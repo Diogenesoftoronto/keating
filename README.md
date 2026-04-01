@@ -27,16 +27,18 @@ It is designed around five influences:
 
 ## Quick Start
 
+![Keating Doctor](docs/assets/doctor.gif)
+
 ```bash
-npm run build
-npm run doctor
-npm run docs:diagrams
-npm run bench
-npm run evolve
-npm run map -- derivative
-npm run animate -- derivative
-npm run trace
-npm run shell
+mise run build
+mise run doctor
+mise run docs:diagrams
+mise run bench
+mise run evolve
+mise run map -- derivative
+mise run animate -- derivative
+mise run trace
+mise run shell
 ```
 
 Keating reads runtime/model defaults from `keating.config.json`.
@@ -103,12 +105,26 @@ The system deliberately separates:
 
 That split keeps the interactive shell flexible while making the improvement loop testable without an LLM in the loop.
 
+## Testing
+
+![Keating Tests](docs/assets/tests.gif)
+
+```bash
+mise run test
+```
+
+The test suite covers:
+- property checks for lesson plans and maps
+- fuzzed teaching policies and topics
+- visual grammar invariants for animations
+- end-to-end artifact generation and trace persistence
+
 ## Visual Teaching Layer
 
 Keating now treats diagrams and animations as first-class teaching artifacts instead of optional garnish.
 
-- `npm run map -- <topic>` writes a meaning map with teaching loop, concept structure, misconceptions, practice, and transfer hooks, then renders it with `oxdraw` when available.
-- `npm run animate -- <topic>` writes a browser-runnable `manim-web` bundle under `.keating/outputs/animations/<topic>/`.
+- `mise run map -- <topic>` writes a meaning map with teaching loop, concept structure, misconceptions, practice, and transfer hooks, then renders it with `oxdraw` when available.
+- `mise run animate -- <topic>` writes a browser-runnable `manim-web` bundle under `.keating/outputs/animations/<topic>/`.
 - Each animation bundle includes:
   - `player.html`
   - `scene.mjs`
@@ -135,10 +151,10 @@ Keating persists detailed trace artifacts under `.keating/outputs/traces/`.
 Useful commands:
 
 ```bash
-npm run doctor
-npm run bench -- derivative
-npm run evolve -- derivative
-npm run trace -- derivative
+mise run doctor
+mise run bench -- derivative
+mise run evolve -- derivative
+mise run trace -- derivative
 ```
 
 ## Documentation
@@ -150,5 +166,5 @@ npm run trace -- derivative
 Regenerate the checked-in docs SVGs with:
 
 ```bash
-npm run docs:diagrams
+mise run docs:diagrams
 ```
