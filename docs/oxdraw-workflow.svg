@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1688" height="719" viewBox="0 0 1688 719" font-family="Inter, system-ui, sans-serif">
+  <defs>
+        <marker id="arrow-end" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto" markerUnits="strokeWidth">
+            <path d="M1,1 L6,4 L1,7 z" fill="context-stroke" />
+        </marker>
+        <marker id="arrow-start" markerWidth="8" markerHeight="8" refX="2" refY="4" orient="auto" markerUnits="strokeWidth">
+            <path d="M7,1 L2,4 L7,7 z" fill="context-stroke" />
+        </marker>
+  </defs>
+  <rect width="100%" height="100%" fill="white" />
+  <polyline points="467.7,610.0 561.8,639.3 676.2,579.3 790.6,519.3 836.8,371.0" fill="none" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <line x1="974.8" y1="345.0" x2="993.8" y2="345.0" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <line x1="1220.0" y1="320.0" x2="1337.8" y2="290.2" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <polyline points="1405.0,240.0 1269.6,136.8 1121.4,156.8 973.1,176.8 864.6,319.2" fill="none" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <line x1="1220.0" y1="370.0" x2="1337.8" y2="399.8" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <rect x="83.7" y="80.0" width="607.6" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
+  <text x="387.5" y="105.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">classDef author fill:#11233b,stroke:#8db5ff,color:#f8f5ec,stroke-width:1px</text>
+  <rect x="83.7" y="240.0" width="607.6" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
+  <text x="387.5" y="265.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">classDef render fill:#173122,stroke:#8fd7b6,color:#f8f5ec,stroke-width:1px</text>
+  <rect x="80.0" y="400.0" width="615.0" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
+  <text x="387.5" y="425.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">classDef inspect fill:#3a2317,stroke:#ff9b6b,color:#f8f5ec,stroke-width:1px</text>
+  <rect x="231.7" y="560.0" width="311.6" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
+  <text x="387.5" y="585.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">write[Write Mermaid .mmd]:::author</text>
+  <rect x="715.0" y="320.0" width="259.8" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
+  <text x="844.9" y="345.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">render[Run oxdraw]:::render</text>
+  <rect x="994.8" y="320.0" width="252.4" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
+  <text x="1121.0" y="345.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">svg[Inspect SVG]:::inspect</text>
+  <rect x="1267.2" y="240.0" width="341.2" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
+  <text x="1437.8" y="265.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">revise[Revise Mermaid Source]:::author</text>
+  <rect x="1267.2" y="400.0" width="341.2" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
+  <text x="1437.8" y="425.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">commit[Commit .mmd and .svg]:::inspect</text>
+</svg>

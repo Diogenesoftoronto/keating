@@ -1,0 +1,16 @@
+graph LR
+  classDef author fill:#11233b,stroke:#8db5ff,color:#f8f5ec,stroke-width:1px;
+  classDef render fill:#173122,stroke:#8fd7b6,color:#f8f5ec,stroke-width:1px;
+  classDef inspect fill:#3a2317,stroke:#ff9b6b,color:#f8f5ec,stroke-width:1px;
+
+  write[Write Mermaid .mmd]:::author
+  render[Run oxdraw]:::render
+  svg[Inspect SVG]:::inspect
+  revise[Revise Mermaid Source]:::author
+  commit[Commit .mmd and .svg]:::inspect
+
+  write --> render
+  render --> svg
+  svg --> revise
+  revise --> render
+  svg --> commit

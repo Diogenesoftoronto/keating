@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="963" height="918" viewBox="0 0 963 918" font-family="Inter, system-ui, sans-serif">
+  <defs>
+        <marker id="arrow-end" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto" markerUnits="strokeWidth">
+            <path d="M1,1 L6,4 L1,7 z" fill="context-stroke" />
+        </marker>
+        <marker id="arrow-start" markerWidth="8" markerHeight="8" refX="2" refY="4" orient="auto" markerUnits="strokeWidth">
+            <path d="M7,1 L2,4 L7,7 z" fill="context-stroke" />
+        </marker>
+  </defs>
+  <rect width="100%" height="100%" fill="white" />
+  <line x1="481.6" y1="130.0" x2="481.6" y2="239.0" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <line x1="463.8" y1="290.0" x2="386.0" y2="399.2" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <line x1="503.5" y1="290.0" x2="599.0" y2="399.2" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <line x1="549.7" y1="450.0" x2="234.6" y2="559.7" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <line x1="583.6" y1="450.0" x2="417.5" y2="559.4" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <line x1="618.0" y1="450.0" x2="602.9" y2="559.0" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <line x1="648.5" y1="450.0" x2="766.3" y2="559.3" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <polyline points="161.8,560.0 161.8,511.0 698.5,511.0 698.5,719.0" fill="none" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <line x1="428.7" y1="610.0" x2="647.6" y2="719.6" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <line x1="614.8" y1="610.0" x2="682.5" y2="719.2" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <polyline points="599.3,585.0 543.9,580.2 543.9,636.0 418.2,636.0 418.2,639.7 292.4,699.2 278.7,719.2" fill="none" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <polyline points="780.5,610.0 700.8,758.2 567.5,798.2 434.3,838.2 308.3,770.5" fill="none" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <polyline points="794.0,585.0 738.5,581.7 738.5,636.0 623.3,636.0 623.3,640.0 508.1,698.3 494.6,719.2" fill="none" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <line x1="245.5" y1="720.0" x2="177.8" y2="610.8" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <polyline points="261.0,745.0 316.4,749.8 316.4,694.0 442.1,694.0 442.1,690.3 567.9,630.8 581.6,610.8" fill="none" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <polyline points="477.9,745.0 533.4,748.3 533.4,694.0 648.6,694.0 648.6,690.0 763.8,631.7 777.3,610.8" fill="none" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <rect x="411.6" y="80.0" width="140.0" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
+  <text x="481.6" y="105.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">User</text>
+  <rect x="336.9" y="240.0" width="289.4" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
+  <text x="481.6" y="265.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">Pi or Feynman-embedded Pi shell</text>
+  <rect x="237.7" y="400.0" width="259.8" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
+  <text x="367.6" y="425.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">Prompt templates and skills</text>
+  <rect x="517.5" y="400.0" width="208.0" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
+  <text x="621.5" y="425.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">Keating Pi extension</text>
+  <rect x="80.0" y="560.0" width="163.6" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
+  <text x="161.8" y="585.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">Lesson planner</text>
+  <rect x="263.6" y="560.0" width="230.2" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
+  <text x="378.7" y="585.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">Mermaid and oxdraw maps</text>
+  <rect x="513.8" y="560.0" width="171.0" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
+  <text x="599.3" y="585.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">Benchmark suite</text>
+  <rect x="704.8" y="560.0" width="178.4" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
+  <text x="794.0" y="585.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">Evolution engine</text>
+  <rect x="145.9" y="720.0" width="230.2" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
+  <text x="261.0" y="745.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">Current teaching policy</text>
+  <rect x="396.1" y="720.0" width="163.6" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
+  <text x="477.9" y="745.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">Policy archive</text>
+  <rect x="579.7" y="720.0" width="237.6" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
+  <text x="698.5" y="745.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">Artifacts under .keating</text>
+</svg>

@@ -1,0 +1,40 @@
+{
+  "name": "keating",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A Pi-powered hyperteacher package with self-improving teaching policies, lesson maps, and animated visual teaching artifacts.",
+  "keywords": [
+    "pi-package",
+    "hyperteacher",
+    "education",
+    "feynman-style",
+    "teaching-agent"
+  ],
+  "pi": {
+    "extensions": [
+      "./dist/src/pi"
+    ],
+    "skills": [
+      "./pi/skills"
+    ],
+    "prompts": [
+      "./pi/prompts"
+    ]
+  },
+  "scripts": {
+    "build": "mise run build",
+    "docs:diagrams": "mise run docs-diagrams",
+    "test": "mise run test",
+    "doctor": "mise run doctor",
+    "shell": "mise run shell",
+    "bench": "mise run bench",
+    "evolve": "mise run evolve",
+    "map": "mise run map",
+    "animate": "mise run animate",
+    "trace": "mise run trace"
+  },
+  "dependencies": {
+    "manim-web": "^0.3.16"
+  }
+}

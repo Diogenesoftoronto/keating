@@ -1,0 +1,48 @@
+graph TD
+  classDef source fill:#11233b,stroke:#8db5ff,color:#f8f5ec,stroke-width:1px;
+  classDef static fill:#173122,stroke:#8fd7b6,color:#f8f5ec,stroke-width:1px;
+  classDef dynamic fill:#3a2317,stroke:#ff9b6b,color:#f8f5ec,stroke-width:1px;
+  classDef eval fill:#2f2140,stroke:#d3a6ff,color:#f8f5ec,stroke-width:1px;
+
+  topic[Topic Definition]:::source
+  policy[Teacher Policy]:::source
+  plan[Lesson Plan]:::source
+  map[Mermaid Meaning Map]:::static
+  oxdraw[oxdraw SVG Render]:::static
+  storyboard[Storyboard]:::dynamic
+  manifest[Animation Manifest]:::dynamic
+  scene[manim-web Scene Bundle]:::dynamic
+  learner[Synthetic Learner Benchmark]:::eval
+  evolve[Evolution Engine]:::eval
+
+  topic --> plan
+  policy --> plan
+  plan --> map
+  map --> oxdraw
+  topic --> storyboard
+  policy --> storyboard
+  topic --> manifest
+  policy --> manifest
+  storyboard --> scene
+  manifest --> scene
+  policy --> learner
+  learner --> evolve
+  evolve --> policy
+  learner --> manifest
+  oxdraw --> learner
+
+  subgraph static_visual["Static Visuals"]
+    map
+    oxdraw
+  end
+
+  subgraph animated_visual["Animated Visuals"]
+    storyboard
+    manifest
+    scene
+  end
+
+  subgraph feedback["Feedback Loop"]
+    learner
+    evolve
+  end

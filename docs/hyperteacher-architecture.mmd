@@ -1,0 +1,29 @@
+graph TD
+  user[User]
+  shell[Pi or Feynman-embedded Pi shell]
+  prompts[Prompt templates and skills]
+  ext[Keating Pi extension]
+  planner[Lesson planner]
+  maps[Mermaid and oxdraw maps]
+  bench[Benchmark suite]
+  evo[Evolution engine]
+  policy[Current teaching policy]
+  archive[Policy archive]
+  outputs[Artifacts under .keating]
+
+  user --> shell
+  shell --> prompts
+  shell --> ext
+  ext --> planner
+  ext --> maps
+  ext --> bench
+  ext --> evo
+  planner --> outputs
+  maps --> outputs
+  bench --> outputs
+  bench --> policy
+  evo --> policy
+  evo --> archive
+  policy --> planner
+  policy --> bench
+  archive --> evo

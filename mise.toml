@@ -1,0 +1,42 @@
+[tools]
+bun = "latest"
+
+[tasks.build]
+description = "Build the project"
+run = "bun x tsc -p tsconfig.json"
+
+[tasks.docs-diagrams]
+description = "Render documentation diagrams"
+run = "bun scripts/render-docs-diagrams.mjs"
+
+[tasks.test]
+description = "Run tests"
+run = "bun test ./test/*.test.ts"
+
+[tasks.doctor]
+description = "Run the hyperteacher doctor"
+run = "bun src/cli/main.ts doctor"
+
+[tasks.shell]
+description = "Start the hyperteacher shell"
+run = "bun src/cli/main.ts shell"
+
+[tasks.bench]
+description = "Run benchmarks"
+run = "bun src/cli/main.ts bench"
+
+[tasks.evolve]
+description = "Evolve the teaching policy"
+run = "bun src/cli/main.ts evolve"
+
+[tasks.map]
+description = "Generate a lesson map"
+run = "bun src/cli/main.ts map"
+
+[tasks.animate]
+description = "Animate a teaching artifact"
+run = "bun src/cli/main.ts animate"
+
+[tasks.trace]
+description = "Trace a teaching session"
+run = "bun src/cli/main.ts trace"

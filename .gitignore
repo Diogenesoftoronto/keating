@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+*.tsbuildinfo
+
+# Project-specific state
+.keating/
+.codex/
+
+# Environment
+.env*
+*.local
+
+# OS files
+.DS_Store
+Thumbs.db
