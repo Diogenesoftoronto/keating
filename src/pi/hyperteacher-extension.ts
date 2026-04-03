@@ -6,13 +6,19 @@ import {
   currentPolicySummary,
   ensureProjectScaffold,
   evolvePolicyArtifact,
+  evolvePromptArtifact,
+  improveArtifact,
+  improveHistory,
   listArtifacts,
   mapTopicArtifact,
-  planTopicArtifact
+  planTopicArtifact,
+  verifyTopicArtifact
 } from "../core/project.js";
+import { learnerStatePath } from "../core/paths.js";
+import { loadLearnerState, recordFeedback, saveLearnerState } from "../core/learner-state.js";
 
-function topicFromArgs(args: string[]): string {
-  return args.join(" ").trim();
+function topicFromArgs(args: string | string[]): string {
+  return (Array.isArray(args) ? args.join(" ") : String(args ?? "")).trim();
 }
 
 function info(ctx: any, message: string): void {
@@ -93,6 +99,19 @@ export default function hyperteacher(pi: any): void {
     }
   });
 
+  pi.registerCommand("prompt-evolve", {
+    description: "Evolve a prompt template using prompt-learning feedback and PROSPER-style selection.",
+    handler: async (args: string[], ctx: any) => {
+      const promptName = topicFromArgs(args) || "learn";
+      const artifact = await evolvePromptArtifact(ctx.cwd, promptName);
+      ctx.ui.setEditorText(`read ${relative(ctx.cwd, artifact.reportPath)}`);
+      info(
+        ctx,
+        `Prompt ${promptName} evolved to ${artifact.bestScore.toFixed(2)} and saved to ${relative(ctx.cwd, artifact.evolvedPromptPath)}`
+      );
+    }
+  });
+
   pi.registerCommand("policy", {
     description: "Show the active hyperteacher policy.",
     handler: async (_args: string[], ctx: any) => {
@@ -117,6 +136,68 @@ export default function hyperteacher(pi: any): void {
     }
   });
 
+  pi.registerCommand("verify", {
+    description: "Generate a fact-checking checklist for a topic before teaching it.",
+    handler: async (args: string[], ctx: any) => {
+      const topic = topicFromArgs(args);
+      if (!topic) {
+        info(ctx, "Usage: /verify <topic>");
+        return;
+      }
+      const result = await verifyTopicArtifact(ctx.cwd, topic);
+      if (result.alreadyVerified) {
+        info(ctx, `Already verified: ${relative(ctx.cwd, result.checklistPath)}`);
+      } else {
+        ctx.ui.setEditorText(`read ${relative(ctx.cwd, result.checklistPath)}`);
+        info(ctx, `Verification checklist generated. Complete it before teaching this topic.`);
+      }
+    }
+  });
+
+  pi.registerCommand("feedback", {
+    description: "Record feedback on the current teaching session (up, down, confused).",
+    handler: async (args: string[], ctx: any) => {
+      const raw = topicFromArgs(args).toLowerCase();
+      const parts = raw.split(/\s+/);
+      const signalMap: Record<string, "thumbs-up" | "thumbs-down" | "confused"> = {
+        up: "thumbs-up",
+        down: "thumbs-down",
+        confused: "confused"
+      };
+      const signal = signalMap[parts[0]];
+      if (!signal) {
+        info(ctx, "Usage: /feedback <up|down|confused> [topic]");
+        return;
+      }
+      const topic = parts.slice(1).join(" ") || "general";
+      const statePath = learnerStatePath(ctx.cwd);
+      const state = await loadLearnerState(statePath);
+      recordFeedback(state, topic, signal);
+      await saveLearnerState(statePath, state);
+      info(ctx, `Recorded ${signal} feedback for "${topic}".`);
+    }
+  });
+
+  pi.registerCommand("improve", {
+    description: "Generate a self-improvement proposal by diagnosing benchmark weaknesses.",
+    handler: async (args: string[], ctx: any) => {
+      const sub = topicFromArgs(args).toLowerCase();
+      if (sub === "history") {
+        const md = await improveHistory(ctx.cwd);
+        ctx.ui.setEditorText(md);
+        info(ctx, "Loaded improvement history into the editor.");
+        return;
+      }
+      info(ctx, "Running benchmark and diagnosing weaknesses...");
+      const artifact = await improveArtifact(ctx.cwd);
+      ctx.ui.setEditorText(`read ${relative(ctx.cwd, artifact.proposalPath)}`);
+      info(
+        ctx,
+        `Improvement proposal ${artifact.proposal.id} targets ${artifact.proposal.targets.map(t => t.file).join(", ")}`
+      );
+    }
+  });
+
   pi.registerCommand("trace", {
     description: "Browse persisted benchmark and evolution traces.",
     handler: async (args: string[], ctx: any) => {
@@ -138,6 +219,6 @@ export default function hyperteacher(pi: any): void {
 
   pi.on("session_start", async (_event: any, ctx: any) => {
     await ensureProjectScaffold(ctx.cwd);
-    info(ctx, "Keating loaded: use /plan, /map, /animate, /bench, /evolve, /trace, or /policy.");
+    info(ctx, "Keating loaded: use /plan, /map, /animate, /verify, /bench, /evolve, /prompt-evolve, /improve, /trace, /feedback, or /policy.");
   });
 }

@@ -87,6 +87,83 @@ export function buildLessonPlan(topicName: string, policy: TeacherPolicy): Lesso
     phases[5]!.bullets.unshift(`Pause after each practice step and ask the learner to predict the next move.`);
   }
 
+  // Domain-specific phase customizations
+  if (topic.domain === "code") {
+    const exIdx = phases.findIndex((p) => p.id === "examples");
+    if (exIdx !== -1) {
+      phases.splice(exIdx + 1, 0, {
+        id: "live-code",
+        title: "Live Code",
+        purpose: "Write and trace runnable code so the learner sees the concept execute.",
+        bullets: [
+          `Write a minimal runnable example demonstrating ${topic.title}.`,
+          `Step through execution line by line, narrating state changes.`,
+          `Ask the learner to predict output before running.`
+        ]
+      });
+    }
+  }
+
+  if (topic.domain === "law") {
+    const examples = phases.find((p) => p.id === "examples");
+    if (examples) {
+      examples.bullets.push(
+        `Cite at least one leading case or statute relevant to ${topic.title}.`,
+        `Distinguish the ratio decidendi from obiter dicta.`
+      );
+    }
+  }
+
+  if (topic.domain === "medicine") {
+    const formalCore = phases.find((p) => p.id === "formal-core");
+    if (formalCore) {
+      formalCore.bullets.push(
+        `Reference the level of evidence (RCT, meta-analysis, observational) for key claims about ${topic.title}.`,
+        `Distinguish mechanism-based reasoning from evidence-based conclusions.`
+      );
+    }
+  }
+
+  if (topic.domain === "history") {
+    const examples = phases.find((p) => p.id === "examples");
+    if (examples) {
+      examples.bullets.push(
+        `Place ${topic.title} on a timeline with at least two contextual events.`,
+        `Distinguish primary sources from secondary interpretation.`
+      );
+    }
+  }
+
+  if (topic.domain === "psychology") {
+    const misconceptions = phases.find((p) => p.id === "misconceptions");
+    if (misconceptions) {
+      misconceptions.bullets.push(
+        `Flag the replication status of key studies related to ${topic.title}.`,
+        `Distinguish folk-psychology usage from empirical findings.`
+      );
+    }
+  }
+
+  if (topic.domain === "politics") {
+    const transfer = phases.find((p) => p.id === "transfer");
+    if (transfer) {
+      transfer.bullets.push(
+        `Present at least two competing analytical frameworks for ${topic.title}.`,
+        `Distinguish normative claims from descriptive ones.`
+      );
+    }
+  }
+
+  if (topic.domain === "arts") {
+    const examples = phases.find((p) => p.id === "examples");
+    if (examples) {
+      examples.bullets.push(
+        `Ground analysis in at least one specific work that exemplifies ${topic.title}.`,
+        `Connect formal technique to expressive effect.`
+      );
+    }
+  }
+
   return { topic, policy, phases };
 }
 

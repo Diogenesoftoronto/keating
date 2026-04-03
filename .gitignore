@@ -1,18 +1,29 @@
 # Dependencies
 node_modules/
+.entire/
+.claude/
 
 # Build outputs
 dist/
 *.tsbuildinfo
+*.pdf
+*.png
+*.svg
 
 # Project-specific state
 .keating/
 .codex/
+.mise/
 
 # Environment
 .env*
 *.local
+mise.local.toml
 
 # OS files
 .DS_Store
 Thumbs.db
+
+# Outreach & Private Drafts
+docs/outreach-email.md
+docs/drafts/

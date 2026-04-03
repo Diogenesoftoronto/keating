@@ -1,5 +1,5 @@
 ---
-description: Bridge a concept across science, math, and philosophy so the learner sees what transfers and what does not.
+description: Bridge a concept across domains including science, math, philosophy, code, law, history, psychology, medicine, arts, and politics so the learner sees what transfers and what does not.
 args: <topic>
 section: Teaching Workflows
 topLevelCli: true

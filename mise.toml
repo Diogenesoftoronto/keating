@@ -29,6 +29,10 @@ run = "bun src/cli/main.ts bench"
 description = "Evolve the teaching policy"
 run = "bun src/cli/main.ts evolve"
 
+[tasks.prompt-evolve]
+description = "Evolve a prompt template"
+run = "bun src/cli/main.ts prompt-evolve"
+
 [tasks.map]
 description = "Generate a lesson map"
 run = "bun src/cli/main.ts map"

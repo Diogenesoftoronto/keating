@@ -7,7 +7,15 @@ import { resolveTopic } from "./topics.js";
 import { TeacherPolicy } from "./types.js";
 import { slugify } from "./util.js";
 
-export type AnimationSceneKind = "function-graph" | "distribution-bars" | "belief-update" | "concept-card";
+export type AnimationSceneKind =
+  | "function-graph"
+  | "distribution-bars"
+  | "belief-update"
+  | "concept-card"
+  | "code-trace"
+  | "timeline"
+  | "case-diagram"
+  | "mind-map";
 
 export interface AnimationManifest {
   topic: string;
@@ -28,10 +36,23 @@ export interface AnimationArtifact {
 
 function pickSceneKind(topicName: string): AnimationSceneKind {
   const topic = resolveTopic(topicName);
+  // Canonical slug overrides for backward compatibility
   if (topic.slug === "derivative") return "function-graph";
   if (topic.slug === "entropy") return "distribution-bars";
   if (topic.slug === "bayes-rule") return "belief-update";
-  return "concept-card";
+  // Route by domain
+  switch (topic.domain) {
+    case "math": return "function-graph";
+    case "science": return "distribution-bars";
+    case "code": return "code-trace";
+    case "history": return "timeline";
+    case "law":
+    case "politics": return "case-diagram";
+    case "psychology":
+    case "arts": return "mind-map";
+    case "medicine": return "distribution-bars";
+    default: return "concept-card";
+  }
 }
 
 function importSpecifierFrom(dirPath: string, targetPath: string): string {
@@ -72,10 +93,18 @@ function sceneRationale(topicName: string, policy: TeacherPolicy, sceneKind: Ani
     sceneKind === "function-graph"
       ? "A function graph highlights local change, secant-to-tangent motion, and equation refinement."
       : sceneKind === "distribution-bars"
-        ? "A bar chart makes multiplicity, relative weight, and entropy growth legible before symbol manipulation."
+        ? "A bar chart makes multiplicity, relative weight, and statistical relationships legible before symbol manipulation."
         : sceneKind === "belief-update"
           ? "A belief-update chart makes prior, evidence, and posterior shifts visible instead of purely verbal."
-          : "A concept-card scene is safer when the concept is philosophical or the visual grammar is still exploratory.",
+          : sceneKind === "code-trace"
+            ? "A code-trace scene shows execution flow, variable state, and call-stack evolution step by step."
+            : sceneKind === "timeline"
+              ? "A timeline scene places events in chronological order so causal relationships and periodization become visible."
+              : sceneKind === "case-diagram"
+                ? "A case-diagram scene structures arguments as premises leading to conclusions, making reasoning transparent."
+                : sceneKind === "mind-map"
+                  ? "A mind-map scene radiates concepts from a central idea, revealing connections and clustering."
+                  : "A concept-card scene is safer when the concept is philosophical or the visual grammar is still exploratory.",
     `Interdisciplinary hooks carried into the scene: ${topic.interdisciplinaryHooks.join(", ")}.`
   ];
 }
@@ -94,26 +123,43 @@ export function buildAnimationManifest(topicName: string, policy: TeacherPolicy)
   };
 }
 
-function derivativeSceneSource(importSpecifier: string): string {
-  return `import { Axes, Text, MathTex, Create, Write, FadeIn, Transform } from ${JSON.stringify(importSpecifier)};
+export function animationSceneSource(topicName: string, policy: TeacherPolicy, importSpecifier: string): string {
+  const topic = resolveTopic(topicName);
+  const manifest = buildAnimationManifest(topicName, policy);
+  const thesis = topic.formalCore[0] ?? topic.summary;
+  const misconception = topic.misconceptions[0] ?? `Avoid flattening ${topic.title} into a slogan.`;
+  const bridge = topic.interdisciplinaryHooks[0] ?? "application";
 
-const palette = {
-  background: "#08111f",
-  ink: "#f8f5ec",
-  accent: "#ff7a59",
-  support: "#7bb0ff",
-  soft: "#9dd7c8"
-};
+  const palette = {
+    background: "#08111f",
+    ink: "#f8f5ec",
+    accent: "#ff7a59",
+    support: "#7bb0ff",
+    soft: "#9dd7c8",
+    warning: "#ff8e72"
+  };
 
-function textLine(text, y, fontSize = 28, color = palette.ink) {
-  const node = new Text({ text, fontSize, color, fontFamily: "Iowan Old Style, Georgia, serif" });
+  const commonHelpers = `
+const palette = ${JSON.stringify(palette, null, 2)};
+
+function textLine(text, y, fontSize = 28, color = palette.ink, fontFamily = "Iowan Old Style, Georgia, serif") {
+  const node = new Text({
+    text,
+    fontSize,
+    color,
+    fontFamily,
+    lineHeight: 1.15
+  });
   node.moveTo([0, y, 0]);
   return node;
 }
+`;
 
-export async function construct(scene) {
-  const title = textLine("Derivative: local change made visible", 3.2, 34);
-  const cue = textLine("Shrink the interval while watching the slope stabilize.", 2.55, 24, palette.soft);
+  let sceneLogic = "";
+
+  switch (manifest.sceneKind) {
+    case "function-graph":
+      sceneLogic = `
   const axes = new Axes({
     xRange: [-2, 3, 1],
     yRange: [-1, 6, 1],
@@ -123,197 +169,115 @@ export async function construct(scene) {
   });
   axes.moveTo([0, -0.2, 0]);
 
-  const parabola = axes.plot((x) => x * x, {
+  const plot = axes.plot((x) => x * x, {
     xRange: [-1.8, 2.2],
     color: palette.accent,
     strokeWidth: 5
   });
 
-  const secant = new MathTex({
-    latex: "\\\\frac{f(x+h)-f(x)}{h}",
+  const formula = new MathTex({
+    latex: ${JSON.stringify(topic.formalCore[0] || "f(x)")},
     fontSize: 42,
     color: palette.ink
   });
-  secant.moveTo([0, -3.05, 0]);
+  formula.moveTo([0, -3.05, 0]);
 
-  const tangent = new MathTex({
-    latex: "\\\\lim_{h \\\\to 0}\\\\frac{f(x+h)-f(x)}{h}=2x",
-    fontSize: 38,
-    color: palette.ink
-  });
-  tangent.moveTo([0, -3.05, 0]);
-  await tangent.waitForRender();
-
-  await scene.play(new Write(title), new FadeIn(cue));
-  await scene.play(new Create(axes), new Create(parabola));
-  await scene.play(new Write(secant));
-  await scene.wait(0.6);
-  await scene.play(new Transform(secant, tangent));
-  await scene.wait(1.2);
-}
+  await scene.play(new Create(axes), new Create(plot));
+  await scene.play(new Write(formula));
 `;
-}
+      break;
 
-function entropySceneSource(importSpecifier: string): string {
-  return `import { BarChart, Text, MathTex, Create, Write, FadeIn, Transform } from ${JSON.stringify(importSpecifier)};
-
-const palette = {
-  ink: "#f8f5ec",
-  accent: "#ff9b42",
-  accentAlt: "#69c2ff",
-  accentSoft: "#8fd7b6"
-};
-
-function textLine(text, y, fontSize = 28, color = palette.ink) {
-  const node = new Text({ text, fontSize, color, fontFamily: "Iowan Old Style, Georgia, serif" });
-  node.moveTo([0, y, 0]);
-  return node;
-}
-
-export async function construct(scene) {
-  const title = textLine("Entropy: more compatible arrangements", 3.15, 34);
-  const cue = textLine("Count the hidden ways a macrostate can happen.", 2.55, 24, palette.accentSoft);
+    case "distribution-bars":
+    case "belief-update":
+      sceneLogic = `
   const chart = new BarChart({
-    values: [1, 3, 8],
-    xLabels: ["ordered", "mixed", "high W"],
-    barColors: [palette.accentAlt, palette.accentSoft, palette.accent],
-    yRange: [0, 8, 2],
+    values: [0.2, 0.5, 0.8],
+    xLabels: ["initial", "mid", "target"],
+    barColors: [palette.support, palette.soft, palette.accent],
+    yRange: [0, 1, 0.2],
     width: 8.5,
     height: 4.6,
     axisColor: palette.ink
   });
   chart.moveTo([0, -0.25, 0]);
 
-  const multiplicity = new MathTex({
-    latex: "W \\\\uparrow \\\\Rightarrow S \\\\uparrow",
-    fontSize: 38,
-    color: palette.ink
-  });
-  multiplicity.moveTo([0, -2.95, 0]);
-  await multiplicity.waitForRender();
+  const label = textLine(${JSON.stringify(topic.summary)}, -3.0, 24, palette.soft);
 
-  const formula = new MathTex({
-    latex: "S = k \\\\log W",
-    fontSize: 42,
-    color: palette.ink
-  });
-  formula.moveTo([0, -2.95, 0]);
-  await formula.waitForRender();
-
-  await scene.play(new Write(title), new FadeIn(cue));
   await scene.play(new Create(chart));
-  await scene.play(new Write(multiplicity));
-  await scene.wait(0.6);
-  await scene.play(new Transform(multiplicity, formula));
-  await scene.wait(1.2);
-}
+  await scene.play(new FadeIn(label));
 `;
-}
+      break;
 
-function bayesSceneSource(importSpecifier: string): string {
-  return `import { BarChart, Text, MathTex, Create, Write, FadeIn, Transform } from ${JSON.stringify(importSpecifier)};
-
-const palette = {
-  ink: "#f8f5ec",
-  prior: "#8fd7b6",
-  evidence: "#79a8ff",
-  posterior: "#ff7a59"
-};
-
-function textLine(text, y, fontSize = 28, color = palette.ink) {
-  const node = new Text({ text, fontSize, color, fontFamily: "Iowan Old Style, Georgia, serif" });
-  node.moveTo([0, y, 0]);
-  return node;
-}
-
-export async function construct(scene) {
-  const title = textLine("Bayes: beliefs after evidence", 3.15, 34);
-  const cue = textLine("Base rates matter before a positive signal arrives.", 2.55, 24, palette.prior);
-  const chart = new BarChart({
-    values: [0.01, 0.9, 0.083],
-    xLabels: ["prior", "likelihood", "posterior"],
-    barColors: [palette.prior, palette.evidence, palette.posterior],
-    yRange: [0, 1, 0.25],
-    width: 8.5,
-    height: 4.6,
-    axisColor: palette.ink
-  });
-  chart.moveTo([0, -0.25, 0]);
-
-  const intuition = new MathTex({
-    latex: "posterior \\\\propto prior \\\\times likelihood",
-    fontSize: 34,
-    color: palette.ink
-  });
-  intuition.moveTo([0, -2.95, 0]);
-  await intuition.waitForRender();
-
-  const formula = new MathTex({
-    latex: "P(H|E)=\\\\frac{P(E|H)P(H)}{P(E)}",
-    fontSize: 38,
-    color: palette.ink
-  });
-  formula.moveTo([0, -2.95, 0]);
-  await formula.waitForRender();
-
-  await scene.play(new Write(title), new FadeIn(cue));
-  await scene.play(new Create(chart));
-  await scene.play(new Write(intuition));
-  await scene.wait(0.6);
-  await scene.play(new Transform(intuition, formula));
-  await scene.wait(1.2);
-}
+    case "code-trace":
+      sceneLogic = `
+  const code = textLine(${JSON.stringify(topic.examples[0] || "// example code")}, 0, 24, palette.soft, "'Fira Code', monospace");
+  const state = textLine("State: evolving...", -2.0, 24, palette.accent);
+  await scene.play(new Write(code));
+  await scene.play(new FadeIn(state));
 `;
-}
+      break;
 
-function conceptCardSceneSource(importSpecifier: string, topicName: string, policy: TeacherPolicy): string {
-  const topic = resolveTopic(topicName);
-  const manifest = buildAnimationManifest(topicName, policy);
-  const thesis = topic.formalCore[0] ?? topic.summary;
-  const misconception = topic.misconceptions[0] ?? `Avoid flattening ${topic.title} into a slogan.`;
-  const bridge = topic.interdisciplinaryHooks[0] ?? "application";
+    case "timeline":
+      sceneLogic = `
+  const events = ${JSON.stringify(topic.diagramNodes.slice(0, 4))};
+  for (let i = 0; i < events.length; i++) {
+    const node = textLine(events[i], 1.5 - i * 1.0, 28, i % 2 === 0 ? palette.accent : palette.support);
+    await scene.play(new FadeIn(node));
+    await scene.wait(0.2);
+  }
+`;
+      break;
 
-  return `import { Text, FadeIn, Write } from ${JSON.stringify(importSpecifier)};
+    case "case-diagram":
+      sceneLogic = `
+  const premise = textLine(${JSON.stringify(topic.formalCore[0] || "Premise")}, 1.0, 26, palette.soft);
+  const conclusion = textLine(${JSON.stringify(topic.summary)}, -1.0, 30, palette.accent);
+  await scene.play(new Write(premise));
+  await scene.wait(0.5);
+  await scene.play(new Transform(premise, conclusion));
+`;
+      break;
 
-const palette = {
-  ink: "#f8f5ec",
-  accent: "#d9b36c",
-  warning: "#ff8e72",
-  soft: "#87c8be"
-};
+    case "mind-map":
+      sceneLogic = `
+  const center = textLine(${JSON.stringify(topic.title)}, 0, 42, palette.accent);
+  await scene.play(new Write(center));
+  const nodes = ${JSON.stringify(topic.diagramNodes.slice(0, 4))};
+  const positions = [[-4, 2], [4, 2], [-4, -2], [4, -2]];
+  for (let i = 0; i < nodes.length; i++) {
+    const node = textLine(nodes[i], 0, 24, palette.support);
+    node.moveTo([...positions[i], 0]);
+    await scene.play(new FadeIn(node));
+  }
+`;
+      break;
 
-function textLine(text, y, fontSize = 28, color = palette.ink) {
-  const node = new Text({
-    text,
-    fontSize,
-    color,
-    fontFamily: "Iowan Old Style, Georgia, serif",
-    lineHeight: 1.15
-  });
-  node.moveTo([0, y, 0]);
-  return node;
-}
-
-export async function construct(scene) {
-  const title = textLine(${JSON.stringify(`${topic.title}: meaning before slogans`)}, 3.05, 34, palette.accent);
+    default: // concept-card
+      sceneLogic = `
   const thesis = textLine(${JSON.stringify(thesis)}, 1.25, 26);
   const warning = textLine(${JSON.stringify(`Misconception: ${misconception}`)}, -0.15, 24, palette.warning);
-  const bridge = textLine(${JSON.stringify(`Bridge outward: ${bridge}`)}, -1.65, 24, palette.soft);
-  const cue = textLine(${JSON.stringify(manifest.rationale[2] ?? "A concept-card scene keeps the visual grammar explicit while the teaching policy evolves.")}, -2.75, 22);
+  const hook = textLine(${JSON.stringify(`Bridge: ${bridge}`)}, -1.65, 24, palette.soft);
 
+  await scene.play(new FadeIn(thesis), new FadeIn(warning), new FadeIn(hook));
+`;
+  }
+
+  return `import { 
+  Scene, Text, MathTex, Axes, BarChart, 
+  Create, Write, FadeIn, FadeOut, Transform 
+} from ${JSON.stringify(importSpecifier)};
+
+${commonHelpers}
+
+export async function construct(scene) {
+  const title = textLine(${JSON.stringify(`${topic.title}: ${manifest.sceneKind}`)}, 3.2, 34, palette.accent);
   await scene.play(new Write(title));
-  await scene.play(new FadeIn(thesis), new FadeIn(warning), new FadeIn(bridge), new FadeIn(cue));
-  await scene.wait(1.2);
+
+  ${sceneLogic}
+
+  await scene.wait(2.0);
 }
 `;
-}
-
-export function animationSceneSource(topicName: string, policy: TeacherPolicy, importSpecifier: string): string {
-  const sceneKind = pickSceneKind(topicName);
-  if (sceneKind === "function-graph") return derivativeSceneSource(importSpecifier);
-  if (sceneKind === "distribution-bars") return entropySceneSource(importSpecifier);
-  if (sceneKind === "belief-update") return bayesSceneSource(importSpecifier);
-  return conceptCardSceneSource(importSpecifier, topicName, policy);
 }
 
 export function animationStoryboardMarkdown(topicName: string, policy: TeacherPolicy): string {

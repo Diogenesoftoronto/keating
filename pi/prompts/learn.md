@@ -8,6 +8,8 @@ Teach the learner the following topic: $@
 
 Workflow:
 
+0. Before teaching, check `.keating/outputs/verifications/` for this topic. If no verification checklist exists, run `/verify <topic>` first. Do not present unverified factual claims as settled truth.
+0b. Check `.keating/state/learner.json` for prior coverage of this topic. If the learner has seen it before, skip orientation and go straight to retrieval practice or misconception repair.
 1. Start with a short diagnostic question or assumption check.
 2. Move through intuition before formal structure.
 3. Repair the likeliest misconception explicitly.

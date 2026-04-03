@@ -32,6 +32,12 @@ declare module "node:os" {
   export const tmpdir: () => string;
 }
 
+declare module "node:crypto" {
+  export function createHash(algorithm: string): {
+    update(data: string): { digest(encoding: string): string };
+  };
+}
+
 declare module "node:test" {
   const test: any;
   export default test;

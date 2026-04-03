@@ -262,3 +262,48 @@ export function benchmarkToMarkdown(result: BenchmarkResult): string {
   lines.push("");
   return `${lines.join("\n")}\n`;
 }
+
+export interface FeedbackSummary {
+  confusionRate: number;
+  satisfactionRate: number;
+  sampleSize: number;
+}
+
+export interface SimulationWeights {
+  masteryGain: number;
+  retention: number;
+  engagement: number;
+  transfer: number;
+  confusion: number;
+}
+
+const BASE_WEIGHTS: SimulationWeights = {
+  masteryGain: 0.34,
+  retention: 0.20,
+  engagement: 0.16,
+  transfer: 0.18,
+  confusion: 0.18
+};
+
+export function applyFeedbackBias(
+  feedback: FeedbackSummary
+): SimulationWeights {
+  if (feedback.sampleSize < 5) return { ...BASE_WEIGHTS };
+
+  const weights = { ...BASE_WEIGHTS };
+  // High confusion from real users → increase confusion penalty weight
+  weights.confusion = clamp(weights.confusion + feedback.confusionRate * 0.08);
+  // High satisfaction → slightly increase engagement weight
+  weights.engagement = clamp(weights.engagement + feedback.satisfactionRate * 0.04);
+
+  // Renormalize positive weights to sum to ~0.88 (1 - confusion weight)
+  const positiveSum = weights.masteryGain + weights.retention + weights.engagement + weights.transfer;
+  const targetPositive = 1 - weights.confusion;
+  const scale = targetPositive / positiveSum;
+  weights.masteryGain *= scale;
+  weights.retention *= scale;
+  weights.engagement *= scale;
+  weights.transfer *= scale;
+
+  return weights;
+}

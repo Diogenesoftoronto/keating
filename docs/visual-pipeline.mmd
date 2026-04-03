@@ -13,7 +13,9 @@ graph TD
   manifest[Animation Manifest]:::dynamic
   scene[manim-web Scene Bundle]:::dynamic
   learner[Synthetic Learner Benchmark]:::eval
-  evolve[Evolution Engine]:::eval
+  evolve[Policy Evolution Engine]:::eval
+  promptEval[Prompt Evolution Report]:::eval
+  promptLoop[Prompt Evolution Engine]:::eval
 
   topic --> plan
   policy --> plan
@@ -28,8 +30,11 @@ graph TD
   policy --> learner
   learner --> evolve
   evolve --> policy
+  promptLoop --> promptEval
   learner --> manifest
   oxdraw --> learner
+  plan --> promptLoop
+  promptLoop --> scene
 
   subgraph static_visual["Static Visuals"]
     map
@@ -45,4 +50,6 @@ graph TD
   subgraph feedback["Feedback Loop"]
     learner
     evolve
+    promptLoop
+    promptEval
   end

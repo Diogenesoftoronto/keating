@@ -30,11 +30,14 @@
     "shell": "mise run shell",
     "bench": "mise run bench",
     "evolve": "mise run evolve",
+    "prompt-evolve": "mise run prompt-evolve",
     "map": "mise run map",
     "animate": "mise run animate",
     "trace": "mise run trace"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "dotenv": "^17.4.0",
     "manim-web": "^0.3.16"
   }
 }
