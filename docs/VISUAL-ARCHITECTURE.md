@@ -18,6 +18,7 @@ Keating treats visual explanation as part of the teaching system, not as decorat
 
 3. Evaluation and traceability
    - benchmark and evolution traces explain why a policy is changing
+   - prompt-evolution reports explain why a teaching prompt revision was selected
    - animation manifests explain why a scene grammar was selected
    - storyboards connect the visual artifact back to pedagogical intent
 
@@ -26,7 +27,7 @@ Keating treats visual explanation as part of the teaching system, not as decorat
 - `plan` builds a deterministic teaching sequence.
 - `map` turns that sequence into a structural knowledge graph.
 - `animate` turns the topic and policy into an executable explanation bundle.
-- `bench` and `evolve` provide the feedback loop that should eventually tune visual choices too.
+- `bench`, `evolve`, and `prompt-evolve` provide the feedback loop that should eventually tune visual choices too.
 
 ## Current Responsibilities
 
@@ -38,6 +39,8 @@ Keating treats visual explanation as part of the teaching system, not as decorat
   - selects a scene grammar and emits `player.html`, `scene.mjs`, `storyboard.md`, and `manifest.json`
 - `src/core/project.ts`
   - persists visual artifacts under `.keating/outputs/`
+- `src/core/prompt-evolution.ts`
+  - scores prompt templates across multiple teaching objectives and writes evolved prompt artifacts that can later inform visual teaching behavior
 
 ## Why `oxdraw`
 
@@ -46,6 +49,7 @@ Keating treats visual explanation as part of the teaching system, not as decorat
 - Mermaid remains easy to diff and hand-edit
 - SVG output is deterministic enough for artifact workflows
 - generated diagrams can sit beside benchmark and evolution reports as equal citizens
+- visual artifacts can now sit beside prompt-evolution reports too, which makes prompt changes inspectable instead of hidden inside the runtime
 
 ## Near-Term Direction
 

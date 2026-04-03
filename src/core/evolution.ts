@@ -3,7 +3,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { BenchmarkResult, EvolutionCandidate, TeacherPolicy } from "./types.js";
 import { Prng } from "./random.js";
 import { clamp } from "./util.js";
-import { DEFAULT_POLICY, clampPolicy, policySignature } from "./policy.js";
+import { DEFAULT_POLICY, clampPolicy } from "./policy.js";
 import { benchmarkToMarkdown, runBenchmarkSuite } from "./benchmark.js";
 
 interface EvolutionArchive {
@@ -69,27 +69,37 @@ function mutatePolicy(parent: TeacherPolicy, prng: Prng, iteration: number): Tea
   return mutated;
 }
 
-function ngrams(text: string, width = 2): Set<string> {
-  if (text.length <= width) return new Set([text]);
-  const values = new Set<string>();
-  for (let index = 0; index <= text.length - width; index += 1) {
-    values.add(text.slice(index, index + width));
-  }
-  return values;
+function policyVector(policy: TeacherPolicy): number[] {
+  return [
+    policy.analogyDensity,
+    policy.socraticRatio,
+    policy.formalism,
+    policy.retrievalPractice,
+    policy.exerciseCount / 5,
+    policy.diagramBias,
+    policy.reflectionBias,
+    policy.interdisciplinaryBias,
+    policy.challengeRate
+  ];
 }
 
-function noveltyScore(existing: string[], policy: TeacherPolicy): number {
-  if (existing.length === 0) return 1;
-  const candidate = ngrams(policySignature(policy));
-  let bestDistance = 1;
-  for (const signature of existing) {
-    const other = ngrams(signature);
-    const union = new Set([...candidate, ...other]).size;
-    const intersection = [...candidate].filter((item) => other.has(item)).length;
-    const jaccardDistance = union === 0 ? 0 : 1 - intersection / union;
-    bestDistance = Math.min(bestDistance, jaccardDistance);
+function euclideanDistance(a: number[], b: number[]): number {
+  let sum = 0;
+  for (let i = 0; i < a.length; i++) {
+    sum += (a[i] - b[i]) ** 2;
   }
-  return bestDistance;
+  return Math.sqrt(sum / a.length);
+}
+
+export function noveltyScore(existingPolicies: TeacherPolicy[], candidate: TeacherPolicy): number {
+  if (existingPolicies.length === 0) return 1;
+  const candidateVec = policyVector(candidate);
+  let minDist = Infinity;
+  for (const existing of existingPolicies) {
+    const dist = euclideanDistance(candidateVec, policyVector(existing));
+    minDist = Math.min(minDist, dist);
+  }
+  return minDist;
 }
 
 async function loadArchive(filePath: string): Promise<EvolutionArchive> {
@@ -122,12 +132,11 @@ export async function evolvePolicy(
   const acceptedCandidates: EvolutionCandidate[] = [];
   const exploredCandidates: EvolutionCandidate[] = [];
   const prng = new Prng(seed + 17);
-  const seen = new Set<string>(archive.candidates.map((entry) => policySignature(entry.policy)));
-  seen.add(policySignature(basePolicy));
+  const seen: TeacherPolicy[] = [...archive.candidates.map((entry) => entry.policy), basePolicy];
 
   for (let iteration = 1; iteration <= iterations; iteration += 1) {
     const candidatePolicy = mutatePolicy(best.policy, prng, iteration);
-    const novelty = noveltyScore([...seen], candidatePolicy);
+    const novelty = noveltyScore(seen, candidatePolicy);
     const candidateBenchmark = runBenchmarkSuite(candidatePolicy, focusTopic, seed + iteration * 11);
     const parameterDelta = diffPolicy(best.policy, candidatePolicy);
     const candidate: EvolutionCandidate = {
@@ -152,7 +161,7 @@ export async function evolvePolicy(
     const candidateWeakest = Math.min(...candidateBenchmark.topicBenchmarks.map((entry) => entry.meanScore));
     const improves = candidateBenchmark.overallScore > best.overallScore;
     const safe = candidateWeakest >= bestWeakest - 1.5;
-    const novelEnough = novelty >= 0.08;
+    const novelEnough = novelty >= 0.05;
     candidate.decision.improves = improves;
     candidate.decision.safe = safe;
     candidate.decision.novelEnough = novelEnough;
@@ -177,7 +186,7 @@ export async function evolvePolicy(
       );
     }
     if (novelEnough) {
-      candidate.decision.reasons.push(`novelty ${novelty.toFixed(3)} cleared the 0.08 threshold`);
+      candidate.decision.reasons.push(`novelty ${novelty.toFixed(3)} cleared the 0.05 threshold`);
     } else {
       candidate.decision.reasons.push(`novelty ${novelty.toFixed(3)} was too close to archived policies`);
     }
@@ -188,7 +197,7 @@ export async function evolvePolicy(
       acceptedCandidates.push(candidate);
     }
     exploredCandidates.push(candidate);
-    seen.add(policySignature(candidatePolicy));
+    seen.push(candidate.policy);
   }
 
   const nextArchive: EvolutionArchive = {

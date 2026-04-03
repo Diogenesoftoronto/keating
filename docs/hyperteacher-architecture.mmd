@@ -5,10 +5,14 @@ graph TD
   ext[Keating Pi extension]
   planner[Lesson planner]
   maps[Mermaid and oxdraw maps]
+  verify[Verification checklist engine]
   bench[Benchmark suite]
-  evo[Evolution engine]
+  evo[Policy evolution engine]
+  pevo[Prompt evolution engine]
   policy[Current teaching policy]
   archive[Policy archive]
+  promptsnap[Prompt evolution archive]
+  learner[Learner state and feedback]
   outputs[Artifacts under .keating]
 
   user --> shell
@@ -16,14 +20,21 @@ graph TD
   shell --> ext
   ext --> planner
   ext --> maps
+  ext --> verify
   ext --> bench
   ext --> evo
+  ext --> pevo
+  ext --> learner
   planner --> outputs
   maps --> outputs
+  verify --> outputs
   bench --> outputs
+  pevo --> outputs
   bench --> policy
   evo --> policy
   evo --> archive
+  pevo --> promptsnap
   policy --> planner
   policy --> bench
   archive --> evo
+  prompts --> pevo

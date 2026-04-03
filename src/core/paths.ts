@@ -33,6 +33,10 @@ export function evolutionDir(cwd: string): string {
   return join(outputsDir(cwd), "evolution");
 }
 
+export function promptEvolutionDir(cwd: string): string {
+  return join(outputsDir(cwd), "prompt-evolution");
+}
+
 export function tracesDir(cwd: string): string {
   return join(outputsDir(cwd), "traces");
 }
@@ -49,15 +53,35 @@ export function policyArchivePath(cwd: string): string {
   return join(stateDir(cwd), "policy-archive.json");
 }
 
+export function promptEvolutionArchivePath(cwd: string): string {
+  return join(stateDir(cwd), "prompt-evolution-archive.json");
+}
+
+export function learnerStatePath(cwd: string): string {
+  return join(stateDir(cwd), "learner.json");
+}
+
+export function verificationsDir(cwd: string): string {
+  return join(outputsDir(cwd), "verifications");
+}
+
+export function verificationCachePath(cwd: string): string {
+  return join(stateDir(cwd), "verification-cache.json");
+}
+
 export async function ensureKeatingDirs(cwd: string): Promise<void> {
   await Promise.all([
     mkdir(stateDir(cwd), { recursive: true }),
+    mkdir(join(stateDir(cwd), "snapshots"), { recursive: true }),
     mkdir(plansDir(cwd), { recursive: true }),
     mkdir(mapsDir(cwd), { recursive: true }),
     mkdir(animationsDir(cwd), { recursive: true }),
     mkdir(benchmarksDir(cwd), { recursive: true }),
     mkdir(evolutionDir(cwd), { recursive: true }),
+    mkdir(promptEvolutionDir(cwd), { recursive: true }),
     mkdir(tracesDir(cwd), { recursive: true }),
+    mkdir(verificationsDir(cwd), { recursive: true }),
+    mkdir(join(outputsDir(cwd), "improvements"), { recursive: true }),
     mkdir(sessionsDir(cwd), { recursive: true })
   ]);
 }

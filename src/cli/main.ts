@@ -10,9 +10,13 @@ import {
   currentPolicySummary,
   ensureProjectScaffold,
   evolvePolicyArtifact,
+  evolvePromptArtifact,
+  improveArtifact,
+  improveHistory,
   listArtifacts,
   mapTopicArtifact,
-  planTopicArtifact
+  planTopicArtifact,
+  verifyTopicArtifact
 } from "../core/project.js";
 import { detectPiRuntime, launchPi } from "../runtime/pi.js";
 
@@ -22,8 +26,12 @@ function printUsage(): void {
   plan <topic>                Write a deterministic lesson plan artifact
   map <topic>                 Write a Mermaid map and render with oxdraw if present
   animate <topic>             Write a manim-web animation bundle for a topic
+  verify <topic>              Generate a fact-checking checklist for a topic
+  improve                     Generate a self-improvement proposal for the teaching code
+  improve history             Show the improvement attempt history
   bench [topic]               Run the learner benchmark suite
   evolve [topic]              Evolve the current teaching policy
+  prompt-evolve [prompt]      Evolve a prompt template with prompt-learning feedback
   policy                      Print the active policy
   trace [substring]           List persisted debug traces and artifacts
   doctor                      Inspect Pi/Feynman and oxdraw availability
@@ -65,6 +73,17 @@ async function run(): Promise<void> {
       console.log(relative(cwd, artifact.manifestPath));
       return;
     }
+    case "verify": {
+      const topic = args.join(" ").trim();
+      if (!topic) throw new Error("verify requires a topic.");
+      const result = await verifyTopicArtifact(cwd, topic);
+      if (result.alreadyVerified) {
+        console.log(`Already verified: ${relative(cwd, result.checklistPath)}`);
+      } else {
+        console.log(`Verification checklist: ${relative(cwd, result.checklistPath)}`);
+      }
+      return;
+    }
     case "bench": {
       const topic = args.join(" ").trim() || undefined;
       const result = await benchPolicyArtifact(cwd, topic);
@@ -77,6 +96,25 @@ async function run(): Promise<void> {
       const result = await evolvePolicyArtifact(cwd, topic);
       console.log(`${result.bestScore.toFixed(2)} ${relative(cwd, result.reportPath)}`);
       if (result.tracePath) console.log(relative(cwd, result.tracePath));
+      return;
+    }
+    case "prompt-evolve": {
+      const promptName = args.join(" ").trim() || "learn";
+      const result = await evolvePromptArtifact(cwd, promptName);
+      console.log(`${result.bestScore.toFixed(2)} ${relative(cwd, result.reportPath)}`);
+      console.log(relative(cwd, result.evolvedPromptPath));
+      return;
+    }
+    case "improve": {
+      if (args[0] === "history") {
+        const md = await improveHistory(cwd);
+        console.log(md);
+        return;
+      }
+      const artifact = await improveArtifact(cwd);
+      console.log(`Proposal: ${artifact.proposal.id}`);
+      console.log(`Targets: ${artifact.proposal.targets.map(t => t.file).join(", ")}`);
+      console.log(relative(cwd, artifact.proposalPath));
       return;
     }
     case "policy": {

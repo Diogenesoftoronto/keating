@@ -1,4 +1,15 @@
-export type Domain = "math" | "science" | "philosophy" | "general";
+export type Domain =
+  | "math"
+  | "science"
+  | "philosophy"
+  | "code"
+  | "law"
+  | "politics"
+  | "psychology"
+  | "medicine"
+  | "arts"
+  | "history"
+  | "general";
 
 export interface TopicDefinition {
   slug: string;
@@ -155,4 +166,41 @@ export interface BenchmarkTopicTrace {
   };
   dominantStrength: string;
   dominantWeakness: string;
+}
+
+export interface VerifiedClaim {
+  claim: string;
+  status: "confirmed" | "unconfirmed" | "corrected";
+  source?: string;
+  correction?: string;
+}
+
+export interface VerificationResult {
+  topic: string;
+  contentHash: string;
+  claims: VerifiedClaim[];
+  overallConfidence: number;
+  checkedAt: string;
+}
+
+export interface LearnerState {
+  id: string;
+  coveredTopics: Array<{
+    slug: string;
+    domain: Domain;
+    lastSeen: string;
+    masteryEstimate: number;
+    sessionCount: number;
+  }>;
+  identifiedMisconceptions: Array<{
+    topic: string;
+    misconception: string;
+    addressed: boolean;
+  }>;
+  feedback: Array<{
+    topic: string;
+    timestamp: string;
+    signal: "thumbs-up" | "thumbs-down" | "confused";
+  }>;
+  profile: LearnerProfile;
 }

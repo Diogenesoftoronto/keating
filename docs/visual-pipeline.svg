@@ -10,20 +10,23 @@
   </defs>
   <rect width="100%" height="100%" fill="white" />
   <polyline points="2731.4,130.0 2731.4,499.0 1140.9,499.0 1140.9,451.0" fill="none" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
-  <line x1="1426.9" y1="290.0" x2="1194.8" y2="399.6" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
-  <polyline points="1140.9,450.0 1140.8,571.6 1144.9,575.9 1149.1,580.2 1295.6,585.0" fill="none" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
-  <line x1="1324.4" y1="610.0" x2="1450.3" y2="719.3" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <line x1="1262.1" y1="290.0" x2="1164.0" y2="399.3" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <line x1="1134.5" y1="450.0" x2="1106.8" y2="559.0" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <line x1="1159.5" y1="610.0" x2="1419.7" y2="719.6" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
   <line x1="2630.2" y1="130.0" x2="1537.7" y2="399.8" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
-  <line x1="1473.0" y1="290.0" x2="1442.7" y2="399.0" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <line x1="1308.1" y1="290.0" x2="1411.2" y2="399.3" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
   <line x1="2656.6" y1="130.0" x2="1850.2" y2="399.7" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
-  <line x1="1525.9" y1="290.0" x2="1727.6" y2="399.5" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
-  <line x1="1467.8" y1="450.0" x2="1608.9" y2="559.4" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
-  <line x1="1753.8" y1="450.0" x2="1663.3" y2="559.2" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
-  <polyline points="1335.2,265.0 988.7,265.0 988.7,905.0 1289.8,905.0" fill="none" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <line x1="1361.1" y1="290.0" x2="1697.0" y2="399.7" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <line x1="1437.2" y1="450.0" x2="1444.8" y2="559.0" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <line x1="1723.3" y1="450.0" x2="1498.7" y2="559.6" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <polyline points="1139.8,265.0 882.3,265.0 882.3,905.0 1289.8,905.0" fill="none" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
   <line x1="1479.9" y1="930.0" x2="1479.9" y2="1039.0" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
-  <polyline points="1454.9,1040.0 1279.9,865.0 1279.9,665.0 1279.9,465.0 1454.2,290.7" fill="none" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <polyline points="1309.3,1065.0 919.3,1065.0 919.3,265.0 1138.8,265.0" fill="none" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <polyline points="2011.7,585.0 2221.1,585.0 2221.1,265.0 1821.0,265.0" fill="none" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
   <polyline points="1669.0,905.0 2176.7,905.0 2176.7,425.0 1946.1,425.0" fill="none" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
   <line x1="1479.9" y1="770.0" x2="1479.9" y2="879.0" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <line x1="1248.0" y1="450.0" x2="1718.2" y2="559.8" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
+  <line x1="1640.9" y1="585.0" x2="1621.9" y2="585.0" stroke="#2d3748" stroke-width="2" marker-end="url(#arrow-end)" />
   <rect x="80.0" y="80.0" width="607.6" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
   <text x="383.8" y="105.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">classDef source fill:#11233b,stroke:#8db5ff,color:#f8f5ec,stroke-width:1px</text>
   <rect x="707.6" y="80.0" width="607.6" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
@@ -34,22 +37,26 @@
   <text x="2266.6" y="105.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">classDef eval fill:#2f2140,stroke:#d3a6ff,color:#f8f5ec,stroke-width:1px</text>
   <rect x="2583.0" y="80.0" width="296.8" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
   <text x="2731.4" y="105.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">topic[Topic Definition]:::source</text>
-  <rect x="1335.2" y="240.0" width="289.4" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
-  <text x="1479.9" y="265.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">policy[Teacher Policy]:::source</text>
+  <rect x="1139.8" y="240.0" width="289.4" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
+  <text x="1284.5" y="265.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">policy[Teacher Policy]:::source</text>
   <rect x="1014.7" y="400.0" width="252.4" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
   <text x="1140.9" y="425.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">plan[Lesson Plan]:::source</text>
-  <rect x="1143.5" y="560.0" width="304.2" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
-  <text x="1295.6" y="585.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">map[Mermaid Meaning Map]:::static</text>
+  <rect x="948.1" y="560.0" width="304.2" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
+  <text x="1100.2" y="585.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">map[Mermaid Meaning Map]:::static</text>
   <rect x="1324.1" y="720.0" width="311.6" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
   <text x="1479.9" y="745.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">oxdraw[oxdraw SVG Render]:::static</text>
   <rect x="1287.1" y="400.0" width="296.8" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
   <text x="1435.5" y="425.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">storyboard[Storyboard]:::dynamic</text>
   <rect x="1603.9" y="400.0" width="341.2" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
   <text x="1774.5" y="425.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">manifest[Animation Manifest]:::dynamic</text>
-  <rect x="1467.7" y="560.0" width="348.6" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
-  <text x="1642.0" y="585.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">scene[manim-web Scene Bundle]:::dynamic</text>
+  <rect x="1272.3" y="560.0" width="348.6" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
+  <text x="1446.6" y="585.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">scene[manim-web Scene Bundle]:::dynamic</text>
   <rect x="1290.8" y="880.0" width="378.2" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
   <text x="1479.9" y="905.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">learner[Synthetic Learner Benchmark]:::eval</text>
-  <rect x="1335.2" y="1040.0" width="289.4" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
-  <text x="1479.9" y="1065.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">evolve[Evolution Engine]:::eval</text>
+  <rect x="1309.3" y="1040.0" width="341.2" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
+  <text x="1479.9" y="1065.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">evolve[Policy Evolution Engine]:::eval</text>
+  <rect x="1449.2" y="240.0" width="370.8" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
+  <text x="1634.6" y="265.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">promptEval[Prompt Evolution Report]:::eval</text>
+  <rect x="1640.9" y="560.0" width="370.8" height="50.0" rx="8" ry="8" fill="#fde68a" stroke="#2d3748" stroke-width="2" />
+  <text x="1826.3" y="585.0" fill="#1a202c" font-size="14" text-anchor="middle" dominant-baseline="middle">promptLoop[Prompt Evolution Engine]:::eval</text>
 </svg>

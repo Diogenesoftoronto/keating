@@ -1,6 +1,23 @@
 # Keating
 
-Keating is a Pi-powered hyperteacher scaffold: a tutoring shell with a Feynman-style interaction model, deterministic lesson planning, a synthetic learner benchmark, and a self-improving teaching-policy loop.
+> *"O me! O life! of the questions of these recurring,
+> Of the endless trains of the faithless, of cities fill’d with the foolish,
+> Of myself for ever reproaching myself, (for who more foolish than I, and who more faithless?)
+> Of eyes that vainly crave the light, of the objects mean, of the struggle ever renew’d,
+> Of the poor results of all, of the plodding and sordid crowds I see around me,
+> Of the empty and useless years of the rest, with the rest me intertwined,
+> The question, O me! so sad, recurring—What good amid these, O me, O life?
+>
+> Answer.
+> That you are here—that life exists and identity,
+> That the powerful play goes on, and you may contribute a verse."*
+> -- Walt Whitman, *Leaves of Grass*
+
+Keating exists because as AI grows more capable, the risk is not just that it replaces our tasks, but that it replaces our *voice*. We must not let technology become a surrogate for thought. 
+
+**The goal of Keating is cognitive empowerment.** It is a Pi-powered hyperteacher scaffold designed to ensure that humans remain the authors of their own understanding. It uses the most advanced models not to provide answers, but to force the rigorous reconstruction of ideas within the learner's own identity.
+
+We use technology to ensure the "powerful play" goes on, and that every learner is equipped to contribute their own verse.
 
 It is designed around five influences:
 
@@ -13,15 +30,20 @@ It is designed around five influences:
 ## What Exists
 
 - A Pi launcher that prefers a fresh standalone `pi` install by default and only uses the bundled Feynman runtime when you explicitly allow it.
-- A Pi extension with operational commands: `/plan`, `/map`, `/animate`, `/bench`, `/evolve`, `/policy`, `/outputs`.
+- A Pi extension with operational commands: `/plan`, `/map`, `/animate`, `/verify`, `/bench`, `/evolve`, `/prompt-evolve`, `/feedback`, `/policy`, `/outputs`, `/trace`.
 - Teaching workflows as prompt templates: `/learn`, `/diagnose`, `/quiz`, `/bridge`.
+- A prompt-evolution loop that scores prompt templates with natural-language feedback and picks revisions with a PROSPER-style multi-objective selector.
+- 12 domains: math, science, philosophy, code, law, politics, psychology, medicine, arts, history, and general.
 - Deterministic artifacts under `.keating/`:
-  - lesson plans
+  - lesson plans with domain-specific guidance (code gets live-code phases, law gets case citations, etc.)
   - richer Mermaid meaning maps rendered through `oxdraw`
-  - self-contained `manim-web` animation bundles for quantitative and conceptual scenes
+  - self-contained `manim-web` animation bundles: function-graphs, distribution-bars, belief-updates, code-traces, timelines, case-diagrams, mind-maps, and concept-cards
+  - fact-checking verification checklists that must be completed before teaching
   - benchmark reports
   - evolution reports
+  - prompt-evolution reports and evolved prompt snapshots
   - the current policy and policy archive
+  - persistent learner state and feedback signals
 - Persisted traces that explain why benchmark runs and evolution candidates succeeded or failed.
 - A test suite with property checks, fuzz-style inputs, and an end-to-end acceptance pipeline.
 
@@ -35,6 +57,7 @@ mise run doctor
 mise run docs:diagrams
 mise run bench
 mise run evolve
+mise run prompt-evolve -- learn
 mise run map -- derivative
 mise run animate -- derivative
 mise run trace
@@ -71,13 +94,52 @@ Inside the Pi shell:
 /plan derivative
 /map derivative
 /animate derivative
+/verify derivative
 /learn derivative
 /quiz derivative
 /bench derivative
 /evolve derivative
+/prompt-evolve learn
+/feedback up derivative
 /trace derivative
 /outputs
 ```
+
+## Prompt Evolution
+
+`prompt-evolve` does not silently rewrite the checked-in prompt template. It reads a source prompt such as `pi/prompts/learn.md`, scores it on teaching objectives like learner voice, diagnosis, verification, retrieval, transfer, and structure, then writes:
+
+- `.keating/outputs/prompt-evolution/learn.md`
+- `.keating/outputs/prompt-evolution/learn.evolved.md`
+
+Example:
+
+Before:
+
+```md
+Teach the learner the following topic: $@
+
+Workflow:
+1. Start with a short diagnostic question.
+2. Explain the concept.
+3. End with a summary.
+```
+
+After `mise run prompt-evolve -- learn`:
+
+```md
+Teach the learner the following topic: $@
+
+Workflow:
+1. Start with a short diagnostic question.
+1a. Separate missing prerequisite, partial intuition, and formal gap before choosing the next move.
+2. Explain the concept.
+5a. Make the learner reconstruct the core idea from memory rather than merely agreeing with your explanation.
+6a. Ask the learner to carry the idea into a new setting so they prove they can transfer it.
+0c. Keep Keating's standard in view: "Boys, you must strive to find your own voice..."
+```
+
+The point is not cosmetic prompt churn or benchmark gaming. The loop tries to produce prompts that improve human learning outcomes: sharper diagnosis, stronger reconstruction from memory, better transfer, and clearer learner articulation.
 
 ## Project Layout
 
@@ -147,6 +209,11 @@ Keating persists detailed trace artifacts under `.keating/outputs/traces/`.
   - gate outcomes
   - acceptance or rejection reasons
   - parameter deltas from the parent policy
+- Prompt-evolution artifacts show:
+  - baseline feedback on the source prompt
+  - candidate objective vectors
+  - the PROSPER-style preference score
+  - the recommended evolved prompt snapshot
 
 Useful commands:
 
@@ -154,6 +221,7 @@ Useful commands:
 mise run doctor
 mise run bench -- derivative
 mise run evolve -- derivative
+mise run prompt-evolve -- learn
 mise run trace -- derivative
 ```
 
