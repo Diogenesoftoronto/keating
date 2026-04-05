@@ -21,10 +21,10 @@ jobs:
         run: bun install
 
       - name: Build
-        run: bun run build
+        run: bun x tsc -p tsconfig.json
 
       - name: Test
-        run: bun run test
+        run: bun test ./test/*.test.ts
 
       - name: Build web
         run: |
