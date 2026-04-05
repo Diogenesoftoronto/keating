@@ -7,6 +7,13 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        chat: resolve(__dirname, 'chat.html'),
+      },
+    },
+    assetsDir: 'assets',
   },
   resolve: {
     alias: {
@@ -19,4 +26,5 @@ export default defineConfig({
   server: {
     port: 3000,
   },
+  base: './',
 });
