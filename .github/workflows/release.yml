@@ -42,9 +42,10 @@ jobs:
           VERSION="${GITHUB_REF#refs/tags/v}"
           BUNDLE_NAME="keating-${VERSION}-${{ matrix.os }}-${{ matrix.arch }}"
           mkdir -p bundle
-          cp -r bin dist pi scripts/install/install.sh bundle/
+          cp -r bin dist pi scripts/install bundle/
           cp package.json bundle/
-          mv bundle/keating-install.sh bundle/install.sh
+          mv bundle/install/install.sh bundle/install.sh
+          rm -rf bundle/install
           tar -czf "${BUNDLE_NAME}.tar.gz" -C bundle .
 
       - name: Upload artifact

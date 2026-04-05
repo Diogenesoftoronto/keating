@@ -61,7 +61,7 @@ Visit **[keating.help](https://keating.help)** to use Keating directly in your b
 Install via curl:
 
 ```bash
-curl -fsSL https://github.com/Diogenesoftoronto/keating/releases/latest/download/keating-install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Diogenesoftoronto/keating/main/scripts/install/install.sh | bash
 ```
 
 Or with npm/pnpm/bun:
