@@ -174,8 +174,8 @@ warn_command_conflict() {
     step "Or launch directly: $expected_path"
 
     case "$resolved_path" in
-      *"/node_modules/@diogenesoftoronto/keating/"* | *"/node_modules/.bin/keating")
-        step "If that path is an old global npm install, remove it with: npm uninstall -g @diogenesoftoronto/keating"
+      *"/node_modules/@interleavelove/keating/"* | *"/node_modules/.bin/keating")
+        step "If that path is an old global npm install, remove it with: npm uninstall -g @interleavelove/keating"
         ;;
     esac
   fi
@@ -260,8 +260,8 @@ This usually means the release exists, but not all platform bundles were uploade
 
 Workarounds:
   - try again after the release finishes publishing
-  - install via pnpm instead: pnpm add -g @diogenesoftoronto/keating
-  - install via bun instead: bun add -g @diogenesoftoronto/keating
+  - install via pnpm instead: pnpm add -g @interleavelove/keating
+  - install via bun instead: bun add -g @interleavelove/keating
 EOF
   exit 1
 fi
