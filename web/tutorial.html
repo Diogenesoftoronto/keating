@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Key Setup - Keating</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper: #f4f1ea;
+      --ink: #1a1a1a;
+      --accent: #d44a3d;
+      --terminal: #0c0c0c;
+    }
+    body {
+      font-family: 'Space Mono', monospace;
+      background-color: var(--paper);
+      color: var(--ink);
+      line-height: 1.6;
+    }
+    .font-terminal { font-family: 'VT323', monospace; }
+    .terminal-window {
+      background: var(--terminal);
+      color: #00ff00;
+      font-family: 'VT323', monospace;
+    }
+    .paper-fold {
+      background: var(--paper);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1), 0 0 40px rgba(0,0,0,0.05) inset;
+    }
+    .distressed-border { border: 2px solid var(--ink); }
+    .status-led {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+      animation: pulse-led 2s ease-in-out infinite;
+    }
+    @keyframes pulse-led {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    .tab-btn {
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      background: var(--ink);
+      color: var(--paper);
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+  </style>
+</head>
+<body class="min-h-screen">
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-[#f4f1ea]/95 border-b-2 border-[#1a1a1a]">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-3">
+        <div class="status-led"></div>
+        <span class="text-lg sm:text-xl font-bold tracking-tight">KEATING//</span>
+      </a>
+      <div class="flex items-center gap-6 font-terminal text-lg">
+        <a href="/" class="hover:text-[#d44a3d] transition-colors">[HOME]</a>
+        <a href="/blog.html" class="hover:text-[#d44a3d] transition-colors">[BLOG]</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="pt-24 pb-16 px-6">
+    <div class="max-w-4xl mx-auto">
+      <div class="paper-fold distressed-border p-8 mb-8">
+        <h1 class="text-3xl md:text-4xl font-bold mb-2">Model Setup Guide</h1>
+        <p class="text-[#64748b] font-terminal">Choose how Keating runs AI models</p>
+      </div>
+
+      <!-- Model Types Overview -->
+      <div class="grid md:grid-cols-2 gap-6 mb-8">
+        <div class="paper-fold distressed-border p-6 border-l-4 border-l-[#10b981]">
+          <h2 class="text-xl font-bold mb-2 flex items-center gap-2">
+            <span class="text-[#10b981]">BROWSER</span>
+            <span class="text-xs bg-[#10b981]/10 text-[#10b981] px-2 py-1 rounded">ZERO SETUP</span>
+          </h2>
+          <p class="text-sm mb-3">Runs entirely in your browser using WebGPU. No installation, no API keys, no server. Just open and chat.</p>
+          <ul class="text-sm space-y-1 text-[#64748b]">
+            <li>- Uses Transformers.js + ONNX models</li>
+            <li>- Model cached in browser (~5GB)</li>
+            <li>- Works offline after first load</li>
+            <li>- Privacy: data never leaves device</li>
+          </ul>
+        </div>
+        
+        <div class="paper-fold distressed-border p-6 border-l-4 border-l-[#6366f1]">
+          <h2 class="text-xl font-bold mb-2 flex items-center gap-2">
+            <span class="text-[#6366f1]">LOCAL</span>
+            <span class="text-xs bg-[#6366f1]/10 text-[#6366f1] px-2 py-1 rounded">REQUIRES SETUP</span>
+          </h2>
+          <p class="text-sm mb-3">Run any model locally with Ollama, llama.cpp, LiteLLM, or llmfit. More model choices, better performance.</p>
+          <ul class="text-sm space-y-1 text-[#64748b]">
+            <li>- Use any GGUF model</li>
+            <li>- GPU acceleration (CUDA/Metal)</li>
+            <li>- No internet required</li>
+            <li>- Set endpoint in settings</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Detailed Tabs -->
+      <div class="paper-fold distressed-border overflow-hidden">
+        <div class="flex border-b-2 border-[#1a1a1a]">
+          <button class="tab-btn font-terminal px-6 py-3 border-r-2 border-[#1a1a1a] active" data-tab="browser">[BROWSER]</button>
+          <button class="tab-btn font-terminal px-6 py-3 border-r-2 border-[#1a1a1a]" data-tab="ollama">[OLLAMA]</button>
+          <button class="tab-btn font-terminal px-6 py-3 border-r-2 border-[#1a1a1a]" data-tab="llamacpp">[LLAMA.CPP]</button>
+          <button class="tab-btn font-terminal px-6 py-3 border-r-2 border-[#1a1a1a]" data-tab="litellm">[LITELLM]</button>
+          <button class="tab-btn font-terminal px-6 py-3" data-tab="cloud">[CLOUD]</button>
+        </div>
+
+        <!-- Browser Tab -->
+        <div id="tab-browser" class="tab-content active p-6">
+          <h3 class="text-xl font-bold mb-4">Browser WebGPU (Zero Setup)</h3>
+          <p class="mb-4">The simplest option - just use Keating in a supported browser. No installation required.</p>
+          
+          <div class="terminal-window p-4 mb-4 text-sm">
+            <p class="text-[#00ff00] mb-2"># Requirements:</p>
+            <p class="ml-4">Chrome 113+ / Edge 113+ / Firefox Nightly (WebGPU flag)</p>
+            <p class="ml-4">GPU with WebGPU support (most modern GPUs)</p>
+            <p class="ml-4">~5GB free disk space for model cache</p>
+          </div>
+
+          <div class="space-y-4">
+            <div class="flex gap-3">
+              <span class="font-terminal text-[#d44a3d] shrink-0">01.</span>
+              <span>Open Keating web app in Chrome or Edge</span>
+            </div>
+            <div class="flex gap-3">
+              <span class="font-terminal text-[#d44a3d] shrink-0">02.</span>
+              <span>Select "Gemma 4 E4B (Browser)" as model</span>
+            </div>
+            <div class="flex gap-3">
+              <span class="font-terminal text-[#d44a3d] shrink-0">03.</span>
+              <span>Wait for model to download and cache (~5GB, one-time)</span>
+            </div>
+            <div class="flex gap-3">
+              <span class="font-terminal text-[#d44a3d] shrink-0">04.</span>
+              <span>Chat! Works offline for future sessions</span>
+            </div>
+          </div>
+
+          <div class="mt-6 p-4 bg-[#10b981]/10 border-l-4 border-[#10b981]">
+            <p class="font-terminal text-[#10b981]">NO_API_KEY_REQUIRED</p>
+            <p class="text-sm mt-1">Your conversations never leave your device. Completely private.</p>
+          </div>
+        </div>
+
+        <!-- Ollama Tab -->
+        <div id="tab-ollama" class="tab-content p-6">
+          <h3 class="text-xl font-bold mb-4">Ollama</h3>
+          <p class="mb-4">Popular local LLM runner with excellent GPU support. Works with any GGUF model.</p>
+          
+          <div class="terminal-window p-4 mb-4 text-sm overflow-x-auto">
+            <p class="text-[#00ff00] mb-2"># Install Ollama:</p>
+            <p class="text-[#f4f1ea]">curl -fsSL https://ollama.com/install.sh | sh</p>
+            <p class="text-[#00ff00] mt-3 mb-2"># Pull a model:</p>
+            <p class="text-[#f4f1ea]">ollama pull gemma3:4b</p>
+            <p class="text-[#00ff00] mt-3 mb-2"># Or use a custom GGUF:</p>
+            <p class="text-[#f4f1ea]">ollama create mymodel -f Modelfile</p>
+            <p class="text-[#00ff00] mt-3 mb-2"># Start server (runs on port 11434):</p>
+            <p class="text-[#f4f1ea]">ollama serve</p>
+          </div>
+
+          <div class="space-y-4">
+            <div class="flex gap-3">
+              <span class="font-terminal text-[#d44a3d] shrink-0">01.</span>
+              <span>Install Ollama from <a href="https://ollama.com" target="_blank" class="text-[#6366f1] underline">ollama.com</a></span>
+            </div>
+            <div class="flex gap-3">
+              <span class="font-terminal text-[#d44a3d] shrink-0">02.</span>
+              <span>Pull your preferred model: <code class="bg-[#1a1a1a] text-[#00ff00] px-1">ollama pull gemma3:4b</code></span>
+            </div>
+            <div class="flex gap-3">
+              <span class="font-terminal text-[#d44a3d] shrink-0">03.</span>
+              <span>In Keating settings, add custom provider:</span>
+            </div>
+          </div>
+
+          <div class="mt-4 ml-8 terminal-window p-4 text-sm">
+            <p class="text-[#00ff00]">Provider: ollama</p>
+            <p class="text-[#00ff00]">Base URL: http://localhost:11434</p>
+            <p class="text-[#00ff00]">Model: gemma3:4b (or your model name)</p>
+          </div>
+
+          <div class="mt-6 p-4 bg-[#6366f1]/10 border-l-4 border-[#6366f1]">
+            <p class="font-terminal text-[#6366f1]">GPU_ACCELERATION</p>
+            <p class="text-sm mt-1">Ollama auto-detects CUDA (NVIDIA) and Metal (macOS). No API key needed for local.</p>
+          </div>
+        </div>
+
+        <!-- llama.cpp Tab -->
+        <div id="tab-llamacpp" class="tab-content p-6">
+          <h3 class="text-xl font-bold mb-4">llama.cpp</h3>
+          <p class="mb-4">Lightweight C++ inference. Maximum control and performance. Runs any GGUF model.</p>
+          
+          <div class="terminal-window p-4 mb-4 text-sm overflow-x-auto">
+            <p class="text-[#00ff00] mb-2"># Clone and build:</p>
+            <p class="text-[#f4f1ea]">git clone https://github.com/ggerganov/llama.cpp</p>
+            <p class="text-[#f4f1ea]">cd llama.cpp && make</p>
+            <p class="text-[#00ff00] mt-3 mb-2"># Download a GGUF model:</p>
+            <p class="text-[#f4f1ea]">wget https://huggingface.co/unsloth/gemma-4-E4B-it-GGUF/resolve/main/gemma-4-E4B-it-UD-Q4_K_XL.gguf</p>
+            <p class="text-[#00ff00] mt-3 mb-2"># Run server:</p>
+            <p class="text-[#f4f1ea]">./llama-server -m gemma-4-E4B-it-UD-Q4_K_XL.gguf --port 8080</p>
+          </div>
+
+          <div class="space-y-4">
+            <div class="flex gap-3">
+              <span class="font-terminal text-[#d44a3d] shrink-0">01.</span>
+              <span>Build llama.cpp from <a href="https://github.com/ggerganov/llama.cpp" target="_blank" class="text-[#6366f1] underline">GitHub</a></span>
+            </div>
+            <div class="flex gap-3">
+              <span class="font-terminal text-[#d44a3d] shrink-0">02.</span>
+              <span>Download a GGUF model from HuggingFace</span>
+            </div>
+            <div class="flex gap-3">
+              <span class="font-terminal text-[#d44a3d] shrink-0">03.</span>
+              <span>Start the server with your model</span>
+            </div>
+            <div class="flex gap-3">
+              <span class="font-terminal text-[#d44a3d] shrink-0">04.</span>
+              <span>In Keating settings, add custom provider pointing to <code class="bg-[#1a1a1a] text-[#00ff00] px-1">http://localhost:8080</code></span>
+            </div>
+          </div>
+
+          <div class="mt-6 p-4 bg-[#d97706]/10 border-l-4 border-[#d97706]">
+            <p class="font-terminal text-[#d97706]">TIP</p>
+            <p class="text-sm mt-1">Use <code class="bg-[#1a1a1a] text-[#00ff00] px-1">-ngl 99</code> to offload all layers to GPU. Use <code class="bg-[#1a1a1a] text-[#00ff00] px-1">-c 8192</code> for larger context.</p>
+          </div>
+        </div>
+
+        <!-- LiteLLM Tab -->
+        <div id="tab-litellm" class="tab-content p-6">
+          <h3 class="text-xl font-bold mb-4">LiteLLM</h3>
+          <p class="mb-4">Unified API proxy that works with 100+ LLM providers. Exposes an OpenAI-compatible endpoint.</p>
+          
+          <div class="terminal-window p-4 mb-4 text-sm overflow-x-auto">
+            <p class="text-[#00ff00] mb-2"># Install:</p>
+            <p class="text-[#f4f1ea]">pip install litellm</p>
+            <p class="text-[#00ff00] mt-3 mb-2"># Run with a local model:</p>
+            <p class="text-[#f4f1ea]">litellm --model ollama/gemma3:4b</p>
+            <p class="text-[#00ff00] mt-3 mb-2"># Or with API keys (env vars):</p>
+            <p class="text-[#f4f1ea]">export OPENAI_API_KEY=sk-...</p>
+            <p class="text-[#f4f1ea]">export ANTHROPIC_API_KEY=sk-ant-...</p>
+            <p class="text-[#f4f1ea]">litellm --port 4000</p>
+          </div>
+
+          <div class="space-y-4">
+            <div class="flex gap-3">
+              <span class="font-terminal text-[#d44a3d] shrink-0">01.</span>
+              <span>Install: <code class="bg-[#1a1a1a] text-[#00ff00] px-1">pip install litellm</code></span>
+            </div>
+            <div class="flex gap-3">
+              <span class="font-terminal text-[#d44a3d] shrink-0">02.</span>
+              <span>Set API keys as environment variables (if using cloud providers)</span>
+            </div>
+            <div class="flex gap-3">
+              <span class="font-terminal text-[#d44a3d] shrink-0">03.</span>
+              <span>Start proxy: <code class="bg-[#1a1a1a] text-[#00ff00] px-1">litellm --port 4000</code></span>
+            </div>
+            <div class="flex gap-3">
+              <span class="font-terminal text-[#d44a3d] shrink-0">04.</span>
+              <span>Point Keating to <code class="bg-[#1a1a1a] text-[#00ff00] px-1">http://localhost:4000</code></span>
+            </div>
+          </div>
+
+          <div class="mt-6 p-4 bg-[#10b981]/10 border-l-4 border-[#10b981]">
+            <p class="font-terminal text-[#10b981]">UNIFIED_API</p>
+            <p class="text-sm mt-1">LiteLLM gives you one OpenAI-compatible endpoint that can route to any provider (local or cloud).</p>
+          </div>
+        </div>
+
+        <!-- Cloud Tab -->
+        <div id="tab-cloud" class="tab-content p-6">
+          <h3 class="text-xl font-bold mb-4">Cloud Providers</h3>
+          <p class="mb-4">Use managed AI services for best performance and model variety. Requires API keys.</p>
+          
+          <!-- Google -->
+          <div class="mb-6 p-4 bg-[#4285f4]/5 border border-[#4285f4]/20">
+            <h4 class="font-bold text-[#4285f4] mb-2">Google AI Studio (Gemini)</h4>
+            <ol class="space-y-2 text-sm">
+              <li>1. Go to <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-[#4285f4] underline">aistudio.google.com/app/apikey</a></li>
+              <li>2. Sign in and click "Create API Key"</li>
+              <li>3. Copy key (starts with "AIza...")</li>
+              <li>4. Paste in Keating settings</li>
+            </ol>
+            <p class="text-xs text-[#64748b] mt-2">Free tier: 15 req/min, 1M tokens/day</p>
+          </div>
+
+          <!-- Anthropic -->
+          <div class="mb-6 p-4 bg-[#d97706]/5 border border-[#d97706]/20">
+            <h4 class="font-bold text-[#d97706] mb-2">Anthropic (Claude)</h4>
+            <ol class="space-y-2 text-sm">
+              <li>1. Go to <a href="https://console.anthropic.com/" target="_blank" class="text-[#d97706] underline">console.anthropic.com</a></li>
+              <li>2. Create account and navigate to API Keys</li>
+              <li>3. Click "Create Key" and copy</li>
+              <li>4. Paste in Keating settings</li>
+            </ol>
+            <p class="text-xs text-[#64748b] mt-2">Pricing: Claude Sonnet $3/M input, $15/M output</p>
+          </div>
+
+          <!-- OpenAI -->
+          <div class="p-4 bg-[#10a37f]/5 border border-[#10a37f]/20">
+            <h4 class="font-bold text-[#10a37f] mb-2">OpenAI (GPT)</h4>
+            <ol class="space-y-2 text-sm">
+              <li>1. Go to <a href="https://platform.openai.com/api-keys" target="_blank" class="text-[#10a37f] underline">platform.openai.com/api-keys</a></li>
+              <li>2. Create account and click "Create new secret key"</li>
+              <li>3. Copy immediately (shown only once)</li>
+              <li>4. Paste in Keating settings</li>
+            </ol>
+            <p class="text-xs text-[#64748b] mt-2">Pricing: GPT-4o $2.50/M input, $10/M output</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Security Note -->
+      <section class="mt-8 bg-[#1a1a1a] text-[#f4f1ea] p-6 border-l-4 border-[#d44a3d]">
+        <h3 class="font-terminal text-xl text-[#d44a3d] mb-3">SECURITY_NOTE</h3>
+        <p class="text-sm">API keys are stored locally in your browser's IndexedDB (web) or <code class="text-[#00ff00]">~/.keating/.env</code> (CLI). They never leave your device. Never commit keys to git.</p>
+      </section>
+    </div>
+  </main>
+
+  <footer class="py-8 px-6 border-t-2 border-[#1a1a1a]">
+    <div class="max-w-6xl mx-auto text-center font-terminal text-[#1a1a1a]/60">
+      <a href="/" class="hover:text-[#d44a3d] transition-colors">[BACK_TO_HOME]</a>
+    </div>
+  </footer>
+
+  <script>
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

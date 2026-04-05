@@ -1,25 +1,34 @@
-import { pipeline, env } from '@huggingface/transformers';
+import {
+  AutoProcessor,
+  AutoModelForCausalLM,
+  TextStreamer,
+  env,
+} from '@huggingface/transformers';
 
 // Configure Transformers.js
 env.allowLocalModels = false;
 env.useBrowserCache = true;
 
-const MODEL_ID = 'unsloth/gemma-4-E4B-it-GGUF';
-const MODEL_FILE = 'gemma-4-E4B-it-UD-Q4_K_XL.gguf';
+// ONNX model - Gemma 4 E4B (the only format Transformers.js supports)
+const MODEL_ID = 'onnx-community/gemma-4-E4B-it-ONNX';
 
 export interface LocalModel {
   loaded: boolean;
   loading: boolean;
+  loadingProgress: number;
   error: string | null;
-  generator: any | null;
+  model: any | null;
+  processor: any | null;
 }
 
 class LocalModelStore {
   private state: LocalModel = {
     loaded: false,
     loading: false,
+    loadingProgress: 0,
     error: null,
-    generator: null,
+    model: null,
+    processor: null,
   };
 
   private listeners: Set<(state: LocalModel) => void> = new Set();
@@ -37,29 +46,36 @@ class LocalModelStore {
   async load(): Promise<void> {
     if (this.state.loaded || this.state.loading) return;
 
-    this.state = { ...this.state, loading: true, error: null };
+    this.state = { ...this.state, loading: true, loadingProgress: 0, error: null };
     this.notify();
 
     try {
       console.log('Loading local model:', MODEL_ID);
 
-      // Use text-generation pipeline with GGUF format
-      const generator = await pipeline('text-generation', MODEL_ID, {
+      // Load processor (tokenizer)
+      const processor = await AutoProcessor.from_pretrained(MODEL_ID);
+
+      // Load model with WebGPU and q4f16 quantization
+      const model = await AutoModelForCausalLM.from_pretrained(MODEL_ID, {
+        dtype: 'q4f16',
+        device: 'webgpu',
         progress_callback: (progress: any) => {
-          if (progress.status === 'progress') {
-            console.log(`Loading: ${Math.round(progress.progress)}%`);
+          if (progress.status === 'progress' || progress.status === 'progress_total') {
+            const pct = Math.round(progress.progress ?? 0);
+            this.state = { ...this.state, loadingProgress: pct };
+            this.notify();
+            console.log(`Loading: ${pct}%`);
           }
         },
-        // @ts-ignore - GGUF-specific config
-        dtype: 'q4',
-        device: 'webgpu',
       });
 
       this.state = {
         loaded: true,
         loading: false,
+        loadingProgress: 100,
         error: null,
-        generator,
+        model,
+        processor,
       };
       this.notify();
       console.log('Local model loaded successfully');
@@ -68,27 +84,67 @@ class LocalModelStore {
       this.state = {
         loaded: false,
         loading: false,
+        loadingProgress: 0,
         error: message,
-        generator: null,
+        model: null,
+        processor: null,
       };
       this.notify();
       console.error('Failed to load local model:', message);
     }
   }
 
-  async generate(prompt: string, options?: { max_length?: number; temperature?: number }): Promise<string> {
-    if (!this.state.generator) {
+  async generate(
+    prompt: string,
+    options?: { max_length?: number; temperature?: number },
+    onToken?: (token: string) => void
+  ): Promise<string> {
+    if (!this.state.model || !this.state.processor) {
       throw new Error('Model not loaded');
     }
 
-    const result = await this.state.generator(prompt, {
+    // Prepare messages in chat format
+    const messages = [
+      {
+        role: 'user',
+        content: [{ type: 'text', text: prompt }],
+      },
+    ];
+
+    // Apply chat template
+    const formattedPrompt = this.state.processor.apply_chat_template(messages, {
+      add_generation_prompt: true,
+    });
+
+    // Tokenize input
+    const inputs = await this.state.processor(formattedPrompt, {
+      add_special_tokens: false,
+    });
+
+    // Generate with streaming
+    const streamer = new TextStreamer(this.state.processor.tokenizer, {
+      skip_prompt: true,
+      skip_special_tokens: true,
+      callback_function: onToken
+        ? (text: string) => onToken(text)
+        : undefined,
+    });
+
+    const outputs = await this.state.model.generate({
+      ...inputs,
       max_new_tokens: options?.max_length ?? 512,
       temperature: options?.temperature ?? 0.7,
       do_sample: true,
-      return_full_text: false,
+      streamer,
     });
 
-    return result[0]?.generated_text ?? '';
+    // Decode output
+    const decoded = this.state.processor.batch_decode(
+      outputs.slice(null, [inputs.input_ids.dims.at(-1), null]),
+      { skip_special_tokens: true }
+    );
+
+    return decoded[0] ?? '';
   }
 
   getState(): LocalModel {
