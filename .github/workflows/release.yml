@@ -35,7 +35,7 @@ jobs:
       - name: Build
         run: |
           bun install
-          bun run build
+          bun x tsc -p tsconfig.json
 
       - name: Create bundle
         run: |
@@ -83,7 +83,7 @@ jobs:
       - name: Build
         run: |
           bun install
-          bun run build
+          bun x tsc -p tsconfig.json
 
       - name: Publish to npm
         run: |
