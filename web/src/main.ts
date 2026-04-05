@@ -53,10 +53,6 @@ customProviders.setBackend(backend);
 const storage = new AppStorage(settings, providerKeys, sessions, customProviders, backend);
 setAppStorage(storage);
 
-// Local model configuration
-const LOCAL_MODEL_ID = "unsloth/gemma-4-E4B-it-GGUF";
-const LOCAL_MODEL_FILE = "gemma-4-E4B-it-UD-Q4_K_XL.gguf";
-
 // Keating system prompt
 const KEATING_SYSTEM_PROMPT = `You are Keating, a hyperteacher designed for cognitive empowerment.
 
@@ -79,7 +75,7 @@ let isEditingTitle = false;
 let agent: Agent;
 let chatPanel: ChatPanel;
 let agentUnsubscribe: (() => void) | undefined;
-let useLocalModel = false;
+let useBrowserModel = false;
 
 // ============================================================================
 // RENDER
@@ -123,8 +119,9 @@ const createAgent = async (initialState?: Partial<AgentState>) => {
 		agentUnsubscribe();
 	}
 
-	const defaultModel = useLocalModel
-		? getModel("local", LOCAL_MODEL_ID)
+	// Default to Gemini for cloud, or handle browser model specially
+	const defaultModel = useBrowserModel
+		? getModel("google", "gemini-2.0-flash") // Browser model uses its own inference
 		: getModel("google", "gemini-2.0-pro");
 
 	agent = new Agent({
@@ -168,8 +165,8 @@ async function initApp() {
 		app,
 	);
 
-	// Check for local model support
-	useLocalModel = await checkLocalModelCapability();
+	// Check for browser model capability (WebGPU)
+	useBrowserModel = await checkBrowserModelCapability();
 
 	// Create ChatPanel
 	chatPanel = new ChatPanel();
@@ -180,9 +177,9 @@ async function initApp() {
 	renderApp();
 }
 
-async function checkLocalModelCapability(): Promise<boolean> {
+async function checkBrowserModelCapability(): Promise<boolean> {
 	if (!navigator.gpu) {
-		console.log("WebGPU not available, local model disabled");
+		console.log("WebGPU not available, browser model disabled");
 		return false;
 	}
 
@@ -192,7 +189,7 @@ async function checkLocalModelCapability(): Promise<boolean> {
 			console.log("No WebGPU adapter found");
 			return false;
 		}
-		console.log("WebGPU available, local model possible");
+		console.log("WebGPU available, browser model possible");
 		return true;
 	} catch (e) {
 		console.log("WebGPU check failed:", e);

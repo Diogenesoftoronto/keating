@@ -11,6 +11,8 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'index.html'),
         chat: resolve(__dirname, 'chat.html'),
+        tutorial: resolve(__dirname, 'tutorial.html'),
+        blog: resolve(__dirname, 'blog.html'),
       },
     },
     assetsDir: 'assets',
@@ -25,6 +27,11 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    headers: {
+      // Required for WebGPU and SharedArrayBuffer
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+    },
   },
   base: './',
 });

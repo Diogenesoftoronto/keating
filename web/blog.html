@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blog - Keating</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper: #f4f1ea;
+      --ink: #1a1a1a;
+      --accent: #d44a3d;
+      --terminal: #0c0c0c;
+    }
+    body {
+      font-family: 'Space Mono', monospace;
+      background-color: var(--paper);
+      color: var(--ink);
+      line-height: 1.6;
+    }
+    .font-terminal { font-family: 'VT323', monospace; }
+    .paper-fold {
+      background: var(--paper);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1), 0 0 40px rgba(0,0,0,0.05) inset;
+    }
+    .distressed-border { border: 2px solid var(--ink); }
+    .status-led {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+      animation: pulse-led 2s ease-in-out infinite;
+    }
+    @keyframes pulse-led {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    .post-card {
+      transition: all 0.2s ease;
+    }
+    .post-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-[#f4f1ea]/95 border-b-2 border-[#1a1a1a]">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-3">
+        <div class="status-led"></div>
+        <span class="text-lg sm:text-xl font-bold tracking-tight">KEATING//</span>
+      </a>
+      <div class="flex items-center gap-6 font-terminal text-lg">
+        <a href="/" class="hover:text-[#d44a3d] transition-colors">[HOME]</a>
+        <a href="/tutorial.html" class="hover:text-[#d44a3d] transition-colors">[TUTORIAL]</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="pt-24 pb-16 px-6">
+    <div class="max-w-4xl mx-auto">
+      <div class="paper-fold distressed-border p-8 mb-8">
+        <h1 class="text-3xl md:text-4xl font-bold mb-2">Keating Updates</h1>
+        <p class="text-[#64748b] font-terminal">Development log and release notes</p>
+      </div>
+
+      <div class="space-y-6">
+        <!-- Post 1 -->
+        <article class="paper-fold distressed-border p-6 post-card">
+          <div class="flex items-center gap-3 mb-3">
+            <span class="font-terminal text-[#d44a3d]">2025-01-15</span>
+            <span class="text-xs bg-[#10b981]/10 text-[#10b981] px-2 py-1 rounded">FEATURE</span>
+          </div>
+          <h2 class="text-xl font-bold mb-3">Local Model Support via WebGPU</h2>
+          <p class="mb-4">Keating now runs entirely in your browser using WebGPU. Run Gemma 4 E4B locally without any API keys. The model loads progressively and caches in your browser for subsequent sessions.</p>
+          <p class="text-sm text-[#64748b]">Requires Chrome 113+ or Edge 113+ with WebGPU support. Model size: ~5GB cached locally.</p>
+        </article>
+
+        <!-- Post 2 -->
+        <article class="paper-fold distressed-border p-6 post-card">
+          <div class="flex items-center gap-3 mb-3">
+            <span class="font-terminal text-[#d44a3d]">2025-01-10</span>
+            <span class="text-xs bg-[#6366f1]/10 text-[#6366f1] px-2 py-1 rounded">RELEASE</span>
+          </div>
+          <h2 class="text-xl font-bold mb-3">v0.1.0 - Initial Public Release</h2>
+          <p class="mb-4">First public release of Keating hyperteacher. Built on the Pi agent framework with support for Google Gemini, Anthropic Claude, and OpenAI GPT models. Features Socratic teaching methodology with diagnostic-first approach.</p>
+          <ul class="text-sm space-y-1 ml-4">
+            <li>- Chat-based teaching interface</li>
+            <li>- Multi-provider support</li>
+            <li>- Local session persistence</li>
+            <li>- Dark mode support</li>
+          </ul>
+        </article>
+
+        <!-- Post 3 -->
+        <article class="paper-fold distressed-border p-6 post-card">
+          <div class="flex items-center gap-3 mb-3">
+            <span class="font-terminal text-[#d44a3d]">2025-01-05</span>
+            <span class="text-xs bg-[#d97706]/10 text-[#d97706] px-2 py-1 rounded">DEV LOG</span>
+          </div>
+          <h2 class="text-xl font-bold mb-3">The Hyperteacher Philosophy</h2>
+          <p class="mb-4">Keating is named after John Keating from Dead Poets Society, who taught that the purpose of education is not to fill minds but to ignite them. Our AI doesn't give answers - it forces you to reconstruct understanding from memory.</p>
+          <p class="text-sm text-[#64748b]">Core principle: struggle is the feature, not the bug. Neural pathways form through effort.</p>
+        </article>
+      </div>
+
+      <!-- RSS/Subscribe hint -->
+      <div class="mt-12 p-6 bg-[#1a1a1a] text-[#f4f1ea]">
+        <h3 class="font-terminal text-lg mb-2">STAY_UPDATED</h3>
+        <p class="text-sm text-[#f4f1ea]/70">Follow development on <a href="https://github.com/Diogenesoftoronto/keating" class="text-[#d44a3d] underline">GitHub</a> or watch the repository for release notifications.</p>
+      </div>
+    </div>
+  </main>
+
+  <footer class="py-8 px-6 border-t-2 border-[#1a1a1a]">
+    <div class="max-w-6xl mx-auto text-center font-terminal text-[#1a1a1a]/60">
+      <a href="/" class="hover:text-[#d44a3d] transition-colors">[BACK_TO_HOME]</a>
+    </div>
+  </footer>
+</body>
+</html>
