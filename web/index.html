@@ -3,138 +3,469 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Keating - Hyperteacher for Cognitive Empowerment</title>
-  <meta name="description" content="A Pi-powered hyperteacher designed to ensure humans remain the authors of their own understanding. Contribute your verse.">
-  <meta property="og:title" content="Keating - Hyperteacher">
-  <meta property="og:description" content="Cognitive empowerment through Socratic AI. Not answers—understanding.">
-  <meta property="og:type" content="website">
+  <title>Keating - Hyperteacher</title>
+  <meta name="description" content="A Pi-powered hyperteacher that ensures humans remain the authors of their own understanding.">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-    body { font-family: 'Inter', sans-serif; }
-    .gradient-text {
-      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+    :root {
+      --paper: #f4f1ea;
+      --ink: #1a1a1a;
+      --accent: #d44a3d;
+      --accent-dim: #a33a30;
+      --terminal: #0c0c0c;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Space Mono', monospace;
+      background-color: var(--paper);
+      color: var(--ink);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Paper texture overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+      opacity: 0.04;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    .font-terminal {
+      font-family: 'VT323', monospace;
+    }
+
+    /* CRT scanline effect */
+    .crt::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.03),
+        rgba(0, 0, 0, 0.03) 1px,
+        transparent 1px,
+        transparent 2px
+      );
+      pointer-events: none;
+      animation: scanlines 0.1s linear infinite;
+    }
+
+    @keyframes scanlines {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(2px); }
+    }
+
+    /* Blinking cursor */
+    .cursor-blink::after {
+      content: '_';
+      animation: blink 1s step-end infinite;
+      color: var(--accent);
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    /* Terminal glow */
+    .terminal-glow {
+      box-shadow: 0 0 20px rgba(212, 74, 61, 0.3), inset 0 0 20px rgba(212, 74, 61, 0.05);
+    }
+
+    /* Typewriter effect */
+    .typewriter {
+      overflow: hidden;
+      white-space: nowrap;
+      animation: typing 3.5s steps(40, end);
+    }
+
+    @keyframes typing {
+      from { width: 0; }
+      to { width: 100%; }
+    }
+
+    /* Glitch effect on hover */
+    .glitch-hover:hover {
+      animation: glitch 0.3s ease-in-out;
+    }
+
+    @keyframes glitch {
+      0%, 100% { transform: translate(0); }
+      20% { transform: translate(-2px, 2px); }
+      40% { transform: translate(-2px, -2px); }
+      60% { transform: translate(2px, 2px); }
+      80% { transform: translate(2px, -2px); }
+    }
+
+    /* Boot sequence animation */
+    @keyframes boot-line {
+      0% { opacity: 0; transform: translateX(-10px); }
+      100% { opacity: 1; transform: translateX(0); }
+    }
+
+    .boot-line {
+      opacity: 0;
+      animation: boot-line 0.1s ease forwards;
+    }
+
+    /* Paper fold effect */
+    .paper-fold {
+      position: relative;
+      background: var(--paper);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1), 0 0 40px rgba(0,0,0,0.05) inset;
+    }
+
+    .paper-fold::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 100%;
+      background: linear-gradient(180deg, rgba(0,0,0,0.02) 0%, transparent 100%);
+      pointer-events: none;
+    }
+
+    /* Distressed border */
+    .distressed-border {
+      border: 2px solid var(--ink);
+      position: relative;
+    }
+
+    .distressed-border::before {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      background: var(--paper);
+      clip-path: polygon(
+        0% 0%, 100% 0%, 100% 100%, 0% 100%,
+        0% 95%, 2% 95%, 2% 90%, 0% 90%,
+        0% 85%, 3% 85%, 3% 80%, 0% 80%,
+        0% 75%, 1% 75%, 1% 70%, 0% 70%,
+        0% 65%, 2% 65%, 2% 60%, 0% 60%,
+        0% 55%, 1% 55%, 1% 50%, 0% 50%,
+        0% 45%, 3% 45%, 3% 40%, 0% 40%,
+        0% 35%, 2% 35%, 2% 30%, 0% 30%,
+        0% 25%, 1% 25%, 1% 20%, 0% 20%,
+        0% 15%, 2% 15%, 2% 10%, 0% 10%,
+        0% 5%, 1% 5%, 1% 0%
+      );
+      z-index: -1;
+    }
+
+    /* Status LED */
+    .status-led {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+      animation: pulse-led 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-led {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* Button press effect */
+    .btn-retro {
+      background: var(--paper);
+      border: 2px solid var(--ink);
+      position: relative;
+      transition: all 0.1s;
+    }
+
+    .btn-retro::before {
+      content: '';
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      right: -4px;
+      bottom: -4px;
+      background: var(--ink);
+      z-index: -1;
+      transition: all 0.1s;
+    }
+
+    .btn-retro:hover::before {
+      top: 2px;
+      left: 2px;
+      right: -2px;
+      bottom: -2px;
+    }
+
+    .btn-retro:active {
+      transform: translate(2px, 2px);
+    }
+
+    .btn-retro:active::before {
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+    }
+
+    /* Terminal window */
+    .terminal-window {
+      background: var(--terminal);
+      color: #00ff00;
+      font-family: 'VT323', monospace;
+      position: relative;
+    }
+
+    .terminal-window::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 255, 0, 0.03),
+        rgba(0, 255, 0, 0.03) 1px,
+        transparent 1px,
+        transparent 2px
+      );
+      pointer-events: none;
+    }
+
+    /* Tape effect */
+    .tape {
+      position: relative;
+    }
+
+    .tape::before {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%) rotate(-2deg);
+      width: 80px;
+      height: 25px;
+      background: rgba(255, 255, 255, 0.4);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    /* Stamped text */
+    .stamp {
+      border: 3px solid var(--accent);
+      color: var(--accent);
+      padding: 4px 12px;
+      transform: rotate(-5deg);
+      display: inline-block;
+      font-weight: bold;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      opacity: 0.8;
+    }
+
+    /* Marquee */
+    .marquee {
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .marquee span {
+      display: inline-block;
+      animation: marquee 20s linear infinite;
+    }
+
+    @keyframes marquee {
+      0% { transform: translateX(100%); }
+      100% { transform: translateX(-100%); }
+    }
+
+    /* Coordinates decoration */
+    .coords {
+      font-family: 'VT323', monospace;
+      font-size: 12px;
+      color: var(--accent);
+      opacity: 0.5;
     }
   </style>
 </head>
-<body class="bg-[#0a0a0f] text-white min-h-screen">
+<body class="min-h-screen">
   <!-- Navigation -->
-  <nav class="fixed top-0 left-0 right-0 z-50 bg-[#0a0a0f]/80 backdrop-blur-lg border-b border-white/5">
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-[#f4f1ea]/95 border-b-2 border-[#1a1a1a]">
     <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-      <div class="flex items-center gap-2">
-        <svg class="w-8 h-8 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-        </svg>
-        <span class="text-xl font-semibold">Keating</span>
+      <div class="flex items-center gap-3">
+        <div class="status-led"></div>
+        <span class="text-xl font-bold tracking-tight">KEATING//</span>
+        <span class="font-terminal text-lg text-[#d44a3d]">v0.1.2</span>
       </div>
-      <div class="flex items-center gap-6">
-        <a href="#features" class="text-white/60 hover:text-white transition">Features</a>
-        <a href="#install" class="text-white/60 hover:text-white transition">Install</a>
-        <a href="https://github.com/Diogenesoftoronto/keating" target="_blank" class="text-white/60 hover:text-white transition">GitHub</a>
-        <button id="try-btn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg font-medium transition">
-          Try Keating →
+      <div class="flex items-center gap-8 font-terminal text-lg">
+        <a href="#features" class="hover:text-[#d44a3d] transition-colors glitch-hover">[FEATURES]</a>
+        <a href="#install" class="hover:text-[#d44a3d] transition-colors glitch-hover">[INSTALL]</a>
+        <a href="https://github.com/Diogenesoftoronto/keating" target="_blank" class="hover:text-[#d44a3d] transition-colors glitch-hover">[GITHUB]</a>
+        <button id="try-btn" class="btn-retro px-4 py-2 font-bold text-sm">
+          TRY_KEATING
         </button>
       </div>
     </div>
   </nav>
 
+  <!-- Boot Sequence (hidden by default, shown on load) -->
+  <div id="boot-sequence" class="fixed inset-0 bg-[#0c0c0c] z-[60] font-terminal text-[#00ff00] p-8 overflow-hidden">
+    <div class="crt max-w-2xl mx-auto mt-20 text-lg leading-relaxed">
+      <div class="boot-line" style="animation-delay: 0.1s">BIOS DATE 01/15/25 14:22:51 VER 0.1.2</div>
+      <div class="boot-line" style="animation-delay: 0.3s">CPU: NEURAL-CORE x64 @ 3.2GHz</div>
+      <div class="boot-line" style="animation-delay: 0.5s">MEMORY TEST: 16384K OK</div>
+      <div class="boot-line" style="animation-delay: 0.7s"></div>
+      <div class="boot-line" style="animation-delay: 0.9s">LOADING KEATING HYPERTEACHER MODULE...</div>
+      <div class="boot-line" style="animation-delay: 1.2s">INITIALIZING SOCRATIC PROTOCOLS... [OK]</div>
+      <div class="boot-line" style="animation-delay: 1.5s">MOUNTING KNOWLEDGE GRAPH... [OK]</div>
+      <div class="boot-line" style="animation-delay: 1.8s">CALIBRATING DIAGNOSTIC ENGINE... [OK]</div>
+      <div class="boot-line" style="animation-delay: 2.1s"></div>
+      <div class="boot-line" style="animation-delay: 2.4s">SYSTEM READY.</div>
+      <div class="boot-line cursor-blink" style="animation-delay: 2.7s">_</div>
+    </div>
+  </div>
+
   <!-- Hero -->
   <section class="pt-32 pb-20 px-6">
-    <div class="max-w-4xl mx-auto text-center">
-      <h1 class="text-5xl md:text-6xl font-bold mb-6 leading-tight">
-        The hyperteacher that ensures you
-        <span class="gradient-text">think for yourself</span>
-      </h1>
-      <p class="text-xl text-white/60 mb-8 max-w-2xl mx-auto leading-relaxed">
-        Keating uses AI not to give answers, but to make you reconstruct understanding from memory. 
-        Diagnostics, reconstruction, transfer testing, voice preservation.
-      </p>
-      <p class="text-md text-white/40 mb-10 italic">
-        "That you are here—that life exists and identity, that the powerful play goes on, and you may contribute a verse."
-      </p>
-      <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <button id="hero-try-btn" class="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 rounded-xl font-semibold text-lg transition shadow-lg shadow-indigo-500/25">
-          Try Keating Free →
+    <div class="max-w-4xl mx-auto">
+      <!-- Coordinates decoration -->
+      <div class="coords mb-4">42.3601° N, 71.0589° W // WELLESLEY, MA</div>
+      
+      <div class="paper-fold distressed-border p-8 mb-8">
+        <h1 class="text-4xl md:text-6xl font-bold mb-6 leading-none tracking-tight">
+          THE HYPERTEACHER<br/>
+          <span class="font-terminal text-[#d44a3d] text-5xl md:text-7xl">THINK_FOR_YOURSELF</span>
+        </h1>
+        <p class="text-lg mb-6 max-w-2xl leading-relaxed">
+          Keating doesn't give answers. It forces you to reconstruct understanding from memory. 
+          No hand-holding. No spoon-feeding. Just the Socratic method powered by silicon.
+        </p>
+        <div class="stamp">COGNITIVE EMPOWERMENT</div>
+      </div>
+
+      <!-- Terminal quote box -->
+      <div class="terminal-window p-4 mb-8 terminal-glow">
+        <div class="flex items-center gap-2 mb-2 border-b border-[#00ff00]/30 pb-2">
+          <span class="w-3 h-3 rounded-full bg-[#ff5f56]"></span>
+          <span class="w-3 h-3 rounded-full bg-[#ffbd2e]"></span>
+          <span class="w-3 h-3 rounded-full bg-[#27ca40]"></span>
+          <span class="ml-4 text-sm opacity-60">root@keating:~</span>
+        </div>
+        <p class="font-terminal text-xl md:text-2xl leading-relaxed typewriter">
+          "That the powerful play goes on, and you may contribute a verse."
+        </p>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-4">
+        <button id="hero-try-btn" class="btn-retro px-8 py-4 font-bold text-lg">
+          INITIALIZE_SESSION →
         </button>
-        <a href="#install" class="px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-medium text-lg transition">
-          Install Locally
+        <a href="#install" class="btn-retro px-8 py-4 font-bold text-lg text-center">
+          BUILD_FROM_SOURCE
         </a>
       </div>
     </div>
   </section>
 
   <!-- What is Keating -->
-  <section class="py-20 px-6 bg-gradient-to-b from-[#0a0a0f] to-[#0f0f15]">
+  <section id="features" class="py-20 px-6 border-t-2 border-[#1a1a1a]">
     <div class="max-w-4xl mx-auto">
-      <h2 class="text-3xl font-bold text-center mb-12">What is Keating?</h2>
-      <div class="grid md:grid-cols-2 gap-8">
-        <div class="p-6 rounded-2xl bg-white/5 border border-white/5">
-          <div class="text-4xl mb-4">🎓</div>
-          <h3 class="text-xl font-semibold mb-3">Diagnosis First</h3>
-          <p class="text-white/60">Before teaching, Keating understands what you already know and where your gaps lie. No wasted time on concepts you've mastered.</p>
+      <div class="flex items-center gap-4 mb-12">
+        <span class="font-terminal text-[#d44a3d]">$ cat MANIFESTO.txt</span>
+        <div class="flex-1 h-px bg-[#1a1a1a]/20"></div>
+      </div>
+      
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="paper-fold distressed-border p-6 tape">
+          <div class="font-terminal text-2xl text-[#d44a3d] mb-3">[01] DIAGNOSE</div>
+          <p class="text-sm leading-relaxed">
+            Before teaching, Keating maps what you actually know. No wasted cycles on mastered concepts. 
+            Like a debugger for your knowledge graph.
+          </p>
         </div>
-        <div class="p-6 rounded-2xl bg-white/5 border border-white/5">
-          <div class="text-4xl mb-4">🧠</div>
-          <h3 class="text-xl font-semibold mb-3">Reconstruction Over Regurgitation</h3>
-          <p class="text-white/60">Make you reconstruct ideas from memory, not merely agree with explanations. Real learning requires effort.</p>
+        
+        <div class="paper-fold distressed-border p-6 tape">
+          <div class="font-terminal text-2xl text-[#d44a3d] mb-3">[02] RECONSTRUCT</div>
+          <p class="text-sm leading-relaxed">
+            You don't memorize—you rebuild. From memory, from first principles. 
+            Struggle is the feature, not the bug. That's how neural pathways form.
+          </p>
         </div>
-        <div class="p-6 rounded-2xl bg-white/5 border border-white/5">
-          <div class="text-4xl mb-4">🚀</div>
-          <h3 class="text-xl font-semibold mb-3">Transfer Testing</h3>
-          <p class="text-white/60">Ask you to carry ideas into new settings to prove genuine understanding. Confirmation isn't comprehension.</p>
+        
+        <div class="paper-fold distressed-border p-6 tape">
+          <div class="font-terminal text-2xl text-[#d44a3d] mb-3">[03] TRANSFER</div>
+          <p class="text-sm leading-relaxed">
+            Prove it in unfamiliar territory. Real understanding shows when you can apply 
+            knowledge in contexts you've never seen.
+          </p>
         </div>
-        <div class="p-6 rounded-2xl bg-white/5 border border-white/5">
-          <div class="text-4xl mb-4">🗣️</div>
-          <h3 class="text-xl font-semibold mb-3">Voice Preservation</h3>
-          <p class="text-white/60">Penalize rote echoing. Reward novel analogies and personal articulation. Your voice matters, not the AI's.</p>
+        
+        <div class="paper-fold distressed-border p-6 tape">
+          <div class="font-terminal text-2xl text-[#d44a3d] mb-3">[04] PRESERVE</div>
+          <p class="text-sm leading-relaxed">
+            Penalize rote echoing. Reward novel analogies. Your voice matters, not the AI's. 
+            If you parrot, Keating will know.
+          </p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Features -->
-  <section id="features" class="py-20 px-6">
+  <!-- How It Works -->
+  <section class="py-20 px-6 bg-[#1a1a1a] text-[#f4f1ea]">
     <div class="max-w-4xl mx-auto">
-      <h2 class="text-3xl font-bold text-center mb-12">How It Works</h2>
-      <div class="space-y-6">
-        <div class="flex gap-6 items-start p-6 rounded-2xl bg-white/[0.02] border border-white/5">
-          <div class="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center shrink-0">
-            <span class="text-xl font-bold">1</span>
-          </div>
+      <div class="flex items-center gap-4 mb-12">
+        <span class="font-terminal text-[#d44a3d]">$ ./keating --protocol</span>
+        <div class="flex-1 h-px bg-[#f4f1ea]/20"></div>
+      </div>
+
+      <div class="space-y-6 font-terminal">
+        <div class="flex gap-4 p-4 border border-[#f4f1ea]/20">
+          <div class="text-[#d44a3d] text-2xl">01</div>
           <div>
-            <h3 class="text-lg font-semibold mb-2">You Ask a Question</h3>
-            <p class="text-white/60">Ask about any topic—math, philosophy, science, code, anything. Keating doesn't lecture, it investigates.</p>
+            <div class="text-lg text-[#00ff00]">INPUT_QUERY</div>
+            <div class="text-sm text-[#f4f1ea]/60">Ask anything. Math, philosophy, code, art. Keating doesn't lecture—it investigates.</div>
           </div>
         </div>
-        <div class="flex gap-6 items-start p-6 rounded-2xl bg-white/[0.02] border border-white/5">
-          <div class="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center shrink-0">
-            <span class="text-xl font-bold">2</span>
-          </div>
+
+        <div class="flex gap-4 p-4 border border-[#f4f1ea]/20">
+          <div class="text-[#d44a3d] text-2xl">02</div>
           <div>
-            <h3 class="text-lg font-semibold mb-2">Keating Diagnoses</h3>
-            <p class="text-white/60">Instead of answering, Keating probes your current understanding. What's solid? What's shaky? Where are the gaps?</p>
+            <div class="text-lg text-[#00ff00]">RUN_DIAGNOSTIC</div>
+            <div class="text-sm text-[#f4f1ea]/60">Instead of answering, Keating probes. What's solid? What's shaky? Where are the gaps?</div>
           </div>
         </div>
-        <div class="flex gap-6 items-start p-6 rounded-2xl bg-white/[0.02] border border-white/5">
-          <div class="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center shrink-0">
-            <span class="text-xl font-bold">3</span>
-          </div>
+
+        <div class="flex gap-4 p-4 border border-[#f4f1ea]/20">
+          <div class="text-[#d44a3d] text-2xl">03</div>
           <div>
-            <h3 class="text-lg font-semibold mb-2">You reconstruct</h3>
-            <p class="text-white/60">Guided by questions, you rebuild the concept yourself. Struggling is the point—it's how neural pathways form.</p>
+            <div class="text-lg text-[#00ff00]">FORCE_RECONSTRUCTION</div>
+            <div class="text-sm text-[#f4f1ea]/60">Guided questions. You rebuild the concept yourself. No shortcuts.</div>
           </div>
         </div>
-        <div class="flex gap-6 items-start p-6 rounded-2xl bg-white/[0.02] border border-white/5">
-          <div class="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center shrink-0">
-            <span class="text-xl font-bold">4</span>
-          </div>
+
+        <div class="flex gap-4 p-4 border border-[#f4f1ea]/20">
+          <div class="text-[#d44a3d] text-2xl">04</div>
           <div>
-            <h3 class="text-lg font-semibold mb-2">Keating Tests Transfer</h3>
-            <p class="text-white/60">Apply the concept to a new context. Real understanding shows when you can use knowledge in unfamiliar situations.</p>
+            <div class="text-lg text-[#00ff00]">TEST_TRANSFER</div>
+            <div class="text-sm text-[#f4f1ea]/60">Apply to new context. Can you actually use this knowledge, or did you just memorize?</div>
           </div>
         </div>
       </div>
@@ -142,53 +473,75 @@
   </section>
 
   <!-- Install -->
-  <section id="install" class="py-20 px-6 bg-gradient-to-b from-[#0f0f15] to-[#0a0a0f]">
-    <div class="max-w-4xl mx-auto text-center">
-      <h2 class="text-3xl font-bold mb-6">Install Keating</h2>
-      <p class="text-white/60 mb-8">Available for macOS and Linux. Your API keys stay local.</p>
-      <div class="max-w-xl mx-auto text-left">
-        <div class="p-4 rounded-xl bg-[#1a1a24] border border-white/10 font-mono text-sm overflow-x-auto">
-          <code class="text-green-400">$</code> <span class="text-white/80">curl -fsSL https://raw.githubusercontent.com/Diogenesoftoronto/keating/main/scripts/install/install.sh | bash</span>
+  <section id="install" class="py-20 px-6 border-t-2 border-[#1a1a1a]">
+    <div class="max-w-4xl mx-auto">
+      <div class="flex items-center gap-4 mb-8">
+        <span class="font-terminal text-[#d44a3d]">$ curl install.sh | bash</span>
+        <div class="flex-1 h-px bg-[#1a1a1a]/20"></div>
+      </div>
+
+      <div class="terminal-window p-4 terminal-glow mb-6">
+        <div class="flex items-center gap-2 mb-2 border-b border-[#00ff00]/30 pb-2">
+          <span class="w-3 h-3 rounded-full bg-[#ff5f56]"></span>
+          <span class="w-3 h-3 rounded-full bg-[#ffbd2e]"></span>
+          <span class="w-3 h-3 rounded-full bg-[#27ca40]"></span>
+          <span class="ml-4 text-sm opacity-60">install.sh</span>
         </div>
-        <p class="text-xs text-white/40 mt-3">Or via npm: <code class="text-white/60">npm install -g @interleavelove/keating</code></p>
+        <code class="font-terminal text-lg block">
+          <span class="text-[#00ff00]">$</span> curl -fsSL https://raw.githubusercontent.com/Diogenesoftoronto/keating/main/scripts/install/install.sh <span class="text-[#00ff00]">|</span> bash<br/><br/>
+          <span class="text-[#888]"># Or via npm:</span><br/>
+          <span class="text-[#00ff00]">$</span> npm install -g @interleavelove/keating
+        </code>
+      </div>
+
+      <div class="marquee border-y-2 border-[#1a1a1a] py-2 bg-[#1a1a1a] text-[#f4f1ea]">
+        <span class="font-terminal">*** AVAILABLE FOR macOS AND LINUX *** YOUR API KEYS STAY LOCAL *** NO CLOUD DEPENDENCY *** FREE AND OPEN SOURCE ***</span>
       </div>
     </div>
   </section>
 
   <!-- Footer -->
-  <footer class="py-12 px-6 border-t border-white/5">
-    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-      <div class="flex items-center gap-2 text-white/40">
-        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-        </svg>
-        <span>Keating</span>
+  <footer class="py-12 px-6 border-t-2 border-[#1a1a1a]">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 font-terminal">
+      <div class="flex items-center gap-2 text-[#1a1a1a]/60">
+        <span class="text-[#d44a3d]">●</span>
+        <span>KEATING_HYPERTEACHER</span>
       </div>
-      <p class="text-white/40 text-sm">Built on Pi • Open Source MIT</p>
-      <div class="flex gap-4 text-white/40">
-        <a href="https://github.com/Diogenesoftoronto/keating" class="hover:text-white transition">GitHub</a>
-        <a href="https://keating.help" class="hover:text-white transition">Web App</a>
+      <p class="text-sm text-[#1a1a1a]/60">BUILT_ON_PI // MIT_LICENSE // 2025</p>
+      <div class="flex gap-6 text-[#1a1a1a]/60">
+        <a href="https://github.com/Diogenesoftoronto/keating" class="hover:text-[#d44a3d] transition-colors">[GITHUB]</a>
+        <a href="https://keating.help" class="hover:text-[#d44a3d] transition-colors">[WEB]</a>
       </div>
     </div>
   </footer>
 
   <!-- Chat Modal -->
   <div id="chat-modal" class="fixed inset-0 z-[100] hidden">
-    <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" id="chat-overlay"></div>
-    <div class="absolute inset-4 md:inset-8 lg:inset-16 bg-[#0f0f15] rounded-2xl border border-white/10 flex flex-col overflow-hidden">
-      <div class="flex items-center justify-between px-6 py-4 border-b border-white/5">
-        <h3 class="font-semibold">Keating Chat</h3>
-        <button id="close-chat" class="p-2 hover:bg-white/10 rounded-lg transition">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
+    <div class="absolute inset-0 bg-[#0c0c0c]/90" id="chat-overlay"></div>
+    <div class="absolute inset-4 md:inset-8 lg:inset-16 terminal-window border-2 border-[#00ff00]/50 flex flex-col overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4 border-b-2 border-[#00ff00]/30 bg-[#0c0c0c]">
+        <div class="flex items-center gap-3">
+          <span class="status-led"></span>
+          <span class="font-terminal text-xl text-[#00ff00]">KEATING_SESSION</span>
+        </div>
+        <button id="close-chat" class="font-terminal text-[#00ff00] hover:text-[#d44a3d] text-xl">
+          [X]
         </button>
       </div>
-      <iframe id="chat-frame" src="/app" class="flex-1 w-full"></iframe>
+      <iframe id="chat-frame" src="/app" class="flex-1 w-full bg-[#0c0c0c]"></iframe>
     </div>
   </div>
 
   <script>
+    // Boot sequence
+    setTimeout(() => {
+      document.getElementById('boot-sequence').style.opacity = '0';
+      document.getElementById('boot-sequence').style.transition = 'opacity 0.5s';
+      setTimeout(() => {
+        document.getElementById('boot-sequence').classList.add('hidden');
+      }, 500);
+    }, 3500);
+
     function openChat() {
       document.getElementById('chat-modal').classList.remove('hidden');
       document.body.style.overflow = 'hidden';
@@ -203,9 +556,18 @@
     document.getElementById('close-chat').addEventListener('click', closeChat);
     document.getElementById('chat-overlay').addEventListener('click', closeChat);
     
-    // Close on Escape
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeChat();
+    });
+
+    // Random glitch effect on nav links
+    document.querySelectorAll('.glitch-hover').forEach(el => {
+      el.addEventListener('mouseenter', () => {
+        el.style.textShadow = '2px 0 #d44a3d, -2px 0 #00ff00';
+        setTimeout(() => {
+          el.style.textShadow = 'none';
+        }, 100);
+      });
     });
   </script>
 </body>
