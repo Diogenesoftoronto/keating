@@ -3,12 +3,210 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Keating - Hyperteacher</title>
-  <meta name="description" content="A Pi-powered hyperteacher for cognitive empowerment. Contribute your verse.">
+  <title>Keating - Hyperteacher for Cognitive Empowerment</title>
+  <meta name="description" content="A Pi-powered hyperteacher designed to ensure humans remain the authors of their own understanding. Contribute your verse.">
+  <meta property="og:title" content="Keating - Hyperteacher">
+  <meta property="og:description" content="Cognitive empowerment through Socratic AI. Not answers—understanding.">
+  <meta property="og:type" content="website">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .gradient-text {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+  </style>
 </head>
-<body>
-  <div id="app"></div>
-  <script type="module" src="/src/main.ts"></script>
+<body class="bg-[#0a0a0f] text-white min-h-screen">
+  <!-- Navigation -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-[#0a0a0f]/80 backdrop-blur-lg border-b border-white/5">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <svg class="w-8 h-8 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+        <span class="text-xl font-semibold">Keating</span>
+      </div>
+      <div class="flex items-center gap-6">
+        <a href="#features" class="text-white/60 hover:text-white transition">Features</a>
+        <a href="#install" class="text-white/60 hover:text-white transition">Install</a>
+        <a href="https://github.com/Diogenesoftoronto/keating" target="_blank" class="text-white/60 hover:text-white transition">GitHub</a>
+        <button id="try-btn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg font-medium transition">
+          Try Keating →
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="pt-32 pb-20 px-6">
+    <div class="max-w-4xl mx-auto text-center">
+      <h1 class="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+        The hyperteacher that ensures you
+        <span class="gradient-text">think for yourself</span>
+      </h1>
+      <p class="text-xl text-white/60 mb-8 max-w-2xl mx-auto leading-relaxed">
+        Keating uses AI not to give answers, but to make you reconstruct understanding from memory. 
+        Diagnostics, reconstruction, transfer testing, voice preservation.
+      </p>
+      <p class="text-md text-white/40 mb-10 italic">
+        "That you are here—that life exists and identity, that the powerful play goes on, and you may contribute a verse."
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <button id="hero-try-btn" class="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 rounded-xl font-semibold text-lg transition shadow-lg shadow-indigo-500/25">
+          Try Keating Free →
+        </button>
+        <a href="#install" class="px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-medium text-lg transition">
+          Install Locally
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- What is Keating -->
+  <section class="py-20 px-6 bg-gradient-to-b from-[#0a0a0f] to-[#0f0f15]">
+    <div class="max-w-4xl mx-auto">
+      <h2 class="text-3xl font-bold text-center mb-12">What is Keating?</h2>
+      <div class="grid md:grid-cols-2 gap-8">
+        <div class="p-6 rounded-2xl bg-white/5 border border-white/5">
+          <div class="text-4xl mb-4">🎓</div>
+          <h3 class="text-xl font-semibold mb-3">Diagnosis First</h3>
+          <p class="text-white/60">Before teaching, Keating understands what you already know and where your gaps lie. No wasted time on concepts you've mastered.</p>
+        </div>
+        <div class="p-6 rounded-2xl bg-white/5 border border-white/5">
+          <div class="text-4xl mb-4">🧠</div>
+          <h3 class="text-xl font-semibold mb-3">Reconstruction Over Regurgitation</h3>
+          <p class="text-white/60">Make you reconstruct ideas from memory, not merely agree with explanations. Real learning requires effort.</p>
+        </div>
+        <div class="p-6 rounded-2xl bg-white/5 border border-white/5">
+          <div class="text-4xl mb-4">🚀</div>
+          <h3 class="text-xl font-semibold mb-3">Transfer Testing</h3>
+          <p class="text-white/60">Ask you to carry ideas into new settings to prove genuine understanding. Confirmation isn't comprehension.</p>
+        </div>
+        <div class="p-6 rounded-2xl bg-white/5 border border-white/5">
+          <div class="text-4xl mb-4">🗣️</div>
+          <h3 class="text-xl font-semibold mb-3">Voice Preservation</h3>
+          <p class="text-white/60">Penalize rote echoing. Reward novel analogies and personal articulation. Your voice matters, not the AI's.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features" class="py-20 px-6">
+    <div class="max-w-4xl mx-auto">
+      <h2 class="text-3xl font-bold text-center mb-12">How It Works</h2>
+      <div class="space-y-6">
+        <div class="flex gap-6 items-start p-6 rounded-2xl bg-white/[0.02] border border-white/5">
+          <div class="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center shrink-0">
+            <span class="text-xl font-bold">1</span>
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold mb-2">You Ask a Question</h3>
+            <p class="text-white/60">Ask about any topic—math, philosophy, science, code, anything. Keating doesn't lecture, it investigates.</p>
+          </div>
+        </div>
+        <div class="flex gap-6 items-start p-6 rounded-2xl bg-white/[0.02] border border-white/5">
+          <div class="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center shrink-0">
+            <span class="text-xl font-bold">2</span>
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold mb-2">Keating Diagnoses</h3>
+            <p class="text-white/60">Instead of answering, Keating probes your current understanding. What's solid? What's shaky? Where are the gaps?</p>
+          </div>
+        </div>
+        <div class="flex gap-6 items-start p-6 rounded-2xl bg-white/[0.02] border border-white/5">
+          <div class="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center shrink-0">
+            <span class="text-xl font-bold">3</span>
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold mb-2">You reconstruct</h3>
+            <p class="text-white/60">Guided by questions, you rebuild the concept yourself. Struggling is the point—it's how neural pathways form.</p>
+          </div>
+        </div>
+        <div class="flex gap-6 items-start p-6 rounded-2xl bg-white/[0.02] border border-white/5">
+          <div class="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center shrink-0">
+            <span class="text-xl font-bold">4</span>
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold mb-2">Keating Tests Transfer</h3>
+            <p class="text-white/60">Apply the concept to a new context. Real understanding shows when you can use knowledge in unfamiliar situations.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Install -->
+  <section id="install" class="py-20 px-6 bg-gradient-to-b from-[#0f0f15] to-[#0a0a0f]">
+    <div class="max-w-4xl mx-auto text-center">
+      <h2 class="text-3xl font-bold mb-6">Install Keating</h2>
+      <p class="text-white/60 mb-8">Available for macOS and Linux. Your API keys stay local.</p>
+      <div class="max-w-xl mx-auto text-left">
+        <div class="p-4 rounded-xl bg-[#1a1a24] border border-white/10 font-mono text-sm overflow-x-auto">
+          <code class="text-green-400">$</code> <span class="text-white/80">curl -fsSL https://raw.githubusercontent.com/Diogenesoftoronto/keating/main/scripts/install/install.sh | bash</span>
+        </div>
+        <p class="text-xs text-white/40 mt-3">Or via npm: <code class="text-white/60">npm install -g @interleavelove/keating</code></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="py-12 px-6 border-t border-white/5">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-2 text-white/40">
+        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+        <span>Keating</span>
+      </div>
+      <p class="text-white/40 text-sm">Built on Pi • Open Source MIT</p>
+      <div class="flex gap-4 text-white/40">
+        <a href="https://github.com/Diogenesoftoronto/keating" class="hover:text-white transition">GitHub</a>
+        <a href="https://keating.help" class="hover:text-white transition">Web App</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Chat Modal -->
+  <div id="chat-modal" class="fixed inset-0 z-[100] hidden">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" id="chat-overlay"></div>
+    <div class="absolute inset-4 md:inset-8 lg:inset-16 bg-[#0f0f15] rounded-2xl border border-white/10 flex flex-col overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-white/5">
+        <h3 class="font-semibold">Keating Chat</h3>
+        <button id="close-chat" class="p-2 hover:bg-white/10 rounded-lg transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <iframe id="chat-frame" src="/app" class="flex-1 w-full"></iframe>
+    </div>
+  </div>
+
+  <script>
+    function openChat() {
+      document.getElementById('chat-modal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeChat() {
+      document.getElementById('chat-modal').classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+    
+    document.getElementById('try-btn').addEventListener('click', openChat);
+    document.getElementById('hero-try-btn').addEventListener('click', openChat);
+    document.getElementById('close-chat').addEventListener('click', closeChat);
+    document.getElementById('chat-overlay').addEventListener('click', closeChat);
+    
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeChat();
+    });
+  </script>
 </body>
 </html>
