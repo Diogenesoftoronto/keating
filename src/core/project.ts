@@ -30,9 +30,11 @@ import {
   buildPendingVerificationResult,
   buildVerificationChecklist,
   loadVerificationCache,
+  runCoveVerification,
   saveVerificationCache,
   verificationStatus
 } from "./verification.js";
+import { type VerificationResult } from "./types.js";
 import {
   generateImprovementArtifact,
   loadImprovementArchive,

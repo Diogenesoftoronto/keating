@@ -49,7 +49,32 @@ It is designed around five influences:
 
 ## Quick Start
 
-![Keating Doctor](docs/assets/doctor.gif)
+### From the Web
+
+Visit **[keating.help](https://keating.help)** to use Keating directly in your browser with:
+- Your own API keys (stored locally)
+- Local model inference via WebGPU (Gemma 4 E4B)
+- Full hyperteacher experience without installation
+
+### From the Command Line
+
+Install via curl:
+
+```bash
+curl -fsSL https://github.com/Diogenesoftoronto/keating/releases/latest/download/install.sh | bash
+```
+
+Or with npm/pnpm/bun:
+
+```bash
+npm install -g @diogenesoftoronto/keating
+pnpm add -g @diogenesoftoronto/keating
+bun add -g @diogenesoftoronto/keating
+```
+
+### Development
+
+<video src="docs/assets/doctor.mp4" autoplay loop muted width="100%"></video>
 
 ```bash
 mise run build
@@ -141,6 +166,17 @@ Workflow:
 
 The point is not cosmetic prompt churn or benchmark gaming. The loop tries to produce prompts that improve human learning outcomes: sharper diagnosis, stronger reconstruction from memory, better transfer, and clearer learner articulation.
 
+## Benchmarking Cognitive Friction
+
+To ensure that Keating serves as a bridge to independent understanding rather than a shortcut to agreement, we maintain a **Synthetic Learner Suite**. 
+
+Recent results using small models (1–2B parameters) show that the system successfully identifies and redirects "Surface Agreement." Key findings include:
+- **Redirection Effectiveness:** Identifying meta-responses ("That's a great question!") and insisting on personal application before advancing.
+- **Intuition-First Efficacy:** Measurable self-correction in technical domains (e.g., correcting conflations between function values and derivatives).
+- **Voice Persistence:** Penalizing rote echoing of the teacher and rewarding novel analogies or domain transfers.
+
+Detailed results are available in our latest study: `docs/study.typ`.
+
 ## Project Layout
 
 - `src/core/`: lesson planning, benchmarks, policy mutation, artifact helpers.
@@ -169,7 +205,7 @@ That split keeps the interactive shell flexible while making the improvement loo
 
 ## Testing
 
-![Keating Tests](docs/assets/tests.gif)
+<video src="docs/assets/tests.mp4" autoplay loop muted width="100%"></video>
 
 ```bash
 mise run test

@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build
+        run: bun run build
+
+      - name: Test
+        run: bun run test
+
+      - name: Build web
+        run: |
+          cd web
+          bun install
+          bun run build
+
+      - name: Create bundles for install script
+        run: |
+          mkdir -p bundle
+          cp -r bin pi scripts/install bundle/
+          cp package.json bundle/
+          tar -czf "keating-bundle.tar.gz" -C bundle .

@@ -1,0 +1,7 @@
+[build]
+dockerfilePath = "Dockerfile.web"
+
+[deploy]
+restartPolicyType = "ALWAYS"
+healthcheckPath = "/"
+healthcheckTimeout = 30

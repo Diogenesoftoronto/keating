@@ -1,7 +1,6 @@
 {
-  "name": "keating",
+  "name": "@diogenesoftoronto/keating",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
   "description": "A Pi-powered hyperteacher package with self-improving teaching policies, lesson maps, and animated visual teaching artifacts.",
   "keywords": [
@@ -9,7 +8,31 @@
     "hyperteacher",
     "education",
     "feynman-style",
-    "teaching-agent"
+    "teaching-agent",
+    "ai-education",
+    "cognitive-empowerment"
+  ],
+  "author": "Diogenes of Toronto",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Diogenesoftoronto/keating.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Diogenesoftoronto/keating/issues"
+  },
+  "homepage": "https://keating.help",
+  "bin": {
+    "keating": "./bin/keating.js"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "files": [
+    "bin/",
+    "dist/",
+    "pi/",
+    "scripts/install/"
   ],
   "pi": {
     "extensions": [
@@ -33,7 +56,8 @@
     "prompt-evolve": "mise run prompt-evolve",
     "map": "mise run map",
     "animate": "mise run animate",
-    "trace": "mise run trace"
+    "trace": "mise run trace",
+    "prepack": "bun run build"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

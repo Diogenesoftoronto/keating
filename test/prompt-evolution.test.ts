@@ -19,7 +19,7 @@ async function mockEvaluator(_cwd: string, promptPath: string, prompt: string): 
     promptName: "learn",
     score: isGood ? 90 : 50,
     objectives: {
-      voice: isGood ? 1 : 0.2,
+      voice_divergence: isGood ? 1 : 0.2,
       diagnosis: 0.5,
       verification: 0.5,
       retrieval: 0.5,
@@ -48,7 +48,7 @@ test("PROSPER-style winner prefers candidates that win across multiple objective
         promptName: "learn",
         score: 78,
         objectives: {
-          voice: 1,
+          voice_divergence: 1,
           diagnosis: 0.2,
           verification: 0.2,
           retrieval: 0.2,
@@ -70,7 +70,7 @@ test("PROSPER-style winner prefers candidates that win across multiple objective
         promptName: "learn",
         score: 84,
         objectives: {
-          voice: 0.8,
+          voice_divergence: 0.8,
           diagnosis: 0.8,
           verification: 0.8,
           retrieval: 0.8,
