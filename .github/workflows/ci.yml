@@ -32,9 +32,7 @@ jobs:
           bun install
           bun run build
 
-      - name: Create bundles for install script
+      - name: Verify web build
         run: |
-          mkdir -p bundle
-          cp -r bin pi scripts/install bundle/
-          cp package.json bundle/
-          tar -czf "keating-bundle.tar.gz" -C bundle .
+          ls -la dist/
+          echo "Web app built successfully"

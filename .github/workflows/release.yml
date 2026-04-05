@@ -98,20 +98,7 @@ jobs:
     needs: release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Build web
-        run: |
-          cd web
-          bun install
-          bun run build
-
       - name: Deploy to Railway
         run: |
-          # Static site deployment handled by Railway auto-deploy
-          echo "Web build complete - Railway will auto-deploy from dist/"
+          echo "Web deployment handled by Railway GitHub integration"
+          echo "Connect the repo at https://railway.app to enable auto-deploy"
