@@ -46,18 +46,9 @@
     ]
   },
   "scripts": {
-    "build": "mise run build",
-    "docs:diagrams": "mise run docs-diagrams",
-    "test": "mise run test",
-    "doctor": "mise run doctor",
-    "shell": "mise run shell",
-    "bench": "mise run bench",
-    "evolve": "mise run evolve",
-    "prompt-evolve": "mise run prompt-evolve",
-    "map": "mise run map",
-    "animate": "mise run animate",
-    "trace": "mise run trace",
-    "prepack": "bun run build"
+    "build": "bun x tsc -p tsconfig.json",
+    "test": "bun test ./test/*.test.ts",
+    "prepack": "bun x tsc -p tsconfig.json"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
