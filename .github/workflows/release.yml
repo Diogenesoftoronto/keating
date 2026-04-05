@@ -44,7 +44,7 @@ jobs:
           mkdir -p bundle
           cp -r bin dist pi scripts/install/install.sh bundle/
           cp package.json bundle/
-          mv bundle/install.sh bundle/keating-install.sh
+          mv bundle/keating-install.sh bundle/install.sh
           tar -czf "${BUNDLE_NAME}.tar.gz" -C bundle .
 
       - name: Upload artifact
