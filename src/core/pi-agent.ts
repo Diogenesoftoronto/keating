@@ -52,11 +52,20 @@ export async function piComplete(cwd: string, prompt: string, options: PiComplet
 export async function piCompleteJson<T>(cwd: string, prompt: string, options: PiCompletionOptions = {}): Promise<T> {
   const response = await piComplete(cwd, prompt, { ...options, json: true });
   try {
-    // Pi in JSON mode might return the raw JSON or a markdown block depending on the provider.
-    // We try to extract it.
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
-    const cleanJson = jsonMatch ? jsonMatch[0] : response;
-    return JSON.parse(cleanJson) as T;
+    // Some models output reasoning BEFORE the JSON block.
+    // We try to find all JSON-like blocks and pick the one that parses successfully,
+    // prioritizing the last one.
+    const matches = response.match(/\{[\s\S]*?\}/g);
+    if (!matches) return JSON.parse(response) as T;
+    
+    for (let i = matches.length - 1; i >= 0; i--) {
+      try {
+        return JSON.parse(matches[i]) as T;
+      } catch {
+        continue;
+      }
+    }
+    throw new Error("No valid JSON block found in response.");
   } catch (error) {
     throw new Error(`Failed to parse Pi JSON response: ${response}\nError: ${error}`);
   }

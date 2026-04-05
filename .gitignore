@@ -10,6 +10,14 @@ dist/
 *.png
 *.svg
 
+# Build artifacts
+test/bench.log
+test/final_dataset.json
+test/traces/
+docs/generated/
+analysis/__pycache__/
+*.pyc
+
 # Project-specific state
 .keating/
 .codex/

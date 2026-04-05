@@ -1,0 +1,22 @@
+/* Import base styles from pi-web-ui which includes Tailwind + KaTeX + themes */
+@import '@mariozechner/pi-web-ui/app.css';
+
+/* Custom Keating styles */
+:root {
+  --color-primary: #6366f1;
+}
+
+.keating-header {
+  background: rgba(15, 15, 15, 0.8);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.75rem 1rem;
+}
+
+.local-model-badge {
+  background: var(--color-primary);
+  color: white;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+}

@@ -1,0 +1,33 @@
+# Development files
+.github/
+.vscode/
+.codex/
+mise.toml
+bun.lock
+
+# Source (not needed in package - compiled in dist/)
+src/
+test/
+docs/
+analysis/
+
+# Web app (deployed separately)
+web/
+Dockerfile.web
+railway.toml
+
+# Generated files
+.keating/
+*.log
+.env
+.env.local
+
+# Editor
+*.swp
+*.swo
+*~
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

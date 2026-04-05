@@ -1,0 +1,13 @@
+= Introduction
+
+One-to-one tutoring remains one of the strongest known educational interventions @bloom1984, and intelligent tutoring systems improve learning outcomes on average across domains @ma2014. Recent generative-AI tutors suggest that some of that benefit may be scalable @kestin2025; @thesen2025. But tutoring quality cannot be judged only by whether the learner receives an explanation. Learning requires active reconstruction, self-explanation, and transfer, whereas AI systems make it unusually easy for the learner to accept a polished account instead of generating one @chi1989; @rittlejohnson2017. This is exactly the terrain where cognitive offloading becomes a serious educational risk @risko2016; @burnett2026.
+
+Keating is built for that failure mode. The central idea is simple: if conventional AI tutors are mostly *chatbots that teach*, Keating is a *metaharness that governs teaching*. A chatbot is primarily an interaction policy at the level of the next response. Keating adds a layer above that response policy. It generates and constrains plans, maps, visual artifacts, verification checks, prompt evolution, benchmark traces, and policy search. The live teaching exchange is therefore only one component of a larger pedagogical control system.
+
+That distinction matters both scientifically and technically. For readers from learning science, the key claim is that the system is organized around mechanisms such as diagnosis, retrieval, and self-explanation rather than answer delivery. For readers from machine learning and systems, the key claim is that the object being optimized is not merely a prompt or a chatbot transcript, but an *instructional environment* with inspectable artifacts, objective functions, mutation operators, and safety gates. Recent systems work has started to optimize harnesses and editable meta-level agents in non-educational domains @lee2026metaharness; @zhang2026hyperagents. Keating is therefore "two steps ahead" of chatbot tutoring in a precise sense: it does not merely generate tutoring turns; it evaluates and redesigns the conditions under which those turns are generated for teaching.
+
+We make three contributions:
+
+1. We formalize Keating as a teaching metaharness rather than a tutoring chatbot.
+2. We provide a mathematical account of the synthetic harness used for policy search.
+3. We present a reproducible analysis stack that separates archival trace evaluation from internal synthetic optimization.

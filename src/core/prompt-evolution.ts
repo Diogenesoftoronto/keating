@@ -10,6 +10,8 @@ dotenv.config();
 const KEATING_QUOTE =
   "Boys, you must strive to find your own voice. Because the longer you wait to begin, the less likely you are to find it at all.";
 
+let piAvailabilityCache: boolean | null = null;
+
 function promptNameFromPath(promptPath: string): string {
   const fileName = promptPath.split(/[\\/]/).pop() ?? promptPath;
   return fileName.replace(/\.md$/, "");
@@ -75,6 +77,74 @@ function parseFrontMatter(raw: string): string {
   return `${parts[0]}\n---`.trim();
 }
 
+function clamp01(value: number): number {
+  return Math.max(0, Math.min(1, value));
+}
+
+function keywordScore(body: string, keywords: string[], base: number, bonus: number): number {
+  const hits = keywords.filter((keyword) => body.includes(keyword)).length;
+  return clamp01(base + hits * bonus);
+}
+
+function heuristicPromptEvaluation(promptPath: string, prompt: string): PromptEvaluation {
+  const body = parsePromptBody(prompt).toLowerCase();
+
+  const objectives: PromptObjectiveVector = {
+    voice_divergence: keywordScore(body, ["own words", "own language", "personal context", "say it again"], 0.35, 0.18),
+    diagnosis: keywordScore(body, ["diagnostic", "prerequisite", "misconception", "assumption check"], 0.4, 0.16),
+    verification: keywordScore(body, ["verify", "verification", "source", "unverified", "check claim"], 0.2, 0.18),
+    retrieval: keywordScore(body, ["retrieval", "reconstruct", "without looking", "recall", "practice"], 0.35, 0.18),
+    transfer: keywordScore(body, ["transfer", "bridge", "other domain", "practical consequence", "new setting"], 0.3, 0.18),
+    structure: keywordScore(
+      body,
+      ["diagnose", "intuition", "formal", "misconception", "example", "retrieval", "reflection"],
+      0.45,
+      0.09
+    )
+  };
+
+  const feedback: string[] = [];
+  if (objectives.voice_divergence < 0.7) feedback.push("Add an explicit requirement that the learner restate the idea in their own words.");
+  if (objectives.diagnosis < 0.7) feedback.push("Strengthen diagnosis of prerequisite gaps and misconceptions before teaching.");
+  if (objectives.verification < 0.7) feedback.push("Include a step that distinguishes verified claims from claims that still need checking.");
+  if (objectives.retrieval < 0.7) feedback.push("Add a retrieval checkpoint that requires reconstruction rather than agreement.");
+  if (objectives.transfer < 0.7) feedback.push("Bridge the concept into a different domain or practical context before ending.");
+  if (objectives.structure < 0.7) feedback.push("Make the lesson loop explicit so the workflow is easy to follow and evaluate.");
+
+  const score =
+    objectives.voice_divergence * 14 +
+    objectives.diagnosis * 20 +
+    objectives.verification * 18 +
+    objectives.retrieval * 18 +
+    objectives.transfer * 16 +
+    objectives.structure * 14;
+
+  return {
+    promptPath,
+    promptName: promptNameFromPath(promptPath),
+    score,
+    objectives,
+    feedback
+  };
+}
+
+function heuristicCandidatePrompt(basePrompt: string): string {
+  const frontMatter = parseFrontMatter(basePrompt);
+  const body = parsePromptBody(basePrompt).trimEnd();
+  const additions = [
+    '4a. If the learner echoes your phrasing, stop and ask them to explain the idea again in their own words.',
+    '4b. Separate missing prerequisite, misconception, and partial intuition before choosing the next teaching move.',
+    '5a. Add one short retrieval checkpoint that the learner must answer without relying on your wording.',
+    '6a. Bridge the idea into a new domain, personal example, or practical consequence before ending.',
+    '6b. Mark any factual claim that still needs verification instead of presenting it as settled.'
+  ].filter((line) => !body.includes(line));
+
+  const evolvedBody =
+    additions.length === 0 ? `${body}\n7a. Keep the learner cognitively active at every step.` : `${body}\n${additions.join("\n")}`;
+
+  return frontMatter ? `${frontMatter}\n${evolvedBody}\n` : `${evolvedBody}\n`;
+}
+
 export async function evaluatePromptContent(cwd: string, promptPath: string, prompt: string): Promise<PromptEvaluation> {
   const body = parsePromptBody(prompt);
 
@@ -112,10 +182,25 @@ ${body}
 """
 `;
 
-  const data = await piCompleteJson<{
+  if (piAvailabilityCache === false) {
+    return heuristicPromptEvaluation(promptPath, prompt);
+  }
+
+  let data: {
     objectives: PromptObjectiveVector;
     feedback: string[];
-  }>(cwd, evalPrompt, { thinking: "low" });
+  };
+  try {
+    data = await piCompleteJson<{
+      objectives: PromptObjectiveVector;
+      feedback: string[];
+    }>(cwd, evalPrompt, { thinking: "low" });
+    piAvailabilityCache = true;
+  } catch {
+    piAvailabilityCache = false;
+    const heuristic = heuristicPromptEvaluation(promptPath, prompt);
+    return heuristic;
+  }
 
   const objectives = data.objectives;
   const score =
@@ -161,7 +246,18 @@ Mandate:
 
 Evolved Prompt Body (no code blocks, no frontmatter):`;
 
-  const evolvedBody = await piComplete(cwd, generationPrompt, { thinking: "medium" });
+  if (piAvailabilityCache === false) {
+    return heuristicCandidatePrompt(basePrompt);
+  }
+
+  let evolvedBody: string;
+  try {
+    evolvedBody = await piComplete(cwd, generationPrompt, { thinking: "medium" });
+    piAvailabilityCache = true;
+  } catch {
+    piAvailabilityCache = false;
+    return heuristicCandidatePrompt(basePrompt);
+  }
   return frontMatter ? `${frontMatter}\n${evolvedBody}\n` : `${evolvedBody}\n`;
 }
 

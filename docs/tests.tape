@@ -1,5 +1,5 @@
-# Output docs/assets/tests.gif
-Output docs/assets/tests.gif
+# Output docs/assets/tests.mp4
+Output docs/assets/tests.mp4
 
 # Set Terminal Settings
 Set FontSize 18

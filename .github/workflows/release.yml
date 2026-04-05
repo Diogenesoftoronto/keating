@@ -1,0 +1,115 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - os: linux
+            arch: x64
+            target: x86_64-unknown-linux-gnu
+          - os: darwin
+            arch: x64
+            target: x86_64-apple-darwin
+          - os: darwin
+            arch: arm64
+            target: aarch64-apple-darwin
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Build
+        run: |
+          bun install
+          bun run build
+
+      - name: Create bundle
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          BUNDLE_NAME="keating-${VERSION}-${{ matrix.os }}-${{ matrix.arch }}"
+          mkdir -p bundle
+          cp -r bin dist pi scripts/install bundle/
+          cp package.json bundle/
+          tar -czf "${BUNDLE_NAME}.tar.gz" -C bundle .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: keating-${{ matrix.os }}-${{ matrix.arch }}
+          path: keating-*.tar.gz
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*.tar.gz
+          generate_release_notes: true
+
+  publish-npm:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Build
+        run: |
+          bun install
+          bun run build
+
+      - name: Publish to npm
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+          bun publish --access public
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  deploy-web:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Build web
+        run: |
+          cd web
+          bun install
+          bun run build
+
+      - name: Deploy to Railway
+        run: |
+          # Static site deployment handled by Railway auto-deploy
+          echo "Web build complete - Railway will auto-deploy from dist/"
