@@ -67,9 +67,9 @@ curl -fsSL https://github.com/Diogenesoftoronto/keating/releases/latest/download
 Or with npm/pnpm/bun:
 
 ```bash
-npm install -g @diogenesoftoronto/keating
-pnpm add -g @diogenesoftoronto/keating
-bun add -g @diogenesoftoronto/keating
+npm install -g @interleavelove/keating
+pnpm add -g @interleavelove/keating
+bun add -g @interleavelove/keating
 ```
 
 ### Development
