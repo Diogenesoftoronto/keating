@@ -22,8 +22,19 @@ bun add -g @mariozechner/pi-coding-agent
 ```
 
 ### Install Keating
-Clone the repository and install dependencies:
+Install via npm or use the curl installer:
 
+```bash
+# Using npm
+npm install -g @interleavelove/keating
+
+# Or via curl installer (macOS/Linux)
+curl -fsSL https://raw.githubusercontent.com/Diogenesoftoronto/keating/main/scripts/install/install.sh | bash
+```
+
+Or clone and build from source:
+
+Or clone and build from source:
 ```bash
 git clone https://github.com/Diogenesoftoronto/keating.git
 cd keating
