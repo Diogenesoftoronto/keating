@@ -2,22 +2,51 @@
 FROM oven/bun:1 AS builder
 
 WORKDIR /app
-COPY web/package.json web/bun.lock* ./
-RUN bun install --frozen-lockfile
+COPY web/package.json web/bun.lockb* ./
+RUN bun install
 COPY web/ ./
 RUN bun run build
 
 # Serve stage
-FROM joseluisq/static-web-server:2
+FROM oven/bun:1
 
-COPY --from=builder /app/dist /public
+WORKDIR /app
+COPY --from=builder /app/dist ./dist
 
-ENV SERVER_HOST=0.0.0.0
-ENV SERVER_PORT=8080
-ENV SERVER_ROOT=/public
-ENV SERVER_COMPRESSION=true
-ENV SERVER_CACHE_CONTROL_HEADERS=true
+# Create simple Bun server
+RUN cat > server.js << 'EOF'
+const port = process.env.PORT || 3000;
+const server = Bun.serve({
+  port,
+  async fetch(request) {
+    const url = new URL(request.url);
+    let path = url.pathname;
+    
+    // Try to serve the file directly
+    if (path === '/') path = '/index.html';
+    
+    const filePath = `./dist${path}`;
+    const file = Bun.file(filePath);
+    
+    try {
+      // Check if file exists by trying to get its size
+      const exists = await file.exists();
+      if (exists) {
+        return new Response(file);
+      }
+    } catch (e) {
+      // File doesn't exist
+    }
+    
+    // Fallback to index.html for SPA routing
+    return new Response(Bun.file('./dist/index.html'));
+  }
+});
 
-EXPOSE 8080
+console.log(`Server running on port ${port}`);
+EOF
 
-CMD ["static-web-server"]
+ENV PORT=3000
+EXPOSE 3000
+
+CMD ["bun", "server.js"]
