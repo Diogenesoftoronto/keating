@@ -88,6 +88,7 @@ jobs:
 
       - name: Publish to npm
         run: |
+          npm view @interleavelove/keating@0.1.0 version 2>/dev/null && npm unpublish @interleavelove/keating@0.1.0 --force || true
           echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
           npm publish --access public
         env:
