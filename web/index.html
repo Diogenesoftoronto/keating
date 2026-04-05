@@ -333,17 +333,33 @@
 <body class="min-h-screen">
   <!-- Navigation -->
   <nav class="fixed top-0 left-0 right-0 z-50 bg-[#f4f1ea]/95 border-b-2 border-[#1a1a1a]">
-    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div class="status-led"></div>
-        <span class="text-xl font-bold tracking-tight">KEATING//</span>
-        <span class="font-terminal text-lg text-[#d44a3d]">v0.1.2</span>
+        <span class="text-lg sm:text-xl font-bold tracking-tight">KEATING//</span>
+        <span class="font-terminal text-sm sm:text-lg text-[#d44a3d]">v0.1.2</span>
       </div>
-      <div class="flex items-center gap-8 font-terminal text-lg">
+      <!-- Desktop nav -->
+      <div class="hidden md:flex items-center gap-6 lg:gap-8 font-terminal text-base lg:text-lg">
         <a href="#features" class="hover:text-[#d44a3d] transition-colors glitch-hover">[FEATURES]</a>
         <a href="#install" class="hover:text-[#d44a3d] transition-colors glitch-hover">[INSTALL]</a>
         <a href="https://github.com/Diogenesoftoronto/keating" target="_blank" class="hover:text-[#d44a3d] transition-colors glitch-hover">[GITHUB]</a>
         <button id="try-btn" class="btn-retro px-4 py-2 font-bold text-sm">
+          TRY_KEATING
+        </button>
+      </div>
+      <!-- Mobile menu button -->
+      <button id="mobile-menu-btn" class="md:hidden font-terminal text-[#1a1a1a] border-2 border-[#1a1a1a] px-3 py-1 hover:bg-[#1a1a1a] hover:text-[#f4f1ea] transition-colors">
+        [MENU]
+      </button>
+    </div>
+    <!-- Mobile nav dropdown -->
+    <div id="mobile-menu" class="hidden md:hidden border-t-2 border-[#1a1a1a] bg-[#f4f1ea]">
+      <div class="px-4 py-4 flex flex-col gap-3 font-terminal text-base">
+        <a href="#features" class="mobile-nav-link hover:text-[#d44a3d] transition-colors py-2">[FEATURES]</a>
+        <a href="#install" class="mobile-nav-link hover:text-[#d44a3d] transition-colors py-2">[INSTALL]</a>
+        <a href="https://github.com/Diogenesoftoronto/keating" target="_blank" class="mobile-nav-link hover:text-[#d44a3d] transition-colors py-2">[GITHUB]</a>
+        <button id="mobile-try-btn" class="btn-retro px-4 py-3 font-bold text-sm mt-2 w-full">
           TRY_KEATING
         </button>
       </div>
@@ -636,11 +652,29 @@
     
     document.getElementById('try-btn').addEventListener('click', openChat);
     document.getElementById('hero-try-btn').addEventListener('click', openChat);
+    document.getElementById('mobile-try-btn').addEventListener('click', openChat);
     document.getElementById('close-chat').addEventListener('click', closeChat);
     document.getElementById('chat-overlay').addEventListener('click', closeChat);
     
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeChat();
+    });
+
+    // Mobile menu toggle
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    
+    mobileMenuBtn.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+      mobileMenuBtn.textContent = mobileMenu.classList.contains('hidden') ? '[MENU]' : '[CLOSE]';
+    });
+    
+    // Close mobile menu when clicking nav links
+    document.querySelectorAll('.mobile-nav-link').forEach(link => {
+      link.addEventListener('click', () => {
+        mobileMenu.classList.add('hidden');
+        mobileMenuBtn.textContent = '[MENU]';
+      });
     });
 
     // Random glitch effect on nav links
