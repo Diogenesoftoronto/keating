@@ -12,6 +12,7 @@ FROM joseluisq/static-web-server:2
 
 COPY --from=builder /app/dist /public
 
+ENV SERVER_HOST=0.0.0.0
 ENV SERVER_PORT=8080
 ENV SERVER_ROOT=/public
 ENV SERVER_COMPRESSION=true
