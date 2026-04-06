@@ -200,13 +200,11 @@ const hybridStreamFn = async (model: Model<Api>, context: Context, options?: Sim
 // RENDER
 // ============================================================================
 const renderApp = () => {
-	const app = document.getElementById("app");
-	if (!app) return;
-
-	const appHtml = html`
-		<div class="w-full h-screen flex flex-col bg-background text-foreground overflow-hidden">
-			<!-- Header -->
-			<div class="flex items-center justify-between border-b border-border shrink-0">
+	const headerEl = document.getElementById("header");
+	if (headerEl) {
+		// Render header only once
+		const headerHtml = html`
+			<div class="flex items-center justify-between border-b border-border shrink-0 h-full">
 				<div class="flex items-center gap-2 px-4 py-3">
 					<span class="text-lg font-semibold">${currentTitle}</span>
 				</div>
@@ -221,13 +219,15 @@ const renderApp = () => {
 					})}
 				</div>
 			</div>
+		`;
+		render(headerHtml, headerEl);
+	}
 
-			<!-- Chat Panel -->
-			${chatPanel}
-		</div>
-	`;
-
-	render(appHtml, app);
+	// Append chatPanel to its container (only once)
+	const chatContainer = document.getElementById("chat-container");
+	if (chatContainer && !chatPanel.parentElement) {
+		chatContainer.appendChild(chatPanel);
+	}
 };
 
 // ============================================================================
@@ -290,27 +290,54 @@ const handleModelSelected = async (event: CustomEvent<{ model: string }>) => {
 };
 
 // ============================================================================
+// PRELOAD MODEL
+// ============================================================================
+async function preloadModelIfNeeded() {
+	if (selectedModelId === 'browser' && webGpuAvailable) {
+		const state = localModel.getState();
+		if (!state.loaded && !state.loading) {
+			// Subscribe before loading to catch progress updates
+			const unsubscribe = localModel.subscribe((s) => {
+				if (s.loading && !s.loaded) {
+					window.parent?.postMessage({ type: 'model-loading-start' }, '*');
+				}
+				if (s.loaded) {
+					window.parent?.postMessage({ type: 'model-loading-complete' }, '*');
+					unsubscribe();
+				}
+				if (s.error) {
+					window.parent?.postMessage({ type: 'model-loading-error' }, '*');
+					unsubscribe();
+				}
+				// Forward progress updates
+				if (s.loadingProgress > 0) {
+					window.parent?.postMessage({ 
+						type: 'model-loading-progress', 
+						progress: s.loadingProgress 
+					}, '*');
+				}
+			});
+			await localModel.load();
+		}
+	}
+}
+
+// ============================================================================
 // INIT
 // ============================================================================
 async function initApp() {
 	const app = document.getElementById("app");
-	if (!app) throw new Error("App container not found");
-
-	// Show loading
-	render(
-		html`
-			<div class="w-full h-screen flex items-center justify-center bg-background text-foreground">
-				<div class="text-muted-foreground">Loading Keating...</div>
-			</div>
-		`,
-		app,
-	);
+	const header = document.getElementById("header");
+	if (!app || !header) throw new Error("App containers not found");
 
 	// Check for browser model capability (WebGPU)
 	webGpuAvailable = await checkBrowserModelCapability();
 	
 	// Set initial model based on WebGPU availability
 	selectedModelId = webGpuAvailable ? 'browser' : 'google';
+
+	// Preload model if browser model is available (shows loading UI on homepage once)
+	preloadModelIfNeeded();
 
 	// Create ChatPanel
 	chatPanel = new ChatPanel();
