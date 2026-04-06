@@ -12,7 +12,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
 </head>
 <body>
-  <div id="app"></div>
+  <div id="app" class="w-full h-screen flex flex-col bg-background text-foreground overflow-hidden">
+    <div id="header" class="shrink-0"></div>
+    <div id="chat-container" class="flex-1 overflow-hidden"></div>
+  </div>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

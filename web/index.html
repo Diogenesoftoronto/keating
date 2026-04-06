@@ -638,6 +638,28 @@
     </div>
   </div>
 
+  <!-- Model Loading Overlay (shown once when Gemma 4 is loading) -->
+  <div id="model-loading-overlay" class="fixed inset-0 bg-[#0c0c0c] z-[110] hidden">
+    <div class="absolute inset-0 flex flex-col items-center justify-center font-terminal text-[#00ff00]">
+      <div class="text-lg mb-8 text-center max-w-md px-4">
+        <div class="mb-4">
+          <span class="text-[#d44a3d]">$</span> LOADING Gemma-4-E4B MODEL
+        </div>
+        <div class="text-sm text-[#00ff00]/60">
+          First-time setup downloads ~2GB model to your browser
+        </div>
+      </div>
+      <!-- Progress bar -->
+      <div class="w-64 h-2 bg-[#00ff00]/20 border border-[#00ff00]/50 mb-4">
+        <div id="model-load-progress" class="h-full bg-[#00ff00] transition-all duration-300" style="width: 0%"></div>
+      </div>
+      <div id="model-load-percent" class="text-sm text-[#00ff00]/60">0%</div>
+      <div class="mt-8 text-xs text-[#00ff00]/40">
+        This only happens once • Model cached locally after
+      </div>
+    </div>
+  </div>
+
   <script>
     // Boot sequence
     setTimeout(() => {
@@ -656,6 +678,35 @@
       document.getElementById('chat-modal').classList.add('hidden');
       document.body.style.overflow = '';
     }
+    
+    // Model loading state management
+    const modelLoadingOverlay = document.getElementById('model-loading-overlay');
+    const modelLoadProgress = document.getElementById('model-load-progress');
+    const modelLoadPercent = document.getElementById('model-load-percent');
+    const chatFrame = document.getElementById('chat-frame');
+    let modelLoadShown = localStorage.getItem('keating_model_load_shown') === 'true';
+
+    // Listen for model loading messages from iframe
+    window.addEventListener('message', (event) => {
+      if (event.data.type === 'model-loading-start') {
+        // Show loading overlay only on first load
+        if (!modelLoadShown) {
+          modelLoadingOverlay.classList.remove('hidden');
+        }
+      } else if (event.data.type === 'model-loading-progress') {
+        const progress = event.data.progress;
+        modelLoadProgress.style.width = progress + '%';
+        modelLoadPercent.textContent = progress + '%';
+      } else if (event.data.type === 'model-loading-complete') {
+        localStorage.setItem('keating_model_load_shown', 'true');
+        modelLoadShown = true;
+        modelLoadingOverlay.classList.add('hidden');
+      } else if (event.data.type === 'model-loading-error') {
+        localStorage.setItem('keating_model_load_shown', 'true');
+        modelLoadShown = true;
+        modelLoadingOverlay.classList.add('hidden');
+      }
+    });
     
     document.getElementById('try-btn').addEventListener('click', openChat);
     document.getElementById('hero-try-btn').addEventListener('click', openChat);

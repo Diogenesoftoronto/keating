@@ -80,6 +80,32 @@
       </div>
 
       <div class="space-y-6">
+        <!-- Post: Chat Fix & Loading Animation -->
+        <article class="paper-fold distressed-border p-6 post-card">
+          <div class="flex items-center gap-3 mb-3">
+            <span class="font-terminal text-[#d44a3d]">2025-04-05</span>
+            <span class="text-xs bg-[#10b981]/10 text-[#10b981] px-2 py-1 rounded">FIX</span>
+          </div>
+          <h2 class="text-xl font-bold mb-3">Chat Panel Fix & Model Loading Animation</h2>
+          <p class="mb-4">Fixed the text disappearing issue in the chat panel that occurred after sending messages. Also added a one-time model loading animation when the browser model initializes.</p>
+          
+          <h3 class="font-bold mt-4 mb-2">Bug Fix: Chat Panel Lifecycle</h3>
+          <p class="mb-4">The root cause was Lit re-rendering replacing the ChatPanel element on every state update. Separated the static header from the dynamic chat panel with distinct DOM containers. The header renders via Lit's templating, while the ChatPanel is appended once and never replaced.</p>
+
+          <h3 class="font-bold mt-4 mb-2">New: Model Loading Overlay</h3>
+          <p class="mb-4">When using the browser model (Gemma 4 E4B), a loading overlay now appears on the homepage showing real-time download progress. This only shows once—the first time the model is loaded. Subsequent visits skip the overlay since the model is cached locally.</p>
+          
+          <div class="code-block mb-4">
+<pre>// Model loading state communicated via postMessage
+window.parent.postMessage({ type: 'model-loading-progress', progress: 45 }, '*');
+
+// Parent page shows overlay only once
+const modelLoadShown = localStorage.getItem('keating_model_load_shown') === 'true';</pre>
+          </div>
+          
+          <p class="text-sm text-[#64748b]">The overlay includes a progress bar, percentage display, and explains that the ~2GB download only happens once.</p>
+        </article>
+
         <!-- Post: PWA & Browser Model -->
         <article class="paper-fold distressed-border p-6 post-card">
           <div class="flex items-center gap-3 mb-3">
