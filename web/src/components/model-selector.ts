@@ -17,8 +17,8 @@ const MODEL_OPTIONS = [
   },
   { 
     id: 'google', 
-    name: 'Google Gemini 2.5 Pro', 
-    description: 'Cloud - most capable Gemini', 
+    name: 'Google Gemini 3.1 Pro Preview', 
+    description: 'Cloud - latest Gemini preview', 
     requiresKey: true,
     category: 'cloud'
   },
@@ -39,8 +39,9 @@ const MODEL_OPTIONS = [
 ];
 
 export class KeatingModelSelector extends HTMLElement {
-  private selectedModel: string = 'google';
+  private selectedModel: string = 'browser';
   private localModelState: LocalModel | null = null;
+  private webGpuAvailable: boolean = false;
   private unsubscribe?: () => void;
 
   constructor() {
@@ -48,13 +49,31 @@ export class KeatingModelSelector extends HTMLElement {
     this.attachShadow({ mode: 'open' });
   }
 
-  connectedCallback() {
+  async connectedCallback() {
+    // Check WebGPU availability before subscribing
+    this.webGpuAvailable = await this.checkWebGpu();
+    if (!this.webGpuAvailable) {
+      this.selectedModel = 'google';
+    }
+
     this.unsubscribe = localModel.subscribe(state => {
       this.localModelState = state;
       this.render();
     });
 
     this.render();
+  }
+
+  private async checkWebGpu(): Promise<boolean> {
+    if (!navigator.gpu) {
+      return false;
+    }
+    try {
+      const adapter = await navigator.gpu.requestAdapter();
+      return adapter !== null;
+    } catch {
+      return false;
+    }
   }
 
   disconnectedCallback() {
@@ -279,8 +298,11 @@ export class KeatingModelSelector extends HTMLElement {
     let statusHtml = '';
     let isDisabled = false;
 
-    if (isBrowser && this.localModelState) {
-      if (this.localModelState.loading) {
+    if (isBrowser) {
+      if (!this.webGpuAvailable) {
+        statusHtml = `<div class="status status-error">WebGPU not available</div>`;
+        isDisabled = true;
+      } else if (this.localModelState?.loading) {
         statusHtml = `
           <div class="status status-loading">Loading model... ${this.localModelState.loadingProgress}%</div>
           <div class="progress-bar">
@@ -288,9 +310,9 @@ export class KeatingModelSelector extends HTMLElement {
           </div>
         `;
         isDisabled = true;
-      } else if (this.localModelState.loaded) {
+      } else if (this.localModelState?.loaded) {
         statusHtml = `<div class="status status-loaded">Model ready</div>`;
-      } else if (this.localModelState.error) {
+      } else if (this.localModelState?.error) {
         statusHtml = `<div class="status status-error">Error: ${this.localModelState.error}</div>`;
       }
     }

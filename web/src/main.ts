@@ -1,6 +1,6 @@
 import "@mariozechner/mini-lit/dist/ThemeToggle.js";
 import { Agent, type AgentMessage } from "@mariozechner/pi-agent-core";
-import { getModel } from "@mariozechner/pi-ai";
+import { getModel, streamSimple, type Context, type AssistantMessage, createAssistantMessageEventStream, type SimpleStreamOptions, type Model, type Api } from "@mariozechner/pi-ai";
 import {
 	type AgentState,
 	ApiKeyPromptDialog,
@@ -26,6 +26,7 @@ import { Button } from "@mariozechner/mini-lit/dist/Button.js";
 // Import custom components
 import "./components/model-selector";
 import "./components/settings";
+import { localModel } from "./stores/local-model";
 
 // Storage setup
 const settings = new SettingsStore();
@@ -75,7 +76,125 @@ let isEditingTitle = false;
 let agent: Agent;
 let chatPanel: ChatPanel;
 let agentUnsubscribe: (() => void) | undefined;
-let useBrowserModel = false;
+let selectedModelId: string = 'browser'; // 'browser', 'google', 'anthropic', 'openai', 'local'
+let webGpuAvailable: boolean = false;
+
+// ============================================================================
+// BROWSER MODEL STREAM FUNCTION
+// ============================================================================
+const createBrowserStreamFn = () => {
+	return async (model: Model<Api>, context: Context, options?: SimpleStreamOptions) => {
+		const stream = createAssistantMessageEventStream();
+		const abortSignal = options?.signal;
+
+		// Default assistant message fields for browser model
+		const defaultFields = {
+			api: "browser" as const,
+			provider: "browser" as const,
+			model: "gemma-4-e4b",
+			usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } },
+		};
+
+		// Don't block - run generation asynchronously
+		(async () => {
+			try {
+				if (abortSignal?.aborted) {
+					stream.end({
+						...defaultFields,
+						role: "assistant",
+						content: [],
+						stopReason: "aborted",
+						errorMessage: "Request aborted",
+						timestamp: Date.now(),
+					} as AssistantMessage);
+					return;
+				}
+
+				// Extract user messages and format for local model
+				const userMessages = context.messages
+					.filter((m): m is Extract<typeof m, { role: "user" }> => m.role === "user")
+					.map(m => {
+						const content = m.content;
+						if (typeof content === "string") return content;
+						return content.filter((c): c is Extract<typeof c, { type: "text" }> => c.type === "text").map(c => c.text).join("\n");
+					});
+
+				// Build prompt with system and messages
+				const systemPrompt = context.systemPrompt || "";
+				const conversationHistory = userMessages.join("\n\n");
+				const fullPrompt = systemPrompt ? `${systemPrompt}\n\n${conversationHistory}` : conversationHistory;
+
+				// Create partial assistant message for streaming
+				const partialMessage: AssistantMessage = {
+					...defaultFields,
+					role: "assistant",
+					content: [{ type: "text", text: "" }],
+					stopReason: "stop",
+					timestamp: Date.now(),
+				};
+
+				stream.push({ type: "start", partial: partialMessage });
+
+				// Generate with local model
+				const response = await localModel.generate(fullPrompt, {
+					max_length: options?.maxTokens ?? 1024,
+					temperature: options?.temperature ?? 0.7,
+				}, (token: string) => {
+					// Stream tokens as they arrive
+					const textBlock = partialMessage.content[0];
+					if (textBlock.type === "text") {
+						textBlock.text = textBlock.text + token;
+					}
+					stream.push({ type: "text_start", contentIndex: 0, partial: partialMessage });
+				});
+
+				if (abortSignal?.aborted) {
+					stream.end({
+						...defaultFields,
+						role: "assistant",
+						content: [{ type: "text", text: response }],
+						stopReason: "aborted",
+						errorMessage: "Request aborted",
+						timestamp: Date.now(),
+					} as AssistantMessage);
+					return;
+				}
+
+				// Final message
+				stream.end({
+					...defaultFields,
+					role: "assistant",
+					content: [{ type: "text", text: response }],
+					stopReason: "stop",
+					timestamp: Date.now(),
+				} as AssistantMessage);
+			} catch (error) {
+				const errorMessage = error instanceof Error ? error.message : String(error);
+				stream.end({
+					...defaultFields,
+					role: "assistant",
+					content: [],
+					stopReason: "error",
+					errorMessage,
+					timestamp: Date.now(),
+				} as AssistantMessage);
+			}
+		})();
+
+		return stream;
+	};
+};
+
+// ============================================================================
+// HYBRID STREAM FUNCTION
+// ============================================================================
+const hybridStreamFn = async (model: Model<Api>, context: Context, options?: SimpleStreamOptions) => {
+	if (selectedModelId === 'browser' && webGpuAvailable) {
+		const browserStream = createBrowserStreamFn();
+		return browserStream(model, context, options);
+	}
+	return streamSimple(model, context, options);
+};
 
 // ============================================================================
 // RENDER
@@ -119,10 +238,10 @@ const createAgent = async (initialState?: Partial<AgentState>) => {
 		agentUnsubscribe();
 	}
 
-	// Default to Gemini for cloud, or handle browser model specially
-	const defaultModel = useBrowserModel
-		? getModel("google", "gemini-2.0-flash") // Browser model uses its own inference
-		: getModel("google", "gemini-2.0-pro");
+	// Default model based on selection
+	const defaultModel = selectedModelId === 'browser' && webGpuAvailable
+		? getModel("google", "gemini-3.1-pro-preview") // Placeholder, actual inference via hybridStreamFn
+		: getModel("google", "gemini-3.1-pro-preview");
 
 	agent = new Agent({
 		initialState: initialState || {
@@ -133,6 +252,7 @@ const createAgent = async (initialState?: Partial<AgentState>) => {
 			tools: [],
 		},
 		convertToLlm: defaultConvertToLlm,
+		streamFn: hybridStreamFn,
 	});
 
 	agentUnsubscribe = agent.subscribe((event: any) => {
@@ -146,6 +266,27 @@ const createAgent = async (initialState?: Partial<AgentState>) => {
 			return await ApiKeyPromptDialog.prompt(provider);
 		},
 	});
+};
+
+// ============================================================================
+// MODEL SELECTION
+// ============================================================================
+const handleModelSelected = async (event: CustomEvent<{ model: string }>) => {
+	const newModelId = event.detail.model;
+	
+	// If switching to browser model, ensure it's loaded
+	if (newModelId === 'browser' && webGpuAvailable) {
+		const state = localModel.getState();
+		if (!state.loaded && !state.loading) {
+			await localModel.load();
+		}
+	}
+	
+	selectedModelId = newModelId;
+	
+	// Recreate agent with new model selection
+	const currentState = agent?.state;
+	await createAgent(currentState);
 };
 
 // ============================================================================
@@ -166,10 +307,19 @@ async function initApp() {
 	);
 
 	// Check for browser model capability (WebGPU)
-	useBrowserModel = await checkBrowserModelCapability();
+	webGpuAvailable = await checkBrowserModelCapability();
+	
+	// Set initial model based on WebGPU availability
+	selectedModelId = webGpuAvailable ? 'browser' : 'google';
 
 	// Create ChatPanel
 	chatPanel = new ChatPanel();
+
+	// Listen for model selection events
+	document.addEventListener('model-selected', ((event: Event) => {
+		const customEvent = event as CustomEvent<{ model: string }>;
+		handleModelSelected(customEvent);
+	}) as EventListener);
 
 	// Create agent
 	await createAgent();
