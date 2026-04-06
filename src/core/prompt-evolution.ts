@@ -202,6 +202,11 @@ ${body}
     return heuristic;
   }
 
+  // Guard against missing objectives in response
+  if (!data?.objectives) {
+    return heuristicPromptEvaluation(promptPath, prompt);
+  }
+
   const objectives = data.objectives;
   const score =
     objectives.voice_divergence * 14 +

@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Blog - Keating</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.svg">
+  <meta name="theme-color" content="#f4f1ea">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=VT323&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -46,6 +48,14 @@
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
+    .code-block {
+      background: #1a1a1a;
+      color: #f4f1ea;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      font-size: 0.85rem;
+      overflow-x: auto;
+    }
   </style>
 </head>
 <body class="min-h-screen">
@@ -70,7 +80,74 @@
       </div>
 
       <div class="space-y-6">
-        <!-- Post 1 -->
+        <!-- Post: PWA & Browser Model -->
+        <article class="paper-fold distressed-border p-6 post-card">
+          <div class="flex items-center gap-3 mb-3">
+            <span class="font-terminal text-[#d44a3d]">2025-04-05</span>
+            <span class="text-xs bg-[#10b981]/10 text-[#10b981] px-2 py-1 rounded">FEATURE</span>
+            <span class="text-xs bg-[#6366f1]/10 text-[#6366f1] px-2 py-1 rounded">PWA</span>
+          </div>
+          <h2 class="text-xl font-bold mb-3">Installable PWA with Full Browser Model Integration</h2>
+          <p class="mb-4">Keating is now a fully installable Progressive Web App. Install it from your browser and run it offline with the browser model. The WebGPU-powered Gemma 4 E4B model streams tokens in real-time directly in your browser.</p>
+          
+          <h3 class="font-bold mt-4 mb-2">Key Changes</h3>
+          <ul class="text-sm space-y-2 ml-4 mb-4">
+            <li><strong>Browser Model → Agent:</strong> The local Gemma model is now fully wired into the Agent infrastructure. Token streaming works via a custom stream function that dispatches between WebGPU and cloud providers.</li>
+            <li><strong>Automatic Fallback:</strong> On load, the app checks for WebGPU support. If unavailable, it automatically falls back to <code class="bg-[#1a1a1a] text-[#f4f1ea] px-1 rounded">gemini-3.1-pro-preview</code>.</li>
+            <li><strong>Model Selector:</strong> The model selector now shows WebGPU status in real-time. Browser option is disabled with a clear message when WebGPU isn't available.</li>
+            <li><strong>PWA Manifest:</strong> Added service worker with intelligent caching for WASM files and model weights from HuggingFace CDN.</li>
+          </ul>
+
+          <h3 class="font-bold mt-4 mb-2">How It Works</h3>
+          <div class="code-block mb-4">
+<pre>// Hybrid stream function dispatches based on model selection
+const hybridStreamFn = async (model, context, options) => {
+  if (selectedModelId === 'browser' && webGpuAvailable) {
+    return createBrowserStreamFn()(model, context, options);
+  }
+  return streamSimple(model, context, options);
+};</pre>
+          </div>
+
+          <p class="text-sm text-[#64748b]">Install: Visit keating.help in Chrome/Edge and click "Install" in the address bar, or use the browser's menu → "Install app".</p>
+        </article>
+
+        <!-- Post: Cloud Model Update -->
+        <article class="paper-fold distressed-border p-6 post-card">
+          <div class="flex items-center gap-3 mb-3">
+            <span class="font-terminal text-[#d44a3d]">2025-04-05</span>
+            <span class="text-xs bg-[#d97706]/10 text-[#d97706] px-2 py-1 rounded">UPDATE</span>
+          </div>
+          <h2 class="text-xl font-bold mb-3">Default Cloud Model: Gemini 3.1 Pro Preview</h2>
+          <p class="mb-4">Updated the default cloud model from <code class="bg-[#1a1a1a] text-[#f4f1ea] px-1 rounded">gemini-2.5-pro</code> to <code class="bg-[#1a1a1a] text-[#f4f1ea] px-1 rounded">gemini-3.1-pro-preview</code>. This gives access to the latest Gemini capabilities when WebGPU is unavailable.</p>
+          <p class="text-sm text-[#64748b]">The model selector UI has been updated to reflect this change, showing "Gemini 3.1 Pro Preview" instead of the previous version.</p>
+        </article>
+
+        <!-- Post: WebGPU Detection -->
+        <article class="paper-fold distressed-border p-6 post-card">
+          <div class="flex items-center gap-3 mb-3">
+            <span class="font-terminal text-[#d44a3d]">2025-04-05</span>
+            <span class="text-xs bg-[#6366f1]/10 text-[#6366f1] px-2 py-1 rounded">TECH</span>
+          </div>
+          <h2 class="text-xl font-bold mb-3">Robust WebGPU Detection</h2>
+          <p class="mb-4">The model selector now performs async WebGPU detection before rendering. This prevents the UI from showing the browser option when it won't actually work.</p>
+          
+          <div class="code-block mb-4">
+<pre>async checkWebGpu(): Promise&lt;boolean&gt; {
+  if (!navigator.gpu) return false;
+  try {
+    const adapter = await navigator.gpu.requestAdapter();
+    return adapter !== null;
+  } catch {
+    return false;
+  }
+}</pre>
+          </div>
+          
+          <p class="text-sm text-[#64748b]">If WebGPU is unavailable, the browser model option shows "WebGPU not available" and is grayed out.</p>
+        </article>
+
+        <!-- Post 1: Original WebGPU -->
         <article class="paper-fold distressed-border p-6 post-card">
           <div class="flex items-center gap-3 mb-3">
             <span class="font-terminal text-[#d44a3d]">2025-01-15</span>
@@ -81,7 +158,7 @@
           <p class="text-sm text-[#64748b]">Requires Chrome 113+ or Edge 113+ with WebGPU support. Model size: ~5GB cached locally.</p>
         </article>
 
-        <!-- Post 2 -->
+        <!-- Post 2: Initial Release -->
         <article class="paper-fold distressed-border p-6 post-card">
           <div class="flex items-center gap-3 mb-3">
             <span class="font-terminal text-[#d44a3d]">2025-01-10</span>
@@ -97,7 +174,7 @@
           </ul>
         </article>
 
-        <!-- Post 3 -->
+        <!-- Post 3: Philosophy -->
         <article class="paper-fold distressed-border p-6 post-card">
           <div class="flex items-center gap-3 mb-3">
             <span class="font-terminal text-[#d44a3d]">2025-01-05</span>

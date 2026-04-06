@@ -16,8 +16,10 @@
     "katex": "^0.16.44"
   },
   "devDependencies": {
+    "tailwindcss": "^4.0.0",
     "typescript": "^5.7.0",
     "vite": "^5.4.0",
-    "tailwindcss": "^4.0.0"
+    "vite-plugin-pwa": "^1.2.0",
+    "workbox-window": "^7.4.0"
   }
 }
