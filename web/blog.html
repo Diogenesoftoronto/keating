@@ -80,6 +80,25 @@
       </div>
 
       <div class="space-y-6">
+        <!-- Post: Synthetic Provider Release -->
+        <article class="paper-fold distressed-border p-6 post-card">
+          <div class="flex items-center gap-3 mb-3">
+            <span class="font-terminal text-[#d44a3d]">2026-04-09</span>
+            <span class="text-xs bg-[#10b981]/10 text-[#10b981] px-2 py-1 rounded">RELEASE</span>
+          </div>
+          <h2 class="text-xl font-bold mb-3">v0.1.3 - Synthetic Provider Support and Mobile UI Polish</h2>
+          <p class="mb-4">Keating now exposes Synthetic as a first-class custom provider in the Pi settings flow. The provider is configured as an OpenAI-compatible endpoint at <code class="bg-[#1a1a1a] text-[#f4f1ea] px-1 rounded">https://api.synthetic.new/openai/v1</code>, with matching setup guidance in the tutorial.</p>
+
+          <h3 class="font-bold mt-4 mb-2">Key Changes</h3>
+          <ul class="text-sm space-y-2 ml-4 mb-4">
+            <li><strong>Synthetic Provider:</strong> Added a dedicated custom-provider entry so users can select Synthetic directly from the provider picker.</li>
+            <li><strong>Setup Guide:</strong> Updated <code class="bg-[#1a1a1a] text-[#f4f1ea] px-1 rounded">web/tutorial.html</code> with the exact provider name, type, and base URL.</li>
+            <li><strong>Mobile Polish:</strong> Increased touch targets and spacing across the homepage, model selector, settings dialog, and install tabs.</li>
+          </ul>
+
+          <p class="text-sm text-[#64748b]">This release keeps the UI consistent with the current provider flow while making the browser experience less cramped on small screens.</p>
+        </article>
+
         <!-- Post: Chat Fix & Loading Animation -->
         <article class="paper-fold distressed-border p-6 post-card">
           <div class="flex items-center gap-3 mb-3">
