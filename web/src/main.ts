@@ -15,6 +15,7 @@ import {
 	setAppStorage,
 	defaultConvertToLlm,
 	ProxyTab,
+	ModelSelector,
 	ProvidersModelsTab,
 } from "@mariozechner/pi-web-ui";
 import { html, render } from "lit";
@@ -78,6 +79,27 @@ let chatPanel: ChatPanel;
 let agentUnsubscribe: (() => void) | undefined;
 let selectedModelId: string = 'browser'; // 'browser', 'google', 'anthropic', 'openai', 'local'
 let webGpuAvailable: boolean = false;
+
+const BROWSER_MODEL: Model<Api> = {
+	id: "gemma-4-e4b",
+	name: "Gemma 4 E4B (Browser)",
+	api: "browser" as Api,
+	provider: "browser",
+	baseUrl: "",
+	reasoning: false,
+	input: ["text"],
+	cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+	contextWindow: 0,
+	maxTokens: 0,
+};
+
+const createInitialModel = (): Model<Api> => {
+	if (selectedModelId === "browser" && webGpuAvailable) {
+		return BROWSER_MODEL;
+	}
+
+	return getModel("google", "gemini-3.1-pro-preview");
+};
 
 // ============================================================================
 // BROWSER MODEL STREAM FUNCTION
@@ -189,7 +211,7 @@ const createBrowserStreamFn = () => {
 // HYBRID STREAM FUNCTION
 // ============================================================================
 const hybridStreamFn = async (model: Model<Api>, context: Context, options?: SimpleStreamOptions) => {
-	if (selectedModelId === 'browser' && webGpuAvailable) {
+	if (model.provider === "browser") {
 		const browserStream = createBrowserStreamFn();
 		return browserStream(model, context, options);
 	}
@@ -238,19 +260,17 @@ const createAgent = async (initialState?: Partial<AgentState>) => {
 		agentUnsubscribe();
 	}
 
-	// Default model based on selection
-	const defaultModel = selectedModelId === 'browser' && webGpuAvailable
-		? getModel("google", "gemini-3.1-pro-preview") // Placeholder, actual inference via hybridStreamFn
-		: getModel("google", "gemini-3.1-pro-preview");
+	const nextInitialState: Partial<AgentState> = {
+		systemPrompt: KEATING_SYSTEM_PROMPT,
+		model: initialState?.model ?? createInitialModel(),
+		thinkingLevel: "medium",
+		messages: [],
+		tools: [],
+		...initialState,
+	};
 
 	agent = new Agent({
-		initialState: initialState || {
-			systemPrompt: KEATING_SYSTEM_PROMPT,
-			model: defaultModel,
-			thinkingLevel: "medium",
-			messages: [],
-			tools: [],
-		},
+		initialState: nextInitialState,
 		convertToLlm: defaultConvertToLlm,
 		streamFn: hybridStreamFn,
 	});
@@ -263,7 +283,15 @@ const createAgent = async (initialState?: Partial<AgentState>) => {
 
 	await chatPanel.setAgent(agent, {
 		onApiKeyRequired: async (provider: string) => {
+			if (provider === "browser") return true;
 			return await ApiKeyPromptDialog.prompt(provider);
+		},
+		onModelSelect: () => {
+			ModelSelector.open(agent.state.model, (model) => {
+				selectedModelId = model.provider as string;
+				agent.state.model = model;
+				chatPanel.agentInterface?.requestUpdate();
+			});
 		},
 	});
 };
