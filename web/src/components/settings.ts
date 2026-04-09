@@ -73,10 +73,13 @@ export class KeatingSettings extends HTMLElement {
           font-weight: 500;
         }
         input {
-          padding: 0.5rem 0.75rem;
+          padding: 0.75rem 1rem;
           border: 1px solid #e2e8f0;
           border-radius: 0.375rem;
-          font-size: 0.875rem;
+          font-size: 16px;
+          min-height: 44px;
+          width: 100%;
+          box-sizing: border-box;
         }
         input:focus {
           outline: none;
@@ -90,16 +93,26 @@ export class KeatingSettings extends HTMLElement {
         .buttons {
           display: flex;
           justify-content: flex-end;
-          gap: 0.5rem;
+          gap: 0.75rem;
           margin-top: 1.5rem;
         }
+        @media (max-width: 480px) {
+          .buttons {
+            flex-direction: column;
+          }
+          .buttons button {
+            width: 100%;
+          }
+        }
         button {
-          padding: 0.5rem 1rem;
+          padding: 0.75rem 1.25rem;
           border-radius: 0.5rem;
           border: 1px solid #e2e8f0;
           background: white;
           cursor: pointer;
           font-size: 0.875rem;
+          min-height: 44px;
+          min-width: 44px;
         }
         button:hover {
           background: #f8fafc;

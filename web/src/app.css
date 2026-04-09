@@ -20,3 +20,104 @@
   padding: 0.25rem 0.5rem;
   border-radius: 9999px;
 }
+
+/* Mobile-friendly improvements for Pi Mono UI */
+@media (max-width: 768px) {
+  /* Larger touch targets for buttons */
+  button,
+  [role="button"],
+  .btn {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+  }
+
+  /* Larger input fields */
+  input,
+  textarea,
+  select {
+    min-height: 44px;
+    font-size: 16px; /* Prevents iOS zoom on focus */
+    padding: 0.75rem;
+  }
+
+  /* Increase spacing between interactive elements */
+  .gap-1 { gap: 0.5rem !important; }
+  .gap-2 { gap: 0.75rem !important; }
+  .gap-3 { gap: 1rem !important; }
+
+  /* Larger header text */
+  header .text-lg {
+    font-size: 1.125rem;
+  }
+
+  /* Full-width buttons in modal/dialog contexts */
+  dialog button,
+  [role="dialog"] button {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Increase padding in chat input area */
+  .chat-input,
+  [class*="input"] {
+    padding: 1rem;
+  }
+
+  /* Larger icons in buttons */
+  button svg,
+  [role="button"] svg {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  /* Improve spacing in settings panels */
+  .settings-panel,
+  [class*="settings"] {
+    padding: 1.5rem;
+  }
+
+  /* Make dropdowns more touch-friendly */
+  select,
+  [role="combobox"] {
+    min-height: 48px;
+    padding: 0.75rem 2.5rem 0.75rem 1rem;
+  }
+
+  /* Increase tap target for close buttons */
+  .close-btn,
+  [aria-label="close"],
+  button[title="Close"] {
+    min-width: 48px;
+    min-height: 48px;
+    padding: 0.75rem;
+  }
+}
+
+/* Additional mobile optimizations for small screens */
+@media (max-width: 480px) {
+  /* Even larger touch targets on very small screens */
+  button,
+  [role="button"] {
+    min-height: 48px;
+    padding: 0.875rem 1.25rem;
+  }
+
+  /* Ensure text is readable */
+  body {
+    font-size: 16px;
+  }
+
+  /* Stack buttons vertically */
+  .button-group,
+  [class*="button-group"] {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .button-group button,
+  [class*="button-group"] button {
+    width: 100%;
+  }
+}

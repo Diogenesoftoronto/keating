@@ -140,11 +140,12 @@ export class KeatingModelSelector extends HTMLElement {
           display: flex;
           align-items: flex-start;
           gap: 0.75rem;
-          padding: 0.75rem 1rem;
+          padding: 1rem 1rem;
           border: 2px solid #e2e8f0;
           border-radius: 0.375rem;
           cursor: pointer;
           transition: all 0.15s;
+          min-height: 44px;
         }
         .model-option:hover:not(.disabled) {
           border-color: #6366f1;
@@ -221,20 +222,38 @@ export class KeatingModelSelector extends HTMLElement {
         .buttons {
           display: flex;
           justify-content: flex-end;
-          gap: 0.5rem;
+          gap: 0.75rem;
           margin-top: 1.25rem;
           padding-top: 1rem;
           border-top: 1px solid #e2e8f0;
         }
+        @media (max-width: 480px) {
+          .dialog {
+            width: 95%;
+            padding: 1.25rem;
+            max-height: 90vh;
+          }
+          .buttons {
+            flex-direction: column;
+          }
+          .buttons button {
+            width: 100%;
+          }
+          .model-option {
+            padding: 1rem 0.875rem;
+          }
+        }
         button {
-          padding: 0.5rem 1rem;
+          padding: 0.75rem 1.25rem;
           border-radius: 0.375rem;
           border: 2px solid #1a1a1a;
           background: #f4f1ea;
           cursor: pointer;
-          font-size: 0.85rem;
+          font-size: 0.875rem;
           font-family: inherit;
           transition: all 0.15s;
+          min-height: 44px;
+          min-width: 44px;
         }
         button:hover {
           background: #1a1a1a;
