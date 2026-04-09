@@ -80,6 +80,25 @@
       </div>
 
       <div class="space-y-6">
+        <!-- Post: Model Selector Fix -->
+        <article class="paper-fold distressed-border p-6 post-card">
+          <div class="flex items-center gap-3 mb-3">
+            <span class="font-terminal text-[#d44a3d]">2026-04-09</span>
+            <span class="text-xs bg-[#d97706]/10 text-[#d97706] px-2 py-1 rounded">FIX</span>
+          </div>
+          <h2 class="text-xl font-bold mb-3">Chat Model Selector Now Reflects the Actual Choice</h2>
+          <p class="mb-4">Fixed the web UI bug where the chat window kept showing <code class="bg-[#1a1a1a] text-[#f4f1ea] px-1 rounded">gemini-3.1-pro-preview</code> even after picking a different model. The selected model now updates the agent state directly, so the chat button and the runtime stay in sync.</p>
+
+          <h3 class="font-bold mt-4 mb-2">What Changed</h3>
+          <ul class="text-sm space-y-2 ml-4 mb-4">
+            <li><strong>State Sync:</strong> Selecting a model now writes the chosen model back into the active agent state instead of leaving the old Gemini placeholder in place.</li>
+            <li><strong>Immediate Rerender:</strong> The model button in the chat window refreshes as soon as a new model is chosen.</li>
+            <li><strong>Browser Path:</strong> The local browser model is now represented as a real model object, so the UI can display it explicitly instead of pretending everything is Gemini.</li>
+          </ul>
+
+          <p class="text-sm text-[#64748b]">This fixes the mismatch between the picker and the chat header, which made it look like model changes were being ignored.</p>
+        </article>
+
         <!-- Post: Synthetic Provider Release -->
         <article class="paper-fold distressed-border p-6 post-card">
           <div class="flex items-center gap-3 mb-3">
