@@ -20,4 +20,10 @@ export default defineNitroConfig({
       maxAge: 60 * 60 * 24 * 365, // 1 year for hashed assets
     },
   ],
+  handlers: [
+    {
+      route: "/api/chat-proxy/**",
+      handler: "server/api/chat-proxy/[...slug].post.ts",
+    },
+  ],
 });
