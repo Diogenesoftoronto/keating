@@ -12,6 +12,12 @@ export default defineNitroConfig({
     "/**/*.ico": { fallthrough: false },
     "/**/*.wasm": { fallthrough: false },
     "/**/*.onnx": { fallthrough: false },
-    "/": { prerender: true },
-  }
+    "/**": { static: true },
+  },
+  publicAssets: [
+    {
+      dir: "dist",
+      maxAge: 60 * 60 * 24 * 365, // 1 year for hashed assets
+    },
+  ],
 });
