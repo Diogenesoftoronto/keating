@@ -33,7 +33,8 @@
     "dist/",
     "pi/",
     "scripts/install/",
-    "SYSTEM.md"
+    "SYSTEM.md",
+    "web/dist/"
   ],
   "pi": {
     "extensions": [
@@ -47,13 +48,18 @@
     ]
   },
   "scripts": {
-    "build": "bun x tsc -p tsconfig.json",
+    "build": "bun x tsc -p tsconfig.json && cd web && bun run build",
     "test": "bun test ./test/*.test.ts",
-    "prepack": "bun x tsc -p tsconfig.json"
+    "prepack": "bun run build"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "dotenv": "^17.4.0",
-    "manim-web": "^0.3.16"
+    "h3": "^2.0.1-rc.20",
+    "manim-web": "^0.3.16",
+    "nitro": "^3.0.260311-beta"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0"
   }
 }

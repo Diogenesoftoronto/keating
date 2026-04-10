@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Web app converted to React with Keating browser tools integration
 - Model selector rewritten with dynamic provider discovery
+- **Migrated to Nitro + Vite** for a high-performance, runtime-agnostic server engine.
 
 ### Added
 - `web:build` and `web:preview` tasks for production builds

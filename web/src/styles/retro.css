@@ -360,3 +360,19 @@
   background: var(--ink);
   color: var(--paper);
 }
+
+/* Custom utility classes to replace arbitrary Tailwind classes that don't compile */
+.bg-paper { background-color: var(--paper); }
+.bg-ink { background-color: var(--ink); }
+.text-paper { color: var(--paper); }
+.text-ink { color: var(--ink); }
+.border-ink { border-color: var(--ink); }
+.text-accent { color: var(--accent); }
+.border-paper-20 { border-color: rgba(244, 241, 234, 0.2); }
+.text-paper-60 { color: rgba(244, 241, 234, 0.6); }
+.text-paper-80 { color: rgba(244, 241, 234, 0.8); }
+.bg-paper-95 { background-color: var(--paper); } /* Made opaque to fix overlap */
+.border-green-30 { border-color: rgba(0, 255, 0, 0.3); }
+.border-green-50 { border-color: rgba(0, 255, 0, 0.5); }
+.bg-green-30 { background-color: rgba(0, 255, 0, 0.3); }
+.bg-ink-20 { background-color: rgba(26, 26, 26, 0.2); }

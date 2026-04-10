@@ -19,6 +19,7 @@ import {
   verifyTopicArtifact
 } from "../core/project.js";
 import { detectPiRuntime, launchPi } from "../runtime/pi.js";
+import { serveWeb } from "./web.js";
 
 function printUsage(): void {
   console.log(`keating commands:
@@ -35,6 +36,7 @@ function printUsage(): void {
   policy                      Print the active policy
   trace [substring]           List persisted debug traces and artifacts
   doctor                      Inspect Pi/Feynman and oxdraw availability
+  web [port]                  Start a local server for the browser UI
 `);
 }
 
@@ -43,6 +45,11 @@ async function run(): Promise<void> {
   const cwd = process.cwd();
 
   switch (command) {
+    case "web": {
+      const port = args[0] ? parseInt(args[0], 10) : 3000;
+      await serveWeb(port);
+      return;
+    }
     case "shell": {
       const exitCode = await launchPi(cwd, args);
       process.exitCode = exitCode;
