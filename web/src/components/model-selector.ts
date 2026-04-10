@@ -184,8 +184,17 @@ export class KeatingModelSelector extends HTMLElement {
 	private bindEvents() {
 		this.shadowRoot?.querySelector("#cancel")?.addEventListener("click", () => this.remove());
 		this.shadowRoot?.querySelector("#search")?.addEventListener("input", (event) => {
-			this.searchQuery = (event.target as HTMLInputElement).value;
+			const input = event.target as HTMLInputElement;
+			this.searchQuery = input.value;
+			const cursorPos = input.selectionStart ?? this.searchQuery.length;
 			this.render();
+			// render() replaces the entire shadow DOM, destroying the focused input.
+			// Restore focus and cursor position on the newly created input.
+			const newInput = this.shadowRoot?.querySelector<HTMLInputElement>("#search");
+			if (newInput) {
+				newInput.focus();
+				newInput.setSelectionRange(cursorPos, cursorPos);
+			}
 		});
 		this.shadowRoot?.querySelector("#refresh")?.addEventListener("click", async () => {
 			await this.loadModels();

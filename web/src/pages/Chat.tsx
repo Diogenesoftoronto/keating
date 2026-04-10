@@ -11,7 +11,7 @@ import "../components/settings";
 
 export function Chat() {
   const chatPanelRef = useRef<ChatPanel>(null);
-  const { title, openSettings } = useKeatingAgent(chatPanelRef);
+  const { title, openSettings, ready } = useKeatingAgent(chatPanelRef);
 
   return (
     <div className="w-full h-screen flex flex-col bg-background text-foreground overflow-hidden">
@@ -30,10 +30,18 @@ export function Chat() {
         </div>
       </div>
 
-      {/* Chat panel — @lit/react handles the DOM lifecycle */}
+      {/* Loading placeholder — shown while agent initialises */}
+      {!ready && (
+        <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
+          Initializing…
+        </div>
+      )}
+
+      {/* Chat panel — kept in DOM from mount so setAgent can be called via ref.
+          Hidden (not removed) until ready to avoid the uninitialized-state flash. */}
       <ChatPanelComponent
         ref={chatPanelRef}
-        style={{ flex: 1, overflow: "hidden", display: "block" }}
+        style={{ flex: 1, overflow: "hidden", display: ready ? "block" : "none" }}
       />
     </div>
   );
