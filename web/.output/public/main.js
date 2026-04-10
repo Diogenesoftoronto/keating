@@ -1,7 +1,8 @@
-import React, { Suspense, use, useCallback, useEffect, useRef, useState, useTransition } from "react";
+import React, { Suspense, use, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import ReactDOM from "react-dom/client";
 import { Link, Outlet, RouterProvider, createHashHistory, createRootRoute, createRoute, createRouter, useNavigate } from "@tanstack/react-router";
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
+import { layoutWithLines, prepareWithSegments } from "@chenglou/pretext";
 import { Download, FileText, Settings } from "lucide-react";
 import { Agent } from "@mariozechner/pi-agent-core";
 import { createAssistantMessageEventStream, getModel, getModels, getProviders, streamSimple } from "@mariozechner/pi-ai";
@@ -20,119 +21,62 @@ import "@mariozechner/mini-lit/dist/ThemeToggle.js";
 function Nav({ showFeatures = false }) {
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const navigate = useNavigate();
-	const closeMobile = () => setMobileOpen(false);
-	return /* @__PURE__ */ jsxs("nav", {
+	return /* @__PURE__ */ jsx("nav", {
 		className: "fixed top-0 left-0 right-0 z-50 bg-[#f4f1ea] border-b-2 border-[#1a1a1a]",
-		children: [/* @__PURE__ */ jsxs("div", {
+		children: /* @__PURE__ */ jsxs("div", {
 			className: "max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between",
-			children: [
-				/* @__PURE__ */ jsxs(Link, {
-					to: "/",
-					className: "flex items-center gap-3",
-					children: [
-						/* @__PURE__ */ jsx("div", { className: "status-led" }),
-						/* @__PURE__ */ jsx("span", {
-							className: "text-lg sm:text-xl font-bold tracking-tight",
-							children: "KEATING//"
-						}),
-						/* @__PURE__ */ jsx("span", {
-							className: "font-terminal text-sm sm:text-lg text-[#d44a3d]",
-							children: "v0.1.4"
-						})
-					]
-				}),
-				/* @__PURE__ */ jsxs("div", {
-					className: "hidden md:flex items-center gap-6 lg:gap-8 font-terminal text-base lg:text-lg",
-					children: [
-						showFeatures && /* @__PURE__ */ jsx("a", {
-							href: "#features",
-							className: "hover:text-[#d44a3d] transition-colors glitch-hover",
-							children: "[FEATURES]"
-						}),
-						/* @__PURE__ */ jsx(Link, {
-							to: "/tutorial",
-							className: "hover:text-[#d44a3d] transition-colors glitch-hover",
-							children: "[TUTORIAL]"
-						}),
-						/* @__PURE__ */ jsx(Link, {
-							to: "/blog",
-							className: "hover:text-[#d44a3d] transition-colors glitch-hover",
-							children: "[BLOG]"
-						}),
-						/* @__PURE__ */ jsx(Link, {
-							to: "/paper",
-							className: "hover:text-[#d44a3d] transition-colors glitch-hover",
-							children: "[PAPER]"
-						}),
-						/* @__PURE__ */ jsx("a", {
-							href: "https://github.com/Diogenesoftoronto/keating",
-							target: "_blank",
-							rel: "noreferrer",
-							className: "hover:text-[#d44a3d] transition-colors glitch-hover",
-							children: "[GITHUB]"
-						}),
-						/* @__PURE__ */ jsx("button", {
-							className: "btn-retro px-4 py-2 font-bold text-sm min-h-[44px]",
-							onClick: () => navigate({ to: "/chat" }),
-							children: "TRY_KEATING"
-						})
-					]
-				}),
-				/* @__PURE__ */ jsx("button", {
-					className: "md:hidden font-terminal text-[#1a1a1a] border-2 border-[#1a1a1a] px-4 py-2 min-h-[44px] min-w-[44px] hover:bg-[#1a1a1a] hover:text-[#f4f1ea] transition-colors text-lg",
-					onClick: () => setMobileOpen((o) => !o),
-					children: mobileOpen ? "[CLOSE]" : "[MENU]"
-				})
-			]
-		}), mobileOpen && /* @__PURE__ */ jsx("div", {
-			className: "md:hidden border-t-2 border-[#1a1a1a] bg-[#f4f1ea] overflow-y-auto",
-			style: { maxHeight: "calc(100dvh - 56px)" },
-			children: /* @__PURE__ */ jsxs("div", {
-				className: "px-4 py-4 flex flex-col gap-2 font-terminal text-base",
+			children: [/* @__PURE__ */ jsxs(Link, {
+				to: "/",
+				className: "flex items-center gap-3",
+				children: [
+					/* @__PURE__ */ jsx("div", { className: "status-led" }),
+					/* @__PURE__ */ jsx("span", {
+						className: "text-lg sm:text-xl font-bold tracking-tight",
+						children: "KEATING//"
+					}),
+					/* @__PURE__ */ jsx("span", {
+						className: "font-terminal text-sm sm:text-lg text-[#d44a3d]",
+						children: "v0.1.4"
+					})
+				]
+			}), /* @__PURE__ */ jsxs("div", {
+				className: "flex items-center gap-2 sm:gap-4 md:gap-6 lg:gap-8 font-terminal text-[10px] xs:text-xs sm:text-sm md:text-base lg:text-lg",
 				children: [
 					showFeatures && /* @__PURE__ */ jsx("a", {
 						href: "#features",
-						className: "hover:text-[#d44a3d] transition-colors py-3 px-2 min-h-[48px] flex items-center",
-						onClick: closeMobile,
+						className: "hidden sm:block hover:text-[#d44a3d] transition-colors glitch-hover",
 						children: "[FEATURES]"
 					}),
 					/* @__PURE__ */ jsx(Link, {
 						to: "/tutorial",
-						className: "hover:text-[#d44a3d] transition-colors py-3 px-2 min-h-[48px] flex items-center",
-						onClick: closeMobile,
+						className: "hover:text-[#d44a3d] transition-colors glitch-hover",
 						children: "[TUTORIAL]"
 					}),
 					/* @__PURE__ */ jsx(Link, {
 						to: "/blog",
-						className: "hover:text-[#d44a3d] transition-colors py-3 px-2 min-h-[48px] flex items-center",
-						onClick: closeMobile,
+						className: "hover:text-[#d44a3d] transition-colors glitch-hover",
 						children: "[BLOG]"
 					}),
 					/* @__PURE__ */ jsx(Link, {
 						to: "/paper",
-						className: "hover:text-[#d44a3d] transition-colors py-3 px-2 min-h-[48px] flex items-center",
-						onClick: closeMobile,
+						className: "hover:text-[#d44a3d] transition-colors glitch-hover",
 						children: "[PAPER]"
 					}),
 					/* @__PURE__ */ jsx("a", {
 						href: "https://github.com/Diogenesoftoronto/keating",
 						target: "_blank",
 						rel: "noreferrer",
-						className: "hover:text-[#d44a3d] transition-colors py-3 px-2 min-h-[48px] flex items-center",
-						onClick: closeMobile,
+						className: "hidden md:block hover:text-[#d44a3d] transition-colors glitch-hover",
 						children: "[GITHUB]"
 					}),
 					/* @__PURE__ */ jsx("button", {
-						className: "btn-retro px-4 py-4 font-bold text-base mt-2 w-full min-h-[48px]",
-						onClick: () => {
-							closeMobile();
-							navigate({ to: "/chat" });
-						},
+						className: "btn-retro px-2 py-1 sm:px-4 sm:py-2 font-bold text-[10px] sm:text-sm min-h-[32px] sm:min-h-[44px]",
+						onClick: () => navigate({ to: "/chat" }),
 						children: "TRY_KEATING"
 					})
 				]
-			})
-		})]
+			})]
+		})
 	});
 }
 //#endregion
@@ -266,6 +210,71 @@ function BootSequence() {
 	});
 }
 //#endregion
+//#region src/components/Pretext.tsx
+function Pretext({ text, font = "16px \"Inter\", sans-serif", lineHeight = 24, className = "", justify = true }) {
+	const containerRef = useRef(null);
+	const [width, setWidth] = useState(0);
+	useEffect(() => {
+		if (!containerRef.current) return;
+		const updateWidth = () => {
+			if (containerRef.current) setWidth(containerRef.current.clientWidth);
+		};
+		updateWidth();
+		const observer = new ResizeObserver(updateWidth);
+		observer.observe(containerRef.current);
+		return () => observer.disconnect();
+	}, []);
+	const prepared = useMemo(() => prepareWithSegments(text, font), [text, font]);
+	const { lines } = useMemo(() => {
+		if (width <= 0 || !text.trim()) return { lines: [] };
+		try {
+			return layoutWithLines(prepared, width, lineHeight);
+		} catch (e) {
+			console.error("Pretext layout error:", e);
+			return { lines: [] };
+		}
+	}, [
+		prepared,
+		width,
+		lineHeight,
+		text
+	]);
+	if (!text.trim() || lines.length === 0) return /* @__PURE__ */ jsx("div", {
+		ref: containerRef,
+		className,
+		children: text
+	});
+	return /* @__PURE__ */ jsx("div", {
+		ref: containerRef,
+		className: `pretext-container ${className}`,
+		style: {
+			font,
+			lineHeight: `${lineHeight}px`
+		},
+		children: lines.map((line, i) => {
+			const isLastLine = i === lines.length - 1;
+			const shouldJustify = justify && !isLastLine && lines.length > 1;
+			return /* @__PURE__ */ jsxs("div", {
+				className: "pretext-line",
+				style: {
+					height: lineHeight,
+					textAlign: shouldJustify ? "justify" : "left",
+					overflow: "hidden",
+					whiteSpace: "nowrap",
+					position: "relative"
+				},
+				children: [line.text, shouldJustify && /* @__PURE__ */ jsx("span", {
+					style: {
+						display: "inline-block",
+						width: "100%"
+					},
+					"aria-hidden": "true"
+				})]
+			}, i);
+		})
+	});
+}
+//#endregion
 //#region src/pages/Landing.tsx
 var INSTALL_TABS = [
 	{
@@ -359,9 +368,14 @@ function Landing() {
 										})
 									]
 								}),
-								/* @__PURE__ */ jsx("p", {
-									className: "text-lg mb-6 max-w-2xl leading-relaxed",
-									children: "Keating doesn't give answers. It forces you to reconstruct understanding from memory. No hand-holding. No spoon-feeding. Just the Socratic method powered by silicon."
+								/* @__PURE__ */ jsx("div", {
+									className: "max-w-2xl",
+									children: /* @__PURE__ */ jsx(Pretext, {
+										text: "Keating doesn't give answers. It forces you to reconstruct understanding from memory. No hand-holding. No spoon-feeding. Just the Socratic method powered by silicon.",
+										font: "18px 'Inter', sans-serif",
+										lineHeight: 28,
+										className: "mb-6 opacity-90"
+									})
 								}),
 								/* @__PURE__ */ jsx("div", {
 									className: "stamp",
@@ -446,9 +460,14 @@ function Landing() {
 									"] ",
 									title
 								]
-							}), /* @__PURE__ */ jsx("p", {
-								className: "text-sm leading-relaxed",
-								children: body
+							}), /* @__PURE__ */ jsx("div", {
+								className: "text-sm",
+								children: /* @__PURE__ */ jsx(Pretext, {
+									text: body,
+									font: "14px 'Inter', sans-serif",
+									lineHeight: 20,
+									justify: true
+								})
 							})]
 						}, n))
 					})]
@@ -1439,36 +1458,66 @@ var POSTS = [
 		},
 		title: "From Stubs to Reality: AI-Powered Pedagogical Verification",
 		body: /* @__PURE__ */ jsxs(Fragment, { children: [
-			/* @__PURE__ */ jsx("p", {
+			/* @__PURE__ */ jsx("div", {
 				className: "mb-4",
-				children: "Today we've completed a major architectural shift: moving from deterministic mathematical stubs to true AI-powered verification across our core pedagogical engines."
+				children: /* @__PURE__ */ jsx(Pretext, {
+					text: "Today we've completed a major architectural shift: moving from deterministic mathematical stubs to true AI-powered verification across our core pedagogical engines.",
+					font: "16px 'Inter', sans-serif",
+					lineHeight: 24
+				})
 			}),
 			/* @__PURE__ */ jsx("h3", {
 				className: "font-bold mt-4 mb-2",
 				children: "What's New?"
 			}),
 			/* @__PURE__ */ jsxs("ul", {
-				className: "text-sm space-y-2 ml-4 mb-4",
+				className: "text-sm space-y-4 ml-4 mb-4",
 				children: [
-					/* @__PURE__ */ jsxs("li", { children: [
-						/* @__PURE__ */ jsx("strong", { children: "Real-Time Animation Generation:" }),
-						" The animation engine no longer relies on hardcoded ManimJS templates. It now uses the ",
-						/* @__PURE__ */ jsx(Code, { children: "pi" }),
-						" agent to generate custom, context-aware visual teaching beats for any topic."
-					] }),
-					/* @__PURE__ */ jsxs("li", { children: [/* @__PURE__ */ jsx("strong", { children: "Realistic Teaching Simulations:" }), " Our synthetic benchmarks now use LLM-backed simulations to evaluate teaching outcomes (mastery, retention, confusion) instead of algebraic approximations."] }),
-					/* @__PURE__ */ jsxs("li", { children: [/* @__PURE__ */ jsx("strong", { children: "Dynamic Learner Profiles:" }), " Learner state updates are now driven by AI-inferred pedagogical shifts based on historical performance and feedback."] }),
-					/* @__PURE__ */ jsxs("li", { children: [
-						/* @__PURE__ */ jsx("strong", { children: "Research Paper Integration:" }),
-						" The formal account of the Keating metaharness is now served directly in the web application with a dedicated ",
-						/* @__PURE__ */ jsx(Code, { children: "[PAPER]" }),
-						" section and PDF download."
-					] })
+					/* @__PURE__ */ jsxs("li", { children: [/* @__PURE__ */ jsx("div", {
+						className: "font-bold mb-1 underline decoration-[#d44a3d]",
+						children: "Real-Time Animation Generation:"
+					}), /* @__PURE__ */ jsx(Pretext, {
+						text: "The animation engine no longer relies on hardcoded ManimJS templates. It now uses the pi agent to generate custom, context-aware visual teaching beats for any topic.",
+						font: "14px 'Inter', sans-serif",
+						lineHeight: 20,
+						justify: false
+					})] }),
+					/* @__PURE__ */ jsxs("li", { children: [/* @__PURE__ */ jsx("div", {
+						className: "font-bold mb-1 underline decoration-[#d44a3d]",
+						children: "Realistic Teaching Simulations:"
+					}), /* @__PURE__ */ jsx(Pretext, {
+						text: "Our synthetic benchmarks now use LLM-backed simulations to evaluate teaching outcomes (mastery, retention, confusion) instead of algebraic approximations.",
+						font: "14px 'Inter', sans-serif",
+						lineHeight: 20,
+						justify: false
+					})] }),
+					/* @__PURE__ */ jsxs("li", { children: [/* @__PURE__ */ jsx("div", {
+						className: "font-bold mb-1 underline decoration-[#d44a3d]",
+						children: "Dynamic Learner Profiles:"
+					}), /* @__PURE__ */ jsx(Pretext, {
+						text: "Learner state updates are now driven by AI-inferred pedagogical shifts based on historical performance and feedback.",
+						font: "14px 'Inter', sans-serif",
+						lineHeight: 20,
+						justify: false
+					})] }),
+					/* @__PURE__ */ jsxs("li", { children: [/* @__PURE__ */ jsx("div", {
+						className: "font-bold mb-1 underline decoration-[#d44a3d]",
+						children: "Research Paper Integration:"
+					}), /* @__PURE__ */ jsx(Pretext, {
+						text: "The formal account of the Keating metaharness is now served directly in the web application with a dedicated [PAPER] section and PDF download.",
+						font: "14px 'Inter', sans-serif",
+						lineHeight: 20,
+						justify: false
+					})] })
 				]
 			}),
-			/* @__PURE__ */ jsx("p", {
-				className: "text-sm text-[#64748b]",
-				children: "These changes ensure that Keating's \"self-improvement\" loop is grounded in actual semantic understanding rather than pre-baked formulas."
+			/* @__PURE__ */ jsx("div", {
+				className: "text-sm text-[#64748b] mt-6",
+				children: /* @__PURE__ */ jsx(Pretext, {
+					text: "These changes ensure that Keating's 'self-improvement' loop is grounded in actual semantic understanding rather than pre-baked formulas.",
+					font: "italic 14px 'Inter', sans-serif",
+					lineHeight: 20
+				})
 			})
 		] })
 	},
@@ -4784,31 +4833,37 @@ function Paper() {
 								className: "flex items-center gap-2 mb-8 text-[#64748b] font-terminal text-sm border-b border-[#64748b]/20 pb-4",
 								children: [/* @__PURE__ */ jsx(FileText, { size: 16 }), "ABSTRACT"]
 							}),
-							/* @__PURE__ */ jsx("p", {
+							/* @__PURE__ */ jsx("div", {
 								className: "text-lg md:text-xl font-serif italic text-[#2c3e50] mb-8",
-								children: "AI tutors can scale explanation, but scaling explanation is not the same as scaling learning. A tutoring system that answers fluently may still weaken the learner's own reconstruction of a concept."
+								children: /* @__PURE__ */ jsx(Pretext, {
+									text: "AI tutors can scale explanation, but scaling explanation is not the same as scaling learning. A tutoring system that answers fluently may still weaken the learner's own reconstruction of a concept.",
+									font: "italic 20px 'Georgia', serif",
+									lineHeight: 32
+								})
 							}),
 							/* @__PURE__ */ jsxs("div", {
-								className: "space-y-6 text-[#1a1a1a]",
+								className: "space-y-8 text-[#1a1a1a] font-serif",
 								children: [
-									/* @__PURE__ */ jsxs("p", { children: [
-										"Keating is designed around that distinction. It is not a single tutoring chatbot; it is a ",
-										/* @__PURE__ */ jsx("strong", { children: "metaharness" }),
-										" for teaching, a control layer that organizes planning, prompting, retrieval, transfer, verification, and evaluation around the live teaching exchange."
-									] }),
-									/* @__PURE__ */ jsxs("p", { children: [
-										"We analyze two evidence layers: an archival trace set of 22 raw sessions curated to 16 topic x learner pairs, and a synthetic benchmark implemented directly in the repository. The archival set yields a normalized overall score of 0.61 (95% bootstrap interval 0.515-0.705), with strong topic heterogeneity:",
-										/* @__PURE__ */ jsx("em", { children: "Special Relativity" }),
-										" is highest at 0.75 and ",
-										/* @__PURE__ */ jsx("em", { children: "Stoicism" }),
-										" lowest at 0.425."
-									] }),
-									/* @__PURE__ */ jsxs("p", { children: [
-										"The synthetic layer shows that the current Keating policy, although evolved on ",
-										/* @__PURE__ */ jsx("em", { children: "Derivative" }),
-										" alone, improves the full 14-topic harness by 6.703 points over the default policy across 200/200 seeds, with derivative-only evolution improving in 29/30 reruns."
-									] }),
-									/* @__PURE__ */ jsx("p", { children: "The contribution of this paper is therefore twofold: a formal account of a teaching metaharness and a reproducible benchmark-and-analysis stack for studying agency-preserving instruction. The present evidence supports systems and methodology claims; a human randomized trial remains the necessary next step for causal pedagogical claims." })
+									/* @__PURE__ */ jsx(Pretext, {
+										text: "Keating is designed around that distinction. It is not a single tutoring chatbot; it is a metaharness for teaching, a control layer that organizes planning, prompting, retrieval, transfer, verification, and evaluation around the live teaching exchange.",
+										font: "18px 'Georgia', serif",
+										lineHeight: 28
+									}),
+									/* @__PURE__ */ jsx(Pretext, {
+										text: "We analyze two evidence layers: an archival trace set of 22 raw sessions curated to 16 topic x learner pairs, and a synthetic benchmark implemented directly in the repository. The archival set yields a normalized overall score of 0.61 (95% bootstrap interval 0.515-0.705), with strong topic heterogeneity: Special Relativity is highest at 0.75 and Stoicism lowest at 0.425.",
+										font: "18px 'Georgia', serif",
+										lineHeight: 28
+									}),
+									/* @__PURE__ */ jsx(Pretext, {
+										text: "The synthetic layer shows that the current Keating policy, although evolved on Derivative alone, improves the full 14-topic harness by 6.703 points over the default policy across 200/200 seeds, with derivative-only evolution improving in 29/30 reruns.",
+										font: "18px 'Georgia', serif",
+										lineHeight: 28
+									}),
+									/* @__PURE__ */ jsx(Pretext, {
+										text: "The contribution of this paper is therefore twofold: a formal account of a teaching metaharness and a reproducible benchmark-and-analysis stack for studying agency-preserving instruction. The present evidence supports systems and methodology claims; a human randomized trial remains the necessary next step for causal pedagogical claims.",
+										font: "18px 'Georgia', serif",
+										lineHeight: 28
+									})
 								]
 							}),
 							/* @__PURE__ */ jsx("div", {
