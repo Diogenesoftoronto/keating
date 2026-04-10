@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "@tanstack/react-router";
 
 interface NavProps {
   showFeatures?: boolean;
@@ -37,7 +37,7 @@ export function Nav({ showFeatures = false }: NavProps) {
           </a>
           <button
             className="btn-retro px-4 py-2 font-bold text-sm min-h-[44px]"
-            onClick={() => navigate("/chat")}
+            onClick={() => navigate({ to: "/chat" })}
           >
             TRY_KEATING
           </button>
@@ -90,7 +90,7 @@ export function Nav({ showFeatures = false }: NavProps) {
             </a>
             <button
               className="btn-retro px-4 py-4 font-bold text-base mt-2 w-full min-h-[48px]"
-              onClick={() => { closeMobile(); navigate("/chat"); }}
+              onClick={() => { closeMobile(); navigate({ to: "/chat" }); }}
             >
               TRY_KEATING
             </button>
