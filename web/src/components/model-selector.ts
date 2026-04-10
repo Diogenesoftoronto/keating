@@ -1,89 +1,230 @@
-import { localModel, type LocalModel } from '../stores/local-model';
+import { getProviders, type Api, type Model } from "@mariozechner/pi-ai";
+import { localModel, type LocalModel } from "../stores/local-model";
+import { getSelectableModels } from "../lib/provider-models";
 
-const MODEL_OPTIONS = [
-  { 
-    id: 'browser', 
-    name: 'Gemma 4 E4B (Browser)', 
-    description: 'WebGPU - runs in browser, no setup', 
-    requiresKey: false,
-    category: 'browser'
-  },
-  { 
-    id: 'local', 
-    name: 'Local Server', 
-    description: 'Ollama, llama.cpp, LiteLLM endpoint', 
-    requiresKey: false,
-    category: 'local'
-  },
-  { 
-    id: 'google', 
-    name: 'Google Gemini 3.1 Pro Preview', 
-    description: 'Cloud - latest Gemini preview', 
-    requiresKey: true,
-    category: 'cloud'
-  },
-  { 
-    id: 'anthropic', 
-    name: 'Anthropic Claude', 
-    description: 'Cloud - Claude Sonnet 4', 
-    requiresKey: true,
-    category: 'cloud'
-  },
-  { 
-    id: 'openai', 
-    name: 'OpenAI GPT-4o', 
-    description: 'Cloud - OpenAI flagship', 
-    requiresKey: true,
-    category: 'cloud'
-  },
-];
+const BROWSER_MODEL: Model<Api> = {
+	id: "gemma-4-e4b",
+	name: "Gemma 4 E4B (Browser)",
+	api: "browser" as Api,
+	provider: "browser",
+	baseUrl: "",
+	reasoning: false,
+	input: ["text"],
+	cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+	contextWindow: 0,
+	maxTokens: 0,
+};
+
+type SelectableModel = {
+	key: string;
+	model: Model<Api>;
+	group: "browser" | "cloud" | "custom";
+};
+
+function modelKey(model: Model<any>): string {
+	return `${model.provider}::${model.api}::${model.id}`;
+}
 
 export class KeatingModelSelector extends HTMLElement {
-  private selectedModel: string = 'browser';
-  private localModelState: LocalModel | null = null;
-  private webGpuAvailable: boolean = false;
-  private unsubscribe?: () => void;
+	private currentModel: Model<Api> | null = null;
+	private onSelect?: (model: Model<Api>) => void;
+	private selectedKey = modelKey(BROWSER_MODEL);
+	private localModelState: LocalModel | null = null;
+	private webGpuAvailable = false;
+	private searchQuery = "";
+	private unsubscribe?: () => void;
+	private loadingModels = true;
+	private loadError = "";
+	private models: SelectableModel[] = [];
 
-  constructor() {
-    super();
-    this.attachShadow({ mode: 'open' });
-  }
+	static async open(currentModel: Model<Api> | null, onSelect: (model: Model<Api>) => void) {
+		const dialog = new KeatingModelSelector();
+		dialog.currentModel = currentModel;
+		dialog.onSelect = onSelect;
+		dialog.selectedKey = currentModel ? modelKey(currentModel) : modelKey(BROWSER_MODEL);
+		document.body.appendChild(dialog);
+	}
 
-  async connectedCallback() {
-    // Check WebGPU availability before subscribing
-    this.webGpuAvailable = await this.checkWebGpu();
-    if (!this.webGpuAvailable) {
-      this.selectedModel = 'google';
-    }
+	constructor() {
+		super();
+		this.attachShadow({ mode: "open" });
+	}
 
-    this.unsubscribe = localModel.subscribe(state => {
-      this.localModelState = state;
-      this.render();
-    });
+	async connectedCallback() {
+		this.webGpuAvailable = await this.checkWebGpu();
+		this.unsubscribe = localModel.subscribe((state) => {
+			this.localModelState = state;
+			this.render();
+		});
+		await this.loadModels();
+		this.render();
+	}
 
-    this.render();
-  }
+	disconnectedCallback() {
+		this.unsubscribe?.();
+	}
 
-  private async checkWebGpu(): Promise<boolean> {
-    if (!navigator.gpu) {
-      return false;
-    }
-    try {
-      const adapter = await navigator.gpu.requestAdapter();
-      return adapter !== null;
-    } catch {
-      return false;
-    }
-  }
+	private async checkWebGpu(): Promise<boolean> {
+		if (!navigator.gpu) return false;
+		try {
+			return (await navigator.gpu.requestAdapter()) !== null;
+		} catch {
+			return false;
+		}
+	}
 
-  disconnectedCallback() {
-    this.unsubscribe?.();
-  }
+	private async loadModels() {
+		this.loadingModels = true;
+		this.loadError = "";
+		this.render();
 
-  private render() {
-    if (!this.shadowRoot) return;
+		try {
+			const models = await getSelectableModels();
+			const knownProviders = new Set<string>(getProviders());
+			const selectable: SelectableModel[] = models.map((model) => ({
+				key: modelKey(model),
+				model,
+				group:
+					model.provider === "browser"
+						? "browser"
+						: knownProviders.has(model.provider)
+							? "cloud"
+							: "custom",
+			}));
 
-    this.shadowRoot.innerHTML = `
+			if (this.webGpuAvailable) {
+				selectable.unshift({ key: modelKey(BROWSER_MODEL), model: BROWSER_MODEL, group: "browser" });
+			}
+
+			const deduped = new Map<string, SelectableModel>();
+			for (const model of selectable) {
+				deduped.set(model.key, model);
+			}
+
+			this.models = Array.from(deduped.values());
+			if (!this.models.some((entry) => entry.key === this.selectedKey) && this.models[0]) {
+				this.selectedKey = this.models[0].key;
+			}
+		} catch (error) {
+			this.loadError = error instanceof Error ? error.message : String(error);
+			this.models = this.webGpuAvailable
+				? [{ key: modelKey(BROWSER_MODEL), model: BROWSER_MODEL, group: "browser" }]
+				: [];
+		} finally {
+			this.loadingModels = false;
+		}
+	}
+
+	private getFilteredModels(): SelectableModel[] {
+		const query = this.searchQuery.trim().toLowerCase();
+		if (!query) return this.models;
+
+		return this.models.filter(({ model }) => {
+			const haystack = `${model.name} ${model.id} ${model.provider}`.toLowerCase();
+			return haystack.includes(query);
+		});
+	}
+
+	private renderGroup(title: string, group: SelectableModel["group"], models: SelectableModel[]): string {
+		if (models.length === 0) return "";
+
+		return `
+      <div class="category">${title}</div>
+      ${models.map((entry) => this.renderModelOption(entry)).join("")}
+    `;
+	}
+
+	private renderModelOption(entry: SelectableModel): string {
+		const { model, key } = entry;
+		const isSelected = this.selectedKey === key;
+		const isBrowser = model.provider === "browser";
+		const statusHtml = this.renderStatus(model);
+		const disabled = isBrowser && !this.webGpuAvailable;
+		const badges = [
+			isBrowser ? '<span class="badge badge-browser">WebGPU</span>' : "",
+			entry.group === "cloud" ? '<span class="badge badge-key">Cloud</span>' : "",
+			entry.group === "custom" ? '<span class="badge badge-local">Custom</span>' : "",
+			model.input.includes("image") ? '<span class="badge badge-vision">Vision</span>' : "",
+			model.reasoning ? '<span class="badge badge-thinking">Thinking</span>' : "",
+		]
+			.filter(Boolean)
+			.join("");
+
+		const providerLabel = isBrowser ? "Runs in this browser" : `Provider: ${model.provider}`;
+		return `
+      <div class="model-option ${isSelected ? "selected" : ""} ${disabled ? "disabled" : ""}" data-model-key="${key}">
+        <input type="radio" name="model" value="${key}" class="model-radio" ${isSelected ? "checked" : ""} ${disabled ? "disabled" : ""}>
+        <div class="model-info">
+          <div class="model-name">${model.name}</div>
+          <div class="model-desc">${providerLabel}</div>
+          <div class="model-id">${model.id}</div>
+          <div class="badges">${badges}</div>
+          ${statusHtml}
+        </div>
+      </div>
+    `;
+	}
+
+	private renderStatus(model: Model<Api>): string {
+		if (model.provider !== "browser") return "";
+		if (!this.webGpuAvailable) return `<div class="status status-error">WebGPU not available</div>`;
+		if (this.localModelState?.loading) {
+			return `
+        <div class="status status-loading">Loading browser model... ${this.localModelState.loadingProgress}%</div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: ${this.localModelState.loadingProgress}%"></div>
+        </div>
+      `;
+		}
+		if (this.localModelState?.loaded) return `<div class="status status-loaded">Model ready</div>`;
+		if (this.localModelState?.error) return `<div class="status status-error">${this.localModelState.error}</div>`;
+		return `<div class="status">Loads on demand when selected</div>`;
+	}
+
+	private bindEvents() {
+		this.shadowRoot?.querySelector("#cancel")?.addEventListener("click", () => this.remove());
+		this.shadowRoot?.querySelector("#search")?.addEventListener("input", (event) => {
+			this.searchQuery = (event.target as HTMLInputElement).value;
+			this.render();
+		});
+		this.shadowRoot?.querySelector("#refresh")?.addEventListener("click", async () => {
+			await this.loadModels();
+			this.render();
+		});
+		this.shadowRoot?.querySelector("#select")?.addEventListener("click", async () => {
+			const selected = this.models.find((entry) => entry.key === this.selectedKey)?.model;
+			if (!selected) return;
+
+			if (selected.provider === "browser" && !this.localModelState?.loaded) {
+				await localModel.load();
+				if (!localModel.getState().loaded) {
+					this.render();
+					return;
+				}
+			}
+
+			this.onSelect?.(selected);
+			this.remove();
+		});
+
+		this.shadowRoot?.querySelectorAll(".model-option").forEach((element) => {
+			element.addEventListener("click", () => {
+				if (element.classList.contains("disabled")) return;
+				this.selectedKey = (element as HTMLElement).dataset.modelKey || this.selectedKey;
+				this.render();
+			});
+		});
+	}
+
+	private render() {
+		if (!this.shadowRoot) return;
+
+		const filtered = this.getFilteredModels();
+		const browserModels = filtered.filter((entry) => entry.group === "browser");
+		const cloudModels = filtered.filter((entry) => entry.group === "cloud");
+		const customModels = filtered.filter((entry) => entry.group === "custom");
+
+		this.shadowRoot.innerHTML = `
       <style>
         :host {
           display: block;
@@ -91,7 +232,7 @@ export class KeatingModelSelector extends HTMLElement {
           inset: 0;
           background: rgba(0, 0, 0, 0.6);
           z-index: 1000;
-          font-family: 'Space Mono', monospace;
+          font-family: "Space Mono", monospace;
         }
         .dialog {
           position: absolute;
@@ -102,293 +243,220 @@ export class KeatingModelSelector extends HTMLElement {
           border: 2px solid #1a1a1a;
           border-radius: 0.5rem;
           padding: 1.5rem;
-          width: 90%;
-          max-width: 520px;
+          width: min(720px, 92vw);
           max-height: 85vh;
-          overflow-y: auto;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
         }
         h2 {
-          margin: 0 0 0.5rem;
+          margin: 0;
           font-size: 1.25rem;
           font-weight: 600;
         }
         .subtitle {
           font-size: 0.75rem;
           color: #64748b;
-          margin-bottom: 1rem;
+          margin: 0;
+        }
+        .toolbar {
+          display: flex;
+          gap: 0.75rem;
+          flex-wrap: wrap;
+        }
+        .toolbar input {
+          flex: 1;
+          min-width: 220px;
+          padding: 0.75rem 1rem;
+          border: 2px solid #1a1a1a;
+          border-radius: 0.375rem;
+          background: #fffdf8;
+          font: inherit;
+        }
+        .toolbar button,
+        .buttons button {
+          padding: 0.75rem 1.25rem;
+          border-radius: 0.375rem;
+          border: 2px solid #1a1a1a;
+          background: #f4f1ea;
+          cursor: pointer;
+          font: inherit;
+        }
+        .toolbar button:hover,
+        .buttons button:hover {
+          background: #1a1a1a;
+          color: #f4f1ea;
+        }
+        .buttons button.primary {
+          background: #d44a3d;
+          border-color: #d44a3d;
+          color: #fff;
+        }
+        .buttons button.primary:hover {
+          background: #a33a30;
+          border-color: #a33a30;
+        }
+        .content {
+          overflow-y: auto;
+          border: 1px solid #d6d3cc;
+          background: #fffdf8;
+          padding: 0.5rem 0;
         }
         .category {
+          position: sticky;
+          top: 0;
+          z-index: 1;
+          background: #fff8ef;
+          border-top: 1px solid #d6d3cc;
+          border-bottom: 1px solid #d6d3cc;
+          padding: 0.5rem 1rem;
           font-size: 0.7rem;
-          text-transform: uppercase;
           letter-spacing: 0.1em;
+          text-transform: uppercase;
           color: #64748b;
-          margin: 1rem 0 0.5rem;
-          padding-top: 0.5rem;
-          border-top: 1px solid #e2e8f0;
         }
         .category:first-of-type {
-          margin-top: 0;
-          padding-top: 0;
           border-top: none;
-        }
-        .models {
-          display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
         }
         .model-option {
           display: flex;
-          align-items: flex-start;
           gap: 0.75rem;
-          padding: 1rem 1rem;
-          border: 2px solid #e2e8f0;
-          border-radius: 0.375rem;
+          align-items: flex-start;
+          padding: 1rem;
+          border-bottom: 1px solid #ece8de;
           cursor: pointer;
-          transition: all 0.15s;
-          min-height: 44px;
         }
-        .model-option:hover:not(.disabled) {
-          border-color: #6366f1;
-          background: #f8f7f4;
-        }
+        .model-option:hover:not(.disabled),
         .model-option.selected {
-          border-color: #6366f1;
-          background: #f0eff8;
+          background: #f7f2ea;
         }
         .model-option.disabled {
-          opacity: 0.5;
+          opacity: 0.45;
           cursor: not-allowed;
         }
         .model-radio {
           margin-top: 0.25rem;
         }
         .model-info {
-          flex: 1;
           min-width: 0;
+          flex: 1;
         }
         .model-name {
-          font-weight: 600;
-          font-size: 0.9rem;
+          font-weight: 700;
+          font-size: 0.95rem;
         }
-        .model-desc {
-          font-size: 0.75rem;
+        .model-desc,
+        .model-id,
+        .status {
           color: #64748b;
+          font-size: 0.75rem;
+          margin-top: 0.2rem;
+          word-break: break-word;
         }
         .badges {
           display: flex;
-          gap: 0.5rem;
-          margin-top: 0.25rem;
+          gap: 0.4rem;
           flex-wrap: wrap;
+          margin-top: 0.4rem;
         }
         .badge {
           font-size: 0.65rem;
           padding: 0.125rem 0.5rem;
           border-radius: 9999px;
-          font-weight: 500;
+          font-weight: 600;
         }
         .badge-key {
-          background: #fef3c7;
-          color: #92400e;
+          background: #e8ecff;
+          color: #3043a6;
         }
         .badge-browser {
-          background: #10b981/10;
-          color: #059669;
           background: #d1fae5;
+          color: #047857;
         }
-        .badge-local {
-          background: #e0e7ff;
-          color: #4338ca;
+        .badge-local,
+        .badge-vision,
+        .badge-thinking {
+          background: #f4e4d8;
+          color: #8b4513;
         }
-        .status {
-          font-size: 0.7rem;
-          margin-top: 0.375rem;
-        }
-        .status-loading { color: #6366f1; }
-        .status-loaded { color: #10b981; }
-        .status-error { color: #ef4444; }
+        .status-loading { color: #3043a6; }
+        .status-loaded { color: #047857; }
+        .status-error { color: #b91c1c; }
         .progress-bar {
           width: 100%;
           height: 4px;
           background: #e2e8f0;
-          border-radius: 2px;
-          margin-top: 0.375rem;
+          border-radius: 9999px;
+          margin-top: 0.4rem;
           overflow: hidden;
         }
         .progress-fill {
           height: 100%;
-          background: #6366f1;
-          transition: width 0.3s ease;
+          background: #3043a6;
         }
+        .empty,
+        .loading,
+        .error {
+          padding: 1rem;
+          color: #64748b;
+          font-size: 0.85rem;
+        }
+        .error { color: #b91c1c; }
         .buttons {
           display: flex;
           justify-content: flex-end;
           gap: 0.75rem;
-          margin-top: 1.25rem;
-          padding-top: 1rem;
-          border-top: 1px solid #e2e8f0;
         }
-        @media (max-width: 480px) {
+        @media (max-width: 640px) {
           .dialog {
-            width: 95%;
-            padding: 1.25rem;
-            max-height: 90vh;
+            width: 95vw;
+            padding: 1rem;
+          }
+          .toolbar {
+            flex-direction: column;
+          }
+          .toolbar input {
+            min-width: 0;
           }
           .buttons {
             flex-direction: column;
           }
-          .buttons button {
-            width: 100%;
-          }
-          .model-option {
-            padding: 1rem 0.875rem;
-          }
-        }
-        button {
-          padding: 0.75rem 1.25rem;
-          border-radius: 0.375rem;
-          border: 2px solid #1a1a1a;
-          background: #f4f1ea;
-          cursor: pointer;
-          font-size: 0.875rem;
-          font-family: inherit;
-          transition: all 0.15s;
-          min-height: 44px;
-          min-width: 44px;
-        }
-        button:hover {
-          background: #1a1a1a;
-          color: #f4f1ea;
-        }
-        button.primary {
-          background: #6366f1;
-          color: white;
-          border-color: #6366f1;
-        }
-        button.primary:hover {
-          background: #4f46e5;
-        }
-        button:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-        .help-link {
-          display: block;
-          text-align: center;
-          margin-top: 0.75rem;
-          font-size: 0.75rem;
-          color: #6366f1;
-          text-decoration: underline;
-          cursor: pointer;
-        }
-        .help-link:hover {
-          color: #4f46e5;
         }
       </style>
       <div class="dialog">
-        <h2>Select Model</h2>
-        <p class="subtitle">Choose how Keating runs AI inference</p>
-        
-        <div class="models">
-          <div class="category">No Setup Required</div>
-          ${this.renderModelOption(MODEL_OPTIONS.find(m => m.id === 'browser')!)}
-          
-          <div class="category">Requires Local Server</div>
-          ${this.renderModelOption(MODEL_OPTIONS.find(m => m.id === 'local')!)}
-          
-          <div class="category">Cloud Providers</div>
-          ${MODEL_OPTIONS.filter(m => m.category === 'cloud').map(opt => this.renderModelOption(opt)).join('')}
+        <div>
+          <h2>Select Model</h2>
+          <p class="subtitle">Built-in providers and discovered custom-provider models.</p>
         </div>
-        
+        <div class="toolbar">
+          <input id="search" type="text" placeholder="Search models or providers" value="${this.searchQuery}">
+          <button id="refresh" type="button">Refresh</button>
+        </div>
+        <div class="content">
+          ${
+						this.loadingModels
+							? '<div class="loading">Loading models…</div>'
+							: this.loadError
+								? `<div class="error">${this.loadError}</div>`
+								: filtered.length === 0
+									? '<div class="empty">No models matched the current search.</div>'
+									: `
+                ${this.renderGroup("Browser", "browser", browserModels)}
+                ${this.renderGroup("Cloud", "cloud", cloudModels)}
+                ${this.renderGroup("Custom Providers", "custom", customModels)}
+              `
+					}
+        </div>
         <div class="buttons">
-          <button id="cancel">Cancel</button>
-          <button id="select" class="primary">Select</button>
-        </div>
-        <a class="help-link" id="help-link">Need help? View setup guide</a>
-      </div>
-    `;
-
-    this.bindEvents();
-  }
-
-  private renderModelOption(opt: typeof MODEL_OPTIONS[0]): string {
-    const isBrowser = opt.id === 'browser';
-    const isSelected = this.selectedModel === opt.id;
-
-    let statusHtml = '';
-    let isDisabled = false;
-
-    if (isBrowser) {
-      if (!this.webGpuAvailable) {
-        statusHtml = `<div class="status status-error">WebGPU not available</div>`;
-        isDisabled = true;
-      } else if (this.localModelState?.loading) {
-        statusHtml = `
-          <div class="status status-loading">Loading model... ${this.localModelState.loadingProgress}%</div>
-          <div class="progress-bar">
-            <div class="progress-fill" style="width: ${this.localModelState.loadingProgress}%"></div>
-          </div>
-        `;
-        isDisabled = true;
-      } else if (this.localModelState?.loaded) {
-        statusHtml = `<div class="status status-loaded">Model ready</div>`;
-      } else if (this.localModelState?.error) {
-        statusHtml = `<div class="status status-error">Error: ${this.localModelState.error}</div>`;
-      }
-    }
-
-    const badgesHtml = opt.requiresKey 
-      ? '<span class="badge badge-key">API Key</span>'
-      : opt.id === 'browser'
-        ? '<span class="badge badge-browser">WebGPU</span>'
-        : '<span class="badge badge-local">Endpoint</span>';
-
-    return `
-      <div class="model-option ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}"
-           data-model="${opt.id}">
-        <input type="radio" name="model" value="${opt.id}" class="model-radio"
-               ${isSelected ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}>
-        <div class="model-info">
-          <div class="model-name">${opt.name}</div>
-          <div class="model-desc">${opt.description}</div>
-          <div class="badges">${badgesHtml}</div>
-          ${statusHtml}
+          <button id="cancel" type="button">Cancel</button>
+          <button id="select" class="primary" type="button">Use Selected Model</button>
         </div>
       </div>
     `;
-  }
 
-  private bindEvents() {
-    this.shadowRoot?.querySelectorAll('.model-option').forEach(el => {
-      el.addEventListener('click', (e) => {
-        const modelId = (e.currentTarget as HTMLElement).dataset.model;
-        if (modelId && !el.classList.contains('disabled')) {
-          this.selectedModel = modelId;
-          this.render();
-        }
-      });
-    });
-
-    this.shadowRoot?.querySelector('#cancel')?.addEventListener('click', () => {
-      this.remove();
-    });
-
-    this.shadowRoot?.querySelector('#select')?.addEventListener('click', () => {
-      // If browser model selected and not loaded, start loading
-      if (this.selectedModel === 'browser' && !this.localModelState?.loaded && !this.localModelState?.loading) {
-        localModel.load();
-        return; // Keep dialog open while loading
-      }
-      
-      this.dispatchEvent(new CustomEvent('model-selected', {
-        detail: { model: this.selectedModel },
-      }));
-      this.remove();
-    });
-
-    this.shadowRoot?.querySelector('#help-link')?.addEventListener('click', () => {
-      window.open('/tutorial.html', '_blank');
-    });
-  }
+		this.bindEvents();
+	}
 }
 
-customElements.define('keating-model-selector', KeatingModelSelector);
+customElements.define("keating-model-selector", KeatingModelSelector);

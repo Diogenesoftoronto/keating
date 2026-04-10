@@ -6,6 +6,18 @@
   --color-primary: #6366f1;
 }
 
+message-editor textarea {
+  color: var(--color-foreground) !important;
+  -webkit-text-fill-color: var(--color-foreground) !important;
+  caret-color: var(--color-foreground) !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+message-editor textarea::placeholder {
+  -webkit-text-fill-color: var(--color-muted-foreground) !important;
+}
+
 .keating-header {
   background: rgba(15, 15, 15, 0.8);
   backdrop-filter: blur(10px);
