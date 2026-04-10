@@ -171,6 +171,23 @@ function createBrowserStreamFn() {
 
 function hybridStreamFn(model: Model<Api>, context: Context, options?: SimpleStreamOptions) {
   if (model.provider === "browser") return createBrowserStreamFn()(model, context, options);
+
+  // CORS Fix: Proxy custom providers (like Minimax) through the backend to bypass header restrictions
+  if (model.baseUrl && model.baseUrl.includes("minimax.io")) {
+    const proxiedModel = {
+      ...model,
+      baseUrl: `${window.location.origin}/api/chat-proxy`,
+    };
+    const proxiedOptions: SimpleStreamOptions = {
+      ...options,
+      headers: {
+        ...options?.headers,
+        "x-target-url": model.baseUrl,
+      },
+    };
+    return streamSimple(proxiedModel, context, proxiedOptions);
+  }
+
   return streamSimple(model, context, options);
 }
 
