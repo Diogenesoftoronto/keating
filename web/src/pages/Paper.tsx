@@ -5,7 +5,7 @@ import { Pretext } from "../components/Pretext";
 
 export function Paper() {
   return (
-    <div className="retro-layout">
+    <div className="retro-layout retro-page">
       <Nav />
 
       <main className="pt-28 pb-16 px-6">

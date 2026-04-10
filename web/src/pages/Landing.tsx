@@ -61,7 +61,7 @@ export function Landing() {
   }
 
   return (
-    <div className="retro-layout">
+    <div className="retro-layout retro-page">
       <BootSequence />
       <Nav showFeatures />
 

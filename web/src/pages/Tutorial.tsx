@@ -16,7 +16,7 @@ export function Tutorial() {
   const [activeTab, setActiveTab] = useState<TutorialTab>("browser");
 
   return (
-    <div className="retro-layout">
+    <div className="retro-layout retro-page">
       <Nav />
 
       <main className="pt-28 pb-16 px-6">

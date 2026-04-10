@@ -389,7 +389,7 @@ const hybridStreamFn = async (model, context, options) => {
 
 export function Blog() {
   return (
-    <div className="retro-layout">
+    <div className="retro-layout retro-page">
       <Nav />
 
       <main className="pt-28 pb-16 px-6">

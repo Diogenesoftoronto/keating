@@ -1,7 +1,7 @@
 /* Retro/paper theme for landing, tutorial, blog pages */
 /* Scope everything under .retro-layout to avoid polluting the chat theme */
 
-.retro-layout, nav, .pi-chat-panel {
+.retro-layout {
   --paper: #f4f1ea;
   --ink: #1a1a1a;
   --accent: #d44a3d;
@@ -16,8 +16,8 @@
   -webkit-font-smoothing: antialiased;
 }
 
-/* Paper texture overlay */
-.retro-layout::before {
+/* Paper texture overlay — only on full-page retro layouts, not nav */
+.retro-layout.retro-page::before {
   content: '';
   position: fixed;
   top: 0;
@@ -30,8 +30,107 @@
   z-index: 1;
 }
 
+/* VT323 terminal font — works anywhere inside .retro-layout */
 .retro-layout .font-terminal {
   font-family: 'VT323', monospace;
+}
+
+/* Nav link styling */
+.retro-layout .nav-link {
+  color: var(--ink);
+  text-decoration: none;
+  transition: color 0.15s, text-shadow 0.15s;
+  cursor: pointer;
+  position: relative;
+}
+
+.retro-layout .nav-link:hover {
+  color: var(--accent);
+}
+
+/* ===== GLITCH HOVER — visible, no clip-path ===== */
+.retro-layout .glitch-hover {
+  position: relative;
+  transition: color 0.1s, text-shadow 0.1s;
+}
+
+.retro-layout .glitch-hover:hover {
+  color: var(--accent);
+  text-shadow: 2px 0 #00ff00, -2px 0 var(--accent);
+  animation: retro-glitch 0.3s steps(3, end) infinite;
+}
+
+@keyframes retro-glitch {
+  0%, 100% { transform: translate(0); }
+  20% { transform: translate(-2px, 1px); }
+  40% { transform: translate(2px, -1px); }
+  60% { transform: translate(-1px, -1px); }
+  80% { transform: translate(1px, 2px); }
+}
+
+/* ===== BTN-RETRO — the 3D push button ===== */
+.retro-layout .btn-retro {
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  color: var(--ink);
+  position: relative;
+  transition: all 0.1s;
+  cursor: pointer;
+  font-family: 'VT323', monospace;
+}
+
+.retro-layout .btn-retro::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  right: -4px;
+  bottom: -4px;
+  background: var(--ink);
+  z-index: -1;
+  transition: all 0.1s;
+}
+
+.retro-layout .btn-retro:hover {
+  color: var(--accent);
+  text-shadow: 1px 0 #00ff00, -1px 0 var(--accent);
+}
+
+.retro-layout .btn-retro:hover::before {
+  top: 2px;
+  left: 2px;
+  right: -2px;
+  bottom: -2px;
+}
+
+.retro-layout .btn-retro:active {
+  transform: translate(2px, 2px);
+  background: var(--accent);
+  color: var(--paper);
+  text-shadow: none;
+}
+
+.retro-layout .btn-retro:active::before {
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* ===== STATUS LED ===== */
+.retro-layout .status-led {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  animation: retro-pulse-led 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes retro-pulse-led {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
 }
 
 /* CRT scanline effect */
@@ -74,6 +173,7 @@
   box-shadow: 0 0 20px rgba(212, 74, 61, 0.3), inset 0 0 20px rgba(212, 74, 61, 0.05);
 }
 
+/* Typewriter effect */
 .retro-layout .typewriter {
   overflow: hidden;
   white-space: nowrap;
@@ -83,31 +183,6 @@
 @keyframes retro-typing {
   from { width: 0; }
   to { width: 100%; }
-}
-
-/* Glitch effect on hover — intense shadow flicker + translate + noise */
-.glitch-hover:hover, .btn-retro:hover {
-  animation: retro-glitch 0.15s steps(2, end) infinite;
-  text-shadow: 2px 0 var(--accent), -2px 0 #00ff00, 0 2px #2980b9;
-  filter: brightness(1.1) contrast(1.2);
-}
-
-.glitch-hover:active, .btn-retro:active {
-  animation: retro-glitch-active 0.1s steps(1) infinite;
-  background-color: var(--accent) !important;
-  color: var(--paper) !important;
-}
-
-@keyframes retro-glitch {
-  0% { transform: translate(0); clip-path: inset(0 0 0 0); }
-  25% { transform: translate(-2px, 1px); clip-path: inset(10% 0 40% 0); }
-  50% { transform: translate(2px, -1px); clip-path: inset(50% 0 10% 0); }
-  75% { transform: translate(-1px, -2px); clip-path: inset(30% 0 20% 0); }
-}
-
-@keyframes retro-glitch-active {
-  0% { transform: scale(0.98) translate(-5px, 0); }
-  50% { transform: scale(1.02) translate(5px, 0); }
 }
 
 /* Boot sequence animation */
@@ -167,61 +242,6 @@
     0% 5%, 1% 5%, 1% 0%
   );
   z-index: -1;
-}
-
-/* Status LED */
-.retro-layout .status-led {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 8px var(--accent);
-  animation: retro-pulse-led 2s ease-in-out infinite;
-  flex-shrink: 0;
-}
-
-@keyframes retro-pulse-led {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
-}
-
-/* Retro button */
-.retro-layout .btn-retro {
-  background: var(--paper);
-  border: 2px solid var(--ink);
-  position: relative;
-  transition: all 0.1s;
-  cursor: pointer;
-}
-
-.retro-layout .btn-retro::before {
-  content: '';
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  right: -4px;
-  bottom: -4px;
-  background: var(--ink);
-  z-index: -1;
-  transition: all 0.1s;
-}
-
-.retro-layout .btn-retro:hover::before {
-  top: 2px;
-  left: 2px;
-  right: -2px;
-  bottom: -2px;
-}
-
-.retro-layout .btn-retro:active {
-  transform: translate(2px, 2px);
-}
-
-.retro-layout .btn-retro:active::before {
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
 }
 
 /* Terminal window */
@@ -369,7 +389,7 @@
   color: var(--paper);
 }
 
-/* Custom utility classes to replace arbitrary Tailwind classes that don't compile */
+/* Custom utility classes */
 .bg-paper { background-color: var(--paper); }
 .bg-ink { background-color: var(--ink); }
 .text-paper { color: var(--paper); }
@@ -379,7 +399,7 @@
 .border-paper-20 { border-color: rgba(244, 241, 234, 0.2); }
 .text-paper-60 { color: rgba(244, 241, 234, 0.6); }
 .text-paper-80 { color: rgba(244, 241, 234, 0.8); }
-.bg-paper-95 { background-color: var(--paper); } /* Made opaque to fix overlap */
+.bg-paper-95 { background-color: var(--paper); }
 .border-green-30 { border-color: rgba(0, 255, 0, 0.3); }
 .border-green-50 { border-color: rgba(0, 255, 0, 0.5); }
 .bg-green-30 { background-color: rgba(0, 255, 0, 0.3); }
