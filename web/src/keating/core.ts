@@ -118,6 +118,7 @@ export interface BenchmarkResult {
 	topicBenchmarks: TopicBenchmark[];
 	overallScore: number;
 	weakestTopic: string;
+	trace?: any;
 }
 
 export interface EvolutionCandidate {
@@ -761,6 +762,7 @@ export function runBenchmarkSuite(
 		topicBenchmarks,
 		overallScore: mean(topicBenchmarks.map((entry) => entry.meanScore)),
 		weakestTopic: weakest?.topic.title ?? "n/a",
+		trace: undefined,
 	};
 }
 
