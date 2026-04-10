@@ -44,3 +44,7 @@ run = "bun src/cli/main.ts animate"
 [tasks.trace]
 description = "Trace a teaching session"
 run = "bun src/cli/main.ts trace"
+
+[tasks.web]
+description = "Start the Keating web UI dev server"
+run = "bun --cwd web run dev"

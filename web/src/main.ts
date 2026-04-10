@@ -15,8 +15,6 @@ import {
 	setAppStorage,
 	defaultConvertToLlm,
 	ProxyTab,
-	ModelSelector,
-	ProvidersModelsTab,
 } from "@mariozechner/pi-web-ui";
 import { html, render } from "lit";
 import { Settings } from "lucide";
@@ -26,7 +24,11 @@ import { Button } from "@mariozechner/mini-lit/dist/Button.js";
 
 // Import custom components
 import "./components/model-selector";
+import "./components/providers-models-tab";
 import "./components/settings";
+import { KeatingProvidersModelsTab } from "./components/providers-models-tab";
+import { KeatingModelSelector } from "./components/model-selector";
+import { getProviderApiKey, syncCustomProviderKeys } from "./lib/provider-models";
 import { localModel } from "./stores/local-model";
 
 // Storage setup
@@ -76,8 +78,7 @@ let currentTitle = "Keating";
 let isEditingTitle = false;
 let agent: Agent;
 let chatPanel: ChatPanel;
-let agentUnsubscribe: (() => void) | undefined;
-let selectedModelId: string = 'browser'; // 'browser', 'google', 'anthropic', 'openai', 'local'
+let selectedModel: Model<Api> | undefined;
 let webGpuAvailable: boolean = false;
 
 const BROWSER_MODEL: Model<Api> = {
@@ -93,13 +94,9 @@ const BROWSER_MODEL: Model<Api> = {
 	maxTokens: 0,
 };
 
-const createInitialModel = (): Model<Api> => {
-	if (selectedModelId === "browser" && webGpuAvailable) {
-		return BROWSER_MODEL;
-	}
+const DEFAULT_MODEL = getModel("google", "gemini-3.1-pro-preview");
 
-	return getModel("google", "gemini-3.1-pro-preview");
-};
+const createInitialModel = (): Model<Api> => selectedModel ?? DEFAULT_MODEL;
 
 // ============================================================================
 // BROWSER MODEL STREAM FUNCTION
@@ -236,7 +233,7 @@ const renderApp = () => {
 						variant: "ghost",
 						size: "sm",
 						children: icon(Settings, "sm"),
-						onClick: () => SettingsDialog.open([new ProvidersModelsTab(), new ProxyTab()]),
+						onClick: () => SettingsDialog.open([new KeatingProvidersModelsTab(), new ProxyTab()]),
 						title: "Settings",
 					})}
 				</div>
@@ -252,14 +249,40 @@ const renderApp = () => {
 	}
 };
 
+const loadBrowserModel = async () => {
+	const state = localModel.getState();
+	if (!state.loaded && !state.loading) {
+		await localModel.load();
+	}
+
+	if (!localModel.getState().loaded) {
+		throw new Error(localModel.getState().error || "Failed to load browser model");
+	}
+};
+
+const switchModel = async (model: Model<Api>) => {
+	if (model.provider === "browser") {
+		await loadBrowserModel();
+	}
+
+	selectedModel = model;
+
+	const currentState = agent?.state;
+	await createAgent(
+		currentState
+			? {
+					...currentState,
+					model,
+					messages: [...currentState.messages],
+				}
+			: { model },
+	);
+};
+
 // ============================================================================
 // AGENT
 // ============================================================================
 const createAgent = async (initialState?: Partial<AgentState>) => {
-	if (agentUnsubscribe) {
-		agentUnsubscribe();
-	}
-
 	const nextInitialState: Partial<AgentState> = {
 		systemPrompt: KEATING_SYSTEM_PROMPT,
 		model: initialState?.model ?? createInitialModel(),
@@ -274,81 +297,21 @@ const createAgent = async (initialState?: Partial<AgentState>) => {
 		convertToLlm: defaultConvertToLlm,
 		streamFn: hybridStreamFn,
 	});
-
-	agentUnsubscribe = agent.subscribe((event: any) => {
-		if (event.type === "state-update") {
-			renderApp();
-		}
-	});
+	agent.getApiKey = async (provider: string) => await getProviderApiKey(provider);
 
 	await chatPanel.setAgent(agent, {
 		onApiKeyRequired: async (provider: string) => {
 			if (provider === "browser") return true;
+			if (await getProviderApiKey(provider)) return true;
 			return await ApiKeyPromptDialog.prompt(provider);
 		},
 		onModelSelect: () => {
-			ModelSelector.open(agent.state.model, (model) => {
-				selectedModelId = model.provider as string;
-				agent.state.model = model;
-				chatPanel.agentInterface?.requestUpdate();
+			void KeatingModelSelector.open(agent.state.model as Model<Api>, async (model) => {
+				await switchModel(model);
 			});
 		},
 	});
 };
-
-// ============================================================================
-// MODEL SELECTION
-// ============================================================================
-const handleModelSelected = async (event: CustomEvent<{ model: string }>) => {
-	const newModelId = event.detail.model;
-	
-	// If switching to browser model, ensure it's loaded
-	if (newModelId === 'browser' && webGpuAvailable) {
-		const state = localModel.getState();
-		if (!state.loaded && !state.loading) {
-			await localModel.load();
-		}
-	}
-	
-	selectedModelId = newModelId;
-	
-	// Recreate agent with new model selection
-	const currentState = agent?.state;
-	await createAgent(currentState);
-};
-
-// ============================================================================
-// PRELOAD MODEL
-// ============================================================================
-async function preloadModelIfNeeded() {
-	if (selectedModelId === 'browser' && webGpuAvailable) {
-		const state = localModel.getState();
-		if (!state.loaded && !state.loading) {
-			// Subscribe before loading to catch progress updates
-			const unsubscribe = localModel.subscribe((s) => {
-				if (s.loading && !s.loaded) {
-					window.parent?.postMessage({ type: 'model-loading-start' }, '*');
-				}
-				if (s.loaded) {
-					window.parent?.postMessage({ type: 'model-loading-complete' }, '*');
-					unsubscribe();
-				}
-				if (s.error) {
-					window.parent?.postMessage({ type: 'model-loading-error' }, '*');
-					unsubscribe();
-				}
-				// Forward progress updates
-				if (s.loadingProgress > 0) {
-					window.parent?.postMessage({ 
-						type: 'model-loading-progress', 
-						progress: s.loadingProgress 
-					}, '*');
-				}
-			});
-			await localModel.load();
-		}
-	}
-}
 
 // ============================================================================
 // INIT
@@ -360,21 +323,11 @@ async function initApp() {
 
 	// Check for browser model capability (WebGPU)
 	webGpuAvailable = await checkBrowserModelCapability();
-	
-	// Set initial model based on WebGPU availability
-	selectedModelId = webGpuAvailable ? 'browser' : 'google';
-
-	// Preload model if browser model is available (shows loading UI on homepage once)
-	preloadModelIfNeeded();
+	await syncCustomProviderKeys();
+	selectedModel = DEFAULT_MODEL;
 
 	// Create ChatPanel
 	chatPanel = new ChatPanel();
-
-	// Listen for model selection events
-	document.addEventListener('model-selected', ((event: Event) => {
-		const customEvent = event as CustomEvent<{ model: string }>;
-		handleModelSelected(customEvent);
-	}) as EventListener);
 
 	// Create agent
 	await createAgent();
