@@ -1,0 +1,351 @@
+/* Retro/paper theme for landing, tutorial, blog pages */
+/* Scope everything under .retro-layout to avoid polluting the chat theme */
+
+.retro-layout {
+  --paper: #f4f1ea;
+  --ink: #1a1a1a;
+  --accent: #d44a3d;
+  --accent-dim: #a33a30;
+  --terminal: #0c0c0c;
+
+  font-family: 'Space Mono', monospace;
+  background-color: var(--paper);
+  color: var(--ink);
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Paper texture overlay */
+.retro-layout::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.04;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.retro-layout .font-terminal {
+  font-family: 'VT323', monospace;
+}
+
+/* CRT scanline effect */
+.retro-layout .crt::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.03),
+    rgba(0, 0, 0, 0.03) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  animation: retro-scanlines 0.1s linear infinite;
+}
+
+@keyframes retro-scanlines {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(2px); }
+}
+
+/* Blinking cursor */
+.retro-layout .cursor-blink::after {
+  content: '_';
+  animation: retro-blink 1s step-end infinite;
+  color: var(--accent);
+}
+
+@keyframes retro-blink {
+  50% { opacity: 0; }
+}
+
+/* Terminal glow */
+.retro-layout .terminal-glow {
+  box-shadow: 0 0 20px rgba(212, 74, 61, 0.3), inset 0 0 20px rgba(212, 74, 61, 0.05);
+}
+
+/* Typewriter effect */
+.retro-layout .typewriter {
+  overflow: hidden;
+  white-space: nowrap;
+  animation: retro-typing 3.5s steps(40, end);
+}
+
+@keyframes retro-typing {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+/* Glitch effect on hover */
+.retro-layout .glitch-hover:hover {
+  animation: retro-glitch 0.3s ease-in-out;
+}
+
+@keyframes retro-glitch {
+  0%, 100% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(-2px, -2px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+}
+
+/* Boot sequence animation */
+@keyframes retro-boot-line {
+  0% { opacity: 0; transform: translateX(-10px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+.retro-layout .boot-line {
+  opacity: 0;
+  animation: retro-boot-line 0.1s ease forwards;
+}
+
+/* Paper fold effect */
+.retro-layout .paper-fold {
+  position: relative;
+  background: var(--paper);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1), 0 0 40px rgba(0,0,0,0.05) inset;
+}
+
+.retro-layout .paper-fold::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  background: linear-gradient(180deg, rgba(0,0,0,0.02) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+/* Distressed border */
+.retro-layout .distressed-border {
+  border: 2px solid var(--ink);
+  position: relative;
+}
+
+.retro-layout .distressed-border::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: var(--paper);
+  clip-path: polygon(
+    0% 0%, 100% 0%, 100% 100%, 0% 100%,
+    0% 95%, 2% 95%, 2% 90%, 0% 90%,
+    0% 85%, 3% 85%, 3% 80%, 0% 80%,
+    0% 75%, 1% 75%, 1% 70%, 0% 70%,
+    0% 65%, 2% 65%, 2% 60%, 0% 60%,
+    0% 55%, 1% 55%, 1% 50%, 0% 50%,
+    0% 45%, 3% 45%, 3% 40%, 0% 40%,
+    0% 35%, 2% 35%, 2% 30%, 0% 30%,
+    0% 25%, 1% 25%, 1% 20%, 0% 20%,
+    0% 15%, 2% 15%, 2% 10%, 0% 10%,
+    0% 5%, 1% 5%, 1% 0%
+  );
+  z-index: -1;
+}
+
+/* Status LED */
+.retro-layout .status-led {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  animation: retro-pulse-led 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes retro-pulse-led {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* Retro button */
+.retro-layout .btn-retro {
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  position: relative;
+  transition: all 0.1s;
+  cursor: pointer;
+}
+
+.retro-layout .btn-retro::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  right: -4px;
+  bottom: -4px;
+  background: var(--ink);
+  z-index: -1;
+  transition: all 0.1s;
+}
+
+.retro-layout .btn-retro:hover::before {
+  top: 2px;
+  left: 2px;
+  right: -2px;
+  bottom: -2px;
+}
+
+.retro-layout .btn-retro:active {
+  transform: translate(2px, 2px);
+}
+
+.retro-layout .btn-retro:active::before {
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* Terminal window */
+.retro-layout .terminal-window {
+  background: var(--terminal);
+  color: #00ff00;
+  font-family: 'VT323', monospace;
+  position: relative;
+}
+
+.retro-layout .terminal-window::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 255, 0, 0.03),
+    rgba(0, 255, 0, 0.03) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+}
+
+/* Tape effect */
+.retro-layout .tape {
+  position: relative;
+}
+
+.retro-layout .tape::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-2deg);
+  width: 80px;
+  height: 25px;
+  background: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Stamped text */
+.retro-layout .stamp {
+  border: 3px solid var(--accent);
+  color: var(--accent);
+  padding: 4px 12px;
+  transform: rotate(-5deg);
+  display: inline-block;
+  font-weight: bold;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+/* Marquee */
+.retro-layout .marquee {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.retro-layout .marquee span {
+  display: inline-block;
+  animation: retro-marquee 20s linear infinite;
+}
+
+@keyframes retro-marquee {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+/* Coordinates decoration */
+.retro-layout .coords {
+  font-family: 'VT323', monospace;
+  font-size: 12px;
+  color: var(--accent);
+  opacity: 0.5;
+}
+
+/* Install tabs */
+.retro-layout .install-tab {
+  font-family: 'VT323', monospace;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.retro-layout .install-tab:hover {
+  transform: translateY(-1px);
+}
+
+.retro-layout .install-tab.active {
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+/* Copy button */
+.retro-layout .copy-btn {
+  font-family: 'VT323', monospace;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.retro-layout .copy-btn:hover {
+  background: rgba(0, 255, 0, 0.2);
+}
+
+/* Post card hover */
+.retro-layout .post-card {
+  transition: all 0.2s ease;
+}
+
+.retro-layout .post-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Code block */
+.retro-layout .code-block {
+  background: #1a1a1a;
+  color: #f4f1ea;
+  padding: 1rem;
+  font-size: 0.85rem;
+  overflow-x: auto;
+  font-family: 'Space Mono', monospace;
+}
+
+/* Tutorial tab button */
+.retro-layout .tab-btn {
+  transition: all 0.2s;
+  font-family: 'VT323', monospace;
+  cursor: pointer;
+}
+
+.retro-layout .tab-btn.active {
+  background: var(--ink);
+  color: var(--paper);
+}

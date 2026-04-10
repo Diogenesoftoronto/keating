@@ -93,6 +93,7 @@ export interface LearnerState {
 	strengths: string[];
 	weaknesses: string[];
 	lastSessionAt?: number;
+	sessionsCount: number;
 }
 
 export class KeatingStorage {
@@ -348,6 +349,7 @@ export class KeatingStorage {
 			state.topicsExplored.push(topic);
 		}
 		state.lastSessionAt = Date.now();
+		state.sessionsCount = (state.sessionsCount || 0) + 1;
 		await this.saveLearnerState(state);
 
 		return entry;
@@ -372,6 +374,7 @@ export class KeatingStorage {
 						feedbackHistory: [],
 						strengths: [],
 						weaknesses: [],
+						sessionsCount: 0,
 					}
 				);
 			};

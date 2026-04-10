@@ -1,6 +1,6 @@
 {
   "name": "@interleavelove/keating",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "type": "module",
   "description": "A Pi-powered hyperteacher package with self-improving teaching policies, lesson maps, and animated visual teaching artifacts.",
   "keywords": [
@@ -32,7 +32,8 @@
     "bin/",
     "dist/",
     "pi/",
-    "scripts/install/"
+    "scripts/install/",
+    "SYSTEM.md"
   ],
   "pi": {
     "extensions": [

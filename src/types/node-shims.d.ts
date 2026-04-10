@@ -22,6 +22,11 @@ declare module "node:path" {
   export const delimiter: string;
 }
 
+declare module "node:url" {
+  export function fileURLToPath(url: string | URL): string;
+  export function pathToFileURL(path: string): URL;
+}
+
 declare module "node:child_process" {
   export const spawn: (...args: any[]) => any;
   export const spawnSync: (...args: any[]) => any;
@@ -46,6 +51,10 @@ declare module "node:test" {
 declare module "node:assert/strict" {
   const assert: any;
   export default assert;
+}
+
+interface ImportMeta {
+  url: string;
 }
 
 declare const process: any;

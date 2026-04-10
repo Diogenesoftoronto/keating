@@ -1,10 +1,26 @@
 /**
  * Browser-compatible Keating tools/commands
- * Adapts src/pi/hyperteacher-extension.ts for browser use
+ * Uses real implementations from core.ts
  */
 
 import type { AgentTool } from "@mariozechner/pi-agent-core";
 import { KeatingStorage, DEFAULT_BROWSER_POLICY } from "./storage";
+import {
+	buildLessonPlan,
+	lessonPlanToMarkdown,
+	buildConceptMap,
+	runBenchmarkSuite,
+	benchmarkToMarkdown,
+	evolvePolicy,
+	evolutionToMarkdown,
+	DEFAULT_POLICY,
+	diagnoseBenchmark,
+	evaluatePrompt,
+	resolveTopic,
+	type TeacherPolicy,
+	type BenchmarkResult,
+	type EvolutionRun,
+} from "./core";
 
 export const KEATING_SYSTEM_PROMPT = `You are Keating, a hyperteacher designed for cognitive empowerment.
 
@@ -24,19 +40,22 @@ Your role is to ensure every learner is equipped to contribute their own verse.
 ## Available Commands
 Use these slash commands to help learners:
 
-- \`/plan <topic>\` - Generate a lesson plan for a topic
-- \`/map <topic>\` - Create a visual concept map
+- \`/plan <topic>\` - Generate a structured lesson plan for a topic
+- \`/map <topic>\` - Create a visual Mermaid concept map
 - \`/animate <topic>\` - Generate an animation storyboard
 - \`/verify <topic>\` - Create a fact-checking checklist
-- \`/bench\` - Run a teaching benchmark
-- \`/evolve\` - Improve the teaching policy
+- \`/bench\` - Run a synthetic learner benchmark
+- \`/evolve\` - Improve the teaching policy through evolution
 - \`/feedback <up|down|confused> [topic]\` - Record learning feedback
 - \`/policy\` - Show the current teaching policy
 - \`/outputs\` - Browse all saved artifacts
 - \`/state\` - Show your learner profile
+- \`/improve\` - Get improvement suggestions from benchmark diagnosis
+- \`/trace\` - Browse benchmark and evolution traces
+- \`/prompt-eval\` - Evaluate a prompt template for teaching effectiveness
 `;
 
-// Helper function to create tools without complex schema types
+// Helper function to create tools with proper schema
 function createSimpleTool(
 	name: string,
 	description: string,
@@ -60,24 +79,45 @@ function createSimpleTool(
 
 export async function createKeatingTools(storage: KeatingStorage): Promise<AgentTool[]> {
 	return [
-		// /plan - Generate lesson plan
+		// /plan - Generate real lesson plan
 		createSimpleTool(
 			"plan",
-			"Generate a deterministic lesson plan for a topic. Usage: /plan <topic>",
+			"Generate a structured lesson plan for a topic. Usage: /plan <topic>",
 			async (params) => {
 				const topic = (params.topic as string) || "";
 				if (!topic) {
 					return "Please specify a topic. Usage: /plan <topic>";
 				}
 
-				const plan = generateLessonPlan(topic);
-				await storage.saveLessonPlan(topic, plan.content, plan.metadata);
+				const policy = await storage.getActivePolicy();
+				const teacherPolicy: TeacherPolicy = policy
+					? {
+							name: policy.id,
+							analogyDensity: 0.6,
+							socraticRatio: 0.55,
+							formalism: 0.5,
+							retrievalPractice: 0.7,
+							exerciseCount: 4,
+							diagramBias: 0.45,
+							reflectionBias: 0.5,
+							interdisciplinaryBias: 0.4,
+							challengeRate: 0.35,
+						}
+					: DEFAULT_POLICY;
 
-				return `📚 Lesson plan created for "${topic}"\n\n${plan.content}\n\n[Saved to browser storage]`;
+				const plan = buildLessonPlan(topic, teacherPolicy);
+				const markdown = lessonPlanToMarkdown(plan);
+
+				await storage.saveLessonPlan(topic, markdown, {
+					domain: plan.topic.domain,
+					phaseCount: plan.phases.length,
+				});
+
+				return `📚 Lesson plan created for "${topic}"\n\n${markdown}\n\n[Saved to browser storage]`;
 			}
 		),
 
-		// /map - Generate concept map
+		// /map - Generate real concept map
 		createSimpleTool(
 			"map",
 			"Generate a Mermaid concept map for a topic. Usage: /map <topic>",
@@ -87,7 +127,7 @@ export async function createKeatingTools(storage: KeatingStorage): Promise<Agent
 					return "Please specify a topic. Usage: /map <topic>";
 				}
 
-				const mapContent = generateConceptMap(topic);
+				const mapContent = buildConceptMap(topic);
 				await storage.saveLessonMap(topic, mapContent);
 
 				return `🗺️ Concept map for "${topic}"\n\n\`\`\`mermaid\n${mapContent}\n\`\`\`\n\n[Saved to browser storage]`;
@@ -104,10 +144,81 @@ export async function createKeatingTools(storage: KeatingStorage): Promise<Agent
 					return "Please specify a topic. Usage: /animate <topic>";
 				}
 
-				const animation = generateAnimationStoryboard(topic);
-				await storage.saveAnimation(topic, animation.storyboard, animation.scene, animation.manifest);
+				const resolved = resolveTopic(topic);
+				const storyboard = `# Animation Storyboard: ${resolved.title}
 
-				return `🎬 Animation storyboard for "${topic}"\n\n${animation.storyboard}\n\n[Saved to browser storage]`;
+## Scene 1: Introduction (0-2s)
+- **Visual**: Title card with "${resolved.title}"
+- **Transition**: Fade in
+- **Audio**: Brief hook from summary
+
+## Scene 2: Intuition Phase (2-8s)
+- **Visual**: ${resolved.intuition[0] || "Animated diagram showing key concept"}
+- **Duration**: 6s
+- **Narration**: Concrete example before formal language
+
+## Scene 3: Formal Structure (8-15s)
+- **Visual**: ${resolved.formalCore[0] || "Step-by-step formal definition"}
+- **Duration**: 7s
+- **Highlight**: Key definitions and relationships
+
+## Scene 4: Misconception Repair (15-20s)
+- **Visual**: Common mistake vs correct understanding
+- **Duration**: 5s
+- **Overlay**: Warning indicators
+
+## Scene 5: Examples (20-28s)
+- **Visual**: ${resolved.examples[0] || "Worked example"}
+- **Duration**: 8s
+- **Step-through**: Incremental reveal
+
+## Scene 6: Transfer (28-35s)
+- **Visual**: Bridge to ${resolved.interdisciplinaryHooks.slice(0, 2).join(", ")}
+- **Duration**: 7s
+- **Transition**: Fade out with summary
+`;
+
+				const scene = `// Scene: ${resolved.title}
+// Manim-web compatible scene definition
+
+class ${resolved.slug.replace(/-/g, "_").replace(/^(.)/, (c) => c.toUpperCase())}Scene extends Scene {
+  construct() {
+    // Scene 1: Introduction
+    this.play(FadeIn(title("${resolved.title}")));
+    
+    // Scene 2: Intuition
+    this.play(Create(intuitionDiagram));
+    
+    // Scene 3: Formal
+    this.play(Write(formalDefinition));
+    
+    // Scene 4: Misconceptions
+    this.play(Indicate(commonMistake), Transform(commonMistake, correctVersion));
+    
+    // Scene 5: Examples
+    this.play(Create(exampleVisual));
+    
+    // Scene 6: Transfer
+    this.play(FadeOut(title("${resolved.title}")));
+  }
+}`;
+
+				const manifest = JSON.stringify(
+					{
+						topic: resolved.title,
+						slug: resolved.slug,
+						domain: resolved.domain,
+						scenes: ["intro", "intuition", "formal", "misconceptions", "examples", "transfer"],
+						duration: 35,
+						generatedAt: new Date().toISOString(),
+					},
+					null,
+					2
+				);
+
+				await storage.saveAnimation(topic, storyboard, scene, manifest);
+
+				return `🎬 Animation storyboard for "${topic}"\n\n${storyboard}\n\n[Saved to browser storage]`;
 			}
 		),
 
@@ -121,22 +232,73 @@ export async function createKeatingTools(storage: KeatingStorage): Promise<Agent
 					return "Please specify a topic. Usage: /verify <topic>";
 				}
 
-				const checklist = generateVerificationChecklist(topic);
+				const resolved = resolveTopic(topic);
+				const checklist = `# Verification Checklist: ${resolved.title}
+
+Before teaching this topic, verify your knowledge:
+
+## Core Facts
+- [ ] I can define ${resolved.title} precisely
+- [ ] I know 3+ real-world applications
+- [ ] I understand the limitations
+
+## Common Misconceptions
+${resolved.misconceptions.map((m) => `- [ ] I can explain why "${m}" is wrong`).join("\n")}
+- [ ] I have counterexamples ready
+
+## Prerequisites
+${resolved.prerequisites.map((p) => `- [ ] Learners need: ${p}`).join("\n")}
+- [ ] I can assess prerequisite knowledge
+- [ ] I have bridge materials if needed
+
+## Edge Cases
+- [ ] I know where ${resolved.title} doesn't apply
+- [ ] I can handle "what if" questions
+- [ ] I understand advanced extensions
+
+## Sources Verified
+- [ ] Primary sources checked
+- [ ] Multiple sources agree
+- [ ] Recent developments included
+
+---
+Complete this checklist before teaching ${resolved.title}.
+`;
+
 				await storage.saveVerification(topic, checklist);
 
 				return `✅ Verification checklist for "${topic}"\n\n${checklist}\n\n[Saved to browser storage]`;
 			}
 		),
 
-		// /bench - Run teaching benchmark
+		// /bench - Run real teaching benchmark
 		createSimpleTool(
 			"bench",
 			"Run a synthetic learner benchmark. Usage: /bench [topic]",
 			async (params) => {
 				const topic = params.topic as string | undefined;
-				const result = await runBenchmark(storage, topic);
+				const policy = await storage.getActivePolicy();
+				const teacherPolicy: TeacherPolicy = policy
+					? {
+							name: policy.id,
+							analogyDensity: 0.6,
+							socraticRatio: 0.55,
+							formalism: 0.5,
+							retrievalPractice: 0.7,
+							exerciseCount: 4,
+							diagramBias: 0.45,
+							reflectionBias: 0.5,
+							interdisciplinaryBias: 0.4,
+							challengeRate: 0.35,
+						}
+					: DEFAULT_POLICY;
 
-				return `📊 Benchmark complete!\n\nScore: ${result.score.toFixed(2)}/100\n\n${result.report}`;
+				const result = runBenchmarkSuite(teacherPolicy, topic);
+				const report = benchmarkToMarkdown(result);
+
+				await storage.saveBenchmark(result.overallScore, report, topic, JSON.stringify(result.trace, null, 2));
+
+				return `📊 Benchmark complete!\n\n**Overall Score:** ${result.overallScore.toFixed(2)}/100\n\n${report}`;
 			}
 		),
 
@@ -146,9 +308,48 @@ export async function createKeatingTools(storage: KeatingStorage): Promise<Agent
 			"Evolve and improve the teaching policy. Usage: /evolve [topic]",
 			async (params) => {
 				const topic = params.topic as string | undefined;
-				const result = await evolvePolicy(storage, topic);
+				const policy = await storage.getActivePolicy();
+				const basePolicy: TeacherPolicy = policy
+					? {
+							name: policy.id,
+							analogyDensity: 0.6,
+							socraticRatio: 0.55,
+							formalism: 0.5,
+							retrievalPractice: 0.7,
+							exerciseCount: 4,
+							diagramBias: 0.45,
+							reflectionBias: 0.5,
+							interdisciplinaryBias: 0.4,
+							challengeRate: 0.35,
+						}
+					: DEFAULT_POLICY;
 
-				return `🧬 Policy evolved!\n\nBest score: ${result.bestScore.toFixed(2)}/100\n\nNew policy applied.`;
+				const run = evolvePolicy(basePolicy, topic);
+				const report = evolutionToMarkdown(run);
+
+				// Save evolved policy
+				await storage.savePolicy(
+					`# Evolved Teaching Policy\n\n` +
+						`Generated: ${new Date().toISOString()}\n` +
+						`Score: ${run.best.overallScore.toFixed(2)}/100\n\n` +
+						`## Parameters\n` +
+						`- analogyDensity: ${run.bestPolicy.analogyDensity.toFixed(3)}\n` +
+						`- socraticRatio: ${run.bestPolicy.socraticRatio.toFixed(3)}\n` +
+						`- formalism: ${run.bestPolicy.formalism.toFixed(3)}\n` +
+						`- exerciseCount: ${run.bestPolicy.exerciseCount}\n` +
+						`- diagramBias: ${run.bestPolicy.diagramBias.toFixed(3)}\n`,
+					true
+				);
+
+				await storage.saveEvolution(
+					run.best.overallScore,
+					JSON.stringify(run.bestPolicy),
+					report,
+					topic,
+					JSON.stringify(run.exploredCandidates, null, 2)
+				);
+
+				return `🧬 Policy evolved!\n\n**Best Score:** ${run.best.overallScore.toFixed(2)}/100\n**Baseline:** ${run.baseline.overallScore.toFixed(2)}/100\n**Accepted:** ${run.acceptedCandidates.length}/${run.exploredCandidates.length} candidates\n\n${report}`;
 			}
 		),
 
@@ -222,217 +423,111 @@ export async function createKeatingTools(storage: KeatingStorage): Promise<Agent
 				return `👤 Learner Profile
 
 **Topics Explored:** ${state.topicsExplored.length}
-- ${state.topicsExplored.slice(-10).join("\n- ") || "None yet"}
+${state.topicsExplored.slice(-10).map((t) => `- ${t}`).join("\n") || "None yet"}
 
 **Feedback History:**
 - 👍 ${upCount} positive
-- 👎 ${downCount} negative  
+- 👎 ${downCount} negative
 - 🤔 ${confusedCount} confused
 
 ${state.lastSessionAt ? `**Last Session:** ${new Date(state.lastSessionAt).toLocaleString()}` : "**First Session:** Welcome to Keating!"}`;
 			}
 		),
-	];
-}
 
-// Helper functions for generating content
+		// /improve - Get improvement suggestions
+		createSimpleTool(
+			"improve",
+			"Get improvement suggestions from benchmark diagnosis. Usage: /improve",
+			async () => {
+				const policy = await storage.getActivePolicy();
+				const teacherPolicy: TeacherPolicy = policy
+					? {
+							name: policy.id,
+							analogyDensity: 0.6,
+							socraticRatio: 0.55,
+							formalism: 0.5,
+							retrievalPractice: 0.7,
+							exerciseCount: 4,
+							diagramBias: 0.45,
+							reflectionBias: 0.5,
+							interdisciplinaryBias: 0.4,
+							challengeRate: 0.35,
+						}
+					: DEFAULT_POLICY;
 
-function generateLessonPlan(topic: string): { content: string; metadata: Record<string, unknown> } {
-	return {
-		content: `# Lesson Plan: ${topic}
+				const benchmark = runBenchmarkSuite(teacherPolicy);
+				const suggestions = diagnoseBenchmark(benchmark);
 
-## Prerequisites
-- What should learners already know before starting?
+				if (suggestions.length === 0) {
+					return `✅ Benchmark looks healthy!\n\nOverall score: ${benchmark.overallScore.toFixed(2)}/100\n\nNo major improvement areas identified.`;
+				}
 
-## Learning Objectives
-1. Understand the core concepts of ${topic}
-2. Apply ${topic} in practical scenarios
-3. Transfer knowledge to new contexts
+				const suggestionList = suggestions
+					.map((s, i) => `### ${i + 1}. ${s.area}\n- **Metric**: ${s.metric} = ${s.value.toFixed(2)}\n- **Suggestion**: ${s.suggestion}`)
+					.join("\n\n");
 
-## Diagnostic Questions
-1. What do you already know about ${topic}?
-2. Where have you encountered ${topic} before?
-3. What aspects confuse you most?
-
-## Key Concepts
-- Concept 1: [To be explored]
-- Concept 2: [To be explored]
-- Concept 3: [To be explored]
-
-## Practice Activities
-1. Reconstruction exercise
-2. Transfer application
-3. Self-assessment
-
-## Success Criteria
-- Learner can explain ${topic} in their own words
-- Learner can apply ${topic} to novel problems
-- Learner can teach ${topic} to someone else
-`,
-		metadata: {
-			topic,
-			generatedAt: new Date().toISOString(),
-			version: "1.0",
-		},
-	};
-}
-
-function generateConceptMap(topic: string): string {
-	return `graph TD
-    A[${topic}] --> B[Core Concepts]
-    A --> C[Applications]
-    A --> D[Related Topics]
-    
-    B --> B1[Concept 1]
-    B --> B2[Concept 2]
-    B --> B3[Concept 3]
-    
-    C --> C1[Practical Use]
-    C --> C2[Real-world Examples]
-    
-    D --> D1[Prerequisites]
-    D --> D2[Advanced Topics]
-    
-    style A fill:#d44a3d,color:#fff
-    style B fill:#3043a6,color:#fff
-    style C fill:#047857,color:#fff
-    style D fill:#64748b,color:#fff`;
-}
-
-function generateAnimationStoryboard(topic: string): { storyboard: string; scene: string; manifest: string } {
-	return {
-		storyboard: `# Animation Storyboard: ${topic}
-
-## Scene 1: Introduction
-- Visual: Title card with "${topic}"
-- Duration: 2s
-- Transition: Fade in
-
-## Scene 2: Core Concept
-- Visual: Animated diagram showing key concept
-- Duration: 5s
-- Narration: Brief explanation
-
-## Scene 3: Application
-- Visual: Step-by-step demonstration
-- Duration: 8s
-- Highlight: Key points
-
-## Scene 4: Summary
-- Visual: Recap with key takeaways
-- Duration: 3s
-- Transition: Fade out
-`,
-		scene: `# Scene: ${topic}
-
-// Animation code would go here
-// This is a placeholder for manim-web compatible scene definition`,
-		manifest: JSON.stringify(
-			{
-				topic,
-				scenes: ["intro", "concept", "application", "summary"],
-				duration: 18,
-				generatedAt: new Date().toISOString(),
-			},
-			null,
-			2
+				return `🔧 Improvement Suggestions\n\nBenchmark score: ${benchmark.overallScore.toFixed(2)}/100\n\n${suggestionList}`;
+			}
 		),
-	};
-}
 
-function generateVerificationChecklist(topic: string): string {
-	return `# Verification Checklist: ${topic}
+		// /trace - Browse benchmark/evolution traces
+		createSimpleTool(
+			"trace",
+			"Browse benchmark and evolution traces. Usage: /trace [type]",
+			async (params) => {
+				const type = (params.type as string) || "all";
 
-Before teaching this topic, verify your knowledge:
+				const benchmarks = await storage.getBenchmarks();
+				const evolutions = await storage.getEvolutions();
 
-## Core Facts
-- [ ] I can define ${topic} precisely
-- [ ] I know 3+ real-world applications
-- [ ] I understand the limitations
+				if (benchmarks.length === 0 && evolutions.length === 0) {
+					return "No traces yet. Use /bench or /evolve first.";
+				}
 
-## Common Misconceptions
-- [ ] I know what learners often get wrong
-- [ ] I can explain why these are wrong
-- [ ] I have counterexamples ready
+				const lines: string[] = ["📊 Keating Traces\n"];
 
-## Prerequisites
-- [ ] I know what learners need first
-- [ ] I can assess prerequisite knowledge
-- [ ] I have bridge materials if needed
+				if (type === "all" || type === "benchmark") {
+					lines.push("## Benchmarks");
+					for (const b of benchmarks.slice(0, 10)) {
+						lines.push(`- ${b.topic || "general"}: ${b.score.toFixed(2)} (${new Date(b.createdAt).toLocaleDateString()})`);
+					}
+					lines.push("");
+				}
 
-## Edge Cases
-- [ ] I know where ${topic} doesn't apply
-- [ ] I can handle "what if" questions
-- [ ] I understand advanced extensions
+				if (type === "all" || type === "evolution") {
+					lines.push("## Evolutions");
+					for (const e of evolutions.slice(0, 10)) {
+						lines.push(`- ${e.topic || "general"}: ${e.bestScore.toFixed(2)} (${new Date(e.createdAt).toLocaleDateString()})`);
+					}
+				}
 
-## Sources Verified
-- [ ] Primary sources checked
-- [ ] Multiple sources agree
-- [ ] Recent developments included
+				return lines.join("\n");
+			}
+		),
 
----
-Complete this checklist before teaching ${topic}.
-`;
-}
+		// /prompt-eval - Evaluate prompt template
+		createSimpleTool(
+			"prompt-eval",
+			"Evaluate a prompt template for teaching effectiveness. Usage: /prompt-eval <prompt>",
+			async (params) => {
+				const promptContent = (params.prompt as string) || "";
+				if (!promptContent) {
+					return "Please provide a prompt to evaluate. Usage: /prompt-eval <prompt>";
+				}
 
-async function runBenchmark(storage: KeatingStorage, topic?: string): Promise<{ score: number; report: string }> {
-	const baseScore = 70 + Math.random() * 20;
-	const score = Math.round(baseScore * 10) / 10;
+				const result = evaluatePrompt(promptContent);
 
-	const report = `# Benchmark Report${topic ? `: ${topic}` : ""}
+				const objectiveList = Object.entries(result.objectives)
+					.map(([k, v]) => `- ${k}: ${v.toFixed(2)}`)
+					.join("\n");
 
-## Summary
-- **Score:** ${score}/100
-- **Date:** ${new Date().toLocaleString()}
+				const feedbackSection =
+					result.feedback.length > 0
+						? `\n## Feedback\n${result.feedback.map((f) => `- ${f}`).join("\n")}`
+						: "\n## Feedback\n- No major issues detected.";
 
-## Breakdown
-- Diagnosis Accuracy: ${Math.round(70 + Math.random() * 25)}%
-- Teaching Effectiveness: ${Math.round(70 + Math.random() * 25)}%
-- Transfer Testing: ${Math.round(70 + Math.random() * 25)}%
-- Voice Preservation: ${Math.round(70 + Math.random() * 25)}%
-
-## Recommendations
-1. Focus on transfer testing
-2. Add more diagnostic questions
-3. Improve Socratic guidance
-`;
-
-	await storage.saveBenchmark(score, report, topic);
-	return { score, report };
-}
-
-async function evolvePolicy(storage: KeatingStorage, topic?: string): Promise<{ bestScore: number; policy: string; report: string }> {
-	const policies = await storage.getPolicies();
-	const currentPolicy = policies.find((p) => p.active)?.content || DEFAULT_BROWSER_POLICY;
-
-	const evolvedPolicy = currentPolicy + `
-
-## Evolved Strategies
-- Added: More diagnostic checkpoints
-- Added: Transfer testing after each concept
-- Added: Voice preservation scoring
-- Evolved at: ${new Date().toISOString()}
-`;
-
-	const bestScore = 75 + Math.random() * 15;
-	await storage.savePolicy(evolvedPolicy, true);
-
-	const report = `# Evolution Report${topic ? `: ${topic}` : ""}
-
-## Results
-- **Best Score:** ${bestScore.toFixed(2)}/100
-- **Iterations:** 3
-- **Improvements:** +${(Math.random() * 10).toFixed(1)}%
-
-## Changes Applied
-1. Enhanced diagnostic phase
-2. Improved transfer testing
-3. Better voice preservation checks
-
-## Next Steps
-- Continue monitoring scores
-- Iterate on weak areas
-`;
-
-	return { bestScore: Math.round(bestScore * 10) / 10, policy: evolvedPolicy, report };
+				return `📝 Prompt Evaluation\n\n**Score:** ${result.score.toFixed(2)}/100\n\n## Objectives\n${objectiveList}${feedbackSection}`;
+			}
+		),
+	];
 }
