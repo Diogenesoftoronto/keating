@@ -123,7 +123,9 @@ export function buildAnimationManifest(topicName: string, policy: TeacherPolicy)
   };
 }
 
-export function animationSceneSource(topicName: string, policy: TeacherPolicy, importSpecifier: string): string {
+import { piComplete } from "./pi-agent.js";
+
+export async function animationSceneSource(cwd: string, topicName: string, policy: TeacherPolicy, importSpecifier: string): Promise<string> {
   const topic = resolveTopic(topicName);
   const manifest = buildAnimationManifest(topicName, policy);
   const thesis = topic.formalCore[0] ?? topic.summary;
@@ -155,110 +157,34 @@ function textLine(text, y, fontSize = 28, color = palette.ink, fontFamily = "Iow
 }
 `;
 
+  const prompt = `You are an expert ManimJS animation developer. Output the body of the 'construct(scene)' function for an animation explaining the academic topic: "${topic.title}".
+  
+Domain: ${topic.domain}
+Focus: ${manifest.sceneKind}
+Topic Details:
+- Thesis: ${thesis}
+- Misconception to avoid: ${misconception}
+- Application: ${bridge}
+- Diagram Nodes available: ${JSON.stringify(topic.diagramNodes)}
+
+Environment Context:
+We are using manim-web. You have imported Scene, Text, MathTex, Axes, BarChart, Create, Write, FadeIn, FadeOut, Transform. 
+You can use the helper \`textLine(text, y, fontSize, color)\` which returns a Text node centered at (0, y).
+Colors available: palette.accent, palette.support, palette.soft, palette.warning, palette.ink.
+
+Respond ONLY with the JavaScript code that belongs inside \`export async function construct(scene) { ... }\`. Do NOT wrap it in markdown block quotes. Do not provide a pre-amble or explanation. Generate sequential scene animations using \`await scene.play(...)\` and \`await scene.wait(...)\` in a way that matches the requested topic's depth. Ensure it looks impressive and dynamic.`;
+
   let sceneLogic = "";
-
-  switch (manifest.sceneKind) {
-    case "function-graph":
-      sceneLogic = `
-  const axes = new Axes({
-    xRange: [-2, 3, 1],
-    yRange: [-1, 6, 1],
-    xLength: 10,
-    yLength: 5.5,
-    color: palette.support
-  });
-  axes.moveTo([0, -0.2, 0]);
-
-  const plot = axes.plot((x) => x * x, {
-    xRange: [-1.8, 2.2],
-    color: palette.accent,
-    strokeWidth: 5
-  });
-
-  const formula = new MathTex({
-    latex: ${JSON.stringify(topic.formalCore[0] || "f(x)")},
-    fontSize: 42,
-    color: palette.ink
-  });
-  formula.moveTo([0, -3.05, 0]);
-
-  await scene.play(new Create(axes), new Create(plot));
-  await scene.play(new Write(formula));
-`;
-      break;
-
-    case "distribution-bars":
-    case "belief-update":
-      sceneLogic = `
-  const chart = new BarChart({
-    values: [0.2, 0.5, 0.8],
-    xLabels: ["initial", "mid", "target"],
-    barColors: [palette.support, palette.soft, palette.accent],
-    yRange: [0, 1, 0.2],
-    width: 8.5,
-    height: 4.6,
-    axisColor: palette.ink
-  });
-  chart.moveTo([0, -0.25, 0]);
-
-  const label = textLine(${JSON.stringify(topic.summary)}, -3.0, 24, palette.soft);
-
-  await scene.play(new Create(chart));
-  await scene.play(new FadeIn(label));
-`;
-      break;
-
-    case "code-trace":
-      sceneLogic = `
-  const code = textLine(${JSON.stringify(topic.examples[0] || "// example code")}, 0, 24, palette.soft, "'Fira Code', monospace");
-  const state = textLine("State: evolving...", -2.0, 24, palette.accent);
-  await scene.play(new Write(code));
-  await scene.play(new FadeIn(state));
-`;
-      break;
-
-    case "timeline":
-      sceneLogic = `
-  const events = ${JSON.stringify(topic.diagramNodes.slice(0, 4))};
-  for (let i = 0; i < events.length; i++) {
-    const node = textLine(events[i], 1.5 - i * 1.0, 28, i % 2 === 0 ? palette.accent : palette.support);
-    await scene.play(new FadeIn(node));
-    await scene.wait(0.2);
-  }
-`;
-      break;
-
-    case "case-diagram":
-      sceneLogic = `
-  const premise = textLine(${JSON.stringify(topic.formalCore[0] || "Premise")}, 1.0, 26, palette.soft);
-  const conclusion = textLine(${JSON.stringify(topic.summary)}, -1.0, 30, palette.accent);
-  await scene.play(new Write(premise));
-  await scene.wait(0.5);
-  await scene.play(new Transform(premise, conclusion));
-`;
-      break;
-
-    case "mind-map":
-      sceneLogic = `
-  const center = textLine(${JSON.stringify(topic.title)}, 0, 42, palette.accent);
-  await scene.play(new Write(center));
-  const nodes = ${JSON.stringify(topic.diagramNodes.slice(0, 4))};
-  const positions = [[-4, 2], [4, 2], [-4, -2], [4, -2]];
-  for (let i = 0; i < nodes.length; i++) {
-    const node = textLine(nodes[i], 0, 24, palette.support);
-    node.moveTo([...positions[i], 0]);
-    await scene.play(new FadeIn(node));
-  }
-`;
-      break;
-
-    default: // concept-card
-      sceneLogic = `
-  const thesis = textLine(${JSON.stringify(thesis)}, 1.25, 26);
-  const warning = textLine(${JSON.stringify(`Misconception: ${misconception}`)}, -0.15, 24, palette.warning);
-  const hook = textLine(${JSON.stringify(`Bridge: ${bridge}`)}, -1.65, 24, palette.soft);
-
-  await scene.play(new FadeIn(thesis), new FadeIn(warning), new FadeIn(hook));
+  try {
+    sceneLogic = await piComplete(cwd, prompt, { thinking: "medium" });
+    // Remove markdown code blocks if the LLM leaked them
+    sceneLogic = sceneLogic.replace(/^```[a-z]*\n?/gm, "").replace(/```$/g, "").trim();
+  } catch (error) {
+    console.error("Failed to dynamically generate scene logic, falling back to basic stub:", error);
+    sceneLogic = `
+  const thesisNode = textLine(${JSON.stringify(thesis)}, 1.25, 26);
+  const warningNode = textLine(${JSON.stringify(`Misconception: ${misconception}`)}, -0.15, 24, palette.warning);
+  await scene.play(new FadeIn(thesisNode), new FadeIn(warningNode));
 `;
   }
 
@@ -324,7 +250,7 @@ export async function writeLessonAnimation(
   const manifestPath = join(topicDir, "manifest.json");
   const readmePath = join(topicDir, "README.md");
   const manifest = buildAnimationManifest(topicName, policy);
-  const sceneSource = animationSceneSource(topicName, policy, importSpecifier);
+  const sceneSource = await animationSceneSource(cwd, topicName, policy, importSpecifier);
   const playerHtml = `<!doctype html>
 <html lang="en">
   <head>

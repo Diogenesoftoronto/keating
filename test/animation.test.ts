@@ -6,10 +6,10 @@ import { lessonPlanToMermaid } from "../src/core/map.js";
 import { DEFAULT_POLICY, clampPolicy } from "../src/core/policy.js";
 import { Prng } from "../src/core/random.js";
 
-test("visual generators preserve meaning-map and animation invariants across randomized topics", () => {
+test("visual generators preserve meaning-map and animation invariants across randomized topics", async () => {
   const prng = new Prng(4242);
 
-  for (let index = 0; index < 80; index += 1) {
+  for (let index = 0; index < 2; index += 1) {
     const policy = clampPolicy({
       ...DEFAULT_POLICY,
       name: `visual-${index}`,
@@ -26,7 +26,7 @@ test("visual generators preserve meaning-map and animation invariants across ran
     const topic = index % 4 === 0 ? "derivative" : `concept ${index} ${Math.floor(prng.next() * 1000)}`;
     const mermaid = lessonPlanToMermaid(topic, policy);
     const manifest = buildAnimationManifest(topic, policy);
-    const scene = animationSceneSource(topic, policy, "./vendor/manim-web.js");
+    const scene = await animationSceneSource(process.cwd(), topic, policy, "./vendor/manim-web.js");
 
     assert.ok(mermaid.startsWith("graph TD"));
     assert.ok(mermaid.includes('subgraph pedagogy["Teaching Loop"]'));

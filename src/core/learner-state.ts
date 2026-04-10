@@ -82,33 +82,27 @@ export function recordFeedback(
   return state;
 }
 
-export function buildProfileFromFeedback(state: LearnerState): LearnerProfile {
-  const profile = { ...state.profile };
-  if (state.feedback.length === 0) return profile;
+import { piCompleteJson } from "./pi-agent.js";
 
-  const total = state.feedback.length;
-  const confusedCount = state.feedback.filter(f => f.signal === "confused").length;
-  const positiveCount = state.feedback.filter(f => f.signal === "thumbs-up").length;
-  const negativeCount = state.feedback.filter(f => f.signal === "thumbs-down").length;
+export async function buildProfileFromFeedback(cwd: string, state: LearnerState): Promise<LearnerProfile> {
+  if (state.feedback.length === 0) return { ...state.profile };
 
-  const confusionRate = confusedCount / total;
-  const satisfactionRate = positiveCount / total;
+  const prompt = `You are updating a learner's pedagogical profile based on their history.
+Current Profile: ${JSON.stringify(state.profile, null, 2)}
+Recent Feedback: ${JSON.stringify(state.feedback, null, 2)}
+Covered Topics: ${JSON.stringify(state.coveredTopics, null, 2)}
 
-  // High confusion suggests lower abstraction comfort and higher anxiety
-  profile.abstractionComfort = clamp(profile.abstractionComfort - confusionRate * 0.2);
-  profile.anxiety = clamp(profile.anxiety + confusionRate * 0.15);
+Given this feedback, how should the learner's traits (priorKnowledge, abstractionComfort, analogyNeed, dialoguePreference, diagramAffinity, persistence, transferDesire, anxiety) be updated? Each trait is a scalar from 0.0 to 1.0. 
+Respond ONLY with a JSON object exactly matching the LearnerProfile schema (include all fields, even 'id'). Use thoughtful inferences. For example, if they are confused frequently, they may need more analogies and less abstraction. If they give thumbs-up on highly formal topics, they have high abstraction comfort.`;
 
-  // High satisfaction suggests the current teaching style works
-  profile.persistence = clamp(profile.persistence + satisfactionRate * 0.1);
-
-  // High negative feedback suggests teaching style mismatch
-  profile.dialoguePreference = clamp(profile.dialoguePreference + (negativeCount / total) * 0.1);
-
-  // Update prior knowledge from covered topics
-  if (state.coveredTopics.length > 0) {
-    const avgMastery = state.coveredTopics.reduce((sum, t) => sum + t.masteryEstimate, 0) / state.coveredTopics.length;
-    profile.priorKnowledge = clamp(avgMastery);
+  try {
+    const updated = await piCompleteJson<LearnerProfile>(cwd, prompt, { thinking: "low" });
+    return {
+      ...updated,
+      id: state.profile.id // Preserve ID
+    };
+  } catch (error) {
+    console.error("Failed to dynamically update profile, falling back to current:", error);
+    return { ...state.profile };
   }
-
-  return profile;
 }

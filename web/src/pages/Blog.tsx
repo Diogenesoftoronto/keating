@@ -37,6 +37,33 @@ function CodeBlock({ children }: { children: string }) {
 const POSTS: Post[] = [
   {
     date: "2026-04-10",
+    badge: { label: "RELEASE", color: "release" },
+    title: "From Stubs to Reality: AI-Powered Pedagogical Verification",
+    body: (
+      <>
+        <p className="mb-4">
+          Today we've completed a major architectural shift: moving from deterministic mathematical stubs to true AI-powered verification across our core pedagogical engines.
+        </p>
+        <h3 className="font-bold mt-4 mb-2">What's New?</h3>
+        <ul className="text-sm space-y-2 ml-4 mb-4">
+          <li>
+            <strong>Real-Time Animation Generation:</strong> The animation engine no longer relies on hardcoded ManimJS templates. It now uses the <Code>pi</Code> agent to generate custom, context-aware visual teaching beats for any topic.
+          </li>
+          <li>
+            <strong>Realistic Teaching Simulations:</strong> Our synthetic benchmarks now use LLM-backed simulations to evaluate teaching outcomes (mastery, retention, confusion) instead of algebraic approximations.
+          </li>
+          <li>
+            <strong>Dynamic Learner Profiles:</strong> Learner state updates are now driven by AI-inferred pedagogical shifts based on historical performance and feedback.
+          </li>
+        </ul>
+        <p className="text-sm text-[#64748b]">
+          These changes ensure that Keating's "self-improvement" loop is grounded in actual semantic understanding rather than pre-baked formulas.
+        </p>
+      </>
+    ),
+  },
+  {
+    date: "2026-04-10",
     badge: { label: "TECH", color: "tech" },
     title: "Power Move: Migrating to Nitro + Vite",
     body: (

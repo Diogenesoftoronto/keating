@@ -354,8 +354,8 @@ async function runSyntheticBenchmarkAnalysis(currentPolicy) {
   const topicDeltas = new Map();
 
   for (let seed = 1; seed <= 200; seed += 1) {
-    const baseline = runBenchmarkSuite(DEFAULT_POLICY, undefined, seed);
-    const current = runBenchmarkSuite(currentPolicy, undefined, seed);
+    const baseline = await runBenchmarkSuite(process.cwd(), DEFAULT_POLICY, undefined, seed);
+    const current = await runBenchmarkSuite(process.cwd(), currentPolicy, undefined, seed);
 
     const derivativeDelta =
       current.topicBenchmarks.find((entry) => entry.topic.slug === "derivative")?.meanScore -
@@ -416,8 +416,8 @@ async function runSyntheticBenchmarkAnalysis(currentPolicy) {
       };
       for (let seed = 1; seed <= 200; seed += 1) {
         deltas.push(
-          runBenchmarkSuite(ablatedPolicy, undefined, seed).overallScore -
-            runBenchmarkSuite(DEFAULT_POLICY, undefined, seed).overallScore
+          (await runBenchmarkSuite(process.cwd(), ablatedPolicy, undefined, seed)).overallScore -
+          (await runBenchmarkSuite(process.cwd(), DEFAULT_POLICY, undefined, seed)).overallScore
         );
       }
       const sorted = [...deltas].sort((left, right) => left - right);
