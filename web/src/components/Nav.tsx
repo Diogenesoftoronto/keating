@@ -12,7 +12,7 @@ export function Nav({ showFeatures = false }: NavProps) {
   const closeMobile = () => setMobileOpen(false);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-[#f4f1ea]/95 border-b-2 border-[#1a1a1a] backdrop-blur-sm">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-[#f4f1ea] border-b-2 border-[#1a1a1a]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
           <div className="status-led" />

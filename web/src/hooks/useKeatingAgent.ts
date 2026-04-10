@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState, useTransition, useCallback, use } from "react";
 import { Agent } from "@mariozechner/pi-agent-core";
 import {
   getModel,
@@ -174,24 +174,38 @@ function hybridStreamFn(model: Model<Api>, context: Context, options?: SimpleStr
   return streamSimple(model, context, options);
 }
 
+// ─── Initialisation Promise ─────────────────────────────────────────────────
+let initPromise: Promise<void> | null = null;
+function getInitPromise() {
+  if (!initPromise) {
+    initPromise = Promise.all([
+      syncCustomProviderKeys(),
+      keatingStorage.init()
+    ]).then(() => {});
+  }
+  return initPromise;
+}
+
 // ─── Hook ───────────────────────────────────────────────────────────────────
 export interface UseKeatingAgentReturn {
   title: string;
-  ready: boolean;
+  isPending: boolean;
   openSettings: () => void;
+  chatPanelRef: (node: ChatPanel | null) => void;
 }
 
-export function useKeatingAgent(
-  chatPanelRef: React.RefObject<ChatPanel | null>,
-): UseKeatingAgentReturn {
-  const [title] = useState("Keating");
-  const [ready, setReady] = useState(false);
-  const agentRef = useRef<Agent | null>(null);
-  const agentUnsubRef = useRef<(() => void) | null>(null);
-  const selectedModelRef = useRef<Model<Api>>(DEFAULT_MODEL);
+export function useKeatingAgent(): UseKeatingAgentReturn {
+  // Use React 19's use() for suspense handling of asynchronous init
+  use(getInitPromise());
 
-  const openSettings = () =>
+  const [title] = useState("Keating");
+  const agentRef = useRef<Agent | null>(null);
+  const selectedModelRef = useRef<Model<Api>>(DEFAULT_MODEL);
+  const [isPending, startTransition] = useTransition();
+
+  const openSettings = useCallback(() => {
     SettingsDialog.open([new KeatingProvidersModelsTab(), new ProxyTab()]);
+  }, []);
 
   async function loadBrowserModel() {
     const state = localModel.getState();
@@ -201,7 +215,7 @@ export function useKeatingAgent(
     }
   }
 
-  async function createAgent(initialState?: Partial<AgentState>) {
+  const createAgent = useCallback(async (panel: ChatPanel, initialState?: Partial<AgentState>) => {
     const tools = await createKeatingTools(keatingStorage);
     const nextState: Partial<AgentState> = {
       systemPrompt: TOOLS_PROMPT,
@@ -212,7 +226,6 @@ export function useKeatingAgent(
       ...initialState,
     };
 
-    agentUnsubRef.current?.();
     const agent = new Agent({
       initialState: nextState,
       convertToLlm: defaultConvertToLlm,
@@ -221,7 +234,7 @@ export function useKeatingAgent(
     agent.getApiKey = (provider: string) => getProviderApiKey(provider);
     agentRef.current = agent;
 
-    await chatPanelRef.current?.setAgent(agent, {
+    const setupCallbacks = {
       onApiKeyRequired: async (provider: string) => {
         if (provider === "browser") return true;
         if (await getProviderApiKey(provider)) return true;
@@ -230,38 +243,51 @@ export function useKeatingAgent(
       onModelSelect: () =>
         KeatingModelSelector.open(
           agent.state.model as Model<Api>,
-          async (model) => {
-            if (model.provider === "browser") await loadBrowserModel();
-            selectedModelRef.current = model;
-            const current = agent.state;
-            await createAgent({ ...current, model, messages: [...current.messages] });
+          (model) => {
+            // Use React 19 useTransition with async function
+            startTransition(async () => {
+              if (model.provider === "browser") await loadBrowserModel();
+              selectedModelRef.current = model;
+              const current = agent.state;
+              await createAgent(panel, { ...current, model, messages: [...current.messages] });
+            });
           },
         ),
-    });
-  }
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function init() {
-      await syncCustomProviderKeys();
-      await keatingStorage.init();
-
-      if (cancelled) return;
-      if (!chatPanelRef.current) return;
-
-      await createAgent();
-      if (!cancelled) setReady(true);
-    }
-
-    init().catch(console.error);
-
-    return () => {
-      cancelled = true;
-      agentUnsubRef.current?.();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chatPanelRef]);
 
-  return { title, ready, openSettings };
+    await panel.setAgent(agent, setupCallbacks);
+  }, []);
+
+  // Use a callback ref to safely initialize the agent when the DOM node resolves
+  const chatPanelRef = useCallback((node: ChatPanel | null) => {
+    if (node) {
+      if (!agentRef.current) {
+        createAgent(node).catch(console.error);
+      } else {
+        // Re-attach existing agent if component re-mounted (e.g. strict mode)
+        const setupCallbacks = {
+          onApiKeyRequired: async (provider: string) => {
+            if (provider === "browser") return true;
+            if (await getProviderApiKey(provider)) return true;
+            return ApiKeyPromptDialog.prompt(provider);
+          },
+          onModelSelect: () =>
+            KeatingModelSelector.open(
+              agentRef.current!.state.model as Model<Api>,
+              (model) => {
+                startTransition(async () => {
+                  if (model.provider === "browser") await loadBrowserModel();
+                  selectedModelRef.current = model;
+                  const current = agentRef.current!.state;
+                  await createAgent(node, { ...current, model, messages: [...current.messages] });
+                });
+              },
+            ),
+        };
+        node.setAgent(agentRef.current, setupCallbacks).catch(console.error);
+      }
+    }
+  }, [createAgent]);
+
+  return { title, isPending, openSettings, chatPanelRef };
 }

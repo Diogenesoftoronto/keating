@@ -3,12 +3,16 @@ import { resolve } from 'path';
 import { VitePWA } from 'vite-plugin-pwa';
 import react from '@vitejs/plugin-react';
 import reactOgImage from 'vite-plugin-react-og-image';
+import tailwindcss from '@tailwindcss/vite';
+import { nitro } from 'nitro/vite';
 
 export default defineConfig({
   root: '.',
   publicDir: 'public',
   plugins: [
     react(),
+    nitro(),
+    tailwindcss(),
     reactOgImage({
       host: 'https://keating.help',
       componentPath: './src/og-image',

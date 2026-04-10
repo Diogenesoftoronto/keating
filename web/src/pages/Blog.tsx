@@ -36,6 +36,40 @@ function CodeBlock({ children }: { children: string }) {
 
 const POSTS: Post[] = [
   {
+    date: "2026-04-10",
+    badge: { label: "TECH", color: "tech" },
+    title: "Power Move: Migrating to Nitro + Vite",
+    body: (
+      <>
+        <p className="mb-4">
+          We've leveled up the Keating server stack by migrating to <Code>Nitro</Code> and{" "}
+          <Code>Vite</Code>. This provides a high-performance, completely runtime-agnostic
+          engine that integrates directly with our build pipeline.
+        </p>
+        <h3 className="font-bold mt-4 mb-2">Why Nitro?</h3>
+        <ul className="text-sm space-y-2 ml-4 mb-4">
+          <li>
+            <strong>Universal Deployment:</strong> Nitro allows Keating to run seamlessly on
+            Node.js, Bun, or even edge workers with zero code changes.
+          </li>
+          <li>
+            <strong>Vite Integration:</strong> The server and client now share a unified
+            build process, making the developer experience much smoother.
+          </li>
+          <li>
+            <strong>Optimized Output:</strong> The new build generates a standalone{" "}
+            <Code>.output</Code> directory that bundle everything needed to run the
+            Web UI, reducing overhead.
+          </li>
+        </ul>
+        <p className="text-sm text-[#64748b]">
+          The CLI has been updated to launch this new engine automatically—just run{" "}
+          <Code>keating web</Code> and experience the speed.
+        </p>
+      </>
+    ),
+  },
+  {
     date: "2026-04-09",
     badge: { label: "FIX", color: "fix" },
     title: "Chat Model Selector Now Reflects the Actual Choice",

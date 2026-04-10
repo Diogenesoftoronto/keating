@@ -1,3 +1,6 @@
+/* Import Tailwind CSS */
+@import "tailwindcss";
+
 /* Import base styles from pi-web-ui which includes Tailwind + KaTeX + themes */
 @import '@mariozechner/pi-web-ui/app.css';
 
