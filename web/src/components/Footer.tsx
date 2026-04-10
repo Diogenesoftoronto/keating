@@ -1,3 +1,5 @@
+import { Link } from "@tanstack/react-router";
+
 export function Footer() {
   return (
     <footer className="py-12 px-6 border-t-2 border-[#1a1a1a]">
@@ -27,9 +29,9 @@ export function SimpleFooter() {
   return (
     <footer className="py-8 px-6 border-t-2 border-[#1a1a1a]">
       <div className="max-w-6xl mx-auto text-center font-terminal text-[#1a1a1a]/60">
-        <a href="/" className="hover:text-[#d44a3d] transition-colors">
+        <Link to="/" className="hover:text-[#d44a3d] transition-colors">
           [BACK_TO_HOME]
-        </a>
+        </Link>
       </div>
     </footer>
   );

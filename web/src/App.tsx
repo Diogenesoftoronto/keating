@@ -4,13 +4,14 @@ import {
   createRoute,
   createRootRoute,
   createHashHistory,
+  Outlet,
 } from "@tanstack/react-router";
 import { Landing } from "./pages/Landing";
 import { Tutorial } from "./pages/Tutorial";
 import { Blog } from "./pages/Blog";
 import { Chat } from "./pages/Chat";
 
-const rootRoute = createRootRoute();
+const rootRoute = createRootRoute({ component: () => <Outlet /> });
 
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
