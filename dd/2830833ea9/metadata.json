@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.5.2",
+  "checkpoint_id": "dd2830833ea9",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "web/index.html",
+    "web/vite.config.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/dd/2830833ea9/0/metadata.json",
+      "transcript": "/dd/2830833ea9/0/full.jsonl",
+      "content_hash": "/dd/2830833ea9/0/content_hash.txt",
+      "prompt": "/dd/2830833ea9/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 16,
+    "cache_creation_tokens": 10255,
+    "cache_read_tokens": 1848189,
+    "output_tokens": 5528,
+    "api_call_count": 14
+  }
+}
