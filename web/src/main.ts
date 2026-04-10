@@ -78,6 +78,7 @@ let currentTitle = "Keating";
 let isEditingTitle = false;
 let agent: Agent;
 let chatPanel: ChatPanel;
+let agentUnsubscribe: (() => void) | undefined;
 let selectedModel: Model<Api> | undefined;
 let webGpuAvailable: boolean = false;
 
@@ -298,6 +299,12 @@ const createAgent = async (initialState?: Partial<AgentState>) => {
 		streamFn: hybridStreamFn,
 	});
 	agent.getApiKey = async (provider: string) => await getProviderApiKey(provider);
+
+	agentUnsubscribe = agent.subscribe((event: any) => {
+		if (event.type === "state-update") {
+			renderApp();
+		}
+	});
 
 	await chatPanel.setAgent(agent, {
 		onApiKeyRequired: async (provider: string) => {

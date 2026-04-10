@@ -661,14 +661,22 @@
   </div>
 
   <script>
-    // Boot sequence
-    setTimeout(() => {
-      document.getElementById('boot-sequence').style.opacity = '0';
-      document.getElementById('boot-sequence').style.transition = 'opacity 0.5s';
+    // Boot sequence - only show once per user
+    const bootSequence = document.getElementById('boot-sequence');
+    const bootShown = localStorage.getItem('keating_boot_shown') === 'true';
+    
+    if (bootShown) {
+      bootSequence.classList.add('hidden');
+    } else {
       setTimeout(() => {
-        document.getElementById('boot-sequence').classList.add('hidden');
-      }, 500);
-    }, 3500);
+        bootSequence.style.opacity = '0';
+        bootSequence.style.transition = 'opacity 0.5s';
+        setTimeout(() => {
+          bootSequence.classList.add('hidden');
+          localStorage.setItem('keating_boot_shown', 'true');
+        }, 500);
+      }, 3500);
+    }
 
     function openChat() {
       document.getElementById('chat-modal').classList.remove('hidden');
