@@ -12,8 +12,8 @@ export function Nav({ showFeatures = false }: NavProps) {
   const closeMobile = () => setMobileOpen(false);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-[#f4f1ea]/95 border-b-2 border-[#1a1a1a]">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-[#f4f1ea]/95 border-b-2 border-[#1a1a1a] backdrop-blur-sm">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
           <div className="status-led" />
           <span className="text-lg sm:text-xl font-bold tracking-tight">KEATING//</span>
@@ -54,7 +54,7 @@ export function Nav({ showFeatures = false }: NavProps) {
 
       {/* Mobile nav dropdown */}
       {mobileOpen && (
-        <div className="md:hidden border-t-2 border-[#1a1a1a] bg-[#f4f1ea]">
+        <div className="md:hidden border-t-2 border-[#1a1a1a] bg-[#f4f1ea] overflow-y-auto" style={{ maxHeight: 'calc(100dvh - 56px)' }}>
           <div className="px-4 py-4 flex flex-col gap-2 font-terminal text-base">
             {showFeatures && (
               <a

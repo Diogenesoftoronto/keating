@@ -64,8 +64,8 @@ export function Landing() {
       <BootSequence />
       <Nav showFeatures />
 
-      {/* Hero */}
-      <section className="pt-32 pb-20 px-6">
+      {/* Hero — pt accounts for fixed nav (h-14 = 3.5rem) + extra breathing room */}
+      <section className="pt-20 sm:pt-24 pb-12 sm:pb-20 px-6">
         <div className="max-w-4xl mx-auto">
           <div className="coords mb-4">42.3601° N, 71.0589° W // WELLESLEY, MA</div>
 
@@ -122,7 +122,7 @@ export function Landing() {
             <div className="flex-1 h-px bg-[#1a1a1a]/20" />
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-2 gap-8 pt-3">
             {[
               {
                 n: "01",
@@ -237,14 +237,16 @@ export function Landing() {
           </div>
 
           {/* Terminal window */}
-          <div className="terminal-window p-4 terminal-glow mb-6 relative">
-            <div className="flex items-center gap-2 mb-2 border-b border-[#00ff00]/30 pb-2">
-              <span className="w-3 h-3 rounded-full bg-[#ff5f56]" />
-              <span className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
-              <span className="w-3 h-3 rounded-full bg-[#27ca40]" />
-              <span className="ml-4 text-sm opacity-60">{TAB_FILENAMES[activeTab]}</span>
+          <div className="terminal-window p-4 terminal-glow mb-6 overflow-x-auto">
+            <div className="flex items-center justify-between gap-2 mb-2 border-b border-[#00ff00]/30 pb-2 min-w-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="w-3 h-3 rounded-full bg-[#ff5f56] shrink-0" />
+                <span className="w-3 h-3 rounded-full bg-[#ffbd2e] shrink-0" />
+                <span className="w-3 h-3 rounded-full bg-[#27ca40] shrink-0" />
+                <span className="ml-2 text-sm opacity-60 truncate">{TAB_FILENAMES[activeTab]}</span>
+              </div>
               <button
-                className={`copy-btn absolute right-4 top-4 px-3 py-1 border border-[#00ff00]/50 text-[#00ff00] font-terminal text-sm transition ${
+                className={`copy-btn shrink-0 ml-4 px-3 py-1 border border-[#00ff00]/50 text-[#00ff00] font-terminal text-sm transition ${
                   copied ? "bg-[#00ff00]/30" : ""
                 }`}
                 onClick={handleCopy}
@@ -255,45 +257,39 @@ export function Landing() {
 
             {/* npm */}
             {activeTab === "npm" && (
-              <code className="font-terminal text-lg block">
-                <span className="text-[#00ff00]">$</span> npm install -g @interleavelove/keating
-                <br />
+              <code className="font-terminal text-base sm:text-lg block whitespace-pre-wrap break-all">
+                <span className="text-[#00ff00]">$</span>{" "}npm install -g @interleavelove/keating{"\n"}
                 <span className="text-[#888]"># Requires Node.js 18+ and API key in ~/.keating/.env</span>
               </code>
             )}
 
             {/* bun */}
             {activeTab === "bun" && (
-              <code className="font-terminal text-lg block">
-                <span className="text-[#00ff00]">$</span> bun add -g @interleavelove/keating
-                <br />
+              <code className="font-terminal text-base sm:text-lg block whitespace-pre-wrap break-all">
+                <span className="text-[#00ff00]">$</span>{" "}bun add -g @interleavelove/keating{"\n"}
                 <span className="text-[#888]"># Fastest option. Requires Bun 1.0+ and API key</span>
               </code>
             )}
 
             {/* pnpm */}
             {activeTab === "pnpm" && (
-              <code className="font-terminal text-lg block">
-                <span className="text-[#00ff00]">$</span> pnpm add -g @interleavelove/keating
-                <br />
+              <code className="font-terminal text-base sm:text-lg block whitespace-pre-wrap break-all">
+                <span className="text-[#00ff00]">$</span>{" "}pnpm add -g @interleavelove/keating{"\n"}
                 <span className="text-[#888]"># Disk-efficient. Requires pnpm and API key</span>
               </code>
             )}
 
             {/* curl */}
             {activeTab === "curl" && (
-              <code className="font-terminal text-lg block">
-                <span className="text-[#00ff00]">$</span> curl -fsSL
-                https://raw.githubusercontent.com/Diogenesoftoronto/keating/main/scripts/install/install.sh{" "}
-                <span className="text-[#00ff00]">|</span> bash
-                <br />
+              <code className="font-terminal text-base sm:text-lg block whitespace-pre-wrap break-all">
+                <span className="text-[#00ff00]">$</span>{" "}curl -fsSL https://raw.githubusercontent.com/Diogenesoftoronto/keating/main/scripts/install/install.sh <span className="text-[#00ff00]">|</span> bash{"\n"}
                 <span className="text-[#888]"># Standalone install. No package manager needed.</span>
               </code>
             )}
 
             {/* agent */}
             {activeTab === "agent" && (
-              <div className="font-terminal text-base leading-relaxed">
+              <div className="font-terminal text-base leading-relaxed break-words">
                 <p className="text-[#00ff00] mb-2">$ cat AGENT_INSTRUCTIONS.txt</p>
                 <p className="text-[#f4f1ea] mb-4">
                   Install Keating hyperteacher CLI with one of these methods. All require setting a

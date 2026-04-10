@@ -74,11 +74,13 @@
   box-shadow: 0 0 20px rgba(212, 74, 61, 0.3), inset 0 0 20px rgba(212, 74, 61, 0.05);
 }
 
-/* Typewriter effect */
-.retro-layout .typewriter {
-  overflow: hidden;
-  white-space: nowrap;
-  animation: retro-typing 3.5s steps(40, end);
+/* Typewriter effect — only on screens wide enough to avoid overflow */
+@media (min-width: 640px) {
+  .retro-layout .typewriter {
+    overflow: hidden;
+    white-space: nowrap;
+    animation: retro-typing 3.5s steps(40, end);
+  }
 }
 
 @keyframes retro-typing {
@@ -219,6 +221,8 @@
   color: #00ff00;
   font-family: 'VT323', monospace;
   position: relative;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .retro-layout .terminal-window::before {
@@ -336,6 +340,12 @@
   font-size: 0.85rem;
   overflow-x: auto;
   font-family: 'Space Mono', monospace;
+}
+
+.retro-layout .code-block pre {
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 /* Tutorial tab button */
