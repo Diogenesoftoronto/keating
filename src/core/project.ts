@@ -83,7 +83,7 @@ export async function benchPolicyArtifact(
   await ensureProjectScaffold(cwd);
   const config = await loadKeatingConfig(cwd);
   const policy = await loadPolicy(currentPolicyPath(cwd));
-  const result = runBenchmarkSuite(policy, focusTopic, 20260401, config.debug.traceTopLearners);
+  const result = await runBenchmarkSuite(cwd, policy, focusTopic, 20260401, config.debug.traceTopLearners);
   const fileName = focusTopic ? `${slugify(focusTopic)}.md` : "core-suite.md";
   const reportPath = join(benchmarksDir(cwd), fileName);
   await writeFile(reportPath, benchmarkToMarkdown(result), "utf8");

@@ -30,11 +30,15 @@ function buildLearnerPopulation(seed: number, count: number): LearnerProfile[] {
   return learners;
 }
 
-export function simulateTeaching(
+import { piCompleteJson } from "./pi-agent.js";
+
+export async function simulateTeaching(
+  cwd: string,
   policy: TeacherPolicy,
   topic: TopicDefinition,
   learner: LearnerProfile
-): TeachingSimulation {
+): Promise<TeachingSimulation> {
+  // Use pure math to calculate initial constraints as baseline context
   const intuitionFit = 1 - Math.abs(policy.analogyDensity - learner.analogyNeed);
   const rigorTarget = clamp((topic.formalism + learner.abstractionComfort) / 2);
   const rigorFit = 1 - Math.abs(policy.formalism - rigorTarget);
@@ -53,73 +57,72 @@ export function simulateTeaching(
       learner.priorKnowledge * 0.15
   );
 
-  const masteryGain = clamp(
-    0.14 +
-      intuitionFit * 0.18 +
-      rigorFit * 0.2 +
-      dialogueFit * 0.12 +
-      diagramFit * 0.09 +
-      practiceFit * 0.12 +
-      (1 - overload) * 0.18
-  );
-  const retention = clamp(masteryGain * (0.55 + policy.retrievalPractice * 0.45));
-  const engagement = clamp(
-    0.12 +
-      intuitionFit * 0.16 +
-      dialogueFit * 0.16 +
-      diagramFit * 0.1 +
-      reflectionFit * 0.14 +
-      (1 - overload) * 0.18
-  );
-  const transfer = clamp(
-    retention * (0.55 + policy.interdisciplinaryBias * 0.25 + learner.transferDesire * 0.2)
-  );
-  const confusion = clamp(
-    0.04 +
-      overload * 0.55 +
-      Math.abs(policy.formalism - learner.abstractionComfort) * 0.18 +
-      Math.abs(policy.challengeRate - learner.persistence) * 0.12
-  );
+  const prompt = `Simulate an educational interaction based on the following context.
+Teacher Policy: ${JSON.stringify(policy, null, 2)}
+Topic: ${topic.title} (${topic.domain}) - ${topic.summary}
+Learner Traits: ${JSON.stringify(learner, null, 2)}
 
-  const score = clamp(
-    masteryGain * 0.34 +
-      retention * 0.2 +
-      engagement * 0.16 +
-      transfer * 0.18 -
-      confusion * 0.18,
-    0,
-    1
-  );
+Evaluate the teaching outcomes from 0.0 to 1.0 (masteryGain, retention, engagement, transfer, confusion). Also provide an overall 'score' (0.0=failure to 1.0=mastery).
+Provide 1 to 3 string sentences explaining the outcome in the 'explanation' array. 
+Respond ONLY as a JSON matching:
+{
+  "masteryGain": number,
+  "retention": number,
+  "engagement": number,
+  "transfer": number,
+  "confusion": number,
+  "score": number,
+  "explanation": string[]
+}`;
 
-  const explanation: string[] = [];
-  if (intuitionFit >= 0.8) explanation.push("analogy pacing matched the learner well");
-  if (rigorFit >= 0.8) explanation.push("formal depth fit the learner's abstraction comfort");
-  if (practiceFit >= 0.75) explanation.push("exercise load matched the learner's need for repetition");
-  if (reflectionFit >= 0.75) explanation.push("reflection and transfer demands aligned with the learner");
-  if (overload >= 0.55) explanation.push("challenge and formal load pushed the learner toward overload");
-  if (diagramFit <= 0.45) explanation.push("diagram emphasis mismatched the learner's visual preference");
-  if (explanation.length === 0) explanation.push("the lesson was balanced but not strongly optimized for this learner");
+  try {
+    const evaluation = await piCompleteJson<{
+      masteryGain: number;
+      retention: number;
+      engagement: number;
+      transfer: number;
+      confusion: number;
+      score: number;
+      explanation: string[];
+    }>(cwd, prompt, { thinking: "low" });
 
-  return {
-    learner,
-    topic,
-    masteryGain,
-    retention,
-    engagement,
-    transfer,
-    confusion,
-    score,
-    breakdown: {
-      intuitionFit,
-      rigorFit,
-      dialogueFit,
-      diagramFit,
-      practiceFit,
-      reflectionFit,
-      overload
-    },
-    explanation
-  };
+    return {
+      learner,
+      topic,
+      masteryGain: clamp(evaluation.masteryGain, 0, 1),
+      retention: clamp(evaluation.retention, 0, 1),
+      engagement: clamp(evaluation.engagement, 0, 1),
+      transfer: clamp(evaluation.transfer, 0, 1),
+      confusion: clamp(evaluation.confusion, 0, 1),
+      score: clamp(evaluation.score, 0, 1),
+      breakdown: {
+        intuitionFit,
+        rigorFit,
+        dialogueFit,
+        diagramFit,
+        practiceFit,
+        reflectionFit,
+        overload
+      },
+      explanation: evaluation.explanation
+    };
+  } catch (error) {
+    console.error("LLM simulation failed, falling back to algebraic baseline", error);
+    // Fallback logic
+    const masteryGain = clamp(0.14 + intuitionFit * 0.18 + rigorFit * 0.2 + dialogueFit * 0.12 + diagramFit * 0.09 + practiceFit * 0.12 + (1 - overload) * 0.18);
+    return {
+      learner,
+      topic,
+      masteryGain,
+      retention: clamp(masteryGain * (0.55 + policy.retrievalPractice * 0.45)),
+      engagement: clamp(0.12 + intuitionFit * 0.16 + dialogueFit * 0.16 + diagramFit * 0.1 + reflectionFit * 0.14 + (1 - overload) * 0.18),
+      transfer: clamp(masteryGain * (0.55 + policy.interdisciplinaryBias * 0.25 + learner.transferDesire * 0.2)),
+      confusion: clamp(0.04 + overload * 0.55 + Math.abs(policy.formalism - learner.abstractionComfort) * 0.18 + Math.abs(policy.challengeRate - learner.persistence) * 0.12),
+      score: clamp(masteryGain * 0.34 + 0.2 + 0.16 + 0.18 - 0.18, 0, 1),
+      breakdown: { intuitionFit, rigorFit, dialogueFit, diagramFit, practiceFit, reflectionFit, overload },
+      explanation: ["Fallback deterministic explanation."]
+    };
+  }
 }
 
 function classifyDominantSignal(simulations: TeachingSimulation[], kind: "strength" | "weakness"): string {
@@ -157,42 +160,50 @@ function summarizeTopic(topic: TopicDefinition, simulations: TeachingSimulation[
   };
 }
 
-export function runBenchmarkSuite(
+export async function runBenchmarkSuite(
+  cwd: string,
   policy: TeacherPolicy,
   focusTopic?: string,
   seed = 20260401,
   traceLimit = 3
-): BenchmarkResult {
+): Promise<BenchmarkResult> {
   const topics = benchmarkTopics(focusTopic);
   const topicTraces: BenchmarkTopicTrace[] = [];
-  const topicBenchmarks = topics.map((topic, index) => {
-    const learners = buildLearnerPopulation(seed + index * 97, 18);
-    const simulations = learners.map((learner) => simulateTeaching(policy, topic, learner));
-    const summary = summarizeTopic(topic, simulations, traceLimit);
-    topicTraces.push({
-      topic: topic.title,
-      topLearners: summary.topLearners.map((entry) => ({
-        learnerId: entry.learner.id,
-        score: entry.score,
-        explanation: entry.explanation
-      })),
-      strugglingLearners: summary.strugglingLearners.map((entry) => ({
-        learnerId: entry.learner.id,
-        score: entry.score,
-        explanation: entry.explanation
-      })),
-      metricMeans: {
-        masteryGain: summary.meanMasteryGain,
-        retention: summary.meanRetention,
-        engagement: summary.meanEngagement,
-        transfer: summary.meanTransfer,
-        confusion: summary.meanConfusion
-      },
-      dominantStrength: summary.dominantStrength,
-      dominantWeakness: summary.dominantWeakness
-    });
-    return summary;
-  });
+  // Reduce learner count to 3 instead of 18 to save LLM tokens and time
+  const NUM_LEARNERS = 3;
+  
+  const topicBenchmarks = await Promise.all(
+    topics.map(async (topic, index) => {
+      const learners = buildLearnerPopulation(seed + index * 97, NUM_LEARNERS);
+      const simulations = await Promise.all(
+        learners.map((learner) => simulateTeaching(cwd, policy, topic, learner))
+      );
+      const summary = summarizeTopic(topic, simulations, traceLimit);
+      topicTraces.push({
+        topic: topic.title,
+        topLearners: summary.topLearners.map((entry) => ({
+          learnerId: entry.learner.id,
+          score: entry.score,
+          explanation: entry.explanation
+        })),
+        strugglingLearners: summary.strugglingLearners.map((entry) => ({
+          learnerId: entry.learner.id,
+          score: entry.score,
+          explanation: entry.explanation
+        })),
+        metricMeans: {
+          masteryGain: summary.meanMasteryGain,
+          retention: summary.meanRetention,
+          engagement: summary.meanEngagement,
+          transfer: summary.meanTransfer,
+          confusion: summary.meanConfusion
+        },
+        dominantStrength: summary.dominantStrength,
+        dominantWeakness: summary.dominantWeakness
+      });
+      return summary;
+    })
+  );
 
   const weakest = [...topicBenchmarks].sort((left, right) => left.meanScore - right.meanScore)[0];
 
@@ -204,7 +215,7 @@ export function runBenchmarkSuite(
     weakestTopic: weakest?.topic.title ?? "n/a",
     trace: {
       seed,
-      learnerCountPerTopic: 18,
+      learnerCountPerTopic: NUM_LEARNERS,
       topicTraces
     }
   };

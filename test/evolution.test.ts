@@ -39,8 +39,8 @@ test("noveltyScore uses Euclidean distance in parameter space", () => {
   assert.equal(emptyNovelty, 1);
 });
 
-test("benchmark suite remains deterministic for fixed policy and seed", () => {
-  const left = runBenchmarkSuite(DEFAULT_POLICY, "derivative", 99);
-  const right = runBenchmarkSuite(DEFAULT_POLICY, "derivative", 99);
+test("benchmark suite remains deterministic for fixed policy and seed", async () => {
+  const left = await runBenchmarkSuite(process.cwd(), DEFAULT_POLICY, "derivative", 99);
+  const right = await runBenchmarkSuite(process.cwd(), DEFAULT_POLICY, "derivative", 99);
   assert.deepEqual(left, right);
 });

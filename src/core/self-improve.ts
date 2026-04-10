@@ -215,7 +215,7 @@ export async function generateImprovementProposal(
   cwd: string
 ): Promise<ImprovementProposal> {
   const policy = await loadPolicy(currentPolicyPath(cwd));
-  const benchmark = runBenchmarkSuite(policy);
+  const benchmark = await runBenchmarkSuite(cwd, policy);
   const weaknesses = diagnoseFromBenchmark(benchmark);
 
   // Prioritize: pick the top 3 weaknesses by severity
@@ -352,7 +352,7 @@ export async function evaluateImprovement(
   baselineScore: number
 ): Promise<{ afterScore: number; improved: boolean; delta: number }> {
   const policy = await loadPolicy(currentPolicyPath(cwd));
-  const result = runBenchmarkSuite(policy);
+  const result = await runBenchmarkSuite(cwd, policy);
   const delta = result.overallScore - baselineScore;
   return {
     afterScore: result.overallScore,

@@ -27,7 +27,7 @@ test("fuzzed topics and policies stay bounded and renderable", () => {
     const topic = `topic ${index} ${Math.floor(prng.next() * 1000)}`;
     const plan = buildLessonPlan(topic, policy);
     const mermaid = lessonPlanToMermaid(topic, policy);
-    const benchmark = runBenchmarkSuite(policy, topic, index + 1);
+    const benchmark = await runBenchmarkSuite(process.cwd(), policy, topic, index + 1);
 
     assert.ok(plan.phases.length >= 6);
     assert.ok(mermaid.startsWith("graph TD"));

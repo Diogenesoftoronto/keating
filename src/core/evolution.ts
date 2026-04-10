@@ -127,7 +127,7 @@ export async function evolvePolicy(
   seed = 20260401
 ): Promise<EvolutionRun> {
   const archive = await loadArchive(archivePath);
-  const baseline = runBenchmarkSuite(basePolicy, focusTopic, seed);
+  const baseline = await runBenchmarkSuite(process.cwd(), basePolicy, focusTopic, seed);
   let best = baseline;
   const acceptedCandidates: EvolutionCandidate[] = [];
   const exploredCandidates: EvolutionCandidate[] = [];
@@ -137,7 +137,7 @@ export async function evolvePolicy(
   for (let iteration = 1; iteration <= iterations; iteration += 1) {
     const candidatePolicy = mutatePolicy(best.policy, prng, iteration);
     const novelty = noveltyScore(seen, candidatePolicy);
-    const candidateBenchmark = runBenchmarkSuite(candidatePolicy, focusTopic, seed + iteration * 11);
+    const candidateBenchmark = await runBenchmarkSuite(process.cwd(), candidatePolicy, focusTopic, seed + iteration * 11);
     const parameterDelta = diffPolicy(best.policy, candidatePolicy);
     const candidate: EvolutionCandidate = {
       policy: candidatePolicy,
