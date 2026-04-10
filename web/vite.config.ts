@@ -13,14 +13,14 @@ export default defineConfig({
     react(),
     nitro(),
     tailwindcss(),
-    reactOgImage({
-      host: 'https://keating.help',
-      componentPath: './src/og-image',
-      imageResponseOptions: {
-        width: 1200,
-        height: 630,
-      },
-    }),
+    // reactOgImage({
+    //   host: 'https://keating.help',
+    //   componentPath: './src/og-image',
+    //   imageResponseOptions: {
+    //     width: 1200,
+    //     height: 630,
+    //   },
+    // }),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.svg'],
@@ -85,20 +85,15 @@ export default defineConfig({
     }),
   ],
   build: {
+    outDir: 'dist',
+    emptyOutDir: true,
     assetsDir: 'assets',
     sourcemap: false,
-    chunkSizeWarningLimit: 1000,
-    reportCompressedSize: false, // Speed up build
+    chunkSizeWarningLimit: 5000, // Large because of mermaid/transformers-js
+    reportCompressedSize: false,
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
-      },
-      output: {
-        manualChunks(id) {
-          if (id.includes('@huggingface/transformers')) {
-            return 'transformers-lib';
-          }
-        },
       },
     },
   },
