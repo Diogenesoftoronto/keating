@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@tanstack/react-router";
 import { Nav } from "../components/Nav";
 import { Footer } from "../components/Footer";
 import { BootSequence } from "../components/BootSequence";
@@ -100,7 +100,7 @@ export function Landing() {
           <div className="flex flex-col sm:flex-row gap-4">
             <button
               className="btn-retro px-8 py-4 font-bold text-lg min-h-[56px]"
-              onClick={() => navigate("/chat")}
+              onClick={() => navigate({ to: "/chat" })}
             >
               INITIALIZE_SESSION →
             </button>
