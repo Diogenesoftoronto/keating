@@ -89,7 +89,7 @@ export default defineConfig({
       },
     },
     assetsDir: 'assets',
-    sourcemap: true,
+    sourcemap: false,
   },
   esbuild: {
     loader: 'tsx',
