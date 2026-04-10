@@ -1,6 +1,9 @@
 /* Import base styles from pi-web-ui which includes Tailwind + KaTeX + themes */
 @import '@mariozechner/pi-web-ui/app.css';
 
+/* Retro theme for landing, tutorial, blog */
+@import './styles/retro.css';
+
 /* Custom Keating styles */
 :root {
   --color-primary: #6366f1;

@@ -77,9 +77,6 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
-        chat: resolve(__dirname, 'chat.html'),
-        tutorial: resolve(__dirname, 'tutorial.html'),
-        blog: resolve(__dirname, 'blog.html'),
       },
     },
     assetsDir: 'assets',
@@ -105,5 +102,5 @@ export default defineConfig({
       'Cross-Origin-Embedder-Policy': 'require-corp',
     },
   },
-  base: './',
+  base: '/',
 });

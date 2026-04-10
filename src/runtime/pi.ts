@@ -1,12 +1,15 @@
 import { existsSync, readFileSync } from "node:fs";
 import { readdir } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { spawn, spawnSync } from "node:child_process";
 import { homedir } from "node:os";
 
 import { loadKeatingConfig, mergePiDefaults } from "../core/config.js";
 import { ensureProjectScaffold } from "../core/project.js";
 import { sessionsDir } from "../core/paths.js";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export interface PiRuntimeDetails {
   kind: "binary" | "embedded-feynman";
@@ -97,14 +100,17 @@ export async function launchPi(cwd: string, args: string[]): Promise<number> {
     throw new Error("Could not find a Pi runtime matching the current Keating runtime preference.");
   }
 
-  const extensionPath = resolve(cwd, "dist", "src", "pi", "hyperteacher-extension.js");
+  const extensionPath = join(__dirname, "..", "pi", "hyperteacher-extension.js");
   if (!existsSync(extensionPath)) {
     throw new Error(`Missing built extension: ${extensionPath}. Run npm run build first.`);
   }
 
-  const promptDir = resolve(cwd, "pi", "prompts");
-  const skillsDir = resolve(cwd, "pi", "skills");
-  const systemPrompt = readFileSync(resolve(cwd, "SYSTEM.md"), "utf8");
+  // Resolve paths relative to package installation directory (3 levels up from dist/src/runtime/)
+  const packageRoot = join(__dirname, "..", "..", "..");
+  const promptDir = join(packageRoot, "pi", "prompts");
+  const skillsDir = join(packageRoot, "pi", "skills");
+  const systemPromptPath = join(packageRoot, "SYSTEM.md");
+  const systemPrompt = readFileSync(systemPromptPath, "utf8");
   const sharedArgs = mergePiDefaults(config, [
     "--session-dir",
     sessionsDir(cwd),

@@ -10,16 +10,21 @@
   },
   "dependencies": {
     "@huggingface/transformers": "^3.0.0",
+    "@lit/react": "^1.0.8",
     "@mariozechner/pi-agent-core": "^0.65.0",
     "@mariozechner/pi-ai": "^0.65.0",
     "@mariozechner/pi-web-ui": "^0.65.0",
     "katex": "^0.16.44",
+    "lucide-react": "^1.8.0",
+    "mermaid": "^11.4.0",
     "react": "^19.2.5",
-    "react-dom": "^19.2.5"
+    "react-dom": "^19.2.5",
+    "react-router-dom": "^7.14.0"
   },
   "devDependencies": {
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@types/react-router-dom": "^5.3.3",
     "@vitejs/plugin-react": "^4.0.0",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.0",

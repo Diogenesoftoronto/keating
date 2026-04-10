@@ -1,25 +1,18 @@
-import { useEffect, useRef } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Landing } from "./pages/Landing";
+import { Tutorial } from "./pages/Tutorial";
+import { Blog } from "./pages/Blog";
+import { Chat } from "./pages/Chat";
 
 export function App() {
-	const initializedRef = useRef(false);
-
-	useEffect(() => {
-		if (initializedRef.current) return;
-		initializedRef.current = true;
-
-		// Import the main module which initializes the app
-		import("./main").then(({ initApp }) => {
-			initApp();
-		}).catch(console.error);
-	}, []);
-
-	return (
-		<div
-			id="app"
-			className="w-full h-screen flex flex-col bg-background text-foreground overflow-hidden"
-		>
-			<div id="header" className="shrink-0"></div>
-			<div id="chat-container" className="flex-1 overflow-hidden"></div>
-		</div>
-	);
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/chat" element={<Chat />} />
+        <Route path="/tutorial" element={<Tutorial />} />
+        <Route path="/blog" element={<Blog />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
