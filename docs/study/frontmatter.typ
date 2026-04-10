@@ -4,7 +4,7 @@
 
 #align(center)[
   #v(0.4em)
-  The Keating Research Group \
+  Theo The Debugger \
   #datetime(year: 2026, month: 4, day: 3).display("[month repr:long] [day], [year]")
 ]
 

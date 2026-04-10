@@ -17,7 +17,7 @@ export function Nav({ showFeatures = false }: NavProps) {
         <Link to="/" className="flex items-center gap-3">
           <div className="status-led" />
           <span className="text-lg sm:text-xl font-bold tracking-tight">KEATING//</span>
-          <span className="font-terminal text-sm sm:text-lg text-[#d44a3d]">v0.1.3</span>
+          <span className="font-terminal text-sm sm:text-lg text-[#d44a3d]">v0.1.4</span>
         </Link>
 
         {/* Desktop nav */}
@@ -27,6 +27,7 @@ export function Nav({ showFeatures = false }: NavProps) {
           )}
           <Link to="/tutorial" className="hover:text-[#d44a3d] transition-colors glitch-hover">[TUTORIAL]</Link>
           <Link to="/blog" className="hover:text-[#d44a3d] transition-colors glitch-hover">[BLOG]</Link>
+          <Link to="/paper" className="hover:text-[#d44a3d] transition-colors glitch-hover">[PAPER]</Link>
           <a
             href="https://github.com/Diogenesoftoronto/keating"
             target="_blank"
@@ -78,6 +79,13 @@ export function Nav({ showFeatures = false }: NavProps) {
               onClick={closeMobile}
             >
               [BLOG]
+            </Link>
+            <Link
+              to="/paper"
+              className="hover:text-[#d44a3d] transition-colors py-3 px-2 min-h-[48px] flex items-center"
+              onClick={closeMobile}
+            >
+              [PAPER]
             </Link>
             <a
               href="https://github.com/Diogenesoftoronto/keating"

@@ -55,6 +55,9 @@ const POSTS: Post[] = [
           <li>
             <strong>Dynamic Learner Profiles:</strong> Learner state updates are now driven by AI-inferred pedagogical shifts based on historical performance and feedback.
           </li>
+          <li>
+            <strong>Research Paper Integration:</strong> The formal account of the Keating metaharness is now served directly in the web application with a dedicated <Code>[PAPER]</Code> section and PDF download.
+          </li>
         </ul>
         <p className="text-sm text-[#64748b]">
           These changes ensure that Keating's "self-improvement" loop is grounded in actual semantic understanding rather than pre-baked formulas.
