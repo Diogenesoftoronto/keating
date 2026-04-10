@@ -1,0 +1,10 @@
+hey the copy past button for the           <button class="copy-btn absolute right-4 top-4 px-3 py-1 border border-[#00ff00]/50 text-[#00ff00] font-terminal text-sm hover:bg-[#00ff00]/20 transition" data-copy-target="install-code">[COPY]</button>
+this doesn't correctly copy the correctly selected code and also wraps incorrectly. i am trying to get the application rewritten with react on the front end
+
+---
+
+i want the whole things to be a react app (minus the cli of course)
+
+---
+
+let's tdo thata

@@ -1,0 +1,61 @@
+{
+  "cli_version": "0.5.2",
+  "checkpoint_id": "b8323f79d7e4",
+  "session_id": "1523f2cd-2a23-4d42-a81f-a6ef002bb764",
+  "strategy": "manual-commit",
+  "created_at": "2026-04-10T05:33:34.593317489Z",
+  "branch": "main",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "CHANGELOG.md",
+    "package.json",
+    "src/runtime/pi.ts",
+    "src/types/node-shims.d.ts",
+    "web/blog.html",
+    "web/bun.lock",
+    "web/chat.html",
+    "web/index.html",
+    "web/package.json",
+    "web/src/App.tsx",
+    "web/src/app.css",
+    "web/src/components/BootSequence.tsx",
+    "web/src/components/Footer.tsx",
+    "web/src/components/Nav.tsx",
+    "web/src/hooks/useKeatingAgent.ts",
+    "web/src/keating/browser-tools.ts",
+    "web/src/keating/storage.ts",
+    "web/src/lit-components.ts",
+    "web/src/main-react.tsx",
+    "web/src/main.ts",
+    "web/src/pages/Blog.tsx",
+    "web/src/pages/Chat.tsx",
+    "web/src/pages/Landing.tsx",
+    "web/src/pages/Tutorial.tsx",
+    "web/src/styles/retro.css",
+    "web/tailwind.config.ts",
+    "web/tutorial.html",
+    "web/vite.config.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-4-6",
+  "turn_id": "46b7762d5dff",
+  "token_usage": {
+    "input_tokens": 342,
+    "cache_creation_tokens": 132085,
+    "cache_read_tokens": 6133231,
+    "output_tokens": 54387,
+    "api_call_count": 68
+  },
+  "session_metrics": {
+    "turn_count": 3
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-04-10T05:33:34.077536773Z",
+    "agent_lines": 1936,
+    "human_added": 1971,
+    "human_modified": 214,
+    "human_removed": 0,
+    "total_committed": 4121,
+    "agent_percentage": 46.97888861926717
+  }
+}
