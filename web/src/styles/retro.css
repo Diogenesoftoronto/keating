@@ -1,19 +1,18 @@
 /* Retro/paper theme for landing, tutorial, blog pages */
 /* Scope everything under .retro-layout to avoid polluting the chat theme */
 
-.retro-layout {
+.retro-layout, nav, .pi-chat-panel {
   --paper: #f4f1ea;
   --ink: #1a1a1a;
   --accent: #d44a3d;
   --accent-dim: #a33a30;
   --terminal: #0c0c0c;
-  --nav-height: 3.5rem; /* matches h-14 = 56px */
+  --nav-height: 3.5rem;
 
   font-family: 'Space Mono', monospace;
   background-color: var(--paper);
   color: var(--ink);
   line-height: 1.6;
-  min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -86,17 +85,29 @@
   to { width: 100%; }
 }
 
-/* Glitch effect on hover — intense shadow flicker + translate */
-.retro-layout .glitch-hover:hover {
-  animation: retro-glitch 0.2s ease-in-out infinite;
-  text-shadow: 2px 0 var(--accent), -2px 0 #00ff00;
+/* Glitch effect on hover — intense shadow flicker + translate + noise */
+.glitch-hover:hover, .btn-retro:hover {
+  animation: retro-glitch 0.15s steps(2, end) infinite;
+  text-shadow: 2px 0 var(--accent), -2px 0 #00ff00, 0 2px #2980b9;
+  filter: brightness(1.1) contrast(1.2);
+}
+
+.glitch-hover:active, .btn-retro:active {
+  animation: retro-glitch-active 0.1s steps(1) infinite;
+  background-color: var(--accent) !important;
+  color: var(--paper) !important;
 }
 
 @keyframes retro-glitch {
-  0%, 100% { transform: translate(0); }
-  25% { transform: translate(-1px, 1px); }
-  50% { transform: translate(1px, -1px); }
-  75% { transform: translate(-1px, -1px); }
+  0% { transform: translate(0); clip-path: inset(0 0 0 0); }
+  25% { transform: translate(-2px, 1px); clip-path: inset(10% 0 40% 0); }
+  50% { transform: translate(2px, -1px); clip-path: inset(50% 0 10% 0); }
+  75% { transform: translate(-1px, -2px); clip-path: inset(30% 0 20% 0); }
+}
+
+@keyframes retro-glitch-active {
+  0% { transform: scale(0.98) translate(-5px, 0); }
+  50% { transform: scale(1.02) translate(5px, 0); }
 }
 
 /* Boot sequence animation */
