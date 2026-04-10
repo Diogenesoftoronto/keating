@@ -92,9 +92,9 @@ export function Tutorial() {
                   required.
                 </p>
 
-                <div className="terminal-window p-4 mb-4 text-sm">
+                <div className="terminal-window p-4 mb-4 text-sm overflow-x-auto">
                   <p className="text-[#00ff00] mb-2"># Requirements:</p>
-                  <p className="ml-4">Chrome 113+ / Edge 113+ / Firefox Nightly (WebGPU flag)</p>
+                  <p className="ml-4 break-words">Chrome 113+ / Edge 113+ / Firefox Nightly (WebGPU flag)</p>
                   <p className="ml-4">GPU with WebGPU support (most modern GPUs)</p>
                   <p className="ml-4">~5GB free disk space for model cache</p>
                 </div>
@@ -134,7 +134,7 @@ export function Tutorial() {
 
                 <div className="terminal-window p-4 mb-4 text-sm overflow-x-auto">
                   <p className="text-[#00ff00] mb-2"># Install Ollama:</p>
-                  <p className="text-[#f4f1ea]">curl -fsSL https://ollama.com/install.sh | sh</p>
+                  <p className="text-[#f4f1ea] break-all">curl -fsSL https://ollama.com/install.sh | sh</p>
                   <p className="text-[#00ff00] mt-3 mb-2"># Pull a model:</p>
                   <p className="text-[#f4f1ea]">ollama pull gemma3:4b</p>
                   <p className="text-[#00ff00] mt-3 mb-2"># Start server (runs on port 11434):</p>
@@ -171,7 +171,7 @@ export function Tutorial() {
                   </div>
                 </div>
 
-                <div className="mt-4 ml-8 terminal-window p-4 text-sm">
+                <div className="mt-4 ml-8 terminal-window p-4 text-sm overflow-x-auto">
                   <p className="text-[#00ff00]">Provider: ollama</p>
                   <p className="text-[#00ff00]">Base URL: http://localhost:11434</p>
                   <p className="text-[#00ff00]">Model: gemma3:4b (or your model name)</p>

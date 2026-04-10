@@ -28,8 +28,8 @@ function Code({ children }: { children: React.ReactNode }) {
 
 function CodeBlock({ children }: { children: string }) {
   return (
-    <div className="code-block mb-4">
-      <pre>{children}</pre>
+    <div className="code-block mb-4 overflow-x-auto">
+      <pre className="whitespace-pre-wrap break-words">{children}</pre>
     </div>
   );
 }
