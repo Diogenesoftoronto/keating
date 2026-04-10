@@ -85,15 +85,20 @@ export default defineConfig({
     }),
   ],
   build: {
-    outDir: 'dist',
-    emptyOutDir: true,
+    assetsDir: 'assets',
+    sourcemap: false,
+    chunkSizeWarningLimit: 1000,
+    reportCompressedSize: false, // Speed up build
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
       },
+      output: {
+        manualChunks: {
+          'transformers-lib': ['@huggingface/transformers'],
+        },
+      },
     },
-    assetsDir: 'assets',
-    sourcemap: false,
   },
   esbuild: {
     loader: 'tsx',
