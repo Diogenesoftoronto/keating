@@ -75,13 +75,10 @@
   box-shadow: 0 0 20px rgba(212, 74, 61, 0.3), inset 0 0 20px rgba(212, 74, 61, 0.05);
 }
 
-/* Typewriter effect — only on screens wide enough to avoid overflow */
-@media (min-width: 640px) {
-  .retro-layout .typewriter {
-    overflow: hidden;
-    white-space: nowrap;
-    animation: retro-typing 3.5s steps(40, end);
-  }
+.retro-layout .typewriter {
+  overflow: hidden;
+  white-space: nowrap;
+  animation: retro-typing 3.5s steps(40, end);
 }
 
 @keyframes retro-typing {
@@ -89,17 +86,17 @@
   to { width: 100%; }
 }
 
-/* Glitch effect on hover */
+/* Glitch effect on hover — intense shadow flicker + translate */
 .retro-layout .glitch-hover:hover {
-  animation: retro-glitch 0.3s ease-in-out;
+  animation: retro-glitch 0.2s ease-in-out infinite;
+  text-shadow: 2px 0 var(--accent), -2px 0 #00ff00;
 }
 
 @keyframes retro-glitch {
   0%, 100% { transform: translate(0); }
-  20% { transform: translate(-2px, 2px); }
-  40% { transform: translate(-2px, -2px); }
-  60% { transform: translate(2px, 2px); }
-  80% { transform: translate(2px, -2px); }
+  25% { transform: translate(-1px, 1px); }
+  50% { transform: translate(1px, -1px); }
+  75% { transform: translate(-1px, -1px); }
 }
 
 /* Boot sequence animation */
