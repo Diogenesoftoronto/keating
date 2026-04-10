@@ -2,7 +2,7 @@ import React, { Suspense, use, useCallback, useEffect, useRef, useState, useTran
 import ReactDOM from "react-dom/client";
 import { Link, Outlet, RouterProvider, createHashHistory, createRootRoute, createRoute, createRouter, useNavigate } from "@tanstack/react-router";
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
-import { Settings } from "lucide-react";
+import { Download, FileText, Settings } from "lucide-react";
 import { Agent } from "@mariozechner/pi-agent-core";
 import { createAssistantMessageEventStream, getModel, getModels, getProviders, streamSimple } from "@mariozechner/pi-ai";
 import { ApiKeyPromptDialog, AppStorage, CustomProvidersStore, IndexedDBStorageBackend, ProviderKeysStore, ProxyTab, SessionsStore, SettingsDialog, SettingsStore, SettingsTab, defaultConvertToLlm, getAppStorage, setAppStorage } from "@mariozechner/pi-web-ui";
@@ -14,7 +14,6 @@ import { Button } from "@mariozechner/mini-lit/dist/Button.js";
 import { DialogBase } from "@mariozechner/mini-lit/dist/DialogBase.js";
 import { Input } from "@mariozechner/mini-lit/dist/Input.js";
 import { Label } from "@mariozechner/mini-lit/dist/Label.js";
-import { AutoModelForCausalLM, AutoProcessor, TextStreamer, env } from "@huggingface/transformers";
 import { Ollama } from "ollama/browser";
 import "@mariozechner/mini-lit/dist/ThemeToggle.js";
 //#region src/components/Nav.tsx
@@ -38,7 +37,7 @@ function Nav({ showFeatures = false }) {
 						}),
 						/* @__PURE__ */ jsx("span", {
 							className: "font-terminal text-sm sm:text-lg text-[#d44a3d]",
-							children: "v0.1.3"
+							children: "v0.1.4"
 						})
 					]
 				}),
@@ -59,6 +58,11 @@ function Nav({ showFeatures = false }) {
 							to: "/blog",
 							className: "hover:text-[#d44a3d] transition-colors glitch-hover",
 							children: "[BLOG]"
+						}),
+						/* @__PURE__ */ jsx(Link, {
+							to: "/paper",
+							className: "hover:text-[#d44a3d] transition-colors glitch-hover",
+							children: "[PAPER]"
 						}),
 						/* @__PURE__ */ jsx("a", {
 							href: "https://github.com/Diogenesoftoronto/keating",
@@ -103,6 +107,12 @@ function Nav({ showFeatures = false }) {
 						className: "hover:text-[#d44a3d] transition-colors py-3 px-2 min-h-[48px] flex items-center",
 						onClick: closeMobile,
 						children: "[BLOG]"
+					}),
+					/* @__PURE__ */ jsx(Link, {
+						to: "/paper",
+						className: "hover:text-[#d44a3d] transition-colors py-3 px-2 min-h-[48px] flex items-center",
+						onClick: closeMobile,
+						children: "[PAPER]"
 					}),
 					/* @__PURE__ */ jsx("a", {
 						href: "https://github.com/Diogenesoftoronto/keating",
@@ -1424,6 +1434,47 @@ var POSTS = [
 	{
 		date: "2026-04-10",
 		badge: {
+			label: "RELEASE",
+			color: "release"
+		},
+		title: "From Stubs to Reality: AI-Powered Pedagogical Verification",
+		body: /* @__PURE__ */ jsxs(Fragment, { children: [
+			/* @__PURE__ */ jsx("p", {
+				className: "mb-4",
+				children: "Today we've completed a major architectural shift: moving from deterministic mathematical stubs to true AI-powered verification across our core pedagogical engines."
+			}),
+			/* @__PURE__ */ jsx("h3", {
+				className: "font-bold mt-4 mb-2",
+				children: "What's New?"
+			}),
+			/* @__PURE__ */ jsxs("ul", {
+				className: "text-sm space-y-2 ml-4 mb-4",
+				children: [
+					/* @__PURE__ */ jsxs("li", { children: [
+						/* @__PURE__ */ jsx("strong", { children: "Real-Time Animation Generation:" }),
+						" The animation engine no longer relies on hardcoded ManimJS templates. It now uses the ",
+						/* @__PURE__ */ jsx(Code, { children: "pi" }),
+						" agent to generate custom, context-aware visual teaching beats for any topic."
+					] }),
+					/* @__PURE__ */ jsxs("li", { children: [/* @__PURE__ */ jsx("strong", { children: "Realistic Teaching Simulations:" }), " Our synthetic benchmarks now use LLM-backed simulations to evaluate teaching outcomes (mastery, retention, confusion) instead of algebraic approximations."] }),
+					/* @__PURE__ */ jsxs("li", { children: [/* @__PURE__ */ jsx("strong", { children: "Dynamic Learner Profiles:" }), " Learner state updates are now driven by AI-inferred pedagogical shifts based on historical performance and feedback."] }),
+					/* @__PURE__ */ jsxs("li", { children: [
+						/* @__PURE__ */ jsx("strong", { children: "Research Paper Integration:" }),
+						" The formal account of the Keating metaharness is now served directly in the web application with a dedicated ",
+						/* @__PURE__ */ jsx(Code, { children: "[PAPER]" }),
+						" section and PDF download."
+					] })
+				]
+			}),
+			/* @__PURE__ */ jsx("p", {
+				className: "text-sm text-[#64748b]",
+				children: "These changes ensure that Keating's \"self-improvement\" loop is grounded in actual semantic understanding rather than pre-baked formulas."
+			})
+		] })
+	},
+	{
+		date: "2026-04-10",
+		badge: {
 			label: "TECH",
 			color: "tech"
 		},
@@ -2147,8 +2198,6 @@ var KeatingProvidersModelsTab = @customElement("keating-providers-models-tab") c
 };
 //#endregion
 //#region src/stores/local-model.ts
-env.allowLocalModels = false;
-env.useBrowserCache = true;
 var MODEL_ID = "onnx-community/gemma-4-E4B-it-ONNX";
 var LocalModelStore = class {
 	state = {
@@ -2157,7 +2206,8 @@ var LocalModelStore = class {
 		loadingProgress: 0,
 		error: null,
 		model: null,
-		processor: null
+		processor: null,
+		transformers: null
 	};
 	listeners = /* @__PURE__ */ new Set();
 	subscribe(listener) {
@@ -2178,7 +2228,10 @@ var LocalModelStore = class {
 		};
 		this.notify();
 		try {
-			console.log("Loading local model:", MODEL_ID);
+			console.log("Loading transformers.js and model:", MODEL_ID);
+			const { AutoProcessor, AutoModelForCausalLM, env } = await import("@huggingface/transformers");
+			env.allowLocalModels = false;
+			env.useBrowserCache = true;
 			const processor = await AutoProcessor.from_pretrained(MODEL_ID);
 			this.state = {
 				loaded: true,
@@ -2200,7 +2253,12 @@ var LocalModelStore = class {
 						}
 					}
 				}),
-				processor
+				processor,
+				transformers: {
+					AutoProcessor,
+					AutoModelForCausalLM,
+					env
+				}
 			};
 			this.notify();
 			console.log("Local model loaded successfully");
@@ -2229,6 +2287,7 @@ var LocalModelStore = class {
 		}];
 		const formattedPrompt = this.state.processor.apply_chat_template(messages, { add_generation_prompt: true });
 		const inputs = await this.state.processor(formattedPrompt, { add_special_tokens: false });
+		const { TextStreamer } = await import("@huggingface/transformers");
 		const streamer = new TextStreamer(this.state.processor.tokenizer, {
 			skip_prompt: true,
 			skip_special_tokens: true,
@@ -4679,6 +4738,95 @@ function Chat() {
 	});
 }
 //#endregion
+//#region src/pages/Paper.tsx
+function Paper() {
+	return /* @__PURE__ */ jsxs("div", {
+		className: "retro-layout",
+		children: [
+			/* @__PURE__ */ jsx(Nav, {}),
+			/* @__PURE__ */ jsx("main", {
+				className: "pt-28 pb-16 px-6",
+				children: /* @__PURE__ */ jsxs("div", {
+					className: "max-w-4xl mx-auto",
+					children: [/* @__PURE__ */ jsxs("div", {
+						className: "paper-fold distressed-border p-8 mb-8",
+						children: [/* @__PURE__ */ jsx("h1", {
+							className: "text-3xl md:text-4xl font-bold mb-4",
+							children: "Keating: A Metaharness for Agency-Preserving AI Instruction"
+						}), /* @__PURE__ */ jsxs("div", {
+							className: "flex flex-col md:flex-row md:items-center justify-between gap-4",
+							children: [/* @__PURE__ */ jsxs("div", {
+								className: "text-[#64748b] font-terminal",
+								children: [
+									/* @__PURE__ */ jsx("span", {
+										className: "text-[#d44a3d]",
+										children: "AUTHOR:"
+									}),
+									" Dio the Debugger ",
+									/* @__PURE__ */ jsx("br", {}),
+									/* @__PURE__ */ jsx("span", {
+										className: "text-[#d44a3d] leading-7",
+										children: "DATE:"
+									}),
+									" April 3, 2026"
+								]
+							}), /* @__PURE__ */ jsxs("a", {
+								href: "/study.pdf",
+								download: true,
+								className: "inline-flex items-center justify-center gap-2 bg-[#d44a3d] text-[#f4f1ea] px-6 py-3 font-bold hover:bg-[#b33e33] transition-colors",
+								children: [/* @__PURE__ */ jsx(Download, { size: 20 }), "DOWNLOAD PDF"]
+							})]
+						})]
+					}), /* @__PURE__ */ jsxs("article", {
+						className: "paper-fold distressed-border p-8 md:p-12 leading-relaxed",
+						children: [
+							/* @__PURE__ */ jsxs("div", {
+								className: "flex items-center gap-2 mb-8 text-[#64748b] font-terminal text-sm border-b border-[#64748b]/20 pb-4",
+								children: [/* @__PURE__ */ jsx(FileText, { size: 16 }), "ABSTRACT"]
+							}),
+							/* @__PURE__ */ jsx("p", {
+								className: "text-lg md:text-xl font-serif italic text-[#2c3e50] mb-8",
+								children: "AI tutors can scale explanation, but scaling explanation is not the same as scaling learning. A tutoring system that answers fluently may still weaken the learner's own reconstruction of a concept."
+							}),
+							/* @__PURE__ */ jsxs("div", {
+								className: "space-y-6 text-[#1a1a1a]",
+								children: [
+									/* @__PURE__ */ jsxs("p", { children: [
+										"Keating is designed around that distinction. It is not a single tutoring chatbot; it is a ",
+										/* @__PURE__ */ jsx("strong", { children: "metaharness" }),
+										" for teaching, a control layer that organizes planning, prompting, retrieval, transfer, verification, and evaluation around the live teaching exchange."
+									] }),
+									/* @__PURE__ */ jsxs("p", { children: [
+										"We analyze two evidence layers: an archival trace set of 22 raw sessions curated to 16 topic x learner pairs, and a synthetic benchmark implemented directly in the repository. The archival set yields a normalized overall score of 0.61 (95% bootstrap interval 0.515-0.705), with strong topic heterogeneity:",
+										/* @__PURE__ */ jsx("em", { children: "Special Relativity" }),
+										" is highest at 0.75 and ",
+										/* @__PURE__ */ jsx("em", { children: "Stoicism" }),
+										" lowest at 0.425."
+									] }),
+									/* @__PURE__ */ jsxs("p", { children: [
+										"The synthetic layer shows that the current Keating policy, although evolved on ",
+										/* @__PURE__ */ jsx("em", { children: "Derivative" }),
+										" alone, improves the full 14-topic harness by 6.703 points over the default policy across 200/200 seeds, with derivative-only evolution improving in 29/30 reruns."
+									] }),
+									/* @__PURE__ */ jsx("p", { children: "The contribution of this paper is therefore twofold: a formal account of a teaching metaharness and a reproducible benchmark-and-analysis stack for studying agency-preserving instruction. The present evidence supports systems and methodology claims; a human randomized trial remains the necessary next step for causal pedagogical claims." })
+								]
+							}),
+							/* @__PURE__ */ jsx("div", {
+								className: "mt-12 pt-8 border-t border-[#64748b]/20",
+								children: /* @__PURE__ */ jsx("p", {
+									className: "text-sm text-[#64748b] font-terminal uppercase tracking-widest text-center",
+									children: "— End of Abstract —"
+								})
+							})
+						]
+					})]
+				})
+			}),
+			/* @__PURE__ */ jsx(SimpleFooter, {})
+		]
+	});
+}
+//#endregion
 //#region src/App.tsx
 var rootRoute = createRootRoute({ component: () => /* @__PURE__ */ jsx(Outlet, {}) });
 var indexRoute = createRoute({
@@ -4701,12 +4849,18 @@ var blogRoute = createRoute({
 	path: "/blog",
 	component: Blog
 });
+var paperRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/paper",
+	component: Paper
+});
 var router = createRouter({
 	routeTree: rootRoute.addChildren([
 		indexRoute,
 		chatRoute,
 		tutorialRoute,
-		blogRoute
+		blogRoute,
+		paperRoute
 	]),
 	history: createHashHistory()
 });

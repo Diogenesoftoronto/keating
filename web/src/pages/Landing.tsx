@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Nav } from "../components/Nav";
 import { Footer } from "../components/Footer";
 import { BootSequence } from "../components/BootSequence";
+import { Pretext } from "../components/Pretext";
 
 type InstallTab = "npm" | "bun" | "pnpm" | "curl" | "agent";
 
@@ -77,10 +78,14 @@ export function Landing() {
                 THINK_FOR_YOURSELF
               </span>
             </h1>
-            <p className="text-lg mb-6 max-w-2xl leading-relaxed">
-              Keating doesn't give answers. It forces you to reconstruct understanding from memory.
-              No hand-holding. No spoon-feeding. Just the Socratic method powered by silicon.
-            </p>
+            <div className="max-w-2xl">
+              <Pretext 
+                text="Keating doesn't give answers. It forces you to reconstruct understanding from memory. No hand-holding. No spoon-feeding. Just the Socratic method powered by silicon."
+                font="18px 'Inter', sans-serif"
+                lineHeight={28}
+                className="mb-6 opacity-90"
+              />
+            </div>
             <div className="stamp">COGNITIVE EMPOWERMENT</div>
           </div>
 
@@ -149,7 +154,14 @@ export function Landing() {
                 <div className="font-terminal text-2xl text-[#d44a3d] mb-3">
                   [{n}] {title}
                 </div>
-                <p className="text-sm leading-relaxed">{body}</p>
+                <div className="text-sm">
+                  <Pretext 
+                    text={body}
+                    font="14px 'Inter', sans-serif"
+                    lineHeight={20}
+                    justify={true}
+                  />
+                </div>
               </div>
             ))}
           </div>

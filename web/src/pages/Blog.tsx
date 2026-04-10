@@ -1,5 +1,7 @@
+import { Link } from "@tanstack/react-router";
 import { Nav } from "../components/Nav";
 import { SimpleFooter } from "../components/Footer";
+import { Pretext } from "../components/Pretext";
 
 type BadgeColor = "fix" | "release" | "feature" | "pwa" | "update" | "tech" | "devlog";
 
@@ -41,27 +43,59 @@ const POSTS: Post[] = [
     title: "From Stubs to Reality: AI-Powered Pedagogical Verification",
     body: (
       <>
-        <p className="mb-4">
-          Today we've completed a major architectural shift: moving from deterministic mathematical stubs to true AI-powered verification across our core pedagogical engines.
-        </p>
+        <div className="mb-4">
+          <Pretext 
+            text="Today we've completed a major architectural shift: moving from deterministic mathematical stubs to true AI-powered verification across our core pedagogical engines."
+            font="16px 'Inter', sans-serif"
+            lineHeight={24}
+          />
+        </div>
         <h3 className="font-bold mt-4 mb-2">What's New?</h3>
-        <ul className="text-sm space-y-2 ml-4 mb-4">
+        <ul className="text-sm space-y-4 ml-4 mb-4">
           <li>
-            <strong>Real-Time Animation Generation:</strong> The animation engine no longer relies on hardcoded ManimJS templates. It now uses the <Code>pi</Code> agent to generate custom, context-aware visual teaching beats for any topic.
+            <div className="font-bold mb-1 underline decoration-[#d44a3d]">Real-Time Animation Generation:</div>
+            <Pretext 
+              text="The animation engine no longer relies on hardcoded ManimJS templates. It now uses the pi agent to generate custom, context-aware visual teaching beats for any topic."
+              font="14px 'Inter', sans-serif"
+              lineHeight={20}
+              justify={false}
+            />
           </li>
           <li>
-            <strong>Realistic Teaching Simulations:</strong> Our synthetic benchmarks now use LLM-backed simulations to evaluate teaching outcomes (mastery, retention, confusion) instead of algebraic approximations.
+            <div className="font-bold mb-1 underline decoration-[#d44a3d]">Realistic Teaching Simulations:</div>
+            <Pretext 
+              text="Our synthetic benchmarks now use LLM-backed simulations to evaluate teaching outcomes (mastery, retention, confusion) instead of algebraic approximations."
+              font="14px 'Inter', sans-serif"
+              lineHeight={20}
+              justify={false}
+            />
           </li>
           <li>
-            <strong>Dynamic Learner Profiles:</strong> Learner state updates are now driven by AI-inferred pedagogical shifts based on historical performance and feedback.
+            <div className="font-bold mb-1 underline decoration-[#d44a3d]">Dynamic Learner Profiles:</div>
+            <Pretext 
+              text="Learner state updates are now driven by AI-inferred pedagogical shifts based on historical performance and feedback."
+              font="14px 'Inter', sans-serif"
+              lineHeight={20}
+              justify={false}
+            />
           </li>
           <li>
-            <strong>Research Paper Integration:</strong> The formal account of the Keating metaharness is now served directly in the web application with a dedicated <Code>[PAPER]</Code> section and PDF download.
+            <div className="font-bold mb-1 underline decoration-[#d44a3d]">Research Paper Integration:</div>
+            <Pretext 
+              text="The formal account of the Keating metaharness is now served directly in the web application with a dedicated [PAPER] section and PDF download."
+              font="14px 'Inter', sans-serif"
+              lineHeight={20}
+              justify={false}
+            />
           </li>
         </ul>
-        <p className="text-sm text-[#64748b]">
-          These changes ensure that Keating's "self-improvement" loop is grounded in actual semantic understanding rather than pre-baked formulas.
-        </p>
+        <div className="text-sm text-[#64748b] mt-6">
+          <Pretext 
+            text="These changes ensure that Keating's 'self-improvement' loop is grounded in actual semantic understanding rather than pre-baked formulas."
+            font="italic 14px 'Inter', sans-serif"
+            lineHeight={20}
+          />
+        </div>
       </>
     ),
   },
