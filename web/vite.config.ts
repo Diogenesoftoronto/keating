@@ -94,15 +94,13 @@ export default defineConfig({
         main: resolve(__dirname, 'index.html'),
       },
       output: {
-        manualChunks: {
-          'transformers-lib': ['@huggingface/transformers'],
+        manualChunks(id) {
+          if (id.includes('@huggingface/transformers')) {
+            return 'transformers-lib';
+          }
         },
       },
     },
-  },
-  esbuild: {
-    loader: 'tsx',
-    include: /\.(tsx?|jsx?)$/,
   },
   resolve: {
     alias: {
