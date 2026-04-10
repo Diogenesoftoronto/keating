@@ -1,13 +1,7 @@
-import {
-  AutoProcessor,
-  AutoModelForCausalLM,
-  TextStreamer,
-  env,
-} from '@huggingface/transformers';
+// Dynamic imports used to keep @huggingface/transformers out of the main bundle
+// This prevents build timeouts and ensures the ~100MB library is only loaded on demand.
 
-// Configure Transformers.js
-env.allowLocalModels = false;
-env.useBrowserCache = true;
+// Configuration will be applied inside the async load() method
 
 // ONNX model - Gemma 4 E4B (the only format Transformers.js supports)
 const MODEL_ID = 'onnx-community/gemma-4-E4B-it-ONNX';
@@ -19,6 +13,7 @@ export interface LocalModel {
   error: string | null;
   model: any | null;
   processor: any | null;
+  transformers: any | null; // Store transformers instance
 }
 
 class LocalModelStore {
@@ -29,6 +24,7 @@ class LocalModelStore {
     error: null,
     model: null,
     processor: null,
+    transformers: null,
   };
 
   private listeners: Set<(state: LocalModel) => void> = new Set();
@@ -50,7 +46,14 @@ class LocalModelStore {
     this.notify();
 
     try {
-      console.log('Loading local model:', MODEL_ID);
+      console.log('Loading transformers.js and model:', MODEL_ID);
+
+      // Dynamically import transformers.js
+      const { AutoProcessor, AutoModelForCausalLM, env } = await import('@huggingface/transformers');
+      
+      // Ensure we NEVER try to load local models from the repo
+      env.allowLocalModels = false;
+      env.useBrowserCache = true;
 
       // Load processor (tokenizer)
       const processor = await AutoProcessor.from_pretrained(MODEL_ID);
@@ -76,6 +79,7 @@ class LocalModelStore {
         error: null,
         model,
         processor,
+        transformers: { AutoProcessor, AutoModelForCausalLM, env },
       };
       this.notify();
       console.log('Local model loaded successfully');
@@ -120,6 +124,9 @@ class LocalModelStore {
     const inputs = await this.state.processor(formattedPrompt, {
       add_special_tokens: false,
     });
+
+    // Dynamically import TextStreamer
+    const { TextStreamer } = await import('@huggingface/transformers');
 
     // Generate with streaming
     const streamer = new TextStreamer(this.state.processor.tokenizer, {
