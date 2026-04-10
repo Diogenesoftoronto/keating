@@ -9,6 +9,11 @@ dist/
 *.pdf
 *.png
 *.svg
+!web/public/*.png
+!web/public/*.svg
+
+# Nitro
+.output/
 
 # Build artifacts
 test/bench.log
