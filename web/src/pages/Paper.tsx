@@ -1,6 +1,7 @@
 import { Nav } from "../components/Nav";
 import { SimpleFooter } from "../components/Footer";
 import { Download, FileText } from "lucide-react";
+import { Pretext } from "../components/Pretext";
 
 export function Paper() {
   return (
@@ -35,37 +36,38 @@ export function Paper() {
               ABSTRACT
             </div>
             
-            <p className="text-lg md:text-xl font-serif italic text-[#2c3e50] mb-8">
-              AI tutors can scale explanation, but scaling explanation is not the same as scaling learning. 
-              A tutoring system that answers fluently may still weaken the learner's own reconstruction of a concept.
-            </p>
+            <div className="text-lg md:text-xl font-serif italic text-[#2c3e50] mb-8">
+              <Pretext 
+                text="AI tutors can scale explanation, but scaling explanation is not the same as scaling learning. A tutoring system that answers fluently may still weaken the learner's own reconstruction of a concept."
+                font="italic 20px 'Georgia', serif"
+                lineHeight={32}
+              />
+            </div>
 
-            <div className="space-y-6 text-[#1a1a1a]">
-              <p>
-                Keating is designed around that distinction. It is not a single tutoring chatbot; 
-                it is a <strong>metaharness</strong> for teaching, a control layer that organizes planning, prompting, 
-                retrieval, transfer, verification, and evaluation around the live teaching exchange.
-              </p>
+            <div className="space-y-8 text-[#1a1a1a] font-serif">
+              <Pretext 
+                text="Keating is designed around that distinction. It is not a single tutoring chatbot; it is a metaharness for teaching, a control layer that organizes planning, prompting, retrieval, transfer, verification, and evaluation around the live teaching exchange."
+                font="18px 'Georgia', serif"
+                lineHeight={28}
+              />
               
-              <p>
-                We analyze two evidence layers: an archival trace set of 22 raw sessions curated to 16 topic x learner pairs, 
-                and a synthetic benchmark implemented directly in the repository. The archival set yields a normalized 
-                overall score of 0.61 (95% bootstrap interval 0.515-0.705), with strong topic heterogeneity: 
-                <em>Special Relativity</em> is highest at 0.75 and <em>Stoicism</em> lowest at 0.425.
-              </p>
+              <Pretext 
+                text="We analyze two evidence layers: an archival trace set of 22 raw sessions curated to 16 topic x learner pairs, and a synthetic benchmark implemented directly in the repository. The archival set yields a normalized overall score of 0.61 (95% bootstrap interval 0.515-0.705), with strong topic heterogeneity: Special Relativity is highest at 0.75 and Stoicism lowest at 0.425."
+                font="18px 'Georgia', serif"
+                lineHeight={28}
+              />
 
-              <p>
-                The synthetic layer shows that the current Keating policy, although evolved on <em>Derivative</em> alone, 
-                improves the full 14-topic harness by 6.703 points over the default policy across 200/200 seeds, 
-                with derivative-only evolution improving in 29/30 reruns.
-              </p>
+              <Pretext 
+                text="The synthetic layer shows that the current Keating policy, although evolved on Derivative alone, improves the full 14-topic harness by 6.703 points over the default policy across 200/200 seeds, with derivative-only evolution improving in 29/30 reruns."
+                font="18px 'Georgia', serif"
+                lineHeight={28}
+              />
 
-              <p>
-                The contribution of this paper is therefore twofold: a formal account of a teaching metaharness 
-                and a reproducible benchmark-and-analysis stack for studying agency-preserving instruction. 
-                The present evidence supports systems and methodology claims; a human randomized trial 
-                remains the necessary next step for causal pedagogical claims.
-              </p>
+              <Pretext 
+                text="The contribution of this paper is therefore twofold: a formal account of a teaching metaharness and a reproducible benchmark-and-analysis stack for studying agency-preserving instruction. The present evidence supports systems and methodology claims; a human randomized trial remains the necessary next step for causal pedagogical claims."
+                font="18px 'Georgia', serif"
+                lineHeight={28}
+              />
             </div>
 
             <div className="mt-12 pt-8 border-t border-[#64748b]/20">
