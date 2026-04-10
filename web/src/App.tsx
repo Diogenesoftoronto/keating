@@ -10,6 +10,7 @@ import { Landing } from "./pages/Landing";
 import { Tutorial } from "./pages/Tutorial";
 import { Blog } from "./pages/Blog";
 import { Chat } from "./pages/Chat";
+import { Paper } from "./pages/Paper";
 
 const rootRoute = createRootRoute({ component: () => <Outlet /> });
 
@@ -37,11 +38,18 @@ const blogRoute = createRoute({
   component: Blog,
 });
 
+const paperRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/paper",
+  component: Paper,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   chatRoute,
   tutorialRoute,
   blogRoute,
+  paperRoute,
 ]);
 
 const hashHistory = createHashHistory();
