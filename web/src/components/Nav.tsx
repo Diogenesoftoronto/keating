@@ -20,10 +20,10 @@ export function Nav({ showFeatures = false }: NavProps) {
           <span className="font-terminal text-sm sm:text-lg text-[#d44a3d]">v0.1.4</span>
         </Link>
 
-        {/* Desktop/Tablet nav */}
-        <div className="hidden sm:flex items-center gap-3 md:gap-6 lg:gap-8 font-terminal text-sm md:text-base lg:text-lg">
+        {/* Constant nav links — always visible now */}
+        <div className="flex items-center gap-2 sm:gap-4 md:gap-6 lg:gap-8 font-terminal text-[10px] xs:text-xs sm:text-sm md:text-base lg:text-lg">
           {showFeatures && (
-            <a href="#features" className="hidden lg:block hover:text-[#d44a3d] transition-colors glitch-hover">[FEATURES]</a>
+            <a href="#features" className="hidden sm:block hover:text-[#d44a3d] transition-colors glitch-hover">[FEATURES]</a>
           )}
           <Link to="/tutorial" className="hover:text-[#d44a3d] transition-colors glitch-hover">[TUTORIAL]</Link>
           <Link to="/blog" className="hover:text-[#d44a3d] transition-colors glitch-hover">[BLOG]</Link>
@@ -37,74 +37,14 @@ export function Nav({ showFeatures = false }: NavProps) {
             [GITHUB]
           </a>
           <button
-            className="btn-retro px-3 py-1.5 md:px-4 md:py-2 font-bold text-xs md:text-sm min-h-[36px] md:min-h-[44px]"
+            className="btn-retro px-2 py-1 sm:px-4 sm:py-2 font-bold text-[10px] sm:text-sm min-h-[32px] sm:min-h-[44px]"
             onClick={() => navigate({ to: "/chat" })}
           >
             TRY_KEATING
           </button>
         </div>
-
-        {/* Mobile menu button (only on xs) */}
-        <button
-          className="sm:hidden font-terminal text-[#1a1a1a] border-2 border-[#1a1a1a] px-3 py-1.5 min-h-[40px] min-w-[40px] hover:bg-[#1a1a1a] hover:text-[#f4f1ea] transition-colors text-base"
-          onClick={() => setMobileOpen((o) => !o)}
-        >
-          {mobileOpen ? "[CLOSE]" : "[MENU]"}
-        </button>
       </div>
 
-      {/* Mobile nav dropdown (only on xs) */}
-      {mobileOpen && (
-        <div className="sm:hidden border-t-2 border-[#1a1a1a] bg-[#f4f1ea] overflow-y-auto" style={{ maxHeight: 'calc(100dvh - 56px)' }}>
-          <div className="px-4 py-4 flex flex-col gap-2 font-terminal text-base">
-            {showFeatures && (
-              <a
-                href="#features"
-                className="hover:text-[#d44a3d] transition-colors py-3 px-2 min-h-[48px] flex items-center"
-                onClick={closeMobile}
-              >
-                [FEATURES]
-              </a>
-            )}
-            <Link
-              to="/tutorial"
-              className="hover:text-[#d44a3d] transition-colors py-3 px-2 min-h-[48px] flex items-center"
-              onClick={closeMobile}
-            >
-              [TUTORIAL]
-            </Link>
-            <Link
-              to="/blog"
-              className="hover:text-[#d44a3d] transition-colors py-3 px-2 min-h-[48px] flex items-center"
-              onClick={closeMobile}
-            >
-              [BLOG]
-            </Link>
-            <Link
-              to="/paper"
-              className="hover:text-[#d44a3d] transition-colors py-3 px-2 min-h-[48px] flex items-center"
-              onClick={closeMobile}
-            >
-              [PAPER]
-            </Link>
-            <a
-              href="https://github.com/Diogenesoftoronto/keating"
-              target="_blank"
-              rel="noreferrer"
-              className="hover:text-[#d44a3d] transition-colors py-3 px-2 min-h-[48px] flex items-center"
-              onClick={closeMobile}
-            >
-              [GITHUB]
-            </a>
-            <button
-              className="btn-retro px-4 py-4 font-bold text-base mt-2 w-full min-h-[48px]"
-              onClick={() => { closeMobile(); navigate({ to: "/chat" }); }}
-            >
-              TRY_KEATING
-            </button>
-          </div>
-        </div>
-      )}
     </nav>
   );
 }
