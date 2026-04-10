@@ -15,7 +15,7 @@ export function Paper() {
             </h1>
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="text-[#64748b] font-terminal">
-                <span className="text-[#d44a3d]">AUTHOR:</span> Theo The Debugger <br />
+                <span className="text-[#d44a3d]">AUTHOR:</span> Dio the Debugger <br />
                 <span className="text-[#d44a3d] leading-7">DATE:</span> April 3, 2026
               </div>
               <a
