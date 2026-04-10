@@ -11,42 +11,12 @@ RUN bun run build
 FROM oven/bun:1
 
 WORKDIR /app
-COPY --from=builder /app/dist ./dist
-
-# Create simple Bun server
-RUN cat > server.js << 'EOF'
-const port = process.env.PORT || 3000;
-const server = Bun.serve({
-  port,
-  async fetch(request) {
-    const url = new URL(request.url);
-    let path = url.pathname;
-    
-    // Try to serve the file directly
-    if (path === '/') path = '/index.html';
-    
-    const filePath = `./dist${path}`;
-    const file = Bun.file(filePath);
-    
-    try {
-      // Check if file exists by trying to get its size
-      const exists = await file.exists();
-      if (exists) {
-        return new Response(file);
-      }
-    } catch (e) {
-      // File doesn't exist
-    }
-    
-    // Fallback to index.html for SPA routing
-    return new Response(Bun.file('./dist/index.html'));
-  }
-});
-
-console.log(`Server running on port ${port}`);
-EOF
+# Copy the entire Nitro output which includes static assets and the server
+COPY --from=builder /app/.output ./.output
 
 ENV PORT=3000
+ENV HOST=0.0.0.0
 EXPOSE 3000
 
-CMD ["bun", "server.js"]
+# Run the Nitro server entry point
+CMD ["bun", ".output/server/index.mjs"]
