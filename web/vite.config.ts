@@ -2,12 +2,21 @@ import { defineConfig } from 'vite';
 import { resolve } from 'path';
 import { VitePWA } from 'vite-plugin-pwa';
 import react from '@vitejs/plugin-react';
+import reactOgImage from 'vite-plugin-react-og-image';
 
 export default defineConfig({
   root: '.',
   publicDir: 'public',
   plugins: [
     react(),
+    reactOgImage({
+      host: 'https://keating.help',
+      componentPath: './src/og-image',
+      imageResponseOptions: {
+        width: 1200,
+        height: 630,
+      },
+    }),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.svg'],
