@@ -89,13 +89,9 @@ export default defineConfig({
     emptyOutDir: true,
     assetsDir: 'assets',
     sourcemap: false,
-    chunkSizeWarningLimit: 5000, // Large because of mermaid/transformers-js
+    chunkSizeWarningLimit: 5000,
     reportCompressedSize: false,
-    rollupOptions: {
-      input: {
-        main: resolve(__dirname, 'index.html'),
-      },
-    },
+    ssr: false,
   },
   resolve: {
     alias: {
@@ -110,7 +106,14 @@ export default defineConfig({
     headers: {
       // Required for WebGPU and SharedArrayBuffer
       'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp',
+      'Cross-Origin-Embedder-Policy': 'credentialless',
+    },
+  },
+  esbuild: {
+    tsconfigRaw: {
+      compilerOptions: {
+        experimentalDecorators: true,
+      },
     },
   },
   base: '/',

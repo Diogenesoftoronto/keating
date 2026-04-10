@@ -92,6 +92,7 @@ class LocalModelStore {
         error: message,
         model: null,
         processor: null,
+        transformers: null,
       };
       this.notify();
       console.error('Failed to load local model:', message);

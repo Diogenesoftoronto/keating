@@ -404,3 +404,51 @@
 .border-green-50 { border-color: rgba(0, 255, 0, 0.5); }
 .bg-green-30 { background-color: rgba(0, 255, 0, 0.3); }
 .bg-ink-20 { background-color: rgba(26, 26, 26, 0.2); }
+
+/* =================================================================
+   RESPONSIVE NAV — md breakpoint (768px) matches original index.html
+   Using vanilla @media to avoid Tailwind class-order issues.
+   ================================================================= */
+
+/* Mobile-first: hamburger visible, desktop links hidden */
+.nav-desktop {
+  display: none !important;
+}
+
+.nav-mobile-toggle {
+  display: inline-flex;
+}
+
+/* md and up: desktop links visible, hamburger hidden */
+@media (min-width: 768px) {
+  .nav-desktop {
+    display: flex !important;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .nav-desktop-link {
+    font-size: 1rem;
+  }
+
+  .nav-mobile-toggle {
+    display: none !important;
+  }
+}
+
+/* lg: a bit more gap between nav links */
+@media (min-width: 1024px) {
+  .nav-desktop {
+    gap: 2rem;
+  }
+
+  .nav-desktop-link {
+    font-size: 1.125rem;
+  }
+}
+
+/* Hamburger button hover */
+.nav-mobile-toggle:hover {
+  background: #1a1a1a !important;
+  color: #f4f1ea !important;
+}
