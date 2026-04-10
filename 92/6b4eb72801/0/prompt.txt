@@ -1,0 +1,13 @@
+add application embeds so we have open graph stuff working, https://github.com/sunya9/vite-plugin-react-og-imagehttps://github.com/sunya9/vite-plugin-react-og-imagehttps://github.com/sunya9/vite-plugin-react-og-image
+
+---
+
+[Image #2] [Image #3] [Image #4] the following images show problems layout specifically the menu doesn't appear in landscape there is also overlapping element issues like the nav bar and the copy button here. look through the code and make sure this no longer happens use modern techniques for this
+
+---
+
+make sure the text in the copy does not overflow it's container.
+
+---
+
+an other places like this
