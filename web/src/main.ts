@@ -30,6 +30,8 @@ import { KeatingProvidersModelsTab } from "./components/providers-models-tab";
 import { KeatingModelSelector } from "./components/model-selector";
 import { getProviderApiKey, syncCustomProviderKeys } from "./lib/provider-models";
 import { localModel } from "./stores/local-model";
+import { createKeatingTools, KEATING_SYSTEM_PROMPT as TOOLS_PROMPT } from "./keating/browser-tools";
+import { KeatingStorage } from "./keating/storage";
 
 // Storage setup
 const settings = new SettingsStore();
@@ -57,21 +59,8 @@ customProviders.setBackend(backend);
 const storage = new AppStorage(settings, providerKeys, sessions, customProviders, backend);
 setAppStorage(storage);
 
-// Keating system prompt
-const KEATING_SYSTEM_PROMPT = `You are Keating, a hyperteacher designed for cognitive empowerment.
-
-Your purpose is NOT to provide answers, but to ensure humans remain the authors of their own understanding.
-
-Core principles:
-1. **Diagnosis First**: Before teaching, understand what the learner already knows and where their gaps lie.
-2. **Reconstruction Over Regurgitation**: Make learners reconstruct ideas from memory, not merely agree with explanations.
-3. **Transfer Testing**: Ask learners to carry ideas into new settings to prove genuine understanding.
-4. **Voice Preservation**: Penalize rote echoing. Reward novel analogies and personal articulation.
-5. **Socratic Patience**: Guide with questions, not lectures. Let insights emerge from the learner.
-
-*"That you are here—that life exists and identity, that the powerful play goes on, and you may contribute a verse."*
-
-Your role is to ensure every learner is equipped to contribute their own verse.`;
+// Keating storage for tools/artifacts
+const keatingStorage = new KeatingStorage();
 
 let currentSessionId: string | undefined;
 let currentTitle = "Keating";
@@ -284,12 +273,14 @@ const switchModel = async (model: Model<Api>) => {
 // AGENT
 // ============================================================================
 const createAgent = async (initialState?: Partial<AgentState>) => {
+	const tools = await createKeatingTools(keatingStorage);
+	
 	const nextInitialState: Partial<AgentState> = {
-		systemPrompt: KEATING_SYSTEM_PROMPT,
+		systemPrompt: TOOLS_PROMPT,
 		model: initialState?.model ?? createInitialModel(),
 		thinkingLevel: "medium",
 		messages: [],
-		tools: [],
+		tools,
 		...initialState,
 	};
 
@@ -331,6 +322,10 @@ async function initApp() {
 	// Check for browser model capability (WebGPU)
 	webGpuAvailable = await checkBrowserModelCapability();
 	await syncCustomProviderKeys();
+	
+	// Initialize Keating storage
+	await keatingStorage.init();
+	
 	selectedModel = DEFAULT_MODEL;
 
 	// Create ChatPanel
@@ -362,5 +357,9 @@ async function checkBrowserModelCapability(): Promise<boolean> {
 	}
 }
 
-// Start app
-initApp();
+// Start app - only if not imported as module
+if (typeof window !== "undefined") {
+	initApp();
+}
+
+export { initApp };
