@@ -84,7 +84,12 @@ function chatProxyPlugin(): Plugin {
   };
 }
 
+import pkg from '../package.json';
+
 export default defineConfig({
+  define: {
+    'import.meta.env.APP_VERSION': JSON.stringify(pkg.version),
+  },
   root: '.',
   publicDir: 'public',
   plugins: [

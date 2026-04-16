@@ -8,7 +8,12 @@ export function Footer() {
           <span className="text-[#d44a3d]">●</span>
           <span>KEATING_HYPERTEACHER</span>
         </div>
-        <p className="text-sm text-[#1a1a1a]/60">BUILT_ON_PI // MIT_LICENSE // 2025</p>
+        <p className="text-sm text-[#1a1a1a]/60 flex items-center gap-3">
+          <span>BUILT_ON_PI // MIT_LICENSE // 2026</span>
+          <span className="px-2 py-0.5 border border-[#1a1a1a]/20 rounded text-[10px] bg-[#1a1a1a]/5">
+            V{import.meta.env.APP_VERSION}
+          </span>
+        </p>
         <div className="flex gap-6 text-[#1a1a1a]/60">
           <a
             href="https://github.com/Diogenesoftoronto/keating"
