@@ -444,10 +444,19 @@ export function promptEvolutionToMarkdown(run: PromptEvolutionRun): string {
   }
 
   lines.push("## Recommended Prompt");
-  lines.push("");
   lines.push("```md");
   lines.push(run.best.prompt.trimEnd());
   lines.push("```");
   lines.push("");
   return `${lines.join("\n")}\n`;
+}
+
+import { learnPrompt, LearnPromptOptions } from "./ax-prompt-learner.js";
+
+export async function evolveWithACE(
+  cwd: string,
+  promptName: string = "learn",
+  options?: LearnPromptOptions
+) {
+  return learnPrompt(cwd, promptName, options);
 }

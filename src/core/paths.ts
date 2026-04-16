@@ -69,6 +69,14 @@ export function verificationCachePath(cwd: string): string {
   return join(stateDir(cwd), "verification-cache.json");
 }
 
+export function engagementPolicyPath(cwd: string): string {
+  return join(stateDir(cwd), "engagement-policy.json");
+}
+
+export function timelineDir(cwd: string): string {
+  return join(outputsDir(cwd), "timelines");
+}
+
 export async function ensureKeatingDirs(cwd: string): Promise<void> {
   await Promise.all([
     mkdir(stateDir(cwd), { recursive: true }),
@@ -82,6 +90,7 @@ export async function ensureKeatingDirs(cwd: string): Promise<void> {
     mkdir(tracesDir(cwd), { recursive: true }),
     mkdir(verificationsDir(cwd), { recursive: true }),
     mkdir(join(outputsDir(cwd), "improvements"), { recursive: true }),
-    mkdir(sessionsDir(cwd), { recursive: true })
+    mkdir(sessionsDir(cwd), { recursive: true }),
+    mkdir(timelineDir(cwd), { recursive: true })
   ]);
 }

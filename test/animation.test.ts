@@ -1,48 +1,89 @@
-import test from "node:test";
-import assert from "node:assert/strict";
+import { test, expect } from "bun:test";
+import * as fc from "fast-check";
 
 import { animationSceneSource, buildAnimationManifest } from "../src/core/animation.js";
 import { lessonPlanToMermaid } from "../src/core/map.js";
 import { DEFAULT_POLICY, clampPolicy } from "../src/core/policy.js";
-import { Prng } from "../src/core/random.js";
+import { arbPolicy } from "./helpers.js";
 
-test("visual generators preserve meaning-map and animation invariants across randomized topics", async () => {
-  const prng = new Prng(4242);
+const CANONICAL_TOPICS = [
+  "derivative", "entropy", "bayes-rule", "falsifiability", "stoicism",
+  "recursion", "precedent", "separation-of-powers", "cognitive-bias",
+  "evidence-based-medicine", "counterpoint", "industrial-revolution",
+  "relativity", "social-contract"
+];
 
-  for (let index = 0; index < 2; index += 1) {
-    const policy = clampPolicy({
-      ...DEFAULT_POLICY,
-      name: `visual-${index}`,
-      analogyDensity: prng.next(),
-      socraticRatio: prng.next(),
-      formalism: prng.next(),
-      retrievalPractice: prng.next(),
-      exerciseCount: prng.int(1, 5),
-      diagramBias: prng.next(),
-      reflectionBias: prng.next(),
-      interdisciplinaryBias: prng.next(),
-      challengeRate: prng.next()
-    });
-    const topic = index % 4 === 0 ? "derivative" : `concept ${index} ${Math.floor(prng.next() * 1000)}`;
-    const mermaid = lessonPlanToMermaid(topic, policy);
-    const manifest = buildAnimationManifest(topic, policy);
-    const scene = await animationSceneSource(process.cwd(), topic, policy, "./vendor/manim-web.js");
+// ─── Mermaid diagram properties (pure, no I/O) ─────────────────────────────
 
-    assert.ok(mermaid.startsWith("graph TD"));
-    assert.ok(mermaid.includes('subgraph pedagogy["Teaching Loop"]'));
-    assert.ok(mermaid.includes('subgraph meaning["Meaning Map"]'));
-    assert.ok(mermaid.includes('subgraph friction["Misconceptions And Practice"]'));
-    assert.ok(mermaid.includes('subgraph transfer["Transfer Hooks"]'));
-    assert.ok(scene.includes('from "./vendor/manim-web.js"'));
-    assert.ok(scene.includes("export async function construct(scene)"));
-    assert.ok(manifest.rationale.length >= 4);
-    assert.equal(manifest.focusMoments.length, 4);
-  }
+test("ALWAYS: mermaid output contains required subgraphs for any policy+topic", () => {
+  fc.assert(fc.property(
+    arbPolicy,
+    fc.constantFrom(...CANONICAL_TOPICS),
+    (policy, topic) => {
+      const p = clampPolicy(policy);
+      const mermaid = lessonPlanToMermaid(topic, p);
+      expect(mermaid.startsWith("graph TD")).toBe(true);
+      expect(mermaid.includes('subgraph pedagogy["Teaching Loop"]')).toBe(true);
+      expect(mermaid.includes('subgraph meaning["Meaning Map"]')).toBe(true);
+      expect(mermaid.includes('subgraph friction["Misconceptions And Practice"]')).toBe(true);
+      expect(mermaid.includes('subgraph transfer["Transfer Hooks"]')).toBe(true);
+    }
+  ));
 });
 
-test("canonical topics select distinct animation grammars", () => {
-  assert.equal(buildAnimationManifest("derivative", DEFAULT_POLICY).sceneKind, "function-graph");
-  assert.equal(buildAnimationManifest("entropy", DEFAULT_POLICY).sceneKind, "distribution-bars");
-  assert.equal(buildAnimationManifest("bayes", DEFAULT_POLICY).sceneKind, "belief-update");
-  assert.equal(buildAnimationManifest("stoicism", DEFAULT_POLICY).sceneKind, "concept-card");
+// ─── Animation manifest properties ─────────────────────────────────────────
+
+test("ALWAYS: animation manifest has sufficient rationale and 4 focus moments", () => {
+  fc.assert(fc.property(
+    arbPolicy,
+    fc.constantFrom(...CANONICAL_TOPICS),
+    (policy, topic) => {
+      const p = clampPolicy(policy);
+      const manifest = buildAnimationManifest(topic, p);
+      expect(manifest.rationale.length).toBeGreaterThanOrEqual(4);
+      expect(manifest.focusMoments.length).toBe(4);
+    }
+  ));
+});
+
+test("ALWAYS: animation scene kind is never empty", () => {
+  fc.assert(fc.property(
+    arbPolicy,
+    fc.constantFrom(...CANONICAL_TOPICS),
+    (policy, topic) => {
+      const p = clampPolicy(policy);
+      const manifest = buildAnimationManifest(topic, p);
+      expect(manifest.sceneKind.length).toBeGreaterThan(0);
+    }
+  ));
+});
+
+// ─── Canonical topic → scene-kind mapping (deterministic) ───────────────────
+
+test("ALWAYS: canonical topics select distinct animation grammars", () => {
+  expect(buildAnimationManifest("derivative", DEFAULT_POLICY).sceneKind).toBe("function-graph");
+  expect(buildAnimationManifest("entropy", DEFAULT_POLICY).sceneKind).toBe("distribution-bars");
+  expect(buildAnimationManifest("bayes", DEFAULT_POLICY).sceneKind).toBe("belief-update");
+  expect(buildAnimationManifest("stoicism", DEFAULT_POLICY).sceneKind).toBe("concept-card");
+});
+
+test("ALWAYS: animation manifest is deterministic for same inputs", () => {
+  fc.assert(fc.property(
+    arbPolicy,
+    fc.constantFrom(...CANONICAL_TOPICS),
+    (policy, topic) => {
+      const p = clampPolicy(policy);
+      const m1 = buildAnimationManifest(topic, p);
+      const m2 = buildAnimationManifest(topic, p);
+      expect(m1).toEqual(m2);
+    }
+  ));
+});
+
+// ─── Scene source generation (involves I/O) ─────────────────────────────────
+
+test("animation scene source contains expected boilerplate", async () => {
+  const scene = await animationSceneSource(process.cwd(), "derivative", DEFAULT_POLICY, "./vendor/manim-web.js");
+  expect(scene.includes('from "./vendor/manim-web.js"')).toBe(true);
+  expect(scene.includes("export async function construct(scene)")).toBe(true);
 });

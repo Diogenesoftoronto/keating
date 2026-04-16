@@ -12,14 +12,24 @@ import {
 	runBenchmarkSuite,
 	benchmarkToMarkdown,
 	evolvePolicy,
+	evolvePolicy as _evolvePolicyLegacy,
 	evolutionToMarkdown,
+	mapElitesEvolve,
+	mapElitesToMarkdown,
+	mapElitesToEvolutionRun,
 	DEFAULT_POLICY,
 	diagnoseBenchmark,
 	evaluatePrompt,
 	resolveTopic,
+	buildEngagementTimeline,
+	getDueTopics,
+	engagementTimelineToMarkdown,
+	dueTopicsToMarkdown,
+	DEFAULT_ENGAGEMENT_POLICY,
 	type TeacherPolicy,
 	type BenchmarkResult,
 	type EvolutionRun,
+	type CoveredTopic,
 } from "./core";
 
 export const KEATING_SYSTEM_PROMPT = `You are Keating, a hyperteacher designed for cognitive empowerment.
@@ -53,6 +63,8 @@ Use these slash commands to help learners:
 - \`/improve\` - Get improvement suggestions from benchmark diagnosis
 - \`/trace\` - Browse benchmark and evolution traces
 - \`/prompt-eval\` - Evaluate a prompt template for teaching effectiveness
+- \`/timeline\` - Show engagement timeline with retention decay and review urgency
+- \`/due\` - Show topics that are due for review based on spaced repetition
 `;
 
 // Helper function to create tools with proper schema
@@ -324,8 +336,9 @@ Complete this checklist before teaching ${resolved.title}.
 						}
 					: DEFAULT_POLICY;
 
-				const run = evolvePolicy(basePolicy, topic);
-				const report = evolutionToMarkdown(run);
+				const meRun = mapElitesEvolve(basePolicy, topic);
+				const run = mapElitesToEvolutionRun(meRun);
+				const report = mapElitesToMarkdown(meRun);
 
 				// Save evolved policy
 				await storage.savePolicy(
@@ -349,7 +362,7 @@ Complete this checklist before teaching ${resolved.title}.
 					JSON.stringify(run.exploredCandidates, null, 2)
 				);
 
-				return `🧬 Policy evolved!\n\n**Best Score:** ${run.best.overallScore.toFixed(2)}/100\n**Baseline:** ${run.baseline.overallScore.toFixed(2)}/100\n**Accepted:** ${run.acceptedCandidates.length}/${run.exploredCandidates.length} candidates\n\n${report}`;
+				return `🧬 Policy evolved (MAP-Elites)!\n\n**Best Score:** ${run.best.overallScore.toFixed(2)}/100\n**Baseline:** ${run.baseline.overallScore.toFixed(2)}/100\n**Filled cells:** ${meRun.filledCellCount}/${meRun.totalCells}\n**Accepted:** ${run.acceptedCandidates.length}/${run.exploredCandidates.length} candidates\n\n${report}`;
 			}
 		),
 
@@ -527,6 +540,71 @@ ${state.lastSessionAt ? `**Last Session:** ${new Date(state.lastSessionAt).toLoc
 						: "\n## Feedback\n- No major issues detected.";
 
 				return `📝 Prompt Evaluation\n\n**Score:** ${result.score.toFixed(2)}/100\n\n## Objectives\n${objectiveList}${feedbackSection}`;
+			}
+		),
+
+		// /timeline - Show engagement timeline
+		createSimpleTool(
+			"timeline",
+			"Show the engagement timeline for all covered topics with retention decay and review urgency. Usage: /timeline",
+			async () => {
+				const state = await storage.getLearnerState();
+				const coveredTopics: CoveredTopic[] = (state.topicsExplored || []).map((slug) => {
+					// Build covered topic data from feedback history
+					const topicFeedback = state.feedbackHistory.filter((f) => f.topic === slug);
+					const lastEntry = topicFeedback[topicFeedback.length - 1];
+					const upCount = topicFeedback.filter((f) => f.signal === "thumbs-up").length;
+					const totalCount = topicFeedback.length || 1;
+					const resolved = resolveTopic(slug);
+					return {
+						slug: resolved.slug,
+						domain: resolved.domain,
+						lastSeenAt: lastEntry?.createdAt ?? (state.lastSessionAt ?? Date.now()),
+						masteryEstimate: Math.min(1, 0.3 + (upCount / totalCount) * 0.5),
+						sessionCount: totalCount,
+					};
+				});
+
+				if (coveredTopics.length === 0) {
+					return "📅 No topics covered yet. Start a lesson and provide feedback to begin tracking your engagement timeline.";
+				}
+
+				const timeline = buildEngagementTimeline(coveredTopics, DEFAULT_ENGAGEMENT_POLICY);
+				return engagementTimelineToMarkdown(timeline);
+			}
+		),
+
+		// /due - Show topics due for review
+		createSimpleTool(
+			"due",
+			"Show topics that are due for review based on spaced repetition. Usage: /due",
+			async () => {
+				const state = await storage.getLearnerState();
+				const coveredTopics: CoveredTopic[] = (state.topicsExplored || []).map((slug) => {
+					const topicFeedback = state.feedbackHistory.filter((f) => f.topic === slug);
+					const lastEntry = topicFeedback[topicFeedback.length - 1];
+					const upCount = topicFeedback.filter((f) => f.signal === "thumbs-up").length;
+					const totalCount = topicFeedback.length || 1;
+					const resolved = resolveTopic(slug);
+					return {
+						slug: resolved.slug,
+						domain: resolved.domain,
+						lastSeenAt: lastEntry?.createdAt ?? (state.lastSessionAt ?? Date.now()),
+						masteryEstimate: Math.min(1, 0.3 + (upCount / totalCount) * 0.5),
+						sessionCount: totalCount,
+					};
+				});
+
+				if (coveredTopics.length === 0) {
+					return "📋 No topics covered yet. Start a lesson and provide feedback to begin tracking.";
+				}
+
+				const due = getDueTopics(coveredTopics, DEFAULT_ENGAGEMENT_POLICY);
+				if (due.length === 0) {
+					return "✅ All topics are up to date! No reviews needed right now.";
+				}
+
+				return dueTopicsToMarkdown(due);
 			}
 		),
 	];

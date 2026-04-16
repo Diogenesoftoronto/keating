@@ -1,4 +1,4 @@
-import { useRef, useState, useTransition, useCallback, use } from "react";
+import { useRef, useState, useTransition, useCallback, use, useEffect } from "react";
 import { Agent } from "@mariozechner/pi-agent-core";
 import {
   getModel,
@@ -172,8 +172,18 @@ function createBrowserStreamFn() {
 function hybridStreamFn(model: Model<Api>, context: Context, options?: SimpleStreamOptions) {
   if (model.provider === "browser") return createBrowserStreamFn()(model, context, options);
 
-  // CORS Fix: Proxy custom providers (like Minimax) through the backend to bypass header restrictions
-  if (model.baseUrl && model.baseUrl.includes("minimax.io")) {
+  // CORS Fix: Proxy providers with non-standard base URLs through the backend
+  // to bypass CORS header restrictions. Well-known cloud providers (anthropic.com,
+  // openai.com, googleapis.com, etc.) work directly from the browser.
+  const directOrigins = [
+    "anthropic.com", "openai.com", "googleapis.com", "groq.com",
+    "x.ai", "mistral.ai", "huggingface.co", "cerebras.ai",
+    "amazonaws.com", "azure.com", "github.com", "openrouter.ai",
+  ];
+  const needsProxy = model.baseUrl &&
+    !directOrigins.some(origin => model.baseUrl!.includes(origin));
+
+  if (needsProxy) {
     const proxiedModel = {
       ...model,
       baseUrl: `${window.location.origin}/api/chat-proxy`,
@@ -232,6 +242,8 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     }
   }
 
+  const unsubRef = useRef<(() => void) | null>(null);
+
   const createAgent = useCallback(async (panel: ChatPanel, initialState?: Partial<AgentState>) => {
     const tools = await createKeatingTools(keatingStorage);
     const nextState: Partial<AgentState> = {
@@ -251,17 +263,39 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     agent.getApiKey = (provider: string) => getProviderApiKey(provider);
     agentRef.current = agent;
 
+    // Subscribe to agent events to force Lit re-render on array mutations.
+    // The pi-agent-core Agent pushes messages in-place (same array reference),
+    // so Lit's @property({ type: Array }) never detects the change.
+    // We replace the array reference on message_end/agent_end so message-list re-renders.
+    if (unsubRef.current) unsubRef.current();
+    unsubRef.current = agent.subscribe((ev) => {
+      if (ev.type === "message_end" || ev.type === "agent_end") {
+        const msgs = agent.state.messages;
+        agent.state.messages = [...msgs];
+      }
+      if (import.meta.env.DEV) {
+        const summary = ev.type === "message_end" || ev.type === "message_start" || ev.type === "message_update"
+          ? `${ev.type} role=${(ev as any).message?.role}`
+          : ev.type;
+        console.log(`[keating:agent] ${summary} (messages=${agent.state.messages.length}, streaming=${agent.state.isStreaming})`);
+      }
+    });
+
     const setupCallbacks = {
       onApiKeyRequired: async (provider: string) => {
         if (provider === "browser") return true;
         if (await getProviderApiKey(provider)) return true;
         return ApiKeyPromptDialog.prompt(provider);
       },
+      onBeforeSend: () => {
+        if (import.meta.env.DEV) {
+          console.log(`[keating:send] model=${agent.state.model.provider}/${agent.state.model.id} messages=${agent.state.messages.length}`);
+        }
+      },
       onModelSelect: () =>
         KeatingModelSelector.open(
           agent.state.model as Model<Api>,
           (model) => {
-            // Use React 19 useTransition with async function
             startTransition(async () => {
               if (model.provider === "browser") await loadBrowserModel();
               selectedModelRef.current = model;
@@ -275,6 +309,12 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     await panel.setAgent(agent, setupCallbacks);
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (unsubRef.current) unsubRef.current();
+    };
+  }, []);
+
   // Use a callback ref to safely initialize the agent when the DOM node resolves
   const chatPanelRef = useCallback((node: ChatPanel | null) => {
     if (node) {
@@ -282,26 +322,46 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
         createAgent(node).catch(console.error);
       } else {
         // Re-attach existing agent if component re-mounted (e.g. strict mode)
+        const agent = agentRef.current;
+        // Re-subscribe to agent events (StrictMode cleanup may have unsubscribed)
+        if (unsubRef.current) unsubRef.current();
+        unsubRef.current = agent.subscribe((ev) => {
+          if (ev.type === "message_end" || ev.type === "agent_end") {
+            const msgs = agent.state.messages;
+            agent.state.messages = [...msgs];
+          }
+          if (import.meta.env.DEV) {
+            const summary = ev.type === "message_end" || ev.type === "message_start" || ev.type === "message_update"
+              ? `${ev.type} role=${(ev as any).message?.role}`
+              : ev.type;
+            console.log(`[keating:agent] ${summary} (messages=${agent.state.messages.length}, streaming=${agent.state.isStreaming})`);
+          }
+        });
         const setupCallbacks = {
           onApiKeyRequired: async (provider: string) => {
             if (provider === "browser") return true;
             if (await getProviderApiKey(provider)) return true;
             return ApiKeyPromptDialog.prompt(provider);
           },
+          onBeforeSend: () => {
+            if (import.meta.env.DEV) {
+              console.log(`[keating:send] model=${agent.state.model.provider}/${agent.state.model.id} messages=${agent.state.messages.length}`);
+            }
+          },
           onModelSelect: () =>
             KeatingModelSelector.open(
-              agentRef.current!.state.model as Model<Api>,
+              agent.state.model as Model<Api>,
               (model) => {
                 startTransition(async () => {
                   if (model.provider === "browser") await loadBrowserModel();
                   selectedModelRef.current = model;
-                  const current = agentRef.current!.state;
+                  const current = agent.state;
                   await createAgent(node, { ...current, model, messages: [...current.messages] });
                 });
               },
             ),
         };
-        node.setAgent(agentRef.current, setupCallbacks).catch(console.error);
+        node.setAgent(agent, setupCallbacks).catch(console.error);
       }
     }
   }, [createAgent]);

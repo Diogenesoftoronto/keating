@@ -53,6 +53,7 @@
     "prepack": "bun run build"
   },
   "dependencies": {
+    "@ax-llm/ax": "^19.0.43",
     "@google/generative-ai": "^0.24.1",
     "dotenv": "^17.4.0",
     "h3": "^2.0.1-rc.20",
@@ -60,6 +61,7 @@
     "nitro": "^3.0.260311-beta"
   },
   "devDependencies": {
-    "@types/node": "^25.6.0"
+    "@types/node": "^25.6.0",
+    "fast-check": "^4.6.0"
   }
 }

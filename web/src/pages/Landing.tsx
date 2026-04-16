@@ -71,12 +71,15 @@ export function Landing() {
           <div className="coords mb-4">42.3601° N, 71.0589° W // WELLESLEY, MA</div>
 
           <div className="paper-fold distressed-border p-8 mb-8">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-none tracking-tight">
-              THE HYPERTEACHER
-              <br />
-              <span className="font-terminal text-[#d44a3d] text-5xl md:text-7xl">
-                THINK_FOR_YOURSELF
-              </span>
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-none tracking-tight flex items-center gap-6">
+              <img src="/logo.png" alt="Keating Logo" className="w-24 h-24 sm:w-32 sm:h-32 object-contain filter drop-shadow-md rounded" />
+              <div>
+                THE HYPERTEACHER
+                <br />
+                <span className="font-terminal text-accent text-5xl md:text-7xl">
+                  THINK_FOR_YOURSELF
+                </span>
+              </div>
             </h1>
             <div className="max-w-2xl">
               <Pretext 
@@ -123,7 +126,7 @@ export function Landing() {
       <section id="features" className="py-20 px-6 border-t-2 border-[#1a1a1a]">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center gap-4 mb-12">
-            <span className="font-terminal text-[#d44a3d]">$ cat MANIFESTO.txt</span>
+            <span className="font-terminal text-accent">$ cat MANIFESTO.txt</span>
             <div className="flex-1 h-px bg-[#1a1a1a]/20" />
           </div>
 
@@ -151,7 +154,7 @@ export function Landing() {
               },
             ].map(({ n, title, body }) => (
               <div key={n} className="paper-fold distressed-border p-6 tape">
-                <div className="font-terminal text-2xl text-[#d44a3d] mb-3">
+                <div className="font-terminal text-2xl text-accent mb-3">
                   [{n}] {title}
                 </div>
                 <div className="text-sm">
@@ -172,7 +175,7 @@ export function Landing() {
       <section className="py-20 px-6 bg-[#1a1a1a] text-[#f4f1ea]">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center gap-4 mb-12">
-            <span className="font-terminal text-[#d44a3d]">$ ./keating --protocol</span>
+            <span className="font-terminal text-accent">$ ./keating --protocol</span>
             <div className="flex-1 h-px bg-[#f4f1ea]/20" />
           </div>
 
@@ -200,7 +203,7 @@ export function Landing() {
               },
             ].map(({ n, title, body }) => (
               <div key={n} className="flex gap-4 p-4 border border-[#f4f1ea]/20">
-                <div className="text-[#d44a3d] text-2xl">{n}</div>
+                <div className="text-accent text-2xl">{n}</div>
                 <div>
                   <div className="text-lg text-[#00ff00]">{title}</div>
                   <div className="text-sm text-[#f4f1ea]/60">{body}</div>
@@ -215,7 +218,7 @@ export function Landing() {
       <section id="install" className="py-20 px-6 border-t-2 border-[#1a1a1a]">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center gap-4 mb-8">
-            <span className="font-terminal text-[#d44a3d]">$ ./install.sh</span>
+            <span className="font-terminal text-accent">$ ./install.sh</span>
             <div className="flex-1 h-px bg-[#1a1a1a]/20" />
           </div>
 
@@ -231,8 +234,8 @@ export function Landing() {
                     "install-tab px-3 py-3 md:px-4 md:py-2 border-2 min-h-[44px] text-sm md:text-base transition",
                     isAgent
                       ? isActive
-                        ? "border-[#d44a3d] bg-[#d44a3d] text-[#f4f1ea]"
-                        : "border-[#d44a3d] text-[#d44a3d] hover:bg-[#d44a3d] hover:text-[#f4f1ea]"
+                        ? "border-[#10b981] bg-[#10b981] text-[#f4f1ea]"
+                        : "border-[#10b981] text-[#10b981] hover:bg-[#10b981] hover:text-[#f4f1ea]"
                       : isActive
                       ? "border-[#1a1a1a] bg-[#1a1a1a] text-[#f4f1ea]"
                       : "border-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-[#f4f1ea]",
@@ -307,13 +310,13 @@ export function Landing() {
                   Install Keating hyperteacher CLI with one of these methods. All require setting a
                   Google API key for the AI backend.
                 </p>
-                <p className="text-[#d44a3d] mb-1">Option 1: NPM (most common)</p>
+                <p className="text-accent mb-1">Option 1: NPM (most common)</p>
                 <p className="text-[#f4f1ea]/80 mb-3 ml-4">npm install -g @interleavelove/keating</p>
-                <p className="text-[#d44a3d] mb-1">Option 2: Bun (fastest)</p>
+                <p className="text-accent mb-1">Option 2: Bun (fastest)</p>
                 <p className="text-[#f4f1ea]/80 mb-3 ml-4">bun add -g @interleavelove/keating</p>
-                <p className="text-[#d44a3d] mb-1">Option 3: PNPM (disk efficient)</p>
+                <p className="text-accent mb-1">Option 3: PNPM (disk efficient)</p>
                 <p className="text-[#f4f1ea]/80 mb-3 ml-4">pnpm add -g @interleavelove/keating</p>
-                <p className="text-[#d44a3d] mb-1">Option 4: Curl (standalone)</p>
+                <p className="text-accent mb-1">Option 4: Curl (standalone)</p>
                 <p className="text-[#f4f1ea]/80 mb-3 ml-4">
                   curl -fsSL .../install.sh | bash
                 </p>

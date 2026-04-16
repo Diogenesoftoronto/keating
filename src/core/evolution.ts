@@ -1,9 +1,9 @@
 import { readFile, writeFile } from "node:fs/promises";
 
-import { BenchmarkResult, EvolutionCandidate, TeacherPolicy } from "./types.js";
+import { BenchmarkResult, EvolutionCandidate, SimulationWeights, TeacherPolicy } from "./types.js";
 import { Prng } from "./random.js";
 import { clamp } from "./util.js";
-import { DEFAULT_POLICY, clampPolicy } from "./policy.js";
+import { DEFAULT_POLICY, DEFAULT_WEIGHTS, clampPolicy, clampWeights } from "./policy.js";
 import { benchmarkToMarkdown, runBenchmarkSuite } from "./benchmark.js";
 
 interface EvolutionArchive {
@@ -50,6 +50,16 @@ function diffPolicy(before: TeacherPolicy, after: TeacherPolicy) {
 
 function mutateScalar(prng: Prng, value: number, amplitude = 0.18): number {
   return clamp(value + (prng.next() * 2 - 1) * amplitude);
+}
+
+function mutateWeights(parent: SimulationWeights, prng: Prng, amplitude = 0.12): SimulationWeights {
+  return clampWeights({
+    masteryGain: mutateScalar(prng, parent.masteryGain, amplitude),
+    retention: mutateScalar(prng, parent.retention, amplitude),
+    engagement: mutateScalar(prng, parent.engagement, amplitude),
+    transfer: mutateScalar(prng, parent.transfer, amplitude),
+    confusion: mutateScalar(prng, parent.confusion, amplitude)
+  });
 }
 
 function mutatePolicy(parent: TeacherPolicy, prng: Prng, iteration: number): TeacherPolicy {
@@ -124,11 +134,13 @@ export async function evolvePolicy(
   basePolicy: TeacherPolicy,
   focusTopic?: string,
   iterations = 24,
-  seed = 20260401
+  seed = 20260401,
+  baseWeights: SimulationWeights = DEFAULT_WEIGHTS
 ): Promise<EvolutionRun> {
   const archive = await loadArchive(archivePath);
-  const baseline = await runBenchmarkSuite(process.cwd(), basePolicy, focusTopic, seed);
+  const baseline = await runBenchmarkSuite(process.cwd(), basePolicy, focusTopic, seed, 3, baseWeights);
   let best = baseline;
+  let bestWeights = baseWeights;
   const acceptedCandidates: EvolutionCandidate[] = [];
   const exploredCandidates: EvolutionCandidate[] = [];
   const prng = new Prng(seed + 17);
@@ -136,8 +148,9 @@ export async function evolvePolicy(
 
   for (let iteration = 1; iteration <= iterations; iteration += 1) {
     const candidatePolicy = mutatePolicy(best.policy, prng, iteration);
+    const candidateWeights = mutateWeights(bestWeights, prng);
     const novelty = noveltyScore(seen, candidatePolicy);
-    const candidateBenchmark = await runBenchmarkSuite(process.cwd(), candidatePolicy, focusTopic, seed + iteration * 11);
+    const candidateBenchmark = await runBenchmarkSuite(process.cwd(), candidatePolicy, focusTopic, seed + iteration * 11, 3, candidateWeights);
     const parameterDelta = diffPolicy(best.policy, candidatePolicy);
     const candidate: EvolutionCandidate = {
       policy: candidatePolicy,
@@ -194,6 +207,7 @@ export async function evolvePolicy(
     if (improves && safe && novelEnough) {
       candidate.accepted = true;
       best = candidateBenchmark;
+      bestWeights = candidateWeights;
       acceptedCandidates.push(candidate);
     }
     exploredCandidates.push(candidate);
@@ -276,3 +290,17 @@ export function evolutionToMarkdown(run: EvolutionRun): string {
   lines.push("");
   return `${lines.join("\n")}\n`;
 }
+
+import { optimizePolicy, OptimizePolicyOptions } from "./ax-optimizer.js";
+import { mapElitesEvolve, MapElitesOptions, mapElitesToEvolutionRun, mapElitesToMarkdown } from "./map-elites.js";
+
+export async function evolveWithGEPA(
+  cwd: string,
+  basePolicy: TeacherPolicy,
+  options?: OptimizePolicyOptions
+): Promise<EvolutionRun> {
+  return optimizePolicy(cwd, basePolicy, options);
+}
+
+export { mapElitesEvolve, mapElitesToEvolutionRun, mapElitesToMarkdown };
+export type { MapElitesOptions } from "./map-elites.js";

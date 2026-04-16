@@ -233,7 +233,7 @@ export async function generateImprovementProposal(
     ? `Improving ${targets.map(t => t.weakness).join(", ")} should raise the overall benchmark score from ${benchmark.overallScore.toFixed(2)} by addressing the identified weak areas.`
     : `The benchmark score is ${benchmark.overallScore.toFixed(2)} with no severe weaknesses detected. Consider exploring novel teaching strategies.`;
 
-  const instructions = buildImprovementInstructions(cwd, targets, benchmark);
+  const instructions = await buildImprovementInstructions(cwd, targets, benchmark);
 
   return {
     id: generateProposalId(),
@@ -246,11 +246,11 @@ export async function generateImprovementProposal(
   };
 }
 
-function buildImprovementInstructions(
+async function buildImprovementInstructions(
   _cwd: string,
   targets: ImprovementTarget[],
   benchmark: BenchmarkResult
-): string {
+): Promise<string> {
   const lines: string[] = [
     "# Self-Improvement Instructions",
     "",
@@ -261,6 +261,12 @@ function buildImprovementInstructions(
     "",
     `- Overall score: ${benchmark.overallScore.toFixed(2)}`,
     `- Weakest topic: ${benchmark.weakestTopic}`,
+    "",
+    "## Knowledge Context",
+    "",
+    "Where applicable, leverage these Ax optimization traces to inform your changes:",
+    `- **GEPA Pareto Front**: Check \`.keating/state/gepa-optimized.json\` for multi-objective hyperparameter tuning traces.`,
+    `- **ACE Playbook**: Check \`.keating/state/ace-playbook.json\` for the latest prompt-learning strategy updates.`,
     "",
     "## Safety Rules",
     "",

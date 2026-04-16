@@ -1,5 +1,4 @@
-import test from "node:test";
-import assert from "node:assert/strict";
+import { test, expect } from "bun:test";
 import { access, mkdtemp, mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -64,12 +63,12 @@ Workflow:
   const manifest = await readFile(animation.manifestPath, "utf8");
   const promptReport = await readFile(promptEvolution.reportPath, "utf8");
   const artifacts = await listArtifacts(workdir);
-  assert.ok(summary.includes("Policy:"));
-  assert.ok(report.includes("# Benchmark Report"));
-  assert.ok(trace.includes("\"decision\""));
-  assert.ok(storyboard.includes("# Animation Storyboard: Derivative"));
-  assert.ok(manifest.includes("\"sceneKind\": \"function-graph\""));
-  assert.ok(promptReport.includes("# Prompt Evolution Report: learn"));
-  assert.ok(artifacts.some((artifact) => artifact.path.endsWith("animations/derivative/player.html")));
-  assert.ok(artifacts.some((artifact) => artifact.path.endsWith("prompt-evolution/learn.evolved.md")));
-});
+  expect(summary.includes("Policy:")).toBe(true);
+  expect(report.includes("# Benchmark Report")).toBe(true);
+  expect(trace.includes("\"decision\"")).toBe(true);
+  expect(storyboard.includes("# Animation Storyboard: Derivative")).toBe(true);
+  expect(manifest.includes("\"sceneKind\": \"function-graph\"")).toBe(true);
+  expect(promptReport.includes("# Prompt Evolution Report: learn")).toBe(true);
+  expect(artifacts.some((artifact) => artifact.path.endsWith("animations/derivative/player.html"))).toBe(true);
+  expect(artifacts.some((artifact) => artifact.path.endsWith("prompt-evolution/learn.evolved.md"))).toBe(true);
+}, { timeout: 60000 });

@@ -94,6 +94,11 @@ export interface LearnerState {
 	weaknesses: string[];
 	lastSessionAt?: number;
 	sessionsCount: number;
+	sessions: Array<{
+		startedAt: number;
+		endedAt?: number;
+		topicsCovered: string[];
+	}>;
 }
 
 export class KeatingStorage {
@@ -375,6 +380,7 @@ export class KeatingStorage {
 						strengths: [],
 						weaknesses: [],
 						sessionsCount: 0,
+						sessions: [],
 					}
 				);
 			};
@@ -389,6 +395,29 @@ export class KeatingStorage {
 			request.onsuccess = () => resolve();
 			request.onerror = () => reject(request.error);
 		});
+	}
+
+	async recordSessionStart(): Promise<void> {
+		const state = await this.getLearnerState();
+		if (!state.sessions) state.sessions = [];
+		state.sessions.push({
+			startedAt: Date.now(),
+			topicsCovered: [],
+		});
+		state.lastSessionAt = Date.now();
+		state.sessionsCount = (state.sessionsCount || 0) + 1;
+		await this.saveLearnerState(state);
+	}
+
+	async recordSessionEnd(topicsCovered: string[]): Promise<void> {
+		const state = await this.getLearnerState();
+		if (!state.sessions) state.sessions = [];
+		const current = state.sessions[state.sessions.length - 1];
+		if (current && !current.endedAt) {
+			current.endedAt = Date.now();
+			current.topicsCovered = topicsCovered;
+		}
+		await this.saveLearnerState(state);
 	}
 
 	// List all artifacts

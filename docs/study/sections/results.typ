@@ -11,7 +11,7 @@ The paper uses two evidence layers.
 
 The two layers answer different questions. The archival layer asks what kinds of concrete successes and failures appear in recorded sessions. The synthetic layer asks whether the policy-search machinery is robust inside the benchmark it is designed to optimize.
 
-The repository contains 22 raw trace files, including repeated runs for some topic x learner pairs. We imposed a deterministic curation rule: retain the latest trace by timestamp for each topic x learner pair. This yielded 16 retained sessions, matching the checked-in snapshot `test/final_dataset.json`. One retained derivative trace for `Qwen-2.5-1.5B` contained `mastery=8`, `engagement=7`, and `clarity=8` while the rest of the archive used the 0-1 scale; we normalized that record to 0.8, 0.7, and 0.8 and recorded the correction in the generated analysis bundle.
+The repository contains 22 raw trace files, including repeated runs for some topic x learner pairs. We imposed a deterministic curation rule: retain the latest trace by timestamp for each topic x learner pair. This yielded 16 retained sessions, matching the checked-in snapshot `test/final_dataset.json`. The timestamp rule matters methodologically, not just administratively: it fixes the evaluation set by temporal provenance and avoids quietly selecting whichever repeated run looked best in hindsight. One retained derivative trace for `Qwen-2.5-1.5B` contained `mastery=8`, `engagement=7`, and `clarity=8` while the rest of the archive used the 0-1 scale; we normalized that record to 0.8, 0.7, and 0.8 and recorded the correction in the generated analysis bundle.
 
 #figure(
   modest-table(
@@ -75,7 +75,7 @@ We also reran derivative-only evolution 30 times from the default policy. The be
 
 The current policy differs from the default policy by nine scalar parameters. One-at-a-time ablations show that the largest synthetic gains come from maximal retrieval practice (+3.137 points when swapped into the default policy), lower challenge rate (+2.324), and higher interdisciplinary bias (+0.877). Increasing diagram bias or reflection bias alone reduces mean benchmark score by about 0.4 points each.
 
-This is a useful diagnosis of the metaharness itself. The benchmark is highly sensitive to retrieval and overload control, but less sensitive to reflective richness in isolation. That does not mean reflection is unimportant pedagogically. It means the current harness is better at rewarding some desirable instructional traits than others.
+This is a useful diagnosis of the metaharness itself. The benchmark is highly sensitive to retrieval and overload control, but less sensitive to reflective richness in isolation. That does not mean reflection is unimportant pedagogically. It means the current harness is better at rewarding some desirable instructional traits than others. The same diagnosis also surfaces a further risk: once a policy optimizer can see that retrieval-heavy, lower-overload settings are disproportionately rewarded, it may learn to push those knobs in ways that increase benchmark score without producing correspondingly better teaching in the real world. We did not run a dedicated reward-hacking audit in the present study, so these gains should be read as *within-harness* gains rather than as proof that the optimizer cannot exploit benchmark idiosyncrasies.
 
 #figure(
   modest-table(

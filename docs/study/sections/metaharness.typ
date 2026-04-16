@@ -6,7 +6,7 @@ A tutoring chatbot takes a learner message and emits a response. Its quality is 
 
 Keating is metaharnessed along four axes:
 
-1. *Artifact layer.* The system can generate lesson plans, concept maps, animations, verification checklists, prompt-evolution reports, benchmark reports, and policy traces.
+1. *Artifact layer.* The system can generate lesson plans, concept maps, animations, verification checklists, prompt-evolution reports, benchmark reports, policy traces, and engagement timelines that estimate when previously covered topics should be revisited.
 2. *Governance layer.* Teaching behavior is parameterized by a policy with explicit controls such as formalism, retrieval practice, and challenge rate.
 3. *Evaluation layer.* Policies are benchmarked against a synthetic learner suite rather than revised purely by intuition.
 4. *Improvement layer.* Mutation, selection, and archival comparison operate on the teaching harness itself.
@@ -16,6 +16,7 @@ In practical terms, Keating does not ask only "what should the tutor say next?" 
 - What diagnostic state should exist before explanation begins?
 - What scaffold should force reconstruction rather than agreement?
 - What evidence would show that a policy is helping one learner type while harming another?
+- When a learner returns after time away, which topics are now overdue for reinforcement before new material is introduced?
 - Which parameters of the teaching environment should be changed after a failed run?
 
 Those are metaharness questions, not chatbot questions.

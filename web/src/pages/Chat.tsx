@@ -15,7 +15,7 @@ function ChatContent() {
   const { title, openSettings, chatPanelRef } = useKeatingAgent();
 
   return (
-    <div className="w-full h-full flex flex-col bg-background text-foreground overflow-hidden">
+    <div className="chat-page-shell w-full flex flex-col bg-background text-foreground overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border shrink-0 px-4 py-2 h-14">
         <span className="text-lg font-semibold">{title}</span>
@@ -33,7 +33,7 @@ function ChatContent() {
 
       <pi-chat-panel
         ref={chatPanelRef}
-        style={{ flex: 1, overflow: "hidden", display: "block" }}
+        className="chat-page-panel"
       ></pi-chat-panel>
     </div>
   );
@@ -42,7 +42,7 @@ function ChatContent() {
 export function Chat() {
   return (
     <Suspense fallback={
-      <div className="w-full h-screen flex flex-col bg-background text-foreground overflow-hidden">
+      <div className="chat-page-shell w-full flex flex-col bg-background text-foreground overflow-hidden">
         <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
           Initializing…
         </div>

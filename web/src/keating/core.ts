@@ -51,6 +51,14 @@ export interface TeacherPolicy {
 	challengeRate: number;
 }
 
+export interface SimulationWeights {
+	masteryGain: number;
+	retention: number;
+	engagement: number;
+	transfer: number;
+	confusion: number;
+}
+
 export interface LessonPhase {
 	id: string;
 	title: string;
@@ -439,6 +447,38 @@ export const DEFAULT_POLICY: TeacherPolicy = {
 	challengeRate: 0.35,
 };
 
+export const DEFAULT_WEIGHTS: SimulationWeights = {
+	masteryGain: 0.34,
+	retention: 0.20,
+	engagement: 0.16,
+	transfer: 0.18,
+	confusion: 0.18,
+};
+
+export function clampWeights(weights: SimulationWeights): SimulationWeights {
+	const clamped: SimulationWeights = {
+		masteryGain: clamp(weights.masteryGain, 0.01, 1),
+		retention: clamp(weights.retention, 0.01, 1),
+		engagement: clamp(weights.engagement, 0.01, 1),
+		transfer: clamp(weights.transfer, 0.01, 1),
+		confusion: clamp(weights.confusion, 0.01, 1),
+	};
+	const sum =
+		clamped.masteryGain +
+		clamped.retention +
+		clamped.engagement +
+		clamped.transfer +
+		clamped.confusion;
+	if (sum === 0) return DEFAULT_WEIGHTS;
+	return {
+		masteryGain: clamped.masteryGain / sum,
+		retention: clamped.retention / sum,
+		engagement: clamped.engagement / sum,
+		transfer: clamped.transfer / sum,
+		confusion: clamped.confusion / sum,
+	};
+}
+
 export function clampPolicy(policy: TeacherPolicy): TeacherPolicy {
 	return {
 		...policy,
@@ -638,7 +678,8 @@ function buildLearnerPopulation(seed: number, count: number): LearnerProfile[] {
 export function simulateTeaching(
 	policy: TeacherPolicy,
 	topic: TopicDefinition,
-	learner: LearnerProfile
+	learner: LearnerProfile,
+	weights: SimulationWeights = DEFAULT_WEIGHTS
 ): TeachingSimulation {
 	const intuitionFit = 1 - Math.abs(policy.analogyDensity - learner.analogyNeed);
 	const rigorTarget = clamp((topic.formalism + learner.abstractionComfort) / 2);
@@ -673,7 +714,7 @@ export function simulateTeaching(
 			Math.abs(policy.challengeRate - learner.persistence) * 0.12
 	);
 
-	const score = clamp(masteryGain * 0.34 + retention * 0.2 + engagement * 0.16 + transfer * 0.18 - confusion * 0.18, 0, 1);
+	const score = clamp(masteryGain * weights.masteryGain + retention * weights.retention + engagement * weights.engagement + transfer * weights.transfer - confusion * weights.confusion, 0, 1);
 
 	const explanation: string[] = [];
 	if (intuitionFit >= 0.8) explanation.push("analogy pacing matched the learner well");
@@ -745,12 +786,13 @@ export function runBenchmarkSuite(
 	policy: TeacherPolicy,
 	focusTopic?: string,
 	seed = 20260401,
-	traceLimit = 3
+	traceLimit = 3,
+	weights: SimulationWeights = DEFAULT_WEIGHTS
 ): BenchmarkResult {
 	const topics = benchmarkTopics(focusTopic);
 	const topicBenchmarks = topics.map((topic, index) => {
 		const learners = buildLearnerPopulation(seed + index * 97, 18);
-		const simulations = learners.map((learner) => simulateTeaching(policy, topic, learner));
+		const simulations = learners.map((learner) => simulateTeaching(policy, topic, learner, weights));
 		return summarizeTopic(topic, simulations, traceLimit);
 	});
 
@@ -800,6 +842,16 @@ export function benchmarkToMarkdown(result: BenchmarkResult): string {
 
 function mutateScalar(prng: Prng, value: number, amplitude = 0.18): number {
 	return clamp(value + (prng.next() * 2 - 1) * amplitude);
+}
+
+function mutateWeights(parent: SimulationWeights, prng: Prng, amplitude = 0.12): SimulationWeights {
+	return clampWeights({
+		masteryGain: mutateScalar(prng, parent.masteryGain, amplitude),
+		retention: mutateScalar(prng, parent.retention, amplitude),
+		engagement: mutateScalar(prng, parent.engagement, amplitude),
+		transfer: mutateScalar(prng, parent.transfer, amplitude),
+		confusion: mutateScalar(prng, parent.confusion, amplitude),
+	});
 }
 
 function mutatePolicy(parent: TeacherPolicy, prng: Prng, iteration: number): TeacherPolicy {
@@ -885,10 +937,12 @@ export function evolvePolicy(
 	basePolicy: TeacherPolicy,
 	focusTopic?: string,
 	iterations = 12,
-	seed = 20260401
+	seed = 20260401,
+	baseWeights: SimulationWeights = DEFAULT_WEIGHTS
 ): EvolutionRun {
-	const baseline = runBenchmarkSuite(basePolicy, focusTopic, seed);
+	const baseline = runBenchmarkSuite(basePolicy, focusTopic, seed, 3, baseWeights);
 	let best = baseline;
+	let bestWeights = baseWeights;
 	const acceptedCandidates: EvolutionCandidate[] = [];
 	const exploredCandidates: EvolutionCandidate[] = [];
 	const prng = new Prng(seed + 17);
@@ -896,8 +950,9 @@ export function evolvePolicy(
 
 	for (let iteration = 1; iteration <= iterations; iteration += 1) {
 		const candidatePolicy = mutatePolicy(best.policy, prng, iteration);
+		const candidateWeights = mutateWeights(bestWeights, prng);
 		const novelty = noveltyScore(seen, candidatePolicy);
-		const candidateBenchmark = runBenchmarkSuite(candidatePolicy, focusTopic, seed + iteration * 11);
+		const candidateBenchmark = runBenchmarkSuite(candidatePolicy, focusTopic, seed + iteration * 11, 3, candidateWeights);
 		const parameterDelta = diffPolicy(best.policy, candidatePolicy);
 
 		const bestWeakest = Math.min(...best.topicBenchmarks.map((entry) => entry.meanScore));
@@ -943,6 +998,7 @@ export function evolvePolicy(
 		if (improves && safe && novelEnough) {
 			candidate.accepted = true;
 			best = candidateBenchmark;
+			bestWeights = candidateWeights;
 			acceptedCandidates.push(candidate);
 		}
 		exploredCandidates.push(candidate);
@@ -956,6 +1012,221 @@ export function evolvePolicy(
 		exploredCandidates,
 		bestPolicy: best.policy,
 	};
+}
+
+export interface MapElitesCell {
+	policy: TeacherPolicy;
+	weights: SimulationWeights;
+	score: number;
+	benchmark: BenchmarkResult;
+	iteration: number;
+}
+
+export interface MapElitesGrid {
+	descriptors: string[];
+	resolution: number;
+	cells: Map<string, MapElitesCell | null>;
+}
+
+export interface MapElitesRun {
+	baseline: BenchmarkResult;
+	best: BenchmarkResult;
+	grid: MapElitesGrid;
+	filledCellCount: number;
+	totalCells: number;
+	exploredCandidates: EvolutionCandidate[];
+}
+
+const DEFAULT_DESCRIPTORS = ["formalism", "socraticRatio"];
+const DEFAULT_RESOLUTION = 10;
+
+function meCellKey(descriptors: number[], resolution: number): string {
+	return descriptors
+		.map((d) => Math.min(Math.floor(d * resolution), resolution - 1))
+		.join(",");
+}
+
+function meGetDescriptorValues(policy: TeacherPolicy, descriptors: string[]): number[] {
+	return descriptors.map((d) => {
+		const val = policy[d as keyof TeacherPolicy];
+		return typeof val === "number" ? val : 0;
+	});
+}
+
+function mePlaceInGrid(
+	grid: MapElitesGrid,
+	policy: TeacherPolicy,
+	weights: SimulationWeights,
+	score: number,
+	benchmark: BenchmarkResult,
+	iteration: number
+): boolean {
+	const descVals = meGetDescriptorValues(policy, grid.descriptors);
+	const key = meCellKey(descVals, grid.resolution);
+	const existing = grid.cells.get(key);
+	if (!existing || score > existing.score) {
+		grid.cells.set(key, { policy, weights, score, benchmark, iteration });
+		return !existing;
+	}
+	return false;
+}
+
+function meSelectParent(grid: MapElitesGrid, prng: Prng): { policy: TeacherPolicy; weights: SimulationWeights } {
+	const filled = Array.from(grid.cells.values()).filter((c): c is MapElitesCell => c !== null);
+	if (filled.length === 0) return { policy: DEFAULT_POLICY, weights: DEFAULT_WEIGHTS };
+	const idx = Math.floor(prng.next() * filled.length);
+	return { policy: filled[idx].policy, weights: filled[idx].weights };
+}
+
+function meRandomPolicy(prng: Prng, iteration: number): TeacherPolicy {
+	return clampPolicy({
+		name: `me-random-${iteration}`,
+		analogyDensity: prng.next(),
+		socraticRatio: prng.next(),
+		formalism: prng.next(),
+		retrievalPractice: prng.next(),
+		exerciseCount: Math.round(1 + prng.next() * 4),
+		diagramBias: prng.next(),
+		reflectionBias: prng.next(),
+		interdisciplinaryBias: prng.next(),
+		challengeRate: prng.next(),
+	});
+}
+
+function meRandomWeights(prng: Prng): SimulationWeights {
+	return clampWeights({
+		masteryGain: 0.1 + prng.next() * 0.9,
+		retention: 0.1 + prng.next() * 0.9,
+		engagement: 0.1 + prng.next() * 0.9,
+		transfer: 0.1 + prng.next() * 0.9,
+		confusion: 0.1 + prng.next() * 0.9,
+	});
+}
+
+export function mapElitesEvolve(
+	basePolicy: TeacherPolicy,
+	focusTopic?: string,
+	iterations = 24,
+	seed = 20260401,
+	descriptors = DEFAULT_DESCRIPTORS,
+	resolution = DEFAULT_RESOLUTION
+): MapElitesRun {
+	const prng = new Prng(seed);
+	const grid: MapElitesGrid = { descriptors, resolution, cells: new Map() };
+	const totalCells = resolution ** descriptors.length;
+	const initRandom = Math.floor(iterations * 0.25);
+
+	const baseline = runBenchmarkSuite(basePolicy, focusTopic, seed, 3, DEFAULT_WEIGHTS);
+	mePlaceInGrid(grid, basePolicy, DEFAULT_WEIGHTS, baseline.overallScore, baseline, 0);
+
+	const exploredCandidates: EvolutionCandidate[] = [];
+
+	for (let i = 1; i <= iterations; i++) {
+		let candidatePolicy: TeacherPolicy;
+		let candidateWeights: SimulationWeights;
+
+		if (i <= initRandom) {
+			candidatePolicy = meRandomPolicy(prng, i);
+			candidateWeights = meRandomWeights(prng);
+		} else {
+			const parent = meSelectParent(grid, prng);
+			candidatePolicy = mutatePolicy(parent.policy, prng, i);
+			candidateWeights = mutateWeights(parent.weights, prng);
+		}
+
+		const candidateBenchmark = runBenchmarkSuite(candidatePolicy, focusTopic, seed + i * 11, 3, candidateWeights);
+		const isNewCell = mePlaceInGrid(grid, candidatePolicy, candidateWeights, candidateBenchmark.overallScore, candidateBenchmark, i);
+
+		exploredCandidates.push({
+			policy: candidatePolicy,
+			benchmark: candidateBenchmark,
+			parentName: null,
+			iteration: i,
+			novelty: isNewCell ? 1 : 0,
+			accepted: isNewCell,
+			decision: {
+				improves: isNewCell,
+				safe: true,
+				novelEnough: isNewCell,
+				scoreDelta: 0,
+				weakestTopicDelta: 0,
+				reasons: isNewCell
+					? [`placed in new cell or improved existing cell (score ${candidateBenchmark.overallScore.toFixed(2)})`]
+					: ["discarded — cell already held a better elite"],
+			},
+			parameterDelta: [],
+		});
+	}
+
+	let best: BenchmarkResult = baseline;
+	for (const cell of grid.cells.values()) {
+		if (cell && cell.benchmark.overallScore > best.overallScore) {
+			best = cell.benchmark;
+		}
+	}
+
+	return {
+		baseline,
+		best,
+		grid,
+		filledCellCount: grid.cells.size,
+		totalCells,
+		exploredCandidates,
+	};
+}
+
+export function mapElitesToEvolutionRun(run: MapElitesRun): EvolutionRun {
+	return {
+		baseline: run.baseline,
+		best: run.best,
+		acceptedCandidates: run.exploredCandidates.filter((c) => c.accepted),
+		exploredCandidates: run.exploredCandidates,
+		bestPolicy: run.best.policy,
+	};
+}
+
+export function mapElitesToMarkdown(run: MapElitesRun): string {
+	const lines = [
+		"# MAP-Elites Evolution Report",
+		"",
+		`- Descriptors: ${run.grid.descriptors.join(" × ")}`,
+		`- Grid: ${run.grid.resolution}^${run.grid.descriptors.length} = ${run.totalCells} cells`,
+		`- Filled cells: ${run.filledCellCount} / ${run.totalCells} (${((run.filledCellCount / run.totalCells) * 100).toFixed(1)}%)`,
+		`- Baseline score: ${run.baseline.overallScore.toFixed(2)}`,
+		`- Best score: ${run.best.overallScore.toFixed(2)}`,
+		`- Explored candidates: ${run.exploredCandidates.length}`,
+		"",
+		"## Elite Archive",
+		"",
+	];
+
+	const sorted = Array.from(run.grid.cells.entries()).sort(([a], [b]) => a.localeCompare(b));
+	const header = run.grid.descriptors.map((d, i) => `${d}[${i}]`).join(" | ");
+	lines.push(`| ${header} | Policy | Score | Weights (m/r/e/t/c) |`);
+	lines.push(`| ${run.grid.descriptors.map(() => "---").join(" | ")} | --- | ---: | --- |`);
+
+	for (const [key, cell] of sorted) {
+		if (!cell) continue;
+		const indices = key.split(",").map(Number);
+		const labels = indices
+			.map((idx, i) => {
+				const lo = (idx / run.grid.resolution).toFixed(2);
+				const hi = ((idx + 1) / run.grid.resolution).toFixed(2);
+				return `${lo}–${hi}`;
+			})
+			.join(" | ");
+		const w = cell.weights;
+		lines.push(
+			`| ${labels} | ${cell.policy.name} | ${cell.score.toFixed(2)} | ${w.masteryGain.toFixed(2)}/${w.retention.toFixed(2)}/${w.engagement.toFixed(2)}/${w.transfer.toFixed(2)}/${w.confusion.toFixed(2)} |`
+		);
+	}
+
+	lines.push("");
+	lines.push("## Best Benchmark Snapshot");
+	lines.push("");
+	lines.push(benchmarkToMarkdown(run.best).trim());
+	lines.push("");
+	return `${lines.join("\n")}\n`;
 }
 
 export function evolutionToMarkdown(run: EvolutionRun): string {
@@ -1080,4 +1351,241 @@ export function diagnoseBenchmark(benchmark: BenchmarkResult): ImprovementSugges
 	}
 
 	return suggestions;
+}
+
+// ============================================================================
+// Engagement Timeline (spaced revisit system)
+// ============================================================================
+
+export interface EngagementPolicy {
+	name: string;
+	retentionHalfLifeDays: number;
+	dueThreshold: number;
+	minReviewIntervalDays: number;
+	urgencyTiers: [number, number, number, number];
+}
+
+export const DEFAULT_ENGAGEMENT_POLICY: EngagementPolicy = {
+	name: "spaced-revisit-default",
+	retentionHalfLifeDays: 7,
+	dueThreshold: 0.5,
+	minReviewIntervalDays: 1,
+	urgencyTiers: [21, 14, 7, 3],
+};
+
+export type UrgencyLabel = "critical" | "high" | "moderate" | "low" | "fresh";
+
+export interface TopicEngagement {
+	slug: string;
+	title: string;
+	domain: string;
+	lastSeenAt: number;
+	daysSinceLastSeen: number;
+	masteryEstimate: number;
+	estimatedRetention: number;
+	isDue: boolean;
+	urgency: number;
+	urgencyLabel: UrgencyLabel;
+	sessionCount: number;
+	nextReviewAt: number;
+}
+
+export interface EngagementTimeline {
+	generatedAt: number;
+	policy: EngagementPolicy;
+	topics: TopicEngagement[];
+	summary: {
+		totalTopics: number;
+		dueCount: number;
+		criticalCount: number;
+		averageRetention: number;
+		oldestUnreviewedDays: number;
+	};
+}
+
+const MS_PER_DAY = 86_400_000;
+
+function estimateRetention(mastery: number, daysSince: number, halfLifeDays: number): number {
+	const masteryFactor = 0.5 + mastery * 1.5;
+	const effectiveHalfLife = halfLifeDays * masteryFactor;
+	const decay = Math.exp((-daysSince * Math.LN2) / effectiveHalfLife);
+	return Math.max(0, Math.min(1, mastery * decay));
+}
+
+function computeUrgencyLabel(
+	retention: number,
+	dueThreshold: number,
+	daysSince: number,
+	tiers: [number, number, number, number]
+): { urgency: number; label: UrgencyLabel } {
+	if (daysSince < 1) return { urgency: 0, label: "fresh" };
+	if (retention >= dueThreshold) {
+		return { urgency: Math.max(0, 1 - retention / dueThreshold) * 0.3, label: "low" };
+	}
+	const deficit = dueThreshold - retention;
+	const rawUrgency = Math.min(1, deficit / dueThreshold + 0.3);
+	let label: UrgencyLabel;
+	if (daysSince >= tiers[0]) label = "critical";
+	else if (daysSince >= tiers[1]) label = "high";
+	else if (daysSince >= tiers[2]) label = "moderate";
+	else label = "low";
+	return { urgency: rawUrgency, label };
+}
+
+function estimateNextReviewMs(lastSeenAt: number, mastery: number, halfLifeDays: number, dueThreshold: number): number {
+	if (mastery <= dueThreshold) return Date.now();
+	const masteryFactor = 0.5 + mastery * 1.5;
+	const effectiveHalfLife = halfLifeDays * masteryFactor;
+	const daysUntilDue = (-effectiveHalfLife * Math.log(dueThreshold / mastery)) / Math.LN2;
+	return lastSeenAt + daysUntilDue * MS_PER_DAY;
+}
+
+export interface CoveredTopic {
+	slug: string;
+	domain: string;
+	lastSeenAt: number;
+	masteryEstimate: number;
+	sessionCount: number;
+}
+
+export function computeTopicEngagement(
+	topic: CoveredTopic,
+	policy: EngagementPolicy,
+	now: number = Date.now()
+): TopicEngagement {
+	const daysSince = (now - topic.lastSeenAt) / MS_PER_DAY;
+	const retention = estimateRetention(topic.masteryEstimate, daysSince, policy.retentionHalfLifeDays);
+	const isDue = retention < policy.dueThreshold && daysSince >= policy.minReviewIntervalDays;
+	const { urgency, label } = computeUrgencyLabel(retention, policy.dueThreshold, daysSince, policy.urgencyTiers);
+	const nextReview = estimateNextReviewMs(topic.lastSeenAt, topic.masteryEstimate, policy.retentionHalfLifeDays, policy.dueThreshold);
+	return {
+		slug: topic.slug,
+		title: titleCase(topic.slug.replace(/-/g, " ")),
+		domain: topic.domain,
+		lastSeenAt: topic.lastSeenAt,
+		daysSinceLastSeen: daysSince,
+		masteryEstimate: topic.masteryEstimate,
+		estimatedRetention: retention,
+		isDue,
+		urgency,
+		urgencyLabel: label,
+		sessionCount: topic.sessionCount,
+		nextReviewAt: nextReview,
+	};
+}
+
+export function buildEngagementTimeline(
+	coveredTopics: CoveredTopic[],
+	policy: EngagementPolicy = DEFAULT_ENGAGEMENT_POLICY,
+	now: number = Date.now()
+): EngagementTimeline {
+	const topics = coveredTopics.map((t) => computeTopicEngagement(t, policy, now));
+	topics.sort((a, b) => b.urgency - a.urgency);
+	const dueCount = topics.filter((t) => t.isDue).length;
+	const criticalCount = topics.filter((t) => t.urgencyLabel === "critical").length;
+	const averageRetention = topics.length > 0 ? mean(topics.map((t) => t.estimatedRetention)) : 1;
+	const oldestDays = topics.length > 0 ? Math.max(...topics.map((t) => t.daysSinceLastSeen)) : 0;
+	return {
+		generatedAt: now,
+		policy,
+		topics,
+		summary: { totalTopics: topics.length, dueCount, criticalCount, averageRetention, oldestUnreviewedDays: oldestDays },
+	};
+}
+
+export function getDueTopics(
+	coveredTopics: CoveredTopic[],
+	policy: EngagementPolicy = DEFAULT_ENGAGEMENT_POLICY,
+	now: number = Date.now()
+): TopicEngagement[] {
+	return buildEngagementTimeline(coveredTopics, policy, now).topics.filter((t) => t.isDue);
+}
+
+function formatDaysAgo(days: number): string {
+	if (days < 1) return "today";
+	if (days < 2) return "1 day ago";
+	if (days < 7) return `${Math.floor(days)} days ago`;
+	if (days < 14) return "1 week ago";
+	if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
+	if (days < 60) return "1 month ago";
+	return `${Math.floor(days / 30)} months ago`;
+}
+
+function urgencyEmoji(label: UrgencyLabel): string {
+	switch (label) {
+		case "critical": return "🔴";
+		case "high": return "🟠";
+		case "moderate": return "🟡";
+		case "low": return "🟢";
+		case "fresh": return "✨";
+	}
+}
+
+function retentionBar(retention: number): string {
+	const filled = Math.round(retention * 10);
+	return "█".repeat(filled) + "░".repeat(10 - filled);
+}
+
+export function engagementTimelineToMarkdown(timeline: EngagementTimeline): string {
+	const lines = [
+		"# 📅 Engagement Timeline",
+		"",
+		`Generated: ${new Date(timeline.generatedAt).toLocaleString()}`,
+		"",
+		"## Summary",
+		"",
+		`- **Topics tracked:** ${timeline.summary.totalTopics}`,
+		`- **Due for review:** ${timeline.summary.dueCount}`,
+		`- **Critical:** ${timeline.summary.criticalCount}`,
+		`- **Average retention:** ${(timeline.summary.averageRetention * 100).toFixed(1)}%`,
+		`- **Oldest unreviewed:** ${formatDaysAgo(timeline.summary.oldestUnreviewedDays)}`,
+		"",
+	];
+
+	if (timeline.topics.length === 0) {
+		lines.push("No topics covered yet. Start a lesson to begin tracking.");
+		return lines.join("\n") + "\n";
+	}
+
+	lines.push("## Topics");
+	lines.push("");
+	lines.push("| Status | Topic | Last Seen | Retention | Mastery | Sessions | Next Review |");
+	lines.push("| :---: | --- | --- | --- | ---: | ---: | --- |");
+	for (const topic of timeline.topics) {
+		const nextReview = topic.isDue ? "**NOW**" : new Date(topic.nextReviewAt).toLocaleDateString();
+		lines.push(
+			`| ${urgencyEmoji(topic.urgencyLabel)} | **${topic.title}** (${topic.domain}) | ${formatDaysAgo(topic.daysSinceLastSeen)} | ${retentionBar(topic.estimatedRetention)} ${(topic.estimatedRetention * 100).toFixed(0)}% | ${(topic.masteryEstimate * 100).toFixed(0)}% | ${topic.sessionCount} | ${nextReview} |`
+		);
+	}
+	lines.push("");
+	lines.push("### Legend");
+	lines.push("- 🔴 Critical — severely overdue");
+	lines.push("- 🟠 High — significantly overdue");
+	lines.push("- 🟡 Moderate — approaching review threshold");
+	lines.push("- 🟢 Low — retention adequate");
+	lines.push("- ✨ Fresh — recently covered");
+	lines.push("");
+	return lines.join("\n") + "\n";
+}
+
+export function dueTopicsToMarkdown(topics: TopicEngagement[]): string {
+	if (topics.length === 0) {
+		return "# Due Topics\n\n✅ All topics are up to date! No reviews needed right now.\n";
+	}
+	const lines = [
+		"# 📋 Due Topics",
+		"",
+		`${topics.length} topic${topics.length === 1 ? "" : "s"} due for review:`,
+		"",
+	];
+	for (const topic of topics) {
+		lines.push(`### ${urgencyEmoji(topic.urgencyLabel)} ${topic.title}`);
+		lines.push(`- Domain: ${topic.domain}`);
+		lines.push(`- Last seen: ${formatDaysAgo(topic.daysSinceLastSeen)}`);
+		lines.push(`- Retention: ${retentionBar(topic.estimatedRetention)} ${(topic.estimatedRetention * 100).toFixed(0)}%`);
+		lines.push(`- Mastery at last review: ${(topic.masteryEstimate * 100).toFixed(0)}%`);
+		lines.push(`- Sessions: ${topic.sessionCount}`);
+		lines.push("");
+	}
+	return lines.join("\n") + "\n";
 }

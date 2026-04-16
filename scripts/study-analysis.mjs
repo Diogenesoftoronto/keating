@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 
 import { runBenchmarkSuite } from "../src/core/benchmark.ts";
 import { evolvePolicy } from "../src/core/evolution.ts";
+import { mapElitesEvolve, mapElitesToEvolutionRun } from "../src/core/map-elites.ts";
 import { DEFAULT_POLICY, loadPolicy } from "../src/core/policy.ts";
 
 const SCORE_KEYS = ["mastery", "engagement", "clarity"];
@@ -434,7 +435,8 @@ async function runSyntheticBenchmarkAnalysis(currentPolicy) {
   for (let seed = 1; seed <= 30; seed += 1) {
     const tempDir = await mkdtemp(join(tmpdir(), "keating-study-"));
     const archivePath = join(tempDir, "archive.json");
-    const run = await evolvePolicy(archivePath, DEFAULT_POLICY, "derivative", 24, seed);
+    const meRun = await mapElitesEvolve(process.cwd(), DEFAULT_POLICY, { iterations: 24, focusTopic: "derivative", seed });
+    const run = mapElitesToEvolutionRun(meRun);
     evolutionRuns.push({
       seed,
       baseline: round(run.baseline.overallScore),
