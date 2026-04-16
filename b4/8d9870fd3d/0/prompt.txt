@@ -1,0 +1,63 @@
+add application embeds so we have open graph stuff working, https://github.com/sunya9/vite-plugin-react-og-imagehttps://github.com/sunya9/vite-plugin-react-og-imagehttps://github.com/sunya9/vite-plugin-react-og-image
+
+---
+
+[Image #2] [Image #3] [Image #4] the following images show problems layout specifically the menu doesn't appear in landscape there is also overlapping element issues like the nav bar and the copy button here. look through the code and make sure this no longer happens use modern techniques for this
+
+---
+
+make sure the text in the copy does not overflow it's container.
+
+---
+
+an other places like this
+
+---
+
+commit and push
+
+---
+
+can you make sure the blog and tutorial page are appearing
+
+---
+
+they are just blank in the previous build when i try to visit them make sure that the routing and everything works, use tanstack router
+
+---
+
+Source map error: JSON.parse: unexpected character at line 1 column 1 of the JSON data
+Resource URL: https://keating.help/assets/main-Cz-jsWCo.js
+Source Map URL: main-Cz-jsWCo.js.map
+
+---
+
+okay commit and push
+
+---
+
+hey the tutoril page doesn't seem to appear when i navigate to that route also the pages don't appear in the top nav still and  the top nav still overlaps with  the page
+
+---
+
+commit and push
+
+---
+
+there are two important text bugs, the lit component for the chat page, still the text does not appear on the screen but for brief moment just the cursor appears and then it  is all gone, the other issue is that in the model selector the window is not focusable it loses focus in that window everytime i press a letter are these related?
+
+---
+
+cont
+
+---
+
+but this happens when i pick a model that i have configured as well
+
+---
+
+go ahead
+
+---
+
+the logic on the preview model is false google has made them generally available for months now feel free to look that up google frequently calls things preview anyway fix the actually problem

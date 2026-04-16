@@ -1,0 +1,25 @@
+{
+  "cli_version": "0.5.2",
+  "checkpoint_id": "b48d9870fd3d",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "web/src/main-react.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/b4/8d9870fd3d/0/metadata.json",
+      "transcript": "/b4/8d9870fd3d/0/full.jsonl",
+      "content_hash": "/b4/8d9870fd3d/0/content_hash.txt",
+      "prompt": "/b4/8d9870fd3d/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 627,
+    "cache_creation_tokens": 367345,
+    "cache_read_tokens": 17617196,
+    "output_tokens": 160515,
+    "api_call_count": 195
+  }
+}
