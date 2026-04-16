@@ -1,41 +1,127 @@
-import test from "node:test";
-import assert from "node:assert/strict";
+import { test, expect } from "bun:test";
+import * as fc from "fast-check";
 
 import { runBenchmarkSuite } from "../src/core/benchmark.js";
-import { buildLessonPlan } from "../src/core/lesson-plan.js";
+import { buildLessonPlan, lessonPlanToMarkdown } from "../src/core/lesson-plan.js";
 import { lessonPlanToMermaid } from "../src/core/map.js";
 import { DEFAULT_POLICY, clampPolicy } from "../src/core/policy.js";
-import { Prng } from "../src/core/random.js";
+import {
+  arbPolicy,
+  policyIsBounded,
+  benchmarkScoresAreBounded
+} from "./helpers.js";
 
-test("fuzzed topics and policies stay bounded and renderable", () => {
-  const prng = new Prng(2026);
+const CANONICAL_TOPICS = [
+  "derivative", "entropy", "bayes-rule", "falsifiability", "stoicism",
+  "recursion", "precedent", "separation-of-powers", "cognitive-bias",
+  "evidence-based-medicine", "counterpoint", "industrial-revolution",
+  "relativity", "social-contract"
+];
 
-  for (let index = 0; index < 200; index += 1) {
-    const policy = clampPolicy({
-      ...DEFAULT_POLICY,
-      name: `fuzz-${index}`,
-      analogyDensity: prng.next(),
-      socraticRatio: prng.next(),
-      formalism: prng.next(),
-      retrievalPractice: prng.next(),
-      exerciseCount: prng.int(1, 5),
-      diagramBias: prng.next(),
-      reflectionBias: prng.next(),
-      interdisciplinaryBias: prng.next(),
-      challengeRate: prng.next()
-    });
-    const topic = `topic ${index} ${Math.floor(prng.next() * 1000)}`;
-    const plan = buildLessonPlan(topic, policy);
-    const mermaid = lessonPlanToMermaid(topic, policy);
-    const benchmark = await runBenchmarkSuite(process.cwd(), policy, topic, index + 1);
+// ─── Lesson plan properties (pure, no I/O) ─────────────────────────────────
 
-    assert.ok(plan.phases.length >= 6);
-    assert.ok(mermaid.startsWith("graph TD"));
-    assert.ok(benchmark.overallScore >= 0);
-    assert.ok(benchmark.overallScore <= 100);
-    for (const entry of benchmark.topicBenchmarks) {
-      assert.ok(entry.meanConfusion >= 0);
-      assert.ok(entry.meanConfusion <= 1);
+test("ALWAYS: lesson plans preserve phase order and non-empty bullets", () => {
+  fc.assert(fc.property(
+    arbPolicy,
+    fc.constantFrom(...CANONICAL_TOPICS),
+    (policy, topic) => {
+      const p = clampPolicy(policy);
+      const plan = buildLessonPlan(topic, p);
+
+      expect(plan.phases[0]?.title).toBe("Orientation");
+      expect(plan.phases.at(-1)?.title).toBe("Transfer and Reflection");
+      expect(plan.phases.some((phase) => phase.title === "Guided Practice")).toBe(true);
+      expect(plan.phases.length).toBeGreaterThanOrEqual(6);
+
+      for (const phase of plan.phases) {
+        expect(phase.bullets.length).toBeGreaterThan(0);
+        for (const bullet of phase.bullets) {
+          expect(bullet.length).toBeGreaterThan(5);
+        }
+      }
     }
-  }
+  ));
 });
+
+test("ALWAYS: lesson plan markdown includes topic title header", () => {
+  fc.assert(fc.property(
+    arbPolicy,
+    fc.constantFrom(...CANONICAL_TOPICS),
+    (policy, topic) => {
+      const p = clampPolicy(policy);
+      const plan = buildLessonPlan(topic, p);
+      const md = lessonPlanToMarkdown(plan);
+      expect(md.includes(`# Lesson Plan: ${plan.topic.title}`)).toBe(true);
+    }
+  ));
+});
+
+test("ALWAYS: lesson plan topic matches input topic", () => {
+  fc.assert(fc.property(
+    arbPolicy,
+    fc.constantFrom(...CANONICAL_TOPICS),
+    (policy, topic) => {
+      const p = clampPolicy(policy);
+      const plan = buildLessonPlan(topic, p);
+      expect(plan.topic.slug).toBe(topic);
+    }
+  ));
+});
+
+test("ALWAYS: lesson plan policy is bounded", () => {
+  fc.assert(fc.property(
+    arbPolicy,
+    fc.constantFrom(...CANONICAL_TOPICS),
+    (policy, topic) => {
+      const p = clampPolicy(policy);
+      const plan = buildLessonPlan(topic, p);
+      expect(policyIsBounded(plan.policy)).toBe(true);
+    }
+  ));
+});
+
+// ─── Mermaid diagram properties (pure, no I/O) ─────────────────────────────
+
+test("ALWAYS: mermaid output starts with graph TD and contains required subgraphs", () => {
+  fc.assert(fc.property(
+    arbPolicy,
+    fc.constantFrom(...CANONICAL_TOPICS),
+    (policy, topic) => {
+      const p = clampPolicy(policy);
+      const mermaid = lessonPlanToMermaid(topic, p);
+      expect(mermaid.startsWith("graph TD")).toBe(true);
+      expect(mermaid.includes('subgraph pedagogy["Teaching Loop"]')).toBe(true);
+      expect(mermaid.includes('subgraph meaning["Meaning Map"]')).toBe(true);
+      expect(mermaid.includes('subgraph friction["Misconceptions And Practice"]')).toBe(true);
+      expect(mermaid.includes('subgraph transfer["Transfer Hooks"]')).toBe(true);
+    }
+  ));
+});
+
+// ─── Fuzz: benchmark scores stay bounded for random policies ───────────────
+
+test("ALWAYS: benchmark scores stay in [0, 100] for random policies", async () => {
+  const origError = console.error;
+  console.error = () => {};
+  try {
+    const topics = CANONICAL_TOPICS;
+
+    await fc.assert(fc.asyncProperty(
+      arbPolicy,
+      fc.constantFrom(...topics),
+      fc.integer({ min: 1, max: 9999 }),
+      async (policy, topic, seed) => {
+        const p = clampPolicy(policy);
+        const benchmark = await runBenchmarkSuite(process.cwd(), p, topic, seed, 3);
+        expect(benchmarkScoresAreBounded(benchmark)).toBe(true);
+
+        for (const entry of benchmark.topicBenchmarks) {
+          expect(entry.meanConfusion).toBeGreaterThanOrEqual(0);
+          expect(entry.meanConfusion).toBeLessThanOrEqual(1);
+        }
+      }
+    ), { numRuns: 5 });
+  } finally {
+    console.error = origError;
+  }
+}, 60000);

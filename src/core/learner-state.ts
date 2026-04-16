@@ -6,6 +6,7 @@ const DEFAULT_LEARNER_STATE: Omit<LearnerState, "id"> = {
   coveredTopics: [],
   identifiedMisconceptions: [],
   feedback: [],
+  sessions: [],
   profile: {
     id: "default",
     priorKnowledge: 0.5,
@@ -79,6 +80,28 @@ export function recordFeedback(
     timestamp: new Date().toISOString(),
     signal
   });
+  return state;
+}
+
+export function recordSessionStart(state: LearnerState): LearnerState {
+  if (!state.sessions) state.sessions = [];
+  state.sessions.push({
+    startedAt: new Date().toISOString(),
+    topicsCovered: []
+  });
+  return state;
+}
+
+export function recordSessionEnd(
+  state: LearnerState,
+  topicsCovered: string[]
+): LearnerState {
+  if (!state.sessions) state.sessions = [];
+  const current = state.sessions[state.sessions.length - 1];
+  if (current && !current.endedAt) {
+    current.endedAt = new Date().toISOString();
+    current.topicsCovered = topicsCovered;
+  }
   return state;
 }
 

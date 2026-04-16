@@ -1,0 +1,52 @@
+
+[SESSION keating-test-reform-001]
+KEATING PROJECT TEST REFORM CONTEXT
+
+Goal: Rewrite the test suite using fast-check (property-based testing) and Antithesis guidelines.
+
+Antithesis Key Principles:
+- Test PROPERTIES not sequences — "always true", "never true", "sometimes true"
+- Deterministic simulation: controlled entropy, reproducible seeds
+- Validate continuously: work → validate → work
+- State space exploration: diverse inputs + system faults
+- Always properties: disproved by single counterexample
+- Sometimes properties: proved by single example
+- Reliability properties: invariants, determinism/purity, differential testing, ACID
+- Swarm testing: randomly enable/disable features
+- Buggification: make rare events common
+- Cover the entire surface including config, admin, startup, error paths
+
+Current Test State (32 tests, 0 fail):
+- map-elites.test.ts: 4 unit tests (grid fill, cell replace, score select, run conversion)
+- evolution.test.ts: 3 tests (acceptance criteria, novelty scoring, benchmark determinism)
+- prompt-evolution.test.ts: 2 tests (multi-obj winner, prompt evolve with mock LLM)
+- config.test.ts: 2 tests (defaults, merge overrides)
+- pipeline.test.ts: 1 integration test (full pipeline)
+- animation.test.ts: 2 tests (manual PBT with Prng)
+- lesson-plan.test.ts: 1 test (100 iterations manual PBT)
+- fuzz.test.ts: 1 test (5 iterations manual PBT)
+- hyperteacher-extension.test.ts: 13 tests (command handlers with mock PI)
+- ax-optimizer.test.ts: 1 test (GEPA optimizer)
+- ax-prompt-learner.test.ts: 1 test (ACE learner)
+
+Key Source Modules:
+- map-elites.ts: createGrid, placeInGrid, selectParent, mapElitesEvolve, mapElitesToEvolutionRun, mapElitesToMarkdown
+- evolution.ts: evolvePolicy, noveltyScore, evolutionToMarkdown
+- benchmark.ts: simulateTeaching, runBenchmarkSuite, summarizeTopic, applyFeedbackBias
+- prompt-evolution.ts: PROSPER multi-obj prompt evolution
+- config.ts: createConfig, mergePiDefaults
+- policy.ts: DEFAULT_POLICY, DEFAULT_WEIGHTS, clampPolicy, clampWeights
+
+Critical Invariants to Test:
+1. MAP-Elites: archive never shrinks in quality per cell, cell key is deterministic, grid monotonically improves, descriptors map correctly
+2. Evolution: accepted candidates always improve score, novelty score is always >= 0, safety gate prevents regressions
+3. Benchmark: scores always in [0,1], confusion bounded, summary aggregation is consistent
+4. Policy: clamped policies stay in bounds, mutation changes at least one parameter
+5. Config: merge preserves unspecified defaults, override wins
+6. Feedback: weights remain normalized after bias application
+
+Mocking Strategy:
+- Use dependency injection for LLM calls (piCompleteJson) instead of env hacks
+- Create deterministic mock that returns algebraic baseline directly
+- Mock filesystem for archive save/load
+- Keep real math, mock only I/O boundaries

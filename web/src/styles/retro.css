@@ -4,8 +4,8 @@
 .retro-layout {
   --paper: #f4f1ea;
   --ink: #1a1a1a;
-  --accent: #d44a3d;
-  --accent-dim: #a33a30;
+  --accent: #10b981;
+  --accent-dim: #059669;
   --terminal: #0c0c0c;
   --nav-height: 3.5rem;
 
@@ -33,6 +33,12 @@
 /* VT323 terminal font — works anywhere inside .retro-layout */
 .retro-layout .font-terminal {
   font-family: 'VT323', monospace;
+}
+
+.retro-layout .keating-title {
+  font-family: 'VT323', monospace;
+  font-size: 48px;
+  color: #10b981;
 }
 
 /* Nav link styling */

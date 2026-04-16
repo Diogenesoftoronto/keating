@@ -1,39 +1,146 @@
-import test from "node:test";
-import assert from "node:assert/strict";
+import { test, expect } from "bun:test";
+import * as fc from "fast-check";
 
 import { buildLessonPlan, lessonPlanToMarkdown } from "../src/core/lesson-plan.js";
 import { DEFAULT_POLICY, clampPolicy } from "../src/core/policy.js";
-import { Prng } from "../src/core/random.js";
+import {
+  arbPolicy,
+  policyIsBounded
+} from "./helpers.js";
 
-test("lesson plans preserve phase order and non-empty bullets across randomized policies", () => {
-  const prng = new Prng(42);
-  const topics = ["derivative", "entropy", "bayes", "falsifiability", "stoicism", "complex systems"];
+const CANONICAL_TOPICS = [
+  "derivative", "entropy", "bayes-rule", "falsifiability", "stoicism",
+  "recursion", "precedent", "separation-of-powers", "cognitive-bias",
+  "evidence-based-medicine", "counterpoint", "industrial-revolution",
+  "relativity", "social-contract"
+];
 
-  for (let index = 0; index < 100; index += 1) {
-    const policy = clampPolicy({
-      ...DEFAULT_POLICY,
-      name: `policy-${index}`,
-      analogyDensity: prng.next(),
-      socraticRatio: prng.next(),
-      formalism: prng.next(),
-      retrievalPractice: prng.next(),
-      exerciseCount: prng.int(1, 5),
-      diagramBias: prng.next(),
-      reflectionBias: prng.next(),
-      interdisciplinaryBias: prng.next(),
-      challengeRate: prng.next()
-    });
+// ─── Phase order invariants (Antithesis: always properties) ─────────────────
 
-    const plan = buildLessonPlan(prng.pick(topics), policy);
-    assert.equal(plan.phases[0]?.title, "Orientation");
-    assert.equal(plan.phases.at(-1)?.title, "Transfer and Reflection");
-    assert.ok(plan.phases.some((phase) => phase.title === "Guided Practice"));
-    for (const phase of plan.phases) {
-      assert.ok(phase.bullets.length > 0);
-      for (const bullet of phase.bullets) {
-        assert.ok(bullet.length > 5);
+test("ALWAYS: first phase is Orientation, last is Transfer and Reflection", () => {
+  fc.assert(fc.property(
+    arbPolicy,
+    fc.constantFrom(...CANONICAL_TOPICS),
+    (policy, topic) => {
+      const p = clampPolicy(policy);
+      const plan = buildLessonPlan(topic, p);
+      expect(plan.phases[0]?.title).toBe("Orientation");
+      expect(plan.phases.at(-1)?.title).toBe("Transfer and Reflection");
+    }
+  ));
+});
+
+test("ALWAYS: Guided Practice phase exists in every plan", () => {
+  fc.assert(fc.property(
+    arbPolicy,
+    fc.constantFrom(...CANONICAL_TOPICS),
+    (policy, topic) => {
+      const p = clampPolicy(policy);
+      const plan = buildLessonPlan(topic, p);
+      expect(plan.phases.some((phase) => phase.title === "Guided Practice")).toBe(true);
+    }
+  ));
+});
+
+test("ALWAYS: every phase has non-empty bullets with meaningful content", () => {
+  fc.assert(fc.property(
+    arbPolicy,
+    fc.constantFrom(...CANONICAL_TOPICS),
+    (policy, topic) => {
+      const p = clampPolicy(policy);
+      const plan = buildLessonPlan(topic, p);
+      for (const phase of plan.phases) {
+        expect(phase.bullets.length).toBeGreaterThan(0);
+        for (const bullet of phase.bullets) {
+          expect(bullet.length).toBeGreaterThan(5);
+        }
       }
     }
-    assert.ok(lessonPlanToMarkdown(plan).includes(`# Lesson Plan: ${plan.topic.title}`));
-  }
+  ));
+});
+
+test("ALWAYS: plan has at least 6 phases", () => {
+  fc.assert(fc.property(
+    arbPolicy,
+    fc.constantFrom(...CANONICAL_TOPICS),
+    (policy, topic) => {
+      const p = clampPolicy(policy);
+      const plan = buildLessonPlan(topic, p);
+      expect(plan.phases.length).toBeGreaterThanOrEqual(6);
+    }
+  ));
+});
+
+test("ALWAYS: topic slug matches input topic", () => {
+  fc.assert(fc.property(
+    arbPolicy,
+    fc.constantFrom(...CANONICAL_TOPICS),
+    (policy, topic) => {
+      const p = clampPolicy(policy);
+      const plan = buildLessonPlan(topic, p);
+      expect(plan.topic.slug).toBe(topic);
+    }
+  ));
+});
+
+test("ALWAYS: policy in plan is bounded", () => {
+  fc.assert(fc.property(
+    arbPolicy,
+    fc.constantFrom(...CANONICAL_TOPICS),
+    (policy, topic) => {
+      const p = clampPolicy(policy);
+      const plan = buildLessonPlan(topic, p);
+      expect(policyIsBounded(plan.policy)).toBe(true);
+    }
+  ));
+});
+
+// ─── Markdown output properties ────────────────────────────────────────────
+
+test("ALWAYS: markdown output includes topic title header", () => {
+  fc.assert(fc.property(
+    arbPolicy,
+    fc.constantFrom(...CANONICAL_TOPICS),
+    (policy, topic) => {
+      const p = clampPolicy(policy);
+      const plan = buildLessonPlan(topic, p);
+      const md = lessonPlanToMarkdown(plan);
+      expect(md.includes(`# Lesson Plan: ${plan.topic.title}`)).toBe(true);
+    }
+  ));
+});
+
+test("ALWAYS: markdown output is non-empty and contains phase content", () => {
+  fc.assert(fc.property(
+    arbPolicy,
+    fc.constantFrom(...CANONICAL_TOPICS),
+    (policy, topic) => {
+      const p = clampPolicy(policy);
+      const plan = buildLessonPlan(topic, p);
+      const md = lessonPlanToMarkdown(plan);
+      expect(md.length).toBeGreaterThan(100);
+      for (const phase of plan.phases) {
+        expect(md.includes(phase.title)).toBe(true);
+      }
+    }
+  ));
+});
+
+// ─── Sometimes properties (Antithesis: sometimes true) ──────────────────────
+
+test("SOMETIMES: plans include Socratic dialogue elements", () => {
+  let foundSocratic = false;
+  fc.assert(fc.property(
+    arbPolicy,
+    fc.constantFrom(...CANONICAL_TOPICS),
+    (policy, topic) => {
+      const p = clampPolicy(policy);
+      const plan = buildLessonPlan(topic, p);
+      const md = lessonPlanToMarkdown(plan);
+      if (md.includes("?") || md.toLowerCase().includes("ask") || md.toLowerCase().includes("question")) {
+        foundSocratic = true;
+      }
+    }
+  ), { numRuns: 30 });
+  expect(foundSocratic).toBe(true);
 });

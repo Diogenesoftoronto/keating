@@ -12,7 +12,7 @@ import { sessionsDir } from "../core/paths.js";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export interface PiRuntimeDetails {
-  kind: "binary" | "embedded-feynman";
+  kind: "binary" | "embedded-keating";
   command: string;
   cliPath?: string;
 }
@@ -27,16 +27,20 @@ export interface PiRuntimeReport {
 function resolveStandalonePi(): PiRuntimeDetails | null {
   const result = spawnSync("which", ["pi"], { encoding: "utf8" });
   if (result.status === 0 && result.stdout.trim()) {
-    return {
-      kind: "binary",
-      command: result.stdout.trim()
-    };
+    const command = result.stdout.trim();
+    const versionResult = spawnSync(command, ["--version"], { encoding: "utf8" });
+    if (versionResult.status === 0 && /^\d+\.\d+\.\d+/.test(versionResult.stdout.trim())) {
+      return {
+        kind: "binary",
+        command
+      };
+    }
   }
   return null;
 }
 
 async function resolveEmbeddedPi(): Promise<PiRuntimeDetails | null> {
-  const base = join(homedir(), ".local", "share", "feynman");
+  const base = join(homedir(), ".local", "share", "keating");
   const entries = await readdir(base, { withFileTypes: true }).catch(() => []);
   const dirs = entries
     .filter((entry: any) => entry.isDirectory())
@@ -46,10 +50,10 @@ async function resolveEmbeddedPi(): Promise<PiRuntimeDetails | null> {
 
   for (const name of dirs) {
     const appRoot = join(base, name, "app");
-    const cliPath = join(appRoot, "node_modules", "@mariozechner", "pi-coding-agent", "dist", "cli.js");
+    const cliPath = join(appRoot, "node_modules", "@interleavelove", "keating-coding-agent", "dist", "cli.js");
     if (existsSync(cliPath)) {
       return {
-        kind: "embedded-feynman",
+        kind: "embedded-keating",
         command: process.execPath,
         cliPath
       };
@@ -100,13 +104,18 @@ export async function launchPi(cwd: string, args: string[]): Promise<number> {
     throw new Error("Could not find a Pi runtime matching the current Keating runtime preference.");
   }
 
-  const extensionPath = join(__dirname, "..", "pi", "hyperteacher-extension.js");
+  const isDist = __dirname.replace(/\\/g, "/").includes("/dist/src/runtime");
+  // Resolve paths relative to package root
+  const packageRoot = isDist ? join(__dirname, "..", "..", "..") : join(__dirname, "..", "..");
+
+  const extensionPath = isDist
+    ? join(__dirname, "..", "pi", "hyperteacher-extension.js")
+    : join(packageRoot, "dist", "src", "pi", "hyperteacher-extension.js");
+
   if (!existsSync(extensionPath)) {
     throw new Error(`Missing built extension: ${extensionPath}. Run npm run build first.`);
   }
 
-  // Resolve paths relative to package installation directory (3 levels up from dist/src/runtime/)
-  const packageRoot = join(__dirname, "..", "..", "..");
   const promptDir = join(packageRoot, "pi", "prompts");
   const skillsDir = join(packageRoot, "pi", "skills");
   const systemPromptPath = join(packageRoot, "SYSTEM.md");

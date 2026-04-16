@@ -8,6 +8,28 @@
 @import './styles/retro.css';
 
 /* Custom Keating styles */
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.chat-page-shell {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.chat-page-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  display: block;
+}
+
 :root {
   --color-primary: #6366f1;
 }

@@ -1,4 +1,4 @@
-import { defineEventHandler, proxyRequest, getHeader, getRequestURL } from "h3";
+import { defineEventHandler, proxyRequest, getHeader, getRequestURL, getHeaders, createError } from "h3";
 
 export default defineEventHandler(async (event) => {
   // Get the target URL from the custom header
@@ -11,10 +11,9 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // The request path might have extra segments appended by the SDK (e.g., /messages)
-  // We need to re-attach those to the target base URL.
-  const proxyPath = event.context.params?.slug || "";
-  const fullTargetUrl = `${targetBaseUrl.replace(/\/$/, "")}/${proxyPath.replace(/^\//, "")}`;
+  const reqUrl = getRequestURL(event);
+  const proxyPath = reqUrl.pathname.replace(/^\/api\/chat-proxy\/?/, "") + reqUrl.search;
+  const fullTargetUrl = `${targetBaseUrl.replace(/\/$/, "")}/${proxyPath}`;
 
   // Define headers to strip (problematic for Minimax/CORS)
   const forbiddenHeaders = [
@@ -30,15 +29,19 @@ export default defineEventHandler(async (event) => {
     "referer"       // Let Nitro re-generate
   ];
 
-  return proxyRequest(event, fullTargetUrl, {
-    fetchOptions: {
-      headers: (headers) => {
-        const h = { ...headers };
-        for (const forbidden of forbiddenHeaders) {
-          delete h[forbidden];
-        }
-        return h;
-      }
+  const headersParams = { ...event.headers } as any;
+  // If event.headers isn't a plain object (in H3 it might not be directly exposed as a plain object on some adapters)
+  // we can use getHeaders(event)
+  const currentHeaders = getHeaders(event);
+  const h: Record<string, string> = { ...currentHeaders } as any;
+  for (const forbidden of forbiddenHeaders) {
+    if (h[forbidden] !== undefined) {
+      delete h[forbidden];
     }
+  }
+  delete h["x-target-url"];
+
+  return proxyRequest(event, fullTargetUrl, {
+    headers: h
   });
 });

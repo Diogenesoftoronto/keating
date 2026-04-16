@@ -30,17 +30,23 @@ export async function piComplete(cwd: string, prompt: string, options: PiComplet
 
   const finalArgs = mergePiDefaults(config, [...args, prompt]);
   
-  const result = spawnSync("pi", finalArgs, {
-    cwd,
-    encoding: "utf8",
-    env: {
-      ...process.env,
-      PI_SKIP_VERSION_CHECK: "1"
-    }
-  });
+  let result;
+  try {
+    result = spawnSync("pi", finalArgs, {
+      cwd,
+      stdio: "pipe",
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        PI_SKIP_VERSION_CHECK: "1"
+      }
+    });
+  } catch (e) {
+    throw new Error(`Pi command could not be spawned: ${e}`);
+  }
 
   if (result.status !== 0) {
-    throw new Error(`Pi completion failed (exit ${result.status}): ${result.stderr || result.stdout}`);
+    throw new Error(`Pi completion failed (exit ${result.status || 'null'}): ${result.stderr || result.stdout}`);
   }
 
   return result.stdout.trim();

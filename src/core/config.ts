@@ -20,7 +20,7 @@ export interface KeatingConfig {
 
 export const DEFAULT_KEATING_CONFIG: KeatingConfig = {
   pi: {
-    runtimePreference: "standalone-only",
+    runtimePreference: "prefer-standalone",
     defaultProvider: "google",
     defaultModel: "google/gemini-2.5-pro",
     defaultThinking: "medium"

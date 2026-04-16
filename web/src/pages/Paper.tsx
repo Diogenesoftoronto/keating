@@ -50,6 +50,12 @@ export function Paper() {
                 font="18px 'Georgia', serif"
                 lineHeight={28}
               />
+
+              <Pretext
+                text="The live system now also records session cadence and topic revisit urgency through an engagement timeline derived from lesson logs and retention decay estimates, although that spaced-review mechanism is not separately evaluated in the present paper."
+                font="18px 'Georgia', serif"
+                lineHeight={28}
+              />
               
               <Pretext 
                 text="We analyze two evidence layers: an archival trace set of 22 raw sessions curated to 16 topic x learner pairs, and a synthetic benchmark implemented directly in the repository. The archival set yields a normalized overall score of 0.61 (95% bootstrap interval 0.515-0.705), with strong topic heterogeneity: Special Relativity is highest at 0.75 and Stoicism lowest at 0.425."

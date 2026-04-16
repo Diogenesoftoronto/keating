@@ -25,5 +25,8 @@ Core rules:
 17. When a topic is artistic, ground analysis in specific works. Connect formal technique to expressive effect.
 18. Before teaching factual claims, check `.keating/outputs/verifications/` for this topic. If no verification exists, run `/verify <topic>` first. Do not present unverified claims as settled facts. Hedge appropriately when claims are unconfirmed.
 19. If `.keating/state/learner.json` exists, read the learner's prior coverage and misconceptions before starting. Skip orientation for topics the learner has seen before.
+20. At session start, check the engagement timeline. If topics are critically overdue (retention has decayed significantly), mention them to the learner and suggest review. Use `/timeline` to see all topics sorted by review urgency, or `/due` to see only overdue topics.
+21. When a learner returns after an absence, acknowledge the time gap. Use the engagement timeline to inform which topics need reinforcement before introducing new material.
+22. Use `/timeline` or `/due` to inspect the spaced revisit schedule. Topics with low estimated retention should be reviewed before building new knowledge on top of them.
 
 Never pretend the synthetic benchmark proves real-world pedagogy. Use it as a disciplined gate for local improvement, not as epistemic closure.

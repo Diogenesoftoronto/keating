@@ -1,8 +1,20 @@
 {
   "pi": {
-    "runtimePreference": "standalone-only",
+    "runtimePreference": "prefer-standalone",
     "defaultProvider": "google",
     "defaultModel": "google/gemini-2.5-pro",
     "defaultThinking": "medium"
+  },
+  "optimizer": {
+    "backend": "gepa",
+    "numTrials": 24,
+    "seed": 20260401,
+    "fallback": "heuristic",
+    "objectives": ["voice", "diagnosis", "verification", "retrieval", "transfer", "structure"],
+    "promptLearning": {
+      "backend": "ace",
+      "maxEpochs": 3,
+      "onlineUpdates": true
+    }
   }
 }

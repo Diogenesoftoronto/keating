@@ -16,6 +16,8 @@ Keating is implemented as a policy-controlled teaching scaffold around a Pi runt
 
 These controls do not directly encode a single answer. They encode a region of instructional behavior. The metaharness evaluates those controls against topic structure and learner profiles, then uses the resulting signals to revise the policy.
 
+The live system also now persists session-level timing state. `LearnerState` records session starts, session ends, and the topics covered within each lesson, and the engagement module converts that history into an *engagement timeline* for spaced revisit. For each covered topic, Keating stores the last-seen timestamp, session count, and mastery estimate, then applies an exponential retention-decay model with a configurable half-life, due threshold, minimum review interval, and urgency tiers. Operationally, this lets the tutor detect when a learner has been away, estimate which topics are likely slipping, and suggest review before continuing. This timing-aware revisit mechanism is part of the present system architecture, but it was added after the benchmark results reported here and is not yet evaluated as a separate outcome variable in the study.
+
 == Mathematical formulation of the harness
 
 For readers from educational measurement, this section defines the latent teaching signals. For readers from ML systems, it specifies the benchmark objective. For readers from applied mathematics, it gives the explicit map from policy and learner parameters to session score.
@@ -253,7 +255,7 @@ This is the metaharness improvement loop. It does not directly train a model. In
 
 == External archival evaluation
 
-We analyzed the 22 JSON trace files stored in `test/traces/`. Because multiple traces existed for some topic x learner pairs, we retained the chronologically latest trace for each pair, yielding 16 sessions spanning four topics (`Derivative`, `Special Relativity`, `Stoicism`, and `Social Contract Theory`) and four learner models (`Llama-3.2-1B`, `LFM-2.5-1.2B`, `Qwen-2.5-1.5B`, and `Cloud-MiniMax-M2.5`). The retained set exactly matched `test/final_dataset.json`.
+We analyzed the 22 JSON trace files stored in `test/traces/`. Because multiple traces existed for some topic x learner pairs, we retained the chronologically latest trace for each pair, yielding 16 sessions spanning four topics (`Derivative`, `Special Relativity`, `Stoicism`, and `Social Contract Theory`) and four learner models (`Llama-3.2-1B`, `LFM-2.5-1.2B`, `Qwen-2.5-1.5B`, and `Cloud-MiniMax-M2.5`). The retained set exactly matched `test/final_dataset.json`. This timestamp-based rule was chosen to make archival evaluation deterministic and auditable: later reruns replace earlier reruns by a visible provenance field rather than by manual judgment.
 
 Each retained trace already contained three scalar labels: mastery, engagement, and clarity. We treated these as archived outcome labels. One record encoded scores on a 0-10 scale rather than the 0-1 scale used elsewhere, so we normalized that record by dividing by 10 and recorded the correction in `docs/generated/study-analysis.json`.
 
@@ -264,6 +266,8 @@ The external overall score was defined as the unweighted mean of mastery, engage
 The internal benchmark uses `src/core/benchmark.ts`. Unless a focus topic is specified, the suite evaluates 14 topics. For each topic and random seed, the benchmark samples 18 synthetic learners and computes topic-level mean scores from mastery gain, retention, engagement, transfer, and confusion. The current study compared the repository default policy with the current evolved policy in `.keating/state/current-policy.json` over 200 seeds.
 
 To probe overfitting, we separately summarized tuned-topic (`Derivative`) and non-tuned-topic mean deltas. To probe mechanism, we performed one-at-a-time ablations by swapping each current-policy parameter individually into the default policy and re-evaluating over the same 200 seeds. To probe optimization stability, we reran derivative-only evolution 30 times from the default policy using `src/core/evolution.ts`.
+
+We did *not* run a dedicated reward-hacking study in which the optimizer was challenged against hidden holdout metrics, adversarially perturbed harness coefficients, or external human judgments. That omission is important because any policy-search loop can in principle exploit regularities in the scoring function rather than improve the underlying pedagogical behavior the score was meant to represent.
 
 == Statistics and reporting
 

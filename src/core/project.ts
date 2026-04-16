@@ -4,7 +4,16 @@ import { join, relative } from "node:path";
 import { loadKeatingConfig } from "./config.js";
 import { writeLessonAnimation } from "./animation.js";
 import { benchmarkToMarkdown, runBenchmarkSuite } from "./benchmark.js";
+import {
+  buildEngagementTimeline,
+  dueTopics,
+  dueTopicsToMarkdown,
+  engagementTimelineToMarkdown,
+  loadEngagementPolicy,
+  DEFAULT_ENGAGEMENT_POLICY
+} from "./engagement.js";
 import { evolutionToMarkdown, evolvePolicy } from "./evolution.js";
+import { mapElitesEvolve, mapElitesToMarkdown, mapElitesToEvolutionRun } from "./map-elites.js";
 import { buildLessonPlan, lessonPlanToMarkdown } from "./lesson-plan.js";
 import { writeLessonMap } from "./map.js";
 import { writePromptEvolutionArtifacts } from "./prompt-evolution.js";
@@ -13,14 +22,17 @@ import {
   benchmarksDir,
   currentPolicyPath,
   ensureKeatingDirs,
+  engagementPolicyPath,
   evolutionDir,
   mapsDir,
   plansDir,
   policyArchivePath,
   promptEvolutionDir,
+  timelineDir,
   tracesDir,
   verificationsDir,
-  verificationCachePath
+  verificationCachePath,
+  learnerStatePath
 } from "./paths.js";
 import { ensureConfig } from "./config.js";
 import { DEFAULT_POLICY, loadPolicy, savePolicy } from "./policy.js";
@@ -35,6 +47,7 @@ import {
   verificationStatus
 } from "./verification.js";
 import { type VerificationResult } from "./types.js";
+import { loadLearnerState } from "./learner-state.js";
 import {
   generateImprovementArtifact,
   loadImprovementArchive,
@@ -104,11 +117,12 @@ export async function evolvePolicyArtifact(
   const config = await loadKeatingConfig(cwd);
   const policyPath = currentPolicyPath(cwd);
   const basePolicy = await loadPolicy(policyPath);
-  const run = await evolvePolicy(policyArchivePath(cwd), basePolicy, focusTopic);
+  const meRun = await mapElitesEvolve(cwd, basePolicy, { focusTopic });
+  const run = mapElitesToEvolutionRun(meRun);
   await savePolicy(policyPath, run.best.policy);
   const fileName = focusTopic ? `${slugify(focusTopic)}.md` : "latest.md";
   const reportPath = join(evolutionDir(cwd), fileName);
-  await writeFile(reportPath, evolutionToMarkdown(run), "utf8");
+  await writeFile(reportPath, mapElitesToMarkdown(meRun), "utf8");
   const tracePath = config.debug.persistTraces
     ? join(tracesDir(cwd), `${focusTopic ? slugify(focusTopic) : "latest"}-evolution.json`)
     : null;
@@ -189,6 +203,32 @@ export async function improveHistory(cwd: string): Promise<string> {
   return improvementHistoryToMarkdown(archive);
 }
 
+export async function timelineArtifact(
+  cwd: string
+): Promise<{ reportPath: string; markdown: string }> {
+  await ensureProjectScaffold(cwd);
+  const state = await loadLearnerState(learnerStatePath(cwd));
+  const policy = await loadEngagementPolicy(engagementPolicyPath(cwd));
+  const timeline = buildEngagementTimeline(state, policy);
+  const markdown = engagementTimelineToMarkdown(timeline);
+  const reportPath = join(timelineDir(cwd), "latest.md");
+  await writeFile(reportPath, markdown, "utf8");
+  return { reportPath, markdown };
+}
+
+export async function dueTopicsArtifact(
+  cwd: string
+): Promise<{ reportPath: string; markdown: string; count: number }> {
+  await ensureProjectScaffold(cwd);
+  const state = await loadLearnerState(learnerStatePath(cwd));
+  const policy = await loadEngagementPolicy(engagementPolicyPath(cwd));
+  const due = dueTopics(state, policy);
+  const markdown = dueTopicsToMarkdown(due);
+  const reportPath = join(timelineDir(cwd), "due.md");
+  await writeFile(reportPath, markdown, "utf8");
+  return { reportPath, markdown, count: due.length };
+}
+
 export async function currentPolicySummary(cwd: string): Promise<string> {
   await ensureProjectScaffold(cwd);
   const policy = await loadPolicy(currentPolicyPath(cwd));
@@ -216,7 +256,8 @@ export async function listArtifacts(cwd: string): Promise<Array<{ label: string;
     evolutionDir(cwd),
     promptEvolutionDir(cwd),
     tracesDir(cwd),
-    verificationsDir(cwd)
+    verificationsDir(cwd),
+    timelineDir(cwd)
   ];
   const artifacts: Array<{ label: string; path: string; mtime: number }> = [];
 

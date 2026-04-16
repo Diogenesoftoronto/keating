@@ -4,6 +4,7 @@ import {
   animateTopicArtifact,
   benchPolicyArtifact,
   currentPolicySummary,
+  dueTopicsArtifact,
   ensureProjectScaffold,
   evolvePolicyArtifact,
   evolvePromptArtifact,
@@ -12,10 +13,11 @@ import {
   listArtifacts,
   mapTopicArtifact,
   planTopicArtifact,
+  timelineArtifact,
   verifyTopicArtifact
 } from "../core/project.js";
 import { learnerStatePath } from "../core/paths.js";
-import { loadLearnerState, recordFeedback, saveLearnerState } from "../core/learner-state.js";
+import { loadLearnerState, recordFeedback, recordSessionStart, saveLearnerState } from "../core/learner-state.js";
 
 function topicFromArgs(args: string | string[]): string {
   return (Array.isArray(args) ? args.join(" ") : String(args ?? "")).trim();
@@ -217,8 +219,41 @@ export default function hyperteacher(pi: any): void {
     }
   });
 
+  pi.registerCommand("timeline", {
+    description: "Show the engagement timeline for all covered topics, sorted by review urgency.",
+    handler: async (_args: string[], ctx: any) => {
+      const artifact = await timelineArtifact(ctx.cwd);
+      ctx.ui.setEditorText(artifact.markdown);
+      info(ctx, `Engagement timeline saved to ${relative(ctx.cwd, artifact.reportPath)}`);
+    }
+  });
+
+  pi.registerCommand("due", {
+    description: "Show topics that are due for review based on spaced repetition.",
+    handler: async (_args: string[], ctx: any) => {
+      const artifact = await dueTopicsArtifact(ctx.cwd);
+      ctx.ui.setEditorText(artifact.markdown);
+      if (artifact.count === 0) {
+        info(ctx, "All topics are up to date! No reviews needed.");
+      } else {
+        info(ctx, `${artifact.count} topic${artifact.count === 1 ? "" : "s"} due for review.`);
+      }
+    }
+  });
+
   pi.on("session_start", async (_event: any, ctx: any) => {
     await ensureProjectScaffold(ctx.cwd);
-    info(ctx, "Keating loaded: use /plan, /map, /animate, /verify, /bench, /evolve, /prompt-evolve, /improve, /trace, /feedback, or /policy.");
+    // Record session start in learner state
+    const statePath = learnerStatePath(ctx.cwd);
+    const state = await loadLearnerState(statePath);
+    recordSessionStart(state);
+    await saveLearnerState(statePath, state);
+    // Check for due topics and notify
+    const dueArtifact = await dueTopicsArtifact(ctx.cwd);
+    if (dueArtifact.count > 0) {
+      info(ctx, `Keating loaded. ${dueArtifact.count} topic${dueArtifact.count === 1 ? " is" : "s are"} due for review. Use /due to see them.`);
+    } else {
+      info(ctx, "Keating loaded: use /plan, /map, /animate, /verify, /bench, /evolve, /prompt-evolve, /improve, /trace, /feedback, /timeline, /due, or /policy.");
+    }
   });
 }
