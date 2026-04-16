@@ -79,7 +79,7 @@ export function Nav({ showFeatures = false }: NavProps) {
             className="font-terminal"
             style={{ fontSize: "1rem", color: "#d44a3d" }}
           >
-            v0.1.4
+            v{import.meta.env.APP_VERSION}
           </span>
         </Link>
 
