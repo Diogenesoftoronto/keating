@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-16
+
+### Added
+- **Ax Optimization Framework**: Integrated multi-objective policy and prompt learning (GEPA/ACE) using `@ax-llm/ax`.
+- **MAP-Elites Archive**: Implementation of MAP-Elites for diverse policy discovery and quality-diversity search.
+- **Engagement Policies**: Temporal awareness and engagement optimization for teaching actions.
+- **Improved Benchmarking**: Enhanced metric reporting, simulation robustness, and better handling of edge cases.
+- **Retro Aesthetic Polish**: Finalized pixel-art identity, VT323 typography, and emerald green theme across all pages.
+
+### Changed
+- Completed rebranding of "Feynman" assets and paths to "Keating".
+- Migrated core backend interactions to use Nitro proxies for robust CORS handling in production.
+- Refactored chat interface to handle streaming and error states more gracefully.
+
 ## [0.1.4] - 2025-04-10
 
 ### Fixed
@@ -73,7 +87,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v0.1.4...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/Diogenesoftoronto/keating/compare/v0.1.4...v0.2.0
 [0.1.4]: https://github.com/Diogenesoftoronto/keating/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/Diogenesoftoronto/keating/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/Diogenesoftoronto/keating/compare/v0.1.1...v0.1.2
