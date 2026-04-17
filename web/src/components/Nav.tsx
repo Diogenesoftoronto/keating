@@ -55,32 +55,36 @@ export function Nav({ showFeatures = false }: NavProps) {
         {/* Logo */}
         <Link
           to="/"
+          className="nav-logo"
           style={{
             display: "flex",
             alignItems: "center",
             gap: "0.5rem",
             textDecoration: "none",
             color: "inherit",
-            flexShrink: 0,
+            flexShrink: 1,
+            minWidth: 0
           }}
         >
-          <div className="status-led" />
-          <span
-            style={{
-              fontSize: "1.125rem",
-              fontWeight: 700,
-              letterSpacing: "-0.025em",
-              whiteSpace: "nowrap",
-            }}
-          >
-            KEATING//
-          </span>
-          <span
-            className="font-terminal"
-            style={{ fontSize: "1rem", color: "#d44a3d" }}
-          >
-            v{import.meta.env.APP_VERSION}
-          </span>
+          <div className="status-led shrink-0" />
+          <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-2 leading-tight">
+            <span
+              style={{
+                fontSize: "1.125rem",
+                fontWeight: 700,
+                letterSpacing: "-0.025em",
+                whiteSpace: "nowrap",
+              }}
+            >
+              KEATING//
+            </span>
+            <span
+              className="font-terminal"
+              style={{ fontSize: "0.875rem", color: "#d44a3d", whiteSpace: "nowrap" }}
+            >
+              v{import.meta.env.APP_VERSION}
+            </span>
+          </div>
         </Link>
 
         {/* Desktop links — visible at md (768px) and up */}

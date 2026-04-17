@@ -13,7 +13,7 @@ dist/
 !web/public/*.svg
 
 # Nitro
-.output/
+web/.output/
 
 # Build artifacts
 test/bench.log

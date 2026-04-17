@@ -47,7 +47,7 @@ run = "bun src/cli/main.ts trace"
 
 [tasks.web]
 description = "Start the Keating web UI dev server"
-run = "cd web && bun run dev"
+run = "bun run --cwd web dev"
 
 [tasks.web-build]
 description = "Build the Keating web UI for production"
