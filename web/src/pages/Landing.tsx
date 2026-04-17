@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Nav } from "../components/Nav";
 import { Footer } from "../components/Footer";
@@ -52,6 +52,20 @@ export function Landing() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<InstallTab>("npm");
   const [copied, setCopied] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const isMobile = windowWidth < 640;
+  const isSmallMobile = windowWidth < 400;
+  
+  const titleFont = `${isSmallMobile ? 26 : isMobile ? 28 : 32}px 'Inter', sans-serif`;
+  const subtitleFontSize = isSmallMobile ? 24 : isMobile ? 32 : 42;
+  const subtitleFont = `${subtitleFontSize}px 'VT323', monospace`;
 
   function handleCopy() {
     navigator.clipboard.writeText(TAB_COPY_TEXT[activeTab]).then(() => {
@@ -70,17 +84,30 @@ export function Landing() {
         <div className="max-w-4xl mx-auto">
           <div className="coords mb-4">42.3601° N, 71.0589° W // WELLESLEY, MA</div>
 
-          <div className="paper-fold distressed-border p-8 mb-8">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-none tracking-tight flex items-center gap-6">
-              <img src="/logo.png" alt="Keating Logo" className="w-24 h-24 sm:w-32 sm:h-32 object-contain filter drop-shadow-md rounded" />
-              <div>
-                THE HYPERTEACHER
-                <br />
-                <span className="font-terminal text-accent text-5xl md:text-7xl">
-                  THINK_FOR_YOURSELF
-                </span>
+          <div className="paper-fold distressed-border p-6 sm:p-8 mb-8">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-8 mb-6">
+              <img 
+                src="/logo.png" 
+                alt="Keating Logo" 
+                className="w-20 h-20 sm:w-32 sm:h-32 object-contain filter drop-shadow-md rounded" 
+              />
+              <div className="flex-1 w-full text-center sm:text-left" role="heading" aria-level={1}>
+                <Pretext 
+                  text="THE HYPERTEACHER"
+                  font={`bold ${titleFont}`}
+                  lineHeight={isMobile ? 30 : 36}
+                  className="mb-2"
+                  justify={false}
+                />
+                <Pretext 
+                  text={"THINK_\u200BFOR_\u200BYOURSELF"}
+                  font={subtitleFont}
+                  lineHeight={isMobile ? 34 : 44}
+                  className="text-accent"
+                  justify={false}
+                />
               </div>
-            </h1>
+            </div>
             <div className="max-w-2xl">
               <Pretext 
                 text="Keating doesn't give answers. It forces you to reconstruct understanding from memory. No hand-holding. No spoon-feeding. Just the Socratic method powered by silicon."
@@ -92,17 +119,23 @@ export function Landing() {
             <div className="stamp">COGNITIVE EMPOWERMENT</div>
           </div>
 
-          {/* Terminal quote */}
-          <div className="terminal-window p-4 mb-8 terminal-glow">
-            <div className="flex items-center gap-2 mb-2 border-b border-[#00ff00]/30 pb-2">
-              <span className="w-3 h-3 rounded-full bg-[#ff5f56]" />
-              <span className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
-              <span className="w-3 h-3 rounded-full bg-[#27ca40]" />
-              <span className="ml-4 text-sm opacity-60">root@keating:~</span>
+          {/* Terminal window */}
+          <div className="terminal-window p-4 mb-8 terminal-glow overflow-hidden">
+            <div className="flex items-center mb-2 border-b border-[#00ff00]/30 pb-2 overflow-hidden">
+              <div className="flex gap-2 shrink-0">
+                <span className="w-3 h-3 rounded-full bg-[#ff5f56]" />
+                <span className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
+                <span className="w-3 h-3 rounded-full bg-[#27ca40]" />
+              </div>
+              <div className={`flex-1 min-w-0 ${isMobile ? 'marquee ml-4' : 'ml-4'}`}>
+                <span className="text-sm opacity-60 whitespace-nowrap">root@keating:~</span>
+              </div>
             </div>
-            <p className="font-terminal text-xl md:text-2xl leading-relaxed typewriter">
-              "That the powerful play goes on, and you may contribute a verse."
-            </p>
+            <div className={isMobile ? 'marquee' : ''}>
+              <p className={`font-terminal text-xl md:text-2xl leading-relaxed ${!isMobile ? 'typewriter' : ''} whitespace-nowrap`}>
+                {isMobile ? <span>"That the powerful play goes on, and you may contribute a verse."</span> : '"That the powerful play goes on, and you may contribute a verse."'}
+              </p>
+            </div>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
@@ -205,8 +238,14 @@ export function Landing() {
               <div key={n} className="flex gap-4 p-4 border border-[#f4f1ea]/20">
                 <div className="text-accent text-2xl">{n}</div>
                 <div>
-                  <div className="text-lg text-[#00ff00]">{title}</div>
-                  <div className="text-sm text-[#f4f1ea]/60">{body}</div>
+                  <div className="text-lg text-[#00ff00] mb-1">{title}</div>
+                  <Pretext 
+                    text={body}
+                    font="14px 'VT323', monospace"
+                    lineHeight={20}
+                    className="text-[#f4f1ea]/70"
+                    justify={false}
+                  />
                 </div>
               </div>
             ))}
