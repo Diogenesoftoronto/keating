@@ -1,0 +1,13 @@
+hey currently keating web in the browser @web/src/pages/Chat.tsx does not allow me to enter a prompt after a succesful response, i think that the ui isn't updating in someway in order for me to send because the button to send never refreshes. [Image #1]
+
+---
+
+yes
+
+---
+
+use bun
+
+---
+
+find a way to test this

@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.5.5",
+  "checkpoint_id": "4358a3f2db37",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "web/bun.lock",
+    "web/package.json",
+    "web/src/hooks/agent-subscriptions.ts",
+    "web/src/hooks/useKeatingAgent.ts",
+    "web/test/agent-subscriptions.test.ts",
+    "web/tsconfig.json"
+  ],
+  "sessions": [
+    {
+      "metadata": "/43/58a3f2db37/0/metadata.json",
+      "transcript": "/43/58a3f2db37/0/full.jsonl",
+      "content_hash": "/43/58a3f2db37/0/content_hash.txt",
+      "prompt": "/43/58a3f2db37/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 433,
+    "cache_creation_tokens": 117091,
+    "cache_read_tokens": 7291914,
+    "output_tokens": 40222,
+    "api_call_count": 77
+  }
+}
