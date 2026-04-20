@@ -8,15 +8,14 @@
     "skipLibCheck": true,
     "declaration": false,
     "outDir": "./dist",
-    "rootDir": "./src",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
     "experimentalDecorators": true,
     "useDefineForClassFields": false,
-    "types": ["vite/client"]
+    "types": ["vite/client", "bun"]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "test/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }
