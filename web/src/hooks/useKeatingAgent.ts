@@ -31,6 +31,7 @@ import { getProviderApiKey, syncCustomProviderKeys } from "../lib/provider-model
 import { localModel } from "../stores/local-model";
 import { createKeatingTools, KEATING_SYSTEM_PROMPT as TOOLS_PROMPT } from "../keating/browser-tools";
 import { KeatingStorage } from "../keating/storage";
+import { subscribeAgentEvents } from "./agent-subscriptions";
 
 // ─── Storage singletons (module-level, initialised once) ───────────────────
 const settingsStore = new SettingsStore();
@@ -263,23 +264,8 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     agent.getApiKey = (provider: string) => getProviderApiKey(provider);
     agentRef.current = agent;
 
-    // Subscribe to agent events to force Lit re-render on array mutations.
-    // The pi-agent-core Agent pushes messages in-place (same array reference),
-    // so Lit's @property({ type: Array }) never detects the change.
-    // We replace the array reference on message_end/agent_end so message-list re-renders.
     if (unsubRef.current) unsubRef.current();
-    unsubRef.current = agent.subscribe((ev) => {
-      if (ev.type === "message_end" || ev.type === "agent_end") {
-        const msgs = agent.state.messages;
-        agent.state.messages = [...msgs];
-      }
-      if (import.meta.env.DEV) {
-        const summary = ev.type === "message_end" || ev.type === "message_start" || ev.type === "message_update"
-          ? `${ev.type} role=${(ev as any).message?.role}`
-          : ev.type;
-        console.log(`[keating:agent] ${summary} (messages=${agent.state.messages.length}, streaming=${agent.state.isStreaming})`);
-      }
-    });
+    unsubRef.current = subscribeAgentEvents(agent, panel);
 
     const setupCallbacks = {
       onApiKeyRequired: async (provider: string) => {
@@ -325,18 +311,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
         const agent = agentRef.current;
         // Re-subscribe to agent events (StrictMode cleanup may have unsubscribed)
         if (unsubRef.current) unsubRef.current();
-        unsubRef.current = agent.subscribe((ev) => {
-          if (ev.type === "message_end" || ev.type === "agent_end") {
-            const msgs = agent.state.messages;
-            agent.state.messages = [...msgs];
-          }
-          if (import.meta.env.DEV) {
-            const summary = ev.type === "message_end" || ev.type === "message_start" || ev.type === "message_update"
-              ? `${ev.type} role=${(ev as any).message?.role}`
-              : ev.type;
-            console.log(`[keating:agent] ${summary} (messages=${agent.state.messages.length}, streaming=${agent.state.isStreaming})`);
-          }
-        });
+        unsubRef.current = subscribeAgentEvents(agent, node);
         const setupCallbacks = {
           onApiKeyRequired: async (provider: string) => {
             if (provider === "browser") return true;
