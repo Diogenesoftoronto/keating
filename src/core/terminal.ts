@@ -104,8 +104,7 @@ export function printCommandSections(sections: CommandSection[]): void {
 
 export function printShellGreeting(): void {
 	printAsciiHeader([
-		paint("THE HYPERTEACHER — Cognitive Empowerment", PARCHMENT, BOLD),
-		"",
+		paint("THE HYPERTEACHER — Cognitive Empowerment!", PARCHMENT, BOLD),
 		paint('"That the powerful play goes on, and you may contribute a verse."', SEPIA, DIM),
 		paint("                                                          — Whitman", SEPIA, DIM),
 	]);

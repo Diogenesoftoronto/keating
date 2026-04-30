@@ -20,8 +20,8 @@ export function Paper() {
                 <span className="text-[#d44a3d] leading-7">DATE:</span> April 3, 2026
               </div>
               <a
-                href="/study.pdf"
-                download
+                href="/keating-metaharness.pdf"
+                download="keating-metaharness.pdf"
                 className="inline-flex items-center justify-center gap-2 bg-[#d44a3d] text-[#f4f1ea] px-6 py-3 font-bold hover:bg-[#b33e33] transition-colors"
               >
                 <Download size={20} />

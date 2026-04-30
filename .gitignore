@@ -11,6 +11,7 @@ dist/
 *.svg
 !web/public/*.png
 !web/public/*.svg
+!web/public/*.pdf
 
 # Nitro
 web/.output/
