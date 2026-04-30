@@ -1,0 +1,45 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "136942b0bb22",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "README.md",
+    "SYSTEM.md",
+    "keating.config.json",
+    "pi/prompts/learn.md",
+    "pi/skills/adaptive-teaching/SKILL.md",
+    "src/cli/main.ts",
+    "src/cli/web.ts",
+    "src/core/engagement.ts",
+    "src/core/paths.ts",
+    "src/core/pi-agent.ts",
+    "src/core/project.ts",
+    "src/core/terminal.ts",
+    "src/pi/hyperteacher-extension.ts",
+    "src/runtime/pi.ts",
+    "test/hyperteacher-extension.test.ts",
+    "web/src/app.css",
+    "web/src/components/ChatIntro.tsx",
+    "web/src/keating/browser-tools.ts",
+    "web/src/keating/core.ts",
+    "web/src/keating/storage.ts",
+    "web/src/pages/Chat.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/13/6942b0bb22/0/metadata.json",
+      "transcript": "/13/6942b0bb22/0/full.jsonl",
+      "content_hash": "/13/6942b0bb22/0/content_hash.txt",
+      "prompt": "/13/6942b0bb22/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 19,
+    "cache_creation_tokens": 16208,
+    "cache_read_tokens": 230653,
+    "output_tokens": 3091,
+    "api_call_count": 9
+  }
+}
