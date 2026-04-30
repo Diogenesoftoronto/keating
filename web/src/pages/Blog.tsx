@@ -38,6 +38,94 @@ function CodeBlock({ children }: { children: string }) {
 
 const POSTS: Post[] = [
   {
+    date: "2026-04-30",
+    badge: { label: "RELEASE", color: "release" },
+    title: "v0.3.0 — Pedagogical Engines, a Sharper Logo, and Recorded Workflows",
+    body: (
+      <>
+        <div className="mb-4">
+          <Pretext
+            text="Keating 0.3.0 is out. This release lays the groundwork for a much richer learning loop — flashcards, quizzes, mastery tracking, and multi-week projects — and gives the brand a long-overdue polish at both ends of the stack."
+            font="16px 'Inter', sans-serif"
+            lineHeight={24}
+          />
+        </div>
+        <h3 className="font-bold mt-4 mb-2">New Pedagogical Engines</h3>
+        <ul className="text-sm space-y-3 ml-4 mb-4">
+          <li>
+            <div className="font-bold mb-1 underline decoration-[#d44a3d]">Flashcards:</div>
+            <Pretext
+              text="Spaced-repetition decks with definitions, intuitions, common misconceptions, transfer prompts, and optional mnemonics — generated per topic."
+              font="14px 'Inter', sans-serif"
+              lineHeight={20}
+              justify={false}
+            />
+          </li>
+          <li>
+            <div className="font-bold mb-1 underline decoration-[#d44a3d]">Quizzes & Workbooks:</div>
+            <Pretext
+              text="Structured question sets across recall, comprehension, application, analysis, and transfer levels, with rubrics for short-answer items and a generated answer key."
+              font="14px 'Inter', sans-serif"
+              lineHeight={20}
+              justify={false}
+            />
+          </li>
+          <li>
+            <div className="font-bold mb-1 underline decoration-[#d44a3d]">Mastery Tracking:</div>
+            <Pretext
+              text="Longitudinal mastery curves so the system can decide what to revisit and when, instead of treating every session as fresh."
+              font="14px 'Inter', sans-serif"
+              lineHeight={20}
+              justify={false}
+            />
+          </li>
+          <li>
+            <div className="font-bold mb-1 underline decoration-[#d44a3d]">Long-Horizon Projects:</div>
+            <Pretext
+              text="Multi-stage assignments with milestones, deliverables, and rubrics — the path from one-off lessons toward weeks-long studio work."
+              font="14px 'Inter', sans-serif"
+              lineHeight={20}
+              justify={false}
+            />
+          </li>
+        </ul>
+        <h3 className="font-bold mt-4 mb-2">A Sharper KEATING</h3>
+        <p className="text-sm mb-4">
+          The CLI logo was misaligned (the &quot;T&quot; was lopsided and the rows
+          drifted). It has been rebuilt in the ANSI Shadow font so the shell now
+          matches the web. The web boot screen also picked up a vertical emerald
+          gradient and a subtle CRT-style glow.
+        </p>
+        <h3 className="font-bold mt-4 mb-2">Recorded Workflows</h3>
+        <p className="text-sm mb-2">
+          Four new <Code>vhs</Code> tapes live in <Code>docs/</Code> and record
+          the workflows we actually demo:
+        </p>
+        <ul className="text-sm space-y-2 ml-4 mb-4">
+          <li><Code>intro.tape</Code> — boot the Keating shell, show the refreshed logo, list commands.</li>
+          <li><Code>learning-flow.tape</Code> — <Code>plan → map → animate → verify → trace</Code>.</li>
+          <li><Code>improve-flow.tape</Code> — <Code>bench → evolve → prompt-evolve → improve</Code>.</li>
+          <li><Code>feedback-flow.tape</Code> — record signals, then <Code>due</Code> and <Code>timeline</Code>.</li>
+        </ul>
+        <p className="text-sm mb-2">Render any of them with:</p>
+        <CodeBlock>{`vhs docs/learning-flow.tape`}</CodeBlock>
+        <h3 className="font-bold mt-4 mb-2">Plumbing</h3>
+        <ul className="text-sm space-y-2 ml-4 mb-4">
+          <li><strong>Command Spec Registry</strong> — <Code>core/commands.ts</Code> is now the single source of truth for CLI/shell command surfaces.</li>
+          <li><strong>Terminal &amp; Theme Modules</strong> — palette, ASCII headers, and section helpers extracted to <Code>core/terminal.ts</Code> and <Code>core/theme.ts</Code>.</li>
+          <li><strong>Browser Tools / Storage</strong> — broader tool surfaces and persistence improvements in <Code>web/src/keating/</Code>.</li>
+        </ul>
+        <div className="text-sm text-[#64748b] mt-6">
+          <Pretext
+            text="The new engines ship as libraries first; CLI subcommands and web UI surfaces will land behind them in the next point releases."
+            font="italic 14px 'Inter', sans-serif"
+            lineHeight={20}
+          />
+        </div>
+      </>
+    ),
+  },
+  {
     date: "2026-04-10",
     badge: { label: "RELEASE", color: "release" },
     title: "From Stubs to Reality: AI-Powered Pedagogical Verification",
