@@ -28,7 +28,7 @@ export const DEFAULT_KEATING_CONFIG: KeatingConfig = {
   debug: {
     persistTraces: true,
     traceTopLearners: 3,
-    consoleSummary: true
+    consoleSummary: false
   }
 };
 
