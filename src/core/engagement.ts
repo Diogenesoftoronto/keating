@@ -7,7 +7,7 @@ import {
   TopicEngagement
 } from "./types.js";
 import { mean } from "./util.js";
-import { titleCase } from "./util.js";
+import { titleCase, slugify } from "./util.js";
 
 export const DEFAULT_ENGAGEMENT_POLICY: EngagementPolicy = {
   name: "spaced-revisit-default",
@@ -128,9 +128,17 @@ export function computeTopicEngagement(
     policy.dueThreshold
   );
 
+  // Defensive: older learner.json files (or partial writes) can have a topic
+  // entry missing `slug`. Derive one from any available label so the timeline
+  // never crashes the extension at session_start.
+  const rawSlug =
+    topic.slug ||
+    ((topic as any).title ? slugify((topic as any).title) : null) ||
+    "unknown-topic";
+
   return {
-    slug: topic.slug,
-    title: titleCase(topic.slug.replace(/-/g, " ")),
+    slug: rawSlug,
+    title: titleCase(rawSlug.replace(/-/g, " ")),
     domain: topic.domain,
     lastSeen: topic.lastSeen,
     daysSinceLastSeen: daysSince,
@@ -149,7 +157,9 @@ export function buildEngagementTimeline(
   policy: EngagementPolicy = DEFAULT_ENGAGEMENT_POLICY,
   now: Date = new Date()
 ): EngagementTimeline {
-  const topics = state.coveredTopics.map(t => computeTopicEngagement(t, policy, now));
+  const topics = (state.coveredTopics ?? [])
+    .filter((t): t is NonNullable<typeof t> => Boolean(t))
+    .map(t => computeTopicEngagement(t, policy, now));
 
   // Sort by urgency descending (most urgent first)
   topics.sort((a, b) => b.urgency - a.urgency);
