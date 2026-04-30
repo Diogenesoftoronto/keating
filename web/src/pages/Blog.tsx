@@ -97,17 +97,65 @@ const POSTS: Post[] = [
           gradient and a subtle CRT-style glow.
         </p>
         <h3 className="font-bold mt-4 mb-2">Recorded Workflows</h3>
-        <p className="text-sm mb-2">
+        <p className="text-sm mb-4">
           Four new <Code>vhs</Code> tapes live in <Code>docs/</Code> and record
-          the workflows we actually demo:
+          the workflows we actually demo. The rendered videos:
         </p>
-        <ul className="text-sm space-y-2 ml-4 mb-4">
-          <li><Code>intro.tape</Code> — boot the Keating shell, show the refreshed logo, list commands.</li>
-          <li><Code>learning-flow.tape</Code> — <Code>plan → map → animate → verify → trace</Code>.</li>
-          <li><Code>improve-flow.tape</Code> — <Code>bench → evolve → prompt-evolve → improve</Code>.</li>
-          <li><Code>feedback-flow.tape</Code> — record signals, then <Code>due</Code> and <Code>timeline</Code>.</li>
-        </ul>
-        <p className="text-sm mb-2">Render any of them with:</p>
+        <div className="space-y-5 mb-4">
+          <figure>
+            <figcaption className="text-xs text-[#64748b] mb-1">
+              <Code>intro.tape</Code> — boot the Keating shell, show the refreshed logo, list commands.
+            </figcaption>
+            <video
+              src="/tapes/intro.mp4"
+              controls
+              muted
+              loop
+              playsInline
+              className="w-full rounded border border-[#1f2937]"
+            />
+          </figure>
+          <figure>
+            <figcaption className="text-xs text-[#64748b] mb-1">
+              <Code>learning-flow.tape</Code> — <Code>plan → map → animate → verify → trace</Code>.
+            </figcaption>
+            <video
+              src="/tapes/learning-flow.mp4"
+              controls
+              muted
+              loop
+              playsInline
+              className="w-full rounded border border-[#1f2937]"
+            />
+          </figure>
+          <figure>
+            <figcaption className="text-xs text-[#64748b] mb-1">
+              <Code>improve-flow.tape</Code> — <Code>bench → evolve → prompt-evolve → improve</Code>.
+            </figcaption>
+            <video
+              src="/tapes/improve-flow.mp4"
+              controls
+              muted
+              loop
+              playsInline
+              className="w-full rounded border border-[#1f2937]"
+            />
+          </figure>
+          <figure>
+            <figcaption className="text-xs text-[#64748b] mb-1">
+              <Code>feedback-flow.tape</Code> — record signals, then <Code>due</Code> and <Code>timeline</Code>.
+            </figcaption>
+            <video
+              src="/tapes/feedback-flow.mp4"
+              controls
+              muted
+              loop
+              playsInline
+              className="w-full rounded border border-[#1f2937]"
+            />
+          </figure>
+        </div>
+        <p className="text-sm mb-2">Render any of them yourself with:</p>
         <CodeBlock>{`vhs docs/learning-flow.tape`}</CodeBlock>
         <h3 className="font-bold mt-4 mb-2">Plumbing</h3>
         <ul className="text-sm space-y-2 ml-4 mb-4">
