@@ -1,0 +1,1 @@
+i don't think the terminal.ts is being used i don't see the fixed keating ascii text
