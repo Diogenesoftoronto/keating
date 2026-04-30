@@ -19,6 +19,7 @@ import {
 import { learnerStatePath } from "../core/paths.js";
 import { loadLearnerState, recordFeedback, recordSessionStart, saveLearnerState } from "../core/learner-state.js";
 import { extensionCommandSpecs, shellCommandSections } from "../core/commands.js";
+import { KEATING_ASCII_LOGO, KEATING_SUBTITLE_LINES } from "../core/terminal.js";
 
 const ANSI_RE = /\x1b\[[0-9;]*[a-zA-Z]/g;
 
@@ -42,24 +43,20 @@ function info(ctx: any, message: string): void {
 function keatingGreetingComponent(_tui: any, theme: any): any {
   const t = theme.fg.bind(theme);
   const b = theme.bold.bind(theme);
-  const accent = (s: string) => t("accent", s);
   const dim = (s: string) => t("dim", s);
   const muted = (s: string) => t("muted", s);
   const brd = (s: string) => t("borderMuted", s);
 
-  const logoLines = [
-    b(accent("  ██╗  ██╗███████╗ █████╗ ████████╗██╗███╗   ██╗ ██████╗ ")),
-    b(accent("  ██║ ██╔╝██╔════╝██╔══██╗╚══██╔══╝██║████╗  ██║██╔════╝ ")),
-    b(t("mdHeading", "  █████╔╝ █████╗  ███████║   ██║   ██║██╔██╗ ██║██║  ███╗")),
-    b(t("mdHeading", "  ██╔═██╗ ██╔══╝  ██╔══██║   ██║   ██║██║╚██╗██║██║   ██║")),
-    b(t("text",      "  ██║  ██╗███████╗██║  ██║   ██║   ██║██║ ╚████║╚██████╔╝")),
-    b(t("text",      "  ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝   ╚═╝   ╚═╝╚═╝  ╚═══╝ ╚═════╝ ")),
-  ];
+  // Color the canonical logo with a vertical gradient: accent → mdHeading → text.
+  const palette: string[] = ["accent", "accent", "mdHeading", "mdHeading", "text", "text"];
+  const logoLines: string[] = KEATING_ASCII_LOGO.map((line: string, i: number) =>
+    b(t(palette[i] ?? "text", `  ${line}`)),
+  );
 
-  const subtitleLines = [
-    b(muted("    THE HYPERTEACHER — Cognitive Empowerment")),
-    dim('    "That the powerful play goes on, and you may contribute a verse."'),
-    dim("                                                          — Whitman"),
+  const [title, ...quoteLines] = KEATING_SUBTITLE_LINES;
+  const subtitleLines: string[] = [
+    b(muted(`    ${title}`)),
+    ...quoteLines.map((line: string) => dim(`    ${line}`)),
   ];
 
   const allLines = [...logoLines, ...subtitleLines];

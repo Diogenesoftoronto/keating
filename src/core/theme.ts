@@ -3,6 +3,7 @@
  */
 
 import { extensionCommandSpecs, cliCommandSpecs } from "./commands.js";
+import { KEATING_ASCII_LOGO, KEATING_SUBTITLE_LINES } from "./terminal.js";
 
 // Warm scholarly palette (mirrors web --primary, --accent, etc.)
 export const color = {
@@ -51,18 +52,25 @@ export function bold(tag: keyof typeof color, text: string): string {
 /**
  * The Keating shell ASCII greeting — shown once per session.
  */
-export const KEATING_GREETING = `
-${color.terracotta}  ██╗  ██╗███████╗ █████╗ ████████╗██╗███╗   ██╗ ██████╗ ${color.reset}
-${color.terracotta}  ██║ ██╔╝██╔════╝██╔══██╗╚══██╔══╝██║████╗  ██║██╔════╝ ${color.reset}
-${color.sage}  █████╔╝ █████╗  ███████║   ██║   ██║██╔██╗ ██║██║  ███╗${color.reset}
-${color.sage}  ██╔═██╗ ██╔══╝  ██╔══██║   ██║   ██║██║╚██╗██║██║   ██║${color.reset}
-${color.cream}  ██║  ██╗███████╗██║  ██║   ██║   ██║██║ ╚████║╚██████╔╝${color.reset}
-${color.cream}  ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝   ╚═╝   ╚═╝╚═╝  ╚═══╝ ╚═════╝ ${color.reset}
-
-${color.bold}${color.parchment}    THE HYPERTEACHER — Cognitive Empowerment${color.reset}
-${color.dim}${color.sepia}    "That the powerful play goes on, and you may contribute a verse."${color.reset}
-${color.dim}${color.sepia}                                                          — Whitman${color.reset}
-`;
+export const KEATING_GREETING = (() => {
+  const logoColors = [
+    color.terracotta,
+    color.terracotta,
+    color.sage,
+    color.sage,
+    color.cream,
+    color.cream,
+  ];
+  const logo = KEATING_ASCII_LOGO.map(
+    (line, i) => `${logoColors[i] ?? color.cream}  ${line}${color.reset}`,
+  ).join("\n");
+  const [title, ...quoteLines] = KEATING_SUBTITLE_LINES;
+  const subtitle = [
+    `${color.bold}${color.parchment}    ${title}${color.reset}`,
+    ...quoteLines.map(line => `${color.dim}${color.sepia}    ${line}${color.reset}`),
+  ].join("\n");
+  return `\n${logo}\n\n${subtitle}\n`;
+})();
 
 /**
  * Command list formatted for the shell greeting (slash-prefixed).

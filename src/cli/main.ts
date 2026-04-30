@@ -25,9 +25,11 @@ import {
 import { detectAiRuntime, launchShell } from "../runtime/pi.js";
 import { serveWeb } from "./web.js";
 import { color, bold, cliCommands } from "../core/theme.js";
+import { printAsciiHeader } from "../core/terminal.js";
 
 function printUsage(): void {
-  console.log(bold("terracotta", "Keating CLI") + "  " + color.dim + color.sepia + "v0.2.0" + color.reset);
+  printAsciiHeader();
+  console.log(bold("terracotta", "Keating CLI") + "  " + color.dim + color.sepia + "v0.3.0" + color.reset);
   console.log(color.parchment + "The Hyperteacher — cognitive empowerment through Socratic AI." + color.reset);
   console.log("");
   console.log(cliCommands());

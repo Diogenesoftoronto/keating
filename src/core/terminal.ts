@@ -58,6 +58,12 @@ export const KEATING_ASCII_LOGO = [
 	"╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝   ╚═╝   ╚═╝╚═╝  ╚═══╝ ╚═════╝ ",
 ];
 
+export const KEATING_SUBTITLE_LINES = [
+	"THE HYPERTEACHER — Cognitive Empowerment",
+	'"That the powerful play goes on, and you may contribute a verse."',
+	"                                                          — Whitman",
+];
+
 export function printAsciiHeader(subtitleLines: string[] = []): void {
 	console.log("");
 	for (const line of KEATING_ASCII_LOGO) {
