@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-04-30
+
+### Added
+- **Pedagogical Engines**: Library-level scaffolding for `flashcards` (spaced-repetition decks with mnemonics), `quiz` (multi-level workbooks with answer keys), `mastery` (longitudinal progress tracking), and `projects` (multi-stage assignments with milestones, deliverables, and rubrics).
+- **Command Spec Registry**: New `core/commands.ts` defines a single source of truth for CLI/shell command surfaces, enabling consistent help output across CLI and web.
+- **Terminal & Theme Modules**: Extracted `core/terminal.ts` and `core/theme.ts` so palette, ASCII headers, and console section helpers are reusable across CLI, shell, and benchmarking output.
+- **VHS Workflow Tapes**: Added `intro.tape`, `learning-flow.tape`, `improve-flow.tape`, and `feedback-flow.tape` to record demonstrable end-to-end workflows.
+- **ChatIntro Polish**: Web boot screen now renders the KEATING logo with a vertical emerald gradient and CRT-style glow.
+
+### Changed
+- **CLI ASCII Logo**: Replaced the misaligned block-character logo with the clean ANSI Shadow font, aligning the CLI brand with the web UI.
+- **Browser Tools / Storage / Core**: Significant expansion of `web/src/keating/{browser-tools,core,storage}.ts` with broader tool surfaces and persistence improvements.
+- **Hyperteacher Extension**: Updated extension wiring (`src/pi/hyperteacher-extension.ts`) and runtime to expose the new pedagogical engines through the Pi agent.
+- **Project Scaffold**: `core/project.ts` and `core/paths.ts` reorganized to support the new artifact types.
+
 ## [0.2.0] - 2026-04-16
 
 ### Added
