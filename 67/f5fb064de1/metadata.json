@@ -1,0 +1,31 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "67f5fb064de1",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "CHANGELOG.md",
+    "docs/feedback-flow.tape",
+    "docs/improve-flow.tape",
+    "docs/intro.tape",
+    "docs/learning-flow.tape",
+    "package.json",
+    "web/src/pages/Blog.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/67/f5fb064de1/0/metadata.json",
+      "transcript": "/67/f5fb064de1/0/full.jsonl",
+      "content_hash": "/67/f5fb064de1/0/content_hash.txt",
+      "prompt": "/67/f5fb064de1/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 26,
+    "cache_creation_tokens": 23743,
+    "cache_read_tokens": 918532,
+    "output_tokens": 9686,
+    "api_call_count": 21
+  }
+}
