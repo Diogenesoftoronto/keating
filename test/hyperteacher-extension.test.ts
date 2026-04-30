@@ -31,6 +31,7 @@ function createMockPi() {
 function createMockCtx(cwd: string) {
   const notifications: Array<{ message: string; level: string }> = [];
   let editorText = "";
+  const widgetKeys = new Set<string>();
 
   return {
     cwd,
@@ -38,12 +39,22 @@ function createMockCtx(cwd: string) {
     get editorText() {
       return editorText;
     },
+    get widgetKeys() {
+      return widgetKeys;
+    },
     ui: {
       notify(message: string, level: string) {
         notifications.push({ message, level });
       },
       setEditorText(text: string) {
         editorText = text;
+      },
+      setWidget(key: string, content: any, _options?: any) {
+        if (content === undefined) {
+          widgetKeys.delete(key);
+        } else {
+          widgetKeys.add(key);
+        }
       },
       async select(_title: string, options: string[]) {
         return options[0] ?? "";
@@ -144,4 +155,6 @@ test("session_start event fires notification", async () => {
   const { pi, ctx } = await setup();
   await pi.events.get("session_start")!({}, ctx);
   assert.ok(ctx.notifications.some((n) => n.message.includes("Keating loaded")));
+  assert.ok(ctx.widgetKeys.has("keating-greeting"), "setWidget should be called for greeting");
+  assert.ok(ctx.widgetKeys.has("keating-commands"), "setWidget should be called for commands");
 });

@@ -1,6 +1,6 @@
 {
   "pi": {
-    "runtimePreference": "prefer-standalone",
+    "runtimePreference": "embedded-only",
     "defaultProvider": "google",
     "defaultModel": "google/gemini-2.5-pro",
     "defaultThinking": "medium"

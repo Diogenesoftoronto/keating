@@ -18,6 +18,18 @@ import {
 } from "../core/project.js";
 import { learnerStatePath } from "../core/paths.js";
 import { loadLearnerState, recordFeedback, recordSessionStart, saveLearnerState } from "../core/learner-state.js";
+import { extensionCommandSpecs, shellCommandSections } from "../core/commands.js";
+
+const ANSI_RE = /\x1b\[[0-9;]*[a-zA-Z]/g;
+
+function visibleWidth(text: string): number {
+  return text.replace(ANSI_RE, "").length;
+}
+
+function padVisible(text: string, width: number): string {
+  const vw = visibleWidth(text);
+  return vw >= width ? text : text + " ".repeat(width - vw);
+}
 
 function topicFromArgs(args: string | string[]): string {
   return (Array.isArray(args) ? args.join(" ") : String(args ?? "")).trim();
@@ -26,6 +38,87 @@ function topicFromArgs(args: string | string[]): string {
 function info(ctx: any, message: string): void {
   ctx.ui.notify(message, "info");
 }
+
+function keatingGreetingComponent(_tui: any, theme: any): any {
+  const t = theme.fg.bind(theme);
+  const b = theme.bold.bind(theme);
+  const accent = (s: string) => t("accent", s);
+  const dim = (s: string) => t("dim", s);
+  const muted = (s: string) => t("muted", s);
+  const brd = (s: string) => t("borderMuted", s);
+
+  const logoLines = [
+    b(accent("  ██   ██  ███████  ████████   ██████  ██ ███    ██ ")),
+    b(accent("  ██  ██   ██          ██     ██       ██ ████   ██ ")),
+    b(t("mdHeading", "   █████    █████       ██     ██       ██ ██ ██  ██ ")),
+    b(t("mdHeading", "   ██  ██   ██          ██     ██       ██ ██  ██ ██ ")),
+    b(t("text",     "   ██   ██  ███████     ██      ██████  ██ ██   ████ ")),
+  ];
+
+  const subtitleLines = [
+    b(muted("    THE HYPERTEACHER — Cognitive Empowerment")),
+    dim('    "That the powerful play goes on, and you may contribute a verse."'),
+    dim("                                                          — Whitman"),
+  ];
+
+  const allLines = [...logoLines, ...subtitleLines];
+
+  return {
+    render(width: number): string[] {
+      const inner = Math.max(30, width - 4);
+      const border = "─".repeat(inner);
+      const result: string[] = [];
+      result.push(brd(`┌${border}┐`));
+      for (const line of allLines) {
+        result.push(`${brd("│")} ${padVisible(line, inner)} ${brd("│")}`);
+      }
+      result.push(brd(`└${border}┘`));
+      return result;
+    },
+    invalidate(): void {},
+    dispose(): void {},
+  };
+}
+
+function keatingCommandsComponent(_tui: any, theme: any): any {
+  const b = theme.bold.bind(theme);
+  const t = theme.fg.bind(theme);
+  const brd = (s: string) => t("borderMuted", s);
+  const accent = (s: string) => t("accent", s);
+  const dim = (s: string) => t("dim", s);
+  const heading = (s: string) => t("mdHeading", s);
+
+  const sections = shellCommandSections();
+  const lines: string[] = [];
+  for (const section of sections) {
+    if (lines.length > 0) lines.push("");
+    lines.push(b(heading(`◆ ${section.title}`)));
+    const maxUsage = Math.max(...section.commands.map(c => c.usage.length));
+    for (const cmd of section.commands) {
+      lines.push(`  ${b(accent(cmd.usage.padEnd(maxUsage + 2)))}  ${dim(cmd.description)}`);
+    }
+  }
+  lines.push("");
+  lines.push(dim('Type "/help" any time for usage hints.'));
+
+  return {
+    render(width: number): string[] {
+      const inner = Math.max(30, width - 4);
+      const border = "─".repeat(inner);
+      const result: string[] = [];
+      result.push(brd(`┌${border}┐`));
+      for (const line of lines) {
+        result.push(`${brd("│")} ${padVisible(line, inner)} ${brd("│")}`);
+      }
+      result.push(brd(`└${border}┘`));
+      return result;
+    },
+    invalidate(): void {},
+    dispose(): void {},
+  };
+}
+
+let greetingShown = false;
 
 export default function hyperteacher(pi: any): void {
   pi.registerCommand("plan", {
@@ -248,12 +341,20 @@ export default function hyperteacher(pi: any): void {
     const state = await loadLearnerState(statePath);
     recordSessionStart(state);
     await saveLearnerState(statePath, state);
+
+    // ─── Branded greeting on first session in this process ───────────────
+    if (!greetingShown) {
+      greetingShown = true;
+      ctx.ui.setWidget("keating-greeting", keatingGreetingComponent);
+      ctx.ui.setWidget("keating-commands", keatingCommandsComponent);
+    }
+
     // Check for due topics and notify
     const dueArtifact = await dueTopicsArtifact(ctx.cwd);
     if (dueArtifact.count > 0) {
       info(ctx, `Keating loaded. ${dueArtifact.count} topic${dueArtifact.count === 1 ? " is" : "s are"} due for review. Use /due to see them.`);
     } else {
-      info(ctx, "Keating loaded: use /plan, /map, /animate, /verify, /bench, /evolve, /prompt-evolve, /improve, /trace, /feedback, /timeline, /due, or /policy.");
+      info(ctx, `Keating loaded — ready to teach. Type a topic or a command.`);
     }
   });
 }

@@ -4,7 +4,7 @@
  */
 
 const DB_NAME = "keating-db";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 // Store names
 const STORES = {
@@ -17,6 +17,8 @@ const STORES = {
 	POLICIES: "policies",
 	FEEDBACK: "feedback",
 	LEARNER_STATE: "learner-state",
+	PROMPT_EVOLUTIONS: "prompt-evolutions",
+	IMPROVEMENTS: "improvements",
 } as const;
 
 export interface LessonPlan {
@@ -101,6 +103,27 @@ export interface LearnerState {
 	}>;
 }
 
+export interface PromptEvolutionResult {
+	id: string;
+	promptName: string;
+	createdAt: number;
+	bestScore: number;
+	bestPrompt: string;
+	report: string;
+}
+
+export interface ImprovementAttemptRecord {
+	id: string;
+	createdAt: number;
+	proposalId: string;
+	baselineScore: number;
+	afterScore: number | null;
+	scoreDelta: number | null;
+	accepted: boolean;
+	targets: string;
+	hypothesis: string;
+}
+
 export class KeatingStorage {
 	private db: IDBDatabase | null = null;
 	private dbPromise: Promise<IDBDatabase> | null = null;
@@ -131,6 +154,7 @@ export class KeatingStorage {
 						const store = db.createObjectStore(storeName, { keyPath: "id" });
 						store.createIndex("topic", "topic", { unique: false });
 						store.createIndex("createdAt", "createdAt", { unique: false });
+						store.createIndex("promptName", "promptName", { unique: false });
 					}
 				});
 			};
@@ -420,14 +444,136 @@ export class KeatingStorage {
 		await this.saveLearnerState(state);
 	}
 
+	// Prompt Evolutions
+	async savePromptEvolution(promptName: string, run: { bestScore: number; bestPrompt: string; report: string }): Promise<PromptEvolutionResult> {
+		const result: PromptEvolutionResult = {
+			id: this.generateId(),
+			promptName,
+			createdAt: Date.now(),
+			bestScore: run.bestScore,
+			bestPrompt: run.bestPrompt,
+			report: run.report,
+		};
+		await this.put(STORES.PROMPT_EVOLUTIONS, result);
+		return result;
+	}
+
+	async getPromptEvolutions(promptName?: string): Promise<PromptEvolutionResult[]> {
+		if (promptName) {
+			return this.getByTopic<PromptEvolutionResult>(STORES.PROMPT_EVOLUTIONS, promptName);
+		}
+		return this.getAll<PromptEvolutionResult>(STORES.PROMPT_EVOLUTIONS);
+	}
+
+	// Improvements
+	async saveImprovementAttempt(attempt: {
+		proposalId: string;
+		baselineScore: number;
+		afterScore: number | null;
+		scoreDelta: number | null;
+		accepted: boolean;
+		targets: string;
+		hypothesis: string;
+	}): Promise<ImprovementAttemptRecord> {
+		const record: ImprovementAttemptRecord = {
+			id: this.generateId(),
+			createdAt: Date.now(),
+			...attempt,
+		};
+		await this.put(STORES.IMPROVEMENTS, record);
+
+		const archive = await this.getImprovementArchive();
+		archive.attempts.push({
+			proposal: {
+				id: attempt.proposalId,
+				timestamp: new Date().toISOString(),
+				targets: [],
+				hypothesis: attempt.hypothesis,
+				baselineScore: attempt.baselineScore,
+				status: attempt.accepted ? "accepted" : "rejected",
+			},
+			baselineScore: attempt.baselineScore,
+			afterScore: attempt.afterScore,
+			scoreDelta: attempt.scoreDelta,
+			accepted: attempt.accepted,
+			completedAt: new Date().toISOString(),
+		});
+		if (attempt.accepted) {
+			archive.totalAccepted += 1;
+			archive.cumulativeImprovement += attempt.scoreDelta ?? 0;
+		} else {
+			archive.totalRejected += 1;
+		}
+		await this.saveImprovementArchive(archive);
+
+		return record;
+	}
+
+	async getImprovementAttempts(): Promise<ImprovementAttemptRecord[]> {
+		return this.getAll<ImprovementAttemptRecord>(STORES.IMPROVEMENTS);
+	}
+
+	async getImprovementArchive(): Promise<{
+		attempts: Array<{
+			proposal: { id: string; timestamp: string; targets: unknown[]; hypothesis: string; baselineScore: number; status: string };
+			baselineScore: number;
+			afterScore: number | null;
+			scoreDelta: number | null;
+			accepted: boolean;
+			completedAt: string | null;
+		}>;
+		totalAccepted: number;
+		totalRejected: number;
+		cumulativeImprovement: number;
+	}> {
+		const attempts = await this.getImprovementAttempts();
+		const archive = {
+			attempts: attempts.map((a) => ({
+				proposal: {
+					id: a.proposalId,
+					timestamp: new Date(a.createdAt).toISOString(),
+					targets: a.targets.split(",").map((t) => ({ area: t.trim() })),
+					hypothesis: a.hypothesis,
+					baselineScore: a.baselineScore,
+					status: a.accepted ? "accepted" : "rejected",
+				},
+				baselineScore: a.baselineScore,
+				afterScore: a.afterScore,
+				scoreDelta: a.scoreDelta,
+				accepted: a.accepted,
+				completedAt: new Date(a.createdAt).toISOString(),
+			})),
+			totalAccepted: attempts.filter((a) => a.accepted).length,
+			totalRejected: attempts.filter((a) => !a.accepted).length,
+			cumulativeImprovement: attempts.filter((a) => a.accepted).reduce((sum, a) => sum + (a.scoreDelta ?? 0), 0),
+		};
+		return archive;
+	}
+
+	async saveImprovementArchive(archive: {
+		totalAccepted: number;
+		totalRejected: number;
+		cumulativeImprovement: number;
+		attempts: unknown[];
+	}): Promise<void> {
+		const store = await this.getStore(STORES.LEARNER_STATE, "readwrite");
+		return new Promise((resolve, reject) => {
+			const request = store.put({ id: "improvement-archive", ...archive });
+			request.onsuccess = () => resolve();
+			request.onerror = () => reject(request.error);
+		});
+	}
+
 	// List all artifacts
 	async listArtifacts(): Promise<Array<{ id: string; label: string; type: string; createdAt: number }>> {
-		const [plans, maps, animations, benchmarks, evolutions] = await Promise.all([
+		const [plans, maps, animations, benchmarks, evolutions, promptEvos, improvements] = await Promise.all([
 			this.getLessonPlans(),
 			this.getLessonMaps(),
 			this.getAnimations(),
 			this.getBenchmarks(),
 			this.getEvolutions(),
+			this.getPromptEvolutions(),
+			this.getImprovementAttempts(),
 		]);
 
 		return [
@@ -445,6 +591,18 @@ export class KeatingStorage {
 				label: `Evolution: ${e.topic || "general"} (${e.bestScore.toFixed(2)})`,
 				type: "evolution",
 				createdAt: e.createdAt,
+			})),
+			...promptEvos.map((pe) => ({
+				id: pe.id,
+				label: `Prompt Evo: ${pe.promptName} (${pe.bestScore.toFixed(2)})`,
+				type: "prompt-evolution",
+				createdAt: pe.createdAt,
+			})),
+			...improvements.map((imp) => ({
+				id: imp.id,
+				label: `Improve: ${imp.accepted ? "✓" : "✗"} ${imp.proposalId} (Δ${(imp.scoreDelta ?? 0) >= 0 ? "+" : ""}${(imp.scoreDelta ?? 0).toFixed(2)})`,
+				type: "improvement",
+				createdAt: imp.createdAt,
 			})),
 		].sort((a, b) => b.createdAt - a.createdAt);
 	}

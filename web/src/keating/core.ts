@@ -1304,6 +1304,321 @@ export function evaluatePrompt(promptContent: string): { score: number; objectiv
 }
 
 // ============================================================================
+// Prompt Evolution (iterative, PROSPER-style — browser-compatible)
+// ============================================================================
+
+export interface PromptEvolutionCandidate {
+	iteration: number;
+	label: string;
+	prompt: string;
+	score: number;
+	objectives: PromptObjectiveVector;
+	feedback: string[];
+	parentLabel: string;
+	accepted: boolean;
+	preferenceScore: number;
+}
+
+export interface PromptEvolutionRun {
+	promptName: string;
+	baselineScore: number;
+	baselineObjectives: PromptObjectiveVector;
+	best: PromptEvolutionCandidate;
+	exploredCandidates: PromptEvolutionCandidate[];
+	acceptedCandidates: PromptEvolutionCandidate[];
+}
+
+function heuristicEvolvePrompt(basePrompt: string, evaluation: { score: number; objectives: PromptObjectiveVector; feedback: string[] }): string {
+	const body = basePrompt.trimEnd();
+	const additions = [
+		'4a. If the learner echoes your phrasing, stop and ask them to explain the idea again in their own words.',
+		'4b. Separate missing prerequisite, misconception, and partial intuition before choosing the next teaching move.',
+		'5a. Add one short retrieval checkpoint that the learner must answer without relying on your wording.',
+		'6a. Bridge the idea into a new domain, personal example, or practical consequence before ending.',
+		'6b. Mark any factual claim that still needs verification instead of presenting it as settled.',
+	].filter((line) => !body.includes(line));
+
+	if (additions.length === 0) {
+		return `${body}\n7a. Keep the learner cognitively active at every step. Challenge them to predict before you reveal.`;
+	}
+
+	const weakAreas: string[] = [];
+	if (evaluation.objectives.voice_divergence < 0.7) weakAreas.push("Force the learner to re-explain in their own words after each major concept.");
+	if (evaluation.objectives.diagnosis < 0.7) weakAreas.push("Before teaching, explicitly assess what the learner already knows and where gaps lie.");
+	if (evaluation.objectives.verification < 0.7) weakAreas.push("Flag unverified claims explicitly. Never present speculation as settled fact.");
+	if (evaluation.objectives.retrieval < 0.7) weakAreas.push("After each explanation, ask the learner to reconstruct the idea without looking at your words.");
+	if (evaluation.objectives.transfer < 0.7) weakAreas.push("Before concluding, bridge the concept into a different domain or practical setting.");
+
+	const targeted = weakAreas.length > 0 ? weakAreas : additions;
+	return `${body}\n${targeted.join("\n")}`;
+}
+
+function pairwisePreference(left: PromptEvolutionCandidate, right: PromptEvolutionCandidate): number {
+	const leftVector = [
+		left.objectives.voice_divergence,
+		left.objectives.diagnosis,
+		left.objectives.verification,
+		left.objectives.retrieval,
+		left.objectives.transfer,
+		left.objectives.structure,
+	];
+	const rightVector = [
+		right.objectives.voice_divergence,
+		right.objectives.diagnosis,
+		right.objectives.verification,
+		right.objectives.retrieval,
+		right.objectives.transfer,
+		right.objectives.structure,
+	];
+	let wins = 0;
+	let losses = 0;
+	for (let index = 0; index < leftVector.length; index += 1) {
+		if (leftVector[index] > rightVector[index]) wins += 1;
+		if (leftVector[index] < rightVector[index]) losses += 1;
+	}
+	const aggregateDelta = left.score - right.score;
+	return wins - losses + aggregateDelta / 25;
+}
+
+function prosperStyleWinner(candidates: PromptEvolutionCandidate[]): PromptEvolutionCandidate {
+	let best = candidates[0];
+	let bestScore = -Infinity;
+
+	for (const candidate of candidates) {
+		const score = candidates.reduce((sum, opponent) => {
+			if (candidate === opponent) return sum;
+			return sum + pairwisePreference(candidate, opponent);
+		}, 0);
+		candidate.preferenceScore = score;
+		if (score > bestScore) {
+			best = candidate;
+			bestScore = score;
+		}
+	}
+
+	return best;
+}
+
+export function evolvePromptTemplate(
+	basePrompt: string,
+	promptName = "learn",
+	iterations = 4
+): PromptEvolutionRun {
+	const baseline = heuristicPromptEvaluation(basePrompt);
+	const candidates: PromptEvolutionCandidate[] = [];
+
+	let currentPrompt = basePrompt;
+	for (let iteration = 1; iteration <= iterations; iteration += 1) {
+		const currentEval = heuristicPromptEvaluation(currentPrompt);
+		const candidatePrompt = heuristicEvolvePrompt(currentPrompt, currentEval);
+		const evaluation = heuristicPromptEvaluation(candidatePrompt);
+		candidates.push({
+			iteration,
+			label: `${promptName}-candidate-${iteration}`,
+			prompt: candidatePrompt,
+			score: evaluation.score,
+			objectives: evaluation.objectives,
+			feedback: evaluation.feedback,
+			parentLabel: promptName,
+			accepted: false,
+			preferenceScore: 0,
+		});
+		currentPrompt = candidatePrompt;
+	}
+
+	const best = prosperStyleWinner(candidates);
+	for (const candidate of candidates) {
+		candidate.accepted = candidate.label === best.label && candidate.score >= baseline.score;
+	}
+
+	return {
+		promptName,
+		baselineScore: baseline.score,
+		baselineObjectives: baseline.objectives,
+		best,
+		exploredCandidates: candidates,
+		acceptedCandidates: candidates.filter((c) => c.accepted),
+	};
+}
+
+export function promptEvolutionToMarkdown(run: PromptEvolutionRun): string {
+	const objectiveList = (objectives: PromptObjectiveVector): string[] => [
+		`voice_divergence=${objectives.voice_divergence.toFixed(2)}`,
+		`diagnosis=${objectives.diagnosis.toFixed(2)}`,
+		`verification=${objectives.verification.toFixed(2)}`,
+		`retrieval=${objectives.retrieval.toFixed(2)}`,
+		`transfer=${objectives.transfer.toFixed(2)}`,
+		`structure=${objectives.structure.toFixed(2)}`,
+	];
+
+	const lines = [
+		`# Prompt Evolution Report: ${run.promptName}`,
+		"",
+		`- Baseline score: ${run.baselineScore.toFixed(2)}`,
+		`- Best candidate: ${run.best.label}`,
+		`- Best candidate score: ${run.best.score.toFixed(2)}`,
+		`- PROSPER-style preference score: ${run.best.preferenceScore.toFixed(2)}`,
+		"",
+		"## Candidates",
+		"",
+	];
+
+	for (const candidate of run.exploredCandidates) {
+		lines.push(`### ${candidate.label}`);
+		lines.push(`- score: ${candidate.score.toFixed(2)}`);
+		lines.push(`- preference: ${candidate.preferenceScore.toFixed(2)}`);
+		lines.push(`- accepted: ${candidate.accepted ? "yes" : "no"}`);
+		lines.push(`- objectives: ${objectiveList(candidate.objectives).join(", ")}`);
+		lines.push("");
+	}
+
+	lines.push("## Evolved Prompt");
+	lines.push("```md");
+	lines.push(run.best.prompt.trimEnd());
+	lines.push("```");
+	lines.push("");
+	return `${lines.join("\n")}\n`;
+}
+
+// ============================================================================
+// Self-Improvement Proposal Lifecycle (browser-compatible)
+// ============================================================================
+
+export interface ImprovementTarget {
+	area: string;
+	metric: string;
+	value: number;
+	suggestion: string;
+}
+
+export interface ImprovementProposal {
+	id: string;
+	timestamp: string;
+	targets: ImprovementTarget[];
+	hypothesis: string;
+	baselineScore: number;
+	status: "pending" | "applied" | "accepted" | "rejected";
+}
+
+export interface ImprovementAttempt {
+	proposal: ImprovementProposal;
+	baselineScore: number;
+	afterScore: number | null;
+	scoreDelta: number | null;
+	accepted: boolean;
+	completedAt: string | null;
+}
+
+export interface ImprovementArchive {
+	attempts: ImprovementAttempt[];
+	totalAccepted: number;
+	totalRejected: number;
+	cumulativeImprovement: number;
+}
+
+export function generateImprovementProposal(benchmark: BenchmarkResult): ImprovementProposal {
+	const weaknesses = diagnoseBenchmark(benchmark);
+	const sorted = weaknesses.sort((a, b) => a.value - b.value);
+	const targets: ImprovementTarget[] = sorted.slice(0, 3).map((w) => ({
+		area: w.area,
+		metric: w.metric,
+		value: w.value,
+		suggestion: w.suggestion,
+	}));
+
+	const hypothesis = targets.length > 0
+		? `Improving ${targets.map((t) => t.area).join(", ")} should raise the overall benchmark score from ${benchmark.overallScore.toFixed(2)} by addressing the identified weak areas.`
+		: `The benchmark score is ${benchmark.overallScore.toFixed(2)} with no severe weaknesses detected. Consider exploring novel teaching strategies.`;
+
+	const ts = Date.now().toString(36);
+	const id = `improve-${ts}-${Math.random().toString(36).substr(2, 5)}`;
+
+	return {
+		id,
+		timestamp: new Date().toISOString(),
+		targets,
+		hypothesis,
+		baselineScore: benchmark.overallScore,
+		status: "pending",
+	};
+}
+
+export function proposalToMarkdown(proposal: ImprovementProposal): string {
+	const lines = [
+		`# Improvement Proposal: ${proposal.id}`,
+		"",
+		`**Timestamp**: ${proposal.timestamp}`,
+		`**Baseline score**: ${proposal.baselineScore.toFixed(2)}`,
+		`**Status**: ${proposal.status}`,
+		"",
+		"## Hypothesis",
+		"",
+		proposal.hypothesis,
+		"",
+		"## Targets",
+		"",
+	];
+
+	for (let i = 0; i < proposal.targets.length; i++) {
+		const t = proposal.targets[i];
+		lines.push(`### ${i + 1}. ${t.area}`);
+		lines.push(`- **Metric**: ${t.metric} = ${t.value.toFixed(2)}`);
+		lines.push(`- **Suggestion**: ${t.suggestion}`);
+		lines.push("");
+	}
+
+	lines.push("## Suggested Actions");
+	lines.push("");
+
+	if (proposal.targets.some((t) => t.metric === "meanScore" || t.metric === "meanConfusion")) {
+		lines.push("1. Run `/evolve` to search for a better policy using MAP-Elites");
+		lines.push("2. Run `/prompt-evolve` to evolve teaching prompt templates");
+		lines.push("3. Re-run `/bench` after changes to measure improvement");
+	} else {
+		lines.push("1. Run `/evolve` to optimize teaching policy parameters");
+		lines.push("2. Adjust feedback with `/feedback` to update learner profile");
+		lines.push("3. Re-run `/bench` after changes to measure improvement");
+	}
+
+	lines.push("");
+	return lines.join("\n");
+}
+
+export function improvementArchiveToMarkdown(archive: ImprovementArchive): string {
+	const lines = [
+		"# Self-Improvement History",
+		"",
+		`- Total attempts: ${archive.attempts.length}`,
+		`- Accepted: ${archive.totalAccepted}`,
+		`- Rejected: ${archive.totalRejected}`,
+		`- Cumulative score improvement: ${archive.cumulativeImprovement.toFixed(2)}`,
+		"",
+	];
+
+	if (archive.attempts.length === 0) {
+		lines.push("No improvement attempts yet. Run `/improve` to start.");
+		return lines.join("\n") + "\n";
+	}
+
+	lines.push("## Attempts");
+	lines.push("");
+
+	for (const attempt of archive.attempts) {
+		const status = attempt.accepted ? "ACCEPTED" : "REJECTED";
+		lines.push(`### ${attempt.proposal.id} — ${status}`);
+		lines.push(`- Baseline: ${attempt.baselineScore.toFixed(2)}`);
+		if (attempt.afterScore != null) {
+			lines.push(`- After: ${attempt.afterScore.toFixed(2)}`);
+			lines.push(`- Delta: ${(attempt.scoreDelta ?? 0) >= 0 ? "+" : ""}${(attempt.scoreDelta ?? 0).toFixed(2)}`);
+		}
+		lines.push(`- Hypothesis: ${attempt.proposal.hypothesis}`);
+		lines.push("");
+	}
+
+	return lines.join("\n") + "\n";
+}
+
+// ============================================================================
 // Self-Improvement Diagnosis (simplified for browser)
 // ============================================================================
 

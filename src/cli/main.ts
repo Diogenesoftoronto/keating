@@ -4,6 +4,8 @@ import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 
 import { configPath, loadKeatingConfig } from "../core/config.js";
+import { learnerStatePath } from "../core/paths.js";
+import { loadLearnerState, recordFeedback, saveLearnerState } from "../core/learner-state.js";
 import {
   animateTopicArtifact,
   benchPolicyArtifact,
@@ -16,28 +18,27 @@ import {
   listArtifacts,
   mapTopicArtifact,
   planTopicArtifact,
-  verifyTopicArtifact
+  verifyTopicArtifact,
+  timelineArtifact,
+  dueTopicsArtifact
 } from "../core/project.js";
-import { detectPiRuntime, launchPi } from "../runtime/pi.js";
+import { detectAiRuntime, launchShell } from "../runtime/pi.js";
 import { serveWeb } from "./web.js";
+import { color, bold, cliCommands } from "../core/theme.js";
 
 function printUsage(): void {
-  console.log(`keating commands:
-  shell [initial prompt...]   Launch the Pi-powered hyperteacher shell
-  plan <topic>                Write a deterministic lesson plan artifact
-  map <topic>                 Write a Mermaid map and render with oxdraw if present
-  animate <topic>             Write a manim-web animation bundle for a topic
-  verify <topic>              Generate a fact-checking checklist for a topic
-  improve                     Generate a self-improvement proposal for the teaching code
-  improve history             Show the improvement attempt history
-  bench [topic]               Run the learner benchmark suite
-  evolve [topic]              Evolve the current teaching policy
-  prompt-evolve [prompt]      Evolve a prompt template with prompt-learning feedback
-  policy                      Print the active policy
-  trace [substring]           List persisted debug traces and artifacts
-  doctor                      Inspect Pi/Feynman and oxdraw availability
-  web [port]                  Start a local server for the browser UI
-`);
+  console.log(bold("terracotta", "Keating CLI") + "  " + color.dim + color.sepia + "v0.2.0" + color.reset);
+  console.log(color.parchment + "The Hyperteacher — cognitive empowerment through Socratic AI." + color.reset);
+  console.log("");
+  console.log(cliCommands());
+  console.log("");
+  console.log(bold("sage", "General Commands"));
+  console.log(`  ${color.terracotta}shell${color.reset}  [initial prompt...]  Launch the AI-powered hyperteacher shell`);
+  console.log(`  ${color.terracotta}doctor${color.reset}                    Inspect AI runtime and oxdraw availability`);
+  console.log(`  ${color.terracotta}web${color.reset}     [port]             Start a local server for the browser UI`);
+  console.log(`  ${color.terracotta}policy${color.reset}                    Print the active teaching policy`);
+  console.log(`  ${color.terracotta}trace${color.reset}   [substring]        Browse debug traces and artifacts`);
+  console.log("");
 }
 
 async function run(): Promise<void> {
@@ -51,7 +52,7 @@ async function run(): Promise<void> {
       return;
     }
     case "shell": {
-      const exitCode = await launchPi(cwd, args);
+      const exitCode = await launchShell(cwd, args);
       process.exitCode = exitCode;
       return;
     }
@@ -140,30 +141,61 @@ async function run(): Promise<void> {
       }
       return;
     }
+    case "timeline": {
+      const { markdown } = await timelineArtifact(cwd);
+      console.log(markdown);
+      return;
+    }
+    case "due": {
+      const { markdown } = await dueTopicsArtifact(cwd);
+      console.log(markdown);
+      return;
+    }
+    case "feedback": {
+      const raw = args.join(" ").trim().toLowerCase();
+      const parts = raw.split(/\s+/);
+      const signalMap: Record<string, "thumbs-up" | "thumbs-down" | "confused"> = {
+        up: "thumbs-up",
+        down: "thumbs-down",
+        confused: "confused"
+      };
+      const signal = signalMap[parts[0]];
+      if (!signal) {
+        throw new Error("Usage: keating feedback <up|down|confused> [topic]");
+      }
+      const topic = parts.slice(1).join(" ") || "general";
+      const statePath = learnerStatePath(cwd);
+      const state = await loadLearnerState(statePath);
+      recordFeedback(state, topic, signal);
+      await saveLearnerState(statePath, state);
+      console.log(`${color.ok}Recorded ${signal.replace("thumbs-", "👍 ")} feedback for "${topic}".${color.reset}`);
+      return;
+    }
     case "doctor": {
       await ensureProjectScaffold(cwd);
       const config = await loadKeatingConfig(cwd);
-      const runtime = await detectPiRuntime(cwd);
+      const runtime = await detectAiRuntime(cwd);
       const oxdraw = spawnSync("which", ["oxdraw"], { encoding: "utf8" });
       const manimWebPath = join(cwd, "node_modules", "manim-web", "dist", "index.js");
       const manimWebInstalled = await access(manimWebPath).then(
         () => true,
         () => false
       );
-      console.log(`config_path=${configPath(cwd)}`);
-      console.log(`pi_runtime_preference=${config.pi.runtimePreference}`);
-      console.log(`pi_default_provider=${config.pi.defaultProvider ?? "unset"}`);
-      console.log(`pi_default_model=${config.pi.defaultModel ?? "unset"}`);
-      console.log(`pi_default_thinking=${config.pi.defaultThinking ?? "unset"}`);
-      console.log(`debug_persist_traces=${String(config.debug.persistTraces)}`);
-      console.log(`debug_trace_top_learners=${String(config.debug.traceTopLearners)}`);
-      console.log(`debug_console_summary=${String(config.debug.consoleSummary)}`);
-      console.log(`pi_runtime=${runtime.selected ? runtime.selected.kind : "missing"}`);
-      console.log(`pi_standalone=${runtime.standalone ? runtime.standalone.command : "missing"}`);
-      console.log(`pi_embedded=${runtime.embedded ? runtime.embedded.cliPath ?? runtime.embedded.command : "missing"}`);
-      if (runtime.selected) console.log(`pi_command=${runtime.selected.command}`);
-      console.log(`oxdraw=${oxdraw.status === 0 ? oxdraw.stdout.trim() : "missing"}`);
-      console.log(`manim_web=${manimWebInstalled ? manimWebPath : "missing"}`);
+      console.log(`${bold("terracotta", "Keating Doctor")}  ${color.sepia}diagnostic report${color.reset}\n`);
+      console.log(`  ${color.cream}config_path${color.reset}           ${color.sepia}${configPath(cwd)}${color.reset}`);
+      console.log(`  ${color.cream}ai_runtime_preference${color.reset} ${color.terracotta}${config.pi.runtimePreference}${color.reset}`);
+      console.log(`  ${color.cream}ai_default_provider${color.reset}   ${config.pi.defaultProvider ?? color.sepia + "unset" + color.reset}`);
+      console.log(`  ${color.cream}ai_default_model${color.reset}      ${config.pi.defaultModel ?? color.sepia + "unset" + color.reset}`);
+      console.log(`  ${color.cream}ai_default_thinking${color.reset}   ${config.pi.defaultThinking ?? color.sepia + "unset" + color.reset}`);
+      console.log(`  ${color.cream}debug_persist_traces${color.reset}  ${color.sage}${String(config.debug.persistTraces)}${color.reset}`);
+      console.log(`  ${color.cream}debug_trace_top_learners${color.reset} ${color.sage}${String(config.debug.traceTopLearners)}${color.reset}`);
+      console.log(`  ${color.cream}debug_console_summary${color.reset} ${color.sage}${String(config.debug.consoleSummary)}${color.reset}`);
+      console.log(`  ${color.cream}ai_runtime${color.reset}            ${runtime.selected ? color.ok + runtime.selected.kind : color.err + "missing"}${color.reset}`);
+      console.log(`  ${color.cream}ai_standalone${color.reset}         ${runtime.standalone ? color.sage + runtime.standalone.command : color.err + "missing"}${color.reset}`);
+      console.log(`  ${color.cream}ai_embedded${color.reset}           ${runtime.embedded ? color.sage + (runtime.embedded.cliPath ?? runtime.embedded.command) : color.err + "missing"}${color.reset}`);
+      if (runtime.selected) console.log(`  ${color.cream}ai_command${color.reset}            ${color.terracotta}${runtime.selected.command}${color.reset}`);
+      console.log(`  ${color.cream}oxdraw${color.reset}                ${oxdraw.status === 0 ? color.ok + oxdraw.stdout.trim() : color.err + "missing"}${color.reset}`);
+      console.log(`  ${color.cream}manim_web${color.reset}             ${manimWebInstalled ? color.ok + manimWebPath : color.err + "missing"}${color.reset}`);
       return;
     }
     case "help":
@@ -179,6 +211,6 @@ async function run(): Promise<void> {
 }
 
 run().catch((error) => {
-  console.error(error instanceof Error ? error.message : String(error));
+  console.error(`${color.err}${color.bold}Error:${color.reset} ${error instanceof Error ? error.message : String(error)}`);
   process.exitCode = 1;
 });

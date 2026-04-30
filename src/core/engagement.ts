@@ -19,9 +19,11 @@ export const DEFAULT_ENGAGEMENT_POLICY: EngagementPolicy = {
 
 const MS_PER_DAY = 86_400_000;
 
-function daysBetween(a: string | Date, b: string | Date): number {
+function daysBetween(a: string | Date | undefined, b: string | Date): number {
+  if (!a) return 0;
   const msA = typeof a === "string" ? new Date(a).getTime() : a.getTime();
   const msB = typeof b === "string" ? new Date(b).getTime() : b.getTime();
+  if (!Number.isFinite(msA) || !Number.isFinite(msB)) return 0;
   return Math.abs(msB - msA) / MS_PER_DAY;
 }
 
@@ -84,22 +86,20 @@ function computeUrgency(
  * and the retention decay model.
  */
 function estimateNextReview(
-  lastSeen: string,
+  lastSeen: string | undefined,
   masteryEstimate: number,
   halfLifeDays: number,
   dueThreshold: number
 ): string {
-  // Solve for t where retention = dueThreshold:
-  // dueThreshold = mastery × e^(-t·ln2 / effectiveHalfLife)
-  // t = -effectiveHalfLife × ln(dueThreshold / mastery) / ln2
+  if (!lastSeen) return new Date().toISOString();
   if (masteryEstimate <= dueThreshold) {
-    // Already due — next review is now
     return new Date().toISOString();
   }
   const masteryFactor = 0.5 + masteryEstimate * 1.5;
   const effectiveHalfLife = halfLifeDays * masteryFactor;
   const daysUntilDue = (-effectiveHalfLife * Math.log(dueThreshold / masteryEstimate)) / Math.LN2;
   const lastSeenMs = new Date(lastSeen).getTime();
+  if (!Number.isFinite(lastSeenMs)) return new Date().toISOString();
   return new Date(lastSeenMs + daysUntilDue * MS_PER_DAY).toISOString();
 }
 

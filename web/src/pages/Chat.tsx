@@ -1,6 +1,7 @@
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { Settings } from "lucide-react";
 import { useKeatingAgent } from "../hooks/useKeatingAgent";
+import { ChatIntro } from "../components/ChatIntro";
 
 // Types for the custom components
 import "../lit-components";
@@ -13,6 +14,14 @@ import "@mariozechner/mini-lit/dist/ThemeToggle.js";
 
 function ChatContent() {
   const { title, openSettings, chatPanelRef } = useKeatingAgent();
+  const [introDismissed, setIntroDismissed] = useState(
+    () => sessionStorage.getItem("keating_chat_intro") === "dismissed"
+  );
+
+  const dismissIntro = () => {
+    setIntroDismissed(true);
+    sessionStorage.setItem("keating_chat_intro", "dismissed");
+  };
 
   return (
     <div className="chat-page-shell w-full flex flex-col bg-background text-foreground overflow-hidden">
@@ -31,10 +40,22 @@ function ChatContent() {
         </div>
       </div>
 
-      <pi-chat-panel
-        ref={chatPanelRef}
-        className="chat-page-panel"
-      ></pi-chat-panel>
+      {introDismissed ? (
+        <pi-chat-panel
+          ref={chatPanelRef}
+          className="chat-page-panel"
+        ></pi-chat-panel>
+      ) : (
+        <div className="relative flex-1 overflow-hidden">
+          <ChatIntro />
+          <button
+            onClick={dismissIntro}
+            className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 px-6 py-2.5 border-2 border-[#10b981] text-[#10b981] font-terminal text-sm hover:bg-[#10b981] hover:text-[#0c0c0c] transition-colors"
+          >
+            [ GET STARTED → ]
+          </button>
+        </div>
+      )}
     </div>
   );
 }

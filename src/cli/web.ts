@@ -2,6 +2,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { access, readdir, stat } from "node:fs/promises";
 import { spawn } from "node:child_process";
+import { color } from "../core/theme.js";
 
 const WEB_SOURCE_PATHS = [
   "src",
@@ -39,7 +40,7 @@ async function warnIfWebBuildIsStale(pkgRoot: string, nitroServerPath: string): 
 
   if (newestSourceMtimeMs <= buildMtimeMs) return;
 
-  console.warn("\x1b[33mWarning: web sources are newer than web/.output.\x1b[0m");
+  console.warn(`${color.warn}Warning: web sources are newer than web/.output.${color.reset}`);
   console.warn("`keating web` serves the last production build, not the live Vite source tree.");
   console.warn("Use `mise run web` for hot reload, or rebuild with `bun run --cwd web build` before launching.");
 }
@@ -58,7 +59,7 @@ export async function serveWeb(port = 3000): Promise<void> {
   try {
     await access(nitroServerPath);
   } catch (error) {
-    console.error(`\x1b[31mError: Could not find Nitro server at ${nitroServerPath}\x1b[0m`);
+    console.error(`${color.err}Error: Could not find Nitro server at ${nitroServerPath}${color.reset}`);
     console.error("Please run the build command first:");
     console.error("  bun run --cwd web build");
     process.exit(1);
@@ -66,7 +67,7 @@ export async function serveWeb(port = 3000): Promise<void> {
 
   await warnIfWebBuildIsStale(pkgRoot, nitroServerPath);
 
-  process.stdout.write(`\x1b[32m🚀 Starting Keating Nitro Server on port ${port}...\x1b[0m\n`);
+  process.stdout.write(`${color.ok}${color.bold} Keating Web Server ${color.reset}  ${color.parchment}port ${port}${color.reset}\n`);
 
   const env = { 
     ...process.env, 
@@ -81,7 +82,7 @@ export async function serveWeb(port = 3000): Promise<void> {
   });
 
   child.on("error", (err) => {
-    console.error("\x1b[31mFailed to start Nitro server:\x1b[0m", err);
+    console.error(`${color.err}Failed to start Nitro server:${color.reset}`, err);
   });
 
   // Handle termination signals
