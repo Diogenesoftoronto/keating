@@ -72,6 +72,25 @@ pnpm add -g @interleavelove/keating
 bun add -g @interleavelove/keating
 ```
 
+Then launch the shell:
+
+```bash
+keating shell
+```
+
+From a local checkout, build first and run the repo binary directly:
+
+```bash
+bun run build
+node ./bin/keating.js shell
+```
+
+The executable form works too:
+
+```bash
+./bin/keating.js shell
+```
+
 ### Development
 
 <video src="docs/assets/doctor.mp4" autoplay loop muted width="100%"></video>
@@ -102,7 +121,7 @@ Keating reads runtime/model defaults from `keating.config.json`.
   "debug": {
     "persistTraces": true,
     "traceTopLearners": 3,
-    "consoleSummary": true
+    "consoleSummary": false
   }
 }
 ```

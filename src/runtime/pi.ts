@@ -1,11 +1,11 @@
 import { existsSync, statSync, readFileSync } from "node:fs";
-import { readdir } from "node:fs/promises";
+import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn, spawnSync } from "node:child_process";
 import { homedir } from "node:os";
 
-import { loadKeatingConfig, mergePiDefaults } from "../core/config.js";
+import { type KeatingConfig, loadKeatingConfig, mergePiDefaults } from "../core/config.js";
 import { ensureProjectScaffold } from "../core/project.js";
 import { sessionsDir, configDir } from "../core/paths.js";
 
@@ -43,6 +43,27 @@ const CLI_AGENT_PACKAGES = [
   ["@interleavelove", "keating-coding-agent"],
   ["@mariozechner", "pi-coding-agent"],
 ];
+
+async function syncPiSettings(cwd: string, config: KeatingConfig): Promise<void> {
+  const agentDir = configDir(cwd);
+  const settingsPath = join(agentDir, "settings.json");
+  let settings: Record<string, unknown> = {};
+
+  try {
+    const parsed = JSON.parse(await readFile(settingsPath, "utf8"));
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      settings = parsed as Record<string, unknown>;
+    }
+  } catch {
+    settings = {};
+  }
+
+  const quietStartup = !config.debug.consoleSummary;
+  if (settings.quietStartup === quietStartup) return;
+
+  await mkdir(agentDir, { recursive: true });
+  await writeFile(settingsPath, `${JSON.stringify({ ...settings, quietStartup }, null, 2)}\n`, "utf8");
+}
 
 async function resolveEmbeddedAgent(): Promise<AiRuntimeDetails | null> {
   const base = join(homedir(), ".local", "share", "keating");
@@ -127,6 +148,7 @@ export async function detectAiRuntime(cwd: string): Promise<AiRuntimeReport> {
 export async function launchShell(cwd: string, args: string[]): Promise<number> {
   await ensureProjectScaffold(cwd);
   const config = await loadKeatingConfig(cwd);
+  await syncPiSettings(cwd, config);
   const report = await detectAiRuntime(cwd);
   const runtime = report.selected;
   if (!runtime) {

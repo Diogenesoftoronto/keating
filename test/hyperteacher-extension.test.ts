@@ -1,9 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp } from "node:fs/promises";
+import { mkdtemp, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
+import { configPath } from "../src/core/config.js";
 import { ensureProjectScaffold } from "../src/core/project.js";
 import hyperteacher from "../src/pi/hyperteacher-extension.js";
 
@@ -31,6 +32,7 @@ function createMockPi() {
 function createMockCtx(cwd: string) {
   const notifications: Array<{ message: string; level: string }> = [];
   let editorText = "";
+  let headerSet = false;
   const widgetKeys = new Set<string>();
 
   return {
@@ -42,12 +44,18 @@ function createMockCtx(cwd: string) {
     get widgetKeys() {
       return widgetKeys;
     },
+    get headerSet() {
+      return headerSet;
+    },
     ui: {
       notify(message: string, level: string) {
         notifications.push({ message, level });
       },
       setEditorText(text: string) {
         editorText = text;
+      },
+      setHeader(content: any) {
+        headerSet = Boolean(content);
       },
       setWidget(key: string, content: any, _options?: any) {
         if (content === undefined) {
@@ -154,7 +162,22 @@ test("/trace with empty args works", async () => {
 test("session_start event fires notification", async () => {
   const { pi, ctx } = await setup();
   await pi.events.get("session_start")!({}, ctx);
+  assert.equal(ctx.notifications.some((n) => n.message.includes("Keating loaded")), false);
+  assert.ok(ctx.headerSet, "setHeader should be called for the startup card");
+  assert.equal(ctx.widgetKeys.size, 0, "startup card should not occupy persistent widgets");
+});
+
+test("session_start debug console summary fires notification", async () => {
+  const { cwd, pi, ctx } = await setup();
+  await writeFile(
+    configPath(cwd),
+    JSON.stringify({
+      debug: {
+        consoleSummary: true
+      }
+    }),
+    "utf8"
+  );
+  await pi.events.get("session_start")!({}, ctx);
   assert.ok(ctx.notifications.some((n) => n.message.includes("Keating loaded")));
-  assert.ok(ctx.widgetKeys.has("keating-greeting"), "setWidget should be called for greeting");
-  assert.ok(ctx.widgetKeys.has("keating-commands"), "setWidget should be called for commands");
 });

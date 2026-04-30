@@ -1,4 +1,5 @@
 import { relative } from "node:path";
+import { homedir } from "node:os";
 
 import {
   animateTopicArtifact,
@@ -18,9 +19,11 @@ import {
 } from "../core/project.js";
 import { learnerStatePath } from "../core/paths.js";
 import { loadLearnerState, recordFeedback, recordSessionStart, saveLearnerState } from "../core/learner-state.js";
-import { extensionCommandSpecs, shellCommandSections } from "../core/commands.js";
+import { loadKeatingConfig } from "../core/config.js";
+import { shellCommandSections } from "../core/commands.js";
 import { KEATING_ASCII_LOGO, KEATING_SUBTITLE_LINES } from "../core/terminal.js";
 
+const KEATING_VERSION = "0.3.0";
 const ANSI_RE = /\x1b\[[0-9;]*[a-zA-Z]/g;
 
 function visibleWidth(text: string): number {
@@ -32,6 +35,89 @@ function padVisible(text: string, width: number): string {
   return vw >= width ? text : text + " ".repeat(width - vw);
 }
 
+function truncatePlain(text: string, width: number): string {
+  if (text.length <= width) return text;
+  if (width <= 1) return text.slice(0, Math.max(0, width));
+  return `${text.slice(0, width - 1)}…`;
+}
+
+function centerPlain(text: string, width: number): string {
+  const truncated = truncatePlain(text, width);
+  const gap = Math.max(0, width - truncated.length);
+  const left = Math.floor(gap / 2);
+  return `${" ".repeat(left)}${truncated}${" ".repeat(gap - left)}`;
+}
+
+function wrapWords(text: string, maxWidth: number): string[] {
+  const width = Math.max(1, maxWidth);
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let current = "";
+
+  for (const raw of words) {
+    const word = truncatePlain(raw, width);
+    const next = current ? `${current} ${word}` : word;
+    if (current && next.length > width) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = next;
+    }
+  }
+
+  if (current) lines.push(current);
+  return lines.length > 0 ? lines : [""];
+}
+
+function formatHeaderPath(path: string): string {
+  const home = homedir();
+  return path.startsWith(home) ? `~${path.slice(home.length)}` : path;
+}
+
+function getCurrentModelLabel(ctx: any): string {
+  if (typeof ctx?.model === "string" && ctx.model.trim()) return ctx.model.trim();
+  if (ctx?.model?.provider && ctx?.model?.id) return `${ctx.model.provider}/${ctx.model.id}`;
+
+  const branch = ctx?.sessionManager?.getBranch?.();
+  if (Array.isArray(branch)) {
+    for (let index = branch.length - 1; index >= 0; index -= 1) {
+      const entry = branch[index];
+      if (entry?.type === "model_change" && entry.provider && entry.modelId) {
+        return `${entry.provider}/${entry.modelId}`;
+      }
+    }
+  }
+
+  return "not set";
+}
+
+function getSessionLabel(ctx: any): string {
+  const manager = ctx?.sessionManager;
+  return manager?.getSessionName?.()?.trim() || manager?.getSessionId?.() || "new session";
+}
+
+function summarizeLastActivity(ctx: any): string {
+  const branch = ctx?.sessionManager?.getBranch?.();
+  if (!Array.isArray(branch)) return "";
+
+  for (let index = branch.length - 1; index >= 0; index -= 1) {
+    const entry = branch[index];
+    if (entry?.type !== "message") continue;
+    const message = entry.message;
+    const role = message?.role === "assistant" ? "agent" : message?.role === "user" ? "you" : message?.role;
+    const content = message?.content;
+    const text = typeof content === "string"
+      ? content
+      : Array.isArray(content)
+        ? content.map((item: any) => item?.text ?? (item?.name ? `[${item.name}]` : "")).filter(Boolean).join(" ")
+        : "";
+    const compact = text.replace(/\s+/g, " ").trim();
+    if (compact) return `${role ?? "message"}: ${compact}`;
+  }
+
+  return "";
+}
+
 function topicFromArgs(args: string | string[]): string {
   return (Array.isArray(args) ? args.join(" ") : String(args ?? "")).trim();
 }
@@ -40,79 +126,129 @@ function info(ctx: any, message: string): void {
   ctx.ui.notify(message, "info");
 }
 
-function keatingGreetingComponent(_tui: any, theme: any): any {
-  const t = theme.fg.bind(theme);
-  const b = theme.bold.bind(theme);
-  const dim = (s: string) => t("dim", s);
-  const muted = (s: string) => t("muted", s);
-  const brd = (s: string) => t("borderMuted", s);
-
-  // Color the canonical logo with a vertical gradient: accent → mdHeading → text.
-  const palette: string[] = ["accent", "accent", "mdHeading", "mdHeading", "text", "text"];
-  const logoLines: string[] = KEATING_ASCII_LOGO.map((line: string, i: number) =>
-    b(t(palette[i] ?? "text", `  ${line}`)),
-  );
-
-  const [title, ...quoteLines] = KEATING_SUBTITLE_LINES;
-  const subtitleLines: string[] = [
-    b(muted(`    ${title}`)),
-    ...quoteLines.map((line: string) => dim(`    ${line}`)),
-  ];
-
-  const allLines = [...logoLines, ...subtitleLines];
-
-  return {
-    render(width: number): string[] {
-      const inner = Math.max(30, width - 4);
-      const border = "─".repeat(inner);
-      const result: string[] = [];
-      result.push(brd(`┌${border}┐`));
-      for (const line of allLines) {
-        result.push(`${brd("│")} ${padVisible(line, inner)} ${brd("│")}`);
-      }
-      result.push(brd(`└${border}┘`));
-      return result;
-    },
-    invalidate(): void {},
-    dispose(): void {},
-  };
-}
-
-function keatingCommandsComponent(_tui: any, theme: any): any {
-  const b = theme.bold.bind(theme);
-  const t = theme.fg.bind(theme);
-  const brd = (s: string) => t("borderMuted", s);
-  const accent = (s: string) => t("accent", s);
-  const dim = (s: string) => t("dim", s);
-  const heading = (s: string) => t("mdHeading", s);
-
+function createKeatingHeaderComponent(pi: any, ctx: any): (tui: any, theme: any) => any {
   const sections = shellCommandSections();
-  const lines: string[] = [];
-  for (const section of sections) {
-    if (lines.length > 0) lines.push("");
-    lines.push(b(heading(`◆ ${section.title}`)));
-    const maxUsage = Math.max(...section.commands.map(c => c.usage.length));
-    for (const cmd of section.commands) {
-      lines.push(`  ${b(accent(cmd.usage.padEnd(maxUsage + 2)))}  ${dim(cmd.description)}`);
-    }
-  }
-  lines.push("");
-  lines.push(dim('Type "/help" any time for usage hints.'));
+  const commandCount = sections.reduce((sum, section) => sum + section.commands.length, 0);
 
-  return {
-    render(width: number): string[] {
-      const inner = Math.max(30, width - 4);
-      const border = "─".repeat(inner);
-      const result: string[] = [];
-      result.push(brd(`┌${border}┐`));
-      for (const line of lines) {
-        result.push(`${brd("│")} ${padVisible(line, inner)} ${brd("│")}`);
-      }
-      result.push(brd(`└${border}┘`));
-      return result;
-    },
-    invalidate(): void {},
-    dispose(): void {},
+  return (_tui: any, theme: any): any => {
+    const t = theme.fg.bind(theme);
+    const b = theme.bold.bind(theme);
+    const border = (text: string) => t("borderMuted", text);
+    const dim = (text: string) => t("dim", text);
+    const accent = (text: string) => t("accent", text);
+    const heading = (text: string) => b(t("mdHeading", text));
+    const text = (value: string) => t("text", value);
+
+    return {
+      render(width: number): string[] {
+        const maxWidth = Math.max(width - 2, 1);
+        const cardWidth = Math.min(maxWidth, 120);
+        const innerWidth = Math.max(cardWidth - 2, 1);
+        const contentWidth = Math.max(innerWidth - 2, 1);
+        const outerPad = " ".repeat(Math.max(0, Math.floor((width - cardWidth) / 2)));
+        const lines: string[] = [];
+        const push = (line: string) => lines.push(`${outerPad}${line}`);
+        const row = (content: string) => `${border("│")} ${padVisible(content, contentWidth)} ${border("│")}`;
+        const emptyRow = () => `${border("│")}${" ".repeat(innerWidth)}${border("│")}`;
+        const separator = () => `${border("├")}${border("─".repeat(innerWidth))}${border("┤")}`;
+        const useWideLayout = contentWidth >= 72;
+
+        push("");
+        if (cardWidth >= 72) {
+          const logoWidth = Math.max(...KEATING_ASCII_LOGO.map(line => line.length));
+          const logoPad = " ".repeat(Math.max(0, Math.floor((cardWidth - logoWidth) / 2)));
+          const palette = ["accent", "accent", "mdHeading", "mdHeading", "text", "text"];
+          for (let index = 0; index < KEATING_ASCII_LOGO.length; index += 1) {
+            push(b(t(palette[index] ?? "text", `${logoPad}${KEATING_ASCII_LOGO[index]}`)));
+          }
+          push("");
+        }
+
+        const versionTag = ` v${KEATING_VERSION} `;
+        const versionGap = Math.max(0, innerWidth - versionTag.length);
+        const versionLeft = Math.floor(versionGap / 2);
+        push(
+          border(`╭${"─".repeat(versionLeft)}`) +
+            dim(versionTag) +
+            border(`${"─".repeat(versionGap - versionLeft)}╮`),
+        );
+
+        if (useWideLayout) {
+          const leftWidth = Math.min(38, Math.floor(contentWidth * 0.35));
+          const dividerWidth = 3;
+          const rightWidth = contentWidth - leftWidth - dividerWidth;
+          const leftValueWidth = Math.max(1, leftWidth - 11);
+          const commandNameWidth = 18;
+          const commandDescWidth = Math.max(12, rightWidth - commandNameWidth - 2);
+          const leftLines: string[] = [""];
+          const rightLines: string[] = ["", heading("Teaching Workflows")];
+          const leftLabel = (label: string, value: string, color: "text" | "dim") => {
+            const wrapped = wrapWords(value, leftValueWidth);
+            leftLines.push(`${dim(label.padEnd(10))} ${color === "text" ? text(wrapped[0]!) : dim(wrapped[0]!)}`);
+            for (const line of wrapped.slice(1)) {
+              leftLines.push(`${" ".repeat(11)}${color === "text" ? text(line) : dim(line)}`);
+            }
+          };
+          const listBlock = (label: string, value: string) => {
+            if (!value) return;
+            leftLines.push("");
+            leftLines.push(accent(b(label)));
+            for (const line of wrapWords(value, leftWidth)) {
+              leftLines.push(dim(line));
+            }
+          };
+
+          leftLabel("model", getCurrentModelLabel(ctx), "text");
+          leftLabel("directory", formatHeaderPath(ctx.cwd), "text");
+          leftLabel("session", getSessionLabel(ctx), "dim");
+          leftLines.push("");
+          leftLines.push(dim(`${pi.getAllTools?.().length ?? 0} tools · ${commandCount} commands`));
+          listBlock("Purpose", KEATING_SUBTITLE_LINES[0] ?? "The Hyperteacher");
+          listBlock("Last Activity", truncatePlain(summarizeLastActivity(ctx), leftWidth * 2));
+
+          for (const section of sections) {
+            rightLines.push("");
+            rightLines.push(accent(b(section.title)));
+            for (const command of section.commands) {
+              const wrapped = wrapWords(command.description, commandDescWidth);
+              rightLines.push(`${accent(command.usage.padEnd(commandNameWidth))}${dim(wrapped[0]!)}`);
+              for (const line of wrapped.slice(1)) {
+                rightLines.push(`${" ".repeat(commandNameWidth)}${dim(line)}`);
+              }
+            }
+          }
+
+          const maxRows = Math.max(leftLines.length, rightLines.length);
+          for (let index = 0; index < maxRows; index += 1) {
+            push(row(
+              `${padVisible(leftLines[index] ?? "", leftWidth)}` +
+              `${border(" │ ")}` +
+              `${padVisible(rightLines[index] ?? "", rightWidth)}`,
+            ));
+          }
+        } else {
+          push(emptyRow());
+          push(row(heading(centerPlain(KEATING_SUBTITLE_LINES[0] ?? "Keating", contentWidth))));
+          push(row(dim(centerPlain(KEATING_SUBTITLE_LINES[1] ?? "The Hyperteacher", contentWidth))));
+          push(row(dim(centerPlain(`${pi.getAllTools?.().length ?? 0} tools · ${commandCount} commands`, contentWidth))));
+          push(emptyRow());
+          push(separator());
+          for (const section of sections) {
+            push(row(accent(b(section.title))));
+            for (const command of section.commands) {
+              const descWidth = Math.max(1, contentWidth - 18);
+              push(row(`${accent(command.usage.padEnd(17))}${dim(truncatePlain(command.description, descWidth))}`));
+            }
+          }
+        }
+
+        push(border(`╰${"─".repeat(innerWidth)}╯`));
+        push("");
+        return lines;
+      },
+      invalidate(): void {},
+      dispose(): void {},
+    };
   };
 }
 
@@ -339,20 +475,26 @@ export default function hyperteacher(pi: any): void {
     const state = await loadLearnerState(statePath);
     recordSessionStart(state);
     await saveLearnerState(statePath, state);
+    const config = await loadKeatingConfig(ctx.cwd);
 
     // ─── Branded greeting on first session in this process ───────────────
     if (!greetingShown) {
       greetingShown = true;
-      ctx.ui.setWidget("keating-greeting", keatingGreetingComponent);
-      ctx.ui.setWidget("keating-commands", keatingCommandsComponent);
+      if (ctx.hasUI !== false && typeof ctx.ui.setHeader === "function") {
+        ctx.ui.setHeader(createKeatingHeaderComponent(pi, ctx));
+      } else if (typeof ctx.ui.setWidget === "function") {
+        ctx.ui.setWidget("keating-greeting", createKeatingHeaderComponent(pi, ctx));
+      }
     }
 
     // Check for due topics and notify
     const dueArtifact = await dueTopicsArtifact(ctx.cwd);
-    if (dueArtifact.count > 0) {
-      info(ctx, `Keating loaded. ${dueArtifact.count} topic${dueArtifact.count === 1 ? " is" : "s are"} due for review. Use /due to see them.`);
-    } else {
-      info(ctx, `Keating loaded — ready to teach. Type a topic or a command.`);
+    if (config.debug.consoleSummary) {
+      if (dueArtifact.count > 0) {
+        info(ctx, `Keating loaded. ${dueArtifact.count} topic${dueArtifact.count === 1 ? " is" : "s are"} due for review. Use /due to see them.`);
+      } else {
+        info(ctx, `Keating loaded — ready to teach. Type a topic or a command.`);
+      }
     }
   });
 }
