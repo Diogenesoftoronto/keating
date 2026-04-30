@@ -1,0 +1,28 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "9f663e2585c6",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "src/cli/main.ts",
+    "src/core/terminal.ts",
+    "src/core/theme.ts",
+    "src/pi/hyperteacher-extension.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/9f/663e2585c6/0/metadata.json",
+      "transcript": "/9f/663e2585c6/0/full.jsonl",
+      "content_hash": "/9f/663e2585c6/0/content_hash.txt",
+      "prompt": "/9f/663e2585c6/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 20,
+    "cache_creation_tokens": 13794,
+    "cache_read_tokens": 1573818,
+    "output_tokens": 8975,
+    "api_call_count": 15
+  }
+}

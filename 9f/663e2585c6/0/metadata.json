@@ -1,0 +1,51 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "9f663e2585c6",
+  "session_id": "8b259f67-2069-44df-96e6-5ac05c22b5b3",
+  "strategy": "manual-commit",
+  "created_at": "2026-04-30T20:38:11.271025617Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "src/pi/hyperteacher-extension.ts",
+    "src/core/terminal.ts",
+    "src/core/theme.ts",
+    "src/cli/main.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-4-7",
+  "turn_id": "6d4be14e0196",
+  "checkpoint_transcript_start": 427,
+  "transcript_lines_at_start": 427,
+  "token_usage": {
+    "input_tokens": 20,
+    "cache_creation_tokens": 13794,
+    "cache_read_tokens": 1573818,
+    "output_tokens": 8975,
+    "api_call_count": 15
+  },
+  "session_metrics": {
+    "turn_count": 10
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-04-30T20:38:11.250089646Z",
+    "agent_lines": 39,
+    "agent_removed": 26,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 39,
+    "total_lines_changed": 65,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
