@@ -8,7 +8,7 @@
  * - Progress tracking
  */
 
-import { TopicDefinition, resolveTopic } from "./topics.js";
+import { resolveTopic } from "./topics.js";
 
 export type MilestoneStatus = "not_started" | "in_progress" | "submitted" | "reviewed";
 
@@ -46,6 +46,7 @@ export interface Project {
 
 export interface Assignment {
   id: string;
+  slug: string;
   title: string;
   topic: string;
   instructions: string;
@@ -204,6 +205,7 @@ export function generateAssignment(topicName: string): Assignment {
 
   return {
     id,
+    slug: topic.slug,
     title: `${topic.title} Challenge`,
     topic: topic.title,
     instructions: `Complete all deliverables below. Focus on understanding, not speed. If you are stuck for more than 20 minutes, ask for help rather than guessing.`,

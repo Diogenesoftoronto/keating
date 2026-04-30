@@ -2,7 +2,7 @@
  * Flash Cards Engine — spaced-repetition flash cards with front/back and mnemonics.
  */
 
-import { TopicDefinition, resolveTopic } from "./topics.js";
+import { resolveTopic } from "./topics.js";
 
 export interface FlashCard {
   id: string;

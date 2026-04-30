@@ -1,4 +1,6 @@
 import { Domain, TopicDefinition } from "./types.js";
+
+export type { TopicDefinition } from "./types.js";
 import { slugify, titleCase } from "./util.js";
 
 const TOPICS: Record<string, TopicDefinition> = {
