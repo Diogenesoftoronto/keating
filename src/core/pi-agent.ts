@@ -1,5 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { loadKeatingConfig, mergePiDefaults } from "./config.js";
+import { configDir } from "./paths.js";
 
 export interface PiCompletionOptions {
   systemPrompt?: string;
@@ -8,8 +9,8 @@ export interface PiCompletionOptions {
 }
 
 /**
- * Programmatic interface to the Pi agent via CLI.
- * This ensures we use the same provider, model, and thinking settings as the user's Pi install.
+ * Programmatic interface to the AI agent via CLI.
+ * This ensures we use the same provider, model, and thinking settings as the user's agent install.
  */
 export async function piComplete(cwd: string, prompt: string, options: PiCompletionOptions = {}): Promise<string> {
   const config = await loadKeatingConfig(cwd);
@@ -38,15 +39,16 @@ export async function piComplete(cwd: string, prompt: string, options: PiComplet
       encoding: "utf8",
       env: {
         ...process.env,
-        PI_SKIP_VERSION_CHECK: "1"
+        PI_SKIP_VERSION_CHECK: "1",
+        PI_CODING_AGENT_DIR: configDir(cwd)
       }
     });
   } catch (e) {
-    throw new Error(`Pi command could not be spawned: ${e}`);
+    throw new Error(`Agent command could not be spawned: ${e}`);
   }
 
   if (result.status !== 0) {
-    throw new Error(`Pi completion failed (exit ${result.status || 'null'}): ${result.stderr || result.stdout}`);
+    throw new Error(`Agent completion failed (exit ${result.status || 'null'}): ${result.stderr || result.stdout}`);
   }
 
   return result.stdout.trim();
@@ -73,6 +75,6 @@ export async function piCompleteJson<T>(cwd: string, prompt: string, options: Pi
     }
     throw new Error("No valid JSON block found in response.");
   } catch (error) {
-    throw new Error(`Failed to parse Pi JSON response: ${response}\nError: ${error}`);
+    throw new Error(`Failed to parse agent JSON response: ${response}\nError: ${error}`);
   }
 }

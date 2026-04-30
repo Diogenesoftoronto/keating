@@ -20,6 +20,11 @@ import {
 	DEFAULT_POLICY,
 	diagnoseBenchmark,
 	evaluatePrompt,
+	evolvePromptTemplate,
+	promptEvolutionToMarkdown,
+	generateImprovementProposal,
+	proposalToMarkdown,
+	improvementArchiveToMarkdown,
 	resolveTopic,
 	buildEngagementTimeline,
 	getDueTopics,
@@ -30,6 +35,8 @@ import {
 	type BenchmarkResult,
 	type EvolutionRun,
 	type CoveredTopic,
+	type ImprovementProposal,
+	type ImprovementArchive,
 } from "./core";
 
 export const KEATING_SYSTEM_PROMPT = `You are Keating, a hyperteacher designed for cognitive empowerment.
@@ -47,24 +54,63 @@ Core principles:
 
 Your role is to ensure every learner is equipped to contribute their own verse.
 
-## Available Commands
-Use these slash commands to help learners:
+## Self-Evolution Protocol
 
-- \`/plan <topic>\` - Generate a structured lesson plan for a topic
-- \`/map <topic>\` - Create a visual Mermaid concept map
-- \`/animate <topic>\` - Generate an animation storyboard
-- \`/verify <topic>\` - Create a fact-checking checklist
-- \`/bench\` - Run a synthetic learner benchmark
-- \`/evolve\` - Improve the teaching policy through evolution
-- \`/feedback <up|down|confused> [topic]\` - Record learning feedback
-- \`/policy\` - Show the current teaching policy
-- \`/outputs\` - Browse all saved artifacts
-- \`/state\` - Show your learner profile
-- \`/improve\` - Get improvement suggestions from benchmark diagnosis
-- \`/trace\` - Browse benchmark and evolution traces
-- \`/prompt-eval\` - Evaluate a prompt template for teaching effectiveness
-- \`/timeline\` - Show engagement timeline with retention decay and review urgency
-- \`/due\` - Show topics that are due for review based on spaced repetition
+You are an autonomous agent with direct access to tools. You MUST follow these protocols:
+
+### Session Bootstrap
+On every new conversation, you MUST:
+1. Call \`learner_state\` to load the learner's profile and history
+2. If the learner has covered topics, call \`timeline\` to check retention decay and review urgency
+3. If any topics are due for review, proactively mention them to the learner before they ask
+
+### Teaching Loop
+When a learner asks about a topic:
+1. Call \`plan\` to generate a structured lesson plan adapted to the current policy
+2. Call \`verify\` to self-check your knowledge before teaching
+3. Teach using the Socratic method, guided by the plan
+4. After teaching, call \`feedback\` to record the session outcome (up/down/confused based on the learner's demonstrated understanding)
+5. Call \`map\` or \`animate\` yourself when visual aids would help.
+
+**Important**: Run ALL tool calls yourself. NEVER ask the learner to run commands for you. Execute all prerequisites autonomously.
+
+### Self-Improvement Triggers
+You MUST autonomously run self-improvement when:
+- This is the first session (no benchmarks exist) — call \`auto_improve\` to baseline your teaching policy
+- The learner expresses confusion or gives rote responses — call \`auto_improve\` after the session
+- 3+ sessions have occurred since the last evolution — call \`auto_improve\`
+- The learner explicitly asks you to improve (honor the request via \`auto_improve\`)
+
+### When NOT to self-improve
+- Do not interrupt an active teaching moment. Finish helping the learner first, then improve in the background.
+- Do not run \`auto_improve\` more than once per conversation unless the learner requests it.
+
+## Tools
+
+You have internal tools for teaching, self-evaluation, and self-evolution. Use them autonomously — the learner does not need to know about them. You are a self-governing agent; execute all steps yourself.
+
+### Teaching (use when helping a learner with a topic)
+- \`plan\` — Generate a structured lesson plan for a topic. Run this yourself when structure is needed.
+- \`map\` — Create a visual Mermaid concept map for a topic. Run this yourself when visualization helps.
+- \`animate\` — Generate an animation storyboard for a topic. Run this yourself when visuals help.
+- \`verify\` — Self-check knowledge before teaching a topic. Always run this yourself before teaching factual claims.
+- \`feedback\` — Record learner feedback (up/down/confused) for a topic. Run this yourself after sessions.
+
+### Self-Evaluation (use to measure and track your effectiveness)
+- \`bench\` — Run a synthetic learner benchmark against current policy. Run this yourself when measuring effectiveness.
+- \`timeline\` — Show engagement timeline with retention decay. Run this yourself at session start.
+- \`due\` — Show topics due for spaced-repetition review. Run this yourself at session start.
+- \`learner_state\` — Load the learner's profile and session history. Always run this yourself first.
+- \`trace\` — Browse benchmark and evolution history
+- \`policy\` — Show the current teaching policy
+- \`outputs\` — Browse all saved artifacts
+
+### Self-Evolution (use to autonomously improve your teaching)
+- \`auto_improve\` — Run the full self-improvement loop: benchmark → evolve policy → evolve prompts → record results. Use this yourself instead of asking the learner to trigger it.
+- \`improve\` — Generate a targeted improvement proposal for specific weaknesses. Run this yourself when weaknesses are detected.
+- \`evolve\` — Evolve the teaching policy via MAP-Elites. Run this yourself when improvement is needed.
+- \`prompt_evolve\` — Iteratively evolve a teaching prompt template via PROSPER-style selection
+- \`prompt_eval\` — Single-pass evaluation of a prompt template
 `;
 
 // Helper function to create tools with proper schema
@@ -91,14 +137,14 @@ function createSimpleTool(
 
 export async function createKeatingTools(storage: KeatingStorage): Promise<AgentTool[]> {
 	return [
-		// /plan - Generate real lesson plan
+		// plan - Generate lesson plan
 		createSimpleTool(
 			"plan",
-			"Generate a structured lesson plan for a topic. Usage: /plan <topic>",
+			"Generate a structured lesson plan for a topic, adapted to the current teaching policy. Use before teaching any topic to structure your approach.",
 			async (params) => {
 				const topic = (params.topic as string) || "";
 				if (!topic) {
-					return "Please specify a topic. Usage: /plan <topic>";
+					return "Topic required. Pass a topic parameter.";
 				}
 
 				const policy = await storage.getActivePolicy();
@@ -125,36 +171,32 @@ export async function createKeatingTools(storage: KeatingStorage): Promise<Agent
 					phaseCount: plan.phases.length,
 				});
 
-				return `📚 Lesson plan created for "${topic}"\n\n${markdown}\n\n[Saved to browser storage]`;
+				return markdown;
 			}
 		),
 
-		// /map - Generate real concept map
+		// map - Generate concept map
 		createSimpleTool(
 			"map",
-			"Generate a Mermaid concept map for a topic. Usage: /map <topic>",
+			"Generate a Mermaid concept map for a topic. Use to visualize knowledge structure before or during teaching.",
 			async (params) => {
 				const topic = (params.topic as string) || "";
-				if (!topic) {
-					return "Please specify a topic. Usage: /map <topic>";
-				}
+				if (!topic) return "Topic required.";
 
 				const mapContent = buildConceptMap(topic);
 				await storage.saveLessonMap(topic, mapContent);
 
-				return `🗺️ Concept map for "${topic}"\n\n\`\`\`mermaid\n${mapContent}\n\`\`\`\n\n[Saved to browser storage]`;
+				return `\`\`\`mermaid\n${mapContent}\n\`\`\``;
 			}
 		),
 
-		// /animate - Generate animation storyboard
+		// animate - Generate animation storyboard
 		createSimpleTool(
 			"animate",
-			"Generate an animation storyboard for a topic. Usage: /animate <topic>",
+			"Generate an animation storyboard for a topic. Use to create visual teaching materials.",
 			async (params) => {
 				const topic = (params.topic as string) || "";
-				if (!topic) {
-					return "Please specify a topic. Usage: /animate <topic>";
-				}
+				if (!topic) return "Topic required.";
 
 				const resolved = resolveTopic(topic);
 				const storyboard = `# Animation Storyboard: ${resolved.title}
@@ -230,19 +272,17 @@ class ${resolved.slug.replace(/-/g, "_").replace(/^(.)/, (c) => c.toUpperCase())
 
 				await storage.saveAnimation(topic, storyboard, scene, manifest);
 
-				return `🎬 Animation storyboard for "${topic}"\n\n${storyboard}\n\n[Saved to browser storage]`;
+				return storyboard;
 			}
 		),
 
-		// /verify - Generate verification checklist
+		// verify - Self-check knowledge before teaching
 		createSimpleTool(
 			"verify",
-			"Generate a fact-checking checklist for a topic. Usage: /verify <topic>",
+			"Generate a fact-checking checklist for a topic. Always use this BEFORE teaching to self-verify your knowledge.",
 			async (params) => {
 				const topic = (params.topic as string) || "";
-				if (!topic) {
-					return "Please specify a topic. Usage: /verify <topic>";
-				}
+				if (!topic) return "Topic required.";
 
 				const resolved = resolveTopic(topic);
 				const checklist = `# Verification Checklist: ${resolved.title}
@@ -271,22 +311,18 @@ ${resolved.prerequisites.map((p) => `- [ ] Learners need: ${p}`).join("\n")}
 ## Sources Verified
 - [ ] Primary sources checked
 - [ ] Multiple sources agree
-- [ ] Recent developments included
-
----
-Complete this checklist before teaching ${resolved.title}.
-`;
+- [ ] Recent developments included`;
 
 				await storage.saveVerification(topic, checklist);
 
-				return `✅ Verification checklist for "${topic}"\n\n${checklist}\n\n[Saved to browser storage]`;
+				return checklist;
 			}
 		),
 
-		// /bench - Run real teaching benchmark
+		// bench - Run synthetic learner benchmark
 		createSimpleTool(
 			"bench",
-			"Run a synthetic learner benchmark. Usage: /bench [topic]",
+			"Run a synthetic learner benchmark against the current teaching policy. Use to measure teaching effectiveness and identify weaknesses.",
 			async (params) => {
 				const topic = params.topic as string | undefined;
 				const policy = await storage.getActivePolicy();
@@ -310,14 +346,14 @@ Complete this checklist before teaching ${resolved.title}.
 
 				await storage.saveBenchmark(result.overallScore, report, topic, JSON.stringify(result.trace, null, 2));
 
-				return `📊 Benchmark complete!\n\n**Overall Score:** ${result.overallScore.toFixed(2)}/100\n\n${report}`;
+				return `**Overall Score:** ${result.overallScore.toFixed(2)}/100\n\n${report}`;
 			}
 		),
 
-		// /evolve - Evolve teaching policy
+		// evolve - Evolve teaching policy via MAP-Elites
 		createSimpleTool(
 			"evolve",
-			"Evolve and improve the teaching policy. Usage: /evolve [topic]",
+			"Evolve the teaching policy using MAP-Elites algorithm. Use to search for better policy parameters when benchmarks show room for improvement.",
 			async (params) => {
 				const topic = params.topic as string | undefined;
 				const policy = await storage.getActivePolicy();
@@ -340,7 +376,6 @@ Complete this checklist before teaching ${resolved.title}.
 				const run = mapElitesToEvolutionRun(meRun);
 				const report = mapElitesToMarkdown(meRun);
 
-				// Save evolved policy
 				await storage.savePolicy(
 					`# Evolved Teaching Policy\n\n` +
 						`Generated: ${new Date().toISOString()}\n` +
@@ -362,14 +397,14 @@ Complete this checklist before teaching ${resolved.title}.
 					JSON.stringify(run.exploredCandidates, null, 2)
 				);
 
-				return `🧬 Policy evolved (MAP-Elites)!\n\n**Best Score:** ${run.best.overallScore.toFixed(2)}/100\n**Baseline:** ${run.baseline.overallScore.toFixed(2)}/100\n**Filled cells:** ${meRun.filledCellCount}/${meRun.totalCells}\n**Accepted:** ${run.acceptedCandidates.length}/${run.exploredCandidates.length} candidates\n\n${report}`;
+				return `**Policy evolved (MAP-Elites)**\n\nBest: ${run.best.overallScore.toFixed(2)}/100 | Baseline: ${run.baseline.overallScore.toFixed(2)}/100 | Filled cells: ${meRun.filledCellCount}/${meRun.totalCells} | Accepted: ${run.acceptedCandidates.length}/${run.exploredCandidates.length}\n\n${report}`;
 			}
 		),
 
-		// /feedback - Record feedback
+		// feedback - Record learner feedback
 		createSimpleTool(
 			"feedback",
-			"Record learning feedback. Usage: /feedback <up|down|confused> [topic]",
+			"Record a learner feedback signal for a topic. Call this after teaching to track session outcomes. signal must be 'up', 'down', or 'confused'.",
 			async (params) => {
 				const signalParam = (params.signal as string) || "";
 				const signalMap: Record<string, "thumbs-up" | "thumbs-down" | "confused"> = {
@@ -379,38 +414,37 @@ Complete this checklist before teaching ${resolved.title}.
 				};
 				const signal = signalMap[signalParam];
 				if (!signal) {
-					return "Invalid signal. Use: /feedback <up|down|confused> [topic]";
+					return "signal must be 'up', 'down', or 'confused'.";
 				}
 
 				const topic = (params.topic as string) || "general";
 				await storage.recordFeedback(topic, signal);
 
-				const emoji = signal === "thumbs-up" ? "👍" : signal === "thumbs-down" ? "👎" : "🤔";
-				return `${emoji} Feedback recorded: ${signal} for "${topic}"`;
+				return `Recorded ${signal} feedback for "${topic}".`;
 			}
 		),
 
-		// /policy - Show current policy
+		// policy - Show current teaching policy
 		createSimpleTool(
 			"policy",
-			"Show the current teaching policy. Usage: /policy",
+			"Show the current active teaching policy parameters.",
 			async () => {
 				const policy = await storage.getActivePolicy();
 				const content = policy?.content || DEFAULT_BROWSER_POLICY;
 
-				return `📋 Current Teaching Policy\n\n\`\`\`markdown\n${content}\n\`\`\``;
+				return `\`\`\`markdown\n${content}\n\`\`\``;
 			}
 		),
 
-		// /outputs - Browse artifacts
+		// outputs - Browse artifacts
 		createSimpleTool(
 			"outputs",
-			"Browse all saved Keating artifacts. Usage: /outputs",
+			"Browse all saved Keating artifacts (plans, maps, benchmarks, evolutions, etc).",
 			async () => {
 				const artifacts = await storage.listArtifacts();
 
 				if (artifacts.length === 0) {
-					return "No artifacts yet. Use /plan, /map, /animate, /verify, /bench, or /evolve first.";
+					return "No artifacts yet.";
 				}
 
 				const list = artifacts
@@ -418,40 +452,149 @@ Complete this checklist before teaching ${resolved.title}.
 					.map((a) => `- ${a.label} (${new Date(a.createdAt).toLocaleDateString()})`)
 					.join("\n");
 
-				return `📚 Keating Artifacts (${artifacts.length} total)\n\n${list}`;
+				return `Keating Artifacts (${artifacts.length} total)\n\n${list}`;
 			}
 		),
 
-		// /state - Show learner state
+		// learner_state - Load learner profile (agent-facing, renamed from /state)
 		createSimpleTool(
-			"state",
-			"Show your learner profile and progress. Usage: /state",
+			"learner_state",
+			"Load the learner's profile, session history, and topic progress. ALWAYS call this at the start of every new conversation.",
 			async () => {
+				await storage.recordSessionStart();
 				const state = await storage.getLearnerState();
 
 				const upCount = state.feedbackHistory.filter((f) => f.signal === "thumbs-up").length;
 				const downCount = state.feedbackHistory.filter((f) => f.signal === "thumbs-down").length;
 				const confusedCount = state.feedbackHistory.filter((f) => f.signal === "confused").length;
 
-				return `👤 Learner Profile
+				const topicList = state.topicsExplored.slice(-10).map((t) => `- ${t}`).join("\n") || "None yet";
 
-**Topics Explored:** ${state.topicsExplored.length}
-${state.topicsExplored.slice(-10).map((t) => `- ${t}`).join("\n") || "None yet"}
-
-**Feedback History:**
-- 👍 ${upCount} positive
-- 👎 ${downCount} negative
-- 🤔 ${confusedCount} confused
-
-${state.lastSessionAt ? `**Last Session:** ${new Date(state.lastSessionAt).toLocaleString()}` : "**First Session:** Welcome to Keating!"}`;
+				return `Learner Profile:
+- Sessions: ${state.sessionsCount || 0}
+- Topics explored: ${state.topicsExplored.length}
+${topicList}
+- Feedback: 👍${upCount} 👎${downCount} 🤔${confusedCount}
+- Last session: ${state.lastSessionAt ? new Date(state.lastSessionAt).toLocaleString() : "First session"}`;
 			}
 		),
 
-		// /improve - Get improvement suggestions
+		// auto_improve - Full autonomous self-improvement loop
+		createSimpleTool(
+			"auto_improve",
+			"Run the full autonomous self-improvement loop: benchmark current policy → evolve policy via MAP-Elites → evolve prompt template → record improvement. Use this instead of calling bench/evolve/improve separately. Triggers automatically on first session and periodically thereafter.",
+			async (params) => {
+				const topic = params.topic as string | undefined;
+
+				const policy = await storage.getActivePolicy();
+				const basePolicy: TeacherPolicy = policy
+					? {
+							name: policy.id,
+							analogyDensity: 0.6,
+							socraticRatio: 0.55,
+							formalism: 0.5,
+							retrievalPractice: 0.7,
+							exerciseCount: 4,
+							diagramBias: 0.45,
+							reflectionBias: 0.5,
+							interdisciplinaryBias: 0.4,
+							challengeRate: 0.35,
+						}
+					: DEFAULT_POLICY;
+
+				// Step 1: Baseline benchmark
+				const baseline = runBenchmarkSuite(basePolicy, topic);
+				const baselineReport = benchmarkToMarkdown(baseline);
+				await storage.saveBenchmark(baseline.overallScore, baselineReport, topic);
+
+				// Step 2: Evolve policy via MAP-Elites
+				const meRun = mapElitesEvolve(basePolicy, topic);
+				const run = mapElitesToEvolutionRun(meRun);
+				const evolveReport = mapElitesToMarkdown(meRun);
+
+				await storage.savePolicy(
+					`# Evolved Teaching Policy\n\n` +
+						`Generated: ${new Date().toISOString()}\n` +
+						`Score: ${run.best.overallScore.toFixed(2)}/100\n\n` +
+						`## Parameters\n` +
+						`- analogyDensity: ${run.bestPolicy.analogyDensity.toFixed(3)}\n` +
+						`- socraticRatio: ${run.bestPolicy.socraticRatio.toFixed(3)}\n` +
+						`- formalism: ${run.bestPolicy.formalism.toFixed(3)}\n` +
+						`- exerciseCount: ${run.bestPolicy.exerciseCount}\n` +
+						`- diagramBias: ${run.bestPolicy.diagramBias.toFixed(3)}\n`,
+					true
+				);
+				await storage.saveEvolution(
+					run.best.overallScore,
+					JSON.stringify(run.bestPolicy),
+					evolveReport,
+					topic,
+					JSON.stringify(run.exploredCandidates, null, 2)
+				);
+
+				// Step 3: Evolve prompt template
+				const promptRun = evolvePromptTemplate(KEATING_SYSTEM_PROMPT, "learn", 4);
+				const promptReport = promptEvolutionToMarkdown(promptRun);
+				await storage.savePromptEvolution("learn", {
+					bestScore: promptRun.best.score,
+					bestPrompt: promptRun.best.prompt,
+					report: promptReport,
+				});
+
+				// Step 4: Post-evolution benchmark
+				const evolvedPolicy = run.bestPolicy;
+				const after = runBenchmarkSuite(evolvedPolicy, topic);
+				const afterReport = benchmarkToMarkdown(after);
+				await storage.saveBenchmark(after.overallScore, afterReport, topic);
+
+				// Step 5: Record improvement
+				const delta = after.overallScore - baseline.overallScore;
+				const proposalId = `auto-${Date.now().toString(36)}`;
+				await storage.saveImprovementAttempt({
+					proposalId,
+					baselineScore: baseline.overallScore,
+					afterScore: after.overallScore,
+					scoreDelta: delta,
+					accepted: delta > 0,
+					targets: diagnoseBenchmark(baseline).map((s) => s.area).join(","),
+					hypothesis: `Auto-improve: evolved policy (${run.acceptedCandidates.length} accepted) + evolved prompt (${promptRun.acceptedCandidates.length} accepted)`,
+				});
+
+				const verdict = delta > 0
+					? `IMPROVED by +${delta.toFixed(2)}`
+					: delta < -0.5
+						? `REGRESSED by ${delta.toFixed(2)} (evolved policy reverted)`
+						: `NO SIGNIFICANT CHANGE (Δ${delta.toFixed(2)})`;
+
+				return `Self-improvement complete.
+
+**Benchmark:** ${baseline.overallScore.toFixed(2)} → ${after.overallScore.toFixed(2)} (${verdict})
+
+**Policy Evolution (MAP-Elites):**
+- Accepted: ${run.acceptedCandidates.length}/${run.exploredCandidates.length} candidates
+- Filled cells: ${meRun.filledCellCount}/${meRun.totalCells}
+- Best policy: analogyDensity=${evolvedPolicy.analogyDensity.toFixed(3)} socraticRatio=${evolvedPolicy.socraticRatio.toFixed(3)} formalism=${evolvedPolicy.formalism.toFixed(3)}
+
+**Prompt Evolution (PROSPER):**
+- Baseline: ${promptRun.baselineScore.toFixed(2)} → Best: ${promptRun.best.score.toFixed(2)}
+- Accepted: ${promptRun.acceptedCandidates.length}/${promptRun.exploredCandidates.length} candidates
+
+**Weaknesses diagnosed:** ${diagnoseBenchmark(baseline).map((s) => s.area).join(", ") || "none"}`;
+			}
+		),
+
+		// improve - Targeted improvement proposal
 		createSimpleTool(
 			"improve",
-			"Get improvement suggestions from benchmark diagnosis. Usage: /improve",
-			async () => {
+			"Generate a targeted improvement proposal by diagnosing benchmark weaknesses. Returns specific areas to improve and suggestions. Pass action='history' to view past improvement attempts.",
+			async (params) => {
+				const sub = (params.action as string) || "";
+
+				if (sub === "history") {
+					const archive = await storage.getImprovementArchive();
+					return improvementArchiveToMarkdown(archive as ImprovementArchive);
+				}
+
 				const policy = await storage.getActivePolicy();
 				const teacherPolicy: TeacherPolicy = policy
 					? {
@@ -469,24 +612,17 @@ ${state.lastSessionAt ? `**Last Session:** ${new Date(state.lastSessionAt).toLoc
 					: DEFAULT_POLICY;
 
 				const benchmark = runBenchmarkSuite(teacherPolicy);
-				const suggestions = diagnoseBenchmark(benchmark);
+				const proposal = generateImprovementProposal(benchmark);
+				const report = proposalToMarkdown(proposal);
 
-				if (suggestions.length === 0) {
-					return `✅ Benchmark looks healthy!\n\nOverall score: ${benchmark.overallScore.toFixed(2)}/100\n\nNo major improvement areas identified.`;
-				}
-
-				const suggestionList = suggestions
-					.map((s, i) => `### ${i + 1}. ${s.area}\n- **Metric**: ${s.metric} = ${s.value.toFixed(2)}\n- **Suggestion**: ${s.suggestion}`)
-					.join("\n\n");
-
-				return `🔧 Improvement Suggestions\n\nBenchmark score: ${benchmark.overallScore.toFixed(2)}/100\n\n${suggestionList}`;
+				return report;
 			}
 		),
 
-		// /trace - Browse benchmark/evolution traces
+		// trace - Browse benchmark/evolution traces
 		createSimpleTool(
 			"trace",
-			"Browse benchmark and evolution traces. Usage: /trace [type]",
+			"Browse benchmark and evolution history. Pass type='benchmark' or type='evolution' to filter.",
 			async (params) => {
 				const type = (params.type as string) || "all";
 
@@ -494,10 +630,10 @@ ${state.lastSessionAt ? `**Last Session:** ${new Date(state.lastSessionAt).toLoc
 				const evolutions = await storage.getEvolutions();
 
 				if (benchmarks.length === 0 && evolutions.length === 0) {
-					return "No traces yet. Use /bench or /evolve first.";
+					return "No traces yet. Run auto_improve or bench first.";
 				}
 
-				const lines: string[] = ["📊 Keating Traces\n"];
+				const lines: string[] = ["Keating Traces\n"];
 
 				if (type === "all" || type === "benchmark") {
 					lines.push("## Benchmarks");
@@ -518,14 +654,37 @@ ${state.lastSessionAt ? `**Last Session:** ${new Date(state.lastSessionAt).toLoc
 			}
 		),
 
-		// /prompt-eval - Evaluate prompt template
+		// prompt_evolve - Iteratively evolve a teaching prompt template
 		createSimpleTool(
-			"prompt-eval",
-			"Evaluate a prompt template for teaching effectiveness. Usage: /prompt-eval <prompt>",
+			"prompt_evolve",
+			"Iteratively evolve a teaching prompt template using PROSPER-style pairwise selection. Runs 4 iterations of candidate generation and evaluation.",
+			async (params) => {
+				const promptName = (params.name as string) || "learn";
+				const basePrompt = KEATING_SYSTEM_PROMPT;
+
+				const run = evolvePromptTemplate(basePrompt, promptName, 4);
+				const report = promptEvolutionToMarkdown(run);
+
+				await storage.savePromptEvolution(promptName, {
+					bestScore: run.best.score,
+					bestPrompt: run.best.prompt,
+					report,
+				});
+
+				const improved = run.best.score > run.baselineScore;
+
+				return `Prompt "${promptName}" evolved.\n\nBaseline: ${run.baselineScore.toFixed(2)} → Best: ${run.best.score.toFixed(2)} | Improved: ${improved}\n\n${report}`;
+			}
+		),
+
+		// prompt_eval - Single-pass prompt evaluation
+		createSimpleTool(
+			"prompt_eval",
+			"Evaluate a prompt template for teaching effectiveness in a single pass. Returns score, per-objective breakdown, and improvement feedback.",
 			async (params) => {
 				const promptContent = (params.prompt as string) || "";
 				if (!promptContent) {
-					return "Please provide a prompt to evaluate. Usage: /prompt-eval <prompt>";
+					return "Prompt content required.";
 				}
 
 				const result = evaluatePrompt(promptContent);
@@ -539,18 +698,17 @@ ${state.lastSessionAt ? `**Last Session:** ${new Date(state.lastSessionAt).toLoc
 						? `\n## Feedback\n${result.feedback.map((f) => `- ${f}`).join("\n")}`
 						: "\n## Feedback\n- No major issues detected.";
 
-				return `📝 Prompt Evaluation\n\n**Score:** ${result.score.toFixed(2)}/100\n\n## Objectives\n${objectiveList}${feedbackSection}`;
+				return `**Score:** ${result.score.toFixed(2)}/100\n\n## Objectives\n${objectiveList}${feedbackSection}`;
 			}
 		),
 
-		// /timeline - Show engagement timeline
+		// timeline - Show engagement timeline
 		createSimpleTool(
 			"timeline",
-			"Show the engagement timeline for all covered topics with retention decay and review urgency. Usage: /timeline",
+			"Show the engagement timeline for all covered topics with retention decay and review urgency. Use at session start to check if any topics need review.",
 			async () => {
 				const state = await storage.getLearnerState();
 				const coveredTopics: CoveredTopic[] = (state.topicsExplored || []).map((slug) => {
-					// Build covered topic data from feedback history
 					const topicFeedback = state.feedbackHistory.filter((f) => f.topic === slug);
 					const lastEntry = topicFeedback[topicFeedback.length - 1];
 					const upCount = topicFeedback.filter((f) => f.signal === "thumbs-up").length;
@@ -566,7 +724,7 @@ ${state.lastSessionAt ? `**Last Session:** ${new Date(state.lastSessionAt).toLoc
 				});
 
 				if (coveredTopics.length === 0) {
-					return "📅 No topics covered yet. Start a lesson and provide feedback to begin tracking your engagement timeline.";
+					return "No topics covered yet.";
 				}
 
 				const timeline = buildEngagementTimeline(coveredTopics, DEFAULT_ENGAGEMENT_POLICY);
@@ -574,10 +732,10 @@ ${state.lastSessionAt ? `**Last Session:** ${new Date(state.lastSessionAt).toLoc
 			}
 		),
 
-		// /due - Show topics due for review
+		// due - Show topics due for review
 		createSimpleTool(
 			"due",
-			"Show topics that are due for review based on spaced repetition. Usage: /due",
+			"Show topics that are due for review based on spaced repetition. Use at session start to proactively suggest review.",
 			async () => {
 				const state = await storage.getLearnerState();
 				const coveredTopics: CoveredTopic[] = (state.topicsExplored || []).map((slug) => {
@@ -596,12 +754,12 @@ ${state.lastSessionAt ? `**Last Session:** ${new Date(state.lastSessionAt).toLoc
 				});
 
 				if (coveredTopics.length === 0) {
-					return "📋 No topics covered yet. Start a lesson and provide feedback to begin tracking.";
+					return "No topics covered yet.";
 				}
 
 				const due = getDueTopics(coveredTopics, DEFAULT_ENGAGEMENT_POLICY);
 				if (due.length === 0) {
-					return "✅ All topics are up to date! No reviews needed right now.";
+					return "All topics are up to date. No reviews needed.";
 				}
 
 				return dueTopicsToMarkdown(due);

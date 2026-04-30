@@ -32,7 +32,12 @@ import {
   tracesDir,
   verificationsDir,
   verificationCachePath,
-  learnerStatePath
+  learnerStatePath,
+  quizDir,
+  flashcardsDir,
+  projectsDir,
+  workbooksDir,
+  masteryDir
 } from "./paths.js";
 import { ensureConfig } from "./config.js";
 import { DEFAULT_POLICY, loadPolicy, savePolicy } from "./policy.js";
@@ -57,6 +62,20 @@ import {
   rejectImprovement,
   type ImprovementArtifact
 } from "./self-improve.js";
+import {
+  generateQuiz, quizToMarkdown, quizAnswerKeyToMarkdown,
+  generateWorkbook, workbookToMarkdown
+} from "./quiz.js";
+import {
+  generateFlashCards, flashcardsToMarkdown
+} from "./flashcards.js";
+import {
+  generateProject, generateAssignment,
+  projectToMarkdown, assignmentToMarkdown
+} from "./projects.js";
+import {
+  generateDiagnosticQuestions
+} from "./mastery.js";
 
 export async function ensureProjectScaffold(cwd: string): Promise<void> {
   await ensureKeatingDirs(cwd);
@@ -246,6 +265,76 @@ export async function currentPolicySummary(cwd: string): Promise<string> {
   ].join("\n");
 }
 
+export async function quizTopicArtifact(cwd: string, topicName: string) {
+  await ensureProjectScaffold(cwd);
+  const quiz = generateQuiz(topicName);
+  const slug = quiz.slug;
+  const base = join(quizDir(cwd), slug);
+  await writeFile(`${base}.md`, quizToMarkdown(quiz), "utf8");
+  await writeFile(`${base}-answers.md`, quizAnswerKeyToMarkdown(quiz), "utf8");
+  return { quizPath: `${base}.md`, answersPath: `${base}-answers.md` };
+}
+
+export async function workbookTopicArtifact(cwd: string, topicName: string) {
+  await ensureProjectScaffold(cwd);
+  const wb = generateWorkbook(topicName);
+  const wbPath = join(workbooksDir(cwd), `${wb.slug}.md`);
+  await writeFile(wbPath, workbookToMarkdown(wb), "utf8");
+  return { workbookPath: wbPath };
+}
+
+export async function flashcardsTopicArtifact(cwd: string, topicName: string) {
+  await ensureProjectScaffold(cwd);
+  const deck = generateFlashCards(topicName);
+  const deckPath = join(flashcardsDir(cwd), `${deck.slug}.md`);
+  await writeFile(deckPath, flashcardsToMarkdown(deck), "utf8");
+  return { flashcardsPath: deckPath };
+}
+
+export async function projectTopicArtifact(cwd: string, topicName: string) {
+  await ensureProjectScaffold(cwd);
+  const project = generateProject(topicName);
+  const projectPath = join(projectsDir(cwd), `${project.slug}.md`);
+  await writeFile(projectPath, projectToMarkdown(project), "utf8");
+  return { projectPath };
+}
+
+export async function assignmentTopicArtifact(cwd: string, topicName: string) {
+  await ensureProjectScaffold(cwd);
+  const assignment = generateAssignment(topicName);
+  const assignmentPath = join(projectsDir(cwd), `${assignment.slug}-assignment.md`);
+  await writeFile(assignmentPath, assignmentToMarkdown(assignment), "utf8");
+  return { assignmentPath };
+}
+
+export async function masteryTopicArtifact(cwd: string, topicName: string) {
+  await ensureProjectScaffold(cwd);
+  const topic = resolveTopic(topicName);
+  const questions = generateDiagnosticQuestions(topic);
+  const slug = topic.slug;
+  const diagPath = join(masteryDir(cwd), `${slug}-diagnostic.md`);
+
+  const lines = [
+    `# Diagnostic Questions: ${topic.title}`,
+    "",
+    `> Answer each question in your own words. Self-score using the rubric, or run \`keating assess ${topicName}\` after answering.`,
+    "",
+  ];
+  for (const q of questions) {
+    lines.push(`## ${q.id} [${q.level}]`);
+    lines.push(q.question);
+    lines.push("");
+    lines.push(`**Rubric:** ${q.rubric}`);
+    lines.push("");
+    lines.push(`**Your answer:**`);
+    lines.push("");
+    lines.push("---");
+    lines.push("");
+  }
+  await writeFile(diagPath, lines.join("\n"), "utf8");
+  return { diagPath };
+}
+
 export async function listArtifacts(cwd: string): Promise<Array<{ label: string; path: string }>> {
   await ensureProjectScaffold(cwd);
   const roots = [
@@ -257,7 +346,12 @@ export async function listArtifacts(cwd: string): Promise<Array<{ label: string;
     promptEvolutionDir(cwd),
     tracesDir(cwd),
     verificationsDir(cwd),
-    timelineDir(cwd)
+    timelineDir(cwd),
+    quizDir(cwd),
+    flashcardsDir(cwd),
+    projectsDir(cwd),
+    workbooksDir(cwd),
+    masteryDir(cwd)
   ];
   const artifacts: Array<{ label: string; path: string; mtime: number }> = [];
 

@@ -1,6 +1,6 @@
 # Keating
 
-> *"O me! O life! of the questions of these recurring,
+> "O me! O life! of the questions of these recurring,
 > Of the endless trains of the faithless, of cities fill’d with the foolish,
 > Of myself for ever reproaching myself, (for who more foolish than I, and who more faithless?)
 > Of eyes that vainly crave the light, of the objects mean, of the struggle ever renew’d,
@@ -10,7 +10,7 @@
 >
 > Answer.
 > That you are here—that life exists and identity,
-> That the powerful play goes on, and you may contribute a verse."*
+> That the powerful play goes on, and you may contribute a verse."
 > -- Walt Whitman, *Leaves of Grass*
 
 Keating exists because as AI grows more capable, the risk is not just that it replaces our tasks, but that it replaces our *voice*. We must not let technology become a surrogate for thought. 

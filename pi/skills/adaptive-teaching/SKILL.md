@@ -18,12 +18,12 @@ Use this skill when the user asks to learn a concept rather than merely receive 
 
 ## Keating Artifacts
 
-- If a lesson plan would help, tell the user to run `/plan <topic>`.
-- If a concept map would help, tell the user to run `/map <topic>`.
-- If an animation would help, tell the user to run `/animate <topic>`.
-- If they want to verify facts first, tell the user to run `/verify <topic>`.
-- If they want the teacher to improve, tell the user to run `/bench [topic]` and `/evolve [topic]`.
-- If they want to give feedback, tell the user to run `/feedback <up|down|confused> [topic]`.
+- Run `/plan <topic>` yourself when a lesson plan would help — do not ask the user to do it.
+- Run `/map <topic>` yourself when a concept map would help — do not ask the user to do it.
+- Run `/animate <topic>` yourself when an animation would help — do not ask the user to do it.
+- Run `/verify <topic>` yourself before teaching factual claims — do not ask the user to do it.
+- Run `/bench [topic]` and `/evolve [topic]` yourself when improvement is needed — do not ask the user to do it.
+- Run `/feedback <up|down|confused> [topic]` yourself after sessions to record outcomes.
 
 ## Red Flags
 

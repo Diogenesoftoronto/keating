@@ -61,7 +61,7 @@ message-editor textarea::placeholder {
   border-radius: 9999px;
 }
 
-/* Mobile-friendly improvements for Pi Mono UI */
+/* Mobile-friendly improvements for mono UI */
 @media (max-width: 768px) {
   /* Larger touch targets for buttons */
   button,

@@ -45,6 +45,10 @@ export function sessionsDir(cwd: string): string {
   return join(keatingRoot(cwd), "sessions");
 }
 
+export function configDir(cwd: string): string {
+  return join(keatingRoot(cwd), "pi-config");
+}
+
 export function currentPolicyPath(cwd: string): string {
   return join(stateDir(cwd), "current-policy.json");
 }
@@ -77,6 +81,26 @@ export function timelineDir(cwd: string): string {
   return join(outputsDir(cwd), "timelines");
 }
 
+export function quizDir(cwd: string): string {
+  return join(outputsDir(cwd), "quizzes");
+}
+
+export function flashcardsDir(cwd: string): string {
+  return join(outputsDir(cwd), "flashcards");
+}
+
+export function projectsDir(cwd: string): string {
+  return join(outputsDir(cwd), "projects");
+}
+
+export function masteryDir(cwd: string): string {
+  return join(outputsDir(cwd), "mastery");
+}
+
+export function workbooksDir(cwd: string): string {
+  return join(outputsDir(cwd), "workbooks");
+}
+
 export async function ensureKeatingDirs(cwd: string): Promise<void> {
   await Promise.all([
     mkdir(stateDir(cwd), { recursive: true }),
@@ -91,6 +115,12 @@ export async function ensureKeatingDirs(cwd: string): Promise<void> {
     mkdir(verificationsDir(cwd), { recursive: true }),
     mkdir(join(outputsDir(cwd), "improvements"), { recursive: true }),
     mkdir(sessionsDir(cwd), { recursive: true }),
-    mkdir(timelineDir(cwd), { recursive: true })
+    mkdir(timelineDir(cwd), { recursive: true }),
+    mkdir(quizDir(cwd), { recursive: true }),
+    mkdir(flashcardsDir(cwd), { recursive: true }),
+    mkdir(projectsDir(cwd), { recursive: true }),
+    mkdir(masteryDir(cwd), { recursive: true }),
+    mkdir(workbooksDir(cwd), { recursive: true }),
+    mkdir(configDir(cwd), { recursive: true })
   ]);
 }
