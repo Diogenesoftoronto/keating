@@ -1,0 +1,52 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "2c89292f334f",
+  "session_id": "8b259f67-2069-44df-96e6-5ac05c22b5b3",
+  "strategy": "manual-commit",
+  "created_at": "2026-04-30T20:31:49.417581228Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    ".gitignore",
+    "web/src/pages/Paper.tsx",
+    "web/nitro.config.ts",
+    "web/src/components/ChatIntro.tsx",
+    "web/package.json"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-4-7",
+  "turn_id": "61725f332f25",
+  "checkpoint_transcript_start": 200,
+  "transcript_lines_at_start": 200,
+  "token_usage": {
+    "input_tokens": 52,
+    "cache_creation_tokens": 23034,
+    "cache_read_tokens": 2289146,
+    "output_tokens": 11247,
+    "api_call_count": 32
+  },
+  "session_metrics": {
+    "turn_count": 8
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-04-30T20:31:49.397264671Z",
+    "agent_lines": 12,
+    "agent_removed": 4,
+    "human_added": 10555,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 10567,
+    "total_lines_changed": 10573,
+    "agent_percentage": 0.1513288565213279,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+create teh new git hub release
+
+---
+
+remove claude as co-commiter
+
+---
+
+Want me to /schedule a background agent in 2 weeks to open the git-lfs migration PR for those tapes? later
+
+---
+
+3
+
+---
+
+the site release should be updated, also the study.pdf doesn't properly download in production, i would also want you to rename that file with the title of the study
