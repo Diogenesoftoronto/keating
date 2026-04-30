@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### TODO
+- Move rendered VHS tapes (`docs/assets/*.mp4`, `web/public/tapes/*.mp4`) out of git history and into git-lfs (or an external CDN). They were committed inline in 0.3.0 to keep the blog working immediately; ~1.7MB today, will grow.
+
 ## [0.3.0] - 2026-04-30
 
 ### Added
