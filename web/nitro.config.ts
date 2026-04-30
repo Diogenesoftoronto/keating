@@ -12,6 +12,13 @@ export default defineNitroConfig({
     "/**/*.ico": { fallthrough: false },
     "/**/*.wasm": { fallthrough: false },
     "/**/*.onnx": { fallthrough: false },
+    "/**/*.pdf": {
+      fallthrough: false,
+      headers: { "Content-Disposition": "attachment" },
+    },
+    "/**/*.mp4": { fallthrough: false },
+    "/**/*.webp": { fallthrough: false },
+    "/**/*.gif": { fallthrough: false },
     "/**": { static: true },
   },
   publicAssets: [
