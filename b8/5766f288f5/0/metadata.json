@@ -1,0 +1,48 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "b85766f288f5",
+  "session_id": "8b259f67-2069-44df-96e6-5ac05c22b5b3",
+  "strategy": "manual-commit",
+  "created_at": "2026-04-30T20:48:59.728597266Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "src/core/engagement.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-4-7",
+  "turn_id": "7fe204848df1",
+  "checkpoint_transcript_start": 491,
+  "transcript_lines_at_start": 491,
+  "token_usage": {
+    "input_tokens": 35,
+    "cache_creation_tokens": 19984,
+    "cache_read_tokens": 3653314,
+    "output_tokens": 9119,
+    "api_call_count": 30
+  },
+  "session_metrics": {
+    "turn_count": 11
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-04-30T20:48:59.680837798Z",
+    "agent_lines": 14,
+    "agent_removed": 4,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 14,
+    "total_lines_changed": 18,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
