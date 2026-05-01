@@ -11,6 +11,12 @@ export interface KeatingConfig {
     defaultModel?: string;
     defaultThinking?: string;
   };
+  speech: {
+    enabled: boolean;
+    defaultVoice: string;
+    fastModel?: string;
+    steeringModel?: string;
+  };
   debug: {
     persistTraces: boolean;
     traceTopLearners: number;
@@ -24,6 +30,12 @@ export const DEFAULT_KEATING_CONFIG: KeatingConfig = {
     defaultProvider: "google",
     defaultModel: "google/gemini-2.5-pro",
     defaultThinking: "medium"
+  },
+  speech: {
+    enabled: false,
+    defaultVoice: "conversational",
+    fastModel: "gemini-3.1-flash-live-preview",
+    steeringModel: "default"
   },
   debug: {
     persistTraces: true,
@@ -57,6 +69,15 @@ export async function loadKeatingConfig(cwd: string): Promise<KeatingConfig> {
         defaultProvider: sanitizeOptionalString(parsed.pi?.defaultProvider) ?? DEFAULT_KEATING_CONFIG.pi.defaultProvider,
         defaultModel: sanitizeOptionalString(parsed.pi?.defaultModel) ?? DEFAULT_KEATING_CONFIG.pi.defaultModel,
         defaultThinking: sanitizeOptionalString(parsed.pi?.defaultThinking) ?? DEFAULT_KEATING_CONFIG.pi.defaultThinking
+      },
+      speech: {
+        enabled:
+          typeof parsed.speech?.enabled === "boolean"
+            ? parsed.speech.enabled
+            : DEFAULT_KEATING_CONFIG.speech.enabled,
+        defaultVoice: sanitizeOptionalString(parsed.speech?.defaultVoice) ?? DEFAULT_KEATING_CONFIG.speech.defaultVoice,
+        fastModel: sanitizeOptionalString(parsed.speech?.fastModel) ?? DEFAULT_KEATING_CONFIG.speech.fastModel,
+        steeringModel: sanitizeOptionalString(parsed.speech?.steeringModel) ?? DEFAULT_KEATING_CONFIG.speech.steeringModel
       },
       debug: {
         persistTraces:

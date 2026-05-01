@@ -32,6 +32,7 @@ It is designed around five influences:
 - A Pi launcher that prefers a fresh standalone `pi` install by default and only uses the bundled Feynman runtime when you explicitly allow it.
 - A Pi extension with operational commands: `/plan`, `/map`, `/animate`, `/verify`, `/bench`, `/evolve`, `/prompt-evolve`, `/feedback`, `/policy`, `/outputs`, `/trace`.
 - Teaching workflows as prompt templates: `/learn`, `/diagnose`, `/quiz`, `/bridge`.
+- An optional speech module that exposes a `keating_voice` tool for short voice-tagged learner-facing utterances while the normal model keeps doing reasoning, questioning, verification, and tool-backed correction.
 - A prompt-evolution loop that scores prompt templates with natural-language feedback and picks revisions with a PROSPER-style multi-objective selector.
 - 12 domains: math, science, philosophy, code, law, politics, psychology, medicine, arts, history, and general.
 - Deterministic artifacts under `.keating/`:
@@ -54,6 +55,7 @@ It is designed around five influences:
 Visit **[keating.help](https://keating.help)** to use Keating directly in your browser with:
 - Your own API keys (stored locally)
 - Local model inference via WebGPU (Gemma 4 E4B)
+- Optional Gemini 3.1 Flash Live speech from the speaker button in the chat header
 - Full hyperteacher experience without installation
 
 ### From the Command Line
@@ -118,6 +120,12 @@ Keating reads runtime/model defaults from `keating.config.json`.
     "defaultModel": "google/gemini-2.5-pro",
     "defaultThinking": "medium"
   },
+  "speech": {
+    "enabled": false,
+    "defaultVoice": "conversational",
+    "fastModel": "gemini-3.1-flash-live-preview",
+    "steeringModel": "default"
+  },
   "debug": {
     "persistTraces": true,
     "traceTopLearners": 3,
@@ -132,6 +140,16 @@ Keating reads runtime/model defaults from `keating.config.json`.
 - `prefer-standalone`
 - `embedded-only`
 
+The speech module is disabled by default. When `speech.enabled` is `true`, Keating registers a Pi tool named `keating_voice`. The tool returns transcript-safe voice tags such as:
+
+```text
+[voice voice=conversational tags=question,verify pace=normal affect=curious] What would you expect to happen next?
+```
+
+In the Pi shell, this first layer is provider-neutral: `fastModel` names the intended fast conversational voice path, and `steeringModel` names the supervising model path, but the tool emits structured voice-tagged utterances rather than audio. That keeps the speech loop optional while preserving the normal tool-using teacher as the source of questions, verification, and corrections.
+
+In the web app, the speech toggle registers the same `keating_voice` tool and routes it through Gemini 3.1 Flash Live (`gemini-3.1-flash-live-preview`) with audio output. Speech stays off by default, uses the Google API key from Settings, and should be used for short conversational delivery while the primary model continues to plan, verify, and steer the lesson.
+
 Inside the Pi shell:
 
 ```text
@@ -145,6 +163,7 @@ Inside the Pi shell:
 /evolve derivative
 /prompt-evolve learn
 /feedback up derivative
+/speech
 /trace derivative
 /outputs
 ```

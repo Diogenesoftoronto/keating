@@ -13,15 +13,25 @@ interface RegisteredCommand {
   handler: (args: string | string[], ctx: any) => Promise<void>;
 }
 
+interface RegisteredTool {
+  name: string;
+  execute: (toolCallId: string, params: any) => Promise<any>;
+}
+
 function createMockPi() {
   const commands = new Map<string, RegisteredCommand>();
   const events = new Map<string, (event: any, ctx: any) => Promise<void>>();
+  const tools = new Map<string, RegisteredTool>();
 
   return {
     commands,
     events,
+    tools,
     registerCommand(name: string, cmd: RegisteredCommand) {
       commands.set(name, cmd);
+    },
+    registerTool(tool: RegisteredTool) {
+      tools.set(tool.name, tool);
     },
     on(event: string, handler: (event: any, ctx: any) => Promise<void>) {
       events.set(event, handler);
@@ -153,6 +163,13 @@ test("/policy shows current policy", async () => {
   assert.ok(ctx.editorText.includes("Policy:"));
 });
 
+test("/speech shows disabled status by default", async () => {
+  const { pi, ctx } = await setup();
+  await pi.commands.get("speech")!.handler("" as any, ctx);
+  assert.ok(ctx.editorText.includes("speech=disabled"));
+  assert.ok(ctx.notifications.some((n) => n.message.includes("Speech is disabled")));
+});
+
 test("/trace with empty args works", async () => {
   const { pi, ctx } = await setup();
   await pi.commands.get("trace")!.handler("" as any, ctx);
@@ -165,6 +182,7 @@ test("session_start event fires notification", async () => {
   assert.equal(ctx.notifications.some((n) => n.message.includes("Keating loaded")), false);
   assert.ok(ctx.headerSet, "setHeader should be called for the startup card");
   assert.equal(ctx.widgetKeys.size, 0, "startup card should not occupy persistent widgets");
+  assert.equal(pi.tools.has("keating_voice"), false);
 });
 
 test("session_start debug console summary fires notification", async () => {
@@ -180,4 +198,34 @@ test("session_start debug console summary fires notification", async () => {
   );
   await pi.events.get("session_start")!({}, ctx);
   assert.ok(ctx.notifications.some((n) => n.message.includes("Keating loaded")));
+});
+
+test("session_start registers voice tool when speech is enabled", async () => {
+  const { cwd, pi, ctx } = await setup();
+  await writeFile(
+    configPath(cwd),
+    JSON.stringify({
+      speech: {
+        enabled: true,
+        defaultVoice: "coach",
+        fastModel: "fast-voice",
+        steeringModel: "standard-verifier"
+      }
+    }),
+    "utf8"
+  );
+
+  await pi.events.get("session_start")!({}, ctx);
+  const tool = pi.tools.get("keating_voice");
+  assert.ok(tool, "speech-enabled sessions should register keating_voice");
+
+  const result = await tool.execute("tool-1", {
+    text: "What is your next guess?",
+    tags: ["question", "verify"],
+    affect: "curious"
+  });
+
+  assert.equal(result.content[0].text, "[voice voice=coach tags=question,verify pace=normal affect=curious] What is your next guess?");
+  assert.equal(result.details.fastModel, "fast-voice");
+  assert.equal(result.details.steeringModel, "standard-verifier");
 });

@@ -23,6 +23,7 @@ export const extensionCommandSpecs: CommandSpec[] = [
 	{ name: "timeline",     args: "",               section: "Review",        description: "Show engagement timeline for all topics." },
 	{ name: "due",          args: "",               section: "Review",        description: "Show topics due for spaced-review." },
 	{ name: "policy",       args: "",               section: "Session",       description: "Show the active hyperteacher policy." },
+	{ name: "speech",       args: "",               section: "Session",       description: "Show optional voice-tool status." },
 	{ name: "trace",        args: "[query]",        section: "Session",       description: "Browse debug traces and artifacts." },
 	{ name: "outputs",      args: "",               section: "Session",       description: "Browse all Keating artifacts.", shellOnly: true },
 ];

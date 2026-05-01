@@ -5,6 +5,7 @@
 
 import type { AgentTool } from "@mariozechner/pi-agent-core";
 import { KeatingStorage, DEFAULT_BROWSER_POLICY } from "./storage";
+import { createSpeechTool, type WebSpeechSettings } from "./speech";
 import {
 	buildLessonPlan,
 	lessonPlanToMarkdown,
@@ -113,6 +114,17 @@ You have internal tools for teaching, self-evaluation, and self-evolution. Use t
 - \`prompt_eval\` — Single-pass evaluation of a prompt template
 `;
 
+const SPEECH_SYSTEM_PROMPT = `
+### Optional Speech
+- \`keating_voice\` is available only when the learner enables speech in the web UI.
+- Use \`keating_voice\` for short learner-facing utterances: one question, one recap, one redirect, or one encouragement.
+- Keep deeper reasoning, verification, and tool work in the normal text/tool loop. The voice layer is for conversational delivery, not for independent answers.
+`;
+
+export function buildKeatingSystemPrompt(speechEnabled = false): string {
+	return speechEnabled ? `${KEATING_SYSTEM_PROMPT}${SPEECH_SYSTEM_PROMPT}` : KEATING_SYSTEM_PROMPT;
+}
+
 // Helper function to create tools with proper schema
 function createSimpleTool(
 	name: string,
@@ -128,15 +140,28 @@ function createSimpleTool(
 			properties: {},
 			additionalProperties: true,
 		},
-		execute: async (params: unknown) => {
+		execute: async (_toolCallId: string, params: Record<string, unknown>) => {
 			const result = await execute(params as Record<string, unknown>);
-			return { success: true, message: result };
+			return {
+				content: [{ type: "text", text: result }],
+				details: { tool: name },
+			};
 		},
 	} as unknown as AgentTool;
 }
 
-export async function createKeatingTools(storage: KeatingStorage): Promise<AgentTool[]> {
-	return [
+export interface KeatingToolsOptions {
+	speech?: {
+		settings: WebSpeechSettings;
+		getGoogleApiKey: () => Promise<string | undefined>;
+	};
+}
+
+export async function createKeatingTools(
+	storage: KeatingStorage,
+	options: KeatingToolsOptions = {}
+): Promise<AgentTool[]> {
+	const tools: AgentTool[] = [
 		// plan - Generate lesson plan
 		createSimpleTool(
 			"plan",
@@ -766,4 +791,10 @@ ${topicList}
 			}
 		),
 	];
+
+	if (options.speech?.settings.enabled) {
+		tools.push(createSpeechTool(options.speech.settings, options.speech.getGoogleApiKey));
+	}
+
+	return tools;
 }
