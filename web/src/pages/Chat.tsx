@@ -1,5 +1,5 @@
 import { Suspense, useState } from "react";
-import { Settings } from "lucide-react";
+import { Settings, Volume2, VolumeX } from "lucide-react";
 import { useKeatingAgent } from "../hooks/useKeatingAgent";
 import { ChatIntro } from "../components/ChatIntro";
 
@@ -13,7 +13,7 @@ import "../components/settings";
 import "@mariozechner/mini-lit/dist/ThemeToggle.js";
 
 function ChatContent() {
-  const { title, openSettings, chatPanelRef } = useKeatingAgent();
+  const { title, openSettings, chatPanelRef, speechEnabled, toggleSpeech } = useKeatingAgent();
   const [introDismissed, setIntroDismissed] = useState(
     () => sessionStorage.getItem("keating_chat_intro") === "dismissed"
   );
@@ -30,6 +30,14 @@ function ChatContent() {
         <span className="text-lg font-semibold">{title}</span>
         <div className="flex items-center gap-1">
           <theme-toggle></theme-toggle>
+          <button
+            className={`inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-8 w-8 ${speechEnabled ? "text-primary" : ""}`}
+            title={speechEnabled ? "Disable speech" : "Enable speech"}
+            aria-pressed={speechEnabled}
+            onClick={toggleSpeech}
+          >
+            {speechEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+          </button>
           <button
             className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-8 w-8"
             title="Settings"

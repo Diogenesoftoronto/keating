@@ -29,7 +29,8 @@ import { KeatingProvidersModelsTab } from "../components/providers-models-tab";
 import { KeatingModelSelector } from "../components/model-selector";
 import { getProviderApiKey, syncCustomProviderKeys } from "../lib/provider-models";
 import { localModel } from "../stores/local-model";
-import { createKeatingTools, KEATING_SYSTEM_PROMPT as TOOLS_PROMPT } from "../keating/browser-tools";
+import { buildKeatingSystemPrompt, createKeatingTools } from "../keating/browser-tools";
+import { loadWebSpeechSettings, primeSpeechAudio, saveWebSpeechSettings, type WebSpeechSettings } from "../keating/speech";
 import { KeatingStorage } from "../keating/storage";
 import { subscribeAgentEvents } from "./agent-subscriptions";
 
@@ -220,6 +221,8 @@ export interface UseKeatingAgentReturn {
   isPending: boolean;
   openSettings: () => void;
   chatPanelRef: (node: ChatPanel | null) => void;
+  speechEnabled: boolean;
+  toggleSpeech: () => void;
 }
 
 export function useKeatingAgent(): UseKeatingAgentReturn {
@@ -229,6 +232,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const [title] = useState("Keating");
   const agentRef = useRef<Agent | null>(null);
   const selectedModelRef = useRef<Model<Api>>(DEFAULT_MODEL);
+  const [speechSettings, setSpeechSettings] = useState<WebSpeechSettings>(() => loadWebSpeechSettings());
   const [isPending, startTransition] = useTransition();
 
   const openSettings = useCallback(() => {
@@ -245,10 +249,17 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
 
   const unsubRef = useRef<(() => void) | null>(null);
 
+  const toolOptions = useCallback((settings: WebSpeechSettings) => ({
+    speech: {
+      settings,
+      getGoogleApiKey: () => getProviderApiKey("google"),
+    },
+  }), []);
+
   const createAgent = useCallback(async (panel: ChatPanel, initialState?: Partial<AgentState>) => {
-    const tools = await createKeatingTools(keatingStorage);
+    const tools = await createKeatingTools(keatingStorage, toolOptions(speechSettings));
     const nextState: Partial<AgentState> = {
-      systemPrompt: TOOLS_PROMPT,
+      systemPrompt: buildKeatingSystemPrompt(speechSettings.enabled),
       model: initialState?.model ?? selectedModelRef.current,
       thinkingLevel: "medium",
       messages: [],
@@ -293,6 +304,33 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     };
 
     await panel.setAgent(agent, setupCallbacks);
+  }, [speechSettings, toolOptions]);
+
+  useEffect(() => {
+    const agent = agentRef.current;
+    if (!agent) return;
+
+    let cancelled = false;
+    createKeatingTools(keatingStorage, toolOptions(speechSettings))
+      .then((tools) => {
+        if (cancelled) return;
+        agent.state.tools = tools;
+        agent.state.systemPrompt = buildKeatingSystemPrompt(speechSettings.enabled);
+      })
+      .catch(console.error);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [speechSettings, toolOptions]);
+
+  const toggleSpeech = useCallback(() => {
+    setSpeechSettings((current) => {
+      const next = { ...current, enabled: !current.enabled };
+      saveWebSpeechSettings(next);
+      if (next.enabled) primeSpeechAudio().catch(console.warn);
+      return next;
+    });
   }, []);
 
   useEffect(() => {
@@ -341,5 +379,5 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     }
   }, [createAgent]);
 
-  return { title, isPending, openSettings, chatPanelRef };
+  return { title, isPending, openSettings, chatPanelRef, speechEnabled: speechSettings.enabled, toggleSpeech };
 }

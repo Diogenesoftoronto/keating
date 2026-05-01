@@ -38,6 +38,46 @@ function CodeBlock({ children }: { children: string }) {
 
 const POSTS: Post[] = [
   {
+    date: "2026-05-01",
+    badge: { label: "FEATURE", color: "feature" },
+    title: "Optional Speech: Gemini Live Voice for the Web",
+    body: (
+      <>
+        <div className="mb-4">
+          <Pretext
+            text="Keating now has an optional speech layer. The teacher still thinks, verifies, plans, and steers through the normal model/tool loop, but it can hand short learner-facing moments to a dedicated voice tool when speech is useful."
+            font="16px 'Inter', sans-serif"
+            lineHeight={24}
+          />
+        </div>
+        <h3 className="font-bold mt-4 mb-2">How It Works</h3>
+        <ul className="text-sm space-y-2 ml-4 mb-4">
+          <li>
+            <strong>Opt-in by design:</strong> Speech stays disabled until you turn it on. In the web app, use the speaker button in the chat header.
+          </li>
+          <li>
+            <strong>Voice tool:</strong> When enabled, the model gets <Code>keating_voice</Code> for short questions, redirects, recaps, and encouragement.
+          </li>
+          <li>
+            <strong>Gemini Live path:</strong> The browser route uses <Code>gemini-3.1-flash-live-preview</Code> with the Google API key stored in Settings.
+          </li>
+          <li>
+            <strong>Normal model remains in charge:</strong> Reasoning, verification, and correction still happen through the regular teaching tools instead of being hidden inside the voice layer.
+          </li>
+        </ul>
+        <h3 className="font-bold mt-4 mb-2">Shell Support</h3>
+        <p className="text-sm mb-4">
+          The CLI config now includes a disabled-by-default <Code>speech</Code> block. When enabled,
+          the Pi extension registers <Code>keating_voice</Code> and emits transcript-safe voice tags:
+        </p>
+        <CodeBlock>{`[voice voice=conversational tags=question,verify pace=normal affect=curious] What would you expect to happen next?`}</CodeBlock>
+        <p className="text-sm text-[#64748b]">
+          The first shell version is provider-neutral and tag-based. The web version is the first audio-backed path.
+        </p>
+      </>
+    ),
+  },
+  {
     date: "2026-04-30",
     badge: { label: "RELEASE", color: "release" },
     title: "v0.3.0 — Pedagogical Engines, a Sharper Logo, and Recorded Workflows",

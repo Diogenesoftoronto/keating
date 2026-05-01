@@ -43,6 +43,10 @@ test("ALWAYS: loadKeatingConfig preserves valid overrides, defaults missing fiel
       defaultProvider: fc.option(fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0), { nil: undefined }),
       defaultModel: fc.option(fc.string({ minLength: 1, maxLength: 40 }).filter(s => s.trim().length > 0), { nil: undefined }),
       defaultThinking: fc.option(fc.constantFrom("low", "medium", "high"), { nil: undefined }),
+      speechEnabled: fc.boolean(),
+      defaultVoice: fc.option(fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0), { nil: undefined }),
+      fastModel: fc.option(fc.string({ minLength: 1, maxLength: 40 }).filter(s => s.trim().length > 0), { nil: undefined }),
+      steeringModel: fc.option(fc.string({ minLength: 1, maxLength: 40 }).filter(s => s.trim().length > 0), { nil: undefined }),
       persistTraces: fc.boolean(),
       traceTopLearners: fc.integer({ min: 1, max: 10 }),
       consoleSummary: fc.boolean(),
@@ -56,6 +60,12 @@ test("ALWAYS: loadKeatingConfig preserves valid overrides, defaults missing fiel
           ...(overrides.defaultModel ? { defaultModel: overrides.defaultModel } : {}),
           ...(overrides.defaultThinking ? { defaultThinking: overrides.defaultThinking } : {}),
         },
+        speech: {
+          enabled: overrides.speechEnabled,
+          ...(overrides.defaultVoice ? { defaultVoice: overrides.defaultVoice } : {}),
+          ...(overrides.fastModel ? { fastModel: overrides.fastModel } : {}),
+          ...(overrides.steeringModel ? { steeringModel: overrides.steeringModel } : {}),
+        },
         debug: {
           persistTraces: overrides.persistTraces,
           traceTopLearners: overrides.traceTopLearners,
@@ -66,6 +76,7 @@ test("ALWAYS: loadKeatingConfig preserves valid overrides, defaults missing fiel
       const config = await loadKeatingConfig(workdir);
 
       expect(config.pi.runtimePreference).toBe(overrides.runtimePreference);
+      expect(config.speech.enabled).toBe(overrides.speechEnabled);
       expect(config.debug.persistTraces).toBe(overrides.persistTraces);
       expect(config.debug.traceTopLearners).toBe(overrides.traceTopLearners);
       expect(config.debug.consoleSummary).toBe(overrides.consoleSummary);
@@ -78,6 +89,15 @@ test("ALWAYS: loadKeatingConfig preserves valid overrides, defaults missing fiel
 
       if (overrides.defaultThinking) expect(config.pi.defaultThinking).toBe(overrides.defaultThinking.trim());
       else expect(config.pi.defaultThinking).toBe(DEFAULT_KEATING_CONFIG.pi.defaultThinking);
+
+      if (overrides.defaultVoice) expect(config.speech.defaultVoice).toBe(overrides.defaultVoice.trim());
+      else expect(config.speech.defaultVoice).toBe(DEFAULT_KEATING_CONFIG.speech.defaultVoice);
+
+      if (overrides.fastModel) expect(config.speech.fastModel).toBe(overrides.fastModel.trim());
+      else expect(config.speech.fastModel).toBe(DEFAULT_KEATING_CONFIG.speech.fastModel);
+
+      if (overrides.steeringModel) expect(config.speech.steeringModel).toBe(overrides.steeringModel.trim());
+      else expect(config.speech.steeringModel).toBe(DEFAULT_KEATING_CONFIG.speech.steeringModel);
     }
   ));
 });
