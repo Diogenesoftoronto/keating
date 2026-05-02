@@ -480,26 +480,34 @@ export default function hyperteacher(pi: any): void {
   });
 
   pi.registerCommand("feedback", {
-    description: "Record feedback on the current teaching session (up, down, confused).",
-    handler: async (args: string[], ctx: any) => {
-      const raw = topicFromArgs(args).toLowerCase();
-      const parts = raw.split(/\s+/);
+    description: "Record feedback on the current teaching session (up, down, confused) with an optional comment.",
+    handler: async (args: string | string[], ctx: any) => {
+      const parts = Array.isArray(args) ? args : String(args ?? "").trim().split(/\s+/);
       const signalMap: Record<string, "thumbs-up" | "thumbs-down" | "confused"> = {
         up: "thumbs-up",
         down: "thumbs-down",
         confused: "confused"
       };
-      const signal = signalMap[parts[0]];
+      const signal = signalMap[parts[0]?.toLowerCase() ?? ""];
       if (!signal) {
-        info(ctx, "Usage: /feedback <up|down|confused> [topic]");
+        info(ctx, "Usage: /feedback <up|down|confused> [topic] [--comment=message]");
         return;
       }
-      const topic = parts.slice(1).join(" ") || "general";
+      let comment: string | undefined;
+      const filtered = parts.filter((arg: string) => {
+        if (arg.startsWith("--comment=")) {
+          comment = arg.slice("--comment=".length);
+          return false;
+        }
+        return true;
+      });
+      const topic = filtered.slice(1).join(" ") || "general";
       const statePath = learnerStatePath(ctx.cwd);
       const state = await loadLearnerState(statePath);
-      recordFeedback(state, topic, signal);
+      recordFeedback(state, topic, signal, comment);
       await saveLearnerState(statePath, state);
-      info(ctx, `Recorded ${signal} feedback for "${topic}".`);
+      const commentHint = comment ? ` with comment` : "";
+      info(ctx, `Recorded ${signal} feedback for "${topic}".${commentHint}`);
     }
   });
 

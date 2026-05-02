@@ -73,12 +73,14 @@ export function recordMisconception(
 export function recordFeedback(
   state: LearnerState,
   topic: string,
-  signal: "thumbs-up" | "thumbs-down" | "confused"
+  signal: "thumbs-up" | "thumbs-down" | "confused",
+  comment?: string
 ): LearnerState {
   state.feedback.push({
     topic,
     timestamp: new Date().toISOString(),
-    signal
+    signal,
+    comment
   });
   return state;
 }

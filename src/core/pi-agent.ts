@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { loadKeatingConfig, mergePiDefaults } from "./config.js";
 import { configDir } from "./paths.js";
+import { detectAiRuntime } from "../runtime/pi.js";
 
 export interface PiCompletionOptions {
   systemPrompt?: string;
@@ -14,26 +15,37 @@ export interface PiCompletionOptions {
  */
 export async function piComplete(cwd: string, prompt: string, options: PiCompletionOptions = {}): Promise<string> {
   const config = await loadKeatingConfig(cwd);
-  
+  const runtime = await detectAiRuntime(cwd);
+
+  if (!runtime.selected) {
+    throw new Error(
+      "No AI runtime found. Install `pi` or configure an embedded agent (e.g. chrysalis-forge)."
+    );
+  }
+
   const args = ["-p", "--no-session", "--no-tools", "--no-extensions", "--no-skills"];
-  
+
   if (options.systemPrompt) {
     args.push("--system-prompt", options.systemPrompt);
   }
-  
+
   if (options.json) {
     args.push("--mode", "json");
   }
-  
+
   if (options.thinking) {
     args.push("--thinking", options.thinking);
   }
 
   const finalArgs = mergePiDefaults(config, [...args, prompt]);
-  
+
   let result;
   try {
-    result = spawnSync("pi", finalArgs, {
+    const isBinary = runtime.selected.kind === "binary";
+    const command = runtime.selected.command;
+    const spawnArgs = isBinary ? finalArgs : [runtime.selected.cliPath!, ...finalArgs];
+
+    result = spawnSync(command, spawnArgs, {
       cwd,
       stdio: "pipe",
       encoding: "utf8",
@@ -48,7 +60,8 @@ export async function piComplete(cwd: string, prompt: string, options: PiComplet
   }
 
   if (result.status !== 0) {
-    throw new Error(`Agent completion failed (exit ${result.status || 'null'}): ${result.stderr || result.stdout}`);
+    const errMsg = result.stderr?.trim() || result.stdout?.trim() || "unknown error";
+    throw new Error(`Agent completion failed (exit ${result.status}): ${errMsg}`);
   }
 
   return result.stdout.trim();

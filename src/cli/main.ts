@@ -18,6 +18,7 @@ import {
   listArtifacts,
   mapTopicArtifact,
   planTopicArtifact,
+  quizTopicArtifact,
   verifyTopicArtifact,
   timelineArtifact,
   dueTopicsArtifact
@@ -94,6 +95,14 @@ async function run(): Promise<void> {
       }
       return;
     }
+    case "quiz": {
+      const topic = args.join(" ").trim();
+      if (!topic) throw new Error("quiz requires a topic.");
+      const result = await quizTopicArtifact(cwd, topic);
+      console.log(relative(cwd, result.quizPath));
+      console.log(relative(cwd, result.answersPath));
+      return;
+    }
     case "bench": {
       const topic = args.join(" ").trim() || undefined;
       const result = await benchPolicyArtifact(cwd, topic);
@@ -154,23 +163,31 @@ async function run(): Promise<void> {
       return;
     }
     case "feedback": {
-      const raw = args.join(" ").trim().toLowerCase();
-      const parts = raw.split(/\s+/);
       const signalMap: Record<string, "thumbs-up" | "thumbs-down" | "confused"> = {
         up: "thumbs-up",
         down: "thumbs-down",
         confused: "confused"
       };
-      const signal = signalMap[parts[0]];
+      const signal = signalMap[args[0]?.toLowerCase() ?? ""];
       if (!signal) {
-        throw new Error("Usage: keating feedback <up|down|confused> [topic]");
+        throw new Error("Usage: keating feedback <up|down|confused> [topic] [--comment=message]");
       }
-      const topic = parts.slice(1).join(" ") || "general";
+      let comment: string | undefined;
+      const filtered = args.filter((arg) => {
+        if (arg.startsWith("--comment=")) {
+          comment = arg.slice("--comment=".length);
+          return false;
+        }
+        return true;
+      });
+      const topic = filtered.slice(1).join(" ") || "general";
       const statePath = learnerStatePath(cwd);
       const state = await loadLearnerState(statePath);
-      recordFeedback(state, topic, signal);
+      recordFeedback(state, topic, signal, comment);
       await saveLearnerState(statePath, state);
-      console.log(`${color.ok}Recorded ${signal.replace("thumbs-", "👍 ")} feedback for "${topic}".${color.reset}`);
+      const sigLabel = { "thumbs-up": "👍 up", "thumbs-down": "👎 down", "confused": "🤔 confused" }[signal];
+      const commentHint = comment ? ` (comment: "${comment}")` : "";
+      console.log(`${color.ok}Recorded ${sigLabel} feedback for "${topic}"${commentHint}.${color.reset}`);
       return;
     }
     case "doctor": {

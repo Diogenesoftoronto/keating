@@ -194,6 +194,61 @@ const POSTS: Post[] = [
               className="w-full rounded border border-[#1f2937]"
             />
           </figure>
+          <figure>
+            <figcaption className="text-xs text-[#64748b] mb-1">
+              <Code>teacher-flow.tape</Code> — generate a plan, inspect it, then verify the output.
+            </figcaption>
+            <video
+              src="/tapes/teacher-flow.mp4"
+              controls
+              muted
+              loop
+              playsInline
+              className="w-full rounded border border-[#1f2937]"
+            />
+          </figure>
+          <figure>
+            <figcaption className="text-xs text-[#64748b] mb-1">
+              <Code>session-flow.tape</Code> — launch the shell, check policy, browse outputs, send feedback.
+            </figcaption>
+            <video
+              src="/tapes/session-flow.mp4"
+              controls
+              muted
+              loop
+              playsInline
+              className="w-full rounded border border-[#1f2937]"
+            />
+          </figure>
+        </div>
+        <h3 className="font-bold mt-4 mb-2">Quality Checks</h3>
+        <div className="space-y-5 mb-4">
+          <figure>
+            <figcaption className="text-xs text-[#64748b] mb-1">
+              <Code>doctor.tape</Code> — run <Code>mise run doctor</Code> to check your setup.
+            </figcaption>
+            <video
+              src="/tapes/doctor.mp4"
+              controls
+              muted
+              loop
+              playsInline
+              className="w-full rounded border border-[#1f2937]"
+            />
+          </figure>
+          <figure>
+            <figcaption className="text-xs text-[#64748b] mb-1">
+              <Code>tests.tape</Code> — run <Code>mise run test</Code> to exercise the suite.
+            </figcaption>
+            <video
+              src="/tapes/tests.mp4"
+              controls
+              muted
+              loop
+              playsInline
+              className="w-full rounded border border-[#1f2937]"
+            />
+          </figure>
         </div>
         <p className="text-sm mb-2">Render any of them yourself with:</p>
         <CodeBlock>{`vhs docs/learning-flow.tape`}</CodeBlock>
@@ -265,6 +320,21 @@ const POSTS: Post[] = [
             />
           </li>
         </ul>
+        <div className="my-4">
+          <figure>
+            <figcaption className="text-xs text-[#64748b] mb-1">
+              <Code>teacher-flow.tape</Code> — generate a plan, then verify the output.
+            </figcaption>
+            <video
+              src="/tapes/teacher-flow.mp4"
+              controls
+              muted
+              loop
+              playsInline
+              className="w-full rounded border border-[#1f2937]"
+            />
+          </figure>
+        </div>
         <div className="text-sm text-[#64748b] mt-6">
           <Pretext 
             text="These changes ensure that Keating's 'self-improvement' loop is grounded in actual semantic understanding rather than pre-baked formulas."
