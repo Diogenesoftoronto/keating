@@ -19,7 +19,7 @@ export const extensionCommandSpecs: CommandSpec[] = [
 	{ name: "evolve",       args: "[topic]",        section: "Optimization",  description: "Evolve teaching policies via MAP-Elites." },
 	{ name: "prompt-evolve",args: "[name]",         section: "Optimization",  description: "Evolve a prompt template with ACE." },
 	{ name: "improve",      args: "",               section: "Self-Improvement", description: "Generate a self-improvement proposal." },
-	{ name: "feedback",     args: "<up|down|confused>", section: "Session",   description: "Record session feedback." },
+	{ name: "feedback",     args: "<up|down|confused> [topic] [--comment=text]", section: "Session",   description: "Record session feedback with optional comment." },
 	{ name: "timeline",     args: "",               section: "Review",        description: "Show engagement timeline for all topics." },
 	{ name: "due",          args: "",               section: "Review",        description: "Show topics due for spaced-review." },
 	{ name: "policy",       args: "",               section: "Session",       description: "Show the active hyperteacher policy." },

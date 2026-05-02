@@ -274,6 +274,7 @@ export interface LearnerState {
     topic: string;
     timestamp: string;
     signal: "thumbs-up" | "thumbs-down" | "confused";
+    comment?: string;
   }>;
   sessions: Array<{
     startedAt: string;

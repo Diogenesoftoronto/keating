@@ -2,7 +2,7 @@
   "pi": {
     "runtimePreference": "embedded-only",
     "defaultProvider": "google",
-    "defaultModel": "google/gemini-2.5-pro",
+    "defaultModel": "google/gemini-3-flash-preview",
     "defaultThinking": "medium"
   },
   "optimizer": {

@@ -14,7 +14,6 @@ export default defineNitroConfig({
     "/**/*.onnx": { fallthrough: false },
     "/**/*.pdf": {
       fallthrough: false,
-      headers: { "Content-Disposition": "attachment" },
     },
     "/**/*.mp4": { fallthrough: false },
     "/**/*.webp": { fallthrough: false },
