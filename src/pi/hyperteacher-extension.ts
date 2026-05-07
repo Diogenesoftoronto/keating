@@ -3,7 +3,9 @@ import { homedir } from "node:os";
 
 import {
   animateTopicArtifact,
+  autoImproveArtifact,
   benchPolicyArtifact,
+  promptEvalArtifact,
   currentPolicySummary,
   dueTopicsArtifact,
   ensureProjectScaffold,
@@ -424,6 +426,20 @@ export default function hyperteacher(pi: any): void {
     }
   });
 
+  pi.registerCommand("prompt-eval", {
+    description: "Evaluate a prompt template for teaching effectiveness in a single pass.",
+    handler: async (args: string[], ctx: any) => {
+      const promptContent = topicFromArgs(args);
+      if (!promptContent) {
+        info(ctx, "Usage: /prompt-eval <prompt text>");
+        return;
+      }
+      const result = await promptEvalArtifact(ctx.cwd, promptContent);
+      ctx.ui.setEditorText(`read ${relative(ctx.cwd, result.reportPath)}`);
+      info(ctx, `Prompt scored ${result.score.toFixed(2)}/100`);
+    }
+  });
+
   pi.registerCommand("policy", {
     description: "Show the active hyperteacher policy.",
     handler: async (_args: string[], ctx: any) => {
@@ -531,6 +547,18 @@ export default function hyperteacher(pi: any): void {
     }
   });
 
+  pi.registerCommand("auto-improve", {
+    description: "Run the full self-improvement loop: benchmark → evolve policy → evolve prompt → benchmark again.",
+    handler: async (args: string[], ctx: any) => {
+      const topic = topicFromArgs(args) || undefined;
+      info(ctx, "Running auto-improve loop (bench → evolve → prompt-evolve → bench)...");
+      const result = await autoImproveArtifact(ctx.cwd, topic);
+      const verdict = result.delta > 0 ? "IMPROVED" : result.delta < -0.5 ? "REGRESSED" : "NO SIGNIFICANT CHANGE";
+      ctx.ui.setEditorText(`read ${relative(ctx.cwd, result.reportPath)}`);
+      info(ctx, `Auto-improve: ${result.baselineScore.toFixed(2)} → ${result.afterScore.toFixed(2)} (${verdict}, Δ${result.delta >= 0 ? "+" : ""}${result.delta.toFixed(2)})`);
+    }
+  });
+
   pi.registerCommand("trace", {
     description: "Browse persisted benchmark and evolution traces.",
     handler: async (args: string[], ctx: any) => {
@@ -547,6 +575,26 @@ export default function hyperteacher(pi: any): void {
       if (artifact) {
         ctx.ui.setEditorText(`read ${artifact.path}`);
       }
+    }
+  });
+
+  pi.registerCommand("learner-state", {
+    description: "Show the learner's profile and session history.",
+    handler: async (_args: string[], ctx: any) => {
+      const statePath = learnerStatePath(ctx.cwd);
+      const state = await loadLearnerState(statePath);
+      const upCount = state.feedback.filter((f) => f.signal === "thumbs-up").length;
+      const downCount = state.feedback.filter((f) => f.signal === "thumbs-down").length;
+      const confusedCount = state.feedback.filter((f) => f.signal === "confused").length;
+      const lines = [
+        `Sessions: ${state.sessions?.length ?? 0}`,
+        `Topics covered: ${state.coveredTopics.length}`,
+        ...state.coveredTopics.slice(-10).map((t) => `  - ${t.slug} (${t.domain})`),
+        `Feedback: 👍${upCount} 👎${downCount} 🤔${confusedCount}`,
+        `Misconceptions identified: ${state.identifiedMisconceptions.length}`,
+      ];
+      ctx.ui.setEditorText(lines.join("\n"));
+      info(ctx, "Learner profile loaded.");
     }
   });
 

@@ -12,7 +12,7 @@ const KEATING_ASCII = `
 const INTRO_LINES = [
   { text: "INIT SEQUENCE v0.3.0", delay: 100 },
   { text: "─────────────────────────────────────────", delay: 200 },
-  { text: "model   : gemini-2.5-flash", delay: 300 },
+  { text: "model   : gemini-3-flash-preview", delay: 300 },
   { text: "policy  : keating-default", delay: 400 },
   { text: "system  : Socratic teaching engine", delay: 500 },
   { text: "tools   : plan, map, verify, animate, bench, evolve", delay: 600 },
@@ -90,7 +90,7 @@ export function ChatIntro({ onDismiss }: { onDismiss?: () => void }) {
           <div className="mt-4 flex items-center gap-3">
             <span className="cursor-blink">_</span>
             <span className="text-[#666] text-sm animate-pulse">
-              Type below to begin your session...
+              Press getting started below to begin your session...
             </span>
           </div>
         )}

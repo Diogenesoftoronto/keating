@@ -63,7 +63,7 @@ setAppStorage(storage);
 const keatingStorage = new KeatingStorage();
 
 // ─── Constants ─────────────────────────────────────────────────────────────
-const DEFAULT_MODEL = getModel("google", "gemini-2.5-flash");
+const DEFAULT_MODEL = getModel("google", "gemini-3-flash-preview");
 
 // ─── Stream functions ───────────────────────────────────────────────────────
 function createBrowserStreamFn() {

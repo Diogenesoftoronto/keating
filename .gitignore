@@ -1,5 +1,7 @@
 # Dependencies
 node_modules/
+.bun-install/
+.bun-tmp/
 .entire/
 .claude/
 
@@ -21,6 +23,7 @@ test/bench.log
 test/final_dataset.json
 test/traces/
 docs/generated/
+video/keating-intro/public/generated/
 analysis/__pycache__/
 *.pyc
 

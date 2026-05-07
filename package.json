@@ -50,6 +50,7 @@
   "scripts": {
     "build": "bun x tsc -p tsconfig.json && cd web && bun run build",
     "test": "bun test ./test/*.test.ts",
+    "video:intro": "bun scripts/render-keating-intro.mjs",
     "prepack": "bun run build"
   },
   "dependencies": {
@@ -61,7 +62,15 @@
     "nitro": "^3.0.260311-beta"
   },
   "devDependencies": {
+    "@remotion/cli": "^4.0.455",
+    "@remotion/media-utils": "^4.0.455",
+    "@remotion/renderer": "^4.0.455",
     "@types/node": "^25.6.0",
-    "fast-check": "^4.6.0"
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "fast-check": "^4.6.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "remotion": "^4.0.455"
   }
 }

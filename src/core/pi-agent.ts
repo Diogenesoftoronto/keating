@@ -59,9 +59,17 @@ export async function piComplete(cwd: string, prompt: string, options: PiComplet
     throw new Error(`Agent command could not be spawned: ${e}`);
   }
 
-  if (result.status !== 0) {
+  if (result.error) {
+    throw new Error(`Agent command failed to launch: ${result.error.message}`);
+  }
+
+  const signal = result.signal;
+  const exitStatus = result.status;
+
+  if (exitStatus === null || exitStatus !== 0) {
     const errMsg = result.stderr?.trim() || result.stdout?.trim() || "unknown error";
-    throw new Error(`Agent completion failed (exit ${result.status}): ${errMsg}`);
+    const exitInfo = exitStatus !== null ? `exit ${exitStatus}` : `killed by signal ${signal ?? "unknown"}`;
+    throw new Error(`Agent completion failed (${exitInfo}): ${errMsg}`);
   }
 
   return result.stdout.trim();

@@ -32,6 +32,9 @@ import {
 	engagementTimelineToMarkdown,
 	dueTopicsToMarkdown,
 	DEFAULT_ENGAGEMENT_POLICY,
+	generateQuiz,
+	quizToMarkdown,
+	quizAnswerKeyToMarkdown,
 	type TeacherPolicy,
 	type BenchmarkResult,
 	type EvolutionRun,
@@ -95,6 +98,7 @@ You have internal tools for teaching, self-evaluation, and self-evolution. Use t
 - \`map\` — Create a visual Mermaid concept map for a topic. Run this yourself when visualization helps.
 - \`animate\` — Generate an animation storyboard for a topic. Run this yourself when visuals help.
 - \`verify\` — Self-check knowledge before teaching a topic. Always run this yourself before teaching factual claims.
+- \`quiz\` — Generate retrieval practice questions for a topic. Run this yourself to create assessment material.
 - \`feedback\` — Record learner feedback (up/down/confused) for a topic. Run this yourself after sessions.
 
 ### Self-Evaluation (use to measure and track your effectiveness)
@@ -126,9 +130,10 @@ export function buildKeatingSystemPrompt(speechEnabled = false): string {
 }
 
 // Helper function to create tools with proper schema
-function createSimpleTool(
+function createTool(
 	name: string,
 	description: string,
+	parameters: Record<string, unknown>,
 	execute: (params: Record<string, unknown>) => Promise<string>
 ): AgentTool {
 	return {
@@ -137,8 +142,8 @@ function createSimpleTool(
 		description,
 		parameters: {
 			type: "object",
-			properties: {},
-			additionalProperties: true,
+			properties: parameters,
+			additionalProperties: false,
 		},
 		execute: async (_toolCallId: string, params: Record<string, unknown>) => {
 			const result = await execute(params as Record<string, unknown>);
@@ -163,9 +168,12 @@ export async function createKeatingTools(
 ): Promise<AgentTool[]> {
 	const tools: AgentTool[] = [
 		// plan - Generate lesson plan
-		createSimpleTool(
+		createTool(
 			"plan",
 			"Generate a structured lesson plan for a topic, adapted to the current teaching policy. Use before teaching any topic to structure your approach.",
+			{
+				topic: { type: "string", description: "The topic to generate a lesson plan for" }
+			},
 			async (params) => {
 				const topic = (params.topic as string) || "";
 				if (!topic) {
@@ -201,9 +209,12 @@ export async function createKeatingTools(
 		),
 
 		// map - Generate concept map
-		createSimpleTool(
+		createTool(
 			"map",
 			"Generate a Mermaid concept map for a topic. Use to visualize knowledge structure before or during teaching.",
+			{
+				topic: { type: "string", description: "The topic to generate a concept map for" }
+			},
 			async (params) => {
 				const topic = (params.topic as string) || "";
 				if (!topic) return "Topic required.";
@@ -216,9 +227,12 @@ export async function createKeatingTools(
 		),
 
 		// animate - Generate animation storyboard
-		createSimpleTool(
+		createTool(
 			"animate",
 			"Generate an animation storyboard for a topic. Use to create visual teaching materials.",
+			{
+				topic: { type: "string", description: "The topic to generate an animation storyboard for" }
+			},
 			async (params) => {
 				const topic = (params.topic as string) || "";
 				if (!topic) return "Topic required.";
@@ -302,9 +316,12 @@ class ${resolved.slug.replace(/-/g, "_").replace(/^(.)/, (c) => c.toUpperCase())
 		),
 
 		// verify - Self-check knowledge before teaching
-		createSimpleTool(
+		createTool(
 			"verify",
 			"Generate a fact-checking checklist for a topic. Always use this BEFORE teaching to self-verify your knowledge.",
+			{
+				topic: { type: "string", description: "The topic to generate a verification checklist for" }
+			},
 			async (params) => {
 				const topic = (params.topic as string) || "";
 				if (!topic) return "Topic required.";
@@ -345,9 +362,12 @@ ${resolved.prerequisites.map((p) => `- [ ] Learners need: ${p}`).join("\n")}
 		),
 
 		// bench - Run synthetic learner benchmark
-		createSimpleTool(
+		createTool(
 			"bench",
 			"Run a synthetic learner benchmark against the current teaching policy. Use to measure teaching effectiveness and identify weaknesses.",
+			{
+				topic: { type: "string", description: "Optional topic to focus the benchmark on" }
+			},
 			async (params) => {
 				const topic = params.topic as string | undefined;
 				const policy = await storage.getActivePolicy();
@@ -376,9 +396,12 @@ ${resolved.prerequisites.map((p) => `- [ ] Learners need: ${p}`).join("\n")}
 		),
 
 		// evolve - Evolve teaching policy via MAP-Elites
-		createSimpleTool(
+		createTool(
 			"evolve",
 			"Evolve the teaching policy using MAP-Elites algorithm. Use to search for better policy parameters when benchmarks show room for improvement.",
+			{
+				topic: { type: "string", description: "Optional topic to focus the evolution on" }
+			},
 			async (params) => {
 				const topic = params.topic as string | undefined;
 				const policy = await storage.getActivePolicy();
@@ -426,10 +449,35 @@ ${resolved.prerequisites.map((p) => `- [ ] Learners need: ${p}`).join("\n")}
 			}
 		),
 
+		// quiz - Generate retrieval practice questions
+		createTool(
+			"quiz",
+			"Generate retrieval practice questions for a topic. Creates recall, comprehension, application, and transfer questions with answer keys.",
+			{
+				topic: { type: "string", description: "The topic to generate quiz questions for" }
+			},
+			async (params) => {
+				const topic = (params.topic as string) || "";
+				if (!topic) return "Topic required.";
+
+				const quiz = generateQuiz(topic);
+				const md = quizToMarkdown(quiz);
+				const answers = quizAnswerKeyToMarkdown(quiz);
+
+				await storage.saveLessonPlan(topic, md, { type: "quiz", questionCount: quiz.questions.length });
+
+				return `${md}\n---\n${answers}`;
+			}
+		),
+
 		// feedback - Record learner feedback
-		createSimpleTool(
+		createTool(
 			"feedback",
 			"Record a learner feedback signal for a topic. Call this after teaching to track session outcomes. signal must be 'up', 'down', or 'confused'.",
+			{
+				signal: { type: "string", enum: ["up", "down", "confused"], description: "Feedback signal: up, down, or confused" },
+				topic: { type: "string", description: "The topic the feedback is about (defaults to 'general')" }
+			},
 			async (params) => {
 				const signalParam = (params.signal as string) || "";
 				const signalMap: Record<string, "thumbs-up" | "thumbs-down" | "confused"> = {
@@ -450,9 +498,10 @@ ${resolved.prerequisites.map((p) => `- [ ] Learners need: ${p}`).join("\n")}
 		),
 
 		// policy - Show current teaching policy
-		createSimpleTool(
+		createTool(
 			"policy",
 			"Show the current active teaching policy parameters.",
+			{},
 			async () => {
 				const policy = await storage.getActivePolicy();
 				const content = policy?.content || DEFAULT_BROWSER_POLICY;
@@ -462,9 +511,10 @@ ${resolved.prerequisites.map((p) => `- [ ] Learners need: ${p}`).join("\n")}
 		),
 
 		// outputs - Browse artifacts
-		createSimpleTool(
+		createTool(
 			"outputs",
 			"Browse all saved Keating artifacts (plans, maps, benchmarks, evolutions, etc).",
+			{},
 			async () => {
 				const artifacts = await storage.listArtifacts();
 
@@ -482,9 +532,10 @@ ${resolved.prerequisites.map((p) => `- [ ] Learners need: ${p}`).join("\n")}
 		),
 
 		// learner_state - Load learner profile (agent-facing, renamed from /state)
-		createSimpleTool(
+		createTool(
 			"learner_state",
 			"Load the learner's profile, session history, and topic progress. ALWAYS call this at the start of every new conversation.",
+			{},
 			async () => {
 				await storage.recordSessionStart();
 				const state = await storage.getLearnerState();
@@ -505,9 +556,12 @@ ${topicList}
 		),
 
 		// auto_improve - Full autonomous self-improvement loop
-		createSimpleTool(
+		createTool(
 			"auto_improve",
 			"Run the full autonomous self-improvement loop: benchmark current policy → evolve policy via MAP-Elites → evolve prompt template → record improvement. Use this instead of calling bench/evolve/improve separately. Triggers automatically on first session and periodically thereafter.",
+			{
+				topic: { type: "string", description: "Optional topic to focus the improvement on" }
+			},
 			async (params) => {
 				const topic = params.topic as string | undefined;
 
@@ -609,9 +663,12 @@ ${topicList}
 		),
 
 		// improve - Targeted improvement proposal
-		createSimpleTool(
+		createTool(
 			"improve",
 			"Generate a targeted improvement proposal by diagnosing benchmark weaknesses. Returns specific areas to improve and suggestions. Pass action='history' to view past improvement attempts.",
+			{
+				action: { type: "string", description: "Pass 'history' to view past improvement attempts" }
+			},
 			async (params) => {
 				const sub = (params.action as string) || "";
 
@@ -645,9 +702,12 @@ ${topicList}
 		),
 
 		// trace - Browse benchmark/evolution traces
-		createSimpleTool(
+		createTool(
 			"trace",
 			"Browse benchmark and evolution history. Pass type='benchmark' or type='evolution' to filter.",
+			{
+				type: { type: "string", enum: ["benchmark", "evolution", "all"], description: "Filter by trace type" }
+			},
 			async (params) => {
 				const type = (params.type as string) || "all";
 
@@ -680,9 +740,12 @@ ${topicList}
 		),
 
 		// prompt_evolve - Iteratively evolve a teaching prompt template
-		createSimpleTool(
+		createTool(
 			"prompt_evolve",
 			"Iteratively evolve a teaching prompt template using PROSPER-style pairwise selection. Runs 4 iterations of candidate generation and evaluation.",
+			{
+				name: { type: "string", description: "Name of the prompt template to evolve (defaults to 'learn')" }
+			},
 			async (params) => {
 				const promptName = (params.name as string) || "learn";
 				const basePrompt = KEATING_SYSTEM_PROMPT;
@@ -703,9 +766,12 @@ ${topicList}
 		),
 
 		// prompt_eval - Single-pass prompt evaluation
-		createSimpleTool(
+		createTool(
 			"prompt_eval",
 			"Evaluate a prompt template for teaching effectiveness in a single pass. Returns score, per-objective breakdown, and improvement feedback.",
+			{
+				prompt: { type: "string", description: "The prompt template content to evaluate" }
+			},
 			async (params) => {
 				const promptContent = (params.prompt as string) || "";
 				if (!promptContent) {
@@ -728,9 +794,10 @@ ${topicList}
 		),
 
 		// timeline - Show engagement timeline
-		createSimpleTool(
+		createTool(
 			"timeline",
 			"Show the engagement timeline for all covered topics with retention decay and review urgency. Use at session start to check if any topics need review.",
+			{},
 			async () => {
 				const state = await storage.getLearnerState();
 				const coveredTopics: CoveredTopic[] = (state.topicsExplored || []).map((slug) => {
@@ -758,9 +825,10 @@ ${topicList}
 		),
 
 		// due - Show topics due for review
-		createSimpleTool(
+		createTool(
 			"due",
 			"Show topics that are due for review based on spaced repetition. Use at session start to proactively suggest review.",
+			{},
 			async () => {
 				const state = await storage.getLearnerState();
 				const coveredTopics: CoveredTopic[] = (state.topicsExplored || []).map((slug) => {
