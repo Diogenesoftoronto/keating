@@ -38,6 +38,79 @@ function CodeBlock({ children }: { children: string }) {
 
 const POSTS: Post[] = [
   {
+    date: "2026-05-07",
+    badge: { label: "FIX", color: "fix" },
+    title: "All 19 Keating Web Tools Now Expose Real Parameter Schemas",
+    body: (
+      <>
+        <div className="mb-4">
+          <Pretext
+            text="Keating's web model now receives the full teaching tool surface with proper JSON Schema parameter definitions. The important fix was replacing createSimpleTool, which produced empty properties objects, with createTool registrations that describe each tool's actual arguments."
+            font="16px 'Inter', sans-serif"
+            lineHeight={24}
+          />
+        </div>
+        <h3 className="font-bold mt-4 mb-2">What Changed</h3>
+        <p className="text-sm mb-4">
+          All 19 Keating tools are now available to the web model with schemas it can
+          actually call. Topic-driven tools expose <Code>topic</Code>, feedback exposes
+          a constrained <Code>signal</Code>, prompt evaluation requires <Code>prompt</Code>,
+          and the optional speech path exposes the full <Code>keating_voice</Code> shape.
+        </p>
+        <div className="mb-4 overflow-x-auto">
+          <table className="w-full min-w-[520px] border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-[#1f2937] text-left">
+                <th className="py-2 pr-4 font-bold">Tool</th>
+                <th className="py-2 font-bold">Parameters</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                ["plan", "topic"],
+                ["map", "topic"],
+                ["animate", "topic"],
+                ["verify", "topic"],
+                ["bench", "topic (optional)"],
+                ["evolve", "topic (optional)"],
+                ["quiz", "topic"],
+                ["feedback", "signal (up/down/confused), topic"],
+                ["policy", "none"],
+                ["outputs", "none"],
+                ["learner_state", "none"],
+                ["auto_improve", "topic (optional)"],
+                ["improve", "action (optional)"],
+                ["trace", "type (optional)"],
+                ["prompt_evolve", "name (optional)"],
+                ["prompt_eval", "prompt"],
+                ["timeline", "none"],
+                ["due", "none"],
+                ["keating_voice", "text, tags, voice, pace, affect"],
+              ].map(([tool, params]) => (
+                <tr key={tool} className="border-b border-[#1f2937]/30">
+                  <td className="py-2 pr-4 align-top">
+                    <Code>{tool}</Code>
+                  </td>
+                  <td className="py-2 align-top">{params}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <h3 className="font-bold mt-4 mb-2">Why It Matters</h3>
+        <p className="text-sm mb-4">
+          Empty tool schemas make the model guess at invisible arguments. With real
+          schemas, the web teacher can reliably choose the right tool and pass valid
+          arguments for lessons, checks, benchmarks, learner feedback, prompt evaluation,
+          due work, timelines, and voice output.
+        </p>
+        <p className="text-sm text-[#64748b]">
+          The web build compiles successfully with the new tool definitions.
+        </p>
+      </>
+    ),
+  },
+  {
     date: "2026-05-01",
     badge: { label: "FEATURE", color: "feature" },
     title: "Optional Speech: Gemini Live Voice for the Web",
