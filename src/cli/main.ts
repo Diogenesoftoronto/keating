@@ -8,7 +8,9 @@ import { learnerStatePath } from "../core/paths.js";
 import { loadLearnerState, recordFeedback, saveLearnerState } from "../core/learner-state.js";
 import {
   animateTopicArtifact,
+  autoImproveArtifact,
   benchPolicyArtifact,
+  promptEvalArtifact,
   currentPolicySummary,
   ensureProjectScaffold,
   evolvePolicyArtifact,
@@ -124,6 +126,13 @@ async function run(): Promise<void> {
       console.log(relative(cwd, result.evolvedPromptPath));
       return;
     }
+    case "prompt-eval": {
+      const promptContent = args.join(" ").trim();
+      if (!promptContent) throw new Error("prompt-eval requires prompt text to evaluate.");
+      const result = await promptEvalArtifact(cwd, promptContent);
+      console.log(`${result.score.toFixed(2)} ${relative(cwd, result.reportPath)}`);
+      return;
+    }
     case "improve": {
       if (args[0] === "history") {
         const md = await improveHistory(cwd);
@@ -134,6 +143,18 @@ async function run(): Promise<void> {
       console.log(`Proposal: ${artifact.proposal.id}`);
       console.log(`Targets: ${artifact.proposal.targets.map(t => t.file).join(", ")}`);
       console.log(relative(cwd, artifact.proposalPath));
+      return;
+    }
+    case "auto-improve": {
+      const topic = args.join(" ").trim() || undefined;
+      const result = await autoImproveArtifact(cwd, topic);
+      const verdict = result.delta > 0
+        ? `${color.ok}IMPROVED by +${result.delta.toFixed(2)}${color.reset}`
+        : result.delta < -0.5
+          ? `${color.err}REGRESSED by ${result.delta.toFixed(2)}${color.reset}`
+          : `${color.sepia}NO SIGNIFICANT CHANGE (Δ${result.delta.toFixed(2)})${color.reset}`;
+      console.log(`Baseline: ${result.baselineScore.toFixed(2)} → After: ${result.afterScore.toFixed(2)} — ${verdict}`);
+      console.log(relative(cwd, result.reportPath));
       return;
     }
     case "policy": {
@@ -150,6 +171,21 @@ async function run(): Promise<void> {
           console.log(artifact.path);
         }
       }
+      return;
+    }
+    case "learner-state": {
+      await ensureProjectScaffold(cwd);
+      const statePath = learnerStatePath(cwd);
+      const state = await loadLearnerState(statePath);
+      const upCount = state.feedback.filter((f) => f.signal === "thumbs-up").length;
+      const downCount = state.feedback.filter((f) => f.signal === "thumbs-down").length;
+      const confusedCount = state.feedback.filter((f) => f.signal === "confused").length;
+      console.log(`${bold("terracotta", "Learner Profile")}`);
+      console.log(`  Sessions: ${state.sessions?.length ?? 0}`);
+      console.log(`  Topics covered: ${state.coveredTopics.length}`);
+      for (const t of state.coveredTopics.slice(-10)) console.log(`    - ${t.slug} (${t.domain})`);
+      console.log(`  Feedback: 👍${upCount} 👎${downCount} 🤔${confusedCount}`);
+      console.log(`  Misconceptions identified: ${state.identifiedMisconceptions.length}`);
       return;
     }
     case "timeline": {

@@ -117,13 +117,13 @@ Keating reads runtime/model defaults from `keating.config.json`.
   "pi": {
     "runtimePreference": "standalone-only",
     "defaultProvider": "google",
-    "defaultModel": "google/gemini-2.5-pro",
+    "defaultModel": "google/gemini-3.1-pro-preview",
     "defaultThinking": "medium"
   },
   "speech": {
     "enabled": false,
     "defaultVoice": "conversational",
-    "fastModel": "gemini-3.1-flash-live-preview",
+    "fastModel": "gemini-3.1-flash-tts-preview",
     "steeringModel": "default"
   },
   "debug": {

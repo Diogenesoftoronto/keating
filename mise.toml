@@ -56,3 +56,7 @@ run = "cd web && bun run build"
 [tasks.web-preview]
 description = "Preview the Keating web UI production build"
 run = "cd web && bun run build && bun run preview"
+
+[tasks.video-intro]
+description = "Render the narrated Keating intro video"
+run = "bun scripts/render-keating-intro.mjs"

@@ -16,7 +16,7 @@ import { evolutionToMarkdown, evolvePolicy } from "./evolution.js";
 import { mapElitesEvolve, mapElitesToMarkdown, mapElitesToEvolutionRun } from "./map-elites.js";
 import { buildLessonPlan, lessonPlanToMarkdown } from "./lesson-plan.js";
 import { writeLessonMap } from "./map.js";
-import { writePromptEvolutionArtifacts } from "./prompt-evolution.js";
+import { evaluatePromptContent, type PromptObjectiveVector, writePromptEvolutionArtifacts } from "./prompt-evolution.js";
 import {
   animationsDir,
   benchmarksDir,
@@ -220,6 +220,77 @@ export async function improveHistory(cwd: string): Promise<string> {
   await ensureProjectScaffold(cwd);
   const archive = await loadImprovementArchive(cwd);
   return improvementHistoryToMarkdown(archive);
+}
+
+export async function autoImproveArtifact(
+  cwd: string,
+  focusTopic?: string
+): Promise<{ baselineScore: number; afterScore: number; delta: number; reportPath: string }> {
+  await ensureProjectScaffold(cwd);
+
+  const baseline = await benchPolicyArtifact(cwd, focusTopic);
+
+  const evolved = await evolvePolicyArtifact(cwd, focusTopic);
+
+  const promptEvo = await evolvePromptArtifact(cwd, "learn");
+
+  const after = await benchPolicyArtifact(cwd, focusTopic);
+
+  const delta = after.overallScore - baseline.overallScore;
+
+  const report = [
+    `# Auto-Improve Report`,
+    ``,
+    `**Baseline:** ${baseline.overallScore.toFixed(2)}/100`,
+    `**After:** ${after.overallScore.toFixed(2)}/100`,
+    `**Delta:** ${delta >= 0 ? "+" : ""}${delta.toFixed(2)}`,
+    `**Verdict:** ${delta > 0 ? "IMPROVED" : delta < -0.5 ? "REGRESSED" : "NO SIGNIFICANT CHANGE"}`,
+    ``,
+    `## Benchmark`,
+    `- Report: ${relative(cwd, baseline.reportPath)}`,
+    ``,
+    `## Policy Evolution`,
+    `- Best: ${evolved.bestScore.toFixed(2)}/100`,
+    `- Report: ${relative(cwd, evolved.reportPath)}`,
+    ``,
+    `## Prompt Evolution`,
+    `- Best: ${promptEvo.bestScore.toFixed(2)}/100`,
+    `- Report: ${relative(cwd, promptEvo.reportPath)}`,
+    ``,
+  ].join("\n");
+
+  const reportPath = join(benchmarksDir(cwd), focusTopic ? `${slugify(focusTopic)}-auto-improve.md` : "auto-improve.md");
+  await writeFile(reportPath, report, "utf8");
+
+  return { baselineScore: baseline.overallScore, afterScore: after.overallScore, delta, reportPath };
+}
+
+export async function promptEvalArtifact(
+  cwd: string,
+  promptContent: string
+): Promise<{ reportPath: string; score: number; objectives: PromptObjectiveVector; feedback: string[] }> {
+  await ensureProjectScaffold(cwd);
+  const slug = `eval-${Date.now().toString(36)}`;
+  const tmpPath = join(promptEvolutionDir(cwd), `${slug}.md`);
+  await writeFile(tmpPath, promptContent, "utf8");
+
+  const result = await evaluatePromptContent(cwd, tmpPath, promptContent);
+
+  const lines = [
+    `# Prompt Evaluation`,
+    ``,
+    `**Score:** ${result.score.toFixed(2)}/100`,
+    ``,
+    `## Objectives`,
+    ...Object.entries(result.objectives).map(([k, v]) => `- ${k}: ${v.toFixed(2)}`),
+    ``,
+    `## Feedback`,
+    ...(result.feedback.length > 0 ? result.feedback.map((f) => `- ${f}`) : ["- No major issues detected."]),
+  ];
+  const reportPath = join(promptEvolutionDir(cwd), `${slug}-eval.md`);
+  await writeFile(reportPath, lines.join("\n"), "utf8");
+
+  return { reportPath, score: result.score, objectives: result.objectives, feedback: result.feedback };
 }
 
 export async function timelineArtifact(

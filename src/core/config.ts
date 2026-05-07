@@ -23,12 +23,12 @@ export interface KeatingConfig {
     consoleSummary: boolean;
   };
 }
-
+// TODO import and use the default model everywhere so that i am not resetting this in multiple place and I just import this.
 export const DEFAULT_KEATING_CONFIG: KeatingConfig = {
   pi: {
     runtimePreference: "prefer-standalone",
-    defaultProvider: "google",
-    defaultModel: "google/gemini-2.5-pro",
+    defaultProvider: "google-gemini-cli",
+    defaultModel: "gemini-3.1-pro-preview",
     defaultThinking: "medium"
   },
   speech: {

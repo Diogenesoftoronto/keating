@@ -538,7 +538,7 @@ const hybridStreamFn = async (model, context, options) => {
     body: (
       <>
         <p className="mb-4">
-          Updated the default cloud model from <Code>gemini-2.5-pro</Code> to{" "}
+          Updated the default cloud model from <Code>gemini-3.1-pro-preview</Code> to{" "}
           <Code>gemini-3.1-pro-preview</Code>. This gives access to the latest Gemini
           capabilities when WebGPU is unavailable.
         </p>
