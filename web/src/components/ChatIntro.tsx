@@ -10,7 +10,7 @@ const KEATING_ASCII = `
 `.trim();
 
 const INTRO_LINES = [
-  { text: "INIT SEQUENCE v0.3.0", delay: 100 },
+  { text: "INIT SEQUENCE v0.3.1", delay: 100 },
   { text: "─────────────────────────────────────────", delay: 200 },
   { text: "model   : gemini-3-flash-preview", delay: 300 },
   { text: "policy  : keating-default", delay: 400 },

@@ -10,6 +10,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### TODO
 - Move rendered VHS tapes (`docs/assets/*.mp4`, `web/public/tapes/*.mp4`) out of git history and into git-lfs (or an external CDN). They were committed inline in 0.3.0 to keep the blog working immediately; ~1.7MB today, will grow.
 
+## [0.3.1] - 2026-05-08
+
+### Added
+- Added an Artifacts button to the chat header and a new artifact browser overlay for browsing Keating plans, maps, animations, benchmarks, and evolution outputs from the web app.
+- Added a rename-capable session manager dialog with load, rename, and delete actions for saved chat sessions.
+
+### Changed
+- The web chat now prompts once for persistent browser storage, automatically resumes the most recent saved session, and records session-end events when starting a new session or switching sessions.
+- Added typed schemas for optional and required parameters across the web tool surface, including `feedback.signal`, `prompt_eval.prompt`, and `keating_voice` speech fields.
+- Updated the site blog with the v0.3.1 release notes, the full 19-tool web schema table, and the `createSimpleTool` to `createTool` fix.
+
+### Fixed
+- Web model tool registration now exposes all 19 Keating tools with proper JSON Schema parameter definitions instead of empty `properties: {}` schemas.
+- Replaced the browser-side `createSimpleTool` helper with `createTool` registrations so model calls can supply the expected tool arguments for planning, mapping, animation, verification, benchmarking, feedback, state inspection, prompt evaluation, timelines, due work, and voice output.
+- Custom provider model discovery now uses Keating's same-origin backend proxy instead of making cross-origin browser requests to local or remote provider endpoints such as Ollama's `/api/tags`.
+- Anthropic-compatible and non-standard custom chat providers now route through the same backend proxy path, avoiding browser CORS failures from direct provider requests.
+- The Nitro chat proxy now handles model-discovery GET requests as well as chat POST requests.
+
 ## [0.3.0] - 2026-04-30
 
 ### Added
@@ -105,7 +123,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/Diogenesoftoronto/keating/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Diogenesoftoronto/keating/compare/v0.1.4...v0.2.0
 [0.1.4]: https://github.com/Diogenesoftoronto/keating/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/Diogenesoftoronto/keating/compare/v0.1.2...v0.1.3

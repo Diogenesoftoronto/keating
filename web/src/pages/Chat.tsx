@@ -1,7 +1,8 @@
 import { Suspense, useState } from "react";
-import { History, Plus, Settings, Volume2, VolumeX } from "lucide-react";
+import { History, LibraryBig, Plus, Settings, Volume2, VolumeX } from "lucide-react";
 import { useKeatingAgent } from "../hooks/useKeatingAgent";
 import { ChatIntro } from "../components/ChatIntro";
+import { ArtifactBrowserOverlay } from "../components/ArtifactBrowserOverlay";
 
 // Types for the custom components
 import "../lit-components";
@@ -17,6 +18,7 @@ function ChatContent() {
   const [introDismissed, setIntroDismissed] = useState(
     () => sessionStorage.getItem("keating_chat_intro") === "dismissed"
   );
+  const [artifactBrowserOpen, setArtifactBrowserOpen] = useState(false);
 
   const dismissIntro = () => {
     setIntroDismissed(true);
@@ -63,6 +65,14 @@ function ChatContent() {
           >
             <Settings size={16} />
           </button>
+          <button
+            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-8 w-8"
+            title="Artifacts"
+            aria-label="Artifacts"
+            onClick={() => setArtifactBrowserOpen(true)}
+          >
+            <LibraryBig size={16} />
+          </button>
         </div>
       </div>
 
@@ -82,6 +92,11 @@ function ChatContent() {
           </button>
         </div>
       )}
+
+      <ArtifactBrowserOverlay
+        open={artifactBrowserOpen}
+        onClose={() => setArtifactBrowserOpen(false)}
+      />
     </div>
   );
 }

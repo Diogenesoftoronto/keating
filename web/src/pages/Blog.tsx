@@ -38,6 +38,64 @@ function CodeBlock({ children }: { children: string }) {
 
 const POSTS: Post[] = [
   {
+    date: "2026-05-08",
+    badge: { label: "RELEASE", color: "release" },
+    title: "v0.3.1 - Sessions, Artifacts, Tool Schemas, and Provider Proxying",
+    body: (
+      <>
+        <div className="mb-4">
+          <Pretext
+            text="Keating 0.3.1 is a web reliability release: saved sessions are easier to resume and manage, generated teaching artifacts are reachable from chat, the browser model gets real tool schemas, and custom providers no longer make direct cross-origin discovery calls from the page."
+            font="16px 'Inter', sans-serif"
+            lineHeight={24}
+          />
+        </div>
+        <h3 className="font-bold mt-4 mb-2">Session Continuity</h3>
+        <ul className="text-sm space-y-2 ml-4 mb-4">
+          <li>
+            <strong>Persistent storage prompt:</strong> Keating asks once for durable browser storage so longer learning histories are less likely to be evicted.
+          </li>
+          <li>
+            <strong>Auto-resume:</strong> returning to chat now restores the latest saved session instead of always opening an empty conversation.
+          </li>
+          <li>
+            <strong>Session manager:</strong> the history dialog can load, rename, and delete saved sessions.
+          </li>
+          <li>
+            <strong>Session-end recording:</strong> switching sessions or starting a new one records the end of the current learner session.
+          </li>
+        </ul>
+        <h3 className="font-bold mt-4 mb-2">Artifacts in Chat</h3>
+        <p className="text-sm mb-4">
+          The chat header now includes an Artifacts button. It opens a side overlay for browsing
+          lesson plans, maps, animations, benchmark reports, and evolution outputs without leaving
+          the current conversation.
+        </p>
+        <h3 className="font-bold mt-4 mb-2">Provider Proxy Fixes</h3>
+        <p className="text-sm mb-4">
+          Custom-provider model discovery now calls Keating's same-origin backend proxy before
+          reaching servers like Ollama, llama.cpp, vLLM, LM Studio, Synthetic, or Anthropic-compatible
+          endpoints. That prevents browser CORS failures such as a direct request to{" "}
+          <Code>http://localhost:11434/api/tags</Code> from <Code>https://keating.help</Code>.
+        </p>
+        <p className="text-sm mb-4">
+          The same proxy path now handles both discovery GET requests and chat POST requests, so
+          non-standard custom providers and Anthropic-compatible endpoints share one backend route.
+        </p>
+        <h3 className="font-bold mt-4 mb-2">Tool Schemas</h3>
+        <p className="text-sm mb-4">
+          The web model still gets the full 19-tool Keating surface, but now each tool exposes real
+          JSON Schema parameters instead of empty <Code>properties</Code> objects. The result is a
+          teacher that can call planning, mapping, verification, benchmarking, prompt evaluation,
+          due-work, timeline, feedback, and voice tools with valid arguments.
+        </p>
+        <p className="text-sm text-[#64748b]">
+          Version strings, package metadata, changelog, and the web build are aligned for v0.3.1.
+        </p>
+      </>
+    ),
+  },
+  {
     date: "2026-05-07",
     badge: { label: "FIX", color: "fix" },
     title: "All 19 Keating Web Tools Now Expose Real Parameter Schemas",

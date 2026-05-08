@@ -29,7 +29,7 @@ export default defineNitroConfig({
   handlers: [
     {
       route: "/api/chat-proxy/**",
-      handler: "server/api/chat-proxy/[...slug].post.ts",
+      handler: "server/api/chat-proxy/[...slug].ts",
     },
   ],
 });
