@@ -85,6 +85,9 @@ jobs:
       - name: Build
         run: |
           bun install
+          cd web
+          bun install
+          cd ..
           bun x tsc -p tsconfig.json
 
       - name: Publish to npm
