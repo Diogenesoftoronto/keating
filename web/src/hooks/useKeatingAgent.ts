@@ -12,6 +12,7 @@ import {
 } from "@mariozechner/pi-ai";
 import {
   type AgentState,
+  type AgentMessage,
   ApiKeyPromptDialog,
   AppStorage,
   ChatPanel,
@@ -21,6 +22,9 @@ import {
   SessionsStore,
   SettingsDialog,
   SettingsStore,
+  SessionListDialog,
+  type SessionData,
+  type SessionMetadata,
   setAppStorage,
   defaultConvertToLlm,
   ProxyTab,
@@ -220,9 +224,72 @@ export interface UseKeatingAgentReturn {
   title: string;
   isPending: boolean;
   openSettings: () => void;
+  openSessions: () => void;
+  newSession: () => void;
   chatPanelRef: (node: ChatPanel | null) => void;
   speechEnabled: boolean;
   toggleSpeech: () => void;
+}
+
+function createSessionId(): string {
+  return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+const emptyUsage: SessionMetadata["usage"] = {
+  input: 0,
+  output: 0,
+  cacheRead: 0,
+  cacheWrite: 0,
+  totalTokens: 0,
+  cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+};
+
+function messageText(message: AgentMessage): string {
+  const msg = message as any;
+  const content = msg.content;
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) {
+    return content
+      .filter((part) => part?.type === "text" && typeof part.text === "string")
+      .map((part) => part.text)
+      .join(" ");
+  }
+  return "";
+}
+
+function sessionTitle(messages: AgentMessage[]) {
+  const firstUserText = messages
+    .filter((message) => (message as any).role === "user" || (message as any).role === "user-with-attachments")
+    .map(messageText)
+    .find((text) => text.trim().length > 0);
+  if (!firstUserText) return "New session";
+  return firstUserText.trim().replace(/\s+/g, " ").slice(0, 80);
+}
+
+function sessionPreview(messages: AgentMessage[]) {
+  return messages
+    .map(messageText)
+    .filter(Boolean)
+    .join("\n")
+    .slice(0, 2048);
+}
+
+function sessionUsage(messages: AgentMessage[]): SessionMetadata["usage"] {
+  return messages.reduce<SessionMetadata["usage"]>((usage, message) => {
+    const messageUsage = (message as any).usage;
+    if (!messageUsage) return usage;
+    usage.input += messageUsage.input ?? 0;
+    usage.output += messageUsage.output ?? 0;
+    usage.cacheRead += messageUsage.cacheRead ?? 0;
+    usage.cacheWrite += messageUsage.cacheWrite ?? 0;
+    usage.totalTokens += messageUsage.totalTokens ?? 0;
+    usage.cost.input += messageUsage.cost?.input ?? 0;
+    usage.cost.output += messageUsage.cost?.output ?? 0;
+    usage.cost.cacheRead += messageUsage.cost?.cacheRead ?? 0;
+    usage.cost.cacheWrite += messageUsage.cost?.cacheWrite ?? 0;
+    usage.cost.total += messageUsage.cost?.total ?? 0;
+    return usage;
+  }, structuredClone(emptyUsage));
 }
 
 export function useKeatingAgent(): UseKeatingAgentReturn {
@@ -231,6 +298,9 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
 
   const [title] = useState("Keating");
   const agentRef = useRef<Agent | null>(null);
+  const panelRef = useRef<ChatPanel | null>(null);
+  const sessionIdRef = useRef<string>(createSessionId());
+  const sessionCreatedAtRef = useRef(new Date().toISOString());
   const selectedModelRef = useRef<Model<Api>>(DEFAULT_MODEL);
   const [speechSettings, setSpeechSettings] = useState<WebSpeechSettings>(() => loadWebSpeechSettings());
   const [isPending, startTransition] = useTransition();
@@ -248,6 +318,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   }
 
   const unsubRef = useRef<(() => void) | null>(null);
+  const persistUnsubRef = useRef<(() => void) | null>(null);
 
   const toolOptions = useCallback((settings: WebSpeechSettings) => ({
     speech: {
@@ -256,7 +327,42 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     },
   }), []);
 
+  const saveSessionSnapshot = useCallback(async (
+    agent: Agent | null = agentRef.current,
+    sessionId = sessionIdRef.current,
+    createdAt = sessionCreatedAtRef.current,
+  ) => {
+    if (!agent || agent.state.messages.length === 0) return;
+
+    const now = new Date().toISOString();
+    const messages = [...agent.state.messages];
+    const title = sessionTitle(messages);
+    const metadata: SessionMetadata = {
+      id: sessionId,
+      title,
+      createdAt,
+      lastModified: now,
+      messageCount: messages.length,
+      usage: sessionUsage(messages),
+      thinkingLevel: agent.state.thinkingLevel,
+      preview: sessionPreview(messages),
+    };
+    const data: SessionData = {
+      id: sessionId,
+      title,
+      model: agent.state.model,
+      thinkingLevel: agent.state.thinkingLevel,
+      messages,
+      createdAt,
+      lastModified: now,
+    };
+
+    await sessions.save(data, metadata);
+  }, []);
+
   const createAgent = useCallback(async (panel: ChatPanel, initialState?: Partial<AgentState>) => {
+    const agentSessionId = sessionIdRef.current;
+    const agentCreatedAt = sessionCreatedAtRef.current;
     const tools = await createKeatingTools(keatingStorage, toolOptions(speechSettings));
     const nextState: Partial<AgentState> = {
       systemPrompt: buildKeatingSystemPrompt(speechSettings.enabled),
@@ -271,12 +377,19 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       initialState: nextState,
       convertToLlm: defaultConvertToLlm,
       streamFn: hybridStreamFn,
+      sessionId: agentSessionId,
     });
     agent.getApiKey = (provider: string) => getProviderApiKey(provider);
     agentRef.current = agent;
 
     if (unsubRef.current) unsubRef.current();
     unsubRef.current = subscribeAgentEvents(agent, panel);
+    if (persistUnsubRef.current) persistUnsubRef.current();
+    persistUnsubRef.current = agent.subscribe((ev) => {
+      if (ev.type === "agent_end") {
+        agent.waitForIdle().then(() => saveSessionSnapshot(agent, agentSessionId, agentCreatedAt)).catch(console.error);
+      }
+    });
 
     const setupCallbacks = {
       onApiKeyRequired: async (provider: string) => {
@@ -304,7 +417,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     };
 
     await panel.setAgent(agent, setupCallbacks);
-  }, [speechSettings, toolOptions]);
+  }, [saveSessionSnapshot, speechSettings, toolOptions]);
 
   useEffect(() => {
     const agent = agentRef.current;
@@ -336,11 +449,60 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   useEffect(() => {
     return () => {
       if (unsubRef.current) unsubRef.current();
+      if (persistUnsubRef.current) persistUnsubRef.current();
     };
   }, []);
 
+  const newSession = useCallback(() => {
+    const panel = panelRef.current;
+    if (!panel) return;
+
+    startTransition(async () => {
+      const currentAgent = agentRef.current;
+      if (currentAgent?.state.isStreaming) {
+        currentAgent.abort();
+        await currentAgent.waitForIdle();
+      }
+      await saveSessionSnapshot(currentAgent);
+      sessionIdRef.current = createSessionId();
+      sessionCreatedAtRef.current = new Date().toISOString();
+      await createAgent(panel, { messages: [], model: selectedModelRef.current, thinkingLevel: "medium" });
+    });
+  }, [createAgent, saveSessionSnapshot]);
+
+  const loadSession = useCallback(async (session: SessionData) => {
+    const panel = panelRef.current;
+    if (!panel) return;
+
+    const currentAgent = agentRef.current;
+    if (currentAgent?.state.isStreaming) {
+      currentAgent.abort();
+      await currentAgent.waitForIdle();
+    }
+    await saveSessionSnapshot(currentAgent);
+
+    sessionIdRef.current = session.id;
+    sessionCreatedAtRef.current = session.createdAt;
+    selectedModelRef.current = session.model;
+    await createAgent(panel, {
+      model: session.model,
+      thinkingLevel: session.thinkingLevel,
+      messages: session.messages,
+    });
+  }, [createAgent, saveSessionSnapshot]);
+
+  const openSessions = useCallback(() => {
+    SessionListDialog.open((sessionId) => {
+      startTransition(async () => {
+        const session = await sessions.loadSession(sessionId);
+        if (session) await loadSession(session);
+      });
+    });
+  }, [loadSession]);
+
   // Use a callback ref to safely initialize the agent when the DOM node resolves
   const chatPanelRef = useCallback((node: ChatPanel | null) => {
+    panelRef.current = node;
     if (node) {
       if (!agentRef.current) {
         createAgent(node).catch(console.error);
@@ -379,5 +541,5 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     }
   }, [createAgent]);
 
-  return { title, isPending, openSettings, chatPanelRef, speechEnabled: speechSettings.enabled, toggleSpeech };
+  return { title, isPending, openSettings, openSessions, newSession, chatPanelRef, speechEnabled: speechSettings.enabled, toggleSpeech };
 }
