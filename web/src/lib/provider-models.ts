@@ -1,6 +1,6 @@
 import { getModels, getProviders, type Api, type Model } from "@mariozechner/pi-ai";
 import { getAppStorage, type CustomProvider } from "@mariozechner/pi-web-ui";
-import { Ollama } from "ollama/browser";
+import { proxiedProviderRequestUrl } from "./provider-proxy";
 
 export type KeatingCustomProviderType =
 	| "ollama"
@@ -93,16 +93,22 @@ function manualProviderApi(type: KeatingCustomProviderType): Api {
 	}
 }
 
-async function fetchJson(url: string, apiKey?: string): Promise<any> {
-	const headers: HeadersInit = {
-		"Content-Type": "application/json",
+async function fetchJson(url: string, apiKey?: string, options: { method?: "GET" | "POST"; body?: unknown } = {}): Promise<any> {
+	const proxied = proxiedProviderRequestUrl(url);
+	const headers: Record<string, string> = {
+		"x-target-url": proxied.targetBaseUrl,
 	};
 
+	if (options.body !== undefined) headers["Content-Type"] = "application/json";
 	if (apiKey) {
 		headers.Authorization = `Bearer ${apiKey}`;
 	}
 
-	const response = await fetch(url, { method: "GET", headers });
+	const response = await fetch(proxied.url, {
+		method: options.method ?? "GET",
+		headers,
+		body: options.body === undefined ? undefined : JSON.stringify(options.body),
+	});
 	if (!response.ok) {
 		throw new Error(`HTTP ${response.status}: ${response.statusText}`);
 	}
@@ -156,12 +162,16 @@ async function discoverOpenAiCompatibleModels(
 }
 
 async function discoverOllamaModels(baseUrl: string): Promise<Model<Api>[]> {
-	const ollama = new Ollama({ host: baseUrl });
-	const { models } = await ollama.list();
+	const trimmedBaseUrl = trimTrailingSlash(baseUrl);
+	const payload = await fetchJson(`${trimmedBaseUrl}/api/tags`);
+	const models = Array.isArray(payload?.models) ? payload.models : [];
 
 	const discovered = await Promise.all(
 		models.map(async (model: any): Promise<Model<Api> | null> => {
-			const details = await ollama.show({ model: model.name });
+			const details = await fetchJson(`${trimmedBaseUrl}/api/show`, undefined, {
+				method: "POST",
+				body: { model: model.name },
+			});
 			const capabilities: string[] = (details as any).capabilities || [];
 			if (!capabilities.includes("tools")) return null;
 

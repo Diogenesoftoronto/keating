@@ -18,11 +18,11 @@ import {
   ChatPanel,
   CustomProvidersStore,
   IndexedDBStorageBackend,
+  PersistentStorageDialog,
   ProviderKeysStore,
   SessionsStore,
   SettingsDialog,
   SettingsStore,
-  SessionListDialog,
   type SessionData,
   type SessionMetadata,
   setAppStorage,
@@ -31,7 +31,9 @@ import {
 } from "@mariozechner/pi-web-ui";
 import { KeatingProvidersModelsTab } from "../components/providers-models-tab";
 import { KeatingModelSelector } from "../components/model-selector";
+import { SessionManagerDialog } from "../components/SessionManagerDialog";
 import { getProviderApiKey, syncCustomProviderKeys } from "../lib/provider-models";
+import { chatProxyBaseUrl, proxyTargetHeader, shouldProxyModel } from "../lib/provider-proxy";
 import { localModel } from "../stores/local-model";
 import { buildKeatingSystemPrompt, createKeatingTools } from "../keating/browser-tools";
 import { loadWebSpeechSettings, primeSpeechAudio, saveWebSpeechSettings, type WebSpeechSettings } from "../keating/speech";
@@ -176,29 +178,18 @@ function createBrowserStreamFn() {
 }
 
 function hybridStreamFn(model: Model<Api>, context: Context, options?: SimpleStreamOptions) {
-  if (model.provider === "browser") return createBrowserStreamFn()(model, context, options);
+	if (model.provider === "browser") return createBrowserStreamFn()(model, context, options);
 
-  // CORS Fix: Proxy providers with non-standard base URLs through the backend
-  // to bypass CORS header restrictions. Well-known cloud providers (anthropic.com,
-  // openai.com, googleapis.com, etc.) work directly from the browser.
-  const directOrigins = [
-    "anthropic.com", "openai.com", "googleapis.com", "groq.com",
-    "x.ai", "mistral.ai", "huggingface.co", "cerebras.ai",
-    "amazonaws.com", "azure.com", "github.com", "openrouter.ai",
-  ];
-  const needsProxy = model.baseUrl &&
-    !directOrigins.some(origin => model.baseUrl!.includes(origin));
-
-  if (needsProxy) {
+  if (shouldProxyModel(model)) {
     const proxiedModel = {
       ...model,
-      baseUrl: `${window.location.origin}/api/chat-proxy`,
+      baseUrl: chatProxyBaseUrl(),
     };
     const proxiedOptions: SimpleStreamOptions = {
       ...options,
       headers: {
         ...options?.headers,
-        "x-target-url": model.baseUrl,
+        "x-target-url": proxyTargetHeader(model.baseUrl),
       },
     };
     return streamSimple(proxiedModel, context, proxiedOptions);
@@ -304,6 +295,9 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const selectedModelRef = useRef<Model<Api>>(DEFAULT_MODEL);
   const [speechSettings, setSpeechSettings] = useState<WebSpeechSettings>(() => loadWebSpeechSettings());
   const [isPending, startTransition] = useTransition();
+  const bootstrapTimerRef = useRef<number | null>(null);
+  const bootstrapGenerationRef = useRef(0);
+  const persistentStorageRequestedRef = useRef(false);
 
   const openSettings = useCallback(() => {
     SettingsDialog.open([new KeatingProvidersModelsTab(), new ProxyTab()]);
@@ -446,6 +440,22 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     });
   }, []);
 
+  const requestPersistentStorageOnce = useCallback(() => {
+    if (persistentStorageRequestedRef.current) return;
+    persistentStorageRequestedRef.current = true;
+    void PersistentStorageDialog.request().catch((error) => {
+      console.warn("Persistent storage request failed:", error);
+    });
+  }, []);
+
+  const endLearnerSession = useCallback(async () => {
+    try {
+      await keatingStorage.recordSessionEnd([]);
+    } catch (error) {
+      console.warn("Failed to record session end:", error);
+    }
+  }, []);
+
   useEffect(() => {
     return () => {
       if (unsubRef.current) unsubRef.current();
@@ -464,11 +474,12 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
         await currentAgent.waitForIdle();
       }
       await saveSessionSnapshot(currentAgent);
+      await endLearnerSession();
       sessionIdRef.current = createSessionId();
       sessionCreatedAtRef.current = new Date().toISOString();
       await createAgent(panel, { messages: [], model: selectedModelRef.current, thinkingLevel: "medium" });
     });
-  }, [createAgent, saveSessionSnapshot]);
+  }, [createAgent, endLearnerSession, saveSessionSnapshot]);
 
   const loadSession = useCallback(async (session: SessionData) => {
     const panel = panelRef.current;
@@ -480,6 +491,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       await currentAgent.waitForIdle();
     }
     await saveSessionSnapshot(currentAgent);
+    if (currentAgent) await endLearnerSession();
 
     sessionIdRef.current = session.id;
     sessionCreatedAtRef.current = session.createdAt;
@@ -489,29 +501,37 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       thinkingLevel: session.thinkingLevel,
       messages: session.messages,
     });
-  }, [createAgent, saveSessionSnapshot]);
+  }, [createAgent, endLearnerSession, saveSessionSnapshot]);
 
   const openSessions = useCallback(() => {
-    SessionListDialog.open((sessionId) => {
-      startTransition(async () => {
-        const session = await sessions.loadSession(sessionId);
-        if (session) await loadSession(session);
-      });
+    SessionManagerDialog.open({
+      onLoad: (sessionId) => {
+        startTransition(async () => {
+          const session = await sessions.loadSession(sessionId);
+          if (session) await loadSession(session);
+        });
+      },
     });
   }, [loadSession]);
 
   // Use a callback ref to safely initialize the agent when the DOM node resolves
   const chatPanelRef = useCallback((node: ChatPanel | null) => {
+    if (bootstrapTimerRef.current !== null) {
+      clearTimeout(bootstrapTimerRef.current);
+      bootstrapTimerRef.current = null;
+    }
+
+    bootstrapGenerationRef.current += 1;
     panelRef.current = node;
+
+    if (!node) return;
+
+    const existingAgent = agentRef.current;
     if (node) {
-      if (!agentRef.current) {
-        createAgent(node).catch(console.error);
-      } else {
+      if (existingAgent) {
         // Re-attach existing agent if component re-mounted (e.g. strict mode)
-        const agent = agentRef.current;
-        // Re-subscribe to agent events (StrictMode cleanup may have unsubscribed)
         if (unsubRef.current) unsubRef.current();
-        unsubRef.current = subscribeAgentEvents(agent, node);
+        unsubRef.current = subscribeAgentEvents(existingAgent, node);
         const setupCallbacks = {
           onApiKeyRequired: async (provider: string) => {
             if (provider === "browser") return true;
@@ -520,26 +540,67 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
           },
           onBeforeSend: () => {
             if (import.meta.env.DEV) {
-              console.log(`[keating:send] model=${agent.state.model.provider}/${agent.state.model.id} messages=${agent.state.messages.length}`);
+              console.log(`[keating:send] model=${existingAgent.state.model.provider}/${existingAgent.state.model.id} messages=${existingAgent.state.messages.length}`);
             }
           },
           onModelSelect: () =>
             KeatingModelSelector.open(
-              agent.state.model as Model<Api>,
+              existingAgent.state.model as Model<Api>,
               (model) => {
                 startTransition(async () => {
                   if (model.provider === "browser") await loadBrowserModel();
                   selectedModelRef.current = model;
-                  const current = agent.state;
+                  const current = existingAgent.state;
                   await createAgent(node, { ...current, model, messages: [...current.messages] });
                 });
               },
             ),
         };
-        node.setAgent(agent, setupCallbacks).catch(console.error);
+        node.setAgent(existingAgent, setupCallbacks).catch(console.error);
+        return;
       }
+
+      const generation = bootstrapGenerationRef.current;
+      bootstrapTimerRef.current = window.setTimeout(() => {
+        if (bootstrapGenerationRef.current !== generation || panelRef.current !== node || agentRef.current) {
+          return;
+        }
+
+        requestPersistentStorageOnce();
+
+        void (async () => {
+          try {
+            const latestSessionId = await sessions.getLatestSessionId();
+            if (bootstrapGenerationRef.current !== generation || panelRef.current !== node || agentRef.current) {
+              return;
+            }
+
+            if (latestSessionId) {
+              const session = await sessions.loadSession(latestSessionId);
+              if (bootstrapGenerationRef.current !== generation || panelRef.current !== node || agentRef.current) {
+                return;
+              }
+              if (session) {
+                await loadSession(session);
+                return;
+              }
+            }
+
+            if (bootstrapGenerationRef.current !== generation || panelRef.current !== node || agentRef.current) {
+              return;
+            }
+
+            await createAgent(node);
+          } catch (error) {
+            console.error(error);
+            if (!agentRef.current && panelRef.current === node && bootstrapGenerationRef.current === generation) {
+              await createAgent(node).catch(console.error);
+            }
+          }
+        })();
+      }, 0);
     }
-  }, [createAgent]);
+  }, [createAgent, loadSession, requestPersistentStorageOnce]);
 
   return { title, isPending, openSettings, openSessions, newSession, chatPanelRef, speechEnabled: speechSettings.enabled, toggleSpeech };
 }
