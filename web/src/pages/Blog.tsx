@@ -1,7 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Nav } from "../components/Nav";
 import { SimpleFooter } from "../components/Footer";
-import { Pretext } from "../components/Pretext";
 
 type BadgeColor = "fix" | "release" | "feature" | "pwa" | "update" | "tech" | "devlog";
 
@@ -43,13 +42,12 @@ const POSTS: Post[] = [
     title: "v0.3.1 - Sessions, Artifacts, Tool Schemas, and Provider Proxying",
     body: (
       <>
-        <div className="mb-4">
-          <Pretext
-            text="Keating 0.3.1 is a web reliability release: saved sessions are easier to resume and manage, generated teaching artifacts are reachable from chat, the browser model gets real tool schemas, and custom providers no longer make direct cross-origin discovery calls from the page."
-            font="16px 'Inter', sans-serif"
-            lineHeight={24}
-          />
-        </div>
+        <p className="mb-4 leading-6">
+          Keating 0.3.1 is a web reliability release: saved sessions are easier to resume and
+          manage, generated teaching artifacts are reachable from chat, the browser model gets
+          real tool schemas, and custom providers no longer make direct cross-origin discovery
+          calls from the page.
+        </p>
         <h3 className="font-bold mt-4 mb-2">Session Continuity</h3>
         <ul className="text-sm space-y-2 ml-4 mb-4">
           <li>
@@ -101,13 +99,12 @@ const POSTS: Post[] = [
     title: "All 19 Keating Web Tools Now Expose Real Parameter Schemas",
     body: (
       <>
-        <div className="mb-4">
-          <Pretext
-            text="Keating's web model now receives the full teaching tool surface with proper JSON Schema parameter definitions. The important fix was replacing createSimpleTool, which produced empty properties objects, with createTool registrations that describe each tool's actual arguments."
-            font="16px 'Inter', sans-serif"
-            lineHeight={24}
-          />
-        </div>
+        <p className="mb-4 leading-6">
+          Keating&apos;s web model now receives the full teaching tool surface with proper JSON
+          Schema parameter definitions. The important fix was replacing createSimpleTool, which
+          produced empty properties objects, with createTool registrations that describe each
+          tool&apos;s actual arguments.
+        </p>
         <h3 className="font-bold mt-4 mb-2">What Changed</h3>
         <p className="text-sm mb-4">
           All 19 Keating tools are now available to the web model with schemas it can
@@ -174,13 +171,11 @@ const POSTS: Post[] = [
     title: "Optional Speech: Gemini Live Voice for the Web",
     body: (
       <>
-        <div className="mb-4">
-          <Pretext
-            text="Keating now has an optional speech layer. The teacher still thinks, verifies, plans, and steers through the normal model/tool loop, but it can hand short learner-facing moments to a dedicated voice tool when speech is useful."
-            font="16px 'Inter', sans-serif"
-            lineHeight={24}
-          />
-        </div>
+        <p className="mb-4 leading-6">
+          Keating now has an optional speech layer. The teacher still thinks, verifies, plans, and
+          steers through the normal model/tool loop, but it can hand short learner-facing moments
+          to a dedicated voice tool when speech is useful.
+        </p>
         <h3 className="font-bold mt-4 mb-2">How It Works</h3>
         <ul className="text-sm space-y-2 ml-4 mb-4">
           <li>
@@ -214,50 +209,40 @@ const POSTS: Post[] = [
     title: "v0.3.0 — Pedagogical Engines, a Sharper Logo, and Recorded Workflows",
     body: (
       <>
-        <div className="mb-4">
-          <Pretext
-            text="Keating 0.3.0 is out. This release lays the groundwork for a much richer learning loop — flashcards, quizzes, mastery tracking, and multi-week projects — and gives the brand a long-overdue polish at both ends of the stack."
-            font="16px 'Inter', sans-serif"
-            lineHeight={24}
-          />
-        </div>
+        <p className="mb-4 leading-6">
+          Keating 0.3.0 is out. This release lays the groundwork for a much richer learning loop:
+          flashcards, quizzes, mastery tracking, and multi-week projects. It also gives the brand
+          a long-overdue polish at both ends of the stack.
+        </p>
         <h3 className="font-bold mt-4 mb-2">New Pedagogical Engines</h3>
         <ul className="text-sm space-y-3 ml-4 mb-4">
           <li>
             <div className="font-bold mb-1 underline decoration-[#d44a3d]">Flashcards:</div>
-            <Pretext
-              text="Spaced-repetition decks with definitions, intuitions, common misconceptions, transfer prompts, and optional mnemonics — generated per topic."
-              font="14px 'Inter', sans-serif"
-              lineHeight={20}
-              justify={false}
-            />
+            <p>
+              Spaced-repetition decks with definitions, intuitions, common misconceptions,
+              transfer prompts, and optional mnemonics, generated per topic.
+            </p>
           </li>
           <li>
             <div className="font-bold mb-1 underline decoration-[#d44a3d]">Quizzes & Workbooks:</div>
-            <Pretext
-              text="Structured question sets across recall, comprehension, application, analysis, and transfer levels, with rubrics for short-answer items and a generated answer key."
-              font="14px 'Inter', sans-serif"
-              lineHeight={20}
-              justify={false}
-            />
+            <p>
+              Structured question sets across recall, comprehension, application, analysis, and
+              transfer levels, with rubrics for short-answer items and a generated answer key.
+            </p>
           </li>
           <li>
             <div className="font-bold mb-1 underline decoration-[#d44a3d]">Mastery Tracking:</div>
-            <Pretext
-              text="Longitudinal mastery curves so the system can decide what to revisit and when, instead of treating every session as fresh."
-              font="14px 'Inter', sans-serif"
-              lineHeight={20}
-              justify={false}
-            />
+            <p>
+              Longitudinal mastery curves so the system can decide what to revisit and when,
+              instead of treating every session as fresh.
+            </p>
           </li>
           <li>
             <div className="font-bold mb-1 underline decoration-[#d44a3d]">Long-Horizon Projects:</div>
-            <Pretext
-              text="Multi-stage assignments with milestones, deliverables, and rubrics — the path from one-off lessons toward weeks-long studio work."
-              font="14px 'Inter', sans-serif"
-              lineHeight={20}
-              justify={false}
-            />
+            <p>
+              Multi-stage assignments with milestones, deliverables, and rubrics: the path from
+              one-off lessons toward weeks-long studio work.
+            </p>
           </li>
         </ul>
         <h3 className="font-bold mt-4 mb-2">A Sharper KEATING</h3>
@@ -389,13 +374,10 @@ const POSTS: Post[] = [
           <li><strong>Terminal &amp; Theme Modules</strong> — palette, ASCII headers, and section helpers extracted to <Code>core/terminal.ts</Code> and <Code>core/theme.ts</Code>.</li>
           <li><strong>Browser Tools / Storage</strong> — broader tool surfaces and persistence improvements in <Code>web/src/keating/</Code>.</li>
         </ul>
-        <div className="text-sm text-[#64748b] mt-6">
-          <Pretext
-            text="The new engines ship as libraries first; CLI subcommands and web UI surfaces will land behind them in the next point releases."
-            font="italic 14px 'Inter', sans-serif"
-            lineHeight={20}
-          />
-        </div>
+        <p className="text-sm italic text-[#64748b] mt-6">
+          The new engines ship as libraries first; CLI subcommands and web UI surfaces will land
+          behind them in the next point releases.
+        </p>
       </>
     ),
   },
@@ -405,50 +387,39 @@ const POSTS: Post[] = [
     title: "From Stubs to Reality: AI-Powered Pedagogical Verification",
     body: (
       <>
-        <div className="mb-4">
-          <Pretext 
-            text="Today we've completed a major architectural shift: moving from deterministic mathematical stubs to true AI-powered verification across our core pedagogical engines."
-            font="16px 'Inter', sans-serif"
-            lineHeight={24}
-          />
-        </div>
+        <p className="mb-4 leading-6">
+          Today we&apos;ve completed a major architectural shift: moving from deterministic
+          mathematical stubs to true AI-powered verification across our core pedagogical engines.
+        </p>
         <h3 className="font-bold mt-4 mb-2">What's New?</h3>
         <ul className="text-sm space-y-4 ml-4 mb-4">
           <li>
             <div className="font-bold mb-1 underline decoration-[#d44a3d]">Real-Time Animation Generation:</div>
-            <Pretext 
-              text="The animation engine no longer relies on hardcoded ManimJS templates. It now uses the pi agent to generate custom, context-aware visual teaching beats for any topic."
-              font="14px 'Inter', sans-serif"
-              lineHeight={20}
-              justify={false}
-            />
+            <p>
+              The animation engine no longer relies on hardcoded ManimJS templates. It now uses
+              the pi agent to generate custom, context-aware visual teaching beats for any topic.
+            </p>
           </li>
           <li>
             <div className="font-bold mb-1 underline decoration-[#d44a3d]">Realistic Teaching Simulations:</div>
-            <Pretext 
-              text="Our synthetic benchmarks now use LLM-backed simulations to evaluate teaching outcomes (mastery, retention, confusion) instead of algebraic approximations."
-              font="14px 'Inter', sans-serif"
-              lineHeight={20}
-              justify={false}
-            />
+            <p>
+              Our synthetic benchmarks now use LLM-backed simulations to evaluate teaching
+              outcomes (mastery, retention, confusion) instead of algebraic approximations.
+            </p>
           </li>
           <li>
             <div className="font-bold mb-1 underline decoration-[#d44a3d]">Dynamic Learner Profiles:</div>
-            <Pretext 
-              text="Learner state updates are now driven by AI-inferred pedagogical shifts based on historical performance and feedback."
-              font="14px 'Inter', sans-serif"
-              lineHeight={20}
-              justify={false}
-            />
+            <p>
+              Learner state updates are now driven by AI-inferred pedagogical shifts based on
+              historical performance and feedback.
+            </p>
           </li>
           <li>
             <div className="font-bold mb-1 underline decoration-[#d44a3d]">Research Paper Integration:</div>
-            <Pretext 
-              text="The formal account of the Keating metaharness is now served directly in the web application with a dedicated [PAPER] section and PDF download."
-              font="14px 'Inter', sans-serif"
-              lineHeight={20}
-              justify={false}
-            />
+            <p>
+              The formal account of the Keating metaharness is now served directly in the web
+              application with a dedicated [PAPER] section and PDF download.
+            </p>
           </li>
         </ul>
         <div className="my-4">
@@ -466,13 +437,10 @@ const POSTS: Post[] = [
             />
           </figure>
         </div>
-        <div className="text-sm text-[#64748b] mt-6">
-          <Pretext 
-            text="These changes ensure that Keating's 'self-improvement' loop is grounded in actual semantic understanding rather than pre-baked formulas."
-            font="italic 14px 'Inter', sans-serif"
-            lineHeight={20}
-          />
-        </div>
+        <p className="text-sm italic text-[#64748b] mt-6">
+          These changes ensure that Keating&apos;s self-improvement loop is grounded in actual
+          semantic understanding rather than pre-baked formulas.
+        </p>
       </>
     ),
   },

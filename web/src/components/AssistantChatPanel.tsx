@@ -17,6 +17,42 @@ interface AssistantChatPanelProps {
 	className?: string;
 }
 
+function TextPart({ text }: { text: string }) {
+	return <span>{text}</span>;
+}
+
+function ReasoningPart({ text }: { text: string }) {
+	if (!text.trim()) return null;
+	return (
+		<details className="mb-3 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+			<summary className="cursor-pointer font-medium">Reasoning</summary>
+			<div className="mt-2 whitespace-pre-wrap">{text}</div>
+		</details>
+	);
+}
+
+function ToolPart({ toolName, args, result, isError }: { toolName: string; args?: unknown; result?: unknown; isError?: boolean }) {
+	return (
+		<div className={`my-3 rounded-md border px-3 py-2 text-xs ${isError ? "border-destructive/40 bg-destructive/5" : "border-border bg-muted/40"}`}>
+			<div className="font-medium text-muted-foreground">Tool: {toolName}</div>
+			{args !== undefined && (
+				<pre className="mt-2 overflow-x-auto whitespace-pre-wrap text-muted-foreground">{JSON.stringify(args, null, 2)}</pre>
+			)}
+			{result !== undefined && (
+				<pre className="mt-2 overflow-x-auto whitespace-pre-wrap text-foreground">{typeof result === "string" ? result : JSON.stringify(result, null, 2)}</pre>
+			)}
+		</div>
+	);
+}
+
+const messagePartComponents = {
+	Text: TextPart,
+	Reasoning: ReasoningPart,
+	tools: {
+		Fallback: ToolPart,
+	},
+};
+
 function textFromContent(content: unknown): string {
 	if (typeof content === "string") return content;
 	if (!Array.isArray(content)) return "";
@@ -160,7 +196,9 @@ function UserMessage() {
 		<MessagePrimitive.Root className="mx-auto mb-4 flex max-w-3xl justify-end">
 			<div className="flex max-w-[82%] gap-3 rounded-lg bg-primary px-4 py-3 text-sm text-primary-foreground">
 				<User className="mt-0.5 h-4 w-4 shrink-0" />
-				<MessagePrimitive.Content />
+				<div className="min-w-0 whitespace-pre-wrap leading-6">
+					<MessagePrimitive.Content components={messagePartComponents} />
+				</div>
 			</div>
 		</MessagePrimitive.Root>
 	);
@@ -172,7 +210,7 @@ function AssistantMessage() {
 			<div className="flex max-w-[90%] gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-card-foreground">
 				<Bot className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
 				<div className="min-w-0 whitespace-pre-wrap leading-6">
-					<MessagePrimitive.Content />
+					<MessagePrimitive.Content components={messagePartComponents} />
 				</div>
 			</div>
 		</MessagePrimitive.Root>
