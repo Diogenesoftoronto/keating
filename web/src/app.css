@@ -7,6 +7,98 @@
 /* Retro theme for landing, tutorial, blog */
 @import './styles/retro.css';
 
+/* ────────────────────────────────────────────────────────────────
+   RETRO THEME OVERRIDES — overrides pi-web-ui default tokens
+   with retro paper/terminal values so the entire app feels
+   consistent with the landing page aesthetic.
+   ──────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Core retro tokens globally available */
+  --paper: #f4f1ea;
+  --ink: #1a1a1a;
+  --accent-green: #10b981;
+  /* Paper palette (light mode — default) */
+  --background: #f4f1ea;
+  --foreground: #1a1a1a;
+  --card: #f4f1ea;
+  --card-foreground: #1a1a1a;
+  --popover: #f4f1ea;
+  --popover-foreground: #1a1a1a;
+  --primary: #10b981;
+  --primary-foreground: #f4f1ea;
+  --secondary: #e8e4da;
+  --secondary-foreground: #1a1a1a;
+  --muted: #e8e4da;
+  --muted-foreground: #666666;
+  --accent: #e8e4da;
+  --accent-foreground: #1a1a1a;
+  --destructive: #dc2626;
+  --destructive-foreground: #f4f1ea;
+  --border: #1a1a1a;
+  --input: #1a1a1a;
+  --ring: #10b981;
+  --chart-1: #10b981;
+  --chart-2: #059669;
+  --chart-3: #047857;
+  --chart-4: #065f46;
+  --chart-5: #064e3b;
+  --sidebar: #f4f1ea;
+  --sidebar-foreground: #1a1a1a;
+  --sidebar-primary: #10b981;
+  --sidebar-primary-foreground: #f4f1ea;
+  --sidebar-accent: #e8e4da;
+  --sidebar-accent-foreground: #1a1a1a;
+  --sidebar-border: #1a1a1a;
+  --sidebar-ring: #10b981;
+  --font-sans: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-serif: "Space Mono", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-mono: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --radius: 0.25rem;
+}
+
+.dark {
+  /* Terminal palette (dark mode) */
+  --paper: #0c0c0c;
+  --ink: #e8e4da;
+  --background: #0c0c0c;
+  --foreground: #e8e4da;
+  --card: #141414;
+  --card-foreground: #e8e4da;
+  --popover: #141414;
+  --popover-foreground: #e8e4da;
+  --primary: #10b981;
+  --primary-foreground: #0c0c0c;
+  --secondary: #1a1a1a;
+  --secondary-foreground: #e8e4da;
+  --muted: #1a1a1a;
+  --muted-foreground: #888888;
+  --accent: rgba(16, 185, 129, 0.15);
+  --accent-foreground: #10b981;
+  --destructive: #ef4444;
+  --destructive-foreground: #f4f1ea;
+  --border: rgba(0, 255, 0, 0.2);
+  --input: rgba(0, 255, 0, 0.25);
+  --ring: #10b981;
+  --chart-1: #10b981;
+  --chart-2: #059669;
+  --chart-3: #047857;
+  --chart-4: #065f46;
+  --chart-5: #064e3b;
+  --sidebar: #141414;
+  --sidebar-foreground: #e8e4da;
+  --sidebar-primary: #10b981;
+  --sidebar-primary-foreground: #0c0c0c;
+  --sidebar-accent: rgba(16, 185, 129, 0.15);
+  --sidebar-accent-foreground: #10b981;
+  --sidebar-border: rgba(0, 255, 0, 0.2);
+  --sidebar-ring: #10b981;
+  --font-sans: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-serif: "Space Mono", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-mono: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --radius: 0.25rem;
+}
+
 /* Custom Keating styles */
 html,
 body,
@@ -14,6 +106,43 @@ body,
   height: 100%;
   margin: 0;
   padding: 0;
+}
+
+/* App pages use retro monospace font */
+body {
+  font-family: var(--font-sans);
+}
+
+/* Smooth theme transitions (except background which can flash) */
+html {
+  transition: color-scheme 0.2s ease;
+}
+
+/* Theme-aware highlight color */
+::selection {
+  background: rgba(16, 185, 129, 0.25);
+  color: var(--foreground);
+}
+
+.dark ::selection {
+  background: rgba(16, 185, 129, 0.35);
+}
+
+/* Focus ring uses accent green */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Button hover/active micro-interactions */
+button:not(:disabled) {
+  transition: transform 0.08s ease-out, background-color 0.12s ease;
+}
+
+/* Firefox scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
 }
 
 .chat-page-shell {
@@ -82,7 +211,7 @@ body,
 }
 
 :root {
-  --color-primary: #6366f1;
+  --color-primary: #10b981;
 }
 
 message-editor textarea {
@@ -97,11 +226,17 @@ message-editor textarea::placeholder {
   -webkit-text-fill-color: var(--color-muted-foreground) !important;
 }
 
+/* Retro-styled keating header for non-chat pages */
 .keating-header {
-  background: rgba(15, 15, 15, 0.8);
+  background: var(--background);
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 2px solid var(--border);
   padding: 0.75rem 1rem;
+}
+
+.dark .keating-header {
+  background: var(--background);
+  border-bottom: 2px solid var(--border);
 }
 
 .local-model-badge {
@@ -230,4 +365,108 @@ message-editor textarea::placeholder {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Fix markdown headings for dark mode contrast */
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  color: var(--foreground);
+}
+
+/* Fix KaTeX math rendering in dark mode */
+.markdown-content .katex {
+  color: var(--foreground);
+}
+
+/* Fix inline code contrast */
+.markdown-content code:not(.hljs) {
+  color: var(--foreground);
+}
+
+/* ─── Chat styling ─── */
+.chat-page-shell {
+  --chat-paper: #f4f1ea;
+  --chat-ink: #1a1a1a;
+  --chat-accent: #10b981;
+}
+
+.dark .chat-page-shell {
+  --chat-paper: #0c0c0c;
+  --chat-ink: #e8e4da;
+  --chat-accent: #10b981;
+}
+
+.chat-page-shell .chat-header {
+  background: var(--chat-paper);
+  border-bottom: 2px solid var(--chat-ink);
+}
+
+.dark .chat-page-shell .chat-header {
+  background: var(--chat-paper);
+  border-bottom: 2px solid var(--chat-ink);
+}
+
+.chat-page-shell .composer-root {
+  background: var(--chat-paper);
+  border: 2px solid var(--chat-ink);
+  box-shadow: 4px 4px 0 var(--chat-ink);
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.chat-page-shell .composer-root:focus-within {
+  box-shadow: 2px 2px 0 var(--chat-ink);
+}
+
+.dark .chat-page-shell .composer-root {
+  background: var(--chat-paper);
+  border-color: rgba(0, 255, 0, 0.3);
+  box-shadow: 4px 4px 0 rgba(0, 255, 0, 0.15);
+}
+
+.dark .chat-page-shell .composer-root:focus-within {
+  box-shadow: 2px 2px 0 rgba(0, 255, 0, 0.2);
+}
+
+/* ─── Session manager / dialog styling ─── */
+.session-manager-dialog {
+  background: var(--background);
+  border: 2px solid var(--border);
+  box-shadow: 8px 8px 0 var(--border);
+}
+
+.dark .session-manager-dialog {
+  box-shadow: 8px 8px 0 rgba(0, 255, 0, 0.15);
+}
+
+/* ─── Artifact browser overlay styling ─── */
+.artifact-browser-overlay {
+  border-left: 2px solid var(--border);
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.15);
+}
+
+.dark .artifact-browser-overlay {
+  border-left: 2px solid rgba(0, 255, 0, 0.2);
+}
+
+/* ─── Retro scrollbars ─── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 0;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 0, 0.2);
 }

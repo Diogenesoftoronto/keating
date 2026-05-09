@@ -6,12 +6,13 @@ import { KeatingStorage } from "../keating/storage";
 
 interface ArtifactBrowserOverlayProps {
   open: boolean;
+  artifactId?: string;
   onClose: () => void;
 }
 
 const artifactStorage = new KeatingStorage();
 
-export function ArtifactBrowserOverlay({ open, onClose }: ArtifactBrowserOverlayProps) {
+export function ArtifactBrowserOverlay({ open, artifactId, onClose }: ArtifactBrowserOverlayProps) {
   useEffect(() => {
     if (!open) return;
 
@@ -61,8 +62,8 @@ export function ArtifactBrowserOverlay({ open, onClose }: ArtifactBrowserOverlay
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-4">
-          <ArtifactViewer storage={artifactStorage} onClose={onClose} />
+        <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-6">
+          <ArtifactViewer storage={artifactStorage} artifactId={artifactId} onClose={onClose} />
         </div>
       </div>
     </div>,

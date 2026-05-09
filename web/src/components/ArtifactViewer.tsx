@@ -11,6 +11,26 @@ interface ArtifactViewerProps {
 
 type ArtifactType = "plan" | "map" | "animation" | "benchmark" | "evolution" | "verification" | "prompt-evolution" | "improvement";
 
+type ArtifactCategory = "teaching" | "visual" | "optimization" | "improvement";
+
+const CATEGORY_MAP: Record<ArtifactType, { category: ArtifactCategory; icon: string }> = {
+	plan: { category: "teaching", icon: "📖" },
+	map: { category: "visual", icon: "🗺️" },
+	animation: { category: "visual", icon: "🎬" },
+	benchmark: { category: "optimization", icon: "📊" },
+	evolution: { category: "optimization", icon: "🧬" },
+	verification: { category: "teaching", icon: "✅" },
+	"prompt-evolution": { category: "optimization", icon: "⚡" },
+	improvement: { category: "improvement", icon: "🔧" },
+};
+
+const CATEGORY_LABELS: Record<ArtifactCategory, string> = {
+	teaching: "Teaching Materials",
+	visual: "Visuals & Maps",
+	optimization: "Optimization & Benchmarks",
+	improvement: "Improvements",
+};
+
 interface Artifact {
 	id: string;
 	type: ArtifactType;
@@ -92,27 +112,27 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 
 	if (selected) {
 		return (
-			<div className="artifact-detail">
+			<div className="artifact-detail text-foreground">
 				{/* Header */}
-				<div className="flex items-center justify-between mb-4 pb-2 border-b border-border">
-					<div>
+				<div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-4 pb-2 border-b border-border">
+					<div className="min-w-0">
 						<button onClick={() => setSelected(null)} className="text-sm text-muted-foreground hover:underline">
 							← Back to list
 						</button>
-						<h2 className="text-lg font-semibold mt-1">{selected.label}</h2>
+						<h2 className="text-lg font-semibold mt-1 text-foreground truncate">{selected.label}</h2>
 						<p className="text-xs text-muted-foreground">
 							{new Date(selected.createdAt).toLocaleString()}
 						</p>
 					</div>
 					{onClose && (
-						<button onClick={onClose} className="text-sm text-muted-foreground hover:underline">
+						<button onClick={onClose} className="text-sm text-muted-foreground hover:underline sm:shrink-0">
 							Close
 						</button>
 					)}
 				</div>
 
 				{/* Content */}
-				<div className="artifact-content">
+				<div className="artifact-content text-foreground">
 					{selected.type === "plan" && <PlanViewer plan={selected.data as LessonPlan} />}
 					{selected.type === "map" && <MapView map={selected.data as LessonMap} />}
 					{selected.type === "animation" && <AnimationViewer animation={selected.data as Animation} />}
@@ -126,10 +146,21 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 		);
 	}
 
+	// Group artifacts by category
+	const grouped = useMemo(() => {
+		const map = new Map<ArtifactCategory, Artifact[]>();
+		for (const artifact of filteredArtifacts) {
+			const cat = CATEGORY_MAP[artifact.type].category;
+			if (!map.has(cat)) map.set(cat, []);
+			map.get(cat)!.push(artifact);
+		}
+		return map;
+	}, [filteredArtifacts]);
+
 	return (
-		<div className="artifact-list">
+		<div className="artifact-list text-foreground">
 			<div className="flex items-center justify-between mb-4 pb-2 border-b border-border">
-				<h2 className="text-lg font-semibold">📚 Keating Artifacts</h2>
+				<h2 className="text-lg font-semibold text-foreground">📚 Keating Artifacts</h2>
 				{onClose && (
 					<button onClick={onClose} className="text-sm text-muted-foreground hover:underline">
 						Close
@@ -140,7 +171,7 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 			{artifacts.length === 0 ? (
 				<p className="text-muted-foreground text-sm">No artifacts yet. Use /plan, /map, /animate, /bench, or /evolve to create some.</p>
 			) : (
-				<div className="space-y-3">
+				<div className="space-y-4">
 					<input
 						className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground"
 						value={query}
@@ -150,23 +181,37 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 					{filteredArtifacts.length === 0 ? (
 						<p className="py-8 text-center text-sm text-muted-foreground">No artifacts match your search</p>
 					) : (
-						<div className="space-y-2">
-							{filteredArtifacts.map((artifact) => (
-								<button
-									key={artifact.id}
-									onClick={() => setSelected(artifact)}
-									className="w-full text-left p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
-								>
-									<div className="flex items-center justify-between">
-										<span className="font-medium">{artifact.label}</span>
-										<span className="text-xs text-muted-foreground">
-											{new Date(artifact.createdAt).toLocaleDateString()}
-										</span>
+						<div className="space-y-5">
+							{(Array.from(grouped.entries()) as [ArtifactCategory, Artifact[]][]).map(([category, items]) => (
+								<section key={category}>
+									<h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
+										{CATEGORY_LABELS[category]}
+									</h3>
+									<div className="space-y-2">
+										{items.map((artifact) => (
+											<button
+												key={artifact.id}
+												onClick={() => setSelected(artifact)}
+												className="w-full text-left p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors border border-transparent hover:border-border/50"
+											>
+												<div className="flex items-center gap-2">
+													<span className="text-lg" title={artifact.type}>{CATEGORY_MAP[artifact.type].icon}</span>
+													<div className="flex-1 min-w-0">
+														<div className="flex items-center justify-between">
+															<span className="font-medium truncate">{artifact.label}</span>
+															<span className="text-xs text-muted-foreground shrink-0 ml-2">
+																{new Date(artifact.createdAt).toLocaleDateString()}
+															</span>
+														</div>
+														<div className="text-xs text-muted-foreground mt-0.5">
+															{artifactPreview(artifact)}
+														</div>
+													</div>
+												</div>
+											</button>
+										))}
 									</div>
-									<div className="text-xs text-muted-foreground mt-1">
-										{artifact.type}
-									</div>
-								</button>
+								</section>
 							))}
 						</div>
 					)}
@@ -174,6 +219,30 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 			)}
 		</div>
 	);
+}
+
+function artifactPreview(artifact: Artifact): string {
+	const data = artifact.data as Record<string, unknown>;
+	switch (artifact.type) {
+		case "plan":
+			return `Phases: ${(data?.metadata as { phaseCount?: number })?.phaseCount ?? "—"} | Domain: ${(data?.metadata as { domain?: string })?.domain ?? "—"}`;
+		case "map":
+			return data?.mmdContent ? `${String(data.mmdContent).split("\n").length} nodes` : "Concept map";
+		case "animation":
+			return "Storyboard + scene";
+		case "benchmark":
+			return `Score: ${(data as unknown as BenchmarkResult).score.toFixed(1)}/100`;
+		case "evolution":
+			return `Best: ${(data as unknown as EvolutionResult).bestScore.toFixed(1)}/100`;
+		case "verification":
+			return data?.checklist ? `${String(data.checklist).split("\n").filter((l) => l.startsWith("- [")).length} checks` : "Checklist";
+		case "prompt-evolution":
+			return `Best score: ${(data as unknown as PromptEvolutionResult).bestScore.toFixed(1)}`;
+		case "improvement":
+			return (data as unknown as ImprovementAttemptRecord).accepted ? "Accepted" : "Rejected";
+		default:
+			return "";
+	}
 }
 
 // Individual viewers

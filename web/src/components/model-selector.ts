@@ -1,19 +1,21 @@
 import { getProviders, type Api, type Model } from "@mariozechner/pi-ai";
-import { localModel, type LocalModel } from "../stores/local-model";
+import { localModel, getModelName, getModelId, type LocalModel } from "../stores/local-model";
 import { getSelectableModels } from "../lib/provider-models";
 
-const BROWSER_MODEL: Model<Api> = {
-	id: "gemma-4-e4b",
-	name: "Gemma 4 E4B (Browser)",
-	api: "browser" as Api,
-	provider: "browser",
-	baseUrl: "",
-	reasoning: false,
-	input: ["text"],
-	cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-	contextWindow: 0,
-	maxTokens: 0,
-};
+function makeBrowserModel(): Model<Api> {
+	return {
+		id: getModelId(),
+		name: getModelName(),
+		api: "browser" as Api,
+		provider: "browser",
+		baseUrl: "",
+		reasoning: false,
+		input: ["text"],
+		cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+		contextWindow: 0,
+		maxTokens: 0,
+	};
+}
 
 type SelectableModel = {
 	key: string;
@@ -28,7 +30,7 @@ function modelKey(model: Model<any>): string {
 export class KeatingModelSelector extends HTMLElement {
 	private currentModel: Model<Api> | null = null;
 	private onSelect?: (model: Model<Api>) => void;
-	private selectedKey = modelKey(BROWSER_MODEL);
+	private selectedKey = modelKey(makeBrowserModel());
 	private localModelState: LocalModel | null = null;
 	private webGpuAvailable = false;
 	private searchQuery = "";
@@ -41,7 +43,7 @@ export class KeatingModelSelector extends HTMLElement {
 		const dialog = new KeatingModelSelector();
 		dialog.currentModel = currentModel;
 		dialog.onSelect = onSelect;
-		dialog.selectedKey = currentModel ? modelKey(currentModel) : modelKey(BROWSER_MODEL);
+		dialog.selectedKey = currentModel ? modelKey(currentModel) : modelKey(makeBrowserModel());
 		document.body.appendChild(dialog);
 	}
 
@@ -93,7 +95,7 @@ export class KeatingModelSelector extends HTMLElement {
 			}));
 
 			if (this.webGpuAvailable) {
-				selectable.unshift({ key: modelKey(BROWSER_MODEL), model: BROWSER_MODEL, group: "browser" });
+				selectable.unshift({ key: modelKey(makeBrowserModel()), model: makeBrowserModel(), group: "browser" });
 			}
 
 			const deduped = new Map<string, SelectableModel>();
@@ -108,7 +110,7 @@ export class KeatingModelSelector extends HTMLElement {
 		} catch (error) {
 			this.loadError = error instanceof Error ? error.message : String(error);
 			this.models = this.webGpuAvailable
-				? [{ key: modelKey(BROWSER_MODEL), model: BROWSER_MODEL, group: "browser" }]
+				? [{ key: modelKey(makeBrowserModel()), model: makeBrowserModel(), group: "browser" }]
 				: [];
 		} finally {
 			this.loadingModels = false;
@@ -233,6 +235,8 @@ export class KeatingModelSelector extends HTMLElement {
 		const cloudModels = filtered.filter((entry) => entry.group === "cloud");
 		const customModels = filtered.filter((entry) => entry.group === "custom");
 
+		const isDark = document.documentElement.classList.contains("dark");
+
 		this.shadowRoot.innerHTML = `
       <style>
         :host {
@@ -258,6 +262,54 @@ export class KeatingModelSelector extends HTMLElement {
           display: flex;
           flex-direction: column;
           gap: 1rem;
+          color: #1a1a1a;
+        }
+        .dialog.dark {
+          background: #0c0c0c;
+          border-color: rgba(0, 255, 0, 0.3);
+          color: #e8e4da;
+        }
+        .dialog.dark .subtitle,
+        .dialog.dark .model-desc,
+        .dialog.dark .model-id,
+        .dialog.dark .status {
+          color: #888;
+        }
+        .dialog.dark .toolbar input {
+          background: #141414;
+          border-color: rgba(0, 255, 0, 0.25);
+          color: #e8e4da;
+        }
+        .dialog.dark .toolbar button,
+        .dialog.dark .buttons button {
+          background: #141414;
+          border-color: rgba(0, 255, 0, 0.25);
+          color: #e8e4da;
+        }
+        .dialog.dark .toolbar button:hover,
+        .dialog.dark .buttons button:hover {
+          background: rgba(0, 255, 0, 0.15);
+          color: #00ff00;
+        }
+        .dialog.dark .content {
+          border-color: rgba(0, 255, 0, 0.15);
+          background: #0c0c0c;
+        }
+        .dialog.dark .category {
+          background: #141414;
+          border-color: rgba(0, 255, 0, 0.15);
+          color: #888;
+        }
+        .dialog.dark .model-option {
+          border-color: rgba(0, 255, 0, 0.1);
+        }
+        .dialog.dark .model-option:hover:not(.disabled),
+        .dialog.dark .model-option.selected {
+          background: rgba(0, 255, 0, 0.08);
+        }
+        .dialog.dark .empty,
+        .dialog.dark .loading {
+          color: #888;
         }
         h2 {
           margin: 0;
@@ -298,13 +350,13 @@ export class KeatingModelSelector extends HTMLElement {
           color: #f4f1ea;
         }
         .buttons button.primary {
-          background: #d44a3d;
-          border-color: #d44a3d;
-          color: #fff;
+          background: #10b981;
+          border-color: #10b981;
+          color: #0c0c0c;
         }
         .buttons button.primary:hover {
-          background: #a33a30;
-          border-color: #a33a30;
+          background: #059669;
+          border-color: #059669;
         }
         .content {
           overflow-y: auto;
@@ -433,7 +485,7 @@ export class KeatingModelSelector extends HTMLElement {
           }
         }
       </style>
-      <div class="dialog">
+      <div class="dialog${isDark ? ' dark' : ''}">
         <div>
           <h2>Select Model</h2>
           <p class="subtitle">Built-in providers and discovered custom-provider models.</p>

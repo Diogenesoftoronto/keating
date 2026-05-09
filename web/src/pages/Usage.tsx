@@ -1,7 +1,7 @@
-import { Suspense, use } from "react";
+import { Suspense, use, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, BookOpenCheck, Brain, Clock3, MessageSquareText, TrendingUp } from "lucide-react";
-import { getInitPromise, sessions } from "../hooks/keating-storage";
+import { ArrowLeft, BookOpenCheck, Brain, Clock3, Cpu, Flame, Gem, MessageSquareText, TrendingUp, Wrench } from "lucide-react";
+import { getInitPromise, keatingStorage, sessions } from "../hooks/keating-storage";
 import type { SessionMetadata } from "../types/session";
 
 let metadataPromise: Promise<SessionMetadata[]> | null = null;
@@ -57,9 +57,37 @@ function MetricCard({
 	);
 }
 
+function useArtifactMetrics() {
+	const [metrics, setMetrics] = useState<{
+		plans: number; maps: number; animations: number;
+		benchmarks: number; evolutions: number; promptEvolutions: number; improvements: number;
+	} | null>(null);
+
+	useEffect(() => {
+		let cancelled = false;
+		Promise.all([
+			keatingStorage.getLessonPlans(),
+			keatingStorage.getLessonMaps(),
+			keatingStorage.getAnimations(),
+			keatingStorage.getBenchmarks(),
+			keatingStorage.getEvolutions(),
+			keatingStorage.getPromptEvolutions(),
+			keatingStorage.getImprovementAttempts(),
+		]).then(([plans, maps, animations, benchmarks, evolutions, promptEvolutions, improvements]) => {
+			if (!cancelled) {
+				setMetrics({ plans: plans.length, maps: maps.length, animations: animations.length, benchmarks: benchmarks.length, evolutions: evolutions.length, promptEvolutions: promptEvolutions.length, improvements: improvements.length });
+			}
+		}).catch(() => {});
+		return () => { cancelled = true; };
+	}, []);
+
+	return metrics;
+}
+
 function UsageContent() {
 	const navigate = useNavigate();
 	const metadata = useSessionMetadata().sort((a, b) => b.lastModified.localeCompare(a.lastModified));
+	const artifactMetrics = useArtifactMetrics();
 	const totals = metadata.reduce(
 		(acc, session) => {
 			acc.messages += session.messageCount;
@@ -77,6 +105,9 @@ function UsageContent() {
 	const recent = metadata.slice(0, 8);
 	const deepest = [...metadata].sort((a, b) => b.messageCount - a.messageCount).slice(0, 5);
 	const dailyMessages = activeSpan ? totals.messages / activeSpan : 0;
+
+	const selfImprovement = artifactMetrics ? artifactMetrics.benchmarks + artifactMetrics.evolutions + artifactMetrics.promptEvolutions + artifactMetrics.improvements : 0;
+	const teachingMats = artifactMetrics ? artifactMetrics.plans + artifactMetrics.maps + artifactMetrics.animations : 0;
 
 	return (
 		<div className="min-h-screen bg-background text-foreground">
@@ -121,6 +152,28 @@ function UsageContent() {
 						label="Estimated spend"
 						value={formatCost(totals.cost)}
 						detail="Based on provider usage metadata"
+					/>
+				</div>
+
+				{/* Self-improvement vs Learning distinction */}
+				<div className="mt-6 grid gap-3 sm:grid-cols-3">
+					<MetricCard
+						icon={<Gem size={18} />}
+						label="Teaching materials"
+						value={formatNumber(teachingMats)}
+						detail={`${formatNumber(artifactMetrics?.plans ?? 0)} plans · ${formatNumber(artifactMetrics?.maps ?? 0)} maps · ${formatNumber(artifactMetrics?.animations ?? 0)} animations`}
+					/>
+					<MetricCard
+						icon={<Cpu size={18} />}
+						label="Self-improvement runs"
+						value={formatNumber(selfImprovement)}
+						detail={`${formatNumber(artifactMetrics?.evolutions ?? 0)} evolutions · ${formatNumber(artifactMetrics?.promptEvolutions ?? 0)} prompt evos`}
+					/>
+					<MetricCard
+						icon={<Flame size={18} />}
+						label="Improvement attempts"
+						value={formatNumber(artifactMetrics?.improvements ?? 0)}
+						detail={artifactMetrics && artifactMetrics.improvements > 0 ? `${formatNumber(artifactMetrics.benchmarks)} benchmarks measured` : "No improvements logged yet"}
 					/>
 				</div>
 

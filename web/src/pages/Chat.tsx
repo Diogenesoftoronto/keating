@@ -35,12 +35,25 @@ function ChatContent() {
 
   useEffect(() => subscribeKeatingUiSettings(setUiSettings), []);
 
+  const [artifactTarget, setArtifactTarget] = useState<string | undefined>(undefined);
+
   useEffect(() => {
     const openArtifacts = () => {
       if (uiSettings.autoOpenArtifacts) setArtifactBrowserOpen(true);
     };
+    const openArtifactTarget = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.id) {
+        setArtifactTarget(detail.id);
+        setArtifactBrowserOpen(true);
+      }
+    };
     window.addEventListener("keating:artifact-created", openArtifacts);
-    return () => window.removeEventListener("keating:artifact-created", openArtifacts);
+    window.addEventListener("keating:open-artifact", openArtifactTarget);
+    return () => {
+      window.removeEventListener("keating:artifact-created", openArtifacts);
+      window.removeEventListener("keating:open-artifact", openArtifactTarget);
+    };
   }, [uiSettings.autoOpenArtifacts]);
 
   const handleShare = async () => {
@@ -95,7 +108,7 @@ function ChatContent() {
             <History size={16} />
           </button>
           <button
-            className={`${actionButtonClass} ${shareState === "copied" ? "text-primary" : ""} ${shareState === "error" ? "text-destructive" : ""}`}
+            className={`${actionButtonClass} hidden sm:inline-flex ${shareState === "copied" ? "text-primary" : ""} ${shareState === "error" ? "text-destructive" : ""}`}
             title={shareState === "copied" ? "Copied share link" : shareState === "error" ? "Could not share yet" : "Share session"}
             aria-label="Share session"
             disabled={isPending || shareState === "sharing"}
@@ -104,7 +117,7 @@ function ChatContent() {
             <Share2 size={16} />
           </button>
           <button
-            className={actionButtonClass}
+            className={`${actionButtonClass} hidden sm:inline-flex`}
             title="Learning usage"
             aria-label="Learning usage"
             onClick={() => navigate({ to: "/usage" })}
@@ -112,7 +125,7 @@ function ChatContent() {
             <BarChart3 size={16} />
           </button>
           <button
-            className={`${actionButtonClass} ${speechEnabled ? "text-primary" : ""}`}
+            className={`${actionButtonClass} hidden sm:inline-flex ${speechEnabled ? "text-primary" : ""}`}
             title={speechEnabled ? "Disable speech" : "Enable speech"}
             aria-pressed={speechEnabled}
             onClick={toggleSpeech}
@@ -120,7 +133,7 @@ function ChatContent() {
             {speechEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
           </button>
           <button
-            className={actionButtonClass}
+            className={`${actionButtonClass} hidden sm:inline-flex`}
             title="Settings"
             aria-label="Settings"
             onClick={openSettings}
@@ -148,7 +161,7 @@ function ChatContent() {
           <ChatIntro />
           <button
             onClick={dismissIntro}
-            className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 px-6 py-2.5 border-2 border-[#10b981] text-[#10b981] font-terminal text-sm hover:bg-[#10b981] hover:text-[#0c0c0c] transition-colors"
+            className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 px-6 py-2.5 border-2 border-primary text-primary font-terminal text-sm hover:bg-primary hover:text-primary-foreground transition-colors"
           >
             [ GET STARTED → ]
           </button>
@@ -184,7 +197,8 @@ function ChatContent() {
 
       <ArtifactBrowserOverlay
         open={artifactBrowserOpen}
-        onClose={() => setArtifactBrowserOpen(false)}
+        artifactId={artifactTarget}
+        onClose={() => { setArtifactBrowserOpen(false); setArtifactTarget(undefined); }}
       />
       {sessionManagerDialog}
     </div>

@@ -32,17 +32,17 @@ import { printAsciiHeader } from "../core/terminal.js";
 
 function printUsage(): void {
   printAsciiHeader();
-  console.log(bold("terracotta", "Keating CLI") + "  " + color.dim + color.sepia + "v0.3.0" + color.reset);
+  console.log(bold("primary", "Keating CLI") + "  " + color.dim + color.sepia + "v0.3.0" + color.reset);
   console.log(color.parchment + "The Hyperteacher — cognitive empowerment through Socratic AI." + color.reset);
   console.log("");
   console.log(cliCommands());
   console.log("");
-  console.log(bold("sage", "General Commands"));
-  console.log(`  ${color.terracotta}shell${color.reset}  [initial prompt...]  Launch the AI-powered hyperteacher shell`);
-  console.log(`  ${color.terracotta}doctor${color.reset}                    Inspect AI runtime and oxdraw availability`);
-  console.log(`  ${color.terracotta}web${color.reset}     [port]             Start a local server for the browser UI`);
-  console.log(`  ${color.terracotta}policy${color.reset}                    Print the active teaching policy`);
-  console.log(`  ${color.terracotta}trace${color.reset}   [substring]        Browse debug traces and artifacts`);
+  console.log(bold("primary", "General Commands"));
+  console.log(`  ${color.primary}shell${color.reset}  [initial prompt...]  Launch the AI-powered hyperteacher shell`);
+  console.log(`  ${color.primary}doctor${color.reset}                    Inspect AI runtime and oxdraw availability`);
+  console.log(`  ${color.primary}web${color.reset}     [port]             Start a local server for the browser UI`);
+  console.log(`  ${color.primary}policy${color.reset}                    Print the active teaching policy`);
+  console.log(`  ${color.primary}trace${color.reset}   [substring]        Browse debug traces and artifacts`);
   console.log("");
 }
 
@@ -180,7 +180,7 @@ async function run(): Promise<void> {
       const upCount = state.feedback.filter((f) => f.signal === "thumbs-up").length;
       const downCount = state.feedback.filter((f) => f.signal === "thumbs-down").length;
       const confusedCount = state.feedback.filter((f) => f.signal === "confused").length;
-      console.log(`${bold("terracotta", "Learner Profile")}`);
+      console.log(`${bold("primary", "Learner Profile")}`);
       console.log(`  Sessions: ${state.sessions?.length ?? 0}`);
       console.log(`  Topics covered: ${state.coveredTopics.length}`);
       for (const t of state.coveredTopics.slice(-10)) console.log(`    - ${t.slug} (${t.domain})`);
@@ -236,19 +236,19 @@ async function run(): Promise<void> {
         () => true,
         () => false
       );
-      console.log(`${bold("terracotta", "Keating Doctor")}  ${color.sepia}diagnostic report${color.reset}\n`);
+      console.log(`${bold("primary", "Keating Doctor")}  ${color.sepia}diagnostic report${color.reset}\n`);
       console.log(`  ${color.cream}config_path${color.reset}           ${color.sepia}${configPath(cwd)}${color.reset}`);
-      console.log(`  ${color.cream}ai_runtime_preference${color.reset} ${color.terracotta}${config.pi.runtimePreference}${color.reset}`);
+      console.log(`  ${color.cream}ai_runtime_preference${color.reset} ${color.primary}${config.pi.runtimePreference}${color.reset}`);
       console.log(`  ${color.cream}ai_default_provider${color.reset}   ${config.pi.defaultProvider ?? color.sepia + "unset" + color.reset}`);
       console.log(`  ${color.cream}ai_default_model${color.reset}      ${config.pi.defaultModel ?? color.sepia + "unset" + color.reset}`);
       console.log(`  ${color.cream}ai_default_thinking${color.reset}   ${config.pi.defaultThinking ?? color.sepia + "unset" + color.reset}`);
-      console.log(`  ${color.cream}debug_persist_traces${color.reset}  ${color.sage}${String(config.debug.persistTraces)}${color.reset}`);
-      console.log(`  ${color.cream}debug_trace_top_learners${color.reset} ${color.sage}${String(config.debug.traceTopLearners)}${color.reset}`);
-      console.log(`  ${color.cream}debug_console_summary${color.reset} ${color.sage}${String(config.debug.consoleSummary)}${color.reset}`);
+      console.log(`  ${color.cream}debug_persist_traces${color.reset}  ${color.primary}${String(config.debug.persistTraces)}${color.reset}`);
+      console.log(`  ${color.cream}debug_trace_top_learners${color.reset} ${color.primary}${String(config.debug.traceTopLearners)}${color.reset}`);
+      console.log(`  ${color.cream}debug_console_summary${color.reset} ${color.primary}${String(config.debug.consoleSummary)}${color.reset}`);
       console.log(`  ${color.cream}ai_runtime${color.reset}            ${runtime.selected ? color.ok + runtime.selected.kind : color.err + "missing"}${color.reset}`);
-      console.log(`  ${color.cream}ai_standalone${color.reset}         ${runtime.standalone ? color.sage + runtime.standalone.command : color.err + "missing"}${color.reset}`);
-      console.log(`  ${color.cream}ai_embedded${color.reset}           ${runtime.embedded ? color.sage + (runtime.embedded.cliPath ?? runtime.embedded.command) : color.err + "missing"}${color.reset}`);
-      if (runtime.selected) console.log(`  ${color.cream}ai_command${color.reset}            ${color.terracotta}${runtime.selected.command}${color.reset}`);
+      console.log(`  ${color.cream}ai_standalone${color.reset}         ${runtime.standalone ? color.primary + runtime.standalone.command : color.err + "missing"}${color.reset}`);
+      console.log(`  ${color.cream}ai_embedded${color.reset}           ${runtime.embedded ? color.primary + (runtime.embedded.cliPath ?? runtime.embedded.command) : color.err + "missing"}${color.reset}`);
+      if (runtime.selected) console.log(`  ${color.cream}ai_command${color.reset}            ${color.primary}${runtime.selected.command}${color.reset}`);
       console.log(`  ${color.cream}oxdraw${color.reset}                ${oxdraw.status === 0 ? color.ok + oxdraw.stdout.trim() : color.err + "missing"}${color.reset}`);
       console.log(`  ${color.cream}manim_web${color.reset}             ${manimWebInstalled ? color.ok + manimWebPath : color.err + "missing"}${color.reset}`);
       return;

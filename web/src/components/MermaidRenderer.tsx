@@ -34,7 +34,7 @@ export function MermaidRenderer({ content, className }: MermaidRendererProps) {
 				// Initialize mermaid with theme
 				mermaid.default.initialize({
 					startOnLoad: false,
-					theme: "dark",
+					theme: document.documentElement.classList.contains("dark") ? "dark" : "default",
 					securityLevel: "loose",
 					flowchart: {
 						useMaxWidth: true,
