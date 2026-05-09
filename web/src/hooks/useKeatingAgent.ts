@@ -26,6 +26,7 @@ import { subscribeAgentEvents } from "./agent-subscriptions";
 import { DEFAULT_MODEL, hybridStreamFn } from "./keating-stream";
 import { getInitPromise, keatingStorage, sessions } from "./keating-storage";
 import { createSessionId, sessionPreview, sessionTitle, sessionUsage } from "./session-metadata";
+import { saveSharedSession, sharedSessionUrl } from "../keating/shared-sessions";
 
 // ─── Hook ───────────────────────────────────────────────────────────────────
 export interface UseKeatingAgentReturn {
@@ -34,6 +35,7 @@ export interface UseKeatingAgentReturn {
   openSettings: () => void;
   openSessions: () => void;
   newSession: () => void;
+  shareSession: () => Promise<string>;
   chatPanelRef: (node: ChatPanel | null) => void;
   speechEnabled: boolean;
   toggleSpeech: () => void;
@@ -237,6 +239,16 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     });
   }, [createAgent, endLearnerSession, saveSessionSnapshot]);
 
+  const shareSession = useCallback(async () => {
+    const agent = agentRef.current;
+    if (!agent) throw new Error("No active session to share");
+    await saveSessionSnapshot(agent);
+    const shared = saveSharedSession([...agent.state.messages], sessionCreatedAtRef.current);
+    const url = sharedSessionUrl(shared, window.location.origin);
+    await navigator.clipboard?.writeText(url);
+    return url;
+  }, [saveSessionSnapshot]);
+
   const loadSession = useCallback(async (session: SessionData) => {
     const panel = panelRef.current;
     if (!panel) return;
@@ -358,5 +370,5 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     }
   }, [createAgent, loadSession, requestPersistentStorageOnce]);
 
-  return { title, isPending, openSettings, openSessions, newSession, chatPanelRef, speechEnabled: speechSettings.enabled, toggleSpeech };
+  return { title, isPending, openSettings, openSessions, newSession, shareSession, chatPanelRef, speechEnabled: speechSettings.enabled, toggleSpeech };
 }

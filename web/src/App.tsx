@@ -11,6 +11,8 @@ import { Tutorial } from "./pages/Tutorial";
 import { Blog } from "./pages/Blog";
 import { Chat } from "./pages/Chat";
 import { Paper } from "./pages/Paper";
+import { SharedSession } from "./pages/SharedSession";
+import { Usage } from "./pages/Usage";
 
 const rootRoute = createRootRoute({ component: () => <Outlet /> });
 
@@ -24,6 +26,18 @@ const chatRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/chat",
   component: Chat,
+});
+
+const usageRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/usage",
+  component: Usage,
+});
+
+const sharedSessionRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/s/$shareId",
+  component: SharedSession,
 });
 
 const tutorialRoute = createRoute({
@@ -47,6 +61,8 @@ const paperRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   chatRoute,
+  usageRoute,
+  sharedSessionRoute,
   tutorialRoute,
   blogRoute,
   paperRoute,
