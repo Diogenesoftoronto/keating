@@ -16,6 +16,16 @@
   -webkit-font-smoothing: antialiased;
 }
 
+/* Dark mode: terminal palette */
+.dark .retro-layout {
+  --paper: #0c0c0c;
+  --ink: #e8e4da;
+}
+
+.dark .retro-layout.retro-page::before {
+  opacity: 0.02;
+}
+
 /* Paper texture overlay — only on full-page retro layouts, not nav */
 .retro-layout.retro-page::before {
   content: '';
@@ -455,6 +465,6 @@
 
 /* Hamburger button hover */
 .nav-mobile-toggle:hover {
-  background: #1a1a1a !important;
-  color: #f4f1ea !important;
+  background: var(--ink, #1a1a1a) !important;
+  color: var(--paper, #f4f1ea) !important;
 }

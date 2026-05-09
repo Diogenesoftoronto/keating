@@ -1,8 +1,7 @@
-import { Suspense, use, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Copy, GitFork, MessageSquareText } from "lucide-react";
 import { forkSharedSession, loadSharedSessionFromUrl, type SharedSession as SharedSessionData } from "../keating/shared-sessions";
-import { getInitPromise } from "../hooks/keating-storage";
 import "../lit-components";
 
 function formatDate(iso: string) {
@@ -31,8 +30,6 @@ function messageLabel(message: unknown) {
 }
 
 function SharedSessionContent() {
-	use(getInitPromise());
-
 	const navigate = useNavigate();
 	const shareId = useMemo(() => decodeURIComponent(window.location.pathname.split("/").pop() ?? ""), []);
 	const [session, setSession] = useState<SharedSessionData | null>(null);

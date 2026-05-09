@@ -164,8 +164,8 @@ export function SessionManagerDialog({
 	};
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true" aria-label="Sessions">
-			<div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-border bg-background text-foreground shadow-xl">
+		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-2 sm:p-4" role="dialog" aria-modal="true" aria-label="Sessions">
+			<div className="flex max-h-[95dvh] sm:max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-border bg-background text-foreground shadow-xl">
 				<header className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
 					<div>
 						<h2 className="text-base font-semibold">Sessions</h2>
@@ -212,7 +212,7 @@ export function SessionManagerDialog({
 								const isDeleting = pendingDeleteSessionId === session.id;
 								return (
 									<li key={session.id} className="rounded-lg border border-border bg-background p-3">
-										<div className="flex items-start justify-between gap-3">
+										<div className="flex flex-wrap items-start justify-between gap-2 sm:gap-3">
 											<button
 												className="min-w-0 flex-1 text-left"
 												disabled={isBusy}
@@ -226,7 +226,7 @@ export function SessionManagerDialog({
 													{formatDate(session.lastModified)} | {session.messageCount} messages | {formatUsage(session.usage)}
 												</p>
 											</button>
-											<div className="flex shrink-0 gap-1">
+											<div className="flex shrink-0 gap-1 ml-auto">
 												<button
 													className="dialog-icon-button inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent disabled:opacity-50"
 													disabled={isBusy || !onFork}

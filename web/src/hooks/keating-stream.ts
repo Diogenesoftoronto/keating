@@ -10,7 +10,7 @@ import {
 } from "@mariozechner/pi-ai";
 import { normalizeToolCallStream } from "../keating/tool-call-normalizer";
 import { chatProxyBaseUrl, proxyTargetHeader, shouldProxyModel } from "../lib/provider-proxy";
-import { localModel } from "../stores/local-model";
+import { localModel, getModelName, getModelId } from "../stores/local-model";
 
 export const DEFAULT_MODEL = getModel("google", "gemini-3-flash-preview");
 
@@ -22,7 +22,7 @@ function createBrowserStreamFn() {
 		const defaultFields = {
 			api: "browser" as const,
 			provider: "browser" as const,
-			model: "gemma-4-e4b",
+			model: getModelId(),
 			usage: {
 				input: 0,
 				output: 0,

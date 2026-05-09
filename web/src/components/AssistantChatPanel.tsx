@@ -10,7 +10,8 @@ import {
 	type ThreadMessageLike,
 	useExternalStoreRuntime,
 } from "@assistant-ui/react";
-import { Bot, ChevronRight, CircleAlert, CircleCheck, Loader2, Send, Square, User, Wrench } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import { Bot, ChevronRight, CircleAlert, CircleCheck, LibraryBig, Loader2, Send, Square, User, Wrench } from "lucide-react";
 import type { ChatPanelHandle, ChatPanelSetupCallbacks } from "../types/chat-panel";
 import { loadKeatingUiSettings, subscribeKeatingUiSettings } from "../keating/ui-settings";
 
@@ -51,11 +52,87 @@ function StreamingTextPart({ text, status }: { text: string; status?: { type: st
 		};
 	}, [status?.type, text]);
 
+	return <MarkdownText text={visibleText} isRunning={status?.type === "running" && visibleText.length >= text.length} />;
+}
+
+const artifactLinkPattern = /\[artifact:\/\/([^/]+)\/([^\]]+)\]/g;
+
+function stripArtifactLinks(text: string): string {
+	return text.replace(artifactLinkPattern, "").trim();
+}
+
+function ArtifactChips({ text }: { text: string }) {
+	const matches = Array.from(text.matchAll(artifactLinkPattern));
+	if (matches.length === 0) return null;
 	return (
-		<span>
-			{visibleText}
-			{status?.type === "running" && visibleText.length >= text.length ? <span className="ml-0.5 animate-pulse">|</span> : null}
-		</span>
+		<div className="flex flex-wrap gap-2 mb-3">
+			{matches.map((m, i) => {
+				const type = m[1];
+				const id = m[2];
+				const label = type.replace(/-/g, " ");
+				return (
+					<button
+						key={i}
+						className="inline-flex items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+						onClick={() => window.dispatchEvent(new CustomEvent("keating:open-artifact", { detail: { type, id } }))}
+						title={`View ${label}`}
+					>
+						<LibraryBig size={12} />
+						<span className="capitalize">{label}</span>
+					</button>
+				);
+			})}
+		</div>
+	);
+}
+
+function MarkdownText({ text, isRunning }: { text: string; isRunning?: boolean }) {
+	const cleanText = stripArtifactLinks(text);
+	return (
+		<div className="break-words text-sm leading-6">
+			<ArtifactChips text={text} />
+			{cleanText ? (
+				<ReactMarkdown
+					components={{
+						// eslint-disable-next-line @typescript-eslint/no-explicit-any
+						pre: ({ children }: any) => <pre className="overflow-x-auto rounded-md bg-muted p-3 text-xs">{children}</pre>,
+						// eslint-disable-next-line @typescript-eslint/no-explicit-any
+						code: ({ className, children, ...props }: any) => {
+							const isInline = !className?.includes("language-");
+							if (isInline) {
+								return <code className="rounded bg-muted px-1.5 py-0.5 text-sm font-mono" {...props}>{children}</code>;
+							}
+							return <code className="font-mono text-sm" {...props}>{children}</code>;
+						},
+						// eslint-disable-next-line @typescript-eslint/no-explicit-any
+						p: ({ children }: any) => <p className="mb-3 last:mb-0">{children}</p>,
+						// eslint-disable-next-line @typescript-eslint/no-explicit-any
+						ul: ({ children }: any) => <ul className="mb-3 list-disc pl-5">{children}</ul>,
+						// eslint-disable-next-line @typescript-eslint/no-explicit-any
+						ol: ({ children }: any) => <ol className="mb-3 list-decimal pl-5">{children}</ol>,
+						// eslint-disable-next-line @typescript-eslint/no-explicit-any
+						li: ({ children }: any) => <li className="mb-1">{children}</li>,
+						// eslint-disable-next-line @typescript-eslint/no-explicit-any
+						h1: ({ children }: any) => <h1 className="mb-2 mt-4 text-lg font-semibold">{children}</h1>,
+						// eslint-disable-next-line @typescript-eslint/no-explicit-any
+						h2: ({ children }: any) => <h2 className="mb-2 mt-3 text-base font-semibold">{children}</h2>,
+						// eslint-disable-next-line @typescript-eslint/no-explicit-any
+						h3: ({ children }: any) => <h3 className="mb-1 mt-2 text-sm font-semibold">{children}</h3>,
+						// eslint-disable-next-line @typescript-eslint/no-explicit-any
+						strong: ({ children }: any) => <strong className="font-semibold">{children}</strong>,
+						// eslint-disable-next-line @typescript-eslint/no-explicit-any
+						em: ({ children }: any) => <em className="italic">{children}</em>,
+						// eslint-disable-next-line @typescript-eslint/no-explicit-any
+						a: ({ children, href }: any) => <a href={href} className="text-primary underline" target="_blank" rel="noreferrer">{children}</a>,
+						// eslint-disable-next-line @typescript-eslint/no-explicit-any
+						blockquote: ({ children }: any) => <blockquote className="my-2 border-l-2 border-border pl-3 text-muted-foreground">{children}</blockquote>,
+					}}
+				>
+					{cleanText}
+				</ReactMarkdown>
+			) : null}
+			{isRunning ? <span className="ml-0.5 animate-pulse">|</span> : null}
+		</div>
 	);
 }
 
@@ -278,16 +355,16 @@ function AssistantThread({ agent, callbacks, version }: { agent: Agent | null; c
 			<ThreadPrimitive.Root className="flex h-full min-h-0 flex-col bg-background text-foreground">
 				<ThreadPrimitive.Viewport className="min-h-0 flex-1 overflow-y-auto px-3 py-4 sm:px-4 sm:py-6">
 					<AuiIf condition={(state) => state.thread.isEmpty}>
-						<div className="mx-auto flex h-full max-w-2xl items-center justify-center text-sm text-muted-foreground">
+						<div className="mx-auto flex h-full max-w-2xl items-center justify-center text-sm text-muted-foreground font-terminal">
 							Start a conversation with Keating.
 						</div>
 					</AuiIf>
 					<ThreadPrimitive.Messages components={{ UserMessage: UserMessageComponent, AssistantMessage: AssistantMessageComponent }} />
 					<ThreadPrimitive.ViewportFooter className="sticky bottom-0 bg-background/95 pt-3 backdrop-blur">
-						<ComposerPrimitive.Root className="mx-auto flex max-w-3xl items-end gap-2 rounded-lg border border-border bg-background p-2 shadow-sm">
+						<ComposerPrimitive.Root className="composer-root mx-auto flex w-full max-w-3xl items-end gap-1.5 sm:gap-2 rounded-lg border border-border bg-background p-2 shadow-sm">
 							<button
 								type="button"
-								className="mb-1 hidden max-w-36 shrink-0 truncate rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50 sm:inline-flex"
+								className="mb-1 inline-flex max-w-20 shrink-0 truncate rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50 sm:max-w-36"
 								disabled={!callbacks.onModelSelect}
 								onClick={() => callbacks.onModelSelect?.()}
 								title={modelLabel}
@@ -316,7 +393,7 @@ function AssistantThread({ agent, callbacks, version }: { agent: Agent | null; c
 function UserMessage({ components }: { components: ReturnType<typeof messagePartComponents> }) {
 	return (
 		<MessagePrimitive.Root className="mx-auto mb-4 flex max-w-3xl justify-end">
-			<div className="flex max-w-[88%] gap-3 rounded-lg bg-primary px-4 py-3 text-sm text-primary-foreground sm:max-w-[82%]">
+			<div className="flex max-w-[88%] gap-3 rounded-lg border-2 border-primary bg-primary px-4 py-3 text-sm text-primary-foreground sm:max-w-[82%]">
 				<User className="mt-0.5 h-4 w-4 shrink-0" />
 				<div className="min-w-0 whitespace-pre-wrap leading-6">
 					<MessagePrimitive.Content components={components} />
@@ -329,9 +406,9 @@ function UserMessage({ components }: { components: ReturnType<typeof messagePart
 function AssistantMessage({ components }: { components: ReturnType<typeof messagePartComponents> }) {
 	return (
 		<MessagePrimitive.Root className="mx-auto mb-4 flex max-w-3xl justify-start">
-			<div className="flex max-w-[94%] gap-3 px-1 py-2 text-sm text-foreground sm:max-w-[90%]">
+			<div className="flex max-w-[94%] gap-3 rounded-lg border-2 border-border bg-muted/30 px-4 py-3 text-sm text-foreground shadow-sm sm:max-w-[90%]">
 				<Bot className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-				<div className="min-w-0 whitespace-pre-wrap leading-6">
+				<div className="min-w-0 leading-6">
 					<MessagePrimitive.Content components={components} />
 				</div>
 			</div>

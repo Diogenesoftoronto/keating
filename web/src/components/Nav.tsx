@@ -36,8 +36,8 @@ export function Nav({ showFeatures = false }: NavProps) {
         left: 0,
         right: 0,
         zIndex: 50,
-        borderBottom: "2px solid #1a1a1a",
-        background: "rgba(244, 241, 234, 0.97)",
+        borderBottom: "2px solid var(--ink, #1a1a1a)",
+        background: "var(--paper, #f4f1ea)",
       }}
     >
       {/* Main bar */}
@@ -80,7 +80,7 @@ export function Nav({ showFeatures = false }: NavProps) {
             </span>
             <span
               className="font-terminal"
-              style={{ fontSize: "0.875rem", color: "#d44a3d", whiteSpace: "nowrap" }}
+              style={{ fontSize: "0.875rem", color: "var(--accent, #d44a3d)", whiteSpace: "nowrap" }}
             >
               v{import.meta.env.APP_VERSION}
             </span>
@@ -136,8 +136,8 @@ export function Nav({ showFeatures = false }: NavProps) {
           id="mobile-menu-btn"
           className="nav-mobile-toggle glitch-hover font-terminal"
           style={{
-            color: "#1a1a1a",
-            border: "2px solid #1a1a1a",
+            color: "var(--ink, #1a1a1a)",
+            border: "2px solid var(--ink, #1a1a1a)",
             padding: "0.375rem 0.75rem",
             cursor: "pointer",
             background: "transparent",
@@ -158,8 +158,8 @@ export function Nav({ showFeatures = false }: NavProps) {
         <div
           id="mobile-menu"
           style={{
-            borderTop: "2px solid #1a1a1a",
-            background: "#f4f1ea",
+            borderTop: "2px solid var(--ink, #1a1a1a)",
+            background: "var(--paper, #f4f1ea)",
             maxHeight: "calc(100dvh - 3.5rem)",
             overflowY: "auto",
           }}

@@ -3,8 +3,20 @@
 
 // Configuration will be applied inside the async load() method
 
-// ONNX model - Gemma 4 E4B (the only format Transformers.js supports)
-const MODEL_ID = 'onnx-community/gemma-4-E4B-it-ONNX';
+const DESKTOP_MODEL_ID = 'onnx-community/gemma-4-E4B-it-ONNX';
+const MOBILE_MODEL_ID = 'onnx-community/gemma-2-E2B-it-ONNX';
+
+function isMobileDevice(): boolean {
+	return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth < 768;
+}
+
+export function getModelId(): string {
+	return isMobileDevice() ? MOBILE_MODEL_ID : DESKTOP_MODEL_ID;
+}
+
+export function getModelName(): string {
+	return isMobileDevice() ? "Gemma 2 E2B (Browser)" : "Gemma 4 E4B (Browser)";
+}
 
 export interface LocalModel {
   loaded: boolean;
@@ -46,20 +58,21 @@ class LocalModelStore {
     this.notify();
 
     try {
-      console.log('Loading transformers.js and model:', MODEL_ID);
+      const modelId = getModelId();
+      console.log('Loading transformers.js and model:', modelId);
 
       // Dynamically import transformers.js
       const { AutoProcessor, AutoModelForCausalLM, env } = await import('@huggingface/transformers');
-      
+
       // Ensure we NEVER try to load local models from the repo
       env.allowLocalModels = false;
       env.useBrowserCache = true;
 
       // Load processor (tokenizer)
-      const processor = await AutoProcessor.from_pretrained(MODEL_ID);
+      const processor = await AutoProcessor.from_pretrained(modelId);
 
       // Load model with WebGPU and q4f16 quantization
-      const model = await AutoModelForCausalLM.from_pretrained(MODEL_ID, {
+      const model = await AutoModelForCausalLM.from_pretrained(modelId, {
         dtype: 'q4f16',
         device: 'webgpu',
         progress_callback: (progress: any) => {

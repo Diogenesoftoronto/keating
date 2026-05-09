@@ -8,24 +8,36 @@ function rgb(red: number, green: number, blue: number): string {
 	return `\x1b[38;2;${red};${green};${blue}m`;
 }
 
-const TERRACOTTA = rgb(194, 120, 92);
-const SAGE = rgb(167, 192, 128);
-const CREAM = rgb(230, 218, 192);
-const PARCHMENT = rgb(187, 178, 150);
-const SEPIA = rgb(137, 126, 109);
-const DARK_STONE = rgb(92, 86, 78);
+function bgRgb(red: number, green: number, blue: number): string {
+	return `\x1b[48;2;${red};${green};${blue}m`;
+}
+
+// ─── Retro palette (true-color, matches web 1:1) ───────────────────────
+const PRIMARY = rgb(16, 185, 129);        // #10b981 — web primary green
+const PRIMARY_BG = bgRgb(16, 185, 129) + rgb(244, 241, 234);
+const GREEN_LIGHT = rgb(52, 211, 153);    // #34d399 — logo top
+const GREEN_DARK = rgb(5, 150, 105);      // #059669 — logo bottom
+const TERRACOTTA = rgb(212, 74, 61);      // #d44a3d — Nav version tag
+const PAPER = rgb(244, 241, 234);         // #f4f1ea — background
+const PARCHMENT = rgb(216, 210, 196);     // border-muted
+const SEPIA = rgb(160, 150, 136);         // muted text
+const COAL = rgb(50, 50, 50);             // dark borders
+const NEON = rgb(0, 255, 0);              // #00ff00 — terminal glow
+const INK = rgb(26, 26, 26);              // #1a1a1a — foreground
 
 function paint(text: string, ...codes: string[]): string {
 	return `${codes.join("")}${text}${RESET}`;
 }
 
 export const keatingColor = {
+	primary: PRIMARY,
 	terracotta: TERRACOTTA,
-	sage: SAGE,
-	cream: CREAM,
+	paper: PAPER,
 	parchment: PARCHMENT,
 	sepia: SEPIA,
-	darkStone: DARK_STONE,
+	coal: COAL,
+	neon: NEON,
+	ink: INK,
 };
 
 export function printInfo(text: string): void {
@@ -33,20 +45,20 @@ export function printInfo(text: string): void {
 }
 
 export function printSuccess(text: string): void {
-	console.log(paint(`  ✓ ${text}`, SAGE, BOLD));
+	console.log(paint(`  ✓ ${text}`, PRIMARY, BOLD));
 }
 
 export function printWarning(text: string): void {
-	console.log(paint(`  ⚠ ${text}`, PARCHMENT, BOLD));
+	console.log(paint(`  ⚠ ${text}`, rgb(255, 193, 7), BOLD));
 }
 
 export function printError(text: string): void {
-	console.log(paint(`  ✗ ${text}`, TERRACOTTA, BOLD));
+	console.log(paint(`  ✗ ${text}`, rgb(220, 38, 38), BOLD));
 }
 
 export function printSection(title: string): void {
 	console.log("");
-	console.log(paint(`◆ ${title}`, SAGE, BOLD));
+	console.log(paint(`◆ ${title}`, PRIMARY, BOLD));
 }
 
 export const KEATING_ASCII_LOGO = [
@@ -66,8 +78,10 @@ export const KEATING_SUBTITLE_LINES = [
 
 export function printAsciiHeader(subtitleLines: string[] = []): void {
 	console.log("");
-	for (const line of KEATING_ASCII_LOGO) {
-		console.log(paint(`  ${line}`, TERRACOTTA, BOLD));
+	// Render logo with progressive green gradient (top-center-heavy)
+	const logoColors = [GREEN_LIGHT, GREEN_LIGHT, PRIMARY, PRIMARY, GREEN_DARK, GREEN_DARK];
+	for (let index = 0; index < KEATING_ASCII_LOGO.length; index += 1) {
+		console.log(paint(`  ${KEATING_ASCII_LOGO[index]}`, logoColors[index], BOLD));
 	}
 	for (const line of subtitleLines) {
 		console.log(paint(`  ${line}`, SEPIA));
@@ -78,22 +92,22 @@ export function printAsciiHeader(subtitleLines: string[] = []): void {
 export function printPanel(title: string, subtitleLines: string[] = []): void {
 	const inner = 53;
 	const border = "─".repeat(inner + 2);
-	const renderLine = (text: string, color: string, bold = false): string => {
+	const renderLine = (text: string, color: string, bolded = false): string => {
 		const content = text.length > inner ? `${text.slice(0, inner - 3)}...` : text;
-		const codes = bold ? `${color}${BOLD}` : color;
-		return `${DARK_STONE}${BOLD}│${RESET} ${codes}${content.padEnd(inner)}${RESET} ${DARK_STONE}${BOLD}│${RESET}`;
+		const codes = bolded ? `${color}${BOLD}` : color;
+		return `${COAL}${BOLD}│${RESET} ${codes}${content.padEnd(inner)}${RESET} ${COAL}${BOLD}│${RESET}`;
 	};
 
 	console.log("");
-	console.log(paint(`┌${border}┐`, DARK_STONE, BOLD));
-	console.log(renderLine(title, SAGE, true));
+	console.log(paint(`┌${border}┐`, COAL, BOLD));
+	console.log(renderLine(title, PRIMARY, true));
 	if (subtitleLines.length > 0) {
-		console.log(paint(`├${border}┤`, DARK_STONE, BOLD));
+		console.log(paint(`├${border}┤`, COAL, BOLD));
 		for (const line of subtitleLines) {
-			console.log(renderLine(line, CREAM));
+			console.log(renderLine(line, PAPER));
 		}
 	}
-	console.log(paint(`└${border}┘`, DARK_STONE, BOLD));
+	console.log(paint(`└${border}┘`, COAL, BOLD));
 	console.log("");
 }
 
@@ -103,7 +117,7 @@ export function printCommandSections(sections: CommandSection[]): void {
 		const maxUsage = Math.max(...section.commands.map(c => c.usage.length));
 		for (const cmd of section.commands) {
 			const padded = cmd.usage.padEnd(maxUsage + 2);
-			console.log(paint(`  ${padded}`, TERRACOTTA, BOLD) + paint(cmd.description, SEPIA));
+			console.log(paint(`  ${padded}`, PRIMARY, BOLD) + paint(cmd.description, SEPIA));
 		}
 	}
 }

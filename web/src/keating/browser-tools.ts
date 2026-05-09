@@ -199,12 +199,12 @@ export async function createKeatingTools(
 				const plan = buildLessonPlan(topic, teacherPolicy);
 				const markdown = lessonPlanToMarkdown(plan);
 
-				await storage.saveLessonPlan(topic, markdown, {
+				const saved = await storage.saveLessonPlan(topic, markdown, {
 					domain: plan.topic.domain,
 					phaseCount: plan.phases.length,
 				});
 
-				return markdown;
+				return `[artifact://plan/${saved.id}]\n\n${markdown}`;
 			}
 		),
 
@@ -220,9 +220,9 @@ export async function createKeatingTools(
 				if (!topic) return "Topic required.";
 
 				const mapContent = buildConceptMap(topic);
-				await storage.saveLessonMap(topic, mapContent);
+				const saved = await storage.saveLessonMap(topic, mapContent);
 
-				return `\`\`\`mermaid\n${mapContent}\n\`\`\``;
+				return `[artifact://map/${saved.id}]\n\n\`\`\`mermaid\n${mapContent}\n\`\`\``;
 			}
 		),
 
@@ -309,9 +309,9 @@ class ${resolved.slug.replace(/-/g, "_").replace(/^(.)/, (c) => c.toUpperCase())
 					2
 				);
 
-				await storage.saveAnimation(topic, storyboard, scene, manifest);
+				const saved = await storage.saveAnimation(topic, storyboard, scene, manifest);
 
-				return storyboard;
+				return `[artifact://animation/${saved.id}]\n\n${storyboard}`;
 			}
 		),
 
@@ -355,9 +355,9 @@ ${resolved.prerequisites.map((p) => `- [ ] Learners need: ${p}`).join("\n")}
 - [ ] Multiple sources agree
 - [ ] Recent developments included`;
 
-				await storage.saveVerification(topic, checklist);
+				const saved = await storage.saveVerification(topic, checklist);
 
-				return checklist;
+				return `[artifact://verification/${saved.id}]\n\n${checklist}`;
 			}
 		),
 
@@ -389,9 +389,9 @@ ${resolved.prerequisites.map((p) => `- [ ] Learners need: ${p}`).join("\n")}
 				const result = runBenchmarkSuite(teacherPolicy, topic);
 				const report = benchmarkToMarkdown(result);
 
-				await storage.saveBenchmark(result.overallScore, report, topic, JSON.stringify(result.trace, null, 2));
+				const saved = await storage.saveBenchmark(result.overallScore, report, topic, JSON.stringify(result.trace, null, 2));
 
-				return `**Overall Score:** ${result.overallScore.toFixed(2)}/100\n\n${report}`;
+				return `[artifact://benchmark/${saved.id}]\n\n**Overall Score:** ${result.overallScore.toFixed(2)}/100\n\n${report}`;
 			}
 		),
 
@@ -437,7 +437,7 @@ ${resolved.prerequisites.map((p) => `- [ ] Learners need: ${p}`).join("\n")}
 					true
 				);
 
-				await storage.saveEvolution(
+				const saved = await storage.saveEvolution(
 					run.best.overallScore,
 					JSON.stringify(run.bestPolicy),
 					report,
@@ -445,7 +445,7 @@ ${resolved.prerequisites.map((p) => `- [ ] Learners need: ${p}`).join("\n")}
 					JSON.stringify(run.exploredCandidates, null, 2)
 				);
 
-				return `**Policy evolved (MAP-Elites)**\n\nBest: ${run.best.overallScore.toFixed(2)}/100 | Baseline: ${run.baseline.overallScore.toFixed(2)}/100 | Filled cells: ${meRun.filledCellCount}/${meRun.totalCells} | Accepted: ${run.acceptedCandidates.length}/${run.exploredCandidates.length}\n\n${report}`;
+				return `[artifact://evolution/${saved.id}]\n\n**Policy evolved (MAP-Elites)**\n\nBest: ${run.best.overallScore.toFixed(2)}/100 | Baseline: ${run.baseline.overallScore.toFixed(2)}/100 | Filled cells: ${meRun.filledCellCount}/${meRun.totalCells} | Accepted: ${run.acceptedCandidates.length}/${run.exploredCandidates.length}\n\n${report}`;
 			}
 		),
 
@@ -464,9 +464,9 @@ ${resolved.prerequisites.map((p) => `- [ ] Learners need: ${p}`).join("\n")}
 				const md = quizToMarkdown(quiz);
 				const answers = quizAnswerKeyToMarkdown(quiz);
 
-				await storage.saveLessonPlan(topic, md, { type: "quiz", questionCount: quiz.questions.length });
+				const saved = await storage.saveLessonPlan(topic, md, { type: "quiz", questionCount: quiz.questions.length });
 
-				return `${md}\n---\n${answers}`;
+				return `[artifact://plan/${saved.id}]\n\n${md}\n---\n${answers}`;
 			}
 		),
 
@@ -603,7 +603,7 @@ ${topicList}
 						`- diagramBias: ${run.bestPolicy.diagramBias.toFixed(3)}\n`,
 					true
 				);
-				await storage.saveEvolution(
+				const saved = await storage.saveEvolution(
 					run.best.overallScore,
 					JSON.stringify(run.bestPolicy),
 					evolveReport,
@@ -614,7 +614,7 @@ ${topicList}
 				// Step 3: Evolve prompt template
 				const promptRun = evolvePromptTemplate(KEATING_SYSTEM_PROMPT, "learn", 4);
 				const promptReport = promptEvolutionToMarkdown(promptRun);
-				await storage.savePromptEvolution("learn", {
+				const promptSaved = await storage.savePromptEvolution("learn", {
 					bestScore: promptRun.best.score,
 					bestPrompt: promptRun.best.prompt,
 					report: promptReport,
@@ -624,12 +624,12 @@ ${topicList}
 				const evolvedPolicy = run.bestPolicy;
 				const after = runBenchmarkSuite(evolvedPolicy, topic);
 				const afterReport = benchmarkToMarkdown(after);
-				await storage.saveBenchmark(after.overallScore, afterReport, topic);
+				const benchmarkSaved = await storage.saveBenchmark(after.overallScore, afterReport, topic);
 
 				// Step 5: Record improvement
 				const delta = after.overallScore - baseline.overallScore;
 				const proposalId = `auto-${Date.now().toString(36)}`;
-				await storage.saveImprovementAttempt({
+				const improvementSaved = await storage.saveImprovementAttempt({
 					proposalId,
 					baselineScore: baseline.overallScore,
 					afterScore: after.overallScore,
@@ -645,7 +645,7 @@ ${topicList}
 						? `REGRESSED by ${delta.toFixed(2)} (evolved policy reverted)`
 						: `NO SIGNIFICANT CHANGE (Δ${delta.toFixed(2)})`;
 
-				return `Self-improvement complete.
+				return `[artifact://evolution/${saved.id}] [artifact://prompt-evolution/${promptSaved.id}] [artifact://benchmark/${benchmarkSaved.id}] [artifact://improvement/${improvementSaved.id}]\n\nSelf-improvement complete.
 
 **Benchmark:** ${baseline.overallScore.toFixed(2)} → ${after.overallScore.toFixed(2)} (${verdict})
 
