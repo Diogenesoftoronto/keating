@@ -10,8 +10,9 @@ import {
 	type ThreadMessageLike,
 	useExternalStoreRuntime,
 } from "@assistant-ui/react";
-import { Bot, ChevronRight, Send, Square, User, Wrench } from "lucide-react";
+import { Bot, ChevronRight, CircleAlert, CircleCheck, Loader2, Send, Square, User, Wrench } from "lucide-react";
 import type { ChatPanelHandle, ChatPanelSetupCallbacks } from "../types/chat-panel";
+import { loadKeatingUiSettings, subscribeKeatingUiSettings } from "../keating/ui-settings";
 
 interface AssistantChatPanelProps {
 	className?: string;
@@ -84,27 +85,35 @@ function formatToolResult(result: unknown) {
 	return JSON.stringify(result, null, 2);
 }
 
-function ToolPart({ toolName, args, result, isError, status }: { toolName: string; args?: unknown; result?: unknown; isError?: boolean; status?: { type: string } }) {
+function ToolPart({ toolName, args, result, isError, status, showDetails }: { toolName: string; args?: unknown; result?: unknown; isError?: boolean; status?: { type: string }; showDetails?: boolean }) {
 	const resultText = formatToolResult(result);
+	const state = status?.type === "running" && result === undefined ? "running" : isError ? "error" : "success";
+	const stateClass = state === "error"
+		? "border-destructive/60 bg-destructive/10 text-destructive"
+		: state === "running"
+			? "border-amber-500/60 bg-amber-500/10 text-amber-600 dark:text-amber-300"
+			: "border-emerald-500/60 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
+	const StateIcon = state === "error" ? CircleAlert : state === "running" ? Loader2 : CircleCheck;
 	return (
-		<div className={`my-3 overflow-hidden rounded-lg border text-xs ${isError ? "border-destructive/40 bg-destructive/5" : "border-border bg-muted/35"}`}>
-			<div className="flex items-center gap-2 border-b border-border/70 px-3 py-2 text-muted-foreground">
+		<div className={`my-2 rounded-md border-l-4 px-3 py-2 text-xs ${stateClass}`}>
+			<div className="flex items-center gap-2">
+				<StateIcon size={14} className={state === "running" ? "animate-spin" : ""} />
 				<Wrench size={13} />
 				<span className="font-medium">Tool</span>
-				<span className="rounded bg-background px-1.5 py-0.5 font-mono">{toolName}</span>
-				<span className="ml-auto">{status?.type === "running" && result === undefined ? "running" : isError ? "error" : "done"}</span>
+				<span className="rounded bg-background/70 px-1.5 py-0.5 font-mono text-foreground">{toolName}</span>
+				<span className="ml-auto uppercase tracking-wide">{state}</span>
 			</div>
-			{args !== undefined && Object.keys(args as Record<string, unknown>).length > 0 ? (
-				<details className="px-3 py-2">
-					<summary className="flex cursor-pointer list-none items-center gap-1 text-muted-foreground">
+			{showDetails && args !== undefined && Object.keys(args as Record<string, unknown>).length > 0 ? (
+				<details className="mt-2 text-foreground/80">
+					<summary className="flex cursor-pointer list-none items-center gap-1">
 						<ChevronRight size={13} />
 						Arguments
 					</summary>
 					<pre className="mt-2 overflow-x-auto whitespace-pre-wrap text-muted-foreground">{JSON.stringify(args, null, 2)}</pre>
 				</details>
 			) : null}
-			{resultText ? (
-				<div className="border-t border-border/60 px-3 py-2 text-foreground">
+			{showDetails && resultText ? (
+				<div className="mt-2 text-foreground">
 					<pre className="max-h-44 overflow-auto whitespace-pre-wrap font-sans leading-5">{resultText}</pre>
 				</div>
 			) : null}
@@ -112,13 +121,15 @@ function ToolPart({ toolName, args, result, isError, status }: { toolName: strin
 	);
 }
 
-const messagePartComponents = {
-	Text: StreamingTextPart,
-	Reasoning: ReasoningPart,
-	tools: {
-		Fallback: ToolPart,
-	},
-};
+function messagePartComponents(showToolUi: boolean) {
+	return {
+		Text: StreamingTextPart,
+		Reasoning: ReasoningPart,
+		tools: {
+			Fallback: (props: Parameters<typeof ToolPart>[0]) => <ToolPart {...props} showDetails={showToolUi} />,
+		},
+	};
+}
 
 function textFromContent(content: unknown): string {
 	if (typeof content === "string") return content;
@@ -236,7 +247,11 @@ function textFromAppendMessage(message: AppendMessage): string {
 }
 
 function AssistantThread({ agent, callbacks, version }: { agent: Agent | null; callbacks: ChatPanelSetupCallbacks; version: number }) {
+	const [uiSettings, setUiSettings] = useState(() => loadKeatingUiSettings());
 	const messages = useMemo(() => foldToolResults([...(agent?.state.messages ?? [])]), [agent, version]);
+	const components = useMemo(() => messagePartComponents(uiSettings.showToolUi), [uiSettings.showToolUi]);
+	const UserMessageComponent = useCallback(() => <UserMessage components={components} />, [components]);
+	const AssistantMessageComponent = useCallback(() => <AssistantMessage components={components} />, [components]);
 	const runtime = useExternalStoreRuntime<AgentMessage>({
 		messages,
 		isRunning: agent?.state.isStreaming ?? false,
@@ -256,6 +271,8 @@ function AssistantThread({ agent, callbacks, version }: { agent: Agent | null; c
 	});
 	const modelLabel = agent?.state.model.name ?? agent?.state.model.id ?? "Model";
 
+	useEffect(() => subscribeKeatingUiSettings(setUiSettings), []);
+
 	return (
 		<AssistantRuntimeProvider runtime={runtime}>
 			<ThreadPrimitive.Root className="flex h-full min-h-0 flex-col bg-background text-foreground">
@@ -265,7 +282,7 @@ function AssistantThread({ agent, callbacks, version }: { agent: Agent | null; c
 							Start a conversation with Keating.
 						</div>
 					</AuiIf>
-					<ThreadPrimitive.Messages components={{ UserMessage, AssistantMessage }} />
+					<ThreadPrimitive.Messages components={{ UserMessage: UserMessageComponent, AssistantMessage: AssistantMessageComponent }} />
 					<ThreadPrimitive.ViewportFooter className="sticky bottom-0 bg-background/95 pt-3 backdrop-blur">
 						<ComposerPrimitive.Root className="mx-auto flex max-w-3xl items-end gap-2 rounded-lg border border-border bg-background p-2 shadow-sm">
 							<button
@@ -296,26 +313,26 @@ function AssistantThread({ agent, callbacks, version }: { agent: Agent | null; c
 	);
 }
 
-function UserMessage() {
+function UserMessage({ components }: { components: ReturnType<typeof messagePartComponents> }) {
 	return (
 		<MessagePrimitive.Root className="mx-auto mb-4 flex max-w-3xl justify-end">
 			<div className="flex max-w-[88%] gap-3 rounded-lg bg-primary px-4 py-3 text-sm text-primary-foreground sm:max-w-[82%]">
 				<User className="mt-0.5 h-4 w-4 shrink-0" />
 				<div className="min-w-0 whitespace-pre-wrap leading-6">
-					<MessagePrimitive.Content components={messagePartComponents} />
+					<MessagePrimitive.Content components={components} />
 				</div>
 			</div>
 		</MessagePrimitive.Root>
 	);
 }
 
-function AssistantMessage() {
+function AssistantMessage({ components }: { components: ReturnType<typeof messagePartComponents> }) {
 	return (
 		<MessagePrimitive.Root className="mx-auto mb-4 flex max-w-3xl justify-start">
-			<div className="flex max-w-[94%] gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-card-foreground sm:max-w-[90%]">
+			<div className="flex max-w-[94%] gap-3 px-1 py-2 text-sm text-foreground sm:max-w-[90%]">
 				<Bot className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
 				<div className="min-w-0 whitespace-pre-wrap leading-6">
-					<MessagePrimitive.Content components={messagePartComponents} />
+					<MessagePrimitive.Content components={components} />
 				</div>
 			</div>
 		</MessagePrimitive.Root>

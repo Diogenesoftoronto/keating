@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { MermaidRenderer } from "./MermaidRenderer";
 import { AnimationPlayer } from "./AnimationPlayer";
-import { KeatingStorage, type LessonPlan, type LessonMap, type Animation, type BenchmarkResult, type EvolutionResult, type Verification } from "../keating/storage";
+import { KeatingStorage, type LessonPlan, type LessonMap, type Animation, type BenchmarkResult, type EvolutionResult, type Verification, type PromptEvolutionResult, type ImprovementAttemptRecord } from "../keating/storage";
 
 interface ArtifactViewerProps {
 	storage: KeatingStorage;
@@ -9,7 +9,7 @@ interface ArtifactViewerProps {
 	onClose?: () => void;
 }
 
-type ArtifactType = "plan" | "map" | "animation" | "benchmark" | "evolution" | "verification";
+type ArtifactType = "plan" | "map" | "animation" | "benchmark" | "evolution" | "verification" | "prompt-evolution" | "improvement";
 
 interface Artifact {
 	id: string;
@@ -23,18 +23,35 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 	const [artifacts, setArtifacts] = useState<Artifact[]>([]);
 	const [selected, setSelected] = useState<Artifact | null>(null);
 	const [loading, setLoading] = useState(true);
+	const [query, setQuery] = useState("");
+
+	const filteredArtifacts = useMemo(() => {
+		const normalizedQuery = query.trim().toLowerCase();
+		if (!normalizedQuery) return artifacts;
+		return artifacts.filter((artifact) => {
+			const text = [
+				artifact.label,
+				artifact.type,
+				new Date(artifact.createdAt).toLocaleString(),
+				JSON.stringify(artifact.data),
+			].join(" ").toLowerCase();
+			return text.includes(normalizedQuery);
+		});
+	}, [artifacts, query]);
 
 	useEffect(() => {
 		async function loadArtifacts() {
 			setLoading(true);
 			try {
-				const [plans, maps, animations, benchmarks, evolutions, verifications] = await Promise.all([
+				const [plans, maps, animations, benchmarks, evolutions, verifications, promptEvolutions, improvements] = await Promise.all([
 					storage.getLessonPlans(),
 					storage.getLessonMaps(),
 					storage.getAnimations(),
 					storage.getBenchmarks(),
 					storage.getEvolutions(),
 					storage.getVerifications(),
+					storage.getPromptEvolutions(),
+					storage.getImprovementAttempts(),
 				]);
 
 				const all: Artifact[] = [
@@ -44,6 +61,8 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 					...benchmarks.map((b) => ({ id: b.id, type: "benchmark" as const, label: `Benchmark: ${b.topic || "general"}`, createdAt: b.createdAt, data: b })),
 					...evolutions.map((e) => ({ id: e.id, type: "evolution" as const, label: `Evolution: ${e.topic || "general"}`, createdAt: e.createdAt, data: e })),
 					...verifications.map((v) => ({ id: v.id, type: "verification" as const, label: `Verification: ${v.topic}`, createdAt: v.createdAt, data: v })),
+					...promptEvolutions.map((p) => ({ id: p.id, type: "prompt-evolution" as const, label: `Prompt Evo: ${p.promptName}`, createdAt: p.createdAt, data: p })),
+					...improvements.map((i) => ({ id: i.id, type: "improvement" as const, label: `Improve: ${i.proposalId}`, createdAt: i.createdAt, data: i })),
 				];
 
 				all.sort((a, b) => b.createdAt - a.createdAt);
@@ -100,6 +119,8 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 					{selected.type === "benchmark" && <BenchmarkViewer benchmark={selected.data as BenchmarkResult} />}
 					{selected.type === "evolution" && <EvolutionViewer evolution={selected.data as EvolutionResult} />}
 					{selected.type === "verification" && <VerificationViewer data={selected.data} />}
+					{selected.type === "prompt-evolution" && <PromptEvolutionViewer promptEvolution={selected.data as PromptEvolutionResult} />}
+					{selected.type === "improvement" && <ImprovementViewer improvement={selected.data as ImprovementAttemptRecord} />}
 				</div>
 			</div>
 		);
@@ -119,24 +140,36 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 			{artifacts.length === 0 ? (
 				<p className="text-muted-foreground text-sm">No artifacts yet. Use /plan, /map, /animate, /bench, or /evolve to create some.</p>
 			) : (
-				<div className="space-y-2">
-					{artifacts.map((artifact) => (
-						<button
-							key={artifact.id}
-							onClick={() => setSelected(artifact)}
-							className="w-full text-left p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
-						>
-							<div className="flex items-center justify-between">
-								<span className="font-medium">{artifact.label}</span>
-								<span className="text-xs text-muted-foreground">
-									{new Date(artifact.createdAt).toLocaleDateString()}
-								</span>
-							</div>
-							<div className="text-xs text-muted-foreground mt-1">
-								{artifact.type}
-							</div>
-						</button>
-					))}
+				<div className="space-y-3">
+					<input
+						className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground"
+						value={query}
+						placeholder="Search artifacts"
+						onChange={(event) => setQuery(event.target.value)}
+					/>
+					{filteredArtifacts.length === 0 ? (
+						<p className="py-8 text-center text-sm text-muted-foreground">No artifacts match your search</p>
+					) : (
+						<div className="space-y-2">
+							{filteredArtifacts.map((artifact) => (
+								<button
+									key={artifact.id}
+									onClick={() => setSelected(artifact)}
+									className="w-full text-left p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+								>
+									<div className="flex items-center justify-between">
+										<span className="font-medium">{artifact.label}</span>
+										<span className="text-xs text-muted-foreground">
+											{new Date(artifact.createdAt).toLocaleDateString()}
+										</span>
+									</div>
+									<div className="text-xs text-muted-foreground mt-1">
+										{artifact.type}
+									</div>
+								</button>
+							))}
+						</div>
+					)}
 				</div>
 			)}
 		</div>
@@ -264,6 +297,40 @@ function EvolutionViewer({ evolution }: { evolution: EvolutionResult }) {
 			)}
 		</div>
 	);
+}
+
+function PromptEvolutionViewer({ promptEvolution }: { promptEvolution: PromptEvolutionResult }) {
+	return (
+		<div className="space-y-4">
+			<div className="flex items-center gap-4">
+				<div className="text-3xl font-bold text-primary">{promptEvolution.bestScore.toFixed(1)}</div>
+				<div className="text-sm text-muted-foreground">best prompt score</div>
+			</div>
+			<ArtifactMarkdownViewer content={promptEvolution.report} />
+			<details>
+				<summary className="text-sm text-muted-foreground cursor-pointer">View Prompt</summary>
+				<pre className="mt-2 whitespace-pre-wrap bg-muted/20 p-3 rounded text-xs overflow-auto max-h-96">
+					{promptEvolution.bestPrompt}
+				</pre>
+			</details>
+		</div>
+	);
+}
+
+function ImprovementViewer({ improvement }: { improvement: ImprovementAttemptRecord }) {
+	const content = `# Improvement Attempt
+
+- Proposal: ${improvement.proposalId}
+- Baseline: ${improvement.baselineScore.toFixed(2)}
+- After: ${improvement.afterScore === null ? "not measured" : improvement.afterScore.toFixed(2)}
+- Delta: ${improvement.scoreDelta === null ? "not measured" : improvement.scoreDelta.toFixed(2)}
+- Status: ${improvement.accepted ? "accepted" : "rejected"}
+- Targets: ${improvement.targets}
+
+## Hypothesis
+${improvement.hypothesis}`;
+
+	return <ArtifactMarkdownViewer content={content} />;
 }
 
 function VerificationViewer({ data }: { data: unknown }) {

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Trash2, Pencil, X, Check, Loader2 } from "lucide-react";
+import { Check, CopyPlus, Loader2, Pencil, Search, Sparkles, Trash2, X } from "lucide-react";
 import { sessions } from "../hooks/keating-storage";
 import type { SessionMetadata } from "../types/session";
 
@@ -7,6 +7,8 @@ export interface SessionManagerDialogProps {
 	open: boolean;
 	onClose: () => void;
 	onLoad: (sessionId: string) => void | Promise<void>;
+	onFork?: (sessionId: string) => void | Promise<void>;
+	onSuggestTitle?: (sessionId: string) => Promise<string>;
 	onDeleted?: (sessionId: string) => void | Promise<void>;
 	onRenamed?: (sessionId: string, title: string) => void | Promise<void>;
 }
@@ -31,21 +33,34 @@ export function SessionManagerDialog({
 	open,
 	onClose,
 	onLoad,
+	onFork,
+	onSuggestTitle,
 	onDeleted,
 	onRenamed,
 }: SessionManagerDialogProps) {
 	const [items, setItems] = useState<SessionMetadata[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [errorMessage, setErrorMessage] = useState("");
+	const [query, setQuery] = useState("");
 	const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
 	const [pendingDeleteSessionId, setPendingDeleteSessionId] = useState<string | null>(null);
 	const [busySessionId, setBusySessionId] = useState<string | null>(null);
 	const [renameDraft, setRenameDraft] = useState("");
 
-	const sortedItems = useMemo(
-		() => [...items].sort((left, right) => right.lastModified.localeCompare(left.lastModified)),
-		[items],
-	);
+	const sortedItems = useMemo(() => {
+		const normalizedQuery = query.trim().toLowerCase();
+		return items
+			.filter((session) => {
+				if (!normalizedQuery) return true;
+				return [
+					session.title,
+					session.preview,
+					new Date(session.lastModified).toLocaleString(),
+					String(session.messageCount),
+				].some((value) => value.toLowerCase().includes(normalizedQuery));
+			})
+			.sort((left, right) => right.lastModified.localeCompare(left.lastModified));
+	}, [items, query]);
 
 	useEffect(() => {
 		if (!open) return;
@@ -115,15 +130,48 @@ export function SessionManagerDialog({
 		}
 	};
 
+	const forkSession = async (session: SessionMetadata) => {
+		if (!onFork) return;
+		setBusySessionId(session.id);
+		setErrorMessage("");
+		try {
+			await onFork(session.id);
+			await reload();
+			onClose();
+		} catch (error) {
+			console.error("Failed to fork session:", error);
+			setErrorMessage(error instanceof Error ? error.message : "Failed to fork session");
+		} finally {
+			setBusySessionId(null);
+		}
+	};
+
+	const suggestTitle = async (session: SessionMetadata) => {
+		if (!onSuggestTitle) return;
+		setBusySessionId(session.id);
+		setErrorMessage("");
+		try {
+			const title = await onSuggestTitle(session.id);
+			setPendingDeleteSessionId(null);
+			setEditingSessionId(session.id);
+			setRenameDraft(title);
+		} catch (error) {
+			console.error("Failed to suggest title:", error);
+			setErrorMessage(error instanceof Error ? error.message : "Failed to suggest a title");
+		} finally {
+			setBusySessionId(null);
+		}
+	};
+
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true" aria-label="Sessions">
 			<div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-border bg-background text-foreground shadow-xl">
 				<header className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
 					<div>
 						<h2 className="text-base font-semibold">Sessions</h2>
-						<p className="mt-1 text-sm text-muted-foreground">Load, rename, or delete a previous conversation</p>
+						<p className="mt-1 text-sm text-muted-foreground">Search, fork, rename, or load a previous conversation</p>
 					</div>
-					<button className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent" aria-label="Close sessions" onClick={onClose}>
+					<button className="dialog-icon-button inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent" aria-label="Close sessions" onClick={onClose}>
 						<X size={16} />
 					</button>
 				</header>
@@ -134,6 +182,18 @@ export function SessionManagerDialog({
 					</div>
 				) : null}
 
+				<div className="border-b border-border px-5 py-3">
+					<label className="flex min-h-10 items-center gap-2 rounded-md border border-border bg-background px-3 text-sm">
+						<Search size={15} className="shrink-0 text-muted-foreground" />
+						<input
+							className="min-w-0 flex-1 bg-transparent py-2 outline-none placeholder:text-muted-foreground"
+							value={query}
+							placeholder="Search sessions"
+							onChange={(event) => setQuery(event.target.value)}
+						/>
+					</label>
+				</div>
+
 				<div className="min-h-0 flex-1 overflow-y-auto p-5">
 					{loading ? (
 						<div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
@@ -141,7 +201,9 @@ export function SessionManagerDialog({
 							Loading...
 						</div>
 					) : sortedItems.length === 0 ? (
-						<div className="py-10 text-center text-sm text-muted-foreground">No sessions yet</div>
+						<div className="py-10 text-center text-sm text-muted-foreground">
+							{items.length === 0 ? "No sessions yet" : "No sessions match your search"}
+						</div>
 					) : (
 						<ul className="space-y-2" aria-label="Saved sessions">
 							{sortedItems.map((session) => {
@@ -166,7 +228,25 @@ export function SessionManagerDialog({
 											</button>
 											<div className="flex shrink-0 gap-1">
 												<button
-													className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent disabled:opacity-50"
+													className="dialog-icon-button inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent disabled:opacity-50"
+													disabled={isBusy || !onFork}
+													aria-label="Fork session"
+													title="Fork session"
+													onClick={() => void forkSession(session)}
+												>
+													<CopyPlus size={15} />
+												</button>
+												<button
+													className="dialog-icon-button inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent disabled:opacity-50"
+													disabled={isBusy || !onSuggestTitle}
+													aria-label="Suggest title with AI"
+													title="Suggest title with AI"
+													onClick={() => void suggestTitle(session)}
+												>
+													{isBusy && busySessionId === session.id ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
+												</button>
+												<button
+													className="dialog-icon-button inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent disabled:opacity-50"
 													disabled={isBusy}
 													aria-label="Rename session"
 													onClick={() => {
@@ -178,7 +258,7 @@ export function SessionManagerDialog({
 													<Pencil size={15} />
 												</button>
 												<button
-													className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent disabled:opacity-50"
+													className="dialog-icon-button inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent disabled:opacity-50"
 													disabled={isBusy}
 													aria-label="Delete session"
 													onClick={() => {
@@ -204,10 +284,10 @@ export function SessionManagerDialog({
 														if (event.key === "Escape") setEditingSessionId(null);
 													}}
 												/>
-												<button className="inline-flex h-10 w-10 items-center justify-center rounded-md hover:bg-accent" onClick={() => setEditingSessionId(null)}>
+												<button className="dialog-icon-button inline-flex h-10 w-10 items-center justify-center rounded-md hover:bg-accent" onClick={() => setEditingSessionId(null)}>
 													<X size={16} />
 												</button>
-												<button className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-primary text-primary-foreground disabled:opacity-50" disabled={isBusy} onClick={() => void saveRename(session)}>
+												<button className="dialog-icon-button inline-flex h-10 w-10 items-center justify-center rounded-md bg-primary text-primary-foreground disabled:opacity-50" disabled={isBusy} onClick={() => void saveRename(session)}>
 													<Check size={16} />
 												</button>
 											</div>
@@ -217,10 +297,10 @@ export function SessionManagerDialog({
 											<div className="mt-3 flex items-center justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/5 p-3">
 												<p className="text-sm text-foreground">Delete this session?</p>
 												<div className="flex gap-2">
-													<button className="rounded-md px-3 py-2 text-sm hover:bg-accent" disabled={isBusy} onClick={() => setPendingDeleteSessionId(null)}>
+													<button className="dialog-compact-button rounded-md px-3 py-2 text-sm hover:bg-accent" disabled={isBusy} onClick={() => setPendingDeleteSessionId(null)}>
 														Cancel
 													</button>
-													<button className="rounded-md bg-destructive px-3 py-2 text-sm text-destructive-foreground disabled:opacity-50" disabled={isBusy} onClick={() => void confirmDelete(session)}>
+													<button className="dialog-compact-button rounded-md bg-destructive px-3 py-2 text-sm text-destructive-foreground disabled:opacity-50" disabled={isBusy} onClick={() => void confirmDelete(session)}>
 														Delete
 													</button>
 												</div>
@@ -236,4 +316,3 @@ export function SessionManagerDialog({
 		</div>
 	);
 }
-

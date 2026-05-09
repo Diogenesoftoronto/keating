@@ -3,6 +3,7 @@ import { Agent, type AgentState } from "@mariozechner/pi-agent-core";
 import {
   type Model,
   type Api,
+  type Context,
 } from "@mariozechner/pi-ai";
 import {
   ApiKeyPromptDialog,
@@ -12,6 +13,7 @@ import {
   ProxyTab,
 } from "@mariozechner/pi-web-ui";
 import { KeatingProvidersModelsTab } from "../components/providers-models-tab";
+import { KeatingUiSettingsTab } from "../components/KeatingUiSettingsTab";
 import { KeatingModelSelector } from "../components/model-selector";
 import { SessionManagerDialog } from "../components/SessionManagerDialogReact";
 import { getProviderApiKey } from "../lib/provider-models";
@@ -25,6 +27,31 @@ import { createSessionId, sessionPreview, sessionTitle, sessionUsage } from "./s
 import { saveSharedSession, sharedSessionUrl } from "../keating/shared-sessions";
 import type { ChatPanelHandle } from "../types/chat-panel";
 import type { SessionData, SessionMetadata } from "../types/session";
+
+function cloneMessages(messages: SessionData["messages"]): SessionData["messages"] {
+  return structuredClone(messages);
+}
+
+function cleanSuggestedTitle(text: string) {
+  return text
+    .replace(/^["'`]+|["'`]+$/g, "")
+    .replace(/^title:\s*/i, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 80);
+}
+
+const ARTIFACT_TOOL_NAMES = new Set([
+  "plan",
+  "map",
+  "animate",
+  "verify",
+  "quiz",
+  "bench",
+  "evolve",
+  "auto_improve",
+  "prompt_evolve",
+]);
 
 // ─── Hook ───────────────────────────────────────────────────────────────────
 export interface UseKeatingAgentReturn {
@@ -58,7 +85,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const persistentStorageRequestedRef = useRef(false);
 
   const openSettings = useCallback(() => {
-    SettingsDialog.open([new KeatingProvidersModelsTab(), new ProxyTab()]);
+    SettingsDialog.open([new KeatingProvidersModelsTab(), new KeatingUiSettingsTab(), new ProxyTab()]);
   }, []);
 
   async function loadBrowserModel() {
@@ -138,6 +165,9 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     unsubRef.current = subscribeAgentEvents(agent, panel as any);
     if (persistUnsubRef.current) persistUnsubRef.current();
     persistUnsubRef.current = agent.subscribe((ev) => {
+      if (ev.type === "tool_execution_end" && !ev.isError && ARTIFACT_TOOL_NAMES.has(ev.toolName)) {
+        window.dispatchEvent(new CustomEvent("keating:artifact-created", { detail: { toolName: ev.toolName, result: ev.result } }));
+      }
       if (ev.type === "agent_end") {
         agent.waitForIdle().then(() => saveSessionSnapshot(agent, agentSessionId, agentCreatedAt)).catch(console.error);
       }
@@ -273,6 +303,77 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     });
   }, [createAgent, endLearnerSession, saveSessionSnapshot]);
 
+  const forkSession = useCallback(async (sessionId: string) => {
+    const source = await sessions.loadSession(sessionId) as SessionData | null;
+    if (!source) throw new Error("Session not found");
+
+    const panel = panelRef.current;
+    const now = new Date().toISOString();
+    const messages = cloneMessages(source.messages);
+    const id = createSessionId();
+    const title = `${source.title || sessionTitle(messages)} (fork)`;
+    const metadata: SessionMetadata = {
+      id,
+      title,
+      createdAt: now,
+      lastModified: now,
+      messageCount: messages.length,
+      usage: sessionUsage(messages),
+      thinkingLevel: source.thinkingLevel,
+      preview: sessionPreview(messages),
+    };
+    const data: SessionData = {
+      ...source,
+      id,
+      title,
+      messages,
+      createdAt: now,
+      lastModified: now,
+    };
+
+    await saveSessionSnapshot();
+    await sessions.save(data, metadata);
+    if (panel) await loadSession(data);
+  }, [loadSession, saveSessionSnapshot]);
+
+  const suggestSessionTitle = useCallback(async (sessionId: string) => {
+    const session = await sessions.loadSession(sessionId) as SessionData | null;
+    if (!session) throw new Error("Session not found");
+
+    const model = session.model ?? selectedModelRef.current;
+    if (model.provider === "browser") {
+      await loadBrowserModel();
+    } else if (!(await getProviderApiKey(model.provider))) {
+      const allowed = await ApiKeyPromptDialog.prompt(model.provider);
+      if (!allowed) throw new Error(`No API key available for ${model.provider}`);
+    }
+
+    const apiKey = model.provider === "browser" ? undefined : await getProviderApiKey(model.provider);
+    const context: Context = {
+      systemPrompt: "You rename learning chat sessions. Return only a concise, specific title. No quotes. No punctuation-only titles. Maximum 7 words.",
+      messages: [{
+        role: "user",
+        timestamp: Date.now(),
+        content: `Conversation preview:\n${sessionPreview(session.messages).slice(0, 2400)}\n\nCurrent title: ${session.title}`,
+      }],
+    };
+
+    const stream = await hybridStreamFn(model as Model<Api>, context, {
+      apiKey,
+      maxTokens: 32,
+      temperature: 0.2,
+      reasoning: "minimal",
+    });
+    const message = await stream.result();
+    const text = message.content
+      .filter((part) => part.type === "text")
+      .map((part) => part.text)
+      .join(" ");
+    const title = cleanSuggestedTitle(text);
+    if (!title) return sessionTitle(session.messages);
+    return title;
+  }, []);
+
   const openSessions = useCallback(() => {
     setSessionsOpen(true);
   }, []);
@@ -280,6 +381,8 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const sessionManagerDialog = createElement(SessionManagerDialog, {
     open: sessionsOpen,
     onClose: () => setSessionsOpen(false),
+    onFork: forkSession,
+    onSuggestTitle: suggestSessionTitle,
     onLoad: (sessionId: string) => {
       startTransition(async () => {
         const session = await sessions.loadSession(sessionId);
