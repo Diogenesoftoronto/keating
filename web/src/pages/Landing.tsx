@@ -109,12 +109,11 @@ export function Landing() {
               </div>
             </div>
             <div className="max-w-2xl">
-              <Pretext 
-                text="Keating doesn't give answers. It forces you to reconstruct understanding from memory. No hand-holding. No spoon-feeding. Just the Socratic method powered by silicon."
-                font="18px 'Inter', sans-serif"
-                lineHeight={28}
-                className="mb-6 opacity-90"
-              />
+              <p className="mb-6 text-lg leading-7 opacity-90">
+                Keating doesn&apos;t give answers. It forces you to reconstruct understanding from
+                memory. No hand-holding. No spoon-feeding. Just the Socratic method powered by
+                silicon.
+              </p>
             </div>
             <div className="stamp">COGNITIVE EMPOWERMENT</div>
           </div>
@@ -190,14 +189,7 @@ export function Landing() {
                 <div className="font-terminal text-2xl text-accent mb-3">
                   [{n}] {title}
                 </div>
-                <div className="text-sm">
-                  <Pretext 
-                    text={body}
-                    font="14px 'Inter', sans-serif"
-                    lineHeight={20}
-                    justify={true}
-                  />
-                </div>
+                <p className="text-sm leading-5">{body}</p>
               </div>
             ))}
           </div>
