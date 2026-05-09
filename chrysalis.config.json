@@ -1,0 +1,23 @@
+{
+  "pi": {
+    "runtimePreference": "prefer-embedded",
+    "defaultProvider": "openai",
+    "defaultModel": "gpt-5.4",
+    "defaultThinking": "medium",
+    "tools": [
+      "read",
+      "bash",
+      "edit",
+      "write",
+      "grep",
+      "find",
+      "ls"
+    ]
+  },
+  "profiles": {
+    "default": "best"
+  },
+  "artifacts": {
+    "root": ".chrysalis"
+  }
+}

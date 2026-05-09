@@ -3,7 +3,7 @@ import {
   createRouter,
   createRoute,
   createRootRoute,
-  createHashHistory,
+  createBrowserHistory,
   Outlet,
 } from "@tanstack/react-router";
 import { Landing } from "./pages/Landing";
@@ -52,8 +52,8 @@ const routeTree = rootRoute.addChildren([
   paperRoute,
 ]);
 
-const hashHistory = createHashHistory();
-const router = createRouter({ routeTree, history: hashHistory });
+const browserHistory = createBrowserHistory();
+const router = createRouter({ routeTree, history: browserHistory });
 
 declare module "@tanstack/react-router" {
   interface Register {

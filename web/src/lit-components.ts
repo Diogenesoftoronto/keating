@@ -9,6 +9,7 @@ declare module "react" {
     interface IntrinsicElements {
       "pi-chat-panel": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & { ref?: React.Ref<ChatPanel> }, ChatPanel>;
       "theme-toggle": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>;
+      "markdown-block": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & { content?: string }, HTMLElement>;
     }
   }
 }

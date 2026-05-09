@@ -1,0 +1,19 @@
+{
+  "pi": {
+    "runtimePreference": "prefer-standalone",
+    "defaultProvider": "google",
+    "defaultModel": "google/gemini-2.5-pro",
+    "defaultThinking": "medium"
+  },
+  "speech": {
+    "enabled": false,
+    "defaultVoice": "conversational",
+    "fastModel": "gemini-3.1-flash-live-preview",
+    "steeringModel": "default"
+  },
+  "debug": {
+    "persistTraces": true,
+    "traceTopLearners": 3,
+    "consoleSummary": false
+  }
+}
