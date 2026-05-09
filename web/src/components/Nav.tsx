@@ -106,6 +106,9 @@ export function Nav({ showFeatures = false }: NavProps) {
           <Link to="/paper" className="nav-link glitch-hover font-terminal nav-desktop-link">
             [PAPER]
           </Link>
+          <Link to="/usage" className="nav-link glitch-hover font-terminal nav-desktop-link">
+            [USAGE]
+          </Link>
           <a
             href="https://github.com/Diogenesoftoronto/keating"
             target="_blank"
@@ -212,6 +215,14 @@ export function Nav({ showFeatures = false }: NavProps) {
               onClick={closeMobile}
             >
               [PAPER]
+            </Link>
+            <Link
+              to="/usage"
+              className="nav-link glitch-hover"
+              style={{ padding: "0.75rem 0.5rem" }}
+              onClick={closeMobile}
+            >
+              [USAGE]
             </Link>
             <a
               href="https://github.com/Diogenesoftoronto/keating"

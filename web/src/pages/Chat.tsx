@@ -1,5 +1,6 @@
 import { Suspense, useState } from "react";
-import { History, LibraryBig, Plus, Settings, Volume2, VolumeX } from "lucide-react";
+import { BarChart3, History, LibraryBig, Plus, Settings, Share2, Volume2, VolumeX } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
 import { useKeatingAgent } from "../hooks/useKeatingAgent";
 import { ChatIntro } from "../components/ChatIntro";
 import { ArtifactBrowserOverlay } from "../components/ArtifactBrowserOverlay";
@@ -14,15 +15,30 @@ import "../components/settings";
 import "@mariozechner/mini-lit/dist/ThemeToggle.js";
 
 function ChatContent() {
-  const { title, isPending, openSettings, openSessions, newSession, chatPanelRef, speechEnabled, toggleSpeech } = useKeatingAgent();
+  const navigate = useNavigate();
+  const { title, isPending, openSettings, openSessions, newSession, shareSession, chatPanelRef, speechEnabled, toggleSpeech } = useKeatingAgent();
   const [introDismissed, setIntroDismissed] = useState(
     () => sessionStorage.getItem("keating_chat_intro") === "dismissed"
   );
   const [artifactBrowserOpen, setArtifactBrowserOpen] = useState(false);
+  const [shareState, setShareState] = useState<"idle" | "sharing" | "copied" | "error">("idle");
 
   const dismissIntro = () => {
     setIntroDismissed(true);
     sessionStorage.setItem("keating_chat_intro", "dismissed");
+  };
+
+  const handleShare = async () => {
+    setShareState("sharing");
+    try {
+      await shareSession();
+      setShareState("copied");
+      window.setTimeout(() => setShareState("idle"), 1600);
+    } catch (error) {
+      console.warn("Failed to share session:", error);
+      setShareState("error");
+      window.setTimeout(() => setShareState("idle"), 2200);
+    }
   };
 
   return (
@@ -49,6 +65,23 @@ function ChatContent() {
             onClick={openSessions}
           >
             <History size={16} />
+          </button>
+          <button
+            className={`inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-8 w-8 disabled:pointer-events-none disabled:opacity-50 ${shareState === "copied" ? "text-primary" : ""} ${shareState === "error" ? "text-destructive" : ""}`}
+            title={shareState === "copied" ? "Copied share link" : shareState === "error" ? "Could not share yet" : "Share session"}
+            aria-label="Share session"
+            disabled={isPending || shareState === "sharing"}
+            onClick={handleShare}
+          >
+            <Share2 size={16} />
+          </button>
+          <button
+            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-8 w-8"
+            title="Learning usage"
+            aria-label="Learning usage"
+            onClick={() => navigate({ to: "/usage" })}
+          >
+            <BarChart3 size={16} />
           </button>
           <button
             className={`inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-8 w-8 ${speechEnabled ? "text-primary" : ""}`}
