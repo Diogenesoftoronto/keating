@@ -52,7 +52,7 @@ export function ArtifactBrowserOverlay({ open, onClose }: ArtifactBrowserOverlay
           </div>
           <button
             type="button"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-accent hover:text-accent-foreground"
+            className="dialog-icon-button inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-accent hover:text-accent-foreground"
             aria-label="Close artifact browser"
             title="Close"
             onClick={onClose}

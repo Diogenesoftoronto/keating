@@ -1,10 +1,11 @@
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { BarChart3, History, LibraryBig, Plus, Settings, Share2, Volume2, VolumeX } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useKeatingAgent } from "../hooks/useKeatingAgent";
 import { ChatIntro } from "../components/ChatIntro";
 import { ArtifactBrowserOverlay } from "../components/ArtifactBrowserOverlay";
 import { AssistantChatPanel } from "../components/AssistantChatPanel";
+import { loadKeatingUiSettings, subscribeKeatingUiSettings } from "../keating/ui-settings";
 
 // Types for the custom components
 import "../lit-components";
@@ -22,6 +23,7 @@ function ChatContent() {
     () => sessionStorage.getItem("keating_chat_intro") === "dismissed"
   );
   const [artifactBrowserOpen, setArtifactBrowserOpen] = useState(false);
+  const [uiSettings, setUiSettings] = useState(() => loadKeatingUiSettings());
   const [shareState, setShareState] = useState<"idle" | "sharing" | "copied" | "error">("idle");
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [shareMessage, setShareMessage] = useState<string | null>(null);
@@ -30,6 +32,16 @@ function ChatContent() {
     setIntroDismissed(true);
     sessionStorage.setItem("keating_chat_intro", "dismissed");
   };
+
+  useEffect(() => subscribeKeatingUiSettings(setUiSettings), []);
+
+  useEffect(() => {
+    const openArtifacts = () => {
+      if (uiSettings.autoOpenArtifacts) setArtifactBrowserOpen(true);
+    };
+    window.addEventListener("keating:artifact-created", openArtifacts);
+    return () => window.removeEventListener("keating:artifact-created", openArtifacts);
+  }, [uiSettings.autoOpenArtifacts]);
 
   const handleShare = async () => {
     setShareState("sharing");

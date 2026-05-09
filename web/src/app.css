@@ -150,6 +150,16 @@ message-editor textarea::placeholder {
     margin-bottom: 0.5rem;
   }
 
+  [role="dialog"] .dialog-icon-button {
+    width: 2rem !important;
+    margin-bottom: 0 !important;
+  }
+
+  [role="dialog"] .dialog-compact-button {
+    width: auto !important;
+    margin-bottom: 0 !important;
+  }
+
   /* Increase padding in chat input area */
   .chat-input,
   [class*="input"] {
