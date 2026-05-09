@@ -1,23 +1,19 @@
-import { useRef, useState, useTransition, useCallback, use, useEffect } from "react";
-import { Agent } from "@mariozechner/pi-agent-core";
+import { createElement, useRef, useState, useTransition, useCallback, use, useEffect } from "react";
+import { Agent, type AgentState } from "@mariozechner/pi-agent-core";
 import {
   type Model,
   type Api,
 } from "@mariozechner/pi-ai";
 import {
-  type AgentState,
   ApiKeyPromptDialog,
-  ChatPanel,
   PersistentStorageDialog,
   SettingsDialog,
-  type SessionData,
-  type SessionMetadata,
   defaultConvertToLlm,
   ProxyTab,
 } from "@mariozechner/pi-web-ui";
 import { KeatingProvidersModelsTab } from "../components/providers-models-tab";
 import { KeatingModelSelector } from "../components/model-selector";
-import { SessionManagerDialog } from "../components/SessionManagerDialog";
+import { SessionManagerDialog } from "../components/SessionManagerDialogReact";
 import { getProviderApiKey } from "../lib/provider-models";
 import { localModel } from "../stores/local-model";
 import { buildKeatingSystemPrompt, createKeatingTools } from "../keating/browser-tools";
@@ -27,6 +23,8 @@ import { DEFAULT_MODEL, hybridStreamFn } from "./keating-stream";
 import { getInitPromise, keatingStorage, sessions } from "./keating-storage";
 import { createSessionId, sessionPreview, sessionTitle, sessionUsage } from "./session-metadata";
 import { saveSharedSession, sharedSessionUrl } from "../keating/shared-sessions";
+import type { ChatPanelHandle } from "../types/chat-panel";
+import type { SessionData, SessionMetadata } from "../types/session";
 
 // ─── Hook ───────────────────────────────────────────────────────────────────
 export interface UseKeatingAgentReturn {
@@ -36,7 +34,8 @@ export interface UseKeatingAgentReturn {
   openSessions: () => void;
   newSession: () => void;
   shareSession: () => Promise<string>;
-  chatPanelRef: (node: ChatPanel | null) => void;
+  chatPanelRef: (node: ChatPanelHandle | null) => void;
+  sessionManagerDialog: React.ReactNode;
   speechEnabled: boolean;
   toggleSpeech: () => void;
 }
@@ -47,11 +46,12 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
 
   const [title] = useState("Keating");
   const agentRef = useRef<Agent | null>(null);
-  const panelRef = useRef<ChatPanel | null>(null);
+  const panelRef = useRef<ChatPanelHandle | null>(null);
   const sessionIdRef = useRef<string>(createSessionId());
   const sessionCreatedAtRef = useRef(new Date().toISOString());
   const selectedModelRef = useRef<Model<Api>>(DEFAULT_MODEL);
   const [speechSettings, setSpeechSettings] = useState<WebSpeechSettings>(() => loadWebSpeechSettings());
+  const [sessionsOpen, setSessionsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const bootstrapTimerRef = useRef<number | null>(null);
   const bootstrapGenerationRef = useRef(0);
@@ -112,7 +112,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     await sessions.save(data, metadata);
   }, []);
 
-  const createAgent = useCallback(async (panel: ChatPanel, initialState?: Partial<AgentState>) => {
+  const createAgent = useCallback(async (panel: ChatPanelHandle, initialState?: Partial<AgentState>) => {
     const agentSessionId = sessionIdRef.current;
     const agentCreatedAt = sessionCreatedAtRef.current;
     const tools = await createKeatingTools(keatingStorage, toolOptions(speechSettings));
@@ -135,7 +135,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     agentRef.current = agent;
 
     if (unsubRef.current) unsubRef.current();
-    unsubRef.current = subscribeAgentEvents(agent, panel);
+    unsubRef.current = subscribeAgentEvents(agent, panel as any);
     if (persistUnsubRef.current) persistUnsubRef.current();
     persistUnsubRef.current = agent.subscribe((ev) => {
       if (ev.type === "agent_end") {
@@ -245,7 +245,9 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     await saveSessionSnapshot(agent);
     const shared = saveSharedSession([...agent.state.messages], sessionCreatedAtRef.current);
     const url = sharedSessionUrl(shared, window.location.origin);
-    await navigator.clipboard?.writeText(url);
+    await navigator.clipboard?.writeText(url).catch((error) => {
+      console.warn("Failed to copy share link:", error);
+    });
     return url;
   }, [saveSessionSnapshot]);
 
@@ -272,18 +274,22 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   }, [createAgent, endLearnerSession, saveSessionSnapshot]);
 
   const openSessions = useCallback(() => {
-    SessionManagerDialog.open({
-      onLoad: (sessionId) => {
-        startTransition(async () => {
-          const session = await sessions.loadSession(sessionId);
-          if (session) await loadSession(session);
-        });
-      },
-    });
-  }, [loadSession]);
+    setSessionsOpen(true);
+  }, []);
+
+  const sessionManagerDialog = createElement(SessionManagerDialog, {
+    open: sessionsOpen,
+    onClose: () => setSessionsOpen(false),
+    onLoad: (sessionId: string) => {
+      startTransition(async () => {
+        const session = await sessions.loadSession(sessionId);
+        if (session) await loadSession(session as SessionData);
+      });
+    },
+  });
 
   // Use a callback ref to safely initialize the agent when the DOM node resolves
-  const chatPanelRef = useCallback((node: ChatPanel | null) => {
+  const chatPanelRef = useCallback((node: ChatPanelHandle | null) => {
     if (bootstrapTimerRef.current !== null) {
       clearTimeout(bootstrapTimerRef.current);
       bootstrapTimerRef.current = null;
@@ -299,7 +305,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       if (existingAgent) {
         // Re-attach existing agent if component re-mounted (e.g. strict mode)
         if (unsubRef.current) unsubRef.current();
-        unsubRef.current = subscribeAgentEvents(existingAgent, node);
+        unsubRef.current = subscribeAgentEvents(existingAgent, node as any);
         const setupCallbacks = {
           onApiKeyRequired: async (provider: string) => {
             if (provider === "browser") return true;
@@ -370,5 +376,5 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     }
   }, [createAgent, loadSession, requestPersistentStorageOnce]);
 
-  return { title, isPending, openSettings, openSessions, newSession, shareSession, chatPanelRef, speechEnabled: speechSettings.enabled, toggleSpeech };
+  return { title, isPending, openSettings, openSessions, newSession, shareSession, chatPanelRef, sessionManagerDialog, speechEnabled: speechSettings.enabled, toggleSpeech };
 }

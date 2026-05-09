@@ -11,6 +11,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@assistant-ui/react": "^0.14.0",
+    "@assistant-ui/react-markdown": "^0.14.0",
     "@chenglou/pretext": "^0.0.5",
     "@google/genai": "^1.48.0",
     "@huggingface/transformers": "^3.0.0",

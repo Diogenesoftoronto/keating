@@ -236,16 +236,10 @@ export function Landing() {
               },
             ].map(({ n, title, body }) => (
               <div key={n} className="flex gap-4 p-4 border border-[#f4f1ea]/20">
-                <div className="text-accent text-2xl">{n}</div>
-                <div>
+                <div className="text-accent text-2xl shrink-0">{n}</div>
+                <div className="min-w-0 flex-1">
                   <div className="text-lg text-[#00ff00] mb-1">{title}</div>
-                  <Pretext 
-                    text={body}
-                    font="14px 'VT323', monospace"
-                    lineHeight={20}
-                    className="text-[#f4f1ea]/70"
-                    justify={false}
-                  />
+                  <p className="text-sm leading-5 text-[#f4f1ea]/70">{body}</p>
                 </div>
               </div>
             ))}

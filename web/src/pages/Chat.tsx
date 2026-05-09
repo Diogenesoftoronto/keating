@@ -4,6 +4,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useKeatingAgent } from "../hooks/useKeatingAgent";
 import { ChatIntro } from "../components/ChatIntro";
 import { ArtifactBrowserOverlay } from "../components/ArtifactBrowserOverlay";
+import { AssistantChatPanel } from "../components/AssistantChatPanel";
 
 // Types for the custom components
 import "../lit-components";
@@ -16,12 +17,14 @@ import "@mariozechner/mini-lit/dist/ThemeToggle.js";
 
 function ChatContent() {
   const navigate = useNavigate();
-  const { title, isPending, openSettings, openSessions, newSession, shareSession, chatPanelRef, speechEnabled, toggleSpeech } = useKeatingAgent();
+  const { title, isPending, openSettings, openSessions, newSession, shareSession, chatPanelRef, sessionManagerDialog, speechEnabled, toggleSpeech } = useKeatingAgent();
   const [introDismissed, setIntroDismissed] = useState(
     () => sessionStorage.getItem("keating_chat_intro") === "dismissed"
   );
   const [artifactBrowserOpen, setArtifactBrowserOpen] = useState(false);
   const [shareState, setShareState] = useState<"idle" | "sharing" | "copied" | "error">("idle");
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [shareMessage, setShareMessage] = useState<string | null>(null);
 
   const dismissIntro = () => {
     setIntroDismissed(true);
@@ -30,12 +33,16 @@ function ChatContent() {
 
   const handleShare = async () => {
     setShareState("sharing");
+    setShareMessage(null);
     try {
-      await shareSession();
+      const url = await shareSession();
+      setShareUrl(url);
+      setShareMessage("Share link ready. It was copied if your browser allowed clipboard access.");
       setShareState("copied");
       window.setTimeout(() => setShareState("idle"), 1600);
     } catch (error) {
       console.warn("Failed to share session:", error);
+      setShareMessage(error instanceof Error ? error.message : "Could not create a share link yet.");
       setShareState("error");
       window.setTimeout(() => setShareState("idle"), 2200);
     }
@@ -110,10 +117,10 @@ function ChatContent() {
       </div>
 
       {introDismissed ? (
-        <pi-chat-panel
+        <AssistantChatPanel
           ref={chatPanelRef}
           className="chat-page-panel"
-        ></pi-chat-panel>
+        />
       ) : (
         <div className="relative flex-1 overflow-hidden">
           <ChatIntro />
@@ -126,10 +133,38 @@ function ChatContent() {
         </div>
       )}
 
+      {(shareUrl || shareMessage) && (
+        <div className="border-t border-border bg-background px-4 py-3 text-sm">
+          <div className="mx-auto flex max-w-4xl flex-col gap-2 sm:flex-row sm:items-center">
+            <span className={shareState === "error" ? "text-destructive" : "text-muted-foreground"}>
+              {shareMessage}
+            </span>
+            {shareUrl && (
+              <input
+                className="min-w-0 flex-1 rounded-md border border-border bg-muted px-3 py-2 font-mono text-xs text-foreground"
+                readOnly
+                value={shareUrl}
+                onFocus={(event) => event.currentTarget.select()}
+              />
+            )}
+            <button
+              className="inline-flex h-8 items-center justify-center rounded-md border border-border px-3 text-xs hover:bg-accent"
+              onClick={() => {
+                setShareUrl(null);
+                setShareMessage(null);
+              }}
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
       <ArtifactBrowserOverlay
         open={artifactBrowserOpen}
         onClose={() => setArtifactBrowserOpen(false)}
       />
+      {sessionManagerDialog}
     </div>
   );
 }
