@@ -29,6 +29,7 @@ analysis/__pycache__/
 
 # Project-specific state
 .keating/
+.chrysalis/
 .codex/
 .mise/
 
