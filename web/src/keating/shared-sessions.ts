@@ -1,8 +1,5 @@
-import {
-	type AgentMessage,
-	type SessionData,
-	type SessionMetadata,
-} from "@mariozechner/pi-web-ui";
+import type { AgentMessage } from "@mariozechner/pi-agent-core";
+import type { SessionData, SessionMetadata } from "../types/session";
 import { createSessionId, sessionPreview, sessionTitle, sessionUsage } from "../hooks/session-metadata";
 import { sessions } from "../hooks/keating-storage";
 import { DEFAULT_MODEL } from "../hooks/keating-stream";

@@ -1,8 +1,10 @@
-import { Suspense, use, useMemo } from "react";
+import { Suspense, use } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, BookOpenCheck, Brain, Clock3, MessageSquareText, TrendingUp } from "lucide-react";
-import { type SessionMetadata } from "@mariozechner/pi-web-ui";
 import { getInitPromise, sessions } from "../hooks/keating-storage";
+import type { SessionMetadata } from "../types/session";
+
+let metadataPromise: Promise<SessionMetadata[]> | null = null;
 
 function formatNumber(value: number) {
 	return new Intl.NumberFormat().format(Math.round(value));
@@ -26,7 +28,9 @@ function firstSentence(text: string) {
 
 function useSessionMetadata() {
 	use(getInitPromise());
-	const metadataPromise = useMemo(() => sessions.getAllMetadata(), []);
+	if (!metadataPromise) {
+		metadataPromise = sessions.getAllMetadata();
+	}
 	return use(metadataPromise);
 }
 

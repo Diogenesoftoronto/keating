@@ -1,7 +1,5 @@
-import {
-	type AgentMessage,
-	type SessionMetadata,
-} from "@mariozechner/pi-web-ui";
+import type { AgentMessage } from "@mariozechner/pi-agent-core";
+import type { SessionMetadata } from "../types/session";
 
 export function createSessionId(): string {
 	return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
