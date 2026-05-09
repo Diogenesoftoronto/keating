@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { MermaidRenderer } from "./MermaidRenderer";
 import { AnimationPlayer } from "./AnimationPlayer";
-import { KeatingStorage, type LessonPlan, type LessonMap, type Animation, type BenchmarkResult, type EvolutionResult } from "../keating/storage";
+import { KeatingStorage, type LessonPlan, type LessonMap, type Animation, type BenchmarkResult, type EvolutionResult, type Verification } from "../keating/storage";
 
 interface ArtifactViewerProps {
 	storage: KeatingStorage;
@@ -144,13 +144,61 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 }
 
 // Individual viewers
+const mermaidFencePattern = /```mermaid[^\n]*\n([\s\S]*?)```/gi;
+
+function splitMermaidBlocks(content: string) {
+	const parts: Array<{ type: "markdown" | "mermaid"; content: string }> = [];
+	let lastIndex = 0;
+
+	for (const match of content.matchAll(mermaidFencePattern)) {
+		const index = match.index ?? 0;
+		const markdown = content.slice(lastIndex, index);
+		if (markdown.trim()) parts.push({ type: "markdown", content: markdown });
+		parts.push({ type: "mermaid", content: match[1].trim() });
+		lastIndex = index + match[0].length;
+	}
+
+	const trailingMarkdown = content.slice(lastIndex);
+	if (trailingMarkdown.trim()) parts.push({ type: "markdown", content: trailingMarkdown });
+
+	return parts;
+}
+
+function ArtifactMarkdownViewer({ content }: { content: string }) {
+	const parts = splitMermaidBlocks(content);
+
+	if (parts.length === 0) {
+		return (
+			<div className="prose prose-sm dark:prose-invert max-w-none">
+				<markdown-block content={content}></markdown-block>
+			</div>
+		);
+	}
+
+	return (
+		<div className="space-y-4">
+			{parts.map((part, index) => {
+				if (part.type === "mermaid") {
+					return (
+						<div key={index} className="overflow-auto rounded-lg border border-border bg-background p-4">
+							<MermaidRenderer content={part.content} />
+						</div>
+					);
+				}
+
+				return (
+					<div key={index} className="prose prose-sm dark:prose-invert max-w-none">
+						<markdown-block content={part.content}></markdown-block>
+					</div>
+				);
+			})}
+		</div>
+	);
+}
+
 function PlanViewer({ plan }: { plan: LessonPlan }) {
 	return (
-		<div className="prose prose-sm dark:prose-invert max-w-none">
-			<pre className="whitespace-pre-wrap bg-muted/30 p-4 rounded-lg overflow-auto text-xs">
-				{plan.content}
-			</pre>
-		</div>
+		<ArtifactMarkdownViewer content={plan.content} />
 	);
 }
 
@@ -185,9 +233,7 @@ function BenchmarkViewer({ benchmark }: { benchmark: BenchmarkResult }) {
 				<div className="text-3xl font-bold text-primary">{benchmark.score.toFixed(1)}</div>
 				<div className="text-sm text-muted-foreground">/ 100</div>
 			</div>
-			<pre className="whitespace-pre-wrap bg-muted/30 p-4 rounded-lg overflow-auto text-xs">
-				{benchmark.report}
-			</pre>
+			<ArtifactMarkdownViewer content={benchmark.report} />
 			{benchmark.trace && (
 				<details>
 					<summary className="text-sm text-muted-foreground cursor-pointer">View Trace</summary>
@@ -207,9 +253,7 @@ function EvolutionViewer({ evolution }: { evolution: EvolutionResult }) {
 				<div className="text-3xl font-bold text-primary">{evolution.bestScore.toFixed(1)}</div>
 				<div className="text-sm text-muted-foreground">/ 100 best score</div>
 			</div>
-			<pre className="whitespace-pre-wrap bg-muted/30 p-4 rounded-lg overflow-auto text-xs">
-				{evolution.report}
-			</pre>
+			<ArtifactMarkdownViewer content={evolution.report} />
 			{evolution.trace && (
 				<details>
 					<summary className="text-sm text-muted-foreground cursor-pointer">View Trace</summary>
@@ -223,10 +267,6 @@ function EvolutionViewer({ evolution }: { evolution: EvolutionResult }) {
 }
 
 function VerificationViewer({ data }: { data: unknown }) {
-	const verification = data as { topic: string; checklist: string };
-	return (
-		<pre className="whitespace-pre-wrap bg-muted/30 p-4 rounded-lg overflow-auto text-xs">
-			{verification.checklist}
-		</pre>
-	);
+	const verification = data as Verification;
+	return <ArtifactMarkdownViewer content={verification.checklist} />;
 }

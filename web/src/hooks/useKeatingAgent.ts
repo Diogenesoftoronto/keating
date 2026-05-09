@@ -36,6 +36,7 @@ import { getProviderApiKey, syncCustomProviderKeys } from "../lib/provider-model
 import { chatProxyBaseUrl, proxyTargetHeader, shouldProxyModel } from "../lib/provider-proxy";
 import { localModel } from "../stores/local-model";
 import { buildKeatingSystemPrompt, createKeatingTools } from "../keating/browser-tools";
+import { normalizeToolCallStream } from "../keating/tool-call-normalizer";
 import { loadWebSpeechSettings, primeSpeechAudio, saveWebSpeechSettings, type WebSpeechSettings } from "../keating/speech";
 import { KeatingStorage } from "../keating/storage";
 import { subscribeAgentEvents } from "./agent-subscriptions";
@@ -177,8 +178,10 @@ function createBrowserStreamFn() {
   };
 }
 
-function hybridStreamFn(model: Model<Api>, context: Context, options?: SimpleStreamOptions) {
-	if (model.provider === "browser") return createBrowserStreamFn()(model, context, options);
+async function hybridStreamFn(model: Model<Api>, context: Context, options?: SimpleStreamOptions) {
+	if (model.provider === "browser") {
+		return normalizeToolCallStream(await createBrowserStreamFn()(model, context, options), context);
+	}
 
   if (shouldProxyModel(model)) {
     const proxiedModel = {
@@ -192,10 +195,10 @@ function hybridStreamFn(model: Model<Api>, context: Context, options?: SimpleStr
         "x-target-url": proxyTargetHeader(model.baseUrl),
       },
     };
-    return streamSimple(proxiedModel, context, proxiedOptions);
+    return normalizeToolCallStream(streamSimple(proxiedModel, context, proxiedOptions), context);
   }
 
-  return streamSimple(model, context, options);
+  return normalizeToolCallStream(streamSimple(model, context, options), context);
 }
 
 // ─── Initialisation Promise ─────────────────────────────────────────────────
