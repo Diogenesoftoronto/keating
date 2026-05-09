@@ -1,6 +1,6 @@
 import { Suspense, useState } from "react";
 import { BarChart3, History, LibraryBig, Plus, Settings, Share2, Volume2, VolumeX } from "lucide-react";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useKeatingAgent } from "../hooks/useKeatingAgent";
 import { ChatIntro } from "../components/ChatIntro";
 import { ArtifactBrowserOverlay } from "../components/ArtifactBrowserOverlay";
@@ -48,15 +48,24 @@ function ChatContent() {
     }
   };
 
+  const actionButtonClass = "chat-action-button inline-flex shrink-0 items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50";
+
   return (
     <div className="chat-page-shell w-full flex flex-col bg-background text-foreground overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border shrink-0 px-4 py-2 h-14">
-        <span className="text-lg font-semibold">{title}</span>
-        <div className="flex items-center gap-1">
+      <div className="chat-header flex items-center gap-2 border-b border-border shrink-0 px-2 sm:px-4 py-2 h-14">
+        <Link
+          to="/"
+          className="chat-brand inline-flex min-w-0 shrink-0 items-center gap-2 rounded-md px-2 py-1 hover:bg-accent hover:text-accent-foreground"
+          aria-label="Go to Keating home"
+        >
+          <img src="/logo.png" alt="" className="h-7 w-7 rounded object-contain sm:hidden" />
+          <span className="truncate text-base font-semibold sm:text-lg">{title}</span>
+        </Link>
+        <div className="chat-actions no-scrollbar ml-auto flex min-w-0 flex-1 items-center justify-end gap-1 overflow-x-auto">
           <theme-toggle></theme-toggle>
           <button
-            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-8 w-8 disabled:pointer-events-none disabled:opacity-50"
+            className={actionButtonClass}
             title="New session"
             aria-label="New session"
             disabled={isPending}
@@ -65,7 +74,7 @@ function ChatContent() {
             <Plus size={16} />
           </button>
           <button
-            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-8 w-8 disabled:pointer-events-none disabled:opacity-50"
+            className={actionButtonClass}
             title="Session history"
             aria-label="Session history"
             disabled={isPending}
@@ -74,7 +83,7 @@ function ChatContent() {
             <History size={16} />
           </button>
           <button
-            className={`inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-8 w-8 disabled:pointer-events-none disabled:opacity-50 ${shareState === "copied" ? "text-primary" : ""} ${shareState === "error" ? "text-destructive" : ""}`}
+            className={`${actionButtonClass} ${shareState === "copied" ? "text-primary" : ""} ${shareState === "error" ? "text-destructive" : ""}`}
             title={shareState === "copied" ? "Copied share link" : shareState === "error" ? "Could not share yet" : "Share session"}
             aria-label="Share session"
             disabled={isPending || shareState === "sharing"}
@@ -83,7 +92,7 @@ function ChatContent() {
             <Share2 size={16} />
           </button>
           <button
-            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-8 w-8"
+            className={actionButtonClass}
             title="Learning usage"
             aria-label="Learning usage"
             onClick={() => navigate({ to: "/usage" })}
@@ -91,7 +100,7 @@ function ChatContent() {
             <BarChart3 size={16} />
           </button>
           <button
-            className={`inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-8 w-8 ${speechEnabled ? "text-primary" : ""}`}
+            className={`${actionButtonClass} ${speechEnabled ? "text-primary" : ""}`}
             title={speechEnabled ? "Disable speech" : "Enable speech"}
             aria-pressed={speechEnabled}
             onClick={toggleSpeech}
@@ -99,14 +108,15 @@ function ChatContent() {
             {speechEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
           </button>
           <button
-            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-8 w-8"
+            className={actionButtonClass}
             title="Settings"
+            aria-label="Settings"
             onClick={openSettings}
           >
             <Settings size={16} />
           </button>
           <button
-            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-8 w-8"
+            className={actionButtonClass}
             title="Artifacts"
             aria-label="Artifacts"
             onClick={() => setArtifactBrowserOpen(true)}

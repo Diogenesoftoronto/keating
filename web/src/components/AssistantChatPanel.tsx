@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import type { Agent, AgentMessage } from "@mariozechner/pi-agent-core";
 import {
 	AssistantRuntimeProvider,
@@ -10,15 +10,52 @@ import {
 	type ThreadMessageLike,
 	useExternalStoreRuntime,
 } from "@assistant-ui/react";
-import { Send, Square, Bot, User } from "lucide-react";
+import { Bot, ChevronRight, Send, Square, User, Wrench } from "lucide-react";
 import type { ChatPanelHandle, ChatPanelSetupCallbacks } from "../types/chat-panel";
 
 interface AssistantChatPanelProps {
 	className?: string;
 }
 
-function TextPart({ text }: { text: string }) {
-	return <span>{text}</span>;
+function StreamingTextPart({ text, status }: { text: string; status?: { type: string } }) {
+	const [visibleText, setVisibleText] = useState(text);
+	const visibleLengthRef = useRef(text.length);
+	const previousTextRef = useRef(text);
+
+	useEffect(() => {
+		const isGrowing = text.startsWith(previousTextRef.current);
+		const shouldAnimate = status?.type === "running" && text.length > visibleLengthRef.current && isGrowing;
+
+		previousTextRef.current = text;
+
+		if (!shouldAnimate) {
+			visibleLengthRef.current = text.length;
+			setVisibleText(text);
+			return;
+		}
+
+		let cancelled = false;
+		const tick = () => {
+			if (cancelled) return;
+			visibleLengthRef.current = Math.min(text.length, visibleLengthRef.current + 3);
+			setVisibleText(text.slice(0, visibleLengthRef.current));
+			if (visibleLengthRef.current < text.length) {
+				window.setTimeout(tick, 18);
+			}
+		};
+		tick();
+
+		return () => {
+			cancelled = true;
+		};
+	}, [status?.type, text]);
+
+	return (
+		<span>
+			{visibleText}
+			{status?.type === "running" && visibleText.length >= text.length ? <span className="ml-0.5 animate-pulse">|</span> : null}
+		</span>
+	);
 }
 
 function ReasoningPart({ text }: { text: string }) {
@@ -31,22 +68,52 @@ function ReasoningPart({ text }: { text: string }) {
 	);
 }
 
-function ToolPart({ toolName, args, result, isError }: { toolName: string; args?: unknown; result?: unknown; isError?: boolean }) {
+function formatToolResult(result: unknown) {
+	if (result === undefined) return "";
+	if (typeof result === "string") return result;
+	if (Array.isArray(result)) {
+		const text = result
+			.map((part) => {
+				if (part?.type === "text" && typeof part.text === "string") return part.text;
+				return "";
+			})
+			.filter(Boolean)
+			.join("\n");
+		if (text) return text;
+	}
+	return JSON.stringify(result, null, 2);
+}
+
+function ToolPart({ toolName, args, result, isError, status }: { toolName: string; args?: unknown; result?: unknown; isError?: boolean; status?: { type: string } }) {
+	const resultText = formatToolResult(result);
 	return (
-		<div className={`my-3 rounded-md border px-3 py-2 text-xs ${isError ? "border-destructive/40 bg-destructive/5" : "border-border bg-muted/40"}`}>
-			<div className="font-medium text-muted-foreground">Tool: {toolName}</div>
-			{args !== undefined && (
-				<pre className="mt-2 overflow-x-auto whitespace-pre-wrap text-muted-foreground">{JSON.stringify(args, null, 2)}</pre>
-			)}
-			{result !== undefined && (
-				<pre className="mt-2 overflow-x-auto whitespace-pre-wrap text-foreground">{typeof result === "string" ? result : JSON.stringify(result, null, 2)}</pre>
-			)}
+		<div className={`my-3 overflow-hidden rounded-lg border text-xs ${isError ? "border-destructive/40 bg-destructive/5" : "border-border bg-muted/35"}`}>
+			<div className="flex items-center gap-2 border-b border-border/70 px-3 py-2 text-muted-foreground">
+				<Wrench size={13} />
+				<span className="font-medium">Tool</span>
+				<span className="rounded bg-background px-1.5 py-0.5 font-mono">{toolName}</span>
+				<span className="ml-auto">{status?.type === "running" && result === undefined ? "running" : isError ? "error" : "done"}</span>
+			</div>
+			{args !== undefined && Object.keys(args as Record<string, unknown>).length > 0 ? (
+				<details className="px-3 py-2">
+					<summary className="flex cursor-pointer list-none items-center gap-1 text-muted-foreground">
+						<ChevronRight size={13} />
+						Arguments
+					</summary>
+					<pre className="mt-2 overflow-x-auto whitespace-pre-wrap text-muted-foreground">{JSON.stringify(args, null, 2)}</pre>
+				</details>
+			) : null}
+			{resultText ? (
+				<div className="border-t border-border/60 px-3 py-2 text-foreground">
+					<pre className="max-h-44 overflow-auto whitespace-pre-wrap font-sans leading-5">{resultText}</pre>
+				</div>
+			) : null}
 		</div>
 	);
 }
 
 const messagePartComponents = {
-	Text: TextPart,
+	Text: StreamingTextPart,
 	Reasoning: ReasoningPart,
 	tools: {
 		Fallback: ToolPart,
@@ -66,6 +133,42 @@ function textFromContent(content: unknown): string {
 		})
 		.filter(Boolean)
 		.join("\n");
+}
+
+function foldToolResults(messages: AgentMessage[]): AgentMessage[] {
+	const folded: AgentMessage[] = [];
+	const assistantByToolCallId = new Map<string, any>();
+
+	for (const message of messages) {
+		const msg = message as any;
+		if (msg.role === "assistant" && Array.isArray(msg.content)) {
+			const clone = {
+				...msg,
+				content: msg.content.map((part: any) => ({ ...part })),
+			};
+			for (const part of clone.content) {
+				if (part?.type === "toolCall" && part.id) {
+					assistantByToolCallId.set(part.id, part);
+				}
+			}
+			folded.push(clone as AgentMessage);
+			continue;
+		}
+
+		if (msg.role === "toolResult") {
+			const toolCall = assistantByToolCallId.get(msg.toolCallId);
+			if (toolCall) {
+				toolCall.__toolResult = msg.content;
+				toolCall.__toolDetails = msg.details;
+				toolCall.__toolError = msg.isError;
+				continue;
+			}
+		}
+
+		folded.push(message);
+	}
+
+	return folded;
 }
 
 function toAssistantMessage(message: AgentMessage, index: number, isRunning: boolean): ThreadMessageLike {
@@ -90,6 +193,8 @@ function toAssistantMessage(message: AgentMessage, index: number, isRunning: boo
 						toolName: part.name ?? "tool",
 						args: part.arguments ?? {},
 						argsText: JSON.stringify(part.arguments ?? {}),
+						result: part.__toolResult ?? part.__toolDetails,
+						isError: part.__toolError,
 					};
 				}
 				return { type: "text" as const, text: part?.text ?? "" };
@@ -131,7 +236,7 @@ function textFromAppendMessage(message: AppendMessage): string {
 }
 
 function AssistantThread({ agent, callbacks, version }: { agent: Agent | null; callbacks: ChatPanelSetupCallbacks; version: number }) {
-	const messages = useMemo(() => [...(agent?.state.messages ?? [])], [agent, version]);
+	const messages = useMemo(() => foldToolResults([...(agent?.state.messages ?? [])]), [agent, version]);
 	const runtime = useExternalStoreRuntime<AgentMessage>({
 		messages,
 		isRunning: agent?.state.isStreaming ?? false,
@@ -154,7 +259,7 @@ function AssistantThread({ agent, callbacks, version }: { agent: Agent | null; c
 	return (
 		<AssistantRuntimeProvider runtime={runtime}>
 			<ThreadPrimitive.Root className="flex h-full min-h-0 flex-col bg-background text-foreground">
-				<ThreadPrimitive.Viewport className="min-h-0 flex-1 overflow-y-auto px-4 py-6">
+				<ThreadPrimitive.Viewport className="min-h-0 flex-1 overflow-y-auto px-3 py-4 sm:px-4 sm:py-6">
 					<AuiIf condition={(state) => state.thread.isEmpty}>
 						<div className="mx-auto flex h-full max-w-2xl items-center justify-center text-sm text-muted-foreground">
 							Start a conversation with Keating.
@@ -165,7 +270,7 @@ function AssistantThread({ agent, callbacks, version }: { agent: Agent | null; c
 						<ComposerPrimitive.Root className="mx-auto flex max-w-3xl items-end gap-2 rounded-lg border border-border bg-background p-2 shadow-sm">
 							<button
 								type="button"
-								className="mb-1 max-w-36 truncate rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+								className="mb-1 hidden max-w-36 shrink-0 truncate rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50 sm:inline-flex"
 								disabled={!callbacks.onModelSelect}
 								onClick={() => callbacks.onModelSelect?.()}
 								title={modelLabel}
@@ -194,7 +299,7 @@ function AssistantThread({ agent, callbacks, version }: { agent: Agent | null; c
 function UserMessage() {
 	return (
 		<MessagePrimitive.Root className="mx-auto mb-4 flex max-w-3xl justify-end">
-			<div className="flex max-w-[82%] gap-3 rounded-lg bg-primary px-4 py-3 text-sm text-primary-foreground">
+			<div className="flex max-w-[88%] gap-3 rounded-lg bg-primary px-4 py-3 text-sm text-primary-foreground sm:max-w-[82%]">
 				<User className="mt-0.5 h-4 w-4 shrink-0" />
 				<div className="min-w-0 whitespace-pre-wrap leading-6">
 					<MessagePrimitive.Content components={messagePartComponents} />
@@ -207,7 +312,7 @@ function UserMessage() {
 function AssistantMessage() {
 	return (
 		<MessagePrimitive.Root className="mx-auto mb-4 flex max-w-3xl justify-start">
-			<div className="flex max-w-[90%] gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-card-foreground">
+			<div className="flex max-w-[94%] gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-card-foreground sm:max-w-[90%]">
 				<Bot className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
 				<div className="min-w-0 whitespace-pre-wrap leading-6">
 					<MessagePrimitive.Content components={messagePartComponents} />
