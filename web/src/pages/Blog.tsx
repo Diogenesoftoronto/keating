@@ -58,6 +58,43 @@ function majorMinor(version: string): string {
 
 const POSTS: Post[] = [
   {
+    date: "2026-05-10",
+    badge: { label: "RELEASE", color: "release" },
+    title: "v0.3.4 — Markdown Tables and LaTeX Math in Chat",
+    version: "0.3.4",
+    summary:
+      "Chat now renders GitHub-flavored markdown tables and LaTeX math expressions. Inline math via $...$ and block math via $$...$$ are properly typeset with KaTeX.",
+    sections: [
+      { id: "markdown-tables", title: "Markdown Table Support" },
+      { id: "latex-math", title: "LaTeX Math Rendering" },
+    ],
+    body: (
+      <>
+        <p className="mb-4 leading-6">
+          Keating 0.3.4 improves the chat rendering pipeline with two long-requested
+          features: properly formatted markdown tables and LaTeX math expressions.
+        </p>
+        <h3 id="markdown-tables" className="font-bold mt-4 mb-2">Markdown Table Support</h3>
+        <p className="text-sm mb-4">
+          The chat panel now includes <Code>remark-gfm</Code> so GitHub-flavored
+          markdown tables render correctly. Inline table components use theme-aware
+          borders and spacing so data is readable in both light and dark modes.
+        </p>
+        <h3 id="latex-math" className="font-bold mt-4 mb-2">LaTeX Math Rendering</h3>
+        <p className="text-sm mb-4">
+          The <Code>react-markdown</Code> renderer now includes <Code>remark-math</Code>
+          {" "}and <Code>rehype-katex</Code> plugins. Inline math delimited by{" "}
+          <Code>$...$</Code> and block math delimited by <Code>$$...$$</Code> are
+          passed through KaTeX for proper typesetting. The KaTeX stylesheet is loaded
+          in the app entry point so expressions render consistently across the UI.
+        </p>
+        <p className="text-sm text-muted-foreground">
+          The v0.3.4 build compiles cleanly and all 18 tests pass.
+        </p>
+      </>
+    ),
+  },
+  {
     date: "2026-05-09",
     badge: { label: "RELEASE", color: "release" },
     title: "v0.3.3 — Interactive Quizzes, Scene Storyboards, and Dark Mode Fixes",
