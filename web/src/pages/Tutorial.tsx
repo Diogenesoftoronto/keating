@@ -22,9 +22,144 @@ export function Tutorial() {
       <main className="pt-28 pb-16 px-6">
         <div className="max-w-4xl mx-auto">
           <div className="paper-fold distressed-border p-8 mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold mb-2">Model Setup Guide</h1>
-            <p className="text-[#64748b] font-terminal">Choose how Keating runs AI models</p>
+            <h1 className="text-3xl md:text-4xl font-bold mb-2">Getting Started with Keating</h1>
+            <p className="text-[#64748b] font-terminal">How to learn, plan, and assess with your AI tutor</p>
           </div>
+
+          {/* What Is Keating */}
+          <section className="paper-fold distressed-border p-6 mb-8">
+            <h2 className="text-xl font-bold mb-4">What Is Keating?</h2>
+            <p className="mb-4">
+              Keating is a Socratic AI tutor. It does not give answers — it forces you to
+              reconstruct understanding from memory through questions, struggle, and guided
+              correction. Named after John Keating from <em>Dead Poets Society</em>, it treats
+              learning as an active process.
+            </p>
+            <div className="grid md:grid-cols-4 gap-4 mb-4">
+              {[
+                { step: "1", label: "Diagnose", desc: "Keating probes what you already know before explaining anything." },
+                { step: "2", label: "Struggle", desc: "You answer freely. Mistakes are expected and useful." },
+                { step: "3", label: "Check", desc: "Keating verifies your reasoning against correct understanding." },
+                { step: "4", label: "Build", desc: "Missing pieces are filled in through targeted explanation." },
+              ].map((s) => (
+                <div key={s.step} className="border border-[#1f2937]/30 rounded p-4">
+                  <div className="font-terminal text-[#d44a3d] mb-1">{s.step}. {s.label.toUpperCase()}</div>
+                  <p className="text-sm text-[#64748b]">{s.desc}</p>
+                </div>
+              ))}
+            </div>
+            <p className="text-sm text-[#64748b]">
+              The system has 19 teaching tools — from lesson plans to concept maps to quizzes
+              and benchmarked self-improvement. You drive the conversation. Keating responds.
+            </p>
+          </section>
+
+          {/* Suggested Prompts */}
+          <section className="paper-fold distressed-border p-6 mb-8">
+            <h2 className="text-xl font-bold mb-4">Suggested Prompts</h2>
+            <p className="text-sm text-[#64748b] mb-4">
+              Click any prompt to copy it. Paste it into the chat to get started.
+            </p>
+            <div className="space-y-5">
+              {[
+                {
+                  category: "Learn",
+                  color: "#10b981",
+                  prompts: [
+                    "Explain quantum entanglement like I'm 12 years old.",
+                    "Why does gradient descent work? Walk me through the intuition.",
+                    "Teach me the fundamentals of supply and demand using a real-world example.",
+                  ],
+                },
+                {
+                  category: "Plan",
+                  color: "#6366f1",
+                  prompts: [
+                    "Plan a 4-week course on machine learning fundamentals for a beginner.",
+                    "Create a study roadmap for passing the AWS Solutions Architect exam.",
+                    "Map out the prerequisites I need to understand transformers before reading the Attention Is All You Need paper.",
+                  ],
+                },
+                {
+                  category: "Map",
+                  color: "#d97706",
+                  prompts: [
+                    "Draw a concept map connecting special relativity, general relativity, and cosmology.",
+                    "Map the evolution of web development from HTML to modern React frameworks.",
+                    "Show me how probability, statistics, and linear algebra connect in data science.",
+                  ],
+                },
+                {
+                  category: "Assess",
+                  color: "#d44a3d",
+                  prompts: [
+                    "Quiz me on the Krebs cycle. Ask questions that test deeper understanding, not memorization.",
+                    "Evaluate my understanding of async/await in JavaScript by asking me to explain it from scratch.",
+                    "Benchmark my knowledge of classical mechanics. Push until you find the gaps.",
+                  ],
+                },
+                {
+                  category: "Create",
+                  color: "#ec4899",
+                  prompts: [
+                    "Animate how DNS resolution works step by step.",
+                    "Create a verification checklist for a secure web API design.",
+                    "Generate a set of spaced-repetition flashcards for Spanish verb conjugations.",
+                  ],
+                },
+              ].map((group) => (
+                <div key={group.category}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="font-terminal text-sm" style={{ color: group.color }}>
+                      [{group.category.toUpperCase()}]
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {group.prompts.map((prompt) => (
+                      <button
+                        key={prompt}
+                        className="text-left text-sm border border-[#1f2937]/20 rounded-md px-3 py-2 hover:bg-[#1f2937]/5 transition-colors break-words"
+                        title="Click to copy"
+                        onClick={() => {
+                          navigator.clipboard.writeText(prompt);
+                        }}
+                      >
+                        {prompt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Tool Commands Reference */}
+          <section className="paper-fold distressed-border p-6 mb-8">
+            <h2 className="text-xl font-bold mb-4">Tool Commands</h2>
+            <p className="text-sm text-[#64748b] mb-4">
+              Keating can invoke tools directly. Prefix your message with a command or ask
+              Keating to use a specific tool.
+            </p>
+            <div className="grid sm:grid-cols-2 gap-3 text-sm">
+              {[
+                ["/plan", "Generate a structured lesson plan on a topic"],
+                ["/map", "Create a concept map or knowledge graph"],
+                ["/animate", "Produce a step-by-step animation of a process"],
+                ["/verify", "Run a pedagogical verification checklist"],
+                ["/bench", "Benchmark understanding and identify gaps"],
+                ["/evolve", "Iteratively improve a teaching approach"],
+                ["/quiz", "Generate a quiz with rubric and answer key"],
+                ["/feedback", "Record learner feedback signals"],
+                ["/due", "List upcoming work and deadlines"],
+                ["/timeline", "Show learning progress over time"],
+              ].map(([cmd, desc]) => (
+                <div key={cmd} className="flex gap-3 items-start">
+                  <code className="bg-[#1a1a1a] text-[#00ff00] px-1.5 py-0.5 rounded shrink-0 text-xs">{cmd}</code>
+                  <span className="text-[#64748b]">{desc}</span>
+                </div>
+              ))}
+            </div>
+          </section>
 
           {/* Model Types Overview */}
           <div className="grid md:grid-cols-2 gap-6 mb-8">
