@@ -8,22 +8,25 @@ import { loadKeatingUiSettings, saveKeatingUiSettings } from "../keating/ui-sett
 export class KeatingUiSettingsTab extends SettingsTab {
 	@state() private showToolUi = false;
 	@state() private autoOpenArtifacts = true;
+	@state() private showRawErrors = false;
 
 	override connectedCallback() {
 		super.connectedCallback();
 		const settings = loadKeatingUiSettings();
 		this.showToolUi = settings.showToolUi;
 		this.autoOpenArtifacts = settings.autoOpenArtifacts;
+		this.showRawErrors = settings.showRawErrors;
 	}
 
 	getTabName(): string {
 		return "Interface";
 	}
 
-	private updateSettings(partial: Partial<{ showToolUi: boolean; autoOpenArtifacts: boolean }>) {
+	private updateSettings(partial: Partial<{ showToolUi: boolean; autoOpenArtifacts: boolean; showRawErrors: boolean }>) {
 		const next = { ...loadKeatingUiSettings(), ...partial };
 		this.showToolUi = next.showToolUi;
 		this.autoOpenArtifacts = next.autoOpenArtifacts;
+		this.showRawErrors = next.showRawErrors;
 		saveKeatingUiSettings(next);
 	}
 
@@ -47,6 +50,20 @@ export class KeatingUiSettingsTab extends SettingsTab {
 					${Switch({
 						checked: this.showToolUi,
 						onChange: (checked) => this.updateSettings({ showToolUi: checked }),
+						label: "",
+					})}
+				</div>
+
+				<div class="flex items-start justify-between gap-4 rounded-lg border border-border p-4">
+					<div>
+						<div class="text-sm font-medium text-foreground">Show raw error details</div>
+						<p class="mt-1 text-sm text-muted-foreground">
+							Display full error messages and response bodies in tool failures. When off, only a short summary is shown.
+						</p>
+					</div>
+					${Switch({
+						checked: this.showRawErrors,
+						onChange: (checked) => this.updateSettings({ showRawErrors: checked }),
 						label: "",
 					})}
 				</div>

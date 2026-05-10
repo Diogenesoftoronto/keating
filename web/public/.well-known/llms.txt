@@ -1,0 +1,44 @@
+# Keating
+
+> A Pi-powered hyperteacher scaffold designed to ensure that humans remain the authors of their own understanding. Keating uses the most advanced AI models not to provide answers, but to force the rigorous reconstruction of ideas within the learner's own identity — Socratic method, powered by silicon.
+
+## Overview
+
+Open source (MIT), runs in the browser or CLI. Supports local inference via WebGPU (Gemma 4 E4B), cloud providers (Google, Anthropic, OpenAI), and custom endpoints (Ollama, llama.cpp, LiteLLM). Includes speech, automated lesson planning, concept maps, animations, quizzes, flashcards, benchmarked self-improvement, and a persistent engagement timeline.
+
+## Get Started
+
+- Website: https://keating.help
+- GitHub: https://github.com/Diogenesoftoronto/keating
+- Paper PDF: https://keating.help/keating-metaharness.pdf
+- Install: https://keating.help/#install
+
+## Documentation
+
+- Architecture: https://github.com/Diogenesoftoronto/keating/blob/main/docs/ARCHITECTURE.md
+- Visual Architecture: https://github.com/Diogenesoftoronto/keating/blob/main/docs/VISUAL-ARCHITECTURE.md
+- Testing Strategy: https://github.com/Diogenesoftoronto/keating/blob/main/docs/TESTING.md
+- Oxdraw Tutorial: https://github.com/Diogenesoftoronto/keating/blob/main/docs/OXDRAW-TUTORIAL.md
+- Changelog: https://github.com/Diogenesoftoronto/keating/blob/main/CHANGELOG.md
+
+## Core Prompts
+
+- Learn workflow: https://github.com/Diogenesoftoronto/keating/blob/main/pi/prompts/learn.md
+- Diagnose workflow: https://github.com/Diogenesoftoronto/keating/blob/main/pi/prompts/diagnose.md
+- Quiz workflow: https://github.com/Diogenesoftoronto/keating/blob/main/pi/prompts/quiz.md
+- Bridge workflow: https://github.com/Diogenesoftoronto/keating/blob/main/pi/prompts/bridge.md
+- Improve workflow: https://github.com/Diogenesoftoronto/keating/blob/main/pi/prompts/improve.md
+
+## Key Modules
+
+- Core types and domain model: `src/core/types.ts`
+- Teaching policy and benchmark simulation: `src/core/benchmark.ts`
+- Policy evolution with safety gates: `src/core/evolution.ts`
+- Prompt evolution with multi-objective selection: `src/core/prompt-evolution.ts`
+- Lesson plan generator: `src/core/lesson-plan.ts`
+- Animation bundle generator (manim-web): `src/core/animation.ts`
+- Concept map generator (Mermaid / oxdraw): `src/core/map.ts`
+- CLI shell and commands: `src/cli/main.ts`
+- Pi extension entrypoint: `src/pi/hyperteacher-extension.ts`
+- Web chat runtime: `web/src/hooks/useKeatingAgent.ts`
+- Web app entry: `web/src/App.tsx`

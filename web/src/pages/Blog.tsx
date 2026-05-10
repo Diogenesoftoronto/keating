@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Nav } from "../components/Nav";
+import { useSeo } from "../hooks/useSeo";
 import { SimpleFooter } from "../components/Footer";
 import { ChevronDown, ChevronUp, Hash } from "lucide-react";
 
@@ -1046,6 +1047,11 @@ function VersionTOC({ groups, expandedMap, onJump }: { groups: VersionGroup[]; e
 /* ── Page ────────────────────────────────────────────────────────── */
 
 export function Blog() {
+  useSeo({
+    title: "Keating Blog — Changelog & Release Notes",
+    description: "Latest updates, release notes, and development news for Keating — the Pi-powered hyperteacher for Socratic AI tutoring.",
+    canonical: "https://keating.help/blog",
+  });
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const toggle = (title: string) => {

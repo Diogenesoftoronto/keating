@@ -1,8 +1,14 @@
 import { Nav } from "../components/Nav";
 import { SimpleFooter } from "../components/Footer";
+import { useSeo } from "../hooks/useSeo";
 import { Download, FileText } from "lucide-react";
 
 export function Paper() {
+  useSeo({
+    title: "Keating Paper — A Metaharness for Agency-Preserving AI Instruction",
+    description: "The Keating paper: a metaharness for teaching, a control layer that organizes planning, prompting, retrieval, transfer, verification, and evaluation around the live teaching exchange.",
+    canonical: "https://keating.help/paper",
+  });
   return (
     <div className="retro-layout retro-page">
       <Nav />

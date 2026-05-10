@@ -4,6 +4,7 @@ import { Nav } from "../components/Nav";
 import { Footer } from "../components/Footer";
 import { BootSequence } from "../components/BootSequence";
 import { Pretext } from "../components/Pretext";
+import { useSeo } from "../hooks/useSeo";
 
 type InstallTab = "npm" | "bun" | "pnpm" | "curl" | "agent";
 
@@ -49,6 +50,11 @@ Required: API Key Setup
 };
 
 export function Landing() {
+  useSeo({
+    title: "Keating — The Hyperteacher | Socratic AI Tutor",
+    description: "Keating is a Pi-powered hyperteacher that ensures humans remain the authors of their own understanding. Socratic AI tutoring with lesson plans, concept maps, animations, and self-improving pedagogy.",
+    canonical: "https://keating.help/",
+  });
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<InstallTab>("npm");
   const [copied, setCopied] = useState(false);

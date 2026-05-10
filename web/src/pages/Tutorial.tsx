@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Nav } from "../components/Nav";
 import { SimpleFooter } from "../components/Footer";
+import { useSeo } from "../hooks/useSeo";
 
 type TutorialTab = "browser" | "ollama" | "llamacpp" | "litellm" | "cloud";
 
@@ -13,6 +14,11 @@ const TABS: { id: TutorialTab; label: string }[] = [
 ];
 
 export function Tutorial() {
+  useSeo({
+    title: "Keating Tutorial — Getting Started",
+    description: "Learn how to use Keating: Socratic AI tutoring with lesson plans, concept maps, quizzes, and local or cloud model support.",
+    canonical: "https://keating.help/tutorial",
+  });
   const [activeTab, setActiveTab] = useState<TutorialTab>("browser");
 
   return (

@@ -59,6 +59,16 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 		});
 	}, [artifacts, query]);
 
+	const grouped = useMemo(() => {
+		const map = new Map<ArtifactCategory, Artifact[]>();
+		for (const artifact of filteredArtifacts) {
+			const cat = CATEGORY_MAP[artifact.type].category;
+			if (!map.has(cat)) map.set(cat, []);
+			map.get(cat)!.push(artifact);
+		}
+		return map;
+	}, [filteredArtifacts]);
+
 	useEffect(() => {
 		async function loadArtifacts() {
 			setLoading(true);
@@ -145,17 +155,6 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 			</div>
 		);
 	}
-
-	// Group artifacts by category
-	const grouped = useMemo(() => {
-		const map = new Map<ArtifactCategory, Artifact[]>();
-		for (const artifact of filteredArtifacts) {
-			const cat = CATEGORY_MAP[artifact.type].category;
-			if (!map.has(cat)) map.set(cat, []);
-			map.get(cat)!.push(artifact);
-		}
-		return map;
-	}, [filteredArtifacts]);
 
 	return (
 		<div className="artifact-list text-foreground">

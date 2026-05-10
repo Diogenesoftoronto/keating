@@ -10,20 +10,28 @@ const renderCache = new Map<string, string>();
 
 export function MermaidRenderer({ content, className }: MermaidRendererProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
+	const renderTargetRef = useRef<HTMLDivElement | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(true);
+	const [svg, setSvg] = useState<string | null>(null);
 
 	useEffect(() => {
-		let mounted = true;
+		let cancelled = false;
 
 		async function renderDiagram() {
-			if (!containerRef.current || !content) return;
+			if (!content) {
+				setLoading(false);
+				return;
+			}
 
 			// Check cache first
 			const cacheKey = content.slice(0, 100);
 			if (renderCache.has(cacheKey)) {
-				containerRef.current.innerHTML = renderCache.get(cacheKey)!;
-				setLoading(false);
+				if (!cancelled) {
+					setSvg(renderCache.get(cacheKey)!);
+					setLoading(false);
+					setError(null);
+				}
 				return;
 			}
 
@@ -49,20 +57,37 @@ export function MermaidRenderer({ content, className }: MermaidRendererProps) {
 					mermaidCode = mermaidMatch[1];
 				}
 
-				// Generate unique ID
+				// Generate unique ID — must not already exist in the DOM
 				const id = `mermaid-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-				// Render
-				const { svg } = await mermaid.default.render(id, mermaidCode);
+				// Create a detached container for mermaid to render into.
+				// This avoids Mermaid and React fighting over the same DOM node,
+				// which causes "removeChild" errors on re-render.
+				if (!renderTargetRef.current) {
+					renderTargetRef.current = document.createElement("div");
+					renderTargetRef.current.style.position = "absolute";
+					renderTargetRef.current.style.left = "-9999px";
+					renderTargetRef.current.style.top = "-9999px";
+					renderTargetRef.current.style.visibility = "hidden";
+					document.body.appendChild(renderTargetRef.current);
+				}
 
-				if (mounted && containerRef.current) {
-					containerRef.current.innerHTML = svg;
-					renderCache.set(cacheKey, svg);
+				// Clear any previous content
+				renderTargetRef.current.innerHTML = "";
+
+				// Render into detached container
+				const { svg: renderedSvg } = await mermaid.default.render(id, mermaidCode, renderTargetRef.current);
+
+				// Only store the SVG string — never let Mermaid touch React's DOM
+				renderCache.set(cacheKey, renderedSvg);
+
+				if (!cancelled) {
+					setSvg(renderedSvg);
 					setLoading(false);
 					setError(null);
 				}
 			} catch (err) {
-				if (mounted) {
+				if (!cancelled) {
 					setError(err instanceof Error ? err.message : "Failed to render diagram");
 					setLoading(false);
 				}
@@ -74,7 +99,16 @@ export function MermaidRenderer({ content, className }: MermaidRendererProps) {
 		renderDiagram();
 
 		return () => {
-			mounted = false;
+			cancelled = true;
+			// Clean up the detached render container
+			if (renderTargetRef.current) {
+				try {
+					document.body.removeChild(renderTargetRef.current);
+				} catch {
+					// already removed
+				}
+				renderTargetRef.current = null;
+			}
 		};
 	}, [content]);
 
@@ -92,7 +126,11 @@ export function MermaidRenderer({ content, className }: MermaidRendererProps) {
 			ref={containerRef}
 			className={`mermaid-container ${className} ${loading ? "animate-pulse bg-muted/20 rounded-lg" : ""}`}
 		>
-			{loading && <div className="p-8 text-center text-muted-foreground">Rendering diagram...</div>}
+			{loading ? (
+				<div className="p-8 text-center text-muted-foreground">Rendering diagram...</div>
+			) : svg ? (
+				<div dangerouslySetInnerHTML={{ __html: svg }} />
+			) : null}
 		</div>
 	);
 }
