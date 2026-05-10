@@ -39,6 +39,77 @@ const POSTS: Post[] = [
   {
     date: "2026-05-09",
     badge: { label: "RELEASE", color: "release" },
+    title: "v0.3.3 — Interactive Quizzes, Scene Storyboards, and Dark Mode Fixes",
+    body: (
+      <>
+        <p className="mb-4 leading-6">
+          Keating 0.3.3 brings interactive teaching artifacts directly into the
+          chat stream. Quizzes render as live forms with multiple-choice,
+          fill-in-the-blank, true/false, and open-ended questions. Animation
+          storyboards become navigable scene cards. Dark mode on the retro
+          landing pages no longer shows black-on-black text.
+        </p>
+        <h3 className="font-bold mt-4 mb-2">Interactive Quiz Tool UI</h3>
+        <p className="text-sm mb-4">
+          When the model calls <Code>quiz</Code>, the returned content now
+          includes an inline <Code>&lt;keating-quiz /&gt;</Code> tag that the
+          chat panel parses and renders into a live form. Each question type is
+          handled with the right interaction pattern:
+        </p>
+        <ul className="text-sm space-y-2 ml-4 mb-4">
+          <li><strong>Multiple choice:</strong> radio-style options</li>
+          <li><strong>Fill in the blank:</strong> textareas that strip and compare against the correct answer</li>
+          <li><strong>True / False:</strong> paired toggle buttons</li>
+          <li><strong>Short answer / transfer:</strong> open text fields with rubrics shown after submission</li>
+        </ul>
+        <p className="text-sm mb-4">
+          After pressing Submit, every question shows whether the answer is
+          correct, reveals the right answer, displays the explanation, and
+          surfaces the rubric. A Retake button resets the form. The quiz engine
+          now generates <Code>fill_in</Code> and <Code>true_false</Code>
+          questions alongside the existing types so the UI sees real variety.
+        </p>
+        <h3 className="font-bold mt-4 mb-2">Scene Storyboard Renderer</h3>
+        <p className="text-sm mb-4">
+          The <Code>animate</Code> tool emits a <Code>&lt;keating-scene /&gt;</Code>
+          tag alongside its markdown. The new <Code>SceneRenderer</Code>
+          component parses the storyboard into a set of scene cards with
+          duration, visual descriptions, audio cues, transitions, and highlights.
+          Users can click through the timeline or use prev/next arrows.
+        </p>
+        <h3 className="font-bold mt-4 mb-2">Dark Mode Contrast Fix</h3>
+        <p className="text-sm mb-4">
+          Hardcoded hex colors (<Code>#1a1a1a</Code>, <Code>#64748b</Code>,
+          <Code>#f4f1ea</Code>) on the landing, tutorial, blog, paper, and
+          footer pages have been replaced with theme-aware Tailwind classes
+          (<Code>border-border</Code>, <Code>text-muted-foreground</Code>,
+          etc.). Text and dividers now adapt automatically between light and
+          dark modes.
+        </p>
+        <h3 className="font-bold mt-4 mb-2">Chat Viewport Fix</h3>
+        <p className="text-sm mb-4">
+          The <Code>.chat-page-panel</Code> was <Code>display: block</Code>,
+          which broke flex height propagation. Messages pushed the composer
+          outside the viewport. Switched to <Code>display: flex; flex-direction:
+          column; height: 100%</Code> so the scroll area stays bounded.
+        </p>
+        <h3 className="font-bold mt-4 mb-2">Version Sync Script</h3>
+        <p className="text-sm mb-4">
+          A new <Code>scripts/sync-version.mjs</Code> utility reads the root
+          <Code>package.json</Code> version and enforces it across the web
+          package, the CLI extension, and hardcoded web strings. Run it with
+          <Code>--check</Code> in CI or without flags to auto-update.
+        </p>
+        <p className="text-sm text-muted-foreground">
+          The v0.3.3 build compiles cleanly, all 18 tests pass, and the
+          monorepo version strings are aligned.
+        </p>
+      </>
+    ),
+  },
+  {
+    date: "2026-05-09",
+    badge: { label: "RELEASE", color: "release" },
     title: "v0.3.2 — Chat Rewrite Stabilizes: Forks, Feedback, and Mobile",
     body: (
       <>
