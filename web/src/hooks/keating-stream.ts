@@ -136,6 +136,10 @@ export async function hybridStreamFn(model: Model<Api>, context: Context, option
 				"x-target-url": proxyTargetHeader(model.baseUrl),
 			},
 		};
+		if (import.meta.env.DEV) {
+			const hasApiKey = !!options?.apiKey;
+			console.log(`[keating:stream] proxy ${model.provider} -> ${model.baseUrl} (apiKey=${hasApiKey})`);
+		}
 		return normalizeToolCallStream(streamSimple(proxiedModel, context, proxiedOptions), context);
 	}
 

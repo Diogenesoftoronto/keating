@@ -33,6 +33,11 @@ export default defineEventHandler(async (event) => {
     delete headers[forbidden];
   }
 
+  if (process.dev || import.meta.env?.DEV) {
+    const hasAuth = !!headers["authorization"];
+    console.log(`[chat-proxy] ${event.method} ${proxyPath} -> ${targetBaseUrl} (auth=${hasAuth})`);
+  }
+
   return proxyRequest(event, fullTargetUrl, {
     headers,
   });

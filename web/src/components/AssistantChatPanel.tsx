@@ -155,12 +155,7 @@ function ErrorBadge({ classified, rawMessage, showRaw }: { classified: Classifie
 	);
 }
 
-function isAuthError(status?: { type: string; reason?: string; error?: string }): boolean {
-	if (!status || status.type !== "incomplete" || status.reason !== "error") return false;
-	return AUTH_ERROR_PATTERNS.test(status.error ?? "");
-}
-
-const authErrorsById = new Map<string, { provider: string; error: string }>();
+type AuthErrorEntry = { provider: string; error: string };
 
 function ArtifactChips({ text }: { text: string }) {
 	const matches = Array.from(text.matchAll(artifactLinkPattern));
@@ -465,12 +460,6 @@ function toAssistantMessage(message: AgentMessage, index: number, isRunning: boo
 			}
 		}
 
-		if (status.type === "incomplete" && status.reason === "error" && isAuthError(status)) {
-			authErrorsById.set(id, { provider: msg.provider ?? msg.model?.split("/", 2)[0] ?? "unknown", error: status.error ?? "Authentication failed" });
-		} else {
-			authErrorsById.delete(id);
-		}
-
 		return { id, role: "assistant", createdAt: timestamp, status, content };
 	}
 
@@ -589,9 +578,16 @@ function AssistantThread({ agent, callbacks, version }: { agent: Agent | null; c
 	const modelRef = useRef(agent?.state.model);
 	if (agent) modelRef.current = agent.state.model;
 
-	const lastAuthError = useMemo(() => {
-		const entries = Array.from(authErrorsById.values());
-		return entries.length > 0 ? entries[entries.length - 1] : null;
+	const lastAuthError: AuthErrorEntry | null = useMemo(() => {
+		for (let i = messages.length - 1; i >= 0; i--) {
+			const msg = messages[i] as any;
+			if (msg.role !== "assistant" || msg.stopReason !== "error") continue;
+			const errorText = msg.errorMessage ?? "";
+			if (!AUTH_ERROR_PATTERNS.test(errorText)) continue;
+			const provider = msg.provider ?? msg.model?.split("/", 2)[0] ?? "unknown";
+			return { provider, error: errorText };
+		}
+		return null;
 	}, [messages]);
 
 	const convertMessage = useCallback(
@@ -643,6 +639,10 @@ function AssistantThread({ agent, callbacks, version }: { agent: Agent | null; c
 		() => <AssistantMessage components={components} onFork={callbacks.onFork} />,
 		[components, callbacks.onFork],
 	);
+	const threadComponents = useMemo(
+		() => ({ UserMessage: UserMessageComponent, AssistantMessage: AssistantMessageComponent }),
+		[UserMessageComponent, AssistantMessageComponent],
+	);
 
 	return (
 		<AuthErrorContext.Provider value={callbacks.onAuthError ?? (() => Promise.resolve(false))}>
@@ -653,7 +653,7 @@ function AssistantThread({ agent, callbacks, version }: { agent: Agent | null; c
 					<AuiIf condition={(state) => state.thread.isEmpty}>
 						<SuggestedPrompts onSelect={sendText} />
 					</AuiIf>
-					<ThreadPrimitive.Messages components={{ UserMessage: UserMessageComponent, AssistantMessage: AssistantMessageComponent }} />
+					<ThreadPrimitive.Messages components={threadComponents} />
 					<ThreadPrimitive.ViewportFooter className="sticky bottom-0 bg-background/95 pt-3 backdrop-blur">
 						<ComposerPrimitive.Root className="composer-root mx-auto flex w-full max-w-3xl items-end gap-1.5 sm:gap-2 rounded-lg border border-border bg-background p-2 shadow-sm">
 							<button

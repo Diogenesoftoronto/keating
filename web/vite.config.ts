@@ -48,6 +48,11 @@ function chatProxyPlugin(): Plugin {
         }
         outHeaders['host'] = targetUrl.host;
 
+        if (import.meta.env.DEV) {
+          const hasAuth = 'authorization' in outHeaders;
+          console.log(`[chat-proxy] ${req.method} ${proxyPath} -> ${targetUrl.hostname} (auth=${hasAuth})`);
+        }
+
         const chunks: Buffer[] = [];
         req.on('data', (chunk: Buffer) => chunks.push(chunk));
         req.on('end', () => {
@@ -70,7 +75,7 @@ function chatProxyPlugin(): Plugin {
             },
           );
           proxyReq.on('error', (err) => {
-            console.error('[chat-proxy]', err.message);
+            console.error('[chat-proxy] request error:', err.message);
             if (!res.headersSent) {
               res.statusCode = 502;
               res.end('Proxy error: ' + err.message);
