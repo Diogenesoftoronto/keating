@@ -3,7 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Copy, GitFork, MessageSquareText } from "lucide-react";
 import { useSeo } from "../hooks/useSeo";
 import { forkSharedSession, loadSharedSessionFromUrl, type SharedSession as SharedSessionData } from "../keating/shared-sessions";
-import "../lit-components";
+import { MarkdownBlock } from "../components/MarkdownBlock";
 
 function formatDate(iso: string) {
 	return new Date(iso).toLocaleString(undefined, {
@@ -134,7 +134,7 @@ function SharedSessionContent() {
 									{messageLabel(message)}
 								</div>
 								<div className={`prose prose-sm max-w-none ${isAssistant ? "dark:prose-invert" : "dark:prose-invert"}`}>
-									<markdown-block content={messageText(message)}></markdown-block>
+									<MarkdownBlock content={messageText(message)} />
 								</div>
 							</article>
 						);

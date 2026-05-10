@@ -1,5 +1,6 @@
 import { getModels, getProviders, type Api, type Model } from "@mariozechner/pi-ai";
 import { getAppStorage, type CustomProvider } from "@mariozechner/pi-web-ui";
+import { loadKeatingUiSettings } from "../keating/ui-settings";
 import { proxiedProviderRequestUrl } from "./provider-proxy";
 
 export type KeatingCustomProviderType =
@@ -323,10 +324,14 @@ export async function getProviderApiKey(providerName: string): Promise<string | 
 }
 
 export async function getSelectableModels(): Promise<Array<Model<Api>>> {
+	const settings = loadKeatingUiSettings();
+	const hidden = new Set(settings.hiddenProviders);
 	const models: Array<Model<Api>> = [];
 
 	for (const provider of getProviders()) {
-		models.push(...(getModels(provider as any) as Array<Model<Api>>));
+		if (!hidden.has(provider)) {
+			models.push(...(getModels(provider as any) as Array<Model<Api>>));
+		}
 	}
 
 	const customProviders = await getCustomProviders();
@@ -342,6 +347,21 @@ export async function getSelectableModels(): Promise<Array<Model<Api>>> {
 	);
 
 	models.push(...customModels.flat());
+
+	for (const saved of settings.customModels) {
+		models.push({
+			id: saved.id,
+			name: saved.name,
+			api: saved.api as Api,
+			provider: saved.provider,
+			baseUrl: saved.baseUrl || "",
+			reasoning: saved.reasoning,
+			input: saved.vision ? (["text", "image"] as Array<"text" | "image">) : (["text"] as Array<"text" | "image">),
+			cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+			contextWindow: 0,
+			maxTokens: 0,
+		});
+	}
 
 	return models;
 }

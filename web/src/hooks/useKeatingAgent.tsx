@@ -1,5 +1,6 @@
 import { createElement, useRef, useState, useTransition, useCallback, use, useEffect } from "react";
-import { Agent, type AgentState } from "@mariozechner/pi-agent-core";
+import type { JSX } from "react";
+import { Agent, type AgentState, type ThinkingLevel } from "@mariozechner/pi-agent-core";
 import {
   type Model,
   type Api,
@@ -8,14 +9,14 @@ import {
 import {
   ApiKeyPromptDialog,
   PersistentStorageDialog,
-  SettingsDialog,
   defaultConvertToLlm,
-  ProxyTab,
 } from "@mariozechner/pi-web-ui";
-import { KeatingProvidersModelsTab } from "../components/providers-models-tab";
-import { KeatingUiSettingsTab } from "../components/KeatingUiSettingsTab";
-import { KeatingModelSelector } from "../components/model-selector";
 import { SessionManagerDialog } from "../components/SessionManagerDialogReact";
+import { SettingsDialog } from "../components/SettingsDialog";
+import { KeatingUiSettingsTabReact } from "../components/KeatingUiSettingsTabReact";
+import { ProvidersModelsTabReact } from "../components/ProvidersModelsTabReact";
+import { ProxyTabReact } from "../components/ProxyTabReact";
+import { ModelSelectorDialog } from "../components/ModelSelectorReact";
 import { getProviderApiKey } from "../lib/provider-models";
 import { localModel } from "../stores/local-model";
 import { buildKeatingSystemPrompt, createKeatingTools } from "../keating/browser-tools";
@@ -25,6 +26,7 @@ import { DEFAULT_MODEL, hybridStreamFn } from "./keating-stream";
 import { getInitPromise, keatingStorage, sessions } from "./keating-storage";
 import { createSessionId, sessionPreview, sessionTitle, sessionUsage } from "./session-metadata";
 import { saveSharedSession, sharedSessionUrl } from "../keating/shared-sessions";
+import { loadKeatingUiSettings } from "../keating/ui-settings";
 import type { ChatPanelHandle } from "../types/chat-panel";
 import type { SessionData, SessionMetadata } from "../types/session";
 
@@ -62,9 +64,10 @@ export interface UseKeatingAgentReturn {
   newSession: () => void;
   shareSession: () => Promise<string>;
   chatPanelRef: (node: ChatPanelHandle | null) => void;
-  sessionManagerDialog: React.ReactNode;
+  dialogs: React.ReactNode;
   speechEnabled: boolean;
   toggleSpeech: () => void;
+  setThinkingLevel: (level: ThinkingLevel) => void;
 }
 
 export function useKeatingAgent(): UseKeatingAgentReturn {
@@ -79,13 +82,15 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const selectedModelRef = useRef<Model<Api>>(DEFAULT_MODEL);
   const [speechSettings, setSpeechSettings] = useState<WebSpeechSettings>(() => loadWebSpeechSettings());
   const [sessionsOpen, setSessionsOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const bootstrapTimerRef = useRef<number | null>(null);
   const bootstrapGenerationRef = useRef(0);
   const persistentStorageRequestedRef = useRef(false);
 
   const openSettings = useCallback(() => {
-    SettingsDialog.open([new KeatingProvidersModelsTab(), new KeatingUiSettingsTab(), new ProxyTab()]);
+    setSettingsOpen(true);
   }, []);
 
   async function loadBrowserModel() {
@@ -146,7 +151,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     const nextState: Partial<AgentState> = {
       systemPrompt: buildKeatingSystemPrompt(speechSettings.enabled),
       model: initialState?.model ?? selectedModelRef.current,
-      thinkingLevel: "medium",
+      thinkingLevel: initialState?.thinkingLevel ?? loadKeatingUiSettings().reasoningLevel,
       messages: [],
       tools,
       ...initialState,
@@ -188,19 +193,16 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
           console.log(`[keating:send] model=${agent.state.model.provider}/${agent.state.model.id} messages=${agent.state.messages.length}`);
         }
       },
-      onModelSelect: () =>
-        KeatingModelSelector.open(
-          agent.state.model as Model<Api>,
-          (model) => {
-            startTransition(async () => {
-              if (model.provider === "browser") await loadBrowserModel();
-              selectedModelRef.current = model;
-              const current = agent.state;
-              await createAgent(panel, { ...current, model, messages: [...current.messages] });
-            });
-          },
-        ),
+      onModelSelect: () => {
+        setModelSelectorOpen(true);
+      },
       onFork: () => forkSession(agentSessionId),
+      thinkingLevel: agent.state.thinkingLevel,
+      onThinkingLevelChange: (level: ThinkingLevel) => {
+        if (agentRef.current) {
+          agentRef.current.state.thinkingLevel = level;
+        }
+      },
     };
 
     await panel.setAgent(agent, setupCallbacks);
@@ -270,7 +272,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       await endLearnerSession();
       sessionIdRef.current = createSessionId();
       sessionCreatedAtRef.current = new Date().toISOString();
-      await createAgent(panel, { messages: [], model: selectedModelRef.current, thinkingLevel: "medium" });
+      await createAgent(panel, { messages: [], model: selectedModelRef.current });
     });
   }, [createAgent, endLearnerSession, saveSessionSnapshot]);
 
@@ -396,6 +398,34 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     },
   });
 
+  const settingsDialog = createElement(SettingsDialog, {
+    open: settingsOpen,
+    onClose: () => setSettingsOpen(false),
+    tabs: [
+      { id: "providers", label: "Providers & Models", component: createElement(ProvidersModelsTabReact, {}) },
+      { id: "interface", label: "Interface", component: createElement(KeatingUiSettingsTabReact, {}) },
+      { id: "proxy", label: "Proxy", component: createElement(ProxyTabReact, {}) },
+    ],
+  });
+
+  const modelSelectorDialog = createElement(ModelSelectorDialog, {
+    open: modelSelectorOpen,
+    currentModel: agentRef.current?.state.model ?? selectedModelRef.current,
+    onClose: () => setModelSelectorOpen(false),
+    onSelect: (model: Model<Api>) => {
+      setModelSelectorOpen(false);
+      startTransition(async () => {
+        if (model.provider === "browser") await loadBrowserModel();
+        selectedModelRef.current = model;
+        const agent = agentRef.current;
+        if (agent) {
+          const current = agent.state;
+          await createAgent(panelRef.current!, { ...current, model, messages: [...current.messages] });
+        }
+      });
+    },
+  });
+
   // Use a callback ref to safely initialize the agent when the DOM node resolves
   const chatPanelRef = useCallback((node: ChatPanelHandle | null) => {
     if (bootstrapTimerRef.current !== null) {
@@ -429,19 +459,16 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
               console.log(`[keating:send] model=${existingAgent.state.model.provider}/${existingAgent.state.model.id} messages=${existingAgent.state.messages.length}`);
             }
           },
-          onModelSelect: () =>
-            KeatingModelSelector.open(
-              existingAgent.state.model as Model<Api>,
-              (model) => {
-                startTransition(async () => {
-                  if (model.provider === "browser") await loadBrowserModel();
-                  selectedModelRef.current = model;
-                  const current = existingAgent.state;
-                  await createAgent(node, { ...current, model, messages: [...current.messages] });
-                });
-              },
-            ),
+          onModelSelect: () => {
+            setModelSelectorOpen(true);
+          },
           onFork: () => forkSession(sessionIdRef.current),
+          thinkingLevel: existingAgent.state.thinkingLevel,
+          onThinkingLevelChange: (level: ThinkingLevel) => {
+            if (agentRef.current) {
+              agentRef.current.state.thinkingLevel = level;
+            }
+          },
         };
         node.setAgent(existingAgent, setupCallbacks).catch(console.error);
         return;
@@ -489,5 +516,20 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     }
   }, [createAgent, loadSession, requestPersistentStorageOnce]);
 
-  return { title, isPending, openSettings, openSessions, newSession, shareSession, chatPanelRef, sessionManagerDialog, speechEnabled: speechSettings.enabled, toggleSpeech };
+  const setThinkingLevel = useCallback((level: ThinkingLevel) => {
+    const agent = agentRef.current;
+    if (agent) {
+      agent.state.thinkingLevel = level;
+    }
+  }, []);
+
+  const allDialogs = (
+    <>
+      {sessionManagerDialog}
+      {settingsDialog}
+      {modelSelectorDialog}
+    </>
+  );
+
+  return { title, isPending, openSettings, openSessions, newSession, shareSession, chatPanelRef, dialogs: allDialogs, speechEnabled: speechSettings.enabled, toggleSpeech, setThinkingLevel };
 }

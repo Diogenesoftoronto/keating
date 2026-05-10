@@ -1,13 +1,36 @@
+import type { Api, Model } from "@mariozechner/pi-ai";
+
+export type ReasoningLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
+
+export type SavedModel = {
+	key: string;
+	id: string;
+	name: string;
+	provider: string;
+	api: string;
+	baseUrl?: string;
+	reasoning: boolean;
+	vision: boolean;
+};
+
 export interface KeatingUiSettings {
 	showToolUi: boolean;
 	autoOpenArtifacts: boolean;
 	showRawErrors: boolean;
+	reasoningLevel: ReasoningLevel;
+	hiddenProviders: string[];
+	recentModels: Array<{ key: string; timestamp: number }>;
+	customModels: SavedModel[];
 }
 
 export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
 	showToolUi: false,
 	autoOpenArtifacts: true,
 	showRawErrors: false,
+	reasoningLevel: "medium",
+	hiddenProviders: [],
+	recentModels: [],
+	customModels: [],
 };
 
 const STORAGE_KEY = "keating_ui_settings";
@@ -18,7 +41,56 @@ function normalizeSettings(value: Partial<KeatingUiSettings> | null): KeatingUiS
 		showToolUi: value?.showToolUi ?? DEFAULT_UI_SETTINGS.showToolUi,
 		autoOpenArtifacts: value?.autoOpenArtifacts ?? DEFAULT_UI_SETTINGS.autoOpenArtifacts,
 		showRawErrors: value?.showRawErrors ?? DEFAULT_UI_SETTINGS.showRawErrors,
+		reasoningLevel: value?.reasoningLevel ?? DEFAULT_UI_SETTINGS.reasoningLevel,
+		hiddenProviders: Array.isArray(value?.hiddenProviders) ? value.hiddenProviders : DEFAULT_UI_SETTINGS.hiddenProviders,
+		recentModels: Array.isArray(value?.recentModels) ? value.recentModels : DEFAULT_UI_SETTINGS.recentModels,
+		customModels: Array.isArray(value?.customModels) ? value.customModels : DEFAULT_UI_SETTINGS.customModels,
 	};
+}
+
+export function addRecentModel(key: string) {
+	const settings = loadKeatingUiSettings();
+	const filtered = settings.recentModels.filter((m) => m.key !== key);
+	const next: KeatingUiSettings = {
+		...settings,
+		recentModels: [{ key, timestamp: Date.now() }, ...filtered].slice(0, 7),
+	};
+	saveKeatingUiSettings(next);
+	return next;
+}
+
+export function addCustomModel(model: SavedModel) {
+	const settings = loadKeatingUiSettings();
+	const filtered = settings.customModels.filter((m) => m.key !== model.key);
+	const next: KeatingUiSettings = {
+		...settings,
+		customModels: [...filtered, model],
+	};
+	saveKeatingUiSettings(next);
+	return next;
+}
+
+export function removeCustomModel(key: string) {
+	const settings = loadKeatingUiSettings();
+	const next: KeatingUiSettings = {
+		...settings,
+		customModels: settings.customModels.filter((m) => m.key !== key),
+	};
+	saveKeatingUiSettings(next);
+	return next;
+}
+
+export function toggleProviderVisibility(provider: string, hidden: boolean) {
+	const settings = loadKeatingUiSettings();
+	const set = new Set(settings.hiddenProviders);
+	if (hidden) set.add(provider);
+	else set.delete(provider);
+	const next: KeatingUiSettings = {
+		...settings,
+		hiddenProviders: Array.from(set),
+	};
+	saveKeatingUiSettings(next);
+	return next;
 }
 
 export function loadKeatingUiSettings(): KeatingUiSettings {

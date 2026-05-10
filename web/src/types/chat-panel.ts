@@ -1,4 +1,4 @@
-import type { Agent } from "@mariozechner/pi-agent-core";
+import type { Agent, ThinkingLevel } from "@mariozechner/pi-agent-core";
 
 export interface ChatPanelSetupCallbacks {
 	onApiKeyRequired?: (provider: string) => Promise<boolean>;
@@ -7,6 +7,8 @@ export interface ChatPanelSetupCallbacks {
 	onCostClick?: () => void;
 	onModelSelect?: () => void;
 	onFork?: () => void | Promise<void>;
+	thinkingLevel?: ThinkingLevel;
+	onThinkingLevelChange?: (level: ThinkingLevel) => void;
 }
 
 export interface ChatPanelHandle {

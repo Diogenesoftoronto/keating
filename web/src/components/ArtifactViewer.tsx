@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { MermaidRenderer } from "./MermaidRenderer";
 import { AnimationPlayer } from "./AnimationPlayer";
+import { MarkdownBlock } from "./MarkdownBlock";
 import { KeatingStorage, type LessonPlan, type LessonMap, type Animation, type BenchmarkResult, type EvolutionResult, type Verification, type PromptEvolutionResult, type ImprovementAttemptRecord } from "../keating/storage";
 
 interface ArtifactViewerProps {
@@ -271,7 +272,7 @@ function ArtifactMarkdownViewer({ content }: { content: string }) {
 	if (parts.length === 0) {
 		return (
 			<div className="prose prose-sm dark:prose-invert max-w-none">
-				<markdown-block content={content}></markdown-block>
+				<MarkdownBlock content={content} />
 			</div>
 		);
 	}
@@ -289,7 +290,7 @@ function ArtifactMarkdownViewer({ content }: { content: string }) {
 
 				return (
 					<div key={index} className="prose prose-sm dark:prose-invert max-w-none">
-						<markdown-block content={part.content}></markdown-block>
+						<MarkdownBlock content={part.content} />
 					</div>
 				);
 			})}
