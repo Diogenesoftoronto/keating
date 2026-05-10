@@ -11,7 +11,7 @@ import {
 	useExternalStoreRuntime,
 } from "@assistant-ui/react";
 import ReactMarkdown from "react-markdown";
-import { Bot, ChevronRight, CircleAlert, CircleCheck, LibraryBig, Loader2, Send, Square, User, Wrench } from "lucide-react";
+import { Bot, ChevronRight, CircleAlert, CircleCheck, CopyPlus, LibraryBig, Loader2, Send, Square, ThumbsDown, ThumbsUp, User, Wrench, X } from "lucide-react";
 import type { ChatPanelHandle, ChatPanelSetupCallbacks } from "../types/chat-panel";
 import { loadKeatingUiSettings, subscribeKeatingUiSettings } from "../keating/ui-settings";
 
@@ -327,13 +327,17 @@ function AssistantThread({ agent, callbacks, version }: { agent: Agent | null; c
 	const [uiSettings, setUiSettings] = useState(() => loadKeatingUiSettings());
 	const messages = useMemo(() => foldToolResults([...(agent?.state.messages ?? [])]), [agent, version]);
 	const components = useMemo(() => messagePartComponents(uiSettings.showToolUi), [uiSettings.showToolUi]);
-	const UserMessageComponent = useCallback(() => <UserMessage components={components} />, [components]);
-	const AssistantMessageComponent = useCallback(() => <AssistantMessage components={components} />, [components]);
-	const runtime = useExternalStoreRuntime<AgentMessage>({
-		messages,
-		isRunning: agent?.state.isStreaming ?? false,
-		convertMessage: (message, index) => toAssistantMessage(message, index, agent?.state.isStreaming ?? false),
-		onNew: async (message) => {
+	const isRunning = agent?.state.isStreaming ?? false;
+	const modelRef = useRef(agent?.state.model);
+	if (agent) modelRef.current = agent.state.model;
+
+	const convertMessage = useCallback(
+		(message: AgentMessage, index: number) => toAssistantMessage(message, index, isRunning),
+		[isRunning],
+	);
+
+	const onNew = useCallback(
+		async (message: AppendMessage) => {
 			if (!agent) return;
 			const text = textFromAppendMessage(message);
 			if (!text) return;
@@ -342,13 +346,34 @@ function AssistantThread({ agent, callbacks, version }: { agent: Agent | null; c
 			await callbacks.onBeforeSend?.();
 			await agent.prompt(text);
 		},
-		onCancel: async () => {
-			agent?.abort();
-		},
-	});
-	const modelLabel = agent?.state.model.name ?? agent?.state.model.id ?? "Model";
+		[agent, callbacks],
+	);
+
+	const onCancel = useCallback(async () => {
+		agent?.abort();
+	}, [agent]);
+
+	const storeAdapter = useMemo(
+		() => ({
+			messages,
+			isRunning,
+			convertMessage,
+			onNew,
+			onCancel,
+		}),
+		[messages, isRunning, convertMessage, onNew, onCancel],
+	);
+
+	const runtime = useExternalStoreRuntime<AgentMessage>(storeAdapter);
+	const modelLabel = modelRef.current?.name ?? modelRef.current?.id ?? "Model";
 
 	useEffect(() => subscribeKeatingUiSettings(setUiSettings), []);
+
+	const UserMessageComponent = useCallback(() => <UserMessage components={components} />, [components]);
+	const AssistantMessageComponent = useCallback(
+		() => <AssistantMessage components={components} onFork={callbacks.onFork} />,
+		[components, callbacks.onFork],
+	);
 
 	return (
 		<AssistantRuntimeProvider runtime={runtime}>
@@ -403,16 +428,159 @@ function UserMessage({ components }: { components: ReturnType<typeof messagePart
 	);
 }
 
-function AssistantMessage({ components }: { components: ReturnType<typeof messagePartComponents> }) {
+function FeedbackModal({
+	open,
+	type,
+	onClose,
+	onSubmit,
+}: {
+	open: boolean;
+	type: "up" | "down";
+	onClose: () => void;
+	onSubmit: (type: "up" | "down", comment: string) => void;
+}) {
+	const [comment, setComment] = useState("");
+
+	useEffect(() => {
+		if (open) setComment("");
+	}, [open]);
+
+	if (!open) return null;
+
 	return (
-		<MessagePrimitive.Root className="mx-auto mb-4 flex max-w-3xl justify-start">
-			<div className="flex max-w-[94%] gap-3 rounded-lg border-2 border-border bg-muted/30 px-4 py-3 text-sm text-foreground shadow-sm sm:max-w-[90%]">
-				<Bot className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-				<div className="min-w-0 leading-6">
-					<MessagePrimitive.Content components={components} />
+		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4" onClick={onClose}>
+			<div
+				className="w-full max-w-md rounded-lg border border-border bg-background p-5 shadow-lg"
+				onClick={(e) => e.stopPropagation()}
+			>
+				<div className="flex items-center justify-between mb-3">
+					<h3 className="text-sm font-semibold text-foreground">
+						{type === "up" ? "What was helpful?" : "What could be improved?"}
+					</h3>
+					<button
+						type="button"
+						className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+						onClick={onClose}
+						aria-label="Close"
+					>
+						<X size={14} />
+					</button>
+				</div>
+				<textarea
+					className="w-full rounded-md border border-border bg-muted/30 px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground resize-none"
+					rows={4}
+					placeholder="Optional comment..."
+					value={comment}
+					onChange={(e) => setComment(e.target.value)}
+					autoFocus
+				/>
+				<div className="mt-3 flex justify-end gap-2">
+					<button
+						type="button"
+						className="inline-flex h-8 items-center justify-center rounded-md border border-border px-3 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+						onClick={onClose}
+					>
+						Skip
+					</button>
+					<button
+						type="button"
+						className="inline-flex h-8 items-center justify-center rounded-md bg-primary px-3 text-xs text-primary-foreground hover:bg-primary/90"
+						onClick={() => onSubmit(type, comment)}
+					>
+						Submit
+					</button>
 				</div>
 			</div>
-		</MessagePrimitive.Root>
+		</div>
+	);
+}
+
+function AssistantMessage({
+	components,
+	onFork,
+}: {
+	components: ReturnType<typeof messagePartComponents>;
+	onFork?: () => void | Promise<void>;
+}) {
+	const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
+	const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
+	const [feedbackType, setFeedbackType] = useState<"up" | "down">("up");
+
+	const handleFeedbackClick = (type: "up" | "down") => {
+		setFeedbackType(type);
+		setFeedbackModalOpen(true);
+	};
+
+	const handleFeedbackSubmit = (type: "up" | "down", comment: string) => {
+		setFeedback(type);
+		setFeedbackModalOpen(false);
+		try {
+			window.dispatchEvent(
+				new CustomEvent("keating:message-feedback", {
+					detail: { type, comment },
+				}),
+			);
+		} catch {
+			/* noop */
+		}
+	};
+
+	return (
+		<>
+			<MessagePrimitive.Root className="mx-auto mb-4 flex max-w-3xl justify-start">
+				<div className="flex max-w-[94%] gap-3 rounded-lg border-2 border-border bg-muted/30 px-4 py-3 text-sm text-foreground shadow-sm sm:max-w-[90%]">
+					<Bot className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+					<div className="min-w-0 leading-6 flex-1">
+						<MessagePrimitive.Content components={components} />
+						<div className="mt-2 flex items-center gap-1">
+							<button
+								type="button"
+								className={`inline-flex h-6 w-6 items-center justify-center rounded-md transition-colors ${
+									feedback === "up"
+										? "bg-primary/20 text-primary"
+										: "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+								}`}
+								title="Helpful"
+								onClick={() => handleFeedbackClick("up")}
+								aria-pressed={feedback === "up"}
+							>
+								<ThumbsUp size={13} />
+							</button>
+							<button
+								type="button"
+								className={`inline-flex h-6 w-6 items-center justify-center rounded-md transition-colors ${
+									feedback === "down"
+										? "bg-destructive/20 text-destructive"
+										: "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+								}`}
+								title="Not helpful"
+								onClick={() => handleFeedbackClick("down")}
+								aria-pressed={feedback === "down"}
+							>
+								<ThumbsDown size={13} />
+							</button>
+							{onFork && (
+								<button
+									type="button"
+									className="inline-flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+									title="Fork session"
+									onClick={onFork}
+									aria-label="Fork session"
+								>
+									<CopyPlus size={13} />
+								</button>
+							)}
+						</div>
+					</div>
+				</div>
+			</MessagePrimitive.Root>
+			<FeedbackModal
+				open={feedbackModalOpen}
+				type={feedbackType}
+				onClose={() => setFeedbackModalOpen(false)}
+				onSubmit={handleFeedbackSubmit}
+			/>
+		</>
 	);
 }
 

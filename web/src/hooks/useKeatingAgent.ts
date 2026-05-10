@@ -196,6 +196,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
             });
           },
         ),
+      onFork: () => forkSession(agentSessionId),
     };
 
     await panel.setAgent(agent, setupCallbacks);
@@ -432,6 +433,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
                 });
               },
             ),
+          onFork: () => forkSession(sessionIdRef.current),
         };
         node.setAgent(existingAgent, setupCallbacks).catch(console.error);
         return;
