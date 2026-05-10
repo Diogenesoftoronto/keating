@@ -59,6 +59,11 @@ export function addRecentModel(key: string) {
 	return next;
 }
 
+export function getRecentModels(): Array<{ key: string; timestamp: number }> {
+	const settings = loadKeatingUiSettings();
+	return [...settings.recentModels].sort((a, b) => b.timestamp - a.timestamp);
+}
+
 export function addCustomModel(model: SavedModel) {
 	const settings = loadKeatingUiSettings();
 	const filtered = settings.customModels.filter((m) => m.key !== model.key);

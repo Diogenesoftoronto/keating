@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { getAppStorage } from "@mariozechner/pi-web-ui";
 
-export function ProxyTabReact() {
+export function ProxyTab() {
   const [enabled, setEnabled] = useState(false);
   const [url, setUrl] = useState("http://localhost:3001");
 

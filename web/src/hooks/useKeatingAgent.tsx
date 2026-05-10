@@ -1,5 +1,4 @@
-import { createElement, useRef, useState, useTransition, useCallback, use, useEffect } from "react";
-import type { JSX } from "react";
+import { useRef, useState, useTransition, useCallback, use, useEffect } from "react";
 import { Agent, type AgentState, type ThinkingLevel } from "@mariozechner/pi-agent-core";
 import {
   type Model,
@@ -13,10 +12,10 @@ import {
 } from "@mariozechner/pi-web-ui";
 import { SessionManagerDialog } from "../components/SessionManagerDialogReact";
 import { SettingsDialog } from "../components/SettingsDialog";
-import { KeatingUiSettingsTabReact } from "../components/KeatingUiSettingsTabReact";
-import { ProvidersModelsTabReact } from "../components/ProvidersModelsTabReact";
-import { ProxyTabReact } from "../components/ProxyTabReact";
-import { ModelSelectorDialog } from "../components/ModelSelectorReact";
+import { KeatingUiSettingsTab } from "../components/KeatingUiSettingsTab";
+import { ProvidersModelsTab } from "../components/ProvidersModelsTab";
+import { ProxyTab } from "../components/ProxyTab";
+import { ModelSelectorDialog } from "../components/ModelSelector";
 import { getProviderApiKey } from "../lib/provider-models";
 import { localModel } from "../stores/local-model";
 import { buildKeatingSystemPrompt, createKeatingTools } from "../keating/browser-tools";
@@ -385,46 +384,52 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     setSessionsOpen(true);
   }, []);
 
-  const sessionManagerDialog = createElement(SessionManagerDialog, {
-    open: sessionsOpen,
-    onClose: () => setSessionsOpen(false),
-    onFork: forkSession,
-    onSuggestTitle: suggestSessionTitle,
-    onLoad: (sessionId: string) => {
-      startTransition(async () => {
-        const session = await sessions.loadSession(sessionId);
-        if (session) await loadSession(session as SessionData);
-      });
-    },
-  });
+  const sessionManagerDialog = (
+    <SessionManagerDialog
+      open={sessionsOpen}
+      onClose={() => setSessionsOpen(false)}
+      onFork={forkSession}
+      onSuggestTitle={suggestSessionTitle}
+      onLoad={(sessionId: string) => {
+        startTransition(async () => {
+          const session = await sessions.loadSession(sessionId);
+          if (session) await loadSession(session as SessionData);
+        });
+      }}
+    />
+  );
 
-  const settingsDialog = createElement(SettingsDialog, {
-    open: settingsOpen,
-    onClose: () => setSettingsOpen(false),
-    tabs: [
-      { id: "providers", label: "Providers & Models", component: createElement(ProvidersModelsTabReact, {}) },
-      { id: "interface", label: "Interface", component: createElement(KeatingUiSettingsTabReact, {}) },
-      { id: "proxy", label: "Proxy", component: createElement(ProxyTabReact, {}) },
-    ],
-  });
+  const settingsDialog = (
+    <SettingsDialog
+      open={settingsOpen}
+      onClose={() => setSettingsOpen(false)}
+      tabs={[
+        { id: "providers", label: "Providers & Models", component: <ProvidersModelsTab /> },
+        { id: "interface", label: "Interface", component: <KeatingUiSettingsTab /> },
+        { id: "proxy", label: "Proxy", component: <ProxyTab /> },
+      ]}
+    />
+  );
 
-  const modelSelectorDialog = createElement(ModelSelectorDialog, {
-    open: modelSelectorOpen,
-    currentModel: agentRef.current?.state.model ?? selectedModelRef.current,
-    onClose: () => setModelSelectorOpen(false),
-    onSelect: (model: Model<Api>) => {
-      setModelSelectorOpen(false);
-      startTransition(async () => {
-        if (model.provider === "browser") await loadBrowserModel();
-        selectedModelRef.current = model;
-        const agent = agentRef.current;
-        if (agent) {
-          const current = agent.state;
-          await createAgent(panelRef.current!, { ...current, model, messages: [...current.messages] });
-        }
-      });
-    },
-  });
+  const modelSelectorDialog = (
+    <ModelSelectorDialog
+      open={modelSelectorOpen}
+      currentModel={agentRef.current?.state.model ?? selectedModelRef.current}
+      onClose={() => setModelSelectorOpen(false)}
+      onSelect={(model: Model<Api>) => {
+        setModelSelectorOpen(false);
+        startTransition(async () => {
+          if (model.provider === "browser") await loadBrowserModel();
+          selectedModelRef.current = model;
+          const agent = agentRef.current;
+          if (agent) {
+            const current = agent.state;
+            await createAgent(panelRef.current!, { ...current, model, messages: [...current.messages] });
+          }
+        });
+      }}
+    />
+  );
 
   // Use a callback ref to safely initialize the agent when the DOM node resolves
   const chatPanelRef = useCallback((node: ChatPanelHandle | null) => {
