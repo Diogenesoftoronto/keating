@@ -155,11 +155,11 @@ export function Landing() {
       </section>
 
       {/* Features */}
-      <section id="features" className="py-20 px-6 border-t-2 border-[#1a1a1a]">
+      <section id="features" className="py-20 px-6 border-t-2 border-border">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center gap-4 mb-12">
             <span className="font-terminal text-accent">$ cat MANIFESTO.txt</span>
-            <div className="flex-1 h-px bg-[#1a1a1a]/20" />
+            <div className="flex-1 h-px bg-border/20" />
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 pt-3">
@@ -240,11 +240,11 @@ export function Landing() {
       </section>
 
       {/* Install */}
-      <section id="install" className="py-20 px-6 border-t-2 border-[#1a1a1a]">
+      <section id="install" className="py-20 px-6 border-t-2 border-border">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center gap-4 mb-8">
             <span className="font-terminal text-accent">$ ./install.sh</span>
-            <div className="flex-1 h-px bg-[#1a1a1a]/20" />
+            <div className="flex-1 h-px bg-border/20" />
           </div>
 
           {/* Tab buttons */}
@@ -262,8 +262,8 @@ export function Landing() {
                         ? "border-[#10b981] bg-[#10b981] text-[#f4f1ea]"
                         : "border-[#10b981] text-[#10b981] hover:bg-[#10b981] hover:text-[#f4f1ea]"
                       : isActive
-                      ? "border-[#1a1a1a] bg-[#1a1a1a] text-[#f4f1ea]"
-                      : "border-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-[#f4f1ea]",
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-foreground hover:bg-foreground hover:text-background",
                     isActive ? "active" : "",
                   ]
                     .filter(Boolean)
@@ -355,7 +355,7 @@ export function Landing() {
             )}
           </div>
 
-          <div className="marquee border-y-2 border-[#1a1a1a] py-2 bg-[#1a1a1a] text-[#f4f1ea]">
+          <div className="marquee border-y-2 border-foreground py-2 bg-foreground text-background">
             <span className="font-terminal">
               *** AVAILABLE FOR macOS AND LINUX *** YOUR API KEYS STAY LOCAL *** NO CLOUD
               DEPENDENCY *** FREE AND OPEN SOURCE ***

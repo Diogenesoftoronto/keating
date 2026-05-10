@@ -14,7 +14,7 @@ export function Paper() {
               Keating: A Metaharness for Agency-Preserving AI Instruction
             </h1>
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="text-[#64748b] font-terminal">
+              <div className="text-muted-foreground font-terminal">
                 <span className="text-[#d44a3d]">AUTHOR:</span> Dio the Debugger <br />
                 <span className="text-[#d44a3d] leading-7">DATE:</span> April 3, 2026
               </div>
@@ -30,18 +30,18 @@ export function Paper() {
           </div>
 
           <article className="paper-fold distressed-border p-8 md:p-12 leading-relaxed">
-            <div className="flex items-center gap-2 mb-8 text-[#64748b] font-terminal text-sm border-b border-[#64748b]/20 pb-4">
+            <div className="flex items-center gap-2 mb-8 text-muted-foreground font-terminal text-sm border-b border-border pb-4">
               <FileText size={16} />
               ABSTRACT
             </div>
             
-            <p className="text-lg md:text-xl font-serif italic text-[#2c3e50] mb-8 leading-8">
+            <p className="text-lg md:text-xl font-serif italic text-foreground/80 mb-8 leading-8">
               AI tutors can scale explanation, but scaling explanation is not the same as scaling
               learning. A tutoring system that answers fluently may still weaken the learner&apos;s
               own reconstruction of a concept.
             </p>
 
-            <div className="space-y-8 text-[#1a1a1a] font-serif">
+            <div className="space-y-8 text-foreground font-serif">
               <p className="text-lg leading-7">
                 Keating is designed around that distinction. It is not a single tutoring chatbot;
                 it is a metaharness for teaching, a control layer that organizes planning,
@@ -80,8 +80,8 @@ export function Paper() {
               </p>
             </div>
 
-            <div className="mt-12 pt-8 border-t border-[#64748b]/20">
-              <p className="text-sm text-[#64748b] font-terminal uppercase tracking-widest text-center">
+            <div className="mt-12 pt-8 border-t border-border">
+              <p className="text-sm text-muted-foreground font-terminal uppercase tracking-widest text-center">
                 &mdash; End of Abstract &mdash;
               </p>
             </div>

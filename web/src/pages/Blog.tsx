@@ -90,7 +90,7 @@ const POSTS: Post[] = [
           <li><strong>Thumbs Down:</strong> Open a modal for optional improvement suggestions</li>
           <li><strong>Fork:</strong> Create a copy of the current session starting from this message</li>
         </ul>
-        <p className="text-sm text-[#64748b]">
+        <p className="text-sm text-muted-foreground">
           The v0.3.2 web build compiles cleanly with all TypeScript checks passing and 18 tests green.
         </p>
       </>
@@ -147,7 +147,7 @@ const POSTS: Post[] = [
           teacher that can call planning, mapping, verification, benchmarking, prompt evaluation,
           due-work, timeline, feedback, and voice tools with valid arguments.
         </p>
-        <p className="text-sm text-[#64748b]">
+        <p className="text-sm text-muted-foreground">
           Version strings, package metadata, changelog, and the web build are aligned for v0.3.1.
         </p>
       </>
@@ -175,7 +175,7 @@ const POSTS: Post[] = [
         <div className="mb-4 overflow-x-auto">
           <table className="w-full min-w-[520px] border-collapse text-sm">
             <thead>
-              <tr className="border-b border-[#1f2937] text-left">
+              <tr className="border-b border-border text-left">
                 <th className="py-2 pr-4 font-bold">Tool</th>
                 <th className="py-2 font-bold">Parameters</th>
               </tr>
@@ -202,7 +202,7 @@ const POSTS: Post[] = [
                 ["due", "none"],
                 ["keating_voice", "text, tags, voice, pace, affect"],
               ].map(([tool, params]) => (
-                <tr key={tool} className="border-b border-[#1f2937]/30">
+                <tr key={tool} className="border-b border-border/30">
                   <td className="py-2 pr-4 align-top">
                     <Code>{tool}</Code>
                   </td>
@@ -219,7 +219,7 @@ const POSTS: Post[] = [
           arguments for lessons, checks, benchmarks, learner feedback, prompt evaluation,
           due work, timelines, and voice output.
         </p>
-        <p className="text-sm text-[#64748b]">
+        <p className="text-sm text-muted-foreground">
           The web build compiles successfully with the new tool definitions.
         </p>
       </>
@@ -257,7 +257,7 @@ const POSTS: Post[] = [
           the Pi extension registers <Code>keating_voice</Code> and emits transcript-safe voice tags:
         </p>
         <CodeBlock>{`[voice voice=conversational tags=question,verify pace=normal affect=curious] What would you expect to happen next?`}</CodeBlock>
-        <p className="text-sm text-[#64748b]">
+        <p className="text-sm text-muted-foreground">
           The first shell version is provider-neutral and tag-based. The web version is the first audio-backed path.
         </p>
       </>
@@ -319,7 +319,7 @@ const POSTS: Post[] = [
         </p>
         <div className="space-y-5 mb-4">
           <figure>
-            <figcaption className="text-xs text-[#64748b] mb-1">
+            <figcaption className="text-xs text-muted-foreground mb-1">
               <Code>intro.tape</Code> — boot the Keating shell, show the refreshed logo, list commands.
             </figcaption>
             <video
@@ -328,11 +328,11 @@ const POSTS: Post[] = [
               muted
               loop
               playsInline
-              className="w-full rounded border border-[#1f2937]"
+              className="w-full rounded border border-border"
             />
           </figure>
           <figure>
-            <figcaption className="text-xs text-[#64748b] mb-1">
+            <figcaption className="text-xs text-muted-foreground mb-1">
               <Code>learning-flow.tape</Code> — <Code>plan → map → animate → verify → trace</Code>.
             </figcaption>
             <video
@@ -341,11 +341,11 @@ const POSTS: Post[] = [
               muted
               loop
               playsInline
-              className="w-full rounded border border-[#1f2937]"
+              className="w-full rounded border border-border"
             />
           </figure>
           <figure>
-            <figcaption className="text-xs text-[#64748b] mb-1">
+            <figcaption className="text-xs text-muted-foreground mb-1">
               <Code>improve-flow.tape</Code> — <Code>bench → evolve → prompt-evolve → improve</Code>.
             </figcaption>
             <video
@@ -354,11 +354,11 @@ const POSTS: Post[] = [
               muted
               loop
               playsInline
-              className="w-full rounded border border-[#1f2937]"
+              className="w-full rounded border border-border"
             />
           </figure>
           <figure>
-            <figcaption className="text-xs text-[#64748b] mb-1">
+            <figcaption className="text-xs text-muted-foreground mb-1">
               <Code>feedback-flow.tape</Code> — record signals, then <Code>due</Code> and <Code>timeline</Code>.
             </figcaption>
             <video
@@ -367,11 +367,11 @@ const POSTS: Post[] = [
               muted
               loop
               playsInline
-              className="w-full rounded border border-[#1f2937]"
+              className="w-full rounded border border-border"
             />
           </figure>
           <figure>
-            <figcaption className="text-xs text-[#64748b] mb-1">
+            <figcaption className="text-xs text-muted-foreground mb-1">
               <Code>teacher-flow.tape</Code> — generate a plan, inspect it, then verify the output.
             </figcaption>
             <video
@@ -380,11 +380,11 @@ const POSTS: Post[] = [
               muted
               loop
               playsInline
-              className="w-full rounded border border-[#1f2937]"
+              className="w-full rounded border border-border"
             />
           </figure>
           <figure>
-            <figcaption className="text-xs text-[#64748b] mb-1">
+            <figcaption className="text-xs text-muted-foreground mb-1">
               <Code>session-flow.tape</Code> — launch the shell, check policy, browse outputs, send feedback.
             </figcaption>
             <video
@@ -393,14 +393,14 @@ const POSTS: Post[] = [
               muted
               loop
               playsInline
-              className="w-full rounded border border-[#1f2937]"
+              className="w-full rounded border border-border"
             />
           </figure>
         </div>
         <h3 className="font-bold mt-4 mb-2">Quality Checks</h3>
         <div className="space-y-5 mb-4">
           <figure>
-            <figcaption className="text-xs text-[#64748b] mb-1">
+            <figcaption className="text-xs text-muted-foreground mb-1">
               <Code>doctor.tape</Code> — run <Code>mise run doctor</Code> to check your setup.
             </figcaption>
             <video
@@ -409,11 +409,11 @@ const POSTS: Post[] = [
               muted
               loop
               playsInline
-              className="w-full rounded border border-[#1f2937]"
+              className="w-full rounded border border-border"
             />
           </figure>
           <figure>
-            <figcaption className="text-xs text-[#64748b] mb-1">
+            <figcaption className="text-xs text-muted-foreground mb-1">
               <Code>tests.tape</Code> — run <Code>mise run test</Code> to exercise the suite.
             </figcaption>
             <video
@@ -422,7 +422,7 @@ const POSTS: Post[] = [
               muted
               loop
               playsInline
-              className="w-full rounded border border-[#1f2937]"
+              className="w-full rounded border border-border"
             />
           </figure>
         </div>
@@ -434,7 +434,7 @@ const POSTS: Post[] = [
           <li><strong>Terminal &amp; Theme Modules</strong> — palette, ASCII headers, and section helpers extracted to <Code>core/terminal.ts</Code> and <Code>core/theme.ts</Code>.</li>
           <li><strong>Browser Tools / Storage</strong> — broader tool surfaces and persistence improvements in <Code>web/src/keating/</Code>.</li>
         </ul>
-        <p className="text-sm italic text-[#64748b] mt-6">
+        <p className="text-sm italic text-muted-foreground mt-6">
           The new engines ship as libraries first; CLI subcommands and web UI surfaces will land
           behind them in the next point releases.
         </p>
@@ -484,7 +484,7 @@ const POSTS: Post[] = [
         </ul>
         <div className="my-4">
           <figure>
-            <figcaption className="text-xs text-[#64748b] mb-1">
+            <figcaption className="text-xs text-muted-foreground mb-1">
               <Code>teacher-flow.tape</Code> — generate a plan, then verify the output.
             </figcaption>
             <video
@@ -493,11 +493,11 @@ const POSTS: Post[] = [
               muted
               loop
               playsInline
-              className="w-full rounded border border-[#1f2937]"
+              className="w-full rounded border border-border"
             />
           </figure>
         </div>
-        <p className="text-sm italic text-[#64748b] mt-6">
+        <p className="text-sm italic text-muted-foreground mt-6">
           These changes ensure that Keating&apos;s self-improvement loop is grounded in actual
           semantic understanding rather than pre-baked formulas.
         </p>
@@ -531,7 +531,7 @@ const POSTS: Post[] = [
             Web UI, reducing overhead.
           </li>
         </ul>
-        <p className="text-sm text-[#64748b]">
+        <p className="text-sm text-muted-foreground">
           The CLI has been updated to launch this new engine automatically—just run{" "}
           <Code>keating web</Code> and experience the speed.
         </p>
@@ -566,7 +566,7 @@ const POSTS: Post[] = [
             Gemini.
           </li>
         </ul>
-        <p className="text-sm text-[#64748b]">
+        <p className="text-sm text-muted-foreground">
           This fixes the mismatch between the picker and the chat header, which made it look like
           model changes were being ignored.
         </p>
@@ -600,7 +600,7 @@ const POSTS: Post[] = [
             homepage, model selector, settings dialog, and install tabs.
           </li>
         </ul>
-        <p className="text-sm text-[#64748b]">
+        <p className="text-sm text-muted-foreground">
           This release keeps the UI consistent with the current provider flow while making the
           browser experience less cramped on small screens.
         </p>
@@ -636,7 +636,7 @@ localModel.subscribe((state) => {
   if (state.loading) showLoadingOverlay(state.loadingProgress);
   if (state.loaded) hideLoadingOverlay();
 });`}</CodeBlock>
-        <p className="text-sm text-[#64748b]">
+        <p className="text-sm text-muted-foreground">
           The overlay includes a progress bar, percentage display, and explains that the ~2GB
           download only happens once.
         </p>
@@ -683,7 +683,7 @@ const hybridStreamFn = async (model, context, options) => {
   }
   return streamSimple(model, context, options);
 };`}</CodeBlock>
-        <p className="text-sm text-[#64748b]">
+        <p className="text-sm text-muted-foreground">
           Install: Visit keating.help in Chrome/Edge and click "Install" in the address bar, or
           use the browser's menu → "Install app".
         </p>
@@ -701,7 +701,7 @@ const hybridStreamFn = async (model, context, options) => {
           <Code>gemini-3.1-pro-preview</Code>. This gives access to the latest Gemini
           capabilities when WebGPU is unavailable.
         </p>
-        <p className="text-sm text-[#64748b]">
+        <p className="text-sm text-muted-foreground">
           The model selector UI has been updated to reflect this change, showing "Gemini 3.1 Pro
           Preview" instead of the previous version.
         </p>
@@ -727,7 +727,7 @@ const hybridStreamFn = async (model, context, options) => {
     return false;
   }
 }`}</CodeBlock>
-        <p className="text-sm text-[#64748b]">
+        <p className="text-sm text-muted-foreground">
           If WebGPU is unavailable, the browser model option shows "WebGPU not available" and is
           grayed out.
         </p>
@@ -745,7 +745,7 @@ const hybridStreamFn = async (model, context, options) => {
           without any API keys. The model loads progressively and caches in your browser for
           subsequent sessions.
         </p>
-        <p className="text-sm text-[#64748b]">
+        <p className="text-sm text-muted-foreground">
           Requires Chrome 113+ or Edge 113+ with WebGPU support. Model size: ~5GB cached
           locally.
         </p>
@@ -783,7 +783,7 @@ const hybridStreamFn = async (model, context, options) => {
           purpose of education is not to fill minds but to ignite them. Our AI doesn't give
           answers — it forces you to reconstruct understanding from memory.
         </p>
-        <p className="text-sm text-[#64748b]">
+        <p className="text-sm text-muted-foreground">
           Core principle: struggle is the feature, not the bug. Neural pathways form through
           effort.
         </p>
@@ -801,7 +801,7 @@ export function Blog() {
         <div className="max-w-4xl mx-auto">
           <div className="paper-fold distressed-border p-8 mb-8">
             <h1 className="text-3xl md:text-4xl font-bold mb-2">Keating Updates</h1>
-            <p className="text-[#64748b] font-terminal">Development log and release notes</p>
+            <p className="text-muted-foreground font-terminal">Development log and release notes</p>
           </div>
 
           <div className="space-y-6">
