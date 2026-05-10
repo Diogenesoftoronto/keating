@@ -179,6 +179,10 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
         if (await getProviderApiKey(provider)) return true;
         return ApiKeyPromptDialog.prompt(provider);
       },
+      onAuthError: async (provider: string) => {
+        if (provider === "browser") return false;
+        return ApiKeyPromptDialog.prompt(provider);
+      },
       onBeforeSend: () => {
         if (import.meta.env.DEV) {
           console.log(`[keating:send] model=${agent.state.model.provider}/${agent.state.model.id} messages=${agent.state.messages.length}`);
@@ -414,6 +418,10 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
           onApiKeyRequired: async (provider: string) => {
             if (provider === "browser") return true;
             if (await getProviderApiKey(provider)) return true;
+            return ApiKeyPromptDialog.prompt(provider);
+          },
+          onAuthError: async (provider: string) => {
+            if (provider === "browser") return false;
             return ApiKeyPromptDialog.prompt(provider);
           },
           onBeforeSend: () => {

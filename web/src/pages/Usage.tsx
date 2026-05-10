@@ -1,6 +1,7 @@
 import { Suspense, use, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, BookOpenCheck, Brain, Clock3, Cpu, Flame, Gem, MessageSquareText, TrendingUp, Wrench } from "lucide-react";
+import { useSeo } from "../hooks/useSeo";
 import { getInitPromise, keatingStorage, sessions } from "../hooks/keating-storage";
 import type { SessionMetadata } from "../types/session";
 
@@ -242,6 +243,11 @@ function SessionRow({ session }: { session: SessionMetadata }) {
 }
 
 export function Usage() {
+	useSeo({
+		title: "Keating Dashboard — Usage & Analytics",
+		description: "View your Keating usage statistics, session history, and learning analytics.",
+		canonical: "https://keating.help/usage",
+	});
 	return (
 		<Suspense fallback={
 			<div className="min-h-screen bg-background text-foreground">

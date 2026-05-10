@@ -1,11 +1,13 @@
 export interface KeatingUiSettings {
 	showToolUi: boolean;
 	autoOpenArtifacts: boolean;
+	showRawErrors: boolean;
 }
 
 export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
 	showToolUi: false,
 	autoOpenArtifacts: true,
+	showRawErrors: false,
 };
 
 const STORAGE_KEY = "keating_ui_settings";
@@ -15,6 +17,7 @@ function normalizeSettings(value: Partial<KeatingUiSettings> | null): KeatingUiS
 	return {
 		showToolUi: value?.showToolUi ?? DEFAULT_UI_SETTINGS.showToolUi,
 		autoOpenArtifacts: value?.autoOpenArtifacts ?? DEFAULT_UI_SETTINGS.autoOpenArtifacts,
+		showRawErrors: value?.showRawErrors ?? DEFAULT_UI_SETTINGS.showRawErrors,
 	};
 }
 

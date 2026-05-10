@@ -6,6 +6,47 @@
 const DESKTOP_MODEL_ID = 'onnx-community/gemma-4-E4B-it-ONNX';
 const MOBILE_MODEL_ID = 'onnx-community/gemma-2-E2B-it-ONNX';
 
+function classifyLocalModelError(message: string): string {
+	const lower = message.toLowerCase();
+
+	if (lower.includes('image_processor_type') || lower.includes('feature_extractor_type')) {
+		return 'WebGPU is not available on this device. The browser model requires a GPU with WebGPU support. Use Chrome 113+ or Edge 113+ and ensure hardware acceleration is enabled in your browser settings.';
+	}
+
+	if (lower.includes('webgpu') || lower.includes('webgpu is not supported') || lower.includes('no adapter')) {
+		return 'WebGPU is not supported in this browser. The browser model requires Chrome 113+ or Edge 113+. Enable hardware acceleration in your browser settings.';
+	}
+
+	if (lower.includes('not allowed to load from') || lower.includes('failed to fetch') || lower.includes('networkerror') || lower.includes('net::')) {
+		return 'Could not download the browser model. Check your internet connection and try again. The model files are ~5GB and require a stable connection.';
+	}
+
+	if (lower.includes('out of memory') || lower.includes('memory allocation') || lower.includes('not enough memory')) {
+		return 'Not enough GPU memory to load the browser model. Close other tabs or applications using GPU resources and try again.';
+	}
+
+	if (lower.includes('aborted') || lower.includes('cancelled')) {
+		return 'Model loading was cancelled.';
+	}
+
+	return message;
+}
+
+async function checkWebGpuAvailable(): Promise<{ available: boolean; reason?: string }> {
+	if (!navigator.gpu) {
+		return { available: false, reason: 'WebGPU is not supported in this browser. The browser model requires Chrome 113+ or Edge 113+ with hardware acceleration enabled.' };
+	}
+	try {
+		const adapter = await navigator.gpu.requestAdapter();
+		if (!adapter) {
+			return { available: false, reason: 'No WebGPU adapter found. Your GPU may not support WebGPU, or hardware acceleration may be disabled. Enable it in your browser settings.' };
+		}
+		return { available: true };
+	} catch {
+		return { available: false, reason: 'WebGPU adapter request failed. Your GPU may not support WebGPU, or hardware acceleration may be disabled in your browser settings.' };
+	}
+}
+
 function isMobileDevice(): boolean {
 	return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth < 768;
 }
@@ -58,6 +99,22 @@ class LocalModelStore {
     this.notify();
 
     try {
+      const gpuCheck = await checkWebGpuAvailable();
+      if (!gpuCheck.available) {
+        this.state = {
+          loaded: false,
+          loading: false,
+          loadingProgress: 0,
+          error: gpuCheck.reason!,
+          model: null,
+          processor: null,
+          transformers: null,
+        };
+        this.notify();
+        console.error('WebGPU not available:', gpuCheck.reason);
+        return;
+      }
+
       const modelId = getModelId();
       console.log('Loading transformers.js and model:', modelId);
 
@@ -97,7 +154,8 @@ class LocalModelStore {
       this.notify();
       console.log('Local model loaded successfully');
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
+      const rawMessage = error instanceof Error ? error.message : String(error);
+      const message = classifyLocalModelError(rawMessage);
       this.state = {
         loaded: false,
         loading: false,

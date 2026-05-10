@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /s/
+Disallow: /api/
+Disallow: /admin
+
+Sitemap: https://keating.help/sitemap.xml
+LLMs-txt: https://keating.help/llms.txt

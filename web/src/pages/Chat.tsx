@@ -2,6 +2,7 @@ import { Suspense, useEffect, useState } from "react";
 import { BarChart3, History, LibraryBig, Plus, Settings, Share2, Volume2, VolumeX } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useKeatingAgent } from "../hooks/useKeatingAgent";
+import { useSeo } from "../hooks/useSeo";
 import { ChatIntro } from "../components/ChatIntro";
 import { ArtifactBrowserOverlay } from "../components/ArtifactBrowserOverlay";
 import { AssistantChatPanel } from "../components/AssistantChatPanel";
@@ -17,6 +18,11 @@ import "../components/settings";
 import "@mariozechner/mini-lit/dist/ThemeToggle.js";
 
 function ChatContent() {
+  useSeo({
+    title: "Keating Chat — Socratic AI Tutor Session",
+    description: "Start a Socratic tutoring session with Keating. Diagnose what you know, reconstruct understanding from memory, and test transfer to new contexts.",
+    canonical: "https://keating.help/chat",
+  });
   const navigate = useNavigate();
   const { title, isPending, openSettings, openSessions, newSession, shareSession, chatPanelRef, sessionManagerDialog, speechEnabled, toggleSpeech } = useKeatingAgent();
   const [introDismissed, setIntroDismissed] = useState(
