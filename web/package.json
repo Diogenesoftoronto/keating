@@ -1,6 +1,6 @@
 {
   "name": "@interleavelove/keating-web",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "type": "module",
   "private": true,
   "scripts": {
@@ -25,7 +25,10 @@
     "mermaid": "^11.4.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
-    "react-grab": "^0.1.32"
+    "react-grab": "^0.1.32",
+    "rehype-katex": "^7.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.2",

@@ -11,6 +11,9 @@ import {
 	useExternalStoreRuntime,
 } from "@assistant-ui/react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import { Bot, ChevronRight, CircleAlert, CircleCheck, CopyPlus, KeyRound, LibraryBig, Loader2, Lock, Send, Server, ShieldAlert, Square, ThumbsDown, ThumbsUp, User, Wifi, Wrench, X } from "lucide-react";
 import type { ChatPanelHandle, ChatPanelSetupCallbacks } from "../types/chat-panel";
 import { loadKeatingUiSettings, subscribeKeatingUiSettings } from "../keating/ui-settings";
@@ -249,6 +252,8 @@ function MarkdownText({ text, isRunning }: { text: string; isRunning?: boolean }
 				return (
 					<ReactMarkdown
 						key={i}
+						remarkPlugins={[remarkGfm, remarkMath]}
+						rehypePlugins={[rehypeKatex]}
 						components={{
 							// eslint-disable-next-line @typescript-eslint/no-explicit-any
 							pre: ({ children }: any) => <pre className="overflow-x-auto rounded-md bg-muted p-3 text-xs">{children}</pre>,
@@ -282,6 +287,14 @@ function MarkdownText({ text, isRunning }: { text: string; isRunning?: boolean }
 							a: ({ children, href }: any) => <a href={href} className="text-primary underline" target="_blank" rel="noreferrer">{children}</a>,
 							// eslint-disable-next-line @typescript-eslint/no-explicit-any
 							blockquote: ({ children }: any) => <blockquote className="my-2 border-l-2 border-border pl-3 text-muted-foreground">{children}</blockquote>,
+							// eslint-disable-next-line @typescript-eslint/no-explicit-any
+							table: ({ children }: any) => <table className="mb-3 w-full border-collapse text-sm">{children}</table>,
+							// eslint-disable-next-line @typescript-eslint/no-explicit-any
+							thead: ({ children }: any) => <thead className="border-b border-border bg-muted/50">{children}</thead>,
+							// eslint-disable-next-line @typescript-eslint/no-explicit-any
+							th: ({ children }: any) => <th className="px-3 py-2 text-left font-semibold">{children}</th>,
+							// eslint-disable-next-line @typescript-eslint/no-explicit-any
+							td: ({ children }: any) => <td className="border-b border-border px-3 py-2">{children}</td>,
 						}}
 					>
 						{seg.content}

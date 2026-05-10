@@ -1,5 +1,6 @@
 import ReactDOM from "react-dom/client";
 import "./app.css";
+import "katex/dist/katex.min.css";
 import { App } from "./App";
 import { initThemeSync } from "./theme-sync";
 
