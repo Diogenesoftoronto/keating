@@ -1,10 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
 
+function getInitialTheme(): boolean {
+  if (typeof document === "undefined") return false;
+  const root = document.documentElement;
+  if (root.classList.contains("dark") || root.classList.contains("light")) {
+    return root.classList.contains("dark");
+  }
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
 export function ThemeToggle() {
-  const [isDark, setIsDark] = useState(() =>
-    document.documentElement.classList.contains("dark")
-  );
+  const [isDark, setIsDark] = useState(() => getInitialTheme());
 
   useEffect(() => {
     const observer = new MutationObserver(() => {

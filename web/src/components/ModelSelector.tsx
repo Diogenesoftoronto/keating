@@ -3,6 +3,7 @@ import { RefreshCw, Search, X } from "lucide-react";
 import { getProviders, type Api, type Model } from "@mariozechner/pi-ai";
 import { localModel, getModelName, getModelId, type LocalModel } from "../stores/local-model";
 import { getSelectableModels } from "../lib/provider-models";
+import { addRecentModel, getRecentModels } from "../keating/ui-settings";
 
 function makeBrowserModel(): Model<Api> {
 	return {
@@ -22,7 +23,7 @@ function makeBrowserModel(): Model<Api> {
 type SelectableModel = {
 	key: string;
 	model: Model<Api>;
-	group: "browser" | "cloud" | "custom";
+	group: "recent" | "browser" | "cloud" | "custom";
 };
 
 function modelKey(model: Model<any>): string {
@@ -109,9 +110,12 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 		});
 	}, [search, models]);
 
-	const browserModels = filtered.filter((e) => e.group === "browser");
-	const cloudModels = filtered.filter((e) => e.group === "cloud");
-	const customModels = filtered.filter((e) => e.group === "custom");
+	const recentKeys = new Set(search.trim() === "" ? getRecentModels().map((m) => m.key) : []);
+
+	const recentModels = filtered.filter((e) => recentKeys.has(e.key));
+	const browserModels = filtered.filter((e) => e.group === "browser" && !recentKeys.has(e.key));
+	const cloudModels = filtered.filter((e) => e.group === "cloud" && !recentKeys.has(e.key));
+	const customModels = filtered.filter((e) => e.group === "custom" && !recentKeys.has(e.key));
 
 	const handleSelect = async () => {
 		const selected = models.find((e) => e.key === selectedKey)?.model;
@@ -120,6 +124,7 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 			await localModel.load();
 			if (!localModel.getState().loaded) return;
 		}
+		addRecentModel(modelKey(selected));
 		onSelect(selected);
 		setSearch("");
 	};
@@ -129,6 +134,8 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 	return (
 		<div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 px-4 font-mono" onClick={onClose}>
 			<div
+				role="dialog"
+				aria-modal="true"
 				className="flex flex-col rounded-lg border-2 border-border bg-background overflow-hidden w-[min(720px,92vw)] max-h-[85vh]"
 				onClick={(e) => e.stopPropagation()}
 			>
@@ -168,6 +175,7 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 						<div className="p-4 text-sm text-muted-foreground text-center">No models matched the current search.</div>
 					) : (
 						<>
+							{renderGroup("Recent", recentModels, selectedKey, setSelectedKey, localState, webGpuAvailable)}
 							{renderGroup("Browser", browserModels, selectedKey, setSelectedKey, localState, webGpuAvailable)}
 							{renderGroup("Cloud", cloudModels, selectedKey, setSelectedKey, localState, webGpuAvailable)}
 							{renderGroup("Custom Providers", customModels, selectedKey, setSelectedKey, localState, webGpuAvailable)}
