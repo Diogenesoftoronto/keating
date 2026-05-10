@@ -1,5 +1,5 @@
 import { createContext, forwardRef, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
-import type { Agent, AgentMessage } from "@mariozechner/pi-agent-core";
+import type { Agent, AgentMessage, ThinkingLevel } from "@mariozechner/pi-agent-core";
 import {
 	AssistantRuntimeProvider,
 	AuiIf,
@@ -14,7 +14,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
-import { Bot, ChevronRight, CircleAlert, CircleCheck, CopyPlus, KeyRound, LibraryBig, Loader2, Lock, Send, Server, ShieldAlert, Square, ThumbsDown, ThumbsUp, User, Wifi, Wrench, X } from "lucide-react";
+import { Bot, ChevronRight, CircleAlert, CircleCheck, CopyPlus, KeyRound, LibraryBig, Lightbulb, Loader2, Lock, Send, Server, ShieldAlert, Square, ThumbsDown, ThumbsUp, User, Wifi, Wrench, X } from "lucide-react";
 import type { ChatPanelHandle, ChatPanelSetupCallbacks } from "../types/chat-panel";
 import { loadKeatingUiSettings, subscribeKeatingUiSettings } from "../keating/ui-settings";
 import { QuizRenderer } from "./QuizRenderer";
@@ -334,7 +334,7 @@ function formatToolResult(result: unknown) {
 
 function ToolPart({ toolName, args, result, isError, status, showDetails, showRawErrors }: { toolName: string; args?: unknown; result?: unknown; isError?: boolean; status?: { type: string }; showDetails?: boolean; showRawErrors?: boolean }) {
 	const resultText = formatToolResult(result);
-	const state = status?.type === "running" && result === undefined ? "running" : isError ? "error" : "success";
+	const state = result === undefined ? "running" : isError ? "error" : "success";
 	const stateClass = state === "error"
 		? "border-destructive/60 bg-destructive/10 text-destructive"
 		: state === "running"
@@ -434,10 +434,17 @@ function foldToolResults(messages: AgentMessage[]): AgentMessage[] {
 	return folded;
 }
 
-function toAssistantMessage(message: AgentMessage, index: number, isRunning: boolean): ThreadMessageLike {
+function toAssistantMessage(message: AgentMessage, index: number, totalMessages: number, isRunning: boolean): ThreadMessageLike {
 	const msg = message as any;
 	const timestamp = typeof msg.timestamp === "number" ? new Date(msg.timestamp) : new Date();
-	const status = isRunning && msg.role === "assistant"
+
+	// Only the last assistant message should show "running" status.
+	// During tool execution, isRunning is still true, but the assistant message
+	// is already complete (followed by toolResult messages).
+	const isLastMessage = index === totalMessages - 1;
+	const hasStopReason = msg.stopReason != null;
+	const isActivelyStreaming = isRunning && msg.role === "assistant" && isLastMessage && !hasStopReason;
+	const status = isActivelyStreaming
 		? { type: "running" as const }
 		: msg.stopReason === "error"
 			? { type: "incomplete" as const, reason: "error" as const, error: msg.errorMessage ?? "Assistant response failed" }
@@ -583,6 +590,71 @@ function SuggestedPrompts({ onSelect }: { onSelect: (text: string) => void }) {
 	);
 }
 
+const REASONING_OPTIONS: { value: ThinkingLevel; label: string; short: string }[] = [
+	{ value: "off", label: "Off", short: "Off" },
+	{ value: "minimal", label: "Minimal", short: "Min" },
+	{ value: "low", label: "Low", short: "Low" },
+	{ value: "medium", label: "Medium", short: "Med" },
+	{ value: "high", label: "High", short: "High" },
+	{ value: "xhigh", label: "Max", short: "Max" },
+];
+
+function ReasoningLevelSelector({
+	level,
+	onChange,
+	disabled,
+}: {
+	level: ThinkingLevel;
+	onChange: (level: ThinkingLevel) => void;
+	disabled?: boolean;
+}) {
+	const [open, setOpen] = useState(false);
+	const current = REASONING_OPTIONS.find((o) => o.value === level) ?? REASONING_OPTIONS[3];
+	const ref = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (!open) return;
+		const handle = (e: MouseEvent) => {
+			if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+		};
+		document.addEventListener("mousedown", handle);
+		return () => document.removeEventListener("mousedown", handle);
+	}, [open]);
+
+	return (
+		<div ref={ref} className="relative">
+			<button
+				type="button"
+				className={`mb-1 hidden sm:inline-flex shrink-0 items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50 ${level === "off" ? "" : "border-primary/50 text-primary"}`}
+				disabled={disabled}
+				title={`Reasoning: ${current.label}`}
+				onClick={() => setOpen((o) => !o)}
+			>
+				<Lightbulb size={12} />
+				<span className="font-medium">{current.short}</span>
+			</button>
+			{open && (
+				<div className="absolute bottom-full right-0 z-50 mb-1 w-40 rounded-md border border-border bg-background shadow-lg font-terminal">
+					<div className="flex flex-col p-1">
+						<div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Reasoning</div>
+						{REASONING_OPTIONS.map((opt) => (
+							<button
+								key={opt.value}
+								type="button"
+								className={`flex items-center gap-2 rounded px-2 py-1.5 text-xs text-left transition-colors ${opt.value === level ? "bg-primary/10 text-primary font-medium" : "text-foreground hover:bg-accent hover:text-accent-foreground"}`}
+								onClick={() => { onChange(opt.value); setOpen(false); }}
+							>
+								<span className="w-2 h-2 rounded-full" style={{ background: opt.value === "off" ? "var(--muted-foreground, #888)" : opt.value === "xhigh" ? "#dc2626" : opt.value === "high" ? "#ea580c" : opt.value === "medium" ? "#10b981" : "#3b82f6" }} />
+								{opt.label}
+							</button>
+						))}
+					</div>
+				</div>
+			)}
+		</div>
+	);
+}
+
 function AssistantThread({ agent, callbacks, version }: { agent: Agent | null; callbacks: ChatPanelSetupCallbacks; version: number }) {
 	const [uiSettings, setUiSettings] = useState(() => loadKeatingUiSettings());
 	const messages = useMemo(() => foldToolResults([...(agent?.state.messages ?? [])]), [agent, version]);
@@ -603,9 +675,10 @@ function AssistantThread({ agent, callbacks, version }: { agent: Agent | null; c
 		return null;
 	}, [messages]);
 
+	const totalMessages = messages.length;
 	const convertMessage = useCallback(
-		(message: AgentMessage, index: number) => toAssistantMessage(message, index, isRunning),
-		[isRunning],
+		(message: AgentMessage, index: number) => toAssistantMessage(message, index, totalMessages, isRunning),
+		[totalMessages, isRunning],
 	);
 
 	const sendText = useCallback(
@@ -678,17 +751,27 @@ function AssistantThread({ agent, callbacks, version }: { agent: Agent | null; c
 							>
 								{modelLabel}
 							</button>
+							{/* Reasoning level — visible on landscape/tablet+ */}
+							<ReasoningLevelSelector
+								level={agent?.state.thinkingLevel ?? callbacks.thinkingLevel ?? "medium"}
+								onChange={callbacks.onThinkingLevelChange ?? (() => {})}
+								disabled={isRunning}
+							/>
 							<ComposerPrimitive.Input
 								className="max-h-40 min-h-11 flex-1 resize-none bg-transparent px-2 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground"
 								placeholder="Message Keating"
 								rows={1}
 							/>
-							<ComposerPrimitive.Cancel className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground">
-								<Square size={16} />
-							</ComposerPrimitive.Cancel>
-							<ComposerPrimitive.Send className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-primary text-primary-foreground disabled:opacity-50">
-								<Send size={16} />
-							</ComposerPrimitive.Send>
+							{/* Only show Send OR Cancel — never both */}
+							{isRunning ? (
+								<ComposerPrimitive.Cancel className="inline-flex h-9 w-9 items-center justify-center rounded-md border-2 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground animate-pulse">
+									<Square size={16} />
+								</ComposerPrimitive.Cancel>
+							) : (
+								<ComposerPrimitive.Send className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-primary text-primary-foreground disabled:opacity-50">
+									<Send size={16} />
+								</ComposerPrimitive.Send>
+							)}
 						</ComposerPrimitive.Root>
 					</ThreadPrimitive.ViewportFooter>
 				</ThreadPrimitive.Viewport>

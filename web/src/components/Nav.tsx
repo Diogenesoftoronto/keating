@@ -67,7 +67,8 @@ export function Nav({ showFeatures = false }: NavProps) {
           }}
         >
           <div className="status-led shrink-0" />
-          <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-2 leading-tight">
+          {/* Desktop: show text + version. Mobile: hide text, show just logo */}
+          <div className="hidden sm:flex flex-col sm:flex-row sm:items-baseline sm:gap-2 leading-tight">
             <span
               style={{
                 fontSize: "1.125rem",
