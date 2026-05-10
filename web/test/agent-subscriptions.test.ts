@@ -143,4 +143,39 @@ describe("subscribeAgentEvents", () => {
     const unique = new Set(arrayRefs);
     expect(unique.size).toBe(arrayRefs.length);
   });
+
+  test("replaces messages array reference on message_update and message_start for React reactivity", async () => {
+    const agent = makeAgent();
+    const updateRefs: unknown[] = [];
+    const startRefs: unknown[] = [];
+
+    const unsubHelper = subscribeAgentEvents(agent, { agentInterface: undefined });
+    const unsubProbe = agent.subscribe((ev) => {
+      if (ev.type === "message_update") {
+        updateRefs.push(agent.state.messages);
+      }
+      if (ev.type === "message_start") {
+        startRefs.push(agent.state.messages);
+      }
+    });
+
+    try {
+      await agent.prompt("hello");
+      await agent.waitForIdle();
+    } finally {
+      unsubProbe();
+      unsubHelper();
+    }
+
+    // Streaming agents produce message_update events; each should have a fresh ref.
+    if (updateRefs.length > 1) {
+      const uniqueUpdates = new Set(updateRefs);
+      expect(uniqueUpdates.size).toBe(updateRefs.length);
+    }
+    // message_start should also produce a fresh ref.
+    if (startRefs.length > 0) {
+      const uniqueStarts = new Set(startRefs);
+      expect(uniqueStarts.size).toBe(startRefs.length);
+    }
+  });
 });

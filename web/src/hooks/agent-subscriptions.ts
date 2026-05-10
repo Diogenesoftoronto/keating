@@ -20,7 +20,7 @@ interface AgentPanelLike {
 // Send button comes back.
 export function subscribeAgentEvents(agent: Agent, panel: AgentPanelLike) {
   return agent.subscribe((ev) => {
-    if (ev.type === "message_end" || ev.type === "agent_end") {
+    if (ev.type === "message_end" || ev.type === "agent_end" || ev.type === "message_update" || ev.type === "message_start") {
       const msgs = agent.state.messages;
       agent.state.messages = [...msgs];
     }
