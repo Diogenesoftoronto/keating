@@ -23,7 +23,7 @@ export function Tutorial() {
         <div className="max-w-4xl mx-auto">
           <div className="paper-fold distressed-border p-8 mb-8">
             <h1 className="text-3xl md:text-4xl font-bold mb-2">Getting Started with Keating</h1>
-            <p className="text-[#64748b] font-terminal">How to learn, plan, and assess with your AI tutor</p>
+            <p className="text-muted-foreground font-terminal">How to learn, plan, and assess with your AI tutor</p>
           </div>
 
           {/* What Is Keating */}
@@ -42,13 +42,13 @@ export function Tutorial() {
                 { step: "3", label: "Check", desc: "Keating verifies your reasoning against correct understanding." },
                 { step: "4", label: "Build", desc: "Missing pieces are filled in through targeted explanation." },
               ].map((s) => (
-                <div key={s.step} className="border border-[#1f2937]/30 rounded p-4">
+                <div key={s.step} className="border border-border/30 rounded p-4">
                   <div className="font-terminal text-[#d44a3d] mb-1">{s.step}. {s.label.toUpperCase()}</div>
-                  <p className="text-sm text-[#64748b]">{s.desc}</p>
+                  <p className="text-sm text-muted-foreground">{s.desc}</p>
                 </div>
               ))}
             </div>
-            <p className="text-sm text-[#64748b]">
+            <p className="text-sm text-muted-foreground">
               The system has 19 teaching tools — from lesson plans to concept maps to quizzes
               and benchmarked self-improvement. You drive the conversation. Keating responds.
             </p>
@@ -57,7 +57,7 @@ export function Tutorial() {
           {/* Suggested Prompts */}
           <section className="paper-fold distressed-border p-6 mb-8">
             <h2 className="text-xl font-bold mb-4">Suggested Prompts</h2>
-            <p className="text-sm text-[#64748b] mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
               Click any prompt to copy it. Paste it into the chat to get started.
             </p>
             <div className="space-y-5">
@@ -118,7 +118,7 @@ export function Tutorial() {
                     {group.prompts.map((prompt) => (
                       <button
                         key={prompt}
-                        className="text-left text-sm border border-[#1f2937]/20 rounded-md px-3 py-2 hover:bg-[#1f2937]/5 transition-colors break-words"
+                        className="text-left text-sm border border-border/20 rounded-md px-3 py-2 hover:bg-foreground/5 transition-colors break-words"
                         title="Click to copy"
                         onClick={() => {
                           navigator.clipboard.writeText(prompt);
@@ -136,7 +136,7 @@ export function Tutorial() {
           {/* Tool Commands Reference */}
           <section className="paper-fold distressed-border p-6 mb-8">
             <h2 className="text-xl font-bold mb-4">Tool Commands</h2>
-            <p className="text-sm text-[#64748b] mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
               Keating can invoke tools directly. Prefix your message with a command or ask
               Keating to use a specific tool.
             </p>
@@ -155,7 +155,7 @@ export function Tutorial() {
               ].map(([cmd, desc]) => (
                 <div key={cmd} className="flex gap-3 items-start">
                   <code className="bg-[#1a1a1a] text-[#00ff00] px-1.5 py-0.5 rounded shrink-0 text-xs">{cmd}</code>
-                  <span className="text-[#64748b]">{desc}</span>
+                  <span className="text-muted-foreground">{desc}</span>
                 </div>
               ))}
             </div>
@@ -174,7 +174,7 @@ export function Tutorial() {
                 Runs entirely in your browser using WebGPU. No installation, no API keys, no server.
                 Just open and chat.
               </p>
-              <ul className="text-sm space-y-1 text-[#64748b]">
+              <ul className="text-sm space-y-1 text-muted-foreground">
                 <li>- Uses Transformers.js + ONNX models</li>
                 <li>- Model cached in browser (~5GB)</li>
                 <li>- Works offline after first load</li>
@@ -193,7 +193,7 @@ export function Tutorial() {
                 Run any model locally with Ollama, llama.cpp, LiteLLM, or llmfit. More model
                 choices, better performance.
               </p>
-              <ul className="text-sm space-y-1 text-[#64748b]">
+              <ul className="text-sm space-y-1 text-muted-foreground">
                 <li>- Use any GGUF model</li>
                 <li>- GPU acceleration (CUDA/Metal)</li>
                 <li>- No internet required</li>
@@ -204,11 +204,11 @@ export function Tutorial() {
 
           {/* Detailed Tabs */}
           <div className="paper-fold distressed-border overflow-hidden">
-            <div className="flex border-b-2 border-[#1a1a1a] overflow-x-auto">
+            <div className="flex border-b-2 border-border overflow-x-auto">
               {TABS.map((tab) => (
                 <button
                   key={tab.id}
-                  className={`tab-btn font-terminal px-6 py-3 border-r-2 border-[#1a1a1a] whitespace-nowrap ${
+                  className={`tab-btn font-terminal px-6 py-3 border-r-2 border-border whitespace-nowrap ${
                     activeTab === tab.id ? "active" : ""
                   }`}
                   onClick={() => setActiveTab(tab.id)}
@@ -482,7 +482,7 @@ export function Tutorial() {
                     <li>3. Copy key (starts with "AIza...")</li>
                     <li>4. Paste in Keating settings</li>
                   </ol>
-                  <p className="text-xs text-[#64748b] mt-2">
+                  <p className="text-xs text-muted-foreground mt-2">
                     Free tier: 15 req/min, 1M tokens/day
                   </p>
                 </div>
@@ -509,7 +509,7 @@ export function Tutorial() {
                       as the base URL
                     </li>
                   </ol>
-                  <p className="text-xs text-[#64748b] mt-2">
+                  <p className="text-xs text-muted-foreground mt-2">
                     Use this when you want Synthetic's hosted models through an OpenAI-compatible
                     endpoint.
                   </p>
@@ -533,7 +533,7 @@ export function Tutorial() {
                     <li>3. Click "Create Key" and copy</li>
                     <li>4. Paste in Keating settings</li>
                   </ol>
-                  <p className="text-xs text-[#64748b] mt-2">
+                  <p className="text-xs text-muted-foreground mt-2">
                     Pricing: Claude Sonnet $3/M input, $15/M output
                   </p>
                 </div>
@@ -556,7 +556,7 @@ export function Tutorial() {
                     <li>3. Copy immediately (shown only once)</li>
                     <li>4. Paste in Keating settings</li>
                   </ol>
-                  <p className="text-xs text-[#64748b] mt-2">
+                  <p className="text-xs text-muted-foreground mt-2">
                     Pricing: GPT-4o $2.50/M input, $10/M output
                   </p>
                 </div>

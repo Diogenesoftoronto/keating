@@ -311,7 +311,7 @@ class ${resolved.slug.replace(/-/g, "_").replace(/^(.)/, (c) => c.toUpperCase())
 
 				const saved = await storage.saveAnimation(topic, storyboard, scene, manifest);
 
-				return `[artifact://animation/${saved.id}]\n\n${storyboard}`;
+				return `[artifact://animation/${saved.id}]\n\n${storyboard}\n\n<keating-scene markdown=${JSON.stringify(JSON.stringify(storyboard))} />`;
 			}
 		),
 
@@ -466,7 +466,7 @@ ${resolved.prerequisites.map((p) => `- [ ] Learners need: ${p}`).join("\n")}
 
 				const saved = await storage.saveLessonPlan(topic, md, { type: "quiz", questionCount: quiz.questions.length });
 
-				return `[artifact://plan/${saved.id}]\n\n${md}\n---\n${answers}`;
+				return `[artifact://plan/${saved.id}]\n\n${md}\n---\n${answers}\n\n<keating-quiz json=${JSON.stringify(JSON.stringify(quiz))} />`;
 			}
 		),
 

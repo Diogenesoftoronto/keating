@@ -207,6 +207,10 @@ export class Prng {
 	int(min: number, max: number): number {
 		return Math.floor(min + this.next() * (max - min + 1));
 	}
+
+	bool(): boolean {
+		return this.next() >= 0.5;
+	}
 }
 
 // ============================================================================
@@ -1939,6 +1943,36 @@ function makeRecallQ(topic: TopicDefinition, prng: Prng, idx: number): QuizQuest
 		correctAnswer: topic.summary,
 		explanation: `The core definition: ${topic.summary}`,
 		rubric: `0-1pt: vague. 2pts: captures essence. 3pts: precise, mentions nuance.`,
+	};
+}
+
+function makeFillInQ(topic: TopicDefinition, _prng: Prng, idx: number): QuizQuestion {
+	return {
+		id: `${topic.slug}-f${idx}`,
+		type: "fill_in",
+		level: "recall",
+		question: `Complete the sentence: "${topic.title} is a concept that _____."`,
+		correctAnswer: topic.summary.toLowerCase().replace(/^a /, "").split(".")[0],
+		explanation: `The completed definition: ${topic.title} is a concept that ${topic.summary.toLowerCase().replace(/^a /, "").split(".")[0]}.`,
+		rubric: `1pt: partially correct. 2pts: captures the complete idea.`,
+	};
+}
+
+function makeTrueFalseQ(topic: TopicDefinition, prng: Prng, idx: number): QuizQuestion {
+	const isTrue = prng.bool();
+	const mis = topic.misconceptions[prng.int(0, topic.misconceptions.length - 1)] ?? "a common misconception";
+	return {
+		id: `${topic.slug}-tf${idx}`,
+		type: "true_false",
+		level: "comprehension",
+		question: isTrue
+			? `True or False: "${topic.title}" is commonly described as ${topic.summary.toLowerCase()}.`
+			: `True or False: "${mis}"`,
+		correctAnswer: isTrue ? "True" : "False",
+		explanation: isTrue
+			? `This is true — ${topic.title} is indeed ${topic.summary.toLowerCase()}.`
+			: `"${mis}" is a known misconception about ${topic.title}.`,
+		rubric: `1pt: correct answer.`,
 	};
 }
 

@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { createContext, forwardRef, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import type { Agent, AgentMessage } from "@mariozechner/pi-agent-core";
 import {
 	AssistantRuntimeProvider,
@@ -11,37 +11,47 @@ import {
 	useExternalStoreRuntime,
 } from "@assistant-ui/react";
 import ReactMarkdown from "react-markdown";
-import { Bot, ChevronRight, CircleAlert, CircleCheck, CopyPlus, LibraryBig, Loader2, Send, Square, ThumbsDown, ThumbsUp, User, Wrench, X } from "lucide-react";
+import { Bot, ChevronRight, CircleAlert, CircleCheck, CopyPlus, KeyRound, LibraryBig, Loader2, Lock, Send, Server, ShieldAlert, Square, ThumbsDown, ThumbsUp, User, Wifi, Wrench, X } from "lucide-react";
 import type { ChatPanelHandle, ChatPanelSetupCallbacks } from "../types/chat-panel";
 import { loadKeatingUiSettings, subscribeKeatingUiSettings } from "../keating/ui-settings";
+import { QuizRenderer } from "./QuizRenderer";
+import { SceneRenderer } from "./SceneRenderer";
+import type { Quiz } from "../keating/core";
+
+const AuthErrorContext = createContext<(provider: string) => Promise<boolean>>(() => Promise.resolve(false));
+const LastAuthErrorContext = createContext<{ provider: string; error: string } | null>(null);
+
+const ERROR_TEXT_PREFIX = "\x00__KEATING_ERROR__\x00";
 
 interface AssistantChatPanelProps {
 	className?: string;
 }
 
-function StreamingTextPart({ text, status }: { text: string; status?: { type: string } }) {
-	const [visibleText, setVisibleText] = useState(text);
-	const visibleLengthRef = useRef(text.length);
-	const previousTextRef = useRef(text);
+function StreamingTextPart({ text, status, showRawErrors }: { text: string; status?: { type: string; reason?: string; error?: string }; showRawErrors?: boolean }) {
+	const isMarkedError = text.startsWith(ERROR_TEXT_PREFIX);
+	const displayText = isMarkedError ? text.slice(ERROR_TEXT_PREFIX.length) : text;
+	const [visibleText, setVisibleText] = useState(displayText);
+	const visibleLengthRef = useRef(displayText.length);
+	const previousTextRef = useRef(displayText);
 
 	useEffect(() => {
-		const isGrowing = text.startsWith(previousTextRef.current);
-		const shouldAnimate = status?.type === "running" && text.length > visibleLengthRef.current && isGrowing;
+		const isGrowing = displayText.startsWith(previousTextRef.current);
+		const shouldAnimate = status?.type === "running" && displayText.length > visibleLengthRef.current && isGrowing;
 
-		previousTextRef.current = text;
+		previousTextRef.current = displayText;
 
 		if (!shouldAnimate) {
-			visibleLengthRef.current = text.length;
-			setVisibleText(text);
+			visibleLengthRef.current = displayText.length;
+			setVisibleText(displayText);
 			return;
 		}
 
 		let cancelled = false;
 		const tick = () => {
 			if (cancelled) return;
-			visibleLengthRef.current = Math.min(text.length, visibleLengthRef.current + 3);
-			setVisibleText(text.slice(0, visibleLengthRef.current));
-			if (visibleLengthRef.current < text.length) {
+			visibleLengthRef.current = Math.min(displayText.length, visibleLengthRef.current + 3);
+			setVisibleText(displayText.slice(0, visibleLengthRef.current));
+			if (visibleLengthRef.current < displayText.length) {
 				window.setTimeout(tick, 18);
 			}
 		};
@@ -50,16 +60,107 @@ function StreamingTextPart({ text, status }: { text: string; status?: { type: st
 		return () => {
 			cancelled = true;
 		};
-	}, [status?.type, text]);
+	}, [status?.type, displayText]);
 
-	return <MarkdownText text={visibleText} isRunning={status?.type === "running" && visibleText.length >= text.length} />;
+	if (isMarkedError) {
+		const classified = classifyError(visibleText);
+		return <ErrorBadge classified={classified} rawMessage={visibleText} showRaw={!!showRawErrors} />;
+	}
+
+	return <MarkdownText text={visibleText} isRunning={status?.type === "running" && visibleText.length >= displayText.length} />;
 }
+
+const MessageErrorText = createContext<string | null>(null);
 
 const artifactLinkPattern = /\[artifact:\/\/([^/]+)\/([^\]]+)\]/g;
 
 function stripArtifactLinks(text: string): string {
 	return text.replace(artifactLinkPattern, "").trim();
 }
+
+const AUTH_ERROR_PATTERNS = /authentication_error|invalid.api.key|unauthorized|401|403|api.secret.key|auth.*fail|login.fail|key.*invalid|key.*expired/i;
+
+const HTTP_STATUS_PATTERN = /\b(4[0-9]{2}|5[0-9]{2})\b/;
+
+interface ClassifiedError {
+	statusCode: number | null;
+	title: string;
+	description: string;
+	icon: typeof CircleAlert;
+	category: "auth" | "permission" | "not-found" | "rate-limit" | "server" | "network" | "unknown";
+}
+
+const HTTP_ERROR_MAP: Record<number, Omit<ClassifiedError, "statusCode">> = {
+	400: { title: "Bad Request", description: "The request was malformed or invalid.", icon: CircleAlert, category: "unknown" },
+	401: { title: "Unauthorized", description: "Authentication is required to access this resource.", icon: Lock, category: "auth" },
+	403: { title: "Forbidden", description: "You don't have permission to access this resource.", icon: ShieldAlert, category: "permission" },
+	404: { title: "Not Found", description: "The requested resource does not exist.", icon: CircleAlert, category: "not-found" },
+	408: { title: "Request Timeout", description: "The server took too long to respond.", icon: Wifi, category: "network" },
+	409: { title: "Conflict", description: "The request conflicts with the current state.", icon: CircleAlert, category: "unknown" },
+	422: { title: "Unprocessable", description: "The request was understood but couldn't be processed.", icon: CircleAlert, category: "unknown" },
+	429: { title: "Too Many Requests", description: "Rate limit exceeded. Please wait and try again.", icon: Wifi, category: "rate-limit" },
+	500: { title: "Internal Server Error", description: "Something went wrong on the server side.", icon: Server, category: "server" },
+	502: { title: "Bad Gateway", description: "The server received an invalid response from an upstream service.", icon: Server, category: "server" },
+	503: { title: "Service Unavailable", description: "The server is temporarily unavailable. Try again later.", icon: Server, category: "server" },
+	504: { title: "Gateway Timeout", description: "The server didn't respond in time.", icon: Wifi, category: "network" },
+};
+
+const NETWORK_ERRORS: Record<string, Omit<ClassifiedError, "statusCode">> = {
+	ECONNREFUSED: { title: "Connection Refused", description: "Could not connect to the server.", icon: Wifi, category: "network" },
+	ECONNRESET: { title: "Connection Reset", description: "The connection was unexpectedly closed.", icon: Wifi, category: "network" },
+	ETIMEDOUT: { title: "Connection Timeout", description: "The connection timed out.", icon: Wifi, category: "network" },
+	ENOTFOUND: { title: "DNS Error", description: "Could not resolve the server address.", icon: Wifi, category: "network" },
+	FETCH_ERROR: { title: "Network Error", description: "A network error occurred while making the request.", icon: Wifi, category: "network" },
+};
+
+function classifyError(errorText: string): ClassifiedError {
+	const httpMatch = errorText.match(HTTP_STATUS_PATTERN);
+	if (httpMatch) {
+		const code = parseInt(httpMatch[1], 10);
+		const mapped = HTTP_ERROR_MAP[code];
+		if (mapped) return { ...mapped, statusCode: code };
+		if (code >= 400 && code < 500) return { statusCode: code, title: `Client Error (${code})`, description: "The request could not be processed.", icon: CircleAlert, category: "unknown" };
+		if (code >= 500) return { statusCode: code, title: `Server Error (${code})`, description: "An error occurred on the server.", icon: Server, category: "server" };
+	}
+
+	for (const [pattern, def] of Object.entries(NETWORK_ERRORS)) {
+		if (errorText.toUpperCase().includes(pattern)) return { ...def, statusCode: null };
+	}
+
+	return { statusCode: null, title: "Error", description: "An unexpected error occurred.", icon: CircleAlert, category: "unknown" };
+}
+
+function ErrorBadge({ classified, rawMessage, showRaw }: { classified: ClassifiedError; rawMessage: string; showRaw: boolean }) {
+	const ErrorIcon = classified.icon;
+	return (
+		<div className="space-y-1.5">
+			<div className="flex items-center gap-1.5 font-medium">
+				<ErrorIcon size={13} />
+				<span>{classified.title}</span>
+				{classified.statusCode && (
+					<span className="rounded bg-background/70 px-1.5 py-0.5 font-mono text-[10px]">{classified.statusCode}</span>
+				)}
+			</div>
+			<p className="text-muted-foreground">{classified.description}</p>
+			{showRaw && (
+				<details className="mt-2">
+					<summary className="flex cursor-pointer list-none items-center gap-1 text-muted-foreground hover:text-foreground">
+						<ChevronRight size={13} />
+						Raw details
+					</summary>
+					<pre className="mt-2 max-h-44 overflow-auto whitespace-pre-wrap text-[11px] text-muted-foreground">{rawMessage}</pre>
+				</details>
+			)}
+		</div>
+	);
+}
+
+function isAuthError(status?: { type: string; reason?: string; error?: string }): boolean {
+	if (!status || status.type !== "incomplete" || status.reason !== "error") return false;
+	return AUTH_ERROR_PATTERNS.test(status.error ?? "");
+}
+
+const authErrorsById = new Map<string, { provider: string; error: string }>();
 
 function ArtifactChips({ text }: { text: string }) {
 	const matches = Array.from(text.matchAll(artifactLinkPattern));
@@ -86,51 +187,112 @@ function ArtifactChips({ text }: { text: string }) {
 	);
 }
 
+const quizTagPattern = /<keating-quiz\s+json=([^>]+)\s*\/>/g;
+const sceneTagPattern = /<keating-scene\s+markdown=([^>]+)\s*\/>/g;
+
+function parseInteractiveSegments(text: string): Array<{ type: "text"; content: string } | { type: "quiz"; json: string } | { type: "scene"; markdown: string }> {
+	const segments: ReturnType<typeof parseInteractiveSegments> = [];
+	let lastIndex = 0;
+
+	// Try quiz tags first
+	for (const match of text.matchAll(quizTagPattern)) {
+		if (match.index !== undefined && match.index > lastIndex) {
+			segments.push({ type: "text", content: text.slice(lastIndex, match.index) });
+		}
+		segments.push({ type: "quiz", json: match[1] });
+		lastIndex = match.index + match[0].length;
+	}
+
+	// Then scene tags on remaining text
+	let sceneText = text.slice(lastIndex);
+	let sceneLast = 0;
+	for (const match of sceneText.matchAll(sceneTagPattern)) {
+		if (match.index !== undefined && match.index > sceneLast) {
+			segments.push({ type: "text", content: sceneText.slice(sceneLast, match.index) });
+		}
+		segments.push({ type: "scene", markdown: JSON.parse(match[1]) });
+		sceneLast = match.index + match[0].length;
+	}
+	if (sceneLast < sceneText.length) {
+		segments.push({ type: "text", content: sceneText.slice(sceneLast) });
+	}
+
+	if (segments.length === 0) segments.push({ type: "text", content: text });
+	return segments;
+}
+
 function MarkdownText({ text, isRunning }: { text: string; isRunning?: boolean }) {
 	const cleanText = stripArtifactLinks(text);
+	const segments = parseInteractiveSegments(cleanText);
 	return (
 		<div className="break-words text-sm leading-6">
 			<ArtifactChips text={text} />
-			{cleanText ? (
-				<ReactMarkdown
-					components={{
-						// eslint-disable-next-line @typescript-eslint/no-explicit-any
-						pre: ({ children }: any) => <pre className="overflow-x-auto rounded-md bg-muted p-3 text-xs">{children}</pre>,
-						// eslint-disable-next-line @typescript-eslint/no-explicit-any
-						code: ({ className, children, ...props }: any) => {
-							const isInline = !className?.includes("language-");
-							if (isInline) {
-								return <code className="rounded bg-muted px-1.5 py-0.5 text-sm font-mono" {...props}>{children}</code>;
-							}
-							return <code className="font-mono text-sm" {...props}>{children}</code>;
-						},
-						// eslint-disable-next-line @typescript-eslint/no-explicit-any
-						p: ({ children }: any) => <p className="mb-3 last:mb-0">{children}</p>,
-						// eslint-disable-next-line @typescript-eslint/no-explicit-any
-						ul: ({ children }: any) => <ul className="mb-3 list-disc pl-5">{children}</ul>,
-						// eslint-disable-next-line @typescript-eslint/no-explicit-any
-						ol: ({ children }: any) => <ol className="mb-3 list-decimal pl-5">{children}</ol>,
-						// eslint-disable-next-line @typescript-eslint/no-explicit-any
-						li: ({ children }: any) => <li className="mb-1">{children}</li>,
-						// eslint-disable-next-line @typescript-eslint/no-explicit-any
-						h1: ({ children }: any) => <h1 className="mb-2 mt-4 text-lg font-semibold">{children}</h1>,
-						// eslint-disable-next-line @typescript-eslint/no-explicit-any
-						h2: ({ children }: any) => <h2 className="mb-2 mt-3 text-base font-semibold">{children}</h2>,
-						// eslint-disable-next-line @typescript-eslint/no-explicit-any
-						h3: ({ children }: any) => <h3 className="mb-1 mt-2 text-sm font-semibold">{children}</h3>,
-						// eslint-disable-next-line @typescript-eslint/no-explicit-any
-						strong: ({ children }: any) => <strong className="font-semibold">{children}</strong>,
-						// eslint-disable-next-line @typescript-eslint/no-explicit-any
-						em: ({ children }: any) => <em className="italic">{children}</em>,
-						// eslint-disable-next-line @typescript-eslint/no-explicit-any
-						a: ({ children, href }: any) => <a href={href} className="text-primary underline" target="_blank" rel="noreferrer">{children}</a>,
-						// eslint-disable-next-line @typescript-eslint/no-explicit-any
-						blockquote: ({ children }: any) => <blockquote className="my-2 border-l-2 border-border pl-3 text-muted-foreground">{children}</blockquote>,
-					}}
-				>
-					{cleanText}
-				</ReactMarkdown>
-			) : null}
+			{segments.map((seg, i) => {
+				if (seg.type === "quiz") {
+					try {
+						const parsed = JSON.parse(JSON.parse(seg.json)) as Quiz;
+						return (
+							<QuizRenderer
+								key={i}
+								quiz={parsed}
+								onSubmit={(answers, score) => {
+									window.dispatchEvent(
+										new CustomEvent("keating:quiz-submitted", {
+											detail: { quizId: parsed.slug, answers, score },
+										}),
+									);
+								}}
+							/>
+						);
+					} catch {
+						return null;
+					}
+				}
+				if (seg.type === "scene") {
+					return <SceneRenderer key={i} storyboard={seg.markdown} />;
+				}
+				return (
+					<ReactMarkdown
+						key={i}
+						components={{
+							// eslint-disable-next-line @typescript-eslint/no-explicit-any
+							pre: ({ children }: any) => <pre className="overflow-x-auto rounded-md bg-muted p-3 text-xs">{children}</pre>,
+							// eslint-disable-next-line @typescript-eslint/no-explicit-any
+							code: ({ className, children, ...props }: any) => {
+								const isInline = !className?.includes("language-");
+								if (isInline) {
+									return <code className="rounded bg-muted px-1.5 py-0.5 text-sm font-mono" {...props}>{children}</code>;
+								}
+								return <code className="font-mono text-sm" {...props}>{children}</code>;
+							},
+							// eslint-disable-next-line @typescript-eslint/no-explicit-any
+							p: ({ children }: any) => <p className="mb-3 last:mb-0">{children}</p>,
+							// eslint-disable-next-line @typescript-eslint/no-explicit-any
+							ul: ({ children }: any) => <ul className="mb-3 list-disc pl-5">{children}</ul>,
+							// eslint-disable-next-line @typescript-eslint/no-explicit-any
+							ol: ({ children }: any) => <ol className="mb-3 list-decimal pl-5">{children}</ol>,
+							// eslint-disable-next-line @typescript-eslint/no-explicit-any
+							li: ({ children }: any) => <li className="mb-1">{children}</li>,
+							// eslint-disable-next-line @typescript-eslint/no-explicit-any
+							h1: ({ children }: any) => <h1 className="mb-2 mt-4 text-lg font-semibold">{children}</h1>,
+							// eslint-disable-next-line @typescript-eslint/no-explicit-any
+							h2: ({ children }: any) => <h2 className="mb-2 mt-3 text-base font-semibold">{children}</h2>,
+							// eslint-disable-next-line @typescript-eslint/no-explicit-any
+							h3: ({ children }: any) => <h3 className="mb-1 mt-2 text-sm font-semibold">{children}</h3>,
+							// eslint-disable-next-line @typescript-eslint/no-explicit-any
+							strong: ({ children }: any) => <strong className="font-semibold">{children}</strong>,
+							// eslint-disable-next-line @typescript-eslint/no-explicit-any
+							em: ({ children }: any) => <em className="italic">{children}</em>,
+							// eslint-disable-next-line @typescript-eslint/no-explicit-any
+							a: ({ children, href }: any) => <a href={href} className="text-primary underline" target="_blank" rel="noreferrer">{children}</a>,
+							// eslint-disable-next-line @typescript-eslint/no-explicit-any
+							blockquote: ({ children }: any) => <blockquote className="my-2 border-l-2 border-border pl-3 text-muted-foreground">{children}</blockquote>,
+						}}
+					>
+						{seg.content}
+					</ReactMarkdown>
+				);
+			})}
 			{isRunning ? <span className="ml-0.5 animate-pulse">|</span> : null}
 		</div>
 	);
@@ -162,7 +324,7 @@ function formatToolResult(result: unknown) {
 	return JSON.stringify(result, null, 2);
 }
 
-function ToolPart({ toolName, args, result, isError, status, showDetails }: { toolName: string; args?: unknown; result?: unknown; isError?: boolean; status?: { type: string }; showDetails?: boolean }) {
+function ToolPart({ toolName, args, result, isError, status, showDetails, showRawErrors }: { toolName: string; args?: unknown; result?: unknown; isError?: boolean; status?: { type: string }; showDetails?: boolean; showRawErrors?: boolean }) {
 	const resultText = formatToolResult(result);
 	const state = status?.type === "running" && result === undefined ? "running" : isError ? "error" : "success";
 	const stateClass = state === "error"
@@ -171,6 +333,7 @@ function ToolPart({ toolName, args, result, isError, status, showDetails }: { to
 			? "border-amber-500/60 bg-amber-500/10 text-amber-600 dark:text-amber-300"
 			: "border-emerald-500/60 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
 	const StateIcon = state === "error" ? CircleAlert : state === "running" ? Loader2 : CircleCheck;
+	const classifiedError = state === "error" ? classifyError(resultText) : null;
 	return (
 		<div className={`my-2 rounded-md border-l-4 px-3 py-2 text-xs ${stateClass}`}>
 			<div className="flex items-center gap-2">
@@ -189,7 +352,11 @@ function ToolPart({ toolName, args, result, isError, status, showDetails }: { to
 					<pre className="mt-2 overflow-x-auto whitespace-pre-wrap text-muted-foreground">{JSON.stringify(args, null, 2)}</pre>
 				</details>
 			) : null}
-			{showDetails && resultText ? (
+			{state === "error" && classifiedError ? (
+				<div className="mt-2">
+					<ErrorBadge classified={classifiedError} rawMessage={resultText} showRaw={!!showRawErrors} />
+				</div>
+			) : showDetails && resultText ? (
 				<div className="mt-2 text-foreground">
 					<pre className="max-h-44 overflow-auto whitespace-pre-wrap font-sans leading-5">{resultText}</pre>
 				</div>
@@ -198,12 +365,12 @@ function ToolPart({ toolName, args, result, isError, status, showDetails }: { to
 	);
 }
 
-function messagePartComponents(showToolUi: boolean) {
+function messagePartComponents(showToolUi: boolean, showRawErrors: boolean) {
 	return {
-		Text: StreamingTextPart,
+		Text: (props: any) => <StreamingTextPart {...props} showRawErrors={showRawErrors} />,
 		Reasoning: ReasoningPart,
 		tools: {
-			Fallback: (props: Parameters<typeof ToolPart>[0]) => <ToolPart {...props} showDetails={showToolUi} />,
+			Fallback: (props: Parameters<typeof ToolPart>[0]) => <ToolPart {...props} showDetails={showToolUi} showRawErrors={showRawErrors} />,
 		},
 	};
 }
@@ -288,17 +455,35 @@ function toAssistantMessage(message: AgentMessage, index: number, isRunning: boo
 				return { type: "text" as const, text: part?.text ?? "" };
 			})
 			: [{ type: "text" as const, text: textFromContent(msg.content) }];
-		return { id: `assistant-${index}-${msg.timestamp ?? ""}`, role: "assistant", createdAt: timestamp, status, content };
+
+		const id = `assistant-${index}-${msg.timestamp ?? ""}`;
+
+		if (status.type === "incomplete" && status.reason === "error") {
+			const errorText = msg.errorMessage ?? "Assistant response failed";
+			if (!content.some((c: any) => c.type === "text" && c.text)) {
+				content.unshift({ type: "text" as const, text: `${ERROR_TEXT_PREFIX}${errorText}` });
+			}
+		}
+
+		if (status.type === "incomplete" && status.reason === "error" && isAuthError(status)) {
+			authErrorsById.set(id, { provider: msg.provider ?? msg.model?.split("/", 2)[0] ?? "unknown", error: status.error ?? "Authentication failed" });
+		} else {
+			authErrorsById.delete(id);
+		}
+
+		return { id, role: "assistant", createdAt: timestamp, status, content };
 	}
 
 	if (msg.role === "toolResult") {
 		const summary = textFromContent(msg.content) || JSON.stringify(msg.details ?? {}, null, 2);
+		const id = `tool-${index}-${msg.toolCallId ?? ""}`;
+		const errorPrefix = msg.isError ? ERROR_TEXT_PREFIX : "";
 		return {
-			id: `tool-${index}-${msg.toolCallId ?? ""}`,
+			id,
 			role: "assistant",
 			createdAt: timestamp,
 			status: msg.isError ? { type: "incomplete", reason: "error", error: summary } : { type: "complete", reason: "stop" },
-			content: [{ type: "text", text: `Tool ${msg.toolName ?? "result"}:\n${summary}` }],
+			content: [{ type: "text", text: `${errorPrefix}Tool ${msg.toolName ?? "result"}:\n${summary}` }],
 		};
 	}
 
@@ -323,63 +508,74 @@ function textFromAppendMessage(message: AppendMessage): string {
 		.trim();
 }
 
-const SUGGESTED_PROMPT_GROUPS = [
-	{
-		label: "Learn",
-		prompts: [
-			"Explain quantum entanglement like I'm 12 years old.",
-			"Why does gradient descent work? Walk me through the intuition.",
-		],
-	},
-	{
-		label: "Plan",
-		prompts: [
-			"Plan a 4-week course on machine learning fundamentals.",
-			"Create a study roadmap for passing the AWS Solutions Architect exam.",
-		],
-	},
-	{
-		label: "Map",
-		prompts: [
-			"Draw a concept map connecting probability, statistics, and linear algebra.",
-			"Map the evolution of web development from HTML to modern React frameworks.",
-		],
-	},
-	{
-		label: "Assess",
-		prompts: [
-			"Quiz me on the Krebs cycle. Test deeper understanding, not memorization.",
-			"Evaluate my understanding of async/await in JavaScript from scratch.",
-		],
-	},
-	{
-		label: "Create",
-		prompts: [
-			"Animate how DNS resolution works step by step.",
-			"Generate spaced-repetition flashcards for Spanish verb conjugations.",
-		],
-	},
+const ALL_PROMPTS = [
+	{ label: "Learn", text: "Explain quantum entanglement simply" },
+	{ label: "Learn", text: "Why does gradient descent work?" },
+	{ label: "Plan", text: "Plan a 4-week ML course" },
+	{ label: "Plan", text: "Study roadmap for AWS cert" },
+	{ label: "Map", text: "Map probability to statistics" },
+	{ label: "Map", text: "Map web dev from HTML to React" },
+	{ label: "Assess", text: "Quiz me on the Krebs cycle" },
+	{ label: "Assess", text: "Test my async/await knowledge" },
+	{ label: "Create", text: "Animate how DNS works" },
+	{ label: "Create", text: "Flashcards for Spanish verbs" },
 ];
 
+function pickThree(): typeof ALL_PROMPTS {
+	const shuffled = [...ALL_PROMPTS].sort(() => Math.random() - 0.5);
+	return shuffled.slice(0, 3);
+}
+
 function SuggestedPrompts({ onSelect }: { onSelect: (text: string) => void }) {
+	const [prompts, setPrompts] = useState(() => pickThree());
+	const scrollRef = useRef<HTMLDivElement>(null);
+
+	const scroll = (dir: "left" | "right") => {
+		scrollRef.current?.scrollBy({ left: dir === "left" ? -220 : 220, behavior: "smooth" });
+	};
+
+	const refresh = () => setPrompts(pickThree());
+
 	return (
-		<div className="mx-auto flex h-full max-w-2xl flex-col items-center justify-center gap-4 px-4">
-			<div className="text-sm text-muted-foreground font-terminal mb-2">Start a conversation</div>
-			<div className="flex flex-wrap justify-center gap-2">
-				{SUGGESTED_PROMPT_GROUPS.map((group) =>
-					group.prompts.map((prompt) => (
+		<div className="mx-auto flex h-full max-w-3xl flex-col items-center justify-center gap-3 px-4">
+			<div className="text-sm text-muted-foreground font-terminal">Start a conversation</div>
+			<div className="flex w-full items-center gap-1">
+				<button
+					type="button"
+					onClick={() => scroll("left")}
+					className="shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+					aria-label="Scroll left"
+				>
+					<ChevronRight size={14} className="rotate-180" />
+				</button>
+				<div ref={scrollRef} className="flex-1 flex gap-2 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide py-1" style={{ scrollbarWidth: "none" }}>
+					{prompts.map((p) => (
 						<button
-							key={prompt}
+							key={p.text}
 							type="button"
-							onClick={() => onSelect(prompt)}
-							className="rounded-full border border-border bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground hover:border-primary/50 hover:bg-primary/10 hover:text-primary transition-colors text-left max-w-xs"
-							title={prompt}
+							onClick={() => onSelect(p.text)}
+							className="snap-start shrink-0 w-52 rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-left transition-all hover:border-primary hover:bg-primary/10 hover:text-primary hover:shadow-sm active:scale-[0.98]"
 						>
-							<span className="font-medium uppercase tracking-wide mr-1.5 text-[10px]">{group.label}</span>
-							{prompt}
+							<span className="block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">{p.label}</span>
+							<span className="block text-xs leading-snug">{p.text}</span>
 						</button>
-					))
-				)}
+					))}
+					<button
+						type="button"
+						onClick={refresh}
+						className="snap-start shrink-0 w-20 rounded-lg border border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-all flex items-center justify-center"
+					>
+						<span className="text-xs">More</span>
+					</button>
+				</div>
+				<button
+					type="button"
+					onClick={() => scroll("right")}
+					className="shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+					aria-label="Scroll right"
+				>
+					<ChevronRight size={14} />
+				</button>
 			</div>
 		</div>
 	);
@@ -388,10 +584,15 @@ function SuggestedPrompts({ onSelect }: { onSelect: (text: string) => void }) {
 function AssistantThread({ agent, callbacks, version }: { agent: Agent | null; callbacks: ChatPanelSetupCallbacks; version: number }) {
 	const [uiSettings, setUiSettings] = useState(() => loadKeatingUiSettings());
 	const messages = useMemo(() => foldToolResults([...(agent?.state.messages ?? [])]), [agent, version]);
-	const components = useMemo(() => messagePartComponents(uiSettings.showToolUi), [uiSettings.showToolUi]);
+	const components = useMemo(() => messagePartComponents(uiSettings.showToolUi, uiSettings.showRawErrors), [uiSettings.showToolUi, uiSettings.showRawErrors]);
 	const isRunning = agent?.state.isStreaming ?? false;
 	const modelRef = useRef(agent?.state.model);
 	if (agent) modelRef.current = agent.state.model;
+
+	const lastAuthError = useMemo(() => {
+		const entries = Array.from(authErrorsById.values());
+		return entries.length > 0 ? entries[entries.length - 1] : null;
+	}, [messages]);
 
 	const convertMessage = useCallback(
 		(message: AgentMessage, index: number) => toAssistantMessage(message, index, isRunning),
@@ -444,6 +645,8 @@ function AssistantThread({ agent, callbacks, version }: { agent: Agent | null; c
 	);
 
 	return (
+		<AuthErrorContext.Provider value={callbacks.onAuthError ?? (() => Promise.resolve(false))}>
+		<LastAuthErrorContext.Provider value={lastAuthError}>
 		<AssistantRuntimeProvider runtime={runtime}>
 			<ThreadPrimitive.Root className="flex h-full min-h-0 flex-col bg-background text-foreground">
 				<ThreadPrimitive.Viewport className="min-h-0 flex-1 overflow-y-auto px-3 py-4 sm:px-4 sm:py-6">
@@ -478,6 +681,8 @@ function AssistantThread({ agent, callbacks, version }: { agent: Agent | null; c
 				</ThreadPrimitive.Viewport>
 			</ThreadPrimitive.Root>
 		</AssistantRuntimeProvider>
+		</LastAuthErrorContext.Provider>
+		</AuthErrorContext.Provider>
 	);
 }
 
@@ -571,6 +776,9 @@ function AssistantMessage({
 	const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
 	const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
 	const [feedbackType, setFeedbackType] = useState<"up" | "down">("up");
+	const onAuthError = useContext(AuthErrorContext);
+	const authError = useContext(LastAuthErrorContext);
+	const [retrying, setRetrying] = useState(false);
 
 	const handleFeedbackClick = (type: "up" | "down") => {
 		setFeedbackType(type);
@@ -591,6 +799,13 @@ function AssistantMessage({
 		}
 	};
 
+	const handleAuthRetry = async () => {
+		if (!authError) return;
+		setRetrying(true);
+		await onAuthError(authError.provider);
+		setRetrying(false);
+	};
+
 	return (
 		<>
 			<MessagePrimitive.Root className="group mx-auto mb-4 flex max-w-3xl justify-start">
@@ -598,6 +813,26 @@ function AssistantMessage({
 					<Bot className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
 					<div className="min-w-0 leading-6 flex-1">
 						<MessagePrimitive.Content components={components} />
+						{authError && (
+							<div className="my-2 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm">
+								<div className="flex items-start gap-2">
+									<KeyRound size={16} className="mt-0.5 shrink-0 text-destructive" />
+									<div className="min-w-0 flex-1">
+										<p className="font-medium text-destructive mb-1">Authentication failed</p>
+										<p className="text-xs text-muted-foreground mb-2">{authError.error}</p>
+										<button
+											type="button"
+											onClick={handleAuthRetry}
+											disabled={retrying}
+											className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+										>
+											{retrying ? <Loader2 size={12} className="animate-spin" /> : <KeyRound size={12} />}
+											Re-enter API key
+										</button>
+									</div>
+								</div>
+							</div>
+						)}
 						<div className="mt-2 flex items-center gap-1">
 							<button
 								type="button"
