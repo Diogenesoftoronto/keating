@@ -37,6 +37,66 @@ function CodeBlock({ children }: { children: string }) {
 
 const POSTS: Post[] = [
   {
+    date: "2026-05-09",
+    badge: { label: "RELEASE", color: "release" },
+    title: "v0.3.2 — Chat Rewrite Stabilizes: Forks, Feedback, and Mobile",
+    body: (
+      <>
+        <p className="mb-4 leading-6">
+          The Assistant UI rewrite has stabilized. After migrating the chat layer from Lit to React,
+          a series of refinements landed across mobile layout, artifact integration, CLI theming,
+          and crash prevention. This release also introduces per-message fork and feedback actions.
+        </p>
+        <h3 className="font-bold mt-4 mb-2">Chat Rewrite Matures</h3>
+        <p className="text-sm mb-4">
+          The chat UI is now built on <Code>@assistant-ui/react</Code> instead of the previous Lit-based
+          message list. This gives us better streaming message handling, built-in composer primitives,
+          and a cleaner React integration. The migration took several iterations — text rendering fixes,
+          prose layout adjustments, mobile toolbar improvements — but the result is a more reliable
+          chat experience.
+        </p>
+        <h3 className="font-bold mt-4 mb-2">Mobile Responsiveness</h3>
+        <ul className="text-sm space-y-2 ml-4 mb-4">
+          <li>Adaptive toolbar buttons that show/hide based on viewport size</li>
+          <li>Touch-friendly targets across the header, model selector, and settings</li>
+          <li>Responsive message bubbles and composer layout</li>
+        </ul>
+        <h3 className="font-bold mt-4 mb-2">Artifacts in Conversation</h3>
+        <p className="text-sm mb-4">
+          Lesson plans, concept maps, animations, and benchmark outputs generated during chat now
+          appear as clickable artifact chips inside assistant messages. Clicking a chip opens the
+          artifact browser directly to that item.
+        </p>
+        <h3 className="font-bold mt-4 mb-2">CLI Theme Refresh</h3>
+        <p className="text-sm mb-4">
+          The shell palette now matches the web retro-green terminal theme. The boot screen,
+          ASCII headers, and progress indicators share the same dark mode-aware palette.
+        </p>
+        <h3 className="font-bold mt-4 mb-2">React #310 Crash Fix</h3>
+        <p className="text-sm mb-4">
+          A hook-count mismatch crash (React error #310) was traced to <Code>@assistant-ui/react</Code>&apos;s
+          internal use of conditional hooks. The library calls <Code>useRef</Code> and <Code>useState</Code>
+          inside conditional blocks (annotated with biome-ignore). Under React 19 StrictMode&apos;s
+          double-render, these conditions flipped between renders, violating React&apos;s hook rules.
+          Removing StrictMode eliminates the crash path while the adapter object is now memoized
+          for additional stability.
+        </p>
+        <h3 className="font-bold mt-4 mb-2">Per-Message Fork and Feedback</h3>
+        <p className="text-sm mb-4">
+          Each assistant message now shows three action buttons:
+        </p>
+        <ul className="text-sm space-y-2 ml-4 mb-4">
+          <li><strong>Thumbs Up:</strong> Open a modal for optional positive feedback comments</li>
+          <li><strong>Thumbs Down:</strong> Open a modal for optional improvement suggestions</li>
+          <li><strong>Fork:</strong> Create a copy of the current session starting from this message</li>
+        </ul>
+        <p className="text-sm text-[#64748b]">
+          The v0.3.2 web build compiles cleanly with all TypeScript checks passing and 18 tests green.
+        </p>
+      </>
+    ),
+  },
+  {
     date: "2026-05-08",
     badge: { label: "RELEASE", color: "release" },
     title: "v0.3.1 - Sessions, Artifacts, Tool Schemas, and Provider Proxying",

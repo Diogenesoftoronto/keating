@@ -323,6 +323,68 @@ function textFromAppendMessage(message: AppendMessage): string {
 		.trim();
 }
 
+const SUGGESTED_PROMPT_GROUPS = [
+	{
+		label: "Learn",
+		prompts: [
+			"Explain quantum entanglement like I'm 12 years old.",
+			"Why does gradient descent work? Walk me through the intuition.",
+		],
+	},
+	{
+		label: "Plan",
+		prompts: [
+			"Plan a 4-week course on machine learning fundamentals.",
+			"Create a study roadmap for passing the AWS Solutions Architect exam.",
+		],
+	},
+	{
+		label: "Map",
+		prompts: [
+			"Draw a concept map connecting probability, statistics, and linear algebra.",
+			"Map the evolution of web development from HTML to modern React frameworks.",
+		],
+	},
+	{
+		label: "Assess",
+		prompts: [
+			"Quiz me on the Krebs cycle. Test deeper understanding, not memorization.",
+			"Evaluate my understanding of async/await in JavaScript from scratch.",
+		],
+	},
+	{
+		label: "Create",
+		prompts: [
+			"Animate how DNS resolution works step by step.",
+			"Generate spaced-repetition flashcards for Spanish verb conjugations.",
+		],
+	},
+];
+
+function SuggestedPrompts({ onSelect }: { onSelect: (text: string) => void }) {
+	return (
+		<div className="mx-auto flex h-full max-w-2xl flex-col items-center justify-center gap-4 px-4">
+			<div className="text-sm text-muted-foreground font-terminal mb-2">Start a conversation</div>
+			<div className="flex flex-wrap justify-center gap-2">
+				{SUGGESTED_PROMPT_GROUPS.map((group) =>
+					group.prompts.map((prompt) => (
+						<button
+							key={prompt}
+							type="button"
+							onClick={() => onSelect(prompt)}
+							className="rounded-full border border-border bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground hover:border-primary/50 hover:bg-primary/10 hover:text-primary transition-colors text-left max-w-xs"
+							title={prompt}
+						>
+							<span className="font-medium uppercase tracking-wide mr-1.5 text-[10px]">{group.label}</span>
+							{prompt}
+						</button>
+					))
+				)}
+			</div>
+		</div>
+	);
+}
+
 function AssistantThread({ agent, callbacks, version }: { agent: Agent | null; callbacks: ChatPanelSetupCallbacks; version: number }) {
 	const [uiSettings, setUiSettings] = useState(() => loadKeatingUiSettings());
 	const messages = useMemo(() => foldToolResults([...(agent?.state.messages ?? [])]), [agent, version]);
@@ -336,17 +398,23 @@ function AssistantThread({ agent, callbacks, version }: { agent: Agent | null; c
 		[isRunning],
 	);
 
-	const onNew = useCallback(
-		async (message: AppendMessage) => {
-			if (!agent) return;
-			const text = textFromAppendMessage(message);
-			if (!text) return;
+	const sendText = useCallback(
+		async (text: string) => {
+			if (!agent || !text.trim()) return;
 			const provider = agent.state.model.provider;
 			if (callbacks.onApiKeyRequired && !(await callbacks.onApiKeyRequired(provider))) return;
 			await callbacks.onBeforeSend?.();
 			await agent.prompt(text);
 		},
 		[agent, callbacks],
+	);
+
+	const onNew = useCallback(
+		async (message: AppendMessage) => {
+			const text = textFromAppendMessage(message);
+			if (text) await sendText(text);
+		},
+		[sendText],
 	);
 
 	const onCancel = useCallback(async () => {
@@ -380,9 +448,7 @@ function AssistantThread({ agent, callbacks, version }: { agent: Agent | null; c
 			<ThreadPrimitive.Root className="flex h-full min-h-0 flex-col bg-background text-foreground">
 				<ThreadPrimitive.Viewport className="min-h-0 flex-1 overflow-y-auto px-3 py-4 sm:px-4 sm:py-6">
 					<AuiIf condition={(state) => state.thread.isEmpty}>
-						<div className="mx-auto flex h-full max-w-2xl items-center justify-center text-sm text-muted-foreground font-terminal">
-							Start a conversation with Keating.
-						</div>
+						<SuggestedPrompts onSelect={sendText} />
 					</AuiIf>
 					<ThreadPrimitive.Messages components={{ UserMessage: UserMessageComponent, AssistantMessage: AssistantMessageComponent }} />
 					<ThreadPrimitive.ViewportFooter className="sticky bottom-0 bg-background/95 pt-3 backdrop-blur">
@@ -527,7 +593,7 @@ function AssistantMessage({
 
 	return (
 		<>
-			<MessagePrimitive.Root className="mx-auto mb-4 flex max-w-3xl justify-start">
+			<MessagePrimitive.Root className="group mx-auto mb-4 flex max-w-3xl justify-start">
 				<div className="flex max-w-[94%] gap-3 rounded-lg border-2 border-border bg-muted/30 px-4 py-3 text-sm text-foreground shadow-sm sm:max-w-[90%]">
 					<Bot className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
 					<div className="min-w-0 leading-6 flex-1">
@@ -562,7 +628,7 @@ function AssistantMessage({
 							{onFork && (
 								<button
 									type="button"
-									className="inline-flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+									className="inline-flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-all opacity-0 group-hover:opacity-100"
 									title="Fork session"
 									onClick={onFork}
 									aria-label="Fork session"
