@@ -1,0 +1,42 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "2c937fb93109",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "web/nitro.config.ts",
+    "web/public/logo.png",
+    "web/src/App.tsx",
+    "web/src/app.css",
+    "web/src/components/KeatingUiSettingsTab.tsx",
+    "web/src/components/ModelSelector.tsx",
+    "web/src/components/Nav.tsx",
+    "web/src/components/ProvidersModelsTab.tsx",
+    "web/src/components/SessionManagerDialogReact.tsx",
+    "web/src/components/SettingsDialog.tsx",
+    "web/src/components/ThemeToggle.tsx",
+    "web/src/hooks/useKeatingAgent.tsx",
+    "web/src/lib/provider-models.ts",
+    "web/src/pages/Blog.tsx",
+    "web/src/pages/Chat.tsx",
+    "web/src/pages/Landing.tsx",
+    "web/src/pages/Paper.tsx",
+    "web/src/pages/Tutorial.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/2c/937fb93109/0/metadata.json",
+      "transcript": "/2c/937fb93109/0/full.jsonl",
+      "content_hash": "/2c/937fb93109/0/content_hash.txt",
+      "prompt": "/2c/937fb93109/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 55,
+    "cache_creation_tokens": 46862,
+    "cache_read_tokens": 1898406,
+    "output_tokens": 21048,
+    "api_call_count": 40
+  }
+}

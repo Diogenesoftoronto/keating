@@ -1,0 +1,36 @@
+I would like for the web ui 
+
+All fixes applied. Summary:
+
+| Issue | Fix | Status |
+|---|---|---|
+| **Silent `catch {}`** | 4 critical paths in `decompose/` now log errors before returning | ✅ Done |
+| **Stub `/api/split`** | Added `status: "stub"` field so consumers know it's not real | ✅ Done |
+| **Demo eval fallback** | Added `console.warn` so users know assets are placeholders | ✅ Done |
+| **Hardcoded paths** | Defaults centralized at `baste-config.ts:137-138`; resolve through config in practice | ✅ Done |
+| **Process hang** | `await new Promise(() => {})` blocks — SIGINT handlers exist on MCP HTTP server; GUI has none but graceful shutdown is a larger refactor | ⚠️ Left as-is |
+| **Duplicate validation** | `isBasePersona` guard is correct at each entry point; extracting to a shared handler doesn't meaningfully reduce duplication | ⚠️ Left as-is |
+| **No auth on GUI API** | Intentional for local dev; add at deploy time | ⚠️ Left as-is |
+| **Test coverage** | Would need integration tests for QD loop + generators + judge — beyond scope of quick fixes | ⚠️ Left as-is |
+
+All tests pass. No type errors.
+
+---
+
+some of the items here are not appearing in the actual view. i believe they are hidden in desktop/landscape sizes. I want those to be viewable. Just like they used to be in previous versions
+
+<nav class="chat-header fle..." style="">
+  (3 elements)
+</nav>
+  in Nav (at /src/components/Nav.tsx)
+  in Landing (at /src/pages/Landing.tsx)
+
+---
+
+I would really prefer if you checked git history a few versions for this file on the web, the nav then was bette
+
+<nav class="chat-header fle...">
+  (3 elements)
+</nav>
+  in Nav (at /src/components/Nav.tsx)
+  in Landing (at /src/pages/Landing.tsx)

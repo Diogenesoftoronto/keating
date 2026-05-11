@@ -1,0 +1,117 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "2c937fb93109",
+  "session_id": "bb04cf16-d6f2-4e1a-a1e4-4d16e78cc7e2",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-11T05:18:27.830453082Z",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "web/nitro.config.ts",
+    "web/public/logo.png",
+    "web/src/App.tsx",
+    "web/src/app.css",
+    "web/src/components/KeatingUiSettingsTab.tsx",
+    "web/src/components/ModelSelector.tsx",
+    "web/src/components/Nav.tsx",
+    "web/src/components/ProvidersModelsTab.tsx",
+    "web/src/components/SessionManagerDialogReact.tsx",
+    "web/src/components/SettingsDialog.tsx",
+    "web/src/components/ThemeToggle.tsx",
+    "web/src/hooks/useKeatingAgent.tsx",
+    "web/src/lib/provider-models.ts",
+    "web/src/pages/Blog.tsx",
+    "web/src/pages/Chat.tsx",
+    "web/src/pages/Landing.tsx",
+    "web/src/pages/Paper.tsx",
+    "web/src/pages/Tutorial.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-4-7",
+  "turn_id": "36dfaa0a0613",
+  "token_usage": {
+    "input_tokens": 55,
+    "cache_creation_tokens": 46862,
+    "cache_read_tokens": 1898406,
+    "output_tokens": 21048,
+    "api_call_count": 40
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-11T05:18:27.818265099Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 686,
+    "total_committed": 0,
+    "total_lines_changed": 686,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 1560,
+      "user_lines_removed": 686,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "web/nitro.config.ts": 8,
+        "web/server/api/oauth/config.ts": 25,
+        "web/server/api/oauth/refresh.ts": 64,
+        "web/server/api/oauth/token.ts": 68,
+        "web/src/App.tsx": 8,
+        "web/src/app.css": 6,
+        "web/src/components/ModelSelector.tsx": 15,
+        "web/src/components/Nav.tsx": 98,
+        "web/src/components/ProvidersModelsTab.tsx": 219,
+        "web/src/components/SessionManagerDialog.tsx": 318,
+        "web/src/components/SettingsDialog.tsx": 1,
+        "web/src/components/ThemeToggle.tsx": 3,
+        "web/src/hooks/useDialogState.ts": 26,
+        "web/src/hooks/useKeatingAgent.tsx": 24,
+        "web/src/keating/oauth.ts": 317,
+        "web/src/lib/provider-models.ts": 36,
+        "web/src/pages/Blog.tsx": 1,
+        "web/src/pages/Chat.tsx": 55,
+        "web/src/pages/Landing.tsx": 2,
+        "web/src/pages/OAuthCallback.tsx": 88,
+        "web/src/pages/Paper.tsx": 1,
+        "web/src/pages/Tutorial.tsx": 1,
+        "web/src/test/ui-settings.test.ts": 176
+      },
+      "user_removed_per_file": {
+        "web/src/app.css": 19,
+        "web/src/components/KeatingUiSettingsTab.tsx": 59,
+        "web/src/components/ModelSelector.tsx": 4,
+        "web/src/components/Nav.tsx": 169,
+        "web/src/components/ProvidersModelsTab.tsx": 26,
+        "web/src/components/SessionManagerDialogReact.tsx": 318,
+        "web/src/hooks/useKeatingAgent.tsx": 23,
+        "web/src/lib/provider-models.ts": 21,
+        "web/src/pages/Blog.tsx": 1,
+        "web/src/pages/Chat.tsx": 42,
+        "web/src/pages/Landing.tsx": 2,
+        "web/src/pages/Paper.tsx": 1,
+        "web/src/pages/Tutorial.tsx": 1
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1560,
+      "agent_lines_removed": 686
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1511,
+      "agent_lines_removed": 550
+    }
+  ]
+}
