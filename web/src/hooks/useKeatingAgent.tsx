@@ -1,5 +1,6 @@
 import { useRef, useState, useTransition, useCallback, use, useEffect } from "react";
 import { Agent, type AgentState, type ThinkingLevel } from "@mariozechner/pi-agent-core";
+import { useDialogState } from "./useDialogState";
 import {
   type Model,
   type Api,
@@ -10,7 +11,7 @@ import {
   PersistentStorageDialog,
   defaultConvertToLlm,
 } from "@mariozechner/pi-web-ui";
-import { SessionManagerDialog } from "../components/SessionManagerDialogReact";
+import { SessionManagerDialog } from "../components/SessionManagerDialog";
 import { SettingsDialog } from "../components/SettingsDialog";
 import { KeatingUiSettingsTab } from "../components/KeatingUiSettingsTab";
 import { ProvidersModelsTab } from "../components/ProvidersModelsTab";
@@ -80,17 +81,17 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const sessionCreatedAtRef = useRef(new Date().toISOString());
   const selectedModelRef = useRef<Model<Api>>(DEFAULT_MODEL);
   const [speechSettings, setSpeechSettings] = useState<WebSpeechSettings>(() => loadWebSpeechSettings());
-  const [sessionsOpen, setSessionsOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
+  const sessionsDialog = useDialogState();
+  const settingsDialog = useDialogState();
+  const modelSelectorDialog = useDialogState();
   const [isPending, startTransition] = useTransition();
   const bootstrapTimerRef = useRef<number | null>(null);
   const bootstrapGenerationRef = useRef(0);
   const persistentStorageRequestedRef = useRef(false);
 
   const openSettings = useCallback(() => {
-    setSettingsOpen(true);
-  }, []);
+    settingsDialog.onOpen();
+  }, [settingsDialog]);
 
   async function loadBrowserModel() {
     const state = localModel.getState();
@@ -193,7 +194,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
         }
       },
       onModelSelect: () => {
-        setModelSelectorOpen(true);
+        modelSelectorDialog.onOpen();
       },
       onFork: () => forkSession(agentSessionId),
       thinkingLevel: agent.state.thinkingLevel,
@@ -381,13 +382,13 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   }, []);
 
   const openSessions = useCallback(() => {
-    setSessionsOpen(true);
-  }, []);
+    sessionsDialog.onOpen();
+  }, [sessionsDialog]);
 
-  const sessionManagerDialog = (
+  const sessionManagerDialogElement = (
     <SessionManagerDialog
-      open={sessionsOpen}
-      onClose={() => setSessionsOpen(false)}
+      open={sessionsDialog.open}
+      onClose={sessionsDialog.onClose}
       onFork={forkSession}
       onSuggestTitle={suggestSessionTitle}
       onLoad={(sessionId: string) => {
@@ -399,10 +400,10 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     />
   );
 
-  const settingsDialog = (
+  const settingsDialogElement = (
     <SettingsDialog
-      open={settingsOpen}
-      onClose={() => setSettingsOpen(false)}
+      open={settingsDialog.open}
+      onClose={settingsDialog.onClose}
       tabs={[
         { id: "providers", label: "Providers & Models", component: <ProvidersModelsTab /> },
         { id: "interface", label: "Interface", component: <KeatingUiSettingsTab /> },
@@ -411,13 +412,13 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     />
   );
 
-  const modelSelectorDialog = (
+  const modelSelectorDialogElement = (
     <ModelSelectorDialog
-      open={modelSelectorOpen}
+      open={modelSelectorDialog.open}
       currentModel={agentRef.current?.state.model ?? selectedModelRef.current}
-      onClose={() => setModelSelectorOpen(false)}
+      onClose={modelSelectorDialog.onClose}
       onSelect={(model: Model<Api>) => {
-        setModelSelectorOpen(false);
+        modelSelectorDialog.onClose();
         startTransition(async () => {
           if (model.provider === "browser") await loadBrowserModel();
           selectedModelRef.current = model;
@@ -465,7 +466,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
             }
           },
           onModelSelect: () => {
-            setModelSelectorOpen(true);
+            modelSelectorDialog.onOpen();
           },
           onFork: () => forkSession(sessionIdRef.current),
           thinkingLevel: existingAgent.state.thinkingLevel,
@@ -530,9 +531,9 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
 
   const allDialogs = (
     <>
-      {sessionManagerDialog}
-      {settingsDialog}
-      {modelSelectorDialog}
+      {sessionManagerDialogElement}
+      {settingsDialogElement}
+      {modelSelectorDialogElement}
     </>
   );
 

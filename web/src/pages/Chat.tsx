@@ -16,7 +16,7 @@ function ChatContent() {
     canonical: "https://keating.help/chat",
   });
   const navigate = useNavigate();
-  const { title, isPending, openSettings, openSessions, newSession, shareSession, chatPanelRef, dialogs, speechEnabled, toggleSpeech } = useKeatingAgent();
+  const { isPending, openSettings, openSessions, newSession, shareSession, chatPanelRef, dialogs, speechEnabled, toggleSpeech } = useKeatingAgent();
   const [introDismissed, setIntroDismissed] = useState(
     () => sessionStorage.getItem("keating_chat_intro") === "dismissed"
   );
@@ -103,14 +103,12 @@ function ChatContent() {
           className="chat-brand inline-flex min-w-0 shrink-0 items-center gap-2 rounded-md px-2 py-1 hover:bg-accent hover:text-accent-foreground"
           aria-label="Go to Keating home"
         >
-          {/* Mobile: just the logo, no text */}
-          <img src="/logo.png" alt="Keating" className="h-7 w-7 rounded object-contain sm:hidden" />
-          {/* Desktop: show text title */}
-          <span className="hidden sm:inline truncate text-base font-semibold sm:text-lg">{title}</span>
+          <img src="/logo.png" alt="Keating" className="h-7 w-7 rounded object-contain" />
+          <span className="hidden sm:inline truncate text-base font-semibold sm:text-lg">Keating</span>
         </Link>
 
-        {/* Desktop actions */}
-        <div className="chat-actions no-scrollbar ml-auto hidden sm:flex min-w-0 flex-1 items-center justify-end gap-1 overflow-x-auto">
+        {/* Actions */}
+        <div className="chat-actions no-scrollbar ml-auto flex min-w-0 flex-1 items-center justify-end gap-1 overflow-x-auto">
           <ThemeToggle />
           <button
             className={actionButtonClass}
@@ -131,7 +129,7 @@ function ChatContent() {
             <History size={16} />
           </button>
           <button
-            className={`${actionButtonClass} ${shareState === "copied" ? "text-primary" : ""} ${shareState === "error" ? "text-destructive" : ""}`}
+            className={`${actionButtonClass} hidden md:inline-flex ${shareState === "copied" ? "text-primary" : ""} ${shareState === "error" ? "text-destructive" : ""}`}
             title={shareState === "copied" ? "Copied share link" : shareState === "error" ? "Could not share yet" : "Share session"}
             aria-label="Share session"
             disabled={isPending || shareState === "sharing"}
@@ -140,7 +138,7 @@ function ChatContent() {
             <Share2 size={16} />
           </button>
           <button
-            className={actionButtonClass}
+            className={`${actionButtonClass} hidden md:inline-flex`}
             title="Learning usage"
             aria-label="Learning usage"
             onClick={() => navigate({ to: "/usage" })}
@@ -148,7 +146,7 @@ function ChatContent() {
             <BarChart3 size={16} />
           </button>
           <button
-            className={`${actionButtonClass} ${speechEnabled ? "text-primary" : ""}`}
+            className={`${actionButtonClass} hidden lg:inline-flex ${speechEnabled ? "text-primary" : ""}`}
             title={speechEnabled ? "Disable speech" : "Enable speech"}
             aria-pressed={speechEnabled}
             onClick={toggleSpeech}
@@ -164,29 +162,7 @@ function ChatContent() {
             <Settings size={16} />
           </button>
           <button
-            className={actionButtonClass}
-            title="Artifacts"
-            aria-label="Artifacts"
-            onClick={() => setArtifactBrowserOpen(true)}
-          >
-            <LibraryBig size={16} />
-          </button>
-        </div>
-
-        {/* Mobile actions: reduced set + hamburger */}
-        <div className="chat-actions no-scrollbar ml-auto flex sm:hidden min-w-0 flex-1 items-center justify-end gap-1 overflow-x-auto">
-          <ThemeToggle />
-          <button
-            className={actionButtonClass}
-            title="New session"
-            aria-label="New session"
-            disabled={isPending}
-            onClick={newSession}
-          >
-            <Plus size={16} />
-          </button>
-          <button
-            className={actionButtonClass}
+            className={`${actionButtonClass} hidden lg:inline-flex`}
             title="Artifacts"
             aria-label="Artifacts"
             onClick={() => setArtifactBrowserOpen(true)}
@@ -194,7 +170,7 @@ function ChatContent() {
             <LibraryBig size={16} />
           </button>
           <button
-            className={actionButtonClass}
+            className={`${actionButtonClass} md:hidden`}
             title="Menu"
             aria-label="Menu"
             aria-expanded={mobileMenuOpen}
@@ -212,14 +188,6 @@ function ChatContent() {
             style={{ fontSize: "0.875rem" }}
           >
             <div className="flex flex-col p-1">
-              <button
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
-                onClick={() => { setMobileMenuOpen(false); openSessions(); }}
-                disabled={isPending}
-              >
-                <History size={14} />
-                Session history
-              </button>
               <button
                 className={`flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors ${shareState === "copied" ? "text-primary" : ""} ${shareState === "error" ? "text-destructive" : ""}`}
                 onClick={() => { setMobileMenuOpen(false); handleShare(); }}
@@ -249,6 +217,51 @@ function ChatContent() {
                 <Settings size={14} />
                 Settings
               </button>
+              <button
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                onClick={() => { setMobileMenuOpen(false); setArtifactBrowserOpen(true); }}
+              >
+                <LibraryBig size={14} />
+                Artifacts
+              </button>
+              <div className="my-1 border-t border-border" />
+              <Link
+                to="/"
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Home
+              </Link>
+              <Link
+                to="/tutorial"
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Tutorial
+              </Link>
+              <Link
+                to="/blog"
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Blog
+              </Link>
+              <Link
+                to="/paper"
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Paper
+              </Link>
+              <a
+                href="https://github.com/Diogenesoftoronto/keating"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                GitHub
+              </a>
             </div>
           </div>
         )}

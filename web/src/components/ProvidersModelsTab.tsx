@@ -11,7 +11,24 @@ import {
 	type SavedModel,
 	addRecentModel,
 } from "../keating/ui-settings";
-import { getSelectableModels } from "../lib/provider-models";
+import { loadWebSpeechSettings, saveWebSpeechSettings, type WebSpeechSettings } from "../keating/speech";
+import {
+	initiateOAuth,
+	isOAuthProvider,
+	providerToOAuthId,
+	loadOAuthCredentials,
+	deleteOAuthCredentials,
+	type OAuthProviderId,
+} from "../keating/oauth";
+
+const SPEECH_MODELS = [
+	{ value: "gemini-2.0-flash-live-001", label: "Gemini 2.0 Flash Live" },
+	{ value: "gemini-2.5-flash-live-preview", label: "Gemini 2.5 Flash Live (Preview)" },
+	{ value: "gemini-3.0-flash-live-preview", label: "Gemini 3.0 Flash Live (Preview)" },
+	{ value: "gemini-3.1-flash-live-preview", label: "Gemini 3.1 Flash Live (Preview)" },
+];
+
+const SPEECH_VOICES = ["Kore", "Puck", "Charon", "Fenrir", "Leda", "Orus", "Aoede"];
 
 export type KeatingCustomProviderType =
 	| "ollama"
@@ -54,6 +71,9 @@ export function ProvidersModelsTab() {
 	const [settings, setSettings] = useState(() => loadKeatingUiSettings());
 	const [showAddModel, setShowAddModel] = useState(false);
 	const [providerDialog, setProviderDialog] = useState<{ open: boolean; provider?: KeatingCustomProvider; type?: KeatingCustomProviderType }>({ open: false });
+	const [modelError, setModelError] = useState("");
+	const [providerError, setProviderError] = useState("");
+	const [speechSettings, setSpeechSettings] = useState<WebSpeechSettings>(() => loadWebSpeechSettings());
 
 	const [modelForm, setModelForm] = useState({
 		name: "",
@@ -77,12 +97,25 @@ export function ProvidersModelsTab() {
 	}, [providerDialog.open]);
 
 	useEffect(() => {
+		setProviderError("");
+		if (!providerDialog.open) {
+			setProviderForm({ name: "", type: "openai-completions", baseUrl: "", apiKey: "" });
+			return;
+		}
 		if (providerDialog.provider) {
+			// Also fetch apiKey from providerKeys storage in case it was stored separately
+			const storage = getAppStorage();
+			let apiKey = providerDialog.provider.apiKey ?? "";
+			storage.providerKeys.get(providerDialog.provider.name).then((key) => {
+				if (key) {
+					setProviderForm((prev) => ({ ...prev, apiKey: key }));
+				}
+			}).catch(() => {});
 			setProviderForm({
 				name: providerDialog.provider.name,
 				type: providerDialog.provider.type,
 				baseUrl: providerDialog.provider.baseUrl,
-				apiKey: providerDialog.provider.apiKey ?? "",
+				apiKey,
 			});
 		} else if (providerDialog.type) {
 			const defaults: Record<KeatingCustomProviderType, string> = {
@@ -110,12 +143,19 @@ export function ProvidersModelsTab() {
 		refresh();
 	};
 
+	const updateSpeech = useCallback((partial: Partial<WebSpeechSettings>) => {
+		const next = { ...loadWebSpeechSettings(), ...partial };
+		setSpeechSettings(next);
+		saveWebSpeechSettings(next);
+	}, []);
+
 	const handleSaveModel = () => {
+		setModelError("");
 		const name = modelForm.name.trim();
 		const id = modelForm.id.trim();
 		const provider = modelForm.provider.trim();
 		if (!name || !id || !provider) {
-			alert("Name, ID, and Provider are required");
+			setModelError("Name, ID, and Provider are required");
 			return;
 		}
 		const key = `${provider}::${modelForm.api}::${id}`;
@@ -135,8 +175,9 @@ export function ProvidersModelsTab() {
 	};
 
 	const handleSaveProvider = async () => {
+		setProviderError("");
 		if (!providerForm.name.trim() || !providerForm.baseUrl.trim()) {
-			alert("Name and Base URL are required");
+			setProviderError("Name and Base URL are required");
 			return;
 		}
 		const isEdit = !!providerDialog.provider;
@@ -160,7 +201,7 @@ export function ProvidersModelsTab() {
 			setProviderForm({ name: "", type: "openai-completions", baseUrl: "", apiKey: "" });
 		} catch (error) {
 			console.error("Failed to save provider:", error);
-			alert(isEdit ? "Failed to update provider" : "Failed to save provider");
+			setProviderError(isEdit ? "Failed to update provider" : "Failed to save provider");
 		}
 	};
 
@@ -191,7 +232,9 @@ export function ProvidersModelsTab() {
 					</p>
 				</div>
 				<div className="flex flex-col gap-3">
-					<ProviderKeyInputs providers={providers} />
+					<OAuthProviderKeys
+						providers={providers.filter((p) => !settings.hiddenProviders.includes(p))}
+					/>
 				</div>
 			</div>
 
@@ -248,6 +291,11 @@ export function ProvidersModelsTab() {
 
 				{showAddModel && (
 					<div className="flex flex-col gap-3 rounded-lg border border-border p-4 bg-muted/30">
+						{modelError && (
+							<div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+								{modelError}
+							</div>
+						)}
 						<div className="flex flex-col gap-2">
 							<label className="text-sm font-medium text-foreground">Model Name</label>
 							<input
@@ -270,13 +318,16 @@ export function ProvidersModelsTab() {
 						</div>
 						<div className="flex flex-col gap-2">
 							<label className="text-sm font-medium text-foreground">Provider</label>
-							<input
-								type="text"
+							<select
 								className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-								placeholder="e.g., openai"
 								value={modelForm.provider}
 								onChange={(e) => setModelForm((f) => ({ ...f, provider: e.target.value }))}
-							/>
+							>
+								{getProviders().map((p) => (
+									<option key={p} value={p}>{p}</option>
+								))}
+								<option value="custom">Custom</option>
+							</select>
 						</div>
 						<div className="flex flex-col gap-2">
 							<label className="text-sm font-medium text-foreground">API Type</label>
@@ -320,7 +371,8 @@ export function ProvidersModelsTab() {
 						</div>
 						<div className="flex justify-end">
 							<button
-								className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+								className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+								disabled={!modelForm.name.trim() || !modelForm.id.trim() || !modelForm.provider.trim()}
 								onClick={handleSaveModel}
 							>
 								Save Model
@@ -402,7 +454,13 @@ export function ProvidersModelsTab() {
 
 			{/* Provider Dialog */}
 			{providerDialog.open && (
-				<div className="fixed inset-0 z-[1001] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4" onClick={() => setProviderDialog({ open: false })}>
+				<div
+					className="fixed inset-0 z-[1001] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
+					role="dialog"
+					aria-modal="true"
+					aria-label={providerDialog.provider ? "Edit Provider" : "Add Provider"}
+					onClick={() => setProviderDialog({ open: false })}
+				>
 					<div className="w-full max-w-md rounded-lg border border-border bg-background p-5 shadow-lg" onClick={(e) => e.stopPropagation()}>
 						<div className="flex items-center justify-between mb-4">
 							<h3 className="text-sm font-semibold text-foreground">
@@ -458,6 +516,11 @@ export function ProvidersModelsTab() {
 									onChange={(e) => setProviderForm((f) => ({ ...f, apiKey: e.target.value }))}
 								/>
 							</div>
+							{providerError && (
+								<div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+									{providerError}
+								</div>
+							)}
 							<div className="flex justify-end gap-2 mt-2">
 								<button
 									className="rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent transition-colors"
@@ -477,6 +540,43 @@ export function ProvidersModelsTab() {
 					</div>
 				</div>
 			)}
+			<div className="border-t border-border" />
+
+			{/* Speech Settings */}
+			<div className="flex flex-col gap-4">
+				<div>
+					<h3 className="text-sm font-semibold text-foreground mb-2">Speech</h3>
+					<p className="text-sm text-muted-foreground">
+						Configure the Gemini Live speech model and voice used for spoken learner responses.
+					</p>
+				</div>
+				<div className="flex flex-col gap-3">
+					<div className="flex flex-col gap-2">
+						<label className="text-sm font-medium text-foreground">Speech Model</label>
+						<select
+							className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+							value={speechSettings.model}
+							onChange={(e) => updateSpeech({ model: e.target.value })}
+						>
+							{SPEECH_MODELS.map((m) => (
+								<option key={m.value} value={m.value}>{m.label}</option>
+							))}
+						</select>
+					</div>
+					<div className="flex flex-col gap-2">
+						<label className="text-sm font-medium text-foreground">Voice</label>
+						<select
+							className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+							value={speechSettings.voiceName}
+							onChange={(e) => updateSpeech({ voiceName: e.target.value })}
+						>
+							{SPEECH_VOICES.map((v) => (
+								<option key={v} value={v}>{v}</option>
+							))}
+						</select>
+					</div>
+				</div>
+			</div>
 		</div>
 	);
 }
@@ -491,8 +591,10 @@ async function loadCustomProviders(): Promise<KeatingCustomProvider[]> {
 	}
 }
 
-function ProviderKeyInputs({ providers }: { providers: string[] }) {
+function OAuthProviderKeys({ providers }: { providers: string[] }) {
 	const [keys, setKeys] = useState<Record<string, string>>({});
+	const [oauthStatus, setOAuthStatus] = useState<Record<string, boolean>>({});
+	const [oauthLoading, setOauthLoading] = useState<Record<string, boolean>>({});
 
 	useEffect(() => {
 		const storage = getAppStorage();
@@ -506,6 +608,38 @@ function ProviderKeyInputs({ providers }: { providers: string[] }) {
 		});
 	}, [providers.join(",")]);
 
+	useEffect(() => {
+		const checkOAuth = async () => {
+			const status: Record<string, boolean> = {};
+			for (const provider of providers) {
+				const oauthId = providerToOAuthId(provider);
+				if (oauthId) {
+					const creds = await loadOAuthCredentials(oauthId);
+					status[provider] = !!creds;
+				}
+			}
+			setOAuthStatus(status);
+		};
+		checkOAuth();
+	}, [providers.join(",")]);
+
+	useEffect(() => {
+		const handler = (event: MessageEvent) => {
+			if (event.data?.type !== "keating-oauth-result") return;
+			const { success, provider: oauthProvider } = event.data;
+			if (success && oauthProvider) {
+				setOAuthStatus((prev) => ({ ...prev, [oauthProvider]: true }));
+			}
+			setOauthLoading((prev) => {
+				const next = { ...prev };
+				for (const k of Object.keys(next)) next[k] = false;
+				return next;
+			});
+		};
+		window.addEventListener("message", handler);
+		return () => window.removeEventListener("message", handler);
+	}, []);
+
 	const save = async (provider: string, value: string) => {
 		const storage = getAppStorage();
 		if (value.trim()) {
@@ -515,21 +649,80 @@ function ProviderKeyInputs({ providers }: { providers: string[] }) {
 		}
 	};
 
+	const handleSignIn = (provider: string) => {
+		const oauthId = providerToOAuthId(provider);
+		if (!oauthId) return;
+		setOauthLoading((prev) => ({ ...prev, [provider]: true }));
+		initiateOAuth(oauthId);
+	};
+
+	const handleSignOut = async (provider: string) => {
+		const oauthId = providerToOAuthId(provider);
+		if (!oauthId) return;
+		await deleteOAuthCredentials(oauthId);
+		const storage = getAppStorage();
+		await storage.providerKeys.delete(provider);
+		setOAuthStatus((prev) => ({ ...prev, [provider]: false }));
+		setKeys((prev) => ({ ...prev, [provider]: "" }));
+	};
+
+	const OAUTH_PROVIDER_LABELS: Record<string, string> = {
+		anthropic: "Anthropic",
+		"openai-codex": "OpenAI Codex",
+		google: "Google Gemini",
+	};
+
 	return (
 		<>
-			{providers.map((provider) => (
-				<div key={provider} className="flex flex-col gap-1">
-					<label className="text-xs font-medium text-muted-foreground capitalize">{provider} API Key</label>
-					<input
-						type="password"
-						className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-						placeholder={`${provider} API key`}
-						value={keys[provider] ?? ""}
-						onChange={(e) => setKeys((prev) => ({ ...prev, [provider]: e.target.value }))}
-						onBlur={(e) => save(provider, e.target.value)}
-					/>
-				</div>
-			))}
+			{providers.map((provider) => {
+				const oauthId = providerToOAuthId(provider);
+				const isOAuth = !!oauthId;
+				const hasOAuth = oauthStatus[provider] === true;
+				const loading = oauthLoading[provider] === true;
+
+				if (isOAuth) {
+					return (
+						<div key={provider} className="flex flex-col gap-1">
+							<label className="text-xs font-medium text-muted-foreground capitalize">
+								{OAUTH_PROVIDER_LABELS[provider] ?? provider}
+							</label>
+							{hasOAuth ? (
+								<div className="flex items-center justify-between gap-3 rounded-md border border-border bg-muted/30 px-3 py-2">
+									<span className="text-sm text-muted-foreground">Signed in</span>
+									<button
+										className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+										onClick={() => handleSignOut(provider)}
+									>
+										Sign out
+									</button>
+								</div>
+							) : (
+								<button
+									className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+									disabled={loading}
+									onClick={() => handleSignIn(provider)}
+								>
+									{loading ? "Waiting for sign-in…" : `Sign in with ${OAUTH_PROVIDER_LABELS[provider] ?? provider}`}
+								</button>
+							)}
+						</div>
+					);
+				}
+
+				return (
+					<div key={provider} className="flex flex-col gap-1">
+						<label className="text-xs font-medium text-muted-foreground capitalize">{provider} API Key</label>
+						<input
+							type="password"
+							className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+							placeholder={`${provider} API key`}
+							value={keys[provider] ?? ""}
+							onChange={(e) => setKeys((prev) => ({ ...prev, [provider]: e.target.value }))}
+							onBlur={(e) => save(provider, e.target.value)}
+						/>
+					</div>
+				);
+			})}
 		</>
 	);
 }

@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw, Search, X } from "lucide-react";
 import { getProviders, type Api, type Model } from "@mariozechner/pi-ai";
 import { localModel, getModelName, getModelId, type LocalModel } from "../stores/local-model";
-import { getSelectableModels } from "../lib/provider-models";
-import { addRecentModel, getRecentModels } from "../keating/ui-settings";
+import { getSelectableModels, buildSavedModel } from "../lib/provider-models";
+import { addRecentModel, getRecentModels, loadKeatingUiSettings } from "../keating/ui-settings";
 
 function makeBrowserModel(): Model<Api> {
 	return {
@@ -72,7 +72,15 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 		setLoading(true);
 		setError("");
 		try {
-			const all = await getSelectableModels();
+			const uiSettings = loadKeatingUiSettings();
+			const hidden = new Set(uiSettings.hiddenProviders);
+			const all = await getSelectableModels((provider) => !hidden.has(provider));
+
+			// Append saved custom models
+			for (const saved of uiSettings.customModels) {
+				all.push(buildSavedModel(saved));
+			}
+
 			const knownProviders = new Set<string>(getProviders());
 			const selectable: SelectableModel[] = all.map((model) => ({
 				key: modelKey(model),
@@ -110,7 +118,10 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 		});
 	}, [search, models]);
 
-	const recentKeys = new Set(search.trim() === "" ? getRecentModels().map((m) => m.key) : []);
+	const recentKeys = useMemo(
+		() => new Set(search.trim() === "" ? getRecentModels().map((m) => m.key) : []),
+		[search],
+	);
 
 	const recentModels = filtered.filter((e) => recentKeys.has(e.key));
 	const browserModels = filtered.filter((e) => e.group === "browser" && !recentKeys.has(e.key));
