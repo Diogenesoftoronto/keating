@@ -11,6 +11,7 @@ export function Nav({ showFeatures = false }: NavProps) {
   const navigate = useNavigate();
   const closeMobile = () => setMobileOpen(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const toggleButtonRef = useRef<HTMLButtonElement>(null);
 
   const handleResize = useCallback(() => {
     if (window.innerWidth >= 768) setMobileOpen(false);
@@ -27,7 +28,9 @@ export function Nav({ showFeatures = false }: NavProps) {
       if (e.key === "Escape") setMobileOpen(false);
     };
     const handleClickOutside = (e: MouseEvent) => {
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (toggleButtonRef.current && toggleButtonRef.current.contains(target)) return;
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(target)) {
         setMobileOpen(false);
       }
     };
@@ -148,6 +151,7 @@ export function Nav({ showFeatures = false }: NavProps) {
         <div className="nav-mobile-actions flex md:hidden items-center gap-2">
           <ThemeToggle />
           <button
+            ref={toggleButtonRef}
             id="mobile-menu-btn"
             className="nav-mobile-toggle glitch-hover font-terminal"
             style={{
