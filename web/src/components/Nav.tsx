@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface NavProps {
   showFeatures?: boolean;
@@ -9,8 +10,8 @@ export function Nav({ showFeatures = false }: NavProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
   const closeMobile = () => setMobileOpen(false);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
 
-  // Close mobile menu on route change / resize past breakpoint
   const handleResize = useCallback(() => {
     if (window.innerWidth >= 768) setMobileOpen(false);
   }, []);
@@ -20,10 +21,22 @@ export function Nav({ showFeatures = false }: NavProps) {
     return () => window.removeEventListener("resize", handleResize);
   }, [handleResize]);
 
-  // Lock body scroll when mobile menu is open
   useEffect(() => {
-    document.body.style.overflow = mobileOpen ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    if (!mobileOpen) return;
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileOpen(false);
+    };
+    const handleClickOutside = (e: MouseEvent) => {
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target as Node)) {
+        setMobileOpen(false);
+      }
+    };
+    document.addEventListener("keydown", handleEscape);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, [mobileOpen]);
 
   return (
@@ -31,10 +44,8 @@ export function Nav({ showFeatures = false }: NavProps) {
       id="main-nav"
       className="retro-layout"
       style={{
-        position: "fixed",
+        position: "sticky",
         top: 0,
-        left: 0,
-        right: 0,
         zIndex: 50,
         borderBottom: "2px solid var(--ink, #1a1a1a)",
         background: "var(--paper, #f4f1ea)",
@@ -50,6 +61,7 @@ export function Nav({ showFeatures = false }: NavProps) {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
+          gap: "1rem",
         }}
       >
         {/* Logo */}
@@ -63,12 +75,11 @@ export function Nav({ showFeatures = false }: NavProps) {
             textDecoration: "none",
             color: "inherit",
             flexShrink: 1,
-            minWidth: 0
+            minWidth: 0,
           }}
         >
           <div className="status-led shrink-0" />
-          {/* Desktop: show text + version. Mobile: hide text, show just logo */}
-          <div className="hidden sm:flex flex-col sm:flex-row sm:items-baseline sm:gap-2 leading-tight">
+          <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-2 leading-tight">
             <span
               style={{
                 fontSize: "1.125rem",
@@ -88,8 +99,8 @@ export function Nav({ showFeatures = false }: NavProps) {
           </div>
         </Link>
 
-        {/* Desktop links — visible at md (768px) and up */}
-        <div className="nav-desktop" style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
+        {/* Desktop links — visible at md (768px) and up, controlled by retro.css */}
+        <div className="nav-desktop" style={{ alignItems: "center", gap: "1.5rem" }}>
           {showFeatures && (
             <a href="#features" className="nav-link glitch-hover font-terminal nav-desktop-link">
               [FEATURES]
@@ -118,6 +129,7 @@ export function Nav({ showFeatures = false }: NavProps) {
           >
             [GITHUB]
           </a>
+          <ThemeToggle />
           <button
             className="btn-retro nav-desktop-link"
             style={{
@@ -132,32 +144,36 @@ export function Nav({ showFeatures = false }: NavProps) {
           </button>
         </div>
 
-        {/* Mobile hamburger — visible below md (768px) */}
-        <button
-          id="mobile-menu-btn"
-          className="nav-mobile-toggle glitch-hover font-terminal"
-          style={{
-            color: "var(--ink, #1a1a1a)",
-            border: "2px solid var(--ink, #1a1a1a)",
-            padding: "0.375rem 0.75rem",
-            cursor: "pointer",
-            background: "transparent",
-            fontSize: "1rem",
-            transition: "background 0.15s, color 0.15s",
-          }}
-          onClick={() => setMobileOpen((o) => !o)}
-          aria-expanded={mobileOpen}
-          aria-controls="mobile-menu"
-          aria-label="Toggle navigation menu"
-        >
-          {mobileOpen ? "[CLOSE]" : "[MENU]"}
-        </button>
+        {/* Mobile actions + hamburger — visible below md (768px) */}
+        <div className="nav-mobile-actions flex md:hidden items-center gap-2">
+          <ThemeToggle />
+          <button
+            id="mobile-menu-btn"
+            className="nav-mobile-toggle glitch-hover font-terminal"
+            style={{
+              color: "var(--ink, #1a1a1a)",
+              border: "2px solid var(--ink, #1a1a1a)",
+              padding: "0.375rem 0.75rem",
+              cursor: "pointer",
+              background: "transparent",
+              fontSize: "1rem",
+              transition: "background 0.15s, color 0.15s",
+            }}
+            onClick={() => setMobileOpen((o) => !o)}
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-menu"
+            aria-label="Toggle navigation menu"
+          >
+            {mobileOpen ? "[CLOSE]" : "[MENU]"}
+          </button>
+        </div>
       </div>
 
       {/* Mobile dropdown — below md (768px) */}
       {mobileOpen && (
         <div
           id="mobile-menu"
+          ref={mobileMenuRef}
           style={{
             borderTop: "2px solid var(--ink, #1a1a1a)",
             background: "var(--paper, #f4f1ea)",

@@ -85,8 +85,8 @@ export function Landing() {
       <BootSequence />
       <Nav showFeatures />
 
-      {/* Hero — pt accounts for fixed nav (h-14 = 3.5rem) + extra breathing room */}
-      <section className="pt-20 sm:pt-24 pb-12 sm:pb-20 px-6">
+      {/* Hero */}
+      <section className="pt-6 sm:pt-8 pb-12 sm:pb-20 px-6">
         <div className="max-w-4xl mx-auto">
           <div className="coords mb-4">42.3601° N, 71.0589° W // WELLESLEY, MA</div>
 

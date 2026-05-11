@@ -1,7 +1,7 @@
 import { getModels, getProviders, type Api, type Model } from "@mariozechner/pi-ai";
 import { getAppStorage, type CustomProvider } from "@mariozechner/pi-web-ui";
-import { loadKeatingUiSettings } from "../keating/ui-settings";
 import { proxiedProviderRequestUrl } from "./provider-proxy";
+import { getOAuthAccessToken, providerToOAuthId } from "../keating/oauth";
 
 export type KeatingCustomProviderType =
 	| "ollama"
@@ -315,6 +315,12 @@ export async function syncCustomProviderKeys(): Promise<void> {
 }
 
 export async function getProviderApiKey(providerName: string): Promise<string | undefined> {
+	const oauthId = providerToOAuthId(providerName);
+	if (oauthId) {
+		const token = await getOAuthAccessToken(oauthId);
+		if (token) return token;
+	}
+
 	const storage = getAppStorage();
 	const storedKey = await storage.providerKeys.get(providerName);
 	if (storedKey) return storedKey;
@@ -323,13 +329,23 @@ export async function getProviderApiKey(providerName: string): Promise<string | 
 	return customProviders.find((provider) => provider.name === providerName)?.apiKey;
 }
 
-export async function getSelectableModels(): Promise<Array<Model<Api>>> {
-	const settings = loadKeatingUiSettings();
-	const hidden = new Set(settings.hiddenProviders);
+export const UNKNOWN_COST = {
+	input: 0,
+	output: 0,
+	cacheRead: 0,
+	cacheWrite: 0,
+} as const;
+
+export const UNKNOWN_CONTEXT_WINDOW = 8192;
+export const UNKNOWN_MAX_TOKENS = 4096;
+
+export async function getSelectableModels(
+	filter?: (provider: string) => boolean,
+): Promise<Array<Model<Api>>> {
 	const models: Array<Model<Api>> = [];
 
 	for (const provider of getProviders()) {
-		if (!hidden.has(provider)) {
+		if (!filter || filter(provider)) {
 			models.push(...(getModels(provider as any) as Array<Model<Api>>));
 		}
 	}
@@ -347,21 +363,20 @@ export async function getSelectableModels(): Promise<Array<Model<Api>>> {
 	);
 
 	models.push(...customModels.flat());
-
-	for (const saved of settings.customModels) {
-		models.push({
-			id: saved.id,
-			name: saved.name,
-			api: saved.api as Api,
-			provider: saved.provider,
-			baseUrl: saved.baseUrl || "",
-			reasoning: saved.reasoning,
-			input: saved.vision ? (["text", "image"] as Array<"text" | "image">) : (["text"] as Array<"text" | "image">),
-			cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-			contextWindow: 0,
-			maxTokens: 0,
-		});
-	}
-
 	return models;
+}
+
+export function buildSavedModel(saved: any): Model<Api> {
+	return {
+		id: saved.id,
+		name: saved.name,
+		api: saved.api as Api,
+		provider: saved.provider,
+		baseUrl: saved.baseUrl || "",
+		reasoning: saved.reasoning,
+		input: saved.vision ? (["text", "image"] as Array<"text" | "image">) : (["text"] as Array<"text" | "image">),
+		cost: UNKNOWN_COST,
+		contextWindow: UNKNOWN_CONTEXT_WINDOW,
+		maxTokens: UNKNOWN_MAX_TOKENS,
+	};
 }

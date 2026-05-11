@@ -79,6 +79,7 @@ export function SettingsDialog({ open, tabs, onClose }: SettingsDialogProps) {
               className="sm:hidden text-sm font-medium bg-transparent border border-border rounded px-2 py-1"
               value={activeTab}
               onChange={(e) => setActiveTab(Number(e.target.value))}
+              aria-label="Settings tab"
             >
               {tabs.map((tab, i) => (
                 <option key={tab.id} value={i}>{tab.label}</option>

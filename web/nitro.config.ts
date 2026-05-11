@@ -31,5 +31,13 @@ export default defineNitroConfig({
       route: "/api/chat-proxy/**",
       handler: "server/api/chat-proxy/[...slug].ts",
     },
+    {
+      route: "/api/oauth/token",
+      handler: "server/api/oauth/token.ts",
+    },
+    {
+      route: "/api/oauth/refresh",
+      handler: "server/api/oauth/refresh.ts",
+    },
   ],
 });

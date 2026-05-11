@@ -173,24 +173,17 @@ button:not(:disabled) {
   scroll-snap-type: x proximity;
 }
 
-.chat-action-button {
+.chat-action-button,
+.chat-actions > button {
   width: 2.25rem;
   height: 2.25rem;
   padding: 0;
   scroll-snap-align: end;
 }
 
-.chat-actions theme-toggle {
-  flex: 0 0 auto;
-  width: 2.25rem;
-  height: 2.25rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
 @media (max-width: 640px) {
-  .chat-page-shell .chat-action-button {
+  .chat-page-shell .chat-action-button,
+  .chat-page-shell .chat-actions > button {
     width: 2rem;
     height: 2rem;
     min-width: 2rem;
@@ -198,16 +191,10 @@ button:not(:disabled) {
     padding: 0;
   }
 
-  .chat-page-shell .chat-action-button svg {
+  .chat-page-shell .chat-action-button svg,
+  .chat-page-shell .chat-actions > button svg {
     width: 1rem;
     height: 1rem;
-  }
-
-  .chat-page-shell .chat-actions theme-toggle {
-    width: 2rem;
-    height: 2rem;
-    min-width: 2rem;
-    min-height: 2rem;
   }
 }
 

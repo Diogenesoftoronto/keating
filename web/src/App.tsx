@@ -13,6 +13,7 @@ import { Chat } from "./pages/Chat";
 import { Paper } from "./pages/Paper";
 import { SharedSession } from "./pages/SharedSession";
 import { Usage } from "./pages/Usage";
+import { OAuthCallback } from "./pages/OAuthCallback";
 
 const rootRoute = createRootRoute({ component: () => <Outlet /> });
 
@@ -58,6 +59,12 @@ const paperRoute = createRoute({
   component: Paper,
 });
 
+const oauthCallbackRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/oauth/callback",
+  component: OAuthCallback,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   chatRoute,
@@ -66,6 +73,7 @@ const routeTree = rootRoute.addChildren([
   tutorialRoute,
   blogRoute,
   paperRoute,
+  oauthCallbackRoute,
 ]);
 
 const browserHistory = createBrowserHistory();

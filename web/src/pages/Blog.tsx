@@ -1115,7 +1115,7 @@ export function Blog() {
     <div className="retro-layout retro-page">
       <Nav />
 
-      <main className="pt-28 pb-16 px-6">
+      <main className="pt-6 pb-16 px-6">
         <div className="max-w-6xl mx-auto">
           {/* Hero */}
           <div className="paper-fold distressed-border p-8 mb-8">

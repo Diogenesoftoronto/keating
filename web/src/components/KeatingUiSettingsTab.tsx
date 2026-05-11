@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import { loadKeatingUiSettings, saveKeatingUiSettings, type ReasoningLevel } from "../keating/ui-settings";
-import { loadWebSpeechSettings, saveWebSpeechSettings, type WebSpeechSettings, GEMINI_LIVE_SPEECH_MODEL, DEFAULT_SPEECH_VOICE } from "../keating/speech";
 
 const REASONING_LEVELS: { value: ReasoningLevel; label: string; description: string }[] = [
 	{ value: "off", label: "Off", description: "Fastest responses, no reasoning tokens" },
@@ -11,37 +10,13 @@ const REASONING_LEVELS: { value: ReasoningLevel; label: string; description: str
 	{ value: "xhigh", label: "Maximum", description: "Most thorough reasoning (select models only)" },
 ];
 
-const SPEECH_MODELS = [
-	{ value: "gemini-2.0-flash-live-001", label: "Gemini 2.0 Flash Live" },
-	{ value: "gemini-2.5-flash-live-preview", label: "Gemini 2.5 Flash Live (Preview)" },
-	{ value: "gemini-3.0-flash-live-preview", label: "Gemini 3.0 Flash Live (Preview)" },
-	{ value: "gemini-3.1-flash-live-preview", label: "Gemini 3.1 Flash Live (Preview)" },
-];
-
-const SPEECH_VOICES = [
-	"Kore",
-	"Puck",
-	"Charon",
-	"Fenrir",
-	"Leda",
-	"Orus",
-	"Aoede",
-];
-
 export function KeatingUiSettingsTab() {
 	const [settings, setSettings] = useState(() => loadKeatingUiSettings());
-	const [speechSettings, setSpeechSettings] = useState<WebSpeechSettings>(() => loadWebSpeechSettings());
 
 	const update = useCallback((partial: Partial<typeof settings>) => {
 		const next = { ...loadKeatingUiSettings(), ...partial };
 		setSettings(next);
 		saveKeatingUiSettings(next);
-	}, []);
-
-	const updateSpeech = useCallback((partial: Partial<WebSpeechSettings>) => {
-		const next = { ...loadWebSpeechSettings(), ...partial };
-		setSpeechSettings(next);
-		saveWebSpeechSettings(next);
 	}, []);
 
 	return (
@@ -135,40 +110,6 @@ export function KeatingUiSettingsTab() {
 				</div>
 			</div>
 
-			<div className="border-t border-border" />
-
-			<div>
-				<h3 className="text-sm font-semibold text-foreground mb-2">Speech</h3>
-				<p className="text-sm text-muted-foreground mb-3">
-					Configure the Gemini Live speech model and voice used for spoken learner responses.
-				</p>
-				<div className="flex flex-col gap-3">
-					<div className="flex flex-col gap-1">
-						<label className="text-sm font-medium text-foreground">Speech Model</label>
-						<select
-							className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-							value={speechSettings.model}
-							onChange={(e) => updateSpeech({ model: e.target.value })}
-						>
-							{SPEECH_MODELS.map((m) => (
-								<option key={m.value} value={m.value}>{m.label}</option>
-							))}
-						</select>
-					</div>
-					<div className="flex flex-col gap-1">
-						<label className="text-sm font-medium text-foreground">Voice</label>
-						<select
-							className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-							value={speechSettings.voiceName}
-							onChange={(e) => updateSpeech({ voiceName: e.target.value })}
-						>
-							{SPEECH_VOICES.map((v) => (
-								<option key={v} value={v}>{v}</option>
-							))}
-						</select>
-					</div>
-				</div>
-			</div>
 		</div>
 	);
 }
