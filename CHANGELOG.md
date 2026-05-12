@@ -10,6 +10,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### TODO
 - Move rendered VHS tapes (`docs/assets/*.mp4`, `web/public/tapes/*.mp4`) out of git history and into git-lfs (or an external CDN). They were committed inline in 0.3.0 to keep the blog working immediately; ~1.7MB today, will grow.
 
+## [0.3.5] - 2026-05-12
+
+### Fixed
+- Standalone `curl | bash` installer now works correctly. The release tarball was archived without its top-level `keating-VERSION-OS-ARCH/` directory, so the wrapper script pointed at a nonexistent path. The release workflow now stages files inside the versioned directory before archiving.
+- The install wrapper script at `~/.local/bin/keating` now uses `exec node ...` to invoke `bin/keating.js` instead of trying to `exec` a standalone binary that does not exist in the tarball.
+- Added `require_command node` to the install script so the installer fails early with a clear message if Node.js is not available on the system.
+
+## [0.3.4] - 2026-05-10
+
+### Added
+- Chat panel now renders GitHub-flavored markdown tables via `remark-gfm`.
+- LaTeX math expressions are typeset with KaTeX using `remark-math` and `rehype-katex` plugins. Inline `$...$` and block `$$...$$` delimiters are supported.
+
+## [0.3.3] - 2026-05-09
+
+### Added
+- Interactive quiz UI renders live forms inside chat with multiple-choice, fill-in-the-blank, true/false, and open-ended question types.
+- Animation storyboards render as navigable scene cards with duration, visual descriptions, audio cues, and transitions.
+- Version sync script (`scripts/sync-version.mjs`) enforces the root `package.json` version across the web package, CLI extension, and hardcoded web strings.
+
+### Fixed
+- Dark mode contrast fixed across landing, tutorial, blog, paper, and footer pages by replacing hardcoded hex colors with theme-aware Tailwind classes.
+- Chat viewport overflow fixed by switching `.chat-page-panel` from `display: block` to `display: flex; flex-direction: column; height: 100%`.
+
+## [0.3.2] - 2026-05-09
+
+### Added
+- Per-message fork and feedback actions (thumbs up, thumbs down, fork from message).
+- Artifact chips in assistant messages that open the artifact browser directly.
+
+### Changed
+- Chat UI migrated from Lit to `@assistant-ui/react` for better streaming and composer primitives.
+- Mobile responsiveness improved with adaptive toolbar buttons, touch-friendly targets, and responsive message bubbles.
+- CLI theme refreshed to match the web retro-green terminal palette.
+
+### Fixed
+- React error #310 crash (hook-count mismatch under StrictMode double-render) fixed by removing StrictMode and memoizing the adapter object.
+
 ## [0.3.1] - 2026-05-08
 
 ### Added
@@ -123,7 +161,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.5...HEAD
+[0.3.5]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.4...v0.3.5
+[0.3.4]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.3...v0.3.4
+[0.3.3]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.2...v0.3.3
+[0.3.2]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Diogenesoftoronto/keating/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Diogenesoftoronto/keating/compare/v0.1.4...v0.2.0

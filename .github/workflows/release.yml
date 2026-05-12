@@ -41,12 +41,15 @@ jobs:
         run: |
           VERSION="${GITHUB_REF#refs/tags/v}"
           BUNDLE_NAME="keating-${VERSION}-${{ matrix.os }}-${{ matrix.arch }}"
-          mkdir -p bundle
-          cp -r bin dist pi scripts/install bundle/
-          cp package.json bundle/
-          mv bundle/install/install.sh bundle/install.sh
-          rm -rf bundle/install
-          tar -czf "${BUNDLE_NAME}.tar.gz" -C bundle .
+          STAGE_DIR="${BUNDLE_NAME}"
+          mkdir -p "${STAGE_DIR}"
+          cp -r bin dist pi scripts/install "${STAGE_DIR}/"
+          cp package.json "${STAGE_DIR}/"
+          # Bundle node_modules so the tarball is truly standalone
+          cp -r node_modules "${STAGE_DIR}/"
+          mv "${STAGE_DIR}/install/install.sh" "${STAGE_DIR}/install.sh"
+          rm -rf "${STAGE_DIR}/install"
+          tar -czf "${BUNDLE_NAME}.tar.gz" "${STAGE_DIR}"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

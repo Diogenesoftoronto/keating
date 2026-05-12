@@ -130,6 +130,12 @@ function schedulePcmAudio(base64: string): boolean {
 	return true;
 }
 
+function speechErrorMessage(error: unknown): string {
+	if (error instanceof Error && error.message.trim()) return error.message.trim();
+	if (typeof error === "string" && error.trim()) return error.trim();
+	return "Gemini Live speech failed.";
+}
+
 function contentParts(message: any): any[] {
 	return Array.isArray(message?.serverContent?.modelTurn?.parts)
 		? message.serverContent.modelTurn.parts
@@ -293,7 +299,27 @@ export function createSpeechTool(
 				};
 			}
 
-			const result = await speakWithGeminiLive(utterance, settings, apiKey, signal);
+			let result: Awaited<ReturnType<typeof speakWithGeminiLive>>;
+			try {
+				result = await speakWithGeminiLive(utterance, settings, apiKey, signal);
+			} catch (error) {
+				const message = speechErrorMessage(error);
+				console.warn(`[keating:speech] ${settings.model} failed: ${message}`);
+				return {
+					content: [{
+						type: "text",
+						text: `${line}\n\nVoice layer failed for ${settings.model}: ${message}\nThe main chat response can continue without speech audio.`,
+					}],
+					details: {
+						provider: "gemini-live",
+						model: settings.model,
+						voiceName: utterance.voice,
+						utterance,
+						status: "speech-error",
+						error: message,
+					},
+				};
+			}
 			return {
 				content: [{
 					type: "text",
