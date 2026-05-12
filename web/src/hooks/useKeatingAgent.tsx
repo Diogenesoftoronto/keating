@@ -56,6 +56,29 @@ const ARTIFACT_TOOL_NAMES = new Set([
 ]);
 
 const SESSION_RESTORE_TIMEOUT_MS = 5_000;
+const PERSISTENT_STORAGE_STATUS_KEY = "keating:persistent-storage-status";
+
+type PersistentStorageStatus = "unknown" | "granted" | "declined";
+
+function getPersistentStorageStatus(): PersistentStorageStatus {
+  if (typeof localStorage === "undefined") return "unknown";
+  try {
+    const value = localStorage.getItem(PERSISTENT_STORAGE_STATUS_KEY);
+    if (value === "granted" || value === "declined") return value;
+    return "unknown";
+  } catch {
+    return "unknown";
+  }
+}
+
+function savePersistentStorageStatus(status: Exclude<PersistentStorageStatus, "unknown">): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.setItem(PERSISTENT_STORAGE_STATUS_KEY, status);
+  } catch {
+    // Ignore storage failures; the in-memory ref still suppresses repeats this mount.
+  }
+}
 
 async function withSessionRestoreTimeout<T>(operation: Promise<T>, label: string): Promise<T> {
   let timeoutId: number | undefined;
@@ -81,6 +104,7 @@ export interface UseKeatingAgentReturn {
   chatPanelRef: (node: ChatPanelHandle | null) => void;
   dialogs: React.ReactNode;
   speechEnabled: boolean;
+  persistentStorageStatus: PersistentStorageStatus;
   toggleSpeech: () => void;
   setThinkingLevel: (level: ThinkingLevel) => void;
 }
@@ -96,6 +120,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const sessionCreatedAtRef = useRef(new Date().toISOString());
   const selectedModelRef = useRef<Model<Api>>(DEFAULT_MODEL);
   const [speechSettings, setSpeechSettings] = useState<WebSpeechSettings>(() => loadWebSpeechSettings());
+  const [persistentStorageStatus, setPersistentStorageStatus] = useState<PersistentStorageStatus>(() => getPersistentStorageStatus());
   const sessionsDialog = useDialogState();
   const settingsDialog = useDialogState();
   const modelSelectorDialog = useDialogState();
@@ -251,12 +276,20 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   }, []);
 
   const requestPersistentStorageOnce = useCallback(() => {
-    if (persistentStorageRequestedRef.current) return;
+    if (persistentStorageRequestedRef.current || persistentStorageStatus !== "unknown") return;
     persistentStorageRequestedRef.current = true;
-    void PersistentStorageDialog.request().catch((error) => {
-      console.warn("Persistent storage request failed:", error);
-    });
-  }, []);
+    void PersistentStorageDialog.request()
+      .then((granted) => {
+        const nextStatus: PersistentStorageStatus = granted ? "granted" : "declined";
+        setPersistentStorageStatus(nextStatus);
+        savePersistentStorageStatus(nextStatus as Exclude<PersistentStorageStatus, "unknown">);
+      })
+      .catch((error) => {
+        setPersistentStorageStatus("declined");
+        savePersistentStorageStatus("declined");
+        console.warn("Persistent storage request failed:", error);
+      });
+  }, [persistentStorageStatus]);
 
   const endLearnerSession = useCallback(async () => {
     try {
@@ -552,5 +585,5 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     </>
   );
 
-  return { title, isPending, openSettings, openSessions, newSession, shareSession, chatPanelRef, dialogs: allDialogs, speechEnabled: speechSettings.enabled, toggleSpeech, setThinkingLevel };
+  return { title, isPending, openSettings, openSessions, newSession, shareSession, chatPanelRef, dialogs: allDialogs, speechEnabled: speechSettings.enabled, persistentStorageStatus, toggleSpeech, setThinkingLevel };
 }
