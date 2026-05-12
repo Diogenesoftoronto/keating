@@ -55,6 +55,21 @@ const ARTIFACT_TOOL_NAMES = new Set([
   "prompt_evolve",
 ]);
 
+const SESSION_RESTORE_TIMEOUT_MS = 5_000;
+
+async function withSessionRestoreTimeout<T>(operation: Promise<T>, label: string): Promise<T> {
+  let timeoutId: number | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = window.setTimeout(() => reject(new Error(`${label} timed out after ${SESSION_RESTORE_TIMEOUT_MS}ms`)), SESSION_RESTORE_TIMEOUT_MS);
+  });
+
+  try {
+    return await Promise.race([operation, timeout]);
+  } finally {
+    if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+  }
+}
+
 // ─── Hook ───────────────────────────────────────────────────────────────────
 export interface UseKeatingAgentReturn {
   title: string;
@@ -490,13 +505,13 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
 
         void (async () => {
           try {
-            const latestSessionId = await sessions.getLatestSessionId();
+            const latestSessionId = await withSessionRestoreTimeout(sessions.getLatestSessionId(), "Restoring latest session");
             if (bootstrapGenerationRef.current !== generation || panelRef.current !== node || agentRef.current) {
               return;
             }
 
             if (latestSessionId) {
-              const session = await sessions.loadSession(latestSessionId);
+              const session = await withSessionRestoreTimeout(sessions.loadSession(latestSessionId), "Loading latest session");
               if (bootstrapGenerationRef.current !== generation || panelRef.current !== node || agentRef.current) {
                 return;
               }
@@ -512,7 +527,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
 
             await createAgent(node);
           } catch (error) {
-            console.error(error);
+            console.warn("Could not restore the latest saved session; starting a new chat session.", error);
             if (!agentRef.current && panelRef.current === node && bootstrapGenerationRef.current === generation) {
               await createAgent(node).catch(console.error);
             }

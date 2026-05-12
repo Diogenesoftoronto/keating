@@ -9,6 +9,7 @@ import {
 	type AppendMessage,
 	type ThreadMessageLike,
 	useExternalStoreRuntime,
+	useMessage,
 } from "@assistant-ui/react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -20,14 +21,15 @@ import { loadKeatingUiSettings, subscribeKeatingUiSettings } from "../keating/ui
 import { QuizRenderer } from "./QuizRenderer";
 import { SceneRenderer } from "./SceneRenderer";
 import type { Quiz } from "../keating/core";
+import { KEATING_VOICE_TOOL_NAME } from "../keating/speech";
 
 const AuthErrorContext = createContext<(provider: string) => Promise<boolean>>(() => Promise.resolve(false));
-const LastAuthErrorContext = createContext<{ provider: string; error: string } | null>(null);
 
 const ERROR_TEXT_PREFIX = "\x00__KEATING_ERROR__\x00";
 
 interface AssistantChatPanelProps {
 	className?: string;
+	speechEnabled?: boolean;
 }
 
 function StreamingTextPart({ text, status, showRawErrors }: { text: string; status?: { type: string; reason?: string; error?: string }; showRawErrors?: boolean }) {
@@ -73,15 +75,14 @@ function StreamingTextPart({ text, status, showRawErrors }: { text: string; stat
 	return <MarkdownText text={visibleText} isRunning={status?.type === "running" && visibleText.length >= displayText.length} />;
 }
 
-const MessageErrorText = createContext<string | null>(null);
-
 const artifactLinkPattern = /\[artifact:\/\/([^/]+)\/([^\]]+)\]/g;
 
 function stripArtifactLinks(text: string): string {
 	return text.replace(artifactLinkPattern, "").trim();
 }
 
-const AUTH_ERROR_PATTERNS = /authentication_error|invalid.api.key|unauthorized|401|403|api.secret.key|auth.*fail|login.fail|key.*invalid|key.*expired/i;
+const AUTH_ERROR_PATTERNS = /authentication_error|invalid.api.key|unauthorized|401|api.secret.key|auth.*fail|login.fail|key.*invalid|key.*expired/i;
+const VOICE_ERROR_PATTERNS = /keating_voice|gemini live speech|voice layer|speech model|speech failed|speech timed out/i;
 
 const HTTP_STATUS_PATTERN = /\b(4[0-9]{2}|5[0-9]{2})\b/;
 
@@ -90,7 +91,7 @@ interface ClassifiedError {
 	title: string;
 	description: string;
 	icon: typeof CircleAlert;
-	category: "auth" | "permission" | "not-found" | "rate-limit" | "server" | "network" | "unknown";
+	category: "auth" | "permission" | "not-found" | "rate-limit" | "server" | "network" | "speech" | "unknown";
 }
 
 const HTTP_ERROR_MAP: Record<number, Omit<ClassifiedError, "statusCode">> = {
@@ -117,6 +118,26 @@ const NETWORK_ERRORS: Record<string, Omit<ClassifiedError, "statusCode">> = {
 };
 
 function classifyError(errorText: string): ClassifiedError {
+	const isVoiceError = VOICE_ERROR_PATTERNS.test(errorText);
+	if (isVoiceError && AUTH_ERROR_PATTERNS.test(errorText)) {
+		return {
+			statusCode: errorText.match(HTTP_STATUS_PATTERN) ? parseInt(errorText.match(HTTP_STATUS_PATTERN)![1], 10) : null,
+			title: "Voice Authentication Failed",
+			description: "The speech model rejected its credentials. The main chat model may still be working.",
+			icon: KeyRound,
+			category: "speech",
+		};
+	}
+	if (isVoiceError) {
+		return {
+			statusCode: null,
+			title: "Voice Model Error",
+			description: "The optional speech layer failed. The main chat model may still be working.",
+			icon: Wifi,
+			category: "speech",
+		};
+	}
+
 	const httpMatch = errorText.match(HTTP_STATUS_PATTERN);
 	if (httpMatch) {
 		const code = parseInt(httpMatch[1], 10);
@@ -128,6 +149,10 @@ function classifyError(errorText: string): ClassifiedError {
 
 	for (const [pattern, def] of Object.entries(NETWORK_ERRORS)) {
 		if (errorText.toUpperCase().includes(pattern)) return { ...def, statusCode: null };
+	}
+
+	if (AUTH_ERROR_PATTERNS.test(errorText)) {
+		return { statusCode: null, title: "Authentication Failed", description: "The selected model provider rejected its credentials.", icon: KeyRound, category: "auth" };
 	}
 
 	return { statusCode: null, title: "Error", description: "An unexpected error occurred.", icon: CircleAlert, category: "unknown" };
@@ -159,6 +184,15 @@ function ErrorBadge({ classified, rawMessage, showRaw }: { classified: Classifie
 }
 
 type AuthErrorEntry = { provider: string; error: string };
+
+function authErrorFromAgentMessage(msg: any): AuthErrorEntry | null {
+	if (msg.role !== "assistant" || msg.stopReason !== "error") return null;
+	const errorText = msg.errorMessage ?? "";
+	if (!AUTH_ERROR_PATTERNS.test(errorText)) return null;
+	if (VOICE_ERROR_PATTERNS.test(errorText)) return null;
+	const provider = msg.provider ?? msg.model?.provider ?? msg.model?.split?.("/", 2)?.[0] ?? "unknown";
+	return { provider, error: errorText };
+}
 
 function ArtifactChips({ text }: { text: string }) {
 	const matches = Array.from(text.matchAll(artifactLinkPattern));
@@ -434,6 +468,21 @@ function foldToolResults(messages: AgentMessage[]): AgentMessage[] {
 	return folded;
 }
 
+function filterSpeechMessages(messages: AgentMessage[], speechEnabled: boolean): AgentMessage[] {
+	if (speechEnabled) return messages;
+	return messages
+		.map((message) => {
+			const msg = message as any;
+			if (msg.role === "toolResult" && msg.toolName === KEATING_VOICE_TOOL_NAME) return null;
+			if (msg.role !== "assistant" || !Array.isArray(msg.content)) return message;
+
+			const content = msg.content.filter((part: any) => !(part?.type === "toolCall" && part.name === KEATING_VOICE_TOOL_NAME));
+			if (content.length === msg.content.length) return message;
+			return { ...msg, content } as AgentMessage;
+		})
+		.filter((message): message is AgentMessage => message !== null);
+}
+
 function toAssistantMessage(message: AgentMessage, index: number, totalMessages: number, isRunning: boolean): ThreadMessageLike {
 	const msg = message as any;
 	const timestamp = typeof msg.timestamp === "number" ? new Date(msg.timestamp) : new Date();
@@ -480,7 +529,15 @@ function toAssistantMessage(message: AgentMessage, index: number, totalMessages:
 			}
 		}
 
-		return { id, role: "assistant", createdAt: timestamp, status, content };
+		const authError = authErrorFromAgentMessage(msg);
+		return {
+			id,
+			role: "assistant",
+			createdAt: timestamp,
+			status,
+			content,
+			metadata: authError ? { custom: { keatingAuthError: authError } } : undefined,
+		};
 	}
 
 	if (msg.role === "toolResult") {
@@ -655,25 +712,13 @@ function ReasoningLevelSelector({
 	);
 }
 
-function AssistantThread({ agent, callbacks, version }: { agent: Agent | null; callbacks: ChatPanelSetupCallbacks; version: number }) {
+function AssistantThread({ agent, callbacks, version, speechEnabled }: { agent: Agent | null; callbacks: ChatPanelSetupCallbacks; version: number; speechEnabled: boolean }) {
 	const [uiSettings, setUiSettings] = useState(() => loadKeatingUiSettings());
-	const messages = useMemo(() => foldToolResults([...(agent?.state.messages ?? [])]), [agent, version]);
+	const messages = useMemo(() => foldToolResults(filterSpeechMessages([...(agent?.state.messages ?? [])], speechEnabled)), [agent, version, speechEnabled]);
 	const components = useMemo(() => messagePartComponents(uiSettings.showToolUi, uiSettings.showRawErrors), [uiSettings.showToolUi, uiSettings.showRawErrors]);
 	const isRunning = agent?.state.isStreaming ?? false;
 	const modelRef = useRef(agent?.state.model);
 	if (agent) modelRef.current = agent.state.model;
-
-	const lastAuthError: AuthErrorEntry | null = useMemo(() => {
-		for (let i = messages.length - 1; i >= 0; i--) {
-			const msg = messages[i] as any;
-			if (msg.role !== "assistant" || msg.stopReason !== "error") continue;
-			const errorText = msg.errorMessage ?? "";
-			if (!AUTH_ERROR_PATTERNS.test(errorText)) continue;
-			const provider = msg.provider ?? msg.model?.split("/", 2)[0] ?? "unknown";
-			return { provider, error: errorText };
-		}
-		return null;
-	}, [messages]);
 
 	const totalMessages = messages.length;
 	const convertMessage = useCallback(
@@ -732,7 +777,6 @@ function AssistantThread({ agent, callbacks, version }: { agent: Agent | null; c
 
 	return (
 		<AuthErrorContext.Provider value={callbacks.onAuthError ?? (() => Promise.resolve(false))}>
-		<LastAuthErrorContext.Provider value={lastAuthError}>
 		<AssistantRuntimeProvider runtime={runtime}>
 			<ThreadPrimitive.Root className="flex h-full min-h-0 flex-col bg-background text-foreground">
 				<ThreadPrimitive.Viewport className="min-h-0 flex-1 overflow-y-auto px-3 py-4 sm:px-4 sm:py-6">
@@ -777,7 +821,6 @@ function AssistantThread({ agent, callbacks, version }: { agent: Agent | null; c
 				</ThreadPrimitive.Viewport>
 			</ThreadPrimitive.Root>
 		</AssistantRuntimeProvider>
-		</LastAuthErrorContext.Provider>
 		</AuthErrorContext.Provider>
 	);
 }
@@ -873,7 +916,7 @@ function AssistantMessage({
 	const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
 	const [feedbackType, setFeedbackType] = useState<"up" | "down">("up");
 	const onAuthError = useContext(AuthErrorContext);
-	const authError = useContext(LastAuthErrorContext);
+	const authError = useMessage((message) => message.metadata.custom?.keatingAuthError as AuthErrorEntry | undefined);
 	const [retrying, setRetrying] = useState(false);
 
 	const handleFeedbackClick = (type: "up" | "down") => {
@@ -981,7 +1024,7 @@ function AssistantMessage({
 	);
 }
 
-export const AssistantChatPanel = forwardRef<ChatPanelHandle, AssistantChatPanelProps>(({ className }, ref) => {
+export const AssistantChatPanel = forwardRef<ChatPanelHandle, AssistantChatPanelProps>(({ className, speechEnabled = false }, ref) => {
 	const [agent, setAgentState] = useState<Agent | null>(null);
 	const [callbacks, setCallbacks] = useState<ChatPanelSetupCallbacks>({});
 	const [version, setVersion] = useState(0);
@@ -999,7 +1042,7 @@ export const AssistantChatPanel = forwardRef<ChatPanelHandle, AssistantChatPanel
 	return (
 		<div className={className}>
 			<AgentSubscription agent={agent} onChange={refresh} />
-			<AssistantThread agent={agent} callbacks={callbacks} version={version} />
+			<AssistantThread agent={agent} callbacks={callbacks} version={version} speechEnabled={speechEnabled} />
 		</div>
 	);
 });

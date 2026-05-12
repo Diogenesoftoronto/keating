@@ -32,7 +32,7 @@ import { printAsciiHeader } from "../core/terminal.js";
 
 function printUsage(): void {
   printAsciiHeader();
-  console.log(bold("primary", "Keating CLI") + "  " + color.dim + color.sepia + "v0.3.0" + color.reset);
+  console.log(bold("primary", "Keating CLI") + "  " + color.dim + color.sepia + "v0.3.5" + color.reset);
   console.log(color.parchment + "The Hyperteacher — cognitive empowerment through Socratic AI." + color.reset);
   console.log("");
   console.log(cliCommands());

@@ -231,6 +231,7 @@ esac
 
 require_command mktemp
 require_command tar
+require_command node
 
 asset_target="$os-$arch"
 archive_extension="tar.gz"
@@ -275,7 +276,7 @@ step "Linking keating into $INSTALL_BIN_DIR"
 cat >"$INSTALL_BIN_DIR/keating" <<EOF
 #!/bin/sh
 set -eu
-exec "$INSTALL_APP_DIR/$bundle_name/keating" "\$@"
+exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "\$@"
 EOF
 chmod 0755 "$INSTALL_BIN_DIR/keating"
 

@@ -1,28 +1,61 @@
 import { Suspense, useEffect, useRef, useState } from "react";
-import { BarChart3, History, LibraryBig, Menu, Plus, Settings, Share2, Volume2, VolumeX, X } from "lucide-react";
+import {
+  BarChart3,
+  History,
+  LibraryBig,
+  Menu,
+  Plus,
+  Settings,
+  Share2,
+  Volume2,
+  VolumeX,
+  X,
+} from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useKeatingAgent } from "../hooks/useKeatingAgent";
 import { useSeo } from "../hooks/useSeo";
 import { ChatIntro } from "../components/ChatIntro";
 import { ArtifactBrowserOverlay } from "../components/ArtifactBrowserOverlay";
+import { ArtifactSidePanel } from "../components/ArtifactSidePanel";
 import { AssistantChatPanel } from "../components/AssistantChatPanel";
 import { ThemeToggle } from "../components/ThemeToggle";
-import { loadKeatingUiSettings, subscribeKeatingUiSettings } from "../keating/ui-settings";
+import {
+  loadKeatingUiSettings,
+  subscribeKeatingUiSettings,
+} from "../keating/ui-settings";
 
 function ChatContent() {
   useSeo({
     title: "Keating Chat — Socratic AI Tutor Session",
-    description: "Start a Socratic tutoring session with Keating. Diagnose what you know, reconstruct understanding from memory, and test transfer to new contexts.",
+    description:
+      "Start a Socratic tutoring session with Keating. Diagnose what you know, reconstruct understanding from memory, and test transfer to new contexts.",
     canonical: "https://keating.help/chat",
   });
   const navigate = useNavigate();
-  const { isPending, openSettings, openSessions, newSession, shareSession, chatPanelRef, dialogs, speechEnabled, toggleSpeech } = useKeatingAgent();
+  const {
+    isPending,
+    openSettings,
+    openSessions,
+    newSession,
+    shareSession,
+    chatPanelRef,
+    dialogs,
+    speechEnabled,
+    toggleSpeech,
+  } = useKeatingAgent();
   const [introDismissed, setIntroDismissed] = useState(
-    () => sessionStorage.getItem("keating_chat_intro") === "dismissed"
+    () => sessionStorage.getItem("keating_chat_intro") === "dismissed",
   );
   const [artifactBrowserOpen, setArtifactBrowserOpen] = useState(false);
+  const [isWideViewport, setIsWideViewport] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(min-width: 1024px)").matches,
+  );
   const [uiSettings, setUiSettings] = useState(() => loadKeatingUiSettings());
-  const [shareState, setShareState] = useState<"idle" | "sharing" | "copied" | "error">("idle");
+  const [shareState, setShareState] = useState<
+    "idle" | "sharing" | "copied" | "error"
+  >("idle");
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [shareMessage, setShareMessage] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -35,7 +68,10 @@ function ChatContent() {
       if (e.key === "Escape") setMobileMenuOpen(false);
     };
     const handleClickOutside = (e: MouseEvent) => {
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target as Node)) {
+      if (
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(e.target as Node)
+      ) {
         setMobileMenuOpen(false);
       }
     };
@@ -54,7 +90,17 @@ function ChatContent() {
 
   useEffect(() => subscribeKeatingUiSettings(setUiSettings), []);
 
-  const [artifactTarget, setArtifactTarget] = useState<string | undefined>(undefined);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const handler = (e: MediaQueryListEvent) => setIsWideViewport(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  const [artifactTarget, setArtifactTarget] = useState<string | undefined>(
+    undefined,
+  );
 
   useEffect(() => {
     const openArtifacts = () => {
@@ -81,18 +127,25 @@ function ChatContent() {
     try {
       const url = await shareSession();
       setShareUrl(url);
-      setShareMessage("Share link ready. It was copied if your browser allowed clipboard access.");
+      setShareMessage(
+        "Share link ready. It was copied if your browser allowed clipboard access.",
+      );
       setShareState("copied");
       window.setTimeout(() => setShareState("idle"), 1600);
     } catch (error) {
       console.warn("Failed to share session:", error);
-      setShareMessage(error instanceof Error ? error.message : "Could not create a share link yet.");
+      setShareMessage(
+        error instanceof Error
+          ? error.message
+          : "Could not create a share link yet.",
+      );
       setShareState("error");
       window.setTimeout(() => setShareState("idle"), 2200);
     }
   };
 
-  const actionButtonClass = "chat-action-button inline-flex shrink-0 items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50";
+  const actionButtonClass =
+    "chat-action-button inline-flex shrink-0 items-center justify-center roundeinline d-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50";
 
   return (
     <div className="chat-page-shell w-full flex flex-col bg-background text-foreground overflow-hidden">
@@ -103,15 +156,21 @@ function ChatContent() {
           className="chat-brand inline-flex min-w-0 shrink-0 items-center gap-2 rounded-md px-2 py-1 hover:bg-accent hover:text-accent-foreground"
           aria-label="Go to Keating home"
         >
-          <img src="/logo.png" alt="Keating" className="h-7 w-7 rounded object-contain" />
-          <span className="hidden sm:inline truncate text-base font-semibold sm:text-lg">Keating</span>
+          <img
+            src="/logo.png"
+            alt="Keating"
+            className="h-7 w-7 rounded object-contain"
+          />
+          <span className="hidden md:block truncate text-base font-semibold">
+            Keating
+          </span>
         </Link>
 
         {/* Actions */}
         <div className="chat-actions no-scrollbar ml-auto flex min-w-0 flex-1 items-center justify-end gap-1 overflow-x-auto">
           <ThemeToggle />
           <button
-            className={actionButtonClass}
+            className={`${actionButtonClass} sm:hidden lg:inline-flex`}
             title="New session"
             aria-label="New session"
             disabled={isPending}
@@ -120,7 +179,7 @@ function ChatContent() {
             <Plus size={16} />
           </button>
           <button
-            className={actionButtonClass}
+            className={`${actionButtonClass} sm:hidden lg:inline-flex`}
             title="Session history"
             aria-label="Session history"
             disabled={isPending}
@@ -129,8 +188,22 @@ function ChatContent() {
             <History size={16} />
           </button>
           <button
+            className={`${actionButtonClass} sm:hidden lg:inline-flex`}
+            title="Settings"
+            aria-label="Settings"
+            onClick={openSettings}
+          >
+            <Settings size={16} />
+          </button>
+          <button
             className={`${actionButtonClass} hidden md:inline-flex ${shareState === "copied" ? "text-primary" : ""} ${shareState === "error" ? "text-destructive" : ""}`}
-            title={shareState === "copied" ? "Copied share link" : shareState === "error" ? "Could not share yet" : "Share session"}
+            title={
+              shareState === "copied"
+                ? "Copied share link"
+                : shareState === "error"
+                  ? "Could not share yet"
+                  : "Share session"
+            }
             aria-label="Share session"
             disabled={isPending || shareState === "sharing"}
             onClick={handleShare}
@@ -152,14 +225,6 @@ function ChatContent() {
             onClick={toggleSpeech}
           >
             {speechEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-          </button>
-          <button
-            className={actionButtonClass}
-            title="Settings"
-            aria-label="Settings"
-            onClick={openSettings}
-          >
-            <Settings size={16} />
           </button>
           <button
             className={`${actionButtonClass} hidden lg:inline-flex`}
@@ -190,7 +255,10 @@ function ChatContent() {
             <div className="flex flex-col p-1">
               <button
                 className={`flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors ${shareState === "copied" ? "text-primary" : ""} ${shareState === "error" ? "text-destructive" : ""}`}
-                onClick={() => { setMobileMenuOpen(false); handleShare(); }}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  handleShare();
+                }}
                 disabled={isPending || shareState === "sharing"}
               >
                 <Share2 size={14} />
@@ -198,28 +266,40 @@ function ChatContent() {
               </button>
               <button
                 className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
-                onClick={() => { setMobileMenuOpen(false); navigate({ to: "/usage" }); }}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  navigate({ to: "/usage" });
+                }}
               >
                 <BarChart3 size={14} />
                 Learning usage
               </button>
               <button
                 className={`flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors ${speechEnabled ? "text-primary" : ""}`}
-                onClick={() => { setMobileMenuOpen(false); toggleSpeech(); }}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  toggleSpeech();
+                }}
               >
                 {speechEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
                 {speechEnabled ? "Disable speech" : "Enable speech"}
               </button>
               <button
                 className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
-                onClick={() => { setMobileMenuOpen(false); openSettings(); }}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  openSettings();
+                }}
               >
                 <Settings size={14} />
                 Settings
               </button>
               <button
                 className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
-                onClick={() => { setMobileMenuOpen(false); setArtifactBrowserOpen(true); }}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setArtifactBrowserOpen(true);
+                }}
               >
                 <LibraryBig size={14} />
                 Artifacts
@@ -268,10 +348,25 @@ function ChatContent() {
       </div>
 
       {introDismissed ? (
-        <AssistantChatPanel
-          ref={chatPanelRef}
-          className="chat-page-panel"
-        />
+        <div className="flex flex-1 min-h-0 overflow-hidden">
+          <AssistantChatPanel
+            ref={chatPanelRef}
+            className="chat-page-panel flex-1 min-w-0"
+            speechEnabled={speechEnabled}
+          />
+          {isWideViewport && artifactBrowserOpen && (
+            <div className="shrink-0 border-l border-border h-full">
+              <ArtifactSidePanel
+                open={artifactBrowserOpen}
+                artifactId={artifactTarget}
+                onClose={() => {
+                  setArtifactBrowserOpen(false);
+                  setArtifactTarget(undefined);
+                }}
+              />
+            </div>
+          )}
+        </div>
       ) : (
         <div className="relative flex-1 overflow-hidden">
           <ChatIntro />
@@ -287,7 +382,13 @@ function ChatContent() {
       {(shareUrl || shareMessage) && (
         <div className="border-t border-border bg-background px-4 py-3 text-sm">
           <div className="mx-auto flex max-w-4xl flex-col gap-2 sm:flex-row sm:items-center">
-            <span className={shareState === "error" ? "text-destructive" : "text-muted-foreground"}>
+            <span
+              className={
+                shareState === "error"
+                  ? "text-destructive"
+                  : "text-muted-foreground"
+              }
+            >
               {shareMessage}
             </span>
             {shareUrl && (
@@ -312,9 +413,12 @@ function ChatContent() {
       )}
 
       <ArtifactBrowserOverlay
-        open={artifactBrowserOpen}
+        open={artifactBrowserOpen && !isWideViewport}
         artifactId={artifactTarget}
-        onClose={() => { setArtifactBrowserOpen(false); setArtifactTarget(undefined); }}
+        onClose={() => {
+          setArtifactBrowserOpen(false);
+          setArtifactTarget(undefined);
+        }}
       />
       {dialogs}
     </div>
@@ -323,13 +427,15 @@ function ChatContent() {
 
 export function Chat() {
   return (
-    <Suspense fallback={
-      <div className="chat-page-shell w-full flex flex-col bg-background text-foreground overflow-hidden">
-        <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
-          Initializing…
+    <Suspense
+      fallback={
+        <div className="chat-page-shell w-full flex flex-col bg-background text-foreground overflow-hidden">
+          <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
+            Initializing…
+          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <ChatContent />
     </Suspense>
   );

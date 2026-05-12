@@ -58,6 +58,76 @@ function majorMinor(version: string): string {
 
 const POSTS: Post[] = [
   {
+    date: "2026-05-12",
+    badge: { label: "FIX", color: "fix" },
+    title: "v0.3.5 — Standalone Installer Fix: Tarball Structure and Node.js Entry Point",
+    version: "0.3.5",
+    summary:
+      "The curl | bash installer was broken: the release tarball lacked its top-level directory and the wrapper tried to exec a nonexistent binary. Both are fixed — install now works end-to-end on Linux and macOS.",
+    sections: [
+      { id: "broken-install", title: "What Was Broken" },
+      { id: "tarball-structure", title: "Tarball Structure Fix" },
+      { id: "node-entry-point", title: "Node.js Entry Point Fix" },
+      { id: "early-node-check", title: "Early Node.js Check" },
+    ],
+    body: (
+      <>
+        <p className="mb-4 leading-6">
+          If you ran <Code>curl -fsSL https://keating.help/install | bash</Code> and
+          then typed <Code>keating</Code>, you got a confusing "No such file or directory"
+          error. The installer reported success — it downloaded, extracted, and linked — but
+          the resulting binary could not run. Two independent bugs caused this.
+        </p>
+        <h3 id="broken-install" className="font-bold mt-4 mb-2">What Was Broken</h3>
+        <p className="text-sm mb-4">
+          The GitHub Actions release workflow archived the bundle contents without
+          a top-level versioned directory. The install script extracted the tarball
+          into <Code>~/.local/share/keating/</Code> and expected a subdirectory
+          called <Code>keating-0.3.3-linux-x64/</Code>, but the files landed
+          directly in the parent directory. On top of that, the wrapper script
+          at <Code>~/.local/bin/keating</Code> tried to <Code>exec</Code> a
+          standalone binary called <Code>keating</Code> — but the tarball
+          contains a Node.js project where the real entry point
+          is <Code>bin/keating.js</Code>.
+        </p>
+        <h3 id="tarball-structure" className="font-bold mt-4 mb-2">Tarball Structure Fix</h3>
+        <p className="text-sm mb-4">
+          The release workflow now stages all bundle files inside a
+          versioned <Code>keating-VERSION-OS-ARCH/</Code> directory before
+          running <Code>tar</Code>. This means the tarball root is
+          <Code>keating-0.3.5-linux-x64/</Code>, which matches the path the
+          install script constructs and expects.
+        </p>
+        <CodeBlock>{`# Before (broken): tar archived bundle contents flat
+tar -czf "\${BUNDLE_NAME}.tar.gz" -C bundle .
+
+# After (fixed): tar archives the versioned directory
+tar -czf "\${BUNDLE_NAME}.tar.gz" "\${STAGE_DIR}"`}</CodeBlock>
+        <h3 id="node-entry-point" className="font-bold mt-4 mb-2">Node.js Entry Point Fix</h3>
+        <p className="text-sm mb-4">
+          The install wrapper now launches Keating through Node.js instead of
+          trying to exec a standalone binary:
+        </p>
+        <CodeBlock>{`# Before (broken):
+exec "$INSTALL_APP_DIR/$bundle_name/keating" "$@"
+
+# After (fixed):
+exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
+        <h3 id="early-node-check" className="font-bold mt-4 mb-2">Early Node.js Check</h3>
+        <p className="text-sm mb-4">
+          The install script now checks for <Code>node</Code> alongside <Code>tar</Code> and
+          <Code>mktemp</Code>. If Node.js is not on <Code>PATH</Code>, the installer
+          exits immediately with a clear message instead of waiting until runtime to
+          discover the missing dependency.
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Reinstall with the updated script to get a working binary:&nbsp;
+          <Code>curl -fsSL https://keating.help/install | bash</Code>
+        </p>
+      </>
+    ),
+  },
+  {
     date: "2026-05-10",
     badge: { label: "RELEASE", color: "release" },
     title: "v0.3.4 — Markdown Tables and LaTeX Math in Chat",
