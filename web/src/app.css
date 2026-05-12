@@ -419,6 +419,34 @@ message-editor textarea::placeholder {
   box-shadow: 2px 2px 0 rgba(0, 255, 0, 0.2);
 }
 
+.chat-persistence-banner {
+  background: #f59e0b;
+  color: #111827;
+}
+
+.dark .chat-persistence-banner {
+  background: #d97706;
+  color: #111827;
+}
+
+.chat-persistence-track {
+  display: flex;
+  width: max-content;
+  gap: 2rem;
+  white-space: nowrap;
+  animation: chat-persistence-scroll 18s linear infinite;
+}
+
+@keyframes chat-persistence-scroll {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
 /* ─── Session manager / dialog styling ─── */
 .session-manager-dialog {
   background: var(--background);

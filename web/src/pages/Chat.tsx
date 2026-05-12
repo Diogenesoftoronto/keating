@@ -41,6 +41,7 @@ function ChatContent() {
     chatPanelRef,
     dialogs,
     speechEnabled,
+    persistentStorageStatus,
     toggleSpeech,
   } = useKeatingAgent();
   const [introDismissed, setIntroDismissed] = useState(
@@ -146,6 +147,7 @@ function ChatContent() {
 
   const actionButtonClass =
     "chat-action-button inline-flex shrink-0 items-center justify-center roundeinline d-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50";
+  const showPersistenceBanner = persistentStorageStatus === "declined";
 
   return (
     <div className="chat-page-shell w-full flex flex-col bg-background text-foreground overflow-hidden">
@@ -346,6 +348,15 @@ function ChatContent() {
           </div>
         )}
       </div>
+
+      {showPersistenceBanner && (
+        <div className="chat-persistence-banner shrink-0 border-b border-border">
+          <div className="chat-persistence-track px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.25em]">
+            <span>Session is not being persisted, all data will not be available outside of cache.</span>
+            <span aria-hidden="true">Session is not being persisted, all data will not be available outside of cache.</span>
+          </div>
+        </div>
+      )}
 
       {introDismissed ? (
         <div className="flex flex-1 min-h-0 overflow-hidden">
