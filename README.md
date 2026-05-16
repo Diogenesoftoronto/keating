@@ -69,15 +69,35 @@ curl -fsSL https://raw.githubusercontent.com/Diogenesoftoronto/keating/main/scri
 Or with npm/pnpm/bun:
 
 ```bash
-npm install -g @interleavelove/keating
-pnpm add -g @interleavelove/keating
-bun add -g @interleavelove/keating
+npm install -g keating
+pnpm add -g keating
+bun add -g keating
 ```
 
 Then launch the shell:
 
 ```bash
 keating shell
+```
+
+For a guided local setup:
+
+```bash
+keating setup
+keating doctor
+keating shell
+```
+
+The setup screen uses an Ink-powered terminal UI with arrow-key choices for provider, model, thinking effort, and runtime preference. Choose the recommended default path for `google` + `gemini-3.1-pro-preview`, or select custom provider/model values when your Pi runtime supports them.
+
+Non-interactive environments can write the default config with `keating setup --yes`.
+
+Keating checks credentials before launching the shell. It tries the configured provider first, then falls back to configured OpenAI or Anthropic credentials when the default Google key is missing. Supported environment variables are:
+
+```bash
+export GEMINI_API_KEY=...
+export OPENAI_API_KEY=...
+export ANTHROPIC_API_KEY=...
 ```
 
 From a local checkout, build first and run the repo binary directly:
@@ -117,7 +137,7 @@ Keating reads runtime/model defaults from `keating.config.json`.
   "pi": {
     "runtimePreference": "standalone-only",
     "defaultProvider": "google",
-    "defaultModel": "google/gemini-3.1-pro-preview",
+    "defaultModel": "gemini-3.1-pro-preview",
     "defaultThinking": "medium"
   },
   "speech": {
@@ -139,6 +159,8 @@ Keating reads runtime/model defaults from `keating.config.json`.
 - `standalone-only`
 - `prefer-standalone`
 - `embedded-only`
+
+`keating --list-models` is passed through to the underlying Pi shell runtime. The legacy typo `keating --list-model` is accepted as an alias for the same runtime flag.
 
 The speech module is disabled by default. When `speech.enabled` is `true`, Keating registers a Pi tool named `keating_voice`. The tool returns transcript-safe voice tags such as:
 

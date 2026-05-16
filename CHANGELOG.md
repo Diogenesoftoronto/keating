@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.6] - 2026-05-16
+
+### Added
+- Added an Ink-powered `keating setup` flow for interactive provider, model, thinking, and runtime onboarding, plus `keating setup --yes` for non-interactive default configuration.
+- `keating --list-models` now passes through to the Pi runtime, and `keating --list-model` is accepted as a compatibility alias.
+
+### Changed
+- Renamed the npm package from `@interleavelove/keating` to `keating`.
+- The default shell provider is now `google` with `gemini-3.1-pro-preview`.
+
+### Fixed
+- Existing configs that still name the removed `google-gemini-cli` provider are normalized to `google` when Keating reads them.
+- Shell launch now checks provider credentials before starting Pi, falls back from Google to configured OpenAI or Anthropic credentials, and reports recovery commands when no provider is configured.
+- Common CLI errors such as missing command input, missing runtime, and missing build artifacts now include concrete recovery commands.
+
 ### Fixed
 - Dotenv startup tips are now suppressed unless `KEATING_DEBUG=1` or `DEBUG=1` is set.
 - Curl and npm installs now verify that the CLI launcher, compiled Pi extension, and embedded agent runtime are present before publishing release artifacts.
@@ -167,7 +182,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.5...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.6...HEAD
+[0.3.6]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.5...v0.3.6
 [0.3.5]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.4...v0.3.5
 [0.3.4]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.2...v0.3.3

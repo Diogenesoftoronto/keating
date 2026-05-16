@@ -44,6 +44,7 @@ const files = [
   { path: join(rootDir, "src/pi/hyperteacher-extension.ts"), pattern: /const KEATING_VERSION = "[^"]+"/, replacement: `const KEATING_VERSION = "${targetVersion}"` },
 
   // Web UI hardcoded strings
+  { path: join(webDir, "index.html"), pattern: /"softwareVersion":\s*"[^"]+"/, replacement: `"softwareVersion": "${targetVersion}"` },
   { path: join(webDir, "src/components/ChatIntro.tsx"), pattern: /INIT SEQUENCE v[\d.]+/, replacement: `INIT SEQUENCE v${targetVersion}` },
   { path: join(webDir, "src/og-image.tsx"), pattern: /v[\d.]+<\/span>/, replacement: `v${targetVersion}</span>` },
 ];

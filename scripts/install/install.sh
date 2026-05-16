@@ -4,7 +4,7 @@ set -eu
 
 VERSION="${1:-latest}"
 INSTALL_BIN_DIR="${KEATING_INSTALL_BIN_DIR:-$HOME/.local/bin}"
-INSTALL_APP_DIR="${KEATING_INSTALL_APP_DIR:-$HOME/.local/share/keating}"
+INSTALL_APP_DIR="${KEATING_INSTALL_APP_DIR:-$HOME/.local/sharekeating}"
 SKIP_PATH_UPDATE="${KEATING_INSTALL_SKIP_PATH_UPDATE:-0}"
 path_action="already"
 path_profile=""
@@ -174,8 +174,8 @@ warn_command_conflict() {
     step "Or launch directly: $expected_path"
 
     case "$resolved_path" in
-      *"/node_modules/@interleavelove/keating/"* | *"/node_modules/.bin/keating")
-        step "If that path is an old global npm install, remove it with: npm uninstall -g @interleavelove/keating"
+      *"/node_modules/keating/"* | *"/node_modules/.bin/keating")
+        step "If that path is an old global npm install, remove it with: npm uninstall -g keating"
         ;;
     esac
   fi
@@ -261,8 +261,8 @@ This usually means the release exists, but not all platform bundles were uploade
 
 Workarounds:
   - try again after the release finishes publishing
-  - install via pnpm instead: pnpm add -g @interleavelove/keating
-  - install via bun instead: bun add -g @interleavelove/keating
+  - install via pnpm instead: pnpm add -g keating
+  - install via bun instead: bun add -g keating
 EOF
   exit 1
 fi

@@ -32,13 +32,13 @@ export async function learnPrompt(
 
   const studentAI = ai({
     name: config.pi.defaultProvider === "openai" ? "openai" : "google-gemini",
-    apiKey: process.env.OPENAI_API_KEY || process.env.GOOGLE_API_KEY || "",
+    apiKey: process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "",
     config: { model: mapToAxModel(config.pi.defaultModel || "google/gemini-3.1-pro-preview") as any }
   });
 
   const teacherAI = ai({
     name: config.pi.defaultProvider === "openai" ? "openai" : "google-gemini",
-    apiKey: process.env.OPENAI_API_KEY || process.env.GOOGLE_API_KEY || "",
+    apiKey: process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "",
     config: { model: mapToAxModel("google/gemini-3.1-pro-preview") as any }
   });
 

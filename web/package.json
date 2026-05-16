@@ -1,6 +1,6 @@
 {
-  "name": "@interleavelove/keating-web",
-  "version": "0.3.5",
+  "name": "keating-web",
+  "version": "0.3.6",
   "type": "module",
   "private": true,
   "scripts": {

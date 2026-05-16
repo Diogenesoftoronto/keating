@@ -23,12 +23,20 @@ export interface KeatingConfig {
     consoleSummary: boolean;
   };
 }
-// TODO import and use the default model everywhere so that i am not resetting this in multiple place and I just import this.
+
+export const DEFAULT_PI_PROVIDER = "google";
+export const DEFAULT_PI_MODEL = "gemini-3.1-pro-preview";
+export const FALLBACK_PI_MODELS: Record<string, string> = {
+  google: DEFAULT_PI_MODEL,
+  openai: "gpt-5.2",
+  anthropic: "claude-sonnet-4-5"
+};
+
 export const DEFAULT_KEATING_CONFIG: KeatingConfig = {
   pi: {
     runtimePreference: "prefer-standalone",
-    defaultProvider: "google-gemini-cli",
-    defaultModel: "gemini-3.1-pro-preview",
+    defaultProvider: DEFAULT_PI_PROVIDER,
+    defaultModel: DEFAULT_PI_MODEL,
     defaultThinking: "medium"
   },
   speech: {
@@ -59,6 +67,11 @@ function sanitizeOptionalString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
+function normalizeProvider(value: string | undefined): string | undefined {
+  if (value === "google-gemini-cli") return DEFAULT_PI_PROVIDER;
+  return value;
+}
+
 export async function loadKeatingConfig(cwd: string): Promise<KeatingConfig> {
   const path = configPath(cwd);
   try {
@@ -66,7 +79,7 @@ export async function loadKeatingConfig(cwd: string): Promise<KeatingConfig> {
     return {
       pi: {
         runtimePreference: sanitizeRuntimePreference(parsed.pi?.runtimePreference),
-        defaultProvider: sanitizeOptionalString(parsed.pi?.defaultProvider) ?? DEFAULT_KEATING_CONFIG.pi.defaultProvider,
+        defaultProvider: normalizeProvider(sanitizeOptionalString(parsed.pi?.defaultProvider)) ?? DEFAULT_KEATING_CONFIG.pi.defaultProvider,
         defaultModel: sanitizeOptionalString(parsed.pi?.defaultModel) ?? DEFAULT_KEATING_CONFIG.pi.defaultModel,
         defaultThinking: sanitizeOptionalString(parsed.pi?.defaultThinking) ?? DEFAULT_KEATING_CONFIG.pi.defaultThinking
       },
@@ -99,10 +112,14 @@ export async function loadKeatingConfig(cwd: string): Promise<KeatingConfig> {
   }
 }
 
+export async function writeKeatingConfig(cwd: string, config: KeatingConfig): Promise<void> {
+  await writeFile(configPath(cwd), `${JSON.stringify(config, null, 2)}\n`, "utf8");
+}
+
 export async function ensureConfig(cwd: string): Promise<void> {
   const path = configPath(cwd);
   if (!existsSync(path)) {
-    await writeFile(path, `${JSON.stringify(DEFAULT_KEATING_CONFIG, null, 2)}\n`, "utf8");
+    await writeKeatingConfig(cwd, DEFAULT_KEATING_CONFIG);
   }
 }
 
@@ -126,4 +143,19 @@ export function mergePiDefaults(config: KeatingConfig, args: string[]): string[]
   }
 
   return merged;
+}
+
+export function mergePiDefaultsWithOverrides(
+  config: KeatingConfig,
+  args: string[],
+  overrides: { provider?: string; model?: string } = {}
+): string[] {
+  return mergePiDefaults({
+    ...config,
+    pi: {
+      ...config.pi,
+      defaultProvider: overrides.provider ?? config.pi.defaultProvider,
+      defaultModel: overrides.model ?? config.pi.defaultModel
+    }
+  }, args);
 }

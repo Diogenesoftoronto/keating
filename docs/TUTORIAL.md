@@ -26,7 +26,7 @@ Install via npm or use the curl installer:
 
 ```bash
 # Using npm
-npm install -g @interleavelove/keating
+npm install -g keating
 
 # Or via curl installer (macOS/Linux)
 curl -fsSL https://raw.githubusercontent.com/Diogenesoftoronto/keating/main/scripts/install/install.sh | bash
@@ -45,7 +45,7 @@ bun install
 Keating requires an API key for the "Smart Teacher" logic (defaults to Gemini). You can set this in a `.env` file or use the `skate` secret manager if available.
 
 ```bash
-echo "GOOGLE_API_KEY=your_key_here" > .env
+echo "GEMINI_API_KEY=your_key_here" > .env
 ```
 
 ---
