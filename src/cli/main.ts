@@ -3,7 +3,7 @@ import { relative } from "node:path";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 
-import { configPath, loadKeatingConfig } from "../core/config.js";
+import { DEFAULT_KEATING_CONFIG, configPath, loadKeatingConfig, writeKeatingConfig } from "../core/config.js";
 import { learnerStatePath } from "../core/paths.js";
 import { loadLearnerState, recordFeedback, saveLearnerState } from "../core/learner-state.js";
 import {
@@ -32,13 +32,14 @@ import { printAsciiHeader } from "../core/terminal.js";
 
 function printUsage(): void {
   printAsciiHeader();
-  console.log(bold("primary", "Keating CLI") + "  " + color.dim + color.sepia + "v0.3.5" + color.reset);
+  console.log(bold("primary", "Keating CLI") + "  " + color.dim + color.sepia + "v0.3.6" + color.reset);
   console.log(color.parchment + "The Hyperteacher — cognitive empowerment through Socratic AI." + color.reset);
   console.log("");
   console.log(cliCommands());
   console.log("");
   console.log(bold("primary", "General Commands"));
   console.log(`  ${color.primary}shell${color.reset}  [initial prompt...]  Launch the AI-powered hyperteacher shell`);
+  console.log(`  ${color.primary}setup${color.reset}  [--yes]             Configure Keating for this project`);
   console.log(`  ${color.primary}doctor${color.reset}                    Inspect AI runtime and oxdraw availability`);
   console.log(`  ${color.primary}web${color.reset}     [port]             Start a local server for the browser UI`);
   console.log(`  ${color.primary}policy${color.reset}                    Print the active teaching policy`);
@@ -46,11 +47,111 @@ function printUsage(): void {
   console.log("");
 }
 
+function normalizeTopLevelShellArgs(args: string[]): string[] | null {
+  if (args.length === 0 || !args[0]?.startsWith("-") || args[0] === "--help" || args[0] === "-h") return null;
+  return args.map((arg) => arg === "--list-model" ? "--list-models" : arg);
+}
+
+function commandUsage(command: string, example: string): Error {
+  return new Error([
+    `${command} needs more input.`,
+    "",
+    "Recover with:",
+    `  ${example}`,
+    "  keating help"
+  ].join("\n"));
+}
+
+function unknownCommand(command: string): Error {
+  return new Error([
+    `Unknown command: ${command}`,
+    "",
+    "Recover with:",
+    "  keating help",
+    "  keating setup",
+    "  keating shell",
+    "",
+    "For model discovery, use:",
+    "  keating --list-models"
+  ].join("\n"));
+}
+
+async function setupProject(cwd: string, args: string[]): Promise<void> {
+  const yes = args.includes("--yes") || args.includes("-y");
+  const existing = await loadKeatingConfig(cwd);
+  let next = {
+    ...DEFAULT_KEATING_CONFIG,
+    ...existing,
+    pi: {
+      ...DEFAULT_KEATING_CONFIG.pi,
+      ...existing.pi
+    },
+    speech: {
+      ...DEFAULT_KEATING_CONFIG.speech,
+      ...existing.speech
+    },
+    debug: {
+      ...DEFAULT_KEATING_CONFIG.debug,
+      ...existing.debug
+    }
+  };
+
+  if (!yes && process.stdin.isTTY && process.stdout.isTTY) {
+    const { runInteractiveSetup } = await import("./setup.js");
+    const answers = await runInteractiveSetup({
+      runtimePreference: next.pi.runtimePreference,
+      defaultProvider: next.pi.defaultProvider ?? "google",
+      defaultModel: next.pi.defaultModel ?? "gemini-3.1-pro-preview",
+      defaultThinking: next.pi.defaultThinking ?? "medium"
+    });
+
+    if (!answers) {
+      console.log(`${color.sepia}Setup cancelled.${color.reset}`);
+      return;
+    }
+
+    next = {
+      ...next,
+      pi: {
+        ...next.pi,
+        ...answers
+      }
+    };
+  } else {
+    next = {
+      ...next,
+      pi: {
+        ...next.pi,
+        runtimePreference: DEFAULT_KEATING_CONFIG.pi.runtimePreference,
+        defaultProvider: DEFAULT_KEATING_CONFIG.pi.defaultProvider,
+        defaultModel: DEFAULT_KEATING_CONFIG.pi.defaultModel,
+        defaultThinking: DEFAULT_KEATING_CONFIG.pi.defaultThinking
+      }
+    };
+  }
+
+  await writeKeatingConfig(cwd, next);
+  console.log(`${color.ok}Wrote ${relative(cwd, configPath(cwd))}${color.reset}`);
+  console.log(`Run ${color.primary}keating doctor${color.reset} to verify the runtime, then ${color.primary}keating shell${color.reset}.`);
+}
+
 async function run(): Promise<void> {
-  const [command = "shell", ...args] = process.argv.slice(2);
+  const rawArgs = process.argv.slice(2);
   const cwd = process.cwd();
+  const topLevelShellArgs = normalizeTopLevelShellArgs(rawArgs);
+  if (topLevelShellArgs) {
+    const exitCode = await launchShell(cwd, topLevelShellArgs);
+    process.exitCode = exitCode;
+    return;
+  }
+
+  const [command = "shell", ...args] = rawArgs;
 
   switch (command) {
+    case "setup": {
+      await setupProject(cwd, args);
+      return;
+    }
     case "web": {
       const port = args[0] ? parseInt(args[0], 10) : 3000;
       await serveWeb(port);
@@ -63,14 +164,14 @@ async function run(): Promise<void> {
     }
     case "plan": {
       const topic = args.join(" ").trim();
-      if (!topic) throw new Error("plan requires a topic.");
+      if (!topic) throw commandUsage("plan", "keating plan derivative");
       const artifact = await planTopicArtifact(cwd, topic);
       console.log(relative(cwd, artifact.planPath));
       return;
     }
     case "map": {
       const topic = args.join(" ").trim();
-      if (!topic) throw new Error("map requires a topic.");
+      if (!topic) throw commandUsage("map", "keating map derivative");
       const artifact = await mapTopicArtifact(cwd, topic);
       console.log(relative(cwd, artifact.mmdPath));
       if (artifact.svgPath) console.log(relative(cwd, artifact.svgPath));
@@ -78,7 +179,7 @@ async function run(): Promise<void> {
     }
     case "animate": {
       const topic = args.join(" ").trim();
-      if (!topic) throw new Error("animate requires a topic.");
+      if (!topic) throw commandUsage("animate", "keating animate derivative");
       const artifact = await animateTopicArtifact(cwd, topic);
       console.log(relative(cwd, artifact.playerPath));
       console.log(relative(cwd, artifact.scenePath));
@@ -88,7 +189,7 @@ async function run(): Promise<void> {
     }
     case "verify": {
       const topic = args.join(" ").trim();
-      if (!topic) throw new Error("verify requires a topic.");
+      if (!topic) throw commandUsage("verify", "keating verify derivative");
       const result = await verifyTopicArtifact(cwd, topic);
       if (result.alreadyVerified) {
         console.log(`Already verified: ${relative(cwd, result.checklistPath)}`);
@@ -99,7 +200,7 @@ async function run(): Promise<void> {
     }
     case "quiz": {
       const topic = args.join(" ").trim();
-      if (!topic) throw new Error("quiz requires a topic.");
+      if (!topic) throw commandUsage("quiz", "keating quiz derivative");
       const result = await quizTopicArtifact(cwd, topic);
       console.log(relative(cwd, result.quizPath));
       console.log(relative(cwd, result.answersPath));
@@ -128,7 +229,7 @@ async function run(): Promise<void> {
     }
     case "prompt-eval": {
       const promptContent = args.join(" ").trim();
-      if (!promptContent) throw new Error("prompt-eval requires prompt text to evaluate.");
+      if (!promptContent) throw commandUsage("prompt-eval", "keating prompt-eval \"Start with a diagnostic question.\"");
       const result = await promptEvalArtifact(cwd, promptContent);
       console.log(`${result.score.toFixed(2)} ${relative(cwd, result.reportPath)}`);
       return;
@@ -206,7 +307,13 @@ async function run(): Promise<void> {
       };
       const signal = signalMap[args[0]?.toLowerCase() ?? ""];
       if (!signal) {
-        throw new Error("Usage: keating feedback <up|down|confused> [topic] [--comment=message]");
+        throw new Error([
+          "feedback needs a signal: up, down, or confused.",
+          "",
+          "Recover with:",
+          "  keating feedback up derivative",
+          "  keating feedback confused derivative --comment=\"lost at chain rule\""
+        ].join("\n"));
       }
       let comment: string | undefined;
       const filtered = args.filter((arg) => {
@@ -260,7 +367,7 @@ async function run(): Promise<void> {
       return;
     }
     default: {
-      throw new Error(`Unknown command: ${command}`);
+      throw unknownCommand(command);
     }
   }
 }

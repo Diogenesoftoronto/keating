@@ -36,6 +36,25 @@ test("ALWAYS: ensureConfig creates the default config and loadKeatingConfig read
   expect(saved).toEqual(DEFAULT_KEATING_CONFIG);
 });
 
+test("ALWAYS: default Pi provider uses regular Google provider with Gemini 3.1 Pro", () => {
+  expect(DEFAULT_KEATING_CONFIG.pi.defaultProvider).toBe("google");
+  expect(DEFAULT_KEATING_CONFIG.pi.defaultModel).toBe("gemini-3.1-pro-preview");
+});
+
+test("ALWAYS: loadKeatingConfig migrates legacy google-gemini-cli provider", async () => {
+  const workdir = await mkdtemp(join(tmpdir(), "keating-cfg-"));
+  await writeFile(configPath(workdir), JSON.stringify({
+    pi: {
+      runtimePreference: "prefer-standalone",
+      defaultProvider: "google-gemini-cli",
+      defaultModel: "gemini-3.1-pro-preview"
+    }
+  }), "utf8");
+  const config = await loadKeatingConfig(workdir);
+  expect(config.pi.defaultProvider).toBe("google");
+  expect(config.pi.defaultModel).toBe("gemini-3.1-pro-preview");
+});
+
 test("ALWAYS: loadKeatingConfig preserves valid overrides, defaults missing fields", async () => {
   await fc.assert(fc.asyncProperty(
     fc.record({

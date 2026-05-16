@@ -1,7 +1,7 @@
 {
   "pi": {
     "runtimePreference": "embedded-only",
-    "defaultProvider": "google-gemini-cli",
+    "defaultProvider": "google",
     "defaultModel": "gemini-3.1-pro-preview",
     "defaultThinking": "medium"
   },

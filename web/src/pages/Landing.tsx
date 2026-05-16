@@ -25,28 +25,28 @@ const TAB_FILENAMES: Record<InstallTab, string> = {
 };
 
 const TAB_COPY_TEXT: Record<InstallTab, string> = {
-  npm: "$ npm install -g @interleavelove/keating\n# Requires Node.js 18+ and API key in ~/.keating/.env",
-  bun: "$ bun add -g @interleavelove/keating\n# Fastest option. Requires Bun 1.0+ and API key",
-  pnpm: "$ pnpm add -g @interleavelove/keating\n# Disk-efficient. Requires pnpm and API key",
+  npm: "$ npm install -g keating\n# Requires Node.js 18+ and API key in ~/.keating/.env",
+  bun: "$ bun add -g keating\n# Fastest option. Requires Bun 1.0+ and API key",
+  pnpm: "$ pnpm add -g keating\n# Disk-efficient. Requires pnpm and API key",
   curl: "$ curl -fsSL https://raw.githubusercontent.com/Diogenesoftoronto/keating/main/scripts/install/install.sh | bash\n# Standalone install. No package manager needed.",
   agent: `Install Keating hyperteacher CLI with one of these methods. All require setting a Google API key for the AI backend.
 
 Option 1: NPM (most common)
-npm install -g @interleavelove/keating
+npm install -g keating
 
 Option 2: Bun (fastest)
-bun add -g @interleavelove/keating
+bun add -g keating
 
 Option 3: PNPM (disk efficient)
-pnpm add -g @interleavelove/keating
+pnpm add -g keating
 
 Option 4: Curl (standalone)
 curl -fsSL https://raw.githubusercontent.com/Diogenesoftoronto/keating/main/scripts/install/install.sh | bash
 
 Required: API Key Setup
 1. Get a Gemini API key from Google AI Studio
-2. Create ~/.keating/.env with: GOOGLE_API_KEY=your_key
-3. Or set GOOGLE_API_KEY as environment variable`,
+2. Create ~/.keating/.env with: GEMINI_API_KEY=your_key
+3. Or set GEMINI_API_KEY as environment variable`,
 };
 
 export function Landing() {
@@ -206,7 +206,7 @@ export function Landing() {
       <section className="py-20 px-6 bg-[#1a1a1a] text-[#f4f1ea]">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center gap-4 mb-12">
-            <span className="font-terminal text-accent">$ ./keating --protocol</span>
+            <span className="font-terminal text-accent">$ .keating --protocol</span>
             <div className="flex-1 h-px bg-[#f4f1ea]/20" />
           </div>
 
@@ -304,7 +304,7 @@ export function Landing() {
             {/* npm */}
             {activeTab === "npm" && (
               <code className="font-terminal text-base sm:text-lg block whitespace-pre-wrap break-all">
-                <span className="text-[#00ff00]">$</span>{" "}npm install -g @interleavelove/keating{"\n"}
+                <span className="text-[#00ff00]">$</span>{" "}npm install -g keating{"\n"}
                 <span className="text-[#888]"># Requires Node.js 18+ and API key in ~/.keating/.env</span>
               </code>
             )}
@@ -312,7 +312,7 @@ export function Landing() {
             {/* bun */}
             {activeTab === "bun" && (
               <code className="font-terminal text-base sm:text-lg block whitespace-pre-wrap break-all">
-                <span className="text-[#00ff00]">$</span>{" "}bun add -g @interleavelove/keating{"\n"}
+                <span className="text-[#00ff00]">$</span>{" "}bun add -g keating{"\n"}
                 <span className="text-[#888]"># Fastest option. Requires Bun 1.0+ and API key</span>
               </code>
             )}
@@ -320,7 +320,7 @@ export function Landing() {
             {/* pnpm */}
             {activeTab === "pnpm" && (
               <code className="font-terminal text-base sm:text-lg block whitespace-pre-wrap break-all">
-                <span className="text-[#00ff00]">$</span>{" "}pnpm add -g @interleavelove/keating{"\n"}
+                <span className="text-[#00ff00]">$</span>{" "}pnpm add -g keating{"\n"}
                 <span className="text-[#888]"># Disk-efficient. Requires pnpm and API key</span>
               </code>
             )}
@@ -342,11 +342,11 @@ export function Landing() {
                   Google API key for the AI backend.
                 </p>
                 <p className="text-accent mb-1">Option 1: NPM (most common)</p>
-                <p className="text-[#f4f1ea]/80 mb-3 ml-4">npm install -g @interleavelove/keating</p>
+                <p className="text-[#f4f1ea]/80 mb-3 ml-4">npm install -g keating</p>
                 <p className="text-accent mb-1">Option 2: Bun (fastest)</p>
-                <p className="text-[#f4f1ea]/80 mb-3 ml-4">bun add -g @interleavelove/keating</p>
+                <p className="text-[#f4f1ea]/80 mb-3 ml-4">bun add -g keating</p>
                 <p className="text-accent mb-1">Option 3: PNPM (disk efficient)</p>
-                <p className="text-[#f4f1ea]/80 mb-3 ml-4">pnpm add -g @interleavelove/keating</p>
+                <p className="text-[#f4f1ea]/80 mb-3 ml-4">pnpm add -g keating</p>
                 <p className="text-accent mb-1">Option 4: Curl (standalone)</p>
                 <p className="text-[#f4f1ea]/80 mb-3 ml-4">
                   curl -fsSL .../install.sh | bash
@@ -354,9 +354,9 @@ export function Landing() {
                 <p className="text-[#00ff00] mb-1">Required: API Key Setup</p>
                 <p className="text-[#f4f1ea]/80 mb-1 ml-4">1. Get a Gemini API key from Google AI Studio</p>
                 <p className="text-[#f4f1ea]/80 mb-1 ml-4">
-                  2. Create ~/.keating/.env with: GOOGLE_API_KEY=your_key
+                  2. Create ~/.keating/.env with: GEMINI_API_KEY=your_key
                 </p>
-                <p className="text-[#f4f1ea]/80 ml-4">3. Or set GOOGLE_API_KEY as environment variable</p>
+                <p className="text-[#f4f1ea]/80 ml-4">3. Or set GEMINI_API_KEY as environment variable</p>
               </div>
             )}
           </div>
