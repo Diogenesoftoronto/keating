@@ -1,11 +1,11 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import * as dotenv from "dotenv";
 
+import { loadEnv } from "./env.js";
 import { promptEvolutionArchivePath, promptEvolutionDir } from "./paths.js";
 import { piComplete, piCompleteJson } from "./pi-agent.js";
 
-dotenv.config();
+loadEnv();
 
 const KEATING_QUOTE =
   "Boys, you must strive to find your own voice. Because the longer you wait to begin, the less likely you are to find it at all.";

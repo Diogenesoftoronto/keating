@@ -43,13 +43,26 @@ jobs:
           BUNDLE_NAME="keating-${VERSION}-${{ matrix.os }}-${{ matrix.arch }}"
           STAGE_DIR="${BUNDLE_NAME}"
           mkdir -p "${STAGE_DIR}"
-          cp -r bin dist pi scripts/install "${STAGE_DIR}/"
+          mkdir -p "${STAGE_DIR}/bin"
+          cp bin/keating.js "${STAGE_DIR}/bin/"
+          cp -r dist pi scripts/install "${STAGE_DIR}/"
           cp package.json "${STAGE_DIR}/"
           # Bundle node_modules so the tarball is truly standalone
           cp -r node_modules "${STAGE_DIR}/"
           mv "${STAGE_DIR}/install/install.sh" "${STAGE_DIR}/install.sh"
           rm -rf "${STAGE_DIR}/install"
           tar -czf "${BUNDLE_NAME}.tar.gz" "${STAGE_DIR}"
+
+      - name: Verify bundle contents
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          BUNDLE_NAME="keating-${VERSION}-${{ matrix.os }}-${{ matrix.arch }}"
+          tar -tzf "${BUNDLE_NAME}.tar.gz" > bundle-files.txt
+          grep -Fx "${BUNDLE_NAME}/bin/keating.js" bundle-files.txt
+          grep -Fx "${BUNDLE_NAME}/dist/src/cli/main.js" bundle-files.txt
+          grep -Fx "${BUNDLE_NAME}/dist/src/pi/hyperteacher-extension.js" bundle-files.txt
+          ! grep -F "${BUNDLE_NAME}/bin/.keating/" bundle-files.txt
+          ! grep -F "${BUNDLE_NAME}/bin/keating.config.json" bundle-files.txt
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -95,6 +108,8 @@ jobs:
 
       - name: Publish to npm
         run: |
+          npm pack --ignore-scripts --dry-run --json > npm-pack.json
+          node scripts/verify-package-manifest.mjs npm-pack.json
           echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
           npm publish --access public
         env:

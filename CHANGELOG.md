@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Dotenv startup tips are now suppressed unless `KEATING_DEBUG=1` or `DEBUG=1` is set.
+- Curl and npm installs now verify that the CLI launcher, compiled Pi extension, and embedded agent runtime are present before publishing release artifacts.
+- Release and npm packages no longer include local `bin/.keating` state or `bin/keating.config.json`.
+- Runtime discovery now checks Keating's bundled `@mariozechner/pi-coding-agent` dependency and reports actionable setup guidance when no AI runtime is available.
+
 ### TODO
 - Move rendered VHS tapes (`docs/assets/*.mp4`, `web/public/tapes/*.mp4`) out of git history and into git-lfs (or an external CDN). They were committed inline in 0.3.0 to keep the blog working immediately; ~1.7MB today, will grow.
 
