@@ -1,11 +1,11 @@
 import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
-import * as dotenv from "dotenv";
 
+import { loadEnv } from "./env.js";
 import { TopicDefinition, VerificationResult, VerifiedClaim } from "./types.js";
 import { piComplete, piCompleteJson } from "./pi-agent.js";
 
-dotenv.config();
+loadEnv();
 
 export function topicContentHash(topic: TopicDefinition): string {
   const payload = JSON.stringify({

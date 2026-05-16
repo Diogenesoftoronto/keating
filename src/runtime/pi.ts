@@ -11,6 +11,16 @@ import { sessionsDir, configDir } from "../core/paths.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+function resolvePackageRoot(): string {
+  const override = process.env.KEATING_PACKAGE_ROOT_OVERRIDE;
+  if (override) return resolve(override);
+
+  const normalizedDir = __dirname.replace(/\\/g, "/");
+  return normalizedDir.includes("/dist/src/runtime")
+    ? join(__dirname, "..", "..", "..")
+    : join(__dirname, "..", "..");
+}
+
 export interface AiRuntimeDetails {
   kind: "binary" | "embedded-keating";
   command: string;
@@ -22,6 +32,28 @@ export interface AiRuntimeReport {
   standalone: AiRuntimeDetails | null;
   embedded: AiRuntimeDetails | null;
   preference: "standalone-only" | "prefer-standalone" | "embedded-only";
+}
+
+function missingRuntimeMessage(report: AiRuntimeReport): string {
+  if (report.preference === "standalone-only") {
+    return [
+      "Keating is configured for standalone-only but no `pi` AI agent binary was found on PATH.",
+      "Install it with `npm install -g @mariozechner/pi-coding-agent`, or change `pi.runtimePreference` in keating.config.json to `prefer-standalone` after installing an embedded agent."
+    ].join(" ");
+  }
+
+  if (report.preference === "embedded-only") {
+    return [
+      "Keating is configured for embedded-only but no embedded AI agent was found.",
+      "For a source checkout, install a standalone agent with `npm install -g @mariozechner/pi-coding-agent` and set `pi.runtimePreference` to `prefer-standalone` in keating.config.json.",
+      "After the runtime is found, set your model provider API key as usual."
+    ].join(" ");
+  }
+
+  return [
+    "Could not find an AI runtime.",
+    "Install `pi` with `npm install -g @mariozechner/pi-coding-agent`, or install Keating from a standalone release bundle that includes an embedded agent."
+  ].join(" ");
 }
 
 function resolveStandaloneAgent(): AiRuntimeDetails | null {
@@ -65,7 +97,21 @@ async function syncPiSettings(cwd: string, config: KeatingConfig): Promise<void>
   await writeFile(settingsPath, `${JSON.stringify({ ...settings, quietStartup }, null, 2)}\n`, "utf8");
 }
 
-async function resolveEmbeddedAgent(): Promise<AiRuntimeDetails | null> {
+function resolveAgentInNodeModules(nodeModulesDir: string): AiRuntimeDetails | null {
+  for (const [scope, pkg] of CLI_AGENT_PACKAGES) {
+    const cliPath = join(nodeModulesDir, scope, pkg, "dist", "cli.js");
+    if (existsSync(cliPath)) {
+      return { kind: "embedded-keating", command: process.execPath, cliPath };
+    }
+  }
+
+  return null;
+}
+
+async function resolveEmbeddedAgent(packageRoot = resolvePackageRoot()): Promise<AiRuntimeDetails | null> {
+  const local = resolveAgentInNodeModules(join(packageRoot, "node_modules"));
+  if (local) return local;
+
   const base = join(homedir(), ".local", "share", "keating");
   const entries = await readdir(base, { withFileTypes: true }).catch(() => []);
   const dirs = entries
@@ -75,12 +121,9 @@ async function resolveEmbeddedAgent(): Promise<AiRuntimeDetails | null> {
     .reverse();
 
   for (const name of dirs) {
-    const appRoot = join(base, name, "app");
-    for (const [scope, pkg] of CLI_AGENT_PACKAGES) {
-      const cliPath = join(appRoot, "node_modules", scope, pkg, "dist", "cli.js");
-      if (existsSync(cliPath)) {
-        return { kind: "embedded-keating", command: process.execPath, cliPath };
-      }
+    for (const root of [join(base, name), join(base, name, "app")]) {
+      const embedded = resolveAgentInNodeModules(join(root, "node_modules"));
+      if (embedded) return embedded;
     }
   }
 
@@ -152,17 +195,11 @@ export async function launchShell(cwd: string, args: string[]): Promise<number> 
   const report = await detectAiRuntime(cwd);
   const runtime = report.selected;
   if (!runtime) {
-    if (report.preference === "standalone-only") {
-      throw new Error(
-        "Keating is configured for standalone-only but no AI agent binary was found on PATH. Install `@mariozechner/pi-coding-agent` or change `pi.runtimePreference` in keating.config.json."
-      );
-    }
-    throw new Error("Could not find an AI runtime matching the current Keating runtime preference.");
+    throw new Error(missingRuntimeMessage(report));
   }
 
+  const packageRoot = resolvePackageRoot();
   const isDist = __dirname.replace(/\\/g, "/").includes("/dist/src/runtime");
-  // Resolve paths relative to package root
-  const packageRoot = isDist ? join(__dirname, "..", "..", "..") : join(__dirname, "..", "..");
 
   const extensionPath = isDist
     ? join(__dirname, "..", "pi", "hyperteacher-extension.js")
