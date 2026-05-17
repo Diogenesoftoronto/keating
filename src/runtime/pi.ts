@@ -277,7 +277,7 @@ async function resolveEmbeddedAgent(packageRoot = resolvePackageRoot()): Promise
       }
       const nmDir = join(globalPrefix, ver, "lib", "node_modules");
       const nmEntries = await readdir(nmDir, { withFileTypes: true }).catch(() => []);
-      const nmDirs = nmEntries.filter((e: any) => e.isDirectory() || (e.isSymbolicLink() && statSync(join(nmDir, e.name)).isDirectory()));
+      const nmDirs = nmEntries.filter((e: any) => e.isDirectory() || (e.isSymbolicLink() && (() => { try { return statSync(join(nmDir, e.name)).isDirectory(); } catch { return false; } })()));
       for (const nmEntry of nmDirs) {
         const nested = join(nmDir, nmEntry.name, "node_modules", scope, pkg, "dist", "cli.js");
         if (existsSync(nested)) {

@@ -45,12 +45,12 @@ export function SettingsDialog({ open, tabs, onClose }: SettingsDialogProps) {
       <div
         role="dialog"
         aria-modal="true"
-        className="flex w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-lg border-2 border-border bg-background shadow-lg"
+        className="flex w-full max-w-5xl max-h-[90vh] overflow-hidden rounded-lg border-2 border-border bg-background shadow-lg"
         style={{ fontFamily: "'Space Mono', monospace" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Sidebar */}
-        <div className="hidden sm:flex w-48 flex-col border-r border-border bg-muted/30 shrink-0">
+        <div className="hidden sm:flex w-44 md:w-52 lg:w-56 flex-col border-r border-border bg-muted/30 shrink-0">
           <div className="px-4 py-3 border-b border-border">
             <span className="text-sm font-semibold text-foreground">Settings</span>
           </div>

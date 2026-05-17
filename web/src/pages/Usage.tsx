@@ -4,6 +4,7 @@ import { ArrowLeft, BookOpenCheck, Brain, Clock3, Cpu, Flame, Gem, MessageSquare
 import { useSeo } from "../hooks/useSeo";
 import { getInitPromise, keatingStorage, sessions } from "../hooks/keating-storage";
 import type { SessionMetadata } from "../types/session";
+import { UsageCharts } from "../components/UsageCharts";
 
 let metadataPromise: Promise<SessionMetadata[]> | null = null;
 
@@ -220,6 +221,8 @@ function UsageContent() {
 						</div>
 					</section>
 				</div>
+
+				<UsageCharts sessionMetadata={metadata} />
 			</main>
 		</div>
 	);

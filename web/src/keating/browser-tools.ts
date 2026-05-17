@@ -158,7 +158,7 @@ function createTool(
 export interface KeatingToolsOptions {
 	speech?: {
 		settings: WebSpeechSettings;
-		getGoogleApiKey: () => Promise<string | undefined>;
+		getApiKey: (provider: string) => Promise<string | undefined>;
 	};
 }
 
@@ -861,7 +861,7 @@ ${topicList}
 	];
 
 	if (options.speech?.settings.enabled) {
-		tools.push(createSpeechTool(options.speech.settings, options.speech.getGoogleApiKey));
+		tools.push(createSpeechTool(options.speech.settings, options.speech.getApiKey));
 	}
 
 	return tools;

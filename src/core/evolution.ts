@@ -2,9 +2,9 @@ import { readFile, writeFile } from "node:fs/promises";
 
 import { BenchmarkResult, EvolutionCandidate, SimulationWeights, TeacherPolicy } from "./types.js";
 import { Prng } from "./random.js";
-import { clamp } from "./util.js";
 import { DEFAULT_POLICY, DEFAULT_WEIGHTS, clampPolicy, clampWeights } from "./policy.js";
 import { benchmarkToMarkdown, runBenchmarkSuite } from "./benchmark.js";
+import { mutateScalar, mutatePolicy, mutateWeights } from "./mutation.js";
 
 interface EvolutionArchive {
   currentPolicy: TeacherPolicy;
@@ -46,37 +46,6 @@ function diffPolicy(before: TeacherPolicy, after: TeacherPolicy) {
       return { field, before: previous, after: next, delta };
     })
     .filter((entry) => entry.delta !== 0);
-}
-
-function mutateScalar(prng: Prng, value: number, amplitude = 0.18): number {
-  return clamp(value + (prng.next() * 2 - 1) * amplitude);
-}
-
-function mutateWeights(parent: SimulationWeights, prng: Prng, amplitude = 0.12): SimulationWeights {
-  return clampWeights({
-    masteryGain: mutateScalar(prng, parent.masteryGain, amplitude),
-    retention: mutateScalar(prng, parent.retention, amplitude),
-    engagement: mutateScalar(prng, parent.engagement, amplitude),
-    transfer: mutateScalar(prng, parent.transfer, amplitude),
-    confusion: mutateScalar(prng, parent.confusion, amplitude)
-  });
-}
-
-function mutatePolicy(parent: TeacherPolicy, prng: Prng, iteration: number): TeacherPolicy {
-  const mutated = clampPolicy({
-    ...parent,
-    name: `keating-candidate-${iteration}`,
-    analogyDensity: mutateScalar(prng, parent.analogyDensity),
-    socraticRatio: mutateScalar(prng, parent.socraticRatio),
-    formalism: mutateScalar(prng, parent.formalism),
-    retrievalPractice: mutateScalar(prng, parent.retrievalPractice),
-    exerciseCount: parent.exerciseCount + prng.int(-1, 1),
-    diagramBias: mutateScalar(prng, parent.diagramBias),
-    reflectionBias: mutateScalar(prng, parent.reflectionBias),
-    interdisciplinaryBias: mutateScalar(prng, parent.interdisciplinaryBias),
-    challengeRate: mutateScalar(prng, parent.challengeRate)
-  });
-  return mutated;
 }
 
 function policyVector(policy: TeacherPolicy): number[] {
@@ -147,7 +116,7 @@ export async function evolvePolicy(
   const seen: TeacherPolicy[] = [...archive.candidates.map((entry) => entry.policy), basePolicy];
 
   for (let iteration = 1; iteration <= iterations; iteration += 1) {
-    const candidatePolicy = mutatePolicy(best.policy, prng, iteration);
+    const candidatePolicy = mutatePolicy(best.policy, prng, iteration, "keating-candidate");
     const candidateWeights = mutateWeights(bestWeights, prng);
     const novelty = noveltyScore(seen, candidatePolicy);
     const candidateBenchmark = await runBenchmarkSuite(process.cwd(), candidatePolicy, focusTopic, seed + iteration * 11, 3, candidateWeights);

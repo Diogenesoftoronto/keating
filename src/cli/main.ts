@@ -154,6 +154,9 @@ async function run(): Promise<void> {
     }
     case "web": {
       const port = args[0] ? parseInt(args[0], 10) : 3000;
+      if (!Number.isInteger(port) || port < 1 || port > 65535) {
+        throw new Error(`Invalid port: "${args[0]}". Must be an integer between 1 and 65535.`);
+      }
       await serveWeb(port);
       return;
     }

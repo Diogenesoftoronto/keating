@@ -1,13 +1,15 @@
 import { test, expect } from "bun:test";
 import * as fc from "fast-check";
+import { mkdtempSync } from "node:fs";
+import { join } from "node:path";
 
-import { createGrid, placeInGrid, mapElitesToEvolutionRun } from "../src/core/map-elites.js";
+import { createGrid, placeInGrid, mapElitesToEvolutionRun, mapElitesEvolve } from "../src/core/map-elites.js";
 import { clampPolicy, clampWeights, DEFAULT_POLICY, DEFAULT_WEIGHTS } from "../src/core/policy.js";
 import type { TeacherPolicy, SimulationWeights, BenchmarkResult } from "../src/core/types.js";
 import {
   arbPolicy, arbWeights, arbDescriptors, arbResolution, arbScore,
-  stubBenchmarkResult, policyIsBounded, weightsAreNormalized, weightsAreBounded,
-  benchmarkScoresAreBounded
+  stubBenchmarkResult, policyIsBounded, weightsAreBounded,
+  benchmarkScoresAreBounded, suppressConsoleError
 } from "./helpers.js";
 
 // ─── Pure-function property tests (no I/O, no LLM) ────────────────────────
@@ -47,7 +49,7 @@ test("ALWAYS: placeInGrid cell key is deterministic for same inputs", () => {
   ));
 });
 
-test("ALWAYS: placeInGrid with higher score replaces existing cell", () => {
+test("ALWAYS: placeInGrid with higher score replaces existing cell and returns false (cell already existed)", () => {
   fc.assert(fc.property(
     arbPolicy, arbWeights,
     fc.double({ min: 0, max: 49, noNaN: true }),
@@ -59,9 +61,11 @@ test("ALWAYS: placeInGrid with higher score replaces existing cell", () => {
       const benchmark1 = stubBenchmarkResult(p, weights, 1);
       const benchmark2 = stubBenchmarkResult(p, weights, 2);
 
-      placeInGrid(grid, p, weights, lowScore, benchmark1, 0);
-      placeInGrid(grid, p, weights, highScore, benchmark2, 1);
+      const firstInsert = placeInGrid(grid, p, weights, lowScore, benchmark1, 0);
+      const replaced = placeInGrid(grid, p, weights, highScore, benchmark2, 1);
 
+      expect(firstInsert).toBe(true);
+      expect(replaced).toBe(false);
       const cell = Array.from(grid.cells.values())[0];
       expect(cell).not.toBeNull();
       expect(cell!.score).toBe(highScore);
@@ -102,9 +106,10 @@ test("ALWAYS: equal score does NOT replace existing cell (stability)", () => {
       const p = clampPolicy(policy);
       const benchmark = stubBenchmarkResult(p, weights, 1);
 
-      placeInGrid(grid, p, weights, score, benchmark, 0);
+      const firstInsert = placeInGrid(grid, p, weights, score, benchmark, 0);
       const replaced = placeInGrid(grid, p, weights, score, benchmark, 1);
 
+      expect(firstInsert).toBe(true);
       expect(replaced).toBe(false);
       const cell = Array.from(grid.cells.values())[0];
       expect(cell?.iteration).toBe(0);
@@ -271,14 +276,10 @@ test("ALWAYS: mapElitesToEvolutionRun archive bestScore matches run best", () =>
 // ─── Integration test with real mapElitesEvolve (algebraic fallback) ───────
 
 test("mapElitesEvolve fills grid and never regresses cell quality", async () => {
-  const origError = console.error;
-  console.error = () => {};
-  try {
-    const { mkdtempSync } = await import("node:fs");
-    const { join } = await import("node:path");
+  if (!process.env.GOOGLE_API_KEY && !process.env.GEMINI_API_KEY) return;
+  await suppressConsoleError(async () => {
     const tmp = mkdtempSync(join(process.tmpdir ?? "/tmp", "me-pbt-"));
 
-    const { mapElitesEvolve } = await import("../src/core/map-elites.js");
     const run = await mapElitesEvolve(tmp, DEFAULT_POLICY, {
       iterations: 8,
       seed: 12345,
@@ -297,7 +298,5 @@ test("mapElitesEvolve fills grid and never regresses cell quality", async () => 
         expect(weightsAreBounded(cell.weights)).toBe(true);
       }
     }
-  } finally {
-    console.error = origError;
-  }
+  });
 }, 60000);

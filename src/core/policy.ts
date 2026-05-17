@@ -20,27 +20,51 @@ export const DEFAULT_WEIGHTS: SimulationWeights = {
   masteryGain: 0.34,
   retention: 0.20,
   engagement: 0.16,
-  transfer: 0.18,
-  confusion: 0.18
+  transfer: 0.16,
+  confusion: 0.14
 };
 
 export function clampWeights(weights: SimulationWeights): SimulationWeights {
-  const clamped: SimulationWeights = {
-    masteryGain: clamp(weights.masteryGain, 0.01, 1),
-    retention: clamp(weights.retention, 0.01, 1),
-    engagement: clamp(weights.engagement, 0.01, 1),
-    transfer: clamp(weights.transfer, 0.01, 1),
-    confusion: clamp(weights.confusion, 0.01, 1)
-  };
-  const sum = clamped.masteryGain + clamped.retention + clamped.engagement + clamped.transfer + clamped.confusion;
+  if (weightsAreBounded(weights) && weightsAreNormalized(weights)) return { ...weights };
+  const sum = weights.masteryGain + weights.retention + weights.engagement + weights.transfer + weights.confusion;
   if (sum === 0) return DEFAULT_WEIGHTS;
-  return {
-    masteryGain: clamped.masteryGain / sum,
-    retention: clamped.retention / sum,
-    engagement: clamped.engagement / sum,
-    transfer: clamped.transfer / sum,
-    confusion: clamped.confusion / sum
+  const normalized: SimulationWeights = {
+    masteryGain: weights.masteryGain / sum,
+    retention: weights.retention / sum,
+    engagement: weights.engagement / sum,
+    transfer: weights.transfer / sum,
+    confusion: weights.confusion / sum
   };
+  const needsClamp = Object.values(normalized).some(v => v < 0.01 || v > 1);
+  if (!needsClamp) return normalized;
+  const clamped: SimulationWeights = {
+    masteryGain: clamp(normalized.masteryGain, 0.01, 1),
+    retention: clamp(normalized.retention, 0.01, 1),
+    engagement: clamp(normalized.engagement, 0.01, 1),
+    transfer: clamp(normalized.transfer, 0.01, 1),
+    confusion: clamp(normalized.confusion, 0.01, 1)
+  };
+  const clampedSum = clamped.masteryGain + clamped.retention + clamped.engagement + clamped.transfer + clamped.confusion;
+  if (clampedSum === 0) return DEFAULT_WEIGHTS;
+  return {
+    masteryGain: clamped.masteryGain / clampedSum,
+    retention: clamped.retention / clampedSum,
+    engagement: clamped.engagement / clampedSum,
+    transfer: clamped.transfer / clampedSum,
+    confusion: clamped.confusion / clampedSum
+  };
+}
+
+function weightsAreBounded(weights: SimulationWeights): boolean {
+  for (const v of Object.values(weights)) {
+    if (typeof v !== "number" || !Number.isFinite(v) || v < 0 || v > 1) return false;
+  }
+  return true;
+}
+
+function weightsAreNormalized(weights: SimulationWeights): boolean {
+  const sum = weights.masteryGain + weights.retention + weights.engagement + weights.transfer + weights.confusion;
+  return Math.abs(sum - 1) < 0.001;
 }
 
 export function clampPolicy(policy: TeacherPolicy): TeacherPolicy {

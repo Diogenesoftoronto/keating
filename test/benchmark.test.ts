@@ -5,7 +5,7 @@ import { applyFeedbackBias, summarizeTopic } from "../src/core/benchmark.js";
 import { DEFAULT_WEIGHTS, clampPolicy, clampWeights } from "../src/core/policy.js";
 import type { TeachingSimulation, TopicDefinition, SimulationWeights } from "../src/core/types.js";
 import {
-  arbPolicy, arbWeights, arbLearnerProfile, arbTopicDefinition,
+  arbPolicy, arbWeights, arbUnboundedWeights, arbLearnerProfile, arbTopicDefinition,
   policyIsBounded, weightsAreNormalized, weightsAreBounded,
   benchmarkScoresAreBounded
 } from "./helpers.js";
@@ -54,16 +54,22 @@ test("ALWAYS: summarizeTopic produces bounded mean scores", () => {
   fc.assert(fc.property(
     arbTopicDefinition,
     fc.array(arbLearnerProfile, { minLength: 1, maxLength: 10 }),
-    (topic, learners) => {
-      const simulations: TeachingSimulation[] = learners.map((learner) => ({
+    fc.array(fc.double({ min: 0, max: 1, noNaN: true }), { minLength: 1, maxLength: 10 }),
+    fc.array(fc.double({ min: 0, max: 1, noNaN: true }), { minLength: 1, maxLength: 10 }),
+    fc.array(fc.double({ min: 0, max: 1, noNaN: true }), { minLength: 1, maxLength: 10 }),
+    fc.array(fc.double({ min: 0, max: 1, noNaN: true }), { minLength: 1, maxLength: 10 }),
+    fc.array(fc.double({ min: 0, max: 0.5, noNaN: true }), { minLength: 1, maxLength: 10 }),
+    fc.array(fc.double({ min: 0, max: 1, noNaN: true }), { minLength: 1, maxLength: 10 }),
+    (topic, learners, masteryGains, retentions, engagements, transfers, confusions, scores) => {
+      const simulations: TeachingSimulation[] = learners.map((learner, i) => ({
         learner,
         topic,
-        masteryGain: Math.random(),
-        retention: Math.random(),
-        engagement: Math.random(),
-        transfer: Math.random(),
-        confusion: Math.random() * 0.5,
-        score: Math.random(),
+        masteryGain: masteryGains[i % masteryGains.length] ?? 0.5,
+        retention: retentions[i % retentions.length] ?? 0.5,
+        engagement: engagements[i % engagements.length] ?? 0.5,
+        transfer: transfers[i % transfers.length] ?? 0.5,
+        confusion: confusions[i % confusions.length] ?? 0.1,
+        score: scores[i % scores.length] ?? 0.5,
         breakdown: {
           intuitionFit: 0.5,
           rigorFit: 0.5,

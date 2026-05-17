@@ -3,10 +3,12 @@ import {
   BarChart3,
   History,
   LibraryBig,
+  Loader2,
   Menu,
   Plus,
   Settings,
   Share2,
+  Sparkles,
   Volume2,
   VolumeX,
   X,
@@ -43,7 +45,25 @@ function ChatContent() {
     speechEnabled,
     persistentStorageStatus,
     toggleSpeech,
+    generateCurrentSessionTitle,
   } = useKeatingAgent();
+  const [titleState, setTitleState] = useState<"idle" | "loading" | "renamed" | "error">("idle");
+  const [titleMessage, setTitleMessage] = useState<string>("");
+  const handleGenerateTitle = async () => {
+    if (titleState === "loading") return;
+    setTitleState("loading");
+    setTitleMessage("");
+    try {
+      const next = await generateCurrentSessionTitle();
+      setTitleMessage(`Renamed to "${next}"`);
+      setTitleState("renamed");
+      window.setTimeout(() => setTitleState("idle"), 2400);
+    } catch (err) {
+      setTitleMessage(err instanceof Error ? err.message : "Could not generate a title.");
+      setTitleState("error");
+      window.setTimeout(() => setTitleState("idle"), 2800);
+    }
+  };
   const [introDismissed, setIntroDismissed] = useState(
     () => sessionStorage.getItem("keating_chat_intro") === "dismissed",
   );
@@ -172,7 +192,7 @@ function ChatContent() {
         <div className="chat-actions no-scrollbar ml-auto flex min-w-0 flex-1 items-center justify-end gap-1 overflow-x-auto">
           <ThemeToggle />
           <button
-            className={`${actionButtonClass} sm:hidden lg:inline-flex`}
+            className={`${actionButtonClass} hidden sm:inline-flex`}
             title="New session"
             aria-label="New session"
             disabled={isPending}
@@ -181,7 +201,7 @@ function ChatContent() {
             <Plus size={16} />
           </button>
           <button
-            className={`${actionButtonClass} sm:hidden lg:inline-flex`}
+            className={`${actionButtonClass} hidden sm:inline-flex`}
             title="Session history"
             aria-label="Session history"
             disabled={isPending}
@@ -190,7 +210,24 @@ function ChatContent() {
             <History size={16} />
           </button>
           <button
-            className={`${actionButtonClass} sm:hidden lg:inline-flex`}
+            className={`${actionButtonClass} hidden sm:inline-flex ${titleState === "renamed" ? "text-primary" : ""} ${titleState === "error" ? "text-destructive" : ""}`}
+            title={
+              titleState === "loading"
+                ? "Generating title…"
+                : titleState === "renamed"
+                  ? titleMessage
+                  : titleState === "error"
+                    ? titleMessage
+                    : "Generate title with model"
+            }
+            aria-label="Generate title with model"
+            disabled={isPending || titleState === "loading"}
+            onClick={handleGenerateTitle}
+          >
+            {titleState === "loading" ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+          </button>
+          <button
+            className={`${actionButtonClass} hidden sm:inline-flex`}
             title="Settings"
             aria-label="Settings"
             onClick={openSettings}
@@ -198,7 +235,7 @@ function ChatContent() {
             <Settings size={16} />
           </button>
           <button
-            className={`${actionButtonClass} hidden md:inline-flex ${shareState === "copied" ? "text-primary" : ""} ${shareState === "error" ? "text-destructive" : ""}`}
+            className={`${actionButtonClass} hidden sm:inline-flex ${shareState === "copied" ? "text-primary" : ""} ${shareState === "error" ? "text-destructive" : ""}`}
             title={
               shareState === "copied"
                 ? "Copied share link"
@@ -213,7 +250,7 @@ function ChatContent() {
             <Share2 size={16} />
           </button>
           <button
-            className={`${actionButtonClass} hidden md:inline-flex`}
+            className={`${actionButtonClass} hidden sm:inline-flex`}
             title="Learning usage"
             aria-label="Learning usage"
             onClick={() => navigate({ to: "/usage" })}
@@ -221,7 +258,7 @@ function ChatContent() {
             <BarChart3 size={16} />
           </button>
           <button
-            className={`${actionButtonClass} hidden lg:inline-flex ${speechEnabled ? "text-primary" : ""}`}
+            className={`${actionButtonClass} hidden sm:inline-flex ${speechEnabled ? "text-primary" : ""}`}
             title={speechEnabled ? "Disable speech" : "Enable speech"}
             aria-pressed={speechEnabled}
             onClick={toggleSpeech}
@@ -229,7 +266,7 @@ function ChatContent() {
             {speechEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
           </button>
           <button
-            className={`${actionButtonClass} hidden lg:inline-flex`}
+            className={`${actionButtonClass} hidden sm:inline-flex`}
             title="Artifacts"
             aria-label="Artifacts"
             onClick={() => setArtifactBrowserOpen(true)}
@@ -237,7 +274,7 @@ function ChatContent() {
             <LibraryBig size={16} />
           </button>
           <button
-            className={`${actionButtonClass} md:hidden`}
+            className={`${actionButtonClass} sm:hidden`}
             title="Menu"
             aria-label="Menu"
             aria-expanded={mobileMenuOpen}
@@ -255,6 +292,39 @@ function ChatContent() {
             style={{ fontSize: "0.875rem" }}
           >
             <div className="flex flex-col p-1">
+              <button
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  newSession();
+                }}
+                disabled={isPending}
+              >
+                <Plus size={14} />
+                New session
+              </button>
+              <button
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  openSessions();
+                }}
+                disabled={isPending}
+              >
+                <History size={14} />
+                Session history
+              </button>
+              <button
+                className={`flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors ${titleState === "renamed" ? "text-primary" : ""} ${titleState === "error" ? "text-destructive" : ""}`}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  void handleGenerateTitle();
+                }}
+                disabled={isPending || titleState === "loading"}
+              >
+                {titleState === "loading" ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                {titleState === "loading" ? "Generating title…" : "Generate title"}
+              </button>
               <button
                 className={`flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors ${shareState === "copied" ? "text-primary" : ""} ${shareState === "error" ? "text-destructive" : ""}`}
                 onClick={() => {

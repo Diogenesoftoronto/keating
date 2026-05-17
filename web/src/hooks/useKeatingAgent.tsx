@@ -16,6 +16,7 @@ import { SettingsDialog } from "../components/SettingsDialog";
 import { KeatingUiSettingsTab } from "../components/KeatingUiSettingsTab";
 import { ProvidersModelsTab } from "../components/ProvidersModelsTab";
 import { ProxyTab } from "../components/ProxyTab";
+import { SpeechSettingsTab } from "../components/SpeechSettingsTab";
 import { ModelSelectorDialog } from "../components/ModelSelector";
 import { getProviderApiKey } from "../lib/provider-models";
 import { localModel } from "../stores/local-model";
@@ -107,6 +108,7 @@ export interface UseKeatingAgentReturn {
   persistentStorageStatus: PersistentStorageStatus;
   toggleSpeech: () => void;
   setThinkingLevel: (level: ThinkingLevel) => void;
+  generateCurrentSessionTitle: () => Promise<string>;
 }
 
 export function useKeatingAgent(): UseKeatingAgentReturn {
@@ -147,7 +149,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const toolOptions = useCallback((settings: WebSpeechSettings) => ({
     speech: {
       settings,
-      getGoogleApiKey: () => getProviderApiKey("google"),
+      getApiKey: (provider: string) => getProviderApiKey(provider),
     },
   }), []);
 
@@ -429,6 +431,18 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     return title;
   }, []);
 
+  const generateCurrentSessionTitle = useCallback(async () => {
+    const agent = agentRef.current;
+    if (!agent || agent.state.messages.length === 0) {
+      throw new Error("Send a message first — there's nothing for the model to title yet.");
+    }
+    await saveSessionSnapshot();
+    const sessionId = sessionIdRef.current;
+    const nextTitle = await suggestSessionTitle(sessionId);
+    await sessions.updateTitle(sessionId, nextTitle);
+    return nextTitle;
+  }, [saveSessionSnapshot, suggestSessionTitle]);
+
   const openSessions = useCallback(() => {
     sessionsDialog.onOpen();
   }, [sessionsDialog]);
@@ -454,6 +468,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       onClose={settingsDialog.onClose}
       tabs={[
         { id: "providers", label: "Providers & Models", component: <ProvidersModelsTab /> },
+        { id: "speech", label: "Speech & Voice", component: <SpeechSettingsTab onSettingsChange={setSpeechSettings} /> },
         { id: "interface", label: "Interface", component: <KeatingUiSettingsTab /> },
         { id: "proxy", label: "Proxy", component: <ProxyTab /> },
       ]}
@@ -585,5 +600,5 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     </>
   );
 
-  return { title, isPending, openSettings, openSessions, newSession, shareSession, chatPanelRef, dialogs: allDialogs, speechEnabled: speechSettings.enabled, persistentStorageStatus, toggleSpeech, setThinkingLevel };
+  return { title, isPending, openSettings, openSessions, newSession, shareSession, chatPanelRef, dialogs: allDialogs, speechEnabled: speechSettings.enabled, persistentStorageStatus, toggleSpeech, setThinkingLevel, generateCurrentSessionTitle };
 }
