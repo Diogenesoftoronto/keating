@@ -3,6 +3,35 @@ import * as fc from "fast-check";
 import type { TeacherPolicy, SimulationWeights, LearnerProfile, TopicDefinition, BenchmarkResult, TopicBenchmark, TeachingSimulation, BenchmarkTopicTrace, MapElitesGrid, MapElitesCell } from "../src/core/types.js";
 import { clampPolicy, clampWeights } from "../src/core/policy.js";
 
+// ─── Shared constants ──────────────────────────────────────────────────────
+
+export const CANONICAL_TOPICS = [
+  "derivative", "entropy", "bayes-rule", "falsifiability", "stoicism",
+  "recursion", "precedent", "separation-of-powers", "cognitive-bias",
+  "evidence-based-medicine", "counterpoint", "industrial-revolution",
+  "relativity", "social-contract"
+];
+
+// ─── Test utilities ────────────────────────────────────────────────────────
+
+export function suppressConsoleError<T>(fn: () => Promise<T>): Promise<T>;
+export function suppressConsoleError<T>(fn: () => T): T;
+export function suppressConsoleError<T>(fn: () => T | Promise<T>): T | Promise<T> {
+  const origError = console.error;
+  console.error = () => {};
+  try {
+    const result = fn();
+    if (result instanceof Promise) {
+      return result.finally(() => { console.error = origError; });
+    }
+    console.error = origError;
+    return result;
+  } catch (e) {
+    console.error = origError;
+    throw e;
+  }
+}
+
 // ─── fast-check Arbitraries ────────────────────────────────────────────────
 
 export const arbPolicyName = fc.string({ minLength: 1, maxLength: 32 });
@@ -20,12 +49,33 @@ export const arbPolicy: fc.Arbitrary<TeacherPolicy> = fc.record({
   challengeRate: fc.double({ min: 0, max: 1, noNaN: true }),
 });
 
+export const arbUnboundedPolicy: fc.Arbitrary<TeacherPolicy> = fc.record({
+  name: arbPolicyName,
+  analogyDensity: fc.double({ min: -10, max: 10, noNaN: true }),
+  socraticRatio: fc.double({ min: -10, max: 10, noNaN: true }),
+  formalism: fc.double({ min: -10, max: 10, noNaN: true }),
+  retrievalPractice: fc.double({ min: -10, max: 10, noNaN: true }),
+  exerciseCount: fc.integer({ min: -100, max: 100 }),
+  diagramBias: fc.double({ min: -10, max: 10, noNaN: true }),
+  reflectionBias: fc.double({ min: -10, max: 10, noNaN: true }),
+  interdisciplinaryBias: fc.double({ min: -10, max: 10, noNaN: true }),
+  challengeRate: fc.double({ min: -10, max: 10, noNaN: true }),
+});
+
 export const arbWeights: fc.Arbitrary<SimulationWeights> = fc.record({
   masteryGain: fc.double({ min: 0.01, max: 1, noNaN: true }),
   retention: fc.double({ min: 0.01, max: 1, noNaN: true }),
   engagement: fc.double({ min: 0.01, max: 1, noNaN: true }),
   transfer: fc.double({ min: 0.01, max: 1, noNaN: true }),
   confusion: fc.double({ min: 0.01, max: 1, noNaN: true }),
+});
+
+export const arbUnboundedWeights: fc.Arbitrary<SimulationWeights> = fc.record({
+  masteryGain: fc.double({ min: -5, max: 5, noNaN: true }),
+  retention: fc.double({ min: -5, max: 5, noNaN: true }),
+  engagement: fc.double({ min: -5, max: 5, noNaN: true }),
+  transfer: fc.double({ min: -5, max: 5, noNaN: true }),
+  confusion: fc.double({ min: -5, max: 5, noNaN: true }),
 });
 
 export const arbLearnerProfile: fc.Arbitrary<LearnerProfile> = fc.record({
@@ -190,7 +240,7 @@ export function policyIsBounded(policy: TeacherPolicy): boolean {
 
 export function weightsAreNormalized(weights: SimulationWeights): boolean {
   const sum = weights.masteryGain + weights.retention + weights.engagement + weights.transfer + weights.confusion;
-  return Math.abs(sum - 1) < 0.02;
+  return Math.abs(sum - 1) < 0.001;
 }
 
 export function weightsAreBounded(weights: SimulationWeights): boolean {

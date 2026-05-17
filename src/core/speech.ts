@@ -14,23 +14,22 @@ export const VOICE_TAGS = [
 
 export type VoiceTag = (typeof VOICE_TAGS)[number];
 
-export interface VoiceUtteranceInput {
-  text: string;
-  voice?: string;
-  tags?: string[];
-  pace?: "slow" | "normal" | "quick";
-  affect?: "warm" | "curious" | "firm" | "celebratory";
-  listenFor?: string;
-}
+type Pace = "slow" | "normal" | "quick";
+type Affect = "warm" | "curious" | "firm" | "celebratory";
 
 export interface VoiceUtterance {
   text: string;
   voice: string;
   tags: VoiceTag[];
-  pace: "slow" | "normal" | "quick";
-  affect: "warm" | "curious" | "firm" | "celebratory";
+  pace: Pace;
+  affect: Affect;
   listenFor?: string;
 }
+
+export type VoiceUtteranceInput = Partial<Omit<VoiceUtterance, "text">> & {
+  text: string;
+  tags?: string[];
+};
 
 const DEFAULT_TAGS: VoiceTag[] = ["explain"];
 const DEFAULT_PACE: VoiceUtterance["pace"] = "normal";

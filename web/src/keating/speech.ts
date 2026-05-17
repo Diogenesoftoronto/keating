@@ -4,7 +4,7 @@ export const KEATING_VOICE_TOOL_NAME = "keating_voice";
 export const GEMINI_LIVE_SPEECH_MODEL = "gemini-3.1-flash-live-preview";
 export const DEFAULT_SPEECH_VOICE = "Kore";
 const SPEECH_SETTINGS_KEY = "keating:web:speech";
-const RECEIVE_SAMPLE_RATE = 24_000;
+export const RECEIVE_SAMPLE_RATE = 24_000;
 
 const VOICE_TAGS = new Set([
 	"explain",
@@ -16,10 +16,35 @@ const VOICE_TAGS = new Set([
 	"recap",
 ]);
 
+export type SpeechProviderId =
+	| "gemini-live"
+	| "openai-tts"
+	| "openai-realtime"
+	| "supertonic-3"
+	| string; // allows "custom:<id>"
+
+export interface CustomSpeechModel {
+	id: string;            // stable client id; storage key is `custom:${id}`
+	label: string;         // shown in dropdown
+	baseUrl: string;       // for OpenAI-compatible TTS endpoints
+	model: string;         // model id passed in request body
+	voice: string;         // default voice
+	providerKey: string;   // which providerKeys entry to use ("openai", custom name)
+	apiPath?: string;      // default "/v1/audio/speech"
+}
+
 export interface WebSpeechSettings {
 	enabled: boolean;
+	/** Active provider. Defaults to "gemini-live" for back-compat. */
+	providerId: SpeechProviderId;
+	/** Active model for the chosen provider. */
 	model: string;
+	/** Active voice for the chosen provider. */
 	voiceName: string;
+	/** User-defined OpenAI-compatible TTS endpoints. */
+	customModels: CustomSpeechModel[];
+	/** When true, Realtime providers may capture mic input. */
+	microphoneEnabled: boolean;
 }
 
 export interface VoiceUtterance {
@@ -32,8 +57,11 @@ export interface VoiceUtterance {
 
 export const DEFAULT_WEB_SPEECH_SETTINGS: WebSpeechSettings = {
 	enabled: false,
+	providerId: "gemini-live",
 	model: GEMINI_LIVE_SPEECH_MODEL,
 	voiceName: DEFAULT_SPEECH_VOICE,
+	customModels: [],
+	microphoneEnabled: false,
 };
 
 function cleanString(value: unknown): string {
@@ -72,10 +100,19 @@ export function loadWebSpeechSettings(): WebSpeechSettings {
 		const raw = window.localStorage.getItem(SPEECH_SETTINGS_KEY);
 		if (!raw) return DEFAULT_WEB_SPEECH_SETTINGS;
 		const parsed = JSON.parse(raw) as Partial<WebSpeechSettings>;
+		const customModels = Array.isArray(parsed.customModels)
+			? parsed.customModels.filter(
+					(m): m is CustomSpeechModel =>
+						!!m && typeof m.id === "string" && typeof m.baseUrl === "string" && typeof m.model === "string",
+				)
+			: [];
 		return {
 			enabled: parsed.enabled === true,
+			providerId: cleanString(parsed.providerId) || DEFAULT_WEB_SPEECH_SETTINGS.providerId,
 			model: cleanString(parsed.model) || DEFAULT_WEB_SPEECH_SETTINGS.model,
 			voiceName: cleanString(parsed.voiceName) || DEFAULT_WEB_SPEECH_SETTINGS.voiceName,
+			customModels,
+			microphoneEnabled: parsed.microphoneEnabled === true,
 		};
 	} catch {
 		return DEFAULT_WEB_SPEECH_SETTINGS;
@@ -90,7 +127,7 @@ export function saveWebSpeechSettings(settings: WebSpeechSettings): void {
 let audioContext: AudioContext | null = null;
 let scheduledUntil = 0;
 
-function getAudioContext(): AudioContext | null {
+export function getAudioContext(): AudioContext | null {
 	if (typeof window === "undefined") return null;
 	const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
 	if (!AudioContextCtor) return null;
@@ -110,14 +147,14 @@ function decodeBase64Pcm(base64: string): Int16Array {
 	return new Int16Array(bytes.buffer);
 }
 
-function schedulePcmAudio(base64: string): boolean {
+export function schedulePcmAudio(base64: string, sampleRate = RECEIVE_SAMPLE_RATE): boolean {
 	const context = getAudioContext();
 	if (!context) return false;
 
 	const pcm = decodeBase64Pcm(base64);
 	if (pcm.length === 0) return false;
 
-	const buffer = context.createBuffer(1, pcm.length, RECEIVE_SAMPLE_RATE);
+	const buffer = context.createBuffer(1, pcm.length, sampleRate);
 	const channel = buffer.getChannelData(0);
 	for (let i = 0; i < pcm.length; i += 1) channel[i] = pcm[i] / 32768;
 
@@ -130,138 +167,101 @@ function schedulePcmAudio(base64: string): boolean {
 	return true;
 }
 
-function speechErrorMessage(error: unknown): string {
+export async function scheduleAudioBlob(blob: Blob): Promise<boolean> {
+	const context = getAudioContext();
+	if (!context) return false;
+	const arrayBuffer = await blob.arrayBuffer();
+	const audioBuffer = await context.decodeAudioData(arrayBuffer.slice(0));
+	const source = context.createBufferSource();
+	source.buffer = audioBuffer;
+	source.connect(context.destination);
+	const startAt = Math.max(context.currentTime + 0.03, scheduledUntil);
+	source.start(startAt);
+	scheduledUntil = startAt + audioBuffer.duration;
+	return true;
+}
+
+export function speechErrorMessage(error: unknown, fallback: string): string {
 	if (error instanceof Error && error.message.trim()) return error.message.trim();
 	if (typeof error === "string" && error.trim()) return error.trim();
-	return "Gemini Live speech failed.";
+	return fallback;
 }
 
-function contentParts(message: any): any[] {
-	return Array.isArray(message?.serverContent?.modelTurn?.parts)
-		? message.serverContent.modelTurn.parts
-		: [];
+export interface SpeechSynthesisResult {
+	audioChunks: number;
+	playedChunks: number;
+	transcript: string;
+	warning?: string;
 }
 
-async function speakWithGeminiLive(
-	utterance: VoiceUtterance,
-	settings: WebSpeechSettings,
-	apiKey: string,
-	signal?: AbortSignal,
-): Promise<{ audioChunks: number; playedChunks: number; transcript: string }> {
-	const { GoogleGenAI, Modality, ThinkingLevel } = await import("@google/genai");
-	const ai = new GoogleGenAI({ apiKey });
+export interface SpeechSynthesisRequest {
+	utterance: VoiceUtterance;
+	settings: WebSpeechSettings;
+	customModel?: CustomSpeechModel;
+	getApiKey: (provider: string) => Promise<string | undefined>;
+	signal?: AbortSignal;
+}
 
-	let session: { sendRealtimeInput: (params: { text: string }) => void; close: () => void } | null = null;
-	let done = false;
-	let audioChunks = 0;
-	let playedChunks = 0;
-	let transcript = "";
+export interface SpeechProviderDescriptor {
+	id: SpeechProviderId;
+	label: string;
+	kind: "tts" | "duplex";
+	status: "stable" | "preview" | "experimental";
+	description: string;
+	models: { value: string; label: string }[];
+	voices: string[];
+	needsApiKey?: string;
+}
 
-	const finish = (resolve: (value: { audioChunks: number; playedChunks: number; transcript: string }) => void) => {
-		if (done) return;
-		done = true;
-		session?.close();
-		resolve({ audioChunks, playedChunks, transcript: transcript.trim() });
-	};
+export interface SpeechProvider extends SpeechProviderDescriptor {
+	synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthesisResult>;
+}
 
-	return await new Promise((resolve, reject) => {
-		const timeout: ReturnType<typeof setTimeout> = setTimeout(() => {
-			if (done) return;
-			done = true;
-			session?.close();
-			reject(new Error("Gemini Live speech timed out."));
-		}, 30_000);
+const providerRegistry = new Map<SpeechProviderId, SpeechProvider>();
+let registrationPromise: Promise<void> | null = null;
 
-		const abort = () => {
-			if (done) return;
-			done = true;
-			clearTimeout(timeout);
-			session?.close();
-			reject(new Error("Gemini Live speech aborted."));
-		};
+async function ensureProvidersRegistered(): Promise<void> {
+	if (registrationPromise) return registrationPromise;
+	registrationPromise = (async () => {
+		const [gemini, oaiTts, oaiRealtime, supertonic] = await Promise.all([
+			import("./speech-providers/gemini-live"),
+			import("./speech-providers/openai-tts"),
+			import("./speech-providers/openai-realtime"),
+			import("./speech-providers/supertonic"),
+		]);
+		providerRegistry.set("gemini-live", gemini.geminiLiveProvider);
+		providerRegistry.set("openai-tts", oaiTts.openAITtsProvider);
+		providerRegistry.set("openai-realtime", oaiRealtime.openAIRealtimeProvider);
+		providerRegistry.set("supertonic-3", supertonic.supertonicProvider);
+	})();
+	return registrationPromise;
+}
 
-		if (signal?.aborted) {
-			abort();
-			return;
-		}
-		signal?.addEventListener("abort", abort, { once: true });
+export async function listSpeechProviders(): Promise<SpeechProviderDescriptor[]> {
+	await ensureProvidersRegistered();
+	return Array.from(providerRegistry.values()).map(({ synthesize: _ignored, ...info }) => info);
+}
 
-		ai.live.connect({
-			model: settings.model,
-			callbacks: {
-				onmessage: (message: any) => {
-					for (const part of contentParts(message)) {
-						const data = part.inlineData?.data;
-						if (typeof data === "string" && data.length > 0) {
-							audioChunks += 1;
-							if (schedulePcmAudio(data)) playedChunks += 1;
-						}
-						if (typeof part.text === "string") transcript += part.text;
-					}
+export async function getSpeechProvider(id: SpeechProviderId): Promise<SpeechProvider | null> {
+	await ensureProvidersRegistered();
+	return providerRegistry.get(id) ?? null;
+}
 
-					const outputText = message?.serverContent?.outputTranscription?.text;
-					if (typeof outputText === "string") transcript += outputText;
-
-					if (message?.serverContent?.turnComplete || message?.serverContent?.generationComplete) {
-						clearTimeout(timeout);
-						signal?.removeEventListener("abort", abort);
-						finish(resolve);
-					}
-				},
-				onerror: (event: ErrorEvent) => {
-					if (done) return;
-					done = true;
-					clearTimeout(timeout);
-					signal?.removeEventListener("abort", abort);
-					reject(new Error(event.message || "Gemini Live speech failed."));
-				},
-				onclose: () => {
-					if (done) return;
-					clearTimeout(timeout);
-					signal?.removeEventListener("abort", abort);
-					finish(resolve);
-				},
-			},
-			config: {
-				responseModalities: [Modality.AUDIO],
-				outputAudioTranscription: {},
-				speechConfig: {
-					voiceConfig: {
-						prebuiltVoiceConfig: { voiceName: utterance.voice },
-					},
-				},
-				systemInstruction:
-					"You are Keating's voice layer. Speak the provided learner-facing line only. Keep it natural, concise, and conversational. Do not add extra teaching content.",
-				thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL },
-			},
-		}).then((liveSession) => {
-			if (done) {
-				liveSession.close();
-				return;
-			}
-			session = liveSession;
-			session.sendRealtimeInput({
-				text: `${voiceTagLine(utterance)}\n\nSpeak this line exactly, preserving the teaching intent.`,
-			});
-		}).catch((error) => {
-			if (done) return;
-			done = true;
-			clearTimeout(timeout);
-			signal?.removeEventListener("abort", abort);
-			reject(error);
-		});
-	});
+function resolveCustomModel(settings: WebSpeechSettings): CustomSpeechModel | undefined {
+	if (!settings.providerId.startsWith("custom:")) return undefined;
+	const id = settings.providerId.slice("custom:".length);
+	return settings.customModels.find((m) => m.id === id);
 }
 
 export function createSpeechTool(
 	settings: WebSpeechSettings,
-	getGoogleApiKey: () => Promise<string | undefined>,
+	getApiKey: (provider: string) => Promise<string | undefined>,
 ): AgentTool {
 	return {
 		name: KEATING_VOICE_TOOL_NAME,
 		label: "Keating Voice",
 		description:
-			"Speak one short learner-facing utterance through the optional Gemini 3.1 Flash Live speech layer. Use for brief questions, recaps, redirects, and encouragement only.",
+			"Speak one short learner-facing utterance through the active speech provider (Gemini Live, OpenAI TTS, OpenAI Realtime, Supertonic-3, or a user-defined custom provider). Use for brief questions, recaps, redirects, and encouragement only.",
 		parameters: {
 			type: "object",
 			properties: {
@@ -271,7 +271,7 @@ export function createSpeechTool(
 					items: { type: "string", enum: Array.from(VOICE_TAGS) },
 					description: "Voice tags such as question, explain, verify, redirect, encourage, pause, or recap.",
 				},
-				voice: { type: "string", description: "Optional voice name. Defaults to the configured Gemini Live voice." },
+				voice: { type: "string", description: "Optional voice name. Defaults to the configured voice." },
 				pace: { type: "string", description: "Optional pacing hint." },
 				affect: { type: "string", description: "Optional affect hint." },
 			},
@@ -281,37 +281,67 @@ export function createSpeechTool(
 		execute: async (_toolCallId: string, params: Record<string, unknown>, signal?: AbortSignal) => {
 			const utterance = normalizeVoiceUtterance(params, settings);
 			const line = voiceTagLine(utterance);
-			const apiKey = await getGoogleApiKey();
+			const customModel = resolveCustomModel(settings);
 
-			if (!apiKey) {
+			let provider: SpeechProvider | null;
+			if (customModel) {
+				const mod = await import("./speech-providers/custom-tts");
+				provider = mod.customTtsProvider;
+			} else {
+				provider = await getSpeechProvider(settings.providerId);
+			}
+
+			if (!provider) {
 				return {
 					content: [{
 						type: "text",
-						text: `${line}\n\nSpeech is enabled, but no Google API key is configured. Add a Google API key in Settings to play Gemini Live audio.`,
+						text: `${line}\n\nSpeech is enabled but no provider matched "${settings.providerId}". Open Settings → Speech to pick one.`,
 					}],
 					details: {
-						provider: "gemini-live",
-						model: settings.model,
-						voiceName: utterance.voice,
+						provider: settings.providerId,
+						status: "missing-provider",
 						utterance,
-						status: "missing-api-key",
 					},
 				};
 			}
 
-			let result: Awaited<ReturnType<typeof speakWithGeminiLive>>;
 			try {
-				result = await speakWithGeminiLive(utterance, settings, apiKey, signal);
-			} catch (error) {
-				const message = speechErrorMessage(error);
-				console.warn(`[keating:speech] ${settings.model} failed: ${message}`);
+				const result = await provider.synthesize({
+					utterance,
+					settings,
+					customModel,
+					getApiKey,
+					signal,
+				});
 				return {
 					content: [{
 						type: "text",
-						text: `${line}\n\nVoice layer failed for ${settings.model}: ${message}\nThe main chat response can continue without speech audio.`,
+						text: `${line}\n\nSpeech played with ${provider.label}${result.warning ? ` (${result.warning})` : ""}. Audio chunks: ${result.audioChunks}.`,
 					}],
 					details: {
-						provider: "gemini-live",
+						provider: provider.id,
+						label: provider.label,
+						kind: provider.kind,
+						model: settings.model,
+						voiceName: utterance.voice,
+						utterance,
+						transcript: result.transcript,
+						audioChunks: result.audioChunks,
+						playedChunks: result.playedChunks,
+						warning: result.warning,
+					},
+				};
+			} catch (error) {
+				const message = speechErrorMessage(error, `${provider.label} speech failed.`);
+				console.warn(`[keating:speech] ${provider.id}/${settings.model} failed: ${message}`);
+				return {
+					content: [{
+						type: "text",
+						text: `${line}\n\n${provider.label} voice layer failed: ${message}\nThe main chat response can continue without speech audio.`,
+					}],
+					details: {
+						provider: provider.id,
+						label: provider.label,
 						model: settings.model,
 						voiceName: utterance.voice,
 						utterance,
@@ -320,21 +350,6 @@ export function createSpeechTool(
 					},
 				};
 			}
-			return {
-				content: [{
-					type: "text",
-					text: `${line}\n\nSpeech played with ${settings.model}. Audio chunks: ${result.audioChunks}.`,
-				}],
-				details: {
-					provider: "gemini-live",
-					model: settings.model,
-					voiceName: utterance.voice,
-					utterance,
-					transcript: result.transcript,
-					audioChunks: result.audioChunks,
-					playedChunks: result.playedChunks,
-				},
-			};
 		},
 	} as unknown as AgentTool;
 }

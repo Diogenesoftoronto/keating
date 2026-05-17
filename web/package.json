@@ -1,6 +1,6 @@
 {
   "name": "keating-web",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "type": "module",
   "private": true,
   "scripts": {
@@ -26,6 +26,7 @@
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-grab": "^0.1.32",
+    "recharts": "^3.8.1",
     "rehype-katex": "^7.0.1",
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0"

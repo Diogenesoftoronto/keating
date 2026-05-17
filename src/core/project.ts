@@ -108,23 +108,37 @@ export async function animateTopicArtifact(cwd: string, topicName: string) {
   return writeLessonAnimation(cwd, topicName, policy);
 }
 
+async function writeArtifactWithTrace(
+  cwd: string,
+  outputDir: string,
+  slug: string,
+  markdownContent: string,
+  traceSuffix: string,
+  traceData: unknown
+): Promise<{ reportPath: string; tracePath: string | null }> {
+  const config = await loadKeatingConfig(cwd);
+  const reportPath = join(outputDir, `${slug}.md`);
+  await writeFile(reportPath, markdownContent, "utf8");
+  const tracePath = config.debug.persistTraces
+    ? join(tracesDir(cwd), `${slug}-${traceSuffix}.json`)
+    : null;
+  if (tracePath) {
+    await writeFile(tracePath, `${JSON.stringify(traceData, null, 2)}\n`, "utf8");
+  }
+  return { reportPath, tracePath };
+}
+
 export async function benchPolicyArtifact(
   cwd: string,
   focusTopic?: string
 ): Promise<{ reportPath: string; tracePath: string | null; overallScore: number }> {
   await ensureProjectScaffold(cwd);
-  const config = await loadKeatingConfig(cwd);
   const policy = await loadPolicy(currentPolicyPath(cwd));
-  const result = await runBenchmarkSuite(cwd, policy, focusTopic, 20260401, config.debug.traceTopLearners);
-  const fileName = focusTopic ? `${slugify(focusTopic)}.md` : "core-suite.md";
-  const reportPath = join(benchmarksDir(cwd), fileName);
-  await writeFile(reportPath, benchmarkToMarkdown(result), "utf8");
-  const tracePath = config.debug.persistTraces
-    ? join(tracesDir(cwd), `${focusTopic ? slugify(focusTopic) : "core-suite"}-benchmark.json`)
-    : null;
-  if (tracePath) {
-    await writeFile(tracePath, `${JSON.stringify(result, null, 2)}\n`, "utf8");
-  }
+  const result = await runBenchmarkSuite(cwd, policy, focusTopic, 20260401);
+  const slug = focusTopic ? slugify(focusTopic) : "core-suite";
+  const { reportPath, tracePath } = await writeArtifactWithTrace(
+    cwd, benchmarksDir(cwd), slug, benchmarkToMarkdown(result), "benchmark", result
+  );
   return { reportPath, tracePath, overallScore: result.overallScore };
 }
 
@@ -133,21 +147,15 @@ export async function evolvePolicyArtifact(
   focusTopic?: string
 ): Promise<{ reportPath: string; tracePath: string | null; bestScore: number; policyPath: string }> {
   await ensureProjectScaffold(cwd);
-  const config = await loadKeatingConfig(cwd);
   const policyPath = currentPolicyPath(cwd);
   const basePolicy = await loadPolicy(policyPath);
   const meRun = await mapElitesEvolve(cwd, basePolicy, { focusTopic });
   const run = mapElitesToEvolutionRun(meRun);
   await savePolicy(policyPath, run.best.policy);
-  const fileName = focusTopic ? `${slugify(focusTopic)}.md` : "latest.md";
-  const reportPath = join(evolutionDir(cwd), fileName);
-  await writeFile(reportPath, mapElitesToMarkdown(meRun), "utf8");
-  const tracePath = config.debug.persistTraces
-    ? join(tracesDir(cwd), `${focusTopic ? slugify(focusTopic) : "latest"}-evolution.json`)
-    : null;
-  if (tracePath) {
-    await writeFile(tracePath, `${JSON.stringify(run, null, 2)}\n`, "utf8");
-  }
+  const slug = focusTopic ? slugify(focusTopic) : "latest";
+  const { reportPath, tracePath } = await writeArtifactWithTrace(
+    cwd, evolutionDir(cwd), slug, mapElitesToMarkdown(meRun), "evolution", run
+  );
   return { reportPath, tracePath, bestScore: run.best.overallScore, policyPath };
 }
 
@@ -293,12 +301,17 @@ export async function promptEvalArtifact(
   return { reportPath, score: result.score, objectives: result.objectives, feedback: result.feedback };
 }
 
-export async function timelineArtifact(
-  cwd: string
-): Promise<{ reportPath: string; markdown: string }> {
+async function loadEngagementContext(cwd: string) {
   await ensureProjectScaffold(cwd);
   const state = await loadLearnerState(learnerStatePath(cwd));
   const policy = await loadEngagementPolicy(engagementPolicyPath(cwd));
+  return { state, policy };
+}
+
+export async function timelineArtifact(
+  cwd: string
+): Promise<{ reportPath: string; markdown: string }> {
+  const { state, policy } = await loadEngagementContext(cwd);
   const timeline = buildEngagementTimeline(state, policy);
   const markdown = engagementTimelineToMarkdown(timeline);
   const reportPath = join(timelineDir(cwd), "latest.md");
@@ -309,9 +322,7 @@ export async function timelineArtifact(
 export async function dueTopicsArtifact(
   cwd: string
 ): Promise<{ reportPath: string; markdown: string; count: number }> {
-  await ensureProjectScaffold(cwd);
-  const state = await loadLearnerState(learnerStatePath(cwd));
-  const policy = await loadEngagementPolicy(engagementPolicyPath(cwd));
+  const { state, policy } = await loadEngagementContext(cwd);
   const due = dueTopics(state, policy);
   const markdown = dueTopicsToMarkdown(due);
   const reportPath = join(timelineDir(cwd), "due.md");

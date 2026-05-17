@@ -58,6 +58,114 @@ function majorMinor(version: string): string {
 
 const POSTS: Post[] = [
   {
+    date: "2026-05-17",
+    badge: { label: "FEATURE", color: "feature" },
+    title: "v0.3.7 — Pluggable Speech Providers, Usage Charts, and Model-Generated Session Titles",
+    version: "0.3.7",
+    summary:
+      "Speech is now a provider abstraction with Gemini Live, OpenAI TTS, OpenAI Realtime (preview), local Supertonic-3 (experimental), and a user-defined custom-TTS form. The Usage page gained five charts, the chat header now lets the model rename the current session, and the responsive layout finally keeps every setting reachable from sm to lg.",
+    sections: [
+      { id: "session-title", title: "Model-Generated Session Titles" },
+      { id: "speech-providers", title: "Speech & Voice — New Tab, New Providers" },
+      { id: "usage-charts", title: "Usage Charts" },
+      { id: "responsive-fixes", title: "Responsive Layout & Settings Navigation" },
+      { id: "suggested-prompts", title: "Suggested-Prompts Auto-Load-More" },
+      { id: "honest-status", title: "Honest Status: Preview vs. Experimental" },
+    ],
+    body: (
+      <>
+        <p className="mb-4 leading-6">
+          0.3.7 is a layout-and-voice release. The chat header keeps every action visible
+          across <Code>sm</Code>, <Code>md</Code>, and <Code>lg</Code>, the Settings dialog gets
+          a wider sidebar and in-tab sub-navigation, speech grows from a single Gemini Live
+          path into a pluggable provider system, and the Usage page learns to draw charts.
+        </p>
+
+        <h3 id="session-title" className="font-bold mt-4 mb-2">Model-Generated Session Titles</h3>
+        <p className="text-sm mb-4">
+          A new <Code>Sparkles</Code> button in the chat header (and a matching mobile-menu
+          entry) asks the active model to rename the current session based on its content.
+          The handler snapshots the live messages, feeds a preview to the model with a
+          minimal-reasoning configuration, and writes the cleaned title back via{" "}
+          <Code>sessions.updateTitle</Code>. Tooltip feedback reports{" "}
+          <em>"Generating title…"</em>, <em>"Renamed to …"</em>, or the error message.
+        </p>
+
+        <h3 id="speech-providers" className="font-bold mt-4 mb-2">Speech & Voice — New Tab, New Providers</h3>
+        <p className="text-sm mb-4">
+          Speech is now its own Settings tab, and{" "}
+          <Code>src/keating/speech.ts</Code> exposes a <Code>SpeechProvider</Code> interface
+          backed by a lazy registry. Built-in providers:
+        </p>
+        <ul className="text-sm mb-4 list-disc pl-6 space-y-1">
+          <li><strong>Gemini Live</strong> — existing audio-out path, refactored behind the interface. Stable.</li>
+          <li><strong>OpenAI TTS</strong> — <Code>gpt-4o-mini-tts</Code>, <Code>tts-1</Code>, and <Code>tts-1-hd</Code> via <Code>/v1/audio/speech</Code>, with steerable affect/pace on the mini model. Stable.</li>
+          <li><strong>OpenAI Realtime</strong> — full WebRTC duplex: mints an ephemeral session, exchanges SDP, attaches the mic when enabled, and plays the remote audio track. Flagged <strong>preview</strong> (per-utterance session, untested against your account).</li>
+          <li><strong>Supertonic-3 (local)</strong> — wires <Code>onnxruntime-web</Code> and downloads the 4 ONNX files plus <Code>tts.json</Code> and <Code>unicode_indexer.json</Code> from the Hugging Face repo. Flagged <strong>experimental</strong>: sessions load and warm up, but the text→tokens→duration→vectors→vocoder synthesis pipeline still needs to be ported from the Python <Code>supertonic</Code> package.</li>
+          <li><strong>Custom TTS</strong> — paste any OpenAI-compatible <Code>/v1/audio/speech</Code> endpoint: label, base URL, model id, voice, provider-key name, and optional API path.</li>
+        </ul>
+        <p className="text-sm mb-4">
+          A microphone toggle in the same tab is honored by duplex providers like OpenAI
+          Realtime. The voice tool the agent calls (<Code>keating_voice</Code>) dispatches to
+          the active provider through the registry instead of hard-coding Gemini.
+        </p>
+
+        <h3 id="usage-charts" className="font-bold mt-4 mb-2">Usage Charts</h3>
+        <p className="text-sm mb-4">
+          The Usage page now includes five panels powered by{" "}
+          <Code>src/components/UsageCharts.tsx</Code>:
+        </p>
+        <ul className="text-sm mb-4 list-disc pl-6 space-y-1">
+          <li><strong>Topic mix donut</strong> — artifacts grouped by topic, recharts <Code>PieChart</Code> with a shared palette.</li>
+          <li><strong>Feedback signal donut</strong> — confident / off-track / confused from <Code>learnerState.feedbackHistory</Code>.</li>
+          <li><strong>Curriculum timeline</strong> — a hand-rolled SVG Gantt across <Code>learnerState.sessions</Code> (start/end + topics covered), color-matched to the donut.</li>
+          <li><strong>Daily activity heatmap</strong> — 12 weeks of sessions/day, GitHub-style grid (also hand-rolled SVG).</li>
+          <li><strong>Coming up</strong> — open <Code>Verification</Code> checklists plus <Code>learnerState.weaknesses[]</Code> / <Code>strengths[]</Code>. Honest stand-in for "due" work since storage has no SRS field yet.</li>
+        </ul>
+
+        <h3 id="responsive-fixes" className="font-bold mt-4 mb-2">Responsive Layout & Settings Navigation</h3>
+        <p className="text-sm mb-4">
+          At the <Code>md</Code> breakpoint the chat header was silently dropping
+          Settings, New Session, History, Speech, and Artifacts: the hamburger was hidden
+          (<Code>md:hidden</Code>) before the inline icons started showing. All seven
+          action icons now render together from <Code>sm</Code> upward and the hamburger
+          collapses to <Code>xs</Code> only; the mobile dropdown gained the missing
+          New Session / Session history entries.
+        </p>
+        <p className="text-sm mb-4">
+          The Settings dialog widened to <Code>max-w-5xl</Code> with a wider sidebar on
+          md/lg, and the heavy <strong>Providers & Models</strong> tab gained a sticky
+          chip-style sub-section navigator (Cloud / Visibility / My Models / Custom
+          Providers) with <Code>scrollIntoView</Code> jumps and per-section{" "}
+          <Code>scroll-mt-20</Code>. The Speech & Voice tab uses the same pattern.
+        </p>
+
+        <h3 id="suggested-prompts" className="font-bold mt-4 mb-2">Suggested-Prompts Auto-Load-More</h3>
+        <p className="text-sm mb-4">
+          The suggested-prompts strip used to randomize three items and only let the
+          "More" pill swap them out. Pressing the right-arrow at the end of the list now
+          appends fresh suggestions filtered against what's already been shown, growing
+          the strip until the underlying pool is exhausted. The "More" pill follows the
+          same semantics and hides once nothing new is left.
+        </p>
+
+        <h3 id="honest-status" className="font-bold mt-4 mb-2">Honest Status: Preview vs. Experimental</h3>
+        <p className="text-sm mb-4">
+          The Speech tab uses badge color to tell you exactly where each provider stands.
+          Stable providers ship no badge. <em>Preview</em> means the integration is wired
+          end-to-end but hasn't been validated against a live account in this release —
+          OpenAI Realtime falls here because the per-utterance session pattern needs to
+          mature into a persistent duplex channel. <em>Experimental</em> means the wiring
+          deliberately stops short of a working call — Supertonic-3 falls here because
+          the four ONNX models load fine in browser, but reproducing the Python{" "}
+          <Code>supertonic</Code> package's tokenization, duration alignment, voice-style
+          conditioning, and vocoder windowing in JS is its own follow-up. Picking either
+          provider surfaces a clear error rather than a silent failure.
+        </p>
+      </>
+    ),
+  },
+  {
     date: "2026-05-12",
     badge: { label: "FIX", color: "fix" },
     title: "v0.3.5 — Standalone Installer Fix: Tarball Structure and Node.js Entry Point",

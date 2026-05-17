@@ -107,7 +107,10 @@ export async function loadKeatingConfig(cwd: string): Promise<KeatingConfig> {
             : DEFAULT_KEATING_CONFIG.debug.consoleSummary
       }
     };
-  } catch {
+  } catch (err) {
+    if (existsSync(path)) {
+      console.error(`Warning: keating.config.json is invalid and will be ignored. Falling back to defaults. Error: ${err instanceof Error ? err.message : String(err)}`);
+    }
     return DEFAULT_KEATING_CONFIG;
   }
 }

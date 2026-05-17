@@ -620,7 +620,10 @@ function buildFallbackTopic(rawTopic: string): TopicDefinition {
 
 export function resolveTopic(query: string): TopicDefinition {
   const normalized = slugify(query);
-  return TOPICS[normalized] ?? TOPICS[normalized.replace(/-rule$/, "")] ?? buildFallbackTopic(query);
+  if (Object.hasOwn(TOPICS, normalized)) return TOPICS[normalized];
+  const withoutRule = normalized.replace(/-rule$/, "");
+  if (Object.hasOwn(TOPICS, withoutRule)) return TOPICS[withoutRule];
+  return buildFallbackTopic(query);
 }
 
 export function benchmarkTopics(focusTopic?: string): TopicDefinition[] {

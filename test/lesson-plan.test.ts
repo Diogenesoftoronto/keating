@@ -5,15 +5,9 @@ import { buildLessonPlan, lessonPlanToMarkdown } from "../src/core/lesson-plan.j
 import { DEFAULT_POLICY, clampPolicy } from "../src/core/policy.js";
 import {
   arbPolicy,
-  policyIsBounded
+  policyIsBounded,
+  CANONICAL_TOPICS
 } from "./helpers.js";
-
-const CANONICAL_TOPICS = [
-  "derivative", "entropy", "bayes-rule", "falsifiability", "stoicism",
-  "recursion", "precedent", "separation-of-powers", "cognitive-bias",
-  "evidence-based-medicine", "counterpoint", "industrial-revolution",
-  "relativity", "social-contract"
-];
 
 // ─── Phase order invariants (Antithesis: always properties) ─────────────────
 
@@ -91,6 +85,40 @@ test("ALWAYS: policy in plan is bounded", () => {
       const p = clampPolicy(policy);
       const plan = buildLessonPlan(topic, p);
       expect(policyIsBounded(plan.policy)).toBe(true);
+    }
+  ));
+});
+
+test("ALWAYS: high diagramBias policy includes a Diagram phase", () => {
+  fc.assert(fc.property(
+    fc.constantFrom(...CANONICAL_TOPICS),
+    (topic) => {
+      const highDiagramPolicy = { ...DEFAULT_POLICY, diagramBias: 0.9 };
+      const plan = buildLessonPlan(topic, highDiagramPolicy);
+      expect(plan.phases.some((phase) => phase.title === "Diagram")).toBe(true);
+    }
+  ));
+});
+
+test("ALWAYS: low diagramBias policy omits the Diagram phase", () => {
+  fc.assert(fc.property(
+    fc.constantFrom(...CANONICAL_TOPICS),
+    (topic) => {
+      const lowDiagramPolicy = { ...DEFAULT_POLICY, diagramBias: 0.3 };
+      const plan = buildLessonPlan(topic, lowDiagramPolicy);
+      expect(plan.phases.some((phase) => phase.title === "Diagram")).toBe(false);
+    }
+  ));
+});
+
+test("ALWAYS: high socraticRatio adds diagnostic question to Orientation", () => {
+  fc.assert(fc.property(
+    fc.constantFrom(...CANONICAL_TOPICS),
+    (topic) => {
+      const highSocratic = { ...DEFAULT_POLICY, socraticRatio: 0.8 };
+      const plan = buildLessonPlan(topic, highSocratic);
+      const orientBullets = plan.phases.find(p => p.id === "orient")?.bullets ?? [];
+      expect(orientBullets.some(b => b.includes("diagnostic question"))).toBe(true);
     }
   ));
 });

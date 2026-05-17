@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.7] - 2026-05-17
+
+### Added
+- Chat header now exposes a "Generate title with model" sparkle button (and a matching mobile-menu entry) that asks the active model to rename the current session and persists the result to storage.
+- New "Speech & Voice" tab in Settings with a provider abstraction. Built-in providers: Gemini Live (existing, refactored), OpenAI TTS (`gpt-4o-mini-tts`, `tts-1`, `tts-1-hd`), OpenAI Realtime (WebRTC duplex, preview), and Supertonic-3 (local ONNX, experimental — sessions load, synthesis pipeline pending). Users can also add OpenAI-compatible custom TTS endpoints inline.
+- Microphone toggle for duplex speech providers (consumed by OpenAI Realtime when active).
+- Usage page gained five charts: topic-mix donut, feedback-signal donut, hand-rolled SVG curriculum-timeline Gantt, 12-week activity heatmap, and an "Open checklists / weak spots" coming-up panel. Powered by `recharts` for pie charts and hand-rolled SVG elsewhere.
+- Suggested-prompts strip auto-appends new suggestions when the scroll-right button is pressed at the end of the list, until the underlying pool is exhausted.
+
+### Changed
+- Chat-page header icons (new session, history, settings, share, usage, speech, artifacts) now show together at sm/md/lg sizes instead of disappearing at md; the hamburger collapses to xs only, and its dropdown gained the previously missing "New session" / "Session history" entries.
+- Settings dialog widened to `max-w-5xl`, sidebar widened on md/lg, and the heavy "Providers & Models" tab gained a sticky chip-style sub-section navigator (Cloud / Visibility / My Models / Custom Providers) with scroll-to-section jumps.
+- The speech section moved out of "Providers & Models" into the dedicated "Speech & Voice" tab.
+
+### Fixed
+- Several Settings sections and chat-header icons were previously unreachable at the md breakpoint because the mobile menu disappeared before all icons fit inline; both issues are addressed by the new header layout and the Settings sub-navigator.
+
 ## [0.3.6] - 2026-05-16
 
 ### Added

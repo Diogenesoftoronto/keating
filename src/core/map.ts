@@ -65,7 +65,9 @@ export function lessonPlanToMermaid(topicName: string, policy: TeacherPolicy): s
 
   lines.push("  learner --> orient");
   lines.push("  thesis --> orient");
-  lines.push(`  ${plan.phases.at(-1)!.id} --> ${topicId}_hook_0`);
+  if (plan.topic.interdisciplinaryHooks.length > 0) {
+    lines.push(`  ${plan.phases.at(-1)!.id} --> ${topicId}_hook_0`);
+  }
   lines.push(`  ${plan.phases.find((phase) => phase.id === "diagram")?.id ?? "examples"} --> ${topicId}_core`);
   lines.push(`  class ${plan.phases.map((phase) => phase.id).join(",")} phase;`);
   lines.push(`  class ${topicId}_core,${plan.topic.diagramNodes.map((_, index) => `${topicId}_concept_${index}`).join(",")},${plan.topic.prerequisites.slice(0, 3).map((_, index) => `${topicId}_prereq_${index}`).join(",")} concept;`);

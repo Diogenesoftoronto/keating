@@ -970,23 +970,45 @@ const ALL_PROMPTS = [
   { label: "Create", text: "Flashcards for Spanish verbs" },
 ];
 
-function pickThree(): typeof ALL_PROMPTS {
-  const shuffled = [...ALL_PROMPTS].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, 3);
+function pickN(pool: typeof ALL_PROMPTS, n: number): typeof ALL_PROMPTS {
+  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, Math.min(n, shuffled.length));
 }
 
 function SuggestedPrompts({ onSelect }: { onSelect: (text: string) => void }) {
-  const [prompts, setPrompts] = useState(() => pickThree());
+  const [prompts, setPrompts] = useState(() => pickN(ALL_PROMPTS, 3));
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const remaining = ALL_PROMPTS.filter(
+    (p) => !prompts.some((existing) => existing.text === p.text),
+  );
+  const exhausted = remaining.length === 0;
+
+  const appendMore = (count = 3) => {
+    if (remaining.length === 0) return false;
+    setPrompts((prev) => [...prev, ...pickN(remaining, count)]);
+    return true;
+  };
+
   const scroll = (dir: "left" | "right") => {
-    scrollRef.current?.scrollBy({
+    const el = scrollRef.current;
+    if (!el) return;
+    if (dir === "right") {
+      const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4;
+      if (atEnd && appendMore()) {
+        requestAnimationFrame(() => {
+          scrollRef.current?.scrollBy({ left: 220, behavior: "smooth" });
+        });
+        return;
+      }
+    }
+    el.scrollBy({
       left: dir === "left" ? -220 : 220,
       behavior: "smooth",
     });
   };
 
-  const refresh = () => setPrompts(pickThree());
+  const refresh = () => appendMore();
 
   return (
     <div className="mx-auto flex h-full max-w-3xl flex-col items-center justify-center gap-3 px-4">
@@ -1020,17 +1042,20 @@ function SuggestedPrompts({ onSelect }: { onSelect: (text: string) => void }) {
               <span className="block text-xs leading-snug">{p.text}</span>
             </button>
           ))}
-          <button
-            type="button"
-            onClick={refresh}
-            className="snap-start shrink-0 w-20 rounded-lg border border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-all flex items-center justify-center"
-          >
-            <span className="text-xs">More</span>
-          </button>
+          {!exhausted && (
+            <button
+              type="button"
+              onClick={refresh}
+              className="snap-start shrink-0 w-20 rounded-lg border border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-all flex items-center justify-center"
+            >
+              <span className="text-xs">More</span>
+            </button>
+          )}
         </div>
         <button
           type="button"
           onClick={() => scroll("right")}
+          title={exhausted ? "No more suggestions" : "Scroll right"}
           className="shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
           aria-label="Scroll right"
         >

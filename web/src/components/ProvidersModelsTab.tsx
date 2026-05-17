@@ -11,7 +11,6 @@ import {
 	type SavedModel,
 	addRecentModel,
 } from "../keating/ui-settings";
-import { loadWebSpeechSettings, saveWebSpeechSettings, type WebSpeechSettings } from "../keating/speech";
 import {
 	initiateOAuth,
 	isOAuthProvider,
@@ -20,15 +19,6 @@ import {
 	deleteOAuthCredentials,
 	type OAuthProviderId,
 } from "../keating/oauth";
-
-const SPEECH_MODELS = [
-	{ value: "gemini-2.0-flash-live-001", label: "Gemini 2.0 Flash Live" },
-	{ value: "gemini-2.5-flash-live-preview", label: "Gemini 2.5 Flash Live (Preview)" },
-	{ value: "gemini-3.0-flash-live-preview", label: "Gemini 3.0 Flash Live (Preview)" },
-	{ value: "gemini-3.1-flash-live-preview", label: "Gemini 3.1 Flash Live (Preview)" },
-];
-
-const SPEECH_VOICES = ["Kore", "Puck", "Charon", "Fenrir", "Leda", "Orus", "Aoede"];
 
 export type KeatingCustomProviderType =
 	| "ollama"
@@ -73,8 +63,6 @@ export function ProvidersModelsTab() {
 	const [providerDialog, setProviderDialog] = useState<{ open: boolean; provider?: KeatingCustomProvider; type?: KeatingCustomProviderType }>({ open: false });
 	const [modelError, setModelError] = useState("");
 	const [providerError, setProviderError] = useState("");
-	const [speechSettings, setSpeechSettings] = useState<WebSpeechSettings>(() => loadWebSpeechSettings());
-
 	const [modelForm, setModelForm] = useState({
 		name: "",
 		id: "",
@@ -142,12 +130,6 @@ export function ProvidersModelsTab() {
 		toggleProviderVisibility(provider, hidden);
 		refresh();
 	};
-
-	const updateSpeech = useCallback((partial: Partial<WebSpeechSettings>) => {
-		const next = { ...loadWebSpeechSettings(), ...partial };
-		setSpeechSettings(next);
-		saveWebSpeechSettings(next);
-	}, []);
 
 	const handleSaveModel = () => {
 		setModelError("");
@@ -221,10 +203,36 @@ export function ProvidersModelsTab() {
 		setProviderDialog({ open: true, type });
 	};
 
+	const SECTIONS = [
+		{ id: "cloud-providers", label: "Cloud" },
+		{ id: "provider-visibility", label: "Visibility" },
+		{ id: "my-models", label: "My Models" },
+		{ id: "custom-providers", label: "Custom Providers" },
+	];
+
+	const scrollToSection = (id: string) => {
+		const el = document.getElementById(`settings-section-${id}`);
+		if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+	};
+
 	return (
 		<div className="flex flex-col gap-8">
+			<nav className="sticky -top-4 sm:-top-5 z-10 -mx-4 sm:-mx-5 -mt-4 sm:-mt-5 px-4 sm:px-5 pt-3 pb-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b border-border">
+				<div className="flex flex-wrap gap-1.5">
+					{SECTIONS.map((s) => (
+						<button
+							key={s.id}
+							onClick={() => scrollToSection(s.id)}
+							className="rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+						>
+							{s.label}
+						</button>
+					))}
+				</div>
+			</nav>
+
 			{/* Cloud Provider Keys */}
-			<div className="flex flex-col gap-4">
+			<div id="settings-section-cloud-providers" className="flex flex-col gap-4 scroll-mt-20">
 				<div>
 					<h3 className="text-sm font-semibold text-foreground mb-2">Cloud Providers</h3>
 					<p className="text-sm text-muted-foreground">
@@ -241,7 +249,7 @@ export function ProvidersModelsTab() {
 			<div className="border-t border-border" />
 
 			{/* Provider Visibility */}
-			<div className="flex flex-col gap-4">
+			<div id="settings-section-provider-visibility" className="flex flex-col gap-4 scroll-mt-20">
 				<div>
 					<h3 className="text-sm font-semibold text-foreground mb-2">Provider Visibility</h3>
 					<p className="text-sm text-muted-foreground">
@@ -273,7 +281,7 @@ export function ProvidersModelsTab() {
 			<div className="border-t border-border" />
 
 			{/* Custom Models */}
-			<div className="flex flex-col gap-4">
+			<div id="settings-section-my-models" className="flex flex-col gap-4 scroll-mt-20">
 				<div className="flex items-center justify-between">
 					<div>
 						<h3 className="text-sm font-semibold text-foreground mb-2">My Models</h3>
@@ -409,7 +417,7 @@ export function ProvidersModelsTab() {
 			<div className="border-t border-border" />
 
 			{/* Custom Providers */}
-			<div className="flex flex-col gap-4">
+			<div id="settings-section-custom-providers" className="flex flex-col gap-4 scroll-mt-20">
 				<div className="flex items-center justify-between">
 					<div>
 						<h3 className="text-sm font-semibold text-foreground mb-2">Custom Providers</h3>
@@ -540,43 +548,6 @@ export function ProvidersModelsTab() {
 					</div>
 				</div>
 			)}
-			<div className="border-t border-border" />
-
-			{/* Speech Settings */}
-			<div className="flex flex-col gap-4">
-				<div>
-					<h3 className="text-sm font-semibold text-foreground mb-2">Speech</h3>
-					<p className="text-sm text-muted-foreground">
-						Configure the Gemini Live speech model and voice used for spoken learner responses.
-					</p>
-				</div>
-				<div className="flex flex-col gap-3">
-					<div className="flex flex-col gap-2">
-						<label className="text-sm font-medium text-foreground">Speech Model</label>
-						<select
-							className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-							value={speechSettings.model}
-							onChange={(e) => updateSpeech({ model: e.target.value })}
-						>
-							{SPEECH_MODELS.map((m) => (
-								<option key={m.value} value={m.value}>{m.label}</option>
-							))}
-						</select>
-					</div>
-					<div className="flex flex-col gap-2">
-						<label className="text-sm font-medium text-foreground">Voice</label>
-						<select
-							className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-							value={speechSettings.voiceName}
-							onChange={(e) => updateSpeech({ voiceName: e.target.value })}
-						>
-							{SPEECH_VOICES.map((v) => (
-								<option key={v} value={v}>{v}</option>
-							))}
-						</select>
-					</div>
-				</div>
-			</div>
 		</div>
 	);
 }
