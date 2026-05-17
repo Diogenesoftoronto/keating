@@ -1,0 +1,14 @@
+make sure that md, lg and sm sizes all hove the same icons accessible and in view.
+
+<div class="chat-actions no...">
+  (9 elements)
+</div>
+  in ChatContent (at /src/pages/Chat.tsx) currently some views don't have settings icon or the settings is not viewable etc
+
+---
+
+I would also love for you to improve the layout of settings for example on lg and md layouts it is not possible to get to all the settings, further more it isn't easy to navigate to important settings.
+
+---
+
+yes add that, i would also love if there was the ability to add different speech or custom speech model. I would love if you add supersonic-3 as a model that was default for local, you can load it via onnx. and also add gpt realtime models as options for speech as well. tts should also be offered for a full back and forth voice experience.

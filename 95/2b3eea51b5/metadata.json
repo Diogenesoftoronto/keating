@@ -1,0 +1,59 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "952b3eea51b5",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "package.json",
+    "src/cli/main.ts",
+    "src/core/config.ts",
+    "src/core/evolution.ts",
+    "src/core/map-elites.ts",
+    "src/core/map.ts",
+    "src/core/policy.ts",
+    "src/core/project.ts",
+    "src/core/speech.ts",
+    "src/core/topics.ts",
+    "src/runtime/pi.ts",
+    "test/animation.test.ts",
+    "test/benchmark.test.ts",
+    "test/evolution.test.ts",
+    "test/fuzz.test.ts",
+    "test/helpers.ts",
+    "test/lesson-plan.test.ts",
+    "test/map-elites.test.ts",
+    "web/bun.lock",
+    "web/package.json",
+    "web/src/components/AssistantChatPanel.tsx",
+    "web/src/components/ProvidersModelsTab.tsx",
+    "web/src/components/SettingsDialog.tsx",
+    "web/src/components/SpeechSettingsTab.tsx",
+    "web/src/components/UsageCharts.tsx",
+    "web/src/hooks/useKeatingAgent.tsx",
+    "web/src/keating/browser-tools.ts",
+    "web/src/keating/speech-providers/custom-tts.ts",
+    "web/src/keating/speech-providers/gemini-live.ts",
+    "web/src/keating/speech-providers/openai-realtime.ts",
+    "web/src/keating/speech-providers/openai-tts.ts",
+    "web/src/keating/speech-providers/supertonic.ts",
+    "web/src/keating/speech.ts",
+    "web/src/pages/Chat.tsx",
+    "web/src/pages/Usage.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/95/2b3eea51b5/0/metadata.json",
+      "transcript": "/95/2b3eea51b5/0/full.jsonl",
+      "content_hash": "/95/2b3eea51b5/0/content_hash.txt",
+      "prompt": "/95/2b3eea51b5/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 176,
+    "cache_creation_tokens": 286780,
+    "cache_read_tokens": 18691898,
+    "output_tokens": 99373,
+    "api_call_count": 146
+  }
+}
