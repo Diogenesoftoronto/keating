@@ -58,6 +58,65 @@ function majorMinor(version: string): string {
 
 const POSTS: Post[] = [
   {
+    date: "2026-05-19",
+    badge: { label: "FEATURE", color: "feature" },
+    title: "v0.3.8 — Chat Attachments and Vision-Aware Image Uploads",
+    version: "0.3.8",
+    summary:
+      "The web chat composer now has a paperclip button for local file and image attachments. Images are routed to vision-capable models, text/code files are folded into the prompt as readable attachment blocks, and text-only models now fail clearly with a suggestion to switch models instead of silently dropping pictures.",
+    sections: [
+      { id: "paperclip-composer", title: "Paperclip Composer" },
+      { id: "attachment-routing", title: "Attachment Routing" },
+      { id: "vision-guard", title: "Vision Model Guard" },
+      { id: "transcript-rendering", title: "Transcript Rendering" },
+    ],
+    body: (
+      <>
+        <p className="mb-4 leading-6">
+          0.3.8 makes the chat composer feel like a real working surface. The prompt
+          bar now includes a standard <Code>Paperclip</Code> control, selected files appear
+          as removable chips before send, and the agent receives the attachment content
+          instead of a placeholder string.
+        </p>
+
+        <h3 id="paperclip-composer" className="font-bold mt-4 mb-2">Paperclip Composer</h3>
+        <p className="text-sm mb-4">
+          The chat panel now enables the <Code>@assistant-ui/react</Code> attachment adapter
+          on the external-store runtime. <Code>ComposerPrimitive.AddAttachment</Code> opens
+          the browser file picker, accepts multiple files, and renders a familiar paperclip
+          icon beside the input. <Code>ComposerPrimitive.Attachments</Code> shows each pending
+          attachment as a compact chip with a remove button.
+        </p>
+
+        <h3 id="attachment-routing" className="font-bold mt-4 mb-2">Attachment Routing</h3>
+        <p className="text-sm mb-4">
+          Image files are read locally as data URLs and converted into Pi&apos;s image-content
+          shape: <Code>{"{ type: \"image\", mimeType, data }"}</Code>. Text-like files,
+          including markdown, JSON, CSV, code, YAML, and plain text, are read in the browser
+          and wrapped in named attachment blocks so the model can inspect them directly.
+          Unsupported binary files are rejected before they reach the model.
+        </p>
+
+        <h3 id="vision-guard" className="font-bold mt-4 mb-2">Vision Model Guard</h3>
+        <p className="text-sm mb-4">
+          The send path now checks <Code>model.input.includes(&quot;image&quot;)</Code> before
+          dispatching an image message. If the active model is text-only, Keating records
+          the user&apos;s attempted message and immediately shows a chat error telling the user
+          to switch to a vision-capable model such as Gemini Flash/Pro or GPT-4o, then send
+          the image again.
+        </p>
+
+        <h3 id="transcript-rendering" className="font-bold mt-4 mb-2">Transcript Rendering</h3>
+        <p className="text-sm mb-4">
+          Sent images render inline in the user transcript. Text file attachments show a
+          short <Code>[attached file: name]</Code> summary in the message bubble while the
+          full file contents remain available in the actual model context. That keeps chat
+          history readable without weakening the prompt.
+        </p>
+      </>
+    ),
+  },
+  {
     date: "2026-05-17",
     badge: { label: "FEATURE", color: "feature" },
     title: "v0.3.7 — Pluggable Speech Providers, Usage Charts, and Model-Generated Session Titles",

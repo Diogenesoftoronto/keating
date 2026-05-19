@@ -14,13 +14,16 @@ import type {
   AgentMessage,
   ThinkingLevel,
 } from "@mariozechner/pi-agent-core";
+import type { ImageContent, TextContent } from "@mariozechner/pi-ai";
 import {
   AssistantRuntimeProvider,
+  AttachmentPrimitive,
   AuiIf,
   ComposerPrimitive,
   MessagePrimitive,
   ThreadPrimitive,
   type AppendMessage,
+  type AttachmentAdapter,
   type ThreadMessageLike,
   useExternalStoreRuntime,
   useMessage,
@@ -40,6 +43,7 @@ import {
   Lightbulb,
   Loader2,
   Lock,
+  Paperclip,
   Send,
   Server,
   ShieldAlert,
@@ -69,6 +73,129 @@ const AuthErrorContext = createContext<(provider: string) => Promise<boolean>>(
 );
 
 const ERROR_TEXT_PREFIX = "\x00__KEATING_ERROR__\x00";
+
+type PromptContent = TextContent | ImageContent;
+
+const TEXT_ATTACHMENT_ACCEPT = [
+  "text/*",
+  "application/json",
+  "application/xml",
+  "application/javascript",
+  "application/typescript",
+  "application/x-javascript",
+  ".txt",
+  ".md",
+  ".markdown",
+  ".csv",
+  ".json",
+  ".xml",
+  ".html",
+  ".css",
+  ".js",
+  ".jsx",
+  ".ts",
+  ".tsx",
+  ".py",
+  ".rb",
+  ".go",
+  ".rs",
+  ".java",
+  ".c",
+  ".cpp",
+  ".h",
+  ".hpp",
+  ".toml",
+  ".yaml",
+  ".yml",
+].join(",");
+
+function readFileAsText(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ""));
+    reader.onerror = () =>
+      reject(reader.error ?? new Error(`Could not read ${file.name}`));
+    reader.readAsText(file);
+  });
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ""));
+    reader.onerror = () =>
+      reject(reader.error ?? new Error(`Could not read ${file.name}`));
+    reader.readAsDataURL(file);
+  });
+}
+
+function attachmentMatchesAccept(file: File, accept: string): boolean {
+  if (accept === "*") return true;
+  const extension = file.name.includes(".")
+    ? `.${file.name.split(".").pop()!.toLowerCase()}`
+    : "";
+  const mime = file.type.toLowerCase();
+
+  return accept.split(",").some((entry) => {
+    const rule = entry.trim().toLowerCase();
+    if (!rule) return false;
+    if (rule.startsWith(".") && extension === rule) return true;
+    if (rule.endsWith("/*")) return mime.startsWith(`${rule.slice(0, -2)}/`);
+    return mime === rule;
+  });
+}
+
+const keatingAttachmentAdapter: AttachmentAdapter = {
+  accept: `image/*,${TEXT_ATTACHMENT_ACCEPT}`,
+  async add({ file }) {
+    return {
+      id: `${file.name}-${file.size}-${file.lastModified}`,
+      type: file.type.startsWith("image/") ? "image" : "document",
+      name: file.name,
+      contentType: file.type,
+      file,
+      status: { type: "requires-action", reason: "composer-send" },
+    };
+  },
+  async send(attachment) {
+    const file = attachment.file;
+    if (file.type.startsWith("image/")) {
+      return {
+        ...attachment,
+        type: "image",
+        status: { type: "complete" },
+        content: [
+          {
+            type: "image",
+            image: await readFileAsDataUrl(file),
+            filename: file.name,
+          },
+        ],
+      };
+    }
+
+    if (!attachmentMatchesAccept(file, TEXT_ATTACHMENT_ACCEPT)) {
+      throw new Error(
+        `${file.name} is not a readable text or image attachment.`,
+      );
+    }
+
+    return {
+      ...attachment,
+      type: "document",
+      status: { type: "complete" },
+      content: [
+        {
+          type: "text",
+          text: `<attachment name="${file.name}" type="${file.type || "text/plain"}">\n${await readFileAsText(file)}\n</attachment>`,
+        },
+      ],
+    };
+  },
+  async remove() {
+    // Files are only read locally in the browser; there is no remote cleanup.
+  },
+};
 
 interface AssistantChatPanelProps {
   className?: string;
@@ -390,6 +517,65 @@ function ErrorBadge({
           </pre>
         </details>
       )}
+    </div>
+  );
+}
+
+function ImagePart({ image, filename }: { image: string; filename?: string }) {
+  return (
+    <figure className="my-2 overflow-hidden rounded-md border border-border bg-background/60">
+      <img
+        src={image}
+        alt={filename ?? "Attached image"}
+        className="max-h-80 w-full object-contain"
+      />
+      {filename ? (
+        <figcaption className="border-t border-border px-2 py-1 text-[11px] text-muted-foreground">
+          {filename}
+        </figcaption>
+      ) : null}
+    </figure>
+  );
+}
+
+function FilePart({
+  filename,
+  mimeType,
+}: {
+  filename?: string;
+  mimeType?: string;
+}) {
+  return (
+    <div className="my-2 inline-flex max-w-full items-center gap-2 rounded-md border border-border bg-background/60 px-2 py-1 text-xs">
+      <Paperclip size={13} className="shrink-0 text-muted-foreground" />
+      <span className="truncate">{filename ?? "attachment"}</span>
+      {mimeType ? (
+        <span className="shrink-0 text-muted-foreground">{mimeType}</span>
+      ) : null}
+    </div>
+  );
+}
+
+function ComposerAttachmentChip({
+  attachment,
+}: {
+  attachment: { name: string; type?: string; contentType?: string };
+}) {
+  const isImage = attachment.type === "image";
+  return (
+    <div className="inline-flex max-w-48 items-center gap-1.5 rounded-md border border-border bg-muted/40 px-2 py-1 text-xs text-foreground">
+      <Paperclip size={12} className="shrink-0 text-muted-foreground" />
+      <span className="truncate">{attachment.name}</span>
+      {isImage ? (
+        <span className="shrink-0 text-muted-foreground">image</span>
+      ) : null}
+      <AttachmentPrimitive.Remove
+        className="ml-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+        aria-label={`Remove ${attachment.name}`}
+        title="Remove attachment"
+      >
+        <X size={12} />
+      </AttachmentPrimitive.Remove>
     </div>
   );
 }
@@ -750,6 +936,8 @@ function messagePartComponents(showToolUi: boolean, showRawErrors: boolean) {
     Text: (props: any) => (
       <StreamingTextPart {...props} showRawErrors={showRawErrors} />
     ),
+    Image: ImagePart,
+    File: FilePart,
     Reasoning: ReasoningPart,
     tools: {
       Fallback: (props: Parameters<typeof ToolPart>[0]) => (
@@ -761,6 +949,90 @@ function messagePartComponents(showToolUi: boolean, showRawErrors: boolean) {
       ),
     },
   };
+}
+
+function dataUrlToImageContent(dataUrl: string): ImageContent | null {
+  const match = dataUrl.match(/^data:([^;,]+);base64,(.*)$/);
+  if (!match) return null;
+  return { type: "image", mimeType: match[1], data: match[2] };
+}
+
+function modelSupportsImages(model: unknown): boolean {
+  const input = (model as { input?: unknown })?.input;
+  return Array.isArray(input) && input.includes("image");
+}
+
+function modelDisplayName(model: unknown): string {
+  const m = model as { name?: string; id?: string };
+  return m?.name ?? m?.id ?? "The selected model";
+}
+
+function visionCapabilityError(model: unknown): string {
+  return `${modelDisplayName(model)} cannot read image attachments. Choose a vision-capable model from the model selector, such as Gemini Flash/Pro or GPT-4o, then send the image again.`;
+}
+
+function displayTextFromAgentText(text: string): string {
+  const match = text.match(/^<attachment name="([^"]+)"/);
+  if (match) return `[attached file: ${match[1]}]`;
+  return text;
+}
+
+function contentFromAppendMessage(message: AppendMessage): PromptContent[] {
+  const content: PromptContent[] = [];
+  for (const part of message.content) {
+    if (part.type === "text" && part.text.trim()) {
+      content.push({ type: "text", text: part.text });
+    } else if (part.type === "image") {
+      const image = dataUrlToImageContent(part.image);
+      if (image) content.push(image);
+    } else if (part.type === "file") {
+      content.push({
+        type: "text",
+        text: `[file: ${part.filename ?? "attachment"}]\n${part.data}`,
+      });
+    }
+  }
+
+  for (const attachment of message.attachments ?? []) {
+    for (const part of attachment.content ?? []) {
+      if (part.type === "text" && part.text.trim()) {
+        content.push({ type: "text", text: part.text });
+      } else if (part.type === "image") {
+        const image = dataUrlToImageContent(part.image);
+        if (image) content.push(image);
+      } else if (part.type === "file") {
+        content.push({
+          type: "text",
+          text: `[file: ${part.filename ?? attachment.name}]\n${part.data}`,
+        });
+      }
+    }
+  }
+
+  return content;
+}
+
+function assistantContentFromAgentContent(content: unknown) {
+  if (typeof content === "string") return [{ type: "text" as const, text: content }];
+  if (!Array.isArray(content)) return [{ type: "text" as const, text: "" }];
+  return content
+    .map((part: any) => {
+      if (part?.type === "text") {
+        return {
+          type: "text" as const,
+          text: displayTextFromAgentText(part.text ?? ""),
+        };
+      }
+      if (part?.type === "image") {
+        return {
+          type: "image" as const,
+          image: `data:${part.mimeType};base64,${part.data}`,
+          filename: part.filename,
+        };
+      }
+      return { type: "text" as const, text: textFromContent([part]) };
+    })
+    .filter((part) => part.type !== "text" || part.text);
 }
 
 function textFromContent(content: unknown): string {
@@ -939,22 +1211,45 @@ function toAssistantMessage(
     id: `user-${index}-${msg.timestamp ?? ""}`,
     role: "user",
     createdAt: timestamp,
-    content: textFromContent(msg.content),
+    content: assistantContentFromAgentContent(msg.content),
   };
 }
 
-function textFromAppendMessage(message: AppendMessage): string {
-  return message.content
-    .map((part) => {
-      if (part.type === "text") return part.text;
-      if (part.type === "image") return "[image]";
-      if (part.type === "file")
-        return `[file: ${part.filename ?? "attachment"}]`;
-      return "";
-    })
-    .filter(Boolean)
-    .join("\n")
-    .trim();
+function makeUserMessageFromAppend(message: AppendMessage): AgentMessage | null {
+  const content = contentFromAppendMessage(message);
+  if (content.length === 0) return null;
+  return {
+    role: "user",
+    content,
+    timestamp: Date.now(),
+  } as AgentMessage;
+}
+
+function makeAttachmentErrorMessage(agent: Agent, errorMessage: string): AgentMessage {
+  return {
+    role: "assistant",
+    content: [],
+    api: agent.state.model.api,
+    provider: agent.state.model.provider,
+    model: agent.state.model.id,
+    usage: {
+      input: 0,
+      output: 0,
+      cacheRead: 0,
+      cacheWrite: 0,
+      totalTokens: 0,
+      cost: {
+        input: 0,
+        output: 0,
+        cacheRead: 0,
+        cacheWrite: 0,
+        total: 0,
+      },
+    },
+    stopReason: "error",
+    errorMessage,
+    timestamp: Date.now(),
+  } as AgentMessage;
 }
 
 const ALL_PROMPTS = [
@@ -1168,12 +1463,13 @@ function AssistantThread({
   speechEnabled: boolean;
 }) {
   const [uiSettings, setUiSettings] = useState(() => loadKeatingUiSettings());
+  const [localVersion, setLocalVersion] = useState(0);
   const messages = useMemo(
     () =>
       foldToolResults(
         filterSpeechMessages([...(agent?.state.messages ?? [])], speechEnabled),
       ),
-    [agent, version, speechEnabled],
+    [agent, version, localVersion, speechEnabled],
   );
   const components = useMemo(
     () =>
@@ -1208,10 +1504,36 @@ function AssistantThread({
 
   const onNew = useCallback(
     async (message: AppendMessage) => {
-      const text = textFromAppendMessage(message);
-      if (text) await sendText(text);
+      if (!agent) return;
+      const userMessage = makeUserMessageFromAppend(message);
+      if (!userMessage) return;
+
+      const content = (userMessage as any).content;
+      const hasImage =
+        Array.isArray(content) &&
+        content.some((part: any) => part?.type === "image");
+      if (hasImage && !modelSupportsImages(agent.state.model)) {
+        agent.state.messages.push(userMessage);
+        agent.state.messages.push(
+          makeAttachmentErrorMessage(
+            agent,
+            visionCapabilityError(agent.state.model),
+          ),
+        );
+        setLocalVersion((current) => current + 1);
+        return;
+      }
+
+      const provider = agent.state.model.provider;
+      if (
+        callbacks.onApiKeyRequired &&
+        !(await callbacks.onApiKeyRequired(provider))
+      )
+        return;
+      await callbacks.onBeforeSend?.();
+      await agent.prompt(userMessage);
     },
-    [sendText],
+    [agent, callbacks],
   );
 
   const onCancel = useCallback(async () => {
@@ -1225,6 +1547,9 @@ function AssistantThread({
       convertMessage,
       onNew,
       onCancel,
+      adapters: {
+        attachments: keatingAttachmentAdapter,
+      },
     }),
     [messages, isRunning, convertMessage, onNew, onCancel],
   );
@@ -1264,41 +1589,56 @@ function AssistantThread({
             </AuiIf>
             <ThreadPrimitive.Messages components={threadComponents} />
             <ThreadPrimitive.ViewportFooter className="sticky bottom-0 bg-background/95 pt-3 backdrop-blur">
-              <ComposerPrimitive.Root className="composer-root mx-auto flex w-full max-w-3xl items-end gap-1.5 sm:gap-2 rounded-lg border border-border bg-background p-2 shadow-sm">
-                <button
-                  type="button"
-                  className="mb-1 inline-flex max-w-20 shrink-0 truncate rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50 sm:max-w-36"
-                  disabled={!callbacks.onModelSelect}
-                  onClick={() => callbacks.onModelSelect?.()}
-                  title={modelLabel}
-                >
-                  {modelLabel}
-                </button>
-                {/* Reasoning level — visible on landscape/tablet+ */}
-                <ReasoningLevelSelector
-                  level={
-                    agent?.state.thinkingLevel ??
-                    callbacks.thinkingLevel ??
-                    "medium"
-                  }
-                  onChange={callbacks.onThinkingLevelChange ?? (() => {})}
-                  disabled={isRunning}
-                />
-                <ComposerPrimitive.Input
-                  className="max-h-40 min-h-11 flex-1 resize-none bg-transparent px-2 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground"
-                  placeholder="Message Keating"
-                  rows={1}
-                />
-                {/* Only show Send OR Cancel — never both */}
-                {isRunning ? (
-                  <ComposerPrimitive.Cancel className="inline-flex h-9 w-9 items-center justify-center rounded-md border-2 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground animate-pulse">
-                    <Square size={16} />
-                  </ComposerPrimitive.Cancel>
-                ) : (
-                  <ComposerPrimitive.Send className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-primary text-primary-foreground disabled:opacity-50">
-                    <Send size={16} />
-                  </ComposerPrimitive.Send>
-                )}
+              <ComposerPrimitive.Root className="composer-root mx-auto flex w-full max-w-3xl flex-col gap-2 rounded-lg border border-border bg-background p-2 shadow-sm">
+                <ComposerPrimitive.Attachments>
+                  {({ attachment }) => (
+                    <ComposerAttachmentChip attachment={attachment} />
+                  )}
+                </ComposerPrimitive.Attachments>
+                <div className="flex w-full items-end gap-1.5 sm:gap-2">
+                  <button
+                    type="button"
+                    className="mb-1 inline-flex max-w-20 shrink-0 truncate rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50 sm:max-w-36"
+                    disabled={!callbacks.onModelSelect}
+                    onClick={() => callbacks.onModelSelect?.()}
+                    title={modelLabel}
+                  >
+                    {modelLabel}
+                  </button>
+                  {/* Reasoning level — visible on landscape/tablet+ */}
+                  <ReasoningLevelSelector
+                    level={
+                      agent?.state.thinkingLevel ??
+                      callbacks.thinkingLevel ??
+                      "medium"
+                    }
+                    onChange={callbacks.onThinkingLevelChange ?? (() => {})}
+                    disabled={isRunning}
+                  />
+                  <ComposerPrimitive.AddAttachment
+                    multiple
+                    className="mb-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+                    title="Attach files or images"
+                    aria-label="Attach files or images"
+                  >
+                    <Paperclip size={16} />
+                  </ComposerPrimitive.AddAttachment>
+                  <ComposerPrimitive.Input
+                    className="max-h-40 min-h-11 flex-1 resize-none bg-transparent px-2 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                    placeholder="Message Keating"
+                    rows={1}
+                  />
+                  {/* Only show Send OR Cancel — never both */}
+                  {isRunning ? (
+                    <ComposerPrimitive.Cancel className="inline-flex h-9 w-9 items-center justify-center rounded-md border-2 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground animate-pulse">
+                      <Square size={16} />
+                    </ComposerPrimitive.Cancel>
+                  ) : (
+                    <ComposerPrimitive.Send className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-primary text-primary-foreground disabled:opacity-50">
+                      <Send size={16} />
+                    </ComposerPrimitive.Send>
+                  )}
+                </div>
               </ComposerPrimitive.Root>
             </ThreadPrimitive.ViewportFooter>
           </ThreadPrimitive.Viewport>
