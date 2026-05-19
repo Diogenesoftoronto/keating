@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.8] - 2026-05-19
+
+### Added
+- Web chat composer now supports attachments through a paperclip button, including multiple local files before send.
+- Image attachments are sent to vision-capable models as image input, while readable text/code/data files are converted into local text attachment blocks.
+- Composer attachment chips show selected files and provide inline remove controls before sending.
+
+### Fixed
+- Sending images with a text-only model now produces a visible chat error that explains the model cannot read images and suggests switching to a vision-capable model such as Gemini Flash/Pro or GPT-4o.
+- User transcript rendering now shows attached images inline and summarizes text file attachments without dumping full file contents back into the message bubble.
+
 ## [0.3.7] - 2026-05-17
 
 ### Added
@@ -199,7 +210,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.6...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.8...HEAD
+[0.3.8]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.7...v0.3.8
+[0.3.7]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.6...v0.3.7
 [0.3.6]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.5...v0.3.6
 [0.3.5]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.4...v0.3.5
 [0.3.4]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.3...v0.3.4
