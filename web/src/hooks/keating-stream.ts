@@ -10,9 +10,63 @@ import {
 } from "@earendil-works/pi-ai";
 import { normalizeToolCallStream } from "../keating/tool-call-normalizer";
 import { chatProxyBaseUrl, proxyTargetHeader, shouldProxyModel } from "../lib/provider-proxy";
+import { loadKeatingUiSettings } from "../keating/ui-settings";
 import { localModel, getModelName, getModelId } from "../stores/local-model";
 
 export const DEFAULT_MODEL = getModel("google", "gemini-3-flash-preview");
+
+function isGoogleGroundingModel(model: Model<Api>): boolean {
+	return model.provider === "google" && model.api === "google-generative-ai" && /^gemini-(?:2(?:\.0|\.5)|3|3\.1|3\.5)/.test(model.id);
+}
+
+function supportsGoogleSearchWithCustomTools(model: Model<Api>): boolean {
+	return /^gemini-3/.test(model.id);
+}
+
+function hasGoogleSearchTool(payload: any): boolean {
+	return Array.isArray(payload?.config?.tools)
+		&& payload.config.tools.some((tool: any) => tool?.googleSearch || tool?.google_search);
+}
+
+export function applyGoogleSearchGrounding(payload: unknown, model: Model<Api>, hasApiKey: boolean): unknown | undefined {
+	if (!hasApiKey || loadKeatingUiSettings().googleGrounding === "off" || !isGoogleGroundingModel(model)) {
+		return undefined;
+	}
+
+	const params = payload as any;
+	const existingTools = Array.isArray(params?.config?.tools) ? params.config.tools : [];
+	if (existingTools.length > 0 && !supportsGoogleSearchWithCustomTools(model)) {
+		return undefined;
+	}
+	if (hasGoogleSearchTool(params)) {
+		return undefined;
+	}
+
+	return {
+		...params,
+		config: {
+			...(params?.config ?? {}),
+			tools: [...existingTools, { googleSearch: {} }],
+		},
+	};
+}
+
+function mergeOnPayload(
+	options: SimpleStreamOptions | undefined,
+	model: Model<Api>,
+): SimpleStreamOptions | undefined {
+	if (model.provider !== "google") return options;
+
+	return {
+		...options,
+		onPayload: async (payload, payloadModel) => {
+			const userPayload = await options?.onPayload?.(payload, payloadModel);
+			const nextPayload = userPayload ?? payload;
+			const groundedPayload = applyGoogleSearchGrounding(nextPayload, payloadModel, !!options?.apiKey);
+			return groundedPayload ?? userPayload;
+		},
+	};
+}
 
 function createBrowserStreamFn() {
 	return async (_model: Model<Api>, context: Context, options?: SimpleStreamOptions) => {
@@ -147,8 +201,8 @@ export async function hybridStreamFn(model: Model<Api>, context: Context, option
 			const hasApiKey = !!options?.apiKey;
 			console.log(`[keating:stream] proxy ${model.provider} -> ${model.baseUrl} (apiKey=${hasApiKey})`);
 		}
-		return normalizeToolCallStream(streamSimple(proxiedModel, context, proxiedOptions), context);
+		return normalizeToolCallStream(streamSimple(proxiedModel, context, mergeOnPayload(proxiedOptions, proxiedModel)), context);
 	}
 
-	return normalizeToolCallStream(streamSimple(model, context, options), context);
+	return normalizeToolCallStream(streamSimple(model, context, mergeOnPayload(options, model)), context);
 }
