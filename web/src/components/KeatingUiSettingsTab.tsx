@@ -82,6 +82,24 @@ export function KeatingUiSettingsTab() {
 				</label>
 			</div>
 
+			<div className="flex items-start justify-between gap-4 rounded-lg border border-border p-4">
+				<div>
+					<div className="text-sm font-medium text-foreground">Google web grounding</div>
+					<p className="mt-1 text-sm text-muted-foreground">
+						Automatically enable Gemini Google Search grounding when a Google key is available. This lets Google-backed chats use current web results and citations.
+					</p>
+				</div>
+				<label className="relative inline-flex cursor-pointer items-center">
+					<input
+						type="checkbox"
+						className="sr-only peer"
+						checked={settings.googleGrounding === "auto"}
+						onChange={(e) => update({ googleGrounding: e.target.checked ? "auto" : "off" })}
+					/>
+					<div className="h-5 w-9 rounded-full bg-muted-foreground/30 peer-checked:bg-primary transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-4" />
+				</label>
+			</div>
+
 			<div>
 				<h3 className="text-sm font-semibold text-foreground mb-2">Reasoning Level</h3>
 				<p className="text-sm text-muted-foreground mb-3">

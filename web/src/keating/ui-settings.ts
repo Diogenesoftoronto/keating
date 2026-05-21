@@ -17,6 +17,7 @@ export interface KeatingUiSettings {
 	showToolUi: boolean;
 	autoOpenArtifacts: boolean;
 	showRawErrors: boolean;
+	googleGrounding: "auto" | "off";
 	reasoningLevel: ReasoningLevel;
 	hiddenProviders: string[];
 	recentModels: Array<{ key: string; timestamp: number }>;
@@ -27,6 +28,7 @@ export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
 	showToolUi: false,
 	autoOpenArtifacts: true,
 	showRawErrors: false,
+	googleGrounding: "auto",
 	reasoningLevel: "medium",
 	hiddenProviders: [],
 	recentModels: [],
@@ -41,6 +43,7 @@ function normalizeSettings(value: Partial<KeatingUiSettings> | null): KeatingUiS
 		showToolUi: value?.showToolUi ?? DEFAULT_UI_SETTINGS.showToolUi,
 		autoOpenArtifacts: value?.autoOpenArtifacts ?? DEFAULT_UI_SETTINGS.autoOpenArtifacts,
 		showRawErrors: value?.showRawErrors ?? DEFAULT_UI_SETTINGS.showRawErrors,
+		googleGrounding: value?.googleGrounding === "off" ? "off" : DEFAULT_UI_SETTINGS.googleGrounding,
 		reasoningLevel: value?.reasoningLevel ?? DEFAULT_UI_SETTINGS.reasoningLevel,
 		hiddenProviders: Array.isArray(value?.hiddenProviders) ? value.hiddenProviders : DEFAULT_UI_SETTINGS.hiddenProviders,
 		recentModels: Array.isArray(value?.recentModels) ? value.recentModels : DEFAULT_UI_SETTINGS.recentModels,
