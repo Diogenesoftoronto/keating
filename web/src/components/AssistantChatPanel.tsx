@@ -76,6 +76,14 @@ const ERROR_TEXT_PREFIX = "\x00__KEATING_ERROR__\x00";
 
 type PromptContent = TextContent | ImageContent;
 
+const PREFILL_STATUS_LINES = [
+  "Reading the board before answering...",
+  "Finding the bridge from what you know...",
+  "Sketching the lesson path...",
+  "Checking the example that will do the most work...",
+  "Setting up the next question...",
+];
+
 const TEXT_ATTACHMENT_ACCEPT = [
   "text/*",
   "application/json",
@@ -824,9 +832,14 @@ function MarkdownText({
 }
 
 function ReasoningPart({ text }: { text: string }) {
+  const [open, setOpen] = useState(true);
   if (!text.trim()) return null;
   return (
-    <details className="mb-3 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+    <details
+      open={open}
+      onToggle={(event) => setOpen(event.currentTarget.open)}
+      className="mb-3 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
+    >
       <summary className="cursor-pointer font-medium">Reasoning</summary>
       <div className="mt-2 whitespace-pre-wrap">{text}</div>
     </details>
@@ -1111,6 +1124,36 @@ function filterSpeechMessages(
     .filter((message): message is AgentMessage => message !== null);
 }
 
+function hasRenderableAssistantContent(content: unknown): boolean {
+  if (!Array.isArray(content)) return typeof content === "string" && content.trim().length > 0;
+  return content.some((part: any) => {
+    if (part?.type === "text") return typeof part.text === "string" && part.text.trim().length > 0;
+    if (part?.type === "thinking") return typeof part.thinking === "string" && part.thinking.trim().length > 0;
+    if (part?.type === "toolCall") return true;
+    if (part?.type === "image") return true;
+    return false;
+  });
+}
+
+function visibleAgentMessages(agent: Agent | null, speechEnabled: boolean): AgentMessage[] {
+  if (!agent) return [];
+  const messages = [...agent.state.messages];
+  const streamingMessage = agent.state.streamingMessage as any;
+  if (
+    streamingMessage?.role === "assistant" &&
+    hasRenderableAssistantContent(streamingMessage.content)
+  ) {
+    messages.push({
+      ...streamingMessage,
+      __keatingStreaming: true,
+      content: Array.isArray(streamingMessage.content)
+        ? streamingMessage.content.map((part: any) => ({ ...part }))
+        : streamingMessage.content,
+    } as AgentMessage);
+  }
+  return foldToolResults(filterSpeechMessages(messages, speechEnabled));
+}
+
 function toAssistantMessage(
   message: AgentMessage,
   index: number,
@@ -1127,7 +1170,10 @@ function toAssistantMessage(
   const isLastMessage = index === totalMessages - 1;
   const hasStopReason = msg.stopReason != null;
   const isActivelyStreaming =
-    isRunning && msg.role === "assistant" && isLastMessage && !hasStopReason;
+    isRunning &&
+    msg.role === "assistant" &&
+    isLastMessage &&
+    (msg.__keatingStreaming === true || !hasStopReason);
   const status = isActivelyStreaming
     ? { type: "running" as const }
     : msg.stopReason === "error"
@@ -1248,6 +1294,36 @@ function makeAttachmentErrorMessage(agent: Agent, errorMessage: string): AgentMe
     },
     stopReason: "error",
     errorMessage,
+    timestamp: Date.now(),
+  } as AgentMessage;
+}
+
+function makePrefillStatusMessage(agent: Agent, step: number): AgentMessage {
+  return {
+    role: "assistant",
+    content: [
+      {
+        type: "text",
+        text: PREFILL_STATUS_LINES[step % PREFILL_STATUS_LINES.length],
+      },
+    ],
+    api: agent.state.model.api,
+    provider: agent.state.model.provider,
+    model: agent.state.model.id,
+    usage: {
+      input: 0,
+      output: 0,
+      cacheRead: 0,
+      cacheWrite: 0,
+      totalTokens: 0,
+      cost: {
+        input: 0,
+        output: 0,
+        cacheRead: 0,
+        cacheWrite: 0,
+        total: 0,
+      },
+    },
     timestamp: Date.now(),
   } as AgentMessage;
 }
@@ -1464,19 +1540,24 @@ function AssistantThread({
 }) {
   const [uiSettings, setUiSettings] = useState(() => loadKeatingUiSettings());
   const [localVersion, setLocalVersion] = useState(0);
+  const [loadingStep, setLoadingStep] = useState(0);
+  const isRunning = agent?.state.isStreaming ?? false;
   const messages = useMemo(
-    () =>
-      foldToolResults(
-        filterSpeechMessages([...(agent?.state.messages ?? [])], speechEnabled),
-      ),
-    [agent, version, localVersion, speechEnabled],
+    () => {
+      const visibleMessages = visibleAgentMessages(agent, speechEnabled);
+      const lastMessage = visibleMessages.at(-1) as any;
+      if (agent && isRunning && lastMessage?.role === "user") {
+        return [...visibleMessages, makePrefillStatusMessage(agent, loadingStep)];
+      }
+      return visibleMessages;
+    },
+    [agent, version, localVersion, speechEnabled, isRunning, loadingStep],
   );
   const components = useMemo(
     () =>
       messagePartComponents(uiSettings.showToolUi, uiSettings.showRawErrors),
     [uiSettings.showToolUi, uiSettings.showRawErrors],
   );
-  const isRunning = agent?.state.isStreaming ?? false;
   const modelRef = useRef(agent?.state.model);
   if (agent) modelRef.current = agent.state.model;
 
@@ -1558,6 +1639,18 @@ function AssistantThread({
   const modelLabel = modelRef.current?.name ?? modelRef.current?.id ?? "Model";
 
   useEffect(() => subscribeKeatingUiSettings(setUiSettings), []);
+
+  useEffect(() => {
+    if (!isRunning) {
+      setLoadingStep(0);
+      return;
+    }
+    const id = window.setInterval(
+      () => setLoadingStep((current) => current + 1),
+      2200,
+    );
+    return () => window.clearInterval(id);
+  }, [isRunning]);
 
   const UserMessageComponent = useCallback(
     () => <UserMessage components={components} />,

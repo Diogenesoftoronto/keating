@@ -73,6 +73,7 @@ function createBrowserStreamFn() {
 				};
 
 				stream.push({ type: "start", partial: partialMessage });
+				stream.push({ type: "text_start", contentIndex: 0, partial: partialMessage });
 
 				const response = await localModel.generate(
 					fullPrompt,
@@ -80,7 +81,7 @@ function createBrowserStreamFn() {
 					(token: string) => {
 						const textBlock = partialMessage.content[0];
 						if (textBlock.type === "text") textBlock.text += token;
-						stream.push({ type: "text_start", contentIndex: 0, partial: partialMessage });
+						stream.push({ type: "text_delta", contentIndex: 0, delta: token, partial: partialMessage });
 					},
 				);
 
@@ -96,6 +97,12 @@ function createBrowserStreamFn() {
 					return;
 				}
 
+				stream.push({
+					type: "text_end",
+					contentIndex: 0,
+					content: response,
+					partial: partialMessage,
+				});
 				stream.end({
 					...defaultFields,
 					role: "assistant",

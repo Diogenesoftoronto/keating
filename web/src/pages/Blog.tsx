@@ -58,6 +58,54 @@ function majorMinor(version: string): string {
 
 const POSTS: Post[] = [
   {
+    date: "2026-05-21",
+    badge: { label: "RELEASE", color: "release" },
+    title: "v0.3.9 — Streaming Replies and Live Reasoning Panels",
+    version: "0.3.9",
+    summary:
+      "Assistant replies now render live from the in-flight stream instead of appearing all at once at the end. When a reasoning-capable model emits thinking chunks, Keating now shows them in a live collapsible Reasoning panel while the answer is still being written.",
+    sections: [
+      { id: "live-reply-stream", title: "Live Reply Stream" },
+      { id: "thinking-stream", title: "Thinking Stream" },
+      { id: "prefill-state", title: "Prefill State" },
+    ],
+    body: (
+      <>
+        <p className="mb-4 leading-6">
+          0.3.9 fixes the biggest remaining mismatch between Keating&apos;s chat UI and
+          the underlying model stream. Assistant replies no longer wait for the final
+          committed message before appearing in the transcript: the thread now renders
+          the live partial assistant message as it arrives.
+        </p>
+
+        <h3 id="live-reply-stream" className="font-bold mt-4 mb-2">Live Reply Stream</h3>
+        <p className="text-sm mb-4">
+          The chat panel now merges <Code>agent.state.streamingMessage</Code> into the
+          visible transcript while a run is active. That means token streaming works for
+          the browser model path and for provider-backed models that already emit normal
+          text deltas through <Code>@mariozechner/pi-ai</Code>.
+        </p>
+
+        <h3 id="thinking-stream" className="font-bold mt-4 mb-2">Thinking Stream</h3>
+        <p className="text-sm mb-4">
+          Keating already had a dedicated Reasoning renderer for assistant content parts
+          of type <Code>thinking</Code>. 0.3.9 connects that renderer to the live stream,
+          so models that emit <Code>thinking_start</Code>, <Code>thinking_delta</Code>,
+          and <Code>thinking_end</Code> events now reveal their in-progress reasoning in
+          real time instead of only after the assistant turn finishes.
+        </p>
+
+        <h3 id="prefill-state" className="font-bold mt-4 mb-2">Prefill State</h3>
+        <p className="text-sm mb-4">
+          Before the first streamed text or reasoning chunk arrives, the thread keeps a
+          lightweight rotating status line in place. Once the stream contains real
+          content, Keating swaps that placeholder for the live assistant bubble rather
+          than flashing an empty panel.
+        </p>
+      </>
+    ),
+  },
+  {
     date: "2026-05-19",
     badge: { label: "FEATURE", color: "feature" },
     title: "v0.3.8 — Chat Attachments and Vision-Aware Image Uploads",
