@@ -6,7 +6,7 @@ import {
 	SessionsStore,
 	SettingsStore,
 	setAppStorage,
-} from "@mariozechner/pi-web-ui";
+} from "@earendil-works/pi-web-ui";
 import { KeatingStorage } from "../keating/storage";
 import { syncCustomProviderKeys } from "../lib/provider-models";
 

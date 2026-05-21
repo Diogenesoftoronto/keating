@@ -45,11 +45,11 @@ bun run build
 
 ## 4. Setting up the `pi` Agent
 
-Keating requires the `@mariozechner/pi-coding-agent` runtime CLI to talk to the LLMs.
+Keating requires the `@earendil-works/pi-coding-agent` runtime CLI to talk to the LLMs.
 If you have not already configured it, install it globally:
 
 ```bash
-npm install -g @mariozechner/pi-coding-agent
+npm install -g @earendil-works/pi-coding-agent
 
 # Run a quick check to configure your API keys or local model server details
 pi -p "Say hello"

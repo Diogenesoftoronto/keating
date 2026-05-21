@@ -1,16 +1,16 @@
 import { useRef, useState, useTransition, useCallback, use, useEffect } from "react";
-import { Agent, type AgentState, type ThinkingLevel } from "@mariozechner/pi-agent-core";
+import { Agent, type AgentState, type ThinkingLevel } from "@earendil-works/pi-agent-core";
 import { useDialogState } from "./useDialogState";
 import {
   type Model,
   type Api,
   type Context,
-} from "@mariozechner/pi-ai";
+} from "@earendil-works/pi-ai";
 import {
   ApiKeyPromptDialog,
   PersistentStorageDialog,
   defaultConvertToLlm,
-} from "@mariozechner/pi-web-ui";
+} from "@earendil-works/pi-web-ui";
 import { SessionManagerDialog } from "../components/SessionManagerDialog";
 import { SettingsDialog } from "../components/SettingsDialog";
 import { KeatingUiSettingsTab } from "../components/KeatingUiSettingsTab";

@@ -1,4 +1,4 @@
-import { getAppStorage } from "@mariozechner/pi-web-ui";
+import { getAppStorage } from "@earendil-works/pi-web-ui";
 
 export type OAuthProviderId = "anthropic" | "openai-codex" | "google-gemini-cli";
 
@@ -16,6 +16,7 @@ interface OAuthProviderConfig {
 	authorizeUrl: string;
 	tokenUrl: string;
 	scopes: string[];
+	redirectUri?: string;
 	/** Extra params appended to the authorize URL query */
 	extraAuthParams?: Record<string, string>;
 }
@@ -27,6 +28,7 @@ const OAUTH_PROVIDERS: Record<OAuthProviderId, OAuthProviderConfig> = {
 		clientId: "9d1c250a-e61b-44d9-88ed-5944d1962f5e",
 		authorizeUrl: "https://claude.ai/oauth/authorize",
 		tokenUrl: "https://platform.claude.com/v1/oauth/token",
+		redirectUri: "http://localhost:53692/callback",
 		scopes: [
 			"org:create_api_key",
 			"user:profile",
@@ -42,7 +44,13 @@ const OAUTH_PROVIDERS: Record<OAuthProviderId, OAuthProviderConfig> = {
 		clientId: "app_EMoamEEZ73f0CkXaXp7hrann",
 		authorizeUrl: "https://auth.openai.com/oauth/authorize",
 		tokenUrl: "https://auth.openai.com/oauth/token",
+		redirectUri: "http://localhost:1455/auth/callback",
 		scopes: ["openid", "profile", "email", "offline_access"],
+		extraAuthParams: {
+			id_token_add_organizations: "true",
+			codex_cli_simplified_flow: "true",
+			originator: "pi",
+		},
 	},
 	"google-gemini-cli": {
 		id: "google-gemini-cli",
@@ -65,6 +73,10 @@ const OAUTH_PROVIDERS: Record<OAuthProviderId, OAuthProviderConfig> = {
 function getRedirectUri(): string {
 	const origin = globalThis.location?.origin ?? "";
 	return `${origin}/oauth/callback`;
+}
+
+function getProviderRedirectUri(config: OAuthProviderConfig): string {
+	return config.redirectUri ?? getRedirectUri();
 }
 
 export function getOAuthProviderConfig(id: OAuthProviderId): OAuthProviderConfig {
@@ -99,17 +111,19 @@ function base64UrlEncode(buffer: Uint8Array): string {
 interface PendingOAuthState {
 	verifier: string;
 	provider: OAuthProviderId;
+	state: string;
+	redirectUri: string;
 	createdAt: number;
 }
 
 const PENDING_KEY = "keating_oauth_pending";
 
 function savePendingOAuth(state: PendingOAuthState): void {
-	sessionStorage.setItem(PENDING_KEY, JSON.stringify(state));
+	localStorage.setItem(PENDING_KEY, JSON.stringify(state));
 }
 
 function loadPendingOAuth(): PendingOAuthState | null {
-	const raw = sessionStorage.getItem(PENDING_KEY);
+	const raw = localStorage.getItem(PENDING_KEY);
 	if (!raw) return null;
 	try {
 		return JSON.parse(raw) as PendingOAuthState;
@@ -119,15 +133,22 @@ function loadPendingOAuth(): PendingOAuthState | null {
 }
 
 function clearPendingOAuth(): void {
-	sessionStorage.removeItem(PENDING_KEY);
+	localStorage.removeItem(PENDING_KEY);
+}
+
+function createState(): string {
+	const array = new Uint8Array(16);
+	crypto.getRandomValues(array);
+	return base64UrlEncode(array);
 }
 
 export function initiateOAuth(providerId: OAuthProviderId): void {
 	const config = OAUTH_PROVIDERS[providerId];
-	const redirectUri = getRedirectUri();
+	const redirectUri = getProviderRedirectUri(config);
 
 	generatePKCE().then(({ verifier, challenge }) => {
-		savePendingOAuth({ verifier, provider: providerId, createdAt: Date.now() });
+		const state = providerId === "anthropic" ? verifier : createState();
+		savePendingOAuth({ verifier, provider: providerId, state, redirectUri, createdAt: Date.now() });
 
 		const params = new URLSearchParams({
 			response_type: "code",
@@ -136,7 +157,12 @@ export function initiateOAuth(providerId: OAuthProviderId): void {
 			scope: config.scopes.join(" "),
 			code_challenge: challenge,
 			code_challenge_method: "S256",
+			state,
 		});
+
+		if (providerId === "anthropic") {
+			params.set("code", "true");
+		}
 
 		if (config.extraAuthParams) {
 			for (const [key, value] of Object.entries(config.extraAuthParams)) {
@@ -165,7 +191,48 @@ export interface OAuthCallbackResult {
 	error?: string;
 }
 
-export async function handleOAuthCallback(code: string): Promise<OAuthCallbackResult> {
+function parseOAuthCallbackInput(input: string): { code?: string; state?: string; error?: string; errorDescription?: string } {
+	const value = input.trim();
+	if (!value) return {};
+	try {
+		const url = new URL(value);
+		return {
+			code: url.searchParams.get("code") ?? undefined,
+			state: url.searchParams.get("state") ?? undefined,
+			error: url.searchParams.get("error") ?? undefined,
+			errorDescription: url.searchParams.get("error_description") ?? undefined,
+		};
+	} catch {
+		// Not a URL.
+	}
+	if (value.includes("#")) {
+		const [code, state] = value.split("#", 2);
+		return { code, state };
+	}
+	if (value.includes("code=") || value.includes("state=") || value.includes("error=")) {
+		const params = new URLSearchParams(value.replace(/^\?/, ""));
+		return {
+			code: params.get("code") ?? undefined,
+			state: params.get("state") ?? undefined,
+			error: params.get("error") ?? undefined,
+			errorDescription: params.get("error_description") ?? undefined,
+		};
+	}
+	return { code: value };
+}
+
+export async function completeOAuthFromInput(input: string): Promise<OAuthCallbackResult> {
+	const parsed = parseOAuthCallbackInput(input);
+	if (parsed.error) {
+		return { success: false, error: parsed.errorDescription ?? parsed.error };
+	}
+	if (!parsed.code) {
+		return { success: false, error: "Paste the final callback URL or authorization code." };
+	}
+	return handleOAuthCallback(parsed.code, parsed.state);
+}
+
+export async function handleOAuthCallback(code: string, state?: string | null): Promise<OAuthCallbackResult> {
 	const pending = loadPendingOAuth();
 	if (!pending) {
 		return { success: false, error: "No pending OAuth request found. Please try again." };
@@ -177,8 +244,14 @@ export async function handleOAuthCallback(code: string): Promise<OAuthCallbackRe
 		return { success: false, error: "OAuth request expired. Please try again." };
 	}
 
-	const config = OAUTH_PROVIDERS[pending.provider];
-	const redirectUri = getRedirectUri();
+	if (state && state !== pending.state) {
+		clearPendingOAuth();
+		return { success: false, error: "OAuth state mismatch. Please try signing in again." };
+	}
+
+	if (!state && pending.provider === "anthropic") {
+		state = pending.state;
+	}
 
 	clearPendingOAuth();
 
@@ -189,7 +262,8 @@ export async function handleOAuthCallback(code: string): Promise<OAuthCallbackRe
 			body: JSON.stringify({
 				provider: pending.provider,
 				code,
-				redirect_uri: redirectUri,
+				state: state ?? pending.state,
+				redirect_uri: pending.redirectUri,
 				code_verifier: pending.verifier,
 			}),
 		});
@@ -270,8 +344,6 @@ async function refreshOAuthToken(
 	provider: OAuthProviderId,
 	credentials: OAuthCredentials,
 ): Promise<OAuthCredentials | null> {
-	const config = OAUTH_PROVIDERS[provider];
-
 	try {
 		const response = await fetch("/api/oauth/refresh", {
 			method: "POST",

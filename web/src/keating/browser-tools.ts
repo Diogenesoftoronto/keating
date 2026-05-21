@@ -3,7 +3,7 @@
  * Uses real implementations from core.ts
  */
 
-import type { AgentTool } from "@mariozechner/pi-agent-core";
+import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { KeatingStorage, DEFAULT_BROWSER_POLICY } from "./storage";
 import { createSpeechTool, type WebSpeechSettings } from "./speech";
 import {

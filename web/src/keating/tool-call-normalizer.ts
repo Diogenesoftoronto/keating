@@ -4,7 +4,7 @@ import {
 	type AssistantMessageEvent,
 	type AssistantMessageEventStream,
 	type Context,
-} from "@mariozechner/pi-ai";
+} from "@earendil-works/pi-ai";
 
 function toolAliases(name: string): string[] {
 	const trimmed = name.trim();

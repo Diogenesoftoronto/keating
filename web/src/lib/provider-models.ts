@@ -1,5 +1,5 @@
-import { getModels, getProviders, type Api, type Model } from "@mariozechner/pi-ai";
-import { getAppStorage, type CustomProvider } from "@mariozechner/pi-web-ui";
+import { getModels, getProviders, type Api, type Model } from "@earendil-works/pi-ai";
+import { getAppStorage, type CustomProvider } from "@earendil-works/pi-web-ui";
 import { proxiedProviderRequestUrl } from "./provider-proxy";
 import { getOAuthAccessToken, providerToOAuthId } from "../keating/oauth";
 
