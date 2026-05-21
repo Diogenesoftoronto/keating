@@ -6,6 +6,7 @@ interface TokenRequestBody {
 	code: string;
 	redirect_uri: string;
 	code_verifier: string;
+	state?: string;
 }
 
 export default defineEventHandler(async (event) => {
@@ -35,15 +36,20 @@ export default defineEventHandler(async (event) => {
 		client_id: config.clientId,
 	};
 
+	if (body.provider === "anthropic" && body.state) {
+		tokenParams.state = body.state;
+	}
+
 	if (config.clientSecret) {
 		tokenParams.client_secret = config.clientSecret;
 	}
 
 	try {
+		const isJsonTokenProvider = body.provider === "anthropic";
 		const response = await fetch(config.tokenUrl, {
 			method: "POST",
-			headers: { "Content-Type": "application/x-www-form-urlencoded" },
-			body: new URLSearchParams(tokenParams).toString(),
+			headers: { "Content-Type": isJsonTokenProvider ? "application/json" : "application/x-www-form-urlencoded" },
+			body: isJsonTokenProvider ? JSON.stringify(tokenParams) : new URLSearchParams(tokenParams).toString(),
 		});
 
 		if (!response.ok) {

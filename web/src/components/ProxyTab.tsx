@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { getAppStorage } from "@mariozechner/pi-web-ui";
+import { getAppStorage } from "@earendil-works/pi-web-ui";
 
 export function ProxyTab() {
   const [enabled, setEnabled] = useState(false);

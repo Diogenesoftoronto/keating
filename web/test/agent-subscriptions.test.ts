@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { Agent } from "@mariozechner/pi-agent-core";
+import { Agent } from "@earendil-works/pi-agent-core";
 import {
   createAssistantMessageEventStream,
   type Api,
@@ -7,7 +7,7 @@ import {
   type Context,
   type Model,
   type SimpleStreamOptions,
-} from "@mariozechner/pi-ai";
+} from "@earendil-works/pi-ai";
 import { subscribeAgentEvents } from "../src/hooks/agent-subscriptions";
 
 const FAKE_MODEL: Model<Api> = {

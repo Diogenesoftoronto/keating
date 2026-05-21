@@ -83,7 +83,7 @@ const POSTS: Post[] = [
           The chat panel now merges <Code>agent.state.streamingMessage</Code> into the
           visible transcript while a run is active. That means token streaming works for
           the browser model path and for provider-backed models that already emit normal
-          text deltas through <Code>@mariozechner/pi-ai</Code>.
+          text deltas through <Code>@earendil-works/pi-ai</Code>.
         </p>
 
         <h3 id="thinking-stream" className="font-bold mt-4 mb-2">Thinking Stream</h3>

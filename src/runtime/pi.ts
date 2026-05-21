@@ -40,7 +40,7 @@ function missingRuntimeMessage(report: AiRuntimeReport): string {
       "Keating is configured for standalone-only but no `pi` AI agent binary was found on PATH.",
       "",
       "Recover with one of:",
-      "  npm install -g @mariozechner/pi-coding-agent",
+      "  npm install -g @earendil-works/pi-coding-agent",
       "  keating setup",
       "  edit keating.config.json and set pi.runtimePreference to prefer-standalone"
     ].join("\n");
@@ -51,7 +51,7 @@ function missingRuntimeMessage(report: AiRuntimeReport): string {
       "Keating is configured for embedded-only but no embedded AI agent was found.",
       "",
       "Recover with one of:",
-      "  npm install -g @mariozechner/pi-coding-agent",
+      "  npm install -g @earendil-works/pi-coding-agent",
       "  keating setup",
       "  npm install -g keating"
     ].join("\n");
@@ -61,7 +61,7 @@ function missingRuntimeMessage(report: AiRuntimeReport): string {
     "Could not find an AI runtime.",
     "",
     "Recover with one of:",
-    "  npm install -g @mariozechner/pi-coding-agent",
+    "  npm install -g @earendil-works/pi-coding-agent",
     "  npm install -g keating",
     "  curl -fsSL https://raw.githubusercontent.com/Diogenesoftoronto/keating/main/scripts/install/install.sh | bash"
   ].join("\n");
@@ -83,6 +83,7 @@ function resolveStandaloneAgent(): AiRuntimeDetails | null {
 }
 
 const CLI_AGENT_PACKAGES = [
+  ["@earendil-works", "pi-coding-agent"],
   ["@interleavelove", "keating-coding-agent"],
   ["@mariozechner", "pi-coding-agent"],
 ];

@@ -6,7 +6,9 @@ import { tmpdir } from "node:os";
 
 import { configPath } from "../src/core/config.js";
 import { ensureProjectScaffold } from "../src/core/project.js";
-import hyperteacher from "../src/pi/hyperteacher-extension.js";
+import hyperteacher, { createKeatingHeaderComponent } from "../src/pi/hyperteacher-extension.js";
+
+const ANSI_RE = /\x1b\[[0-9;]*[a-zA-Z]/g;
 
 interface RegisteredCommand {
   description: string;
@@ -183,6 +185,40 @@ test("session_start event fires notification", async () => {
   assert.ok(ctx.headerSet, "setHeader should be called for the startup card");
   assert.equal(ctx.widgetKeys.size, 0, "startup card should not occupy persistent widgets");
   assert.equal(pi.tools.has("keating_voice"), false);
+});
+
+test("startup header clamps ANSI-colored rows to terminal width", async () => {
+  const cwd = await mkdtemp(join(tmpdir(), "keating-ext-width-"));
+  const pi = {
+    getAllTools: () => [],
+  };
+  const ctx = {
+    cwd,
+    model: "provider/model-with-an-intentionally-long-name-that-needs-wrapping",
+    sessionManager: {
+      getSessionName: () => "session-with-an-intentionally-long-name-that-needs-wrapping",
+      getBranch: () => [
+        {
+          type: "message",
+          message: {
+            role: "assistant",
+            content: "This is a long recent teaching activity summary that should never push the rendered header past the terminal width."
+          }
+        }
+      ]
+    }
+  };
+  const theme = {
+    fg: (_name: string, text: string) => `\x1b[36m${text}\x1b[0m`,
+    bold: (text: string) => `\x1b[1m${text}\x1b[22m`,
+  };
+
+  const component = createKeatingHeaderComponent(pi, ctx)(null, theme);
+  const lines = component.render(111);
+
+  for (const line of lines) {
+    assert.ok(line.replace(ANSI_RE, "").length <= 111, line);
+  }
 });
 
 test("session_start debug console summary fires notification", async () => {

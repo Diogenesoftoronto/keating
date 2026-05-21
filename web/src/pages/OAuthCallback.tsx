@@ -7,6 +7,7 @@ export function OAuthCallback() {
 	useEffect(() => {
 		const params = new URLSearchParams(window.location.search);
 		const code = params.get("code");
+		const state = params.get("state");
 		const error = params.get("error");
 		const errorDescription = params.get("error_description");
 
@@ -30,7 +31,7 @@ export function OAuthCallback() {
 			return;
 		}
 
-		handleOAuthCallback(code).then((r) => {
+		handleOAuthCallback(code, state).then((r) => {
 			setResult(r);
 			notifyOpener(r);
 		});

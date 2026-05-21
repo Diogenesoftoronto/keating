@@ -13,8 +13,8 @@ import type {
   Agent,
   AgentMessage,
   ThinkingLevel,
-} from "@mariozechner/pi-agent-core";
-import type { ImageContent, TextContent } from "@mariozechner/pi-ai";
+} from "@earendil-works/pi-agent-core";
+import type { ImageContent, TextContent } from "@earendil-works/pi-ai";
 import {
   AssistantRuntimeProvider,
   AttachmentPrimitive,

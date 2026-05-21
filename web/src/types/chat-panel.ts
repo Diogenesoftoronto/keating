@@ -1,4 +1,4 @@
-import type { Agent, ThinkingLevel } from "@mariozechner/pi-agent-core";
+import type { Agent, ThinkingLevel } from "@earendil-works/pi-agent-core";
 
 export interface ChatPanelSetupCallbacks {
 	onApiKeyRequired?: (provider: string) => Promise<boolean>;

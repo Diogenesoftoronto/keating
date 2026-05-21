@@ -12,6 +12,7 @@ import { Prng } from "./random.js";
 import { benchmarkTopics } from "./topics.js";
 import { clamp, mean } from "./util.js";
 import { DEFAULT_WEIGHTS, clampWeights } from "./policy.js";
+import { piCompleteJson } from "./pi-agent.js";
 
 function buildLearnerPopulation(seed: number, count: number): LearnerProfile[] {
   const prng = new Prng(seed);
@@ -31,8 +32,6 @@ function buildLearnerPopulation(seed: number, count: number): LearnerProfile[] {
   }
   return learners;
 }
-
-import { piCompleteJson } from "./pi-agent.js";
 
 export async function simulateTeaching(
   cwd: string,
@@ -59,6 +58,46 @@ export async function simulateTeaching(
       learner.anxiety * 0.25 -
       learner.priorKnowledge * 0.15
   );
+  const deterministicBaseline = (): TeachingSimulation => {
+    const masteryGain = clamp(0.14 + intuitionFit * 0.18 + rigorFit * 0.2 + dialogueFit * 0.12 + diagramFit * 0.09 + practiceFit * 0.12 + (1 - overload) * 0.18);
+    const retention = clamp(masteryGain * (0.55 + policy.retrievalPractice * 0.45));
+    const engagement = clamp(0.12 + intuitionFit * 0.16 + dialogueFit * 0.16 + diagramFit * 0.1 + reflectionFit * 0.14 + (1 - overload) * 0.18);
+    const transfer = clamp(masteryGain * (0.55 + policy.interdisciplinaryBias * 0.25 + learner.transferDesire * 0.2));
+    const confusion = clamp(0.04 + overload * 0.55 + Math.abs(policy.formalism - learner.abstractionComfort) * 0.18 + Math.abs(policy.challengeRate - learner.persistence) * 0.12);
+    const score = clamp(
+      masteryGain * weights.masteryGain +
+      retention * weights.retention +
+      engagement * weights.engagement +
+      transfer * weights.transfer -
+      confusion * weights.confusion,
+      0, 1
+    );
+
+    return {
+      learner,
+      topic,
+      masteryGain,
+      retention,
+      engagement,
+      transfer,
+      confusion,
+      score,
+      breakdown: {
+        intuitionFit,
+        rigorFit,
+        dialogueFit,
+        diagramFit,
+        practiceFit,
+        reflectionFit,
+        overload
+      },
+      explanation: ["Deterministic algebraic baseline."]
+    };
+  };
+
+  if (process.env.KEATING_LLM_BENCHMARK !== "1") {
+    return deterministicBaseline();
+  }
 
   const prompt = `Simulate an educational interaction based on the following context.
 Teacher Policy: ${JSON.stringify(policy, null, 2)}
@@ -115,40 +154,7 @@ Respond ONLY as a JSON matching:
     };
   } catch (error) {
     console.error("LLM simulation failed, falling back to algebraic baseline", error);
-    const masteryGain = clamp(0.14 + intuitionFit * 0.18 + rigorFit * 0.2 + dialogueFit * 0.12 + diagramFit * 0.09 + practiceFit * 0.12 + (1 - overload) * 0.18);
-    const retention = clamp(masteryGain * (0.55 + policy.retrievalPractice * 0.45));
-    const engagement = clamp(0.12 + intuitionFit * 0.16 + dialogueFit * 0.16 + diagramFit * 0.1 + reflectionFit * 0.14 + (1 - overload) * 0.18);
-    const transfer = clamp(masteryGain * (0.55 + policy.interdisciplinaryBias * 0.25 + learner.transferDesire * 0.2));
-    const confusion = clamp(0.04 + overload * 0.55 + Math.abs(policy.formalism - learner.abstractionComfort) * 0.18 + Math.abs(policy.challengeRate - learner.persistence) * 0.12);
-    const score = clamp(
-      masteryGain * weights.masteryGain +
-      retention * weights.retention +
-      engagement * weights.engagement +
-      transfer * weights.transfer -
-      confusion * weights.confusion,
-      0, 1
-    );
-    
-    return {
-      learner,
-      topic,
-      masteryGain,
-      retention,
-      engagement,
-      transfer,
-      confusion,
-      score,
-      breakdown: {
-        intuitionFit,
-        rigorFit,
-        dialogueFit,
-        diagramFit,
-        practiceFit,
-        reflectionFit,
-        overload
-      },
-      explanation: ["Fallback deterministic explanation."]
-    };
+    return deterministicBaseline();
   }
 }
 

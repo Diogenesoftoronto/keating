@@ -1,19 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
 import { Trash2, X } from "lucide-react";
-import { getProviders } from "@mariozechner/pi-ai";
-import { getAppStorage, type CustomProvider } from "@mariozechner/pi-web-ui";
+import { getProviders } from "@earendil-works/pi-ai";
+import { getAppStorage, type CustomProvider } from "@earendil-works/pi-web-ui";
 import {
 	loadKeatingUiSettings,
-	saveKeatingUiSettings,
 	toggleProviderVisibility,
 	addCustomModel,
 	removeCustomModel,
-	type SavedModel,
-	addRecentModel,
 } from "../keating/ui-settings";
 import {
+	completeOAuthFromInput,
 	initiateOAuth,
-	isOAuthProvider,
 	providerToOAuthId,
 	loadOAuthCredentials,
 	deleteOAuthCredentials,
@@ -566,6 +563,8 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 	const [keys, setKeys] = useState<Record<string, string>>({});
 	const [oauthStatus, setOAuthStatus] = useState<Record<string, boolean>>({});
 	const [oauthLoading, setOauthLoading] = useState<Record<string, boolean>>({});
+	const [oauthInputs, setOAuthInputs] = useState<Record<string, string>>({});
+	const [oauthErrors, setOAuthErrors] = useState<Record<string, string>>({});
 
 	useEffect(() => {
 		const storage = getAppStorage();
@@ -598,8 +597,13 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 		const handler = (event: MessageEvent) => {
 			if (event.data?.type !== "keating-oauth-result") return;
 			const { success, provider: oauthProvider } = event.data;
+			const provider = oauthProviderToProviderName(oauthProvider);
 			if (success && oauthProvider) {
-				setOAuthStatus((prev) => ({ ...prev, [oauthProvider]: true }));
+				setOAuthStatus((prev) => ({ ...prev, [provider]: true }));
+				setOAuthInputs((prev) => ({ ...prev, [provider]: "" }));
+				setOAuthErrors((prev) => ({ ...prev, [provider]: "" }));
+			} else if (provider) {
+				setOAuthErrors((prev) => ({ ...prev, [provider]: event.data.error ?? "OAuth sign-in failed." }));
 			}
 			setOauthLoading((prev) => {
 				const next = { ...prev };
@@ -623,8 +627,29 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 	const handleSignIn = (provider: string) => {
 		const oauthId = providerToOAuthId(provider);
 		if (!oauthId) return;
+		setOAuthErrors((prev) => ({ ...prev, [provider]: "" }));
+		setOAuthInputs((prev) => ({ ...prev, [provider]: "" }));
 		setOauthLoading((prev) => ({ ...prev, [provider]: true }));
 		initiateOAuth(oauthId);
+	};
+
+	const handleCompleteOAuth = async (provider: string) => {
+		const input = oauthInputs[provider]?.trim() ?? "";
+		if (!input) {
+			setOAuthErrors((prev) => ({ ...prev, [provider]: "Paste the callback URL or authorization code first." }));
+			return;
+		}
+		setOauthLoading((prev) => ({ ...prev, [provider]: true }));
+		setOAuthErrors((prev) => ({ ...prev, [provider]: "" }));
+		const result = await completeOAuthFromInput(input);
+		if (result.success && result.provider) {
+			const statusProvider = oauthProviderToProviderName(result.provider);
+			setOAuthStatus((prev) => ({ ...prev, [statusProvider]: true }));
+			setOAuthInputs((prev) => ({ ...prev, [provider]: "" }));
+		} else {
+			setOAuthErrors((prev) => ({ ...prev, [provider]: result.error ?? "OAuth sign-in failed." }));
+		}
+		setOauthLoading((prev) => ({ ...prev, [provider]: false }));
 	};
 
 	const handleSignOut = async (provider: string) => {
@@ -668,13 +693,43 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 									</button>
 								</div>
 							) : (
-								<button
-									className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
-									disabled={loading}
-									onClick={() => handleSignIn(provider)}
-								>
-									{loading ? "Waiting for sign-in…" : `Sign in with ${OAUTH_PROVIDER_LABELS[provider] ?? provider}`}
-								</button>
+								<div className="flex flex-col gap-2">
+									<button
+										className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+										disabled={loading}
+										onClick={() => handleSignIn(provider)}
+									>
+										{loading ? "Waiting for sign-in…" : `Sign in with ${OAUTH_PROVIDER_LABELS[provider] ?? provider}`}
+									</button>
+									{loading && (
+										<div className="rounded-md border border-border bg-muted/20 p-2">
+											<p className="mb-2 text-xs text-muted-foreground">
+												If the provider redirects to a localhost callback that does not load, paste that final URL here.
+											</p>
+											<div className="flex gap-2">
+												<input
+													type="text"
+													className="min-w-0 flex-1 rounded-md border border-border bg-background px-2 py-1.5 text-xs"
+													placeholder="Callback URL or authorization code"
+													value={oauthInputs[provider] ?? ""}
+													onChange={(e) => setOAuthInputs((prev) => ({ ...prev, [provider]: e.target.value }))}
+												/>
+												<button
+													className="rounded-md border border-border px-2 py-1.5 text-xs font-medium hover:bg-accent hover:text-accent-foreground transition-colors disabled:opacity-50"
+													disabled={!oauthInputs[provider]?.trim()}
+													onClick={() => handleCompleteOAuth(provider)}
+												>
+													Complete
+												</button>
+											</div>
+										</div>
+									)}
+									{oauthErrors[provider] && (
+										<div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+											{oauthErrors[provider]}
+										</div>
+									)}
+								</div>
 							)}
 						</div>
 					);
@@ -696,6 +751,12 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 			})}
 		</>
 	);
+}
+
+function oauthProviderToProviderName(provider: OAuthProviderId | string | undefined): string {
+	if (provider === "google-gemini-cli") return "google";
+	if (provider === "anthropic" || provider === "openai-codex") return provider;
+	return provider ?? "";
 }
 
 function CustomProviderCard({

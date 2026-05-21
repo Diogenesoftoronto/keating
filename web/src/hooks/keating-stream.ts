@@ -7,7 +7,7 @@ import {
 	type Context,
 	type Model,
 	type SimpleStreamOptions,
-} from "@mariozechner/pi-ai";
+} from "@earendil-works/pi-ai";
 import { normalizeToolCallStream } from "../keating/tool-call-normalizer";
 import { chatProxyBaseUrl, proxyTargetHeader, shouldProxyModel } from "../lib/provider-proxy";
 import { localModel, getModelName, getModelId } from "../stores/local-model";

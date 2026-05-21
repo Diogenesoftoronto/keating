@@ -36,10 +36,11 @@ export default defineEventHandler(async (event) => {
 	}
 
 	try {
+		const isJsonTokenProvider = body.provider === "anthropic";
 		const response = await fetch(config.tokenUrl, {
 			method: "POST",
-			headers: { "Content-Type": "application/x-www-form-urlencoded" },
-			body: new URLSearchParams(refreshParams).toString(),
+			headers: { "Content-Type": isJsonTokenProvider ? "application/json" : "application/x-www-form-urlencoded" },
+			body: isJsonTokenProvider ? JSON.stringify(refreshParams) : new URLSearchParams(refreshParams).toString(),
 		});
 
 		if (!response.ok) {

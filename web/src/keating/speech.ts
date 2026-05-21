@@ -1,4 +1,4 @@
-import type { AgentTool } from "@mariozechner/pi-agent-core";
+import type { AgentTool } from "@earendil-works/pi-agent-core";
 
 export const KEATING_VOICE_TOOL_NAME = "keating_voice";
 export const GEMINI_LIVE_SPEECH_MODEL = "gemini-3.1-flash-live-preview";

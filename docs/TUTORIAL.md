@@ -15,10 +15,10 @@ The recommended way to install Pi is via `npm` or `bun`:
 
 ```bash
 # Using npm
-npm install -g @mariozechner/pi-coding-agent
+npm install -g @earendil-works/pi-coding-agent
 
 # Or using bun
-bun add -g @mariozechner/pi-coding-agent
+bun add -g @earendil-works/pi-coding-agent
 ```
 
 ### Install Keating

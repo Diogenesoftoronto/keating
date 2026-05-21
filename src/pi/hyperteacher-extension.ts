@@ -32,16 +32,44 @@ import {
 } from "../core/speech.js";
 import { KEATING_ASCII_LOGO, KEATING_SUBTITLE_LINES } from "../core/terminal.js";
 
-const KEATING_VERSION = "0.3.9";
+const KEATING_VERSION = "0.3.10";
 const ANSI_RE = /\x1b\[[0-9;]*[a-zA-Z]/g;
 
 function visibleWidth(text: string): number {
   return text.replace(ANSI_RE, "").length;
 }
 
+function truncateVisible(text: string, width: number): string {
+  const limit = Math.max(0, width);
+  if (visibleWidth(text) <= limit) return text;
+  if (limit === 0) return "";
+
+  const suffix = limit > 1 ? "…" : "";
+  const contentLimit = Math.max(0, limit - visibleWidth(suffix));
+  let visible = 0;
+  let output = "";
+
+  for (let index = 0; index < text.length;) {
+    const ansi = text.slice(index).match(/^\x1b\[[0-9;]*[a-zA-Z]/);
+    if (ansi) {
+      output += ansi[0];
+      index += ansi[0].length;
+      continue;
+    }
+
+    if (visible >= contentLimit) break;
+    output += text[index];
+    visible += 1;
+    index += 1;
+  }
+
+  return `${output}${suffix}`;
+}
+
 function padVisible(text: string, width: number): string {
-  const vw = visibleWidth(text);
-  return vw >= width ? text : text + " ".repeat(width - vw);
+  const fitted = truncateVisible(text, width);
+  const vw = visibleWidth(fitted);
+  return vw >= width ? fitted : fitted + " ".repeat(width - vw);
 }
 
 function truncatePlain(text: string, width: number): string {
@@ -135,7 +163,7 @@ function info(ctx: any, message: string): void {
   ctx.ui.notify(message, "info");
 }
 
-function createKeatingHeaderComponent(pi: any, ctx: any): (tui: any, theme: any) => any {
+export function createKeatingHeaderComponent(pi: any, ctx: any): (tui: any, theme: any) => any {
   const sections = shellCommandSections();
   const commandCount = sections.reduce((sum, section) => sum + section.commands.length, 0);
 

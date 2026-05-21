@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createAssistantMessageEventStream, type AssistantMessage, type Context } from "@mariozechner/pi-ai";
+import { createAssistantMessageEventStream, type AssistantMessage, type Context } from "@earendil-works/pi-ai";
 import { normalizeToolCallStream, resolveToolCallName } from "../src/keating/tool-call-normalizer";
 
 const context: Context = {

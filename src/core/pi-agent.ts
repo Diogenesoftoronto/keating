@@ -19,7 +19,7 @@ export async function piComplete(cwd: string, prompt: string, options: PiComplet
 
   if (!runtime.selected) {
     throw new Error(
-      "No AI runtime found. Install `pi` with `npm install -g @mariozechner/pi-coding-agent`, or reinstall Keating so its embedded runtime dependency is present."
+      "No AI runtime found. Install `pi` with `npm install -g @earendil-works/pi-coding-agent`, or reinstall Keating so its embedded runtime dependency is present."
     );
   }
 

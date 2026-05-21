@@ -11,12 +11,21 @@ interface Scene {
 	highlight?: string;
 }
 
-function parseStoryboard(markdown: string): { title: string; scenes: Scene[]; totalDuration: number } {
+function durationSeconds(label: string): number {
+	const cleaned = label.trim().replace(/s$/i, "");
+	const range = cleaned.match(/^(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)$/);
+	if (range) {
+		return Math.max(0, Number(range[2]) - Number(range[1]));
+	}
+	const value = Number(cleaned);
+	return Number.isFinite(value) ? Math.max(0, value) : 0;
+}
+
+export function parseStoryboard(markdown: string): { title: string; scenes: Scene[]; totalDuration: number } {
 	const lines = markdown.split("\n");
 	const scenes: Scene[] = [];
 	let title = "";
 	let current: Partial<Scene> = {};
-	let totalDuration = 0;
 
 	for (const line of lines) {
 		const titleMatch = line.match(/^# Animation Storyboard: (.+)$/);
@@ -31,8 +40,6 @@ function parseStoryboard(markdown: string): { title: string; scenes: Scene[]; to
 				scenes.push(current as Scene);
 			}
 			const [, num, name, dur] = sceneMatch;
-			const durSec = parseInt(dur.replace("s", ""), 10) || 0;
-			totalDuration += durSec;
 			current = { number: parseInt(num, 10), title: name, duration: dur };
 			continue;
 		}
@@ -52,8 +59,6 @@ function parseStoryboard(markdown: string): { title: string; scenes: Scene[]; to
 		const durMatch = line.match(/^- \*\*Duration\*\*: (\d+)s$/);
 		if (durMatch) {
 			current.duration = `${durMatch[1]}s`;
-			const durSec = parseInt(durMatch[1], 10);
-			totalDuration += durSec;
 		}
 
 		const highMatch = line.match(/^- \*\*Highlight\*\*: (.+)$/);
@@ -68,6 +73,7 @@ function parseStoryboard(markdown: string): { title: string; scenes: Scene[]; to
 
 	if (current.title) scenes.push(current as Scene);
 
+	const totalDuration = scenes.reduce((sum, scene) => sum + durationSeconds(scene.duration), 0);
 	return { title, scenes, totalDuration };
 }
 
