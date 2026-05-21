@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.9] - 2026-05-21
+
+### Added
+- Web chat now streams the in-progress assistant message directly from `agent.state.streamingMessage`, so the response appears token by token instead of waiting for the final assistant message to commit.
+- Live reasoning blocks now surface during model thinking when the provider emits `thinking_*` stream events, using the existing collapsible "Reasoning" UI in the chat transcript.
+
+### Changed
+- While a request is still waiting on its first streamed token, the chat thread shows rotating prefill status lines instead of a blank assistant bubble.
+
 ## [0.3.8] - 2026-05-19
 
 ### Added
@@ -210,7 +219,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.8...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.9...HEAD
+[0.3.9]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.8...v0.3.9
 [0.3.8]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.7...v0.3.8
 [0.3.7]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.6...v0.3.7
 [0.3.6]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.5...v0.3.6
