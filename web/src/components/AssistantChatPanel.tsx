@@ -63,6 +63,7 @@ import {
   loadKeatingUiSettings,
   subscribeKeatingUiSettings,
 } from "../keating/ui-settings";
+import { getProviderApiKey } from "../lib/provider-models";
 import { QuizRenderer } from "./QuizRenderer";
 import { SceneRenderer } from "./SceneRenderer";
 import type { Quiz } from "../keating/core";
@@ -636,6 +637,7 @@ function ArtifactChips({ text }: { text: string }) {
 
 const quizTagPattern = /<keating-quiz\s+json=([^>]+)\s*\/>/g;
 const sceneTagPattern = /<keating-scene\s+markdown=([^>]+)\s*\/>/g;
+const URL_IN_TEXT_PATTERN = /\bhttps?:\/\/[^\s<>"')\]]+/i;
 
 function parseInteractiveSegments(
   text: string,
@@ -1527,6 +1529,49 @@ function ReasoningLevelSelector({
   );
 }
 
+function WebGroundingHint({
+  hasUrl,
+  hasGoogleKey,
+  groundingEnabled,
+  usingGoogleModel,
+}: {
+  hasUrl: boolean;
+  hasGoogleKey: boolean | null;
+  groundingEnabled: boolean;
+  usingGoogleModel: boolean;
+}) {
+  if (!hasUrl) return null;
+
+  const needsKey = hasGoogleKey === false;
+  const needsGrounding = !groundingEnabled;
+  const needsGoogleModel = !usingGoogleModel;
+  if (!needsKey && !needsGrounding && !needsGoogleModel) return null;
+
+  return (
+    <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs leading-5 text-muted-foreground">
+      <span className="font-medium text-foreground">URL detected.</span>{" "}
+      To let Keating read current web pages, use a Google Gemini model with Google web grounding enabled
+      {needsKey ? " and add a Google API key" : ""}.
+      {needsKey && (
+        <>
+          {" "}Get one from{" "}
+          <a
+            className="text-primary underline underline-offset-2"
+            href="https://aistudio.google.com/app/apikey"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Google AI Studio
+          </a>
+          , then paste it in Settings → Providers & Models → Google Gemini.
+        </>
+      )}
+      {needsGrounding && " Turn on Settings → Interface → Google web grounding."}
+      {needsGoogleModel && " Select a Google Gemini model for grounded web results."}
+    </div>
+  );
+}
+
 function AssistantThread({
   agent,
   callbacks,
@@ -1541,6 +1586,8 @@ function AssistantThread({
   const [uiSettings, setUiSettings] = useState(() => loadKeatingUiSettings());
   const [localVersion, setLocalVersion] = useState(0);
   const [loadingStep, setLoadingStep] = useState(0);
+  const [composerHasUrl, setComposerHasUrl] = useState(false);
+  const [hasGoogleKey, setHasGoogleKey] = useState<boolean | null>(null);
   const isRunning = agent?.state.isStreaming ?? false;
   const messages = useMemo(
     () => {
@@ -1578,6 +1625,7 @@ function AssistantThread({
       )
         return;
       await callbacks.onBeforeSend?.();
+      setComposerHasUrl(false);
       await agent.prompt(text);
     },
     [agent, callbacks],
@@ -1612,6 +1660,7 @@ function AssistantThread({
       )
         return;
       await callbacks.onBeforeSend?.();
+      setComposerHasUrl(false);
       await agent.prompt(userMessage);
     },
     [agent, callbacks],
@@ -1637,8 +1686,29 @@ function AssistantThread({
 
   const runtime = useExternalStoreRuntime<AgentMessage>(storeAdapter);
   const modelLabel = modelRef.current?.name ?? modelRef.current?.id ?? "Model";
+  const usingGoogleModel = modelRef.current?.provider === "google";
 
   useEffect(() => subscribeKeatingUiSettings(setUiSettings), []);
+
+  useEffect(() => {
+    if (!composerHasUrl) {
+      setHasGoogleKey(null);
+      return;
+    }
+
+    let cancelled = false;
+    getProviderApiKey("google")
+      .then((key) => {
+        if (!cancelled) setHasGoogleKey(!!key);
+      })
+      .catch(() => {
+        if (!cancelled) setHasGoogleKey(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [composerHasUrl]);
 
   useEffect(() => {
     if (!isRunning) {
@@ -1683,6 +1753,12 @@ function AssistantThread({
             <ThreadPrimitive.Messages components={threadComponents} />
             <ThreadPrimitive.ViewportFooter className="sticky bottom-0 bg-background/95 pt-3 backdrop-blur">
               <ComposerPrimitive.Root className="composer-root mx-auto flex w-full max-w-3xl flex-col gap-2 rounded-lg border border-border bg-background p-2 shadow-sm">
+                <WebGroundingHint
+                  hasUrl={composerHasUrl}
+                  hasGoogleKey={hasGoogleKey}
+                  groundingEnabled={uiSettings.googleGrounding === "auto"}
+                  usingGoogleModel={usingGoogleModel}
+                />
                 <ComposerPrimitive.Attachments>
                   {({ attachment }) => (
                     <ComposerAttachmentChip attachment={attachment} />
@@ -1720,6 +1796,7 @@ function AssistantThread({
                     className="max-h-40 min-h-11 flex-1 resize-none bg-transparent px-2 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground"
                     placeholder="Message Keating"
                     rows={1}
+                    onChange={(event) => setComposerHasUrl(URL_IN_TEXT_PATTERN.test(event.currentTarget.value))}
                   />
                   {/* Only show Send OR Cancel — never both */}
                   {isRunning ? (
