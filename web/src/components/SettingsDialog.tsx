@@ -73,10 +73,10 @@ export function SettingsDialog({ open, tabs, onClose }: SettingsDialogProps) {
 
         {/* Content */}
         <div className="flex flex-col flex-1 min-h-0">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          <div className="flex min-h-14 items-center justify-between gap-3 px-4 py-2 border-b border-border">
             {/* Mobile tab selector */}
             <select
-              className="sm:hidden text-sm font-medium bg-transparent border border-border rounded px-2 py-1"
+              className="min-w-0 flex-1 sm:hidden text-sm font-medium bg-transparent border border-border rounded px-2 py-2"
               value={activeTab}
               onChange={(e) => setActiveTab(Number(e.target.value))}
               aria-label="Settings tab"
@@ -90,10 +90,10 @@ export function SettingsDialog({ open, tabs, onClose }: SettingsDialogProps) {
             </span>
             <button
               onClick={onClose}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              className="dialog-icon-button inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
               aria-label="Close"
             >
-              <X size={14} />
+              <X size={16} />
             </button>
           </div>
           <div className="flex-1 overflow-y-auto p-4 sm:p-5">

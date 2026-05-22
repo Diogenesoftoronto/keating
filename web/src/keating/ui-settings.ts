@@ -1,6 +1,7 @@
 import type { Api, Model } from "@earendil-works/pi-ai";
 
 export type ReasoningLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
+export type AnimationRenderer = "manim" | "hyperframes";
 
 export type SavedModel = {
 	key: string;
@@ -19,6 +20,8 @@ export interface KeatingUiSettings {
 	showRawErrors: boolean;
 	googleGrounding: "auto" | "off";
 	reasoningLevel: ReasoningLevel;
+	animationRenderer: AnimationRenderer;
+	userProfileImage: string | null;
 	hiddenProviders: string[];
 	recentModels: Array<{ key: string; timestamp: number }>;
 	customModels: SavedModel[];
@@ -30,6 +33,8 @@ export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
 	showRawErrors: false,
 	googleGrounding: "auto",
 	reasoningLevel: "medium",
+	animationRenderer: "manim",
+	userProfileImage: null,
 	hiddenProviders: [],
 	recentModels: [],
 	customModels: [],
@@ -45,6 +50,8 @@ function normalizeSettings(value: Partial<KeatingUiSettings> | null): KeatingUiS
 		showRawErrors: value?.showRawErrors ?? DEFAULT_UI_SETTINGS.showRawErrors,
 		googleGrounding: value?.googleGrounding === "off" ? "off" : DEFAULT_UI_SETTINGS.googleGrounding,
 		reasoningLevel: value?.reasoningLevel ?? DEFAULT_UI_SETTINGS.reasoningLevel,
+		animationRenderer: value?.animationRenderer === "hyperframes" ? "hyperframes" : DEFAULT_UI_SETTINGS.animationRenderer,
+		userProfileImage: typeof value?.userProfileImage === "string" && value.userProfileImage.startsWith("data:image/") ? value.userProfileImage : DEFAULT_UI_SETTINGS.userProfileImage,
 		hiddenProviders: Array.isArray(value?.hiddenProviders) ? value.hiddenProviders : DEFAULT_UI_SETTINGS.hiddenProviders,
 		recentModels: Array.isArray(value?.recentModels) ? value.recentModels : DEFAULT_UI_SETTINGS.recentModels,
 		customModels: Array.isArray(value?.customModels) ? value.customModels : DEFAULT_UI_SETTINGS.customModels,

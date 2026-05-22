@@ -35,6 +35,21 @@ const AUTO_DISCOVERY_TYPES = new Set<KeatingCustomProviderType>([
 	"ollama", "llama.cpp", "vllm", "lmstudio",
 ]);
 
+const PROVIDER_PRIORITY = ["openai", "anthropic", "google"];
+
+function sortProvidersByPriority(list: string[]): string[] {
+	const rank = (name: string) => {
+		const idx = PROVIDER_PRIORITY.indexOf(name);
+		return idx === -1 ? PROVIDER_PRIORITY.length : idx;
+	};
+	return [...list].sort((a, b) => {
+		const ra = rank(a);
+		const rb = rank(b);
+		if (ra !== rb) return ra - rb;
+		return a.localeCompare(b);
+	});
+}
+
 const PROVIDER_TYPE_OPTIONS = [
 	{ value: "ollama", label: "Ollama" },
 	{ value: "llama.cpp", label: "llama.cpp" },
@@ -121,7 +136,7 @@ export function ProvidersModelsTab() {
 		setSettings(loadKeatingUiSettings());
 	}, []);
 
-	const providers = getProviders();
+	const providers = sortProvidersByPriority(getProviders());
 
 	const handleToggleProvider = (provider: string, hidden: boolean) => {
 		toggleProviderVisibility(provider, hidden);

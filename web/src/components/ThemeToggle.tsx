@@ -41,7 +41,7 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={toggle}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+      className="chat-action-button inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
       title={isDark ? "Switch to light mode" : "Switch to dark mode"}
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
     >

@@ -57,6 +57,7 @@ describe("Keating UI Settings", () => {
 			expect(settings.hiddenProviders).toEqual([]);
 			expect(settings.recentModels).toEqual([]);
 			expect(settings.customModels).toEqual([]);
+			expect(settings.animationRenderer).toBe("manim");
 		});
 
 		it("returns defaults when localStorage has invalid JSON", () => {
@@ -74,6 +75,12 @@ describe("Keating UI Settings", () => {
 			expect(settings.reasoningLevel).toBe("high");
 			expect(settings.hiddenProviders).toEqual(["openai"]);
 			expect(settings.showToolUi).toBe(DEFAULT_UI_SETTINGS.showToolUi);
+		});
+
+		it("loads Hyperframes as an optional animation renderer", () => {
+			localStorage.setItem("keating_ui_settings", JSON.stringify({ animationRenderer: "hyperframes" }));
+			const settings = loadKeatingUiSettings();
+			expect(settings.animationRenderer).toBe("hyperframes");
 		});
 	});
 

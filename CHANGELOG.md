@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.11] - 2026-05-22
+
+### Added
+- Added a persistent large-screen sessions sidebar to the chat view with search, load, fork, rename-entry access, and nested fork navigation.
+- Forked chat sessions now preserve parent metadata and appear as an explorable session tree in the sidebar and session manager.
+- Added a user profile image setting for web chat avatars.
+- Added a web animation renderer setting with Manim-web as the default and Hyperframes as an optional renderer for generated animation artifacts.
+
+### Changed
+- Forking a session now has a visible transition so the session split is easier to track.
+- Assistant messages now use the Keating logo instead of the generic robot icon, and message sizing/alignment was tightened across desktop and mobile views.
+- Usage session rows now prioritize readable session text with date, turn count, and token metadata anchored at the bottom.
+- Keating web now uses the logo image as the favicon and Apple touch icon.
+
+### Fixed
+- Fixed mobile overflow in the chat composer, suggested prompts, session rows, and deepest-dive usage sections.
+- Fixed the mobile settings dialog close button sizing so it uses the header height more naturally.
+- Fixed the settings icon visibility on small chat screens.
+- Removed the redundant generate-title action from the chat header.
+
+## [0.3.10] - 2026-05-22
+
+### Added
+- Added a Google Search grounding setting for Gemini/Google web chat requests.
+- URL-heavy user prompts now suggest enabling Google grounding when it is available.
+
 ## [0.3.9] - 2026-05-21
 
 ### Added

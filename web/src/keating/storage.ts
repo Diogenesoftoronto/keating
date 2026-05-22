@@ -45,6 +45,7 @@ export interface Animation {
 	storyboard: string;
 	scene: string;
 	manifest: string;
+	renderer?: "manim" | "hyperframes";
 }
 
 export interface Verification {
@@ -244,7 +245,13 @@ export class KeatingStorage {
 	}
 
 	// Animations
-	async saveAnimation(topic: string, storyboard: string, scene: string, manifest: string): Promise<Animation> {
+	async saveAnimation(
+		topic: string,
+		storyboard: string,
+		scene: string,
+		manifest: string,
+		renderer: "manim" | "hyperframes" = "manim",
+	): Promise<Animation> {
 		const animation: Animation = {
 			id: this.generateId(),
 			topic,
@@ -252,6 +259,7 @@ export class KeatingStorage {
 			storyboard,
 			scene,
 			manifest,
+			renderer,
 		};
 		await this.put(STORES.ANIMATIONS, animation);
 		return animation;

@@ -11,6 +11,10 @@ interface AnimationPlayerProps {
 interface Manifest {
 	topic: string;
 	slug: string;
+	renderer?: "manim" | "hyperframes";
+	compositionId?: string;
+	width?: number;
+	height?: number;
 	scenes: string[];
 	duration: number;
 }
@@ -29,14 +33,16 @@ export function AnimationPlayer({ scene, manifest, storyboard, className }: Anim
 	}
 
 	const storyboardData = storyboard ? parseStoryboard(storyboard) : null;
+	const isHyperframes = manifestData?.renderer === "hyperframes";
 
 	return (
 		<div className={`animation-player bg-muted/20 rounded-lg overflow-hidden ${className ?? ""}`}>
 			{/* Header */}
 			<div className="flex items-center justify-between px-4 py-2 bg-muted/30 border-b border-border">
 				<div className="flex items-center gap-2">
-					<span className="text-sm font-medium">🎬 Animation</span>
+					<span className="text-sm font-medium">Animation</span>
 					{manifestData && <span className="text-xs text-muted-foreground">({manifestData.topic})</span>}
+					{isHyperframes && <span className="text-xs text-muted-foreground">Hyperframes</span>}
 				</div>
 				<div className="flex items-center gap-2">
 					<button
@@ -50,7 +56,14 @@ export function AnimationPlayer({ scene, manifest, storyboard, className }: Anim
 
 			{/* Content */}
 			<div className="p-4">
-				{storyboardData?.scenes.length ? (
+				{isHyperframes && scene ? (
+					<iframe
+						title={`${manifestData?.topic ?? "Keating"} Hyperframes composition`}
+						srcDoc={scene}
+						sandbox="allow-scripts"
+						className="aspect-video w-full rounded-md border border-border bg-black"
+					/>
+				) : storyboardData?.scenes.length ? (
 					<SceneRenderer storyboard={storyboard ?? ""} />
 				) : scene ? (
 					<div className="space-y-3">
@@ -76,7 +89,9 @@ export function AnimationPlayer({ scene, manifest, storyboard, className }: Anim
 
 				{showSource && scene && (
 					<div className="mt-3 space-y-2">
-						<div className="text-xs font-medium text-muted-foreground">Scene Code</div>
+						<div className="text-xs font-medium text-muted-foreground">
+							{isHyperframes ? "Hyperframes HTML" : "Scene Code"}
+						</div>
 						<pre className="text-xs text-muted-foreground whitespace-pre-wrap bg-muted/30 p-3 rounded overflow-auto max-h-64">
 							{scene}
 						</pre>
@@ -89,6 +104,7 @@ export function AnimationPlayer({ scene, manifest, storyboard, className }: Anim
 				<div className="px-4 py-2 bg-muted/30 border-t border-border text-xs text-muted-foreground">
 					<span className="mr-4">Duration: {manifestData.duration}s</span>
 					<span>Scenes: {manifestData.scenes.length}</span>
+					{manifestData.renderer && <span className="ml-4">Renderer: {manifestData.renderer}</span>}
 				</div>
 			)}
 
@@ -120,7 +136,7 @@ export function AnimationPreview({
 				onClick={() => setExpanded(true)}
 				className="text-xs text-primary hover:underline flex items-center gap-1"
 			>
-				🎬 Show Animation
+				Show Animation
 			</button>
 		);
 	}

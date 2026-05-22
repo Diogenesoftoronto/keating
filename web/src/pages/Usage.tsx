@@ -1,6 +1,6 @@
 import { Suspense, use, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, BookOpenCheck, Brain, Clock3, Cpu, Flame, Gem, MessageSquareText, TrendingUp, Wrench } from "lucide-react";
+import { ArrowLeft, BookOpenCheck, Brain, CalendarDays, Clock3, Cpu, Flame, Gem, MessageSquareText, TrendingUp } from "lucide-react";
 import { useSeo } from "../hooks/useSeo";
 import { getInitPromise, keatingStorage, sessions } from "../hooks/keating-storage";
 import type { SessionMetadata } from "../types/session";
@@ -25,7 +25,13 @@ function daysBetween(start: string, end: string) {
 }
 
 function firstSentence(text: string) {
-	return text.replace(/\s+/g, " ").trim().split(/[.!?]\s/)[0]?.slice(0, 120) || "No preview saved";
+	const clean = text
+		.replace(/Learner Profile:[\s\S]*$/i, "")
+		.replace(/Feedback:[\s\S]*$/i, "")
+		.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, "")
+		.replace(/\s+/g, " ")
+		.trim();
+	return clean.split(/[.!?]\s/)[0]?.slice(0, 220) || "No preview saved";
 }
 
 function useSessionMetadata() {
@@ -48,13 +54,13 @@ function MetricCard({
 	detail: string;
 }) {
 	return (
-		<div className="rounded-lg border border-border bg-background p-4">
+		<div className="min-w-0 rounded-lg border border-border bg-background p-4">
 			<div className="flex items-center justify-between gap-3">
 				<div className="text-sm text-muted-foreground">{label}</div>
 				<div className="text-muted-foreground">{icon}</div>
 			</div>
 			<div className="mt-3 text-2xl font-semibold">{value}</div>
-			<div className="mt-1 text-xs text-muted-foreground">{detail}</div>
+			<div className="mt-1 min-w-0 break-words text-xs text-muted-foreground">{detail}</div>
 		</div>
 	);
 }
@@ -129,8 +135,8 @@ function UsageContent() {
 				</div>
 			</header>
 
-			<main className="mx-auto max-w-6xl px-4 py-6">
-				<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+			<main className="mx-auto min-w-0 max-w-6xl overflow-hidden px-4 py-6">
+				<div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-4">
 					<MetricCard
 						icon={<BookOpenCheck size={18} />}
 						label="Learning sessions"
@@ -158,7 +164,7 @@ function UsageContent() {
 				</div>
 
 				{/* Self-improvement vs Learning distinction */}
-				<div className="mt-6 grid gap-3 sm:grid-cols-3">
+				<div className="mt-6 grid min-w-0 gap-3 sm:grid-cols-3">
 					<MetricCard
 						icon={<Gem size={18} />}
 						label="Teaching materials"
@@ -179,8 +185,8 @@ function UsageContent() {
 					/>
 				</div>
 
-				<div className="mt-6 grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
-					<section className="rounded-lg border border-border bg-background">
+				<div className="mt-6 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)]">
+					<section className="min-w-0 overflow-hidden rounded-lg border border-border bg-background">
 						<div className="border-b border-border px-4 py-3">
 							<h2 className="text-sm font-semibold">Recent learning</h2>
 							<p className="mt-1 text-xs text-muted-foreground">Latest saved sessions and their focus</p>
@@ -196,7 +202,7 @@ function UsageContent() {
 						</div>
 					</section>
 
-					<section className="rounded-lg border border-border bg-background">
+					<section className="min-w-0 overflow-hidden rounded-lg border border-border bg-background">
 						<div className="border-b border-border px-4 py-3">
 							<h2 className="text-sm font-semibold">Deepest dives</h2>
 							<p className="mt-1 text-xs text-muted-foreground">Sessions with the most back-and-forth</p>
@@ -205,15 +211,19 @@ function UsageContent() {
 							{deepest.length === 0 ? (
 								<div className="py-8 text-center text-sm text-muted-foreground">No learning history yet</div>
 							) : deepest.map((session, index) => (
-								<div key={session.id} className="flex items-start gap-3">
+								<div key={session.id} className="flex min-w-0 items-start gap-3">
 									<div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-xs font-medium">
 										{index + 1}
 									</div>
 									<div className="min-w-0 flex-1">
-										<div className="truncate text-sm font-medium">{session.title}</div>
-										<div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+										<div className="overflow-hidden text-ellipsis text-sm font-medium [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
+											{session.title}
+										</div>
+										<div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
 											<Clock3 size={13} />
-											{session.messageCount} messages | {formatDate(session.lastModified)}
+											<span>{session.messageCount} messages</span>
+											<span aria-hidden="true">|</span>
+											<span>{formatDate(session.lastModified)}</span>
 										</div>
 									</div>
 								</div>
@@ -231,15 +241,26 @@ function UsageContent() {
 function SessionRow({ session }: { session: SessionMetadata }) {
 	const tokens = session.usage.totalTokens || session.usage.input + session.usage.output;
 	return (
-		<div className="grid gap-3 px-4 py-3 sm:grid-cols-[1fr_auto] sm:items-center">
-			<div className="min-w-0">
+		<div className="flex min-h-36 min-w-0 flex-col gap-3 px-4 py-3">
+			<div className="min-w-0 flex-1">
 				<div className="truncate text-sm font-medium">{session.title}</div>
-				<div className="mt-1 text-xs text-muted-foreground">{firstSentence(session.preview)}</div>
+				<p className="mt-2 overflow-hidden text-xs leading-5 text-muted-foreground [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]">
+					{firstSentence(session.preview)}
+				</p>
 			</div>
-			<div className="flex flex-wrap gap-2 text-xs text-muted-foreground sm:justify-end">
-				<span className="rounded-md bg-muted px-2 py-1">{formatDate(session.lastModified)}</span>
-				<span className="rounded-md bg-muted px-2 py-1">{session.messageCount} turns</span>
-				<span className="rounded-md bg-muted px-2 py-1">{formatNumber(tokens)} tokens</span>
+			<div className="flex min-w-0 flex-wrap gap-2 text-[11px] text-muted-foreground">
+				<span className="inline-flex min-w-0 items-center gap-1 rounded-md bg-muted px-2 py-1">
+					<CalendarDays size={12} className="shrink-0" />
+					<span className="truncate">{formatDate(session.lastModified)}</span>
+				</span>
+				<span className="inline-flex min-w-0 items-center gap-1 rounded-md bg-muted px-2 py-1">
+					<MessageSquareText size={12} className="shrink-0" />
+					<span className="truncate">{session.messageCount} turns</span>
+				</span>
+				<span className="inline-flex min-w-0 items-center gap-1 rounded-md bg-muted px-2 py-1">
+					<Brain size={12} className="shrink-0" />
+					<span className="truncate">{formatNumber(tokens)} tokens</span>
+				</span>
 			</div>
 		</div>
 	);

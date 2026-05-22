@@ -33,7 +33,6 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import {
-  Bot,
   ChevronRight,
   CircleAlert,
   CircleCheck,
@@ -900,19 +899,21 @@ function ToolPart({
   const classifiedError = state === "error" ? classifyError(resultText) : null;
   return (
     <div
-      className={`my-2 rounded-md border-l-4 px-3 py-2 text-xs ${stateClass}`}
+      className={`my-2 w-full rounded-md border-l-4 px-3 py-2 text-xs ${stateClass}`}
     >
-      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
         <StateIcon
           size={14}
           className={state === "running" ? "animate-spin" : ""}
         />
         <Wrench size={13} />
         <span className="font-medium">Tool</span>
-        <span className="rounded bg-background/70 px-1.5 py-0.5 font-mono text-foreground">
+        <span className="max-w-full truncate rounded bg-background/70 px-1.5 py-0.5 font-mono text-foreground">
           {toolName}
         </span>
-        <span className="ml-auto uppercase tracking-wide">{state}</span>
+        <span className="ml-auto shrink-0 uppercase tracking-wide">
+          {state}
+        </span>
       </div>
       {showDetails &&
       args !== undefined &&
@@ -1384,11 +1385,11 @@ function SuggestedPrompts({ onSelect }: { onSelect: (text: string) => void }) {
   const refresh = () => appendMore();
 
   return (
-    <div className="mx-auto flex h-full max-w-3xl flex-col items-center justify-center gap-3 px-4">
+    <div className="mx-auto flex h-full w-full min-w-0 max-w-3xl flex-col items-center justify-center gap-3 px-1 sm:px-4">
       <div className="text-sm text-muted-foreground font-terminal">
         Start a conversation
       </div>
-      <div className="flex w-full items-center gap-1">
+      <div className="flex w-full min-w-0 items-center gap-1">
         <button
           type="button"
           onClick={() => scroll("left")}
@@ -1399,7 +1400,7 @@ function SuggestedPrompts({ onSelect }: { onSelect: (text: string) => void }) {
         </button>
         <div
           ref={scrollRef}
-          className="flex-1 flex gap-2 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide py-1"
+          className="flex min-w-0 flex-1 gap-2 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide py-1"
           style={{ scrollbarWidth: "none" }}
         >
           {prompts.map((p) => (
@@ -1407,7 +1408,7 @@ function SuggestedPrompts({ onSelect }: { onSelect: (text: string) => void }) {
               key={p.text}
               type="button"
               onClick={() => onSelect(p.text)}
-              className="snap-start shrink-0 w-52 rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-left transition-all hover:border-primary hover:bg-primary/10 hover:text-primary hover:shadow-sm active:scale-[0.98]"
+              className="snap-start w-[min(13rem,calc(100vw-7rem))] shrink-0 rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-left transition-all hover:border-primary hover:bg-primary/10 hover:text-primary hover:shadow-sm active:scale-[0.98]"
             >
               <span className="block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
                 {p.label}
@@ -1480,7 +1481,7 @@ function ReasoningLevelSelector({
     <div ref={ref} className="relative">
       <button
         type="button"
-        className={`mb-1 hidden sm:inline-flex shrink-0 items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50 ${level === "off" ? "" : "border-primary/50 text-primary"}`}
+        className={`hidden h-9 shrink-0 items-center gap-1 rounded-md border border-border px-2 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50 sm:inline-flex ${level === "off" ? "" : "border-primary/50 text-primary"}`}
         disabled={disabled}
         title={`Reasoning: ${current.label}`}
         onClick={() => setOpen((o) => !o)}
@@ -1723,8 +1724,13 @@ function AssistantThread({
   }, [isRunning]);
 
   const UserMessageComponent = useCallback(
-    () => <UserMessage components={components} />,
-    [components],
+    () => (
+      <UserMessage
+        components={components}
+        profileImage={uiSettings.userProfileImage}
+      />
+    ),
+    [components, uiSettings.userProfileImage],
   );
   const AssistantMessageComponent = useCallback(
     () => (
@@ -1746,13 +1752,15 @@ function AssistantThread({
     >
       <AssistantRuntimeProvider runtime={runtime}>
         <ThreadPrimitive.Root className="flex h-full min-h-0 flex-col bg-background text-foreground">
-          <ThreadPrimitive.Viewport className="min-h-0 flex-1 overflow-y-auto px-3 py-4 sm:px-4 sm:py-6">
-            <AuiIf condition={(state) => state.thread.isEmpty}>
-              <SuggestedPrompts onSelect={sendText} />
-            </AuiIf>
-            <ThreadPrimitive.Messages components={threadComponents} />
-            <ThreadPrimitive.ViewportFooter className="sticky bottom-0 bg-background/95 pt-3 backdrop-blur">
-              <ComposerPrimitive.Root className="composer-root mx-auto flex w-full max-w-3xl flex-col gap-2 rounded-lg border border-border bg-background p-2 shadow-sm">
+          <ThreadPrimitive.Viewport className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 py-4 sm:px-4 sm:py-6">
+            <div className="flex flex-1 flex-col">
+              <AuiIf condition={(state) => state.thread.isEmpty}>
+                <SuggestedPrompts onSelect={sendText} />
+              </AuiIf>
+              <ThreadPrimitive.Messages components={threadComponents} />
+            </div>
+            <ThreadPrimitive.ViewportFooter className="sticky bottom-0 min-w-0 bg-background/95 pt-3 backdrop-blur">
+              <ComposerPrimitive.Root className="composer-root mx-auto flex w-[calc(100%-6px)] max-w-3xl flex-col gap-2 rounded-lg border border-border bg-background p-2 shadow-sm sm:w-full">
                 <WebGroundingHint
                   hasUrl={composerHasUrl}
                   hasGoogleKey={hasGoogleKey}
@@ -1764,10 +1772,10 @@ function AssistantThread({
                     <ComposerAttachmentChip attachment={attachment} />
                   )}
                 </ComposerPrimitive.Attachments>
-                <div className="flex w-full items-end gap-1.5 sm:gap-2">
+                <div className="flex w-full min-w-0 items-center gap-1.5 sm:gap-2">
                   <button
                     type="button"
-                    className="mb-1 inline-flex max-w-20 shrink-0 truncate rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50 sm:max-w-36"
+                    className="inline-flex h-9 max-w-20 shrink-0 items-center overflow-hidden truncate whitespace-nowrap rounded-md border border-border px-2 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50 sm:max-w-36"
                     disabled={!callbacks.onModelSelect}
                     onClick={() => callbacks.onModelSelect?.()}
                     title={modelLabel}
@@ -1786,25 +1794,25 @@ function AssistantThread({
                   />
                   <ComposerPrimitive.AddAttachment
                     multiple
-                    className="mb-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
                     title="Attach files or images"
                     aria-label="Attach files or images"
                   >
                     <Paperclip size={16} />
                   </ComposerPrimitive.AddAttachment>
                   <ComposerPrimitive.Input
-                    className="max-h-40 min-h-11 flex-1 resize-none bg-transparent px-2 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                    className="max-h-40 min-h-9 min-w-0 flex-1 resize-none self-center bg-transparent px-1 py-2 text-sm leading-5 text-foreground outline-none placeholder:text-muted-foreground sm:px-2"
                     placeholder="Message Keating"
                     rows={1}
                     onChange={(event) => setComposerHasUrl(URL_IN_TEXT_PATTERN.test(event.currentTarget.value))}
                   />
                   {/* Only show Send OR Cancel — never both */}
                   {isRunning ? (
-                    <ComposerPrimitive.Cancel className="inline-flex h-9 w-9 items-center justify-center rounded-md border-2 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground animate-pulse">
+                    <ComposerPrimitive.Cancel className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border-2 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground animate-pulse">
                       <Square size={16} />
                     </ComposerPrimitive.Cancel>
                   ) : (
-                    <ComposerPrimitive.Send className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-primary text-primary-foreground disabled:opacity-50">
+                    <ComposerPrimitive.Send className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground disabled:opacity-50">
                       <Send size={16} />
                     </ComposerPrimitive.Send>
                   )}
@@ -1820,13 +1828,23 @@ function AssistantThread({
 
 function UserMessage({
   components,
+  profileImage,
 }: {
   components: ReturnType<typeof messagePartComponents>;
+  profileImage?: string | null;
 }) {
   return (
-    <MessagePrimitive.Root className="mx-auto mb-4 flex max-w-3xl justify-end">
+    <MessagePrimitive.Root className="mx-auto mb-4 flex w-full max-w-3xl justify-end">
       <div className="flex max-w-[88%] gap-3 rounded-lg border-2 border-primary bg-primary px-4 py-3 text-sm text-primary-foreground sm:max-w-[82%]">
-        <User className="mt-0.5 h-4 w-4 shrink-0" />
+        {profileImage ? (
+          <img
+            src={profileImage}
+            alt="You"
+            className="mt-0.5 h-5 w-5 shrink-0 rounded object-cover"
+          />
+        ) : (
+          <User className="mt-0.5 h-4 w-4 shrink-0" />
+        )}
         <div className="min-w-0 whitespace-pre-wrap leading-6">
           <MessagePrimitive.Content components={components} />
         </div>
@@ -1950,9 +1968,13 @@ function AssistantMessage({
 
   return (
     <>
-      <MessagePrimitive.Root className="group mx-auto mb-4 flex max-w-3xl justify-start">
-        <div className="flex max-w-[94%] gap-3 rounded-lg border-2 border-border bg-muted/30 px-4 py-3 text-sm text-foreground shadow-sm sm:max-w-[90%]">
-          <Bot className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+      <MessagePrimitive.Root className="group mx-auto mb-4 flex w-full max-w-3xl justify-start">
+        <div className="flex w-full max-w-[94%] gap-3 rounded-lg border-2 border-border bg-muted/30 px-4 py-3 text-sm text-foreground shadow-sm sm:max-w-[90%]">
+          <img
+            src="/logo.png"
+            alt="Keating"
+            className="mt-0.5 h-5 w-5 shrink-0 rounded object-contain"
+          />
           <div className="min-w-0 leading-6 flex-1">
             <MessagePrimitive.Content components={components} />
             {authError && (

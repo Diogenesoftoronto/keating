@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check, CopyPlus, Loader2, Pencil, Search, Sparkles, Trash2, X } from "lucide-react";
+import { Check, CopyPlus, GitBranch, Loader2, Pencil, Search, Sparkles, Trash2, X } from "lucide-react";
 import { sessions } from "../hooks/keating-storage";
 import type { SessionMetadata } from "../types/session";
+import { buildSessionTree, flattenSessionTree } from "./session-tree";
 
 export interface SessionManagerDialogProps {
 	open: boolean;
@@ -49,7 +50,7 @@ export function SessionManagerDialog({
 
 	const sortedItems = useMemo(() => {
 		const normalizedQuery = query.trim().toLowerCase();
-		return items
+		const filtered = items
 			.filter((session) => {
 				if (!normalizedQuery) return true;
 				return [
@@ -58,8 +59,13 @@ export function SessionManagerDialog({
 					new Date(session.lastModified).toLocaleString(),
 					String(session.messageCount),
 				].some((value) => value.toLowerCase().includes(normalizedQuery));
-			})
-			.sort((left, right) => right.lastModified.localeCompare(left.lastModified));
+			});
+		if (normalizedQuery) {
+			return filtered
+				.map((session) => ({ session, children: [], depth: 0 }))
+				.sort((left, right) => right.session.lastModified.localeCompare(left.session.lastModified));
+		}
+		return flattenSessionTree(buildSessionTree(filtered));
 	}, [items, query]);
 
 	useEffect(() => {
@@ -206,12 +212,16 @@ export function SessionManagerDialog({
 						</div>
 					) : (
 						<ul className="space-y-2" aria-label="Saved sessions">
-							{sortedItems.map((session) => {
+							{sortedItems.map(({ session, depth, children }) => {
 								const isBusy = busySessionId === session.id;
 								const isRenaming = editingSessionId === session.id;
 								const isDeleting = pendingDeleteSessionId === session.id;
 								return (
-									<li key={session.id} className="rounded-lg border border-border bg-background p-3">
+									<li
+										key={session.id}
+										className="rounded-lg border border-border bg-background p-3"
+										style={{ marginLeft: `${Math.min(depth, 6) * 1.25}rem` }}
+									>
 										<div className="flex flex-wrap items-start justify-between gap-2 sm:gap-3">
 											<button
 												className="min-w-0 flex-1 text-left"
@@ -221,9 +231,19 @@ export function SessionManagerDialog({
 													onClose();
 												}}
 											>
-												<h3 className="truncate text-sm font-medium text-foreground">{session.title}</h3>
+												<h3 className="flex min-w-0 items-center gap-2 text-sm font-medium text-foreground">
+													{session.parentSessionId ? (
+														<GitBranch size={13} className="shrink-0 text-primary" />
+													) : null}
+													<span className="truncate">{session.title}</span>
+													{children.length > 0 ? (
+														<span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+															{children.length}
+														</span>
+													) : null}
+												</h3>
 												<p className="mt-1 text-xs text-muted-foreground">
-													{formatDate(session.lastModified)} | {session.messageCount} messages | {formatUsage(session.usage)}
+													{session.parentSessionId ? "Fork | " : ""}{formatDate(session.lastModified)} | {session.messageCount} messages | {formatUsage(session.usage)}
 												</p>
 											</button>
 											<div className="flex shrink-0 gap-1 ml-auto">
