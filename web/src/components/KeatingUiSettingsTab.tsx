@@ -10,6 +10,15 @@ const REASONING_LEVELS: { value: ReasoningLevel; label: string; description: str
 	{ value: "xhigh", label: "Maximum", description: "Most thorough reasoning (select models only)" },
 ];
 
+function readImageAsDataUrl(file: File): Promise<string> {
+	return new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onload = () => resolve(String(reader.result ?? ""));
+		reader.onerror = () => reject(reader.error ?? new Error(`Could not read ${file.name}`));
+		reader.readAsDataURL(file);
+	});
+}
+
 export function KeatingUiSettingsTab() {
 	const [settings, setSettings] = useState(() => loadKeatingUiSettings());
 
@@ -19,6 +28,13 @@ export function KeatingUiSettingsTab() {
 		saveKeatingUiSettings(next);
 	}, []);
 
+	const updateProfileImage = useCallback(async (file: File | undefined) => {
+		if (!file) return;
+		if (!file.type.startsWith("image/")) return;
+		const image = await readImageAsDataUrl(file);
+		update({ userProfileImage: image });
+	}, [update]);
+
 	return (
 		<div className="flex flex-col gap-6">
 			<div>
@@ -26,6 +42,50 @@ export function KeatingUiSettingsTab() {
 				<p className="text-sm text-muted-foreground">
 					Control how much internal agent activity appears in the conversation.
 				</p>
+			</div>
+
+			<div className="flex flex-col gap-4 rounded-lg border border-border p-4 sm:flex-row sm:items-center sm:justify-between">
+				<div className="flex min-w-0 items-center gap-3">
+					<div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-muted text-xs text-muted-foreground">
+						{settings.userProfileImage ? (
+							<img
+								src={settings.userProfileImage}
+								alt="Your profile"
+								className="h-full w-full object-cover"
+							/>
+						) : (
+							<span>YOU</span>
+						)}
+					</div>
+					<div className="min-w-0">
+						<div className="text-sm font-medium text-foreground">Your profile image</div>
+						<p className="mt-1 text-sm text-muted-foreground">
+							Shown beside your chat messages on this device.
+						</p>
+					</div>
+				</div>
+				<div className="flex shrink-0 flex-wrap items-center gap-2">
+					<label className="inline-flex h-9 cursor-pointer items-center justify-center rounded-md border border-border px-3 text-xs font-medium text-foreground hover:bg-accent hover:text-accent-foreground">
+						Upload
+						<input
+							type="file"
+							accept="image/*"
+							className="sr-only"
+							onChange={(event) => {
+								void updateProfileImage(event.target.files?.[0]);
+								event.currentTarget.value = "";
+							}}
+						/>
+					</label>
+					<button
+						type="button"
+						className="inline-flex h-9 items-center justify-center rounded-md border border-border px-3 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+						disabled={!settings.userProfileImage}
+						onClick={() => update({ userProfileImage: null })}
+					>
+						Remove
+					</button>
+				</div>
 			</div>
 
 			<div className="flex items-start justify-between gap-4 rounded-lg border border-border p-4">
@@ -80,6 +140,43 @@ export function KeatingUiSettingsTab() {
 					/>
 					<div className="h-5 w-9 rounded-full bg-muted-foreground/30 peer-checked:bg-primary transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-4" />
 				</label>
+			</div>
+
+			<div>
+				<h3 className="text-sm font-semibold text-foreground mb-2">Animation Renderer</h3>
+				<p className="text-sm text-muted-foreground mb-3">
+					Choose the source format Keating uses when creating browser animation artifacts.
+				</p>
+				<div className="flex flex-col gap-2">
+					<label className="flex items-center gap-3 rounded-md border border-border px-3 py-2 cursor-pointer hover:bg-accent/50 transition-colors">
+						<input
+							type="radio"
+							name="animation-renderer"
+							value="manim"
+							checked={settings.animationRenderer === "manim"}
+							onChange={() => update({ animationRenderer: "manim" })}
+							className="shrink-0"
+						/>
+						<div className="min-w-0">
+							<div className="text-sm font-medium text-foreground">Manim-web</div>
+							<div className="text-xs text-muted-foreground">Default browser animation source.</div>
+						</div>
+					</label>
+					<label className="flex items-center gap-3 rounded-md border border-border px-3 py-2 cursor-pointer hover:bg-accent/50 transition-colors">
+						<input
+							type="radio"
+							name="animation-renderer"
+							value="hyperframes"
+							checked={settings.animationRenderer === "hyperframes"}
+							onChange={() => update({ animationRenderer: "hyperframes" })}
+							className="shrink-0"
+						/>
+						<div className="min-w-0">
+							<div className="text-sm font-medium text-foreground">Hyperframes</div>
+							<div className="text-xs text-muted-foreground">HTML composition with timed clips and a GSAP timeline.</div>
+						</div>
+					</label>
+				</div>
 			</div>
 
 			<div className="flex items-start justify-between gap-4 rounded-lg border border-border p-4">

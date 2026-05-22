@@ -3,12 +3,10 @@ import {
   BarChart3,
   History,
   LibraryBig,
-  Loader2,
   Menu,
   Plus,
   Settings,
   Share2,
-  Sparkles,
   Volume2,
   VolumeX,
   X,
@@ -42,28 +40,12 @@ function ChatContent() {
     shareSession,
     chatPanelRef,
     dialogs,
+    sessionSidebar,
     speechEnabled,
     persistentStorageStatus,
     toggleSpeech,
-    generateCurrentSessionTitle,
+    forkingSessionId,
   } = useKeatingAgent();
-  const [titleState, setTitleState] = useState<"idle" | "loading" | "renamed" | "error">("idle");
-  const [titleMessage, setTitleMessage] = useState<string>("");
-  const handleGenerateTitle = async () => {
-    if (titleState === "loading") return;
-    setTitleState("loading");
-    setTitleMessage("");
-    try {
-      const next = await generateCurrentSessionTitle();
-      setTitleMessage(`Renamed to "${next}"`);
-      setTitleState("renamed");
-      window.setTimeout(() => setTitleState("idle"), 2400);
-    } catch (err) {
-      setTitleMessage(err instanceof Error ? err.message : "Could not generate a title.");
-      setTitleState("error");
-      window.setTimeout(() => setTitleState("idle"), 2800);
-    }
-  };
   const [introDismissed, setIntroDismissed] = useState(
     () => sessionStorage.getItem("keating_chat_intro") === "dismissed",
   );
@@ -110,6 +92,12 @@ function ChatContent() {
   };
 
   useEffect(() => subscribeKeatingUiSettings(setUiSettings), []);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.body.classList.add("chat-shell-active");
+    return () => document.body.classList.remove("chat-shell-active");
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -166,11 +154,11 @@ function ChatContent() {
   };
 
   const actionButtonClass =
-    "chat-action-button inline-flex shrink-0 items-center justify-center roundeinline d-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50";
+    "chat-action-button inline-flex shrink-0 items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50";
   const showPersistenceBanner = persistentStorageStatus === "declined";
 
   return (
-    <div className="chat-page-shell w-full flex flex-col bg-background text-foreground overflow-hidden">
+    <div className={`chat-page-shell w-full flex flex-col bg-background text-foreground overflow-hidden ${forkingSessionId ? "session-forking" : ""}`}>
       {/* Header */}
       <div className="chat-header flex items-center gap-2 border-b border-border shrink-0 px-2 sm:px-4 py-2 h-14 relative">
         <Link
@@ -189,10 +177,10 @@ function ChatContent() {
         </Link>
 
         {/* Actions */}
-        <div className="chat-actions no-scrollbar ml-auto flex min-w-0 flex-1 items-center justify-end gap-1 overflow-x-auto">
+        <div className="chat-actions ml-auto flex min-w-0 flex-1 items-center justify-end gap-1 overflow-hidden">
           <ThemeToggle />
           <button
-            className={`${actionButtonClass} hidden sm:inline-flex`}
+            className={actionButtonClass}
             title="New session"
             aria-label="New session"
             disabled={isPending}
@@ -210,24 +198,7 @@ function ChatContent() {
             <History size={16} />
           </button>
           <button
-            className={`${actionButtonClass} hidden sm:inline-flex ${titleState === "renamed" ? "text-primary" : ""} ${titleState === "error" ? "text-destructive" : ""}`}
-            title={
-              titleState === "loading"
-                ? "Generating title…"
-                : titleState === "renamed"
-                  ? titleMessage
-                  : titleState === "error"
-                    ? titleMessage
-                    : "Generate title with model"
-            }
-            aria-label="Generate title with model"
-            disabled={isPending || titleState === "loading"}
-            onClick={handleGenerateTitle}
-          >
-            {titleState === "loading" ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-          </button>
-          <button
-            className={`${actionButtonClass} hidden sm:inline-flex`}
+            className={actionButtonClass}
             title="Settings"
             aria-label="Settings"
             onClick={openSettings}
@@ -276,7 +247,7 @@ function ChatContent() {
           <button
             className={`${actionButtonClass} sm:hidden`}
             title="Menu"
-            aria-label="Menu"
+            aria-label="More menu"
             aria-expanded={mobileMenuOpen}
             onClick={() => setMobileMenuOpen((o) => !o)}
           >
@@ -313,17 +284,6 @@ function ChatContent() {
               >
                 <History size={14} />
                 Session history
-              </button>
-              <button
-                className={`flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors ${titleState === "renamed" ? "text-primary" : ""} ${titleState === "error" ? "text-destructive" : ""}`}
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  void handleGenerateTitle();
-                }}
-                disabled={isPending || titleState === "loading"}
-              >
-                {titleState === "loading" ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-                {titleState === "loading" ? "Generating title…" : "Generate title"}
               </button>
               <button
                 className={`flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors ${shareState === "copied" ? "text-primary" : ""} ${shareState === "error" ? "text-destructive" : ""}`}
@@ -430,6 +390,7 @@ function ChatContent() {
 
       {introDismissed ? (
         <div className="flex flex-1 min-h-0 overflow-hidden">
+          {sessionSidebar}
           <AssistantChatPanel
             ref={chatPanelRef}
             className="chat-page-panel flex-1 min-w-0"

@@ -32,7 +32,7 @@ import {
 } from "../core/speech.js";
 import { KEATING_ASCII_LOGO, KEATING_SUBTITLE_LINES } from "../core/terminal.js";
 
-const KEATING_VERSION = "0.3.10";
+const KEATING_VERSION = "0.3.11";
 const ANSI_RE = /\x1b\[[0-9;]*[a-zA-Z]/g;
 
 function visibleWidth(text: string): number {

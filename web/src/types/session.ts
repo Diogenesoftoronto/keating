@@ -19,6 +19,8 @@ export interface SessionUsage {
 export interface SessionMetadata {
 	id: string;
 	title: string;
+	parentSessionId?: string | null;
+	forkedAt?: string;
 	createdAt: string;
 	lastModified: string;
 	messageCount: number;
@@ -30,10 +32,11 @@ export interface SessionMetadata {
 export interface SessionData {
 	id: string;
 	title: string;
+	parentSessionId?: string | null;
+	forkedAt?: string;
 	model: Model<any>;
 	thinkingLevel: ThinkingLevel;
 	messages: AgentMessage[];
 	createdAt: string;
 	lastModified: string;
 }
-

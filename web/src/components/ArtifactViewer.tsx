@@ -40,7 +40,7 @@ interface Artifact {
 	data: unknown;
 }
 
-export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerProps) {
+export function ArtifactViewer({ storage, artifactId }: ArtifactViewerProps) {
 	const [artifacts, setArtifacts] = useState<Artifact[]>([]);
 	const [selected, setSelected] = useState<Artifact | null>(null);
 	const [loading, setLoading] = useState(true);
@@ -125,21 +125,14 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 		return (
 			<div className="artifact-detail text-foreground">
 				{/* Header */}
-				<div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-4 pb-2 border-b border-border">
-					<div className="min-w-0">
-						<button onClick={() => setSelected(null)} className="text-sm text-muted-foreground hover:underline">
-							← Back to list
-						</button>
-						<h2 className="text-lg font-semibold mt-1 text-foreground truncate">{selected.label}</h2>
-						<p className="text-xs text-muted-foreground">
-							{new Date(selected.createdAt).toLocaleString()}
-						</p>
-					</div>
-					{onClose && (
-						<button onClick={onClose} className="text-sm text-muted-foreground hover:underline sm:shrink-0">
-							Close
-						</button>
-					)}
+				<div className="mb-4 pb-2 border-b border-border">
+					<button onClick={() => setSelected(null)} className="text-sm text-muted-foreground hover:underline">
+						← Back to list
+					</button>
+					<h2 className="text-lg font-semibold mt-1 text-foreground truncate">{selected.label}</h2>
+					<p className="text-xs text-muted-foreground">
+						{new Date(selected.createdAt).toLocaleString()}
+					</p>
 				</div>
 
 				{/* Content */}
@@ -159,15 +152,6 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 
 	return (
 		<div className="artifact-list text-foreground">
-			<div className="flex items-center justify-between mb-4 pb-2 border-b border-border">
-				<h2 className="text-lg font-semibold text-foreground">📚 Keating Artifacts</h2>
-				{onClose && (
-					<button onClick={onClose} className="text-sm text-muted-foreground hover:underline">
-						Close
-					</button>
-				)}
-			</div>
-
 			{artifacts.length === 0 ? (
 				<p className="text-muted-foreground text-sm">No artifacts yet. Use /plan, /map, /animate, /bench, or /evolve to create some.</p>
 			) : (

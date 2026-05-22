@@ -181,6 +181,24 @@ button:not(:disabled) {
   scroll-snap-align: end;
 }
 
+@media (max-width: 768px) {
+  .chat-page-shell .chat-action-button,
+  .chat-page-shell .chat-actions > button {
+    width: 2.25rem;
+    height: 2.25rem;
+    min-width: 2.25rem;
+    min-height: 2.25rem;
+    padding: 0;
+    font-size: 0.875rem;
+  }
+
+  .chat-page-shell .chat-action-button svg,
+  .chat-page-shell .chat-actions > button svg {
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
 @media (max-width: 640px) {
   .chat-page-shell .chat-action-button,
   .chat-page-shell .chat-actions > button {
@@ -189,12 +207,6 @@ button:not(:disabled) {
     min-width: 2rem;
     min-height: 2rem;
     padding: 0;
-  }
-
-  .chat-page-shell .chat-action-button svg,
-  .chat-page-shell .chat-actions > button svg {
-    width: 1rem;
-    height: 1rem;
   }
 }
 
@@ -235,38 +247,36 @@ message-editor textarea::placeholder {
   border-radius: 9999px;
 }
 
-/* Mobile-friendly improvements for mono UI */
+/* Mobile-friendly improvements for mono UI.
+   Scoped to `body:not(.chat-shell-active)` so the dense chat UI manages its
+   own button sizes — global 44px touch targets blow up the chat header icons
+   and the composer send button. */
 @media (max-width: 768px) {
-  /* Larger touch targets for buttons */
-  button,
-  [role="button"],
-  .btn {
+  body:not(.chat-shell-active) button,
+  body:not(.chat-shell-active) [role="button"],
+  body:not(.chat-shell-active) .btn {
     min-height: 44px;
     min-width: 44px;
     padding: 0.75rem 1rem;
     font-size: 1rem;
   }
 
-  /* Larger input fields */
-  input,
-  textarea,
-  select {
+  body:not(.chat-shell-active) input,
+  body:not(.chat-shell-active) textarea,
+  body:not(.chat-shell-active) select {
     min-height: 44px;
     font-size: 16px; /* Prevents iOS zoom on focus */
     padding: 0.75rem;
   }
 
-  /* Increase spacing between interactive elements */
-  .gap-1 { gap: 0.5rem !important; }
-  .gap-2 { gap: 0.75rem !important; }
-  .gap-3 { gap: 1rem !important; }
+  body:not(.chat-shell-active) .gap-1 { gap: 0.5rem !important; }
+  body:not(.chat-shell-active) .gap-2 { gap: 0.75rem !important; }
+  body:not(.chat-shell-active) .gap-3 { gap: 1rem !important; }
 
-  /* Larger header text */
   header .text-lg {
     font-size: 1.125rem;
   }
 
-  /* Full-width buttons in modal/dialog contexts */
   dialog button,
   [role="dialog"] button {
     width: 100%;
@@ -283,33 +293,23 @@ message-editor textarea::placeholder {
     margin-bottom: 0 !important;
   }
 
-  /* Increase padding in chat input area */
-  .chat-input,
-  [class*="input"] {
-    padding: 1rem;
-  }
-
-  /* Larger icons in buttons */
-  button svg,
-  [role="button"] svg {
+  body:not(.chat-shell-active) button svg,
+  body:not(.chat-shell-active) [role="button"] svg {
     width: 1.5rem;
     height: 1.5rem;
   }
 
-  /* Improve spacing in settings panels */
   .settings-panel,
-  [class*="settings"] {
+  [class*="settings-panel"] {
     padding: 1.5rem;
   }
 
-  /* Make dropdowns more touch-friendly */
-  select,
-  [role="combobox"] {
+  body:not(.chat-shell-active) select,
+  body:not(.chat-shell-active) [role="combobox"] {
     min-height: 48px;
     padding: 0.75rem 2.5rem 0.75rem 1rem;
   }
 
-  /* Increase tap target for close buttons */
   .close-btn,
   [aria-label="close"],
   button[title="Close"] {
@@ -319,21 +319,17 @@ message-editor textarea::placeholder {
   }
 }
 
-/* Additional mobile optimizations for small screens */
 @media (max-width: 480px) {
-  /* Even larger touch targets on very small screens */
-  button,
-  [role="button"] {
+  body:not(.chat-shell-active) button,
+  body:not(.chat-shell-active) [role="button"] {
     min-height: 48px;
     padding: 0.875rem 1.25rem;
   }
 
-  /* Ensure text is readable */
   body {
     font-size: 16px;
   }
 
-  /* Stack buttons vertically */
   .button-group,
   [class*="button-group"] {
     flex-direction: column;
@@ -407,6 +403,40 @@ message-editor textarea::placeholder {
 
 .chat-page-shell .composer-root:focus-within {
   box-shadow: 2px 2px 0 var(--chat-ink);
+}
+
+.chat-page-shell.session-forking .chat-page-panel {
+  animation: session-fork-pulse 560ms ease-out;
+}
+
+.session-fork-arrive {
+  animation: session-fork-arrive 900ms ease-out;
+}
+
+@keyframes session-fork-pulse {
+  0% {
+    transform: translateX(0);
+    filter: none;
+  }
+  35% {
+    transform: translateX(8px);
+    filter: drop-shadow(-6px 0 0 color-mix(in srgb, var(--chat-accent) 35%, transparent));
+  }
+  100% {
+    transform: translateX(0);
+    filter: none;
+  }
+}
+
+@keyframes session-fork-arrive {
+  0% {
+    transform: translateX(-10px);
+    background: color-mix(in srgb, var(--chat-accent) 22%, transparent);
+  }
+  100% {
+    transform: translateX(0);
+    background: transparent;
+  }
 }
 
 .dark .chat-page-shell .composer-root {

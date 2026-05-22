@@ -17,6 +17,7 @@ import { KeatingUiSettingsTab } from "../components/KeatingUiSettingsTab";
 import { ProvidersModelsTab } from "../components/ProvidersModelsTab";
 import { ProxyTab } from "../components/ProxyTab";
 import { SpeechSettingsTab } from "../components/SpeechSettingsTab";
+import { SessionSidebar } from "../components/SessionSidebar";
 import { ModelSelectorDialog } from "../components/ModelSelector";
 import { getProviderApiKey } from "../lib/provider-models";
 import { localModel } from "../stores/local-model";
@@ -109,6 +110,9 @@ export interface UseKeatingAgentReturn {
   toggleSpeech: () => void;
   setThinkingLevel: (level: ThinkingLevel) => void;
   generateCurrentSessionTitle: () => Promise<string>;
+  sessionSidebar: React.ReactNode;
+  activeSessionId: string;
+  forkingSessionId: string | null;
 }
 
 export function useKeatingAgent(): UseKeatingAgentReturn {
@@ -120,7 +124,12 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const panelRef = useRef<ChatPanelHandle | null>(null);
   const sessionIdRef = useRef<string>(createSessionId());
   const sessionCreatedAtRef = useRef(new Date().toISOString());
+  const sessionParentIdRef = useRef<string | null>(null);
+  const sessionForkedAtRef = useRef<string | undefined>(undefined);
   const selectedModelRef = useRef<Model<Api>>(DEFAULT_MODEL);
+  const [activeSessionId, setActiveSessionId] = useState(() => sessionIdRef.current);
+  const [forkingSessionId, setForkingSessionId] = useState<string | null>(null);
+  const [forkedSessionId, setForkedSessionId] = useState<string | null>(null);
   const [speechSettings, setSpeechSettings] = useState<WebSpeechSettings>(() => loadWebSpeechSettings());
   const [persistentStorageStatus, setPersistentStorageStatus] = useState<PersistentStorageStatus>(() => getPersistentStorageStatus());
   const sessionsDialog = useDialogState();
@@ -166,6 +175,8 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     const metadata: SessionMetadata = {
       id: sessionId,
       title,
+      parentSessionId: sessionParentIdRef.current,
+      forkedAt: sessionForkedAtRef.current,
       createdAt,
       lastModified: now,
       messageCount: messages.length,
@@ -176,6 +187,8 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     const data: SessionData = {
       id: sessionId,
       title,
+      parentSessionId: sessionParentIdRef.current,
+      forkedAt: sessionForkedAtRef.current,
       model: agent.state.model,
       thinkingLevel: agent.state.thinkingLevel,
       messages,
@@ -184,6 +197,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     };
 
     await sessions.save(data, metadata);
+    window.dispatchEvent(new CustomEvent("keating:sessions-changed"));
   }, []);
 
   const createAgent = useCallback(async (panel: ChatPanelHandle, initialState?: Partial<AgentState>) => {
@@ -322,6 +336,9 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       await endLearnerSession();
       sessionIdRef.current = createSessionId();
       sessionCreatedAtRef.current = new Date().toISOString();
+      sessionParentIdRef.current = null;
+      sessionForkedAtRef.current = undefined;
+      setActiveSessionId(sessionIdRef.current);
       await createAgent(panel, { messages: [], model: selectedModelRef.current });
     });
   }, [createAgent, endLearnerSession, saveSessionSnapshot]);
@@ -352,6 +369,9 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
 
     sessionIdRef.current = session.id;
     sessionCreatedAtRef.current = session.createdAt;
+    sessionParentIdRef.current = session.parentSessionId ?? null;
+    sessionForkedAtRef.current = session.forkedAt;
+    setActiveSessionId(session.id);
     selectedModelRef.current = session.model;
     await createAgent(panel, {
       model: session.model,
@@ -372,6 +392,8 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     const metadata: SessionMetadata = {
       id,
       title,
+      parentSessionId: source.id,
+      forkedAt: now,
       createdAt: now,
       lastModified: now,
       messageCount: messages.length,
@@ -383,14 +405,27 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       ...source,
       id,
       title,
+      parentSessionId: source.id,
+      forkedAt: now,
       messages,
       createdAt: now,
       lastModified: now,
     };
 
-    await saveSessionSnapshot();
-    await sessions.save(data, metadata);
-    if (panel) await loadSession(data);
+    setForkingSessionId(sessionId);
+    setForkedSessionId(null);
+    window.dispatchEvent(new CustomEvent("keating:session-fork-start", { detail: { sourceId: sessionId } }));
+    try {
+      await saveSessionSnapshot();
+      await sessions.save(data, metadata);
+      window.dispatchEvent(new CustomEvent("keating:sessions-changed", { detail: { sessionId: id, parentSessionId: source.id } }));
+      if (panel) await loadSession(data);
+      setForkedSessionId(id);
+      window.dispatchEvent(new CustomEvent("keating:session-fork-end", { detail: { sourceId: sessionId, sessionId: id } }));
+      window.setTimeout(() => setForkedSessionId((current) => current === id ? null : current), 1800);
+    } finally {
+      setForkingSessionId(null);
+    }
   }, [loadSession, saveSessionSnapshot]);
 
   const suggestSessionTitle = useCallback(async (sessionId: string) => {
@@ -440,6 +475,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     const sessionId = sessionIdRef.current;
     const nextTitle = await suggestSessionTitle(sessionId);
     await sessions.updateTitle(sessionId, nextTitle);
+    window.dispatchEvent(new CustomEvent("keating:sessions-changed"));
     return nextTitle;
   }, [saveSessionSnapshot, suggestSessionTitle]);
 
@@ -453,12 +489,34 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       onClose={sessionsDialog.onClose}
       onFork={forkSession}
       onSuggestTitle={suggestSessionTitle}
+      onDeleted={() => {
+        window.dispatchEvent(new CustomEvent("keating:sessions-changed"));
+      }}
+      onRenamed={() => {
+        window.dispatchEvent(new CustomEvent("keating:sessions-changed"));
+      }}
       onLoad={(sessionId: string) => {
         startTransition(async () => {
           const session = await sessions.loadSession(sessionId);
           if (session) await loadSession(session as SessionData);
         });
       }}
+    />
+  );
+
+  const sessionSidebarElement = (
+    <SessionSidebar
+      activeSessionId={activeSessionId}
+      forkingSessionId={forkingSessionId}
+      forkedSessionId={forkedSessionId}
+      onLoad={(sessionId: string) => {
+        startTransition(async () => {
+          const session = await sessions.loadSession(sessionId);
+          if (session) await loadSession(session as SessionData);
+        });
+      }}
+      onFork={forkSession}
+      onOpenSessions={sessionsDialog.onOpen}
     />
   );
 
@@ -600,5 +658,5 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     </>
   );
 
-  return { title, isPending, openSettings, openSessions, newSession, shareSession, chatPanelRef, dialogs: allDialogs, speechEnabled: speechSettings.enabled, persistentStorageStatus, toggleSpeech, setThinkingLevel, generateCurrentSessionTitle };
+  return { title, isPending, openSettings, openSessions, newSession, shareSession, chatPanelRef, dialogs: allDialogs, speechEnabled: speechSettings.enabled, persistentStorageStatus, toggleSpeech, setThinkingLevel, generateCurrentSessionTitle, sessionSidebar: sessionSidebarElement, activeSessionId, forkingSessionId };
 }

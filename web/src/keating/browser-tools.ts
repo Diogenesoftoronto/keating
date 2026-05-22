@@ -6,6 +6,7 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { KeatingStorage, DEFAULT_BROWSER_POLICY } from "./storage";
 import { createSpeechTool, type WebSpeechSettings } from "./speech";
+import { loadKeatingUiSettings } from "./ui-settings";
 import {
 	buildLessonPlan,
 	lessonPlanToMarkdown,
@@ -155,6 +156,96 @@ function createTool(
 	} as unknown as AgentTool;
 }
 
+type ResolvedTopic = ReturnType<typeof resolveTopic>;
+
+function escapeHtml(value: string): string {
+	return value
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#39;");
+}
+
+function buildManimScene(resolved: ResolvedTopic): string {
+	return `// Scene: ${resolved.title}
+// Manim-web compatible scene definition
+
+class ${resolved.slug.replace(/-/g, "_").replace(/^(.)/, (c) => c.toUpperCase())}Scene extends Scene {
+  construct() {
+    // Scene 1: Introduction
+    this.play(FadeIn(title("${resolved.title}")));
+    
+    // Scene 2: Intuition
+    this.play(Create(intuitionDiagram));
+    
+    // Scene 3: Formal
+    this.play(Write(formalDefinition));
+    
+    // Scene 4: Misconceptions
+    this.play(Indicate(commonMistake), Transform(commonMistake, correctVersion));
+    
+    // Scene 5: Examples
+    this.play(Create(exampleVisual));
+    
+    // Scene 6: Transfer
+    this.play(FadeOut(title("${resolved.title}")));
+  }
+}`;
+}
+
+function buildHyperframesComposition(resolved: ResolvedTopic): string {
+	const compositionId = `${resolved.slug}-lesson`;
+	const clips = [
+		{ start: 0, duration: 2, label: "Intro", title: resolved.title, body: resolved.summary },
+		{ start: 2, duration: 6, label: "Intuition", title: "Start concrete", body: resolved.intuition[0] ?? "Animate the core idea before naming it." },
+		{ start: 8, duration: 7, label: "Formal", title: "Name the structure", body: resolved.formalCore[0] ?? "Reveal the definition one relationship at a time." },
+		{ start: 15, duration: 5, label: "Repair", title: "Fix the trap", body: resolved.misconceptions[0] ?? "Contrast a common mistake with the corrected model." },
+		{ start: 20, duration: 8, label: "Example", title: "Work it through", body: resolved.examples[0] ?? "Step through a representative example." },
+		{ start: 28, duration: 7, label: "Transfer", title: "Carry it elsewhere", body: `Bridge to ${resolved.interdisciplinaryHooks.slice(0, 2).join(", ") || "a neighboring domain"}.` },
+	];
+	const encodedClips = JSON.stringify(clips.map((clip) => ({ selector: `#clip-${clip.start}`, start: clip.start })));
+
+	return `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    html, body { margin: 0; width: 100%; height: 100%; background: #0a0a0a; color: #f4f1e8; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    #root { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: linear-gradient(135deg, #0b0b0b 0%, #161616 55%, #211706 100%); }
+    .clip { position: absolute; inset: 96px; display: grid; align-content: center; gap: 28px; opacity: 0; }
+    .label { color: #f59e0b; font-size: 34px; letter-spacing: .16em; text-transform: uppercase; }
+    h1, h2 { margin: 0; max-width: 1380px; font-size: 112px; line-height: 1; letter-spacing: 0; }
+    p { margin: 0; max-width: 1220px; color: #d6d3ca; font-size: 48px; line-height: 1.24; }
+    .rule { width: 420px; height: 8px; background: #f59e0b; }
+  </style>
+</head>
+<body>
+  <div id="root" data-composition-id="${escapeHtml(compositionId)}" data-start="0" data-width="1920" data-height="1080">
+${clips.map((clip, index) => `    <section id="clip-${clip.start}" class="clip" data-start="${clip.start}" data-duration="${clip.duration}" data-track-index="${index}">
+      <div class="label">${escapeHtml(clip.label)}</div>
+      <${index === 0 ? "h1" : "h2"}>${escapeHtml(clip.title)}</${index === 0 ? "h1" : "h2"}>
+      <div class="rule"></div>
+      <p>${escapeHtml(clip.body)}</p>
+    </section>`).join("\n")}
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const clips = ${encodedClips};
+    for (const clip of clips) {
+      tl.to(clip.selector, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" }, clip.start);
+      tl.to(clip.selector, { opacity: 0, y: -28, duration: 0.35, ease: "power2.in" }, clip.start + 1.65);
+    }
+    window.__timelines = window.__timelines || {};
+    window.__timelines[${JSON.stringify(compositionId)}] = tl;
+    tl.play(0);
+  </script>
+</body>
+</html>`;
+}
+
 export interface KeatingToolsOptions {
 	speech?: {
 		settings: WebSpeechSettings;
@@ -271,36 +362,18 @@ export async function createKeatingTools(
 - **Transition**: Fade out with summary
 `;
 
-				const scene = `// Scene: ${resolved.title}
-// Manim-web compatible scene definition
-
-class ${resolved.slug.replace(/-/g, "_").replace(/^(.)/, (c) => c.toUpperCase())}Scene extends Scene {
-  construct() {
-    // Scene 1: Introduction
-    this.play(FadeIn(title("${resolved.title}")));
-    
-    // Scene 2: Intuition
-    this.play(Create(intuitionDiagram));
-    
-    // Scene 3: Formal
-    this.play(Write(formalDefinition));
-    
-    // Scene 4: Misconceptions
-    this.play(Indicate(commonMistake), Transform(commonMistake, correctVersion));
-    
-    // Scene 5: Examples
-    this.play(Create(exampleVisual));
-    
-    // Scene 6: Transfer
-    this.play(FadeOut(title("${resolved.title}")));
-  }
-}`;
+				const renderer = loadKeatingUiSettings().animationRenderer;
+				const scene = renderer === "hyperframes" ? buildHyperframesComposition(resolved) : buildManimScene(resolved);
 
 				const manifest = JSON.stringify(
 					{
 						topic: resolved.title,
 						slug: resolved.slug,
 						domain: resolved.domain,
+						renderer,
+						compositionId: renderer === "hyperframes" ? `${resolved.slug}-lesson` : undefined,
+						width: renderer === "hyperframes" ? 1920 : undefined,
+						height: renderer === "hyperframes" ? 1080 : undefined,
 						scenes: ["intro", "intuition", "formal", "misconceptions", "examples", "transfer"],
 						duration: 35,
 						generatedAt: new Date().toISOString(),
@@ -309,7 +382,7 @@ class ${resolved.slug.replace(/-/g, "_").replace(/^(.)/, (c) => c.toUpperCase())
 					2
 				);
 
-				const saved = await storage.saveAnimation(topic, storyboard, scene, manifest);
+				const saved = await storage.saveAnimation(topic, storyboard, scene, manifest, renderer);
 
 				return `[artifact://animation/${saved.id}]\n\n${storyboard}\n\n<keating-scene markdown=${JSON.stringify(JSON.stringify(storyboard))} />`;
 			}
