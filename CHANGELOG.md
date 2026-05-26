@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.12] - 2026-05-26
+
+### Added
+- Added portable web session sharing with server-backed short links, compressed snapshot links, and local-only short links.
+- Added Nitro share storage endpoints for publishing and loading shared chat sessions.
+- Added UI settings for share-link mode and app-wide font family selection.
+- Added an OpenCode Entire plugin hook file for session and turn lifecycle tracking.
+
+### Changed
+- Shared sessions now preserve model and thinking-level metadata when copied or forked.
+- Shared-session loading now falls back between embedded URL snapshots, local cache, and server storage.
+
 ## [0.3.11] - 2026-05-22
 
 ### Added
@@ -245,7 +257,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.9...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.12...HEAD
+[0.3.12]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.11...v0.3.12
+[0.3.11]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.10...v0.3.11
+[0.3.10]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.9...v0.3.10
 [0.3.9]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.8...v0.3.9
 [0.3.8]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.7...v0.3.8
 [0.3.7]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.6...v0.3.7
