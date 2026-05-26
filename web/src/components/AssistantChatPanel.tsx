@@ -63,6 +63,7 @@ import {
   subscribeKeatingUiSettings,
 } from "../keating/ui-settings";
 import { getProviderApiKey } from "../lib/provider-models";
+import { tutorialApiKeyHref } from "../lib/tutorial-links";
 import { QuizRenderer } from "./QuizRenderer";
 import { SceneRenderer } from "./SceneRenderer";
 import type { Quiz } from "../keating/core";
@@ -2029,6 +2030,14 @@ function AssistantMessage({
                       )}
                       Re-enter API key
                     </button>
+                    <a
+                      href={tutorialApiKeyHref(authError.provider)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="ml-2 inline-flex items-center text-xs text-primary underline underline-offset-2"
+                    >
+                      Need a key?
+                    </a>
                   </div>
                 </div>
               </div>

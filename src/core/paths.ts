@@ -101,6 +101,10 @@ export function workbooksDir(cwd: string): string {
   return join(outputsDir(cwd), "workbooks");
 }
 
+export function exportsDir(cwd: string): string {
+  return join(outputsDir(cwd), "exports");
+}
+
 export async function ensureKeatingDirs(cwd: string): Promise<void> {
   await Promise.all([
     mkdir(stateDir(cwd), { recursive: true }),
@@ -121,6 +125,7 @@ export async function ensureKeatingDirs(cwd: string): Promise<void> {
     mkdir(projectsDir(cwd), { recursive: true }),
     mkdir(masteryDir(cwd), { recursive: true }),
     mkdir(workbooksDir(cwd), { recursive: true }),
+    mkdir(exportsDir(cwd), { recursive: true }),
     mkdir(configDir(cwd), { recursive: true })
   ]);
 }

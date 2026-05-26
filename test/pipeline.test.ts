@@ -11,6 +11,7 @@ import {
   ensureProjectScaffold,
   evolvePolicyArtifact,
   evolvePromptArtifact,
+  exportKeatingData,
   listArtifacts,
   mapTopicArtifact,
   planTopicArtifact
@@ -40,6 +41,13 @@ Workflow:
   const bench = await benchPolicyArtifact(workdir, "derivative");
   const evolution = await evolvePolicyArtifact(workdir, "derivative");
   const promptEvolution = await evolvePromptArtifact(workdir, "learn");
+  const fineTuneExport = await exportKeatingData(workdir, {
+    mode: "finetune",
+    source: "artifacts",
+    format: "chatml",
+    redact: true,
+    minAssistantChars: 80,
+  });
 
   await access(plan.planPath);
   await access(map.mmdPath);
@@ -54,6 +62,7 @@ Workflow:
   await access(evolution.policyPath);
   await access(promptEvolution.reportPath);
   await access(promptEvolution.evolvedPromptPath);
+  await access(fineTuneExport.manifestPath);
   await access(configPath(workdir));
 
   const summary = await currentPolicySummary(workdir);
@@ -71,4 +80,5 @@ Workflow:
   expect(promptReport.includes("# Prompt Evolution Report: learn")).toBe(true);
   expect(artifacts.some((artifact) => artifact.path.endsWith("animations/derivative/player.html"))).toBe(true);
   expect(artifacts.some((artifact) => artifact.path.endsWith("prompt-evolution/learn.evolved.md"))).toBe(true);
+  expect(artifacts.some((artifact) => artifact.path.endsWith("manifest.json"))).toBe(true);
 }, { timeout: 60000 });

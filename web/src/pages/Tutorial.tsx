@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Nav } from "../components/Nav";
 import { SimpleFooter } from "../components/Footer";
 import { useSeo } from "../hooks/useSeo";
 
-type TutorialTab = "browser" | "ollama" | "llamacpp" | "litellm" | "cloud";
+type TutorialTab = "browser" | "ollama" | "llamacpp" | "litellm" | "cloud" | "advanced";
 
 const TABS: { id: TutorialTab; label: string }[] = [
   { id: "browser", label: "[BROWSER]" },
@@ -11,7 +11,18 @@ const TABS: { id: TutorialTab; label: string }[] = [
   { id: "llamacpp", label: "[LLAMA.CPP]" },
   { id: "litellm", label: "[LITELLM]" },
   { id: "cloud", label: "[CLOUD]" },
+  { id: "advanced", label: "[ADVANCED]" },
 ];
+
+function tutorialTabFromUrl(): TutorialTab {
+  if (typeof window === "undefined") return "browser";
+  const requested = new URLSearchParams(window.location.search).get("tab");
+  if (requested && TABS.some((tab) => tab.id === requested)) return requested as TutorialTab;
+  const advancedAnchors = new Set(["unsloth-studio", "fine-tune-from-keating", "runpod-training", "doc-to-lora", "feynman-harness"]);
+  if (advancedAnchors.has(window.location.hash.slice(1))) return "advanced";
+  if (window.location.hash.includes("api-key") || window.location.hash === "#get-api-key") return "cloud";
+  return "browser";
+}
 
 export function Tutorial() {
   useSeo({
@@ -19,7 +30,32 @@ export function Tutorial() {
     description: "Learn how to use Keating: Socratic AI tutoring with lesson plans, concept maps, quizzes, and local or cloud model support.",
     canonical: "https://keating.help/tutorial",
   });
-  const [activeTab, setActiveTab] = useState<TutorialTab>("browser");
+  const [activeTab, setActiveTab] = useState<TutorialTab>(() => tutorialTabFromUrl());
+
+  useEffect(() => {
+    const onLocationChange = () => setActiveTab(tutorialTabFromUrl());
+    window.addEventListener("popstate", onLocationChange);
+    window.addEventListener("hashchange", onLocationChange);
+    return () => {
+      window.removeEventListener("popstate", onLocationChange);
+      window.removeEventListener("hashchange", onLocationChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!window.location.hash) return;
+    window.requestAnimationFrame(() => {
+      document.getElementById(window.location.hash.slice(1))?.scrollIntoView({ block: "start" });
+    });
+  }, [activeTab]);
+
+  const selectTab = (tab: TutorialTab) => {
+    setActiveTab(tab);
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", tab);
+    url.hash = "";
+    window.history.replaceState(null, "", url);
+  };
 
   return (
     <div className="retro-layout retro-page">
@@ -217,7 +253,7 @@ export function Tutorial() {
                   className={`tab-btn font-terminal px-6 py-3 border-r-2 border-border whitespace-nowrap ${
                     activeTab === tab.id ? "active" : ""
                   }`}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => selectTab(tab.id)}
                 >
                   {tab.label}
                 </button>
@@ -470,7 +506,16 @@ export function Tutorial() {
                   Use managed AI services for best performance and model variety. Requires API keys.
                 </p>
 
-                <div className="mb-6 p-4 bg-[#4285f4]/5 border border-[#4285f4]/20">
+                <div id="get-api-key" className="mb-6 p-4 bg-[#f4f1ea]/5 border border-border">
+                  <h4 className="font-bold mb-2">Where API keys go in Keating</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Open Settings, choose Providers & Models, then paste the key beside the provider.
+                    Keys stay in browser storage for the web app. In the CLI, use environment
+                    variables such as <code className="bg-[#1a1a1a] text-[#00ff00] px-1">GEMINI_API_KEY</code>.
+                  </p>
+                </div>
+
+                <div id="google-api-key" className="mb-6 p-4 bg-[#4285f4]/5 border border-[#4285f4]/20 scroll-mt-24">
                   <h4 className="font-bold text-[#4285f4] mb-2">Google AI Studio (Gemini)</h4>
                   <ol className="space-y-2 text-sm">
                     <li>
@@ -521,7 +566,7 @@ export function Tutorial() {
                   </p>
                 </div>
 
-                <div className="mb-6 p-4 bg-[#d97706]/5 border border-[#d97706]/20">
+                <div id="anthropic-api-key" className="mb-6 p-4 bg-[#d97706]/5 border border-[#d97706]/20 scroll-mt-24">
                   <h4 className="font-bold text-[#d97706] mb-2">Anthropic (Claude)</h4>
                   <ol className="space-y-2 text-sm">
                     <li>
@@ -544,7 +589,7 @@ export function Tutorial() {
                   </p>
                 </div>
 
-                <div className="p-4 bg-[#10a37f]/5 border border-[#10a37f]/20">
+                <div id="openai-api-key" className="p-4 bg-[#10a37f]/5 border border-[#10a37f]/20 scroll-mt-24">
                   <h4 className="font-bold text-[#10a37f] mb-2">OpenAI (GPT)</h4>
                   <ol className="space-y-2 text-sm">
                     <li>
@@ -566,6 +611,90 @@ export function Tutorial() {
                     Pricing: GPT-4o $2.50/M input, $10/M output
                   </p>
                 </div>
+              </div>
+            )}
+
+            {/* Advanced Tab */}
+            {activeTab === "advanced" && (
+              <div className="p-6 space-y-6">
+                <section id="unsloth-studio" className="scroll-mt-24">
+                  <h3 className="text-xl font-bold mb-3">Unsloth Studio</h3>
+                  <p className="mb-3">
+                    Unsloth Studio gives you a no-code local UI for training and running models.
+                    Use it after exporting Keating data when you want a visual fine-tuning workflow.
+                  </p>
+                  <div className="terminal-window p-4 text-sm overflow-x-auto">
+                    <p className="text-[#00ff00]"># Start Unsloth Studio</p>
+                    <p className="text-[#f4f1ea]">pip install unsloth</p>
+                    <p className="text-[#f4f1ea]">unsloth studio -H 0.0.0.0 -p 8888</p>
+                  </div>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    Docs:{" "}
+                    <a href="https://unsloth.ai/docs" target="_blank" rel="noreferrer" className="text-[#6366f1] underline">
+                      unsloth.ai/docs
+                    </a>
+                  </p>
+                </section>
+
+                <section id="fine-tune-from-keating" className="scroll-mt-24">
+                  <h3 className="text-xl font-bold mb-3">Fine-tune from Keating data</h3>
+                  <p className="mb-3">
+                    Keating can export lesson artifacts and tutoring sessions as ChatML or Alpaca
+                    JSONL. Use the CLI or the Usage page in the web app.
+                  </p>
+                  <div className="terminal-window p-4 text-sm overflow-x-auto">
+                    <p className="text-[#00ff00]"># CLI export</p>
+                    <p className="text-[#f4f1ea]">keating export --finetune --source=all --format=both</p>
+                    <p className="text-[#00ff00] mt-3"># Web export</p>
+                    <p className="text-[#f4f1ea]">Open Usage → Fine-tune export → Export fine-tune data</p>
+                  </div>
+                </section>
+
+                <section id="runpod-training" className="scroll-mt-24">
+                  <h3 className="text-xl font-bold mb-3">RunPod training</h3>
+                  <p className="mb-3">
+                    The CLI export includes a RunPod README and start script. Upload the export
+                    directory to a GPU pod, install requirements, and run the generated Unsloth
+                    script.
+                  </p>
+                  <div className="terminal-window p-4 text-sm overflow-x-auto">
+                    <p className="text-[#f4f1ea]">pip install -r requirements.txt</p>
+                    <p className="text-[#f4f1ea]">python unsloth_train.py --data train.chatml.jsonl --out keating-lora</p>
+                  </div>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    RunPod guide:{" "}
+                    <a href="https://www.runpod.io/articles/guides/how-to-fine-tune-large-language-models-on-a-budget" target="_blank" rel="noreferrer" className="text-[#6366f1] underline">
+                      fine-tune LLMs on a budget
+                    </a>
+                  </p>
+                </section>
+
+                <section id="doc-to-lora" className="scroll-mt-24">
+                  <h3 className="text-xl font-bold mb-3">Doc-to-LoRA research path</h3>
+                  <p>
+                    Doc-to-LoRA is an advanced research direction for turning documents into LoRA
+                    adapters. Treat this as experimental: export Keating's corpus, inspect it, and
+                    adapt the method when you want a model to internalize a structured body of
+                    course documents.
+                    {" "}
+                    <a href="https://pub.sakana.ai/doc-to-lora/" target="_blank" rel="noreferrer" className="text-[#6366f1] underline">
+                      Read Sakana's Doc-to-LoRA article
+                    </a>.
+                  </p>
+                </section>
+
+                <section id="feynman-harness" className="scroll-mt-24">
+                  <h3 className="text-xl font-bold mb-3">Use Feynman beside Keating</h3>
+                  <p>
+                    Feynman can sit next to Keating as a research and replication harness. Use it
+                    for literature review, recipe generation, replication planning, and checking
+                    whether a fine-tuning dataset is grounded enough before you train.
+                    {" "}
+                    <a href="https://feynman.is" target="_blank" rel="noreferrer" className="text-[#6366f1] underline">
+                      feynman.is
+                    </a>
+                  </p>
+                </section>
               </div>
             )}
           </div>

@@ -21,6 +21,7 @@ export const extensionCommandSpecs: CommandSpec[] = [
 	{ name: "prompt-eval",  args: "<prompt>",         section: "Optimization",  description: "Evaluate a prompt template in a single pass." },
 	{ name: "improve",      args: "",               section: "Self-Improvement", description: "Generate a self-improvement proposal." },
 	{ name: "auto-improve", args: "[topic]",        section: "Self-Improvement", description: "Run full self-improvement loop: bench → evolve → prompt-evolve → bench." },
+	{ name: "export",       args: "--finetune [options]", section: "Export", description: "Export Keating data for fine-tuning or downstream workflows.", cliOnly: true },
 	{ name: "feedback",     args: "<up|down|confused> [topic] [--comment=text]", section: "Session",   description: "Record session feedback with optional comment." },
 	{ name: "timeline",     args: "",               section: "Review",        description: "Show engagement timeline for all topics." },
 	{ name: "learner-state",args: "",               section: "Review",        description: "Show learner profile and session history." },

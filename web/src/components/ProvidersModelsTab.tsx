@@ -8,6 +8,7 @@ import {
 	addCustomModel,
 	removeCustomModel,
 } from "../keating/ui-settings";
+import { tutorialApiKeyHref } from "../lib/tutorial-links";
 import {
 	completeOAuthFromInput,
 	initiateOAuth,
@@ -694,9 +695,19 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 				if (isOAuth) {
 					return (
 						<div key={provider} className="flex flex-col gap-1">
-							<label className="text-xs font-medium text-muted-foreground capitalize">
-								{OAUTH_PROVIDER_LABELS[provider] ?? provider}
-							</label>
+							<div className="flex items-center justify-between gap-3">
+								<label className="text-xs font-medium text-muted-foreground capitalize">
+									{OAUTH_PROVIDER_LABELS[provider] ?? provider}
+								</label>
+								<a
+									href={tutorialApiKeyHref(provider)}
+									target="_blank"
+									rel="noreferrer"
+									className="text-xs text-primary underline underline-offset-2"
+								>
+									Get a key
+								</a>
+							</div>
 							{hasOAuth ? (
 								<div className="flex items-center justify-between gap-3 rounded-md border border-border bg-muted/30 px-3 py-2">
 									<span className="text-sm text-muted-foreground">Signed in</span>
@@ -752,7 +763,17 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 
 				return (
 					<div key={provider} className="flex flex-col gap-1">
-						<label className="text-xs font-medium text-muted-foreground capitalize">{provider} API Key</label>
+						<div className="flex items-center justify-between gap-3">
+							<label className="text-xs font-medium text-muted-foreground capitalize">{provider} API Key</label>
+							<a
+								href={tutorialApiKeyHref(provider)}
+								target="_blank"
+								rel="noreferrer"
+								className="text-xs text-primary underline underline-offset-2"
+							>
+								Get a key
+							</a>
+						</div>
 						<input
 							type="password"
 							className="rounded-md border border-border bg-background px-3 py-2 text-sm"

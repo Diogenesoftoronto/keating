@@ -23,8 +23,10 @@ import {
   quizTopicArtifact,
   verifyTopicArtifact,
   timelineArtifact,
-  dueTopicsArtifact
+  dueTopicsArtifact,
+  exportKeatingData
 } from "../core/project.js";
+import type { ExportSource, FineTuneFormat } from "../core/export.js";
 import { detectAiRuntime, launchShell } from "../runtime/pi.js";
 import { serveWeb } from "./web.js";
 import { color, bold, cliCommands } from "../core/theme.js";
@@ -74,6 +76,60 @@ function unknownCommand(command: string): Error {
     "For model discovery, use:",
     "  keating --list-models"
   ].join("\n"));
+}
+
+function optionValue(args: string[], name: string): string | undefined {
+  const prefix = `${name}=`;
+  const withEquals = args.find((arg) => arg.startsWith(prefix));
+  if (withEquals) return withEquals.slice(prefix.length);
+  const index = args.indexOf(name);
+  return index >= 0 ? args[index + 1] : undefined;
+}
+
+function parseChoice<T extends string>(value: string | undefined, allowed: readonly T[], fallback: T, label: string): T {
+  if (!value) return fallback;
+  if ((allowed as readonly string[]).includes(value)) return value as T;
+  throw new Error(`${label} must be one of: ${allowed.join(", ")}`);
+}
+
+async function runExportCommand(cwd: string, args: string[]): Promise<void> {
+  if (!args.includes("--finetune")) {
+    throw new Error([
+      "export needs a mode.",
+      "",
+      "Recover with:",
+      "  keating export --finetune",
+      "  keating export --finetune --source=artifacts --format=chatml",
+      "",
+      "Supported options:",
+      "  --source=all|artifacts|sessions",
+      "  --format=chatml|alpaca|both",
+      "  --out=DIR",
+      "  --no-redact",
+      "  --min-assistant-chars=N"
+    ].join("\n"));
+  }
+
+  const source = parseChoice<ExportSource>(optionValue(args, "--source"), ["all", "artifacts", "sessions"], "all", "--source");
+  const format = parseChoice<FineTuneFormat>(optionValue(args, "--format"), ["chatml", "alpaca", "both"], "both", "--format");
+  const minAssistantCharsValue = optionValue(args, "--min-assistant-chars");
+  const minAssistantChars = minAssistantCharsValue ? Number.parseInt(minAssistantCharsValue, 10) : 80;
+  if (!Number.isInteger(minAssistantChars) || minAssistantChars < 1) {
+    throw new Error("--min-assistant-chars must be a positive integer.");
+  }
+
+  const result = await exportKeatingData(cwd, {
+    mode: "finetune",
+    source,
+    format,
+    outDir: optionValue(args, "--out"),
+    redact: !args.includes("--no-redact"),
+    minAssistantChars,
+  });
+
+  console.log(`${color.ok}Exported ${result.manifest.counts.examplesWritten} fine-tuning examples.${color.reset}`);
+  console.log(relative(cwd, result.manifestPath));
+  for (const file of result.manifest.files) console.log(file);
 }
 
 async function setupProject(cwd: string, args: string[]): Promise<void> {
@@ -259,6 +315,10 @@ async function run(): Promise<void> {
           : `${color.sepia}NO SIGNIFICANT CHANGE (Δ${result.delta.toFixed(2)})${color.reset}`;
       console.log(`Baseline: ${result.baselineScore.toFixed(2)} → After: ${result.afterScore.toFixed(2)} — ${verdict}`);
       console.log(relative(cwd, result.reportPath));
+      return;
+    }
+    case "export": {
+      await runExportCommand(cwd, args);
       return;
     }
     case "policy": {

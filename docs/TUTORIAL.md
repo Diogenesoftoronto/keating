@@ -48,6 +48,12 @@ Keating requires an API key for the "Smart Teacher" logic (defaults to Gemini). 
 echo "GEMINI_API_KEY=your_key_here" > .env
 ```
 
+In the web app, open **Settings -> Providers & Models** and paste the key beside the provider. If you do not have one yet:
+
+- Gemini: <https://aistudio.google.com/app/apikey>
+- OpenAI: <https://platform.openai.com/api-keys>
+- Anthropic: <https://console.anthropic.com/>
+
 ---
 
 ## 2. Teacher's Objective: Building the Scaffold
@@ -128,3 +134,67 @@ mise run evolve
 ```
 
 The system will mutate its internal parameters (analogy density, Socratic ratio, etc.) until it finds a policy that better empowers the human voice.
+
+---
+
+## 6. Exporting Keating Data for Fine-Tuning
+
+Keating can export its teaching artifacts and saved tutoring sessions as training-ready JSONL.
+
+```bash
+keating export --finetune
+keating export --finetune --source=artifacts --format=chatml
+keating export --finetune --source=sessions --format=alpaca --out=.keating/exports/session-run
+```
+
+Options:
+
+- `--source=all|artifacts|sessions`
+- `--format=chatml|alpaca|both`
+- `--no-redact` to disable secret redaction
+- `--min-assistant-chars=N` to skip short assistant replies
+
+The export writes:
+
+```text
+.keating/outputs/exports/<timestamp>/
+  manifest.json
+  train.chatml.jsonl
+  train.alpaca.jsonl
+  corpus.md
+  requirements.txt
+  unsloth_train.py
+  runpod/
+    README.md
+    start.sh
+```
+
+The web app exposes the same workflow from **Usage -> Fine-tune export**. Choose ChatML, Alpaca, or both, then download the generated dataset and manifest.
+
+### Unsloth Studio
+
+Use Unsloth Studio when you want a visual training workflow:
+
+```bash
+pip install unsloth
+unsloth studio -H 0.0.0.0 -p 8888
+```
+
+Docs: <https://unsloth.ai/docs>
+
+### RunPod
+
+For cloud GPU experiments, upload the export directory to a RunPod pod and run:
+
+```bash
+pip install -r requirements.txt
+python unsloth_train.py --data train.chatml.jsonl --out keating-lora
+```
+
+The generated `runpod/start.sh` wraps this command. Tune the base model, sequence length, and batch size for the GPU you rent.
+
+### Doc-to-LoRA and Feynman
+
+Doc-to-LoRA is an advanced research path for turning documents into LoRA adapters: <https://pub.sakana.ai/doc-to-lora/>.
+
+Feynman can be used alongside Keating as a research and replication harness for literature review, recipes, and training checks: <https://feynman.is>.

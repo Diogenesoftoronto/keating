@@ -24,6 +24,7 @@ import {
   ensureKeatingDirs,
   engagementPolicyPath,
   evolutionDir,
+  exportsDir,
   mapsDir,
   plansDir,
   policyArchivePath,
@@ -39,6 +40,7 @@ import {
   workbooksDir,
   masteryDir
 } from "./paths.js";
+import { exportFineTuneDataset, type KeatingExportManifest, type KeatingExportOptions } from "./export.js";
 import { ensureConfig } from "./config.js";
 import { DEFAULT_POLICY, loadPolicy, savePolicy } from "./policy.js";
 import { resolveTopic } from "./topics.js";
@@ -330,6 +332,14 @@ export async function dueTopicsArtifact(
   return { reportPath, markdown, count: due.length };
 }
 
+export async function exportKeatingData(
+  cwd: string,
+  options: KeatingExportOptions
+): Promise<{ manifestPath: string; outDir: string; manifest: KeatingExportManifest }> {
+  await ensureProjectScaffold(cwd);
+  return exportFineTuneDataset(cwd, options);
+}
+
 export async function currentPolicySummary(cwd: string): Promise<string> {
   await ensureProjectScaffold(cwd);
   const policy = await loadPolicy(currentPolicyPath(cwd));
@@ -433,7 +443,8 @@ export async function listArtifacts(cwd: string): Promise<Array<{ label: string;
     flashcardsDir(cwd),
     projectsDir(cwd),
     workbooksDir(cwd),
-    masteryDir(cwd)
+    masteryDir(cwd),
+    exportsDir(cwd)
   ];
   const artifacts: Array<{ label: string; path: string; mtime: number }> = [];
 
