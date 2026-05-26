@@ -7,7 +7,6 @@ import {
   type Context,
 } from "@earendil-works/pi-ai";
 import {
-  ApiKeyPromptDialog,
   PersistentStorageDialog,
   defaultConvertToLlm,
 } from "@earendil-works/pi-web-ui";
@@ -19,6 +18,7 @@ import { ProxyTab } from "../components/ProxyTab";
 import { SpeechSettingsTab } from "../components/SpeechSettingsTab";
 import { SessionSidebar } from "../components/SessionSidebar";
 import { ModelSelectorDialog } from "../components/ModelSelector";
+import { KeatingApiKeyPromptDialog, promptKeatingApiKey } from "../components/KeatingApiKeyPromptDialog";
 import { getProviderApiKey } from "../lib/provider-models";
 import { localModel } from "../stores/local-model";
 import { buildKeatingSystemPrompt, createKeatingTools } from "../keating/browser-tools";
@@ -238,11 +238,11 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       onApiKeyRequired: async (provider: string) => {
         if (provider === "browser") return true;
         if (await getProviderApiKey(provider)) return true;
-        return ApiKeyPromptDialog.prompt(provider);
+        return promptKeatingApiKey(provider);
       },
       onAuthError: async (provider: string) => {
         if (provider === "browser") return false;
-        return ApiKeyPromptDialog.prompt(provider);
+        return promptKeatingApiKey(provider);
       },
       onBeforeSend: () => {
         if (import.meta.env.DEV) {
@@ -439,7 +439,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     if (model.provider === "browser") {
       await loadBrowserModel();
     } else if (!(await getProviderApiKey(model.provider))) {
-      const allowed = await ApiKeyPromptDialog.prompt(model.provider);
+      const allowed = await promptKeatingApiKey(model.provider);
       if (!allowed) throw new Error(`No API key available for ${model.provider}`);
     }
 
@@ -578,11 +578,11 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
           onApiKeyRequired: async (provider: string) => {
             if (provider === "browser") return true;
             if (await getProviderApiKey(provider)) return true;
-            return ApiKeyPromptDialog.prompt(provider);
+            return promptKeatingApiKey(provider);
           },
           onAuthError: async (provider: string) => {
             if (provider === "browser") return false;
-            return ApiKeyPromptDialog.prompt(provider);
+            return promptKeatingApiKey(provider);
           },
           onBeforeSend: () => {
             if (import.meta.env.DEV) {
@@ -658,6 +658,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       {sessionManagerDialogElement}
       {settingsDialogElement}
       {modelSelectorDialogElement}
+      <KeatingApiKeyPromptDialog />
     </>
   );
 

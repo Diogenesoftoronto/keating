@@ -100,6 +100,14 @@ export OPENAI_API_KEY=...
 export ANTHROPIC_API_KEY=...
 ```
 
+Export Keating artifacts and sessions for fine-tuning with:
+
+```bash
+keating export --finetune --source=all --format=both
+```
+
+The web app exposes the same dataset export from the Usage page.
+
 From a local checkout, build first and run the repo binary directly:
 
 ```bash

@@ -1,10 +1,11 @@
 import { Suspense, use, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, BookOpenCheck, Brain, CalendarDays, Clock3, Cpu, Flame, Gem, MessageSquareText, TrendingUp } from "lucide-react";
+import { ArrowLeft, BookOpenCheck, Brain, CalendarDays, Clock3, Cpu, Download, Flame, Gem, MessageSquareText, TrendingUp } from "lucide-react";
 import { useSeo } from "../hooks/useSeo";
 import { getInitPromise, keatingStorage, sessions } from "../hooks/keating-storage";
 import type { SessionMetadata } from "../types/session";
 import { UsageCharts } from "../components/UsageCharts";
+import { buildWebFineTuneExport, type WebExportSource, type WebFineTuneFormat } from "../keating/export";
 
 let metadataPromise: Promise<SessionMetadata[]> | null = null;
 
@@ -62,6 +63,152 @@ function MetricCard({
 			<div className="mt-3 text-2xl font-semibold">{value}</div>
 			<div className="mt-1 min-w-0 break-words text-xs text-muted-foreground">{detail}</div>
 		</div>
+	);
+}
+
+function downloadTextFile(filename: string, content: string) {
+	const blob = new Blob([content], { type: "application/json;charset=utf-8" });
+	const url = URL.createObjectURL(blob);
+	const link = document.createElement("a");
+	link.href = url;
+	link.download = filename;
+	document.body.appendChild(link);
+	link.click();
+	link.remove();
+	URL.revokeObjectURL(url);
+}
+
+function SegmentedControl<T extends string>({
+	label,
+	value,
+	options,
+	onChange,
+}: {
+	label: string;
+	value: T;
+	options: Array<{ value: T; label: string }>;
+	onChange: (value: T) => void;
+}) {
+	return (
+		<div>
+			<div className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
+			<div className="inline-flex overflow-hidden rounded-md border border-border">
+				{options.map((option) => (
+					<button
+						key={option.value}
+						type="button"
+						className={`px-3 py-1.5 text-xs transition-colors ${value === option.value ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}
+						onClick={() => onChange(option.value)}
+					>
+						{option.label}
+					</button>
+				))}
+			</div>
+		</div>
+	);
+}
+
+function FineTuneExportPanel() {
+	const [format, setFormat] = useState<WebFineTuneFormat>("both");
+	const [source, setSource] = useState<WebExportSource>("all");
+	const [redact, setRedact] = useState(true);
+	const [minAssistantChars, setMinAssistantChars] = useState(80);
+	const [exporting, setExporting] = useState(false);
+	const [result, setResult] = useState<{ examples: number; skipped: number; redactions: number } | null>(null);
+	const [error, setError] = useState("");
+
+	const handleExport = async () => {
+		setExporting(true);
+		setError("");
+		try {
+			const bundle = await buildWebFineTuneExport({
+				source,
+				format,
+				redact,
+				minAssistantChars,
+			});
+			if (bundle.exampleCount === 0) {
+				setError("No fine-tuning examples were generated. Create sessions or artifacts first.");
+				setResult({ examples: 0, skipped: bundle.skippedCount, redactions: bundle.redactionCount });
+				return;
+			}
+			if (bundle.chatmlJsonl) downloadTextFile("keating-finetune.chatml.jsonl", bundle.chatmlJsonl);
+			if (bundle.alpacaJsonl) downloadTextFile("keating-finetune.alpaca.jsonl", bundle.alpacaJsonl);
+			downloadTextFile("keating-finetune.manifest.json", bundle.manifestJson);
+			setResult({ examples: bundle.exampleCount, skipped: bundle.skippedCount, redactions: bundle.redactionCount });
+		} catch (err) {
+			setError(err instanceof Error ? err.message : String(err));
+		} finally {
+			setExporting(false);
+		}
+	};
+
+	return (
+		<section className="mt-6 rounded-lg border border-border bg-background">
+			<div className="border-b border-border px-4 py-3">
+				<h2 className="text-sm font-semibold">Fine-tune export</h2>
+				<p className="mt-1 text-xs text-muted-foreground">Download training JSONL from Keating sessions and artifacts.</p>
+			</div>
+			<div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_auto]">
+				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+					<SegmentedControl
+						label="Format"
+						value={format}
+						onChange={setFormat}
+						options={[
+							{ value: "chatml", label: "ChatML" },
+							{ value: "alpaca", label: "Alpaca" },
+							{ value: "both", label: "Both" },
+						]}
+					/>
+					<SegmentedControl
+						label="Source"
+						value={source}
+						onChange={setSource}
+						options={[
+							{ value: "all", label: "All" },
+							{ value: "artifacts", label: "Artifacts" },
+							{ value: "sessions", label: "Sessions" },
+						]}
+					/>
+					<label className="flex flex-col gap-2">
+						<span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Minimum assistant length</span>
+						<input
+							type="number"
+							min={1}
+							className="h-8 rounded-md border border-border bg-background px-2 text-sm"
+							value={minAssistantChars}
+							onChange={(event) => setMinAssistantChars(Math.max(1, Number.parseInt(event.target.value, 10) || 1))}
+						/>
+					</label>
+					<label className="flex items-center gap-2 self-end text-sm">
+						<input
+							type="checkbox"
+							checked={redact}
+							onChange={(event) => setRedact(event.target.checked)}
+						/>
+						Redact secrets
+					</label>
+				</div>
+				<div className="flex flex-col items-start gap-2 lg:items-end">
+					<button
+						type="button"
+						className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+						onClick={handleExport}
+						disabled={exporting}
+					>
+						<Download size={16} />
+						{exporting ? "Exporting..." : "Export fine-tune data"}
+					</button>
+					{result && (
+						<div className="text-xs text-muted-foreground">
+							{formatNumber(result.examples)} examples · {formatNumber(result.skipped)} skipped · {formatNumber(result.redactions)} redactions
+						</div>
+					)}
+					{error && <div className="max-w-sm text-xs text-destructive">{error}</div>}
+				</div>
+			</div>
+		</section>
 	);
 }
 
@@ -184,6 +331,8 @@ function UsageContent() {
 						detail={artifactMetrics && artifactMetrics.improvements > 0 ? `${formatNumber(artifactMetrics.benchmarks)} benchmarks measured` : "No improvements logged yet"}
 					/>
 				</div>
+
+				<FineTuneExportPanel />
 
 				<div className="mt-6 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)]">
 					<section className="min-w-0 overflow-hidden rounded-lg border border-border bg-background">
