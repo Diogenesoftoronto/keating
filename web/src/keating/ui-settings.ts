@@ -2,6 +2,8 @@ import type { Api, Model } from "@earendil-works/pi-ai";
 
 export type ReasoningLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
 export type AnimationRenderer = "manim" | "hyperframes";
+export type UiFontFamily = "roboto" | "space-mono";
+export type ShareLinkMode = "portable-short" | "compressed-hash" | "local-short";
 
 export type SavedModel = {
 	key: string;
@@ -21,6 +23,8 @@ export interface KeatingUiSettings {
 	googleGrounding: "auto" | "off";
 	reasoningLevel: ReasoningLevel;
 	animationRenderer: AnimationRenderer;
+	fontFamily: UiFontFamily;
+	shareLinkMode: ShareLinkMode;
 	userProfileImage: string | null;
 	hiddenProviders: string[];
 	recentModels: Array<{ key: string; timestamp: number }>;
@@ -34,14 +38,80 @@ export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
 	googleGrounding: "auto",
 	reasoningLevel: "medium",
 	animationRenderer: "manim",
+	fontFamily: "roboto",
+	shareLinkMode: "portable-short",
 	userProfileImage: null,
 	hiddenProviders: [],
 	recentModels: [],
 	customModels: [],
 };
 
+type FontStack = {
+	sans: string;
+	serif: string;
+	mono: string;
+};
+
+const FONT_STACKS: Record<UiFontFamily, FontStack> = {
+	roboto: {
+		sans: '"Roboto", "Segoe UI", Arial, sans-serif',
+		serif: 'Georgia, Cambria, "Times New Roman", Times, serif',
+		mono: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+	},
+	"space-mono": {
+		sans: '"Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+		serif: '"Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+		mono: '"Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+	},
+};
+
 const STORAGE_KEY = "keating_ui_settings";
 const SETTINGS_CHANGED_EVENT = "keating:ui-settings-changed";
+
+export const FONT_FAMILY_OPTIONS: Array<{
+	value: UiFontFamily;
+	label: string;
+	description: string;
+}> = [
+	{
+		value: "roboto",
+		label: "Roboto",
+		description: "Clean sans serif default for the app UI.",
+	},
+	{
+		value: "space-mono",
+		label: "Space Mono",
+		description: "Retro monospace styling for the entire app.",
+	},
+];
+
+export const SHARE_LINK_MODE_OPTIONS: Array<{
+	value: ShareLinkMode;
+	label: string;
+	description: string;
+}> = [
+	{
+		value: "portable-short",
+		label: "Portable short",
+		description: "Short links that work across browsers when share storage is available.",
+	},
+	{
+		value: "compressed-hash",
+		label: "Compressed snapshot",
+		description: "Embeds the session snapshot in the URL for server-free sharing.",
+	},
+	{
+		value: "local-short",
+		label: "Local short",
+		description: "Shortest links, available from this browser's cache only.",
+	},
+];
+
+function normalizeShareLinkMode(value: unknown): ShareLinkMode {
+	return value === "compressed-hash" || value === "local-short" || value === "portable-short"
+		? value
+		: DEFAULT_UI_SETTINGS.shareLinkMode;
+}
 
 function normalizeSettings(value: Partial<KeatingUiSettings> | null): KeatingUiSettings {
 	return {
@@ -51,11 +121,22 @@ function normalizeSettings(value: Partial<KeatingUiSettings> | null): KeatingUiS
 		googleGrounding: value?.googleGrounding === "off" ? "off" : DEFAULT_UI_SETTINGS.googleGrounding,
 		reasoningLevel: value?.reasoningLevel ?? DEFAULT_UI_SETTINGS.reasoningLevel,
 		animationRenderer: value?.animationRenderer === "hyperframes" ? "hyperframes" : DEFAULT_UI_SETTINGS.animationRenderer,
+		fontFamily: value?.fontFamily === "space-mono" ? "space-mono" : DEFAULT_UI_SETTINGS.fontFamily,
+		shareLinkMode: normalizeShareLinkMode(value?.shareLinkMode),
 		userProfileImage: typeof value?.userProfileImage === "string" && value.userProfileImage.startsWith("data:image/") ? value.userProfileImage : DEFAULT_UI_SETTINGS.userProfileImage,
 		hiddenProviders: Array.isArray(value?.hiddenProviders) ? value.hiddenProviders : DEFAULT_UI_SETTINGS.hiddenProviders,
 		recentModels: Array.isArray(value?.recentModels) ? value.recentModels : DEFAULT_UI_SETTINGS.recentModels,
 		customModels: Array.isArray(value?.customModels) ? value.customModels : DEFAULT_UI_SETTINGS.customModels,
 	};
+}
+
+export function applyKeatingUiTypography(fontFamily: UiFontFamily) {
+	if (typeof document === "undefined") return;
+	const stacks = FONT_STACKS[fontFamily] ?? FONT_STACKS.roboto;
+	const root = document.documentElement;
+	root.style.setProperty("--font-sans", stacks.sans);
+	root.style.setProperty("--font-serif", stacks.serif);
+	root.style.setProperty("--font-mono", stacks.mono);
 }
 
 export function addRecentModel(key: string) {

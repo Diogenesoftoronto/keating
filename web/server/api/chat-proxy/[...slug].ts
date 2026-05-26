@@ -35,7 +35,8 @@ export default defineEventHandler(async (event) => {
 
   if (process.dev || import.meta.env?.DEV) {
     const hasAuth = !!headers["authorization"];
-    console.log(`[chat-proxy] ${event.method} ${proxyPath} -> ${targetBaseUrl} (auth=${hasAuth})`);
+    const hasApiKey = !!headers["x-api-key"];
+    console.log(`[chat-proxy] ${event.method} ${proxyPath} -> ${targetBaseUrl} (auth=${hasAuth}, xApiKey=${hasApiKey})`);
   }
 
   return proxyRequest(event, fullTargetUrl, {

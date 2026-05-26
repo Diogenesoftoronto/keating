@@ -134,10 +134,15 @@ function ChatContent() {
     setShareState("sharing");
     setShareMessage(null);
     try {
-      const url = await shareSession();
-      setShareUrl(url);
+      const result = await shareSession();
+      setShareUrl(result.url);
+      const linkType = result.mode === "portable-short"
+        ? "Portable share link"
+        : result.mode === "compressed-hash"
+          ? "Snapshot share link"
+          : "Local share link";
       setShareMessage(
-        "Share link ready. It was copied if your browser allowed clipboard access.",
+        `${linkType} ready${result.fallback ? " after portable storage was unavailable" : ""}. It was copied if your browser allowed clipboard access.`,
       );
       setShareState("copied");
       window.setTimeout(() => setShareState("idle"), 1600);

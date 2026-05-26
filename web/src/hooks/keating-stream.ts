@@ -11,6 +11,7 @@ import {
 import { normalizeToolCallStream } from "../keating/tool-call-normalizer";
 import { chatProxyBaseUrl, proxyTargetHeader, shouldProxyModel } from "../lib/provider-proxy";
 import { loadKeatingUiSettings } from "../keating/ui-settings";
+import { getProviderApiKey } from "../lib/provider-models";
 import { localModel, getModelName, getModelId } from "../stores/local-model";
 
 export const DEFAULT_MODEL = getModel("google", "gemini-3-flash-preview");
@@ -185,24 +186,27 @@ export async function hybridStreamFn(model: Model<Api>, context: Context, option
 		return normalizeToolCallStream(await createBrowserStreamFn()(model, context, options), context);
 	}
 
+	const apiKey = options?.apiKey ?? await getProviderApiKey(model.provider);
+	const streamOptions: SimpleStreamOptions | undefined = apiKey ? { ...options, apiKey } : options;
+
 	if (shouldProxyModel(model)) {
 		const proxiedModel = {
 			...model,
 			baseUrl: chatProxyBaseUrl(),
 		};
 		const proxiedOptions: SimpleStreamOptions = {
-			...options,
+			...streamOptions,
 			headers: {
-				...options?.headers,
+				...streamOptions?.headers,
 				"x-target-url": proxyTargetHeader(model.baseUrl),
 			},
 		};
 		if (import.meta.env.DEV) {
-			const hasApiKey = !!options?.apiKey;
+			const hasApiKey = !!proxiedOptions.apiKey;
 			console.log(`[keating:stream] proxy ${model.provider} -> ${model.baseUrl} (apiKey=${hasApiKey})`);
 		}
 		return normalizeToolCallStream(streamSimple(proxiedModel, context, mergeOnPayload(proxiedOptions, proxiedModel)), context);
 	}
 
-	return normalizeToolCallStream(streamSimple(model, context, mergeOnPayload(options, model)), context);
+	return normalizeToolCallStream(streamSimple(model, context, mergeOnPayload(streamOptions, model)), context);
 }

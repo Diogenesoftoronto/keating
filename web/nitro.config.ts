@@ -32,6 +32,14 @@ export default defineNitroConfig({
       handler: "server/api/chat-proxy/[...slug].ts",
     },
     {
+      route: "/api/share",
+      handler: "server/api/share/index.ts",
+    },
+    {
+      route: "/api/share/**",
+      handler: "server/api/share/[id].ts",
+    },
+    {
       route: "/api/oauth/token",
       handler: "server/api/oauth/token.ts",
     },
