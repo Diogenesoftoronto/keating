@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Copy, GitFork, MessageSquareText } from "lucide-react";
+import { ArrowLeft, Bot, Copy, GitFork, MessageSquareText, User } from "lucide-react";
 import { useSeo } from "../hooks/useSeo";
 import { forkSharedSession, loadSharedSessionFromUrl, type SharedSession as SharedSessionData } from "../keating/shared-sessions";
 import { MarkdownBlock } from "../components/MarkdownBlock";
@@ -30,6 +30,21 @@ function messageLabel(message: unknown) {
 	return role === "assistant" ? "Keating" : "Learner";
 }
 
+function modelLabel(session: SharedSessionData) {
+	const model = session.model;
+	if (!model) return "Unknown model";
+	return model.name || model.id;
+}
+
+function modelDetails(session: SharedSessionData) {
+	const model = session.model;
+	const parts = [
+		model ? model.provider : "unknown provider",
+		session.thinkingLevel ? `${session.thinkingLevel} reasoning` : null,
+	].filter(Boolean);
+	return parts.join(" | ");
+}
+
 function SharedSessionContent() {
 	useSeo({
 		title: "Keating Shared Session",
@@ -38,12 +53,28 @@ function SharedSessionContent() {
 	const navigate = useNavigate();
 	const shareId = useMemo(() => decodeURIComponent(window.location.pathname.split("/").pop() ?? ""), []);
 	const [session, setSession] = useState<SharedSessionData | null>(null);
+	const [loading, setLoading] = useState(true);
 	const [copied, setCopied] = useState(false);
 	const [forking, setForking] = useState(false);
 	const [error, setError] = useState("");
 
 	useEffect(() => {
-		setSession(loadSharedSessionFromUrl(shareId, window.location.hash));
+		let cancelled = false;
+		setLoading(true);
+		setSession(null);
+		loadSharedSessionFromUrl(shareId, window.location.hash)
+			.then((shared) => {
+				if (!cancelled) setSession(shared);
+			})
+			.catch(() => {
+				if (!cancelled) setSession(null);
+			})
+			.finally(() => {
+				if (!cancelled) setLoading(false);
+			});
+		return () => {
+			cancelled = true;
+		};
 	}, [shareId]);
 
 	const copyLink = async () => {
@@ -65,6 +96,16 @@ function SharedSessionContent() {
 			setForking(false);
 		}
 	};
+
+	if (loading) {
+		return (
+			<div className="min-h-screen bg-background text-foreground">
+				<div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
+					Loading shared session...
+				</div>
+			</div>
+		);
+	}
 
 	if (!session) {
 		return (
@@ -97,6 +138,11 @@ function SharedSessionContent() {
 						<p className="mt-1 text-xs text-muted-foreground">
 							{session.messageCount} messages | Shared {formatDate(session.sharedAt)}
 						</p>
+						<div className="mt-2 inline-flex max-w-full items-center gap-2 rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs text-primary">
+							<Bot size={13} className="shrink-0" />
+							<span className="truncate">Shared from {modelLabel(session)}</span>
+							<span className="hidden text-primary/80 sm:inline">| {modelDetails(session)}</span>
+						</div>
 					</div>
 					<div className="flex items-center gap-2">
 						<button
@@ -128,10 +174,21 @@ function SharedSessionContent() {
 				<div className="space-y-4">
 					{session.messages.map((message, index) => {
 						const isAssistant = (message as any).role === "assistant";
+						const RoleIcon = isAssistant ? Bot : User;
 						return (
-							<article key={index} className="rounded-lg border border-border bg-background p-4">
-								<div className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-									{messageLabel(message)}
+							<article
+								key={index}
+								className={`rounded-lg border bg-background p-4 ${
+									isAssistant
+										? "border-primary/30 border-l-4 border-l-primary"
+										: "border-amber-500/40 border-l-4 border-l-amber-500 bg-amber-500/5"
+								}`}
+							>
+								<div className={`mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-wide ${
+									isAssistant ? "text-primary" : "text-amber-700 dark:text-amber-300"
+								}`}>
+									<RoleIcon size={13} />
+									<span>{messageLabel(message)}</span>
 								</div>
 								<div className={`prose prose-sm max-w-none ${isAssistant ? "dark:prose-invert" : "dark:prose-invert"}`}>
 									<MarkdownBlock content={messageText(message)} />

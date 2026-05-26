@@ -54,6 +54,8 @@ describe("Keating UI Settings", () => {
 		it("returns defaults when localStorage is empty", () => {
 			const settings = loadKeatingUiSettings();
 			expect(settings.showToolUi).toBe(DEFAULT_UI_SETTINGS.showToolUi);
+			expect(settings.fontFamily).toBe(DEFAULT_UI_SETTINGS.fontFamily);
+			expect(settings.shareLinkMode).toBe("portable-short");
 			expect(settings.hiddenProviders).toEqual([]);
 			expect(settings.recentModels).toEqual([]);
 			expect(settings.customModels).toEqual([]);
@@ -69,11 +71,13 @@ describe("Keating UI Settings", () => {
 		it("merges partial stored settings with defaults", () => {
 			localStorage.setItem(
 				"keating_ui_settings",
-				JSON.stringify({ reasoningLevel: "high", hiddenProviders: ["openai"] }),
+				JSON.stringify({ reasoningLevel: "high", hiddenProviders: ["openai"], fontFamily: "space-mono", shareLinkMode: "compressed-hash" }),
 			);
 			const settings = loadKeatingUiSettings();
 			expect(settings.reasoningLevel).toBe("high");
 			expect(settings.hiddenProviders).toEqual(["openai"]);
+			expect(settings.fontFamily).toBe("space-mono");
+			expect(settings.shareLinkMode).toBe("compressed-hash");
 			expect(settings.showToolUi).toBe(DEFAULT_UI_SETTINGS.showToolUi);
 		});
 
@@ -82,14 +86,22 @@ describe("Keating UI Settings", () => {
 			const settings = loadKeatingUiSettings();
 			expect(settings.animationRenderer).toBe("hyperframes");
 		});
+
+		it("rejects invalid share link modes", () => {
+			localStorage.setItem("keating_ui_settings", JSON.stringify({ shareLinkMode: "tiny-magic" }));
+			const settings = loadKeatingUiSettings();
+			expect(settings.shareLinkMode).toBe("portable-short");
+		});
 	});
 
 	describe("saveKeatingUiSettings", () => {
 		it("persists settings to localStorage", () => {
-			const settings = { ...DEFAULT_UI_SETTINGS, showToolUi: true };
+			const settings = { ...DEFAULT_UI_SETTINGS, showToolUi: true, fontFamily: "space-mono" as const, shareLinkMode: "local-short" as const };
 			saveKeatingUiSettings(settings);
 			const stored = JSON.parse(localStorage.getItem("keating_ui_settings")!);
 			expect(stored.showToolUi).toBe(true);
+			expect(stored.fontFamily).toBe("space-mono");
+			expect(stored.shareLinkMode).toBe("local-short");
 		});
 	});
 

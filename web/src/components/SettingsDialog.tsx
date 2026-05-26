@@ -46,7 +46,6 @@ export function SettingsDialog({ open, tabs, onClose }: SettingsDialogProps) {
         role="dialog"
         aria-modal="true"
         className="flex w-full max-w-5xl max-h-[90vh] overflow-hidden rounded-lg border-2 border-border bg-background shadow-lg"
-        style={{ fontFamily: "'Space Mono', monospace" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Sidebar */}
@@ -74,9 +73,8 @@ export function SettingsDialog({ open, tabs, onClose }: SettingsDialogProps) {
         {/* Content */}
         <div className="flex flex-col flex-1 min-h-0">
           <div className="flex min-h-14 items-center justify-between gap-3 px-4 py-2 border-b border-border">
-            {/* Mobile tab selector */}
             <select
-              className="min-w-0 flex-1 sm:hidden text-sm font-medium bg-transparent border border-border rounded px-2 py-2"
+              className="min-w-0 flex-1 text-sm font-medium bg-transparent border border-border rounded px-2 py-2"
               value={activeTab}
               onChange={(e) => setActiveTab(Number(e.target.value))}
               aria-label="Settings tab"
@@ -85,9 +83,6 @@ export function SettingsDialog({ open, tabs, onClose }: SettingsDialogProps) {
                 <option key={tab.id} value={i}>{tab.label}</option>
               ))}
             </select>
-            <span className="hidden sm:block text-sm font-semibold text-foreground">
-              {tabs[activeTab]?.label}
-            </span>
             <button
               onClick={onClose}
               className="dialog-icon-button inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"

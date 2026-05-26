@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   RouterProvider,
   createRouter,
@@ -14,6 +15,11 @@ import { Paper } from "./pages/Paper";
 import { SharedSession } from "./pages/SharedSession";
 import { Usage } from "./pages/Usage";
 import { OAuthCallback } from "./pages/OAuthCallback";
+import {
+  applyKeatingUiTypography,
+  loadKeatingUiSettings,
+  subscribeKeatingUiSettings,
+} from "./keating/ui-settings";
 
 const rootRoute = createRootRoute({ component: () => <Outlet /> });
 
@@ -85,6 +91,23 @@ declare module "@tanstack/react-router" {
   }
 }
 
+function KeatingUiPreferencesSync() {
+  const [settings, setSettings] = useState(() => loadKeatingUiSettings());
+
+  useEffect(() => {
+    applyKeatingUiTypography(settings.fontFamily);
+  }, [settings.fontFamily]);
+
+  useEffect(() => subscribeKeatingUiSettings(setSettings), []);
+
+  return null;
+}
+
 export function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <>
+      <KeatingUiPreferencesSync />
+      <RouterProvider router={router} />
+    </>
+  );
 }

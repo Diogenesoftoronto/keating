@@ -1,5 +1,13 @@
 import { useCallback, useState } from "react";
-import { loadKeatingUiSettings, saveKeatingUiSettings, type ReasoningLevel } from "../keating/ui-settings";
+import {
+	FONT_FAMILY_OPTIONS,
+	SHARE_LINK_MODE_OPTIONS,
+	loadKeatingUiSettings,
+	saveKeatingUiSettings,
+	type ReasoningLevel,
+	type ShareLinkMode,
+	type UiFontFamily,
+} from "../keating/ui-settings";
 
 const REASONING_LEVELS: { value: ReasoningLevel; label: string; description: string }[] = [
 	{ value: "off", label: "Off", description: "Fastest responses, no reasoning tokens" },
@@ -85,6 +93,54 @@ export function KeatingUiSettingsTab() {
 					>
 						Remove
 					</button>
+				</div>
+			</div>
+
+			<div className="flex items-start justify-between gap-4 rounded-lg border border-border p-4">
+				<div className="min-w-0">
+					<div className="text-sm font-medium text-foreground">Font family</div>
+					<p className="mt-1 text-sm text-muted-foreground">
+						Choose the default typeface for the app interface.
+					</p>
+				</div>
+				<select
+					className="min-w-44 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
+					value={settings.fontFamily}
+					onChange={(e) => update({ fontFamily: e.target.value as UiFontFamily })}
+				>
+					{FONT_FAMILY_OPTIONS.map((option) => (
+						<option key={option.value} value={option.value}>
+							{option.label}
+						</option>
+					))}
+				</select>
+			</div>
+
+			<div>
+				<h3 className="text-sm font-semibold text-foreground mb-2">Share Links</h3>
+				<p className="text-sm text-muted-foreground mb-3">
+					Choose how copied session links carry the transcript.
+				</p>
+				<div className="flex flex-col gap-2">
+					{SHARE_LINK_MODE_OPTIONS.map((option) => (
+						<label
+							key={option.value}
+							className="flex items-center gap-3 rounded-md border border-border px-3 py-2 cursor-pointer hover:bg-accent/50 transition-colors"
+						>
+							<input
+								type="radio"
+								name="share-link-mode"
+								value={option.value}
+								checked={settings.shareLinkMode === option.value}
+								onChange={() => update({ shareLinkMode: option.value as ShareLinkMode })}
+								className="shrink-0"
+							/>
+							<div className="min-w-0">
+								<div className="text-sm font-medium text-foreground">{option.label}</div>
+								<div className="text-xs text-muted-foreground">{option.description}</div>
+							</div>
+						</label>
+					))}
 				</div>
 			</div>
 

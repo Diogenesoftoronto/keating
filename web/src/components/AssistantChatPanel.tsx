@@ -938,7 +938,7 @@ function ToolPart({
         </div>
       ) : showDetails && resultText ? (
         <div className="mt-2 text-foreground">
-          <pre className="max-h-44 overflow-auto whitespace-pre-wrap font-sans leading-5">
+          <pre className="max-h-44 overflow-auto whitespace-pre-wrap font-mono leading-5">
             {resultText}
           </pre>
         </div>
@@ -1138,6 +1138,16 @@ function hasRenderableAssistantContent(content: unknown): boolean {
   });
 }
 
+function isSameStreamingAssistantMessage(message: unknown, streamingMessage: unknown): boolean {
+  const left = message as any;
+  const right = streamingMessage as any;
+  if (!left || !right) return false;
+  if (left === right) return true;
+  if (left.role !== "assistant" || right.role !== "assistant") return false;
+  if (left.timestamp !== right.timestamp) return false;
+  return JSON.stringify(left.content ?? null) === JSON.stringify(right.content ?? null);
+}
+
 function visibleAgentMessages(agent: Agent | null, speechEnabled: boolean): AgentMessage[] {
   if (!agent) return [];
   const messages = [...agent.state.messages];
@@ -1146,13 +1156,18 @@ function visibleAgentMessages(agent: Agent | null, speechEnabled: boolean): Agen
     streamingMessage?.role === "assistant" &&
     hasRenderableAssistantContent(streamingMessage.content)
   ) {
-    messages.push({
-      ...streamingMessage,
-      __keatingStreaming: true,
-      content: Array.isArray(streamingMessage.content)
-        ? streamingMessage.content.map((part: any) => ({ ...part }))
-        : streamingMessage.content,
-    } as AgentMessage);
+    const alreadyVisible = messages.some((message) =>
+      isSameStreamingAssistantMessage(message, streamingMessage),
+    );
+    if (!alreadyVisible) {
+      messages.push({
+        ...streamingMessage,
+        __keatingStreaming: true,
+        content: Array.isArray(streamingMessage.content)
+          ? streamingMessage.content.map((part: any) => ({ ...part }))
+          : streamingMessage.content,
+      } as AgentMessage);
+    }
   }
   return foldToolResults(filterSpeechMessages(messages, speechEnabled));
 }
@@ -1835,18 +1850,25 @@ function UserMessage({
 }) {
   return (
     <MessagePrimitive.Root className="mx-auto mb-4 flex w-full max-w-3xl justify-end">
-      <div className="flex max-w-[88%] gap-3 rounded-lg border-2 border-primary bg-primary px-4 py-3 text-sm text-primary-foreground sm:max-w-[82%]">
-        {profileImage ? (
-          <img
-            src={profileImage}
-            alt="You"
-            className="mt-0.5 h-5 w-5 shrink-0 rounded object-cover"
-          />
-        ) : (
-          <User className="mt-0.5 h-4 w-4 shrink-0" />
-        )}
-        <div className="min-w-0 whitespace-pre-wrap leading-6">
-          <MessagePrimitive.Content components={components} />
+      <div className="flex max-w-[88%] gap-3 rounded-lg border-2 border-amber-700 bg-amber-500 px-4 py-3 text-sm text-black shadow-sm dark:border-amber-300 dark:bg-amber-300 sm:max-w-[82%]">
+        <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded bg-black/10">
+          {profileImage ? (
+            <img
+              src={profileImage}
+              alt="You"
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <User className="h-4 w-4 shrink-0" />
+          )}
+        </div>
+        <div className="min-w-0">
+          <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-black/70">
+            Learner
+          </div>
+          <div className="whitespace-pre-wrap leading-6 font-ui">
+            <MessagePrimitive.Content components={components} />
+          </div>
         </div>
       </div>
     </MessagePrimitive.Root>
@@ -1969,13 +1991,16 @@ function AssistantMessage({
   return (
     <>
       <MessagePrimitive.Root className="group mx-auto mb-4 flex w-full max-w-3xl justify-start">
-        <div className="flex w-full max-w-[94%] gap-3 rounded-lg border-2 border-border bg-muted/30 px-4 py-3 text-sm text-foreground shadow-sm sm:max-w-[90%]">
+        <div className="flex w-full gap-3 px-1 text-sm text-foreground">
           <img
             src="/logo.png"
             alt="Keating"
-            className="mt-0.5 h-5 w-5 shrink-0 rounded object-contain"
+            className="mt-1 h-5 w-5 shrink-0 rounded object-contain"
           />
-          <div className="min-w-0 leading-6 flex-1">
+          <div className="min-w-0 flex-1 leading-6">
+            <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-primary">
+              Keating
+            </div>
             <MessagePrimitive.Content components={components} />
             {authError && (
               <div className="my-2 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm">

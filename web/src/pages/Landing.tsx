@@ -68,9 +68,10 @@ export function Landing() {
 
   const isMobile = windowWidth < 640;
   const isSmallMobile = windowWidth < 400;
+  const appScale = 1.2;
   
-  const titleFont = `${isSmallMobile ? 26 : isMobile ? 28 : 32}px 'Inter', sans-serif`;
-  const subtitleFontSize = isSmallMobile ? 24 : isMobile ? 32 : 42;
+  const titleFont = `${Math.round((isSmallMobile ? 26 : isMobile ? 28 : 32) * appScale)}px 'Space Mono', monospace`;
+  const subtitleFontSize = Math.round((isSmallMobile ? 24 : isMobile ? 32 : 42) * appScale);
   const subtitleFont = `${subtitleFontSize}px 'VT323', monospace`;
 
   function handleCopy() {
@@ -101,14 +102,14 @@ export function Landing() {
                 <Pretext 
                   text="THE HYPERTEACHER"
                   font={`bold ${titleFont}`}
-                  lineHeight={isMobile ? 30 : 36}
+                  lineHeight={Math.round((isMobile ? 30 : 36) * appScale)}
                   className="mb-2"
                   justify={false}
                 />
                 <Pretext 
                   text={"THINK_\u200BFOR_\u200BYOURSELF"}
                   font={subtitleFont}
-                  lineHeight={isMobile ? 34 : 44}
+                  lineHeight={Math.round((isMobile ? 34 : 44) * appScale)}
                   className="text-accent"
                   justify={false}
                 />

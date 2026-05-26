@@ -2,10 +2,10 @@
 @import "tailwindcss";
 
 /* Import base styles from pi-web-ui which includes Tailwind + KaTeX + themes */
-@import '@earendil-works/pi-web-ui/app.css';
+@import "@earendil-works/pi-web-ui/app.css";
 
 /* Retro theme for landing, tutorial, blog */
-@import './styles/retro.css';
+@import "./styles/retro.css";
 
 /* ────────────────────────────────────────────────────────────────
    RETRO THEME OVERRIDES — overrides pi-web-ui default tokens
@@ -18,6 +18,8 @@
   --paper: #f4f1ea;
   --ink: #1a1a1a;
   --accent-green: #10b981;
+  --font-ui:
+    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   /* Paper palette (light mode — default) */
   --background: #f4f1ea;
   --foreground: #1a1a1a;
@@ -51,9 +53,11 @@
   --sidebar-accent-foreground: #1a1a1a;
   --sidebar-border: #1a1a1a;
   --sidebar-ring: #10b981;
-  --font-sans: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  --font-serif: "Space Mono", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  --font-mono: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-sans: "Roboto", "Segoe UI", Arial, sans-serif;
+  --font-serif: Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
   --radius: 0.25rem;
 }
 
@@ -61,6 +65,8 @@
   /* Terminal palette (dark mode) */
   --paper: #0c0c0c;
   --ink: #e8e4da;
+  --font-ui:
+    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --background: #0c0c0c;
   --foreground: #e8e4da;
   --card: #141414;
@@ -93,9 +99,11 @@
   --sidebar-accent-foreground: #10b981;
   --sidebar-border: rgba(0, 255, 0, 0.2);
   --sidebar-ring: #10b981;
-  --font-sans: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  --font-serif: "Space Mono", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  --font-mono: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-sans: "Roboto", "Segoe UI", Arial, sans-serif;
+  --font-serif: Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
   --radius: 0.25rem;
 }
 
@@ -108,13 +116,25 @@ body,
   padding: 0;
 }
 
-/* App pages use retro monospace font */
+/* App pages use the configurable sans font */
 body {
   font-family: var(--font-sans);
 }
 
+input,
+textarea,
+select {
+  font-family: var(--font-ui);
+}
+
+.font-ui {
+  font-family: var(--font-ui);
+}
+
 /* Smooth theme transitions (except background which can flash) */
 html {
+  transform: scale(100%);
+  font-size: 130%;
   transition: color-scheme 0.2s ease;
 }
 
@@ -136,7 +156,9 @@ html {
 
 /* Button hover/active micro-interactions */
 button:not(:disabled) {
-  transition: transform 0.08s ease-out, background-color 0.12s ease;
+  transition:
+    transform 0.08s ease-out,
+    background-color 0.12s ease;
 }
 
 /* Firefox scrollbars */
@@ -215,6 +237,7 @@ button:not(:disabled) {
 }
 
 message-editor textarea {
+  font-family: var(--font-ui) !important;
   color: var(--color-foreground) !important;
   -webkit-text-fill-color: var(--color-foreground) !important;
   caret-color: var(--color-foreground) !important;
@@ -269,9 +292,15 @@ message-editor textarea::placeholder {
     padding: 0.75rem;
   }
 
-  body:not(.chat-shell-active) .gap-1 { gap: 0.5rem !important; }
-  body:not(.chat-shell-active) .gap-2 { gap: 0.75rem !important; }
-  body:not(.chat-shell-active) .gap-3 { gap: 1rem !important; }
+  body:not(.chat-shell-active) .gap-1 {
+    gap: 0.5rem !important;
+  }
+  body:not(.chat-shell-active) .gap-2 {
+    gap: 0.75rem !important;
+  }
+  body:not(.chat-shell-active) .gap-3 {
+    gap: 1rem !important;
+  }
 
   header .text-lg {
     font-size: 1.125rem;
@@ -398,7 +427,9 @@ message-editor textarea::placeholder {
   background: var(--chat-paper);
   border: 2px solid var(--chat-ink);
   box-shadow: 4px 4px 0 var(--chat-ink);
-  transition: box-shadow 0.15s, transform 0.15s;
+  transition:
+    box-shadow 0.15s,
+    transform 0.15s;
 }
 
 .chat-page-shell .composer-root:focus-within {
@@ -420,7 +451,9 @@ message-editor textarea::placeholder {
   }
   35% {
     transform: translateX(8px);
-    filter: drop-shadow(-6px 0 0 color-mix(in srgb, var(--chat-accent) 35%, transparent));
+    filter: drop-shadow(
+      -6px 0 0 color-mix(in srgb, var(--chat-accent) 35%, transparent)
+    );
   }
   100% {
     transform: translateX(0);

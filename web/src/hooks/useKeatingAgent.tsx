@@ -27,7 +27,7 @@ import { subscribeAgentEvents } from "./agent-subscriptions";
 import { DEFAULT_MODEL, hybridStreamFn } from "./keating-stream";
 import { getInitPromise, keatingStorage, sessions } from "./keating-storage";
 import { createSessionId, sessionPreview, sessionTitle, sessionUsage } from "./session-metadata";
-import { saveSharedSession, sharedSessionUrl } from "../keating/shared-sessions";
+import { saveSharedSession, sharedSessionUrl, type SharedSessionUrlResult } from "../keating/shared-sessions";
 import { loadKeatingUiSettings } from "../keating/ui-settings";
 import type { ChatPanelHandle } from "../types/chat-panel";
 import type { SessionData, SessionMetadata } from "../types/session";
@@ -102,7 +102,7 @@ export interface UseKeatingAgentReturn {
   openSettings: () => void;
   openSessions: () => void;
   newSession: () => void;
-  shareSession: () => Promise<string>;
+  shareSession: () => Promise<SharedSessionUrlResult>;
   chatPanelRef: (node: ChatPanelHandle | null) => void;
   dialogs: React.ReactNode;
   speechEnabled: boolean;
@@ -347,12 +347,15 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     const agent = agentRef.current;
     if (!agent) throw new Error("No active session to share");
     await saveSessionSnapshot(agent);
-    const shared = saveSharedSession([...agent.state.messages], sessionCreatedAtRef.current);
-    const url = sharedSessionUrl(shared, window.location.origin);
-    await navigator.clipboard?.writeText(url).catch((error) => {
+    const shared = saveSharedSession([...agent.state.messages], sessionCreatedAtRef.current, {
+      model: agent.state.model,
+      thinkingLevel: agent.state.thinkingLevel,
+    });
+    const result = await sharedSessionUrl(shared, window.location.origin, loadKeatingUiSettings().shareLinkMode);
+    await navigator.clipboard?.writeText(result.url).catch((error) => {
       console.warn("Failed to copy share link:", error);
     });
-    return url;
+    return result;
   }, [saveSessionSnapshot]);
 
   const loadSession = useCallback(async (session: SessionData) => {

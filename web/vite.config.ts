@@ -48,10 +48,9 @@ function chatProxyPlugin(): Plugin {
         }
         outHeaders['host'] = targetUrl.host;
 
-        if (import.meta.env.DEV) {
-          const hasAuth = 'authorization' in outHeaders;
-          console.log(`[chat-proxy] ${req.method} ${proxyPath} -> ${targetUrl.hostname} (auth=${hasAuth})`);
-        }
+        const hasAuth = 'authorization' in outHeaders;
+        const hasApiKey = 'x-api-key' in outHeaders;
+        console.log(`[chat-proxy] ${req.method} ${proxyPath} -> ${targetUrl.hostname} (auth=${hasAuth}, xApiKey=${hasApiKey})`);
 
         const chunks: Buffer[] = [];
         req.on('data', (chunk: Buffer) => chunks.push(chunk));
