@@ -1,0 +1,48 @@
+{
+  "cli_version": "0.6.2",
+  "checkpoint_id": "08fcd7cc9a66",
+  "session_id": "ses_194892a59ffeINfZ5h4aG7j6VZ",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-27T22:08:52.687066451Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "web/src/components/SessionSidebar.tsx",
+    "web/src/hooks/useKeatingAgent.tsx",
+    "web/src/pages/Chat.tsx"
+  ],
+  "agent": "OpenCode",
+  "model": "neuralwatt/moonshotai/Kimi-K2.6",
+  "turn_id": "c6c9339a1912",
+  "token_usage": {
+    "input_tokens": 99651,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1989680,
+    "output_tokens": 28950,
+    "api_call_count": 29
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-27T22:08:52.661476227Z",
+    "agent_lines": 272,
+    "agent_removed": 47,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 272,
+    "total_lines_changed": 319,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
