@@ -144,6 +144,9 @@ export interface UseKeatingAgentReturn {
   forkingSessionId: string | null;
   sessionSidebarCollapsed: boolean;
   toggleSessionSidebar: () => void;
+  mobileSidebarOpen: boolean;
+  toggleMobileSidebar: () => void;
+  closeMobileSidebar: () => void;
 }
 
 export function useKeatingAgent(): UseKeatingAgentReturn {
@@ -175,6 +178,9 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     setSessionSidebarCollapsed(next);
     writeSessionSidebarCollapsed(next);
   }, []);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const toggleMobileSidebar = useCallback(() => setMobileSidebarOpen((v) => !v), []);
+  const closeMobileSidebar = useCallback(() => setMobileSidebarOpen(false), []);
   const [speechSettings, setSpeechSettings] = useState<WebSpeechSettings>(() => loadWebSpeechSettings());
   const [persistentStorageStatus, setPersistentStorageStatus] = useState<PersistentStorageStatus>(() => getPersistentStorageStatus());
   const [persistentStorageChecked, setPersistentStorageChecked] = useState(false);
@@ -579,6 +585,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       collapsed={sessionSidebarCollapsed}
       onCollapsedChange={setSidebarCollapsed}
       onLoad={(sessionId: string) => {
+        closeMobileSidebar();
         startTransition(async () => {
           const session = await sessions.loadSession(sessionId);
           if (session) await loadSession(session as SessionData);
@@ -586,6 +593,9 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       }}
       onFork={forkSession}
       onOpenSessions={sessionsDialog.onOpen}
+      mobileOpen={mobileSidebarOpen}
+      onMobileClose={closeMobileSidebar}
+      onNewSession={newSession}
     />
   );
 
@@ -733,5 +743,5 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       ? "unknown"
       : persistentStorageStatus;
 
-  return { title, isPending, openSettings, openSessions, newSession, shareSession, chatPanelRef, dialogs: allDialogs, speechEnabled: speechSettings.enabled, persistentStorageStatus: visiblePersistentStorageStatus, toggleSpeech, setThinkingLevel, generateCurrentSessionTitle, sessionSidebar: sessionSidebarElement, activeSessionId, forkingSessionId, sessionSidebarCollapsed, toggleSessionSidebar };
+  return { title, isPending, openSettings, openSessions, newSession, shareSession, chatPanelRef, dialogs: allDialogs, speechEnabled: speechSettings.enabled, persistentStorageStatus: visiblePersistentStorageStatus, toggleSpeech, setThinkingLevel, generateCurrentSessionTitle, sessionSidebar: sessionSidebarElement, activeSessionId, forkingSessionId, sessionSidebarCollapsed, toggleSessionSidebar, mobileSidebarOpen, toggleMobileSidebar, closeMobileSidebar };
 }
