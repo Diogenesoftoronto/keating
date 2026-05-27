@@ -1,0 +1,43 @@
+{
+  "cli_version": "0.6.2",
+  "checkpoint_id": "bf3f9988caf1",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "bun.lock",
+    "fnox.toml",
+    "package.json",
+    "src/cli/main.ts",
+    "src/core/commands.ts",
+    "src/mcp/server.ts",
+    "test/mcp.test.ts",
+    "web/bun.lock",
+    "web/package.json",
+    "web/src/app.css",
+    "web/src/components/AssistantChatPanel.tsx",
+    "web/src/components/SessionManagerDialog.tsx",
+    "web/src/components/SessionSidebar.tsx",
+    "web/src/components/ThemeToggle.tsx",
+    "web/src/components/session-tree.ts",
+    "web/src/hooks/useKeatingAgent.tsx",
+    "web/src/keating/webmcp.ts",
+    "web/src/pages/Chat.tsx",
+    "web/src/pages/Tutorial.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/bf/3f9988caf1/0/metadata.json",
+      "transcript": "/bf/3f9988caf1/0/full.jsonl",
+      "content_hash": "/bf/3f9988caf1/0/content_hash.txt",
+      "prompt": "/bf/3f9988caf1/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 30,
+    "cache_creation_tokens": 131440,
+    "cache_read_tokens": 1668395,
+    "output_tokens": 42515,
+    "api_call_count": 20
+  }
+}
