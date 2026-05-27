@@ -1,0 +1,38 @@
+{
+  "cli_version": "0.6.2",
+  "checkpoint_id": "88e123c94a69",
+  "session_id": "15d947d5-a569-49a5-81af-afb759d33f47",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-27T22:16:05.193621057Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "web/src/components/ArtifactViewer.tsx",
+    "web/src/hooks/useKeatingAgent.tsx",
+    "web/src/keating/storage.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "",
+  "turn_id": "0772c1fe5fd0",
+  "checkpoint_transcript_start": 173,
+  "transcript_lines_at_start": 173,
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-27T22:16:05.15920056Z",
+    "agent_lines": 340,
+    "agent_removed": 139,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 340,
+    "total_lines_changed": 479,
+    "agent_percentage": 100,
+    "metric_version": 2
+  }
+}
