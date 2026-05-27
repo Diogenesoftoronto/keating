@@ -6,6 +6,7 @@ import {
 	type SpeechSynthesisRequest,
 	type SpeechSynthesisResult,
 } from "../speech";
+import { withApiRetry } from "../api-retry";
 
 const GEMINI_VOICES = ["Kore", "Puck", "Charon", "Fenrir", "Leda", "Orus", "Aoede"];
 
@@ -60,7 +61,7 @@ async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthe
 		}
 		signal?.addEventListener("abort", abort, { once: true });
 
-		ai.live
+		withApiRetry(() => ai.live
 			.connect({
 				model: settings.model || GEMINI_LIVE_SPEECH_MODEL,
 				callbacks: {
@@ -109,7 +110,7 @@ async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthe
 						"You are Keating's voice layer. Speak the provided learner-facing line only. Keep it natural, concise, and conversational. Do not add extra teaching content.",
 					thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL },
 				},
-			})
+			}), { signal })
 			.then((liveSession) => {
 				if (done) {
 					liveSession.close();

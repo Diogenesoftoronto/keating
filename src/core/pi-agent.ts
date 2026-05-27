@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import { loadKeatingConfig, mergePiDefaults } from "./config.js";
 import { configDir } from "./paths.js";
 import { detectAiRuntime } from "../runtime/pi.js";
+import { withApiRetry } from "./api-retry.js";
 
 export interface PiCompletionOptions {
   systemPrompt?: string;
@@ -22,6 +23,7 @@ export async function piComplete(cwd: string, prompt: string, options: PiComplet
       "No AI runtime found. Install `pi` with `npm install -g @earendil-works/pi-coding-agent`, or reinstall Keating so its embedded runtime dependency is present."
     );
   }
+  const selectedRuntime = runtime.selected;
 
   const args = ["-p", "--no-session", "--no-tools", "--no-extensions", "--no-skills"];
 
@@ -39,40 +41,42 @@ export async function piComplete(cwd: string, prompt: string, options: PiComplet
 
   const finalArgs = mergePiDefaults(config, [...args, prompt]);
 
-  let result;
-  try {
-    const isBinary = runtime.selected.kind === "binary";
-    const command = runtime.selected.command;
-    const spawnArgs = isBinary ? finalArgs : [runtime.selected.cliPath!, ...finalArgs];
+  return withApiRetry(() => {
+    let result;
+    try {
+      const isBinary = selectedRuntime.kind === "binary";
+      const command = selectedRuntime.command;
+      const spawnArgs = isBinary ? finalArgs : [selectedRuntime.cliPath!, ...finalArgs];
 
-    result = spawnSync(command, spawnArgs, {
-      cwd,
-      stdio: "pipe",
-      encoding: "utf8",
-      env: {
-        ...process.env,
-        PI_SKIP_VERSION_CHECK: "1",
-        PI_CODING_AGENT_DIR: configDir(cwd)
-      }
-    });
-  } catch (e) {
-    throw new Error(`Agent command could not be spawned: ${e}`);
-  }
+      result = spawnSync(command, spawnArgs, {
+        cwd,
+        stdio: "pipe",
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          PI_SKIP_VERSION_CHECK: "1",
+          PI_CODING_AGENT_DIR: configDir(cwd)
+        }
+      });
+    } catch (e) {
+      throw new Error(`Agent command could not be spawned: ${e}`);
+    }
 
-  if (result.error) {
-    throw new Error(`Agent command failed to launch: ${result.error.message}`);
-  }
+    if (result.error) {
+      throw new Error(`Agent command failed to launch: ${result.error.message}`);
+    }
 
-  const signal = result.signal;
-  const exitStatus = result.status;
+    const signal = result.signal;
+    const exitStatus = result.status;
 
-  if (exitStatus === null || exitStatus !== 0) {
-    const errMsg = result.stderr?.trim() || result.stdout?.trim() || "unknown error";
-    const exitInfo = exitStatus !== null ? `exit ${exitStatus}` : `killed by signal ${signal ?? "unknown"}`;
-    throw new Error(`Agent completion failed (${exitInfo}): ${errMsg}`);
-  }
+    if (exitStatus === null || exitStatus !== 0) {
+      const errMsg = result.stderr?.trim() || result.stdout?.trim() || "unknown error";
+      const exitInfo = exitStatus !== null ? `exit ${exitStatus}` : `killed by signal ${signal ?? "unknown"}`;
+      throw new Error(`Agent completion failed (${exitInfo}): ${errMsg}`);
+    }
 
-  return result.stdout.trim();
+    return result.stdout.trim();
+  }, config.apiRetry);
 }
 
 /**

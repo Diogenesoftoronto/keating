@@ -4,6 +4,7 @@ import {
 	type SpeechSynthesisRequest,
 	type SpeechSynthesisResult,
 } from "../speech";
+import { withApiRetry } from "../api-retry";
 
 const REALTIME_MODELS = [
 	{ value: "gpt-realtime", label: "gpt-realtime (latest)" },
@@ -25,23 +26,28 @@ const REALTIME_VOICES = [
 	"verse",
 ];
 
-async function mintEphemeralKey(apiKey: string, model: string, voice: string): Promise<string> {
-	const response = await fetch("https://api.openai.com/v1/realtime/sessions", {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-			Authorization: `Bearer ${apiKey}`,
-		},
-		body: JSON.stringify({
-			model,
-			voice,
-			modalities: ["audio", "text"],
-		}),
-	});
-	if (!response.ok) {
-		const errText = await response.text().catch(() => "");
-		throw new Error(`Realtime session mint failed (${response.status}): ${errText.slice(0, 200) || response.statusText}`);
-	}
+async function mintEphemeralKey(apiKey: string, model: string, voice: string, signal?: AbortSignal): Promise<string> {
+	const response = await withApiRetry(async () => {
+		const result = await fetch("https://api.openai.com/v1/realtime/sessions", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${apiKey}`,
+			},
+			body: JSON.stringify({
+				model,
+				voice,
+				modalities: ["audio", "text"],
+			}),
+			signal,
+		});
+		if (!result.ok) {
+			const errText = await result.text().catch(() => "");
+			const retryAfter = result.headers.get("retry-after");
+			throw new Error(`Realtime session mint failed (${result.status}): ${errText.slice(0, 200) || result.statusText}${retryAfter ? ` retry-after: ${retryAfter}` : ""}`);
+		}
+		return result;
+	}, { signal });
 	const data = (await response.json()) as { client_secret?: { value?: string } };
 	const value = data.client_secret?.value;
 	if (!value) throw new Error("Realtime session mint returned no client_secret.value");
@@ -70,7 +76,7 @@ async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthe
 	const model = settings.model || "gpt-realtime";
 	const voice = utterance.voice || "marin";
 
-	const ephemeralKey = await mintEphemeralKey(apiKey, model, voice);
+	const ephemeralKey = await mintEphemeralKey(apiKey, model, voice, signal);
 
 	const pc = new RTCPeerConnection();
 	const audioEl = typeof document !== "undefined" ? document.createElement("audio") : null;
@@ -159,17 +165,22 @@ async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthe
 			const offer = await pc.createOffer();
 			await pc.setLocalDescription(offer);
 
-			const sdpResponse = await fetch(`https://api.openai.com/v1/realtime?model=${encodeURIComponent(model)}`, {
-				method: "POST",
-				headers: {
-					Authorization: `Bearer ${ephemeralKey}`,
-					"Content-Type": "application/sdp",
-				},
-				body: offer.sdp,
-			});
-			if (!sdpResponse.ok) {
-				throw new Error(`Realtime SDP exchange failed (${sdpResponse.status})`);
-			}
+			const sdpResponse = await withApiRetry(async () => {
+				const result = await fetch(`https://api.openai.com/v1/realtime?model=${encodeURIComponent(model)}`, {
+					method: "POST",
+					headers: {
+						Authorization: `Bearer ${ephemeralKey}`,
+						"Content-Type": "application/sdp",
+					},
+					body: offer.sdp,
+					signal,
+				});
+				if (!result.ok) {
+					const retryAfter = result.headers.get("retry-after");
+					throw new Error(`Realtime SDP exchange failed (${result.status})${retryAfter ? ` retry-after: ${retryAfter}` : ""}`);
+				}
+				return result;
+			}, { signal });
 			const answer: RTCSessionDescriptionInit = {
 				type: "answer",
 				sdp: await sdpResponse.text(),

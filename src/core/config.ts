@@ -1,6 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
+import { DEFAULT_API_RETRY_POLICY, sanitizeApiRetryPolicy, type ApiRetryPolicy } from "./api-retry.js";
 
 export type PiRuntimePreference = "standalone-only" | "prefer-standalone" | "embedded-only";
 
@@ -22,6 +23,7 @@ export interface KeatingConfig {
     traceTopLearners: number;
     consoleSummary: boolean;
   };
+  apiRetry: ApiRetryPolicy;
 }
 
 export const DEFAULT_PI_PROVIDER = "google";
@@ -49,7 +51,8 @@ export const DEFAULT_KEATING_CONFIG: KeatingConfig = {
     persistTraces: true,
     traceTopLearners: 3,
     consoleSummary: false
-  }
+  },
+  apiRetry: DEFAULT_API_RETRY_POLICY
 };
 
 export function configPath(cwd: string): string {
@@ -105,7 +108,8 @@ export async function loadKeatingConfig(cwd: string): Promise<KeatingConfig> {
           typeof parsed.debug?.consoleSummary === "boolean"
             ? parsed.debug.consoleSummary
             : DEFAULT_KEATING_CONFIG.debug.consoleSummary
-      }
+      },
+      apiRetry: sanitizeApiRetryPolicy((parsed as Partial<KeatingConfig>).apiRetry)
     };
   } catch (err) {
     if (existsSync(path)) {
