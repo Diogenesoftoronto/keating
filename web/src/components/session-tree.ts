@@ -40,10 +40,14 @@ export function buildSessionTree(sessions: SessionMetadata[]): SessionTreeNode[]
 	return roots;
 }
 
-export function flattenSessionTree(nodes: SessionTreeNode[]): SessionTreeNode[] {
+export function flattenSessionTree(
+	nodes: SessionTreeNode[],
+	collapsedSet?: ReadonlySet<string>,
+): SessionTreeNode[] {
 	const flattened: SessionTreeNode[] = [];
 	const visit = (node: SessionTreeNode) => {
 		flattened.push(node);
+		if (collapsedSet?.has(node.session.id)) return;
 		for (const child of node.children) visit(child);
 	};
 	for (const node of nodes) visit(node);

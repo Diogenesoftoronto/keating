@@ -118,6 +118,9 @@ const TEXT_ATTACHMENT_ACCEPT = [
   ".yml",
 ].join(",");
 
+const PDF_ATTACHMENT_ACCEPT = "application/pdf,.pdf";
+const DOCUMENT_ATTACHMENT_ACCEPT = `${PDF_ATTACHMENT_ACCEPT},${TEXT_ATTACHMENT_ACCEPT}`;
+
 function readFileAsText(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -154,14 +157,62 @@ function attachmentMatchesAccept(file: File, accept: string): boolean {
   });
 }
 
+function fileIsPdf(file: File): boolean {
+  return attachmentMatchesAccept(file, PDF_ATTACHMENT_ACCEPT);
+}
+
+function attachmentContentType(file: File): string {
+  if (fileIsPdf(file)) return "application/pdf";
+  return file.type;
+}
+
+async function readPdfAsAttachmentText(file: File): Promise<string> {
+  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  pdfjs.GlobalWorkerOptions.workerSrc ||= new URL(
+    "pdfjs-dist/legacy/build/pdf.worker.mjs",
+    import.meta.url,
+  ).toString();
+
+  const pdf = await pdfjs.getDocument({
+    data: new Uint8Array(await file.arrayBuffer()),
+    isEvalSupported: false,
+  }).promise;
+
+  let extractedText = `<pdf filename="${file.name}">`;
+  let hasReadableText = false;
+  try {
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+      const page = await pdf.getPage(pageNumber);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items
+        .map((item: any) => ("str" in item ? item.str : ""))
+        .filter((text: string) => text.trim())
+        .join(" ");
+      if (pageText.trim()) hasReadableText = true;
+      extractedText += `\n<page number="${pageNumber}">\n${pageText}\n</page>`;
+      page.cleanup();
+    }
+  } finally {
+    await pdf.destroy();
+  }
+  extractedText += "\n</pdf>";
+
+  if (!hasReadableText) {
+    throw new Error(
+      `${file.name} did not contain readable PDF text. Scanned PDFs need OCR before attaching.`,
+    );
+  }
+  return `<attachment name="${file.name}" type="application/pdf">\n${extractedText}\n</attachment>`;
+}
+
 const keatingAttachmentAdapter: AttachmentAdapter = {
-  accept: `image/*,${TEXT_ATTACHMENT_ACCEPT}`,
+  accept: `image/*,${DOCUMENT_ATTACHMENT_ACCEPT}`,
   async add({ file }) {
     return {
       id: `${file.name}-${file.size}-${file.lastModified}`,
       type: file.type.startsWith("image/") ? "image" : "document",
       name: file.name,
-      contentType: file.type,
+      contentType: attachmentContentType(file),
       file,
       status: { type: "requires-action", reason: "composer-send" },
     };
@@ -183,9 +234,24 @@ const keatingAttachmentAdapter: AttachmentAdapter = {
       };
     }
 
+    if (fileIsPdf(file)) {
+      return {
+        ...attachment,
+        type: "document",
+        contentType: "application/pdf",
+        status: { type: "complete" },
+        content: [
+          {
+            type: "text",
+            text: await readPdfAsAttachmentText(file),
+          },
+        ],
+      };
+    }
+
     if (!attachmentMatchesAccept(file, TEXT_ATTACHMENT_ACCEPT)) {
       throw new Error(
-        `${file.name} is not a readable text or image attachment.`,
+        `${file.name} is not a readable text, PDF, or image attachment.`,
       );
     }
 

@@ -29,6 +29,7 @@ import {
 import type { ExportSource, FineTuneFormat } from "../core/export.js";
 import { detectAiRuntime, launchShell } from "../runtime/pi.js";
 import { serveWeb } from "./web.js";
+import { serveWebMcp } from "../mcp/server.js";
 import { color, bold, cliCommands } from "../core/theme.js";
 import { printAsciiHeader } from "../core/terminal.js";
 
@@ -44,6 +45,7 @@ function printUsage(): void {
   console.log(`  ${color.primary}setup${color.reset}  [--yes]             Configure Keating for this project`);
   console.log(`  ${color.primary}doctor${color.reset}                    Inspect AI runtime and oxdraw availability`);
   console.log(`  ${color.primary}web${color.reset}     [port]             Start a local server for the browser UI`);
+  console.log(`  ${color.primary}webmcp${color.reset}  [port] [--host=127.0.0.1]  Expose Keating tools over MCP Streamable HTTP`);
   console.log(`  ${color.primary}policy${color.reset}                    Print the active teaching policy`);
   console.log(`  ${color.primary}trace${color.reset}   [substring]        Browse debug traces and artifacts`);
   console.log("");
@@ -84,6 +86,10 @@ function optionValue(args: string[], name: string): string | undefined {
   if (withEquals) return withEquals.slice(prefix.length);
   const index = args.indexOf(name);
   return index >= 0 ? args[index + 1] : undefined;
+}
+
+function firstPositional(args: string[]): string | undefined {
+  return args.find((arg) => !arg.startsWith("-"));
 }
 
 function parseChoice<T extends string>(value: string | undefined, allowed: readonly T[], fallback: T, label: string): T {
@@ -214,6 +220,18 @@ async function run(): Promise<void> {
         throw new Error(`Invalid port: "${args[0]}". Must be an integer between 1 and 65535.`);
       }
       await serveWeb(port);
+      return;
+    }
+    case "webmcp": {
+      const portArg = firstPositional(args);
+      const port = portArg ? parseInt(portArg, 10) : 3928;
+      const host = optionValue(args, "--host") ?? "127.0.0.1";
+      if (!Number.isInteger(port) || port < 1 || port > 65535) {
+        throw new Error(`Invalid port: "${portArg}". Must be an integer between 1 and 65535.`);
+      }
+      const running = await serveWebMcp({ cwd, port, host });
+      console.log(`${color.ok}${color.bold} Keating WebMCP ${color.reset}  ${color.parchment}${running.url}${color.reset}`);
+      console.log(`${color.sepia}Connect MCP clients to the URL above. Press Ctrl+C to stop.${color.reset}`);
       return;
     }
     case "shell": {

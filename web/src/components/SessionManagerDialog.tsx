@@ -46,7 +46,9 @@ export function SessionManagerDialog({
 	const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
 	const [pendingDeleteSessionId, setPendingDeleteSessionId] = useState<string | null>(null);
 	const [busySessionId, setBusySessionId] = useState<string | null>(null);
+	const [forkedSourceSessionId, setForkedSourceSessionId] = useState<string | null>(null);
 	const [renameDraft, setRenameDraft] = useState("");
+	const [isSidePanel, setIsSidePanel] = useState(false);
 
 	const sortedItems = useMemo(() => {
 		const normalizedQuery = query.trim().toLowerCase();
@@ -88,6 +90,15 @@ export function SessionManagerDialog({
 			cancelled = true;
 		};
 	}, [open]);
+
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		const mediaQuery = window.matchMedia("(min-width: 768px)");
+		const syncMode = () => setIsSidePanel(mediaQuery.matches);
+		syncMode();
+		mediaQuery.addEventListener("change", syncMode);
+		return () => mediaQuery.removeEventListener("change", syncMode);
+	}, []);
 
 	if (!open) return null;
 
@@ -138,12 +149,16 @@ export function SessionManagerDialog({
 
 	const forkSession = async (session: SessionMetadata) => {
 		if (!onFork) return;
-		setBusySessionId(session.id);
-		setErrorMessage("");
+			setBusySessionId(session.id);
+			setErrorMessage("");
 		try {
 			await onFork(session.id);
 			await reload();
-			onClose();
+			setForkedSourceSessionId(session.id);
+			window.setTimeout(() => {
+				setForkedSourceSessionId((current) => current === session.id ? null : current);
+			}, 1800);
+			if (!isSidePanel) onClose();
 		} catch (error) {
 			console.error("Failed to fork session:", error);
 			setErrorMessage(error instanceof Error ? error.message : "Failed to fork session");
@@ -169,9 +184,16 @@ export function SessionManagerDialog({
 		}
 	};
 
+	const shellClassName = isSidePanel
+		? "fixed inset-y-0 left-0 z-50 flex w-auto max-w-full items-stretch pointer-events-none"
+		: "fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-2 sm:p-4";
+	const panelClassName = isSidePanel
+		? "session-manager-dialog session-manager-side-panel pointer-events-auto flex h-full w-[min(28rem,100vw)] max-w-full flex-col overflow-hidden bg-background text-foreground"
+		: "session-manager-dialog flex max-h-[95dvh] sm:max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-lg bg-background text-foreground";
+
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-2 sm:p-4" role="dialog" aria-modal="true" aria-label="Sessions">
-			<div className="flex max-h-[95dvh] sm:max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-border bg-background text-foreground shadow-xl">
+		<div className={shellClassName}>
+			<div className={panelClassName} role="dialog" aria-modal={isSidePanel ? undefined : true} aria-label="Sessions">
 				<header className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
 					<div>
 						<h2 className="text-base font-semibold">Sessions</h2>
@@ -216,6 +238,7 @@ export function SessionManagerDialog({
 								const isBusy = busySessionId === session.id;
 								const isRenaming = editingSessionId === session.id;
 								const isDeleting = pendingDeleteSessionId === session.id;
+								const justForked = forkedSourceSessionId === session.id;
 								return (
 									<li
 										key={session.id}
@@ -228,7 +251,7 @@ export function SessionManagerDialog({
 												disabled={isBusy}
 												onClick={() => {
 													void Promise.resolve(onLoad(session.id)).catch(console.error);
-													onClose();
+													if (!isSidePanel) onClose();
 												}}
 											>
 												<h3 className="flex min-w-0 items-center gap-2 text-sm font-medium text-foreground">
@@ -241,6 +264,11 @@ export function SessionManagerDialog({
 															{children.length}
 														</span>
 													) : null}
+													{justForked ? (
+														<span className="shrink-0 rounded bg-primary px-1.5 py-0.5 text-[10px] text-primary-foreground">
+															Forked
+														</span>
+													) : null}
 												</h3>
 												<p className="mt-1 text-xs text-muted-foreground">
 													{session.parentSessionId ? "Fork | " : ""}{formatDate(session.lastModified)} | {session.messageCount} messages | {formatUsage(session.usage)}
@@ -250,11 +278,11 @@ export function SessionManagerDialog({
 												<button
 													className="dialog-icon-button inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent disabled:opacity-50"
 													disabled={isBusy || !onFork}
-													aria-label="Fork session"
-													title="Fork session"
+													aria-label={justForked ? "Session forked" : "Fork session"}
+													title={justForked ? "Session forked" : "Fork session"}
 													onClick={() => void forkSession(session)}
 												>
-													<CopyPlus size={15} />
+													{isBusy ? <Loader2 size={15} className="animate-spin" /> : justForked ? <Check size={15} /> : <CopyPlus size={15} />}
 												</button>
 												<button
 													className="dialog-icon-button inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent disabled:opacity-50"
