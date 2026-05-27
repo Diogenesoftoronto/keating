@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.6.2",
+  "checkpoint_id": "08fcd7cc9a66",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "web/src/components/SessionSidebar.tsx",
+    "web/src/hooks/useKeatingAgent.tsx",
+    "web/src/pages/Chat.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/08/fcd7cc9a66/0/metadata.json",
+      "transcript": "/08/fcd7cc9a66/0/full.jsonl",
+      "content_hash": "/08/fcd7cc9a66/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  }
+}
