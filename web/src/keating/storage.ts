@@ -28,6 +28,7 @@ export interface LessonPlan {
 	updatedAt: number;
 	content: string;
 	metadata?: Record<string, unknown>;
+	sessionId?: string;
 }
 
 export interface LessonMap {
@@ -36,6 +37,7 @@ export interface LessonMap {
 	createdAt: number;
 	mmdContent: string;
 	svgContent?: string;
+	sessionId?: string;
 }
 
 export interface Animation {
@@ -46,6 +48,7 @@ export interface Animation {
 	scene: string;
 	manifest: string;
 	renderer?: "manim" | "hyperframes";
+	sessionId?: string;
 }
 
 export interface Verification {
@@ -54,6 +57,7 @@ export interface Verification {
 	createdAt: number;
 	checklist: string;
 	completed: boolean;
+	sessionId?: string;
 }
 
 export interface BenchmarkResult {
@@ -63,6 +67,7 @@ export interface BenchmarkResult {
 	score: number;
 	trace?: string;
 	report: string;
+	sessionId?: string;
 }
 
 export interface EvolutionResult {
@@ -73,6 +78,7 @@ export interface EvolutionResult {
 	policy: string;
 	trace?: string;
 	report: string;
+	sessionId?: string;
 }
 
 export interface Policy {
@@ -111,6 +117,7 @@ export interface PromptEvolutionResult {
 	bestScore: number;
 	bestPrompt: string;
 	report: string;
+	sessionId?: string;
 }
 
 export interface ImprovementAttemptRecord {
@@ -123,11 +130,17 @@ export interface ImprovementAttemptRecord {
 	accepted: boolean;
 	targets: string;
 	hypothesis: string;
+	sessionId?: string;
 }
 
 export class KeatingStorage {
 	private db: IDBDatabase | null = null;
 	private dbPromise: Promise<IDBDatabase> | null = null;
+	currentSessionId: string | null = null;
+
+	setCurrentSessionId(id: string | null): void {
+		this.currentSessionId = id;
+	}
 
 	async init(): Promise<void> {
 		if (this.db) return;
@@ -212,6 +225,7 @@ export class KeatingStorage {
 			updatedAt: Date.now(),
 			content,
 			metadata,
+			sessionId: this.currentSessionId ?? undefined,
 		};
 		await this.put(STORES.LESSON_PLANS, plan);
 		return plan;
@@ -232,6 +246,7 @@ export class KeatingStorage {
 			createdAt: Date.now(),
 			mmdContent,
 			svgContent,
+			sessionId: this.currentSessionId ?? undefined,
 		};
 		await this.put(STORES.LESSON_MAPS, map);
 		return map;
@@ -260,6 +275,7 @@ export class KeatingStorage {
 			scene,
 			manifest,
 			renderer,
+			sessionId: this.currentSessionId ?? undefined,
 		};
 		await this.put(STORES.ANIMATIONS, animation);
 		return animation;
@@ -280,6 +296,7 @@ export class KeatingStorage {
 			createdAt: Date.now(),
 			checklist,
 			completed: false,
+			sessionId: this.currentSessionId ?? undefined,
 		};
 		await this.put(STORES.VERIFICATIONS, verification);
 		return verification;
@@ -301,6 +318,7 @@ export class KeatingStorage {
 			score,
 			trace,
 			report,
+			sessionId: this.currentSessionId ?? undefined,
 		};
 		await this.put(STORES.BENCHMARKS, benchmark);
 		return benchmark;
@@ -323,6 +341,7 @@ export class KeatingStorage {
 			policy,
 			trace,
 			report,
+			sessionId: this.currentSessionId ?? undefined,
 		};
 		await this.put(STORES.EVOLUTIONS, evolution);
 		return evolution;
@@ -461,6 +480,7 @@ export class KeatingStorage {
 			bestScore: run.bestScore,
 			bestPrompt: run.bestPrompt,
 			report: run.report,
+			sessionId: this.currentSessionId ?? undefined,
 		};
 		await this.put(STORES.PROMPT_EVOLUTIONS, result);
 		return result;
@@ -487,6 +507,7 @@ export class KeatingStorage {
 			id: this.generateId(),
 			createdAt: Date.now(),
 			...attempt,
+			sessionId: this.currentSessionId ?? undefined,
 		};
 		await this.put(STORES.IMPROVEMENTS, record);
 

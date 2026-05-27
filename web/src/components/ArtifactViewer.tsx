@@ -1,8 +1,24 @@
 import { useState, useEffect, useMemo } from "react";
+import {
+	BookOpen,
+	ChevronRight,
+	Eye,
+	EyeOff,
+	GitBranch,
+	Map as MapIcon,
+	MessageSquare,
+	Play,
+	Search,
+	Settings2,
+	Sparkles,
+	Wrench,
+} from "lucide-react";
 import { MermaidRenderer } from "./MermaidRenderer";
 import { AnimationPlayer } from "./AnimationPlayer";
 import { MarkdownBlock } from "./MarkdownBlock";
 import { KeatingStorage, type LessonPlan, type LessonMap, type Animation, type BenchmarkResult, type EvolutionResult, type Verification, type PromptEvolutionResult, type ImprovementAttemptRecord } from "../keating/storage";
+import { sessions, getInitPromise } from "../hooks/keating-storage";
+import type { SessionMetadata } from "../types/session";
 
 interface ArtifactViewerProps {
 	storage: KeatingStorage;
@@ -12,24 +28,32 @@ interface ArtifactViewerProps {
 
 type ArtifactType = "plan" | "map" | "animation" | "benchmark" | "evolution" | "verification" | "prompt-evolution" | "improvement";
 
-type ArtifactCategory = "teaching" | "visual" | "optimization" | "improvement";
+type ArtifactAudience = "user" | "agent";
 
-const CATEGORY_MAP: Record<ArtifactType, { category: ArtifactCategory; icon: string }> = {
-	plan: { category: "teaching", icon: "📖" },
-	map: { category: "visual", icon: "🗺️" },
-	animation: { category: "visual", icon: "🎬" },
-	benchmark: { category: "optimization", icon: "📊" },
-	evolution: { category: "optimization", icon: "🧬" },
-	verification: { category: "teaching", icon: "✅" },
-	"prompt-evolution": { category: "optimization", icon: "⚡" },
-	improvement: { category: "improvement", icon: "🔧" },
+// ── Audience classification ──────────────────────────────────────────
+// User-facing: teaching materials the learner directly benefits from
+// Agent-facing: internal optimization/self-improvement artifacts
+
+const AUDIENCE_MAP: Record<ArtifactType, ArtifactAudience> = {
+	plan: "user",
+	map: "user",
+	animation: "user",
+	verification: "user",
+	benchmark: "agent",
+	evolution: "agent",
+	"prompt-evolution": "agent",
+	improvement: "agent",
 };
 
-const CATEGORY_LABELS: Record<ArtifactCategory, string> = {
-	teaching: "Teaching Materials",
-	visual: "Visuals & Maps",
-	optimization: "Optimization & Benchmarks",
-	improvement: "Improvements",
+const TYPE_META: Record<ArtifactType, { label: string; icon: React.ReactNode }> = {
+	plan: { label: "Lesson Plan", icon: <BookOpen size={14} /> },
+	map: { label: "Concept Map", icon: <MapIcon size={14} /> },
+	animation: { label: "Animation", icon: <Play size={14} /> },
+	verification: { label: "Verification", icon: <ChevronRight size={14} /> },
+	benchmark: { label: "Benchmark", icon: <Sparkles size={14} /> },
+	evolution: { label: "Evolution", icon: <Settings2 size={14} /> },
+	"prompt-evolution": { label: "Prompt Evo", icon: <Sparkles size={14} /> },
+	improvement: { label: "Improvement", icon: <Wrench size={14} /> },
 };
 
 interface Artifact {
@@ -37,175 +61,47 @@ interface Artifact {
 	type: ArtifactType;
 	label: string;
 	createdAt: number;
+	sessionId?: string;
 	data: unknown;
 }
 
-export function ArtifactViewer({ storage, artifactId }: ArtifactViewerProps) {
-	const [artifacts, setArtifacts] = useState<Artifact[]>([]);
-	const [selected, setSelected] = useState<Artifact | null>(null);
-	const [loading, setLoading] = useState(true);
-	const [query, setQuery] = useState("");
+const SHOW_AGENT_KEY = "keating:artifact-show-agent";
 
-	const filteredArtifacts = useMemo(() => {
-		const normalizedQuery = query.trim().toLowerCase();
-		if (!normalizedQuery) return artifacts;
-		return artifacts.filter((artifact) => {
-			const text = [
-				artifact.label,
-				artifact.type,
-				new Date(artifact.createdAt).toLocaleString(),
-				JSON.stringify(artifact.data),
-			].join(" ").toLowerCase();
-			return text.includes(normalizedQuery);
-		});
-	}, [artifacts, query]);
-
-	const grouped = useMemo(() => {
-		const map = new Map<ArtifactCategory, Artifact[]>();
-		for (const artifact of filteredArtifacts) {
-			const cat = CATEGORY_MAP[artifact.type].category;
-			if (!map.has(cat)) map.set(cat, []);
-			map.get(cat)!.push(artifact);
-		}
-		return map;
-	}, [filteredArtifacts]);
-
-	useEffect(() => {
-		async function loadArtifacts() {
-			setLoading(true);
-			try {
-				const [plans, maps, animations, benchmarks, evolutions, verifications, promptEvolutions, improvements] = await Promise.all([
-					storage.getLessonPlans(),
-					storage.getLessonMaps(),
-					storage.getAnimations(),
-					storage.getBenchmarks(),
-					storage.getEvolutions(),
-					storage.getVerifications(),
-					storage.getPromptEvolutions(),
-					storage.getImprovementAttempts(),
-				]);
-
-				const all: Artifact[] = [
-					...plans.map((p) => ({ id: p.id, type: "plan" as const, label: `Plan: ${p.topic}`, createdAt: p.createdAt, data: p })),
-					...maps.map((m) => ({ id: m.id, type: "map" as const, label: `Map: ${m.topic}`, createdAt: m.createdAt, data: m })),
-					...animations.map((a) => ({ id: a.id, type: "animation" as const, label: `Animation: ${a.topic}`, createdAt: a.createdAt, data: a })),
-					...benchmarks.map((b) => ({ id: b.id, type: "benchmark" as const, label: `Benchmark: ${b.topic || "general"}`, createdAt: b.createdAt, data: b })),
-					...evolutions.map((e) => ({ id: e.id, type: "evolution" as const, label: `Evolution: ${e.topic || "general"}`, createdAt: e.createdAt, data: e })),
-					...verifications.map((v) => ({ id: v.id, type: "verification" as const, label: `Verification: ${v.topic}`, createdAt: v.createdAt, data: v })),
-					...promptEvolutions.map((p) => ({ id: p.id, type: "prompt-evolution" as const, label: `Prompt Evo: ${p.promptName}`, createdAt: p.createdAt, data: p })),
-					...improvements.map((i) => ({ id: i.id, type: "improvement" as const, label: `Improve: ${i.proposalId}`, createdAt: i.createdAt, data: i })),
-				];
-
-				all.sort((a, b) => b.createdAt - a.createdAt);
-				setArtifacts(all);
-
-				// If artifactId provided, select it
-				if (artifactId) {
-					const found = all.find((a) => a.id === artifactId);
-					if (found) setSelected(found);
-				}
-			} catch (err) {
-				console.error("Failed to load artifacts:", err);
-			}
-			setLoading(false);
-		}
-
-		loadArtifacts();
-	}, [storage, artifactId]);
-
-	if (loading) {
-		return (
-			<div className="p-8 text-center text-muted-foreground">
-				<div className="animate-pulse">Loading artifacts...</div>
-			</div>
-		);
+function readShowAgent(): boolean {
+	if (typeof localStorage === "undefined") return false;
+	try {
+		return localStorage.getItem(SHOW_AGENT_KEY) === "1";
+	} catch {
+		return false;
 	}
-
-	if (selected) {
-		return (
-			<div className="artifact-detail text-foreground">
-				{/* Header */}
-				<div className="mb-4 pb-2 border-b border-border">
-					<button onClick={() => setSelected(null)} className="text-sm text-muted-foreground hover:underline">
-						← Back to list
-					</button>
-					<h2 className="text-lg font-semibold mt-1 text-foreground truncate">{selected.label}</h2>
-					<p className="text-xs text-muted-foreground">
-						{new Date(selected.createdAt).toLocaleString()}
-					</p>
-				</div>
-
-				{/* Content */}
-				<div className="artifact-content text-foreground">
-					{selected.type === "plan" && <PlanViewer plan={selected.data as LessonPlan} />}
-					{selected.type === "map" && <MapView map={selected.data as LessonMap} />}
-					{selected.type === "animation" && <AnimationViewer animation={selected.data as Animation} />}
-					{selected.type === "benchmark" && <BenchmarkViewer benchmark={selected.data as BenchmarkResult} />}
-					{selected.type === "evolution" && <EvolutionViewer evolution={selected.data as EvolutionResult} />}
-					{selected.type === "verification" && <VerificationViewer data={selected.data} />}
-					{selected.type === "prompt-evolution" && <PromptEvolutionViewer promptEvolution={selected.data as PromptEvolutionResult} />}
-					{selected.type === "improvement" && <ImprovementViewer improvement={selected.data as ImprovementAttemptRecord} />}
-				</div>
-			</div>
-		);
-	}
-
-	return (
-		<div className="artifact-list text-foreground">
-			{artifacts.length === 0 ? (
-				<p className="text-muted-foreground text-sm">No artifacts yet. Use /plan, /map, /animate, /bench, or /evolve to create some.</p>
-			) : (
-				<div className="space-y-4">
-					<input
-						className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground"
-						value={query}
-						placeholder="Search artifacts"
-						onChange={(event) => setQuery(event.target.value)}
-					/>
-					{filteredArtifacts.length === 0 ? (
-						<p className="py-8 text-center text-sm text-muted-foreground">No artifacts match your search</p>
-					) : (
-						<div className="space-y-5">
-							{(Array.from(grouped.entries()) as [ArtifactCategory, Artifact[]][]).map(([category, items]) => (
-								<section key={category}>
-									<h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
-										{CATEGORY_LABELS[category]}
-									</h3>
-									<div className="space-y-2">
-										{items.map((artifact) => (
-											<button
-												key={artifact.id}
-												onClick={() => setSelected(artifact)}
-												className="w-full text-left p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors border border-transparent hover:border-border/50"
-											>
-												<div className="flex items-center gap-2">
-													<span className="text-lg" title={artifact.type}>{CATEGORY_MAP[artifact.type].icon}</span>
-													<div className="flex-1 min-w-0">
-														<div className="flex items-center justify-between">
-															<span className="font-medium truncate">{artifact.label}</span>
-															<span className="text-xs text-muted-foreground shrink-0 ml-2">
-																{new Date(artifact.createdAt).toLocaleDateString()}
-															</span>
-														</div>
-														<div className="text-xs text-muted-foreground mt-0.5">
-															{artifactPreview(artifact)}
-														</div>
-													</div>
-												</div>
-											</button>
-										))}
-									</div>
-								</section>
-							))}
-						</div>
-					)}
-				</div>
-			)}
-		</div>
-	);
 }
 
-function artifactPreview(artifact: Artifact): string {
+function writeShowAgent(value: boolean): void {
+	if (typeof localStorage === "undefined") return;
+	try {
+		localStorage.setItem(SHOW_AGENT_KEY, value ? "1" : "0");
+	} catch {
+		// ignore
+	}
+}
+
+function formatArtifactDate(ts: number): string {
+	const d = new Date(ts);
+	const now = new Date();
+	const diffMs = now.getTime() - d.getTime();
+	const diffMins = Math.floor(diffMs / 60000);
+	const diffHours = Math.floor(diffMs / 3600000);
+	const diffDays = Math.floor(diffMs / 86400000);
+
+	if (diffMins < 1) return "Just now";
+	if (diffMins < 60) return `${diffMins}m ago`;
+	if (diffHours < 24) return `${diffHours}h ago`;
+	if (diffDays === 1) return "Yesterday";
+	if (diffDays < 7) return `${diffDays}d ago`;
+	return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function artifactPreviewText(artifact: Artifact): string {
 	const data = artifact.data as Record<string, unknown>;
 	switch (artifact.type) {
 		case "plan":
@@ -229,13 +125,309 @@ function artifactPreview(artifact: Artifact): string {
 	}
 }
 
-// Individual viewers
+export function ArtifactViewer({ storage, artifactId }: ArtifactViewerProps) {
+	const [artifacts, setArtifacts] = useState<Artifact[]>([]);
+	const [selected, setSelected] = useState<Artifact | null>(null);
+	const [loading, setLoading] = useState(true);
+	const [query, setQuery] = useState("");
+	const [showAgentArtifacts, setShowAgentArtifacts] = useState(() => readShowAgent());
+	const [sessionMap, setSessionMap] = useState<Map<string, SessionMetadata>>(new Map());
+
+	// Load artifacts
+	useEffect(() => {
+		async function loadArtifacts() {
+			setLoading(true);
+			try {
+				const [plans, maps, animations, benchmarks, evolutions, verifications, promptEvolutions, improvements] = await Promise.all([
+					storage.getLessonPlans(),
+					storage.getLessonMaps(),
+					storage.getAnimations(),
+					storage.getBenchmarks(),
+					storage.getEvolutions(),
+					storage.getVerifications(),
+					storage.getPromptEvolutions(),
+					storage.getImprovementAttempts(),
+				]);
+
+				const all: Artifact[] = [
+					...plans.map((p) => ({ id: p.id, type: "plan" as const, label: p.topic, createdAt: p.createdAt, sessionId: p.sessionId, data: p })),
+					...maps.map((m) => ({ id: m.id, type: "map" as const, label: m.topic, createdAt: m.createdAt, sessionId: m.sessionId, data: m })),
+					...animations.map((a) => ({ id: a.id, type: "animation" as const, label: a.topic, createdAt: a.createdAt, sessionId: a.sessionId, data: a })),
+					...benchmarks.map((b) => ({ id: b.id, type: "benchmark" as const, label: b.topic || "general", createdAt: b.createdAt, sessionId: b.sessionId, data: b })),
+					...evolutions.map((e) => ({ id: e.id, type: "evolution" as const, label: e.topic || "general", createdAt: e.createdAt, sessionId: e.sessionId, data: e })),
+					...verifications.map((v) => ({ id: v.id, type: "verification" as const, label: v.topic, createdAt: v.createdAt, sessionId: v.sessionId, data: v })),
+					...promptEvolutions.map((p) => ({ id: p.id, type: "prompt-evolution" as const, label: p.promptName, createdAt: p.createdAt, sessionId: p.sessionId, data: p })),
+					...improvements.map((i) => ({ id: i.id, type: "improvement" as const, label: i.proposalId, createdAt: i.createdAt, sessionId: i.sessionId, data: i })),
+				];
+
+				all.sort((a, b) => b.createdAt - a.createdAt);
+				setArtifacts(all);
+
+				// If artifactId provided, select it
+				if (artifactId) {
+					const found = all.find((a) => a.id === artifactId);
+					if (found) setSelected(found);
+				}
+			} catch (err) {
+				console.error("Failed to load artifacts:", err);
+			}
+			setLoading(false);
+		}
+
+		loadArtifacts();
+	}, [storage, artifactId]);
+
+	// Load session metadata for grouping
+	useEffect(() => {
+		async function loadSessions() {
+			try {
+				await getInitPromise();
+				const meta = await sessions.getAllMetadata();
+				const map = new Map(meta.map((m) => [m.id, m]));
+				setSessionMap(map);
+			} catch {
+				// sessions store may not be available in all contexts
+			}
+		}
+		loadSessions();
+	}, []);
+
+	const filteredArtifacts = useMemo(() => {
+		const normalizedQuery = query.trim().toLowerCase();
+		let result = artifacts;
+		if (!showAgentArtifacts) {
+			result = result.filter((a) => AUDIENCE_MAP[a.type] === "user");
+		}
+		if (normalizedQuery) {
+			result = result.filter((a) => {
+				const text = [a.label, a.type, new Date(a.createdAt).toLocaleString(), JSON.stringify(a.data)].join(" ").toLowerCase();
+				return text.includes(normalizedQuery);
+			});
+		}
+		return result;
+	}, [artifacts, query, showAgentArtifacts]);
+
+	const agentArtifactCount = useMemo(
+		() => artifacts.filter((a) => AUDIENCE_MAP[a.type] === "agent").length,
+		[artifacts],
+	);
+
+	// Group by sessionId (or "__other__" for unassociated)
+	const groupedBySession = useMemo(() => {
+		const groups = new Map<string, Artifact[]>();
+		for (const artifact of filteredArtifacts) {
+			const key = artifact.sessionId ?? "__other__";
+			if (!groups.has(key)) groups.set(key, []);
+			groups.get(key)!.push(artifact);
+		}
+		return groups;
+	}, [filteredArtifacts]);
+
+	// Sort groups: newest session first, then "__other__" at bottom
+	const sortedGroupKeys = useMemo(() => {
+		const keys = Array.from(groupedBySession.keys());
+		keys.sort((a, b) => {
+			if (a === "__other__") return 1;
+			if (b === "__other__") return -1;
+			// Sort by most recent artifact in each group
+			const groupA = groupedBySession.get(a)!;
+			const groupB = groupedBySession.get(b)!;
+			return groupB[0].createdAt - groupA[0].createdAt;
+		});
+		return keys;
+	}, [groupedBySession]);
+
+	const toggleShowAgent = () => {
+		const next = !showAgentArtifacts;
+		setShowAgentArtifacts(next);
+		writeShowAgent(next);
+	};
+
+	if (loading) {
+		return (
+			<div className="p-8 text-center text-muted-foreground">
+				<div className="animate-pulse">Loading artifacts...</div>
+			</div>
+		);
+	}
+
+	if (selected) {
+		return (
+			<div className="artifact-detail text-foreground">
+				<div className="mb-4 pb-2 border-b border-border">
+					<button onClick={() => setSelected(null)} className="text-sm text-muted-foreground hover:underline">
+						← Back to list
+					</button>
+					<h2 className="text-lg font-semibold mt-1 text-foreground truncate">{selected.label}</h2>
+					<div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+						<span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-muted">
+							{TYPE_META[selected.type].icon}
+							{TYPE_META[selected.type].label}
+						</span>
+						<span>{new Date(selected.createdAt).toLocaleString()}</span>
+						{AUDIENCE_MAP[selected.type] === "agent" && (
+							<span className="text-[10px] uppercase tracking-wider text-amber-500">Agent</span>
+						)}
+					</div>
+				</div>
+				<div className="artifact-content text-foreground">
+					{selected.type === "plan" && <PlanViewer plan={selected.data as LessonPlan} />}
+					{selected.type === "map" && <MapView map={selected.data as LessonMap} />}
+					{selected.type === "animation" && <AnimationViewer animation={selected.data as Animation} />}
+					{selected.type === "benchmark" && <BenchmarkViewer benchmark={selected.data as BenchmarkResult} />}
+					{selected.type === "evolution" && <EvolutionViewer evolution={selected.data as EvolutionResult} />}
+					{selected.type === "verification" && <VerificationViewer data={selected.data} />}
+					{selected.type === "prompt-evolution" && <PromptEvolutionViewer promptEvolution={selected.data as PromptEvolutionResult} />}
+					{selected.type === "improvement" && <ImprovementViewer improvement={selected.data as ImprovementAttemptRecord} />}
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<div className="artifact-list text-foreground">
+			{artifacts.length === 0 ? (
+				<p className="text-muted-foreground text-sm">
+					No artifacts yet. Use /plan, /map, /animate, /bench, or /evolve to create some.
+				</p>
+			) : (
+				<div className="space-y-4">
+					{/* Search + Toggle */}
+					<div className="flex items-center gap-2">
+						<label className="flex min-h-9 flex-1 items-center gap-2 rounded-md border border-border bg-background px-3 text-xs">
+							<Search size={14} className="shrink-0 text-muted-foreground" />
+							<input
+								className="min-w-0 flex-1 bg-transparent py-2 outline-none placeholder:text-muted-foreground"
+								value={query}
+								placeholder="Search artifacts"
+								onChange={(event) => setQuery(event.target.value)}
+							/>
+						</label>
+						{agentArtifactCount > 0 && (
+							<button
+								type="button"
+								onClick={toggleShowAgent}
+								title={showAgentArtifacts ? "Hide agent artifacts" : "Show agent artifacts"}
+								className={`inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors ${
+									showAgentArtifacts
+										? "border-primary/30 bg-primary/10 text-primary hover:bg-primary/20"
+										: "border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+								}`}
+							>
+								{showAgentArtifacts ? <Eye size={13} /> : <EyeOff size={13} />}
+								{showAgentArtifacts ? `Hide ${agentArtifactCount} agent` : `Show ${agentArtifactCount} agent`}
+							</button>
+						)}
+					</div>
+
+					{filteredArtifacts.length === 0 ? (
+						<div className="py-8 text-center text-sm text-muted-foreground">
+							{artifacts.length > 0 ? "No artifacts match your search" : "No artifacts yet"}
+						</div>
+					) : (
+						<div className="space-y-6">
+							{sortedGroupKeys.map((groupKey) => {
+								const groupArtifacts = groupedBySession.get(groupKey)!;
+								const isOther = groupKey === "__other__";
+								const sessionMeta = !isOther ? sessionMap.get(groupKey) : undefined;
+
+								return (
+									<section key={groupKey}>
+										{/* Session header */}
+										<div className="mb-2 flex items-center gap-2">
+											{isOther ? (
+												<>
+													<span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+														Other artifacts
+													</span>
+													<span className="text-[10px] text-muted-foreground">
+														(no session)
+													</span>
+												</>
+											) : sessionMeta ? (
+												<>
+													<MessageSquare size={12} className="shrink-0 text-muted-foreground" />
+													<span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">
+														{sessionMeta.title}
+													</span>
+													<span className="text-[10px] text-muted-foreground">
+														{formatArtifactDate(new Date(sessionMeta.lastModified ?? sessionMeta.createdAt).getTime())} · {sessionMeta.messageCount} messages
+													</span>
+													{sessionMeta.parentSessionId && (
+														<GitBranch size={10} className="shrink-0 text-primary" />
+													)}
+												</>
+											) : (
+												<span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+													Unknown session
+												</span>
+											)}
+											<span className="ml-auto text-[10px] text-muted-foreground">
+												{groupArtifacts.length} artifact{groupArtifacts.length === 1 ? "" : "s"}
+											</span>
+										</div>
+
+										{/* Artifact list */}
+										<div className="space-y-1.5">
+											{groupArtifacts.map((artifact) => {
+												const meta = TYPE_META[artifact.type];
+												const isAgent = AUDIENCE_MAP[artifact.type] === "agent";
+												return (
+													<button
+														key={artifact.id}
+														onClick={() => setSelected(artifact)}
+														className={`group w-full text-left rounded-lg border p-2.5 transition-colors ${
+															isAgent
+																? "border-border/50 bg-muted/20 hover:bg-muted/40"
+																: "border-border bg-muted/30 hover:bg-muted/50"
+														}`}
+													>
+														<div className="flex items-start gap-2.5">
+															<span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-background border border-border text-muted-foreground">
+																{meta.icon}
+															</span>
+															<div className="min-w-0 flex-1">
+																<div className="flex items-center gap-2">
+																	<span className="text-sm font-medium truncate text-foreground">
+																		{artifact.label}
+																	</span>
+																	{isAgent && (
+																		<span className="shrink-0 rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+																		Agent
+																	</span>
+																	)}
+																</div>
+																<div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
+																	<span>{meta.label}</span>
+																	<span>·</span>
+																	<span>{formatArtifactDate(artifact.createdAt)}</span>
+																	<span>·</span>
+																	<span className="truncate">{artifactPreviewText(artifact)}</span>
+																</div>
+															</div>
+														</div>
+													</button>
+												);
+											})}
+										</div>
+									</section>
+								);
+							})}
+						</div>
+					)}
+				</div>
+			)}
+		</div>
+	);
+}
+
+// ── Sub-viewers (unchanged from before) ───────────────────────────────────
+
 const mermaidFencePattern = /```mermaid[^\n]*\n([\s\S]*?)```/gi;
 
 function splitMermaidBlocks(content: string) {
 	const parts: Array<{ type: "markdown" | "mermaid"; content: string }> = [];
 	let lastIndex = 0;
-
 	for (const match of content.matchAll(mermaidFencePattern)) {
 		const index = match.index ?? 0;
 		const markdown = content.slice(lastIndex, index);
@@ -243,16 +435,13 @@ function splitMermaidBlocks(content: string) {
 		parts.push({ type: "mermaid", content: match[1].trim() });
 		lastIndex = index + match[0].length;
 	}
-
 	const trailingMarkdown = content.slice(lastIndex);
 	if (trailingMarkdown.trim()) parts.push({ type: "markdown", content: trailingMarkdown });
-
 	return parts;
 }
 
 function ArtifactMarkdownViewer({ content }: { content: string }) {
 	const parts = splitMermaidBlocks(content);
-
 	if (parts.length === 0) {
 		return (
 			<div className="prose prose-sm dark:prose-invert max-w-none">
@@ -260,7 +449,6 @@ function ArtifactMarkdownViewer({ content }: { content: string }) {
 			</div>
 		);
 	}
-
 	return (
 		<div className="space-y-4">
 			{parts.map((part, index) => {
@@ -271,7 +459,6 @@ function ArtifactMarkdownViewer({ content }: { content: string }) {
 						</div>
 					);
 				}
-
 				return (
 					<div key={index} className="prose prose-sm dark:prose-invert max-w-none">
 						<MarkdownBlock content={part.content} />
@@ -283,9 +470,7 @@ function ArtifactMarkdownViewer({ content }: { content: string }) {
 }
 
 function PlanViewer({ plan }: { plan: LessonPlan }) {
-	return (
-		<ArtifactMarkdownViewer content={plan.content} />
-	);
+	return <ArtifactMarkdownViewer content={plan.content} />;
 }
 
 function MapView({ map }: { map: LessonMap }) {
@@ -304,11 +489,7 @@ function MapView({ map }: { map: LessonMap }) {
 
 function AnimationViewer({ animation }: { animation: Animation }) {
 	return (
-		<AnimationPlayer
-			storyboard={animation.storyboard}
-			scene={animation.scene}
-			manifest={animation.manifest}
-		/>
+		<AnimationPlayer storyboard={animation.storyboard} scene={animation.scene} manifest={animation.manifest} />
 	);
 }
 
@@ -323,9 +504,7 @@ function BenchmarkViewer({ benchmark }: { benchmark: BenchmarkResult }) {
 			{benchmark.trace && (
 				<details>
 					<summary className="text-sm text-muted-foreground cursor-pointer">View Trace</summary>
-					<pre className="mt-2 whitespace-pre-wrap bg-muted/20 p-3 rounded text-xs overflow-auto max-h-96">
-						{benchmark.trace}
-					</pre>
+					<pre className="mt-2 whitespace-pre-wrap bg-muted/20 p-3 rounded text-xs overflow-auto max-h-96">{benchmark.trace}</pre>
 				</details>
 			)}
 		</div>
@@ -343,9 +522,7 @@ function EvolutionViewer({ evolution }: { evolution: EvolutionResult }) {
 			{evolution.trace && (
 				<details>
 					<summary className="text-sm text-muted-foreground cursor-pointer">View Trace</summary>
-					<pre className="mt-2 whitespace-pre-wrap bg-muted/20 p-3 rounded text-xs overflow-auto max-h-96">
-						{evolution.trace}
-					</pre>
+					<pre className="mt-2 whitespace-pre-wrap bg-muted/20 p-3 rounded text-xs overflow-auto max-h-96">{evolution.trace}</pre>
 				</details>
 			)}
 		</div>
@@ -362,9 +539,7 @@ function PromptEvolutionViewer({ promptEvolution }: { promptEvolution: PromptEvo
 			<ArtifactMarkdownViewer content={promptEvolution.report} />
 			<details>
 				<summary className="text-sm text-muted-foreground cursor-pointer">View Prompt</summary>
-				<pre className="mt-2 whitespace-pre-wrap bg-muted/20 p-3 rounded text-xs overflow-auto max-h-96">
-					{promptEvolution.bestPrompt}
-				</pre>
+				<pre className="mt-2 whitespace-pre-wrap bg-muted/20 p-3 rounded text-xs overflow-auto max-h-96">{promptEvolution.bestPrompt}</pre>
 			</details>
 		</div>
 	);
@@ -382,7 +557,6 @@ function ImprovementViewer({ improvement }: { improvement: ImprovementAttemptRec
 
 ## Hypothesis
 ${improvement.hypothesis}`;
-
 	return <ArtifactMarkdownViewer content={content} />;
 }
 

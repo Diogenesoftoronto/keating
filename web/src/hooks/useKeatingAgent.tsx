@@ -196,6 +196,10 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     settingsDialog.onOpen();
   }, [settingsDialog]);
 
+  useEffect(() => {
+    keatingStorage.setCurrentSessionId(sessionIdRef.current);
+  }, []);
+
   async function loadBrowserModel() {
     const state = localModel.getState();
     if (!state.loaded && !state.loading) await localModel.load();
@@ -405,6 +409,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       await saveSessionSnapshot(currentAgent);
       await endLearnerSession();
       sessionIdRef.current = createSessionId();
+      keatingStorage.setCurrentSessionId(sessionIdRef.current);
       sessionCreatedAtRef.current = new Date().toISOString();
       sessionParentIdRef.current = null;
       sessionForkedAtRef.current = undefined;
@@ -441,6 +446,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     if (currentAgent) await endLearnerSession();
 
     sessionIdRef.current = session.id;
+    keatingStorage.setCurrentSessionId(session.id);
     sessionCreatedAtRef.current = session.createdAt;
     sessionParentIdRef.current = session.parentSessionId ?? null;
     sessionForkedAtRef.current = session.forkedAt;
