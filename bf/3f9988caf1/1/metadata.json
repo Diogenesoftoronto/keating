@@ -1,0 +1,94 @@
+{
+  "cli_version": "0.6.2",
+  "checkpoint_id": "bf3f9988caf1",
+  "session_id": "ba7a8359-2c2d-48d1-b491-e67ea38c18d0",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-27T22:03:52.348856927Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "bun.lock",
+    "package.json",
+    "src/cli/main.ts",
+    "src/core/commands.ts",
+    "web/bun.lock",
+    "web/package.json",
+    "web/src/app.css",
+    "web/src/components/AssistantChatPanel.tsx",
+    "web/src/components/SessionManagerDialog.tsx",
+    "web/src/components/SessionSidebar.tsx",
+    "web/src/components/ThemeToggle.tsx",
+    "web/src/components/session-tree.ts",
+    "web/src/hooks/useKeatingAgent.tsx",
+    "web/src/pages/Chat.tsx",
+    "web/src/pages/Tutorial.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "",
+  "turn_id": "d0cf5f4d12c6",
+  "token_usage": {
+    "input_tokens": 6,
+    "cache_creation_tokens": 131152,
+    "cache_read_tokens": 18110,
+    "output_tokens": 3391,
+    "api_call_count": 1
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-27T22:03:51.292621962Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 103,
+    "total_committed": 0,
+    "total_lines_changed": 103,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 1606,
+      "user_lines_removed": 103,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "bun.lock": 162,
+        "fnox.toml": 2,
+        "package.json": 4,
+        "src/cli/main.ts": 18,
+        "src/core/commands.ts": 1,
+        "src/mcp/server.ts": 586,
+        "test/mcp.test.ts": 39,
+        "web/bun.lock": 141,
+        "web/package.json": 3,
+        "web/src/app.css": 10,
+        "web/src/components/AssistantChatPanel.tsx": 69,
+        "web/src/components/SessionManagerDialog.tsx": 37,
+        "web/src/components/SessionSidebar.tsx": 132,
+        "web/src/components/ThemeToggle.tsx": 6,
+        "web/src/components/session-tree.ts": 5,
+        "web/src/hooks/useKeatingAgent.tsx": 74,
+        "web/src/keating/webmcp.ts": 209,
+        "web/src/pages/Chat.tsx": 90,
+        "web/src/pages/Tutorial.tsx": 18
+      },
+      "user_removed_per_file": {
+        "bun.lock": 4,
+        "package.json": 2,
+        "web/bun.lock": 2,
+        "web/package.json": 2,
+        "web/src/components/AssistantChatPanel.tsx": 3,
+        "web/src/components/SessionManagerDialog.tsx": 9,
+        "web/src/components/SessionSidebar.tsx": 19,
+        "web/src/components/ThemeToggle.tsx": 2,
+        "web/src/components/session-tree.ts": 1,
+        "web/src/hooks/useKeatingAgent.tsx": 3,
+        "web/src/pages/Chat.tsx": 56
+      }
+    }
+  ]
+}

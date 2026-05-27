@@ -3,7 +3,7 @@
   "checkpoint_id": "bf3f9988caf1",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
     "bun.lock",
     "fnox.toml",
@@ -31,13 +31,19 @@
       "transcript": "/bf/3f9988caf1/0/full.jsonl",
       "content_hash": "/bf/3f9988caf1/0/content_hash.txt",
       "prompt": "/bf/3f9988caf1/0/prompt.txt"
+    },
+    {
+      "metadata": "/bf/3f9988caf1/1/metadata.json",
+      "transcript": "/bf/3f9988caf1/1/full.jsonl",
+      "content_hash": "/bf/3f9988caf1/1/content_hash.txt",
+      "prompt": "/bf/3f9988caf1/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 30,
-    "cache_creation_tokens": 131440,
-    "cache_read_tokens": 1668395,
-    "output_tokens": 42515,
-    "api_call_count": 20
+    "input_tokens": 36,
+    "cache_creation_tokens": 262592,
+    "cache_read_tokens": 1686505,
+    "output_tokens": 45906,
+    "api_call_count": 21
   }
 }
