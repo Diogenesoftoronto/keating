@@ -1,0 +1,8 @@
+I would like for the side panel for the sessions to look a lot like the openai, google or claude sidepanels in function. they should operate like a tree view of the sessions that have toggle and constant view of the different sessions available instead of needing to click the button on the this top chat nav.
+I also think that changing  this from a div into a proper navigation  element makes way more sense. 
+<div class="chat-header fle...">
+  <a ...>
+  <div ...>
+  Keating
+</div>
+  in ChatContent (at /src/pages/Chat.tsx)

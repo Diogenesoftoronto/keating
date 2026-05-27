@@ -1,0 +1,38 @@
+{
+  "cli_version": "0.6.2",
+  "checkpoint_id": "0dab8cadb9ff",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "keating.config.json",
+    "src/core/api-retry.ts",
+    "src/core/config.ts",
+    "src/core/pi-agent.ts",
+    "test/api-retry.test.ts",
+    "test/config.test.ts",
+    "web/src/hooks/keating-stream.ts",
+    "web/src/keating/api-retry.ts",
+    "web/src/keating/speech-providers/custom-tts.ts",
+    "web/src/keating/speech-providers/gemini-live.ts",
+    "web/src/keating/speech-providers/openai-realtime.ts",
+    "web/src/keating/speech-providers/openai-tts.ts",
+    "web/src/lib/provider-models.ts",
+    "web/test/api-retry.test.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0d/ab8cadb9ff/0/metadata.json",
+      "transcript": "/0d/ab8cadb9ff/0/full.jsonl",
+      "content_hash": "/0d/ab8cadb9ff/0/content_hash.txt",
+      "prompt": "/0d/ab8cadb9ff/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 136,
+    "cache_creation_tokens": 122405,
+    "cache_read_tokens": 318026,
+    "output_tokens": 11474,
+    "api_call_count": 7
+  }
+}
