@@ -52,7 +52,13 @@ function ChatContent() {
     persistentStorageStatus,
     toggleSpeech,
     forkingSessionId,
+    mobileSidebarOpen,
+    toggleMobileSidebar,
+    closeMobileSidebar,
   } = useKeatingAgent();
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches,
+  );
   const [introDismissed, setIntroDismissed] = useState(
     () => sessionStorage.getItem("keating_chat_intro") === "dismissed",
   );
@@ -110,6 +116,14 @@ function ChatContent() {
     if (typeof window === "undefined") return;
     const mq = window.matchMedia("(min-width: 1024px)");
     const handler = (e: MediaQueryListEvent) => setIsWideViewport(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(min-width: 768px)");
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
   }, []);
@@ -178,17 +192,28 @@ function ChatContent() {
       >
         <button
           type="button"
-          className={`${actionButtonClass} hidden md:inline-flex`}
-          title={sessionSidebarCollapsed ? "Show sessions panel" : "Hide sessions panel"}
-          aria-label={sessionSidebarCollapsed ? "Show sessions panel" : "Hide sessions panel"}
-          aria-pressed={!sessionSidebarCollapsed}
-          onClick={toggleSessionSidebar}
+          className={actionButtonClass}
+          title={isDesktop
+            ? (sessionSidebarCollapsed ? "Show sessions panel" : "Hide sessions panel")
+            : (mobileSidebarOpen ? "Close sessions panel" : "Open sessions panel")
+          }
+          aria-label={isDesktop
+            ? (sessionSidebarCollapsed ? "Show sessions panel" : "Hide sessions panel")
+            : (mobileSidebarOpen ? "Close sessions panel" : "Open sessions panel")
+          }
+          aria-pressed={isDesktop ? !sessionSidebarCollapsed : mobileSidebarOpen}
+          onClick={() => {
+            if (isDesktop) {
+              toggleSessionSidebar();
+            } else {
+              toggleMobileSidebar();
+            }
+          }}
         >
-          {sessionSidebarCollapsed ? (
-            <PanelLeftOpen size={16} />
-          ) : (
-            <PanelLeftClose size={16} />
-          )}
+          {isDesktop
+            ? (sessionSidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />)
+            : (mobileSidebarOpen ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />)
+          }
         </button>
         <Link
           to="/"
@@ -217,16 +242,16 @@ function ChatContent() {
             <Plus size={16} />
           </button>
           <button
-            className={`${actionButtonClass} hidden min-[400px]:inline-flex`}
+            className={`${actionButtonClass} hidden sm:inline-flex`}
             title="Settings"
             aria-label="Settings"
             onClick={openSettings}
           >
             <Settings size={16} />
           </button>
-          <ThemeToggle className="hidden min-[440px]:inline-flex" />
+          <ThemeToggle className="hidden sm:inline-flex" />
           <button
-            className={`${actionButtonClass} hidden min-[480px]:inline-flex ${shareState === "copied" ? "text-primary" : ""} ${shareState === "error" ? "text-destructive" : ""}`}
+            className={`${actionButtonClass} hidden md:inline-flex ${shareState === "copied" ? "text-primary" : ""} ${shareState === "error" ? "text-destructive" : ""}`}
             title={
               shareState === "copied"
                 ? "Copied share link"
@@ -241,7 +266,7 @@ function ChatContent() {
             <Share2 size={16} />
           </button>
           <button
-            className={`${actionButtonClass} hidden min-[540px]:inline-flex ${speechEnabled ? "text-primary" : ""}`}
+            className={`${actionButtonClass} hidden md:inline-flex ${speechEnabled ? "text-primary" : ""}`}
             title={speechEnabled ? "Disable speech" : "Enable speech"}
             aria-pressed={speechEnabled}
             onClick={toggleSpeech}
@@ -249,7 +274,7 @@ function ChatContent() {
             {speechEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
           </button>
           <button
-            className={`${actionButtonClass} hidden min-[580px]:inline-flex`}
+            className={`${actionButtonClass} hidden md:inline-flex`}
             title="Artifacts"
             aria-label="Artifacts"
             onClick={() => setArtifactBrowserOpen(true)}
@@ -257,16 +282,7 @@ function ChatContent() {
             <LibraryBig size={16} />
           </button>
           <button
-            className={`${actionButtonClass} hidden sm:inline-flex md:hidden`}
-            title="Session history"
-            aria-label="Session history"
-            disabled={isPending}
-            onClick={openSessions}
-          >
-            <History size={16} />
-          </button>
-          <button
-            className={`${actionButtonClass} hidden sm:inline-flex`}
+            className={`${actionButtonClass} hidden md:inline-flex`}
             title="Learning usage"
             aria-label="Learning usage"
             onClick={() => navigate({ to: "/usage" })}
@@ -274,7 +290,7 @@ function ChatContent() {
             <BarChart3 size={16} />
           </button>
           <a
-            className={`${actionButtonClass} hidden sm:inline-flex`}
+            className={`${actionButtonClass} hidden md:inline-flex`}
             title="Report an issue"
             aria-label="Report an issue on GitHub"
             href={GITHUB_ISSUE_URL}
@@ -305,18 +321,7 @@ function ChatContent() {
           >
             <div className="flex flex-col p-1">
               <button
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors md:hidden"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  openSessions();
-                }}
-                disabled={isPending}
-              >
-                <History size={14} />
-                Manage sessions
-              </button>
-              <button
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors min-[400px]:hidden"
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors sm:hidden"
                 onClick={() => {
                   setMobileMenuOpen(false);
                   openSettings();
@@ -325,8 +330,9 @@ function ChatContent() {
                 <Settings size={14} />
                 Settings
               </button>
+              <div className="sm:hidden" />
               <button
-                className={`flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors min-[480px]:hidden ${shareState === "copied" ? "text-primary" : ""} ${shareState === "error" ? "text-destructive" : ""}`}
+                className={`flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors md:hidden ${shareState === "copied" ? "text-primary" : ""} ${shareState === "error" ? "text-destructive" : ""}`}
                 onClick={() => {
                   setMobileMenuOpen(false);
                   handleShare();
@@ -337,7 +343,7 @@ function ChatContent() {
                 {shareState === "copied" ? "Link copied" : "Share session"}
               </button>
               <button
-                className={`flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors min-[540px]:hidden ${speechEnabled ? "text-primary" : ""}`}
+                className={`flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors md:hidden ${speechEnabled ? "text-primary" : ""}`}
                 onClick={() => {
                   setMobileMenuOpen(false);
                   toggleSpeech();
@@ -347,7 +353,7 @@ function ChatContent() {
                 {speechEnabled ? "Disable speech" : "Enable speech"}
               </button>
               <button
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors min-[580px]:hidden"
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors md:hidden"
                 onClick={() => {
                   setMobileMenuOpen(false);
                   setArtifactBrowserOpen(true);
@@ -357,7 +363,7 @@ function ChatContent() {
                 Artifacts
               </button>
               <button
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors sm:hidden"
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors md:hidden"
                 onClick={() => {
                   setMobileMenuOpen(false);
                   navigate({ to: "/usage" });
@@ -366,7 +372,7 @@ function ChatContent() {
                 <BarChart3 size={14} />
                 Learning usage
               </button>
-              <div className="my-1 border-t border-border sm:hidden" />
+              <div className="my-1 border-t border-border md:hidden" />
               <Link
                 to="/"
                 className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
@@ -408,7 +414,7 @@ function ChatContent() {
                 href={GITHUB_ISSUE_URL}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors sm:hidden"
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors md:hidden"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Report issue
