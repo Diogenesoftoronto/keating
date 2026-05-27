@@ -1,9 +1,12 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import {
   BarChart3,
+  Bug,
   History,
   LibraryBig,
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
   Plus,
   Settings,
   Share2,
@@ -24,6 +27,8 @@ import {
   subscribeKeatingUiSettings,
 } from "../keating/ui-settings";
 
+const GITHUB_ISSUE_URL = "https://github.com/Diogenesoftoronto/keating/issues/new";
+
 function ChatContent() {
   useSeo({
     title: "Keating Chat — Socratic AI Tutor Session",
@@ -41,6 +46,8 @@ function ChatContent() {
     chatPanelRef,
     dialogs,
     sessionSidebar,
+    sessionSidebarCollapsed,
+    toggleSessionSidebar,
     speechEnabled,
     persistentStorageStatus,
     toggleSpeech,
@@ -165,7 +172,24 @@ function ChatContent() {
   return (
     <div className={`chat-page-shell w-full flex flex-col bg-background text-foreground overflow-hidden ${forkingSessionId ? "session-forking" : ""}`}>
       {/* Header */}
-      <div className="chat-header flex items-center gap-2 border-b border-border shrink-0 px-2 sm:px-4 py-2 h-14 relative">
+      <nav
+        className="chat-header flex items-center gap-2 border-b border-border shrink-0 px-2 sm:px-4 py-2 h-14 relative"
+        aria-label="Chat navigation"
+      >
+        <button
+          type="button"
+          className={`${actionButtonClass} hidden md:inline-flex`}
+          title={sessionSidebarCollapsed ? "Show sessions panel" : "Hide sessions panel"}
+          aria-label={sessionSidebarCollapsed ? "Show sessions panel" : "Hide sessions panel"}
+          aria-pressed={!sessionSidebarCollapsed}
+          onClick={toggleSessionSidebar}
+        >
+          {sessionSidebarCollapsed ? (
+            <PanelLeftOpen size={16} />
+          ) : (
+            <PanelLeftClose size={16} />
+          )}
+        </button>
         <Link
           to="/"
           className="chat-brand inline-flex min-w-0 shrink-0 items-center gap-2 rounded-md px-2 py-1 hover:bg-accent hover:text-accent-foreground"
@@ -183,7 +207,6 @@ function ChatContent() {
 
         {/* Actions */}
         <div className="chat-actions ml-auto flex min-w-0 flex-1 items-center justify-end gap-1 overflow-hidden">
-          <ThemeToggle />
           <button
             className={actionButtonClass}
             title="New session"
@@ -194,24 +217,16 @@ function ChatContent() {
             <Plus size={16} />
           </button>
           <button
-            className={`${actionButtonClass} hidden sm:inline-flex`}
-            title="Session history"
-            aria-label="Session history"
-            disabled={isPending}
-            onClick={openSessions}
-          >
-            <History size={16} />
-          </button>
-          <button
-            className={actionButtonClass}
+            className={`${actionButtonClass} hidden min-[400px]:inline-flex`}
             title="Settings"
             aria-label="Settings"
             onClick={openSettings}
           >
             <Settings size={16} />
           </button>
+          <ThemeToggle className="hidden min-[440px]:inline-flex" />
           <button
-            className={`${actionButtonClass} hidden sm:inline-flex ${shareState === "copied" ? "text-primary" : ""} ${shareState === "error" ? "text-destructive" : ""}`}
+            className={`${actionButtonClass} hidden min-[480px]:inline-flex ${shareState === "copied" ? "text-primary" : ""} ${shareState === "error" ? "text-destructive" : ""}`}
             title={
               shareState === "copied"
                 ? "Copied share link"
@@ -226,15 +241,7 @@ function ChatContent() {
             <Share2 size={16} />
           </button>
           <button
-            className={`${actionButtonClass} hidden sm:inline-flex`}
-            title="Learning usage"
-            aria-label="Learning usage"
-            onClick={() => navigate({ to: "/usage" })}
-          >
-            <BarChart3 size={16} />
-          </button>
-          <button
-            className={`${actionButtonClass} hidden sm:inline-flex ${speechEnabled ? "text-primary" : ""}`}
+            className={`${actionButtonClass} hidden min-[540px]:inline-flex ${speechEnabled ? "text-primary" : ""}`}
             title={speechEnabled ? "Disable speech" : "Enable speech"}
             aria-pressed={speechEnabled}
             onClick={toggleSpeech}
@@ -242,7 +249,7 @@ function ChatContent() {
             {speechEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
           </button>
           <button
-            className={`${actionButtonClass} hidden sm:inline-flex`}
+            className={`${actionButtonClass} hidden min-[580px]:inline-flex`}
             title="Artifacts"
             aria-label="Artifacts"
             onClick={() => setArtifactBrowserOpen(true)}
@@ -250,37 +257,55 @@ function ChatContent() {
             <LibraryBig size={16} />
           </button>
           <button
-            className={`${actionButtonClass} sm:hidden`}
+            className={`${actionButtonClass} hidden sm:inline-flex md:hidden`}
+            title="Session history"
+            aria-label="Session history"
+            disabled={isPending}
+            onClick={openSessions}
+          >
+            <History size={16} />
+          </button>
+          <button
+            className={`${actionButtonClass} hidden sm:inline-flex`}
+            title="Learning usage"
+            aria-label="Learning usage"
+            onClick={() => navigate({ to: "/usage" })}
+          >
+            <BarChart3 size={16} />
+          </button>
+          <a
+            className={`${actionButtonClass} hidden sm:inline-flex`}
+            title="Report an issue"
+            aria-label="Report an issue on GitHub"
+            href={GITHUB_ISSUE_URL}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <Bug size={16} />
+          </a>
+          <button
+            className={actionButtonClass}
             title="Menu"
             aria-label="More menu"
             aria-expanded={mobileMenuOpen}
+            aria-haspopup="menu"
             onClick={() => setMobileMenuOpen((o) => !o)}
           >
             {mobileMenuOpen ? <X size={16} /> : <Menu size={16} />}
           </button>
         </div>
 
-        {/* Mobile dropdown menu */}
+        {/* Overflow menu */}
         {mobileMenuOpen && (
           <div
             ref={mobileMenuRef}
+            role="menu"
             className="absolute right-2 top-full z-50 mt-1 w-56 rounded-md border border-border bg-background shadow-lg font-terminal"
             style={{ fontSize: "0.875rem" }}
           >
             <div className="flex flex-col p-1">
               <button
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  newSession();
-                }}
-                disabled={isPending}
-              >
-                <Plus size={14} />
-                New session
-              </button>
-              <button
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors md:hidden"
                 onClick={() => {
                   setMobileMenuOpen(false);
                   openSessions();
@@ -288,10 +313,20 @@ function ChatContent() {
                 disabled={isPending}
               >
                 <History size={14} />
-                Session history
+                Manage sessions
               </button>
               <button
-                className={`flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors ${shareState === "copied" ? "text-primary" : ""} ${shareState === "error" ? "text-destructive" : ""}`}
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors min-[400px]:hidden"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  openSettings();
+                }}
+              >
+                <Settings size={14} />
+                Settings
+              </button>
+              <button
+                className={`flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors min-[480px]:hidden ${shareState === "copied" ? "text-primary" : ""} ${shareState === "error" ? "text-destructive" : ""}`}
                 onClick={() => {
                   setMobileMenuOpen(false);
                   handleShare();
@@ -302,17 +337,7 @@ function ChatContent() {
                 {shareState === "copied" ? "Link copied" : "Share session"}
               </button>
               <button
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  navigate({ to: "/usage" });
-                }}
-              >
-                <BarChart3 size={14} />
-                Learning usage
-              </button>
-              <button
-                className={`flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors ${speechEnabled ? "text-primary" : ""}`}
+                className={`flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors min-[540px]:hidden ${speechEnabled ? "text-primary" : ""}`}
                 onClick={() => {
                   setMobileMenuOpen(false);
                   toggleSpeech();
@@ -322,17 +347,7 @@ function ChatContent() {
                 {speechEnabled ? "Disable speech" : "Enable speech"}
               </button>
               <button
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  openSettings();
-                }}
-              >
-                <Settings size={14} />
-                Settings
-              </button>
-              <button
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors min-[580px]:hidden"
                 onClick={() => {
                   setMobileMenuOpen(false);
                   setArtifactBrowserOpen(true);
@@ -341,7 +356,17 @@ function ChatContent() {
                 <LibraryBig size={14} />
                 Artifacts
               </button>
-              <div className="my-1 border-t border-border" />
+              <button
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors sm:hidden"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  navigate({ to: "/usage" });
+                }}
+              >
+                <BarChart3 size={14} />
+                Learning usage
+              </button>
+              <div className="my-1 border-t border-border sm:hidden" />
               <Link
                 to="/"
                 className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
@@ -379,10 +404,19 @@ function ChatContent() {
               >
                 GitHub
               </a>
+              <a
+                href={GITHUB_ISSUE_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors sm:hidden"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Report issue
+              </a>
             </div>
           </div>
         )}
-      </div>
+      </nav>
 
       {showPersistenceBanner && (
         <div className="chat-persistence-banner shrink-0 border-b border-border">

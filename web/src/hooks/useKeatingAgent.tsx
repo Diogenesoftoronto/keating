@@ -22,6 +22,7 @@ import { KeatingApiKeyPromptDialog, promptKeatingApiKey } from "../components/Ke
 import { getProviderApiKey } from "../lib/provider-models";
 import { localModel } from "../stores/local-model";
 import { buildKeatingSystemPrompt, createKeatingTools } from "../keating/browser-tools";
+import { registerKeatingWebMcp } from "../keating/webmcp";
 import { loadWebSpeechSettings, primeSpeechAudio, saveWebSpeechSettings, type WebSpeechSettings } from "../keating/speech";
 import { subscribeAgentEvents } from "./agent-subscriptions";
 import { DEFAULT_MODEL, hybridStreamFn } from "./keating-stream";
@@ -59,6 +60,25 @@ const ARTIFACT_TOOL_NAMES = new Set([
 
 const SESSION_RESTORE_TIMEOUT_MS = 5_000;
 const PERSISTENT_STORAGE_STATUS_KEY = "keating:persistent-storage-status";
+const SESSION_SIDEBAR_COLLAPSED_KEY = "keating:session-sidebar-collapsed";
+
+function readSessionSidebarCollapsed(): boolean {
+  if (typeof localStorage === "undefined") return false;
+  try {
+    return localStorage.getItem(SESSION_SIDEBAR_COLLAPSED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function writeSessionSidebarCollapsed(collapsed: boolean): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.setItem(SESSION_SIDEBAR_COLLAPSED_KEY, collapsed ? "1" : "0");
+  } catch {
+    // ignore storage failures
+  }
+}
 
 type PersistentStorageStatus = "unknown" | "granted" | "declined";
 
@@ -79,6 +99,15 @@ function savePersistentStorageStatus(status: Exclude<PersistentStorageStatus, "u
     localStorage.setItem(PERSISTENT_STORAGE_STATUS_KEY, status);
   } catch {
     // Ignore storage failures; the in-memory ref still suppresses repeats this mount.
+  }
+}
+
+async function browserPersistentStorageGranted(): Promise<boolean> {
+  if (typeof navigator === "undefined" || !navigator.storage?.persisted) return false;
+  try {
+    return await navigator.storage.persisted();
+  } catch {
+    return false;
   }
 }
 
@@ -113,6 +142,8 @@ export interface UseKeatingAgentReturn {
   sessionSidebar: React.ReactNode;
   activeSessionId: string;
   forkingSessionId: string | null;
+  sessionSidebarCollapsed: boolean;
+  toggleSessionSidebar: () => void;
 }
 
 export function useKeatingAgent(): UseKeatingAgentReturn {
@@ -130,8 +161,23 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const [activeSessionId, setActiveSessionId] = useState(() => sessionIdRef.current);
   const [forkingSessionId, setForkingSessionId] = useState<string | null>(null);
   const [forkedSessionId, setForkedSessionId] = useState<string | null>(null);
+  const [sessionSidebarCollapsed, setSessionSidebarCollapsed] = useState<boolean>(
+    () => readSessionSidebarCollapsed(),
+  );
+  const toggleSessionSidebar = useCallback(() => {
+    setSessionSidebarCollapsed((current) => {
+      const next = !current;
+      writeSessionSidebarCollapsed(next);
+      return next;
+    });
+  }, []);
+  const setSidebarCollapsed = useCallback((next: boolean) => {
+    setSessionSidebarCollapsed(next);
+    writeSessionSidebarCollapsed(next);
+  }, []);
   const [speechSettings, setSpeechSettings] = useState<WebSpeechSettings>(() => loadWebSpeechSettings());
   const [persistentStorageStatus, setPersistentStorageStatus] = useState<PersistentStorageStatus>(() => getPersistentStorageStatus());
+  const [persistentStorageChecked, setPersistentStorageChecked] = useState(false);
   const sessionsDialog = useDialogState();
   const settingsDialog = useDialogState();
   const modelSelectorDialog = useDialogState();
@@ -204,6 +250,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     const agentSessionId = sessionIdRef.current;
     const agentCreatedAt = sessionCreatedAtRef.current;
     const tools = await createKeatingTools(keatingStorage, toolOptions(speechSettings));
+    registerKeatingWebMcp(keatingStorage, tools).catch(console.warn);
     const nextState: Partial<AgentState> = {
       systemPrompt: buildKeatingSystemPrompt(speechSettings.enabled),
       model: initialState?.model ?? selectedModelRef.current,
@@ -274,6 +321,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
         if (cancelled) return;
         agent.state.tools = tools;
         agent.state.systemPrompt = buildKeatingSystemPrompt(speechSettings.enabled);
+        registerKeatingWebMcp(keatingStorage, tools).catch(console.warn);
       })
       .catch(console.error);
 
@@ -291,12 +339,28 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     });
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    void browserPersistentStorageGranted().then((granted) => {
+      if (cancelled) return;
+      if (granted) {
+        setPersistentStorageStatus("granted");
+        savePersistentStorageStatus("granted");
+      }
+      setPersistentStorageChecked(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const requestPersistentStorageOnce = useCallback(() => {
     if (persistentStorageRequestedRef.current || persistentStorageStatus !== "unknown") return;
     persistentStorageRequestedRef.current = true;
     void PersistentStorageDialog.request()
-      .then((granted) => {
-        const nextStatus: PersistentStorageStatus = granted ? "granted" : "declined";
+      .then(async (granted) => {
+        const nextStatus: PersistentStorageStatus =
+          granted || (await browserPersistentStorageGranted()) ? "granted" : "declined";
         setPersistentStorageStatus(nextStatus);
         savePersistentStorageStatus(nextStatus as Exclude<PersistentStorageStatus, "unknown">);
       })
@@ -512,6 +576,8 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       activeSessionId={activeSessionId}
       forkingSessionId={forkingSessionId}
       forkedSessionId={forkedSessionId}
+      collapsed={sessionSidebarCollapsed}
+      onCollapsedChange={setSidebarCollapsed}
       onLoad={(sessionId: string) => {
         startTransition(async () => {
           const session = await sessions.loadSession(sessionId);
@@ -662,5 +728,10 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     </>
   );
 
-  return { title, isPending, openSettings, openSessions, newSession, shareSession, chatPanelRef, dialogs: allDialogs, speechEnabled: speechSettings.enabled, persistentStorageStatus, toggleSpeech, setThinkingLevel, generateCurrentSessionTitle, sessionSidebar: sessionSidebarElement, activeSessionId, forkingSessionId };
+  const visiblePersistentStorageStatus =
+    persistentStorageStatus === "declined" && !persistentStorageChecked
+      ? "unknown"
+      : persistentStorageStatus;
+
+  return { title, isPending, openSettings, openSessions, newSession, shareSession, chatPanelRef, dialogs: allDialogs, speechEnabled: speechSettings.enabled, persistentStorageStatus: visiblePersistentStorageStatus, toggleSpeech, setThinkingLevel, generateCurrentSessionTitle, sessionSidebar: sessionSidebarElement, activeSessionId, forkingSessionId, sessionSidebarCollapsed, toggleSessionSidebar };
 }

@@ -1,0 +1,2 @@
+[secrets]
+opencode_api_key= { provider = "vault", value = "opencode_api_key" }

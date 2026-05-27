@@ -521,6 +521,16 @@ message-editor textarea::placeholder {
   box-shadow: 8px 8px 0 rgba(0, 255, 0, 0.15);
 }
 
+.session-manager-side-panel {
+  border-width: 0 2px 0 0;
+  border-radius: 0;
+  box-shadow: 6px 0 18px rgba(0, 0, 0, 0.16);
+}
+
+.dark .session-manager-side-panel {
+  box-shadow: 6px 0 18px rgba(0, 255, 0, 0.1);
+}
+
 /* ─── Artifact browser overlay styling ─── */
 .artifact-browser-overlay {
   border-left: 2px solid var(--border);

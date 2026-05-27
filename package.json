@@ -56,14 +56,16 @@
   },
   "dependencies": {
     "@ax-llm/ax": "^19.0.43",
-    "@google/generative-ai": "^0.24.1",
     "@earendil-works/pi-coding-agent": "^0.75.4",
+    "@google/generative-ai": "^0.24.1",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "dotenv": "^17.4.0",
     "h3": "^2.0.1-rc.20",
     "ink": "^7.0.3",
     "manim-web": "^0.3.16",
     "nitro": "^3.0.260311-beta",
-    "react": "^19.2.5"
+    "react": "^19.2.5",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@remotion/cli": "^4.0.455",

@@ -5,6 +5,8 @@ import { useSeo } from "../hooks/useSeo";
 
 type TutorialTab = "browser" | "ollama" | "llamacpp" | "litellm" | "cloud" | "advanced";
 
+const GITHUB_ISSUE_URL = "https://github.com/Diogenesoftoronto/keating/issues/new";
+
 const TABS: { id: TutorialTab; label: string }[] = [
   { id: "browser", label: "[BROWSER]" },
   { id: "ollama", label: "[OLLAMA]" },
@@ -201,6 +203,22 @@ export function Tutorial() {
                 </div>
               ))}
             </div>
+          </section>
+
+          <section className="paper-fold distressed-border p-6 mb-8">
+            <h2 className="text-xl font-bold mb-3">Problems or Bugs</h2>
+            <p className="text-sm text-muted-foreground">
+              If Keating breaks, a provider setup fails, or a tutorial step is unclear, open a{" "}
+              <a
+                href={GITHUB_ISSUE_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="text-[#6366f1] underline"
+              >
+                GitHub issue
+              </a>{" "}
+              with the browser, model provider, and what you were trying to do.
+            </p>
           </section>
 
           {/* Model Types Overview */}

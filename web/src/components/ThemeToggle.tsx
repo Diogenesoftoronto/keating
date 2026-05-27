@@ -13,7 +13,11 @@ function getInitialTheme(): boolean {
   return window.matchMedia("(prefers-color-scheme: dark)").matches;
 }
 
-export function ThemeToggle() {
+interface ThemeToggleProps {
+  className?: string;
+}
+
+export function ThemeToggle({ className = "" }: ThemeToggleProps = {}) {
   const [isDark, setIsDark] = useState(() => getInitialTheme());
 
   useEffect(() => {
@@ -41,7 +45,7 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={toggle}
-      className="chat-action-button inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+      className={`chat-action-button inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors ${className}`.trim()}
       title={isDark ? "Switch to light mode" : "Switch to dark mode"}
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
     >

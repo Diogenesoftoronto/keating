@@ -35,6 +35,7 @@ export const extensionCommandSpecs: CommandSpec[] = [
 export const cliCommandSpecs: CommandSpec[] = [
 	{ name: "shell",        args: "[prompt]",       section: "Core",          description: "Launch the AI-powered hyperteacher shell." },
 	{ name: "web",          args: "[port]",         section: "Core",          description: "Start the browser UI dev server." },
+	{ name: "webmcp",       args: "[port] [--host=127.0.0.1]", section: "Core", description: "Expose Keating tools over MCP Streamable HTTP." },
 	{ name: "doctor",       args: "",               section: "Core",          description: "Inspect AI runtime and oxdraw availability." },
 	...extensionCommandSpecs.filter(s => !s.shellOnly),
 ];
