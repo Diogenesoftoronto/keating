@@ -1,1 +1,1 @@
-side panel work i s not dont you need to actually get the rest of the  work dodne
+the artifact stuff should be separated by what was actually made per session, or things that are in the related category and categorized for things that are mainly for the user rather than for the model.  hide things for the agent by default but allow other stuff to appear visible in ui

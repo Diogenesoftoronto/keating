@@ -20,11 +20,11 @@
     },
     "cost": 0,
     "tokens": {
-      "input": 245547,
-      "output": 53813,
+      "input": 246529,
+      "output": 54617,
       "reasoning": 0,
       "cache": {
-        "read": 7426672,
+        "read": 8003280,
         "write": 0
       }
     },
@@ -37,7 +37,7 @@
     ],
     "time": {
       "created": 1779919410599,
-      "updated": 1779920160920
+      "updated": 1779920178314
     }
   },
   "messages": [
@@ -9085,19 +9085,22 @@
         },
         "cost": 0,
         "tokens": {
-          "input": 0,
-          "output": 0,
+          "total": 144291,
+          "input": 191,
+          "output": 244,
           "reasoning": 0,
           "cache": {
-            "read": 0,
-            "write": 0
+            "write": 0,
+            "read": 143856
           }
         },
         "modelID": "neuralwatt/moonshotai/Kimi-K2.6",
         "providerID": "bifrost",
         "time": {
-          "created": 1779920160648
+          "created": 1779920160648,
+          "completed": 1779920170861
         },
+        "finish": "tool-calls",
         "id": "msg_e6b824788001Ce7fAZxzdVkSso",
         "sessionID": "ses_194892a59ffeINfZ5h4aG7j6VZ"
       },
@@ -9136,22 +9139,385 @@
           "tool": "bash",
           "callID": "call_428f100e687196f38e1ee5fb",
           "state": {
-            "metadata": {
-              "output": "",
-              "description": "Commit artifact improvements"
-            },
-            "status": "running",
+            "status": "completed",
             "input": {
               "command": "git add -A && git commit -m \"feat(web): artifact audience filtering + per-session grouping\n\nArtifactViewer redesign:\n- Categorize every artifact type as user-facing or agent-facing\n- Default view hides agent artifacts (benchmarks, evolutions, prompt-evolutions,\n  improvements); toggle in header with localStorage persistence\n- Group artifacts by session instead of by flat category\n- Show session title, date, message count for each group\n- Artifacts without session association shown under 'Other artifacts'\n- Agent artifacts labeled with amber 'Agent' badge\n- Each artifact card shows: icon, type label, date, preview snippet\n\nStorage layer:\n- Add optional sessionId to all artifact types (no DB migration needed —\n  IndexedDB stores extra fields automatically)\n- KeatingStorage auto-tags new artifacts with currentSessionId\n- setCurrentSessionId() called on session switch (new, load, fork)\n\nBuild: clean | Tests: 203 pass, 0 fail\"",
               "description": "Commit artifact improvements"
             },
+            "output": "[main e0ee929] feat(web): artifact audience filtering + per-session grouping\n 3 files changed, 341 insertions(+), 140 deletions(-)\n",
+            "metadata": {
+              "output": "[main e0ee929] feat(web): artifact audience filtering + per-session grouping\n 3 files changed, 341 insertions(+), 140 deletions(-)\n",
+              "exit": 0,
+              "description": "Commit artifact improvements",
+              "truncated": false
+            },
+            "title": "Commit artifact improvements",
             "time": {
-              "start": 1779920164162
+              "start": 1779920170735,
+              "end": 1779920170744
             }
           },
           "id": "prt_e6b824db2001cVdfaHofDEuqG8",
           "sessionID": "ses_194892a59ffeINfZ5h4aG7j6VZ",
           "messageID": "msg_e6b824788001Ce7fAZxzdVkSso"
+        },
+        {
+          "reason": "tool-calls",
+          "snapshot": "b32c47bedbefdeeb8b51cf3b7f47fd342c29d429",
+          "type": "step-finish",
+          "tokens": {
+            "total": 144291,
+            "input": 191,
+            "output": 244,
+            "reasoning": 0,
+            "cache": {
+              "write": 0,
+              "read": 143856
+            }
+          },
+          "cost": 0,
+          "id": "prt_e6b826f2f001IXb6nAiXa1Evfu",
+          "sessionID": "ses_194892a59ffeINfZ5h4aG7j6VZ",
+          "messageID": "msg_e6b824788001Ce7fAZxzdVkSso"
+        }
+      ]
+    },
+    {
+      "info": {
+        "parentID": "msg_e6b7d8e4d0019kjP61p6CpHinJ",
+        "role": "assistant",
+        "mode": "build",
+        "agent": "build",
+        "path": {
+          "cwd": "/home/diogenes/Projects/keating",
+          "root": "/home/diogenes/Projects/keating"
+        },
+        "cost": 0,
+        "tokens": {
+          "total": 144378,
+          "input": 327,
+          "output": 35,
+          "reasoning": 0,
+          "cache": {
+            "write": 0,
+            "read": 144016
+          }
+        },
+        "modelID": "neuralwatt/moonshotai/Kimi-K2.6",
+        "providerID": "bifrost",
+        "time": {
+          "created": 1779920170890,
+          "completed": 1779920175399
+        },
+        "finish": "tool-calls",
+        "id": "msg_e6b826f8a001Sy50EUlZ9ToJMz",
+        "sessionID": "ses_194892a59ffeINfZ5h4aG7j6VZ"
+      },
+      "parts": [
+        {
+          "snapshot": "b32c47bedbefdeeb8b51cf3b7f47fd342c29d429",
+          "type": "step-start",
+          "id": "prt_e6b82755e001vBIyB8VrmgThvz",
+          "sessionID": "ses_194892a59ffeINfZ5h4aG7j6VZ",
+          "messageID": "msg_e6b826f8a001Sy50EUlZ9ToJMz"
+        },
+        {
+          "type": "reasoning",
+          "text": "               Push and update todos.     ",
+          "time": {
+            "start": 1779920172387,
+            "end": 1779920172501
+          },
+          "id": "prt_e6b827563001ENHtilZUo88LFR",
+          "sessionID": "ses_194892a59ffeINfZ5h4aG7j6VZ",
+          "messageID": "msg_e6b826f8a001Sy50EUlZ9ToJMz"
+        },
+        {
+          "type": "text",
+          "text": "               ",
+          "time": {
+            "start": 1779920172504,
+            "end": 1779920172713
+          },
+          "id": "prt_e6b8275d80018IDzzh6kPFkdRa",
+          "sessionID": "ses_194892a59ffeINfZ5h4aG7j6VZ",
+          "messageID": "msg_e6b826f8a001Sy50EUlZ9ToJMz"
+        },
+        {
+          "type": "tool",
+          "tool": "bash",
+          "callID": "call_c0682e4a9ae70248f0108372",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git push",
+              "description": "Push to origin"
+            },
+            "output": "[entire] Pushing entire/checkpoints/v1 to origin.... done\nTo github.com:Diogenesoftoronto/keating.git\n   3323529..e0ee929  main -> main\n",
+            "metadata": {
+              "output": "[entire] Pushing entire/checkpoints/v1 to origin.... done\nTo github.com:Diogenesoftoronto/keating.git\n   3323529..e0ee929  main -> main\n",
+              "exit": 0,
+              "description": "Push to origin",
+              "truncated": false
+            },
+            "title": "Push to origin",
+            "time": {
+              "start": 1779920175259,
+              "end": 1779920175268
+            }
+          },
+          "id": "prt_e6b827606001ugdArcOVrWHcNh",
+          "sessionID": "ses_194892a59ffeINfZ5h4aG7j6VZ",
+          "messageID": "msg_e6b826f8a001Sy50EUlZ9ToJMz"
+        },
+        {
+          "reason": "tool-calls",
+          "snapshot": "b32c47bedbefdeeb8b51cf3b7f47fd342c29d429",
+          "type": "step-finish",
+          "tokens": {
+            "total": 144378,
+            "input": 327,
+            "output": 35,
+            "reasoning": 0,
+            "cache": {
+              "write": 0,
+              "read": 144016
+            }
+          },
+          "cost": 0,
+          "id": "prt_e6b8280ea001Jt5JKzvZItJAY7",
+          "sessionID": "ses_194892a59ffeINfZ5h4aG7j6VZ",
+          "messageID": "msg_e6b826f8a001Sy50EUlZ9ToJMz"
+        }
+      ]
+    },
+    {
+      "info": {
+        "parentID": "msg_e6b7d8e4d0019kjP61p6CpHinJ",
+        "role": "assistant",
+        "mode": "build",
+        "agent": "build",
+        "path": {
+          "cwd": "/home/diogenes/Projects/keating",
+          "root": "/home/diogenes/Projects/keating"
+        },
+        "cost": 0,
+        "tokens": {
+          "total": 144591,
+          "input": 121,
+          "output": 150,
+          "reasoning": 0,
+          "cache": {
+            "write": 0,
+            "read": 144320
+          }
+        },
+        "modelID": "neuralwatt/moonshotai/Kimi-K2.6",
+        "providerID": "bifrost",
+        "time": {
+          "created": 1779920175426,
+          "completed": 1779920177966
+        },
+        "finish": "tool-calls",
+        "id": "msg_e6b828142001IgzBR00vVj2p4h",
+        "sessionID": "ses_194892a59ffeINfZ5h4aG7j6VZ"
+      },
+      "parts": [
+        {
+          "snapshot": "b32c47bedbefdeeb8b51cf3b7f47fd342c29d429",
+          "type": "step-start",
+          "id": "prt_e6b828701001b93OINGBZHArKq",
+          "sessionID": "ses_194892a59ffeINfZ5h4aG7j6VZ",
+          "messageID": "msg_e6b828142001IgzBR00vVj2p4h"
+        },
+        {
+          "type": "reasoning",
+          "text": "                 Done. Let me update the todo list and summarize.    ",
+          "time": {
+            "start": 1779920176901,
+            "end": 1779920177042
+          },
+          "id": "prt_e6b828705001e5ODLl1kiv69XA",
+          "sessionID": "ses_194892a59ffeINfZ5h4aG7j6VZ",
+          "messageID": "msg_e6b828142001IgzBR00vVj2p4h"
+        },
+        {
+          "type": "text",
+          "text": "       ",
+          "time": {
+            "start": 1779920177046,
+            "end": 1779920177849
+          },
+          "id": "prt_e6b828796001tYkprLUab2bhwo",
+          "sessionID": "ses_194892a59ffeINfZ5h4aG7j6VZ",
+          "messageID": "msg_e6b828142001IgzBR00vVj2p4h"
+        },
+        {
+          "type": "tool",
+          "tool": "todowrite",
+          "callID": "call_e2a6fa25ba7ec49660c5ac02",
+          "state": {
+            "status": "completed",
+            "input": {
+              "todos": [
+                {
+                  "content": "Update storage.ts: add sessionId to artifact types, auto-tag on save",
+                  "status": "completed",
+                  "priority": "high"
+                },
+                {
+                  "content": "Update useKeatingAgent: set current sessionId on storage when switching sessions",
+                  "status": "completed",
+                  "priority": "high"
+                },
+                {
+                  "content": "Update ArtifactViewer: audience classification, session grouping, agent toggle",
+                  "status": "completed",
+                  "priority": "high"
+                },
+                {
+                  "content": "Build, typecheck, and commit",
+                  "status": "completed",
+                  "priority": "high"
+                }
+              ]
+            },
+            "output": "[\n  {\n    \"content\": \"Update storage.ts: add sessionId to artifact types, auto-tag on save\",\n    \"status\": \"completed\",\n    \"priority\": \"high\"\n  },\n  {\n    \"content\": \"Update useKeatingAgent: set current sessionId on storage when switching sessions\",\n    \"status\": \"completed\",\n    \"priority\": \"high\"\n  },\n  {\n    \"content\": \"Update ArtifactViewer: audience classification, session grouping, agent toggle\",\n    \"status\": \"completed\",\n    \"priority\": \"high\"\n  },\n  {\n    \"content\": \"Build, typecheck, and commit\",\n    \"status\": \"completed\",\n    \"priority\": \"high\"\n  }\n]",
+            "metadata": {
+              "todos": [
+                {
+                  "content": "Update storage.ts: add sessionId to artifact types, auto-tag on save",
+                  "status": "completed",
+                  "priority": "high"
+                },
+                {
+                  "content": "Update useKeatingAgent: set current sessionId on storage when switching sessions",
+                  "status": "completed",
+                  "priority": "high"
+                },
+                {
+                  "content": "Update ArtifactViewer: audience classification, session grouping, agent toggle",
+                  "status": "completed",
+                  "priority": "high"
+                },
+                {
+                  "content": "Build, typecheck, and commit",
+                  "status": "completed",
+                  "priority": "high"
+                }
+              ],
+              "truncated": false
+            },
+            "title": "0 todos",
+            "time": {
+              "start": 1779920177766,
+              "end": 1779920177775
+            }
+          },
+          "id": "prt_e6b8287c6001oxIJLF28FCwv3T",
+          "sessionID": "ses_194892a59ffeINfZ5h4aG7j6VZ",
+          "messageID": "msg_e6b828142001IgzBR00vVj2p4h"
+        },
+        {
+          "reason": "tool-calls",
+          "snapshot": "b32c47bedbefdeeb8b51cf3b7f47fd342c29d429",
+          "type": "step-finish",
+          "tokens": {
+            "total": 144591,
+            "input": 121,
+            "output": 150,
+            "reasoning": 0,
+            "cache": {
+              "write": 0,
+              "read": 144320
+            }
+          },
+          "cost": 0,
+          "id": "prt_e6b828b02001sQQj5zga6lDgTH",
+          "sessionID": "ses_194892a59ffeINfZ5h4aG7j6VZ",
+          "messageID": "msg_e6b828142001IgzBR00vVj2p4h"
+        }
+      ]
+    },
+    {
+      "info": {
+        "parentID": "msg_e6b7d8e4d0019kjP61p6CpHinJ",
+        "role": "assistant",
+        "mode": "build",
+        "agent": "build",
+        "path": {
+          "cwd": "/home/diogenes/Projects/keating",
+          "root": "/home/diogenes/Projects/keating"
+        },
+        "cost": 0,
+        "tokens": {
+          "total": 145134,
+          "input": 343,
+          "output": 375,
+          "reasoning": 0,
+          "cache": {
+            "write": 0,
+            "read": 144416
+          }
+        },
+        "modelID": "neuralwatt/moonshotai/Kimi-K2.6",
+        "providerID": "bifrost",
+        "time": {
+          "created": 1779920177989,
+          "completed": 1779920182318
+        },
+        "finish": "stop",
+        "id": "msg_e6b828b4500121bVd6VVUzaz3a",
+        "sessionID": "ses_194892a59ffeINfZ5h4aG7j6VZ"
+      },
+      "parts": [
+        {
+          "snapshot": "b32c47bedbefdeeb8b51cf3b7f47fd342c29d429",
+          "type": "step-start",
+          "id": "prt_e6b829231001F4vAISriMLBhv6",
+          "sessionID": "ses_194892a59ffeINfZ5h4aG7j6VZ",
+          "messageID": "msg_e6b828b4500121bVd6VVUzaz3a"
+        },
+        {
+          "type": "reasoning",
+          "text": " All done. Pushed `e0ee929` to `origin/main`. Let me give a clear summary of what was implemented. ",
+          "time": {
+            "start": 1779920179765,
+            "end": 1779920179775
+          },
+          "id": "prt_e6b829235001P9Upq6ZEtTEVlR",
+          "sessionID": "ses_194892a59ffeINfZ5h4aG7j6VZ",
+          "messageID": "msg_e6b828b4500121bVd6VVUzaz3a"
+        },
+        {
+          "type": "text",
+          "text": " Done. Pushed `e0ee929` to `origin/main`.\n\n## Artifact browser — redesigned\n\n### Audience filtering (user vs agent)\nEvery artifact type is now classified:\n\n| User-facing (visible by default) | Agent-facing (hidden by default) |\n|---|---|\n| Lesson plans, concept maps, animations, verifications | Benchmarks, policy evolutions, prompt evolutions, improvement attempts |\n\n- Toggle button in the artifact browser header shows/hides agent artifacts\n- Hidden count displayed (`Show 5 agent` / `Hide 5 agent`)\n- State persisted to `localStorage`\n- Agent artifacts get an amber **\"Agent\"** badge\n\n### Per-session grouping\nArtifacts are now grouped by the session that created them:\n\n```\nSession: Introduction to Trigonometry\n  Today · 12 messages\n  ├── Lesson Plan: Introduction to Trigonometry\n  ├── Concept Map: Introduction to Trigonometry\n  └── Verification: Introduction to Trigonometry\n\nSession: Quantum Mechanics\n  Yesterday · 8 messages\n  ├── Lesson Plan: Quantum Mechanics\n  ├── Animation: Quantum Mechanics\n  └── Concept Map: Quantum Mechanics\n```\n\n- Each group shows session **title**, **date**, and **message count**\n- Forked sessions show a branch icon\n- Artifacts without session association (from before this change) appear under **\"Other artifacts\"**\n- Within each session, artifacts sorted newest-first\n\n### How session tracking works\n- `KeatingStorage` now auto-tags every saved artifact with `currentSessionId`\n- Session ID is set whenever you switch sessions: **new**, **load**, or **fork**\n- No DB migration needed — IndexedDB stores the extra field transparently",
+          "time": {
+            "start": 1779920179778,
+            "end": 1779920182217
+          },
+          "id": "prt_e6b8292420015tn47AikBlFMur",
+          "sessionID": "ses_194892a59ffeINfZ5h4aG7j6VZ",
+          "messageID": "msg_e6b828b4500121bVd6VVUzaz3a"
+        },
+        {
+          "reason": "stop",
+          "snapshot": "b32c47bedbefdeeb8b51cf3b7f47fd342c29d429",
+          "type": "step-finish",
+          "tokens": {
+            "total": 145134,
+            "input": 343,
+            "output": 375,
+            "reasoning": 0,
+            "cache": {
+              "write": 0,
+              "read": 144416
+            }
+          },
+          "cost": 0,
+          "id": "prt_e6b829bea001KbVy6cW3lOH2GD",
+          "sessionID": "ses_194892a59ffeINfZ5h4aG7j6VZ",
+          "messageID": "msg_e6b828b4500121bVd6VVUzaz3a"
         }
       ]
     }
