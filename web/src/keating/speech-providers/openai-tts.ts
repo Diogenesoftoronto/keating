@@ -4,6 +4,7 @@ import {
 	type SpeechSynthesisRequest,
 	type SpeechSynthesisResult,
 } from "../speech";
+import { withApiRetry } from "../api-retry";
 
 const OPENAI_TTS_VOICES = [
 	"alloy",
@@ -44,20 +45,24 @@ async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthe
 		body.instructions = `Speak with a ${utterance.affect} affect at a ${utterance.pace} pace.`;
 	}
 
-	const response = await fetch("https://api.openai.com/v1/audio/speech", {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-			Authorization: `Bearer ${apiKey}`,
-		},
-		body: JSON.stringify(body),
-		signal,
-	});
+	const response = await withApiRetry(async () => {
+		const result = await fetch("https://api.openai.com/v1/audio/speech", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${apiKey}`,
+			},
+			body: JSON.stringify(body),
+			signal,
+		});
 
-	if (!response.ok) {
-		const errText = await response.text().catch(() => "");
-		throw new Error(`OpenAI TTS request failed (${response.status}): ${errText.slice(0, 200) || response.statusText}`);
-	}
+		if (!result.ok) {
+			const errText = await result.text().catch(() => "");
+			const retryAfter = result.headers.get("retry-after");
+			throw new Error(`OpenAI TTS request failed (${result.status}): ${errText.slice(0, 200) || result.statusText}${retryAfter ? ` retry-after: ${retryAfter}` : ""}`);
+		}
+		return result;
+	}, { signal });
 
 	const blob = await response.blob();
 	const played = await scheduleAudioBlob(blob).catch(() => false);

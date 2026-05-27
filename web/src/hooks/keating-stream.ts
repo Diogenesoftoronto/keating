@@ -9,6 +9,7 @@ import {
 	type SimpleStreamOptions,
 } from "@earendil-works/pi-ai";
 import { normalizeToolCallStream } from "../keating/tool-call-normalizer";
+import { streamWithApiRetry } from "../keating/api-retry";
 import { chatProxyBaseUrl, proxyTargetHeader, shouldProxyModel } from "../lib/provider-proxy";
 import { loadKeatingUiSettings } from "../keating/ui-settings";
 import { getProviderApiKey } from "../lib/provider-models";
@@ -205,8 +206,16 @@ export async function hybridStreamFn(model: Model<Api>, context: Context, option
 			const hasApiKey = !!proxiedOptions.apiKey;
 			console.log(`[keating:stream] proxy ${model.provider} -> ${model.baseUrl} (apiKey=${hasApiKey})`);
 		}
-		return normalizeToolCallStream(streamSimple(proxiedModel, context, mergeOnPayload(proxiedOptions, proxiedModel)), context);
+		const mergedOptions = mergeOnPayload(proxiedOptions, proxiedModel);
+		return normalizeToolCallStream(
+			streamWithApiRetry(proxiedModel, context, mergedOptions, (nextOptions) => streamSimple(proxiedModel, context, nextOptions)),
+			context,
+		);
 	}
 
-	return normalizeToolCallStream(streamSimple(model, context, mergeOnPayload(streamOptions, model)), context);
+	const mergedOptions = mergeOnPayload(streamOptions, model);
+	return normalizeToolCallStream(
+		streamWithApiRetry(model, context, mergedOptions, (nextOptions) => streamSimple(model, context, nextOptions)),
+		context,
+	);
 }

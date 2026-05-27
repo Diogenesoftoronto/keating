@@ -2,6 +2,7 @@ import { getModels, getProviders, type Api, type Model } from "@earendil-works/p
 import { getAppStorage, type CustomProvider } from "@earendil-works/pi-web-ui";
 import { proxiedProviderRequestUrl } from "./provider-proxy";
 import { getOAuthAccessToken, providerToOAuthId } from "../keating/oauth";
+import { withApiRetry } from "../keating/api-retry";
 
 export type KeatingCustomProviderType =
 	| "ollama"
@@ -105,14 +106,18 @@ async function fetchJson(url: string, apiKey?: string, options: { method?: "GET"
 		headers.Authorization = `Bearer ${apiKey}`;
 	}
 
-	const response = await fetch(proxied.url, {
-		method: options.method ?? "GET",
-		headers,
-		body: options.body === undefined ? undefined : JSON.stringify(options.body),
+	const response = await withApiRetry(async () => {
+		const result = await fetch(proxied.url, {
+			method: options.method ?? "GET",
+			headers,
+			body: options.body === undefined ? undefined : JSON.stringify(options.body),
+		});
+		if (!result.ok) {
+			const retryAfter = result.headers.get("retry-after");
+			throw new Error(`HTTP ${result.status}: ${result.statusText}${retryAfter ? ` retry-after: ${retryAfter}` : ""}`);
+		}
+		return result;
 	});
-	if (!response.ok) {
-		throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-	}
 
 	return await response.json();
 }

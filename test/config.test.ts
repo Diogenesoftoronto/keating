@@ -36,6 +36,16 @@ test("ALWAYS: ensureConfig creates the default config and loadKeatingConfig read
   expect(saved).toEqual(DEFAULT_KEATING_CONFIG);
 });
 
+test("ALWAYS: loadKeatingConfig includes bounded model-agnostic API retry defaults", async () => {
+  const workdir = await mkdtemp(join(tmpdir(), "keating-cfg-"));
+  const config = await loadKeatingConfig(workdir);
+
+  expect(config.apiRetry.maxAttempts).toBeGreaterThanOrEqual(1);
+  expect(config.apiRetry.maxAttempts).toBeLessThanOrEqual(8);
+  expect(config.apiRetry.initialDelayMs).toBeLessThanOrEqual(config.apiRetry.maxDelayMs);
+  expect(config.apiRetry.rateLimitIntervalMs).toBeGreaterThanOrEqual(0);
+});
+
 test("ALWAYS: default Pi provider uses regular Google provider with Gemini 3.1 Pro", () => {
   expect(DEFAULT_KEATING_CONFIG.pi.defaultProvider).toBe("google");
   expect(DEFAULT_KEATING_CONFIG.pi.defaultModel).toBe("gemini-3.1-pro-preview");
@@ -69,6 +79,10 @@ test("ALWAYS: loadKeatingConfig preserves valid overrides, defaults missing fiel
       persistTraces: fc.boolean(),
       traceTopLearners: fc.integer({ min: 1, max: 10 }),
       consoleSummary: fc.boolean(),
+      retryAttempts: fc.integer({ min: 1, max: 8 }),
+      retryInitialDelayMs: fc.integer({ min: 0, max: 10_000 }),
+      retryMaxDelayMs: fc.integer({ min: 10_000, max: 30_000 }),
+      retryRateLimitIntervalMs: fc.integer({ min: 0, max: 5_000 }),
     }),
     async (overrides) => {
       const workdir = await mkdtemp(join(tmpdir(), "keating-cfg-"));
@@ -89,6 +103,13 @@ test("ALWAYS: loadKeatingConfig preserves valid overrides, defaults missing fiel
           persistTraces: overrides.persistTraces,
           traceTopLearners: overrides.traceTopLearners,
           consoleSummary: overrides.consoleSummary,
+        },
+        apiRetry: {
+          maxAttempts: overrides.retryAttempts,
+          initialDelayMs: overrides.retryInitialDelayMs,
+          maxDelayMs: overrides.retryMaxDelayMs,
+          rateLimitIntervalMs: overrides.retryRateLimitIntervalMs,
+          jitterRatio: 0,
         }
       };
       await writeFile(configPath(workdir), JSON.stringify(partial), "utf8");
@@ -99,6 +120,10 @@ test("ALWAYS: loadKeatingConfig preserves valid overrides, defaults missing fiel
       expect(config.debug.persistTraces).toBe(overrides.persistTraces);
       expect(config.debug.traceTopLearners).toBe(overrides.traceTopLearners);
       expect(config.debug.consoleSummary).toBe(overrides.consoleSummary);
+      expect(config.apiRetry.maxAttempts).toBe(overrides.retryAttempts);
+      expect(config.apiRetry.initialDelayMs).toBe(overrides.retryInitialDelayMs);
+      expect(config.apiRetry.maxDelayMs).toBe(overrides.retryMaxDelayMs);
+      expect(config.apiRetry.rateLimitIntervalMs).toBe(overrides.retryRateLimitIntervalMs);
 
       if (overrides.defaultProvider) expect(config.pi.defaultProvider).toBe(overrides.defaultProvider.trim());
       else expect(config.pi.defaultProvider).toBe(DEFAULT_KEATING_CONFIG.pi.defaultProvider);

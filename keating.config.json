@@ -5,6 +5,13 @@
     "defaultModel": "gemini-3.1-pro-preview",
     "defaultThinking": "medium"
   },
+  "apiRetry": {
+    "maxAttempts": 4,
+    "initialDelayMs": 750,
+    "maxDelayMs": 30000,
+    "rateLimitIntervalMs": 500,
+    "jitterRatio": 0.2
+  },
   "optimizer": {
     "backend": "gepa",
     "numTrials": 24,
