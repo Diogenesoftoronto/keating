@@ -84,14 +84,15 @@ export function SessionSidebar({
 	const [forkedSourceSessionId, setForkedSourceSessionId] = useState<string | null>(null);
 	const [collapsedNodes, setCollapsedNodes] = useState<Set<string>>(() => readCollapsedTreeNodes());
 	const [isDesktop, setIsDesktop] = useState(() =>
-		typeof window !== "undefined" ? window.innerWidth >= MD_BREAKPOINT : true,
+		typeof window !== "undefined"
+			? window.matchMedia(`(min-width: ${MD_BREAKPOINT}px)`).matches
+			: true,
 	);
 
 	useEffect(() => {
 		if (typeof window === "undefined") return;
 		const mq = window.matchMedia(`(min-width: ${MD_BREAKPOINT}px)`);
 		const sync = () => setIsDesktop(mq.matches);
-		sync();
 		mq.addEventListener("change", sync);
 		return () => mq.removeEventListener("change", sync);
 	}, []);
@@ -157,11 +158,11 @@ export function SessionSidebar({
 		return (
 			<>
 				<div
-					className="fixed inset-0 z-40 bg-black/45 md:hidden"
+					className="fixed inset-0 z-40 bg-black/45"
 					onClick={onMobileClose}
 					aria-hidden="true"
 				/>
-				<aside className="session-sidebar fixed inset-y-0 left-0 z-50 flex w-[min(22rem,85vw)] flex-col border-r-2 border-border bg-background md:hidden">
+				<aside className="session-sidebar fixed inset-y-0 left-0 z-50 flex w-[min(22rem,85vw)] flex-col border-r-2 border-border bg-background">
 					<header className="border-b border-border px-4 py-4">
 						<div className="flex items-start justify-between gap-3">
 							<div className="min-w-0">
@@ -316,7 +317,7 @@ export function SessionSidebar({
 	/* ── Desktop collapsed strip ── */
 	if (collapsed) {
 		return (
-			<aside className="session-sidebar hidden w-14 shrink-0 flex-col items-center gap-3 border-r-2 border-border bg-background py-3 md:flex">
+			<aside className="session-sidebar flex w-14 shrink-0 flex-col items-center gap-3 border-r-2 border-border bg-background py-3">
 				<button
 					type="button"
 					className="inline-flex h-9 w-9 items-center justify-center rounded-md text-foreground hover:bg-accent hover:text-accent-foreground"
@@ -344,7 +345,7 @@ export function SessionSidebar({
 
 	/* ── Desktop expanded sidebar ── */
 	return (
-		<aside className="session-sidebar hidden w-80 shrink-0 flex-col border-r-2 border-border bg-background md:flex xl:w-96">
+		<aside className="session-sidebar flex w-80 shrink-0 flex-col border-r-2 border-border bg-background xl:w-96">
 			<header className="border-b border-border px-4 py-4">
 				<div className="flex items-start justify-between gap-3">
 					<div className="min-w-0">
