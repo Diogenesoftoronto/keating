@@ -3,7 +3,7 @@
   "checkpoint_id": "ac3e56d46481",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "src/core/ax-optimizer.ts",
     "src/core/evolution.ts",
@@ -15,13 +15,19 @@
       "transcript": "/ac/3e56d46481/0/full.jsonl",
       "content_hash": "/ac/3e56d46481/0/content_hash.txt",
       "prompt": "/ac/3e56d46481/0/prompt.txt"
+    },
+    {
+      "metadata": "/ac/3e56d46481/1/metadata.json",
+      "transcript": "/ac/3e56d46481/1/full.jsonl",
+      "content_hash": "/ac/3e56d46481/1/content_hash.txt",
+      "prompt": "/ac/3e56d46481/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 0,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 0,
-    "output_tokens": 0,
-    "api_call_count": 1
+    "input_tokens": 2898,
+    "cache_creation_tokens": 75155,
+    "cache_read_tokens": 1272311,
+    "output_tokens": 11704,
+    "api_call_count": 24
   }
 }

@@ -1,0 +1,94 @@
+{
+  "cli_version": "0.6.2",
+  "checkpoint_id": "ac3e56d46481",
+  "session_id": "d3831bc3-237f-4b97-b9c7-01536b2b291f",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-29T00:10:38.804553337Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "src/core/ax-optimizer.ts",
+    "src/core/evolution.ts",
+    "src/core/map-elites.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "",
+  "turn_id": "9af4ddab0a34",
+  "token_usage": {
+    "input_tokens": 2898,
+    "cache_creation_tokens": 75155,
+    "cache_read_tokens": 1272311,
+    "output_tokens": 11704,
+    "api_call_count": 23
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-29T00:10:38.795368407Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 13,
+    "total_committed": 0,
+    "total_lines_changed": 13,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 3041,
+      "user_lines_removed": 860,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "docs/core-self-modification-gaps.md": 320,
+        "docs/web-self-modification-gaps.md": 356,
+        "src/cli/main.ts": 92,
+        "src/core/ax-optimizer.ts": 18,
+        "src/core/code-edit.ts": 190,
+        "src/core/commands.ts": 3,
+        "src/core/evolution.ts": 2,
+        "src/core/map-elites.ts": 24,
+        "src/core/project.ts": 76,
+        "src/core/prompt-evolution.ts": 2,
+        "src/core/self-improve.ts": 17,
+        "src/pi/hyperteacher-extension.ts": 902,
+        "test/code-edit.test.ts": 143,
+        "web/src/components/AssistantChatPanel.tsx": 36,
+        "web/src/components/SessionSidebar.tsx": 111,
+        "web/src/components/UsageCharts.tsx": 186,
+        "web/src/components/session-tree.ts": 26,
+        "web/src/hooks/useKeatingAgent.tsx": 12,
+        "web/src/keating/browser-tools.ts": 143,
+        "web/src/keating/core.ts": 10,
+        "web/src/keating/storage.ts": 11,
+        "web/src/pages/Blog.tsx": 354,
+        "web/src/pages/Chat.tsx": 6,
+        "web/src/pages/Usage.tsx": 1
+      },
+      "user_removed_per_file": {
+        "src/cli/main.ts": 2,
+        "src/core/ax-optimizer.ts": 4,
+        "src/core/commands.ts": 2,
+        "src/core/map-elites.ts": 9,
+        "src/core/project.ts": 8,
+        "src/core/prompt-evolution.ts": 1,
+        "src/core/self-improve.ts": 3,
+        "src/pi/hyperteacher-extension.ts": 574,
+        "web/src/components/AssistantChatPanel.tsx": 5,
+        "web/src/components/SessionSidebar.tsx": 37,
+        "web/src/components/UsageCharts.tsx": 55,
+        "web/src/components/session-tree.ts": 6,
+        "web/src/hooks/useKeatingAgent.tsx": 3,
+        "web/src/keating/browser-tools.ts": 105,
+        "web/src/keating/core.ts": 10,
+        "web/src/keating/storage.ts": 1,
+        "web/src/pages/Chat.tsx": 34,
+        "web/src/pages/Usage.tsx": 1
+      }
+    }
+  ]
+}
