@@ -1,0 +1,37 @@
+{
+  "cli_version": "0.6.2",
+  "checkpoint_id": "a053933f118b",
+  "session_id": "019e710a-7ef8-73bb-af54-7edcce5af8a7",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-29T00:12:04.554262055Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "bun.lock"
+  ],
+  "agent": "Pi",
+  "model": "",
+  "turn_id": "fd3e9534583b",
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 1
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-29T00:12:04.552977851Z",
+    "agent_lines": 319,
+    "agent_removed": 8,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 319,
+    "total_lines_changed": 327,
+    "agent_percentage": 100,
+    "metric_version": 2
+  }
+}
