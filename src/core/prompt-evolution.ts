@@ -339,7 +339,8 @@ export async function evolvePrompt(
   generator: PromptGenerator = generateCandidatePrompt
 ): Promise<PromptEvolutionRun> {
   const promptPath = join(cwd, "pi", "prompts", `${promptName}.md`);
-  const prompt = await readFile(promptPath, "utf8");
+  const evolvedPromptPath = join(promptEvolutionDir(cwd), `${promptName}.evolved.md`);
+  const prompt = await readFile(evolvedPromptPath, "utf8").catch(() => readFile(promptPath, "utf8"));
   const baseline = await evaluator(cwd, promptPath, prompt);
   const candidates: PromptEvolutionCandidate[] = [];
 
