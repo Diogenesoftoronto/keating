@@ -1,0 +1,37 @@
+{
+  "cli_version": "0.6.2",
+  "checkpoint_id": "040b9a2d6dfe",
+  "session_id": "019e710a-7ef8-73bb-af54-7edcce5af8a7",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-29T00:11:54.153140365Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "web/src/pages/Blog.tsx"
+  ],
+  "agent": "Pi",
+  "model": "",
+  "turn_id": "fd3e9534583b",
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 1
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-29T00:11:54.150448452Z",
+    "agent_lines": 474,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 474,
+    "total_lines_changed": 474,
+    "agent_percentage": 100,
+    "metric_version": 2
+  }
+}
