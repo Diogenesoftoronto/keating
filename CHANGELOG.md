@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.13] - 2026-05-28
+
+### Added
+- Added a `keating edit` CLI command that applies a single search/replace edit to any source file under the project, with stdin (JSON payload) and interactive (`---` separator) input modes plus an optional `--backup-dir` for pre-edit snapshots.
+- Added `keating improve accept <id>` and `keating improve reject <id>` subcommands that resolve a pending self-improvement proposal using the snapshots and baseline score stored in the improvement archive.
+- Added an `auto-improve --force` flag that bypasses the new 30-minute cooldown when re-running the full self-improvement loop intentionally.
+- Added MAP-Elites grid persistence: each focus topic now reads and writes a JSON grid under `.keating/outputs/evolution/`, so successive runs build on prior cells instead of resetting.
+- Added new mutable source targets for the self-improver — `src/core/mutation.ts`, `src/core/map-elites.ts`, and `src/core/prompt-evolution.ts` — so the system can iterate on its own evolution machinery.
+- Added a resizable session sidebar in the web chat with a draggable column-resize handle that persists its width to `localStorage` between sessions.
+- Added a year-by-year activity heatmap on the Usage page with a year selector, replacing the previous fixed 12-week window.
+
+### Changed
+- `auto-improve` now snapshots the previous teaching policy before the run and rolls it back automatically when the loop verdict is REGRESSED, so a bad run cannot corrupt the active policy.
+- The Ax/GEPA optimizer now benchmarks every candidate on its Pareto front instead of returning a placeholder baseline, and tags each evolution run with the optimizer it actually used (`gepa` or `mapElites_fallback`) plus the fallback reason when applicable.
+- Prompt evolution now resumes from the prior `*.evolved.md` artifact when available, so successive `evolve-prompt` calls accumulate improvements rather than restarting from the base prompt.
+- `bench` now derives benchmark weights from the learner's recorded thumbs-up / confused / thumbs-down feedback, so reported scores reflect real session signals instead of a fixed default profile.
+- Web `auto_improve` tool is now gated to one run per chat session and exposes an explicit `force` parameter, mirroring the new CLI cooldown.
+- Web policy loading now actually parses the stored policy markdown (JSON block or `field: value` pairs) instead of always falling back to `DEFAULT_POLICY`; `clampPolicy` rounds `exerciseCount` and caps it at 5.
+- Web `DEFAULT_POLICY` rebalanced toward more analogies, Socratic dialogue, retrieval practice, and diagrams to match the latest evolved policies.
+- Web prompt evolution lookups now use a real IndexedDB `promptName` index rather than the generic topic index, fixing stale prompt suggestions when a topic and prompt share a name.
+- The web chat now merges consecutive assistant messages into a single bubble for cleaner transcripts, and user message bubbles were restyled from amber to green for stronger learner/assistant contrast.
+- The desktop sidebar collapse toggle was removed in favor of the new drag-resize handle; the mobile drawer toggle is unchanged.
+
+### Fixed
+- `improveReject` no longer requires the caller to supply snapshots — it now restores them from the improvement archive automatically when omitted.
+- MAP-Elites candidates now record their actual parent policy name (was always `null`) and persist the grid to disk on every run so cell descriptors survive restarts.
+- Fixed missing `mkdir -p` when saving a MAP-Elites grid into a fresh project that has no `evolution` directory yet.
+- Fixed a typo in the v0.3.11 blog title ("For k Trees" → "Fork Trees").
+
 ## [0.3.12] - 2026-05-26
 
 ### Added
