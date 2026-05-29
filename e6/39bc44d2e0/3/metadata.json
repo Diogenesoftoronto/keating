@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.6.2",
+  "checkpoint_id": "e639bc44d2e0",
+  "session_id": "ses_192daec61ffeS9vPI0h2IK8bIP",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-29T00:11:10.326736363Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "src/pi/hyperteacher-extension.ts"
+  ],
+  "agent": "OpenCode",
+  "model": "neuralwatt/moonshotai/Kimi-K2.6",
+  "turn_id": "2574534d4a50",
+  "checkpoint_transcript_start": 102,
+  "transcript_lines_at_start": 102,
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  },
+  "session_metrics": {
+    "turn_count": 4
+  }
+}
