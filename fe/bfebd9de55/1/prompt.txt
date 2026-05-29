@@ -1,0 +1,5 @@
+given the current changes, update the version numberr, changelog and get ready for a new published package.  also make sure the new blog posts all cover the changes
+
+---
+
+.
