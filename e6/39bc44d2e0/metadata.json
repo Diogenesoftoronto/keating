@@ -3,7 +3,7 @@
   "checkpoint_id": "e639bc44d2e0",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "src/pi/hyperteacher-extension.ts"
   ],
@@ -19,13 +19,19 @@
       "transcript": "/e6/39bc44d2e0/1/full.jsonl",
       "content_hash": "/e6/39bc44d2e0/1/content_hash.txt",
       "prompt": "/e6/39bc44d2e0/1/prompt.txt"
+    },
+    {
+      "metadata": "/e6/39bc44d2e0/2/metadata.json",
+      "transcript": "/e6/39bc44d2e0/2/full.jsonl",
+      "content_hash": "/e6/39bc44d2e0/2/content_hash.txt",
+      "prompt": "/e6/39bc44d2e0/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1314,
+    "input_tokens": 136930,
     "cache_creation_tokens": 46591,
-    "cache_read_tokens": 2115715,
-    "output_tokens": 18921,
-    "api_call_count": 44
+    "cache_read_tokens": 2376467,
+    "output_tokens": 26187,
+    "api_call_count": 51
   }
 }
