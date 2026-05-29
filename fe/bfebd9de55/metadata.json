@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.6.2",
+  "checkpoint_id": "febfebd9de55",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "src/cli/main.ts",
+    "src/core/commands.ts",
+    "src/core/project.ts",
+    "src/core/self-improve.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/fe/bfebd9de55/0/metadata.json",
+      "transcript": "/fe/bfebd9de55/0/full.jsonl",
+      "content_hash": "/fe/bfebd9de55/0/content_hash.txt",
+      "prompt": "/fe/bfebd9de55/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 1
+  }
+}
