@@ -1,0 +1,1 @@
+give the current changes that are uncommited, get those commited and pushed. make sure there is a detailed summary of each change. remove self modification docs.
