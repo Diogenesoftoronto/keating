@@ -3,7 +3,7 @@
   "checkpoint_id": "6d9496502d5c",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "web/src/components/UsageCharts.tsx",
     "web/src/pages/Usage.tsx"
@@ -20,13 +20,19 @@
       "transcript": "/6d/9496502d5c/1/full.jsonl",
       "content_hash": "/6d/9496502d5c/1/content_hash.txt",
       "prompt": "/6d/9496502d5c/1/prompt.txt"
+    },
+    {
+      "metadata": "/6d/9496502d5c/2/metadata.json",
+      "transcript": "/6d/9496502d5c/2/full.jsonl",
+      "content_hash": "/6d/9496502d5c/2/content_hash.txt",
+      "prompt": "/6d/9496502d5c/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1314,
+    "input_tokens": 136930,
     "cache_creation_tokens": 46591,
-    "cache_read_tokens": 2115715,
-    "output_tokens": 18921,
-    "api_call_count": 44
+    "cache_read_tokens": 2376467,
+    "output_tokens": 26187,
+    "api_call_count": 51
   }
 }
