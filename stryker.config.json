@@ -1,0 +1,69 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "_comment": "Mutation testing via Stryker. Uses the command runner because the project's tests run on bun, which has no native Stryker plugin.",
+  "packageManager": "npm",
+  "testRunner": "command",
+  "commandRunner": {
+    "command": "bun test ./test/*.test.ts"
+  },
+  "coverageAnalysis": "off",
+  "reporters": ["html", "clear-text", "progress"],
+  "htmlReporter": {
+    "fileName": "reports/mutation/mutation.html"
+  },
+  "mutate": [
+    "src/core/**/*.ts",
+    "!src/core/**/*.test.ts",
+    "!src/core/**/*.d.ts"
+  ],
+  "mutator": {
+    "excludedMutations": [
+      "ArithmeticOperator",
+      "ArrayDeclaration",
+      "ArrowFunction",
+      "AssignmentOperator",
+      "BooleanLiteral",
+      "ConditionalExpression",
+      "EqualityOperator",
+      "LogicalOperator",
+      "MethodExpression",
+      "ObjectLiteral",
+      "OptionalChaining",
+      "Regex",
+      "StringLiteral",
+      "UpdateOperator"
+    ]
+  },
+  "timeoutMS": 60000,
+  "concurrency": 2,
+  "thresholds": {
+    "high": 80,
+    "low": 60,
+    "break": null
+  },
+  "tempDirName": ".stryker-tmp",
+  "cleanTempDir": true,
+  "ignorePatterns": [
+    ".bun-install",
+    ".bun-tmp",
+    ".entire",
+    ".claude",
+    ".keating",
+    ".chrysalis",
+    ".codex",
+    ".crush",
+    ".opencode",
+    ".agents",
+    ".github",
+    "web/.output",
+    "web/dist",
+    "web/node_modules",
+    "data",
+    "video",
+    "analysis",
+    "test/traces",
+    "test/final_dataset.json",
+    "reports",
+    "*.tsbuildinfo"
+  ]
+}

@@ -27,6 +27,10 @@ video/keating-intro/public/generated/
 analysis/__pycache__/
 *.pyc
 
+# Mutation testing
+.stryker-tmp/
+reports/mutation/
+
 # Project-specific state
 .keating/
 .chrysalis/

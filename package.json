@@ -1,6 +1,6 @@
 {
   "name": "keating",
-  "version": "0.3.12",
+  "version": "0.3.13",
   "type": "module",
   "description": "A Pi-powered hyperteacher package with self-improving teaching policies, lesson maps, and animated visual teaching artifacts.",
   "keywords": [
@@ -51,6 +51,7 @@
   "scripts": {
     "build": "bun x tsc -p tsconfig.json && cd web && bun run build",
     "test": "bun test ./test/*.test.ts",
+    "mutate": "stryker run",
     "video:intro": "bun scripts/render-keating-intro.mjs",
     "prepack": "bun run build"
   },
@@ -71,6 +72,7 @@
     "@remotion/cli": "^4.0.455",
     "@remotion/media-utils": "^4.0.455",
     "@remotion/renderer": "^4.0.455",
+    "@stryker-mutator/core": "^9.6.1",
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
