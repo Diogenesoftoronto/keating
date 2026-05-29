@@ -1,0 +1,117 @@
+{
+  "cli_version": "0.6.2",
+  "checkpoint_id": "9360a448a468",
+  "session_id": "ses_192daec61ffeS9vPI0h2IK8bIP",
+  "strategy": "manual-commit",
+  "created_at": "2026-05-29T00:10:24.397278011Z",
+  "branch": "main",
+  "checkpoints_count": 4,
+  "files_touched": [
+    "src/core/code-edit.ts",
+    "test/code-edit.test.ts"
+  ],
+  "agent": "OpenCode",
+  "model": "neuralwatt/moonshotai/Kimi-K2.6",
+  "turn_id": "2574534d4a50",
+  "token_usage": {
+    "input_tokens": 455207,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 14875488,
+    "output_tokens": 34819,
+    "api_call_count": 98
+  },
+  "session_metrics": {
+    "turn_count": 4
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-05-29T00:10:24.336428926Z",
+    "agent_lines": 333,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 333,
+    "total_lines_changed": 333,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 990,
+      "user_lines_removed": 182,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "docs/core-self-modification-gaps.md": 320,
+        "docs/web-self-modification-gaps.md": 356,
+        "src/cli/main.ts": 19,
+        "src/core/ax-optimizer.ts": 18,
+        "src/core/commands.ts": 2,
+        "src/core/evolution.ts": 2,
+        "src/core/map-elites.ts": 24,
+        "src/core/project.ts": 76,
+        "src/core/prompt-evolution.ts": 2,
+        "src/core/self-improve.ts": 17,
+        "src/pi/hyperteacher-extension.ts": 22,
+        "web/src/hooks/useKeatingAgent.tsx": 12,
+        "web/src/keating/browser-tools.ts": 93,
+        "web/src/keating/core.ts": 10,
+        "web/src/keating/storage.ts": 11,
+        "web/src/pages/Chat.tsx": 6
+      },
+      "user_removed_per_file": {
+        "src/cli/main.ts": 2,
+        "src/core/ax-optimizer.ts": 4,
+        "src/core/commands.ts": 2,
+        "src/core/map-elites.ts": 9,
+        "src/core/project.ts": 8,
+        "src/core/prompt-evolution.ts": 1,
+        "src/core/self-improve.ts": 3,
+        "web/src/hooks/useKeatingAgent.tsx": 3,
+        "web/src/keating/browser-tools.ts": 105,
+        "web/src/keating/core.ts": 10,
+        "web/src/keating/storage.ts": 1,
+        "web/src/pages/Chat.tsx": 34
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 213,
+      "user_lines_removed": 62,
+      "agent_lines_added": 990,
+      "agent_lines_removed": 182,
+      "user_added_per_file": {
+        "web/src/components/UsageCharts.tsx": 186,
+        "web/src/components/session-tree.ts": 26,
+        "web/src/pages/Usage.tsx": 1
+      },
+      "user_removed_per_file": {
+        "web/src/components/UsageCharts.tsx": 55,
+        "web/src/components/session-tree.ts": 6,
+        "web/src/pages/Usage.tsx": 1
+      }
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 425,
+      "user_lines_removed": 37,
+      "agent_lines_added": 1203,
+      "agent_lines_removed": 244,
+      "user_added_per_file": {
+        "web/src/components/SessionSidebar.tsx": 111,
+        "web/src/pages/Blog.tsx": 314
+      },
+      "user_removed_per_file": {
+        "web/src/components/SessionSidebar.tsx": 37
+      }
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
