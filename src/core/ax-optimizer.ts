@@ -77,14 +77,21 @@ export async function optimizePolicy(
 
     const baseline = await runBenchmarkSuite(cwd, basePolicy, focusTopic, seed);
     const best = await runBenchmarkSuite(cwd, bestPolicy, focusTopic, seed);
+    const paretoBenchmarks = await Promise.all(
+      study.paretoFront.map((p, i) => {
+        const policy = trialToPolicy(new PolicyTrial(p.params), `gepa-pareto-${i}`);
+        const weights = trialToWeights(new PolicyTrial(p.params));
+        return runBenchmarkSuite(cwd, policy, focusTopic, seed + i * 17, 3, weights);
+      })
+    );
 
     const run: EvolutionRun = {
       baseline,
       best,
       acceptedCandidates: [], // Not using candidate-by-candidate acceptance here
       exploredCandidates: study.paretoFront.map((p, i) => ({
-        policy: trialToPolicy(new PolicyTrial(p.params), `gepa-pareto-${i}`),
-        benchmark: baseline, // Placeholder
+        policy: paretoBenchmarks[i].policy,
+        benchmark: paretoBenchmarks[i],
         parentName: basePolicy.name,
         iteration: i,
         novelty: 1.0,
@@ -102,7 +109,8 @@ export async function optimizePolicy(
           accepted: true,
           iteration: 0
         }))
-      }
+      },
+      metadata: { optimizerUsed: "gepa" }
     };
 
     await writeFile(gepaResultPath(cwd), JSON.stringify(study, null, 2), "utf8");
@@ -111,6 +119,12 @@ export async function optimizePolicy(
   } catch (error) {
     console.warn("GEPA Optimization failed, falling back to MAP-Elites.", error);
     const meRun = await mapElitesEvolve(cwd, basePolicy, { iterations: nTrials, focusTopic, seed });
-    return mapElitesToEvolutionRun(meRun);
+    const run = mapElitesToEvolutionRun(meRun);
+    run.metadata = {
+      ...(run.metadata ?? {}),
+      optimizerUsed: "mapElites_fallback",
+      fallbackReason: error instanceof Error ? error.message : String(error)
+    };
+    return run;
   }
 }
