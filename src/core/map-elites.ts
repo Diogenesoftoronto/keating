@@ -1,5 +1,5 @@
-import { readFile, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
 
 import {
   BenchmarkResult,
@@ -15,6 +15,8 @@ import { DEFAULT_POLICY, DEFAULT_WEIGHTS, clampPolicy, clampWeights } from "./po
 import { benchmarkToMarkdown, runBenchmarkSuite } from "./benchmark.js";
 import { evolvePolicy as fallbackEvolvePolicy, EvolutionRun } from "./evolution.js";
 import { mutateScalar, mutatePolicy, mutateWeights } from "./mutation.js";
+import { evolutionDir } from "./paths.js";
+import { slugify } from "./util.js";
 
 export interface MapElitesOptions {
   iterations?: number;
@@ -23,6 +25,7 @@ export interface MapElitesOptions {
   resolution?: number;
   focusTopic?: string;
   initRandom?: number;
+  gridPath?: string;
 }
 
 export const DEFAULT_DESCRIPTORS: string[] = ["formalism", "socraticRatio"];
@@ -76,9 +79,9 @@ function selectParent(grid: MapElitesGrid, prng: Prng): { policy: TeacherPolicy;
   return { policy: filled[idx].policy, weights: filled[idx].weights };
 }
 
-function randomPolicy(prng: Prng, iteration: number): TeacherPolicy {
+function randomPolicy(prng: Prng, iteration: number, namePrefix = "me-random"): TeacherPolicy {
   return clampPolicy({
-    name: `me-random-${iteration}`,
+    name: `${namePrefix}-${iteration}`,
     analogyDensity: prng.next(),
     socraticRatio: prng.next(),
     formalism: prng.next(),
@@ -89,6 +92,10 @@ function randomPolicy(prng: Prng, iteration: number): TeacherPolicy {
     interdisciplinaryBias: prng.next(),
     challengeRate: prng.next()
   });
+}
+
+function defaultGridPath(cwd: string, focusTopic?: string): string {
+  return join(evolutionDir(cwd), `${focusTopic ? slugify(focusTopic) : "latest"}-map-elites-grid.json`);
 }
 
 function randomWeights(prng: Prng): SimulationWeights {
@@ -112,11 +119,13 @@ export async function mapElitesEvolve(
     descriptors = DEFAULT_DESCRIPTORS,
     resolution = DEFAULT_RESOLUTION,
     focusTopic,
-    initRandom = Math.floor(iterations * 0.25)
+    initRandom = Math.floor(iterations * 0.25),
+    gridPath = defaultGridPath(cwd, focusTopic)
   } = options;
 
   const prng = new Prng(seed);
-  const grid = createGrid(descriptors, resolution);
+  const runId = `me-${Date.now().toString(36)}`;
+  const grid = await loadMapElitesGrid(gridPath, descriptors, resolution);
   const totalCells = resolution ** descriptors.length;
 
   const baseline = await runBenchmarkSuite(cwd, basePolicy, focusTopic, seed, 3, DEFAULT_WEIGHTS);
@@ -128,12 +137,15 @@ export async function mapElitesEvolve(
     let candidatePolicy: TeacherPolicy;
     let candidateWeights: SimulationWeights;
 
+    let parentName: string | null = null;
+
     if (i <= initRandom) {
-      candidatePolicy = randomPolicy(prng, i);
+      candidatePolicy = randomPolicy(prng, i, `${runId}-random`);
       candidateWeights = randomWeights(prng);
     } else {
       const parent = selectParent(grid, prng);
-      candidatePolicy = mutatePolicy(parent.policy, prng, i, "me-candidate");
+      parentName = parent.policy.name;
+      candidatePolicy = mutatePolicy(parent.policy, prng, i, `${runId}-candidate`);
       candidateWeights = mutateWeights(parent.weights, prng);
     }
 
@@ -149,7 +161,7 @@ export async function mapElitesEvolve(
     exploredCandidates.push({
       policy: candidatePolicy,
       benchmark: candidateBenchmark,
-      parentName: null,
+      parentName,
       iteration: i,
       novelty: isNewCell ? 1 : 0,
       accepted: isNewCell,
@@ -166,6 +178,8 @@ export async function mapElitesEvolve(
       parameterDelta: []
     });
   }
+
+  await saveMapElitesGrid(gridPath, grid);
 
   let best: BenchmarkResult = baseline;
   for (const cell of grid.cells.values()) {
@@ -247,6 +261,7 @@ export async function saveMapElitesGrid(filePath: string, grid: MapElitesGrid): 
   for (const [key, cell] of grid.cells.entries()) {
     serializable[key] = cell;
   }
+  await mkdir(dirname(filePath), { recursive: true });
   await writeFile(filePath, `${JSON.stringify({ descriptors: grid.descriptors, resolution: grid.resolution, cells: serializable }, null, 2)}\n`, "utf8");
 }
 

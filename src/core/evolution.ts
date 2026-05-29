@@ -24,6 +24,7 @@ export interface EvolutionRun {
   acceptedCandidates: EvolutionCandidate[];
   exploredCandidates: EvolutionCandidate[];
   archive: EvolutionArchive;
+  metadata?: Record<string, unknown>;
 }
 
 function diffPolicy(before: TeacherPolicy, after: TeacherPolicy) {
@@ -216,6 +217,7 @@ export function evolutionToMarkdown(run: EvolutionRun): string {
     `- Best score: ${run.best.overallScore.toFixed(2)}`,
     `- Accepted candidates: ${run.acceptedCandidates.length}`,
     `- Explored candidates: ${run.exploredCandidates.length}`,
+    ...(run.metadata?.optimizerUsed ? [`- Optimizer used: ${String(run.metadata.optimizerUsed)}`] : []),
     ""
   ];
 
