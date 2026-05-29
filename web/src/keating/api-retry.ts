@@ -13,7 +13,7 @@ import {
 	isRetryableApiError,
 	retryDelayMs,
 	type ApiRetryPolicy,
-} from "../../../src/core/api-retry.js";
+} from "../core/api-retry.js";
 
 export {
 	isRetryableApiError,
@@ -21,7 +21,7 @@ export {
 	retryDelayMs,
 	retryableStatusCode,
 	type ApiRetryPolicy,
-} from "../../../src/core/api-retry.js";
+} from "../core/api-retry.js";
 
 export const WEB_API_RETRY_POLICY: ApiRetryPolicy = DEFAULT_API_RETRY_POLICY;
 
