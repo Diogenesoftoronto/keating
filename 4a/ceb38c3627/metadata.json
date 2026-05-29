@@ -3,7 +3,7 @@
   "checkpoint_id": "4aceb38c3627",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "web/src/hooks/useKeatingAgent.tsx",
     "web/src/keating/browser-tools.ts",
@@ -22,13 +22,19 @@
       "transcript": "/4a/ceb38c3627/1/full.jsonl",
       "content_hash": "/4a/ceb38c3627/1/content_hash.txt",
       "prompt": "/4a/ceb38c3627/1/prompt.txt"
+    },
+    {
+      "metadata": "/4a/ceb38c3627/2/metadata.json",
+      "transcript": "/4a/ceb38c3627/2/full.jsonl",
+      "content_hash": "/4a/ceb38c3627/2/content_hash.txt",
+      "prompt": "/4a/ceb38c3627/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 1314,
+    "input_tokens": 136930,
     "cache_creation_tokens": 46591,
-    "cache_read_tokens": 2115715,
-    "output_tokens": 18921,
-    "api_call_count": 44
+    "cache_read_tokens": 2376467,
+    "output_tokens": 26187,
+    "api_call_count": 51
   }
 }
