@@ -20,6 +20,7 @@ import {
 	mapElitesToMarkdown,
 	mapElitesToEvolutionRun,
 	DEFAULT_POLICY,
+	clampPolicy,
 	diagnoseBenchmark,
 	evaluatePrompt,
 	evolvePromptTemplate,
@@ -43,6 +44,7 @@ import {
 	type ImprovementProposal,
 	type ImprovementArchive,
 } from "./core";
+import type { Policy } from "./storage";
 
 export const KEATING_SYSTEM_PROMPT = `You are Keating, a hyperteacher designed for cognitive empowerment.
 
@@ -126,8 +128,70 @@ const SPEECH_SYSTEM_PROMPT = `
 - Keep deeper reasoning, verification, and tool work in the normal text/tool loop. The voice layer is for conversational delivery, not for independent answers.
 `;
 
-export function buildKeatingSystemPrompt(speechEnabled = false): string {
-	return speechEnabled ? `${KEATING_SYSTEM_PROMPT}${SPEECH_SYSTEM_PROMPT}` : KEATING_SYSTEM_PROMPT;
+export function buildKeatingSystemPrompt(speechEnabled = false, basePrompt = KEATING_SYSTEM_PROMPT): string {
+	return speechEnabled ? `${basePrompt}${SPEECH_SYSTEM_PROMPT}` : basePrompt;
+}
+
+export async function getActiveKeatingPrompt(storage: KeatingStorage, promptName = "learn"): Promise<string> {
+	const evolutions = await storage.getPromptEvolutions(promptName);
+	const latest = evolutions.sort((left, right) => right.createdAt - left.createdAt)[0];
+	return latest?.bestPrompt || KEATING_SYSTEM_PROMPT;
+}
+
+const POLICY_FIELDS: Array<keyof Omit<TeacherPolicy, "name">> = [
+	"analogyDensity",
+	"socraticRatio",
+	"formalism",
+	"retrievalPractice",
+	"exerciseCount",
+	"diagramBias",
+	"reflectionBias",
+	"interdisciplinaryBias",
+	"challengeRate",
+];
+
+function parsePolicyFromStorage(policy: Policy | null): TeacherPolicy {
+	if (!policy) return DEFAULT_POLICY;
+
+	const parsed = parsePolicyContent(policy.content);
+	return clampPolicy({
+		...DEFAULT_POLICY,
+		...parsed,
+		name: policy.id,
+	});
+}
+
+function parsePolicyContent(content: string): Partial<TeacherPolicy> {
+	const jsonBlock = content.match(/```json\s*([\s\S]*?)```/i)?.[1] ?? content;
+	try {
+		const parsed = JSON.parse(jsonBlock) as Partial<TeacherPolicy>;
+		return typeof parsed === "object" && parsed !== null ? parsed : {};
+	} catch {
+		const parsed: Partial<Record<keyof Omit<TeacherPolicy, "name">, number>> = {};
+		for (const field of POLICY_FIELDS) {
+			const match = content.match(new RegExp(`${field}\\s*:\\s*(-?\\d+(?:\\.\\d+)?)`, "i"));
+			if (match) {
+				parsed[field] = Number(match[1]);
+			}
+		}
+		return parsed;
+	}
+}
+
+function policyToMarkdown(policy: TeacherPolicy, score: number): string {
+	return [
+		"# Evolved Teaching Policy",
+		"",
+		`Generated: ${new Date().toISOString()}`,
+		`Score: ${score.toFixed(2)}/100`,
+		"",
+		"## Parameters",
+		...POLICY_FIELDS.map((field) => `- ${field}: ${policy[field].toFixed(field === "exerciseCount" ? 0 : 3)}`),
+		"",
+		"```json",
+		JSON.stringify(policy, null, 2),
+		"```",
+	].join("\n");
 }
 
 // Helper function to create tools with proper schema
@@ -251,6 +315,7 @@ export interface KeatingToolsOptions {
 		settings: WebSpeechSettings;
 		getApiKey: (provider: string) => Promise<string | undefined>;
 	};
+	setSystemPrompt?: (basePrompt: string) => void;
 }
 
 export async function createKeatingTools(
@@ -271,21 +336,7 @@ export async function createKeatingTools(
 					return "Topic required. Pass a topic parameter.";
 				}
 
-				const policy = await storage.getActivePolicy();
-				const teacherPolicy: TeacherPolicy = policy
-					? {
-							name: policy.id,
-							analogyDensity: 0.6,
-							socraticRatio: 0.55,
-							formalism: 0.5,
-							retrievalPractice: 0.7,
-							exerciseCount: 4,
-							diagramBias: 0.45,
-							reflectionBias: 0.5,
-							interdisciplinaryBias: 0.4,
-							challengeRate: 0.35,
-						}
-					: DEFAULT_POLICY;
+				const teacherPolicy = parsePolicyFromStorage(await storage.getActivePolicy());
 
 				const plan = buildLessonPlan(topic, teacherPolicy);
 				const markdown = lessonPlanToMarkdown(plan);
@@ -443,21 +494,7 @@ ${resolved.prerequisites.map((p) => `- [ ] Learners need: ${p}`).join("\n")}
 			},
 			async (params) => {
 				const topic = params.topic as string | undefined;
-				const policy = await storage.getActivePolicy();
-				const teacherPolicy: TeacherPolicy = policy
-					? {
-							name: policy.id,
-							analogyDensity: 0.6,
-							socraticRatio: 0.55,
-							formalism: 0.5,
-							retrievalPractice: 0.7,
-							exerciseCount: 4,
-							diagramBias: 0.45,
-							reflectionBias: 0.5,
-							interdisciplinaryBias: 0.4,
-							challengeRate: 0.35,
-						}
-					: DEFAULT_POLICY;
+				const teacherPolicy = parsePolicyFromStorage(await storage.getActivePolicy());
 
 				const result = runBenchmarkSuite(teacherPolicy, topic);
 				const report = benchmarkToMarkdown(result);
@@ -477,38 +514,13 @@ ${resolved.prerequisites.map((p) => `- [ ] Learners need: ${p}`).join("\n")}
 			},
 			async (params) => {
 				const topic = params.topic as string | undefined;
-				const policy = await storage.getActivePolicy();
-				const basePolicy: TeacherPolicy = policy
-					? {
-							name: policy.id,
-							analogyDensity: 0.6,
-							socraticRatio: 0.55,
-							formalism: 0.5,
-							retrievalPractice: 0.7,
-							exerciseCount: 4,
-							diagramBias: 0.45,
-							reflectionBias: 0.5,
-							interdisciplinaryBias: 0.4,
-							challengeRate: 0.35,
-						}
-					: DEFAULT_POLICY;
+				const basePolicy = parsePolicyFromStorage(await storage.getActivePolicy());
 
 				const meRun = mapElitesEvolve(basePolicy, topic);
 				const run = mapElitesToEvolutionRun(meRun);
 				const report = mapElitesToMarkdown(meRun);
 
-				await storage.savePolicy(
-					`# Evolved Teaching Policy\n\n` +
-						`Generated: ${new Date().toISOString()}\n` +
-						`Score: ${run.best.overallScore.toFixed(2)}/100\n\n` +
-						`## Parameters\n` +
-						`- analogyDensity: ${run.bestPolicy.analogyDensity.toFixed(3)}\n` +
-						`- socraticRatio: ${run.bestPolicy.socraticRatio.toFixed(3)}\n` +
-						`- formalism: ${run.bestPolicy.formalism.toFixed(3)}\n` +
-						`- exerciseCount: ${run.bestPolicy.exerciseCount}\n` +
-						`- diagramBias: ${run.bestPolicy.diagramBias.toFixed(3)}\n`,
-					true
-				);
+				await storage.savePolicy(policyToMarkdown(run.bestPolicy, run.best.overallScore), true);
 
 				const saved = await storage.saveEvolution(
 					run.best.overallScore,
@@ -633,26 +645,21 @@ ${topicList}
 			"auto_improve",
 			"Run the full autonomous self-improvement loop: benchmark current policy → evolve policy via MAP-Elites → evolve prompt template → record improvement. Use this instead of calling bench/evolve/improve separately. Triggers automatically on first session and periodically thereafter.",
 			{
-				topic: { type: "string", description: "Optional topic to focus the improvement on" }
+				topic: { type: "string", description: "Optional topic to focus the improvement on" },
+				force: { type: "boolean", description: "Set true only when the learner explicitly asks to run auto_improve again in this session" }
 			},
 			async (params) => {
 				const topic = params.topic as string | undefined;
+				const force = params.force === true;
+				const previousPolicy = await storage.getActivePolicy();
+				const alreadyRanThisSession = (await storage.getImprovementAttempts()).some(
+					(attempt) => attempt.sessionId === storage.currentSessionId
+				);
+				if (alreadyRanThisSession && !force) {
+					return "auto_improve already ran in this session. Pass force=true only if the learner explicitly asks to run it again.";
+				}
 
-				const policy = await storage.getActivePolicy();
-				const basePolicy: TeacherPolicy = policy
-					? {
-							name: policy.id,
-							analogyDensity: 0.6,
-							socraticRatio: 0.55,
-							formalism: 0.5,
-							retrievalPractice: 0.7,
-							exerciseCount: 4,
-							diagramBias: 0.45,
-							reflectionBias: 0.5,
-							interdisciplinaryBias: 0.4,
-							challengeRate: 0.35,
-						}
-					: DEFAULT_POLICY;
+				const basePolicy = parsePolicyFromStorage(await storage.getActivePolicy());
 
 				// Step 1: Baseline benchmark
 				const baseline = runBenchmarkSuite(basePolicy, topic);
@@ -664,18 +671,7 @@ ${topicList}
 				const run = mapElitesToEvolutionRun(meRun);
 				const evolveReport = mapElitesToMarkdown(meRun);
 
-				await storage.savePolicy(
-					`# Evolved Teaching Policy\n\n` +
-						`Generated: ${new Date().toISOString()}\n` +
-						`Score: ${run.best.overallScore.toFixed(2)}/100\n\n` +
-						`## Parameters\n` +
-						`- analogyDensity: ${run.bestPolicy.analogyDensity.toFixed(3)}\n` +
-						`- socraticRatio: ${run.bestPolicy.socraticRatio.toFixed(3)}\n` +
-						`- formalism: ${run.bestPolicy.formalism.toFixed(3)}\n` +
-						`- exerciseCount: ${run.bestPolicy.exerciseCount}\n` +
-						`- diagramBias: ${run.bestPolicy.diagramBias.toFixed(3)}\n`,
-					true
-				);
+				await storage.savePolicy(policyToMarkdown(run.bestPolicy, run.best.overallScore), true);
 				const saved = await storage.saveEvolution(
 					run.best.overallScore,
 					JSON.stringify(run.bestPolicy),
@@ -685,13 +681,15 @@ ${topicList}
 				);
 
 				// Step 3: Evolve prompt template
-				const promptRun = evolvePromptTemplate(KEATING_SYSTEM_PROMPT, "learn", 4);
+				const promptBase = await getActiveKeatingPrompt(storage, "learn");
+				const promptRun = evolvePromptTemplate(promptBase, "learn", 4);
 				const promptReport = promptEvolutionToMarkdown(promptRun);
 				const promptSaved = await storage.savePromptEvolution("learn", {
 					bestScore: promptRun.best.score,
 					bestPrompt: promptRun.best.prompt,
 					report: promptReport,
 				});
+				options.setSystemPrompt?.(promptRun.best.prompt);
 
 				// Step 4: Post-evolution benchmark
 				const evolvedPolicy = run.bestPolicy;
@@ -701,13 +699,16 @@ ${topicList}
 
 				// Step 5: Record improvement
 				const delta = after.overallScore - baseline.overallScore;
+				if (delta < -0.5) {
+					await storage.savePolicy(previousPolicy?.content ?? policyToMarkdown(basePolicy, baseline.overallScore), true);
+				}
 				const proposalId = `auto-${Date.now().toString(36)}`;
 				const improvementSaved = await storage.saveImprovementAttempt({
 					proposalId,
 					baselineScore: baseline.overallScore,
 					afterScore: after.overallScore,
 					scoreDelta: delta,
-					accepted: delta > 0,
+					accepted: delta > -0.5,
 					targets: diagnoseBenchmark(baseline).map((s) => s.area).join(","),
 					hypothesis: `Auto-improve: evolved policy (${run.acceptedCandidates.length} accepted) + evolved prompt (${promptRun.acceptedCandidates.length} accepted)`,
 				});
@@ -750,21 +751,7 @@ ${topicList}
 					return improvementArchiveToMarkdown(archive as ImprovementArchive);
 				}
 
-				const policy = await storage.getActivePolicy();
-				const teacherPolicy: TeacherPolicy = policy
-					? {
-							name: policy.id,
-							analogyDensity: 0.6,
-							socraticRatio: 0.55,
-							formalism: 0.5,
-							retrievalPractice: 0.7,
-							exerciseCount: 4,
-							diagramBias: 0.45,
-							reflectionBias: 0.5,
-							interdisciplinaryBias: 0.4,
-							challengeRate: 0.35,
-						}
-					: DEFAULT_POLICY;
+				const teacherPolicy = parsePolicyFromStorage(await storage.getActivePolicy());
 
 				const benchmark = runBenchmarkSuite(teacherPolicy);
 				const proposal = generateImprovementProposal(benchmark);
@@ -821,7 +808,7 @@ ${topicList}
 			},
 			async (params) => {
 				const promptName = (params.name as string) || "learn";
-				const basePrompt = KEATING_SYSTEM_PROMPT;
+				const basePrompt = await getActiveKeatingPrompt(storage, promptName);
 
 				const run = evolvePromptTemplate(basePrompt, promptName, 4);
 				const report = promptEvolutionToMarkdown(run);
@@ -831,6 +818,7 @@ ${topicList}
 					bestPrompt: run.best.prompt,
 					report,
 				});
+				options.setSystemPrompt?.(run.best.prompt);
 
 				const improved = run.best.score > run.baselineScore;
 
@@ -929,6 +917,80 @@ ${topicList}
 				}
 
 				return dueTopicsToMarkdown(due);
+			}
+		),
+
+		// ask_user_question - Ask the learner a direct question with optional choices
+		createTool(
+			"ask_user_question",
+			"Ask the learner a direct question with optional multiple-choice answers. Use to check understanding, prompt reflection, or gather the learner's thinking before explaining a concept. The agent waits for the user's answer in the next message.",
+			{
+				question: { type: "string", description: "The question to ask the learner" },
+				choices: { type: "array", items: { type: "string" }, description: "Optional list of answer choices for multiple-choice questions" },
+				allow_text: { type: "boolean", description: "Whether to also allow free-text input (default: true if no choices, false if choices provided)" },
+				hint: { type: "string", description: "Optional hint to display below the question" },
+			},
+			async (params) => {
+				const question = String(params.question ?? "");
+				if (!question) return "Error: question text is required.";
+				const choices = Array.isArray(params.choices)
+					? (params.choices as unknown[]).filter((c): c is string => typeof c === "string")
+					: undefined;
+				const allowText = typeof params.allow_text === "boolean" ? params.allow_text : !choices || choices.length === 0;
+				const hint = String(params.hint ?? "");
+				const payload = JSON.stringify({ question, choices, allow_text: allowText, hint: hint || undefined });
+				const label = choices ? ` (choices: ${choices.join(", ")})` : "";
+				return `[question] Asking learner: ${question}${label}\n\n<keating-question json=${JSON.stringify(payload)} />`;
+			}
+		),
+
+		// edit_source - Propose a source code edit (web: produces diff; CLI: applies directly)
+		createTool(
+			"edit_source",
+			"Propose a precise source code edit using search/replace blocks. In the browser this returns a formatted diff for manual application; on the CLI it can apply directly. Use for bug fixes, refactoring, or adding small features. Always include enough surrounding context in the search block to make it unique.",
+			{
+				file: { type: "string", description: "Relative file path to edit (e.g. src/core/lesson-plan.ts)" },
+				search: { type: "string", description: "Exact code block to search for. Must be unique in the file. Include surrounding lines for safety." },
+				replace: { type: "string", description: "Replacement code block." },
+				reason: { type: "string", description: "Short explanation of why this change is being made." },
+			},
+			async (params) => {
+				const file = String(params.file ?? "");
+				const search = String(params.search ?? "");
+				const replace = String(params.replace ?? "");
+				const reason = String(params.reason ?? "agent edit");
+
+				if (!file || !search) {
+					return "Error: file and search are required.";
+				}
+
+				// Web context: we cannot write to the filesystem, so produce a formatted diff
+				const searchLines = search.split("\n").length;
+				const replaceLines = replace.split("\n").length;
+				const charDelta = replace.length - search.length;
+
+				return [
+					`## Proposed Edit: ${file}`,
+					"",
+					`**Reason:** ${reason}`,
+					`**Lines:** ${searchLines} → ${replaceLines}  |  **Char Δ:** ${charDelta >= 0 ? "+" : ""}${charDelta}`,
+					"",
+					"### Search",
+					"```",
+					search,
+					"```",
+					"",
+					"### Replace",
+					"```",
+					replace,
+					"```",
+					"",
+					"---",
+					"**To apply this edit in the CLI:**",
+					`echo '{"search":${JSON.stringify(search)},"replace":${JSON.stringify(replace)}}' | keating edit ${file}`,
+					"",
+					"**Or manually:** copy the Replace block into the file where the Search block currently appears.",
+				].join("\n");
 			}
 		),
 	];

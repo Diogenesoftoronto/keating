@@ -440,15 +440,15 @@ export function benchmarkTopics(focusTopic?: string): TopicDefinition[] {
 
 export const DEFAULT_POLICY: TeacherPolicy = {
 	name: "keating-default",
-	analogyDensity: 0.6,
-	socraticRatio: 0.55,
-	formalism: 0.5,
-	retrievalPractice: 0.7,
-	exerciseCount: 4,
-	diagramBias: 0.45,
-	reflectionBias: 0.5,
-	interdisciplinaryBias: 0.4,
-	challengeRate: 0.35,
+	analogyDensity: 0.72,
+	socraticRatio: 0.66,
+	formalism: 0.64,
+	retrievalPractice: 0.74,
+	exerciseCount: 3,
+	diagramBias: 0.7,
+	reflectionBias: 0.68,
+	interdisciplinaryBias: 0.62,
+	challengeRate: 0.58,
 };
 
 export const DEFAULT_WEIGHTS: SimulationWeights = {
@@ -490,7 +490,7 @@ export function clampPolicy(policy: TeacherPolicy): TeacherPolicy {
 		socraticRatio: clamp(policy.socraticRatio),
 		formalism: clamp(policy.formalism),
 		retrievalPractice: clamp(policy.retrievalPractice),
-		exerciseCount: Math.max(1, Math.min(8, policy.exerciseCount)),
+		exerciseCount: Math.min(5, Math.max(1, Math.round(policy.exerciseCount))),
 		diagramBias: clamp(policy.diagramBias),
 		reflectionBias: clamp(policy.reflectionBias),
 		interdisciplinaryBias: clamp(policy.interdisciplinaryBias),

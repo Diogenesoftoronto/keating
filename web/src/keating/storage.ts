@@ -203,6 +203,16 @@ export class KeatingStorage {
 		});
 	}
 
+	private async getByIndex<T>(storeName: string, indexName: string, value: IDBValidKey): Promise<T[]> {
+		const store = await this.getStore(storeName);
+		const index = store.index(indexName);
+		return new Promise((resolve, reject) => {
+			const request = index.getAll(value);
+			request.onsuccess = () => resolve(request.result);
+			request.onerror = () => reject(request.error);
+		});
+	}
+
 	private async put<T>(storeName: string, data: T): Promise<string> {
 		const store = await this.getStore(storeName, "readwrite");
 		return new Promise((resolve, reject) => {
@@ -488,7 +498,7 @@ export class KeatingStorage {
 
 	async getPromptEvolutions(promptName?: string): Promise<PromptEvolutionResult[]> {
 		if (promptName) {
-			return this.getByTopic<PromptEvolutionResult>(STORES.PROMPT_EVOLUTIONS, promptName);
+			return this.getByIndex<PromptEvolutionResult>(STORES.PROMPT_EVOLUTIONS, "promptName", promptName);
 		}
 		return this.getAll<PromptEvolutionResult>(STORES.PROMPT_EVOLUTIONS);
 	}
