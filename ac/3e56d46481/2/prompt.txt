@@ -1,0 +1,43 @@
+what are some options for mutation testing that could be used in this repository? I want tools that visually tell me how good test coverage, mutants etc. is
+
+---
+
+let's get stryker working, what about for rust?
+
+---
+
+okay try fixing the current tests.
+
+---
+
+categorize the mutants
+
+---
+
+why are these high and low signal?
+
+---
+
+let's start with blockstatements.
+
+---
+
+in languages like go what options are there for mutations testing?
+
+---
+
+can you self host stryker?
+
+---
+
+okay  is the run complete?
+
+---
+
+<task-notification>
+<task-id>bk86a814e</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/tmp/claude-1000/-home-diogenes-Projects-keating/e9856545-333d-4bb9-990b-f1911dedc523/tasks/bk86a814e.output</output-file>
+<status>failed</status>
+<summary>Background command "Run BlockStatement mutations on src/core" failed with exit code 1</summary>
+</task-notification>
