@@ -15,8 +15,10 @@ import {
   ensureProjectScaffold,
   evolvePolicyArtifact,
   evolvePromptArtifact,
+  improveAccept,
   improveArtifact,
   improveHistory,
+  improveReject,
   listArtifacts,
   mapTopicArtifact,
   planTopicArtifact,
@@ -32,6 +34,7 @@ import { serveWeb } from "./web.js";
 import { serveWebMcp } from "../mcp/server.js";
 import { color, bold, cliCommands } from "../core/theme.js";
 import { printAsciiHeader } from "../core/terminal.js";
+import { applySourceEdit, rollbackEdits, editResultToMarkdown } from "../core/code-edit.js";
 
 function printUsage(): void {
   printAsciiHeader();
@@ -136,6 +139,74 @@ async function runExportCommand(cwd: string, args: string[]): Promise<void> {
   console.log(`${color.ok}Exported ${result.manifest.counts.examplesWritten} fine-tuning examples.${color.reset}`);
   console.log(relative(cwd, result.manifestPath));
   for (const file of result.manifest.files) console.log(file);
+}
+
+async function runEditCommand(cwd: string, args: string[]): Promise<void> {
+  const fileArg = args[0];
+  if (!fileArg) {
+    throw commandUsage("edit", "keating edit src/core/lesson-plan.ts");
+  }
+
+  const backupDirValue = optionValue(args, "--backup-dir");
+  const backupDir = backupDirValue ? join(cwd, backupDirValue) : undefined;
+
+  // Read edit payload from stdin if piped, otherwise expect JSON file path
+  const stdinPayload = process.stdin.isTTY
+    ? null
+    : await new Promise<string>((resolve) => {
+        let data = "";
+        process.stdin.on("data", (chunk) => { data += chunk; });
+        process.stdin.on("end", () => resolve(data));
+      });
+
+  if (stdinPayload) {
+    const edit = JSON.parse(stdinPayload) as { search: string; replace: string; reason?: string };
+    if (!edit.search || typeof edit.replace !== "string") {
+      throw new Error("stdin edit must be JSON with { search: string, replace: string, reason?: string }");
+    }
+    const result = await applySourceEdit(cwd, {
+      file: fileArg,
+      search: edit.search,
+      replace: edit.replace,
+      reason: edit.reason || "manual edit",
+    }, backupDir);
+    console.log(result.success ? `${color.ok}${result.message}${color.reset}` : `${color.err}${result.message}${color.reset}`);
+    if (!result.success) process.exitCode = 1;
+    return;
+  }
+
+  // Interactive mode: prompt for search and replace
+  console.log(`${color.sepia}Interactive edit mode for ${fileArg}${color.reset}`);
+  console.log("Paste the search block, then a line with --- then the replace block.");
+  console.log("End with EOF (Ctrl+D) or a line with ===");
+  console.log("");
+
+  const rl = (await import("node:readline/promises")).createInterface({ input: process.stdin, output: process.stdout });
+  const lines: string[] = [];
+  for await (const line of rl) {
+    if (line.trim() === "===") break;
+    lines.push(line);
+  }
+  rl.close();
+
+  const payload = lines.join("\n");
+  const separatorIndex = payload.indexOf("\n---\n");
+  if (separatorIndex === -1) {
+    throw new Error("Could not find separator --- between search and replace blocks.");
+  }
+
+  const search = payload.slice(0, separatorIndex);
+  const replace = payload.slice(separatorIndex + 5); // skip "\n---\n"
+
+  const result = await applySourceEdit(cwd, {
+    file: fileArg,
+    search,
+    replace,
+    reason: "interactive edit",
+  }, backupDir);
+
+  console.log(result.success ? `${color.ok}${result.message}${color.reset}` : `${color.err}${result.message}${color.reset}`);
+  if (!result.success) process.exitCode = 1;
 }
 
 async function setupProject(cwd: string, args: string[]): Promise<void> {
@@ -317,6 +388,20 @@ async function run(): Promise<void> {
         console.log(md);
         return;
       }
+      if (args[0] === "accept") {
+        const proposalId = args[1];
+        if (!proposalId) throw commandUsage("improve accept", "keating improve accept improve-abc123");
+        const result = await improveAccept(cwd, proposalId);
+        console.log(`${color.ok}Accepted ${proposalId}.${color.reset} After: ${result.afterScore.toFixed(2)} Delta: ${result.delta >= 0 ? "+" : ""}${result.delta.toFixed(2)}`);
+        return;
+      }
+      if (args[0] === "reject") {
+        const proposalId = args[1];
+        if (!proposalId) throw commandUsage("improve reject", "keating improve reject improve-abc123");
+        await improveReject(cwd, proposalId);
+        console.log(`${color.ok}Rejected ${proposalId} and restored snapshots when available.${color.reset}`);
+        return;
+      }
       const artifact = await improveArtifact(cwd);
       console.log(`Proposal: ${artifact.proposal.id}`);
       console.log(`Targets: ${artifact.proposal.targets.map(t => t.file).join(", ")}`);
@@ -324,8 +409,9 @@ async function run(): Promise<void> {
       return;
     }
     case "auto-improve": {
-      const topic = args.join(" ").trim() || undefined;
-      const result = await autoImproveArtifact(cwd, topic);
+      const force = args.includes("--force");
+      const topic = args.filter((arg) => arg !== "--force").join(" ").trim() || undefined;
+      const result = await autoImproveArtifact(cwd, topic, { force });
       const verdict = result.delta > 0
         ? `${color.ok}IMPROVED by +${result.delta.toFixed(2)}${color.reset}`
         : result.delta < -0.5
@@ -333,6 +419,10 @@ async function run(): Promise<void> {
           : `${color.sepia}NO SIGNIFICANT CHANGE (Δ${result.delta.toFixed(2)})${color.reset}`;
       console.log(`Baseline: ${result.baselineScore.toFixed(2)} → After: ${result.afterScore.toFixed(2)} — ${verdict}`);
       console.log(relative(cwd, result.reportPath));
+      return;
+    }
+    case "edit": {
+      await runEditCommand(cwd, args);
       return;
     }
     case "export": {

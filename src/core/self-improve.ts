@@ -65,7 +65,10 @@ const MUTABLE_SOURCES: Record<string, string> = {
   "animation": "src/core/animation.ts",
   "topics": "src/core/topics.ts",
   "map": "src/core/map.ts",
-  "policy-defaults": "src/core/policy.ts"
+  "policy-defaults": "src/core/policy.ts",
+  "mutation": "src/core/mutation.ts",
+  "map-elites": "src/core/map-elites.ts",
+  "prompt-evolution": "src/core/prompt-evolution.ts"
 };
 
 /** Files that must never be modified by self-improvement. Checked at proposal time. */
@@ -377,10 +380,10 @@ export async function recordAttempt(
 ): Promise<void> {
   const archive = await loadImprovementArchive(cwd);
   archive.attempts.push(attempt);
-  if (attempt.accepted) {
+  if (attempt.completedAt && attempt.accepted) {
     archive.totalAccepted += 1;
     archive.cumulativeImprovement += attempt.scoreDelta ?? 0;
-  } else {
+  } else if (attempt.completedAt) {
     archive.totalRejected += 1;
   }
   await saveImprovementArchive(cwd, archive);
@@ -440,6 +443,17 @@ export async function generateImprovementArtifact(cwd: string): Promise<Improvem
     : content + "No prior improvement attempts. This is the first run.\n";
 
   await writeFile(proposalPath, fullContent, "utf8");
+
+  await recordAttempt(cwd, {
+    proposal,
+    snapshots,
+    baselineScore: proposal.baselineScore,
+    afterScore: null,
+    scoreDelta: null,
+    accepted: false,
+    rollbackPerformed: false,
+    completedAt: null
+  });
 
   return { proposalPath, proposal, snapshots };
 }
