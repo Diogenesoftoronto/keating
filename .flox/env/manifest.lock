@@ -1,0 +1,1173 @@
+{
+  "lockfile-version": 1,
+  "manifest": {
+    "schema-version": "1.12.0",
+    "install": {
+      "bun": {
+        "pkg-path": "bun"
+      },
+      "fd": {
+        "pkg-path": "fd"
+      },
+      "gh": {
+        "pkg-path": "gh"
+      },
+      "imagemagick": {
+        "pkg-path": "imagemagick"
+      },
+      "just": {
+        "pkg-path": "just"
+      },
+      "nodejs_22": {
+        "pkg-path": "nodejs_22"
+      },
+      "oxdraw": {
+        "pkg-path": "oxdraw",
+        "systems": [
+          "aarch64-linux",
+          "x86_64-linux"
+        ]
+      },
+      "ripgrep": {
+        "pkg-path": "ripgrep"
+      },
+      "similarity": {
+        "pkg-path": "similarity"
+      },
+      "typst": {
+        "pkg-path": "typst"
+      }
+    },
+    "hook": {},
+    "profile": {},
+    "options": {}
+  },
+  "packages": [
+    {
+      "attr_path": "bun",
+      "broken": false,
+      "derivation": "/nix/store/7ai107a6w4rsg4435bp0cpalpzax7cdl-bun-1.3.13.drv",
+      "description": "Incredibly fast JavaScript runtime, bundler, transpiler and package manager – all in one",
+      "install_id": "bun",
+      "license": "[ MIT, LGPL-2.1-only ]",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "bun-1.3.13",
+      "pname": "bun",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T07:06:02.736769Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "1.3.13",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/lbiphfz5g4vdkiar14k2y7cdb4yvjkv4-bun-1.3.13"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "bun",
+      "broken": false,
+      "derivation": "/nix/store/2knjs833899rgw13smqbanj2wjaqhrc4-bun-1.3.13.drv",
+      "description": "Incredibly fast JavaScript runtime, bundler, transpiler and package manager – all in one",
+      "install_id": "bun",
+      "license": "[ MIT, LGPL-2.1-only ]",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "bun-1.3.13",
+      "pname": "bun",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T07:34:25.959749Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "1.3.13",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/ywc7zrq5vr32ashfgc7dp84a2f3rzic6-bun-1.3.13"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "bun",
+      "broken": false,
+      "derivation": "/nix/store/kj336nadzmvifd94ns4dx1jj761sa1kd-bun-1.3.13.drv",
+      "description": "Incredibly fast JavaScript runtime, bundler, transpiler and package manager – all in one",
+      "install_id": "bun",
+      "license": "[ MIT, LGPL-2.1-only ]",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "bun-1.3.13",
+      "pname": "bun",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T08:02:11.947951Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "1.3.13",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/mrxnqkawj180lw76j3s7s7cpc6f6fzxk-bun-1.3.13"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "bun",
+      "broken": false,
+      "derivation": "/nix/store/qnd4n683czmm44piqp95zz9jcnfbk055-bun-1.3.13.drv",
+      "description": "Incredibly fast JavaScript runtime, bundler, transpiler and package manager – all in one",
+      "install_id": "bun",
+      "license": "[ MIT, LGPL-2.1-only ]",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "bun-1.3.13",
+      "pname": "bun",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T08:32:51.035042Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "1.3.13",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/z1cxjx705fswwjjns0sw2ysbd5jqxfgm-bun-1.3.13"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "fd",
+      "broken": false,
+      "derivation": "/nix/store/y4pw406v40713bi1ma7p5yai4kb71j0q-fd-10.4.2.drv",
+      "description": "Simple, fast and user-friendly alternative to find",
+      "install_id": "fd",
+      "license": "[ Apache-2.0, MIT ]",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "fd-10.4.2",
+      "pname": "fd",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T07:06:03.532953Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "10.4.2",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/h07wyxfpicdwj0j3xbg9841hd0grb9sy-fd-10.4.2"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "fd",
+      "broken": false,
+      "derivation": "/nix/store/8nj1iv30bad2wf92xb0ny7qrkb6sbq3a-fd-10.4.2.drv",
+      "description": "Simple, fast and user-friendly alternative to find",
+      "install_id": "fd",
+      "license": "[ Apache-2.0, MIT ]",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "fd-10.4.2",
+      "pname": "fd",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T07:34:27.096172Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "10.4.2",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/493wwp79iq7db1dy1gj3a9dpazh17v42-fd-10.4.2"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "fd",
+      "broken": false,
+      "derivation": "/nix/store/xkr19km5qrshaxwwi6chcxjx3dm1g3fx-fd-10.4.2.drv",
+      "description": "Simple, fast and user-friendly alternative to find",
+      "install_id": "fd",
+      "license": "[ Apache-2.0, MIT ]",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "fd-10.4.2",
+      "pname": "fd",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T08:02:12.726558Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "10.4.2",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/h350vnmjbhxgiqm4v7hihq43kk7ixswk-fd-10.4.2"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "fd",
+      "broken": false,
+      "derivation": "/nix/store/jpsvs89a2p0z0ns25jxgwf6042qpqadr-fd-10.4.2.drv",
+      "description": "Simple, fast and user-friendly alternative to find",
+      "install_id": "fd",
+      "license": "[ Apache-2.0, MIT ]",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "fd-10.4.2",
+      "pname": "fd",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T08:32:52.277364Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "10.4.2",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/wci2b3l9gs8nq3alx6czffsq55bg44cv-fd-10.4.2"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "gh",
+      "broken": false,
+      "derivation": "/nix/store/igihgwr3ikj2524mgifccan67jknmclm-gh-2.92.0.drv",
+      "description": "GitHub CLI tool",
+      "install_id": "gh",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "gh-2.92.0",
+      "pname": "gh",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T07:06:03.814291Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "2.92.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/2wapk3dm2magc0lq8rx8yd5pam3xlacw-gh-2.92.0"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "gh",
+      "broken": false,
+      "derivation": "/nix/store/3c2vcidnc32cn31i32xdnkprsqm33vgn-gh-2.92.0.drv",
+      "description": "GitHub CLI tool",
+      "install_id": "gh",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "gh-2.92.0",
+      "pname": "gh",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T07:34:27.528582Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "2.92.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/63sx2manc3ny8l4zzppcvz9292vi3044-gh-2.92.0"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "gh",
+      "broken": false,
+      "derivation": "/nix/store/h2h7b44zhi3303v08hx1hmz5drvzybfx-gh-2.92.0.drv",
+      "description": "GitHub CLI tool",
+      "install_id": "gh",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "gh-2.92.0",
+      "pname": "gh",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T08:02:12.994109Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "2.92.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/arfkhrr2bcmdrg6ncgnk6vaqx6qfv3vl-gh-2.92.0"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "gh",
+      "broken": false,
+      "derivation": "/nix/store/c0wbm13m79lpwj2gdblcygnc2l1g75ab-gh-2.92.0.drv",
+      "description": "GitHub CLI tool",
+      "install_id": "gh",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "gh-2.92.0",
+      "pname": "gh",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T08:32:52.740453Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "2.92.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/d0r9xzcpv8xcjds6z1w03wyqi6iv30af-gh-2.92.0"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "imagemagick",
+      "broken": false,
+      "derivation": "/nix/store/7asnrnrzc5l6bqq1v6iny4mhx0n7bb2k-imagemagick-7.1.2-23.drv",
+      "description": "Software suite to create, edit, compose, or convert bitmap images",
+      "install_id": "imagemagick",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "imagemagick-7.1.2-23",
+      "pname": "imagemagick",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T07:06:19.511222Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "7.1.2-23",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "dev": "/nix/store/4as8dc7lb02lnnqdi7278705h7ayc4zg-imagemagick-7.1.2-23-dev",
+        "doc": "/nix/store/kmzihbxg9n3j6l12fr1l4mz0lqmqrim9-imagemagick-7.1.2-23-doc",
+        "out": "/nix/store/paxfk2s1gb9qylklxdlvicc5x0hf3fy7-imagemagick-7.1.2-23"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "imagemagick",
+      "broken": false,
+      "derivation": "/nix/store/33fjh0xvllsq0pdh092v895ybijj9wfn-imagemagick-7.1.2-23.drv",
+      "description": "Software suite to create, edit, compose, or convert bitmap images",
+      "install_id": "imagemagick",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "imagemagick-7.1.2-23",
+      "pname": "imagemagick",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T07:34:47.775247Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "7.1.2-23",
+      "outputs_to_install": [
+        "out",
+        "out"
+      ],
+      "outputs": {
+        "dev": "/nix/store/z77shkv7hqjffi2zygbl9gxspswmrqvs-imagemagick-7.1.2-23-dev",
+        "doc": "/nix/store/fk4qf1lj4yv486hk2v55p3yddxgskkl8-imagemagick-7.1.2-23-doc",
+        "out": "/nix/store/nqqi92858bzd9sx119kcyrybbriaz4ab-imagemagick-7.1.2-23"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "imagemagick",
+      "broken": false,
+      "derivation": "/nix/store/rzmyrkbwii5sjzba5p4wsvimj462m7bn-imagemagick-7.1.2-23.drv",
+      "description": "Software suite to create, edit, compose, or convert bitmap images",
+      "install_id": "imagemagick",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "imagemagick-7.1.2-23",
+      "pname": "imagemagick",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T08:02:28.567557Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "7.1.2-23",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "dev": "/nix/store/yxdrxin5kv207nmhgg1sgf5va467b0z9-imagemagick-7.1.2-23-dev",
+        "doc": "/nix/store/90naf9g7bjbhjj544wdql90dm7yad2bg-imagemagick-7.1.2-23-doc",
+        "out": "/nix/store/52dp7qa7c566z1px4fq50in87jx6s3yb-imagemagick-7.1.2-23"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "imagemagick",
+      "broken": false,
+      "derivation": "/nix/store/3x7jpp1jz7r1h216kmgh22mnr3fdc7x1-imagemagick-7.1.2-23.drv",
+      "description": "Software suite to create, edit, compose, or convert bitmap images",
+      "install_id": "imagemagick",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "imagemagick-7.1.2-23",
+      "pname": "imagemagick",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T08:33:13.189909Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "7.1.2-23",
+      "outputs_to_install": [
+        "out",
+        "out"
+      ],
+      "outputs": {
+        "dev": "/nix/store/mqn50k3viz5wb0gwbdfwb23v7l32kfxf-imagemagick-7.1.2-23-dev",
+        "doc": "/nix/store/fqly9ymadz5cj8kq18wv2flq45m00rs1-imagemagick-7.1.2-23-doc",
+        "out": "/nix/store/vwalk1kcnb5mr5c5c8100a96r9kgq4g2-imagemagick-7.1.2-23"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "just",
+      "broken": false,
+      "derivation": "/nix/store/5zna38fywzym7bl48g1h13wqvdycbw3a-just-1.51.0.drv",
+      "description": "Handy way to save and run project-specific commands",
+      "install_id": "just",
+      "license": "CC0-1.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "just-1.51.0",
+      "pname": "just",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T07:06:20.263258Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "1.51.0",
+      "outputs_to_install": [
+        "man",
+        "out"
+      ],
+      "outputs": {
+        "doc": "/nix/store/d0n7b7xd2miyja6m2nlzc2szj0gqzgxb-just-1.51.0-doc",
+        "man": "/nix/store/48iac05gjz4kjpx605hcgn95an8ary9q-just-1.51.0-man",
+        "out": "/nix/store/18ml04rix1526kmcv5fcir6n7cb8lxyf-just-1.51.0"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "just",
+      "broken": false,
+      "derivation": "/nix/store/gr86ih929ihb6y0vvc4wr8ppyw687nxv-just-1.51.0.drv",
+      "description": "Handy way to save and run project-specific commands",
+      "install_id": "just",
+      "license": "CC0-1.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "just-1.51.0",
+      "pname": "just",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T07:34:48.994051Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "1.51.0",
+      "outputs_to_install": [
+        "man",
+        "out"
+      ],
+      "outputs": {
+        "doc": "/nix/store/ppj3c78k6x3bql77f3mgrjjrxb2jjc0q-just-1.51.0-doc",
+        "man": "/nix/store/8ygmlmpxmggc2wqbkz1yhf7fz5nwg084-just-1.51.0-man",
+        "out": "/nix/store/6q8i59br2gzxnqax4dz3g1fmkwp2mfs2-just-1.51.0"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "just",
+      "broken": false,
+      "derivation": "/nix/store/ggxnxxh3pgrwvqf7b3f4djxvvfpxkkcy-just-1.51.0.drv",
+      "description": "Handy way to save and run project-specific commands",
+      "install_id": "just",
+      "license": "CC0-1.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "just-1.51.0",
+      "pname": "just",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T08:02:29.283119Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "1.51.0",
+      "outputs_to_install": [
+        "man",
+        "out"
+      ],
+      "outputs": {
+        "doc": "/nix/store/x5g644hwbjdlij9w37gwgg1z1h4b6qqk-just-1.51.0-doc",
+        "man": "/nix/store/144wqvh3s441y05xvzn8m16rhcqbki7d-just-1.51.0-man",
+        "out": "/nix/store/7ppiil9ycr565vqgbc18x4rpgbfgcnzy-just-1.51.0"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "just",
+      "broken": false,
+      "derivation": "/nix/store/45c51wm8lisrj4d8p7kshvwyfm3wfnz3-just-1.51.0.drv",
+      "description": "Handy way to save and run project-specific commands",
+      "install_id": "just",
+      "license": "CC0-1.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "just-1.51.0",
+      "pname": "just",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T08:33:14.456114Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "1.51.0",
+      "outputs_to_install": [
+        "man",
+        "out"
+      ],
+      "outputs": {
+        "doc": "/nix/store/r800x8xppg70s00hw3h6x9cxpd6nh06y-just-1.51.0-doc",
+        "man": "/nix/store/p04vig0h2hj7hg5vgd74n5nphlcy23l8-just-1.51.0-man",
+        "out": "/nix/store/3j32zmchv9wd60qng1mm04yj07wf04i8-just-1.51.0"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "nodejs_22",
+      "broken": false,
+      "derivation": "/nix/store/ws7l43s1hfna7y9l861cj1bp2kbi29nn-nodejs-22.22.3.drv",
+      "description": "Event-driven I/O framework for the V8 JavaScript engine",
+      "install_id": "nodejs_22",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "nodejs-22.22.3",
+      "pname": "nodejs_22",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T07:06:28.041161Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "22.22.3",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/k1yy2d1h7pvpac7m14vmaw23j529fpza-nodejs-22.22.3"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "nodejs_22",
+      "broken": false,
+      "derivation": "/nix/store/zyl0kmrlj0li816zn8hv62zmpdknsrcz-nodejs-22.22.3.drv",
+      "description": "Event-driven I/O framework for the V8 JavaScript engine",
+      "install_id": "nodejs_22",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "nodejs-22.22.3",
+      "pname": "nodejs_22",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T07:35:05.602538Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "22.22.3",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/d8zana2n6i904c088i533ivg1j817x8v-nodejs-22.22.3"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "nodejs_22",
+      "broken": false,
+      "derivation": "/nix/store/pi39qyfxbhrn7hswr692hy7l3l1383hl-nodejs-22.22.3.drv",
+      "description": "Event-driven I/O framework for the V8 JavaScript engine",
+      "install_id": "nodejs_22",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "nodejs-22.22.3",
+      "pname": "nodejs_22",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T08:02:36.830989Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "22.22.3",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/9yvmgryhhwnswgaji30cpw4m9swhv1ia-nodejs-22.22.3"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "nodejs_22",
+      "broken": false,
+      "derivation": "/nix/store/1wpdkzniws8nxwf6zzzpwgc65v2vmjbc-nodejs-22.22.3.drv",
+      "description": "Event-driven I/O framework for the V8 JavaScript engine",
+      "install_id": "nodejs_22",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "nodejs-22.22.3",
+      "pname": "nodejs_22",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T08:33:31.729539Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "22.22.3",
+      "outputs_to_install": [
+        "out",
+        "out",
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/ac9bklddx1klg92hj7r08xmpky1nwag2-nodejs-22.22.3"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "oxdraw",
+      "broken": false,
+      "derivation": "/nix/store/8fddphvmlh4izlyxkplyyqr42g44w429-oxdraw-0.2.0.drv",
+      "description": "Diagram as Code Tool Written in Rust with Draggable Editing",
+      "install_id": "oxdraw",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "oxdraw-0.2.0",
+      "pname": "oxdraw",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T07:35:13.770893Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.2.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/3rn9kn1xgvlgzqg9l37bwxb2rgz27nhv-oxdraw-0.2.0"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "oxdraw",
+      "broken": false,
+      "derivation": "/nix/store/6h4mk6yjrwvbapcb6wrhmcml7ngk3396-oxdraw-0.2.0.drv",
+      "description": "Diagram as Code Tool Written in Rust with Draggable Editing",
+      "install_id": "oxdraw",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "oxdraw-0.2.0",
+      "pname": "oxdraw",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T08:33:39.377397Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.2.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/zvsg8k317kdlnadc40m6i5vjhig32y52-oxdraw-0.2.0"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "ripgrep",
+      "broken": false,
+      "derivation": "/nix/store/d162870ah7rpk32264m5xh0b0xkg21qz-ripgrep-15.1.0.drv",
+      "description": "Utility that combines the usability of The Silver Searcher with the raw speed of grep",
+      "install_id": "ripgrep",
+      "license": "[ Unlicense, MIT ]",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "ripgrep-15.1.0",
+      "pname": "ripgrep",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T07:07:31.254104Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "15.1.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/8k3a39k5wxvch0ir2lb1pskvwing02lq-ripgrep-15.1.0"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "ripgrep",
+      "broken": false,
+      "derivation": "/nix/store/kyg5522bnylrx24015biv9as0fhjydp2-ripgrep-15.1.0.drv",
+      "description": "Utility that combines the usability of The Silver Searcher with the raw speed of grep",
+      "install_id": "ripgrep",
+      "license": "[ Unlicense, MIT ]",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "ripgrep-15.1.0",
+      "pname": "ripgrep",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T07:36:30.141498Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "15.1.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/ayxgmx0yf8mjfym3jprkkrjql1hyh8wy-ripgrep-15.1.0"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "ripgrep",
+      "broken": false,
+      "derivation": "/nix/store/aak5hgpiacl1h3kl6zqdcvrvjz5iklmx-ripgrep-15.1.0.drv",
+      "description": "Utility that combines the usability of The Silver Searcher with the raw speed of grep",
+      "install_id": "ripgrep",
+      "license": "[ Unlicense, MIT ]",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "ripgrep-15.1.0",
+      "pname": "ripgrep",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T08:03:39.742908Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "15.1.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/ra0dsj16fbhgkymvpa84wvhbqdvw7lq7-ripgrep-15.1.0"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "ripgrep",
+      "broken": false,
+      "derivation": "/nix/store/9j4lgb7xfazvlxy7qrsc39lflnk23zca-ripgrep-15.1.0.drv",
+      "description": "Utility that combines the usability of The Silver Searcher with the raw speed of grep",
+      "install_id": "ripgrep",
+      "license": "[ Unlicense, MIT ]",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "ripgrep-15.1.0",
+      "pname": "ripgrep",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T08:34:54.409829Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "15.1.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/ixsp81bia5w1fqd2d59vwbcfqk3n5231-ripgrep-15.1.0"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "similarity",
+      "broken": false,
+      "derivation": "/nix/store/23sh37lgsx0sar9idxhfj6p05fc4l99w-similarity-0.5.0.drv",
+      "description": "Code similarity detection tool",
+      "install_id": "similarity",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "similarity-0.5.0",
+      "pname": "similarity",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T07:07:51.652221Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.5.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/k2v1ihxy2k5cd2ljc246bw4k4pb2vk4f-similarity-0.5.0"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "similarity",
+      "broken": false,
+      "derivation": "/nix/store/i91rpr1bx1crmppz86jcaja2f9pqlkgi-similarity-0.5.0.drv",
+      "description": "Code similarity detection tool",
+      "install_id": "similarity",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "similarity-0.5.0",
+      "pname": "similarity",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T07:36:56.180260Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.5.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/yjhsnjxi53pl9lywyvd3aprn0xp4xv9r-similarity-0.5.0"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "similarity",
+      "broken": false,
+      "derivation": "/nix/store/6lsl66jz66b8f573savjyi1mbrsa7mk8-similarity-0.5.0.drv",
+      "description": "Code similarity detection tool",
+      "install_id": "similarity",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "similarity-0.5.0",
+      "pname": "similarity",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T08:04:00.151585Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.5.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/20gv0c7w0lvf035v0c99bipjvwzyc4sx-similarity-0.5.0"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "similarity",
+      "broken": false,
+      "derivation": "/nix/store/a53f5hqnyfcwz1m4mlixay1z4s7kslna-similarity-0.5.0.drv",
+      "description": "Code similarity detection tool",
+      "install_id": "similarity",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "similarity-0.5.0",
+      "pname": "similarity",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T08:35:20.161826Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.5.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/bvccj5632d3fjllysizl4vy5jcjqbr62-similarity-0.5.0"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "typst",
+      "broken": false,
+      "derivation": "/nix/store/9l4v0nk4ldc437plq4cf777s5f4c8sbw-typst-0.14.2.drv",
+      "description": "New markup-based typesetting system that is powerful and easy to learn",
+      "install_id": "typst",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "typst-0.14.2",
+      "pname": "typst",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T07:08:17.652583Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.14.2",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/k9mjg0khw2xii5ssjc5x4nmblwkr82g8-typst-0.14.2"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "typst",
+      "broken": false,
+      "derivation": "/nix/store/7rbfvlrj1afz0zaj8khkwmbgipiid3bx-typst-0.14.2.drv",
+      "description": "New markup-based typesetting system that is powerful and easy to learn",
+      "install_id": "typst",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "typst-0.14.2",
+      "pname": "typst",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T07:37:35.391591Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.14.2",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/61kvn3z01nljx5k18s4832lqmv1zyfn4-typst-0.14.2"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "typst",
+      "broken": false,
+      "derivation": "/nix/store/bqsvi3fni9vyjn4nzsqshvzfvwxd4g1h-typst-0.14.2.drv",
+      "description": "New markup-based typesetting system that is powerful and easy to learn",
+      "install_id": "typst",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "typst-0.14.2",
+      "pname": "typst",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T08:04:26.443198Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.14.2",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/r1sqwsdbwz9sr9y9070a2s47y2q0visg-typst-0.14.2"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "typst",
+      "broken": false,
+      "derivation": "/nix/store/fsg5sg7imy4l47mq00l54lv12s3p4aph-typst-0.14.2.drv",
+      "description": "New markup-based typesetting system that is powerful and easy to learn",
+      "install_id": "typst",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "name": "typst-0.14.2",
+      "pname": "typst",
+      "rev": "64c08a7ca051951c8eae34e3e3cb1e202fe36786",
+      "rev_count": 1004030,
+      "rev_date": "2026-05-23T18:24:25Z",
+      "scrape_date": "2026-05-26T08:35:58.024149Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.14.2",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/ry8j6r24psimnq3bfb6ls3kns6gf19xd-typst-0.14.2"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    }
+  ]
+}

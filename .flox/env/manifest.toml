@@ -1,0 +1,113 @@
+schema-version = "1.12.0"
+
+
+## Install Packages --------------------------------------------------
+##  $ flox install gum  <- puts a package in [install] section below
+##  $ flox search gum   <- search for a package
+##  $ flox show gum     <- show all versions of a package
+## -------------------------------------------------------------------
+[install]
+imagemagick.pkg-path = "imagemagick"
+bun.pkg-path = "bun"
+nodejs_22.pkg-path = "nodejs_22"
+typst.pkg-path = "typst"
+oxdraw.pkg-path = "oxdraw"
+oxdraw.systems = ["aarch64-linux", "x86_64-linux"]
+similarity.pkg-path = "similarity"
+gh.pkg-path = "gh"
+ripgrep.pkg-path = "ripgrep"
+fd.pkg-path = "fd"
+just.pkg-path = "just"
+# gum.pkg-path = "gum"
+# gum.version = "^0.14.5"
+
+
+## Environment Variables ---------------------------------------------
+##  ... available for use in the activated environment
+##      as well as [hook], [profile] scripts and [services] below.
+## -------------------------------------------------------------------
+[vars]
+NODE_OPTIONS = "--enable-source-maps"
+
+
+## Activation Hook ---------------------------------------------------
+##  ... run by _bash_ shell when you run 'flox activate'.
+## -------------------------------------------------------------------
+[hook]
+on-activate = '''
+  # Auto-install node dependencies if node_modules is missing
+  if [ ! -d node_modules ]; then
+    echo "⚙ Installing root dependencies…"
+    bun install
+  fi
+  if [ ! -d web/node_modules ]; then
+    echo "⚙ Installing web dependencies…"
+    cd web && bun install && cd ..
+  fi
+'''
+
+
+## Profile script ----------------------------------------------------
+## ... sourced by _your shell_ when you run 'flox activate'.
+## -------------------------------------------------------------------
+[profile]
+common = '''
+  # Keating shortcuts
+  alias k="bun src/cli/main.ts"
+'''
+
+bash = '''
+  # Tab completions for just
+  eval "$(just --completions bash)" 2>/dev/null || true
+'''
+
+zsh = '''
+  # Tab completions for just
+  eval "$(just --completions zsh)" 2>/dev/null || true
+'''
+
+
+## Services ---------------------------------------------------------
+##  $ flox services start             <- Starts all services
+##  $ flox services status            <- Status of running services
+##  $ flox activate --start-services  <- Activates & starts all
+## ------------------------------------------------------------------
+[services]
+# myservice.command = "python3 -m http.server"
+
+
+## Include ----------------------------------------------------------
+## ... environments to create a composed environment
+## ------------------------------------------------------------------
+[include]
+# environments = [
+#     { dir = "../common" }
+# ]
+
+
+## Build and publish your own packages ------------------------------
+##  $ flox build
+##  $ flox publish
+## ------------------------------------------------------------------
+[build]
+# [build.myproject]
+# description = "The coolest project ever"
+# version = "0.0.1"
+# command = """
+#   mkdir -p $out/bin
+#   cargo build --release
+#   cp target/release/myproject $out/bin/myproject
+# """
+
+
+## Other Environment Options -----------------------------------------
+[options]
+# Systems that environment is compatible with
+# systems = [
+#   "aarch64-darwin",
+#   "aarch64-linux",
+#   "x86_64-darwin",
+#   "x86_64-linux",
+# ]
+# Uncomment to disable CUDA detection.
+# cuda-detection = false
