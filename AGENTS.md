@@ -4,7 +4,7 @@
 
 ## Overview
 
-Keating is a Pi-powered "hyperteacher" — a CLI tool + web app that generates pedagogical artifacts (lesson plans, maps, animations, benchmarks, policy evolution) deterministically from a local Node.js core, while the actual interactive teaching experience lives in Pi prompt/skill/extension templates. The design deliberately separates: (1) the interactive Pi shell runtime layer, (2) the deterministic pedagogy engine, and (3) the self-improvement harness.
+Keating is a Pi-powered "hyperteacher" — a CLI tool + web app that generates pedagogical artifacts (lesson plans, maps, animations, benchmarks, policy evolution) deterministically from a local Node.js core, while the actual interactive teaching experience lives in Pi prompt/skill/extension templates. The design deliberately separates: (1) the interactive Pi shell runtime layer and (2) the deterministic pedagogy engine.
 
 ## Project Structure
 
@@ -23,32 +23,33 @@ Keating is a Pi-powered "hyperteacher" — a CLI tool + web app that generates p
 
 ## Build & Test Commands
 
-This project uses **Bun** and **mise**. Do not assume npm/pnpm.
+This project uses **Bun** as its runtime. Do not assume npm/pnpm.
+All dev dependencies (bun, node, oxdraw, typst, similarity, just, etc.) are managed by **Flox**. Run `flox activate` to enter the dev environment.
+Task runner is **just** — run `just` to list available tasks.
 
 | Task | Command |
 |------|---------|
-| Install deps | `bun install` (root + run `cd web && bun install` for web) |
-| Build root | `bun x tsc -p tsconfig.json` — compiles to `dist/`. Uses NodeNext resolution, outDir is `dist`. |
-| Build everything | `bun run build` — compiles root, then builds web (vite + nitro). |
-| Test root | `bun test ./test/*.test.ts` — uses `bun:test` runtime with `fast-check` for property-based testing. |
-| Test web | `cd web && bun test` |
+| Install deps | `just install` (root + web; auto-runs on `flox activate` if missing) |
+| Build root | `just build` — compiles to `dist/` via `tsc` with NodeNext resolution |
+| Build everything | `just build-all` — root + web (vite + nitro) |
+| Test root | `just test` — uses `bun:test` runtime with `fast-check` for property-based testing |
+| Test web | `just test-web` |
+| Mutation testing | `just mutate` — Stryker command runner against `src/core/` |
 | Run CLI | `bun src/cli/main.ts <command>` or `node ./bin/keating.js <command>` |
-| Dev server (web) | `cd web && bun run dev` (Vite dev on port 3000) |
-| Web build | `cd web && bun run build` — `vite build && npx nitro build`, outputs to `web/dist/` and `web/.output/` |
-| Typecheck (web) | `cd web && bun run typecheck` — `tsc --noEmit` |
-| Web preview | `cd web && bun run preview` |
-| Render docs diagrams | `bun scripts/render-docs-diagrams.mjs` |
-| Render intro video | `bun scripts/render-keating-intro.mjs` |
+| Dev server (web) | `just web` (Vite dev on port 3000) |
+| Web build | `just web-build` — `vite build && nitro build`, outputs to `web/dist/` and `web/.output/` |
+| Web preview | `just web-preview` |
+| Render docs diagrams | `just docs-diagrams` |
+| Render intro video | `just video-intro` |
 
-**Mise tasks** (`mise.toml`) are the canonical dev workflow: `mise run build`, `mise run test`, `mise run shell`, `mise run doctor`, `mise run bench`, `mise run evolve`, `mise run prompt-evolve -- learn`, `mise run map -- <topic>`, `mise run animate -- <topic>`, `mise run trace`, etc.
+**Just tasks** (`justfile`) are the canonical dev workflow: `just build`, `just test`, `just shell`, `just doctor`, `just bench`, `just evolve`, `just prompt-evolve`, `just map <topic>`, `just animate <topic>`, `just trace`, etc. Run `just` with no arguments to see all available tasks.
 
 ## Code Organization & Architecture
 
 ### Three-Layer Split
 
 1. **Pi Runtime Layer** — `pi/prompts/`, `pi/skills/`, `src/pi/hyperteacher-extension.ts`. Flexible, interactive teaching shell. The extension registers slash commands (`/plan`, `/map`, etc.) that delegate to `src/core/project.ts`.
-2. **Deterministic Pedagogy Layer** — `src/core/lesson-plan.ts`, `src/core/map.ts`, `src/core/animation.ts`, `src/core/verification.ts`, `src/core/verification.ts`, etc. All pure/local logic. Produces inspectable artifacts under `.keating/outputs/`.
-3. **Self-Improvement Layer** — `src/core/benchmark.ts`, `src/core/evolution.ts`, `src/core/prompt-evolution.ts`, `src/core/map-elites.ts`. Benchmarks policies against synthetic learners, evolves prompt templates with PROSPER-style multi-objective scoring, gates changes with safety checks.
+2. **Deterministic Pedagogy Layer** — `src/core/lesson-plan.ts`, `src/core/map.ts`, `src/core/animation.ts`, `src/core/verification.ts`, `src/core/benchmark.ts`, `src/core/evolution.ts`, `src/core/prompt-evolution.ts`, `src/core/map-elites.ts`, etc. All pure/local logic. Produces inspectable artifacts under `.keating/outputs/`.
 
 ### Deterministic vs Non-Deterministic Boundary
 
@@ -156,7 +157,24 @@ Tests use `bun:test` (not vitest/jest). Run with `bun test ./test/*.test.ts`.
 - `.keating/outputs/prompt-evolution/<name>.md` (report)
 - `.keating/outputs/prompt-evolution/<name>.evolved.md` (evolved snapshot)
 
+Successive runs resume from the prior `*.evolved.md` artifact when available, so evolution accumulates across runs rather than always restarting from the base prompt.
+
 The selector is PROSPER-style: balanced multi-objective candidates beat narrow overfit edits.
+
+## Flox Environment
+
+All system-level dev dependencies are managed by Flox (`.flox/env/manifest.toml`):
+- **bun** — JS runtime, bundler, package manager
+- **nodejs_22** — Node.js for tools that need it
+- **oxdraw** — diagram rendering (Mermaid → SVG, Linux only)
+- **typst** — Typesetting for doc generation
+- **imagemagick** — image processing for diagram export
+- **similarity** — code similarity detection (`similarity-ts`)
+- **just** — task runner (replaces mise)
+- **gh** — GitHub CLI
+- **ripgrep**, **fd** — fast search utilities
+
+Run `flox activate` to enter the dev environment. The activation hook auto-installs `node_modules` if missing. An `alias k="bun src/cli/main.ts"` is provided for quick CLI access.
 
 ## Speech Module
 
@@ -178,11 +196,15 @@ keating animate <topic>
 keating verify <topic>
 
 # Evaluation & improvement
-keating bench [topic]           # Benchmark current policy
-keating evolve [topic]          # Policy evolution with safety gates
+keating bench [topic]           # Benchmark current policy (weights derived from learner feedback)
+keating evolve [topic]          # Policy evolution with MAP-Elites (grids persist between runs)
 keating prompt-evolve [prompt]  # Prompt evolution (default: "learn")
-keating auto-improve [topic]    # Full loop: bench → evolve → prompt-evolve → bench
+keating auto-improve [topic]    # Full loop: bench → evolve → prompt-evolve → bench (30-min cooldown, auto-rollback on regression)
+keating auto-improve [topic] --force  # Override cooldown
 keating improve                 # Self-improvement proposal from benchmark weaknesses
+keating improve accept <id>     # Accept a pending improvement proposal
+keating improve reject <id>     # Reject a pending proposal and restore snapshots
+keating edit <file>             # Apply search/replace edit (stdin JSON or interactive mode)
 
 # State inspection
 keating policy             # Show active policy
