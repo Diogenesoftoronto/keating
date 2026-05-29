@@ -66,6 +66,8 @@ import { getProviderApiKey } from "../lib/provider-models";
 import { tutorialApiKeyHref } from "../lib/tutorial-links";
 import { QuizRenderer } from "./QuizRenderer";
 import { SceneRenderer } from "./SceneRenderer";
+import { QuestionRenderer } from "./QuestionRenderer";
+import type { QuestionData } from "./QuestionRenderer";
 import type { Quiz } from "../keating/core";
 import { KEATING_VOICE_TOOL_NAME } from "../keating/speech";
 
@@ -703,6 +705,7 @@ function ArtifactChips({ text }: { text: string }) {
 
 const quizTagPattern = /<keating-quiz\s+json=([^>]+)\s*\/>/g;
 const sceneTagPattern = /<keating-scene\s+markdown=([^>]+)\s*\/>/g;
+const questionTagPattern = /<keating-question\s+json=([^>]+)\s*\/>/g;
 const URL_IN_TEXT_PATTERN = /\bhttps?:\/\/[^\s<>"')\]]+/i;
 
 function parseInteractiveSegments(
@@ -711,6 +714,7 @@ function parseInteractiveSegments(
   | { type: "text"; content: string }
   | { type: "quiz"; json: string }
   | { type: "scene"; markdown: string }
+ | { type: "question"; json: string }
 > {
   const segments: ReturnType<typeof parseInteractiveSegments> = [];
   let lastIndex = 0;
@@ -743,6 +747,12 @@ function parseInteractiveSegments(
   if (sceneLast < sceneText.length) {
     segments.push({ type: "text", content: sceneText.slice(sceneLast) });
   }
+
+ // Question tags — always scan the original text so questions are found
+ // even when quiz/scene tags already produced segments above.
+ for (const match of text.matchAll(questionTagPattern)) {
+ segments.push({ type: "question", json: match[1] });
+ }
 
   if (segments.length === 0) segments.push({ type: "text", content: text });
   return segments;
@@ -784,6 +794,26 @@ function MarkdownText({
         if (seg.type === "scene") {
           return <SceneRenderer key={i} storyboard={seg.markdown} />;
         }
+ if (seg.type === "question") {
+ try {
+ const parsed = JSON.parse(seg.json) as QuestionData;
+ return (
+ <QuestionRenderer
+ key={i}
+ data={parsed}
+ onAnswer={(answer) => {
+ window.dispatchEvent(
+ new CustomEvent("keating:question-answered", {
+ detail: { question: parsed.question, answer },
+ }),
+ );
+ }}
+ />
+ );
+ } catch {
+ return null;
+ }
+ }
         return (
           <ReactMarkdown
             key={i}
@@ -890,7 +920,7 @@ function MarkdownText({
               ),
             }}
           >
-            {seg.content}
+            {seg.type === "text" ? seg.content : ""}
           </ReactMarkdown>
         );
       })}
@@ -955,7 +985,7 @@ function ToolPart({
     state === "error"
       ? "border-destructive/60 bg-destructive/10 text-destructive"
       : state === "running"
-        ? "border-amber-500/60 bg-amber-500/10 text-amber-600 dark:text-amber-300"
+        ? "border-amber-500/60 bg-green-500/10 text-amber-600 dark:text-amber-300"
         : "border-emerald-500/60 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
   const StateIcon =
     state === "error"
@@ -1194,6 +1224,35 @@ function filterSpeechMessages(
     .filter((message): message is AgentMessage => message !== null);
 }
 
+function mergeConsecutiveAssistantMessages(messages: AgentMessage[]): AgentMessage[] {
+ const merged: AgentMessage[] = [];
+ for (const message of messages) {
+ const msg = message as any;
+ if (msg.role === "assistant" && merged.length > 0) {
+ const last = merged[merged.length - 1] as any;
+ if (last.role === "assistant") {
+ const left = Array.isArray(last.content)
+ ? last.content.map((p: any) => ({ ...p }))
+ : [{ type: "text", text: textFromContent(last.content) }];
+ const right = Array.isArray(msg.content)
+ ? msg.content.map((p: any) => ({ ...p }))
+ : [{ type: "text", text: textFromContent(msg.content) }];
+ last.content = [...left, ...right];
+ if (msg.timestamp) last.timestamp = msg.timestamp;
+ if (msg.stopReason !== undefined) last.stopReason = msg.stopReason;
+ if (msg.errorMessage) {
+ last.errorMessage = msg.errorMessage;
+ last.stopReason = msg.stopReason ?? last.stopReason;
+ }
+ if (msg.__keatingStreaming) last.__keatingStreaming = msg.__keatingStreaming;
+ continue;
+ }
+ }
+ merged.push(message);
+ }
+ return merged;
+}
+
 function hasRenderableAssistantContent(content: unknown): boolean {
   if (!Array.isArray(content)) return typeof content === "string" && content.trim().length > 0;
   return content.some((part: any) => {
@@ -1236,7 +1295,9 @@ function visibleAgentMessages(agent: Agent | null, speechEnabled: boolean): Agen
       } as AgentMessage);
     }
   }
-  return foldToolResults(filterSpeechMessages(messages, speechEnabled));
+  return mergeConsecutiveAssistantMessages(
+ foldToolResults(filterSpeechMessages(messages, speechEnabled)),
+ );
 }
 
 function toAssistantMessage(
@@ -1917,8 +1978,8 @@ function UserMessage({
 }) {
   return (
     <MessagePrimitive.Root className="mx-auto mb-4 flex w-full max-w-3xl justify-end">
-      <div className="flex max-w-[88%] gap-3 rounded-lg border-2 border-amber-700 bg-amber-500 px-4 py-3 text-sm text-black shadow-sm dark:border-amber-300 dark:bg-amber-300 sm:max-w-[82%]">
-        <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded bg-black/10">
+      <div className="flex max-w-[88%] gap-3 rounded-lg border-2 border-green-700 bg-green-500 px-4 py-3 text-sm text-white shadow-sm dark:border-green-400 dark:bg-green-600 sm:max-w-[82%]">
+        <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded bg-white/15">
           {profileImage ? (
             <img
               src={profileImage}
@@ -1930,7 +1991,7 @@ function UserMessage({
           )}
         </div>
         <div className="min-w-0">
-          <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-black/70">
+          <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-white/80">
             Learner
           </div>
           <div className="whitespace-pre-wrap leading-6 font-ui">
