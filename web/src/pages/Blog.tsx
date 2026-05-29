@@ -58,6 +58,273 @@ function majorMinor(version: string): string {
 
 const POSTS: Post[] = [
   {
+    date: "2026-05-28",
+    badge: { label: "RELEASE", color: "release" },
+    title: "v0.3.13 — Source-Edit CLI, Safer Auto-Improve, and Persistent MAP-Elites",
+    version: "0.3.13",
+    summary:
+      "New `keating edit` command for search/replace source edits. Auto-improve gets a 30-min cooldown and rolls back regressions. MAP-Elites grids now persist between runs. Resizable session sidebar and year-by-year activity heatmap on the web.",
+    sections: [
+      { id: "edit-cli", title: "Source-Edit CLI" },
+      { id: "safer-auto-improve", title: "Safer Auto-Improve Loop" },
+      { id: "persistent-mapelites", title: "Persistent MAP-Elites Grids" },
+      { id: "real-pareto", title: "Real Pareto Benchmarks" },
+      { id: "feedback-bench", title: "Feedback-Weighted Benchmarks" },
+      { id: "web-polish", title: "Web Polish" },
+    ],
+    body: (
+      <>
+        <p className="mb-4 leading-6">
+          0.3.13 hardens the self-improvement loop and adds the first
+          first-class way for Keating to edit its own source files. The web
+          chat gets a resizable session sidebar, a multi-year activity
+          heatmap, and a handful of correctness fixes for how the active
+          policy is loaded.
+        </p>
+
+        <h3 id="edit-cli" className="font-bold mt-4 mb-2">Source-Edit CLI</h3>
+        <p className="text-sm mb-4">
+          A new <Code>keating edit &lt;file&gt;</Code> command applies a single
+          search/replace edit to any file under the project root. The search
+          block must match exactly and uniquely — duplicate matches are
+          rejected for safety. Pass the edit on stdin as JSON for scripted
+          flows or use the interactive mode (paste search, then{" "}
+          <Code>---</Code>, then replace, end with <Code>===</Code> or
+          Ctrl+D). An optional <Code>--backup-dir=DIR</Code> snapshots each
+          target before the write so a bad edit can be reverted by hand. This
+          is the same primitive that the self-improvement loop now uses
+          internally, exposed for direct human and agent use.
+        </p>
+
+        <h3 id="safer-auto-improve" className="font-bold mt-4 mb-2">Safer Auto-Improve Loop</h3>
+        <p className="text-sm mb-4">
+          <Code>auto-improve</Code> now snapshots the active teaching policy
+          before running and automatically rolls back when the post-loop
+          verdict is REGRESSED, so a bad run can no longer corrupt your
+          policy. A 30-minute cooldown prevents accidental back-to-back runs;
+          pass <Code>--force</Code> to override it. The improvement archive
+          gained <Code>accept</Code> and <Code>reject</Code> subcommands
+          (<Code>keating improve accept &lt;id&gt;</Code> /{" "}
+          <Code>keating improve reject &lt;id&gt;</Code>) that resolve a
+          pending proposal using the snapshots stored alongside it — no need
+          to thread snapshots through the call yourself.
+        </p>
+        <p className="text-sm mb-4">
+          The same gating now applies in the web chat: the{" "}
+          <Code>auto_improve</Code> tool runs at most once per session unless
+          the learner explicitly asks again with a <Code>force</Code> flag.
+        </p>
+
+        <h3 id="persistent-mapelites" className="font-bold mt-4 mb-2">Persistent MAP-Elites Grids</h3>
+        <p className="text-sm mb-4">
+          The MAP-Elites quality-diversity archive now reads and writes a
+          per-topic grid JSON under{" "}
+          <Code>.keating/outputs/evolution/</Code>. Successive runs build on
+          previously-discovered cells instead of restarting from an empty
+          archive, and each candidate now records its real parent policy
+          name. Three additional source files (<Code>mutation.ts</Code>,{" "}
+          <Code>map-elites.ts</Code>, <Code>prompt-evolution.ts</Code>) joined
+          the self-improver's mutable surface so the system can iterate on
+          its own evolution machinery.
+        </p>
+
+        <h3 id="real-pareto" className="font-bold mt-4 mb-2">Real Pareto Benchmarks</h3>
+        <p className="text-sm mb-4">
+          The Ax/GEPA optimizer used to report its Pareto front using a
+          baseline placeholder for every point. It now actually benchmarks
+          every candidate on the front against the focus topic, with the
+          candidate's own learned weights. Each evolution run is also tagged
+          with the optimizer that produced it (<Code>gepa</Code> or{" "}
+          <Code>mapElites_fallback</Code>) and, on fallback, the reason GEPA
+          was skipped — so you can see at a glance which method generated a
+          given result.
+        </p>
+
+        <h3 id="feedback-bench" className="font-bold mt-4 mb-2">Feedback-Weighted Benchmarks</h3>
+        <p className="text-sm mb-4">
+          <Code>keating bench</Code> now derives its objective weights from
+          the learner's recorded thumbs-up, thumbs-down, and confused
+          signals. A history skewed toward confusion increases the weight on
+          retention and clarity; a history skewed toward satisfaction shifts
+          weight toward engagement and transfer. Reported scores are now a
+          measurement of how the current policy serves your real session
+          history rather than a fixed default profile.
+        </p>
+
+        <h3 id="web-polish" className="font-bold mt-4 mb-2">Web Polish</h3>
+        <p className="text-sm mb-4">
+          The desktop session sidebar gained a drag-resize handle on its
+          right edge and remembers its width in <Code>localStorage</Code>;
+          the old desktop collapse toggle was removed in favor of the
+          handle. Usage's activity heatmap was rebuilt as a year-by-year
+          view with a year selector, replacing the previous fixed 12-week
+          window. Web chat now merges consecutive assistant messages into a
+          single bubble for cleaner transcripts, and user messages were
+          restyled from amber to green for stronger learner/assistant
+          contrast.
+        </p>
+        <p className="text-sm mb-4">
+          Under the hood, the active teaching policy is now actually parsed
+          out of stored markdown (either a JSON block or{" "}
+          <Code>field: value</Code> lines) instead of silently falling back
+          to <Code>DEFAULT_POLICY</Code> for every web tool call. The web{" "}
+          <Code>DEFAULT_POLICY</Code> itself was rebalanced toward more
+          analogies, Socratic dialogue, retrieval practice, and diagrams to
+          match the latest evolved policies, and prompt-evolution lookups
+          now use a proper IndexedDB <Code>promptName</Code> index instead
+          of the generic topic index.
+        </p>
+      </>
+    ),
+  },
+  {
+    date: "2026-05-26",
+    badge: { label: "RELEASE", color: "release" },
+    title: "v0.3.12 — Portable Session Sharing, Short Links, and UI Settings",
+    version: "0.3.12",
+    summary:
+      "Share chat sessions with short links (server-backed, compressed snapshots, or local-only). New UI settings for share-link mode and app-wide font family. OpenCode Entire plugin hook for session lifecycle tracking.",
+    sections: [
+      { id: "session-sharing", title: "Portable Session Sharing" },
+      { id: "nitro-share", title: "Nitro Share Storage Backend" },
+      { id: "ui-settings", title: "UI Settings Expansion" },
+    ],
+    body: (
+      <>
+        <p className="mb-4 leading-6">
+          0.3.12 brings session sharing to the web: you can now share a Keating
+          learning session as a short link, a compressed snapshot embedded in the
+          URL, or a local-only shared link. The backend is powered by Nitro
+          endpoints for publishing and loading sessions from server storage.
+        </p>
+
+        <h3 id="session-sharing" className="font-bold mt-4 mb-2">Portable Session Sharing</h3>
+        <p className="text-sm mb-4">
+          The chat header now includes a share button with three sharing modes:
+          server-backed short links (persisted on the Keating server), compressed
+          snapshot links (the full session payload is embedded in a base64 URL
+          fragment for maximum portability), and local-only short links (shared
+          via browser clipboard with no server roundtrip). Each mode preserves
+          the full message history, model selection, and thinking-level settings.
+        </p>
+
+        <h3 id="nitro-share" className="font-bold mt-4 mb-2">Nitro Share Storage Backend</h3>
+        <p className="text-sm mb-4">
+          Server-backed sharing is handled by a new Nitro API route at{" "}
+          <Code>/api/share</Code>. Sessions are published with a short random slug,
+          stored server-side, and loaded on demand. The endpoint also supports
+          updating existing shares so you can keep a link alive as a session
+          evolves. Compressed snapshots bypass the server entirely: the session
+          JSON is gzipped, base64-encoded, and appended to the URL hash for
+          zero-dependency sharing.
+        </p>
+
+        <h3 id="ui-settings" className="font-bold mt-4 mb-2">UI Settings Expansion</h3>
+        <p className="text-sm mb-4">
+          A new Settings section lets you choose the default share-link mode
+          (server, snapshot, or local) and select your app-wide font family.
+          Forked sessions now preserve parent metadata and appear as part of
+          an explorable session tree in the sidebar.
+        </p>
+      </>
+    ),
+  },
+  {
+    date: "2026-05-22",
+    badge: { label: "RELEASE", color: "release" },
+    title: "v0.3.11 — Session Sidebar, Fork Trees, and Profile Images",
+    version: "0.3.11",
+    summary:
+      "Persistent session sidebar on large screens with search, load, fork, rename, and nested fork navigation. Forked sessions now appear as a session tree. User profile images and animation-renderer settings.",
+    sections: [
+      { id: "session-sidebar", title: "Persistent Session Sidebar" },
+      { id: "fork-trees", title: "Fork Session Trees" },
+      { id: "profile-images", title: "User Profile Images" },
+      { id: "animation-renderer", title: "Animation Renderer Setting" },
+    ],
+    body: (
+      <>
+        <p className="mb-4 leading-6">
+          0.3.11 brings a dedicated session sidebar to the chat view so you can
+          navigate your learning history without leaving the conversation. Forked
+          sessions are now threaded into an explorable tree, and the web app
+          supports custom user avatars and a choice of animation renderers.
+        </p>
+
+        <h3 id="session-sidebar" className="font-bold mt-4 mb-2">Persistent Session Sidebar</h3>
+        <p className="text-sm mb-4">
+          A collapsible sidebar on the left of the chat view lists every saved
+          session with search, load, fork, rename, and delete actions. Nested
+          forks are indented under their parent and the current session is
+          highlighted. The sidebar is visible at <Code>md</Code> breakpoint and
+          up and collapses to a drawer on smaller screens.
+        </p>
+
+        <h3 id="fork-trees" className="font-bold mt-4 mb-2">Fork Session Trees</h3>
+        <p className="text-sm mb-4">
+          Forking a session now keeps a reference to the parent session id and
+          the fork timestamp. The sidebar renders this as a nested tree so you
+          can trace how a conversation branched. A forking transition on the
+          active session card makes the split easy to track visually.
+        </p>
+
+        <h3 id="profile-images" className="font-bold mt-4 mb-2">User Profile Images</h3>
+        <p className="text-sm mb-4">
+          Settings now accepts a profile-image URL which renders as a user avatar
+          throughout the chat UI. The Keating logo replaces the generic robot icon
+          on assistant messages for brand consistency.
+        </p>
+
+        <h3 id="animation-renderer" className="font-bold mt-4 mb-2">Animation Renderer Setting</h3>
+        <p className="text-sm mb-4">
+          The generated animation artifacts can now use either Manim-web (the
+          default) or Hyperframes as the renderer. Hyperframes is an optional
+          experimental path for faster canvas-based scene rendering in the
+          browser.
+        </p>
+      </>
+    ),
+  },
+  {
+    date: "2026-05-22",
+    badge: { label: "RELEASE", color: "release" },
+    title: "v0.3.10 — Google Search Grounding for Gemini",
+    version: "0.3.10",
+    summary:
+      "Gemini and Google chat requests can now include real-time web search grounding. URL-heavy prompts automatically suggest enabling it.",
+    sections: [
+      { id: "google-grounding", title: "Google Search Grounding" },
+      { id: "url-suggestions", title: "URL Prompt Suggestions" },
+    ],
+    body: (
+      <>
+        <p className="mb-4 leading-6">
+          0.3.10 adds an opt-in Google Search grounding toggle for Gemini/Google
+          chat requests. When enabled, the model receives live web results as
+          grounding context, improving accuracy on current events and factual
+          questions.
+        </p>
+
+        <h3 id="google-grounding" className="font-bold mt-4 mb-2">Google Search Grounding</h3>
+        <p className="text-sm mb-4">
+          A new Settings toggle <em>Google Search Grounding</em> appears when a
+          Gemini model is active. Turning it on appends a{" "}
+          <Code>googleSearch</Code> tool to the request payload so the model can
+          search the web before replying. Grounding citations are surfaced inline
+          as numbered references when the model uses them.
+        </p>
+
+        <h3 id="url-suggestions" className="font-bold mt-4 mb-2">URL Prompt Suggestions</h3>
+        <p className="text-sm mb-4">
+          If your prompt contains URLs or looks like a question about recent
+          facts, Keating now surfaces a subtle suggestion to enable Google
+          Grounding. This only appears when the feature is available and off,
+          nudging you toward more accurate answers without forcing the toggle.
+        </p>
+      </>
+    ),
+  },
+  {
     date: "2026-05-21",
     badge: { label: "RELEASE", color: "release" },
     title: "v0.3.9 — Streaming Replies and Live Reasoning Panels",
@@ -338,6 +605,63 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
         <p className="text-sm text-muted-foreground">
           Reinstall with the updated script to get a working binary:&nbsp;
           <Code>curl -fsSL https://keating.help/install | bash</Code>
+        </p>
+      </>
+    ),
+  },
+  {
+    date: "2026-05-16",
+    badge: { label: "RELEASE", color: "release" },
+    title: "v0.3.6 — Ink Setup Flow, Package Rename, and Provider Defaults",
+    version: "0.3.6",
+    summary:
+      "Interactive onboarding with Ink. Package renamed to keating. Default shell provider is now Google/gemini-3.1-pro-preview. --list-models passes through to Pi runtime.",
+    sections: [
+      { id: "ink-setup", title: "Ink Setup Flow" },
+      { id: "package-rename", title: "Package Rename" },
+      { id: "provider-defaults", title: "Provider Defaults & Credential Checks" },
+    ],
+    body: (
+      <>
+        <p className="mb-4 leading-6">
+          0.3.6 polishes the onboarding experience and rebrands the package. A
+          new interactive setup flow guides you through provider, model, thinking
+          level, and runtime configuration. The npm package is now simply
+          <Code>keating</Code> instead of{" "}
+          <Code>@interleavelove/keating</Code>.
+        </p>
+
+        <h3 id="ink-setup" className="font-bold mt-4 mb-2">Ink Setup Flow</h3>
+        <p className="text-sm mb-4">
+          Running <Code>keating setup</Code> drops you into an interactive Ink
+          terminal UI. It asks which AI provider to use, which model, reasoning
+          level, and whether to enable the Pi shell runtime. Pass{" "}
+          <Code>--yes</Code> for a non-interactive default configuration that
+          writes <Code>keating.config.json</Code> with sensible defaults.
+        </p>
+
+        <h3 id="package-rename" className="font-bold mt-4 mb-2">Package Rename</h3>
+        <p className="text-sm mb-4">
+          The npm package was renamed from{" "}
+          <Code>@interleavelove/keating</Code> to plain{" "}
+          <Code>keating</Code>. Existing installations will continue to work via
+          npm aliases, but new installs should use{" "}
+          <Code>npm install -g keating</Code>.
+        </p>
+
+        <h3 id="provider-defaults" className="font-bold mt-4 mb-2">Provider Defaults & Credential Checks</h3>
+        <p className="text-sm mb-4">
+          The default shell provider is now <Code>google</Code> with{" "}
+          <Code>gemini-3.1-pro-preview</Code>. Before launching the Pi shell,
+          Keating checks that the selected provider has valid credentials and
+          falls back to OpenAI or Anthropic if Google is unavailable. If no
+          provider is configured, it prints recovery commands instead of a
+          generic error.
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Legacy configs referencing the removed{" "}
+          <Code>google-gemini-cli</Code> provider are automatically normalized to{" "}
+          <Code>google</Code> on read.
         </p>
       </>
     ),
@@ -854,6 +1178,67 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
     ),
   },
   {
+    date: "2026-04-16",
+    badge: { label: "RELEASE", color: "release" },
+    title: "v0.2.0 — Ax Optimization, MAP-Elites, and Complete Rebrand",
+    version: "0.2.0",
+    summary:
+      "Multi-objective policy and prompt learning via @ax-llm/ax (GEPA/ACE). MAP-Elites for quality-diversity search. Temporal engagement policies. Full rebrand from Feynman to Keating. Retro aesthetic finalized.",
+    sections: [
+      { id: "ax-optimization", title: "Ax Optimization Framework" },
+      { id: "map-elites", title: "MAP-Elites Archive" },
+      { id: "engagement-policies", title: "Engagement Policies" },
+      { id: "rebrand", title: "Rebrand to Keating" },
+    ],
+    body: (
+      <>
+        <p className="mb-4 leading-6">
+          0.2.0 is a foundational release. It introduces multi-objective policy
+          and prompt evolution powered by{" "}
+          <Code>@ax-llm/ax</Code>, quality-diversity search via MAP-Elites, and
+          temporal engagement awareness. It also completes the rebrand from
+          Feynman to Keating across every page and file.
+        </p>
+
+        <h3 id="ax-optimization" className="font-bold mt-4 mb-2">Ax Optimization Framework</h3>
+        <p className="text-sm mb-4">
+          Integrated <Code>@ax-llm/ax</Code> for multi-objective optimization.
+          GEPA (Generative Evolutionary Prompt Augmentation) and ACE (Adaptive
+          Context Evolution) now optimize both teaching policy parameters and
+          prompt templates against benchmark outcomes. The optimizer explores
+          Pareto fronts balancing mastery, retention, engagement, transfer, and
+          confusion.
+        </p>
+
+        <h3 id="map-elites" className="font-bold mt-4 mb-2">MAP-Elites Archive</h3>
+        <p className="text-sm mb-4">
+          MAP-Elites provides quality-diversity search: instead of converging to
+          a single best policy, it discovers a diverse archive of policies that
+          excel across different behavioral dimensions. This gives Keating a
+          repertoire of teaching styles it can select from based on topic and
+          learner state.
+        </p>
+
+        <h3 id="engagement-policies" className="font-bold mt-4 mb-2">Engagement Policies</h3>
+        <p className="text-sm mb-4">
+          New temporal awareness lets the system track when topics were last
+          visited, how confident the learner appeared, and when to reintroduce
+          material for spaced repetition. Engagement policies optimize the timing
+          of teaching actions rather than just their content.
+        </p>
+
+        <h3 id="rebrand" className="font-bold mt-4 mb-2">Rebrand to Keating</h3>
+        <p className="text-sm mb-4">
+          All Feynman references, paths, assets, and branding have been migrated
+          to Keating. The retro aesthetic is finalized: VT323 terminal
+          typography, emerald green theme, pixel-art identity, and the Dead Poets
+          Society-inspired philosophy of teaching to ignite minds rather than
+          fill them.
+        </p>
+      </>
+    ),
+  },
+  {
     date: "2026-04-10",
     badge: { label: "RELEASE", color: "release" },
     title: "From Stubs to Reality: AI-Powered Pedagogical Verification",
@@ -950,6 +1335,55 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
         <p className="text-sm text-muted-foreground">
           The CLI has been updated to launch this new engine automatically—just run{" "}
           <Code>keating web</Code> and experience the speed.
+        </p>
+      </>
+    ),
+  },
+  {
+    date: "2025-04-10",
+    badge: { label: "RELEASE", color: "release" },
+    title: "v0.1.4 — CLI Fixes, React Migration, and Nitro+Vite Stack",
+    version: "0.1.4",
+    summary:
+      "CLI works globally via npm/bun. Web app rewritten in React with Keating browser tools. Server migrated to Nitro + Vite for universal deployment.",
+    sections: [
+      { id: "cli-fixes", title: "CLI Fixes" },
+      { id: "react-migration", title: "React Migration" },
+      { id: "nitro-vite", title: "Nitro + Vite" },
+    ],
+    body: (
+      <>
+        <p className="mb-4 leading-6">
+          0.1.4 fixes global CLI installation, completes the React rewrite of
+          the web app, and moves the server stack to Nitro + Vite for a
+          runtime-agnostic build.
+        </p>
+
+        <h3 id="cli-fixes" className="font-bold mt-4 mb-2">CLI Fixes</h3>
+        <p className="text-sm mb-4">
+          When installed globally via <Code>npm install -g keating</Code> or{" "}
+          <Code>bun install -g keating</Code>, the CLI now resolves internal
+          paths relative to the package installation directory instead of the
+          current working directory. This fixes runtime errors like missing
+          compiled extension assets when running <Code>keating</Code> from
+          arbitrary directories.
+        </p>
+
+        <h3 id="react-migration" className="font-bold mt-4 mb-2">React Migration</h3>
+        <p className="text-sm mb-4">
+          The web app was rebuilt from Lit components to React, integrating
+          Keating browser tools directly into the component tree. The model
+          selector was rewritten with dynamic provider discovery, and agent state
+          updates now persist correctly across the boot sequence.
+        </p>
+
+        <h3 id="nitro-vite" className="font-bold mt-4 mb-2">Nitro + Vite</h3>
+        <p className="text-sm mb-4">
+          The previous Bun server was replaced with Nitro, enabling deployment
+          on Node.js, Bun, or edge workers from the same build. Vite handles the
+          client build, and the two share a unified pipeline. New mise tasks{" "}
+          <Code>web:build</Code> and <Code>web:preview</Code> handle production
+          builds.
         </p>
       </>
     ),
@@ -1195,6 +1629,46 @@ const hybridStreamFn = async (model, context, options) => {
         <p className="text-sm text-muted-foreground">
           Requires Chrome 113+ or Edge 113+ with WebGPU support. Model size: ~5GB cached
           locally.
+        </p>
+      </>
+    ),
+  },
+  {
+    date: "2025-04-01",
+    badge: { label: "RELEASE", color: "release" },
+    title: "v0.1.2 — Initial Public Release",
+    version: "0.1.2",
+    summary:
+      "First public release of Keating. Pi-powered hyperteacher shell with lesson plans, concept maps, animations, verification, benchmarks, policy evolution, and self-improvement proposals.",
+    sections: [
+      { id: "core-tools", title: "Core Teaching Tools" },
+      { id: "self-improvement", title: "Self-Improvement Loop" },
+    ],
+    body: (
+      <>
+        <p className="mb-4 leading-6">
+          Keating 0.1.2 is the first public release. It ships a complete
+          hyperteacher CLI built on the Pi agent framework, with deterministic
+          pedagogical engines for lesson planning, concept mapping, animation
+          generation, and teaching verification.
+        </p>
+
+        <h3 id="core-tools" className="font-bold mt-4 mb-2">Core Teaching Tools</h3>
+        <ul className="text-sm space-y-2 ml-4 mb-4">
+          <li><Code>keating plan &lt;topic&gt;</Code> — Generate structured lesson plans</li>
+          <li><Code>keating map &lt;topic&gt;</Code> — Create Mermaid concept maps</li>
+          <li><Code>keating animate &lt;topic&gt;</Code> — Build Manim-web animation bundles</li>
+          <li><Code>keating verify &lt;topic&gt;</Code> — Run verification checklists</li>
+          <li><Code>keating bench</Code> — Benchmark teaching policies against synthetic learners</li>
+        </ul>
+
+        <h3 id="self-improvement" className="font-bold mt-4 mb-2">Self-Improvement Loop</h3>
+        <p className="text-sm mb-4">
+          <Code>keating evolve</Code> runs policy evolution by mutating teaching
+          parameters against benchmark scores. <Code>keating improve</Code>
+          generates targeted improvement proposals from benchmark weakness
+          analysis. <Code>keating doctor</Code> diagnoses your runtime environment
+          and reports actionable setup guidance.
         </p>
       </>
     ),
