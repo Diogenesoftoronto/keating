@@ -150,7 +150,7 @@ function FineTuneExportPanel() {
 				<p className="mt-1 text-xs text-muted-foreground">Download training JSONL from Keating sessions and artifacts.</p>
 			</div>
 			<div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_auto]">
-				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+				<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 					<SegmentedControl
 						label="Format"
 						value={format}

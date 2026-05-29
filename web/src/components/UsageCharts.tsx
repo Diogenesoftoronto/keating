@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { keatingStorage } from "../hooks/keating-storage";
 import type { LearnerState, Verification, FeedbackEntry } from "../keating/storage";
@@ -94,10 +94,6 @@ export function UsageCharts({ sessionMetadata }: UsageChartsProps) {
 			cancelled = true;
 		};
 	}, []);
-
-	const dailyActivity = useMemo(() => {
-		return buildDailyActivity(sessionMetadata);
-	}, [sessionMetadata]);
 
 	if (!data) {
 		return (
@@ -196,9 +192,9 @@ export function UsageCharts({ sessionMetadata }: UsageChartsProps) {
 
 			<ChartPanel
 				title="Daily activity"
-				subtitle="Sessions per day across the last 12 weeks"
+				subtitle="Sessions per day year by year"
 			>
-				<ActivityHeatmap days={dailyActivity} />
+				<ActivityHeatmap sessions={sessionMetadata} />
 			</ChartPanel>
 
 			<ChartPanel
@@ -213,6 +209,129 @@ export function UsageCharts({ sessionMetadata }: UsageChartsProps) {
 			</ChartPanel>
 		</div>
 	);
+}
+
+function PolicyGrowthPanel({
+ benchmarks,
+ evolutions,
+ improvements,
+ policies,
+}: {
+ benchmarks: { score: number; createdAt: number }[];
+ evolutions: { bestScore: number; createdAt: number }[];
+ improvements: { baselineScore: number; afterScore: number | null; scoreDelta: number | null; createdAt: number }[];
+ policies: { active: boolean; createdAt: number; updatedAt: number }[];
+}) {
+ const maxScore = 100;
+ const height = 110;
+ const barPad = 40;
+
+ const fmtDate = (t: number) => new Date(t).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+
+ const makePoints = (arr: { score: number; createdAt: number }[], color: string, label: string) => {
+   if (arr.length === 0) return null;
+   const sorted = [...arr].sort((a, b) => a.createdAt - b.createdAt);
+   const minT = sorted[0].createdAt;
+   const maxT = sorted[sorted.length - 1].createdAt;
+   const span = Math.max(maxT - minT, 1);
+   const usableW = 100 - barPad * 2;
+   return {
+     sorted,
+     label,
+     color,
+     points: sorted.map((d) => ({
+       x: barPad + ((d.createdAt - minT) / span) * usableW,
+       y: height - 24 - (d.score / maxScore) * (height - 40),
+       score: d.score,
+       date: fmtDate(d.createdAt),
+     })),
+     minT,
+     maxT,
+   };
+ };
+
+ const benchmarkLine = makePoints(benchmarks, "#6366f1", "Benchmark");
+ const evolutionLine = makePoints(evolutions.map((e) => ({ score: e.bestScore, createdAt: e.createdAt })), "#22c55e", "Evolution");
+
+ const improvementBars = improvements
+   .filter((i) => i.scoreDelta !== null)
+   .sort((a, b) => a.createdAt - b.createdAt)
+   .slice(-12);
+
+ return (
+   <div>
+     <div className="mb-4">
+       <svg width="100%" viewBox={`0 0 100 ${height}`} preserveAspectRatio="none" style={{ height }}>
+         {[0, 25, 50, 75, 100].map((tick) => {
+           const y = height - 24 - (tick / maxScore) * (height - 40);
+           return (
+             <g key={tick}>
+               <line x1={barPad} y1={y} x2={100 - barPad} y2={y} stroke="currentColor" strokeOpacity={0.08} />
+               <text x={barPad - 4} y={y + 3} fontSize={6} fill="currentColor" opacity={0.45} textAnchor="end">
+                 {tick}
+               </text>
+             </g>
+           );
+         })}
+
+         {[benchmarkLine, evolutionLine].filter(Boolean).map((line) => {
+           if (!line) return null;
+           const d = line.points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+           return (
+             <g key={line.label}>
+               <path d={d} fill="none" stroke={line.color} strokeWidth={0.8} opacity={0.6} />
+               {line.points.map((p, i) => (
+                 <circle key={i} cx={p.x} cy={p.y} r={1.2} fill={line.color}>
+                   <title>{line.label}: {p.score.toFixed(1)} on {p.date}</title>
+                 </circle>
+               ))}
+             </g>
+           );
+         })}
+       </svg>
+
+       <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
+         {benchmarkLine && (
+           <div className="flex items-center gap-1.5">
+             <span className="inline-block h-1.5 w-4 rounded-full" style={{ background: benchmarkLine.color }} />
+             <span className="text-muted-foreground">Benchmark scores</span>
+           </div>
+         )}
+         {evolutionLine && (
+           <div className="flex items-center gap-1.5">
+             <span className="inline-block h-1.5 w-4 rounded-full" style={{ background: evolutionLine.color }} />
+             <span className="text-muted-foreground">Evolved policy scores</span>
+           </div>
+         )}
+       </div>
+     </div>
+
+     {improvementBars.length > 0 && (
+       <div>
+         <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Recent improvements</div>
+         <div className="flex gap-1">
+           {improvementBars.map((bar, i) => {
+             const delta = bar.scoreDelta ?? 0;
+             const positive = delta >= 0;
+             return (
+               <div key={i} className="flex-1">
+                 <div
+                   className={`rounded-sm ${positive ? "bg-emerald-500" : "bg-destructive"} transition-all`}
+                   style={{ height: `${Math.min(Math.abs(delta) * 40 + 4, 40)}px`, opacity: 0.75 }}
+                   title={`Δ${delta >= 0 ? "+" : ""}${delta.toFixed(2)} on ${fmtDate(bar.createdAt)}`}
+                 />
+               </div>
+             );
+           })}
+         </div>
+         <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
+           <span>{improvementBars.length} latest</span>
+           <span>{policies.filter((p) => p.active).length} active policy{policies.filter((p) => p.active).length === 1 ? "" : "ies"} · {policies.length} total</span>
+         </div>
+       </div>
+     )}
+   </div>
+ );
 }
 
 function EmptyState({ message }: { message: string }) {
@@ -231,22 +350,32 @@ function aggregateFeedback(entries: FeedbackEntry[]) {
 	return out;
 }
 
-function buildDailyActivity(sessions: SessionMetadata[]) {
-	const today = new Date();
-	today.setHours(0, 0, 0, 0);
-	const days: { date: Date; count: number }[] = [];
+function getAvailableYears(sessions: SessionMetadata[]): number[] {
+	if (sessions.length === 0) {
+		const now = new Date().getFullYear();
+		return [now];
+	}
+	const years = new Set<number>();
+	for (const s of sessions) {
+		years.add(new Date(s.lastModified).getFullYear());
+	}
+	return Array.from(years).sort((a, b) => a - b);
+}
+
+function buildYearActivity(year: number, sessions: SessionMetadata[]) {
 	const dayCounts = new Map<string, number>();
 	for (const s of sessions) {
 		const d = new Date(s.lastModified);
 		const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 		dayCounts.set(key, (dayCounts.get(key) ?? 0) + 1);
 	}
-	const span = 84;
-	for (let i = span - 1; i >= 0; i--) {
-		const d = new Date(today);
-		d.setDate(d.getDate() - i);
+
+	const start = new Date(year, 0, 1);
+	const end = new Date(year, 11, 31);
+	const days: { date: Date; count: number }[] = [];
+	for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
 		const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-		days.push({ date: d, count: dayCounts.get(key) ?? 0 });
+		days.push({ date: new Date(d), count: dayCounts.get(key) ?? 0 });
 	}
 	return days;
 }
@@ -351,59 +480,215 @@ function CurriculumGantt({
 	);
 }
 
-function ActivityHeatmap({ days }: { days: { date: Date; count: number }[] }) {
+function ActivityHeatmap({ sessions }: { sessions: SessionMetadata[] }) {
+	const availableYears = useMemo(() => getAvailableYears(sessions), [sessions]);
+	const [year, setYear] = useState(() => {
+		const now = new Date().getFullYear();
+		return availableYears.includes(now) ? now : availableYears[availableYears.length - 1] ?? now;
+	});
+	const [tooltip, setTooltip] = useState<{
+		x: number;
+		y: number;
+		date: Date;
+		count: number;
+	} | null>(null);
+	const containerRef = useRef<HTMLDivElement>(null);
+
+	const { days, maxCount } = useMemo(() => {
+		const d = buildYearActivity(year, sessions);
+		const max = Math.max(1, ...d.map((x) => x.count));
+		return { days: d, maxCount: max };
+	}, [year, sessions]);
+
+	const handleCellHover = useCallback(
+		(e: React.MouseEvent<SVGRectElement>, date: Date, count: number) => {
+			const rect = e.currentTarget.getBoundingClientRect();
+			const containerRect = containerRef.current?.getBoundingClientRect();
+			setTooltip({
+				x: rect.left + rect.width / 2 - (containerRect?.left ?? 0),
+				y: rect.top - (containerRect?.top ?? 0),
+				date,
+				count,
+			});
+		},
+		[],
+	);
+
 	if (days.length === 0) return <EmptyState message="No daily activity yet." />;
-	const max = days.reduce((m, d) => Math.max(m, d.count), 0);
+
 	const cell = 14;
 	const gap = 3;
-	const weeks = Math.ceil(days.length / 7);
-	const width = weeks * (cell + gap);
-	const height = 7 * (cell + gap) + 16;
+	const startWeekday = days[0].date.getDay();
+	const weeks = Math.ceil((days.length + startWeekday) / 7);
+	const gridWidth = weeks * (cell + gap);
+	const gridHeight = 7 * (cell + gap);
+	const labelOffsetY = 16;
+	const svgHeight = gridHeight + labelOffsetY + 28;
 
 	const shade = (count: number) => {
 		if (count === 0) return "var(--muted, #f3f4f6)";
-		const t = max <= 1 ? 1 : count / max;
+		const t = maxCount <= 1 ? 1 : count / maxCount;
 		const alpha = 0.25 + t * 0.75;
 		return `rgba(99, 102, 241, ${alpha.toFixed(2)})`;
 	};
 
-	const firstDay = days[0].date;
-	const startWeekday = firstDay.getDay();
+	// month labels — first day of each unique month
+	const months: { name: string; x: number }[] = [];
+	let lastMonth = -1;
+	for (let i = 0; i < days.length; i++) {
+		const d = days[i];
+		if (d.date.getMonth() !== lastMonth) {
+			lastMonth = d.date.getMonth();
+			const col = Math.floor((i + startWeekday) / 7);
+			months.push({
+				name: d.date.toLocaleDateString(undefined, { month: "short" }),
+				x: col * (cell + gap),
+			});
+		}
+	}
+
+	const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+	// Build the full year range from earliest data year to now
+	const earliestYear = availableYears[0];
+	const latestYear = availableYears[availableYears.length - 1];
+	const allNavYears = Array.from(
+		{ length: latestYear - earliestYear + 1 },
+		(_, i) => earliestYear + i,
+	).reverse();
 
 	return (
-		<div className="overflow-x-auto">
-			<svg width={width} height={height} role="img" aria-label="Daily activity heatmap" style={{ minWidth: width }}>
-				{days.map((d, i) => {
-					const slot = i + startWeekday;
-					const col = Math.floor(slot / 7);
-					const row = slot % 7;
-					const x = col * (cell + gap);
-					const y = row * (cell + gap);
-					return (
-						<rect
-							key={i}
-							x={x}
-							y={y}
-							width={cell}
-							height={cell}
-							rx={2}
-							fill={shade(d.count)}
-							stroke="currentColor"
-							strokeOpacity={0.05}
+		<div ref={containerRef} className="relative">
+			{/* Year tabs — GitHub style */}
+			<div className="mb-3 flex flex-wrap items-center gap-1.5">
+				{allNavYears.map((y) => (
+					<button
+						key={y}
+						type="button"
+						className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+							y === year
+								? "bg-primary text-primary-foreground"
+								: "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+						}`}
+						onClick={() => setYear(y)}
+					>
+						{y}
+					</button>
+				))}
+			</div>
+
+			<div className="overflow-x-auto">
+				<svg
+					width="100%"
+					viewBox={`0 0 ${gridWidth + 28} ${svgHeight}`}
+					preserveAspectRatio="xMinYMin meet"
+					role="img"
+					aria-label={`Daily activity heatmap for ${year}`}
+					style={{ minWidth: gridWidth + 28 }}
+				>
+					{/* Weekday labels (sparse: just Mon / Wed / Fri) */}
+					{[1, 3, 5].map((row) => (
+						<text
+							key={row}
+							x={0}
+							y={row * (cell + gap) + cell - 1}
+							fontSize={9}
+							fill="currentColor"
+							opacity={0.55}
 						>
-							<title>
-								{d.date.toLocaleDateString()} — {d.count} session{d.count === 1 ? "" : "s"}
-							</title>
-						</rect>
-					);
-				})}
-				<text x={0} y={height - 2} fontSize={10} fill="currentColor" opacity={0.55}>
-					{firstDay.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-				</text>
-				<text x={width} y={height - 2} fontSize={10} fill="currentColor" opacity={0.55} textAnchor="end">
-					Today
-				</text>
-			</svg>
+							{weekdayLabels[row]}
+						</text>
+					))}
+
+					<g transform="translate(28, 0)">
+						{days.map((d, i) => {
+							const slot = i + startWeekday;
+							const col = Math.floor(slot / 7);
+							const row = slot % 7;
+							const x = col * (cell + gap);
+							const y = row * (cell + gap);
+							return (
+								<rect
+									key={i}
+									x={x}
+									y={y}
+									width={cell}
+									height={cell}
+									rx={2}
+									fill={shade(d.count)}
+									stroke="currentColor"
+									strokeOpacity={0.05}
+									onMouseEnter={(e) => handleCellHover(e, d.date, d.count)}
+									onMouseLeave={() => setTooltip(null)}
+								/>
+							);
+						})}
+
+						{/* Month labels */}
+						{months.map((m, i) => (
+							<text
+								key={i}
+								x={m.x}
+								y={gridHeight + 12}
+								fontSize={10}
+								fill="currentColor"
+								opacity={0.55}
+							>
+								{m.name}
+							</text>
+						))}
+					</g>
+
+					{/* Legend */}
+					<g transform={`translate(${gridWidth + 28 - 100}, ${svgHeight - 20})`}>
+						<text x={-6} y={10} fontSize={10} fill="currentColor" opacity={0.5} textAnchor="end">
+							Less
+						</text>
+						{[0, 1, 2, 3, 4].map((level) => {
+							const count = Math.round((maxCount / 4) * level);
+							return (
+								<rect
+									key={level}
+									x={level * (cell + gap)}
+									y={0}
+									width={cell}
+									height={cell}
+									rx={2}
+									fill={shade(count)}
+								>
+									<title>{count} session{count === 1 ? "" : "s"}</title>
+								</rect>
+							);
+						})}
+						<text x={5 * (cell + gap) + 4} y={10} fontSize={10} fill="currentColor" opacity={0.5}>
+							More
+						</text>
+					</g>
+				</svg>
+			</div>
+
+			{/* Rich tooltip */}
+			{tooltip && (
+				<div
+					className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-full rounded-md border border-border bg-popover px-3 py-2 text-popover-foreground shadow-md"
+					style={{
+						left: tooltip.x,
+						top: tooltip.y - 8,
+					}}
+				>
+					<div className="text-xs font-semibold">
+						{tooltip.count} session{tooltip.count === 1 ? "" : "s"}
+					</div>
+					<div className="text-[11px] text-muted-foreground">
+						{tooltip.date.toLocaleDateString(undefined, {
+							weekday: "short",
+							month: "short",
+							day: "numeric",
+							year: "numeric",
+						})}
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }
