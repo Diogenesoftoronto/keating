@@ -1,9 +1,9 @@
-import { readdir, stat, writeFile } from "node:fs/promises";
+import { readdir, readFile, stat, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 
 import { loadKeatingConfig } from "./config.js";
 import { writeLessonAnimation } from "./animation.js";
-import { benchmarkToMarkdown, runBenchmarkSuite } from "./benchmark.js";
+import { applyFeedbackBias, benchmarkToMarkdown, runBenchmarkSuite, type FeedbackSummary } from "./benchmark.js";
 import {
   buildEngagementTimeline,
   dueTopics,
@@ -33,6 +33,7 @@ import {
   tracesDir,
   verificationsDir,
   verificationCachePath,
+  stateDir,
   learnerStatePath,
   quizDir,
   flashcardsDir,
@@ -136,12 +137,29 @@ export async function benchPolicyArtifact(
 ): Promise<{ reportPath: string; tracePath: string | null; overallScore: number }> {
   await ensureProjectScaffold(cwd);
   const policy = await loadPolicy(currentPolicyPath(cwd));
-  const result = await runBenchmarkSuite(cwd, policy, focusTopic, 20260401);
+  const learnerState = await loadLearnerState(learnerStatePath(cwd));
+  const feedback = summarizeFeedback(learnerState.feedback);
+  const weights = applyFeedbackBias(feedback);
+  const result = await runBenchmarkSuite(cwd, policy, focusTopic, 20260401, 3, weights);
   const slug = focusTopic ? slugify(focusTopic) : "core-suite";
   const { reportPath, tracePath } = await writeArtifactWithTrace(
     cwd, benchmarksDir(cwd), slug, benchmarkToMarkdown(result), "benchmark", result
   );
   return { reportPath, tracePath, overallScore: result.overallScore };
+}
+
+function summarizeFeedback(feedback: Array<{ signal: "thumbs-up" | "thumbs-down" | "confused" }>): FeedbackSummary {
+  const sampleSize = feedback.length;
+  if (sampleSize === 0) {
+    return { confusionRate: 0, satisfactionRate: 0, sampleSize };
+  }
+  const confused = feedback.filter((entry) => entry.signal === "confused").length;
+  const satisfied = feedback.filter((entry) => entry.signal === "thumbs-up").length;
+  return {
+    confusionRate: confused / sampleSize,
+    satisfactionRate: satisfied / sampleSize,
+    sampleSize
+  };
 }
 
 export async function evolvePolicyArtifact(
@@ -216,14 +234,22 @@ export async function improveArtifact(cwd: string): Promise<ImprovementArtifact>
 
 export async function improveAccept(cwd: string, proposalId: string): Promise<{ afterScore: number; delta: number }> {
   await ensureProjectScaffold(cwd);
-  const evaluation = await evaluateImprovement(cwd, 0);
+  const archive = await loadImprovementArchive(cwd);
+  const attempt = archive.attempts.find((entry) => entry.proposal.id === proposalId);
+  const evaluation = await evaluateImprovement(cwd, attempt?.baselineScore ?? 0);
   await acceptImprovement(cwd, proposalId, evaluation.afterScore);
   return { afterScore: evaluation.afterScore, delta: evaluation.delta };
 }
 
-export async function improveReject(cwd: string, proposalId: string, snapshots: any[]): Promise<void> {
+export async function improveReject(cwd: string, proposalId: string, snapshots?: any[]): Promise<void> {
   await ensureProjectScaffold(cwd);
-  await rejectImprovement(cwd, proposalId, snapshots);
+  if (snapshots) {
+    await rejectImprovement(cwd, proposalId, snapshots);
+    return;
+  }
+  const archive = await loadImprovementArchive(cwd);
+  const attempt = archive.attempts.find((entry) => entry.proposal.id === proposalId);
+  await rejectImprovement(cwd, proposalId, attempt?.snapshots ?? []);
 }
 
 export async function improveHistory(cwd: string): Promise<string> {
@@ -232,11 +258,48 @@ export async function improveHistory(cwd: string): Promise<string> {
   return improvementHistoryToMarkdown(archive);
 }
 
+interface AutoImproveState {
+  lastRunAt?: string;
+}
+
+function autoImproveStatePath(cwd: string): string {
+  return join(stateDir(cwd), "auto-improve.json");
+}
+
+async function loadAutoImproveState(cwd: string): Promise<AutoImproveState> {
+  try {
+    return JSON.parse(await readFile(autoImproveStatePath(cwd), "utf8")) as AutoImproveState;
+  } catch {
+    return {};
+  }
+}
+
+async function saveAutoImproveState(cwd: string, state: AutoImproveState): Promise<void> {
+  await writeFile(autoImproveStatePath(cwd), `${JSON.stringify(state, null, 2)}\n`, "utf8");
+}
+
+function assertAutoImproveAllowed(state: AutoImproveState, force: boolean): void {
+  if (force || !state.lastRunAt) return;
+  const lastRunMs = Date.parse(state.lastRunAt);
+  if (!Number.isFinite(lastRunMs)) return;
+  const cooldownMs = 30 * 60 * 1000;
+  const elapsedMs = Date.now() - lastRunMs;
+  if (elapsedMs >= 0 && elapsedMs < cooldownMs) {
+    const remainingMinutes = Math.ceil((cooldownMs - elapsedMs) / 60000);
+    throw new Error(`auto-improve ran recently. Re-run with --force or wait ${remainingMinutes} minute(s).`);
+  }
+}
+
 export async function autoImproveArtifact(
   cwd: string,
-  focusTopic?: string
+  focusTopic?: string,
+  options: { force?: boolean } = {}
 ): Promise<{ baselineScore: number; afterScore: number; delta: number; reportPath: string }> {
   await ensureProjectScaffold(cwd);
+  const state = await loadAutoImproveState(cwd);
+  assertAutoImproveAllowed(state, options.force === true);
+  const policyPath = currentPolicyPath(cwd);
+  const previousPolicy = await loadPolicy(policyPath);
 
   const baseline = await benchPolicyArtifact(cwd, focusTopic);
 
@@ -247,6 +310,11 @@ export async function autoImproveArtifact(
   const after = await benchPolicyArtifact(cwd, focusTopic);
 
   const delta = after.overallScore - baseline.overallScore;
+  const rolledBack = delta < -0.5;
+  if (rolledBack) {
+    await savePolicy(policyPath, previousPolicy);
+  }
+  await saveAutoImproveState(cwd, { lastRunAt: new Date().toISOString() });
 
   const report = [
     `# Auto-Improve Report`,
@@ -254,7 +322,7 @@ export async function autoImproveArtifact(
     `**Baseline:** ${baseline.overallScore.toFixed(2)}/100`,
     `**After:** ${after.overallScore.toFixed(2)}/100`,
     `**Delta:** ${delta >= 0 ? "+" : ""}${delta.toFixed(2)}`,
-    `**Verdict:** ${delta > 0 ? "IMPROVED" : delta < -0.5 ? "REGRESSED" : "NO SIGNIFICANT CHANGE"}`,
+    `**Verdict:** ${delta > 0 ? "IMPROVED" : rolledBack ? "REGRESSED (policy rolled back)" : "NO SIGNIFICANT CHANGE"}`,
     ``,
     `## Benchmark`,
     `- Report: ${relative(cwd, baseline.reportPath)}`,
