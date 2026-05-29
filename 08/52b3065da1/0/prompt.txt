@@ -1,0 +1,1 @@
+remove the self modification docs, replace mise tasks with just task runner, also use flox for all the dev dependencies in this project including tools like similarity-ts, oxdraw, and stryker
