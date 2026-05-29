@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	Check,
 	ChevronDown,
@@ -18,6 +18,11 @@ import { buildSessionTree, flattenSessionTree } from "./session-tree";
 
 const TREE_COLLAPSED_STORAGE_KEY = "keating:session-tree-collapsed";
 const MD_BREAKPOINT = 768;
+
+const SIDEBAR_MIN_W = 288;
+const SIDEBAR_MAX_W = 640;
+const SIDEBAR_DEFAULT_W = 360;
+const SIDEBAR_W_KEY = "keating_session_sidebar_width";
 
 interface SessionSidebarProps {
 	activeSessionId?: string;
@@ -65,6 +70,27 @@ function writeCollapsedTreeNodes(set: ReadonlySet<string>) {
 	}
 }
 
+function loadSidebarWidth(): number {
+	if (typeof localStorage === "undefined") return SIDEBAR_DEFAULT_W;
+	try {
+		const raw = localStorage.getItem(SIDEBAR_W_KEY);
+		if (!raw) return SIDEBAR_DEFAULT_W;
+		const parsed = parseInt(raw, 10);
+		if (isNaN(parsed) || parsed < SIDEBAR_MIN_W || parsed > SIDEBAR_MAX_W) return SIDEBAR_DEFAULT_W;
+		return parsed;
+	} catch {
+		return SIDEBAR_DEFAULT_W;
+	}
+}
+
+function saveSidebarWidth(value: number) {
+	try {
+		localStorage.setItem(SIDEBAR_W_KEY, String(value));
+	} catch {
+		/* noop */
+	}
+}
+
 export function SessionSidebar({
 	activeSessionId,
 	forkingSessionId,
@@ -88,6 +114,8 @@ export function SessionSidebar({
 			? window.matchMedia(`(min-width: ${MD_BREAKPOINT}px)`).matches
 			: true,
 	);
+	const [sidebarWidth, setSidebarWidth] = useState(loadSidebarWidth);
+	const dragState = useRef({ active: false, startX: 0, startWidth: 0 });
 
 	useEffect(() => {
 		if (typeof window === "undefined") return;
@@ -151,6 +179,43 @@ export function SessionSidebar({
 			setForkedSourceSessionId((current) => current === sessionId ? null : current);
 		}, 1800);
 	};
+
+	/* ── Resize handlers ── */
+	const handleResizeStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+		e.preventDefault();
+		const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+		dragState.current = { active: true, startX: clientX, startWidth: sidebarWidth };
+
+		const onMove = (moveEvent: MouseEvent | TouchEvent) => {
+			if (!dragState.current.active) return;
+			const moveX = "touches" in moveEvent ? moveEvent.touches[0].clientX : moveEvent.clientX;
+			const delta = moveX - dragState.current.startX;
+			const next = Math.min(SIDEBAR_MAX_W, Math.max(SIDEBAR_MIN_W, dragState.current.startWidth + delta));
+			setSidebarWidth(next);
+		};
+
+		const onUp = () => {
+			if (!dragState.current.active) return;
+			dragState.current.active = false;
+			document.body.style.cursor = "";
+			document.body.style.userSelect = "";
+			window.removeEventListener("mousemove", onMove);
+			window.removeEventListener("mouseup", onUp);
+			window.removeEventListener("touchmove", onMove);
+			window.removeEventListener("touchend", onUp);
+			setSidebarWidth((w) => {
+				saveSidebarWidth(w);
+				return w;
+			});
+		};
+
+		document.body.style.cursor = "col-resize";
+		document.body.style.userSelect = "none";
+		window.addEventListener("mousemove", onMove);
+		window.addEventListener("mouseup", onUp);
+		window.addEventListener("touchmove", onMove, { passive: false });
+		window.addEventListener("touchend", onUp);
+	}, [sidebarWidth]);
 
 	/* ── Mobile drawer ── */
 	if (!isDesktop) {
@@ -270,14 +335,14 @@ export function SessionSidebar({
 															</span>
 														) : null}
 														{justForkedSource ? (
-															<span className="shrink-0 rounded bg-primary px-1.5 py-0.5 text-[10px] text-primary-foreground">
-																Forked
-															</span>
-														) : null}
+																<span className="shrink-0 rounded bg-primary px-1.5 py-0.5 text-[10px] text-primary-foreground">
+																	Forked
+																</span>
+															) : null}
 													</div>
 													<p className="mt-2 overflow-hidden text-xs leading-5 text-muted-foreground [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
 														{session.preview || "No preview saved"}
-														</p>
+													</p>
 													<div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
 														<span>{session.parentSessionId ? "Fork | " : ""}{formatDate(session.lastModified)}</span>
 														<span aria-hidden="true">|</span>
@@ -289,19 +354,19 @@ export function SessionSidebar({
 													className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50 group-hover:opacity-100 ${
 														justForkedSource ? "text-primary opacity-100" : "opacity-0"
 													}`}
-														title={justForkedSource ? "Session forked" : "Fork session"}
-														aria-label={justForkedSource ? "Session forked" : "Fork session"}
-														disabled={forking}
-														onClick={() => void forkSession(session.id)}
-													>
-														{forking ? (
-															<Loader2 size={12} className="animate-spin" />
-														) : justForkedSource ? (
-															<Check size={12} />
-														) : (
-															<CopyPlus size={12} />
-														)}
-													</button>
+													title={justForkedSource ? "Session forked" : "Fork session"}
+													aria-label={justForkedSource ? "Session forked" : "Fork session"}
+													disabled={forking}
+													onClick={() => void forkSession(session.id)}
+												>
+													{forking ? (
+														<Loader2 size={12} className="animate-spin" />
+													) : justForkedSource ? (
+														<Check size={12} />
+													) : (
+														<CopyPlus size={12} />
+													)}
+												</button>
 											</div>
 										</li>
 									);
@@ -345,26 +410,19 @@ export function SessionSidebar({
 
 	/* ── Desktop expanded sidebar ── */
 	return (
-		<aside className="session-sidebar flex w-80 shrink-0 flex-col border-r-2 border-border bg-background xl:w-96">
+		<aside className="session-sidebar relative flex shrink-0 flex-col border-r-2 border-border bg-background" style={{ width: `${sidebarWidth}px` }}>
+			{/* Resize handle — right edge drag bar */}
+			<div
+				className="group absolute inset-y-0 right-0 z-10 flex w-2 cursor-col-resize items-center justify-center"
+				onMouseDown={handleResizeStart}
+				onTouchStart={handleResizeStart}
+			>
+				<div className="h-8 w-0.5 rounded-full bg-border opacity-0 transition-opacity group-hover:opacity-100 group-active:opacity-100" />
+			</div>
+
 			<header className="border-b border-border px-4 py-4">
-				<div className="flex items-start justify-between gap-3">
-					<div className="min-w-0">
-						<div className="flex items-center gap-2 text-sm font-semibold">
-							<History size={15} />
-							Sessions
-						</div>
-						<p className="mt-1 text-xs leading-5 text-muted-foreground">
-							Search, fork, rename, or load a previous conversation
-						</p>
-					</div>
+				<div className="flex items-start gap-3">
 					<div className="flex shrink-0 items-center gap-1">
-						<button
-							type="button"
-							className="inline-flex h-8 shrink-0 items-center justify-center rounded-md border border-border px-2 text-xs hover:bg-accent"
-							onClick={onOpenSessions}
-						>
-							Manage
-						</button>
 						{onCollapsedChange ? (
 							<button
 								type="button"
@@ -376,6 +434,22 @@ export function SessionSidebar({
 								<PanelLeftClose size={14} />
 							</button>
 						) : null}
+						<button
+							type="button"
+							className="inline-flex h-8 shrink-0 items-center justify-center rounded-md border border-border px-2 text-xs hover:bg-accent"
+							onClick={onOpenSessions}
+						>
+							Manage
+						</button>
+					</div>
+					<div className="min-w-0 flex-1 text-right">
+						<div className="flex items-center justify-end gap-2 text-sm font-semibold">
+							Sessions
+							<History size={15} />
+						</div>
+						<p className="mt-1 text-xs leading-5 text-muted-foreground">
+							Search, fork, rename, or load a previous conversation
+						</p>
 					</div>
 				</div>
 				<label className="mt-3 flex min-h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-xs">
