@@ -46,8 +46,6 @@ function ChatContent() {
     chatPanelRef,
     dialogs,
     sessionSidebar,
-    sessionSidebarCollapsed,
-    toggleSessionSidebar,
     speechEnabled,
     persistentStorageStatus,
     toggleSpeech,
@@ -56,9 +54,6 @@ function ChatContent() {
     toggleMobileSidebar,
     closeMobileSidebar,
   } = useKeatingAgent();
-  const [isDesktop, setIsDesktop] = useState(
-    () => typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches,
-  );
   const [introDismissed, setIntroDismissed] = useState(
     () => sessionStorage.getItem("keating_chat_intro") === "dismissed",
   );
@@ -116,14 +111,6 @@ function ChatContent() {
     if (typeof window === "undefined") return;
     const mq = window.matchMedia("(min-width: 1024px)");
     const handler = (e: MediaQueryListEvent) => setIsWideViewport(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const mq = window.matchMedia("(min-width: 768px)");
-    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
   }, []);
@@ -192,28 +179,13 @@ function ChatContent() {
       >
         <button
           type="button"
-          className={actionButtonClass}
-          title={isDesktop
-            ? (sessionSidebarCollapsed ? "Show sessions panel" : "Hide sessions panel")
-            : (mobileSidebarOpen ? "Close sessions panel" : "Open sessions panel")
-          }
-          aria-label={isDesktop
-            ? (sessionSidebarCollapsed ? "Show sessions panel" : "Hide sessions panel")
-            : (mobileSidebarOpen ? "Close sessions panel" : "Open sessions panel")
-          }
-          aria-pressed={isDesktop ? !sessionSidebarCollapsed : mobileSidebarOpen}
-          onClick={() => {
-            if (isDesktop) {
-              toggleSessionSidebar();
-            } else {
-              toggleMobileSidebar();
-            }
-          }}
+          className={`${actionButtonClass} md:hidden`}
+          title={mobileSidebarOpen ? "Close sessions panel" : "Open sessions panel"}
+          aria-label={mobileSidebarOpen ? "Close sessions panel" : "Open sessions panel"}
+          aria-pressed={mobileSidebarOpen}
+          onClick={toggleMobileSidebar}
         >
-          {isDesktop
-            ? (sessionSidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />)
-            : (mobileSidebarOpen ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />)
-          }
+          {mobileSidebarOpen ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
         </button>
         <Link
           to="/"

@@ -6,11 +6,21 @@ export interface SessionTreeNode {
 	depth: number;
 }
 
-function sortNodes(nodes: SessionTreeNode[]) {
-	nodes.sort((left, right) =>
-		right.session.lastModified.localeCompare(left.session.lastModified),
-	);
-	for (const node of nodes) sortNodes(node.children);
+function getSubtreeLastModified(node: SessionTreeNode): string {
+	let max = node.session.lastModified;
+	for (const child of node.children) {
+		const childMax = getSubtreeLastModified(child);
+		if (childMax > max) max = childMax;
+	}
+	return max;
+}
+
+function sortByCreatedAt(nodes: SessionTreeNode[]) {
+	nodes.sort((left, right) => {
+		const cmp = right.session.createdAt.localeCompare(left.session.createdAt);
+		return cmp !== 0 ? cmp : right.session.id.localeCompare(left.session.id);
+	});
+	for (const node of nodes) sortByCreatedAt(node.children);
 }
 
 export function buildSessionTree(sessions: SessionMetadata[]): SessionTreeNode[] {
@@ -36,7 +46,17 @@ export function buildSessionTree(sessions: SessionMetadata[]): SessionTreeNode[]
 		for (const child of node.children) assignDepth(child, depth + 1);
 	};
 	for (const root of roots) assignDepth(root, 0);
-	sortNodes(roots);
+
+	// Roots order by the most recent activity anywhere in the subtree so that
+	// clicking any member (parent or fork) moves the whole nest to the recent
+	// position. Children stay in stable creation order and never jitter.
+	roots.sort((left, right) => {
+		const leftMax = getSubtreeLastModified(left);
+		const rightMax = getSubtreeLastModified(right);
+		return rightMax.localeCompare(leftMax);
+	});
+	for (const root of roots) sortByCreatedAt(root.children);
+
 	return roots;
 }
 
