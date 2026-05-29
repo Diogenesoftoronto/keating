@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.6.2",
+  "checkpoint_id": "955c2094ebef",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "CHANGELOG.md",
+    "web/index.html",
+    "web/package.json",
+    "web/src/components/ChatIntro.tsx",
+    "web/src/og-image.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/95/5c2094ebef/0/metadata.json",
+      "transcript": "/95/5c2094ebef/0/full.jsonl",
+      "content_hash": "/95/5c2094ebef/0/content_hash.txt",
+      "prompt": "/95/5c2094ebef/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 1
+  }
+}
