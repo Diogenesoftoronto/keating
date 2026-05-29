@@ -21,7 +21,7 @@ import { ModelSelectorDialog } from "../components/ModelSelector";
 import { KeatingApiKeyPromptDialog, promptKeatingApiKey } from "../components/KeatingApiKeyPromptDialog";
 import { getProviderApiKey } from "../lib/provider-models";
 import { localModel } from "../stores/local-model";
-import { buildKeatingSystemPrompt, createKeatingTools } from "../keating/browser-tools";
+import { buildKeatingSystemPrompt, createKeatingTools, getActiveKeatingPrompt } from "../keating/browser-tools";
 import { registerKeatingWebMcp } from "../keating/webmcp";
 import { loadWebSpeechSettings, primeSpeechAudio, saveWebSpeechSettings, type WebSpeechSettings } from "../keating/speech";
 import { subscribeAgentEvents } from "./agent-subscriptions";
@@ -191,6 +191,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const bootstrapTimerRef = useRef<number | null>(null);
   const bootstrapGenerationRef = useRef(0);
   const persistentStorageRequestedRef = useRef(false);
+  const systemPromptBaseRef = useRef<string>("");
 
   const openSettings = useCallback(() => {
     settingsDialog.onOpen();
@@ -215,6 +216,12 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     speech: {
       settings,
       getApiKey: (provider: string) => getProviderApiKey(provider),
+    },
+    setSystemPrompt: (basePrompt: string) => {
+      systemPromptBaseRef.current = basePrompt;
+      if (agentRef.current) {
+        agentRef.current.state.systemPrompt = buildKeatingSystemPrompt(settings.enabled, basePrompt);
+      }
     },
   }), []);
 
@@ -259,10 +266,12 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const createAgent = useCallback(async (panel: ChatPanelHandle, initialState?: Partial<AgentState>) => {
     const agentSessionId = sessionIdRef.current;
     const agentCreatedAt = sessionCreatedAtRef.current;
+    const promptBase = initialState?.systemPrompt ?? await getActiveKeatingPrompt(keatingStorage);
+    systemPromptBaseRef.current = promptBase;
     const tools = await createKeatingTools(keatingStorage, toolOptions(speechSettings));
     registerKeatingWebMcp(keatingStorage, tools).catch(console.warn);
     const nextState: Partial<AgentState> = {
-      systemPrompt: buildKeatingSystemPrompt(speechSettings.enabled),
+      systemPrompt: buildKeatingSystemPrompt(speechSettings.enabled, promptBase),
       model: initialState?.model ?? selectedModelRef.current,
       thinkingLevel: initialState?.thinkingLevel ?? loadKeatingUiSettings().reasoningLevel,
       messages: [],
@@ -330,7 +339,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       .then((tools) => {
         if (cancelled) return;
         agent.state.tools = tools;
-        agent.state.systemPrompt = buildKeatingSystemPrompt(speechSettings.enabled);
+        agent.state.systemPrompt = buildKeatingSystemPrompt(speechSettings.enabled, systemPromptBaseRef.current);
         registerKeatingWebMcp(keatingStorage, tools).catch(console.warn);
       })
       .catch(console.error);
