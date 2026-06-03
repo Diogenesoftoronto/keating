@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.6.3",
+  "checkpoint_id": "aa248d126d1a",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "fnox.toml",
+    "src/cli/setup.ts",
+    "src/core/config.ts",
+    "src/runtime/pi.ts",
+    "web/src/components/KeatingApiKeyPromptDialog.tsx",
+    "web/src/lib/tutorial-links.ts",
+    "web/src/pages/Tutorial.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/aa/248d126d1a/0/metadata.json",
+      "transcript": "/aa/248d126d1a/0/full.jsonl",
+      "content_hash": "/aa/248d126d1a/0/content_hash.txt",
+      "prompt": "/aa/248d126d1a/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 12,
+    "cache_creation_tokens": 21041,
+    "cache_read_tokens": 201781,
+    "output_tokens": 2918,
+    "api_call_count": 7
+  }
+}

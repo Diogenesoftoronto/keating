@@ -1,0 +1,1 @@
+I noticed that some models put very large amounts of text for the questions offered, keating is supposed to be conversation and more turn based. does the system prompt encourage the use of the ask user question tool? i don't really see it used in the UI on the web. Is there even such a tool that is registered?
