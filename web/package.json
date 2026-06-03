@@ -1,6 +1,6 @@
 {
   "name": "keating-web",
-  "version": "0.3.13",
+  "version": "1.1.0",
   "type": "module",
   "private": true,
   "scripts": {
@@ -14,8 +14,8 @@
     "@assistant-ui/react": "^0.14.0",
     "@assistant-ui/react-markdown": "^0.14.0",
     "@chenglou/pretext": "^0.0.5",
-    "@earendil-works/pi-agent-core": "^0.75.4",
-    "@earendil-works/pi-ai": "^0.75.4",
+    "@earendil-works/pi-agent-core": "^0.78.0",
+    "@earendil-works/pi-ai": "^0.78.0",
     "@earendil-works/pi-web-ui": "^0.75.3",
     "@google/genai": "^1.48.0",
     "@huggingface/transformers": "^3.0.0",

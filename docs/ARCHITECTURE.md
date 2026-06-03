@@ -8,7 +8,7 @@ Keating is not just "an AI tutor." It is an attempt to make tutoring behavior in
 
 ## Design Split
 
-The project is intentionally divided into three layers:
+The project is intentionally divided into four layers:
 
 1. Pi runtime layer
    - supplies the Feynman-like shell, prompt templates, skills, and extension commands
@@ -28,6 +28,13 @@ The project is intentionally divided into three layers:
    - evolves prompt templates from natural-language feedback
    - records learner feedback and persistent traces
    - persists an explicit decision ledger for every candidate
+
+4. Agent runtime and serving layer
+   - keeps browser-compatible work local by default
+   - exposes the current runtime mode through `/api/agent-runtime/config`
+   - routes remote-only work through `/api/agent-runtime/remote/**` when a server or cloud backend is configured
+   - shares sandbox abstractions through `packages/browser-agent-runtime/`
+   - lets the browser and CLI converge on one capability model instead of growing separate tool stacks
 
 ## Borrowed Ideas
 
@@ -79,6 +86,28 @@ The project is intentionally divided into three layers:
 - `/trace [substring]` browses persisted benchmark and evolution traces.
 - `/improve` generates a code self-improvement proposal from benchmark weaknesses.
 - `/policy` exposes the currently active policy.
+
+The web surface also exposes an explicit agent runtime contract:
+
+- `keating web --browser-only-agent [port]` starts the free/local browser agent mode. Browser-compatible work runs on the learner's device. Remote-only work returns a fallback error.
+- `keating web --remote [port]` starts the same browser app with a configured remote sandbox endpoint for operations that need native binaries, durable compute, server-side secrets, public inbound networking, or isolation stronger than a browser worker.
+- `keating web --cloud [port]` routes those remote-only operations through the canonical Keating backend, `https://keating.help` unless `--cloud-endpoint` overrides it.
+- The browser agent calls `agent_runtime` to inspect capabilities before attempting sensitive work.
+- The browser agent calls `remote_execute` only when browser-local tools cannot satisfy the request.
+
+This keeps the free tier browser-only while making server-backed execution a deliberate serving choice instead of an implicit fallback.
+
+## Runtime Boundary
+
+`packages/browser-agent-runtime/` defines the shared vocabulary for local and remote execution:
+
+- sandboxes advertise capabilities instead of leaking implementation details into tools
+- local memory and future NodePod-backed sandboxes can snapshot and roll back self-modifying work
+- remote sandboxes can be selected when the local browser cannot satisfy a capability requirement
+- the Daytona-shaped facade lets a browser-hosted sandbox look like a remote workspace to agents that already understand Daytona-style filesystem and process calls
+- the RPC relay protocol gives NodePod, postMessage, WebSocket, or fetch transports the same operation envelope
+
+The boundary is intentionally small. Keating should add providers behind it, not spread provider-specific assumptions through the teaching tools.
 
 ## Visual Artifact Strategy
 

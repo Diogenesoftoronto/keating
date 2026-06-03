@@ -48,6 +48,9 @@ function ChatContent() {
     sessionSidebar,
     speechEnabled,
     persistentStorageStatus,
+    persistentBannerDismissed,
+    retryPersistentStorage,
+    dismissPersistentBanner,
     toggleSpeech,
     forkingSessionId,
     mobileSidebarOpen,
@@ -168,7 +171,7 @@ function ChatContent() {
 
   const actionButtonClass =
     "chat-action-button inline-flex shrink-0 items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50";
-  const showPersistenceBanner = persistentStorageStatus === "declined";
+  const showPersistenceBanner = persistentStorageStatus === "declined" && !persistentBannerDismissed;
 
   return (
     <div className={`chat-page-shell w-full flex flex-col bg-background text-foreground overflow-hidden ${forkingSessionId ? "session-forking" : ""}`}>
@@ -205,7 +208,7 @@ function ChatContent() {
         {/* Actions */}
         <div className="chat-actions ml-auto flex min-w-0 flex-1 items-center justify-end gap-1 overflow-hidden">
           <button
-            className={actionButtonClass}
+            className={`${actionButtonClass} hidden md:inline-flex`}
             title="New session"
             aria-label="New session"
             disabled={isPending}
@@ -397,10 +400,29 @@ function ChatContent() {
       </nav>
 
       {showPersistenceBanner && (
-        <div className="chat-persistence-banner shrink-0 border-b border-border">
-          <div className="chat-persistence-track px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.25em]">
-            <span>Session is not being persisted, all data will not be available outside of cache.</span>
-            <span aria-hidden="true">Session is not being persisted, all data will not be available outside of cache.</span>
+        <div className="shrink-0 border-b border-border bg-amber-500/10 px-3 py-2">
+          <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-700 dark:text-amber-300">
+              <span className="hidden sm:inline">Session is not being persisted — data may be cleared by the browser.</span>
+              <span className="sm:hidden">Not persisted — data may be lost.</span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                className="inline-flex h-6 items-center rounded bg-primary px-2 text-[10px] font-medium text-primary-foreground hover:bg-primary/90"
+                onClick={retryPersistentStorage}
+              >
+                Grant
+              </button>
+              <button
+                type="button"
+                className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                onClick={dismissPersistentBanner}
+                aria-label="Dismiss persistence warning"
+              >
+                <X size={12} />
+              </button>
+            </div>
           </div>
         </div>
       )}

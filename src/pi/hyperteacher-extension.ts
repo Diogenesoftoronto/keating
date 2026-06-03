@@ -33,7 +33,7 @@ import {
 import { KEATING_ASCII_LOGO, KEATING_SUBTITLE_LINES } from "../core/terminal.js";
 import { generateQuiz, quizToMarkdown, quizAnswerKeyToMarkdown } from "../core/quiz.js";
 
-const KEATING_VERSION = "0.3.13";
+const KEATING_VERSION = "1.1.0";
 const ANSI_RE = /\x1b\[[0-9;]*[a-zA-Z]/g;
 
 function visibleWidth(text: string): number {

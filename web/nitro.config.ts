@@ -32,6 +32,14 @@ export default defineNitroConfig({
       handler: "server/api/chat-proxy/[...slug].ts",
     },
     {
+      route: "/api/agent-runtime/config",
+      handler: "server/api/agent-runtime/config.ts",
+    },
+    {
+      route: "/api/agent-runtime/remote/**",
+      handler: "server/api/agent-runtime/remote/[...path].ts",
+    },
+    {
       route: "/api/share",
       handler: "server/api/share/index.ts",
     },

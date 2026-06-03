@@ -30,7 +30,7 @@ import {
 } from "../core/project.js";
 import type { ExportSource, FineTuneFormat } from "../core/export.js";
 import { detectAiRuntime, launchShell } from "../runtime/pi.js";
-import { serveWeb } from "./web.js";
+import { serveWeb, type ServeWebOptions, type WebAgentRuntimeMode } from "./web.js";
 import { serveWebMcp } from "../mcp/server.js";
 import { color, bold, cliCommands } from "../core/theme.js";
 import { printAsciiHeader } from "../core/terminal.js";
@@ -47,7 +47,7 @@ function printUsage(): void {
   console.log(`  ${color.primary}shell${color.reset}  [initial prompt...]  Launch the AI-powered hyperteacher shell`);
   console.log(`  ${color.primary}setup${color.reset}  [--yes]             Configure Keating for this project`);
   console.log(`  ${color.primary}doctor${color.reset}                    Inspect AI runtime and oxdraw availability`);
-  console.log(`  ${color.primary}web${color.reset}     [port]             Start a local server for the browser UI`);
+  console.log(`  ${color.primary}web${color.reset}     [port] [--browser-only-agent|--remote|--cloud]  Start the browser UI`);
   console.log(`  ${color.primary}webmcp${color.reset}  [port] [--host=127.0.0.1]  Expose Keating tools over MCP Streamable HTTP`);
   console.log(`  ${color.primary}policy${color.reset}                    Print the active teaching policy`);
   console.log(`  ${color.primary}trace${color.reset}   [substring]        Browse debug traces and artifacts`);
@@ -93,6 +93,62 @@ function optionValue(args: string[], name: string): string | undefined {
 
 function firstPositional(args: string[]): string | undefined {
   return args.find((arg) => !arg.startsWith("-"));
+}
+
+function firstWebPositional(args: string[]): string | undefined {
+  const optionsWithValues = new Set([
+    "--remote-provider",
+    "--remote-endpoint",
+    "--remote-region",
+    "--remote-snapshot",
+    "--remote-cpu",
+    "--remote-memory",
+    "--remote-disk",
+    "--cloud-endpoint"
+  ]);
+
+  for (let i = 0; i < args.length; i += 1) {
+    const arg = args[i];
+    if (!arg) continue;
+    if (optionsWithValues.has(arg)) {
+      i += 1;
+      continue;
+    }
+    if (arg.startsWith("--") && arg.includes("=")) continue;
+    if (!arg.startsWith("-")) return arg;
+  }
+  return undefined;
+}
+
+function parseWebCommand(args: string[]): { port: number; options: ServeWebOptions } {
+  const modes: WebAgentRuntimeMode[] = [];
+  if (args.includes("--browser-only-agent")) modes.push("browser-only");
+  if (args.includes("--remote")) modes.push("remote");
+  if (args.includes("--cloud")) modes.push("cloud");
+  if (modes.length > 1) {
+    throw new Error("Choose only one web agent mode: --browser-only-agent, --remote, or --cloud.");
+  }
+
+  const portArg = firstWebPositional(args);
+  const port = portArg ? parseInt(portArg, 10) : 3000;
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error(`Invalid port: "${portArg}". Must be an integer between 1 and 65535.`);
+  }
+
+  return {
+    port,
+    options: {
+      agentRuntimeMode: modes[0] ?? "browser-only",
+      remoteProvider: optionValue(args, "--remote-provider"),
+      remoteEndpoint: optionValue(args, "--remote-endpoint"),
+      remoteRegion: optionValue(args, "--remote-region"),
+      remoteSnapshot: optionValue(args, "--remote-snapshot"),
+      remoteCpu: optionValue(args, "--remote-cpu"),
+      remoteMemory: optionValue(args, "--remote-memory"),
+      remoteDisk: optionValue(args, "--remote-disk"),
+      cloudEndpoint: optionValue(args, "--cloud-endpoint")
+    }
+  };
 }
 
 function parseChoice<T extends string>(value: string | undefined, allowed: readonly T[], fallback: T, label: string): T {
@@ -286,11 +342,8 @@ async function run(): Promise<void> {
       return;
     }
     case "web": {
-      const port = args[0] ? parseInt(args[0], 10) : 3000;
-      if (!Number.isInteger(port) || port < 1 || port > 65535) {
-        throw new Error(`Invalid port: "${args[0]}". Must be an integer between 1 and 65535.`);
-      }
-      await serveWeb(port);
+      const { port, options } = parseWebCommand(args);
+      await serveWeb(port, options);
       return;
     }
     case "webmcp": {

@@ -140,7 +140,7 @@ export async function benchPolicyArtifact(
   const learnerState = await loadLearnerState(learnerStatePath(cwd));
   const feedback = summarizeFeedback(learnerState.feedback);
   const weights = applyFeedbackBias(feedback);
-  const result = await runBenchmarkSuite(cwd, policy, focusTopic, 20260401, 3, weights);
+  const result = await runBenchmarkSuite(cwd, policy, focusTopic, 20260401, 3, weights, learnerState);
   const slug = focusTopic ? slugify(focusTopic) : "core-suite";
   const { reportPath, tracePath } = await writeArtifactWithTrace(
     cwd, benchmarksDir(cwd), slug, benchmarkToMarkdown(result), "benchmark", result

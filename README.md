@@ -47,6 +47,11 @@ It is designed around five influences:
   - persistent learner state and feedback signals
 - Persisted traces that explain why benchmark runs and evolution candidates succeeded or failed.
 - A test suite with property checks, fuzz-style inputs, and an end-to-end acceptance pipeline.
+- A browser-first agent serving model with three explicit modes:
+  - `keating web --browser-only-agent` for the free/local default where supported agent work stays on the learner's device.
+  - `keating web --remote` for a self-hosted server that can proxy remote-only work to a configured microVM or sandbox endpoint.
+  - `keating web --cloud` for the canonical Keating Cloud backend at `https://keating.help`.
+- A shared browser agent runtime package under `packages/browser-agent-runtime/` with local memory sandboxes, capability routing, transactional snapshots, Daytona-shaped compatibility, a NodePod adapter seam, and an RPC relay protocol.
 
 ## Quick Start
 
@@ -56,7 +61,8 @@ Visit **[keating.help](https://keating.help)** to use Keating directly in your b
 - Your own API keys (stored locally)
 - Local model inference via WebGPU (Gemma 4 E4B)
 - Optional Gemini 3.1 Flash Live speech from the speaker button in the chat header
-- Full hyperteacher experience without installation
+- Browser-only agent execution by default for the free surface
+- Clear fallback errors when a task needs native binaries, server-side secrets, durable compute, public inbound networking, or microVM isolation
 
 ### From the Command Line
 
@@ -120,6 +126,32 @@ The executable form works too:
 ```bash
 ./bin/keating.js shell
 ```
+
+### Serving the Web Agent
+
+`keating web` serves the production Nitro build and now makes the agent runtime mode explicit.
+
+```bash
+# Free/local mode: browser-compatible work runs on the learner's device.
+keating web --browser-only-agent 3000
+
+# Self-hosted remote mode: local-first browser agent with remote-only work
+# proxied to your configured sandbox service.
+keating web --remote 3000 \
+  --remote-provider=microsandbox \
+  --remote-endpoint=http://127.0.0.1:8787 \
+  --remote-region=local \
+  --remote-snapshot=keating-base
+
+# Cloud mode: local-first browser agent with remote-only work routed
+# through the canonical Keating backend.
+keating web --cloud 3000
+keating web --cloud 3000 --cloud-endpoint=https://keating.help
+```
+
+The browser reads `/api/agent-runtime/config` on startup. In browser-only mode, `/api/agent-runtime/remote/**` is disabled and remote-only work returns a clear fallback. In remote and cloud modes, the browser agent gets an `agent_runtime` tool for capability discovery and a `remote_execute` tool that posts to the server-side proxy for work that cannot safely or practically happen in the browser.
+
+Browser-only mode is intentionally the free-tier default. It is lower-risk than running arbitrary code on a shared server because code runs on the user's own device, but it still cannot provide native binaries, Docker or microVM isolation, unrestricted host filesystem access, durable background jobs, public inbound networking, or server-brokered secrets. Those belong behind `--remote` or `--cloud`.
 
 ### Development
 
@@ -253,6 +285,7 @@ Detailed results are available in our latest study: `docs/study.typ`.
 - `src/pi/`: the compiled Pi extension entrypoint.
 - `pi/prompts/`: teaching prompt templates.
 - `pi/skills/`: teaching skills for the runtime.
+- `packages/browser-agent-runtime/`: shared browser/remote sandbox abstractions for local-first agents.
 - `docs/`: architecture, testing strategy, and diagrams.
 
 Key docs:
@@ -260,6 +293,8 @@ Key docs:
 - `docs/ARCHITECTURE.md`
 - `docs/OXDRAW-TUTORIAL.md`
 - `docs/VISUAL-ARCHITECTURE.md`
+- `docs/self-modifying-agent-architecture.md`
+- `docs/plans/storage-atproto-educator-tools.md`
 
 ## Design Notes
 
@@ -334,6 +369,8 @@ mise run trace -- derivative
 - Architecture overview: `docs/ARCHITECTURE.md`
 - Visual system architecture: `docs/VISUAL-ARCHITECTURE.md`
 - `oxdraw` authoring and rendering tutorial: `docs/OXDRAW-TUTORIAL.md`
+- Browser/remote self-modifying agent plan: `docs/self-modifying-agent-architecture.md`
+- Storage, AT Protocol, and educator-tools roadmap: `docs/plans/storage-atproto-educator-tools.md`
 
 Regenerate the checked-in docs SVGs with:
 

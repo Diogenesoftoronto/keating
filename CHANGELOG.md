@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-06-03
+
+### Added
+- Added OpenAI image-model support to the `generate_image` browser tool, with model, size, quality, mode, and diagram-kind controls plus browser-local SVG fallback.
+- Added richer local image-generation fallbacks for learning diagrams, including anatomy and comparison layouts suitable for antibody/minibinder lessons.
+- Added interactive quiz taking inside lesson-plan artifacts. Lesson plans now expose `Lesson` and `Quiz` modes, generate multiple-choice/multi-select/transfer checks from the saved plan, and can redo quizzes with more focus on missed sections.
+- Added provider filtering to the model chooser and compatibility entries for MiniMax M3 in MiniMax provider lists.
+- Added a Vite development proxy for `/api/agent-runtime/remote/**`, matching the Nitro remote-runtime route used by production builds.
+
+### Changed
+- Centralized real-learner benchmark scoring, deterministic synthetic teaching simulation, outcome thresholds, and real/synthetic blending in a shared browser-safe benchmark helper.
+- Improved blog and tutorial navigation with search/filtering, version-oriented update browsing, topic navigation, hover affordances, and mobile-safe control layouts.
+- Improved artifact browsing by removing redundant side-panel headings and moving close controls into the search row.
+- Improved chat copy affordances for assistant text, code blocks, reasoning, tool arguments, tool output, and generated image payloads.
+- Reasoning blocks now parse `<think>` / `<thinking>` tags, deduplicate repeated reasoning, and auto-collapse after a response completes.
+- Updated Keating packages to Pi `0.78.0` line packages where available.
+
+### Fixed
+- Fixed adaptive quiz scoring so skipped fallback questions are excluded from raw score, weighted score, denominator, percentage display, submission payloads, and persisted quiz stats.
+- Fixed benchmark blending so real and synthetic coefficients stay non-negative and sum to one as real learner data grows.
+- Fixed browser benchmark traces so real learner outcome counts and synthetic fallback state are persisted and reflected in benchmark artifacts.
+- Fixed chat send failures that could hide or fail to persist a user message when the provider threw before streaming began.
+- Fixed rendering of generated image/question/goal tags so tag-heavy messages no longer appear blank, misplaced, or duplicated.
+- Fixed raw model thinking tags leaking into assistant messages.
+- Fixed duplicate question text/header rendering and added collapsible question UI.
+- Fixed animation artifacts that previously displayed storyboard text without playable visual motion.
+- Removed redundant Keating and Features nav links.
+
+## [1.0.0] - 2026-06-02
+
+### Added
+- Added explicit web agent serving modes: `keating web --browser-only-agent`, `keating web --remote`, and `keating web --cloud`.
+- Added `/api/agent-runtime/config` so the browser can discover whether it is running in browser-only, remote, or Keating Cloud mode.
+- Added `/api/agent-runtime/remote/**` as the controlled proxy path for remote-only work in remote and cloud modes; browser-only mode intentionally returns a fallback error instead of silently executing on a server.
+- Added `agent_runtime` and `remote_execute` browser tools so the agent can inspect capabilities and hand off work that cannot run locally.
+- Added `packages/browser-agent-runtime/`, a shared local-first sandbox runtime package with memory sandboxes, capability routing, transactional snapshots, Daytona-shaped compatibility, a NodePod adapter seam, and an RPC relay protocol.
+- Added roadmap documentation for PDS/AT Protocol storage and educator tooling in `docs/plans/storage-atproto-educator-tools.md`.
+
+### Changed
+- Bumped Keating to the 1.0.0 major release line.
+- Made browser-only execution the documented free-tier default. Browser-compatible work stays on the learner's device, while native binaries, durable compute, public inbound networking, server-side secrets, unrestricted host filesystem access, and microVM isolation require remote or cloud mode.
+- Reframed the self-modifying-agent architecture around a shared runtime boundary so CLI, browser, NodePod, Daytona, microsandbox, and Keating Cloud can converge on one capability model.
+- Updated README and architecture docs to describe the new serving contract and remote/cloud fallback behavior.
+
+### Notes
+- The remote microVM provisioner is not yet implemented. The v1 release establishes the mode/config/proxy/tooling contract that Daytona, NodePod, microsandbox, or another backend can implement behind `/api/agent-runtime/remote/execute`.
+
 ## [0.3.13] - 2026-05-28
 
 ### Added
@@ -286,7 +333,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.12...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/Diogenesoftoronto/keating/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.13...v1.0.0
+[0.3.13]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.12...v0.3.13
 [0.3.12]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.11...v0.3.12
 [0.3.11]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.10...v0.3.11
 [0.3.10]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.9...v0.3.10

@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
+import type { Key, ReactNode } from "react";
 import type {
   Agent,
   AgentMessage,
@@ -36,6 +37,8 @@ import {
   ChevronRight,
   CircleAlert,
   CircleCheck,
+  Check,
+  Copy,
   CopyPlus,
   KeyRound,
   LibraryBig,
@@ -66,8 +69,10 @@ import { getProviderApiKey } from "../lib/provider-models";
 import { tutorialApiKeyHref } from "../lib/tutorial-links";
 import { QuizRenderer } from "./QuizRenderer";
 import { SceneRenderer } from "./SceneRenderer";
-import { QuestionRenderer } from "./QuestionRenderer";
-import type { QuestionData } from "./QuestionRenderer";
+import { QuestionRenderer, normalizeQuestionForm } from "./QuestionRenderer";
+import type { AnsweredQuestion, QuestionFormData } from "./QuestionRenderer";
+import { GoalRenderer } from "./GoalRenderer";
+import { normalizeGoal } from "../keating/goals";
 import type { Quiz } from "../keating/core";
 import { KEATING_VOICE_TOOL_NAME } from "../keating/speech";
 
@@ -706,6 +711,9 @@ function ArtifactChips({ text }: { text: string }) {
 const quizTagPattern = /<keating-quiz\s+json=([^>]+)\s*\/>/g;
 const sceneTagPattern = /<keating-scene\s+markdown=([^>]+)\s*\/>/g;
 const questionTagPattern = /<keating-question\s+json=([^>]+)\s*\/>/g;
+const goalTagPattern = /<keating-goal\s+json=([^>]+)\s*\/>/g;
+const generatedImageTagPattern = /<keating-image\s+json=([^>]+)\s*\/>/g;
+const interactiveTagPattern = /<keating-(quiz|scene|question|goal|image)\s+(json|markdown)=([^>]+)\s*\/>/g;
 const URL_IN_TEXT_PATTERN = /\bhttps?:\/\/[^\s<>"')\]]+/i;
 
 function parseInteractiveSegments(
@@ -715,47 +723,280 @@ function parseInteractiveSegments(
   | { type: "quiz"; json: string }
   | { type: "scene"; markdown: string }
  | { type: "question"; json: string }
+  | { type: "goal"; json: string }
+  | { type: "image"; json: string }
 > {
   const segments: ReturnType<typeof parseInteractiveSegments> = [];
   let lastIndex = 0;
 
-  // Try quiz tags first
-  for (const match of text.matchAll(quizTagPattern)) {
-    if (match.index !== undefined && match.index > lastIndex) {
-      segments.push({
-        type: "text",
-        content: text.slice(lastIndex, match.index),
-      });
+  for (const match of text.matchAll(interactiveTagPattern)) {
+    const index = match.index ?? 0;
+    if (index > lastIndex) {
+      segments.push({ type: "text", content: text.slice(lastIndex, index) });
     }
-    segments.push({ type: "quiz", json: match[1] });
-    lastIndex = match.index + match[0].length;
-  }
 
-  // Then scene tags on remaining text
-  let sceneText = text.slice(lastIndex);
-  let sceneLast = 0;
-  for (const match of sceneText.matchAll(sceneTagPattern)) {
-    if (match.index !== undefined && match.index > sceneLast) {
-      segments.push({
-        type: "text",
-        content: sceneText.slice(sceneLast, match.index),
-      });
+    const tag = match[1];
+    const payload = match[3];
+    if (tag === "quiz") segments.push({ type: "quiz", json: payload });
+    if (tag === "scene") {
+      let markdown = payload;
+      try {
+        markdown = JSON.parse(payload);
+      } catch {
+        // Older tags may already carry raw markdown.
+      }
+      segments.push({ type: "scene", markdown });
     }
-    segments.push({ type: "scene", markdown: JSON.parse(match[1]) });
-    sceneLast = match.index + match[0].length;
-  }
-  if (sceneLast < sceneText.length) {
-    segments.push({ type: "text", content: sceneText.slice(sceneLast) });
+    if (tag === "question") segments.push({ type: "question", json: payload });
+    if (tag === "goal") segments.push({ type: "goal", json: payload });
+    if (tag === "image") segments.push({ type: "image", json: payload });
+    lastIndex = index + match[0].length;
   }
 
- // Question tags — always scan the original text so questions are found
- // even when quiz/scene tags already produced segments above.
- for (const match of text.matchAll(questionTagPattern)) {
- segments.push({ type: "question", json: match[1] });
- }
-
+  if (lastIndex < text.length) {
+    segments.push({ type: "text", content: text.slice(lastIndex) });
+  }
   if (segments.length === 0) segments.push({ type: "text", content: text });
   return segments;
+}
+
+function stripQuestionTags(text: string): string {
+  return text.replace(questionTagPattern, "").trim();
+}
+
+function stripGoalTags(text: string): string {
+  return text.replace(goalTagPattern, "").trim();
+}
+
+function stripGeneratedImageTags(text: string): string {
+  return text.replace(generatedImageTagPattern, "").trim();
+}
+
+function extractQuestionPayload(text: string): string | null {
+  const matches = Array.from(text.matchAll(questionTagPattern));
+  return matches.length > 0 ? matches[matches.length - 1][1] : null;
+}
+
+function parseQuestionPayload(payload: string): QuestionFormData | null {
+  try {
+    const parsed = JSON.parse(payload);
+    return normalizeQuestionForm(typeof parsed === "string" ? JSON.parse(parsed) : parsed);
+  } catch {
+    return null;
+  }
+}
+
+/** Scan messages backward and return the most recent unanswered question form. */
+function extractActiveQuestion(messages: AgentMessage[]): QuestionFormData | null {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i] as any;
+    if (msg.role === "user") return null;
+    if (msg.role !== "assistant") continue;
+    if (!Array.isArray(msg.content)) continue;
+    for (const part of msg.content) {
+      if (part?.type === "text" && typeof part.text === "string") {
+        const payload = extractQuestionPayload(part.text);
+        if (payload) {
+          const form = parseQuestionPayload(payload);
+          if (form) return form;
+        }
+      }
+      if (part?.type === "toolCall" && part.__toolResult !== undefined) {
+        let toolText = "";
+        if (typeof part.__toolResult === "string") {
+          toolText = part.__toolResult;
+        } else if (Array.isArray(part.__toolResult)) {
+          toolText = part.__toolResult
+            .map((p: any) => (p?.type === "text" && typeof p.text === "string" ? p.text : ""))
+            .filter(Boolean)
+            .join("\n");
+        }
+        if (toolText) {
+          const payload = extractQuestionPayload(toolText);
+          if (payload) {
+            const form = parseQuestionPayload(payload);
+            if (form) return form;
+          }
+        }
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Render a single interactive segment (quiz/scene/question/goal) to its live
+ * component. Returns null for plain-text segments and for unparseable payloads.
+ * Shared by MarkdownText (assistant text) and ToolPart (tool results) so the
+ * cards render no matter which message channel carries the tag.
+ */
+function renderInteractiveSegment(
+  seg: ReturnType<typeof parseInteractiveSegments>[number],
+  key: Key,
+): ReactNode | null {
+  if (seg.type === "quiz") {
+    try {
+      const parsed = JSON.parse(JSON.parse(seg.json)) as Quiz;
+      return (
+        <QuizRenderer
+          key={key}
+          quiz={parsed}
+          onSubmit={(result) => {
+            window.dispatchEvent(
+              new CustomEvent("keating:quiz-submitted", {
+                detail: {
+                  quizId: parsed.slug,
+                  topic: parsed.topic,
+                  total: parsed.questions.length,
+                  questions: parsed.questions.map((q) => ({
+                    id: q.id,
+                    question: q.question,
+                    correctAnswer: q.correctAnswer,
+                    type: q.type,
+                  })),
+                  answers: result.answers,
+                  score: result.score,
+                  weightedScore: result.weightedScore,
+                  confidence: result.confidence,
+                  partialCredits: result.partialCredits,
+                  flagged: result.flagged,
+                  timing: result.timing,
+                },
+              }),
+            );
+          }}
+        />
+      );
+    } catch {
+      return null;
+    }
+  }
+  if (seg.type === "scene") {
+    return <SceneRenderer key={key} storyboard={seg.markdown} />;
+  }
+  if (seg.type === "question") {
+    try {
+      const form = normalizeQuestionForm(JSON.parse(JSON.parse(seg.json)));
+      if (!form) return null;
+      return (
+        <QuestionRenderer
+          key={key}
+          data={form}
+          onSubmit={(answers) => {
+            window.dispatchEvent(
+              new CustomEvent("keating:question-answered", { detail: { answers } }),
+            );
+          }}
+        />
+      );
+    } catch {
+      return null;
+    }
+  }
+  if (seg.type === "goal") {
+    try {
+      const goal = normalizeGoal(JSON.parse(JSON.parse(seg.json)));
+      if (!goal) return null;
+      return <GoalRenderer key={key} goal={goal} />;
+    } catch {
+      return null;
+    }
+  }
+  if (seg.type === "image") {
+    return <GeneratedImageCard key={key} payload={seg.json} />;
+  }
+  return null;
+}
+
+/** Extract only the interactive cards from a block of text (e.g. a tool result). */
+function extractInteractiveCards(text: string): ReactNode[] {
+  const cards: ReactNode[] = [];
+  parseInteractiveSegments(text).forEach((seg, i) => {
+    if (seg.type === "question") return;
+    const card = renderInteractiveSegment(seg, `card-${i}`);
+    if (card !== null) cards.push(card);
+  });
+  return cards;
+}
+
+function CopyButton({
+  text,
+  label = "Copy",
+  className = "",
+}: {
+  text: string;
+  label?: string;
+  className?: string;
+}) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1400);
+    } catch (error) {
+      console.warn("Copy failed:", error);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      className={`inline-flex h-7 items-center gap-1 rounded-md border border-border bg-background/85 px-2 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground ${className}`}
+      aria-label={label}
+      title={label}
+    >
+      {copied ? <Check size={12} /> : <Copy size={12} />}
+      {copied ? "Copied" : label}
+    </button>
+  );
+}
+
+function copyTextFromReactNode(node: ReactNode): string {
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(copyTextFromReactNode).join("");
+  if (node && typeof node === "object" && "props" in node) {
+    return copyTextFromReactNode((node as { props?: { children?: ReactNode } }).props?.children);
+  }
+  return "";
+}
+
+function GeneratedImageCard({ payload }: { payload: string }) {
+  let data: { title?: string; alt?: string; svg?: string; dataUrl?: string; mimeType?: string; model?: string; prompt?: string } | null = null;
+  try {
+    const parsed = JSON.parse(payload);
+    data = typeof parsed === "string" ? JSON.parse(parsed) : parsed;
+  } catch {
+    data = null;
+  }
+
+  if (!data?.svg && !data?.dataUrl) return null;
+
+  const src = data.dataUrl ?? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(data.svg ?? "")}`;
+  const copyText = data.svg ?? data.dataUrl ?? "";
+  return (
+    <figure className="my-3 overflow-hidden rounded-lg border border-border bg-background">
+      <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
+        <div className="min-w-0">
+          <figcaption className="truncate text-xs font-medium text-foreground">
+            {data.title ?? "Generated learning image"}
+          </figcaption>
+          {data.model && (
+            <div className="truncate font-terminal text-[10px] text-muted-foreground">
+              {data.model}
+            </div>
+          )}
+        </div>
+        <CopyButton text={copyText} label={data.svg ? "Copy SVG" : "Copy image"} />
+      </div>
+      <img
+        src={src}
+        alt={data.alt ?? data.title ?? "Generated learning image"}
+        className="w-full bg-white"
+      />
+    </figure>
+  );
 }
 
 function MarkdownText({
@@ -765,55 +1006,24 @@ function MarkdownText({
   text: string;
   isRunning?: boolean;
 }) {
-  const cleanText = stripArtifactLinks(text);
-  const segments = parseInteractiveSegments(cleanText);
+  const displayText = stripArtifactLinks(text);
+  const copyText = stripGeneratedImageTags(stripQuestionTags(stripGoalTags(displayText)));
+  const segments = parseInteractiveSegments(displayText).filter(
+    (s) => s.type !== "question",
+  );
   return (
-    <div className="break-words text-sm leading-6">
+    <div className="group/text-block relative break-words text-sm leading-6">
+      {text.trim() && (
+        <CopyButton
+          text={copyText}
+          label="Copy"
+          className="absolute right-0 top-0 z-10 opacity-0 group-hover/text-block:opacity-100 focus:opacity-100"
+        />
+      )}
       <ArtifactChips text={text} />
       {segments.map((seg, i) => {
-        if (seg.type === "quiz") {
-          try {
-            const parsed = JSON.parse(JSON.parse(seg.json)) as Quiz;
-            return (
-              <QuizRenderer
-                key={i}
-                quiz={parsed}
-                onSubmit={(answers, score) => {
-                  window.dispatchEvent(
-                    new CustomEvent("keating:quiz-submitted", {
-                      detail: { quizId: parsed.slug, answers, score },
-                    }),
-                  );
-                }}
-              />
-            );
-          } catch {
-            return null;
-          }
-        }
-        if (seg.type === "scene") {
-          return <SceneRenderer key={i} storyboard={seg.markdown} />;
-        }
- if (seg.type === "question") {
- try {
- const parsed = JSON.parse(seg.json) as QuestionData;
- return (
- <QuestionRenderer
- key={i}
- data={parsed}
- onAnswer={(answer) => {
- window.dispatchEvent(
- new CustomEvent("keating:question-answered", {
- detail: { question: parsed.question, answer },
- }),
- );
- }}
- />
- );
- } catch {
- return null;
- }
- }
+        const card = renderInteractiveSegment(seg, i);
+        if (card !== null) return card;
         return (
           <ReactMarkdown
             key={i}
@@ -822,9 +1032,16 @@ function MarkdownText({
             components={{
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               pre: ({ children }: any) => (
-                <pre className="overflow-x-auto rounded-md bg-muted p-3 text-xs">
-                  {children}
-                </pre>
+                <div className="group/code relative my-2">
+                  <pre className="overflow-x-auto rounded-md bg-muted p-3 pr-20 text-xs">
+                    {children}
+                  </pre>
+                  <CopyButton
+                    text={copyTextFromReactNode(children).replace(/\n$/, "")}
+                    label="Copy code"
+                    className="absolute right-2 top-2 opacity-0 group-hover/code:opacity-100 focus:opacity-100"
+                  />
+                </div>
               ),
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               code: ({ className, children, ...props }: any) => {
@@ -929,16 +1146,39 @@ function MarkdownText({
   );
 }
 
-function ReasoningPart({ text }: { text: string }) {
-  const [open, setOpen] = useState(true);
+function ReasoningPart({
+  text,
+  status,
+}: {
+  text: string;
+  status?: { type: string };
+}) {
+  const [open, setOpen] = useState(() => status?.type === "running");
+  const userToggledRef = useRef(false);
+
+  useEffect(() => {
+    if (status?.type === "running") {
+      userToggledRef.current = false;
+      setOpen(true);
+      return;
+    }
+    if (!userToggledRef.current) setOpen(false);
+  }, [status?.type]);
+
   if (!text.trim()) return null;
   return (
     <details
       open={open}
-      onToggle={(event) => setOpen(event.currentTarget.open)}
+      onToggle={(event) => {
+        userToggledRef.current = true;
+        setOpen(event.currentTarget.open);
+      }}
       className="mb-3 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
     >
-      <summary className="cursor-pointer font-medium">Reasoning</summary>
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 font-medium">
+        <span>Reasoning</span>
+        <CopyButton text={text} label="Copy" />
+      </summary>
       <div className="mt-2 whitespace-pre-wrap">{text}</div>
     </details>
   );
@@ -981,6 +1221,16 @@ function ToolPart({
   const resultText = formatToolResult(result);
   const state =
     result === undefined ? "running" : isError ? "error" : "success";
+
+  // Tools emit interactive cards (ask_user_question, quiz, goal, animation) as
+  // tags in their result text. Render those as live components — always visible,
+  // independent of the "Show tool details" toggle.
+  const interactiveCards =
+    state === "success" ? extractInteractiveCards(resultText) : [];
+  if (interactiveCards.length > 0) {
+    return <div className="w-full">{interactiveCards}</div>;
+  }
+
   const stateClass =
     state === "error"
       ? "border-destructive/60 bg-destructive/10 text-destructive"
@@ -1016,9 +1266,12 @@ function ToolPart({
       args !== undefined &&
       Object.keys(args as Record<string, unknown>).length > 0 ? (
         <details className="mt-2 text-foreground/80">
-          <summary className="flex cursor-pointer list-none items-center gap-1">
-            <ChevronRight size={13} />
-            Arguments
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-2">
+            <span className="inline-flex items-center gap-1">
+              <ChevronRight size={13} />
+              Arguments
+            </span>
+            <CopyButton text={JSON.stringify(args, null, 2)} label="Copy" />
           </summary>
           <pre className="mt-2 overflow-x-auto whitespace-pre-wrap text-muted-foreground">
             {JSON.stringify(args, null, 2)}
@@ -1035,6 +1288,9 @@ function ToolPart({
         </div>
       ) : showDetails && resultText ? (
         <div className="mt-2 text-foreground">
+          <div className="mb-1 flex justify-end">
+            <CopyButton text={resultText} label="Copy output" />
+          </div>
           <pre className="max-h-44 overflow-auto whitespace-pre-wrap font-mono leading-5">
             {resultText}
           </pre>
@@ -1300,6 +1556,99 @@ function visibleAgentMessages(agent: Agent | null, speechEnabled: boolean): Agen
  );
 }
 
+type AssistantTextPart =
+  | { type: "text"; text: string }
+  | { type: "reasoning"; text: string };
+
+const THINK_TAG_PATTERN = /<\/?think(?:ing)?>/gi;
+
+function normalizeReasoningText(text: string): string {
+  return text.replace(/\s+/g, " ").trim();
+}
+
+function normalizeAssistantContentParts(parts: any[]): any[] {
+  const normalized: any[] = [];
+
+  for (const part of parts) {
+    if (part.type !== "reasoning") {
+      normalized.push(part);
+      continue;
+    }
+
+    const text = part.text ?? "";
+    const key = normalizeReasoningText(text);
+    if (!key) continue;
+
+    const last = normalized.at(-1);
+    if (last?.type === "reasoning") {
+      const lastText = last.text ?? "";
+      const lastKey = normalizeReasoningText(lastText);
+      if (lastKey === key) continue;
+      if (lastKey.includes(key)) continue;
+      if (key.includes(lastKey)) {
+        last.text = text;
+        continue;
+      }
+      last.text = `${lastText.trim()}\n\n${text.trim()}`;
+      continue;
+    }
+
+    const duplicateIndex = normalized.findIndex((candidate) => {
+      if (candidate.type !== "reasoning") return false;
+      const candidateKey = normalizeReasoningText(candidate.text ?? "");
+      return candidateKey === key || candidateKey.includes(key) || key.includes(candidateKey);
+    });
+    if (duplicateIndex !== -1) {
+      const duplicate = normalized[duplicateIndex];
+      const duplicateKey = normalizeReasoningText(duplicate.text ?? "");
+      if (key.length > duplicateKey.length) duplicate.text = text;
+      continue;
+    }
+
+    normalized.push(part);
+  }
+
+  return normalized;
+}
+
+function assistantTextParts(text: string): AssistantTextPart[] {
+  if (!text) return [{ type: "text", text: "" }];
+  const parts: AssistantTextPart[] = [];
+  let cursor = 0;
+  let reasoningStart: number | null = null;
+
+  for (const match of text.matchAll(THINK_TAG_PATTERN)) {
+    const tag = match[0].toLowerCase();
+    const tagIndex = match.index ?? 0;
+    if (!tag.startsWith("</")) {
+      if (reasoningStart === null) {
+        const visible = text.slice(cursor, tagIndex);
+        if (visible) parts.push({ type: "text", text: visible });
+        reasoningStart = tagIndex + match[0].length;
+        cursor = reasoningStart;
+      }
+      continue;
+    }
+
+    if (reasoningStart !== null) {
+      const reasoning = text.slice(reasoningStart, tagIndex);
+      if (reasoning.trim()) parts.push({ type: "reasoning", text: reasoning });
+      cursor = tagIndex + match[0].length;
+      reasoningStart = null;
+    }
+  }
+
+  if (reasoningStart !== null) {
+    const reasoning = text.slice(reasoningStart);
+    if (reasoning.trim()) parts.push({ type: "reasoning", text: reasoning });
+    return parts.length > 0 ? parts : [{ type: "text", text: "" }];
+  }
+
+  const tail = text.slice(cursor);
+  if (tail) parts.push({ type: "text", text: tail });
+  return parts.length > 0 ? parts : [{ type: "text", text: "" }];
+}
+
 function toAssistantMessage(
   message: AgentMessage,
   index: number,
@@ -1333,12 +1682,12 @@ function toAssistantMessage(
         : { type: "complete" as const, reason: "stop" as const };
 
   if (msg.role === "assistant") {
-    const content = Array.isArray(msg.content)
-      ? msg.content.map((part: any) => {
+    const content = normalizeAssistantContentParts(Array.isArray(msg.content)
+      ? msg.content.flatMap((part: any) => {
           if (part?.type === "thinking")
-            return { type: "reasoning" as const, text: part.thinking ?? "" };
+            return [{ type: "reasoning" as const, text: part.thinking ?? "" }];
           if (part?.type === "toolCall") {
-            return {
+            return [{
               type: "tool-call" as const,
               toolCallId: part.id ?? `tool-${index}`,
               toolName: part.name ?? "tool",
@@ -1346,11 +1695,11 @@ function toAssistantMessage(
               argsText: JSON.stringify(part.arguments ?? {}),
               result: part.__toolResult ?? part.__toolDetails,
               isError: part.__toolError,
-            };
+            }];
           }
-          return { type: "text" as const, text: part?.text ?? "" };
+          return assistantTextParts(part?.text ?? "");
         })
-      : [{ type: "text" as const, text: textFromContent(msg.content) }];
+      : assistantTextParts(textFromContent(msg.content)));
 
     const id = `assistant-${index}-${msg.timestamp ?? ""}`;
 
@@ -1417,9 +1766,26 @@ function makeUserMessageFromAppend(message: AppendMessage): AgentMessage | null 
   } as AgentMessage;
 }
 
-function makeAttachmentErrorMessage(agent: Agent, errorMessage: string): AgentMessage {
+function makeUserTextMessage(text: string): AgentMessage {
   return {
-    role: "assistant",
+    role: "user",
+    content: [{ type: "text", text }],
+    timestamp: Date.now(),
+  } as AgentMessage;
+}
+
+function hasUserTextMessage(messages: AgentMessage[], text: string): boolean {
+  const normalized = text.trim();
+  return messages.some((message) => {
+    const msg = message as any;
+    if (msg.role !== "user" && msg.role !== "user-with-attachments") return false;
+    return textFromContent(msg.content).trim() === normalized;
+  });
+}
+
+function makeAttachmentErrorMessage(agent: Agent, errorMessage: string): AgentMessage {
+	return {
+		role: "assistant",
     content: [],
     api: agent.state.model.api,
     provider: agent.state.model.provider,
@@ -1441,12 +1807,26 @@ function makeAttachmentErrorMessage(agent: Agent, errorMessage: string): AgentMe
     stopReason: "error",
     errorMessage,
     timestamp: Date.now(),
-  } as AgentMessage;
+	} as AgentMessage;
+}
+
+function errorMessageText(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
+}
+
+function makePromptErrorMessage(agent: Agent, error: unknown): AgentMessage {
+  return makeAttachmentErrorMessage(agent, errorMessageText(error));
 }
 
 function makePrefillStatusMessage(agent: Agent, step: number): AgentMessage {
-  return {
-    role: "assistant",
+	return {
+		role: "assistant",
     content: [
       {
         type: "text",
@@ -1744,6 +2124,10 @@ function AssistantThread({
     },
     [agent, version, localVersion, speechEnabled, isRunning, loadingStep],
   );
+  const activeQuestion = useMemo(
+    () => extractActiveQuestion(messages),
+    [messages],
+  );
   const components = useMemo(
     () =>
       messagePartComponents(uiSettings.showToolUi, uiSettings.showRawErrors),
@@ -1762,6 +2146,7 @@ function AssistantThread({
   const sendText = useCallback(
     async (text: string) => {
       if (!agent || !text.trim()) return;
+      if (agent.state.isStreaming) return;
       const provider = agent.state.model.provider;
       if (
         callbacks.onApiKeyRequired &&
@@ -1770,7 +2155,17 @@ function AssistantThread({
         return;
       await callbacks.onBeforeSend?.();
       setComposerHasUrl(false);
-      await agent.prompt(text);
+      try {
+        await agent.prompt(text);
+      } catch (error) {
+        console.error("Keating send failed before the model stream started:", error);
+        if (!hasUserTextMessage(agent.state.messages, text)) {
+          agent.state.messages.push(makeUserTextMessage(text));
+        }
+        agent.state.messages.push(makePromptErrorMessage(agent, error));
+        setLocalVersion((current) => current + 1);
+        await callbacks.onLocalMessagesChanged?.();
+      }
     },
     [agent, callbacks],
   );
@@ -1780,6 +2175,7 @@ function AssistantThread({
       if (!agent) return;
       const userMessage = makeUserMessageFromAppend(message);
       if (!userMessage) return;
+      if (agent.state.isStreaming) return;
 
       const content = (userMessage as any).content;
       const hasImage =
@@ -1794,6 +2190,7 @@ function AssistantThread({
           ),
         );
         setLocalVersion((current) => current + 1);
+        await callbacks.onLocalMessagesChanged?.();
         return;
       }
 
@@ -1805,7 +2202,18 @@ function AssistantThread({
         return;
       await callbacks.onBeforeSend?.();
       setComposerHasUrl(false);
-      await agent.prompt(userMessage);
+      try {
+        await agent.prompt(userMessage);
+      } catch (error) {
+        console.error("Keating send failed before the model stream started:", error);
+        const userText = textFromContent((userMessage as any).content);
+        if (!userText || !hasUserTextMessage(agent.state.messages, userText)) {
+          agent.state.messages.push(userMessage);
+        }
+        agent.state.messages.push(makePromptErrorMessage(agent, error));
+        setLocalVersion((current) => current + 1);
+        await callbacks.onLocalMessagesChanged?.();
+      }
     },
     [agent, callbacks],
   );
@@ -1813,6 +2221,144 @@ function AssistantThread({
   const onCancel = useCallback(async () => {
     agent?.abort();
   }, [agent]);
+
+  // When the learner submits an ask_user_question form, feed their answers back
+  // into the conversation as a user turn so the agent actually receives them.
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent).detail as
+        | { answers?: AnsweredQuestion[] }
+        | undefined;
+      const answers = detail?.answers;
+      if (!agent || !answers || answers.length === 0) return;
+      const text =
+        answers.length === 1 && !answers[0].header
+          ? answers[0].answer
+          : answers
+              .map(
+                (a) =>
+                  `- ${a.header ? `${a.header} — ` : ""}${a.question}: ${a.answer}`,
+              )
+              .join("\n");
+      void onNew({
+        role: "user",
+        content: [{ type: "text", text }],
+      } as unknown as AppendMessage);
+    };
+    window.addEventListener("keating:question-answered", handler);
+    return () => window.removeEventListener("keating:question-answered", handler);
+  }, [agent, onNew]);
+
+  // When the learner finishes a quiz, report their score, timing, confidence,
+  // partial credits, and flagged questions back to the agent.
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent).detail as
+        | {
+            topic?: string;
+            total?: number;
+            score?: number;
+            weightedScore?: number;
+            confidence?: Record<string, number>;
+            partialCredits?: Record<string, number>;
+            flagged?: string[];
+            timing?: { totalMs: number; perQuestionMs: Record<string, number> };
+            questions?: Array<{ id: string; question: string; correctAnswer: string; type?: string }>;
+            answers?: Record<string, string>;
+          }
+        | undefined;
+      if (!agent || !detail || typeof detail.score !== "number") return;
+      const total = detail.total ?? 0;
+      const seconds = detail.timing ? Math.round(detail.timing.totalMs / 1000) : null;
+      const lines: string[] = [
+        `I finished the quiz${detail.topic ? ` on "${detail.topic}"` : ""}.`,
+        `Score: ${detail.score}/${total}${seconds !== null ? ` in ${seconds}s` : ""}.`,
+      ];
+      if (typeof detail.weightedScore === "number") {
+        lines.push(`Weighted score: ${detail.weightedScore.toFixed(2)}.`);
+      }
+      if (detail.questions && detail.answers && detail.timing) {
+        const perQ = detail.timing.perQuestionMs;
+        for (const q of detail.questions) {
+          const mine = (detail.answers[q.id] ?? "").trim();
+          const correct = mine.toLowerCase() === q.correctAnswer.trim().toLowerCase();
+          const pc = detail.partialCredits?.[q.id];
+          const conf = detail.confidence?.[q.id];
+          const parts: string[] = [
+            `- ${q.question} → my answer: "${mine || "(blank)"}" ${correct ? "✓" : "✗"}`,
+          ];
+          if (typeof pc === "number" && !correct) {
+            parts.push(`(partial credit: ${Math.round(pc * 100)}%)`);
+          }
+          if (typeof conf === "number") {
+            parts.push(`[confidence: ${conf}%]`);
+          }
+          const t = perQ[q.id] ? ` (${Math.round(perQ[q.id] / 1000)}s)` : "";
+          parts.push(t);
+          lines.push(parts.join(" "));
+        }
+      }
+      if (detail.flagged && detail.flagged.length > 0) {
+        lines.push(`Bookmarked ${detail.flagged.length} question${detail.flagged.length > 1 ? "s" : ""} for review.`);
+      }
+      const lowConfidence = Object.entries(detail.confidence ?? {})
+        .filter(([, v]) => v < 70)
+        .map(([id]) => detail.questions?.find((q) => q.id === id)?.question)
+        .filter(Boolean);
+      if (lowConfidence.length > 0) {
+        lines.push(`Low confidence on: ${lowConfidence.join("; ")}.`);
+      }
+      lines.push("Please review my answers and timing, then guide what to work on next.");
+      void onNew({
+        role: "user",
+        content: [{ type: "text", text: lines.join("\n") }],
+      } as unknown as AppendMessage);
+    };
+    window.addEventListener("keating:quiz-submitted", handler);
+    return () => window.removeEventListener("keating:quiz-submitted", handler);
+  }, [agent, onNew]);
+
+  // Handle quiz remediation requests: learner clicked "Review" on a missed Bloom's level.
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent).detail as
+        | { level?: string; topic?: string; slug?: string }
+        | undefined;
+      if (!detail?.level) return;
+      void onNew({
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: `I need help with "${detail.level}" level questions on "${detail.topic || detail.slug || "this topic"}". Please generate targeted review material for this area.`,
+          },
+        ],
+      } as unknown as AppendMessage);
+    };
+    window.addEventListener("keating:quiz-remediation-requested", handler);
+    return () => window.removeEventListener("keating:quiz-remediation-requested", handler);
+  }, [onNew]);
+
+  // Handle quiz reframe requests: learner selected a reframe mode with no pre-generated text.
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent).detail as
+        | { questionId?: string; mode?: string; topic?: string }
+        | undefined;
+      if (!detail?.mode || !detail?.questionId) return;
+      void onNew({
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: `Please reframe question "${detail.questionId}" in "${detail.mode}" mode for "${detail.topic || "this topic"}".`,
+          },
+        ],
+      } as unknown as AppendMessage);
+    };
+    window.addEventListener("keating:quiz-reframe-requested", handler);
+    return () => window.removeEventListener("keating:quiz-reframe-requested", handler);
+  }, [onNew]);
 
   const storeAdapter = useMemo(
     () => ({
@@ -1903,6 +2449,20 @@ function AssistantThread({
               <ThreadPrimitive.Messages components={threadComponents} />
             </div>
             <ThreadPrimitive.ViewportFooter className="sticky bottom-0 min-w-0 bg-background/95 pt-3 backdrop-blur">
+              {activeQuestion && (
+                <div className="mx-auto mb-2 w-[calc(100%-6px)] max-w-3xl sm:w-full">
+                  <QuestionRenderer
+                    data={activeQuestion}
+                    onSubmit={(answers) => {
+                      window.dispatchEvent(
+                        new CustomEvent("keating:question-answered", {
+                          detail: { answers },
+                        }),
+                      );
+                    }}
+                  />
+                </div>
+              )}
               <ComposerPrimitive.Root className="composer-root mx-auto flex w-[calc(100%-6px)] max-w-3xl flex-col gap-2 rounded-lg border border-border bg-background p-2 shadow-sm sm:w-full">
                 <WebGroundingHint
                   hasUrl={composerHasUrl}

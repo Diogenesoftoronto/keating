@@ -3,6 +3,16 @@
  * Ports src/core/*.ts for browser use without Node.js dependencies
  */
 
+import {
+	MIN_REAL_OUTCOMES,
+	blendRealSyntheticScore,
+	computeRealOutcomeScore,
+	feedbackToOutcomeScore,
+	hasEnoughRealData,
+	simulateDeterministicTeaching,
+	type ScoreableLearnerOutcome,
+} from "../../../src/core/benchmark-real.js";
+
 // ============================================================================
 // Types (from src/core/types.ts)
 // ============================================================================
@@ -126,7 +136,38 @@ export interface BenchmarkResult {
 	topicBenchmarks: TopicBenchmark[];
 	overallScore: number;
 	weakestTopic: string;
-	trace?: any;
+	trace: BenchmarkTrace;
+}
+
+export interface BenchmarkTrace {
+	seed: number;
+	learnerCountPerTopic: number;
+	topicTraces: BenchmarkTopicTrace[];
+	realOutcomeCount: number;
+	syntheticFallback: boolean;
+}
+
+export interface BenchmarkTopicTrace {
+	topic: string;
+	topLearners: Array<{
+		learnerId: string;
+		score: number;
+		explanation: string[];
+	}>;
+	strugglingLearners: Array<{
+		learnerId: string;
+		score: number;
+		explanation: string[];
+	}>;
+	metricMeans: {
+		masteryGain: number;
+		retention: number;
+		engagement: number;
+		transfer: number;
+		confusion: number;
+	};
+	dominantStrength: string;
+	dominantWeakness: string;
 }
 
 export interface EvolutionCandidate {
@@ -685,70 +726,7 @@ export function simulateTeaching(
 	learner: LearnerProfile,
 	weights: SimulationWeights = DEFAULT_WEIGHTS
 ): TeachingSimulation {
-	const intuitionFit = 1 - Math.abs(policy.analogyDensity - learner.analogyNeed);
-	const rigorTarget = clamp((topic.formalism + learner.abstractionComfort) / 2);
-	const rigorFit = 1 - Math.abs(policy.formalism - rigorTarget);
-	const dialogueFit = 1 - Math.abs(policy.socraticRatio - learner.dialoguePreference);
-	const diagramTarget = topic.visualizable ? learner.diagramAffinity : 0.2;
-	const diagramFit = 1 - Math.abs(policy.diagramBias - diagramTarget);
-	const practiceNeed = clamp(1 - learner.priorKnowledge + learner.anxiety * 0.2);
-	const practiceFit = 1 - Math.abs(policy.exerciseCount / 5 - practiceNeed);
-	const reflectionFit = 1 - Math.abs(policy.reflectionBias - learner.transferDesire);
-	const overload = clamp(
-		policy.formalism * 0.35 +
-			(policy.exerciseCount / 5) * 0.15 +
-			policy.challengeRate * 0.3 -
-			learner.persistence * 0.2 +
-			learner.anxiety * 0.25 -
-			learner.priorKnowledge * 0.15
-	);
-
-	const masteryGain = clamp(
-		0.14 + intuitionFit * 0.18 + rigorFit * 0.2 + dialogueFit * 0.12 + diagramFit * 0.09 + practiceFit * 0.12 + (1 - overload) * 0.18
-	);
-	const retention = clamp(masteryGain * (0.55 + policy.retrievalPractice * 0.45));
-	const engagement = clamp(
-		0.12 + intuitionFit * 0.16 + dialogueFit * 0.16 + diagramFit * 0.1 + reflectionFit * 0.14 + (1 - overload) * 0.18
-	);
-	const transfer = clamp(retention * (0.55 + policy.interdisciplinaryBias * 0.25 + learner.transferDesire * 0.2));
-	const confusion = clamp(
-		0.04 +
-			overload * 0.55 +
-			Math.abs(policy.formalism - learner.abstractionComfort) * 0.18 +
-			Math.abs(policy.challengeRate - learner.persistence) * 0.12
-	);
-
-	const score = clamp(masteryGain * weights.masteryGain + retention * weights.retention + engagement * weights.engagement + transfer * weights.transfer - confusion * weights.confusion, 0, 1);
-
-	const explanation: string[] = [];
-	if (intuitionFit >= 0.8) explanation.push("analogy pacing matched the learner well");
-	if (rigorFit >= 0.8) explanation.push("formal depth fit the learner's abstraction comfort");
-	if (practiceFit >= 0.75) explanation.push("exercise load matched the learner's need for repetition");
-	if (reflectionFit >= 0.75) explanation.push("reflection and transfer demands aligned with the learner");
-	if (overload >= 0.55) explanation.push("challenge and formal load pushed the learner toward overload");
-	if (diagramFit <= 0.45) explanation.push("diagram emphasis mismatched the learner's visual preference");
-	if (explanation.length === 0) explanation.push("the lesson was balanced but not strongly optimized for this learner");
-
-	return {
-		learner,
-		topic,
-		masteryGain,
-		retention,
-		engagement,
-		transfer,
-		confusion,
-		score,
-		breakdown: {
-			intuitionFit,
-			rigorFit,
-			dialogueFit,
-			diagramFit,
-			practiceFit,
-			reflectionFit,
-			overload,
-		},
-		explanation,
-	};
+	return simulateDeterministicTeaching(policy, topic, learner, weights);
 }
 
 function classifyDominantSignal(simulations: TeachingSimulation[], kind: "strength" | "weakness"): string {
@@ -786,18 +764,83 @@ function summarizeTopic(topic: TopicDefinition, simulations: TeachingSimulation[
 	};
 }
 
+export interface BrowserLearnerOutcome extends ScoreableLearnerOutcome {
+	topic: string;
+	feedbackSignal: "thumbs-up" | "thumbs-down" | "confused";
+	masteryEstimate: number;
+	outcomeScore: number;
+}
+
+export function extractBrowserOutcomes(feedbackHistory: Array<{ topic: string; signal: "thumbs-up" | "thumbs-down" | "confused" }>, topicsExplored: string[]): BrowserLearnerOutcome[] {
+	return feedbackHistory.map((fb) => ({
+		topic: fb.topic,
+		feedbackSignal: fb.signal,
+		masteryEstimate: topicsExplored.includes(fb.topic) ? 0.6 : 0.4,
+		outcomeScore: feedbackToOutcomeScore(fb.signal),
+	}));
+}
+
 export function runBenchmarkSuite(
 	policy: TeacherPolicy,
 	focusTopic?: string,
 	seed = 20260401,
 	traceLimit = 3,
-	weights: SimulationWeights = DEFAULT_WEIGHTS
+	weights: SimulationWeights = DEFAULT_WEIGHTS,
+	realOutcomes?: BrowserLearnerOutcome[]
 ): BenchmarkResult {
+	const outcomes = realOutcomes ?? [];
+	const useRealLearners = hasEnoughRealData(outcomes);
+	const NUM_SYNTHETIC = 3;
+
 	const topics = benchmarkTopics(focusTopic);
+	const topicTraces: BenchmarkTopicTrace[] = [];
 	const topicBenchmarks = topics.map((topic, index) => {
-		const learners = buildLearnerPopulation(seed + index * 97, 18);
-		const simulations = learners.map((learner) => simulateTeaching(policy, topic, learner, weights));
-		return summarizeTopic(topic, simulations, traceLimit);
+		const topicReal = outcomes.filter((o) => o.topic === topic.slug);
+		let summary: TopicBenchmark;
+
+		if (useRealLearners && topicReal.length >= 3) {
+			const realSim = computeRealOutcomeScore(topicReal, policy, topic, weights);
+			const synthLearners = buildLearnerPopulation(seed + index * 97, NUM_SYNTHETIC);
+			const synthSims = synthLearners.map((learner) => simulateTeaching(policy, topic, learner, weights));
+			if (synthSims.length > 0) {
+				const synthMean = mean(synthSims.map((s) => s.score));
+				realSim.score = blendRealSyntheticScore(realSim.score, synthMean, topicReal.length);
+			}
+			summary = summarizeTopic(topic, [realSim, ...synthSims], traceLimit);
+		} else if (useRealLearners && topicReal.length > 0) {
+			const realSim = computeRealOutcomeScore(topicReal, policy, topic, weights);
+			const synthLearners = buildLearnerPopulation(seed + index * 97, NUM_SYNTHETIC);
+			const synthSims = synthLearners.map((learner) => simulateTeaching(policy, topic, learner, weights));
+			summary = summarizeTopic(topic, [...synthSims, realSim], traceLimit);
+		} else {
+			const learners = buildLearnerPopulation(seed + index * 97, NUM_SYNTHETIC);
+			const simulations = learners.map((learner) => simulateTeaching(policy, topic, learner, weights));
+			summary = summarizeTopic(topic, simulations, traceLimit);
+		}
+
+		topicTraces.push({
+			topic: topic.title,
+			topLearners: summary.topLearners.map((entry) => ({
+				learnerId: entry.learner.id,
+				score: entry.score,
+				explanation: entry.explanation || ["unknown"],
+			})),
+			strugglingLearners: summary.strugglingLearners.map((entry) => ({
+				learnerId: entry.learner.id,
+				score: entry.score,
+				explanation: entry.explanation || ["unknown"],
+			})),
+			metricMeans: {
+				masteryGain: summary.meanMasteryGain,
+				retention: summary.meanRetention,
+				engagement: summary.meanEngagement,
+				transfer: summary.meanTransfer,
+				confusion: summary.meanConfusion,
+			},
+			dominantStrength: summary.dominantStrength,
+			dominantWeakness: summary.dominantWeakness,
+		});
+		return summary;
 	});
 
 	const weakest = [...topicBenchmarks].sort((left, right) => left.meanScore - right.meanScore)[0];
@@ -808,7 +851,13 @@ export function runBenchmarkSuite(
 		topicBenchmarks,
 		overallScore: mean(topicBenchmarks.map((entry) => entry.meanScore)),
 		weakestTopic: weakest?.topic.title ?? "n/a",
-		trace: undefined,
+		trace: {
+			seed,
+			learnerCountPerTopic: useRealLearners ? 1 + NUM_SYNTHETIC : NUM_SYNTHETIC,
+			topicTraces,
+			realOutcomeCount: outcomes.length,
+			syntheticFallback: !useRealLearners,
+		},
 	};
 }
 
@@ -836,6 +885,12 @@ export function benchmarkToMarkdown(result: BenchmarkResult): string {
 	lines.push(
 		`- The policy currently underperforms most on ${result.weakestTopic}, which is a useful anchor for mutation and curriculum repair.`
 	);
+	const realCount = (result as any).trace?.realOutcomeCount ?? 0;
+	if (realCount > 0) {
+		lines.push(`- Benchmark includes **real learner outcomes** (${realCount} data points). Synthetic component is progressively discounted as data grows.`);
+	} else {
+		lines.push(`- Benchmark uses **synthetic learners** only — not enough real student data yet (need ${MIN_REAL_OUTCOMES}+ feedback signals).`);
+	}
 	lines.push("");
 	return `${lines.join("\n")}\n`;
 }
@@ -1273,7 +1328,13 @@ export function evolutionToMarkdown(run: EvolutionRun): string {
 // Prompt Evolution (simplified for browser)
 // ============================================================================
 
-function heuristicPromptEvaluation(promptContent: string): { score: number; objectives: PromptObjectiveVector; feedback: string[] } {
+export interface PromptEvaluationResult {
+	score: number;
+	objectives: PromptObjectiveVector;
+	feedback: string[];
+}
+
+function heuristicPromptEvaluation(promptContent: string): PromptEvaluationResult {
 	const body = promptContent.toLowerCase();
 
 	const objectives: PromptObjectiveVector = {
@@ -1303,7 +1364,7 @@ function heuristicPromptEvaluation(promptContent: string): { score: number; obje
 	return { score, objectives, feedback };
 }
 
-export function evaluatePrompt(promptContent: string): { score: number; objectives: PromptObjectiveVector; feedback: string[] } {
+export function evaluatePrompt(promptContent: string): PromptEvaluationResult {
 	return heuristicPromptEvaluation(promptContent);
 }
 
@@ -1332,7 +1393,7 @@ export interface PromptEvolutionRun {
 	acceptedCandidates: PromptEvolutionCandidate[];
 }
 
-function heuristicEvolvePrompt(basePrompt: string, evaluation: { score: number; objectives: PromptObjectiveVector; feedback: string[] }): string {
+function heuristicEvolvePrompt(basePrompt: string, evaluation: PromptEvaluationResult): string {
 	const body = basePrompt.trimEnd();
 	const additions = [
 		'4a. If the learner echoes your phrasing, stop and ask them to explain the idea again in their own words.',
@@ -1626,12 +1687,7 @@ export function improvementArchiveToMarkdown(archive: ImprovementArchive): strin
 // Self-Improvement Diagnosis (simplified for browser)
 // ============================================================================
 
-export interface ImprovementSuggestion {
-	area: string;
-	metric: string;
-	value: number;
-	suggestion: string;
-}
+export type ImprovementSuggestion = ImprovementTarget;
 
 export function diagnoseBenchmark(benchmark: BenchmarkResult): ImprovementSuggestion[] {
 	const suggestions: ImprovementSuggestion[] = [];
@@ -1913,7 +1969,7 @@ export function dueTopicsToMarkdown(topics: TopicEngagement[]): string {
 // Quiz Engine (from src/core/quiz.ts)
 // ============================================================================
 
-export type QuestionType = "multiple_choice" | "short_answer" | "true_false" | "fill_in" | "transfer";
+export type QuestionType = "multiple_choice" | "short_answer" | "true_false" | "fill_in" | "transfer" | "slider" | "dropdown" | "multi_select";
 
 export interface QuizQuestion {
 	id: string;
@@ -1921,9 +1977,21 @@ export interface QuizQuestion {
 	level: "recall" | "comprehension" | "application" | "analysis" | "transfer";
 	question: string;
 	options?: string[];
+	min?: number;
+	max?: number;
+	step?: number;
 	correctAnswer: string;
+	correctAnswers?: string[];
 	explanation: string;
 	rubric?: string;
+	timeLimit?: number;
+	reframes?: Record<string, string>;
+	fallbackFor?: string;
+}
+
+export interface AdaptiveRule {
+	level: "recall" | "comprehension" | "application" | "analysis" | "transfer";
+	threshold: number;
 }
 
 export interface Quiz {
@@ -1932,6 +2000,7 @@ export interface Quiz {
 	generatedAt: string;
 	questions: QuizQuestion[];
 	totalPoints: number;
+	adaptiveRules?: AdaptiveRule[];
 }
 
 function makeRecallQ(topic: TopicDefinition, prng: Prng, idx: number): QuizQuestion {
@@ -2037,19 +2106,50 @@ function makeTransferQ(topic: TopicDefinition, prng: Prng, idx: number): QuizQue
 	};
 }
 
-export function generateQuiz(topicName: string, seed = 42): Quiz {
+export interface GenerateQuizOptions {
+	adaptive?: boolean;
+	reframes?: string[];
+}
+
+export function generateQuiz(topicName: string, seed = 42, options: GenerateQuizOptions = {}): Quiz {
 	const topic = resolveTopic(topicName);
 	const prng = new Prng(seed);
 	const questions: QuizQuestion[] = [];
 
-	questions.push(makeRecallQ(topic, prng, 1));
-	questions.push(makeRecallQ(topic, prng, 2));
-	questions.push(makeComprehensionQ(topic, prng, 1));
-	questions.push(makeMisconceptionQ(topic, prng, 1));
-	questions.push(makeApplicationQ(topic, prng, 1));
-	questions.push(makeApplicationQ(topic, prng, 2));
-	questions.push(makeTransferQ(topic, prng, 1));
-	questions.push(makeTransferQ(topic, prng, 2));
+	const r1 = makeRecallQ(topic, prng, 1);
+	const r2 = makeRecallQ(topic, prng, 2);
+	const c1 = makeComprehensionQ(topic, prng, 1);
+	const m1 = makeMisconceptionQ(topic, prng, 1);
+	const a1 = makeApplicationQ(topic, prng, 1);
+	const a2 = makeApplicationQ(topic, prng, 2);
+	const t1 = makeTransferQ(topic, prng, 1);
+	const t2 = makeTransferQ(topic, prng, 2);
+
+	if (options.adaptive) {
+		r2.fallbackFor = "recall";
+		a2.fallbackFor = "application";
+		t2.fallbackFor = "transfer";
+	}
+
+	if (options.reframes && options.reframes.length > 0) {
+		const addReframes = (q: QuizQuestion) => {
+			q.reframes = {};
+			for (const mode of options.reframes!) {
+				if (mode === "eli5") {
+					q.reframes[mode] = `[ELI5] ${q.question.replace(topic.title, `"${topic.title}"`)} Explain it like I'm 10 years old.`;
+				} else if (mode === "debug") {
+					q.reframes[mode] = `[Debug scenario] ${q.question.replace(topic.title, `a bug involving ${topic.title}`)} Frame this as finding and fixing a bug.`;
+				} else if (mode === "cooking") {
+					q.reframes[mode] = `[Cooking analogy] ${q.question.replace(topic.title, `a cooking technique related to "${topic.title}"`)} Use a kitchen/cooking analogy.`;
+				} else {
+					q.reframes[mode] = `[${mode}] ${q.question}`;
+				}
+			}
+		};
+		[r1, r2, c1, m1, a1, a2, t1, t2].forEach(addReframes);
+	}
+
+	questions.push(r1, r2, c1, m1, a1, a2, t1, t2);
 
 	return {
 		topic: topic.title,
@@ -2057,6 +2157,12 @@ export function generateQuiz(topicName: string, seed = 42): Quiz {
 		generatedAt: new Date().toISOString(),
 		questions,
 		totalPoints: questions.reduce((s, q) => s + (q.rubric ? 3 : 1), 0),
+		adaptiveRules: options.adaptive ? [
+			{ level: "recall", threshold: 0.5 },
+			{ level: "comprehension", threshold: 0.5 },
+			{ level: "application", threshold: 0.5 },
+			{ level: "transfer", threshold: 0.5 },
+		] : undefined,
 	};
 }
 

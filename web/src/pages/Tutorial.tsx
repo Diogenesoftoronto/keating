@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Nav } from "../components/Nav";
 import { SimpleFooter } from "../components/Footer";
 import { useSeo } from "../hooks/useSeo";
+import { ArrowRight } from "lucide-react";
 
 type TutorialTab = "browser" | "ollama" | "llamacpp" | "litellm" | "cloud" | "advanced";
 
@@ -14,6 +15,69 @@ const TABS: { id: TutorialTab; label: string }[] = [
   { id: "litellm", label: "[LITELLM]" },
   { id: "cloud", label: "[CLOUD]" },
   { id: "advanced", label: "[ADVANCED]" },
+];
+
+interface TutorialJump {
+  label: string;
+  detail: string;
+  tab?: TutorialTab;
+  targetId?: string;
+  tags: string[];
+}
+
+const TUTORIAL_JUMPS: TutorialJump[] = [
+  {
+    label: "Understand Keating",
+    detail: "What it is, how it teaches, and useful starter prompts.",
+    targetId: "what-is-keating",
+    tags: ["overview", "start", "prompts"],
+  },
+  {
+    label: "Choose a model path",
+    detail: "Browser, local runners, LiteLLM, or cloud providers.",
+    targetId: "model-setup",
+    tags: ["model", "provider", "setup"],
+  },
+  {
+    label: "Set up API keys",
+    detail: "Where keys go and links for provider dashboards.",
+    tab: "cloud",
+    targetId: "get-api-key",
+    tags: ["api", "key", "cloud", "provider"],
+  },
+  {
+    label: "Use OpenRouter",
+    detail: "Free model setup and featured OpenRouter model IDs.",
+    tab: "cloud",
+    targetId: "openrouter-api-key",
+    tags: ["openrouter", "free", "provider"],
+  },
+  {
+    label: "Run locally with Ollama",
+    detail: "Install Ollama and point Keating at localhost.",
+    tab: "ollama",
+    targetId: "tab-ollama",
+    tags: ["ollama", "local", "gpu"],
+  },
+  {
+    label: "Understand settings",
+    detail: "Providers, persona, speech, interface, sharing, and proxy.",
+    targetId: "settings",
+    tags: ["settings", "persona", "speech", "proxy"],
+  },
+  {
+    label: "Export or fine-tune",
+    detail: "Advanced export, RunPod, and fine-tuning paths.",
+    tab: "advanced",
+    targetId: "fine-tune-from-keating",
+    tags: ["advanced", "finetune", "export", "runpod"],
+  },
+  {
+    label: "Report a problem",
+    detail: "What to include when provider setup or the app breaks.",
+    targetId: "problems",
+    tags: ["bug", "support", "issue"],
+  },
 ];
 
 function tutorialTabFromUrl(): TutorialTab {
@@ -33,6 +97,7 @@ export function Tutorial() {
     canonical: "https://keating.help/tutorial",
   });
   const [activeTab, setActiveTab] = useState<TutorialTab>(() => tutorialTabFromUrl());
+  const [guideQuery, setGuideQuery] = useState("");
 
   useEffect(() => {
     const onLocationChange = () => setActiveTab(tutorialTabFromUrl());
@@ -44,20 +109,36 @@ export function Tutorial() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!window.location.hash) return;
-    window.requestAnimationFrame(() => {
-      document.getElementById(window.location.hash.slice(1))?.scrollIntoView({ block: "start" });
-    });
-  }, [activeTab]);
-
   const selectTab = (tab: TutorialTab) => {
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
     setActiveTab(tab);
     const url = new URL(window.location.href);
     url.searchParams.set("tab", tab);
     url.hash = "";
     window.history.replaceState(null, "", url);
+    window.requestAnimationFrame(() => window.scrollTo(scrollX, scrollY));
   };
+
+  const jumpTo = (jump: TutorialJump) => {
+    if (jump.tab) setActiveTab(jump.tab);
+    const url = new URL(window.location.href);
+    if (jump.tab) url.searchParams.set("tab", jump.tab);
+    if (jump.targetId) url.hash = jump.targetId;
+    window.history.replaceState(null, "", url);
+    if (!jump.targetId) return;
+    window.requestAnimationFrame(() => {
+      document.getElementById(jump.targetId!)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
+  const filteredJumps = useMemo(() => {
+    const query = guideQuery.trim().toLowerCase();
+    if (!query) return TUTORIAL_JUMPS;
+    return TUTORIAL_JUMPS.filter((jump) =>
+      [jump.label, jump.detail, ...jump.tags].join(" ").toLowerCase().includes(query),
+    );
+  }, [guideQuery]);
 
   return (
     <div className="retro-layout retro-page">
@@ -70,8 +151,48 @@ export function Tutorial() {
             <p className="text-muted-foreground font-terminal">How to learn, plan, and assess with your AI tutor</p>
           </div>
 
+          <section className="paper-fold distressed-border p-5 mb-8">
+            <div className="flex flex-col gap-4">
+              <div>
+                <h2 className="text-xl font-bold mb-2">Find What You Need</h2>
+                <p className="text-sm text-muted-foreground">
+                  Search setup paths, settings, provider keys, and advanced workflows without
+                  scanning the whole tutorial.
+                </p>
+              </div>
+              <input
+                value={guideQuery}
+                onChange={(event) => setGuideQuery(event.target.value)}
+                placeholder="Search tutorial topics..."
+                className="w-full rounded-md border-2 border-border bg-background px-3 py-2 text-sm text-foreground"
+              />
+              <div className="grid gap-3 sm:grid-cols-2">
+                {filteredJumps.map((jump) => (
+                  <button
+                    key={jump.label}
+                    type="button"
+                    onClick={() => jumpTo(jump)}
+                    className="tutorial-topic-card group rounded-md border-2 border-border bg-background p-3 text-left transition-colors hover:bg-muted/50"
+                  >
+                    <span className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-semibold">{jump.label}</span>
+                      <ArrowRight
+                        size={15}
+                        className="shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary"
+                        aria-hidden="true"
+                      />
+                    </span>
+                    <span className="mt-1 block text-xs leading-5 text-muted-foreground group-hover:text-foreground/80">
+                      {jump.detail}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </section>
+
           {/* What Is Keating */}
-          <section className="paper-fold distressed-border p-6 mb-8">
+          <section id="what-is-keating" className="paper-fold distressed-border p-6 mb-8 scroll-mt-24">
             <h2 className="text-xl font-bold mb-4">What Is Keating?</h2>
             <p className="mb-4">
               Keating is a Socratic AI tutor. It does not give answers — it forces you to
@@ -99,7 +220,7 @@ export function Tutorial() {
           </section>
 
           {/* Suggested Prompts */}
-          <section className="paper-fold distressed-border p-6 mb-8">
+          <section id="suggested-prompts" className="paper-fold distressed-border p-6 mb-8 scroll-mt-24">
             <h2 className="text-xl font-bold mb-4">Suggested Prompts</h2>
             <p className="text-sm text-muted-foreground mb-4">
               Click any prompt to copy it. Paste it into the chat to get started.
@@ -178,7 +299,7 @@ export function Tutorial() {
           </section>
 
           {/* Tool Commands Reference */}
-          <section className="paper-fold distressed-border p-6 mb-8">
+          <section id="tool-commands" className="paper-fold distressed-border p-6 mb-8 scroll-mt-24">
             <h2 className="text-xl font-bold mb-4">Tool Commands</h2>
             <p className="text-sm text-muted-foreground mb-4">
               Keating can invoke tools directly. Prefix your message with a command or ask
@@ -205,7 +326,157 @@ export function Tutorial() {
             </div>
           </section>
 
-          <section className="paper-fold distressed-border p-6 mb-8">
+          {/* Settings Explained */}
+          <section id="settings" className="paper-fold distressed-border p-6 mb-8 scroll-mt-24">
+            <h2 className="text-xl font-bold mb-4">Settings Explained</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              Open settings with the gear icon in the chat header (on a phone, tap the{" "}
+              <span className="font-terminal">[≡]</span> menu → Settings). Everything you set
+              is saved in your browser — nothing is uploaded. Below is what each tab does, with
+              extra notes on the parts that aren't obvious.
+            </p>
+
+            <div className="space-y-6">
+              {/* Providers & Models */}
+              <div className="border-l-4 border-l-[#6366f1] pl-4">
+                <h3 className="font-bold mb-1">Providers &amp; Models</h3>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Where Keating connects to a brain. Paste an API key beside a provider, or add a{" "}
+                  <strong>custom provider</strong> (any OpenAI-compatible endpoint — Ollama,
+                  llama.cpp, LiteLLM, Synthetic) by giving it a name and base URL. You can hide
+                  providers you never use so the model picker stays short.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Why it exists: Keating is model-agnostic. The same tutor runs on a free browser
+                  model, a local GGUF, or a frontier cloud model — you choose the tradeoff between
+                  privacy, cost, and capability. Keys live only in this browser's storage.
+                </p>
+              </div>
+
+              {/* Teacher Persona */}
+              <div className="border-l-4 border-l-[#d44a3d] pl-4">
+                <h3 className="font-bold mb-1">Teacher Persona</h3>
+                <p className="text-sm text-muted-foreground mb-2">
+                  The editable identity and voice of your tutor — the "who" of the system prompt.
+                  It ships as John Keating from <em>Dead Poets Society</em>. Edit the text to change
+                  the character, tone, or values; <strong>Reset to John Keating</strong> restores
+                  the default.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Why it's split out: the agent's tools and teaching protocol (diagnosis, quizzes,
+                  goals, self-improvement) are kept separate and always apply, so editing the
+                  persona can never break Keating's behavior — it only reshapes its personality.
+                  Changes take effect on your next message and in all new sessions.
+                </p>
+              </div>
+
+              {/* Speech & Voice */}
+              <div className="border-l-4 border-l-[#10b981] pl-4">
+                <h3 className="font-bold mb-1">Speech &amp; Voice</h3>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Turn on spoken replies and pick a voice. Choose a built-in provider (e.g. OpenAI
+                  or Gemini text-to-speech) or define a custom one with its own base URL, model, and
+                  voice name.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Why it exists: hearing an explanation while reading helps retention, and a custom
+                  endpoint lets you route speech through your own TTS server. Speech uses the
+                  relevant provider key, so set that under Providers &amp; Models first.
+                </p>
+              </div>
+
+              {/* Interface */}
+              <div className="border-l-4 border-l-[#d97706] pl-4">
+                <h3 className="font-bold mb-1">Interface</h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  How the chat looks and how much of Keating's "thinking" you see. The non-obvious
+                  controls:
+                </p>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li>
+                    <span className="font-medium text-foreground">Reasoning level (Off → Maximum):</span>{" "}
+                    how hard the model thinks before answering. Higher levels mean deeper, slower,
+                    more expensive replies — great for hard problems, overkill for quick questions.
+                    Only reasoning-capable models honor it; <em>Maximum</em> works on select models.
+                  </li>
+                  <li>
+                    <span className="font-medium text-foreground">Show tool details:</span>{" "}
+                    reveals the arguments and results of each tool call inside the chat. Leave it off
+                    for a clean conversation; turn it on to see exactly what Keating did (or to debug).
+                  </li>
+                  <li>
+                    <span className="font-medium text-foreground">Show raw error details:</span>{" "}
+                    prints the full provider error body instead of a short summary. Turn this on when
+                    a model or key isn't working and you need the real message to fix it.
+                  </li>
+                  <li>
+                    <span className="font-medium text-foreground">Open artifacts automatically:</span>{" "}
+                    pops the side panel whenever Keating creates a plan, map, animation, quiz, or
+                    benchmark, so you don't have to go looking for it.
+                  </li>
+                  <li>
+                    <span className="font-medium text-foreground">Google web grounding:</span>{" "}
+                    when a Google key is present, lets Gemini search the live web and cite sources.
+                    Keep it on for current information; switch off for purely offline reasoning.
+                  </li>
+                  <li>
+                    <span className="font-medium text-foreground">Animation renderer:</span>{" "}
+                    the format Keating uses for animations — <em>Manim</em> (mathematical, film-style
+                    scenes) or <em>Hyperframes</em> (lightweight in-browser frames).
+                  </li>
+                  <li>
+                    <span className="font-medium text-foreground">Font &amp; profile image:</span>{" "}
+                    cosmetic — switch between a clean sans and a terminal monospace, and set the
+                    avatar shown on your messages.
+                  </li>
+                </ul>
+              </div>
+
+              {/* Share links */}
+              <div className="border-l-4 border-l-[#ec4899] pl-4">
+                <h3 className="font-bold mb-1">Share Links (under Interface)</h3>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Controls what happens when you share a session. The three modes trade portability
+                  against link length and privacy:
+                </p>
+                <ul className="space-y-1.5 text-sm text-muted-foreground">
+                  <li>
+                    <span className="font-medium text-foreground">Portable short</span> — short link
+                    that opens in any browser (uses share storage when available). Best default.
+                  </li>
+                  <li>
+                    <span className="font-medium text-foreground">Compressed snapshot</span> — embeds
+                    the whole conversation inside the URL itself, so it works with no server at all.
+                    The link can get long, but nothing is stored anywhere external.
+                  </li>
+                  <li>
+                    <span className="font-medium text-foreground">Local short</span> — the shortest
+                    link, but it only opens from the browser that created it (the data stays in this
+                    browser's cache).
+                  </li>
+                </ul>
+              </div>
+
+              {/* Proxy */}
+              <div className="border-l-4 border-l-[#00ff00] pl-4">
+                <h3 className="font-bold mb-1">Proxy</h3>
+                <p className="text-sm text-muted-foreground mb-2">
+                  A CORS proxy lets this browser-based app call providers that block direct
+                  cross-origin requests. Toggle <strong>Use CORS Proxy</strong> and set the{" "}
+                  <strong>Proxy URL</strong> (e.g.{" "}
+                  <code className="bg-[#1a1a1a] text-[#00ff00] px-1">http://localhost:3001</code>).
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Why it exists: browsers refuse some cross-site API calls for security. Most setups
+                  don't need this — reach for it only if a provider fails with a CORS error. It is
+                  required for Z-AI and for Anthropic with an OAuth token. The proxy must forward
+                  requests on to the upstream provider.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section id="problems" className="paper-fold distressed-border p-6 mb-8 scroll-mt-24">
             <h2 className="text-xl font-bold mb-3">Problems or Bugs</h2>
             <p className="text-sm text-muted-foreground">
               If Keating breaks, a provider setup fails, or a tutorial step is unclear, open a{" "}
@@ -263,12 +534,19 @@ export function Tutorial() {
           </div>
 
           {/* Detailed Tabs */}
-          <div className="paper-fold distressed-border overflow-hidden">
-            <div className="flex border-b-2 border-border overflow-x-auto">
+          <div id="model-setup" className="paper-fold distressed-border overflow-hidden scroll-mt-24">
+            <div
+              className="grid grid-cols-2 border-b-2 border-border sm:flex sm:flex-wrap"
+              role="tablist"
+              aria-label="Model setup options"
+            >
               {TABS.map((tab) => (
                 <button
                   key={tab.id}
-                  className={`tab-btn font-terminal px-6 py-3 border-r-2 border-border whitespace-nowrap ${
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === tab.id}
+                  className={`tab-btn font-terminal min-w-0 border-b-2 border-r-2 border-border px-3 py-3 text-center text-sm sm:border-b-0 sm:px-6 sm:text-base ${
                     activeTab === tab.id ? "active" : ""
                   }`}
                   onClick={() => selectTab(tab.id)}
@@ -280,7 +558,7 @@ export function Tutorial() {
 
             {/* Browser Tab */}
             {activeTab === "browser" && (
-              <div className="p-6">
+              <div id="tab-browser" className="p-6 scroll-mt-24">
                 <h3 className="text-xl font-bold mb-4">Browser WebGPU (Zero Setup)</h3>
                 <p className="mb-4">
                   The simplest option — just use Keating in a supported browser. No installation
@@ -321,7 +599,7 @@ export function Tutorial() {
 
             {/* Ollama Tab */}
             {activeTab === "ollama" && (
-              <div className="p-6">
+              <div id="tab-ollama" className="p-6 scroll-mt-24">
                 <h3 className="text-xl font-bold mb-4">Ollama</h3>
                 <p className="mb-4">
                   Popular local LLM runner with excellent GPU support. Works with any GGUF model.
@@ -384,7 +662,7 @@ export function Tutorial() {
 
             {/* llama.cpp Tab */}
             {activeTab === "llamacpp" && (
-              <div className="p-6">
+              <div id="tab-llamacpp" className="p-6 scroll-mt-24">
                 <h3 className="text-xl font-bold mb-4">llama.cpp</h3>
                 <p className="mb-4">
                   Lightweight C++ inference. Maximum control and performance. Runs any GGUF model.
@@ -454,7 +732,7 @@ export function Tutorial() {
 
             {/* LiteLLM Tab */}
             {activeTab === "litellm" && (
-              <div className="p-6">
+              <div id="tab-litellm" className="p-6 scroll-mt-24">
                 <h3 className="text-xl font-bold mb-4">LiteLLM</h3>
                 <p className="mb-4">
                   Unified API proxy that works with 100+ LLM providers. Exposes an
@@ -518,7 +796,7 @@ export function Tutorial() {
 
             {/* Cloud Tab */}
             {activeTab === "cloud" && (
-              <div className="p-6">
+              <div id="tab-cloud" className="p-6 scroll-mt-24">
                 <h3 className="text-xl font-bold mb-4">Cloud Providers</h3>
                 <p className="mb-4">
                   Use managed AI services for best performance and model variety. Requires API keys.
@@ -531,6 +809,55 @@ export function Tutorial() {
                     Keys stay in browser storage for the web app. In the CLI, use environment
                     variables such as <code className="bg-[#1a1a1a] text-[#00ff00] px-1">GEMINI_API_KEY</code>.
                   </p>
+                </div>
+
+                <div id="openrouter-api-key" className="mb-6 p-4 bg-[#6366f1]/5 border border-[#6366f1]/20 scroll-mt-24">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h4 className="font-bold text-[#6366f1]">OpenRouter — free models, no credit card required</h4>
+                    <span className="rounded-full bg-[#6366f1]/15 px-2 py-0.5 text-[10px] font-semibold text-[#6366f1] uppercase tracking-wide">Free</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    OpenRouter gives access to many free models — a great way to start without a billing setup.
+                  </p>
+                  <ol className="space-y-2 text-sm mb-3">
+                    <li>
+                      1. Go to{" "}
+                      <a
+                        href="https://openrouter.ai/keys"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[#6366f1] underline"
+                      >
+                        openrouter.ai/keys
+                      </a>
+                      {" "}and create a free account
+                    </li>
+                    <li>2. Click "Create Key" and copy it (starts with "sk-or-...")</li>
+                    <li>
+                      3. In Keating Settings → Providers &amp; Models, paste the key next to <strong>openrouter</strong>
+                    </li>
+                    <li>
+                      4. In the CLI:{" "}
+                      <code className="bg-[#1a1a1a] text-[#00ff00] px-1">export OPENROUTER_API_KEY=sk-or-...</code>
+                    </li>
+                  </ol>
+                  <div className="text-xs text-muted-foreground">
+                    <p className="font-medium mb-1">Featured free models:</p>
+                    <ul className="space-y-0.5 list-disc list-inside">
+                      <li><code className="text-[#6366f1]">poolside/laguna-m.1:free</code> — Poolside Laguna M.1 (recommended)</li>
+                      <li><code className="text-[#6366f1]">openai/gpt-oss-120b:free</code> — OpenAI GPT-OSS 120B</li>
+                      <li><code className="text-[#6366f1]">deepseek/deepseek-v4-flash:free</code> — DeepSeek V4 Flash</li>
+                      <li><code className="text-[#6366f1]">google/gemma-4-31b-it:free</code> — Google Gemma 4 31B</li>
+                      <li><code className="text-[#6366f1]">nvidia/nemotron-3-super-120b-a12b:free</code> — Nvidia Nemotron 120B</li>
+                      <li><code className="text-[#6366f1]">moonshotai/kimi-k2.6:free</code> — MoonshotAI Kimi K2.6</li>
+                    </ul>
+                    <p className="mt-2">
+                      Browse all free models at{" "}
+                      <a href="https://openrouter.ai/collections/free-models" target="_blank" rel="noreferrer" className="text-[#6366f1] underline">
+                        openrouter.ai/collections/free-models
+                      </a>
+                    </p>
+                  </div>
                 </div>
 
                 <div id="google-api-key" className="mb-6 p-4 bg-[#4285f4]/5 border border-[#4285f4]/20 scroll-mt-24">
@@ -634,7 +961,7 @@ export function Tutorial() {
 
             {/* Advanced Tab */}
             {activeTab === "advanced" && (
-              <div className="p-6 space-y-6">
+              <div id="tab-advanced" className="p-6 space-y-6 scroll-mt-24">
                 <section id="unsloth-studio" className="scroll-mt-24">
                   <h3 className="text-xl font-bold mb-3">Unsloth Studio</h3>
                   <p className="mb-3">

@@ -1,131 +1,392 @@
-import { useCallback, useState } from "react";
-import { ArrowRight, CheckCircle2, HelpCircle, MessageSquare } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+import {
+	ArrowRight,
+	Check,
+	CheckCircle2,
+	ChevronDown,
+	ChevronLeft,
+	ChevronRight,
+	ChevronUp,
+	HelpCircle,
+	MessageSquare,
+} from "lucide-react";
 
+/** A single question within an ask_user_question form. */
+export interface QuestionField {
+	/** Short chip/label shown above the question (e.g. "Goal", "Approach"). */
+	header?: string;
+	question: string;
+	choices?: string[];
+	/** Allow selecting more than one choice. */
+	multiSelect?: boolean;
+	/** Show a free-text input in addition to (or instead of) choices. */
+	allowText?: boolean;
+	hint?: string;
+}
+
+/** Normalized multi-field form payload. */
+export interface QuestionFormData {
+	intro?: string;
+	questions: QuestionField[];
+}
+
+/** Legacy single-question payload (kept for backward compatibility). */
 export interface QuestionData {
- question: string;
- choices?: string[];
- allow_text?: boolean;
- hint?: string;
+	question: string;
+	choices?: string[];
+	allow_text?: boolean;
+	hint?: string;
+}
+
+export interface AnsweredQuestion {
+	header?: string;
+	question: string;
+	answer: string;
 }
 
 interface QuestionRendererProps {
- data: QuestionData;
- onAnswer?: (answer: string) => void;
+	data: QuestionFormData;
+	onSubmit?: (answers: AnsweredQuestion[]) => void;
 }
 
-export function QuestionRenderer({ data, onAnswer }: QuestionRendererProps) {
- const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
- const [textInput, setTextInput] = useState("");
- const [submitted, setSubmitted] = useState(false);
- const [submittedAnswer, setSubmittedAnswer] = useState<string | null>(null);
+/**
+ * Accepts either the new multi-field shape `{ questions: [...] }` or the legacy
+ * single-question shape `{ question, choices, allow_text, hint }` and returns a
+ * normalized QuestionFormData. Returns null when nothing renderable is present.
+ */
+export function normalizeQuestionForm(raw: unknown): QuestionFormData | null {
+	if (!raw || typeof raw !== "object") return null;
+	const obj = raw as Record<string, unknown>;
 
- const canSubmit = submitted
- ? false
- : data.choices
- ? selectedChoice !== null
- : textInput.trim().length > 0;
+	const coerceField = (value: unknown): QuestionField | null => {
+		if (!value || typeof value !== "object") return null;
+		const q = value as Record<string, unknown>;
+		const question = typeof q.question === "string" ? q.question : "";
+		if (!question) return null;
+		const choices = Array.isArray(q.choices)
+			? q.choices.filter((c): c is string => typeof c === "string")
+			: undefined;
+		const multiSelect =
+			typeof q.multiSelect === "boolean"
+				? q.multiSelect
+				: typeof q.multi_select === "boolean"
+					? q.multi_select
+					: false;
+		const allowText =
+			typeof q.allowText === "boolean"
+				? q.allowText
+				: typeof q.allow_text === "boolean"
+					? q.allow_text
+					: !choices || choices.length === 0;
+		return {
+			header: typeof q.header === "string" ? q.header : undefined,
+			question,
+			choices: choices && choices.length > 0 ? choices : undefined,
+			multiSelect,
+			allowText,
+			hint: typeof q.hint === "string" ? q.hint : undefined,
+		};
+	};
 
- const handleSubmit = useCallback(() => {
- if (!canSubmit) return;
- const answer = data.choices ? selectedChoice! : textInput.trim();
- setSubmittedAnswer(answer);
- setSubmitted(true);
- onAnswer?.(answer);
- }, [canSubmit, data.choices, selectedChoice, textInput, onAnswer]);
+	if (Array.isArray(obj.questions)) {
+		const questions = obj.questions
+			.map(coerceField)
+			.filter((q): q is QuestionField => q !== null);
+		if (questions.length === 0) return null;
+		return {
+			intro: typeof obj.intro === "string" ? obj.intro : undefined,
+			questions,
+		};
+	}
 
- return (
- <div className="my-3 rounded-xl border border-primary/30 bg-primary/5 p-4 shadow-sm">
- <div className="flex items-start gap-3">
- <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
- <HelpCircle size={18} className="text-primary" />
- </div>
- <div className="min-w-0 flex-1 space-y-3">
- <p className="text-sm font-medium leading-6">{data.question}</p>
+	const single = coerceField(obj);
+	if (!single) return null;
+	return { intro: typeof obj.intro === "string" ? obj.intro : undefined, questions: [single] };
+}
 
- {data.choices && data.choices.length > 0 && (
- <div className="space-y-2">
- {data.choices.map((choice) => {
- const isSelected = selectedChoice === choice;
- const isSubmittedChoice = submitted && submittedAnswer === choice;
- return (
- <button
- key={choice}
- type="button"
- disabled={submitted}
- className={`flex w-full items-center gap-3 rounded-lg border-2 px-4 py-3 text-left text-sm transition-all ${
- isSubmittedChoice
- ? "border-primary bg-primary/15 text-primary"
- : isSelected
- ? "border-primary bg-primary/10 text-primary"
- : "border-border bg-background hover:border-primary/50"
- } ${submitted ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
- onClick={() => !submitted && setSelectedChoice(choice)}
- >
- {isSubmittedChoice ? (
- <CheckCircle2 size={16} className="shrink-0" />
- ) : isSelected ? (
- <CheckCircle2 size={16} className="shrink-0" />
- ) : (
- <div className="h-4 w-4 shrink-0 rounded-full border-2 border-border" />
- )}
- <span className="flex-1">{choice}</span>
- </button>
- );
- })}
- </div>
- )}
+interface FieldState {
+	selected: string[];
+	text: string;
+}
 
- {data.allow_text && (
- <div className="space-y-2">
- {data.choices && data.choices.length > 0 && (
- <div className="flex items-center gap-2 text-xs text-muted-foreground">
- <div className="h-px flex-1 bg-border" />
- <span>or type your answer</span>
- <div className="h-px flex-1 bg-border" />
- </div>
- )}
- <div className="flex gap-2">
- <input
- type="text"
- className="h-9 flex-1 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
- placeholder="Your answer..."
- value={textInput}
- disabled={submitted}
- onChange={(e) => setTextInput(e.target.value)}
- onKeyDown={(e) => {
- if (e.key === "Enter" && canSubmit) handleSubmit();
- }}
- />
- </div>
- </div>
- )}
+export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
+	const questions = data.questions;
+	const total = questions.length;
+	const stepThrough = total > 0; // always use step-through layout
+	const [states, setStates] = useState<FieldState[]>(() =>
+		questions.map(() => ({ selected: [], text: "" })),
+	);
+	const [submitted, setSubmitted] = useState(false);
+	const [current, setCurrent] = useState(0);
+	const [collapsed, setCollapsed] = useState(false);
 
- {data.hint && !submitted && (
- <p className="text-xs text-muted-foreground italic">
- 💡 {data.hint}
- </p>
- )}
+	const answerFor = useCallback(
+		(index: number): string => {
+			const state = states[index];
+			if (!state) return "";
+			const parts = [...state.selected];
+			const text = state.text.trim();
+			if (text) parts.push(text);
+			return parts.join(", ");
+		},
+		[states],
+	);
 
- {!submitted && (
- <button
- type="button"
- disabled={!canSubmit}
- className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
- onClick={handleSubmit}
- >
- <ArrowRight size={16} />
- Answer
- </button>
- )}
+	const allAnswered = useMemo(
+		() => questions.every((_, index) => answerFor(index).length > 0),
+		[questions, answerFor],
+	);
 
- {submitted && (
- <div className="flex items-center gap-2 text-sm text-primary">
- <MessageSquare size={14} />
- <span>Answered: <strong>{submittedAnswer}</strong></span>
- </div>
- )}
- </div>
- </div>
- </div>
- );
+	const currentAnswered = useMemo(
+		() => answerFor(current).length > 0,
+		[answerFor, current],
+	);
+
+	const toggleChoice = (index: number, choice: string, multiSelect: boolean) => {
+		if (submitted) return;
+		setStates((current) =>
+			current.map((state, i) => {
+				if (i !== index) return state;
+				if (multiSelect) {
+					const selected = state.selected.includes(choice)
+						? state.selected.filter((c) => c !== choice)
+						: [...state.selected, choice];
+					return { ...state, selected };
+				}
+				return { ...state, selected: state.selected[0] === choice ? [] : [choice] };
+			}),
+		);
+	};
+
+	const setText = (index: number, value: string) => {
+		if (submitted) return;
+		setStates((current) =>
+			current.map((state, i) => (i === index ? { ...state, text: value } : state)),
+		);
+	};
+
+	const handleSubmit = useCallback(() => {
+		if (submitted || !allAnswered) return;
+		const answers: AnsweredQuestion[] = questions.map((q, index) => ({
+			header: q.header,
+			question: q.question,
+			answer: answerFor(index),
+		}));
+		setSubmitted(true);
+		onSubmit?.(answers);
+	}, [submitted, allAnswered, questions, answerFor, onSubmit]);
+
+	const goNext = useCallback(() => {
+		if (current < total - 1) setCurrent((c) => c + 1);
+	}, [current, total]);
+
+	const goPrev = useCallback(() => {
+		if (current > 0) setCurrent((c) => c - 1);
+	}, [current]);
+
+	if (submitted) {
+		return (
+			<div className="my-3 rounded-xl border border-primary/30 bg-primary/5 p-4 shadow-sm">
+				<div className="flex items-start gap-3">
+					<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+						<CheckCircle2 size={18} className="text-primary" />
+					</div>
+					<div className="min-w-0 flex-1 space-y-2">
+						<p className="text-sm font-medium text-primary">Submitted</p>
+						<div className="space-y-1 text-sm text-primary">
+							{questions.map((q, index) => (
+								<div key={index} className="flex items-start gap-2">
+									<MessageSquare size={14} className="mt-1 shrink-0" />
+									<span>
+										{q.header ? `${q.header}: ` : ""}
+										<strong>{answerFor(index)}</strong>
+									</span>
+								</div>
+							))}
+						</div>
+					</div>
+				</div>
+			</div>
+		);
+	}
+
+	const q = questions[current];
+	if (!q) return null;
+	const state = states[current] ?? { selected: [], text: "" };
+	const isLast = current === total - 1;
+	const progress = total > 1 ? ((current + 1) / total) * 100 : 100;
+
+	return (
+		<div className="my-3 rounded-xl border border-primary/30 bg-primary/5 p-4 shadow-sm">
+			<div className="flex items-start gap-3">
+				<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+					<HelpCircle size={18} className="text-primary" />
+				</div>
+				<div className="min-w-0 flex-1 space-y-4">
+					<div className="flex items-start justify-between gap-3">
+						<div className="min-w-0">
+							<p className="text-sm font-medium text-primary">Question</p>
+							{collapsed && (
+								<p className="line-clamp-2 text-xs leading-5 text-muted-foreground">
+									{data.intro || q.question}
+								</p>
+							)}
+						</div>
+						<button
+							type="button"
+							onClick={() => setCollapsed((value) => !value)}
+							aria-expanded={!collapsed}
+							className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md border border-border bg-background px-2 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/60 hover:bg-primary/10 hover:text-primary"
+						>
+							{collapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+							{collapsed ? "Show" : "Hide"}
+						</button>
+					</div>
+					{collapsed ? (
+						<div className="flex items-center gap-2 rounded-lg border border-border/60 bg-background/40 p-3">
+							<div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+								<div
+									className="h-full rounded-full bg-primary transition-all"
+									style={{ width: `${progress}%` }}
+								/>
+							</div>
+							<span className="font-terminal text-[11px] text-muted-foreground tabular-nums">
+								{current + 1}/{total}
+							</span>
+						</div>
+					) : (
+						<>
+					{data.intro && (
+						<p className="text-sm leading-6 text-muted-foreground">{data.intro}</p>
+					)}
+
+					{/* Progress bar */}
+					<div className="flex items-center gap-2">
+						<div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+							<div
+								className="h-full rounded-full bg-primary transition-all"
+								style={{ width: `${progress}%` }}
+							/>
+						</div>
+						<span className="font-terminal text-[11px] text-muted-foreground tabular-nums">
+							{current + 1}/{total}
+						</span>
+					</div>
+
+					{/* Current question card */}
+					<div className="space-y-3 rounded-lg border border-border/60 bg-background/40 p-3">
+						{q.header && (
+							<span className="inline-flex rounded bg-primary/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-primary">
+								{q.header}
+							</span>
+						)}
+						<p className="text-sm font-medium leading-6">{q.question}</p>
+
+						{q.choices && q.choices.length > 0 && (
+							<div className="space-y-2">
+								{q.choices.map((choice) => {
+									const isSelected = state.selected.includes(choice);
+									return (
+										<button
+											key={choice}
+											type="button"
+											disabled={submitted}
+											aria-pressed={isSelected}
+											className={`flex w-full items-center gap-3 rounded-lg border-2 px-4 py-3 text-left text-sm transition-all ${
+												isSelected
+													? "border-primary bg-primary/10 text-primary"
+													: "border-border bg-background hover:border-primary/50"
+											} ${submitted ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
+											onClick={() => toggleChoice(current, choice, q.multiSelect ?? false)}
+										>
+											{q.multiSelect ? (
+												<span
+													className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 ${
+														isSelected ? "border-primary bg-primary text-primary-foreground" : "border-border"
+													}`}
+												>
+													{isSelected ? <Check size={12} /> : null}
+												</span>
+											) : isSelected ? (
+												<CheckCircle2 size={16} className="shrink-0" />
+											) : (
+												<div className="h-4 w-4 shrink-0 rounded-full border-2 border-border" />
+											)}
+											<span className="flex-1">{choice}</span>
+										</button>
+									);
+								})}
+							</div>
+						)}
+
+						{q.allowText && (
+							<div className="space-y-2">
+								{q.choices && q.choices.length > 0 && (
+									<div className="flex items-center gap-2 text-xs text-muted-foreground">
+										<div className="h-px flex-1 bg-border" />
+										<span>or type your own</span>
+										<div className="h-px flex-1 bg-border" />
+									</div>
+								)}
+								<input
+									type="text"
+									className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+									placeholder="Your answer..."
+									value={state.text}
+									disabled={submitted}
+									onChange={(e) => setText(current, e.target.value)}
+									onKeyDown={(e) => {
+										if (e.key === "Enter" && currentAnswered) {
+											if (!isLast) goNext();
+											else if (allAnswered) handleSubmit();
+										}
+									}}
+								/>
+							</div>
+						)}
+
+						{q.hint && !submitted && (
+							<p className="text-xs italic text-muted-foreground">💡 {q.hint}</p>
+						)}
+					</div>
+
+					{/* Navigation */}
+					<div className="flex items-center justify-between gap-2">
+						<button
+							type="button"
+							onClick={goPrev}
+							disabled={current === 0}
+							className="inline-flex items-center gap-1 rounded-lg border-2 border-border bg-background px-3 py-2 text-sm font-medium hover:bg-accent disabled:opacity-40 disabled:pointer-events-none transition-colors"
+						>
+							<ChevronLeft size={14} />
+							Back
+						</button>
+
+						{!isLast ? (
+							<button
+								type="button"
+								onClick={goNext}
+								className="inline-flex items-center gap-1 rounded-lg border-2 border-primary bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+							>
+								Next
+								<ChevronRight size={14} />
+							</button>
+						) : (
+							<button
+								type="button"
+								disabled={!allAnswered}
+								className="inline-flex items-center gap-2 rounded-lg border-2 border-primary bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+								onClick={handleSubmit}
+							>
+								<ArrowRight size={16} />
+								{total === 1 ? "Answer" : "Submit answers"}
+							</button>
+						)}
+					</div>
+						</>
+					)}
+				</div>
+			</div>
+		</div>
+	);
 }

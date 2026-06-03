@@ -7,6 +7,7 @@ export interface ChatPanelSetupCallbacks {
 	onCostClick?: () => void;
 	onModelSelect?: () => void;
 	onFork?: () => void | Promise<void>;
+	onLocalMessagesChanged?: () => void | Promise<void>;
 	thinkingLevel?: ThinkingLevel;
 	onThinkingLevelChange?: (level: ThinkingLevel) => void;
 }
@@ -14,4 +15,3 @@ export interface ChatPanelSetupCallbacks {
 export interface ChatPanelHandle {
 	setAgent(agent: Agent, config?: ChatPanelSetupCallbacks): Promise<void>;
 }
-

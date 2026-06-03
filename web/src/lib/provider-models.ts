@@ -344,6 +344,28 @@ export const UNKNOWN_COST = {
 export const UNKNOWN_CONTEXT_WINDOW = 8192;
 export const UNKNOWN_MAX_TOKENS = 4096;
 
+function keatingCompatibilityModels(filter?: (provider: string) => boolean): Array<Model<Api>> {
+	const models: Array<Model<Api>> = [];
+	const maybeAdd = (provider: string, baseUrl: string) => {
+		if (filter && !filter(provider)) return;
+		models.push({
+			id: "MiniMax-M3",
+			name: "MiniMax-M3",
+			api: "openai-completions" as Api,
+			provider,
+			baseUrl,
+			reasoning: true,
+			input: ["text"],
+			cost: UNKNOWN_COST,
+			contextWindow: 1_000_000,
+			maxTokens: 4096,
+		});
+	};
+	maybeAdd("minimax", "https://api.minimax.io/v1");
+	maybeAdd("minimax-cn", "https://api.minimaxi.com/v1");
+	return models;
+}
+
 export async function getSelectableModels(
 	filter?: (provider: string) => boolean,
 ): Promise<Array<Model<Api>>> {
@@ -354,6 +376,8 @@ export async function getSelectableModels(
 			models.push(...(getModels(provider as any) as Array<Model<Api>>));
 		}
 	}
+
+	models.push(...keatingCompatibilityModels(filter));
 
 	const customProviders = await getCustomProviders();
 	const customModels = await Promise.all(

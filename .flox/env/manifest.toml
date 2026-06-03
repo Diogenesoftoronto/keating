@@ -18,6 +18,8 @@ gh.pkg-path = "gh"
 ripgrep.pkg-path = "ripgrep"
 fd.pkg-path = "fd"
 just.pkg-path = "just"
+codex.pkg-path = "flox/codex"
+codex.pkg-group = "codex"
 # gum.pkg-path = "gum"
 # gum.version = "^0.14.5"
 

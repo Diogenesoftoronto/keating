@@ -7,7 +7,9 @@ import {
 	GitBranch,
 	Map as MapIcon,
 	MessageSquare,
+	PanelRightClose,
 	Play,
+	RotateCcw,
 	Search,
 	Settings2,
 	Sparkles,
@@ -16,9 +18,11 @@ import {
 import { MermaidRenderer } from "./MermaidRenderer";
 import { AnimationPlayer } from "./AnimationPlayer";
 import { MarkdownBlock } from "./MarkdownBlock";
+import { QuizRenderer, type QuizResult } from "./QuizRenderer";
 import { KeatingStorage, type LessonPlan, type LessonMap, type Animation, type BenchmarkResult, type EvolutionResult, type Verification, type PromptEvolutionResult, type ImprovementAttemptRecord } from "../keating/storage";
 import { sessions, getInitPromise } from "../hooks/keating-storage";
 import type { SessionMetadata } from "../types/session";
+import type { Quiz, QuizQuestion } from "../keating/core";
 
 interface ArtifactViewerProps {
 	storage: KeatingStorage;
@@ -125,7 +129,7 @@ function artifactPreviewText(artifact: Artifact): string {
 	}
 }
 
-export function ArtifactViewer({ storage, artifactId }: ArtifactViewerProps) {
+export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerProps) {
 	const [artifacts, setArtifacts] = useState<Artifact[]>([]);
 	const [selected, setSelected] = useState<Artifact | null>(null);
 	const [loading, setLoading] = useState(true);
@@ -303,6 +307,17 @@ export function ArtifactViewer({ storage, artifactId }: ArtifactViewerProps) {
 								onChange={(event) => setQuery(event.target.value)}
 							/>
 						</label>
+						{onClose && (
+							<button
+								type="button"
+								className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+								aria-label="Close artifact panel"
+								title="Close panel"
+								onClick={onClose}
+							>
+								<PanelRightClose size={16} />
+							</button>
+						)}
 						{agentArtifactCount > 0 && (
 							<button
 								type="button"
@@ -469,8 +484,301 @@ function ArtifactMarkdownViewer({ content }: { content: string }) {
 	);
 }
 
+interface PlanQuizSection {
+	index: number;
+	title: string;
+	purpose: string;
+	bullets: string[];
+}
+
+type PlanViewerMode = "lesson" | "quiz";
+
+function stripMarkdown(text: string): string {
+	return text
+		.replace(/^\s*[-*]\s+/, "")
+		.replace(/\*\*/g, "")
+		.replace(/`/g, "")
+		.trim();
+}
+
+function localSlug(text: string): string {
+	return text
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, "-")
+		.replace(/^-|-$/g, "")
+		.slice(0, 80) || "lesson-plan";
+}
+
+function shuffleWithSeed<T>(items: T[], seed: number): T[] {
+	const copy = [...items];
+	let state = Math.max(1, seed | 0);
+	for (let i = copy.length - 1; i > 0; i--) {
+		state = (state * 1103515245 + 12345) & 0x7fffffff;
+		const j = state % (i + 1);
+		[copy[i], copy[j]] = [copy[j], copy[i]];
+	}
+	return copy;
+}
+
+function optionSet(correct: string, distractors: string[], seed: number, fallbackLabel = "None of the above"): string[] {
+	const seen = new Set<string>();
+	const options = [correct, ...distractors, fallbackLabel]
+		.map(stripMarkdown)
+		.filter((item) => {
+			if (item.length < 3 || seen.has(item.toLowerCase())) return false;
+			seen.add(item.toLowerCase());
+			return true;
+		})
+		.slice(0, 4);
+	while (options.length < 4) {
+		options.push(`Related but not the best answer ${options.length}`);
+	}
+	return shuffleWithSeed(options, seed);
+}
+
+function extractPlanSummary(content: string): string {
+	const summary = content.match(/^- Summary:\s*(.+)$/im)?.[1]?.trim();
+	if (summary) return stripMarkdown(summary);
+	const firstParagraph = content
+		.split(/\n{2,}/)
+		.map((part) => stripMarkdown(part))
+		.find((part) => part && !part.startsWith("#") && !part.startsWith("- Domain:"));
+	return firstParagraph ?? "the central idea of this lesson";
+}
+
+function extractPlanSections(content: string): PlanQuizSection[] {
+	const sections: PlanQuizSection[] = [];
+	const headingPattern = /^##\s+(.+)$/gm;
+	const matches = Array.from(content.matchAll(headingPattern));
+
+	for (let i = 0; i < matches.length; i++) {
+		const match = matches[i];
+		const title = stripMarkdown(match[1] ?? "");
+		const start = (match.index ?? 0) + match[0].length;
+		const end = i + 1 < matches.length ? matches[i + 1].index ?? content.length : content.length;
+		const body = content.slice(start, end).trim();
+		const lines = body.split("\n").map((line) => line.trim()).filter(Boolean);
+		const purpose = stripMarkdown(lines.find((line) => !line.startsWith("- ")) ?? "");
+		const bullets = lines.filter((line) => line.startsWith("- ")).map(stripMarkdown);
+		if (title && (purpose || bullets.length > 0)) {
+			sections.push({ index: i, title, purpose, bullets });
+		}
+	}
+
+	return sections;
+}
+
+function buildPlanQuiz(plan: LessonPlan, seed: number, focusSectionIndexes: number[] = []): Quiz | null {
+	const sections = extractPlanSections(plan.content).filter((section) => section.bullets.length > 0 || section.purpose);
+	if (sections.length < 2) return null;
+
+	const summary = extractPlanSummary(plan.content);
+	const slug = localSlug(plan.topic);
+	const allBullets = sections.flatMap((section) => section.bullets.map((bullet) => ({ section, bullet })));
+	const orderedSections = [
+		...sections.filter((section) => focusSectionIndexes.includes(section.index)),
+		...sections.filter((section) => !focusSectionIndexes.includes(section.index)),
+	];
+	const questions: QuizQuestion[] = [];
+	const sectionLimit = focusSectionIndexes.length > 0 ? 7 : 6;
+
+	questions.push({
+		id: `${slug}-plan-summary-${seed}`,
+		type: "multiple_choice",
+		level: "recall",
+		question: `Which statement best captures the main point of this lesson plan?`,
+		options: optionSet(
+			summary,
+			[
+				`The lesson is mainly a list of unrelated facts about ${plan.topic}.`,
+				`The lesson avoids practice and only asks the learner to read.`,
+				`The lesson is only concerned with provider setup and app navigation.`,
+			],
+			seed + 1,
+		),
+		correctAnswer: summary,
+		explanation: `This comes from the saved lesson summary for ${plan.topic}.`,
+	});
+
+	for (const section of orderedSections.slice(0, sectionLimit)) {
+		const correct = section.bullets[seed % section.bullets.length] ?? section.purpose;
+		const distractors = allBullets
+			.filter((item) => item.section.index !== section.index)
+			.map((item) => item.bullet);
+		questions.push({
+			id: `${slug}-plan-section-${section.index}-${seed}`,
+			type: "multiple_choice",
+			level: section.index < 2 ? "comprehension" : section.title.toLowerCase().includes("practice") ? "application" : "analysis",
+			question: `In the "${section.title}" part of the plan, which move should the tutor make?`,
+			options: optionSet(correct, distractors, seed + section.index + 10),
+			correctAnswer: correct,
+			explanation: `The "${section.title}" section says: ${correct}`,
+		});
+	}
+
+	const multiSelectSections = orderedSections.filter((section) => section.bullets.length >= 2);
+	const multiSection = multiSelectSections[seed % multiSelectSections.length];
+	if (multiSection) {
+		const correctAnswers = multiSection.bullets.slice(0, 2);
+		const distractors = allBullets
+			.filter((item) => item.section.index !== multiSection.index)
+			.map((item) => item.bullet);
+		questions.push({
+			id: `${slug}-plan-multi-${multiSection.index}-${seed}`,
+			type: "multi_select",
+			level: "application",
+			question: `Select the two actions that belong in "${multiSection.title}".`,
+			options: optionSet(correctAnswers[0], [correctAnswers[1], ...distractors], seed + 100, "Skip this action"),
+			correctAnswer: correctAnswers.join(", "),
+			correctAnswers,
+			explanation: `Both selected actions come directly from "${multiSection.title}".`,
+		});
+	}
+
+	const transfer = sections.find((section) => /transfer|reflection/i.test(section.title)) ?? sections.at(-1);
+	if (transfer) {
+		questions.push({
+			id: `${slug}-plan-transfer-${transfer.index}-${seed}`,
+			type: "short_answer",
+			level: "transfer",
+			question: `Use your own words: how would you apply the "${transfer.title}" part of this plan after taking the lesson?`,
+			correctAnswer: transfer.bullets[0] ?? transfer.purpose,
+			explanation: `A strong answer should connect back to this saved lesson move: ${transfer.bullets[0] ?? transfer.purpose}`,
+			rubric: "2pts: names the relevant move. 3pts: applies it to a new example. 4pts: applies it and names a limit.",
+		});
+	}
+
+	return {
+		topic: plan.topic,
+		slug: `${slug}-lesson-plan`,
+		generatedAt: new Date().toISOString(),
+		questions,
+		totalPoints: questions.reduce((sum, q) => sum + (q.rubric ? 3 : q.type === "multi_select" ? 2 : 1), 0),
+		adaptiveRules: [
+			{ level: "recall", threshold: 0.5 },
+			{ level: "comprehension", threshold: 0.5 },
+			{ level: "application", threshold: 0.5 },
+			{ level: "analysis", threshold: 0.5 },
+			{ level: "transfer", threshold: 0.5 },
+		],
+	};
+}
+
+function missedSectionIndexes(result: QuizResult | null): number[] {
+	if (!result) return [];
+	const missed = new Set<number>();
+	for (const [questionId, credit] of Object.entries(result.partialCredits)) {
+		if (credit >= 1) continue;
+		const match = questionId.match(/-plan-(?:section|multi|transfer)-(\d+)-/);
+		if (match) missed.add(Number(match[1]));
+	}
+	return Array.from(missed);
+}
+
 function PlanViewer({ plan }: { plan: LessonPlan }) {
-	return <ArtifactMarkdownViewer content={plan.content} />;
+	const [mode, setMode] = useState<PlanViewerMode>("lesson");
+	const [quizSeed, setQuizSeed] = useState(() => Math.floor(Date.now() % 100000));
+	const [lastResult, setLastResult] = useState<QuizResult | null>(null);
+	const focusSections = useMemo(() => missedSectionIndexes(lastResult), [lastResult]);
+	const quiz = useMemo(() => buildPlanQuiz(plan, quizSeed, focusSections), [plan, quizSeed, focusSections]);
+
+	const redoQuiz = () => {
+		setQuizSeed((seed) => seed + 17);
+		setMode("quiz");
+	};
+
+	return (
+		<div className="space-y-4">
+			<div className="flex flex-col gap-3 rounded-lg border border-border bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+				<div className="min-w-0">
+					<p className="text-sm font-medium text-foreground">Lesson artifact</p>
+					<p className="text-xs text-muted-foreground">
+						Read the plan or take a quiz generated from this saved lesson.
+					</p>
+				</div>
+				<div className="flex flex-wrap items-center gap-2">
+					<div className="inline-flex rounded-md border border-border bg-background p-1">
+						<button
+							type="button"
+							onClick={() => setMode("lesson")}
+							className={`rounded px-3 py-1.5 text-xs font-medium transition-colors ${
+								mode === "lesson" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+							}`}
+						>
+							Lesson
+						</button>
+						<button
+							type="button"
+							onClick={() => setMode("quiz")}
+							disabled={!quiz}
+							className={`rounded px-3 py-1.5 text-xs font-medium transition-colors disabled:pointer-events-none disabled:opacity-40 ${
+								mode === "quiz" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+							}`}
+						>
+							Quiz
+						</button>
+					</div>
+					<button
+						type="button"
+						onClick={redoQuiz}
+						disabled={!quiz}
+						className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-40"
+					>
+						<RotateCcw size={13} />
+						Redo quiz
+					</button>
+				</div>
+			</div>
+
+			{mode === "lesson" && <ArtifactMarkdownViewer content={plan.content} />}
+
+			{mode === "quiz" && (
+				quiz ? (
+					<div className="space-y-3">
+						{focusSections.length > 0 && (
+							<div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+								This redo is weighted toward the sections missed in the last attempt.
+							</div>
+						)}
+						<QuizRenderer
+							key={`${plan.id}-${quizSeed}-${focusSections.join(".")}`}
+							quiz={quiz}
+							onSubmit={(result) => {
+								setLastResult(result);
+								window.dispatchEvent(
+									new CustomEvent("keating:quiz-submitted", {
+										detail: {
+											quizId: quiz.slug,
+											topic: quiz.topic,
+											artifactId: plan.id,
+											total: quiz.questions.length,
+											questions: quiz.questions.map((q) => ({
+												id: q.id,
+												question: q.question,
+												correctAnswer: q.correctAnswer,
+												type: q.type,
+											})),
+											answers: result.answers,
+											score: result.score,
+											weightedScore: result.weightedScore,
+											confidence: result.confidence,
+											partialCredits: result.partialCredits,
+											flagged: result.flagged,
+											timing: result.timing,
+										},
+									}),
+								);
+							}}
+						/>
+					</div>
+				) : (
+					<div className="rounded-lg border border-border bg-muted/20 p-4 text-sm text-muted-foreground">
+						This lesson plan does not have enough structured sections to build an interactive quiz.
+					</div>
+				)
+			)}
+		</div>
+	);
 }
 
 function MapView({ map }: { map: LessonMap }) {

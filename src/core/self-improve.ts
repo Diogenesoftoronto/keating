@@ -4,8 +4,9 @@ import { join } from "node:path";
 import { BenchmarkResult } from "./types.js";
 import { runBenchmarkSuite } from "./benchmark.js";
 import { loadPolicy } from "./policy.js";
-import { currentPolicyPath, stateDir, outputsDir } from "./paths.js";
+import { currentPolicyPath, stateDir, outputsDir, learnerStatePath } from "./paths.js";
 import { mean } from "./util.js";
+import { loadLearnerState } from "./learner-state.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -361,7 +362,8 @@ export async function evaluateImprovement(
   baselineScore: number
 ): Promise<{ afterScore: number; improved: boolean; delta: number }> {
   const policy = await loadPolicy(currentPolicyPath(cwd));
-  const result = await runBenchmarkSuite(cwd, policy);
+  const learnerState = await loadLearnerState(learnerStatePath(cwd));
+  const result = await runBenchmarkSuite(cwd, policy, undefined, 20260401, 3, undefined, learnerState);
   const delta = result.overallScore - baselineScore;
   return {
     afterScore: result.overallScore,
