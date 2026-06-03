@@ -17,13 +17,29 @@ interface Choice<T extends string = string> {
 }
 
 const PROVIDERS: Choice[] = [
-  { label: "Google", value: "google", hint: "Recommended" },
+  { label: "OpenRouter (free)", value: "openrouter", hint: "Free models, no credit card required" },
+  { label: "Zyphra Cloud", value: "zyphra", hint: "ZAYA1-8B local reasoning model" },
+  { label: "Google", value: "google", hint: "Recommended for best performance" },
   { label: "OpenAI", value: "openai" },
   { label: "Anthropic", value: "anthropic" },
   { label: "Custom", value: "custom", hint: "Type a provider name" }
 ];
 
 const MODELS_BY_PROVIDER: Record<string, Choice[]> = {
+  zyphra: [
+    { label: "ZAYA1-8B", value: "zyphra/ZAYA1-8B", hint: "Recommended" },
+    { label: "Custom", value: "custom", hint: "Type a model name" }
+  ],
+  openrouter: [
+    { label: "Poolside Laguna M.1 (free)", value: "poolside/laguna-m.1:free", hint: "Recommended" },
+    { label: "Poolside Laguna XS.2 (free)", value: "poolside/laguna-xs.2:free", hint: "Faster/smaller" },
+    { label: "OpenAI GPT-OSS 120B (free)", value: "openai/gpt-oss-120b:free" },
+    { label: "DeepSeek V4 Flash (free)", value: "deepseek/deepseek-v4-flash:free" },
+    { label: "Google Gemma 4 31B (free)", value: "google/gemma-4-31b-it:free" },
+    { label: "Nvidia Nemotron 120B (free)", value: "nvidia/nemotron-3-super-120b-a12b:free" },
+    { label: "MoonshotAI Kimi K2.6 (free)", value: "moonshotai/kimi-k2.6:free" },
+    { label: "Custom", value: "custom", hint: "Type a model name" }
+  ],
   google: [
     { label: "Gemini 3.1 Pro Preview", value: "gemini-3.1-pro-preview", hint: "Recommended" },
     { label: "Gemini 3.1 Flash Live Preview", value: "gemini-3.1-flash-live-preview" },

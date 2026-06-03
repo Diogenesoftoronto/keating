@@ -88,6 +88,36 @@ const CLI_AGENT_PACKAGES = [
   ["@mariozechner", "pi-coding-agent"],
 ];
 
+const ZYPHRA_PI_PROVIDER = {
+  baseUrl: "https://api.zyphracloud.com/v1",
+  api: "openai-completions",
+  apiKey: "ZYPHRA_API_KEY",
+  models: [
+    { id: "zyphra/ZAYA1-8B", name: "ZAYA1-8B" }
+  ]
+} as const;
+
+async function syncZyphraProvider(cwd: string, env: NodeJS.ProcessEnv): Promise<void> {
+  if (!env.ZYPHRA_API_KEY) return;
+
+  const modelsPath = join(configDir(cwd), "models.json");
+  let existing: Record<string, unknown> = {};
+  try {
+    const raw = await readFile(modelsPath, "utf8");
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      existing = parsed as Record<string, unknown>;
+    }
+  } catch {
+    existing = {};
+  }
+
+  const providers = (existing.providers as Record<string, unknown>) ?? {};
+  const merged = { ...existing, providers: { ...providers, zyphra: ZYPHRA_PI_PROVIDER } };
+  await mkdir(configDir(cwd), { recursive: true });
+  await writeFile(modelsPath, `${JSON.stringify(merged, null, 2)}\n`, "utf8");
+}
+
 async function syncPiSettings(cwd: string, config: KeatingConfig): Promise<void> {
   const agentDir = configDir(cwd);
   const settingsPath = join(agentDir, "settings.json");
@@ -112,7 +142,9 @@ async function syncPiSettings(cwd: string, config: KeatingConfig): Promise<void>
 const PROVIDER_ENV_KEYS: Record<string, string[]> = {
   google: ["GEMINI_API_KEY", "GOOGLE_API_KEY"],
   openai: ["OPENAI_API_KEY"],
-  anthropic: ["ANTHROPIC_OAUTH_TOKEN", "ANTHROPIC_API_KEY"]
+  anthropic: ["ANTHROPIC_OAUTH_TOKEN", "ANTHROPIC_API_KEY"],
+  openrouter: ["OPENROUTER_API_KEY"],
+  zyphra: ["ZYPHRA_API_KEY"]
 };
 
 const PROVIDER_SETUP_HINTS: Record<string, string[]> = {
@@ -126,6 +158,16 @@ const PROVIDER_SETUP_HINTS: Record<string, string[]> = {
   ],
   anthropic: [
     "export ANTHROPIC_API_KEY=your_anthropic_key",
+    "or run `keating setup` and choose another provider"
+  ],
+  openrouter: [
+    "export OPENROUTER_API_KEY=your_openrouter_key",
+    "get a free key at https://openrouter.ai (free models available, no credit card required)",
+    "or run `keating setup` and choose another provider"
+  ],
+  zyphra: [
+    "export ZYPHRA_API_KEY=your_zyphra_key",
+    "get a key at https://cloud.zyphra.com",
     "or run `keating setup` and choose another provider"
   ]
 };
@@ -206,7 +248,7 @@ function selectAuthenticatedProvider(cwd: string, config: KeatingConfig, args: s
     return { env };
   }
 
-  const candidates = [configuredProvider, "google", "openai", "anthropic"].filter((provider, index, all) =>
+  const candidates = [configuredProvider, "google", "openai", "anthropic", "openrouter", "zyphra"].filter((provider, index, all) =>
     provider && all.indexOf(provider) === index
   );
   const selected = candidates.find((provider) => providerIsConfigured(cwd, env, provider));
@@ -214,11 +256,13 @@ function selectAuthenticatedProvider(cwd: string, config: KeatingConfig, args: s
     throw new Error([
       providerSetupMessage(configuredProvider),
       "",
-      "Keating also checked for OpenAI and Anthropic credentials and did not find them.",
+      "Keating also checked for OpenAI, Anthropic, OpenRouter, and Zyphra credentials and did not find them.",
       "Supported fallback env vars:",
       "  GEMINI_API_KEY or GOOGLE_API_KEY",
       "  OPENAI_API_KEY",
-      "  ANTHROPIC_API_KEY or ANTHROPIC_OAUTH_TOKEN"
+      "  ANTHROPIC_API_KEY or ANTHROPIC_OAUTH_TOKEN",
+      "  OPENROUTER_API_KEY (free models available at https://openrouter.ai)",
+      "  ZYPHRA_API_KEY (ZAYA1-8B via https://cloud.zyphra.com)"
     ].join("\n"));
   }
 
@@ -327,6 +371,7 @@ export async function launchShell(cwd: string, args: string[]): Promise<number> 
   await ensureProjectScaffold(cwd);
   const config = await loadKeatingConfig(cwd);
   await syncPiSettings(cwd, config);
+  await syncZyphraProvider(cwd, process.env);
   const report = await detectAiRuntime(cwd);
   const runtime = report.selected;
   if (!runtime) {

@@ -2,6 +2,8 @@ import {
   BenchmarkResult,
   BenchmarkTopicTrace,
   LearnerProfile,
+  LearnerState,
+  RealLearnerOutcome,
   SimulationWeights,
   TeacherPolicy,
   TeachingSimulation,
@@ -9,10 +11,57 @@ import {
   TopicDefinition
 } from "./types.js";
 import { Prng } from "./random.js";
-import { benchmarkTopics } from "./topics.js";
+import { benchmarkTopics, resolveTopic } from "./topics.js";
 import { clamp, mean } from "./util.js";
 import { DEFAULT_WEIGHTS, clampWeights } from "./policy.js";
 import { piCompleteJson } from "./pi-agent.js";
+import {
+  MIN_REAL_OUTCOMES,
+  blendRealSyntheticScore,
+  computeRealOutcomeScore,
+  feedbackToOutcomeScore,
+  hasEnoughRealData,
+  simulateDeterministicTeaching
+} from "./benchmark-real.js";
+
+// ---------------------------------------------------------------------------
+// Real learner outcome extraction: convert stored student data into
+// scoreable outcome records that replace synthetic simulations.
+// ---------------------------------------------------------------------------
+
+export function extractRealOutcomes(state: LearnerState): RealLearnerOutcome[] {
+  const outcomes: RealLearnerOutcome[] = [];
+
+  for (const fb of state.feedback) {
+    const topicSlug = fb.topic;
+    const covered = state.coveredTopics.find((ct) => ct.slug === topicSlug);
+    const session =
+      state.sessions.find((s) => s.topicsCovered.includes(topicSlug)) ?? null;
+
+    let sessionDurationMs: number | null = null;
+    if (session?.startedAt && session?.endedAt) {
+      sessionDurationMs =
+        new Date(session.endedAt).getTime() -
+        new Date(session.startedAt).getTime();
+    }
+
+    outcomes.push({
+      learnerId: state.profile.id,
+      topic: topicSlug,
+      feedbackSignal: fb.signal,
+      quizScore: null,
+      sessionDurationMs,
+      masteryEstimate: covered?.masteryEstimate ?? 0.5,
+      outcomeScore: feedbackToOutcomeScore(fb.signal),
+    });
+  }
+
+  return outcomes;
+}
+
+// ---------------------------------------------------------------------------
+// Synthetic learner population (fallback when real data is insufficient)
+// ---------------------------------------------------------------------------
 
 function buildLearnerPopulation(seed: number, count: number): LearnerProfile[] {
   const prng = new Prng(seed);
@@ -40,59 +89,9 @@ export async function simulateTeaching(
   learner: LearnerProfile,
   weights: SimulationWeights = DEFAULT_WEIGHTS
 ): Promise<TeachingSimulation> {
-  // Use pure math to calculate initial constraints as baseline context
-  const intuitionFit = 1 - Math.abs(policy.analogyDensity - learner.analogyNeed);
-  const rigorTarget = clamp((topic.formalism + learner.abstractionComfort) / 2);
-  const rigorFit = 1 - Math.abs(policy.formalism - rigorTarget);
-  const dialogueFit = 1 - Math.abs(policy.socraticRatio - learner.dialoguePreference);
-  const diagramTarget = topic.visualizable ? learner.diagramAffinity : 0.2;
-  const diagramFit = 1 - Math.abs(policy.diagramBias - diagramTarget);
-  const practiceNeed = clamp(1 - learner.priorKnowledge + learner.anxiety * 0.2);
-  const practiceFit = 1 - Math.abs(policy.exerciseCount / 5 - practiceNeed);
-  const reflectionFit = 1 - Math.abs(policy.reflectionBias - learner.transferDesire);
-  const overload = clamp(
-    policy.formalism * 0.35 +
-      (policy.exerciseCount / 5) * 0.15 +
-      policy.challengeRate * 0.3 -
-      learner.persistence * 0.2 +
-      learner.anxiety * 0.25 -
-      learner.priorKnowledge * 0.15
-  );
+  const baseline = simulateDeterministicTeaching(policy, topic, learner, weights);
   const deterministicBaseline = (): TeachingSimulation => {
-    const masteryGain = clamp(0.14 + intuitionFit * 0.18 + rigorFit * 0.2 + dialogueFit * 0.12 + diagramFit * 0.09 + practiceFit * 0.12 + (1 - overload) * 0.18);
-    const retention = clamp(masteryGain * (0.55 + policy.retrievalPractice * 0.45));
-    const engagement = clamp(0.12 + intuitionFit * 0.16 + dialogueFit * 0.16 + diagramFit * 0.1 + reflectionFit * 0.14 + (1 - overload) * 0.18);
-    const transfer = clamp(masteryGain * (0.55 + policy.interdisciplinaryBias * 0.25 + learner.transferDesire * 0.2));
-    const confusion = clamp(0.04 + overload * 0.55 + Math.abs(policy.formalism - learner.abstractionComfort) * 0.18 + Math.abs(policy.challengeRate - learner.persistence) * 0.12);
-    const score = clamp(
-      masteryGain * weights.masteryGain +
-      retention * weights.retention +
-      engagement * weights.engagement +
-      transfer * weights.transfer -
-      confusion * weights.confusion,
-      0, 1
-    );
-
-    return {
-      learner,
-      topic,
-      masteryGain,
-      retention,
-      engagement,
-      transfer,
-      confusion,
-      score,
-      breakdown: {
-        intuitionFit,
-        rigorFit,
-        dialogueFit,
-        diagramFit,
-        practiceFit,
-        reflectionFit,
-        overload
-      },
-      explanation: ["Deterministic algebraic baseline."]
-    };
+    return baseline;
   };
 
   if (process.env.KEATING_LLM_BENCHMARK !== "1") {
@@ -141,15 +140,7 @@ Respond ONLY as a JSON matching:
       transfer: clamp(evaluation.transfer, 0, 1),
       confusion: clamp(evaluation.confusion, 0, 1),
       score: clamp(evaluation.score, 0, 1),
-      breakdown: {
-        intuitionFit,
-        rigorFit,
-        dialogueFit,
-        diagramFit,
-        practiceFit,
-        reflectionFit,
-        overload
-      },
+      breakdown: baseline.breakdown,
       explanation: evaluation.explanation
     };
   } catch (error) {
@@ -197,25 +188,72 @@ export function summarizeTopic(topic: TopicDefinition, simulations: TeachingSimu
   };
 }
 
+// ---------------------------------------------------------------------------
+// Main benchmark suite — uses real learner outcomes when available,
+// falls back to synthetic population otherwise.
+// ---------------------------------------------------------------------------
+
 export async function runBenchmarkSuite(
   cwd: string,
   policy: TeacherPolicy,
   focusTopic?: string,
   seed = 20260401,
   traceLimit = 3,
-  weights: SimulationWeights = DEFAULT_WEIGHTS
+  weights: SimulationWeights = DEFAULT_WEIGHTS,
+  learnerState?: LearnerState
 ): Promise<BenchmarkResult> {
   const topics = benchmarkTopics(focusTopic);
   const topicTraces: BenchmarkTopicTrace[] = [];
-  // Reduce learner count to 3 instead of 18 to save LLM tokens and time
-  const NUM_LEARNERS = 3;
-  
+  const realOutcomes = learnerState ? extractRealOutcomes(learnerState) : [];
+  const useRealLearners = hasEnoughRealData(realOutcomes);
+  const NUM_SYNTHETIC_LEARNERS = 3;
+
   const topicBenchmarks = await Promise.all(
     topics.map(async (topic, index) => {
-      const learners = buildLearnerPopulation(seed + index * 97, NUM_LEARNERS);
-      const simulations = await Promise.all(
-        learners.map((learner) => simulateTeaching(cwd, policy, topic, learner, weights))
-      );
+      const topicReal = realOutcomes.filter((o) => o.topic === topic.slug);
+
+      let simulations: TeachingSimulation[];
+
+      if (useRealLearners && topicReal.length >= 3) {
+        // Score against real learner outcomes for this topic
+        const realSim = computeRealOutcomeScore(topicReal, policy, topic, weights);
+
+        // Supplement with synthetic to keep evolutionary gradients smooth
+        const synthLearners = buildLearnerPopulation(seed + index * 97, NUM_SYNTHETIC_LEARNERS);
+        const synthSims = await Promise.all(
+          synthLearners.map((learner) =>
+            simulateTeaching(cwd, policy, topic, learner, weights)
+          )
+        );
+
+        const syntheticSim = synthSims.length > 0 ? synthSims : [];
+        simulations = [realSim, ...syntheticSim];
+        // Adjust the real sim's score by blending with synthetic mean
+        if (syntheticSim.length > 0) {
+          const synthMean = mean(syntheticSim.map((s) => s.score));
+          realSim.score = blendRealSyntheticScore(realSim.score, synthMean, topicReal.length);
+        }
+      } else if (useRealLearners && topicReal.length > 0) {
+        // Some real data for this topic but not enough on its own — blend
+        const realSim = computeRealOutcomeScore(topicReal, policy, topic, weights);
+
+        const synthLearners = buildLearnerPopulation(seed + index * 97, NUM_SYNTHETIC_LEARNERS);
+        const synthSims = await Promise.all(
+          synthLearners.map((learner) =>
+            simulateTeaching(cwd, policy, topic, learner, weights)
+          )
+        );
+        simulations = [...synthSims, realSim];
+      } else {
+        // Pure synthetic (no real data available)
+        const synthLearners = buildLearnerPopulation(seed + index * 97, NUM_SYNTHETIC_LEARNERS);
+        simulations = await Promise.all(
+          synthLearners.map((learner) =>
+            simulateTeaching(cwd, policy, topic, learner, weights)
+          )
+        );
+      }
+
       const summary = summarizeTopic(topic, simulations, traceLimit);
       topicTraces.push({
         topic: topic.title,
@@ -255,8 +293,10 @@ export async function runBenchmarkSuite(
     weakestTopic: weakest?.topic.title ?? "n/a",
     trace: {
       seed,
-      learnerCountPerTopic: NUM_LEARNERS,
-      topicTraces
+      learnerCountPerTopic: useRealLearners ? 1 + NUM_SYNTHETIC_LEARNERS : NUM_SYNTHETIC_LEARNERS,
+      topicTraces,
+      realOutcomeCount: realOutcomes.length,
+      syntheticFallback: !useRealLearners,
     }
   };
 }
@@ -268,6 +308,8 @@ export function benchmarkToMarkdown(result: BenchmarkResult): string {
     `- Suite: ${result.suiteName}`,
     `- Overall score: ${result.overallScore.toFixed(2)}`,
     `- Weakest topic: ${result.weakestTopic}`,
+    `- Real outcomes: ${result.trace.realOutcomeCount}`,
+    `- Data source: ${result.trace.syntheticFallback ? "synthetic" : "real+synthetic"}`,
     "",
     "| Topic | Score | Mastery | Retention | Engagement | Transfer | Confusion |",
     "| --- | ---: | ---: | ---: | ---: | ---: | ---: |"
@@ -285,6 +327,15 @@ export function benchmarkToMarkdown(result: BenchmarkResult): string {
   lines.push(
     `- The policy currently underperforms most on ${result.weakestTopic}, which is a useful anchor for mutation and curriculum repair.`
   );
+  if (!result.trace.syntheticFallback) {
+    lines.push(
+      `- Benchmark includes **real learner outcomes** (${result.trace.realOutcomeCount} data points). As more students use the system, the synthetic component is progressively discounted.`
+    );
+  } else {
+    lines.push(
+      `- Benchmark uses **synthetic learners** only — not enough real student data yet (need ${MIN_REAL_OUTCOMES}+ feedback signals). Keep teaching to build the real outcome corpus.`
+    );
+  }
   lines.push(
     "- Invariants tracked here favor durable learning signals: mastery, retention, engagement, transfer, and bounded confusion."
   );

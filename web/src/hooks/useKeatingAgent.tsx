@@ -13,6 +13,7 @@ import {
 import { SessionManagerDialog } from "../components/SessionManagerDialog";
 import { SettingsDialog } from "../components/SettingsDialog";
 import { KeatingUiSettingsTab } from "../components/KeatingUiSettingsTab";
+import { TeacherPersonaTab } from "../components/TeacherPersonaTab";
 import { ProvidersModelsTab } from "../components/ProvidersModelsTab";
 import { ProxyTab } from "../components/ProxyTab";
 import { SpeechSettingsTab } from "../components/SpeechSettingsTab";
@@ -21,7 +22,9 @@ import { ModelSelectorDialog } from "../components/ModelSelector";
 import { KeatingApiKeyPromptDialog, promptKeatingApiKey } from "../components/KeatingApiKeyPromptDialog";
 import { getProviderApiKey } from "../lib/provider-models";
 import { localModel } from "../stores/local-model";
-import { buildKeatingSystemPrompt, createKeatingTools, getActiveKeatingPrompt } from "../keating/browser-tools";
+import { buildKeatingSystemPrompt, composeKeatingSystemPrompt, createKeatingTools, getActiveKeatingPrompt } from "../keating/browser-tools";
+import { loadAgentRuntimeConfig, type KeatingAgentRuntimeConfig } from "../keating/agent-runtime";
+import { isDefaultPersona, loadPersona, subscribePersona } from "../keating/persona";
 import { registerKeatingWebMcp } from "../keating/webmcp";
 import { loadWebSpeechSettings, primeSpeechAudio, saveWebSpeechSettings, type WebSpeechSettings } from "../keating/speech";
 import { subscribeAgentEvents } from "./agent-subscriptions";
@@ -136,6 +139,9 @@ export interface UseKeatingAgentReturn {
   dialogs: React.ReactNode;
   speechEnabled: boolean;
   persistentStorageStatus: PersistentStorageStatus;
+  persistentBannerDismissed: boolean;
+  retryPersistentStorage: () => void;
+  dismissPersistentBanner: () => void;
   toggleSpeech: () => void;
   setThinkingLevel: (level: ThinkingLevel) => void;
   generateCurrentSessionTitle: () => Promise<string>;
@@ -212,7 +218,8 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const unsubRef = useRef<(() => void) | null>(null);
   const persistUnsubRef = useRef<(() => void) | null>(null);
 
-  const toolOptions = useCallback((settings: WebSpeechSettings) => ({
+  const toolOptions = useCallback((settings: WebSpeechSettings, agentRuntime?: KeatingAgentRuntimeConfig) => ({
+    agentRuntime,
     speech: {
       settings,
       getApiKey: (provider: string) => getProviderApiKey(provider),
@@ -266,9 +273,17 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const createAgent = useCallback(async (panel: ChatPanelHandle, initialState?: Partial<AgentState>) => {
     const agentSessionId = sessionIdRef.current;
     const agentCreatedAt = sessionCreatedAtRef.current;
-    const promptBase = initialState?.systemPrompt ?? await getActiveKeatingPrompt(keatingStorage);
+    // Custom personas take precedence; the untouched default still honors any
+    // evolved prompt produced by the self-improvement loop.
+    const persona = loadPersona();
+    const promptBase =
+      initialState?.systemPrompt ??
+      (isDefaultPersona(persona)
+        ? await getActiveKeatingPrompt(keatingStorage)
+        : composeKeatingSystemPrompt(persona));
     systemPromptBaseRef.current = promptBase;
-    const tools = await createKeatingTools(keatingStorage, toolOptions(speechSettings));
+    const agentRuntime = await loadAgentRuntimeConfig();
+    const tools = await createKeatingTools(keatingStorage, toolOptions(speechSettings, agentRuntime));
     registerKeatingWebMcp(keatingStorage, tools).catch(console.warn);
     const nextState: Partial<AgentState> = {
       systemPrompt: buildKeatingSystemPrompt(speechSettings.enabled, promptBase),
@@ -315,6 +330,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
           console.log(`[keating:send] model=${agent.state.model.provider}/${agent.state.model.id} messages=${agent.state.messages.length}`);
         }
       },
+      onLocalMessagesChanged: () => saveSessionSnapshot(agent, agentSessionId, agentCreatedAt),
       onModelSelect: () => {
         modelSelectorDialog.onOpen();
       },
@@ -335,7 +351,8 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     if (!agent) return;
 
     let cancelled = false;
-    createKeatingTools(keatingStorage, toolOptions(speechSettings))
+    loadAgentRuntimeConfig()
+      .then((agentRuntime) => createKeatingTools(keatingStorage, toolOptions(speechSettings, agentRuntime)))
       .then((tools) => {
         if (cancelled) return;
         agent.state.tools = tools;
@@ -348,6 +365,21 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       cancelled = true;
     };
   }, [speechSettings, toolOptions]);
+
+  // Apply teacher-persona edits to the live agent so changes take effect on the
+  // next turn without needing a new session.
+  useEffect(() => {
+    return subscribePersona((persona) => {
+      const base = composeKeatingSystemPrompt(persona);
+      systemPromptBaseRef.current = base;
+      if (agentRef.current) {
+        agentRef.current.state.systemPrompt = buildKeatingSystemPrompt(
+          speechSettings.enabled,
+          base,
+        );
+      }
+    });
+  }, [speechSettings.enabled]);
 
   const toggleSpeech = useCallback(() => {
     setSpeechSettings((current) => {
@@ -374,7 +406,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   }, []);
 
   const requestPersistentStorageOnce = useCallback(() => {
-    if (persistentStorageRequestedRef.current || persistentStorageStatus !== "unknown") return;
+    if (persistentStorageRequestedRef.current) return;
     persistentStorageRequestedRef.current = true;
     void PersistentStorageDialog.request()
       .then(async (granted) => {
@@ -388,7 +420,26 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
         savePersistentStorageStatus("declined");
         console.warn("Persistent storage request failed:", error);
       });
-  }, [persistentStorageStatus]);
+  }, []);
+
+  const retryPersistentStorage = useCallback(() => {
+    persistentStorageRequestedRef.current = false;
+    void PersistentStorageDialog.request()
+      .then(async (granted) => {
+        const nextStatus: PersistentStorageStatus =
+          granted || (await browserPersistentStorageGranted()) ? "granted" : "declined";
+        setPersistentStorageStatus(nextStatus);
+        savePersistentStorageStatus(nextStatus as Exclude<PersistentStorageStatus, "unknown">);
+      })
+      .catch((error) => {
+        setPersistentStorageStatus("declined");
+        savePersistentStorageStatus("declined");
+        console.warn("Persistent storage retry failed:", error);
+      });
+  }, []);
+
+  const [persistentBannerDismissed, setPersistentBannerDismissed] = useState(false);
+  const dismissPersistentBanner = useCallback(() => setPersistentBannerDismissed(true), []);
 
   const endLearnerSession = useCallback(async () => {
     try {
@@ -620,6 +671,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       onClose={settingsDialog.onClose}
       tabs={[
         { id: "providers", label: "Providers & Models", component: <ProvidersModelsTab /> },
+        { id: "persona", label: "Teacher Persona", component: <TeacherPersonaTab /> },
         { id: "speech", label: "Speech & Voice", component: <SpeechSettingsTab onSettingsChange={setSpeechSettings} /> },
         { id: "interface", label: "Interface", component: <KeatingUiSettingsTab /> },
         { id: "proxy", label: "Proxy", component: <ProxyTab /> },
@@ -680,6 +732,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
               console.log(`[keating:send] model=${existingAgent.state.model.provider}/${existingAgent.state.model.id} messages=${existingAgent.state.messages.length}`);
             }
           },
+          onLocalMessagesChanged: () => saveSessionSnapshot(existingAgent),
           onModelSelect: () => {
             modelSelectorDialog.onOpen();
           },
@@ -758,5 +811,5 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       ? "unknown"
       : persistentStorageStatus;
 
-  return { title, isPending, openSettings, openSessions, newSession, shareSession, chatPanelRef, dialogs: allDialogs, speechEnabled: speechSettings.enabled, persistentStorageStatus: visiblePersistentStorageStatus, toggleSpeech, setThinkingLevel, generateCurrentSessionTitle, sessionSidebar: sessionSidebarElement, activeSessionId, forkingSessionId, sessionSidebarCollapsed, toggleSessionSidebar, mobileSidebarOpen, toggleMobileSidebar, closeMobileSidebar };
+  return { title, isPending, openSettings, openSessions, newSession, shareSession, chatPanelRef, dialogs: allDialogs, speechEnabled: speechSettings.enabled, persistentStorageStatus: visiblePersistentStorageStatus, persistentBannerDismissed, retryPersistentStorage, dismissPersistentBanner, toggleSpeech, setThinkingLevel, generateCurrentSessionTitle, sessionSidebar: sessionSidebarElement, activeSessionId, forkingSessionId, sessionSidebarCollapsed, toggleSessionSidebar, mobileSidebarOpen, toggleMobileSidebar, closeMobileSidebar };
 }

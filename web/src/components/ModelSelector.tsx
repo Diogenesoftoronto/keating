@@ -42,6 +42,7 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState("");
 	const [search, setSearch] = useState("");
+	const [providerFilter, setProviderFilter] = useState("all");
 	const [selectedKey, setSelectedKey] = useState(currentModel ? modelKey(currentModel) : modelKey(makeBrowserModel()));
 	const [localState, setLocalState] = useState<LocalModel | null>(null);
 	const [webGpuAvailable, setWebGpuAvailable] = useState(false);
@@ -50,6 +51,7 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 	useEffect(() => {
 		if (!open) return;
 		setSearch("");
+		setProviderFilter("all");
 		setSelectedKey(currentModel ? modelKey(currentModel) : modelKey(makeBrowserModel()));
 		checkWebGpu().then(setWebGpuAvailable);
 		const unsub = localModel.subscribe(setLocalState);
@@ -111,12 +113,22 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 
 	const filtered = useMemo(() => {
 		const q = search.trim().toLowerCase();
-		if (!q) return models;
+		const provider = providerFilter;
 		return models.filter(({ model }) => {
+			if (provider !== "all" && model.provider !== provider) return false;
+			if (!q) return true;
 			const haystack = `${model.name} ${model.id} ${model.provider}`.toLowerCase();
 			return haystack.includes(q);
 		});
-	}, [search, models]);
+	}, [search, providerFilter, models]);
+
+	const providerOptions = useMemo(
+		() =>
+			Array.from(new Set(models.map(({ model }) => model.provider))).sort((left, right) =>
+				left.localeCompare(right),
+			),
+		[models],
+	);
 
 	const recentKeys = useMemo(
 		() => new Set(search.trim() === "" ? getRecentModels().map((m) => m.key) : []),
@@ -155,21 +167,39 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 						<h2 className="text-base font-semibold text-foreground">Select Model</h2>
 						<p className="text-xs text-muted-foreground mt-0.5">Built-in providers and discovered custom-provider models.</p>
 					</div>
-					<div className="flex gap-2 mt-3 flex-wrap">
-						<input
-							ref={inputRef}
-							type="text"
-							placeholder="Search models or providers"
-							className="flex-1 min-w-[180px] rounded-md border-2 border-border bg-background px-3 py-2 text-sm"
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-						/>
+					<div className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(10rem,14rem)_auto]">
+						<label className="min-w-0">
+							<span className="sr-only">Search models</span>
+							<input
+								ref={inputRef}
+								type="text"
+								placeholder="Search models"
+								className="w-full rounded-md border-2 border-border bg-background px-3 py-2 text-sm"
+								value={search}
+								onChange={(e) => setSearch(e.target.value)}
+							/>
+						</label>
+						<label className="min-w-0">
+							<span className="sr-only">Filter by provider</span>
+							<select
+								className="w-full rounded-md border-2 border-border bg-background px-3 py-2 text-sm"
+								value={providerFilter}
+								onChange={(e) => setProviderFilter(e.target.value)}
+							>
+								<option value="all">All providers</option>
+								{providerOptions.map((provider) => (
+									<option key={provider} value={provider}>
+										{provider}
+									</option>
+								))}
+							</select>
+						</label>
 						<button
 							onClick={() => {
 								setLoading(true);
 								loadModels();
 							}}
-							className="inline-flex items-center gap-1 rounded-md border-2 border-border px-3 py-2 text-sm hover:bg-ink hover:text-paper transition-colors"
+							className="inline-flex items-center justify-center gap-1 rounded-md border-2 border-border px-3 py-2 text-sm hover:bg-ink hover:text-paper transition-colors"
 						>
 							<RefreshCw size={14} />
 							Refresh

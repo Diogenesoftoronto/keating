@@ -4,6 +4,20 @@ import { access, readdir, stat } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { color } from "../core/theme.js";
 
+export type WebAgentRuntimeMode = "browser-only" | "remote" | "cloud";
+
+export interface ServeWebOptions {
+  agentRuntimeMode?: WebAgentRuntimeMode;
+  remoteProvider?: string;
+  remoteEndpoint?: string;
+  remoteRegion?: string;
+  remoteSnapshot?: string;
+  remoteCpu?: string;
+  remoteMemory?: string;
+  remoteDisk?: string;
+  cloudEndpoint?: string;
+}
+
 const WEB_SOURCE_PATHS = [
   "src",
   "public",
@@ -45,15 +59,33 @@ async function warnIfWebBuildIsStale(pkgRoot: string, nitroServerPath: string): 
   console.warn("Use `mise run web` for hot reload, or rebuild with `bun run --cwd web build` before launching.");
 }
 
+async function resolvePackageRoot(currentDir: string): Promise<string> {
+  const candidates = [
+    join(currentDir, "..", "..", ".."), // dist/src/cli/web.js -> project root
+    join(currentDir, "..", ".."), // src/cli/web.ts -> project root
+  ];
+
+  for (const candidate of candidates) {
+    const nitroServerPath = join(candidate, "web", ".output", "server", "index.mjs");
+    try {
+      await access(nitroServerPath);
+      return candidate;
+    } catch {
+      // Keep looking; source and compiled entrypoints sit at different depths.
+    }
+  }
+
+  return candidates[0];
+}
+
 /**
  * Starts the Keating Web UI server using Nitro.
  * Port-incrementing logic is now handled by Nitro's runtime 
  * or can be passed via the PORT environment variable.
  */
-export async function serveWeb(port = 3000): Promise<void> {
+export async function serveWeb(port = 3000, options: ServeWebOptions = {}): Promise<void> {
   const currentDir = dirname(fileURLToPath(import.meta.url));
-  // Navigate from dist/src/cli/web.js to project root
-  const pkgRoot = join(currentDir, "..", "..", "..");
+  const pkgRoot = await resolvePackageRoot(currentDir);
   const nitroServerPath = join(pkgRoot, "web", ".output", "server", "index.mjs");
 
   try {
@@ -67,12 +99,22 @@ export async function serveWeb(port = 3000): Promise<void> {
 
   await warnIfWebBuildIsStale(pkgRoot, nitroServerPath);
 
-  process.stdout.write(`${color.ok}${color.bold} Keating Web Server ${color.reset}  ${color.parchment}port ${port}${color.reset}\n`);
+  const mode = options.agentRuntimeMode ?? "browser-only";
+  process.stdout.write(`${color.ok}${color.bold} Keating Web Server ${color.reset}  ${color.parchment}port ${port}${color.reset}  ${color.sepia}agent=${mode}${color.reset}\n`);
 
   const env = { 
     ...process.env, 
     PORT: port.toString(),
-    NITRO_PORT: port.toString()
+    NITRO_PORT: port.toString(),
+    KEATING_WEB_AGENT_MODE: mode,
+    KEATING_WEB_REMOTE_PROVIDER: options.remoteProvider ?? process.env.KEATING_WEB_REMOTE_PROVIDER ?? "",
+    KEATING_WEB_REMOTE_ENDPOINT: options.remoteEndpoint ?? process.env.KEATING_WEB_REMOTE_ENDPOINT ?? "",
+    KEATING_WEB_REMOTE_REGION: options.remoteRegion ?? process.env.KEATING_WEB_REMOTE_REGION ?? "",
+    KEATING_WEB_REMOTE_SNAPSHOT: options.remoteSnapshot ?? process.env.KEATING_WEB_REMOTE_SNAPSHOT ?? "",
+    KEATING_WEB_REMOTE_CPU: options.remoteCpu ?? process.env.KEATING_WEB_REMOTE_CPU ?? "",
+    KEATING_WEB_REMOTE_MEMORY: options.remoteMemory ?? process.env.KEATING_WEB_REMOTE_MEMORY ?? "",
+    KEATING_WEB_REMOTE_DISK: options.remoteDisk ?? process.env.KEATING_WEB_REMOTE_DISK ?? "",
+    KEATING_WEB_CLOUD_ENDPOINT: options.cloudEndpoint ?? process.env.KEATING_WEB_CLOUD_ENDPOINT ?? "https://keating.help"
   };
 
   // Run the Nitro server in a child process

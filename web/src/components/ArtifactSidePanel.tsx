@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { PanelRightClose, Search } from "lucide-react";
 import { ArtifactViewer } from "./ArtifactViewer";
 import { KeatingStorage } from "../keating/storage";
 
@@ -95,22 +94,6 @@ export function ArtifactSidePanel({ open, artifactId, onClose }: ArtifactSidePan
 				onTouchStart={handleDragStart}
 			>
 				<div className="h-8 w-0.5 rounded-full bg-border opacity-0 transition-opacity group-hover:opacity-100 group-active:opacity-100" />
-			</div>
-
-			<div className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border px-3">
-				<div className="flex items-center gap-2 min-w-0">
-					<Search size={14} className="shrink-0 text-muted-foreground" />
-					<span className="text-sm font-medium text-foreground truncate">Artifacts</span>
-				</div>
-				<button
-					type="button"
-					className="inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-accent hover:text-accent-foreground"
-					aria-label="Close artifact panel"
-					title="Close panel"
-					onClick={onClose}
-				>
-					<PanelRightClose size={16} />
-				</button>
 			</div>
 
 			{open && (

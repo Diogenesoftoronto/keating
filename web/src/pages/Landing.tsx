@@ -84,7 +84,7 @@ export function Landing() {
   return (
     <div className="retro-layout retro-page">
       <BootSequence />
-      <Nav showFeatures />
+      <Nav />
 
       {/* Hero */}
       <section className="pt-6 sm:pt-8 pb-12 sm:pb-20 px-6">

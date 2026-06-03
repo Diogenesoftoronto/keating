@@ -4,6 +4,11 @@ node_modules/
 .bun-tmp/
 .entire/
 .claude/
+.cursor/
+.factory/
+.gemini/
+.pi/
+.zero/
 
 # Build outputs
 dist/

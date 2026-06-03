@@ -2,6 +2,7 @@ const PROVIDER_ANCHORS: Record<string, string> = {
 	google: "google-api-key",
 	openai: "openai-api-key",
 	anthropic: "anthropic-api-key",
+	openrouter: "openrouter-api-key",
 };
 
 export function tutorialApiKeyHref(provider?: string): string {

@@ -260,10 +260,23 @@ export function SessionSidebar({
 								) : null}
 							</div>
 						</div>
-						<label className="mt-3 flex min-h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-xs">
+						{onNewSession ? (
+							<button
+								type="button"
+								className="mt-3 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-primary bg-primary text-sm font-semibold text-primary-foreground transition-colors active:bg-primary/90"
+								onClick={() => {
+									onNewSession();
+									onMobileClose?.();
+								}}
+							>
+								<Plus size={18} />
+								New session
+							</button>
+						) : null}
+						<label className="mt-3 flex min-h-11 items-center gap-2 rounded-md border border-border bg-background px-3 text-xs">
 							<Search size={14} className="shrink-0 text-muted-foreground" />
 							<input
-								className="min-w-0 flex-1 bg-transparent py-2 outline-none placeholder:text-muted-foreground"
+								className="min-w-0 flex-1 bg-transparent py-2.5 outline-none placeholder:text-muted-foreground"
 								value={query}
 								placeholder="Search sessions"
 								onChange={(event) => setQuery(event.target.value)}
@@ -452,6 +465,16 @@ export function SessionSidebar({
 						</p>
 					</div>
 				</div>
+				{onNewSession ? (
+					<button
+						type="button"
+						className="mt-3 inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-primary bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+						onClick={onNewSession}
+					>
+						<Plus size={16} />
+						New session
+					</button>
+				) : null}
 				<label className="mt-3 flex min-h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-xs">
 					<Search size={14} className="shrink-0 text-muted-foreground" />
 					<input

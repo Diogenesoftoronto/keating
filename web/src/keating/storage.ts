@@ -3,8 +3,10 @@
  * Replaces Node.js filesystem operations from src/core/
  */
 
+import type { LearnerGoal } from "./goals";
+
 const DB_NAME = "keating-db";
-const DB_VERSION = 2;
+const DB_VERSION = 4;
 
 // Store names
 const STORES = {
@@ -19,6 +21,8 @@ const STORES = {
 	LEARNER_STATE: "learner-state",
 	PROMPT_EVOLUTIONS: "prompt-evolutions",
 	IMPROVEMENTS: "improvements",
+	GOALS: "goals",
+	QUIZ_RESULTS: "quiz-results",
 } as const;
 
 export interface LessonPlan {
@@ -108,6 +112,16 @@ export interface LearnerState {
 		endedAt?: number;
 		topicsCovered: string[];
 	}>;
+}
+
+export interface QuizResultRecord {
+	id: string;
+	topic: string;
+	createdAt: number;
+	score: number;
+	weightedScore?: number;
+	totalQuestions: number;
+	sessionId?: string;
 }
 
 export interface PromptEvolutionResult {
@@ -222,8 +236,42 @@ export class KeatingStorage {
 		});
 	}
 
+	private async deleteById(storeName: string, id: string): Promise<void> {
+		const store = await this.getStore(storeName, "readwrite");
+		return new Promise((resolve, reject) => {
+			const request = store.delete(id);
+			request.onsuccess = () => resolve();
+			request.onerror = () => reject(request.error);
+		});
+	}
+
 	private generateId(): string {
 		return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+	}
+
+	// Learner Goals — long-horizon curricula, tracked across sessions
+	async saveGoal(goal: LearnerGoal): Promise<LearnerGoal> {
+		const record: LearnerGoal = {
+			...goal,
+			sessionId: goal.sessionId ?? this.currentSessionId ?? undefined,
+			updatedAt: Date.now(),
+		};
+		await this.put(STORES.GOALS, record);
+		return record;
+	}
+
+	async getGoals(): Promise<LearnerGoal[]> {
+		const goals = await this.getAll<LearnerGoal>(STORES.GOALS);
+		return goals.sort((a, b) => b.updatedAt - a.updatedAt);
+	}
+
+	async getGoal(id: string): Promise<LearnerGoal | null> {
+		const goals = await this.getAll<LearnerGoal>(STORES.GOALS);
+		return goals.find((g) => g.id === id) ?? null;
+	}
+
+	async deleteGoal(id: string): Promise<void> {
+		await this.deleteById(STORES.GOALS, id);
 	}
 
 	// Lesson Plans
@@ -339,6 +387,39 @@ export class KeatingStorage {
 			return this.getByTopic<BenchmarkResult>(STORES.BENCHMARKS, topic);
 		}
 		return this.getAll<BenchmarkResult>(STORES.BENCHMARKS);
+	}
+
+	// Quiz Results
+	async saveQuizResult(score: number, weightedScore: number | undefined, totalQuestions: number, topic?: string): Promise<QuizResultRecord> {
+		const record: QuizResultRecord = {
+			id: this.generateId(),
+			topic: topic || "general",
+			createdAt: Date.now(),
+			score,
+			weightedScore,
+			totalQuestions,
+			sessionId: this.currentSessionId ?? undefined,
+		};
+		await this.put(STORES.QUIZ_RESULTS, record);
+		return record;
+	}
+
+	async getQuizResults(topic?: string): Promise<QuizResultRecord[]> {
+		if (topic) {
+			return this.getByTopic<QuizResultRecord>(STORES.QUIZ_RESULTS, topic);
+		}
+		return this.getAll<QuizResultRecord>(STORES.QUIZ_RESULTS);
+	}
+
+	async getTopicQuizStats(topic: string): Promise<{ count: number; avgScore: number; avgWeightedScore: number; topQuartile: number } | null> {
+		const results = await this.getQuizResults(topic);
+		if (results.length < 5) return null;
+		const sorted = [...results].sort((a, b) => b.score - a.score);
+		const avgScore = sorted.reduce((s, r) => s + r.score, 0) / sorted.length;
+		const avgWeighted = sorted.filter((r) => typeof r.weightedScore === "number").reduce((s, r) => s + (r.weightedScore ?? 0), 0) / sorted.length;
+		const qIdx = Math.floor(sorted.length * 0.25);
+		const topQuartile = sorted[qIdx]?.score ?? sorted[0]?.score ?? 0;
+		return { count: sorted.length, avgScore, avgWeightedScore: avgWeighted, topQuartile };
 	}
 
 	// Evolutions

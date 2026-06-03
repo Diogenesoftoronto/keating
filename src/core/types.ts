@@ -139,10 +139,22 @@ export interface CandidateDecision {
   reasons: string[];
 }
 
+export interface RealLearnerOutcome {
+  learnerId: string;
+  topic: string;
+  feedbackSignal: "thumbs-up" | "thumbs-down" | "confused";
+  quizScore: number | null;
+  sessionDurationMs: number | null;
+  masteryEstimate: number;
+  outcomeScore: number;
+}
+
 export interface BenchmarkTrace {
   seed: number;
   learnerCountPerTopic: number;
   topicTraces: BenchmarkTopicTrace[];
+  realOutcomeCount: number;
+  syntheticFallback: boolean;
 }
 
 export interface BenchmarkTopicTrace {

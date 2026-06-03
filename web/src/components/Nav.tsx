@@ -2,11 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ThemeToggle } from "./ThemeToggle";
 
-interface NavProps {
-  showFeatures?: boolean;
-}
-
-export function Nav({ showFeatures = false }: NavProps) {
+export function Nav() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
   const closeMobile = () => setMobileOpen(false);
@@ -81,7 +77,11 @@ export function Nav({ showFeatures = false }: NavProps) {
             minWidth: 0,
           }}
         >
-          <div className="status-led shrink-0" />
+          <img
+            src="/logo.png"
+            alt="Keating"
+            className="h-7 w-7 rounded object-contain"
+          />
           <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-2 leading-tight">
             <span
               style={{
@@ -91,7 +91,7 @@ export function Nav({ showFeatures = false }: NavProps) {
                 whiteSpace: "nowrap",
               }}
             >
-              KEATING//
+              Keating
             </span>
             <span
               className="font-terminal"
@@ -104,14 +104,6 @@ export function Nav({ showFeatures = false }: NavProps) {
 
         {/* Desktop links — visible at md (768px) and up, controlled by retro.css */}
         <div className="nav-desktop" style={{ alignItems: "center", gap: "1.5rem" }}>
-          {showFeatures && (
-            <a href="#features" className="nav-link glitch-hover font-terminal nav-desktop-link">
-              [FEATURES]
-            </a>
-          )}
-          <Link to="/" className="nav-link glitch-hover font-terminal nav-desktop-link">
-            [KEATING]
-          </Link>
           <Link to="/tutorial" className="nav-link glitch-hover font-terminal nav-desktop-link">
             [TUTORIAL]
           </Link>
@@ -195,24 +187,6 @@ export function Nav({ showFeatures = false }: NavProps) {
               fontSize: "1.125rem",
             }}
           >
-            {showFeatures && (
-              <a
-                href="#features"
-                className="nav-link glitch-hover"
-                style={{ padding: "0.75rem 0.5rem" }}
-                onClick={closeMobile}
-              >
-                [FEATURES]
-              </a>
-            )}
-            <Link
-              to="/"
-              className="nav-link glitch-hover"
-              style={{ padding: "0.75rem 0.5rem" }}
-              onClick={closeMobile}
-            >
-              [KEATING]
-            </Link>
             <Link
               to="/tutorial"
               className="nav-link glitch-hover"

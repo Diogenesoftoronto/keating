@@ -1,2 +1,3 @@
 [secrets]
 opencode_api_key= { provider = "vault", value = "opencode_api_key" }
+zyphra_api_key= { provider = "vault", value = "zyphra_api_key" }

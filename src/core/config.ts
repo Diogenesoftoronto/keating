@@ -31,7 +31,9 @@ export const DEFAULT_PI_MODEL = "gemini-3.1-pro-preview";
 export const FALLBACK_PI_MODELS: Record<string, string> = {
   google: DEFAULT_PI_MODEL,
   openai: "gpt-5.2",
-  anthropic: "claude-sonnet-4-5"
+  anthropic: "claude-sonnet-4-5",
+  openrouter: "poolside/laguna-m.1:free",
+  zyphra: "zyphra/ZAYA1-8B"
 };
 
 export const DEFAULT_KEATING_CONFIG: KeatingConfig = {

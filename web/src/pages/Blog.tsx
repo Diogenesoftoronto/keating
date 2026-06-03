@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Nav } from "../components/Nav";
 import { useSeo } from "../hooks/useSeo";
 import { SimpleFooter } from "../components/Footer";
-import { ChevronDown, ChevronUp, Hash } from "lucide-react";
+import { ChevronDown, ChevronUp, Hash, Search } from "lucide-react";
 
 type BadgeColor = "fix" | "release" | "feature" | "pwa" | "update" | "tech" | "devlog";
 
@@ -57,6 +57,243 @@ function majorMinor(version: string): string {
 /* ── Data ────────────────────────────────────────────────────────── */
 
 const POSTS: Post[] = [
+  {
+    date: "2026-06-03",
+    badge: { label: "RELEASE", color: "release" },
+    title: "v1.1.0 - Image Generation, Interactive Quizzes, and Cleaner Learning Artifacts",
+    version: "1.1.0",
+    summary:
+      "Keating 1.1 turns the web app into a more complete learning workspace: image generation joins the tool set, lesson-plan artifacts gain an interactive quiz taker, chat output is easier to copy and inspect, MiniMax M3 is selectable, and benchmark/runtime correctness issues are fixed across CLI and browser paths.",
+    sections: [
+      { id: "image-generation", title: "Image Generation Tooling" },
+      { id: "interactive-quizzes", title: "Interactive Lesson Quizzes" },
+      { id: "chat-rendering", title: "Cleaner Chat Output" },
+      { id: "artifact-viewers", title: "Artifact and Animation Viewers" },
+      { id: "model-provider-updates", title: "Model and Provider Updates" },
+      { id: "benchmark-runtime-fixes", title: "Benchmark and Runtime Fixes" },
+      { id: "site-navigation-polish", title: "Site Navigation Polish" },
+    ],
+    body: (
+      <>
+        <p className="mb-4 leading-6">
+          1.1.0 is the follow-through release for the web learning experience.
+          The chat, artifact viewer, tutorial, blog, model chooser, quiz
+          renderer, animation player, and benchmark plumbing all got touched so
+          the app behaves more like a usable study environment and less like a
+          collection of separate demos.
+        </p>
+
+        <h3 id="image-generation" className="font-bold mt-4 mb-2">Image Generation Tooling</h3>
+        <p className="text-sm mb-4">
+          The browser <Code>generate_image</Code> tool now supports image models
+          directly, including model, size, quality, mode, and diagram-kind
+          controls. When a configured provider is unavailable, Keating falls
+          back to richer browser-local SVG learning diagrams instead of empty
+          placeholders. That gives the tutor a path to produce infographics,
+          anatomy sketches, comparison cards, and structured study visuals
+          inside the same artifact flow as plans, maps, and animations.
+        </p>
+        <p className="text-sm mb-4">
+          Generated image payloads also render in chat with copy affordances, so
+          learners can keep the prompt, metadata, and generated artifact details
+          instead of losing the useful parts behind a tool call.
+        </p>
+
+        <h3 id="interactive-quizzes" className="font-bold mt-4 mb-2">Interactive Lesson Quizzes</h3>
+        <p className="text-sm mb-4">
+          Lesson-plan artifacts now expose <Code>Lesson</Code> and{" "}
+          <Code>Quiz</Code> modes. The quiz mode turns the saved plan into an
+          interactive quiz taker with multiple-choice, multi-select, true/false,
+          short-answer, and transfer checks. Quiz attempts are scored in-place,
+          missed topics are visible, and the learner can redo a quiz with a
+          stronger focus on the sections they missed.
+        </p>
+        <p className="text-sm mb-4">
+          Adaptive quiz scoring was fixed at the same time: remedial fallback
+          questions that are skipped because the learner already answered the
+          primary question correctly no longer count against the raw score,
+          weighted score, denominator, submitted payload, or persisted stats.
+        </p>
+
+        <h3 id="chat-rendering" className="font-bold mt-4 mb-2">Cleaner Chat Output</h3>
+        <p className="text-sm mb-4">
+          Assistant output is now much easier to work with. Text blocks, code
+          blocks, reasoning, tool arguments, tool output, generated images, and
+          structured response blocks all have copy affordances where they are
+          useful. Reasoning blocks parse <Code>&lt;think&gt;</Code> and{" "}
+          <Code>&lt;thinking&gt;</Code> tags, deduplicate repeated reasoning, and
+          auto-collapse after the response completes so older turns stop taking
+          over the transcript.
+        </p>
+        <p className="text-sm mb-4">
+          Chat persistence also got a correctness pass. User messages are now
+          preserved when a provider throws before streaming begins, which fixes
+          the case where a first message appeared to disappear after an initial
+          provider error. Tag-heavy messages such as question, goal, image, and
+          reasoning outputs now render in the right place instead of showing raw
+          tags, duplicated headers, or blank assistant bubbles.
+        </p>
+
+        <h3 id="artifact-viewers" className="font-bold mt-4 mb-2">Artifact and Animation Viewers</h3>
+        <p className="text-sm mb-4">
+          The artifact side panel was tightened up by removing the redundant
+          header block and moving the close control into the search row. The
+          animation player now renders playable visual motion instead of only
+          displaying storyboard text, and artifact viewers gained clearer
+          handling for generated lesson, quiz, image, and animation outputs.
+        </p>
+        <p className="text-sm mb-4">
+          Question cards now support collapsing, and the duplicate visible
+          question header was removed from the expanded state. The compact
+          summary only appears when the question is hidden, which keeps the
+          transcript from repeating the same prompt twice.
+        </p>
+
+        <h3 id="model-provider-updates" className="font-bold mt-4 mb-2">Model and Provider Updates</h3>
+        <p className="text-sm mb-4">
+          The model chooser now supports provider filtering as well as search,
+          making large provider lists easier to scan. MiniMax M3 compatibility
+          entries were added to the MiniMax model lists, and Keating packages
+          were updated to the Pi <Code>0.78.0</Code> package line where
+          available.
+        </p>
+        <p className="text-sm mb-4">
+          Provider setup copy and tutorial navigation were also tuned so the
+          browser, llama.cpp, Ollama, LiteLLM, and related setup buttons behave
+          like in-page navigation controls without unexpectedly jumping the
+          learner back to the top of the tutorial.
+        </p>
+
+        <h3 id="benchmark-runtime-fixes" className="font-bold mt-4 mb-2">Benchmark and Runtime Fixes</h3>
+        <p className="text-sm mb-4">
+          Real-learner benchmark scoring, deterministic synthetic learner
+          simulation, outcome thresholds, and real/synthetic blending were
+          centralized in a shared browser-safe helper. Real and synthetic blend
+          coefficients now stay non-negative and sum to one as learner feedback
+          accumulates, so benchmark scores do not distort once a topic has more
+          real outcomes.
+        </p>
+        <p className="text-sm mb-4">
+          Browser benchmark traces now report real learner outcome counts and
+          synthetic fallback state correctly. Vite development mode also gained
+          the same <Code>/api/agent-runtime/remote/**</Code> proxy path as the
+          Nitro production server, so remote agent mode no longer works only in
+          production builds.
+        </p>
+
+        <h3 id="site-navigation-polish" className="font-bold mt-4 mb-2">Site Navigation Polish</h3>
+        <p className="text-sm mb-4">
+          The blog itself now has search, release-line filtering, update types,
+          a version-oriented table of contents, featured docs, and resource
+          links. The tutorial learned the same lesson: topic navigation is more
+          obvious, hover states make interactive controls clearer, mobile button
+          groups avoid cramped layouts, and selecting a tutorial section no
+          longer force-scrolls the page to the top.
+        </p>
+        <p className="text-sm mb-4">
+          Redundant Keating and Features nav links were removed from the landing
+          and blog contexts, while logo hover affordances were brought closer to
+          the chat-page treatment for a more consistent site shell.
+        </p>
+      </>
+    ),
+  },
+  {
+    date: "2026-06-02",
+    badge: { label: "MAJOR", color: "release" },
+    title: "v1.0.0 - Browser-First Agents, Remote Sandboxes, and the Keating Cloud Boundary",
+    version: "1.0.0",
+    summary:
+      "Keating 1.0 makes the agent runtime explicit: browser-only for the free local default, remote for a self-hosted sandbox endpoint, and cloud for the canonical keating.help backend. It also introduces the shared browser-agent runtime package and lays out the PDS/AT Protocol and educator-tool roadmap.",
+    sections: [
+      { id: "serving-modes", title: "Three Serving Modes" },
+      { id: "runtime-tools", title: "Runtime-Aware Tools" },
+      { id: "shared-runtime", title: "Shared Browser Agent Runtime" },
+      { id: "what-stays-local", title: "What Stays Local" },
+      { id: "storage-roadmap", title: "PDS and Educator Roadmap" },
+    ],
+    body: (
+      <>
+        <p className="mb-4 leading-6">
+          1.0.0 is the line where Keating stops treating browser execution,
+          local CLI execution, and cloud execution as separate worlds. The
+          browser agent now starts by asking what runtime it is in, and
+          remote-only work has an explicit path instead of an implicit
+          server fallback.
+        </p>
+
+        <h3 id="serving-modes" className="font-bold mt-4 mb-2">Three Serving Modes</h3>
+        <p className="text-sm mb-4">
+          <Code>keating web</Code> now has an explicit agent mode. Browser-only
+          is the free local default. Remote mode points at a self-hosted
+          sandbox service. Cloud mode points at the canonical Keating backend.
+        </p>
+        <CodeBlock>{`keating web --browser-only-agent 3000
+
+keating web --remote 3000 \\
+  --remote-provider=microsandbox \\
+  --remote-endpoint=http://127.0.0.1:8787 \\
+  --remote-region=local \\
+  --remote-snapshot=keating-base
+
+keating web --cloud 3000
+keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
+        <p className="text-sm mb-4">
+          The web server exposes <Code>/api/agent-runtime/config</Code> so the
+          app can discover its mode, and <Code>/api/agent-runtime/remote/**</Code>{" "}
+          as the controlled proxy path for remote/cloud execution. In
+          browser-only mode that proxy returns a fallback error by design.
+        </p>
+
+        <h3 id="runtime-tools" className="font-bold mt-4 mb-2">Runtime-Aware Tools</h3>
+        <p className="text-sm mb-4">
+          The web agent now gets <Code>agent_runtime</Code> and{" "}
+          <Code>remote_execute</Code>. The first reports the current mode,
+          capabilities, and fallback policy. The second posts remote-only
+          operations to the configured server when available, or explains why
+          the task cannot run in browser-only mode.
+        </p>
+
+        <h3 id="shared-runtime" className="font-bold mt-4 mb-2">Shared Browser Agent Runtime</h3>
+        <p className="text-sm mb-4">
+          A new <Code>packages/browser-agent-runtime</Code> package provides
+          the shared execution vocabulary: memory sandboxes, capability
+          routing, transactional snapshots, rollback helpers, Daytona-shaped
+          filesystem/process compatibility, a NodePod adapter seam, and an
+          RPC relay protocol. The point is to make NodePod, Daytona,
+          microsandbox, and future providers adapters behind one boundary.
+        </p>
+
+        <h3 id="what-stays-local" className="font-bold mt-4 mb-2">What Stays Local</h3>
+        <p className="text-sm mb-4">
+          The free browser surface is intentionally browser-only. It is
+          lower-risk than running arbitrary learner code on a shared Keating
+          server, but it cannot provide native binaries, Docker or microVM
+          isolation, durable background compute, unrestricted host filesystem
+          access, public inbound networking, or server-brokered secrets.
+          Those belong behind <Code>--remote</Code> or <Code>--cloud</Code>.
+        </p>
+
+        <h3 id="storage-roadmap" className="font-bold mt-4 mb-2">PDS and Educator Roadmap</h3>
+        <p className="text-sm mb-4">
+          The docs now separate private learning state, portable public
+          educational artifacts, and operational sandbox state. AT Protocol
+          and PDS integration is a good fit for public lesson packs, rubrics,
+          maps, quizzes, educator profiles, and learner-approved portfolio
+          artifacts. It should not become the default store for raw private
+          tutoring transcripts, API keys, private goals, or classroom roster
+          analytics.
+        </p>
+        <p className="text-sm mb-4">
+          Educator tooling is also being scoped as an explicit product layer:
+          lesson packs, misconception banks, rubrics, class goals, review
+          sets, portfolio artifacts, and privacy-preserving class analytics.
+          The storage roadmap lives in{" "}
+          <Code>docs/plans/storage-atproto-educator-tools.md</Code>.
+        </p>
+      </>
+    ),
+  },
   {
     date: "2026-05-28",
     badge: { label: "RELEASE", color: "release" },
@@ -1722,6 +1959,27 @@ const hybridStreamFn = async (model, context, options) => {
 
 type VersionGroup = { version: string; posts: Post[] };
 
+const ALL_CATEGORIES = "all";
+const ALL_VERSIONS = "all";
+
+function postId(post: Post): string {
+  return post.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "");
+}
+
+function postSearchText(post: Post): string {
+  return [
+    post.title,
+    post.summary,
+    post.version ?? "",
+    post.badge.label,
+    ...(post.sections?.map((section) => section.title) ?? []),
+  ].join(" ").toLowerCase();
+}
+
+function versionLabel(post: Post): string {
+  return post.version ? `v${majorMinor(post.version)}` : "Other";
+}
+
 function groupByVersion(posts: Post[]): VersionGroup[] {
   const map = new Map<string, Post[]>();
   for (const p of posts) {
@@ -1745,10 +2003,8 @@ function groupByVersion(posts: Post[]): VersionGroup[] {
 /* ── Components ──────────────────────────────────────────────────── */
 
 function PostCard({ post, expanded, onToggle }: { post: Post; expanded: boolean; onToggle: () => void }) {
-  const postId = post.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "");
-
   return (
-    <article id={postId} className="paper-fold distressed-border p-6 post-card scroll-mt-28">
+    <article id={postId(post)} className="paper-fold distressed-border p-6 post-card scroll-mt-28">
       <div className="flex items-center gap-3 mb-3">
         <span className="font-terminal text-[#d44a3d]">{post.date}</span>
         <span className={`text-xs px-2 py-1 rounded ${BADGE_CLASSES[post.badge.color]}`}>
@@ -1804,39 +2060,217 @@ function PostCard({ post, expanded, onToggle }: { post: Post; expanded: boolean;
   );
 }
 
+function UpdateFilters({
+  query,
+  onQueryChange,
+  selectedCategory,
+  onCategoryChange,
+  selectedVersion,
+  onVersionChange,
+  categories,
+  versions,
+  total,
+  filtered,
+}: {
+  query: string;
+  onQueryChange: (value: string) => void;
+  selectedCategory: string;
+  onCategoryChange: (value: string) => void;
+  selectedVersion: string;
+  onVersionChange: (value: string) => void;
+  categories: string[];
+  versions: string[];
+  total: number;
+  filtered: number;
+}) {
+  return (
+    <section className="paper-fold distressed-border p-5 mb-6" aria-label="Filter updates">
+      <div className="flex flex-col gap-4">
+        <label className="flex flex-col gap-2">
+          <span className="font-terminal text-xs text-muted-foreground">SEARCH_UPDATES</span>
+          <span className="relative">
+            <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={query}
+              onChange={(event) => onQueryChange(event.target.value)}
+              placeholder="Search versions, providers, runtime, sharing, PWA..."
+              className="w-full rounded-md border-2 border-border bg-background py-2 pl-9 pr-3 text-sm text-foreground"
+            />
+          </span>
+        </label>
+
+        <div className="grid gap-3 md:grid-cols-2">
+          <div>
+            <div className="mb-2 font-terminal text-xs text-muted-foreground">TYPE</div>
+            <div className="flex flex-wrap gap-2">
+              {[ALL_CATEGORIES, ...categories].map((category) => (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => onCategoryChange(category)}
+                  className={`rounded-md border px-2.5 py-1.5 text-xs transition-colors ${
+                    selectedCategory === category
+                      ? "border-primary bg-primary/15 text-primary"
+                      : "border-border bg-background text-foreground hover:bg-muted/60"
+                  }`}
+                >
+                  {category === ALL_CATEGORIES ? "All" : category}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-2 font-terminal text-xs text-muted-foreground">VERSION</div>
+            <div className="flex flex-wrap gap-2">
+              {[ALL_VERSIONS, ...versions].map((version) => (
+                <button
+                  key={version}
+                  type="button"
+                  onClick={() => onVersionChange(version)}
+                  className={`rounded-md border px-2.5 py-1.5 text-xs transition-colors ${
+                    selectedVersion === version
+                      ? "border-primary bg-primary/15 text-primary"
+                      : "border-border bg-background text-foreground hover:bg-muted/60"
+                  }`}
+                >
+                  {version === ALL_VERSIONS ? "All" : version}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="font-terminal text-xs text-muted-foreground">
+          Showing {filtered} of {total} updates
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function VersionTOC({ groups, expandedMap, onJump }: { groups: VersionGroup[]; expandedMap: Set<string>; onJump: (post: Post) => void }) {
   return (
     <div className="paper-fold distressed-border p-5 sticky top-20">
-      <h3 className="font-terminal text-sm mb-3 text-accent">$ cat CHANGELOG</h3>
-      <div className="space-y-3">
-        {groups.map((g) => (
-          <div key={g.version}>
-            <div className="font-terminal text-xs text-muted-foreground mb-1 uppercase tracking-wider">
-              {g.version}
+      <h3 className="font-terminal text-sm mb-1 text-accent">$ browse UPDATES</h3>
+      <p className="mb-4 text-xs leading-5 text-muted-foreground">
+        Jump by release line, feature note, or dev log. Filters update this list.
+      </p>
+      {groups.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No matching updates.</p>
+      ) : (
+        <div className="space-y-3">
+          {groups.map((g) => (
+            <div key={g.version}>
+              <div className="font-terminal text-xs text-muted-foreground mb-1 uppercase tracking-wider">
+                {g.version}
+              </div>
+              <div className="space-y-1">
+                {g.posts.map((p) => {
+                  const isExpanded = expandedMap.has(p.title);
+                  return (
+                    <button
+                      key={p.title}
+                      onClick={() => onJump(p)}
+                      className={`w-full rounded px-1.5 py-1 text-left text-xs leading-4 transition-colors ${
+                        isExpanded
+                          ? "border border-primary/20 bg-primary/10 text-primary"
+                          : "text-foreground/80 hover:bg-muted/50"
+                      }`}
+                    >
+                      <span className="block font-medium">
+                        {p.title.replace(/^v\d+\.\d+\.\d+\s*[-—]\s*/, "")}
+                      </span>
+                      <span className="font-terminal text-[10px] text-muted-foreground">
+                        {p.date} / {p.badge.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <div className="space-y-1">
-              {g.posts.map((p) => {
-                const pid = p.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "");
-                const isExpanded = expandedMap.has(p.title);
-                return (
-                  <button
-                    key={p.title}
-                    onClick={() => onJump(p)}
-                    className={`w-full text-left text-xs leading-4 px-1.5 py-1 rounded transition-colors ${
-                      isExpanded
-                        ? "bg-primary/10 text-primary border border-primary/20"
-                        : "text-foreground/80 hover:bg-muted/50"
-                    }`}
-                  >
-                    {p.title.replace(/^v\d+\.\d+\.\d+\s*[-—]\s*/, "")}
-                  </button>
-                );
-              })}
-            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FeaturedDocs({ onJump }: { onJump: (post: Post) => void }) {
+  const picks = POSTS.filter((post) =>
+    ["release", "feature", "tech", "devlog"].includes(post.badge.color),
+  ).slice(0, 4);
+
+  return (
+    <section className="grid gap-3 md:grid-cols-2 mb-6">
+      {picks.map((post) => (
+        <button
+          key={post.title}
+          type="button"
+          onClick={() => onJump(post)}
+          className="rounded-md border-2 border-border bg-background p-4 text-left transition-colors hover:bg-muted/50"
+        >
+          <div className="mb-2 flex items-center gap-2">
+            <span className={`rounded px-2 py-0.5 text-[10px] ${BADGE_CLASSES[post.badge.color]}`}>
+              {post.badge.label}
+            </span>
+            <span className="font-terminal text-[11px] text-muted-foreground">{post.date}</span>
           </div>
+          <h3 className="text-sm font-semibold leading-5">{post.title}</h3>
+          <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">{post.summary}</p>
+        </button>
+      ))}
+    </section>
+  );
+}
+
+function ResourceLibrary() {
+  const resources = [
+    {
+      label: "Tutorial settings guide",
+      detail: "Provider keys, persona, speech, interface, sharing, and proxy setup.",
+      href: "/tutorial#settings",
+    },
+    {
+      label: "Architecture notes",
+      detail: "Runtime layers, deterministic pedagogy, and artifact flow.",
+      href: "https://github.com/Diogenesoftoronto/keating/blob/main/docs/ARCHITECTURE.md",
+    },
+    {
+      label: "Self-modifying agent plan",
+      detail: "Browser, remote sandbox, NodePod, and cloud execution boundaries.",
+      href: "https://github.com/Diogenesoftoronto/keating/blob/main/docs/self-modifying-agent-architecture.md",
+    },
+    {
+      label: "Storage and educator roadmap",
+      detail: "PDS, AT Protocol, public learning artifacts, and educator tools.",
+      href: "https://github.com/Diogenesoftoronto/keating/blob/main/docs/plans/storage-atproto-educator-tools.md",
+    },
+  ];
+
+  return (
+    <section className="paper-fold distressed-border p-5 mb-6">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-bold">Docs Worth Reading</h2>
+          <p className="text-sm text-muted-foreground">
+            Design notes and implementation plans that explain where Keating is going.
+          </p>
+        </div>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2">
+        {resources.map((resource) => (
+          <a
+            key={resource.label}
+            href={resource.href}
+            className="rounded-md border border-border bg-background p-3 transition-colors hover:bg-muted/50"
+          >
+            <span className="block text-sm font-semibold">{resource.label}</span>
+            <span className="mt-1 block text-xs leading-5 text-muted-foreground">{resource.detail}</span>
+          </a>
         ))}
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -1849,6 +2283,9 @@ export function Blog() {
     canonical: "https://keating.help/blog",
   });
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [query, setQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState(ALL_CATEGORIES);
+  const [selectedVersion, setSelectedVersion] = useState(ALL_VERSIONS);
 
   const toggle = (title: string) => {
     setExpanded((prev) => {
@@ -1860,15 +2297,36 @@ export function Blog() {
   };
 
   const jumpToPost = (post: Post) => {
-    const pid = post.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "");
-    const el = document.getElementById(pid);
+    const el = document.getElementById(postId(post));
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "start" });
       setExpanded((prev) => new Set(prev).add(post.title));
     }
   };
 
-  const versionGroups = useMemo(() => groupByVersion(POSTS), []);
+  const categories = useMemo(
+    () => Array.from(new Set(POSTS.map((post) => post.badge.label))).sort(),
+    [],
+  );
+  const versions = useMemo(
+    () =>
+      Array.from(new Set(POSTS.map(versionLabel))).sort((left, right) => {
+        if (left === "Other") return 1;
+        if (right === "Other") return -1;
+        return right.localeCompare(left, undefined, { numeric: true });
+      }),
+    [],
+  );
+  const filteredPosts = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    return POSTS.filter((post) => {
+      if (selectedCategory !== ALL_CATEGORIES && post.badge.label !== selectedCategory) return false;
+      if (selectedVersion !== ALL_VERSIONS && versionLabel(post) !== selectedVersion) return false;
+      if (normalizedQuery && !postSearchText(post).includes(normalizedQuery)) return false;
+      return true;
+    });
+  }, [query, selectedCategory, selectedVersion]);
+  const versionGroups = useMemo(() => groupByVersion(filteredPosts), [filteredPosts]);
 
   return (
     <div className="retro-layout retro-page">
@@ -1879,20 +2337,43 @@ export function Blog() {
           {/* Hero */}
           <div className="paper-fold distressed-border p-8 mb-8">
             <h1 className="text-3xl md:text-4xl font-bold mb-2">Keating Updates</h1>
-            <p className="text-muted-foreground font-terminal">Development log and release notes</p>
+            <p className="text-muted-foreground font-terminal">Searchable release notes, feature notes, and dev logs</p>
           </div>
 
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Posts */}
             <div className="flex-1 min-w-0 space-y-6">
-              {POSTS.map((post) => (
-                <PostCard
-                  key={post.title}
-                  post={post}
-                  expanded={expanded.has(post.title)}
-                  onToggle={() => toggle(post.title)}
-                />
-              ))}
+              <UpdateFilters
+                query={query}
+                onQueryChange={setQuery}
+                selectedCategory={selectedCategory}
+                onCategoryChange={setSelectedCategory}
+                selectedVersion={selectedVersion}
+                onVersionChange={setSelectedVersion}
+                categories={categories}
+                versions={versions}
+                total={POSTS.length}
+                filtered={filteredPosts.length}
+              />
+              <ResourceLibrary />
+              <FeaturedDocs onJump={jumpToPost} />
+              {filteredPosts.length === 0 ? (
+                <div className="paper-fold distressed-border p-8 text-center">
+                  <h2 className="text-lg font-bold">No matching updates</h2>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Try a broader search, another version, or the All type filter.
+                  </p>
+                </div>
+              ) : (
+                filteredPosts.map((post) => (
+                  <PostCard
+                    key={post.title}
+                    post={post}
+                    expanded={expanded.has(post.title)}
+                    onToggle={() => toggle(post.title)}
+                  />
+                ))
+              )}
             </div>
 
             {/* Sidebar TOC */}

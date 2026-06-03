@@ -12,6 +12,7 @@ import { dirname, join } from "node:path";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, "..");
 const webDir = join(rootDir, "web");
+const browserAgentRuntimeDir = join(rootDir, "packages", "browser-agent-runtime");
 
 function readJson(path) {
   return JSON.parse(readFileSync(path, "utf-8"));
@@ -39,6 +40,7 @@ if (!/^\d+\.\d+\.\d+/.test(targetVersion)) {
 const files = [
   // Package manifests
   { path: join(webDir, "package.json"), pattern: /"version":\s*"[^"]+"/, replacement: `"version": "${targetVersion}"` },
+  { path: join(browserAgentRuntimeDir, "package.json"), pattern: /"version":\s*"[^"]+"/, replacement: `"version": "${targetVersion}"` },
 
   // Extension / CLI
   { path: join(rootDir, "src/pi/hyperteacher-extension.ts"), pattern: /const KEATING_VERSION = "[^"]+"/, replacement: `const KEATING_VERSION = "${targetVersion}"` },

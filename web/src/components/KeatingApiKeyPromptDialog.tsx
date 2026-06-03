@@ -46,6 +46,7 @@ function providerLabel(provider: string) {
 	if (provider === "google") return "Google Gemini";
 	if (provider === "openai") return "OpenAI";
 	if (provider === "anthropic") return "Anthropic";
+	if (provider === "openrouter") return "OpenRouter";
 	return provider;
 }
 

@@ -559,3 +559,12 @@ message-editor textarea::placeholder {
 .dark ::-webkit-scrollbar-thumb {
   background: rgba(0, 255, 0, 0.2);
 }
+
+/* ────────────────────────────────────────────────────────────────
+   WebMCP widget — keep the bridge registered for MCP clients but hide
+   the injected floating trigger. Its fixed bottom-right position
+   overlapped the chat composer's send button on small screens.
+   ──────────────────────────────────────────────────────────────── */
+[data-webmcp-widget] {
+  display: none !important;
+}
