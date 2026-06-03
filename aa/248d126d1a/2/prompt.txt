@@ -1,0 +1,17 @@
+i want you to setup free models for keating. get free model setup with openrouter so people can just get started using it. https://openrouter.ai/collections/free-models pick laguna m.1 from poolside.
+
+---
+
+.
+
+---
+
+add the other models for open router, also i want you to add using free open router models in the getting an api key section in the website.
+
+---
+
+for local models can you add zaya 8b from zephra as an option?
+
+---
+
+zyphra/ZAYA1-8B, use fnox to get the api key https://api.zyphracloud.com is the endpoint

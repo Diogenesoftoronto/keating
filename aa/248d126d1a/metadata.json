@@ -3,7 +3,7 @@
   "checkpoint_id": "aa248d126d1a",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 5,
+  "checkpoints_count": 8,
   "files_touched": [
     ".flox/env/manifest.lock",
     "fnox.toml",
@@ -41,13 +41,19 @@
       "transcript": "/aa/248d126d1a/1/full.jsonl",
       "content_hash": "/aa/248d126d1a/1/content_hash.txt",
       "prompt": "/aa/248d126d1a/1/prompt.txt"
+    },
+    {
+      "metadata": "/aa/248d126d1a/2/metadata.json",
+      "transcript": "/aa/248d126d1a/2/full.jsonl",
+      "content_hash": "/aa/248d126d1a/2/content_hash.txt",
+      "prompt": "/aa/248d126d1a/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 13813,
-    "cache_creation_tokens": 1015374,
-    "cache_read_tokens": 29029670,
-    "output_tokens": 149214,
-    "api_call_count": 192
+    "input_tokens": 14755,
+    "cache_creation_tokens": 1101402,
+    "cache_read_tokens": 32724515,
+    "output_tokens": 172632,
+    "api_call_count": 249
   }
 }
