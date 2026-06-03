@@ -1,0 +1,272 @@
+there's a few issues with the current design on mobile specifically, we don't have a great way to create new sessions, the button gets pushed from the top nav in the chat panel to be unseen on smaller screens as it gets covered by the logo, instead what we want is for there to be an easy way to start a new session in the side panel via touch. remember on small screens we should be focusing on touch aware user interface design. The other problem is that the webmcp gets in the way of the ui as well. That covers the send button in the overlay, i would like the webmcp button to be hidden in view.
+
+---
+
+add a teacher persona file that can be edit in the web ui. begin with the standard persona of john keating the fictional character in the movie
+
+---
+
+add the settings explaination in the tutorial. you should explain what some of the complex parts are for and how to use them or why they exist
+
+---
+
+the ui for the ask user question still doesn't seem to work: and be visible this is the text from tool-ui for make a generative ui tool: The [Quick Start](/docs/quick-start) covers the basics — installing a component, registering it, and seeing it render. This page adds three patterns: type-safe tool results with `InferUITools`, frontend tools that run entirely in the browser, and auto-continue for multi-step flows.
+
+## Tool Type Inference
+
+`InferUITools` (AI SDK 6) infers tool input/output types from your tool set and gives you fully typed `message.parts` in the UI.
+
+- [**InferUITools reference**](https://ai-sdk.dev/docs/reference/ai-sdk-ui/infer-ui-tools)
+
+<Steps>
+
+<Step>
+
+### Define Tools with Output Schemas
+
+```ts title="lib/tools.ts"
+import { tool } from "ai";
+import { z } from "zod";
+import { SerializableLinkPreviewSchema } from "@/components/tool-ui/link-preview/schema";
+
+export const tools = {
+  previewLink: tool({
+    description: "Return a simple link preview",
+    inputSchema: z.object({ url: z.url() }),
+    outputSchema: SerializableLinkPreviewSchema,
+    async execute({ url }) {
+      return {
+        id: "link-preview-1",
+        href: url,
+        title: "React Server Components",
+        image:
+          "https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&q=80&w=1200",
+        domain: new URL(url).hostname,
+      };
+    },
+  }),
+} as const;
+
+// Export a type only; the client should import types, not server code.
+export type Tools = typeof tools;
+```
+
+</Step>
+
+<Step>
+
+### Use Tools on the Server
+
+```ts
+import { streamText, convertToModelMessages } from "ai";
+import { openai } from "@ai-sdk/openai";
+import { tools } from "@/lib/tools";
+
+export async function POST(req: Request) {
+  const { messages } = await req.json();
+
+  const result = streamText({
+    model: openai("gpt-5-nano"),
+    messages: await convertToModelMessages(messages),
+    tools,
+  });
+
+  return result.toUIMessageStreamResponse();
+}
+```
+
+</Step>
+
+<Step>
+
+### Infer UI-Level Types in the Client
+
+```tsx
+"use client";
+
+import { useChat } from "@ai-sdk/react";
+import { InferUITools } from "ai";
+import type { Tools } from "@/lib/tools";
+import { LinkPreview } from "@/components/tool-ui/link-preview";
+import { safeParseSerializableLinkPreview } from "@/components/tool-ui/link-preview/schema";
+
+type MyUITools = InferUITools<Tools>;
+
+export default function Chat() {
+  const { messages } = useChat<MyUITools>({ api: "/api/chat" });
+
+  return (
+    <div>
+      {messages.map((m) => (
+        <div key={m.id}>
+          {m.parts.map((part, i) => {
+            // Fully typed: 'tool-previewLink' with correct output shape
+            if (
+              part.type === "tool-previewLink" &&
+              part.state === "output-available"
+            ) {
+              const preview = safeParseSerializableLinkPreview(part.output);
+              if (!preview) return null;
+              return <LinkPreview key={i} {...preview} />;
+            }
+            return null;
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+</Step>
+
+</Steps>
+
+## Tips
+
+### Keep runtime boundaries clean
+
+Export only types from `lib/tools.ts` to the client. **Never import server code into the browser.**
+
+### Single-tool helpers
+
+`InferUITool` (singular) does the same thing for a single tool definition.
+
+### End-to-end validation
+
+Use the component's `outputSchema` on the server and `safeParseSerializable{componentName}` on the client to validate at both ends.
+
+### Routing by lifecycle state (outside Tool UI renderers)
+
+If you consume raw `message.parts`, keep lifecycle handling outside Tool UI components:
+
+- `state === 'invocation'` / `state === 'output-pending'` / `state === 'errored'`:
+  route to app-level UI (message shell, transport error, telemetry), not the Tool UI component.
+- `state === 'output-available'`:
+  parse `part.output` with `safeParseSerializable{componentName}` and render only when parsing succeeds.
+
+Inside Tool UI toolkit renderers, use a strict gate:
+
+```tsx
+const parsed = safeParseSerializableX(resultOrArgs);
+if (!parsed) return null;
+return <X {...parsed} />;
+```
+
+## Frontend tools (interactive Tool UIs)
+
+Decision surfaces like OptionList work best as **frontend tools**. The model calls a tool with component props as arguments, then your UI calls `addResult(...)` after the user confirms. That result feeds back into the conversation.
+
+If you're using `AssistantChatTransport`, it forwards **system instructions** and **registered tools** in the request body. Your `/api/chat` route needs to read and forward them, otherwise the model won't see your frontend tools.
+
+```ts title="app/api/chat/route.ts"
+import { openai } from "@ai-sdk/openai";
+import {
+  streamText,
+  convertToModelMessages,
+  jsonSchema,
+  type UIMessage,
+  type JSONSchema7,
+} from "ai";
+
+type ForwardedTools = Record<
+  string,
+  { description?: string; parameters: JSONSchema7 }
+>;
+
+function toStreamTextTools(tools?: ForwardedTools) {
+  if (!tools) return undefined;
+  return Object.fromEntries(
+    Object.entries(tools).map(([name, tool]) => [
+      name,
+      {
+        ...(tool.description ? { description: tool.description } : {}),
+        inputSchema: jsonSchema(tool.parameters),
+      },
+    ]),
+  );
+}
+
+export async function POST(req: Request) {
+  const body = (await req.json()) as {
+    messages: UIMessage[];
+    system?: string;
+    tools?: ForwardedTools;
+  };
+
+  const result = streamText({
+    model: openai("gpt-4o"),
+    messages: await convertToModelMessages(body.messages),
+    system: body.system,
+    tools: toStreamTextTools(body.tools),
+  });
+
+  return result.toUIMessageStreamResponse();
+}
+```
+
+### Register a frontend tool
+
+Register the tool on the client so `AssistantChatTransport` forwards it to the model.
+
+```tsx
+"use client";
+
+import { type Toolkit } from "@assistant-ui/react";
+import { OptionList } from "@/components/tool-ui/option-list";
+import {
+  safeParseSerializableOptionList,
+  SerializableOptionListSchema,
+} from "@/components/tool-ui/option-list/schema";
+
+export const toolkit: Toolkit = {
+  selectFormat: {
+    // description and parameters are forwarded to the model.
+    description: "Ask the user to choose an output format.",
+    parameters: SerializableOptionListSchema,
+    // For frontend tools, parse args and render; handle result for receipt state.
+    render: ({ args, toolCallId, result, addResult }) => {
+      const parsedArgs = safeParseSerializableOptionList({
+        ...args,
+        id: args?.id ?? `format-selection-${toolCallId}`,
+      });
+      if (!parsedArgs) {
+        return null;
+      }
+      if (result) {
+        // After the user confirms, render the receipt state.
+        return <OptionList {...parsedArgs} value={undefined} choice={result} />;
+      }
+      return (
+        <OptionList
+          {...parsedArgs}
+          value={undefined}
+          onAction={(actionId, selection) => {
+            if (actionId === "confirm") addResult?.(selection);
+          }}
+        />
+      );
+    },
+  },
+};
+```
+
+Pass this toolkit to `Tools({ toolkit })` under `<AssistantRuntimeProvider>` so the definition and renderer are forwarded by `AssistantChatTransport`.
+
+### Auto-continue after `addResult(...)`
+
+When a tool produces results that need follow-up — a search that needs a summary, a calculation that needs interpretation — auto-continue tells the assistant to proceed without waiting for user input. Enable it with `sendAutomaticallyWhen`:
+
+```tsx
+import {
+  useChatRuntime,
+  AssistantChatTransport,
+} from "@assistant-ui/react-ai-sdk";
+import { lastAssistantMessageIsCompleteWithToolCalls } from "ai";
+
+const runtime = useChatRuntime({
+  transport: new AssistantChatTransport({ api: "/api/chat" }),
+  // Automatically send when the assistant finishes with tool calls
+  sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
+});
+```

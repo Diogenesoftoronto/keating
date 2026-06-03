@@ -3,15 +3,31 @@
   "checkpoint_id": "aa248d126d1a",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 5,
   "files_touched": [
+    ".flox/env/manifest.lock",
     "fnox.toml",
     "src/cli/setup.ts",
     "src/core/config.ts",
     "src/runtime/pi.ts",
+    "web/src/app.css",
+    "web/src/components/AssistantChatPanel.tsx",
+    "web/src/components/GoalRenderer.tsx",
     "web/src/components/KeatingApiKeyPromptDialog.tsx",
+    "web/src/components/QuestionRenderer.tsx",
+    "web/src/components/QuizRenderer.tsx",
+    "web/src/components/SessionSidebar.tsx",
+    "web/src/components/TeacherPersonaTab.tsx",
+    "web/src/hooks/useKeatingAgent.tsx",
+    "web/src/keating/browser-tools.ts",
+    "web/src/keating/goals.ts",
+    "web/src/keating/persona.ts",
+    "web/src/keating/storage.ts",
     "web/src/lib/tutorial-links.ts",
-    "web/src/pages/Tutorial.tsx"
+    "web/src/pages/Chat.tsx",
+    "web/src/pages/Tutorial.tsx",
+    "web/src/test/goals.test.ts",
+    "web/src/test/persona.test.ts"
   ],
   "sessions": [
     {
@@ -19,13 +35,19 @@
       "transcript": "/aa/248d126d1a/0/full.jsonl",
       "content_hash": "/aa/248d126d1a/0/content_hash.txt",
       "prompt": "/aa/248d126d1a/0/prompt.txt"
+    },
+    {
+      "metadata": "/aa/248d126d1a/1/metadata.json",
+      "transcript": "/aa/248d126d1a/1/full.jsonl",
+      "content_hash": "/aa/248d126d1a/1/content_hash.txt",
+      "prompt": "/aa/248d126d1a/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 12,
-    "cache_creation_tokens": 21041,
-    "cache_read_tokens": 201781,
-    "output_tokens": 2918,
-    "api_call_count": 7
+    "input_tokens": 13813,
+    "cache_creation_tokens": 1015374,
+    "cache_read_tokens": 29029670,
+    "output_tokens": 149214,
+    "api_call_count": 192
   }
 }
