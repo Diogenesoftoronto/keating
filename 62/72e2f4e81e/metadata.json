@@ -1,0 +1,25 @@
+{
+  "cli_version": "0.6.3",
+  "checkpoint_id": "6272e2f4e81e",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "web/src/keating/core.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/62/72e2f4e81e/0/metadata.json",
+      "transcript": "/62/72e2f4e81e/0/full.jsonl",
+      "content_hash": "/62/72e2f4e81e/0/content_hash.txt",
+      "prompt": "/62/72e2f4e81e/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  }
+}
