@@ -251,6 +251,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     };
 
     await sessions.save(data, metadata);
+    await keatingStorage.recordLearnerTurnFeedback(messages as Array<{ role?: unknown; content?: unknown }>);
     window.dispatchEvent(new CustomEvent("keating:sessions-changed"));
   }, []);
 

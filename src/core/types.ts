@@ -115,12 +115,14 @@ export interface BenchmarkResult {
 export interface EvolutionCandidate {
   policy: TeacherPolicy;
   benchmark: BenchmarkResult;
+  counterfactualBenchmark?: BenchmarkResult;
   parentName: string | null;
   iteration: number;
   novelty: number;
   accepted: boolean;
   decision: CandidateDecision;
   parameterDelta: PolicyDelta[];
+  preferenceScore?: number;
 }
 
 export interface PolicyDelta {
@@ -155,6 +157,7 @@ export interface BenchmarkTrace {
   topicTraces: BenchmarkTopicTrace[];
   realOutcomeCount: number;
   syntheticFallback: boolean;
+  dataSource?: "learner-feedback" | "learner-feedback-sparse" | "synthetic" | "no-learner-feedback";
 }
 
 export interface BenchmarkTopicTrace {

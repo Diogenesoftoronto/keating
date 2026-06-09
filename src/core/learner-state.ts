@@ -20,13 +20,17 @@ const DEFAULT_LEARNER_STATE: Omit<LearnerState, "id"> = {
   }
 };
 
+function defaultLearnerState(): LearnerState {
+  return JSON.parse(JSON.stringify({ id: "learner-1", ...DEFAULT_LEARNER_STATE })) as LearnerState;
+}
+
 export async function loadLearnerState(filePath: string): Promise<LearnerState> {
   // Read JSON from filePath. If file doesn't exist or is invalid, return default with id "learner-1"
   try {
     const raw = await readFile(filePath, "utf8");
     return JSON.parse(raw) as LearnerState;
   } catch {
-    return { id: "learner-1", ...DEFAULT_LEARNER_STATE };
+    return defaultLearnerState();
   }
 }
 

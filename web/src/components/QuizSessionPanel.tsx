@@ -198,8 +198,8 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
 
   if (!started) {
     return (
-      <div className="my-3 rounded-xl border border-border bg-background p-6 shadow-sm">
-        <div className="flex items-start gap-4">
+      <div className="my-3 rounded-xl border border-border bg-background p-4 sm:p-6 shadow-sm">
+        <div className="flex items-start gap-3 sm:gap-4">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
             <GraduationCap size={20} className="text-primary" />
           </div>
@@ -224,7 +224,7 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
               <button
                 type="button"
                 onClick={handleStart}
-                className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-3 sm:px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
               >
                 Start Quiz
               </button>
@@ -232,7 +232,7 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
                 <button
                   type="button"
                   onClick={onDismiss}
-                  className="inline-flex h-9 items-center rounded-lg border border-border px-4 text-sm hover:bg-accent"
+                  className="inline-flex h-9 items-center rounded-lg border border-border px-3 sm:px-4 text-sm hover:bg-accent"
                 >
                   Skip
                 </button>
@@ -259,7 +259,7 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
     }).length;
 
     return (
-      <div className="my-3 rounded-xl border border-border bg-background p-5 shadow-sm">
+      <div className="my-3 rounded-xl border border-border bg-background p-4 sm:p-5 shadow-sm">
         <div className="flex items-center gap-3 mb-4">
           <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${correctCount / total >= 0.7 ? "bg-emerald-500/10" : "bg-amber-500/10"}`}>
             {correctCount / total >= 0.7 ? (
@@ -283,7 +283,7 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
 
   // In-progress quiz
   return (
-    <div className="my-3 rounded-xl border border-border bg-background p-5 shadow-sm">
+    <div className="my-3 rounded-xl border border-border bg-background p-4 sm:p-5 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div className="min-w-0 flex items-center gap-2">
           <GraduationCap size={16} className="shrink-0 text-primary" />

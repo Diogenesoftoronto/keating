@@ -14,6 +14,7 @@ import { Chat } from "./pages/Chat";
 import { Paper } from "./pages/Paper";
 import { SharedSession } from "./pages/SharedSession";
 import { Usage } from "./pages/Usage";
+import { KeatingBench } from "./pages/KeatingBench";
 import { OAuthCallback } from "./pages/OAuthCallback";
 import {
   applyKeatingUiTypography,
@@ -36,14 +37,20 @@ const chatRoute = createRoute({
 });
 
 const usageRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/usage",
-  component: Usage,
+	getParentRoute: () => rootRoute,
+	path: "/usage",
+	component: Usage,
+});
+
+const benchRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/bench",
+	component: KeatingBench,
 });
 
 const sharedSessionRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/s/$shareId",
+	getParentRoute: () => rootRoute,
+	path: "/s/$shareId",
   component: SharedSession,
 });
 
@@ -72,10 +79,11 @@ const oauthCallbackRoute = createRoute({
 });
 
 const routeTree = rootRoute.addChildren([
-  indexRoute,
-  chatRoute,
-  usageRoute,
-  sharedSessionRoute,
+	indexRoute,
+	chatRoute,
+	usageRoute,
+	benchRoute,
+	sharedSessionRoute,
   tutorialRoute,
   blogRoute,
   paperRoute,

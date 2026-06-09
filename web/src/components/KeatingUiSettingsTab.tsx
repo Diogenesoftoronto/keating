@@ -1,4 +1,6 @@
 import { useCallback, useState } from "react";
+import { Toggle } from "./Toggle";
+import { SettingRow } from "./SettingRow";
 import {
 	FONT_FAMILY_OPTIONS,
 	SHARE_LINK_MODE_OPTIONS,
@@ -87,7 +89,7 @@ export function KeatingUiSettingsTab() {
 					</label>
 					<button
 						type="button"
-						className="inline-flex h-9 items-center justify-center rounded-md border border-border px-3 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+						className="dialog-compact-button inline-flex h-9 items-center justify-center rounded-md border border-border px-3 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
 						disabled={!settings.userProfileImage}
 						onClick={() => update({ userProfileImage: null })}
 					>
@@ -96,7 +98,7 @@ export function KeatingUiSettingsTab() {
 				</div>
 			</div>
 
-			<div className="flex items-start justify-between gap-4 rounded-lg border border-border p-4">
+			<div className="flex flex-col gap-3 rounded-lg border border-border p-4 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
 				<div className="min-w-0">
 					<div className="text-sm font-medium text-foreground">Font family</div>
 					<p className="mt-1 text-sm text-muted-foreground">
@@ -104,7 +106,7 @@ export function KeatingUiSettingsTab() {
 					</p>
 				</div>
 				<select
-					className="min-w-44 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
+					className="w-full sm:w-auto sm:min-w-44 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
 					value={settings.fontFamily}
 					onChange={(e) => update({ fontFamily: e.target.value as UiFontFamily })}
 				>
@@ -144,59 +146,26 @@ export function KeatingUiSettingsTab() {
 				</div>
 			</div>
 
-			<div className="flex items-start justify-between gap-4 rounded-lg border border-border p-4">
-				<div>
-					<div className="text-sm font-medium text-foreground">Show tool details</div>
-					<p className="mt-1 text-sm text-muted-foreground">
-						Show tool arguments and results inside chat messages. Compact status remains visible when this is off.
-					</p>
-				</div>
-				<label className="relative inline-flex cursor-pointer items-center">
-					<input
-						type="checkbox"
-						className="sr-only peer"
-						checked={settings.showToolUi}
-						onChange={(e) => update({ showToolUi: e.target.checked })}
-					/>
-					<div className="h-5 w-9 rounded-full bg-muted-foreground/30 peer-checked:bg-primary transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-4" />
-				</label>
-			</div>
+			<SettingRow
+				title="Show tool details"
+				description="Show tool arguments and results inside chat messages. Compact status remains visible when this is off."
+			>
+				<Toggle checked={settings.showToolUi} onChange={(checked) => update({ showToolUi: checked })} />
+			</SettingRow>
 
-			<div className="flex items-start justify-between gap-4 rounded-lg border border-border p-4">
-				<div>
-					<div className="text-sm font-medium text-foreground">Show raw error details</div>
-					<p className="mt-1 text-sm text-muted-foreground">
-						Display full error messages and response bodies in tool failures. When off, only a short summary is shown.
-					</p>
-				</div>
-				<label className="relative inline-flex cursor-pointer items-center">
-					<input
-						type="checkbox"
-						className="sr-only peer"
-						checked={settings.showRawErrors}
-						onChange={(e) => update({ showRawErrors: e.target.checked })}
-					/>
-					<div className="h-5 w-9 rounded-full bg-muted-foreground/30 peer-checked:bg-primary transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-4" />
-				</label>
-			</div>
+			<SettingRow
+				title="Show raw error details"
+				description="Display full error messages and response bodies in tool failures. When off, only a short summary is shown."
+			>
+				<Toggle checked={settings.showRawErrors} onChange={(checked) => update({ showRawErrors: checked })} />
+			</SettingRow>
 
-			<div className="flex items-start justify-between gap-4 rounded-lg border border-border p-4">
-				<div>
-					<div className="text-sm font-medium text-foreground">Open artifacts automatically</div>
-					<p className="mt-1 text-sm text-muted-foreground">
-						Open the artifact side panel when Keating creates a plan, map, animation, benchmark, or evolution.
-					</p>
-				</div>
-				<label className="relative inline-flex cursor-pointer items-center">
-					<input
-						type="checkbox"
-						className="sr-only peer"
-						checked={settings.autoOpenArtifacts}
-						onChange={(e) => update({ autoOpenArtifacts: e.target.checked })}
-					/>
-					<div className="h-5 w-9 rounded-full bg-muted-foreground/30 peer-checked:bg-primary transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-4" />
-				</label>
-			</div>
+			<SettingRow
+				title="Open artifacts automatically"
+				description="Open the artifact side panel when Keating creates a plan, map, animation, benchmark, or evolution."
+			>
+				<Toggle checked={settings.autoOpenArtifacts} onChange={(checked) => update({ autoOpenArtifacts: checked })} />
+			</SettingRow>
 
 			<div>
 				<h3 className="text-sm font-semibold text-foreground mb-2">Animation Renderer</h3>
@@ -235,23 +204,15 @@ export function KeatingUiSettingsTab() {
 				</div>
 			</div>
 
-			<div className="flex items-start justify-between gap-4 rounded-lg border border-border p-4">
-				<div>
-					<div className="text-sm font-medium text-foreground">Google web grounding</div>
-					<p className="mt-1 text-sm text-muted-foreground">
-						Automatically enable Gemini Google Search grounding when a Google key is available. This lets Google-backed chats use current web results and citations.
-					</p>
-				</div>
-				<label className="relative inline-flex cursor-pointer items-center">
-					<input
-						type="checkbox"
-						className="sr-only peer"
-						checked={settings.googleGrounding === "auto"}
-						onChange={(e) => update({ googleGrounding: e.target.checked ? "auto" : "off" })}
-					/>
-					<div className="h-5 w-9 rounded-full bg-muted-foreground/30 peer-checked:bg-primary transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-4" />
-				</label>
-			</div>
+			<SettingRow
+				title="Google web grounding"
+				description="Automatically enable Gemini Google Search grounding when a Google key is available. This lets Google-backed chats use current web results and citations."
+			>
+				<Toggle
+					checked={settings.googleGrounding === "auto"}
+					onChange={(checked) => update({ googleGrounding: checked ? "auto" : "off" })}
+				/>
+			</SettingRow>
 
 			<div>
 				<h3 className="text-sm font-semibold text-foreground mb-2">Reasoning Level</h3>

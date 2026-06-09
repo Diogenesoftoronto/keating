@@ -116,6 +116,9 @@ export function Nav() {
           <Link to="/usage" className="nav-link glitch-hover font-terminal nav-desktop-link">
             [USAGE]
           </Link>
+          <Link to="/bench" className="nav-link glitch-hover font-terminal nav-desktop-link">
+            [BENCH]
+          </Link>
           <a
             href="https://github.com/Diogenesoftoronto/keating"
             target="_blank"
@@ -218,6 +221,14 @@ export function Nav() {
               onClick={closeMobile}
             >
               [USAGE]
+            </Link>
+            <Link
+              to="/bench"
+              className="nav-link glitch-hover"
+              style={{ padding: "0.75rem 0.5rem" }}
+              onClick={closeMobile}
+            >
+              [BENCH]
             </Link>
             <a
               href="https://github.com/Diogenesoftoronto/keating"

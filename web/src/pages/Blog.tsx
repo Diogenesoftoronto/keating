@@ -59,6 +59,173 @@ function majorMinor(version: string): string {
 const POSTS: Post[] = [
   {
     date: "2026-06-09",
+    badge: { label: "FEATURE", color: "feature" },
+    title: "KeatingBench - Ranking Teaching Models by Learner Outcomes",
+    summary:
+      "KeatingBench adds a separate benchmark page for comparing teaching models using shared learner sessions, replay cases, PROSPER judgement, readiness gates, and transparent methodology explainers.",
+    sections: [
+      { id: "why-keatingbench-exists", title: "Why KeatingBench Exists" },
+      { id: "what-gets-tested", title: "What Gets Tested" },
+      { id: "from-session-to-signal", title: "From Session to Signal" },
+      { id: "prosper-judgement", title: "PROSPER Judgement" },
+      { id: "replay-case-bank", title: "Replay Case Bank" },
+      { id: "readiness-and-sparsity", title: "Readiness and Sparsity" },
+      { id: "privacy-and-analytics", title: "Privacy and Analytics" },
+      { id: "next-step-cross-model-replay", title: "Next Step" },
+    ],
+    body: (
+      <>
+        <p className="mb-4 leading-6">
+          KeatingBench is a new benchmark surface for a narrower question than
+          most model leaderboards ask: which model actually teaches better in
+          learner interactions? It sits at <Code>/bench</Code>, separate from
+          chat and usage, and ranks models using the session data learners choose
+          to share.
+        </p>
+        <p className="text-sm mb-4">
+          The page is deliberately closer to an evaluation dashboard than a
+          release note. It shows the model leaderboard, replay evidence, PROSPER
+          scoring dimensions, readiness bands, and an explainer for how each
+          piece works. The goal is to make the benchmark inspectable before it is
+          trusted.
+        </p>
+
+        <h3 id="why-keatingbench-exists" className="font-bold mt-4 mb-2">Why KeatingBench Exists</h3>
+        <p className="text-sm mb-4">
+          A generic answer-quality benchmark is not enough for a tutoring system.
+          A teaching model should diagnose where the learner is, recover from
+          confusion, correct mistakes, invite practice, and help the learner
+          transfer the idea to a new case. KeatingBench treats those learner
+          outcomes as first-class evidence.
+        </p>
+        <p className="text-sm mb-4">
+          That also changes how data should be used. Synthetic learners can be
+          useful for stress tests, but the primary benchmark should be grounded
+          in real learner interaction. KeatingBench starts from shared sessions
+          and local private sessions, then turns those conversations into
+          replayable learner states.
+        </p>
+
+        <h3 id="what-gets-tested" className="font-bold mt-4 mb-2">What Gets Tested</h3>
+        <p className="text-sm mb-4">
+          KeatingBench looks for teaching moments inside learner turns. A turn
+          may signal understanding, confusion, correction, transfer, retention
+          need, or dissatisfaction. Those are different from simple thumbs up or
+          thumbs down ratings because they reveal where the learner is in the
+          teaching loop.
+        </p>
+        <p className="text-sm mb-4">
+          The benchmark currently classifies replay stages as{" "}
+          <Code>diagnosis</Code>, <Code>confusion-recovery</Code>,{" "}
+          <Code>correction</Code>, <Code>transfer</Code>, and{" "}
+          <Code>retention</Code>. The leaderboard shows the replay mix so a model
+          with easy wins is not confused with a model that handled hard recovery
+          cases.
+        </p>
+
+        <h3 id="from-session-to-signal" className="font-bold mt-4 mb-2">From Session to Signal</h3>
+        <p className="text-sm mb-4">
+          The data path starts with a shared or local session. KeatingBench reads
+          the learner messages, extracts feedback-like signals from the learner's
+          own words, and records the nearby assistant context. Each extracted
+          state becomes a replay case with a normalized outcome score.
+        </p>
+        <CodeBlock>{`thumbs-up   -> high outcome signal
+confused    -> mid-low outcome signal
+thumbs-down -> low outcome signal`}</CodeBlock>
+        <p className="text-sm mb-4">
+          Explicit feedback remains valuable, but the benchmark also uses
+          learner-turn analysis because a confused follow-up or a correction is
+          meaningful evidence even when the learner never clicks a feedback
+          button.
+        </p>
+
+        <h3 id="prosper-judgement" className="font-bold mt-4 mb-2">PROSPER Judgement</h3>
+        <p className="text-sm mb-4">
+          The headline rank is not the raw outcome score. It is a PROSPER score:
+          a weighted multi-objective judgement designed to avoid rewarding narrow
+          or brittle behavior. Raw outcome is still shown in the table, but it is
+          only one component.
+        </p>
+        <CodeBlock>{`PROSPER =
+  performance
+  robustness
+  outcome lift
+  sparse-data caution
+  personalization
+  evidence quality
+  retention / transfer`}</CodeBlock>
+        <p className="text-sm mb-4">
+          This means a model can rank well only when it balances learner outcome
+          with evidence quality and teaching behavior. A model that gets a few
+          positive signals but has little evidence remains marked as sparse.
+        </p>
+
+        <h3 id="replay-case-bank" className="font-bold mt-4 mb-2">Replay Case Bank</h3>
+        <p className="text-sm mb-4">
+          The replay case bank is the most important part of the page. It shows
+          the learner states KeatingBench is actually using: stage, inferred
+          feedback signal, learner text, outcome score, and PROSPER score. This
+          makes the benchmark auditable instead of just producing a mysterious
+          rank.
+        </p>
+        <p className="text-sm mb-4">
+          The same case bank is also the foundation for cross-model replay. Once
+          provider replay is wired in, the harness can send the same extracted
+          learner state to multiple models and compare their responses under the
+          same judgement criteria.
+        </p>
+
+        <h3 id="readiness-and-sparsity" className="font-bold mt-4 mb-2">Readiness and Sparsity</h3>
+        <p className="text-sm mb-4">
+          KeatingBench does not treat all data volumes equally. Sparse data is
+          visible but should not drive strong conclusions or policy evolution.
+          The page currently uses explicit readiness bands:
+        </p>
+        <CodeBlock>{`waiting      < 5 signals
+sparse       >= 5 signals
+provisional  >= 20 signals
+rankable     >= 50 signals
+stable       >= 100 signals`}</CodeBlock>
+        <p className="text-sm mb-4">
+          The policy-evolution gate is still stricter about caution: if the
+          system does not have enough real learner signal, it should say it is
+          not ready to evolve rather than pretending a thin sample is a reliable
+          improvement target.
+        </p>
+
+        <h3 id="privacy-and-analytics" className="font-bold mt-4 mb-2">Privacy and Analytics</h3>
+        <p className="text-sm mb-4">
+          KeatingBench uses shared sessions as benchmark material only when those
+          sessions are available to the app. Local private sessions stay in the
+          local view. The new PostHog integration is opt-in through Vite
+          environment variables, with autocapture and session recording disabled
+          so learner text is not automatically sent as analytics data.
+        </p>
+        <p className="text-sm mb-4">
+          The analytics events are aggregate events such as opening or exporting
+          the benchmark. The benchmark data itself remains the session corpus,
+          not a hidden analytics stream.
+        </p>
+
+        <h3 id="next-step-cross-model-replay" className="font-bold mt-4 mb-2">Next Step</h3>
+        <p className="text-sm mb-4">
+          The current implementation scores observed sessions deterministically.
+          The next real step is provider replay: take the same replay case, send
+          it to multiple models, and judge the resulting teaching move with the
+          same PROSPER vector.
+        </p>
+        <p className="text-sm mb-4">
+          That is the path from a useful local leaderboard to a proper
+          KeatingBench: human-grounded cases, comparable model responses,
+          transparent scoring, and enough evidence to know when the system is
+          ready to evolve.
+        </p>
+      </>
+    ),
+  },
+  {
+    date: "2026-06-09",
     badge: { label: "RELEASE", color: "release" },
     title: "v1.2.0 - Observable Self-Evolution, Timed Quizzes, and Release Hygiene",
     version: "1.2.0",

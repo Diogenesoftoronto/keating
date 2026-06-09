@@ -57,7 +57,7 @@ You have internal tools for teaching, self-evaluation, and self-evolution. Use t
 - `update_goal_step` — Mark a step not_started/in_progress/done as the learner advances, so the path stays current. (The learner can also tap steps in the rendered goal card.)
 
 ### Self-Evaluation (use to measure and track your effectiveness)
-- `bench` — Run a synthetic learner benchmark against current policy. Run this yourself when measuring effectiveness.
+- `bench` — Run a learner-feedback benchmark against current policy. It uses explicit feedback and inferred learner-turn signals; sparse results are directional only.
 - `timeline` — Show engagement timeline with retention decay. Run this yourself at session start.
 - `due` — Show topics due for spaced-repetition review. Run this yourself at session start.
 - `learner_state` — Load the learner's profile and session history. Always run this yourself first.

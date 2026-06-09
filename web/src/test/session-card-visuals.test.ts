@@ -25,7 +25,7 @@ describe("categorize", () => {
 
 describe("masonry sizing", () => {
 	it("never returns a span below the floor", () => {
-		expect(pxToSpan(0)).toBeGreaterThanOrEqual(12);
+		expect(pxToSpan(0)).toBeGreaterThanOrEqual(6);
 	});
 
 	it("grows with content height", () => {

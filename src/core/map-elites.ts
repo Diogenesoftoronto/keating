@@ -7,16 +7,18 @@ import {
   MapElitesCell,
   MapElitesGrid,
   MapElitesRun,
+  LearnerState,
   SimulationWeights,
   TeacherPolicy
 } from "./types.js";
 import { Prng } from "./random.js";
 import { DEFAULT_POLICY, DEFAULT_WEIGHTS, clampPolicy, clampWeights } from "./policy.js";
-import { benchmarkToMarkdown, runBenchmarkSuite } from "./benchmark.js";
+import { benchmarkToMarkdown, extractHarnessOutcomes, runBenchmarkSuite } from "./benchmark.js";
 import { evolvePolicy as fallbackEvolvePolicy, EvolutionRun } from "./evolution.js";
 import { mutateScalar, mutatePolicy, mutateWeights } from "./mutation.js";
 import { evolutionDir } from "./paths.js";
 import { slugify } from "./util.js";
+import { counterfactualBenchmark, prosperPolicyWinner, type PolicyJudgementCandidate } from "./policy-judgement.js";
 
 export interface MapElitesOptions {
   iterations?: number;
@@ -26,6 +28,7 @@ export interface MapElitesOptions {
   focusTopic?: string;
   initRandom?: number;
   gridPath?: string;
+  learnerState?: LearnerState;
 }
 
 export const DEFAULT_DESCRIPTORS: string[] = ["formalism", "socraticRatio"];
@@ -120,18 +123,30 @@ export async function mapElitesEvolve(
     resolution = DEFAULT_RESOLUTION,
     focusTopic,
     initRandom = Math.floor(iterations * 0.25),
-    gridPath = defaultGridPath(cwd, focusTopic)
+    gridPath = defaultGridPath(cwd, focusTopic),
+    learnerState
   } = options;
 
   const prng = new Prng(seed);
   const runId = `me-${Date.now().toString(36)}`;
   const grid = await loadMapElitesGrid(gridPath, descriptors, resolution);
   const totalCells = resolution ** descriptors.length;
+  const realOutcomes = learnerState ? await extractHarnessOutcomes(cwd, learnerState) : [];
 
-  const baseline = await runBenchmarkSuite(cwd, basePolicy, focusTopic, seed, 3, DEFAULT_WEIGHTS);
+  const baseline = await runBenchmarkSuite(cwd, basePolicy, focusTopic, seed, 3, DEFAULT_WEIGHTS, learnerState);
+  const baselineCounterfactual = learnerState
+    ? await counterfactualBenchmark(cwd, learnerState, realOutcomes, basePolicy, focusTopic, seed + 7, 3, DEFAULT_WEIGHTS)
+    : undefined;
   placeInGrid(grid, basePolicy, DEFAULT_WEIGHTS, baseline.overallScore, baseline, 0);
 
   const exploredCandidates: EvolutionCandidate[] = [];
+  const judgementCandidates: PolicyJudgementCandidate[] = [{
+    label: basePolicy.name,
+    policy: basePolicy,
+    benchmark: baseline,
+    counterfactualBenchmark: baselineCounterfactual,
+    preferenceScore: 0
+  }];
 
   for (let i = 1; i <= iterations; i++) {
     let candidatePolicy: TeacherPolicy;
@@ -150,17 +165,21 @@ export async function mapElitesEvolve(
     }
 
     const candidateBenchmark = await runBenchmarkSuite(
-      cwd, candidatePolicy, focusTopic, seed + i * 11, 3, candidateWeights
+      cwd, candidatePolicy, focusTopic, seed + i * 11, 3, candidateWeights, learnerState
     );
+    const candidateCounterfactual = learnerState
+      ? await counterfactualBenchmark(cwd, learnerState, realOutcomes, candidatePolicy, focusTopic, seed + i * 11 + 7, 3, candidateWeights)
+      : undefined;
 
     const isNewCell = placeInGrid(
       grid, candidatePolicy, candidateWeights,
       candidateBenchmark.overallScore, candidateBenchmark, i
     );
 
-    exploredCandidates.push({
+    const explored: EvolutionCandidate = {
       policy: candidatePolicy,
       benchmark: candidateBenchmark,
+      counterfactualBenchmark: candidateCounterfactual,
       parentName,
       iteration: i,
       novelty: isNewCell ? 1 : 0,
@@ -176,17 +195,30 @@ export async function mapElitesEvolve(
           : [`discarded — cell already held a better elite`]
       },
       parameterDelta: []
+    };
+    exploredCandidates.push(explored);
+    judgementCandidates.push({
+      label: candidatePolicy.name,
+      policy: candidatePolicy,
+      benchmark: candidateBenchmark,
+      counterfactualBenchmark: candidateCounterfactual,
+      preferenceScore: 0
     });
   }
 
   await saveMapElitesGrid(gridPath, grid);
 
-  let best: BenchmarkResult = baseline;
-  for (const cell of grid.cells.values()) {
-    if (cell && cell.benchmark.overallScore > best.overallScore) {
-      best = cell.benchmark;
-    }
+  const prosperBest = prosperPolicyWinner(judgementCandidates);
+  for (const candidate of exploredCandidates) {
+    const judgement = judgementCandidates.find((entry) => entry.label === candidate.policy.name);
+    candidate.preferenceScore = judgement?.preferenceScore ?? 0;
+    candidate.accepted = candidate.policy.name === prosperBest.policy.name;
+    candidate.decision.reasons = [
+      ...candidate.decision.reasons,
+      `PROSPER policy preference score ${candidate.preferenceScore.toFixed(2)}`
+    ];
   }
+  const best = prosperBest.benchmark;
 
   return {
     baseline,
@@ -208,6 +240,7 @@ export function mapElitesToMarkdown(run: MapElitesRun): string {
     `- Baseline score: ${run.baseline.overallScore.toFixed(2)}`,
     `- Best score: ${run.best.overallScore.toFixed(2)}`,
     `- Explored candidates: ${run.exploredCandidates.length}`,
+    `- Judgement: PROSPER-style pairwise preference over real feedback, counterfactual robustness, mastery, transfer, low confusion, and evidence readiness.`,
     ""
   ];
 
@@ -234,6 +267,16 @@ export function mapElitesToMarkdown(run: MapElitesRun): string {
     );
   }
 
+  lines.push("");
+  lines.push("## PROSPER Candidate Judgement");
+  lines.push("");
+  lines.push("| Candidate | Real Score | Counterfactual Score | Preference | Accepted |");
+  lines.push("| --- | ---: | ---: | ---: | :---: |");
+  for (const candidate of run.exploredCandidates.slice().sort((left, right) => (right.preferenceScore ?? 0) - (left.preferenceScore ?? 0)).slice(0, 12)) {
+    lines.push(
+      `| ${candidate.policy.name} | ${candidate.benchmark.overallScore.toFixed(2)} | ${candidate.counterfactualBenchmark?.overallScore.toFixed(2) ?? "n/a"} | ${(candidate.preferenceScore ?? 0).toFixed(2)} | ${candidate.accepted ? "yes" : "no"} |`
+    );
+  }
   lines.push("");
   lines.push("## Best Benchmark Snapshot");
   lines.push("");

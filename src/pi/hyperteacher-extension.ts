@@ -374,6 +374,15 @@ function registerSpeechTool(pi: any, config: KeatingConfig): void {
  }
 }
 
+function feedbackOnlyTopics(state: Awaited<ReturnType<typeof loadLearnerState>>): string[] {
+ const covered = new Set(state.coveredTopics.map((topic) => topic.slug));
+ return [...new Set(
+ state.feedback
+ .map((feedback) => feedback.topic.trim())
+ .filter((topic) => topic && topic !== "general" && !covered.has(topic))
+ )].slice(-10);
+}
+
 function keatingToolMaker(name: string, label: string, description: string, parameters: Record<string, unknown>, exec: (params: Record<string, unknown>) => Promise<Record<string, unknown>>) {
  return {
  name,
@@ -482,7 +491,7 @@ function registerKeatingTools(pi: any): void {
  keatingToolMaker(
  "bench",
  "bench",
- "Run a synthetic learner benchmark against the current teaching policy. Use to measure teaching effectiveness and identify weaknesses.",
+ "Run a learner-feedback benchmark against the current teaching policy. Uses explicit feedback and inferred learner-turn signals.",
  { topic: { type: "string", description: "Optional topic to focus the benchmark on" } },
  async (params) => {
  const topic = (params.topic as string) || undefined;
@@ -533,7 +542,11 @@ function registerKeatingTools(pi: any): void {
  const downCount = state.feedback.filter((f: any) => f.signal === down).length;
  const confusedCount = state.feedback.filter((f: any) => f.signal === confused).length;
  const topicList = state.coveredTopics.slice(-10).map((t: any) => ` - ${t.slug} (${t.domain})`).join("\n") || "None yet";
- const text = `Learner Profile:\nSessions: ${state.sessions?.length ?? 0}\nTopics explored: ${state.coveredTopics.length}\n${topicList}\nFeedback: 👍${upCount} 👎${downCount} 🤔${confusedCount}\nMisconceptions identified: ${state.identifiedMisconceptions.length}`;
+ const feedbackTopics = feedbackOnlyTopics(state);
+ const feedbackTopicList = feedbackTopics.length > 0
+ ? `\nFeedback-only topics: ${feedbackTopics.length}\n${feedbackTopics.map((topic) => ` - ${topic}`).join("\n")}`
+ : "";
+ const text = `Learner Profile:\nSessions: ${state.sessions?.length ?? 0}\nTopics explored: ${state.coveredTopics.length}\n${topicList}${feedbackTopicList}\nFeedback: 👍${upCount} 👎${downCount} 🤔${confusedCount}\nMisconceptions identified: ${state.identifiedMisconceptions.length}`;
  return { content: [{ type: "text", text }] };
  }
  ),
@@ -765,7 +778,7 @@ export default function hyperteacher(pi: any): void {
  });
 
  pi.registerCommand("bench", {
- description: "Run the synthetic learner benchmark suite against the current teaching policy.",
+ description: "Run the learner-feedback benchmark suite against the current teaching policy.",
  handler: async (args: string[], ctx: any) => {
  const topic = topicFromArgs(args) || undefined;
  const artifact = await benchPolicyArtifact(ctx.cwd, topic);
@@ -963,10 +976,14 @@ export default function hyperteacher(pi: any): void {
  const upCount = state.feedback.filter((f) => f.signal === "thumbs-up").length;
  const downCount = state.feedback.filter((f) => f.signal === "thumbs-down").length;
  const confusedCount = state.feedback.filter((f) => f.signal === "confused").length;
+ const feedbackTopics = feedbackOnlyTopics(state);
  const lines = [
  `Sessions: ${state.sessions?.length ?? 0}`,
  `Topics covered: ${state.coveredTopics.length}`,
  ...state.coveredTopics.slice(-10).map((t) => ` - ${t.slug} (${t.domain})`),
+ ...(feedbackTopics.length > 0
+ ? [`Feedback-only topics: ${feedbackTopics.length}`, ...feedbackTopics.map((topic) => ` - ${topic}`)]
+ : []),
  `Feedback: 👍${upCount} 👎${downCount} 🤔${confusedCount}`,
  `Misconceptions identified: ${state.identifiedMisconceptions.length}`,
  ];

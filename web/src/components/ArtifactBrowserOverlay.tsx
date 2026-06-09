@@ -43,7 +43,7 @@ export function ArtifactBrowserOverlay({ open, artifactId, onClose }: ArtifactBr
       onClick={onClose}
     >
       <div
-        className="absolute inset-y-0 right-0 flex h-full w-full max-w-none flex-col border-l border-border bg-background shadow-2xl sm:max-w-[960px]"
+        className="absolute inset-y-0 right-0 flex h-full w-full max-w-[100vw] flex-col border-l border-border bg-background shadow-2xl sm:max-w-[960px]"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
@@ -62,7 +62,7 @@ export function ArtifactBrowserOverlay({ open, artifactId, onClose }: ArtifactBr
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-6">
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6">
           <ArtifactViewer storage={artifactStorage} artifactId={artifactId} onClose={onClose} />
         </div>
       </div>

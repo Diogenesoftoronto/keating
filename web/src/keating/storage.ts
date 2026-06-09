@@ -4,6 +4,7 @@
  */
 
 import type { LearnerGoal } from "./goals";
+import { inferBrowserLearnerTurnSignal } from "./core";
 
 const DB_NAME = "keating-db";
 const DB_VERSION = 4;
@@ -98,6 +99,8 @@ export interface FeedbackEntry {
 	topic: string;
 	signal: "thumbs-up" | "thumbs-down" | "confused";
 	createdAt: number;
+	source?: "explicit" | "turn-analysis";
+	evidence?: string;
 }
 
 export interface LearnerState {
@@ -480,12 +483,18 @@ export class KeatingStorage {
 	}
 
 	// Feedback
-	async recordFeedback(topic: string, signal: "thumbs-up" | "thumbs-down" | "confused"): Promise<FeedbackEntry> {
+	async recordFeedback(
+		topic: string,
+		signal: "thumbs-up" | "thumbs-down" | "confused",
+		options: { source?: "explicit" | "turn-analysis"; evidence?: string } = {},
+	): Promise<FeedbackEntry> {
 		const entry: FeedbackEntry = {
 			id: this.generateId(),
 			topic,
 			signal,
 			createdAt: Date.now(),
+			source: options.source ?? "explicit",
+			evidence: options.evidence,
 		};
 		await this.put(STORES.FEEDBACK, entry);
 
@@ -500,6 +509,40 @@ export class KeatingStorage {
 		await this.saveLearnerState(state);
 
 		return entry;
+	}
+
+	async recordLearnerTurnFeedback(messages: Array<{ role?: unknown; content?: unknown }>): Promise<number> {
+		const state = await this.getLearnerState();
+		const fallbackTopic = state.topicsExplored.at(-1) ?? state.feedbackHistory.at(-1)?.topic ?? "general";
+		let count = 0;
+
+		for (const message of messages) {
+			const role = message.role;
+			if (role !== "user" && role !== "user-with-attachments") continue;
+			const text = browserMessageText(message);
+			const inferred = inferBrowserLearnerTurnSignal(text, fallbackTopic);
+			if (!inferred || inferred.topic === "general") continue;
+			if (state.feedbackHistory.some((entry) => entry.source === "turn-analysis" && entry.evidence === inferred.evidence)) continue;
+			const entry: FeedbackEntry = {
+				id: this.generateId(),
+				topic: inferred.topic,
+				signal: inferred.signal,
+				createdAt: Date.now(),
+				source: "turn-analysis",
+				evidence: inferred.evidence,
+			};
+			await this.put(STORES.FEEDBACK, entry);
+			state.feedbackHistory.push(entry);
+			if (!state.topicsExplored.includes(inferred.topic)) state.topicsExplored.push(inferred.topic);
+			count += 1;
+		}
+
+		if (count > 0) {
+			state.lastSessionAt = Date.now();
+			await this.saveLearnerState(state);
+		}
+
+		return count;
 	}
 
 	async getFeedback(topic?: string): Promise<FeedbackEntry[]> {
@@ -726,6 +769,25 @@ export class KeatingStorage {
 			})),
 		].sort((a, b) => b.createdAt - a.createdAt);
 	}
+}
+
+function browserMessageText(message: { content?: unknown }): string {
+	const content = message.content;
+	if (typeof content === "string") return content.trim();
+	if (Array.isArray(content)) {
+		return content
+			.map((item) => {
+				if (typeof item === "string") return item;
+				if (item && typeof item === "object" && typeof (item as { text?: unknown }).text === "string") {
+					return (item as { text: string }).text;
+				}
+				return "";
+			})
+			.filter(Boolean)
+			.join(" ")
+			.trim();
+	}
+	return "";
 }
 
 // Default policy for browser

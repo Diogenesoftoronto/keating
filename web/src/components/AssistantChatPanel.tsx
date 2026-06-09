@@ -1017,10 +1017,13 @@ function CopyButton({
   text,
   label = "Copy",
   className = "",
+  variant = "outline",
 }: {
   text: string;
   label?: string;
   className?: string;
+  /** "outline" = bordered chip; "ghost" = borderless, matches message action-row buttons. */
+  variant?: "outline" | "ghost";
 }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
@@ -1033,16 +1036,20 @@ function CopyButton({
     }
   };
 
+  const base =
+    variant === "ghost"
+      ? "h-6 w-6 rounded text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+      : "h-7 w-7 rounded-md border border-border bg-background/85 text-muted-foreground hover:bg-accent hover:text-accent-foreground";
+
   return (
     <button
       type="button"
       onClick={copy}
-      className={`inline-flex h-7 items-center gap-1 rounded-md border border-border bg-background/85 px-2 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground ${className}`}
-      aria-label={label}
-      title={label}
+      className={`inline-flex items-center justify-center transition-colors ${base} ${className}`}
+      aria-label={copied ? "Copied" : label}
+      title={copied ? "Copied" : label}
     >
-      {copied ? <Check size={12} /> : <Copy size={12} />}
-      {copied ? "Copied" : label}
+      {copied ? <Check size={13} className="text-green-500" /> : <Copy size={13} />}
     </button>
   );
 }
@@ -1101,19 +1108,11 @@ function MarkdownText({
   isRunning?: boolean;
 }) {
   const displayText = stripArtifactLinks(text);
-  const copyText = stripQuizTags(stripGeneratedImageTags(stripQuestionTags(stripGoalTags(displayText))));
   const segments = parseInteractiveSegments(displayText).filter(
     (s) => s.type !== "question" && s.type !== "quiz",
   );
   return (
-    <div className="group/text-block relative break-words text-sm leading-6">
-      {text.trim() && (
-        <CopyButton
-          text={copyText}
-          label="Copy"
-          className="absolute right-0 top-0 z-10 opacity-0 group-hover/text-block:opacity-100 focus:opacity-100"
-        />
-      )}
+    <div className="group/text-block break-words text-sm leading-6">
       <ArtifactChips text={text} />
       {segments.map((seg, i) => {
         const card = renderInteractiveSegment(seg, i);
@@ -1126,15 +1125,17 @@ function MarkdownText({
             components={{
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               pre: ({ children }: any) => (
-                <div className="group/code relative my-2">
-                  <pre className="overflow-x-auto rounded-md bg-muted p-3 pr-20 text-xs">
+                <div className="group/code my-2">
+                  <pre className="overflow-x-auto rounded-md bg-muted p-3 text-xs">
                     {children}
                   </pre>
-                  <CopyButton
-                    text={copyTextFromReactNode(children).replace(/\n$/, "")}
-                    label="Copy code"
-                    className="absolute right-2 top-2 opacity-0 group-hover/code:opacity-100 focus:opacity-100"
-                  />
+                  <div className="mt-1 flex justify-end">
+                    <CopyButton
+                      text={copyTextFromReactNode(children).replace(/\n$/, "")}
+                      label="Copy code"
+                      className="opacity-0 group-hover/code:opacity-100 focus:opacity-100"
+                    />
+                  </div>
                 </div>
               ),
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -2563,7 +2564,7 @@ function AssistantThread({
     >
       <AssistantRuntimeProvider runtime={runtime}>
         <ThreadPrimitive.Root className="flex h-full min-h-0 flex-col bg-background text-foreground">
-          <ThreadPrimitive.Viewport className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 py-4 sm:px-4 sm:py-6">
+          <ThreadPrimitive.Viewport className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-3 py-4 sm:px-4 sm:py-6">
             <div className="flex flex-1 flex-col">
               <AuiIf condition={(state) => state.thread.isEmpty}>
                 <SuggestedPrompts onSelect={sendText} />
@@ -2572,7 +2573,7 @@ function AssistantThread({
             </div>
             <ThreadPrimitive.ViewportFooter className="sticky bottom-0 min-w-0 bg-background/95 pt-3 backdrop-blur">
               {activeQuiz && (
-                <div className="mx-auto mb-2 w-[calc(100%-6px)] max-w-3xl sm:w-full">
+                <div className="mx-auto mb-1.5 sm:mb-2 w-full max-w-3xl overflow-x-hidden px-1.5 sm:px-0">
                   <QuizSessionPanel
                     quiz={activeQuiz}
                     onSubmit={(result) => {
@@ -2607,7 +2608,7 @@ function AssistantThread({
                 </div>
               )}
               {activeQuestion && (
-                <div className="mx-auto mb-2 w-[calc(100%-6px)] max-w-3xl sm:w-full">
+                <div className="mx-auto mb-1.5 sm:mb-2 w-full max-w-3xl overflow-x-hidden px-1.5 sm:px-0">
                   <QuestionRenderer
                     data={activeQuestion}
                     onSubmit={(answers) => {
@@ -2620,7 +2621,7 @@ function AssistantThread({
                   />
                 </div>
               )}
-              <ComposerPrimitive.Root className="composer-root mx-auto flex w-[calc(100%-6px)] max-w-3xl flex-col gap-2 rounded-lg border border-border bg-background p-2 shadow-sm sm:w-full">
+              <ComposerPrimitive.Root className="composer-root mx-auto flex w-[calc(100%-6px)] max-w-3xl flex-col gap-1.5 sm:gap-2 rounded-lg border border-border bg-background p-1.5 sm:p-2 shadow-sm sm:w-full">
                 <WebGroundingHint
                   hasUrl={composerHasUrl}
                   hasGoogleKey={hasGoogleKey}
@@ -2635,7 +2636,7 @@ function AssistantThread({
                 <div className="flex w-full min-w-0 items-center gap-1.5 sm:gap-2">
                   <button
                     type="button"
-                    className="inline-flex h-9 max-w-20 shrink-0 items-center overflow-hidden truncate whitespace-nowrap rounded-md border border-border px-2 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50 sm:max-w-36"
+                    className="inline-flex h-8 max-w-16 shrink-0 items-center overflow-hidden truncate whitespace-nowrap rounded-md border border-border px-1.5 text-[11px] text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50 sm:h-9 sm:max-w-20 sm:px-2 sm:text-xs"
                     disabled={!callbacks.onModelSelect}
                     onClick={() => callbacks.onModelSelect?.()}
                     title={modelLabel}
@@ -2654,26 +2655,26 @@ function AssistantThread({
                   />
                   <ComposerPrimitive.AddAttachment
                     multiple
-                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50 sm:h-9 sm:w-9"
                     title="Attach files or images"
                     aria-label="Attach files or images"
                   >
-                    <Paperclip size={16} />
+                    <Paperclip size={15} className="sm:size-4" />
                   </ComposerPrimitive.AddAttachment>
                   <ComposerPrimitive.Input
-                    className="max-h-40 min-h-9 min-w-0 flex-1 resize-none self-center bg-transparent px-1 py-2 text-sm leading-5 text-foreground outline-none placeholder:text-muted-foreground sm:px-2"
+                    className="max-h-40 min-h-8 min-w-0 flex-1 resize-none self-center bg-transparent px-1 py-1.5 text-sm leading-5 text-foreground outline-none placeholder:text-muted-foreground sm:min-h-9 sm:px-1 sm:py-2"
                     placeholder="Message Keating"
                     rows={1}
                     onChange={(event) => setComposerHasUrl(URL_IN_TEXT_PATTERN.test(event.currentTarget.value))}
                   />
                   {/* Only show Send OR Cancel — never both */}
                   {isRunning ? (
-                    <ComposerPrimitive.Cancel className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border-2 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground animate-pulse">
-                      <Square size={16} />
+                    <ComposerPrimitive.Cancel className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border-2 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground animate-pulse sm:h-9 sm:w-9">
+                      <Square size={15} className="sm:size-4" />
                     </ComposerPrimitive.Cancel>
                   ) : (
-                    <ComposerPrimitive.Send className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground disabled:opacity-50">
-                      <Send size={16} />
+                    <ComposerPrimitive.Send className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground disabled:opacity-50 sm:h-9 sm:w-9">
+                      <Send size={15} className="sm:size-4" />
                     </ComposerPrimitive.Send>
                   )}
                 </div>
@@ -2808,6 +2809,15 @@ function AssistantMessage({
   // The message id is `assistant-${index}-${timestamp}` (see toAssistantMessage).
   // The trailing timestamp is the stable handle we use to fork at this turn.
   const messageId = useMessage((message) => message.id);
+  const messageText = useMessage((message) =>
+    (message.content as Array<{ type: string; text?: string }>)
+      .filter((part) => part.type === "text")
+      .map((part) => part.text ?? "")
+      .join("\n\n"),
+  );
+  const copyText = stripQuizTags(
+    stripGeneratedImageTags(stripQuestionTags(stripGoalTags(stripArtifactLinks(messageText)))),
+  ).trim();
   const handleFork = () => {
     const ts = Number(messageId.slice(messageId.lastIndexOf("-") + 1));
     onFork?.(Number.isFinite(ts) ? ts : undefined);
@@ -2894,6 +2904,7 @@ function AssistantMessage({
               </div>
             )}
             <div className="mt-2 flex items-center gap-1">
+              {copyText && <CopyButton variant="ghost" text={copyText} label="Copy message" />}
               <button
                 type="button"
                 className={`inline-flex h-6 w-6 items-center justify-center rounded-md transition-colors ${

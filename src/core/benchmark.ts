@@ -1,3 +1,6 @@
+import { readdir, readFile } from "node:fs/promises";
+import { join } from "node:path";
+
 import {
   BenchmarkResult,
   BenchmarkTopicTrace,
@@ -17,12 +20,13 @@ import { DEFAULT_WEIGHTS, clampWeights } from "./policy.js";
 import { piCompleteJson } from "./pi-agent.js";
 import {
   MIN_REAL_OUTCOMES,
-  blendRealSyntheticScore,
+  hasEnoughRealData,
   computeRealOutcomeScore,
   feedbackToOutcomeScore,
-  hasEnoughRealData,
   simulateDeterministicTeaching
 } from "./benchmark-real.js";
+import { sessionsDir } from "./paths.js";
+import { inferLearnerTurnSignal, learnerTurnSignalToOutcome } from "./learner-turn-analysis.js";
 
 // ---------------------------------------------------------------------------
 // Real learner outcome extraction: convert stored student data into
@@ -33,8 +37,8 @@ export function extractRealOutcomes(state: LearnerState): RealLearnerOutcome[] {
   const outcomes: RealLearnerOutcome[] = [];
 
   for (const fb of state.feedback) {
-    const topicSlug = fb.topic;
-    const covered = state.coveredTopics.find((ct) => ct.slug === topicSlug);
+    const topicSlug = resolveTopic(fb.topic).slug;
+    const covered = state.coveredTopics.find((ct) => ct.slug === topicSlug || ct.slug === fb.topic);
     const session =
       state.sessions.find((s) => s.topicsCovered.includes(topicSlug)) ?? null;
 
@@ -57,6 +61,66 @@ export function extractRealOutcomes(state: LearnerState): RealLearnerOutcome[] {
   }
 
   return outcomes;
+}
+
+export async function extractHarnessOutcomes(cwd: string, state: LearnerState): Promise<RealLearnerOutcome[]> {
+  const outcomes = extractRealOutcomes(state);
+  const fallbackTopic =
+    state.coveredTopics.at(-1)?.slug ??
+    state.feedback.at(-1)?.topic ??
+    "general";
+
+  for (const message of await readLearnerMessages(cwd)) {
+    const signal = inferLearnerTurnSignal(message, fallbackTopic);
+    if (!signal || signal.topic === "general") continue;
+    outcomes.push(learnerTurnSignalToOutcome(signal, state.profile.id));
+  }
+
+  return outcomes;
+}
+
+async function readLearnerMessages(cwd: string): Promise<string[]> {
+  const dir = sessionsDir(cwd);
+  const entries = await readdir(dir, { withFileTypes: true }).catch(() => []);
+  const messages: string[] = [];
+
+  for (const entry of entries) {
+    if (!entry.isFile() || !entry.name.endsWith(".json")) continue;
+    const fullPath = join(dir, entry.name);
+    try {
+      const parsed = JSON.parse(await readFile(fullPath, "utf8")) as { messages?: unknown[] };
+      for (const message of parsed.messages ?? []) {
+        if (!message || typeof message !== "object") continue;
+        const role = (message as { role?: unknown }).role;
+        if (role !== "user" && role !== "user-with-attachments") continue;
+        const text = messageText(message);
+        if (text) messages.push(text);
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return messages;
+}
+
+function messageText(message: unknown): string {
+  const content = (message as { content?: unknown }).content;
+  if (typeof content === "string") return content.trim();
+  if (Array.isArray(content)) {
+    return content
+      .map((item) => {
+        if (typeof item === "string") return item;
+        if (item && typeof item === "object" && typeof (item as { text?: unknown }).text === "string") {
+          return (item as { text: string }).text;
+        }
+        return "";
+      })
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+  }
+  return "";
 }
 
 // ---------------------------------------------------------------------------
@@ -150,6 +214,7 @@ Respond ONLY as a JSON matching:
 }
 
 function classifyDominantSignal(simulations: TeachingSimulation[], kind: "strength" | "weakness"): string {
+  if (simulations.length === 0) return "no learner feedback";
   const metrics = {
     intuitionFit: mean(simulations.map((entry) => entry.breakdown.intuitionFit)),
     rigorFit: mean(simulations.map((entry) => entry.breakdown.rigorFit)),
@@ -189,8 +254,9 @@ export function summarizeTopic(topic: TopicDefinition, simulations: TeachingSimu
 }
 
 // ---------------------------------------------------------------------------
-// Main benchmark suite — uses real learner outcomes when available,
-// falls back to synthetic population otherwise.
+// Main benchmark suite. If learner state is supplied, user-facing benchmarks
+// use gathered learner feedback only. Synthetic learners remain available only
+// for internal optimizer/test calls that provide no learner state.
 // ---------------------------------------------------------------------------
 
 export async function runBenchmarkSuite(
@@ -204,48 +270,26 @@ export async function runBenchmarkSuite(
 ): Promise<BenchmarkResult> {
   const topics = benchmarkTopics(focusTopic);
   const topicTraces: BenchmarkTopicTrace[] = [];
-  const realOutcomes = learnerState ? extractRealOutcomes(learnerState) : [];
-  const useRealLearners = hasEnoughRealData(realOutcomes);
+  const realOutcomes = learnerState ? await extractHarnessOutcomes(cwd, learnerState) : [];
+  const hasLearnerContext = learnerState !== undefined;
+  const hasFeedback = realOutcomes.length > 0;
+  const hasEnoughFeedback = hasEnoughRealData(realOutcomes);
   const NUM_SYNTHETIC_LEARNERS = 3;
+  const benchmarkedTopics = hasLearnerContext && hasFeedback && !focusTopic
+    ? [...new Set(realOutcomes.map((outcome) => outcome.topic))].map((topic) => resolveTopic(topic))
+    : topics;
 
   const topicBenchmarks = await Promise.all(
-    topics.map(async (topic, index) => {
+    benchmarkedTopics.map(async (topic, index) => {
       const topicReal = realOutcomes.filter((o) => o.topic === topic.slug);
 
       let simulations: TeachingSimulation[];
 
-      if (useRealLearners && topicReal.length >= 3) {
-        // Score against real learner outcomes for this topic
-        const realSim = computeRealOutcomeScore(topicReal, policy, topic, weights);
-
-        // Supplement with synthetic to keep evolutionary gradients smooth
-        const synthLearners = buildLearnerPopulation(seed + index * 97, NUM_SYNTHETIC_LEARNERS);
-        const synthSims = await Promise.all(
-          synthLearners.map((learner) =>
-            simulateTeaching(cwd, policy, topic, learner, weights)
-          )
-        );
-
-        const syntheticSim = synthSims.length > 0 ? synthSims : [];
-        simulations = [realSim, ...syntheticSim];
-        // Adjust the real sim's score by blending with synthetic mean
-        if (syntheticSim.length > 0) {
-          const synthMean = mean(syntheticSim.map((s) => s.score));
-          realSim.score = blendRealSyntheticScore(realSim.score, synthMean, topicReal.length);
-        }
-      } else if (useRealLearners && topicReal.length > 0) {
-        // Some real data for this topic but not enough on its own — blend
-        const realSim = computeRealOutcomeScore(topicReal, policy, topic, weights);
-
-        const synthLearners = buildLearnerPopulation(seed + index * 97, NUM_SYNTHETIC_LEARNERS);
-        const synthSims = await Promise.all(
-          synthLearners.map((learner) =>
-            simulateTeaching(cwd, policy, topic, learner, weights)
-          )
-        );
-        simulations = [...synthSims, realSim];
+      if (hasLearnerContext) {
+        simulations = topicReal.length > 0
+          ? [computeRealOutcomeScore(topicReal, policy, topic, weights)]
+          : [];
       } else {
-        // Pure synthetic (no real data available)
         const synthLearners = buildLearnerPopulation(seed + index * 97, NUM_SYNTHETIC_LEARNERS);
         simulations = await Promise.all(
           synthLearners.map((learner) =>
@@ -284,6 +328,13 @@ export async function runBenchmarkSuite(
   const weakest = [...topicBenchmarks].sort((left, right) => left.meanScore - right.meanScore)[0];
 
   const overallScores = topicBenchmarks.map((entry) => entry.meanScore).filter(s => !Number.isNaN(s));
+  const dataSource = hasLearnerContext
+    ? hasFeedback
+      ? hasEnoughFeedback
+        ? "learner-feedback"
+        : "learner-feedback-sparse"
+      : "no-learner-feedback"
+    : "synthetic";
 
   return {
     policy,
@@ -293,10 +344,11 @@ export async function runBenchmarkSuite(
     weakestTopic: weakest?.topic.title ?? "n/a",
     trace: {
       seed,
-      learnerCountPerTopic: useRealLearners ? 1 + NUM_SYNTHETIC_LEARNERS : NUM_SYNTHETIC_LEARNERS,
+      learnerCountPerTopic: hasLearnerContext ? (hasFeedback ? 1 : 0) : NUM_SYNTHETIC_LEARNERS,
       topicTraces,
       realOutcomeCount: realOutcomes.length,
-      syntheticFallback: !useRealLearners,
+      syntheticFallback: !hasLearnerContext,
+      dataSource,
     }
   };
 }
@@ -308,8 +360,8 @@ export function benchmarkToMarkdown(result: BenchmarkResult): string {
     `- Suite: ${result.suiteName}`,
     `- Overall score: ${result.overallScore.toFixed(2)}`,
     `- Weakest topic: ${result.weakestTopic}`,
-    `- Real outcomes: ${result.trace.realOutcomeCount}`,
-    `- Data source: ${result.trace.syntheticFallback ? "synthetic" : "real+synthetic"}`,
+    `- Learner feedback outcomes: ${result.trace.realOutcomeCount}`,
+    `- Data source: ${result.trace.dataSource ?? (result.trace.syntheticFallback ? "synthetic" : "learner-feedback")}`,
     "",
     "| Topic | Score | Mastery | Retention | Engagement | Transfer | Confusion |",
     "| --- | ---: | ---: | ---: | ---: | ---: | ---: |"
@@ -327,13 +379,21 @@ export function benchmarkToMarkdown(result: BenchmarkResult): string {
   lines.push(
     `- The policy currently underperforms most on ${result.weakestTopic}, which is a useful anchor for mutation and curriculum repair.`
   );
-  if (!result.trace.syntheticFallback) {
+  if (result.trace.dataSource === "learner-feedback") {
     lines.push(
-      `- Benchmark includes **real learner outcomes** (${result.trace.realOutcomeCount} data points). As more students use the system, the synthetic component is progressively discounted.`
+      `- Benchmark uses **learner feedback only** (${result.trace.realOutcomeCount} data points). This is ready for policy evolution.`
+    );
+  } else if (result.trace.dataSource === "learner-feedback-sparse") {
+    lines.push(
+      `- Benchmark uses **learner feedback only**, but the corpus is sparse (${result.trace.realOutcomeCount}/${MIN_REAL_OUTCOMES} minimum signals). Treat this as directional and do not evolve policy yet.`
+    );
+  } else if (result.trace.dataSource === "no-learner-feedback") {
+    lines.push(
+      `- Benchmark has no learner feedback yet. Teach first, collect at least ${MIN_REAL_OUTCOMES} feedback signals for this learner, then benchmark/evolve.`
     );
   } else {
     lines.push(
-      `- Benchmark uses **synthetic learners** only — not enough real student data yet (need ${MIN_REAL_OUTCOMES}+ feedback signals). Keep teaching to build the real outcome corpus.`
+      `- Benchmark uses the deterministic synthetic fallback because no learner-state corpus was supplied. User-facing harness benchmarks should supply learner state.`
     );
   }
   lines.push(

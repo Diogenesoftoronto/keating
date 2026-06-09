@@ -3,7 +3,8 @@ import { join, relative } from "node:path";
 
 import { loadKeatingConfig } from "./config.js";
 import { writeLessonAnimation } from "./animation.js";
-import { applyFeedbackBias, benchmarkToMarkdown, runBenchmarkSuite, type FeedbackSummary } from "./benchmark.js";
+import { applyFeedbackBias, benchmarkToMarkdown, extractHarnessOutcomes, runBenchmarkSuite, type FeedbackSummary } from "./benchmark.js";
+import { MIN_REAL_OUTCOMES, hasEnoughRealData } from "./benchmark-real.js";
 import {
   buildEngagementTimeline,
   dueTopics,
@@ -219,7 +220,12 @@ export async function evolvePolicyArtifact(
   await ensureProjectScaffold(cwd);
   const policyPath = currentPolicyPath(cwd);
   const basePolicy = await loadPolicy(policyPath);
-  const meRun = await mapElitesEvolve(cwd, basePolicy, { focusTopic });
+  const learnerState = await loadLearnerState(learnerStatePath(cwd));
+  const realOutcomes = await extractHarnessOutcomes(cwd, learnerState);
+  if (!hasEnoughRealData(realOutcomes)) {
+    throw new Error(`Not ready to evolve: need at least ${MIN_REAL_OUTCOMES} learner feedback signals; found ${realOutcomes.length}.`);
+  }
+  const meRun = await mapElitesEvolve(cwd, basePolicy, { focusTopic, learnerState });
   const run = mapElitesToEvolutionRun(meRun);
   await savePolicy(policyPath, run.best.policy);
   await syncPolicyArchive(cwd, run.archive);
@@ -522,7 +528,47 @@ async function loadEngagementContext(cwd: string) {
   await ensureProjectScaffold(cwd);
   const state = await loadLearnerState(learnerStatePath(cwd));
   const policy = await loadEngagementPolicy(engagementPolicyPath(cwd));
-  return { state, policy };
+  return { state: learnerStateWithFeedbackCoverage(state), policy };
+}
+
+function learnerStateWithFeedbackCoverage(state: Awaited<ReturnType<typeof loadLearnerState>>) {
+  const covered = new Set((state.coveredTopics ?? []).map((topic) => topic.slug));
+  const feedbackByTopic = new Map<string, typeof state.feedback>();
+  for (const feedback of state.feedback ?? []) {
+    const topic = feedback.topic.trim();
+    if (!topic || topic === "general") continue;
+    const existing = feedbackByTopic.get(topic) ?? [];
+    existing.push(feedback);
+    feedbackByTopic.set(topic, existing);
+  }
+
+  const inferredTopics = [...feedbackByTopic.entries()]
+    .filter(([topic]) => !covered.has(resolveTopic(topic).slug))
+    .map(([topic, feedback]) => {
+      const resolved = resolveTopic(topic);
+      const latest = feedback
+        .map((entry) => entry.timestamp)
+        .sort((left, right) => Date.parse(right) - Date.parse(left))[0] ?? new Date().toISOString();
+      const signalScore = feedback.reduce((sum, entry) => {
+        if (entry.signal === "thumbs-up") return sum + 0.75;
+        if (entry.signal === "confused") return sum + 0.35;
+        return sum + 0.2;
+      }, 0) / Math.max(1, feedback.length);
+
+      return {
+        slug: resolved.slug,
+        domain: resolved.domain,
+        lastSeen: latest,
+        masteryEstimate: signalScore,
+        sessionCount: feedback.length
+      };
+    });
+
+  if (inferredTopics.length === 0) return state;
+  return {
+    ...state,
+    coveredTopics: [...state.coveredTopics, ...inferredTopics]
+  };
 }
 
 export async function timelineArtifact(
