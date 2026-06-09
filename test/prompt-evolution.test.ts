@@ -7,6 +7,7 @@ import { tmpdir } from "node:os";
 import {
   prosperStyleWinner,
   evolvePrompt,
+  writePromptEvolutionArtifacts,
   type PromptEvolutionCandidate,
   type PromptEvaluation,
   type PromptObjectiveVector
@@ -35,6 +36,28 @@ async function mockEvaluator(_cwd: string, promptPath: string, prompt: string): 
 
 async function mockGenerator(_cwd: string, basePrompt: string, _evaluation: PromptEvaluation, _iteration: number): Promise<string> {
   return basePrompt + "\nHelp the learner find their own voice.";
+}
+
+async function regressiveEvaluator(_cwd: string, promptPath: string, prompt: string): Promise<PromptEvaluation> {
+  const regressed = prompt.includes("remove the safeguards");
+  return {
+    promptPath,
+    promptName: "learn",
+    score: regressed ? 40 : 92,
+    objectives: {
+      voice_divergence: regressed ? 0.2 : 1,
+      diagnosis: regressed ? 0.2 : 0.9,
+      verification: regressed ? 0.2 : 0.9,
+      retrieval: regressed ? 0.2 : 0.9,
+      transfer: regressed ? 0.2 : 0.9,
+      structure: regressed ? 0.2 : 0.9
+    },
+    feedback: regressed ? ["Regression"] : []
+  };
+}
+
+async function regressiveGenerator(): Promise<string> {
+  return "remove the safeguards";
 }
 
 // ─── PROSPER winner properties (pure function, no I/O) ──────────────────────
@@ -127,12 +150,14 @@ test("ALWAYS: prosperStyleWinner prefers balanced objectives over narrow high sc
   expect(winner.preferenceScore).toBeGreaterThan(candidates[0].preferenceScore);
 });
 
-test("ALWAYS: prosperStyleWinner sets preferenceScore > 0 for winner", () => {
+test("ALWAYS: prosperStyleWinner returns a candidate with maximal preferenceScore", () => {
   fc.assert(fc.property(
     fc.array(arbCandidate, { minLength: 2, maxLength: 8 }),
     (candidates) => {
       const winner = prosperStyleWinner(candidates);
-      expect(winner.preferenceScore).toBeGreaterThan(0);
+      const maxPreference = Math.max(...candidates.map((candidate) => candidate.preferenceScore));
+      expect(Number.isFinite(winner.preferenceScore)).toBe(true);
+      expect(winner.preferenceScore).toBe(maxPreference);
     }
   ));
 });
@@ -171,4 +196,28 @@ test("ALWAYS: prompt evolution with mock never returns undefined or empty prompt
     expect(candidate.prompt.length).toBeGreaterThan(0);
     expect(typeof candidate.evaluation.score === "number" && Number.isFinite(candidate.evaluation.score)).toBe(true);
   }
+});
+
+test("prompt artifact writer does not apply a regressive winner", async () => {
+  const workdir = await mkdtemp(join(tmpdir(), "keating-prompt-evolution-regression-"));
+  await ensureProjectScaffold(workdir);
+  await mkdir(join(workdir, "pi", "prompts"), { recursive: true });
+  await writeFile(join(workdir, "pi", "prompts", "learn.md"), "Base source prompt.");
+
+  const appliedPrompt = "Keep the learner in their own voice with verification and retrieval.";
+  const evolvedPath = join(workdir, ".keating", "outputs", "prompt-evolution", "learn.evolved.md");
+  await writeFile(evolvedPath, appliedPrompt);
+
+  const artifact = await writePromptEvolutionArtifacts(workdir, "learn", {
+    iterations: 2,
+    evaluator: regressiveEvaluator,
+    generator: regressiveGenerator
+  });
+
+  const evolved = await readFile(evolvedPath, "utf8");
+  const report = await readFile(artifact.reportPath, "utf8");
+  expect(artifact.accepted).toBe(false);
+  expect(evolved).toBe(appliedPrompt);
+  expect(report.includes("- Accepted: no")).toBe(true);
+  expect(report.includes("Applied prompt: unchanged")).toBe(true);
 });

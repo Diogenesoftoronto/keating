@@ -1,6 +1,6 @@
 {
   "name": "keating",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "type": "module",
   "description": "A Pi-powered hyperteacher package with self-improving teaching policies, lesson maps, and animated visual teaching artifacts.",
   "keywords": [
@@ -49,7 +49,7 @@
     ]
   },
   "scripts": {
-    "build": "bun x tsc -p tsconfig.json && cd web && bun run build",
+    "build": "bun x tsc -p tsconfig.json && bun scripts/copy-core-templates.ts && cd web && bun run build",
     "test": "bun test ./test/*.test.ts",
     "mutate": "stryker run",
     "video:intro": "bun scripts/render-keating-intro.mjs",
@@ -63,6 +63,7 @@
     "dotenv": "^17.4.0",
     "h3": "^2.0.1-rc.20",
     "ink": "^7.0.3",
+    "jsoncrack-react": "^1.0.3",
     "manim-web": "^0.3.16",
     "nitro": "^3.0.260311-beta",
     "react": "^19.2.5",
@@ -76,7 +77,7 @@
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "fast-check": "^4.6.0",
+    "fast-check": "^4.8.0",
     "react-dom": "^19.2.5",
     "remotion": "^4.0.455"
   }

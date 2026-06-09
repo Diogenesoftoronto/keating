@@ -141,6 +141,16 @@ function questionCredit(q: QuizQuestion, rawAnswer: string): number {
 		const score = selectedCorrect / correctSet.size - selectedWrong / (q.options?.length || 1);
 		return Math.max(0, score);
 	}
+	if (q.type === "fill_in" && q.blanks && q.blanks.length > 0) {
+		// Multi-blank fill_in: answers are pipe-separated, correctAnswers array expected
+		const userAnswers = rawAnswer.split("|").map((s) => s.trim());
+		const correctAnswers = q.correctAnswers ?? [q.correctAnswer];
+		let correct = 0;
+		for (let i = 0; i < Math.min(userAnswers.length, correctAnswers.length); i++) {
+			if (userAnswers[i].toLowerCase() === correctAnswers[i].trim().toLowerCase()) correct++;
+		}
+		return correct / correctAnswers.length;
+	}
 	if (q.type === "true_false" || q.type === "multiple_choice" || q.type === "dropdown") {
 		return rawAnswer.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase() ? 1 : 0;
 	}
@@ -165,6 +175,12 @@ function isCorrect(q: QuizQuestion, rawAnswer: string): boolean {
 			q.correctAnswers.length === selected.size &&
 			q.correctAnswers.every((c) => selected.has(c))
 		);
+	}
+	if (q.type === "fill_in" && q.blanks && q.blanks.length > 0) {
+		const userAnswers = rawAnswer.split("|").map((s) => s.trim());
+		const correctAnswers = q.correctAnswers ?? [q.correctAnswer];
+		if (userAnswers.length !== correctAnswers.length) return false;
+		return userAnswers.every((a, i) => a.toLowerCase() === correctAnswers[i].trim().toLowerCase());
 	}
 	return rawAnswer.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase();
 }
@@ -312,6 +328,102 @@ function ReframeToggle({
 					{mode}
 				</button>
 			))}
+		</div>
+	);
+}
+
+/**
+ * Parse a fill-in-the-blank template into text parts and blank positions.
+ * Supports ___ and {{blank}} as placeholders.
+ */
+function parseBlanks(template: string): { text: string; isBlank: boolean; index: number }[] {
+	const parts: { text: string; isBlank: boolean; index: number }[] = [];
+	const regex = /_{3,}|\{\{blank\}\}/g;
+	let lastIndex = 0;
+	let blankIndex = 0;
+	let match: RegExpExecArray | null;
+
+	while ((match = regex.exec(template)) !== null) {
+		if (match.index > lastIndex) {
+			parts.push({ text: template.slice(lastIndex, match.index), isBlank: false, index: -1 });
+		}
+		parts.push({ text: match[0], isBlank: true, index: blankIndex++ });
+		lastIndex = match.index + match[0].length;
+	}
+	if (lastIndex < template.length) {
+		parts.push({ text: template.slice(lastIndex), isBlank: false, index: -1 });
+	}
+	return parts;
+}
+
+function MultiBlankFillIn({
+	question,
+	blanks,
+	answer,
+	onChange,
+	revealed,
+	correctAnswers,
+}: {
+	question: string;
+	blanks: { placeholder?: string; hint?: string }[];
+	answer: string;
+	onChange: (val: string) => void;
+	revealed: boolean;
+	correctAnswers: string[];
+}) {
+	const values = useMemo(() => answer.split("|").map((s) => s.trim()), [answer]);
+	const parts = useMemo(() => parseBlanks(question), [question]);
+	const blankRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+	const setValue = (idx: number, val: string) => {
+		const next = [...values];
+		next[idx] = val;
+		onChange(next.join("|"));
+	};
+
+	let blankCounter = 0;
+	return (
+		<div className="space-y-3">
+			<div className="text-sm font-medium leading-relaxed">
+				{parts.map((part, idx) => {
+					if (!part.isBlank) {
+						return <span key={idx}>{part.text}</span>;
+					}
+					const bIdx = blankCounter++;
+					const blankDef = blanks[bIdx];
+					const isCorrect = revealed && values[bIdx]?.trim().toLowerCase() === correctAnswers[bIdx]?.trim().toLowerCase();
+					const isWrong = revealed && values[bIdx]?.trim() && !isCorrect;
+					return (
+						<span key={idx} className="inline-flex items-center gap-1 mx-1">
+							<input
+								ref={(el) => { blankRefs.current[bIdx] = el; }}
+								type="text"
+								disabled={revealed}
+								className={`inline-block w-20 h-7 rounded border bg-background px-2 text-sm text-center outline-none focus:border-primary placeholder:text-muted-foreground/50 ${
+									isCorrect ? "border-emerald-500/60 bg-emerald-500/5" : isWrong ? "border-destructive/60 bg-destructive/5" : "border-border"
+								}`}
+								placeholder={blankDef?.placeholder ?? "___"}
+								value={values[bIdx] ?? ""}
+								onChange={(e) => setValue(bIdx, e.target.value)}
+								onKeyDown={(e) => {
+									if (e.key === "Enter") {
+										const nextBlank = blankRefs.current[bIdx + 1];
+										if (nextBlank) nextBlank.focus();
+									}
+								}}
+							/>
+							{blankDef?.hint && !revealed && (
+								<span className="text-[10px] text-muted-foreground">{blankDef.hint}</span>
+							)}
+							{revealed && (
+								<span className={`text-[10px] ${isCorrect ? "text-emerald-600" : "text-destructive"}`}>
+									{isCorrect ? "✓" : `✗ ${correctAnswers[bIdx] ?? ""}`}
+								</span>
+							)}
+						</span>
+					);
+				})}
+			</div>
 		</div>
 	);
 }
@@ -482,20 +594,31 @@ function QuestionCard({
 
 			{(q.type === "short_answer" || q.type === "fill_in" || q.type === "transfer") && (
 				<div className="space-y-2">
-					<textarea
-						className={`w-full rounded-md border bg-background px-3 py-2 text-sm outline-none resize-none min-h-[80px] placeholder:text-muted-foreground ${
-							wrong
-								? "border-destructive/60 bg-destructive/5"
-								: correct
-									? "border-emerald-500/60 bg-emerald-500/5"
-									: "border-border"
-						}`}
-						placeholder={q.type === "fill_in" ? "Fill in the blank..." : "Type your answer..."}
-						value={answer}
-						onChange={(e) => onChange(e.target.value)}
-						disabled={revealed}
-					/>
-					{revealed && (
+					{q.type === "fill_in" && q.blanks && q.blanks.length > 0 ? (
+						<MultiBlankFillIn
+							question={displayQuestion}
+							blanks={q.blanks}
+							answer={answer}
+							onChange={onChange}
+							revealed={revealed}
+							correctAnswers={q.correctAnswers ?? [q.correctAnswer]}
+						/>
+					) : (
+						<textarea
+							className={`w-full rounded-md border bg-background px-3 py-2 text-sm outline-none resize-none min-h-[80px] placeholder:text-muted-foreground ${
+								wrong
+									? "border-destructive/60 bg-destructive/5"
+									: correct
+										? "border-emerald-500/60 bg-emerald-500/5"
+										: "border-border"
+							}`}
+							placeholder={q.type === "fill_in" ? "Fill in the blank..." : "Type your answer..."}
+							value={answer}
+							onChange={(e) => onChange(e.target.value)}
+							disabled={revealed}
+						/>
+					)}
+					{revealed && !(q.type === "fill_in" && q.blanks && q.blanks.length > 0) && (
 						<div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/50 rounded p-2">
 							<Lightbulb size={14} className="shrink-0 mt-0.5 text-accent" />
 							<div className="space-y-1">

@@ -3,6 +3,7 @@ import { resolve } from 'path';
 import { VitePWA } from 'vite-plugin-pwa';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import nodepod from '@scelar/nodepod/vite';
 import * as https from 'https';
 import * as http from 'http';
 
@@ -216,6 +217,7 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    nodepod(),
     chatProxyPlugin(),
     VitePWA({
       registerType: 'autoUpdate',
@@ -254,7 +256,7 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB for large bundles
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB for large bundles
         // Cache WebGPU WASM files
         runtimeCaching: [
           {
@@ -302,16 +304,17 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    watch: {
+      ignored: [
+        '**/.bun-install/**',
+        '**/.bun-tmp/**',
+        '**/dist/**',
+        '**/.output/**',
+      ],
+    },
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',
       'Cross-Origin-Embedder-Policy': 'credentialless',
-    },
-  },
-  esbuild: {
-    tsconfigRaw: {
-      compilerOptions: {
-        experimentalDecorators: true,
-      },
     },
   },
   base: '/',

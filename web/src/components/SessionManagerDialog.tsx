@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Check, CopyPlus, GitBranch, Loader2, Pencil, Search, Sparkles, Trash2, X } from "lucide-react";
-import { sessions } from "../hooks/keating-storage";
+import { sessions, updateSessionTitle } from "../hooks/keating-storage";
 import type { SessionMetadata } from "../types/session";
 import { buildSessionTree, flattenSessionTree } from "./session-tree";
 
@@ -48,6 +48,7 @@ export function SessionManagerDialog({
 	const [busySessionId, setBusySessionId] = useState<string | null>(null);
 	const [forkedSourceSessionId, setForkedSourceSessionId] = useState<string | null>(null);
 	const [renameDraft, setRenameDraft] = useState("");
+	const [aiSuggestionForSessionId, setAiSuggestionForSessionId] = useState<string | null>(null);
 	const [isSidePanel, setIsSidePanel] = useState(false);
 
 	const sortedItems = useMemo(() => {
@@ -114,14 +115,17 @@ export function SessionManagerDialog({
 		}
 		if (nextTitle === session.title.trim()) {
 			setEditingSessionId(null);
+			setAiSuggestionForSessionId(null);
 			return;
 		}
 		setBusySessionId(session.id);
 		setErrorMessage("");
 		try {
-			await sessions.updateTitle(session.id, nextTitle);
+			const fromAi = aiSuggestionForSessionId === session.id;
+			await updateSessionTitle(session.id, nextTitle, fromAi || session.aiGeneratedTitle);
 			await reload();
 			setEditingSessionId(null);
+			setAiSuggestionForSessionId(null);
 			await onRenamed?.(session.id, nextTitle);
 		} catch (error) {
 			console.error("Failed to rename session:", error);
@@ -174,6 +178,7 @@ export function SessionManagerDialog({
 		try {
 			const title = await onSuggestTitle(session.id);
 			setPendingDeleteSessionId(null);
+			setAiSuggestionForSessionId(session.id);
 			setEditingSessionId(session.id);
 			setRenameDraft(title);
 		} catch (error) {
@@ -295,8 +300,9 @@ export function SessionManagerDialog({
 												</button>
 												<button
 													className="dialog-icon-button inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent disabled:opacity-50"
-													disabled={isBusy}
-													aria-label="Rename session"
+													disabled={isBusy || !session.aiGeneratedTitle}
+													aria-label={session.aiGeneratedTitle ? "Rename session" : "AI title required before renaming"}
+													title={session.aiGeneratedTitle ? "Rename session" : "AI title required before renaming"}
 													onClick={() => {
 														setPendingDeleteSessionId(null);
 														setEditingSessionId(session.id);

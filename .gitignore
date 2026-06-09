@@ -51,6 +51,9 @@ mise.local.toml
 .DS_Store
 Thumbs.db
 
+# Storybook build output
+web/storybook-static/
+
 # Outreach & Private Drafts
 docs/outreach-email.md
 docs/drafts/

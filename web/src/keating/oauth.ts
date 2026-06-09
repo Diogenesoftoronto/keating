@@ -196,11 +196,12 @@ function parseOAuthCallbackInput(input: string): { code?: string; state?: string
 	if (!value) return {};
 	try {
 		const url = new URL(value);
+		const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
 		return {
-			code: url.searchParams.get("code") ?? undefined,
-			state: url.searchParams.get("state") ?? undefined,
-			error: url.searchParams.get("error") ?? undefined,
-			errorDescription: url.searchParams.get("error_description") ?? undefined,
+			code: url.searchParams.get("code") ?? hashParams.get("code") ?? undefined,
+			state: url.searchParams.get("state") ?? hashParams.get("state") ?? undefined,
+			error: url.searchParams.get("error") ?? hashParams.get("error") ?? undefined,
+			errorDescription: url.searchParams.get("error_description") ?? hashParams.get("error_description") ?? undefined,
 		};
 	} catch {
 		// Not a URL.
@@ -253,8 +254,6 @@ export async function handleOAuthCallback(code: string, state?: string | null): 
 		state = pending.state;
 	}
 
-	clearPendingOAuth();
-
 	try {
 		const response = await fetch("/api/oauth/token", {
 			method: "POST",
@@ -283,6 +282,7 @@ export async function handleOAuthCallback(code: string, state?: string | null): 
 		};
 
 		await saveOAuthCredentials(credentials);
+		clearPendingOAuth();
 
 		return { success: true, provider: pending.provider };
 	} catch (error) {

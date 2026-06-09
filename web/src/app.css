@@ -203,6 +203,26 @@ button:not(:disabled) {
   scroll-snap-align: end;
 }
 
+/*
+ * Responsive header visibility — driven from unlayered CSS (not Tailwind
+ * `md:`/`lg:` variants), because Tailwind is compiled twice in this app
+ * (app.css + pi-web-ui) and the duplicated base `.hidden`/`.inline-flex`
+ * emitted last would otherwise clobber the responsive variants at all widths.
+ * `.chat-only-desktop`: inline header actions, shown at md+ (>= 48rem).
+ * `.chat-only-compact`: overflow-menu duplicates, shown below md (< 48rem).
+ */
+.chat-only-desktop {
+  display: none;
+}
+@media (min-width: 48rem) {
+  .chat-only-desktop {
+    display: inline-flex;
+  }
+  .chat-only-compact {
+    display: none;
+  }
+}
+
 @media (max-width: 768px) {
   .chat-page-shell .chat-action-button,
   .chat-page-shell .chat-actions > button {
@@ -529,6 +549,15 @@ message-editor textarea::placeholder {
 
 .dark .session-manager-side-panel {
   box-shadow: 6px 0 18px rgba(0, 255, 0, 0.1);
+}
+
+/* ─── Mobile/tablet session card grid ─── */
+/* Fit an injected lesson-map SVG into its hero band without overflowing. */
+.session-card-hero-svg > svg {
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  object-fit: contain;
 }
 
 /* ─── Artifact browser overlay styling ─── */

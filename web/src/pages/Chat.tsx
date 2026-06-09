@@ -2,7 +2,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import {
   BarChart3,
   Bug,
-  History,
+  Cpu,
   LibraryBig,
   Menu,
   PanelLeftClose,
@@ -21,6 +21,8 @@ import { ChatIntro } from "../components/ChatIntro";
 import { ArtifactBrowserOverlay } from "../components/ArtifactBrowserOverlay";
 import { ArtifactSidePanel } from "../components/ArtifactSidePanel";
 import { AssistantChatPanel } from "../components/AssistantChatPanel";
+import { ForkBanner } from "../components/ForkBanner";
+import { SandboxView } from "../components/SandboxView";
 import { ThemeToggle } from "../components/ThemeToggle";
 import {
   loadKeatingUiSettings,
@@ -40,7 +42,6 @@ function ChatContent() {
   const {
     isPending,
     openSettings,
-    openSessions,
     newSession,
     shareSession,
     chatPanelRef,
@@ -53,9 +54,10 @@ function ChatContent() {
     dismissPersistentBanner,
     toggleSpeech,
     forkingSessionId,
+    forkInfo,
+    openOriginalSession,
     mobileSidebarOpen,
     toggleMobileSidebar,
-    closeMobileSidebar,
   } = useKeatingAgent();
   const [introDismissed, setIntroDismissed] = useState(
     () => sessionStorage.getItem("keating_chat_intro") === "dismissed",
@@ -73,6 +75,7 @@ function ChatContent() {
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [shareMessage, setShareMessage] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [nodePodOpen, setNodePodOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   // Close mobile menu on click outside or escape
@@ -169,8 +172,17 @@ function ChatContent() {
     }
   };
 
+  // NOTE: responsive Tailwind display variants (e.g. `hidden md:inline-flex`) are
+  // NOT reliable here. Tailwind is compiled twice — once via `@import "tailwindcss"`
+  // in app.css and again transitively through `@earendil-works/pi-web-ui/app.css`.
+  // The second copy re-emits base `.hidden`/`.inline-flex` AFTER the first copy's
+  // `md:/lg:` variants, so (same layer, same specificity) base wins and the variant
+  // is dead at every width. We instead drive show/hide from unlayered CSS in
+  // app.css via `.chat-only-desktop` (header icons, md+) and `.chat-only-compact`
+  // (overflow-menu duplicates, < md). Unlayered rules beat Tailwind's @layer
+  // utilities regardless of import order, so this is deterministic.
   const actionButtonClass =
-    "chat-action-button inline-flex shrink-0 items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50";
+    "chat-action-button shrink-0 items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50";
   const showPersistenceBanner = persistentStorageStatus === "declined" && !persistentBannerDismissed;
 
   return (
@@ -182,7 +194,7 @@ function ChatContent() {
       >
         <button
           type="button"
-          className={`${actionButtonClass} md:hidden`}
+          className={`${actionButtonClass} inline-flex lg:hidden`}
           title={mobileSidebarOpen ? "Close sessions panel" : "Open sessions panel"}
           aria-label={mobileSidebarOpen ? "Close sessions panel" : "Open sessions panel"}
           aria-pressed={mobileSidebarOpen}
@@ -208,7 +220,7 @@ function ChatContent() {
         {/* Actions */}
         <div className="chat-actions ml-auto flex min-w-0 flex-1 items-center justify-end gap-1 overflow-hidden">
           <button
-            className={`${actionButtonClass} hidden md:inline-flex`}
+            className={`${actionButtonClass} chat-only-desktop`}
             title="New session"
             aria-label="New session"
             disabled={isPending}
@@ -217,16 +229,18 @@ function ChatContent() {
             <Plus size={16} />
           </button>
           <button
-            className={`${actionButtonClass} hidden sm:inline-flex`}
+            className={`${actionButtonClass} inline-flex`}
             title="Settings"
             aria-label="Settings"
             onClick={openSettings}
           >
             <Settings size={16} />
           </button>
-          <ThemeToggle className="hidden sm:inline-flex" />
+          <span className="chat-only-desktop">
+            <ThemeToggle />
+          </span>
           <button
-            className={`${actionButtonClass} hidden md:inline-flex ${shareState === "copied" ? "text-primary" : ""} ${shareState === "error" ? "text-destructive" : ""}`}
+            className={`${actionButtonClass} chat-only-desktop ${shareState === "copied" ? "text-primary" : ""} ${shareState === "error" ? "text-destructive" : ""}`}
             title={
               shareState === "copied"
                 ? "Copied share link"
@@ -241,7 +255,7 @@ function ChatContent() {
             <Share2 size={16} />
           </button>
           <button
-            className={`${actionButtonClass} hidden md:inline-flex ${speechEnabled ? "text-primary" : ""}`}
+            className={`${actionButtonClass} chat-only-desktop ${speechEnabled ? "text-primary" : ""}`}
             title={speechEnabled ? "Disable speech" : "Enable speech"}
             aria-pressed={speechEnabled}
             onClick={toggleSpeech}
@@ -249,15 +263,25 @@ function ChatContent() {
             {speechEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
           </button>
           <button
-            className={`${actionButtonClass} hidden md:inline-flex`}
+            className={`${actionButtonClass} chat-only-desktop`}
             title="Artifacts"
             aria-label="Artifacts"
             onClick={() => setArtifactBrowserOpen(true)}
           >
             <LibraryBig size={16} />
           </button>
+          {import.meta.env.DEV && (
+            <button
+              className={`${actionButtonClass} chat-only-desktop`}
+              title="NodePod runtime"
+              aria-label="NodePod runtime"
+              onClick={() => setNodePodOpen(true)}
+            >
+              <Cpu size={16} />
+            </button>
+          )}
           <button
-            className={`${actionButtonClass} hidden md:inline-flex`}
+            className={`${actionButtonClass} chat-only-desktop`}
             title="Learning usage"
             aria-label="Learning usage"
             onClick={() => navigate({ to: "/usage" })}
@@ -265,7 +289,7 @@ function ChatContent() {
             <BarChart3 size={16} />
           </button>
           <a
-            className={`${actionButtonClass} hidden md:inline-flex`}
+            className={`${actionButtonClass} chat-only-desktop`}
             title="Report an issue"
             aria-label="Report an issue on GitHub"
             href={GITHUB_ISSUE_URL}
@@ -275,7 +299,7 @@ function ChatContent() {
             <Bug size={16} />
           </a>
           <button
-            className={actionButtonClass}
+            className={`${actionButtonClass} inline-flex`}
             title="Menu"
             aria-label="More menu"
             aria-expanded={mobileMenuOpen}
@@ -296,18 +320,18 @@ function ChatContent() {
           >
             <div className="flex flex-col p-1">
               <button
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors sm:hidden"
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors chat-only-compact"
+                disabled={isPending}
                 onClick={() => {
                   setMobileMenuOpen(false);
-                  openSettings();
+                  newSession();
                 }}
               >
-                <Settings size={14} />
-                Settings
+                <Plus size={14} />
+                New session
               </button>
-              <div className="sm:hidden" />
               <button
-                className={`flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors md:hidden ${shareState === "copied" ? "text-primary" : ""} ${shareState === "error" ? "text-destructive" : ""}`}
+                className={`flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors chat-only-compact ${shareState === "copied" ? "text-primary" : ""} ${shareState === "error" ? "text-destructive" : ""}`}
                 onClick={() => {
                   setMobileMenuOpen(false);
                   handleShare();
@@ -318,7 +342,7 @@ function ChatContent() {
                 {shareState === "copied" ? "Link copied" : "Share session"}
               </button>
               <button
-                className={`flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors md:hidden ${speechEnabled ? "text-primary" : ""}`}
+                className={`flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors chat-only-compact ${speechEnabled ? "text-primary" : ""}`}
                 onClick={() => {
                   setMobileMenuOpen(false);
                   toggleSpeech();
@@ -327,8 +351,13 @@ function ChatContent() {
                 {speechEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
                 {speechEnabled ? "Disable speech" : "Enable speech"}
               </button>
+              <ThemeToggle
+                className="chat-only-compact"
+                variant="menu"
+                onToggled={() => setMobileMenuOpen(false)}
+              />
               <button
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors md:hidden"
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors chat-only-compact"
                 onClick={() => {
                   setMobileMenuOpen(false);
                   setArtifactBrowserOpen(true);
@@ -337,8 +366,20 @@ function ChatContent() {
                 <LibraryBig size={14} />
                 Artifacts
               </button>
+              {import.meta.env.DEV && (
+                <button
+                  className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors chat-only-compact"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setNodePodOpen(true);
+                  }}
+                >
+                  <Cpu size={14} />
+                  NodePod runtime
+                </button>
+              )}
               <button
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors md:hidden"
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors chat-only-compact"
                 onClick={() => {
                   setMobileMenuOpen(false);
                   navigate({ to: "/usage" });
@@ -347,7 +388,7 @@ function ChatContent() {
                 <BarChart3 size={14} />
                 Learning usage
               </button>
-              <div className="my-1 border-t border-border md:hidden" />
+              <div className="my-1 border-t border-border chat-only-compact" />
               <Link
                 to="/"
                 className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
@@ -389,7 +430,7 @@ function ChatContent() {
                 href={GITHUB_ISSUE_URL}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors md:hidden"
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors chat-only-compact"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Report issue
@@ -399,12 +440,19 @@ function ChatContent() {
         )}
       </nav>
 
+      {forkInfo && (
+        <ForkBanner
+          parentTitle={forkInfo.parentTitle}
+          onOpenOriginal={openOriginalSession}
+        />
+      )}
+
       {showPersistenceBanner && (
         <div className="shrink-0 border-b border-border bg-amber-500/10 px-3 py-2">
           <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-700 dark:text-amber-300">
-              <span className="hidden sm:inline">Session is not being persisted — data may be cleared by the browser.</span>
-              <span className="sm:hidden">Not persisted — data may be lost.</span>
+            <div className="flex items-center gap-2 text-xs font-medium text-amber-800 dark:text-amber-200">
+              <span className="hidden sm:inline">Browser storage persistence is not enabled. Sessions still save locally, but the browser may clear them under storage pressure.</span>
+              <span className="sm:hidden">Storage persistence is not enabled.</span>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <button
@@ -412,7 +460,7 @@ function ChatContent() {
                 className="inline-flex h-6 items-center rounded bg-primary px-2 text-[10px] font-medium text-primary-foreground hover:bg-primary/90"
                 onClick={retryPersistentStorage}
               >
-                Grant
+                Try again
               </button>
               <button
                 type="button"
@@ -501,6 +549,7 @@ function ChatContent() {
           setArtifactTarget(undefined);
         }}
       />
+      <SandboxView open={nodePodOpen} onClose={() => setNodePodOpen(false)} />
       {dialogs}
     </div>
   );

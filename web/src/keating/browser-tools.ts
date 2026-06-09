@@ -19,10 +19,9 @@ import {
 } from "./goals";
 import { extractBrowserOutcomes, type BrowserLearnerOutcome } from "./core";
 import { DEFAULT_TEACHER_PERSONA } from "./persona";
+import operationalProtocolMarkdown from "./prompts/operational-protocol.md?raw";
+import speechSystemPromptMarkdown from "./prompts/speech-system-prompt.md?raw";
 import {
-	buildLessonPlan,
-	lessonPlanToMarkdown,
-	buildConceptMap,
 	runBenchmarkSuite,
 	benchmarkToMarkdown,
 	evolvePolicy,
@@ -48,8 +47,10 @@ import {
 	dueTopicsToMarkdown,
 	DEFAULT_ENGAGEMENT_POLICY,
 	generateQuiz,
+	buildAuthoredQuestions,
 	quizToMarkdown,
 	quizAnswerKeyToMarkdown,
+	type AuthoredQuestion,
 	type TeacherPolicy,
 	type BenchmarkResult,
 	type EvolutionRun,
@@ -58,89 +59,32 @@ import {
 	type ImprovementArchive,
 } from "./core";
 import type { Policy } from "./storage";
+import {
+	isNodePodActive,
+	nodePodExecute,
+	nodePodApplyEdit,
+	nodePodApplyEdits,
+	nodePodRollbackEdits,
+	nodePodDiffFile,
+	nodePodChangedFiles,
+	nodePodCreateSnapshot,
+	nodePodRestoreSnapshot,
+	nodePodRunScript,
+	nodePodValidateEdit,
+	writeJsCounterpart,
+	clearPreEditSnapshots,
+	NODEPOD_LOCAL_ENDPOINT,
+	nodePodInfo,
+} from "./nodepod-runtime";
 
 /**
  * Fixed operational protocol — the HOW of the system prompt (tools, bootstrap,
  * self-improvement). This is never user-editable; the editable persona (the WHO)
  * lives in persona.ts and is composed with this via composeKeatingSystemPrompt.
  */
-export const KEATING_OPERATIONAL_PROTOCOL = `## Self-Evolution Protocol
+export const KEATING_OPERATIONAL_PROTOCOL = operationalProtocolMarkdown.trim();
 
-You are an autonomous agent with direct access to tools. You MUST follow these protocols:
-
-### Session Bootstrap
-On every new conversation, you MUST:
-1. Call \`agent_runtime\` to inspect whether execution is browser-only, remote, or Keating Cloud-backed
-2. Call \`learner_state\` to load the learner's profile and history
-3. If the learner has covered topics, call \`timeline\` to check retention decay and review urgency
-4. If any topics are due for review, proactively mention them to the learner before they ask
-5. Call \`list_learner_goals\` to resume any long-horizon goals; surface the next step so work continues across sessions
-
-### Teaching Loop
-When a learner asks about a topic:
-1. Call \`plan\` to generate a structured lesson plan adapted to the current policy
-2. Call \`verify\` to self-check your knowledge before teaching
-3. Teach using the Socratic method, guided by the plan
-4. After teaching, call \`feedback\` to record the session outcome (up/down/confused based on the learner's demonstrated understanding)
-5. Call \`map\` or \`animate\` yourself when visual aids would help.
-
-**Important**: Run ALL tool calls yourself. NEVER ask the learner to run commands for you. Execute all prerequisites autonomously.
-
-### Self-Improvement Triggers
-You MUST autonomously run self-improvement when:
-- This is the first session (no benchmarks exist) — call \`auto_improve\` to baseline your teaching policy
-- The learner expresses confusion or gives rote responses — call \`auto_improve\` after the session
-- 3+ sessions have occurred since the last evolution — call \`auto_improve\`
-- The learner explicitly asks you to improve (honor the request via \`auto_improve\`)
-
-### When NOT to self-improve
-- Do not interrupt an active teaching moment. Finish helping the learner first, then improve in the background.
-- Do not run \`auto_improve\` more than once per conversation unless the learner requests it.
-
-## Tools
-
-You have internal tools for teaching, self-evaluation, and self-evolution. Use them autonomously — the learner does not need to know about them. You are a self-governing agent; execute all steps yourself.
-
-### Teaching (use when helping a learner with a topic)
-- \`plan\` — Generate a structured lesson plan for a topic. Run this yourself when structure is needed.
-- \`map\` — Create a visual Mermaid concept map for a topic. Run this yourself when visualization helps.
-- \`animate\` — Generate an animation storyboard for a topic. Run this yourself when visuals help.
-- \`generate_image\` — Create a real image-model picture or browser-local SVG diagram/infographic. Run this yourself when a static visual aid would help; prefer kind="anatomy" for labeled structures and kind="comparison" for size/category comparisons.
-- \`verify\` — Self-check knowledge before teaching a topic. Always run this yourself before teaching factual claims.
-- \`quiz\` — Generate retrieval practice questions for a topic. Run this yourself to create assessment material.
-- \`feedback\` — Record learner feedback (up/down/confused) for a topic. Run this yourself after sessions.
-- \`ask_user_question\` — Ask the learner one or more questions as an interactive form (choices, multi-select, free text). Their answers come back automatically. Use it to diagnose, gather goals/preferences, or branch the lesson — prefer it over plain-text questions when you need a concrete answer.
-
-### Goals & long-horizon curriculum (use to build toward what the learner wants to accomplish)
-- \`set_learner_goal\` — When a learner wants to accomplish a task or project (not just "learn topic X"), capture it as a goal and design an ordered, multi-step curriculum that scaffolds toward it. Steps persist and are tracked across sessions.
-- \`list_learner_goals\` — Resume saved goals and see progress + the next step. Run at session start.
-- \`update_goal_step\` — Mark a step not_started/in_progress/done as the learner advances, so the path stays current. (The learner can also tap steps in the rendered goal card.)
-
-### Self-Evaluation (use to measure and track your effectiveness)
-- \`bench\` — Run a synthetic learner benchmark against current policy. Run this yourself when measuring effectiveness.
-- \`timeline\` — Show engagement timeline with retention decay. Run this yourself at session start.
-- \`due\` — Show topics due for spaced-repetition review. Run this yourself at session start.
-- \`learner_state\` — Load the learner's profile and session history. Always run this yourself first.
-- \`trace\` — Browse benchmark and evolution history
-- \`policy\` — Show the current teaching policy
-- \`outputs\` — Browse all saved artifacts
-- \`agent_runtime\` — Inspect whether agent execution is browser-only, local+remote, or Keating Cloud-backed
-- \`remote_execute\` — Hand off remote-only work to the configured microVM/cloud runtime when browser execution cannot do it
-
-### Self-Evolution (use to autonomously improve your teaching)
-- \`auto_improve\` — Run the full self-improvement loop: benchmark → evolve policy → evolve prompts → record results. Use this yourself instead of asking the learner to trigger it.
-- \`improve\` — Generate a targeted improvement proposal for specific weaknesses. Run this yourself when weaknesses are detected.
-- \`evolve\` — Evolve the teaching policy via MAP-Elites. Run this yourself when improvement is needed.
-- \`prompt_evolve\` — Iteratively evolve a teaching prompt template via PROSPER-style selection
-- \`prompt_eval\` — Single-pass evaluation of a prompt template
-`;
-
-const SPEECH_SYSTEM_PROMPT = `
-### Optional Speech
-- \`keating_voice\` is available only when the learner enables speech in the web UI.
-- Use \`keating_voice\` for short learner-facing utterances: one question, one recap, one redirect, or one encouragement.
-- Keep deeper reasoning, verification, and tool work in the normal text/tool loop. The voice layer is for conversational delivery, not for independent answers.
-`;
+const SPEECH_SYSTEM_PROMPT = `\n${speechSystemPromptMarkdown.trim()}\n`;
 
 /** Compose a full base system prompt from an editable persona + fixed protocol. */
 export function composeKeatingSystemPrompt(persona: string = DEFAULT_TEACHER_PERSONA): string {
@@ -619,6 +563,17 @@ export async function createKeatingTools(
 					].join("\n")
 					: "";
 
+				const nodePodActive = isNodePodActive();
+				const nodePod = nodePodActive
+					? [
+						"",
+						"## NodePod Sandbox",
+						`- active: true`,
+						`- local endpoint: ${NODEPOD_LOCAL_ENDPOINT}`,
+						`- operations: shell.exec, fs.read, fs.write, snapshot.create`,
+					].join("\n")
+					: "";
+
 				return [
 					`# Agent Runtime`,
 					"",
@@ -630,6 +585,7 @@ export async function createKeatingTools(
 					"## Capabilities",
 					capabilities,
 					remote,
+					nodePod,
 					"",
 					"## Fallback Policy",
 					`- local first: ${runtime.fallback.localFirst}`,
@@ -656,12 +612,34 @@ export async function createKeatingTools(
 			},
 			async (params) => {
 				const runtime = options.agentRuntime;
+				const operation = typeof params.operation === "string" ? params.operation.trim() : "";
+				if (!operation) return "Operation required. Pass an operation parameter.";
+
+				// Route through NodePod browser sandbox when active
+				if (isNodePodActive()) {
+					try {
+						const result = await nodePodExecute(operation, params.payload);
+						return [
+							"# Remote Execution Result (NodePod)",
+							"",
+							`- mode: browser-nodepod`,
+							`- operation: ${operation}`,
+							"",
+							stringifyRemoteResult(result),
+						].join("\n");
+					} catch (error) {
+						return [
+							"# Remote Execution Failed (NodePod)",
+							"",
+							`- operation: ${operation}`,
+							`- error: ${error instanceof Error ? error.message : String(error)}`,
+						].join("\n");
+					}
+				}
+
 				if (!runtime || runtime.mode === "browser-only" || !runtime.executionEndpoint) {
 					return unavailableRemoteRuntimeMessage(runtime);
 				}
-
-				const operation = typeof params.operation === "string" ? params.operation.trim() : "";
-				if (!operation) return "Operation required. Pass an operation parameter.";
 
 				const response = await fetch(`${runtime.executionEndpoint}/execute`, {
 					method: "POST",
@@ -706,9 +684,10 @@ export async function createKeatingTools(
 		// plan - Generate lesson plan
 		createTool(
 			"plan",
-			"Generate a structured lesson plan for a topic, adapted to the current teaching policy. Use before teaching any topic to structure your approach.",
+			"Save a lesson plan you author yourself, grounded in the real material — for EVERY topic, including familiar ones. There is no template: you must pass `content`. Format it as markdown: a `- Summary: ...` line, then `## Phase Title` sections each with a one-line purpose followed by `- ` action bullets. The plan is its own artifact; do NOT also build a quiz here — quizzes are crafted separately, after the learner has gone through the lesson.",
 			{
-				topic: { type: "string", description: "The topic to generate a lesson plan for" }
+				topic: { type: "string", description: "The topic this lesson plan covers" },
+				content: { type: "string", description: "REQUIRED. Agent-authored lesson plan markdown grounded in the real material. Use `- Summary:` plus `## Phase` sections with purpose lines and `- ` bullets." },
 			},
 			async (params) => {
 				const topic = (params.topic as string) || "";
@@ -716,35 +695,38 @@ export async function createKeatingTools(
 					return "Topic required. Pass a topic parameter.";
 				}
 
-				const teacherPolicy = parsePolicyFromStorage(await storage.getActivePolicy());
+				const authoredContent = typeof params.content === "string" ? params.content.trim() : "";
+				if (authoredContent.length < 80) {
+					return "Author the lesson plan yourself. Pass `content` as markdown grounded in the real material: a `- Summary:` line, then `## Phase` sections each with a one-line purpose and `- ` action bullets. No template fallback exists.";
+				}
 
-				const plan = buildLessonPlan(topic, teacherPolicy);
-				const markdown = lessonPlanToMarkdown(plan);
-
-				const saved = await storage.saveLessonPlan(topic, markdown, {
-					domain: plan.topic.domain,
-					phaseCount: plan.phases.length,
+				const saved = await storage.saveLessonPlan(topic, authoredContent, {
+					domain: resolveTopic(topic).domain,
+					authored: true,
 				});
-
-				return `[artifact://plan/${saved.id}]\n\n${markdown}`;
+				return `[artifact://plan/${saved.id}]\n\n${authoredContent}`;
 			}
 		),
 
 		// map - Generate concept map
 		createTool(
 			"map",
-			"Generate a Mermaid concept map for a topic. Use to visualize knowledge structure before or during teaching.",
+			"Save a Mermaid concept map you author yourself, with real concepts and the actual relationships between them — for EVERY topic, including familiar ones. There is no template: you must pass `mermaid`.",
 			{
-				topic: { type: "string", description: "The topic to generate a concept map for" }
+				topic: { type: "string", description: "The topic this concept map covers" },
+				mermaid: { type: "string", description: "REQUIRED. Agent-authored Mermaid diagram (e.g. `graph TD; A[Concept]-->B[...]`) with real nodes and edges grounded in the material." },
 			},
 			async (params) => {
 				const topic = (params.topic as string) || "";
 				if (!topic) return "Topic required.";
 
-				const mapContent = buildConceptMap(topic);
-				const saved = await storage.saveLessonMap(topic, mapContent);
+				const authoredMermaid = typeof params.mermaid === "string" ? params.mermaid.trim() : "";
+				if (authoredMermaid.length < 20) {
+					return "Author the concept map yourself. Pass a `mermaid` diagram (e.g. `graph TD; A[Concept]-->B[Related]`) with real nodes and relationships grounded in the material. No template fallback exists.";
+				}
+				const saved = await storage.saveLessonMap(topic, authoredMermaid);
 
-				return `[artifact://map/${saved.id}]\n\n\`\`\`mermaid\n${mapContent}\n\`\`\``;
+				return `[artifact://map/${saved.id}]\n\n\`\`\`mermaid\n${authoredMermaid}\n\`\`\``;
 			}
 		),
 
@@ -917,46 +899,21 @@ export async function createKeatingTools(
 		// verify - Self-check knowledge before teaching
 		createTool(
 			"verify",
-			"Generate a fact-checking checklist for a topic. Always use this BEFORE teaching to self-verify your knowledge.",
+			"Self-check your knowledge BEFORE teaching. You must pass a `checklist` you author yourself naming the specific facts, definitions, misconceptions, and edge cases you must get right for THIS topic — for EVERY topic, including familiar ones. There is no template.",
 			{
-				topic: { type: "string", description: "The topic to generate a verification checklist for" }
+				topic: { type: "string", description: "The topic this verification checklist covers" },
+				checklist: { type: "string", description: "REQUIRED. Agent-authored markdown checklist of concrete claims to verify for this topic (specific definitions, named misconceptions, edge cases, sources)." },
 			},
 			async (params) => {
 				const topic = (params.topic as string) || "";
 				if (!topic) return "Topic required.";
 
-				const resolved = resolveTopic(topic);
-				const checklist = `# Verification Checklist: ${resolved.title}
-
-Before teaching this topic, verify your knowledge:
-
-## Core Facts
-- [ ] I can define ${resolved.title} precisely
-- [ ] I know 3+ real-world applications
-- [ ] I understand the limitations
-
-## Common Misconceptions
-${resolved.misconceptions.map((m) => `- [ ] I can explain why "${m}" is wrong`).join("\n")}
-- [ ] I have counterexamples ready
-
-## Prerequisites
-${resolved.prerequisites.map((p) => `- [ ] Learners need: ${p}`).join("\n")}
-- [ ] I can assess prerequisite knowledge
-- [ ] I have bridge materials if needed
-
-## Edge Cases
-- [ ] I know where ${resolved.title} doesn't apply
-- [ ] I can handle "what if" questions
-- [ ] I understand advanced extensions
-
-## Sources Verified
-- [ ] Primary sources checked
-- [ ] Multiple sources agree
-- [ ] Recent developments included`;
-
-				const saved = await storage.saveVerification(topic, checklist);
-
-				return `[artifact://verification/${saved.id}]\n\n${checklist}`;
+				const authoredChecklist = typeof params.checklist === "string" ? params.checklist.trim() : "";
+				if (authoredChecklist.length < 40) {
+					return "Author the checklist yourself. Pass a `checklist` in markdown naming the specific facts, definitions, named misconceptions, edge cases, and sources you must get right for THIS topic before teaching it. No template fallback exists.";
+				}
+				const saved = await storage.saveVerification(topic, authoredChecklist);
+				return `[artifact://verification/${saved.id}]\n\n${authoredChecklist}`;
 			}
 		),
 
@@ -1017,11 +974,43 @@ ${resolved.prerequisites.map((p) => `- [ ] Learners need: ${p}`).join("\n")}
 		// quiz - Generate retrieval practice questions
 		createTool(
 			"quiz",
-			"Generate retrieval practice questions for a topic. Creates recall, comprehension, application, and transfer questions with answer keys. Pass adaptive=true to enable adaptive branching (skips fallbacks when learner answers correctly). Pass reframes=[\"eli5\",\"debug\"] to pre-generate question reframes.",
+			"Build a retrieval-practice quiz AFTER the learner has gone through the lesson — it is a separate artifact, never auto-paired with the plan. You MUST pass `questions` you author yourself, grounded in the specific material the learner covered — for EVERY topic. Each question needs a real prompt, the correct answer, an explanation, and (for multiple-choice) plausible distractors. There is no template: calling this without 2+ valid questions is rejected with an instruction to author them. Choose concise character limits before generating; the engine clamps unsafe values and records them in quiz.review. Pass adaptive=true for adaptive branching, or reframes=[\"eli5\",\"debug\"] to pre-generate reframes. After calling this tool, do NOT repeat the quiz questions in your response — the interactive quiz UI renders them directly. Simply say 'Quiz ready' and wait.",
 			{
 				topic: { type: "string", description: "The topic to generate quiz questions for" },
+				questions: {
+					type: "array",
+					description: "Author each question yourself from the real lesson material. Provide 4-10 for a good quiz. When 2+ valid questions are given, they fully replace the generic templates.",
+					items: {
+						type: "object",
+						properties: {
+							question: { type: "string", description: "The actual question prompt. For fill_in with multiple blanks, use ___ or {{blank}} as placeholders in the text." },
+							type: { type: "string", enum: ["multiple_choice", "short_answer", "true_false", "fill_in", "transfer"], description: "Defaults to multiple_choice when options are given, otherwise short_answer. Use 'fill_in' for blanks: supply 'blanks' array for multi-blank questions (each blank is an ___) or just 'correctAnswer' for a single blank." },
+							level: { type: "string", enum: ["recall", "comprehension", "application", "analysis", "transfer"], description: "Bloom level. Aim for a spread from recall to transfer." },
+							options: { type: "array", items: { type: "string" }, description: "For multiple_choice: 3-4 plausible options. Include the correct answer; it is added automatically if missing." },
+							blanks: { type: "array", items: { type: "object", properties: { placeholder: { type: "string" }, hint: { type: "string" } } }, description: "For fill_in with multiple blanks: one entry per ___ placeholder in the question text. The learner gets an input for each blank." },
+							correctAnswer: { type: "string", description: "The correct answer (must match one option for multiple_choice). For multi-blank fill_in, use pipe-separated answers: '2x|2' or supply correctAnswers array." },
+							correctAnswers: { type: "array", items: { type: "string" }, description: "Array of correct answers for multi-blank fill_in questions, one per blank in order." },
+							explanation: { type: "string", description: "Why the answer is correct — the teaching moment." },
+							rubric: { type: "string", description: "For open-ended questions: how to award partial credit. A sensible default is supplied if omitted." },
+						},
+						required: ["question", "correctAnswer", "explanation"],
+						additionalProperties: false,
+					},
+				},
 				adaptive: { type: "boolean", description: "Enable adaptive branching with fallback questions (default false)" },
 				reframes: { type: "array", items: { type: "string" }, description: "Reframe modes to pre-generate, e.g. [\"eli5\", \"debug\", \"cooking\"]" },
+				limits: {
+					type: "object",
+					description: "Optional concise output limits chosen for this quiz. Values are clamped to safe ranges.",
+					properties: {
+						question_chars: { type: "number", description: "Maximum characters per question, clamped to 80-320." },
+						answer_chars: { type: "number", description: "Maximum characters per answer, clamped to 80-500." },
+						explanation_chars: { type: "number", description: "Maximum characters per explanation, clamped to 80-500." },
+						rubric_chars: { type: "number", description: "Maximum characters per rubric, clamped to 60-220." },
+						option_chars: { type: "number", description: "Maximum characters per multiple-choice option, clamped to 40-220." },
+					},
+					additionalProperties: false,
+				},
 			},
 			async (params) => {
 				const topic = (params.topic as string) || "";
@@ -1030,9 +1019,40 @@ ${resolved.prerequisites.map((p) => `- [ ] Learners need: ${p}`).join("\n")}
 				const reframeModes = Array.isArray(params.reframes)
 					? params.reframes.filter((r): r is string => typeof r === "string")
 					: undefined;
+				const rawLimits = params.limits && typeof params.limits === "object"
+					? params.limits as Record<string, unknown>
+					: undefined;
+				const authored = Array.isArray(params.questions)
+					? (params.questions as unknown[])
+						.filter((q): q is Record<string, unknown> => !!q && typeof q === "object")
+						.map((q) => ({
+							question: typeof q.question === "string" ? q.question : "",
+							type: typeof q.type === "string" ? q.type as AuthoredQuestion["type"] : undefined,
+							level: typeof q.level === "string" ? q.level as AuthoredQuestion["level"] : undefined,
+							options: Array.isArray(q.options) ? q.options.filter((o): o is string => typeof o === "string") : undefined,
+							correctAnswer: typeof q.correctAnswer === "string" ? q.correctAnswer : "",
+							explanation: typeof q.explanation === "string" ? q.explanation : "",
+							rubric: typeof q.rubric === "string" ? q.rubric : undefined,
+						}))
+					: [];
+				// No templates. The agent must author the questions itself, grounded in the
+				// lesson the learner just went through. A quiz is built only AFTER the lesson
+				// — it is a separate artifact, never auto-paired with the plan.
+				const validAuthored = buildAuthoredQuestions(resolveTopic(topic), authored);
+				if (validAuthored.length < 2) {
+					return "Author the quiz yourself. Pass a `questions` array (4-10 items), each grounded in the specific lesson the learner just completed, with a real prompt, correctAnswer, explanation, and (for multiple-choice) plausible distractors. Build the quiz only after the learner has gone through the lesson — it is a separate artifact, not a companion to the plan. No template fallback exists.";
+				}
 				const quiz = generateQuiz(topic, 42, {
 					adaptive: params.adaptive === true,
 					reframes: reframeModes,
+					authored,
+					limits: rawLimits ? {
+						questionChars: Number(rawLimits.question_chars),
+						answerChars: Number(rawLimits.answer_chars),
+						explanationChars: Number(rawLimits.explanation_chars),
+						rubricChars: Number(rawLimits.rubric_chars),
+						optionChars: Number(rawLimits.option_chars),
+					} : undefined,
 				});
 				const md = quizToMarkdown(quiz);
 				const answers = quizAnswerKeyToMarkdown(quiz);
@@ -1147,6 +1167,17 @@ ${topicList}
 					return "auto_improve already ran in this session. Pass force=true only if the learner explicitly asks to run it again.";
 				}
 
+				// Snapshot NodePod VFS before any changes (if active)
+				let nodePodSnapId: string | null = null;
+				if (isNodePodActive()) {
+					try {
+						const snap = await nodePodCreateSnapshot(`auto-improve-${Date.now()}`);
+						nodePodSnapId = snap.id;
+					} catch {
+						// ignore snapshot failures
+					}
+				}
+
 				const basePolicy = parsePolicyFromStorage(await storage.getActivePolicy());
 				const learnerState = await storage.getLearnerState();
 				const realOutcomes = extractBrowserOutcomes(learnerState.feedbackHistory, learnerState.topicsExplored);
@@ -1209,6 +1240,10 @@ ${topicList}
 						? `REGRESSED by ${delta.toFixed(2)} (evolved policy reverted)`
 						: `NO SIGNIFICANT CHANGE (Δ${delta.toFixed(2)})`;
 
+				const nodePodNote = nodePodSnapId
+					? `\n**NodePod snapshot:** ${nodePodSnapId} (created before improvement, can restore if needed via \`source_restore\`)`
+					: "";
+
 				return `[artifact://evolution/${saved.id}] [artifact://prompt-evolution/${promptSaved.id}] [artifact://benchmark/${benchmarkSaved.id}] [artifact://improvement/${improvementSaved.id}]\n\nSelf-improvement complete.
 
 **Benchmark:** ${baseline.overallScore.toFixed(2)} → ${after.overallScore.toFixed(2)} (${verdict})
@@ -1220,7 +1255,7 @@ ${topicList}
 
 **Prompt Evolution (PROSPER):**
 - Baseline: ${promptRun.baselineScore.toFixed(2)} → Best: ${promptRun.best.score.toFixed(2)}
-- Accepted: ${promptRun.acceptedCandidates.length}/${promptRun.exploredCandidates.length} candidates
+- Accepted: ${promptRun.acceptedCandidates.length}/${promptRun.exploredCandidates.length} candidates${nodePodNote}
 
 **Weaknesses diagnosed:** ${diagnoseBenchmark(baseline).map((s) => s.area).join(", ") || "none"}`;
 			}
@@ -1413,12 +1448,14 @@ ${topicList}
 		// ask_user_question - Ask the learner one or more questions as an interactive form
 		createTool(
 			"ask_user_question",
-			"Ask the learner one or more questions as an interactive form (choices, multi-select, and/or free text). The learner fills it in and their answers are sent back automatically. Use to check understanding, gather goals/preferences, or branch the lesson. Pass `questions` for a multi-field form, or the single-question fields for a quick one-off.",
+			"Ask the learner one or more questions as an interactive form (choices, multi-select, free text, or fill-in-the-blank). The learner fills it in and their answers are sent back automatically. Use to check understanding, gather goals/preferences, or branch the lesson. Pass `questions` for a multi-field form, or the single-question fields for a quick one-off.",
 			{
-				question: { type: "string", description: "A single question to ask (use `questions` for a multi-field form)" },
+				question: { type: "string", description: "A single question to ask (use `questions` for a multi-field form). For fill-in-the-blank, use ___ or {{blank}} as placeholders." },
 				choices: { type: "array", items: { type: "string" }, description: "Optional answer choices for the single question" },
 				multi_select: { type: "boolean", description: "Allow selecting multiple choices for the single question (default false)" },
 				allow_text: { type: "boolean", description: "Allow free-text input (default: true if no choices, false if choices provided)" },
+				type: { type: "string", enum: ["choice", "text", "blanks"], description: "Question type. 'choice' = multiple choice, 'text' = free text, 'blanks' = fill-in-the-blank (uses ___ or {{blank}} in question text)" },
+				blanks: { type: "array", items: { type: "object", properties: { placeholder: { type: "string" }, hint: { type: "string" } } }, description: "Define blanks for fill-in-the-blank questions. Each entry corresponds to one ___ placeholder in the question text." },
 				hint: { type: "string", description: "Optional hint shown below the single question" },
 				intro: { type: "string", description: "Optional intro text shown above the form" },
 				questions: {
@@ -1428,10 +1465,12 @@ ${topicList}
 						type: "object",
 						properties: {
 							header: { type: "string", description: "Short label/chip shown above the question (e.g. 'Goal', 'Approach')" },
-							question: { type: "string", description: "The question text" },
+							question: { type: "string", description: "The question text. For blanks type, use ___ or {{blank}} as placeholders" },
 							choices: { type: "array", items: { type: "string" }, description: "Optional answer choices" },
 							multi_select: { type: "boolean", description: "Allow selecting multiple choices (default false)" },
 							allow_text: { type: "boolean", description: "Allow free-text input (default: true if no choices)" },
+							type: { type: "string", enum: ["choice", "text", "blanks"], description: "Question type: choice, text, or blanks (fill-in-the-blank)" },
+							blanks: { type: "array", items: { type: "object", properties: { placeholder: { type: "string" }, hint: { type: "string" } } }, description: "Blank definitions for fill-in-the-blank, one per ___ placeholder" },
 							hint: { type: "string", description: "Optional hint shown below this question" },
 						},
 					},
@@ -1605,17 +1644,20 @@ ${topicList}
 			}
 		),
 
-		// edit_source - Propose a source code edit (web: produces diff; CLI: applies directly)
+		// source_edit - Apply a search/replace edit inside the NodePod VFS
 		createTool(
-			"edit_source",
-			"Propose a precise source code edit using search/replace blocks. In the browser this returns a formatted diff for manual application; on the CLI it can apply directly. Use for bug fixes, refactoring, or adding small features. Always include enough surrounding context in the search block to make it unique.",
+			"source_edit",
+			"Apply a precise source code edit using search/replace blocks inside the NodePod sandbox. The file path must be absolute within the sandbox (e.g. /workspace/src/core/policy.ts). Always include enough surrounding context (5-10 lines) in the search block to make it unique. Creates a pre-edit snapshot automatically if none exists for this session.",
 			{
-				file: { type: "string", description: "Relative file path to edit (e.g. src/core/lesson-plan.ts)" },
+				file: { type: "string", description: "Absolute path in NodePod VFS (e.g. /workspace/src/core/policy.ts)" },
 				search: { type: "string", description: "Exact code block to search for. Must be unique in the file. Include surrounding lines for safety." },
 				replace: { type: "string", description: "Replacement code block." },
 				reason: { type: "string", description: "Short explanation of why this change is being made." },
 			},
 			async (params) => {
+				if (!isNodePodActive()) {
+					return "NodePod sandbox is not active. Boot it first via the NodePod Visualizer or wait for it to initialize.";
+				}
 				const file = String(params.file ?? "");
 				const search = String(params.search ?? "");
 				const replace = String(params.replace ?? "");
@@ -1625,33 +1667,181 @@ ${topicList}
 					return "Error: file and search are required.";
 				}
 
-				// Web context: we cannot write to the filesystem, so produce a formatted diff
-				const searchLines = search.split("\n").length;
-				const replaceLines = replace.split("\n").length;
-				const charDelta = replace.length - search.length;
+				const result = await nodePodApplyEdit({ file, search, replace, reason });
+				if (!result.success) {
+					return `# Edit Failed: ${file}\n\n${result.message}`;
+				}
+
+				// Auto-transpile .ts → .js so require() works in NodePod
+				let jsCounterpart = "";
+				if (file.endsWith(".ts")) {
+					try {
+						jsCounterpart = await writeJsCounterpart(file);
+					} catch {
+						// transpilation failed — agent can try manually
+					}
+				}
 
 				return [
-					`## Proposed Edit: ${file}`,
+					`# Edit Applied: ${file}`,
 					"",
-					`**Reason:** ${reason}`,
-					`**Lines:** ${searchLines} → ${replaceLines}  |  **Char Δ:** ${charDelta >= 0 ? "+" : ""}${charDelta}`,
+					result.message,
+					result.diff ? `\n**Diff:** ${result.diff.linesRemoved} removed, ${result.diff.linesAdded} added, Δ${result.diff.charDelta >= 0 ? "+" : ""}${result.diff.charDelta} chars` : "",
+					jsCounterpart ? `\n**Transpiled:** ${jsCounterpart} (auto-generated for require())` : "",
 					"",
-					"### Search",
-					"```",
-					search,
-					"```",
-					"",
-					"### Replace",
-					"```",
-					replace,
-					"```",
-					"",
-					"---",
-					"**To apply this edit in the CLI:**",
-					`echo '{"search":${JSON.stringify(search)},"replace":${JSON.stringify(replace)}}' | keating edit ${file}`,
-					"",
-					"**Or manually:** copy the Replace block into the file where the Search block currently appears.",
+					"Next steps:",
+					"- Call `validate_source_edit` with a test script to confirm the change works.",
+					"- Call `source_diff` to review all changes.",
 				].join("\n");
+			}
+		),
+
+		// source_diff - Show differences between baseline and current VFS
+		createTool(
+			"source_diff",
+			"Show all files in the NodePod sandbox that differ from their baseline (as bundled at boot). Use after source_edit to review what changed.",
+			{},
+			async () => {
+				if (!isNodePodActive()) {
+					return "NodePod sandbox is not active.";
+				}
+				const changed = await nodePodChangedFiles();
+				if (changed.length === 0) {
+					return "No changes from baseline. All files are at their original state.";
+				}
+				const lines = ["# Changed Files", ""];
+				for (const entry of changed) {
+					const diff = await nodePodDiffFile(entry.file);
+					lines.push(`## ${entry.file}`);
+					lines.push(`Δ ${entry.charDelta >= 0 ? "+" : ""}${entry.charDelta} chars`);
+					if (diff?.baseline && diff.current) {
+						// Simple diff: show last 5 lines of baseline vs current context
+						lines.push("```diff");
+						lines.push("// Current state (first 40 lines):");
+						lines.push(diff.current.split("\n").slice(0, 40).join("\n"));
+						lines.push("```");
+					}
+					lines.push("");
+				}
+				return lines.join("\n");
+			}
+		),
+
+		// run_script - Execute a Node.js script inside the NodePod sandbox
+		createTool(
+			"run_script",
+			"Write and execute a Node.js script inside the NodePod sandbox. Use this to test edited modules, run small experiments, or validate logic changes. The script runs in the /workspace directory and can require any module in the VFS.",
+			{
+				code: { type: "string", description: "JavaScript code to execute. Can use require() for built-in modules or files in the VFS." },
+				filename: { type: "string", description: "Optional filename for the temp script (default: /workspace/_agent_script.js)" },
+			},
+			async (params) => {
+				if (!isNodePodActive()) {
+					return "NodePod sandbox is not active.";
+				}
+				const code = String(params.code ?? "");
+				const filename = String(params.filename ?? "/workspace/_agent_script.js");
+				if (!code.trim()) {
+					return "Error: code is required.";
+				}
+				const session = await nodePodRunScript(code, filename);
+				return [
+					"# Script Result",
+					"",
+					`- exit code: ${session.exitCode ?? "unknown"}`,
+					`- duration: ${session.durationMs ?? "?"}ms`,
+					"",
+					session.stdout ? `## stdout\n\`\`\`\n${session.stdout}\n\`\`\`` : "",
+					session.stderr ? `## stderr\n\`\`\`\n${session.stderr}\n\`\`` : "",
+				].filter(Boolean).join("\n");
+			}
+		),
+
+		// validate_source_edit - Run a test to confirm an edit is correct
+		createTool(
+			"validate_source_edit",
+			"Validate a source edit by running a test script inside the NodePod sandbox. If the test fails, the edit is automatically rolled back to the pre-edit snapshot. Use this AFTER every source_edit to confirm the change works.",
+			{
+				file: { type: "string", description: "The .ts file that was edited (e.g. /workspace/src/core/policy.ts)" },
+				testScript: { type: "string", description: "JavaScript test code. Should import the edited module (use .js extension) and assert expected behavior. Example: `const { clampPolicy } = require('/workspace/src/core/policy.js'); console.assert(clampPolicy({...}).analogyDensity === 0.5);`" },
+				autoRollback: { type: "boolean", description: "If true (default), automatically restore the pre-edit snapshot on test failure." },
+			},
+			async (params) => {
+				if (!isNodePodActive()) {
+					return "NodePod sandbox is not active.";
+				}
+				const file = String(params.file ?? "");
+				const testScript = String(params.testScript ?? "");
+				const autoRollback = params.autoRollback !== false;
+
+				if (!file || !testScript) {
+					return "Error: file and testScript are required.";
+				}
+
+				const result = await nodePodValidateEdit(file, testScript, { autoRollback });
+
+				const lines = [
+					`# Validation Result: ${result.passed ? "PASSED" : "FAILED"}`,
+					"",
+					`- File: ${file}`,
+					`- Exit code: ${result.exitCode ?? "unknown"}`,
+					`- Duration: ${result.durationMs}ms`,
+					`- Rollback: ${result.restored ? "performed" : "not needed / unavailable"}`,
+					"",
+					"## Test Output",
+					result.stdout ? `\`\`\`\n${result.stdout}\n\`\`\`` : "(no stdout)",
+					result.stderr ? `\`\`\`\n${result.stderr}\n\`\`\`` : "",
+				];
+				return lines.filter(Boolean).join("\n");
+			}
+		),
+
+		// source_snapshot - Capture the current NodePod VFS state for rollback
+		createTool(
+			"source_snapshot",
+			"Create a snapshot of the current NodePod sandbox state. Use BEFORE making source edits so you can restore if the change causes a regression. Returns a snapshot ID you can pass to source_restore.",
+			{
+				label: { type: "string", description: "Human-readable label for the snapshot (e.g. before-policy-tweak)" },
+			},
+			async (params) => {
+				if (!isNodePodActive()) {
+					return "NodePod sandbox is not active.";
+				}
+				const label = String(params.label ?? "manual");
+				const snap = await nodePodCreateSnapshot(label);
+				return [
+					"# Snapshot Created",
+					"",
+					`- id: ${snap.id}`,
+					`- instanceId: ${snap.instanceId}`,
+					`- createdAt: ${snap.createdAt}`,
+					"",
+					"You can restore this snapshot later with `source_restore`.",
+				].join("\n");
+			}
+		),
+
+		// source_restore - Rollback NodePod VFS to a previous snapshot
+		createTool(
+			"source_restore",
+			"Restore the NodePod sandbox to a previous snapshot. Use this when source edits caused a regression and you want to undo them. Pass the snapshot data returned by source_snapshot.",
+			{
+				data: { type: "object", description: "The snapshot data object returned by a prior source_snapshot call." },
+			},
+			async (params) => {
+				if (!isNodePodActive()) {
+					return "NodePod sandbox is not active.";
+				}
+				const data = params.data;
+				if (!data) {
+					return "Error: snapshot data is required. Pass the full object returned by source_snapshot.";
+				}
+				try {
+					await nodePodRestoreSnapshot(data);
+					return "# Snapshot Restored\n\nNodePod sandbox rolled back to the snapshot state.";
+				} catch (e) {
+					return `# Restore Failed\n\n${e instanceof Error ? e.message : String(e)}`;
+				}
 			}
 		),
 	];

@@ -13,9 +13,14 @@ install:
 # Build the root TypeScript project
 build:
     bun x tsc -p tsconfig.json
+    bun scripts/copy-core-templates.ts
+
+# Generate NodePod boot files from source tree
+generate-nodepod-boot:
+    bun scripts/generate-nodepod-boot-files.ts
 
 # Build everything (root + web)
-build-all: build
+build-all: build generate-nodepod-boot
     cd web && bun run build
 
 # Run the root test suite

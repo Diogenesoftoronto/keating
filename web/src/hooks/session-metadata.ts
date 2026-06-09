@@ -5,6 +5,36 @@ export function createSessionId(): string {
 	return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+export function cloneMessages(messages: AgentMessage[]): AgentMessage[] {
+	return structuredClone(messages);
+}
+
+// Truncate a stored message list to end at the forked assistant turn. `forkPoint`
+// is the timestamp of the clicked assistant message (encoded in its rendered id).
+// We keep everything up to and including that assistant message plus the tool
+// results that belong to its turn, and drop the next user message onward — giving
+// a clean, continuable branch point. If nothing matches, the full list is kept.
+export function truncateAtForkPoint(
+	messages: AgentMessage[],
+	forkPoint: number | undefined,
+): AgentMessage[] {
+	if (forkPoint == null) return messages;
+	let assistantIdx = -1;
+	for (let i = 0; i < messages.length; i++) {
+		const msg = messages[i] as { role?: string; timestamp?: number };
+		if (msg.role === "assistant" && msg.timestamp === forkPoint) assistantIdx = i;
+	}
+	if (assistantIdx === -1) return messages;
+	let boundary = messages.length;
+	for (let i = assistantIdx + 1; i < messages.length; i++) {
+		if ((messages[i] as { role?: string }).role === "user") {
+			boundary = i;
+			break;
+		}
+	}
+	return messages.slice(0, boundary);
+}
+
 const emptyUsage: SessionMetadata["usage"] = {
 	input: 0,
 	output: 0,
@@ -41,7 +71,7 @@ export function sessionPreview(messages: AgentMessage[]) {
 		.map(messageText)
 		.filter(Boolean)
 		.join("\n")
-		.slice(0, 2048);
+		.slice(0, 8192);
 }
 
 export function sessionUsage(messages: AgentMessage[]): SessionMetadata["usage"] {

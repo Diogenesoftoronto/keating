@@ -16,6 +16,6 @@
     "useDefineForClassFields": false,
     "types": ["vite/client", "bun"]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "test/**/*.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "test/**/*.ts", ".storybook/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

@@ -15,9 +15,13 @@ function getInitialTheme(): boolean {
 
 interface ThemeToggleProps {
   className?: string;
+  /** "icon" (default) renders the square header button; "menu" renders a full-width labeled row for the overflow menu. */
+  variant?: "icon" | "menu";
+  /** Called after the theme is toggled (e.g. to close the overflow menu). */
+  onToggled?: () => void;
 }
 
-export function ThemeToggle({ className = "" }: ThemeToggleProps = {}) {
+export function ThemeToggle({ className = "", variant = "icon", onToggled }: ThemeToggleProps = {}) {
   const [isDark, setIsDark] = useState(() => getInitialTheme());
 
   useEffect(() => {
@@ -39,15 +43,32 @@ export function ThemeToggle({ className = "" }: ThemeToggleProps = {}) {
       localStorage.setItem("theme", "light");
     }
     setIsDark(next);
-  }, []);
+    onToggled?.();
+  }, [onToggled]);
+
+  const label = isDark ? "Switch to light mode" : "Switch to dark mode";
+
+  if (variant === "menu") {
+    return (
+      <button
+        type="button"
+        onClick={toggle}
+        className={`flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors ${className}`.trim()}
+        aria-label={label}
+      >
+        {isDark ? <Sun size={14} /> : <Moon size={14} />}
+        {isDark ? "Light mode" : "Dark mode"}
+      </button>
+    );
+  }
 
   return (
     <button
       type="button"
       onClick={toggle}
       className={`chat-action-button inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors ${className}`.trim()}
-      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      title={label}
+      aria-label={label}
     >
       {isDark ? <Sun size={16} /> : <Moon size={16} />}
     </button>

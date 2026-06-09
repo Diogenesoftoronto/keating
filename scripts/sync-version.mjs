@@ -38,11 +38,17 @@ if (!/^\d+\.\d+\.\d+/.test(targetVersion)) {
 }
 
 const files = [
+  // Lockfiles / package metadata
+  { path: join(rootDir, "package-lock.json"), pattern: /"version":\s*"[^"]+"/, replacement: `"version": "${targetVersion}"` },
+  { path: join(rootDir, "package-lock.json"), pattern: /"":\s*\{\n\s+"name":\s*"keating",\n\s+"version":\s*"[^"]+"/, replacement: `"": {\n      "name": "keating",\n      "version": "${targetVersion}"` },
+
   // Package manifests
   { path: join(webDir, "package.json"), pattern: /"version":\s*"[^"]+"/, replacement: `"version": "${targetVersion}"` },
   { path: join(browserAgentRuntimeDir, "package.json"), pattern: /"version":\s*"[^"]+"/, replacement: `"version": "${targetVersion}"` },
 
   // Extension / CLI
+  { path: join(rootDir, "bin", "keating.js"), pattern: /const KEATING_VERSION = "[^"]+"/, replacement: `const KEATING_VERSION = "${targetVersion}"` },
+  { path: join(rootDir, "src", "cli", "main.ts"), pattern: /const KEATING_VERSION = "[^"]+"/, replacement: `const KEATING_VERSION = "${targetVersion}"` },
   { path: join(rootDir, "src/pi/hyperteacher-extension.ts"), pattern: /const KEATING_VERSION = "[^"]+"/, replacement: `const KEATING_VERSION = "${targetVersion}"` },
 
   // Web UI hardcoded strings
