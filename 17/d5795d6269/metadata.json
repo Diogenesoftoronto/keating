@@ -3,7 +3,7 @@
   "checkpoint_id": "17d5795d6269",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 5,
+  "checkpoints_count": 7,
   "files_touched": [
     ".github/workflows/release.yml",
     ".gitignore",
@@ -62,13 +62,19 @@
       "transcript": "/17/d5795d6269/0/full.jsonl",
       "content_hash": "/17/d5795d6269/0/content_hash.txt",
       "prompt": "/17/d5795d6269/0/prompt.txt"
+    },
+    {
+      "metadata": "/17/d5795d6269/1/metadata.json",
+      "transcript": "/17/d5795d6269/1/full.jsonl",
+      "content_hash": "/17/d5795d6269/1/content_hash.txt",
+      "prompt": "/17/d5795d6269/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 9193,
-    "cache_creation_tokens": 552051,
-    "cache_read_tokens": 16928523,
-    "output_tokens": 123952,
-    "api_call_count": 130
+    "input_tokens": 21589,
+    "cache_creation_tokens": 1143482,
+    "cache_read_tokens": 34429131,
+    "output_tokens": 201205,
+    "api_call_count": 301
   }
 }

@@ -1,0 +1,21 @@
+can you improve the quizes to make them work better there are a bunch of features of the quizes that don't work with the material when they are generated it just looks they are roughly templating a subject, i need much better tools for quizing, maybe have some subagent help create and craft each question. currently you get stuff like this quiz: 
+Define "Javascript Async/await Practical Code Reading" in your own words. → my answer: "this question makes no sense" ✗ (partial credit: 17%)  (126s)
+
+State the central idea of Javascript Async/await Practical Code Reading without using the exact lesson wording. → my answer: "makes no sense" ✗ (partial credit: 10%)  (12s)
+
+Explain the intuition: "Anchor Javascript Async/await Practical Code Reading in one memorable metaphor and one real-world example."… → my answer: "nonesense" ✗ (partial credit: 7%)  (15s)
+
+Which of the following statements about Javascript Async/await Practical Code Reading is FALSE? → my answer: "Confusing an example of Javascript Async/await Practical Code Reading with the whole conc…" ✗ (partial credit: 0%)  (22s)
+
+Work through this example: Give one scientific or mathematical example connected to Javascript Async/await Practical Code Reading.… → my answer: "nonesense" ✗ (partial credit: 10%)  (11s)
+
+Use Javascript Async/await Practical Code Reading to solve or analyze this case: Give one scientific or mathematical example connected to J… → my answer: "nonesense" ✗ (partial credit: 10%)  (10s)
+
+Apply Javascript Async/await Practical Code Reading to critique. What structure carries over? → my answer: "nonesense" ✗ (partial credit: 9%)  (6s)
+
+Where would an analogy between Javascript Async/await Practical Code Reading and comparison break down? → my answer: "nonesense" ✗ (partial credit: 9%)  (13s)
+Please review my answers and timing, then guide what to work on next.
+
+---
+
+yes do it for every topic
