@@ -1,0 +1,9 @@
+Search the codebase for session-related code. I need to understand:
+1. How sessions are created and stored
+2. How session titles are generated (AI vs user)
+3. How session search works (what fields are searched)
+4. Any rename functionality
+
+Search broadly for files containing "session", "title", "search", "rename" in the web/ directory primarily, but also check src/ if relevant. Look at the data models, state management, and UI components.
+
+Return the relevant file paths, their key functions/components, and a summary of the current behavior.
