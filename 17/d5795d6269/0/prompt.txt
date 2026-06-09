@@ -1,0 +1,32 @@
+[Image #1] i would love to get something like this for the conversational view instead of the way sessions look on mobile, for forks, create appropriate visualizations as well that would fit
+
+---
+
+skip vet
+
+---
+
+this and and the other button should not appear in the same sizing this is a regression in ui fix this
+
+<button type="button" class="chat-action-but..." title="Open sessions p..." aria-label="Open sessions p..." aria-pressed="false" style="">
+  <svg ...>
+</button>
+  in ChatContent (at /src/pages/Chat.tsx)this is appearing in small view at the same time even with the other one which dshould not happen
+
+<button type="button" class="inline-flex h-9..." title="Expand sessions..." aria-label="Expand sessions...">
+  <svg ...>
+</button>
+  in SessionSidebar (at /src/components/SessionSidebar.tsx)
+  in ChatContent (at /src/pages/Chat.tsx)
+
+---
+
+chat navigation is still a problem
+
+---
+
+[Image #2] this still appears
+
+---
+
+this page could be improved a lot [Image #3]
