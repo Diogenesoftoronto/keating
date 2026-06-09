@@ -49,6 +49,8 @@ interface PromptEvolutionArchive {
     promptName: string;
     label: string;
     score: number;
+    baselineScore?: number;
+    accepted?: boolean;
     objectives: PromptObjectiveVector;
     updatedAt: string;
   }>;
@@ -57,6 +59,7 @@ interface PromptEvolutionArchive {
 export interface PromptEvolutionRun {
   promptPath: string;
   promptName: string;
+  baselinePrompt: string;
   baseline: PromptEvaluation;
   best: PromptEvolutionCandidate;
   exploredCandidates: PromptEvolutionCandidate[];
@@ -369,6 +372,8 @@ export async function evolvePrompt(
     promptName,
     label: best.label,
     score: best.evaluation.score,
+    baselineScore: baseline.score,
+    accepted: best.evaluation.score >= baseline.score,
     objectives: best.evaluation.objectives,
     updatedAt: new Date().toISOString()
   });
@@ -377,6 +382,7 @@ export async function evolvePrompt(
   return {
     promptPath,
     promptName,
+    baselinePrompt: prompt,
     baseline,
     best,
     exploredCandidates: candidates,
@@ -386,18 +392,31 @@ export async function evolvePrompt(
 
 export async function writePromptEvolutionArtifacts(
   cwd: string,
-  promptName = "learn"
-): Promise<{ reportPath: string; evolvedPromptPath: string; bestScore: number; promptPath: string }> {
-  const run = await evolvePrompt(cwd, promptName);
+  promptName = "learn",
+  options: {
+    iterations?: number;
+    evaluator?: PromptEvaluator;
+    generator?: PromptGenerator;
+  } = {}
+): Promise<{ reportPath: string; evolvedPromptPath: string; bestScore: number; promptPath: string; accepted: boolean }> {
+  const run = await evolvePrompt(
+    cwd,
+    promptName,
+    options.iterations ?? 4,
+    options.evaluator ?? evaluatePromptContent,
+    options.generator ?? generateCandidatePrompt
+  );
   const reportPath = join(promptEvolutionDir(cwd), `${promptName}.md`);
   const evolvedPromptPath = join(promptEvolutionDir(cwd), `${promptName}.evolved.md`);
+  const acceptedPrompt = run.acceptedCandidates[0]?.prompt;
   await writeFile(reportPath, promptEvolutionToMarkdown(run), "utf8");
-  await writeFile(evolvedPromptPath, run.best.prompt, "utf8");
+  await writeFile(evolvedPromptPath, acceptedPrompt ?? run.baselinePrompt, "utf8");
   return {
     reportPath,
     evolvedPromptPath,
     bestScore: run.best.evaluation.score,
-    promptPath: run.promptPath
+    promptPath: run.promptPath,
+    accepted: acceptedPrompt !== undefined
   };
 }
 
@@ -419,6 +438,10 @@ export function promptEvolutionToMarkdown(run: PromptEvolutionRun): string {
     `- Best candidate: ${run.best.label}`,
     `- Best candidate score: ${run.best.evaluation.score.toFixed(2)}`,
     `- PROSPER-style preference score: ${run.best.preferenceScore.toFixed(2)}`,
+    `- Accepted: ${run.acceptedCandidates.length > 0 ? "yes" : "no"}`,
+    ...(run.acceptedCandidates.length === 0
+      ? ["- Applied prompt: unchanged because no candidate cleared the baseline score."]
+      : [`- Applied prompt: ${run.acceptedCandidates[0].label}`]),
     "",
     "## Baseline Feedback",
     ""
@@ -444,9 +467,10 @@ export function promptEvolutionToMarkdown(run: PromptEvolutionRun): string {
     lines.push("");
   }
 
-  lines.push("## Recommended Prompt");
+  const appliedPrompt = run.acceptedCandidates[0]?.prompt;
+  lines.push(appliedPrompt ? "## Applied Prompt" : "## Best Candidate Prompt (Not Applied)");
   lines.push("```md");
-  lines.push(run.best.prompt.trimEnd());
+  lines.push((appliedPrompt ?? run.best.prompt).trimEnd());
   lines.push("```");
   lines.push("");
   return `${lines.join("\n")}\n`;

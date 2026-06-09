@@ -37,6 +37,10 @@ export function promptEvolutionDir(cwd: string): string {
   return join(outputsDir(cwd), "prompt-evolution");
 }
 
+export function improvementsDir(cwd: string): string {
+  return join(outputsDir(cwd), "improvements");
+}
+
 export function tracesDir(cwd: string): string {
   return join(outputsDir(cwd), "traces");
 }
@@ -117,7 +121,7 @@ export async function ensureKeatingDirs(cwd: string): Promise<void> {
     mkdir(promptEvolutionDir(cwd), { recursive: true }),
     mkdir(tracesDir(cwd), { recursive: true }),
     mkdir(verificationsDir(cwd), { recursive: true }),
-    mkdir(join(outputsDir(cwd), "improvements"), { recursive: true }),
+    mkdir(improvementsDir(cwd), { recursive: true }),
     mkdir(sessionsDir(cwd), { recursive: true }),
     mkdir(timelineDir(cwd), { recursive: true }),
     mkdir(quizDir(cwd), { recursive: true }),

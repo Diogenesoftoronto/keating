@@ -36,6 +36,7 @@ jobs:
         run: |
           bun install
           bun x tsc -p tsconfig.json
+          bun scripts/copy-core-templates.ts
 
       - name: Create bundle
         run: |
@@ -105,6 +106,7 @@ jobs:
           bun install
           cd ..
           bun x tsc -p tsconfig.json
+          bun scripts/copy-core-templates.ts
 
       - name: Publish to npm
         run: |

@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { configPath } from "../src/core/config.js";
 import {
   animateTopicArtifact,
+  autoImproveArtifact,
   benchPolicyArtifact,
   currentPolicySummary,
   ensureProjectScaffold,
@@ -71,6 +72,8 @@ Workflow:
   const storyboard = await readFile(animation.storyboardPath, "utf8");
   const manifest = await readFile(animation.manifestPath, "utf8");
   const promptReport = await readFile(promptEvolution.reportPath, "utf8");
+  const activePolicy = JSON.parse(await readFile(evolution.policyPath, "utf8"));
+  const policyArchive = JSON.parse(await readFile(join(workdir, ".keating", "state", "policy-archive.json"), "utf8"));
   const artifacts = await listArtifacts(workdir);
   expect(summary.includes("Policy:")).toBe(true);
   expect(report.includes("# Benchmark Report")).toBe(true);
@@ -78,7 +81,35 @@ Workflow:
   expect(storyboard.includes("# Animation Storyboard: Derivative")).toBe(true);
   expect(manifest.includes("\"sceneKind\": \"function-graph\"")).toBe(true);
   expect(promptReport.includes("# Prompt Evolution Report: learn")).toBe(true);
+  expect(policyArchive.currentPolicy.name).toBe(activePolicy.name);
+  expect(Math.abs(policyArchive.bestScore - evolution.bestScore)).toBeLessThan(0.001);
+  expect(policyArchive.candidates.length).toBeGreaterThan(0);
   expect(artifacts.some((artifact) => artifact.path.endsWith("animations/derivative/player.html"))).toBe(true);
   expect(artifacts.some((artifact) => artifact.path.endsWith("prompt-evolution/learn.evolved.md"))).toBe(true);
   expect(artifacts.some((artifact) => artifact.path.endsWith("manifest.json"))).toBe(true);
+}, { timeout: 60000 });
+
+test("auto-improve writes observable transaction artifacts", async () => {
+  const workdir = await mkdtemp(join(tmpdir(), "keating-auto-improve-observability-"));
+  await ensureProjectScaffold(workdir);
+  await mkdir(join(workdir, "pi", "prompts"), { recursive: true });
+  await writeFile(
+    join(workdir, "pi", "prompts", "learn.md"),
+    `Teach with diagnosis, own voice, retrieval, transfer, and verification.`
+  );
+
+  const result = await autoImproveArtifact(workdir, "derivative", { force: true });
+  await access(result.reportPath);
+  await access(result.observabilityPath);
+  await access(result.diagramPath);
+
+  const report = await readFile(result.reportPath, "utf8");
+  const observability = JSON.parse(await readFile(result.observabilityPath, "utf8"));
+  const diagram = await readFile(result.diagramPath, "utf8");
+  expect(report.includes("## Observability Artifacts")).toBe(true);
+  expect(observability.artifacts.baselineBenchmark).toContain("derivative-auto-improve-baseline.md");
+  expect(observability.artifacts.afterBenchmark).toContain("derivative-auto-improve-after.md");
+  expect(observability.artifacts.baselineBenchmark).not.toBe(observability.artifacts.afterBenchmark);
+  expect(typeof observability.rollback.triggered).toBe("boolean");
+  expect(diagram.includes("flowchart TD")).toBe(true);
 }, { timeout: 60000 });

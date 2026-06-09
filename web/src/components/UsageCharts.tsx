@@ -1,7 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { keatingStorage } from "../hooks/keating-storage";
-import type { LearnerState, Verification, FeedbackEntry } from "../keating/storage";
+import type {
+	BenchmarkResult,
+	EvolutionResult,
+	FeedbackEntry,
+	ImprovementAttemptRecord,
+	LearnerState,
+	Policy,
+	Verification,
+} from "../keating/storage";
 import type { SessionMetadata } from "../types/session";
 
 const TOPIC_PALETTE = [
@@ -48,19 +56,38 @@ export function UsageCharts({ sessionMetadata }: UsageChartsProps) {
 		weaknesses: string[];
 		strengths: string[];
 		feedback: FeedbackEntry[];
+		benchmarks: BenchmarkResult[];
+		evolutions: EvolutionResult[];
+		improvements: ImprovementAttemptRecord[];
+		policies: Policy[];
 	} | null>(null);
 
 	useEffect(() => {
 		let cancelled = false;
 		(async () => {
 			try {
-				const [plans, maps, animations, verifications, learnerState, feedback] = await Promise.all([
+				const [
+					plans,
+					maps,
+					animations,
+					verifications,
+					learnerState,
+					feedback,
+					benchmarks,
+					evolutions,
+					improvements,
+					policies,
+				] = await Promise.all([
 					keatingStorage.getLessonPlans(),
 					keatingStorage.getLessonMaps(),
 					keatingStorage.getAnimations(),
 					keatingStorage.getVerifications(),
 					keatingStorage.getLearnerState(),
 					keatingStorage.getFeedback(),
+					keatingStorage.getBenchmarks(),
+					keatingStorage.getEvolutions(),
+					keatingStorage.getImprovementAttempts(),
+					keatingStorage.getPolicies(),
 				]);
 
 				const counts = new Map<string, number>();
@@ -85,6 +112,10 @@ export function UsageCharts({ sessionMetadata }: UsageChartsProps) {
 					weaknesses: learnerState.weaknesses ?? [],
 					strengths: learnerState.strengths ?? [],
 					feedback,
+					benchmarks,
+					evolutions,
+					improvements,
+					policies,
 				});
 			} catch (err) {
 				console.error("Failed to load chart data", err);
@@ -198,6 +229,18 @@ export function UsageCharts({ sessionMetadata }: UsageChartsProps) {
 			</ChartPanel>
 
 			<ChartPanel
+				title="Self-evolution health"
+				subtitle="Benchmark scores, evolved policy scores, rollback attempts, and active policy count"
+			>
+				<PolicyGrowthPanel
+					benchmarks={data.benchmarks}
+					evolutions={data.evolutions}
+					improvements={data.improvements}
+					policies={data.policies}
+				/>
+			</ChartPanel>
+
+			<ChartPanel
 				title="Coming up"
 				subtitle="Open checklists and weak spots that could use another pass"
 			>
@@ -222,116 +265,151 @@ function PolicyGrowthPanel({
  improvements: { baselineScore: number; afterScore: number | null; scoreDelta: number | null; createdAt: number }[];
  policies: { active: boolean; createdAt: number; updatedAt: number }[];
 }) {
- const maxScore = 100;
- const height = 110;
- const barPad = 40;
+	const hasAny = benchmarks.length > 0 || evolutions.length > 0 || improvements.length > 0 || policies.length > 0;
+	if (!hasAny) {
+		return <EmptyState message="No self-evolution records yet — run a benchmark or evolution to see health signals here." />;
+	}
 
- const fmtDate = (t: number) => new Date(t).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+	const maxScore = 100;
+	const height = 132;
+	const leftPad = 10;
+	const rightPad = 3;
+	const chartBottom = height - 28;
+	const chartTop = 12;
 
- const makePoints = (arr: { score: number; createdAt: number }[], color: string, label: string) => {
-   if (arr.length === 0) return null;
-   const sorted = [...arr].sort((a, b) => a.createdAt - b.createdAt);
-   const minT = sorted[0].createdAt;
-   const maxT = sorted[sorted.length - 1].createdAt;
-   const span = Math.max(maxT - minT, 1);
-   const usableW = 100 - barPad * 2;
-   return {
-     sorted,
-     label,
-     color,
-     points: sorted.map((d) => ({
-       x: barPad + ((d.createdAt - minT) / span) * usableW,
-       y: height - 24 - (d.score / maxScore) * (height - 40),
-       score: d.score,
-       date: fmtDate(d.createdAt),
-     })),
-     minT,
-     maxT,
-   };
- };
+	const fmtDate = (t: number) => new Date(t).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+	const benchmarkScores = benchmarks.map((b) => ({ score: b.score, createdAt: b.createdAt }));
+	const evolutionScores = evolutions.map((e) => ({ score: e.bestScore, createdAt: e.createdAt }));
+	const allScores = [...benchmarkScores, ...evolutionScores].sort((a, b) => a.createdAt - b.createdAt);
+	const minT = allScores[0]?.createdAt ?? Date.now();
+	const maxT = allScores[allScores.length - 1]?.createdAt ?? minT;
+	const span = Math.max(maxT - minT, 1);
 
- const benchmarkLine = makePoints(benchmarks, "#6366f1", "Benchmark");
- const evolutionLine = makePoints(evolutions.map((e) => ({ score: e.bestScore, createdAt: e.createdAt })), "#22c55e", "Evolution");
+	const makePoints = (arr: { score: number; createdAt: number }[], color: string, label: string) => {
+		if (arr.length === 0) return null;
+		const sorted = [...arr].sort((a, b) => a.createdAt - b.createdAt);
+		const usableW = 100 - leftPad - rightPad;
+		return {
+			label,
+			color,
+			points: sorted.map((d) => ({
+				x: leftPad + ((d.createdAt - minT) / span) * usableW,
+				y: chartBottom - (d.score / maxScore) * (chartBottom - chartTop),
+				score: d.score,
+				date: fmtDate(d.createdAt),
+			})),
+		};
+	};
 
- const improvementBars = improvements
-   .filter((i) => i.scoreDelta !== null)
-   .sort((a, b) => a.createdAt - b.createdAt)
-   .slice(-12);
+	const benchmarkLine = makePoints(benchmarkScores, "#6366f1", "Benchmark");
+	const evolutionLine = makePoints(evolutionScores, "#22c55e", "Evolution");
+	const orderedBenchmarks = [...benchmarks].sort((a, b) => a.createdAt - b.createdAt);
+	const orderedEvolutions = [...evolutions].sort((a, b) => a.createdAt - b.createdAt);
+	const latestBenchmark = orderedBenchmarks[orderedBenchmarks.length - 1];
+	const latestEvolution = orderedEvolutions[orderedEvolutions.length - 1];
+	const activePolicies = policies.filter((p) => p.active).length;
 
- return (
-   <div>
-     <div className="mb-4">
-       <svg width="100%" viewBox={`0 0 100 ${height}`} preserveAspectRatio="none" style={{ height }}>
-         {[0, 25, 50, 75, 100].map((tick) => {
-           const y = height - 24 - (tick / maxScore) * (height - 40);
-           return (
-             <g key={tick}>
-               <line x1={barPad} y1={y} x2={100 - barPad} y2={y} stroke="currentColor" strokeOpacity={0.08} />
-               <text x={barPad - 4} y={y + 3} fontSize={6} fill="currentColor" opacity={0.45} textAnchor="end">
-                 {tick}
-               </text>
-             </g>
-           );
-         })}
+	const improvementBars = improvements
+		.filter((i) => i.scoreDelta !== null)
+		.sort((a, b) => a.createdAt - b.createdAt)
+		.slice(-12);
+	const acceptedAttempts = improvements.filter((i) => (i.scoreDelta ?? -Infinity) >= 0).length;
+	const rejectedAttempts = improvements.filter((i) => (i.scoreDelta ?? 0) < 0).length;
 
-         {[benchmarkLine, evolutionLine].filter(Boolean).map((line) => {
-           if (!line) return null;
-           const d = line.points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
-           return (
-             <g key={line.label}>
-               <path d={d} fill="none" stroke={line.color} strokeWidth={0.8} opacity={0.6} />
-               {line.points.map((p, i) => (
-                 <circle key={i} cx={p.x} cy={p.y} r={1.2} fill={line.color}>
-                   <title>{line.label}: {p.score.toFixed(1)} on {p.date}</title>
-                 </circle>
-               ))}
-             </g>
-           );
-         })}
-       </svg>
+	return (
+		<div>
+			<div className="mb-4 grid gap-3 sm:grid-cols-4">
+				<MetricTile label="Latest benchmark" value={latestBenchmark ? latestBenchmark.score.toFixed(1) : "none"} />
+				<MetricTile label="Latest evolution" value={latestEvolution ? latestEvolution.bestScore.toFixed(1) : "none"} />
+				<MetricTile label="Active policies" value={`${activePolicies}/${policies.length}`} />
+				<MetricTile label="Attempts" value={`${acceptedAttempts} kept / ${rejectedAttempts} rejected`} />
+			</div>
 
-       <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
-         {benchmarkLine && (
-           <div className="flex items-center gap-1.5">
-             <span className="inline-block h-1.5 w-4 rounded-full" style={{ background: benchmarkLine.color }} />
-             <span className="text-muted-foreground">Benchmark scores</span>
-           </div>
-         )}
-         {evolutionLine && (
-           <div className="flex items-center gap-1.5">
-             <span className="inline-block h-1.5 w-4 rounded-full" style={{ background: evolutionLine.color }} />
-             <span className="text-muted-foreground">Evolved policy scores</span>
-           </div>
-         )}
-       </div>
-     </div>
+			<div className="mb-4">
+				{allScores.length === 0 ? (
+					<EmptyState message="Policy records exist, but no benchmark scores have been recorded yet." />
+				) : (
+					<svg width="100%" viewBox={`0 0 100 ${height}`} preserveAspectRatio="none" style={{ height }}>
+						{[0, 25, 50, 75, 100].map((tick) => {
+							const y = chartBottom - (tick / maxScore) * (chartBottom - chartTop);
+							return (
+								<g key={tick}>
+									<line x1={leftPad} y1={y} x2={100 - rightPad} y2={y} stroke="currentColor" strokeOpacity={0.08} />
+									<text x={leftPad - 1.5} y={y + 3} fontSize={5} fill="currentColor" opacity={0.45} textAnchor="end">
+										{tick}
+									</text>
+								</g>
+							);
+						})}
 
-     {improvementBars.length > 0 && (
-       <div>
-         <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Recent improvements</div>
-         <div className="flex gap-1">
-           {improvementBars.map((bar, i) => {
-             const delta = bar.scoreDelta ?? 0;
-             const positive = delta >= 0;
-             return (
-               <div key={i} className="flex-1">
-                 <div
-                   className={`rounded-sm ${positive ? "bg-emerald-500" : "bg-destructive"} transition-all`}
-                   style={{ height: `${Math.min(Math.abs(delta) * 40 + 4, 40)}px`, opacity: 0.75 }}
-                   title={`Δ${delta >= 0 ? "+" : ""}${delta.toFixed(2)} on ${fmtDate(bar.createdAt)}`}
-                 />
-               </div>
-             );
-           })}
-         </div>
-         <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
-           <span>{improvementBars.length} latest</span>
-           <span>{policies.filter((p) => p.active).length} active policy{policies.filter((p) => p.active).length === 1 ? "" : "ies"} · {policies.length} total</span>
-         </div>
-       </div>
-     )}
-   </div>
- );
+						{[benchmarkLine, evolutionLine].filter(Boolean).map((line) => {
+							if (!line) return null;
+							const d = line.points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+							return (
+								<g key={line.label}>
+									<path d={d} fill="none" stroke={line.color} strokeWidth={0.8} opacity={0.7} />
+									{line.points.map((p, i) => (
+										<circle key={i} cx={p.x} cy={p.y} r={1.2} fill={line.color}>
+											<title>{line.label}: {p.score.toFixed(1)} on {p.date}</title>
+										</circle>
+									))}
+								</g>
+							);
+						})}
+					</svg>
+				)}
+
+				<div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
+					{benchmarkLine && (
+						<div className="flex items-center gap-1.5">
+							<span className="inline-block h-1.5 w-4 rounded-full" style={{ background: benchmarkLine.color }} />
+							<span className="text-muted-foreground">Benchmark scores</span>
+						</div>
+					)}
+					{evolutionLine && (
+						<div className="flex items-center gap-1.5">
+							<span className="inline-block h-1.5 w-4 rounded-full" style={{ background: evolutionLine.color }} />
+							<span className="text-muted-foreground">Evolved policy scores</span>
+						</div>
+					)}
+				</div>
+			</div>
+
+			{improvementBars.length > 0 && (
+				<div>
+					<div className="text-xs font-semibold uppercase text-muted-foreground mb-2">Recent improvements</div>
+					<div className="flex h-12 items-end gap-1">
+						{improvementBars.map((bar, i) => {
+							const delta = bar.scoreDelta ?? 0;
+							const positive = delta >= 0;
+							return (
+								<div key={i} className="flex-1">
+									<div
+										className={`rounded-sm ${positive ? "bg-emerald-500" : "bg-destructive"} transition-all`}
+										style={{ height: `${Math.min(Math.abs(delta) * 40 + 4, 40)}px`, opacity: 0.75 }}
+										title={`Delta ${delta >= 0 ? "+" : ""}${delta.toFixed(2)} on ${fmtDate(bar.createdAt)}`}
+									/>
+								</div>
+							);
+						})}
+					</div>
+					<div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
+						<span>{improvementBars.length} latest</span>
+						<span>{activePolicies} active policy{activePolicies === 1 ? "" : "ies"} / {policies.length} total</span>
+					</div>
+				</div>
+			)}
+		</div>
+	);
+}
+
+function MetricTile({ label, value }: { label: string; value: string }) {
+	return (
+		<div className="rounded-md border border-border bg-muted/20 px-3 py-2">
+			<div className="text-[11px] font-medium uppercase text-muted-foreground">{label}</div>
+			<div className="mt-1 text-lg font-semibold">{value}</div>
+		</div>
+	);
 }
 
 function EmptyState({ message }: { message: string }) {
@@ -709,7 +787,7 @@ function ComingUpPanel({
 	return (
 		<div className="grid gap-4 md:grid-cols-3">
 			<div>
-				<div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Open checklists</div>
+				<div className="text-xs font-semibold uppercase text-muted-foreground">Open checklists</div>
 				{openChecklists.length === 0 ? (
 					<div className="mt-2 text-sm text-muted-foreground">All caught up.</div>
 				) : (
@@ -726,7 +804,7 @@ function ComingUpPanel({
 				)}
 			</div>
 			<div>
-				<div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Weak spots</div>
+				<div className="text-xs font-semibold uppercase text-muted-foreground">Weak spots</div>
 				{weaknesses.length === 0 ? (
 					<div className="mt-2 text-sm text-muted-foreground">None flagged.</div>
 				) : (
@@ -740,7 +818,7 @@ function ComingUpPanel({
 				)}
 			</div>
 			<div>
-				<div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Strengths</div>
+				<div className="text-xs font-semibold uppercase text-muted-foreground">Strengths</div>
 				{strengths.length === 0 ? (
 					<div className="mt-2 text-sm text-muted-foreground">Building.</div>
 				) : (

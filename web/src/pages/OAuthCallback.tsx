@@ -1,37 +1,11 @@
 import { useEffect, useState } from "react";
-import { handleOAuthCallback, type OAuthCallbackResult } from "../keating/oauth";
+import { completeOAuthFromInput, type OAuthCallbackResult } from "../keating/oauth";
 
 export function OAuthCallback() {
 	const [result, setResult] = useState<OAuthCallbackResult | null>(null);
 
 	useEffect(() => {
-		const params = new URLSearchParams(window.location.search);
-		const code = params.get("code");
-		const state = params.get("state");
-		const error = params.get("error");
-		const errorDescription = params.get("error_description");
-
-		if (error) {
-			const r: OAuthCallbackResult = {
-				success: false,
-				error: errorDescription ?? error,
-			};
-			setResult(r);
-			notifyOpener(r);
-			return;
-		}
-
-		if (!code) {
-			const r: OAuthCallbackResult = {
-				success: false,
-				error: "No authorization code received.",
-			};
-			setResult(r);
-			notifyOpener(r);
-			return;
-		}
-
-		handleOAuthCallback(code, state).then((r) => {
+		completeOAuthFromInput(window.location.href).then((r) => {
 			setResult(r);
 			notifyOpener(r);
 		});

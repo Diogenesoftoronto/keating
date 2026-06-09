@@ -42,6 +42,12 @@ test("keating finetune export writes manifest and both JSONL formats", async () 
   expect(await exists(join(result.outDir, "train.alpaca.jsonl"))).toBe(true);
   expect(await exists(join(result.outDir, "unsloth_train.py"))).toBe(true);
   expect(await exists(join(result.outDir, "runpod", "start.sh"))).toBe(true);
+  await expect(readFile(join(result.outDir, "unsloth_train.py"), "utf8")).resolves.toBe(
+    await readFile("src/core/templates/finetune/unsloth_train.py", "utf8")
+  );
+  await expect(readFile(join(result.outDir, "runpod", "start.sh"), "utf8")).resolves.toBe(
+    await readFile("src/core/templates/finetune/runpod/start.sh", "utf8")
+  );
 
   const chatml = await readFile(join(result.outDir, "train.chatml.jsonl"), "utf8");
   const first = JSON.parse(chatml.trim().split("\n")[0]);

@@ -5,6 +5,7 @@ import {
   benchmarksDir,
   evolutionDir,
   exportsDir,
+  improvementsDir,
   mapsDir,
   plansDir,
   promptEvolutionDir,
@@ -82,6 +83,12 @@ const SECRET_PATTERNS: RegExp[] = [
   /^[A-Z][A-Z0-9_]*_API_KEY\s*=\s*.+$/gm,
   /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi,
 ];
+
+const FINETUNE_TEMPLATE_DIR = new URL("./templates/finetune/", import.meta.url);
+
+async function readFineTuneTemplate(path: string): Promise<string> {
+  return readFile(new URL(path, FINETUNE_TEMPLATE_DIR), "utf8");
+}
 
 function normalizeOptions(options: KeatingExportOptions): KeatingExportOptions {
   return {
@@ -256,7 +263,7 @@ async function buildArtifactExamples(cwd: string, options: KeatingExportOptions)
     }
   }
 
-  for (const root of [benchmarksDir(cwd), evolutionDir(cwd), promptEvolutionDir(cwd), tracesDir(cwd)]) {
+  for (const root of [benchmarksDir(cwd), evolutionDir(cwd), promptEvolutionDir(cwd), improvementsDir(cwd), tracesDir(cwd)]) {
     for (const file of await collectFiles(root)) {
       const info = await stat(file).catch(() => null);
       if (!info || info.size > 512_000) continue;
@@ -327,107 +334,6 @@ function timestampSlug(date = new Date()): string {
   return date.toISOString().replace(/[:.]/g, "-");
 }
 
-function requirementsText(): string {
-  return [
-    "unsloth",
-    "transformers",
-    "datasets",
-    "trl",
-    "accelerate",
-    "bitsandbytes",
-    "peft",
-    "",
-  ].join("\n");
-}
-
-function unslothTrainScript(): string {
-  return `#!/usr/bin/env python3
-import argparse
-from datasets import load_dataset
-from trl import SFTTrainer, SFTConfig
-from unsloth import FastLanguageModel
-
-parser = argparse.ArgumentParser(description="Fine-tune a model on Keating export data with Unsloth.")
-parser.add_argument("--data", default="train.chatml.jsonl")
-parser.add_argument("--model", default="unsloth/gemma-3-4b-it")
-parser.add_argument("--out", default="keating-lora")
-parser.add_argument("--max-seq-length", type=int, default=4096)
-parser.add_argument("--epochs", type=float, default=1)
-args = parser.parse_args()
-
-model, tokenizer = FastLanguageModel.from_pretrained(
-    model_name=args.model,
-    max_seq_length=args.max_seq_length,
-    load_in_4bit=True,
-)
-
-model = FastLanguageModel.get_peft_model(
-    model,
-    r=16,
-    target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
-    lora_alpha=16,
-    lora_dropout=0,
-    bias="none",
-)
-
-dataset = load_dataset("json", data_files=args.data, split="train")
-
-def render(example):
-    if "messages" in example:
-        return {"text": tokenizer.apply_chat_template(example["messages"], tokenize=False)}
-    instruction = example.get("instruction", "")
-    input_text = example.get("input", "")
-    output = example.get("output", "")
-    prompt = f"### Instruction:\\n{instruction}\\n\\n### Input:\\n{input_text}\\n\\n### Response:\\n{output}"
-    return {"text": prompt}
-
-dataset = dataset.map(render, remove_columns=dataset.column_names)
-
-trainer = SFTTrainer(
-    model=model,
-    tokenizer=tokenizer,
-    train_dataset=dataset,
-    args=SFTConfig(
-        output_dir=args.out,
-        per_device_train_batch_size=2,
-        gradient_accumulation_steps=4,
-        num_train_epochs=args.epochs,
-        learning_rate=2e-4,
-        logging_steps=10,
-        max_seq_length=args.max_seq_length,
-    ),
-)
-trainer.train()
-model.save_pretrained(args.out)
-tokenizer.save_pretrained(args.out)
-`;
-}
-
-function runpodReadme(): string {
-  return `# Keating Fine-Tune Export on RunPod
-
-1. Create a RunPod GPU pod with a CUDA/PyTorch image.
-2. Upload this export directory to the pod.
-3. Run:
-
-\`\`\`bash
-pip install -r requirements.txt
-python unsloth_train.py --data train.chatml.jsonl --out keating-lora
-\`\`\`
-
-Use \`train.alpaca.jsonl\` if you exported Alpaca format only. Tune batch size, sequence length, and base model for your GPU memory.
-`;
-}
-
-function runpodStartScript(): string {
-  return `#!/usr/bin/env bash
-set -euo pipefail
-cd "$(dirname "$0")/.."
-pip install -r requirements.txt
-python unsloth_train.py --data train.chatml.jsonl --out keating-lora
-`;
-}
-
 export async function exportFineTuneDataset(
   cwd: string,
   inputOptions: KeatingExportOptions
@@ -457,6 +363,18 @@ export async function exportFineTuneDataset(
     throw new Error("No fine-tuning examples found. Run keating plan, quiz, verify, or use Keating chat sessions first.");
   }
 
+  const [
+    requirementsText,
+    unslothTrainScript,
+    runpodReadme,
+    runpodStartScript,
+  ] = await Promise.all([
+    readFineTuneTemplate("requirements.txt"),
+    readFineTuneTemplate("unsloth_train.py"),
+    readFineTuneTemplate("runpod/README.md"),
+    readFineTuneTemplate("runpod/start.sh"),
+  ]);
+
   const files: string[] = [];
   if (options.format === "chatml" || options.format === "both") {
     const path = join(outDir, "train.chatml.jsonl");
@@ -474,19 +392,19 @@ export async function exportFineTuneDataset(
   files.push(relative(cwd, corpusPath));
 
   const requirementsPath = join(outDir, "requirements.txt");
-  await writeFile(requirementsPath, requirementsText(), "utf8");
+  await writeFile(requirementsPath, requirementsText, "utf8");
   files.push(relative(cwd, requirementsPath));
 
   const trainPath = join(outDir, "unsloth_train.py");
-  await writeFile(trainPath, unslothTrainScript(), "utf8");
+  await writeFile(trainPath, unslothTrainScript, "utf8");
   files.push(relative(cwd, trainPath));
 
   const runpodReadmePath = join(outDir, "runpod", "README.md");
-  await writeFile(runpodReadmePath, runpodReadme(), "utf8");
+  await writeFile(runpodReadmePath, runpodReadme, "utf8");
   files.push(relative(cwd, runpodReadmePath));
 
   const runpodStartPath = join(outDir, "runpod", "start.sh");
-  await writeFile(runpodStartPath, runpodStartScript(), "utf8");
+  await writeFile(runpodStartPath, runpodStartScript, "utf8");
   files.push(relative(cwd, runpodStartPath));
 
   const manifest: KeatingExportManifest = {

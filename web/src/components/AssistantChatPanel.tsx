@@ -68,6 +68,9 @@ import {
 import { getProviderApiKey } from "../lib/provider-models";
 import { tutorialApiKeyHref } from "../lib/tutorial-links";
 import { QuizRenderer } from "./QuizRenderer";
+import type { QuizResult } from "./QuizRenderer";
+import { QuizSessionPanel } from "./QuizSessionPanel";
+import { QuizResultCard } from "./QuizResultCard";
 import { SceneRenderer } from "./SceneRenderer";
 import { QuestionRenderer, normalizeQuestionForm } from "./QuestionRenderer";
 import type { AnsweredQuestion, QuestionFormData } from "./QuestionRenderer";
@@ -75,6 +78,7 @@ import { GoalRenderer } from "./GoalRenderer";
 import { normalizeGoal } from "../keating/goals";
 import type { Quiz } from "../keating/core";
 import { KEATING_VOICE_TOOL_NAME } from "../keating/speech";
+import { JsonCrackBlock } from "./JsonCrackBlock";
 
 const AuthErrorContext = createContext<(provider: string) => Promise<boolean>>(
   () => Promise.resolve(false),
@@ -713,7 +717,8 @@ const sceneTagPattern = /<keating-scene\s+markdown=([^>]+)\s*\/>/g;
 const questionTagPattern = /<keating-question\s+json=([^>]+)\s*\/>/g;
 const goalTagPattern = /<keating-goal\s+json=([^>]+)\s*\/>/g;
 const generatedImageTagPattern = /<keating-image\s+json=([^>]+)\s*\/>/g;
-const interactiveTagPattern = /<keating-(quiz|scene|question|goal|image)\s+(json|markdown)=([^>]+)\s*\/>/g;
+const quizResultTagPattern = /<keating-quiz-result\s+json=([^>]+)\s*\/>/g;
+const interactiveTagPattern = /<keating-(quiz|scene|question|goal|image|quiz-result)\s+(json|markdown)=([^>]+)\s*\/>/g;
 const URL_IN_TEXT_PATTERN = /\bhttps?:\/\/[^\s<>"')\]]+/i;
 
 function parseInteractiveSegments(
@@ -722,9 +727,10 @@ function parseInteractiveSegments(
   | { type: "text"; content: string }
   | { type: "quiz"; json: string }
   | { type: "scene"; markdown: string }
- | { type: "question"; json: string }
+  | { type: "question"; json: string }
   | { type: "goal"; json: string }
   | { type: "image"; json: string }
+  | { type: "quiz-result"; json: string }
 > {
   const segments: ReturnType<typeof parseInteractiveSegments> = [];
   let lastIndex = 0;
@@ -738,6 +744,7 @@ function parseInteractiveSegments(
     const tag = match[1];
     const payload = match[3];
     if (tag === "quiz") segments.push({ type: "quiz", json: payload });
+    if (tag === "quiz-result") segments.push({ type: "quiz-result", json: payload });
     if (tag === "scene") {
       let markdown = payload;
       try {
@@ -764,6 +771,14 @@ function stripQuestionTags(text: string): string {
   return text.replace(questionTagPattern, "").trim();
 }
 
+function stripQuizTags(text: string): string {
+  let result = text;
+  for (const _match of text.matchAll(quizTagPattern)) {
+    result = result.replace(_match[0], "");
+  }
+  return result.trim();
+}
+
 function stripGoalTags(text: string): string {
   return text.replace(goalTagPattern, "").trim();
 }
@@ -772,9 +787,21 @@ function stripGeneratedImageTags(text: string): string {
   return text.replace(generatedImageTagPattern, "").trim();
 }
 
+function extractLatestTagPayload(text: string, pattern: RegExp, captureIndex = 1): string | null {
+  pattern.lastIndex = 0;
+  let latest: string | null = null;
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(text)) !== null) {
+    const capture = match[captureIndex];
+    if (typeof capture === "string") latest = capture;
+    if (match[0] === "") pattern.lastIndex += 1;
+  }
+  pattern.lastIndex = 0;
+  return latest;
+}
+
 function extractQuestionPayload(text: string): string | null {
-  const matches = Array.from(text.matchAll(questionTagPattern));
-  return matches.length > 0 ? matches[matches.length - 1][1] : null;
+  return extractLatestTagPayload(text, questionTagPattern);
 }
 
 function parseQuestionPayload(payload: string): QuestionFormData | null {
@@ -816,6 +843,52 @@ function extractActiveQuestion(messages: AgentMessage[]): QuestionFormData | nul
           if (payload) {
             const form = parseQuestionPayload(payload);
             if (form) return form;
+          }
+        }
+      }
+    }
+  }
+  return null;
+}
+
+/** Scan messages backward and return the most recent un-submitted quiz payload. */
+function extractActiveQuiz(messages: AgentMessage[]): Quiz | null {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i] as any;
+    if (msg.role === "user") return null;
+    if (msg.role !== "assistant") continue;
+    if (!Array.isArray(msg.content)) continue;
+    for (const part of msg.content) {
+      if (part?.type === "text" && typeof part.text === "string") {
+        const payload = extractLatestTagPayload(part.text, quizTagPattern);
+        if (payload) {
+          try {
+            const parsed = JSON.parse(JSON.parse(payload)) as Quiz;
+            if (parsed && parsed.questions?.length > 0) return parsed;
+          } catch {
+            // ignore unparseable
+          }
+        }
+      }
+      if (part?.type === "toolCall" && part.__toolResult !== undefined) {
+        let toolText = "";
+        if (typeof part.__toolResult === "string") {
+          toolText = part.__toolResult;
+        } else if (Array.isArray(part.__toolResult)) {
+          toolText = part.__toolResult
+            .map((p: any) => (p?.type === "text" && typeof p.text === "string" ? p.text : ""))
+            .filter(Boolean)
+            .join("\n");
+        }
+        if (toolText) {
+          const payload = extractLatestTagPayload(toolText, quizTagPattern);
+          if (payload) {
+            try {
+              const parsed = JSON.parse(JSON.parse(payload)) as Quiz;
+              if (parsed && parsed.questions?.length > 0) return parsed;
+            } catch {
+              // ignore unparseable
+            }
           }
         }
       }
@@ -871,6 +944,27 @@ function renderInteractiveSegment(
       return null;
     }
   }
+  if (seg.type === "quiz-result") {
+    try {
+      const data = JSON.parse(JSON.parse(seg.json)) as {
+        id: string;
+        timestamp: number;
+        quiz: Quiz;
+        result: QuizResult;
+      };
+      return (
+        <QuizResultCard
+          key={key}
+          data={data}
+          onReview={() => {
+            // Review logic can be wired later
+          }}
+        />
+      );
+    } catch {
+      return null;
+    }
+  }
   if (seg.type === "scene") {
     return <SceneRenderer key={key} storyboard={seg.markdown} />;
   }
@@ -912,7 +1006,7 @@ function renderInteractiveSegment(
 function extractInteractiveCards(text: string): ReactNode[] {
   const cards: ReactNode[] = [];
   parseInteractiveSegments(text).forEach((seg, i) => {
-    if (seg.type === "question") return;
+    if (seg.type === "question" || seg.type === "quiz") return;
     const card = renderInteractiveSegment(seg, `card-${i}`);
     if (card !== null) cards.push(card);
   });
@@ -1007,9 +1101,9 @@ function MarkdownText({
   isRunning?: boolean;
 }) {
   const displayText = stripArtifactLinks(text);
-  const copyText = stripGeneratedImageTags(stripQuestionTags(stripGoalTags(displayText)));
+  const copyText = stripQuizTags(stripGeneratedImageTags(stripQuestionTags(stripGoalTags(displayText))));
   const segments = parseInteractiveSegments(displayText).filter(
-    (s) => s.type !== "question",
+    (s) => s.type !== "question" && s.type !== "quiz",
   );
   return (
     <div className="group/text-block relative break-words text-sm leading-6">
@@ -1273,9 +1367,7 @@ function ToolPart({
             </span>
             <CopyButton text={JSON.stringify(args, null, 2)} label="Copy" />
           </summary>
-          <pre className="mt-2 overflow-x-auto whitespace-pre-wrap text-muted-foreground">
-            {JSON.stringify(args, null, 2)}
-          </pre>
+          <JsonCrackBlock value={args} maxHeight="16rem" title="Arguments" />
         </details>
       ) : null}
       {state === "error" && classifiedError ? (
@@ -1288,12 +1380,18 @@ function ToolPart({
         </div>
       ) : showDetails && resultText ? (
         <div className="mt-2 text-foreground">
-          <div className="mb-1 flex justify-end">
-            <CopyButton text={resultText} label="Copy output" />
-          </div>
-          <pre className="max-h-44 overflow-auto whitespace-pre-wrap font-mono leading-5">
-            {resultText}
-          </pre>
+          {typeof result === "object" && result !== null ? (
+            <JsonCrackBlock value={result} maxHeight="16rem" title="Result" />
+          ) : (
+            <>
+              <div className="mb-1 flex justify-end">
+                <CopyButton text={resultText} label="Copy output" />
+              </div>
+              <pre className="max-h-44 overflow-auto whitespace-pre-wrap font-mono leading-5">
+                {resultText}
+              </pre>
+            </>
+          )}
         </div>
       ) : null}
     </div>
@@ -2128,6 +2226,10 @@ function AssistantThread({
     () => extractActiveQuestion(messages),
     [messages],
   );
+  const activeQuiz = useMemo(
+    () => extractActiveQuiz(messages),
+    [messages],
+  );
   const components = useMemo(
     () =>
       messagePartComponents(uiSettings.showToolUi, uiSettings.showRawErrors),
@@ -2254,9 +2356,10 @@ function AssistantThread({
   useEffect(() => {
     const handler = (event: Event) => {
       const detail = (event as CustomEvent).detail as
-        | {
-            topic?: string;
-            total?: number;
+	        | {
+	            quizId?: string;
+	            topic?: string;
+	            total?: number;
             score?: number;
             weightedScore?: number;
             confidence?: Record<string, number>;
@@ -2309,9 +2412,28 @@ function AssistantThread({
         lines.push(`Low confidence on: ${lowConfidence.join("; ")}.`);
       }
       lines.push("Please review my answers and timing, then guide what to work on next.");
+      const resultPayload = {
+        id: `${detail.quizId ?? "quiz"}-${Date.now()}`,
+        timestamp: Date.now(),
+        quiz: {
+          slug: detail.quizId ?? "",
+          topic: detail.topic ?? "",
+          questions: detail.questions ?? [],
+        },
+        result: {
+          answers: detail.answers ?? {},
+          score: detail.score ?? 0,
+          weightedScore: detail.weightedScore ?? 0,
+          timing: detail.timing ?? { totalMs: 0, perQuestionMs: {} },
+          confidence: detail.confidence ?? {},
+          partialCredits: detail.partialCredits ?? {},
+          flagged: detail.flagged ?? [],
+        },
+      };
+      const tag = `<keating-quiz-result json=${JSON.stringify(JSON.stringify(resultPayload))} />`;
       void onNew({
         role: "user",
-        content: [{ type: "text", text: lines.join("\n") }],
+        content: [{ type: "text", text: lines.join("\n") + "\n\n" + tag }],
       } as unknown as AppendMessage);
     };
     window.addEventListener("keating:quiz-submitted", handler);
@@ -2449,6 +2571,41 @@ function AssistantThread({
               <ThreadPrimitive.Messages components={threadComponents} />
             </div>
             <ThreadPrimitive.ViewportFooter className="sticky bottom-0 min-w-0 bg-background/95 pt-3 backdrop-blur">
+              {activeQuiz && (
+                <div className="mx-auto mb-2 w-[calc(100%-6px)] max-w-3xl sm:w-full">
+                  <QuizSessionPanel
+                    quiz={activeQuiz}
+                    onSubmit={(result) => {
+                      window.dispatchEvent(
+                        new CustomEvent("keating:quiz-submitted", {
+                          detail: {
+                            quizId: activeQuiz.slug,
+                            topic: activeQuiz.topic,
+                            total: activeQuiz.questions.length,
+                            questions: activeQuiz.questions.map((q) => ({
+                              id: q.id,
+                              question: q.question,
+                              correctAnswer: q.correctAnswer,
+                              type: q.type,
+                            })),
+                            answers: result.answers,
+                            score: result.score,
+                            weightedScore: result.weightedScore,
+                            confidence: result.confidence,
+                            partialCredits: result.partialCredits,
+                            flagged: result.flagged,
+                            timing: result.timing,
+                          },
+                        }),
+                      );
+                    }}
+                    onDismiss={() => {
+                      // Dismiss just hides the active quiz panel; quiz remains
+                      // visible in chat thread as a result card if completed.
+                    }}
+                  />
+                </div>
+              )}
               {activeQuestion && (
                 <div className="mx-auto mb-2 w-[calc(100%-6px)] max-w-3xl sm:w-full">
                   <QuestionRenderer
@@ -2638,7 +2795,7 @@ function AssistantMessage({
   onFork,
 }: {
   components: ReturnType<typeof messagePartComponents>;
-  onFork?: () => void | Promise<void>;
+  onFork?: (forkPoint?: number) => void | Promise<void>;
 }) {
   const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
@@ -2648,6 +2805,13 @@ function AssistantMessage({
     (message) =>
       message.metadata.custom?.keatingAuthError as AuthErrorEntry | undefined,
   );
+  // The message id is `assistant-${index}-${timestamp}` (see toAssistantMessage).
+  // The trailing timestamp is the stable handle we use to fork at this turn.
+  const messageId = useMessage((message) => message.id);
+  const handleFork = () => {
+    const ts = Number(messageId.slice(messageId.lastIndexOf("-") + 1));
+    onFork?.(Number.isFinite(ts) ? ts : undefined);
+  };
   const [retrying, setRetrying] = useState(false);
 
   const handleFeedbackClick = (type: "up" | "down") => {
@@ -2760,9 +2924,9 @@ function AssistantMessage({
                 <button
                   type="button"
                   className="inline-flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-all opacity-0 group-hover:opacity-100"
-                  title="Fork session"
-                  onClick={onFork}
-                  aria-label="Fork session"
+                  title="Fork session from here"
+                  onClick={handleFork}
+                  aria-label="Fork session from here"
                 >
                   <CopyPlus size={13} />
                 </button>

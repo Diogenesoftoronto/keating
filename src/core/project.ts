@@ -1,4 +1,4 @@
-import { readdir, readFile, stat, writeFile } from "node:fs/promises";
+import { copyFile, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 
 import { loadKeatingConfig } from "./config.js";
@@ -25,6 +25,7 @@ import {
   engagementPolicyPath,
   evolutionDir,
   exportsDir,
+  improvementsDir,
   mapsDir,
   plansDir,
   policyArchivePath,
@@ -131,6 +132,55 @@ async function writeArtifactWithTrace(
   return { reportPath, tracePath };
 }
 
+async function syncPolicyArchive(
+  cwd: string,
+  archive: {
+    currentPolicy: unknown;
+    bestScore: number;
+    candidates: unknown[];
+  }
+): Promise<void> {
+  let previousCandidates: unknown[] = [];
+  try {
+    const previous = JSON.parse(await readFile(policyArchivePath(cwd), "utf8")) as { candidates?: unknown[] };
+    previousCandidates = Array.isArray(previous.candidates) ? previous.candidates : [];
+  } catch {
+    previousCandidates = [];
+  }
+
+  await writeFile(
+    policyArchivePath(cwd),
+    `${JSON.stringify({ ...archive, candidates: [...previousCandidates, ...archive.candidates] }, null, 2)}\n`,
+    "utf8"
+  );
+}
+
+async function readOptionalFile(filePath: string): Promise<string | null> {
+  try {
+    return await readFile(filePath, "utf8");
+  } catch {
+    return null;
+  }
+}
+
+async function snapshotFile(sourcePath: string | null, targetPath: string): Promise<string | null> {
+  if (!sourcePath) return null;
+  try {
+    await copyFile(sourcePath, targetPath);
+    return targetPath;
+  } catch {
+    return null;
+  }
+}
+
+async function restoreOptionalSnapshot(filePath: string, snapshot: string | null): Promise<void> {
+  if (snapshot === null) {
+    await rm(filePath, { force: true });
+    return;
+  }
+  await writeFile(filePath, snapshot, "utf8");
+}
+
 export async function benchPolicyArtifact(
   cwd: string,
   focusTopic?: string
@@ -172,6 +222,7 @@ export async function evolvePolicyArtifact(
   const meRun = await mapElitesEvolve(cwd, basePolicy, { focusTopic });
   const run = mapElitesToEvolutionRun(meRun);
   await savePolicy(policyPath, run.best.policy);
+  await syncPolicyArchive(cwd, run.archive);
   const slug = focusTopic ? slugify(focusTopic) : "latest";
   const { reportPath, tracePath } = await writeArtifactWithTrace(
     cwd, evolutionDir(cwd), slug, mapElitesToMarkdown(meRun), "evolution", run
@@ -182,7 +233,7 @@ export async function evolvePolicyArtifact(
 export async function evolvePromptArtifact(
   cwd: string,
   promptName = "learn"
-): Promise<{ reportPath: string; evolvedPromptPath: string; bestScore: number; promptPath: string }> {
+): Promise<{ reportPath: string; evolvedPromptPath: string; bestScore: number; promptPath: string; accepted: boolean }> {
   await ensureProjectScaffold(cwd);
   return writePromptEvolutionArtifacts(cwd, promptName);
 }
@@ -294,27 +345,112 @@ export async function autoImproveArtifact(
   cwd: string,
   focusTopic?: string,
   options: { force?: boolean } = {}
-): Promise<{ baselineScore: number; afterScore: number; delta: number; reportPath: string }> {
+): Promise<{
+  baselineScore: number;
+  afterScore: number;
+  delta: number;
+  reportPath: string;
+  observabilityPath: string;
+  diagramPath: string;
+}> {
   await ensureProjectScaffold(cwd);
   const state = await loadAutoImproveState(cwd);
   assertAutoImproveAllowed(state, options.force === true);
   const policyPath = currentPolicyPath(cwd);
   const previousPolicy = await loadPolicy(policyPath);
+  const autoSlug = focusTopic ? `${slugify(focusTopic)}-auto-improve` : "auto-improve";
+  const evolvedPromptPath = join(promptEvolutionDir(cwd), "learn.evolved.md");
+  const previousPrompt = await readOptionalFile(evolvedPromptPath);
 
   const baseline = await benchPolicyArtifact(cwd, focusTopic);
+  const baselineReportPath = await snapshotFile(
+    baseline.reportPath,
+    join(benchmarksDir(cwd), `${autoSlug}-baseline.md`)
+  ) ?? baseline.reportPath;
+  const baselineTracePath = await snapshotFile(
+    baseline.tracePath,
+    join(tracesDir(cwd), `${autoSlug}-baseline-benchmark.json`)
+  );
 
   const evolved = await evolvePolicyArtifact(cwd, focusTopic);
 
   const promptEvo = await evolvePromptArtifact(cwd, "learn");
 
   const after = await benchPolicyArtifact(cwd, focusTopic);
+  const afterReportPath = await snapshotFile(
+    after.reportPath,
+    join(benchmarksDir(cwd), `${autoSlug}-after.md`)
+  ) ?? after.reportPath;
+  const afterTracePath = await snapshotFile(
+    after.tracePath,
+    join(tracesDir(cwd), `${autoSlug}-after-benchmark.json`)
+  );
 
   const delta = after.overallScore - baseline.overallScore;
   const rolledBack = delta < -0.5;
   if (rolledBack) {
     await savePolicy(policyPath, previousPolicy);
+    await restoreOptionalSnapshot(evolvedPromptPath, previousPrompt);
   }
   await saveAutoImproveState(cwd, { lastRunAt: new Date().toISOString() });
+
+  const reportPath = join(benchmarksDir(cwd), `${autoSlug}.md`);
+  const observabilityPath = join(evolutionDir(cwd), `${autoSlug}.json`);
+  const diagramPath = join(evolutionDir(cwd), `${autoSlug}.mmd`);
+  const rel = (path: string | null) => path ? relative(cwd, path) : null;
+  const verdict = delta > 0 ? "IMPROVED" : rolledBack ? "REGRESSED_ROLLED_BACK" : "NO_SIGNIFICANT_CHANGE";
+  const observability = {
+    schemaVersion: 1,
+    generatedAt: new Date().toISOString(),
+    focusTopic: focusTopic ?? null,
+    verdict,
+    scores: {
+      baseline: baseline.overallScore,
+      after: after.overallScore,
+      delta
+    },
+    rollback: {
+      triggered: rolledBack,
+      threshold: -0.5,
+      policy: rolledBack,
+      prompt: rolledBack
+    },
+    policy: {
+      before: previousPolicy.name,
+      candidate: evolved.bestScore,
+      path: rel(policyPath),
+      evolutionReport: rel(evolved.reportPath),
+      evolutionTrace: rel(evolved.tracePath)
+    },
+    prompt: {
+      name: "learn",
+      accepted: promptEvo.accepted,
+      report: rel(promptEvo.reportPath),
+      evolvedPrompt: rel(promptEvo.evolvedPromptPath),
+      hadPriorSnapshot: previousPrompt !== null
+    },
+    artifacts: {
+      report: rel(reportPath),
+      diagram: rel(diagramPath),
+      baselineBenchmark: rel(baselineReportPath),
+      baselineTrace: rel(baselineTracePath),
+      afterBenchmark: rel(afterReportPath),
+      afterTrace: rel(afterTracePath)
+    }
+  };
+
+  const diagram = [
+    "flowchart TD",
+    `  A["Baseline benchmark<br/>${baseline.overallScore.toFixed(2)}/100"]`,
+    `  B["MAP-Elites policy evolution<br/>best ${evolved.bestScore.toFixed(2)}/100"]`,
+    `  C["Prompt evolution<br/>${promptEvo.accepted ? "accepted" : "unchanged"}"]`,
+    `  D["Post-change benchmark<br/>${after.overallScore.toFixed(2)}/100"]`,
+    `  E{"Delta ${delta >= 0 ? "+" : ""}${delta.toFixed(2)}"}`,
+    `  F["Keep current artifacts"]`,
+    `  G["Rollback policy and prompt"]`,
+    "  A --> B --> C --> D --> E",
+    `  E -->|${rolledBack ? "regressed" : "not regressed"}| ${rolledBack ? "G" : "F"}`
+  ].join("\n");
 
   const report = [
     `# Auto-Improve Report`,
@@ -322,25 +458,36 @@ export async function autoImproveArtifact(
     `**Baseline:** ${baseline.overallScore.toFixed(2)}/100`,
     `**After:** ${after.overallScore.toFixed(2)}/100`,
     `**Delta:** ${delta >= 0 ? "+" : ""}${delta.toFixed(2)}`,
-    `**Verdict:** ${delta > 0 ? "IMPROVED" : rolledBack ? "REGRESSED (policy rolled back)" : "NO SIGNIFICANT CHANGE"}`,
+    `**Verdict:** ${delta > 0 ? "IMPROVED" : rolledBack ? "REGRESSED (policy and prompt rolled back)" : "NO SIGNIFICANT CHANGE"}`,
     ``,
     `## Benchmark`,
-    `- Report: ${relative(cwd, baseline.reportPath)}`,
+    `- Baseline report: ${relative(cwd, baselineReportPath)}`,
+    ...(baselineTracePath ? [`- Baseline trace: ${relative(cwd, baselineTracePath)}`] : []),
+    `- After report: ${relative(cwd, afterReportPath)}`,
+    ...(afterTracePath ? [`- After trace: ${relative(cwd, afterTracePath)}`] : []),
     ``,
     `## Policy Evolution`,
     `- Best: ${evolved.bestScore.toFixed(2)}/100`,
     `- Report: ${relative(cwd, evolved.reportPath)}`,
+    `- Rolled back: ${rolledBack ? "yes" : "no"}`,
     ``,
     `## Prompt Evolution`,
     `- Best: ${promptEvo.bestScore.toFixed(2)}/100`,
+    `- Accepted: ${promptEvo.accepted ? "yes" : "no"}`,
     `- Report: ${relative(cwd, promptEvo.reportPath)}`,
+    `- Rolled back: ${rolledBack ? "yes" : "no"}`,
+    ``,
+    `## Observability Artifacts`,
+    `- JSON transaction: ${relative(cwd, observabilityPath)}`,
+    `- Mermaid flow: ${relative(cwd, diagramPath)}`,
     ``,
   ].join("\n");
 
-  const reportPath = join(benchmarksDir(cwd), focusTopic ? `${slugify(focusTopic)}-auto-improve.md` : "auto-improve.md");
   await writeFile(reportPath, report, "utf8");
+  await writeFile(observabilityPath, `${JSON.stringify(observability, null, 2)}\n`, "utf8");
+  await writeFile(diagramPath, `${diagram}\n`, "utf8");
 
-  return { baselineScore: baseline.overallScore, afterScore: after.overallScore, delta, reportPath };
+  return { baselineScore: baseline.overallScore, afterScore: after.overallScore, delta, reportPath, observabilityPath, diagramPath };
 }
 
 export async function promptEvalArtifact(
@@ -506,6 +653,7 @@ export async function listArtifacts(cwd: string): Promise<Array<{ label: string;
     promptEvolutionDir(cwd),
     tracesDir(cwd),
     verificationsDir(cwd),
+    improvementsDir(cwd),
     timelineDir(cwd),
     quizDir(cwd),
     flashcardsDir(cwd),

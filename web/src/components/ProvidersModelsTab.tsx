@@ -613,13 +613,13 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 		const handler = (event: MessageEvent) => {
 			if (event.data?.type !== "keating-oauth-result") return;
 			const { success, provider: oauthProvider } = event.data;
-			const provider = oauthProviderToProviderName(oauthProvider);
+			const providerNames = oauthProviderToProviderNames(oauthProvider);
 			if (success && oauthProvider) {
-				setOAuthStatus((prev) => ({ ...prev, [provider]: true }));
-				setOAuthInputs((prev) => ({ ...prev, [provider]: "" }));
-				setOAuthErrors((prev) => ({ ...prev, [provider]: "" }));
-			} else if (provider) {
-				setOAuthErrors((prev) => ({ ...prev, [provider]: event.data.error ?? "OAuth sign-in failed." }));
+				setOAuthStatus((prev) => setProviderAliases(prev, providerNames, true));
+				setOAuthInputs((prev) => setProviderAliases(prev, providerNames, ""));
+				setOAuthErrors((prev) => setProviderAliases(prev, providerNames, ""));
+			} else if (providerNames.length > 0) {
+				setOAuthErrors((prev) => setProviderAliases(prev, providerNames, event.data.error ?? "OAuth sign-in failed."));
 			}
 			setOauthLoading((prev) => {
 				const next = { ...prev };
@@ -659,8 +659,8 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 		setOAuthErrors((prev) => ({ ...prev, [provider]: "" }));
 		const result = await completeOAuthFromInput(input);
 		if (result.success && result.provider) {
-			const statusProvider = oauthProviderToProviderName(result.provider);
-			setOAuthStatus((prev) => ({ ...prev, [statusProvider]: true }));
+			const statusProviders = oauthProviderToProviderNames(result.provider);
+			setOAuthStatus((prev) => setProviderAliases(prev, statusProviders, true));
 			setOAuthInputs((prev) => ({ ...prev, [provider]: "" }));
 		} else {
 			setOAuthErrors((prev) => ({ ...prev, [provider]: result.error ?? "OAuth sign-in failed." }));
@@ -789,10 +789,19 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 	);
 }
 
-function oauthProviderToProviderName(provider: OAuthProviderId | string | undefined): string {
-	if (provider === "google-gemini-cli") return "google";
-	if (provider === "anthropic" || provider === "openai-codex") return provider;
-	return provider ?? "";
+function oauthProviderToProviderNames(provider: OAuthProviderId | string | undefined): string[] {
+	if (provider === "google-gemini-cli") return ["google"];
+	if (provider === "openai-codex") return ["openai-codex"];
+	if (provider === "anthropic") return ["anthropic"];
+	return provider ? [provider] : [];
+}
+
+function setProviderAliases<T>(prev: Record<string, T>, providers: string[] | string, value: T): Record<string, T> {
+	const next = { ...prev };
+	for (const provider of Array.isArray(providers) ? providers : [providers]) {
+		next[provider] = value;
+	}
+	return next;
 }
 
 function CustomProviderCard({

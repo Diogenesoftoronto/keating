@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 const MIN_NODE_VERSION = "20.19.0";
+const KEATING_VERSION = "1.2.0";
 
 function parseNodeVersion(version) {
   const [major = "0", minor = "0", patch = "0"] = version.replace(/^v/, "").split(".");
@@ -26,6 +27,12 @@ if (compareNodeVersions(parseNodeVersion(process.versions.node), parseNodeVersio
     ? "irm https://keating.help/install.ps1 | iex"
     : "curl -fsSL https://keating.help/install | bash");
   process.exit(1);
+}
+
+const args = process.argv.slice(2);
+if (args.length === 1 && (args[0] === "--version" || args[0] === "-v" || args[0] === "version")) {
+  console.log(`keating ${KEATING_VERSION}`);
+  process.exit(0);
 }
 
 await import(new URL("../dist/src/cli/main.js", import.meta.url).href);

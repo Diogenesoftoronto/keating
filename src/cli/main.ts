@@ -36,9 +36,11 @@ import { color, bold, cliCommands } from "../core/theme.js";
 import { printAsciiHeader } from "../core/terminal.js";
 import { applySourceEdit, rollbackEdits, editResultToMarkdown } from "../core/code-edit.js";
 
+const KEATING_VERSION = "1.2.0";
+
 function printUsage(): void {
   printAsciiHeader();
-  console.log(bold("primary", "Keating CLI") + "  " + color.dim + color.sepia + "v0.3.6" + color.reset);
+  console.log(bold("primary", "Keating CLI") + "  " + color.dim + color.sepia + `v${KEATING_VERSION}` + color.reset);
   console.log(color.parchment + "The Hyperteacher — cognitive empowerment through Socratic AI." + color.reset);
   console.log("");
   console.log(cliCommands());
@@ -327,6 +329,10 @@ async function setupProject(cwd: string, args: string[]): Promise<void> {
 async function run(): Promise<void> {
   const rawArgs = process.argv.slice(2);
   const cwd = process.cwd();
+  if (rawArgs.length === 1 && (rawArgs[0] === "--version" || rawArgs[0] === "-v" || rawArgs[0] === "version")) {
+    console.log(`keating ${KEATING_VERSION}`);
+    return;
+  }
   const topLevelShellArgs = normalizeTopLevelShellArgs(rawArgs);
   if (topLevelShellArgs) {
     const exitCode = await launchShell(cwd, topLevelShellArgs);

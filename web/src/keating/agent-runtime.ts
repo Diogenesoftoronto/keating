@@ -1,4 +1,4 @@
-export type KeatingAgentRuntimeMode = "browser-only" | "remote" | "cloud";
+export type KeatingAgentRuntimeMode = "browser-only" | "browser-nodepod" | "remote" | "cloud";
 
 export interface KeatingRemoteAgentRuntimeConfig {
   provider: string;
@@ -137,6 +137,30 @@ export async function loadAgentRuntimeConfig(force = false): Promise<KeatingAgen
   runtimeConfigPromise = fetch("/api/agent-runtime/config", { headers: { accept: "application/json" } })
     .then((response) => response.ok ? response.json() : DEFAULT_AGENT_RUNTIME_CONFIG)
     .then(normalizeAgentRuntimeConfig)
+    .then(async (config) => {
+      // Overlay NodePod browser sandbox when locally active
+      const { isNodePodActive, NODEPOD_LOCAL_ENDPOINT } = await import("./nodepod-runtime");
+      if (isNodePodActive()) {
+        return {
+          ...config,
+          mode: "browser-nodepod" as KeatingAgentRuntimeMode,
+          label: "Browser + NodePod agent",
+          executionEndpoint: NODEPOD_LOCAL_ENDPOINT,
+          capabilities: {
+            ...config.capabilities,
+            remoteSandbox: true,
+            secureIsolation: false,
+            nativeBinaries: false,
+          },
+          fallback: {
+            localFirst: true,
+            remoteAvailable: true,
+            message: "NodePod browser sandbox is active. Run filesystem, shell, and snapshot work locally. Secure isolation, native binaries, and server-brokered secrets still require a remote backend.",
+          },
+        };
+      }
+      return config;
+    })
     .catch(() => DEFAULT_AGENT_RUNTIME_CONFIG);
   return runtimeConfigPromise;
 }

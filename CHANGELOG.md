@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-06-09
+
+### Added
+- Added observable self-evolution transaction artifacts: baseline and after snapshots, structured JSON reports, Mermaid transaction diagrams, trace entries, and improvement archive export coverage.
+- Added a self-evolution health panel to the web usage charts so humans can inspect recent improvement loops, verdicts, score deltas, policy signatures, and rollback state.
+- Added timed quiz sessions with start/in-progress/completed timing, countdown support for time-limited questions, per-question elapsed time, and richer quiz result cards.
+- Added structured tool argument/result visualization in chat for easier debugging of agent tool calls.
+- Added branch-aware session forking with fork-point truncation, original-session navigation, and focused tests for fork metadata behavior.
+
+### Changed
+- Prompt evolution now refuses to apply regressive winners and reports when the best generated candidate was intentionally not applied.
+- Auto-improve now records clearer before/after policy and prompt state and rolls back policy and prompt artifacts when a run regresses.
+- Browser persistent-storage requests now use the native storage API directly and avoid noisy denied-permission warnings when the browser refuses persistence.
+- Quiz result cards and related light-mode surfaces use stronger foreground contrast.
+- Fine-tune export scripts now live as real template files under `src/core/templates/finetune/`, and the browser operational protocol lives in Markdown instead of a large embedded string.
+- Version synchronization now updates CLI/bin version surfaces along with web, extension, and package metadata.
+- The NodePod boot-file generation task now points at the checked-in Bun TypeScript generator.
+
+### Fixed
+- Fixed NodePod boot-file generation so the generated bundle no longer embeds its own previous output.
+- Fixed release-blocking web type errors in active-quiz extraction and quiz result event details.
+- Fixed the web sandbox test import to use `bun:test` instead of `vitest`.
+- Fixed the CLI help banner and package shim so `keating --version` reports the current release instead of falling through to shell startup.
+
 ## [1.1.0] - 2026-06-03
 
 ### Added
@@ -333,7 +357,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/Diogenesoftoronto/keating/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/Diogenesoftoronto/keating/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.13...v1.0.0
 [0.3.13]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.12...v0.3.13

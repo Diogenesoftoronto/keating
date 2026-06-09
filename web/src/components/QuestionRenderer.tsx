@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useRef } from "react";
 import {
 	ArrowRight,
 	Check,
@@ -11,16 +11,29 @@ import {
 	MessageSquare,
 } from "lucide-react";
 
+/** A single blank within a fill-in-the-blank question. */
+export interface BlankField {
+	/** Placeholder text for the blank input */
+	placeholder?: string;
+	/** Hint shown next to the blank */
+	hint?: string;
+}
+
 /** A single question within an ask_user_question form. */
 export interface QuestionField {
 	/** Short chip/label shown above the question (e.g. "Goal", "Approach"). */
 	header?: string;
+	/** The question text. For blanks type, use ___ as placeholders. */
 	question: string;
+	/** Question type. Defaults to choice/text hybrid. */
+	type?: "choice" | "text" | "blanks";
 	choices?: string[];
 	/** Allow selecting more than one choice. */
 	multiSelect?: boolean;
 	/** Show a free-text input in addition to (or instead of) choices. */
 	allowText?: boolean;
+	/** Blanks definition for fill-in-the-blank questions. */
+	blanks?: BlankField[];
 	hint?: string;
 }
 
@@ -78,12 +91,23 @@ export function normalizeQuestionForm(raw: unknown): QuestionFormData | null {
 				: typeof q.allow_text === "boolean"
 					? q.allow_text
 					: !choices || choices.length === 0;
+		// Detect blanks type
+		const blanks = Array.isArray(q.blanks)
+			? q.blanks.filter((b): b is BlankField => b !== null && typeof b === "object")
+			: undefined;
+		const type: QuestionField["type"] = blanks && blanks.length > 0
+			? "blanks"
+			: typeof q.type === "string" && ["choice", "text", "blanks"].includes(q.type)
+				? (q.type as QuestionField["type"])
+					: undefined;
 		return {
 			header: typeof q.header === "string" ? q.header : undefined,
 			question,
+			type,
 			choices: choices && choices.length > 0 ? choices : undefined,
 			multiSelect,
 			allowText,
+			blanks,
 			hint: typeof q.hint === "string" ? q.hint : undefined,
 		};
 	};
@@ -104,7 +128,8 @@ export function normalizeQuestionForm(raw: unknown): QuestionFormData | null {
 	return { intro: typeof obj.intro === "string" ? obj.intro : undefined, questions: [single] };
 }
 
-interface FieldState {
+interface BlankState {
+	values: string[];
 	selected: string[];
 	text: string;
 }
@@ -112,9 +137,18 @@ interface FieldState {
 export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 	const questions = data.questions;
 	const total = questions.length;
-	const stepThrough = total > 0; // always use step-through layout
-	const [states, setStates] = useState<FieldState[]>(() =>
-		questions.map(() => ({ selected: [], text: "" })),
+	const blankRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+	const countBlanks = (template: string): number => {
+		const matches = template.match(/_{3,}|\{\{blank\}\}/g);
+		return matches ? matches.length : 0;
+	};
+
+	const [states, setStates] = useState<BlankState[]>(() =>
+		questions.map((q) => {
+			const blankCount = q.blanks?.length ?? countBlanks(q.question);
+			return { values: Array(blankCount).fill(""), selected: [], text: "" };
+		}),
 	);
 	const [submitted, setSubmitted] = useState(false);
 	const [current, setCurrent] = useState(0);
@@ -124,22 +158,42 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 		(index: number): string => {
 			const state = states[index];
 			if (!state) return "";
+			const q = questions[index];
+			if (q.type === "blanks" || (q.blanks && q.blanks.length > 0)) {
+				return state.values.filter(Boolean).join(" | ");
+			}
 			const parts = [...state.selected];
 			const text = state.text.trim();
 			if (text) parts.push(text);
 			return parts.join(", ");
 		},
-		[states],
+		[states, questions],
 	);
 
 	const allAnswered = useMemo(
-		() => questions.every((_, index) => answerFor(index).length > 0),
-		[questions, answerFor],
+		() => questions.every((q, index) => {
+			const state = states[index];
+			if (!state) return false;
+			if (q.type === "blanks" || (q.blanks && q.blanks.length > 0)) {
+				return state.values.every((v) => v.trim().length > 0);
+			}
+			return answerFor(index).length > 0;
+		}),
+		[questions, states, answerFor],
 	);
 
 	const currentAnswered = useMemo(
-		() => answerFor(current).length > 0,
-		[answerFor, current],
+		() => {
+			const q = questions[current];
+			if (!q) return false;
+			const state = states[current];
+			if (!state) return false;
+			if (q.type === "blanks" || (q.blanks && q.blanks.length > 0)) {
+				return state.values.every((v) => v.trim().length > 0);
+			}
+			return answerFor(current).length > 0;
+		},
+		[questions, states, current, answerFor],
 	);
 
 	const toggleChoice = (index: number, choice: string, multiSelect: boolean) => {
@@ -163,6 +217,39 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 		setStates((current) =>
 			current.map((state, i) => (i === index ? { ...state, text: value } : state)),
 		);
+	};
+
+	const setBlankValue = (index: number, blankIdx: number, value: string) => {
+		if (submitted) return;
+		setStates((current) =>
+			current.map((state, i) => {
+				if (i !== index) return state;
+				const values = [...state.values];
+				values[blankIdx] = value;
+				return { ...state, values };
+			}),
+		);
+	};
+
+	/** Split a template into text parts and blank positions */
+	const parseTemplate = (template: string): { text: string; isBlank: boolean; index: number }[] => {
+		const parts: { text: string; isBlank: boolean; index: number }[] = [];
+		const regex = /_{3,}|\{\{blank\}\}/g;
+		let lastIndex = 0;
+		let blankIndex = 0;
+		let match: RegExpExecArray | null;
+
+		while ((match = regex.exec(template)) !== null) {
+			if (match.index > lastIndex) {
+				parts.push({ text: template.slice(lastIndex, match.index), isBlank: false, index: -1 });
+			}
+			parts.push({ text: match[0], isBlank: true, index: blankIndex++ });
+			lastIndex = match.index + match[0].length;
+		}
+		if (lastIndex < template.length) {
+			parts.push({ text: template.slice(lastIndex), isBlank: false, index: -1 });
+		}
+		return parts;
 	};
 
 	const handleSubmit = useCallback(() => {
@@ -212,9 +299,10 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 
 	const q = questions[current];
 	if (!q) return null;
-	const state = states[current] ?? { selected: [], text: "" };
+	const state = states[current] ?? { values: [], selected: [], text: "" };
 	const isLast = current === total - 1;
 	const progress = total > 1 ? ((current + 1) / total) * 100 : 100;
+	const isBlanks = q.type === "blanks" || (q.blanks && q.blanks.length > 0);
 
 	return (
 		<div className="my-3 rounded-xl border border-primary/30 bg-primary/5 p-4 shadow-sm">
@@ -280,69 +368,113 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 								{q.header}
 							</span>
 						)}
-						<p className="text-sm font-medium leading-6">{q.question}</p>
 
-						{q.choices && q.choices.length > 0 && (
-							<div className="space-y-2">
-								{q.choices.map((choice) => {
-									const isSelected = state.selected.includes(choice);
-									return (
-										<button
-											key={choice}
-											type="button"
-											disabled={submitted}
-											aria-pressed={isSelected}
-											className={`flex w-full items-center gap-3 rounded-lg border-2 px-4 py-3 text-left text-sm transition-all ${
-												isSelected
-													? "border-primary bg-primary/10 text-primary"
-													: "border-border bg-background hover:border-primary/50"
-											} ${submitted ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
-											onClick={() => toggleChoice(current, choice, q.multiSelect ?? false)}
-										>
-											{q.multiSelect ? (
-												<span
-													className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 ${
-														isSelected ? "border-primary bg-primary text-primary-foreground" : "border-border"
-													}`}
-												>
-													{isSelected ? <Check size={12} /> : null}
-												</span>
-											) : isSelected ? (
-												<CheckCircle2 size={16} className="shrink-0" />
-											) : (
-												<div className="h-4 w-4 shrink-0 rounded-full border-2 border-border" />
-											)}
-											<span className="flex-1">{choice}</span>
-										</button>
-									);
-								})}
+						{/* Fill-in-the-blank rendering */}
+						{isBlanks ? (
+							<div className="space-y-3">
+								<div className="text-sm font-medium leading-relaxed">
+									{parseTemplate(q.question).map((part, idx) => {
+										if (!part.isBlank) {
+											return <span key={idx}>{part.text}</span>;
+										}
+										const blankIdx = part.index;
+										const blankDef = q.blanks?.[blankIdx];
+										return (
+											<span key={idx} className="inline-flex items-center gap-1 mx-1">
+												<input
+													ref={(el) => { blankRefs.current[blankIdx] = el; }}
+													type="text"
+													disabled={submitted}
+													className="inline-block w-24 h-7 rounded border border-border bg-background px-2 text-sm text-center outline-none focus:border-primary placeholder:text-muted-foreground/50"
+													placeholder={blankDef?.placeholder ?? "___"}
+													value={state.values[blankIdx] ?? ""}
+													onChange={(e) => setBlankValue(current, blankIdx, e.target.value)}
+													onKeyDown={(e) => {
+														if (e.key === "Enter") {
+															const nextBlank = blankRefs.current[blankIdx + 1];
+															if (nextBlank) nextBlank.focus();
+															else if (currentAnswered) {
+																if (!isLast) goNext();
+																else if (allAnswered) handleSubmit();
+															}
+														}
+													}}
+												/>
+												{blankDef?.hint && (
+													<span className="text-[10px] text-muted-foreground">{blankDef.hint}</span>
+												)}
+											</span>
+										);
+									})}
+								</div>
 							</div>
-						)}
+						) : (
+							<>
+								<p className="text-sm font-medium leading-6">{q.question}</p>
 
-						{q.allowText && (
-							<div className="space-y-2">
 								{q.choices && q.choices.length > 0 && (
-									<div className="flex items-center gap-2 text-xs text-muted-foreground">
-										<div className="h-px flex-1 bg-border" />
-										<span>or type your own</span>
-										<div className="h-px flex-1 bg-border" />
+									<div className="space-y-2">
+										{q.choices.map((choice) => {
+											const isSelected = state.selected.includes(choice);
+											return (
+												<button
+													key={choice}
+													type="button"
+													disabled={submitted}
+													aria-pressed={isSelected}
+													className={`flex w-full items-center gap-3 rounded-lg border-2 px-4 py-3 text-left text-sm transition-all ${
+														isSelected
+															? "border-primary bg-primary/10 text-primary"
+															: "border-border bg-background hover:border-primary/50"
+													} ${submitted ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
+													onClick={() => toggleChoice(current, choice, q.multiSelect ?? false)}
+												>
+													{q.multiSelect ? (
+														<span
+															className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 ${
+																isSelected ? "border-primary bg-primary text-primary-foreground" : "border-border"
+															}`}
+														>
+															{isSelected ? <Check size={12} /> : null}
+														</span>
+													) : isSelected ? (
+														<CheckCircle2 size={16} className="shrink-0" />
+													) : (
+														<div className="h-4 w-4 shrink-0 rounded-full border-2 border-border" />
+													)}
+													<span className="flex-1">{choice}</span>
+												</button>
+											);
+										})}
 									</div>
 								)}
-								<input
-									type="text"
-									className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
-									placeholder="Your answer..."
-									value={state.text}
-									disabled={submitted}
-									onChange={(e) => setText(current, e.target.value)}
-									onKeyDown={(e) => {
-										if (e.key === "Enter" && currentAnswered) {
-											if (!isLast) goNext();
-											else if (allAnswered) handleSubmit();
-										}
-									}}
-								/>
-							</div>
+
+								{q.allowText && (
+									<div className="space-y-2">
+										{q.choices && q.choices.length > 0 && (
+											<div className="flex items-center gap-2 text-xs text-muted-foreground">
+												<div className="h-px flex-1 bg-border" />
+												<span>or type your own</span>
+												<div className="h-px flex-1 bg-border" />
+											</div>
+										)}
+										<input
+											type="text"
+											className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+											placeholder="Your answer..."
+											value={state.text}
+											disabled={submitted}
+											onChange={(e) => setText(current, e.target.value)}
+											onKeyDown={(e) => {
+												if (e.key === "Enter" && currentAnswered) {
+													if (!isLast) goNext();
+													else if (allAnswered) handleSubmit();
+												}
+											}}
+										/>
+									</div>
+								)}
+							</>
 						)}
 
 						{q.hint && !submitted && (

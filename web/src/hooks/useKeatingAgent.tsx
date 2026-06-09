@@ -1,4 +1,4 @@
-import { useRef, useState, useTransition, useCallback, use, useEffect } from "react";
+import { useRef, useTransition, useCallback, use, useEffect } from "react";
 import { Agent, type AgentState, type ThinkingLevel } from "@earendil-works/pi-agent-core";
 import { useDialogState } from "./useDialogState";
 import {
@@ -6,10 +6,7 @@ import {
   type Api,
   type Context,
 } from "@earendil-works/pi-ai";
-import {
-  PersistentStorageDialog,
-  defaultConvertToLlm,
-} from "@earendil-works/pi-web-ui";
+import { defaultConvertToLlm } from "@earendil-works/pi-web-ui";
 import { SessionManagerDialog } from "../components/SessionManagerDialog";
 import { SettingsDialog } from "../components/SettingsDialog";
 import { KeatingUiSettingsTab } from "../components/KeatingUiSettingsTab";
@@ -25,20 +22,23 @@ import { localModel } from "../stores/local-model";
 import { buildKeatingSystemPrompt, composeKeatingSystemPrompt, createKeatingTools, getActiveKeatingPrompt } from "../keating/browser-tools";
 import { loadAgentRuntimeConfig, type KeatingAgentRuntimeConfig } from "../keating/agent-runtime";
 import { isDefaultPersona, loadPersona, subscribePersona } from "../keating/persona";
+import { bootNodePod } from "../keating/nodepod-runtime";
 import { registerKeatingWebMcp } from "../keating/webmcp";
-import { loadWebSpeechSettings, primeSpeechAudio, saveWebSpeechSettings, type WebSpeechSettings } from "../keating/speech";
+import { type WebSpeechSettings } from "../keating/speech";
+import {
+  savePersistentStorageStatus,
+  useKeatingAgentStore,
+  type ForkInfo,
+  type PersistentStorageStatus,
+} from "../stores/keating-agent-store";
 import { subscribeAgentEvents } from "./agent-subscriptions";
 import { DEFAULT_MODEL, hybridStreamFn } from "./keating-stream";
-import { getInitPromise, keatingStorage, sessions } from "./keating-storage";
-import { createSessionId, sessionPreview, sessionTitle, sessionUsage } from "./session-metadata";
+import { getInitPromise, keatingStorage, sessions, updateSessionTitle } from "./keating-storage";
+import { cloneMessages, createSessionId, sessionPreview, sessionTitle, sessionUsage, truncateAtForkPoint } from "./session-metadata";
 import { saveSharedSession, sharedSessionUrl, type SharedSessionUrlResult } from "../keating/shared-sessions";
 import { loadKeatingUiSettings } from "../keating/ui-settings";
 import type { ChatPanelHandle } from "../types/chat-panel";
 import type { SessionData, SessionMetadata } from "../types/session";
-
-function cloneMessages(messages: SessionData["messages"]): SessionData["messages"] {
-  return structuredClone(messages);
-}
 
 function cleanSuggestedTitle(text: string) {
   return text
@@ -62,55 +62,27 @@ const ARTIFACT_TOOL_NAMES = new Set([
 ]);
 
 const SESSION_RESTORE_TIMEOUT_MS = 5_000;
-const PERSISTENT_STORAGE_STATUS_KEY = "keating:persistent-storage-status";
-const SESSION_SIDEBAR_COLLAPSED_KEY = "keating:session-sidebar-collapsed";
-
-function readSessionSidebarCollapsed(): boolean {
-  if (typeof localStorage === "undefined") return false;
-  try {
-    return localStorage.getItem(SESSION_SIDEBAR_COLLAPSED_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-function writeSessionSidebarCollapsed(collapsed: boolean): void {
-  if (typeof localStorage === "undefined") return;
-  try {
-    localStorage.setItem(SESSION_SIDEBAR_COLLAPSED_KEY, collapsed ? "1" : "0");
-  } catch {
-    // ignore storage failures
-  }
-}
-
-type PersistentStorageStatus = "unknown" | "granted" | "declined";
-
-function getPersistentStorageStatus(): PersistentStorageStatus {
-  if (typeof localStorage === "undefined") return "unknown";
-  try {
-    const value = localStorage.getItem(PERSISTENT_STORAGE_STATUS_KEY);
-    if (value === "granted" || value === "declined") return value;
-    return "unknown";
-  } catch {
-    return "unknown";
-  }
-}
-
-function savePersistentStorageStatus(status: Exclude<PersistentStorageStatus, "unknown">): void {
-  if (typeof localStorage === "undefined") return;
-  try {
-    localStorage.setItem(PERSISTENT_STORAGE_STATUS_KEY, status);
-  } catch {
-    // Ignore storage failures; the in-memory ref still suppresses repeats this mount.
-  }
-}
-
 async function browserPersistentStorageGranted(): Promise<boolean> {
   if (typeof navigator === "undefined" || !navigator.storage?.persisted) return false;
   try {
     return await navigator.storage.persisted();
   } catch {
     return false;
+  }
+}
+
+async function requestBrowserPersistentStorage(): Promise<PersistentStorageStatus> {
+  if (typeof navigator === "undefined" || !navigator.storage) return "declined";
+  try {
+    if (navigator.storage.persisted && await navigator.storage.persisted()) {
+      return "granted";
+    }
+    if (!navigator.storage.persist) return "declined";
+    const granted = await navigator.storage.persist();
+    if (granted) return "granted";
+    return await browserPersistentStorageGranted() ? "granted" : "declined";
+  } catch {
+    return "declined";
   }
 }
 
@@ -131,23 +103,31 @@ async function withSessionRestoreTimeout<T>(operation: Promise<T>, label: string
 export interface UseKeatingAgentReturn {
   title: string;
   isPending: boolean;
+  // Rendered nodes
+  chatPanelRef: (node: ChatPanelHandle | null) => void;
+  dialogs: React.ReactNode;
+  sessionSidebar: React.ReactNode;
+  // Top-level actions
   openSettings: () => void;
   openSessions: () => void;
   newSession: () => void;
   shareSession: () => Promise<SharedSessionUrlResult>;
-  chatPanelRef: (node: ChatPanelHandle | null) => void;
-  dialogs: React.ReactNode;
+  setThinkingLevel: (level: ThinkingLevel) => void;
+  generateCurrentSessionTitle: () => Promise<string>;
+  // Speech
   speechEnabled: boolean;
+  toggleSpeech: () => void;
+  // Persistent storage
   persistentStorageStatus: PersistentStorageStatus;
   persistentBannerDismissed: boolean;
   retryPersistentStorage: () => void;
   dismissPersistentBanner: () => void;
-  toggleSpeech: () => void;
-  setThinkingLevel: (level: ThinkingLevel) => void;
-  generateCurrentSessionTitle: () => Promise<string>;
-  sessionSidebar: React.ReactNode;
+  // Session & fork state
   activeSessionId: string;
   forkingSessionId: string | null;
+  forkInfo: ForkInfo | null;
+  openOriginalSession: () => void;
+  // Sidebar layout
   sessionSidebarCollapsed: boolean;
   toggleSessionSidebar: () => void;
   mobileSidebarOpen: boolean;
@@ -159,7 +139,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   // Use React 19's use() for suspense handling of asynchronous init
   use(getInitPromise());
 
-  const [title] = useState("Keating");
+  const title = "Keating";
   const agentRef = useRef<Agent | null>(null);
   const panelRef = useRef<ChatPanelHandle | null>(null);
   const sessionIdRef = useRef<string>(createSessionId());
@@ -167,29 +147,30 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const sessionParentIdRef = useRef<string | null>(null);
   const sessionForkedAtRef = useRef<string | undefined>(undefined);
   const selectedModelRef = useRef<Model<Api>>(DEFAULT_MODEL);
-  const [activeSessionId, setActiveSessionId] = useState(() => sessionIdRef.current);
-  const [forkingSessionId, setForkingSessionId] = useState<string | null>(null);
-  const [forkedSessionId, setForkedSessionId] = useState<string | null>(null);
-  const [sessionSidebarCollapsed, setSessionSidebarCollapsed] = useState<boolean>(
-    () => readSessionSidebarCollapsed(),
-  );
-  const toggleSessionSidebar = useCallback(() => {
-    setSessionSidebarCollapsed((current) => {
-      const next = !current;
-      writeSessionSidebarCollapsed(next);
-      return next;
-    });
-  }, []);
-  const setSidebarCollapsed = useCallback((next: boolean) => {
-    setSessionSidebarCollapsed(next);
-    writeSessionSidebarCollapsed(next);
-  }, []);
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const toggleMobileSidebar = useCallback(() => setMobileSidebarOpen((v) => !v), []);
-  const closeMobileSidebar = useCallback(() => setMobileSidebarOpen(false), []);
-  const [speechSettings, setSpeechSettings] = useState<WebSpeechSettings>(() => loadWebSpeechSettings());
-  const [persistentStorageStatus, setPersistentStorageStatus] = useState<PersistentStorageStatus>(() => getPersistentStorageStatus());
-  const [persistentStorageChecked, setPersistentStorageChecked] = useState(false);
+  const activeSessionId = useKeatingAgentStore((state) => state.activeSessionId);
+  const setActiveSessionId = useKeatingAgentStore((state) => state.setActiveSessionId);
+  const forkingSessionId = useKeatingAgentStore((state) => state.forkingSessionId);
+  const setForkingSessionId = useKeatingAgentStore((state) => state.setForkingSessionId);
+  const forkedSessionId = useKeatingAgentStore((state) => state.forkedSessionId);
+  const setForkedSessionId = useKeatingAgentStore((state) => state.setForkedSessionId);
+  const clearForkedSessionId = useKeatingAgentStore((state) => state.clearForkedSessionId);
+  const forkInfo = useKeatingAgentStore((state) => state.forkInfo);
+  const setForkInfo = useKeatingAgentStore((state) => state.setForkInfo);
+  const sessionSidebarCollapsed = useKeatingAgentStore((state) => state.sessionSidebarCollapsed);
+  const toggleSessionSidebar = useKeatingAgentStore((state) => state.toggleSessionSidebar);
+  const setSidebarCollapsed = useKeatingAgentStore((state) => state.setSessionSidebarCollapsed);
+  const mobileSidebarOpen = useKeatingAgentStore((state) => state.mobileSidebarOpen);
+  const toggleMobileSidebar = useKeatingAgentStore((state) => state.toggleMobileSidebar);
+  const closeMobileSidebar = useKeatingAgentStore((state) => state.closeMobileSidebar);
+  const speechSettings = useKeatingAgentStore((state) => state.speechSettings);
+  const setSpeechSettings = useKeatingAgentStore((state) => state.setSpeechSettings);
+  const toggleSpeech = useKeatingAgentStore((state) => state.toggleSpeech);
+  const persistentStorageStatus = useKeatingAgentStore((state) => state.persistentStorageStatus);
+  const setPersistentStorageStatus = useKeatingAgentStore((state) => state.setPersistentStorageStatus);
+  const persistentStorageChecked = useKeatingAgentStore((state) => state.persistentStorageChecked);
+  const setPersistentStorageChecked = useKeatingAgentStore((state) => state.setPersistentStorageChecked);
+  const persistentBannerDismissed = useKeatingAgentStore((state) => state.persistentBannerDismissed);
+  const dismissPersistentBanner = useKeatingAgentStore((state) => state.dismissPersistentBanner);
   const sessionsDialog = useDialogState();
   const settingsDialog = useDialogState();
   const modelSelectorDialog = useDialogState();
@@ -204,8 +185,9 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   }, [settingsDialog]);
 
   useEffect(() => {
+    setActiveSessionId(sessionIdRef.current);
     keatingStorage.setCurrentSessionId(sessionIdRef.current);
-  }, []);
+  }, [setActiveSessionId]);
 
   async function loadBrowserModel() {
     const state = localModel.getState();
@@ -253,6 +235,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       usage: sessionUsage(messages),
       thinkingLevel: agent.state.thinkingLevel,
       preview: sessionPreview(messages),
+      aiGeneratedTitle: false,
     };
     const data: SessionData = {
       id: sessionId,
@@ -264,6 +247,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       messages,
       createdAt,
       lastModified: now,
+      aiGeneratedTitle: false,
     };
 
     await sessions.save(data, metadata);
@@ -303,6 +287,20 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     agent.getApiKey = (provider: string) => getProviderApiKey(provider);
     agentRef.current = agent;
 
+    // Boot NodePod lazily in the background; update tools when ready
+    bootNodePod()
+      .then((pod) => {
+        if (!pod || !agentRef.current) return;
+        return loadAgentRuntimeConfig(true)
+          .then((runtime) => createKeatingTools(keatingStorage, toolOptions(speechSettings, runtime)))
+          .then((tools) => {
+            if (!agentRef.current) return;
+            agentRef.current.state.tools = tools;
+            registerKeatingWebMcp(keatingStorage, tools).catch(console.warn);
+          });
+      })
+      .catch(console.warn);
+
     if (unsubRef.current) unsubRef.current();
     unsubRef.current = subscribeAgentEvents(agent, panel as any);
     if (persistUnsubRef.current) persistUnsubRef.current();
@@ -334,7 +332,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       onModelSelect: () => {
         modelSelectorDialog.onOpen();
       },
-      onFork: () => forkSession(agentSessionId),
+      onFork: (forkPoint?: number) => forkSession(agentSessionId, forkPoint),
       thinkingLevel: agent.state.thinkingLevel,
       onThinkingLevelChange: (level: ThinkingLevel) => {
         if (agentRef.current) {
@@ -381,15 +379,6 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     });
   }, [speechSettings.enabled]);
 
-  const toggleSpeech = useCallback(() => {
-    setSpeechSettings((current) => {
-      const next = { ...current, enabled: !current.enabled };
-      saveWebSpeechSettings(next);
-      if (next.enabled) primeSpeechAudio().catch(console.warn);
-      return next;
-    });
-  }, []);
-
   useEffect(() => {
     let cancelled = false;
     void browserPersistentStorageGranted().then((granted) => {
@@ -407,39 +396,40 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
 
   const requestPersistentStorageOnce = useCallback(() => {
     if (persistentStorageRequestedRef.current) return;
+    if (persistentBannerDismissed || persistentStorageStatus !== "unknown") return;
     persistentStorageRequestedRef.current = true;
-    void PersistentStorageDialog.request()
-      .then(async (granted) => {
-        const nextStatus: PersistentStorageStatus =
-          granted || (await browserPersistentStorageGranted()) ? "granted" : "declined";
+    void requestBrowserPersistentStorage()
+      .then((nextStatus) => {
         setPersistentStorageStatus(nextStatus);
         savePersistentStorageStatus(nextStatus as Exclude<PersistentStorageStatus, "unknown">);
+        setPersistentStorageChecked(true);
       })
       .catch((error) => {
         setPersistentStorageStatus("declined");
         savePersistentStorageStatus("declined");
+        setPersistentStorageChecked(true);
         console.warn("Persistent storage request failed:", error);
       });
-  }, []);
+  }, [persistentBannerDismissed, persistentStorageStatus, setPersistentStorageChecked, setPersistentStorageStatus]);
 
   const retryPersistentStorage = useCallback(() => {
     persistentStorageRequestedRef.current = false;
-    void PersistentStorageDialog.request()
-      .then(async (granted) => {
-        const nextStatus: PersistentStorageStatus =
-          granted || (await browserPersistentStorageGranted()) ? "granted" : "declined";
+    void requestBrowserPersistentStorage()
+      .then((nextStatus) => {
         setPersistentStorageStatus(nextStatus);
         savePersistentStorageStatus(nextStatus as Exclude<PersistentStorageStatus, "unknown">);
+        setPersistentStorageChecked(true);
       })
       .catch((error) => {
         setPersistentStorageStatus("declined");
         savePersistentStorageStatus("declined");
+        setPersistentStorageChecked(true);
         console.warn("Persistent storage retry failed:", error);
-      });
-  }, []);
-
-  const [persistentBannerDismissed, setPersistentBannerDismissed] = useState(false);
-  const dismissPersistentBanner = useCallback(() => setPersistentBannerDismissed(true), []);
+      })
+      // If the browser silently denies persistence, stop nagging for this
+      // session instead of leaving a banner the user cannot resolve.
+      .finally(() => dismissPersistentBanner());
+  }, [dismissPersistentBanner, setPersistentStorageChecked, setPersistentStorageStatus]);
 
   const endLearnerSession = useCallback(async () => {
     try {
@@ -474,6 +464,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       sessionParentIdRef.current = null;
       sessionForkedAtRef.current = undefined;
       setActiveSessionId(sessionIdRef.current);
+      setForkInfo(null);
       await createAgent(panel, { messages: [], model: selectedModelRef.current });
     });
   }, [createAgent, endLearnerSession, saveSessionSnapshot]);
@@ -511,6 +502,17 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     sessionParentIdRef.current = session.parentSessionId ?? null;
     sessionForkedAtRef.current = session.forkedAt;
     setActiveSessionId(session.id);
+    if (session.parentSessionId && session.forkedAt) {
+      const parentId = session.parentSessionId;
+      const parentMeta = await sessions.getMetadata(parentId).catch(() => null);
+      setForkInfo({
+        parentId,
+        parentTitle: parentMeta?.title ?? "original session",
+        forkedAt: session.forkedAt,
+      });
+    } else {
+      setForkInfo(null);
+    }
     selectedModelRef.current = session.model;
     await createAgent(panel, {
       model: session.model,
@@ -519,13 +521,25 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     });
   }, [createAgent, endLearnerSession, saveSessionSnapshot]);
 
-  const forkSession = useCallback(async (sessionId: string) => {
+  const openOriginalSession = useCallback(() => {
+    const parentId = forkInfo?.parentId;
+    if (!parentId) return;
+    startTransition(async () => {
+      const session = await sessions.loadSession(parentId);
+      if (session) await loadSession(session as SessionData);
+    });
+  }, [forkInfo, loadSession]);
+
+  const forkSession = useCallback(async (sessionId: string, forkPoint?: number) => {
+    // Persist the live session first so forking the current session captures its
+    // latest messages before we read the stored copy below.
+    await saveSessionSnapshot();
     const source = await sessions.loadSession(sessionId) as SessionData | null;
     if (!source) throw new Error("Session not found");
 
     const panel = panelRef.current;
     const now = new Date().toISOString();
-    const messages = cloneMessages(source.messages);
+    const messages = truncateAtForkPoint(cloneMessages(source.messages), forkPoint);
     const id = createSessionId();
     const title = `${source.title || sessionTitle(messages)} (fork)`;
     const metadata: SessionMetadata = {
@@ -539,6 +553,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       usage: sessionUsage(messages),
       thinkingLevel: source.thinkingLevel,
       preview: sessionPreview(messages),
+      aiGeneratedTitle: false,
     };
     const data: SessionData = {
       ...source,
@@ -549,19 +564,19 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       messages,
       createdAt: now,
       lastModified: now,
+      aiGeneratedTitle: false,
     };
 
     setForkingSessionId(sessionId);
     setForkedSessionId(null);
     window.dispatchEvent(new CustomEvent("keating:session-fork-start", { detail: { sourceId: sessionId } }));
     try {
-      await saveSessionSnapshot();
       await sessions.save(data, metadata);
       window.dispatchEvent(new CustomEvent("keating:sessions-changed", { detail: { sessionId: id, parentSessionId: source.id } }));
       if (panel) await loadSession(data);
       setForkedSessionId(id);
       window.dispatchEvent(new CustomEvent("keating:session-fork-end", { detail: { sourceId: sessionId, sessionId: id } }));
-      window.setTimeout(() => setForkedSessionId((current) => current === id ? null : current), 1800);
+      window.setTimeout(() => clearForkedSessionId(id), 1800);
     } finally {
       setForkingSessionId(null);
     }
@@ -613,8 +628,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     await saveSessionSnapshot();
     const sessionId = sessionIdRef.current;
     const nextTitle = await suggestSessionTitle(sessionId);
-    await sessions.updateTitle(sessionId, nextTitle);
-    window.dispatchEvent(new CustomEvent("keating:sessions-changed"));
+    await updateSessionTitle(sessionId, nextTitle, true);
     return nextTitle;
   }, [saveSessionSnapshot, suggestSessionTitle]);
 
@@ -736,7 +750,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
           onModelSelect: () => {
             modelSelectorDialog.onOpen();
           },
-          onFork: () => forkSession(sessionIdRef.current),
+          onFork: (forkPoint?: number) => forkSession(sessionIdRef.current, forkPoint),
           thinkingLevel: existingAgent.state.thinkingLevel,
           onThinkingLevelChange: (level: ThinkingLevel) => {
             if (agentRef.current) {
@@ -811,5 +825,38 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       ? "unknown"
       : persistentStorageStatus;
 
-  return { title, isPending, openSettings, openSessions, newSession, shareSession, chatPanelRef, dialogs: allDialogs, speechEnabled: speechSettings.enabled, persistentStorageStatus: visiblePersistentStorageStatus, persistentBannerDismissed, retryPersistentStorage, dismissPersistentBanner, toggleSpeech, setThinkingLevel, generateCurrentSessionTitle, sessionSidebar: sessionSidebarElement, activeSessionId, forkingSessionId, sessionSidebarCollapsed, toggleSessionSidebar, mobileSidebarOpen, toggleMobileSidebar, closeMobileSidebar };
+  return {
+    title,
+    isPending,
+    // Rendered nodes
+    chatPanelRef,
+    dialogs: allDialogs,
+    sessionSidebar: sessionSidebarElement,
+    // Top-level actions
+    openSettings,
+    openSessions,
+    newSession,
+    shareSession,
+    setThinkingLevel,
+    generateCurrentSessionTitle,
+    // Speech
+    speechEnabled: speechSettings.enabled,
+    toggleSpeech,
+    // Persistent storage
+    persistentStorageStatus: visiblePersistentStorageStatus,
+    persistentBannerDismissed,
+    retryPersistentStorage,
+    dismissPersistentBanner,
+    // Session & fork state
+    activeSessionId,
+    forkingSessionId,
+    forkInfo,
+    openOriginalSession,
+    // Sidebar layout
+    sessionSidebarCollapsed,
+    toggleSessionSidebar,
+    mobileSidebarOpen,
+    toggleMobileSidebar,
+    closeMobileSidebar,
+  };
 }

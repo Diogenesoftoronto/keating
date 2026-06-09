@@ -58,6 +58,164 @@ function majorMinor(version: string): string {
 
 const POSTS: Post[] = [
   {
+    date: "2026-06-09",
+    badge: { label: "RELEASE", color: "release" },
+    title: "v1.2.0 - Observable Self-Evolution, Timed Quizzes, and Release Hygiene",
+    version: "1.2.0",
+    summary:
+      "Keating 1.2 makes the self-improvement loop much easier to inspect, adds timed quiz sessions and stronger quiz result cards, quiets the browser persistence warning path, and cleans up release metadata so the CLI, package shim, web app, and generated sandbox boot files stay aligned.",
+    sections: [
+      { id: "observable-self-evolution", title: "Observable Self-Evolution" },
+      { id: "timed-quizzes", title: "Timed Quiz Sessions" },
+      { id: "debugging-surfaces", title: "Debugging Surfaces" },
+      { id: "storage-and-state", title: "Storage and State" },
+      { id: "release-hygiene", title: "Release Hygiene" },
+    ],
+    body: (
+      <>
+        <p className="mb-4 leading-6">
+          1.2.0 is a hardening release for Keating's most sensitive loop: the
+          part where the system evaluates and changes itself. The release makes
+          those changes visible to humans, strengthens quiz feedback, and cleans
+          up the release path so the shipped CLI and browser surfaces agree on
+          what version they are running.
+        </p>
+
+        <h3 id="observable-self-evolution" className="font-bold mt-4 mb-2">Observable Self-Evolution</h3>
+        <p className="text-sm mb-4">
+          <Code>auto-improve</Code> now writes a more complete transaction trail:
+          baseline and after snapshots, structured JSON, Mermaid diagrams,
+          trace entries, and policy/prompt state that can be compared after the
+          run. The web usage page gained a self-evolution health panel so recent
+          improvement loops show their verdict, score delta, policy signature,
+          and rollback state without asking someone to dig through hidden files.
+        </p>
+        <p className="text-sm mb-4">
+          Prompt evolution is stricter too. If the best generated candidate
+          scores worse than the current prompt, Keating records the attempt but
+          does not apply it. That keeps the audit trail useful without letting a
+          bad prompt candidate quietly become the new baseline.
+        </p>
+
+        <h3 id="timed-quizzes" className="font-bold mt-4 mb-2">Timed Quiz Sessions</h3>
+        <p className="text-sm mb-4">
+          Quiz sessions now show timing where learners expect it: before start,
+          while answering, and after completion. Time-limited questions display a
+          countdown, completed attempts report total time, and review rows retain
+          per-question timing so slow or uncertain answers are easier to spot.
+        </p>
+        <p className="text-sm mb-4">
+          Quiz result cards were tightened at the same time. Durations render as
+          readable minute/second values, low scores use a clearer result tone,
+          and light-mode contrast was raised so metadata and result details stay
+          legible in chat.
+        </p>
+
+        <h3 id="debugging-surfaces" className="font-bold mt-4 mb-2">Debugging Surfaces</h3>
+        <p className="text-sm mb-4">
+          Tool calls are easier to inspect in the transcript. Structured
+          arguments and results can render as expandable JSON views instead of
+          raw preformatted dumps, which makes it faster to tell whether a tool
+          received the right inputs and returned the right shape.
+        </p>
+        <p className="text-sm mb-4">
+          Session forking also got a correctness pass. Forking from an earlier
+          assistant turn now creates a branch ending at that turn, keeps the
+          related tool results, and shows a banner linking back to the original
+          session.
+        </p>
+
+        <h3 id="storage-and-state" className="font-bold mt-4 mb-2">Storage and State</h3>
+        <p className="text-sm mb-4">
+          The browser persistence request path now uses the native storage API
+          directly. When a browser refuses persistent storage, Keating shows the
+          durable-storage risk without spamming the console with a misleading
+          permission warning. The chat state work also moves more of the web
+          agent surface toward a dedicated Zustand store.
+        </p>
+
+        <h3 id="release-hygiene" className="font-bold mt-4 mb-2">Release Hygiene</h3>
+        <p className="text-sm mb-4">
+          The CLI help banner and package shim now report the current version
+          with <Code>keating --version</Code>, and the version sync script updates
+          those surfaces alongside the web app, Pi extension, HTML metadata, and
+          Open Graph image. Fine-tune export scripts now live as real Python,
+          Bash, requirements, and Markdown template files, and the browser
+          operational protocol moved into Markdown instead of a large embedded
+          prompt string. The NodePod boot-file generation task now points at the
+          checked-in Bun TypeScript generator, so the browser sandbox bundle can
+          be refreshed from the same source tree used by the release build. The
+          generator also skips its own output, preventing recursive bundle growth
+          from breaking the PWA build.
+        </p>
+      </>
+    ),
+  },
+  {
+    date: "2026-06-08",
+    badge: { label: "FEATURE", color: "feature" },
+    title: "Branch-Aware Session Forking",
+    summary:
+      "Forking a session now does what the name implies: the new session ends at the point you branched from instead of carrying the whole conversation forward, and a clear banner shows when you are working inside a fork with a one-click jump back to the original.",
+    sections: [
+      { id: "fork-truncation", title: "Forks End Where You Branch" },
+      { id: "fork-indicator", title: "A Clear Fork Indicator" },
+      { id: "fork-testing", title: "Tested and Storied" },
+    ],
+    body: (
+      <>
+        <p className="mb-4 leading-6">
+          Forking lets you take a conversation in a new direction without losing
+          the original. Until now it cloned the entire transcript no matter which
+          reply you forked from, so branching off an earlier point still dragged
+          every later message along. This update makes forking behave like a real
+          branch and makes the branch relationship visible in the chat itself.
+        </p>
+
+        <h3 id="fork-truncation" className="font-bold mt-4 mb-2">Forks End Where You Branch</h3>
+        <p className="text-sm mb-4">
+          The fork button on each Keating reply now creates a session that ends
+          right after that reply's turn. Everything after the branch point — the
+          next question and all that followed it — is left behind in the original,
+          giving you a clean, continuable starting point. The reply's tool results
+          are kept with it, so the branched conversation stays coherent when you
+          pick it back up.
+        </p>
+        <p className="text-sm mb-4">
+          Because the chat folds tool results and merges consecutive assistant
+          turns before rendering, the displayed position can't be mapped straight
+          back to stored messages. The truncation is anchored on the forked
+          reply's timestamp instead, in a small pure helper{" "}
+          <Code>truncateAtForkPoint</Code> in <Code>session-metadata.ts</Code>. If
+          a timestamp ever fails to match, it safely falls back to keeping the full
+          conversation. Forking a whole past session from the sidebar is unchanged
+          — that branch point is simply the end of the session.
+        </p>
+
+        <h3 id="fork-indicator" className="font-bold mt-4 mb-2">A Clear Fork Indicator</h3>
+        <p className="text-sm mb-4">
+          When the active session is a fork, a slim banner now sits under the chat
+          header reading <em>Forked from "&lt;original title&gt;"</em> with an{" "}
+          <strong>Open original</strong> button to jump back to the parent in one
+          click. The banner is a standalone <Code>ForkBanner</Code> component, and
+          it clears itself when you start a new session so it only ever shows when
+          you are genuinely inside a branch.
+        </p>
+
+        <h3 id="fork-testing" className="font-bold mt-4 mb-2">Tested and Storied</h3>
+        <p className="text-sm mb-4">
+          The branch-point logic ships with unit tests covering the cases that
+          matter: ending after the forked turn, keeping that turn's tool results,
+          matching merged assistant turns, forking the final reply, and the
+          no-match fallback. The project also gained a Storybook setup so isolated
+          UI pieces like <Code>ForkBanner</Code> can be developed and reviewed on
+          their own, including a long-title story that verifies the banner
+          truncates gracefully.
+        </p>
+      </>
+    ),
+  },
+  {
     date: "2026-06-03",
     badge: { label: "RELEASE", color: "release" },
     title: "v1.1.0 - Image Generation, Interactive Quizzes, and Cleaner Learning Artifacts",
