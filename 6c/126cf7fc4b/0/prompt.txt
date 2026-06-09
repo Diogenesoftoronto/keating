@@ -1,0 +1,55 @@
+[Image #1] question renderer still largely appears off the screen and this needs to be smaller on sm and mobile devices
+
+<div class="my-2 sm:my-3 ro..." style="">
+  <div ...>
+  Question
+
+Hide
+
+Vocabulary expansion is a wonderful way to sharpen your tools for expression. To mak...
+</div>
+  in QuestionRenderer (at /src/components/QuestionRenderer.tsx)
+  in AssistantThread (at /src/components/AssistantChatPanel.tsx)
+  in AssistantChatPanel (at /src/components/AssistantChatPanel.tsx)
+
+---
+
+the p tag here still takes up a ton of space that i feel it shouldn't instead it should be smaller and tighter in the line height
+
+<p class="text-sm leading...">
+  Vocabulary expansion is a wonderful way to sharpen your tools for expression. To make this most effe...
+</p>
+  in QuestionRenderer (at /src/components/QuestionRenderer.tsx)
+  in AssistantThread (at /src/components/AssistantChatPanel.tsx)
+  in AssistantChatPanel (at /src/components/AssistantChatPanel.tsx) also the general design of the renderer is too boxy there boxes in boxes for the questions etc. is there a reasonable way to redesign to fit mobile better?
+
+---
+
+[Image #3] look how much space this takes
+
+---
+
+text is actually smaller now but there are a lot unnecessary borders in here that take space that could be used
+
+---
+
+this hide button could be just a simple symbol as well
+
+<button type="button" aria-expanded="true" class="inline-flex h-8...">
+  <svg ...>
+  Hide
+</button>
+  in QuestionRenderer (at /src/components/QuestionRenderer.tsx)
+  in AssistantThread (at /src/components/AssistantChatPanel.tsx)
+  in AssistantChatPanel (at /src/components/AssistantChatPanel.tsx) this div could take up less space
+
+<div class="flex items-star...">
+  <div ...>
+  <button ...>
+  Question
+
+Hide
+</div>
+  in QuestionRenderer (at /src/components/QuestionRenderer.tsx)
+  in AssistantThread (at /src/components/AssistantChatPanel.tsx)
+  in AssistantChatPanel (at /src/components/AssistantChatPanel.tsx)

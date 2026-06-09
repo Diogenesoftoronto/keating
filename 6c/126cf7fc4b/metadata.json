@@ -1,0 +1,25 @@
+{
+  "cli_version": "0.7.5",
+  "checkpoint_id": "6c126cf7fc4b",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "web/src/components/QuestionRenderer.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/6c/126cf7fc4b/0/metadata.json",
+      "transcript": "/6c/126cf7fc4b/0/full.jsonl",
+      "content_hash": "/6c/126cf7fc4b/0/content_hash.txt",
+      "prompt": "/6c/126cf7fc4b/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 3586,
+    "cache_creation_tokens": 139146,
+    "cache_read_tokens": 1449245,
+    "output_tokens": 14132,
+    "api_call_count": 33
+  }
+}
