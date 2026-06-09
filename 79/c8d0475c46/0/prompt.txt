@@ -1,0 +1,175 @@
+[Image #1] question renderer still largely appears off the screen and this needs to be smaller on sm and mobile devices
+
+<div class="my-2 sm:my-3 ro..." style="">
+  <div ...>
+  Question
+
+Hide
+
+Vocabulary expansion is a wonderful way to sharpen your tools for expression. To mak...
+</div>
+  in QuestionRenderer (at /src/components/QuestionRenderer.tsx)
+  in AssistantThread (at /src/components/AssistantChatPanel.tsx)
+  in AssistantChatPanel (at /src/components/AssistantChatPanel.tsx)
+
+---
+
+the p tag here still takes up a ton of space that i feel it shouldn't instead it should be smaller and tighter in the line height
+
+<p class="text-sm leading...">
+  Vocabulary expansion is a wonderful way to sharpen your tools for expression. To make this most effe...
+</p>
+  in QuestionRenderer (at /src/components/QuestionRenderer.tsx)
+  in AssistantThread (at /src/components/AssistantChatPanel.tsx)
+  in AssistantChatPanel (at /src/components/AssistantChatPanel.tsx) also the general design of the renderer is too boxy there boxes in boxes for the questions etc. is there a reasonable way to redesign to fit mobile better?
+
+---
+
+[Image #3] look how much space this takes
+
+---
+
+text is actually smaller now but there are a lot unnecessary borders in here that take space that could be used
+
+---
+
+this hide button could be just a simple symbol as well
+
+<button type="button" aria-expanded="true" class="inline-flex h-8...">
+  <svg ...>
+  Hide
+</button>
+  in QuestionRenderer (at /src/components/QuestionRenderer.tsx)
+  in AssistantThread (at /src/components/AssistantChatPanel.tsx)
+  in AssistantChatPanel (at /src/components/AssistantChatPanel.tsx) this div could take up less space
+
+<div class="flex items-star...">
+  <div ...>
+  <button ...>
+  Question
+
+Hide
+</div>
+  in QuestionRenderer (at /src/components/QuestionRenderer.tsx)
+  in AssistantThread (at /src/components/AssistantChatPanel.tsx)
+  in AssistantChatPanel (at /src/components/AssistantChatPanel.tsx)
+
+---
+
+alright commit and push
+
+---
+
+I think a lot of the lessons learned elsewhere that we fixed on mobile should be applied here
+
+<div class="flex items-cent...">
+  <button ...>
+  <label ...>
+  New
+</div>
+  in SessionCardGrid (at /src/components/SessionCardGrid.tsx)
+  in SessionSidebar (at /src/components/SessionSidebar.tsx)
+  in ChatContent (at /src/pages/Chat.tsx) [Image #5] terrible use of space on this page
+
+---
+
+[Image #6] [Image #7]
+
+---
+
+[Image #8]horizontal spacing is way too much takes up most of the useful realestate
+
+<nav class="sticky -top-4 s...">
+  <div ...>
+  Enable
+Provider
+Voice
+Microphone
+Custom
+</nav>
+  in SpeechSettingsTab (at /src/components/SpeechSettingsTab.tsx)
+  in SettingsDialog (at /src/components/SettingsDialog.tsx)
+  in ChatContent (at /src/pages/Chat.tsx)
+
+---
+
+also needs to be done here, also the one for speech and this one i feel should be a single component to avoid duplication of very similar logic
+
+<nav class="sticky -top-4 s...">
+  <div ...>
+  Cloud
+Visibility
+My Models
+Custom Providers
+</nav>
+  in ProvidersModelsTab (at /src/components/ProvidersModelsTab.tsx)
+  in SettingsDialog (at /src/components/SettingsDialog.tsx)
+  in ChatContent (at /src/pages/Chat.tsx)
+
+---
+
+fix this view in sm as well
+
+<div class="flex items-cent...">
+  <div ...>
+  <select ...>
+  Custom Providers
+
+User-configured servers with auto-discovered or manually defined models.
+
+Add Prov...
+</div>
+  in ProvidersModelsTab (at /src/components/ProvidersModelsTab.tsx)
+  in SettingsDialog (at /src/components/SettingsDialog.tsx)
+  in ChatContent (at /src/pages/Chat.tsx) [Image #12]
+
+---
+
+remove spans like these text is redundant
+
+<span class="text-xs text-mu...">
+  Visible
+</span>
+  in ProvidersModelsTab (at /src/components/ProvidersModelsTab.tsx)
+  in SettingsDialog (at /src/components/SettingsDialog.tsx)
+  in ChatContent (at /src/pages/Chat.tsx)buttons like these should be coloured green when on showing a visible distinction
+
+<div class="h-5 w-9 rounded..." />
+  in ProvidersModelsTab (at /src/components/ProvidersModelsTab.tsx)
+  in SettingsDialog (at /src/components/SettingsDialog.tsx)
+  in ChatContent (at /src/pages/Chat.tsx)
+
+---
+
+find more components that are similar to extract and reuse
+
+---
+
+when it comes to these copy buttons i would prefer if they weren't in the text boxes but instead under or above them and only included the icon so as not to interfer with the actual text
+
+<button type="button" class="inline-flex h-7..." aria-label="Copy" title="Copy">
+  <svg ...>
+  Copy
+</button>
+  in CopyButton (at /src/components/AssistantChatPanel.tsx)
+  in ReasoningPart (at /src/components/AssistantChatPanel.tsx)
+  in AssistantMessage (at /src/components/AssistantChatPanel.tsx)
+
+---
+
+now user text and normal text has this awkward bulge spacing at the end okay just move the copy button here and remove it from other places it is awkward otherwise
+
+<div class="mt-2 flex items...">
+  (3 elements)
+</div>
+  in AssistantMessage (at /src/components/AssistantChatPanel.tsx)
+  in AssistantThread (at /src/components/AssistantChatPanel.tsx)
+  in AssistantChatPanel (at /src/components/AssistantChatPanel.tsx)
+
+---
+
+commit and push
+
+---
+
+stage setting row anbd the other preexisting changes

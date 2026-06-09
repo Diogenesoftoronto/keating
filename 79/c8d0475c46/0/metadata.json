@@ -1,0 +1,250 @@
+{
+  "cli_version": "0.7.5",
+  "checkpoint_id": "79c8d0475c46",
+  "session_id": "1b59c2df-8d22-4879-ac24-0e23f40bf71d",
+  "strategy": "manual-commit",
+  "created_at": "2026-06-09T18:38:03.765455118Z",
+  "branch": "main",
+  "checkpoints_count": 12,
+  "files_touched": [
+    "bun.lock",
+    "package.json",
+    "src/cli/main.ts",
+    "src/core/benchmark.ts",
+    "src/core/learner-state.ts",
+    "src/core/learner-turn-analysis.ts",
+    "src/core/map-elites.ts",
+    "src/core/policy-judgement.ts",
+    "src/core/project.ts",
+    "src/core/types.ts",
+    "src/mcp/server.ts",
+    "src/pi/hyperteacher-extension.ts",
+    "test/feedback-benchmark.test.ts",
+    "test/pipeline.test.ts",
+    "test/policy-judgement.test.ts",
+    "test/timeline-tools.test.ts",
+    "web/bun.lock",
+    "web/package.json",
+    "web/src/App.tsx",
+    "web/src/components/ArtifactBrowserOverlay.tsx",
+    "web/src/components/ArtifactViewer.tsx",
+    "web/src/components/AssistantChatPanel.tsx",
+    "web/src/components/JsonCrackBlock.tsx",
+    "web/src/components/KeatingUiSettingsTab.tsx",
+    "web/src/components/ModelSelector.tsx",
+    "web/src/components/Nav.tsx",
+    "web/src/components/ProvidersModelsTab.tsx",
+    "web/src/components/ProxyTab.tsx",
+    "web/src/components/QuizSessionPanel.tsx",
+    "web/src/components/SessionCard.tsx",
+    "web/src/components/SettingRow.tsx",
+    "web/src/components/SettingsSectionNav.tsx",
+    "web/src/components/SpeechSettingsTab.tsx",
+    "web/src/components/Toggle.tsx",
+    "web/src/components/session-card-visuals.ts",
+    "web/src/hooks/useKeatingAgent.tsx",
+    "web/src/keating/browser-tools.ts",
+    "web/src/keating/core.ts",
+    "web/src/keating/nodepod-boot-files.ts",
+    "web/src/keating/prompts/operational-protocol.md",
+    "web/src/keating/shared-sessions.ts",
+    "web/src/keating/storage.ts",
+    "web/src/lib/posthog.ts",
+    "web/src/main-react.tsx",
+    "web/src/pages/Blog.tsx",
+    "web/src/pages/KeatingBench.tsx",
+    "web/src/test/session-card-visuals.test.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-4-8",
+  "turn_id": "95177e3b88dd",
+  "token_usage": {
+    "input_tokens": 16255,
+    "cache_creation_tokens": 538364,
+    "cache_read_tokens": 15045763,
+    "output_tokens": 71510,
+    "api_call_count": 159
+  },
+  "session_metrics": {
+    "turn_count": 14
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-06-09T18:38:03.659389618Z",
+    "agent_lines": 0,
+    "agent_removed": 553,
+    "human_added": 11943,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 11943,
+    "total_lines_changed": 12496,
+    "agent_percentage": 4.425416133162612,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 1327,
+      "user_lines_removed": 0,
+      "agent_lines_added": 917,
+      "agent_lines_removed": 346,
+      "user_added_per_file": {
+        "src/core/learner-turn-analysis.ts": 70,
+        "src/core/policy-judgement.ts": 171,
+        "test/feedback-benchmark.test.ts": 52,
+        "test/policy-judgement.test.ts": 88,
+        "test/timeline-tools.test.ts": 85,
+        "web/src/lib/posthog.ts": 21,
+        "web/src/pages/KeatingBench.tsx": 840
+      }
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 1327,
+      "user_lines_removed": 0,
+      "agent_lines_added": 927,
+      "agent_lines_removed": 356,
+      "user_added_per_file": {
+        "src/core/learner-turn-analysis.ts": 70,
+        "src/core/policy-judgement.ts": 171,
+        "test/feedback-benchmark.test.ts": 52,
+        "test/policy-judgement.test.ts": 88,
+        "test/timeline-tools.test.ts": 85,
+        "web/src/lib/posthog.ts": 21,
+        "web/src/pages/KeatingBench.tsx": 840
+      }
+    },
+    {
+      "checkpoint_number": 5,
+      "user_lines_added": 1327,
+      "user_lines_removed": 0,
+      "agent_lines_added": 930,
+      "agent_lines_removed": 359,
+      "user_added_per_file": {
+        "src/core/learner-turn-analysis.ts": 70,
+        "src/core/policy-judgement.ts": 171,
+        "test/feedback-benchmark.test.ts": 52,
+        "test/policy-judgement.test.ts": 88,
+        "test/timeline-tools.test.ts": 85,
+        "web/src/lib/posthog.ts": 21,
+        "web/src/pages/KeatingBench.tsx": 840
+      }
+    },
+    {
+      "checkpoint_number": 6,
+      "user_lines_added": 1327,
+      "user_lines_removed": 0,
+      "agent_lines_added": 931,
+      "agent_lines_removed": 360,
+      "user_added_per_file": {
+        "src/core/learner-turn-analysis.ts": 70,
+        "src/core/policy-judgement.ts": 171,
+        "test/feedback-benchmark.test.ts": 52,
+        "test/policy-judgement.test.ts": 88,
+        "test/timeline-tools.test.ts": 85,
+        "web/src/lib/posthog.ts": 21,
+        "web/src/pages/KeatingBench.tsx": 840
+      }
+    },
+    {
+      "checkpoint_number": 7,
+      "user_lines_added": 1327,
+      "user_lines_removed": 0,
+      "agent_lines_added": 976,
+      "agent_lines_removed": 402,
+      "user_added_per_file": {
+        "src/core/learner-turn-analysis.ts": 70,
+        "src/core/policy-judgement.ts": 171,
+        "test/feedback-benchmark.test.ts": 52,
+        "test/policy-judgement.test.ts": 88,
+        "test/timeline-tools.test.ts": 85,
+        "web/src/lib/posthog.ts": 21,
+        "web/src/pages/KeatingBench.tsx": 840
+      }
+    },
+    {
+      "checkpoint_number": 8,
+      "user_lines_added": 1327,
+      "user_lines_removed": 0,
+      "agent_lines_added": 982,
+      "agent_lines_removed": 408,
+      "user_added_per_file": {
+        "src/core/learner-turn-analysis.ts": 70,
+        "src/core/policy-judgement.ts": 171,
+        "test/feedback-benchmark.test.ts": 52,
+        "test/policy-judgement.test.ts": 88,
+        "test/timeline-tools.test.ts": 85,
+        "web/src/lib/posthog.ts": 21,
+        "web/src/pages/KeatingBench.tsx": 840
+      }
+    },
+    {
+      "checkpoint_number": 9,
+      "user_lines_added": 1327,
+      "user_lines_removed": 0,
+      "agent_lines_added": 984,
+      "agent_lines_removed": 411,
+      "user_added_per_file": {
+        "src/core/learner-turn-analysis.ts": 70,
+        "src/core/policy-judgement.ts": 171,
+        "test/feedback-benchmark.test.ts": 52,
+        "test/policy-judgement.test.ts": 88,
+        "test/timeline-tools.test.ts": 85,
+        "web/src/lib/posthog.ts": 21,
+        "web/src/pages/KeatingBench.tsx": 840
+      }
+    },
+    {
+      "checkpoint_number": 10,
+      "user_lines_added": 1327,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1039,
+      "agent_lines_removed": 484,
+      "user_added_per_file": {
+        "src/core/learner-turn-analysis.ts": 70,
+        "src/core/policy-judgement.ts": 171,
+        "test/feedback-benchmark.test.ts": 52,
+        "test/policy-judgement.test.ts": 88,
+        "test/timeline-tools.test.ts": 85,
+        "web/src/lib/posthog.ts": 21,
+        "web/src/pages/KeatingBench.tsx": 840
+      }
+    },
+    {
+      "checkpoint_number": 11,
+      "user_lines_added": 1327,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1062,
+      "agent_lines_removed": 504,
+      "user_added_per_file": {
+        "src/core/learner-turn-analysis.ts": 70,
+        "src/core/policy-judgement.ts": 171,
+        "test/feedback-benchmark.test.ts": 52,
+        "test/policy-judgement.test.ts": 88,
+        "test/timeline-tools.test.ts": 85,
+        "web/src/lib/posthog.ts": 21,
+        "web/src/pages/KeatingBench.tsx": 840
+      }
+    },
+    {
+      "checkpoint_number": 12,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 2460,
+      "agent_lines_removed": 553
+    },
+    {
+      "checkpoint_number": 13,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 2460,
+      "agent_lines_removed": 553
+    }
+  ]
+}
