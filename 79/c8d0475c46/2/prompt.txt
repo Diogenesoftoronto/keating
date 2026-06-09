@@ -1,0 +1,7 @@
+1. SettingRow — the titled bordered card with a control on the right (flex items-start justify-between gap-4 rounded-lg border border-border p-4 → title +
+  description + slot). 6 instances (KeatingUiSettings, Speech). Pairs cleanly with Toggle. Good win.
+  2. SettingsSectionHeader — h3 + muted p. 11 instances, but trivial markup with varying margins; low payoff.
+  3. Radio card group — 7-ish instances, but they diverge (Speech adds status badges + API-key hints, ModelSelector differs), so only a partial/awkward extract.
+
+  My recommendation: do SettingRow (real duplication, low risk), skip the header (not worth the indirection), and leave the radio groups as-is (too
+  heterogeneous).
