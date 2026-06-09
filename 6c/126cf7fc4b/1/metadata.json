@@ -1,0 +1,118 @@
+{
+  "cli_version": "0.7.5",
+  "checkpoint_id": "6c126cf7fc4b",
+  "session_id": "ses_152846b2bffex6alnHgtYqsCLQ",
+  "strategy": "manual-commit",
+  "created_at": "2026-06-09T18:05:02.145394581Z",
+  "branch": "main",
+  "checkpoints_count": 4,
+  "files_touched": [
+    "web/src/components/QuestionRenderer.tsx"
+  ],
+  "agent": "OpenCode",
+  "model": "neuralwatt/moonshotai/Kimi-K2.6",
+  "turn_id": "988aa55737a1",
+  "token_usage": {
+    "input_tokens": 248832,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 3021824,
+    "output_tokens": 45692,
+    "api_call_count": 29
+  },
+  "session_metrics": {
+    "turn_count": 4
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-06-09T18:05:02.087099635Z",
+    "agent_lines": 32,
+    "agent_removed": 31,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 32,
+    "total_lines_changed": 63,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 2191,
+      "user_lines_removed": 293,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "src/cli/main.ts": 15,
+        "src/core/benchmark.ts": 107,
+        "src/core/learner-state.ts": 5,
+        "src/core/learner-turn-analysis.ts": 70,
+        "src/core/map-elites.ts": 53,
+        "src/core/policy-judgement.ts": 171,
+        "src/core/project.ts": 49,
+        "src/core/types.ts": 3,
+        "src/mcp/server.ts": 1,
+        "src/pi/hyperteacher-extension.ts": 20,
+        "test/feedback-benchmark.test.ts": 52,
+        "test/pipeline.test.ts": 12,
+        "test/policy-judgement.test.ts": 88,
+        "test/timeline-tools.test.ts": 85,
+        "web/bun.lock": 37,
+        "web/package.json": 2,
+        "web/src/App.tsx": 17,
+        "web/src/components/JsonCrackBlock.tsx": 81,
+        "web/src/components/Nav.tsx": 11,
+        "web/src/hooks/useKeatingAgent.tsx": 1,
+        "web/src/keating/browser-tools.ts": 12,
+        "web/src/keating/core.ts": 167,
+        "web/src/keating/nodepod-boot-files.ts": 24,
+        "web/src/keating/prompts/operational-protocol.md": 1,
+        "web/src/keating/shared-sessions.ts": 6,
+        "web/src/keating/storage.ts": 63,
+        "web/src/lib/posthog.ts": 21,
+        "web/src/main-react.tsx": 10,
+        "web/src/pages/Blog.tsx": 167,
+        "web/src/pages/KeatingBench.tsx": 840
+      },
+      "user_removed_per_file": {
+        "bun.lock": 3,
+        "package.json": 1,
+        "src/core/benchmark.ts": 47,
+        "src/core/learner-state.ts": 1,
+        "src/core/map-elites.ts": 10,
+        "src/core/project.ts": 3,
+        "src/mcp/server.ts": 1,
+        "src/pi/hyperteacher-extension.ts": 3,
+        "web/bun.lock": 2,
+        "web/src/App.tsx": 9,
+        "web/src/components/JsonCrackBlock.tsx": 155,
+        "web/src/keating/browser-tools.ts": 5,
+        "web/src/keating/core.ts": 30,
+        "web/src/keating/nodepod-boot-files.ts": 20,
+        "web/src/keating/prompts/operational-protocol.md": 1,
+        "web/src/keating/storage.ts": 1,
+        "web/src/main-react.tsx": 1
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 2220,
+      "agent_lines_removed": 322
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 2242,
+      "agent_lines_removed": 344
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 2253,
+      "agent_lines_removed": 355
+    }
+  ]
+}

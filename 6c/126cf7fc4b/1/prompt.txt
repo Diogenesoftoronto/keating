@@ -1,0 +1,20 @@
+the overlay goes off screen when in sm screens this needs to be clamped or something so we stay in the view and there should be no horizontal scrolling on sm or mobile screens here
+
+<div class="min-h-0 flex-1 ...">
+  <div ...>
+  Show 20 agent
+I WANT TO UNDERSTAND HOW PYTORCH WORKS
+7h ago · 27 messages
+3 artifacts
+How PyTorch Wo...
+</div>
+  in ArtifactBrowserOverlay (at /src/components/ArtifactBrowserOverlay.tsx)
+  in ChatContent (at /src/pages/Chat.tsx) the ask user questions modal is also a bit too large, it should actually be a smaller on sm and mobile devices so that it can fit on screen. this could be a smaller on sm so that it doesn't take so much of the screen. remember that getting everything to work like this is a matter of screen realestate it is best to maximize this while still appearing usable
+
+<form class="composer-root m..." style="">
+  <div ...>
+  Gemma 4 31B IT
+</form>
+  in AssistantThread (at /src/components/AssistantChatPanel.tsx)
+  in AssistantChatPanel (at /src/components/AssistantChatPanel.tsx)
+  in ChatContent (at /src/pages/Chat.tsx)
