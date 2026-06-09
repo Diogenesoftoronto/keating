@@ -53,3 +53,7 @@ Hide
   in QuestionRenderer (at /src/components/QuestionRenderer.tsx)
   in AssistantThread (at /src/components/AssistantChatPanel.tsx)
   in AssistantChatPanel (at /src/components/AssistantChatPanel.tsx)
+
+---
+
+alright commit and push
