@@ -7,7 +7,6 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	ChevronUp,
-	HelpCircle,
 	MessageSquare,
 } from "lucide-react";
 
@@ -273,8 +272,8 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 
 	if (submitted) {
 		return (
-			<div className="my-3 rounded-xl border border-primary/30 bg-primary/5 p-4 shadow-sm">
-				<div className="flex items-start gap-3">
+			<div className="my-2 sm:my-3 rounded-lg sm:rounded-xl border border-primary/30 bg-primary/5 p-2.5 sm:p-4 shadow-sm w-full max-w-full overflow-x-hidden">
+				<div className="flex items-start gap-2 sm:gap-3">
 					<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
 						<CheckCircle2 size={18} className="text-primary" />
 					</div>
@@ -284,7 +283,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 							{questions.map((q, index) => (
 								<div key={index} className="flex items-start gap-2">
 									<MessageSquare size={14} className="mt-1 shrink-0" />
-									<span>
+									<span className="min-w-0 break-words">
 										{q.header ? `${q.header}: ` : ""}
 										<strong>{answerFor(index)}</strong>
 									</span>
@@ -305,17 +304,17 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 	const isBlanks = q.type === "blanks" || (q.blanks && q.blanks.length > 0);
 
 	return (
-		<div className="my-3 rounded-xl border border-primary/30 bg-primary/5 p-4 shadow-sm">
-			<div className="flex items-start gap-3">
-				<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-					<HelpCircle size={18} className="text-primary" />
-				</div>
-				<div className="min-w-0 flex-1 space-y-4">
-					<div className="flex items-start justify-between gap-3">
+			<div className="my-2 sm:my-3 rounded-lg sm:rounded-xl border border-primary/30 bg-primary/5 p-2 sm:p-4 shadow-sm w-full max-w-full overflow-x-hidden">
+				<div className="flex items-start gap-1.5 sm:gap-3">
+					<div className="hidden sm:flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+						<CheckCircle2 size={18} className="text-primary" />
+					</div>
+				<div className="min-w-0 flex-1 space-y-2 sm:space-y-4">
+					<div className="flex items-center justify-between gap-2 sm:gap-3">
 						<div className="min-w-0">
-							<p className="text-sm font-medium text-primary">Question</p>
+							<p className="text-xs sm:text-sm font-medium text-primary">Question</p>
 							{collapsed && (
-								<p className="line-clamp-2 text-xs leading-5 text-muted-foreground">
+								<p className="line-clamp-2 text-xs leading-5 text-muted-foreground break-words">
 									{data.intro || q.question}
 								</p>
 							)}
@@ -324,10 +323,12 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 							type="button"
 							onClick={() => setCollapsed((value) => !value)}
 							aria-expanded={!collapsed}
-							className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md border border-border bg-background px-2 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/60 hover:bg-primary/10 hover:text-primary"
+							aria-label={collapsed ? "Show" : "Hide"}
+							title={collapsed ? "Show" : "Hide"}
+							className="inline-flex h-6 sm:h-8 shrink-0 items-center gap-1 rounded-md border border-border bg-background px-1.5 sm:px-2 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/60 hover:bg-primary/10 hover:text-primary"
 						>
 							{collapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
-							{collapsed ? "Show" : "Hide"}
+							<span className="hidden sm:inline">{collapsed ? "Show" : "Hide"}</span>
 						</button>
 					</div>
 					{collapsed ? (
@@ -345,7 +346,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 					) : (
 						<>
 					{data.intro && (
-						<p className="text-sm leading-6 text-muted-foreground">{data.intro}</p>
+						<p className="text-xs leading-snug sm:text-sm sm:leading-6 text-muted-foreground break-words">{data.intro}</p>
 					)}
 
 					{/* Progress bar */}
@@ -362,7 +363,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 					</div>
 
 					{/* Current question card */}
-					<div className="space-y-3 rounded-lg border border-border/60 bg-background/40 p-3">
+					<div className="space-y-2 sm:space-y-3 rounded-none sm:rounded-lg border-0 sm:border border-border/60 bg-transparent sm:bg-background/40 p-0 sm:p-3 max-w-full">
 						{q.header && (
 							<span className="inline-flex rounded bg-primary/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-primary">
 								{q.header}
@@ -371,21 +372,21 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 
 						{/* Fill-in-the-blank rendering */}
 						{isBlanks ? (
-							<div className="space-y-3">
-								<div className="text-sm font-medium leading-relaxed">
+							<div className="space-y-3 max-w-full">
+								<div className="text-sm font-medium leading-relaxed break-words">
 									{parseTemplate(q.question).map((part, idx) => {
 										if (!part.isBlank) {
-											return <span key={idx}>{part.text}</span>;
+											return <span key={idx} className="break-words">{part.text}</span>;
 										}
 										const blankIdx = part.index;
 										const blankDef = q.blanks?.[blankIdx];
 										return (
-											<span key={idx} className="inline-flex items-center gap-1 mx-1">
+											<span key={idx} className="inline-flex items-center gap-1 mx-0.5 sm:mx-1">
 												<input
 													ref={(el) => { blankRefs.current[blankIdx] = el; }}
 													type="text"
 													disabled={submitted}
-													className="inline-block w-24 h-7 rounded border border-border bg-background px-2 text-sm text-center outline-none focus:border-primary placeholder:text-muted-foreground/50"
+													className="inline-block w-16 sm:w-20 h-7 rounded border border-border bg-background px-1.5 sm:px-2 text-sm text-center outline-none focus:border-primary placeholder:text-muted-foreground/50"
 													placeholder={blankDef?.placeholder ?? "___"}
 													value={state.values[blankIdx] ?? ""}
 													onChange={(e) => setBlankValue(current, blankIdx, e.target.value)}
@@ -401,7 +402,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 													}}
 												/>
 												{blankDef?.hint && (
-													<span className="text-[10px] text-muted-foreground">{blankDef.hint}</span>
+													<span className="text-[10px] text-muted-foreground hidden sm:inline">{blankDef.hint}</span>
 												)}
 											</span>
 										);
@@ -410,10 +411,10 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 							</div>
 						) : (
 							<>
-								<p className="text-sm font-medium leading-6">{q.question}</p>
+								<p className="text-xs sm:text-sm font-medium leading-snug sm:leading-6 break-words">{q.question}</p>
 
 								{q.choices && q.choices.length > 0 && (
-									<div className="space-y-2">
+									<div className="space-y-1.5 sm:space-y-2">
 										{q.choices.map((choice) => {
 											const isSelected = state.selected.includes(choice);
 											return (
@@ -422,7 +423,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 													type="button"
 													disabled={submitted}
 													aria-pressed={isSelected}
-													className={`flex w-full items-center gap-3 rounded-lg border-2 px-4 py-3 text-left text-sm transition-all ${
+													className={`flex w-full items-center gap-2 sm:gap-3 rounded-lg border sm:border-2 px-2 py-1.5 sm:px-4 sm:py-3 text-left text-xs sm:text-sm leading-snug transition-all ${
 														isSelected
 															? "border-primary bg-primary/10 text-primary"
 															: "border-border bg-background hover:border-primary/50"
@@ -442,7 +443,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 													) : (
 														<div className="h-4 w-4 shrink-0 rounded-full border-2 border-border" />
 													)}
-													<span className="flex-1">{choice}</span>
+													<span className="flex-1 min-w-0 break-words">{choice}</span>
 												</button>
 											);
 										})}
@@ -478,7 +479,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 						)}
 
 						{q.hint && !submitted && (
-							<p className="text-xs italic text-muted-foreground">💡 {q.hint}</p>
+							<p className="text-xs italic text-muted-foreground break-words">💡 {q.hint}</p>
 						)}
 					</div>
 
@@ -488,7 +489,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 							type="button"
 							onClick={goPrev}
 							disabled={current === 0}
-							className="inline-flex items-center gap-1 rounded-lg border-2 border-border bg-background px-3 py-2 text-sm font-medium hover:bg-accent disabled:opacity-40 disabled:pointer-events-none transition-colors"
+							className="inline-flex items-center gap-1 rounded-lg border-2 border-border bg-background px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium hover:bg-accent disabled:opacity-40 disabled:pointer-events-none transition-colors"
 						>
 							<ChevronLeft size={14} />
 							Back
@@ -498,7 +499,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 							<button
 								type="button"
 								onClick={goNext}
-								className="inline-flex items-center gap-1 rounded-lg border-2 border-primary bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+								className="inline-flex items-center gap-1 rounded-lg border-2 border-primary bg-primary px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
 							>
 								Next
 								<ChevronRight size={14} />
@@ -507,7 +508,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 							<button
 								type="button"
 								disabled={!allAnswered}
-								className="inline-flex items-center gap-2 rounded-lg border-2 border-primary bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+								className="inline-flex items-center gap-1.5 sm:gap-2 rounded-lg border-2 border-primary bg-primary px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:pointer-events-none transition-colors"
 								onClick={handleSubmit}
 							>
 								<ArrowRight size={16} />
