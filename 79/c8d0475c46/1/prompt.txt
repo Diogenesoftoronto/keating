@@ -1,0 +1,6 @@
+Find all files in the web/ directory that contain settings UI markup matching these patterns:
+1. A bordered card with title/description on the left and a control (toggle/switch/button/etc) on the right — the "SettingRow" pattern
+2. Settings section headers with h3 and muted paragraph
+3. Radio card groups used in settings
+
+Search in web/src/ for settings-related components and pages. Return the file paths, line numbers, and relevant code snippets for each instance found.
