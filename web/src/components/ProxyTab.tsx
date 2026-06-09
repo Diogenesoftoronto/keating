@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { getAppStorage } from "@earendil-works/pi-web-ui";
+import { Toggle } from "./Toggle";
 
 export function ProxyTab() {
   const [enabled, setEnabled] = useState(false);
@@ -29,18 +30,13 @@ export function ProxyTab() {
 
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-foreground">Use CORS Proxy</span>
-        <label className="relative inline-flex cursor-pointer items-center">
-          <input
-            type="checkbox"
-            className="sr-only peer"
-            checked={enabled}
-            onChange={(e) => {
-              setEnabled(e.target.checked);
-              save(e.target.checked, url);
-            }}
-          />
-          <div className="h-5 w-9 rounded-full bg-muted-foreground/30 peer-checked:bg-primary transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-4" />
-        </label>
+        <Toggle
+          checked={enabled}
+          onChange={(checked) => {
+            setEnabled(checked);
+            save(checked, url);
+          }}
+        />
       </div>
 
       <div className="flex flex-col gap-1">

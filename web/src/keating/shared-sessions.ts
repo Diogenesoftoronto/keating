@@ -208,6 +208,12 @@ export function loadSharedSession(id: string): SharedSession | null {
 	}
 }
 
+export function listCachedSharedSessions(): SharedSession[] {
+	return readShareIndex()
+		.map((id) => loadSharedSession(id))
+		.filter((session): session is SharedSession => Boolean(session));
+}
+
 function sharedSessionPath(id: string, origin: string) {
 	const url = new URL(`/s/${encodeURIComponent(id)}`, origin);
 	return url.toString();

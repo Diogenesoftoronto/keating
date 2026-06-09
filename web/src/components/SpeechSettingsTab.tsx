@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { Trash2 } from "lucide-react";
+import { SettingsSectionNav } from "./SettingsSectionNav";
+import { Toggle } from "./Toggle";
+import { SettingRow } from "./SettingRow";
 import {
 	listSpeechProviders,
 	loadWebSpeechSettings,
@@ -115,11 +118,6 @@ export function SpeechSettingsTab({ onSettingsChange }: SpeechSettingsTabProps) 
 		{ id: "speech-custom", label: "Custom" },
 	];
 
-	const scrollToSection = (id: string) => {
-		const el = document.getElementById(`settings-section-${id}`);
-		if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-	};
-
 	const statusBadge = (status: SpeechProviderDescriptor["status"]) => {
 		if (status === "stable") return null;
 		const styles =
@@ -135,37 +133,16 @@ export function SpeechSettingsTab({ onSettingsChange }: SpeechSettingsTabProps) 
 
 	return (
 		<div className="flex flex-col gap-8">
-			<nav className="sticky -top-4 sm:-top-5 z-10 -mx-4 sm:-mx-5 -mt-4 sm:-mt-5 px-4 sm:px-5 pt-3 pb-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b border-border">
-				<div className="flex flex-wrap gap-1.5">
-					{SECTIONS.map((s) => (
-						<button
-							key={s.id}
-							onClick={() => scrollToSection(s.id)}
-							className="rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-						>
-							{s.label}
-						</button>
-					))}
-				</div>
-			</nav>
+			<SettingsSectionNav sections={SECTIONS} />
 
-			<div id="settings-section-speech-enable" className="flex items-start justify-between gap-4 rounded-lg border border-border p-4 scroll-mt-20">
-				<div>
-					<div className="text-sm font-medium text-foreground">Enable spoken responses</div>
-					<p className="mt-1 text-sm text-muted-foreground">
-						When on, Keating can call its voice tool to speak short learner-facing lines through the active provider.
-					</p>
-				</div>
-				<label className="relative inline-flex cursor-pointer items-center">
-					<input
-						type="checkbox"
-						className="sr-only peer"
-						checked={settings.enabled}
-						onChange={(e) => persist({ enabled: e.target.checked })}
-					/>
-					<div className="h-5 w-9 rounded-full bg-muted-foreground/30 peer-checked:bg-primary transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-4" />
-				</label>
-			</div>
+			<SettingRow
+				id="settings-section-speech-enable"
+				title="Enable spoken responses"
+				description="When on, Keating can call its voice tool to speak short learner-facing lines through the active provider."
+				className="scroll-mt-20"
+			>
+				<Toggle checked={settings.enabled} onChange={(checked) => persist({ enabled: checked })} />
+			</SettingRow>
 
 			<div id="settings-section-speech-provider" className="flex flex-col gap-4 scroll-mt-20">
 				<div>
@@ -289,23 +266,14 @@ export function SpeechSettingsTab({ onSettingsChange }: SpeechSettingsTabProps) 
 				</div>
 			)}
 
-			<div id="settings-section-speech-mic" className="flex items-start justify-between gap-4 rounded-lg border border-border p-4 scroll-mt-20">
-				<div>
-					<div className="text-sm font-medium text-foreground">Microphone (duplex providers)</div>
-					<p className="mt-1 text-sm text-muted-foreground">
-						When enabled, duplex providers like OpenAI Realtime may capture your microphone for back-and-forth voice. TTS-only providers ignore this.
-					</p>
-				</div>
-				<label className="relative inline-flex cursor-pointer items-center">
-					<input
-						type="checkbox"
-						className="sr-only peer"
-						checked={settings.microphoneEnabled}
-						onChange={(e) => persist({ microphoneEnabled: e.target.checked })}
-					/>
-					<div className="h-5 w-9 rounded-full bg-muted-foreground/30 peer-checked:bg-primary transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-4" />
-				</label>
-			</div>
+			<SettingRow
+				id="settings-section-speech-mic"
+				title="Microphone (duplex providers)"
+				description="When enabled, duplex providers like OpenAI Realtime may capture your microphone for back-and-forth voice. TTS-only providers ignore this."
+				className="scroll-mt-20"
+			>
+				<Toggle checked={settings.microphoneEnabled} onChange={(checked) => persist({ microphoneEnabled: checked })} />
+			</SettingRow>
 
 			<div id="settings-section-speech-custom" className="flex flex-col gap-4 scroll-mt-20">
 				<div>

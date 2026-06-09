@@ -336,7 +336,7 @@ export function createKeatingMcpServer(cwd: string): McpServer {
     "keating_benchmark_policy",
     {
       title: "Benchmark policy",
-      description: "Benchmark the active teaching policy against deterministic synthetic learners.",
+      description: "Benchmark the active teaching policy against learner feedback gathered by the harness.",
       inputSchema: { topic: z.string().min(1).optional() },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false }
     },

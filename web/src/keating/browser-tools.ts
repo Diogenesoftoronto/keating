@@ -24,6 +24,8 @@ import speechSystemPromptMarkdown from "./prompts/speech-system-prompt.md?raw";
 import {
 	runBenchmarkSuite,
 	benchmarkToMarkdown,
+	hasEnoughRealData,
+	MIN_REAL_OUTCOMES,
 	evolvePolicy,
 	evolvePolicy as _evolvePolicyLegacy,
 	evolutionToMarkdown,
@@ -917,10 +919,10 @@ export async function createKeatingTools(
 			}
 		),
 
-		// bench - Run synthetic learner benchmark
+		// bench - Run learner-feedback benchmark
 		createTool(
 			"bench",
-			"Run a synthetic learner benchmark against the current teaching policy. Use to measure teaching effectiveness and identify weaknesses.",
+			"Run a learner-feedback benchmark against the current teaching policy. Uses explicit feedback and inferred learner-turn signals.",
 			{
 				topic: { type: "string", description: "Optional topic to focus the benchmark on" }
 			},
@@ -951,9 +953,11 @@ export async function createKeatingTools(
 				const basePolicy = parsePolicyFromStorage(await storage.getActivePolicy());
 				const learnerState = await storage.getLearnerState();
 				const realOutcomesRef = extractBrowserOutcomes(learnerState.feedbackHistory, learnerState.topicsExplored);
-				void realOutcomesRef;
+				if (!hasEnoughRealData(realOutcomesRef)) {
+					return `Not ready to evolve: need at least ${MIN_REAL_OUTCOMES} learner feedback signals; found ${realOutcomesRef.length}. Keep teaching and collecting explicit or inferred feedback.`;
+				}
 
-				const meRun = mapElitesEvolve(basePolicy, topic);
+				const meRun = mapElitesEvolve(basePolicy, topic, 24, 20260401, undefined, undefined, realOutcomesRef);
 				const run = mapElitesToEvolutionRun(meRun);
 				const report = mapElitesToMarkdown(meRun);
 
@@ -1181,6 +1185,9 @@ ${topicList}
 				const basePolicy = parsePolicyFromStorage(await storage.getActivePolicy());
 				const learnerState = await storage.getLearnerState();
 				const realOutcomes = extractBrowserOutcomes(learnerState.feedbackHistory, learnerState.topicsExplored);
+				if (!hasEnoughRealData(realOutcomes)) {
+					return `Not ready to auto-improve: need at least ${MIN_REAL_OUTCOMES} learner feedback signals; found ${realOutcomes.length}.`;
+				}
 
 				// Step 1: Baseline benchmark
 				const baseline = runBenchmarkSuite(basePolicy, topic, 20260401, 3, DEFAULT_WEIGHTS, realOutcomes);
@@ -1188,7 +1195,7 @@ ${topicList}
 				await storage.saveBenchmark(baseline.overallScore, baselineReport, topic);
 
 				// Step 2: Evolve policy via MAP-Elites
-				const meRun = mapElitesEvolve(basePolicy, topic);
+				const meRun = mapElitesEvolve(basePolicy, topic, 24, 20260401, undefined, undefined, realOutcomes);
 				const run = mapElitesToEvolutionRun(meRun);
 				const evolveReport = mapElitesToMarkdown(meRun);
 

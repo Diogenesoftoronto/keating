@@ -9,6 +9,8 @@ import {
 	removeCustomModel,
 } from "../keating/ui-settings";
 import { tutorialApiKeyHref } from "../lib/tutorial-links";
+import { SettingsSectionNav } from "./SettingsSectionNav";
+import { Toggle } from "./Toggle";
 import {
 	completeOAuthFromInput,
 	initiateOAuth,
@@ -216,33 +218,16 @@ export function ProvidersModelsTab() {
 		setProviderDialog({ open: true, type });
 	};
 
-	const SECTIONS = [
-		{ id: "cloud-providers", label: "Cloud" },
-		{ id: "provider-visibility", label: "Visibility" },
-		{ id: "my-models", label: "My Models" },
-		{ id: "custom-providers", label: "Custom Providers" },
-	];
-
-	const scrollToSection = (id: string) => {
-		const el = document.getElementById(`settings-section-${id}`);
-		if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-	};
-
 	return (
 		<div className="flex flex-col gap-8">
-			<nav className="sticky -top-4 sm:-top-5 z-10 -mx-4 sm:-mx-5 -mt-4 sm:-mt-5 px-4 sm:px-5 pt-3 pb-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b border-border">
-				<div className="flex flex-wrap gap-1.5">
-					{SECTIONS.map((s) => (
-						<button
-							key={s.id}
-							onClick={() => scrollToSection(s.id)}
-							className="rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-						>
-							{s.label}
-						</button>
-					))}
-				</div>
-			</nav>
+			<SettingsSectionNav
+				sections={[
+					{ id: "cloud-providers", label: "Cloud" },
+					{ id: "provider-visibility", label: "Visibility" },
+					{ id: "my-models", label: "My Models" },
+					{ id: "custom-providers", label: "Custom Providers" },
+				]}
+			/>
 
 			{/* Cloud Provider Keys */}
 			<div id="settings-section-cloud-providers" className="flex flex-col gap-4 scroll-mt-20">
@@ -275,16 +260,12 @@ export function ProvidersModelsTab() {
 						return (
 							<div key={provider} className="flex items-center justify-between gap-4 rounded-lg border border-border p-3">
 								<div className="text-sm font-medium text-foreground capitalize">{provider}</div>
-								<label className="relative inline-flex cursor-pointer items-center gap-2">
-									<input
-										type="checkbox"
-										className="sr-only peer"
-										checked={!hidden}
-										onChange={(e) => handleToggleProvider(provider, !e.target.checked)}
-									/>
-									<div className="h-5 w-9 rounded-full bg-muted-foreground/30 peer-checked:bg-primary transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-4" />
-									<span className="text-xs text-muted-foreground">{hidden ? "Hidden" : "Visible"}</span>
-								</label>
+								<Toggle
+									tone="success"
+									aria-label={hidden ? "Hidden" : "Visible"}
+									checked={!hidden}
+									onChange={(checked) => handleToggleProvider(provider, !checked)}
+								/>
 							</div>
 						);
 					})}
@@ -295,15 +276,15 @@ export function ProvidersModelsTab() {
 
 			{/* Custom Models */}
 			<div id="settings-section-my-models" className="flex flex-col gap-4 scroll-mt-20">
-				<div className="flex items-center justify-between">
-					<div>
+				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+					<div className="min-w-0">
 						<h3 className="text-sm font-semibold text-foreground mb-2">My Models</h3>
 						<p className="text-sm text-muted-foreground">
 							Manually add models that aren't auto-discovered.
 						</p>
 					</div>
 					<button
-						className="inline-flex items-center justify-center rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+						className="dialog-compact-button inline-flex shrink-0 items-center justify-center rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
 						onClick={() => setShowAddModel((s) => !s)}
 					>
 						{showAddModel ? "Cancel" : "Add Model"}
@@ -431,15 +412,15 @@ export function ProvidersModelsTab() {
 
 			{/* Custom Providers */}
 			<div id="settings-section-custom-providers" className="flex flex-col gap-4 scroll-mt-20">
-				<div className="flex items-center justify-between">
-					<div>
+				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+					<div className="min-w-0">
 						<h3 className="text-sm font-semibold text-foreground mb-2">Custom Providers</h3>
 						<p className="text-sm text-muted-foreground">
 							User-configured servers with auto-discovered or manually defined models.
 						</p>
 					</div>
 					<select
-						className="rounded-md border border-border bg-background px-2 py-1.5 text-xs"
+						className="w-full sm:w-auto shrink-0 rounded-md border border-border bg-background px-2 py-1.5 text-xs"
 						onChange={(e) => {
 							const value = e.target.value as KeatingCustomProviderType;
 							openAddProvider(value);

@@ -346,7 +346,7 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 								return (
 									<section key={groupKey}>
 										{/* Session header */}
-										<div className="mb-2 flex items-center gap-2">
+										<div className="mb-2 flex items-center gap-2 min-w-0">
 											{isOther ? (
 												<>
 													<span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -359,10 +359,10 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 											) : sessionMeta ? (
 												<>
 													<MessageSquare size={12} className="shrink-0 text-muted-foreground" />
-													<span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate">
+													<span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate min-w-0">
 														{sessionMeta.title}
 													</span>
-													<span className="text-[10px] text-muted-foreground">
+													<span className="text-[10px] text-muted-foreground shrink-0">
 														{formatArtifactDate(new Date(sessionMeta.lastModified ?? sessionMeta.createdAt).getTime())} · {sessionMeta.messageCount} messages
 													</span>
 													{sessionMeta.parentSessionId && (
@@ -374,7 +374,7 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 													Unknown session
 												</span>
 											)}
-											<span className="ml-auto text-[10px] text-muted-foreground">
+											<span className="ml-auto text-[10px] text-muted-foreground shrink-0">
 												{groupArtifacts.length} artifact{groupArtifacts.length === 1 ? "" : "s"}
 											</span>
 										</div>
@@ -409,13 +409,13 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 																	</span>
 																	)}
 																</div>
-																<div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
-																	<span>{meta.label}</span>
-																	<span>·</span>
-																	<span>{formatArtifactDate(artifact.createdAt)}</span>
-																	<span>·</span>
-																	<span className="truncate">{artifactPreviewText(artifact)}</span>
-																</div>
+												<div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground min-w-0">
+														<span className="shrink-0">{meta.label}</span>
+														<span className="shrink-0">·</span>
+														<span className="shrink-0">{formatArtifactDate(artifact.createdAt)}</span>
+														<span className="shrink-0">·</span>
+														<span className="truncate">{artifactPreviewText(artifact)}</span>
+													</div>
 															</div>
 														</div>
 													</button>

@@ -159,6 +159,15 @@ function parseChoice<T extends string>(value: string | undefined, allowed: reado
   throw new Error(`${label} must be one of: ${allowed.join(", ")}`);
 }
 
+function learnerFeedbackTopics(state: Awaited<ReturnType<typeof loadLearnerState>>): string[] {
+  const covered = new Set(state.coveredTopics.map((topic) => topic.slug));
+  return [...new Set(
+    state.feedback
+      .map((feedback) => feedback.topic.trim())
+      .filter((topic) => topic && topic !== "general" && !covered.has(topic))
+  )].slice(-10);
+}
+
 async function runExportCommand(cwd: string, args: string[]): Promise<void> {
   if (!args.includes("--finetune")) {
     throw new Error([
@@ -515,6 +524,11 @@ async function run(): Promise<void> {
       console.log(`  Sessions: ${state.sessions?.length ?? 0}`);
       console.log(`  Topics covered: ${state.coveredTopics.length}`);
       for (const t of state.coveredTopics.slice(-10)) console.log(`    - ${t.slug} (${t.domain})`);
+      const feedbackTopics = learnerFeedbackTopics(state);
+      if (feedbackTopics.length > 0) {
+        console.log(`  Feedback-only topics: ${feedbackTopics.length}`);
+        for (const topic of feedbackTopics) console.log(`    - ${topic}`);
+      }
       console.log(`  Feedback: 👍${upCount} 👎${downCount} 🤔${confusedCount}`);
       console.log(`  Misconceptions identified: ${state.identifiedMisconceptions.length}`);
       return;
@@ -530,6 +544,7 @@ async function run(): Promise<void> {
       return;
     }
     case "feedback": {
+      await ensureProjectScaffold(cwd);
       const signalMap: Record<string, "thumbs-up" | "thumbs-down" | "confused"> = {
         up: "thumbs-up",
         down: "thumbs-down",

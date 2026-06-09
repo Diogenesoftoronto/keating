@@ -142,6 +142,7 @@ export interface BenchmarkTrace {
 	topicTraces: BenchmarkTopicTrace[];
 	realOutcomeCount: number;
 	syntheticFallback: boolean;
+	dataSource?: "learner-feedback" | "learner-feedback-sparse" | "synthetic" | "no-learner-feedback";
 }
 
 export interface BenchmarkTopicTrace {
@@ -170,6 +171,7 @@ export interface BenchmarkTopicTrace {
 export interface EvolutionCandidate {
 	policy: TeacherPolicy;
 	benchmark: BenchmarkResult;
+	counterfactualBenchmark?: BenchmarkResult;
 	parentName: string | null;
 	iteration: number;
 	novelty: number;
@@ -188,6 +190,7 @@ export interface EvolutionCandidate {
 		after: number | string;
 		delta: number;
 	}>;
+	preferenceScore?: number;
 }
 
 export interface PromptObjectiveVector {
@@ -913,6 +916,7 @@ export function simulateTeaching(
 }
 
 function classifyDominantSignal(simulations: TeachingSimulation[], kind: "strength" | "weakness"): string {
+	if (simulations.length === 0) return "no learner feedback";
 	const metrics = {
 		intuitionFit: mean(simulations.map((entry) => entry.breakdown.intuitionFit)),
 		rigorFit: mean(simulations.map((entry) => entry.breakdown.rigorFit)),
@@ -954,9 +958,35 @@ export interface BrowserLearnerOutcome extends ScoreableLearnerOutcome {
 	outcomeScore: number;
 }
 
+export interface BrowserLearnerTurnSignal {
+	topic: string;
+	signal: "thumbs-up" | "thumbs-down" | "confused";
+	masteryEstimate: number;
+	evidence: string;
+}
+
+export function inferBrowserLearnerTurnSignal(text: string, fallbackTopic = "general"): BrowserLearnerTurnSignal | null {
+	const compact = text.replace(/\s+/g, " ").trim();
+	if (compact.length < 4) return null;
+	const lowered = compact.toLowerCase();
+	const signal =
+		/\b(wrong|incorrect|not helpful|bad explanation|no,? that's not|still wrong)\b/i.test(lowered) ? "thumbs-down" :
+		/\b(confused|lost|stuck|unclear|not sure|don't understand|dont understand|doesn't make sense|doesnt make sense|can you explain|what do you mean|why is|how does)\b/i.test(lowered) ? "confused" :
+		/\b(got it|makes sense|i understand|that helps|clear now|yes exactly|correct)\b/i.test(lowered) ? "thumbs-up" :
+		null;
+	if (!signal) return null;
+	const resolved = resolveTopic(fallbackTopic);
+	return {
+		topic: resolved.slug,
+		signal,
+		masteryEstimate: signal === "thumbs-up" ? 0.75 : signal === "confused" ? 0.35 : 0.2,
+		evidence: compact.slice(0, 240),
+	};
+}
+
 export function extractBrowserOutcomes(feedbackHistory: Array<{ topic: string; signal: "thumbs-up" | "thumbs-down" | "confused" }>, topicsExplored: string[]): BrowserLearnerOutcome[] {
 	return feedbackHistory.map((fb) => ({
-		topic: fb.topic,
+		topic: resolveTopic(fb.topic).slug,
 		feedbackSignal: fb.signal,
 		masteryEstimate: topicsExplored.includes(fb.topic) ? 0.6 : 0.4,
 		outcomeScore: feedbackToOutcomeScore(fb.signal),
@@ -972,29 +1002,24 @@ export function runBenchmarkSuite(
 	realOutcomes?: BrowserLearnerOutcome[]
 ): BenchmarkResult {
 	const outcomes = realOutcomes ?? [];
-	const useRealLearners = hasEnoughRealData(outcomes);
+	const hasLearnerContext = realOutcomes !== undefined;
+	const hasFeedback = outcomes.length > 0;
+	const hasEnoughFeedback = hasEnoughRealData(outcomes);
 	const NUM_SYNTHETIC = 3;
 
-	const topics = benchmarkTopics(focusTopic);
+	const topics = hasLearnerContext && hasFeedback && !focusTopic
+		? [...new Set(outcomes.map((outcome) => outcome.topic))].map((topic) => resolveTopic(topic))
+		: benchmarkTopics(focusTopic);
 	const topicTraces: BenchmarkTopicTrace[] = [];
 	const topicBenchmarks = topics.map((topic, index) => {
 		const topicReal = outcomes.filter((o) => o.topic === topic.slug);
 		let summary: TopicBenchmark;
 
-		if (useRealLearners && topicReal.length >= 3) {
-			const realSim = computeRealOutcomeScore(topicReal, policy, topic, weights);
-			const synthLearners = buildLearnerPopulation(seed + index * 97, NUM_SYNTHETIC);
-			const synthSims = synthLearners.map((learner) => simulateTeaching(policy, topic, learner, weights));
-			if (synthSims.length > 0) {
-				const synthMean = mean(synthSims.map((s) => s.score));
-				realSim.score = blendRealSyntheticScore(realSim.score, synthMean, topicReal.length);
-			}
-			summary = summarizeTopic(topic, [realSim, ...synthSims], traceLimit);
-		} else if (useRealLearners && topicReal.length > 0) {
-			const realSim = computeRealOutcomeScore(topicReal, policy, topic, weights);
-			const synthLearners = buildLearnerPopulation(seed + index * 97, NUM_SYNTHETIC);
-			const synthSims = synthLearners.map((learner) => simulateTeaching(policy, topic, learner, weights));
-			summary = summarizeTopic(topic, [...synthSims, realSim], traceLimit);
+		if (hasLearnerContext) {
+			const simulations = topicReal.length > 0
+				? [computeRealOutcomeScore(topicReal, policy, topic, weights)]
+				: [];
+			summary = summarizeTopic(topic, simulations, traceLimit);
 		} else {
 			const learners = buildLearnerPopulation(seed + index * 97, NUM_SYNTHETIC);
 			const simulations = learners.map((learner) => simulateTeaching(policy, topic, learner, weights));
@@ -1027,6 +1052,13 @@ export function runBenchmarkSuite(
 	});
 
 	const weakest = [...topicBenchmarks].sort((left, right) => left.meanScore - right.meanScore)[0];
+	const dataSource = hasLearnerContext
+		? hasFeedback
+			? hasEnoughFeedback
+				? "learner-feedback"
+				: "learner-feedback-sparse"
+			: "no-learner-feedback"
+		: "synthetic";
 
 	return {
 		policy,
@@ -1036,10 +1068,11 @@ export function runBenchmarkSuite(
 		weakestTopic: weakest?.topic.title ?? "n/a",
 		trace: {
 			seed,
-			learnerCountPerTopic: useRealLearners ? 1 + NUM_SYNTHETIC : NUM_SYNTHETIC,
+			learnerCountPerTopic: hasLearnerContext ? (hasFeedback ? 1 : 0) : NUM_SYNTHETIC,
 			topicTraces,
 			realOutcomeCount: outcomes.length,
-			syntheticFallback: !useRealLearners,
+			syntheticFallback: !hasLearnerContext,
+			dataSource,
 		},
 	};
 }
@@ -1069,10 +1102,15 @@ export function benchmarkToMarkdown(result: BenchmarkResult): string {
 		`- The policy currently underperforms most on ${result.weakestTopic}, which is a useful anchor for mutation and curriculum repair.`
 	);
 	const realCount = (result as any).trace?.realOutcomeCount ?? 0;
-	if (realCount > 0) {
-		lines.push(`- Benchmark includes **real learner outcomes** (${realCount} data points). Synthetic component is progressively discounted as data grows.`);
+	const dataSource = (result as any).trace?.dataSource;
+	if (dataSource === "learner-feedback") {
+		lines.push(`- Benchmark uses **learner feedback only** (${realCount} data points). This is ready for policy evolution.`);
+	} else if (dataSource === "learner-feedback-sparse") {
+		lines.push(`- Benchmark uses **learner feedback only**, but the corpus is sparse (${realCount}/${MIN_REAL_OUTCOMES} minimum signals). Treat this as directional and do not evolve policy yet.`);
+	} else if (dataSource === "no-learner-feedback") {
+		lines.push(`- Benchmark has no learner feedback yet. Teach first, collect at least ${MIN_REAL_OUTCOMES} feedback signals for this learner, then benchmark/evolve.`);
 	} else {
-		lines.push(`- Benchmark uses **synthetic learners** only — not enough real student data yet (need ${MIN_REAL_OUTCOMES}+ feedback signals).`);
+		lines.push("- Benchmark uses the deterministic synthetic fallback because no learner feedback corpus was supplied.");
 	}
 	lines.push("");
 	return `${lines.join("\n")}\n`;
@@ -1345,23 +1383,99 @@ function meRandomWeights(prng: Prng): SimulationWeights {
 	});
 }
 
+function browserCounterfactualOutcomes(outcomes: BrowserLearnerOutcome[]): BrowserLearnerOutcome[] {
+	return outcomes.flatMap((outcome) => {
+		const variants: Array<"thumbs-up" | "thumbs-down" | "confused"> =
+			outcome.feedbackSignal === "thumbs-up"
+				? ["thumbs-up", "confused"]
+				: outcome.feedbackSignal === "confused"
+					? ["confused", "thumbs-down"]
+					: ["thumbs-down", "confused"];
+		return variants.map((signal) => ({
+			topic: outcome.topic,
+			feedbackSignal: signal,
+			masteryEstimate: signal === "thumbs-up" ? 0.75 : signal === "confused" ? 0.35 : 0.2,
+			outcomeScore: feedbackToOutcomeScore(signal),
+		}));
+	});
+}
+
+type PolicyJudgementCandidate = {
+	label: string;
+	policy: TeacherPolicy;
+	benchmark: BenchmarkResult;
+	counterfactualBenchmark?: BenchmarkResult;
+	preferenceScore: number;
+};
+
+function policyJudgementVector(candidate: PolicyJudgementCandidate): number[] {
+	const mean = (values: number[]) => values.length === 0 ? 0 : values.reduce((sum, value) => sum + value, 0) / values.length;
+	const topics = candidate.benchmark.topicBenchmarks;
+	return [
+		clamp(candidate.benchmark.overallScore / 100),
+		clamp((candidate.counterfactualBenchmark?.overallScore ?? candidate.benchmark.overallScore) / 100),
+		clamp(mean(topics.map((topic) => topic.meanMasteryGain))),
+		clamp(mean(topics.map((topic) => topic.meanTransfer))),
+		clamp(1 - mean(topics.map((topic) => topic.meanConfusion))),
+		candidate.benchmark.trace.dataSource === "learner-feedback" ? 1 : candidate.benchmark.trace.dataSource === "learner-feedback-sparse" ? 0.35 : 0,
+	];
+}
+
+function prosperPolicyWinner<T extends PolicyJudgementCandidate>(candidates: T[]): T {
+	let best = candidates[0];
+	let bestScore = -Infinity;
+	for (const candidate of candidates) {
+		const left = policyJudgementVector(candidate);
+		const score = candidates.reduce((sum, opponent) => {
+			if (candidate === opponent) return sum;
+			const right = policyJudgementVector(opponent);
+			let wins = 0;
+			let losses = 0;
+			for (let index = 0; index < left.length; index++) {
+				if (left[index] > right[index]) wins += 1;
+				if (left[index] < right[index]) losses += 1;
+			}
+			const aggregateDelta = left.reduce((s, v) => s + v, 0) / left.length - right.reduce((s, v) => s + v, 0) / right.length;
+			return sum + wins - losses + aggregateDelta * 2;
+		}, 0);
+		candidate.preferenceScore = score;
+		if (score > bestScore) {
+			best = candidate;
+			bestScore = score;
+		}
+	}
+	return best;
+}
+
 export function mapElitesEvolve(
 	basePolicy: TeacherPolicy,
 	focusTopic?: string,
 	iterations = 24,
 	seed = 20260401,
 	descriptors = DEFAULT_DESCRIPTORS,
-	resolution = DEFAULT_RESOLUTION
+	resolution = DEFAULT_RESOLUTION,
+	realOutcomes?: BrowserLearnerOutcome[]
 ): MapElitesRun {
 	const prng = new Prng(seed);
 	const grid: MapElitesGrid = { descriptors, resolution, cells: new Map() };
 	const totalCells = resolution ** descriptors.length;
 	const initRandom = Math.floor(iterations * 0.25);
 
-	const baseline = runBenchmarkSuite(basePolicy, focusTopic, seed, 3, DEFAULT_WEIGHTS);
+	const baseline = runBenchmarkSuite(basePolicy, focusTopic, seed, 3, DEFAULT_WEIGHTS, realOutcomes);
+	const cfOutcomes = realOutcomes ? browserCounterfactualOutcomes(realOutcomes) : undefined;
+	const baselineCounterfactual = cfOutcomes
+		? runBenchmarkSuite(basePolicy, focusTopic, seed + 7, 3, DEFAULT_WEIGHTS, cfOutcomes)
+		: undefined;
 	mePlaceInGrid(grid, basePolicy, DEFAULT_WEIGHTS, baseline.overallScore, baseline, 0);
 
 	const exploredCandidates: EvolutionCandidate[] = [];
+	const judgementCandidates: PolicyJudgementCandidate[] = [{
+		label: basePolicy.name,
+		policy: basePolicy,
+		benchmark: baseline,
+		counterfactualBenchmark: baselineCounterfactual,
+		preferenceScore: 0,
+	}];
 
 	for (let i = 1; i <= iterations; i++) {
 		let candidatePolicy: TeacherPolicy;
@@ -1376,12 +1490,16 @@ export function mapElitesEvolve(
 			candidateWeights = mutateWeights(parent.weights, prng);
 		}
 
-		const candidateBenchmark = runBenchmarkSuite(candidatePolicy, focusTopic, seed + i * 11, 3, candidateWeights);
+		const candidateBenchmark = runBenchmarkSuite(candidatePolicy, focusTopic, seed + i * 11, 3, candidateWeights, realOutcomes);
+		const candidateCounterfactual = cfOutcomes
+			? runBenchmarkSuite(candidatePolicy, focusTopic, seed + i * 11 + 7, 3, candidateWeights, cfOutcomes)
+			: undefined;
 		const isNewCell = mePlaceInGrid(grid, candidatePolicy, candidateWeights, candidateBenchmark.overallScore, candidateBenchmark, i);
 
 		exploredCandidates.push({
 			policy: candidatePolicy,
 			benchmark: candidateBenchmark,
+			counterfactualBenchmark: candidateCounterfactual,
 			parentName: null,
 			iteration: i,
 			novelty: isNewCell ? 1 : 0,
@@ -1398,14 +1516,22 @@ export function mapElitesEvolve(
 			},
 			parameterDelta: [],
 		});
+		judgementCandidates.push({
+			label: candidatePolicy.name,
+			policy: candidatePolicy,
+			benchmark: candidateBenchmark,
+			counterfactualBenchmark: candidateCounterfactual,
+			preferenceScore: 0,
+		});
 	}
 
-	let best: BenchmarkResult = baseline;
-	for (const cell of grid.cells.values()) {
-		if (cell && cell.benchmark.overallScore > best.overallScore) {
-			best = cell.benchmark;
-		}
+	const prosperBest = prosperPolicyWinner(judgementCandidates);
+	for (const candidate of exploredCandidates) {
+		const judgement = judgementCandidates.find((entry) => entry.label === candidate.policy.name);
+		candidate.preferenceScore = judgement?.preferenceScore ?? 0;
+		candidate.accepted = candidate.policy.name === prosperBest.policy.name;
 	}
+	const best = prosperBest.benchmark;
 
 	return {
 		baseline,
@@ -1437,6 +1563,7 @@ export function mapElitesToMarkdown(run: MapElitesRun): string {
 		`- Baseline score: ${run.baseline.overallScore.toFixed(2)}`,
 		`- Best score: ${run.best.overallScore.toFixed(2)}`,
 		`- Explored candidates: ${run.exploredCandidates.length}`,
+		`- Judgement: PROSPER-style pairwise preference over real feedback, counterfactual robustness, mastery, transfer, low confusion, and evidence readiness.`,
 		"",
 		"## Elite Archive",
 		"",
@@ -1463,6 +1590,16 @@ export function mapElitesToMarkdown(run: MapElitesRun): string {
 		);
 	}
 
+	lines.push("");
+	lines.push("## PROSPER Candidate Judgement");
+	lines.push("");
+	lines.push("| Candidate | Real Score | Counterfactual Score | Preference | Accepted |");
+	lines.push("| --- | ---: | ---: | ---: | :---: |");
+	for (const candidate of run.exploredCandidates.slice().sort((left, right) => (right.preferenceScore ?? 0) - (left.preferenceScore ?? 0)).slice(0, 12)) {
+		lines.push(
+			`| ${candidate.policy.name} | ${candidate.benchmark.overallScore.toFixed(2)} | ${candidate.counterfactualBenchmark?.overallScore.toFixed(2) ?? "n/a"} | ${(candidate.preferenceScore ?? 0).toFixed(2)} | ${candidate.accepted ? "yes" : "no"} |`
+		);
+	}
 	lines.push("");
 	lines.push("## Best Benchmark Snapshot");
 	lines.push("");

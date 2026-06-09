@@ -155,26 +155,26 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 	if (!open) return null;
 
 	return (
-		<div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 px-4 font-mono" onClick={onClose}>
+		<div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 px-3 sm:px-4 font-mono" onClick={onClose}>
 			<div
 				role="dialog"
 				aria-modal="true"
-				className="flex flex-col rounded-lg border-2 border-border bg-background overflow-hidden w-[min(720px,92vw)] max-h-[85vh]"
+				className="flex flex-col rounded-lg border-2 border-border bg-background overflow-hidden w-[min(720px,96vw)] max-h-[92vh] sm:max-h-[85vh]"
 				onClick={(e) => e.stopPropagation()}
 			>
-				<div className="p-4 border-b border-border shrink-0">
+				<div className="p-3 sm:p-4 border-b border-border shrink-0">
 					<div>
-						<h2 className="text-base font-semibold text-foreground">Select Model</h2>
-						<p className="text-xs text-muted-foreground mt-0.5">Built-in providers and discovered custom-provider models.</p>
+						<h2 className="text-sm sm:text-base font-semibold text-foreground">Select Model</h2>
+						<p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">Built-in providers and discovered custom-provider models.</p>
 					</div>
-					<div className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(10rem,14rem)_auto]">
+					<div className="mt-2 sm:mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(10rem,14rem)_auto]">
 						<label className="min-w-0">
 							<span className="sr-only">Search models</span>
 							<input
 								ref={inputRef}
 								type="text"
 								placeholder="Search models"
-								className="w-full rounded-md border-2 border-border bg-background px-3 py-2 text-sm"
+								className="w-full rounded-md border-2 border-border bg-background px-2.5 py-1.5 text-xs sm:text-sm"
 								value={search}
 								onChange={(e) => setSearch(e.target.value)}
 							/>
@@ -182,7 +182,7 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 						<label className="min-w-0">
 							<span className="sr-only">Filter by provider</span>
 							<select
-								className="w-full rounded-md border-2 border-border bg-background px-3 py-2 text-sm"
+								className="w-full rounded-md border-2 border-border bg-background px-2.5 py-1.5 text-xs sm:text-sm"
 								value={providerFilter}
 								onChange={(e) => setProviderFilter(e.target.value)}
 							>
@@ -199,9 +199,9 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 								setLoading(true);
 								loadModels();
 							}}
-							className="inline-flex items-center justify-center gap-1 rounded-md border-2 border-border px-3 py-2 text-sm hover:bg-ink hover:text-paper transition-colors"
+							className="inline-flex items-center justify-center gap-1 rounded-md border-2 border-border px-2.5 py-1.5 text-xs sm:text-sm hover:bg-ink hover:text-paper transition-colors"
 						>
-							<RefreshCw size={14} />
+							<RefreshCw size={13} />
 							Refresh
 							</button>
 					</div>
@@ -209,11 +209,11 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 
 				<div className="flex-1 overflow-y-auto border border-border m-1 bg-muted/20">
 					{loading ? (
-						<div className="p-4 text-sm text-muted-foreground text-center">Loading models…</div>
+						<div className="p-3 sm:p-4 text-sm text-muted-foreground text-center">Loading models…</div>
 						) : error ? (
-						<div className="p-4 text-sm text-destructive text-center">{error}</div>
+						<div className="p-3 sm:p-4 text-sm text-destructive text-center">{error}</div>
 					) : filtered.length === 0 ? (
-						<div className="p-4 text-sm text-muted-foreground text-center">No models matched the current search.</div>
+						<div className="p-3 sm:p-4 text-sm text-muted-foreground text-center">No models matched the current search.</div>
 					) : (
 						<>
 							{renderGroup("Recent", recentModels, selectedKey, setSelectedKey, localState, webGpuAvailable)}
@@ -224,16 +224,16 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 					)}
 				</div>
 
-				<div className="flex justify-end gap-2 p-4 border-t border-border shrink-0">
+				<div className="flex justify-end gap-2 p-3 sm:p-4 border-t border-border shrink-0">
 					<button
 						onClick={onClose}
-						className="rounded-md border-2 border-border px-4 py-2 text-sm hover:bg-ink hover:text-paper transition-colors"
+						className="rounded-md border-2 border-border px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm hover:bg-ink hover:text-paper transition-colors"
 					>
 						Cancel
 					</button>
 					<button
 						onClick={handleSelect}
-						className="rounded-md bg-primary border-2 border-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90 transition-colors"
+						className="rounded-md bg-primary border-2 border-primary px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm text-primary-foreground hover:bg-primary/90 transition-colors"
 					>
 						Use Selected Model
 					</button>
@@ -254,7 +254,7 @@ function renderGroup(
 	if (models.length === 0) return null;
 	return (
 		<div>
-			<div className="sticky top-0 z-10 bg-muted/80 border-y border-border px-4 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground backdrop-blur">
+			<div className="sticky top-0 z-10 bg-muted/80 border-y border-border px-3 sm:px-4 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground backdrop-blur">
 				{title}
 			</div>
 			{models.map((entry) => (
@@ -307,7 +307,7 @@ function ModelOption({
 
 	return (
 		<div
-			className={`flex gap-3 items-start px-4 py-3 border-b border-border cursor-pointer transition-colors ${
+			className={`flex gap-2.5 sm:gap-3 items-start px-3 sm:px-4 py-2 sm:py-3 border-b border-border cursor-pointer transition-colors ${
 				isSelected ? "bg-primary/5" : ""
 			} ${disabled ? "opacity-45 cursor-not-allowed" : "hover:bg-accent/30"}`}
 			onClick={() => {
@@ -320,14 +320,14 @@ function ModelOption({
 				checked={isSelected}
 				readOnly
 				disabled={disabled}
-				className="mt-1 shrink-0"
+				className="mt-0.5 sm:mt-1 shrink-0"
 			/>
 			<div className="min-w-0 flex-1">
-				<div className="text-sm font-bold">{model.name}</div>
-				<div className="text-xs text-muted-foreground mt-0.5">
+				<div className="text-sm font-bold leading-tight">{model.name}</div>
+				<div className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
 					{isBrowser ? "Runs in this browser" : `Provider: ${model.provider}`}
 				</div>
-				<div className="text-xs text-muted-foreground">{model.id}</div>
+				<div className="text-[11px] sm:text-xs text-muted-foreground">{model.id}</div>
 				{badges.length > 0 && (
 					<div className="flex flex-wrap gap-1 mt-1.5">
 						{badges.map((b) => (

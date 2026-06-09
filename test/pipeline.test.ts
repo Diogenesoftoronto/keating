@@ -4,6 +4,8 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 
 import { configPath } from "../src/core/config.js";
+import { learnerStatePath } from "../src/core/paths.js";
+import { loadLearnerState, recordFeedback, saveLearnerState } from "../src/core/learner-state.js";
 import {
   animateTopicArtifact,
   autoImproveArtifact,
@@ -39,6 +41,11 @@ Workflow:
   const plan = await planTopicArtifact(workdir, "derivative");
   const map = await mapTopicArtifact(workdir, "derivative");
   const animation = await animateTopicArtifact(workdir, "derivative");
+  const learnerState = await loadLearnerState(learnerStatePath(workdir));
+  for (let i = 0; i < 5; i += 1) {
+    recordFeedback(learnerState, "derivative", i === 0 ? "confused" : "thumbs-up");
+  }
+  await saveLearnerState(learnerStatePath(workdir), learnerState);
   const bench = await benchPolicyArtifact(workdir, "derivative");
   const evolution = await evolvePolicyArtifact(workdir, "derivative");
   const promptEvolution = await evolvePromptArtifact(workdir, "learn");
@@ -97,6 +104,11 @@ test("auto-improve writes observable transaction artifacts", async () => {
     join(workdir, "pi", "prompts", "learn.md"),
     `Teach with diagnosis, own voice, retrieval, transfer, and verification.`
   );
+  const learnerState = await loadLearnerState(learnerStatePath(workdir));
+  for (let i = 0; i < 5; i += 1) {
+    recordFeedback(learnerState, "derivative", i === 0 ? "confused" : "thumbs-up");
+  }
+  await saveLearnerState(learnerStatePath(workdir), learnerState);
 
   const result = await autoImproveArtifact(workdir, "derivative", { force: true });
   await access(result.reportPath);

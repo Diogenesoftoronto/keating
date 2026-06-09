@@ -126,5 +126,5 @@ export function estimateRowSpan(opts: {
 }
 
 export function pxToSpan(heightPx: number): number {
-	return Math.max(12, Math.ceil((heightPx + MASONRY_GAP_PX) / (MASONRY_ROW_PX + MASONRY_GAP_PX)));
+	return Math.max(6, Math.ceil((heightPx + MASONRY_GAP_PX) / (MASONRY_ROW_PX + MASONRY_GAP_PX)));
 }

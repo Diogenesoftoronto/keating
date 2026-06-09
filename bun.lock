@@ -12,7 +12,6 @@
         "dotenv": "^17.4.0",
         "h3": "^2.0.1-rc.20",
         "ink": "^7.0.3",
-        "jsoncrack-react": "^1.0.3",
         "manim-web": "^0.3.16",
         "nitro": "^3.0.260311-beta",
         "react": "^19.2.5",
@@ -1044,8 +1043,6 @@
     "json5": ["json5@2.2.3", "", { "bin": { "json5": "lib/cli.js" } }, "sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg=="],
 
     "jsonc-parser": ["jsonc-parser@3.3.1", "", {}, "sha512-HUgH65KyejrUFPvHFPbqOY0rsFip3Bo5wb4ngvdi1EpCYWUQDC5V+Y7mZws+DLkr4M//zQJoanu1SP+87Dv1oQ=="],
-
-    "jsoncrack-react": ["jsoncrack-react@1.0.3", "", { "dependencies": { "jsonc-parser": "^3.3.1", "react-zoomable-ui": "^0.11.0", "reaflow": "5.4.1", "use-long-press": "^3.3.0" }, "peerDependencies": { "react": ">=18", "react-dom": ">=18" } }, "sha512-nQ44t8YRKyjyhrf7cAf3W1JZVYl1VnW44VFV0yk+C8Vdi+S8Ykm9+qtD39hiRxPHfup4NSBXtN3Ayt1zuOVJmQ=="],
 
     "jwa": ["jwa@2.0.1", "", { "dependencies": { "buffer-equal-constant-time": "^1.0.1", "ecdsa-sig-formatter": "1.0.11", "safe-buffer": "^5.0.1" } }, "sha512-hRF04fqJIP8Abbkq5NKGN0Bbr3JxlQ+qhZufXVr0DvujKy93ZCbXZMHDL4EOtodSbCWxOqR8MS1tXA5hwqCXDg=="],
 

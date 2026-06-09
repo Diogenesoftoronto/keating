@@ -141,16 +141,16 @@ export function SessionCard({
 			>
 				{hero?.svg ? (
 					<div
-						className="session-card-hero-svg flex h-28 w-full items-center justify-center overflow-hidden bg-muted/40"
+						className="session-card-hero-svg flex h-20 sm:h-28 w-full items-center justify-center overflow-hidden bg-muted/40"
 						// Locally generated mermaid SVG from the user's own IndexedDB.
 						dangerouslySetInnerHTML={{ __html: hero.svg }}
 					/>
 				) : (
 					<div
-						className="flex h-20 w-full items-center justify-between px-4"
+						className="flex h-12 sm:h-20 w-full items-center justify-between px-3 sm:px-4"
 						style={{ background: categoryGradient(category.accent) }}
 					>
-						<Icon size={26} style={{ color: category.accent }} aria-hidden="true" />
+						<Icon size={20} className="sm:size-[26px]" style={{ color: category.accent }} aria-hidden="true" />
 						<span
 							className="rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide"
 							style={{ color: category.accent, background: `${category.accent}1f` }}
@@ -169,20 +169,20 @@ export function SessionCard({
 
 			<button
 				type="button"
-				className="flex min-w-0 flex-1 flex-col px-3.5 pb-3 pt-2.5 text-left"
+				className="flex min-w-0 flex-1 flex-col px-2.5 sm:px-3.5 pb-2.5 sm:pb-3 pt-2 sm:pt-2.5 text-left"
 				onClick={() => void onLoad(session.id)}
 			>
 				<span className="text-[11px] text-muted-foreground">{formatDate(session.lastModified)}</span>
-				<h3 className="mt-0.5 flex min-w-0 items-center gap-1.5 text-sm font-semibold leading-snug text-foreground">
+				<h3 className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs sm:text-sm font-semibold leading-snug text-foreground">
 					{session.parentSessionId ? (
 						<GitBranch size={13} className="mt-0.5 shrink-0 self-start text-primary" />
 					) : null}
-					<span className="line-clamp-3 break-words">{session.title}</span>
+					<span className="line-clamp-2 sm:line-clamp-3 break-words">{session.title}</span>
 				</h3>
 				{session.preview ? (
-					<p className="mt-1 line-clamp-3 break-words text-xs leading-5 text-muted-foreground">{session.preview}</p>
+					<p className="mt-1 line-clamp-2 sm:line-clamp-3 break-words text-xs leading-snug sm:leading-5 text-muted-foreground">{session.preview}</p>
 				) : null}
-				<div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-muted-foreground">
+				<div className="mt-1.5 sm:mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-muted-foreground">
 					<span>{session.messageCount} messages</span>
 					{childCount > 0 ? (
 						<span className="inline-flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.5">
