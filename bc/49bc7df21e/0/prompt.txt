@@ -1,0 +1,9 @@
+I have this issue when trying to use the application on laptop for lg screen sizes,[Image #4] the screen here doesn't have [Image #5] any way to get the other items that are in the hamburger menu in small, locking people out of many of the toggles that should be available. This needs to be fixed. You need to make these icons appear in the chat navigation window like they did in previous commits.
+
+---
+
+I have this issue when trying to use the application on laptop for lg screen sizes,[Image #4] the screen here doesn't have [Image #5] any way to get the other items that are in the hamburger menu in small, locking people out of many of the toggles that should be available. This needs to be fixed. You need to make these icons appear in the chat navigation window like they did in previous commits. You also need to keep the current status of the chatnav being clean and the menu working for the medium and sm size as well.
+
+---
+
+no change
