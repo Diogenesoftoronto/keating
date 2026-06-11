@@ -1,0 +1,23 @@
+Hey i would like you to improve the interactivity of the model [Image #1] [Image #2] it should look more like the second image. the green button the right should be the keating logo. of which there are many to use.
+
+---
+
+Hey is there a better place we could move the mascot-full? image?
+
+---
+
+okay these roots are hard to read and on light mode. I also would love if they covered a bit more of the page. The way they previously looked in git history was quite good. i want some mix of this
+
+<div class="dark keating-bu...">
+  (6 elements)
+  Reasoning
+
+Ah! A new soul boards the ship. Welcome, welcome — pull up a desk (or stand on one, if yo...
+</div>
+  in AssistantMessage (at /src/components/AssistantChatPanel.tsx)
+  in AssistantThread (at /src/components/AssistantChatPanel.tsx)
+  in AssistantChatPanel (at /src/components/AssistantChatPanel.tsx)
+
+---
+
+.
