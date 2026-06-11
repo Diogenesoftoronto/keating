@@ -1,0 +1,32 @@
+should be upgrades done to the version for the cli, also the cli and tui should have the correct current version numbers. also they should have a command that returns the version they are
+
+---
+
+make sure that i can get the version number in the cli and that the built version of the web server is the latest version of the in the @web/  dir rather than an old version i check when running the bin and it is currently old for some reason
+Called the Read tool with the following input: {"filePath":"/home/diogenes/Projects/keating/web/"}
+<path>/home/diogenes/Projects/keating/web/</path>
+<type>directory</type>
+<entries>
+.bun-install/
+.bun-tmp/
+.env.example
+.output/
+.storybook/
+bun.lock
+bunfig.toml
+debug-nitro.mjs
+dist/
+index.html
+nitro.config.ts
+node_modules/
+package.json
+public/
+server/
+src/
+tailwind.config.ts
+test/
+tsconfig.json
+vite.config.ts
+
+(20 entries)
+</entries>
