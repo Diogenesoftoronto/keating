@@ -1,0 +1,1 @@
+prepare a new github release with a new binary and everything
