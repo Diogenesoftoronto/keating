@@ -8,6 +8,50 @@ import { spawnSync } from "node:child_process";
 import { configPath } from "../src/core/config.js";
 import { detectAiRuntime, launchShell } from "../src/runtime/pi.js";
 
+const ROOT_VERSION = JSON.parse(readFileSync("package.json", "utf8")).version as string;
+
+test("all package manifests share the same version", () => {
+  const webPkg = JSON.parse(readFileSync("web/package.json", "utf8"));
+  const runtimePkg = JSON.parse(readFileSync("packages/browser-agent-runtime/package.json", "utf8"));
+  expect(webPkg.version).toBe(ROOT_VERSION);
+  expect(runtimePkg.version).toBe(ROOT_VERSION);
+});
+
+test("source files that embed the version are in sync with package.json", () => {
+  const checks: Array<{ path: string; pattern: RegExp; label: string }> = [
+    {
+      path: "src/core/version.ts",
+      pattern: new RegExp(`return "${ROOT_VERSION}";`),
+      label: "version.ts fallback",
+    },
+    {
+      path: "bin/keating.js",
+      pattern: new RegExp(`KEATING_VERSION = "${ROOT_VERSION}";`),
+      label: "keating.js fallback",
+    },
+    {
+      path: "web/index.html",
+      pattern: new RegExp(`"softwareVersion": "${ROOT_VERSION}"`),
+      label: "schema.org softwareVersion",
+    },
+    {
+      path: "web/src/components/ChatIntro.tsx",
+      pattern: new RegExp(`INIT SEQUENCE v${ROOT_VERSION}`),
+      label: "ChatIntro terminal banner",
+    },
+    {
+      path: "web/src/og-image.tsx",
+      pattern: new RegExp(`>v${ROOT_VERSION}<`),
+      label: "OG image version badge",
+    },
+  ];
+
+  for (const check of checks) {
+    const content = readFileSync(check.path, "utf8");
+    expect(content).toMatch(check.pattern);
+  }
+});
+
 test("npm package manifest includes only the CLI launcher from bin", () => {
   const pkg = JSON.parse(readFileSync("package.json", "utf8"));
 

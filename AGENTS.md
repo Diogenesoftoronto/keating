@@ -41,6 +41,8 @@ Task runner is **just** — run `just` to list available tasks.
 | Web preview | `just web-preview` |
 | Render docs diagrams | `just docs-diagrams` |
 | Render intro video | `just video-intro` |
+| Check versions | `just check-version` — CI-friendly read-only version sync check |
+| Sync versions | `just sync-version` — auto-fix all tracked version strings |
 
 **Just tasks** (`justfile`) are the canonical dev workflow: `just build`, `just test`, `just shell`, `just doctor`, `just bench`, `just evolve`, `just prompt-evolve`, `just map <topic>`, `just animate <topic>`, `just trace`, etc. Run `just` with no arguments to see all available tasks.
 
@@ -187,6 +189,7 @@ Disabled by default. When `speech.enabled: true` in `keating.config.json`, a `ke
 keating shell              # Launch Pi shell
 keating setup [--yes]      # Interactive config setup
 keating doctor             # Runtime diagnostic report
+keating version            # Show current version
 keating web [port]         # Start local web server
 
 # Artifact generation

@@ -23,8 +23,8 @@ interface Post {
 
 const BADGE_CLASSES: Record<BadgeColor, string> = {
   fix: "bg-[#d97706]/10 text-[#d97706]",
-  release: "bg-[#10b981]/10 text-[#10b981]",
-  feature: "bg-[#10b981]/10 text-[#10b981]",
+  release: "bg-[#1e9b50]/10 text-[#1e9b50]",
+  feature: "bg-[#1e9b50]/10 text-[#1e9b50]",
   pwa: "bg-[#6366f1]/10 text-[#6366f1]",
   update: "bg-[#d97706]/10 text-[#d97706]",
   tech: "bg-[#6366f1]/10 text-[#6366f1]",
@@ -33,7 +33,7 @@ const BADGE_CLASSES: Record<BadgeColor, string> = {
 
 function Code({ children }: { children: React.ReactNode }) {
   return (
-    <code className="bg-[#1a1a1a] text-[#f4f1ea] px-1 rounded text-sm">{children}</code>
+    <code className="bg-[#1c211b] text-[#f1ece0] px-1 rounded text-sm">{children}</code>
   );
 }
 
@@ -57,6 +57,96 @@ function majorMinor(version: string): string {
 /* ── Data ────────────────────────────────────────────────────────── */
 
 const POSTS: Post[] = [
+  {
+    date: "2026-06-10",
+    badge: { label: "RELEASE", color: "release" },
+    title: "v1.3.0 - An Interactive Hero, Readable Chat, and a Wider Polish Pass",
+    version: "1.3.0",
+    summary:
+      "Keating 1.3 puts a living machine on the front page: an interactive 3D CRT that boots a real terminal and hands you a session. Inside the app, Keating's replies now render on a panel that is actually readable in both themes, the conversation column is wider, and a broad retro and mobile polish pass reaches the landing page, navigation, session cards, usage charts, and settings. Underneath, the browser runtime gained portable session data and snapshot export, and every version string now flows from a single source of truth.",
+    sections: [
+      { id: "interactive-hero", title: "An Interactive Hero" },
+      { id: "readable-chat", title: "Readable Chat" },
+      { id: "retro-and-mobile-polish", title: "Retro and Mobile Polish" },
+      { id: "usage-and-runtime", title: "Usage and Browser Runtime" },
+      { id: "single-source-of-truth", title: "One Version, Everywhere" },
+    ],
+    body: (
+      <>
+        <p className="mb-4 leading-6">
+          1.3.0 is a surface release. The teaching engine is the same Socratic
+          loop, but the way you meet it - on the landing page and inside the chat -
+          got a lot more deliberate. The headline is a hero you can actually
+          touch, and a transcript you can actually read.
+        </p>
+
+        <h3 id="interactive-hero" className="font-bold mt-4 mb-2">An Interactive Hero</h3>
+        <p className="text-sm mb-4">
+          The front page now renders a 3D CRT monitor in WebGL. It is not a
+          screenshot - the screen boots a live <Code>keating</Code> terminal
+          sequence, the power LED and buttons respond to hover, and the mascot
+          peeks over the top of the machine. The bezel carries the real brand
+          lockup, and the green key on the right is a branded <Code>K</Code> that
+          launches a session when you press it. On devices without WebGL the hero
+          gracefully falls back to the existing 2D terminal demo, so nothing is
+          lost on lower-end hardware.
+        </p>
+        <p className="text-sm mb-4">
+          The goal is honest: the home page should feel like the tool. A retro
+          machine that responds to you is a better promise than a static banner
+          claiming the same thing.
+        </p>
+
+        <h3 id="readable-chat" className="font-bold mt-4 mb-2">Readable Chat</h3>
+        <p className="text-sm mb-4">
+          Keating's replies render on a retro panel, but that panel is now
+          theme-aware instead of forced dark. In light mode it is a readable cream
+          panel with dark ink and a barely-there scanline; in dark mode it becomes
+          a phosphor CRT with the scanline turned up. The hard offset shadow that
+          gives the brand its retro feel stays in both. The conversation column is
+          also wider, so longer explanations get more comfortable line lengths
+          instead of fighting a narrow box.
+        </p>
+
+        <h3 id="retro-and-mobile-polish" className="font-bold mt-4 mb-2">Retro and Mobile Polish</h3>
+        <p className="text-sm mb-4">
+          A broad pass tightened the rest of the interface, with particular
+          attention to mobile. The landing page, navigation, footer, session
+          cards, session sidebar, and session manager were all reworked, and the
+          settings surface now shares reusable <Code>SettingRow</Code> and{" "}
+          <Code>Toggle</Code> components with their own Storybook stories. Copy
+          buttons were reworked so copying a command or block gives clear
+          feedback. The shared component stories make these pieces easier to
+          review in isolation rather than only inside a running session.
+        </p>
+
+        <h3 id="usage-and-runtime" className="font-bold mt-4 mb-2">Usage and Browser Runtime</h3>
+        <p className="text-sm mb-4">
+          The usage page and its charts were overhauled, backed by a dedicated
+          chart-data pipeline and topic grouping so your learning history is
+          easier to read at a glance. Under the hood, the in-browser runtime
+          gained portable session data, a snapshot database, and sandbox export,
+          so a session's state can travel with you. NodePod boot-file generation
+          was reworked to stay aligned with the checked-in generator, keeping the
+          browser sandbox bundle reproducible from the same source tree as the
+          release build. New tests cover the portable data, usage charts, topic
+          grouping, and snapshot paths.
+        </p>
+
+        <h3 id="single-source-of-truth" className="font-bold mt-4 mb-2">One Version, Everywhere</h3>
+        <p className="text-sm mb-4">
+          Version numbers used to drift between the CLI, the package shim, the web
+          app, the Pi extension, and the page metadata. Now a single{" "}
+          <Code>scripts/sync-version.ts</Code> reads the canonical version from the
+          root <Code>package.json</Code> and writes it everywhere it appears, with{" "}
+          <Code>just check-version</Code> as a read-only CI guard. The CLI reports
+          it directly with <Code>keating version</Code>. It is a small thing that
+          quietly removes a whole class of "which version am I actually running"
+          confusion.
+        </p>
+      </>
+    ),
+  },
   {
     date: "2026-06-09",
     badge: { label: "FEATURE", color: "feature" },
@@ -1318,8 +1408,8 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
         </p>
         <h3 id="dark-mode-fix" className="font-bold mt-4 mb-2">Dark Mode Contrast Fix</h3>
         <p className="text-sm mb-4">
-          Hardcoded hex colors (<Code>#1a1a1a</Code>, <Code>#64748b</Code>,
-          <Code>#f4f1ea</Code>) on the landing, tutorial, blog, paper, and
+          Hardcoded hex colors (<Code>#1c211b</Code>, <Code>#64748b</Code>,
+          <Code>#f1ece0</Code>) on the landing, tutorial, blog, paper, and
           footer pages have been replaced with theme-aware Tailwind classes
           (<Code>border-border</Code>, <Code>text-muted-foreground</Code>,
           etc.). Text and dividers now adapt automatically between light and
@@ -1631,28 +1721,28 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
         <h3 id="ped-engines" className="font-bold mt-4 mb-2">New Pedagogical Engines</h3>
         <ul className="text-sm space-y-3 ml-4 mb-4">
           <li>
-            <div className="font-bold mb-1 underline decoration-[#d44a3d]">Flashcards:</div>
+            <div className="font-bold mb-1 underline decoration-[#d5604b]">Flashcards:</div>
             <p>
               Spaced-repetition decks with definitions, intuitions, common misconceptions,
               transfer prompts, and optional mnemonics, generated per topic.
             </p>
           </li>
           <li>
-            <div className="font-bold mb-1 underline decoration-[#d44a3d]">Quizzes & Workbooks:</div>
+            <div className="font-bold mb-1 underline decoration-[#d5604b]">Quizzes & Workbooks:</div>
             <p>
               Structured question sets across recall, comprehension, application, analysis, and
               transfer levels, with rubrics for short-answer items and a generated answer key.
             </p>
           </li>
           <li>
-            <div className="font-bold mb-1 underline decoration-[#d44a3d]">Mastery Tracking:</div>
+            <div className="font-bold mb-1 underline decoration-[#d5604b]">Mastery Tracking:</div>
             <p>
               Longitudinal mastery curves so the system can decide what to revisit and when,
               instead of treating every session as fresh.
             </p>
           </li>
           <li>
-            <div className="font-bold mb-1 underline decoration-[#d44a3d]">Long-Horizon Projects:</div>
+            <div className="font-bold mb-1 underline decoration-[#d5604b]">Long-Horizon Projects:</div>
             <p>
               Multi-stage assignments with milestones, deliverables, and rubrics: the path from
               one-off lessons toward weeks-long studio work.
@@ -1713,13 +1803,13 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
         <div className="space-y-5 mb-4">
           <figure>
             <figcaption className="text-xs text-muted-foreground mb-1">
-              <Code>doctor.tape</Code> — run <Code>mise run doctor</Code> to check your setup.
+              <Code>doctor.tape</Code> — run <Code>just doctor</Code> to check your setup.
             </figcaption>
             <video src="/tapes/doctor.mp4" controls muted loop playsInline className="w-full rounded border border-border" />
           </figure>
           <figure>
             <figcaption className="text-xs text-muted-foreground mb-1">
-              <Code>tests.tape</Code> — run <Code>mise run test</Code> to exercise the suite.
+              <Code>tests.tape</Code> — run <Code>just test</Code> to exercise the suite.
             </figcaption>
             <video src="/tapes/tests.mp4" controls muted loop playsInline className="w-full rounded border border-border" />
           </figure>
@@ -1819,28 +1909,28 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
         <h3 id="whats-new-stubs" className="font-bold mt-4 mb-2">What's New?</h3>
         <ul className="text-sm space-y-4 ml-4 mb-4">
           <li>
-            <div className="font-bold mb-1 underline decoration-[#d44a3d]">Real-Time Animation Generation:</div>
+            <div className="font-bold mb-1 underline decoration-[#d5604b]">Real-Time Animation Generation:</div>
             <p>
               The animation engine no longer relies on hardcoded ManimJS templates. It now uses
               the pi agent to generate custom, context-aware visual teaching beats for any topic.
             </p>
           </li>
           <li>
-            <div className="font-bold mb-1 underline decoration-[#d44a3d]">Realistic Teaching Simulations:</div>
+            <div className="font-bold mb-1 underline decoration-[#d5604b]">Realistic Teaching Simulations:</div>
             <p>
               Our synthetic benchmarks now use LLM-backed simulations to evaluate teaching
               outcomes (mastery, retention, confusion) instead of algebraic approximations.
             </p>
           </li>
           <li>
-            <div className="font-bold mb-1 underline decoration-[#d44a3d]">Dynamic Learner Profiles:</div>
+            <div className="font-bold mb-1 underline decoration-[#d5604b]">Dynamic Learner Profiles:</div>
             <p>
               Learner state updates are now driven by AI-inferred pedagogical shifts based on
               historical performance and feedback.
             </p>
           </li>
           <li>
-            <div className="font-bold mb-1 underline decoration-[#d44a3d]">Research Paper Integration:</div>
+            <div className="font-bold mb-1 underline decoration-[#d5604b]">Research Paper Integration:</div>
             <p>
               The formal account of the Keating metaharness is now served directly in the web
               application with a dedicated [PAPER] section and PDF download.
@@ -2331,7 +2421,7 @@ function PostCard({ post, expanded, onToggle }: { post: Post; expanded: boolean;
   return (
     <article id={postId(post)} className="paper-fold distressed-border p-6 post-card scroll-mt-28">
       <div className="flex items-center gap-3 mb-3">
-        <span className="font-terminal text-[#d44a3d]">{post.date}</span>
+        <span className="font-terminal text-[#d5604b]">{post.date}</span>
         <span className={`text-xs px-2 py-1 rounded ${BADGE_CLASSES[post.badge.color]}`}>
           {post.badge.label}
         </span>
@@ -2717,7 +2807,7 @@ export function Blog() {
               Follow development on{" "}
               <a
                 href="https://github.com/Diogenesoftoronto/keating"
-                className="text-[#d44a3d] underline"
+                className="text-[#d5604b] underline"
               >
                 GitHub
               </a>{" "}

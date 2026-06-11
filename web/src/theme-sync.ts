@@ -3,8 +3,8 @@
  * Called once on app boot and whenever the theme changes.
  */
 const THEME_COLORS = {
-  light: "#f4f1ea",
-  dark: "#0c0c0c",
+  light: "#f1ece0",
+  dark: "#0c1510",
 };
 
 function updateThemeColor() {

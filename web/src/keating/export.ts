@@ -1,4 +1,3 @@
-import { sessions, keatingStorage } from "../hooks/keating-storage";
 import type { SessionData } from "../types/session";
 import type {
 	Animation,
@@ -8,8 +7,9 @@ import type {
 	LessonPlan,
 	Verification,
 } from "./storage";
+import type { KeatingSandboxPortableBundle } from "./sandbox-export";
 
-export type WebExportSource = "all" | "artifacts" | "sessions";
+export type WebExportSource = "all" | "artifacts" | "sessions" | "sandbox";
 export type WebFineTuneFormat = "chatml" | "alpaca" | "both";
 
 export interface WebFineTuneExportOptions {
@@ -36,6 +36,7 @@ export interface WebExportSources {
 	benchmarks?: BenchmarkResult[];
 	evolutions?: EvolutionResult[];
 	sessions?: SessionData[];
+	sandbox?: KeatingSandboxPortableBundle;
 }
 
 interface FineTuneExample {
@@ -178,6 +179,60 @@ function addSessionExamples(
 	}
 }
 
+function addSandboxExamples(
+	examples: FineTuneExample[],
+	sandbox: KeatingSandboxPortableBundle | undefined,
+	options: WebFineTuneExportOptions,
+	counters: { redactions: number; skipped: number },
+): { filesRead: number; commitsRead: number } {
+	if (!sandbox) return { filesRead: 0, commitsRead: 0 };
+	let filesRead = 0;
+	const commitsRead = sandbox.vc.commits.length;
+	for (const file of sandbox.nodepod.files) {
+		filesRead += 1;
+		if (!/\/workspace\/(src\/core\/|pi\/prompts\/|web\/src\/keating\/)/.test(file.path)) continue;
+		const content = file.content.trim();
+		if (!content) {
+			counters.skipped += 1;
+			continue;
+		}
+		const redacted = redactText(content, options.redact);
+		counters.redactions += redacted.count;
+		const instruction = `Maintain or improve this Keating sandbox source file: ${file.path}.`;
+		examples.push({
+			instruction,
+			output: redacted.text,
+			messages: [
+				{ role: "user", content: instruction },
+				{ role: "assistant", content: redacted.text },
+			],
+		});
+	}
+	for (const commit of sandbox.vc.commits) {
+		const files = sandbox.vc.commitFiles
+			.filter((file) => file.commitId === commit.id)
+			.map((file) => `${file.path} ${file.contentHash}`)
+			.join("\n");
+		const summary = `Commit: ${commit.message}\nBranch: ${commit.branchId}\nFiles:\n${files}`.trim();
+		if (!files) {
+			counters.skipped += 1;
+			continue;
+		}
+		const redacted = redactText(summary, options.redact);
+		counters.redactions += redacted.count;
+		const instruction = "Summarize this Keating browser sandbox code checkpoint for future self-improvement.";
+		examples.push({
+			instruction,
+			output: redacted.text,
+			messages: [
+				{ role: "user", content: instruction },
+				{ role: "assistant", content: redacted.text },
+			],
+		});
+	}
+	return { filesRead, commitsRead };
+}
+
 function toChatMlJsonl(examples: FineTuneExample[]): string {
 	return examples.map((example) => JSON.stringify({
 		messages: example.messages ?? [
@@ -203,8 +258,11 @@ export function buildWebFineTuneExportFromSources(
 	const counters = { redactions: 0, skipped: 0 };
 	const includeArtifacts = options.source === "all" || options.source === "artifacts";
 	const includeSessions = options.source === "all" || options.source === "sessions";
+	const includeSandbox = options.source === "all" || options.source === "sandbox";
 	let artifactsRead = 0;
 	let sessionsRead = 0;
+	let sandboxFilesRead = 0;
+	let sandboxCommitsRead = 0;
 
 	if (includeArtifacts) {
 		for (const plan of sources.plans ?? []) {
@@ -232,6 +290,12 @@ export function buildWebFineTuneExportFromSources(
 		}
 	}
 
+	if (includeSandbox) {
+		const sandboxCounts = addSandboxExamples(examples, sources.sandbox, options, counters);
+		sandboxFilesRead = sandboxCounts.filesRead;
+		sandboxCommitsRead = sandboxCounts.commitsRead;
+	}
+
 	const result: WebFineTuneExportResult = {
 		exampleCount: examples.length,
 		skippedCount: counters.skipped,
@@ -253,6 +317,8 @@ export function buildWebFineTuneExportFromSources(
 		counts: {
 			artifactsRead,
 			sessionsRead,
+			sandboxFilesRead,
+			sandboxCommitsRead,
 			examplesWritten: examples.length,
 			skipped: counters.skipped,
 			redactions: counters.redactions,
@@ -263,6 +329,7 @@ export function buildWebFineTuneExportFromSources(
 }
 
 export async function buildWebFineTuneExport(options: WebFineTuneExportOptions): Promise<WebFineTuneExportResult> {
+	const { sessions, keatingStorage } = await import("../hooks/keating-storage");
 	const metadata = await sessions.getAllMetadata();
 	const sessionData = await Promise.all(metadata.map(async (entry) => sessions.loadSession(entry.id) as Promise<SessionData | null>));
 	const [
@@ -272,6 +339,7 @@ export async function buildWebFineTuneExport(options: WebFineTuneExportOptions):
 		verifications,
 		benchmarks,
 		evolutions,
+		sandbox,
 	] = await Promise.all([
 		keatingStorage.getLessonPlans(),
 		keatingStorage.getLessonMaps(),
@@ -279,6 +347,7 @@ export async function buildWebFineTuneExport(options: WebFineTuneExportOptions):
 		keatingStorage.getVerifications(),
 		keatingStorage.getBenchmarks(),
 		keatingStorage.getEvolutions(),
+		import("./sandbox-export").then((module) => module.buildSandboxPortableBundle()).catch(() => undefined),
 	]);
 	return buildWebFineTuneExportFromSources({
 		plans,
@@ -288,5 +357,6 @@ export async function buildWebFineTuneExport(options: WebFineTuneExportOptions):
 		benchmarks,
 		evolutions,
 		sessions: sessionData.filter(Boolean) as SessionData[],
+		sandbox,
 	}, options);
 }

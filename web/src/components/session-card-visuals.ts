@@ -7,11 +7,32 @@ import type { KeatingStorage } from "../keating/storage";
 
 export type CategoryKey =
 	| "science"
-	| "physics-math"
+	| "math"
+	| "physics"
+	| "chemistry"
+	| "astronomy"
+	| "earth-science"
+	| "materials-science"
 	| "history"
 	| "cs"
 	| "language"
 	| "arts"
+	| "molecular-biology"
+	| "ecology-environment"
+	| "human-anatomy"
+	| "microbiology"
+	| "law"
+	| "politics"
+	| "economics"
+	| "philosophy"
+	| "visual-arts"
+	| "music"
+	| "performing-arts"
+	| "design"
+	| "linguistics"
+	| "literature"
+	| "creative-writing"
+	| "language-learning"
 	| "general";
 
 export interface CategoryMeta {
@@ -22,21 +43,63 @@ export interface CategoryMeta {
 }
 
 const CATEGORY_META: Record<CategoryKey, CategoryMeta> = {
-	science: { key: "science", label: "Science", accent: "#10b981" },
-	"physics-math": { key: "physics-math", label: "Physics & Math", accent: "#3b82f6" },
+	science: { key: "science", label: "Science", accent: "#1e9b50" },
+	math: { key: "math", label: "Math", accent: "#2563eb" },
+	physics: { key: "physics", label: "Physics", accent: "#4f46e5" },
+	chemistry: { key: "chemistry", label: "Chemistry", accent: "#0891b2" },
+	astronomy: { key: "astronomy", label: "Astronomy & Space", accent: "#1e40af" },
+	"earth-science": { key: "earth-science", label: "Earth Science", accent: "#0d9488" },
+	"materials-science": { key: "materials-science", label: "Materials Science", accent: "#9333ea" },
 	history: { key: "history", label: "History", accent: "#f59e0b" },
 	cs: { key: "cs", label: "Computer Science", accent: "#8b5cf6" },
 	language: { key: "language", label: "Language", accent: "#f43f5e" },
 	arts: { key: "arts", label: "Arts", accent: "#ec4899" },
+	"molecular-biology": { key: "molecular-biology", label: "Molecular Biology", accent: "#059669" },
+	"ecology-environment": { key: "ecology-environment", label: "Ecology & Environment", accent: "#65a30d" },
+	"human-anatomy": { key: "human-anatomy", label: "Human Anatomy & Physiology", accent: "#dc2626" },
+	microbiology: { key: "microbiology", label: "Microbiology & Disease", accent: "#7c3aed" },
+	law: { key: "law", label: "Law", accent: "#ea580c" },
+	politics: { key: "politics", label: "Politics & Governance", accent: "#dc2626" },
+	economics: { key: "economics", label: "Economics", accent: "#ca8a04" },
+	philosophy: { key: "philosophy", label: "Philosophy & Ethics", accent: "#7c3aed" },
+	"visual-arts": { key: "visual-arts", label: "Visual Arts", accent: "#ec4899" },
+	music: { key: "music", label: "Music", accent: "#d946ef" },
+	"performing-arts": { key: "performing-arts", label: "Performing Arts", accent: "#f43f5e" },
+	design: { key: "design", label: "Design", accent: "#fb7185" },
+	linguistics: { key: "linguistics", label: "Linguistics", accent: "#f59e0b" },
+	literature: { key: "literature", label: "Literature", accent: "#f97316" },
+	"creative-writing": { key: "creative-writing", label: "Creative Writing", accent: "#fb923c" },
+	"language-learning": { key: "language-learning", label: "Language Learning", accent: "#fbbf24" },
 	general: { key: "general", label: "General", accent: "#64748b" },
 };
 
 // Ordered so earlier categories win ties. Keywords are matched as whole-ish
 // tokens against the lower-cased title.
 const CATEGORY_KEYWORDS: Array<[CategoryKey, string[]]> = [
-	["physics-math", ["physic", "quantum", "relativ", "calculus", "algebra", "geometry", "math", "equation", "theorem", "integral", "derivative", "vector", "matrix", "probability", "statistic", "trigonometry"]],
+	["physics", ["physics", "quantum", "relativ", "mechanics", "wave", "field", "thermodynamic", "entropy", "electromagnetic", "optics", "particle", "nuclear", "astrophysic", "cosmology", "string theory", "gravity", "motion", "force", "energy", "momentum", "velocity", "acceleration", "fluid", "plasma", "condensed matter"]],
+	["math", ["math", "calculus", "algebra", "geometry", "equation", "theorem", "proof", "integral", "derivative", "vector", "matrix", "probability", "statistic", "trigonometry", "number theory", "topology", "differential", "linear algebra", "combinatorics", "graph theory", "set theory", "logic"]],
 	["cs", ["programming", "javascript", "typescript", "python", "rust", "golang", "algorithm", "data structure", "compiler", "react", "function", "recursion", "code", "software", "api", "database", "machine learning", "neural", "computer"]],
-	["science", ["biology", "cell", "photosynthesis", "mitosis", "dna", "genetic", "chemistry", "molecule", "atom", "reaction", "evolution", "ecosystem", "neuron", "anatomy", "physiology", "organism", "enzyme", "protein"]],
+	["chemistry", ["chemistry", "atom", "molecule", "reaction", "compound", "element", "periodic", "acid", "base", "bond", "ionic", "covalent", "organic chemistry", "inorganic", "biochemistry", "catalysis", "stoichiometry", "equilibrium", "redox", "electrochemistry", "polymer"]],
+	["astronomy", ["astronomy", "astrophysics", "planet", "star", "galaxy", "universe", "cosmology", "black hole", "nebula", "supernova", "telescope", "exoplanet", "orbit", "gravity", "solar system", "constellation", "dark matter", "dark energy", "big bang", "space"]],
+	["earth-science", ["geology", "earth", "plate tectonic", "volcano", "earthquake", "mineral", "rock", "fossil", "sediment", "metamorphic", "igneous", "weather", "climate", "ocean", "atmosphere", "hydrology", "meteorology", "glacier", "erosion", "geologic"]],
+	["materials-science", ["material", "nanotechnology", "semiconductor", "metallurgy", "ceramic", "composite", "polymer", "crystallography", "alloy", "superconductor", "graphene", "carbon fiber", "biomaterial", "smart material", "phase transition", "diffusion", "strain", "stress", "fatigue", "corrosion"]],
+	["molecular-biology", ["dna", "rna", "gene", "genome", "protein", "enzyme", "chromosome", "replication", "transcription", "translation", "mutation", "nucleotide", "amino acid", "polymerase", "mitosis", "meiosis", "cell cycle", "molecular"]],
+	["human-anatomy", ["anatomy", "physiology", "organ", "tissue", "muscle", "bone", "cardiovascular", "nervous system", "endocrine", "digestion", "respiratory", "immune system", "lymphatic", "renal", "skeletal", "homeostasis", "neuron", "synapse", "hormone", "circulatory"]],
+	["ecology-environment", ["ecosystem", "biodiversity", "conservation", "habitat", "species", "population", "community", "biosphere", "niche", "symbiosis", "food web", "trophic", "sustainability", "pollution", "climate change", "extinction", "biome", "ecological"]],
+	["microbiology", ["bacteria", "virus", "pathogen", "infection", "microbiology", "antibiotic", "vaccine", "microbiome", "fungus", "parasite", "epidemiology", "pandemic", "immunology", "antibody", "antigen", "vector", "transmission", "virulence", "sterilization"]],
+	["law", ["law", "legal", "court", "statute", "litigation", "jurisdiction", "precedent", "contract", "tort", "constitutional", "criminal law", "civil law", "property", "evidence", "procedure", "appeal", "injunction", "liability", "compliance", "regulation"]],
+	["politics", ["politics", "government", "democracy", "election", "parliament", "congress", "policy", "diplomacy", "international relation", "democratic", "authoritarian", "ideology", "campaign", "lobbying", "bureaucracy", "public administration", "civic", "voting", "legislation", "executive"]],
+	["economics", ["economics", "economy", "market", "supply", "demand", "inflation", "gdp", "recession", "fiscal", "monetary", "microeconomics", "macroeconomics", "trade", "tariff", "exchange rate", "investment", "stock", "bond", "banking", "finance", "capitalism", "socialism"]],
+	["philosophy", ["philosophy", "ethics", "moral", "epistemology", "metaphysics", "logic", "existentialism", "utilitarianism", "deontology", "virtue", "aesthetics", "ontology", "phenomenology", "consciousness", "free will", "determinism", "skepticism", "empiricism", "rationalism", "philosophical"]],
+	["visual-arts", ["painting", "drawing", "sculpture", "photography", "printmaking", "ceramic", "installation", "collage", "watercolor", "oil painting", "acrylic", "charcoal", "pastel", "mixed media", "figure drawing", "landscape", "portrait", "abstract", "realism", "art history"]],
+	["music", ["music", "composition", "melody", "harmony", "rhythm", "orchestra", "symphony", "jazz", "classical", "opera", "piano", "violin", "guitar", "drum", "singing", "choir", "band", "music theory", "notation", "improvisation", "conducting", "recording", "mixing"]],
+	["performing-arts", ["theatre", "drama", "acting", "dance", "ballet", "modern dance", "choreography", "play", "scene", "monologue", "stage", "directing", "playwright", "improvisation", "mime", "puppetry", "circus", "performance art", "stand-up", "opera", "musical theatre"]],
+	["design", ["design", "graphic design", "ui design", "ux design", "interior design", "industrial design", "fashion design", "typography", "layout", "branding", "logo", "illustration", "3d modeling", "animation", "motion graphics", "color theory", "grid system", "wireframe", "prototype", "user research"]],
+	["language-learning", ["language learning", "spanish", "french", "german", "chinese", "japanese", "arabic", "russian", "portuguese", "italian", "korean", "vocabulary", "conjugation", "tense", "pronunciation", "listening", "speaking", "reading", "translation", "bilingual", "multilingual", "fluency"]],
+	["linguistics", ["linguistics", "phonology", "phonetic", "morphology", "syntax", "semantics", "pragmatics", "sociolinguistics", "psycholinguistics", "historical linguistics", "language acquisition", "dialect", "accent", "register", "discourse", "generative", "transformational", " corpus", "phoneme", "morpheme"]],
+	["literature", ["literature", "novel", "short story", "fiction", "nonfiction", "poetry", "poem", "drama", "play", "literary criticism", "genre", "narrative", "protagonist", "antagonist", "theme", "symbolism", "metaphor", "allegory", "satire", "romanticism", "modernism", "postmodernism"]],
+	["creative-writing", ["creative writing", "fiction writing", "storytelling", "plot", "character", "setting", "dialogue", "narrative arc", "worldbuilding", "fan fiction", "flash fiction", "memoir", "autobiography", "journal", "blog", "copywriting", "scriptwriting", "screenplay", "pitch", "outline", "draft"]],
+	["science", ["biology", "cell", "photosynthesis", "chemistry", "molecule", "atom", "reaction", "evolution", "neuron", "physiology", "organism"]],
 	["history", ["history", "historical", "empire", "revolution", "ancient", "medieval", "war", "dynasty", "civilization", "century", "renaissance", "treaty", "colonial"]],
 	["arts", ["art", "painting", "music", "pigment", "color theory", "composition", "sculpture", "design", "architecture", "film", "cinema", "photography", "drawing"]],
 	["language", ["language", "grammar", "vocabulary", "essay", "writing", "poetry", "literature", "spanish", "french", "german", "rhetoric", "syntax", "verb", "sentence"]],

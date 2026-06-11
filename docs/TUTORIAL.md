@@ -65,13 +65,13 @@ Use the Keating CLI to build the foundations for a topic:
 
 ```bash
 # 1. Generate a lesson plan
-mise run plan -- "Special Relativity"
+keating plan "Special Relativity"
 
 # 2. Generate a meaning map (visual diagram)
-mise run map -- "Special Relativity"
+keating map "Special Relativity"
 
 # 3. Generate an animated teaching artifact
-mise run animate -- "Special Relativity"
+keating animate "Special Relativity"
 ```
 
 These artifacts are stored in `.keating/outputs/`. You can inspect them to ensure the "intuition first" logic is sound before the student starts.
@@ -79,7 +79,7 @@ These artifacts are stored in `.keating/outputs/`. You can inspect them to ensur
 ### Verifying Knowledge
 Before teaching, ensure the AI's claims are verified:
 ```bash
-mise run verify -- "Special Relativity"
+keating verify "Special Relativity"
 ```
 This runs a **Chain-of-Verification (CoVe)** loop to fact-check the topic's core claims.
 
@@ -93,7 +93,7 @@ As a student, you use Keating to move beyond surface understanding. The teacher 
 Launch the interactive Pi shell with the Keating extension loaded:
 
 ```bash
-mise run shell
+keating shell
 ```
 
 Inside the shell, you can use specialized slash-commands:
@@ -127,10 +127,10 @@ Keating is a self-improving system. If you find a certain topic isn't being taug
 
 ```bash
 # Run the synthetic benchmark to find weaknesses
-mise run bench
+keating bench
 
 # Evolve the teaching policy to optimize for better outcomes
-mise run evolve
+keating evolve
 ```
 
 The system will mutate its internal parameters (analogy density, Socratic ratio, etc.) until it finds a policy that better empowers the human voice.

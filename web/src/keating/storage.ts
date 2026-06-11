@@ -26,6 +26,37 @@ const STORES = {
 	QUIZ_RESULTS: "quiz-results",
 } as const;
 
+export interface KeatingStoragePortableData {
+	lessonPlans: LessonPlan[];
+	lessonMaps: LessonMap[];
+	animations: Animation[];
+	verifications: Verification[];
+	benchmarks: BenchmarkResult[];
+	evolutions: EvolutionResult[];
+	policies: Policy[];
+	feedback: FeedbackEntry[];
+	learnerState: LearnerState;
+	promptEvolutions: PromptEvolutionResult[];
+	improvements: ImprovementAttemptRecord[];
+	goals: LearnerGoal[];
+	quizResults: QuizResultRecord[];
+}
+
+export interface KeatingStorageImportResult {
+	lessonPlans: number;
+	lessonMaps: number;
+	animations: number;
+	verifications: number;
+	benchmarks: number;
+	evolutions: number;
+	policies: number;
+	feedback: number;
+	promptEvolutions: number;
+	improvements: number;
+	goals: number;
+	quizResults: number;
+}
+
 export interface LessonPlan {
 	id: string;
 	topic: string;
@@ -111,6 +142,7 @@ export interface LearnerState {
 	lastSessionAt?: number;
 	sessionsCount: number;
 	sessions: Array<{
+		id?: string;
 		startedAt: number;
 		endedAt?: number;
 		topicsCovered: string[];
@@ -153,6 +185,7 @@ export interface ImprovementAttemptRecord {
 export class KeatingStorage {
 	private db: IDBDatabase | null = null;
 	private dbPromise: Promise<IDBDatabase> | null = null;
+	private learnerStateWriteQueue: Promise<void> = Promise.resolve();
 	currentSessionId: string | null = null;
 
 	setCurrentSessionId(id: string | null): void {
@@ -239,6 +272,14 @@ export class KeatingStorage {
 		});
 	}
 
+	private async putMany<T>(storeName: string, records: T[] | undefined): Promise<number> {
+		if (!records?.length) return 0;
+		for (const record of records) {
+			await this.put(storeName, record);
+		}
+		return records.length;
+	}
+
 	private async deleteById(storeName: string, id: string): Promise<void> {
 		const store = await this.getStore(storeName, "readwrite");
 		return new Promise((resolve, reject) => {
@@ -250,6 +291,86 @@ export class KeatingStorage {
 
 	private generateId(): string {
 		return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+	}
+
+	private defaultLearnerState(): LearnerState {
+		return {
+			topicsExplored: [],
+			feedbackHistory: [],
+			strengths: [],
+			weaknesses: [],
+			sessionsCount: 0,
+			sessions: [],
+		};
+	}
+
+	private normalizeLearnerState(value: unknown): LearnerState {
+		const raw = value && typeof value === "object" ? value as Partial<LearnerState> : {};
+		return {
+			topicsExplored: Array.isArray(raw.topicsExplored) ? raw.topicsExplored.filter((topic): topic is string => typeof topic === "string") : [],
+			feedbackHistory: Array.isArray(raw.feedbackHistory) ? raw.feedbackHistory.filter((entry): entry is FeedbackEntry => !!entry && typeof entry === "object") : [],
+			strengths: Array.isArray(raw.strengths) ? raw.strengths.filter((item): item is string => typeof item === "string") : [],
+			weaknesses: Array.isArray(raw.weaknesses) ? raw.weaknesses.filter((item): item is string => typeof item === "string") : [],
+			lastSessionAt: typeof raw.lastSessionAt === "number" ? raw.lastSessionAt : undefined,
+			sessionsCount: typeof raw.sessionsCount === "number" ? raw.sessionsCount : 0,
+			sessions: Array.isArray(raw.sessions) ? raw.sessions.filter((session): session is LearnerState["sessions"][number] => !!session && typeof session === "object") : [],
+		};
+	}
+
+	private mergeFeedbackIntoLearnerState(state: LearnerState, feedback: FeedbackEntry[]): { state: LearnerState; changed: boolean } {
+		let changed = false;
+		const byId = new Set(state.feedbackHistory.map((entry) => entry.id));
+		for (const entry of feedback) {
+			if (!byId.has(entry.id)) {
+				state.feedbackHistory.push(entry);
+				byId.add(entry.id);
+				changed = true;
+			}
+		}
+		state.feedbackHistory.sort((a, b) => a.createdAt - b.createdAt);
+
+		const topics = new Set(state.topicsExplored);
+		for (const entry of state.feedbackHistory) {
+			if (entry.topic && !topics.has(entry.topic)) {
+				topics.add(entry.topic);
+				changed = true;
+			}
+		}
+		const nextTopics = [...topics];
+		if (nextTopics.length !== state.topicsExplored.length || nextTopics.some((topic, index) => topic !== state.topicsExplored[index])) {
+			state.topicsExplored = nextTopics;
+			changed = true;
+		}
+
+		if (state.sessionsCount !== state.sessions.length) {
+			state.sessionsCount = state.sessions.length;
+			changed = true;
+		}
+
+		return { state, changed };
+	}
+
+	private async loadLearnerStateRecord(): Promise<LearnerState> {
+		const store = await this.getStore(STORES.LEARNER_STATE);
+		return new Promise((resolve, reject) => {
+			const request = store.get("learner-state");
+			request.onsuccess = () => resolve(this.normalizeLearnerState(request.result || this.defaultLearnerState()));
+			request.onerror = () => reject(request.error);
+		});
+	}
+
+	private async updateLearnerState(mutator: (state: LearnerState) => void | Promise<void>): Promise<LearnerState> {
+		let updated: LearnerState | null = null;
+		const run = this.learnerStateWriteQueue.then(async () => {
+			const state = await this.getLearnerState();
+			await mutator(state);
+			state.sessionsCount = state.sessions.length;
+			await this.saveLearnerState(state);
+			updated = state;
+		});
+		this.learnerStateWriteQueue = run.catch(() => {});
+		await run;
+		return updated ?? this.getLearnerState();
 	}
 
 	// Learner Goals — long-horizon curricula, tracked across sessions
@@ -275,6 +396,94 @@ export class KeatingStorage {
 
 	async deleteGoal(id: string): Promise<void> {
 		await this.deleteById(STORES.GOALS, id);
+	}
+
+	async exportPortableData(): Promise<KeatingStoragePortableData> {
+		const [
+			lessonPlans,
+			lessonMaps,
+			animations,
+			verifications,
+			benchmarks,
+			evolutions,
+			policies,
+			feedback,
+			learnerState,
+			promptEvolutions,
+			improvements,
+			goals,
+			quizResults,
+		] = await Promise.all([
+			this.getLessonPlans(),
+			this.getLessonMaps(),
+			this.getAnimations(),
+			this.getVerifications(),
+			this.getBenchmarks(),
+			this.getEvolutions(),
+			this.getPolicies(),
+			this.getFeedback(),
+			this.getLearnerState(),
+			this.getPromptEvolutions(),
+			this.getImprovementAttempts(),
+			this.getGoals(),
+			this.getQuizResults(),
+		]);
+		return {
+			lessonPlans,
+			lessonMaps,
+			animations,
+			verifications,
+			benchmarks,
+			evolutions,
+			policies,
+			feedback,
+			learnerState,
+			promptEvolutions,
+			improvements,
+			goals,
+			quizResults,
+		};
+	}
+
+	async importPortableData(data: Partial<KeatingStoragePortableData>): Promise<KeatingStorageImportResult> {
+		const result: KeatingStorageImportResult = {
+			lessonPlans: await this.putMany(STORES.LESSON_PLANS, data.lessonPlans),
+			lessonMaps: await this.putMany(STORES.LESSON_MAPS, data.lessonMaps),
+			animations: await this.putMany(STORES.ANIMATIONS, data.animations),
+			verifications: await this.putMany(STORES.VERIFICATIONS, data.verifications),
+			benchmarks: await this.putMany(STORES.BENCHMARKS, data.benchmarks),
+			evolutions: await this.putMany(STORES.EVOLUTIONS, data.evolutions),
+			policies: await this.putMany(STORES.POLICIES, data.policies),
+			feedback: await this.putMany(STORES.FEEDBACK, data.feedback),
+			promptEvolutions: await this.putMany(STORES.PROMPT_EVOLUTIONS, data.promptEvolutions),
+			improvements: await this.putMany(STORES.IMPROVEMENTS, data.improvements),
+			goals: await this.putMany(STORES.GOALS, data.goals),
+			quizResults: await this.putMany(STORES.QUIZ_RESULTS, data.quizResults),
+		};
+		if (data.learnerState) {
+			const current = await this.getLearnerState();
+			const mergedFeedback = [...current.feedbackHistory, ...(data.learnerState.feedbackHistory ?? []), ...(data.feedback ?? [])];
+			const byFeedbackId = new Map(mergedFeedback.map((entry) => [entry.id, entry]));
+			const bySessionId = new Map(
+				[...(current.sessions ?? []), ...(data.learnerState.sessions ?? [])].map((session) => [
+					session.id ?? `${session.startedAt}:${session.endedAt ?? "open"}`,
+					session,
+				]),
+			);
+			const mergedState = this.normalizeLearnerState({
+				...current,
+				...data.learnerState,
+				topicsExplored: [...new Set([...(current.topicsExplored ?? []), ...(data.learnerState.topicsExplored ?? [])])],
+				feedbackHistory: [...byFeedbackId.values()],
+				strengths: [...new Set([...(current.strengths ?? []), ...(data.learnerState.strengths ?? [])])],
+				weaknesses: [...new Set([...(current.weaknesses ?? []), ...(data.learnerState.weaknesses ?? [])])],
+				sessions: [...bySessionId.values()],
+			});
+			await this.saveLearnerState(mergedState);
+		} else if (data.feedback?.length) {
+			await this.getLearnerState();
+		}
+		return result;
 	}
 
 	// Lesson Plans
@@ -498,15 +707,15 @@ export class KeatingStorage {
 		};
 		await this.put(STORES.FEEDBACK, entry);
 
-		// Update learner state
-		const state = await this.getLearnerState();
-		state.feedbackHistory.push(entry);
-		if (!state.topicsExplored.includes(topic)) {
-			state.topicsExplored.push(topic);
-		}
-		state.lastSessionAt = Date.now();
-		state.sessionsCount = (state.sessionsCount || 0) + 1;
-		await this.saveLearnerState(state);
+		await this.updateLearnerState((state) => {
+			if (!state.feedbackHistory.some((existing) => existing.id === entry.id)) {
+				state.feedbackHistory.push(entry);
+			}
+			if (!state.topicsExplored.includes(topic)) {
+				state.topicsExplored.push(topic);
+			}
+			state.lastSessionAt = Date.now();
+		});
 
 		return entry;
 	}
@@ -515,6 +724,7 @@ export class KeatingStorage {
 		const state = await this.getLearnerState();
 		const fallbackTopic = state.topicsExplored.at(-1) ?? state.feedbackHistory.at(-1)?.topic ?? "general";
 		let count = 0;
+		const entries: FeedbackEntry[] = [];
 
 		for (const message of messages) {
 			const role = message.role;
@@ -532,14 +742,20 @@ export class KeatingStorage {
 				evidence: inferred.evidence,
 			};
 			await this.put(STORES.FEEDBACK, entry);
-			state.feedbackHistory.push(entry);
-			if (!state.topicsExplored.includes(inferred.topic)) state.topicsExplored.push(inferred.topic);
+			entries.push(entry);
 			count += 1;
 		}
 
 		if (count > 0) {
-			state.lastSessionAt = Date.now();
-			await this.saveLearnerState(state);
+			await this.updateLearnerState((nextState) => {
+				for (const entry of entries) {
+					if (!nextState.feedbackHistory.some((existing) => existing.id === entry.id)) {
+						nextState.feedbackHistory.push(entry);
+					}
+					if (!nextState.topicsExplored.includes(entry.topic)) nextState.topicsExplored.push(entry.topic);
+				}
+				nextState.lastSessionAt = Date.now();
+			});
 		}
 
 		return count;
@@ -554,23 +770,13 @@ export class KeatingStorage {
 
 	// Learner State
 	async getLearnerState(): Promise<LearnerState> {
-		const store = await this.getStore(STORES.LEARNER_STATE);
-		return new Promise((resolve, reject) => {
-			const request = store.get("learner-state");
-			request.onsuccess = () => {
-				resolve(
-					request.result || {
-						topicsExplored: [],
-						feedbackHistory: [],
-						strengths: [],
-						weaknesses: [],
-						sessionsCount: 0,
-						sessions: [],
-					}
-				);
-			};
-			request.onerror = () => reject(request.error);
-		});
+		const state = await this.loadLearnerStateRecord();
+		const feedback = await this.getAll<FeedbackEntry>(STORES.FEEDBACK);
+		const merged = this.mergeFeedbackIntoLearnerState(state, feedback);
+		if (merged.changed) {
+			await this.saveLearnerState(merged.state);
+		}
+		return merged.state;
 	}
 
 	async saveLearnerState(state: LearnerState): Promise<void> {
@@ -583,15 +789,23 @@ export class KeatingStorage {
 	}
 
 	async recordSessionStart(): Promise<void> {
-		const state = await this.getLearnerState();
-		if (!state.sessions) state.sessions = [];
-		state.sessions.push({
-			startedAt: Date.now(),
-			topicsCovered: [],
+		await this.updateLearnerState((state) => {
+			if (!state.sessions) state.sessions = [];
+			const activeSessionId = this.currentSessionId;
+			const existing = activeSessionId
+				? state.sessions.find((session) => session.id === activeSessionId && !session.endedAt)
+				: state.sessions.at(-1);
+			if (existing && !existing.endedAt) {
+				state.lastSessionAt = Date.now();
+				return;
+			}
+			state.sessions.push({
+				id: activeSessionId ?? undefined,
+				startedAt: Date.now(),
+				topicsCovered: [],
+			});
+			state.lastSessionAt = Date.now();
 		});
-		state.lastSessionAt = Date.now();
-		state.sessionsCount = (state.sessionsCount || 0) + 1;
-		await this.saveLearnerState(state);
 	}
 
 	async recordSessionEnd(topicsCovered: string[]): Promise<void> {

@@ -56,7 +56,7 @@ async function warnIfWebBuildIsStale(pkgRoot: string, nitroServerPath: string): 
 
   console.warn(`${color.warn}Warning: web sources are newer than web/.output.${color.reset}`);
   console.warn("`keating web` serves the last production build, not the live Vite source tree.");
-  console.warn("Use `mise run web` for hot reload, or rebuild with `bun run --cwd web build` before launching.");
+  console.warn("Use `just web` for hot reload, or rebuild with `bun run --cwd web build` before launching.");
 }
 
 async function resolvePackageRoot(currentDir: string): Promise<string> {

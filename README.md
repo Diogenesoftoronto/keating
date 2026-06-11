@@ -155,19 +155,21 @@ Browser-only mode is intentionally the free-tier default. It is lower-risk than 
 
 ### Development
 
+All development dependencies (bun, node, oxdraw, typst, similarity, just, etc.) are managed by **Flox**. Run `flox activate` to enter the dev environment, then use **just** as the task runner.
+
 <video src="docs/assets/doctor.mp4" autoplay loop muted width="100%"></video>
 
 ```bash
-mise run build
-mise run doctor
-mise run docs:diagrams
-mise run bench
-mise run evolve
-mise run prompt-evolve -- learn
-mise run map -- derivative
-mise run animate -- derivative
-mise run trace
-mise run shell
+just build
+just doctor
+just docs-diagrams
+just bench
+just evolve
+just prompt-evolve learn
+just map derivative
+just animate derivative
+just trace
+just shell
 ```
 
 Keating reads runtime/model defaults from `keating.config.json`.
@@ -250,7 +252,7 @@ Workflow:
 3. End with a summary.
 ```
 
-After `mise run prompt-evolve -- learn`:
+After `keating prompt-evolve learn`:
 
 ```md
 Teach the learner the following topic: $@
@@ -311,7 +313,7 @@ That split keeps the interactive shell flexible while making the improvement loo
 <video src="docs/assets/tests.mp4" autoplay loop muted width="100%"></video>
 
 ```bash
-mise run test
+just test
 ```
 
 The test suite covers:
@@ -324,8 +326,8 @@ The test suite covers:
 
 Keating now treats diagrams and animations as first-class teaching artifacts instead of optional garnish.
 
-- `mise run map -- <topic>` writes a meaning map with teaching loop, concept structure, misconceptions, practice, and transfer hooks, then renders it with `oxdraw` when available.
-- `mise run animate -- <topic>` writes a browser-runnable `manim-web` bundle under `.keating/outputs/animations/<topic>/`.
+- `keating map <topic>` writes a meaning map with teaching loop, concept structure, misconceptions, practice, and transfer hooks, then renders it with `oxdraw` when available.
+- `keating animate <topic>` writes a browser-runnable `manim-web` bundle under `.keating/outputs/animations/<topic>/`.
 - Each animation bundle includes:
   - `player.html`
   - `scene.mjs`
@@ -357,11 +359,11 @@ Keating persists detailed trace artifacts under `.keating/outputs/traces/`.
 Useful commands:
 
 ```bash
-mise run doctor
-mise run bench -- derivative
-mise run evolve -- derivative
-mise run prompt-evolve -- learn
-mise run trace -- derivative
+keating doctor
+keating bench derivative
+keating evolve derivative
+keating prompt-evolve learn
+keating trace derivative
 ```
 
 ## Documentation
@@ -375,5 +377,5 @@ mise run trace -- derivative
 Regenerate the checked-in docs SVGs with:
 
 ```bash
-mise run docs:diagrams
+just docs-diagrams
 ```

@@ -37,7 +37,7 @@ export function BootSequence() {
 
   return (
     <div
-      className="fixed inset-0 bg-[#0c0c0c] z-[60] font-terminal text-[#00ff00] p-8 overflow-hidden"
+      className="fixed inset-0 bg-[#0c1510] z-[60] font-terminal text-[#4be388] p-8 overflow-hidden"
       style={{ opacity: fading ? 0 : 1, transition: "opacity 0.5s" }}
     >
       <div className="crt max-w-2xl mx-auto mt-20 text-lg leading-relaxed">

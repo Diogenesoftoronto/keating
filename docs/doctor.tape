@@ -9,7 +9,7 @@ Set Padding 30
 Set Theme "Catppuccin Mocha"
 
 # Run doctor
-Type "mise run doctor"
+Type "just doctor"
 Enter
 
 # Wait for doctor to finish

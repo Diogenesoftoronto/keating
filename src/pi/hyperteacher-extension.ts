@@ -2,38 +2,38 @@ import { relative } from "node:path";
 import { homedir } from "node:os";
 
 import {
- animateTopicArtifact,
- autoImproveArtifact,
- benchPolicyArtifact,
- promptEvalArtifact,
- currentPolicySummary,
- dueTopicsArtifact,
- ensureProjectScaffold,
- evolvePolicyArtifact,
- evolvePromptArtifact,
- improveArtifact,
- improveHistory,
- listArtifacts,
- mapTopicArtifact,
- planTopicArtifact,
- timelineArtifact,
- verifyTopicArtifact
+	animateTopicArtifact,
+	autoImproveArtifact,
+	benchPolicyArtifact,
+	promptEvalArtifact,
+	currentPolicySummary,
+	dueTopicsArtifact,
+	ensureProjectScaffold,
+	evolvePolicyArtifact,
+	evolvePromptArtifact,
+	improveArtifact,
+	improveHistory,
+	listArtifacts,
+	mapTopicArtifact,
+	planTopicArtifact,
+	timelineArtifact,
+	verifyTopicArtifact
 } from "../core/project.js";
 import { learnerStatePath } from "../core/paths.js";
 import { loadLearnerState, recordFeedback, recordSessionStart, saveLearnerState } from "../core/learner-state.js";
 import { type KeatingConfig, loadKeatingConfig } from "../core/config.js";
 import { shellCommandSections } from "../core/commands.js";
 import {
- KEATING_VOICE_TOOL_NAME,
- VOICE_TAGS,
- normalizeVoiceUtterance,
- speechStrategySummary,
- voiceTagLine
+	KEATING_VOICE_TOOL_NAME,
+	VOICE_TAGS,
+	normalizeVoiceUtterance,
+	speechStrategySummary,
+	voiceTagLine
 } from "../core/speech.js";
 import { KEATING_ASCII_LOGO, KEATING_SUBTITLE_LINES } from "../core/terminal.js";
 import { generateQuiz, quizToMarkdown, quizAnswerKeyToMarkdown } from "../core/quiz.js";
+import { KEATING_VERSION } from "../core/version.js";
 
-const KEATING_VERSION = "1.2.0";
 const ANSI_RE = /\x1b\[[0-9;]*[a-zA-Z]/g;
 
 function visibleWidth(text: string): number {
@@ -838,20 +838,27 @@ export default function hyperteacher(pi: any): void {
  }
  });
 
- pi.registerCommand("speech", {
- description: "Show optional voice-tool status.",
- handler: async (_args: string[], ctx: any) => {
- const config = await loadKeatingConfig(ctx.cwd);
- ctx.ui.setEditorText(speechStrategySummary(config.speech));
- if (config.speech.enabled) {
- info(ctx, `Speech is enabled. The model can call ${KEATING_VOICE_TOOL_NAME}.`);
- } else {
- info(ctx, "Speech is disabled. Set speech.enabled=true in keating.config.json to expose the voice tool.");
- }
- }
- });
+  pi.registerCommand("speech", {
+    description: "Show optional voice-tool status.",
+    handler: async (_args: string[], ctx: any) => {
+      const config = await loadKeatingConfig(ctx.cwd);
+      ctx.ui.setEditorText(speechStrategySummary(config.speech));
+      if (config.speech.enabled) {
+        info(ctx, `Speech is enabled. The model can call ${KEATING_VOICE_TOOL_NAME}.`);
+      } else {
+        info(ctx, "Speech is disabled. Set speech.enabled=true in keating.config.json to expose the voice tool.");
+      }
+    }
+  });
 
- pi.registerCommand("outputs", {
+  pi.registerCommand("version", {
+    description: "Show the current Keating version.",
+    handler: async (_args: string[], ctx: any) => {
+      info(ctx, `Keating v${KEATING_VERSION}`);
+    }
+  });
+
+  pi.registerCommand("outputs", {
  description: "Browse Keating plans, maps, benchmark reports, and evolution logs.",
  handler: async (_args: string[], ctx: any) => {
  const artifacts = await listArtifacts(ctx.cwd);

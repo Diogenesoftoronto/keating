@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
+	Atom,
 	Check,
 	Code2,
 	Film,
@@ -26,14 +27,36 @@ import {
 	categorize,
 	categoryGradient,
 } from "./session-card-visuals";
+import { formatRelativeSessionDate } from "../lib/session-date";
 
 const CATEGORY_ICON: Record<CategoryKey, LucideIcon> = {
 	science: FlaskConical,
-	"physics-math": Sigma,
+	math: Sigma,
+	physics: Atom,
+	chemistry: FlaskConical,
+	astronomy: Atom,
+	"earth-science": FlaskConical,
+	"materials-science": FlaskConical,
 	history: Landmark,
 	cs: Code2,
 	language: Languages,
 	arts: Palette,
+	"molecular-biology": FlaskConical,
+	"ecology-environment": FlaskConical,
+	"human-anatomy": FlaskConical,
+	microbiology: FlaskConical,
+	law: Landmark,
+	politics: Landmark,
+	economics: Landmark,
+	philosophy: Landmark,
+	"visual-arts": Palette,
+	music: Palette,
+	"performing-arts": Palette,
+	design: Palette,
+	linguistics: Languages,
+	literature: Languages,
+	"creative-writing": Languages,
+	"language-learning": Languages,
 	general: Sparkles,
 };
 
@@ -55,18 +78,6 @@ export interface SessionCardProps {
 	onFork: (sessionId: string) => void | Promise<void>;
 	onRename: (sessionId: string, title: string) => void | Promise<void>;
 	onDelete: (sessionId: string) => void | Promise<void>;
-}
-
-function formatDate(isoString: string) {
-	const date = new Date(isoString);
-	const now = new Date();
-	const days = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-	if (days === 0) {
-		return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-	}
-	if (days === 1) return "Yesterday";
-	if (days < 7) return `${days}d ago`;
-	return date.toLocaleDateString();
 }
 
 export function SessionCard({
@@ -172,7 +183,7 @@ export function SessionCard({
 				className="flex min-w-0 flex-1 flex-col px-2.5 sm:px-3.5 pb-2.5 sm:pb-3 pt-2 sm:pt-2.5 text-left"
 				onClick={() => void onLoad(session.id)}
 			>
-				<span className="text-[11px] text-muted-foreground">{formatDate(session.lastModified)}</span>
+				<span className="text-[11px] text-muted-foreground">{formatRelativeSessionDate(session.lastModified, { today: "time" })}</span>
 				<h3 className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs sm:text-sm font-semibold leading-snug text-foreground">
 					{session.parentSessionId ? (
 						<GitBranch size={13} className="mt-0.5 shrink-0 self-start text-primary" />

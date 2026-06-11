@@ -1,11 +1,18 @@
 import { Suspense, use, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, BookOpenCheck, Brain, CalendarDays, Clock3, Cpu, Download, Flame, Gem, MessageSquareText, TrendingUp } from "lucide-react";
+import { ArrowLeft, BookOpenCheck, Brain, CalendarDays, Clock3, Cpu, Download, Flame, Gem, MessageSquareText, TrendingUp, Upload } from "lucide-react";
 import { useSeo } from "../hooks/useSeo";
 import { getInitPromise, keatingStorage, sessions } from "../hooks/keating-storage";
 import type { SessionMetadata } from "../types/session";
 import { UsageCharts } from "../components/UsageCharts";
 import { buildWebFineTuneExport, type WebExportSource, type WebFineTuneFormat } from "../keating/export";
+import { downloadTextFile } from "../lib/browser-download";
+import {
+	buildKeatingPortableDataBundle,
+	importKeatingPortableDataBundle,
+	parseKeatingPortableDataBundle,
+	type KeatingPortableImportResult,
+} from "../keating/portable-data";
 
 let metadataPromise: Promise<SessionMetadata[]> | null = null;
 
@@ -66,18 +73,6 @@ function MetricCard({
 	);
 }
 
-function downloadTextFile(filename: string, content: string) {
-	const blob = new Blob([content], { type: "application/json;charset=utf-8" });
-	const url = URL.createObjectURL(blob);
-	const link = document.createElement("a");
-	link.href = url;
-	link.download = filename;
-	document.body.appendChild(link);
-	link.click();
-	link.remove();
-	URL.revokeObjectURL(url);
-}
-
 function SegmentedControl<T extends string>({
 	label,
 	value,
@@ -90,14 +85,14 @@ function SegmentedControl<T extends string>({
 	onChange: (value: T) => void;
 }) {
 	return (
-		<div>
+		<div className="w-full max-w-full sm:min-w-[18rem] sm:flex-1 lg:min-w-[22rem]">
 			<div className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
-			<div className="inline-flex overflow-hidden rounded-md border border-border">
+			<div className="grid min-w-0 grid-cols-2 overflow-hidden rounded-md border border-border sm:flex sm:flex-nowrap sm:overflow-x-auto">
 				{options.map((option) => (
 					<button
 						key={option.value}
 						type="button"
-						className={`px-3 py-1.5 text-xs transition-colors ${value === option.value ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}
+						className={`min-w-0 whitespace-nowrap px-1.5 py-0.5 text-[10px] transition-colors sm:min-w-max sm:flex-1 sm:shrink-0 sm:px-2 sm:py-1 sm:text-[11px] lg:px-3 lg:py-1.5 lg:text-xs ${value === option.value ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}
 						onClick={() => onChange(option.value)}
 					>
 						{option.label}
@@ -147,10 +142,10 @@ function FineTuneExportPanel() {
 		<section className="mt-6 rounded-lg border border-border bg-background">
 			<div className="border-b border-border px-4 py-3">
 				<h2 className="text-sm font-semibold">Fine-tune export</h2>
-				<p className="mt-1 text-xs text-muted-foreground">Download training JSONL from Keating sessions and artifacts.</p>
+				<p className="mt-1 text-xs text-muted-foreground">Download training JSONL from Keating sessions, artifacts, and sandbox self-edit history.</p>
 			</div>
-			<div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_auto]">
-				<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+			<div className="flex min-w-0 flex-col gap-4 p-4 xl:flex-row xl:items-end xl:justify-between">
+				<div className="flex min-w-0 flex-1 flex-wrap items-end gap-4">
 					<SegmentedControl
 						label="Format"
 						value={format}
@@ -169,28 +164,30 @@ function FineTuneExportPanel() {
 							{ value: "all", label: "All" },
 							{ value: "artifacts", label: "Artifacts" },
 							{ value: "sessions", label: "Sessions" },
+							{ value: "sandbox", label: "Sandbox" },
 						]}
 					/>
-					<label className="flex flex-col gap-2">
+					<label className="flex min-w-[9rem] max-w-full flex-col gap-2">
 						<span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Minimum assistant length</span>
 						<input
 							type="number"
 							min={1}
-							className="h-8 rounded-md border border-border bg-background px-2 text-sm"
+							className="h-9 min-w-0 rounded-md border border-border bg-background px-2 text-sm"
 							value={minAssistantChars}
 							onChange={(event) => setMinAssistantChars(Math.max(1, Number.parseInt(event.target.value, 10) || 1))}
 						/>
 					</label>
-					<label className="flex items-center gap-2 self-end text-sm">
+					<label className="flex h-9 min-w-[14rem] max-w-full items-center gap-2 rounded-md border border-border px-3 text-sm">
 						<input
 							type="checkbox"
+							className="h-4 w-4 shrink-0"
 							checked={redact}
 							onChange={(event) => setRedact(event.target.checked)}
 						/>
-						Redact secrets
+						<span className="min-w-0 truncate">Redact secrets</span>
 					</label>
 				</div>
-				<div className="flex flex-col items-start gap-2 lg:items-end">
+				<div className="flex shrink-0 flex-col items-start gap-2 xl:items-end">
 					<button
 						type="button"
 						className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
@@ -207,6 +204,107 @@ function FineTuneExportPanel() {
 					)}
 					{error && <div className="max-w-sm text-xs text-destructive">{error}</div>}
 				</div>
+			</div>
+		</section>
+	);
+}
+
+function PortableDataPanel() {
+	const [includeSandbox, setIncludeSandbox] = useState(true);
+	const [busy, setBusy] = useState(false);
+	const [result, setResult] = useState<string>("");
+	const [error, setError] = useState("");
+
+	const handlePortableExport = async () => {
+		setBusy(true);
+		setError("");
+		setResult("");
+		try {
+			const bundle = await buildKeatingPortableDataBundle({ includeSandbox });
+			downloadTextFile("keating-portable-data.json", `${JSON.stringify(bundle, null, 2)}\n`);
+			setResult(`Exported ${formatNumber(bundle.sessions.length)} sessions and ${formatNumber(bundle.storage.feedback.length)} feedback records.`);
+		} catch (err) {
+			setError(err instanceof Error ? err.message : String(err));
+		} finally {
+			setBusy(false);
+		}
+	};
+
+	const summarizeImport = (imported: KeatingPortableImportResult) => {
+		const artifactCount =
+			imported.lessonPlans +
+			imported.lessonMaps +
+			imported.animations +
+			imported.verifications +
+			imported.benchmarks +
+			imported.evolutions +
+			imported.promptEvolutions +
+			imported.improvements +
+			imported.quizResults;
+		return `Imported ${formatNumber(imported.sessions)} sessions, ${formatNumber(imported.feedback)} feedback records, ${formatNumber(artifactCount)} artifacts, ${formatNumber(imported.goals)} goals, and ${formatNumber(imported.sandboxCommitsImported)} sandbox commits.`;
+	};
+
+	const handlePortableImport = async (file: File | null) => {
+		if (!file) return;
+		setBusy(true);
+		setError("");
+		setResult("");
+		try {
+			const text = await file.text();
+			const bundle = parseKeatingPortableDataBundle(JSON.parse(text));
+			const imported = await importKeatingPortableDataBundle(bundle);
+			metadataPromise = null;
+			setResult(summarizeImport(imported));
+		} catch (err) {
+			setError(err instanceof Error ? err.message : String(err));
+		} finally {
+			setBusy(false);
+		}
+	};
+
+	return (
+		<section className="mt-6 rounded-lg border border-border bg-background">
+			<div className="border-b border-border px-4 py-3">
+				<h2 className="text-sm font-semibold">Portable data</h2>
+				<p className="mt-1 text-xs text-muted-foreground">Move Keating sessions, learner state, artifacts, goals, and sandbox history between browsers.</p>
+			</div>
+			<div className="flex flex-wrap items-center justify-between gap-4 p-4">
+				<label className="flex items-center gap-2 text-sm">
+					<input
+						type="checkbox"
+						checked={includeSandbox}
+						onChange={(event) => setIncludeSandbox(event.target.checked)}
+					/>
+					Include sandbox code history
+				</label>
+				<div className="flex flex-wrap items-center gap-2">
+					<button
+						type="button"
+						className="inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 text-sm hover:bg-accent disabled:opacity-50"
+						onClick={handlePortableExport}
+						disabled={busy}
+					>
+						<Download size={16} />
+						Export portable JSON
+					</button>
+					<label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50">
+						<Upload size={16} />
+						Import portable JSON
+						<input
+							type="file"
+							accept="application/json,.json"
+							className="sr-only"
+							disabled={busy}
+							onChange={(event) => {
+								const file = event.target.files?.[0] ?? null;
+								void handlePortableImport(file);
+								event.currentTarget.value = "";
+							}}
+						/>
+					</label>
+				</div>
+				{result && <div className="basis-full text-xs text-muted-foreground">{result}</div>}
+				{error && <div className="basis-full text-xs text-destructive">{error}</div>}
 			</div>
 		</section>
 	);
@@ -332,6 +430,7 @@ function UsageContent() {
 					/>
 				</div>
 
+				<PortableDataPanel />
 				<FineTuneExportPanel />
 
 				<div className="mt-6 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)]">

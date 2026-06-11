@@ -204,18 +204,16 @@ function ChatContent() {
         </button>
         <Link
           to="/"
-          className="chat-brand inline-flex min-w-0 shrink-0 items-center gap-2 rounded-md px-2 py-1 hover:bg-accent hover:text-accent-foreground"
+          className="chat-brand inline-flex min-w-0 shrink-0 items-center gap-2 rounded-md px-2 py-1"
           aria-label="Go to Keating home"
         >
           <img
-            src="/logo.png"
+            src="/brand/logo-lockup.png"
             alt="Keating"
-            className="h-7 w-7 rounded object-contain"
+            className="h-6 w-auto object-contain"
           />
-          <span className="hidden md:block truncate text-base font-semibold">
-            Keating
-          </span>
         </Link>
+        <span className="chat-mode-badge chat-only-desktop">MODE: SOCRATIC</span>
 
         {/* Actions */}
         <div className="chat-actions ml-auto flex min-w-0 flex-1 items-center justify-end gap-1 overflow-hidden">

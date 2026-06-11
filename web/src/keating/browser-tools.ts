@@ -70,6 +70,7 @@ import {
 	nodePodDiffFile,
 	nodePodChangedFiles,
 	nodePodCreateSnapshot,
+	nodePodFindSnapshot,
 	nodePodRestoreSnapshot,
 	nodePodRunScript,
 	nodePodValidateEdit,
@@ -362,8 +363,8 @@ function buildAnatomySvg(params: {
 	style: string;
 }): string {
 	const palette = params.style === "dark"
-		? { bg: "#101214", panel: "#181c20", ink: "#f6f1e7", muted: "#c9c1b3", accent: "#f59e0b", fab: "#38bdf8", fc: "#34d399", line: "#3f4650" }
-		: { bg: "#f8f7f2", panel: "#ffffff", ink: "#171717", muted: "#525252", accent: "#0f766e", fab: "#0284c7", fc: "#059669", line: "#d8d3c7" };
+		? { bg: "#101214", panel: "#181c20", ink: "#f6f1e7", muted: "#c9c1b3", accent: "#f59e0b", fab: "#38bdf8", fc: "#4be388", line: "#3f4650" }
+		: { bg: "#f8f7f2", panel: "#ffffff", ink: "#171717", muted: "#525252", accent: "#0f766e", fab: "#0284c7", fc: "#14743c", line: "#d8d3c7" };
 	const labels = params.labels.length > 0 ? params.labels : ["Fab arms", "Antigen-binding tips", "Fc stem", "Hinge", "Size variants"];
 	const points = params.points.length > 0 ? params.points : [
 		"Fab arms form the Y tips that grab antigen.",
@@ -1823,7 +1824,7 @@ ${topicList}
 					`- instanceId: ${snap.instanceId}`,
 					`- createdAt: ${snap.createdAt}`,
 					"",
-					"You can restore this snapshot later with `source_restore`.",
+					"Restore later with `source_restore` and `id` set to this snapshot id.",
 				].join("\n");
 			}
 		),
@@ -1831,21 +1832,27 @@ ${topicList}
 		// source_restore - Rollback NodePod VFS to a previous snapshot
 		createTool(
 			"source_restore",
-			"Restore the NodePod sandbox to a previous snapshot. Use this when source edits caused a regression and you want to undo them. Pass the snapshot data returned by source_snapshot.",
+			"Restore the NodePod sandbox to a previous snapshot. Use this when source edits caused a regression and you want to undo them. Pass either an `id` from source_snapshot or full snapshot `data`.",
 			{
-				data: { type: "object", description: "The snapshot data object returned by a prior source_snapshot call." },
+				id: { type: "string", description: "Snapshot id returned by source_snapshot." },
+				data: { type: "object", description: "Full snapshot data object, if available." },
 			},
 			async (params) => {
 				if (!isNodePodActive()) {
 					return "NodePod sandbox is not active.";
 				}
-				const data = params.data;
+				const id = typeof params.id === "string" ? params.id : "";
+				let data = params.data;
+				if (!data && id) {
+					const found = await nodePodFindSnapshot(id);
+					data = found?.data;
+				}
 				if (!data) {
-					return "Error: snapshot data is required. Pass the full object returned by source_snapshot.";
+					return "Error: snapshot id or data is required. Pass `id` from source_snapshot, or a full snapshot object.";
 				}
 				try {
 					await nodePodRestoreSnapshot(data);
-					return "# Snapshot Restored\n\nNodePod sandbox rolled back to the snapshot state.";
+					return `# Snapshot Restored\n\nNodePod sandbox rolled back${id ? ` to ${id}` : ""}.`;
 				} catch (e) {
 					return `# Restore Failed\n\n${e instanceof Error ? e.message : String(e)}`;
 				}

@@ -2,28 +2,92 @@ import { Link } from "@tanstack/react-router";
 
 export function Footer() {
   return (
-    <footer className="py-12 px-6 border-t-2 border-border">
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 font-terminal">
-        <div className="flex items-center gap-2 text-foreground/60">
-          <span className="text-[#d44a3d]">●</span>
-          <span>KEATING_HYPERTEACHER</span>
+    <footer className="foot">
+      <div className="wrap">
+        <div className="foot-grid">
+          <div className="foot-brand">
+            <img src="/brand/logo-lockup.png" alt="Keating" />
+            <p>
+              The hyperteacher. Socratic reconstruction for people who&apos;d rather understand
+              than memorize.
+            </p>
+          </div>
+          <div className="foot-col">
+            <h5>Product</h5>
+            <ul>
+              <li>
+                <Link to="/tutorial">Tutorial</Link>
+              </li>
+              <li>
+                <a href="/#manifesto">Manifesto</a>
+              </li>
+              <li>
+                <a href="/#loop">Harness</a>
+              </li>
+              <li>
+                <Link to="/bench">Bench</Link>
+              </li>
+            </ul>
+          </div>
+          <div className="foot-col">
+            <h5>Resources</h5>
+            <ul>
+              <li>
+                <Link to="/paper">Paper</Link>
+              </li>
+              <li>
+                <Link to="/blog">Blog</Link>
+              </li>
+              <li>
+                <Link to="/usage">Usage</Link>
+              </li>
+              <li>
+                <a
+                  href="https://github.com/Diogenesoftoronto/keating/blob/main/CHANGELOG.md"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Changelog
+                </a>
+              </li>
+            </ul>
+          </div>
+          <div className="foot-col">
+            <h5>Source</h5>
+            <ul>
+              <li>
+                <a
+                  href="https://github.com/Diogenesoftoronto/keating"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  GitHub
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://github.com/Diogenesoftoronto/keating/blob/main/LICENSE"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  License
+                </a>
+              </li>
+              <li>
+                <a href="https://keating.help">keating.help</a>
+              </li>
+            </ul>
+          </div>
         </div>
-        <p className="text-sm text-foreground/60 flex items-center gap-3">
-          <span>BUILT_ON_PI // MIT_LICENSE // 2026</span>
-          <span className="px-2 py-0.5 border border-foreground/20 rounded text-[10px] bg-foreground/5">
-            V{import.meta.env.APP_VERSION}
+        <div className="foot-base">
+          <span>
+            © 2026 keating.help — think_for_yourself // v{import.meta.env.APP_VERSION} //
+            BUILT_ON_PI // MIT_LICENSE
           </span>
-        </p>
-        <div className="flex gap-6 text-foreground/60">
-          <a
-            href="https://github.com/Diogenesoftoronto/keating"
-            className="hover:text-[#d44a3d] transition-colors"
-          >
-            [GITHUB]
-          </a>
-          <a href="https://keating.help" className="hover:text-[#d44a3d] transition-colors">
-            [WEB]
-          </a>
+          <span>
+            system status: <span className="ok">online</span> // uptime:{" "}
+            <span className="ok">optimal</span>
+          </span>
         </div>
       </div>
     </footer>
@@ -34,7 +98,7 @@ export function SimpleFooter() {
   return (
     <footer className="py-8 px-6 border-t-2 border-border">
       <div className="max-w-6xl mx-auto text-center font-terminal text-foreground/60">
-        <Link to="/" className="hover:text-[#d44a3d] transition-colors">
+        <Link to="/" className="hover:text-[#d5604b] transition-colors">
           [BACK_TO_HOME]
         </Link>
       </div>

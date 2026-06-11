@@ -208,7 +208,7 @@ export function Tutorial() {
                 { step: "4", label: "Build", desc: "Missing pieces are filled in through targeted explanation." },
               ].map((s) => (
                 <div key={s.step} className="border border-border/30 rounded p-4">
-                  <div className="font-terminal text-[#d44a3d] mb-1">{s.step}. {s.label.toUpperCase()}</div>
+                  <div className="font-terminal text-[#d5604b] mb-1">{s.step}. {s.label.toUpperCase()}</div>
                   <p className="text-sm text-muted-foreground">{s.desc}</p>
                 </div>
               ))}
@@ -229,7 +229,7 @@ export function Tutorial() {
               {[
                 {
                   category: "Learn",
-                  color: "#10b981",
+                  color: "#1e9b50",
                   prompts: [
                     "Explain quantum entanglement like I'm 12 years old.",
                     "Why does gradient descent work? Walk me through the intuition.",
@@ -256,7 +256,7 @@ export function Tutorial() {
                 },
                 {
                   category: "Assess",
-                  color: "#d44a3d",
+                  color: "#d5604b",
                   prompts: [
                     "Quiz me on the Krebs cycle. Ask questions that test deeper understanding, not memorization.",
                     "Evaluate my understanding of async/await in JavaScript by asking me to explain it from scratch.",
@@ -319,7 +319,7 @@ export function Tutorial() {
                 ["/timeline", "Show learning progress over time"],
               ].map(([cmd, desc]) => (
                 <div key={cmd} className="flex gap-3 items-start">
-                  <code className="bg-[#1a1a1a] text-[#00ff00] px-1.5 py-0.5 rounded shrink-0 text-xs">{cmd}</code>
+                  <code className="bg-[#1c211b] text-[#4be388] px-1.5 py-0.5 rounded shrink-0 text-xs">{cmd}</code>
                   <span className="text-muted-foreground">{desc}</span>
                 </div>
               ))}
@@ -354,7 +354,7 @@ export function Tutorial() {
               </div>
 
               {/* Teacher Persona */}
-              <div className="border-l-4 border-l-[#d44a3d] pl-4">
+              <div className="border-l-4 border-l-[#d5604b] pl-4">
                 <h3 className="font-bold mb-1">Teacher Persona</h3>
                 <p className="text-sm text-muted-foreground mb-2">
                   The editable identity and voice of your tutor — the "who" of the system prompt.
@@ -371,7 +371,7 @@ export function Tutorial() {
               </div>
 
               {/* Speech & Voice */}
-              <div className="border-l-4 border-l-[#10b981] pl-4">
+              <div className="border-l-4 border-l-[#1e9b50] pl-4">
                 <h3 className="font-bold mb-1">Speech &amp; Voice</h3>
                 <p className="text-sm text-muted-foreground mb-2">
                   Turn on spoken replies and pick a voice. Choose a built-in provider (e.g. OpenAI
@@ -458,13 +458,13 @@ export function Tutorial() {
               </div>
 
               {/* Proxy */}
-              <div className="border-l-4 border-l-[#00ff00] pl-4">
+              <div className="border-l-4 border-l-[#4be388] pl-4">
                 <h3 className="font-bold mb-1">Proxy</h3>
                 <p className="text-sm text-muted-foreground mb-2">
                   A CORS proxy lets this browser-based app call providers that block direct
                   cross-origin requests. Toggle <strong>Use CORS Proxy</strong> and set the{" "}
                   <strong>Proxy URL</strong> (e.g.{" "}
-                  <code className="bg-[#1a1a1a] text-[#00ff00] px-1">http://localhost:3001</code>).
+                  <code className="bg-[#1c211b] text-[#4be388] px-1">http://localhost:3001</code>).
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Why it exists: browsers refuse some cross-site API calls for security. Most setups
@@ -494,10 +494,10 @@ export function Tutorial() {
 
           {/* Model Types Overview */}
           <div className="grid md:grid-cols-2 gap-6 mb-8">
-            <div className="paper-fold distressed-border p-6 border-l-4 border-l-[#10b981]">
+            <div className="paper-fold distressed-border p-6 border-l-4 border-l-[#1e9b50]">
               <h2 className="text-xl font-bold mb-2 flex items-center gap-2">
-                <span className="text-[#10b981]">BROWSER</span>
-                <span className="text-xs bg-[#10b981]/10 text-[#10b981] px-2 py-1 rounded">
+                <span className="text-[#1e9b50]">BROWSER</span>
+                <span className="text-xs bg-[#1e9b50]/10 text-[#1e9b50] px-2 py-1 rounded">
                   ZERO SETUP
                 </span>
               </h2>
@@ -566,7 +566,7 @@ export function Tutorial() {
                 </p>
 
                 <div className="terminal-window p-4 mb-4 text-sm overflow-x-auto">
-                  <p className="text-[#00ff00] mb-2"># Requirements:</p>
+                  <p className="text-[#4be388] mb-2"># Requirements:</p>
                   <p className="ml-4 break-words">Chrome 113+ / Edge 113+ / Firefox Nightly (WebGPU flag)</p>
                   <p className="ml-4">GPU with WebGPU support (most modern GPUs)</p>
                   <p className="ml-4">~5GB free disk space for model cache</p>
@@ -580,7 +580,7 @@ export function Tutorial() {
                     "Chat! Works offline for future sessions",
                   ].map((step, i) => (
                     <div key={i} className="flex gap-3">
-                      <span className="font-terminal text-[#d44a3d] shrink-0">
+                      <span className="font-terminal text-[#d5604b] shrink-0">
                         0{i + 1}.
                       </span>
                       <span>{step}</span>
@@ -588,8 +588,8 @@ export function Tutorial() {
                   ))}
                 </div>
 
-                <div className="mt-6 p-4 bg-[#10b981]/10 border-l-4 border-[#10b981]">
-                  <p className="font-terminal text-[#10b981]">NO_API_KEY_REQUIRED</p>
+                <div className="mt-6 p-4 bg-[#1e9b50]/10 border-l-4 border-[#1e9b50]">
+                  <p className="font-terminal text-[#1e9b50]">NO_API_KEY_REQUIRED</p>
                   <p className="text-sm mt-1">
                     Your conversations never leave your device. Completely private.
                   </p>
@@ -606,17 +606,17 @@ export function Tutorial() {
                 </p>
 
                 <div className="terminal-window p-4 mb-4 text-sm overflow-x-auto">
-                  <p className="text-[#00ff00] mb-2"># Install Ollama:</p>
-                  <p className="text-[#f4f1ea] break-all">curl -fsSL https://ollama.com/install.sh | sh</p>
-                  <p className="text-[#00ff00] mt-3 mb-2"># Pull a model:</p>
-                  <p className="text-[#f4f1ea]">ollama pull gemma3:4b</p>
-                  <p className="text-[#00ff00] mt-3 mb-2"># Start server (runs on port 11434):</p>
-                  <p className="text-[#f4f1ea]">ollama serve</p>
+                  <p className="text-[#4be388] mb-2"># Install Ollama:</p>
+                  <p className="text-[#f1ece0] break-all">curl -fsSL https://ollama.com/install.sh | sh</p>
+                  <p className="text-[#4be388] mt-3 mb-2"># Pull a model:</p>
+                  <p className="text-[#f1ece0]">ollama pull gemma3:4b</p>
+                  <p className="text-[#4be388] mt-3 mb-2"># Start server (runs on port 11434):</p>
+                  <p className="text-[#f1ece0]">ollama serve</p>
                 </div>
 
                 <div className="space-y-4">
                   <div className="flex gap-3">
-                    <span className="font-terminal text-[#d44a3d] shrink-0">01.</span>
+                    <span className="font-terminal text-[#d5604b] shrink-0">01.</span>
                     <span>
                       Install Ollama from{" "}
                       <a
@@ -630,24 +630,24 @@ export function Tutorial() {
                     </span>
                   </div>
                   <div className="flex gap-3">
-                    <span className="font-terminal text-[#d44a3d] shrink-0">02.</span>
+                    <span className="font-terminal text-[#d5604b] shrink-0">02.</span>
                     <span>
                       Pull your preferred model:{" "}
-                      <code className="bg-[#1a1a1a] text-[#00ff00] px-1">
+                      <code className="bg-[#1c211b] text-[#4be388] px-1">
                         ollama pull gemma3:4b
                       </code>
                     </span>
                   </div>
                   <div className="flex gap-3">
-                    <span className="font-terminal text-[#d44a3d] shrink-0">03.</span>
+                    <span className="font-terminal text-[#d5604b] shrink-0">03.</span>
                     <span>In Keating settings, add custom provider:</span>
                   </div>
                 </div>
 
                 <div className="mt-4 ml-8 terminal-window p-4 text-sm overflow-x-auto">
-                  <p className="text-[#00ff00]">Provider: ollama</p>
-                  <p className="text-[#00ff00]">Base URL: http://localhost:11434</p>
-                  <p className="text-[#00ff00]">Model: gemma3:4b (or your model name)</p>
+                  <p className="text-[#4be388]">Provider: ollama</p>
+                  <p className="text-[#4be388]">Base URL: http://localhost:11434</p>
+                  <p className="text-[#4be388]">Model: gemma3:4b (or your model name)</p>
                 </div>
 
                 <div className="mt-6 p-4 bg-[#6366f1]/10 border-l-4 border-[#6366f1]">
@@ -669,23 +669,23 @@ export function Tutorial() {
                 </p>
 
                 <div className="terminal-window p-4 mb-4 text-sm overflow-x-auto">
-                  <p className="text-[#00ff00] mb-2"># Clone and build:</p>
-                  <p className="text-[#f4f1ea]">git clone https://github.com/ggerganov/llama.cpp</p>
-                  <p className="text-[#f4f1ea]">cd llama.cpp && make</p>
-                  <p className="text-[#00ff00] mt-3 mb-2"># Download a GGUF model:</p>
-                  <p className="text-[#f4f1ea] break-all">
+                  <p className="text-[#4be388] mb-2"># Clone and build:</p>
+                  <p className="text-[#f1ece0]">git clone https://github.com/ggerganov/llama.cpp</p>
+                  <p className="text-[#f1ece0]">cd llama.cpp && make</p>
+                  <p className="text-[#4be388] mt-3 mb-2"># Download a GGUF model:</p>
+                  <p className="text-[#f1ece0] break-all">
                     wget
                     https://huggingface.co/unsloth/gemma-4-E4B-it-GGUF/resolve/main/gemma-4-E4B-it-UD-Q4_K_XL.gguf
                   </p>
-                  <p className="text-[#00ff00] mt-3 mb-2"># Run server:</p>
-                  <p className="text-[#f4f1ea]">
+                  <p className="text-[#4be388] mt-3 mb-2"># Run server:</p>
+                  <p className="text-[#f1ece0]">
                     ./llama-server -m gemma-4-E4B-it-UD-Q4_K_XL.gguf --port 8080
                   </p>
                 </div>
 
                 <div className="space-y-4">
                   <div className="flex gap-3">
-                    <span className="font-terminal text-[#d44a3d] shrink-0">01.</span>
+                    <span className="font-terminal text-[#d5604b] shrink-0">01.</span>
                     <span>
                       Build llama.cpp from{" "}
                       <a
@@ -699,18 +699,18 @@ export function Tutorial() {
                     </span>
                   </div>
                   <div className="flex gap-3">
-                    <span className="font-terminal text-[#d44a3d] shrink-0">02.</span>
+                    <span className="font-terminal text-[#d5604b] shrink-0">02.</span>
                     <span>Download a GGUF model from HuggingFace</span>
                   </div>
                   <div className="flex gap-3">
-                    <span className="font-terminal text-[#d44a3d] shrink-0">03.</span>
+                    <span className="font-terminal text-[#d5604b] shrink-0">03.</span>
                     <span>Start the server with your model</span>
                   </div>
                   <div className="flex gap-3">
-                    <span className="font-terminal text-[#d44a3d] shrink-0">04.</span>
+                    <span className="font-terminal text-[#d5604b] shrink-0">04.</span>
                     <span>
                       In Keating settings, add custom provider pointing to{" "}
-                      <code className="bg-[#1a1a1a] text-[#00ff00] px-1">
+                      <code className="bg-[#1c211b] text-[#4be388] px-1">
                         http://localhost:8080
                       </code>
                     </span>
@@ -721,9 +721,9 @@ export function Tutorial() {
                   <p className="font-terminal text-[#d97706]">TIP</p>
                   <p className="text-sm mt-1">
                     Use{" "}
-                    <code className="bg-[#1a1a1a] text-[#00ff00] px-1">-ngl 99</code> to offload
+                    <code className="bg-[#1c211b] text-[#4be388] px-1">-ngl 99</code> to offload
                     all layers to GPU. Use{" "}
-                    <code className="bg-[#1a1a1a] text-[#00ff00] px-1">-c 8192</code> for larger
+                    <code className="bg-[#1c211b] text-[#4be388] px-1">-c 8192</code> for larger
                     context.
                   </p>
                 </div>
@@ -740,52 +740,52 @@ export function Tutorial() {
                 </p>
 
                 <div className="terminal-window p-4 mb-4 text-sm overflow-x-auto">
-                  <p className="text-[#00ff00] mb-2"># Install:</p>
-                  <p className="text-[#f4f1ea]">pip install litellm</p>
-                  <p className="text-[#00ff00] mt-3 mb-2"># Run with a local model:</p>
-                  <p className="text-[#f4f1ea]">litellm --model ollama/gemma3:4b</p>
-                  <p className="text-[#00ff00] mt-3 mb-2"># Or with API keys (env vars):</p>
-                  <p className="text-[#f4f1ea]">export OPENAI_API_KEY=sk-...</p>
-                  <p className="text-[#f4f1ea]">export ANTHROPIC_API_KEY=sk-ant-...</p>
-                  <p className="text-[#f4f1ea]">litellm --port 4000</p>
+                  <p className="text-[#4be388] mb-2"># Install:</p>
+                  <p className="text-[#f1ece0]">pip install litellm</p>
+                  <p className="text-[#4be388] mt-3 mb-2"># Run with a local model:</p>
+                  <p className="text-[#f1ece0]">litellm --model ollama/gemma3:4b</p>
+                  <p className="text-[#4be388] mt-3 mb-2"># Or with API keys (env vars):</p>
+                  <p className="text-[#f1ece0]">export OPENAI_API_KEY=sk-...</p>
+                  <p className="text-[#f1ece0]">export ANTHROPIC_API_KEY=sk-ant-...</p>
+                  <p className="text-[#f1ece0]">litellm --port 4000</p>
                 </div>
 
                 <div className="space-y-4">
                   <div className="flex gap-3">
-                    <span className="font-terminal text-[#d44a3d] shrink-0">01.</span>
+                    <span className="font-terminal text-[#d5604b] shrink-0">01.</span>
                     <span>
                       Install:{" "}
-                      <code className="bg-[#1a1a1a] text-[#00ff00] px-1">pip install litellm</code>
+                      <code className="bg-[#1c211b] text-[#4be388] px-1">pip install litellm</code>
                     </span>
                   </div>
                   <div className="flex gap-3">
-                    <span className="font-terminal text-[#d44a3d] shrink-0">02.</span>
+                    <span className="font-terminal text-[#d5604b] shrink-0">02.</span>
                     <span>
                       Set API keys as environment variables (if using cloud providers)
                     </span>
                   </div>
                   <div className="flex gap-3">
-                    <span className="font-terminal text-[#d44a3d] shrink-0">03.</span>
+                    <span className="font-terminal text-[#d5604b] shrink-0">03.</span>
                     <span>
                       Start proxy:{" "}
-                      <code className="bg-[#1a1a1a] text-[#00ff00] px-1">
+                      <code className="bg-[#1c211b] text-[#4be388] px-1">
                         litellm --port 4000
                       </code>
                     </span>
                   </div>
                   <div className="flex gap-3">
-                    <span className="font-terminal text-[#d44a3d] shrink-0">04.</span>
+                    <span className="font-terminal text-[#d5604b] shrink-0">04.</span>
                     <span>
                       Point Keating to{" "}
-                      <code className="bg-[#1a1a1a] text-[#00ff00] px-1">
+                      <code className="bg-[#1c211b] text-[#4be388] px-1">
                         http://localhost:4000
                       </code>
                     </span>
                   </div>
                 </div>
 
-                <div className="mt-6 p-4 bg-[#10b981]/10 border-l-4 border-[#10b981]">
-                  <p className="font-terminal text-[#10b981]">UNIFIED_API</p>
+                <div className="mt-6 p-4 bg-[#1e9b50]/10 border-l-4 border-[#1e9b50]">
+                  <p className="font-terminal text-[#1e9b50]">UNIFIED_API</p>
                   <p className="text-sm mt-1">
                     LiteLLM gives you one OpenAI-compatible endpoint that can route to any provider
                     (local or cloud).
@@ -802,12 +802,12 @@ export function Tutorial() {
                   Use managed AI services for best performance and model variety. Requires API keys.
                 </p>
 
-                <div id="get-api-key" className="mb-6 p-4 bg-[#f4f1ea]/5 border border-border">
+                <div id="get-api-key" className="mb-6 p-4 bg-[#f1ece0]/5 border border-border">
                   <h4 className="font-bold mb-2">Where API keys go in Keating</h4>
                   <p className="text-sm text-muted-foreground">
                     Open Settings, choose Providers & Models, then paste the key beside the provider.
                     Keys stay in browser storage for the web app. In the CLI, use environment
-                    variables such as <code className="bg-[#1a1a1a] text-[#00ff00] px-1">GEMINI_API_KEY</code>.
+                    variables such as <code className="bg-[#1c211b] text-[#4be388] px-1">GEMINI_API_KEY</code>.
                   </p>
                 </div>
 
@@ -838,7 +838,7 @@ export function Tutorial() {
                     </li>
                     <li>
                       4. In the CLI:{" "}
-                      <code className="bg-[#1a1a1a] text-[#00ff00] px-1">export OPENROUTER_API_KEY=sk-or-...</code>
+                      <code className="bg-[#1c211b] text-[#4be388] px-1">export OPENROUTER_API_KEY=sk-or-...</code>
                     </li>
                   </ol>
                   <div className="text-xs text-muted-foreground">
@@ -883,23 +883,23 @@ export function Tutorial() {
                   </p>
                 </div>
 
-                <div className="mb-6 p-4 bg-[#d44a3d]/5 border border-[#d44a3d]/20">
-                  <h4 className="font-bold text-[#d44a3d] mb-2">Synthetic</h4>
+                <div className="mb-6 p-4 bg-[#d5604b]/5 border border-[#d5604b]/20">
+                  <h4 className="font-bold text-[#d5604b] mb-2">Synthetic</h4>
                   <ol className="space-y-2 text-sm">
                     <li>1. Create or copy your Synthetic API key</li>
                     <li>
                       2. In Keating settings, add a custom provider named{" "}
-                      <code className="bg-[#1a1a1a] text-[#00ff00] px-1">synthetic</code>
+                      <code className="bg-[#1c211b] text-[#4be388] px-1">synthetic</code>
                     </li>
                     <li>
                       3. Set the provider type to{" "}
-                      <code className="bg-[#1a1a1a] text-[#00ff00] px-1">
+                      <code className="bg-[#1c211b] text-[#4be388] px-1">
                         Synthetic (OpenAI Compatible)
                       </code>
                     </li>
                     <li>
                       4. Use{" "}
-                      <code className="bg-[#1a1a1a] text-[#00ff00] px-1">
+                      <code className="bg-[#1c211b] text-[#4be388] px-1">
                         https://api.synthetic.new/openai/v1
                       </code>{" "}
                       as the base URL
@@ -969,9 +969,9 @@ export function Tutorial() {
                     Use it after exporting Keating data when you want a visual fine-tuning workflow.
                   </p>
                   <div className="terminal-window p-4 text-sm overflow-x-auto">
-                    <p className="text-[#00ff00]"># Start Unsloth Studio</p>
-                    <p className="text-[#f4f1ea]">pip install unsloth</p>
-                    <p className="text-[#f4f1ea]">unsloth studio -H 0.0.0.0 -p 8888</p>
+                    <p className="text-[#4be388]"># Start Unsloth Studio</p>
+                    <p className="text-[#f1ece0]">pip install unsloth</p>
+                    <p className="text-[#f1ece0]">unsloth studio -H 0.0.0.0 -p 8888</p>
                   </div>
                   <p className="mt-3 text-sm text-muted-foreground">
                     Docs:{" "}
@@ -988,10 +988,10 @@ export function Tutorial() {
                     JSONL. Use the CLI or the Usage page in the web app.
                   </p>
                   <div className="terminal-window p-4 text-sm overflow-x-auto">
-                    <p className="text-[#00ff00]"># CLI export</p>
-                    <p className="text-[#f4f1ea]">keating export --finetune --source=all --format=both</p>
-                    <p className="text-[#00ff00] mt-3"># Web export</p>
-                    <p className="text-[#f4f1ea]">Open Usage → Fine-tune export → Export fine-tune data</p>
+                    <p className="text-[#4be388]"># CLI export</p>
+                    <p className="text-[#f1ece0]">keating export --finetune --source=all --format=both</p>
+                    <p className="text-[#4be388] mt-3"># Web export</p>
+                    <p className="text-[#f1ece0]">Open Usage → Fine-tune export → Export fine-tune data</p>
                   </div>
                 </section>
 
@@ -1003,8 +1003,8 @@ export function Tutorial() {
                     script.
                   </p>
                   <div className="terminal-window p-4 text-sm overflow-x-auto">
-                    <p className="text-[#f4f1ea]">pip install -r requirements.txt</p>
-                    <p className="text-[#f4f1ea]">python unsloth_train.py --data train.chatml.jsonl --out keating-lora</p>
+                    <p className="text-[#f1ece0]">pip install -r requirements.txt</p>
+                    <p className="text-[#f1ece0]">python unsloth_train.py --data train.chatml.jsonl --out keating-lora</p>
                   </div>
                   <p className="mt-3 text-sm text-muted-foreground">
                     RunPod guide:{" "}
@@ -1045,11 +1045,11 @@ export function Tutorial() {
           </div>
 
           {/* Security Note */}
-          <section className="mt-8 bg-[#1a1a1a] text-[#f4f1ea] p-6 border-l-4 border-[#d44a3d]">
-            <h3 className="font-terminal text-xl text-[#d44a3d] mb-3">SECURITY_NOTE</h3>
+          <section className="mt-8 bg-[#1c211b] text-[#f1ece0] p-6 border-l-4 border-[#d5604b]">
+            <h3 className="font-terminal text-xl text-[#d5604b] mb-3">SECURITY_NOTE</h3>
             <p className="text-sm">
               API keys are stored locally in your browser's IndexedDB (web) or{" "}
-              <code className="text-[#00ff00]">~/.keating/.env</code> (CLI). They never leave your
+              <code className="text-[#4be388]">~/.keating/.env</code> (CLI). They never leave your
               device. Never commit keys to git.
             </p>
           </section>

@@ -21,13 +21,13 @@ export function Paper() {
             </h1>
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="text-muted-foreground font-terminal">
-                <span className="text-[#d44a3d]">AUTHOR:</span> Dio the Debugger <br />
-                <span className="text-[#d44a3d] leading-7">DATE:</span> April 3, 2026
+                <span className="text-[#d5604b]">AUTHOR:</span> Dio the Debugger <br />
+                <span className="text-[#d5604b] leading-7">DATE:</span> April 3, 2026
               </div>
               <a
                 href="/keating-metaharness.pdf"
                 download="keating-metaharness.pdf"
-                className="inline-flex items-center justify-center gap-2 bg-[#d44a3d] text-[#f4f1ea] px-6 py-3 font-bold hover:bg-[#b33e33] transition-colors"
+                className="inline-flex items-center justify-center gap-2 bg-[#d5604b] text-[#f1ece0] px-6 py-3 font-bold hover:bg-[#b33e33] transition-colors"
               >
                 <Download size={20} />
                 DOWNLOAD PDF

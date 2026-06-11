@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Check, CopyPlus, GitBranch, Loader2, Pencil, Search, Sparkles, Trash2, X } from "lucide-react";
 import { sessions, updateSessionTitle } from "../hooks/keating-storage";
 import type { SessionMetadata } from "../types/session";
+import { formatRelativeSessionDate } from "../lib/session-date";
 import { buildSessionTree, flattenSessionTree } from "./session-tree";
 
 export interface SessionManagerDialogProps {
@@ -18,16 +19,6 @@ function formatUsage(usage: SessionMetadata["usage"]) {
 	const tokens = usage.totalTokens.toLocaleString();
 	const cost = usage.cost.total > 0 ? ` | $${usage.cost.total.toFixed(4)}` : "";
 	return `${tokens} tokens${cost}`;
-}
-
-function formatDate(isoString: string) {
-	const date = new Date(isoString);
-	const now = new Date();
-	const days = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-	if (days === 0) return "Today";
-	if (days === 1) return "Yesterday";
-	if (days < 7) return `${days} days ago`;
-	return date.toLocaleDateString();
 }
 
 export function SessionManagerDialog({
@@ -276,7 +267,7 @@ export function SessionManagerDialog({
 													) : null}
 												</h3>
 												<p className="mt-1 text-xs text-muted-foreground">
-													{session.parentSessionId ? "Fork | " : ""}{formatDate(session.lastModified)} | {session.messageCount} messages | {formatUsage(session.usage)}
+													{session.parentSessionId ? "Fork | " : ""}{formatRelativeSessionDate(session.lastModified, { recent: "long" })} | {session.messageCount} messages | {formatUsage(session.usage)}
 												</p>
 											</button>
 											<div className="flex shrink-0 gap-1 ml-auto">
