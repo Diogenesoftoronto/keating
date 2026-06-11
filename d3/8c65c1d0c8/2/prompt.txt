@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keating — The Hyperteacher</title>
+<meta name="description" content="Keating doesn't give answers. It forces you to reconstruct understanding from memory. The Socratic method, powered by silicon.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F1ECE0;
+  --paper-deep:#E9E2D2;
+  --card:#F6F2E8;
+  --ink:#1C211B;
+  --ink-soft:#4A5247;
+  --green:#1E9B50;
+  --green-deep:#14743C;
+  --green-wash:#DDEBDD;
+  --crt:#0C1510;
+  --crt-edge:#1B2A1F;
+  --phosphor:#4BE388;
+  --phosphor-dim:#2E9A5C;
+  --amber:#E8A33D;
+  --red:#D5604B;
+  --line:rgba(28,33,27,.22);
+  --line-soft:rgba(28,33,27,.12);
+  --mono-display:'Space Mono',ui-monospace,'Cascadia Mono',Menlo,monospace;
+  --mono-body:'JetBrains Mono',ui-monospace,'Cascadia Mono',Menlo,monospace;
+  --shadow-card:0 1px 0 rgba(28,33,27,.06), 0 10px 28px -18px rgba(28,33,27,.35);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--mono-body);
+  background:var(--paper);
+  color:var(--ink);
+  font-size:15px;
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:var(--green);color:#fff}
+img{display:block;max-width:100%}
+a{color:inherit}
+
+/* ---------- shared ---------- */
+.wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+.eyebrow{
+  font-family:var(--mono-body);font-size:11px;letter-spacing:.18em;
+  color:var(--green-deep);text-transform:uppercase;font-weight:600;
+}
+.prompt::before{content:'$ ';color:var(--green)}
+button,.btn{font-family:var(--mono-body)}
+
+.btn{
+  display:inline-flex;align-items:center;gap:10px;
+  font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  padding:14px 22px;border:1.5px solid var(--ink);text-decoration:none;
+  background:var(--card);color:var(--ink);cursor:pointer;
+  box-shadow:3px 3px 0 var(--ink);
+  transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
+}
+.btn:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--ink)}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.btn:focus-visible{outline:3px solid var(--green);outline-offset:3px}
+.btn-primary{background:var(--green);color:#fff;border-color:var(--green-deep);box-shadow:3px 3px 0 var(--green-deep)}
+.btn-primary:hover{box-shadow:4px 4px 0 var(--green-deep)}
+.btn-primary:active{box-shadow:1px 1px 0 var(--green-deep)}
+
+/* ---------- nav ---------- */
+header{
+  position:sticky;top:0;z-index:50;
+  background:rgba(241,236,224,.92);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);
+}
+.nav{display:flex;align-items:center;gap:24px;height:64px}
+.nav-lockup{display:flex;align-items:center;gap:10px;text-decoration:none}
+.nav-lockup img{height:30px;width:auto}
+.nav-version{font-size:10px;color:var(--green-deep);letter-spacing:.1em;transform:translateY(4px)}
+.nav-links{display:flex;gap:4px;margin-left:auto;list-style:none}
+.nav-links a{
+  font-size:12px;letter-spacing:.06em;text-decoration:none;color:var(--ink-soft);
+  padding:8px 10px;position:relative;transition:color .12s;
+}
+.nav-links a::after{
+  content:'';position:absolute;left:10px;right:100%;bottom:4px;height:2px;
+  background:var(--green);transition:right .18s ease;
+}
+.nav-links a:hover{color:var(--green-deep)}
+.nav-links a:hover::after{right:10px}
+.nav-status{
+  display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.1em;
+  color:var(--green-deep);border:1px solid var(--line);padding:7px 12px;background:var(--card);
+  white-space:nowrap;
+}
+.nav-status .dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2.4s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(30,155,80,.5)}55%{box-shadow:0 0 0 6px rgba(30,155,80,0)}}
+.nav .btn{padding:10px 16px;font-size:12px}
+.nav-burger{display:none}
+
+/* ---------- hero ---------- */
+.hero{padding:64px 0 88px;position:relative;overflow:hidden}
+.hero-coords{margin-bottom:34px;font-size:10px;letter-spacing:.22em;color:var(--ink-soft);opacity:.75}
+.hero-grid{display:grid;grid-template-columns:minmax(0,46fr) minmax(0,54fr);gap:48px;align-items:start}
+.hero h1{
+  font-family:var(--mono-display);font-weight:700;
+  font-size:clamp(34px,4.6vw,56px);line-height:1.08;letter-spacing:-.015em;
+  margin:18px 0 10px;
+}
+.hero h1 .cursor{display:inline-block;width:.55em;height:.09em;background:var(--green);vertical-align:baseline;margin-left:6px;animation:blink 1.1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.hero-sub{
+  font-family:var(--mono-display);color:var(--green-deep);font-weight:700;
+  font-size:clamp(15px,1.6vw,19px);letter-spacing:.06em;margin-bottom:22px;
+}
+.hero-copy{color:var(--ink-soft);max-width:46ch;margin-bottom:34px}
+.hero-copy strong{color:var(--ink);font-weight:600}
+.hero-ctas{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:30px}
+.hero-tags{display:flex;gap:22px;flex-wrap:wrap;font-size:12px;color:var(--ink-soft)}
+.hero-tags span{display:flex;align-items:center;gap:7px}
+.hero-tags i{font-style:normal;color:var(--green)}
+
+.hero-stage{position:relative;padding-left:120px;min-height:480px}
+.hero-sprite-wrap{
+  position:absolute;left:0;bottom:-10px;width:258px;z-index:3;
+  animation:hover-bob 5.5s ease-in-out infinite;
+}
+.hero-sprite{
+  width:100%;filter:drop-shadow(0 18px 22px rgba(28,33,27,.28));
+  transition:transform .25s cubic-bezier(.34,1.56,.64,1);
+}
+.hero-sprite:hover{transform:rotate(-4deg) scale(1.04)}
+@keyframes hover-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+.sprite-shadow{
+  position:absolute;left:28px;bottom:-26px;width:185px;height:20px;z-index:2;
+  background:radial-gradient(ellipse at center,rgba(28,33,27,.28),transparent 70%);
+  animation:shadow-bob 5.5s ease-in-out infinite;
+}
+@keyframes shadow-bob{0%,100%{transform:scaleX(1);opacity:.9}50%{transform:scaleX(.86);opacity:.6}}
+
+/* terminal */
+.term{
+  position:relative;z-index:1;background:var(--crt);
+  border:1.5px solid var(--ink);box-shadow:6px 6px 0 var(--ink);
+}
+.term-bar{
+  display:flex;align-items:center;gap:8px;padding:11px 14px;
+  background:var(--crt-edge);border-bottom:1px solid rgba(75,227,136,.18);
+}
+.term-bar .d{width:11px;height:11px;border-radius:50%}
+.term-bar .d.r{background:var(--red)}.term-bar .d.y{background:var(--amber)}.term-bar .d.g{background:var(--green)}
+.term-title{margin-left:8px;font-size:11px;letter-spacing:.14em;color:var(--phosphor-dim)}
+.term-body{
+  position:relative;padding:22px 24px 26px;min-height:380px;
+  font-size:13.5px;line-height:1.85;color:var(--phosphor);
+}
+.term-body::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0 1px,transparent 1px 3px);
+  mix-blend-mode:multiply;
+}
+.t-line{white-space:pre-wrap;word-break:break-word;min-height:1.85em}
+.t-cmd{color:#DCEFE0}
+.t-cmd::before{content:'keating@harness:~$ ';color:var(--phosphor-dim)}
+.t-sys{color:var(--phosphor-dim);font-style:italic}
+.t-you{color:var(--amber)}
+.t-you::before{content:'you      │ ';color:rgba(232,163,61,.55)}
+.t-k{color:var(--phosphor)}
+.t-k::before{content:'keating  │ ';color:var(--phosphor-dim)}
+.t-ok{color:var(--phosphor);font-weight:600}
+.t-ok::before{content:'✓ ';color:var(--green)}
+.t-caret{display:inline-block;width:8px;height:15px;background:var(--phosphor);vertical-align:-2px;animation:blink 1s steps(1) infinite}
+.term-foot{
+  display:flex;gap:0;border-top:1.5px solid var(--ink);background:var(--card);
+  font-size:11px;letter-spacing:.1em;
+}
+.term-foot div{padding:9px 14px;border-right:1px solid var(--line);display:flex;align-items:center;gap:8px}
+.term-foot div:last-child{border-right:none;margin-left:auto}
+.term-foot .dot{width:7px;height:7px;border-radius:50%;background:var(--green)}
+
+/* ---------- capabilities ---------- */
+.caps{padding:0 0 84px}
+.caps-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.cap-card{
+  background:var(--card);border:1.5px solid var(--ink);padding:24px 22px 26px;
+  box-shadow:var(--shadow-card);transition:transform .16s ease, box-shadow .16s ease;
+}
+.cap-card:hover{transform:translateY(-4px);box-shadow:5px 5px 0 var(--ink)}
+.cap-card img{width:62px;height:auto;margin-bottom:16px;transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
+.cap-card:hover img{transform:rotate(-5deg) scale(1.08)}
+.cap-card h3{font-family:var(--mono-display);font-size:15.5px;letter-spacing:.02em;margin-bottom:8px;line-height:1.4}
+.cap-card p{color:var(--ink-soft);font-size:12.8px;line-height:1.7}
+
+/* ---------- CRT verse ---------- */
+.verse{padding:30px 0 96px;text-align:center;background:
+  radial-gradient(ellipse 60% 55% at 50% 62%, rgba(75,227,136,.12), transparent 70%)}
+.verse-prompt{font-size:11px;letter-spacing:.2em;color:var(--ink-soft);margin-bottom:30px}
+.crt-wrap{position:relative;max-width:620px;margin:0 auto;transition:transform .3s ease}
+.crt-wrap:hover{transform:scale(1.015)}
+.crt-wrap > img{width:100%;height:auto;filter:drop-shadow(0 26px 32px rgba(28,33,27,.3))}
+.crt-screen{
+  position:absolute;left:11.5%;top:19%;width:70.5%;height:54%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:5% 6%;overflow:hidden;
+}
+.crt-screen::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.35) 0 1px,transparent 1px 3px);
+}
+.crt-text{
+  font-family:var(--mono-display);font-weight:700;font-style:italic;
+  font-size:clamp(13px,2.5vw,19px);line-height:1.55;color:var(--phosphor);
+  text-shadow:0 0 14px rgba(75,227,136,.6),0 0 36px rgba(75,227,136,.3);
+  animation:flicker 6s linear infinite;
+}
+.crt-attr{
+  margin-top:10px;font-size:clamp(8px,1.4vw,11px);letter-spacing:.18em;
+  color:var(--phosphor-dim);animation:flicker 6s linear infinite;
+}
+@keyframes flicker{
+  0%,100%{opacity:1}3%{opacity:.92}6%{opacity:1}42%{opacity:1}43%{opacity:.88}44%{opacity:1}71%{opacity:.95}72%{opacity:1}
+}
+
+/* ---------- manifesto ---------- */
+.manifesto{padding:90px 0;position:relative}
+.section-head{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;margin-bottom:14px}
+.section-head h2{
+  font-family:var(--mono-display);font-weight:700;
+  font-size:clamp(24px,3vw,34px);letter-spacing:-.01em;
+}
+.section-lede{color:var(--ink-soft);max-width:62ch;margin-bottom:42px}
+.man-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;position:relative}
+.man-card{
+  background:var(--card);border:1.5px solid var(--ink);
+  padding:26px 26px 28px;box-shadow:var(--shadow-card);
+  transition:transform .14s ease, box-shadow .14s ease;
+}
+.man-card:hover{transform:translateY(-3px);box-shadow:5px 5px 0 var(--ink)}
+.man-num{
+  font-family:var(--mono-display);font-weight:700;font-size:15px;
+  color:var(--green-deep);letter-spacing:.04em;margin-bottom:8px;
+}
+.man-card h3{font-family:var(--mono-display);font-size:19px;margin-bottom:10px;letter-spacing:.02em}
+.man-card p{color:var(--ink-soft);font-size:14px}
+.man-card p strong{color:var(--ink);font-weight:600}
+.stamp{
+  position:absolute;right:-8px;top:-46px;z-index:4;
+  font-size:13px;font-weight:700;letter-spacing:.22em;color:var(--green);
+  border:2.5px dashed var(--green);padding:10px 18px;background:rgba(241,236,224,.85);
+  transform:rotate(-6deg);text-transform:uppercase;
+}
+
+/* ---------- loop ---------- */
+.loop{background:var(--crt);border-top:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink);padding:74px 0 0;position:relative}
+.loop::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.15) 0 1px,transparent 1px 3px);
+}
+.loop .wrap{position:relative}
+.loop-head{display:grid;grid-template-columns:280px 1fr;gap:40px;align-items:start;padding-bottom:56px}
+.loop-head h2{
+  font-family:var(--mono-display);font-weight:700;color:var(--phosphor);
+  font-size:22px;letter-spacing:.04em;margin-bottom:14px;
+}
+.loop-head p{color:var(--phosphor-dim);font-size:13.5px;max-width:34ch}
+.loop-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.loop-step{
+  border:1px solid rgba(75,227,136,.35);padding:18px 16px 20px;position:relative;
+  background:rgba(75,227,136,.04);transition:background .15s,border-color .15s,transform .15s;
+}
+.loop-step:hover{background:rgba(75,227,136,.1);border-color:rgba(75,227,136,.7);transform:translateY(-2px)}
+.loop-step:not(:last-child)::after{
+  content:'»';position:absolute;right:-13px;top:50%;transform:translateY(-50%);
+  color:var(--phosphor-dim);font-size:16px;z-index:2;
+}
+.loop-step h4{
+  font-family:var(--mono-display);color:var(--phosphor);font-size:14px;
+  letter-spacing:.08em;margin-bottom:8px;
+}
+.loop-step h4 span{color:var(--phosphor-dim);margin-right:8px}
+.loop-step p{color:var(--phosphor-dim);font-size:12.5px;line-height:1.7}
+.loop-bar{
+  margin-top:58px;border-top:1px solid rgba(75,227,136,.25);
+  padding:13px 0;font-size:12px;color:var(--phosphor-dim);letter-spacing:.06em;
+}
+.loop-bar b{color:var(--phosphor);font-weight:600}
+
+/* ---------- final cta ---------- */
+.final{padding:100px 0;text-align:center;background:
+  radial-gradient(ellipse 70% 60% at 50% 110%, var(--green-wash), transparent 70%)}
+.final-bot{width:170px;margin:0 auto 22px;transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
+.final-bot:hover{transform:scale(1.06) rotate(3deg)}
+.final h2{
+  font-family:var(--mono-display);font-weight:700;
+  font-size:clamp(28px,4vw,46px);letter-spacing:-.01em;margin-bottom:14px;
+}
+.final p{color:var(--ink-soft);max-width:52ch;margin:0 auto 36px}
+.final .hero-ctas{justify-content:center}
+
+/* ---------- footer ---------- */
+footer{border-top:1.5px solid var(--ink);background:var(--paper-deep);padding:54px 0 30px}
+.foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:36px;margin-bottom:46px}
+.foot-brand img{height:64px;width:auto;margin-bottom:16px}
+.foot-brand p{font-size:12.5px;color:var(--ink-soft);max-width:30ch}
+.foot-col h5{font-size:11px;letter-spacing:.18em;color:var(--green-deep);margin-bottom:14px;text-transform:uppercase}
+.foot-col ul{list-style:none}
+.foot-col a{font-size:13px;text-decoration:none;color:var(--ink-soft);display:inline-block;padding:4px 0;transition:color .12s}
+.foot-col a:hover{color:var(--green-deep)}
+.foot-base{
+  display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  border-top:1px solid var(--line-soft);padding-top:22px;
+  font-size:11px;letter-spacing:.08em;color:var(--ink-soft);
+}
+.foot-base .ok{color:var(--green-deep)}
+
+/* ---------- responsive ---------- */
+@media (max-width:980px){
+  .hero-grid{grid-template-columns:1fr;gap:30px}
+  .hero-stage{padding-left:0;padding-top:150px;min-height:0}
+  .hero-sprite-wrap{width:200px;left:12px;top:0;bottom:auto}
+  .sprite-shadow{display:none}
+  .caps-grid{grid-template-columns:1fr 1fr}
+  .man-grid{grid-template-columns:1fr 1fr}
+  .loop-head{grid-template-columns:1fr;gap:22px}
+  .loop-steps{grid-template-columns:1fr 1fr;gap:18px}
+  .loop-step:not(:last-child)::after{display:none}
+  .foot-grid{grid-template-columns:1fr 1fr}
+}
+@media (max-width:640px){
+  .nav-links,.nav-status{display:none}
+  .caps-grid{grid-template-columns:1fr}
+  .man-grid{grid-template-columns:1fr}
+  .loop-steps{grid-template-columns:1fr}
+  .stamp{right:4px;top:-40px;font-size:11px}
+  .hero{padding-top:40px}
+  .foot-grid{grid-template-columns:1fr}
+  .term-foot div:nth-child(2){display:none}
+  .term-body{font-size:12px;padding:16px 14px 20px}
+  .hero-ctas .btn{width:100%;justify-content:center}
+  .final-bot{width:130px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="nav-lockup" href="#" aria-label="Keating home">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAVMAAABHCAMAAACNpVR/REDACTED/soQAOghAbD9WflSDpn653MH78+UKdzIJaCv7+e369egLhDj069oAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABIBF5hAAAAIHRSTlPv+OAX4vFN2fit3rDbsa3kst//uPXKv7D/AP78L/REDACTED//REDACTED/v8zXZYfskd91/REDACTED/REDACTED/REDACTED/N9jnZu/REDACTED/izIyRdZbRnxhcOX+6/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/BOCvvdMnx3RU2/REDACTED/vS5/wnTSrSz0sHgdSheqBQT6pkCA/REDACTED/REDACTED/pIjTuHa5w9/REDACTED/REDACTED/REDACTED/PeZfM/REDACTED/ou0J/REDACTED/2KqRJsprKp/WWmZd2vTCmSQhQPx6l5seUN0/sOU5MNtWPKfqEHtpL8sNrBc3/REDACTED/REDACTED/REDACTED/sx0aprIy1ZekL06T/Kj3Oc/REDACTED/N/REDACTED/REDACTED/RM6dhl7slpzRTuwQBxDS5o5/REDACTED/MToSIFDxznO2Z/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/hS/D0ksduWeIF9tmIbctkdM9fcwffL8T/REDACTED/REDACTED/SaTWKPgTqkYn6FUEO/REDACTED/tmeDFPUlTlipRuFTfUoilS0I/REDACTED/20re9TdV8UU+0kEyqa31D9A/REDACTED/N/RI3lfkvcsZUmVKZD5ccR0tPw/REDACTED/REDACTED/yw91dMxaav79l19akKVTjZWmr/REDACTED/xtUzvqSOndH7bKzflaDh/REDACTED/REDACTED/REDACTED/SXf1oPU1/MAT5hmnvtKZQxuWa/T/UZwv5Dk0z0D6zv//q/NGE/bu5iP+mXohj3y7+E8Oq3E/Jbavz17fR1v7Qo7mFci/jvfqyjy1ub/REDACTED/REDACTED/gcLiCSDgnBmdwAAAABJRU5ErkJggg==" alt="Keating">
+      <span class="nav-version">v1.2.0</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#">[TUTORIAL]</a></li>
+      <li><a href="#manifesto">[MANIFESTO]</a></li>
+      <li><a href="#">[PAPER]</a></li>
+      <li><a href="#loop">[HARNESS]</a></li>
+      <li><a href="#">[BENCH]</a></li>
+      <li><a href="#">[GITHUB]</a></li>
+    </ul>
+    <div class="nav-status" role="status"><span class="dot"></span>SYSTEM ONLINE</div>
+    <a class="btn btn-primary" href="#">Try_Keating</a>
+  </div>
+</header>
+
+<main>
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-coords">42.2961° N, 71.2925° W // HYPERTEACHER PROTOCOL // UPTIME: OPTIMAL</div>
+    <div class="hero-grid">
+      <div>
+        <div class="eyebrow">The Hyperteacher</div>
+        <h1>Teaching that makes you do the work.<span class="cursor"></span></h1>
+        <div class="hero-sub">THINK_FOR_YOURSELF</div>
+        <p class="hero-copy">
+          Keating doesn't give answers. It <strong>forces you to reconstruct understanding
+          from memory</strong> — no hand-holding, no spoon-feeding. Just the Socratic
+          method, powered by silicon.
+        </p>
+        <div class="hero-ctas">
+          <a class="btn btn-primary" href="keating-chat.html">Initialize_Session →</a>
+          <a class="btn" href="#">Build_From_Source</a>
+        </div>
+        <div class="hero-tags">
+          <span><i>◈</i> Diagnoses gaps</span>
+          <span><i>↻</i> Adapts to you</span>
+          <span><i>▣</i> Open source</span>
+        </div>
+      </div>
+
+      <div class="hero-stage">
+        <div class="hero-sprite-wrap">
+          <img class="hero-sprite" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAVUAAAGTCAMAAACvY3G1AAAB/REDACTED/AAAAgHRSTlPi4v77IVnu6fj5//ai/v600P//tPnS//+y/v//1v//trm4//+1ubn///8A/v7+/v7+/v7//v7+/v7+/v4t/v8G/v/9/v79/v8u/v///v3//U1M///+/v7+//3//v//////BdD+z//+z/7+/q7//v+y0P7//rH+0f4GsP3////+/REDACTED/REDACTED/cTVurAMo315CVKFx19Vczk1d/REDACTED/U/REDACTED/X23+nSP9VtFF4kpRgC2ej47/zvVTxbrcvMvCu5VCBX+X56d/REDACTED/yd6ufBWiwmZsvWZVtXcxe/REDACTED/YxUBbV8WVY/k2Hd3e2yI+9WV1ff/U+kqmAcgIb1+p9MwIqjFrc1/6Oonom60/REDACTED/s/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/dHo6EV4t9ta15hl5YBeL/REDACTED/vz5ixczM89fwB9+bbL3vJtmfOEv/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/7/REDACTED/REDACTED/WhGB5rNLhuaLnhPNxen//REDACTED/REDACTED/REDACTED/REDACTED/WMuFUi/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/eNTRHk7gu3B4PXwQejjfmbrB4/REDACTED/REDACTED/qLuRq8aQqpz2qa/NBXqU5U6gYTKosgt98ObV9+9HC48d/REDACTED/nrur3/REDACTED/8ZjdMW0sOhIasHPL5c//IKtisDMdQ6fHf2FuY+8ffw4tj5Vy///67j7UED3/REDACTED/mioJcdp1Nm2+JvdMO02FzE+xEC36/CkdVMuuCgAWg44iZQ3ZzaW/Bo/u1vf4tQ/REDACTED/REDACTED/8/2T13//+8zMzN/4+vvf/v4Pn+pfP0asEa6/REDACTED/REDACTED/REDACTED/zrs071aZ1zGdSLxwIMQvi510Gs/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED//AzSpsAPpY1Y+H+vCRj/REDACTED/MpTMWYbFu/REDACTED/REDACTED/dAN/REDACTED/RdQgoa6z1fF/REDACTED/dtfe1T/REDACTED/REDACTED/REDACTED/Kc76F6SIqoFFKUj1RbP5669r76jEykuudGqKuPmSU/REDACTED/REDACTED/REDACTED/puNeFZgBpQfbtJaYC/REDACTED/mTTXAldQctIhnteEx3MsPpanc/REDACTED/REDACTED/REDACTED/REDACTED//xKqbftxD6geHwsUsqoVoMoMQLUKdlWvlwKqyQ/REDACTED/vILrJ/REDACTED/uBtHKiCTl9//TXZ1/REDACTED/REDACTED/+Ug/REDACTED/REDACTED/6hjdT3DurC3iaXxudzmB25V/REDACTED/aftFCFzTHC8Txq/REDACTED/REDACTED/quNgffj4Sc6/0bbxsI9WRbHdRdXUtApRhSiAXdyOvd/eTiY/REDACTED/REDACTED/REDACTED/lvm0VE0IOC451VdWp/REDACTED/fqXxHzGyCFlHTtsu9Qfulxj8HlVtzg7D88/BLbspJu+p/REDACTED/REDACTED/Mxd+qOn0Luc0n18oGPnxwq/REDACTED/B7vV+vv9WJL2APwO4Dl7vxCJW0ft/1Ndd95xw/REDACTED/Yi8QK0cvOFFd/REDACTED/REDACTED/REDACTED/xbQPUpUT2PUs33Uo35VIWmfxaw25p/REDACTED/V19Kxex/REDACTED/WXB9u9TS/2Ho5B1fSp5iNU9/8rdlJcFfxihtai7U9/REDACTED/REDACTED/REDACTED/REDACTED/lj3g/7jP3558DLH/REDACTED//REDACTED/REDACTED/xhHqr88ZFRzG98//REDACTED/REDACTED/ZOVL5+/XJT2Y8veE/8d98/REDACTED/24tr46iGr+9/REDACTED/H2wHq+/9qIpznXvZe7lw/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/2YAPs5QY8/w/REDACTED/omU8j4/REDACTED/REDACTED/REDACTED/REDACTED/Rouo/htw/REDACTED/QCILNH9wV8/hqgel12iKha2PKqame9DdXsbqcab/REDACTED/REDACTED/REDACTED/L8nMsZZbFskJNINGsGld1Ohc/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/1lerIaUCVRUbXb58v/Hk0cPHCwsPFrof/REDACTED/DzH22+6w07yOU6BZ7Jk/REDACTED/REDACTED/REDACTED/Sh6m9X3Bi8V/1G6+zYxe/REDACTED/REDACTED/++S4t2lbtu/wv/REDACTED/REDACTED/nHe7l7v7pD5GFf/3TXf7O7Qe/REDACTED/j3f//REDACTED/REDACTED/REDACTED/8N3jfV+sRPXf//u/Ced/0/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/94IsbZOUrHYPoP6NldNS/REDACTED/+JUah3QtxRrtbg1g3Q1T/REDACTED/REDACTED/pq9Q9/REDACTED/REDACTED/ec/AdMo1T/9Gbb/REDACTED//T/2lGoj/REDACTED//r9bQVHUKK02T/REDACTED/CniFT/8Kc/REDACTED/+8DJn/39/+lNgUf/REDACTED/4fQIMViG3ad//8hz/R+sOfgWkS/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/XEPfqP/REDACTED/qGVVtXAsWowMQgn/REDACTED/beyM9E9o+91WdEq9/REDACTED/REDACTED//REDACTED/2C64B018kYXHCuBVT5uDPsAsgPep/REDACTED//REDACTED/TjDwq2XTmjemKStco+lyocMoODwC/hly7S3LCywKo2Yp/REDACTED/REDACTED/KlVPrMGPmGX/REDACTED//CwXq8fvrj2dDEQazXtMaMfM0Iw/REDACTED/4KlI4bJRGOwDjUS0eZdOjvlf/REDACTED/REDACTED/REDACTED/REDACTED/C55+l59gMNwsz97ExuRabiyb5N5W89uqr/FdffRXlmpeutXakj1phkbLrP/nh/REDACTED/REDACTED/O6Bm/REDACTED/REDACTED/CVRItXTSvF4G/hpUl1tHHs2e0MNVcIgeQe3gJAeeelNt0Sj7/QaxZ7vy7XWS2cW1NZDs0mnqwgG0/nIcJwz5t1ksuXUKSOnY/REDACTED/1foxXkmaaS7AOgOj04GP/REDACTED/CHqII6lw4ODo6aa6M6n30uqhi8dvsjTnI/REDACTED/REDACTED/qRK+XE0nFot/+HB7e3sfbMDFYrPY/REDACTED/REDACTED/REDACTED/qyV81EM4vYY/REDACTED/42+H8FKo8XMep43NzgjA3M9/yCzl3i/OJb5OGTkEVDnBkY3AwJeC3FaK/REDACTED/REDACTED/REDACTED/050sA4vOh1Ld/S0f/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/IAiy3vjU8rOF+WGqOpld4M/REDACTED/P3lWDVAmzEn6kT8E/REDACTED/REDACTED/wxs+wvDgVvn5nxmwLjmleqp5Q7WK/REDACTED/zDsopSK93iu9uKFVsh1UjrxUFG4UqijZZVa/REDACTED/RK//REDACTED/REDACTED/l+3PnzALhXxeDw1Nye/REDACTED/REDACTED/uC/iT8jqj/deuN/REDACTED/REDACTED/cP0XUKX44MIQ/REDACTED//85y2k+obCh/TcXPzW059++uMf//nPnwKyz55NxdNDqIox6gHycScx/REDACTED/WYPqf6RqFKvMRk0Ckj/REDACTED/REDACTED/REDACTED/qnGP6psPjCosMKF/RIJ78bm5N+RSbc19mGJK/REDACTED/emf/6R96cf110CU+jehYf5/REDACTED/c/mxNFdXe3eMGPt/xJWrp/GpsTnbLujKBaAKpb/I/CFHpV/REDACTED/QHX0NRGdCeQLhwxMG9Z/REDACTED/yUXGSqJ643LCGm3d5tUNlXR9FNfNmT/DegYlAwIo5K/xoBCtsTE15m/REDACTED//BfU1M/REDACTED/7Xz3v9b+eTViWXU/VujtSM63Q9/REDACTED/q24jJ/1Rth7RlzBxH4AvWbm9uLxW/REDACTED/REDACTED/5fgOoLif+0/REDACTED/3f1oXZhjXvWc/YfAFAobffxpGtSL6s4c5VkM8GP/I5QZQ3V1u/REDACTED/REDACTED/RS+4maBWwfhvM0/REDACTED/REDACTED/REDACTED/PReyEG+YN0C48Vz7p9BRQJ/REDACTED/REDACTED/REDACTED/bvmWueMCiaaYeokrGVbVF/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/qGm1WbMgG/JeXZ7SrhpN28MdvSJictmN/vf3Qxzp1LFsQLgHVuQVYD/G/REDACTED/akfIgZ7OBu/aVuQPBmWzHHv/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/XgYw7/cLJc4V/ChMGHYOiuHTnkXR9ru751QrZkamGu/MzRHW1oRQ/VxaZT3G2QjWYEo4P2NlE9fyeT5/REDACTED/REDACTED/i7X1ND/LTjp5CacyB18inXrydP0WVW/REDACTED/REDACTED/REDACTED/REDACTED/3hw5nf0jZt3DXuX45f/REDACTED/GoljCq/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/24xUX/REDACTED/wFhn/HGKanyDPahkPsF4UwiPE/T9v4fLrW7wxlf5sdie0SiV/REDACTED/REDACTED/REDACTED/REDACTED/pvIEI1bYajfrpkd/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/RssUV8ci+r0/IFO2z/REDACTED/REDACTED/ir6VUbaiVHl5Sk4tyRG/vyKH7/REDACTED/REDACTED/REDACTED/REDACTED/lU+V0lzLH6rZkngWrzArf/REDACTED/REDACTED/REDACTED/G/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/hhkoVO6zIVy74Rn5Fdc/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/BUOwFUV4u/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/PGB712iA7EsdR1j7oqje/REDACTED/REDACTED/741INR6chViKpSYAnrV0hV7tqtCqnk/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/RggQlUmy0pUX2l1aSX0WSZSLVEWKh/s/REDACTED/REDACTED/REDACTED/qKDHPwU6Py/REDACTED/REDACTED/lA/C+8FeI7CVTf0QX2qFRBq7JRY1RD/REDACTED/REDACTED/lsgQlwiGowFTtSumlCGCDqXQYA/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/DTzzEy6kF66iCWNJF5/REDACTED/REDACTED/REDACTED/REDACTED//REDACTED/Eolmk4P/FJqTQJV5W2trxGB+mv/REDACTED/1jafKzeJa3/q8j3xOA2sbXp8P6vL/D282b0aGJ4QUAAAAAElFTkSuQmCC" alt="Keating robot mascot waving" width="341" height="403">
+        </div>
+        <div class="sprite-shadow" aria-hidden="true"></div>
+        <div class="term" aria-label="Example Keating session">
+          <div class="term-bar">
+            <span class="d r"></span><span class="d y"></span><span class="d g"></span>
+            <span class="term-title">KEATING_TERMINAL — session 0x2F</span>
+          </div>
+          <div class="term-body" id="termBody">
+            <div class="t-line t-cmd" data-line>keating session --topic "recursion"</div>
+            <div class="t-line t-sys" data-line>▸ diagnosing knowledge graph… 3 gaps mapped</div>
+            <div class="t-line t-you" data-line>can you just explain it to me?</div>
+            <div class="t-line t-k" data-line>no. you explain it to me. what happens when a function calls itself with no base case?</div>
+            <div class="t-line t-you" data-line>…it never stops?</div>
+            <div class="t-line t-k" data-line>closer. nothing runs forever. what runs out first — time, or memory?</div>
+            <div class="t-line t-you" data-line>memory. each call stacks a new frame until it overflows.</div>
+            <div class="t-line t-ok" data-line>gap closed: call_stack. 2 remaining.</div>
+            <div class="t-line" data-line><span class="t-caret"></span></div>
+          </div>
+          <div class="term-foot">
+            <div><span class="dot"></span>HARNESS ACTIVE</div>
+            <div>GAPS: 2</div>
+            <div>MODE: SOCRATIC</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="caps" aria-label="What Keating does">
+  <div class="wrap">
+    <div class="caps-grid">
+      <div class="cap-card">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAN0AAADwCAMAAACzKJHAAAAA/REDACTED//wDy4cWux5//AAAxe0Ht27vLrX7NroHgyaL//38A/wC0/7T/f3/REDACTED//vsMVhv+9uPu3cHbyKQOXCEleTm0tY8ehUBKqmPp1LSVtYxDo11LiFH+8NcyVyfp1bSyyaZqeEzq1rb46dAHPA3M1rUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACwpn2/AAAAQHRSTlP////1Gv//+ZH//wFp/wH/bf//lgIBAwIJ//////wA/f/+WP/7///9/wX////+//////+N////WP/Q//+zMv//REDACTED/rbbvruoDAGU5kftLFIZn/6i7uqqQXcTXx4X8z4Kvo6ejy/e5xO7EJj8mQFxk0WfFhziso/REDACTED/RBgmHcvArCbivZX6o55Vr04q/aR5n3voLfJ15uP4QRW7po9/REDACTED/REDACTED/737nSb7NPr+wKPqafdO/gEC2+88XFf1pppwlXcWi5+M38nS+BE/LNaCLx3SwuFml0i8X53SF/REDACTED/REDACTED/REDACTED/fKdH3tAmdOofcvtU+WKf/REDACTED/REDACTED/ioYOKo3sUWuXSakx4k33/REDACTED/VBlFeAWUTssUN8sLoh5zMQ/REDACTED/Ovi7oez5rUqtVP9uRQevjND/REDACTED/REDACTED/REDACTED/REDACTED/6onsjrwTybz+umilfdcNY/S1fvRWLJPYmOHPy1xtyZge2+vvXr1+/REDACTED/REDACTED/gm04lf+5psXsHX9KaX/ayd/REDACTED/gHgyC0jKCLQX/REDACTED/okAEIBQ/REDACTED/REDACTED/a/REDACTED/0DV1idHNRc3r5+/REDACTED/REDACTED/MkuhIMN/REDACTED/gY68aXgplCt4d907okU/mSRm2/REDACTED/REDACTED/REDACTED/azBNzhpdc/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/wH4y7X1w/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/b/REDACTED/E1PnFqRnPnnjftqdIaR3AOA/REDACTED/REDACTED/REDACTED/ytZwPNmqqZLqKP4YOcIUbYAKKOXEc3wP/bsmg6gwYGYU6EbYWBfMzt/achDEaLOGDiJ1HybG0cALbeDs/EGPR1m3VY9wiRGlntI9/vqXwXZ/REDACTED/REDACTED/REDACTED/Tx/REDACTED/REDACTED/REDACTED/ZhLkua9+EnuR04/vbbJA/eabLcEPage8fI9qVo2gJjh/RQqSAX4/REDACTED/REDACTED/4weqUvQN/5/KuFZHoldQZWRMCrWRco/REDACTED/ovTL8yvHtr5dg4d/REDACTED/REDACTED/REDACTED/REDACTED/RdVMRnDd/3w/REDACTED/zHdUA25nx4czlPkK6w/+TzMRhuBbVPaQwGJ7Qd/x/AeAnvH9pQ7hA6sS5luL9L/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/9s7d3rk2ArhA2Y1kF/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/o5OucXRhPN2FAoA/+du8Hfkc/laVzGaCupQid/REDACTED/REDACTED/REDACTED/REDACTED/O6FMvHmFSPoQOtFfzGMlXUy/REDACTED/REDACTED/REDACTED/nJL4EXNA+k2CxsH/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/659ciQwdhjysb05n43hZkXHus9A/y1I2Pk/IRVVLR8q4Y46VUadyDAZwTU5w5a/REDACTED/REDACTED/REDACTED/a2GXxeo1vccM606GAP9Q7YB6QFA/i7oAeK7tPDmH1w/REDACTED/REDACTED/OLrFxZMcIJUMU7xZCpCgHhF66NwnJDO/6QxD/6yYTHk/REDACTED/QnlGARM4knQPb84pgThJSd/iXRPfxQrgr5abs0OU99gwAP5/i7OCTJHs5qRWkG90sOLLs4uJicXkn/ZW+MgxJ6wfwFiL2M1dG/N2IiPVywZEJdJx4XAwnVa/REDACTED/meeGtTWSt+NIN3dkUXHxe/yTtCzapGr9jwu/Jyyh86yg7imiVBUHFmPZqf/REDACTED/8Po+Pwjgi8XyBae3rV/REDACTED/rREYbDu6zh+7z0al80aiW/O+n3n4n44EhLGVxz2zmwCHaXSw0vE2Z/25L+l8zqVFmJ08X/REDACTED/REDACTED/REDACTED/RYSDJ9FX/REDACTED/75r3+N3mb9S6w/+RfqL/6zx2dmh493p5dPT1LfX/RFd/FZkvmILw7x9Masu8fHR/4v4Y078Tz/U97dqSce+ROPIQ/xl+9u7sKn5YfpB+T77m5S61H/REDACTED/yD4rv9p67VM9G15P6Ub7+V+1zkYLw/9YLBrIUFZj4AAAAAElFTkSuQmCC" alt="" aria-hidden="true">
+        <h3>Adaptive Tutoring</h3>
+        <p>Keating adapts to your thinking, pace, and goals. You argue, it adjusts.</p>
+      </div>
+      <div class="cap-card">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAN0AAADwCAMAAACzKJHAAAAA/REDACTED//wD/AADMroHr2bsAAP+Gf1r//6oA/wB+qYG/v7//qqr//3/REDACTED//vzcyKP99eIhgz3s2boIVRv+8NUMXCImeDnN1bTp1LNLqGQEOwyvuZREmllyp3VpeFBDolzo1LNNiFMyVicAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAArWM2kAAAAQHRSTlP//yb/pf///+Vi//+W+/8BAf9zAf8DAf8EAwL//////PwA/v/+////V/7/Bf7//1j/WP///4z/////////0P//REDACTED/9WTyNZ0owW2wF6T69+XSCr/57R7DMaXIfXtxX+uxJrdNO1zm5u/vqr81U39CVnZ3/91ec9HUtcnrzMqwiKQfBRfBPi+vL9+/fj/REDACTED/81/H/REDACTED/60O5GYSsW4hPWeZ78vivP1wJhA/REDACTED/REDACTED/REDACTED/REDACTED/Km44KHh/REDACTED/REDACTED/REDACTED/REDACTED/OOcAXzbKNb8C/REDACTED/gh/QiM1i2NE90UyJnS/REDACTED/REDACTED/REDACTED/1gCBMPaTdovi/wV/REDACTED/REDACTED/LcoTuI6T9r0QU5s0tohFU9/REDACTED/SXkVjtu0Kjg8OyHQGHM+LMSwz7k/HP4WNdf727S9P07q6uXx9/jk/REDACTED/REDACTED/REDACTED/7j5SSxNDJffdO68N/fpM8vN5tZ48/hggtk5hSCUsi2yqcgngCXn0niahZ9G64/wD94D20g7jTHwiIbBKx25Bswx/Icbg0vExhFPgkMqQfEg9/REDACTED/+VkCRJzbrHmVBCjw/REDACTED/REDACTED/ES6/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/B//WTYAQ/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/r4pKCZPDwrxSuuwvllMbHuRMr1k/gg7sJXrooL1Ywg2NCb58rinplOt1u7t/REDACTED/dxo89Z9xxQDr/h/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/3KDE1DuuCfdNJw/CY52Hqw/C6VoIljHlyXpg1z//OQivBxaSIpKB01JJlbaKDq1/REDACTED/REDACTED/dZvTiax62+ACIvMS/REDACTED/REDACTED/REDACTED/REDACTED/tF2bbiyzVMsEBoiY6U/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/QCRU+Jpi3Fvg2xp0b+vTuV/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/FOvAtr/REDACTED/REDACTED/REDACTED/REDACTED/wkRWMtGI/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/vC679hxEkwnNv4/oadVeK/REDACTED/REDACTED/Y1OH2HtDRrI2cezmo6/REDACTED/NEJ+ZFhx8Bt/REDACTED/sACf3VGk0HNO0IUOIwRS58/2nd+Oql0geS3Ti/REDACTED/REDACTED/REDACTED/MAVF/REDACTED/REDACTED/QgW+s5tnPvXrKjltmrlSR0a/dNKIAzZkq+J6vr3h20/5SrP1+f/Iw/jms7/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/HZ6/REDACTED/REDACTED/Z9e68Oac/REDACTED/REDACTED/gJzuhbTBPvCK/REDACTED/9ocMho9h0//REDACTED/3QglC/LXTYgY5RYb3bUEwMnEJJ2//REDACTED/1wOnXf6QF+L4ExGI9/TyCPl/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/Xqe9EQD/pkk/ygxsduRZf4CPbIxgWSJl355/WV4Myr6z/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/qgC4V3+U1hN85/REDACTED/REDACTED/REDACTED/REDACTED/PTo7xsLrppxLnv3TtfLmb/g5VhkWfiUtH7M/d57SSF5dSsK54Fx0SNfR2csaa/CK3L2wvmvhgf/REDACTED/REDACTED/bIIv4Z8mv5M9iKJS6z1i6Db/yJZ+qCTqm8k5MvLy8tpqT8jsv74o/REDACTED/REDACTED/fI+vLF0G1EXLb6hB015bOK2+NbsQS/4z0z84aOS81j/REDACTED" alt="" aria-hidden="true">
+        <h3>Evolutionary Feedback</h3>
+        <p>Continuous evaluation refines the harness — and your understanding — every session.</p>
+      </div>
+      <div class="cap-card">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAANsAAADwCAMAAAC+NuGHAAAA/REDACTED//wBYbEL/AADr2b3GroHKrn8TNg1/////AP//77QekD3/f////3/REDACTED//vvu3cHhyJz+9uIihD0NWyLp1LRGpFwmejoGOw1ImVk3e0STmG6wto5ql2lMqGLP2bbp1bVUdkl2o3VueE0dikAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABTGjuDAAAAQHRSTlP//////yPyrf//Zf2UAf8BZf///wIBB/8CAv////z/APxY/v/////+//4F//7///+M/////////////9H/////REDACTED//REDACTED/REDACTED/REDACTED/icV0SdD3oNv5d86KAVa/KfJP+OccmX9XiCkuErgPbet1wo/hcuUm3ZkBk6FPyYUsPQ+/RfLv6E/REDACTED/REDACTED/x9JXA1OKMCScJZu68ux0LTK/sL/7aoYmA//REDACTED/REDACTED/REDACTED/REDACTED/KbLZ2wNv/3qILi/REDACTED/As9PlS4JepRuuR/REDACTED/NeXytJJpFEqRMkHiXSIS1LghEDk/REDACTED/REDACTED/REDACTED/REDACTED/GA4Rv6/REDACTED/b2a4osiyT/0fHoRBjN5/vdtU9hAsLADuZe6+XECg5/REDACTED/EwiyeF4DJDMwtmd+DItlNvFG/REDACTED/jnVWXlsEF/NzD/REDACTED/4xu9I4B1I/REDACTED/REDACTED/REDACTED/REDACTED/rSLKTs8dDoXwZN60H/REDACTED/gqheAq0WjodtJ/REDACTED/W8XNBhw6eRKYQDYyk9R88/wimAz2FTJTq/1CzrnKjcxJUHzMEXP/REDACTED/REDACTED/XC6/ibFsHxWi3F3KRa0A/GgpClz1l5PIZsRvuzvMZozwNno/0icLS8tq8TIcyTEc3tOy2Pv7e/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/fWs7VcvqxWPNkgio2Tkx15hgAcT/JVTV6yAhLXyeHgXFPGd/REDACTED/REDACTED/C6NYRpr/REDACTED/REDACTED/D49t7IUn+R4uxQV2/REDACTED/Y/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/Sv73f4Nr7GHJJK/REDACTED/REDACTED/REDACTED/REDACTED//REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/XMaoHnG26Ty/REDACTED/REDACTED/REDACTED/REDACTED//REDACTED/REDACTED/REDACTED/REDACTED/FiNmA3rg/REDACTED/fFesZRuikGqZtmTH/8bfqH/REDACTED/REDACTED/fDuV+JaYX/REDACTED/u9tMTY/SQaC3oOeny5fHdF/REDACTED/REDACTED/REDACTED/REDACTED/V2Tj/Mqy2nN3++jU/REDACTED/REDACTED/95KPDZ7/REDACTED/ZgBq84BpZ0IptIuVxjmGdQriBHrQlrgo1/bWJgO/REDACTED/REDACTED/REDACTED/8uF+p9thezT9uTgOIJ7EBzvWKaM99B/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/fB0MmI3QdEvp81Gdr/REDACTED/D+mYHYn/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/jkSuOfBwLRAbb5eU/REDACTED/rT//REDACTED/t/REDACTED/REDACTED/oPuKamrwgbRyM03K/REDACTED//REDACTED/WxKbQQZT7led9thGl8bvcICs/REDACTED/nHpU43DJt/0f4IzH8tp0yrhOhjlddtQn1AbC5f0jXp/4bIMPx6eqd2jvQLxRD3XD7p/REDACTED/DeLwef/58c/NoWeDxBo3T/JQyyOmNP+wnT0/lycebU3vk8TR/REDACTED/REDACTED/8H/hiZ0ikwpIIAAAAASUVORK5CYII=" alt="" aria-hidden="true">
+        <h3>Agent Harness</h3>
+        <p>Specialized agents plan, probe, evaluate, and improve in concert.</p>
+      </div>
+      <div class="cap-card">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAANsAAADwCAMAAAC+NuGHAAAA/REDACTED//wDr2rY2ekPKrH3lzqzNsILy4cT/AADt3LzU3sLy6rX/v7///38hkz9/f39/f/9//3//AP/REDACTED//vsKVRohhTzs2LgrWCUlejlEo1pse0+1yKPb5sV5pHYOWyLQ1bXp1LLo1LI8olbq1bUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADCB6F/AAAAQHRSTlP///8p////////ZwHv//+T+48BeP8FBAL/AgICAf////z/AP3///78V//+///++wb//1j///////////REDACTED///V69PdVV3tSRsJzPTm/REDACTED/v7p/ykVYr/Db5k+DUj1sP9/f3Xs7ONpcNIbGKdnb1/REDACTED/1T/vfa/8P1dfjq6+5J5tNGL30tijX0I7Pu3/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/hl0Pkvy+Wl/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/eiP+r/5qlfr29dX/REDACTED/1uH1lZ1v2S4Yf0NRl6fud/VnL3Zkw03sfmkw6gx2tjtD38keyb+Te1km/+Sthfw/REDACTED/sf/Xz+zEc+KReY1d8v3io3Y7/REDACTED/yxyRCFuiu1zxmU+l+RoT9Z/REDACTED/REDACTED/REDACTED/1koF3/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/nqUCNYckzfuIE41yJs1jkjw22bI/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/TMnFlhK0rd2NcAd/REDACTED/REDACTED/REDACTED/b4Qw/k9K/REDACTED/PdBn1Xlgcd5M3b2RBuKug/REDACTED/REDACTED/REDACTED/JWNNjPm56WE3ehjVmX65iS/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/QDAJTShIFG54CKkmttm5r/REDACTED/REDACTED/REDACTED/eaFCAJsYRsmfvyjaebNcPsMKlrA/REDACTED/g+og1latg/p1eT6rVa7mJI4ENLci4ptirxS6+CTT/REDACTED/REDACTED/REDACTED/pJOe7kx9ScHmFl37ISNLcGU5KTT/REDACTED/REDACTED/REDACTED/zdzUkWYHWl9Cio8NT/REDACTED/yg0coRbMh3s3V3yHOrlje2XJnXc6oWT3/MJ3HTvz3KMT9i0at8lFODzO/REDACTED/REDACTED/REDACTED/REDACTED/EZ7laoZtI3C/REDACTED/REDACTED/REDACTED/6Zw/d/JV/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/VF8RSZlA6A6D//REDACTED/rOUFtZsW2wyVL/REDACTED/REDACTED/REDACTED/qTpRb+g9A/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/18cugpNzNG4/REDACTED/REDACTED/7x9upda4LCJfTia5+ECbpW/REDACTED/REDACTED/HoRfBtPi/REDACTED/REDACTED/oYwT/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/gCa1MN/REDACTED/YPEJBZFgE8/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/++vAywXT3UerTAy9kymgp+JV6EHmj/REDACTED/XaipNLaD9q4OGsF1e/vNKs+XLbUt4lZeMX7qSY7HIP5/ZzeZh2/zz6smMRi7HHi8IL9iFr4dMSsFSQHt/REDACTED/svXqK90A64Esjr/REDACTED/REDACTED/fCqS4+dU9dXCmT/ZpCx2Axnnl3dP/z2sUYD7eT6/ffF7/GHJ6/f//GP38X/REDACTED/39w+KAR4e5D9uPd3rJf96/5ta8tenp6fffhNPyx/05U/qHQ/6LU8P4mOfntSb77tPerpX3/YgP0Q88SR/y+115A/qVZ8/fz5TzLjhyROl20YT+d+SQdUShBT/uHW20Uv+1fyqn7Z/sB+h18Y8f6bfIj5Wfjh6s3z6bCOfls+fmSfsl5+hb/zfyziyy8v/Bwc54ty8WBWcAAAAAElFTkSuQmCC" alt="" aria-hidden="true">
+        <h3>Learn by Teaching</h3>
+        <p>Turn explanations into mastery. If you can't teach it back, you don't own it yet.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="verse" aria-label="Verse">
+  <div class="wrap">
+    <div class="verse-prompt prompt">cat VERSE.txt</div>
+    <div class="crt-wrap">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAlMAAAHFCAMAAADhSIwZAAAB/REDACTED/REDACTED/8P/s/////x7/9uH/af//////tov////////xuP///gD+/v7+/v///v7//v/+/v3//v7+MP7+/v/+/s79Bf7+MP7O//7+//7O/87+//7//////k7O//////+wz////v/////+////////zv/////////////Psv///y//////REDACTED/REDACTED/sxov9vju/REDACTED/REDACTED/Vinx66v89usY8fy/Q79Z//dOntsecOOcXPhsZN8/REDACTED/dd9/REDACTED/M8//REDACTED/9OXnfzK2dCPQa5t/REDACTED/REDACTED//REDACTED/Q28YuQ/REDACTED/1xfEvwMAU4Q+FlO/iMTlUJlPnJVI7EKnlAcUTUkG+nf/VKvA7ejX5N/zKWu/PrzcjgB/REDACTED/REDACTED/lFZ/REDACTED/VhAUMSvztgCZ11jA5Ut8/EVloiSm3G/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/Y7IbB6B/REDACTED/eVCWxpg5JswimfrNWKkzM/REDACTED/REDACTED/TzsfDh9X6hkARhS8BRF/REDACTED/QbTTcKHW91iWvebfjzkXS8jj2YeIJ/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/+AmmZtBxk2al2Wrtx/Gl06c/REDACTED/REDACTED/s/xaP/U/i0wZUdI7SuvSHza13fvWrX/REDACTED/tvf/gKPP9ZHvq+n2vrd/n79+alTGKl//epXp+OWntSHT2i39eDG8T//REDACTED/Zff234+t//C//7xSfBXqhlu2GZuhmfPvXs1Du//Ncv//WvXyLUhDqFZaq5vXnjyf/3z5deunbt/z7//NoP9evYg/REDACTED/GTOHx9z/We6FMT6Kj0W/Hfz717OX/REDACTED/REDACTED/97TvN3/4X0am//z0O3NCH5qLRR5feeef/nfoVYepf//REDACTED/9a9//YoS9ctf/REDACTED/REDACTED/REDACTED//v/REDACTED//REDACTED//REDACTED/REDACTED//bHeDkNY6BR2Dnr1X/5KyNQvT9dHYQgXyvAB7eD4TYHU5/REDACTED/YTU+uieqh8PEW3av79T/zqH6r7/H9Z92tFrM0N3u1y8xd+qX//rlaRR3Qu3tGrrd1o0HX7/REDACTED/ymdMIV/REDACTED/ITz0EV0ehOGbxvZm/REDACTED/IdPiEj9Ma63/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/wNOWX8ymMZ6qlwAeVv6VZmVU/REDACTED/+MPP+WoGGUAWjBGW87WMF8/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/DUTgxarEoAFc348tK/k13AqsYW/0jcTkZziYZ+6rSbInc4M6Z8G1Ng50G4/6Annrb6Qa8l/REDACTED/REDACTED/REDACTED/+1AD/REDACTED/0++8y+0X4jbu9P9QStvvmg8Pn6+u/By+rbnrw/REDACTED/yQS/smA8gqehn0Jn+eos9/REDACTED/uixUywyeIOsB/REDACTED/ck5r5bTTE/REDACTED/Hn/REDACTED/5oFZ7gD/Ua20nx/REDACTED/REDACTED/REDACTED/XbvgY2ICk7y1EMytFgvy/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/HcdKwtURsBXkKvmwXBSFm/REDACTED/REDACTED/qnEdfP/REDACTED/yn6STG12TZliiNVa2Oe/REDACTED/REDACTED/29/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/pAYOzo4VNaeuVK83pTOlh84rn/VpzhTnaXqoZOYDWc/REDACTED/REDACTED/REDACTED/hcHNxBMEU5hCjmjJFP+sCp/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/xTZfc+Xcbyj9qQqY0sLpnCnaC/REDACTED/RWOs0sVb7p/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/r4ZDO/ly3Yn/REDACTED/REDACTED/REDACTED/LY56i8/REDACTED/UkVcLmVeqb25z0RYsfINA/REDACTED/REDACTED/D9vHQuTuMRFYCqJu5XJY/REDACTED/Kl0nZpge+wa/REDACTED/j6mesTLctvzMShl6poc+mznfIocRuB/REDACTED/vNuB+XxJRWhsVbWduYSrF9vSybp/REDACTED/gUZWpgYyq2+VO8Qq/REDACTED/InWdl5sHslMpZ7HgnAut802/REDACTED/Q1E/Wg1TMpAA/REDACTED/RG401PwptzR/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/LkdyKk1vxKYYpF0BVVdZ0p5aNzn0rN/REDACTED/REDACTED/byPtx/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/RRfnqlWp1Qc/REDACTED/FSmFqceZ/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/OijzJXZkAlcmDZwyiPKd/REDACTED/ol3y/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/wFLI/REDACTED/REDACTED/REDACTED/REDACTED/tbJ9xXhKdOisXqliPY6OAhVJR/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/mdipi6PaftWQU/lmJubWwk/REDACTED/REDACTED/REDACTED/gUxpa34w6jm/REDACTED/REDACTED/REDACTED/CkNNWj7MFNdylT1Mc/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/E1SxdV2n0DyYYv5UIpoA/REDACTED/REDACTED/REDACTED/hRKZgUb22onQ1CO3QAmNqQpMy/REDACTED/REDACTED/yZpT/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/ZHKV41uXwRLZY67U3/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/7TKbWX173q2cq0S8BVmVxL73Z2e32+/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/g886YtymOLzvgul+FOqmaec8/REDACTED/REDACTED/Rl2e6VB//OkRH+IMvYIHPmX03F03z+hPDTbIeQeXoSkpoXYvXH/REDACTED/REDACTED/H7a6BgXsvBoZg63rEEfy/REDACTED/Q1yGMxCuLIvEqyZH+0M8eET0+yj4iC/iIvlGiMhmQWDUTb5siI/GQhCgv3NnZCQsgVQJT32nxKQ/aPhBWSOzBljjzNkWbZAzxoJ/yBwbLXQ05yImzXBZqhvD/REDACTED/a7bdYQeJ6pJS/REDACTED/Cktjq42hvQymVqNmYyI/jNvG2YGP1wyu4smDm+UY/v0NWT/REDACTED/REDACTED/k4qF4mvrM6o4US4TAH4b+JkO3/jGj/iSAYnIRuIH/jCCHfrsbiSfkMYoo8h1p1CaUphqNktcm/REDACTED/REDACTED/REDACTED/CI5rzVGuhxvQ6lch1kWlT2jKN/REDACTED/KU/2nVHqL7D/REDACTED/REDACTED/REDACTED/6Xyd4ycMC/REDACTED/REDACTED/Ad7bMGQZfPbfVctdDP2UqUSTwwyMy7HSP/REDACTED/KpE7hW/b6rvrU+cqRpPKVTS+JvJ/icCzuBWu80S+vIG5XEn6DR/REDACTED/REDACTED/REDACTED/REDACTED/Xus5p65KEv7T6IyxX/REDACTED/REDACTED/REDACTED/Wi5BqNkY5HN471wk6/T1bmTafKcwf1+o1XvhLjWzzuqPHtV1/W62cxU61dwFSvXl978tVXx8fk4/jrb/md8Cf8/+snN+o9zJRSthympvfRVfW/REDACTED/W6jdee8l2MB6/f/REDACTED/REDACTED/y/MYmIn2i0WZ/c/REDACTED/ufLs2bNvMUZPozB69BR/c/t3f3rr9h3Mxb1799zX3Xsd0k0Wf3+PXif8xXvo3rv3Pf7//REDACTED/71Z2s/REDACTED/O3cP79w/v/oRl6s0vv/wq8r4iB2I1+/qlp/fvRa/cfeK6D3/CR4f+IyJ5j+/pUEWwwgYu/REDACTED/REDACTED/5bmv/REDACTED/+Flvzr2//CetU5D++exz+dPfw+NS3mJP79wlT/u+IkQyfUKSeHn774/REDACTED/gQ/REDACTED/REDACTED/REDACTED/qWXLl679vXna694WisTwBSWqDvRs++/JvbvkDH16Pv7d4+jEJPy5r17u1H08N79p2/d/REDACTED/REDACTED/REDACTED/vDl/REDACTED/REDACTED/c8vCFO/XvvJk/X/5Atmyg+/REDACTED/REDACTED/REDACTED/fxiFV27jb7CTFGJ8/vzn+3c7XuQd3z3Gz0GYOnX/7rXHaxcxUy9dufvk1LN7P317/REDACTED/REDACTED/Td3HIYeqDi2++SZj6+vNf3/8qVP1J8MBMRfiWV768//REDACTED/REDACTED/REDACTED/rizSQ9vXXX2PbF2qp1pSpg2+/J27600efhj/97u7dQ/REDACTED/QDJEm19vyuZIrscXr/O9mdqdeSybNO9LrYDpEjF9UFITOVmr2/YPh/REDACTED/ut22/9eOrUlce3/REDACTED/gaZcrH/REDACTED/REDACTED/REDACTED/+vR3a4/vRY+ETqWFyG2/REDACTED//REDACTED/w5ZDrx9986Vu/ejUw/D4zU88yNM+d5r1J/6w50Iw7d23w0f3b9Ljj28o/REDACTED/REDACTED/eP2RMHR/+FD189Pj+7p2njx+/9dbTK3fufxU9dB/+dP+++/Cru18RV+3J/XvRE+xTPXTfxA/REDACTED/+ITkUg/REDACTED//f7RfcbUw/REDACTED/REDACTED/REDACTED/2P2AJnar4R/ghX91//Lv7959ipghnXvTtk8ePnz69/REDACTED/U2/ZAl1flkw17X17pu+PYid/HGi0haxjAkvhT29C/1EjJFdKpfRxcBU1/Iwbj6ds1kysVMffkjOZLERD/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/tfmNLY6oRZaR5UlYnZyo/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/nYffC9tCJjFy6Sge/REDACTED/REDACTED/cngllSqiP7DO/K5KTt4xuDY20fuz0Ds8/Sp/REDACTED/REDACTED/REDACTED/3LVnjlbonBCkL0+/JSu3dxi9aOQvIlKl/n5+YqTOXaTs85U/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/cX27vw2LT0qKBBQ/1rWVl1vDFlr9+mpM4bwpy9dt3Dr//uRMvXf076p9zdVYMqQa2//REDACTED/+szvWSk1FYjkRLIyPkrgVrDv775/REDACTED/EY9tdu0vg8K/REDACTED/AP69az+prmiDKb/Kz+r1pf6Jlne5CgGNf1XFAxbCo/yxZawoknjpdvfcG2fef/8MHu+fef/94nhpTL363tF/z+uvWo0yEbHdtJUz9EB+Y/vA3zn3zdHRrQ8/REDACTED/REDACTED/yUjnUrXreOElitJc3hz7/REDACTED/REDACTED/REDACTED/G68lwgzq/LHtl67Z6kW3Tbr+ywHyVs/auH//VZnyIY9B+hTq1rdOiOVyqZT+Jc/f/REDACTED/9fzRb/4j3r7wiQ9atB/REDACTED/5za6IhX0Dabz/SXq/xquBfYLu3/GM+Ml7fR+rvn/SV217rR5OfiGLPkXj8/REDACTED/REDACTED/blsN+6n2idY/xif6pBW/MUOs7yyszXtbmvDsj4g/REDACTED/REDACTED/REDACTED/1sd//kP+k6/4G/pFjNfl+J/REDACTED/REDACTED/bvFbjo6O3j06eqPY/REDACTED/Lc6Jv/7WG7fkmWA33rr17pkz7757hkxP2Q1Hb+A/REDACTED/REDACTED/REDACTED/oKN1HfG+/xz3pvg/exfMS70d9X7mtTYdAec6cRZL/REDACTED/x+ZgwdV/d5edAAAAABJRU5ErkJggg==" alt="" aria-hidden="true">
+      <div class="crt-screen">
+        <div class="crt-text">"That the powerful play goes on, and you may contribute a verse."</div>
+        <div class="crt-attr">— WALT WHITMAN // O ME! O LIFE!</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="manifesto" id="manifesto">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow prompt">cat MANIFESTO.txt</span>
+    </div>
+    <h2 style="font-family:var(--mono-display);font-size:clamp(24px,3vw,34px);margin-bottom:12px">Real teaching is reconstruction, not explanation.</h2>
+    <p class="section-lede">
+      An answer you were handed evaporates by Friday. An answer you rebuilt from first
+      principles is yours for good. Keating runs every session on that thesis.
+    </p>
+    <div class="man-grid">
+      <div class="stamp" aria-hidden="true">Cognitive Empowerment</div>
+      <div class="man-card">
+        <div class="man-num">[01]</div>
+        <h3>DIAGNOSE</h3>
+        <p>Before teaching, Keating maps what you actually know. No wasted cycles on
+        mastered concepts — <strong>like a debugger for your knowledge graph.</strong></p>
+      </div>
+      <div class="man-card">
+        <div class="man-num">[02]</div>
+        <h3>RECONSTRUCT</h3>
+        <p>You don't memorize — you rebuild. From memory, from first principles.
+        <strong>Struggle is the feature, not the bug.</strong> That's how neural pathways form.</p>
+      </div>
+      <div class="man-card">
+        <div class="man-num">[03]</div>
+        <h3>PROBE</h3>
+        <p>Every claim you make gets a counter-question. Keating pushes until your
+        explanation survives contact — <strong>or until you find the crack yourself.</strong></p>
+      </div>
+      <div class="man-card">
+        <div class="man-num">[04]</div>
+        <h3>VERIFY</h3>
+        <p>A gap isn't closed because you nodded. You teach the concept back, cold,
+        days later. <strong>If it holds, it's yours.</strong> If not, the loop runs again.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="loop" id="loop">
+  <div class="wrap">
+    <div class="loop-head">
+      <div>
+        <h2>HOW KEATING WORKS</h2>
+        <p>You guide the harness. Keating's agents probe, adapt, and evolve — a learning
+        engine that gets sharper the longer you argue with it.</p>
+      </div>
+      <div class="loop-steps">
+        <div class="loop-step">
+          <h4><span>01</span>DIAGNOSE</h4>
+          <p>Agents map your knowledge graph and rank the gaps worth closing first.</p>
+        </div>
+        <div class="loop-step">
+          <h4><span>02</span>PROBE</h4>
+          <p>Socratic questioning targets the weakest claim in your explanation.</p>
+        </div>
+        <div class="loop-step">
+          <h4><span>03</span>RECONSTRUCT</h4>
+          <p>You rebuild the concept from memory while the harness watches for drift.</p>
+        </div>
+        <div class="loop-step">
+          <h4><span>04</span>EVOLVE</h4>
+          <p>The harness adapts its strategy to how you actually learn. Then it repeats.</p>
+        </div>
+      </div>
+    </div>
+    <div class="loop-bar">keating@harness:~$ <b>diagnose → probe → reconstruct → evolve → repeat</b></div>
+  </div>
+</section>
+
+<section class="final">
+  <div class="wrap">
+    <img class="final-bot" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQMAAAFwCAMAAACLue6WAAAB/REDACTED/48N/REDACTED/REDACTED/j4/+z/5f7nq/r/XxrQ//3/tf+x//+0/9fR//+3/7a4//+4//8A/v7+/v7+/v7+/v/+/v79/v7///7+/v7+/v7+/gX//i7//v7+//7////+/i/P//7//v7+/03///5N//4v/v+w/v3//v/+/v/+//7+/k0HBf/+/////REDACTED/REDACTED//wcKF2Nw9DZb63Yty1KvA4Wlj4/B6s1L13H+loZDfXu0+tExWL3Z/REDACTED/REDACTED/7n9k60J/REDACTED/ptWhQv5ia7lgi4IMTB/68vCheKFvz0DCBquCvl8Hv64/REDACTED/91hFceD+x/0lN6/QcI+8t/Na30i7KAERBMTu+ZuT/REDACTED/I5xc/Ygbbfw78HnhJf/6IGSypht9zgEH/REDACTED/YgZicVTbLz9WBrA4aooKDP7c/REDACTED/IFq/REDACTED/REDACTED/dcPC/REDACTED/REDACTED/y+UBzr7d/REDACTED/REDACTED/AAwb5/J8v4RT6pzCxFz98y57/REDACTED/REDACTED/REDACTED/REDACTED/SKclH/4NieB8/sX9arZaEBKQIQVV+qUD/RWDoSUuvpA3pRwlzwbQFDc/2dvs/zaDdv/REDACTED/REDACTED/3d2/REDACTED/4frnctIEJIqP5jZu/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/cu/KlSv00b1/hAM/Ojg4OdncRCYRDllrBjDkDR/fgcTAvtjKoJzXQQpXRiYGKyQGXV/F/BKY/2P27J/REDACTED/n8PZT0+z2c/REDACTED/REDACTED/REDACTED/REDACTED/5to/AsH/kUSiC8IxK0JxEGAQA4HB4/REDACTED/7irbCdDQHDogBrIOPd48zM1M0f5r3v77815df/REDACTED/REDACTED/3y+/REDACTED/REDACTED/REDACTED/AOfmURYGU/REDACTED/REDACTED/REDACTED/dnC4KBCwwK3E/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/AzuMQYQMEzAwN5/vLu7+Vp9pSpHk8nB/EOa/sOHa8RgdWlptc/UodP1azVgEEGoMgYqMli/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/RAwbdUQzu0My/AQyff4OnLVOZRSx/REDACTED/nDNA/REDACTED/2eboYpEH4CwjB8zDhP59/REDACTED/REDACTED/REDACTED/fLa2k0/REDACTED/REDACTED/TxevyX5ygebc8jA4QwajVAOgIFhuO/REDACTED/REDACTED/bhhm/jgFQQqEmU28EWM8np6hBO/bx4/zIBX5ubWv/jE9lkGTGFgSg6YJ8cIuCAH8jgxWx62N3x8/PJ5QDohBTdaFW2KCMzOvXh/REDACTED/REDACTED/kwy6Ju4r+z8Dg2MgcHz8/REDACTED/REDACTED/feMgYIMSjIDmPtFGbCJ8+mPP1qB+d/REDACTED/REDACTED/zt5ZHDIGIzdS7u5BCvDm5DBrmBw/REDACTED/REDACTED/REDACTED/REDACTED/9rx7mMj//REDACTED/REDACTED/REDACTED//REDACTED/hwyeK1mJ8pLo3yctygIi8SgFJW583Gf3B/REDACTED/REDACTED/+859/hV+Mwl9/xxgE+VczqVUyJF042Y0YsJBJMAB/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/kYFxOHNnAgS7z5/REDACTED/+/cRg2KSgY53fR0uCCcTCAJCcHaAwV//KQ8Qhz9czaciGNAEiK3AIvYcYhAoG/dlBkVbMzQvZGAr25MUVBxVA6L/REDACTED/1cWBBp/REDACTED/T+yFkj/REDACTED/5A4nCX//6VzAIf/REDACTED/X/2TWBb/509Xg8OHM9Hck/REDACTED/chTKWyievridkk5HxmJnP8/S648puvWNbH+uD8r/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/nvb/iUY4PIo0vnjcy/REDACTED/REDACTED/w3fajQJD68r+NPv38fG/REDACTED/REDACTED/QY+fPZr3PztaP4rK/i/REDACTED/REDACTED/wq+xbXn6jEC23skqb9+/REDACTED/REDACTED/zcd5w0/c22t5WyD/REDACTED/2nuzRYBw78GPwx12+/A6mv/Qh5/+BGUQwFmZnl2cvXTo6OrrU75/REDACTED/loZrDLHEbN2yCrKI/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/NFVIgRN2z5t/REDACTED/REDACTED/REDACTED/REDACTED/gDyTCLHwFIjD7Xb/REDACTED/kwxfpSCcTI/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/IY0nIZZAYsyHKsrvW3/i/REDACTED/REDACTED/REDACTED/REDACTED/82j6OxzTZ5GmcAA/fvf1d9/9+J0Yj45HMahJDAJHA0n4v0cXl4RzMrj0ac2D6J/tAQAFQ6tpzhgGb+aZzs/REDACTED/PnZ08whkCgzNYQs50ZX0aAPzx65Pjhw8f/td/REDACTED/RAn4bjozdUbiUyhMTT/REDACTED//nF6/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/PgjcxDRAMzP33+DwvAdRAkQL06Rs/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/mipg4Xr9zSMRQQEFJgtTb6Zx/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/dGJd+MOrMWS4UURLZffqwk/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/o+72WqzniTk6+xxIRl3UtMFx0/REDACTED/REDACTED/8N2rbkAu/REDACTED/1AgwCSEShPM4CcrINMx2H33kmu/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/HcWeZkmsZkEJIMVvun8/2+Agwy66I4/MHBya4qmrf5XmE5BiHBQK+AB7OhB3kyHb7/REDACTED/REDACTED/2rHKABK/REDACTED/REDACTED/SSDIniCQSdnt6xFv+ltZcu/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/2O1pwtV+TpooQpfW8Q4e29xkU619/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/PwQpls7tVjM4lPQq4d/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/QD3SEF/REDACTED/REDACTED/REDACTED/GoCDEoNjstDAbJBjdtzA/acPCwMT7lC3wDWOawNZjYiACen/REDACTED/REDACTED/8ZMEYYP/REDACTED/REDACTED/REDACTED/REDACTED/CeWUmvrKBBdFu1VkuWA/REDACTED/REDACTED/REDACTED/B6/REDACTED/REDACTED/t9UAKUBdEvwCQdr9nOY6Z6CQR/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/B/REDACTED/REDACTED/LHnR6aH/REDACTED/REDACTED/REDACTED/REDACTED/rLvqNQhNEnF9CB4/Z3fMs9FjYRhq9xUBsBofF2budbH9oPlL/RhHCcA1vRZHJs/REDACTED/REDACTED/REDACTED/Z5F69xnfY+SKBe8XZo+H5ias3+5+alttVa/REDACTED/REDACTED/REDACTED/phHjAcRh6/REDACTED/REDACTED/REDACTED/REDACTED/tqs0mC1IF/REDACTED/REDACTED/REDACTED/REDACTED/FxIq7HwUR1/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/399HBv0JGVyb2nysdcpg/REDACTED/eHMydyi/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/+34/REDACTED/7bJbnmCpkJqmXhmbxb6++/REDACTED/REDACTED/REDACTED/rgy+qlxqD0OQVle3/REDACTED/REDACTED/ViBfSA3vQYnmbWuQrP/HLdqoxAG/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/rAfAPBwOYMio0hl2G9pBi4W/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/AiYZYSgnQQj0WpZ/REDACTED/REDACTED/REDACTED/FO2cjZ7/REDACTED/REDACTED/REDACTED/GQLirH5m/REDACTED/REDACTED/Vu+mD27/REDACTED/REDACTED/rA8112Pj/AO6hUvW9XA2sAAAAAElFTkSuQmCC" alt="" aria-hidden="true">
+    <h2>Ready to think for yourself?</h2>
+    <p>Free and open source. Bring a topic you half-understand and leave with one you own.</p>
+    <div class="hero-ctas">
+      <a class="btn btn-primary" href="keating-chat.html">Initialize_Session →</a>
+      <a class="btn" href="#">Read_The_Paper</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAVMAAABHCAMAAACNpVR/REDACTED/soQAOghAbD9WflSDpn653MH78+UKdzIJaCv7+e369egLhDj069oAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABIBF5hAAAAIHRSTlPv+OAX4vFN2fit3rDbsa3kst//uPXKv7D/AP78L/REDACTED//REDACTED/v8zXZYfskd91/REDACTED/REDACTED/REDACTED/N9jnZu/REDACTED/izIyRdZbRnxhcOX+6/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/BOCvvdMnx3RU2/REDACTED/vS5/wnTSrSz0sHgdSheqBQT6pkCA/REDACTED/REDACTED/pIjTuHa5w9/REDACTED/REDACTED/REDACTED/PeZfM/REDACTED/ou0J/REDACTED/2KqRJsprKp/WWmZd2vTCmSQhQPx6l5seUN0/sOU5MNtWPKfqEHtpL8sNrBc3/REDACTED/REDACTED/REDACTED/sx0aprIy1ZekL06T/Kj3Oc/REDACTED/N/REDACTED/REDACTED/RM6dhl7slpzRTuwQBxDS5o5/REDACTED/MToSIFDxznO2Z/REDACTED/REDACTED/REDACTED/REDACTED/REDACTED/hS/D0ksduWeIF9tmIbctkdM9fcwffL8T/REDACTED/REDACTED/SaTWKPgTqkYn6FUEO/REDACTED/tmeDFPUlTlipRuFTfUoilS0I/REDACTED/20re9TdV8UU+0kEyqa31D9A/REDACTED/N/RI3lfkvcsZUmVKZD5ccR0tPw/REDACTED/REDACTED/yw91dMxaav79l19akKVTjZWmr/REDACTED/xtUzvqSOndH7bKzflaDh/REDACTED/REDACTED/REDACTED/SXf1oPU1/MAT5hmnvtKZQxuWa/T/UZwv5Dk0z0D6zv//q/NGE/bu5iP+mXohj3y7+E8Oq3E/Jbavz17fR1v7Qo7mFci/jvfqyjy1ub/REDACTED/REDACTED/gcLiCSDgnBmdwAAAABJRU5ErkJggg==" alt="Keating">
+        <p>The hyperteacher. Socratic reconstruction for people who'd rather understand than memorize.</p>
+      </div>
+      <div class="foot-col">
+        <h5>Product</h5>
+        <ul>
+          <li><a href="#">Tutorial</a></li>
+          <li><a href="#manifesto">Manifesto</a></li>
+          <li><a href="#loop">Harness</a></li>
+          <li><a href="#">Bench</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h5>Resources</h5>
+        <ul>
+          <li><a href="#">Docs</a></li>
+          <li><a href="#">Paper</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Changelog</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h5>Source</h5>
+        <ul>
+          <li><a href="#">GitHub</a></li>
+          <li><a href="#">Usage</a></li>
+          <li><a href="#">License</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <span>© 2026 keating.help — think_for_yourself</span>
+      <span>system status: <span class="ok">online</span> // uptime: <span class="ok">optimal</span></span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var lines = Array.prototype.slice.call(document.querySelectorAll('#termBody [data-line]'));
+  if (reduce || !('IntersectionObserver' in window)) return; // show full transcript instantly
+
+  // stash text, hide lines (caret line stays)
+  var caretLine = lines.pop();
+  var data = lines.map(function(el){
+    var t = el.textContent;
+    el.textContent = '';
+    el.style.minHeight = '1.85em';
+    el.style.visibility = 'hidden';
+    return { el: el, text: t };
+  });
+  caretLine.style.display = 'none';
+
+  function typeLine(i){
+    if (i >= data.length){ caretLine.style.display = ''; return; }
+    var d = data[i], j = 0;
+    d.el.style.visibility = 'visible';
+    var isSys = d.el.classList.contains('t-sys') || d.el.classList.contains('t-ok');
+    var speed = d.el.classList.contains('t-cmd') ? 34 : (isSys ? 6 : 16);
+    (function tick(){
+      d.el.textContent = d.text.slice(0, ++j);
+      if (j < d.text.length) setTimeout(tick, speed);
+      else setTimeout(function(){ typeLine(i+1); }, isSys ? 420 : 650);
+    })();
+  }
+
+  var started = false;
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if (e.isIntersecting && !started){ started = true; io.disconnect(); setTimeout(function(){ typeLine(0); }, 500); }
+    });
+  }, { threshold: 0.35 });
+  io.observe(document.getElementById('termBody'));
+})();
+</script>
+</body>
+</html> <<<--- the following the landing page with some edits, I like a few things in this page compared to the current one. 1. I like the what keating does section 2. I love the verse image over what we currently have. 3. I love the section with the keating bot in a lotus pose right abve ready to think for yourself
+
+---
+
+I also love some of the animations
