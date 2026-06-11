@@ -1,0 +1,16 @@
+I need to understand the exact current state of self-evolution in Keating — both in the browser and in remote/cloud contexts.
+
+Please search the codebase thoroughly for:
+1. How `auto-improve`, `evolve`, `improve` work (look at `src/core/evolution.ts`, `src/core/auto-improve.ts` or similar, `src/core/project.ts` for the artifact functions)
+2. What the browser agent runtime can and cannot do (look at `web/src/keating/browser-tools.ts`, `web/src/hooks/useKeatingAgent.tsx`, `packages/browser-agent-runtime/`)
+3. What the Pi extension does for self-evolution (`src/pi/hyperteacher-extension.ts`)
+4. What docs claim about self-evolution (search `docs/self-modifying-agent-architecture.md`, `README.md`, `AGENTS.md` for claims about "self-evolution", "self-improve", "auto-improve", "mutate", "browser agent")
+5. Any TODO comments or gaps related to self-evolution in the browser
+
+For each area, tell me:
+- What currently works
+- What is stubbed/missing
+- What the docs claim vs reality
+- What the browser cannot do that the CLI can
+
+Return a detailed, honest audit. Be factual — don't believe the docs, verify against the code.
