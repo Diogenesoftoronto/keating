@@ -11,16 +11,20 @@ import type {
 	Verification,
 } from "../keating/storage";
 import type { SessionMetadata } from "../types/session";
-
-const TOPIC_PALETTE = [
-	"#6366f1", "#22c55e", "#f97316", "#ec4899", "#06b6d4",
-	"#a855f7", "#eab308", "#14b8a6", "#ef4444", "#3b82f6",
-	"#84cc16", "#f43f5e", "#0ea5e9", "#d946ef", "#10b981",
-];
-
-function colorForTopic(index: number) {
-	return TOPIC_PALETTE[index % TOPIC_PALETTE.length];
-}
+import {
+	buildTopicArtifactGroups,
+	buildTopicHierarchy,
+	categorizeUsageTopic,
+	type HierarchyNode,
+	type TopicArtifactGroup,
+	type TopicArtifactInput,
+} from "./usage-topic-groups";
+import {
+	getCurriculumDisplayEnd,
+	getPrimaryCurriculumTopic,
+	getVisibleCurriculumSessions,
+	hasMeaningfulPolicyScores,
+} from "./usage-chart-data";
 
 function ChartPanel({
 	title,
@@ -50,7 +54,7 @@ interface UsageChartsProps {
 
 export function UsageCharts({ sessionMetadata }: UsageChartsProps) {
 	const [data, setData] = useState<{
-		topicCounts: { topic: string; count: number; color: string }[];
+		topicGroups: TopicArtifactGroup[];
 		sessions: LearnerState["sessions"];
 		openChecklists: Verification[];
 		weaknesses: string[];
@@ -90,23 +94,17 @@ export function UsageCharts({ sessionMetadata }: UsageChartsProps) {
 					keatingStorage.getPolicies(),
 				]);
 
-				const counts = new Map<string, number>();
-				const addTopic = (t: string | undefined) => {
-					if (!t) return;
-					counts.set(t, (counts.get(t) ?? 0) + 1);
-				};
-				plans.forEach((p) => addTopic(p.topic));
-				maps.forEach((m) => addTopic(m.topic));
-				animations.forEach((a) => addTopic(a.topic));
-				verifications.forEach((v) => addTopic(v.topic));
-
-				const topicCounts = Array.from(counts.entries())
-					.sort((a, b) => b[1] - a[1])
-					.map(([topic, count], i) => ({ topic, count, color: colorForTopic(i) }));
+				const topicArtifacts: TopicArtifactInput[] = [
+					...plans.map((p) => ({ topic: p.topic, type: "plan" as const })),
+					...maps.map((m) => ({ topic: m.topic, type: "map" as const })),
+					...animations.map((a) => ({ topic: a.topic, type: "animation" as const })),
+					...verifications.map((v) => ({ topic: v.topic, type: "verification" as const })),
+				];
+				const topicGroups = buildTopicArtifactGroups(topicArtifacts);
 
 				if (cancelled) return;
 				setData({
-					topicCounts,
+					topicGroups,
 					sessions: learnerState.sessions ?? [],
 					openChecklists: verifications.filter((v) => !v.completed),
 					weaknesses: learnerState.weaknesses ?? [],
@@ -134,52 +132,20 @@ export function UsageCharts({ sessionMetadata }: UsageChartsProps) {
 		);
 	}
 
-	const totalTopicArtifacts = data.topicCounts.reduce((sum, t) => sum + t.count, 0);
+	const totalTopicArtifacts = data.topicGroups.reduce((sum, t) => sum + t.count, 0);
 	const feedbackMix = aggregateFeedback(data.feedback);
-	const topicColorLookup = new Map(data.topicCounts.map((t) => [t.topic, t.color] as const));
 
 	return (
 		<div className="mt-6 flex flex-col gap-6">
 			<div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
 				<ChartPanel
 					title="Topic mix"
-					subtitle={`How your learning artifacts distribute across topics${totalTopicArtifacts ? ` (${totalTopicArtifacts} total)` : ""}`}
+					subtitle={`Artifacts grouped into learning domains${totalTopicArtifacts ? ` (${totalTopicArtifacts} total)` : ""}`}
 				>
-					{data.topicCounts.length === 0 ? (
+					{data.topicGroups.length === 0 ? (
 						<EmptyState message="No topic artifacts yet — start a lesson to see this fill in." />
 					) : (
-						<div style={{ width: "100%", height: 260 }}>
-							<ResponsiveContainer>
-								<PieChart>
-									<Pie
-										data={data.topicCounts}
-										dataKey="count"
-										nameKey="topic"
-										innerRadius={60}
-										outerRadius={95}
-										paddingAngle={2}
-									>
-										{data.topicCounts.map((entry) => (
-											<Cell key={entry.topic} fill={entry.color} />
-										))}
-									</Pie>
-									<Tooltip
-										contentStyle={{
-											background: "var(--background, #fff)",
-											border: "1px solid var(--border, #e5e7eb)",
-											borderRadius: 6,
-											fontSize: 12,
-										}}
-										formatter={(value, name) => [`${value} artifacts`, name as string]}
-									/>
-									<Legend
-										verticalAlign="bottom"
-										wrapperStyle={{ fontSize: 11 }}
-										formatter={(value) => <span style={{ color: "var(--muted-foreground, #6b7280)" }}>{value}</span>}
-									/>
-								</PieChart>
-							</ResponsiveContainer>
-						</div>
+						<TopicGroupWheel groups={data.topicGroups} />
 					)}
 				</ChartPanel>
 
@@ -218,7 +184,7 @@ export function UsageCharts({ sessionMetadata }: UsageChartsProps) {
 				title="Curriculum timeline"
 				subtitle="Each row is a learning session — bar length is duration, color is the first topic covered"
 			>
-				<CurriculumGantt sessions={data.sessions} colorFor={(t) => topicColorLookup.get(t)} />
+				<CurriculumGantt sessions={data.sessions} colorFor={(t) => categorizeUsageTopic(t).color} />
 			</ChartPanel>
 
 			<ChartPanel
@@ -281,6 +247,7 @@ function PolicyGrowthPanel({
 	const benchmarkScores = benchmarks.map((b) => ({ score: b.score, createdAt: b.createdAt }));
 	const evolutionScores = evolutions.map((e) => ({ score: e.bestScore, createdAt: e.createdAt }));
 	const allScores = [...benchmarkScores, ...evolutionScores].sort((a, b) => a.createdAt - b.createdAt);
+	const scoreSignalsAreMeaningful = hasMeaningfulPolicyScores(allScores);
 	const minT = allScores[0]?.createdAt ?? Date.now();
 	const maxT = allScores[allScores.length - 1]?.createdAt ?? minT;
 	const span = Math.max(maxT - minT, 1);
@@ -328,35 +295,50 @@ function PolicyGrowthPanel({
 			<div className="mb-4">
 				{allScores.length === 0 ? (
 					<EmptyState message="Policy records exist, but no benchmark scores have been recorded yet." />
+				) : !scoreSignalsAreMeaningful ? (
+					<div className="rounded-md border border-border bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
+						Scores are recorded, but they are still all 0.0. Add feedback signals and rerun benchmark or evolution before treating this as a trend.
+					</div>
 				) : (
-					<svg width="100%" viewBox={`0 0 100 ${height}`} preserveAspectRatio="none" style={{ height }}>
-						{[0, 25, 50, 75, 100].map((tick) => {
-							const y = chartBottom - (tick / maxScore) * (chartBottom - chartTop);
-							return (
-								<g key={tick}>
-									<line x1={leftPad} y1={y} x2={100 - rightPad} y2={y} stroke="currentColor" strokeOpacity={0.08} />
-									<text x={leftPad - 1.5} y={y + 3} fontSize={5} fill="currentColor" opacity={0.45} textAnchor="end">
+					<div className="grid grid-cols-[2.75rem_minmax(0,1fr)] gap-3">
+						<div className="relative text-[11px] tabular-nums text-muted-foreground" style={{ height }}>
+							{[0, 25, 50, 75, 100].map((tick) => {
+								const y = chartBottom - (tick / maxScore) * (chartBottom - chartTop);
+								return (
+									<div
+										key={tick}
+										className="absolute right-0 -translate-y-1/2"
+										style={{ top: `${(y / height) * 100}%` }}
+									>
 										{tick}
-									</text>
-								</g>
-							);
-						})}
+									</div>
+								);
+							})}
+						</div>
+						<svg width="100%" viewBox={`0 0 100 ${height}`} preserveAspectRatio="none" style={{ height }} role="img" aria-label="Self-evolution score trend">
+							{[0, 25, 50, 75, 100].map((tick) => {
+								const y = chartBottom - (tick / maxScore) * (chartBottom - chartTop);
+								return (
+									<line key={tick} x1={0} y1={y} x2={100 - rightPad} y2={y} stroke="currentColor" strokeOpacity={0.08} />
+								);
+							})}
 
-						{[benchmarkLine, evolutionLine].filter(Boolean).map((line) => {
-							if (!line) return null;
-							const d = line.points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
-							return (
-								<g key={line.label}>
-									<path d={d} fill="none" stroke={line.color} strokeWidth={0.8} opacity={0.7} />
-									{line.points.map((p, i) => (
-										<circle key={i} cx={p.x} cy={p.y} r={1.2} fill={line.color}>
-											<title>{line.label}: {p.score.toFixed(1)} on {p.date}</title>
-										</circle>
-									))}
-								</g>
-							);
-						})}
-					</svg>
+							{[benchmarkLine, evolutionLine].filter(Boolean).map((line) => {
+								if (!line) return null;
+								const d = line.points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x - leftPad} ${p.y}`).join(" ");
+								return (
+									<g key={line.label}>
+										<path d={d} fill="none" stroke={line.color} strokeWidth={0.8} opacity={0.8} />
+										{line.points.map((p, i) => (
+											<circle key={i} cx={p.x - leftPad} cy={p.y} r={1.2} fill={line.color}>
+												<title>{line.label}: {p.score.toFixed(1)} on {p.date}</title>
+											</circle>
+										))}
+									</g>
+								);
+							})}
+						</svg>
+					</div>
 				)}
 
 				<div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
@@ -408,6 +390,348 @@ function MetricTile({ label, value }: { label: string; value: string }) {
 		<div className="rounded-md border border-border bg-muted/20 px-3 py-2">
 			<div className="text-[11px] font-medium uppercase text-muted-foreground">{label}</div>
 			<div className="mt-1 text-lg font-semibold">{value}</div>
+		</div>
+	);
+}
+
+function artifactTypeSummary(group: TopicArtifactGroup): string {
+	const labels: Array<[keyof TopicArtifactGroup["types"], string]> = [
+		["plan", "plans"],
+		["map", "maps"],
+		["animation", "animations"],
+		["verification", "checks"],
+	];
+	return labels
+		.filter(([key]) => group.types[key] > 0)
+		.map(([key, label]) => `${group.types[key]} ${label}`)
+		.join(" · ");
+}
+
+/* ── Interactive 3-level sunburst wheel ─────────────────────────────────── */
+
+function polarToCartesian(cx: number, cy: number, r: number, angleDeg: number) {
+	const rad = ((angleDeg - 90) * Math.PI) / 180;
+	return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+}
+
+function arcPath(cx: number, cy: number, r0: number, r1: number, startDeg: number, endDeg: number): string {
+	if (endDeg - startDeg >= 360 - 0.01) {
+		// Full circle — use two semi-circles to avoid arc rendering artifacts
+		const p0s = polarToCartesian(cx, cy, r1, startDeg);
+		const p0e = polarToCartesian(cx, cy, r1, startDeg + 180);
+		const p1s = polarToCartesian(cx, cy, r0, startDeg + 180);
+		const p1e = polarToCartesian(cx, cy, r0, startDeg);
+		return [
+			`M ${p0s.x} ${p0s.y}`,
+			`A ${r1} ${r1} 0 1 1 ${p0e.x} ${p0e.y}`,
+			`A ${r1} ${r1} 0 1 1 ${p0s.x} ${p0s.y}`,
+			`M ${p1e.x} ${p1e.y}`,
+			`A ${r0} ${r0} 0 1 0 ${p1s.x} ${p1s.y}`,
+			`A ${r0} ${r0} 0 1 0 ${p1e.x} ${p1e.y}`,
+			"Z",
+		].join(" ");
+	}
+	const outerStart = polarToCartesian(cx, cy, r1, startDeg);
+	const outerEnd = polarToCartesian(cx, cy, r1, endDeg);
+	const innerEnd = polarToCartesian(cx, cy, r0, endDeg);
+	const innerStart = polarToCartesian(cx, cy, r0, startDeg);
+	const largeArc = endDeg - startDeg > 180 ? 1 : 0;
+	return [
+		`M ${outerStart.x} ${outerStart.y}`,
+		`A ${r1} ${r1} 0 ${largeArc} 1 ${outerEnd.x} ${outerEnd.y}`,
+		`L ${innerEnd.x} ${innerEnd.y}`,
+		`A ${r0} ${r0} 0 ${largeArc} 0 ${innerStart.x} ${innerStart.y}`,
+		"Z",
+	].join(" ");
+}
+
+interface SunburstSegment {
+	node: HierarchyNode;
+	path: string;
+	color: string;
+	label: string;
+	level: number;
+	startAngle: number;
+	endAngle: number;
+	parentColor: string;
+}
+
+function buildSunburstSegments(
+	root: HierarchyNode,
+	cx: number,
+	cy: number,
+	selectedNode: HierarchyNode | null,
+): SunburstSegment[] {
+	const segments: SunburstSegment[] = [];
+
+	if (root.count === 0) return segments;
+
+	// Determine what to render based on selection
+	let renderRoot: HierarchyNode;
+	let levelOffset: number;
+
+	if (selectedNode && selectedNode !== root) {
+		// Zoomed in — show selected node and its children
+		renderRoot = selectedNode;
+		levelOffset = selectedNode.children[0]?.children?.length ? 0 : 1;
+		// If selected is a leaf (topic), zoom to its parent category instead
+		if (renderRoot.children.length === 0 && selectedNode.key.startsWith("topic-")) {
+			return segments;
+		}
+	} else {
+		renderRoot = root;
+		levelOffset = 0;
+	}
+
+	const innerR = 55;
+	const outerR = 175;
+	const ringThickness = (outerR - innerR) / 3;
+
+	function walk(node: HierarchyNode, startAngle: number, endAngle: number, level: number, parentColor: string) {
+		if (node.count === 0 || endAngle <= startAngle) return;
+
+		const r0 = innerR + (level - levelOffset) * ringThickness;
+		const r1 = r0 + ringThickness - 1.5;
+		if (r0 >= outerR) return;
+
+		const clampedR1 = Math.min(r1, outerR);
+		const color = node.color || parentColor;
+
+		segments.push({
+			node,
+			path: arcPath(cx, cy, Math.max(r0, innerR), clampedR1, startAngle, endAngle),
+			color,
+			label: node.label,
+			level,
+			startAngle,
+			endAngle,
+			parentColor: color,
+		});
+
+		if (node.children.length > 0) {
+			const total = node.children.reduce((s, c) => s + c.count, 0);
+			let cursor = startAngle;
+			for (const child of node.children) {
+				const span = total > 0 ? ((child.count / total) * (endAngle - startAngle)) : 0;
+				walk(child, cursor, cursor + span, level + 1, color);
+				cursor += span;
+			}
+		}
+	}
+
+	walk(renderRoot, 0, 360, 0, renderRoot.color || "#64748b");
+	return segments;
+}
+
+function TopicGroupWheel({ groups }: { groups: TopicArtifactGroup[] }) {
+	const [selected, setSelected] = useState<HierarchyNode | null>(null);
+	const [hovered, setHovered] = useState<SunburstSegment | null>(null);
+	const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
+	const svgRef = useRef<SVGSVGElement>(null);
+
+	const hierarchy = useMemo(() => buildTopicHierarchy(groups), [groups]);
+
+	const segments = useMemo(
+		() => buildSunburstSegments(hierarchy, 200, 200, selected),
+		[hierarchy, selected],
+	);
+
+	const breadcrumbs = useMemo(() => {
+		const trail: HierarchyNode[] = [];
+		if (!selected || selected === hierarchy) return trail;
+		// Walk up from selected to root
+		function findPath(node: HierarchyNode, target: HierarchyNode): boolean {
+			if (node === target) return true;
+			for (const child of node.children) {
+				if (findPath(child, target)) {
+					trail.unshift(child);
+					return true;
+				}
+			}
+			return false;
+		}
+		findPath(hierarchy, selected);
+		return trail;
+	}, [selected, hierarchy]);
+
+	const handleSegmentClick = (segment: SunburstSegment) => {
+		if (segment.node.children.length > 0) {
+			setSelected(segment.node);
+		}
+	};
+
+	const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+		if (!svgRef.current) return;
+		const rect = svgRef.current.getBoundingClientRect();
+		setTooltipPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+	};
+
+	// Detail cards for the selected node (or root)
+	const detailNode = selected || hierarchy;
+	const detailChildren = detailNode.children.filter((c) => c.count > 0);
+
+	return (
+		<div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(16rem,0.8fr)]">
+			<div className="relative" style={{ width: "100%", height: 400 }}>
+				{/* Breadcrumb */}
+				<div className="absolute left-3 top-2 z-10 flex flex-wrap items-center gap-1">
+					<button
+						type="button"
+						onClick={() => setSelected(null)}
+						className="rounded-md bg-background/90 px-2 py-0.5 text-[11px] font-medium text-muted-foreground backdrop-blur hover:bg-accent hover:text-accent-foreground transition-colors"
+					>
+						All domains
+					</button>
+					{breadcrumbs.map((node, i) => (
+						<span key={node.key} className="flex items-center gap-1">
+							<span className="text-muted-foreground">/</span>
+							<button
+								type="button"
+								className="rounded-md bg-background/90 px-2 py-0.5 text-[11px] font-medium backdrop-blur hover:bg-accent hover:text-accent-foreground transition-colors"
+								style={{ color: node.color }}
+								onClick={() => setSelected(i === breadcrumbs.length - 1 ? node : breadcrumbs[i])}
+							>
+								{node.label}
+							</button>
+						</span>
+					))}
+				</div>
+
+				<svg
+					ref={svgRef}
+					viewBox="0 0 400 400"
+					className="h-full w-full"
+					onMouseMove={handleMouseMove}
+					onMouseLeave={() => { setHovered(null); setTooltipPos(null); }}
+				>
+					{segments.map((seg, i) => (
+						<path
+							key={`${seg.node.key}-${i}`}
+							d={seg.path}
+							fill={seg.color}
+							stroke="var(--background, #fff)"
+							strokeWidth={1.5}
+							opacity={hovered && hovered !== seg ? 0.45 : 0.92}
+							className="cursor-pointer transition-opacity duration-150"
+							onMouseEnter={() => setHovered(seg)}
+							onClick={() => handleSegmentClick(seg)}
+						>
+							<title>{seg.label} — {seg.node.count} artifact{seg.node.count === 1 ? "" : "s"}</title>
+						</path>
+					))}
+
+					{/* Center circle — click to zoom out */}
+					<circle
+						cx={200}
+						cy={200}
+						r={53}
+						fill="var(--background, #fff)"
+						stroke="var(--border, #e5e7eb)"
+						strokeWidth={1}
+						className={selected ? "cursor-pointer" : ""}
+						onClick={() => selected && setSelected(null)}
+					/>
+					<text
+						x={200}
+						y={195}
+						textAnchor="middle"
+						fontSize={13}
+						fontWeight={600}
+						fill="currentColor"
+						className="pointer-events-none"
+					>
+						{detailNode.label.length > 18 ? detailNode.label.slice(0, 16) + "…" : detailNode.label}
+					</text>
+					<text
+						x={200}
+						y={212}
+						textAnchor="middle"
+						fontSize={11}
+						fill="var(--muted-foreground, #6b7280)"
+						className="pointer-events-none"
+					>
+						{detailNode.count} artifact{detailNode.count === 1 ? "" : "s"}
+					</text>
+					{selected && (
+						<text
+							x={200}
+							y={228}
+							textAnchor="middle"
+							fontSize={10}
+							fill="var(--primary, #6366f1)"
+							className="pointer-events-none"
+						>
+							Click center to zoom out
+						</text>
+					)}
+				</svg>
+
+				{/* Floating tooltip */}
+				{hovered && tooltipPos && (
+					<div
+						className="pointer-events-none absolute z-20 rounded-md border border-border bg-popover px-3 py-2 text-popover-foreground shadow-md"
+						style={{
+							left: tooltipPos.x + 12,
+							top: tooltipPos.y - 8,
+							fontSize: 12,
+						}}
+					>
+						<div className="font-semibold">{hovered.label}</div>
+						<div className="text-[11px] text-muted-foreground">
+							{hovered.node.count} artifact{hovered.node.count === 1 ? "" : "s"}
+							{hovered.level < 2 && hovered.node.children.length > 0
+								? ` · ${hovered.node.children.length} sub-categorie${hovered.node.children.length === 1 ? "" : "s"}`
+								: ""}
+						</div>
+						{hovered.level < 2 && (
+							<div className="mt-1 text-[10px] text-primary">Click to explore</div>
+						)}
+					</div>
+				)}
+			</div>
+
+			{/* Detail panel */}
+			<div className="min-w-0 space-y-2">
+				<div className="flex items-center justify-between">
+					<div className="text-xs font-semibold uppercase text-muted-foreground">
+						{selected ? "Sub-categories" : "Domains"}
+					</div>
+					{selected && (
+						<button
+							type="button"
+							onClick={() => setSelected(null)}
+							className="rounded-md px-2 py-0.5 text-[11px] text-primary hover:bg-primary/10 transition-colors"
+						>
+							← Back
+						</button>
+					)}
+				</div>
+				{detailChildren.slice(0, 8).map((child) => (
+					<div key={child.key} className="rounded-md border border-border bg-muted/20 p-2.5">
+						<div className="flex min-w-0 items-center justify-between gap-2">
+							<div className="flex min-w-0 items-center gap-2">
+								<span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: child.color }} />
+								<div className="truncate text-xs font-semibold">{child.label}</div>
+							</div>
+							<div className="shrink-0 text-xs tabular-nums text-muted-foreground">{child.count}</div>
+						</div>
+						{child.children.length > 0 && (
+							<div className="mt-2 flex flex-wrap gap-1">
+								{child.children.slice(0, 4).map((topic) => (
+									<span key={topic.key} className="rounded-full bg-background px-2 py-0.5 text-[10px] text-muted-foreground">
+										{topic.label} ×{topic.count}
+									</span>
+								))}
+								{child.children.length > 4 && (
+									<span className="rounded-full bg-background px-2 py-0.5 text-[10px] text-muted-foreground">
+										+{child.children.length - 4}
+									</span>
+								)}
+							</div>
+						)}
+					</div>
+				))}
+			</div>
 		</div>
 	);
 }
@@ -469,17 +793,15 @@ function CurriculumGantt({
 		return <EmptyState message="No sessions yet — once you start exploring topics, your curriculum timeline appears here." />;
 	}
 
-	const ordered = [...sessions]
-		.filter((s) => typeof s.startedAt === "number")
-		.sort((a, b) => a.startedAt - b.startedAt);
+	const ordered = getVisibleCurriculumSessions(sessions);
 
 	if (ordered.length === 0) {
-		return <EmptyState message="No session timestamps recorded yet." />;
+		return <EmptyState message="No topic-bearing sessions yet — finish a lesson with covered topics to build the curriculum timeline." />;
 	}
 
 	const minStart = ordered[0].startedAt;
 	const now = Date.now();
-	const maxEnd = ordered.reduce((m, s) => Math.max(m, s.endedAt ?? now), minStart);
+	const maxEnd = ordered.reduce((m, s) => Math.max(m, getCurriculumDisplayEnd(s, now)), minStart);
 	const span = Math.max(maxEnd - minStart, 1);
 
 	const rowH = 22;
@@ -513,11 +835,12 @@ function CurriculumGantt({
 				{ordered.map((s, i) => {
 					const y = topPad + i * (rowH + rowGap);
 					const startFrac = (s.startedAt - minStart) / span;
-					const endFrac = ((s.endedAt ?? now) - minStart) / span;
+					const displayEnd = getCurriculumDisplayEnd(s, now);
+					const endFrac = (displayEnd - minStart) / span;
 					const usableW = 800 - leftPad - rightPad;
 					const x = leftPad + startFrac * usableW;
 					const w = Math.max(2, (endFrac - startFrac) * usableW);
-					const primary = s.topicsCovered?.[0] ?? "Untitled";
+					const primary = getPrimaryCurriculumTopic(s) ?? "Untitled";
 					const color = colorFor(primary) ?? "#94a3b8";
 					const label = primary.length > 16 ? primary.slice(0, 15) + "…" : primary;
 					return (
@@ -643,7 +966,7 @@ function ActivityHeatmap({ sessions }: { sessions: SessionMetadata[] }) {
 					<button
 						key={y}
 						type="button"
-						className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+						className={`rounded-md px-2.5 py-1 text-xs md:text-lg font-medium transition-colors ${
 							y === year
 								? "bg-primary text-primary-foreground"
 								: "text-muted-foreground hover:bg-accent hover:text-accent-foreground"

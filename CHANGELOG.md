@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-06-10
+
+### Added
+- Added an interactive 3D CRT hero on the landing page (WebGL via three.js) featuring the Keating mascot, a phosphor screen that boots a live terminal sequence, and a branded "K" launch key that opens a session. Falls back to the 2D terminal demo when WebGL is unavailable.
+- Added the brand lockup and "K" mark to the hero monitor bezel, matching the retro brand CRT.
+- Added in-browser sandbox/NodePod runtime building blocks: snapshot database, portable session data, sandbox export, and a transpile path (`nodepod-snapshot-db.ts`, `portable-data.ts`, `sandbox-export.ts`, `lix-sandbox.ts`, `hero-tui.ts`).
+- Added expanded usage analytics: a dedicated chart-data pipeline and topic grouping (`usage-chart-data.ts`, `usage-topic-groups.ts`) with new tests.
+- Added Storybook stories for `ChatIntro`, `MarkdownBlock`, `JsonCrackBlock`, `QuizResultCard`, `SettingRow`, and `Toggle`.
+- Added portable data export/import and a browser-download helper, with `session-date` utilities and coverage tests.
+- Added `keating version` CLI command and `/version` Pi extension command to report the current version.
+- Added `scripts/sync-version.ts` to keep all version strings in sync with the root `package.json`.
+- Added `just check-version` (read-only CI check) and `just sync-version` (auto-fix) tasks.
+- Added `just plan <topic>` and `just verify <topic>` tasks for artifact generation.
+
+### Changed
+- Reworked the chat transcript: Keating replies now render on a theme-aware retro panel — a readable cream panel with dark ink in light mode, a phosphor CRT with scanlines in dark mode — and the conversation column is wider for better line lengths.
+- Shipped a broad retro UI and mobile-polish pass across the landing page, navigation, footer, session cards, session sidebar, session manager, and settings, including shared settings components (`SettingRow`, `Toggle`) and reworked copy buttons.
+- Overhauled the usage page and charts and expanded the browser storage layer with portable snapshots and import/export.
+- Reworked NodePod boot-file generation and runtime so the browser sandbox bundle stays aligned with the checked-in generator.
+- Bumped version to 1.3.0 across root, web, and browser-agent-runtime packages.
+- Replaced hardcoded version constants in `src/cli/main.ts` and `src/pi/hyperteacher-extension.ts` with a shared `src/core/version.ts` that reads from `package.json`.
+- Updated `bin/keating.js` to read its version dynamically from `package.json`.
+- Updated all documentation (`README.md`, `docs/TUTORIAL.md`, VHS tapes, `Blog.tsx`) to use `just` and `keating` commands instead of `mise`.
+- Removed all references to `mise` from the README and task runner docs.
+
 ## [1.2.0] - 2026-06-09
 
 ### Added

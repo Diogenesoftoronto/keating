@@ -35,8 +35,7 @@ import { serveWebMcp } from "../mcp/server.js";
 import { color, bold, cliCommands } from "../core/theme.js";
 import { printAsciiHeader } from "../core/terminal.js";
 import { applySourceEdit, rollbackEdits, editResultToMarkdown } from "../core/code-edit.js";
-
-const KEATING_VERSION = "1.2.0";
+import { KEATING_VERSION } from "../core/version.js";
 
 function printUsage(): void {
   printAsciiHeader();

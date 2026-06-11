@@ -2138,7 +2138,7 @@ function ReasoningLevelSelector({
                           : opt.value === "high"
                             ? "#ea580c"
                             : opt.value === "medium"
-                              ? "#10b981"
+                              ? "#1e9b50"
                               : "#3b82f6",
                   }}
                 />
@@ -2573,7 +2573,7 @@ function AssistantThread({
             </div>
             <ThreadPrimitive.ViewportFooter className="sticky bottom-0 min-w-0 bg-background/95 pt-3 backdrop-blur">
               {activeQuiz && (
-                <div className="mx-auto mb-1.5 sm:mb-2 w-full max-w-3xl overflow-x-hidden px-1.5 sm:px-0">
+                <div className="mx-auto mb-1.5 sm:mb-2 w-full max-w-4xl overflow-x-hidden px-1.5 sm:px-0">
                   <QuizSessionPanel
                     quiz={activeQuiz}
                     onSubmit={(result) => {
@@ -2608,7 +2608,7 @@ function AssistantThread({
                 </div>
               )}
               {activeQuestion && (
-                <div className="mx-auto mb-1.5 sm:mb-2 w-full max-w-3xl overflow-x-hidden px-1.5 sm:px-0">
+                <div className="mx-auto mb-1.5 sm:mb-2 w-full max-w-4xl overflow-x-hidden px-1.5 sm:px-0">
                   <QuestionRenderer
                     data={activeQuestion}
                     onSubmit={(answers) => {
@@ -2621,7 +2621,7 @@ function AssistantThread({
                   />
                 </div>
               )}
-              <ComposerPrimitive.Root className="composer-root mx-auto flex w-[calc(100%-6px)] max-w-3xl flex-col gap-1.5 sm:gap-2 rounded-lg border border-border bg-background p-1.5 sm:p-2 shadow-sm sm:w-full">
+              <ComposerPrimitive.Root className="composer-root mx-auto flex w-[calc(100%-6px)] max-w-4xl flex-col gap-1.5 sm:gap-2 rounded-lg border border-border bg-background p-1.5 sm:p-2 shadow-sm sm:w-full">
                 <WebGroundingHint
                   hasUrl={composerHasUrl}
                   hasGoogleKey={hasGoogleKey}
@@ -2679,6 +2679,15 @@ function AssistantThread({
                   )}
                 </div>
               </ComposerPrimitive.Root>
+              <div className="composer-hint mx-auto flex w-full max-w-4xl justify-between gap-3 px-1 pt-1.5">
+                <span>
+                  keating won&apos;t give you the answer —{" "}
+                  <span className="ok">that&apos;s the point</span>
+                </span>
+                <span className="hidden sm:inline">
+                  enter to send // shift+enter for newline
+                </span>
+              </div>
             </ThreadPrimitive.ViewportFooter>
           </ThreadPrimitive.Viewport>
         </ThreadPrimitive.Root>
@@ -2695,24 +2704,20 @@ function UserMessage({
   profileImage?: string | null;
 }) {
   return (
-    <MessagePrimitive.Root className="mx-auto mb-4 flex w-full max-w-3xl justify-end">
-      <div className="flex max-w-[88%] gap-3 rounded-lg border-2 border-green-700 bg-green-500 px-4 py-3 text-sm text-white shadow-sm dark:border-green-400 dark:bg-green-600 sm:max-w-[82%]">
-        <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded bg-white/15">
+    <MessagePrimitive.Root className="mx-auto mb-4 flex w-full max-w-4xl justify-end">
+      <div className="flex max-w-[88%] flex-row-reverse gap-3 px-1 text-sm text-foreground sm:max-w-[82%]">
+        <div className="chat-avatar chat-avatar-you mt-0.5">
           {profileImage ? (
-            <img
-              src={profileImage}
-              alt="You"
-              className="h-full w-full object-cover"
-            />
+            <img src={profileImage} alt="You" />
           ) : (
             <User className="h-4 w-4 shrink-0" />
           )}
         </div>
-        <div className="min-w-0">
-          <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-white/80">
-            Learner
+        <div className="flex min-w-0 flex-col items-end">
+          <div className="msg-meta">
+            <b>YOU</b>
           </div>
-          <div className="whitespace-pre-wrap leading-6 font-ui">
+          <div className="you-bubble whitespace-pre-wrap leading-6 font-ui">
             <MessagePrimitive.Content components={components} />
           </div>
         </div>
@@ -2852,17 +2857,16 @@ function AssistantMessage({
 
   return (
     <>
-      <MessagePrimitive.Root className="group mx-auto mb-4 flex w-full max-w-3xl justify-start">
+      <MessagePrimitive.Root className="group mx-auto mb-4 flex w-full max-w-4xl justify-start">
         <div className="flex w-full gap-3 px-1 text-sm text-foreground">
-          <img
-            src="/logo.png"
-            alt="Keating"
-            className="mt-1 h-5 w-5 shrink-0 rounded object-contain"
-          />
+          <div className="chat-avatar mt-0.5">
+            <img src="/brand/mascot-head.png" alt="Keating" />
+          </div>
           <div className="min-w-0 flex-1 leading-6">
-            <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-primary">
-              Keating
+            <div className="msg-meta">
+              <b>KEATING</b>
             </div>
+            <div className="keating-bubble text-foreground">
             <MessagePrimitive.Content components={components} />
             {authError && (
               <div className="my-2 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm">
@@ -2903,6 +2907,7 @@ function AssistantMessage({
                 </div>
               </div>
             )}
+            </div>
             <div className="mt-2 flex items-center gap-1">
               {copyText && <CopyButton variant="ghost" text={copyText} label="Copy message" />}
               <button

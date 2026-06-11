@@ -38,6 +38,7 @@ export const cliCommandSpecs: CommandSpec[] = [
 	{ name: "web",          args: "[port]",         section: "Core",          description: "Start the browser UI dev server." },
 	{ name: "webmcp",       args: "[port] [--host=127.0.0.1]", section: "Core", description: "Expose Keating tools over MCP Streamable HTTP." },
 	{ name: "doctor",       args: "",               section: "Core",          description: "Inspect AI runtime and oxdraw availability." },
+	{ name: "version",      args: "",               section: "Core",          description: "Show the Keating version number." },
 	...extensionCommandSpecs.filter(s => !s.shellOnly),
 ];
 

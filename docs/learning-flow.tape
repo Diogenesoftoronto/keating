@@ -8,17 +8,17 @@ Set Padding 40
 Set Theme "Catppuccin Mocha"
 
 # 1. Generate a lesson plan
-Type "mise run plan -- 'Wave-Particle Duality'"
+Type "just plan 'Wave-Particle Duality'"
 Enter
 Sleep 2s
 
 # 2. Build a concept map (mermaid + svg)
-Type "mise run map -- 'Wave-Particle Duality'"
+Type "just map 'Wave-Particle Duality'"
 Enter
 Sleep 2s
 
 # 3. Animate the topic into a teaching artifact
-Type "mise run animate -- 'Wave-Particle Duality'"
+Type "just animate 'Wave-Particle Duality'"
 Enter
 Sleep 3s
 

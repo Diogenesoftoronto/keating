@@ -517,6 +517,18 @@ for (const [kw, d] of [
   ["geometry", "math"], ["integral", "math"], ["topology", "math"],
   ["evolution", "science"], ["quantum", "science"], ["thermodynamic", "science"],
   ["cell", "science"], ["gravity", "science"], ["relativity", "science"],
+  ["dna", "science"], ["rna", "science"], ["gene", "science"], ["genome", "science"],
+  ["protein", "science"], ["enzyme", "science"], ["chromosome", "science"],
+  ["mitosis", "science"], ["meiosis", "science"], ["mutation", "science"],
+  ["ecosystem", "science"], ["biodiversity", "science"], ["habitat", "science"],
+  ["species", "science"], ["biosphere", "science"], ["biome", "science"],
+  ["anatomy", "science"], ["physiology", "science"], ["organ", "science"],
+  ["muscle", "science"], ["bone", "science"], ["cardiovascular", "science"],
+  ["neuron", "science"], ["synapse", "science"], ["hormone", "science"],
+  ["bacteria", "science"], ["virus", "science"], ["pathogen", "science"],
+  ["infection", "science"], ["microbiology", "science"], ["antibiotic", "science"],
+  ["vaccine", "science"], ["microbiome", "science"], ["epidemiology", "science"],
+  ["immunology", "science"], ["antibody", "science"], ["antigen", "science"],
   ["ethics", "philosophy"], ["epistemology", "philosophy"], ["metaphysics", "philosophy"],
   ["logic", "philosophy"], ["existentialism", "philosophy"], ["ontology", "philosophy"]
 ] as const) {

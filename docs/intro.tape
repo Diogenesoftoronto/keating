@@ -8,7 +8,7 @@ Set Padding 40
 Set Theme "Catppuccin Mocha"
 
 # Boot the Keating shell — shows the refreshed ANSI Shadow logo
-Type "mise run shell"
+Type "just shell"
 Enter
 Sleep 5s
 

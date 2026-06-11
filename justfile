@@ -10,8 +10,16 @@ install:
     bun install
     cd web && bun install
 
+# Sync version numbers across all manifests and source files
+sync-version:
+    bun scripts/sync-version.ts
+
+# Verify that all version strings are in sync (CI-friendly)
+check-version:
+    bun scripts/sync-version.ts --check
+
 # Build the root TypeScript project
-build:
+build: check-version
     bun x tsc -p tsconfig.json
     bun scripts/copy-core-templates.ts
 
@@ -20,7 +28,7 @@ generate-nodepod-boot:
     bun scripts/generate-nodepod-boot-files.ts
 
 # Build everything (root + web)
-build-all: build generate-nodepod-boot
+build-all: sync-version build generate-nodepod-boot
     cd web && bun run build
 
 # Run the root test suite
@@ -55,9 +63,17 @@ evolve topic="":
 prompt-evolve name="learn":
     bun src/cli/main.ts prompt-evolve {{ name }}
 
+# Generate a lesson plan
+plan topic:
+    bun src/cli/main.ts plan {{ topic }}
+
 # Generate a lesson map
 map topic:
     bun src/cli/main.ts map {{ topic }}
+
+# Generate a fact-checking checklist before teaching
+verify topic:
+    bun src/cli/main.ts verify {{ topic }}
 
 # Animate a teaching artifact
 animate topic:

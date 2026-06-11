@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { sessions } from "../hooks/keating-storage";
 import type { SessionMetadata } from "../types/session";
+import { formatRelativeSessionDate } from "../lib/session-date";
 import { SessionCardGrid } from "./SessionCardGrid";
 import { buildSessionTree, flattenSessionTree } from "./session-tree";
 
@@ -39,16 +40,6 @@ interface SessionSidebarProps {
 	mobileOpen?: boolean;
 	onMobileClose?: () => void;
 	onNewSession?: () => void;
-}
-
-function formatDate(isoString: string) {
-	const date = new Date(isoString);
-	const now = new Date();
-	const days = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-	if (days === 0) return "Today";
-	if (days === 1) return "Yesterday";
-	if (days < 7) return `${days}d ago`;
-	return date.toLocaleDateString();
 }
 
 function readCollapsedTreeNodes(): Set<string> {
@@ -134,7 +125,7 @@ export function SessionSidebar({
 		const normalizedQuery = query.trim().toLowerCase();
 		const filtered = items.filter((session) => {
 			if (!normalizedQuery) return true;
-			return [session.title, session.preview, formatDate(session.lastModified)]
+			return [session.title, session.preview, formatRelativeSessionDate(session.lastModified)]
 				.some((value) => value.toLowerCase().includes(normalizedQuery));
 		});
 		if (normalizedQuery) {
@@ -313,11 +304,11 @@ export function SessionSidebar({
 				{onNewSession ? (
 					<button
 						type="button"
-						className="mt-3 inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-primary bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+						className="sb-new mt-3 inline-flex h-10 w-full items-center justify-center gap-2 text-sm font-semibold"
 						onClick={onNewSession}
 					>
 						<Plus size={16} />
-						New session
+						New_Session
 					</button>
 				) : null}
 				<label className="mt-3 flex min-h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-xs">
@@ -408,7 +399,7 @@ export function SessionSidebar({
 												{session.preview || "No preview saved"}
 											</p>
 											<div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-												<span>{session.parentSessionId ? "Fork | " : ""}{formatDate(session.lastModified)}</span>
+												<span>{session.parentSessionId ? "Fork | " : ""}{formatRelativeSessionDate(session.lastModified)}</span>
 												<span aria-hidden="true">|</span>
 												<span>{session.messageCount} messages</span>
 											</div>

@@ -8,12 +8,13 @@ import {
 
 describe("categorize", () => {
 	it("maps topical keywords to their category", () => {
-		expect(categorize("Quantum mechanics intro").key).toBe("physics-math");
+		expect(categorize("Quantum mechanics intro").key).toBe("physics");
+		expect(categorize("Calculus derivatives").key).toBe("math");
 		expect(categorize("Recursion in JavaScript").key).toBe("cs");
 		expect(categorize("Photosynthesis in plant cells").key).toBe("science");
 		expect(categorize("The fall of the Roman empire").key).toBe("history");
-		expect(categorize("Color theory and pigments").key).toBe("arts");
-		expect(categorize("Spanish grammar basics").key).toBe("language");
+		expect(categorize("Color theory and pigments").key).toBe("design");
+		expect(categorize("Spanish grammar basics").key).toBe("language-learning");
 	});
 
 	it("falls back to general for unknown or empty titles", () => {

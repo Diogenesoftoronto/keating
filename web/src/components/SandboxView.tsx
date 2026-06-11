@@ -9,11 +9,16 @@ import {
   ChevronRight,
   Copy,
   Cpu,
+  Download,
   FileCode,
   FolderOpen,
+  GitBranch,
+  GitCommit,
+  GitCompare,
   HardDrive,
   Home,
   Loader2,
+  Maximize2,
   Play,
   Plus,
   Power,
@@ -24,6 +29,7 @@ import {
   ScrollText,
   Terminal,
   Trash2,
+  Upload,
   X,
 } from "lucide-react";
 import { JsonCrackBlock } from "./JsonCrackBlock";
@@ -42,15 +48,42 @@ import {
   nodePodDeletePath,
   nodePodCreatePath,
   type VfsEntry,
-  type ShellSession,
-  nodePodRunCapturing,
   nodePodCreateSnapshot,
   nodePodRestoreSnapshot,
   getSnapshotLog,
   NODEPOD_LOCAL_ENDPOINT,
+  nodePodDiffFile,
+  nodePodCreateTerminal,
+  nodePodDetachTerminal,
+  nodePodGetTerminal,
+  nodePodLoadSnapshotsFromDB,
+  nodePodGetAllFileContents,
 } from "../keating/nodepod-runtime";
+import { Terminal as XTerm } from "@xterm/xterm";
+import { FitAddon } from "@xterm/addon-fit";
+import { SerializeAddon } from "@xterm/addon-serialize";
+import "@xterm/xterm/css/xterm.css";
+import { diffStrings, type LineDiff } from "../keating/sandbox-engine";
+import {
+	lixCommit,
+	lixCreateBranch,
+	lixSwitchBranch,
+	lixListBranches,
+	lixListCommits,
+	lixDiffCommits,
+	getSandboxLix,
+	type SandboxCommit,
+	type SandboxBranch,
+} from "../keating/lix-sandbox";
+import {
+  buildSandboxPortableBundle,
+  importSandboxPortableBundle,
+  type KeatingSandboxPortableBundle,
+} from "../keating/sandbox-export";
 
-type TabId = "status" | "vfs" | "shell" | "snapshots" | "log" | "probes";
+type DiffChange = Awaited<ReturnType<typeof lixDiffCommits>>[number];
+
+type TabId = "status" | "vfs" | "shell" | "snapshots" | "vc" | "log" | "probes";
 
 interface LogEvent {
   id: string;
@@ -125,17 +158,36 @@ export function SandboxView({
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [fileContent, setFileContent] = useState("");
   const [fileDirty, setFileDirty] = useState(false);
+  const [showDiff, setShowDiff] = useState(false);
+  const [diffLines, setDiffLines] = useState<LineDiff[]>([]);
+  const [diffLoading, setDiffLoading] = useState(false);
   const [newName, setNewName] = useState("");
   const [createType, setCreateType] = useState<"file" | "dir">("file");
 
   /* shell */
-  const [shellInput, setShellInput] = useState("");
-  const [shellSessions, setShellSessions] = useState<ShellSession[]>([]);
-  const [shellRunning, setShellRunning] = useState(false);
+  const terminalContainerRef = useRef<HTMLDivElement | null>(null);
+  const [terminalReady, setTerminalReady] = useState(false);
 
   /* snapshots */
   const [snapshots, setSnapshots] = useState<ReturnType<typeof getSnapshotLog>>(() => getSnapshotLog());
+  const [dbSnapshots, setDbSnapshots] = useState<Awaited<ReturnType<typeof nodePodLoadSnapshotsFromDB>>>([]);
   const [snapLoading, setSnapLoading] = useState(false);
+  const [showDbSnapshots, setShowDbSnapshots] = useState(false);
+
+  /* version control (Lix) */
+  const [vcBranches, setVcBranches] = useState<SandboxBranch[]>([]);
+  const [vcCommits, setVcCommits] = useState<SandboxCommit[]>([]);
+  const [vcActiveBranch, setVcActiveBranch] = useState<string>("main");
+  const [vcCommitMessage, setVcCommitMessage] = useState("");
+  const [vcNewBranchName, setVcNewBranchName] = useState("");
+  const [vcLoading, setVcLoading] = useState(false);
+  const [vcDiff, setVcDiff] = useState<{
+    fromCommit: string;
+    toCommit: string;
+    changes: DiffChange[];
+  } | null>(null);
+  const [portableBusy, setPortableBusy] = useState(false);
+  const importInputRef = useRef<HTMLInputElement | null>(null);
 
   /* probes */
   const [probeKind, setProbeKind] = useState("config");
@@ -155,7 +207,8 @@ export function SandboxView({
       all.splice(1, 0,
         { id: "vfs", label: "Files", icon: <FileCode size={14} /> },
         { id: "shell", label: "Shell", icon: <Terminal size={14} /> },
-        { id: "snapshots", label: "Snapshots", icon: <HardDrive size={14} /> }
+        { id: "snapshots", label: "Snapshots", icon: <HardDrive size={14} /> },
+        { id: "vc", label: "Version Control", icon: <GitBranch size={14} /> }
       );
     }
     return all;
@@ -175,6 +228,24 @@ export function SandboxView({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open, onClose]);
 
+  /* ── IndexedDB snapshots on mount ─────────────────────── */
+  useEffect(() => {
+    nodePodLoadSnapshotsFromDB().then(setDbSnapshots).catch(() => setDbSnapshots([]));
+  }, []);
+
+  /* ── Terminal attach when shell tab is active ─────────── */
+  useEffect(() => {
+    if (!nodePodActive || activeTab !== "shell") return;
+    const term = nodePodGetTerminal();
+    if (term && terminalContainerRef.current) {
+      term.attach(terminalContainerRef.current);
+      requestAnimationFrame(() => {
+        term.fit();
+        setTerminalReady(true);
+      });
+    }
+  }, [activeTab, nodePodActive]);
+
   /* ── refresh helpers ──────────────────────────────────── */
 
   const pushEvent = useCallback((tab: string, operation: string, ok: boolean, output: unknown, durationMs?: number | null) => {
@@ -189,6 +260,7 @@ export function SandboxView({
     await refreshConfig();
     if (nodePodActive) {
       await refreshVfs();
+      await refreshVc();
     }
     refreshSnapshots();
   }, [nodePodActive]);
@@ -227,6 +299,18 @@ export function SandboxView({
     const started = performance.now();
     try {
       await bootNodePod();
+      const term = nodePodCreateTerminal({
+        Terminal: XTerm,
+        FitAddon,
+        SerializeAddon,
+      });
+      if (term) {
+        if (terminalContainerRef.current) {
+          term.attach(terminalContainerRef.current);
+          term.fit();
+        }
+        setTerminalReady(true);
+      }
       await refreshConfig();
       pushEvent("status", "bootNodePod", true, { mode: "booted" }, Math.round(performance.now() - started));
     } catch (e) {
@@ -238,6 +322,8 @@ export function SandboxView({
 
   const handleTeardown = useCallback(async () => {
     const started = performance.now();
+    nodePodDetachTerminal();
+    setTerminalReady(false);
     await teardownNodePod();
     setNodePodActive(false);
     setNodePodInfoState(null);
@@ -263,6 +349,8 @@ export function SandboxView({
 
   const openFile = useCallback(async (path: string) => {
     setSelectedFile(path);
+    setShowDiff(false);
+    setDiffLines([]);
     try {
       const content = await nodePodReadTextFile(path);
       setFileContent(content);
@@ -272,6 +360,24 @@ export function SandboxView({
       setFileDirty(false);
     }
   }, []);
+
+  const computeDiff = useCallback(async () => {
+    if (!selectedFile) return;
+    setDiffLoading(true);
+    try {
+      const result = await nodePodDiffFile(selectedFile);
+      if (result && result.baseline !== undefined) {
+        const lines = diffStrings(result.baseline, result.current);
+        setDiffLines(lines);
+      } else {
+        setDiffLines([]);
+      }
+    } catch {
+      setDiffLines([]);
+    } finally {
+      setDiffLoading(false);
+    }
+  }, [selectedFile]);
 
   const saveFile = useCallback(async () => {
     if (!selectedFile) return;
@@ -311,62 +417,28 @@ export function SandboxView({
     }
   }, [newName, vfsPath, createType, pushEvent, refreshVfs]);
 
-  /* ── shell actions ────────────────────────────────────── */
+  /* ── shell actions (xterm terminal via NodePod) ────────── */
 
-  const runShell = useCallback(async () => {
-    const raw = shellInput.trim();
-    if (!raw) return;
-    const [cmd, ...args] = raw.split(/\s+/);
-    setShellInput("");
-    setShellRunning(true);
+  const clearTerminal = useCallback(() => {
+    const term = nodePodGetTerminal();
+    if (term) term.clear();
+  }, []);
 
-    const id = uid();
-    const startedAt = performance.now();
-
-    // Optimistic running session — visible immediately
-    const runningSession: ShellSession = {
-      id,
-      command: cmd,
-      args,
-      stdout: "",
-      stderr: "",
-      exitCode: null,
-      running: true,
-      startedAt,
-      durationMs: null,
-      ok: false,
-      result: "",
-    };
-    setShellSessions((prev) => [...prev.slice(-19), runningSession]);
-
-    const started = performance.now();
-    try {
-      const session = await nodePodRunCapturing(cmd, args);
-      // Replace the optimistic session with the completed one
-      setShellSessions((prev) => prev.map((s) => (s.id === id ? session : s)));
-      pushEvent("shell", raw, session.ok, { exitCode: session.exitCode, stdoutLength: session.stdout.length }, Math.round(performance.now() - started));
-    } catch (e) {
-      const errorSession: ShellSession = {
-        id,
-        command: cmd,
-        args,
-        stdout: "",
-        stderr: e instanceof Error ? e.message : String(e),
-        exitCode: -1,
-        running: false,
-        startedAt,
-        durationMs: Math.round(performance.now() - started),
-        ok: false,
-        result: "",
-      };
-      setShellSessions((prev) => prev.map((s) => (s.id === id ? errorSession : s)));
-      pushEvent("shell", raw, false, { error: errorSession.stderr }, errorSession.durationMs);
-    } finally {
-      setShellRunning(false);
-    }
-  }, [shellInput, pushEvent]);
+  const focusTerminal = useCallback(() => {
+    const term = nodePodGetTerminal();
+    if (term) requestAnimationFrame(() => term.fit());
+  }, []);
 
   /* ── snapshot actions ─────────────────────────────────── */
+
+  const refreshDbSnapshots = useCallback(async () => {
+    try {
+      const fromDB = await nodePodLoadSnapshotsFromDB();
+      setDbSnapshots(fromDB);
+    } catch {
+      setDbSnapshots([]);
+    }
+  }, []);
 
   const createSnapshotAction = useCallback(async () => {
     setSnapLoading(true);
@@ -375,12 +447,13 @@ export function SandboxView({
       const snap = await nodePodCreateSnapshot(`manual-${Date.now()}`);
       pushEvent("snapshots", "snapshot.create", true, { id: snap.id }, Math.round(performance.now() - started));
       refreshSnapshots();
+      await refreshDbSnapshots();
     } catch (e) {
       pushEvent("snapshots", "snapshot.create", false, { error: e instanceof Error ? e.message : String(e) }, Math.round(performance.now() - started));
     } finally {
       setSnapLoading(false);
     }
-  }, [pushEvent, refreshSnapshots]);
+  }, [pushEvent, refreshSnapshots, refreshDbSnapshots]);
 
   const restoreSnapshotAction = useCallback(async (data: unknown) => {
     const started = performance.now();
@@ -392,6 +465,124 @@ export function SandboxView({
       pushEvent("snapshots", "snapshot.restore", false, { error: e instanceof Error ? e.message : String(e) }, Math.round(performance.now() - started));
     }
   }, [pushEvent, refreshVfs]);
+
+  /* ── version control (Lix) actions ────────────────────── */
+
+  const refreshVc = useCallback(async () => {
+    try {
+      const [branches, commits] = await Promise.all([
+        lixListBranches(),
+        lixListCommits(),
+      ]);
+      const lix = await getSandboxLix();
+      const activeId = await lix.activeBranchId();
+      setVcBranches(branches);
+      setVcCommits(commits);
+      setVcActiveBranch(activeId);
+    } catch {
+      setVcBranches([]);
+      setVcCommits([]);
+    }
+  }, []);
+
+  const createBranchAction = useCallback(async () => {
+    if (!vcNewBranchName.trim()) return;
+    setVcLoading(true);
+    try {
+      await lixCreateBranch(vcNewBranchName.trim());
+      setVcNewBranchName("");
+      await refreshVc();
+      pushEvent("vc", "branch.create", true, { name: vcNewBranchName.trim() });
+    } catch (e) {
+      pushEvent("vc", "branch.create", false, { error: e instanceof Error ? e.message : String(e) });
+    } finally {
+      setVcLoading(false);
+    }
+  }, [vcNewBranchName, refreshVc, pushEvent]);
+
+  const switchBranchAction = useCallback(async (branchId: string) => {
+    setVcLoading(true);
+    try {
+      await lixSwitchBranch(branchId);
+      await refreshVc();
+      pushEvent("vc", "branch.switch", true, { branchId });
+    } catch (e) {
+      pushEvent("vc", "branch.switch", false, { error: e instanceof Error ? e.message : String(e) });
+    } finally {
+      setVcLoading(false);
+    }
+  }, [refreshVc, pushEvent]);
+
+  const commitToVcAction = useCallback(async () => {
+    const message = vcCommitMessage.trim() || `checkpoint-${Date.now()}`;
+    setVcLoading(true);
+    try {
+      const files = await nodePodGetAllFileContents();
+      const commitId = await lixCommit(files, message);
+      setVcCommitMessage("");
+      await refreshVc();
+      pushEvent("vc", "commit", true, { commitId, files: files.length });
+    } catch (e) {
+      pushEvent("vc", "commit", false, { error: e instanceof Error ? e.message : String(e) });
+    } finally {
+      setVcLoading(false);
+    }
+  }, [vcCommitMessage, refreshVc, pushEvent]);
+
+  const diffCommitsAction = useCallback(async (fromCommitId: string, toCommitId: string) => {
+    setVcLoading(true);
+    try {
+      const changes = await lixDiffCommits(fromCommitId, toCommitId);
+      setVcDiff({ fromCommit: fromCommitId, toCommit: toCommitId, changes });
+    } catch {
+      setVcDiff(null);
+    } finally {
+      setVcLoading(false);
+    }
+  }, []);
+
+  const exportPortableAction = useCallback(async () => {
+    setPortableBusy(true);
+    try {
+      const bundle = await buildSandboxPortableBundle();
+      const text = `${JSON.stringify(bundle, null, 2)}\n`;
+      const blob = new Blob([text], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `keating-sandbox-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      pushEvent("vc", "portable.export", true, {
+        files: bundle.nodepod.files.length,
+        snapshots: bundle.nodepod.snapshots.length,
+        commits: bundle.vc.commits.length,
+      });
+    } catch (e) {
+      pushEvent("vc", "portable.export", false, { error: e instanceof Error ? e.message : String(e) });
+    } finally {
+      setPortableBusy(false);
+    }
+  }, [pushEvent]);
+
+  const importPortableAction = useCallback(async (file: File) => {
+    setPortableBusy(true);
+    try {
+      const text = await file.text();
+      const bundle = JSON.parse(text) as KeatingSandboxPortableBundle;
+      const result = await importSandboxPortableBundle(bundle);
+      await Promise.all([refreshVc(), refreshDbSnapshots()]);
+      await refreshVfs();
+      pushEvent("vc", "portable.import", true, result);
+    } catch (e) {
+      pushEvent("vc", "portable.import", false, { error: e instanceof Error ? e.message : String(e) });
+    } finally {
+      setPortableBusy(false);
+      if (importInputRef.current) importInputRef.current.value = "";
+    }
+  }, [pushEvent, refreshDbSnapshots, refreshVc, refreshVfs]);
 
   /* ── probes ───────────────────────────────────────────── */
 
@@ -564,6 +755,7 @@ export function SandboxView({
       case "vfs": return renderVfs();
       case "shell": return renderShell();
       case "snapshots": return renderSnapshots();
+      case "vc": return renderVC();
       case "log": return renderLog();
       case "probes": return renderProbes();
       default: return null;
@@ -821,15 +1013,53 @@ export function SandboxView({
               <span className="text-xs font-semibold">{selectedFile}</span>
               <div className="flex items-center gap-1">
                 {fileDirty && <span className="text-xs text-amber-600 dark:text-amber-300">unsaved</span>}
+                <button
+                  type="button"
+                  onClick={() => { setShowDiff((s) => !s); if (!showDiff) computeDiff(); }}
+                  className={`inline-flex h-7 items-center gap-1 rounded-md border px-2 text-xs ${showDiff ? "bg-secondary border-secondary text-secondary-foreground" : "border-border hover:bg-accent"}`}
+                >
+                  <GitCompare size={12} /> {showDiff ? "Hide diff" : "Show diff"}
+                </button>
                 <button type="button" onClick={saveFile} className="inline-flex h-7 items-center gap-1 rounded-md bg-primary px-2 text-xs text-primary-foreground hover:bg-primary/90"><Save size={12} /> Save</button>
               </div>
             </div>
-            <textarea
-              className="min-h-48 w-full resize-y bg-background px-3 py-2 font-mono text-xs leading-relaxed"
-              spellCheck={false}
-              value={fileContent}
-              onChange={(e) => { setFileContent(e.target.value); setFileDirty(true); }}
-            />
+
+            {showDiff ? (
+              <div className="min-h-48 w-full overflow-auto bg-background px-3 py-2 font-mono text-xs leading-relaxed">
+                {diffLoading ? (
+                  <div className="flex items-center gap-2 text-muted-foreground"><Loader2 size={13} className="animate-spin" /> Computing diff…</div>
+                ) : diffLines.length === 0 ? (
+                  <div className="text-muted-foreground">No changes — file matches baseline.</div>
+                ) : (
+                  <div className="grid gap-0">
+                    {diffLines.map((line, idx) => (
+                      <div
+                        key={idx}
+                        className={`flex gap-2 px-1 ${
+                          line.type === "removed"
+                            ? "bg-red-500/10 text-red-700 dark:text-red-300"
+                            : line.type === "added"
+                            ? "bg-green-500/10 text-green-700 dark:text-green-300"
+                            : "text-muted-foreground"
+                        }`}
+                      >
+                        <span className="shrink-0 select-none w-4 text-center text-[10px] opacity-50">
+                          {line.type === "removed" ? "-" : line.type === "added" ? "+" : " "}
+                        </span>
+                        <span className="break-all">{line.content}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <textarea
+                className="min-h-48 w-full resize-y bg-background px-3 py-2 font-mono text-xs leading-relaxed"
+                spellCheck={false}
+                value={fileContent}
+                onChange={(e) => { setFileContent(e.target.value); setFileDirty(true); }}
+              />
+            )}
           </div>
         )}
       </div>
@@ -845,51 +1075,36 @@ export function SandboxView({
       );
     }
     return (
-      <div className="grid gap-3">
-        <div className="flex gap-2">
-          <input
-            className="flex-1 rounded-md border border-border bg-background px-3 py-2 font-mono text-xs"
-            placeholder="node -v"
-            value={shellInput}
-            onChange={(e) => setShellInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") runShell(); }}
-          />
-          <button
-            type="button"
-            onClick={runShell}
-            disabled={shellRunning}
-            className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-          >
-            {shellRunning ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />}
-            {shellRunning ? "Running" : "Run"}
-          </button>
+      <div className="grid gap-2 h-full" style={{ height: "calc(100% - 40px)" }}>
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold">NodePod Terminal</span>
+          <div className="flex gap-1">
+            <button
+              type="button"
+              onClick={clearTerminal}
+              className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-background px-2 text-xs hover:bg-muted/50"
+            >
+              <RotateCcw size={12} />
+              Clear
+            </button>
+            <button
+              type="button"
+              onClick={focusTerminal}
+              className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-background px-2 text-xs hover:bg-muted/50"
+            >
+              <Maximize2 size={12} />
+              Fit
+            </button>
+          </div>
         </div>
-
-        {shellSessions.length === 0 && (
-          <div className="text-xs text-muted-foreground">Run a shell command to see output here.</div>
+        <div
+          ref={terminalContainerRef}
+          className="w-full rounded-md border border-border bg-black overflow-hidden"
+          style={{ height: "400px", minHeight: "300px" }}
+        />
+        {!terminalReady && (
+          <div className="text-xs text-muted-foreground">Booting terminal…</div>
         )}
-
-        <div className="grid gap-2">
-          {shellSessions.map((sess) => (
-            <div key={sess.id} className="rounded-md border border-border">
-              <div className="flex items-center justify-between border-b border-border bg-muted/20 px-3 py-1.5">
-                <span className="font-mono text-xs">
-                  <span className="text-muted-foreground">$</span> {sess.command} {sess.args.join(" ")}
-                </span>
-                <span className={`text-xs font-medium ${sess.ok ? "text-primary" : "text-destructive"}`}>
-                  {sess.exitCode === null ? (sess.running ? "running…" : "unknown") : sess.ok ? sess.exitCode : `exit ${sess.exitCode}`}
-                  {sess.durationMs !== null && <span className="ml-1 text-[10px] text-muted-foreground">({sess.durationMs}ms)</span>}
-                </span>
-              </div>
-              {sess.stdout && (
-                <pre className="max-h-40 overflow-auto border-b border-dashed border-border px-3 py-2 text-xs">{sess.stdout}</pre>
-              )}
-              {sess.stderr && (
-                <pre className="max-h-40 overflow-auto px-3 py-2 text-xs text-destructive">{sess.stderr}</pre>
-              )}
-            </div>
-          )).reverse()}
-        </div>
       </div>
     );
   }
@@ -905,36 +1120,259 @@ export function SandboxView({
     return (
       <div className="grid gap-3">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold">Snapshots ({snapshots.length})</span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-semibold">
+              {showDbSnapshots ? `Persisted (${dbSnapshots.length})` : `Session (${snapshots.length})`}
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowDbSnapshots((v) => !v)}
+              className="text-[10px] underline text-muted-foreground hover:text-foreground"
+            >
+              {showDbSnapshots ? "Show session" : "Show persisted"}
+            </button>
+          </div>
+          <div className="flex gap-1">
+            {showDbSnapshots && (
+              <button
+                type="button"
+                onClick={refreshDbSnapshots}
+                className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-background px-2 text-xs hover:bg-muted/50"
+              >
+                <RefreshCw size={12} /> Refresh
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={createSnapshotAction}
+              disabled={snapLoading}
+              className="inline-flex h-7 items-center gap-1 rounded-md bg-primary px-2 text-xs text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            >
+              {snapLoading ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
+              Create
+            </button>
+          </div>
+        </div>
+
+        {showDbSnapshots ? (
+          dbSnapshots.length === 0 ? (
+            <div className="text-xs text-muted-foreground">No persisted snapshots yet. They are saved to IndexedDB and survive page reloads.</div>
+          ) : (
+            <div className="grid gap-2">
+              {dbSnapshots.map((snap) => (
+                <div key={snap.id} className="flex items-center justify-between rounded-md border border-border px-3 py-2">
+                  <div className="min-w-0">
+                    <div className="text-xs font-mono font-medium">{snap.id}</div>
+                    <div className="text-[10px] text-muted-foreground">{snap.instanceId} · {new Date(snap.createdAt).toLocaleString()}</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => restoreSnapshotAction(snap.data)}
+                    className="ml-2 shrink-0 inline-flex h-7 items-center gap-1 rounded-md border border-border px-2 text-xs hover:bg-accent"
+                  >
+                    <RotateCcw size={12} /> Restore
+                  </button>
+                </div>
+              ))}
+            </div>
+          )
+        ) : (
+          snapshots.length === 0 ? (
+            <div className="text-xs text-muted-foreground">No session snapshots yet.</div>
+          ) : (
+            <div className="grid gap-2">
+              {snapshots.map((snap) => (
+                <div key={snap.id} className="flex items-center justify-between rounded-md border border-border px-3 py-2">
+                  <div className="min-w-0">
+                    <div className="text-xs font-mono font-medium">{snap.id}</div>
+                    <div className="text-[10px] text-muted-foreground">{snap.instanceId} · {new Date(snap.createdAt).toLocaleString()}</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => restoreSnapshotAction(snap.data)}
+                    className="ml-2 shrink-0 inline-flex h-7 items-center gap-1 rounded-md border border-border px-2 text-xs hover:bg-accent"
+                  >
+                    <RotateCcw size={12} /> Restore
+                  </button>
+                </div>
+              ))}
+            </div>
+          )
+        )}
+      </div>
+    );
+  }
+
+  function renderVC() {
+    if (!nodePodActive) {
+      return (
+        <div className="text-xs text-muted-foreground">
+          Sandbox is not active. Boot NodePod to use version control.
+        </div>
+      );
+    }
+    return (
+      <div className="grid gap-3">
+        {/* Branch controls */}
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold">
+            Branch: <span className="font-mono">{vcActiveBranch}</span>
+          </span>
+          <div className="flex items-center gap-1.5">
+            <input
+              ref={importInputRef}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) void importPortableAction(file);
+              }}
+            />
+            <button
+              type="button"
+              onClick={exportPortableAction}
+              disabled={portableBusy}
+              className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-background px-2 text-xs hover:bg-muted/50 disabled:opacity-50"
+            >
+              <Download size={12} /> Export
+            </button>
+            <button
+              type="button"
+              onClick={() => importInputRef.current?.click()}
+              disabled={portableBusy}
+              className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-background px-2 text-xs hover:bg-muted/50 disabled:opacity-50"
+            >
+              <Upload size={12} /> Import
+            </button>
+            <button
+              type="button"
+              onClick={refreshVc}
+              className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-background px-2 text-xs hover:bg-muted/50"
+            >
+              <RefreshCw size={12} /> Refresh
+            </button>
+          </div>
+        </div>
+
+        {/* New branch */}
+        <div className="flex gap-2">
+          <input
+            className="flex-1 rounded-md border border-border bg-background px-3 py-2 font-mono text-xs"
+            placeholder="experiment-name"
+            value={vcNewBranchName}
+            onChange={(e) => setVcNewBranchName(e.target.value)}
+          />
           <button
             type="button"
-            onClick={createSnapshotAction}
-            disabled={snapLoading}
-            className="inline-flex h-7 items-center gap-1 rounded-md bg-primary px-2 text-xs text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            onClick={createBranchAction}
+            disabled={vcLoading || !vcNewBranchName.trim()}
+            className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           >
-            {snapLoading ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
-            Create
+            <GitBranch size={13} /> Branch
           </button>
         </div>
-        {snapshots.length === 0 ? (
-          <div className="text-xs text-muted-foreground">No snapshots yet.</div>
-        ) : (
-          <div className="grid gap-2">
-            {snapshots.map((snap, idx) => (
-              <div key={snap.id} className="flex items-center justify-between rounded-md border border-border px-3 py-2">
-                <div className="min-w-0">
-                  <div className="text-xs font-mono font-medium">{snap.id}</div>
-                  <div className="text-[10px] text-muted-foreground">{snap.instanceId} · {new Date(snap.createdAt).toLocaleString()}</div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => restoreSnapshotAction(snap.data)}
-                  className="ml-2 shrink-0 inline-flex h-7 items-center gap-1 rounded-md border border-border px-2 text-xs hover:bg-accent"
-                >
-                  <RotateCcw size={12} /> Restore
-                </button>
+
+        {/* Commit */}
+        <div className="flex gap-2">
+          <input
+            className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-xs"
+            placeholder="Commit message (optional)"
+            value={vcCommitMessage}
+            onChange={(e) => setVcCommitMessage(e.target.value)}
+          />
+          <button
+            type="button"
+            onClick={commitToVcAction}
+            disabled={vcLoading}
+            className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          >
+            <GitCommit size={13} /> Commit
+          </button>
+        </div>
+
+        {/* Branches list */}
+        {vcBranches.length > 0 && (
+          <div className="grid gap-1">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Branches</span>
+            {vcBranches.map((b) => (
+              <div key={b.id} className="flex items-center justify-between rounded-md border border-border px-3 py-1.5">
+                <span className="font-mono text-xs">{b.name}</span>
+                {b.id !== vcActiveBranch && (
+                  <button
+                    type="button"
+                    onClick={() => switchBranchAction(b.id)}
+                    disabled={vcLoading}
+                    className="inline-flex h-6 items-center gap-1 rounded-md border border-border px-2 text-[10px] hover:bg-accent disabled:opacity-50"
+                  >
+                    <RotateCcw size={10} /> Switch
+                  </button>
+                )}
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Commits list */}
+        {vcCommits.length > 0 ? (
+          <div className="grid gap-2">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Commits</span>
+            {vcCommits.map((c, i) => (
+              <div key={c.id} className="rounded-md border border-border px-3 py-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs font-medium">{c.id.slice(0, 24)}</span>
+                  <span className="text-[10px] text-muted-foreground">{c.fileCount} files</span>
+                </div>
+                <div className="text-xs mt-0.5">{c.message}</div>
+                <div className="text-[10px] text-muted-foreground">{new Date(c.createdAt).toLocaleString()}</div>
+                {i < vcCommits.length - 1 && (
+                  <button
+                    type="button"
+                    onClick={() => diffCommitsAction(c.id, vcCommits[i + 1].id)}
+                    className="mt-1.5 inline-flex h-6 items-center gap-1 rounded-md border border-border px-2 text-[10px] hover:bg-accent"
+                  >
+                    <GitCompare size={10} /> Diff with next
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-xs text-muted-foreground">
+            No commits yet. Make changes in the VFS tab and press Commit to track them.
+          </div>
+        )}
+
+        {/* Diff view */}
+        {vcDiff && (
+          <div className="rounded-md border border-border bg-muted/10 p-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold">Diff</span>
+              <button
+                type="button"
+                onClick={() => setVcDiff(null)}
+                className="text-[10px] text-muted-foreground hover:text-foreground"
+              >
+                Close
+              </button>
+            </div>
+            <div className="grid gap-1 max-h-60 overflow-auto">
+              {vcDiff.changes.filter((c) => c.status !== "unchanged").map((c) => (
+                <div key={c.path} className="flex items-center gap-2 text-xs font-mono">
+                  <span className={`shrink-0 w-16 text-[10px] font-bold ${
+                    c.status === "added" ? "text-green-600" :
+                    c.status === "removed" ? "text-red-600" :
+                    "text-amber-600"
+                  }`}>
+                    {c.status.toUpperCase()}
+                  </span>
+                  <span className="truncate">{c.path}</span>
+                </div>
+              ))}
+              {vcDiff.changes.filter((c) => c.status !== "unchanged").length === 0 && (
+                <div className="text-xs text-muted-foreground">No changes</div>
+              )}
+            </div>
           </div>
         )}
       </div>

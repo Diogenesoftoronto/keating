@@ -8,17 +8,17 @@ Set Padding 40
 Set Theme "Catppuccin Mocha"
 
 # 1. Benchmark the current policy
-Type "mise run bench"
+Type "just bench"
 Enter
 Sleep 4s
 
 # 2. Run the evolutionary policy search
-Type "mise run evolve"
+Type "just evolve"
 Enter
 Sleep 5s
 
 # 3. Evolve the underlying learn prompt
-Type "mise run prompt-evolve"
+Type "just prompt-evolve"
 Enter
 Sleep 5s
 

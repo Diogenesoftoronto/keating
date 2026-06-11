@@ -8,7 +8,7 @@ Set Padding 40
 Set Theme "Catppuccin Mocha"
 
 # 1. Launch the Hyperteacher Shell
-Type "mise run shell"
+Type "just shell"
 Enter
 # Wait for Pi to boot and extensions to load
 Sleep 4s

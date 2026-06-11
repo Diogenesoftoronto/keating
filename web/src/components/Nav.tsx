@@ -46,8 +46,8 @@ export function Nav() {
         position: "sticky",
         top: 0,
         zIndex: 50,
-        borderBottom: "2px solid var(--ink, #1a1a1a)",
-        background: "var(--paper, #f4f1ea)",
+        borderBottom: "2px solid var(--ink, #1c211b)",
+        background: "var(--paper, #f1ece0)",
       }}
     >
       {/* Main bar */}
@@ -78,28 +78,11 @@ export function Nav() {
           }}
         >
           <img
-            src="/logo.png"
+            src="/brand/logo-lockup.png"
             alt="Keating"
-            className="h-7 w-7 rounded object-contain"
+            style={{ height: "1.875rem", width: "auto" }}
           />
-          <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-2 leading-tight">
-            <span
-              style={{
-                fontSize: "1.125rem",
-                fontWeight: 700,
-                letterSpacing: "-0.025em",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Keating
-            </span>
-            <span
-              className="font-terminal"
-              style={{ fontSize: "0.875rem", color: "var(--accent, #d44a3d)", whiteSpace: "nowrap" }}
-            >
-              v{import.meta.env.APP_VERSION}
-            </span>
-          </div>
+          <span className="nav-version font-terminal">v{import.meta.env.APP_VERSION}</span>
         </Link>
 
         {/* Desktop links — visible at md (768px) and up, controlled by retro.css */}
@@ -127,6 +110,10 @@ export function Nav() {
           >
             [GITHUB]
           </a>
+          <div className="nav-status" role="status">
+            <span className="dot" />
+            SYSTEM ONLINE
+          </div>
           <ThemeToggle />
           <button
             className="btn-retro nav-desktop-link"
@@ -150,8 +137,8 @@ export function Nav() {
             id="mobile-menu-btn"
             className="nav-mobile-toggle glitch-hover font-terminal"
             style={{
-              color: "var(--ink, #1a1a1a)",
-              border: "2px solid var(--ink, #1a1a1a)",
+              color: "var(--ink, #1c211b)",
+              border: "2px solid var(--ink, #1c211b)",
               padding: "0.375rem 0.75rem",
               cursor: "pointer",
               background: "transparent",
@@ -174,8 +161,8 @@ export function Nav() {
           id="mobile-menu"
           ref={mobileMenuRef}
           style={{
-            borderTop: "2px solid var(--ink, #1a1a1a)",
-            background: "var(--paper, #f4f1ea)",
+            borderTop: "2px solid var(--ink, #1c211b)",
+            background: "var(--paper, #f1ece0)",
             maxHeight: "calc(100dvh - 3.5rem)",
             overflowY: "auto",
           }}

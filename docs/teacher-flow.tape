@@ -8,7 +8,7 @@ Set Padding 40
 Set Theme "Catppuccin Mocha"
 
 # 1. Generate & Inspect Plan
-Type "mise run plan -- 'Special Relativity'"
+Type "just plan 'Special Relativity'"
 Enter
 Sleep 1s
 Type "head -n 12 .keating/outputs/plans/special-relativity.md"
@@ -16,7 +16,7 @@ Enter
 Sleep 3s
 
 # 2. Check Automated Verification
-Type "mise run verify -- 'Special Relativity'"
+Type "just verify 'Special Relativity'"
 Enter
 Sleep 1s
 Type "head -n 15 .keating/outputs/verifications/special-relativity.md"

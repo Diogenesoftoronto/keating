@@ -9,7 +9,7 @@ Set Padding 30
 Set Theme "Catppuccin Mocha"
 
 # Run tests
-Type "mise run test"
+Type "just test"
 Enter
 
 # Wait for tests to finish

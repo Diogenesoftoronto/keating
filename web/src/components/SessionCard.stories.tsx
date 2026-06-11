@@ -60,7 +60,7 @@ export const WithMapHero: Story = {
 		hero: {
 			type: "map",
 			topic: "Cells",
-			svg: '<svg viewBox="0 0 120 80" xmlns="http://www.w3.org/2000/svg"><rect width="120" height="80" fill="#10b98122"/><circle cx="40" cy="40" r="14" fill="none" stroke="#10b981"/><circle cx="84" cy="40" r="14" fill="none" stroke="#10b981"/><line x1="54" y1="40" x2="70" y2="40" stroke="#10b981"/></svg>',
+			svg: '<svg viewBox="0 0 120 80" xmlns="http://www.w3.org/2000/svg"><rect width="120" height="80" fill="#1e9b5022"/><circle cx="40" cy="40" r="14" fill="none" stroke="#1e9b50"/><circle cx="84" cy="40" r="14" fill="none" stroke="#1e9b50"/><line x1="54" y1="40" x2="70" y2="40" stroke="#1e9b50"/></svg>',
 		},
 	},
 };

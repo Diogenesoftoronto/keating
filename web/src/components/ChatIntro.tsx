@@ -10,7 +10,7 @@ const KEATING_ASCII = `
 `.trim();
 
 const INTRO_LINES = [
-  { text: "INIT SEQUENCE v1.2.0", delay: 100 },
+  { text: "INIT SEQUENCE v1.3.0", delay: 100 },
   { text: "─────────────────────────────────────────", delay: 200 },
   { text: "model   : gemini-3-flash-preview", delay: 300 },
   { text: "policy  : keating-default", delay: 400 },
@@ -43,13 +43,13 @@ export function ChatIntro({ onDismiss }: { onDismiss?: () => void }) {
   }, []);
 
   return (
-    <div className="w-full h-full bg-[#0c0c0c] text-[#00ff00] font-terminal overflow-auto p-6 sm:p-8">
+    <div className="w-full h-full bg-[#0c1510] text-[#4be388] font-terminal overflow-auto p-6 sm:p-8">
       <div className="crt max-w-2xl mx-auto">
         {/* ASCII logo */}
         <pre
           className="text-[0.55rem] sm:text-xs md:text-sm leading-[1.05] mb-4 whitespace-pre font-bold tracking-tight"
           style={{
-            background: "linear-gradient(180deg, #34d399 0%, #10b981 55%, #059669 100%)",
+            background: "linear-gradient(180deg, #4be388 0%, #1e9b50 55%, #14743c 100%)",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
             backgroundClip: "text",
@@ -70,7 +70,7 @@ export function ChatIntro({ onDismiss }: { onDismiss?: () => void }) {
             >
               {line.text ? (
                 line.text.startsWith("▸") ? (
-                  <span className="text-[#10b981]">{line.text}</span>
+                  <span className="text-[#1e9b50]">{line.text}</span>
                 ) : line.text.startsWith('"') ? (
                   <span className="text-[#888]">{line.text}</span>
                 ) : line.text.startsWith("—") ? (

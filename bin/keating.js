@@ -1,6 +1,18 @@
 #!/usr/bin/env node
 const MIN_NODE_VERSION = "20.19.0";
-const KEATING_VERSION = "1.2.0";
+
+import { readFileSync } from "fs";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+let KEATING_VERSION;
+try {
+  const pkg = JSON.parse(readFileSync(join(__dirname, "..", "package.json"), "utf8"));
+  KEATING_VERSION = pkg.version;
+} catch {
+  KEATING_VERSION = "1.3.0";
+}
 
 function parseNodeVersion(version) {
   const [major = "0", minor = "0", patch = "0"] = version.replace(/^v/, "").split(".");

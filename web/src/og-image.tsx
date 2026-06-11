@@ -11,7 +11,7 @@ export default function OgImage() {
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        backgroundColor: "#0c0c0c",
+        backgroundColor: "#0c1510",
         fontFamily: "monospace",
         padding: "60px 72px",
         position: "relative",
@@ -35,15 +35,15 @@ export default function OgImage() {
             width: 12,
             height: 12,
             borderRadius: "50%",
-            backgroundColor: "#d44a3d",
-            boxShadow: "0 0 10px #d44a3d",
+            backgroundColor: "#d5604b",
+            boxShadow: "0 0 10px #d5604b",
           }}
         />
-        <span style={{ color: "#d44a3d", fontSize: 22, letterSpacing: "0.1em" }}>
+        <span style={{ color: "#d5604b", fontSize: 22, letterSpacing: "0.1em" }}>
           KEATING // HYPERTEACHER
         </span>
         <div style={{ flex: 1 }} />
-          <span style={{ color: "#00ff00", fontSize: 18, opacity: 0.6 }}>v1.2.0</span>
+          <span style={{ color: "#4be388", fontSize: 18, opacity: 0.6 }}>v1.3.0</span>
       </div>
 
       {/* Main headline */}
@@ -52,7 +52,7 @@ export default function OgImage() {
           style={{
             fontSize: 96,
             fontWeight: 700,
-            color: "#f4f1ea",
+            color: "#f1ece0",
             lineHeight: 1,
             letterSpacing: "-0.02em",
             marginBottom: "8px",
@@ -64,7 +64,7 @@ export default function OgImage() {
           style={{
             fontSize: 96,
             fontWeight: 700,
-            color: "#f4f1ea",
+            color: "#f1ece0",
             lineHeight: 1,
             letterSpacing: "-0.02em",
             marginBottom: "32px",
@@ -82,11 +82,11 @@ export default function OgImage() {
             marginBottom: "40px",
           }}
         >
-          <div style={{ width: 4, height: 48, backgroundColor: "#d44a3d" }} />
+          <div style={{ width: 4, height: 48, backgroundColor: "#d5604b" }} />
           <span
             style={{
               fontSize: 42,
-              color: "#d44a3d",
+              color: "#d5604b",
               fontWeight: 700,
               letterSpacing: "0.06em",
             }}
@@ -98,7 +98,7 @@ export default function OgImage() {
         <div
           style={{
             fontSize: 24,
-            color: "#f4f1ea",
+            color: "#f1ece0",
             opacity: 0.55,
             maxWidth: 640,
             lineHeight: 1.5,
@@ -120,8 +120,8 @@ export default function OgImage() {
       >
         {/* Terminal prompt */}
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <span style={{ color: "#00ff00", fontSize: 22, opacity: 0.8 }}>$</span>
-          <span style={{ color: "#00ff00", fontSize: 22, opacity: 0.8 }}>
+          <span style={{ color: "#4be388", fontSize: 22, opacity: 0.8 }}>$</span>
+          <span style={{ color: "#4be388", fontSize: 22, opacity: 0.8 }}>
             keating --mode socratic
           </span>
         </div>
@@ -133,7 +133,7 @@ export default function OgImage() {
               key={label}
               style={{
                 border: "1px solid rgba(0,255,0,0.4)",
-                color: "#00ff00",
+                color: "#4be388",
                 fontSize: 16,
                 padding: "6px 14px",
                 letterSpacing: "0.08em",
@@ -144,7 +144,7 @@ export default function OgImage() {
           ))}
         </div>
 
-        <span style={{ color: "#f4f1ea", fontSize: 20, opacity: 0.4 }}>keating.help</span>
+        <span style={{ color: "#f1ece0", fontSize: 20, opacity: 0.4 }}>keating.help</span>
       </div>
     </div>
   );

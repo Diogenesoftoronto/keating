@@ -1,5 +1,17 @@
 import { Nodepod } from "@scelar/nodepod";
+import type * as TypeScript from "typescript";
 import { NODEPOD_BOOT_FILES } from "./nodepod-boot-files";
+import { persistSnapshot, loadSnapshots, type SnapshotRecord } from "./nodepod-snapshot-db";
+import {
+	openSandboxLix,
+	closeSandboxLix,
+	lixCommit,
+	lixCreateBranch,
+	lixSwitchBranch,
+	lixListBranches,
+	lixListCommits,
+	lixDiffCommits,
+} from "./lix-sandbox";
 
 let nodePodInstance: Nodepod | null = null;
 let nodePodBootPromise: Promise<Nodepod | null> | null = null;
@@ -46,7 +58,7 @@ export async function bootNodePod(): Promise<Nodepod | null> {
 				"/workspace/package.json",
 				JSON.stringify({
 					name: "keating-nodepod-workspace",
-					type: "module",
+					type: "commonjs",
 					dependencies: {},
 					devDependencies: {},
 				},
@@ -97,6 +109,9 @@ globalThis.assertEq = assertEq;
 `
 			);
 
+			// Open Lix for version tracking
+			await openSandboxLix();
+
 			nodePodInstance = pod;
 			console.log("[nodepod] Booted successfully with", Object.keys(NODEPOD_BOOT_FILES).length, "source files, instanceId:", pod.instanceId);
 			return pod;
@@ -111,6 +126,11 @@ globalThis.assertEq = assertEq;
 
 export async function teardownNodePod(): Promise<void> {
 	if (nodePodInstance) {
+		if (activeTerminal) {
+			activeTerminal.detach();
+			activeTerminal = null;
+		}
+		closeSandboxLix();
 		nodePodInstance.teardown();
 		nodePodInstance = null;
 		nodePodBootPromise = null;
@@ -324,6 +344,15 @@ export async function nodePodApplyEdit(edit: SourceEdit): Promise<EditResult> {
 		};
 	}
 
+	if (!preEditSnapshotByFile.has(edit.file)) {
+		try {
+			const snap = await nodePodCreateSnapshot(`pre-edit-${Date.now()}`);
+			preEditSnapshotByFile.set(edit.file, { id: snap.id, data: snap.data });
+		} catch {
+			// Validation will report rollback as unavailable if snapshot capture fails.
+		}
+	}
+
 	const nextContent = contentNormalized.replace(searchNormalized, edit.replace);
 	await pod.fs.writeFile(edit.file, nextContent);
 
@@ -390,8 +419,22 @@ export async function nodePodRollbackEdits(snapshots: Map<string, string>): Prom
 }
 
 /**
- * Compute diff between the current VFS content and the baseline.
+ * Get all current VFS file contents that have baselines (i.e. boot files + any edits).
  */
+export async function nodePodGetAllFileContents(): Promise<Array<{ path: string; content: string }>> {
+	const pod = await getNodePod();
+	if (!pod) return [];
+	const files: Array<{ path: string; content: string }> = [];
+	for (const [vPath] of baselineContent) {
+		try {
+			const content = await pod.fs.readFile(vPath, "utf8");
+			files.push({ path: vPath, content });
+		} catch {
+			// file deleted
+		}
+	}
+	return files;
+}
 export function nodePodComputeDiff(): Array<{ file: string; baseline: string; current: string; changed: boolean; charDelta: number }> {
 	const diffs: Array<{ file: string; baseline: string; current: string; changed: boolean; charDelta: number }> = [];
 	for (const [file, baseline] of baselineContent) {
@@ -515,33 +558,90 @@ export async function nodePodRunScript(code: string, filename = "/workspace/_age
 
 /* ─── Snapshots ─────────────────────────────────────────── */
 
-// In-memory snapshot log for the visualizer to persist across probes
-const snapshotLog: Array<{ id: string; instanceId: string; createdAt: string; data: unknown }> = [];
+// In-memory snapshot log for the current session
+const snapshotLog: Array<SnapshotRecord> = [];
 
-export function getSnapshotLog(): typeof snapshotLog {
+export function getSnapshotLog(): SnapshotRecord[] {
 	return [...snapshotLog];
 }
 
-export async function nodePodCreateSnapshot(name?: string): Promise<{ id: string; instanceId: string; createdAt: string; data: unknown }> {
+export async function nodePodLoadSnapshotsFromDB(): Promise<SnapshotRecord[]> {
+	return loadSnapshots();
+}
+
+export async function nodePodFindSnapshot(id: string): Promise<SnapshotRecord | null> {
+	const snapshots = await loadSnapshots();
+	return snapshots.find((snapshot) => snapshot.id === id) ?? null;
+}
+
+export async function nodePodCreateSnapshot(name?: string): Promise<SnapshotRecord> {
 	const pod = await getNodePod();
 	if (!pod) throw new Error("NodePod unavailable");
 	const snap = pod.snapshot();
-	const entry = {
+	const entry: SnapshotRecord = {
 		id: name ?? `snapshot-${Date.now()}`,
 		instanceId: pod.instanceId,
 		createdAt: new Date().toISOString(),
+		label: name,
 		data: snap,
 	};
 	snapshotLog.unshift(entry);
-	// cap to 20
+	// cap to 20 in memory
 	snapshotLog.splice(20);
+	// persist to IndexedDB (fire-and-forget with catch)
+	persistSnapshot(entry).catch(() => {});
 	return entry;
 }
 
 export async function nodePodRestoreSnapshot(data: unknown): Promise<void> {
 	const pod = await getNodePod();
 	if (!pod) throw new Error("NodePod unavailable");
-	await pod.restore(data as ReturnType<typeof pod.snapshot>);
+	const snapshot = normalizeSnapshotPayload(data);
+	await pod.restore(snapshot as ReturnType<typeof pod.snapshot>);
+}
+
+function normalizeSnapshotPayload(data: unknown): unknown {
+	if (data && typeof data === "object") {
+		const value = data as Record<string, unknown>;
+		if (Array.isArray(value.entries)) return value;
+		if (value.data) return normalizeSnapshotPayload(value.data);
+	}
+	throw new Error("Invalid NodePod snapshot payload: expected a volume snapshot with entries.");
+}
+
+/* ─── Terminal ──────────────────────────────────────────── */
+
+let activeTerminal: ReturnType<Nodepod["createTerminal"]> | null = null;
+
+export interface XTermClasses {
+	Terminal: unknown;
+	FitAddon?: unknown;
+	WebglAddon?: unknown;
+	SerializeAddon?: unknown;
+}
+
+export function nodePodCreateTerminal(xtermClasses: XTermClasses): ReturnType<Nodepod["createTerminal"]> | null {
+	if (!nodePodInstance) return null;
+	activeTerminal = nodePodInstance.createTerminal({
+		Terminal: xtermClasses.Terminal,
+		FitAddon: xtermClasses.FitAddon,
+		WebglAddon: xtermClasses.WebglAddon,
+		SerializeAddon: xtermClasses.SerializeAddon,
+		fontSize: 13,
+		fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+	});
+	return activeTerminal;
+}
+
+export function nodePodGetTerminal(): ReturnType<Nodepod["createTerminal"]> | null {
+	return activeTerminal;
+}
+
+export function nodePodDetachTerminal(): void {
+	if (activeTerminal) {
+		activeTerminal.detach();
+		activeTerminal = null;
+	}
 }
 
 /* ─── Validation Bridge ─────────────────────────────────── */
@@ -549,59 +649,25 @@ export async function nodePodRestoreSnapshot(data: unknown): Promise<void> {
 /** Track the most recent snapshot per file path for rollback. */
 const preEditSnapshotByFile = new Map<string, { id: string; data: unknown }>();
 
-/**
- * Transpile TypeScript source to JavaScript using a fast regex-based
- * transpiler suitable for the Keating core modules.
- *
- * This handles:
- *   - Type annotations on vars, params, returns
- *   - Interface / type declarations
- *   - Generic parameters
- *   - Import type / export type
- *   - ESM import extensions (.ts → .js)
- */
-export function transpileTsToJs(source: string): string {
-	let js = source;
+let tsCompilerPromise: Promise<typeof TypeScript> | null = null;
 
-	// Remove `import type` and `export type` lines
-	js = js.replace(/^\s*import\s+type\s+[^;]+;/gm, "");
-	js = js.replace(/^\s*export\s+type\s+[^;]+;/gm, "");
+async function loadTypeScriptCompiler(): Promise<typeof TypeScript> {
+	tsCompilerPromise ??= import("typescript") as Promise<typeof TypeScript>;
+	return tsCompilerPromise;
+}
 
-	// Remove standalone type aliases
-	js = js.replace(/^\s*type\s+\w+[^=;]*=\s*[^;]+;?\s*$/gm, "");
-
-	// Remove interface declarations (simple single-line and multi-line)
-	js = js.replace(/^\s*interface\s+\w+\s*\{[^}]*\}\s*$/gm, "");
-	js = js.replace(/\binterface\s+\w+\s*\{[\s\S]*?\n\}\s*$/gm, "");
-
-	// Remove generic type parameters from functions, classes, methods
-	js = js.replace(/(function|class|method)\s+(\w+)<[^>]+>/g, "$1 $2");
-
-	// Remove variable type annotations: const x: number = 5 → const x = 5
-	// Be careful not to match inside strings — this is best-effort
-	js = js.replace(/(\b(?:const|let|var)\s+\w+)\s*:\s*[^=;]+(?=[=;])/g, "$1");
-
-	// Remove parameter type annotations in function signatures
-	// (conservative: only match simple identifiers, not destructuring)
-	js = js.replace(/(\(|,)\s*(\w+)\s*:\s*[^,)\]]+/g, "$1$2");
-
-	// Remove return type annotations: ): SomeType { → ) {
-	js = js.replace(/\)\s*:\s*[^{]+\{/g, ") {");
-
-	// Remove `as` type assertions
-	js = js.replace(/\s+as\s+\w+/g, "");
-
-	// Convert .ts import extensions to .js
-	js = js.replace(/from\s+["']([^"']+)\.ts["']/g, 'from "$1.js"');
-	js = js.replace(/require\(["']([^"']+)\.ts["']\)/g, 'require("$1.js")');
-
-	// Remove access modifiers and declare keywords
-	js = js.replace(/\b(declare|readonly|private|protected|public)\b/g, "");
-
-	// Clean up excess blank lines
-	js = js.replace(/\n{3,}/g, "\n\n");
-
-	return js;
+export async function transpileTsToJs(source: string, filename = "source.ts"): Promise<string> {
+	const ts = await loadTypeScriptCompiler();
+	return ts.transpileModule(source, {
+		fileName: filename,
+		compilerOptions: {
+			module: ts.ModuleKind.CommonJS,
+			target: ts.ScriptTarget.ES2022,
+			esModuleInterop: true,
+			moduleResolution: ts.ModuleResolutionKind.NodeNext,
+			skipLibCheck: true,
+		},
+	}).outputText;
 }
 
 /**
@@ -614,7 +680,7 @@ export async function writeJsCounterpart(tsPath: string): Promise<string> {
 
 	const jsPath = tsPath.replace(/\.ts$/, ".js");
 	const tsContent = await nodePodReadTextFile(tsPath);
-	const jsContent = transpileTsToJs(tsContent);
+	const jsContent = await transpileTsToJs(tsContent, tsPath);
 	await writeFileToVfs(pod, jsPath, jsContent);
 	return jsPath;
 }
@@ -644,7 +710,7 @@ export async function nodePodValidateEdit(
 
 	const { autoRollback = true } = options;
 
-	// Step 1: snapshot current state (if not already snapshotted)
+	// Step 1: capture a fallback snapshot if validation is called without source_edit.
 	let snapId: string | null = null;
 	if (autoRollback && !preEditSnapshotByFile.has(tsFilePath)) {
 		try {
@@ -688,6 +754,7 @@ export async function nodePodValidateEdit(
 			try {
 				await nodePodRestoreSnapshot(saved.data);
 				restored = true;
+				preEditSnapshotByFile.delete(tsFilePath);
 			} catch {
 				// restore failed, leave partial state
 			}

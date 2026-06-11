@@ -877,7 +877,7 @@ export function buildConceptMap(topicName: string): string {
     D --> D1[${topic.interdisciplinaryHooks[0] || "Connections"}]
     D --> D2[Advanced Topics]
 
-    style A fill:#d44a3d,color:#fff
+    style A fill:#d5604b,color:#fff
     style B fill:#3043a6,color:#fff
     style C fill:#047857,color:#fff
     style D fill:#64748b,color:#fff`;

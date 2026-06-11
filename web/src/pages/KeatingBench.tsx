@@ -10,6 +10,7 @@ import { sessionUsage } from "../hooks/session-metadata";
 import type { SessionData } from "../types/session";
 import { feedbackToOutcomeScore, inferBrowserLearnerTurnSignal, MIN_REAL_OUTCOMES } from "../keating/core";
 import { listCachedSharedSessions, type SharedModelInfo } from "../keating/shared-sessions";
+import { downloadTextFile } from "../lib/browser-download";
 
 type BenchmarkSource = "shared" | "local" | "all";
 
@@ -383,18 +384,6 @@ function percent(value: number) {
 	return `${Math.round(value * 100)}%`;
 }
 
-function downloadTextFile(filename: string, content: string) {
-	const blob = new Blob([content], { type: "application/json;charset=utf-8" });
-	const url = URL.createObjectURL(blob);
-	const link = document.createElement("a");
-	link.href = url;
-	link.download = filename;
-	document.body.appendChild(link);
-	link.click();
-	link.remove();
-	URL.revokeObjectURL(url);
-}
-
 function MetricTile({ icon, label, value, detail }: { icon: React.ReactNode; label: string; value: string; detail: string }) {
 	return (
 		<div className="min-w-0 rounded-md border border-border bg-background p-4">
@@ -675,7 +664,7 @@ function KeatingBenchContent() {
 											<div className="flex items-center gap-3">
 												<div className="w-20 text-lg font-semibold tabular-nums">{row.prosperScore.toFixed(1)}</div>
 												<div className="h-2 w-28 overflow-hidden rounded-sm bg-muted">
-													<div className="h-full bg-[linear-gradient(90deg,#10b981,#0ea5e9,#f59e0b)]" style={{ width: `${Math.max(2, Math.min(100, row.prosperScore))}%` }} />
+													<div className="h-full bg-[linear-gradient(90deg,#1e9b50,#0ea5e9,#f59e0b)]" style={{ width: `${Math.max(2, Math.min(100, row.prosperScore))}%` }} />
 												</div>
 											</div>
 											<div className="mt-1 text-xs text-muted-foreground">Evidence {Math.round(row.confidence * 100)}%</div>

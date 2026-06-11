@@ -115,6 +115,41 @@ test("keating finetune export can use sessions only and redacts secrets", async 
   expect(jsonl).not.toContain("sk-testsecret");
 });
 
+test("keating finetune export skips assistant turns shorter than the minimum", async () => {
+  const workdir = await tempProject();
+  await mkdir(join(workdir, ".keating", "sessions"), { recursive: true });
+  await writeFile(
+    join(workdir, ".keating", "sessions", "session-1.json"),
+    JSON.stringify({
+      id: "session-1",
+      messages: [
+        { role: "user", content: "Teach me recursion briefly." },
+        { role: "assistant", content: "No." },
+        { role: "user", content: "Teach me recursion with enough detail." },
+        {
+          role: "assistant",
+          content: "Recursion solves a problem by reducing it to smaller versions of itself until a base case stops the process and the call stack unwinds.",
+        },
+      ],
+    }),
+    "utf8"
+  );
+
+  const result = await exportKeatingData(workdir, {
+    mode: "finetune",
+    source: "sessions",
+    format: "chatml",
+    redact: true,
+    minAssistantChars: 40,
+  });
+
+  expect(result.manifest.counts.examplesWritten).toBe(1);
+  expect(result.manifest.counts.skipped).toBeGreaterThanOrEqual(1);
+  const jsonl = await readFile(join(result.outDir, "train.chatml.jsonl"), "utf8");
+  expect(jsonl).not.toContain("No.");
+  expect(jsonl).toContain("call stack unwinds");
+});
+
 test("keating finetune export fails clearly for empty projects", async () => {
   const workdir = await tempProject();
 

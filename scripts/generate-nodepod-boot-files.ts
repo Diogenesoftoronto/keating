@@ -13,6 +13,7 @@
 
 import { readFile, readdir, writeFile, mkdir } from "node:fs/promises";
 import { join, relative } from "node:path";
+import type * as TypeScript from "typescript";
 
 const SOURCE_DIRS = ["src/core", "pi/prompts", "web/src/keating"];
 const OUTPUT_FILE = "web/src/keating/nodepod-boot-files.ts";
@@ -37,23 +38,27 @@ async function* walkDir(dir: string): AsyncGenerator<string> {
   }
 }
 
-/** Use Bun's built-in transpiler for TS → JS. */
-function transpileWithBun(source: string, filename: string): string {
+let tsPromise: Promise<typeof TypeScript> | null = null;
+
+async function loadTypeScript(): Promise<typeof TypeScript> {
+  tsPromise ??= import(new URL("../web/node_modules/typescript/lib/typescript.js", import.meta.url).href) as Promise<typeof TypeScript>;
+  return tsPromise;
+}
+
+/** Use TypeScript's compiler API for TS → CommonJS so NodePod require() works. */
+async function transpileWithTypeScript(source: string, filename: string): Promise<string> {
   try {
-    // @ts-ignore — Bun.Transpiler is a Bun-specific API
-    const transpiler = new Bun.Transpiler({
-      loader: "ts",
-      target: "browser",
-      tsconfig: {
-        compilerOptions: {
-          module: "NodeNext",
-          moduleResolution: "NodeNext",
-          target: "ES2022",
-          strict: true,
-        },
+    const ts = await loadTypeScript();
+    return ts.transpileModule(source, {
+      fileName: filename,
+      compilerOptions: {
+        module: ts.ModuleKind.CommonJS,
+        target: ts.ScriptTarget.ES2022,
+        esModuleInterop: true,
+        moduleResolution: ts.ModuleResolutionKind.NodeNext,
+        skipLibCheck: true,
       },
-    });
-    return transpiler.transformSync(source, filename);
+    }).outputText;
   } catch {
     return source; // fallback: return raw source
   }
@@ -76,7 +81,7 @@ async function main() {
         // Transpile .ts → .js using Bun's built-in transformer
         if (rel.endsWith(".ts") && !rel.endsWith(".d.ts")) {
           const jsPath = rel.replace(/\.ts$/, ".js");
-          const jsContent = transpileWithBun(content, rel);
+          const jsContent = await transpileWithTypeScript(content, rel);
           files.set(jsPath, jsContent);
         }
       }
@@ -127,7 +132,7 @@ async function main() {
 
   const totalBytes = sorted.reduce((sum, [, c]) => sum + c.length, 0);
   const jsCount = sorted.filter(([p]) => p.endsWith(".js")).length;
-  console.log(`Generated ${OUTPUT_FILE} with ${sorted.length} files (${Math.round(totalBytes / 1024)} KB total, ${jsCount} JS transpiled via Bun)`);
+  console.log(`Generated ${OUTPUT_FILE} with ${sorted.length} files (${Math.round(totalBytes / 1024)} KB total, ${jsCount} JS transpiled via TypeScript)`);
 }
 
 main().catch((e) => {

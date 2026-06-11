@@ -1,8 +1,6 @@
-import type { Api, Model } from "@earendil-works/pi-ai";
-
 export type ReasoningLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
 export type AnimationRenderer = "manim" | "hyperframes";
-export type UiFontFamily = "roboto" | "space-mono";
+export type UiFontFamily = "roboto" | "space-mono" | "jetbrains-mono";
 export type ShareLinkMode = "portable-short" | "compressed-hash" | "local-short";
 
 export type SavedModel = {
@@ -38,7 +36,7 @@ export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
 	googleGrounding: "auto",
 	reasoningLevel: "medium",
 	animationRenderer: "manim",
-	fontFamily: "roboto",
+	fontFamily: "jetbrains-mono",
 	shareLinkMode: "portable-short",
 	userProfileImage: null,
 	hiddenProviders: [],
@@ -63,6 +61,11 @@ const FONT_STACKS: Record<UiFontFamily, FontStack> = {
 		serif: '"Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
 		mono: '"Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
 	},
+	"jetbrains-mono": {
+		sans: '"JetBrains Mono", ui-monospace, "Cascadia Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+		serif: '"JetBrains Mono", ui-monospace, "Cascadia Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+		mono: '"JetBrains Mono", ui-monospace, "Cascadia Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+	},
 };
 
 const STORAGE_KEY = "keating_ui_settings";
@@ -82,6 +85,11 @@ export const FONT_FAMILY_OPTIONS: Array<{
 		value: "space-mono",
 		label: "Space Mono",
 		description: "Retro monospace styling for the entire app.",
+	},
+	{
+		value: "jetbrains-mono",
+		label: "JetBrains Mono",
+		description: "Terminal monospace matching the Keating brand reference.",
 	},
 ];
 
@@ -121,7 +129,10 @@ function normalizeSettings(value: Partial<KeatingUiSettings> | null): KeatingUiS
 		googleGrounding: value?.googleGrounding === "off" ? "off" : DEFAULT_UI_SETTINGS.googleGrounding,
 		reasoningLevel: value?.reasoningLevel ?? DEFAULT_UI_SETTINGS.reasoningLevel,
 		animationRenderer: value?.animationRenderer === "hyperframes" ? "hyperframes" : DEFAULT_UI_SETTINGS.animationRenderer,
-		fontFamily: value?.fontFamily === "space-mono" ? "space-mono" : DEFAULT_UI_SETTINGS.fontFamily,
+		fontFamily:
+			value?.fontFamily === "space-mono" || value?.fontFamily === "roboto" || value?.fontFamily === "jetbrains-mono"
+				? value.fontFamily
+				: DEFAULT_UI_SETTINGS.fontFamily,
 		shareLinkMode: normalizeShareLinkMode(value?.shareLinkMode),
 		userProfileImage: typeof value?.userProfileImage === "string" && value.userProfileImage.startsWith("data:image/") ? value.userProfileImage : DEFAULT_UI_SETTINGS.userProfileImage,
 		hiddenProviders: Array.isArray(value?.hiddenProviders) ? value.hiddenProviders : DEFAULT_UI_SETTINGS.hiddenProviders,
