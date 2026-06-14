@@ -36,6 +36,12 @@ analysis/__pycache__/
 .stryker-tmp/
 reports/mutation/
 
+# Apalache (TLA+ model checker) output
+_apalache-out/
+
+# Vite plugin output: manim-web library copied into the public dir at build time
+web/public/manim-web/
+
 # Project-specific state
 .keating/
 .chrysalis/
