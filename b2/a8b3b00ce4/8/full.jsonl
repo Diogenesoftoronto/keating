@@ -1,0 +1,867 @@
+{
+  "info": {
+    "id": "ses_1471e7828ffeeoKI8KfLD80wkX",
+    "slug": "lucky-moon",
+    "projectID": "a22a21fb6b0ce9d72f5871a7851df49ec28c3ac4",
+    "directory": "/home/diogenes/Projects/keating",
+    "path": "",
+    "title": "Reorganize interface settings and customization",
+    "agent": "plan",
+    "model": {
+      "id": "neuralwatt/qwen3.5-397b-fast",
+      "providerID": "bifrost"
+    },
+    "version": "1.15.12",
+    "summary": {
+      "additions": 284,
+      "deletions": 0,
+      "files": 1
+    },
+    "cost": 0,
+    "tokens": {
+      "input": 101443,
+      "output": 4332,
+      "reasoning": 0,
+      "cache": {
+        "read": 304128,
+        "write": 0
+      }
+    },
+    "time": {
+      "created": 1781218248663,
+      "updated": 1781218712346
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1781218248747
+        },
+        "agent": "plan",
+        "model": {
+          "providerID": "bifrost",
+          "modelID": "neuralwatt/qwen3.5-397b-fast"
+        },
+        "summary": {
+          "diffs": [
+            {
+              "file": "web/test/animation-and-image-tools.test.ts",
+              "patch": "Index: web/test/animation-and-image-tools.test.ts\n===================================================================\n--- web/test/animation-and-image-tools.test.ts\t\n+++ web/test/animation-and-image-tools.test.ts\t\n@@ -0,0 +1,275 @@\n+import { describe, expect, test } from \"bun:test\";\n+import {\n+\tparseStoryboardScenes,\n+\t__test_buildManimScene,\n+\t__test_buildHyperframesComposition,\n+\t__test_buildProcessSvg,\n+\t__test_buildLocalImageSvg,\n+\t__test_buildInfographicSvg,\n+\t__test_parseStoryboardDurationSeconds,\n+\t__test_storyboardTitle,\n+} from \"../src/keating/browser-tools\";\n+import { resolveTopic } from \"../src/keating/core\";\n+\n+describe(\"animate storyboard parsing\", () => {\n+\ttest(\"extracts scene number, title, duration, visual, audio, and highlight\", () => {\n+\t\tconst storyboard = `# Animation Storyboard: DNS Resolution\n+\n+## Scene 1: The browser cache (0-3s)\n+- **Visual**: Browser checks its local cache for the IP. Show a small \"Cache\" box on the left with a question mark.\n+- **Audio**: The OS asks: have we seen this domain recently?\n+- **Duration**: 3s\n+\n+## Scene 2: Recursive resolver (3-7s)\n+- **Visual**: A packet leaves the laptop toward the ISP's recursive resolver. Animate a labeled arrow.\n+- **Highlight**: The resolver does the heavy lifting.\n+\n+## Scene 3: Root then TLD (7-12s)\n+- **Visual**: The resolver queries a root server (.), then the .com TLD. Show two stacked arrows.\n+- **Audio**: Walk down the namespace.\n+`;\n+\n+\t\tconst scenes = parseStoryboardScenes(storyboard);\n+\t\texpect(scenes).toHaveLength(3);\n+\t\texpect(scenes[0].number).toBe(1);\n+\t\texpect(scenes[0].title).toBe(\"The browser cache\");\n+\t\texpect(scenes[0].duration).toBe(\"3s\");\n+\t\texpect(scenes[0].visual).toMatch(/Browser checks its local cache/);\n+\t\texpect(scenes[0].audio).toMatch(/OS asks/);\n+\t\texpect(scenes[1].title).toBe(\"Recursive resolver\");\n+\t\texpect(scenes[1].duration).toBe(\"3-7s\");\n+\t\texpect(scenes[1].highlight).toMatch(/heavy lifting/);\n+\t\texpect(scenes[2].duration).toBe(\"7-12s\");\n+\t});\n+\n+\ttest(\"returns no scenes for a generic template-only storyboard\", () => {\n+\t\t// Verifies the parser does not accept the OLD generic template as real\n+\t\t// content; an empty parse signals the animate tool to ask the agent to\n+\t\t// author proper beats.\n+\t\tconst generic = `# Animation Storyboard: Generic\n+\n+## Scene 1: Introduction (0-2s)\n+- **Visual**: Title card with \"Generic\"\n+- **Transition**: Fade in\n+- **Audio**: Brief hook from summary\n+`;\n+\t\t// A single scene should still parse, but with no audio/visual in the\n+\t\t// usual sense — the author is expected to fill these in.\n+\t\tconst scenes = parseStoryboardScenes(generic);\n+\t\texpect(scenes).toHaveLength(1);\n+\t\texpect(scenes[0].visual).toMatch(/Title card with \"Generic\"/);\n+\t});\n+});\n+\n+describe(\"buildManimScene from authored storyboard\", () => {\n+\ttest(\"emits a play() line for every authored scene with real visual content\", () => {\n+\t\tconst resolved = resolveTopic(\"DNS\");\n+\t\tconst storyboard = `# Animation Storyboard: DNS Resolution\n+\n+## Scene 1: Browser cache (0-3s)\n+- **Visual**: Browser checks local DNS cache; show a \"cache hit\" pill.\n+- **Audio**: The OS asks the resolver for the IP.\n+\n+## Scene 2: Recursive resolver (3-7s)\n+- **Visual**: A packet leaves the laptop to the ISP's recursive resolver.\n+- **Audio**: The resolver does the heavy lifting.\n+\n+## Scene 3: Root and TLD (7-12s)\n+- **Visual**: Two stacked arrows: root . then .com TLD.\n+- **Audio**: Walk down the namespace from right to left.\n+`;\n+\n+\t\tconst source = __test_buildManimScene(resolved, storyboard);\n+\t\t// Real authored scene titles and visuals should appear in the source,\n+\t\t// not the generic FadeIn(title(\"...\")) placeholder.\n+\t\texpect(source).toContain(\"Browser cache\");\n+\t\texpect(source).toContain(\"Recursive resolver\");\n+\t\texpect(source).toContain(\"Root and TLD\");\n+\t\texpect(source).toContain(\"Browser checks local DNS cache\");\n+\t\texpect(source).toContain(\"recursive resolver\");\n+\t\t// The generic placeholder that used to ship should be gone.\n+\t\texpect(source).not.toContain(\"Title card with\");\n+\t});\n+\n+\ttest(\"falls back to a minimal scene when storyboard is empty\", () => {\n+\t\tconst resolved = resolveTopic(\"DNS\");\n+\t\tconst source = __test_buildManimScene(resolved, \"\");\n+\t\texpect(source).toMatch(/class .* extends Scene/);\n+\t\texpect(source).toMatch(/FadeIn/);\n+\t});\n+});\n+\n+describe(\"buildHyperframesComposition from authored storyboard\", () => {\n+\ttest(\"uses authored scene titles and body text in clip elements\", () => {\n+\t\tconst resolved = resolveTopic(\"DNS\");\n+\t\tconst storyboard = `# Animation Storyboard: DNS Resolution\n+\n+## Scene 1: Browser cache (0-3s)\n+- **Visual**: Browser checks local DNS cache.\n+- **Audio**: The OS asks the resolver for the IP.\n+\n+## Scene 2: Recursive resolver (3-7s)\n+- **Visual**: A packet leaves the laptop to the ISP's recursive resolver.\n+- **Highlight**: The resolver does the heavy lifting.\n+`;\n+\t\tconst html = __test_buildHyperframesComposition(resolved, storyboard);\n+\t\t// Authored scene titles appear in clip sections.\n+\t\texpect(html).toContain(\"Browser cache\");\n+\t\texpect(html).toContain(\"Recursive resolver\");\n+\t\t// Authored body lines appear in <p> blocks.\n+\t\texpect(html).toContain(\"Browser checks local DNS cache\");\n+\t\texpect(html).toContain(\"recursive resolver\");\n+\t\t// The old generic placeholder is gone.\n+\t\texpect(html).not.toContain(\"Start concrete\");\n+\t\texpect(html).not.toContain(\"Name the structure\");\n+\t});\n+\n+\ttest(\"encodes clip timings that match authored scene durations\", () => {\n+\t\tconst resolved = resolveTopic(\"DNS\");\n+\t\tconst storyboard = `# Animation Storyboard: DNS\n+\n+## Scene 1: A (0-2s)\n+- **Visual**: a\n+\n+## Scene 2: B (2-5s)\n+- **Visual**: b\n+\n+## Scene 3: C (5-9s)\n+- **Visual**: c\n+`;\n+\t\tconst html = __test_buildHyperframesComposition(resolved, storyboard);\n+\t\t// Expect 3 clip selectors; the encoded clips JSON should encode starts\n+\t\t// at 0, 2, 5.\n+\t\texpect(html).toContain(\"#clip-0\");\n+\t\texpect(html).toContain(\"#clip-2\");\n+\t\texpect(html).toContain(\"#clip-5\");\n+\t});\n+});\n+\n+describe(\"generate_image SVG builders use real authored content\", () => {\n+\ttest(\"process kind emits a numbered box per authored point with arrows in between\", () => {\n+\t\tconst svg = __test_buildProcessSvg({\n+\t\t\ttitle: \"DNS resolution\",\n+\t\t\tsubtitle: \"How a name becomes an IP, step by step\",\n+\t\t\tpoints: [\n+\t\t\t\t\"Browser checks its local DNS cache.\",\n+\t\t\t\t\"OS asks the ISP's recursive resolver.\",\n+\t\t\t\t\"Resolver queries a root nameserver for .com.\",\n+\t\t\t\t\"Resolver queries the .com TLD for the authoritative server.\",\n+\t\t\t\t\"Resolver queries the authoritative server and returns the A record.\",\n+\t\t\t],\n+\t\t\tlabels: [\"Cache\", \"Resolver\", \"Root\", \"TLD\", \"Authoritative\"],\n+\t\t\tstyle: \"light\",\n+\t\t});\n+\n+\t\t// All 5 authored labels appear in the SVG (one per box).\n+\t\tfor (const label of [\"Cache\", \"Resolver\", \"Root\", \"TLD\", \"Authoritative\"]) {\n+\t\t\texpect(svg).toContain(label);\n+\t\t}\n+\t\t// All 5 authored points appear as box body text.\n+\t\texpect(svg).toContain(\"Browser checks its local DNS cache\");\n+\t\texpect(svg).toContain(\"ISP&#39;s recursive resolver\"); // apostrophe is escaped\n+\t\texpect(svg).toContain(\"authoritative server and returns the A record\");\n+\t\t// Arrows connect boxes (lines + arrowhead polygons).\n+\t\texpect(svg).toContain(\"data-arrow-key\");\n+\t\texpect(svg).toMatch(/<polygon [^>]*fill=\"[^\"]+\"\\/>/);\n+\t});\n+\n+\ttest(\"process kind wraps to a second row when there are 5+ steps\", () => {\n+\t\tconst svg = __test_buildProcessSvg({\n+\t\t\ttitle: \"Six steps\",\n+\t\t\tsubtitle: \"wrap\",\n+\t\t\tpoints: [\"a\", \"b\", \"c\", \"d\", \"e\", \"f\"],\n+\t\t\tlabels: [\"A\", \"B\", \"C\", \"D\", \"E\", \"F\"],\n+\t\t\tstyle: \"light\",\n+\t\t});\n+\t\t// The vertical wrap-around arrow should be present exactly once\n+\t\t// (only one row break for 6 steps split into 4 + 2 or 3 + 3).\n+\t\tconst wraps = svg.match(/data-arrow-key=\"v-/g) ?? [];\n+\t\texpect(wraps.length).toBeGreaterThanOrEqual(1);\n+\t});\n+\n+\ttest(\"process kind uses the dark palette when requested\", () => {\n+\t\tconst svg = __test_buildProcessSvg({\n+\t\t\ttitle: \"Signal transduction\",\n+\t\t\tsubtitle: \"Receptor to nucleus\",\n+\t\t\tpoints: [\"Ligand binds receptor\", \"G-protein activates\", \"Cascade amplifies\", \"Transcription factor enters nucleus\"],\n+\t\t\tlabels: [\"Bind\", \"Activate\", \"Amplify\", \"Transcribe\"],\n+\t\t\tstyle: \"dark\",\n+\t\t});\n+\t\texpect(svg).toContain('fill=\"#101214\"');\n+\t\texpect(svg).toContain('fill=\"#f59e0b\"');\n+\t});\n+\n+\ttest(\"infographic kind surfaces each authored point and label inside its card\", () => {\n+\t\tconst svg = __test_buildInfographicSvg({\n+\t\t\ttitle: \"Antibody variants\",\n+\t\t\tsubtitle: \"Sizes and roles\",\n+\t\t\tpoints: [\n+\t\t\t\t\"IgG is the full ~150 kDa Y-shape antibody in serum.\",\n+\t\t\t\t\"scFv is a 25 kDa single-chain binding fragment.\",\n+\t\t\t\t\"Nanobodies are ~15 kDa single-domain binders from camelids.\",\n+\t\t\t],\n+\t\t\tlabels: [\"IgG\", \"scFv\", \"Nanobody\"],\n+\t\t\tstyle: \"light\",\n+\t\t});\n+\t\t// Each authored label appears.\n+\t\tfor (const label of [\"IgG\", \"scFv\", \"Nanobody\"]) {\n+\t\t\texpect(svg).toContain(label);\n+\t\t}\n+\t\t// Each authored point appears.\n+\t\texpect(svg).toContain(\"150 kDa Y-shape\");\n+\t\texpect(svg).toContain(\"25 kDa single-chain\");\n+\t\texpect(svg).toContain(\"15 kDa single-domain\");\n+\t});\n+\n+\ttest(\"buildLocalImageSvg dispatches process to buildProcessSvg\", () => {\n+\t\tconst svg = __test_buildLocalImageSvg({\n+\t\t\ttitle: \"Krebs cycle\",\n+\t\t\tsubtitle: \"Eight steps\",\n+\t\t\tpoints: [\"Citrate\", \"Isocitrate\", \"Alpha-ketoglutarate\", \"Succinyl-CoA\"],\n+\t\t\tlabels: [\"1\", \"2\", \"3\", \"4\"],\n+\t\t\tstyle: \"light\",\n+\t\t\tkind: \"process\",\n+\t\t});\n+\t\texpect(svg).toContain(\"data-arrow-key\");\n+\t\texpect(svg).toContain(\"Citrate\");\n+\t\texpect(svg).toContain(\"Isocitrate\");\n+\t});\n+\n+\ttest(\"buildLocalImageSvg dispatches comparison to bar layout\", () => {\n+\t\tconst svg = __test_buildLocalImageSvg({\n+\t\t\ttitle: \"Sizes\",\n+\t\t\tsubtitle: \"kDa\",\n+\t\t\tpoints: [\"150 kDa IgG\", \"25 kDa scFv\", \"15 kDa nanobody\"],\n+\t\t\tlabels: [\"IgG\", \"scFv\", \"Nanobody\"],\n+\t\t\tstyle: \"light\",\n+\t\t\tkind: \"comparison\",\n+\t\t});\n+\t\texpect(svg).toContain(\"150 kDa IgG\");\n+\t\texpect(svg).toContain(\"Nanobody\");\n+\t});\n+});\n+\n+describe(\"parseStoryboardDurationSeconds\", () => {\n+\ttest(\"expands a range to (end - start)\", () => {\n+\t\texpect(__test_parseStoryboardDurationSeconds(\"3-9s\")).toBe(6);\n+\t\texpect(__test_parseStoryboardDurationSeconds(\"0-2.5s\")).toBe(2.5);\n+\t});\n+\ttest(\"uses single number when no range\", () => {\n+\t\texpect(__test_parseStoryboardDurationSeconds(\"4s\")).toBe(4);\n+\t\texpect(__test_parseStoryboardDurationSeconds(\"7\")).toBe(7);\n+\t});\n+\ttest(\"falls back to 4 on garbage\", () => {\n+\t\texpect(__test_parseStoryboardDurationSeconds(\"nope\")).toBe(4);\n+\t});\n+});\n+\n+describe(\"storyboardTitle\", () => {\n+\ttest(\"extracts the H1 title\", () => {\n+\t\texpect(__test_storyboardTitle(\"# Animation Storyboard: DNS\\n\\n## Scene 1: A (0-1s)\\n\")).toBe(\"DNS\");\n+\t});\n+\ttest(\"returns empty string when no title is present\", () => {\n+\t\texpect(__test_storyboardTitle(\"## Scene 1: A (0-1s)\\n\")).toBe(\"\");\n+\t});\n+});\n",
+              "additions": 275,
+              "deletions": 0,
+              "status": "added"
+            }
+          ]
+        },
+        "id": "msg_eb8e187f40010lNP3cQ87gzvcv",
+        "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "the interface section of the settings @web/src/keating/ui-settings.ts includes a lot of subsections that have nothing to do with interface. I would love for this to be changed. We need to consider how to make the settings panels more intuitive as to how they are organized. The other thing that I would be interested in is expanding the customization available. Allowing users to tweak model profiles, and other configuration. If you have other ideas for how we could improve the settings I am all ears.",
+          "id": "prt_eb8e187f5001GG8AtxFEDz1s03",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e187f40010lNP3cQ87gzvcv"
+        },
+        {
+          "type": "file",
+          "mime": "text/plain",
+          "filename": "web/src/keating/ui-settings.ts",
+          "url": "file:///home/diogenes/Projects/keating/web/src/keating/ui-settings.ts",
+          "source": {
+            "text": {
+              "value": "@web/src/keating/ui-settings.ts",
+              "start": 38,
+              "end": 69
+            },
+            "type": "file",
+            "path": "web/src/keating/ui-settings.ts"
+          },
+          "id": "prt_eb8e187f50020R2qUeH2JUfgJV",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e187f40010lNP3cQ87gzvcv"
+        },
+        {
+          "type": "text",
+          "synthetic": true,
+          "text": "Called the Read tool with the following input: {\"filePath\":\"/home/diogenes/Projects/keating/web/src/keating/ui-settings.ts\"}",
+          "id": "prt_eb8e18900001UJwDndTLlf4YdG",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e187f40010lNP3cQ87gzvcv"
+        },
+        {
+          "type": "text",
+          "synthetic": true,
+          "text": "<path>/home/diogenes/Projects/keating/web/src/keating/ui-settings.ts</path>\n<type>file</type>\n<content>\n1: export type ReasoningLevel = \"off\" | \"minimal\" | \"low\" | \"medium\" | \"high\" | \"xhigh\";\n2: export type AnimationRenderer = \"manim\" | \"hyperframes\";\n3: export type UiFontFamily = \"roboto\" | \"space-mono\" | \"jetbrains-mono\";\n4: export type ShareLinkMode = \"portable-short\" | \"compressed-hash\" | \"local-short\";\n5: \n6: export type SavedModel = {\n7: \tkey: string;\n8: \tid: string;\n9: \tname: string;\n10: \tprovider: string;\n11: \tapi: string;\n12: \tbaseUrl?: string;\n13: \treasoning: boolean;\n14: \tvision: boolean;\n15: };\n16: \n17: export interface KeatingUiSettings {\n18: \tshowToolUi: boolean;\n19: \tautoOpenArtifacts: boolean;\n20: \tshowRawErrors: boolean;\n21: \tgoogleGrounding: \"auto\" | \"off\";\n22: \treasoningLevel: ReasoningLevel;\n23: \tanimationRenderer: AnimationRenderer;\n24: \tfontFamily: UiFontFamily;\n25: \tshareLinkMode: ShareLinkMode;\n26: \talternativeResponseChance: number;\n27: \tuserProfileImage: string | null;\n28: \thiddenProviders: string[];\n29: \trecentModels: Array<{ key: string; timestamp: number }>;\n30: \tcustomModels: SavedModel[];\n31: }\n32: \n33: export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {\n34: \tshowToolUi: false,\n35: \tautoOpenArtifacts: true,\n36: \tshowRawErrors: false,\n37: \tgoogleGrounding: \"auto\",\n38: \treasoningLevel: \"medium\",\n39: \tanimationRenderer: \"manim\",\n40: \tfontFamily: \"jetbrains-mono\",\n41: \tshareLinkMode: \"portable-short\",\n42: \talternativeResponseChance: 0.05,\n43: \tuserProfileImage: null,\n44: \thiddenProviders: [],\n45: \trecentModels: [],\n46: \tcustomModels: [],\n47: };\n48: \n49: type FontStack = {\n50: \tsans: string;\n51: \tserif: string;\n52: \tmono: string;\n53: };\n54: \n55: const FONT_STACKS: Record<UiFontFamily, FontStack> = {\n56: \troboto: {\n57: \t\tsans: '\"Roboto\", \"Segoe UI\", Arial, sans-serif',\n58: \t\tserif: 'Georgia, Cambria, \"Times New Roman\", Times, serif',\n59: \t\tmono: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace',\n60: \t},\n61: \t\"space-mono\": {\n62: \t\tsans: '\"Space Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace',\n63: \t\tserif: '\"Space Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace',\n64: \t\tmono: '\"Space Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace',\n65: \t},\n66: \t\"jetbrains-mono\": {\n67: \t\tsans: '\"JetBrains Mono\", ui-monospace, \"Cascadia Mono\", Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace',\n68: \t\tserif: '\"JetBrains Mono\", ui-monospace, \"Cascadia Mono\", Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace',\n69: \t\tmono: '\"JetBrains Mono\", ui-monospace, \"Cascadia Mono\", Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace',\n70: \t},\n71: };\n72: \n73: const STORAGE_KEY = \"keating_ui_settings\";\n74: const SETTINGS_CHANGED_EVENT = \"keating:ui-settings-changed\";\n75: \n76: export const FONT_FAMILY_OPTIONS: Array<{\n77: \tvalue: UiFontFamily;\n78: \tlabel: string;\n79: \tdescription: string;\n80: }> = [\n81: \t{\n82: \t\tvalue: \"roboto\",\n83: \t\tlabel: \"Roboto\",\n84: \t\tdescription: \"Clean sans serif default for the app UI.\",\n85: \t},\n86: \t{\n87: \t\tvalue: \"space-mono\",\n88: \t\tlabel: \"Space Mono\",\n89: \t\tdescription: \"Retro monospace styling for the entire app.\",\n90: \t},\n91: \t{\n92: \t\tvalue: \"jetbrains-mono\",\n93: \t\tlabel: \"JetBrains Mono\",\n94: \t\tdescription: \"Terminal monospace matching the Keating brand reference.\",\n95: \t},\n96: ];\n97: \n98: export const SHARE_LINK_MODE_OPTIONS: Array<{\n99: \tvalue: ShareLinkMode;\n100: \tlabel: string;\n101: \tdescription: string;\n102: }> = [\n103: \t{\n104: \t\tvalue: \"portable-short\",\n105: \t\tlabel: \"Portable short\",\n106: \t\tdescription: \"Short links that work across browsers when share storage is available.\",\n107: \t},\n108: \t{\n109: \t\tvalue: \"compressed-hash\",\n110: \t\tlabel: \"Compressed snapshot\",\n111: \t\tdescription: \"Embeds the session snapshot in the URL for server-free sharing.\",\n112: \t},\n113: \t{\n114: \t\tvalue: \"local-short\",\n115: \t\tlabel: \"Local short\",\n116: \t\tdescription: \"Shortest links, available from this browser's cache only.\",\n117: \t},\n118: ];\n119: \n120: function normalizeShareLinkMode(value: unknown): ShareLinkMode {\n121: \treturn value === \"compressed-hash\" || value === \"local-short\" || value === \"portable-short\"\n122: \t\t? value\n123: \t\t: DEFAULT_UI_SETTINGS.shareLinkMode;\n124: }\n125: \n126: function normalizeAlternativeResponseChance(value: unknown): number {\n127: \tconst numeric = typeof value === \"number\" ? value : Number(value);\n128: \tif (!Number.isFinite(numeric)) return DEFAULT_UI_SETTINGS.alternativeResponseChance;\n129: \treturn Math.max(0, Math.min(1, numeric));\n130: }\n131: \n132: function normalizeSettings(value: Partial<KeatingUiSettings> | null): KeatingUiSettings {\n133: \treturn {\n134: \t\tshowToolUi: value?.showToolUi ?? DEFAULT_UI_SETTINGS.showToolUi,\n135: \t\tautoOpenArtifacts: value?.autoOpenArtifacts ?? DEFAULT_UI_SETTINGS.autoOpenArtifacts,\n136: \t\tshowRawErrors: value?.showRawErrors ?? DEFAULT_UI_SETTINGS.showRawErrors,\n137: \t\tgoogleGrounding: value?.googleGrounding === \"off\" ? \"off\" : DEFAULT_UI_SETTINGS.googleGrounding,\n138: \t\treasoningLevel: value?.reasoningLevel ?? DEFAULT_UI_SETTINGS.reasoningLevel,\n139: \t\tanimationRenderer: value?.animationRenderer === \"hyperframes\" ? \"hyperframes\" : DEFAULT_UI_SETTINGS.animationRenderer,\n140: \t\tfontFamily:\n141: \t\t\tvalue?.fontFamily === \"space-mono\" || value?.fontFamily === \"roboto\" || value?.fontFamily === \"jetbrains-mono\"\n142: \t\t\t\t? value.fontFamily\n143: \t\t\t\t: DEFAULT_UI_SETTINGS.fontFamily,\n144: \t\tshareLinkMode: normalizeShareLinkMode(value?.shareLinkMode),\n145: \t\talternativeResponseChance: normalizeAlternativeResponseChance(value?.alternativeResponseChance),\n146: \t\tuserProfileImage: typeof value?.userProfileImage === \"string\" && value.userProfileImage.startsWith(\"data:image/\") ? value.userProfileImage : DEFAULT_UI_SETTINGS.userProfileImage,\n147: \t\thiddenProviders: Array.isArray(value?.hiddenProviders) ? value.hiddenProviders : DEFAULT_UI_SETTINGS.hiddenProviders,\n148: \t\trecentModels: Array.isArray(value?.recentModels) ? value.recentModels : DEFAULT_UI_SETTINGS.recentModels,\n149: \t\tcustomModels: Array.isArray(value?.customModels) ? value.customModels : DEFAULT_UI_SETTINGS.customModels,\n150: \t};\n151: }\n152: \n153: export function applyKeatingUiTypography(fontFamily: UiFontFamily) {\n154: \tif (typeof document === \"undefined\") return;\n155: \tconst stacks = FONT_STACKS[fontFamily] ?? FONT_STACKS.roboto;\n156: \tconst root = document.documentElement;\n157: \troot.style.setProperty(\"--font-sans\", stacks.sans);\n158: \troot.style.setProperty(\"--font-serif\", stacks.serif);\n159: \troot.style.setProperty(\"--font-mono\", stacks.mono);\n160: }\n161: \n162: export function addRecentModel(key: string) {\n163: \tconst settings = loadKeatingUiSettings();\n164: \tconst filtered = settings.recentModels.filter((m) => m.key !== key);\n165: \tconst next: KeatingUiSettings = {\n166: \t\t...settings,\n167: \t\trecentModels: [{ key, timestamp: Date.now() }, ...filtered].slice(0, 7),\n168: \t};\n169: \tsaveKeatingUiSettings(next);\n170: \treturn next;\n171: }\n172: \n173: export function getRecentModels(): Array<{ key: string; timestamp: number }> {\n174: \tconst settings = loadKeatingUiSettings();\n175: \treturn [...settings.recentModels].sort((a, b) => b.timestamp - a.timestamp);\n176: }\n177: \n178: export function addCustomModel(model: SavedModel) {\n179: \tconst settings = loadKeatingUiSettings();\n180: \tconst filtered = settings.customModels.filter((m) => m.key !== model.key);\n181: \tconst next: KeatingUiSettings = {\n182: \t\t...settings,\n183: \t\tcustomModels: [...filtered, model],\n184: \t};\n185: \tsaveKeatingUiSettings(next);\n186: \treturn next;\n187: }\n188: \n189: export function removeCustomModel(key: string) {\n190: \tconst settings = loadKeatingUiSettings();\n191: \tconst next: KeatingUiSettings = {\n192: \t\t...settings,\n193: \t\tcustomModels: settings.customModels.filter((m) => m.key !== key),\n194: \t};\n195: \tsaveKeatingUiSettings(next);\n196: \treturn next;\n197: }\n198: \n199: export function toggleProviderVisibility(provider: string, hidden: boolean) {\n200: \tconst settings = loadKeatingUiSettings();\n201: \tconst set = new Set(settings.hiddenProviders);\n202: \tif (hidden) set.add(provider);\n203: \telse set.delete(provider);\n204: \tconst next: KeatingUiSettings = {\n205: \t\t...settings,\n206: \t\thiddenProviders: Array.from(set),\n207: \t};\n208: \tsaveKeatingUiSettings(next);\n209: \treturn next;\n210: }\n211: \n212: export function loadKeatingUiSettings(): KeatingUiSettings {\n213: \tif (typeof localStorage === \"undefined\") return DEFAULT_UI_SETTINGS;\n214: \ttry {\n215: \t\tconst raw = localStorage.getItem(STORAGE_KEY);\n216: \t\tif (!raw) return DEFAULT_UI_SETTINGS;\n217: \t\treturn normalizeSettings(JSON.parse(raw) as Partial<KeatingUiSettings>);\n218: \t} catch (error) {\n219: \t\tconsole.warn(\"Failed to load Keating UI settings:\", error);\n220: \t\treturn DEFAULT_UI_SETTINGS;\n221: \t}\n222: }\n223: \n224: export function saveKeatingUiSettings(next: KeatingUiSettings) {\n225: \tconst normalized = normalizeSettings(next);\n226: \ttry {\n227: \t\tlocalStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));\n228: \t} catch (error) {\n229: \t\tconsole.warn(\"Failed to save Keating UI settings:\", error);\n230: \t}\n231: \twindow.dispatchEvent(new CustomEvent<KeatingUiSettings>(SETTINGS_CHANGED_EVENT, { detail: normalized }));\n232: }\n233: \n234: export function subscribeKeatingUiSettings(callback: (settings: KeatingUiSettings) => void) {\n235: \tconst notify = () => callback(loadKeatingUiSettings());\n236: \tconst onCustom = (event: Event) => {\n237: \t\tcallback((event as CustomEvent<KeatingUiSettings>).detail ?? loadKeatingUiSettings());\n238: \t};\n239: \twindow.addEventListener(SETTINGS_CHANGED_EVENT, onCustom);\n240: \twindow.addEventListener(\"storage\", notify);\n241: \treturn () => {\n242: \t\twindow.removeEventListener(SETTINGS_CHANGED_EVENT, onCustom);\n243: \t\twindow.removeEventListener(\"storage\", notify);\n244: \t};\n245: }\n\n(End of file - total 245 lines)\n</content>",
+          "id": "prt_eb8e189000027UlgsK3tbjt6E7",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e187f40010lNP3cQ87gzvcv"
+        }
+      ]
+    },
+    {
+      "info": {
+        "parentID": "msg_eb8e187f40010lNP3cQ87gzvcv",
+        "role": "assistant",
+        "mode": "plan",
+        "agent": "plan",
+        "path": {
+          "cwd": "/home/diogenes/Projects/keating",
+          "root": "/home/diogenes/Projects/keating"
+        },
+        "cost": 0,
+        "tokens": {
+          "total": 40508,
+          "input": 40294,
+          "output": 214,
+          "reasoning": 0,
+          "cache": {
+            "write": 0,
+            "read": 0
+          }
+        },
+        "modelID": "neuralwatt/qwen3.5-397b-fast",
+        "providerID": "bifrost",
+        "time": {
+          "created": 1781218251171,
+          "completed": 1781218256907
+        },
+        "finish": "tool-calls",
+        "id": "msg_eb8e191a3002Tvg2k0JnAyVsJZ",
+        "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX"
+      },
+      "parts": [
+        {
+          "snapshot": "9921ffca340e7af345f392870c595953c9f59a17",
+          "type": "step-start",
+          "id": "prt_eb8e19ddb001DlUQrzXckEc0rD",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e191a3002Tvg2k0JnAyVsJZ"
+        },
+        {
+          "type": "text",
+          "text": "I'll analyze the current settings structure and explore how they're used in the UI to propose a better organization.\n\n",
+          "time": {
+            "start": 1781218254317,
+            "end": 1781218256723
+          },
+          "id": "prt_eb8e19ded00107qslJfVcAivcy",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e191a3002Tvg2k0JnAyVsJZ"
+        },
+        {
+          "type": "tool",
+          "tool": "read",
+          "callID": "call_23fbff5b9744413bafcc6ba8",
+          "state": {
+            "status": "error",
+            "input": {
+              "filePath": "/home/diogenes/Projects/keating/web/src/components/settings-panel.tsx"
+            },
+            "error": "File not found: /home/diogenes/Projects/keating/web/src/components/settings-panel.tsx",
+            "time": {
+              "start": 1781218256425,
+              "end": 1781218256476
+            }
+          },
+          "id": "prt_eb8e1a609001odxRVrx2wL1oHW",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e191a3002Tvg2k0JnAyVsJZ"
+        },
+        {
+          "type": "tool",
+          "tool": "grep",
+          "callID": "call_bcb213fcbbd9409fb52b4299",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "KeatingUiSettings|ui-settings",
+              "path": "/home/diogenes/Projects/keating/web/src",
+              "include": "*.tsx"
+            },
+            "output": "Found 40 matches\n/home/diogenes/Projects/keating/web/src/components/ProvidersModelsTab.tsx:\n  Line 6: \tloadKeatingUiSettings,\n\n  Line 10: } from \"../keating/ui-settings\";\n\n  Line 76: \tconst [settings, setSettings] = useState(() => loadKeatingUiSettings());\n\n  Line 139: \t\tsetSettings(loadKeatingUiSettings());\n\n  Line 169: \t\tsetSettings(loadKeatingUiSettings());\n\n  Line 400: \t\t\t\t\t\t\t\t\t\tsetSettings(loadKeatingUiSettings());\n\n\n/home/diogenes/Projects/keating/web/src/components/AssistantChatPanel.tsx:\n  Line 65:   loadKeatingUiSettings,\n\n  Line 66:   subscribeKeatingUiSettings,\n\n  Line 67: } from \"../keating/ui-settings\";\n\n  Line 2209:   const [uiSettings, setUiSettings] = useState(() => loadKeatingUiSettings());\n\n  Line 2504:   useEffect(() => subscribeKeatingUiSettings(setUiSettings), []);\n\n\n/home/diogenes/Projects/keating/web/src/components/KeatingUiSettingsTab.tsx:\n  Line 7: \tloadKeatingUiSettings,\n\n  Line 8: \tsaveKeatingUiSettings,\n\n  Line 12: } from \"../keating/ui-settings\";\n\n  Line 32: export function KeatingUiSettingsTab() {\n\n  Line 33: \tconst [settings, setSettings] = useState(() => loadKeatingUiSettings());\n\n  Line 36: \t\tconst next = { ...loadKeatingUiSettings(), ...partial };\n\n  Line 38: \t\tsaveKeatingUiSettings(next);\n\n\n/home/diogenes/Projects/keating/web/src/hooks/useKeatingAgent.tsx:\n  Line 12: import { KeatingUiSettingsTab } from \"../components/KeatingUiSettingsTab\";\n\n  Line 39: import { loadKeatingUiSettings } from \"../keating/ui-settings\";\n\n  Line 292:     const settings = loadKeatingUiSettings();\n\n  Line 384:       thinkingLevel: initialState?.thinkingLevel ?? loadKeatingUiSettings().reasoningLevel,\n\n  Line 592:     const result = await sharedSessionUrl(shared, window.location.origin, loadKeatingUiSettings().shareLinkMode);\n\n  Line 802:         { id: \"interface\", label: \"Interface\", component: <KeatingUiSettingsTab /> },\n\n\n/home/diogenes/Projects/keating/web/src/pages/Blog.tsx:\n  Line 842:       { id: \"ui-settings\", title: \"UI Settings Expansion\" },\n\n  Line 874:         <h3 id=\"ui-settings\" className=\"font-bold mt-4 mb-2\">UI Settings Expansion</h3>\n\n\n/home/diogenes/Projects/keating/web/src/pages/Chat.tsx:\n  Line 28:   loadKeatingUiSettings,\n\n  Line 29:   subscribeKeatingUiSettings,\n\n  Line 30: } from \"../keating/ui-settings\";\n\n  Line 71:   const [uiSettings, setUiSettings] = useState(() => loadKeatingUiSettings());\n\n  Line 108:   useEffect(() => subscribeKeatingUiSettings(setUiSettings), []);\n\n\n/home/diogenes/Projects/keating/web/src/components/ModelSelector.tsx:\n  Line 6: import { addRecentModel, getRecentModels, loadKeatingUiSettings } from \"../keating/ui-settings\";\n\n  Line 77: \t\t\tconst uiSettings = loadKeatingUiSettings();\n\n\n/home/diogenes/Projects/keating/web/src/App.tsx:\n  Line 21:   loadKeatingUiSettings,\n\n  Line 22:   subscribeKeatingUiSettings,\n\n  Line 23: } from \"./keating/ui-settings\";\n\n  Line 103:   const [settings, setSettings] = useState(() => loadKeatingUiSettings());\n\n  Line 109:   useEffect(() => subscribeKeatingUiSettings(setSettings), []);\n\n\n/home/diogenes/Projects/keating/web/src/main-react.tsx:\n  Line 6: import { applyKeatingUiTypography, loadKeatingUiSettings } from \"./keating/ui-settings\";\n\n  Line 15: applyKeatingUiTypography(loadKeatingUiSettings().fontFamily);\n",
+            "metadata": {
+              "matches": 40,
+              "truncated": false
+            },
+            "title": "KeatingUiSettings|ui-settings",
+            "time": {
+              "start": 1781218256454,
+              "end": 1781218256510
+            }
+          },
+          "id": "prt_eb8e1a631001Z1N4cqva2euoAV",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e191a3002Tvg2k0JnAyVsJZ"
+        },
+        {
+          "type": "tool",
+          "tool": "grep",
+          "callID": "call_f88aa02901ec470dbb00f2a3",
+          "state": {
+            "status": "completed",
+            "input": {
+              "pattern": "showToolUi|autoOpenArtifacts|showRawErrors|googleGrounding|reasoningLevel|animationRenderer",
+              "path": "/home/diogenes/Projects/keating/web/src",
+              "include": "*.tsx"
+            },
+            "output": "Found 27 matches\n/home/diogenes/Projects/keating/web/src/components/AssistantChatPanel.tsx:\n  Line 294:   showRawErrors,\n\n  Line 298:   showRawErrors?: boolean;\n\n  Line 348:         showRaw={!!showRawErrors}\n\n  Line 1306:   showRawErrors,\n\n  Line 1314:   showRawErrors?: boolean;\n\n  Line 1379:             showRaw={!!showRawErrors}\n\n  Line 1402: function messagePartComponents(showToolUi: boolean, showRawErrors: boolean) {\n\n  Line 1405:       <StreamingTextPart {...props} showRawErrors={showRawErrors} />\n\n  Line 1414:           showDetails={showToolUi}\n\n  Line 1415:           showRawErrors={showRawErrors}\n\n  Line 2236:       messagePartComponents(uiSettings.showToolUi, uiSettings.showRawErrors),\n\n  Line 2237:     [uiSettings.showToolUi, uiSettings.showRawErrors],\n\n  Line 2628:                   groundingEnabled={uiSettings.googleGrounding === \"auto\"}\n\n\n/home/diogenes/Projects/keating/web/src/components/KeatingUiSettingsTab.tsx:\n  Line 153: \t\t\t\t<Toggle checked={settings.showToolUi} onChange={(checked) => update({ showToolUi: checked })} />\n\n  Line 160: \t\t\t\t<Toggle checked={settings.showRawErrors} onChange={(checked) => update({ showRawErrors: checked })} />\n\n  Line 167: \t\t\t\t<Toggle checked={settings.autoOpenArtifacts} onChange={(checked) => update({ autoOpenArtifacts: checked })} />\n\n  Line 209: \t\t\t\t\t\t\tchecked={settings.animationRenderer === \"manim\"}\n\n  Line 210: \t\t\t\t\t\t\tonChange={() => update({ animationRenderer: \"manim\" })}\n\n  Line 223: \t\t\t\t\t\t\tchecked={settings.animationRenderer === \"hyperframes\"}\n\n  Line 224: \t\t\t\t\t\t\tonChange={() => update({ animationRenderer: \"hyperframes\" })}\n\n  Line 240: \t\t\t\t\tchecked={settings.googleGrounding === \"auto\"}\n\n  Line 241: \t\t\t\t\tonChange={(checked) => update({ googleGrounding: checked ? \"auto\" : \"off\" })}\n\n  Line 260: \t\t\t\t\t\t\t\tchecked={settings.reasoningLevel === level.value}\n\n  Line 261: \t\t\t\t\t\t\t\tonChange={() => update({ reasoningLevel: level.value })}\n\n\n/home/diogenes/Projects/keating/web/src/hooks/useKeatingAgent.tsx:\n  Line 384:       thinkingLevel: initialState?.thinkingLevel ?? loadKeatingUiSettings().reasoningLevel,\n\n\n/home/diogenes/Projects/keating/web/src/pages/Chat.tsx:\n  Line 130:       if (uiSettings.autoOpenArtifacts) setArtifactBrowserOpen(true);\n\n  Line 145:   }, [uiSettings.autoOpenArtifacts]);\n",
+            "metadata": {
+              "matches": 27,
+              "truncated": false
+            },
+            "title": "showToolUi|autoOpenArtifacts|showRawErrors|googleGrounding|reasoningLevel|animationRenderer",
+            "time": {
+              "start": 1781218256551,
+              "end": 1781218256575
+            }
+          },
+          "id": "prt_eb8e1a64d001k4I2LoIuqBfmf4",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e191a3002Tvg2k0JnAyVsJZ"
+        },
+        {
+          "reason": "tool-calls",
+          "snapshot": "9921ffca340e7af345f392870c595953c9f59a17",
+          "type": "step-finish",
+          "tokens": {
+            "total": 40508,
+            "input": 40294,
+            "output": 214,
+            "reasoning": 0,
+            "cache": {
+              "write": 0,
+              "read": 0
+            }
+          },
+          "cost": 0,
+          "id": "prt_eb8e1a7bd001rmqjmdrWGLGdxP",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e191a3002Tvg2k0JnAyVsJZ"
+        }
+      ]
+    },
+    {
+      "info": {
+        "parentID": "msg_eb8e187f40010lNP3cQ87gzvcv",
+        "role": "assistant",
+        "mode": "plan",
+        "agent": "plan",
+        "path": {
+          "cwd": "/home/diogenes/Projects/keating",
+          "root": "/home/diogenes/Projects/keating"
+        },
+        "cost": 0,
+        "tokens": {
+          "total": 42333,
+          "input": 2117,
+          "output": 88,
+          "reasoning": 0,
+          "cache": {
+            "write": 0,
+            "read": 40128
+          }
+        },
+        "modelID": "neuralwatt/qwen3.5-397b-fast",
+        "providerID": "bifrost",
+        "time": {
+          "created": 1781218256918,
+          "completed": 1781218259377
+        },
+        "finish": "tool-calls",
+        "id": "msg_eb8e1a815002QuwSCkkpUYRq35",
+        "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX"
+      },
+      "parts": [
+        {
+          "snapshot": "9921ffca340e7af345f392870c595953c9f59a17",
+          "type": "step-start",
+          "id": "prt_eb8e1afc2001DvsAIudu4rUacC",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e1a815002QuwSCkkpUYRq35"
+        },
+        {
+          "type": "tool",
+          "tool": "read",
+          "callID": "call_1509d537a06f43df9e63e362",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/home/diogenes/Projects/keating/web/src/components/KeatingUiSettingsTab.tsx"
+            },
+            "output": "<path>/home/diogenes/Projects/keating/web/src/components/KeatingUiSettingsTab.tsx</path>\n<type>file</type>\n<content>\n1: import { useCallback, useState } from \"react\";\n2: import { Toggle } from \"./Toggle\";\n3: import { SettingRow } from \"./SettingRow\";\n4: import {\n5: \tFONT_FAMILY_OPTIONS,\n6: \tSHARE_LINK_MODE_OPTIONS,\n7: \tloadKeatingUiSettings,\n8: \tsaveKeatingUiSettings,\n9: \ttype ReasoningLevel,\n10: \ttype ShareLinkMode,\n11: \ttype UiFontFamily,\n12: } from \"../keating/ui-settings\";\n13: \n14: const REASONING_LEVELS: { value: ReasoningLevel; label: string; description: string }[] = [\n15: \t{ value: \"off\", label: \"Off\", description: \"Fastest responses, no reasoning tokens\" },\n16: \t{ value: \"minimal\", label: \"Minimal\", description: \"Brief internal checks\" },\n17: \t{ value: \"low\", label: \"Low\", description: \"Light reasoning for simple tasks\" },\n18: \t{ value: \"medium\", label: \"Medium\", description: \"Balanced depth and speed\" },\n19: \t{ value: \"high\", label: \"High\", description: \"Deeper analysis for complex questions\" },\n20: \t{ value: \"xhigh\", label: \"Maximum\", description: \"Most thorough reasoning (select models only)\" },\n21: ];\n22: \n23: function readImageAsDataUrl(file: File): Promise<string> {\n24: \treturn new Promise((resolve, reject) => {\n25: \t\tconst reader = new FileReader();\n26: \t\treader.onload = () => resolve(String(reader.result ?? \"\"));\n27: \t\treader.onerror = () => reject(reader.error ?? new Error(`Could not read ${file.name}`));\n28: \t\treader.readAsDataURL(file);\n29: \t});\n30: }\n31: \n32: export function KeatingUiSettingsTab() {\n33: \tconst [settings, setSettings] = useState(() => loadKeatingUiSettings());\n34: \n35: \tconst update = useCallback((partial: Partial<typeof settings>) => {\n36: \t\tconst next = { ...loadKeatingUiSettings(), ...partial };\n37: \t\tsetSettings(next);\n38: \t\tsaveKeatingUiSettings(next);\n39: \t}, []);\n40: \n41: \tconst updateProfileImage = useCallback(async (file: File | undefined) => {\n42: \t\tif (!file) return;\n43: \t\tif (!file.type.startsWith(\"image/\")) return;\n44: \t\tconst image = await readImageAsDataUrl(file);\n45: \t\tupdate({ userProfileImage: image });\n46: \t}, [update]);\n47: \n48: \treturn (\n49: \t\t<div className=\"flex flex-col gap-6\">\n50: \t\t\t<div>\n51: \t\t\t\t<h3 className=\"text-sm font-semibold text-foreground mb-2\">Chat Interface</h3>\n52: \t\t\t\t<p className=\"text-sm text-muted-foreground\">\n53: \t\t\t\t\tControl how much internal agent activity appears in the conversation.\n54: \t\t\t\t</p>\n55: \t\t\t</div>\n56: \n57: \t\t\t<div className=\"flex flex-col gap-4 rounded-lg border border-border p-4 sm:flex-row sm:items-center sm:justify-between\">\n58: \t\t\t\t<div className=\"flex min-w-0 items-center gap-3\">\n59: \t\t\t\t\t<div className=\"flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-muted text-xs text-muted-foreground\">\n60: \t\t\t\t\t\t{settings.userProfileImage ? (\n61: \t\t\t\t\t\t\t<img\n62: \t\t\t\t\t\t\t\tsrc={settings.userProfileImage}\n63: \t\t\t\t\t\t\t\talt=\"Your profile\"\n64: \t\t\t\t\t\t\t\tclassName=\"h-full w-full object-cover\"\n65: \t\t\t\t\t\t\t/>\n66: \t\t\t\t\t\t) : (\n67: \t\t\t\t\t\t\t<span>YOU</span>\n68: \t\t\t\t\t\t)}\n69: \t\t\t\t\t</div>\n70: \t\t\t\t\t<div className=\"min-w-0\">\n71: \t\t\t\t\t\t<div className=\"text-sm font-medium text-foreground\">Your profile image</div>\n72: \t\t\t\t\t\t<p className=\"mt-1 text-sm text-muted-foreground\">\n73: \t\t\t\t\t\t\tShown beside your chat messages on this device.\n74: \t\t\t\t\t\t</p>\n75: \t\t\t\t\t</div>\n76: \t\t\t\t</div>\n77: \t\t\t\t<div className=\"flex shrink-0 flex-wrap items-center gap-2\">\n78: \t\t\t\t\t<label className=\"inline-flex h-9 cursor-pointer items-center justify-center rounded-md border border-border px-3 text-xs font-medium text-foreground hover:bg-accent hover:text-accent-foreground\">\n79: \t\t\t\t\t\tUpload\n80: \t\t\t\t\t\t<input\n81: \t\t\t\t\t\t\ttype=\"file\"\n82: \t\t\t\t\t\t\taccept=\"image/*\"\n83: \t\t\t\t\t\t\tclassName=\"sr-only\"\n84: \t\t\t\t\t\t\tonChange={(event) => {\n85: \t\t\t\t\t\t\t\tvoid updateProfileImage(event.target.files?.[0]);\n86: \t\t\t\t\t\t\t\tevent.currentTarget.value = \"\";\n87: \t\t\t\t\t\t\t}}\n88: \t\t\t\t\t\t/>\n89: \t\t\t\t\t</label>\n90: \t\t\t\t\t<button\n91: \t\t\t\t\t\ttype=\"button\"\n92: \t\t\t\t\t\tclassName=\"dialog-compact-button inline-flex h-9 items-center justify-center rounded-md border border-border px-3 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50\"\n93: \t\t\t\t\t\tdisabled={!settings.userProfileImage}\n94: \t\t\t\t\t\tonClick={() => update({ userProfileImage: null })}\n95: \t\t\t\t\t>\n96: \t\t\t\t\t\tRemove\n97: \t\t\t\t\t</button>\n98: \t\t\t\t</div>\n99: \t\t\t</div>\n100: \n101: \t\t\t<div className=\"flex flex-col gap-3 rounded-lg border border-border p-4 sm:flex-row sm:items-start sm:justify-between sm:gap-4\">\n102: \t\t\t\t<div className=\"min-w-0\">\n103: \t\t\t\t\t<div className=\"text-sm font-medium text-foreground\">Font family</div>\n104: \t\t\t\t\t<p className=\"mt-1 text-sm text-muted-foreground\">\n105: \t\t\t\t\t\tChoose the default typeface for the app interface.\n106: \t\t\t\t\t</p>\n107: \t\t\t\t</div>\n108: \t\t\t\t<select\n109: \t\t\t\t\tclassName=\"w-full sm:w-auto sm:min-w-44 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground\"\n110: \t\t\t\t\tvalue={settings.fontFamily}\n111: \t\t\t\t\tonChange={(e) => update({ fontFamily: e.target.value as UiFontFamily })}\n112: \t\t\t\t>\n113: \t\t\t\t\t{FONT_FAMILY_OPTIONS.map((option) => (\n114: \t\t\t\t\t\t<option key={option.value} value={option.value}>\n115: \t\t\t\t\t\t\t{option.label}\n116: \t\t\t\t\t\t</option>\n117: \t\t\t\t\t))}\n118: \t\t\t\t</select>\n119: \t\t\t</div>\n120: \n121: \t\t\t<div>\n122: \t\t\t\t<h3 className=\"text-sm font-semibold text-foreground mb-2\">Share Links</h3>\n123: \t\t\t\t<p className=\"text-sm text-muted-foreground mb-3\">\n124: \t\t\t\t\tChoose how copied session links carry the transcript.\n125: \t\t\t\t</p>\n126: \t\t\t\t<div className=\"flex flex-col gap-2\">\n127: \t\t\t\t\t{SHARE_LINK_MODE_OPTIONS.map((option) => (\n128: \t\t\t\t\t\t<label\n129: \t\t\t\t\t\t\tkey={option.value}\n130: \t\t\t\t\t\t\tclassName=\"flex items-center gap-3 rounded-md border border-border px-3 py-2 cursor-pointer hover:bg-accent/50 transition-colors\"\n131: \t\t\t\t\t\t>\n132: \t\t\t\t\t\t\t<input\n133: \t\t\t\t\t\t\t\ttype=\"radio\"\n134: \t\t\t\t\t\t\t\tname=\"share-link-mode\"\n135: \t\t\t\t\t\t\t\tvalue={option.value}\n136: \t\t\t\t\t\t\t\tchecked={settings.shareLinkMode === option.value}\n137: \t\t\t\t\t\t\t\tonChange={() => update({ shareLinkMode: option.value as ShareLinkMode })}\n138: \t\t\t\t\t\t\t\tclassName=\"shrink-0\"\n139: \t\t\t\t\t\t\t/>\n140: \t\t\t\t\t\t\t<div className=\"min-w-0\">\n141: \t\t\t\t\t\t\t\t<div className=\"text-sm font-medium text-foreground\">{option.label}</div>\n142: \t\t\t\t\t\t\t\t<div className=\"text-xs text-muted-foreground\">{option.description}</div>\n143: \t\t\t\t\t\t\t</div>\n144: \t\t\t\t\t\t</label>\n145: \t\t\t\t\t))}\n146: \t\t\t\t</div>\n147: \t\t\t</div>\n148: \n149: \t\t\t<SettingRow\n150: \t\t\t\ttitle=\"Show tool details\"\n151: \t\t\t\tdescription=\"Show tool arguments and results inside chat messages. Compact status remains visible when this is off.\"\n152: \t\t\t>\n153: \t\t\t\t<Toggle checked={settings.showToolUi} onChange={(checked) => update({ showToolUi: checked })} />\n154: \t\t\t</SettingRow>\n155: \n156: \t\t\t<SettingRow\n157: \t\t\t\ttitle=\"Show raw error details\"\n158: \t\t\t\tdescription=\"Display full error messages and response bodies in tool failures. When off, only a short summary is shown.\"\n159: \t\t\t>\n160: \t\t\t\t<Toggle checked={settings.showRawErrors} onChange={(checked) => update({ showRawErrors: checked })} />\n161: \t\t\t</SettingRow>\n162: \n163: \t\t\t<SettingRow\n164: \t\t\t\ttitle=\"Open artifacts automatically\"\n165: \t\t\t\tdescription=\"Open the artifact side panel when Keating creates a plan, map, animation, benchmark, or evolution.\"\n166: \t\t\t>\n167: \t\t\t\t<Toggle checked={settings.autoOpenArtifacts} onChange={(checked) => update({ autoOpenArtifacts: checked })} />\n168: \t\t\t</SettingRow>\n169: \n170: \t\t\t<SettingRow\n171: \t\t\t\ttitle=\"Alternative response chance\"\n172: \t\t\t\tdescription=\"Occasionally generate a background forked answer to the same prompt for DPO preference data.\"\n173: \t\t\t>\n174: \t\t\t\t<div className=\"flex min-w-[12rem] items-center gap-3\">\n175: \t\t\t\t\t<input\n176: \t\t\t\t\t\ttype=\"range\"\n177: \t\t\t\t\t\tmin={0}\n178: \t\t\t\t\t\tmax={100}\n179: \t\t\t\t\t\tstep={1}\n180: \t\t\t\t\t\tclassName=\"w-36\"\n181: \t\t\t\t\t\tvalue={Math.round(settings.alternativeResponseChance * 100)}\n182: \t\t\t\t\t\tonChange={(event) => update({ alternativeResponseChance: Math.max(0, Math.min(1, Number(event.target.value) / 100)) })}\n183: \t\t\t\t\t/>\n184: \t\t\t\t\t<input\n185: \t\t\t\t\t\ttype=\"number\"\n186: \t\t\t\t\t\tmin={0}\n187: \t\t\t\t\t\tmax={100}\n188: \t\t\t\t\t\tstep={1}\n189: \t\t\t\t\t\tclassName=\"h-9 w-16 rounded-md border border-border bg-background px-2 text-sm text-foreground\"\n190: \t\t\t\t\t\tvalue={Math.round(settings.alternativeResponseChance * 100)}\n191: \t\t\t\t\t\tonChange={(event) => update({ alternativeResponseChance: Math.max(0, Math.min(1, Number(event.target.value) / 100)) })}\n192: \t\t\t\t\t\taria-label=\"Alternative response chance percent\"\n193: \t\t\t\t\t/>\n194: \t\t\t\t\t<span className=\"text-sm text-muted-foreground\">%</span>\n195: \t\t\t\t</div>\n196: \t\t\t</SettingRow>\n197: \n198: \t\t\t<div>\n199: \t\t\t\t<h3 className=\"text-sm font-semibold text-foreground mb-2\">Animation Renderer</h3>\n200: \t\t\t\t<p className=\"text-sm text-muted-foreground mb-3\">\n201: \t\t\t\t\tChoose the source format Keating uses when creating browser animation artifacts.\n202: \t\t\t\t</p>\n203: \t\t\t\t<div className=\"flex flex-col gap-2\">\n204: \t\t\t\t\t<label className=\"flex items-center gap-3 rounded-md border border-border px-3 py-2 cursor-pointer hover:bg-accent/50 transition-colors\">\n205: \t\t\t\t\t\t<input\n206: \t\t\t\t\t\t\ttype=\"radio\"\n207: \t\t\t\t\t\t\tname=\"animation-renderer\"\n208: \t\t\t\t\t\t\tvalue=\"manim\"\n209: \t\t\t\t\t\t\tchecked={settings.animationRenderer === \"manim\"}\n210: \t\t\t\t\t\t\tonChange={() => update({ animationRenderer: \"manim\" })}\n211: \t\t\t\t\t\t\tclassName=\"shrink-0\"\n212: \t\t\t\t\t\t/>\n213: \t\t\t\t\t\t<div className=\"min-w-0\">\n214: \t\t\t\t\t\t\t<div className=\"text-sm font-medium text-foreground\">Manim-web</div>\n215: \t\t\t\t\t\t\t<div className=\"text-xs text-muted-foreground\">Default browser animation source.</div>\n216: \t\t\t\t\t\t</div>\n217: \t\t\t\t\t</label>\n218: \t\t\t\t\t<label className=\"flex items-center gap-3 rounded-md border border-border px-3 py-2 cursor-pointer hover:bg-accent/50 transition-colors\">\n219: \t\t\t\t\t\t<input\n220: \t\t\t\t\t\t\ttype=\"radio\"\n221: \t\t\t\t\t\t\tname=\"animation-renderer\"\n222: \t\t\t\t\t\t\tvalue=\"hyperframes\"\n223: \t\t\t\t\t\t\tchecked={settings.animationRenderer === \"hyperframes\"}\n224: \t\t\t\t\t\t\tonChange={() => update({ animationRenderer: \"hyperframes\" })}\n225: \t\t\t\t\t\t\tclassName=\"shrink-0\"\n226: \t\t\t\t\t\t/>\n227: \t\t\t\t\t\t<div className=\"min-w-0\">\n228: \t\t\t\t\t\t\t<div className=\"text-sm font-medium text-foreground\">Hyperframes</div>\n229: \t\t\t\t\t\t\t<div className=\"text-xs text-muted-foreground\">HTML composition with timed clips and a GSAP timeline.</div>\n230: \t\t\t\t\t\t</div>\n231: \t\t\t\t\t</label>\n232: \t\t\t\t</div>\n233: \t\t\t</div>\n234: \n235: \t\t\t<SettingRow\n236: \t\t\t\ttitle=\"Google web grounding\"\n237: \t\t\t\tdescription=\"Automatically enable Gemini Google Search grounding when a Google key is available. This lets Google-backed chats use current web results and citations.\"\n238: \t\t\t>\n239: \t\t\t\t<Toggle\n240: \t\t\t\t\tchecked={settings.googleGrounding === \"auto\"}\n241: \t\t\t\t\tonChange={(checked) => update({ googleGrounding: checked ? \"auto\" : \"off\" })}\n242: \t\t\t\t/>\n243: \t\t\t</SettingRow>\n244: \n245: \t\t\t<div>\n246: \t\t\t\t<h3 className=\"text-sm font-semibold text-foreground mb-2\">Reasoning Level</h3>\n247: \t\t\t\t<p className=\"text-sm text-muted-foreground mb-3\">\n248: \t\t\t\t\tSet how much the model thinks before responding. Higher levels produce more thorough answers but take longer.\n249: \t\t\t\t</p>\n250: \t\t\t\t<div className=\"flex flex-col gap-2\">\n251: \t\t\t\t\t{REASONING_LEVELS.map((level) => (\n252: \t\t\t\t\t\t<label\n253: \t\t\t\t\t\t\tkey={level.value}\n254: \t\t\t\t\t\t\tclassName=\"flex items-center gap-3 rounded-md border border-border px-3 py-2 cursor-pointer hover:bg-accent/50 transition-colors\"\n255: \t\t\t\t\t\t>\n256: \t\t\t\t\t\t\t<input\n257: \t\t\t\t\t\t\t\ttype=\"radio\"\n258: \t\t\t\t\t\t\t\tname=\"reasoning-level\"\n259: \t\t\t\t\t\t\t\tvalue={level.value}\n260: \t\t\t\t\t\t\t\tchecked={settings.reasoningLevel === level.value}\n261: \t\t\t\t\t\t\t\tonChange={() => update({ reasoningLevel: level.value })}\n262: \t\t\t\t\t\t\t\tclassName=\"shrink-0\"\n263: \t\t\t\t\t\t\t/>\n264: \t\t\t\t\t\t\t<div className=\"min-w-0\">\n265: \t\t\t\t\t\t\t\t<div className=\"text-sm font-medium text-foreground\">{level.label}</div>\n266: \t\t\t\t\t\t\t\t<div className=\"text-xs text-muted-foreground\">{level.description}</div>\n267: \t\t\t\t\t\t\t</div>\n268: \t\t\t\t\t\t</label>\n269: \t\t\t\t\t))}\n270: \t\t\t\t</div>\n271: \t\t\t</div>\n272: \n273: \t\t</div>\n274: \t);\n275: }\n\n(End of file - total 275 lines)\n</content>",
+            "metadata": {
+              "preview": "import { useCallback, useState } from \"react\";\nimport { Toggle } from \"./Toggle\";\nimport { SettingRow } from \"./SettingRow\";\nimport {\n\tFONT_FAMILY_OPTIONS,\n\tSHARE_LINK_MODE_OPTIONS,\n\tloadKeatingUiSettings,\n\tsaveKeatingUiSettings,\n\ttype ReasoningLevel,\n\ttype ShareLinkMode,\n\ttype UiFontFamily,\n} from \"../keating/ui-settings\";\n\nconst REASONING_LEVELS: { value: ReasoningLevel; label: string; description: string }[] = [\n\t{ value: \"off\", label: \"Off\", description: \"Fastest responses, no reasoning tokens\" },\n\t{ value: \"minimal\", label: \"Minimal\", description: \"Brief internal checks\" },\n\t{ value: \"low\", label: \"Low\", description: \"Light reasoning for simple tasks\" },\n\t{ value: \"medium\", label: \"Medium\", description: \"Balanced depth and speed\" },\n\t{ value: \"high\", label: \"High\", description: \"Deeper analysis for complex questions\" },\n\t{ value: \"xhigh\", label: \"Maximum\", description: \"Most thorough reasoning (select models only)\" },",
+              "truncated": false,
+              "loaded": []
+            },
+            "title": "web/src/components/KeatingUiSettingsTab.tsx",
+            "time": {
+              "start": 1781218258900,
+              "end": 1781218258987
+            }
+          },
+          "id": "prt_eb8e1afc70011vrSe23hRnCUbq",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e1a815002QuwSCkkpUYRq35"
+        },
+        {
+          "type": "tool",
+          "tool": "read",
+          "callID": "call_7410a169365442f2900b9dd0",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/home/diogenes/Projects/keating/web/src/components/ProvidersModelsTab.tsx"
+            },
+            "output": "<path>/home/diogenes/Projects/keating/web/src/components/ProvidersModelsTab.tsx</path>\n<type>file</type>\n<content>\n1: import { useCallback, useEffect, useState } from \"react\";\n2: import { Trash2, X } from \"lucide-react\";\n3: import { getProviders } from \"@earendil-works/pi-ai\";\n4: import { getAppStorage, type CustomProvider } from \"@earendil-works/pi-web-ui\";\n5: import {\n6: \tloadKeatingUiSettings,\n7: \ttoggleProviderVisibility,\n8: \taddCustomModel,\n9: \tremoveCustomModel,\n10: } from \"../keating/ui-settings\";\n11: import { handleTutorialLinkClick, tutorialApiKeyHref } from \"../lib/tutorial-links\";\n12: import { SettingsSectionNav } from \"./SettingsSectionNav\";\n13: import { Toggle } from \"./Toggle\";\n14: import {\n15: \tcompleteOAuthFromInput,\n16: \tinitiateOAuth,\n17: \tproviderToOAuthId,\n18: \tloadOAuthCredentials,\n19: \tdeleteOAuthCredentials,\n20: \ttype OAuthProviderId,\n21: } from \"../keating/oauth\";\n22: \n23: export type KeatingCustomProviderType =\n24: \t| \"ollama\"\n25: \t| \"llama.cpp\"\n26: \t| \"vllm\"\n27: \t| \"lmstudio\"\n28: \t| \"openai-completions\"\n29: \t| \"openai-responses\"\n30: \t| \"anthropic-messages\"\n31: \t| \"synthetic\";\n32: \n33: type KeatingCustomProvider = Omit<CustomProvider, \"type\"> & {\n34: \ttype: KeatingCustomProviderType;\n35: };\n36: \n37: const AUTO_DISCOVERY_TYPES = new Set<KeatingCustomProviderType>([\n38: \t\"ollama\", \"llama.cpp\", \"vllm\", \"lmstudio\",\n39: ]);\n40: \n41: const PROVIDER_PRIORITY = [\"openai\", \"anthropic\", \"google\"];\n42: \n43: function sortProvidersByPriority(list: string[]): string[] {\n44: \tconst rank = (name: string) => {\n45: \t\tconst idx = PROVIDER_PRIORITY.indexOf(name);\n46: \t\treturn idx === -1 ? PROVIDER_PRIORITY.length : idx;\n47: \t};\n48: \treturn [...list].sort((a, b) => {\n49: \t\tconst ra = rank(a);\n50: \t\tconst rb = rank(b);\n51: \t\tif (ra !== rb) return ra - rb;\n52: \t\treturn a.localeCompare(b);\n53: \t});\n54: }\n55: \n56: const PROVIDER_TYPE_OPTIONS = [\n57: \t{ value: \"ollama\", label: \"Ollama\" },\n58: \t{ value: \"llama.cpp\", label: \"llama.cpp\" },\n59: \t{ value: \"vllm\", label: \"vLLM\" },\n60: \t{ value: \"lmstudio\", label: \"LM Studio\" },\n61: \t{ value: \"openai-completions\", label: \"OpenAI Completions Compatible\" },\n62: \t{ value: \"openai-responses\", label: \"OpenAI Responses Compatible\" },\n63: \t{ value: \"anthropic-messages\", label: \"Anthropic Messages Compatible\" },\n64: \t{ value: \"synthetic\", label: \"Synthetic (OpenAI Compatible)\" },\n65: ];\n66: \n67: const ADD_MODEL_APIS = [\n68: \t{ value: \"openai-completions\", label: \"OpenAI Completions\" },\n69: \t{ value: \"openai-responses\", label: \"OpenAI Responses\" },\n70: \t{ value: \"anthropic-messages\", label: \"Anthropic Messages\" },\n71: \t{ value: \"google\", label: \"Google\" },\n72: ];\n73: \n74: export function ProvidersModelsTab() {\n75: \tconst [customProviders, setCustomProviders] = useState<KeatingCustomProvider[]>([]);\n76: \tconst [settings, setSettings] = useState(() => loadKeatingUiSettings());\n77: \tconst [showAddModel, setShowAddModel] = useState(false);\n78: \tconst [providerDialog, setProviderDialog] = useState<{ open: boolean; provider?: KeatingCustomProvider; type?: KeatingCustomProviderType }>({ open: false });\n79: \tconst [modelError, setModelError] = useState(\"\");\n80: \tconst [providerError, setProviderError] = useState(\"\");\n81: \tconst [modelForm, setModelForm] = useState({\n82: \t\tname: \"\",\n83: \t\tid: \"\",\n84: \t\tprovider: \"openai\",\n85: \t\tapi: \"openai-completions\",\n86: \t\tbaseUrl: \"\",\n87: \t\treasoning: false,\n88: \t\tvision: false,\n89: \t});\n90: \n91: \tconst [providerForm, setProviderForm] = useState({\n92: \t\tname: \"\",\n93: \t\ttype: \"openai-completions\" as KeatingCustomProviderType,\n94: \t\tbaseUrl: \"\",\n95: \t\tapiKey: \"\",\n96: \t});\n97: \n98: \tuseEffect(() => {\n99: \t\tloadCustomProviders().then(setCustomProviders);\n100: \t}, [providerDialog.open]);\n101: \n102: \tuseEffect(() => {\n103: \t\tsetProviderError(\"\");\n104: \t\tif (!providerDialog.open) {\n105: \t\t\tsetProviderForm({ name: \"\", type: \"openai-completions\", baseUrl: \"\", apiKey: \"\" });\n106: \t\t\treturn;\n107: \t\t}\n108: \t\tif (providerDialog.provider) {\n109: \t\t\t// Also fetch apiKey from providerKeys storage in case it was stored separately\n110: \t\t\tconst storage = getAppStorage();\n111: \t\t\tlet apiKey = providerDialog.provider.apiKey ?? \"\";\n112: \t\t\tstorage.providerKeys.get(providerDialog.provider.name).then((key) => {\n113: \t\t\t\tif (key) {\n114: \t\t\t\t\tsetProviderForm((prev) => ({ ...prev, apiKey: key }));\n115: \t\t\t\t}\n116: \t\t\t}).catch(() => {});\n117: \t\t\tsetProviderForm({\n118: \t\t\t\tname: providerDialog.provider.name,\n119: \t\t\t\ttype: providerDialog.provider.type,\n120: \t\t\t\tbaseUrl: providerDialog.provider.baseUrl,\n121: \t\t\t\tapiKey,\n122: \t\t\t});\n123: \t\t} else if (providerDialog.type) {\n124: \t\t\tconst defaults: Record<KeatingCustomProviderType, string> = {\n125: \t\t\t\tollama: \"http://localhost:11434\",\n126: \t\t\t\t\"llama.cpp\": \"http://localhost:8080\",\n127: \t\t\t\tvllm: \"http://localhost:8000\",\n128: \t\t\t\tlmstudio: \"http://localhost:1234\",\n129: \t\t\t\t\"openai-completions\": \"\",\n130: \t\t\t\t\"openai-responses\": \"\",\n131: \t\t\t\t\"anthropic-messages\": \"\",\n132: \t\t\t\tsynthetic: \"https://api.synthetic.new/openai/v1\",\n133: \t\t\t};\n134: \t\t\tsetProviderForm({ name: \"\", type: providerDialog.type, baseUrl: defaults[providerDialog.type] || \"\", apiKey: \"\" });\n135: \t\t}\n136: \t}, [providerDialog.provider, providerDialog.type]);\n137: \n138: \tconst refresh = useCallback(() => {\n139: \t\tsetSettings(loadKeatingUiSettings());\n140: \t}, []);\n141: \n142: \tconst providers = sortProvidersByPriority(getProviders());\n143: \n144: \tconst handleToggleProvider = (provider: string, hidden: boolean) => {\n145: \t\ttoggleProviderVisibility(provider, hidden);\n146: \t\trefresh();\n147: \t};\n148: \n149: \tconst handleSaveModel = () => {\n150: \t\tsetModelError(\"\");\n151: \t\tconst name = modelForm.name.trim();\n152: \t\tconst id = modelForm.id.trim();\n153: \t\tconst provider = modelForm.provider.trim();\n154: \t\tif (!name || !id || !provider) {\n155: \t\t\tsetModelError(\"Name, ID, and Provider are required\");\n156: \t\t\treturn;\n157: \t\t}\n158: \t\tconst key = `${provider}::${modelForm.api}::${id}`;\n159: \t\taddCustomModel({\n160: \t\t\tkey,\n161: \t\t\tid,\n162: \t\t\tname,\n163: \t\t\tprovider,\n164: \t\t\tapi: modelForm.api,\n165: \t\t\tbaseUrl: modelForm.baseUrl.trim() || undefined,\n166: \t\t\treasoning: modelForm.reasoning,\n167: \t\t\tvision: modelForm.vision,\n168: \t\t});\n169: \t\tsetSettings(loadKeatingUiSettings());\n170: \t\tsetShowAddModel(false);\n171: \t\tsetModelForm({ name: \"\", id: \"\", provider: \"openai\", api: \"openai-completions\", baseUrl: \"\", reasoning: false, vision: false });\n172: \t};\n173: \n174: \tconst handleSaveProvider = async () => {\n175: \t\tsetProviderError(\"\");\n176: \t\tif (!providerForm.name.trim() || !providerForm.baseUrl.trim()) {\n177: \t\t\tsetProviderError(\"Name and Base URL are required\");\n178: \t\t\treturn;\n179: \t\t}\n180: \t\tconst isEdit = !!providerDialog.provider;\n181: \t\ttry {\n182: \t\t\tconst storage = getAppStorage();\n183: \t\t\tconst providerId = providerDialog.provider?.id ?? crypto.randomUUID();\n184: \t\t\tconst provider: KeatingCustomProvider = {\n185: \t\t\t\tid: providerId,\n186: \t\t\t\tname: providerForm.name.trim(),\n187: \t\t\t\ttype: providerForm.type,\n188: \t\t\t\tbaseUrl: providerForm.baseUrl.trim(),\n189: \t\t\t\tapiKey: providerForm.apiKey.trim() || undefined,\n190: \t\t\t\tmodels: providerDialog.provider?.models ?? [],\n191: \t\t\t};\n192: \t\t\tawait storage.customProviders.set(provider as any);\n193: \t\t\tif (providerForm.apiKey.trim()) {\n194: \t\t\t\tawait storage.providerKeys.set(provider.name, providerForm.apiKey.trim());\n195: \t\t\t}\n196: \t\t\tawait loadCustomProviders().then(setCustomProviders);\n197: \t\t\tsetProviderDialog({ open: false });\n198: \t\t\tsetProviderForm({ name: \"\", type: \"openai-completions\", baseUrl: \"\", apiKey: \"\" });\n199: \t\t} catch (error) {\n200: \t\t\tconsole.error(\"Failed to save provider:\", error);\n201: \t\t\tsetProviderError(isEdit ? \"Failed to update provider\" : \"Failed to save provider\");\n202: \t\t}\n203: \t};\n204: \n205: \tconst handleDeleteProvider = async (provider: KeatingCustomProvider) => {\n206: \t\tif (!confirm(\"Are you sure you want to delete this provider?\")) return;\n207: \t\ttry {\n208: \t\t\tconst storage = getAppStorage();\n209: \t\t\tawait storage.customProviders.delete(provider.id);\n210: \t\t\tawait storage.providerKeys.delete(provider.name);\n211: \t\t\tawait loadCustomProviders().then(setCustomProviders);\n212: \t\t} catch (error) {\n213: \t\t\tconsole.error(\"Failed to delete provider:\", error);\n214: \t\t}\n215: \t};\n216: \n217: \tconst openAddProvider = (type: KeatingCustomProviderType) => {\n218: \t\tsetProviderDialog({ open: true, type });\n219: \t};\n220: \n221: \treturn (\n222: \t\t<div className=\"flex flex-col gap-8\">\n223: \t\t\t<SettingsSectionNav\n224: \t\t\t\tsections={[\n225: \t\t\t\t\t{ id: \"cloud-providers\", label: \"Cloud\" },\n226: \t\t\t\t\t{ id: \"provider-visibility\", label: \"Visibility\" },\n227: \t\t\t\t\t{ id: \"my-models\", label: \"My Models\" },\n228: \t\t\t\t\t{ id: \"custom-providers\", label: \"Custom Providers\" },\n229: \t\t\t\t]}\n230: \t\t\t/>\n231: \n232: \t\t\t{/* Cloud Provider Keys */}\n233: \t\t\t<div id=\"settings-section-cloud-providers\" className=\"flex flex-col gap-4 scroll-mt-20\">\n234: \t\t\t\t<div>\n235: \t\t\t\t\t<h3 className=\"text-sm font-semibold text-foreground mb-2\">Cloud Providers</h3>\n236: \t\t\t\t\t<p className=\"text-sm text-muted-foreground\">\n237: \t\t\t\t\t\tCloud LLM providers with predefined models. API keys are stored locally in your browser.\n238: \t\t\t\t\t</p>\n239: \t\t\t\t</div>\n240: \t\t\t\t<div className=\"flex flex-col gap-3\">\n241: \t\t\t\t\t<OAuthProviderKeys\n242: \t\t\t\t\t\tproviders={providers.filter((p) => !settings.hiddenProviders.includes(p))}\n243: \t\t\t\t\t/>\n244: \t\t\t\t</div>\n245: \t\t\t</div>\n246: \n247: \t\t\t<div className=\"border-t border-border\" />\n248: \n249: \t\t\t{/* Provider Visibility */}\n250: \t\t\t<div id=\"settings-section-provider-visibility\" className=\"flex flex-col gap-4 scroll-mt-20\">\n251: \t\t\t\t<div>\n252: \t\t\t\t\t<h3 className=\"text-sm font-semibold text-foreground mb-2\">Provider Visibility</h3>\n253: \t\t\t\t\t<p className=\"text-sm text-muted-foreground\">\n254: \t\t\t\t\t\tHide providers you don't use to declutter the model selector.\n255: \t\t\t\t\t</p>\n256: \t\t\t\t</div>\n257: \t\t\t\t<div className=\"flex flex-col gap-3\">\n258: \t\t\t\t\t{providers.map((provider) => {\n259: \t\t\t\t\t\tconst hidden = settings.hiddenProviders.includes(provider);\n260: \t\t\t\t\t\treturn (\n261: \t\t\t\t\t\t\t<div key={provider} className=\"flex items-center justify-between gap-4 rounded-lg border border-border p-3\">\n262: \t\t\t\t\t\t\t\t<div className=\"text-sm font-medium text-foreground capitalize\">{provider}</div>\n263: \t\t\t\t\t\t\t\t<Toggle\n264: \t\t\t\t\t\t\t\t\ttone=\"success\"\n265: \t\t\t\t\t\t\t\t\taria-label={hidden ? \"Hidden\" : \"Visible\"}\n266: \t\t\t\t\t\t\t\t\tchecked={!hidden}\n267: \t\t\t\t\t\t\t\t\tonChange={(checked) => handleToggleProvider(provider, !checked)}\n268: \t\t\t\t\t\t\t\t/>\n269: \t\t\t\t\t\t\t</div>\n270: \t\t\t\t\t\t);\n271: \t\t\t\t\t})}\n272: \t\t\t\t</div>\n273: \t\t\t</div>\n274: \n275: \t\t\t<div className=\"border-t border-border\" />\n276: \n277: \t\t\t{/* Custom Models */}\n278: \t\t\t<div id=\"settings-section-my-models\" className=\"flex flex-col gap-4 scroll-mt-20\">\n279: \t\t\t\t<div className=\"flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4\">\n280: \t\t\t\t\t<div className=\"min-w-0\">\n281: \t\t\t\t\t\t<h3 className=\"text-sm font-semibold text-foreground mb-2\">My Models</h3>\n282: \t\t\t\t\t\t<p className=\"text-sm text-muted-foreground\">\n283: \t\t\t\t\t\t\tManually add models that aren't auto-discovered.\n284: \t\t\t\t\t\t</p>\n285: \t\t\t\t\t</div>\n286: \t\t\t\t\t<button\n287: \t\t\t\t\t\tclassName=\"dialog-compact-button inline-flex shrink-0 items-center justify-center rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-accent hover:text-accent-foreground transition-colors\"\n288: \t\t\t\t\t\tonClick={() => setShowAddModel((s) => !s)}\n289: \t\t\t\t\t>\n290: \t\t\t\t\t\t{showAddModel ? \"Cancel\" : \"Add Model\"}\n291: \t\t\t\t\t</button>\n292: \t\t\t\t</div>\n293: \n294: \t\t\t\t{showAddModel && (\n295: \t\t\t\t\t<div className=\"flex flex-col gap-3 rounded-lg border border-border p-4 bg-muted/30\">\n296: \t\t\t\t\t\t{modelError && (\n297: \t\t\t\t\t\t\t<div className=\"rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive\">\n298: \t\t\t\t\t\t\t\t{modelError}\n299: \t\t\t\t\t\t\t</div>\n300: \t\t\t\t\t\t)}\n301: \t\t\t\t\t\t<div className=\"flex flex-col gap-2\">\n302: \t\t\t\t\t\t\t<label className=\"text-sm font-medium text-foreground\">Model Name</label>\n303: \t\t\t\t\t\t\t<input\n304: \t\t\t\t\t\t\t\ttype=\"text\"\n305: \t\t\t\t\t\t\t\tclassName=\"rounded-md border border-border bg-background px-3 py-2 text-sm\"\n306: \t\t\t\t\t\t\t\tplaceholder=\"e.g., GPT-5\"\n307: \t\t\t\t\t\t\t\tvalue={modelForm.name}\n308: \t\t\t\t\t\t\t\tonChange={(e) => setModelForm((f) => ({ ...f, name: e.target.value }))}\n309: \t\t\t\t\t\t\t/>\n310: \t\t\t\t\t\t</div>\n311: \t\t\t\t\t\t<div className=\"flex flex-col gap-2\">\n312: \t\t\t\t\t\t\t<label className=\"text-sm font-medium text-foreground\">Model ID</label>\n313: \t\t\t\t\t\t\t<input\n314: \t\t\t\t\t\t\t\ttype=\"text\"\n315: \t\t\t\t\t\t\t\tclassName=\"rounded-md border border-border bg-background px-3 py-2 text-sm\"\n316: \t\t\t\t\t\t\t\tplaceholder=\"e.g., gpt-5\"\n317: \t\t\t\t\t\t\t\tvalue={modelForm.id}\n318: \t\t\t\t\t\t\t\tonChange={(e) => setModelForm((f) => ({ ...f, id: e.target.value }))}\n319: \t\t\t\t\t\t\t/>\n320: \t\t\t\t\t\t</div>\n321: \t\t\t\t\t\t<div className=\"flex flex-col gap-2\">\n322: \t\t\t\t\t\t\t<label className=\"text-sm font-medium text-foreground\">Provider</label>\n323: \t\t\t\t\t\t\t<select\n324: \t\t\t\t\t\t\t\tclassName=\"rounded-md border border-border bg-background px-3 py-2 text-sm\"\n325: \t\t\t\t\t\t\t\tvalue={modelForm.provider}\n326: \t\t\t\t\t\t\t\tonChange={(e) => setModelForm((f) => ({ ...f, provider: e.target.value }))}\n327: \t\t\t\t\t\t\t>\n328: \t\t\t\t\t\t\t\t{getProviders().map((p) => (\n329: \t\t\t\t\t\t\t\t\t<option key={p} value={p}>{p}</option>\n330: \t\t\t\t\t\t\t\t))}\n331: \t\t\t\t\t\t\t\t<option value=\"custom\">Custom</option>\n332: \t\t\t\t\t\t\t</select>\n333: \t\t\t\t\t\t</div>\n334: \t\t\t\t\t\t<div className=\"flex flex-col gap-2\">\n335: \t\t\t\t\t\t\t<label className=\"text-sm font-medium text-foreground\">API Type</label>\n336: \t\t\t\t\t\t\t<select\n337: \t\t\t\t\t\t\t\tclassName=\"rounded-md border border-border bg-background px-3 py-2 text-sm\"\n338: \t\t\t\t\t\t\t\tvalue={modelForm.api}\n339: \t\t\t\t\t\t\t\tonChange={(e) => setModelForm((f) => ({ ...f, api: e.target.value }))}\n340: \t\t\t\t\t\t\t>\n341: \t\t\t\t\t\t\t\t{ADD_MODEL_APIS.map((a) => (\n342: \t\t\t\t\t\t\t\t\t<option key={a.value} value={a.value}>{a.label}</option>\n343: \t\t\t\t\t\t\t\t))}\n344: \t\t\t\t\t\t\t</select>\n345: \t\t\t\t\t\t</div>\n346: \t\t\t\t\t\t<div className=\"flex flex-col gap-2\">\n347: \t\t\t\t\t\t\t<label className=\"text-sm font-medium text-foreground\">Base URL (Optional)</label>\n348: \t\t\t\t\t\t\t<input\n349: \t\t\t\t\t\t\t\ttype=\"text\"\n350: \t\t\t\t\t\t\t\tclassName=\"rounded-md border border-border bg-background px-3 py-2 text-sm\"\n351: \t\t\t\t\t\t\t\tplaceholder=\"e.g., https://api.openai.com/v1\"\n352: \t\t\t\t\t\t\t\tvalue={modelForm.baseUrl}\n353: \t\t\t\t\t\t\t\tonChange={(e) => setModelForm((f) => ({ ...f, baseUrl: e.target.value }))}\n354: \t\t\t\t\t\t\t/>\n355: \t\t\t\t\t\t</div>\n356: \t\t\t\t\t\t<div className=\"flex gap-4\">\n357: \t\t\t\t\t\t\t<label className=\"flex items-center gap-2 text-sm\">\n358: \t\t\t\t\t\t\t\t<input\n359: \t\t\t\t\t\t\t\t\ttype=\"checkbox\"\n360: \t\t\t\t\t\t\t\t\tchecked={modelForm.reasoning}\n361: \t\t\t\t\t\t\t\t\tonChange={(e) => setModelForm((f) => ({ ...f, reasoning: e.target.checked }))}\n362: \t\t\t\t\t\t\t\t/>\n363: \t\t\t\t\t\t\t\tReasoning\n364: \t\t\t\t\t\t\t</label>\n365: \t\t\t\t\t\t\t<label className=\"flex items-center gap-2 text-sm\">\n366: \t\t\t\t\t\t\t\t<input\n367: \t\t\t\t\t\t\t\t\ttype=\"checkbox\"\n368: \t\t\t\t\t\t\t\t\tchecked={modelForm.vision}\n369: \t\t\t\t\t\t\t\t\tonChange={(e) => setModelForm((f) => ({ ...f, vision: e.target.checked }))}\n370: \t\t\t\t\t\t\t\t/>\n371: \t\t\t\t\t\t\t\tVision\n372: \t\t\t\t\t\t\t</label>\n373: \t\t\t\t\t\t</div>\n374: \t\t\t\t\t\t<div className=\"flex justify-end\">\n375: \t\t\t\t\t\t\t<button\n376: \t\t\t\t\t\t\t\tclassName=\"inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50\"\n377: \t\t\t\t\t\t\t\tdisabled={!modelForm.name.trim() || !modelForm.id.trim() || !modelForm.provider.trim()}\n378: \t\t\t\t\t\t\t\tonClick={handleSaveModel}\n379: \t\t\t\t\t\t\t>\n380: \t\t\t\t\t\t\t\tSave Model\n381: \t\t\t\t\t\t\t</button>\n382: \t\t\t\t\t\t</div>\n383: \t\t\t\t\t</div>\n384: \t\t\t\t)}\n385: \n386: \t\t\t\t{settings.customModels.length === 0 ? (\n387: \t\t\t\t\t<div className=\"text-sm text-muted-foreground text-center py-6\">No custom models added yet.</div>\n388: \t\t\t\t) : (\n389: \t\t\t\t\t<div className=\"flex flex-col gap-3\">\n390: \t\t\t\t\t\t{settings.customModels.map((model) => (\n391: \t\t\t\t\t\t\t<div key={model.key} className=\"flex items-center justify-between gap-4 rounded-lg border border-border p-3\">\n392: \t\t\t\t\t\t\t\t<div className=\"min-w-0\">\n393: \t\t\t\t\t\t\t\t\t<div className=\"text-sm font-medium text-foreground\">{model.name}</div>\n394: \t\t\t\t\t\t\t\t\t<div className=\"text-xs text-muted-foreground\">{model.provider} / {model.id} / {model.api}</div>\n395: \t\t\t\t\t\t\t\t</div>\n396: \t\t\t\t\t\t\t\t<button\n397: \t\t\t\t\t\t\t\t\tclassName=\"inline-flex items-center justify-center rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors\"\n398: \t\t\t\t\t\t\t\t\tonClick={() => {\n399: \t\t\t\t\t\t\t\t\t\tremoveCustomModel(model.key);\n400: \t\t\t\t\t\t\t\t\t\tsetSettings(loadKeatingUiSettings());\n401: \t\t\t\t\t\t\t\t\t}}\n402: \t\t\t\t\t\t\t\t>\n403: \t\t\t\t\t\t\t\t\tDelete\n404: \t\t\t\t\t\t\t\t</button>\n405: \t\t\t\t\t\t\t</div>\n406: \t\t\t\t\t\t))}\n407: \t\t\t\t\t</div>\n408: \t\t\t\t)}\n409: \t\t\t</div>\n410: \n411: \t\t\t<div className=\"border-t border-border\" />\n412: \n413: \t\t\t{/* Custom Providers */}\n414: \t\t\t<div id=\"settings-section-custom-providers\" className=\"flex flex-col gap-4 scroll-mt-20\">\n415: \t\t\t\t<div className=\"flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4\">\n416: \t\t\t\t\t<div className=\"min-w-0\">\n417: \t\t\t\t\t\t<h3 className=\"text-sm font-semibold text-foreground mb-2\">Custom Providers</h3>\n418: \t\t\t\t\t\t<p className=\"text-sm text-muted-foreground\">\n419: \t\t\t\t\t\t\tUser-configured servers with auto-discovered or manually defined models.\n420: \t\t\t\t\t\t</p>\n421: \t\t\t\t\t</div>\n422: \t\t\t\t\t<select\n423: \t\t\t\t\t\tclassName=\"w-full sm:w-auto shrink-0 rounded-md border border-border bg-background px-2 py-1.5 text-xs\"\n424: \t\t\t\t\t\tonChange={(e) => {\n425: \t\t\t\t\t\t\tconst value = e.target.value as KeatingCustomProviderType;\n426: \t\t\t\t\t\t\topenAddProvider(value);\n427: \t\t\t\t\t\t\te.target.value = \"\";\n428: \t\t\t\t\t\t}}\n429: \t\t\t\t\t\tdefaultValue=\"\"\n430: \t\t\t\t\t>\n431: \t\t\t\t\t\t<option value=\"\" disabled>Add Provider</option>\n432: \t\t\t\t\t\t{PROVIDER_TYPE_OPTIONS.map((o) => (\n433: \t\t\t\t\t\t\t<option key={o.value} value={o.value}>{o.label}</option>\n434: \t\t\t\t\t\t))}\n435: \t\t\t\t\t</select>\n436: \t\t\t\t</div>\n437: \n438: \t\t\t\t{customProviders.length === 0 ? (\n439: \t\t\t\t\t<div className=\"text-sm text-muted-foreground text-center py-8\">\n440: \t\t\t\t\t\tNo custom providers configured. Click &quot;Add Provider&quot; to get started.\n441: \t\t\t\t\t</div>\n442: \t\t\t\t) : (\n443: \t\t\t\t\t<div className=\"flex flex-col gap-4\">\n444: \t\t\t\t\t\t{customProviders.map((provider) => (\n445: \t\t\t\t\t\t\t<CustomProviderCard\n446: \t\t\t\t\t\t\t\tkey={provider.id}\n447: \t\t\t\t\t\t\t\tprovider={provider}\n448: \t\t\t\t\t\t\t\tisAutoDiscovery={AUTO_DISCOVERY_TYPES.has(provider.type as KeatingCustomProviderType)}\n449: \t\t\t\t\t\t\t\tonEdit={() => setProviderDialog({ open: true, provider })}\n450: \t\t\t\t\t\t\t\tonDelete={() => handleDeleteProvider(provider)}\n451: \t\t\t\t\t\t\t/>\n452: \t\t\t\t\t\t))}\n453: \t\t\t\t\t</div>\n454: \t\t\t\t)}\n455: \t\t\t</div>\n456: \n457: \t\t\t{/* Provider Dialog */}\n458: \t\t\t{providerDialog.open && (\n459: \t\t\t\t<div\n460: \t\t\t\t\tclassName=\"fixed inset-0 z-[1001] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4\"\n461: \t\t\t\t\trole=\"dialog\"\n462: \t\t\t\t\taria-modal=\"true\"\n463: \t\t\t\t\taria-label={providerDialog.provider ? \"Edit Provider\" : \"Add Provider\"}\n464: \t\t\t\t\tonClick={() => setProviderDialog({ open: false })}\n465: \t\t\t\t>\n466: \t\t\t\t\t<div className=\"w-full max-w-md rounded-lg border border-border bg-background p-5 shadow-lg\" onClick={(e) => e.stopPropagation()}>\n467: \t\t\t\t\t\t<div className=\"flex items-center justify-between mb-4\">\n468: \t\t\t\t\t\t\t<h3 className=\"text-sm font-semibold text-foreground\">\n469: \t\t\t\t\t\t\t\t{providerDialog.provider ? \"Edit Provider\" : \"Add Provider\"}\n470: \t\t\t\t\t\t\t</h3>\n471: \t\t\t\t\t\t\t<button onClick={() => setProviderDialog({ open: false })} className=\"h-7 w-7 inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent\">\n472: \t\t\t\t\t\t\t\t<X size={14} />\n473: \t\t\t\t\t\t\t</button>\n474: \t\t\t\t\t\t</div>\n475: \t\t\t\t\t\t<div className=\"flex flex-col gap-3\">\n476: \t\t\t\t\t\t\t<div className=\"flex flex-col gap-1\">\n477: \t\t\t\t\t\t\t\t<label className=\"text-sm font-medium text-foreground\">Provider Name</label>\n478: \t\t\t\t\t\t\t\t<input\n479: \t\t\t\t\t\t\t\t\ttype=\"text\"\n480: \t\t\t\t\t\t\t\t\tclassName=\"rounded-md border border-border bg-background px-3 py-2 text-sm\"\n481: \t\t\t\t\t\t\t\t\tplaceholder=\"e.g., My Ollama Server\"\n482: \t\t\t\t\t\t\t\t\tvalue={providerForm.name}\n483: \t\t\t\t\t\t\t\t\tonChange={(e) => setProviderForm((f) => ({ ...f, name: e.target.value }))}\n484: \t\t\t\t\t\t\t\t/>\n485: \t\t\t\t\t\t\t</div>\n486: \t\t\t\t\t\t\t<div className=\"flex flex-col gap-1\">\n487: \t\t\t\t\t\t\t\t<label className=\"text-sm font-medium text-foreground\">Provider Type</label>\n488: \t\t\t\t\t\t\t\t<select\n489: \t\t\t\t\t\t\t\t\tclassName=\"rounded-md border border-border bg-background px-3 py-2 text-sm\"\n490: \t\t\t\t\t\t\t\t\tvalue={providerForm.type}\n491: \t\t\t\t\t\t\t\t\tonChange={(e) => {\n492: \t\t\t\t\t\t\t\t\t\tconst t = e.target.value as KeatingCustomProviderType;\n493: \t\t\t\t\t\t\t\t\t\tsetProviderForm((f) => ({ ...f, type: t }));\n494: \t\t\t\t\t\t\t\t\t}}\n495: \t\t\t\t\t\t\t\t>\n496: \t\t\t\t\t\t\t\t\t{PROVIDER_TYPE_OPTIONS.map((o) => (\n497: \t\t\t\t\t\t\t\t\t\t<option key={o.value} value={o.value}>{o.label}</option>\n498: \t\t\t\t\t\t\t\t\t))}\n499: \t\t\t\t\t\t\t\t</select>\n500: \t\t\t\t\t\t\t</div>\n501: \t\t\t\t\t\t\t<div className=\"flex flex-col gap-1\">\n502: \t\t\t\t\t\t\t\t<label className=\"text-sm font-medium text-foreground\">Base URL</label>\n503: \t\t\t\t\t\t\t\t<input\n504: \t\t\t\t\t\t\t\t\ttype=\"text\"\n505: \t\t\t\t\t\t\t\t\tclassName=\"rounded-md border border-border bg-background px-3 py-2 text-sm\"\n506: \t\t\t\t\t\t\t\t\tplaceholder=\"e.g., https://api.ollama.local\"\n507: \t\t\t\t\t\t\t\t\tvalue={providerForm.baseUrl}\n508: \t\t\t\t\t\t\t\t\tonChange={(e) => setProviderForm((f) => ({ ...f, baseUrl: e.target.value }))}\n509: \t\t\t\t\t\t\t\t/>\n510: \t\t\t\t\t\t\t</div>\n511: \t\t\t\t\t\t\t<div className=\"flex flex-col gap-1\">\n512: \t\t\t\t\t\t\t\t<label className=\"text-sm font-medium text-foreground\">API Key (Optional)</label>\n513: \t\t\t\t\t\t\t\t<input\n514: \t\t\t\t\t\t\t\t\ttype=\"password\"\n515: \t\t\t\t\t\t\t\t\tclassName=\"rounded-md border border-border bg-background px-3 py-2 text-sm\"\n516: \t\t\t\t\t\t\t\t\tplaceholder=\"Leave empty if not required\"\n517: \t\t\t\t\t\t\t\t\tvalue={providerForm.apiKey}\n518: \t\t\t\t\t\t\t\t\tonChange={(e) => setProviderForm((f) => ({ ...f, apiKey: e.target.value }))}\n519: \t\t\t\t\t\t\t\t/>\n520: \t\t\t\t\t\t\t</div>\n521: \t\t\t\t\t\t\t{providerError && (\n522: \t\t\t\t\t\t\t\t<div className=\"rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive\">\n523: \t\t\t\t\t\t\t\t\t{providerError}\n524: \t\t\t\t\t\t\t\t</div>\n525: \t\t\t\t\t\t\t)}\n526: \t\t\t\t\t\t\t<div className=\"flex justify-end gap-2 mt-2\">\n527: \t\t\t\t\t\t\t\t<button\n528: \t\t\t\t\t\t\t\t\tclassName=\"rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent transition-colors\"\n529: \t\t\t\t\t\t\t\t\tonClick={() => setProviderDialog({ open: false })}\n530: \t\t\t\t\t\t\t\t>\n531: \t\t\t\t\t\t\t\t\tCancel\n532: \t\t\t\t\t\t\t\t</button>\n533: \t\t\t\t\t\t\t\t<button\n534: \t\t\t\t\t\t\t\t\tclassName=\"rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50\"\n535: \t\t\t\t\t\t\t\t\tdisabled={!providerForm.name.trim() || !providerForm.baseUrl.trim()}\n536: \t\t\t\t\t\t\t\t\tonClick={handleSaveProvider}\n537: \t\t\t\t\t\t\t\t>\n538: \t\t\t\t\t\t\t\t\tSave\n539: \t\t\t\t\t\t\t\t</button>\n540: \t\t\t\t\t\t\t</div>\n541: \t\t\t\t\t\t</div>\n542: \t\t\t\t\t</div>\n543: \t\t\t\t</div>\n544: \t\t\t)}\n545: \t\t</div>\n546: \t);\n547: }\n548: \n549: async function loadCustomProviders(): Promise<KeatingCustomProvider[]> {\n550: \ttry {\n551: \t\tconst storage = getAppStorage();\n552: \t\treturn (await storage.customProviders.getAll()) as KeatingCustomProvider[];\n553: \t} catch (error) {\n554: \t\tconsole.error(\"Failed to load custom providers:\", error);\n555: \t\treturn [];\n556: \t}\n557: }\n558: \n559: function OAuthProviderKeys({ providers }: { providers: string[] }) {\n560: \tconst [keys, setKeys] = useState<Record<string, string>>({});\n561: \tconst [oauthStatus, setOAuthStatus] = useState<Record<string, boolean>>({});\n562: \tconst [oauthLoading, setOauthLoading] = useState<Record<string, boolean>>({});\n563: \tconst [oauthInputs, setOAuthInputs] = useState<Record<string, string>>({});\n564: \tconst [oauthErrors, setOAuthErrors] = useState<Record<string, string>>({});\n565: \n566: \tuseEffect(() => {\n567: \t\tconst storage = getAppStorage();\n568: \t\tPromise.all(providers.map(async (p) => ({\n569: \t\t\tprovider: p,\n570: \t\t\tkey: (await storage.providerKeys.get(p)) ?? \"\",\n571: \t\t}))).then((results) => {\n572: \t\t\tconst map: Record<string, string> = {};\n573: \t\t\tfor (const { provider, key } of results) map[provider] = key;\n574: \t\t\tsetKeys(map);\n575: \t\t});\n576: \t}, [providers.join(\",\")]);\n577: \n578: \tuseEffect(() => {\n579: \t\tconst checkOAuth = async () => {\n580: \t\t\tconst status: Record<string, boolean> = {};\n581: \t\t\tfor (const provider of providers) {\n582: \t\t\t\tconst oauthId = providerToOAuthId(provider);\n583: \t\t\t\tif (oauthId) {\n584: \t\t\t\t\tconst creds = await loadOAuthCredentials(oauthId);\n585: \t\t\t\t\tstatus[provider] = !!creds;\n586: \t\t\t\t}\n587: \t\t\t}\n588: \t\t\tsetOAuthStatus(status);\n589: \t\t};\n590: \t\tcheckOAuth();\n591: \t}, [providers.join(\",\")]);\n592: \n593: \tuseEffect(() => {\n594: \t\tconst handler = (event: MessageEvent) => {\n595: \t\t\tif (event.data?.type !== \"keating-oauth-result\") return;\n596: \t\t\tconst { success, provider: oauthProvider } = event.data;\n597: \t\t\tconst providerNames = oauthProviderToProviderNames(oauthProvider);\n598: \t\t\tif (success && oauthProvider) {\n599: \t\t\t\tsetOAuthStatus((prev) => setProviderAliases(prev, providerNames, true));\n600: \t\t\t\tsetOAuthInputs((prev) => setProviderAliases(prev, providerNames, \"\"));\n601: \t\t\t\tsetOAuthErrors((prev) => setProviderAliases(prev, providerNames, \"\"));\n602: \t\t\t} else if (providerNames.length > 0) {\n603: \t\t\t\tsetOAuthErrors((prev) => setProviderAliases(prev, providerNames, event.data.error ?? \"OAuth sign-in failed.\"));\n604: \t\t\t}\n605: \t\t\tsetOauthLoading((prev) => {\n606: \t\t\t\tconst next = { ...prev };\n607: \t\t\t\tfor (const k of Object.keys(next)) next[k] = false;\n608: \t\t\t\treturn next;\n609: \t\t\t});\n610: \t\t};\n611: \t\twindow.addEventListener(\"message\", handler);\n612: \t\treturn () => window.removeEventListener(\"message\", handler);\n613: \t}, []);\n614: \n615: \tconst save = async (provider: string, value: string) => {\n616: \t\tconst storage = getAppStorage();\n617: \t\tif (value.trim()) {\n618: \t\t\tawait storage.providerKeys.set(provider, value.trim());\n619: \t\t} else {\n620: \t\t\tawait storage.providerKeys.delete(provider);\n621: \t\t}\n622: \t};\n623: \n624: \tconst handleSignIn = (provider: string) => {\n625: \t\tconst oauthId = providerToOAuthId(provider);\n626: \t\tif (!oauthId) return;\n627: \t\tsetOAuthErrors((prev) => ({ ...prev, [provider]: \"\" }));\n628: \t\tsetOAuthInputs((prev) => ({ ...prev, [provider]: \"\" }));\n629: \t\tsetOauthLoading((prev) => ({ ...prev, [provider]: true }));\n630: \t\tinitiateOAuth(oauthId);\n631: \t};\n632: \n633: \tconst handleCompleteOAuth = async (provider: string) => {\n634: \t\tconst input = oauthInputs[provider]?.trim() ?? \"\";\n635: \t\tif (!input) {\n636: \t\t\tsetOAuthErrors((prev) => ({ ...prev, [provider]: \"Paste the callback URL or authorization code first.\" }));\n637: \t\t\treturn;\n638: \t\t}\n639: \t\tsetOauthLoading((prev) => ({ ...prev, [provider]: true }));\n640: \t\tsetOAuthErrors((prev) => ({ ...prev, [provider]: \"\" }));\n641: \t\tconst result = await completeOAuthFromInput(input);\n642: \t\tif (result.success && result.provider) {\n643: \t\t\tconst statusProviders = oauthProviderToProviderNames(result.provider);\n644: \t\t\tsetOAuthStatus((prev) => setProviderAliases(prev, statusProviders, true));\n645: \t\t\tsetOAuthInputs((prev) => ({ ...prev, [provider]: \"\" }));\n646: \t\t} else {\n647: \t\t\tsetOAuthErrors((prev) => ({ ...prev, [provider]: result.error ?? \"OAuth sign-in failed.\" }));\n648: \t\t}\n649: \t\tsetOauthLoading((prev) => ({ ...prev, [provider]: false }));\n650: \t};\n651: \n652: \tconst handleSignOut = async (provider: string) => {\n653: \t\tconst oauthId = providerToOAuthId(provider);\n654: \t\tif (!oauthId) return;\n655: \t\tawait deleteOAuthCredentials(oauthId);\n656: \t\tconst storage = getAppStorage();\n657: \t\tawait storage.providerKeys.delete(provider);\n658: \t\tsetOAuthStatus((prev) => ({ ...prev, [provider]: false }));\n659: \t\tsetKeys((prev) => ({ ...prev, [provider]: \"\" }));\n660: \t};\n661: \n662: \tconst OAUTH_PROVIDER_LABELS: Record<string, string> = {\n663: \t\tanthropic: \"Anthropic\",\n664: \t\t\"openai-codex\": \"OpenAI Codex\",\n665: \t\tgoogle: \"Google Gemini\",\n666: \t};\n667: \n668: \treturn (\n669: \t\t<>\n670: \t\t\t{providers.map((provider) => {\n671: \t\t\t\tconst oauthId = providerToOAuthId(provider);\n672: \t\t\t\tconst isOAuth = !!oauthId;\n673: \t\t\t\tconst hasOAuth = oauthStatus[provider] === true;\n674: \t\t\t\tconst loading = oauthLoading[provider] === true;\n675: \n676: \t\t\t\tif (isOAuth) {\n677: \t\t\t\t\treturn (\n678: \t\t\t\t\t\t<div key={provider} className=\"flex flex-col gap-1\">\n679: \t\t\t\t\t\t\t<div className=\"flex items-center justify-between gap-3\">\n680: \t\t\t\t\t\t\t\t<label className=\"text-xs font-medium text-muted-foreground capitalize\">\n681: \t\t\t\t\t\t\t\t\t{OAUTH_PROVIDER_LABELS[provider] ?? provider}\n682: \t\t\t\t\t\t\t\t</label>\n683: \t\t\t\t\t\t\t\t<a\n684: \t\t\t\t\t\t\t\t\thref={tutorialApiKeyHref(provider)}\n685: \t\t\t\t\t\t\t\t\tonClick={(event) => handleTutorialLinkClick(event.nativeEvent, tutorialApiKeyHref(provider))}\n686: \t\t\t\t\t\t\t\t\tclassName=\"text-xs text-primary underline underline-offset-2\"\n687: \t\t\t\t\t\t\t\t>\n688: \t\t\t\t\t\t\t\t\tGet a key\n689: \t\t\t\t\t\t\t\t</a>\n690: \t\t\t\t\t\t\t</div>\n691: \t\t\t\t\t\t\t{hasOAuth ? (\n692: \t\t\t\t\t\t\t\t<div className=\"flex items-center justify-between gap-3 rounded-md border border-border bg-muted/30 px-3 py-2\">\n693: \t\t\t\t\t\t\t\t\t<span className=\"text-sm text-muted-foreground\">Signed in</span>\n694: \t\t\t\t\t\t\t\t\t<button\n695: \t\t\t\t\t\t\t\t\t\tclassName=\"text-xs text-muted-foreground hover:text-foreground underline underline-offset-2\"\n696: \t\t\t\t\t\t\t\t\t\tonClick={() => handleSignOut(provider)}\n697: \t\t\t\t\t\t\t\t\t>\n698: \t\t\t\t\t\t\t\t\t\tSign out\n699: \t\t\t\t\t\t\t\t\t</button>\n700: \t\t\t\t\t\t\t\t</div>\n701: \t\t\t\t\t\t\t) : (\n702: \t\t\t\t\t\t\t\t<div className=\"flex flex-col gap-2\">\n703: \t\t\t\t\t\t\t\t\t<button\n704: \t\t\t\t\t\t\t\t\t\tclassName=\"inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50\"\n705: \t\t\t\t\t\t\t\t\t\tdisabled={loading}\n706: \t\t\t\t\t\t\t\t\t\tonClick={() => handleSignIn(provider)}\n707: \t\t\t\t\t\t\t\t\t>\n708: \t\t\t\t\t\t\t\t\t\t{loading ? \"Waiting for sign-in…\" : `Sign in with ${OAUTH_PROVIDER_LABELS[provider] ?? provider}`}\n709: \t\t\t\t\t\t\t\t\t</button>\n710: \t\t\t\t\t\t\t\t\t{loading && (\n711: \t\t\t\t\t\t\t\t\t\t<div className=\"rounded-md border border-border bg-muted/20 p-2\">\n712: \t\t\t\t\t\t\t\t\t\t\t<p className=\"mb-2 text-xs text-muted-foreground\">\n713: \t\t\t\t\t\t\t\t\t\t\t\tIf the provider redirects to a localhost callback that does not load, paste that final URL here.\n714: \t\t\t\t\t\t\t\t\t\t\t</p>\n715: \t\t\t\t\t\t\t\t\t\t\t<div className=\"flex gap-2\">\n716: \t\t\t\t\t\t\t\t\t\t\t\t<input\n717: \t\t\t\t\t\t\t\t\t\t\t\t\ttype=\"text\"\n718: \t\t\t\t\t\t\t\t\t\t\t\t\tclassName=\"min-w-0 flex-1 rounded-md border border-border bg-background px-2 py-1.5 text-xs\"\n719: \t\t\t\t\t\t\t\t\t\t\t\t\tplaceholder=\"Callback URL or authorization code\"\n720: \t\t\t\t\t\t\t\t\t\t\t\t\tvalue={oauthInputs[provider] ?? \"\"}\n721: \t\t\t\t\t\t\t\t\t\t\t\t\tonChange={(e) => setOAuthInputs((prev) => ({ ...prev, [provider]: e.target.value }))}\n722: \t\t\t\t\t\t\t\t\t\t\t\t/>\n723: \t\t\t\t\t\t\t\t\t\t\t\t<button\n724: \t\t\t\t\t\t\t\t\t\t\t\t\tclassName=\"rounded-md border border-border px-2 py-1.5 text-xs font-medium hover:bg-accent hover:text-accent-foreground transition-colors disabled:opacity-50\"\n725: \t\t\t\t\t\t\t\t\t\t\t\t\tdisabled={!oauthInputs[provider]?.trim()}\n726: \t\t\t\t\t\t\t\t\t\t\t\t\tonClick={() => handleCompleteOAuth(provider)}\n727: \t\t\t\t\t\t\t\t\t\t\t\t>\n728: \t\t\t\t\t\t\t\t\t\t\t\t\tComplete\n729: \t\t\t\t\t\t\t\t\t\t\t\t</button>\n730: \t\t\t\t\t\t\t\t\t\t\t</div>\n731: \t\t\t\t\t\t\t\t\t\t</div>\n732: \t\t\t\t\t\t\t\t\t)}\n733: \t\t\t\t\t\t\t\t\t{oauthErrors[provider] && (\n734: \t\t\t\t\t\t\t\t\t\t<div className=\"rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive\">\n735: \t\t\t\t\t\t\t\t\t\t\t{oauthErrors[provider]}\n736: \t\t\t\t\t\t\t\t\t\t</div>\n737: \t\t\t\t\t\t\t\t\t)}\n738: \t\t\t\t\t\t\t\t</div>\n739: \t\t\t\t\t\t\t)}\n740: \t\t\t\t\t\t</div>\n741: \t\t\t\t\t);\n742: \t\t\t\t}\n743: \n744: \t\t\t\treturn (\n745: \t\t\t\t\t<div key={provider} className=\"flex flex-col gap-1\">\n746: \t\t\t\t\t\t<div className=\"flex items-center justify-between gap-3\">\n747: \t\t\t\t\t\t\t<label className=\"text-xs font-medium text-muted-foreground capitalize\">{provider} API Key</label>\n748: \t\t\t\t\t\t\t<a\n749: \t\t\t\t\t\t\t\thref={tutorialApiKeyHref(provider)}\n750: \t\t\t\t\t\t\t\tonClick={(event) => handleTutorialLinkClick(event.nativeEvent, tutorialApiKeyHref(provider))}\n751: \t\t\t\t\t\t\t\tclassName=\"text-xs text-primary underline underline-offset-2\"\n752: \t\t\t\t\t\t\t>\n753: \t\t\t\t\t\t\t\tGet a key\n754: \t\t\t\t\t\t\t</a>\n755: \t\t\t\t\t\t</div>\n756: \t\t\t\t\t\t<input\n757: \t\t\t\t\t\t\ttype=\"password\"\n758: \t\t\t\t\t\t\tclassName=\"rounded-md border border-border bg-background px-3 py-2 text-sm\"\n759: \t\t\t\t\t\t\tplaceholder={`${provider} API key`}\n760: \t\t\t\t\t\t\tvalue={keys[provider] ?? \"\"}\n761: \t\t\t\t\t\t\tonChange={(e) => setKeys((prev) => ({ ...prev, [provider]: e.target.value }))}\n762: \t\t\t\t\t\t\tonBlur={(e) => save(provider, e.target.value)}\n763: \t\t\t\t\t\t/>\n764: \t\t\t\t\t</div>\n765: \t\t\t\t);\n766: \t\t\t})}\n767: \t\t</>\n768: \t);\n769: }\n770: \n771: function oauthProviderToProviderNames(provider: OAuthProviderId | string | undefined): string[] {\n772: \tif (provider === \"google-gemini-cli\") return [\"google\"];\n773: \tif (provider === \"openai-codex\") return [\"openai-codex\"];\n774: \tif (provider === \"anthropic\") return [\"anthropic\"];\n775: \treturn provider ? [provider] : [];\n776: }\n777: \n778: function setProviderAliases<T>(prev: Record<string, T>, providers: string[] | string, value: T): Record<string, T> {\n779: \tconst next = { ...prev };\n780: \tfor (const provider of Array.isArray(providers) ? providers : [providers]) {\n781: \t\tnext[provider] = value;\n782: \t}\n783: \treturn next;\n784: }\n785: \n786: function CustomProviderCard({\n787: \tprovider,\n788: \tisAutoDiscovery,\n789: \tonEdit,\n790: \tonDelete,\n791: }: {\n792: \tprovider: KeatingCustomProvider;\n793: \tisAutoDiscovery: boolean;\n794: \tonEdit: () => void;\n795: \tonDelete: () => void;\n796: }) {\n797: \treturn (\n798: \t\t<div className=\"rounded-lg border border-border p-4\">\n799: \t\t\t<div className=\"flex items-start justify-between gap-3\">\n800: \t\t\t\t<div className=\"min-w-0\">\n801: \t\t\t\t\t<div className=\"text-sm font-medium text-foreground\">{provider.name}</div>\n802: \t\t\t\t\t<div className=\"text-xs text-muted-foreground mt-0.5\">{provider.type} — {provider.baseUrl}</div>\n803: \t\t\t\t\t<div className=\"flex gap-2 mt-1\">\n804: \t\t\t\t\t\t<span className=\"inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground\">\n805: \t\t\t\t\t\t\t{isAutoDiscovery ? \"Auto-discovery\" : \"Manual\"}\n806: \t\t\t\t\t\t</span>\n807: \t\t\t\t\t\t<span className=\"inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground\">\n808: \t\t\t\t\t\t\t{provider.models?.length ?? 0} models\n809: \t\t\t\t\t\t</span>\n810: \t\t\t\t\t</div>\n811: \t\t\t\t</div>\n812: \t\t\t\t<div className=\"flex items-center gap-1 shrink-0\">\n813: \t\t\t\t\t<button\n814: \t\t\t\t\t\tclassName=\"inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground\"\n815: \t\t\t\t\t\tonClick={onEdit}\n816: \t\t\t\t\t\taria-label=\"Edit provider\"\n817: \t\t\t\t\t>\n818: \t\t\t\t\t\t<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" strokeWidth=\"2\" strokeLinecap=\"round\" strokeLinejoin=\"round\"><path d=\"M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z\"/><path d=\"m15 5 4 4\"/></svg>\n819: \t\t\t\t\t</button>\n820: \t\t\t\t\t<button\n821: \t\t\t\t\t\tclassName=\"inline-flex h-7 w-7 items-center justify-center rounded-md text-destructive hover:bg-destructive/10\"\n822: \t\t\t\t\t\tonClick={onDelete}\n823: \t\t\t\t\t\taria-label=\"Delete provider\"\n824: \t\t\t\t\t>\n825: \t\t\t\t\t\t<Trash2 size={14} />\n826: \t\t\t\t\t</button>\n827: \t\t\t\t</div>\n828: \t\t\t</div>\n829: \t\t</div>\n830: \t);\n831: }\n\n(End of file - total 831 lines)\n</content>",
+            "metadata": {
+              "preview": "import { useCallback, useEffect, useState } from \"react\";\nimport { Trash2, X } from \"lucide-react\";\nimport { getProviders } from \"@earendil-works/pi-ai\";\nimport { getAppStorage, type CustomProvider } from \"@earendil-works/pi-web-ui\";\nimport {\n\tloadKeatingUiSettings,\n\ttoggleProviderVisibility,\n\taddCustomModel,\n\tremoveCustomModel,\n} from \"../keating/ui-settings\";\nimport { handleTutorialLinkClick, tutorialApiKeyHref } from \"../lib/tutorial-links\";\nimport { SettingsSectionNav } from \"./SettingsSectionNav\";\nimport { Toggle } from \"./Toggle\";\nimport {\n\tcompleteOAuthFromInput,\n\tinitiateOAuth,\n\tproviderToOAuthId,\n\tloadOAuthCredentials,\n\tdeleteOAuthCredentials,\n\ttype OAuthProviderId,",
+              "truncated": false,
+              "loaded": []
+            },
+            "title": "web/src/components/ProvidersModelsTab.tsx",
+            "time": {
+              "start": 1781218258918,
+              "end": 1781218259027
+            }
+          },
+          "id": "prt_eb8e1afda001oBKYEC2gNi0ofX",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e1a815002QuwSCkkpUYRq35"
+        },
+        {
+          "reason": "tool-calls",
+          "snapshot": "6a456126d2ad183cdbf0fe3cf50f9b0d5f2621fa",
+          "type": "step-finish",
+          "tokens": {
+            "total": 42333,
+            "input": 2117,
+            "output": 88,
+            "reasoning": 0,
+            "cache": {
+              "write": 0,
+              "read": 40128
+            }
+          },
+          "cost": 0,
+          "id": "prt_eb8e1b188001U5AMbNCoHhOp6m",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e1a815002QuwSCkkpUYRq35"
+        },
+        {
+          "type": "patch",
+          "hash": "9921ffca340e7af345f392870c595953c9f59a17",
+          "files": [
+            "/home/diogenes/Projects/keating/web/test/animation-and-image-tools.test.ts"
+          ],
+          "id": "prt_eb8e1b1ae001EbmZQl3yC4O1h5",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e1a815002QuwSCkkpUYRq35"
+        }
+      ]
+    },
+    {
+      "info": {
+        "parentID": "msg_eb8e187f40010lNP3cQ87gzvcv",
+        "role": "assistant",
+        "mode": "plan",
+        "agent": "plan",
+        "path": {
+          "cwd": "/home/diogenes/Projects/keating",
+          "root": "/home/diogenes/Projects/keating"
+        },
+        "cost": 0,
+        "tokens": {
+          "total": 58900,
+          "input": 16524,
+          "output": 136,
+          "reasoning": 0,
+          "cache": {
+            "write": 0,
+            "read": 42240
+          }
+        },
+        "modelID": "neuralwatt/qwen3.5-397b-fast",
+        "providerID": "bifrost",
+        "time": {
+          "created": 1781218259383,
+          "completed": 1781218264292
+        },
+        "finish": "tool-calls",
+        "id": "msg_eb8e1b1b7002z11rLeuGwhkIcm",
+        "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX"
+      },
+      "parts": [
+        {
+          "snapshot": "6a456126d2ad183cdbf0fe3cf50f9b0d5f2621fa",
+          "type": "step-start",
+          "id": "prt_eb8e1ba9c001cLpRKGtHWLv6MO",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e1b1b7002z11rLeuGwhkIcm"
+        },
+        {
+          "type": "text",
+          "text": "Now let me check how the settings tabs are organized in the main settings dialog:\n\n",
+          "time": {
+            "start": 1781218261663,
+            "end": 1781218264181
+          },
+          "id": "prt_eb8e1ba9f001rMJmKi79JCrZ6i",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e1b1b7002z11rLeuGwhkIcm"
+        },
+        {
+          "type": "tool",
+          "tool": "grep",
+          "callID": "call_68a19c84af0d45f0b76e73f0",
+          "state": {
+            "status": "completed",
+            "input": {
+              "include": "*.tsx",
+              "path": "/home/diogenes/Projects/keating/web/src",
+              "pattern": "SettingsTab|settings.*tab|id:.*interface|id:.*providers"
+            },
+            "output": "Found 18 matches\n/home/diogenes/Projects/keating/web/src/components/ProvidersModelsTab.tsx:\n  Line 225: \t\t\t\t\t{ id: \"cloud-providers\", label: \"Cloud\" },\n\n  Line 228: \t\t\t\t\t{ id: \"custom-providers\", label: \"Custom Providers\" },\n\n\n/home/diogenes/Projects/keating/web/src/components/KeatingUiSettingsTab.tsx:\n  Line 32: export function KeatingUiSettingsTab() {\n\n\n/home/diogenes/Projects/keating/web/src/hooks/useKeatingAgent.tsx:\n  Line 12: import { KeatingUiSettingsTab } from \"../components/KeatingUiSettingsTab\";\n\n  Line 16: import { SpeechSettingsTab } from \"../components/SpeechSettingsTab\";\n\n  Line 799:         { id: \"providers\", label: \"Providers & Models\", component: <ProvidersModelsTab /> },\n\n  Line 801:         { id: \"speech\", label: \"Speech & Voice\", component: <SpeechSettingsTab onSettingsChange={setSpeechSettings} /> },\n\n  Line 802:         { id: \"interface\", label: \"Interface\", component: <KeatingUiSettingsTab /> },\n\n\n/home/diogenes/Projects/keating/web/src/pages/Blog.tsx:\n  Line 66:       \"Keating 1.3 puts a living machine on the front page: an interactive 3D CRT that boots a real terminal and hands you a session. Inside the app, Keating's replies now render on a panel that is actually readable in both themes, the conversation column is wider, and a broad retro and mobile polish pass reaches the landing page, navigation, session cards, usage charts, and settings. Underneath, the browser runtime gained portable session data and snapshot export, and every version string now flows from a single source of truth.\",\n\n  Line 1095:       { id: \"speech-providers\", title: \"Speech & Voice — New Tab, New Providers\" },\n\n  Line 2090:       \"Synthetic added as a first-class custom provider. Mobile touch targets and spacing improved across homepage, selector, settings, and install tabs.\",\n\n  Line 2114:             homepage, model selector, settings dialog, and install tabs.\n\n\n/home/diogenes/Projects/keating/web/src/components/SpeechSettingsTab.tsx:\n  Line 16: interface SpeechSettingsTabProps {\n\n  Line 20: export function SpeechSettingsTab({ onSettingsChange }: SpeechSettingsTabProps) {\n\n\n/home/diogenes/Projects/keating/web/src/components/Toggle.tsx:\n  Line 12:  * Shared on/off switch used across settings tabs. Replaces the repeated\n\n\n/home/diogenes/Projects/keating/web/src/components/SettingsSectionNav.tsx:\n  Line 7:  * Sticky in-tab section jump nav shared by settings tabs (Speech, Providers, …).\n\n\n/home/diogenes/Projects/keating/web/src/components/SettingsDialog.tsx:\n  Line 4: export interface SettingsTabDef {\n\n  Line 12:   tabs: SettingsTabDef[];\n",
+            "metadata": {
+              "matches": 18,
+              "truncated": false
+            },
+            "title": "SettingsTab|settings.*tab|id:.*interface|id:.*providers",
+            "time": {
+              "start": 1781218262231,
+              "end": 1781218262279
+            }
+          },
+          "id": "prt_eb8e1baae001cdp4cEjg4ZqpN5",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e1b1b7002z11rLeuGwhkIcm"
+        },
+        {
+          "type": "tool",
+          "tool": "read",
+          "callID": "call_3c0c927b708c485882182422",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/home/diogenes/Projects/keating/web/src/components/SettingsSectionNav.tsx"
+            },
+            "output": "<path>/home/diogenes/Projects/keating/web/src/components/SettingsSectionNav.tsx</path>\n<type>file</type>\n<content>\n1: export interface SettingsSection {\n2: \tid: string;\n3: \tlabel: string;\n4: }\n5: \n6: /**\n7:  * Sticky in-tab section jump nav shared by settings tabs (Speech, Providers, …).\n8:  * Each button scrolls to the element with id `settings-section-{id}`.\n9:  *\n10:  * Buttons carry `dialog-compact-button` so the global mobile rule\n11:  * (`[role=dialog] button { width: 100% }`) doesn't stretch them full-width.\n12:  */\n13: export function SettingsSectionNav({ sections }: { sections: SettingsSection[] }) {\n14: \tconst scrollToSection = (id: string) => {\n15: \t\tconst el = document.getElementById(`settings-section-${id}`);\n16: \t\tif (el) el.scrollIntoView({ behavior: \"smooth\", block: \"start\" });\n17: \t};\n18: \n19: \treturn (\n20: \t\t<nav className=\"sticky -top-4 sm:-top-5 z-10 -mx-4 sm:-mx-5 -mt-4 sm:-mt-5 px-4 sm:px-5 pt-3 pb-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b border-border\">\n21: \t\t\t<div className=\"flex flex-wrap gap-1.5\">\n22: \t\t\t\t{sections.map((s) => (\n23: \t\t\t\t\t<button\n24: \t\t\t\t\t\tkey={s.id}\n25: \t\t\t\t\t\ttype=\"button\"\n26: \t\t\t\t\t\tonClick={() => scrollToSection(s.id)}\n27: \t\t\t\t\t\tclassName=\"dialog-compact-button rounded-md border border-border px-2.5 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors\"\n28: \t\t\t\t\t>\n29: \t\t\t\t\t\t{s.label}\n30: \t\t\t\t\t</button>\n31: \t\t\t\t))}\n32: \t\t\t</div>\n33: \t\t</nav>\n34: \t);\n35: }\n\n(End of file - total 35 lines)\n</content>",
+            "metadata": {
+              "preview": "export interface SettingsSection {\n\tid: string;\n\tlabel: string;\n}\n\n/**\n * Sticky in-tab section jump nav shared by settings tabs (Speech, Providers, …).\n * Each button scrolls to the element with id `settings-section-{id}`.\n *\n * Buttons carry `dialog-compact-button` so the global mobile rule\n * (`[role=dialog] button { width: 100% }`) doesn't stretch them full-width.\n */\nexport function SettingsSectionNav({ sections }: { sections: SettingsSection[] }) {\n\tconst scrollToSection = (id: string) => {\n\t\tconst el = document.getElementById(`settings-section-${id}`);\n\t\tif (el) el.scrollIntoView({ behavior: \"smooth\", block: \"start\" });\n\t};\n\n\treturn (\n\t\t<nav className=\"sticky -top-4 sm:-top-5 z-10 -mx-4 sm:-mx-5 -mt-4 sm:-mt-5 px-4 sm:px-5 pt-3 pb-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b border-border\">",
+              "truncated": false,
+              "loaded": []
+            },
+            "title": "web/src/components/SettingsSectionNav.tsx",
+            "time": {
+              "start": 1781218264061,
+              "end": 1781218264081
+            }
+          },
+          "id": "prt_eb8e1c3e6001Z2GbBQu9YUzTcD",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e1b1b7002z11rLeuGwhkIcm"
+        },
+        {
+          "reason": "tool-calls",
+          "snapshot": "6a456126d2ad183cdbf0fe3cf50f9b0d5f2621fa",
+          "type": "step-finish",
+          "tokens": {
+            "total": 58900,
+            "input": 16524,
+            "output": 136,
+            "reasoning": 0,
+            "cache": {
+              "write": 0,
+              "read": 42240
+            }
+          },
+          "cost": 0,
+          "id": "prt_eb8e1c4bd0012ZJ4Vdsg7ko1dI",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e1b1b7002z11rLeuGwhkIcm"
+        }
+      ]
+    },
+    {
+      "info": {
+        "parentID": "msg_eb8e187f40010lNP3cQ87gzvcv",
+        "role": "assistant",
+        "mode": "plan",
+        "agent": "plan",
+        "path": {
+          "cwd": "/home/diogenes/Projects/keating",
+          "root": "/home/diogenes/Projects/keating"
+        },
+        "cost": 0,
+        "tokens": {
+          "total": 60249,
+          "input": 2084,
+          "output": 85,
+          "reasoning": 0,
+          "cache": {
+            "write": 0,
+            "read": 58080
+          }
+        },
+        "modelID": "neuralwatt/qwen3.5-397b-fast",
+        "providerID": "bifrost",
+        "time": {
+          "created": 1781218264329,
+          "completed": 1781218268538
+        },
+        "finish": "tool-calls",
+        "id": "msg_eb8e1c5090028X2yZGFFwlqEYL",
+        "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX"
+      },
+      "parts": [
+        {
+          "snapshot": "6a456126d2ad183cdbf0fe3cf50f9b0d5f2621fa",
+          "type": "step-start",
+          "id": "prt_eb8e1ce4c001PiMFoC3k37tmKi",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e1c5090028X2yZGFFwlqEYL"
+        },
+        {
+          "type": "tool",
+          "tool": "read",
+          "callID": "call_be1cf331667d424e98823e49",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/home/diogenes/Projects/keating/web/src/components/SettingsDialog.tsx"
+            },
+            "output": "<path>/home/diogenes/Projects/keating/web/src/components/SettingsDialog.tsx</path>\n<type>file</type>\n<content>\n1: import { useCallback, useEffect, useRef, useState } from \"react\";\n2: import { X } from \"lucide-react\";\n3: \n4: export interface SettingsTabDef {\n5:   id: string;\n6:   label: string;\n7:   component: React.ReactNode;\n8: }\n9: \n10: interface SettingsDialogProps {\n11:   open: boolean;\n12:   tabs: SettingsTabDef[];\n13:   onClose: () => void;\n14: }\n15: \n16: export function SettingsDialog({ open, tabs, onClose }: SettingsDialogProps) {\n17:   const [activeTab, setActiveTab] = useState(0);\n18:   const dialogRef = useRef<HTMLDivElement>(null);\n19: \n20:   useEffect(() => {\n21:     if (!open) return;\n22:     const handleEscape = (e: KeyboardEvent) => {\n23:       if (e.key === \"Escape\") onClose();\n24:     };\n25:     document.addEventListener(\"keydown\", handleEscape);\n26:     document.body.style.overflow = \"hidden\";\n27:     return () => {\n28:       document.removeEventListener(\"keydown\", handleEscape);\n29:       document.body.style.overflow = \"\";\n30:     };\n31:   }, [open, onClose]);\n32: \n33:   const handleBackdropClick = useCallback((e: React.MouseEvent) => {\n34:     if (e.target === dialogRef.current) onClose();\n35:   }, [onClose]);\n36: \n37:   if (!open) return null;\n38: \n39:   return (\n40:     <div\n41:       ref={dialogRef}\n42:       className=\"fixed inset-0 z-[1000] flex items-start justify-center bg-black/50 backdrop-blur-sm px-4 pt-6 pb-6\"\n43:       onClick={handleBackdropClick}\n44:     >\n45:       <div\n46:         role=\"dialog\"\n47:         aria-modal=\"true\"\n48:         className=\"flex w-full max-w-5xl max-h-[90vh] overflow-hidden rounded-lg border-2 border-border bg-background shadow-lg\"\n49:         onClick={(e) => e.stopPropagation()}\n50:       >\n51:         {/* Sidebar */}\n52:         <div className=\"hidden sm:flex w-44 md:w-52 lg:w-56 flex-col border-r border-border bg-muted/30 shrink-0\">\n53:           <div className=\"px-4 py-3 border-b border-border\">\n54:             <span className=\"text-sm font-semibold text-foreground\">Settings</span>\n55:           </div>\n56:           <div className=\"flex flex-col p-2 gap-1 overflow-y-auto\">\n57:             {tabs.map((tab, i) => (\n58:               <button\n59:                 key={tab.id}\n60:                 onClick={() => setActiveTab(i)}\n61:                 className={`text-left px-3 py-2 rounded-md text-sm transition-colors ${\n62:                   i === activeTab\n63:                     ? \"bg-primary/10 text-primary font-medium\"\n64:                     : \"text-muted-foreground hover:bg-accent hover:text-accent-foreground\"\n65:                 }`}\n66:               >\n67:                 {tab.label}\n68:               </button>\n69:             ))}\n70:           </div>\n71:         </div>\n72: \n73:         {/* Content */}\n74:         <div className=\"flex flex-col flex-1 min-h-0\">\n75:           <div className=\"flex min-h-14 items-center justify-between gap-3 px-4 py-2 border-b border-border\">\n76:             <select\n77:               className=\"min-w-0 flex-1 text-sm font-medium bg-transparent border border-border rounded px-2 py-2\"\n78:               value={activeTab}\n79:               onChange={(e) => setActiveTab(Number(e.target.value))}\n80:               aria-label=\"Settings tab\"\n81:             >\n82:               {tabs.map((tab, i) => (\n83:                 <option key={tab.id} value={i}>{tab.label}</option>\n84:               ))}\n85:             </select>\n86:             <button\n87:               onClick={onClose}\n88:               className=\"dialog-icon-button inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground\"\n89:               aria-label=\"Close\"\n90:             >\n91:               <X size={16} />\n92:             </button>\n93:           </div>\n94:           <div className=\"flex-1 overflow-y-auto p-4 sm:p-5\">\n95:             {tabs[activeTab]?.component}\n96:           </div>\n97:         </div>\n98:       </div>\n99:     </div>\n100:   );\n101: }\n\n(End of file - total 101 lines)\n</content>",
+            "metadata": {
+              "preview": "import { useCallback, useEffect, useRef, useState } from \"react\";\nimport { X } from \"lucide-react\";\n\nexport interface SettingsTabDef {\n  id: string;\n  label: string;\n  component: React.ReactNode;\n}\n\ninterface SettingsDialogProps {\n  open: boolean;\n  tabs: SettingsTabDef[];\n  onClose: () => void;\n}\n\nexport function SettingsDialog({ open, tabs, onClose }: SettingsDialogProps) {\n  const [activeTab, setActiveTab] = useState(0);\n  const dialogRef = useRef<HTMLDivElement>(null);\n\n  useEffect(() => {",
+              "truncated": false,
+              "loaded": []
+            },
+            "title": "web/src/components/SettingsDialog.tsx",
+            "time": {
+              "start": 1781218267067,
+              "end": 1781218267084
+            }
+          },
+          "id": "prt_eb8e1ce50001pCjtjalWwdLFqa",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e1c5090028X2yZGFFwlqEYL"
+        },
+        {
+          "type": "tool",
+          "tool": "read",
+          "callID": "call_63766d3a21074d169f81a530",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/home/diogenes/Projects/keating/web/src/components/SpeechSettingsTab.tsx"
+            },
+            "output": "<path>/home/diogenes/Projects/keating/web/src/components/SpeechSettingsTab.tsx</path>\n<type>file</type>\n<content>\n1: import { useCallback, useEffect, useState } from \"react\";\n2: import { Trash2 } from \"lucide-react\";\n3: import { SettingsSectionNav } from \"./SettingsSectionNav\";\n4: import { Toggle } from \"./Toggle\";\n5: import { SettingRow } from \"./SettingRow\";\n6: import {\n7: \tlistSpeechProviders,\n8: \tloadWebSpeechSettings,\n9: \tsaveWebSpeechSettings,\n10: \ttype CustomSpeechModel,\n11: \ttype SpeechProviderDescriptor,\n12: \ttype SpeechProviderId,\n13: \ttype WebSpeechSettings,\n14: } from \"../keating/speech\";\n15: \n16: interface SpeechSettingsTabProps {\n17: \tonSettingsChange?: (settings: WebSpeechSettings) => void;\n18: }\n19: \n20: export function SpeechSettingsTab({ onSettingsChange }: SpeechSettingsTabProps) {\n21: \tconst [settings, setSettingsState] = useState<WebSpeechSettings>(() => loadWebSpeechSettings());\n22: \tconst [providers, setProviders] = useState<SpeechProviderDescriptor[]>([]);\n23: \tconst [draftCustom, setDraftCustom] = useState<CustomSpeechModel>({\n24: \t\tid: \"\",\n25: \t\tlabel: \"\",\n26: \t\tbaseUrl: \"\",\n27: \t\tmodel: \"\",\n28: \t\tvoice: \"\",\n29: \t\tproviderKey: \"openai\",\n30: \t});\n31: \tconst [customError, setCustomError] = useState<string>(\"\");\n32: \n33: \tuseEffect(() => {\n34: \t\tlet cancelled = false;\n35: \t\tlistSpeechProviders()\n36: \t\t\t.then((p) => {\n37: \t\t\t\tif (!cancelled) setProviders(p);\n38: \t\t\t})\n39: \t\t\t.catch(console.warn);\n40: \t\treturn () => {\n41: \t\t\tcancelled = true;\n42: \t\t};\n43: \t}, []);\n44: \n45: \tconst persist = useCallback(\n46: \t\t(partial: Partial<WebSpeechSettings>) => {\n47: \t\t\tconst next = { ...loadWebSpeechSettings(), ...partial };\n48: \t\t\tsetSettingsState(next);\n49: \t\t\tsaveWebSpeechSettings(next);\n50: \t\t\tonSettingsChange?.(next);\n51: \t\t},\n52: \t\t[onSettingsChange],\n53: \t);\n54: \n55: \tconst activeProvider = providers.find((p) => p.id === settings.providerId);\n56: \tconst activeCustom = settings.providerId.startsWith(\"custom:\")\n57: \t\t? settings.customModels.find((m) => `custom:${m.id}` === settings.providerId)\n58: \t\t: undefined;\n59: \n60: \tconst handleProviderChange = (providerId: SpeechProviderId) => {\n61: \t\tif (providerId.startsWith(\"custom:\")) {\n62: \t\t\tconst id = providerId.slice(\"custom:\".length);\n63: \t\t\tconst model = settings.customModels.find((m) => m.id === id);\n64: \t\t\tif (!model) return;\n65: \t\t\tpersist({ providerId, model: model.model, voiceName: model.voice });\n66: \t\t\treturn;\n67: \t\t}\n68: \t\tconst next = providers.find((p) => p.id === providerId);\n69: \t\tif (!next) return;\n70: \t\tconst firstModel = next.models[0]?.value ?? \"\";\n71: \t\tconst firstVoice = next.voices[0] ?? \"\";\n72: \t\tpersist({ providerId, model: firstModel, voiceName: firstVoice });\n73: \t};\n74: \n75: \tconst addCustomModel = () => {\n76: \t\tsetCustomError(\"\");\n77: \t\tconst id = draftCustom.id.trim() || draftCustom.label.trim().toLowerCase().replace(/[^a-z0-9_-]+/g, \"-\");\n78: \t\tif (!id || !draftCustom.label.trim() || !draftCustom.baseUrl.trim() || !draftCustom.model.trim()) {\n79: \t\t\tsetCustomError(\"Label, base URL, and model id are required.\");\n80: \t\t\treturn;\n81: \t\t}\n82: \t\tif (settings.customModels.some((m) => m.id === id)) {\n83: \t\t\tsetCustomError(`A custom model with id \"${id}\" already exists.`);\n84: \t\t\treturn;\n85: \t\t}\n86: \t\tconst next: CustomSpeechModel = {\n87: \t\t\tid,\n88: \t\t\tlabel: draftCustom.label.trim(),\n89: \t\t\tbaseUrl: draftCustom.baseUrl.trim(),\n90: \t\t\tmodel: draftCustom.model.trim(),\n91: \t\t\tvoice: draftCustom.voice.trim() || \"alloy\",\n92: \t\t\tproviderKey: draftCustom.providerKey.trim() || \"openai\",\n93: \t\t\tapiPath: draftCustom.apiPath?.trim() || undefined,\n94: \t\t};\n95: \t\tpersist({ customModels: [...settings.customModels, next] });\n96: \t\tsetDraftCustom({ id: \"\", label: \"\", baseUrl: \"\", model: \"\", voice: \"\", providerKey: \"openai\" });\n97: \t};\n98: \n99: \tconst removeCustomModel = (id: string) => {\n100: \t\tconst remaining = settings.customModels.filter((m) => m.id !== id);\n101: \t\tconst patch: Partial<WebSpeechSettings> = { customModels: remaining };\n102: \t\tif (settings.providerId === `custom:${id}`) {\n103: \t\t\tconst fallback = providers[0];\n104: \t\t\tif (fallback) {\n105: \t\t\t\tpatch.providerId = fallback.id;\n106: \t\t\t\tpatch.model = fallback.models[0]?.value ?? \"\";\n107: \t\t\t\tpatch.voiceName = fallback.voices[0] ?? \"\";\n108: \t\t\t}\n109: \t\t}\n110: \t\tpersist(patch);\n111: \t};\n112: \n113: \tconst SECTIONS = [\n114: \t\t{ id: \"speech-enable\", label: \"Enable\" },\n115: \t\t{ id: \"speech-provider\", label: \"Provider\" },\n116: \t\t{ id: \"speech-voice\", label: \"Voice\" },\n117: \t\t{ id: \"speech-mic\", label: \"Microphone\" },\n118: \t\t{ id: \"speech-custom\", label: \"Custom\" },\n119: \t];\n120: \n121: \tconst statusBadge = (status: SpeechProviderDescriptor[\"status\"]) => {\n122: \t\tif (status === \"stable\") return null;\n123: \t\tconst styles =\n124: \t\t\tstatus === \"preview\"\n125: \t\t\t\t? \"border-amber-500/40 bg-amber-500/10 text-amber-600\"\n126: \t\t\t\t: \"border-purple-500/40 bg-purple-500/10 text-purple-600\";\n127: \t\treturn (\n128: \t\t\t<span className={`ml-2 inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide ${styles}`}>\n129: \t\t\t\t{status}\n130: \t\t\t</span>\n131: \t\t);\n132: \t};\n133: \n134: \treturn (\n135: \t\t<div className=\"flex flex-col gap-8\">\n136: \t\t\t<SettingsSectionNav sections={SECTIONS} />\n137: \n138: \t\t\t<SettingRow\n139: \t\t\t\tid=\"settings-section-speech-enable\"\n140: \t\t\t\ttitle=\"Enable spoken responses\"\n141: \t\t\t\tdescription=\"When on, Keating can call its voice tool to speak short learner-facing lines through the active provider.\"\n142: \t\t\t\tclassName=\"scroll-mt-20\"\n143: \t\t\t>\n144: \t\t\t\t<Toggle checked={settings.enabled} onChange={(checked) => persist({ enabled: checked })} />\n145: \t\t\t</SettingRow>\n146: \n147: \t\t\t<div id=\"settings-section-speech-provider\" className=\"flex flex-col gap-4 scroll-mt-20\">\n148: \t\t\t\t<div>\n149: \t\t\t\t\t<h3 className=\"text-sm font-semibold text-foreground mb-2\">Provider</h3>\n150: \t\t\t\t\t<p className=\"text-sm text-muted-foreground\">\n151: \t\t\t\t\t\tChoose which speech engine generates audio. Cloud providers need an API key in Providers & Models.\n152: \t\t\t\t\t</p>\n153: \t\t\t\t</div>\n154: \t\t\t\t<div className=\"flex flex-col gap-2\">\n155: \t\t\t\t\t{providers.map((p) => (\n156: \t\t\t\t\t\t<label\n157: \t\t\t\t\t\t\tkey={p.id}\n158: \t\t\t\t\t\t\tclassName={`flex items-start gap-3 rounded-md border border-border px-3 py-2.5 cursor-pointer hover:bg-accent/40 transition-colors ${settings.providerId === p.id ? \"bg-accent/30 border-primary\" : \"\"}`}\n159: \t\t\t\t\t\t>\n160: \t\t\t\t\t\t\t<input\n161: \t\t\t\t\t\t\t\ttype=\"radio\"\n162: \t\t\t\t\t\t\t\tname=\"speech-provider\"\n163: \t\t\t\t\t\t\t\tvalue={p.id}\n164: \t\t\t\t\t\t\t\tchecked={settings.providerId === p.id}\n165: \t\t\t\t\t\t\t\tonChange={() => handleProviderChange(p.id)}\n166: \t\t\t\t\t\t\t\tclassName=\"mt-1 shrink-0\"\n167: \t\t\t\t\t\t\t/>\n168: \t\t\t\t\t\t\t<div className=\"min-w-0 flex-1\">\n169: \t\t\t\t\t\t\t\t<div className=\"flex items-center gap-2 text-sm font-medium text-foreground\">\n170: \t\t\t\t\t\t\t\t\t<span>{p.label}</span>\n171: \t\t\t\t\t\t\t\t\t<span className=\"inline-flex items-center rounded-full border border-border bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground\">\n172: \t\t\t\t\t\t\t\t\t\t{p.kind === \"duplex\" ? \"duplex\" : \"tts\"}\n173: \t\t\t\t\t\t\t\t\t</span>\n174: \t\t\t\t\t\t\t\t\t{statusBadge(p.status)}\n175: \t\t\t\t\t\t\t\t</div>\n176: \t\t\t\t\t\t\t\t<div className=\"mt-1 text-xs text-muted-foreground\">{p.description}</div>\n177: \t\t\t\t\t\t\t\t{p.needsApiKey && (\n178: \t\t\t\t\t\t\t\t\t<div className=\"mt-1 text-[11px] text-muted-foreground\">\n179: \t\t\t\t\t\t\t\t\t\tNeeds <span className=\"font-mono\">{p.needsApiKey}</span> API key in Providers & Models.\n180: \t\t\t\t\t\t\t\t\t</div>\n181: \t\t\t\t\t\t\t\t)}\n182: \t\t\t\t\t\t\t</div>\n183: \t\t\t\t\t\t</label>\n184: \t\t\t\t\t))}\n185: \n186: \t\t\t\t\t{settings.customModels.map((m) => (\n187: \t\t\t\t\t\t<label\n188: \t\t\t\t\t\t\tkey={`custom:${m.id}`}\n189: \t\t\t\t\t\t\tclassName={`flex items-start gap-3 rounded-md border border-border px-3 py-2.5 cursor-pointer hover:bg-accent/40 transition-colors ${settings.providerId === `custom:${m.id}` ? \"bg-accent/30 border-primary\" : \"\"}`}\n190: \t\t\t\t\t\t>\n191: \t\t\t\t\t\t\t<input\n192: \t\t\t\t\t\t\t\ttype=\"radio\"\n193: \t\t\t\t\t\t\t\tname=\"speech-provider\"\n194: \t\t\t\t\t\t\t\tvalue={`custom:${m.id}`}\n195: \t\t\t\t\t\t\t\tchecked={settings.providerId === `custom:${m.id}`}\n196: \t\t\t\t\t\t\t\tonChange={() => handleProviderChange(`custom:${m.id}`)}\n197: \t\t\t\t\t\t\t\tclassName=\"mt-1 shrink-0\"\n198: \t\t\t\t\t\t\t/>\n199: \t\t\t\t\t\t\t<div className=\"min-w-0 flex-1\">\n200: \t\t\t\t\t\t\t\t<div className=\"text-sm font-medium text-foreground\">{m.label}</div>\n201: \t\t\t\t\t\t\t\t<div className=\"mt-1 text-xs text-muted-foreground truncate\">\n202: \t\t\t\t\t\t\t\t\t{m.baseUrl} · {m.model} · voice {m.voice}\n203: \t\t\t\t\t\t\t\t</div>\n204: \t\t\t\t\t\t\t</div>\n205: \t\t\t\t\t\t\t<button\n206: \t\t\t\t\t\t\t\ttype=\"button\"\n207: \t\t\t\t\t\t\t\tclassName=\"inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive\"\n208: \t\t\t\t\t\t\t\taria-label={`Remove ${m.label}`}\n209: \t\t\t\t\t\t\t\tonClick={(e) => {\n210: \t\t\t\t\t\t\t\t\te.preventDefault();\n211: \t\t\t\t\t\t\t\t\te.stopPropagation();\n212: \t\t\t\t\t\t\t\t\tremoveCustomModel(m.id);\n213: \t\t\t\t\t\t\t\t}}\n214: \t\t\t\t\t\t\t>\n215: \t\t\t\t\t\t\t\t<Trash2 size={14} />\n216: \t\t\t\t\t\t\t</button>\n217: \t\t\t\t\t\t</label>\n218: \t\t\t\t\t))}\n219: \t\t\t\t</div>\n220: \t\t\t</div>\n221: \n222: \t\t\t{(activeProvider || activeCustom) && (\n223: \t\t\t\t<div id=\"settings-section-speech-voice\" className=\"flex flex-col gap-4 scroll-mt-20\">\n224: \t\t\t\t\t<div>\n225: \t\t\t\t\t\t<h3 className=\"text-sm font-semibold text-foreground mb-2\">Model & voice</h3>\n226: \t\t\t\t\t\t<p className=\"text-sm text-muted-foreground\">\n227: \t\t\t\t\t\t\tFine-tune the active provider's model and voice.\n228: \t\t\t\t\t\t</p>\n229: \t\t\t\t\t</div>\n230: \t\t\t\t\t{activeProvider && activeProvider.models.length > 1 && (\n231: \t\t\t\t\t\t<div className=\"flex flex-col gap-2\">\n232: \t\t\t\t\t\t\t<label className=\"text-sm font-medium text-foreground\">Model</label>\n233: \t\t\t\t\t\t\t<select\n234: \t\t\t\t\t\t\t\tclassName=\"rounded-md border border-border bg-background px-3 py-2 text-sm\"\n235: \t\t\t\t\t\t\t\tvalue={settings.model}\n236: \t\t\t\t\t\t\t\tonChange={(e) => persist({ model: e.target.value })}\n237: \t\t\t\t\t\t\t>\n238: \t\t\t\t\t\t\t\t{activeProvider.models.map((m) => (\n239: \t\t\t\t\t\t\t\t\t<option key={m.value} value={m.value}>{m.label}</option>\n240: \t\t\t\t\t\t\t\t))}\n241: \t\t\t\t\t\t\t</select>\n242: \t\t\t\t\t\t</div>\n243: \t\t\t\t\t)}\n244: \t\t\t\t\t<div className=\"flex flex-col gap-2\">\n245: \t\t\t\t\t\t<label className=\"text-sm font-medium text-foreground\">Voice</label>\n246: \t\t\t\t\t\t{activeProvider && activeProvider.voices.length > 0 ? (\n247: \t\t\t\t\t\t\t<select\n248: \t\t\t\t\t\t\t\tclassName=\"rounded-md border border-border bg-background px-3 py-2 text-sm\"\n249: \t\t\t\t\t\t\t\tvalue={settings.voiceName}\n250: \t\t\t\t\t\t\t\tonChange={(e) => persist({ voiceName: e.target.value })}\n251: \t\t\t\t\t\t\t>\n252: \t\t\t\t\t\t\t\t{activeProvider.voices.map((v) => (\n253: \t\t\t\t\t\t\t\t\t<option key={v} value={v}>{v}</option>\n254: \t\t\t\t\t\t\t\t))}\n255: \t\t\t\t\t\t\t</select>\n256: \t\t\t\t\t\t) : (\n257: \t\t\t\t\t\t\t<input\n258: \t\t\t\t\t\t\t\ttype=\"text\"\n259: \t\t\t\t\t\t\t\tclassName=\"rounded-md border border-border bg-background px-3 py-2 text-sm\"\n260: \t\t\t\t\t\t\t\tvalue={settings.voiceName}\n261: \t\t\t\t\t\t\t\tonChange={(e) => persist({ voiceName: e.target.value })}\n262: \t\t\t\t\t\t\t\tplaceholder=\"Voice name\"\n263: \t\t\t\t\t\t\t/>\n264: \t\t\t\t\t\t)}\n265: \t\t\t\t\t</div>\n266: \t\t\t\t</div>\n267: \t\t\t)}\n268: \n269: \t\t\t<SettingRow\n270: \t\t\t\tid=\"settings-section-speech-mic\"\n271: \t\t\t\ttitle=\"Microphone (duplex providers)\"\n272: \t\t\t\tdescription=\"When enabled, duplex providers like OpenAI Realtime may capture your microphone for back-and-forth voice. TTS-only providers ignore this.\"\n273: \t\t\t\tclassName=\"scroll-mt-20\"\n274: \t\t\t>\n275: \t\t\t\t<Toggle checked={settings.microphoneEnabled} onChange={(checked) => persist({ microphoneEnabled: checked })} />\n276: \t\t\t</SettingRow>\n277: \n278: \t\t\t<div id=\"settings-section-speech-custom\" className=\"flex flex-col gap-4 scroll-mt-20\">\n279: \t\t\t\t<div>\n280: \t\t\t\t\t<h3 className=\"text-sm font-semibold text-foreground mb-2\">Add custom TTS endpoint</h3>\n281: \t\t\t\t\t<p className=\"text-sm text-muted-foreground\">\n282: \t\t\t\t\t\tAny OpenAI-compatible <code>/v1/audio/speech</code> endpoint can be plugged in here.\n283: \t\t\t\t\t</p>\n284: \t\t\t\t</div>\n285: \t\t\t\t<div className=\"grid gap-3 sm:grid-cols-2\">\n286: \t\t\t\t\t<div className=\"flex flex-col gap-2\">\n287: \t\t\t\t\t\t<label className=\"text-sm font-medium text-foreground\">Label</label>\n288: \t\t\t\t\t\t<input\n289: \t\t\t\t\t\t\ttype=\"text\"\n290: \t\t\t\t\t\t\tclassName=\"rounded-md border border-border bg-background px-3 py-2 text-sm\"\n291: \t\t\t\t\t\t\tplaceholder=\"e.g. My Self-Hosted TTS\"\n292: \t\t\t\t\t\t\tvalue={draftCustom.label}\n293: \t\t\t\t\t\t\tonChange={(e) => setDraftCustom((d) => ({ ...d, label: e.target.value }))}\n294: \t\t\t\t\t\t/>\n295: \t\t\t\t\t</div>\n296: \t\t\t\t\t<div className=\"flex flex-col gap-2\">\n297: \t\t\t\t\t\t<label className=\"text-sm font-medium text-foreground\">Base URL</label>\n298: \t\t\t\t\t\t<input\n299: \t\t\t\t\t\t\ttype=\"text\"\n300: \t\t\t\t\t\t\tclassName=\"rounded-md border border-border bg-background px-3 py-2 text-sm font-mono\"\n301: \t\t\t\t\t\t\tplaceholder=\"https://tts.example.com\"\n302: \t\t\t\t\t\t\tvalue={draftCustom.baseUrl}\n303: \t\t\t\t\t\t\tonChange={(e) => setDraftCustom((d) => ({ ...d, baseUrl: e.target.value }))}\n304: \t\t\t\t\t\t/>\n305: \t\t\t\t\t</div>\n306: \t\t\t\t\t<div className=\"flex flex-col gap-2\">\n307: \t\t\t\t\t\t<label className=\"text-sm font-medium text-foreground\">Model id</label>\n308: \t\t\t\t\t\t<input\n309: \t\t\t\t\t\t\ttype=\"text\"\n310: \t\t\t\t\t\t\tclassName=\"rounded-md border border-border bg-background px-3 py-2 text-sm font-mono\"\n311: \t\t\t\t\t\t\tplaceholder=\"e.g. piper-en-us\"\n312: \t\t\t\t\t\t\tvalue={draftCustom.model}\n313: \t\t\t\t\t\t\tonChange={(e) => setDraftCustom((d) => ({ ...d, model: e.target.value }))}\n314: \t\t\t\t\t\t/>\n315: \t\t\t\t\t</div>\n316: \t\t\t\t\t<div className=\"flex flex-col gap-2\">\n317: \t\t\t\t\t\t<label className=\"text-sm font-medium text-foreground\">Default voice</label>\n318: \t\t\t\t\t\t<input\n319: \t\t\t\t\t\t\ttype=\"text\"\n320: \t\t\t\t\t\t\tclassName=\"rounded-md border border-border bg-background px-3 py-2 text-sm\"\n321: \t\t\t\t\t\t\tplaceholder=\"e.g. alloy\"\n322: \t\t\t\t\t\t\tvalue={draftCustom.voice}\n323: \t\t\t\t\t\t\tonChange={(e) => setDraftCustom((d) => ({ ...d, voice: e.target.value }))}\n324: \t\t\t\t\t\t/>\n325: \t\t\t\t\t</div>\n326: \t\t\t\t\t<div className=\"flex flex-col gap-2\">\n327: \t\t\t\t\t\t<label className=\"text-sm font-medium text-foreground\">Auth key from provider</label>\n328: \t\t\t\t\t\t<input\n329: \t\t\t\t\t\t\ttype=\"text\"\n330: \t\t\t\t\t\t\tclassName=\"rounded-md border border-border bg-background px-3 py-2 text-sm font-mono\"\n331: \t\t\t\t\t\t\tplaceholder=\"openai\"\n332: \t\t\t\t\t\t\tvalue={draftCustom.providerKey}\n333: \t\t\t\t\t\t\tonChange={(e) => setDraftCustom((d) => ({ ...d, providerKey: e.target.value }))}\n334: \t\t\t\t\t\t/>\n335: \t\t\t\t\t</div>\n336: \t\t\t\t\t<div className=\"flex flex-col gap-2\">\n337: \t\t\t\t\t\t<label className=\"text-sm font-medium text-foreground\">API path (optional)</label>\n338: \t\t\t\t\t\t<input\n339: \t\t\t\t\t\t\ttype=\"text\"\n340: \t\t\t\t\t\t\tclassName=\"rounded-md border border-border bg-background px-3 py-2 text-sm font-mono\"\n341: \t\t\t\t\t\t\tplaceholder=\"/v1/audio/speech\"\n342: \t\t\t\t\t\t\tvalue={draftCustom.apiPath ?? \"\"}\n343: \t\t\t\t\t\t\tonChange={(e) => setDraftCustom((d) => ({ ...d, apiPath: e.target.value }))}\n344: \t\t\t\t\t\t/>\n345: \t\t\t\t\t</div>\n346: \t\t\t\t</div>\n347: \t\t\t\t{customError && (\n348: \t\t\t\t\t<div className=\"rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive\">\n349: \t\t\t\t\t\t{customError}\n350: \t\t\t\t\t</div>\n351: \t\t\t\t)}\n352: \t\t\t\t<div className=\"flex justify-end\">\n353: \t\t\t\t\t<button\n354: \t\t\t\t\t\tclassName=\"inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors\"\n355: \t\t\t\t\t\tonClick={addCustomModel}\n356: \t\t\t\t\t>\n357: \t\t\t\t\t\tAdd custom model\n358: \t\t\t\t\t</button>\n359: \t\t\t\t</div>\n360: \t\t\t</div>\n361: \t\t</div>\n362: \t);\n363: }\n\n(End of file - total 363 lines)\n</content>",
+            "metadata": {
+              "preview": "import { useCallback, useEffect, useState } from \"react\";\nimport { Trash2 } from \"lucide-react\";\nimport { SettingsSectionNav } from \"./SettingsSectionNav\";\nimport { Toggle } from \"./Toggle\";\nimport { SettingRow } from \"./SettingRow\";\nimport {\n\tlistSpeechProviders,\n\tloadWebSpeechSettings,\n\tsaveWebSpeechSettings,\n\ttype CustomSpeechModel,\n\ttype SpeechProviderDescriptor,\n\ttype SpeechProviderId,\n\ttype WebSpeechSettings,\n} from \"../keating/speech\";\n\ninterface SpeechSettingsTabProps {\n\tonSettingsChange?: (settings: WebSpeechSettings) => void;\n}\n\nexport function SpeechSettingsTab({ onSettingsChange }: SpeechSettingsTabProps) {",
+              "truncated": false,
+              "loaded": []
+            },
+            "title": "web/src/components/SpeechSettingsTab.tsx",
+            "time": {
+              "start": 1781218268229,
+              "end": 1781218268316
+            }
+          },
+          "id": "prt_eb8e1d203001oh0tAt9uvNTj78",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e1c5090028X2yZGFFwlqEYL"
+        },
+        {
+          "reason": "tool-calls",
+          "snapshot": "6a456126d2ad183cdbf0fe3cf50f9b0d5f2621fa",
+          "type": "step-finish",
+          "tokens": {
+            "total": 60249,
+            "input": 2084,
+            "output": 85,
+            "reasoning": 0,
+            "cache": {
+              "write": 0,
+              "read": 58080
+            }
+          },
+          "cost": 0,
+          "id": "prt_eb8e1d508001HW1PhjSFcYT3vU",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e1c5090028X2yZGFFwlqEYL"
+        }
+      ]
+    },
+    {
+      "info": {
+        "parentID": "msg_eb8e187f40010lNP3cQ87gzvcv",
+        "role": "assistant",
+        "mode": "plan",
+        "agent": "plan",
+        "path": {
+          "cwd": "/home/diogenes/Projects/keating",
+          "root": "/home/diogenes/Projects/keating"
+        },
+        "cost": 0,
+        "tokens": {
+          "total": 67646,
+          "input": 6758,
+          "output": 696,
+          "reasoning": 0,
+          "cache": {
+            "write": 0,
+            "read": 60192
+          }
+        },
+        "modelID": "neuralwatt/qwen3.5-397b-fast",
+        "providerID": "bifrost",
+        "time": {
+          "created": 1781218268554,
+          "completed": 1781218280883
+        },
+        "finish": "stop",
+        "id": "msg_eb8e1d58a002m6R6sSJndPRXSO",
+        "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX"
+      },
+      "parts": [
+        {
+          "snapshot": "6a456126d2ad183cdbf0fe3cf50f9b0d5f2621fa",
+          "type": "step-start",
+          "id": "prt_eb8e1dcad001Fs7r4CgUYJxouQ",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e1d58a002m6R6sSJndPRXSO"
+        },
+        {
+          "type": "text",
+          "text": "Perfect! Now I have a comprehensive understanding of the current settings structure. Let me provide a thoughtful analysis and recommendations.\n\n## Analysis & Recommendations\n\nYou're absolutely right — the current \"Interface\" tab is a **catch-all** that mixes unrelated concerns. Here's what's currently lumped together:\n\n### Current \"Interface\" Tab Contents:\n- Profile image upload\n- Font family selection\n- Share link modes\n- Show tool details (debugging)\n- Show raw errors (debugging)\n- Auto-open artifacts (workflow)\n- Alternative response chance (ML training)\n- Animation renderer (artifact generation)\n- Google web grounding (provider feature)\n- Reasoning level (model behavior)\n\n### Proposed Reorganization\n\nI'd suggest splitting settings into **4 intuitive tabs**:\n\n#### 1. **Providers & Models** (keep existing, expand)\n- Cloud provider API keys\n- Provider visibility toggles\n- Custom models\n- Custom providers\n- **NEW: Model profiles** (see below)\n\n#### 2. **Interface & Appearance** (pure UI/UX)\n- Font family\n- Profile image\n- Share link mode\n- **Moved from \"Interface\"**: Only visual/interaction prefs\n\n#### 3. **Agent Behavior** (how Keating thinks & acts)\n- Reasoning level\n- Alternative response chance (DPO training)\n- Google web grounding\n- Auto-open artifacts\n- **NEW: Model profiles per task type** (see below)\n\n#### 4. **Speech & Voice** (keep as-is)\n- Enable/disable\n- Provider selection\n- Model & voice\n- Microphone\n- Custom TTS\n\n### Expansion Ideas for Customization\n\n#### **Model Profiles** ⭐\nLet users create named profiles that bundle:\n- Provider + model selection\n- Reasoning level\n- Temperature/top_p (if exposed)\n- Tool usage defaults\n- Context window preferences\n\nExample profiles:\n- \"Quick answers\" → Fast model, minimal reasoning\n- \"Deep analysis\" → Powerful model, high reasoning\n- \"Code review\" → Specific model, tool UI enabled\n- \"Creative brainstorming\" → High temperature, alternative responses\n\n#### **Task-Specific Routing**\nAllow users to specify which model profile to use for:\n- Lesson planning\n- Map generation\n- Animation creation\n- Benchmarking\n- General chat\n\n#### **Advanced Interface Options**\n- Layout density (compact/comfortable)\n- Sidebar width preferences\n- Code block theme\n- Notification preferences\n- Keyboard shortcuts customization\n\n#### **Data & Privacy**\n- Local storage management\n- Session retention policies\n- Export/import settings\n- Clear conversation history\n\n### Questions for You:\n\n1. **Model profiles**: Should profiles be simple (just model + reasoning) or full-featured (temperature, tools, context limits)?\n\n2. **Task-specific routing**: How granular should this be? Just the main artifacts (plan/map/animate), or also sub-modes like verify/benchmark/evolve?\n\n3. **Settings persistence**: Should profiles and advanced settings sync via cloud storage, or stay local-only?\n\n4. **UI complexity**: Do you want progressive disclosure (Basic/Advanced toggle) in settings, or expose everything upfront?\n\nWhat's your take on this direction? Any of these resonate more than others?",
+          "time": {
+            "start": 1781218270386,
+            "end": 1781218280778
+          },
+          "id": "prt_eb8e1dcb2001mW5hNooiSSKP9r",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e1d58a002m6R6sSJndPRXSO"
+        },
+        {
+          "reason": "stop",
+          "snapshot": "6a456126d2ad183cdbf0fe3cf50f9b0d5f2621fa",
+          "type": "step-finish",
+          "tokens": {
+            "total": 67646,
+            "input": 6758,
+            "output": 696,
+            "reasoning": 0,
+            "cache": {
+              "write": 0,
+              "read": 60192
+            }
+          },
+          "cost": 0,
+          "id": "prt_eb8e20585001RHrH5FRyc2J1KS",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e1d58a002m6R6sSJndPRXSO"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1781218564587
+        },
+        "agent": "plan",
+        "model": {
+          "providerID": "bifrost",
+          "modelID": "neuralwatt/qwen3.5-397b-fast"
+        },
+        "summary": {
+          "diffs": []
+        },
+        "id": "msg_eb8e659c5001U03rCQHOLY5ooo",
+        "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "I would like them to be full featured, i would also like the sections and the settings to have things split for advanced usage. I think that moving it from a modal to a full page might also make sense",
+          "id": "prt_eb8e659c6001qdDIcBfnwvlqlv",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e659c5001U03rCQHOLY5ooo"
+        }
+      ]
+    },
+    {
+      "info": {
+        "parentID": "msg_eb8e659c5001U03rCQHOLY5ooo",
+        "role": "assistant",
+        "mode": "plan",
+        "agent": "plan",
+        "path": {
+          "cwd": "/home/diogenes/Projects/keating",
+          "root": "/home/diogenes/Projects/keating"
+        },
+        "cost": 0,
+        "tokens": {
+          "total": 69422,
+          "input": 30721,
+          "output": 1741,
+          "reasoning": 0,
+          "cache": {
+            "write": 0,
+            "read": 36960
+          }
+        },
+        "modelID": "neuralwatt/qwen3.5-397b-fast",
+        "providerID": "bifrost",
+        "time": {
+          "created": 1781218566790,
+          "completed": 1781218588778
+        },
+        "finish": "stop",
+        "id": "msg_eb8e66286002xBytc2yQObRbdW",
+        "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX"
+      },
+      "parts": [
+        {
+          "snapshot": "1ab0fa8c11333f73f1dcb7ae78584180396ca21c",
+          "type": "step-start",
+          "id": "prt_eb8e6773a001jMOxGslA2StOEz",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e66286002xBytc2yQObRbdW"
+        },
+        {
+          "type": "text",
+          "text": "Great direction! Full-featured profiles + progressive disclosure + full-page settings is a solid combination. Let me flesh out a comprehensive plan:\n\n## Plan: Settings System Overhaul\n\n### 1. **Architecture Changes**\n\n#### Move from Modal → Full Page\n- Convert `SettingsDialog` → `SettingsPage` (new route at `/settings`)\n- Keep settings accessible from gear icon in header\n- Benefits:\n  - More space for advanced sections\n  - Better mobile experience (no nested modals)\n  - Can use standard navigation patterns\n  - Easier to add subsections/tabs\n\n#### Progressive Disclosure Pattern\n- Each section has **Basic** / **Advanced** toggle\n- Default to Basic for new users\n- Remember preference per-section in localStorage\n- Visual indicator when advanced options are available\n\n---\n\n### 2. **New Settings Organization**\n\n#### **Tab 1: Providers & Models**\n**Basic:**\n- Cloud provider API keys (OAuth flows)\n- Quick model selector (recent + favorites)\n- Provider visibility toggles\n\n**Advanced:**\n- Custom providers ( ollama, vllm, etc.)\n- Custom models\n- **NEW: Model Profiles** (crud interface)\n- **NEW: Task-specific routing** (which profile for plan/map/animate/etc.)\n- Model discovery settings (auto-discover vs manual)\n\n#### **Tab 2: Agent Behavior**\n**Basic:**\n- Reasoning level (simple dropdown)\n- Auto-open artifacts (toggle)\n- Google grounding (toggle)\n\n**Advanced:**\n- Alternative response chance (slider + exact %)\n- Per-task reasoning overrides\n- Temperature/top_p per profile\n- Context window limits\n- Timeout settings\n- Retry policies\n- **NEW: Tool usage defaults** (show/hide specific tools)\n- **NEW: Response format preferences** (markdown depth, code block options)\n\n#### **Tab 3: Interface & Appearance**\n**Basic:**\n- Font family\n- Profile image upload\n- Share link mode\n- Dark/light mode (if not already exists)\n\n**Advanced:**\n- **NEW: Layout density** (compact/comfortable)\n- **NEW: Sidebar width** (resizable, saved preference)\n- **NEW: Code theme** (if not using system)\n- **NEW: Notification preferences** (toast vs inline)\n- **NEW: Keyboard shortcuts** (view/remap)\n- Animation renderer choice\n- Show tool details (debugging)\n- Show raw errors (debugging)\n\n#### **Tab 4: Speech & Voice** (existing structure, minor tweaks)\n**Basic:**\n- Enable speech (toggle)\n- Provider selection\n- Voice selection\n\n**Advanced:**\n- Model selection per provider\n- Microphone settings\n- Custom TTS endpoints\n- **NEW: Speech rate/pitch controls**\n- **NEW: Auto-play settings** (when to speak automatically)\n- **NEW: Voice feedback mode** (read full response vs summary)\n\n#### **Tab 5: Data & Privacy** ⭐ NEW\n**Basic:**\n- Export settings (JSON)\n- Import settings\n- Clear conversation history\n\n**Advanced:**\n- Local storage management (view usage)\n- Session retention policy\n- Auto-save intervals\n- **NEW: Sync settings** (cloud vs local-only toggle)\n- **NEW: Data export** (conversations, artifacts, benchmarks)\n\n---\n\n### 3. **Model Profiles Feature**\n\n#### Data Structure\n```typescript\ninterface ModelProfile {\n  id: string;\n  name: string;\n  description?: string;\n  \n  // Model selection\n  provider: string;\n  modelId: string;\n  apiKey?: string; // reference to stored key\n  \n  // Reasoning & behavior\n  reasoningLevel: ReasoningLevel;\n  temperature?: number;\n  topP?: number;\n  maxTokens?: number;\n  \n  // Tool behavior\n  enableTools: boolean;\n  allowedTools?: string[];\n  showToolUi: boolean;\n  \n  // Advanced\n  contextWindowLimit?: number;\n  timeoutMs?: number;\n  retryCount?: number;\n  \n  // Metadata\n  isDefault: boolean;\n  taskTypes?: TaskType[]; // which tasks use this profile\n}\n```\n\n#### UI components needed:\n- Profile list (card grid)\n- Profile editor (modal or slide-over)\n- Profile creator wizard\n- Task assignment dropdowns\n- Import/export profiles\n\n---\n\n### 4. **Task-Specific Routing**\n\nLet users assign profiles to tasks:\n\n```typescript\ninterface TaskRouting {\n  plan?: string; // profile ID\n  map?: string;\n  animate?: string;\n  bench?: string;\n  evolve?: string;\n  promptEvolve?: string;\n  chat?: string; // default chat\n  codeReview?: string;\n  custom?: Record<string, string>;\n}\n```\n\nUI: Dropdown per task showing available profiles, with \"Use default\" option\n\n---\n\n### 5. **Implementation Phases**\n\n#### **Phase 1: Infrastructure** (Week 1)\n- [ ] Create `/settings` route in TanStack Router\n- [ ] Build `SettingsPage` component with sidebar nav\n- [ ] Migrate existing tabs to new structure\n- [ ] Add Basic/Advanced toggle component\n- [ ] Update settings storage schema\n\n#### **Phase 2: Model Profiles** (Week 2)\n- [ ] Add `ModelProfile` type to `ui-settings.ts`\n- [ ] Build profile CRUD components\n- [ ] Add profile selector to model dropdown\n- [ ] Implement profile persistence\n- [ ] Add profile import/export\n\n#### **Phase 3: Task Routing** (Week 3)\n- [ ] Add task routing config to settings\n- [ ] Build task assignment UI\n- [ ] Wire up profile selection in artifact commands\n- [ ] Update `useKeatingAgent` to respect routing\n\n#### **Phase 4: Advanced Settings** (Week 3-4)\n- [ ] Add temperature/top_p controls\n- [ ] Context window & timeout settings\n- [ ] Tool usage defaults\n- [ ] Layout density controls\n- [ ] Keyboard shortcut viewer\n- [ ] Notification preferences\n\n#### **Phase 5: Data & Privacy Tab** (Week 4)\n- [ ] Build export/import settings\n- [ ] Storage usage visualization\n- [ ] Conversation history management\n- [ ] Sync settings toggle\n\n#### **Phase 6: Polish** (Week 4-5)\n- [ ] Mobile responsive design\n- [ ] Settings search functionality\n- [ ] Keyboard navigation\n- [ ] Accessibility audit\n- [ ] Onboarding tour for new settings\n- [ ] Documentation updates\n\n---\n\n### 6. **Technical Considerations**\n\n#### Settings Storage Migration\n- Current: `localStorage` only\n- Future: Optional cloud sync (via user account)\n- Migration strategy: Version the settings schema, auto-migrate on load\n\n#### Backwards Compatibility\n- Default profile = current behavior (no profile = use global settings)\n- Existing settings map to profile defaults\n- Feature flags for gradual rollout\n\n#### Performance\n- Lazy-load advanced sections\n- Debounce saves (batch rapid changes)\n- Virtualize long lists (model profiles, custom providers)\n\n---\n\n### Questions for You:\n\n1. **Route structure**: Should settings be at `/settings` (single page) or `/settings/providers`, `/settings/agent`, etc. (multiple pages)?\n\n2. **Cloud sync priority**: Is this a \"nice to have\" or should we design the schema for it from day 1?\n\n3. **Profile inheritance**: Should profiles have a \"base\" they inherit from (e.g., \"Default\" → \"My Custom Profile\"), or be completely independent?\n\n4. **Who can edit**: In a multi-user scenario (if that's ever a thing), should profiles be user-specific or session-specific?\n\n5. **Pre-built profiles**: Should we ship with opinionated defaults like \"Quick Chat\", \"Deep Analysis\", \"Code Helper\", etc.?\n\nWhat do you think? Want to adjust any of these before I start implementing?",
+          "time": {
+            "start": 1781218572093,
+            "end": 1781218588652
+          },
+          "id": "prt_eb8e6773d001LEmintevHYfXvc",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e66286002xBytc2yQObRbdW"
+        },
+        {
+          "reason": "stop",
+          "snapshot": "1ab0fa8c11333f73f1dcb7ae78584180396ca21c",
+          "type": "step-finish",
+          "tokens": {
+            "total": 69422,
+            "input": 30721,
+            "output": 1741,
+            "reasoning": 0,
+            "cache": {
+              "write": 0,
+              "read": 36960
+            }
+          },
+          "cost": 0,
+          "id": "prt_eb8e6b82f001oNifm5M2bdK6aq",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e66286002xBytc2yQObRbdW"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1781218710208
+        },
+        "agent": "plan",
+        "model": {
+          "providerID": "bifrost",
+          "modelID": "neuralwatt/qwen3.5-397b-fast"
+        },
+        "summary": {
+          "diffs": []
+        },
+        "id": "msg_eb8e892a2001OvxJ95eLXFsqaw",
+        "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "I think it would be interesting if models themselves could also modify the tempature, and other hyperparameters of themselves as well. and it would be good to include these in the schema or in model turns etc.",
+          "id": "prt_eb8e892a20027rDLYQq0K8jsUx",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e892a2001OvxJ95eLXFsqaw"
+        }
+      ]
+    },
+    {
+      "info": {
+        "parentID": "msg_eb8e892a2001OvxJ95eLXFsqaw",
+        "role": "assistant",
+        "mode": "plan",
+        "agent": "plan",
+        "path": {
+          "cwd": "/home/diogenes/Projects/keating",
+          "root": "/home/diogenes/Projects/keating"
+        },
+        "cost": 0,
+        "tokens": {
+          "total": 70845,
+          "input": 2945,
+          "output": 1372,
+          "reasoning": 0,
+          "cache": {
+            "write": 0,
+            "read": 66528
+          }
+        },
+        "modelID": "neuralwatt/qwen3.5-397b-fast",
+        "providerID": "bifrost",
+        "time": {
+          "created": 1781218712157,
+          "completed": 1781218730338
+        },
+        "finish": "stop",
+        "id": "msg_eb8e89a5d002FvHBoRpnPj3slC",
+        "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX"
+      },
+      "parts": [
+        {
+          "snapshot": "1ab0fa8c11333f73f1dcb7ae78584180396ca21c",
+          "type": "step-start",
+          "id": "prt_eb8e8b183001rRRJl7GpN5MRa0",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e89a5d002FvHBoRpnPj3slC"
+        },
+        {
+          "type": "text",
+          "text": "Excellent idea! So models would have **self-aware hyperparameter profiles** — they can introspect and adjust their own reasoning depth, temperature, etc. based on the task. This adds a fascinating meta-cognitive layer.\n\nLet me think through the implications and ask some clarifying questions:\n\n## Key Design Questions\n\n### 1. **Who Controls What?**\n\nShould there be **guardrails** on model self-modification?\n\n**Option A: Full autonomy**\n- Model can change any hyperparameter within hard limits\n- User sets min/max bounds per parameter\n- Model decides temperature, reasoning level, token limits dynamically\n\n**Option B: Advisory + Approval**\n- Model proposes changes (\"I'd like to increase reasoning to 'high' for this complex proof\")\n- User approves/rejects via UI prompt\n- Changes logged in conversation metadata\n\n**Option C: Hybrid**\n- Model auto-adjusts \"soft\" params (temperature, top_p) within safe ranges\n- \"Hard\" params need approval (reasoning level, max tokens, tool access)\n- User can lock specific params to prevent changes\n\n**My recommendation: Option C** — gives models flexibility while keeping user in control of expensive/risky changes.\n\n---\n\n### 2. **Schema Design**\n\nWhere should this metadata live?\n\n#### **In the Model Profile:**\n```typescript\ninterface ModelProfile {\n  // ... existing fields\n  \n  // Self-modification permissions\n  allowAutoTemperature: boolean;\n  temperatureRange?: { min: number; max: number };\n  allowAutoReasoning: boolean;\n  reasoningRange?: ReasoningLevel[]; // [\"low\", \"medium\", \"high\"]\n  allowAutoTools: boolean;\n  maxTokensOverride?: number; // absolute ceiling\n}\n```\n\n#### **In Individual Turns:**\n```typescript\ninterface AgentTurn {\n  // ... existing fields\n  \n  // Model's self-selected params for this turn\n  effectiveParams: {\n    temperature: number;\n    reasoningLevel: ReasoningLevel;\n    maxTokens: number;\n    toolsEnabled: boolean;\n  };\n  \n  // Why the model chose these\n  paramsRationale?: string; // \"Increasing temperature for creative brainstorming\"\n  \n  // User overrides (if any)\n  userOverrides?: Partial<typeof effectiveParams>;\n}\n```\n\n#### **In Conversation State:**\n```typescript\ninterface ConversationState {\n  // ... existing fields\n  \n  // Active parameter adjustments (model or user-initiated)\n  activeAdjustments: {\n    timestamp: number;\n    initiator: \"model\" | \"user\";\n    reason?: string;\n    params: {\n      temperature?: number;\n      reasoningLevel?: ReasoningLevel;\n      // ... etc\n    }\n  }[];\n}\n```\n\n---\n\n### 3. **UI Implications**\n\n#### **In Settings (Advanced → Model Profiles):**\n\nEach profile would have a **\"Model Autonomy\"** section:\n\n```\n┌─ Model Self-Adjustment Permissions ────────────┐\n│                                                 │\n│ ☑ Allow temperature auto-adjustment             │\n│   Range: [0.3 ─────●───── 0.9]                 │\n│                                                 │\n│ ☑ Allow reasoning level changes                 │\n│   ☐ Off  ☑ Low  ☑ Medium  ☑ High  ☐ Maximum   │\n│                                                 │\n│ ☐ Allow tool access changes                     │\n│   (Model can enable/disable tools dynamically)  │\n│                                                 │\n│ Max tokens ceiling: [8192]                      │\n│                                                 │\n│ Model should announce changes: ☑ Yes ☐ No      │\n│   (Show toast when params change)              │\n└─────────────────────────────────────────────────┘\n```\n\n#### **In Chat Interface:**\n\nWhen model adjusts params:\n```\n┌──────────────────────────────────────────────┐\n│ ⚙️ Keating adjusted reasoning: Medium → High │\n│   \"This proof requires deeper analysis\"      │\n│   [View Details] [Lock Setting]              │\n└──────────────────────────────────────────────┘\n```\n\n---\n\n### 4. **When Should Models Adjust?**\n\nTriggers for self-modification:\n\n- **Task complexity detection** → increase reasoning\n- **Creative vs analytical mode** → adjust temperature\n- **Long conversation context** → reduce context window\n- **Tool-heavy tasks** → enable more tools\n- **User frustration signals** → change approach (temperature ↓, reasoning ↑)\n- **Benchmark feedback** → learn optimal params for task types\n\n---\n\n### 5. **Meta-Learning Opportunities**\n\nThis opens up **fascinating pedagogical possibilities**:\n\n1. **Param preference learning**: Track which parameter combos work best for each student\n2. **Explicit metacognition**: Model explains _why_ it chose certain params\n3. **Student agency**: Let advanced students see/tweak the model's reasoning dial\n4. **Benchmark integration**: Evolution experiments could include optimal hyperparameters\n\n---\n\n## Clarifying Questions\n\n1. **Visibility level**: Should students **see** when the model adjusts its parameters, or should this be transparent? I'm leaning toward **visible but non-intrusive** (collapsible notification + settings toggle).\n\n2. **Approval workflow**: For \"expensive\" changes (like reasoning level increases that increase token usage), should the model **ask permission** before proceeding, or just proceed with a notification?\n\n3. **Persistence scope**: When a model adjusts params:\n   - Just for **that turn**?\n   - For the **rest of the conversation**?\n   - Remember for **future conversations** with same task type?\n\n4. **Integration with evolution**: Should the `evolve` command also optimize **default hyperparameter profiles**, not just policy weights? This seems like obvious synergy.\n\n5. **Backwards compat**: Existing conversations/profiles wouldn't have this metadata. Should we:\n   - Add default \"model autonomy: off\" for old profiles?\n   - Migration wizard for existing users?\n\n6. **API considerations**: Not all providers support all params (e.g., some don't expose temperature, others don't have reasoning tokens). Should profiles track **capability flags** per model?\n\nWhat's your vision for the balance between **model autonomy** vs **user control**? And should this be enabled by default or as an opt-in advanced feature?",
+          "time": {
+            "start": 1781218718088,
+            "end": 1781218730239
+          },
+          "id": "prt_eb8e8b1880012dc7W3VQCoKbTJ",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e89a5d002FvHBoRpnPj3slC"
+        },
+        {
+          "reason": "stop",
+          "snapshot": "1ab0fa8c11333f73f1dcb7ae78584180396ca21c",
+          "type": "step-finish",
+          "tokens": {
+            "total": 70845,
+            "input": 2945,
+            "output": 1372,
+            "reasoning": 0,
+            "cache": {
+              "write": 0,
+              "read": 66528
+            }
+          },
+          "cost": 0,
+          "id": "prt_eb8e8e13600139nkta41XEHvX6",
+          "sessionID": "ses_1471e7828ffeeoKI8KfLD80wkX",
+          "messageID": "msg_eb8e89a5d002FvHBoRpnPj3slC"
+        }
+      ]
+    }
+  ]
+}

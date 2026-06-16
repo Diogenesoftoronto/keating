@@ -1,0 +1,253 @@
+the interface section of the settings @web/src/keating/ui-settings.ts includes a lot of subsections that have nothing to do with interface. I would love for this to be changed. We need to consider how to make the settings panels more intuitive as to how they are organized. The other thing that I would be interested in is expanding the customization available. Allowing users to tweak model profiles, and other configuration. If you have other ideas for how we could improve the settings I am all ears.
+Called the Read tool with the following input: {"filePath":"/home/diogenes/Projects/keating/web/src/keating/ui-settings.ts"}
+<path>/home/diogenes/Projects/keating/web/src/keating/ui-settings.ts</path>
+<type>file</type>
+<content>
+1: export type ReasoningLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
+2: export type AnimationRenderer = "manim" | "hyperframes";
+3: export type UiFontFamily = "roboto" | "space-mono" | "jetbrains-mono";
+4: export type ShareLinkMode = "portable-short" | "compressed-hash" | "local-short";
+5: 
+6: export type SavedModel = {
+7: 	key: string;
+8: 	id: string;
+9: 	name: string;
+10: 	provider: string;
+11: 	api: string;
+12: 	baseUrl?: string;
+13: 	reasoning: boolean;
+14: 	vision: boolean;
+15: };
+16: 
+17: export interface KeatingUiSettings {
+18: 	showToolUi: boolean;
+19: 	autoOpenArtifacts: boolean;
+20: 	showRawErrors: boolean;
+21: 	googleGrounding: "auto" | "off";
+22: 	reasoningLevel: ReasoningLevel;
+23: 	animationRenderer: AnimationRenderer;
+24: 	fontFamily: UiFontFamily;
+25: 	shareLinkMode: ShareLinkMode;
+26: 	alternativeResponseChance: number;
+27: 	userProfileImage: string | null;
+28: 	hiddenProviders: string[];
+29: 	recentModels: Array<{ key: string; timestamp: number }>;
+30: 	customModels: SavedModel[];
+31: }
+32: 
+33: export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
+34: 	showToolUi: false,
+35: 	autoOpenArtifacts: true,
+36: 	showRawErrors: false,
+37: 	googleGrounding: "auto",
+38: 	reasoningLevel: "medium",
+39: 	animationRenderer: "manim",
+40: 	fontFamily: "jetbrains-mono",
+41: 	shareLinkMode: "portable-short",
+42: 	alternativeResponseChance: 0.05,
+43: 	userProfileImage: null,
+44: 	hiddenProviders: [],
+45: 	recentModels: [],
+46: 	customModels: [],
+47: };
+48: 
+49: type FontStack = {
+50: 	sans: string;
+51: 	serif: string;
+52: 	mono: string;
+53: };
+54: 
+55: const FONT_STACKS: Record<UiFontFamily, FontStack> = {
+56: 	roboto: {
+57: 		sans: '"Roboto", "Segoe UI", Arial, sans-serif',
+58: 		serif: 'Georgia, Cambria, "Times New Roman", Times, serif',
+59: 		mono: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+60: 	},
+61: 	"space-mono": {
+62: 		sans: '"Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+63: 		serif: '"Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+64: 		mono: '"Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+65: 	},
+66: 	"jetbrains-mono": {
+67: 		sans: '"JetBrains Mono", ui-monospace, "Cascadia Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+68: 		serif: '"JetBrains Mono", ui-monospace, "Cascadia Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+69: 		mono: '"JetBrains Mono", ui-monospace, "Cascadia Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+70: 	},
+71: };
+72: 
+73: const STORAGE_KEY = "keating_ui_settings";
+74: const SETTINGS_CHANGED_EVENT = "keating:ui-settings-changed";
+75: 
+76: export const FONT_FAMILY_OPTIONS: Array<{
+77: 	value: UiFontFamily;
+78: 	label: string;
+79: 	description: string;
+80: }> = [
+81: 	{
+82: 		value: "roboto",
+83: 		label: "Roboto",
+84: 		description: "Clean sans serif default for the app UI.",
+85: 	},
+86: 	{
+87: 		value: "space-mono",
+88: 		label: "Space Mono",
+89: 		description: "Retro monospace styling for the entire app.",
+90: 	},
+91: 	{
+92: 		value: "jetbrains-mono",
+93: 		label: "JetBrains Mono",
+94: 		description: "Terminal monospace matching the Keating brand reference.",
+95: 	},
+96: ];
+97: 
+98: export const SHARE_LINK_MODE_OPTIONS: Array<{
+99: 	value: ShareLinkMode;
+100: 	label: string;
+101: 	description: string;
+102: }> = [
+103: 	{
+104: 		value: "portable-short",
+105: 		label: "Portable short",
+106: 		description: "Short links that work across browsers when share storage is available.",
+107: 	},
+108: 	{
+109: 		value: "compressed-hash",
+110: 		label: "Compressed snapshot",
+111: 		description: "Embeds the session snapshot in the URL for server-free sharing.",
+112: 	},
+113: 	{
+114: 		value: "local-short",
+115: 		label: "Local short",
+116: 		description: "Shortest links, available from this browser's cache only.",
+117: 	},
+118: ];
+119: 
+120: function normalizeShareLinkMode(value: unknown): ShareLinkMode {
+121: 	return value === "compressed-hash" || value === "local-short" || value === "portable-short"
+122: 		? value
+123: 		: DEFAULT_UI_SETTINGS.shareLinkMode;
+124: }
+125: 
+126: function normalizeAlternativeResponseChance(value: unknown): number {
+127: 	const numeric = typeof value === "number" ? value : Number(value);
+128: 	if (!Number.isFinite(numeric)) return DEFAULT_UI_SETTINGS.alternativeResponseChance;
+129: 	return Math.max(0, Math.min(1, numeric));
+130: }
+131: 
+132: function normalizeSettings(value: Partial<KeatingUiSettings> | null): KeatingUiSettings {
+133: 	return {
+134: 		showToolUi: value?.showToolUi ?? DEFAULT_UI_SETTINGS.showToolUi,
+135: 		autoOpenArtifacts: value?.autoOpenArtifacts ?? DEFAULT_UI_SETTINGS.autoOpenArtifacts,
+136: 		showRawErrors: value?.showRawErrors ?? DEFAULT_UI_SETTINGS.showRawErrors,
+137: 		googleGrounding: value?.googleGrounding === "off" ? "off" : DEFAULT_UI_SETTINGS.googleGrounding,
+138: 		reasoningLevel: value?.reasoningLevel ?? DEFAULT_UI_SETTINGS.reasoningLevel,
+139: 		animationRenderer: value?.animationRenderer === "hyperframes" ? "hyperframes" : DEFAULT_UI_SETTINGS.animationRenderer,
+140: 		fontFamily:
+141: 			value?.fontFamily === "space-mono" || value?.fontFamily === "roboto" || value?.fontFamily === "jetbrains-mono"
+142: 				? value.fontFamily
+143: 				: DEFAULT_UI_SETTINGS.fontFamily,
+144: 		shareLinkMode: normalizeShareLinkMode(value?.shareLinkMode),
+145: 		alternativeResponseChance: normalizeAlternativeResponseChance(value?.alternativeResponseChance),
+146: 		userProfileImage: typeof value?.userProfileImage === "string" && value.userProfileImage.startsWith("data:image/") ? value.userProfileImage : DEFAULT_UI_SETTINGS.userProfileImage,
+147: 		hiddenProviders: Array.isArray(value?.hiddenProviders) ? value.hiddenProviders : DEFAULT_UI_SETTINGS.hiddenProviders,
+148: 		recentModels: Array.isArray(value?.recentModels) ? value.recentModels : DEFAULT_UI_SETTINGS.recentModels,
+149: 		customModels: Array.isArray(value?.customModels) ? value.customModels : DEFAULT_UI_SETTINGS.customModels,
+150: 	};
+151: }
+152: 
+153: export function applyKeatingUiTypography(fontFamily: UiFontFamily) {
+154: 	if (typeof document === "undefined") return;
+155: 	const stacks = FONT_STACKS[fontFamily] ?? FONT_STACKS.roboto;
+156: 	const root = document.documentElement;
+157: 	root.style.setProperty("--font-sans", stacks.sans);
+158: 	root.style.setProperty("--font-serif", stacks.serif);
+159: 	root.style.setProperty("--font-mono", stacks.mono);
+160: }
+161: 
+162: export function addRecentModel(key: string) {
+163: 	const settings = loadKeatingUiSettings();
+164: 	const filtered = settings.recentModels.filter((m) => m.key !== key);
+165: 	const next: KeatingUiSettings = {
+166: 		...settings,
+167: 		recentModels: [{ key, timestamp: Date.now() }, ...filtered].slice(0, 7),
+168: 	};
+169: 	saveKeatingUiSettings(next);
+170: 	return next;
+171: }
+172: 
+173: export function getRecentModels(): Array<{ key: string; timestamp: number }> {
+174: 	const settings = loadKeatingUiSettings();
+175: 	return [...settings.recentModels].sort((a, b) => b.timestamp - a.timestamp);
+176: }
+177: 
+178: export function addCustomModel(model: SavedModel) {
+179: 	const settings = loadKeatingUiSettings();
+180: 	const filtered = settings.customModels.filter((m) => m.key !== model.key);
+181: 	const next: KeatingUiSettings = {
+182: 		...settings,
+183: 		customModels: [...filtered, model],
+184: 	};
+185: 	saveKeatingUiSettings(next);
+186: 	return next;
+187: }
+188: 
+189: export function removeCustomModel(key: string) {
+190: 	const settings = loadKeatingUiSettings();
+191: 	const next: KeatingUiSettings = {
+192: 		...settings,
+193: 		customModels: settings.customModels.filter((m) => m.key !== key),
+194: 	};
+195: 	saveKeatingUiSettings(next);
+196: 	return next;
+197: }
+198: 
+199: export function toggleProviderVisibility(provider: string, hidden: boolean) {
+200: 	const settings = loadKeatingUiSettings();
+201: 	const set = new Set(settings.hiddenProviders);
+202: 	if (hidden) set.add(provider);
+203: 	else set.delete(provider);
+204: 	const next: KeatingUiSettings = {
+205: 		...settings,
+206: 		hiddenProviders: Array.from(set),
+207: 	};
+208: 	saveKeatingUiSettings(next);
+209: 	return next;
+210: }
+211: 
+212: export function loadKeatingUiSettings(): KeatingUiSettings {
+213: 	if (typeof localStorage === "undefined") return DEFAULT_UI_SETTINGS;
+214: 	try {
+215: 		const raw = localStorage.getItem(STORAGE_KEY);
+216: 		if (!raw) return DEFAULT_UI_SETTINGS;
+217: 		return normalizeSettings(JSON.parse(raw) as Partial<KeatingUiSettings>);
+218: 	} catch (error) {
+219: 		console.warn("Failed to load Keating UI settings:", error);
+220: 		return DEFAULT_UI_SETTINGS;
+221: 	}
+222: }
+223: 
+224: export function saveKeatingUiSettings(next: KeatingUiSettings) {
+225: 	const normalized = normalizeSettings(next);
+226: 	try {
+227: 		localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+228: 	} catch (error) {
+229: 		console.warn("Failed to save Keating UI settings:", error);
+230: 	}
+231: 	window.dispatchEvent(new CustomEvent<KeatingUiSettings>(SETTINGS_CHANGED_EVENT, { detail: normalized }));
+232: }
+233: 
+234: export function subscribeKeatingUiSettings(callback: (settings: KeatingUiSettings) => void) {
+235: 	const notify = () => callback(loadKeatingUiSettings());
+236: 	const onCustom = (event: Event) => {
+237: 		callback((event as CustomEvent<KeatingUiSettings>).detail ?? loadKeatingUiSettings());
+238: 	};
+239: 	window.addEventListener(SETTINGS_CHANGED_EVENT, onCustom);
+240: 	window.addEventListener("storage", notify);
+241: 	return () => {
+242: 		window.removeEventListener(SETTINGS_CHANGED_EVENT, onCustom);
+243: 		window.removeEventListener("storage", notify);
+244: 	};
+245: }
+
+(End of file - total 245 lines)
+</content>
