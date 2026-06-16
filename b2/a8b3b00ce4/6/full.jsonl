@@ -1,0 +1,127 @@
+{
+  "info": {
+    "id": "ses_14318289cffejCjVxhABN48xlE",
+    "slug": "kind-lagoon",
+    "projectID": "a22a21fb6b0ce9d72f5871a7851df49ec28c3ac4",
+    "directory": "/home/diogenes/Projects/keating",
+    "path": "",
+    "title": "New session - 2026-06-12T17:36:11.107Z",
+    "agent": "build",
+    "model": {
+      "id": "Minimax/MiniMax-M3",
+      "providerID": "bifrost"
+    },
+    "version": "1.15.12",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "cost": 0,
+    "tokens": {
+      "input": 0,
+      "output": 0,
+      "reasoning": 0,
+      "cache": {
+        "read": 0,
+        "write": 0
+      }
+    },
+    "time": {
+      "created": 1781285771107,
+      "updated": 1781285776672
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1781285771191
+        },
+        "agent": "build",
+        "model": {
+          "providerID": "bifrost",
+          "modelID": "Minimax/MiniMax-M3"
+        },
+        "summary": {
+          "diffs": []
+        },
+        "id": "msg_ebce7d77e001FxHv8ukjNCAmAd",
+        "sessionID": "ses_14318289cffejCjVxhABN48xlE"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "hi",
+          "id": "prt_ebce7d77f0019UUeuv9aWjKQrJ",
+          "sessionID": "ses_14318289cffejCjVxhABN48xlE",
+          "messageID": "msg_ebce7d77e001FxHv8ukjNCAmAd"
+        }
+      ]
+    },
+    {
+      "info": {
+        "parentID": "msg_ebce7d77e001FxHv8ukjNCAmAd",
+        "role": "assistant",
+        "mode": "build",
+        "agent": "build",
+        "path": {
+          "cwd": "/home/diogenes/Projects/keating",
+          "root": "/home/diogenes/Projects/keating"
+        },
+        "cost": 0,
+        "tokens": {
+          "input": 0,
+          "output": 0,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 0
+          }
+        },
+        "modelID": "Minimax/MiniMax-M3",
+        "providerID": "bifrost",
+        "time": {
+          "created": 1781285776352,
+          "completed": 1781285780449
+        },
+        "error": {
+          "name": "APIError",
+          "data": {
+            "message": "provider is required in model field (format: provider/model) — no providers found for model \"Minimax/MiniMax-M3\" in model catalog to auto-resolve",
+            "statusCode": 400,
+            "isRetryable": false,
+            "responseHeaders": {
+              "access-control-allow-headers": "Content-Type, Authorization, X-Requested-With, X-Stainless-Timeout, X-Api-Key, X-OpenAI-Agents-SDK",
+              "access-control-allow-methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD",
+              "access-control-max-age": "86400",
+              "connection": "keep-alive",
+              "content-length": "235",
+              "content-security-policy": "frame-ancestors 'none'",
+              "content-type": "application/json",
+              "date": "Fri, 12 Jun 2026 17:36:16 GMT",
+              "permissions-policy": "camera=(), microphone=(), geolocation=()",
+              "referrer-policy": "strict-origin-when-cross-origin",
+              "server": "railway-hikari",
+              "strict-transport-security": "max-age=31536000; includeSubDomains",
+              "vary": "Origin",
+              "x-content-type-options": "nosniff",
+              "x-frame-options": "DENY",
+              "x-hikari-trace": "jfk1.57w5",
+              "x-railway-edge": "railway/us-east4-eqdc4a",
+              "x-railway-request-id": "b0WSA_gCTW-qBByKAax-fw"
+            },
+            "responseBody": "{\"is_bifrost_error\":false,\"status_code\":400,\"error\":{\"message\":\"provider is required in model field (format: provider/model) — no providers found for model \\\"Minimax/MiniMax-M3\\\" in model catalog to auto-resolve\"},\"extra_fields\":{}}\n",
+            "metadata": {
+              "url": "https://bifrost.dio.computer/v1/chat/completions"
+            }
+          }
+        },
+        "id": "msg_ebce7ebe0001MmGVfFKoiC7GR7",
+        "sessionID": "ses_14318289cffejCjVxhABN48xlE"
+      },
+      "parts": []
+    }
+  ]
+}
