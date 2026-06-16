@@ -293,8 +293,8 @@ export function AnimationPlayer({ scene, manifest, storyboard, className }: Anim
 			{/* Manifest Info */}
 			{manifestData && (
 				<div className="px-4 py-2 bg-muted/30 border-t border-border text-xs text-muted-foreground">
-					<span className="mr-4">Duration: {manifestData.duration}s</span>
-					<span>Scenes: {manifestData.scenes.length}</span>
+					<span className="mr-4">Duration: {manifestData.duration ?? 0}s</span>
+					<span>Scenes: {Array.isArray(manifestData.scenes) ? manifestData.scenes.length : 0}</span>
 					{manifestData.renderer && <span className="ml-4">Renderer: {manifestData.renderer}</span>}
 				</div>
 			)}

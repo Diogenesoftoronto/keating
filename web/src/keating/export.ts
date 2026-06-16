@@ -8,6 +8,23 @@ import type {
 	Verification,
 } from "./storage";
 import type { KeatingSandboxPortableBundle } from "./sandbox-export";
+import { keatingStorage, sessions } from "../hooks/keating-storage";
+import { buildSandboxPortableBundle } from "./sandbox-export";
+import { loadPersona } from "./persona";
+import {
+	applyJudgeScores,
+	buildDpoChatExamples,
+	buildDpoTextExamples,
+	buildGrpoPrompts,
+	buildKtoExamples,
+	buildPreferencePairs,
+	computeRewardStats,
+	computeSessionRewardedTurns,
+	type ExportJudge,
+	type NormalizedRewardMessage,
+	type RewardedTurn,
+	type RewardStats,
+} from "./reward";
 
 export type WebExportSource = "all" | "artifacts" | "sessions" | "sandbox";
 export type WebFineTuneFormat = "chatml" | "alpaca" | "both";
@@ -17,15 +34,23 @@ export interface WebFineTuneExportOptions {
 	format: WebFineTuneFormat;
 	redact: boolean;
 	minAssistantChars: number;
+	judge?: ExportJudge;
+	now?: number;
 }
 
 export interface WebFineTuneExportResult {
 	chatmlJsonl?: string;
 	alpacaJsonl?: string;
+	rewardedJsonl?: string;
+	ktoJsonl?: string;
+	preferenceJsonl?: string;
+	dpoTextJsonl?: string;
+	grpoPromptsJsonl?: string;
 	manifestJson: string;
 	exampleCount: number;
 	skippedCount: number;
 	redactionCount: number;
+	rewardStats?: RewardStats;
 }
 
 export interface WebExportSources {
@@ -37,6 +62,9 @@ export interface WebExportSources {
 	evolutions?: EvolutionResult[];
 	sessions?: SessionData[];
 	sandbox?: KeatingSandboxPortableBundle;
+	feedback?: import("./storage").FeedbackEntry[];
+	quizResults?: import("./storage").QuizResultRecord[];
+	persona?: string;
 }
 
 interface FineTuneExample {
@@ -44,6 +72,11 @@ interface FineTuneExample {
 	input?: string;
 	output: string;
 	messages?: Array<{ role: "user" | "assistant"; content: string }>;
+}
+
+interface NormalizedSessionResult {
+	messages: NormalizedRewardMessage[];
+	pairMessages: Array<{ role: "user" | "assistant"; content: string }>;
 }
 
 const SECRET_PATTERNS: RegExp[] = [
@@ -130,13 +163,13 @@ function addArtifactExample(
 	});
 }
 
-function addSessionExamples(
-	examples: FineTuneExample[],
+function normalizeSessionMessages(
 	session: SessionData,
 	options: WebFineTuneExportOptions,
 	counters: { redactions: number; skipped: number },
-) {
-	const messages: Array<{ role: "user" | "assistant"; content: string }> = [];
+): NormalizedSessionResult {
+	const messages: NormalizedRewardMessage[] = [];
+	const pairMessages: Array<{ role: "user" | "assistant"; content: string }> = [];
 	for (const message of session.messages as any[]) {
 		const rawRole = message?.role;
 		const role = rawRole === "user" || rawRole === "user-with-attachments"
@@ -157,18 +190,32 @@ function addSessionExamples(
 			counters.skipped += 1;
 			continue;
 		}
+		const shortAssistant = role === "assistant" && text.length < options.minAssistantChars;
 		if (role === "assistant" && text.length < options.minAssistantChars) {
 			counters.skipped += 1;
-			continue;
 		}
 		const redacted = redactText(text, options.redact);
 		counters.redactions += redacted.count;
-		messages.push({ role, content: redacted.text });
+		messages.push({
+			role,
+			content: redacted.text,
+			timestamp: typeof message?.timestamp === "number" ? message.timestamp : undefined,
+			shortAssistant,
+		});
+		if (!shortAssistant) {
+			pairMessages.push({ role, content: redacted.text });
+		}
 	}
+	return { messages, pairMessages };
+}
 
-	for (let index = 0; index < messages.length - 1; index += 1) {
-		const user = messages[index];
-		const assistant = messages[index + 1];
+function addSessionExamples(
+	examples: FineTuneExample[],
+	normalized: NormalizedSessionResult,
+) {
+	for (let index = 0; index < normalized.pairMessages.length - 1; index += 1) {
+		const user = normalized.pairMessages[index];
+		const assistant = normalized.pairMessages[index + 1];
 		if (user?.role === "user" && assistant?.role === "assistant") {
 			examples.push({
 				instruction: user.content,
@@ -250,11 +297,20 @@ function toAlpacaJsonl(examples: FineTuneExample[]): string {
 	})).join("\n") + (examples.length ? "\n" : "");
 }
 
-export function buildWebFineTuneExportFromSources(
+function toJsonl(values: unknown[]): string {
+	return values.map((value) => JSON.stringify(value)).join("\n") + (values.length ? "\n" : "");
+}
+
+function lineCount(jsonl?: string): number {
+	return jsonl ? jsonl.trim().split("\n").filter(Boolean).length : 0;
+}
+
+export async function buildWebFineTuneExportFromSources(
 	sources: WebExportSources,
 	options: WebFineTuneExportOptions,
-): WebFineTuneExportResult {
+): Promise<WebFineTuneExportResult> {
 	const examples: FineTuneExample[] = [];
+	const rewardedTurns: RewardedTurn[] = [];
 	const counters = { redactions: 0, skipped: 0 };
 	const includeArtifacts = options.source === "all" || options.source === "artifacts";
 	const includeSessions = options.source === "all" || options.source === "sessions";
@@ -284,9 +340,28 @@ export function buildWebFineTuneExportFromSources(
 	}
 
 	if (includeSessions) {
+		const usedFeedbackIds = new Set<string>();
+		const persona = sources.persona
+			? redactText(sources.persona, options.redact)
+			: { text: "", count: 0 };
+		counters.redactions += persona.count;
 		for (const session of sources.sessions ?? []) {
 			sessionsRead += 1;
-			addSessionExamples(examples, session, options, counters);
+			const normalized = normalizeSessionMessages(session, options, counters);
+			addSessionExamples(examples, normalized);
+			const turns = computeSessionRewardedTurns({
+				sessionId: session.id,
+				title: session.title,
+				persona: persona.text,
+				messages: normalized.messages,
+				feedback: sources.feedback ?? [],
+				quizResults: sources.quizResults ?? [],
+				usedFeedbackIds,
+			});
+			if (options.judge) {
+				applyJudgeScores(turns, await options.judge(turns));
+			}
+			rewardedTurns.push(...turns);
 		}
 	}
 
@@ -308,10 +383,26 @@ export function buildWebFineTuneExportFromSources(
 	if (options.format === "alpaca" || options.format === "both") {
 		result.alpacaJsonl = toAlpacaJsonl(examples);
 	}
+	if (rewardedTurns.length > 0) {
+		const kto = buildKtoExamples(rewardedTurns);
+		const preferences = buildPreferencePairs(rewardedTurns);
+		const grpoPrompts = buildGrpoPrompts(rewardedTurns);
+		result.rewardStats = computeRewardStats(rewardedTurns);
+		result.rewardedJsonl = toJsonl(rewardedTurns.map((turn) => ({
+			messages: [...turn.context, { role: "assistant", content: turn.completion }],
+			reward: turn.reward,
+			signals: turn.signals,
+			scored: turn.scored,
+		})));
+		result.ktoJsonl = toJsonl(kto);
+		result.preferenceJsonl = toJsonl(buildDpoChatExamples(preferences));
+		result.dpoTextJsonl = toJsonl(buildDpoTextExamples(preferences));
+		result.grpoPromptsJsonl = toJsonl(grpoPrompts);
+	}
 	result.manifestJson = `${JSON.stringify({
 		schemaVersion: 1,
 		mode: "finetune",
-		generatedAt: new Date().toISOString(),
+		generatedAt: new Date(options.now ?? Date.now()).toISOString(),
 		source: options.source,
 		format: options.format,
 		counts: {
@@ -322,14 +413,19 @@ export function buildWebFineTuneExportFromSources(
 			examplesWritten: examples.length,
 			skipped: counters.skipped,
 			redactions: counters.redactions,
+			rewardedLines: lineCount(result.rewardedJsonl),
+			ktoLines: lineCount(result.ktoJsonl),
+			preferenceLines: lineCount(result.preferenceJsonl),
+			dpoTextLines: lineCount(result.dpoTextJsonl),
+			grpoPromptLines: lineCount(result.grpoPromptsJsonl),
 		},
+		rewardStats: result.rewardStats,
 		warnings: examples.length === 0 ? ["No fine-tuning examples were generated."] : [],
 	}, null, 2)}\n`;
 	return result;
 }
 
 export async function buildWebFineTuneExport(options: WebFineTuneExportOptions): Promise<WebFineTuneExportResult> {
-	const { sessions, keatingStorage } = await import("../hooks/keating-storage");
 	const metadata = await sessions.getAllMetadata();
 	const sessionData = await Promise.all(metadata.map(async (entry) => sessions.loadSession(entry.id) as Promise<SessionData | null>));
 	const [
@@ -340,6 +436,9 @@ export async function buildWebFineTuneExport(options: WebFineTuneExportOptions):
 		benchmarks,
 		evolutions,
 		sandbox,
+		feedback,
+		quizResults,
+		persona,
 	] = await Promise.all([
 		keatingStorage.getLessonPlans(),
 		keatingStorage.getLessonMaps(),
@@ -347,7 +446,10 @@ export async function buildWebFineTuneExport(options: WebFineTuneExportOptions):
 		keatingStorage.getVerifications(),
 		keatingStorage.getBenchmarks(),
 		keatingStorage.getEvolutions(),
-		import("./sandbox-export").then((module) => module.buildSandboxPortableBundle()).catch(() => undefined),
+		buildSandboxPortableBundle().catch(() => undefined),
+		keatingStorage.getFeedback(),
+		keatingStorage.getQuizResults(),
+		Promise.resolve(loadPersona()),
 	]);
 	return buildWebFineTuneExportFromSources({
 		plans,
@@ -358,5 +460,8 @@ export async function buildWebFineTuneExport(options: WebFineTuneExportOptions):
 		evolutions,
 		sessions: sessionData.filter(Boolean) as SessionData[],
 		sandbox,
+		feedback,
+		quizResults,
+		persona,
 	}, options);
 }

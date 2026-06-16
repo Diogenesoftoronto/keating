@@ -2,6 +2,8 @@ import type { SessionData, SessionMetadata } from "../types/session";
 import { sessionPreview, sessionUsage } from "../hooks/session-metadata";
 import type { KeatingStorageImportResult, KeatingStoragePortableData } from "./storage";
 import type { KeatingSandboxPortableBundle } from "./sandbox-export";
+import { getInitPromise, keatingStorage, sessions } from "../hooks/keating-storage";
+import { buildSandboxPortableBundle, importSandboxPortableBundle } from "./sandbox-export";
 
 export interface KeatingPortableSession {
 	data: SessionData;
@@ -70,7 +72,6 @@ export function buildKeatingPortableDataBundleFromSources(sources: KeatingPortab
 }
 
 export async function buildKeatingPortableDataBundle(options: { includeSandbox?: boolean } = {}): Promise<KeatingPortableDataBundle> {
-	const { sessions, keatingStorage, getInitPromise } = await import("../hooks/keating-storage");
 	await getInitPromise();
 	const metadata = await sessions.getAllMetadata();
 	const loaded = await Promise.all(metadata.map(async (entry) => {
@@ -79,7 +80,7 @@ export async function buildKeatingPortableDataBundle(options: { includeSandbox?:
 	}));
 	const sandbox = options.includeSandbox === false
 		? undefined
-		: await import("./sandbox-export").then((module) => module.buildSandboxPortableBundle()).catch(() => undefined);
+		: await buildSandboxPortableBundle().catch(() => undefined);
 	return buildKeatingPortableDataBundleFromSources({
 		sessions: loaded.filter((entry): entry is KeatingPortableSession => Boolean(entry)),
 		storage: await keatingStorage.exportPortableData(),
@@ -89,7 +90,6 @@ export async function buildKeatingPortableDataBundle(options: { includeSandbox?:
 
 export async function importKeatingPortableDataBundle(bundle: KeatingPortableDataBundle): Promise<KeatingPortableImportResult> {
 	const parsed = parseKeatingPortableDataBundle(bundle);
-	const { sessions, keatingStorage, getInitPromise } = await import("../hooks/keating-storage");
 	await getInitPromise();
 	let sessionCount = 0;
 	for (const session of parsed.sessions ?? []) {
@@ -101,7 +101,7 @@ export async function importKeatingPortableDataBundle(bundle: KeatingPortableDat
 	let sandboxSnapshotsImported = 0;
 	let sandboxCommitsImported = 0;
 	if (parsed.sandbox) {
-		const sandboxResult = await import("./sandbox-export").then((module) => module.importSandboxPortableBundle(parsed.sandbox!));
+		const sandboxResult = await importSandboxPortableBundle(parsed.sandbox);
 		sandboxFilesImported = sandboxResult.filesImported;
 		sandboxSnapshotsImported = sandboxResult.snapshotsImported;
 		sandboxCommitsImported = sandboxResult.commitsImported;

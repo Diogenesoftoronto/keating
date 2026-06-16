@@ -66,12 +66,13 @@ import {
   subscribeKeatingUiSettings,
 } from "../keating/ui-settings";
 import { getProviderApiKey } from "../lib/provider-models";
-import { tutorialApiKeyHref } from "../lib/tutorial-links";
+import { handleTutorialLinkClick, tutorialApiKeyHref } from "../lib/tutorial-links";
 import { QuizRenderer } from "./QuizRenderer";
 import type { QuizResult } from "./QuizRenderer";
 import { QuizSessionPanel } from "./QuizSessionPanel";
 import { QuizResultCard } from "./QuizResultCard";
 import { SceneRenderer } from "./SceneRenderer";
+import { AnimatedScene, parseAnimationPayload } from "./AnimatedScene";
 import { QuestionRenderer, normalizeQuestionForm } from "./QuestionRenderer";
 import type { AnsweredQuestion, QuestionFormData } from "./QuestionRenderer";
 import { GoalRenderer } from "./GoalRenderer";
@@ -79,6 +80,8 @@ import { normalizeGoal } from "../keating/goals";
 import type { Quiz } from "../keating/core";
 import { KEATING_VOICE_TOOL_NAME } from "../keating/speech";
 import { JsonCrackBlock } from "./JsonCrackBlock";
+import { FlashcardRenderer } from "./FlashcardRenderer";
+import type { FlashcardDeck } from "../keating/srs";
 
 const AuthErrorContext = createContext<(provider: string) => Promise<boolean>>(
   () => Promise.resolve(false),
@@ -718,7 +721,7 @@ const questionTagPattern = /<keating-question\s+json=([^>]+)\s*\/>/g;
 const goalTagPattern = /<keating-goal\s+json=([^>]+)\s*\/>/g;
 const generatedImageTagPattern = /<keating-image\s+json=([^>]+)\s*\/>/g;
 const quizResultTagPattern = /<keating-quiz-result\s+json=([^>]+)\s*\/>/g;
-const interactiveTagPattern = /<keating-(quiz|scene|question|goal|image|quiz-result)\s+(json|markdown)=([^>]+)\s*\/>/g;
+const interactiveTagPattern = /<keating-(quiz|scene|question|goal|image|quiz-result|animation|deck)\s+(json|markdown)=([^>]+)\s*\/>/g;
 const URL_IN_TEXT_PATTERN = /\bhttps?:\/\/[^\s<>"')\]]+/i;
 
 function parseInteractiveSegments(
@@ -731,6 +734,8 @@ function parseInteractiveSegments(
   | { type: "goal"; json: string }
   | { type: "image"; json: string }
   | { type: "quiz-result"; json: string }
+  | { type: "animation"; json: string }
+  | { type: "deck"; json: string }
 > {
   const segments: ReturnType<typeof parseInteractiveSegments> = [];
   let lastIndex = 0;
@@ -757,6 +762,8 @@ function parseInteractiveSegments(
     if (tag === "question") segments.push({ type: "question", json: payload });
     if (tag === "goal") segments.push({ type: "goal", json: payload });
     if (tag === "image") segments.push({ type: "image", json: payload });
+    if (tag === "animation") segments.push({ type: "animation", json: payload });
+    if (tag === "deck") segments.push({ type: "deck", json: payload });
     lastIndex = index + match[0].length;
   }
 
@@ -998,6 +1005,42 @@ function renderInteractiveSegment(
   }
   if (seg.type === "image") {
     return <GeneratedImageCard key={key} payload={seg.json} />;
+  }
+  if (seg.type === "animation") {
+    try {
+      const payloadStr = JSON.parse(seg.json) as string;
+      const parsed = parseAnimationPayload(payloadStr);
+      if (!parsed) return null;
+      return <AnimatedScene key={key} payload={parsed} />;
+    } catch {
+      return null;
+    }
+  }
+  if (seg.type === "deck") {
+    try {
+      const payloadStr = JSON.parse(seg.json) as string;
+      const parsed = JSON.parse(payloadStr) as FlashcardDeck;
+      if (!parsed || !Array.isArray(parsed.cards)) return null;
+      const restrictToCardIds = Array.isArray((parsed as FlashcardDeck & { restrictToCardIds?: string[] }).restrictToCardIds)
+        ? ((parsed as FlashcardDeck & { restrictToCardIds?: string[] }).restrictToCardIds ?? [])
+        : undefined;
+      return (
+        <FlashcardRenderer
+          key={key}
+          deck={parsed}
+          {...(restrictToCardIds ? { restrictToCardIds } : {})}
+          onReview={(result) => {
+            window.dispatchEvent(
+              new CustomEvent("keating:card-reviewed", {
+                detail: { deckId: parsed.id, cardId: result.cardId, rating: result.rating },
+              }),
+            );
+          }}
+        />
+      );
+    } catch {
+      return null;
+    }
   }
   return null;
 }
@@ -2840,7 +2883,7 @@ function AssistantMessage({
     try {
       window.dispatchEvent(
         new CustomEvent("keating:message-feedback", {
-          detail: { type, comment },
+          detail: { type, comment, messageId },
         }),
       );
     } catch {
@@ -2897,8 +2940,7 @@ function AssistantMessage({
                     </button>
                     <a
                       href={tutorialApiKeyHref(authError.provider)}
-                      target="_blank"
-                      rel="noreferrer"
+                      onClick={(event) => handleTutorialLinkClick(event.nativeEvent, tutorialApiKeyHref(authError.provider))}
                       className="ml-2 inline-flex items-center text-xs text-primary underline underline-offset-2"
                     >
                       Need a key?

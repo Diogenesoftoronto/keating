@@ -108,29 +108,51 @@ function FineTuneExportPanel() {
 	const [source, setSource] = useState<WebExportSource>("all");
 	const [redact, setRedact] = useState(true);
 	const [minAssistantChars, setMinAssistantChars] = useState(80);
+	const [judgeScoring, setJudgeScoring] = useState(false);
 	const [exporting, setExporting] = useState(false);
-	const [result, setResult] = useState<{ examples: number; skipped: number; redactions: number } | null>(null);
+	const [result, setResult] = useState<{ examples: number; skipped: number; redactions: number; scored?: number; unscored?: number } | null>(null);
 	const [error, setError] = useState("");
 
 	const handleExport = async () => {
 		setExporting(true);
 		setError("");
 		try {
+			const judge = judgeScoring
+				? (await import("../keating/export-judge")).createKeatingExportJudge()
+				: undefined;
 			const bundle = await buildWebFineTuneExport({
 				source,
 				format,
 				redact,
 				minAssistantChars,
+				judge,
 			});
 			if (bundle.exampleCount === 0) {
 				setError("No fine-tuning examples were generated. Create sessions or artifacts first.");
-				setResult({ examples: 0, skipped: bundle.skippedCount, redactions: bundle.redactionCount });
+				setResult({
+					examples: 0,
+					skipped: bundle.skippedCount,
+					redactions: bundle.redactionCount,
+					scored: bundle.rewardStats?.scored,
+					unscored: bundle.rewardStats?.unscored,
+				});
 				return;
 			}
 			if (bundle.chatmlJsonl) downloadTextFile("keating-finetune.chatml.jsonl", bundle.chatmlJsonl);
 			if (bundle.alpacaJsonl) downloadTextFile("keating-finetune.alpaca.jsonl", bundle.alpacaJsonl);
+			if (bundle.rewardedJsonl) downloadTextFile("train.rewarded.jsonl", bundle.rewardedJsonl);
+			if (bundle.ktoJsonl) downloadTextFile("train.kto.jsonl", bundle.ktoJsonl);
+			if (bundle.preferenceJsonl) downloadTextFile("train.preference.jsonl", bundle.preferenceJsonl);
+			if (bundle.dpoTextJsonl) downloadTextFile("train.dpo.text.jsonl", bundle.dpoTextJsonl);
+			if (bundle.grpoPromptsJsonl) downloadTextFile("prompts.grpo.jsonl", bundle.grpoPromptsJsonl);
 			downloadTextFile("keating-finetune.manifest.json", bundle.manifestJson);
-			setResult({ examples: bundle.exampleCount, skipped: bundle.skippedCount, redactions: bundle.redactionCount });
+			setResult({
+				examples: bundle.exampleCount,
+				skipped: bundle.skippedCount,
+				redactions: bundle.redactionCount,
+				scored: bundle.rewardStats?.scored,
+				unscored: bundle.rewardStats?.unscored,
+			});
 		} catch (err) {
 			setError(err instanceof Error ? err.message : String(err));
 		} finally {
@@ -186,6 +208,15 @@ function FineTuneExportPanel() {
 						/>
 						<span className="min-w-0 truncate">Redact secrets</span>
 					</label>
+					<label className="flex h-9 min-w-[18rem] max-w-full items-center gap-2 rounded-md border border-border px-3 text-sm">
+						<input
+							type="checkbox"
+							className="h-4 w-4 shrink-0"
+							checked={judgeScoring}
+							onChange={(event) => setJudgeScoring(event.target.checked)}
+						/>
+						<span className="min-w-0 truncate">LLM judge scoring (slower, uses API credits)</span>
+					</label>
 				</div>
 				<div className="flex shrink-0 flex-col items-start gap-2 xl:items-end">
 					<button
@@ -200,6 +231,9 @@ function FineTuneExportPanel() {
 					{result && (
 						<div className="text-xs text-muted-foreground">
 							{formatNumber(result.examples)} examples · {formatNumber(result.skipped)} skipped · {formatNumber(result.redactions)} redactions
+							{typeof result.scored === "number" && typeof result.unscored === "number"
+								? ` · ${formatNumber(result.scored)} scored · ${formatNumber(result.unscored)} unscored`
+								: ""}
 						</div>
 					)}
 					{error && <div className="max-w-sm text-xs text-destructive">{error}</div>}
