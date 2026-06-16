@@ -1,24 +1,30 @@
 import { defineNitroConfig } from "nitro/config";
 
+const crossOriginIsolationHeaders = {
+  "Cross-Origin-Opener-Policy": "same-origin",
+  "Cross-Origin-Embedder-Policy": "credentialless",
+};
+
 export default defineNitroConfig({
   // Ensure that /assets/* requests return 404 if not found, 
   // rather than falling back to index.html (SPA fallback).
   routeRules: {
-    "/assets/**": { fallthrough: false },
-    "/**/*.js": { fallthrough: false },
-    "/**/*.css": { fallthrough: false },
-    "/**/*.svg": { fallthrough: false },
-    "/**/*.png": { fallthrough: false },
-    "/**/*.ico": { fallthrough: false },
-    "/**/*.wasm": { fallthrough: false },
-    "/**/*.onnx": { fallthrough: false },
+    "/assets/**": { fallthrough: false, headers: crossOriginIsolationHeaders },
+    "/**/*.js": { fallthrough: false, headers: crossOriginIsolationHeaders },
+    "/**/*.css": { fallthrough: false, headers: crossOriginIsolationHeaders },
+    "/**/*.svg": { fallthrough: false, headers: crossOriginIsolationHeaders },
+    "/**/*.png": { fallthrough: false, headers: crossOriginIsolationHeaders },
+    "/**/*.ico": { fallthrough: false, headers: crossOriginIsolationHeaders },
+    "/**/*.wasm": { fallthrough: false, headers: crossOriginIsolationHeaders },
+    "/**/*.onnx": { fallthrough: false, headers: crossOriginIsolationHeaders },
     "/**/*.pdf": {
       fallthrough: false,
+      headers: crossOriginIsolationHeaders,
     },
-    "/**/*.mp4": { fallthrough: false },
-    "/**/*.webp": { fallthrough: false },
-    "/**/*.gif": { fallthrough: false },
-    "/**": { static: true },
+    "/**/*.mp4": { fallthrough: false, headers: crossOriginIsolationHeaders },
+    "/**/*.webp": { fallthrough: false, headers: crossOriginIsolationHeaders },
+    "/**/*.gif": { fallthrough: false, headers: crossOriginIsolationHeaders },
+    "/**": { static: true, headers: crossOriginIsolationHeaders },
   },
   publicAssets: [
     {
@@ -54,6 +60,22 @@ export default defineNitroConfig({
     {
       route: "/api/oauth/refresh",
       handler: "server/api/oauth/refresh.ts",
+    },
+    {
+      route: "/api/dio/checkout",
+      handler: "server/api/dio/checkout.ts",
+    },
+    {
+      route: "/api/dio/webhook",
+      handler: "server/api/dio/webhook.ts",
+    },
+    {
+      route: "/api/dio/claim",
+      handler: "server/api/dio/claim.ts",
+    },
+    {
+      route: "/api/dio/recover",
+      handler: "server/api/dio/recover.ts",
     },
   ],
 });

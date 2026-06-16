@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { getAppStorage } from "@earendil-works/pi-web-ui";
 import { KeyRound, X } from "lucide-react";
-import { tutorialApiKeyHref } from "../lib/tutorial-links";
+import { handleTutorialLinkClick, tutorialApiKeyHref } from "../lib/tutorial-links";
+import { isDioProvider } from "../dio-provider";
+import { DioAccessPromptDialog, promptDioAccess } from "./DioAccessPromptDialog";
 
 type PromptRequest = {
 	id: string;
@@ -19,6 +21,10 @@ export async function promptKeatingApiKey(provider: string): Promise<boolean> {
 	if (typeof window === "undefined") return false;
 	const existing = await getAppStorage().providerKeys.get(provider);
 	if (existing) return true;
+
+	if (isDioProvider(provider)) {
+		return promptDioAccess();
+	}
 
 	if (activePrompt) {
 		activePrompt.resolve(false);
@@ -66,7 +72,7 @@ export function KeatingApiKeyPromptDialog() {
 		return () => window.removeEventListener("keating:api-key-prompt-changed", sync);
 	}, []);
 
-	if (!request) return null;
+	if (!request) return <DioAccessPromptDialog />;
 
 	const save = async () => {
 		const trimmed = apiKey.trim();
@@ -123,8 +129,7 @@ export function KeatingApiKeyPromptDialog() {
 						<a
 							href={tutorialApiKeyHref(request.provider)}
 							className="text-xs text-primary underline underline-offset-2"
-							target="_blank"
-							rel="noreferrer"
+							onClick={(event) => handleTutorialLinkClick(event.nativeEvent, tutorialApiKeyHref(request.provider))}
 						>
 							Need a key? Follow the tutorial
 						</a>

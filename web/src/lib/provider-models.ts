@@ -1,6 +1,7 @@
 import { getModels, getProviders, type Api, type Model } from "@earendil-works/pi-ai";
 import { getAppStorage, type CustomProvider } from "@earendil-works/pi-web-ui";
 import { proxiedProviderRequestUrl } from "./provider-proxy";
+import { DIO_DEFAULT_MODEL, DIO_PROVIDER_ID } from "../dio-provider";
 import { getOAuthAccessToken, providerToOAuthId } from "../keating/oauth";
 import { withApiRetry } from "../keating/api-retry";
 
@@ -370,6 +371,10 @@ export async function getSelectableModels(
 	filter?: (provider: string) => boolean,
 ): Promise<Array<Model<Api>>> {
 	const models: Array<Model<Api>> = [];
+
+	if (!filter || filter(DIO_PROVIDER_ID)) {
+		models.push(DIO_DEFAULT_MODEL);
+	}
 
 	for (const provider of getProviders()) {
 		if (!filter || filter(provider)) {
