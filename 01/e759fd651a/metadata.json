@@ -3,7 +3,7 @@
   "checkpoint_id": "01e759fd651a",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 4,
+  "checkpoints_count": 6,
   "files_touched": [
     "web/vite.config.ts"
   ],
@@ -19,6 +19,12 @@
       "transcript": "/01/e759fd651a/1/full.jsonl",
       "content_hash": "/01/e759fd651a/1/content_hash.txt",
       "prompt": "/01/e759fd651a/1/prompt.txt"
+    },
+    {
+      "metadata": "/01/e759fd651a/2/metadata.json",
+      "transcript": "/01/e759fd651a/2/full.jsonl",
+      "content_hash": "/01/e759fd651a/2/content_hash.txt",
+      "prompt": "/01/e759fd651a/2/prompt.txt"
     }
   ],
   "token_usage": {
