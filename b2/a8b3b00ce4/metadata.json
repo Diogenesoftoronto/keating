@@ -1,0 +1,38 @@
+{
+  "cli_version": "0.7.6",
+  "checkpoint_id": "b2a8b3b00ce4",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 3,
+  "files_touched": [
+    ".flox/env/manifest.lock",
+    "AGENTS.md",
+    "web/nitro.config.ts",
+    "web/server/api/dio/recover.ts",
+    "web/server/api/dio/webhook.ts",
+    "web/src/App.tsx",
+    "web/src/components/DioAccessPromptDialog.tsx",
+    "web/src/components/KeatingApiKeyPromptDialog.tsx",
+    "web/src/dio-provider/index.ts",
+    "web/src/dio-provider/server.ts",
+    "web/src/hooks/keating-stream.ts",
+    "web/src/lib/provider-models.ts",
+    "web/src/lib/provider-proxy.ts",
+    "web/test/dio-server.test.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/b2/a8b3b00ce4/0/metadata.json",
+      "transcript": "/b2/a8b3b00ce4/0/full.jsonl",
+      "content_hash": "/b2/a8b3b00ce4/0/content_hash.txt",
+      "prompt": "/b2/a8b3b00ce4/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 490759,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 20159776,
+    "output_tokens": 69004,
+    "api_call_count": 167
+  }
+}
