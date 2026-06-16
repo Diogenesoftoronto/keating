@@ -1,0 +1,256 @@
+{
+  "info": {
+    "id": "ses_13267d606ffeAoUaKoBaJ2eTIB",
+    "slug": "witty-nebula",
+    "projectID": "a22a21fb6b0ce9d72f5871a7851df49ec28c3ac4",
+    "directory": "/home/diogenes/Projects/keating",
+    "path": "",
+    "title": "Greeting",
+    "agent": "build",
+    "model": {
+      "id": "neuralwatt/moonshotai/Kimi-K2.7-Code",
+      "providerID": "bifrost",
+      "variant": "default"
+    },
+    "version": "1.16.2",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "cost": 0,
+    "tokens": {
+      "input": 67942,
+      "output": 95,
+      "reasoning": 0,
+      "cache": {
+        "read": 0,
+        "write": 0
+      }
+    },
+    "time": {
+      "created": 1781565762042,
+      "updated": 1781565778029
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1781565762079
+        },
+        "agent": "build",
+        "model": {
+          "providerID": "bifrost",
+          "modelID": "neuralwatt/moonshotai/Kimi-K2.6"
+        },
+        "summary": {
+          "diffs": []
+        },
+        "id": "msg_ecd982a09001IVtbUoi0vGiqb9",
+        "sessionID": "ses_13267d606ffeAoUaKoBaJ2eTIB"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "hi",
+          "id": "prt_ecd982a0a0013RYxl5sxXvxevH",
+          "sessionID": "ses_13267d606ffeAoUaKoBaJ2eTIB",
+          "messageID": "msg_ecd982a09001IVtbUoi0vGiqb9"
+        }
+      ]
+    },
+    {
+      "info": {
+        "parentID": "msg_ecd982a09001IVtbUoi0vGiqb9",
+        "role": "assistant",
+        "mode": "build",
+        "agent": "build",
+        "path": {
+          "cwd": "/home/diogenes/Projects/keating",
+          "root": "/home/diogenes/Projects/keating"
+        },
+        "cost": 0,
+        "tokens": {
+          "total": 33989,
+          "input": 33939,
+          "output": 50,
+          "reasoning": 0,
+          "cache": {
+            "write": 0,
+            "read": 0
+          }
+        },
+        "modelID": "neuralwatt/moonshotai/Kimi-K2.6",
+        "providerID": "bifrost",
+        "time": {
+          "created": 1781565763680,
+          "completed": 1781565768361
+        },
+        "finish": "stop",
+        "id": "msg_ecd98306000180MCySBKU0GS5X",
+        "sessionID": "ses_13267d606ffeAoUaKoBaJ2eTIB"
+      },
+      "parts": [
+        {
+          "snapshot": "54fe11f010eea5a923203b24f732143fdf33abd5",
+          "type": "step-start",
+          "id": "prt_ecd983fb5001lYhBicddCoADfG",
+          "sessionID": "ses_13267d606ffeAoUaKoBaJ2eTIB",
+          "messageID": "msg_ecd98306000180MCySBKU0GS5X"
+        },
+        {
+          "type": "reasoning",
+          "text": " The user said \"hi\". This is a simple greeting. I should respond in a friendly, helpful manner. Since there's no specific task or question, I'll keep it brief and offer assistance. ",
+          "time": {
+            "start": 1781565767611,
+            "end": 1781565767945
+          },
+          "id": "prt_ecd983fbb001YnCnwAW4DZeIG8",
+          "sessionID": "ses_13267d606ffeAoUaKoBaJ2eTIB",
+          "messageID": "msg_ecd98306000180MCySBKU0GS5X"
+        },
+        {
+          "type": "text",
+          "text": " Hi there! How can I help you today?",
+          "time": {
+            "start": 1781565767950,
+            "end": 1781565768135
+          },
+          "id": "prt_ecd98410e001bNygu2jfFwmU6t",
+          "sessionID": "ses_13267d606ffeAoUaKoBaJ2eTIB",
+          "messageID": "msg_ecd98306000180MCySBKU0GS5X"
+        },
+        {
+          "reason": "stop",
+          "snapshot": "54fe11f010eea5a923203b24f732143fdf33abd5",
+          "type": "step-finish",
+          "tokens": {
+            "total": 33989,
+            "input": 33939,
+            "output": 50,
+            "reasoning": 0,
+            "cache": {
+              "write": 0,
+              "read": 0
+            }
+          },
+          "cost": 0,
+          "id": "prt_ecd98424d001BHLByQok8yU2gL",
+          "sessionID": "ses_13267d606ffeAoUaKoBaJ2eTIB",
+          "messageID": "msg_ecd98306000180MCySBKU0GS5X"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1781565776044
+        },
+        "agent": "build",
+        "model": {
+          "providerID": "bifrost",
+          "modelID": "neuralwatt/moonshotai/Kimi-K2.7-Code"
+        },
+        "summary": {
+          "diffs": []
+        },
+        "id": "msg_ecd9860870012AK6nbunaD68sB",
+        "sessionID": "ses_13267d606ffeAoUaKoBaJ2eTIB"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "hi",
+          "id": "prt_ecd986087002QpcfyvuGMQQk3a",
+          "sessionID": "ses_13267d606ffeAoUaKoBaJ2eTIB",
+          "messageID": "msg_ecd9860870012AK6nbunaD68sB"
+        }
+      ]
+    },
+    {
+      "info": {
+        "parentID": "msg_ecd9860870012AK6nbunaD68sB",
+        "role": "assistant",
+        "mode": "build",
+        "agent": "build",
+        "path": {
+          "cwd": "/home/diogenes/Projects/keating",
+          "root": "/home/diogenes/Projects/keating"
+        },
+        "cost": 0,
+        "tokens": {
+          "total": 34048,
+          "input": 34003,
+          "output": 45,
+          "reasoning": 0,
+          "cache": {
+            "write": 0,
+            "read": 0
+          }
+        },
+        "modelID": "neuralwatt/moonshotai/Kimi-K2.7-Code",
+        "providerID": "bifrost",
+        "time": {
+          "created": 1781565777845,
+          "completed": 1781565780805
+        },
+        "finish": "stop",
+        "id": "msg_ecd9867b5001zzIf1UOd9S73W3",
+        "sessionID": "ses_13267d606ffeAoUaKoBaJ2eTIB"
+      },
+      "parts": [
+        {
+          "snapshot": "54fe11f010eea5a923203b24f732143fdf33abd5",
+          "type": "step-start",
+          "id": "prt_ecd9871a8001E8sB3C77TRCdGX",
+          "sessionID": "ses_13267d606ffeAoUaKoBaJ2eTIB",
+          "messageID": "msg_ecd9867b5001zzIf1UOd9S73W3"
+        },
+        {
+          "type": "reasoning",
+          "text": " The user just said \"hi\" again. They might be testing if I'm responsive or want to start a conversation. I should respond briefly and ask how I can help. ",
+          "time": {
+            "start": 1781565780396,
+            "end": 1781565780573
+          },
+          "id": "prt_ecd9871ac001Up29jNGYO5zCcR",
+          "sessionID": "ses_13267d606ffeAoUaKoBaJ2eTIB",
+          "messageID": "msg_ecd9867b5001zzIf1UOd9S73W3"
+        },
+        {
+          "type": "text",
+          "text": " Hi! How can I help you today?",
+          "time": {
+            "start": 1781565780577,
+            "end": 1781565780691
+          },
+          "id": "prt_ecd987261001O05oF7dJFzoxwO",
+          "sessionID": "ses_13267d606ffeAoUaKoBaJ2eTIB",
+          "messageID": "msg_ecd9867b5001zzIf1UOd9S73W3"
+        },
+        {
+          "reason": "stop",
+          "snapshot": "54fe11f010eea5a923203b24f732143fdf33abd5",
+          "type": "step-finish",
+          "tokens": {
+            "total": 34048,
+            "input": 34003,
+            "output": 45,
+            "reasoning": 0,
+            "cache": {
+              "write": 0,
+              "read": 0
+            }
+          },
+          "cost": 0,
+          "id": "prt_ecd987315001d5y1iZAPTFu7lF",
+          "sessionID": "ses_13267d606ffeAoUaKoBaJ2eTIB",
+          "messageID": "msg_ecd9867b5001zzIf1UOd9S73W3"
+        }
+      ]
+    }
+  ]
+}
