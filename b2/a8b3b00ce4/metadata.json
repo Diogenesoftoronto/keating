@@ -3,11 +3,12 @@
   "checkpoint_id": "b2a8b3b00ce4",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 6,
+  "checkpoints_count": 11,
   "files_touched": [
     ".flox/env/manifest.lock",
     "AGENTS.md",
     "web/nitro.config.ts",
+    "web/server/api/dio/checkout.ts",
     "web/server/api/dio/claim.ts",
     "web/server/api/dio/recover.ts",
     "web/server/api/dio/webhook.ts",
@@ -20,6 +21,8 @@
     "web/src/lib/provider-models.ts",
     "web/src/lib/provider-proxy.ts",
     "web/src/pages/DioSuccess.tsx",
+    "web/src/test/dio-prompt.test.ts",
+    "web/src/test/dio-provider.test.ts",
     "web/test/dio-server.test.ts"
   ],
   "sessions": [
@@ -40,13 +43,19 @@
       "transcript": "/b2/a8b3b00ce4/2/full.jsonl",
       "content_hash": "/b2/a8b3b00ce4/2/content_hash.txt",
       "prompt": "/b2/a8b3b00ce4/2/prompt.txt"
+    },
+    {
+      "metadata": "/b2/a8b3b00ce4/3/metadata.json",
+      "transcript": "/b2/a8b3b00ce4/3/full.jsonl",
+      "content_hash": "/b2/a8b3b00ce4/3/content_hash.txt",
+      "prompt": "/b2/a8b3b00ce4/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 636985,
+    "input_tokens": 1157292,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 22773248,
-    "output_tokens": 90164,
-    "api_call_count": 210
+    "cache_read_tokens": 35569568,
+    "output_tokens": 156362,
+    "api_call_count": 316
   }
 }
