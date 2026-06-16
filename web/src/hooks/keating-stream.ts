@@ -11,11 +11,12 @@ import {
 import { normalizeToolCallStream } from "../keating/tool-call-normalizer";
 import { streamWithApiRetry } from "../keating/api-retry";
 import { chatProxyBaseUrl, proxyTargetHeader, shouldProxyModel } from "../lib/provider-proxy";
+import { DIO_DEFAULT_MODEL } from "../dio-provider";
 import { loadKeatingUiSettings } from "../keating/ui-settings";
 import { getProviderApiKey } from "../lib/provider-models";
 import { localModel, getModelName, getModelId } from "../stores/local-model";
 
-export const DEFAULT_MODEL = getModel("google", "gemini-3-flash-preview");
+export const DEFAULT_MODEL = DIO_DEFAULT_MODEL;
 
 function isGoogleGroundingModel(model: Model<Api>): boolean {
 	return model.provider === "google" && model.api === "google-generative-ai" && /^gemini-(?:2(?:\.0|\.5)|3|3\.1|3\.5)/.test(model.id);

@@ -16,6 +16,7 @@ import { SharedSession } from "./pages/SharedSession";
 import { Usage } from "./pages/Usage";
 import { KeatingBench } from "./pages/KeatingBench";
 import { OAuthCallback } from "./pages/OAuthCallback";
+import { DioSuccess } from "./pages/DioSuccess";
 import {
   applyKeatingUiTypography,
   loadKeatingUiSettings,
@@ -78,6 +79,12 @@ const oauthCallbackRoute = createRoute({
   component: OAuthCallback,
 });
 
+const dioSuccessRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/dio/success",
+	component: DioSuccess,
+});
+
 const routeTree = rootRoute.addChildren([
 	indexRoute,
 	chatRoute,
@@ -88,6 +95,7 @@ const routeTree = rootRoute.addChildren([
   blogRoute,
   paperRoute,
   oauthCallbackRoute,
+	dioSuccessRoute,
 ]);
 
 const browserHistory = createBrowserHistory();

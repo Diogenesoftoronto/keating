@@ -226,6 +226,23 @@ keating feedback up|down|confused [topic] [--comment=...]
 
 Keating tries the configured provider first, then falls back to OpenAI/Anthropic if the default key is missing.
 
+### Web / Dio provider
+
+Used by the web app's Dio credit purchase and Bifrost virtual-key provisioning routes. Never expose `BIFROST_API_KEY` client-side.
+
+- `DIO_ENABLED` — Master switch for the Dio provider; defaults to `true` only when `NODE_ENV=development`.
+- `VITE_DIO_ENABLED` — Client-side mirror of `DIO_ENABLED`; controls whether the UI offers Dio access.
+- `CREEM_API_KEY` — Creem API key for server-side checkout creation.
+- `CREEM_WEBHOOK_SECRET` — Secret used to verify Creem webhook signatures.
+- `CREEM_PRODUCT_ID_DIO_CREDITS` — The configured Creem product ID for Dio credits.
+- `DIO_CREDIT_BUDGET` — Bifrost virtual-key budget (credits) assigned to each purchase.
+- `BIFROST_API_KEY` — Server-side Bifrost API key. In local dev, set via `export BIFROST_API_KEY="$(fnox get bifrost_api_key)"`.
+- `BIFROST_BASE_URL` — Bifrost gateway URL (default: `https://bifrost.dio.computer`).
+- `BIFROST_MODEL_ALIAS` — Model allowed for the provisioned virtual key (default: `kimi-k2.6`).
+- `RESEND_API_KEY` — Resend API key for sending recovery OTP emails.
+- `DIO_RECOVERY_FROM_EMAIL` — Sender address for recovery emails (default: `support@keating.help`).
+- `DIO_RECOVERY_DEV_CODE` — When `true`, recovery OTPs are logged and returned instead of emailed (default: `true` when `NODE_ENV=development`).
+
 ## Important Files & Their Roles
 
 | File | Purpose |
