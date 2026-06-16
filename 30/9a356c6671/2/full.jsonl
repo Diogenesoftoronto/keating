@@ -1,0 +1,48 @@
+{
+  "info": {
+    "id": "ses_1326cc704ffeQfrYEER7TsGdZV",
+    "slug": "lucky-star",
+    "projectID": "a22a21fb6b0ce9d72f5871a7851df49ec28c3ac4",
+    "directory": "/home/diogenes/Projects/keating",
+    "path": "",
+    "title": "New session - 2026-06-15T23:17:18.203Z",
+    "agent": "build",
+    "model": {
+      "id": "neuralwatt/moonshotai/Kimi-K2.6",
+      "providerID": "bifrost"
+    },
+    "version": "1.16.2",
+    "cost": 0,
+    "tokens": {
+      "input": 0,
+      "output": 0,
+      "reasoning": 0,
+      "cache": {
+        "read": 0,
+        "write": 0
+      }
+    },
+    "time": {
+      "created": 1781565438203,
+      "updated": 1781565438203
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1781565438260
+        },
+        "agent": "build",
+        "model": {
+          "providerID": "bifrost",
+          "modelID": "neuralwatt/moonshotai/Kimi-K2.6"
+        },
+        "id": "msg_ecd93391500185q7XBabczN4G4",
+        "sessionID": "ses_1326cc704ffeQfrYEER7TsGdZV"
+      },
+      "parts": []
+    }
+  ]
+}
