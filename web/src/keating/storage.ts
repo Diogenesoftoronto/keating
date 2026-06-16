@@ -7,7 +7,7 @@ import type { LearnerGoal } from "./goals";
 import { inferBrowserLearnerTurnSignal } from "./core";
 
 const DB_NAME = "keating-db";
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 
 // Store names
 const STORES = {
@@ -24,6 +24,8 @@ const STORES = {
 	IMPROVEMENTS: "improvements",
 	GOALS: "goals",
 	QUIZ_RESULTS: "quiz-results",
+	DECKS: "decks",
+	CARD_REVIEWS: "card-reviews",
 } as const;
 
 export interface KeatingStoragePortableData {
@@ -40,6 +42,8 @@ export interface KeatingStoragePortableData {
 	improvements: ImprovementAttemptRecord[];
 	goals: LearnerGoal[];
 	quizResults: QuizResultRecord[];
+	decks: FlashcardDeck[];
+	cardReviews: CardReviewRecord[];
 }
 
 export interface KeatingStorageImportResult {
@@ -55,6 +59,8 @@ export interface KeatingStorageImportResult {
 	improvements: number;
 	goals: number;
 	quizResults: number;
+	decks: number;
+	cardReviews: number;
 }
 
 export interface LessonPlan {
@@ -132,6 +138,8 @@ export interface FeedbackEntry {
 	createdAt: number;
 	source?: "explicit" | "turn-analysis";
 	evidence?: string;
+	sessionId?: string;
+	messageId?: string;
 }
 
 export interface LearnerState {
@@ -180,6 +188,65 @@ export interface ImprovementAttemptRecord {
 	targets: string;
 	hypothesis: string;
 	sessionId?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Flashcard decks & spaced-repetition state (SM-2 variant)
+// ---------------------------------------------------------------------------
+
+export interface FlashcardSrsState {
+	ease: number;
+	intervalDays: number;
+	reps: number;
+	lapses: number;
+	dueAt: number;
+	lastReviewedAt: number;
+	lastRating: 0 | 1 | 2 | 3 | null;
+}
+
+export interface Flashcard {
+	id: string;
+	front: string;
+	back: string;
+	tags?: string[];
+	srs: FlashcardSrsState;
+	createdAt: number;
+	updatedAt: number;
+}
+
+export interface FlashcardDeck {
+	id: string;
+	topic: string;
+	slug: string;
+	title: string;
+	description?: string;
+	cards: Flashcard[];
+	createdAt: number;
+	updatedAt: number;
+	sessionId?: string;
+}
+
+export interface CardReviewRecord {
+	id: string;
+	deckId: string;
+	cardId: string;
+	topic: string;
+	slug: string;
+	rating: 0 | 1 | 2 | 3;
+	appliedIntervalDays: number;
+	easeAfter: number;
+	createdAt: number;
+	sessionId?: string;
+}
+
+export function mergeFeedbackById(...lists: Array<FeedbackEntry[] | undefined>): FeedbackEntry[] {
+	const byFeedbackId = new Map<string, FeedbackEntry>();
+	for (const list of lists) {
+		for (const entry of list ?? []) {
+			byFeedbackId.set(entry.id, entry);
+		}
+	}
+	return [...byFeedbackId.values()].sort((a, b) => a.createdAt - b.createdAt);
 }
 
 export class KeatingStorage {
@@ -413,6 +480,8 @@ export class KeatingStorage {
 			improvements,
 			goals,
 			quizResults,
+			decks,
+			cardReviews,
 		] = await Promise.all([
 			this.getLessonPlans(),
 			this.getLessonMaps(),
@@ -427,6 +496,8 @@ export class KeatingStorage {
 			this.getImprovementAttempts(),
 			this.getGoals(),
 			this.getQuizResults(),
+			this.getDecks(),
+			this.getCardReviews(),
 		]);
 		return {
 			lessonPlans,
@@ -442,6 +513,8 @@ export class KeatingStorage {
 			improvements,
 			goals,
 			quizResults,
+			decks,
+			cardReviews,
 		};
 	}
 
@@ -459,11 +532,12 @@ export class KeatingStorage {
 			improvements: await this.putMany(STORES.IMPROVEMENTS, data.improvements),
 			goals: await this.putMany(STORES.GOALS, data.goals),
 			quizResults: await this.putMany(STORES.QUIZ_RESULTS, data.quizResults),
+			decks: await this.putMany(STORES.DECKS, data.decks),
+			cardReviews: await this.putMany(STORES.CARD_REVIEWS, data.cardReviews),
 		};
 		if (data.learnerState) {
 			const current = await this.getLearnerState();
-			const mergedFeedback = [...current.feedbackHistory, ...(data.learnerState.feedbackHistory ?? []), ...(data.feedback ?? [])];
-			const byFeedbackId = new Map(mergedFeedback.map((entry) => [entry.id, entry]));
+			const mergedFeedback = mergeFeedbackById(current.feedbackHistory, data.learnerState.feedbackHistory, data.feedback);
 			const bySessionId = new Map(
 				[...(current.sessions ?? []), ...(data.learnerState.sessions ?? [])].map((session) => [
 					session.id ?? `${session.startedAt}:${session.endedAt ?? "open"}`,
@@ -474,7 +548,7 @@ export class KeatingStorage {
 				...current,
 				...data.learnerState,
 				topicsExplored: [...new Set([...(current.topicsExplored ?? []), ...(data.learnerState.topicsExplored ?? [])])],
-				feedbackHistory: [...byFeedbackId.values()],
+				feedbackHistory: mergedFeedback,
 				strengths: [...new Set([...(current.strengths ?? []), ...(data.learnerState.strengths ?? [])])],
 				weaknesses: [...new Set([...(current.weaknesses ?? []), ...(data.learnerState.weaknesses ?? [])])],
 				sessions: [...bySessionId.values()],
@@ -695,7 +769,7 @@ export class KeatingStorage {
 	async recordFeedback(
 		topic: string,
 		signal: "thumbs-up" | "thumbs-down" | "confused",
-		options: { source?: "explicit" | "turn-analysis"; evidence?: string } = {},
+		options: { source?: "explicit" | "turn-analysis"; evidence?: string; sessionId?: string; messageId?: string } = {},
 	): Promise<FeedbackEntry> {
 		const entry: FeedbackEntry = {
 			id: this.generateId(),
@@ -704,6 +778,8 @@ export class KeatingStorage {
 			createdAt: Date.now(),
 			source: options.source ?? "explicit",
 			evidence: options.evidence,
+			sessionId: options.sessionId ?? this.currentSessionId ?? undefined,
+			messageId: options.messageId,
 		};
 		await this.put(STORES.FEEDBACK, entry);
 
@@ -941,9 +1017,87 @@ export class KeatingStorage {
 		});
 	}
 
+	// Flashcard Decks (SM-2 spaced repetition)
+	async saveDeck(deck: Omit<FlashcardDeck, "id" | "createdAt" | "updatedAt"> & { id?: string; createdAt?: number }): Promise<FlashcardDeck> {
+		const now = Date.now();
+		const record: FlashcardDeck = {
+			id: deck.id ?? this.generateId(),
+			topic: deck.topic,
+			slug: deck.slug,
+			title: deck.title,
+			description: deck.description,
+			cards: deck.cards,
+			createdAt: deck.createdAt ?? now,
+			updatedAt: now,
+			sessionId: deck.sessionId ?? this.currentSessionId ?? undefined,
+		};
+		await this.put(STORES.DECKS, record);
+		return record;
+	}
+
+	async getDecks(topic?: string): Promise<FlashcardDeck[]> {
+		if (topic) {
+			return this.getByTopic<FlashcardDeck>(STORES.DECKS, topic);
+		}
+		return this.getAll<FlashcardDeck>(STORES.DECKS);
+	}
+
+	async getDeck(id: string): Promise<FlashcardDeck | null> {
+		const decks = await this.getDecks();
+		return decks.find((d) => d.id === id) ?? null;
+	}
+
+	async getDeckBySlug(slug: string): Promise<FlashcardDeck | null> {
+		const decks = await this.getDecks();
+		return decks.find((d) => d.slug === slug) ?? null;
+	}
+
+	async updateDeckCardSrs(deckId: string, cardId: string, srs: FlashcardSrsState, updatedAt: number = Date.now()): Promise<FlashcardDeck | null> {
+		const deck = await this.getDeck(deckId);
+		if (!deck) return null;
+		let changed = false;
+		const cards = deck.cards.map((card) => {
+			if (card.id !== cardId) return card;
+			changed = true;
+			return { ...card, srs, updatedAt };
+		});
+		if (!changed) return deck;
+		const updated: FlashcardDeck = { ...deck, cards, updatedAt };
+		await this.put(STORES.DECKS, updated);
+		return updated;
+	}
+
+	async deleteDeck(id: string): Promise<void> {
+		await this.deleteById(STORES.DECKS, id);
+	}
+
+	async recordCardReview(review: Omit<CardReviewRecord, "id" | "createdAt"> & { id?: string; createdAt?: number }): Promise<CardReviewRecord> {
+		const record: CardReviewRecord = {
+			id: review.id ?? this.generateId(),
+			deckId: review.deckId,
+			cardId: review.cardId,
+			topic: review.topic,
+			slug: review.slug,
+			rating: review.rating,
+			appliedIntervalDays: review.appliedIntervalDays,
+			easeAfter: review.easeAfter,
+			createdAt: review.createdAt ?? Date.now(),
+			sessionId: review.sessionId ?? this.currentSessionId ?? undefined,
+		};
+		await this.put(STORES.CARD_REVIEWS, record);
+		return record;
+	}
+
+	async getCardReviews(topic?: string): Promise<CardReviewRecord[]> {
+		if (topic) {
+			return this.getByTopic<CardReviewRecord>(STORES.CARD_REVIEWS, topic);
+		}
+		return this.getAll<CardReviewRecord>(STORES.CARD_REVIEWS);
+	}
+
 	// List all artifacts
 	async listArtifacts(): Promise<Array<{ id: string; label: string; type: string; createdAt: number }>> {
-		const [plans, maps, animations, benchmarks, evolutions, promptEvos, improvements] = await Promise.all([
+		const [plans, maps, animations, benchmarks, evolutions, promptEvos, improvements, decks] = await Promise.all([
 			this.getLessonPlans(),
 			this.getLessonMaps(),
 			this.getAnimations(),
@@ -951,12 +1105,14 @@ export class KeatingStorage {
 			this.getEvolutions(),
 			this.getPromptEvolutions(),
 			this.getImprovementAttempts(),
+			this.getDecks(),
 		]);
 
 		return [
 			...plans.map((p) => ({ id: p.id, label: `Plan: ${p.topic}`, type: "plan", createdAt: p.createdAt })),
 			...maps.map((m) => ({ id: m.id, label: `Map: ${m.topic}`, type: "map", createdAt: m.createdAt })),
 			...animations.map((a) => ({ id: a.id, label: `Animation: ${a.topic}`, type: "animation", createdAt: a.createdAt })),
+			...decks.map((d) => ({ id: d.id, label: `Deck: ${d.title} (${d.cards.length} cards)`, type: "deck", createdAt: d.updatedAt })),
 			...benchmarks.map((b) => ({
 				id: b.id,
 				label: `Benchmark: ${b.topic || "general"} (${b.score.toFixed(2)})`,

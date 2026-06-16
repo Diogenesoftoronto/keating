@@ -1398,13 +1398,22 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
           now generates <Code>fill_in</Code> and <Code>true_false</Code>
           questions alongside the existing types so the UI sees real variety.
         </p>
-        <h3 id="scene-renderer" className="font-bold mt-4 mb-2">Scene Storyboard Renderer</h3>
+        <h3 id="scene-renderer" className="font-bold mt-4 mb-2">Interactive Animated Scenes</h3>
         <p className="text-sm mb-4">
-          The <Code>animate</Code> tool emits a <Code>&lt;keating-scene /&gt;</Code>
-          tag alongside its markdown. The new <Code>SceneRenderer</Code>
-          component parses the storyboard into a set of scene cards with
-          duration, visual descriptions, audio cues, transitions, and highlights.
-          Users can click through the timeline or use prev/next arrows.
+          The <Code>animate</Code> tool now emits a <Code>&lt;keating-animation /&gt;</Code>
+          tag carrying a structured <Code>AnimationPayload</Code>: an ordered
+          list of frames, each with typed visual elements (boxes, circles,
+          labels, icons) at explicit coordinates and connectors (arrows,
+          dashed lines, bidirectional links) between them. The new
+          <Code>AnimatedScene</Code> component renders these as a real,
+          animated SVG diagram that fades elements in and out, interpolates
+          positions between frames, draws arrows, pulses highlighted nodes,
+          and auto-advances. Play / pause / scrub controls and a frame
+          timeline live in the sidebar. Animations can also include a
+          follow-up CTA on the last frame that hands off to
+          <Code>ask_user_question</Code> or <Code>quiz</Code> for
+          check-your-understanding, so visuals and assessments compose in
+          the same chat flow.
         </p>
         <h3 id="dark-mode-fix" className="font-bold mt-4 mb-2">Dark Mode Contrast Fix</h3>
         <p className="text-sm mb-4">

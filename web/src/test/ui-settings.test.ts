@@ -60,6 +60,7 @@ describe("Keating UI Settings", () => {
 			expect(settings.recentModels).toEqual([]);
 			expect(settings.customModels).toEqual([]);
 			expect(settings.animationRenderer).toBe("manim");
+			expect(settings.alternativeResponseChance).toBe(0.05);
 		});
 
 		it("returns defaults when localStorage has invalid JSON", () => {
@@ -79,6 +80,13 @@ describe("Keating UI Settings", () => {
 			expect(settings.fontFamily).toBe("space-mono");
 			expect(settings.shareLinkMode).toBe("compressed-hash");
 			expect(settings.showToolUi).toBe(DEFAULT_UI_SETTINGS.showToolUi);
+		});
+
+		it("clamps alternative response chance to a probability", () => {
+			localStorage.setItem("keating_ui_settings", JSON.stringify({ alternativeResponseChance: 2 }));
+			expect(loadKeatingUiSettings().alternativeResponseChance).toBe(1);
+			localStorage.setItem("keating_ui_settings", JSON.stringify({ alternativeResponseChance: -1 }));
+			expect(loadKeatingUiSettings().alternativeResponseChance).toBe(0);
 		});
 
 		it("loads Hyperframes as an optional animation renderer", () => {

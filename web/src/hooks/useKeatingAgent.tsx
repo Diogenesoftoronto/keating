@@ -1,5 +1,5 @@
 import { useRef, useTransition, useCallback, use, useEffect } from "react";
-import { Agent, type AgentState, type ThinkingLevel } from "@earendil-works/pi-agent-core";
+import { Agent, type AgentMessage, type AgentState, type ThinkingLevel } from "@earendil-works/pi-agent-core";
 import { useDialogState } from "./useDialogState";
 import {
   type Model,
@@ -37,6 +37,12 @@ import { getInitPromise, keatingStorage, sessions, updateSessionTitle } from "./
 import { cloneMessages, createSessionId, sessionPreview, sessionTitle, sessionUsage, truncateAtForkPoint } from "./session-metadata";
 import { saveSharedSession, sharedSessionUrl, type SharedSessionUrlResult } from "../keating/shared-sessions";
 import { loadKeatingUiSettings } from "../keating/ui-settings";
+import {
+  branchBeforeAssistantTurn,
+  canGenerateAlternativeFromBranch,
+  lastAssistantTimestamp,
+  shouldGenerateAlternativeResponse,
+} from "../keating/alternative-responses";
 import type { ChatPanelHandle } from "../types/chat-panel";
 import type { SessionData, SessionMetadata } from "../types/session";
 
@@ -179,6 +185,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const bootstrapGenerationRef = useRef(0);
   const persistentStorageRequestedRef = useRef(false);
   const systemPromptBaseRef = useRef<string>("");
+  const alternativeGenerationRef = useRef(new Set<string>());
 
   const openSettings = useCallback(() => {
     settingsDialog.onOpen();
@@ -188,6 +195,28 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     setActiveSessionId(sessionIdRef.current);
     keatingStorage.setCurrentSessionId(sessionIdRef.current);
   }, [setActiveSessionId]);
+
+  useEffect(() => {
+    const onMessageFeedback = async (event: Event) => {
+      const detail = (event as CustomEvent<{ type?: unknown; comment?: unknown; messageId?: unknown }>).detail;
+      const signal = detail?.type === "up"
+        ? "thumbs-up"
+        : detail?.type === "down"
+          ? "thumbs-down"
+          : null;
+      if (!signal) return;
+      const state = await keatingStorage.getLearnerState();
+      const topic = state.topicsExplored.at(-1) ?? "general";
+      await keatingStorage.recordFeedback(topic, signal, {
+        source: "explicit",
+        evidence: typeof detail.comment === "string" && detail.comment.trim() ? detail.comment : undefined,
+        messageId: typeof detail.messageId === "string" ? detail.messageId : undefined,
+        sessionId: sessionIdRef.current,
+      });
+    };
+    window.addEventListener("keating:message-feedback", onMessageFeedback);
+    return () => window.removeEventListener("keating:message-feedback", onMessageFeedback);
+  }, []);
 
   async function loadBrowserModel() {
     const state = localModel.getState();
@@ -255,6 +284,85 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     window.dispatchEvent(new CustomEvent("keating:sessions-changed"));
   }, []);
 
+  const maybeGenerateAlternativeResponse = useCallback(async (
+    agent: Agent,
+    sourceSessionId: string,
+  ) => {
+    if (sessionIdRef.current !== sourceSessionId) return;
+    const settings = loadKeatingUiSettings();
+    if (!shouldGenerateAlternativeResponse(settings.alternativeResponseChance)) return;
+
+    const sourceMessages = cloneMessages(agent.state.messages);
+    const assistantTimestamp = lastAssistantTimestamp(sourceMessages);
+    if (assistantTimestamp == null) return;
+    const generationKey = `${sourceSessionId}:${assistantTimestamp}`;
+    if (alternativeGenerationRef.current.has(generationKey)) return;
+
+    const branchMessages = branchBeforeAssistantTurn(sourceMessages, assistantTimestamp);
+    if (!canGenerateAlternativeFromBranch(branchMessages)) return;
+    alternativeGenerationRef.current.add(generationKey);
+
+    const model = agent.state.model as Model<Api>;
+    try {
+      if (model.provider === "browser") {
+        await loadBrowserModel();
+      } else if (!(await getProviderApiKey(model.provider))) {
+        return;
+      }
+      const stream = await hybridStreamFn(model, {
+        systemPrompt: agent.state.systemPrompt,
+        messages: branchMessages as unknown as Context["messages"],
+      }, {
+        temperature: 0.85,
+      });
+      const alternative = await stream.result() as AgentMessage;
+      const alternativeContent = (alternative as any).content;
+      const text = Array.isArray(alternativeContent)
+        ? alternativeContent
+          .filter((part: any) => part?.type === "text" && typeof part.text === "string")
+          .map((part: any) => part.text)
+          .join("")
+          .trim()
+        : "";
+      if (!text || (alternative as any).stopReason === "error" || (alternative as any).stopReason === "aborted") return;
+
+      const now = new Date().toISOString();
+      const id = createSessionId();
+      const messages = [...branchMessages, alternative];
+      const title = `${sessionTitle(branchMessages) || "Alternative response"} (alternative)`;
+      const metadata: SessionMetadata = {
+        id,
+        title,
+        parentSessionId: sourceSessionId,
+        forkedAt: now,
+        createdAt: now,
+        lastModified: now,
+        messageCount: messages.length,
+        usage: sessionUsage(messages),
+        thinkingLevel: agent.state.thinkingLevel,
+        preview: sessionPreview(messages),
+        aiGeneratedTitle: false,
+      };
+      const data: SessionData = {
+        id,
+        title,
+        parentSessionId: sourceSessionId,
+        forkedAt: now,
+        model: agent.state.model,
+        thinkingLevel: agent.state.thinkingLevel,
+        messages,
+        createdAt: now,
+        lastModified: now,
+        aiGeneratedTitle: false,
+      };
+      await sessions.save(data, metadata);
+      window.dispatchEvent(new CustomEvent("keating:sessions-changed", { detail: { sessionId: id, parentSessionId: sourceSessionId, generatedAlternative: true } }));
+      window.dispatchEvent(new CustomEvent("keating:dpo-alternative-created", { detail: { sessionId: id, parentSessionId: sourceSessionId } }));
+    } catch (error) {
+      console.warn("Failed to generate DPO alternative response:", error);
+    }
+  }, []);
+
   const createAgent = useCallback(async (panel: ChatPanelHandle, initialState?: Partial<AgentState>) => {
     const agentSessionId = sessionIdRef.current;
     const agentCreatedAt = sessionCreatedAtRef.current;
@@ -310,7 +418,10 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
         window.dispatchEvent(new CustomEvent("keating:artifact-created", { detail: { toolName: ev.toolName, result: ev.result } }));
       }
       if (ev.type === "agent_end") {
-        agent.waitForIdle().then(() => saveSessionSnapshot(agent, agentSessionId, agentCreatedAt)).catch(console.error);
+        agent.waitForIdle()
+          .then(() => saveSessionSnapshot(agent, agentSessionId, agentCreatedAt))
+          .then(() => maybeGenerateAlternativeResponse(agent, agentSessionId))
+          .catch(console.error);
       }
     });
 
@@ -343,7 +454,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     };
 
     await panel.setAgent(agent, setupCallbacks);
-  }, [saveSessionSnapshot, speechSettings, toolOptions]);
+  }, [maybeGenerateAlternativeResponse, saveSessionSnapshot, speechSettings, toolOptions]);
 
   useEffect(() => {
     const agent = agentRef.current;

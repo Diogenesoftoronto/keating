@@ -42,9 +42,6 @@ export async function bootNodePod(): Promise<Nodepod | null> {
 				workdir: "/workspace",
 			});
 
-			// Lazy-load boot files so they code-split into their own chunk
-			const { NODEPOD_BOOT_FILES } = await import("./nodepod-boot-files");
-
 			// Populate VFS with bundled source files
 			for (const [relPath, content] of Object.entries(NODEPOD_BOOT_FILES)) {
 				const vPath = `/workspace/${relPath}`;

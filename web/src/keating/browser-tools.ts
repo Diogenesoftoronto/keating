@@ -7,7 +7,6 @@ import type { AgentTool } from "@earendil-works/pi-agent-core";
 import type { KeatingAgentRuntimeConfig } from "./agent-runtime";
 import { KeatingStorage, DEFAULT_BROWSER_POLICY } from "./storage";
 import { createSpeechTool, type WebSpeechSettings } from "./speech";
-import { loadKeatingUiSettings } from "./ui-settings";
 import { getProviderApiKey } from "../lib/provider-models";
 import { proxiedProviderRequestUrl } from "../lib/provider-proxy";
 import {
@@ -61,6 +60,7 @@ import {
 	type ImprovementArchive,
 } from "./core";
 import type { Policy } from "./storage";
+import { initialSrsState, validateDeckDraft } from "./srs";
 import {
 	isNodePodActive,
 	nodePodExecute,
@@ -202,43 +202,127 @@ function escapeHtml(value: string): string {
 		.replace(/'/g, "&#39;");
 }
 
-function buildManimScene(resolved: ResolvedTopic): string {
-	return `// Scene: ${resolved.title}
-// Manim-web compatible scene definition
-
-class ${resolved.slug.replace(/-/g, "_").replace(/^(.)/, (c) => c.toUpperCase())}Scene extends Scene {
+function buildManimScene(resolved: ResolvedTopic, storyboard: string): string {
+	// Pull the agent-authored scene list out of the storyboard so the generated
+	// manim scene source actually reflects the lesson beats (titles + visuals)
+	// rather than the generic placeholder template we used to ship.
+	const scenes = parseStoryboardScenes(storyboard);
+	const slug = resolved.slug.replace(/-/g, "_").replace(/^(.)/, (c) => c.toUpperCase());
+	const className = `${slug}Scene`;
+	if (scenes.length === 0) {
+		return `// Scene: ${resolved.title}
+// Manim-web compatible scene definition (no authored scenes found)
+class ${className} extends Scene {
   construct() {
-    // Scene 1: Introduction
-    this.play(FadeIn(title("${resolved.title}")));
-    
-    // Scene 2: Intuition
-    this.play(Create(intuitionDiagram));
-    
-    // Scene 3: Formal
-    this.play(Write(formalDefinition));
-    
-    // Scene 4: Misconceptions
-    this.play(Indicate(commonMistake), Transform(commonMistake, correctVersion));
-    
-    // Scene 5: Examples
-    this.play(Create(exampleVisual));
-    
-    // Scene 6: Transfer
-    this.play(FadeOut(title("${resolved.title}")));
+    this.play(FadeIn(title(${JSON.stringify(resolved.title)})));
+  }
+}`;
+	}
+
+	const body = scenes
+		.map((scene) => {
+			const titleLiteral = JSON.stringify(scene.title);
+			const visualLiteral = JSON.stringify(scene.visual || scene.highlight || "");
+			if (scene.title.toLowerCase().includes("miscon")) {
+				return `    this.play(Indicate(${titleLiteral}), Write(${visualLiteral}));`;
+			}
+			if (scene.title.toLowerCase().includes("formal")) {
+				return `    this.play(Write(${visualLiteral}), FadeIn(${titleLiteral}));`;
+			}
+			if (scene.title.toLowerCase().includes("example")) {
+				return `    this.play(Create(${visualLiteral}), Transform(${visualLiteral}, ${visualLiteral}));`;
+			}
+			return `    this.play(FadeIn(${titleLiteral}), Write(${visualLiteral}));`;
+		})
+		.join("\n");
+
+	return `// Scene: ${resolved.title}
+// Manim-web compatible scene definition (agent-authored scenes)
+class ${className} extends Scene {
+  construct() {
+${body}
   }
 }`;
 }
 
-function buildHyperframesComposition(resolved: ResolvedTopic): string {
+interface StoryboardScene {
+	number: number;
+	title: string;
+	duration: string;
+	visual: string;
+	audio?: string;
+	transition?: string;
+	highlight?: string;
+}
+
+/** Extract agent-authored scenes from a storyboard markdown document. */
+export function parseStoryboardScenes(markdown: string): StoryboardScene[] {
+	const lines = markdown.split(/\r?\n/);
+	const scenes: StoryboardScene[] = [];
+	let current: Partial<StoryboardScene> = {};
+	for (const line of lines) {
+		const titleMatch = line.match(/^#\s+Animation Storyboard:\s*(.+)$/);
+		if (titleMatch) continue;
+		const sceneMatch = line.match(/^##\s+Scene\s+(\d+):\s*(.+?)\s*\((\d+(?:\.\d+)?(?:\s*-\s*\d+(?:\.\d+)?)?s)\)\s*$/);
+		if (sceneMatch) {
+			if (current.title) scenes.push(current as StoryboardScene);
+			current = {
+				number: Number(sceneMatch[1]),
+				title: sceneMatch[2].trim(),
+				duration: sceneMatch[3].trim(),
+			};
+			continue;
+		}
+		const visualMatch = line.match(/^-\s*\*\*Visual\*\*:\s*(.+)$/);
+		if (visualMatch) current.visual = visualMatch[1].trim();
+		const audioMatch = line.match(/^-\s*\*\*(?:Audio|Narration)\*\*:\s*(.+)$/);
+		if (audioMatch) current.audio = audioMatch[1].trim();
+		const transMatch = line.match(/^-\s*\*\*Transition\*\*:\s*(.+)$/);
+		if (transMatch) current.transition = transMatch[1].trim();
+		const durMatch = line.match(/^-\s*\*\*Duration\*\*:\s*(\d+)s\s*$/);
+		if (durMatch) current.duration = `${durMatch[1]}s`;
+		const highlightMatch = line.match(/^-\s*\*\*(?:Highlight|Overlay|Step-through)\*\*:\s*(.+)$/);
+		if (highlightMatch) current.highlight = highlightMatch[1].trim();
+	}
+	if (current.title) scenes.push(current as StoryboardScene);
+	return scenes;
+}
+
+function parseStoryboardDurationSeconds(label: string): number {
+	const cleaned = label.trim().replace(/s$/i, "");
+	const range = cleaned.match(/^(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)$/);
+	if (range) return Math.max(0.5, Number(range[2]) - Number(range[1]));
+	const value = Number(cleaned);
+	return Number.isFinite(value) ? Math.max(0.5, value) : 4;
+}
+
+function storyboardTitle(markdown: string): string {
+	const match = markdown.match(/^#\s+Animation Storyboard:\s*(.+)$/m);
+	return match ? match[1].trim() : "";
+}
+
+function buildHyperframesComposition(resolved: ResolvedTopic, storyboard: string): string {
+	// Use the agent-authored storyboard so every visible label, body line, and
+	// duration reflects actual teaching content — not a generic template.
+	const title = storyboardTitle(storyboard) || resolved.title;
+	const scenes = parseStoryboardScenes(storyboard);
 	const compositionId = `${resolved.slug}-lesson`;
-	const clips = [
-		{ start: 0, duration: 2, label: "Intro", title: resolved.title, body: resolved.summary },
-		{ start: 2, duration: 6, label: "Intuition", title: "Start concrete", body: resolved.intuition[0] ?? "Animate the core idea before naming it." },
-		{ start: 8, duration: 7, label: "Formal", title: "Name the structure", body: resolved.formalCore[0] ?? "Reveal the definition one relationship at a time." },
-		{ start: 15, duration: 5, label: "Repair", title: "Fix the trap", body: resolved.misconceptions[0] ?? "Contrast a common mistake with the corrected model." },
-		{ start: 20, duration: 8, label: "Example", title: "Work it through", body: resolved.examples[0] ?? "Step through a representative example." },
-		{ start: 28, duration: 7, label: "Transfer", title: "Carry it elsewhere", body: `Bridge to ${resolved.interdisciplinaryHooks.slice(0, 2).join(", ") || "a neighboring domain"}.` },
-	];
+
+	const clips =
+		scenes.length > 0
+			? scenes.map((scene, index) => {
+				const start = scenes.slice(0, index).reduce((sum, prev) => sum + parseStoryboardDurationSeconds(prev.duration), 0);
+				const duration = parseStoryboardDurationSeconds(scene.duration);
+				return {
+					start,
+					duration,
+					label: `Scene ${scene.number}`,
+					title: scene.title,
+					body: scene.visual || scene.highlight || scene.audio || scene.transition || "",
+				};
+			})
+			: [{ start: 0, duration: 6, label: "Lesson", title: resolved.title, body: resolved.summary }];
+
 	const encodedClips = JSON.stringify(clips.map((clip) => ({ selector: `#clip-${clip.start}`, start: clip.start })));
 
 	return `<!doctype html>
@@ -450,6 +534,101 @@ function buildComparisonSvg(params: {
 </svg>`;
 }
 
+function buildProcessSvg(params: {
+	title: string;
+	subtitle: string;
+	points: string[];
+	labels: string[];
+	style: string;
+}): string {
+	const palette = params.style === "dark"
+		? { bg: "#101214", panel: "#181c20", ink: "#f6f1e7", muted: "#c9c1b3", accent: "#f59e0b", line: "#3f4650", arrow: "#9dd7c8", node: "#1f2937" }
+		: { bg: "#f8f7f2", panel: "#ffffff", ink: "#171717", muted: "#525252", accent: "#0f766e", line: "#d8d3c7", arrow: "#0f766e", node: "#f0f4ef" };
+	const points = params.points.length > 0 ? params.points : ["Define the inputs", "Process the inputs", "Verify the output"];
+	const labels = params.labels.length > 0 ? params.labels : points.map((_, i) => `Step ${i + 1}`);
+	const count = points.length;
+	// Lay out the steps as a horizontal sequence with arrows in between. If we
+	// have 5+ steps, wrap to a second row so the diagram stays readable.
+	const perRow = count <= 4 ? count : Math.ceil(count / 2);
+	const rows: number[] = [];
+	let remaining = count;
+	while (remaining > 0) {
+		const take = Math.min(perRow, remaining);
+		rows.push(take);
+		remaining -= take;
+	}
+	const boxWidth = 232;
+	const boxHeight = 152;
+	const hGap = 64;
+	const vGap = 90;
+	const startX = (1200 - (Math.max(...rows) * boxWidth + (Math.max(...rows) - 1) * hGap)) / 2;
+	const startY = 264;
+
+	let cursor = 0;
+	const renderBox = (point: string, label: string, x: number, y: number, index: number) => {
+		const lines = wrapSvgText(point, 30);
+		return `  <rect x="${x}" y="${y}" width="${boxWidth}" height="${boxHeight}" rx="14" fill="${palette.node}" stroke="${palette.accent}" stroke-width="2"/>
+  <circle cx="${x + 22}" cy="${y + 22}" r="14" fill="${palette.accent}"/>
+  <text x="${x + 22}" y="${y + 28}" text-anchor="middle" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="800" fill="${params.style === "dark" ? "#111827" : "#ffffff"}">${index + 1}</text>
+  <text x="${x + 44}" y="${y + 28}" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="720" fill="${palette.ink}">${escapeHtml(label)}</text>
+  ${svgTextLines(lines, x + 18, y + 60, { size: 18, fill: palette.ink, weight: 500 })}`;
+	};
+	const renderArrow = (x1: number, x2: number, y: number, key: string) => {
+		const midY = y + boxHeight / 2;
+		const xStart = x1 + boxWidth;
+		const xEnd = x2;
+		return `  <line x1="${xStart}" y1="${midY}" x2="${xEnd - 14}" y2="${midY}" stroke="${palette.arrow}" stroke-width="3" stroke-linecap="round" data-arrow-key="${key}"/>
+  <polygon points="${xEnd - 14},${midY - 7} ${xEnd},${midY} ${xEnd - 14},${midY + 7}" fill="${palette.arrow}"/>`;
+	};
+
+	const boxes: string[] = [];
+	const arrows: string[] = [];
+	for (let r = 0; r < rows.length; r++) {
+		const rowCount = rows[r];
+		const rowWidth = rowCount * boxWidth + (rowCount - 1) * hGap;
+		const rowStartX = (1200 - rowWidth) / 2;
+		const y = startY + r * (boxHeight + vGap);
+		const rowBoxes: { x: number; y: number; index: number }[] = [];
+		for (let c = 0; c < rowCount; c++) {
+			const x = rowStartX + c * (boxWidth + hGap);
+			rowBoxes.push({ x, y, index: cursor });
+			boxes.push(renderBox(points[cursor] ?? "", labels[cursor] ?? `Step ${cursor + 1}`, x, y, cursor));
+			cursor += 1;
+		}
+		for (let c = 0; c < rowBoxes.length - 1; c++) {
+			arrows.push(renderArrow(rowBoxes[c].x, rowBoxes[c + 1].x, rowBoxes[c].y, `h-${r}-${c}`));
+		}
+		// Vertical wrap-around arrow from last box in this row to first box in
+		// the next row, on the right edge.
+		if (r < rows.length - 1) {
+			const last = rowBoxes[rowBoxes.length - 1];
+			const nextRow = rows[r + 1];
+			const nextRowWidth = nextRow * boxWidth + (nextRow - 1) * hGap;
+			const nextRowStartX = (1200 - nextRowWidth) / 2;
+			const firstX = nextRowStartX;
+			const firstY = startY + (r + 1) * (boxHeight + vGap);
+			const bendX = last.x + boxWidth + 32;
+			const bendY1 = last.y + boxHeight / 2;
+			const bendY2 = firstY + boxHeight / 2;
+			arrows.push(
+				`  <path d="M ${last.x + boxWidth} ${bendY1} L ${bendX} ${bendY1} L ${bendX} ${bendY2} L ${firstX - 14} ${bendY2}" fill="none" stroke="${palette.arrow}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" data-arrow-key="v-${r}"/>` +
+					`<polygon points="${firstX - 14},${bendY2 - 7} ${firstX},${bendY2} ${firstX - 14},${bendY2 + 7}" fill="${palette.arrow}"/>`,
+			);
+		}
+	}
+
+	return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-label="${escapeHtml(params.title)}">
+  <rect width="1200" height="760" fill="${palette.bg}"/>
+  <rect x="40" y="40" width="1120" height="680" rx="18" fill="${palette.panel}" stroke="${palette.line}" stroke-width="2"/>
+  <text x="72" y="116" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="50" font-weight="760" fill="${palette.ink}">${escapeHtml(params.title)}</text>
+  ${svgTextLines(wrapSvgText(params.subtitle, 82), 74, 166, { size: 23, fill: palette.muted, weight: 450 })}
+  <line x1="72" y1="222" x2="1128" y2="222" stroke="${palette.line}" stroke-width="2"/>
+  ${arrows.join("\n")}
+  ${boxes.join("\n")}
+  <text x="72" y="700" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="18" fill="${palette.muted}">Numbered boxes show the real order of operations; arrows are the causal or temporal links. Edit by passing new points and labels arrays.</text>
+</svg>`;
+}
+
 function buildLocalImageSvg(params: {
 	title: string;
 	subtitle: string;
@@ -460,6 +639,7 @@ function buildLocalImageSvg(params: {
 }): string {
 	if (params.kind === "anatomy") return buildAnatomySvg(params);
 	if (params.kind === "comparison") return buildComparisonSvg(params);
+	if (params.kind === "process") return buildProcessSvg(params);
 	return buildInfographicSvg(params);
 }
 
@@ -684,6 +864,169 @@ export async function createKeatingTools(
 			}
 		),
 
+		// animate - The model authors and renders a real manim-web or hyperframes animation
+		createTool(
+			"animate",
+			"You write the animation itself. The tool renders whatever you author in a sandboxed iframe inline in the chat. Pass `kind` (manim|hyperframes) and authored `body`. For `manim`, write an `async function construct(scene, M) { ... }` that uses manim-web primitives (M.Text, M.FadeIn, M.Create, M.Axes, M.BarChart, M.Transform, M.Write, M.LaggedStart, M.Succession, etc.) to drive a real motion-based explanation. For `hyperframes`, write a full HTML document with GSAP timelines. The tool does not synthesize a template. Calling without authored `body` is rejected with the exact shape required.",
+			{
+				topic: { type: "string", description: "The topic this animation explains" },
+				kind: { type: "string", enum: ["manim", "hyperframes"], description: "Renderer: manim (raw JS scene using manim-web) or hyperframes (HTML + GSAP)." },
+				summary: { type: "string", description: "One-line summary shown above the animation. Recommended." },
+				body: { type: "string", description: "REQUIRED. The JavaScript construct function or full HTML document you author — must explain THIS topic with real content, not a placeholder." },
+			},
+			async (params) => {
+				const topic = (params.topic as string) || "";
+				if (!topic) return "Topic required.";
+
+				const kindRaw = typeof params.kind === "string" ? params.kind : "";
+				if (kindRaw !== "manim" && kindRaw !== "hyperframes") {
+					return [
+						"Pick a `kind`: manim or hyperframes.",
+						"  - `manim`: write an `async function construct(scene, M) { ... }` using manim-web primitives. The construct function runs against a real Scene and animates with real motion.",
+						"  - `hyperframes`: write a full HTML document with GSAP timelines.",
+						"You MUST pass `body` with real content for THIS topic. No template fallback exists.",
+					].join("\n");
+				}
+
+				const kind = kindRaw;
+				const body = typeof params.body === "string" ? params.body : "";
+				const summary = typeof params.summary === "string" ? params.summary.trim() : "";
+
+				if ((kind === "manim" || kind === "hyperframes") && body.trim().length < 50) {
+					const manimExample =
+						"async function construct(scene, M) {\n" +
+						"  const title = new M.Text({ text: 'How DNS works', fontSize: 48, color: '#f4f1e8' });\n" +
+						"  title.moveTo([0, 3, 0]);\n" +
+						"  await scene.play(new M.Write(title));\n" +
+						"  await scene.wait(0.5);\n" +
+						"  const laptop = new M.Text({ text: 'Laptop', fontSize: 28 });\n" +
+						"  laptop.moveTo([-4, 1, 0]);\n" +
+						"  await scene.play(new M.FadeIn(laptop));\n" +
+						"  const resolver = new M.Text({ text: 'Recursive resolver', fontSize: 28 });\n" +
+						"  resolver.moveTo([4, 1, 0]);\n" +
+						"  await scene.play(new M.FadeIn(resolver));\n" +
+						"  await scene.play(new M.Create(new M.Arrow([-3, 0.5, 0], [3, 0.5, 0], { color: '#0f766e' })));\n" +
+						"  await scene.wait(1.5);\n" +
+						"}\n\n" +
+						"Use any manim-web primitive via M.* and drive scene.play(...) / scene.wait(...) for real motion.";
+					const hyperframesExample =
+						"<!doctype html><html><body style=\"background:#0a0a0a;color:#f4f1e8;font-family:ui-monospace,monospace;margin:0;\">\n" +
+						"  <section id=\"clip-0\" data-start=\"0\" data-duration=\"3\" style=\"opacity:0;\"><h2>Browser cache</h2><p>The OS asks the resolver</p></section>\n" +
+						"  <section id=\"clip-3\" data-start=\"3\" data-duration=\"4\" style=\"opacity:0;\"><h2>Recursive resolver</h2><p>The heavy lifting happens here</p></section>\n" +
+						"  <script src=\"https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js\"></script>\n" +
+						"  <script>\n" +
+						"    const tl = gsap.timeline({paused:true});\n" +
+						"    tl.to('#clip-0', {opacity:1, duration:0.4}, 0);\n" +
+						"    tl.to('#clip-0', {opacity:0, duration:0.3}, 3);\n" +
+						"    tl.to('#clip-3', {opacity:1, duration:0.4}, 3);\n" +
+						"    tl.play(0);\n" +
+						"  </script>\n</body></html>";
+					return [
+						`Author the ${kind} animation yourself. Pass \`body\` as real, non-placeholder ${kind === "manim" ? "JavaScript" : "HTML"} code for THIS topic (>=50 chars).`,
+						"",
+						"Example body shape:",
+						"",
+						kind === "manim" ? manimExample : hyperframesExample,
+					].join("\n");
+				}
+
+				const resolved = resolveTopic(topic);
+
+				const storyboard = `# Animation: ${resolved.title}\n\nRenderer: ${kind}\n\nThe model authored a raw ${kind} scene (see manifest for the source).`;
+				const scene = body;
+				const renderer: "manim" | "hyperframes" = kind === "hyperframes" ? "hyperframes" : "manim";
+				const animationPayload: Record<string, unknown> = {
+					topic: resolved.title,
+					kind,
+					summary: summary || undefined,
+					body,
+				};
+
+				const manifest = JSON.stringify(
+					{
+						topic: resolved.title,
+						slug: resolved.slug,
+						domain: resolved.domain,
+						kind,
+						sourceBytes: body.length,
+						generatedAt: new Date().toISOString(),
+					},
+					null,
+					2,
+				);
+				const saved = await storage.saveAnimation(topic, storyboard, scene, manifest, renderer);
+
+				return [
+					`[artifact://animation/${saved.id}]`,
+					"",
+					`<keating-animation json=${JSON.stringify(JSON.stringify(animationPayload))} />`,
+				].join("\n");
+			}
+		),
+
+		createTool(
+			"deck",
+			"Build a spaced-repetition flashcard deck that the chat renders inline. You must author the cards yourself from the material the learner actually covered. Pass `cards` as an array of {front, back, tags?}; generic or duplicate cards are rejected. Keating persists the deck and initializes real SM-2 review state for each card.",
+			{
+				topic: { type: "string", description: "The topic this deck covers" },
+				title: { type: "string", description: "Optional deck title shown in the inline review card. Defaults to '<topic> flashcards'." },
+				description: { type: "string", description: "Optional one-line note about what the learner should practice with this deck." },
+				cards: {
+					type: "array",
+					description: "REQUIRED. Model-authored flashcards: [{ front, back, tags? }]. Write concrete retrieval prompts and answers from the lesson; no placeholders or generic cards.",
+					items: {
+						type: "object",
+						properties: {
+							front: { type: "string", description: "Prompt side of the card." },
+							back: { type: "string", description: "Answer side of the card." },
+							tags: { type: "array", items: { type: "string" }, description: "Optional topic tags for the card." },
+						},
+					},
+				},
+			},
+			async (params) => {
+				const topic = String(params.topic ?? "").trim();
+				if (!topic) return "Topic required.";
+
+				const validated = validateDeckDraft(params.cards);
+				if (!validated.ok) {
+					return `Author the flashcards yourself. ${validated.error} No template fallback exists.`;
+				}
+
+				const resolved = resolveTopic(topic);
+				const title = String(params.title ?? "").trim() || `${resolved.title} flashcards`;
+				const description = String(params.description ?? "").trim() || undefined;
+				const baseSlug = slugifyDeckTitle(title) || `${resolved.slug}-flashcards`;
+				const existing = await storage.getDeckBySlug(baseSlug);
+				const now = Date.now();
+				const cards = (validated.cards ?? []).map((card, index) => ({
+					id: existing?.cards[index]?.id ?? draftDeckCardId(baseSlug, index),
+					front: card.front,
+					back: card.back,
+					...(card.tags ? { tags: card.tags } : {}),
+					srs: existing?.cards[index]?.srs ?? initialSrsState(now),
+					createdAt: existing?.cards[index]?.createdAt ?? now,
+					updatedAt: now,
+				}));
+
+				const saved = await storage.saveDeck({
+					id: existing?.id,
+					createdAt: existing?.createdAt,
+					topic: resolved.title,
+					slug: baseSlug,
+					title,
+					description,
+					cards,
+				});
+
+				return [
+					`Created deck **${saved.title}** with ${saved.cards.length} cards.`,
+					"",
+					`<keating-deck json=${JSON.stringify(JSON.stringify(saved))} />`,
+				].join("\n");
+			}
+		),
+
 		// plan - Generate lesson plan
 		createTool(
 			"plan",
@@ -733,97 +1076,26 @@ export async function createKeatingTools(
 			}
 		),
 
-		// animate - Generate animation storyboard
-		createTool(
-			"animate",
-			"Generate an animation storyboard for a topic. Use to create visual teaching materials.",
-			{
-				topic: { type: "string", description: "The topic to generate an animation storyboard for" }
-			},
-			async (params) => {
-				const topic = (params.topic as string) || "";
-				if (!topic) return "Topic required.";
-
-				const resolved = resolveTopic(topic);
-				const storyboard = `# Animation Storyboard: ${resolved.title}
-
-## Scene 1: Introduction (0-2s)
-- **Visual**: Title card with "${resolved.title}"
-- **Transition**: Fade in
-- **Audio**: Brief hook from summary
-
-## Scene 2: Intuition Phase (2-8s)
-- **Visual**: ${resolved.intuition[0] || "Animated diagram showing key concept"}
-- **Duration**: 6s
-- **Narration**: Concrete example before formal language
-
-## Scene 3: Formal Structure (8-15s)
-- **Visual**: ${resolved.formalCore[0] || "Step-by-step formal definition"}
-- **Duration**: 7s
-- **Highlight**: Key definitions and relationships
-
-## Scene 4: Misconception Repair (15-20s)
-- **Visual**: Common mistake vs correct understanding
-- **Duration**: 5s
-- **Overlay**: Warning indicators
-
-## Scene 5: Examples (20-28s)
-- **Visual**: ${resolved.examples[0] || "Worked example"}
-- **Duration**: 8s
-- **Step-through**: Incremental reveal
-
-## Scene 6: Transfer (28-35s)
-- **Visual**: Bridge to ${resolved.interdisciplinaryHooks.slice(0, 2).join(", ")}
-- **Duration**: 7s
-- **Transition**: Fade out with summary
-`;
-
-				const renderer = loadKeatingUiSettings().animationRenderer;
-				const scene = renderer === "hyperframes" ? buildHyperframesComposition(resolved) : buildManimScene(resolved);
-
-				const manifest = JSON.stringify(
-					{
-						topic: resolved.title,
-						slug: resolved.slug,
-						domain: resolved.domain,
-						renderer,
-						compositionId: renderer === "hyperframes" ? `${resolved.slug}-lesson` : undefined,
-						width: renderer === "hyperframes" ? 1920 : undefined,
-						height: renderer === "hyperframes" ? 1080 : undefined,
-						scenes: ["intro", "intuition", "formal", "misconceptions", "examples", "transfer"],
-						duration: 35,
-						generatedAt: new Date().toISOString(),
-					},
-					null,
-					2
-				);
-
-				const saved = await storage.saveAnimation(topic, storyboard, scene, manifest, renderer);
-
-				return `[artifact://animation/${saved.id}]\n\n${storyboard}\n\n<keating-scene markdown=${JSON.stringify(JSON.stringify(storyboard))} />`;
-			}
-		),
-
 		createTool(
 			"generate_image",
-			"Create a learning image. Supports real OpenAI image models for raster images and browser-local SVG diagrams for labeled anatomy/comparison/process visuals. Use kind='anatomy' for labeled structures like an antibody Y-shape, kind='comparison' for size/category charts, and mode='model' when the learner asks for an actual generated picture.",
+			"Create a learning image. Supports real OpenAI image models for raster images and browser-local SVG diagrams for labeled anatomy/comparison/process visuals. You MUST author the content yourself by passing `title`, `subtitle`, and at least 3 `points` describing what the visual should communicate — generic titles like 'Learning visual' or empty point lists are rejected. Pick the `kind` based on what the visual needs to show: 'anatomy' for labeled structures (e.g. antibody Y-shape), 'comparison' for size/category bars, 'process' for numbered step-by-step flows with arrows (e.g. DNS resolution stages, Krebs cycle, signal transduction), and 'cards' for grouped concepts. Use `mode='model'` when the learner asks for an actual generated picture; 'auto' tries the image model when an OpenAI key is configured and falls back to SVG.",
 			{
-				title: { type: "string", description: "Short title for the learning image" },
-				subtitle: { type: "string", description: "One-sentence explanation or framing caption" },
+				title: { type: "string", description: "REQUIRED. Short, specific title for the visual that reflects THIS topic (e.g. 'DNS resolution steps' or 'IgG antibody anatomy'), not 'Learning visual'." },
+				subtitle: { type: "string", description: "REQUIRED. One-sentence framing caption that names the specific idea being illustrated." },
 				prompt: { type: "string", description: "Detailed image-model prompt. Required for mode=model; should describe labels, diagram layout, style, and educational goal." },
 				mode: { type: "string", description: "auto, model, or svg. auto tries the image model when an OpenAI key is configured, then falls back to SVG." },
-				kind: { type: "string", description: "cards, anatomy, comparison, or process. Used for local SVG fallback and diagram layout." },
+				kind: { type: "string", description: "cards, anatomy, comparison, or process. Used for local SVG fallback and diagram layout. Use 'process' for ordered step-by-step flows with arrows; 'anatomy' for labeled structures; 'comparison' for size/category bars; 'cards' for grouped concepts." },
 				imageModel: { type: "string", description: "OpenAI image model, such as gpt-image-1.5, gpt-image-1, or gpt-image-1-mini." },
 				size: { type: "string", description: "Image size for model mode: 1024x1024, 1536x1024, or 1024x1536." },
 				quality: { type: "string", description: "Image quality for model mode: low, medium, or high." },
 				points: {
 					type: "array",
-					description: "Three to six concise teaching points to visualize",
+					description: "REQUIRED (>=3). Concrete teaching points to visualize. For 'process' these become the numbered steps; for 'anatomy' they become label callouts; for 'comparison' they become bar values; for 'cards' they become card body text. Generic points like 'Core idea' are rejected.",
 					items: { type: "string" },
 				},
 				labels: {
 					type: "array",
-					description: "Optional labels for the visual blocks, such as stages or categories",
+					description: "Optional labels for the visual blocks. For 'process' these become the step titles shown in each box; for 'anatomy' they become structure names.",
 					items: { type: "string" },
 				},
 				style: {
@@ -832,8 +1104,8 @@ export async function createKeatingTools(
 				},
 			},
 			async (params) => {
-				const title = String(params.title ?? "").trim() || "Learning visual";
-				const subtitle = String(params.subtitle ?? "").trim() || "A compact visual summary for this concept.";
+				const title = String(params.title ?? "").trim();
+				const subtitle = String(params.subtitle ?? "").trim();
 				const points = asStringArray(params.points, []);
 				const labels = asStringArray(params.labels, []);
 				const style = String(params.style ?? "light").toLowerCase() === "dark" ? "dark" : "light";
@@ -841,14 +1113,41 @@ export async function createKeatingTools(
 				const mode = requestedMode === "model" || requestedMode === "svg" ? requestedMode : "auto";
 				const kindRaw = String(params.kind ?? "cards").toLowerCase();
 				const kind = ["anatomy", "comparison", "process", "cards"].includes(kindRaw) ? kindRaw : "cards";
+
+				// Reject generic/templated content the same way plan/map/verify/quiz
+				// do — the visual must be grounded in real material.
+				const genericTitle = !title || title.toLowerCase() === "learning visual";
+				const genericSubtitle = !subtitle || subtitle.toLowerCase() === "a compact visual summary for this concept.";
+				const genericPoints = points.length < 3 || points.every((p) => /^(core idea|key relationship|learner takeaway)$/i.test(p.trim()));
+				if (genericTitle || genericSubtitle || genericPoints) {
+					return [
+						"Author the image content yourself. The tool will not synthesize a generic visual. Pass:",
+						"- `title`: a topic-specific title (e.g. 'How DNS resolves a name', 'IgG Y-shape anatomy') — not 'Learning visual'.",
+						"- `subtitle`: a one-sentence framing that names the actual idea.",
+						`- \`points\`: >=3 concrete points that will become the visual's content${
+							kind === "process"
+								? " (for process kind, these are the numbered steps in order)"
+								: kind === "anatomy"
+									? " (for anatomy kind, these are the labeled-structure callouts)"
+									: kind === "comparison"
+										? " (for comparison kind, include the value/size in each point, e.g. '150 kDa full Y')"
+										: " (real concepts grounded in the material)"
+						}.`,
+						"- `labels` (optional): per-block labels for the visual.",
+						"No template fallback exists.",
+					].join("\n");
+				}
+
+				const finalTitle = title;
+				const finalSubtitle = subtitle;
 				const imageModel = String(params.imageModel ?? "gpt-image-1.5").trim() || "gpt-image-1.5";
 				const sizeRaw = String(params.size ?? "1024x1024");
 				const size = ["1024x1024", "1536x1024", "1024x1536"].includes(sizeRaw) ? sizeRaw : "1024x1024";
 				const qualityRaw = String(params.quality ?? "medium").toLowerCase();
 				const quality = ["low", "medium", "high"].includes(qualityRaw) ? qualityRaw : "medium";
 				const prompt = String(params.prompt ?? "").trim() || [
-					`Create a clear educational ${kind === "cards" ? "infographic" : `${kind} diagram`} titled "${title}".`,
-					subtitle,
+					`Create a clear educational ${kind === "cards" ? "infographic" : `${kind} diagram`} titled "${finalTitle}".`,
+					finalSubtitle,
 					points.length > 0 ? `Include these ideas: ${points.join("; ")}.` : "",
 					labels.length > 0 ? `Use labels: ${labels.join(", ")}.` : "",
 					"Make it legible, accurate, and suitable for a learner studying from the image.",
@@ -860,8 +1159,8 @@ export async function createKeatingTools(
 					try {
 						const generated = await generateOpenAiImage({ prompt, model: imageModel, size, quality });
 						payload = {
-							title,
-							alt: subtitle,
+							title: finalTitle,
+							alt: finalSubtitle,
 							dataUrl: generated.dataUrl,
 							mimeType: generated.mimeType,
 							model: imageModel,
@@ -871,27 +1170,27 @@ export async function createKeatingTools(
 						if (mode === "model") throw error;
 						note = `\n\n_Image model unavailable, rendered a local SVG fallback instead: ${error instanceof Error ? error.message : String(error)}_`;
 						payload = {
-							title,
-							alt: subtitle,
-							svg: buildLocalImageSvg({ title, subtitle, points, labels, style, kind }),
+							title: finalTitle,
+							alt: finalSubtitle,
+							svg: buildLocalImageSvg({ title: finalTitle, subtitle: finalSubtitle, points, labels, style, kind }),
 							model: "svg-local",
 							prompt,
 						};
 					}
 				} else {
 					payload = {
-						title,
-						alt: subtitle,
-						svg: buildLocalImageSvg({ title, subtitle, points, labels, style, kind }),
+						title: finalTitle,
+						alt: finalSubtitle,
+						svg: buildLocalImageSvg({ title: finalTitle, subtitle: finalSubtitle, points, labels, style, kind }),
 						model: "svg-local",
 						prompt,
 					};
 				}
 
 				return [
-					`# Generated Image: ${title}`,
+					`# Generated Image: ${finalTitle}`,
 					"",
-					subtitle,
+					finalSubtitle,
 					note,
 					"",
 					`<keating-image json=${JSON.stringify(JSON.stringify(payload))} />`,
@@ -1866,3 +2165,31 @@ ${topicList}
 
 	return tools;
 }
+
+
+function slugifyDeckTitle(value: string): string {
+	return value
+		.toLowerCase()
+		.trim()
+		.replace(/[^a-z0-9]+/g, "-")
+		.replace(/^-+|-+$/g, "")
+		.slice(0, 80);
+}
+
+function draftDeckCardId(deckSlug: string, index: number): string {
+	if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+		return `${deckSlug}-${crypto.randomUUID()}`;
+	}
+	return `${deckSlug}-${Date.now()}-${index + 1}`;
+}
+// Internal-only exports so unit tests can drive the helpers without needing
+// to instantiate the full agent tool set.
+export {
+	buildManimScene as __test_buildManimScene,
+	buildHyperframesComposition as __test_buildHyperframesComposition,
+	buildProcessSvg as __test_buildProcessSvg,
+	buildLocalImageSvg as __test_buildLocalImageSvg,
+	buildInfographicSvg as __test_buildInfographicSvg,
+	parseStoryboardDurationSeconds as __test_parseStoryboardDurationSeconds,
+	storyboardTitle as __test_storyboardTitle,
+};

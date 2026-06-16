@@ -23,6 +23,7 @@ export interface KeatingUiSettings {
 	animationRenderer: AnimationRenderer;
 	fontFamily: UiFontFamily;
 	shareLinkMode: ShareLinkMode;
+	alternativeResponseChance: number;
 	userProfileImage: string | null;
 	hiddenProviders: string[];
 	recentModels: Array<{ key: string; timestamp: number }>;
@@ -38,6 +39,7 @@ export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
 	animationRenderer: "manim",
 	fontFamily: "jetbrains-mono",
 	shareLinkMode: "portable-short",
+	alternativeResponseChance: 0.05,
 	userProfileImage: null,
 	hiddenProviders: [],
 	recentModels: [],
@@ -121,6 +123,12 @@ function normalizeShareLinkMode(value: unknown): ShareLinkMode {
 		: DEFAULT_UI_SETTINGS.shareLinkMode;
 }
 
+function normalizeAlternativeResponseChance(value: unknown): number {
+	const numeric = typeof value === "number" ? value : Number(value);
+	if (!Number.isFinite(numeric)) return DEFAULT_UI_SETTINGS.alternativeResponseChance;
+	return Math.max(0, Math.min(1, numeric));
+}
+
 function normalizeSettings(value: Partial<KeatingUiSettings> | null): KeatingUiSettings {
 	return {
 		showToolUi: value?.showToolUi ?? DEFAULT_UI_SETTINGS.showToolUi,
@@ -134,6 +142,7 @@ function normalizeSettings(value: Partial<KeatingUiSettings> | null): KeatingUiS
 				? value.fontFamily
 				: DEFAULT_UI_SETTINGS.fontFamily,
 		shareLinkMode: normalizeShareLinkMode(value?.shareLinkMode),
+		alternativeResponseChance: normalizeAlternativeResponseChance(value?.alternativeResponseChance),
 		userProfileImage: typeof value?.userProfileImage === "string" && value.userProfileImage.startsWith("data:image/") ? value.userProfileImage : DEFAULT_UI_SETTINGS.userProfileImage,
 		hiddenProviders: Array.isArray(value?.hiddenProviders) ? value.hiddenProviders : DEFAULT_UI_SETTINGS.hiddenProviders,
 		recentModels: Array.isArray(value?.recentModels) ? value.recentModels : DEFAULT_UI_SETTINGS.recentModels,

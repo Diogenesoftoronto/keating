@@ -8,7 +8,7 @@ import {
 	addCustomModel,
 	removeCustomModel,
 } from "../keating/ui-settings";
-import { tutorialApiKeyHref } from "../lib/tutorial-links";
+import { handleTutorialLinkClick, tutorialApiKeyHref } from "../lib/tutorial-links";
 import { SettingsSectionNav } from "./SettingsSectionNav";
 import { Toggle } from "./Toggle";
 import {
@@ -682,8 +682,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 								</label>
 								<a
 									href={tutorialApiKeyHref(provider)}
-									target="_blank"
-									rel="noreferrer"
+									onClick={(event) => handleTutorialLinkClick(event.nativeEvent, tutorialApiKeyHref(provider))}
 									className="text-xs text-primary underline underline-offset-2"
 								>
 									Get a key
@@ -748,8 +747,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 							<label className="text-xs font-medium text-muted-foreground capitalize">{provider} API Key</label>
 							<a
 								href={tutorialApiKeyHref(provider)}
-								target="_blank"
-								rel="noreferrer"
+								onClick={(event) => handleTutorialLinkClick(event.nativeEvent, tutorialApiKeyHref(provider))}
 								className="text-xs text-primary underline underline-offset-2"
 							>
 								Get a key

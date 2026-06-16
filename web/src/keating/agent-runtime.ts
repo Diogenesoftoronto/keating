@@ -1,5 +1,8 @@
 export type KeatingAgentRuntimeMode = "browser-only" | "browser-nodepod" | "remote" | "cloud";
 
+// Overlay NodePod browser sandbox when locally active
+import { isNodePodActive, NODEPOD_LOCAL_ENDPOINT } from "./nodepod-runtime";
+
 export interface KeatingRemoteAgentRuntimeConfig {
   provider: string;
   endpoint: string | null;
@@ -139,7 +142,6 @@ export async function loadAgentRuntimeConfig(force = false): Promise<KeatingAgen
     .then(normalizeAgentRuntimeConfig)
     .then(async (config) => {
       // Overlay NodePod browser sandbox when locally active
-      const { isNodePodActive, NODEPOD_LOCAL_ENDPOINT } = await import("./nodepod-runtime");
       if (isNodePodActive()) {
         return {
           ...config,

@@ -94,6 +94,11 @@ async function readArtifact(storage: KeatingStorage, type: string, id: string): 
 				}, null, 2),
 			};
 		}
+		case "deck": {
+			const artifact = (await storage.getDecks()).find((item) => item.id === id);
+			if (!artifact) break;
+			return { mimeType: "application/json", text: JSON.stringify(artifact, null, 2) };
+		}
 		case "verification": {
 			const artifact = (await storage.getVerifications()).find((item) => item.id === id);
 			if (!artifact) break;

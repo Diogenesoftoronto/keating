@@ -4,7 +4,7 @@ import {
 	buildKeatingPortableDataBundleFromSources,
 	parseKeatingPortableDataBundle,
 } from "../keating/portable-data";
-import type { KeatingStoragePortableData } from "../keating/storage";
+import { mergeFeedbackById, type KeatingStoragePortableData } from "../keating/storage";
 import type { SessionData, SessionMetadata } from "../types/session";
 
 function emptyPortableStorage(overrides: Partial<KeatingStoragePortableData> = {}): KeatingStoragePortableData {
@@ -29,6 +29,8 @@ function emptyPortableStorage(overrides: Partial<KeatingStoragePortableData> = {
 		improvements: [],
 		goals: [],
 		quizResults: [],
+		decks: [],
+		cardReviews: [],
 		...overrides,
 	};
 }
@@ -83,5 +85,30 @@ describe("portable Keating data bundle", () => {
 	it("rejects unsupported bundle shapes", () => {
 		expect(() => parseKeatingPortableDataBundle({ kind: "keating-finetune", schemaVersion: 1 })).toThrow("Unsupported Keating portable data bundle");
 		expect(() => parseKeatingPortableDataBundle(null)).toThrow("Unsupported Keating portable data bundle");
+	});
+
+	it("round-trips feedback attribution fields and merges feedback by id", () => {
+		const feedback = {
+			id: "f1",
+			topic: "Derivative",
+			signal: "thumbs-up" as const,
+			createdAt: 1,
+			sessionId: "s1",
+			messageId: "assistant-0-2000",
+		};
+		const bundle = buildKeatingPortableDataBundleFromSources({
+			generatedAt: "2026-06-10T00:00:00.000Z",
+			sessions: [],
+			storage: emptyPortableStorage({ feedback: [feedback] }),
+		});
+		expect(parseKeatingPortableDataBundle(bundle).storage.feedback[0]).toEqual(feedback);
+		expect(mergeFeedbackById(
+			[{ ...feedback, evidence: "old" }],
+			[{ ...feedback, evidence: "new" }],
+			[{ id: "f2", topic: "Derivative", signal: "confused", createdAt: 2 }],
+		)).toEqual([
+			{ ...feedback, evidence: "new" },
+			{ id: "f2", topic: "Derivative", signal: "confused", createdAt: 2 },
+		]);
 	});
 });

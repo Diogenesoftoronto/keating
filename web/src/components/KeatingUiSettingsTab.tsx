@@ -167,6 +167,34 @@ export function KeatingUiSettingsTab() {
 				<Toggle checked={settings.autoOpenArtifacts} onChange={(checked) => update({ autoOpenArtifacts: checked })} />
 			</SettingRow>
 
+			<SettingRow
+				title="Alternative response chance"
+				description="Occasionally generate a background forked answer to the same prompt for DPO preference data."
+			>
+				<div className="flex min-w-[12rem] items-center gap-3">
+					<input
+						type="range"
+						min={0}
+						max={100}
+						step={1}
+						className="w-36"
+						value={Math.round(settings.alternativeResponseChance * 100)}
+						onChange={(event) => update({ alternativeResponseChance: Math.max(0, Math.min(1, Number(event.target.value) / 100)) })}
+					/>
+					<input
+						type="number"
+						min={0}
+						max={100}
+						step={1}
+						className="h-9 w-16 rounded-md border border-border bg-background px-2 text-sm text-foreground"
+						value={Math.round(settings.alternativeResponseChance * 100)}
+						onChange={(event) => update({ alternativeResponseChance: Math.max(0, Math.min(1, Number(event.target.value) / 100)) })}
+						aria-label="Alternative response chance percent"
+					/>
+					<span className="text-sm text-muted-foreground">%</span>
+				</div>
+			</SettingRow>
+
 			<div>
 				<h3 className="text-sm font-semibold text-foreground mb-2">Animation Renderer</h3>
 				<p className="text-sm text-muted-foreground mb-3">
