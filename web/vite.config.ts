@@ -6,8 +6,76 @@ import tailwindcss from '@tailwindcss/vite';
 import nodepod from '@scelar/nodepod/vite';
 import * as https from 'https';
 import * as http from 'http';
+import { copyFileSync, mkdirSync, readdirSync, statSync, existsSync } from 'node:fs';
+import { join, dirname } from 'node:path';
 
 type AgentRuntimeMode = 'browser-only' | 'remote' | 'cloud';
+
+/**
+ * Copy `node_modules/manim-web/dist/` into the build's public dir as
+ * `/manim-web/...` so the animate tool can author raw manim-web scenes
+ * and render them in an iframe that imports the library at this stable
+ * public path. Works in both dev (Vite serves /manim-web/) and prod
+ * (Nitro bundles the public/ dir).
+ */
+function manimWebPublicPlugin(): Plugin {
+	const SOURCE = resolve(__dirname, '../node_modules/manim-web/dist');
+	let publicDir: string | null = null;
+	const ensureCopied = (): boolean => {
+		if (!publicDir) return false;
+		const target = join(publicDir, 'manim-web');
+		if (existsSync(target)) return true;
+		try {
+			mkdirSync(target, { recursive: true });
+		} catch {
+			return false;
+		}
+		return true;
+	};
+	const copyRecursive = (src: string, dst: string): void => {
+		if (!existsSync(src)) return;
+		for (const entry of readdirSync(src)) {
+			const sourcePath = join(src, entry);
+			const targetPath = join(dst, entry);
+			const stat = statSync(sourcePath);
+			if (stat.isDirectory()) {
+				mkdirSync(targetPath, { recursive: true });
+				copyRecursive(sourcePath, targetPath);
+			} else {
+				mkdirSync(dirname(targetPath), { recursive: true });
+				copyFileSync(sourcePath, targetPath);
+			}
+		}
+	};
+	return {
+		name: 'keating-manim-web-public',
+		apply: () => true,
+		configResolved(config) {
+			publicDir = config.publicDir;
+			if (publicDir) {
+				const target = join(publicDir, 'manim-web');
+				if (!existsSync(target)) {
+					try {
+						mkdirSync(target, { recursive: true });
+						copyRecursive(SOURCE, target);
+						// eslint-disable-next-line no-console
+						console.log(`[manim-web] copied ${SOURCE} -> ${target}`);
+					} catch (e) {
+						// eslint-disable-next-line no-console
+						console.error(`[manim-web] copy failed:`, e);
+					}
+				}
+			}
+		},
+		configureServer(server) {
+			if (!server.config.publicDir) return;
+			const target = join(server.config.publicDir, 'manim-web');
+			if (existsSync(target)) return;
+			mkdirSync(target, { recursive: true });
+			copyRecursive(SOURCE, target);
+		},
+	};
+}
 
 function env(name: string): string | null {
   const value = process.env[name]?.trim();
@@ -219,6 +287,7 @@ export default defineConfig({
     tailwindcss(),
     nodepod(),
     chatProxyPlugin(),
+    manimWebPublicPlugin(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.svg'],
