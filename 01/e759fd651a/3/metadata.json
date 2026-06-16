@@ -1,0 +1,38 @@
+{
+  "cli_version": "0.7.6",
+  "checkpoint_id": "01e759fd651a",
+  "session_id": "ses_1326c732fffesXMcdIi4YPgYVD",
+  "strategy": "manual-commit",
+  "created_at": "2026-06-16T00:52:12.678551839Z",
+  "branch": "main",
+  "checkpoints_count": 5,
+  "save_step_count": 1,
+  "files_touched": [
+    "web/vite.config.ts"
+  ],
+  "agent": "OpenCode",
+  "model": "neuralwatt/moonshotai/Kimi-K2.7-Code",
+  "turn_id": "c18b26762e1e",
+  "token_usage": {
+    "input_tokens": 520307,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 12796320,
+    "output_tokens": 66198,
+    "api_call_count": 106
+  },
+  "session_metrics": {
+    "turn_count": 5
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-06-16T00:52:12.603897571Z",
+    "agent_lines": 69,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 69,
+    "total_lines_changed": 69,
+    "agent_percentage": 100,
+    "metric_version": 2
+  }
+}
