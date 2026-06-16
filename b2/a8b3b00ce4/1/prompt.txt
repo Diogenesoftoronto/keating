@@ -1,0 +1,19 @@
+• Findings
+
+  - Critical: web/server/api/dio/recover.ts:20 returns the Bifrost virtual key for any submitted email. web/server/api/dio/claim.ts:31 also returns the key when purchaseReference is omitted. Anyone who knows a customer email
+    can steal their Dio key. Recovery needs email verification/magic link/OTP, and claim should require a checkout-bound secret.
+
+  - Critical: web/server/api/dio/webhook.ts:42 marks a Creem event processed before product validation, Bifrost key creation, and entitlement save. If Bifrost fails or storage write fails, Creem retry is ignored at web/server/
+    api/dio/webhook.ts:43, leaving the buyer without access. Mark processed only after successful entitlement persistence, or store event state as processing/succeeded/failed with retry safety.
+
+  - High: web/src/dio-provider/server.ts:212 implements idempotency as a read-modify-write array in Nitro storage, so concurrent duplicate webhooks can both pass and issue multiple virtual keys. Use an atomic storage primitive
+    if available, a per-event key with create-if-absent semantics, or make provisioning idempotent by purchase/reference in Bifrost.
+
+  - Medium: The paid flow is not automatic after checkout. web/src/components/DioAccessPromptDialog.tsx:105 opens checkout in a new tab, then the user must manually click Claim at web/src/components/
+    DioAccessPromptDialog.tsx:212. The configured success URL is /dio/success at web/src/dio-provider/server.ts:75, but there is no matching route in web/src/App.tsx:81. This misses the “automatically inserted” requirement.
+
+  Verification
+
+  - rtk bun test web/src/test/dio-provider.test.ts web/src/test/dio-prompt.test.ts: passed.
+  - rtk bun test in web/: passed, including new Dio server tests.
+  - rtk bun run typecheck in web/: exited 0, but printed Flox read-only cache warnings before tsc --noEmit.
