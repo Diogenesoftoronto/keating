@@ -325,7 +325,7 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
-        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB for large bundles
+        maximumFileSizeToCacheInBytes: 20 * 1024 * 1024, // 20MB for large bundles
         // Cache WebGPU WASM files
         runtimeCaching: [
           {
