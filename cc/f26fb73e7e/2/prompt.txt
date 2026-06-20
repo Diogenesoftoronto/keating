@@ -1,0 +1,38 @@
+[Image #1] i got this issue on md and lg devices i would like you to fix it here is the code her
+
+<div class="flex flex-col g...">
+  <div ...>
+  <div ...>
+  Custom Providers
+
+User-configured servers with auto-discovered or manually defined models.
+
+Add Prov...
+</div>
+  in ProvidersModelsTab (at /src/components/ProvidersModelsTab.tsx)
+  in SettingsDialog (at /src/components/SettingsDialog.tsx)
+  in ChatContent (at /src/pages/Chat.tsx)
+
+---
+
+Failed to save provider: SyntaxError: JSON.parse: unexpected character at line 1 column 1 of the JSON data ProvidersModelsTab.tsx:228:12
+    handleSaveProvider ProvidersModelsTab.tsx:228
+    React 13
+    <anonymous> main-react.tsx:18
+ also go this issue
+
+---
+
+Failed to save provider: SyntaxError: JSON.parse: unexpected character at line 1 column 1 of the JSON data ProvidersModelsTab.tsx:228:12
+    handleSaveProvider ProvidersModelsTab.tsx:228
+    React 13
+    <anonymous> main-react.tsx:18
+ also go this issue
+
+---
+
+the layout is sstill not fixed for custom providers
+
+---
+
+nope
