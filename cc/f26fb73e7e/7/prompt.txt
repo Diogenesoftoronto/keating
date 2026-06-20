@@ -1,0 +1,63 @@
+# Dio Provider, Creem Credits, and Kimi K2.6 Default
+
+  ## Summary
+
+  Add a reusable Dio provider module that makes dio the default web provider and kimi-k2.6 the default model, backed by https://bifrost.dio.computer through Bifrost virtual keys. Users without a Dio key see a purchase flow,
+  pay for one configured Creem credit bundle, and receive a Bifrost virtual key that is automatically stored as the dio provider key.
+
+  Use server-side Nitro routes for Creem and Bifrost secrets. Use Bifrost budgets as the credit enforcement layer. Use email-based recovery. Relevant docs checked: Creem checkout/webhooks and Bifrost virtual keys/OpenAI-
+  compatible gateway.
+
+  ## Key Changes
+
+  - Add a local reusable module, web/src/dio-provider/, with browser/server-safe exports:
+      - dioProviderDefinition: provider id dio, label Dio, base URL https://bifrost.dio.computer/v1, API openai-completions.
+      - DIO_DEFAULT_MODEL: model id kimi-k2.6, name Kimi K2.6, provider dio, reasoning enabled, text input, unknown cost, large context fallback.
+      - client helpers: getDioAccessStatus(), startDioCheckout(), claimDioAccess(), recoverDioAccess().
+      - server helpers: Creem checkout creation, Creem webhook verification, Bifrost virtual-key creation, entitlement persistence.
+
+  - Wire dio into existing provider/model seams:
+      - Add Dio to getSelectableModels() ahead of built-in cloud providers.
+      - Change DEFAULT_MODEL in the web chat stream layer to DIO_DEFAULT_MODEL.
+      - Store/retrieve Dio virtual keys through existing getAppStorage().providerKeys under provider name dio.
+      - Ensure shouldProxyModel() proxies Dio requests through /api/chat-proxy, preserving the user’s Dio virtual key as bearer auth.
+
+  - Add a Dio-specific key prompt path:
+      - For provider dio, replace the generic “paste API key” dialog with “Buy Dio credits” and “Recover access by email”.
+      - After successful checkout/claim, save the returned virtual key automatically and retry the pending model request.
+      - Still allow manual key paste behind an advanced/disclosure affordance for development and support.
+
+  ## Payment and Provisioning Flow
+
+  - Add Nitro routes:
+      - POST /api/dio/checkout: creates a Creem checkout for the single configured product and stores a pending purchase record in useStorage("keating:dio").
+      - POST /api/dio/webhook: verifies creem-signature, handles checkout.completed, ignores duplicate event IDs, validates product ID, creates or updates a Bifrost virtual key, and stores the entitlement by normalized
+        customer email.
+
+      - POST /api/dio/claim: accepts email plus checkout/purchase reference when available, returns the virtual key if the webhook has completed, otherwise returns pending.
+      - POST /api/dio/recover: accepts email and returns the active virtual key for that email.
+
+  - Bifrost virtual key creation:
+      - Call POST https://bifrost.dio.computer/api/governance/virtual-keys with server-side BIFROST_API_KEY.
+      - Include a name like keating:<email>:<purchaseId>, description/metadata linking Creem event/order/product IDs, allowed model kimi-k2.6, and a budget max equal to the purchased credit amount.
+      - Store returned virtual_key.id and virtual_key.value; only return value to the browser after a valid claim/recovery.
+
+  - Configuration:
+      - CREEM_API_KEY, CREEM_WEBHOOK_SECRET, CREEM_PRODUCT_ID_DIO_CREDITS, DIO_CREDIT_BUDGET, BIFROST_API_KEY.
+      - Local dev docs should mention export BIFROST_API_KEY="$(fnox get bifrost_api_key)"; never expose or fetch this key client-side.
+
+  ## Tests
+
+  - Unit tests for Dio module constants and model shape: provider dio, model kimi-k2.6, base URL normalization, selectable model ordering, and default model selection.
+  - Server route tests for checkout payload validation, webhook signature verification, duplicate webhook idempotency, product mismatch rejection, and claim/recovery pending/success states.
+  - Mocked Bifrost tests verifying virtual-key request shape and that only virtual_key.value is sent to the client.
+  - UI tests for Dio API-key prompt behavior: missing key opens purchase dialog, successful claim stores provider key, recovery by email stores provider key, manual key fallback still works.
+  - Run rtk just test-web, rtk bun run typecheck in web/, and rtk just build-all after implementation.
+
+  ## Assumptions
+
+  - V1 uses one Creem product configured by env, not hardcoded pricing or a live catalog.
+  - Credits map directly to a Bifrost virtual-key budget; Keating does not maintain its own spend ledger.
+  - Email is the durable account identifier; normalized lowercase email keys entitlements in Nitro storage.
+  - The Bifrost gateway has or will have a routable model alias named exactly kimi-k2.6; if not, set a single module constant/env override during implementation without changing the public Dio provider interface.
+  - Nitro useStorage("keating:dio") is acceptable for v1 persistence, matching the existing share-storage pattern. If the deployment storage is ephemeral, configure Nitro storage to a persistent backend before launch.
