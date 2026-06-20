@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useImperativeHandle,
+  memo,
   useMemo,
   useRef,
   useState,
@@ -30,9 +31,11 @@ import {
   useMessage,
 } from "@assistant-ui/react";
 import ReactMarkdown from "react-markdown";
+import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
 import {
   ChevronRight,
   CircleAlert,
@@ -1143,29 +1146,9 @@ function GeneratedImageCard({ payload }: { payload: string }) {
   );
 }
 
-function MarkdownText({
-  text,
-  isRunning,
-}: {
-  text: string;
-  isRunning?: boolean;
-}) {
-  const displayText = stripArtifactLinks(text);
-  const segments = parseInteractiveSegments(displayText).filter(
-    (s) => s.type !== "question" && s.type !== "quiz",
-  );
-  return (
-    <div className="group/text-block break-words text-sm leading-6">
-      <ArtifactChips text={text} />
-      {segments.map((seg, i) => {
-        const card = renderInteractiveSegment(seg, i);
-        if (card !== null) return card;
-        return (
-          <ReactMarkdown
-            key={i}
-            remarkPlugins={[remarkGfm, remarkMath]}
-            rehypePlugins={[rehypeKatex]}
-            components={{
+// Static renderer map for chat markdown. Hoisted to module scope so it is
+// created once instead of rebuilt for every segment on every streaming token.
+const MARKDOWN_COMPONENTS: Components = {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               pre: ({ children }: any) => (
                 <div className="group/code my-2">
@@ -1273,7 +1256,37 @@ function MarkdownText({
               td: ({ children }: any) => (
                 <td className="border-b border-border px-3 py-2">{children}</td>
               ),
-            }}
+};
+
+const MarkdownText = memo(function MarkdownText({
+  text,
+  isRunning,
+}: {
+  text: string;
+  isRunning?: boolean;
+}) {
+  const displayText = stripArtifactLinks(text);
+  // Parsing segments is non-trivial and runs on every streaming token; memoize
+  // it on the text so unchanged messages don't re-parse.
+  const segments = useMemo(
+    () =>
+      parseInteractiveSegments(displayText).filter(
+        (s) => s.type !== "question" && s.type !== "quiz",
+      ),
+    [displayText],
+  );
+  return (
+    <div className="group/text-block break-words text-sm leading-6">
+      <ArtifactChips text={text} />
+      {segments.map((seg, i) => {
+        const card = renderInteractiveSegment(seg, i);
+        if (card !== null) return card;
+        return (
+          <ReactMarkdown
+            key={i}
+            remarkPlugins={[remarkGfm, remarkMath]}
+            rehypePlugins={[rehypeKatex]}
+            components={MARKDOWN_COMPONENTS}
           >
             {seg.type === "text" ? seg.content : ""}
           </ReactMarkdown>
@@ -1282,7 +1295,7 @@ function MarkdownText({
       {isRunning ? <span className="ml-0.5 animate-pulse">|</span> : null}
     </div>
   );
-}
+});
 
 function ReasoningPart({
   text,

@@ -18,11 +18,14 @@ const voice = process.env.GEMINI_TTS_VOICE || "Kore";
 const sampleRate = 24000;
 
 const scenes = [
-  ["docs/assets/intro.mp4", "Keating", "The hyperteacher", "A Socratic AI scaffold for people who still want to own their understanding.", 1.05],
-  ["docs/assets/learning-flow.mp4", "Artifacts you can inspect", "Plans, maps, animations", "Keating turns a topic into visible learning material instead of a disposable answer.", 1.1],
-  ["docs/assets/teacher-flow.mp4", "Teach, then verify", "Grounded pedagogy", "Lesson plans and verification checklists keep the teaching loop accountable.", 0.95],
-  ["docs/assets/session-flow.mp4", "A live shell", "Policy, outputs, feedback", "The learner can inspect the teacher, browse artifacts, and record signals as the session unfolds.", 1],
-  ["docs/assets/improve-flow.mp4", "It studies itself", "Benchmarks and evolution", "Policy search and prompt evolution make improvement visible instead of mysterious.", 1.15],
+  ["docs/assets/intro.mp4", "Keating", "The hyperteacher", "A Socratic AI scaffold for people who still want to own their understanding.", 0.85],
+  ["docs/assets/web-landing.mp4", "In your browser", "A live teacher", "The same Socratic harness, surfaced as an inspectable web app where diagnosis, reconstruction, probing, and verification are visible steps.", 1.1],
+  ["docs/assets/learning-flow.mp4", "Artifacts you can inspect", "Plans, maps, animations", "Keating turns a topic into visible learning material instead of a disposable answer.", 1],
+  ["docs/assets/teacher-flow.mp4", "Teach, then verify", "Grounded pedagogy", "Lesson plans and verification checklists keep the teaching loop accountable.", 0.9],
+  ["docs/assets/web-tutorial.mp4", "Built like software", "Tutorial and paper", "The teaching flow is documented, versioned, and quotable — no oracle hidden behind a chat box.", 0.95],
+  ["docs/assets/session-flow.mp4", "A live shell", "Policy, outputs, feedback", "The learner can inspect the teacher, browse artifacts, and record signals as the session unfolds.", 0.95],
+  ["docs/assets/improve-flow.mp4", "It studies itself", "Benchmarks and evolution", "Policy search and prompt evolution make improvement visible instead of mysterious.", 1.1],
+  ["docs/assets/web-paper.mp4", "Quotable methodology", "Paper, not vibes", "The metaharness design is written up as a paper you can cite, critique, or fork.", 0.9],
   ["docs/assets/tests.mp4", "Grounded by tests", "Diagnostics and checks", "Keating keeps its teaching machinery tied to reproducible local workflows.", 0.85],
   ["docs/assets/feedback-flow.mp4", "Own the voice", "Why it exists", "The goal is not passive agreement. The goal is a learner who can reconstruct, transfer, and speak.", 1.05],
 ];
@@ -145,7 +148,9 @@ async function main() {
     await copyFile(audioPath, join(publicDir, "narration.wav"));
   }
 
-  const audioDuration = existsSync(audioPath) ? ffprobeDuration(audioPath) : Number(arg("duration", "96"));
+  // With the web UI scenes added, the default target is 104s. The narration
+  // audio (when present) takes precedence; otherwise this fallback applies.
+  const audioDuration = existsSync(audioPath) ? ffprobeDuration(audioPath) : Number(arg("duration", "104"));
   const durationSeconds = Math.max(30, Math.ceil(audioDuration + 1));
   const props = {
     audioSrc: existsSync(audioPath) ? "narration.wav" : null,

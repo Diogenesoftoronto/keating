@@ -138,6 +138,21 @@ The web app is a PWA via `vite-plugin-pwa`. It caches WASM/ONNX files and Huggin
 ### Release Bundle
 The release workflow bundles `node_modules` into the tarball for a truly standalone install. The install script (`scripts/install/install.sh`) is moved to the bundle root, and the `install/` directory is deleted during packaging.
 
+### Narrated Intro Video Pipeline
+
+The narrated intro is composed at build time from two kinds of source footage:
+
+1. **TUI clips** — `docs/*.tape` files (VHS syntax) recorded by [`vhs`](https://github.com/charmbracelet/vhs) at framework boot time. Each tape types into the Keating CLI (or Pi shell) and renders to `docs/assets/<name>.mp4`. The two interactive-shell tapes (`intro.tape`, `session-flow.tape`) use generous fixed `Sleep`s after launching `just shell` because the Pi extension boot time is variable — there is no `Wait`/`Expect` directive in VHS, only `Sleep`, so timing must be conservative. Non-interactive tapes (`learning-flow.tape`, `improve-flow.tape`, `tests.tape`, etc.) run CLI commands directly and are reliable. Validate every tape with `vhs validate docs/*.tape` before committing changes.
+
+2. **Web UI clips** — captured via the [playwriter MCP](https://playwriter.dev) against the local web dev server (`just web` → http://localhost:3000). The capture flow is:
+   - Drive a headed Chrome tab, hide dev overlays (Playwriter toolbar, React Grab) via an injected `<style id="keating-record-overlay-hide">`.
+   - Use `getCDPSession()` → `Page.startScreencast` (not `chrome.tabCapture`) so the recording works without clicking the Playwriter extension icon — `chrome.tabCapture` works but requires an explicit user gesture per tab; CDP `Page.startScreencast` is fully scripted and survives navigation.
+   - Stream JPEG frames into `.keating/outputs/video/frames/<clip-name>/frame_*.jpg`.
+   - Stitch with ffmpeg at 60fps: `ffmpeg -framerate 60 -pattern_type glob -i 'frame_*.jpg' -c:v libx264 -pix_fmt yuv420p -crf 18 docs/assets/<clip>.mp4`.
+   - `just video-web-stitch` runs `scripts/stitch-web-frames.mjs` to redo this stitching pass; the frame-pumping itself flows through the MCP capture driver.
+
+The Remotion composition in `video/keating-intro/src/{root.tsx,video.tsx}` consumes clips by name, and `scripts/render-keating-intro.mjs` mirrors the scene list (kept in sync manually — verify both files list the same scene count before rendering). Total intro duration: 104s across 10 scenes (7 TUI + 3 web). `just video-intro` produces `.keating/outputs/video/keating-intro/keating-intro.mp4`.
+
 ### Node Version
 `package.json` specifies `engines: { "node": ">=20.19.0" }`. Bun is the primary runtime used in CI.
 

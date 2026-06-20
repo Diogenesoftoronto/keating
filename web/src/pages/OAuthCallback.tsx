@@ -1,15 +1,18 @@
 import { useEffect, useState } from "react";
+import { usePostHog } from "@posthog/react";
 import { completeOAuthFromInput, type OAuthCallbackResult } from "../keating/oauth";
 
 export function OAuthCallback() {
+	const posthog = usePostHog();
 	const [result, setResult] = useState<OAuthCallbackResult | null>(null);
 
 	useEffect(() => {
 		completeOAuthFromInput(window.location.href).then((r) => {
 			setResult(r);
+			posthog.capture('oauth_login_completed', { success: r.success, error: r.success ? undefined : r.error });
 			notifyOpener(r);
 		});
-	}, []);
+	}, [posthog]);
 
 	return (
 		<div className="flex min-h-screen items-center justify-center bg-background">

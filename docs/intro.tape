@@ -7,20 +7,21 @@ Set Height 700
 Set Padding 40
 Set Theme "Catppuccin Mocha"
 
-# Boot the Keating shell — shows the refreshed ANSI Shadow logo
+# Boot the Keating shell — the Pi extension load takes a few seconds,
+# so give it a generous fixed sleep instead of failing flakily.
 Type "just shell"
 Enter
-Sleep 5s
+Sleep 6s
 
-# Inspect the current teaching policy
+# Inspect the current teaching policy (instant — no LLM round-trip)
 Type "/policy"
 Enter
-Sleep 2s
+Sleep 3s
 
-# List available commands
+# List available slash commands so the help table renders on screen
 Type "/help"
 Enter
-Sleep 3s
+Sleep 4s
 
 Ctrl+D
 Sleep 1s

@@ -17,10 +17,15 @@ function emitPromptChange() {
 	window.dispatchEvent(new CustomEvent("keating:api-key-prompt-changed"));
 }
 
-export async function promptKeatingApiKey(provider: string): Promise<boolean> {
+export async function promptKeatingApiKey(
+	provider: string,
+	options: { force?: boolean } = {},
+): Promise<boolean> {
 	if (typeof window === "undefined") return false;
-	const existing = await getAppStorage().providerKeys.get(provider);
-	if (existing) return true;
+	if (!options.force) {
+		const existing = await getAppStorage().providerKeys.get(provider);
+		if (existing) return true;
+	}
 
 	if (isDioProvider(provider)) {
 		return promptDioAccess();
@@ -48,11 +53,18 @@ function closePrompt(success: boolean) {
 	emitPromptChange();
 }
 
-function providerLabel(provider: string) {
+async function providerLabel(provider: string): Promise<string> {
 	if (provider === "google") return "Google Gemini";
 	if (provider === "openai") return "OpenAI";
 	if (provider === "anthropic") return "Anthropic";
 	if (provider === "openrouter") return "OpenRouter";
+	try {
+		const providers = (await getAppStorage().customProviders.getAll()) as Array<{ name?: string }>;
+		const match = providers.find((entry) => entry?.name === provider);
+		if (match?.name) return match.name;
+	} catch {
+		/* noop */
+	}
 	return provider;
 }
 
@@ -61,13 +73,20 @@ export function KeatingApiKeyPromptDialog() {
 	const [apiKey, setApiKey] = useState("");
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState("");
+	const [label, setLabel] = useState("");
 
 	useEffect(() => {
 		const sync = () => {
 			setRequest(activePrompt);
 			setApiKey("");
 			setError("");
+			if (activePrompt) {
+				void providerLabel(activePrompt.provider).then(setLabel);
+			} else {
+				setLabel("");
+			}
 		};
+		sync();
 		window.addEventListener("keating:api-key-prompt-changed", sync);
 		return () => window.removeEventListener("keating:api-key-prompt-changed", sync);
 	}, []);
@@ -111,7 +130,7 @@ export function KeatingApiKeyPromptDialog() {
 				</div>
 				<div className="space-y-3 p-4">
 					<p className="text-sm text-muted-foreground">
-						Add a local browser API key for {providerLabel(request.provider)} to use this model.
+						Add a local browser API key for {label || request.provider} to use this model.
 					</p>
 					<input
 						type="password"

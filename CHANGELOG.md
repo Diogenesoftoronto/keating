@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-06-20
+
+### Added
+- Added the **Dio provider**: an in-browser hosted-model option behind a feature flag, with recovery-email sign-in, an OAuth success page, and atomic event locking on the provider server (`web/src/dio-provider/server.ts`, `DioSuccess`, `OAuthCallback`).
+- Added **flashcards and reward exports** to the web app.
+- Overhauled the **Providers & Models settings tab** and the provider-models catalogue (`ProvidersModelsTab.tsx`, `provider-models.ts`) with expanded model coverage and tests.
+- Added syntax-highlighted code blocks in chat via a new `CodeHighlighter` component wired into `MarkdownBlock`.
+- Integrated **PostHog product analytics**: events routed through a Vite/Nitro `/ingest` reverse proxy with exception capture, plus custom captures across the landing page, chat, quiz, and agent hooks.
+- Added the animated **Keating intro video** pipeline (`video/keating-intro`, `render-keating-intro.mjs`, `stitch-web-frames.mjs`) and refreshed VHS tapes, with new `web-landing`, `web-paper`, and `web-tutorial` demo clips.
+
+### Changed
+- **Relicensed the project from MIT to MPL-2.0** (`LICENSE`, `package.json`, footer link).
+- Polished the chat experience: `AssistantChatPanel`, the API-key prompt dialog, and quiz rendering.
+- Raised the PWA precache limit to 20 MB to accommodate the larger bundle.
+
+### Fixed
+- Added missing `react-markdown` and `react-syntax-highlighter` dependencies.
+
 ## [1.3.0] - 2026-06-10
 
 ### Added

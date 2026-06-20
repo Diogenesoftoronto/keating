@@ -102,3 +102,7 @@ docs-diagrams:
 # Render the narrated Keating intro video
 video-intro:
     bun scripts/render-keating-intro.mjs
+
+# Stitch captured web UI frames into docs/assets/web-*.mp4 (frames produced via playwriter MCP — see AGENTS.md)
+video-web-stitch:
+    bun scripts/stitch-web-frames.mjs

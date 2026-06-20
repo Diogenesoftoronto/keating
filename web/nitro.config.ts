@@ -9,7 +9,15 @@ export default defineNitroConfig({
   // Ensure that /assets/* requests return 404 if not found, 
   // rather than falling back to index.html (SPA fallback).
   routeRules: {
-    "/assets/**": { fallthrough: false, headers: crossOriginIsolationHeaders },
+    // Assets under /assets/** are content-hashed, so they can be cached
+    // immutably for a year — a new build emits new filenames.
+    "/assets/**": {
+      fallthrough: false,
+      headers: {
+        ...crossOriginIsolationHeaders,
+        "Cache-Control": "public, max-age=31536000, immutable",
+      },
+    },
     "/**/*.js": { fallthrough: false, headers: crossOriginIsolationHeaders },
     "/**/*.css": { fallthrough: false, headers: crossOriginIsolationHeaders },
     "/**/*.svg": { fallthrough: false, headers: crossOriginIsolationHeaders },

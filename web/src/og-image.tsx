@@ -43,7 +43,7 @@ export default function OgImage() {
           KEATING // HYPERTEACHER
         </span>
         <div style={{ flex: 1 }} />
-          <span style={{ color: "#4be388", fontSize: 18, opacity: 0.6 }}>v1.3.0</span>
+          <span style={{ color: "#4be388", fontSize: 18, opacity: 0.6 }}>v1.4.0</span>
       </div>
 
       {/* Main headline */}

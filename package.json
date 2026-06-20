@@ -1,6 +1,6 @@
 {
   "name": "keating",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "type": "module",
   "description": "A Pi-powered hyperteacher package with self-improving teaching policies, lesson maps, and animated visual teaching artifacts.",
   "keywords": [
@@ -13,7 +13,7 @@
     "cognitive-empowerment"
   ],
   "author": "Diogenes of Toronto",
-  "license": "MIT",
+  "license": "MPL-2.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Diogenesoftoronto/keating.git"

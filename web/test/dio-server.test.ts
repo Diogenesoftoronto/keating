@@ -54,6 +54,7 @@ const envBackup: Record<string, string | undefined> = {};
 beforeEach(() => {
 	for (const key of [
 		"CREEM_API_KEY",
+		"CREEM_BASE_URL",
 		"CREEM_WEBHOOK_SECRET",
 		"CREEM_PRODUCT_ID_DIO_CREDITS",
 		"DIO_CREDIT_BUDGET",
@@ -110,6 +111,22 @@ describe("dio env config", () => {
 		process.env.DIO_CREDIT_BUDGET = "not-a-number";
 		const { getDioEnvConfig } = await import("../src/dio-provider/server");
 		expect(() => getDioEnvConfig()).toThrow(/positive integer/);
+	});
+
+	it("selects the Creem sandbox for test keys", async () => {
+		process.env.CREEM_API_KEY = "creem_test_example";
+		delete process.env.CREEM_BASE_URL;
+		const { getDioEnvConfig } = await import("../src/dio-provider/server");
+		expect(getDioEnvConfig().creemBaseUrl).toBe("https://test-api.creem.io/v1");
+	});
+
+	it("uses production Creem by default and honors an explicit base URL", async () => {
+		const { getDioEnvConfig } = await import("../src/dio-provider/server");
+		process.env.CREEM_API_KEY = "creem_live_example";
+		delete process.env.CREEM_BASE_URL;
+		expect(getDioEnvConfig().creemBaseUrl).toBe("https://api.creem.io/v1");
+		process.env.CREEM_BASE_URL = "https://creem.internal/v1";
+		expect(getDioEnvConfig().creemBaseUrl).toBe("https://creem.internal/v1");
 	});
 
 	it("enables dev recovery code in development", async () => {

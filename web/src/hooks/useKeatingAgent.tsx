@@ -1,4 +1,5 @@
 import { useRef, useTransition, useCallback, use, useEffect } from "react";
+import { usePostHog } from "@posthog/react";
 import { Agent, type AgentMessage, type AgentState, type ThinkingLevel } from "@earendil-works/pi-agent-core";
 import { useDialogState } from "./useDialogState";
 import {
@@ -145,6 +146,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   // Use React 19's use() for suspense handling of asynchronous init
   use(getInitPromise());
 
+  const posthog = usePostHog();
   const title = "Keating";
   const agentRef = useRef<Agent | null>(null);
   const panelRef = useRef<ChatPanelHandle | null>(null);
@@ -207,6 +209,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       if (!signal) return;
       const state = await keatingStorage.getLearnerState();
       const topic = state.topicsExplored.at(-1) ?? "general";
+      posthog.capture('message_feedback_given', { signal, topic, session_id: sessionIdRef.current });
       await keatingStorage.recordFeedback(topic, signal, {
         source: "explicit",
         evidence: typeof detail.comment === "string" && detail.comment.trim() ? detail.comment : undefined,
@@ -433,7 +436,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       },
       onAuthError: async (provider: string) => {
         if (provider === "browser") return false;
-        return promptKeatingApiKey(provider);
+        return promptKeatingApiKey(provider, { force: true });
       },
       onBeforeSend: () => {
         if (import.meta.env.DEV) {
@@ -578,8 +581,9 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       setActiveSessionId(sessionIdRef.current);
       setForkInfo(null);
       await createAgent(panel, { messages: [], model: selectedModelRef.current });
+      posthog.capture('session_started', { session_id: sessionIdRef.current });
     });
-  }, [createAgent, endLearnerSession, saveSessionSnapshot]);
+  }, [createAgent, endLearnerSession, posthog, saveSessionSnapshot]);
 
   const shareSession = useCallback(async () => {
     const agent = agentRef.current;
@@ -851,7 +855,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
           },
           onAuthError: async (provider: string) => {
             if (provider === "browser") return false;
-            return promptKeatingApiKey(provider);
+            return promptKeatingApiKey(provider, { force: true });
           },
           onBeforeSend: () => {
             if (import.meta.env.DEV) {
