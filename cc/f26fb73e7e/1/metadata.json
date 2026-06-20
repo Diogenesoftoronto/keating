@@ -1,0 +1,100 @@
+{
+  "cli_version": "0.7.7",
+  "checkpoint_id": "ccf26fb73e7e",
+  "session_id": "ac17dabe-5bdc-43a6-a273-d7ee1e8f36e1",
+  "strategy": "manual-commit",
+  "created_at": "2026-06-20T06:21:11.346036488Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "LICENSE",
+    "package.json",
+    "web/bun.lock",
+    "web/nitro.config.ts",
+    "web/package.json",
+    "web/src/App.tsx",
+    "web/src/components/AssistantChatPanel.tsx",
+    "web/src/components/CodeHighlighter.tsx",
+    "web/src/components/Footer.tsx",
+    "web/src/components/MarkdownBlock.tsx",
+    "web/src/components/ProvidersModelsTab.tsx",
+    "web/src/components/QuizRenderer.tsx",
+    "web/src/dio-provider/server.ts",
+    "web/src/hooks/useKeatingAgent.tsx",
+    "web/src/lib/posthog.ts",
+    "web/src/lib/provider-models.ts",
+    "web/src/main-react.tsx",
+    "web/src/pages/Chat.tsx",
+    "web/src/pages/DioSuccess.tsx",
+    "web/src/pages/Landing.tsx",
+    "web/src/pages/OAuthCallback.tsx",
+    "web/test/dio-server.test.ts",
+    "web/vite.config.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-4-8",
+  "turn_id": "3bfbf618fd45",
+  "token_usage": {
+    "input_tokens": 12709,
+    "cache_creation_tokens": 474841,
+    "cache_read_tokens": 7170220,
+    "output_tokens": 58950,
+    "api_call_count": 84
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-06-20T06:21:11.31209864Z",
+    "agent_lines": 300,
+    "agent_removed": 114,
+    "human_added": 163,
+    "human_modified": 39,
+    "human_removed": 0,
+    "total_committed": 501,
+    "total_lines_changed": 654,
+    "agent_percentage": 63.30275229357798,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 651,
+      "user_lines_removed": 37,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "LICENSE": 335,
+        "package.json": 1,
+        "web/.gitignore": 1,
+        "web/posthog-setup-report.md": 48,
+        "web/src/components/Footer.tsx": 8,
+        "web/src/components/ProvidersModelsTab.tsx": 75,
+        "web/src/components/QuizRenderer.tsx": 9,
+        "web/src/dio-provider/server.ts": 9,
+        "web/src/hooks/useKeatingAgent.tsx": 5,
+        "web/src/lib/posthog.ts": 4,
+        "web/src/lib/provider-models.ts": 27,
+        "web/src/pages/Chat.tsx": 4,
+        "web/src/pages/DioSuccess.tsx": 4,
+        "web/src/pages/Landing.tsx": 15,
+        "web/src/pages/OAuthCallback.tsx": 4,
+        "web/src/test/provider-models.test.ts": 68,
+        "web/test/dio-server.test.ts": 17,
+        "web/vite.config.ts": 17
+      },
+      "user_removed_per_file": {
+        "package.json": 1,
+        "web/src/components/Footer.tsx": 1,
+        "web/src/components/ProvidersModelsTab.tsx": 23,
+        "web/src/dio-provider/server.ts": 1,
+        "web/src/hooks/useKeatingAgent.tsx": 1,
+        "web/src/lib/posthog.ts": 1,
+        "web/src/lib/provider-models.ts": 5,
+        "web/src/pages/Landing.tsx": 3,
+        "web/src/pages/OAuthCallback.tsx": 1
+      }
+    }
+  ]
+}

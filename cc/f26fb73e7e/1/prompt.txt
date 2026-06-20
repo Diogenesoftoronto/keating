@@ -1,0 +1,1 @@
+I was thinking of improving web rendering performance. I want to cut down load times and improve cache etc.
