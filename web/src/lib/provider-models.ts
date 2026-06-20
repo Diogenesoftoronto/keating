@@ -10,17 +10,22 @@ export type KeatingCustomProviderType =
 	| "llama.cpp"
 	| "vllm"
 	| "lmstudio"
+	| "gateway"
 	| "openai-completions"
 	| "openai-responses"
 	| "anthropic-messages"
 	| "synthetic";
 
+export type KeatingGatewayKind = "bifrost" | "plexus" | "litellm" | "generic";
+
 export type KeatingCustomProvider = Omit<CustomProvider, "type"> & {
 	type: KeatingCustomProviderType;
+	gatewayKind?: KeatingGatewayKind;
 };
 
 const AUTO_DISCOVERY_TYPES = new Set<KeatingCustomProviderType>(["ollama", "llama.cpp", "vllm", "lmstudio"]);
 const OPENAI_COMPATIBLE_TYPES = new Set<KeatingCustomProviderType>([
+	"gateway",
 	"openai-completions",
 	"openai-responses",
 	"synthetic",
@@ -96,6 +101,21 @@ function manualProviderApi(type: KeatingCustomProviderType): Api {
 	}
 }
 
+function openAiCompatibleBaseUrls(provider: KeatingCustomProvider): string[] {
+	const baseUrl = trimTrailingSlash(provider.baseUrl);
+	if (baseUrl.endsWith("/v1")) return [baseUrl];
+
+	if (provider.type === "gateway" && provider.gatewayKind === "bifrost") {
+		return [`${baseUrl}/v1`, `${baseUrl}/openai/v1`, baseUrl];
+	}
+
+	if (provider.type === "gateway") {
+		return [`${baseUrl}/v1`, baseUrl];
+	}
+
+	return [baseUrl, `${baseUrl}/v1`];
+}
+
 async function fetchJson(url: string, apiKey?: string, options: { method?: "GET" | "POST"; body?: unknown } = {}): Promise<any> {
 	const proxied = proxiedProviderRequestUrl(url);
 	const headers: Record<string, string> = {
@@ -120,16 +140,24 @@ async function fetchJson(url: string, apiKey?: string, options: { method?: "GET"
 		return result;
 	});
 
-	return await response.json();
+	const text = await response.text();
+	try {
+		return JSON.parse(text);
+	} catch {
+		const snippet = text.trim().slice(0, 120).replace(/\s+/g, " ");
+		throw new Error(
+			`Expected JSON from ${url} but got ${snippet ? `a non-JSON response ("${snippet}…")` : "an empty response"}. Check the base URL.`,
+		);
+	}
 }
 
 async function discoverOpenAiCompatibleModels(
 	provider: KeatingCustomProvider,
 ): Promise<{ apiBaseUrl: string; models: Model<Api>[] }> {
-	const baseUrl = trimTrailingSlash(provider.baseUrl);
-	const candidateBaseUrls = baseUrl.endsWith("/v1") ? [baseUrl] : [baseUrl, `${baseUrl}/v1`];
+	const candidateBaseUrls = openAiCompatibleBaseUrls(provider);
 
 	let lastError: unknown;
+	let emptyResult: { apiBaseUrl: string; models: Model<Api>[] } | undefined;
 	for (const apiBaseUrl of candidateBaseUrls) {
 		try {
 			const payload = await fetchJson(`${apiBaseUrl}/models`, provider.apiKey);
@@ -146,7 +174,7 @@ async function discoverOpenAiCompatibleModels(
 
 					return {
 						id,
-						name: String(record?.name ?? id),
+						name: String(record?.display_name ?? record?.name ?? id),
 						api: manualProviderApi(provider.type),
 						provider: provider.name,
 						baseUrl: apiBaseUrl,
@@ -159,12 +187,14 @@ async function discoverOpenAiCompatibleModels(
 					})
 					.filter((model: Model<Api> | null): model is Model<Api> => model !== null);
 
-			return { apiBaseUrl, models };
+			if (models.length > 0) return { apiBaseUrl, models };
+			emptyResult ??= { apiBaseUrl, models };
 		} catch (error) {
 			lastError = error;
 		}
 	}
 
+	if (emptyResult) return emptyResult;
 	throw lastError instanceof Error ? lastError : new Error(`Failed to discover models for ${provider.name}`);
 }
 
@@ -267,7 +297,7 @@ async function discoverLmStudioModels(baseUrl: string): Promise<Model<Api>[]> {
 	});
 }
 
-async function discoverCustomProviderModels(provider: KeatingCustomProvider): Promise<Model<Api>[]> {
+export async function discoverCustomProviderModels(provider: KeatingCustomProvider): Promise<Model<Api>[]> {
 	if (AUTO_DISCOVERY_TYPES.has(provider.type)) {
 		let models: Model<Api>[];
 		switch (provider.type) {

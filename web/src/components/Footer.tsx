@@ -82,7 +82,14 @@ export function Footer() {
         <div className="foot-base">
           <span>
             © 2026 keating.help — think_for_yourself // v{import.meta.env.APP_VERSION} //
-            BUILT_ON_PI // MIT_LICENSE
+            BUILT_ON_PI //{" "}
+            <a
+              href="https://www.mozilla.org/en-US/MPL/2.0/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              MPL_2.0
+            </a>
           </span>
           <span>
             system status: <span className="ok">online</span> // uptime:{" "}

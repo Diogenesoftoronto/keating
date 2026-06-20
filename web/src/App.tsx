@@ -5,18 +5,35 @@ import {
   createRoute,
   createRootRoute,
   createBrowserHistory,
+  lazyRouteComponent,
   Outlet,
 } from "@tanstack/react-router";
+// Landing is the entry page — keep it eager so first paint needs no extra
+// round-trip. (Its heavy 3D hero is already lazy-loaded inside the page.)
 import { Landing } from "./pages/Landing";
-import { Tutorial } from "./pages/Tutorial";
-import { Blog } from "./pages/Blog";
-import { Chat } from "./pages/Chat";
-import { Paper } from "./pages/Paper";
-import { SharedSession } from "./pages/SharedSession";
-import { Usage } from "./pages/Usage";
-import { KeatingBench } from "./pages/KeatingBench";
-import { OAuthCallback } from "./pages/OAuthCallback";
-import { DioSuccess } from "./pages/DioSuccess";
+// Every other route is code-split into its own chunk, fetched on navigation, so
+// the entry bundle no longer ships Chat, the assistant panel, markdown/KaTeX, etc.
+const Tutorial = lazyRouteComponent(() => import("./pages/Tutorial"), "Tutorial");
+const Blog = lazyRouteComponent(() => import("./pages/Blog"), "Blog");
+const Chat = lazyRouteComponent(() => import("./pages/Chat"), "Chat");
+const Paper = lazyRouteComponent(() => import("./pages/Paper"), "Paper");
+const SharedSession = lazyRouteComponent(
+  () => import("./pages/SharedSession"),
+  "SharedSession",
+);
+const Usage = lazyRouteComponent(() => import("./pages/Usage"), "Usage");
+const KeatingBench = lazyRouteComponent(
+  () => import("./pages/KeatingBench"),
+  "KeatingBench",
+);
+const OAuthCallback = lazyRouteComponent(
+  () => import("./pages/OAuthCallback"),
+  "OAuthCallback",
+);
+const DioSuccess = lazyRouteComponent(
+  () => import("./pages/DioSuccess"),
+  "DioSuccess",
+);
 import {
   applyKeatingUiTypography,
   loadKeatingUiSettings,
@@ -98,8 +115,39 @@ const routeTree = rootRoute.addChildren([
 	dioSuccessRoute,
 ]);
 
+// Shown while a lazily-loaded route chunk is in flight (after defaultPendingMs)
+// so navigation doesn't flash a blank screen.
+function RoutePending() {
+  return (
+    <div
+      style={{
+        display: "flex",
+        minHeight: "60vh",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <div
+        className="animate-spin"
+        aria-label="Loading"
+        style={{
+          width: 28,
+          height: 28,
+          borderRadius: "9999px",
+          border: "3px solid rgba(0,0,0,0.15)",
+          borderTopColor: "rgba(0,0,0,0.55)",
+        }}
+      />
+    </div>
+  );
+}
+
 const browserHistory = createBrowserHistory();
-const router = createRouter({ routeTree, history: browserHistory });
+const router = createRouter({
+  routeTree,
+  history: browserHistory,
+  defaultPendingComponent: RoutePending,
+});
 
 declare module "@tanstack/react-router" {
   interface Register {

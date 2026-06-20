@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
-import { Trash2, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ChevronDown, Trash2, X } from "lucide-react";
 import { getProviders } from "@earendil-works/pi-ai";
-import { getAppStorage, type CustomProvider } from "@earendil-works/pi-web-ui";
+import { getAppStorage } from "@earendil-works/pi-web-ui";
 import {
 	loadKeatingUiSettings,
 	toggleProviderVisibility,
@@ -12,6 +12,12 @@ import { handleTutorialLinkClick, tutorialApiKeyHref } from "../lib/tutorial-lin
 import { SettingsSectionNav } from "./SettingsSectionNav";
 import { Toggle } from "./Toggle";
 import {
+	discoverCustomProviderModels,
+	type KeatingCustomProvider,
+	type KeatingCustomProviderType,
+	type KeatingGatewayKind,
+} from "../lib/provider-models";
+import {
 	completeOAuthFromInput,
 	initiateOAuth,
 	providerToOAuthId,
@@ -20,22 +26,9 @@ import {
 	type OAuthProviderId,
 } from "../keating/oauth";
 
-export type KeatingCustomProviderType =
-	| "ollama"
-	| "llama.cpp"
-	| "vllm"
-	| "lmstudio"
-	| "openai-completions"
-	| "openai-responses"
-	| "anthropic-messages"
-	| "synthetic";
-
-type KeatingCustomProvider = Omit<CustomProvider, "type"> & {
-	type: KeatingCustomProviderType;
-};
-
 const AUTO_DISCOVERY_TYPES = new Set<KeatingCustomProviderType>([
-	"ollama", "llama.cpp", "vllm", "lmstudio",
+	"ollama", "llama.cpp", "vllm", "lmstudio", "gateway",
+	"openai-completions", "openai-responses", "synthetic",
 ]);
 
 const PROVIDER_PRIORITY = ["openai", "anthropic", "google"];
@@ -58,11 +51,26 @@ const PROVIDER_TYPE_OPTIONS = [
 	{ value: "llama.cpp", label: "llama.cpp" },
 	{ value: "vllm", label: "vLLM" },
 	{ value: "lmstudio", label: "LM Studio" },
+	{ value: "gateway", label: "AI Gateway" },
 	{ value: "openai-completions", label: "OpenAI Completions Compatible" },
 	{ value: "openai-responses", label: "OpenAI Responses Compatible" },
 	{ value: "anthropic-messages", label: "Anthropic Messages Compatible" },
 	{ value: "synthetic", label: "Synthetic (OpenAI Compatible)" },
 ];
+
+const GATEWAY_KIND_OPTIONS: Array<{ value: KeatingGatewayKind; label: string }> = [
+	{ value: "bifrost", label: "Bifrost" },
+	{ value: "plexus", label: "Plexus" },
+	{ value: "litellm", label: "LiteLLM" },
+	{ value: "generic", label: "Other OpenAI-compatible gateway" },
+];
+
+const GATEWAY_DEFAULT_URLS: Record<KeatingGatewayKind, string> = {
+	bifrost: "http://localhost:8080",
+	plexus: "",
+	litellm: "http://localhost:4000",
+	generic: "",
+};
 
 const ADD_MODEL_APIS = [
 	{ value: "openai-completions", label: "OpenAI Completions" },
@@ -75,6 +83,8 @@ export function ProvidersModelsTab() {
 	const [customProviders, setCustomProviders] = useState<KeatingCustomProvider[]>([]);
 	const [settings, setSettings] = useState(() => loadKeatingUiSettings());
 	const [showAddModel, setShowAddModel] = useState(false);
+	const [addProviderMenuOpen, setAddProviderMenuOpen] = useState(false);
+	const addProviderMenuRef = useRef<HTMLDivElement>(null);
 	const [providerDialog, setProviderDialog] = useState<{ open: boolean; provider?: KeatingCustomProvider; type?: KeatingCustomProviderType }>({ open: false });
 	const [modelError, setModelError] = useState("");
 	const [providerError, setProviderError] = useState("");
@@ -91,6 +101,7 @@ export function ProvidersModelsTab() {
 	const [providerForm, setProviderForm] = useState({
 		name: "",
 		type: "openai-completions" as KeatingCustomProviderType,
+		gatewayKind: "bifrost" as KeatingGatewayKind,
 		baseUrl: "",
 		apiKey: "",
 	});
@@ -102,7 +113,7 @@ export function ProvidersModelsTab() {
 	useEffect(() => {
 		setProviderError("");
 		if (!providerDialog.open) {
-			setProviderForm({ name: "", type: "openai-completions", baseUrl: "", apiKey: "" });
+			setProviderForm({ name: "", type: "openai-completions", gatewayKind: "bifrost", baseUrl: "", apiKey: "" });
 			return;
 		}
 		if (providerDialog.provider) {
@@ -117,6 +128,7 @@ export function ProvidersModelsTab() {
 			setProviderForm({
 				name: providerDialog.provider.name,
 				type: providerDialog.provider.type,
+				gatewayKind: providerDialog.provider.gatewayKind ?? "bifrost",
 				baseUrl: providerDialog.provider.baseUrl,
 				apiKey,
 			});
@@ -126,12 +138,19 @@ export function ProvidersModelsTab() {
 				"llama.cpp": "http://localhost:8080",
 				vllm: "http://localhost:8000",
 				lmstudio: "http://localhost:1234",
+				gateway: GATEWAY_DEFAULT_URLS.bifrost,
 				"openai-completions": "",
 				"openai-responses": "",
 				"anthropic-messages": "",
 				synthetic: "https://api.synthetic.new/openai/v1",
 			};
-			setProviderForm({ name: "", type: providerDialog.type, baseUrl: defaults[providerDialog.type] || "", apiKey: "" });
+			setProviderForm({
+				name: "",
+				type: providerDialog.type,
+				gatewayKind: "bifrost",
+				baseUrl: defaults[providerDialog.type] || "",
+				apiKey: "",
+			});
 		}
 	}, [providerDialog.provider, providerDialog.type]);
 
@@ -181,24 +200,34 @@ export function ProvidersModelsTab() {
 		try {
 			const storage = getAppStorage();
 			const providerId = providerDialog.provider?.id ?? crypto.randomUUID();
-			const provider: KeatingCustomProvider = {
+			let provider: KeatingCustomProvider = {
 				id: providerId,
 				name: providerForm.name.trim(),
 				type: providerForm.type,
+				gatewayKind: providerForm.type === "gateway" ? providerForm.gatewayKind : undefined,
 				baseUrl: providerForm.baseUrl.trim(),
 				apiKey: providerForm.apiKey.trim() || undefined,
 				models: providerDialog.provider?.models ?? [],
 			};
+			if (AUTO_DISCOVERY_TYPES.has(provider.type)) {
+				const models = await discoverCustomProviderModels(provider);
+				if (models.length === 0) {
+					setProviderError("Connected successfully, but the provider returned no models. Check the base URL and key.");
+					return;
+				}
+				provider = { ...provider, models };
+			}
 			await storage.customProviders.set(provider as any);
 			if (providerForm.apiKey.trim()) {
 				await storage.providerKeys.set(provider.name, providerForm.apiKey.trim());
 			}
 			await loadCustomProviders().then(setCustomProviders);
 			setProviderDialog({ open: false });
-			setProviderForm({ name: "", type: "openai-completions", baseUrl: "", apiKey: "" });
+			setProviderForm({ name: "", type: "openai-completions", gatewayKind: "bifrost", baseUrl: "", apiKey: "" });
 		} catch (error) {
 			console.error("Failed to save provider:", error);
-			setProviderError(isEdit ? "Failed to update provider" : "Failed to save provider");
+			const message = error instanceof Error ? error.message : "Unknown connection error";
+			setProviderError(`${isEdit ? "Failed to update" : "Failed to save"} provider: ${message}`);
 		}
 	};
 
@@ -216,7 +245,19 @@ export function ProvidersModelsTab() {
 
 	const openAddProvider = (type: KeatingCustomProviderType) => {
 		setProviderDialog({ open: true, type });
+		setAddProviderMenuOpen(false);
 	};
+
+	useEffect(() => {
+		if (!addProviderMenuOpen) return;
+		const onDown = (event: MouseEvent) => {
+			if (!addProviderMenuRef.current?.contains(event.target as Node)) {
+				setAddProviderMenuOpen(false);
+			}
+		};
+		window.addEventListener("mousedown", onDown);
+		return () => window.removeEventListener("mousedown", onDown);
+	}, [addProviderMenuOpen]);
 
 	return (
 		<div className="flex flex-col gap-8">
@@ -419,20 +460,39 @@ export function ProvidersModelsTab() {
 							User-configured servers with auto-discovered or manually defined models.
 						</p>
 					</div>
-					<select
-						className="w-full sm:w-auto shrink-0 rounded-md border border-border bg-background px-2 py-1.5 text-xs"
-						onChange={(e) => {
-							const value = e.target.value as KeatingCustomProviderType;
-							openAddProvider(value);
-							e.target.value = "";
-						}}
-						defaultValue=""
-					>
-						<option value="" disabled>Add Provider</option>
-						{PROVIDER_TYPE_OPTIONS.map((o) => (
-							<option key={o.value} value={o.value}>{o.label}</option>
-						))}
-					</select>
+					<div ref={addProviderMenuRef} className="relative shrink-0 max-sm:w-full">
+						<button
+							type="button"
+							aria-haspopup="menu"
+							aria-expanded={addProviderMenuOpen}
+							onClick={() => setAddProviderMenuOpen((open) => !open)}
+							className="dialog-compact-button inline-flex max-sm:w-full items-center justify-between gap-2 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+						>
+							<span>Add Provider</span>
+							<ChevronDown
+								size={12}
+								className={`transition-transform ${addProviderMenuOpen ? "rotate-180" : ""}`}
+							/>
+						</button>
+						{addProviderMenuOpen ? (
+							<div
+								role="menu"
+								className="absolute right-0 top-9 z-30 w-64 overflow-hidden rounded-lg border border-border bg-background py-1 shadow-lg"
+							>
+								{PROVIDER_TYPE_OPTIONS.map((option) => (
+									<button
+										key={option.value}
+										type="button"
+										role="menuitem"
+										className="flex w-full items-center px-3 py-2 text-left text-xs hover:bg-accent hover:text-accent-foreground transition-colors"
+										onClick={() => openAddProvider(option.value as KeatingCustomProviderType)}
+									>
+										{option.label}
+									</button>
+								))}
+							</div>
+						) : null}
+					</div>
 				</div>
 
 				{customProviders.length === 0 ? (
@@ -498,6 +558,27 @@ export function ProvidersModelsTab() {
 									))}
 								</select>
 							</div>
+							{providerForm.type === "gateway" && (
+								<div className="flex flex-col gap-1">
+									<label className="text-sm font-medium text-foreground">Gateway Kind</label>
+									<select
+										className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+										value={providerForm.gatewayKind}
+										onChange={(e) => {
+											const gatewayKind = e.target.value as KeatingGatewayKind;
+											setProviderForm((form) => ({
+												...form,
+												gatewayKind,
+												baseUrl: GATEWAY_DEFAULT_URLS[gatewayKind],
+											}));
+										}}
+									>
+										{GATEWAY_KIND_OPTIONS.map((option) => (
+											<option key={option.value} value={option.value}>{option.label}</option>
+										))}
+									</select>
+								</div>
+							)}
 							<div className="flex flex-col gap-1">
 								<label className="text-sm font-medium text-foreground">Base URL</label>
 								<input
@@ -799,13 +880,17 @@ function CustomProviderCard({
 			<div className="flex items-start justify-between gap-3">
 				<div className="min-w-0">
 					<div className="text-sm font-medium text-foreground">{provider.name}</div>
-					<div className="text-xs text-muted-foreground mt-0.5">{provider.type} — {provider.baseUrl}</div>
+					<div className="text-xs text-muted-foreground mt-0.5">
+						{provider.type === "gateway" ? `${provider.gatewayKind ?? "generic"} gateway` : provider.type} · {provider.baseUrl}
+					</div>
 					<div className="flex gap-2 mt-1">
 						<span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
 							{isAutoDiscovery ? "Auto-discovery" : "Manual"}
 						</span>
 						<span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-							{provider.models?.length ?? 0} models
+							{isAutoDiscovery
+								? `${provider.models?.length ?? 0} discovered models`
+								: `${provider.models?.length ?? 0} configured models`}
 						</span>
 					</div>
 				</div>

@@ -49,7 +49,7 @@ export function getDioEnvConfig(): DioEnvConfig {
 		creemApiKey,
 		creemWebhookSecret,
 		creemProductId,
-		creemBaseUrl: process.env.CREEM_BASE_URL || "https://api.creem.io/v1",
+		creemBaseUrl: resolveCreemBaseUrl(creemApiKey, process.env.CREEM_BASE_URL),
 		dioCreditBudget,
 		bifrostApiKey,
 		bifrostBaseUrl: process.env.BIFROST_BASE_URL || "https://bifrost.dio.computer",
@@ -58,6 +58,14 @@ export function getDioEnvConfig(): DioEnvConfig {
 		recoveryFromEmail: process.env.DIO_RECOVERY_FROM_EMAIL?.trim() || "support@keating.help",
 		recoveryDevCode: process.env.DIO_RECOVERY_DEV_CODE === "true" || process.env.NODE_ENV === "development",
 	};
+}
+
+export function resolveCreemBaseUrl(apiKey: string, override?: string): string {
+	const configured = override?.trim();
+	if (configured) return configured;
+	return apiKey.startsWith("creem_test_")
+		? "https://test-api.creem.io/v1"
+		: "https://api.creem.io/v1";
 }
 
 function getRequiredEnv(name: string): string {

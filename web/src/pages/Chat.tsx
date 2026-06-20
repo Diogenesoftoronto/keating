@@ -1,4 +1,5 @@
 import { Suspense, useEffect, useRef, useState } from "react";
+import { usePostHog } from "@posthog/react";
 import {
   BarChart3,
   Bug,
@@ -38,6 +39,7 @@ function ChatContent() {
       "Start a Socratic tutoring session with Keating. Diagnose what you know, reconstruct understanding from memory, and test transfer to new contexts.",
     canonical: "https://keating.help/chat",
   });
+  const posthog = usePostHog();
   const navigate = useNavigate();
   const {
     isPending,
@@ -103,6 +105,7 @@ function ChatContent() {
   const dismissIntro = () => {
     setIntroDismissed(true);
     sessionStorage.setItem("keating_chat_intro", "dismissed");
+    posthog.capture('chat_intro_dismissed');
   };
 
   useEffect(() => subscribeKeatingUiSettings(setUiSettings), []);
@@ -159,6 +162,7 @@ function ChatContent() {
         `${linkType} ready${result.fallback ? " after portable storage was unavailable" : ""}. It was copied if your browser allowed clipboard access.`,
       );
       setShareState("copied");
+      posthog.capture('session_shared', { share_mode: result.mode, fallback: result.fallback });
       window.setTimeout(() => setShareState("idle"), 1600);
     } catch (error) {
       console.warn("Failed to share session:", error);

@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { usePostHog } from "@posthog/react";
 import { getAppStorage } from "@earendil-works/pi-web-ui";
 import { claimDioAccess, DIO_PROVIDER_ID, normalizeEmail } from "../dio-provider";
 
 export function DioSuccess() {
+	const posthog = usePostHog();
 	const [status, setStatus] = useState<"claiming" | "success" | "error">("claiming");
 	const [message, setMessage] = useState("Completing your Dio setup...");
 	const attempted = useRef(false);
@@ -27,6 +29,8 @@ export function DioSuccess() {
 			.then(async (result) => {
 				if (result.success && result.apiKey) {
 					await getAppStorage().providerKeys.set(DIO_PROVIDER_ID, result.apiKey);
+					posthog.identify(normalized, { email: normalized });
+					posthog.capture('dio_access_claimed', { email: normalized });
 					setStatus("success");
 					setMessage("Dio access is ready.");
 					window.setTimeout(() => {

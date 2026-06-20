@@ -1,45 +1,15 @@
-import { useCallback, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
-import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
-import tsx from "react-syntax-highlighter/dist/esm/languages/prism/tsx";
-import javascript from "react-syntax-highlighter/dist/esm/languages/prism/javascript";
-import typescript from "react-syntax-highlighter/dist/esm/languages/prism/typescript";
-import python from "react-syntax-highlighter/dist/esm/languages/prism/python";
-import bash from "react-syntax-highlighter/dist/esm/languages/prism/bash";
-import json from "react-syntax-highlighter/dist/esm/languages/prism/json";
-import css from "react-syntax-highlighter/dist/esm/languages/prism/css";
-import markup from "react-syntax-highlighter/dist/esm/languages/prism/markup";
-import yaml from "react-syntax-highlighter/dist/esm/languages/prism/yaml";
-import rust from "react-syntax-highlighter/dist/esm/languages/prism/rust";
-import go from "react-syntax-highlighter/dist/esm/languages/prism/go";
-import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import "katex/dist/katex.min.css";
 import { Play, Copy, Check, Loader2, Terminal } from "lucide-react";
 
-// Register only the languages we need (keeps bundle smaller)
-SyntaxHighlighter.registerLanguage("tsx", tsx);
-SyntaxHighlighter.registerLanguage("jsx", tsx);
-SyntaxHighlighter.registerLanguage("javascript", javascript);
-SyntaxHighlighter.registerLanguage("js", javascript);
-SyntaxHighlighter.registerLanguage("typescript", typescript);
-SyntaxHighlighter.registerLanguage("ts", typescript);
-SyntaxHighlighter.registerLanguage("python", python);
-SyntaxHighlighter.registerLanguage("py", python);
-SyntaxHighlighter.registerLanguage("bash", bash);
-SyntaxHighlighter.registerLanguage("sh", bash);
-SyntaxHighlighter.registerLanguage("shell", bash);
-SyntaxHighlighter.registerLanguage("json", json);
-SyntaxHighlighter.registerLanguage("css", css);
-SyntaxHighlighter.registerLanguage("html", markup);
-SyntaxHighlighter.registerLanguage("yaml", yaml);
-SyntaxHighlighter.registerLanguage("yml", yaml);
-SyntaxHighlighter.registerLanguage("rust", rust);
-SyntaxHighlighter.registerLanguage("rs", rust);
-SyntaxHighlighter.registerLanguage("go", go);
-SyntaxHighlighter.registerLanguage("golang", go);
+// Syntax highlighter (react-syntax-highlighter + Prism language packs) is the
+// heaviest part of this module. Load it on demand only when a code block renders.
+const CodeHighlighter = lazy(() => import("./CodeHighlighter"));
 
 interface MarkdownBlockProps {
 	content: string;
@@ -183,22 +153,26 @@ function CodeBlock({ lang, children }: { lang: string; children: string }) {
 				</div>
 			</div>
 
-			{/* Highlighted code */}
-			<SyntaxHighlighter
-				language={displayLang}
-				style={vscDarkPlus}
-				showLineNumbers
-				lineNumberStyle={{ minWidth: "2.2em", paddingRight: "1em", color: "#6e7681", fontSize: "0.75em" }}
-				customStyle={{
-					margin: 0,
-					borderRadius: 0,
-					fontSize: "0.82rem",
-					lineHeight: 1.55,
-					background: "#0d1117",
-				}}
+			{/* Highlighted code (highlighter chunk loads on demand; plain code shows first) */}
+			<Suspense
+				fallback={
+					<pre
+						style={{
+							margin: 0,
+							padding: "1em",
+							fontSize: "0.82rem",
+							lineHeight: 1.55,
+							background: "#0d1117",
+							color: "#c9d1d9",
+							overflowX: "auto",
+						}}
+					>
+						<code>{children.replace(/\n$/, "")}</code>
+					</pre>
+				}
 			>
-				{children.replace(/\n$/, "")}
-			</SyntaxHighlighter>
+				<CodeHighlighter code={children} language={displayLang} />
+			</Suspense>
 
 			{/* Execution output */}
 			{(state === "running" || state === "done" || state === "error") && (

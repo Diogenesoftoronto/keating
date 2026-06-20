@@ -4,6 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import nodepod from '@scelar/nodepod/vite';
+import { visualizer } from 'rollup-plugin-visualizer';
 import * as https from 'https';
 import * as http from 'http';
 import { copyFileSync, mkdirSync, readdirSync, statSync, existsSync } from 'node:fs';
@@ -276,6 +277,18 @@ function chatProxyPlugin(): Plugin {
 
 import pkg from './package.json';
 
+// Opt-in bundle analysis: `ANALYZE=1 vite build` emits dist/stats.html.
+const analyzePlugins: Plugin[] = process.env.ANALYZE
+  ? [
+      visualizer({
+        filename: 'dist/stats.html',
+        gzipSize: true,
+        brotliSize: true,
+        template: 'treemap',
+      }) as Plugin,
+    ]
+  : [];
+
 export default defineConfig({
   define: {
     'import.meta.env.APP_VERSION': JSON.stringify(pkg.version),
@@ -288,6 +301,7 @@ export default defineConfig({
     nodepod(),
     chatProxyPlugin(),
     manimWebPublicPlugin(),
+    ...analyzePlugins,
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.svg'],
@@ -325,9 +339,39 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
-        maximumFileSizeToCacheInBytes: 20 * 1024 * 1024, // 20MB for large bundles
-        // Cache WebGPU WASM files
+        // vite-plugin-pwa FAILS the build if a precached file exceeds this
+        // limit (it does not silently skip), so it must stay above the largest
+        // emitted chunk. 4MB caps it sanely (was 20MB) while leaving headroom
+        // over the current ~3.5MB max. The runtime caches below handle anything
+        // not precached.
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024, // 4MB
         runtimeCaching: [
+          {
+            // Content-hashed build assets: filename changes on every build, so
+            // CacheFirst is safe and gives offline support for chunks that were
+            // too large to precache.
+            urlPattern: /\/assets\/.*\.(?:js|css|woff2?|ttf)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'asset-cache',
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+              },
+            },
+          },
+          {
+            // Web fonts (e.g. KaTeX fonts loaded at runtime from package paths).
+            urlPattern: /\.(?:woff2?|ttf|otf|eot)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'font-cache',
+              expiration: {
+                maxEntries: 60,
+                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+              },
+            },
+          },
           {
             urlPattern: /\.(?:wasm|onnx)$/i,
             handler: 'CacheFirst',
@@ -373,6 +417,23 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    proxy: {
+      '/ingest/static': {
+        target: 'https://us-assets.i.posthog.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/ingest/, ''),
+      },
+      '/ingest/array': {
+        target: 'https://us-assets.i.posthog.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/ingest/, ''),
+      },
+      '/ingest': {
+        target: 'https://us.i.posthog.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/ingest/, ''),
+      },
+    },
     watch: {
       ignored: [
         '**/.bun-install/**',

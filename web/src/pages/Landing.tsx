@@ -1,5 +1,6 @@
 import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { usePostHog } from "@posthog/react";
 import { Nav } from "../components/Nav";
 import { Footer } from "../components/Footer";
 import { BootSequence } from "../components/BootSequence";
@@ -276,6 +277,7 @@ export function Landing() {
     canonical: "https://keating.help/",
   });
   const navigate = useNavigate();
+  const posthog = usePostHog();
   const [activeTab, setActiveTab] = useState<InstallTab>("npm");
   const [copied, setCopied] = useState(false);
 
@@ -283,6 +285,7 @@ export function Landing() {
     navigator.clipboard.writeText(TAB_COPY_TEXT[activeTab]).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
+      posthog.capture('install_command_copied', { tab: activeTab });
     });
   }
 
@@ -318,7 +321,10 @@ export function Landing() {
                 <div className="hero-ctas">
                   <button
                     className="btn-retro btn-retro-primary"
-                    onClick={() => navigate({ to: "/chat" })}
+                    onClick={() => {
+                      posthog.capture('cta_clicked', { label: 'Initialize_Session', location: 'hero' });
+                      navigate({ to: "/chat" });
+                    }}
                   >
                     Initialize_Session →
                   </button>
@@ -464,7 +470,10 @@ export function Landing() {
             <div className="use-links">
               <button
                 className="btn-retro btn-retro-primary"
-                onClick={() => navigate({ to: "/chat" })}
+                onClick={() => {
+                  posthog.capture('cta_clicked', { label: 'Open_Web_Shell', location: 'use_section' });
+                  navigate({ to: "/chat" });
+                }}
               >
                 Open_Web_Shell →
               </button>
@@ -596,7 +605,10 @@ export function Landing() {
             <div className="hero-ctas">
               <button
                 className="btn-retro btn-retro-primary"
-                onClick={() => navigate({ to: "/chat" })}
+                onClick={() => {
+                  posthog.capture('cta_clicked', { label: 'Initialize_Session', location: 'final_cta' });
+                  navigate({ to: "/chat" });
+                }}
               >
                 Initialize_Session →
               </button>

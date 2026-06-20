@@ -6,7 +6,7 @@ const fps = 30;
 
 const defaultProps: KeatingIntroProps = {
   audioSrc: null,
-  durationSeconds: 96,
+  durationSeconds: 104,
   scenes: [
     {
       clipSrc: "docs/assets/intro.mp4",
@@ -14,7 +14,15 @@ const defaultProps: KeatingIntroProps = {
       title: "Keating",
       kicker: "The hyperteacher",
       body: "A Socratic AI scaffold for people who still want to own their understanding.",
-      weight: 1.05,
+      weight: 0.85,
+    },
+    {
+      clipSrc: "docs/assets/web-landing.mp4",
+      clipDurationSeconds: 8,
+      title: "In your browser",
+      kicker: "A live teacher",
+      body: "The same Socratic harness, surfaced as an inspectable web app where diagnosis, reconstruction, probing, and verification are visible steps.",
+      weight: 1.1,
     },
     {
       clipSrc: "docs/assets/learning-flow.mp4",
@@ -22,7 +30,7 @@ const defaultProps: KeatingIntroProps = {
       title: "Artifacts you can inspect",
       kicker: "Plans, maps, animations",
       body: "Keating turns a topic into visible learning material instead of a disposable answer.",
-      weight: 1.1,
+      weight: 1,
     },
     {
       clipSrc: "docs/assets/teacher-flow.mp4",
@@ -30,6 +38,14 @@ const defaultProps: KeatingIntroProps = {
       title: "Teach, then verify",
       kicker: "Grounded pedagogy",
       body: "Lesson plans and verification checklists keep the teaching loop accountable.",
+      weight: 0.9,
+    },
+    {
+      clipSrc: "docs/assets/web-tutorial.mp4",
+      clipDurationSeconds: 7,
+      title: "Built like software",
+      kicker: "Tutorial and paper",
+      body: "The teaching flow is documented, versioned, and quotable — no oracle hidden behind a chat box.",
       weight: 0.95,
     },
     {
@@ -38,7 +54,7 @@ const defaultProps: KeatingIntroProps = {
       title: "A live shell",
       kicker: "Policy, outputs, feedback",
       body: "The learner can inspect the teacher, browse artifacts, and record signals as the session unfolds.",
-      weight: 1,
+      weight: 0.95,
     },
     {
       clipSrc: "docs/assets/improve-flow.mp4",
@@ -46,7 +62,15 @@ const defaultProps: KeatingIntroProps = {
       title: "It studies itself",
       kicker: "Benchmarks and evolution",
       body: "Policy search and prompt evolution make improvement visible instead of mysterious.",
-      weight: 1.15,
+      weight: 1.1,
+    },
+    {
+      clipSrc: "docs/assets/web-paper.mp4",
+      clipDurationSeconds: 7,
+      title: "Quotable methodology",
+      kicker: "Paper, not vibes",
+      body: "The metaharness design is written up as a paper you can cite, critique, or fork.",
+      weight: 0.9,
     },
     {
       clipSrc: "docs/assets/tests.mp4",

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { usePostHog } from "@posthog/react";
 import {
 	AlertTriangle,
 	Bookmark,
@@ -864,6 +865,7 @@ function BenchmarkComparison({
 QuizRenderer.displayName = "QuizRenderer";
 
 export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) {
+	const posthog = usePostHog();
 	const [answers, setAnswers] = useState<AnswerState>({});
 	const [confidence, setConfidence] = useState<Record<string, number>>({});
 	const [revealed, setRevealed] = useState(false);
@@ -1048,6 +1050,13 @@ export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) 
 		finalTimingRef.current = timing;
 		setElapsed(timing.totalMs);
 		setRevealed(true);
+		posthog.capture('quiz_completed', {
+			topic: quiz.slug ?? quiz.topic,
+			question_count: quiz.questions.length,
+			score: rawScore,
+			weighted_score: weightedScore,
+			duration_ms: timing.totalMs,
+		});
 		onSubmit?.({
 			answers,
 			score: rawScore,
