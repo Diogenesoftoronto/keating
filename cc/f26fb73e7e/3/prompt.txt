@@ -1,0 +1,1 @@
+improve the narrated video capture really parts of the tui and the web ui
