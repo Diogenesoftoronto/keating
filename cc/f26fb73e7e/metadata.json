@@ -3,7 +3,7 @@
   "checkpoint_id": "ccf26fb73e7e",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 9,
+  "checkpoints_count": 11,
   "files_touched": [
     "AGENTS.md",
     "CHANGELOG.md",
@@ -85,6 +85,12 @@
       "transcript": "/cc/f26fb73e7e/5/full.jsonl",
       "content_hash": "/cc/f26fb73e7e/5/content_hash.txt",
       "prompt": "/cc/f26fb73e7e/5/prompt.txt"
+    },
+    {
+      "metadata": "/cc/f26fb73e7e/6/metadata.json",
+      "transcript": "/cc/f26fb73e7e/6/full.jsonl",
+      "content_hash": "/cc/f26fb73e7e/6/content_hash.txt",
+      "prompt": "/cc/f26fb73e7e/6/prompt.txt"
     }
   ],
   "token_usage": {

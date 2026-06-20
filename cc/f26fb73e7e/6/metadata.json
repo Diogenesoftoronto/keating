@@ -1,0 +1,41 @@
+{
+  "cli_version": "0.7.7",
+  "checkpoint_id": "ccf26fb73e7e",
+  "session_id": "ses_13267d606ffeAoUaKoBaJ2eTIB",
+  "strategy": "manual-commit",
+  "created_at": "2026-06-20T06:21:33.169356778Z",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "web/src/components/AssistantChatPanel.tsx",
+    "web/src/components/ProvidersModelsTab.tsx",
+    "web/src/hooks/useKeatingAgent.tsx"
+  ],
+  "agent": "OpenCode",
+  "model": "neuralwatt/moonshotai/Kimi-K2.7-Code",
+  "turn_id": "8a3fbbaace47",
+  "checkpoint_transcript_start": 4,
+  "transcript_lines_at_start": 4,
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-06-20T06:21:33.168070314Z",
+    "agent_lines": 97,
+    "agent_removed": 13,
+    "human_added": 741,
+    "human_modified": 67,
+    "human_removed": 0,
+    "total_committed": 905,
+    "total_lines_changed": 1042,
+    "agent_percentage": 10.556621880998081,
+    "metric_version": 2
+  }
+}
