@@ -1,0 +1,36 @@
+• Findings
+
+  - High: web/server/api/dio/recover.ts:34 creates an OTP but never sends it. The UI says “we’ll email you a verification code” at web/src/components/DioAccessPromptDialog.tsx:248, but there is no mail provider, log-only dev
+  fallback, or returned dev code. Recovery is now safer than before, but non-functional for real users.
+  - High: web/src/dio-provider/server.ts:297 still does a non-atomic getItem then setItem event lock. Concurrent duplicate webhooks can both acquire the lock and create multiple Bifrost keys. The previous race concern is not
+  actually fixed unless Nitro storage provides atomic compare-and-set here, which this code does not use.
+  - Medium: web/server/api/dio/webhook.ts:57 can leave events stuck in processing forever if the process dies after lock acquisition and before completeEvent. Future Creem retries will be treated as duplicates at web/src/dio-
+  provider/server.ts:305. Add a processing TTL/stale-lock recovery.
+  - Medium: If Bifrost key creation succeeds but web/server/api/dio/webhook.ts:115 fails, retrying a failed event can create another virtual key because idempotency is only by stored entitlement/email after persistence. Use a
+  purchase-reference idempotency key with Bifrost or store a provisioning record before/around key creation.
+
+---
+
+i think using resend is fine btw
+
+---
+
+• Not fully fixed.
+
+  Findings
+
+  - High: web typecheck fails. web/server/api/dio/webhook.ts:59 passes Nitro Storage into web/src/dio-provider/server.ts:393, whose setItem type uses unknown and is incompatible with Nitro StorageValue. web/test/dio-
+    server.test.ts:565 and :566 also have invalid null casts.
+
+  - High: Recovery can still become non-functional in production. web/src/dio-provider/server.ts:324 swallows Resend failures and falls through; if dev codes are disabled it returns { sent: false }, but web/server/api/dio/
+    recover.ts:38 still tells the client OTP is required. The user never receives a code.
+
+  - Medium: Event locking is improved but not proven atomic. web/src/dio-provider/server.ts:417 attempts { nx: true }, but correctness depends on the active Nitro storage driver supporting that option. If it ignores it, the
+    read-back check is not a distributed lock guarantee.
+
+  Fixed/Improved
+  The email-only key leak is fixed for claim/recover, /dio/success now exists, stale event locks have a TTL, and provisioning records plus Bifrost idempotency keys reduce duplicate-key risk.
+
+---
+
+begin to think
