@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { sanitizeSvg } from "../lib/sanitize-svg";
 
 interface MermaidRendererProps {
 	content: string;
@@ -43,10 +44,10 @@ export function MermaidRenderer({ content, className }: MermaidRendererProps) {
 				mermaid.default.initialize({
 					startOnLoad: false,
 					theme: document.documentElement.classList.contains("dark") ? "dark" : "default",
-					securityLevel: "loose",
+					securityLevel: "strict",
 					flowchart: {
 						useMaxWidth: true,
-						htmlLabels: true,
+						htmlLabels: false,
 					},
 				});
 
@@ -77,12 +78,16 @@ export function MermaidRenderer({ content, className }: MermaidRendererProps) {
 
 				// Render into detached container
 				const { svg: renderedSvg } = await mermaid.default.render(id, mermaidCode, renderTargetRef.current);
+				const safeSvg = sanitizeSvg(renderedSvg);
+				if (!safeSvg) {
+					throw new Error("Rendered diagram failed SVG safety checks");
+				}
 
 				// Only store the SVG string — never let Mermaid touch React's DOM
-				renderCache.set(cacheKey, renderedSvg);
+				renderCache.set(cacheKey, safeSvg);
 
 				if (!cancelled) {
-					setSvg(renderedSvg);
+					setSvg(safeSvg);
 					setLoading(false);
 					setError(null);
 				}

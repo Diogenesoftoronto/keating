@@ -1,4 +1,4 @@
-import { getModel, type Api, type Context, type Model } from "@earendil-works/pi-ai";
+import { getModel, type Api, type Context, type Model } from "@earendil-works/pi-ai/compat";
 import { DEFAULT_WEIGHTS } from "./core";
 import { hybridStreamFn } from "../hooks/keating-stream";
 import { judgeComposite, type ExportJudge, type JudgeScore, type RewardedTurn } from "./reward";

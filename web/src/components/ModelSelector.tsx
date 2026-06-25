@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw, Search, X } from "lucide-react";
-import { getProviders, type Api, type Model } from "@earendil-works/pi-ai";
+import { getProviders, type Api, type Model } from "@earendil-works/pi-ai/compat";
 import { localModel, getModelName, getModelId, type LocalModel } from "../stores/local-model";
 import { getSelectableModels, buildSavedModel } from "../lib/provider-models";
 import { addRecentModel, getRecentModels, loadKeatingUiSettings } from "../keating/ui-settings";

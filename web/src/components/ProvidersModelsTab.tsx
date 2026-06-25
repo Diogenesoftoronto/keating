@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronDown, Trash2, X } from "lucide-react";
-import { getProviders } from "@earendil-works/pi-ai";
+import { getProviders } from "@earendil-works/pi-ai/compat";
 import { getAppStorage } from "@earendil-works/pi-web-ui";
 import {
 	loadKeatingUiSettings,

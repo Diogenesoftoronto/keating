@@ -1,4 +1,4 @@
-import { getModels, getProviders, type Api, type Model } from "@earendil-works/pi-ai";
+import { getModels, getProviders, type Api, type Model } from "@earendil-works/pi-ai/compat";
 import { getAppStorage, type CustomProvider } from "@earendil-works/pi-web-ui";
 import { proxiedProviderRequestUrl } from "./provider-proxy";
 import { DIO_DEFAULT_MODEL, DIO_PROVIDER_ID } from "../dio-provider";

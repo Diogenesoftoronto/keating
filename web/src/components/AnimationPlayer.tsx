@@ -239,7 +239,7 @@ export function AnimationPlayer({ scene, manifest, storyboard, className }: Anim
 					<iframe
 						title={`${manifestData?.topic ?? "Keating"} Hyperframes composition`}
 						srcDoc={scene}
-						sandbox="allow-scripts allow-same-origin"
+						sandbox="allow-scripts"
 						className="aspect-video w-full rounded-md border border-border bg-black"
 					/>
 				) : storyboardData?.scenes.length ? (

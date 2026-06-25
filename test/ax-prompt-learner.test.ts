@@ -5,8 +5,8 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { ensureProjectScaffold } from "../src/core/project.js";
 
-test("ACE prompt learner runs and returns a playbook", async () => {
-  const workdir = await mkdtemp(join(tmpdir(), "keating-ax-ace-"));
+test("GEPA prompt learner runs and returns a playbook", async () => {
+  const workdir = await mkdtemp(join(tmpdir(), "keating-ax-gepa-"));
   await ensureProjectScaffold(workdir);
   
   await mkdir(join(workdir, "pi", "prompts"), { recursive: true });

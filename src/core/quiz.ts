@@ -170,11 +170,11 @@ function clampLimit(value: number | undefined, min: number, max: number, fallbac
 
 export function resolveQuizLimits(overrides: QuizLimitOverrides = {}): QuizLimits {
   return {
-    questionChars: clampLimit(overrides.questionChars, 80, 320, DEFAULT_QUIZ_LIMITS.questionChars),
-    answerChars: clampLimit(overrides.answerChars, 80, 500, DEFAULT_QUIZ_LIMITS.answerChars),
-    explanationChars: clampLimit(overrides.explanationChars, 80, 500, DEFAULT_QUIZ_LIMITS.explanationChars),
-    rubricChars: clampLimit(overrides.rubricChars, 60, 220, DEFAULT_QUIZ_LIMITS.rubricChars),
-    optionChars: clampLimit(overrides.optionChars, 40, 220, DEFAULT_QUIZ_LIMITS.optionChars),
+    questionChars: clampLimit(overrides.questionChars, 80, 320, 180),
+    answerChars: clampLimit(overrides.answerChars, 80, 500, 220),
+    explanationChars: clampLimit(overrides.explanationChars, 80, 500, 220),
+    rubricChars: clampLimit(overrides.rubricChars, 60, 220, 120),
+    optionChars: clampLimit(overrides.optionChars, 40, 220, 140),
   };
 }
 

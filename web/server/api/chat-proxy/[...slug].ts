@@ -1,4 +1,5 @@
 import { defineEventHandler, proxyRequest, getHeader, getRequestURL, getHeaders, createError } from "h3";
+import { buildValidatedProxyUrl } from "../../utils/proxy-target";
 
 export default defineEventHandler(async (event) => {
   const targetBaseUrl = getHeader(event, "x-target-url");
@@ -12,7 +13,18 @@ export default defineEventHandler(async (event) => {
 
   const reqUrl = getRequestURL(event);
   const proxyPath = reqUrl.pathname.replace(/^\/api\/chat-proxy\/?/, "") + reqUrl.search;
-  const fullTargetUrl = `${targetBaseUrl.replace(/\/$/, "")}/${proxyPath}`;
+  let fullTargetUrl: string;
+  try {
+    fullTargetUrl = buildValidatedProxyUrl(targetBaseUrl, proxyPath, {
+      allowHttp: process.dev || import.meta.env?.DEV,
+      allowLocal: process.dev || import.meta.env?.DEV,
+    });
+  } catch (err) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: err instanceof Error ? err.message : "Invalid proxy target",
+    });
+  }
 
   const forbiddenHeaders = [
     "x-stainless-os",
@@ -36,7 +48,7 @@ export default defineEventHandler(async (event) => {
   if (process.dev || import.meta.env?.DEV) {
     const hasAuth = !!headers["authorization"];
     const hasApiKey = !!headers["x-api-key"];
-    console.log(`[chat-proxy] ${event.method} ${proxyPath} -> ${targetBaseUrl} (auth=${hasAuth}, xApiKey=${hasApiKey})`);
+    console.log(`[chat-proxy] ${event.method} ${proxyPath} -> ${new URL(fullTargetUrl).hostname} (auth=${hasAuth}, xApiKey=${hasApiKey})`);
   }
 
   return proxyRequest(event, fullTargetUrl, {

@@ -9,6 +9,8 @@ import * as https from 'https';
 import * as http from 'http';
 import { copyFileSync, mkdirSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
+import { buildValidatedProxyUrl } from './server/utils/proxy-target';
+import { isAllowedDioOpenAiProxyRequest } from './src/dio-provider/server';
 
 type AgentRuntimeMode = 'browser-only' | 'remote' | 'cloud';
 
@@ -213,7 +215,23 @@ function chatProxyPlugin(): Plugin {
           }
 
           const proxyPath = req.url.replace(/^\/api\/dio\/openai\/?/, '');
-          const targetUrl = new URL(`${targetBase.replace(/\/$/, '')}/${proxyPath}`);
+          if (!isAllowedDioOpenAiProxyRequest(req.method, proxyPath)) {
+            res.statusCode = 404;
+            res.end('Not found');
+            return;
+          }
+
+          let targetUrl: URL;
+          try {
+            targetUrl = new URL(buildValidatedProxyUrl(targetBase, proxyPath, {
+              allowHttp: process.env.NODE_ENV !== 'production',
+              allowLocal: process.env.NODE_ENV !== 'production',
+            }));
+          } catch (error) {
+            res.statusCode = 503;
+            res.end(error instanceof Error ? error.message : 'Dio gateway endpoint is not configured.');
+            return;
+          }
           const forbiddenHeaders = [
             'x-stainless-os', 'x-stainless-lang', 'x-stainless-package-version',
             'x-stainless-runtime', 'x-stainless-runtime-version',
@@ -276,18 +294,20 @@ function chatProxyPlugin(): Plugin {
           return;
         }
 
-        let parsedTarget: URL;
+        let targetUrl: URL;
         try {
-          parsedTarget = new URL(targetBaseUrl);
-        } catch {
+          const proxyPath = req.url.replace(/^\/api\/chat-proxy\/?/, '');
+          targetUrl = new URL(buildValidatedProxyUrl(targetBaseUrl, proxyPath, {
+            allowHttp: true,
+            allowLocal: true,
+          }));
+        } catch (error) {
           res.statusCode = 400;
-          res.end('Invalid x-target-url header');
+          res.end(error instanceof Error ? error.message : 'Invalid x-target-url header');
           return;
         }
 
         const proxyPath = req.url.replace(/^\/api\/chat-proxy\/?/, '');
-        const fullTarget = `${parsedTarget.href.replace(/\/$/, '')}/${proxyPath}`;
-        const targetUrl = new URL(fullTarget);
 
         const forbiddenHeaders = [
           'x-stainless-os', 'x-stainless-lang', 'x-stainless-package-version',
@@ -515,6 +535,8 @@ export default defineConfig({
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',
       'Cross-Origin-Embedder-Policy': 'credentialless',
+      'Cross-Origin-Resource-Policy': 'cross-origin',
+      'Access-Control-Allow-Origin': '*',
     },
   },
   base: '/',
