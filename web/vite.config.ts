@@ -341,10 +341,11 @@ export default defineConfig({
         clientsClaim: true,
         // vite-plugin-pwa FAILS the build if a precached file exceeds this
         // limit (it does not silently skip), so it must stay above the largest
-        // emitted chunk. 4MB caps it sanely (was 20MB) while leaving headroom
-        // over the current ~3.5MB max. The runtime caches below handle anything
-        // not precached.
-        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024, // 4MB
+        // emitted chunk. sandbox-export is currently ~4.3MB; we round up to
+        // 6MB for headroom. The asset-cache runtime rule below catches anything
+        // that still doesn't fit, so an offline reload still works for chunks
+        // exceeding this cap.
+        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024, // 6MB
         runtimeCaching: [
           {
             // Content-hashed build assets: filename changes on every build, so
