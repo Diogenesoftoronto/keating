@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	Atom,
 	Check,
@@ -28,6 +28,7 @@ import {
 	categoryGradient,
 } from "./session-card-visuals";
 import { formatRelativeSessionDate } from "../lib/session-date";
+import { sanitizeSvg } from "../lib/sanitize-svg";
 
 const CATEGORY_ICON: Record<CategoryKey, LucideIcon> = {
 	science: FlaskConical,
@@ -100,6 +101,7 @@ export function SessionCard({
 	const [draft, setDraft] = useState(session.title);
 	const [busy, setBusy] = useState(false);
 	const menuRef = useRef<HTMLDivElement>(null);
+	const safeHeroSvg = useMemo(() => (hero?.svg ? sanitizeSvg(hero.svg) : ""), [hero?.svg]);
 
 	useEffect(() => {
 		if (!menuOpen) return;
@@ -150,11 +152,10 @@ export function SessionCard({
 				onClick={() => void onLoad(session.id)}
 				aria-label={`Open session ${session.title}`}
 			>
-				{hero?.svg ? (
+				{safeHeroSvg ? (
 					<div
 						className="session-card-hero-svg flex h-20 sm:h-28 w-full items-center justify-center overflow-hidden bg-muted/40"
-						// Locally generated mermaid SVG from the user's own IndexedDB.
-						dangerouslySetInnerHTML={{ __html: hero.svg }}
+						dangerouslySetInnerHTML={{ __html: safeHeroSvg }}
 					/>
 				) : (
 					<div

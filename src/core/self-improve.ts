@@ -270,7 +270,7 @@ async function buildImprovementInstructions(
     "",
     "Where applicable, leverage these Ax optimization traces to inform your changes:",
     `- **GEPA Pareto Front**: Check \`.keating/state/gepa-optimized.json\` for multi-objective hyperparameter tuning traces.`,
-    `- **ACE Playbook**: Check \`.keating/state/ace-playbook.json\` for the latest prompt-learning strategy updates.`,
+    `- **GEPA Prompt Playbook**: Check \`.keating/state/gepa-prompt-playbook.json\` for the latest prompt-learning strategy updates.`,
     "",
     "## Safety Rules",
     "",

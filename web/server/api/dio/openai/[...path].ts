@@ -1,5 +1,5 @@
 import { createError, defineEventHandler, getHeaders, getRequestURL, proxyRequest } from "h3";
-import { getDioGatewayBaseUrl, isDioEnabled } from "../../../../src/dio-provider/server";
+import { getDioGatewayBaseUrl, isAllowedDioOpenAiProxyRequest, isDioEnabled } from "../../../../src/dio-provider/server";
 
 export default defineEventHandler(async (event) => {
 	if (!isDioEnabled()) {
@@ -8,6 +8,9 @@ export default defineEventHandler(async (event) => {
 
 	const reqUrl = getRequestURL(event);
 	const proxyPath = reqUrl.pathname.replace(/^\/api\/dio\/openai\/?/, "") + reqUrl.search;
+	if (!isAllowedDioOpenAiProxyRequest(event.method, proxyPath)) {
+		throw createError({ statusCode: 404, statusMessage: "Not found" });
+	}
 	const targetUrl = `${getDioGatewayBaseUrl()}/${proxyPath}`;
 
 	const forbiddenHeaders = [

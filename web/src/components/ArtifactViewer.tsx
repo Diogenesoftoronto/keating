@@ -17,6 +17,7 @@ import {
 import { MermaidRenderer } from "./MermaidRenderer";
 import { AnimationPlayer } from "./AnimationPlayer";
 import { MarkdownBlock } from "./MarkdownBlock";
+import { sanitizeSvg } from "../lib/sanitize-svg";
 import { KeatingStorage, type LessonPlan, type LessonMap, type Animation, type BenchmarkResult, type EvolutionResult, type Verification, type PromptEvolutionResult, type ImprovementAttemptRecord } from "../keating/storage";
 import { sessions, getInitPromise } from "../hooks/keating-storage";
 import type { SessionMetadata } from "../types/session";
@@ -499,13 +500,14 @@ function PlanViewer({ plan }: { plan: LessonPlan }) {
 }
 
 function MapView({ map }: { map: LessonMap }) {
+	const safeSvg = useMemo(() => (map.svgContent ? sanitizeSvg(map.svgContent) : ""), [map.svgContent]);
 	return (
 		<div>
 			<MermaidRenderer content={map.mmdContent} className="bg-background" />
-			{map.svgContent && (
+			{safeSvg && (
 				<details className="mt-4">
 					<summary className="text-sm text-muted-foreground cursor-pointer">View SVG</summary>
-					<div dangerouslySetInnerHTML={{ __html: map.svgContent }} className="mt-2" />
+					<div dangerouslySetInnerHTML={{ __html: safeSvg }} className="mt-2" />
 				</details>
 			)}
 		</div>

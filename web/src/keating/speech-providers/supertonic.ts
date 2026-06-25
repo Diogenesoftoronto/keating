@@ -36,7 +36,6 @@ let sessionPromise: Promise<SupertonicSessionBundle> | null = null;
 async function loadSupertonic(): Promise<SupertonicSessionBundle> {
 	if (sessionPromise) return sessionPromise;
 	sessionPromise = (async () => {
-		// @ts-expect-error - onnxruntime-web ships types but they're not resolvable via package "exports"
 		const ort = await import("onnxruntime-web");
 		const [textEncoderBuf, durationBuf, vectorBuf, vocoderBuf, ttsJson, indexerJson] = await Promise.all([
 			fetch(SUPERTONIC_FILES.textEncoder).then((r) => r.arrayBuffer()),

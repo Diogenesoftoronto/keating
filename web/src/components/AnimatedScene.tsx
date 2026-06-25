@@ -64,7 +64,7 @@ function AnimationBody({ payload }: { payload: AnimationPayload }) {
 		return (
 			<CodeFrame
 				html={buildManimSceneHtml(payload.body, payload.topic)}
-				sandbox="allow-scripts allow-same-origin"
+				sandbox="allow-scripts"
 			/>
 		);
 	}
@@ -75,7 +75,7 @@ function AnimationBody({ payload }: { payload: AnimationPayload }) {
 		return (
 			<CodeFrame
 				html={buildHyperframesHtml(payload.body, payload.topic)}
-				sandbox="allow-scripts allow-same-origin"
+				sandbox="allow-scripts"
 			/>
 		);
 	}

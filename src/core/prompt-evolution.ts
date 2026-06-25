@@ -478,10 +478,12 @@ export function promptEvolutionToMarkdown(run: PromptEvolutionRun): string {
 
 import { learnPrompt, LearnPromptOptions } from "./ax-prompt-learner.js";
 
-export async function evolveWithACE(
+export async function evolveWithGEPA(
   cwd: string,
   promptName: string = "learn",
   options?: LearnPromptOptions
 ) {
   return learnPrompt(cwd, promptName, options);
 }
+
+export const evolveWithACE = evolveWithGEPA;

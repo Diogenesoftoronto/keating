@@ -27,7 +27,7 @@ Current Test State (32 tests, 0 fail):
 - fuzz.test.ts: 1 test (5 iterations manual PBT)
 - hyperteacher-extension.test.ts: 13 tests (command handlers with mock PI)
 - ax-optimizer.test.ts: 1 test (GEPA optimizer)
-- ax-prompt-learner.test.ts: 1 test (ACE learner)
+- ax-prompt-learner.test.ts: 1 test (GEPA learner)
 
 Key Source Modules:
 - map-elites.ts: createGrid, placeInGrid, selectParent, mapElitesEvolve, mapElitesToEvolutionRun, mapElitesToMarkdown

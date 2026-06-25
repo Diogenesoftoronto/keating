@@ -1,13 +1,12 @@
 import {
 	createAssistantMessageEventStream,
-	getModel,
-	streamSimple,
 	type Api,
 	type AssistantMessage,
 	type Context,
 	type Model,
 	type SimpleStreamOptions,
 } from "@earendil-works/pi-ai";
+import { streamSimple } from "@earendil-works/pi-ai/compat";
 import { normalizeToolCallStream } from "../keating/tool-call-normalizer";
 import { streamWithApiRetry } from "../keating/api-retry";
 import { chatProxyBaseUrl, proxyTargetHeader, shouldProxyModel } from "../lib/provider-proxy";

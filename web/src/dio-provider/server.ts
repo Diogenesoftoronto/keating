@@ -65,6 +65,22 @@ export function getDioGatewayBaseUrl(): string {
 	return getRequiredEnv("BIFROST_BASE_URL").replace(/\/+$/, "");
 }
 
+function normalizeDioOpenAiProxyPath(path: string): string {
+	return path.split("?")[0].replace(/^\/+/, "").replace(/\/+$/, "");
+}
+
+export function isAllowedDioOpenAiProxyRequest(method: string | undefined, path: string): boolean {
+	const normalizedMethod = (method || "GET").toUpperCase();
+	const normalizedPath = normalizeDioOpenAiProxyPath(path);
+	if (normalizedMethod === "POST") {
+		return normalizedPath === "v1/chat/completions";
+	}
+	if (normalizedMethod === "GET" || normalizedMethod === "HEAD") {
+		return normalizedPath === "v1/models";
+	}
+	return false;
+}
+
 export function resolveCreemBaseUrl(apiKey: string, override?: string): string {
 	const configured = override?.trim();
 	if (configured) return configured;

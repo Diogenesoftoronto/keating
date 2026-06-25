@@ -157,6 +157,49 @@ describe("dio env config", () => {
 	});
 });
 
+describe("dio OpenAI proxy allowlist", () => {
+	it("allows only the OpenAI-compatible endpoints the web client needs", async () => {
+		const { isAllowedDioOpenAiProxyRequest } = await import("../src/dio-provider/server");
+		expect(isAllowedDioOpenAiProxyRequest("POST", "v1/chat/completions")).toBe(true);
+		expect(isAllowedDioOpenAiProxyRequest("POST", "/v1/chat/completions?stream=true")).toBe(true);
+		expect(isAllowedDioOpenAiProxyRequest("GET", "v1/models")).toBe(true);
+		expect(isAllowedDioOpenAiProxyRequest("HEAD", "v1/models")).toBe(true);
+	});
+
+	it("rejects gateway administration and unexpected OpenAI paths", async () => {
+		const { isAllowedDioOpenAiProxyRequest } = await import("../src/dio-provider/server");
+		expect(isAllowedDioOpenAiProxyRequest("POST", "api/governance/virtual-keys")).toBe(false);
+		expect(isAllowedDioOpenAiProxyRequest("POST", "v1/models")).toBe(false);
+		expect(isAllowedDioOpenAiProxyRequest("GET", "v1/chat/completions")).toBe(false);
+		expect(isAllowedDioOpenAiProxyRequest("POST", "../api/governance/virtual-keys")).toBe(false);
+	});
+});
+
+describe("generic proxy target validation", () => {
+	it("accepts public https base URLs and preserves path prefixes", async () => {
+		const { buildValidatedProxyUrl } = await import("../server/utils/proxy-target");
+		expect(buildValidatedProxyUrl("https://gateway.example/openai/v1", "chat/completions")).toBe(
+			"https://gateway.example/openai/v1/chat/completions",
+		);
+	});
+
+	it("rejects local, private, credentialed, and non-http targets by default", async () => {
+		const { buildValidatedProxyUrl } = await import("../server/utils/proxy-target");
+		expect(() => buildValidatedProxyUrl("http://169.254.169.254", "latest/meta-data")).toThrow(/https|local|private/);
+		expect(() => buildValidatedProxyUrl("https://127.0.0.1:8080", "v1/models")).toThrow(/local|private/);
+		expect(() => buildValidatedProxyUrl("https://user:pass@example.com", "v1/models")).toThrow(/credentials/);
+		expect(() => buildValidatedProxyUrl("file:///etc/passwd", "")).toThrow(/http or https/);
+	});
+
+	it("allows local http targets only when explicitly enabled", async () => {
+		const { buildValidatedProxyUrl } = await import("../server/utils/proxy-target");
+		expect(buildValidatedProxyUrl("http://localhost:11434", "api/tags", {
+			allowHttp: true,
+			allowLocal: true,
+		})).toBe("http://localhost:11434/api/tags");
+	});
+});
+
 describe("creem checkout creation", () => {
 	it("creates a checkout and returns url and reference", async () => {
 		const { createCreemCheckout, getDioEnvConfig } = await import("../src/dio-provider/server");

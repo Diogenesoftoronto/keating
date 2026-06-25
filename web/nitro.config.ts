@@ -5,6 +5,12 @@ const crossOriginIsolationHeaders = {
   "Cross-Origin-Embedder-Policy": "credentialless",
 };
 
+const crossOriginScriptHeaders = {
+  ...crossOriginIsolationHeaders,
+  "Cross-Origin-Resource-Policy": "cross-origin",
+  "Access-Control-Allow-Origin": "*",
+};
+
 export default defineNitroConfig({
   // Ensure that /assets/* requests return 404 if not found, 
   // rather than falling back to index.html (SPA fallback).
@@ -18,6 +24,7 @@ export default defineNitroConfig({
         "Cache-Control": "public, max-age=31536000, immutable",
       },
     },
+    "/manim-web/**": { fallthrough: false, headers: crossOriginScriptHeaders },
     "/**/*.js": { fallthrough: false, headers: crossOriginIsolationHeaders },
     "/**/*.css": { fallthrough: false, headers: crossOriginIsolationHeaders },
     "/**/*.svg": { fallthrough: false, headers: crossOriginIsolationHeaders },
