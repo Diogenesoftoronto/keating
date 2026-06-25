@@ -1,9 +1,15 @@
 import { describe, expect, it, mock, beforeEach, afterEach } from "bun:test";
 
 const keys = new Map<string, string>();
+const settings = new Map<string, unknown>();
 
 function createMockStorage() {
 	return {
+		settings: {
+			get: async (name: string) => settings.get(name),
+			set: async (name: string, value: unknown) => settings.set(name, value),
+			delete: async (name: string) => settings.delete(name),
+		},
 		providerKeys: {
 			get: async (name: string) => keys.get(name),
 			set: async (name: string, value: string) => keys.set(name, value),
@@ -21,6 +27,7 @@ describe("dio access prompt behavior", () => {
 
 	beforeEach(() => {
 		keys.clear();
+		settings.clear();
 		originalViteEnabled = process.env.VITE_DIO_ENABLED;
 		process.env.VITE_DIO_ENABLED = "true";
 		if (typeof (globalThis as any).window === "undefined") {
@@ -75,5 +82,21 @@ describe("dio access prompt behavior", () => {
 		expect(getActiveDioPrompt()).not.toBeNull();
 		closeDioPrompt(false);
 		expect(await promise).toBe(false);
+	});
+
+	it("rememberDioIdentity stores a normalized Dio email", async () => {
+		const { DIO_IDENTITY_EMAIL_SETTING, rememberDioIdentity } = await import("../dio-provider");
+		const identity = await rememberDioIdentity(" Learner@Example.COM ");
+		expect(identity).toEqual({ email: "learner@example.com" });
+		expect(settings.get(DIO_IDENTITY_EMAIL_SETTING)).toBe("learner@example.com");
+	});
+
+	it("getStoredDioIdentity requires both a saved email and Dio key", async () => {
+		const { DIO_IDENTITY_EMAIL_SETTING, getStoredDioIdentity } = await import("../dio-provider");
+		settings.set(DIO_IDENTITY_EMAIL_SETTING, "learner@example.com");
+		expect(await getStoredDioIdentity()).toBeNull();
+
+		keys.set("dio", "existing-key");
+		expect(await getStoredDioIdentity()).toEqual({ email: "learner@example.com" });
 	});
 });

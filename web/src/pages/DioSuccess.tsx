@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { usePostHog } from "@posthog/react";
 import { getAppStorage } from "@earendil-works/pi-web-ui";
-import { claimDioAccess, DIO_PROVIDER_ID, normalizeEmail } from "../dio-provider";
+import { claimDioAccess, DIO_PROVIDER_ID, normalizeEmail, rememberDioIdentity } from "../dio-provider";
 
 export function DioSuccess() {
 	const posthog = usePostHog();
@@ -29,6 +29,7 @@ export function DioSuccess() {
 			.then(async (result) => {
 				if (result.success && result.apiKey) {
 					await getAppStorage().providerKeys.set(DIO_PROVIDER_ID, result.apiKey);
+					await rememberDioIdentity(normalized);
 					posthog.identify(normalized, { email: normalized });
 					posthog.capture('dio_access_claimed', { email: normalized });
 					setStatus("success");
@@ -48,7 +49,7 @@ export function DioSuccess() {
 				setStatus("error");
 				setMessage(err instanceof Error ? err.message : String(err));
 			});
-	}, []);
+	}, [posthog]);
 
 	return (
 		<div className="flex min-h-screen flex-col items-center justify-center bg-background p-6 text-foreground">

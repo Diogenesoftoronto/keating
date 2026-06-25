@@ -252,7 +252,7 @@ Used by the web app's Dio credit purchase and Bifrost virtual-key provisioning r
 - `CREEM_PRODUCT_ID_DIO_CREDITS` — The configured Creem product ID for Dio credits.
 - `DIO_CREDIT_BUDGET` — Bifrost virtual-key budget (credits) assigned to each purchase.
 - `BIFROST_API_KEY` — Server-side Bifrost API key. In local dev, set via `export BIFROST_API_KEY="$(fnox get bifrost_api_key)"`.
-- `BIFROST_BASE_URL` — Bifrost gateway URL (default: `https://bifrost.dio.computer`).
+- `BIFROST_BASE_URL` — Server-only Bifrost gateway URL. Keep the real endpoint in environment/secrets, not in tracked client code or env examples.
 - `BIFROST_MODEL_ALIAS` — Model allowed for the provisioned virtual key (default: `kimi-k2.6`).
 - `RESEND_API_KEY` — Resend API key for sending recovery OTP emails.
 - `DIO_RECOVERY_FROM_EMAIL` — Sender address for recovery emails (default: `support@keating.help`).

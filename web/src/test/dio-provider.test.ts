@@ -1,9 +1,11 @@
 import { describe, expect, it, mock } from "bun:test";
 import {
 	DIO_BASE_URL,
+	DIO_BASE_PATH,
 	DIO_DEFAULT_MODEL,
 	DIO_DEFAULT_MODEL_ID,
 	DIO_PROVIDER_ID,
+	dioOpenAiBaseUrl,
 	dioProviderDefinition,
 	isDioProvider,
 	normalizeEmail,
@@ -13,14 +15,20 @@ describe("dio provider constants", () => {
 	it("defines provider id, label, base url, and api", () => {
 		expect(dioProviderDefinition.id).toBe("dio");
 		expect(dioProviderDefinition.label).toBe("Dio");
-		expect(dioProviderDefinition.baseUrl).toBe("https://bifrost.dio.computer/v1");
+		expect(dioProviderDefinition.baseUrl.endsWith(DIO_BASE_PATH)).toBe(true);
 		expect(dioProviderDefinition.api).toBe("openai-completions");
 	});
 
 	it("exports stable module constants", () => {
 		expect(DIO_PROVIDER_ID).toBe("dio");
-		expect(DIO_BASE_URL).toBe("https://bifrost.dio.computer/v1");
+		expect(DIO_BASE_PATH).toBe("/api/dio/openai/v1");
+		expect(DIO_BASE_URL.endsWith(DIO_BASE_PATH)).toBe(true);
+		expect(DIO_BASE_URL).not.toContain("bifrost");
 		expect(DIO_DEFAULT_MODEL_ID).toBe("kimi-k2.6");
+	});
+
+	it("builds the Dio OpenAI base URL from the current app origin", () => {
+		expect(dioOpenAiBaseUrl("https://keating.test/")).toBe("https://keating.test/api/dio/openai/v1");
 	});
 
 	it("defines the default model with expected shape", () => {
@@ -54,9 +62,11 @@ describe("dio provider constants", () => {
 });
 
 describe("dio proxy behavior", () => {
-	it("proxies dio requests through chat-proxy", async () => {
+	it("routes dio requests through the dedicated same-origin gateway proxy", async () => {
 		const { shouldProxyModel } = await import("../lib/provider-proxy");
-		expect(shouldProxyModel(DIO_DEFAULT_MODEL)).toBe(true);
+		expect(shouldProxyModel(DIO_DEFAULT_MODEL)).toBe(false);
+		expect(DIO_DEFAULT_MODEL.baseUrl.endsWith("/api/dio/openai/v1")).toBe(true);
+		expect(DIO_DEFAULT_MODEL.baseUrl).not.toContain("bifrost");
 	});
 });
 

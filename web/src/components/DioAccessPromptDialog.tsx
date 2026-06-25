@@ -8,6 +8,7 @@ import {
 	recoverDioAccess,
 	startDioCheckout,
 	normalizeEmail,
+	rememberDioIdentity,
 } from "../dio-provider";
 
 type DioPromptRequest = {
@@ -133,6 +134,7 @@ export function DioAccessPromptDialog() {
 			const result = await claimDioAccess(normalized, purchaseReference || undefined);
 			if (result.success && result.apiKey) {
 				await getAppStorage().providerKeys.set(DIO_PROVIDER_ID, result.apiKey);
+				await rememberDioIdentity(normalized);
 				closeDioPrompt(true);
 			} else if (result.pending) {
 				setError("Purchase is still pending. Complete payment and try again.");
@@ -158,6 +160,7 @@ export function DioAccessPromptDialog() {
 			const result = await recoverDioAccess(normalized, otp || undefined);
 			if (result.success && result.apiKey) {
 				await getAppStorage().providerKeys.set(DIO_PROVIDER_ID, result.apiKey);
+				await rememberDioIdentity(normalized);
 				closeDioPrompt(true);
 			} else if (result.requiresOtp) {
 				setRequiresOtp(true);

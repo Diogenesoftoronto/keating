@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { usePostHog } from "@posthog/react";
 import {
   RouterProvider,
   createRouter,
@@ -39,6 +40,7 @@ import {
   loadKeatingUiSettings,
   subscribeKeatingUiSettings,
 } from "./keating/ui-settings";
+import { getStoredDioIdentity } from "./dio-provider";
 
 const rootRoute = createRootRoute({ component: () => <Outlet /> });
 
@@ -167,10 +169,34 @@ function KeatingUiPreferencesSync() {
   return null;
 }
 
+function PostHogIdentitySync() {
+  const posthog = usePostHog();
+
+  useEffect(() => {
+    let cancelled = false;
+    getStoredDioIdentity()
+      .then((identity) => {
+        if (cancelled || !identity) return;
+        posthog.identify(identity.email, { email: identity.email, dio_access: true });
+      })
+      .catch((error) => {
+        if (import.meta.env.DEV) {
+          console.warn("Failed to sync Dio analytics identity:", error);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [posthog]);
+
+  return null;
+}
+
 export function App() {
   return (
     <>
       <KeatingUiPreferencesSync />
+      <PostHogIdentitySync />
       <RouterProvider router={router} />
     </>
   );

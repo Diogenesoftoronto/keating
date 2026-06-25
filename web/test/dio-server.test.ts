@@ -113,6 +113,13 @@ describe("dio env config", () => {
 		expect(() => getDioEnvConfig()).toThrow(/positive integer/);
 	});
 
+	it("requires the gateway base URL from server env", async () => {
+		delete process.env.BIFROST_BASE_URL;
+		const { getDioEnvConfig, getDioGatewayBaseUrl } = await import("../src/dio-provider/server");
+		expect(() => getDioGatewayBaseUrl()).toThrow(/BIFROST_BASE_URL/);
+		expect(() => getDioEnvConfig()).toThrow(/BIFROST_BASE_URL/);
+	});
+
 	it("selects the Creem sandbox for test keys", async () => {
 		process.env.CREEM_API_KEY = "creem_test_example";
 		delete process.env.CREEM_BASE_URL;

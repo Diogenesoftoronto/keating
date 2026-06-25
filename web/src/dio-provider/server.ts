@@ -39,6 +39,7 @@ export function getDioEnvConfig(): DioEnvConfig {
 	const creemProductId = getRequiredEnv("CREEM_PRODUCT_ID_DIO_CREDITS");
 	const dioCreditBudget = Number.parseInt(getRequiredEnv("DIO_CREDIT_BUDGET"), 10);
 	const bifrostApiKey = getRequiredEnv("BIFROST_API_KEY");
+	const bifrostBaseUrl = getDioGatewayBaseUrl();
 
 	if (!Number.isFinite(dioCreditBudget) || dioCreditBudget <= 0) {
 		throw new Error("DIO_CREDIT_BUDGET must be a positive integer");
@@ -52,12 +53,16 @@ export function getDioEnvConfig(): DioEnvConfig {
 		creemBaseUrl: resolveCreemBaseUrl(creemApiKey, process.env.CREEM_BASE_URL),
 		dioCreditBudget,
 		bifrostApiKey,
-		bifrostBaseUrl: process.env.BIFROST_BASE_URL || "https://bifrost.dio.computer",
+		bifrostBaseUrl,
 		bifrostModelAlias: process.env.BIFROST_MODEL_ALIAS || "kimi-k2.6",
 		resendApiKey: process.env.RESEND_API_KEY?.trim(),
 		recoveryFromEmail: process.env.DIO_RECOVERY_FROM_EMAIL?.trim() || "support@keating.help",
 		recoveryDevCode: process.env.DIO_RECOVERY_DEV_CODE === "true" || process.env.NODE_ENV === "development",
 	};
+}
+
+export function getDioGatewayBaseUrl(): string {
+	return getRequiredEnv("BIFROST_BASE_URL").replace(/\/+$/, "");
 }
 
 export function resolveCreemBaseUrl(apiKey: string, override?: string): string {
