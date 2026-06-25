@@ -39,9 +39,9 @@ We've built some insights and a dashboard for you to keep an eye on user behavio
 
 - [ ] Run a full production build (`bun run build`) and fix any lint or type errors introduced by the generated code.
 - [ ] Run the test suite (`bun test`) — call sites that were rewritten or instrumented may need updated mocks or fixtures.
-- [ ] Add `VITE_POSTHOG_PROJECT_TOKEN` and `VITE_POSTHOG_HOST` to `.env.example` (or any monorepo bootstrap scripts) so collaborators know what values to set.
+- [x] Add `VITE_POSTHOG_PROJECT_TOKEN` and `VITE_POSTHOG_HOST` to `.env.example` (or any monorepo bootstrap scripts) so collaborators know what values to set.
 - [ ] Wire source-map upload (`posthog-cli sourcemap` or equivalent) into CI so production stack traces de-minify — this app ships a minified Vite bundle.
-- [ ] Confirm the returning-visitor path also calls `identify` — currently `posthog.identify()` is only called on Dio claim; OAuth-authenticated returning users will remain on anonymous distinct IDs until they claim Dio again.
+- [x] Confirm the returning-visitor path also calls `identify` — Dio purchase and recovery paths now store the normalized email, and app startup re-identifies returning Dio users when a saved key is present.
 
 ### Agent skill
 

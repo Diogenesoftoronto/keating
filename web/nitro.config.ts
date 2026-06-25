@@ -85,5 +85,9 @@ export default defineNitroConfig({
       route: "/api/dio/recover",
       handler: "server/api/dio/recover.ts",
     },
+    {
+      route: "/api/dio/openai/**",
+      handler: "server/api/dio/openai/[...path].ts",
+    },
   ],
 });

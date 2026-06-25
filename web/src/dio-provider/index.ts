@@ -1,10 +1,11 @@
 import type { Api, Model } from "@earendil-works/pi-ai";
 
 export const DIO_PROVIDER_ID = "dio";
-export const DIO_BASE_URL = "https://bifrost.dio.computer/v1";
-export const DIO_GATEWAY_BASE_URL = "https://bifrost.dio.computer";
+export const DIO_BASE_PATH = "/api/dio/openai/v1";
+export const DIO_BASE_URL = dioOpenAiBaseUrl();
 export const DIO_DEFAULT_MODEL_ID = "kimi-k2.6";
 export const DIO_MODEL_ALIAS_OVERRIDE = "kimi-k2.6";
+export const DIO_IDENTITY_EMAIL_SETTING = "dio.identity.email";
 
 export interface DioProviderDefinition {
 	id: string;
@@ -57,6 +58,30 @@ export async function getDioAccessStatus(): Promise<DioAccessStatus> {
 	return { hasKey: typeof key === "string" && key.length > 0 };
 }
 
+export interface DioStoredIdentity {
+	email: string;
+}
+
+export async function rememberDioIdentity(email: string): Promise<DioStoredIdentity | null> {
+	const normalized = normalizeEmail(email);
+	if (!isValidDioIdentityEmail(normalized)) return null;
+	const { getAppStorage } = await import("@earendil-works/pi-web-ui");
+	await getAppStorage().settings.set(DIO_IDENTITY_EMAIL_SETTING, normalized);
+	return { email: normalized };
+}
+
+export async function getStoredDioIdentity(): Promise<DioStoredIdentity | null> {
+	const { getAppStorage } = await import("@earendil-works/pi-web-ui");
+	const storage = getAppStorage();
+	const [email, key] = await Promise.all([
+		storage.settings.get<string>(DIO_IDENTITY_EMAIL_SETTING),
+		storage.providerKeys.get(DIO_PROVIDER_ID),
+	]);
+	if (typeof email !== "string" || typeof key !== "string" || key.length === 0) return null;
+	const normalized = normalizeEmail(email);
+	return isValidDioIdentityEmail(normalized) ? { email: normalized } : null;
+}
+
 export async function startDioCheckout(email: string): Promise<DioCheckoutResult> {
 	const response = await fetch("/api/dio/checkout", {
 		method: "POST",
@@ -98,6 +123,21 @@ export async function recoverDioAccess(email: string, otp?: string): Promise<Dio
 
 export function normalizeEmail(email: string): string {
 	return email.trim().toLowerCase();
+}
+
+export function dioOpenAiBaseUrl(origin = currentOrigin()): string {
+	return `${origin.replace(/\/+$/, "")}${DIO_BASE_PATH}`;
+}
+
+function isValidDioIdentityEmail(email: string): boolean {
+	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function currentOrigin(): string {
+	if (typeof globalThis.location?.origin === "string" && globalThis.location.origin) {
+		return globalThis.location.origin;
+	}
+	return "http://localhost";
 }
 
 export function isDioProvider(provider: string): boolean {

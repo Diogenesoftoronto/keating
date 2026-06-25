@@ -47,7 +47,7 @@ export function proxyTargetHeader(baseUrl: string): string {
 
 export function shouldProxyModel(model: Model<Api>): boolean {
 	if (!model.baseUrl || model.provider === "browser") return false;
-	if (model.provider === "dio") return true;
+	if (model.provider === "dio") return false;
 	if (model.provider === "anthropic" || model.api === "anthropic-messages") return true;
 
 	const url = parseUrl(model.baseUrl);
