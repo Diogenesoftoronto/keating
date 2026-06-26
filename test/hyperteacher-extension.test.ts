@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -41,11 +41,18 @@ function createMockPi() {
   };
 }
 
-function createMockCtx(cwd: string) {
+function createMockCtx(cwd: string, dialogs: {
+  select?: Array<string | ((title: string, options: string[]) => string | undefined)>;
+  input?: string[];
+  confirm?: boolean[];
+} = {}) {
   const notifications: Array<{ message: string; level: string }> = [];
   let editorText = "";
   let headerSet = false;
   const widgetKeys = new Set<string>();
+  const selectResponses = [...(dialogs.select ?? [])];
+  const inputResponses = [...(dialogs.input ?? [])];
+  const confirmResponses = [...(dialogs.confirm ?? [])];
 
   return {
     cwd,
@@ -76,8 +83,16 @@ function createMockCtx(cwd: string) {
           widgetKeys.add(key);
         }
       },
-      async select(_title: string, options: string[]) {
-        return options[0] ?? "";
+      async select(title: string, options: string[]) {
+        const response = selectResponses.shift();
+        if (typeof response === "function") return response(title, options);
+        return response ?? options[0] ?? "";
+      },
+      async input(_title: string, placeholder?: string) {
+        return inputResponses.shift() ?? placeholder ?? "";
+      },
+      async confirm(_title: string, _message: string) {
+        return confirmResponses.shift() ?? true;
       }
     }
   };
@@ -172,6 +187,54 @@ test("/speech shows disabled status by default", async () => {
   assert.ok(ctx.notifications.some((n) => n.message.includes("Speech is disabled")));
 });
 
+test("/setup writes config from TUI dialogs and queues provider login when credentials are missing", async () => {
+  const cwd = await mkdtemp(join(tmpdir(), "keating-ext-setup-"));
+  await ensureProjectScaffold(cwd);
+  const pi = createMockPi();
+  hyperteacher(pi);
+  const ctx = createMockCtx(cwd, {
+    select: [
+      (_title, options) => options.find((option) => option.includes("Custom (custom)")),
+      (_title, options) => options.find((option) => option.includes("Custom (custom)")),
+      (_title, options) => options.find((option) => option.includes("Low (low)")),
+      (_title, options) => options.find((option) => option.includes("Embedded only"))
+    ],
+    input: ["test-provider", "test-model"],
+    confirm: [true]
+  });
+
+  await pi.commands.get("setup")!.handler("" as any, ctx);
+  const saved = JSON.parse(await readFile(configPath(cwd), "utf8"));
+
+  assert.equal(saved.pi.defaultProvider, "test-provider");
+  assert.equal(saved.pi.defaultModel, "test-model");
+  assert.equal(saved.pi.defaultThinking, "low");
+  assert.equal(saved.pi.runtimePreference, "embedded-only");
+  assert.equal(ctx.editorText, "/login test-provider");
+  assert.ok(ctx.notifications.some((n) => n.message.includes("/login test-provider")));
+});
+
+test("/packages adds, lists, recommends, and removes package sources", async () => {
+  const { cwd, pi, ctx } = await setup();
+  const command = pi.commands.get("packages")!;
+
+  await command.handler("add npm:pi-subagents" as any, ctx);
+  let saved = JSON.parse(await readFile(configPath(cwd), "utf8"));
+  assert.deepEqual(saved.pi.packages, ["npm:pi-subagents"]);
+  assert.ok(ctx.notifications.some((n) => n.message.includes("Added npm:pi-subagents")));
+
+  await command.handler("list" as any, ctx);
+  assert.ok(ctx.editorText.includes("npm:pi-subagents"));
+
+  await command.handler("recommended" as any, ctx);
+  assert.ok(ctx.editorText.includes("npm:pi-subagents"));
+  assert.ok(ctx.editorText.includes("npm:pi-web-access"));
+
+  await command.handler("remove npm:pi-subagents" as any, ctx);
+  saved = JSON.parse(await readFile(configPath(cwd), "utf8"));
+  assert.deepEqual(saved.pi.packages, []);
+});
+
 test("/trace with empty args works", async () => {
   const { pi, ctx } = await setup();
   await pi.commands.get("trace")!.handler("" as any, ctx);
@@ -185,6 +248,21 @@ test("session_start event fires notification", async () => {
   assert.ok(ctx.headerSet, "setHeader should be called for the startup card");
   assert.equal(ctx.widgetKeys.size, 0, "startup card should not occupy persistent widgets");
   assert.equal(pi.tools.has("keating_voice"), false);
+});
+
+test("session_start surfaces missing credentials inside the TUI when shell preflight detected them", async () => {
+  const { pi, ctx } = await setup();
+  const previous = process.env.KEATING_AUTH_MISSING_PROVIDER;
+  process.env.KEATING_AUTH_MISSING_PROVIDER = "google";
+  try {
+    await pi.events.get("session_start")!({}, ctx);
+  } finally {
+    if (previous === undefined) delete process.env.KEATING_AUTH_MISSING_PROVIDER;
+    else process.env.KEATING_AUTH_MISSING_PROVIDER = previous;
+  }
+
+  assert.ok(ctx.notifications.some((n) => n.message.includes("/login google")));
+  assert.ok(ctx.notifications.some((n) => n.message.includes("/setup")));
 });
 
 test("startup header clamps ANSI-colored rows to terminal width", async () => {

@@ -18,7 +18,7 @@ import { SpeechSettingsTab } from "../components/SpeechSettingsTab";
 import { SessionSidebar } from "../components/SessionSidebar";
 import { ModelSelectorDialog } from "../components/ModelSelector";
 import { KeatingApiKeyPromptDialog, promptKeatingApiKey } from "../components/KeatingApiKeyPromptDialog";
-import { getProviderApiKey } from "../lib/provider-models";
+import { getProviderApiKey, resolveAvailableChatModel } from "../lib/provider-models";
 import { localModel } from "../stores/local-model";
 import { buildKeatingSystemPrompt, composeKeatingSystemPrompt, createKeatingTools, getActiveKeatingPrompt } from "../keating/browser-tools";
 import { loadAgentRuntimeConfig, type KeatingAgentRuntimeConfig } from "../keating/agent-runtime";
@@ -381,9 +381,11 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     const agentRuntime = await loadAgentRuntimeConfig();
     const tools = await createKeatingTools(keatingStorage, toolOptions(speechSettings, agentRuntime));
     registerKeatingWebMcp(keatingStorage, tools).catch(console.warn);
+    const resolvedModel = await resolveAvailableChatModel(initialState?.model ?? selectedModelRef.current);
+    selectedModelRef.current = resolvedModel;
     const nextState: Partial<AgentState> = {
       systemPrompt: buildKeatingSystemPrompt(speechSettings.enabled, promptBase),
-      model: initialState?.model ?? selectedModelRef.current,
+      model: resolvedModel,
       thinkingLevel: initialState?.thinkingLevel ?? loadKeatingUiSettings().reasoningLevel,
       messages: [],
       tools,

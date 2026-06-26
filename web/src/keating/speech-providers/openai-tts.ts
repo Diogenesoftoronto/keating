@@ -10,9 +10,11 @@ const OPENAI_TTS_VOICES = [
 	"alloy",
 	"ash",
 	"ballad",
+	"cedar",
 	"coral",
 	"echo",
 	"fable",
+	"marin",
 	"nova",
 	"onyx",
 	"sage",
@@ -26,6 +28,26 @@ const OPENAI_TTS_MODELS = [
 	{ value: "tts-1-hd", label: "tts-1 HD (higher quality)" },
 ];
 
+const LEGACY_TTS_VOICES = new Set([
+	"alloy",
+	"ash",
+	"coral",
+	"echo",
+	"fable",
+	"onyx",
+	"nova",
+	"sage",
+	"shimmer",
+]);
+
+function cleanVoice(value: string | undefined, model: string): string {
+	const requested = (value ?? "").trim().toLowerCase();
+	if (model === "tts-1" || model === "tts-1-hd") {
+		return LEGACY_TTS_VOICES.has(requested) ? requested : "alloy";
+	}
+	return OPENAI_TTS_VOICES.includes(requested) ? requested : "marin";
+}
+
 async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthesisResult> {
 	const { utterance, settings, getApiKey, signal } = request;
 	const apiKey = await getApiKey("openai");
@@ -34,9 +56,10 @@ async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthe
 	}
 
 	const model = settings.model || "gpt-4o-mini-tts";
+	const voice = cleanVoice(utterance.voice || settings.voiceName, model);
 	const body: Record<string, unknown> = {
 		model,
-		voice: utterance.voice,
+		voice,
 		input: utterance.text,
 		response_format: "mp3",
 	};

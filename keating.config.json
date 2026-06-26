@@ -1,9 +1,10 @@
 {
   "pi": {
     "runtimePreference": "embedded-only",
-    "defaultProvider": "google",
-    "defaultModel": "gemini-3.1-pro-preview",
-    "defaultThinking": "medium"
+    "defaultProvider": "openai",
+    "defaultModel": "gpt-5.5",
+    "defaultThinking": "medium",
+    "packages": []
   },
   "apiRetry": {
     "maxAttempts": 4,

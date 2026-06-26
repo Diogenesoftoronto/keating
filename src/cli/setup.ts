@@ -42,16 +42,20 @@ const MODELS_BY_PROVIDER: Record<string, Choice[]> = {
   ],
   google: [
     { label: "Gemini 3.1 Pro Preview", value: "gemini-3.1-pro-preview", hint: "Recommended" },
-    { label: "Gemini 3.1 Flash Live Preview", value: "gemini-3.1-flash-live-preview" },
+    { label: "Gemini 3.5 Flash", value: "gemini-3.5-flash", hint: "Faster" },
+    { label: "Gemini 3 Pro Preview", value: "gemini-3-pro-preview" },
     { label: "Custom", value: "custom", hint: "Type a model name" }
   ],
   openai: [
-    { label: "GPT-5.2", value: "gpt-5.2" },
+    { label: "GPT-5.5", value: "gpt-5.5", hint: "Recommended" },
+    { label: "GPT-5.5 Pro", value: "gpt-5.5-pro" },
     { label: "GPT-5.4", value: "gpt-5.4" },
     { label: "Custom", value: "custom", hint: "Type a model name" }
   ],
   anthropic: [
-    { label: "Claude Sonnet 4.5", value: "claude-sonnet-4-5" },
+    { label: "Claude Sonnet 4.6", value: "claude-sonnet-4-6", hint: "Recommended" },
+    { label: "Claude Opus 4.8", value: "claude-opus-4-8" },
+    { label: "Claude Haiku 4.5", value: "claude-haiku-4-5", hint: "Faster" },
     { label: "Custom", value: "custom", hint: "Type a model name" }
   ],
   custom: [
@@ -200,7 +204,7 @@ function SetupApp(props: {
   if (step === "customProvider") {
     return React.createElement(TextPrompt, {
       title: "Custom provider name",
-      initialValue: answers.defaultProvider === "custom" ? "google" : answers.defaultProvider,
+      initialValue: answers.defaultProvider === "custom" ? "openai" : answers.defaultProvider,
       submit: (value) => {
         setAnswers((current) => ({ ...current, defaultProvider: value }));
         setStep("customModel");

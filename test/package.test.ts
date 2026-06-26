@@ -98,6 +98,51 @@ test("dotenv startup output is quiet unless Keating debug is enabled", () => {
   expect(result.stderr).not.toContain("injected env");
 });
 
+test.serial("shell syncs configured Pi packages into Keating's isolated Pi settings", async () => {
+  const workdir = await mkdtemp(join(tmpdir(), "keating-packages-cwd-"));
+  const bindir = await mkdtemp(join(tmpdir(), "keating-packages-bin-"));
+  const capturePath = join(workdir, "settings-capture.json");
+  const piPath = join(bindir, "pi");
+
+  await writeFile(piPath, `#!/bin/sh
+if [ "$1" = "--version" ]; then
+  echo "1.0.0"
+  exit 0
+fi
+node -e "const fs=require('node:fs'); const path=require('node:path'); const cwd=process.cwd(); fs.writeFileSync(process.argv[1], fs.readFileSync(path.join(cwd, '.keating', 'pi-config', 'settings.json'), 'utf8'))" "${capturePath}" "$@"
+`, "utf8");
+  await chmod(piPath, 0o755);
+  await writeFile(configPath(workdir), JSON.stringify({
+    pi: {
+      runtimePreference: "standalone-only",
+      defaultProvider: "openai",
+      defaultModel: "gpt-5.2",
+      packages: ["npm:pi-subagents", "npm:pi-subagents", "npm:pi-web-access"]
+    }
+  }), "utf8");
+
+  const previous = {
+    PATH: process.env.PATH,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY
+  };
+  process.env.PATH = `${bindir}:${process.env.PATH ?? ""}`;
+  process.env.OPENAI_API_KEY = "openai-test-key";
+
+  try {
+    const code = await launchShell(workdir, ["hello"]);
+    const settings = JSON.parse(await readFile(capturePath, "utf8"));
+    expect(code).toBe(0);
+    expect(settings.packages).toEqual(["npm:pi-subagents", "npm:pi-web-access"]);
+  } finally {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+    await rm(workdir, { recursive: true, force: true });
+    await rm(bindir, { recursive: true, force: true });
+  }
+});
+
 test.serial("shell falls back from unauthenticated Google default to configured OpenAI credentials", async () => {
   const workdir = await mkdtemp(join(tmpdir(), "keating-auth-cwd-"));
   const bindir = await mkdtemp(join(tmpdir(), "keating-auth-bin-"));
@@ -127,7 +172,9 @@ node -e "require('node:fs').writeFileSync(process.argv[1], JSON.stringify({ args
     GOOGLE_API_KEY: process.env.GOOGLE_API_KEY,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
-    ANTHROPIC_OAUTH_TOKEN: process.env.ANTHROPIC_OAUTH_TOKEN
+    ANTHROPIC_OAUTH_TOKEN: process.env.ANTHROPIC_OAUTH_TOKEN,
+    OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
+    ZYPHRA_API_KEY: process.env.ZYPHRA_API_KEY
   };
   process.env.PATH = `${bindir}:${process.env.PATH ?? ""}`;
   delete process.env.GEMINI_API_KEY;
@@ -135,6 +182,8 @@ node -e "require('node:fs').writeFileSync(process.argv[1], JSON.stringify({ args
   process.env.OPENAI_API_KEY = "openai-test-key";
   delete process.env.ANTHROPIC_API_KEY;
   delete process.env.ANTHROPIC_OAUTH_TOKEN;
+  delete process.env.OPENROUTER_API_KEY;
+  delete process.env.ZYPHRA_API_KEY;
 
   try {
     const code = await launchShell(workdir, ["hello"]);
@@ -142,7 +191,7 @@ node -e "require('node:fs').writeFileSync(process.argv[1], JSON.stringify({ args
     expect(code).toBe(0);
     expect(captured.args).toContain("--provider");
     expect(captured.args[captured.args.indexOf("--provider") + 1]).toBe("openai");
-    expect(captured.args[captured.args.indexOf("--model") + 1]).toBe("gpt-5.2");
+    expect(captured.args[captured.args.indexOf("--model") + 1]).toBe("gpt-5.5");
     expect(captured.openai).toBe("openai-test-key");
   } finally {
     for (const [key, value] of Object.entries(previous)) {
@@ -154,9 +203,10 @@ node -e "require('node:fs').writeFileSync(process.argv[1], JSON.stringify({ args
   }
 });
 
-test.serial("shell reports actionable credential setup when no supported provider is configured", async () => {
+test.serial("shell opens and reports actionable in-TUI credential setup when no supported provider is configured", async () => {
   const workdir = await mkdtemp(join(tmpdir(), "keating-auth-missing-cwd-"));
   const bindir = await mkdtemp(join(tmpdir(), "keating-auth-missing-bin-"));
+  const capturePath = join(workdir, "args.json");
   const piPath = join(bindir, "pi");
 
   await writeFile(piPath, `#!/bin/sh
@@ -164,6 +214,7 @@ if [ "$1" = "--version" ]; then
   echo "1.0.0"
   exit 0
 fi
+node -e "require('node:fs').writeFileSync(process.argv[1], JSON.stringify({ args: process.argv.slice(2), missing: process.env.KEATING_AUTH_MISSING_PROVIDER || '' }))" "${capturePath}" "$@"
 exit 0
 `, "utf8");
   await chmod(piPath, 0o755);
@@ -181,7 +232,9 @@ exit 0
     GOOGLE_API_KEY: process.env.GOOGLE_API_KEY,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
-    ANTHROPIC_OAUTH_TOKEN: process.env.ANTHROPIC_OAUTH_TOKEN
+    ANTHROPIC_OAUTH_TOKEN: process.env.ANTHROPIC_OAUTH_TOKEN,
+    OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
+    ZYPHRA_API_KEY: process.env.ZYPHRA_API_KEY
   };
   process.env.PATH = `${bindir}:${process.env.PATH ?? ""}`;
   delete process.env.GEMINI_API_KEY;
@@ -189,18 +242,28 @@ exit 0
   delete process.env.OPENAI_API_KEY;
   delete process.env.ANTHROPIC_API_KEY;
   delete process.env.ANTHROPIC_OAUTH_TOKEN;
+  delete process.env.OPENROUTER_API_KEY;
+  delete process.env.ZYPHRA_API_KEY;
 
+  const previousError = console.error;
+  const errors: string[] = [];
+  console.error = (...args: unknown[]) => {
+    errors.push(args.map(String).join(" "));
+  };
   try {
-    let message = "";
-    try {
-      await launchShell(workdir, ["hello"]);
-    } catch (error) {
-      message = error instanceof Error ? error.message : String(error);
-    }
+    const code = await launchShell(workdir, ["hello"]);
+    const captured = JSON.parse(await readFile(capturePath, "utf8"));
+    const message = errors.join("\n");
+    expect(code).toBe(0);
+    expect(captured.missing).toBe("google");
+    expect(captured.args).toContain("--provider");
+    expect(captured.args[captured.args.indexOf("--provider") + 1]).toBe("google");
     expect(message).toContain("export GEMINI_API_KEY=your_google_ai_studio_key");
     expect(message).toContain("OPENAI_API_KEY");
-    expect(message).toContain("keating setup");
+    expect(message).toContain("/login google");
+    expect(message).toContain("/setup");
   } finally {
+    console.error = previousError;
     for (const [key, value] of Object.entries(previous)) {
       if (value === undefined) delete process.env[key];
       else process.env[key] = value;

@@ -14,6 +14,12 @@ describe("OAuth provider wiring", () => {
 		expect(providerToOAuthId("openai-codex")).toBe("openai-codex");
 	});
 
+	it("uses the web app callback for Codex OAuth instead of the CLI loopback callback", () => {
+		const config = getOAuthProviderConfig("openai-codex");
+		expect(config.redirectUri).toBeUndefined();
+		expect(config.authorizeUrl).toBe("https://auth.openai.com/oauth/authorize");
+	});
+
 	it("uses Anthropic's manual OAuth callback instead of a dead localhost redirect", () => {
 		const config = getOAuthProviderConfig("anthropic");
 		expect(config.authorizeUrl).toBe("https://platform.claude.com/oauth/authorize");

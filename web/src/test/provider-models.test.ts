@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
+let providerKeys: Record<string, string | undefined> = {};
+
 mock.module("@earendil-works/pi-web-ui", () => ({
 	getAppStorage: () => ({
 		customProviders: { getAll: async () => [] },
-		providerKeys: { get: async () => undefined },
+		providerKeys: { get: async (provider: string) => providerKeys[provider] },
 	}),
 }));
 
@@ -11,6 +13,7 @@ const originalFetch = globalThis.fetch;
 
 afterEach(() => {
 	globalThis.fetch = originalFetch;
+	providerKeys = {};
 });
 
 function provider(type: "gateway" | "openai-completions", baseUrl: string) {
@@ -64,5 +67,49 @@ describe("gateway model discovery", () => {
 
 		expect(requests).toEqual(["/api/chat-proxy/models", "/api/chat-proxy/v1/models"]);
 		expect(models.map((model) => model.id)).toEqual(["gateway/model"]);
+	});
+});
+
+describe("chat model fallback selection", () => {
+	it("uses an available OpenAI key when the default Dio model has no key", async () => {
+		providerKeys = { openai: "openai-test-key" };
+		const { resolveAvailableChatModel } = await import("../lib/provider-models");
+
+		const selected = await resolveAvailableChatModel({
+			id: "kimi-k2.6",
+			name: "Kimi K2.6",
+			api: "openai-completions" as any,
+			provider: "dio",
+			baseUrl: "/api/dio/openai/v1",
+			reasoning: true,
+			input: ["text"],
+			cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+			contextWindow: 256_000,
+			maxTokens: 8192,
+		});
+
+		expect(selected.provider).toBe("openai");
+		expect(selected.id).toBe("gpt-5.5");
+	});
+
+	it("uses an available Anthropic key when no Dio or OpenAI key exists", async () => {
+		providerKeys = { anthropic: "anthropic-test-key" };
+		const { resolveAvailableChatModel } = await import("../lib/provider-models");
+
+		const selected = await resolveAvailableChatModel({
+			id: "kimi-k2.6",
+			name: "Kimi K2.6",
+			api: "openai-completions" as any,
+			provider: "dio",
+			baseUrl: "/api/dio/openai/v1",
+			reasoning: true,
+			input: ["text"],
+			cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+			contextWindow: 256_000,
+			maxTokens: 8192,
+		});
+
+		expect(selected.provider).toBe("anthropic");
+		expect(selected.id).toBe("claude-sonnet-4-6");
 	});
 });

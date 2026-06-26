@@ -7,7 +7,8 @@ import {
 import { withApiRetry } from "../api-retry";
 
 const REALTIME_MODELS = [
-	{ value: "gpt-realtime", label: "gpt-realtime (latest)" },
+	{ value: "gpt-realtime-2", label: "gpt-realtime-2 (latest)" },
+	{ value: "gpt-realtime", label: "gpt-realtime" },
 	{ value: "gpt-realtime-mini", label: "gpt-realtime-mini" },
 	{ value: "gpt-4o-realtime-preview-2024-12-17", label: "gpt-4o-realtime-preview" },
 	{ value: "gpt-4o-mini-realtime-preview-2024-12-17", label: "gpt-4o-mini-realtime-preview" },
@@ -26,18 +27,27 @@ const REALTIME_VOICES = [
 	"verse",
 ];
 
+function cleanRealtimeVoice(value: string | undefined): string {
+	const requested = (value ?? "").trim().toLowerCase();
+	return REALTIME_VOICES.includes(requested) ? requested : "marin";
+}
+
 async function mintEphemeralKey(apiKey: string, model: string, voice: string, signal?: AbortSignal): Promise<string> {
 	const response = await withApiRetry(async () => {
-		const result = await fetch("https://api.openai.com/v1/realtime/sessions", {
+		const result = await fetch("https://api.openai.com/v1/realtime/client_secrets", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
 				Authorization: `Bearer ${apiKey}`,
 			},
 			body: JSON.stringify({
-				model,
-				voice,
-				modalities: ["audio", "text"],
+				session: {
+					type: "realtime",
+					model,
+					audio: {
+						output: { voice },
+					},
+				},
 			}),
 			signal,
 		});
@@ -48,9 +58,9 @@ async function mintEphemeralKey(apiKey: string, model: string, voice: string, si
 		}
 		return result;
 	}, { signal });
-	const data = (await response.json()) as { client_secret?: { value?: string } };
-	const value = data.client_secret?.value;
-	if (!value) throw new Error("Realtime session mint returned no client_secret.value");
+	const data = (await response.json()) as { value?: string; client_secret?: { value?: string } };
+	const value = data.value ?? data.client_secret?.value;
+	if (!value) throw new Error("Realtime session mint returned no ephemeral secret value");
 	return value;
 }
 
@@ -73,8 +83,8 @@ async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthe
 		throw new Error("No OpenAI API key configured. Add one in Settings → Providers & Models.");
 	}
 
-	const model = settings.model || "gpt-realtime";
-	const voice = utterance.voice || "marin";
+	const model = settings.model || "gpt-realtime-2";
+	const voice = cleanRealtimeVoice(utterance.voice || settings.voiceName);
 
 	const ephemeralKey = await mintEphemeralKey(apiKey, model, voice, signal);
 
@@ -166,7 +176,7 @@ async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthe
 			await pc.setLocalDescription(offer);
 
 			const sdpResponse = await withApiRetry(async () => {
-				const result = await fetch(`https://api.openai.com/v1/realtime?model=${encodeURIComponent(model)}`, {
+				const result = await fetch("https://api.openai.com/v1/realtime/calls", {
 					method: "POST",
 					headers: {
 						Authorization: `Bearer ${ephemeralKey}`,
