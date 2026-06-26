@@ -1,0 +1,59 @@
+{
+  "cli_version": "0.7.7",
+  "checkpoint_id": "0435b1dc5f2a",
+  "session_id": "79c6ddf8-0c47-41e6-a958-440dc10eed4d",
+  "strategy": "manual-commit",
+  "created_at": "2026-06-26T03:00:39.856910874Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "web/src/components/KeatingUiSettingsTab.tsx",
+    "web/src/keating/browser-tools.ts",
+    "web/src/keating/nodepod-boot-files.ts",
+    "web/src/keating/ui-settings.ts",
+    "web/src/lib/image-generators.ts",
+    "web/test/animation-and-image-tools.test.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-4-8",
+  "turn_id": "ca01bd8256fe",
+  "token_usage": {
+    "input_tokens": 22036,
+    "cache_creation_tokens": 1403468,
+    "cache_read_tokens": 32566282,
+    "output_tokens": 147562,
+    "api_call_count": 203
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-06-26T03:00:39.748661963Z",
+    "agent_lines": 240,
+    "agent_removed": 458,
+    "human_added": 1917,
+    "human_modified": 52,
+    "human_removed": 0,
+    "total_committed": 2209,
+    "total_lines_changed": 2736,
+    "agent_percentage": 25.511695906432745,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 292,
+      "agent_lines_removed": 458
+    }
+  ]
+}

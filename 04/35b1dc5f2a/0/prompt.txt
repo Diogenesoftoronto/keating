@@ -1,0 +1,5 @@
+I need the generate image flow fixed. First, there should be a setting to pick the image generator, whether that be local or otherwise which works similar and btw all these choices for the model should be in a central place. The next thing, don't generate these templates they are useless, right now there these template. if there is not image generation model available just have that as a result.
+
+---
+
+.
