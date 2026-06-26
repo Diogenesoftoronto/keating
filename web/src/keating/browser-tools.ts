@@ -9,6 +9,8 @@ import { KeatingStorage, DEFAULT_BROWSER_POLICY } from "./storage";
 import { createSpeechTool, type WebSpeechSettings } from "./speech";
 import { getProviderApiKey } from "../lib/provider-models";
 import { proxiedProviderRequestUrl } from "../lib/provider-proxy";
+import { DEFAULT_IMAGE_GENERATOR_ID, getImageGenerator, localImageEndpoint } from "../lib/image-generators";
+import { loadKeatingUiSettings } from "./ui-settings";
 import {
 	buildGoal,
 	advanceGoalStep,
@@ -207,41 +209,41 @@ function buildManimScene(resolved: ResolvedTopic, storyboard: string): string {
 	// manim scene source actually reflects the lesson beats (titles + visuals)
 	// rather than the generic placeholder template we used to ship.
 	const scenes = parseStoryboardScenes(storyboard);
-	const slug = resolved.slug.replace(/-/g, "_").replace(/^(.)/, (c) => c.toUpperCase());
-	const className = `${slug}Scene`;
 	if (scenes.length === 0) {
 		return `// Scene: ${resolved.title}
 // Manim-web compatible scene definition (no authored scenes found)
-class ${className} extends Scene {
-  construct() {
-    this.play(FadeIn(title(${JSON.stringify(resolved.title)})));
-  }
+async function construct(scene, M) {
+  const title = new M.Text({ text: ${JSON.stringify(resolved.title)}, fontSize: 48, color: "#f4f1e8" });
+  title.moveTo([0, 1.2, 0]);
+  const summary = new M.Text({ text: ${JSON.stringify(resolved.summary)}, fontSize: 26, color: "#c7d2fe" });
+  summary.moveTo([0, -0.4, 0]);
+  await scene.play(new M.Write(title));
+  await scene.play(new M.FadeIn(summary));
+  await scene.wait(1.5);
 }`;
 	}
 
 	const body = scenes
-		.map((scene) => {
+		.map((scene, index) => {
 			const titleLiteral = JSON.stringify(scene.title);
 			const visualLiteral = JSON.stringify(scene.visual || scene.highlight || "");
-			if (scene.title.toLowerCase().includes("miscon")) {
-				return `    this.play(Indicate(${titleLiteral}), Write(${visualLiteral}));`;
-			}
-			if (scene.title.toLowerCase().includes("formal")) {
-				return `    this.play(Write(${visualLiteral}), FadeIn(${titleLiteral}));`;
-			}
-			if (scene.title.toLowerCase().includes("example")) {
-				return `    this.play(Create(${visualLiteral}), Transform(${visualLiteral}, ${visualLiteral}));`;
-			}
-			return `    this.play(FadeIn(${titleLiteral}), Write(${visualLiteral}));`;
+			const y = index % 2 === 0 ? 0.7 : -0.7;
+			return [
+				`  const title${index} = new M.Text({ text: ${titleLiteral}, fontSize: 38, color: "#f4f1e8" });`,
+				`  title${index}.moveTo([0, ${y + 0.8}, 0]);`,
+				`  const visual${index} = new M.Text({ text: ${visualLiteral}, fontSize: 24, color: "#c7d2fe" });`,
+				`  visual${index}.moveTo([0, ${y - 0.05}, 0]);`,
+				`  await scene.play(new M.FadeIn(title${index}), new M.Write(visual${index}));`,
+				`  await scene.wait(${parseStoryboardDurationSeconds(scene.duration).toFixed(2)});`,
+				`  await scene.play(new M.FadeOut(title${index}), new M.FadeOut(visual${index}));`,
+			].join("\n");
 		})
 		.join("\n");
 
 	return `// Scene: ${resolved.title}
 // Manim-web compatible scene definition (agent-authored scenes)
-class ${className} extends Scene {
-  construct() {
+async function construct(scene, M) {
 ${body}
-  }
 }`;
 }
 
@@ -299,6 +301,29 @@ function parseStoryboardDurationSeconds(label: string): number {
 function storyboardTitle(markdown: string): string {
 	const match = markdown.match(/^#\s+Animation Storyboard:\s*(.+)$/m);
 	return match ? match[1].trim() : "";
+}
+
+function buildAuthoredAnimationStoryboard(resolved: ResolvedTopic, kind: "manim" | "hyperframes", summary: string): string {
+	const premise = summary || resolved.summary;
+	return [
+		`# Animation Storyboard: ${resolved.title}`,
+		"",
+		"## Scene 1: Establish the question (0-3s)",
+		`- **Visual**: Open with the core structure of ${resolved.title} and make the learner's starting question visible.`,
+		`- **Narration**: ${premise}`,
+		"- **Highlight**: Name the thing that will change on screen.",
+		"",
+		"## Scene 2: Show the motion (3-8s)",
+		`- **Visual**: Use the authored ${kind} scene to animate the central relationship, not just a static title card.`,
+		"- **Narration**: Point to the moving parts and connect them to the learner's intuition.",
+		"- **Highlight**: The animation source is stored in the scene field.",
+		"",
+		"## Scene 3: Lock the takeaway (8-12s)",
+		"- **Visual**: End on the key contrast, equation, or diagram state that should remain in memory.",
+		"- **Narration**: State the transfer rule the learner can reuse.",
+		"- **Transition**: Fade out after the final state is legible.",
+		"",
+	].join("\n");
 }
 
 function buildHyperframesComposition(resolved: ResolvedTopic, storyboard: string): string {
@@ -373,296 +398,25 @@ function asStringArray(value: unknown, fallback: string[] = []): string[] {
 		.slice(0, 6);
 }
 
-function wrapSvgText(text: string, maxChars: number): string[] {
-	const words = text.split(/\s+/).filter(Boolean);
-	const lines: string[] = [];
-	let line = "";
-	for (const word of words) {
-		const next = line ? `${line} ${word}` : word;
-		if (next.length > maxChars && line) {
-			lines.push(line);
-			line = word;
-		} else {
-			line = next;
-		}
-	}
-	if (line) lines.push(line);
-	return lines.slice(0, 3);
-}
-
-function svgTextLines(lines: string[], x: number, y: number, options: { size?: number; fill?: string; weight?: number; anchor?: "start" | "middle" } = {}): string {
-	const size = options.size ?? 28;
-	const fill = options.fill ?? "#171717";
-	const weight = options.weight ?? 500;
-	const anchor = options.anchor ?? "start";
-	return lines
-		.map((line, index) => `<text x="${x}" y="${y + index * size * 1.25}" text-anchor="${anchor}" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="${size}" font-weight="${weight}" fill="${fill}">${escapeHtml(line)}</text>`)
-		.join("\n");
-}
-
-function buildInfographicSvg(params: {
-	title: string;
-	subtitle: string;
-	points: string[];
-	labels: string[];
-	style: string;
-}): string {
-	const points = params.points.length > 0 ? params.points : ["Core idea", "Key relationship", "Learner takeaway"];
-	const labels = params.labels.length > 0 ? params.labels : points.map((_, index) => `Step ${index + 1}`);
-	const palette = params.style === "dark"
-		? { bg: "#101214", panel: "#181c20", ink: "#f6f1e7", muted: "#c9c1b3", accent: "#f59e0b", line: "#3f4650" }
-		: { bg: "#f8f7f2", panel: "#ffffff", ink: "#171717", muted: "#525252", accent: "#0f766e", line: "#d8d3c7" };
-	const cardWidth = 336;
-	const startX = 72;
-	const startY = 282;
-
-	return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-label="${escapeHtml(params.title)}">
-  <rect width="1200" height="760" fill="${palette.bg}"/>
-  <rect x="40" y="40" width="1120" height="680" rx="18" fill="${palette.panel}" stroke="${palette.line}" stroke-width="2"/>
-  <text x="72" y="116" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="54" font-weight="760" fill="${palette.ink}">${escapeHtml(params.title)}</text>
-  ${svgTextLines(wrapSvgText(params.subtitle, 82), 74, 166, { size: 24, fill: palette.muted, weight: 450 })}
-  <line x1="72" y1="238" x2="1128" y2="238" stroke="${palette.line}" stroke-width="2"/>
-  ${points.slice(0, 3).map((point, index) => {
-		const x = startX + index * (cardWidth + 24);
-		const label = labels[index] ?? `Part ${index + 1}`;
-		const lineX1 = index === 0 ? "" : `<line x1="${x - 24}" y1="${startY + 82}" x2="${x}" y2="${startY + 82}" stroke="${palette.accent}" stroke-width="4" stroke-linecap="round"/>`;
-		return `${lineX1}
-  <rect x="${x}" y="${startY}" width="${cardWidth}" height="300" rx="16" fill="${palette.bg}" stroke="${palette.line}" stroke-width="2"/>
-  <circle cx="${x + 38}" cy="${startY + 46}" r="18" fill="${palette.accent}"/>
-  <text x="${x + 38}" y="${startY + 54}" text-anchor="middle" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="22" font-weight="800" fill="${params.style === "dark" ? "#111827" : "#ffffff"}">${index + 1}</text>
-  <text x="${x + 74}" y="${startY + 54}" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="23" font-weight="720" fill="${palette.ink}">${escapeHtml(label)}</text>
-  ${svgTextLines(wrapSvgText(point, 32), x + 28, startY + 116, { size: 24, fill: palette.ink, weight: 500 })}
-  <rect x="${x + 28}" y="${startY + 246}" width="${cardWidth - 56}" height="8" rx="4" fill="${palette.line}"/>
-  <rect x="${x + 28}" y="${startY + 246}" width="${Math.round((cardWidth - 56) * ((index + 1) / Math.min(3, points.length)))}" height="8" rx="4" fill="${palette.accent}"/>`;
-	}).join("\n")}
-  <text x="72" y="660" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="18" fill="${palette.muted}">Generated by Keating as a browser-local SVG learning image. Copy the SVG to reuse or edit.</text>
-</svg>`;
-}
-
-function buildAnatomySvg(params: {
-	title: string;
-	subtitle: string;
-	points: string[];
-	labels: string[];
-	style: string;
-}): string {
-	const palette = params.style === "dark"
-		? { bg: "#101214", panel: "#181c20", ink: "#f6f1e7", muted: "#c9c1b3", accent: "#f59e0b", fab: "#38bdf8", fc: "#4be388", line: "#3f4650" }
-		: { bg: "#f8f7f2", panel: "#ffffff", ink: "#171717", muted: "#525252", accent: "#0f766e", fab: "#0284c7", fc: "#14743c", line: "#d8d3c7" };
-	const labels = params.labels.length > 0 ? params.labels : ["Fab arms", "Antigen-binding tips", "Fc stem", "Hinge", "Size variants"];
-	const points = params.points.length > 0 ? params.points : [
-		"Fab arms form the Y tips that grab antigen.",
-		"The Fc stem is the immune-system flag.",
-		"Smaller fragments keep the binding idea but remove bulk.",
-	];
-
-	return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-label="${escapeHtml(params.title)}">
-  <rect width="1200" height="760" fill="${palette.bg}"/>
-  <rect x="40" y="40" width="1120" height="680" rx="18" fill="${palette.panel}" stroke="${palette.line}" stroke-width="2"/>
-  <text x="72" y="112" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="50" font-weight="760" fill="${palette.ink}">${escapeHtml(params.title)}</text>
-  ${svgTextLines(wrapSvgText(params.subtitle, 82), 74, 160, { size: 23, fill: palette.muted, weight: 450 })}
-
-  <g transform="translate(130 210)">
-    <path d="M330 390 L430 220 L510 86" fill="none" stroke="${palette.fc}" stroke-width="54" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M430 220 L288 82" fill="none" stroke="${palette.fab}" stroke-width="54" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M430 220 L572 82" fill="none" stroke="${palette.fab}" stroke-width="54" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle cx="288" cy="82" r="38" fill="${palette.accent}"/>
-    <circle cx="572" cy="82" r="38" fill="${palette.accent}"/>
-    <circle cx="430" cy="220" r="30" fill="${palette.panel}" stroke="${palette.line}" stroke-width="6"/>
-    <path d="M290 74 C236 38 178 58 158 104 C210 122 248 120 298 98" fill="none" stroke="${palette.accent}" stroke-width="12" stroke-linecap="round"/>
-    <path d="M570 74 C624 38 682 58 702 104 C650 122 612 120 562 98" fill="none" stroke="${palette.accent}" stroke-width="12" stroke-linecap="round"/>
-    <text x="430" y="470" text-anchor="middle" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="26" font-weight="760" fill="${palette.ink}">IgG Y-shape</text>
-    <text x="430" y="505" text-anchor="middle" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="21" fill="${palette.muted}">~150 kDa full antibody</text>
-
-    <line x1="288" y1="82" x2="120" y2="34" stroke="${palette.line}" stroke-width="2"/>
-    <line x1="572" y1="82" x2="760" y2="34" stroke="${palette.line}" stroke-width="2"/>
-    <line x1="430" y1="220" x2="760" y2="240" stroke="${palette.line}" stroke-width="2"/>
-    <line x1="330" y1="390" x2="116" y2="430" stroke="${palette.line}" stroke-width="2"/>
-  </g>
-
-  <g>
-    <rect x="74" y="226" width="250" height="82" rx="12" fill="${palette.bg}" stroke="${palette.line}"/>
-    <text x="96" y="260" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="21" font-weight="720" fill="${palette.ink}">${escapeHtml(labels[0] ?? "Fab arms")}</text>
-    ${svgTextLines(wrapSvgText(points[0] ?? "The Y arms carry binding specificity.", 28), 96, 292, { size: 16, fill: palette.muted, weight: 450 })}
-
-    <rect x="828" y="226" width="290" height="82" rx="12" fill="${palette.bg}" stroke="${palette.line}"/>
-    <text x="850" y="260" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="21" font-weight="720" fill="${palette.ink}">${escapeHtml(labels[1] ?? "Binding tips")}</text>
-    ${svgTextLines(wrapSvgText(points[1] ?? "Tips recognize antigen by shape complementarity.", 32), 850, 292, { size: 16, fill: palette.muted, weight: 450 })}
-
-    <rect x="828" y="428" width="290" height="82" rx="12" fill="${palette.bg}" stroke="${palette.line}"/>
-    <text x="850" y="462" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="21" font-weight="720" fill="${palette.ink}">${escapeHtml(labels[2] ?? "Fc stem")}</text>
-    ${svgTextLines(wrapSvgText(points[2] ?? "The stem recruits immune machinery.", 32), 850, 494, { size: 16, fill: palette.muted, weight: 450 })}
-
-    <rect x="74" y="600" width="1044" height="58" rx="12" fill="${palette.bg}" stroke="${palette.line}"/>
-    <text x="96" y="636" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="20" font-weight="650" fill="${palette.ink}">Variant scale: IgG ~150 kDa -> scFv ~25 kDa -> nanobody ~15 kDa -> minibinder ~5-20 kDa</text>
-  </g>
-</svg>`;
-}
-
-function buildComparisonSvg(params: {
-	title: string;
-	subtitle: string;
-	points: string[];
-	labels: string[];
-	style: string;
-}): string {
-	const palette = params.style === "dark"
-		? { bg: "#101214", panel: "#181c20", ink: "#f6f1e7", muted: "#c9c1b3", accent: "#f59e0b", line: "#3f4650" }
-		: { bg: "#f8f7f2", panel: "#ffffff", ink: "#171717", muted: "#525252", accent: "#0f766e", line: "#d8d3c7" };
-	const labels = params.labels.length > 0 ? params.labels : ["IgG", "scFv", "Nanobody", "Minibinder"];
-	const points = params.points.length > 0 ? params.points : ["150 kDa full Y", "25 kDa binding fragment", "15 kDa single-domain binder", "5-20 kDa designed binder"];
-	const max = Math.max(...points.map((point) => Number(point.match(/\d+/)?.[0] ?? 20)), 20);
-
-	return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-label="${escapeHtml(params.title)}">
-  <rect width="1200" height="760" fill="${palette.bg}"/>
-  <rect x="40" y="40" width="1120" height="680" rx="18" fill="${palette.panel}" stroke="${palette.line}" stroke-width="2"/>
-  <text x="72" y="112" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="50" font-weight="760" fill="${palette.ink}">${escapeHtml(params.title)}</text>
-  ${svgTextLines(wrapSvgText(params.subtitle, 84), 74, 160, { size: 23, fill: palette.muted, weight: 450 })}
-  <g transform="translate(110 250)">
-    ${labels.slice(0, 6).map((label, index) => {
-		const y = index * 72;
-		const point = points[index] ?? "";
-		const value = Number(point.match(/\d+/)?.[0] ?? 20);
-		const width = Math.max(80, Math.round((value / max) * 690));
-		return `<text x="0" y="${y + 28}" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="22" font-weight="720" fill="${palette.ink}">${escapeHtml(label)}</text>
-    <rect x="180" y="${y}" width="760" height="42" rx="10" fill="${palette.bg}" stroke="${palette.line}"/>
-    <rect x="180" y="${y}" width="${width}" height="42" rx="10" fill="${palette.accent}" opacity="${0.9 - index * 0.08}"/>
-    <text x="${Math.min(900, 198 + width)}" y="${y + 28}" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="18" font-weight="640" fill="${palette.ink}">${escapeHtml(point)}</text>`;
-	}).join("\n")}
-  </g>
-  <text x="110" y="690" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="20" fill="${palette.muted}">Read left to right: shorter bars mean smaller proteins, often easier for tissue penetration or inhaled delivery.</text>
-</svg>`;
-}
-
-function buildProcessSvg(params: {
-	title: string;
-	subtitle: string;
-	points: string[];
-	labels: string[];
-	style: string;
-}): string {
-	const palette = params.style === "dark"
-		? { bg: "#101214", panel: "#181c20", ink: "#f6f1e7", muted: "#c9c1b3", accent: "#f59e0b", line: "#3f4650", arrow: "#9dd7c8", node: "#1f2937" }
-		: { bg: "#f8f7f2", panel: "#ffffff", ink: "#171717", muted: "#525252", accent: "#0f766e", line: "#d8d3c7", arrow: "#0f766e", node: "#f0f4ef" };
-	const points = params.points.length > 0 ? params.points : ["Define the inputs", "Process the inputs", "Verify the output"];
-	const labels = params.labels.length > 0 ? params.labels : points.map((_, i) => `Step ${i + 1}`);
-	const count = points.length;
-	// Lay out the steps as a horizontal sequence with arrows in between. If we
-	// have 5+ steps, wrap to a second row so the diagram stays readable.
-	const perRow = count <= 4 ? count : Math.ceil(count / 2);
-	const rows: number[] = [];
-	let remaining = count;
-	while (remaining > 0) {
-		const take = Math.min(perRow, remaining);
-		rows.push(take);
-		remaining -= take;
-	}
-	const boxWidth = 232;
-	const boxHeight = 152;
-	const hGap = 64;
-	const vGap = 90;
-	const startX = (1200 - (Math.max(...rows) * boxWidth + (Math.max(...rows) - 1) * hGap)) / 2;
-	const startY = 264;
-
-	let cursor = 0;
-	const renderBox = (point: string, label: string, x: number, y: number, index: number) => {
-		const lines = wrapSvgText(point, 30);
-		return `  <rect x="${x}" y="${y}" width="${boxWidth}" height="${boxHeight}" rx="14" fill="${palette.node}" stroke="${palette.accent}" stroke-width="2"/>
-  <circle cx="${x + 22}" cy="${y + 22}" r="14" fill="${palette.accent}"/>
-  <text x="${x + 22}" y="${y + 28}" text-anchor="middle" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="800" fill="${params.style === "dark" ? "#111827" : "#ffffff"}">${index + 1}</text>
-  <text x="${x + 44}" y="${y + 28}" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="16" font-weight="720" fill="${palette.ink}">${escapeHtml(label)}</text>
-  ${svgTextLines(lines, x + 18, y + 60, { size: 18, fill: palette.ink, weight: 500 })}`;
-	};
-	const renderArrow = (x1: number, x2: number, y: number, key: string) => {
-		const midY = y + boxHeight / 2;
-		const xStart = x1 + boxWidth;
-		const xEnd = x2;
-		return `  <line x1="${xStart}" y1="${midY}" x2="${xEnd - 14}" y2="${midY}" stroke="${palette.arrow}" stroke-width="3" stroke-linecap="round" data-arrow-key="${key}"/>
-  <polygon points="${xEnd - 14},${midY - 7} ${xEnd},${midY} ${xEnd - 14},${midY + 7}" fill="${palette.arrow}"/>`;
-	};
-
-	const boxes: string[] = [];
-	const arrows: string[] = [];
-	for (let r = 0; r < rows.length; r++) {
-		const rowCount = rows[r];
-		const rowWidth = rowCount * boxWidth + (rowCount - 1) * hGap;
-		const rowStartX = (1200 - rowWidth) / 2;
-		const y = startY + r * (boxHeight + vGap);
-		const rowBoxes: { x: number; y: number; index: number }[] = [];
-		for (let c = 0; c < rowCount; c++) {
-			const x = rowStartX + c * (boxWidth + hGap);
-			rowBoxes.push({ x, y, index: cursor });
-			boxes.push(renderBox(points[cursor] ?? "", labels[cursor] ?? `Step ${cursor + 1}`, x, y, cursor));
-			cursor += 1;
-		}
-		for (let c = 0; c < rowBoxes.length - 1; c++) {
-			arrows.push(renderArrow(rowBoxes[c].x, rowBoxes[c + 1].x, rowBoxes[c].y, `h-${r}-${c}`));
-		}
-		// Vertical wrap-around arrow from last box in this row to first box in
-		// the next row, on the right edge.
-		if (r < rows.length - 1) {
-			const last = rowBoxes[rowBoxes.length - 1];
-			const nextRow = rows[r + 1];
-			const nextRowWidth = nextRow * boxWidth + (nextRow - 1) * hGap;
-			const nextRowStartX = (1200 - nextRowWidth) / 2;
-			const firstX = nextRowStartX;
-			const firstY = startY + (r + 1) * (boxHeight + vGap);
-			const bendX = last.x + boxWidth + 32;
-			const bendY1 = last.y + boxHeight / 2;
-			const bendY2 = firstY + boxHeight / 2;
-			arrows.push(
-				`  <path d="M ${last.x + boxWidth} ${bendY1} L ${bendX} ${bendY1} L ${bendX} ${bendY2} L ${firstX - 14} ${bendY2}" fill="none" stroke="${palette.arrow}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" data-arrow-key="v-${r}"/>` +
-					`<polygon points="${firstX - 14},${bendY2 - 7} ${firstX},${bendY2} ${firstX - 14},${bendY2 + 7}" fill="${palette.arrow}"/>`,
-			);
-		}
-	}
-
-	return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-label="${escapeHtml(params.title)}">
-  <rect width="1200" height="760" fill="${palette.bg}"/>
-  <rect x="40" y="40" width="1120" height="680" rx="18" fill="${palette.panel}" stroke="${palette.line}" stroke-width="2"/>
-  <text x="72" y="116" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="50" font-weight="760" fill="${palette.ink}">${escapeHtml(params.title)}</text>
-  ${svgTextLines(wrapSvgText(params.subtitle, 82), 74, 166, { size: 23, fill: palette.muted, weight: 450 })}
-  <line x1="72" y1="222" x2="1128" y2="222" stroke="${palette.line}" stroke-width="2"/>
-  ${arrows.join("\n")}
-  ${boxes.join("\n")}
-  <text x="72" y="700" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="18" fill="${palette.muted}">Numbered boxes show the real order of operations; arrows are the causal or temporal links. Edit by passing new points and labels arrays.</text>
-</svg>`;
-}
-
-function buildLocalImageSvg(params: {
-	title: string;
-	subtitle: string;
-	points: string[];
-	labels: string[];
-	style: string;
-	kind: string;
-}): string {
-	if (params.kind === "anatomy") return buildAnatomySvg(params);
-	if (params.kind === "comparison") return buildComparisonSvg(params);
-	if (params.kind === "process") return buildProcessSvg(params);
-	return buildInfographicSvg(params);
-}
-
-async function generateOpenAiImage(params: {
+async function generateImageViaEndpoint(params: {
+	endpoint: string;
+	apiKey?: string;
 	prompt: string;
 	model: string;
 	size: string;
 	quality: string;
 }): Promise<{ dataUrl: string; mimeType: string }> {
-	const apiKey = await getProviderApiKey("openai");
-	if (!apiKey) {
-		throw new Error("No OpenAI API key configured. Add one in Settings -> Providers & Models -> OpenAI.");
-	}
+	const proxied = proxiedProviderRequestUrl(params.endpoint);
+	const headers: Record<string, string> = {
+		accept: "application/json",
+		"content-type": "application/json",
+		"x-target-url": proxied.targetBaseUrl,
+	};
+	if (params.apiKey) headers.Authorization = `Bearer ${params.apiKey}`;
 
-	const proxied = proxiedProviderRequestUrl("https://api.openai.com/v1/images/generations");
 	const response = await fetch(proxied.url, {
 		method: "POST",
-		headers: {
-			accept: "application/json",
-			"content-type": "application/json",
-			Authorization: `Bearer ${apiKey}`,
-			"x-target-url": proxied.targetBaseUrl,
-		},
+		headers,
 		body: JSON.stringify({
 			model: params.model,
 			prompt: params.prompt,
@@ -675,12 +429,12 @@ async function generateOpenAiImage(params: {
 	const payload = await response.json().catch(async () => ({ error: { message: await response.text().catch(() => response.statusText) } }));
 	if (!response.ok) {
 		const message = payload?.error?.message ?? response.statusText;
-		throw new Error(`OpenAI image generation failed (${response.status}): ${String(message).slice(0, 500)}`);
+		throw new Error(`Image generation failed (${response.status}): ${String(message).slice(0, 500)}`);
 	}
 
 	const b64 = payload?.data?.[0]?.b64_json;
 	if (!b64 || typeof b64 !== "string") {
-		throw new Error("OpenAI image generation returned no base64 image data.");
+		throw new Error("Image generation returned no base64 image data.");
 	}
 
 	return { dataUrl: `data:image/png;base64,${b64}`, mimeType: "image/png" };
@@ -873,22 +627,23 @@ export async function createKeatingTools(
 				kind: { type: "string", enum: ["manim", "hyperframes"], description: "Renderer: manim (raw JS scene using manim-web) or hyperframes (HTML + GSAP)." },
 				summary: { type: "string", description: "One-line summary shown above the animation. Recommended." },
 				body: { type: "string", description: "REQUIRED. The JavaScript construct function or full HTML document you author — must explain THIS topic with real content, not a placeholder." },
+				storyboard: { type: "string", description: "Optional markdown storyboard with `# Animation Storyboard:` and `## Scene N: Title (start-ends)` sections. If omitted, Keating saves a concise generated storyboard around the authored scene." },
 			},
 			async (params) => {
 				const topic = (params.topic as string) || "";
 				if (!topic) return "Topic required.";
 
 				const kindRaw = typeof params.kind === "string" ? params.kind : "";
-				if (kindRaw !== "manim" && kindRaw !== "hyperframes") {
+				if (kindRaw && kindRaw !== "manim" && kindRaw !== "hyperframes") {
 					return [
-						"Pick a `kind`: manim or hyperframes.",
+						"Pick a valid `kind`: manim or hyperframes.",
 						"  - `manim`: write an `async function construct(scene, M) { ... }` using manim-web primitives. The construct function runs against a real Scene and animates with real motion.",
 						"  - `hyperframes`: write a full HTML document with GSAP timelines.",
 						"You MUST pass `body` with real content for THIS topic. No template fallback exists.",
 					].join("\n");
 				}
 
-				const kind = kindRaw;
+				const kind: "manim" | "hyperframes" = kindRaw === "manim" ? "manim" : "hyperframes";
 				const body = typeof params.body === "string" ? params.body : "";
 				const summary = typeof params.summary === "string" ? params.summary.trim() : "";
 
@@ -932,7 +687,10 @@ export async function createKeatingTools(
 
 				const resolved = resolveTopic(topic);
 
-				const storyboard = `# Animation: ${resolved.title}\n\nRenderer: ${kind}\n\nThe model authored a raw ${kind} scene (see manifest for the source).`;
+				const storyboard =
+					typeof params.storyboard === "string" && params.storyboard.trim()
+						? params.storyboard.trim()
+						: buildAuthoredAnimationStoryboard(resolved, kind, summary);
 				const scene = body;
 				const renderer: "manim" | "hyperframes" = kind === "hyperframes" ? "hyperframes" : "manim";
 				const animationPayload: Record<string, unknown> = {
@@ -947,6 +705,7 @@ export async function createKeatingTools(
 						topic: resolved.title,
 						slug: resolved.slug,
 						domain: resolved.domain,
+						renderer,
 						kind,
 						sourceBytes: body.length,
 						generatedAt: new Date().toISOString(),
@@ -1078,29 +837,28 @@ export async function createKeatingTools(
 
 		createTool(
 			"generate_image",
-			"Create a learning image. Supports real OpenAI image models for raster images and browser-local SVG diagrams for labeled anatomy/comparison/process visuals. You MUST author the content yourself by passing `title`, `subtitle`, and at least 3 `points` describing what the visual should communicate — generic titles like 'Learning visual' or empty point lists are rejected. Pick the `kind` based on what the visual needs to show: 'anatomy' for labeled structures (e.g. antibody Y-shape), 'comparison' for size/category bars, 'process' for numbered step-by-step flows with arrows (e.g. DNS resolution stages, Krebs cycle, signal transduction), and 'cards' for grouped concepts. Use `mode='model'` when the learner asks for an actual generated picture; 'auto' tries the image model when an OpenAI key is configured and falls back to SVG.",
+			"Generate a real raster learning image with the image generator the learner has configured in Settings → Image generation (OpenAI, or a local OpenAI-compatible server). You MUST author the content yourself by passing `title`, `subtitle`, and at least 3 `points` describing what the visual should communicate — generic titles like 'Learning visual' or empty point lists are rejected. Use `kind` to shape the prompt: 'anatomy' for labeled structures, 'comparison' for size/category bars, 'process' for ordered step-by-step flows, 'cards' for grouped concepts. If no image generator is configured/available, the tool returns a short message instead of an image — there is no template fallback.",
 			{
 				title: { type: "string", description: "REQUIRED. Short, specific title for the visual that reflects THIS topic (e.g. 'DNS resolution steps' or 'IgG antibody anatomy'), not 'Learning visual'." },
 				subtitle: { type: "string", description: "REQUIRED. One-sentence framing caption that names the specific idea being illustrated." },
-				prompt: { type: "string", description: "Detailed image-model prompt. Required for mode=model; should describe labels, diagram layout, style, and educational goal." },
-				mode: { type: "string", description: "auto, model, or svg. auto tries the image model when an OpenAI key is configured, then falls back to SVG." },
-				kind: { type: "string", description: "cards, anatomy, comparison, or process. Used for local SVG fallback and diagram layout. Use 'process' for ordered step-by-step flows with arrows; 'anatomy' for labeled structures; 'comparison' for size/category bars; 'cards' for grouped concepts." },
-				imageModel: { type: "string", description: "OpenAI image model, such as gpt-image-1.5, gpt-image-1, or gpt-image-1-mini." },
-				size: { type: "string", description: "Image size for model mode: 1024x1024, 1536x1024, or 1024x1536." },
-				quality: { type: "string", description: "Image quality for model mode: low, medium, or high." },
+				prompt: { type: "string", description: "Optional explicit image-model prompt. If omitted, one is composed from title/subtitle/points/labels/kind/style." },
+				kind: { type: "string", description: "cards, anatomy, comparison, or process. Shapes the composed prompt. Use 'process' for ordered step-by-step flows; 'anatomy' for labeled structures; 'comparison' for size/category bars; 'cards' for grouped concepts." },
+				imageModel: { type: "string", description: "Optional override for the image model. Defaults to the model selected in Settings → Image generation, then the generator's default." },
+				size: { type: "string", description: "Optional size override (e.g. 1024x1024, 1536x1024, 1024x1536). Defaults to the configured size." },
+				quality: { type: "string", description: "Optional quality override: low, medium, or high. Defaults to the configured quality." },
 				points: {
 					type: "array",
-					description: "REQUIRED (>=3). Concrete teaching points to visualize. For 'process' these become the numbered steps; for 'anatomy' they become label callouts; for 'comparison' they become bar values; for 'cards' they become card body text. Generic points like 'Core idea' are rejected.",
+					description: "REQUIRED (>=3). Concrete teaching points to visualize. For 'process' these become the steps; for 'anatomy' the label callouts; for 'comparison' the bar values; for 'cards' the card body text. Generic points like 'Core idea' are rejected.",
 					items: { type: "string" },
 				},
 				labels: {
 					type: "array",
-					description: "Optional labels for the visual blocks. For 'process' these become the step titles shown in each box; for 'anatomy' they become structure names.",
+					description: "Optional labels for the visual blocks (step titles, structure names, etc.).",
 					items: { type: "string" },
 				},
 				style: {
 					type: "string",
-					description: "Visual style: light or dark",
+					description: "Visual style hint added to the prompt: light or dark",
 				},
 			},
 			async (params) => {
@@ -1109,8 +867,6 @@ export async function createKeatingTools(
 				const points = asStringArray(params.points, []);
 				const labels = asStringArray(params.labels, []);
 				const style = String(params.style ?? "light").toLowerCase() === "dark" ? "dark" : "light";
-				const requestedMode = String(params.mode ?? "auto").toLowerCase();
-				const mode = requestedMode === "model" || requestedMode === "svg" ? requestedMode : "auto";
 				const kindRaw = String(params.kind ?? "cards").toLowerCase();
 				const kind = ["anatomy", "comparison", "process", "cards"].includes(kindRaw) ? kindRaw : "cards";
 
@@ -1140,58 +896,63 @@ export async function createKeatingTools(
 
 				const finalTitle = title;
 				const finalSubtitle = subtitle;
-				const imageModel = String(params.imageModel ?? "gpt-image-1.5").trim() || "gpt-image-1.5";
-				const sizeRaw = String(params.size ?? "1024x1024");
-				const size = ["1024x1024", "1536x1024", "1024x1536"].includes(sizeRaw) ? sizeRaw : "1024x1024";
-				const qualityRaw = String(params.quality ?? "medium").toLowerCase();
-				const quality = ["low", "medium", "high"].includes(qualityRaw) ? qualityRaw : "medium";
+
+				// Resolve the configured image generator from the central config +
+				// the learner's settings. No template/SVG fallback exists.
+				const settings = loadKeatingUiSettings();
+				const generator = getImageGenerator(settings.imageGenerator) ?? getImageGenerator(DEFAULT_IMAGE_GENERATOR_ID)!;
+
+				const endpoint = generator.needsBaseUrl
+					? localImageEndpoint(settings.localImageBaseUrl)
+					: generator.fixedEndpoint ?? "";
+				const apiKey = await getProviderApiKey(generator.providerKey);
+
+				// No image generator available → return a plain message, never an image.
+				if (generator.needsBaseUrl && !endpoint) {
+					return `No image generation model is available. Set a base URL for the local image server in Settings → Image generation (selected generator: ${generator.label}).`;
+				}
+				if (!generator.needsBaseUrl && !apiKey) {
+					return `No image generation model is available. Add an API key for ${generator.label} in Settings → Providers & Models, or pick a different generator in Settings → Image generation.`;
+				}
+
+				const imageModel = (settings.imageModel || String(params.imageModel ?? "")).trim() || generator.models[0] || "";
+				if (!imageModel) {
+					return `No image model is configured for ${generator.label}. Set one in Settings → Image generation.`;
+				}
+
+				const sizeCandidate = (String(params.size ?? "") || settings.imageSize).trim();
+				const size = generator.sizes.includes(sizeCandidate) ? sizeCandidate : generator.sizes[0];
+				const qualityCandidate = (String(params.quality ?? "") || settings.imageQuality).trim().toLowerCase();
+				const quality = generator.qualities.includes(qualityCandidate) ? qualityCandidate : generator.qualities[0];
+
 				const prompt = String(params.prompt ?? "").trim() || [
 					`Create a clear educational ${kind === "cards" ? "infographic" : `${kind} diagram`} titled "${finalTitle}".`,
 					finalSubtitle,
 					points.length > 0 ? `Include these ideas: ${points.join("; ")}.` : "",
 					labels.length > 0 ? `Use labels: ${labels.join(", ")}.` : "",
+					`Use a ${style} visual style.`,
 					"Make it legible, accurate, and suitable for a learner studying from the image.",
 				].filter(Boolean).join(" ");
 
-				let payload: Record<string, string>;
-				let note = "";
-				if (mode !== "svg") {
-					try {
-						const generated = await generateOpenAiImage({ prompt, model: imageModel, size, quality });
-						payload = {
-							title: finalTitle,
-							alt: finalSubtitle,
-							dataUrl: generated.dataUrl,
-							mimeType: generated.mimeType,
-							model: imageModel,
-							prompt,
-						};
-					} catch (error) {
-						if (mode === "model") throw error;
-						note = `\n\n_Image model unavailable, rendered a local SVG fallback instead: ${error instanceof Error ? error.message : String(error)}_`;
-						payload = {
-							title: finalTitle,
-							alt: finalSubtitle,
-							svg: buildLocalImageSvg({ title: finalTitle, subtitle: finalSubtitle, points, labels, style, kind }),
-							model: "svg-local",
-							prompt,
-						};
-					}
-				} else {
-					payload = {
-						title: finalTitle,
-						alt: finalSubtitle,
-						svg: buildLocalImageSvg({ title: finalTitle, subtitle: finalSubtitle, points, labels, style, kind }),
-						model: "svg-local",
-						prompt,
-					};
-				}
+				// A genuine request failure (HTTP error, billing/quota, network)
+				// propagates so it surfaces through the standard classified-error
+				// UI like every other API error. The plain-message returns above
+				// are reserved for the "no generator configured" case.
+				const generated = await generateImageViaEndpoint({ endpoint, apiKey, prompt, model: imageModel, size, quality });
+
+				const payload = {
+					title: finalTitle,
+					alt: finalSubtitle,
+					dataUrl: generated.dataUrl,
+					mimeType: generated.mimeType,
+					model: imageModel,
+					prompt,
+				};
 
 				return [
 					`# Generated Image: ${finalTitle}`,
 					"",
 					finalSubtitle,
-					note,
 					"",
 					`<keating-image json=${JSON.stringify(JSON.stringify(payload))} />`,
 				].join("\n");
@@ -1755,29 +1516,43 @@ ${topicList}
 		// ask_user_question - Ask the learner one or more questions as an interactive form
 		createTool(
 			"ask_user_question",
-			"Ask the learner one or more questions as an interactive form (choices, multi-select, free text, or fill-in-the-blank). The learner fills it in and their answers are sent back automatically. Use to check understanding, gather goals/preferences, or branch the lesson. Pass `questions` for a multi-field form, or the single-question fields for a quick one-off.",
+			"Ask the learner one or more questions as an interactive form (choices, multi-select, free text, fill-in-the-blank, classification table, or matching worksheet). The learner fills it in and their answers are sent back automatically. Use to check understanding, gather goals/preferences, or branch the lesson. Pass `questions` for a multi-field form, or the single-question fields for a quick one-off.",
 			{
 				question: { type: "string", description: "A single question to ask (use `questions` for a multi-field form). For fill-in-the-blank, use ___ or {{blank}} as placeholders." },
-				choices: { type: "array", items: { type: "string" }, description: "Optional answer choices for the single question" },
+				choices: { type: "array", items: { type: "string" }, description: "Optional answer choices. For classification questions, these are categories/slots; for matching questions, these are the answer-bank entries." },
+				items: { type: "array", items: { type: "string" }, description: "Rows to classify or prompts to match when type is 'classification' or 'matching'." },
 				multi_select: { type: "boolean", description: "Allow selecting multiple choices for the single question (default false)" },
 				allow_text: { type: "boolean", description: "Allow free-text input (default: true if no choices, false if choices provided)" },
-				type: { type: "string", enum: ["choice", "text", "blanks"], description: "Question type. 'choice' = multiple choice, 'text' = free text, 'blanks' = fill-in-the-blank (uses ___ or {{blank}} in question text)" },
+				type: { type: "string", enum: ["choice", "text", "blanks", "classification", "matching"], description: "Question type. 'choice' = multiple choice, 'text' = free text, 'blanks' = fill-in-the-blank, 'classification' = classify each item into one category, 'matching' = match each item to one answer-bank entry." },
 				blanks: { type: "array", items: { type: "object", properties: { placeholder: { type: "string" }, hint: { type: "string" } } }, description: "Define blanks for fill-in-the-blank questions. Each entry corresponds to one ___ placeholder in the question text." },
+				require_reasons: { type: "boolean", description: "For classification questions, require a short justification per row (default true)." },
+				unique_matches: { type: "boolean", description: "For matching questions, prevent reusing an answer-bank choice (default true)." },
+				correct_matches: { type: "array", items: { type: "string" }, description: "Optional answer key for matching questions, one correct choice per item in order. Enables red/green feedback after submission." },
+				item_label: { type: "string", description: "Column label for classification items (default 'Item')." },
+				choice_label: { type: "string", description: "Column label for classification choices or matching answer bank (default 'Choice')." },
+				reason_label: { type: "string", description: "Column label for classification justifications (default 'Justification')." },
 				hint: { type: "string", description: "Optional hint shown below the single question" },
 				intro: { type: "string", description: "Optional intro text shown above the form" },
 				questions: {
 					type: "array",
-					description: "Multiple questions to ask at once, each with its own header and choices",
+					description: "Multiple questions to ask at once, each with its own header and input format",
 					items: {
 						type: "object",
 						properties: {
 							header: { type: "string", description: "Short label/chip shown above the question (e.g. 'Goal', 'Approach')" },
 							question: { type: "string", description: "The question text. For blanks type, use ___ or {{blank}} as placeholders" },
-							choices: { type: "array", items: { type: "string" }, description: "Optional answer choices" },
+							choices: { type: "array", items: { type: "string" }, description: "Optional answer choices. For classification questions, these are categories/slots; for matching questions, answer-bank entries." },
+							items: { type: "array", items: { type: "string" }, description: "Rows to classify or prompts to match when type is 'classification' or 'matching'." },
 							multi_select: { type: "boolean", description: "Allow selecting multiple choices (default false)" },
 							allow_text: { type: "boolean", description: "Allow free-text input (default: true if no choices)" },
-							type: { type: "string", enum: ["choice", "text", "blanks"], description: "Question type: choice, text, or blanks (fill-in-the-blank)" },
+							type: { type: "string", enum: ["choice", "text", "blanks", "classification", "matching"], description: "Question type: choice, text, blanks, classification, or matching" },
 							blanks: { type: "array", items: { type: "object", properties: { placeholder: { type: "string" }, hint: { type: "string" } } }, description: "Blank definitions for fill-in-the-blank, one per ___ placeholder" },
+							require_reasons: { type: "boolean", description: "For classification questions, require a short justification per row (default true)." },
+							unique_matches: { type: "boolean", description: "For matching questions, prevent reusing an answer-bank choice (default true)." },
+							correct_matches: { type: "array", items: { type: "string" }, description: "Optional answer key for matching questions, one correct choice per item in order." },
+							item_label: { type: "string", description: "Column label for classification items." },
+							choice_label: { type: "string", description: "Column label for classification choices or matching answer bank." },
+							reason_label: { type: "string", description: "Column label for classification justifications." },
 							hint: { type: "string", description: "Optional hint shown below this question" },
 						},
 					},
@@ -1792,9 +1567,17 @@ ${topicList}
 				type FormField = {
 					header?: string;
 					question: string;
+					type?: string;
 					choices?: string[];
+					items?: string[];
 					multi_select: boolean;
 					allow_text: boolean;
+					require_reasons?: boolean;
+					unique_matches?: boolean;
+					correct_matches?: string[];
+					item_label?: string;
+					choice_label?: string;
+					reason_label?: string;
 					hint?: string;
 				};
 
@@ -1802,14 +1585,33 @@ ${topicList}
 					const question = String(raw.question ?? "");
 					if (!question) return null;
 					const choices = toStringArray(raw.choices);
+					const items = toStringArray(raw.items);
+					const correctMatches = toStringArray(raw.correct_matches);
 					const hasChoices = !!choices && choices.length > 0;
+					const type = typeof raw.type === "string" ? raw.type : undefined;
+					if ((type === "classification" || type === "matching") && (!items || items.length === 0 || !hasChoices)) {
+						return null;
+					}
 					return {
 						header: raw.header ? String(raw.header) : undefined,
 						question,
+						type,
 						choices: hasChoices ? choices : undefined,
+						items: items && items.length > 0 ? items : undefined,
 						multi_select: raw.multi_select === true,
 						allow_text:
-							typeof raw.allow_text === "boolean" ? raw.allow_text : !hasChoices,
+							type === "classification" || type === "matching"
+								? false
+								: typeof raw.allow_text === "boolean" ? raw.allow_text : !hasChoices,
+						require_reasons:
+							typeof raw.require_reasons === "boolean" ? raw.require_reasons : undefined,
+						unique_matches:
+							typeof raw.unique_matches === "boolean" ? raw.unique_matches : undefined,
+						correct_matches:
+							correctMatches && correctMatches.length > 0 ? correctMatches : undefined,
+						item_label: raw.item_label ? String(raw.item_label) : undefined,
+						choice_label: raw.choice_label ? String(raw.choice_label) : undefined,
+						reason_label: raw.reason_label ? String(raw.reason_label) : undefined,
 						hint: raw.hint ? String(raw.hint) : undefined,
 					};
 				};
@@ -2187,9 +1989,6 @@ function draftDeckCardId(deckSlug: string, index: number): string {
 export {
 	buildManimScene as __test_buildManimScene,
 	buildHyperframesComposition as __test_buildHyperframesComposition,
-	buildProcessSvg as __test_buildProcessSvg,
-	buildLocalImageSvg as __test_buildLocalImageSvg,
-	buildInfographicSvg as __test_buildInfographicSvg,
 	parseStoryboardDurationSeconds as __test_parseStoryboardDurationSeconds,
 	storyboardTitle as __test_storyboardTitle,
 };

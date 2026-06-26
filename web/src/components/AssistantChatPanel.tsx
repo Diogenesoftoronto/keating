@@ -27,6 +27,7 @@ import {
   type AppendMessage,
   type AttachmentAdapter,
   type ThreadMessageLike,
+  useComposerRuntime,
   useExternalStoreRuntime,
   useMessage,
 } from "@assistant-ui/react";
@@ -40,6 +41,7 @@ import {
   ChevronRight,
   CircleAlert,
   CircleCheck,
+  CircleDollarSign,
   Check,
   Copy,
   CopyPlus,
@@ -48,6 +50,8 @@ import {
   Lightbulb,
   Loader2,
   Lock,
+  Mic,
+  MicOff,
   Paperclip,
   Send,
   Server,
@@ -81,7 +85,13 @@ import type { AnsweredQuestion, QuestionFormData } from "./QuestionRenderer";
 import { GoalRenderer } from "./GoalRenderer";
 import { normalizeGoal } from "../keating/goals";
 import type { Quiz } from "../keating/core";
-import { KEATING_VOICE_TOOL_NAME } from "../keating/speech";
+import {
+  KEATING_VOICE_TOOL_NAME,
+  loadWebSpeechSettings,
+  resolveSpeechCredential,
+  speechInputMode,
+} from "../keating/speech";
+import { startMicRecording, transcribeAudio, type MicRecorder } from "../keating/speech-providers/stt";
 import { JsonCrackBlock } from "./JsonCrackBlock";
 import { FlashcardRenderer } from "./FlashcardRenderer";
 import type { FlashcardDeck } from "../keating/srs";
@@ -374,6 +384,8 @@ function stripArtifactLinks(text: string): string {
 
 const AUTH_ERROR_PATTERNS =
   /authentication_error|invalid.api.key|unauthorized|401|api.secret.key|auth.*fail|login.fail|key.*invalid|key.*expired/i;
+const BILLING_ERROR_PATTERNS =
+  /insufficient_quota|insufficient.?(funds|quota|credits?|balance)|exceeded your current quota|not enough (credits?|balance)|billing|payment required|\b402\b/i;
 const VOICE_ERROR_PATTERNS =
   /keating_voice|gemini live speech|voice layer|speech model|speech failed|speech timed out/i;
 
@@ -389,6 +401,7 @@ interface ClassifiedError {
     | "permission"
     | "not-found"
     | "rate-limit"
+    | "billing"
     | "server"
     | "network"
     | "speech"
@@ -529,6 +542,22 @@ function classifyError(errorText: string): ClassifiedError {
     };
   }
 
+  // Billing/quota errors are often surfaced as a 429 or 402; classify them
+  // before the generic HTTP handling so they read as a credits problem rather
+  // than a transient rate-limit.
+  if (BILLING_ERROR_PATTERNS.test(errorText)) {
+    return {
+      statusCode: errorText.match(HTTP_STATUS_PATTERN)
+        ? parseInt(errorText.match(HTTP_STATUS_PATTERN)![1], 10)
+        : null,
+      title: "Insufficient Credits or Quota",
+      description:
+        "The provider rejected the request for billing reasons — your account is out of credits or over its quota. Add funds or check your billing settings.",
+      icon: CircleDollarSign,
+      category: "billing",
+    };
+  }
+
   const httpMatch = errorText.match(HTTP_STATUS_PATTERN);
   if (httpMatch) {
     const code = parseInt(httpMatch[1], 10);
@@ -630,6 +659,100 @@ function ImagePart({ image, filename }: { image: string; filename?: string }) {
   );
 }
 
+// Adaptive speech input for the composer. Shown only when a usable speech
+// credential (genuine OpenAI key, or Google/Gemini key) is configured. Push to
+// talk: records the mic, transcribes via the resolved provider, and inserts the
+// text into the composer for review before sending.
+function SpeechMicButton() {
+  const composer = useComposerRuntime();
+  const [available, setAvailable] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const recorderRef = useRef<MicRecorder | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const check = () => {
+      resolveSpeechCredential(getProviderApiKey)
+        .then((cred) => {
+          if (!cancelled) setAvailable(cred !== null);
+        })
+        .catch(() => {
+          if (!cancelled) setAvailable(false);
+        });
+    };
+    check();
+    // Re-check when a key is added/changed via the API-key prompt.
+    window.addEventListener("keating:api-key-prompt-changed", check);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("keating:api-key-prompt-changed", check);
+    };
+  }, []);
+
+  if (!available) return null;
+
+  const mode = speechInputMode(loadWebSpeechSettings());
+  const title =
+    mode === "duplex"
+      ? "Speak to Keating (push to talk — transcribes into the prompt)"
+      : "Dictate your message (push to talk)";
+
+  const handleClick = async () => {
+    if (busy) return;
+    if (recording) {
+      const recorder = recorderRef.current;
+      recorderRef.current = null;
+      setRecording(false);
+      if (!recorder) return;
+      setBusy(true);
+      try {
+        const blob = await recorder.stop();
+        const cred = await resolveSpeechCredential(getProviderApiKey);
+        if (!cred) throw new Error("No speech credential available.");
+        const text = await transcribeAudio(blob, { provider: cred.provider, apiKey: cred.apiKey });
+        if (text) {
+          const existing = composer.getState().text;
+          composer.setText(existing ? `${existing.trimEnd()} ${text}` : text);
+        }
+      } catch (error) {
+        console.warn("[keating:stt] transcription failed", error);
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
+    try {
+      recorderRef.current = await startMicRecording();
+      setRecording(true);
+    } catch (error) {
+      console.warn("[keating:stt] microphone unavailable", error);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={busy}
+      title={title}
+      aria-label={title}
+      aria-pressed={recording}
+      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50 sm:h-9 sm:w-9 ${
+        recording ? "animate-pulse border-destructive text-destructive" : ""
+      }`}
+    >
+      {busy ? (
+        <Loader2 size={16} className="animate-spin" />
+      ) : recording ? (
+        <MicOff size={16} />
+      ) : (
+        <Mic size={16} />
+      )}
+    </button>
+  );
+}
+
 function FilePart({
   filename,
   mimeType,
@@ -674,7 +797,10 @@ function ComposerAttachmentChip({
 
 type AuthErrorEntry = { provider: string; error: string };
 
-function authErrorFromAgentMessage(msg: any): AuthErrorEntry | null {
+function authErrorFromAgentMessage(
+  msg: any,
+  fallbackProvider?: string,
+): AuthErrorEntry | null {
   if (msg.role !== "assistant" || msg.stopReason !== "error") return null;
   const errorText = msg.errorMessage ?? "";
   if (!AUTH_ERROR_PATTERNS.test(errorText)) return null;
@@ -683,6 +809,7 @@ function authErrorFromAgentMessage(msg: any): AuthErrorEntry | null {
     msg.provider ??
     msg.model?.provider ??
     msg.model?.split?.("/", 2)?.[0] ??
+    fallbackProvider ??
     "unknown";
   return { provider, error: errorText };
 }
@@ -1809,6 +1936,7 @@ function toAssistantMessage(
   index: number,
   totalMessages: number,
   isRunning: boolean,
+  fallbackProvider?: string,
 ): ThreadMessageLike {
   const msg = message as any;
   const timestamp =
@@ -1868,7 +1996,7 @@ function toAssistantMessage(
       }
     }
 
-    const authError = authErrorFromAgentMessage(msg);
+    const authError = authErrorFromAgentMessage(msg, fallbackProvider);
     return {
       id,
       role: "assistant",
@@ -2298,7 +2426,13 @@ function AssistantThread({
   const totalMessages = messages.length;
   const convertMessage = useCallback(
     (message: AgentMessage, index: number) =>
-      toAssistantMessage(message, index, totalMessages, isRunning),
+      toAssistantMessage(
+        message,
+        index,
+        totalMessages,
+        isRunning,
+        modelRef.current?.provider,
+      ),
     [totalMessages, isRunning],
   );
 
@@ -2717,6 +2851,7 @@ function AssistantThread({
                   >
                     <Paperclip size={15} className="sm:size-4" />
                   </ComposerPrimitive.AddAttachment>
+                  <SpeechMicButton />
                   <ComposerPrimitive.Input
                     className="max-h-40 min-h-8 min-w-0 flex-1 resize-none self-center bg-transparent px-1 py-1.5 text-sm leading-5 text-foreground outline-none placeholder:text-muted-foreground sm:min-h-9 sm:px-1 sm:py-2"
                     placeholder="Message Keating"

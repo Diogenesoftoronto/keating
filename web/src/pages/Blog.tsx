@@ -929,10 +929,10 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
 
         <h3 id="animation-renderer" className="font-bold mt-4 mb-2">Animation Renderer Setting</h3>
         <p className="text-sm mb-4">
-          The generated animation artifacts can now use either Manim-web (the
-          default) or Hyperframes as the renderer. Hyperframes is an optional
-          experimental path for faster canvas-based scene rendering in the
-          browser.
+          The generated animation artifacts can now use either Hyperframes (the
+          default) or Manim-web as the renderer. Hyperframes is the lightweight
+          in-browser path for timed clip compositions, while Manim-web remains
+          available for mathematical scene source.
         </p>
       </>
     ),

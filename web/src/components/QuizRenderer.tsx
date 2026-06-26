@@ -333,6 +333,25 @@ function ReframeToggle({
 	);
 }
 
+function showsBinaryResult(q: QuizQuestion): boolean {
+	return q.type !== "short_answer" && q.type !== "transfer" && q.type !== "fill_in";
+}
+
+function QuizResultBadge({ correct }: { correct: boolean }) {
+	return (
+		<span
+			className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium ${
+				correct
+					? "border-emerald-500/50 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+					: "border-destructive/50 bg-destructive/10 text-destructive"
+			}`}
+		>
+			{correct ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
+			{correct ? "Correct" : "Incorrect"}
+		</span>
+	);
+}
+
 /**
  * Parse a fill-in-the-blank template into text parts and blank positions.
  * Supports ___ and {{blank}} as placeholders.
@@ -463,6 +482,7 @@ function QuestionCard({
 	const credit = questionCredit(q, answer);
 	const correct = isCorrect(q, answer);
 	const wrong = revealed && answer.trim() && !correct;
+	const binaryCorrect = credit >= 1;
 
 	const displayQuestion = useMemo(() => {
 		if (reframeMode && q.reframes?.[reframeMode]) {
@@ -495,7 +515,10 @@ function QuestionCard({
 					[{index + 1}/{q.level.toUpperCase()}]
 				</span>
 				<div className="flex-1 space-y-1">
-					<p className="text-sm font-medium leading-6">{displayQuestion}</p>
+					<div className="flex flex-wrap items-start gap-2">
+						<p className="min-w-0 flex-1 text-sm font-medium leading-6">{displayQuestion}</p>
+						{revealed && showsBinaryResult(q) && <QuizResultBadge correct={binaryCorrect} />}
+					</div>
 					{reframeModes.length > 0 && !revealed && onReframe && (
 						<ReframeToggle
 							modes={reframeModes}
@@ -607,11 +630,13 @@ function QuestionCard({
 					) : (
 						<textarea
 							className={`w-full rounded-md border bg-background px-3 py-2 text-sm outline-none resize-none min-h-[80px] placeholder:text-muted-foreground ${
-								wrong
-									? "border-destructive/60 bg-destructive/5"
-									: correct
-										? "border-emerald-500/60 bg-emerald-500/5"
-										: "border-border"
+								revealed && q.type === "fill_in"
+									? wrong
+										? "border-destructive/60 bg-destructive/5"
+										: correct
+											? "border-emerald-500/60 bg-emerald-500/5"
+											: "border-border"
+									: "border-border"
 							}`}
 							placeholder={q.type === "fill_in" ? "Fill in the blank..." : "Type your answer..."}
 							value={answer}
@@ -696,7 +721,13 @@ function QuestionCard({
 						value={answer}
 						onChange={(e) => onChange(e.target.value)}
 						disabled={revealed}
-						className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+						className={`w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:border-primary ${
+							revealed
+								? correct
+									? "border-emerald-500/60 bg-emerald-500/5"
+									: "border-destructive/60 bg-destructive/5"
+								: "border-border"
+						}`}
 					>
 						<option value="" disabled>
 							Select an answer...

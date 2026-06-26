@@ -124,6 +124,46 @@ export function saveWebSpeechSettings(settings: WebSpeechSettings): void {
 	window.localStorage.setItem(SPEECH_SETTINGS_KEY, JSON.stringify(settings));
 }
 
+export type SpeechCredentialProvider = "openai" | "google";
+
+export interface SpeechCredential {
+	provider: SpeechCredentialProvider;
+	apiKey: string;
+}
+
+/**
+ * Pick the credential used for speech input (STT / realtime). Prefers a genuine
+ * OpenAI key, then Google/Gemini. The OpenAI check uses the "openai" provider
+ * only — that is the real api.openai.com. A custom-base OpenAI-compatible
+ * provider is stored under its own name and is intentionally NOT treated as an
+ * OpenAI speech credential, since the transcription/realtime endpoints are
+ * OpenAI-specific.
+ */
+export async function resolveSpeechCredential(
+	getApiKey: (provider: string) => Promise<string | undefined>,
+): Promise<SpeechCredential | null> {
+	const openai = await getApiKey("openai");
+	if (openai) return { provider: "openai", apiKey: openai };
+	const google = await getApiKey("google");
+	if (google) return { provider: "google", apiKey: google };
+	return null;
+}
+
+const DUPLEX_PROVIDER_IDS = new Set<SpeechProviderId>(["gemini-live", "openai-realtime"]);
+
+export function isDuplexSpeechProvider(id: SpeechProviderId): boolean {
+	return DUPLEX_PROVIDER_IDS.has(id);
+}
+
+/**
+ * Decide whether the prompt mic button should open a live bidirectional session
+ * or do one-shot speech-to-text. Duplex only when speech is enabled and the
+ * active provider is a duplex provider (OpenAI Realtime / Gemini Live).
+ */
+export function speechInputMode(settings: WebSpeechSettings): "duplex" | "stt" {
+	return settings.enabled && isDuplexSpeechProvider(settings.providerId) ? "duplex" : "stt";
+}
+
 let audioContext: AudioContext | null = null;
 let scheduledUntil = 0;
 

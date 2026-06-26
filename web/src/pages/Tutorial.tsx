@@ -421,8 +421,9 @@ export function Tutorial() {
                   </li>
                   <li>
                     <span className="font-medium text-foreground">Animation renderer:</span>{" "}
-                    the format Keating uses for animations — <em>Manim</em> (mathematical, film-style
-                    scenes) or <em>Hyperframes</em> (lightweight in-browser frames).
+                    the format Keating uses for animations — <em>Hyperframes</em> by default
+                    (lightweight in-browser frames) or <em>Manim</em> for mathematical, film-style
+                    scenes.
                   </li>
                   <li>
                     <span className="font-medium text-foreground">Font &amp; profile image:</span>{" "}

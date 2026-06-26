@@ -3,9 +3,6 @@ import {
 	parseStoryboardScenes,
 	__test_buildManimScene,
 	__test_buildHyperframesComposition,
-	__test_buildProcessSvg,
-	__test_buildLocalImageSvg,
-	__test_buildInfographicSvg,
 	__test_parseStoryboardDurationSeconds,
 	__test_storyboardTitle,
 } from "../src/keating/browser-tools";
@@ -94,8 +91,24 @@ describe("buildManimScene from authored storyboard", () => {
 	test("falls back to a minimal scene when storyboard is empty", () => {
 		const resolved = resolveTopic("DNS");
 		const source = __test_buildManimScene(resolved, "");
-		expect(source).toMatch(/class .* extends Scene/);
-		expect(source).toMatch(/FadeIn/);
+		expect(source).toContain("async function construct(scene, M)");
+		expect(source).toContain("new M.FadeIn");
+		expect(source).not.toMatch(/class .* extends Scene/);
+	});
+
+	test("emits construct(scene, M) source that the iframe host can execute", () => {
+		const resolved = resolveTopic("DNS");
+		const storyboard = `# Animation Storyboard: DNS
+
+## Scene 1: Query path (0-2s)
+- **Visual**: A packet moves from browser cache to resolver.
+`;
+		const source = __test_buildManimScene(resolved, storyboard);
+		expect(source).toContain("async function construct(scene, M)");
+		expect(source).toContain("new M.Text");
+		expect(source).toContain("await scene.play");
+		expect(source).not.toContain("extends Scene");
+		expect(source).not.toContain("this.play");
 	});
 });
 
@@ -143,120 +156,6 @@ describe("buildHyperframesComposition from authored storyboard", () => {
 		expect(html).toContain("#clip-0");
 		expect(html).toContain("#clip-2");
 		expect(html).toContain("#clip-5");
-	});
-});
-
-describe("generate_image SVG builders use real authored content", () => {
-	test("process kind emits a numbered box per authored point with arrows in between", () => {
-		const svg = __test_buildProcessSvg({
-			title: "DNS resolution",
-			subtitle: "How a name becomes an IP, step by step",
-			points: [
-				"Browser checks its local DNS cache.",
-				"OS asks the ISP's recursive resolver.",
-				"Resolver queries a root nameserver for .com.",
-				"Resolver queries the .com TLD for the authoritative server.",
-				"Resolver queries the authoritative server and returns the A record.",
-			],
-			labels: ["Cache", "Resolver", "Root", "TLD", "Authoritative"],
-			style: "light",
-		});
-
-		// All 5 authored labels appear in the SVG (one per box).
-		for (const label of ["Cache", "Resolver", "Root", "TLD", "Authoritative"]) {
-			expect(svg).toContain(label);
-		}
-		// All 5 authored points appear as box body text (wrapSvgText may
-		// break long lines, so we check the *content* is in the SVG
-		// somewhere rather than the exact unbroken substring).
-		expect(svg).toContain("Browser checks its local DNS");
-		expect(svg).toContain("cache.");
-		expect(svg).toContain("ISP&#39;s recursive");
-		expect(svg).toContain("resolver.");
-		expect(svg).toContain("root");
-		expect(svg).toContain("nameserver for .com.");
-		expect(svg).toContain("authoritative server");
-		expect(svg).toContain("returns the A record.");
-		// Arrows connect boxes (lines + arrowhead polygons).
-		expect(svg).toContain("data-arrow-key");
-		expect(svg).toMatch(/<polygon [^>]*fill="[^"]+"\/>/);
-	});
-
-	test("process kind wraps to a second row when there are 5+ steps", () => {
-		const svg = __test_buildProcessSvg({
-			title: "Six steps",
-			subtitle: "wrap",
-			points: ["a", "b", "c", "d", "e", "f"],
-			labels: ["A", "B", "C", "D", "E", "F"],
-			style: "light",
-		});
-		// The vertical wrap-around arrow should be present exactly once
-		// (only one row break for 6 steps split into 4 + 2 or 3 + 3).
-		const wraps = svg.match(/data-arrow-key="v-/g) ?? [];
-		expect(wraps.length).toBeGreaterThanOrEqual(1);
-	});
-
-	test("process kind uses the dark palette when requested", () => {
-		const svg = __test_buildProcessSvg({
-			title: "Signal transduction",
-			subtitle: "Receptor to nucleus",
-			points: ["Ligand binds receptor", "G-protein activates", "Cascade amplifies", "Transcription factor enters nucleus"],
-			labels: ["Bind", "Activate", "Amplify", "Transcribe"],
-			style: "dark",
-		});
-		expect(svg).toContain('fill="#101214"');
-		expect(svg).toContain('fill="#f59e0b"');
-	});
-
-	test("infographic kind surfaces each authored point and label inside its card", () => {
-		const svg = __test_buildInfographicSvg({
-			title: "Antibody variants",
-			subtitle: "Sizes and roles",
-			points: [
-				"IgG is the full ~150 kDa Y-shape antibody in serum.",
-				"scFv is a 25 kDa single-chain binding fragment.",
-				"Nanobodies are ~15 kDa single-domain binders from camelids.",
-			],
-			labels: ["IgG", "scFv", "Nanobody"],
-			style: "light",
-		});
-		// Each authored label appears.
-		for (const label of ["IgG", "scFv", "Nanobody"]) {
-			expect(svg).toContain(label);
-		}
-		// Each authored point appears (text may be word-wrapped by
-		// wrapSvgText, so we check the most distinctive substrings).
-		expect(svg).toContain("150 kDa Y-shape");
-		expect(svg).toContain("25 kDa single-chain");
-		expect(svg).toContain("15 kDa");
-		expect(svg).toContain("single-domain");
-	});
-
-	test("buildLocalImageSvg dispatches process to buildProcessSvg", () => {
-		const svg = __test_buildLocalImageSvg({
-			title: "Krebs cycle",
-			subtitle: "Eight steps",
-			points: ["Citrate", "Isocitrate", "Alpha-ketoglutarate", "Succinyl-CoA"],
-			labels: ["1", "2", "3", "4"],
-			style: "light",
-			kind: "process",
-		});
-		expect(svg).toContain("data-arrow-key");
-		expect(svg).toContain("Citrate");
-		expect(svg).toContain("Isocitrate");
-	});
-
-	test("buildLocalImageSvg dispatches comparison to bar layout", () => {
-		const svg = __test_buildLocalImageSvg({
-			title: "Sizes",
-			subtitle: "kDa",
-			points: ["150 kDa IgG", "25 kDa scFv", "15 kDa nanobody"],
-			labels: ["IgG", "scFv", "Nanobody"],
-			style: "light",
-			kind: "comparison",
-		});
-		expect(svg).toContain("150 kDa IgG");
-		expect(svg).toContain("Nanobody");
 	});
 });
 

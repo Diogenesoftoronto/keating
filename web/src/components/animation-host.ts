@@ -38,16 +38,16 @@ export function buildManimSceneHtml(source: string, topic: string): string {
   <script type="module">
     import * as M from "/manim-web/index.js";
 
-    const source = ${JSON.stringify(escapedSource)};
+    const source = ${JSON.stringify(escapedSource)}.replace(/\\bexport\\s+(?=async\\s+function\\s+construct\\b)/, "");
 
     // The model writes an async function construct(scene, M) { ... }.
-    // We support either: (a) a top-level construct declaration, or
-    // (b) the whole body is a sequence of statements ending in construct(...).
     let construct;
     try {
-      const wrapped = \`return (async () => { \${source} \n; if (typeof construct === "function") return construct; throw new Error("No construct() function was defined."); })()\`;
       // eslint-disable-next-line no-new-func
-      construct = new Function("M", \`return (async () => { \${source} \n; if (typeof construct === "function") return construct; throw new Error("No construct() function was defined."); })()\`)(M);
+      construct = await new Function("M", \`return (async () => { \${source} \n; if (typeof construct === "function") return construct; throw new Error("No construct() function was defined."); })()\`)(M);
+      if (typeof construct !== "function") {
+        throw new Error("construct is not a function.");
+      }
     } catch (e) {
       renderError(String(e?.stack ?? e));
       throw e;

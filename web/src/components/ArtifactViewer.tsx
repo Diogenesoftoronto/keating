@@ -2,9 +2,11 @@ import { useState, useEffect, useMemo } from "react";
 import {
 	BookOpen,
 	ChevronRight,
+	Download,
 	Eye,
 	EyeOff,
 	GitBranch,
+	Layers,
 	Map as MapIcon,
 	MessageSquare,
 	PanelRightClose,
@@ -16,9 +18,11 @@ import {
 } from "lucide-react";
 import { MermaidRenderer } from "./MermaidRenderer";
 import { AnimationPlayer } from "./AnimationPlayer";
+import { FlashcardRenderer } from "./FlashcardRenderer";
 import { MarkdownBlock } from "./MarkdownBlock";
 import { sanitizeSvg } from "../lib/sanitize-svg";
-import { KeatingStorage, type LessonPlan, type LessonMap, type Animation, type BenchmarkResult, type EvolutionResult, type Verification, type PromptEvolutionResult, type ImprovementAttemptRecord } from "../keating/storage";
+import { downloadTextFile } from "../lib/browser-download";
+import { KeatingStorage, type LessonPlan, type LessonMap, type Animation, type BenchmarkResult, type EvolutionResult, type Verification, type PromptEvolutionResult, type ImprovementAttemptRecord, type FlashcardDeck } from "../keating/storage";
 import { sessions, getInitPromise } from "../hooks/keating-storage";
 import type { SessionMetadata } from "../types/session";
 
@@ -28,7 +32,7 @@ interface ArtifactViewerProps {
 	onClose?: () => void;
 }
 
-type ArtifactType = "plan" | "map" | "animation" | "benchmark" | "evolution" | "verification" | "prompt-evolution" | "improvement";
+type ArtifactType = "plan" | "map" | "animation" | "deck" | "benchmark" | "evolution" | "verification" | "prompt-evolution" | "improvement";
 
 type ArtifactAudience = "user" | "agent";
 
@@ -40,6 +44,7 @@ const AUDIENCE_MAP: Record<ArtifactType, ArtifactAudience> = {
 	plan: "user",
 	map: "user",
 	animation: "user",
+	deck: "user",
 	verification: "user",
 	benchmark: "agent",
 	evolution: "agent",
@@ -51,6 +56,7 @@ const TYPE_META: Record<ArtifactType, { label: string; icon: React.ReactNode }> 
 	plan: { label: "Lesson Plan", icon: <BookOpen size={14} /> },
 	map: { label: "Concept Map", icon: <MapIcon size={14} /> },
 	animation: { label: "Animation", icon: <Play size={14} /> },
+	deck: { label: "Flashcards", icon: <Layers size={14} /> },
 	verification: { label: "Verification", icon: <ChevronRight size={14} /> },
 	benchmark: { label: "Benchmark", icon: <Sparkles size={14} /> },
 	evolution: { label: "Evolution", icon: <Settings2 size={14} /> },
@@ -112,6 +118,8 @@ function artifactPreviewText(artifact: Artifact): string {
 			return data?.mmdContent ? `${String(data.mmdContent).split("\n").length} nodes` : "Concept map";
 		case "animation":
 			return "Storyboard + scene";
+		case "deck":
+			return `${(data as unknown as FlashcardDeck).cards.length} cards`;
 		case "benchmark":
 			return `Score: ${(data as unknown as BenchmarkResult).score.toFixed(1)}/100`;
 		case "evolution":
@@ -127,6 +135,81 @@ function artifactPreviewText(artifact: Artifact): string {
 	}
 }
 
+function slugPart(value: string): string {
+	const slug = value
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, "-")
+		.replace(/^-+|-+$/g, "")
+		.slice(0, 64);
+	return slug || "artifact";
+}
+
+function artifactDownload(artifact: Artifact): { filename: string; content: string; type: string } {
+	const stem = `keating-${artifact.type}-${slugPart(artifact.label)}`;
+	switch (artifact.type) {
+		case "plan":
+			return { filename: `${stem}.md`, content: (artifact.data as LessonPlan).content, type: "text/markdown;charset=utf-8" };
+		case "map": {
+			const map = artifact.data as LessonMap;
+			return {
+				filename: `${stem}.${map.svgContent ? "svg" : "mmd"}`,
+				content: map.svgContent ?? map.mmdContent,
+				type: map.svgContent ? "image/svg+xml;charset=utf-8" : "text/plain;charset=utf-8",
+			};
+		}
+		case "animation": {
+			const animation = artifact.data as Animation;
+			return {
+				filename: `${stem}.json`,
+				content: `${JSON.stringify({
+					topic: animation.topic,
+					storyboard: animation.storyboard,
+					scene: animation.scene,
+					manifest: safeJsonParse(animation.manifest),
+					renderer: animation.renderer,
+					createdAt: animation.createdAt,
+				}, null, 2)}\n`,
+				type: "application/json;charset=utf-8",
+			};
+		}
+		case "deck":
+			return { filename: `${stem}.json`, content: `${JSON.stringify(artifact.data, null, 2)}\n`, type: "application/json;charset=utf-8" };
+		case "benchmark":
+			return { filename: `${stem}.md`, content: (artifact.data as BenchmarkResult).report, type: "text/markdown;charset=utf-8" };
+		case "evolution":
+			return { filename: `${stem}.md`, content: (artifact.data as EvolutionResult).report, type: "text/markdown;charset=utf-8" };
+		case "verification":
+			return { filename: `${stem}.md`, content: (artifact.data as Verification).checklist, type: "text/markdown;charset=utf-8" };
+		case "prompt-evolution":
+			return { filename: `${stem}.md`, content: (artifact.data as PromptEvolutionResult).report, type: "text/markdown;charset=utf-8" };
+		case "improvement":
+			return { filename: `${stem}.md`, content: improvementMarkdown(artifact.data as ImprovementAttemptRecord), type: "text/markdown;charset=utf-8" };
+	}
+}
+
+function safeJsonParse(value: string): unknown {
+	try {
+		return JSON.parse(value);
+	} catch {
+		return value;
+	}
+}
+
+function improvementMarkdown(improvement: ImprovementAttemptRecord): string {
+	return `# Improvement Attempt
+
+- Proposal: ${improvement.proposalId}
+- Baseline: ${improvement.baselineScore.toFixed(2)}
+- After: ${improvement.afterScore === null ? "not measured" : improvement.afterScore.toFixed(2)}
+- Delta: ${improvement.scoreDelta === null ? "not measured" : improvement.scoreDelta.toFixed(2)}
+- Status: ${improvement.accepted ? "accepted" : "rejected"}
+- Targets: ${improvement.targets}
+
+## Hypothesis
+${improvement.hypothesis}
+`;
+}
+
 export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerProps) {
 	const [artifacts, setArtifacts] = useState<Artifact[]>([]);
 	const [selected, setSelected] = useState<Artifact | null>(null);
@@ -140,10 +223,11 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 		async function loadArtifacts() {
 			setLoading(true);
 			try {
-				const [plans, maps, animations, benchmarks, evolutions, verifications, promptEvolutions, improvements] = await Promise.all([
+				const [plans, maps, animations, decks, benchmarks, evolutions, verifications, promptEvolutions, improvements] = await Promise.all([
 					storage.getLessonPlans(),
 					storage.getLessonMaps(),
 					storage.getAnimations(),
+					storage.getDecks(),
 					storage.getBenchmarks(),
 					storage.getEvolutions(),
 					storage.getVerifications(),
@@ -155,6 +239,7 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 					...plans.map((p) => ({ id: p.id, type: "plan" as const, label: p.topic, createdAt: p.createdAt, sessionId: p.sessionId, data: p })),
 					...maps.map((m) => ({ id: m.id, type: "map" as const, label: m.topic, createdAt: m.createdAt, sessionId: m.sessionId, data: m })),
 					...animations.map((a) => ({ id: a.id, type: "animation" as const, label: a.topic, createdAt: a.createdAt, sessionId: a.sessionId, data: a })),
+					...decks.map((d) => ({ id: d.id, type: "deck" as const, label: d.title, createdAt: d.updatedAt, sessionId: d.sessionId, data: d })),
 					...benchmarks.map((b) => ({ id: b.id, type: "benchmark" as const, label: b.topic || "general", createdAt: b.createdAt, sessionId: b.sessionId, data: b })),
 					...evolutions.map((e) => ({ id: e.id, type: "evolution" as const, label: e.topic || "general", createdAt: e.createdAt, sessionId: e.sessionId, data: e })),
 					...verifications.map((v) => ({ id: v.id, type: "verification" as const, label: v.topic, createdAt: v.createdAt, sessionId: v.sessionId, data: v })),
@@ -245,6 +330,26 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 		writeShowAgent(next);
 	};
 
+	const downloadSelected = (artifact: Artifact) => {
+		const file = artifactDownload(artifact);
+		downloadTextFile(file.filename, file.content, file.type);
+	};
+
+	const downloadVisibleArtifacts = () => {
+		downloadTextFile(
+			"keating-visible-artifacts.json",
+			`${JSON.stringify(filteredArtifacts.map((artifact) => ({
+				id: artifact.id,
+				type: artifact.type,
+				label: artifact.label,
+				createdAt: artifact.createdAt,
+				sessionId: artifact.sessionId,
+				data: artifact.data,
+			})), null, 2)}\n`,
+			"application/json;charset=utf-8",
+		);
+	};
+
 	if (loading) {
 		return (
 			<div className="p-8 text-center text-muted-foreground">
@@ -257,9 +362,19 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 		return (
 			<div className="artifact-detail text-foreground">
 				<div className="mb-4 pb-2 border-b border-border">
-					<button onClick={() => setSelected(null)} className="text-sm text-muted-foreground hover:underline">
-						← Back to list
-					</button>
+					<div className="flex items-center justify-between gap-3">
+						<button onClick={() => setSelected(null)} className="text-sm text-muted-foreground hover:underline">
+							← Back to list
+						</button>
+						<button
+							type="button"
+							onClick={() => downloadSelected(selected)}
+							className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+						>
+							<Download size={14} />
+							Download
+						</button>
+					</div>
 					<h2 className="text-lg font-semibold mt-1 text-foreground truncate">{selected.label}</h2>
 					<div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
 						<span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-muted">
@@ -276,6 +391,7 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 					{selected.type === "plan" && <PlanViewer plan={selected.data as LessonPlan} />}
 					{selected.type === "map" && <MapView map={selected.data as LessonMap} />}
 					{selected.type === "animation" && <AnimationViewer animation={selected.data as Animation} />}
+					{selected.type === "deck" && <DeckViewer deck={selected.data as FlashcardDeck} />}
 					{selected.type === "benchmark" && <BenchmarkViewer benchmark={selected.data as BenchmarkResult} />}
 					{selected.type === "evolution" && <EvolutionViewer evolution={selected.data as EvolutionResult} />}
 					{selected.type === "verification" && <VerificationViewer data={selected.data} />}
@@ -329,6 +445,16 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 							>
 								{showAgentArtifacts ? <Eye size={13} /> : <EyeOff size={13} />}
 								{showAgentArtifacts ? `Hide ${agentArtifactCount} agent` : `Show ${agentArtifactCount} agent`}
+							</button>
+						)}
+						{filteredArtifacts.length > 0 && (
+							<button
+								type="button"
+								onClick={downloadVisibleArtifacts}
+								title="Download visible artifacts"
+								className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+							>
+								<Download size={15} />
 							</button>
 						)}
 					</div>
@@ -516,7 +642,19 @@ function MapView({ map }: { map: LessonMap }) {
 
 function AnimationViewer({ animation }: { animation: Animation }) {
 	return (
-		<AnimationPlayer storyboard={animation.storyboard} scene={animation.scene} manifest={animation.manifest} />
+		<AnimationPlayer storyboard={animation.storyboard} scene={animation.scene} manifest={animation.manifest} renderer={animation.renderer} />
+	);
+}
+
+function DeckViewer({ deck }: { deck: FlashcardDeck }) {
+	return (
+		<div className="space-y-4">
+			<div className="rounded-lg border border-border bg-muted/20 p-3">
+				<p className="text-sm font-medium text-foreground">{deck.cards.length} flashcards</p>
+				{deck.description && <p className="text-xs text-muted-foreground">{deck.description}</p>}
+			</div>
+			<FlashcardRenderer deck={deck} />
+		</div>
 	);
 }
 
@@ -573,18 +711,7 @@ function PromptEvolutionViewer({ promptEvolution }: { promptEvolution: PromptEvo
 }
 
 function ImprovementViewer({ improvement }: { improvement: ImprovementAttemptRecord }) {
-	const content = `# Improvement Attempt
-
-- Proposal: ${improvement.proposalId}
-- Baseline: ${improvement.baselineScore.toFixed(2)}
-- After: ${improvement.afterScore === null ? "not measured" : improvement.afterScore.toFixed(2)}
-- Delta: ${improvement.scoreDelta === null ? "not measured" : improvement.scoreDelta.toFixed(2)}
-- Status: ${improvement.accepted ? "accepted" : "rejected"}
-- Targets: ${improvement.targets}
-
-## Hypothesis
-${improvement.hypothesis}`;
-	return <ArtifactMarkdownViewer content={content} />;
+	return <ArtifactMarkdownViewer content={improvementMarkdown(improvement)} />;
 }
 
 function VerificationViewer({ data }: { data: unknown }) {

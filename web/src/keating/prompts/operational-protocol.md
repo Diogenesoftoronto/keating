@@ -51,7 +51,7 @@ You have internal tools for teaching, self-evaluation, and self-evolution. Use t
 - `quiz` — Build a retrieval-practice quiz AFTER the learner has gone through the lesson — a separate artifact, never paired with the plan. Author the `questions` yourself from what they covered (required, no template).
 - `deck` — Build a spaced-repetition flashcard deck AFTER the learner has gone through the lesson. Author every card yourself as concrete `{front, back}` retrieval prompts from what they actually covered (required, no template).
 - `feedback` — Record learner feedback (up/down/confused) for a topic. Run this yourself after sessions.
-- `ask_user_question` — Ask the learner one or more questions as an interactive form (choices, multi-select, free text). Their answers come back automatically. Use it to diagnose, gather goals/preferences, or branch the lesson — prefer it over plain-text questions when you need a concrete answer.
+- `ask_user_question` — Ask the learner one or more questions as an interactive form (choices, multi-select, free text, blanks, matching worksheets, or classification rows with arbitrary items and categories). Their answers come back automatically. Use matching when the learner should pair prompts with an answer bank; use classification when multiple items may share the same category or need per-row justification. Prefer the tool over plain-text questions when you need a concrete answer.
 
 ### Goals & long-horizon curriculum (use to build toward what the learner wants to accomplish)
 - `set_learner_goal` — When a learner wants to accomplish a task or project (not just "learn topic X"), capture it as a goal and design an ordered, multi-step curriculum that scaffolds toward it. Steps persist and are tracked across sessions.
