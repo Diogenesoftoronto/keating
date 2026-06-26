@@ -7,6 +7,8 @@ export interface OAuthCredentials {
 	access: string;
 	expires: number;
 	provider: OAuthProviderId;
+	apiKey?: string;
+	idToken?: string;
 }
 
 interface OAuthProviderConfig {
@@ -26,9 +28,9 @@ const OAUTH_PROVIDERS: Record<OAuthProviderId, OAuthProviderConfig> = {
 		id: "anthropic",
 		name: "Anthropic",
 		clientId: "9d1c250a-e61b-44d9-88ed-5944d1962f5e",
-		authorizeUrl: "https://claude.ai/oauth/authorize",
+		authorizeUrl: "https://platform.claude.com/oauth/authorize",
 		tokenUrl: "https://platform.claude.com/v1/oauth/token",
-		redirectUri: "http://localhost:53692/callback",
+		redirectUri: "https://platform.claude.com/oauth/code/callback",
 		scopes: [
 			"org:create_api_key",
 			"user:profile",
@@ -160,10 +162,6 @@ export function initiateOAuth(providerId: OAuthProviderId): void {
 			state,
 		});
 
-		if (providerId === "anthropic") {
-			params.set("code", "true");
-		}
-
 		if (config.extraAuthParams) {
 			for (const [key, value] of Object.entries(config.extraAuthParams)) {
 				params.set(key, value);
@@ -279,6 +277,8 @@ export async function handleOAuthCallback(code: string, state?: string | null): 
 			access: tokens.access_token,
 			expires: Date.now() + (tokens.expires_in ?? 3600) * 1000,
 			provider: pending.provider,
+			apiKey: typeof tokens.api_key === "string" ? tokens.api_key : undefined,
+			idToken: typeof tokens.id_token === "string" ? tokens.id_token : undefined,
 		};
 
 		await saveOAuthCredentials(credentials);
@@ -334,10 +334,10 @@ export async function getOAuthAccessToken(provider: OAuthProviderId): Promise<st
 	if (Date.now() >= credentials.expires - 60_000) {
 		const refreshed = await refreshOAuthToken(provider, credentials);
 		if (!refreshed) return null;
-		return refreshed.access;
+		return refreshed.apiKey ?? refreshed.access;
 	}
 
-	return credentials.access;
+	return credentials.apiKey ?? credentials.access;
 }
 
 async function refreshOAuthToken(
@@ -368,6 +368,8 @@ async function refreshOAuthToken(
 			access: tokens.access_token,
 			expires: Date.now() + (tokens.expires_in ?? 3600) * 1000,
 			provider,
+			apiKey: typeof tokens.api_key === "string" ? tokens.api_key : credentials.apiKey,
+			idToken: typeof tokens.id_token === "string" ? tokens.id_token : credentials.idToken,
 		};
 
 		await saveOAuthCredentials(newCredentials);
@@ -383,6 +385,7 @@ export function isOAuthProvider(providerName: string): providerName is OAuthProv
 
 export function providerToOAuthId(providerName: string): OAuthProviderId | null {
 	if (providerName === "anthropic") return "anthropic";
+	if (providerName === "openai") return "openai-codex";
 	if (providerName === "openai-codex") return "openai-codex";
 	if (providerName === "google") return "google-gemini-cli";
 	return null;

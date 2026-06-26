@@ -1,5 +1,6 @@
 import { defineEventHandler, readBody, createError } from "h3";
 import { getOAuthServerConfigs, type OAuthServerProviderId } from "./config";
+import { exchangeOpenAiCodexApiKey } from "./openai-codex";
 
 interface TokenRequestBody {
 	provider: string;
@@ -45,11 +46,10 @@ export default defineEventHandler(async (event) => {
 	}
 
 	try {
-		const isJsonTokenProvider = body.provider === "anthropic";
 		const response = await fetch(config.tokenUrl, {
 			method: "POST",
-			headers: { "Content-Type": isJsonTokenProvider ? "application/json" : "application/x-www-form-urlencoded" },
-			body: isJsonTokenProvider ? JSON.stringify(tokenParams) : new URLSearchParams(tokenParams).toString(),
+			headers: { "Content-Type": "application/x-www-form-urlencoded" },
+			body: new URLSearchParams(tokenParams).toString(),
 		});
 
 		if (!response.ok) {
@@ -62,6 +62,9 @@ export default defineEventHandler(async (event) => {
 		}
 
 		const tokenData = await response.json();
+		if (body.provider === "openai-codex" && typeof tokenData.id_token === "string") {
+			tokenData.api_key = await exchangeOpenAiCodexApiKey(config.clientId, tokenData.id_token, config.clientSecret, "token");
+		}
 		return tokenData;
 	} catch (error) {
 		if ((error as any).statusCode) throw error;
