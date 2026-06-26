@@ -58,6 +58,70 @@ function majorMinor(version: string): string {
 
 const POSTS: Post[] = [
   {
+    date: "2026-06-26",
+    badge: { label: "UPDATE", color: "update" },
+    title: "Provider Auth Recovery, Voice Defaults, and Release Guardrails",
+    summary:
+      "Keating now recovers more cleanly when provider credentials are missing, the voice path has saner defaults, provider-aware web search behavior is less surprising, and the dev shell finally carries versioning and hook guardrails instead of relying on memory.",
+    sections: [
+      { id: "provider-auth-recovery", title: "Provider Auth Recovery" },
+      { id: "voice-defaults", title: "Voice Defaults" },
+      { id: "provider-aware-search", title: "Provider-Aware Search" },
+      { id: "release-guardrails", title: "Release Guardrails" },
+    ],
+    body: (
+      <>
+        <p className="mb-4 leading-6">
+          This update is about making Keating less brittle around the edges. The
+          teaching engine did not change direction, but the setup path, speech
+          path, and provider defaults were tightened so the product behaves more
+          predictably when credentials are missing or a provider has special
+          capabilities.
+        </p>
+
+        <h3 id="provider-auth-recovery" className="font-bold mt-4 mb-2">Provider Auth Recovery</h3>
+        <p className="text-sm mb-4">
+          Recent CLI, runtime, and settings work makes provider credential
+          resolution fail earlier and explain itself more clearly. That matters
+          because setup friction is not a cosmetic problem for a tutoring tool:
+          if the shell or web app quietly starts with unusable credentials, the
+          learner experiences the failure as product instability. The goal here
+          is straightforward: missing auth should be explicit, recoverable, and
+          consistent across surfaces.
+        </p>
+
+        <h3 id="voice-defaults" className="font-bold mt-4 mb-2">Voice Defaults</h3>
+        <p className="text-sm mb-4">
+          The voice stack also got a correctness pass. Keating now does a better
+          job of choosing sane defaults for speech providers and avoiding the
+          feeling that voice is available in principle but misconfigured in
+          practice. That keeps speech as an optional enhancement instead of a
+          source of confusing half-on states.
+        </p>
+
+        <h3 id="provider-aware-search" className="font-bold mt-4 mb-2">Provider-Aware Search</h3>
+        <p className="text-sm mb-4">
+          Provider-specific web search and grounding defaults were cleaned up so
+          the browser side is less surprising. The important part is not a new
+          toggle; it is that the toggle now follows provider capability more
+          closely, which makes searches and grounded responses easier to reason
+          about when switching models.
+        </p>
+
+        <h3 id="release-guardrails" className="font-bold mt-4 mb-2">Release Guardrails</h3>
+        <p className="text-sm mb-4">
+          The repo now also has a proper <Code>devenv.nix</Code> path for release
+          hygiene. It exposes <Code>bumpy</Code> when the current nixpkgs revision
+          provides it, adds a small <Code>bump-version</Code> helper that runs{" "}
+          <Code>just sync-version</Code> afterwards, and wires repo-local git
+          hooks so version drift is checked before commit while root and web
+          tests run before push. Keating already had the right tasks; now the dev
+          shell actually helps enforce them.
+        </p>
+      </>
+    ),
+  },
+  {
     date: "2026-06-10",
     badge: { label: "RELEASE", color: "release" },
     title: "v1.3.0 - An Interactive Hero, Readable Chat, and a Wider Polish Pass",
