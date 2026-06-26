@@ -47,6 +47,9 @@ export default defineNitroConfig({
       maxAge: 60 * 60 * 24 * 365, // 1 year for hashed assets
     },
   ],
+  // Bundle the OG renderer's font + resvg wasm so they are readable at runtime
+  // via useStorage("assets:server") (see server/utils/og-render.ts).
+  serverAssets: [{ baseName: "server", dir: "server/assets" }],
   handlers: [
     {
       route: "/api/chat-proxy/**",
@@ -95,6 +98,17 @@ export default defineNitroConfig({
     {
       route: "/api/dio/openai/**",
       handler: "server/api/dio/openai/[...path].ts",
+    },
+    {
+      // Per-share OpenGraph image (no .png suffix — a `.png` route would be
+      // shadowed by the fallthrough:false static rule above).
+      route: "/api/og/**",
+      handler: "server/api/og/[...id].ts",
+    },
+    {
+      // Share pages: serve the SPA shell with per-share OG/Twitter meta.
+      route: "/s/**",
+      handler: "server/routes/s/[...path].ts",
     },
   ],
 });

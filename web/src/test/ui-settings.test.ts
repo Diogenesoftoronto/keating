@@ -59,7 +59,7 @@ describe("Keating UI Settings", () => {
 			expect(settings.hiddenProviders).toEqual([]);
 			expect(settings.recentModels).toEqual([]);
 			expect(settings.customModels).toEqual([]);
-			expect(settings.animationRenderer).toBe("manim");
+			expect(settings.animationRenderer).toBe("hyperframes");
 			expect(settings.alternativeResponseChance).toBe(0.05);
 		});
 

@@ -609,7 +609,7 @@ export class KeatingStorage {
 		storyboard: string,
 		scene: string,
 		manifest: string,
-		renderer: "manim" | "hyperframes" = "manim",
+		renderer: "manim" | "hyperframes" = "hyperframes",
 	): Promise<Animation> {
 		const animation: Animation = {
 			id: this.generateId(),

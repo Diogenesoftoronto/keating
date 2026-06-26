@@ -436,7 +436,20 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       },
       onAuthError: async (provider: string) => {
         if (provider === "browser") return false;
-        return promptKeatingApiKey(provider, { force: true });
+        const ok = await promptKeatingApiKey(provider, { force: true });
+        if (!ok) return false;
+        // Key re-entered — actually recover by retrying the failed turn:
+        // drop the trailing errored assistant message and resume generation
+        // from the last user message.
+        const messages = agent.state.messages;
+        const last = messages[messages.length - 1] as any;
+        if (last && last.role === "assistant" && last.stopReason === "error") {
+          agent.state.messages = messages.slice(0, -1);
+        }
+        agent.continue().catch((error) => {
+          console.error("Keating retry after API key re-entry failed:", error);
+        });
+        return true;
       },
       onBeforeSend: () => {
         if (import.meta.env.DEV) {

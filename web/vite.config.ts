@@ -428,6 +428,13 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
+        // Never substitute the precached SPA shell for share routes, API
+        // routes, or hashed assets. A stale service worker serving the old
+        // index.html for /s/:id caused "module script … MIME type text/html"
+        // (the shell referenced an asset hash the new server no longer has).
+        // Share/API routes must reach the server (also required for the
+        // server-rendered OpenGraph meta on /s/:id).
+        navigateFallbackDenylist: [/^\/s\//, /^\/api\//, /^\/assets\//],
         // vite-plugin-pwa FAILS the build if a precached file exceeds this
         // limit (it does not silently skip), so it must stay above the largest
         // emitted chunk. sandbox-export is currently ~4.3MB; we round up to

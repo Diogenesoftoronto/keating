@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Pause, Play, RotateCcw } from "lucide-react";
 import { SceneRenderer, parseStoryboard } from "./SceneRenderer";
+import { buildManimSceneHtml } from "./animation-host";
 
 interface AnimationPlayerProps {
 	scene?: string;
 	manifest?: string;
 	storyboard?: string;
+	renderer?: "manim" | "hyperframes";
 	className?: string;
 }
 
@@ -13,6 +15,7 @@ interface Manifest {
 	topic: string;
 	slug: string;
 	renderer?: "manim" | "hyperframes";
+	kind?: "manim" | "hyperframes";
 	compositionId?: string;
 	width?: number;
 	height?: number;
@@ -198,7 +201,7 @@ function AnimatedStoryboardStage({
 	);
 }
 
-export function AnimationPlayer({ scene, manifest, storyboard, className }: AnimationPlayerProps) {
+export function AnimationPlayer({ scene, manifest, storyboard, renderer: storedRenderer, className }: AnimationPlayerProps) {
 	const [showSource, setShowSource] = useState(false);
 
 	// Parse manifest
@@ -212,7 +215,9 @@ export function AnimationPlayer({ scene, manifest, storyboard, className }: Anim
 	}
 
 	const storyboardData = storyboard ? parseStoryboard(storyboard) : null;
-	const isHyperframes = manifestData?.renderer === "hyperframes";
+	const renderer = manifestData?.renderer ?? manifestData?.kind ?? storedRenderer;
+	const isHyperframes = renderer === "hyperframes";
+	const isManim = renderer === "manim";
 
 	return (
 		<div className={`animation-player bg-muted/20 rounded-lg overflow-hidden ${className ?? ""}`}>
@@ -242,6 +247,23 @@ export function AnimationPlayer({ scene, manifest, storyboard, className }: Anim
 						sandbox="allow-scripts"
 						className="aspect-video w-full rounded-md border border-border bg-black"
 					/>
+				) : isManim && scene ? (
+					<div className="space-y-3">
+						<iframe
+							title={`${manifestData?.topic ?? "Keating"} manim animation`}
+							srcDoc={buildManimSceneHtml(scene, manifestData?.topic ?? "Keating Animation")}
+							sandbox="allow-scripts"
+							className="aspect-video w-full rounded-md border border-border bg-black"
+						/>
+						{storyboardData?.scenes.length ? (
+							<details className="rounded-md border border-border bg-background/70 p-3">
+								<summary className="cursor-pointer text-xs font-medium text-muted-foreground">
+									Storyboard notes
+								</summary>
+								<SceneRenderer storyboard={storyboard ?? ""} />
+							</details>
+						) : null}
+					</div>
 				) : storyboardData?.scenes.length ? (
 					<div className="space-y-3">
 						<AnimatedStoryboardStage
@@ -295,7 +317,7 @@ export function AnimationPlayer({ scene, manifest, storyboard, className }: Anim
 				<div className="px-4 py-2 bg-muted/30 border-t border-border text-xs text-muted-foreground">
 					<span className="mr-4">Duration: {manifestData.duration ?? 0}s</span>
 					<span>Scenes: {Array.isArray(manifestData.scenes) ? manifestData.scenes.length : 0}</span>
-					{manifestData.renderer && <span className="ml-4">Renderer: {manifestData.renderer}</span>}
+					{renderer && <span className="ml-4">Renderer: {renderer}</span>}
 				</div>
 			)}
 

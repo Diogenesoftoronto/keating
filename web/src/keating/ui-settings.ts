@@ -1,3 +1,5 @@
+import { DEFAULT_IMAGE_GENERATOR_ID, isImageGeneratorId, type ImageGeneratorId } from "../lib/image-generators";
+
 export type ReasoningLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
 export type AnimationRenderer = "manim" | "hyperframes";
 export type UiFontFamily = "roboto" | "space-mono" | "jetbrains-mono";
@@ -28,6 +30,11 @@ export interface KeatingUiSettings {
 	hiddenProviders: string[];
 	recentModels: Array<{ key: string; timestamp: number }>;
 	customModels: SavedModel[];
+	imageGenerator: ImageGeneratorId;
+	imageModel: string;
+	imageSize: string;
+	imageQuality: string;
+	localImageBaseUrl: string;
 }
 
 export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
@@ -36,7 +43,7 @@ export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
 	showRawErrors: false,
 	googleGrounding: "auto",
 	reasoningLevel: "medium",
-	animationRenderer: "manim",
+	animationRenderer: "hyperframes",
 	fontFamily: "jetbrains-mono",
 	shareLinkMode: "portable-short",
 	alternativeResponseChance: 0.05,
@@ -44,6 +51,11 @@ export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
 	hiddenProviders: [],
 	recentModels: [],
 	customModels: [],
+	imageGenerator: DEFAULT_IMAGE_GENERATOR_ID,
+	imageModel: "",
+	imageSize: "",
+	imageQuality: "",
+	localImageBaseUrl: "",
 };
 
 type FontStack = {
@@ -147,6 +159,11 @@ function normalizeSettings(value: Partial<KeatingUiSettings> | null): KeatingUiS
 		hiddenProviders: Array.isArray(value?.hiddenProviders) ? value.hiddenProviders : DEFAULT_UI_SETTINGS.hiddenProviders,
 		recentModels: Array.isArray(value?.recentModels) ? value.recentModels : DEFAULT_UI_SETTINGS.recentModels,
 		customModels: Array.isArray(value?.customModels) ? value.customModels : DEFAULT_UI_SETTINGS.customModels,
+		imageGenerator: isImageGeneratorId(value?.imageGenerator) ? value.imageGenerator : DEFAULT_UI_SETTINGS.imageGenerator,
+		imageModel: typeof value?.imageModel === "string" ? value.imageModel : DEFAULT_UI_SETTINGS.imageModel,
+		imageSize: typeof value?.imageSize === "string" ? value.imageSize : DEFAULT_UI_SETTINGS.imageSize,
+		imageQuality: typeof value?.imageQuality === "string" ? value.imageQuality : DEFAULT_UI_SETTINGS.imageQuality,
+		localImageBaseUrl: typeof value?.localImageBaseUrl === "string" ? value.localImageBaseUrl : DEFAULT_UI_SETTINGS.localImageBaseUrl,
 	};
 }
 
