@@ -4,6 +4,7 @@ import { getProviders } from "@earendil-works/pi-ai/compat";
 import { getAppStorage } from "@earendil-works/pi-web-ui";
 import {
 	loadKeatingUiSettings,
+	saveKeatingUiSettings,
 	toggleProviderVisibility,
 	addCustomModel,
 	removeCustomModel,
@@ -266,6 +267,7 @@ export function ProvidersModelsTab() {
 			<SettingsSectionNav
 				sections={[
 					{ id: "cloud-providers", label: "Cloud" },
+					{ id: "web-search", label: "Web Search" },
 					{ id: "provider-visibility", label: "Visibility" },
 					{ id: "my-models", label: "My Models" },
 					{ id: "custom-providers", label: "Custom Providers" },
@@ -283,6 +285,32 @@ export function ProvidersModelsTab() {
 				<div className="flex flex-col gap-3">
 					<OAuthProviderKeys
 						providers={providers.filter((p) => !settings.hiddenProviders.includes(p))}
+					/>
+				</div>
+			</div>
+
+			<div className="border-t border-border" />
+
+			<div id="settings-section-web-search" className="flex flex-col gap-4 scroll-mt-20">
+				<div>
+					<h3 className="text-sm font-semibold text-foreground mb-2">Web Search</h3>
+					<p className="text-sm text-muted-foreground">
+						Let keyed chats use each provider's own web search: Google Search grounding on Gemini, the hosted <code>web_search</code> tool on OpenAI Responses models, and Anthropic's server-side <code>web_search</code> on Claude. Applies automatically when the active model and key support it.
+					</p>
+				</div>
+				<div className="flex items-center justify-between gap-4 rounded-lg border border-border p-3">
+					<div>
+						<div className="text-sm font-medium text-foreground">Provider-native web search</div>
+						<div className="text-xs text-muted-foreground">Enables OpenAI and Anthropic web search. Gemini grounding has its own toggle in Interface settings.</div>
+					</div>
+					<Toggle
+						tone="success"
+						checked={settings.webSearch === "auto"}
+						onChange={(checked) => {
+							const next = { ...settings, webSearch: checked ? "auto" as const : "off" as const };
+							saveKeatingUiSettings(next);
+							setSettings(next);
+						}}
 					/>
 				</div>
 			</div>

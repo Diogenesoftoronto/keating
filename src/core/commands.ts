@@ -24,6 +24,8 @@ export const extensionCommandSpecs: CommandSpec[] = [
 	{ name: "edit",         args: "<file> [--backup-dir=DIR]", section: "Self-Improvement", description: "Apply a search/replace edit to a source file. Reads search/replace from stdin or prompts interactively." },
 	{ name: "export",       args: "--finetune [options]", section: "Export", description: "Export Keating data for fine-tuning or downstream workflows.", cliOnly: true },
 	{ name: "feedback",     args: "<up|down|confused> [topic] [--comment=text]", section: "Session",   description: "Record session feedback with optional comment." },
+	{ name: "setup",        args: "",               section: "Session",       description: "Configure Keating provider/model defaults inside the TUI." },
+	{ name: "packages",     args: "[list|add <source>|remove <source>|recommended]", section: "Session", description: "Manage extra Pi packages loaded by Keating." },
 	{ name: "timeline",     args: "",               section: "Review",        description: "Show engagement timeline for all topics." },
 	{ name: "learner-state",args: "",               section: "Review",        description: "Show learner profile and session history." },
 	{ name: "due",          args: "",               section: "Review",        description: "Show topics due for spaced-review." },
@@ -38,6 +40,7 @@ export const cliCommandSpecs: CommandSpec[] = [
 	{ name: "web",          args: "[port]",         section: "Core",          description: "Start the browser UI dev server." },
 	{ name: "webmcp",       args: "[port] [--host=127.0.0.1]", section: "Core", description: "Expose Keating tools over MCP Streamable HTTP." },
 	{ name: "doctor",       args: "",               section: "Core",          description: "Inspect AI runtime and oxdraw availability." },
+	{ name: "package",      args: "list|add <source>|remove <source>|recommended", section: "Core", description: "Manage extra Pi packages loaded by Keating." },
 	{ name: "version",      args: "",               section: "Core",          description: "Show the Keating version number." },
 	...extensionCommandSpecs.filter(s => !s.shellOnly),
 ];

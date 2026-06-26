@@ -61,6 +61,7 @@ describe("Keating UI Settings", () => {
 			expect(settings.customModels).toEqual([]);
 			expect(settings.animationRenderer).toBe("hyperframes");
 			expect(settings.alternativeResponseChance).toBe(0.05);
+			expect(settings.webSearch).toBe("auto");
 		});
 
 		it("returns defaults when localStorage has invalid JSON", () => {
@@ -80,6 +81,13 @@ describe("Keating UI Settings", () => {
 			expect(settings.fontFamily).toBe("space-mono");
 			expect(settings.shareLinkMode).toBe("compressed-hash");
 			expect(settings.showToolUi).toBe(DEFAULT_UI_SETTINGS.showToolUi);
+		});
+
+		it("disables provider web search only when explicitly off", () => {
+			localStorage.setItem("keating_ui_settings", JSON.stringify({ webSearch: "off" }));
+			expect(loadKeatingUiSettings().webSearch).toBe("off");
+			localStorage.setItem("keating_ui_settings", JSON.stringify({ webSearch: "garbage" }));
+			expect(loadKeatingUiSettings().webSearch).toBe("auto");
 		});
 
 		it("clamps alternative response chance to a probability", () => {

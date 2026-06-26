@@ -53,18 +53,104 @@ export function applyGoogleSearchGrounding(payload: unknown, model: Model<Api>, 
 	};
 }
 
+// ─── OpenAI native web search ────────────────────────────────────────────────
+// The Responses API exposes a hosted `web_search` tool. Older snapshots only
+// accept `web_search_preview`; newer GPT-5 models accept `web_search`.
+function isOpenAiWebSearchModel(model: Model<Api>): boolean {
+	if (model.provider !== "openai") return false;
+	if (model.api !== "openai-responses") return false;
+	// Hosted web search is available on GPT-4o, GPT-4.1, GPT-5, and o-series
+	// reasoning models. Exclude codex-only and deep-research slugs that ship
+	// their own search behavior.
+	if (/codex/.test(model.id)) return false;
+	return /^(gpt-4o|gpt-4\.1|gpt-5|o[1345])/.test(model.id);
+}
+
+function openAiWebSearchToolType(model: Model<Api>): "web_search" | "web_search_preview" {
+	// GPT-5 era and o3/o4 reasoning models use the GA `web_search` type. The
+	// 4o/4.1 generation still expects the `web_search_preview` type.
+	return /^(gpt-5|o3|o4)/.test(model.id) ? "web_search" : "web_search_preview";
+}
+
+function hasOpenAiWebSearchTool(params: any): boolean {
+	return Array.isArray(params?.tools)
+		&& params.tools.some((tool: any) => typeof tool?.type === "string" && tool.type.startsWith("web_search"));
+}
+
+function applyOpenAiWebSearch(payload: unknown, model: Model<Api>, hasApiKey: boolean): unknown | undefined {
+	if (!hasApiKey || loadKeatingUiSettings().webSearch === "off" || !isOpenAiWebSearchModel(model)) {
+		return undefined;
+	}
+	const params = payload as any;
+	if (hasOpenAiWebSearchTool(params)) return undefined;
+	const existingTools = Array.isArray(params?.tools) ? params.tools : [];
+	return {
+		...params,
+		tools: [...existingTools, { type: openAiWebSearchToolType(model) }],
+	};
+}
+
+// ─── Anthropic native web search ─────────────────────────────────────────────
+// Anthropic exposes a server-side `web_search` tool via a versioned type.
+const ANTHROPIC_WEB_SEARCH_TOOL = { type: "web_search_20250305", name: "web_search" } as const;
+
+function isAnthropicWebSearchModel(model: Model<Api>): boolean {
+	if (model.provider !== "anthropic") return false;
+	if (model.api !== "anthropic-messages") return false;
+	// Web search is supported on Claude 3.5+ (Sonnet/Haiku/Opus) and the 4.x line.
+	return /^claude-(?:3-5|3-7|sonnet-4|opus-4|haiku-4|fable-)/.test(model.id);
+}
+
+function hasAnthropicWebSearchTool(params: any): boolean {
+	return Array.isArray(params?.tools)
+		&& params.tools.some((tool: any) => typeof tool?.type === "string" && tool.type.startsWith("web_search"));
+}
+
+function applyAnthropicWebSearch(payload: unknown, model: Model<Api>, hasApiKey: boolean): unknown | undefined {
+	if (!hasApiKey || loadKeatingUiSettings().webSearch === "off" || !isAnthropicWebSearchModel(model)) {
+		return undefined;
+	}
+	const params = payload as any;
+	if (hasAnthropicWebSearchTool(params)) return undefined;
+	const existingTools = Array.isArray(params?.tools) ? params.tools : [];
+	return {
+		...params,
+		tools: [...existingTools, { ...ANTHROPIC_WEB_SEARCH_TOOL }],
+	};
+}
+
+/**
+ * Inject provider-native web search for keyed requests when the active model
+ * supports it. Google grounding is gated by its own setting; OpenAI and
+ * Anthropic native search are gated by the shared `webSearch` setting.
+ */
+export function applyProviderWebSearch(payload: unknown, model: Model<Api>, hasApiKey: boolean): unknown | undefined {
+	switch (model.provider) {
+		case "google":
+			return applyGoogleSearchGrounding(payload, model, hasApiKey);
+		case "openai":
+			return applyOpenAiWebSearch(payload, model, hasApiKey);
+		case "anthropic":
+			return applyAnthropicWebSearch(payload, model, hasApiKey);
+		default:
+			return undefined;
+	}
+}
+
 function mergeOnPayload(
 	options: SimpleStreamOptions | undefined,
 	model: Model<Api>,
 ): SimpleStreamOptions | undefined {
-	if (model.provider !== "google") return options;
+	if (model.provider !== "google" && model.provider !== "openai" && model.provider !== "anthropic") {
+		return options;
+	}
 
 	return {
 		...options,
 		onPayload: async (payload, payloadModel) => {
 			const userPayload = await options?.onPayload?.(payload, payloadModel);
 			const nextPayload = userPayload ?? payload;
-			const groundedPayload = applyGoogleSearchGrounding(nextPayload, payloadModel, !!options?.apiKey);
+			const groundedPayload = applyProviderWebSearch(nextPayload, payloadModel, !!options?.apiKey);
 			return groundedPayload ?? userPayload;
 		},
 	};

@@ -5,9 +5,16 @@ import { fileURLToPath } from "node:url";
 import { spawn, spawnSync } from "node:child_process";
 import { homedir } from "node:os";
 
-import { FALLBACK_PI_MODELS, type KeatingConfig, loadKeatingConfig, mergePiDefaultsWithOverrides } from "../core/config.js";
+import { DEFAULT_PI_PROVIDER, FALLBACK_PI_MODELS, type KeatingConfig, loadKeatingConfig, mergePiDefaultsWithOverrides } from "../core/config.js";
 import { ensureProjectScaffold } from "../core/project.js";
 import { sessionsDir, configDir } from "../core/paths.js";
+import {
+  PROVIDER_ENV_KEYS,
+  envWithProviderAliases,
+  providerIsConfigured,
+  providerSetupMessage
+} from "../core/provider-auth.js";
+import { normalizePiPackages } from "../core/pi-packages.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -133,50 +140,22 @@ async function syncPiSettings(cwd: string, config: KeatingConfig): Promise<void>
   }
 
   const quietStartup = !config.debug.consoleSummary;
-  if (settings.quietStartup === quietStartup) return;
+  const nextSettings: Record<string, unknown> = { ...settings, quietStartup };
+  if (Array.isArray(config.pi.packages)) {
+    nextSettings.packages = normalizePiPackages(config.pi.packages);
+  }
+  if (JSON.stringify(settings) === JSON.stringify(nextSettings)) return;
 
   await mkdir(agentDir, { recursive: true });
-  await writeFile(settingsPath, `${JSON.stringify({ ...settings, quietStartup }, null, 2)}\n`, "utf8");
+  await writeFile(settingsPath, `${JSON.stringify(nextSettings, null, 2)}\n`, "utf8");
 }
-
-const PROVIDER_ENV_KEYS: Record<string, string[]> = {
-  google: ["GEMINI_API_KEY", "GOOGLE_API_KEY"],
-  openai: ["OPENAI_API_KEY"],
-  anthropic: ["ANTHROPIC_OAUTH_TOKEN", "ANTHROPIC_API_KEY"],
-  openrouter: ["OPENROUTER_API_KEY"],
-  zyphra: ["ZYPHRA_API_KEY"]
-};
-
-const PROVIDER_SETUP_HINTS: Record<string, string[]> = {
-  google: [
-    "export GEMINI_API_KEY=your_google_ai_studio_key",
-    "or run `keating setup` and choose another provider"
-  ],
-  openai: [
-    "export OPENAI_API_KEY=your_openai_key",
-    "or run `keating setup` and choose another provider"
-  ],
-  anthropic: [
-    "export ANTHROPIC_API_KEY=your_anthropic_key",
-    "or run `keating setup` and choose another provider"
-  ],
-  openrouter: [
-    "export OPENROUTER_API_KEY=your_openrouter_key",
-    "get a free key at https://openrouter.ai (free models available, no credit card required)",
-    "or run `keating setup` and choose another provider"
-  ],
-  zyphra: [
-    "export ZYPHRA_API_KEY=your_zyphra_key",
-    "get a key at https://cloud.zyphra.com",
-    "or run `keating setup` and choose another provider"
-  ]
-};
 
 interface ProviderAuthSelection {
   provider?: string;
   model?: string;
   env: NodeJS.ProcessEnv;
   note?: string;
+  missingProvider?: string;
 }
 
 function hasFlag(args: string[], flag: string): boolean {
@@ -190,47 +169,6 @@ function flagValue(args: string[], flag: string): string | undefined {
   return index >= 0 ? args[index + 1] : undefined;
 }
 
-function authJsonHasProvider(cwd: string, provider: string): boolean {
-  const path = join(configDir(cwd), "auth.json");
-  try {
-    const parsed = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
-    return Boolean(parsed?.[provider]);
-  } catch {
-    return false;
-  }
-}
-
-function envHasProvider(env: NodeJS.ProcessEnv, provider: string): boolean {
-  return (PROVIDER_ENV_KEYS[provider] ?? []).some((key) => Boolean(env[key]));
-}
-
-function providerIsConfigured(cwd: string, env: NodeJS.ProcessEnv, provider: string): boolean {
-  return envHasProvider(env, provider) || authJsonHasProvider(cwd, provider);
-}
-
-function envWithProviderAliases(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
-  if (!env.GEMINI_API_KEY && env.GOOGLE_API_KEY) {
-    return { ...env, GEMINI_API_KEY: env.GOOGLE_API_KEY };
-  }
-  return { ...env };
-}
-
-function providerSetupMessage(provider: string): string {
-  const hints = PROVIDER_SETUP_HINTS[provider] ?? [
-    `set the API key expected by provider "${provider}"`,
-    "or run `keating setup` and choose a configured provider"
-  ];
-  return [
-    `No credentials found for provider "${provider}".`,
-    "",
-    "Recover with:",
-    ...hints.map((hint) => `  ${hint}`),
-    "  pi /login",
-    "",
-    "Then retry: keating shell"
-  ].join("\n");
-}
-
 function selectAuthenticatedProvider(cwd: string, config: KeatingConfig, args: string[]): ProviderAuthSelection {
   const env = envWithProviderAliases(process.env);
   if (hasFlag(args, "--list-models") || hasFlag(args, "--list-providers")) return { env };
@@ -238,12 +176,12 @@ function selectAuthenticatedProvider(cwd: string, config: KeatingConfig, args: s
   const hasExplicitProvider = hasFlag(args, "--provider");
   const hasExplicitModel = hasFlag(args, "--model");
   const hasExplicitApiKey = hasFlag(args, "--api-key");
-  const configuredProvider = config.pi.defaultProvider ?? "google";
+  const configuredProvider = config.pi.defaultProvider ?? DEFAULT_PI_PROVIDER;
 
   if (hasExplicitProvider) {
     const provider = flagValue(args, "--provider");
     if (provider && !hasExplicitApiKey && PROVIDER_ENV_KEYS[provider] && !providerIsConfigured(cwd, env, provider)) {
-      throw new Error(providerSetupMessage(provider));
+      return { env, note: providerSetupMessage(provider), missingProvider: provider };
     }
     return { env };
   }
@@ -253,7 +191,10 @@ function selectAuthenticatedProvider(cwd: string, config: KeatingConfig, args: s
   );
   const selected = candidates.find((provider) => providerIsConfigured(cwd, env, provider));
   if (!selected) {
-    throw new Error([
+    return {
+      env,
+      missingProvider: configuredProvider,
+      note: [
       providerSetupMessage(configuredProvider),
       "",
       "Keating also checked for OpenAI, Anthropic, OpenRouter, and Zyphra credentials and did not find them.",
@@ -263,7 +204,8 @@ function selectAuthenticatedProvider(cwd: string, config: KeatingConfig, args: s
       "  ANTHROPIC_API_KEY or ANTHROPIC_OAUTH_TOKEN",
       "  OPENROUTER_API_KEY (free models available at https://openrouter.ai)",
       "  ZYPHRA_API_KEY (ZAYA1-8B via https://cloud.zyphra.com)"
-    ].join("\n"));
+    ].join("\n")
+    };
   }
 
   if (selected === configuredProvider) return { env };
@@ -430,6 +372,7 @@ export async function launchShell(cwd: string, args: string[]): Promise<number> 
           stdio: "inherit",
           env: {
             ...authSelection.env,
+            KEATING_AUTH_MISSING_PROVIDER: authSelection.missingProvider ?? "",
             PI_SKIP_VERSION_CHECK: process.env.PI_SKIP_VERSION_CHECK ?? "1",
             PI_CODING_AGENT_DIR: configDir(cwd)
           }
@@ -439,6 +382,7 @@ export async function launchShell(cwd: string, args: string[]): Promise<number> 
           stdio: "inherit",
           env: {
             ...authSelection.env,
+            KEATING_AUTH_MISSING_PROVIDER: authSelection.missingProvider ?? "",
             PI_SKIP_VERSION_CHECK: process.env.PI_SKIP_VERSION_CHECK ?? "1",
             PI_CODING_AGENT_DIR: configDir(cwd)
           }

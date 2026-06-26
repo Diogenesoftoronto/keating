@@ -46,9 +46,9 @@ test("ALWAYS: loadKeatingConfig includes bounded model-agnostic API retry defaul
   expect(config.apiRetry.rateLimitIntervalMs).toBeGreaterThanOrEqual(0);
 });
 
-test("ALWAYS: default Pi provider uses regular Google provider with Gemini 3.1 Pro", () => {
-  expect(DEFAULT_KEATING_CONFIG.pi.defaultProvider).toBe("google");
-  expect(DEFAULT_KEATING_CONFIG.pi.defaultModel).toBe("gemini-3.1-pro-preview");
+test("ALWAYS: default Pi provider uses OpenAI with the latest default model", () => {
+  expect(DEFAULT_KEATING_CONFIG.pi.defaultProvider).toBe("openai");
+  expect(DEFAULT_KEATING_CONFIG.pi.defaultModel).toBe("gpt-5.5");
 });
 
 test("ALWAYS: loadKeatingConfig migrates legacy google-gemini-cli provider", async () => {
@@ -63,6 +63,18 @@ test("ALWAYS: loadKeatingConfig migrates legacy google-gemini-cli provider", asy
   const config = await loadKeatingConfig(workdir);
   expect(config.pi.defaultProvider).toBe("google");
   expect(config.pi.defaultModel).toBe("gemini-3.1-pro-preview");
+});
+
+test("ALWAYS: loadKeatingConfig preserves sanitized Pi package sources when present", async () => {
+  const workdir = await mkdtemp(join(tmpdir(), "keating-cfg-"));
+  await writeFile(configPath(workdir), JSON.stringify({
+    pi: {
+      packages: [" npm:pi-subagents ", "npm:pi-subagents", "", 42, "npm:pi-web-access"]
+    }
+  }), "utf8");
+
+  const config = await loadKeatingConfig(workdir);
+  expect(config.pi.packages).toEqual(["npm:pi-subagents", "npm:pi-web-access"]);
 });
 
 test("ALWAYS: loadKeatingConfig preserves valid overrides, defaults missing fields", async () => {

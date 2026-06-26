@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { ai, ax, optimize, axSerializeOptimizedProgram } from "@ax-llm/ax";
 import { evaluatePromptContent } from "./prompt-evolution.js";
 import { stateDir } from "./paths.js";
-import { loadKeatingConfig } from "./config.js";
+import { DEFAULT_PI_MODEL, loadKeatingConfig } from "./config.js";
 
 // Helper to convert typical string models to Ax model enums or strings
 function mapToAxModel(keatingModel: string): string {
@@ -35,13 +35,13 @@ export async function learnPrompt(
   const studentAI = ai({
     name: config.pi.defaultProvider === "openai" ? "openai" : "google-gemini",
     apiKey: process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "",
-    config: { model: mapToAxModel(config.pi.defaultModel || "google/gemini-3.1-pro-preview") as any }
+    config: { model: mapToAxModel(config.pi.defaultModel || DEFAULT_PI_MODEL) as any }
   });
 
   const teacherAI = ai({
     name: config.pi.defaultProvider === "openai" ? "openai" : "google-gemini",
     apiKey: process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "",
-    config: { model: mapToAxModel("google/gemini-3.1-pro-preview") as any }
+    config: { model: mapToAxModel(DEFAULT_PI_MODEL) as any }
   });
 
   const analyzer = ax("topic:string -> teachingResponse:string");

@@ -36,6 +36,12 @@ import { color, bold, cliCommands } from "../core/theme.js";
 import { printAsciiHeader } from "../core/terminal.js";
 import { applySourceEdit, rollbackEdits, editResultToMarkdown } from "../core/code-edit.js";
 import { KEATING_VERSION } from "../core/version.js";
+import {
+  addConfiguredPiPackage,
+  listConfiguredPiPackages,
+  recommendedPiPackagesMarkdown,
+  removeConfiguredPiPackage
+} from "../core/pi-packages.js";
 
 function printUsage(): void {
   printAsciiHeader();
@@ -48,6 +54,7 @@ function printUsage(): void {
   console.log(`  ${color.primary}shell${color.reset}  [initial prompt...]  Launch the AI-powered hyperteacher shell`);
   console.log(`  ${color.primary}setup${color.reset}  [--yes]             Configure Keating for this project`);
   console.log(`  ${color.primary}doctor${color.reset}                    Inspect AI runtime and oxdraw availability`);
+  console.log(`  ${color.primary}package${color.reset} list|add|remove|recommended  Manage extra Pi packages`);
   console.log(`  ${color.primary}web${color.reset}     [port] [--browser-only-agent|--remote|--cloud]  Start the browser UI`);
   console.log(`  ${color.primary}webmcp${color.reset}  [port] [--host=127.0.0.1]  Expose Keating tools over MCP Streamable HTTP`);
   console.log(`  ${color.primary}policy${color.reset}                    Print the active teaching policy`);
@@ -299,8 +306,8 @@ async function setupProject(cwd: string, args: string[]): Promise<void> {
     const { runInteractiveSetup } = await import("./setup.js");
     const answers = await runInteractiveSetup({
       runtimePreference: next.pi.runtimePreference,
-      defaultProvider: next.pi.defaultProvider ?? "google",
-      defaultModel: next.pi.defaultModel ?? "gemini-3.1-pro-preview",
+      defaultProvider: next.pi.defaultProvider ?? DEFAULT_KEATING_CONFIG.pi.defaultProvider ?? "openai",
+      defaultModel: next.pi.defaultModel ?? DEFAULT_KEATING_CONFIG.pi.defaultModel ?? "gpt-5.5",
       defaultThinking: next.pi.defaultThinking ?? "medium"
     });
 
@@ -334,6 +341,65 @@ async function setupProject(cwd: string, args: string[]): Promise<void> {
   console.log(`Run ${color.primary}keating doctor${color.reset} to verify the runtime, then ${color.primary}keating shell${color.reset}.`);
 }
 
+function formatPackageList(packages: string[]): string {
+  if (packages.length === 0) {
+    return [
+      "No extra Pi packages configured for Keating.",
+      "",
+      "Try:",
+      "  keating package recommended",
+      "  keating package add npm:pi-subagents"
+    ].join("\n");
+  }
+
+  return [
+    "Extra Pi packages configured for Keating:",
+    ...packages.map((pkg) => `  - ${pkg}`)
+  ].join("\n");
+}
+
+async function runPackageCommand(cwd: string, args: string[]): Promise<void> {
+  const subcommand = args[0] ?? "list";
+  if (subcommand === "list") {
+    console.log(formatPackageList(await listConfiguredPiPackages(cwd)));
+    return;
+  }
+
+  if (subcommand === "recommended" || subcommand === "recommend") {
+    console.log(recommendedPiPackagesMarkdown());
+    return;
+  }
+
+  if (subcommand === "add") {
+    const source = args.slice(1).join(" ").trim();
+    if (!source) throw commandUsage("package add", "keating package add npm:pi-subagents");
+    const packages = await addConfiguredPiPackage(cwd, source);
+    console.log(`${color.ok}Added ${source} to ${relative(cwd, configPath(cwd))}.${color.reset}`);
+    console.log(formatPackageList(packages));
+    console.log(`${color.sepia}Packages sync into Pi settings the next time you run keating shell.${color.reset}`);
+    return;
+  }
+
+  if (subcommand === "remove" || subcommand === "rm") {
+    const source = args.slice(1).join(" ").trim();
+    if (!source) throw commandUsage("package remove", "keating package remove npm:pi-subagents");
+    const packages = await removeConfiguredPiPackage(cwd, source);
+    console.log(`${color.ok}Removed ${source} from ${relative(cwd, configPath(cwd))}.${color.reset}`);
+    console.log(formatPackageList(packages));
+    return;
+  }
+
+  throw new Error([
+    `Unknown package command: ${subcommand}`,
+    "",
+    "Recover with:",
+    "  keating package list",
+    "  keating package recommended",
+    "  keating package add npm:pi-subagents",
+    "  keating package remove npm:pi-subagents"
+  ].join("\n"));
+}
+
 async function run(): Promise<void> {
   const rawArgs = process.argv.slice(2);
   const cwd = process.cwd();
@@ -353,6 +419,11 @@ async function run(): Promise<void> {
   switch (command) {
     case "setup": {
       await setupProject(cwd, args);
+      return;
+    }
+    case "package":
+    case "packages": {
+      await runPackageCommand(cwd, args);
       return;
     }
     case "web": {

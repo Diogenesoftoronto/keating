@@ -94,7 +94,7 @@ keating doctor
 keating shell
 ```
 
-The setup screen uses an Ink-powered terminal UI with arrow-key choices for provider, model, thinking effort, and runtime preference. Choose the recommended default path for `google` + `gemini-3.1-pro-preview`, or select custom provider/model values when your Pi runtime supports them.
+The setup screen uses an Ink-powered terminal UI with arrow-key choices for provider, model, thinking effort, and runtime preference. Choose the recommended default path for `openai` + `gpt-5.5`, or select custom provider/model values when your Pi runtime supports them.
 
 Non-interactive environments can write the default config with `keating setup --yes`.
 
@@ -178,9 +178,10 @@ Keating reads runtime/model defaults from `keating.config.json`.
 {
   "pi": {
     "runtimePreference": "standalone-only",
-    "defaultProvider": "google",
-    "defaultModel": "gemini-3.1-pro-preview",
-    "defaultThinking": "medium"
+    "defaultProvider": "openai",
+    "defaultModel": "gpt-5.5",
+    "defaultThinking": "medium",
+    "packages": []
   },
   "speech": {
     "enabled": false,
@@ -203,6 +204,25 @@ Keating reads runtime/model defaults from `keating.config.json`.
 - `embedded-only`
 
 `keating --list-models` is passed through to the underlying Pi shell runtime. The legacy typo `keating --list-model` is accepted as an alias for the same runtime flag.
+
+`pi.packages` is optional. When present, Keating syncs those Pi package sources into its isolated Pi settings directory before launching the shell. This lets Keating use extra Pi packages without hardcoding a stale model/package list in Keating itself. Package sources use Pi's normal syntax:
+
+```bash
+keating package recommended
+keating package add npm:pi-subagents
+keating package add npm:pi-web-access
+keating shell
+```
+
+Inside the shell, use the equivalent TUI command:
+
+```text
+/packages recommended
+/packages add npm:pi-subagents
+/packages list
+```
+
+Pi packages execute extension/skill code with local system access, so review third-party packages before adding them.
 
 The speech module is disabled by default. When `speech.enabled` is `true`, Keating registers a Pi tool named `keating_voice`. The tool returns transcript-safe voice tags such as:
 
@@ -227,6 +247,8 @@ Inside the Pi shell:
 /evolve derivative
 /prompt-evolve learn
 /feedback up derivative
+/setup
+/packages recommended
 /speech
 /trace derivative
 /outputs

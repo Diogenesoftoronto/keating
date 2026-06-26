@@ -11,6 +11,13 @@ export interface KeatingConfig {
     defaultProvider?: string;
     defaultModel?: string;
     defaultThinking?: string;
+    /**
+     * Optional Pi packages to load when launching the Keating shell.
+     *
+     * These are synced into Keating's isolated Pi settings directory. Leave
+     * undefined to preserve packages the user installed manually with Pi.
+     */
+    packages?: string[];
   };
   speech: {
     enabled: boolean;
@@ -26,12 +33,12 @@ export interface KeatingConfig {
   apiRetry: ApiRetryPolicy;
 }
 
-export const DEFAULT_PI_PROVIDER = "google";
-export const DEFAULT_PI_MODEL = "gemini-3.1-pro-preview";
+export const DEFAULT_PI_PROVIDER = "openai";
+export const DEFAULT_PI_MODEL = "gpt-5.5";
 export const FALLBACK_PI_MODELS: Record<string, string> = {
-  google: DEFAULT_PI_MODEL,
-  openai: "gpt-5.2",
-  anthropic: "claude-sonnet-4-5",
+  google: "gemini-3.1-pro-preview",
+  openai: DEFAULT_PI_MODEL,
+  anthropic: "claude-sonnet-4-6",
   openrouter: "poolside/laguna-m.1:free",
   zyphra: "zyphra/ZAYA1-8B"
 };
@@ -73,20 +80,37 @@ function sanitizeOptionalString(value: unknown): string | undefined {
 }
 
 function normalizeProvider(value: string | undefined): string | undefined {
-  if (value === "google-gemini-cli") return DEFAULT_PI_PROVIDER;
+  if (value === "google-gemini-cli") return "google";
   return value;
+}
+
+function sanitizeStringArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const seen = new Set<string>();
+  const strings = value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .filter((item) => {
+      if (seen.has(item)) return false;
+      seen.add(item);
+      return true;
+    });
+  return strings.length > 0 ? strings : [];
 }
 
 export async function loadKeatingConfig(cwd: string): Promise<KeatingConfig> {
   const path = configPath(cwd);
   try {
     const parsed = JSON.parse(await readFile(path, "utf8")) as Partial<KeatingConfig>;
+    const packages = sanitizeStringArray(parsed.pi?.packages);
     return {
       pi: {
         runtimePreference: sanitizeRuntimePreference(parsed.pi?.runtimePreference),
         defaultProvider: normalizeProvider(sanitizeOptionalString(parsed.pi?.defaultProvider)) ?? DEFAULT_KEATING_CONFIG.pi.defaultProvider,
         defaultModel: sanitizeOptionalString(parsed.pi?.defaultModel) ?? DEFAULT_KEATING_CONFIG.pi.defaultModel,
-        defaultThinking: sanitizeOptionalString(parsed.pi?.defaultThinking) ?? DEFAULT_KEATING_CONFIG.pi.defaultThinking
+        defaultThinking: sanitizeOptionalString(parsed.pi?.defaultThinking) ?? DEFAULT_KEATING_CONFIG.pi.defaultThinking,
+        ...(packages === undefined ? {} : { packages })
       },
       speech: {
         enabled:

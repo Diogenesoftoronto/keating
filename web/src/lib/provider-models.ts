@@ -365,6 +365,42 @@ export async function getProviderApiKey(providerName: string): Promise<string | 
 	return customProviders.find((provider) => provider.name === providerName)?.apiKey;
 }
 
+const FALLBACK_CHAT_MODEL_IDS: Record<string, string[]> = {
+	[DIO_PROVIDER_ID]: [DIO_DEFAULT_MODEL.id],
+	openai: ["gpt-5.5", "gpt-5.5-pro", "gpt-5.4", "gpt-5.3-chat-latest", "gpt-5.2", "gpt-5.1", "gpt-5"],
+	anthropic: ["claude-sonnet-4-6", "claude-opus-4-8", "claude-opus-4-7", "claude-sonnet-4-5", "claude-haiku-4-5"],
+	google: ["gemini-3.1-pro-preview", "gemini-3.5-flash", "gemini-3-pro-preview", "gemini-2.5-pro"],
+};
+
+function providerNeedsKey(provider: string): boolean {
+	return provider !== "browser";
+}
+
+function preferredModelForProvider(models: Array<Model<Api>>, provider: string): Model<Api> | undefined {
+	const providerModels = models.filter((model) => model.provider === provider);
+	const ids = FALLBACK_CHAT_MODEL_IDS[provider] ?? [];
+	for (const id of ids) {
+		const found = providerModels.find((model) => model.id === id);
+		if (found) return found;
+	}
+	return providerModels[0];
+}
+
+export async function resolveAvailableChatModel(current: Model<Api>): Promise<Model<Api>> {
+	if (!providerNeedsKey(current.provider) || await getProviderApiKey(current.provider)) {
+		return current;
+	}
+
+	const models = await getSelectableModels();
+	for (const provider of [DIO_PROVIDER_ID, "openai", "anthropic", "google"]) {
+		if (!(await getProviderApiKey(provider))) continue;
+		const model = preferredModelForProvider(models, provider);
+		if (model) return model;
+	}
+
+	return current;
+}
+
 export const UNKNOWN_COST = {
 	input: 0,
 	output: 0,

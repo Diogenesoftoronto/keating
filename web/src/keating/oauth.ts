@@ -46,7 +46,6 @@ const OAUTH_PROVIDERS: Record<OAuthProviderId, OAuthProviderConfig> = {
 		clientId: "app_EMoamEEZ73f0CkXaXp7hrann",
 		authorizeUrl: "https://auth.openai.com/oauth/authorize",
 		tokenUrl: "https://auth.openai.com/oauth/token",
-		redirectUri: "http://localhost:1455/auth/callback",
 		scopes: ["openid", "profile", "email", "offline_access"],
 		extraAuthParams: {
 			id_token_add_organizations: "true",
@@ -73,7 +72,7 @@ const OAUTH_PROVIDERS: Record<OAuthProviderId, OAuthProviderConfig> = {
 };
 
 function getRedirectUri(): string {
-	const origin = globalThis.location?.origin ?? "";
+	const origin = globalThis.location?.origin ?? "https://keating.help";
 	return `${origin}/oauth/callback`;
 }
 

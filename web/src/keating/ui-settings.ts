@@ -35,6 +35,7 @@ export interface KeatingUiSettings {
 	imageSize: string;
 	imageQuality: string;
 	localImageBaseUrl: string;
+	webSearch: "auto" | "off";
 }
 
 export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
@@ -56,6 +57,7 @@ export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
 	imageSize: "",
 	imageQuality: "",
 	localImageBaseUrl: "",
+	webSearch: "auto",
 };
 
 type FontStack = {
@@ -164,6 +166,7 @@ function normalizeSettings(value: Partial<KeatingUiSettings> | null): KeatingUiS
 		imageSize: typeof value?.imageSize === "string" ? value.imageSize : DEFAULT_UI_SETTINGS.imageSize,
 		imageQuality: typeof value?.imageQuality === "string" ? value.imageQuality : DEFAULT_UI_SETTINGS.imageQuality,
 		localImageBaseUrl: typeof value?.localImageBaseUrl === "string" ? value.localImageBaseUrl : DEFAULT_UI_SETTINGS.localImageBaseUrl,
+		webSearch: value?.webSearch === "off" ? "off" : DEFAULT_UI_SETTINGS.webSearch,
 	};
 }
 
