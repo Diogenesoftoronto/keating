@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Added a real `devenv.nix` workflow with `bun`, `just`, optional `bumpy`, a `bump-version` helper, and repo-local git hooks for version checks plus root/web test gates.
+
+### Changed
+- Documented the recent provider-auth, voice-default, and provider-aware web-search hardening work in the public update surfaces instead of leaving it implicit in the git history.
+
+### Fixed
+- Fixed the changelog compare links so `[Unreleased]` now tracks from `v1.4.0`, and restored links for the `1.4.0` and `1.3.0` release lines.
+
 ## [1.4.0] - 2026-06-20
 
 ### Added
@@ -400,7 +409,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/Diogenesoftoronto/keating/compare/v1.3.0...v1.4.0
+[1.3.0]: https://github.com/Diogenesoftoronto/keating/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/Diogenesoftoronto/keating/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/Diogenesoftoronto/keating/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Diogenesoftoronto/keating/compare/v0.3.13...v1.0.0
