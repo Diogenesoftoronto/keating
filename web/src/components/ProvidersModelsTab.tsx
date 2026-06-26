@@ -17,6 +17,8 @@ import {
 	type KeatingCustomProviderType,
 	type KeatingGatewayKind,
 } from "../lib/provider-models";
+import { DIO_PROVIDER_ID } from "../dio-provider";
+import { promptDioAccess } from "./DioAccessPromptDialog";
 import {
 	completeOAuthFromInput,
 	initiateOAuth,
@@ -31,7 +33,7 @@ const AUTO_DISCOVERY_TYPES = new Set<KeatingCustomProviderType>([
 	"openai-completions", "openai-responses", "synthetic",
 ]);
 
-const PROVIDER_PRIORITY = ["openai", "anthropic", "google"];
+const PROVIDER_PRIORITY = ["dio", "openai", "anthropic", "google"];
 
 function sortProvidersByPriority(list: string[]): string[] {
 	const rank = (name: string) => {
@@ -158,7 +160,7 @@ export function ProvidersModelsTab() {
 		setSettings(loadKeatingUiSettings());
 	}, []);
 
-	const providers = sortProvidersByPriority(getProviders());
+	const providers = sortProvidersByPriority(Array.from(new Set([DIO_PROVIDER_ID, ...getProviders()])));
 
 	const handleToggleProvider = (provider: string, hidden: boolean) => {
 		toggleProviderVisibility(provider, hidden);
@@ -658,8 +660,13 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 
 	useEffect(() => {
 		const checkOAuth = async () => {
+			const storage = getAppStorage();
 			const status: Record<string, boolean> = {};
 			for (const provider of providers) {
+				if (provider === DIO_PROVIDER_ID) {
+					status[provider] = !!(await storage.providerKeys.get(DIO_PROVIDER_ID));
+					continue;
+				}
 				const oauthId = providerToOAuthId(provider);
 				if (oauthId) {
 					const creds = await loadOAuthCredentials(oauthId);
@@ -703,6 +710,19 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 	};
 
 	const handleSignIn = (provider: string) => {
+		if (provider === DIO_PROVIDER_ID) {
+			setOAuthErrors((prev) => ({ ...prev, [provider]: "" }));
+			setOauthLoading((prev) => ({ ...prev, [provider]: true }));
+			void promptDioAccess().then(async (success) => {
+				const hasKey = !!(await getAppStorage().providerKeys.get(DIO_PROVIDER_ID));
+				setOAuthStatus((prev) => ({ ...prev, [provider]: success || hasKey }));
+				setOauthLoading((prev) => ({ ...prev, [provider]: false }));
+				if (!success && !hasKey) {
+					setOAuthErrors((prev) => ({ ...prev, [provider]: "Dio sign-in was not completed." }));
+				}
+			});
+			return;
+		}
 		const oauthId = providerToOAuthId(provider);
 		if (!oauthId) return;
 		setOAuthErrors((prev) => ({ ...prev, [provider]: "" }));
@@ -731,6 +751,13 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 	};
 
 	const handleSignOut = async (provider: string) => {
+		if (provider === DIO_PROVIDER_ID) {
+			const storage = getAppStorage();
+			await storage.providerKeys.delete(DIO_PROVIDER_ID);
+			setOAuthStatus((prev) => ({ ...prev, [provider]: false }));
+			setKeys((prev) => ({ ...prev, [provider]: "" }));
+			return;
+		}
 		const oauthId = providerToOAuthId(provider);
 		if (!oauthId) return;
 		await deleteOAuthCredentials(oauthId);
@@ -741,6 +768,8 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 	};
 
 	const OAUTH_PROVIDER_LABELS: Record<string, string> = {
+		dio: "Dio (Kimi K2.6)",
+		openai: "OpenAI Codex",
 		anthropic: "Anthropic",
 		"openai-codex": "OpenAI Codex",
 		google: "Google Gemini",
@@ -750,7 +779,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 		<>
 			{providers.map((provider) => {
 				const oauthId = providerToOAuthId(provider);
-				const isOAuth = !!oauthId;
+				const isOAuth = !!oauthId || provider === DIO_PROVIDER_ID;
 				const hasOAuth = oauthStatus[provider] === true;
 				const loading = oauthLoading[provider] === true;
 
@@ -851,7 +880,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 
 function oauthProviderToProviderNames(provider: OAuthProviderId | string | undefined): string[] {
 	if (provider === "google-gemini-cli") return ["google"];
-	if (provider === "openai-codex") return ["openai-codex"];
+	if (provider === "openai-codex") return ["openai", "openai-codex"];
 	if (provider === "anthropic") return ["anthropic"];
 	return provider ? [provider] : [];
 }

@@ -21,7 +21,11 @@ dist/
 !web/public/*.pdf
 
 # Nitro
+.output/
 web/.output/
+
+# Logs
+*.log
 
 # Build artifacts
 test/bench.log
