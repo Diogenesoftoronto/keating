@@ -2,6 +2,9 @@ import {
 	GEMINI_LIVE_SPEECH_MODEL,
 	schedulePcmAudio,
 	voiceTagLine,
+	type LiveSpeechRequest,
+	type LiveSpeechSession,
+	type LiveSpeechState,
 	type SpeechProvider,
 	type SpeechSynthesisRequest,
 	type SpeechSynthesisResult,
@@ -131,12 +134,130 @@ async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthe
 	});
 }
 
+function encodePcmBase64(input: Float32Array): string {
+	const pcm = new Int16Array(input.length);
+	for (let i = 0; i < input.length; i += 1) {
+		const sample = Math.max(-1, Math.min(1, input[i]));
+		pcm[i] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+	}
+	const bytes = new Uint8Array(pcm.buffer);
+	let binary = "";
+	for (let i = 0; i < bytes.length; i += 1) binary += String.fromCharCode(bytes[i]);
+	return window.btoa(binary);
+}
+
+async function startLiveSession(request: LiveSpeechRequest): Promise<LiveSpeechSession> {
+	const { settings, getApiKey, signal, instructions, onState, onUserTranscript, onAssistantTranscript, onError } = request;
+	const apiKey = await getApiKey("google");
+	if (!apiKey) {
+		throw new Error("No Google API key configured. Sign in to Google in Settings → Providers & Models.");
+	}
+	if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+		throw new Error("Microphone unavailable for live voice.");
+	}
+
+	const { GoogleGenAI, Modality } = await import("@google/genai");
+	const ai = new GoogleGenAI({ apiKey });
+
+	let state: LiveSpeechState = "connecting";
+	const setState = (next: LiveSpeechState) => {
+		if (state === "closed") return;
+		state = next;
+		onState?.(next);
+	};
+	setState("connecting");
+
+	const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+	// 16 kHz mono PCM is what Gemini Live expects on the input stream.
+	const captureContext = new AudioContext({ sampleRate: 16_000 });
+	const sourceNode = captureContext.createMediaStreamSource(micStream);
+	const processor = captureContext.createScriptProcessor(4096, 1, 1);
+
+	let session: { sendRealtimeInput: (params: any) => void; close: () => void } | null = null;
+	let cleanedUp = false;
+	const cleanup = () => {
+		if (cleanedUp) return;
+		cleanedUp = true;
+		try { processor.disconnect(); } catch {}
+		try { sourceNode.disconnect(); } catch {}
+		try { captureContext.close(); } catch {}
+		micStream.getTracks().forEach((track) => track.stop());
+		try { session?.close(); } catch {}
+		setState("closed");
+	};
+
+	if (signal?.aborted) {
+		cleanup();
+		throw new Error("Gemini Live aborted before start.");
+	}
+	signal?.addEventListener("abort", cleanup, { once: true });
+
+	processor.onaudioprocess = (event) => {
+		if (!session || state === "closed") return;
+		const base64 = encodePcmBase64(event.inputBuffer.getChannelData(0));
+		try {
+			session.sendRealtimeInput({ audio: { data: base64, mimeType: "audio/pcm;rate=16000" } });
+		} catch {}
+	};
+
+	try {
+		session = await withApiRetry(() => ai.live.connect({
+			model: settings.model || GEMINI_LIVE_SPEECH_MODEL,
+			callbacks: {
+				onmessage: (message: any) => {
+					for (const part of contentParts(message)) {
+						const data = part.inlineData?.data;
+						if (typeof data === "string" && data.length > 0) {
+							setState("speaking");
+							schedulePcmAudio(data);
+						}
+						if (typeof part.text === "string") onAssistantTranscript?.(part.text, false);
+					}
+					const outputText = message?.serverContent?.outputTranscription?.text;
+					if (typeof outputText === "string") onAssistantTranscript?.(outputText, false);
+					const inputText = message?.serverContent?.inputTranscription?.text;
+					if (typeof inputText === "string") onUserTranscript?.(inputText, false);
+					if (message?.serverContent?.turnComplete) setState("listening");
+				},
+				onerror: (event: ErrorEvent) => onError?.(new Error(event.message || "Gemini Live failed.")),
+				onclose: () => cleanup(),
+			},
+			config: {
+				responseModalities: [Modality.AUDIO],
+				outputAudioTranscription: {},
+				inputAudioTranscription: {},
+				systemInstruction:
+					instructions ||
+					"You are Keating, a warm Socratic tutor on a live voice call with a learner. Keep replies natural, concise, and conversational.",
+			},
+		}), { signal });
+	} catch (error) {
+		cleanup();
+		throw error;
+	}
+
+	// Connecting the processor to the destination pumps onaudioprocess; the
+	// output buffer is left silent so the mic is not echoed back.
+	sourceNode.connect(processor);
+	processor.connect(captureContext.destination);
+	setState("listening");
+
+	return {
+		get state() {
+			return state;
+		},
+		async stop() {
+			cleanup();
+		},
+	};
+}
+
 export const geminiLiveProvider: SpeechProvider = {
 	id: "gemini-live",
 	label: "Gemini Live",
-	kind: "tts",
+	kind: "duplex",
 	status: "stable",
-	description: "Google Gemini Live audio-out. Best for expressive, low-latency speech with prebuilt voices.",
+	description: "Google Gemini Live bidirectional voice. Live mic-in/audio-out sessions plus expressive prebuilt voices.",
 	models: [
 		{ value: "gemini-2.0-flash-live-001", label: "Gemini 2.0 Flash Live" },
 		{ value: "gemini-2.5-flash-live-preview", label: "Gemini 2.5 Flash Live (Preview)" },
@@ -146,4 +267,5 @@ export const geminiLiveProvider: SpeechProvider = {
 	voices: GEMINI_VOICES,
 	needsApiKey: "google",
 	synthesize,
+	startLiveSession,
 };

@@ -86,10 +86,13 @@ import { GoalRenderer } from "./GoalRenderer";
 import { normalizeGoal } from "../keating/goals";
 import type { Quiz } from "../keating/core";
 import {
+  getSpeechProvider,
   KEATING_VOICE_TOOL_NAME,
   loadWebSpeechSettings,
   resolveSpeechCredential,
   speechInputMode,
+  type LiveSpeechSession,
+  type LiveSpeechState,
 } from "../keating/speech";
 import { startMicRecording, transcribeAudio, type MicRecorder } from "../keating/speech-providers/stt";
 import { JsonCrackBlock } from "./JsonCrackBlock";
@@ -668,6 +671,7 @@ function SpeechMicButton() {
   const [available, setAvailable] = useState(false);
   const [recording, setRecording] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [liveOpen, setLiveOpen] = useState(false);
   const recorderRef = useRef<MicRecorder | null>(null);
 
   useEffect(() => {
@@ -690,15 +694,16 @@ function SpeechMicButton() {
     };
   }, []);
 
-  if (!available) return null;
+  const appendToComposer = (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    const existing = composer.getState().text;
+    composer.setText(existing ? `${existing.trimEnd()} ${trimmed}` : trimmed);
+  };
 
-  const mode = speechInputMode(loadWebSpeechSettings());
-  const title =
-    mode === "duplex"
-      ? "Speak to Keating (push to talk — transcribes into the prompt)"
-      : "Dictate your message (push to talk)";
-
-  const handleClick = async () => {
+  // Push-to-talk one-shot dictation (used when no duplex provider is active,
+  // and as the fallback when a live session cannot start).
+  const runPushToTalk = async () => {
     if (busy) return;
     if (recording) {
       const recorder = recorderRef.current;
@@ -711,10 +716,7 @@ function SpeechMicButton() {
         const cred = await resolveSpeechCredential(getProviderApiKey);
         if (!cred) throw new Error("No speech credential available.");
         const text = await transcribeAudio(blob, { provider: cred.provider, apiKey: cred.apiKey });
-        if (text) {
-          const existing = composer.getState().text;
-          composer.setText(existing ? `${existing.trimEnd()} ${text}` : text);
-        }
+        appendToComposer(text);
       } catch (error) {
         console.warn("[keating:stt] transcription failed", error);
       } finally {
@@ -730,26 +732,217 @@ function SpeechMicButton() {
     }
   };
 
+  if (!available) return null;
+
+  const mode = speechInputMode(loadWebSpeechSettings());
+  const title =
+    mode === "duplex"
+      ? "Start a live voice conversation with Keating"
+      : "Dictate your message (push to talk)";
+
+  const handleClick = () => {
+    if (busy) return;
+    if (mode === "duplex" && !recording) {
+      setLiveOpen(true);
+      return;
+    }
+    void runPushToTalk();
+  };
+
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      disabled={busy}
-      title={title}
-      aria-label={title}
-      aria-pressed={recording}
-      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50 sm:h-9 sm:w-9 ${
-        recording ? "animate-pulse border-destructive text-destructive" : ""
-      }`}
+    <>
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={busy}
+        title={title}
+        aria-label={title}
+        aria-pressed={recording}
+        className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50 sm:h-9 sm:w-9 ${
+          recording ? "animate-pulse border-destructive text-destructive" : ""
+        }`}
+      >
+        {busy ? (
+          <Loader2 size={16} className="animate-spin" />
+        ) : recording ? (
+          <MicOff size={16} />
+        ) : (
+          <Mic size={16} />
+        )}
+      </button>
+      {liveOpen ? (
+        <LiveVoiceOverlay
+          onClose={() => setLiveOpen(false)}
+          onTranscript={appendToComposer}
+          onFallback={() => {
+            setLiveOpen(false);
+            void runPushToTalk();
+          }}
+        />
+      ) : null}
+    </>
+  );
+}
+
+const LIVE_STATE_LABEL: Record<LiveSpeechState, string> = {
+  connecting: "Connecting…",
+  listening: "Listening",
+  speaking: "Keating is speaking",
+  closed: "Ended",
+};
+
+// Live bidirectional voice session overlay. Drives the configured duplex
+// speech provider (OpenAI Realtime / Gemini Live) and degrades to push-to-talk
+// dictation if the live session cannot be established.
+function LiveVoiceOverlay({
+  onClose,
+  onTranscript,
+  onFallback,
+}: {
+  onClose: () => void;
+  onTranscript: (text: string) => void;
+  onFallback: () => void;
+}) {
+  const [state, setState] = useState<LiveSpeechState>("connecting");
+  const [userText, setUserText] = useState("");
+  const [assistantText, setAssistantText] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const sessionRef = useRef<LiveSpeechSession | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const userTextRef = useRef("");
+
+  useEffect(() => {
+    const abort = new AbortController();
+    abortRef.current = abort;
+    let active = true;
+    // Delta chunks (final=false) append; a standalone final replaces only when
+    // no deltas were seen, covering providers that emit either style.
+    const merge = (prev: string, text: string, final: boolean) => (final && prev === "" ? text : prev + text);
+    (async () => {
+      try {
+        const settings = loadWebSpeechSettings();
+        const provider = await getSpeechProvider(settings.providerId);
+        if (!provider?.startLiveSession) {
+          throw new Error("The selected speech provider does not support live voice.");
+        }
+        const session = await provider.startLiveSession({
+          settings,
+          getApiKey: getProviderApiKey,
+          signal: abort.signal,
+          onState: (next) => { if (active) setState(next); },
+          onUserTranscript: (text, final) => {
+            if (!active || !text) return;
+            userTextRef.current = merge(userTextRef.current, text, final);
+            setUserText(userTextRef.current);
+          },
+          onAssistantTranscript: (text, final) => {
+            if (!active || !text) return;
+            setAssistantText((prev) => merge(prev, text, final));
+          },
+          onError: (err) => { if (active) setError(err.message); },
+        });
+        if (!active) {
+          void session.stop();
+          return;
+        }
+        sessionRef.current = session;
+      } catch (err) {
+        if (active) setError(err instanceof Error ? err.message : String(err));
+      }
+    })();
+    return () => {
+      active = false;
+      abort.abort();
+      void sessionRef.current?.stop().catch(() => {});
+    };
+  }, []);
+
+  const finish = () => {
+    abortRef.current?.abort();
+    void sessionRef.current?.stop().catch(() => {});
+    onTranscript(userTextRef.current);
+    onClose();
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Live voice conversation"
     >
-      {busy ? (
-        <Loader2 size={16} className="animate-spin" />
-      ) : recording ? (
-        <MicOff size={16} />
-      ) : (
-        <Mic size={16} />
-      )}
-    </button>
+      <div className="w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-xl">
+        <div className="flex items-center gap-3">
+          <span
+            className={`inline-flex h-10 w-10 items-center justify-center rounded-full border ${
+              error
+                ? "border-destructive text-destructive"
+                : state === "speaking"
+                  ? "border-primary text-primary"
+                  : "border-border text-foreground"
+            } ${state === "listening" && !error ? "animate-pulse" : ""}`}
+          >
+            {error ? <MicOff size={18} /> : state === "connecting" ? <Loader2 size={18} className="animate-spin" /> : <Mic size={18} />}
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-medium">{error ? "Voice session error" : LIVE_STATE_LABEL[state]}</div>
+            <div className="truncate text-xs text-muted-foreground">Live voice with Keating</div>
+          </div>
+          <button
+            type="button"
+            onClick={finish}
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+            aria-label="Close live voice"
+            title="Close"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {error ? (
+          <div className="mt-4 space-y-3">
+            <p className="text-xs text-destructive">{error}</p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={onFallback}
+                className="dialog-compact-button inline-flex items-center justify-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs hover:bg-muted"
+              >
+                <Mic size={14} /> Use dictation instead
+              </button>
+              <button
+                type="button"
+                onClick={finish}
+                className="dialog-compact-button inline-flex items-center justify-center rounded-md border border-border px-3 py-1.5 text-xs hover:bg-muted"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-4 space-y-3">
+            <div className="max-h-40 space-y-2 overflow-y-auto text-sm">
+              {assistantText ? (
+                <p className="rounded-md bg-muted/50 px-3 py-2 text-foreground">{assistantText}</p>
+              ) : null}
+              {userText ? (
+                <p className="text-right text-muted-foreground">{userText}</p>
+              ) : null}
+              {!assistantText && !userText ? (
+                <p className="text-xs text-muted-foreground">Start speaking — Keating is listening.</p>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              onClick={finish}
+              className="dialog-compact-button inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-destructive bg-destructive/10 px-3 py-2 text-sm text-destructive hover:bg-destructive/20"
+            >
+              <MicOff size={16} /> End conversation
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -1695,6 +1888,8 @@ function textFromContent(content: unknown): string {
         return part.text;
       if (part?.type === "thinking" && typeof part.thinking === "string")
         return part.thinking;
+      if (part?.type === "reasoning" && typeof part.text === "string")
+        return part.text;
       if (part?.type === "image") return "[image]";
       if (part?.type === "toolCall") return `[tool: ${part.name ?? "unknown"}]`;
       return "";
@@ -1796,6 +1991,7 @@ function hasRenderableAssistantContent(content: unknown): boolean {
   return content.some((part: any) => {
     if (part?.type === "text") return typeof part.text === "string" && part.text.trim().length > 0;
     if (part?.type === "thinking") return typeof part.thinking === "string" && part.thinking.trim().length > 0;
+    if (part?.type === "reasoning") return typeof part.text === "string" && part.text.trim().length > 0;
     if (part?.type === "toolCall") return true;
     if (part?.type === "image") return true;
     return false;
@@ -1895,6 +2091,24 @@ function normalizeAssistantContentParts(parts: any[]): any[] {
 
 function assistantTextParts(text: string): AssistantTextPart[] {
   if (!text) return [{ type: "text", text: "" }];
+
+  // Some OpenAI-compatible reasoning models leak malformed closing tags without
+  // a matching opening tag. When that happens, the safest behavior is to treat
+  // everything before the final closing tag as hidden reasoning and only render
+  // the post-close tail as the learner-visible answer.
+  if (!/<think(?:ing)?>/i.test(text) && /<\/think(?:ing)?>/i.test(text)) {
+    const matches = [...text.matchAll(/<\/think(?:ing)?>/gi)];
+    const last = matches.at(-1);
+    if (last && typeof last.index === "number") {
+      const reasoning = text.slice(0, last.index).trim();
+      const visible = text.slice(last.index + last[0].length).trim();
+      const parts: AssistantTextPart[] = [];
+      if (reasoning) parts.push({ type: "reasoning", text: reasoning });
+      if (visible) parts.push({ type: "text", text: visible });
+      return parts.length > 0 ? parts : [{ type: "text", text: "" }];
+    }
+  }
+
   const parts: AssistantTextPart[] = [];
   let cursor = 0;
   let reasoningStart: number | null = null;
@@ -1931,6 +2145,20 @@ function assistantTextParts(text: string): AssistantTextPart[] {
   return parts.length > 0 ? parts : [{ type: "text", text: "" }];
 }
 
+function assistantHasPendingToolCalls(content: unknown): boolean {
+  if (!Array.isArray(content)) return false;
+  return content.some((part: any) =>
+    part?.type === "toolCall" &&
+    part.__toolResult === undefined &&
+    part.__toolDetails === undefined &&
+    part.__toolError === undefined,
+  );
+}
+
+function assistantHasToolCalls(content: unknown): boolean {
+  return Array.isArray(content) && content.some((part: any) => part?.type === "toolCall");
+}
+
 function toAssistantMessage(
   message: AgentMessage,
   index: number,
@@ -1951,6 +2179,7 @@ function toAssistantMessage(
     isRunning &&
     msg.role === "assistant" &&
     isLastMessage &&
+    !(assistantHasToolCalls(msg.content) && !assistantHasPendingToolCalls(msg.content)) &&
     (msg.__keatingStreaming === true || !hasStopReason);
   const status = isActivelyStreaming
     ? { type: "running" as const }
@@ -3187,6 +3416,10 @@ export const AssistantChatPanel = forwardRef<
 });
 
 AssistantChatPanel.displayName = "AssistantChatPanel";
+
+// Test-only export for parser regressions around malformed reasoning tags from
+// OpenAI-compatible providers.
+export const __test_assistantTextParts = assistantTextParts;
 
 function AgentSubscription({
   agent,

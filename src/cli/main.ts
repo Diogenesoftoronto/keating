@@ -26,9 +26,11 @@ import {
   verifyTopicArtifact,
   timelineArtifact,
   dueTopicsArtifact,
-  exportKeatingData
+  exportKeatingData,
+  importKeatingData
 } from "../core/project.js";
 import type { ExportSource, FineTuneFormat } from "../core/export.js";
+import type { FineTuneImportFormat } from "../core/import.js";
 import { detectAiRuntime, launchShell } from "../runtime/pi.js";
 import { serveWeb, type ServeWebOptions, type WebAgentRuntimeMode } from "./web.js";
 import { serveWebMcp } from "../mcp/server.js";
@@ -212,6 +214,43 @@ async function runExportCommand(cwd: string, args: string[]): Promise<void> {
   console.log(`${color.ok}Exported ${result.manifest.counts.examplesWritten} fine-tuning examples.${color.reset}`);
   console.log(relative(cwd, result.manifestPath));
   for (const file of result.manifest.files) console.log(file);
+}
+
+async function runImportCommand(cwd: string, args: string[]): Promise<void> {
+  if (!args.includes("--finetune")) {
+    throw new Error([
+      "import needs a mode.",
+      "",
+      "Recover with:",
+      "  keating import --finetune .keating/outputs/exports/<export-dir>",
+      "  keating import --finetune train.chatml.jsonl --format=chatml",
+      "",
+      "Supported options:",
+      "  --format=auto|chatml|alpaca",
+      "  --title=TITLE"
+    ].join("\n"));
+  }
+
+  const sourcePath = firstPositional(args.filter((arg) => arg !== "--finetune"));
+  if (!sourcePath) {
+    throw commandUsage("import", "keating import --finetune .keating/outputs/exports/<export-dir>");
+  }
+  const format = parseChoice<FineTuneImportFormat>(
+    optionValue(args, "--format"),
+    ["auto", "chatml", "alpaca"],
+    "auto",
+    "--format"
+  );
+  const result = await importKeatingData(cwd, {
+    sourcePath,
+    format,
+    title: optionValue(args, "--title"),
+  });
+
+  console.log(`${color.ok}Imported ${result.examplesImported} fine-tune examples into ${result.sessionsImported} Keating session${result.sessionsImported === 1 ? "" : "s"}.${color.reset}`);
+  for (const sessionPath of result.sessionPaths) console.log(relative(cwd, sessionPath));
+  if (result.skipped > 0) console.log(`${result.skipped} skipped`);
+  for (const warning of result.warnings) console.log(`${color.sepia}${warning}${color.reset}`);
 }
 
 async function runEditCommand(cwd: string, args: string[]): Promise<void> {
@@ -565,6 +604,10 @@ async function run(): Promise<void> {
     }
     case "export": {
       await runExportCommand(cwd, args);
+      return;
+    }
+    case "import": {
+      await runImportCommand(cwd, args);
       return;
     }
     case "policy": {

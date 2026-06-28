@@ -1,4 +1,5 @@
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
+import type { Model } from "@earendil-works/pi-ai";
 import type { SessionMetadata } from "../types/session";
 
 export function createSessionId(): string {
@@ -90,4 +91,14 @@ export function sessionUsage(messages: AgentMessage[]): SessionMetadata["usage"]
 		usage.cost.total += messageUsage.cost?.total ?? 0;
 		return usage;
 	}, structuredClone(emptyUsage));
+}
+
+export function sessionModelMetadata(model: Model<any> | undefined): Pick<SessionMetadata, "modelProvider" | "modelId" | "modelName" | "modelApi" | "modelReasoning"> {
+	return {
+		modelProvider: model?.provider,
+		modelId: model?.id,
+		modelName: model?.name,
+		modelApi: typeof model?.api === "string" ? model.api : undefined,
+		modelReasoning: typeof model?.reasoning === "boolean" ? model.reasoning : undefined,
+	};
 }

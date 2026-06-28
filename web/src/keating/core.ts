@@ -2576,6 +2576,7 @@ export interface AuthoredQuestion {
 	level?: QuizQuestion["level"];
 	question: string;
 	options?: string[];
+	blanks?: QuizQuestion["blanks"];
 	correctAnswer: string;
 	correctAnswers?: string[];
 	explanation: string;
@@ -2626,6 +2627,14 @@ export function buildAuthoredQuestions(
 		let options = Array.isArray(raw.options)
 			? raw.options.map((o) => String(o).trim()).filter(Boolean)
 			: undefined;
+		const blanks = Array.isArray(raw.blanks)
+			? raw.blanks
+				.map((blank) => ({
+					placeholder: typeof blank.placeholder === "string" ? blank.placeholder.trim() : undefined,
+					hint: typeof blank.hint === "string" ? blank.hint.trim() : undefined,
+				}))
+				.filter((blank) => blank.placeholder || blank.hint)
+			: undefined;
 
 		const level: QuizQuestion["level"] = raw.level && OPEN_LEVELS.has(raw.level)
 			? raw.level
@@ -2655,6 +2664,7 @@ export function buildAuthoredQuestions(
 			level,
 			question,
 			options: options && options.length ? options : undefined,
+			blanks: blanks && blanks.length ? blanks : undefined,
 			correctAnswer,
 			correctAnswers: Array.isArray(raw.correctAnswers) && raw.correctAnswers.length
 				? raw.correctAnswers.map((a) => String(a).trim()).filter(Boolean)

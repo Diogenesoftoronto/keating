@@ -81,6 +81,7 @@ import {
 import {
   generateDiagnosticQuestions
 } from "./mastery.js";
+import { importFineTuneDataset, type KeatingImportOptions, type KeatingImportResult } from "./import.js";
 
 export async function ensureProjectScaffold(cwd: string): Promise<void> {
   await ensureKeatingDirs(cwd);
@@ -599,6 +600,14 @@ export async function exportKeatingData(
 ): Promise<{ manifestPath: string; outDir: string; manifest: KeatingExportManifest }> {
   await ensureProjectScaffold(cwd);
   return exportFineTuneDataset(cwd, options);
+}
+
+export async function importKeatingData(
+  cwd: string,
+  options: KeatingImportOptions
+): Promise<KeatingImportResult> {
+  await ensureProjectScaffold(cwd);
+  return importFineTuneDataset(cwd, options);
 }
 
 export async function currentPolicySummary(cwd: string): Promise<string> {

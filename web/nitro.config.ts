@@ -12,6 +12,14 @@ const crossOriginScriptHeaders = {
 };
 
 export default defineNitroConfig({
+  renderer: {
+    // Nitro was inlining the source web/index.html template into the server
+    // bundle, which still references /src/main-react.tsx. In production that
+    // path falls through to HTML and blanks the app. Force the renderer to use
+    // the Vite-built shell instead.
+    template: "./dist/index.html",
+    static: true,
+  },
   // Ensure that /assets/* requests return 404 if not found, 
   // rather than falling back to index.html (SPA fallback).
   routeRules: {

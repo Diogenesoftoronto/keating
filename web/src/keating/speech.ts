@@ -253,8 +253,30 @@ export interface SpeechProviderDescriptor {
 	needsApiKey?: string;
 }
 
+export type LiveSpeechState = "connecting" | "listening" | "speaking" | "closed";
+
+export interface LiveSpeechRequest {
+	settings: WebSpeechSettings;
+	customModel?: CustomSpeechModel;
+	getApiKey: (provider: string) => Promise<string | undefined>;
+	signal?: AbortSignal;
+	/** Optional persona / system instructions for the live voice agent. */
+	instructions?: string;
+	onState?: (state: LiveSpeechState) => void;
+	onUserTranscript?: (text: string, final: boolean) => void;
+	onAssistantTranscript?: (text: string, final: boolean) => void;
+	onError?: (error: Error) => void;
+}
+
+export interface LiveSpeechSession {
+	readonly state: LiveSpeechState;
+	stop(): Promise<void>;
+}
+
 export interface SpeechProvider extends SpeechProviderDescriptor {
 	synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthesisResult>;
+	/** Opens a long-lived bidirectional voice session (duplex providers only). */
+	startLiveSession?(request: LiveSpeechRequest): Promise<LiveSpeechSession>;
 }
 
 const providerRegistry = new Map<SpeechProviderId, SpeechProvider>();

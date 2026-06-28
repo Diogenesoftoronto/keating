@@ -74,6 +74,22 @@ interface FineTuneExample {
 	messages?: Array<{ role: "user" | "assistant"; content: string }>;
 }
 
+/** One ChatML line = one conversation. Sessions carry a `keating` envelope so
+ *  the importer can reconstruct a resumable session; lossless exports (no
+ *  redaction) embed the original full messages. */
+interface WebConversation {
+	source: "artifact" | "session" | "sandbox";
+	messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
+	envelope?: {
+		title?: string;
+		sessionId?: string;
+		source?: string;
+		model?: unknown;
+		thinkingLevel?: string;
+		messages?: unknown[];
+	};
+}
+
 interface NormalizedSessionResult {
 	messages: NormalizedRewardMessage[];
 	pairMessages: Array<{ role: "user" | "assistant"; content: string }>;
@@ -144,6 +160,7 @@ function addArtifactExample(
 	content: string,
 	options: WebFineTuneExportOptions,
 	counters: { redactions: number; skipped: number },
+	conversations?: WebConversation[],
 ) {
 	const trimmed = content.trim();
 	if (!trimmed) {
@@ -153,14 +170,39 @@ function addArtifactExample(
 	const redacted = redactText(trimmed, options.redact);
 	counters.redactions += redacted.count;
 	const instruction = artifactInstruction(kind, topic);
-	examples.push({
-		instruction,
-		output: redacted.text,
-		messages: [
-			{ role: "user", content: instruction },
-			{ role: "assistant", content: redacted.text },
-		],
-	});
+	const messages = [
+		{ role: "user" as const, content: instruction },
+		{ role: "assistant" as const, content: redacted.text },
+	];
+	examples.push({ instruction, output: redacted.text, messages });
+	conversations?.push({ source: "artifact", messages });
+}
+
+/** Builds one full, resumable conversation from a normalized session. */
+function conversationFromSession(
+	session: SessionData,
+	normalized: NormalizedSessionResult,
+	options: WebFineTuneExportOptions,
+): WebConversation | null {
+	const messages = normalized.messages
+		.filter((message) => !message.shortAssistant)
+		.map((message) => ({ role: message.role, content: message.content }));
+	const hasUser = messages.some((message) => message.role === "user");
+	const hasAssistant = messages.some((message) => message.role === "assistant");
+	if (!hasUser || !hasAssistant) return null;
+	return {
+		source: "session",
+		messages,
+		envelope: {
+			title: session.title,
+			sessionId: session.id,
+			source: "keating-session-export",
+			model: session.model,
+			thinkingLevel: session.thinkingLevel,
+			// Lossless resume: embed originals only when not redacting.
+			messages: options.redact ? undefined : (session.messages as unknown[]),
+		},
+	};
 }
 
 function normalizeSessionMessages(
@@ -231,6 +273,7 @@ function addSandboxExamples(
 	sandbox: KeatingSandboxPortableBundle | undefined,
 	options: WebFineTuneExportOptions,
 	counters: { redactions: number; skipped: number },
+	conversations?: WebConversation[],
 ): { filesRead: number; commitsRead: number } {
 	if (!sandbox) return { filesRead: 0, commitsRead: 0 };
 	let filesRead = 0;
@@ -246,14 +289,12 @@ function addSandboxExamples(
 		const redacted = redactText(content, options.redact);
 		counters.redactions += redacted.count;
 		const instruction = `Maintain or improve this Keating sandbox source file: ${file.path}.`;
-		examples.push({
-			instruction,
-			output: redacted.text,
-			messages: [
-				{ role: "user", content: instruction },
-				{ role: "assistant", content: redacted.text },
-			],
-		});
+		const messages = [
+			{ role: "user" as const, content: instruction },
+			{ role: "assistant" as const, content: redacted.text },
+		];
+		examples.push({ instruction, output: redacted.text, messages });
+		conversations?.push({ source: "sandbox", messages });
 	}
 	for (const commit of sandbox.vc.commits) {
 		const files = sandbox.vc.commitFiles
@@ -268,25 +309,22 @@ function addSandboxExamples(
 		const redacted = redactText(summary, options.redact);
 		counters.redactions += redacted.count;
 		const instruction = "Summarize this Keating browser sandbox code checkpoint for future self-improvement.";
-		examples.push({
-			instruction,
-			output: redacted.text,
-			messages: [
-				{ role: "user", content: instruction },
-				{ role: "assistant", content: redacted.text },
-			],
-		});
+		const messages = [
+			{ role: "user" as const, content: instruction },
+			{ role: "assistant" as const, content: redacted.text },
+		];
+		examples.push({ instruction, output: redacted.text, messages });
+		conversations?.push({ source: "sandbox", messages });
 	}
 	return { filesRead, commitsRead };
 }
 
-function toChatMlJsonl(examples: FineTuneExample[]): string {
-	return examples.map((example) => JSON.stringify({
-		messages: example.messages ?? [
-			{ role: "user", content: example.instruction },
-			{ role: "assistant", content: example.output },
-		],
-	})).join("\n") + (examples.length ? "\n" : "");
+function toChatMlJsonl(conversations: WebConversation[]): string {
+	return conversations.map((conversation) => JSON.stringify(
+		conversation.envelope
+			? { messages: conversation.messages, keating: conversation.envelope }
+			: { messages: conversation.messages },
+	)).join("\n") + (conversations.length ? "\n" : "");
 }
 
 function toAlpacaJsonl(examples: FineTuneExample[]): string {
@@ -310,6 +348,7 @@ export async function buildWebFineTuneExportFromSources(
 	options: WebFineTuneExportOptions,
 ): Promise<WebFineTuneExportResult> {
 	const examples: FineTuneExample[] = [];
+	const conversations: WebConversation[] = [];
 	const rewardedTurns: RewardedTurn[] = [];
 	const counters = { redactions: 0, skipped: 0 };
 	const includeArtifacts = options.source === "all" || options.source === "artifacts";
@@ -323,19 +362,19 @@ export async function buildWebFineTuneExportFromSources(
 	if (includeArtifacts) {
 		for (const plan of sources.plans ?? []) {
 			artifactsRead += 1;
-			addArtifactExample(examples, plan.metadata?.type === "quiz" ? "quiz" : "plan", plan.topic, plan.content, options, counters);
+			addArtifactExample(examples, plan.metadata?.type === "quiz" ? "quiz" : "plan", plan.topic, plan.content, options, counters, conversations);
 		}
 		for (const map of sources.maps ?? []) {
 			artifactsRead += 1;
-			addArtifactExample(examples, "map", map.topic, map.mmdContent, options, counters);
+			addArtifactExample(examples, "map", map.topic, map.mmdContent, options, counters, conversations);
 		}
 		for (const animation of sources.animations ?? []) {
 			artifactsRead += 1;
-			addArtifactExample(examples, "animation", animation.topic, animation.storyboard, options, counters);
+			addArtifactExample(examples, "animation", animation.topic, animation.storyboard, options, counters, conversations);
 		}
 		for (const verification of sources.verifications ?? []) {
 			artifactsRead += 1;
-			addArtifactExample(examples, "verification", verification.topic, verification.checklist, options, counters);
+			addArtifactExample(examples, "verification", verification.topic, verification.checklist, options, counters, conversations);
 		}
 	}
 
@@ -349,6 +388,8 @@ export async function buildWebFineTuneExportFromSources(
 			sessionsRead += 1;
 			const normalized = normalizeSessionMessages(session, options, counters);
 			addSessionExamples(examples, normalized);
+			const conversation = conversationFromSession(session, normalized, options);
+			if (conversation) conversations.push(conversation);
 			const turns = computeSessionRewardedTurns({
 				sessionId: session.id,
 				title: session.title,
@@ -366,7 +407,7 @@ export async function buildWebFineTuneExportFromSources(
 	}
 
 	if (includeSandbox) {
-		const sandboxCounts = addSandboxExamples(examples, sources.sandbox, options, counters);
+		const sandboxCounts = addSandboxExamples(examples, sources.sandbox, options, counters, conversations);
 		sandboxFilesRead = sandboxCounts.filesRead;
 		sandboxCommitsRead = sandboxCounts.commitsRead;
 	}
@@ -378,7 +419,7 @@ export async function buildWebFineTuneExportFromSources(
 		manifestJson: "",
 	};
 	if (options.format === "chatml" || options.format === "both") {
-		result.chatmlJsonl = toChatMlJsonl(examples);
+		result.chatmlJsonl = toChatMlJsonl(conversations);
 	}
 	if (options.format === "alpaca" || options.format === "both") {
 		result.alpacaJsonl = toAlpacaJsonl(examples);

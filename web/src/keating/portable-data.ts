@@ -1,5 +1,5 @@
 import type { SessionData, SessionMetadata } from "../types/session";
-import { sessionPreview, sessionUsage } from "../hooks/session-metadata";
+import { sessionModelMetadata, sessionPreview, sessionUsage } from "../hooks/session-metadata";
 import type { KeatingStorageImportResult, KeatingStoragePortableData } from "./storage";
 import type { KeatingSandboxPortableBundle } from "./sandbox-export";
 import { getInitPromise, keatingStorage, sessions } from "../hooks/keating-storage";
@@ -44,6 +44,7 @@ function metadataForSession(data: SessionData, existing?: Partial<SessionMetadat
 		messageCount: data.messages.length,
 		usage: existing?.usage ?? sessionUsage(data.messages),
 		thinkingLevel: data.thinkingLevel,
+		...sessionModelMetadata(data.model),
 		preview: existing?.preview ?? sessionPreview(data.messages),
 		aiGeneratedTitle: existing?.aiGeneratedTitle ?? data.aiGeneratedTitle,
 	};

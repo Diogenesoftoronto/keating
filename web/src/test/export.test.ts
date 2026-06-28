@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { buildWebFineTuneExportFromSources } from "../keating/export";
+import { buildFineTuneImportSessionsFromFiles } from "../keating/import";
 
 describe("web fine-tune export", () => {
 	it("emits ChatML and Alpaca JSONL from artifacts and sessions", async () => {
@@ -278,5 +279,126 @@ describe("web fine-tune export", () => {
 		expect(chat.rejected).toContain("calls itself");
 		expect(text.prompt).toBe("System: Tutor persona\n\nUser: Explain recursion.");
 		expect(JSON.parse(result.manifestJson).counts.dpoTextLines).toBe(1);
+	});
+
+	it("imports ChatML and Alpaca JSONL as one session per example", () => {
+		const model = {
+			id: "gpt-test",
+			name: "GPT Test",
+			api: "openai-responses",
+			provider: "openai",
+			reasoning: true,
+			input: ["text"],
+			cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+			contextWindow: 128_000,
+			maxTokens: 8192,
+		} as any;
+		const result = buildFineTuneImportSessionsFromFiles([
+			{
+				name: "keating-finetune.chatml.jsonl",
+				text: `${JSON.stringify({ messages: [
+					{ role: "user", content: "Teach entropy." },
+					{ role: "assistant", content: "Entropy tracks uncertainty across possible states." },
+				] })}\n`,
+			},
+			{
+				name: "keating-finetune.alpaca.jsonl",
+				text: `${JSON.stringify({ instruction: "Teach recursion.", input: "Use stacks.", output: "A recursive function needs a base case." })}\n`,
+			},
+		], { now: 1_800_000_000_000, model, thinkingLevel: "high" });
+
+		expect(result.examplesImported).toBe(2);
+		// Two independent examples → two independent sessions (never flattened).
+		expect(result.sessionsImported).toBe(2);
+		expect(result.sessions).toHaveLength(2);
+		expect(result.sessions[0].messages).toHaveLength(2);
+		expect(result.sessions[1].messages).toHaveLength(2);
+		expect(result.sessions[0].model).toBe(model);
+		expect(result.sessions[0].thinkingLevel).toBe("high");
+		// Reconstructed messages are valid AgentMessages (content is a parts array).
+		expect((result.sessions[0].messages[0] as any).content[0]).toEqual({ type: "text", text: "Teach entropy." });
+		expect(String((result.sessions[1].messages[0] as any).content[0].text)).toContain("Use stacks.");
+	});
+
+	it("deduplicates paired ChatML and Alpaca fine-tune imports", () => {
+		const result = buildFineTuneImportSessionsFromFiles([
+			{
+				name: "keating-finetune.chatml.jsonl",
+				text: `${JSON.stringify({ messages: [
+					{ role: "user", content: "Teach entropy." },
+					{ role: "assistant", content: "Entropy tracks uncertainty across possible states." },
+				] })}\n`,
+			},
+			{
+				name: "keating-finetune.alpaca.jsonl",
+				text: `${JSON.stringify({ instruction: "Teach entropy.", input: "", output: "Entropy tracks uncertainty across possible states." })}\n`,
+			},
+		], { now: 1_800_000_000_000 });
+
+		expect(result.examplesImported).toBe(1);
+		expect(result.sessionsImported).toBe(1);
+		expect(result.sessions[0].messages).toHaveLength(2);
+	});
+
+	it("reconstructs a lossless resumable session from the keating envelope", () => {
+		const result = buildFineTuneImportSessionsFromFiles([
+			{
+				name: "train.chatml.jsonl",
+				text: `${JSON.stringify({
+					messages: [
+						{ role: "system", content: "Tutor persona" },
+						{ role: "user", content: "Explain recursion." },
+						{ role: "assistant", content: "It calls itself with a base case." },
+					],
+					keating: {
+						title: "Recursion chat",
+						thinkingLevel: "low",
+						sessionId: "sess-abc",
+						source: "keating-session-export",
+					},
+				})}\n`,
+			},
+		], { now: 1_800_000_000_000 });
+
+		expect(result.sessionsImported).toBe(1);
+		const session = result.sessions[0];
+		expect(session.title).toBe("Recursion chat");
+		expect(session.thinkingLevel).toBe("low");
+		expect(session.id).toBe("sess-abc-import-0");
+		// System message preserved for faithful resume.
+		expect((session.messages[0] as any).role).toBe("system");
+		expect(session.messages).toHaveLength(3);
+	});
+
+	it("round-trips a session through lossless chatml export and import", async () => {
+		const exported = await buildWebFineTuneExportFromSources({
+			sessions: [{
+				id: "s-rt",
+				title: "Recursion deep dive",
+				model: { id: "gpt-x", name: "GPT X", provider: "openai", api: "openai-responses" } as any,
+				thinkingLevel: "low",
+				createdAt: new Date(1_800_000_000_000).toISOString(),
+				lastModified: new Date(1_800_000_000_000).toISOString(),
+				messages: [
+					{ role: "system", content: "Tutor persona" },
+					{ role: "user", content: "Explain recursion in enough detail to learn it." },
+					{ role: "assistant", content: "Recursion solves a problem by reducing it to smaller versions until a base case stops it." },
+				] as any,
+			}],
+		}, { source: "sessions", format: "chatml", redact: false, minAssistantChars: 20 });
+
+		expect(exported.chatmlJsonl).toBeTruthy();
+		const imported = buildFineTuneImportSessionsFromFiles(
+			[{ name: "train.chatml.jsonl", text: exported.chatmlJsonl! }],
+			{ now: 1_800_000_000_000 },
+		);
+
+		expect(imported.sessionsImported).toBe(1);
+		const session = imported.sessions[0];
+		expect(session.title).toBe("Recursion deep dive");
+		expect(session.thinkingLevel).toBe("low");
+		// Lossless envelope round-trips the model and the system turn.
+		expect((session.model as any).id).toBe("gpt-x");
+		expect((session.messages[0] as any).role).toBe("system");
 	});
 });

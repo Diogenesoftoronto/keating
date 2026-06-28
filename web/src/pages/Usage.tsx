@@ -6,6 +6,7 @@ import { getInitPromise, keatingStorage, sessions } from "../hooks/keating-stora
 import type { SessionMetadata } from "../types/session";
 import { UsageCharts } from "../components/UsageCharts";
 import { buildWebFineTuneExport, type WebExportSource, type WebFineTuneFormat } from "../keating/export";
+import { importFineTuneFiles, type WebFineTuneImportResult } from "../keating/import";
 import { downloadTextFile } from "../lib/browser-download";
 import {
 	buildKeatingPortableDataBundle,
@@ -40,6 +41,13 @@ function firstSentence(text: string) {
 		.replace(/\s+/g, " ")
 		.trim();
 	return clean.split(/[.!?]\s/)[0]?.slice(0, 220) || "No preview saved";
+}
+
+function sessionModelLabel(session: SessionMetadata): string | null {
+	const model = session.modelName?.trim() || session.modelId?.trim();
+	if (!model) return null;
+	const provider = session.modelProvider?.trim();
+	return provider ? `${provider}/${model}` : model;
 }
 
 function useSessionMetadata() {
@@ -111,6 +119,7 @@ function FineTuneExportPanel() {
 	const [judgeScoring, setJudgeScoring] = useState(false);
 	const [exporting, setExporting] = useState(false);
 	const [result, setResult] = useState<{ examples: number; skipped: number; redactions: number; scored?: number; unscored?: number } | null>(null);
+	const [importResult, setImportResult] = useState<WebFineTuneImportResult | null>(null);
 	const [error, setError] = useState("");
 
 	const handleExport = async () => {
@@ -153,6 +162,29 @@ function FineTuneExportPanel() {
 				scored: bundle.rewardStats?.scored,
 				unscored: bundle.rewardStats?.unscored,
 			});
+		} catch (err) {
+			setError(err instanceof Error ? err.message : String(err));
+		} finally {
+			setExporting(false);
+		}
+	};
+
+	const handleImport = async (fileList: FileList | null) => {
+		const files = Array.from(fileList ?? []);
+		if (!files.length) return;
+		setExporting(true);
+		setError("");
+		setImportResult(null);
+		try {
+			const imported = await importFineTuneFiles(await Promise.all(files.map(async (file) => ({
+				name: file.name,
+				text: await file.text(),
+			}))));
+			if (imported.examplesImported === 0) {
+				setError("No importable fine-tune examples were found. Choose ChatML or Alpaca JSONL files.");
+			}
+			metadataPromise = null;
+			setImportResult(imported);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : String(err));
 		} finally {
@@ -219,21 +251,43 @@ function FineTuneExportPanel() {
 					</label>
 				</div>
 				<div className="flex shrink-0 flex-col items-start gap-2 xl:items-end">
-					<button
-						type="button"
-						className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-						onClick={handleExport}
-						disabled={exporting}
-					>
-						<Download size={16} />
-						{exporting ? "Exporting..." : "Export fine-tune data"}
-					</button>
+					<div className="flex flex-wrap items-center gap-2 xl:justify-end">
+						<button
+							type="button"
+							className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+							onClick={handleExport}
+							disabled={exporting}
+						>
+							<Download size={16} />
+							{exporting ? "Working..." : "Export fine-tune data"}
+						</button>
+						<label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md border border-border px-3 text-sm hover:bg-accent has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50">
+							<Upload size={16} />
+							Import JSONL
+							<input
+								type="file"
+								accept=".jsonl,application/jsonl,application/x-ndjson"
+								multiple
+								className="sr-only"
+								disabled={exporting}
+								onChange={(event) => {
+									void handleImport(event.target.files);
+									event.currentTarget.value = "";
+								}}
+							/>
+						</label>
+					</div>
 					{result && (
 						<div className="text-xs text-muted-foreground">
 							{formatNumber(result.examples)} examples · {formatNumber(result.skipped)} skipped · {formatNumber(result.redactions)} redactions
 							{typeof result.scored === "number" && typeof result.unscored === "number"
 								? ` · ${formatNumber(result.scored)} scored · ${formatNumber(result.unscored)} unscored`
 								: ""}
+						</div>
+					)}
+					{importResult && (
+						<div className="text-xs text-muted-foreground">
+							Imported {formatNumber(importResult.examplesImported)} examples into {formatNumber(importResult.sessionsImported)} session{importResult.sessionsImported === 1 ? "" : "s"} · {formatNumber(importResult.skipped)} skipped
 						</div>
 					)}
 					{error && <div className="max-w-sm text-xs text-destructive">{error}</div>}
@@ -522,6 +576,7 @@ function UsageContent() {
 
 function SessionRow({ session }: { session: SessionMetadata }) {
 	const tokens = session.usage.totalTokens || session.usage.input + session.usage.output;
+	const modelLabel = sessionModelLabel(session);
 	return (
 		<div className="flex min-h-36 min-w-0 flex-col gap-3 px-4 py-3">
 			<div className="min-w-0 flex-1">
@@ -543,6 +598,12 @@ function SessionRow({ session }: { session: SessionMetadata }) {
 					<Brain size={12} className="shrink-0" />
 					<span className="truncate">{formatNumber(tokens)} tokens</span>
 				</span>
+				{modelLabel && (
+					<span className="inline-flex min-w-0 items-center gap-1 rounded-md bg-muted px-2 py-1">
+						<Cpu size={12} className="shrink-0" />
+						<span className="truncate">{modelLabel}</span>
+					</span>
+				)}
 			</div>
 		</div>
 	);

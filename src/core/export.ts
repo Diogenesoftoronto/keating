@@ -56,8 +56,28 @@ interface FineTuneExample {
   messages?: Array<{ role: "user" | "assistant"; content: string }>;
 }
 
+/**
+ * One ChatML JSONL line = one conversation. Sessions become a single full
+ * multi-turn conversation (system turns preserved) carrying a `keating`
+ * envelope so the importer can reconstruct a faithful, resumable session;
+ * lossless exports (redaction off) also embed the original full messages.
+ */
+interface FineTuneConversation {
+  source: "artifact" | "session";
+  messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
+  envelope?: {
+    title?: string;
+    sessionId?: string;
+    source?: string;
+    model?: unknown;
+    thinkingLevel?: string;
+    messages?: unknown[];
+  };
+}
+
 interface BuildResult {
   examples: FineTuneExample[];
+  conversations: FineTuneConversation[];
   corpusSections: string[];
   artifactsRead: number;
   sessionsRead: number;
@@ -224,6 +244,7 @@ function sessionExamplesFromMessages(
 
 async function buildArtifactExamples(cwd: string, options: KeatingExportOptions): Promise<BuildResult> {
   const examples: FineTuneExample[] = [];
+  const conversations: FineTuneConversation[] = [];
   const corpusSections: string[] = [];
   const warnings: string[] = [];
   let artifactsRead = 0;
@@ -259,6 +280,13 @@ async function buildArtifactExamples(cwd: string, options: KeatingExportOptions)
           { role: "assistant", content: redacted.text },
         ],
       });
+      conversations.push({
+        source: "artifact",
+        messages: [
+          { role: "user", content: artifactInstruction(kind, topic) },
+          { role: "assistant", content: redacted.text },
+        ],
+      });
       corpusSections.push(`## ${kind}: ${relative(cwd, file)}\n\n${redacted.text}`);
     }
   }
@@ -276,11 +304,63 @@ async function buildArtifactExamples(cwd: string, options: KeatingExportOptions)
     }
   }
 
-  return { examples, corpusSections, artifactsRead, sessionsRead: 0, skipped, redactions, warnings };
+  return { examples, conversations, corpusSections, artifactsRead, sessionsRead: 0, skipped, redactions, warnings };
+}
+
+/** Builds one full, resumable conversation from a session's raw messages. */
+function conversationFromSession(
+  parsed: any,
+  sessionId: string,
+  messages: any[],
+  options: KeatingExportOptions,
+): { conversation: FineTuneConversation | null; redactions: number } {
+  const turns: FineTuneConversation["messages"] = [];
+  let redactions = 0;
+  for (const message of messages) {
+    const rawRole = message?.role;
+    const role = rawRole === "user" || rawRole === "user-with-attachments"
+      ? "user"
+      : rawRole === "assistant"
+        ? "assistant"
+        : rawRole === "system"
+          ? "system"
+          : null;
+    if (!role) continue;
+    const text = parseMessageText(message).trim();
+    if (!text) continue;
+    // Keep the visible training turns at the same quality bar as the paired
+    // examples (drop error/too-short assistant turns); the lossless envelope
+    // below still carries the unfiltered originals for faithful resume.
+    if (role === "assistant" && isBadAssistantText(text, message)) continue;
+    if (role === "assistant" && text.length < options.minAssistantChars) continue;
+    const redacted = redactText(text, options.redact);
+    redactions += redacted.count;
+    turns.push({ role, content: redacted.text });
+  }
+  const hasUser = turns.some((turn) => turn.role === "user");
+  const hasAssistant = turns.some((turn) => turn.role === "assistant");
+  if (!hasUser || !hasAssistant) return { conversation: null, redactions };
+  return {
+    conversation: {
+      source: "session",
+      messages: turns,
+      envelope: {
+        title: typeof parsed?.title === "string" ? parsed.title : undefined,
+        sessionId,
+        source: "keating-session-export",
+        model: parsed?.model && typeof parsed.model === "object" ? parsed.model : undefined,
+        thinkingLevel: typeof parsed?.thinkingLevel === "string" ? parsed.thinkingLevel : undefined,
+        // Lossless resume: embed original messages only when not redacting.
+        messages: options.redact ? undefined : messages,
+      },
+    },
+    redactions,
+  };
 }
 
 async function buildSessionExamples(cwd: string, options: KeatingExportOptions): Promise<BuildResult> {
   const examples: FineTuneExample[] = [];
+  const conversations: FineTuneConversation[] = [];
   const corpusSections: string[] = [];
   const warnings: string[] = [];
   let sessionsRead = 0;
@@ -304,22 +384,25 @@ async function buildSessionExamples(cwd: string, options: KeatingExportOptions):
       skipped += converted.skipped;
       redactions += converted.redactions;
       if (converted.corpus) corpusSections.push(converted.corpus);
+      // One full, resumable conversation per session for the ChatML output.
+      // (Redaction counts come from the example path above to avoid double counting.)
+      const conv = conversationFromSession(parsed, sessionId, messages, options);
+      if (conv.conversation) conversations.push(conv.conversation);
     } catch {
       warnings.push(`Skipped invalid session JSON: ${relative(cwd, file)}`);
       skipped += 1;
     }
   }
 
-  return { examples, corpusSections, artifactsRead: 0, sessionsRead, skipped, redactions, warnings };
+  return { examples, conversations, corpusSections, artifactsRead: 0, sessionsRead, skipped, redactions, warnings };
 }
 
-function toChatMlJsonl(examples: FineTuneExample[]): string {
-  return examples.map((example) => JSON.stringify({
-    messages: example.messages ?? [
-      { role: "user", content: example.instruction },
-      { role: "assistant", content: example.output },
-    ],
-  })).join("\n") + (examples.length ? "\n" : "");
+function toChatMlJsonl(conversations: FineTuneConversation[]): string {
+  return conversations.map((conversation) => JSON.stringify(
+    conversation.envelope
+      ? { messages: conversation.messages, keating: conversation.envelope }
+      : { messages: conversation.messages },
+  )).join("\n") + (conversations.length ? "\n" : "");
 }
 
 function toAlpacaJsonl(examples: FineTuneExample[]): string {
@@ -353,13 +436,14 @@ export async function exportFineTuneDataset(
   }
 
   const examples = parts.flatMap((part) => part.examples);
+  const conversations = parts.flatMap((part) => part.conversations);
   const warnings = parts.flatMap((part) => part.warnings);
   const skipped = parts.reduce((sum, part) => sum + part.skipped, 0);
   const redactions = parts.reduce((sum, part) => sum + part.redactions, 0);
   const artifactsRead = parts.reduce((sum, part) => sum + part.artifactsRead, 0);
   const sessionsRead = parts.reduce((sum, part) => sum + part.sessionsRead, 0);
 
-  if (examples.length === 0) {
+  if (examples.length === 0 && conversations.length === 0) {
     throw new Error("No fine-tuning examples found. Run keating plan, quiz, verify, or use Keating chat sessions first.");
   }
 
@@ -378,7 +462,7 @@ export async function exportFineTuneDataset(
   const files: string[] = [];
   if (options.format === "chatml" || options.format === "both") {
     const path = join(outDir, "train.chatml.jsonl");
-    await writeFile(path, toChatMlJsonl(examples), "utf8");
+    await writeFile(path, toChatMlJsonl(conversations), "utf8");
     files.push(relative(cwd, path));
   }
   if (options.format === "alpaca" || options.format === "both") {
