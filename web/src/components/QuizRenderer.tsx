@@ -98,6 +98,25 @@ function tokenize(text: string): string[] {
 		.filter(Boolean);
 }
 
+function ngrams(tokens: string[], n: number): string[] {
+	if (tokens.length < n) return [];
+	const grams: string[] = [];
+	for (let i = 0; i <= tokens.length - n; i++) {
+		grams.push(tokens.slice(i, i + n).join(" "));
+	}
+	return grams;
+}
+
+// Fraction of the reference's n-grams that appear in the answer. Bigrams reward
+// phrasing/word-order overlap, which single-token overlap misses.
+function ngramRecall(answerTokens: string[], referenceTokens: string[], n: number): number {
+	const reference = ngrams(referenceTokens, n);
+	if (reference.length === 0) return 0;
+	const answer = new Set(ngrams(answerTokens, n));
+	const matched = reference.filter((g) => answer.has(g)).length;
+	return matched / reference.length;
+}
+
 function levenshtein(a: string, b: string): number {
 	const m = a.length;
 	const n = b.length;
@@ -119,7 +138,7 @@ function levenshtein(a: string, b: string): number {
 	return prev[n];
 }
 
-function questionCredit(q: QuizQuestion, rawAnswer: string): number {
+export function questionCredit(q: QuizQuestion, rawAnswer: string): number {
 	if (!rawAnswer.trim()) return 0;
 	if (q.type === "slider") {
 		const ans = parseFloat(rawAnswer);
@@ -155,18 +174,37 @@ function questionCredit(q: QuizQuestion, rawAnswer: string): number {
 	if (q.type === "true_false" || q.type === "multiple_choice" || q.type === "dropdown") {
 		return rawAnswer.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase() ? 1 : 0;
 	}
-	// Open-ended: partial credit via Levenshtein + keyword overlap
+	// Open-ended: partial credit via Levenshtein + keyword/n-gram overlap. There's
+	// no single correct string here, so we take the most generous of several
+	// signals; the model gives the authoritative judgment in chat.
 	const a = rawAnswer.trim().toLowerCase();
 	const c = q.correctAnswer.trim().toLowerCase();
 	if (a === c) return 1;
 	const dist = levenshtein(a, c);
 	const len = Math.max(a.length, c.length);
 	const editScore = Math.max(0, 1 - dist / (len || 1));
-	const aTokens = new Set(tokenize(a));
+	const aTokens = tokenize(a);
 	const cTokens = tokenize(c);
-	const overlap = cTokens.filter((t) => aTokens.has(t)).length;
+	const aTokenSet = new Set(aTokens);
+	const overlap = cTokens.filter((t) => aTokenSet.has(t)).length;
 	const keywordScore = cTokens.length ? overlap / cTokens.length : 0;
-	return Math.max(editScore, keywordScore * 0.9);
+	// Phrase overlap: matching consecutive word pairs is a stronger signal that
+	// the learner expressed the same idea, not just reused isolated words.
+	const bigramScore = ngramRecall(aTokens, cTokens, 2);
+	return Math.max(editScore, keywordScore * 0.9, bigramScore);
+}
+
+// Open-ended answers can't be graded by string equality — there's no single
+// "correct" string. The model does the authoritative grading in chat; locally
+// we accept anything close enough on the partial-credit heuristic so the
+// displayed score isn't misleadingly strict.
+const OPEN_ENDED_CREDIT_THRESHOLD = 0.6;
+
+export function isOpenEnded(q: QuizQuestion): boolean {
+	if (q.type === "short_answer" || q.type === "transfer") return true;
+	// Single-blank fill_in is free text; multi-blank fill_in is graded per blank.
+	if (q.type === "fill_in" && !(q.blanks && q.blanks.length > 0)) return true;
+	return false;
 }
 
 function isCorrect(q: QuizQuestion, rawAnswer: string): boolean {
@@ -182,6 +220,9 @@ function isCorrect(q: QuizQuestion, rawAnswer: string): boolean {
 		const correctAnswers = q.correctAnswers ?? [q.correctAnswer];
 		if (userAnswers.length !== correctAnswers.length) return false;
 		return userAnswers.every((a, i) => a.toLowerCase() === correctAnswers[i].trim().toLowerCase());
+	}
+	if (isOpenEnded(q)) {
+		return questionCredit(q, rawAnswer) >= OPEN_ENDED_CREDIT_THRESHOLD;
 	}
 	return rawAnswer.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase();
 }
@@ -649,8 +690,14 @@ function QuestionCard({
 							<Lightbulb size={14} className="shrink-0 mt-0.5 text-accent" />
 							<div className="space-y-1">
 								<p>
-									<span className="font-medium">Correct:</span> {q.correctAnswer}
+									<span className="font-medium">{isOpenEnded(q) ? "Reference answer:" : "Correct:"}</span> {q.correctAnswer}
 								</p>
+								{isOpenEnded(q) && (
+									<p className="text-[10px] italic">
+										Pending review — your teacher is judging this answer in chat.
+										{credit > 0 && ` Heuristic hint: ${credit >= 0.6 ? "looks close" : "some overlap"} (not a grade).`}
+									</p>
+								)}
 								{q.explanation && <p>{q.explanation}</p>}
 								{q.rubric && <p className="text-[10px] opacity-70">{q.rubric}</p>}
 							</div>
@@ -796,6 +843,8 @@ function RemediationDashboard({
 		return map;
 	}, [quiz, answers]);
 
+	const [requested, setRequested] = useState<Set<string>>(new Set());
+
 	const hasMissed = Object.values(stats).some((s) => s.missed > 0);
 	if (!hasMissed) return null;
 
@@ -825,10 +874,14 @@ function RemediationDashboard({
 								</div>
 								<button
 									type="button"
-									onClick={() => onRequestRemediation?.(level)}
-									className="shrink-0 text-[10px] font-medium text-primary hover:underline"
+									disabled={requested.has(level)}
+									onClick={() => {
+										onRequestRemediation?.(level);
+										setRequested((prev) => new Set(prev).add(level));
+									}}
+									className="shrink-0 text-[10px] font-medium text-primary hover:underline disabled:text-muted-foreground disabled:no-underline"
 								>
-									Review
+									{requested.has(level) ? "Requested ✓" : "Review"}
 								</button>
 							</div>
 						</div>
@@ -919,7 +972,14 @@ export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) 
 	}, [quiz.questions, skippedIds]);
 
 	const totalVisible = visibleQuestions.length;
-	const scorableQuestions = visibleQuestions;
+	// Open-ended questions are judged by the teacher (model) in chat, not by the
+	// local heuristic, so they're excluded from the binary score shown here and
+	// surfaced as "pending review" instead.
+	const scorableQuestions = useMemo(
+		() => visibleQuestions.filter((q) => !isOpenEnded(q)),
+		[visibleQuestions],
+	);
+	const pendingReviewCount = totalVisible - scorableQuestions.length;
 	const totalScored = scorableQuestions.length;
 	const currentQuestion = visibleQuestions[current];
 	const timeLimit = currentQuestion?.timeLimit;
@@ -1155,6 +1215,9 @@ export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) 
 								{rawScore}/{totalScored}
 							</div>
 							<div className="text-[10px] text-muted-foreground uppercase">{percent}%</div>
+							{pendingReviewCount > 0 && (
+								<div className="text-[10px] text-muted-foreground">+{pendingReviewCount} pending review</div>
+							)}
 						</div>
 					)}
 				</div>

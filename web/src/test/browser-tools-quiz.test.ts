@@ -93,3 +93,46 @@ describe("quiz tool", () => {
 		expect(fillIn.correctAnswers).toEqual(["type"]);
 	});
 });
+
+describe("grade_quiz tool", () => {
+	test("requires result_id and grades", async () => {
+		const { createKeatingTools } = await import("../keating/browser-tools");
+		const tools = await createKeatingTools({} as any);
+		const gradeTool = tools.find((tool) => tool.name === "grade_quiz");
+
+		expect(gradeTool).toBeDefined();
+		expect((gradeTool!.parameters as { required?: string[] }).required).toEqual(["result_id", "grades"]);
+		await expect(
+			gradeTool!.execute("grade-missing-id", { grades: [{ question_id: "q1", verdict: "correct" }] }),
+		).rejects.toThrow("result_id is required");
+		await expect(
+			gradeTool!.execute("grade-empty", { result_id: "quiz-1", grades: [] }),
+		).rejects.toThrow("non-empty `grades`");
+	});
+
+	test("emits a quiz-grade tag with normalized verdicts", async () => {
+		const { createKeatingTools } = await import("../keating/browser-tools");
+		const tools = await createKeatingTools({} as any);
+		const gradeTool = tools.find((tool) => tool.name === "grade_quiz");
+
+		const result = await gradeTool!.execute("grade-ok", {
+			result_id: "quiz-42",
+			grades: [
+				{ question_id: "q1", verdict: "correct", note: "Nailed the intuition." },
+				{ question_id: "q2", verdict: "bogus" },
+				{ question_id: "", verdict: "incorrect" },
+			],
+		});
+
+		const text = textFromToolResult(result as any);
+		const match = text.match(/<keating-quiz-grade\s+json=([^>]+)\s*\/>/);
+		expect(match).not.toBeNull();
+		const payload = JSON.parse(JSON.parse(match![1]!.trim()));
+		expect(payload.resultId).toBe("quiz-42");
+		// Empty question_id is dropped; invalid verdict falls back to "partial".
+		expect(payload.grades).toEqual([
+			{ questionId: "q1", verdict: "correct", note: "Nailed the intuition." },
+			{ questionId: "q2", verdict: "partial" },
+		]);
+	});
+});

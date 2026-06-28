@@ -84,7 +84,8 @@ import { QuestionRenderer, normalizeQuestionForm } from "./QuestionRenderer";
 import type { AnsweredQuestion, QuestionFormData } from "./QuestionRenderer";
 import { GoalRenderer } from "./GoalRenderer";
 import { normalizeGoal } from "../keating/goals";
-import type { Quiz } from "../keating/core";
+import type { Quiz, QuizGradePayload, QuizQuestionGrade } from "../keating/core";
+import { QuizGradesContext, type QuizGradesContextValue } from "./quiz-grades-context";
 import {
   getSpeechProvider,
   KEATING_VOICE_TOOL_NAME,
@@ -102,6 +103,24 @@ import type { FlashcardDeck } from "../keating/srs";
 const AuthErrorContext = createContext<(provider: string) => Promise<boolean>>(
   () => Promise.resolve(false),
 );
+
+/**
+ * Renders nothing visible beyond a small confirmation; its job is to push the
+ * model's grade payload into QuizGradesContext when the grade tag mounts.
+ */
+function QuizGradeApplier({ payload }: { payload: QuizGradePayload }) {
+  const { applyGrades } = useContext(QuizGradesContext);
+  useEffect(() => {
+    if (payload.resultId && payload.grades.length > 0) {
+      applyGrades(payload.resultId, payload.grades);
+    }
+  }, [payload, applyGrades]);
+  return (
+    <p className="my-1 text-xs text-muted-foreground italic">
+      Reviewed your open-ended answers above.
+    </p>
+  );
+}
 
 const ERROR_TEXT_PREFIX = "\x00__KEATING_ERROR__\x00";
 
@@ -1044,7 +1063,7 @@ const questionTagPattern = /<keating-question\s+json=([^>]+)\s*\/>/g;
 const goalTagPattern = /<keating-goal\s+json=([^>]+)\s*\/>/g;
 const generatedImageTagPattern = /<keating-image\s+json=([^>]+)\s*\/>/g;
 const quizResultTagPattern = /<keating-quiz-result\s+json=([^>]+)\s*\/>/g;
-const interactiveTagPattern = /<keating-(quiz|scene|question|goal|image|quiz-result|animation|deck)\s+(json|markdown)=([^>]+)\s*\/>/g;
+const interactiveTagPattern = /<keating-(quiz|scene|question|goal|image|quiz-result|quiz-grade|animation|deck)\s+(json|markdown)=([^>]+)\s*\/>/g;
 const URL_IN_TEXT_PATTERN = /\bhttps?:\/\/[^\s<>"')\]]+/i;
 
 function parseInteractiveSegments(
@@ -1057,6 +1076,7 @@ function parseInteractiveSegments(
   | { type: "goal"; json: string }
   | { type: "image"; json: string }
   | { type: "quiz-result"; json: string }
+  | { type: "quiz-grade"; json: string }
   | { type: "animation"; json: string }
   | { type: "deck"; json: string }
 > {
@@ -1073,6 +1093,7 @@ function parseInteractiveSegments(
     const payload = match[3];
     if (tag === "quiz") segments.push({ type: "quiz", json: payload });
     if (tag === "quiz-result") segments.push({ type: "quiz-result", json: payload });
+    if (tag === "quiz-grade") segments.push({ type: "quiz-grade", json: payload });
     if (tag === "scene") {
       let markdown = payload;
       try {
@@ -1291,6 +1312,14 @@ function renderInteractiveSegment(
           }}
         />
       );
+    } catch {
+      return null;
+    }
+  }
+  if (seg.type === "quiz-grade") {
+    try {
+      const payload = JSON.parse(JSON.parse(seg.json)) as QuizGradePayload;
+      return <QuizGradeApplier key={key} payload={payload} />;
     } catch {
       return null;
     }
@@ -2744,6 +2773,38 @@ function AssistantThread({
     agent?.abort();
   }, [agent]);
 
+  // System-initiated sends (quiz remediation/reframe requests, etc.) can fire
+  // while the agent is mid-stream, where onNew silently drops them. Queue those
+  // and flush when the agent goes idle so the request is never lost.
+  const [quizGrades, setQuizGrades] = useState<Record<string, QuizQuestionGrade[]>>({});
+  const quizGradesContextValue = useMemo<QuizGradesContextValue>(
+    () => ({
+      grades: quizGrades,
+      applyGrades: (resultId, grades) =>
+        setQuizGrades((prev) => ({ ...prev, [resultId]: grades })),
+    }),
+    [quizGrades],
+  );
+
+  const pendingSendsRef = useRef<AppendMessage[]>([]);
+  const queueOrSend = useCallback(
+    (message: AppendMessage) => {
+      if (agent && !agent.state.isStreaming) {
+        void onNew(message);
+      } else {
+        pendingSendsRef.current.push(message);
+      }
+    },
+    [agent, onNew],
+  );
+
+  useEffect(() => {
+    if (isRunning || !agent) return;
+    if (pendingSendsRef.current.length === 0) return;
+    const next = pendingSendsRef.current.shift();
+    if (next) void onNew(next);
+  }, [isRunning, agent, onNew]);
+
   // When the learner submits an ask_user_question form, feed their answers back
   // into the conversation as a user turn so the agent actually receives them.
   useEffect(() => {
@@ -2792,26 +2853,41 @@ function AssistantThread({
         | undefined;
       if (!agent || !detail || typeof detail.score !== "number") return;
       const total = detail.total ?? 0;
+      const resultId = `${detail.quizId ?? "quiz"}-${Date.now()}`;
+      // Open-ended answers (short answer / transfer / free-text fill-in) have no
+      // single correct string, so they're not auto-scored — the model judges them
+      // by meaning via grade_quiz. detail.score counts objective questions only.
+      const isOpen = (type?: string) =>
+        type === "short_answer" || type === "transfer" || type === "fill_in";
+      const openEndedTotal = (detail.questions ?? []).filter((q) => isOpen(q.type)).length;
+      const objectiveTotal = total - openEndedTotal;
       const seconds = detail.timing ? Math.round(detail.timing.totalMs / 1000) : null;
       const lines: string[] = [
         `I finished the quiz${detail.topic ? ` on "${detail.topic}"` : ""}.`,
-        `Score: ${detail.score}/${total}${seconds !== null ? ` in ${seconds}s` : ""}.`,
+        `Objective score: ${detail.score}/${objectiveTotal}${openEndedTotal > 0 ? ` (${openEndedTotal} open-ended pending your review)` : ""}${seconds !== null ? ` in ${seconds}s` : ""}.`,
       ];
       if (typeof detail.weightedScore === "number") {
         lines.push(`Weighted score: ${detail.weightedScore.toFixed(2)}.`);
       }
       if (detail.questions && detail.answers && detail.timing) {
         const perQ = detail.timing.perQuestionMs;
+        let hasOpenEnded = false;
         for (const q of detail.questions) {
           const mine = (detail.answers[q.id] ?? "").trim();
-          const correct = mine.toLowerCase() === q.correctAnswer.trim().toLowerCase();
-          const pc = detail.partialCredits?.[q.id];
           const conf = detail.confidence?.[q.id];
-          const parts: string[] = [
-            `- ${q.question} → my answer: "${mine || "(blank)"}" ${correct ? "✓" : "✗"}`,
-          ];
-          if (typeof pc === "number" && !correct) {
-            parts.push(`(partial credit: ${Math.round(pc * 100)}%)`);
+          const parts: string[] = [];
+          if (isOpen(q.type)) {
+            hasOpenEnded = true;
+            parts.push(
+              `- [open-ended id=${q.id}] ${q.question} → my answer: "${mine || "(blank)"}" (reference: "${q.correctAnswer}")`,
+            );
+          } else {
+            const correct = mine.toLowerCase() === q.correctAnswer.trim().toLowerCase();
+            const pc = detail.partialCredits?.[q.id];
+            parts.push(`- ${q.question} → my answer: "${mine || "(blank)"}" ${correct ? "✓" : "✗"}`);
+            if (typeof pc === "number" && !correct) {
+              parts.push(`(partial credit: ${Math.round(pc * 100)}%)`);
+            }
           }
           if (typeof conf === "number") {
             parts.push(`[confidence: ${conf}%]`);
@@ -2819,6 +2895,11 @@ function AssistantThread({
           const t = perQ[q.id] ? ` (${Math.round(perQ[q.id] / 1000)}s)` : "";
           parts.push(t);
           lines.push(parts.join(" "));
+        }
+        if (hasOpenEnded) {
+          lines.push(
+            `Grade the open-ended answers (marked [open-ended id=…]) by calling the grade_quiz tool with result_id "${resultId}" and a verdict (correct/partial/incorrect) per question id. Judge by meaning, not exact wording — the reference is one acceptable answer, not the only one. Your verdicts update the result card. Briefly explain anything I got wrong.`,
+          );
         }
       }
       if (detail.flagged && detail.flagged.length > 0) {
@@ -2833,7 +2914,7 @@ function AssistantThread({
       }
       lines.push("Please review my answers and timing, then guide what to work on next.");
       const resultPayload = {
-        id: `${detail.quizId ?? "quiz"}-${Date.now()}`,
+        id: resultId,
         timestamp: Date.now(),
         quiz: {
           slug: detail.quizId ?? "",
@@ -2867,7 +2948,7 @@ function AssistantThread({
         | { level?: string; topic?: string; slug?: string }
         | undefined;
       if (!detail?.level) return;
-      void onNew({
+      queueOrSend({
         role: "user",
         content: [
           {
@@ -2879,7 +2960,7 @@ function AssistantThread({
     };
     window.addEventListener("keating:quiz-remediation-requested", handler);
     return () => window.removeEventListener("keating:quiz-remediation-requested", handler);
-  }, [onNew]);
+  }, [queueOrSend]);
 
   // Handle quiz reframe requests: learner selected a reframe mode with no pre-generated text.
   useEffect(() => {
@@ -2888,7 +2969,7 @@ function AssistantThread({
         | { questionId?: string; mode?: string; topic?: string }
         | undefined;
       if (!detail?.mode || !detail?.questionId) return;
-      void onNew({
+      queueOrSend({
         role: "user",
         content: [
           {
@@ -2900,7 +2981,7 @@ function AssistantThread({
     };
     window.addEventListener("keating:quiz-reframe-requested", handler);
     return () => window.removeEventListener("keating:quiz-reframe-requested", handler);
-  }, [onNew]);
+  }, [queueOrSend]);
 
   const storeAdapter = useMemo(
     () => ({
@@ -2981,6 +3062,7 @@ function AssistantThread({
     <AuthErrorContext.Provider
       value={callbacks.onAuthError ?? (() => Promise.resolve(false))}
     >
+      <QuizGradesContext.Provider value={quizGradesContextValue}>
       <AssistantRuntimeProvider runtime={runtime}>
         <ThreadPrimitive.Root className="flex h-full min-h-0 flex-col bg-background text-foreground">
           <ThreadPrimitive.Viewport className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-3 py-4 sm:px-4 sm:py-6">
@@ -3112,6 +3194,7 @@ function AssistantThread({
           </ThreadPrimitive.Viewport>
         </ThreadPrimitive.Root>
       </AssistantRuntimeProvider>
+      </QuizGradesContext.Provider>
     </AuthErrorContext.Provider>
   );
 }

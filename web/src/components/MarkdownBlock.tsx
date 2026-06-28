@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -13,6 +14,74 @@ const CodeHighlighter = lazy(() => import("./CodeHighlighter"));
 
 interface MarkdownBlockProps {
 	content: string;
+}
+
+// Click-to-reveal "spoiler" / mask: authors wrap a clue or answer in ||double
+// pipes|| and the learner clicks to reveal it. Lets the teacher hide hints so
+// the learner can attempt recall first.
+const SPOILER_PATTERN = /\|\|([^|]+)\|\|/g;
+
+interface MdastNode {
+	type: string;
+	value?: string;
+	children?: MdastNode[];
+	data?: { hName?: string; hProperties?: Record<string, unknown> };
+}
+
+// Dependency-free remark transform: split text nodes on ||...|| into spoiler
+// nodes. Code/inline-code nodes carry `value` under non-"text" types, so they're
+// never matched — spoilers inside code are left alone.
+function remarkSpoiler() {
+	function transform(node: MdastNode) {
+		if (!Array.isArray(node.children)) return;
+		const out: MdastNode[] = [];
+		for (const child of node.children) {
+			if (child.type === "text" && typeof child.value === "string" && child.value.includes("||")) {
+				SPOILER_PATTERN.lastIndex = 0;
+				let last = 0;
+				let matched = false;
+				let m: RegExpExecArray | null;
+				while ((m = SPOILER_PATTERN.exec(child.value)) !== null) {
+					matched = true;
+					if (m.index > last) out.push({ type: "text", value: child.value.slice(last, m.index) });
+					out.push({
+						type: "spoiler",
+						data: { hName: "span", hProperties: { className: ["keating-spoiler"] } },
+						children: [{ type: "text", value: m[1] }],
+					});
+					last = m.index + m[0].length;
+				}
+				if (!matched) {
+					out.push(child);
+				} else if (last < child.value.length) {
+					out.push({ type: "text", value: child.value.slice(last) });
+				}
+			} else {
+				transform(child);
+				out.push(child);
+			}
+		}
+		node.children = out;
+	}
+	return (tree: MdastNode) => transform(tree);
+}
+
+function Spoiler({ children }: { children: ReactNode }) {
+	const [revealed, setRevealed] = useState(false);
+	if (revealed) {
+		return <span className="rounded bg-muted px-1 text-foreground">{children}</span>;
+	}
+	return (
+		<button
+			type="button"
+			onClick={() => setRevealed(true)}
+			title="Reveal"
+			aria-label="Reveal hidden text"
+			className="cursor-pointer select-none rounded bg-foreground/85 px-1 text-transparent transition-colors hover:bg-foreground/70"
+		>
+			{children}
+		</button>
+	);
 }
 
 function CodeBlock({ lang, children }: { lang: string; children: string }) {
@@ -73,6 +142,16 @@ function CodeBlock({ lang, children }: { lang: string; children: string }) {
 }
 
 const COMPONENTS: Components = {
+	span({ className, children, ...props }) {
+		if (typeof className === "string" && className.includes("keating-spoiler")) {
+			return <Spoiler>{children}</Spoiler>;
+		}
+		return (
+			<span className={className} {...props}>
+				{children}
+			</span>
+		);
+	},
 	pre({ children }) {
 		// react-markdown wraps <code> inside <pre>; we intercept the whole block here.
 		// The child should be a <code> element with a className like "language-python".
@@ -136,7 +215,7 @@ const COMPONENTS: Components = {
 
 export function MarkdownBlock({ content }: MarkdownBlockProps) {
 	const plugins = useMemo(
-		() => ({ remark: [remarkGfm, remarkMath], rehype: [rehypeKatex] }),
+		() => ({ remark: [remarkGfm, remarkMath, remarkSpoiler], rehype: [rehypeKatex] }),
 		[],
 	);
 

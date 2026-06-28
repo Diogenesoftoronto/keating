@@ -2311,6 +2311,21 @@ export interface QuizQuestion {
 	fallbackFor?: string;
 }
 
+/** Verdict the teacher (model) assigns to an open-ended answer when grading. */
+export type QuizGradeVerdict = "correct" | "partial" | "incorrect";
+
+export interface QuizQuestionGrade {
+	questionId: string;
+	verdict: QuizGradeVerdict;
+	note?: string;
+}
+
+/** Payload carried by the <keating-quiz-grade> tag the grade_quiz tool emits. */
+export interface QuizGradePayload {
+	resultId: string;
+	grades: QuizQuestionGrade[];
+}
+
 export interface QuizReview {
 	status: "passed" | "revised";
 	issues: string[];
