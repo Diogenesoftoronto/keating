@@ -11,10 +11,10 @@ const SHARE_ID_PATTERN = /^[A-Za-z0-9_-]{8,32}$/;
 let cachedShell: string | null = null;
 
 const SHELL_CANDIDATES = [
-	"./.output/public/index.html",
 	"./dist/index.html",
-	"./public/index.html",
 	"dist/index.html",
+	"./.output/public/index.html",
+	"./public/index.html",
 ];
 
 async function loadShell(): Promise<string | null> {

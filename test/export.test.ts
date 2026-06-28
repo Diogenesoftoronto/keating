@@ -6,10 +6,12 @@ import { tmpdir } from "node:os";
 import {
   ensureProjectScaffold,
   exportKeatingData,
+  importKeatingData,
   planTopicArtifact,
   quizTopicArtifact,
   verifyTopicArtifact
 } from "../src/core/project.js";
+import { sessionsDir } from "../src/core/paths.js";
 
 async function tempProject() {
   const workdir = await mkdtemp(join(tmpdir(), "keating-export-"));
@@ -160,4 +162,111 @@ test("keating finetune export fails clearly for empty projects", async () => {
     redact: true,
     minAssistantChars: 80,
   })).rejects.toThrow("No fine-tuning examples found");
+});
+
+test("keating finetune import reconstructs sessions from exported ChatML", async () => {
+  const source = await tempProject();
+  await planTopicArtifact(source, "derivative");
+  const exported = await exportKeatingData(source, {
+    mode: "finetune",
+    source: "artifacts",
+    format: "chatml",
+    redact: true,
+    minAssistantChars: 80,
+  });
+
+  const target = await tempProject();
+  const imported = await importKeatingData(target, {
+    sourcePath: exported.outDir,
+    format: "auto",
+  });
+
+  expect(imported.examplesImported).toBeGreaterThanOrEqual(1);
+  expect(await exists(imported.sessionPath)).toBe(true);
+  const session = JSON.parse(await readFile(imported.sessionPath, "utf8"));
+  expect(session.source).toBe("keating-finetune-import");
+  expect(session.messages.some((message: { role: string }) => message.role === "user")).toBe(true);
+  expect(session.messages.some((message: { role: string }) => message.role === "assistant")).toBe(true);
+});
+
+test("keating finetune import deduplicates paired ChatML and Alpaca exports", async () => {
+  const source = await tempProject();
+  await planTopicArtifact(source, "derivative");
+  const exported = await exportKeatingData(source, {
+    mode: "finetune",
+    source: "artifacts",
+    format: "both",
+    redact: true,
+    minAssistantChars: 80,
+  });
+
+  const target = await tempProject();
+  const imported = await importKeatingData(target, {
+    sourcePath: exported.outDir,
+    format: "auto",
+  });
+
+  expect(imported.examplesImported).toBe(exported.manifest.counts.examplesWritten);
+  // Each example becomes its own session — never flattened into one.
+  expect(imported.sessionsImported).toBe(exported.manifest.counts.examplesWritten);
+  expect(imported.sessionPaths).toHaveLength(exported.manifest.counts.examplesWritten);
+  const session = JSON.parse(await readFile(imported.sessionPath, "utf8"));
+  expect(session.messages).toHaveLength(2);
+});
+
+test("keating finetune import supports Alpaca JSONL files", async () => {
+  const workdir = await tempProject();
+  const file = join(workdir, "train.alpaca.jsonl");
+  await writeFile(
+    file,
+    `${JSON.stringify({ instruction: "Teach recursion.", input: "Use stacks.", output: "Recursion uses a base case and smaller subproblems." })}\n`,
+    "utf8"
+  );
+
+  const imported = await importKeatingData(workdir, {
+    sourcePath: file,
+    format: "auto",
+  });
+
+  expect(imported.examplesImported).toBe(1);
+  const session = JSON.parse(await readFile(imported.sessionPath, "utf8"));
+  expect(session.messages[0].content).toContain("Use stacks.");
+  expect(session.messages[1].content).toContain("base case");
+});
+
+test("keating lossless session export round-trips into a resumable session", async () => {
+  const source = await tempProject();
+  await mkdir(sessionsDir(source), { recursive: true });
+  const original = {
+    id: "sess-resume",
+    title: "Resume me",
+    model: { id: "gpt-x", name: "GPT X", provider: "openai", api: "openai-responses" },
+    thinkingLevel: "low",
+    messages: [
+      { role: "system", content: [{ type: "text", text: "Tutor persona" }] },
+      { role: "user", content: [{ type: "text", text: "Explain recursion in depth please." }] },
+      { role: "assistant", content: [{ type: "text", text: "Recursion is when a function calls itself with a smaller input until it reaches a base case." }] },
+    ],
+  };
+  await writeFile(join(sessionsDir(source), "sess-resume.json"), `${JSON.stringify(original, null, 2)}\n`, "utf8");
+
+  const exported = await exportKeatingData(source, {
+    mode: "finetune",
+    source: "sessions",
+    format: "chatml",
+    redact: false,
+    minAssistantChars: 10,
+  });
+
+  const target = await tempProject();
+  const imported = await importKeatingData(target, { sourcePath: exported.outDir, format: "auto" });
+
+  expect(imported.sessionsImported).toBe(1);
+  const session = JSON.parse(await readFile(imported.sessionPath, "utf8"));
+  // Lossless: model, thinkingLevel, and the system turn survive the round-trip.
+  expect(session.model.id).toBe("gpt-x");
+  expect(session.thinkingLevel).toBe("low");
+  expect(session.source).toBe("keating-session-export");
+  expect(session.messages[0].role).toBe("system");
+  expect(session.messages).toHaveLength(3);
 });

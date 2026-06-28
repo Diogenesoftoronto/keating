@@ -23,6 +23,7 @@ export const extensionCommandSpecs: CommandSpec[] = [
 	{ name: "auto-improve", args: "[topic] [--force]", section: "Self-Improvement", description: "Run full self-improvement loop: bench → evolve → prompt-evolve → bench." },
 	{ name: "edit",         args: "<file> [--backup-dir=DIR]", section: "Self-Improvement", description: "Apply a search/replace edit to a source file. Reads search/replace from stdin or prompts interactively." },
 	{ name: "export",       args: "--finetune [options]", section: "Export", description: "Export Keating data for fine-tuning or downstream workflows.", cliOnly: true },
+	{ name: "import",       args: "--finetune <path> [options]", section: "Export", description: "Import fine-tune JSONL as Keating session data.", cliOnly: true },
 	{ name: "feedback",     args: "<up|down|confused> [topic] [--comment=text]", section: "Session",   description: "Record session feedback with optional comment." },
 	{ name: "setup",        args: "",               section: "Session",       description: "Configure Keating provider/model defaults inside the TUI." },
 	{ name: "packages",     args: "[list|add <source>|remove <source>|recommended]", section: "Session", description: "Manage extra Pi packages loaded by Keating." },

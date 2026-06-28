@@ -1,7 +1,7 @@
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import type { Model } from "@earendil-works/pi-ai";
 import type { SessionData, SessionMetadata } from "../types/session";
-import { createSessionId, sessionPreview, sessionTitle, sessionUsage } from "../hooks/session-metadata";
+import { createSessionId, sessionModelMetadata, sessionPreview, sessionTitle, sessionUsage } from "../hooks/session-metadata";
 import { sessions } from "../hooks/keating-storage";
 import { DEFAULT_MODEL } from "../hooks/keating-stream";
 import { loadKeatingUiSettings, type ShareLinkMode } from "./ui-settings";
@@ -288,6 +288,12 @@ export async function forkSharedSession(shared: SharedSession): Promise<string> 
 	const now = new Date().toISOString();
 	const title = `${shared.title} (fork)`;
 	const messages = sanitizeMessagesForShare(shared.messages);
+	const model = shared.model ? {
+		...DEFAULT_MODEL,
+		...shared.model,
+		provider: shared.model.provider as any,
+		api: (shared.model.api ?? DEFAULT_MODEL.api) as any,
+	} : DEFAULT_MODEL;
 
 	const metadata: SessionMetadata = {
 		id,
@@ -297,17 +303,13 @@ export async function forkSharedSession(shared: SharedSession): Promise<string> 
 		messageCount: messages.length,
 		usage: sessionUsage(messages),
 		thinkingLevel: shared.thinkingLevel ?? "medium",
+		...sessionModelMetadata(model),
 		preview: sessionPreview(messages),
 	};
 	const data: SessionData = {
 		id,
 		title,
-		model: shared.model ? {
-			...DEFAULT_MODEL,
-			...shared.model,
-			provider: shared.model.provider as any,
-			api: (shared.model.api ?? DEFAULT_MODEL.api) as any,
-		} : DEFAULT_MODEL,
+		model,
 		thinkingLevel: shared.thinkingLevel ?? "medium",
 		messages,
 		createdAt: now,

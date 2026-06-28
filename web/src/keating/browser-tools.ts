@@ -172,7 +172,8 @@ function createTool(
 	name: string,
 	description: string,
 	parameters: Record<string, unknown>,
-	execute: (params: Record<string, unknown>) => Promise<string>
+	execute: (params: Record<string, unknown>) => Promise<string>,
+	required?: string[],
 ): AgentTool {
 	return {
 		name,
@@ -181,6 +182,7 @@ function createTool(
 		parameters: {
 			type: "object",
 			properties: parameters,
+			...(required?.length ? { required } : {}),
 			additionalProperties: false,
 		},
 		execute: async (_toolCallId: string, params: Record<string, unknown>) => {
@@ -1036,97 +1038,108 @@ export async function createKeatingTools(
 			}
 		),
 
-		// quiz - Generate retrieval practice questions
-		createTool(
-			"quiz",
-			"Build a retrieval-practice quiz AFTER the learner has gone through the lesson — it is a separate artifact, never auto-paired with the plan. You MUST pass `questions` you author yourself, grounded in the specific material the learner covered — for EVERY topic. Each question needs a real prompt, the correct answer, an explanation, and (for multiple-choice) plausible distractors. There is no template: calling this without 2+ valid questions is rejected with an instruction to author them. Choose concise character limits before generating; the engine clamps unsafe values and records them in quiz.review. Pass adaptive=true for adaptive branching, or reframes=[\"eli5\",\"debug\"] to pre-generate reframes. After calling this tool, do NOT repeat the quiz questions in your response — the interactive quiz UI renders them directly. Simply say 'Quiz ready' and wait.",
-			{
-				topic: { type: "string", description: "The topic to generate quiz questions for" },
-				questions: {
-					type: "array",
-					description: "Author each question yourself from the real lesson material. Provide 4-10 for a good quiz. When 2+ valid questions are given, they fully replace the generic templates.",
-					items: {
-						type: "object",
-						properties: {
-							question: { type: "string", description: "The actual question prompt. For fill_in with multiple blanks, use ___ or {{blank}} as placeholders in the text." },
-							type: { type: "string", enum: ["multiple_choice", "short_answer", "true_false", "fill_in", "transfer"], description: "Defaults to multiple_choice when options are given, otherwise short_answer. Use 'fill_in' for blanks: supply 'blanks' array for multi-blank questions (each blank is an ___) or just 'correctAnswer' for a single blank." },
-							level: { type: "string", enum: ["recall", "comprehension", "application", "analysis", "transfer"], description: "Bloom level. Aim for a spread from recall to transfer." },
-							options: { type: "array", items: { type: "string" }, description: "For multiple_choice: 3-4 plausible options. Include the correct answer; it is added automatically if missing." },
-							blanks: { type: "array", items: { type: "object", properties: { placeholder: { type: "string" }, hint: { type: "string" } } }, description: "For fill_in with multiple blanks: one entry per ___ placeholder in the question text. The learner gets an input for each blank." },
-							correctAnswer: { type: "string", description: "The correct answer (must match one option for multiple_choice). For multi-blank fill_in, use pipe-separated answers: '2x|2' or supply correctAnswers array." },
-							correctAnswers: { type: "array", items: { type: "string" }, description: "Array of correct answers for multi-blank fill_in questions, one per blank in order." },
-							explanation: { type: "string", description: "Why the answer is correct — the teaching moment." },
-							rubric: { type: "string", description: "For open-ended questions: how to award partial credit. A sensible default is supplied if omitted." },
+			// quiz - Generate retrieval practice questions
+			createTool(
+				"quiz",
+				"Build a retrieval-practice quiz AFTER the learner has gone through the lesson — it is a separate artifact, never auto-paired with the plan. You MUST pass `questions` you author yourself, grounded in the specific material the learner covered — for EVERY topic. Each question needs a real prompt, the correct answer, an explanation, and (for multiple-choice) plausible distractors. There is no template: calling this without 2+ valid questions is rejected with an instruction to author them. Choose concise character limits before generating; the engine clamps unsafe values and records them in quiz.review. Pass adaptive=true for adaptive branching, or reframes=[\"eli5\",\"debug\"] to pre-generate reframes. After calling this tool, do NOT repeat the quiz questions in your response — the interactive quiz UI renders them directly. Simply say 'Quiz ready' and wait.",
+				{
+					topic: { type: "string", description: "The topic to generate quiz questions for" },
+					questions: {
+						type: "array",
+						minItems: 2,
+						description: "Author each question yourself from the real lesson material. Provide 4-10 for a good quiz. When 2+ valid questions are given, they fully replace the generic templates.",
+						items: {
+							type: "object",
+							properties: {
+								question: { type: "string", description: "The actual question prompt. For fill_in with multiple blanks, use ___ or {{blank}} as placeholders in the text." },
+								type: { type: "string", enum: ["multiple_choice", "short_answer", "true_false", "fill_in", "transfer"], description: "Defaults to multiple_choice when options are given, otherwise short_answer. Use 'fill_in' for blanks: supply 'blanks' array for multi-blank questions (each blank is an ___) or just 'correctAnswer' for a single blank." },
+								level: { type: "string", enum: ["recall", "comprehension", "application", "analysis", "transfer"], description: "Bloom level. Aim for a spread from recall to transfer." },
+								options: { type: "array", items: { type: "string" }, description: "For multiple_choice: 3-4 plausible options. Include the correct answer; it is added automatically if missing." },
+								blanks: { type: "array", items: { type: "object", properties: { placeholder: { type: "string" }, hint: { type: "string" } } }, description: "For fill_in with multiple blanks: one entry per ___ placeholder in the question text. The learner gets an input for each blank." },
+								correctAnswer: { type: "string", description: "The correct answer (must match one option for multiple_choice). For multi-blank fill_in, use pipe-separated answers: '2x|2' or supply correctAnswers array." },
+								correctAnswers: { type: "array", items: { type: "string" }, description: "Array of correct answers for multi-blank fill_in questions, one per blank in order." },
+								explanation: { type: "string", description: "Why the answer is correct — the teaching moment." },
+								rubric: { type: "string", description: "For open-ended questions: how to award partial credit. A sensible default is supplied if omitted." },
+							},
+							required: ["question", "correctAnswer", "explanation"],
+							additionalProperties: false,
 						},
-						required: ["question", "correctAnswer", "explanation"],
+					},
+					adaptive: { type: "boolean", description: "Enable adaptive branching with fallback questions (default false)" },
+					reframes: { type: "array", items: { type: "string" }, description: "Reframe modes to pre-generate, e.g. [\"eli5\", \"debug\", \"cooking\"]" },
+					limits: {
+						type: "object",
+						description: "Optional concise output limits chosen for this quiz. Values are clamped to safe ranges.",
+						properties: {
+							question_chars: { type: "number", description: "Maximum characters per question, clamped to 80-320." },
+							answer_chars: { type: "number", description: "Maximum characters per answer, clamped to 80-500." },
+							explanation_chars: { type: "number", description: "Maximum characters per explanation, clamped to 80-500." },
+							rubric_chars: { type: "number", description: "Maximum characters per rubric, clamped to 60-220." },
+							option_chars: { type: "number", description: "Maximum characters per multiple-choice option, clamped to 40-220." },
+						},
 						additionalProperties: false,
 					},
 				},
-				adaptive: { type: "boolean", description: "Enable adaptive branching with fallback questions (default false)" },
-				reframes: { type: "array", items: { type: "string" }, description: "Reframe modes to pre-generate, e.g. [\"eli5\", \"debug\", \"cooking\"]" },
-				limits: {
-					type: "object",
-					description: "Optional concise output limits chosen for this quiz. Values are clamped to safe ranges.",
-					properties: {
-						question_chars: { type: "number", description: "Maximum characters per question, clamped to 80-320." },
-						answer_chars: { type: "number", description: "Maximum characters per answer, clamped to 80-500." },
-						explanation_chars: { type: "number", description: "Maximum characters per explanation, clamped to 80-500." },
-						rubric_chars: { type: "number", description: "Maximum characters per rubric, clamped to 60-220." },
-						option_chars: { type: "number", description: "Maximum characters per multiple-choice option, clamped to 40-220." },
-					},
-					additionalProperties: false,
+				async (params) => {
+					const topic = (params.topic as string) || "";
+					if (!topic) throw new Error("Topic required.");
+
+					const reframeModes = Array.isArray(params.reframes)
+						? params.reframes.filter((r): r is string => typeof r === "string")
+						: undefined;
+					const rawLimits = params.limits && typeof params.limits === "object"
+						? params.limits as Record<string, unknown>
+						: undefined;
+					const authored = Array.isArray(params.questions)
+						? (params.questions as unknown[])
+							.filter((q): q is Record<string, unknown> => !!q && typeof q === "object")
+							.map((q) => ({
+								question: typeof q.question === "string" ? q.question : "",
+								type: typeof q.type === "string" ? q.type as AuthoredQuestion["type"] : undefined,
+								level: typeof q.level === "string" ? q.level as AuthoredQuestion["level"] : undefined,
+								options: Array.isArray(q.options) ? q.options.filter((o): o is string => typeof o === "string") : undefined,
+								blanks: Array.isArray(q.blanks)
+									? q.blanks
+										.filter((blank): blank is Record<string, unknown> => !!blank && typeof blank === "object")
+										.map((blank) => ({
+											placeholder: typeof blank.placeholder === "string" ? blank.placeholder : undefined,
+											hint: typeof blank.hint === "string" ? blank.hint : undefined,
+										}))
+									: undefined,
+								correctAnswer: typeof q.correctAnswer === "string" ? q.correctAnswer : "",
+								correctAnswers: Array.isArray(q.correctAnswers) ? q.correctAnswers.filter((a): a is string => typeof a === "string") : undefined,
+								explanation: typeof q.explanation === "string" ? q.explanation : "",
+								rubric: typeof q.rubric === "string" ? q.rubric : undefined,
+							}))
+						: [];
+					// No templates. The agent must author the questions itself, grounded in the
+					// lesson the learner just went through. A quiz is built only AFTER the lesson
+					// — it is a separate artifact, never auto-paired with the plan.
+					const validAuthored = buildAuthoredQuestions(resolveTopic(topic), authored);
+					if (validAuthored.length < 2) {
+						throw new Error("Author the quiz yourself. Pass a `questions` array (4-10 items), each grounded in the specific lesson the learner just completed, with a real prompt, correctAnswer, explanation, and (for multiple-choice) plausible distractors. Build the quiz only after the learner has gone through the lesson — it is a separate artifact, not a companion to the plan. No template fallback exists.");
+					}
+					const quiz = generateQuiz(topic, 42, {
+						adaptive: params.adaptive === true,
+						reframes: reframeModes,
+						authored,
+						limits: rawLimits ? {
+							questionChars: Number(rawLimits.question_chars),
+							answerChars: Number(rawLimits.answer_chars),
+							explanationChars: Number(rawLimits.explanation_chars),
+							rubricChars: Number(rawLimits.rubric_chars),
+							optionChars: Number(rawLimits.option_chars),
+						} : undefined,
+					});
+					const md = quizToMarkdown(quiz);
+					const answers = quizAnswerKeyToMarkdown(quiz);
+
+					const saved = await storage.saveLessonPlan(topic, md, { type: "quiz", questionCount: quiz.questions.length });
+
+					return `[artifact://plan/${saved.id}]\n\n${md}\n---\n${answers}\n\n<keating-quiz json=${JSON.stringify(JSON.stringify(quiz))} />`;
 				},
-			},
-			async (params) => {
-				const topic = (params.topic as string) || "";
-				if (!topic) return "Topic required.";
-
-				const reframeModes = Array.isArray(params.reframes)
-					? params.reframes.filter((r): r is string => typeof r === "string")
-					: undefined;
-				const rawLimits = params.limits && typeof params.limits === "object"
-					? params.limits as Record<string, unknown>
-					: undefined;
-				const authored = Array.isArray(params.questions)
-					? (params.questions as unknown[])
-						.filter((q): q is Record<string, unknown> => !!q && typeof q === "object")
-						.map((q) => ({
-							question: typeof q.question === "string" ? q.question : "",
-							type: typeof q.type === "string" ? q.type as AuthoredQuestion["type"] : undefined,
-							level: typeof q.level === "string" ? q.level as AuthoredQuestion["level"] : undefined,
-							options: Array.isArray(q.options) ? q.options.filter((o): o is string => typeof o === "string") : undefined,
-							correctAnswer: typeof q.correctAnswer === "string" ? q.correctAnswer : "",
-							explanation: typeof q.explanation === "string" ? q.explanation : "",
-							rubric: typeof q.rubric === "string" ? q.rubric : undefined,
-						}))
-					: [];
-				// No templates. The agent must author the questions itself, grounded in the
-				// lesson the learner just went through. A quiz is built only AFTER the lesson
-				// — it is a separate artifact, never auto-paired with the plan.
-				const validAuthored = buildAuthoredQuestions(resolveTopic(topic), authored);
-				if (validAuthored.length < 2) {
-					return "Author the quiz yourself. Pass a `questions` array (4-10 items), each grounded in the specific lesson the learner just completed, with a real prompt, correctAnswer, explanation, and (for multiple-choice) plausible distractors. Build the quiz only after the learner has gone through the lesson — it is a separate artifact, not a companion to the plan. No template fallback exists.";
-				}
-				const quiz = generateQuiz(topic, 42, {
-					adaptive: params.adaptive === true,
-					reframes: reframeModes,
-					authored,
-					limits: rawLimits ? {
-						questionChars: Number(rawLimits.question_chars),
-						answerChars: Number(rawLimits.answer_chars),
-						explanationChars: Number(rawLimits.explanation_chars),
-						rubricChars: Number(rawLimits.rubric_chars),
-						optionChars: Number(rawLimits.option_chars),
-					} : undefined,
-				});
-				const md = quizToMarkdown(quiz);
-				const answers = quizAnswerKeyToMarkdown(quiz);
-
-				const saved = await storage.saveLessonPlan(topic, md, { type: "quiz", questionCount: quiz.questions.length });
-
-				return `[artifact://plan/${saved.id}]\n\n${md}\n---\n${answers}\n\n<keating-quiz json=${JSON.stringify(JSON.stringify(quiz))} />`;
-			}
-		),
+				["topic", "questions"],
+			),
 
 		// feedback - Record learner feedback
 		createTool(

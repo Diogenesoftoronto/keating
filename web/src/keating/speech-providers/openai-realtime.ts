@@ -1,5 +1,8 @@
 import {
 	getAudioContext,
+	type LiveSpeechRequest,
+	type LiveSpeechSession,
+	type LiveSpeechState,
 	type SpeechProvider,
 	type SpeechSynthesisRequest,
 	type SpeechSynthesisResult,
@@ -204,14 +207,167 @@ async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthe
 	});
 }
 
+async function startLiveSession(request: LiveSpeechRequest): Promise<LiveSpeechSession> {
+	const { settings, getApiKey, signal, instructions, onState, onUserTranscript, onAssistantTranscript, onError } = request;
+	const apiKey = await getApiKey("openai");
+	if (!apiKey) {
+		throw new Error("No OpenAI API key configured. Add one in Settings → Providers & Models.");
+	}
+
+	const model = settings.model || "gpt-realtime-2";
+	const voice = cleanRealtimeVoice(settings.voiceName);
+
+	let state: LiveSpeechState = "connecting";
+	const setState = (next: LiveSpeechState) => {
+		if (state === "closed") return;
+		state = next;
+		onState?.(next);
+	};
+	setState("connecting");
+
+	const ephemeralKey = await mintEphemeralKey(apiKey, model, voice, signal);
+
+	const pc = new RTCPeerConnection();
+	const audioEl = typeof document !== "undefined" ? document.createElement("audio") : null;
+	if (audioEl) {
+		audioEl.autoplay = true;
+		audioEl.style.display = "none";
+		document.body.appendChild(audioEl);
+	}
+
+	let micStream: MediaStream | null = null;
+	let cleanedUp = false;
+	const cleanup = () => {
+		if (cleanedUp) return;
+		cleanedUp = true;
+		try { pc.close(); } catch {}
+		micStream?.getTracks().forEach((track) => track.stop());
+		if (audioEl) {
+			try { audioEl.pause(); } catch {}
+			audioEl.srcObject = null;
+			audioEl.remove();
+		}
+		setState("closed");
+	};
+
+	if (signal?.aborted) {
+		cleanup();
+		throw new Error("OpenAI Realtime aborted before start.");
+	}
+	signal?.addEventListener("abort", cleanup, { once: true });
+
+	pc.ontrack = (event) => {
+		if (audioEl && event.streams[0]) {
+			audioEl.srcObject = event.streams[0];
+			audioEl.play().catch(() => {});
+		}
+	};
+
+	const dataChannel = pc.createDataChannel("oai-events");
+
+	micStream = await attachMicrophone(pc);
+	if (!micStream) {
+		cleanup();
+		throw new Error("Microphone unavailable for live voice.");
+	}
+
+	dataChannel.addEventListener("open", () => {
+		// Enable continuous server-side voice-activity turn detection so the
+		// model keeps listening and replies without an explicit response.create.
+		dataChannel.send(JSON.stringify({
+			type: "session.update",
+			session: {
+				type: "realtime",
+				turn_detection: { type: "server_vad" },
+				input_audio_transcription: { model: "gpt-4o-mini-transcribe" },
+				...(instructions ? { instructions } : {}),
+			},
+		}));
+		setState("listening");
+	});
+
+	dataChannel.addEventListener("message", (event) => {
+		try {
+			const msg = JSON.parse(event.data);
+			switch (msg.type) {
+				case "input_audio_buffer.speech_started":
+					setState("listening");
+					break;
+				case "response.created":
+				case "response.output_audio.delta":
+				case "response.audio.delta":
+					setState("speaking");
+					break;
+				case "response.audio_transcript.delta":
+				case "response.output_audio_transcript.delta":
+					onAssistantTranscript?.(typeof msg.delta === "string" ? msg.delta : "", false);
+					break;
+				case "response.audio_transcript.done":
+				case "response.output_audio_transcript.done":
+					onAssistantTranscript?.(typeof msg.transcript === "string" ? msg.transcript : "", true);
+					break;
+				case "conversation.item.input_audio_transcription.delta":
+					onUserTranscript?.(typeof msg.delta === "string" ? msg.delta : "", false);
+					break;
+				case "conversation.item.input_audio_transcription.completed":
+					onUserTranscript?.(typeof msg.transcript === "string" ? msg.transcript : "", true);
+					break;
+				case "response.done":
+					setState("listening");
+					break;
+				case "error":
+					onError?.(new Error(`Realtime error: ${msg.error?.message ?? "unknown"}`));
+					break;
+			}
+		} catch {}
+	});
+
+	try {
+		getAudioContext();
+		const offer = await pc.createOffer();
+		await pc.setLocalDescription(offer);
+
+		const sdpResponse = await withApiRetry(async () => {
+			const result = await fetch("https://api.openai.com/v1/realtime/calls", {
+				method: "POST",
+				headers: {
+					Authorization: `Bearer ${ephemeralKey}`,
+					"Content-Type": "application/sdp",
+				},
+				body: offer.sdp,
+				signal,
+			});
+			if (!result.ok) {
+				const retryAfter = result.headers.get("retry-after");
+				throw new Error(`Realtime SDP exchange failed (${result.status})${retryAfter ? ` retry-after: ${retryAfter}` : ""}`);
+			}
+			return result;
+		}, { signal });
+		await pc.setRemoteDescription({ type: "answer", sdp: await sdpResponse.text() });
+	} catch (error) {
+		cleanup();
+		throw error;
+	}
+
+	return {
+		get state() {
+			return state;
+		},
+		async stop() {
+			cleanup();
+		},
+	};
+}
+
 export const openAIRealtimeProvider: SpeechProvider = {
 	id: "openai-realtime",
 	label: "OpenAI Realtime",
 	kind: "duplex",
 	status: "preview",
-	description: "WebRTC duplex voice with OpenAI Realtime. Supports mic input when enabled. One-shot per utterance — long-lived sessions are a follow-up.",
+	description: "WebRTC duplex voice with OpenAI Realtime. Live bidirectional voice sessions with continuous turn detection.",
 	models: REALTIME_MODELS,
 	voices: REALTIME_VOICES,
 	needsApiKey: "openai",
 	synthesize,
+	startLiveSession,
 };

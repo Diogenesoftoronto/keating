@@ -20,10 +20,13 @@ import {
 	type TopicArtifactInput,
 } from "./usage-topic-groups";
 import {
+	buildModelUsageBreakdown,
 	getCurriculumDisplayEnd,
 	getPrimaryCurriculumTopic,
 	getVisibleCurriculumSessions,
 	hasMeaningfulPolicyScores,
+	type ModelUsageBreakdown,
+	type ModelUsageEntry,
 } from "./usage-chart-data";
 
 function ChartPanel({
@@ -134,10 +137,11 @@ export function UsageCharts({ sessionMetadata }: UsageChartsProps) {
 
 	const totalTopicArtifacts = data.topicGroups.reduce((sum, t) => sum + t.count, 0);
 	const feedbackMix = aggregateFeedback(data.feedback);
+	const modelMix = buildModelUsageBreakdown(sessionMetadata);
 
 	return (
 		<div className="mt-6 flex flex-col gap-6">
-			<div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+			<div className="grid gap-6 lg:grid-cols-3">
 				<ChartPanel
 					title="Topic mix"
 					subtitle={`Artifacts grouped into learning domains${totalTopicArtifacts ? ` (${totalTopicArtifacts} total)` : ""}`}
@@ -146,6 +150,17 @@ export function UsageCharts({ sessionMetadata }: UsageChartsProps) {
 						<EmptyState message="No topic artifacts yet — start a lesson to see this fill in." />
 					) : (
 						<TopicGroupWheel groups={data.topicGroups} />
+					)}
+				</ChartPanel>
+
+				<ChartPanel
+					title="Model mix"
+					subtitle={modelMix.basis === "tokens" ? "Share of token usage by model" : "Share of message usage by model"}
+				>
+					{modelMix.entries.length === 0 || modelMix.total === 0 ? (
+						<EmptyState message="No model usage recorded yet." />
+					) : (
+						<ModelUsageWheel breakdown={modelMix} />
 					)}
 				</ChartPanel>
 
@@ -216,6 +231,75 @@ export function UsageCharts({ sessionMetadata }: UsageChartsProps) {
 					strengths={data.strengths}
 				/>
 			</ChartPanel>
+		</div>
+	);
+}
+
+function formatCompactNumber(value: number) {
+	return new Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 }).format(value);
+}
+
+function modelUsageTooltipLabel(basis: ModelUsageBreakdown["basis"]) {
+	return basis === "tokens" ? "tokens" : "messages";
+}
+
+function ModelUsageWheel({ breakdown }: { breakdown: ModelUsageBreakdown }) {
+	const metricLabel = modelUsageTooltipLabel(breakdown.basis);
+	return (
+		<div className="grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(12rem,1fr)] xl:items-center">
+			<div className="h-56 min-w-0">
+				<ResponsiveContainer>
+					<PieChart>
+						<Pie
+							data={breakdown.entries}
+							dataKey="value"
+							nameKey="label"
+							innerRadius={52}
+							outerRadius={84}
+							paddingAngle={2}
+							stroke="var(--background, #fff)"
+							strokeWidth={1}
+						>
+							{breakdown.entries.map((entry) => (
+								<Cell key={entry.key} fill={entry.color} />
+							))}
+						</Pie>
+						<Tooltip
+							formatter={(value, _name, item) => {
+								const entry = item.payload as ModelUsageEntry;
+								return [
+									`${formatCompactNumber(Number(value))} ${metricLabel} (${Math.round(entry.share * 100)}%)`,
+									entry.label,
+								];
+							}}
+							contentStyle={{
+								background: "var(--background, #fff)",
+								border: "1px solid var(--border, #e5e7eb)",
+								borderRadius: 6,
+								fontSize: 12,
+							}}
+						/>
+					</PieChart>
+				</ResponsiveContainer>
+			</div>
+			<div className="min-w-0 space-y-2">
+				{breakdown.entries.map((entry) => (
+					<div key={entry.key} className="min-w-0 border-b border-border/60 pb-2 last:border-b-0 last:pb-0">
+						<div className="flex min-w-0 items-center justify-between gap-3">
+							<div className="flex min-w-0 items-center gap-2">
+								<span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: entry.color }} />
+								<div className="min-w-0 truncate text-xs font-semibold">{entry.label}</div>
+							</div>
+							<div className="shrink-0 text-xs tabular-nums text-muted-foreground">
+								{Math.round(entry.share * 100)}%
+							</div>
+						</div>
+						<div className="mt-1 min-w-0 truncate pl-4 text-[11px] text-muted-foreground">
+							{entry.provider}/{entry.modelId} · {formatCompactNumber(entry.tokens)} tokens · {entry.sessions} session{entry.sessions === 1 ? "" : "s"}
+						</div>
+					</div>
+				))}
+			</div>
 		</div>
 	);
 }

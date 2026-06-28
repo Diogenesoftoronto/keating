@@ -35,7 +35,7 @@ import {
 import { subscribeAgentEvents } from "./agent-subscriptions";
 import { DEFAULT_MODEL, hybridStreamFn } from "./keating-stream";
 import { getInitPromise, keatingStorage, sessions, updateSessionTitle } from "./keating-storage";
-import { cloneMessages, createSessionId, sessionPreview, sessionTitle, sessionUsage, truncateAtForkPoint } from "./session-metadata";
+import { cloneMessages, createSessionId, sessionModelMetadata, sessionPreview, sessionTitle, sessionUsage, truncateAtForkPoint } from "./session-metadata";
 import { saveSharedSession, sharedSessionUrl, type SharedSessionUrlResult } from "../keating/shared-sessions";
 import { loadKeatingUiSettings } from "../keating/ui-settings";
 import {
@@ -266,6 +266,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       messageCount: messages.length,
       usage: sessionUsage(messages),
       thinkingLevel: agent.state.thinkingLevel,
+      ...sessionModelMetadata(agent.state.model),
       preview: sessionPreview(messages),
       aiGeneratedTitle: false,
     };
@@ -343,6 +344,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
         messageCount: messages.length,
         usage: sessionUsage(messages),
         thinkingLevel: agent.state.thinkingLevel,
+        ...sessionModelMetadata(agent.state.model),
         preview: sessionPreview(messages),
         aiGeneratedTitle: false,
       };
@@ -683,6 +685,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       messageCount: messages.length,
       usage: sessionUsage(messages),
       thinkingLevel: source.thinkingLevel,
+      ...sessionModelMetadata(source.model),
       preview: sessionPreview(messages),
       aiGeneratedTitle: false,
     };

@@ -514,6 +514,11 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    fs: {
+      // Allow importing the shared, dependency-free fine-tune parser that
+      // lives at the repo root (one level above this web package).
+      allow: ['..'],
+    },
     proxy: {
       '/ingest/static': {
         target: 'https://us-assets.i.posthog.com',

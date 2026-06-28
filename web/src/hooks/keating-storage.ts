@@ -9,7 +9,7 @@ import {
 } from "@earendil-works/pi-web-ui";
 import { KeatingStorage } from "../keating/storage";
 import { syncCustomProviderKeys } from "../lib/provider-models";
-import { sessionPreview, sessionUsage } from "./session-metadata";
+import { sessionModelMetadata, sessionPreview, sessionUsage } from "./session-metadata";
 import type { SessionData, SessionMetadata } from "../types/session";
 
 const settingsStore = new SettingsStore();
@@ -71,6 +71,7 @@ export async function updateSessionTitle(
 		messageCount: data.messages.length,
 		usage: sessionUsage(data.messages),
 		thinkingLevel: data.thinkingLevel,
+		...sessionModelMetadata(data.model),
 		preview: sessionPreview(data.messages),
 		aiGeneratedTitle: aiGeneratedTitle ?? data.aiGeneratedTitle,
 	};
