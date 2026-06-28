@@ -1,0 +1,51 @@
+{
+  "cli_version": "0.7.7",
+  "checkpoint_id": "ba41e1c622c6",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 4,
+  "files_touched": [
+    "shared/finetune-parse.ts",
+    "src/cli/main.ts",
+    "src/core/commands.ts",
+    "src/core/export.ts",
+    "src/core/import.ts",
+    "src/core/project.ts",
+    "test/export.test.ts",
+    "tsconfig.json",
+    "web/src/components/AssistantChatPanel.tsx",
+    "web/src/components/UsageCharts.tsx",
+    "web/src/components/usage-chart-data.ts",
+    "web/src/hooks/keating-storage.ts",
+    "web/src/hooks/session-metadata.ts",
+    "web/src/hooks/useKeatingAgent.tsx",
+    "web/src/keating/export.ts",
+    "web/src/keating/import.ts",
+    "web/src/keating/portable-data.ts",
+    "web/src/keating/shared-sessions.ts",
+    "web/src/keating/speech-providers/gemini-live.ts",
+    "web/src/keating/speech-providers/openai-realtime.ts",
+    "web/src/keating/speech.ts",
+    "web/src/pages/Usage.tsx",
+    "web/src/test/export.test.ts",
+    "web/src/test/usage-charts.test.ts",
+    "web/src/types/session.ts",
+    "web/tsconfig.json",
+    "web/vite.config.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/ba/41e1c622c6/0/metadata.json",
+      "transcript": "/ba/41e1c622c6/0/full.jsonl",
+      "content_hash": "/ba/41e1c622c6/0/content_hash.txt",
+      "prompt": "/ba/41e1c622c6/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 26133,
+    "cache_creation_tokens": 1418593,
+    "cache_read_tokens": 33577674,
+    "output_tokens": 144648,
+    "api_call_count": 182
+  }
+}

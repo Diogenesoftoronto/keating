@@ -1,0 +1,124 @@
+{
+  "cli_version": "0.7.7",
+  "checkpoint_id": "ba41e1c622c6",
+  "session_id": "79c6ddf8-0c47-41e6-a958-440dc10eed4d",
+  "strategy": "manual-commit",
+  "created_at": "2026-06-28T06:50:05.955735406Z",
+  "branch": "main",
+  "checkpoints_count": 4,
+  "save_step_count": 4,
+  "files_touched": [
+    "shared/finetune-parse.ts",
+    "src/cli/main.ts",
+    "src/core/commands.ts",
+    "src/core/export.ts",
+    "src/core/import.ts",
+    "src/core/project.ts",
+    "test/export.test.ts",
+    "tsconfig.json",
+    "web/src/components/AssistantChatPanel.tsx",
+    "web/src/components/UsageCharts.tsx",
+    "web/src/components/usage-chart-data.ts",
+    "web/src/hooks/keating-storage.ts",
+    "web/src/hooks/session-metadata.ts",
+    "web/src/hooks/useKeatingAgent.tsx",
+    "web/src/keating/export.ts",
+    "web/src/keating/import.ts",
+    "web/src/keating/portable-data.ts",
+    "web/src/keating/shared-sessions.ts",
+    "web/src/keating/speech-providers/gemini-live.ts",
+    "web/src/keating/speech-providers/openai-realtime.ts",
+    "web/src/keating/speech.ts",
+    "web/src/pages/Usage.tsx",
+    "web/src/test/export.test.ts",
+    "web/src/test/usage-charts.test.ts",
+    "web/src/types/session.ts",
+    "web/tsconfig.json",
+    "web/vite.config.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-4-8",
+  "turn_id": "adcbad9c7fbc",
+  "checkpoint_transcript_start": 1056,
+  "transcript_lines_at_start": 1056,
+  "token_usage": {
+    "input_tokens": 26133,
+    "cache_creation_tokens": 1418593,
+    "cache_read_tokens": 33577674,
+    "output_tokens": 144648,
+    "api_call_count": 182
+  },
+  "session_metrics": {
+    "turn_count": 5
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-06-28T06:50:05.81062834Z",
+    "agent_lines": 849,
+    "agent_removed": 94,
+    "human_added": 295,
+    "human_modified": 25,
+    "human_removed": 0,
+    "total_committed": 1169,
+    "total_lines_changed": 1370,
+    "agent_percentage": 68.83211678832116,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 1005,
+      "user_lines_removed": 25,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "src/cli/main.ts": 117,
+        "src/core/commands.ts": 4,
+        "src/core/import.ts": 201,
+        "src/core/project.ts": 9,
+        "test/export.test.ts": 68,
+        "web/src/components/UsageCharts.tsx": 85,
+        "web/src/components/usage-chart-data.ts": 103,
+        "web/src/hooks/keating-storage.ts": 2,
+        "web/src/hooks/session-metadata.ts": 11,
+        "web/src/hooks/useKeatingAgent.tsx": 8,
+        "web/src/keating/import.ts": 203,
+        "web/src/keating/portable-data.ts": 2,
+        "web/src/keating/shared-sessions.ts": 9,
+        "web/src/pages/Usage.tsx": 70,
+        "web/src/test/export.test.ts": 54,
+        "web/src/test/usage-charts.test.ts": 54,
+        "web/src/types/session.ts": 5
+      },
+      "user_removed_per_file": {
+        "src/cli/main.ts": 3,
+        "web/src/components/UsageCharts.tsx": 1,
+        "web/src/hooks/keating-storage.ts": 1,
+        "web/src/hooks/useKeatingAgent.tsx": 3,
+        "web/src/keating/portable-data.ts": 1,
+        "web/src/keating/shared-sessions.ts": 7,
+        "web/src/pages/Usage.tsx": 9
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 925,
+      "agent_lines_removed": 21
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 925,
+      "agent_lines_removed": 21
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1778,
+      "agent_lines_removed": 104
+    }
+  ]
+}

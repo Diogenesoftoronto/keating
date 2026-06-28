@@ -1,0 +1,13 @@
+continue working
+
+---
+
+run similarity ts and clean up the logic duplication, the flattening stuff i don't thhink this is intended actually note that nt sure aboutu the message casting thata might be a problem for tthe flattenis as well. i just want to make sure all the work here is being done as well like og previews and speed stuff you can plan this all out for how to tackle all this
+
+---
+
+i have two things that i am considering, the ideal format for training models and the a way to resume from the export log, these may or may not be different.
+
+---
+
+also sharing chats does that actually work
