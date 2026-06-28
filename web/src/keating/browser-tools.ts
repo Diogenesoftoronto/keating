@@ -54,6 +54,8 @@ import {
 	quizToMarkdown,
 	quizAnswerKeyToMarkdown,
 	type AuthoredQuestion,
+	type QuizGradeVerdict,
+	type QuizQuestionGrade,
 	type TeacherPolicy,
 	type BenchmarkResult,
 	type EvolutionRun,
@@ -1166,6 +1168,50 @@ export async function createKeatingTools(
 
 				return `Recorded ${signal} feedback for "${topic}".`;
 			}
+		),
+
+		// grade_quiz - Record the teacher's judgment of open-ended answers
+		createTool(
+			"grade_quiz",
+			"Grade a learner's open-ended quiz answers (short_answer, transfer, free-text fill_in) AFTER they submit. Open-ended answers are never auto-graded by string match — you judge them by meaning, treating the reference answer as one acceptable answer rather than the only one. Pass the `result_id` from the <keating-quiz-result> payload in the submission message, plus a `grades` entry per open-ended question. Your verdicts flow back and update that result card. Objective questions (multiple_choice, true_false, multi_select, slider, dropdown, multi-blank fill_in) are already auto-graded — do not include them.",
+			{
+				result_id: { type: "string", description: "The `id` field from the <keating-quiz-result> payload of the submission you are grading." },
+				grades: {
+					type: "array",
+					description: "One entry per open-ended question you are judging.",
+					items: {
+						type: "object",
+						properties: {
+							question_id: { type: "string", description: "The question's id." },
+							verdict: { type: "string", enum: ["correct", "partial", "incorrect"], description: "Your judgment of the learner's answer by meaning." },
+							note: { type: "string", description: "Short feedback shown to the learner (what was right/wrong)." },
+						},
+						required: ["question_id", "verdict"],
+						additionalProperties: false,
+					},
+				},
+			},
+			async (params) => {
+				const resultId = typeof params.result_id === "string" ? params.result_id : "";
+				if (!resultId) {
+					throw new Error("result_id is required — pass the `id` from the <keating-quiz-result> payload of the submission you are grading.");
+				}
+				const validVerdicts: QuizGradeVerdict[] = ["correct", "partial", "incorrect"];
+				const grades: QuizQuestionGrade[] = (Array.isArray(params.grades) ? params.grades : [])
+					.filter((g): g is Record<string, unknown> => !!g && typeof g === "object")
+					.map((g) => ({
+						questionId: typeof g.question_id === "string" ? g.question_id : "",
+						verdict: validVerdicts.includes(g.verdict as QuizGradeVerdict) ? (g.verdict as QuizGradeVerdict) : "partial",
+						note: typeof g.note === "string" ? g.note : undefined,
+					}))
+					.filter((g) => g.questionId);
+				if (grades.length === 0) {
+					throw new Error("Pass a non-empty `grades` array — one entry per open-ended question, each with question_id and verdict (correct|partial|incorrect).");
+				}
+				const payload = { resultId, grades };
+				return `Recorded ${grades.length} open-ended grade(s).\n\n<keating-quiz-grade json=${JSON.stringify(JSON.stringify(payload))} />`;
+			},
+			["result_id", "grades"],
 		),
 
 		// policy - Show current teaching policy

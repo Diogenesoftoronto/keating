@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import type { Quiz, QuizQuestion } from "../keating/core";
 import type { QuizResult } from "./QuizRenderer";
+import { isOpenEnded, questionCredit } from "./QuizRenderer";
 
 export interface QuizSessionProps {
   quiz: Quiz;
@@ -133,6 +134,10 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
         }
         partialCredits[question.id] = correct / correctAnswers.length;
         if (correct === correctAnswers.length) score++;
+      } else if (isOpenEnded(question)) {
+        // Judged by the teacher (model) in chat — record the heuristic credit as
+        // a soft hint but don't count it toward the local score.
+        partialCredits[question.id] = questionCredit(question, answer);
       } else {
         const correct = answer.toLowerCase() === question.correctAnswer.toLowerCase();
         if (correct) score++;
@@ -245,7 +250,12 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
   }
 
   if (submitted) {
-    const correctCount = quiz.questions.filter((question) => {
+    // Open-ended questions are judged by the teacher (model) in chat, so they're
+    // excluded from this local tally and reported as pending review instead.
+    const objectiveQuestions = quiz.questions.filter((question) => !isOpenEnded(question));
+    const pendingCount = total - objectiveQuestions.length;
+    const decided = objectiveQuestions.length;
+    const correctCount = objectiveQuestions.filter((question) => {
       if (question.type === "multi_select" && question.correctAnswers) {
         const selected = new Set((answers[question.id] ?? "").split(",").map((s) => s.trim()).filter(Boolean));
         return question.correctAnswers.every((c) => selected.has(c)) && selected.size === question.correctAnswers.length;
@@ -257,12 +267,13 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
       }
       return (answers[question.id] ?? "").trim().toLowerCase() === question.correctAnswer.toLowerCase();
     }).length;
+    const ratio = decided > 0 ? correctCount / decided : 0;
 
     return (
       <div className="my-3 rounded-xl border border-border bg-background p-4 sm:p-5 shadow-sm">
         <div className="flex items-center gap-3 mb-4">
-          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${correctCount / total >= 0.7 ? "bg-emerald-500/10" : "bg-amber-500/10"}`}>
-            {correctCount / total >= 0.7 ? (
+          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${decided === 0 || ratio >= 0.7 ? "bg-emerald-500/10" : "bg-amber-500/10"}`}>
+            {decided === 0 || ratio >= 0.7 ? (
               <CheckCircle2 size={20} className="text-emerald-600" />
             ) : (
               <AlertTriangle size={20} className="text-amber-600" />
@@ -271,8 +282,10 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
           <div>
             <h3 className="font-semibold">{quiz.topic}: Completed</h3>
             <p className="text-sm text-muted-foreground">
-              {correctCount}/{total} correct · {formatDuration(finalTiming?.totalMs ?? elapsedMs)} ·{" "}
-              {Math.round((correctCount / total) * 100)}%
+              {decided === 0 ? "Pending review" : `${correctCount}/${decided} correct`}
+              {pendingCount > 0 ? ` · ${pendingCount} pending review` : ""} ·{" "}
+              {formatDuration(finalTiming?.totalMs ?? elapsedMs)}
+              {decided > 0 ? ` · ${Math.round(ratio * 100)}%` : ""}
             </p>
           </div>
         </div>
