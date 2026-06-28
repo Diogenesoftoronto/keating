@@ -1,0 +1,35 @@
+{
+  "cli_version": "0.7.7",
+  "checkpoint_id": "fe962940a0c2",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 4,
+  "files_touched": [
+    "web/src/components/AssistantChatPanel.tsx",
+    "web/src/components/MarkdownBlock.tsx",
+    "web/src/components/QuizRenderer.tsx",
+    "web/src/components/QuizResultCard.tsx",
+    "web/src/components/QuizSessionPanel.tsx",
+    "web/src/components/quiz-grades-context.ts",
+    "web/src/keating/browser-tools.ts",
+    "web/src/keating/core.ts",
+    "web/src/keating/prompts/operational-protocol.md",
+    "web/src/test/browser-tools-quiz.test.ts",
+    "web/src/test/quiz-open-ended-grading.test.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/fe/962940a0c2/0/metadata.json",
+      "transcript": "/fe/962940a0c2/0/full.jsonl",
+      "content_hash": "/fe/962940a0c2/0/content_hash.txt",
+      "prompt": "/fe/962940a0c2/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 20292,
+    "cache_creation_tokens": 543620,
+    "cache_read_tokens": 29514489,
+    "output_tokens": 114422,
+    "api_call_count": 200
+  }
+}

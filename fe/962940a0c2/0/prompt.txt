@@ -1,0 +1,13 @@
+hey i noticed that the quiz for open questions has exact matches here and I would like you to makke this a bit less strict this is where the model needs to judge if an answer is correct or not
+
+---
+
+that said there should be an answer for these that you choose already i think like before then, you also judge those but they won't necessarily be wrong so to speak. we might also do a basic ngram match for the answer too
+
+---
+
+what do you think of these additions? how much of an improvement would you judge them to be?
+
+---
+
+i like your pending review
