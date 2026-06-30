@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Added a real `devenv.nix` workflow with `bun`, `just`, optional `bumpy`, a `bump-version` helper, and repo-local git hooks for version checks plus root/web test gates.
+- Added **model-judged open-ended quiz grading**: short-answer, transfer, and single-blank fill-in questions now render as "pending review" with the reference answer and a labeled, non-authoritative heuristic hint, are excluded from the auto-graded tally, and are graded by meaning through a new `grade_quiz` tool whose per-question verdicts flow back into the result card via `QuizGradesContext`.
+- Added **fine-tune dataset import** for the CLI and web app (ChatML, Alpaca, and JSONL) backed by a dependency-free shared `shared/finetune-parse.ts`, plus related export improvements and tests.
+- Added `||spoiler||` click-to-reveal masks in markdown, leaving fenced code literal.
 - Added a Mermaid rendering regression test that covers uppercase and parameterized mermaid fences.
 
 ### Changed
@@ -20,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fixed the changelog compare links so `[Unreleased]` now tracks from `v1.4.0`, and restored links for the `1.4.0` and `1.3.0` release lines.
+- Fixed OAuth provider sign-in.
+- Fixed the quiz "Review" remediation button so system-initiated remediation sends are queued and flushed when the agent goes idle instead of being silently dropped mid-stream.
 - Fixed production PostHog initialization by passing `VITE_POSTHOG_*` build-time variables through the web Docker build.
 - Fixed the production `/ingest` analytics proxy by adding Nitro proxy rules that mirror the Vite development proxy.
 - Fixed Mermaid diagrams disappearing after SVG validation by falling back to a lenient HTML parse for Mermaid SVG output that is safe but not strict XML.
