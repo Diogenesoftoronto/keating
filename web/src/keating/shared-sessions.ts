@@ -5,12 +5,11 @@ import { createSessionId, sessionModelMetadata, sessionPreview, sessionTitle, se
 import { sessions } from "../hooks/keating-storage";
 import { DEFAULT_MODEL } from "../hooks/keating-stream";
 import { loadKeatingUiSettings, type ShareLinkMode } from "./ui-settings";
+import { decodeSharedSessionPayload, encodeSharedSession } from "./share-codec";
 
 const SHARE_INDEX_KEY = "keating_shared_sessions";
 const SHARE_KEY_PREFIX = "keating_shared_session:";
 const SHARE_HASH_PARAM = "session";
-const COMPRESSED_PREFIX = "gz.";
-const JSON_PREFIX = "json.";
 
 export interface SharedModelInfo {
 	provider: string;
@@ -43,45 +42,6 @@ export interface SharedSessionUrlResult {
 	fallback: boolean;
 }
 
-function bytesToBase64Url(bytes: Uint8Array) {
-	let binary = "";
-	for (const byte of bytes) binary += String.fromCharCode(byte);
-	return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-}
-
-function base64UrlToBytes(value: string) {
-	const base64 = value.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
-	const binary = atob(base64);
-	return Uint8Array.from(binary, (char) => char.charCodeAt(0));
-}
-
-async function gzipBytes(bytes: Uint8Array): Promise<Uint8Array> {
-	const Compression = globalThis.CompressionStream;
-	if (!Compression) return bytes;
-	const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
-	const stream = new Blob([buffer]).stream().pipeThrough(new Compression("gzip"));
-	return new Uint8Array(await new Response(stream).arrayBuffer());
-}
-
-async function gunzipBytes(bytes: Uint8Array): Promise<Uint8Array> {
-	const Decompression = globalThis.DecompressionStream;
-	if (!Decompression) return bytes;
-	const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
-	const stream = new Blob([buffer]).stream().pipeThrough(new Decompression("gzip"));
-	return new Uint8Array(await new Response(stream).arrayBuffer());
-}
-
-async function encodeSharedSession(shared: SharedSession) {
-	const bytes = new TextEncoder().encode(JSON.stringify(shared));
-	try {
-		const compressed = await gzipBytes(bytes);
-		if (compressed.length < bytes.length) return `${COMPRESSED_PREFIX}${bytesToBase64Url(compressed)}`;
-	} catch {
-		// Fall through to uncompressed JSON encoding.
-	}
-	return `${JSON_PREFIX}${bytesToBase64Url(bytes)}`;
-}
-
 function serializeModel(model: Model<any> | undefined): SharedModelInfo {
 	const fallback = model ?? DEFAULT_MODEL;
 	const api = "api" in fallback && typeof fallback.api === "string" ? fallback.api : undefined;
@@ -111,17 +71,8 @@ function normalizeSharedSession(parsed: Partial<SharedSession> | null): SharedSe
 	} as SharedSession;
 }
 
-async function decodeSharedSession(value: string): Promise<SharedSession | null> {
-	try {
-		const isCompressed = value.startsWith(COMPRESSED_PREFIX);
-		const isJson = value.startsWith(JSON_PREFIX);
-		const encoded = isCompressed || isJson ? value.slice(value.indexOf(".") + 1) : value;
-		const bytes = base64UrlToBytes(encoded);
-		const decoded = isCompressed ? await gunzipBytes(bytes) : bytes;
-		return normalizeSharedSession(JSON.parse(new TextDecoder().decode(decoded)) as SharedSession);
-	} catch {
-		return null;
-	}
+function decodeSharedSession(value: string): SharedSession | null {
+	return normalizeSharedSession(decodeSharedSessionPayload(value));
 }
 
 function isShareableRole(role: unknown) {
@@ -243,7 +194,7 @@ export async function sharedSessionUrl(
 
 	if (mode === "compressed-hash") {
 		const url = new URL(`/s/${encodeURIComponent(shared.id)}`, origin);
-		url.hash = `${SHARE_HASH_PARAM}=${await encodeSharedSession(shared)}`;
+		url.hash = `${SHARE_HASH_PARAM}=${encodeSharedSession(shared)}`;
 		return { url: url.toString(), mode, fallback: false };
 	}
 
@@ -254,7 +205,7 @@ export async function sharedSessionUrl(
 	} catch (error) {
 		console.warn("Portable share storage failed; falling back to snapshot link:", error);
 		const url = new URL(`/s/${encodeURIComponent(shared.id)}`, origin);
-		url.hash = `${SHARE_HASH_PARAM}=${await encodeSharedSession(shared)}`;
+		url.hash = `${SHARE_HASH_PARAM}=${encodeSharedSession(shared)}`;
 		return { url: url.toString(), mode: "compressed-hash", fallback: true };
 	}
 }
@@ -277,7 +228,7 @@ export async function loadSharedSessionFromUrl(id: string, hash: string): Promis
 	const encoded = params.get(SHARE_HASH_PARAM);
 	if (!encoded) return loadSharedSession(id) ?? await fetchSharedSession(id);
 
-	const shared = await decodeSharedSession(encoded);
+	const shared = decodeSharedSession(encoded);
 	if (!shared || shared.id !== id) return loadSharedSession(id);
 	cacheSharedSession(shared);
 	return shared;
