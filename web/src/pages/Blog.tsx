@@ -63,10 +63,11 @@ const POSTS: Post[] = [
     title: "v1.4.1 - Production Analytics, Mermaid Diagrams, and Release Guardrails",
     version: "1.4.1",
     summary:
-      "Keating 1.4.1 is a patch release for the browser app: production PostHog analytics now initialize and proxy correctly, Mermaid diagrams render again after SVG validation, chat markdown handles Mermaid fences directly, and the repo's release/version guardrails are documented in the public update trail.",
+      "Keating 1.4.1 is a patch release for the browser app: production PostHog analytics now initialize and proxy correctly, Mermaid diagrams render again after SVG validation, chat markdown handles Mermaid fences directly, open-ended quizzes get model-judged grading, fine-tune datasets can be imported, and the repo's release/version guardrails are documented in the public update trail.",
     sections: [
       { id: "production-analytics", title: "Production Analytics Actually Starts" },
       { id: "mermaid-diagrams", title: "Mermaid Diagrams Render Again" },
+      { id: "teaching-and-data-features", title: "Quiz Grading and Fine-Tune Import" },
       { id: "release-and-provider-notes", title: "Release and Provider Notes" },
       { id: "verification", title: "Verification" },
     ],
@@ -119,6 +120,27 @@ const POSTS: Post[] = [
           shared-session markdown, and artifact markdown instead of only being
           syntax-highlighted as code. The fence parser also accepts uppercase and
           parameterized fences such as <Code>```Mermaid title="..."</Code>.
+        </p>
+
+        <h3 id="teaching-and-data-features" className="font-bold mt-4 mb-2">
+          Quiz Grading and Fine-Tune Import
+        </h3>
+        <p className="text-sm mb-4">
+          Open-ended quiz questions no longer pretend a string match is a real
+          grade. Short-answer, transfer, and single-blank fill-in questions now
+          render as "pending review" with the reference answer and a clearly
+          labeled, non-authoritative heuristic hint, and they are excluded from
+          the auto-graded tally. The teacher grades them by meaning through a new{" "}
+          <Code>grade_quiz</Code> tool whose per-question verdicts flow back into
+          the result card. Markdown also gained <Code>||spoiler||</Code>{" "}
+          click-to-reveal masks so hints can be hidden until the learner is ready.
+        </p>
+        <p className="text-sm mb-4">
+          On the data side, Keating can now import fine-tune datasets in the CLI
+          and the web app. ChatML, Alpaca, and JSONL inputs are parsed by a
+          dependency-free shared parser, paired with export improvements and
+          tests, so a learning corpus can travel back into Keating rather than
+          only out of it.
         </p>
 
         <h3 id="release-and-provider-notes" className="font-bold mt-4 mb-2">
