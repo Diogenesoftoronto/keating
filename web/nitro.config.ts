@@ -23,6 +23,19 @@ export default defineNitroConfig({
   // Ensure that /assets/* requests return 404 if not found, 
   // rather than falling back to index.html (SPA fallback).
   routeRules: {
+    // PostHog reverse proxy. The browser SDK is configured with
+    // `api_host: '/ingest'` so analytics traffic is same-origin (avoids ad
+    // blockers / third-party cookie issues). In dev this is handled by
+    // web/vite.config.ts `server.proxy`; in production Nitro must proxy it.
+    // These rules are more specific than the `/**/*.js` static rule below, so
+    // PostHog's `array.js` / `static` asset requests reach the proxy instead
+    // of hitting the `fallthrough: false` 404.
+    "/ingest/static": { proxy: { to: "https://us-assets.i.posthog.com/static" } },
+    "/ingest/static/**": { proxy: { to: "https://us-assets.i.posthog.com/static/**" } },
+    "/ingest/array": { proxy: { to: "https://us-assets.i.posthog.com/array" } },
+    "/ingest/array/**": { proxy: { to: "https://us-assets.i.posthog.com/array/**" } },
+    "/ingest": { proxy: { to: "https://us.i.posthog.com" } },
+    "/ingest/**": { proxy: { to: "https://us.i.posthog.com/**" } },
     // Assets under /assets/** are content-hashed, so they can be cached
     // immutably for a year — a new build emits new filenames.
     "/assets/**": {

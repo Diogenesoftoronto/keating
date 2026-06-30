@@ -99,6 +99,7 @@ import { startMicRecording, transcribeAudio, type MicRecorder } from "../keating
 import { JsonCrackBlock } from "./JsonCrackBlock";
 import { FlashcardRenderer } from "./FlashcardRenderer";
 import type { FlashcardDeck } from "../keating/srs";
+import { MermaidRenderer } from "./MermaidRenderer";
 
 const AuthErrorContext = createContext<(provider: string) => Promise<boolean>>(
   () => Promise.resolve(false),
@@ -1499,20 +1500,40 @@ function GeneratedImageCard({ payload }: { payload: string }) {
 // created once instead of rebuilt for every segment on every streaming token.
 const MARKDOWN_COMPONENTS: Components = {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              pre: ({ children }: any) => (
-                <div className="group/code my-2">
-                  <pre className="overflow-x-auto rounded-md bg-muted p-3 text-xs">
-                    {children}
-                  </pre>
-                  <div className="mt-1 flex justify-end">
-                    <CopyButton
-                      text={copyTextFromReactNode(children).replace(/\n$/, "")}
-                      label="Copy code"
-                      className="opacity-0 group-hover/code:opacity-100 focus:opacity-100"
-                    />
+              pre: ({ children }: any) => {
+                const code = Array.isArray(children) ? children[0] : children;
+                const props = code?.props as { className?: string; children?: string } | undefined;
+                const lang = /language-(\w+)/.exec(props?.className ?? "")?.[1]?.toLowerCase();
+                const raw = typeof props?.children === "string" ? props.children : copyTextFromReactNode(children);
+                if (lang === "mermaid") {
+                  return (
+                    <div className="group/code my-2 overflow-auto rounded-lg border border-border bg-muted/30 p-4">
+                      <MermaidRenderer content={raw} />
+                      <div className="mt-1 flex justify-end">
+                        <CopyButton
+                          text={raw.replace(/\n$/, "")}
+                          label="Copy diagram"
+                          className="opacity-0 group-hover/code:opacity-100 focus:opacity-100"
+                        />
+                      </div>
+                    </div>
+                  );
+                }
+                return (
+                  <div className="group/code my-2">
+                    <pre className="overflow-x-auto rounded-md bg-muted p-3 text-xs">
+                      {children}
+                    </pre>
+                    <div className="mt-1 flex justify-end">
+                      <CopyButton
+                        text={raw.replace(/\n$/, "")}
+                        label="Copy code"
+                        className="opacity-0 group-hover/code:opacity-100 focus:opacity-100"
+                      />
+                    </div>
                   </div>
-                </div>
-              ),
+                );
+              },
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               code: ({ className, children, ...props }: any) => {
                 const isInline = !className?.includes("language-");

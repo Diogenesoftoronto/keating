@@ -8,6 +8,7 @@ interface MermaidRendererProps {
 
 // Cache for rendered diagrams
 const renderCache = new Map<string, string>();
+const mermaidFencePattern = /```mermaid[^\n]*\n([\s\S]*?)```/i;
 
 export function MermaidRenderer({ content, className }: MermaidRendererProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -53,7 +54,7 @@ export function MermaidRenderer({ content, className }: MermaidRendererProps) {
 
 				// Extract mermaid code from markdown code block if present
 				let mermaidCode = content;
-				const mermaidMatch = content.match(/```mermaid\n([\s\S]*?)\n```/);
+				const mermaidMatch = content.match(mermaidFencePattern);
 				if (mermaidMatch) {
 					mermaidCode = mermaidMatch[1];
 				}
@@ -143,7 +144,7 @@ export function MermaidRenderer({ content, className }: MermaidRendererProps) {
 // Component to render mermaid from chat messages
 export function MermaidMessageRenderer({ content }: { content: string }) {
 	// Check if content contains mermaid code block
-	const mermaidMatch = content.match(/```mermaid\n([\s\S]*?)\n```/);
+	const mermaidMatch = content.match(mermaidFencePattern);
 
 	if (!mermaidMatch) {
 		return null;
@@ -160,7 +161,7 @@ export function MermaidMessageRenderer({ content }: { content: string }) {
 export function useMermaidBlocks(content: string) {
 	const blocks: Array<{ id: string; code: string }> = [];
 
-	const regex = /```mermaid\n([\s\S]*?)\n```/g;
+	const regex = /```mermaid[^\n]*\n([\s\S]*?)```/gi;
 	let match;
 	let index = 0;
 

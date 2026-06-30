@@ -58,6 +58,92 @@ function majorMinor(version: string): string {
 
 const POSTS: Post[] = [
   {
+    date: "2026-06-30",
+    badge: { label: "RELEASE", color: "release" },
+    title: "v1.4.1 - Production Analytics, Mermaid Diagrams, and Release Guardrails",
+    version: "1.4.1",
+    summary:
+      "Keating 1.4.1 is a patch release for the browser app: production PostHog analytics now initialize and proxy correctly, Mermaid diagrams render again after SVG validation, chat markdown handles Mermaid fences directly, and the repo's release/version guardrails are documented in the public update trail.",
+    sections: [
+      { id: "production-analytics", title: "Production Analytics Actually Starts" },
+      { id: "mermaid-diagrams", title: "Mermaid Diagrams Render Again" },
+      { id: "release-and-provider-notes", title: "Release and Provider Notes" },
+      { id: "verification", title: "Verification" },
+    ],
+    body: (
+      <>
+        <p className="mb-4 leading-6">
+          1.4.1 is a correctness release for the shipped web app. The last
+          release added analytics, richer model/provider surfaces, Dio provider
+          plumbing, and more public-facing instrumentation. This patch makes the
+          production path match that intent: analytics now survive the Docker
+          build, the production server handles the same <Code>/ingest</Code>{" "}
+          proxy path as local development, and Mermaid diagrams no longer
+          disappear because a safety check was stricter than Mermaid's SVG output.
+        </p>
+
+        <h3 id="production-analytics" className="font-bold mt-4 mb-2">
+          Production Analytics Actually Starts
+        </h3>
+        <p className="text-sm mb-4">
+          The previous integration had the right event call sites in the bundle,
+          but production builds could compile PostHog initialization away when{" "}
+          <Code>VITE_POSTHOG_PROJECT_TOKEN</Code> was missing at build time. The
+          web Dockerfile now forwards the PostHog Vite variables into the build,
+          so <Code>initPostHog()</Code> can create the provider client in the
+          deployed app instead of returning <Code>null</Code>.
+        </p>
+        <p className="text-sm mb-4">
+          The second half of the fix is server-side: Nitro now proxies{" "}
+          <Code>/ingest</Code>, <Code>/ingest/static</Code>, and{" "}
+          <Code>/ingest/array</Code> in production, matching the Vite development
+          proxy. That keeps analytics traffic same-origin without letting missing
+          proxy routes fall through to the SPA HTML shell.
+        </p>
+
+        <h3 id="mermaid-diagrams" className="font-bold mt-4 mb-2">
+          Mermaid Diagrams Render Again
+        </h3>
+        <p className="text-sm mb-4">
+          A security hardening pass added SVG sanitization before diagrams are
+          inserted into the page. That was the right boundary, but the first
+          implementation parsed Mermaid's SVG with a strict XML parser and
+          rejected otherwise safe output that contained HTML-style entities. The
+          sanitizer now tries strict XML first, falls back to a lenient HTML parse
+          when Mermaid emits safe-but-not-XML-perfect markup, and still strips
+          unsafe elements, event handlers, JavaScript URLs, and unsafe CSS.
+        </p>
+        <p className="text-sm mb-4">
+          Mermaid handling is also more direct in chat. Fenced{" "}
+          <Code>mermaid</Code> blocks now render as diagrams in live chat,
+          shared-session markdown, and artifact markdown instead of only being
+          syntax-highlighted as code. The fence parser also accepts uppercase and
+          parameterized fences such as <Code>```Mermaid title="..."</Code>.
+        </p>
+
+        <h3 id="release-and-provider-notes" className="font-bold mt-4 mb-2">
+          Release and Provider Notes
+        </h3>
+        <p className="text-sm mb-4">
+          The public update trail now covers the provider-auth recovery, voice
+          default, and provider-aware search cleanup that landed after the last
+          tagged release. The repo also has a documented <Code>devenv.nix</Code>{" "}
+          release path with optional <Code>bumpy</Code>, a <Code>bump-version</Code>{" "}
+          helper, and repo-local version/test hooks so release chores are less
+          dependent on memory.
+        </p>
+
+        <h3 id="verification" className="font-bold mt-4 mb-2">Verification</h3>
+        <p className="text-sm mb-4">
+          This patch adds a Mermaid regression test for uppercase and
+          parameterized fences, keeps the existing SVG safety checks in place,
+          and verifies the web app through the Bun test suite plus the full
+          Vite/Nitro production build.
+        </p>
+      </>
+    ),
+  },
+  {
     date: "2026-06-26",
     badge: { label: "UPDATE", color: "update" },
     title: "Provider Auth Recovery, Voice Defaults, and Release Guardrails",
