@@ -1,10 +1,13 @@
 # Build stage
 FROM oven/bun:1 AS builder
 
-WORKDIR /app
+WORKDIR /app/web
 COPY web/package.json web/bun.lockb* ./
 RUN bun install
-COPY web/ ./
+WORKDIR /app
+COPY shared/ ./shared/
+COPY web/ ./web/
+WORKDIR /app/web
 RUN bun run build
 
 # Serve stage
@@ -12,7 +15,7 @@ FROM oven/bun:1
 
 WORKDIR /app
 # Copy the entire Nitro output which includes static assets and the server
-COPY --from=builder /app/.output ./.output
+COPY --from=builder /app/web/.output ./.output
 
 ENV PORT=3000
 ENV HOST=0.0.0.0
