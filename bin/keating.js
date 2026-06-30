@@ -11,7 +11,7 @@ try {
   const pkg = JSON.parse(readFileSync(join(__dirname, "..", "package.json"), "utf8"));
   KEATING_VERSION = pkg.version;
 } catch {
-  KEATING_VERSION = "1.4.0";
+  KEATING_VERSION = "1.4.1";
 }
 
 function parseNodeVersion(version) {

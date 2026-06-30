@@ -7,6 +7,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import { Copy, Check, Terminal } from "lucide-react";
+import { MermaidRenderer } from "./MermaidRenderer";
 
 // Syntax highlighter (react-syntax-highlighter + Prism language packs) is the
 // heaviest part of this module. Load it on demand only when a code block renders.
@@ -94,6 +95,14 @@ function CodeBlock({ lang, children }: { lang: string; children: string }) {
 		setCopied(true);
 		setTimeout(() => setCopied(false), 2000);
 	}, [children]);
+
+	if (displayLang.toLowerCase() === "mermaid") {
+		return (
+			<div className="my-3 overflow-auto rounded-lg border border-border bg-muted/30 p-4">
+				<MermaidRenderer content={children} />
+			</div>
+		);
+	}
 
 	return (
 		<div className="my-3 overflow-hidden rounded-md border border-border">

@@ -7,14 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-06-30
+
 ### Added
 - Added a real `devenv.nix` workflow with `bun`, `just`, optional `bumpy`, a `bump-version` helper, and repo-local git hooks for version checks plus root/web test gates.
+- Added a Mermaid rendering regression test that covers uppercase and parameterized mermaid fences.
 
 ### Changed
 - Documented the recent provider-auth, voice-default, and provider-aware web-search hardening work in the public update surfaces instead of leaving it implicit in the git history.
+- Mermaid code fences in chat and shared markdown now render as diagrams instead of remaining as plain code blocks.
+- Mermaid fence extraction now accepts parameterized and uppercase fences such as ` ```Mermaid title="..." `.
 
 ### Fixed
 - Fixed the changelog compare links so `[Unreleased]` now tracks from `v1.4.0`, and restored links for the `1.4.0` and `1.3.0` release lines.
+- Fixed production PostHog initialization by passing `VITE_POSTHOG_*` build-time variables through the web Docker build.
+- Fixed the production `/ingest` analytics proxy by adding Nitro proxy rules that mirror the Vite development proxy.
+- Fixed Mermaid diagrams disappearing after SVG validation by falling back to a lenient HTML parse for Mermaid SVG output that is safe but not strict XML.
+- Kept SVG sanitization active for Mermaid output while preserving safe diagrams: unsafe elements, event handlers, JavaScript URLs, and unsafe CSS are still removed.
 
 ## [1.4.0] - 2026-06-20
 
@@ -409,7 +418,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v1.4.1...HEAD
+[1.4.1]: https://github.com/Diogenesoftoronto/keating/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/Diogenesoftoronto/keating/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/Diogenesoftoronto/keating/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/Diogenesoftoronto/keating/compare/v1.1.0...v1.2.0
