@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { BookOpen, Brain, Cpu, Settings2, X } from "lucide-react";
 
 export interface SettingsTabDef {
   id: string;
@@ -59,6 +59,13 @@ export function SettingsDialog({ open, tabs, onClose, defaultTabId }: SettingsDi
 
   if (!open) return null;
 
+  const iconForTab = (id: string) => {
+    if (id === "models") return <Cpu size={15} />;
+    if (id === "learning") return <Brain size={15} />;
+    if (id === "app") return <Settings2 size={15} />;
+    return <BookOpen size={15} />;
+  };
+
   return (
     <div
       ref={dialogRef}
@@ -72,7 +79,7 @@ export function SettingsDialog({ open, tabs, onClose, defaultTabId }: SettingsDi
         onClick={(e) => e.stopPropagation()}
       >
         {/* Sidebar */}
-        <div className="hidden sm:flex w-44 md:w-52 lg:w-56 flex-col border-r border-border bg-muted/30 shrink-0">
+        <div className="hidden lg:flex w-56 flex-col border-r border-border bg-muted/30 shrink-0">
           <div className="px-4 py-3 border-b border-border">
             <span className="text-sm font-semibold text-foreground">Settings</span>
           </div>
@@ -81,13 +88,14 @@ export function SettingsDialog({ open, tabs, onClose, defaultTabId }: SettingsDi
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(i)}
-                className={`text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                className={`dialog-compact-button inline-flex items-center gap-2 text-left px-3 py-2 rounded-md text-sm transition-colors ${
                   i === activeTab
                     ? "bg-primary/10 text-primary font-medium"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 }`}
               >
-                {tab.label}
+                {iconForTab(tab.id)}
+                <span>{tab.label}</span>
               </button>
             ))}
           </div>
@@ -97,7 +105,7 @@ export function SettingsDialog({ open, tabs, onClose, defaultTabId }: SettingsDi
         <div className="flex flex-col flex-1 min-h-0">
           <div className="flex min-h-14 items-center justify-between gap-3 px-4 py-2 border-b border-border">
             <div
-              className="sm:hidden flex min-w-0 flex-1 gap-1.5 overflow-x-auto"
+              className="lg:hidden flex min-w-0 flex-1 gap-1.5 overflow-x-auto"
               role="tablist"
               aria-label="Settings tab"
             >
@@ -137,11 +145,14 @@ export function SettingsDialog({ open, tabs, onClose, defaultTabId }: SettingsDi
                       : "text-muted-foreground hover:bg-accent hover:text-accent-foreground border border-border"
                   }`}
                 >
-                  {tab.label}
+                  <span className="inline-flex items-center gap-1.5">
+                    {iconForTab(tab.id)}
+                    {tab.label}
+                  </span>
                 </button>
               ))}
             </div>
-            <span className="hidden sm:block text-sm font-medium">
+            <span className="hidden lg:block text-sm font-medium">
               {tabs[activeTab]?.label}
             </span>
             <button

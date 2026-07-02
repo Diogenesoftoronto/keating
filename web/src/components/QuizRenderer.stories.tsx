@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { fn } from "storybook/test";
+import { fn, userEvent, within } from "storybook/test";
 import { QuizRenderer } from "./QuizRenderer";
 import type { Quiz } from "../keating/core";
 
@@ -150,6 +150,32 @@ const fullMiniQuiz: Quiz = {
 	],
 };
 
+const fillInTheMiddleQuiz: Quiz = {
+	topic: "Fill-in-the-middle Quiz",
+	slug: "fill-in-the-middle-quiz",
+	generatedAt: new Date().toISOString(),
+	totalPoints: 3,
+	review,
+	questions: [
+		{
+			id: "middle-fill-input-slots",
+			type: "fill_in",
+			level: "application",
+			question:
+				"When a package uses pytest only during checks, put pytest in ___; when an installed Python CLI imports requests, put requests in ___; when it links libcrypto, put libcrypto in ___.",
+			blanks: [
+				{ placeholder: "slot", hint: "check tool" },
+				{ placeholder: "slot", hint: "runtime import" },
+				{ placeholder: "slot", hint: "linked lib" },
+			],
+			correctAnswer: "native-inputs | propagated-inputs | inputs",
+			correctAnswers: ["native-inputs", "propagated-inputs", "inputs"],
+			explanation:
+				"Build/check tools belong in native-inputs, Python runtime imports generally need propagated-inputs, and linked libraries belong in inputs.",
+		},
+	],
+};
+
 const meta = {
 	title: "Quiz/QuizRenderer",
 	component: QuizRenderer,
@@ -180,6 +206,28 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const FullMiniApplication: Story = {};
+
+export const FillInTheMiddle: Story = {
+	args: {
+		quiz: fillInTheMiddleQuiz,
+		topicStats: null,
+	},
+};
+
+export const FillInTheMiddleRevealed: Story = {
+	args: {
+		quiz: fillInTheMiddleQuiz,
+		topicStats: null,
+	},
+	play: async ({ canvasElement }) => {
+		const canvas = within(canvasElement);
+		const blanks = await canvas.findAllByRole("textbox");
+		await userEvent.type(blanks[0], "native-inputs");
+		await userEvent.type(blanks[1], "propagated-inputs");
+		await userEvent.type(blanks[2], "inputs");
+		await userEvent.click(canvas.getByRole("button", { name: /submit quiz/i }));
+	},
+};
 
 export const FastTimedQuestion: Story = {
 	args: {

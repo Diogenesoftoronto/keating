@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
@@ -6,8 +6,8 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
-import { Copy, Check, Terminal } from "lucide-react";
 import { MermaidRenderer } from "./MermaidRenderer";
+import { RunnableCodeBlock } from "./RunnableCodeBlock";
 
 // Syntax highlighter (react-syntax-highlighter + Prism language packs) is the
 // heaviest part of this module. Load it on demand only when a code block renders.
@@ -86,15 +86,8 @@ function Spoiler({ children }: { children: ReactNode }) {
 }
 
 function CodeBlock({ lang, children }: { lang: string; children: string }) {
-	const [copied, setCopied] = useState(false);
-
 	const displayLang = lang || "text";
-
-	const copyCode = useCallback(async () => {
-		await navigator.clipboard.writeText(children);
-		setCopied(true);
-		setTimeout(() => setCopied(false), 2000);
-	}, [children]);
+	const code = children.replace(/\n$/, "");
 
 	if (displayLang.toLowerCase() === "mermaid") {
 		return (
@@ -105,27 +98,7 @@ function CodeBlock({ lang, children }: { lang: string; children: string }) {
 	}
 
 	return (
-		<div className="my-3 overflow-hidden rounded-md border border-border">
-			{/* Toolbar */}
-			<div className="flex items-center justify-between border-b border-border bg-muted/40 px-3 py-1.5">
-				<div className="flex items-center gap-2">
-					<Terminal size={12} className="text-muted-foreground" />
-					<span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-						{displayLang}
-					</span>
-				</div>
-				<div className="flex items-center gap-1.5">
-					<button
-						type="button"
-						onClick={copyCode}
-						className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-[11px] font-medium text-foreground transition-colors hover:bg-accent"
-					>
-						{copied ? <Check size={11} /> : <Copy size={11} />}
-						{copied ? "Copied" : "Copy"}
-					</button>
-				</div>
-			</div>
-
+		<RunnableCodeBlock code={code} language={displayLang}>
 			{/* Highlighted code (highlighter chunk loads on demand; plain code shows first) */}
 			<Suspense
 				fallback={
@@ -140,13 +113,13 @@ function CodeBlock({ lang, children }: { lang: string; children: string }) {
 							overflowX: "auto",
 						}}
 					>
-						<code>{children.replace(/\n$/, "")}</code>
+						<code>{code}</code>
 					</pre>
 				}
 			>
-				<CodeHighlighter code={children} language={displayLang} />
+				<CodeHighlighter code={code} language={displayLang} />
 			</Suspense>
-		</div>
+		</RunnableCodeBlock>
 	);
 }
 

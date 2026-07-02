@@ -18,7 +18,7 @@ export const Basic: Story = {};
 export const WithJavascript: Story = {
 	args: {
 		content: `
-## JavaScript Example
+## Runnable JavaScript Example
 \`\`\`javascript
 const fib = (n) => {
   if (n <= 1) return n;
@@ -34,7 +34,7 @@ console.log("fib(10) =", fib(10));
 export const WithTypescript: Story = {
 	args: {
 		content: `
-## TypeScript Example
+## Runnable TypeScript Example
 \`\`\`typescript
 type Point = { x: number; y: number };
 
@@ -53,7 +53,7 @@ console.log(dist({ x: 0, y: 0 }, { x: 3, y: 4 }));
 export const WithPython: Story = {
 	args: {
 		content: `
-## Python Example
+## Python Example (display only)
 \`\`\`python
 def factorial(n):
     if n <= 1:
@@ -64,7 +64,8 @@ for i in range(6):
     print(f"{i}! = {factorial(i)}")
 \`\`\`
 
-Click **Run** to execute via Pyodide (WASM Python loaded on demand).
+Python is syntax-highlighted for now. The Run control is disabled because chat
+execution currently routes JavaScript and TypeScript through NodePod.
 `,
 	},
 };
@@ -163,6 +164,29 @@ Or TypeScript with types:
 \`\`\`typescript
 const factorial = (n: number): number => n <= 1 ? 1 : n * factorial(n - 1);
 console.log("5! =", factorial(5));
+\`\`\`
+`,
+	},
+};
+
+export const RunnableCodeBlocks: Story = {
+	args: {
+		content: `Use this story to manually check the inline editor, Copy, and Run controls.
+
+\`\`\`javascript
+const total = [2, 3, 5, 8].reduce((sum, value) => sum + value, 0);
+console.log("total =", total);
+\`\`\`
+
+\`\`\`typescript
+type Learner = { name: string; mastery: number };
+
+const learner: Learner = { name: "Ada", mastery: 0.72 };
+console.log(\`\${learner.name}: \${Math.round(learner.mastery * 100)}%\`);
+\`\`\`
+
+\`\`\`python
+print("Python is intentionally display-only in this build")
 \`\`\`
 `,
 	},

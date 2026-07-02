@@ -1058,13 +1058,21 @@ function ArtifactChips({ text }: { text: string }) {
   );
 }
 
-const quizTagPattern = /<keating-quiz\s+json=([^>]+)\s*\/>/g;
-const sceneTagPattern = /<keating-scene\s+markdown=([^>]+)\s*\/>/g;
-const questionTagPattern = /<keating-question\s+json=([^>]+)\s*\/>/g;
-const goalTagPattern = /<keating-goal\s+json=([^>]+)\s*\/>/g;
-const generatedImageTagPattern = /<keating-image\s+json=([^>]+)\s*\/>/g;
-const quizResultTagPattern = /<keating-quiz-result\s+json=([^>]+)\s*\/>/g;
-const interactiveTagPattern = /<keating-(quiz|scene|question|goal|image|quiz-result|quiz-grade|animation|deck)\s+(json|markdown)=([^>]+)\s*\/>/g;
+// Tag payloads are JSON string literals (double-stringified by the emitting
+// tools) and may contain literal ">" characters — e.g. HTML/JS source in an
+// animation body — so match a complete quoted string first and only fall back
+// to the legacy "anything up to >" form for old unquoted payloads.
+const TAG_PAYLOAD = String.raw`("(?:[^"\\]|\\.)*"|[^>]+)`;
+const quizTagPattern = new RegExp(String.raw`<keating-quiz\s+json=${TAG_PAYLOAD}\s*\/>`, "g");
+const sceneTagPattern = new RegExp(String.raw`<keating-scene\s+markdown=${TAG_PAYLOAD}\s*\/>`, "g");
+const questionTagPattern = new RegExp(String.raw`<keating-question\s+json=${TAG_PAYLOAD}\s*\/>`, "g");
+const goalTagPattern = new RegExp(String.raw`<keating-goal\s+json=${TAG_PAYLOAD}\s*\/>`, "g");
+const generatedImageTagPattern = new RegExp(String.raw`<keating-image\s+json=${TAG_PAYLOAD}\s*\/>`, "g");
+const quizResultTagPattern = new RegExp(String.raw`<keating-quiz-result\s+json=${TAG_PAYLOAD}\s*\/>`, "g");
+const interactiveTagPattern = new RegExp(
+  String.raw`<keating-(quiz|scene|question|goal|image|quiz-result|quiz-grade|animation|deck)\s+(json|markdown)=${TAG_PAYLOAD}\s*\/>`,
+  "g",
+);
 const URL_IN_TEXT_PATTERN = /\bhttps?:\/\/[^\s<>"')\]]+/i;
 
 function parseInteractiveSegments(
@@ -3524,6 +3532,8 @@ AssistantChatPanel.displayName = "AssistantChatPanel";
 // Test-only export for parser regressions around malformed reasoning tags from
 // OpenAI-compatible providers.
 export const __test_assistantTextParts = assistantTextParts;
+export const __test_parseInteractiveSegments = parseInteractiveSegments;
+export const __test_interactiveTagPattern = interactiveTagPattern;
 
 function AgentSubscription({
   agent,

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { fn } from "storybook/test";
+import { fn, userEvent, within } from "storybook/test";
 import { DeckSummary, FlashcardRenderer, initialSrsState } from "./FlashcardRenderer";
 import type { FlashcardDeck } from "../keating/srs";
 
@@ -70,9 +70,44 @@ type Story = StoryObj<typeof meta>;
 
 export const ReviewQueue: Story = {};
 
+export const InteractiveReview: Story = {
+	args: {
+		autoFocusKeyboard: true,
+	},
+	parameters: {
+		docs: {
+			description: {
+				story: "Click or press Space to flip, use 1-4 to grade, or swipe the revealed card in the canvas.",
+			},
+		},
+	},
+};
+
 export const DueSubset: Story = {
 	args: {
 		restrictToCardIds: ["bayes-prior", "bayes-likelihood"],
+	},
+};
+
+export const CompactChatEmbed: Story = {
+	decorators: [
+		(Story) => (
+			<div className="w-[min(34rem,calc(100vw-1rem))]">
+				<Story />
+			</div>
+		),
+	],
+	args: {
+		showMeta: false,
+	},
+};
+
+export const CompactChatEmbedRevealed: Story = {
+	decorators: CompactChatEmbed.decorators,
+	args: CompactChatEmbed.args,
+	play: async ({ canvasElement }) => {
+		const canvas = within(canvasElement);
+		await userEvent.click(canvas.getByRole("button", { name: /reveal/i }));
 	},
 };
 
