@@ -46,10 +46,18 @@ export default defineEventHandler(async (event) => {
 	}
 
 	try {
+		// Anthropic's token endpoint only accepts JSON bodies; the others take form encoding.
 		const response = await fetch(config.tokenUrl, {
 			method: "POST",
-			headers: { "Content-Type": "application/x-www-form-urlencoded" },
-			body: new URLSearchParams(tokenParams).toString(),
+			...(body.provider === "anthropic"
+				? {
+						headers: { "Content-Type": "application/json", Accept: "application/json" },
+						body: JSON.stringify(tokenParams),
+					}
+				: {
+						headers: { "Content-Type": "application/x-www-form-urlencoded" },
+						body: new URLSearchParams(tokenParams).toString(),
+					}),
 		});
 
 		if (!response.ok) {

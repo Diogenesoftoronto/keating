@@ -39,6 +39,10 @@ const OAUTH_PROVIDERS: Record<OAuthProviderId, OAuthProviderConfig> = {
 			"user:mcp_servers",
 			"user:file_upload",
 		],
+		// `code=true` makes the callback page display the authorization code for copy-paste.
+		extraAuthParams: {
+			code: "true",
+		},
 	},
 	"openai-codex": {
 		id: "openai-codex",
@@ -46,6 +50,10 @@ const OAUTH_PROVIDERS: Record<OAuthProviderId, OAuthProviderConfig> = {
 		clientId: "app_EMoamEEZ73f0CkXaXp7hrann",
 		authorizeUrl: "https://auth.openai.com/oauth/authorize",
 		tokenUrl: "https://auth.openai.com/oauth/token",
+		// The Codex CLI client only has this loopback URI registered; a web origin is
+		// rejected at the authorize step. The localhost page won't load — the user
+		// pastes the final URL back into the app to finish sign-in.
+		redirectUri: "http://localhost:1455/auth/callback",
 		scopes: ["openid", "profile", "email", "offline_access"],
 		extraAuthParams: {
 			id_token_add_organizations: "true",
@@ -59,6 +67,10 @@ const OAUTH_PROVIDERS: Record<OAuthProviderId, OAuthProviderConfig> = {
 		clientId: "681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com",
 		authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
 		tokenUrl: "https://oauth2.googleapis.com/token",
+		// The Gemini CLI client is a Google "installed app", which only allows
+		// loopback redirects (any port). The localhost page won't load — the user
+		// pastes the final URL back into the app to finish sign-in.
+		redirectUri: "http://localhost:7777/oauth2callback",
 		scopes: [
 			"https://www.googleapis.com/auth/cloud-platform",
 			"https://www.googleapis.com/auth/userinfo.email",
@@ -76,7 +88,20 @@ function getRedirectUri(): string {
 	return `${origin}/oauth/callback`;
 }
 
-function getProviderRedirectUri(config: OAuthProviderConfig): string {
+const PROD_WEB_CALLBACK_HOSTS = new Set(["keating.help", "www.keating.help"]);
+
+function isProdWebHost(): boolean {
+	const host = globalThis.location?.hostname ?? "";
+	return PROD_WEB_CALLBACK_HOSTS.has(host);
+}
+
+export function resolveOAuthRedirectUri(providerId: OAuthProviderId): string {
+	const config = OAUTH_PROVIDERS[providerId];
+	// Anthropic always uses its provider-hosted code-display callback. For the
+	// others, production uses the keating.help web callback registered with the
+	// providers; everywhere else (dev/self-hosted) falls back to the CLI clients'
+	// loopback URIs, finished via manual URL paste.
+	if (providerId !== "anthropic" && isProdWebHost()) return getRedirectUri();
 	return config.redirectUri ?? getRedirectUri();
 }
 
@@ -145,7 +170,7 @@ function createState(): string {
 
 export function initiateOAuth(providerId: OAuthProviderId): void {
 	const config = OAUTH_PROVIDERS[providerId];
-	const redirectUri = getProviderRedirectUri(config);
+	const redirectUri = resolveOAuthRedirectUri(providerId);
 
 	generatePKCE().then(({ verifier, challenge }) => {
 		const state = providerId === "anthropic" ? verifier : createState();
