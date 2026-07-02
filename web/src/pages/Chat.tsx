@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useKeatingAgent } from "../hooks/useKeatingAgent";
+import { sessions } from "../hooks/keating-storage";
 import { useSeo } from "../hooks/useSeo";
 import { useMediaQuery } from "../hooks/use-media-query";
 import { ChatIntro } from "../components/ChatIntro";
@@ -63,7 +64,9 @@ function ChatContent() {
     toggleMobileSidebar,
   } = useKeatingAgent();
   const [introDismissed, setIntroDismissed] = useState(
-    () => sessionStorage.getItem("keating_chat_intro") === "dismissed",
+    () =>
+      localStorage.getItem("keating_chat_intro") === "dismissed" ||
+      sessionStorage.getItem("keating_chat_intro") === "dismissed",
   );
   const [artifactBrowserOpen, setArtifactBrowserOpen] = useState(false);
   const isWideViewport = useMediaQuery("(min-width: 1024px)");
@@ -101,9 +104,26 @@ function ChatContent() {
 
   const dismissIntro = () => {
     setIntroDismissed(true);
-    sessionStorage.setItem("keating_chat_intro", "dismissed");
+    localStorage.setItem("keating_chat_intro", "dismissed");
     posthog.capture('chat_intro_dismissed');
   };
+
+  // Returning users with saved sessions shouldn't be gated by the intro.
+  useEffect(() => {
+    if (introDismissed) return;
+    let cancelled = false;
+    sessions
+      .getAllMetadata()
+      .then((items) => {
+        if (cancelled || items.length === 0) return;
+        setIntroDismissed(true);
+        localStorage.setItem("keating_chat_intro", "dismissed");
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [introDismissed]);
 
   useEffect(() => subscribeKeatingUiSettings(setUiSettings), []);
 

@@ -209,7 +209,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 									{loading && (
 										<div className="rounded-md border border-border bg-muted/20 p-2">
 											<p className="mb-2 text-xs text-muted-foreground">
-												If the provider redirects to a localhost callback that does not load, paste that final URL here.
+												After you approve access, the browser lands on a localhost page that won't load — that's expected. Copy that page's full URL (or the code it shows) and paste it here.
 											</p>
 											<div className="flex gap-2">
 												<input
