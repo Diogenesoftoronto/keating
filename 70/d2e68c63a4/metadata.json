@@ -1,0 +1,43 @@
+{
+  "cli_version": "0.7.7",
+  "checkpoint_id": "70d2e68c63a4",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "web/bun.lock",
+    "web/package.json",
+    "web/src/app.css",
+    "web/src/components/AssistantChatPanel.tsx",
+    "web/src/components/FlashcardRenderer.stories.tsx",
+    "web/src/components/FlashcardRenderer.tsx",
+    "web/src/components/KeatingUiSettingsTab.tsx",
+    "web/src/components/MarkdownBlock.stories.tsx",
+    "web/src/components/MarkdownBlock.tsx",
+    "web/src/components/QuizRenderer.stories.tsx",
+    "web/src/components/QuizRenderer.tsx",
+    "web/src/components/RunnableCodeBlock.tsx",
+    "web/src/components/SettingsDialog.stories.tsx",
+    "web/src/components/SettingsDialog.tsx",
+    "web/src/components/flashcards/review-feedback.ts",
+    "web/src/components/flashcards/useCardGestures.ts",
+    "web/src/keating/ui-settings.ts",
+    "web/src/test/interactive-tag-parsing.test.ts",
+    "web/src/test/runnable-code-block.test.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/70/d2e68c63a4/0/metadata.json",
+      "transcript": "/70/d2e68c63a4/0/full.jsonl",
+      "content_hash": "/70/d2e68c63a4/0/content_hash.txt",
+      "prompt": "/70/d2e68c63a4/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 145011,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 729600,
+    "output_tokens": 2355,
+    "api_call_count": 8
+  }
+}
