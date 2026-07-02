@@ -12,7 +12,7 @@ const KEATING_ASCII = `
 const INTRO_LINES = [
   { text: "INIT SEQUENCE v2.0.0", delay: 100 },
   { text: "─────────────────────────────────────────", delay: 200 },
-  { text: "model   : gemini-3-flash-preview", delay: 300 },
+  { text: "model   : Kimi k2.6", delay: 300 },
   { text: "policy  : keating-default", delay: 400 },
   { text: "system  : Socratic teaching engine", delay: 500 },
   { text: "tools   : plan, map, verify, animate, bench, evolve", delay: 600 },

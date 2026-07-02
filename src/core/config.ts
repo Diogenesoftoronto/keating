@@ -36,9 +36,9 @@ export interface KeatingConfig {
 export const DEFAULT_PI_PROVIDER = "openai";
 export const DEFAULT_PI_MODEL = "gpt-5.5";
 export const FALLBACK_PI_MODELS: Record<string, string> = {
-  google: "gemini-3.1-pro-preview",
+  google: "gemini-3.5-flash",
   openai: DEFAULT_PI_MODEL,
-  anthropic: "claude-sonnet-4-6",
+  anthropic: "claude-sonnet-5",
   openrouter: "poolside/laguna-m.1:free",
   zyphra: "zyphra/ZAYA1-8B"
 };
