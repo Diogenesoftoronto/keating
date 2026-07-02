@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.7.7",
+  "checkpoint_id": "5173e7ad424b",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "web/server/api/oauth/config.ts",
+    "web/server/api/oauth/refresh.ts",
+    "web/server/api/oauth/token.ts",
+    "web/src/components/settings/CloudProviderKeysSection.tsx",
+    "web/src/keating/nodepod-boot-files.ts",
+    "web/src/keating/oauth.ts",
+    "web/src/pages/Chat.tsx",
+    "web/src/test/oauth.test.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/51/73e7ad424b/0/metadata.json",
+      "transcript": "/51/73e7ad424b/0/full.jsonl",
+      "content_hash": "/51/73e7ad424b/0/content_hash.txt",
+      "prompt": "/51/73e7ad424b/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 6896,
+    "cache_creation_tokens": 677366,
+    "cache_read_tokens": 6439663,
+    "output_tokens": 37779,
+    "api_call_count": 61
+  }
+}

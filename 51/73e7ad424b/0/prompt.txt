@@ -1,0 +1,13 @@
+Hey I want you to fix oauth issue that I have been having in the application, I also want you to make it so that the intro only appears once per user on initial load up instead of everytime. if therre is session data it just gates things unnecessarily
+
+---
+
+fix it for openai codex and google
+
+---
+
+create a skill for solving and adding oauth from providers
+
+---
+
+commit and push all changes

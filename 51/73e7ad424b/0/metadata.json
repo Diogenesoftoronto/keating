@@ -1,0 +1,79 @@
+{
+  "cli_version": "0.7.7",
+  "checkpoint_id": "5173e7ad424b",
+  "session_id": "92a9fdb7-b473-4755-a24e-abe4d4c951a7",
+  "strategy": "manual-commit",
+  "created_at": "2026-07-02T22:19:23.445689771Z",
+  "branch": "main",
+  "checkpoints_count": 3,
+  "save_step_count": 1,
+  "files_touched": [
+    "web/server/api/oauth/config.ts",
+    "web/server/api/oauth/refresh.ts",
+    "web/server/api/oauth/token.ts",
+    "web/src/components/settings/CloudProviderKeysSection.tsx",
+    "web/src/keating/nodepod-boot-files.ts",
+    "web/src/keating/oauth.ts",
+    "web/src/pages/Chat.tsx",
+    "web/src/test/oauth.test.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "",
+  "turn_id": "aaa8f82ad3c5",
+  "token_usage": {
+    "input_tokens": 6896,
+    "cache_creation_tokens": 677366,
+    "cache_read_tokens": 6439663,
+    "output_tokens": 37779,
+    "api_call_count": 61
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01AiovCzh3a2vzJWWmaveeSX",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "hivemind-search"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "aaa8f82ad3c5",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 81,
+        "end": 82,
+        "entry_ids": [
+          "2cf5fedd-b0ae-4fa5-8408-d424f8e387f3"
+        ],
+        "tool_use_id": "toolu_01AiovCzh3a2vzJWWmaveeSX"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01AiovCzh3a2vzJWWmaveeSX"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: hivemind-search",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 3
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-07-02T22:19:23.415121793Z",
+    "agent_lines": 121,
+    "agent_removed": 19,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 121,
+    "total_lines_changed": 140,
+    "agent_percentage": 100,
+    "metric_version": 2
+  }
+}
