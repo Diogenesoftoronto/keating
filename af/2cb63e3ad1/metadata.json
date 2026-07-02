@@ -3,7 +3,7 @@
   "checkpoint_id": "af2cb63e3ad1",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 5,
+  "checkpoints_count": 6,
   "files_touched": [
     "Dockerfile.web",
     "bun.lock",
@@ -13,6 +13,7 @@
     "desktop/src/preload.ts",
     "desktop/tsconfig.json",
     "docs/p2p-electron-plan.md",
+    "mise.toml",
     "package.json",
     "packages/p2p-core/CRUSH_SPEC.md",
     "packages/p2p-core/package.json",
@@ -24,8 +25,40 @@
     "packages/p2p-core/src/swarm.ts",
     "packages/p2p-core/src/types.ts",
     "packages/p2p-core/tsconfig.json",
+    "web/bun.lock",
+    "web/nitro.config.ts",
+    "web/package.json",
+    "web/public/sitemap.xml",
+    "web/src/App.tsx",
+    "web/src/app.css",
+    "web/src/components/DownloadPdfButton.tsx",
+    "web/src/components/Footer.tsx",
+    "web/src/components/ForkMapCard.tsx",
+    "web/src/components/KeatingUiSettingsTab.tsx",
+    "web/src/components/Nav.tsx",
+    "web/src/components/ProvidersModelsTab.tsx",
+    "web/src/components/SessionBrowser.tsx",
+    "web/src/components/SessionBrowserDesktop.tsx",
+    "web/src/components/SessionBrowserSheet.tsx",
+    "web/src/components/SessionCard.tsx",
+    "web/src/components/SessionCardGrid.tsx",
+    "web/src/components/SessionManagerDialog.tsx",
+    "web/src/components/SessionSidebar.tsx",
+    "web/src/components/SettingsDialog.tsx",
+    "web/src/components/SpeechSettingsTab.tsx",
+    "web/src/hooks/keating-storage.ts",
+    "web/src/hooks/use-sessions.ts",
+    "web/src/hooks/useKeatingAgent.tsx",
     "web/src/lib/p2p-storage-backend.ts",
-    "web/src/types.ts"
+    "web/src/main-react.tsx",
+    "web/src/pages/Chat.tsx",
+    "web/src/pages/Privacy.tsx",
+    "web/src/pages/Terms.tsx",
+    "web/src/styles/retro.css",
+    "web/src/test/ui-settings.test.ts",
+    "web/src/test/use-sessions.test.ts",
+    "web/src/types.ts",
+    "web/vite.config.ts"
   ],
   "sessions": [
     {
@@ -33,13 +66,19 @@
       "transcript": "/af/2cb63e3ad1/0/full.jsonl",
       "content_hash": "/af/2cb63e3ad1/0/content_hash.txt",
       "prompt": "/af/2cb63e3ad1/0/prompt.txt"
+    },
+    {
+      "metadata": "/af/2cb63e3ad1/1/metadata.json",
+      "transcript": "/af/2cb63e3ad1/1/full.jsonl",
+      "content_hash": "/af/2cb63e3ad1/1/content_hash.txt",
+      "prompt": "/af/2cb63e3ad1/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 13280,
-    "cache_creation_tokens": 895911,
-    "cache_read_tokens": 6412647,
-    "output_tokens": 59078,
-    "api_call_count": 72
+    "input_tokens": 61002,
+    "cache_creation_tokens": 3553572,
+    "cache_read_tokens": 20101524,
+    "output_tokens": 140587,
+    "api_call_count": 184
   }
 }

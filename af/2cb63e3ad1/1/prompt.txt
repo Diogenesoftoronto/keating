@@ -1,0 +1,34 @@
+Hey I want you to create a plan for how you would improve the session management and settings in keating. Currently settings are in several different categories and I want a component that is much easier to understand. Similarily, session components have a bunch of nested and duplicate serving interfaces that I would like to unify that is ideal for use in both mobile and desktop interfaces. The interfaces for mobile should utilize the realestate of the screen well as well. The settings should be simple. If you have suggestions for other things to improve along the way feel free to add these in an addendum as stretch goals.
+
+---
+
+Here is a thing that I want you to do during the implementation of this, hand over most work to crush, only design the initial components. You can also use codex to review or fix bugs. You are mostly the orchestrator and component designer.
+
+---
+
+can we kill the the crush and just fix the errors it is have issues with
+
+---
+
+and then restart it again
+
+---
+
+can we kill the the crush and just fix the errors it is have issues with
+
+---
+
+<task-notification>
+<task-id>baabjovnn</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<status>stopped</status>
+<summary>No completion record was found for this background shell command from the previous session. It may have been stopped (via the UI, Monitor timeout, or agent teardown — these leave no transcript marker), or it may have been running when the previous Claude Code process exited. Check the output file for partial results before assuming it completed.</summary>
+</task-notification>
+
+---
+
+current status of the crush process
+
+---
+
+hey for the rest of the session use codex instead
