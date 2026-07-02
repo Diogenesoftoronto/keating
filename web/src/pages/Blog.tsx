@@ -58,6 +58,94 @@ function majorMinor(version: string): string {
 
 const POSTS: Post[] = [
   {
+    date: "2026-07-02",
+    badge: { label: "RELEASE", color: "release" },
+    title: "v2.0.0 - Desktop, P2P Storage, and a Bigger App Surface",
+    version: "2.0.0",
+    summary:
+      "Keating 2.0 starts the desktop/P2P release line: an Electron workspace now hosts the app as a local-first client, shared Hypercore storage moves into @keating/p2p-core, settings and session management are calmer, public download/legal pages are live, and deployed web users get safer stale-build recovery.",
+    sections: [
+      { id: "desktop-p2p", title: "Desktop and P2P Storage" },
+      { id: "settings-sessions", title: "Settings and Sessions" },
+      { id: "public-app-surface", title: "Public App Surface" },
+      { id: "release-runtime", title: "Release Runtime Fixes" },
+      { id: "verification-2", title: "Verification" },
+    ],
+    body: (
+      <>
+        <p className="mb-4 leading-6">
+          2.0.0 is the first Keating release that treats the desktop app and the
+          peer-to-peer storage layer as first-class product surfaces. The web app
+          is still the fastest way to start learning, but the architecture now has
+          a real Electron main process, a typed preload bridge, and a shared P2P
+          core package for local-first storage and replication work.
+        </p>
+
+        <h3 id="desktop-p2p" className="font-bold mt-4 mb-2">
+          Desktop and P2P Storage
+        </h3>
+        <p className="text-sm mb-4">
+          The new desktop workspace boots Keating through Electron with the
+          renderer sandboxed and all storage calls crossing a typed IPC boundary.
+          The main process owns the P2P store, persists a per-user swarm secret,
+          exposes peer stats, and adapts Hyperbee/Corestore storage to the same
+          storage shape the browser app already expects.
+        </p>
+        <p className="text-sm mb-4">
+          That shared storage logic lives in <Code>@keating/p2p-core</Code>. It
+          now builds runnable JavaScript into <Code>dist/</Code>, exports that JS
+          for Node and Electron, and keeps the seeder entrypoint on the same
+          built output. The package no longer asks Electron to execute TypeScript
+          source through workspace exports.
+        </p>
+
+        <h3 id="settings-sessions" className="font-bold mt-4 mb-2">
+          Settings and Sessions
+        </h3>
+        <p className="text-sm mb-4">
+          The settings surface has been reworked around shared local-setting
+          hooks. Speech, model preferences, and UI settings now follow the same
+          subscription pattern, which makes settings changes easier to reason
+          about across tabs and components. Session management also moves toward
+          a dedicated browser experience instead of the older sidebar/dialog
+          split.
+        </p>
+
+        <h3 id="public-app-surface" className="font-bold mt-4 mb-2">
+          Public App Surface
+        </h3>
+        <p className="text-sm mb-4">
+          Keating now has public <Code>/download</Code>, <Code>/privacy</Code>,
+          and <Code>/terms</Code> routes, with navigation, footer, and sitemap
+          updates so the app has a clearer release and policy surface. The retro
+          styling pass also moves more of the product chrome into shared CSS so
+          landing, app, settings, and public pages feel less stitched together.
+        </p>
+
+        <h3 id="release-runtime" className="font-bold mt-4 mb-2">
+          Release Runtime Fixes
+        </h3>
+        <p className="text-sm mb-4">
+          The lazy-route loader now goes through stale-build recovery, so users
+          with an old HTML shell can reload cleanly when a deployed chunk has
+          been replaced. On the P2P side, <Code>deriveTopic</Code> uses a
+          deterministic Node crypto hash and native Hyperbee loading is deferred
+          until storage opens, keeping Bun tests runnable even on machines where
+          the transitive <Code>sodium-native</Code> addon is unavailable.
+        </p>
+
+        <h3 id="verification-2" className="font-bold mt-4 mb-2">Verification</h3>
+        <p className="text-sm mb-4">
+          This release was checked with the P2P package build/typecheck/tests,
+          the desktop main build/typecheck path, and the web TypeScript check.
+          The native Hypercore-backed storage tests remain conditional: they run
+          when the native addon is available and skip cleanly when the current
+          Bun environment cannot load it.
+        </p>
+      </>
+    ),
+  },
+  {
     date: "2026-06-30",
     badge: { label: "RELEASE", color: "release" },
     title: "v1.4.1 - Production Analytics, Mermaid Diagrams, and Release Guardrails",

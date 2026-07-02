@@ -87,6 +87,9 @@ export function Nav() {
 
         {/* Desktop links — visible at md (768px) and up, controlled by retro.css */}
         <div className="nav-desktop" style={{ alignItems: "center", gap: "1.5rem" }}>
+          <Link to="/download" className="nav-link glitch-hover font-terminal nav-desktop-link">
+            [DOWNLOAD]
+          </Link>
           <Link to="/tutorial" className="nav-link glitch-hover font-terminal nav-desktop-link">
             [TUTORIAL]
           </Link>
@@ -102,14 +105,6 @@ export function Nav() {
           <Link to="/bench" className="nav-link glitch-hover font-terminal nav-desktop-link">
             [BENCH]
           </Link>
-          <a
-            href="https://github.com/Diogenesoftoronto/keating"
-            target="_blank"
-            rel="noreferrer"
-            className="nav-link glitch-hover font-terminal nav-desktop-link"
-          >
-            [GITHUB]
-          </a>
           <div className="nav-status" role="status">
             <span className="dot" />
             SYSTEM ONLINE
@@ -177,6 +172,14 @@ export function Nav() {
               fontSize: "1.125rem",
             }}
           >
+            <Link
+              to="/download"
+              className="nav-link glitch-hover"
+              style={{ padding: "0.75rem 0.5rem" }}
+              onClick={closeMobile}
+            >
+              [DOWNLOAD]
+            </Link>
             <Link
               to="/tutorial"
               className="nav-link glitch-hover"

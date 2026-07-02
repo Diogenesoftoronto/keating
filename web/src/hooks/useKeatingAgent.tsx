@@ -8,14 +8,15 @@ import {
   type Context,
 } from "@earendil-works/pi-ai";
 import { defaultConvertToLlm } from "@earendil-works/pi-web-ui";
-import { SessionManagerDialog } from "../components/SessionManagerDialog";
 import { SettingsDialog } from "../components/SettingsDialog";
+import {
+	MODELS_TAB_ALL_SECTION_IDS,
+	SETTINGS_DIALOG_TAB_IDS,
+} from "../components/settings/section-ids";
 import { KeatingUiSettingsTab } from "../components/KeatingUiSettingsTab";
-import { TeacherPersonaTab } from "../components/TeacherPersonaTab";
-import { ProvidersModelsTab } from "../components/ProvidersModelsTab";
-import { ProxyTab } from "../components/ProxyTab";
-import { SpeechSettingsTab } from "../components/SpeechSettingsTab";
-import { SessionSidebar } from "../components/SessionSidebar";
+import { LearningTab } from "../components/settings/LearningTab";
+import { ModelsProvidersTab } from "../components/settings/ModelsProvidersTab";
+import { SessionBrowser, SESSION_BROWSER_BREAKPOINT } from "../components/SessionBrowser";
 import { ModelSelectorDialog } from "../components/ModelSelector";
 import { KeatingApiKeyPromptDialog, promptKeatingApiKey } from "../components/KeatingApiKeyPromptDialog";
 import { getProviderApiKey, resolveAvailableChatModel } from "../lib/provider-models";
@@ -179,7 +180,6 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const setPersistentStorageChecked = useKeatingAgentStore((state) => state.setPersistentStorageChecked);
   const persistentBannerDismissed = useKeatingAgentStore((state) => state.persistentBannerDismissed);
   const dismissPersistentBanner = useKeatingAgentStore((state) => state.dismissPersistentBanner);
-  const sessionsDialog = useDialogState();
   const settingsDialog = useDialogState();
   const modelSelectorDialog = useDialogState();
   const [isPending, startTransition] = useTransition();
@@ -188,10 +188,57 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const persistentStorageRequestedRef = useRef(false);
   const systemPromptBaseRef = useRef<string>("");
   const alternativeGenerationRef = useRef(new Set<string>());
+  const settingsDeepLinkRef = useRef<{ tabId: string; sectionId: string | null } | null>(null);
 
   const openSettings = useCallback(() => {
     settingsDialog.onOpen();
   }, [settingsDialog]);
+
+  // Deep-link support: ?settings=<tabId> or ?settings=<tabId>-<sectionId>.
+  // Opens the settings dialog on the matching tab, scrolls to the section
+  // anchor after the dialog mounts, then strips the param from the URL so
+  // it doesn't pollute history/back-button behavior.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get("settings");
+    if (!raw) return;
+    const MODEL_SECTION_SET = new Set<string>(MODELS_TAB_ALL_SECTION_IDS);
+    let tabId = raw;
+    let sectionId: string | null = null;
+    if (!SETTINGS_DIALOG_TAB_IDS.includes(raw as typeof SETTINGS_DIALOG_TAB_IDS[number])) {
+      const dashIndex = raw.indexOf("-");
+      const candidateTab = dashIndex === -1 ? raw : raw.slice(0, dashIndex);
+      const candidateSection = dashIndex === -1 ? raw : raw.slice(dashIndex + 1);
+      if ((SETTINGS_DIALOG_TAB_IDS as readonly string[]).includes(candidateTab)) {
+        tabId = candidateTab;
+        sectionId = MODEL_SECTION_SET.has(candidateSection) ? candidateSection : null;
+      } else if (MODEL_SECTION_SET.has(raw)) {
+        tabId = "models";
+        sectionId = raw;
+      } else {
+        tabId = "models";
+      }
+    }
+    settingsDeepLinkRef.current = { tabId, sectionId };
+    params.delete("settings");
+    const next = params.toString();
+    const url = `${window.location.pathname}${next ? `?${next}` : ""}${window.location.hash}`;
+    window.history.replaceState({}, "", url);
+    settingsDialog.onOpen();
+  }, [settingsDialog]);
+
+  useEffect(() => {
+    if (!settingsDialog.open) return;
+    const link = settingsDeepLinkRef.current;
+    if (!link) return;
+    const handle = window.setTimeout(() => {
+      const el = link.sectionId ? document.getElementById(`settings-section-${link.sectionId}`) : null;
+      el?.scrollIntoView({ behavior: "smooth", block: "start" });
+      settingsDeepLinkRef.current = null;
+    }, 80);
+    return () => window.clearTimeout(handle);
+  }, [settingsDialog.open]);
 
   useEffect(() => {
     setActiveSessionId(sessionIdRef.current);
@@ -767,32 +814,15 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   }, [saveSessionSnapshot, suggestSessionTitle]);
 
   const openSessions = useCallback(() => {
-    sessionsDialog.onOpen();
-  }, [sessionsDialog]);
-
-  const sessionManagerDialogElement = (
-    <SessionManagerDialog
-      open={sessionsDialog.open}
-      onClose={sessionsDialog.onClose}
-      onFork={forkSession}
-      onSuggestTitle={suggestSessionTitle}
-      onDeleted={() => {
-        window.dispatchEvent(new CustomEvent("keating:sessions-changed"));
-      }}
-      onRenamed={() => {
-        window.dispatchEvent(new CustomEvent("keating:sessions-changed"));
-      }}
-      onLoad={(sessionId: string) => {
-        startTransition(async () => {
-          const session = await sessions.loadSession(sessionId);
-          if (session) await loadSession(session as SessionData);
-        });
-      }}
-    />
-  );
+    if (typeof window !== "undefined" && window.innerWidth < SESSION_BROWSER_BREAKPOINT) {
+      if (!mobileSidebarOpen) toggleMobileSidebar();
+      return;
+    }
+    setSidebarCollapsed(false);
+  }, [mobileSidebarOpen, setSidebarCollapsed, toggleMobileSidebar]);
 
   const sessionSidebarElement = (
-    <SessionSidebar
+    <SessionBrowser
       activeSessionId={activeSessionId}
       forkingSessionId={forkingSessionId}
       forkedSessionId={forkedSessionId}
@@ -806,10 +836,10 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
         });
       }}
       onFork={forkSession}
-      onOpenSessions={sessionsDialog.onOpen}
       mobileOpen={mobileSidebarOpen}
       onMobileClose={closeMobileSidebar}
       onNewSession={newSession}
+      onSuggestTitle={suggestSessionTitle}
     />
   );
 
@@ -817,12 +847,11 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     <SettingsDialog
       open={settingsDialog.open}
       onClose={settingsDialog.onClose}
+      defaultTabId={settingsDeepLinkRef.current?.tabId}
       tabs={[
-        { id: "providers", label: "Providers & Models", component: <ProvidersModelsTab /> },
-        { id: "persona", label: "Teacher Persona", component: <TeacherPersonaTab /> },
-        { id: "speech", label: "Speech & Voice", component: <SpeechSettingsTab onSettingsChange={setSpeechSettings} /> },
-        { id: "interface", label: "Interface", component: <KeatingUiSettingsTab /> },
-        { id: "proxy", label: "Proxy", component: <ProxyTab /> },
+        { id: "models", label: "Models & Providers", component: <ModelsProvidersTab /> },
+        { id: "learning", label: "Learning", component: <LearningTab onSpeechSettingsChange={setSpeechSettings} /> },
+        { id: "app", label: "App", component: <KeatingUiSettingsTab /> },
       ]}
     />
   );
@@ -947,7 +976,6 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
 
   const allDialogs = (
     <>
-      {sessionManagerDialogElement}
       {settingsDialogElement}
       {modelSelectorDialogElement}
       <KeatingApiKeyPromptDialog />

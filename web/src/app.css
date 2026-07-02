@@ -259,7 +259,17 @@ button:not(:disabled) {
   width: 2.25rem;
   height: 2.25rem;
   padding: 0;
-  scroll-snap-align: end;
+}
+
+/* Horizontal scroll-snap only kicks in on viewports where the desktop
+   action row actually overflows (mid-sized tablet / short landscape phones).
+   On small screens we remove the snap so buttons don't pin to the right edge
+   and reserve phantom horizontal space. */
+@media (min-width: 48rem) {
+  .chat-action-button,
+  .chat-actions > button {
+    scroll-snap-align: end;
+  }
 }
 
 /*
@@ -593,27 +603,6 @@ message-editor textarea::placeholder {
   }
 }
 
-/* ─── Session manager / dialog styling ─── */
-.session-manager-dialog {
-  background: var(--background);
-  border: 2px solid var(--border);
-  box-shadow: 8px 8px 0 var(--border);
-}
-
-.dark .session-manager-dialog {
-  box-shadow: 8px 8px 0 rgba(75, 227, 136, 0.15);
-}
-
-.session-manager-side-panel {
-  border-width: 0 2px 0 0;
-  border-radius: 0;
-  box-shadow: 6px 0 18px rgba(0, 0, 0, 0.16);
-}
-
-.dark .session-manager-side-panel {
-  box-shadow: 6px 0 18px rgba(75, 227, 136, 0.1);
-}
-
 /* ─── Mobile/tablet session card grid ─── */
 /* Fit an injected lesson-map SVG into its hero band without overflowing. */
 .session-card-hero-svg > svg {
@@ -716,45 +705,25 @@ message-editor textarea::placeholder {
   color: var(--phosphor);
 }
 
-/* Keating replies render on a retro panel that adapts to the theme. In light
-   mode it's a readable cream panel with dark ink (so text isn't fighting a dark
-   box on a light page); in dark mode it becomes a phosphor CRT with scanlines.
-   Both keep the brand's hard offset shadow for the retro feel. */
+/* Keating replies sit directly on the chat page surface. The surrounding page
+   carries the study-room texture; the agent text should not be boxed. */
 .chat-page-shell .keating-bubble {
   position: relative;
-  background: var(--card);
-  border: 1.5px solid var(--chat-ink);
-  box-shadow: 3px 3px 0 var(--chat-ink);
-  padding: 14px 18px;
-  overflow: hidden;
-}
-
-/* Faint scanline wash — kept very subtle in light mode so it never hurts
-   legibility, and turned up to a true CRT texture in dark mode below. */
-.chat-page-shell .keating-bubble::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(20, 116, 60, 0.05) 0 1px,
-    transparent 1px 3px
-  );
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  overflow: visible;
 }
 
 .dark .chat-page-shell .keating-bubble {
-  background: var(--crt);
-  border-color: rgba(75, 227, 136, 0.3);
-  box-shadow: 3px 3px 0 rgba(75, 227, 136, 0.15);
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
 }
 
 .dark .chat-page-shell .keating-bubble::after {
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0.16) 0 1px,
-    transparent 1px 3px
-  );
+  content: none;
 }
 
 .chat-page-shell .you-bubble {

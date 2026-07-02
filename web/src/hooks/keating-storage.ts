@@ -1,13 +1,17 @@
 import {
 	AppStorage,
 	CustomProvidersStore,
-	IndexedDBStorageBackend,
 	ProviderKeysStore,
 	SessionsStore,
 	SettingsStore,
 	setAppStorage,
 } from "@earendil-works/pi-web-ui";
 import { KeatingStorage } from "../keating/storage";
+import { IndexedDBStorageBackend } from "../lib/cloud-storage-backend";
+import {
+	P2PStorageBackend,
+	hasP2PBackend,
+} from "../lib/p2p-storage-backend";
 import { syncCustomProviderKeys } from "../lib/provider-models";
 import { sessionModelMetadata, sessionPreview, sessionUsage } from "./session-metadata";
 import type { SessionData, SessionMetadata } from "../types/session";
@@ -17,7 +21,9 @@ const providerKeys = new ProviderKeysStore();
 export const sessions = new SessionsStore();
 const customProviders = new CustomProvidersStore();
 
-const backend = new IndexedDBStorageBackend({
+const backend = hasP2PBackend() && window.keatingP2P
+	? new P2PStorageBackend(window.keatingP2P)
+	: new IndexedDBStorageBackend({
 	dbName: "keating",
 	version: 1,
 	stores: [

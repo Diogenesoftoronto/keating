@@ -1894,3 +1894,655 @@
   background: var(--ink, #1c211b) !important;
   color: var(--paper, #f1ece0) !important;
 }
+
+/* =================================================================
+   DOWNLOAD PAGE — desktop app and native mobile roadmap
+   ================================================================= */
+
+.retro-layout .download-page {
+  position: relative;
+  z-index: 2;
+}
+
+.retro-layout .download-hero {
+  padding: 72px 0 84px;
+  border-bottom: 1.5px dashed var(--line);
+}
+
+.retro-layout .download-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+  gap: 54px;
+  align-items: center;
+}
+
+.retro-layout .download-hero h1 {
+  font-family: var(--mono-display);
+  font-size: clamp(38px, 5.4vw, 76px);
+  line-height: 0.98;
+  letter-spacing: -0.025em;
+  max-width: 11ch;
+  margin: 16px 0 24px;
+  color: var(--accent-dim);
+}
+
+.dark .retro-layout .download-hero h1 {
+  color: var(--phosphor);
+  text-shadow: 0 0 24px rgba(75, 227, 136, 0.28);
+}
+
+.retro-layout .download-hero-copy {
+  color: var(--ink-soft);
+  max-width: 62ch;
+  margin-bottom: 30px;
+}
+
+.retro-layout .download-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.retro-layout .download-actions .btn-retro,
+.retro-layout .download-source-box .btn-retro {
+  text-decoration: none;
+  font-size: 12px;
+}
+
+.retro-layout .download-note {
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  max-width: 58ch;
+}
+
+.retro-layout .download-device-panel {
+  background: var(--terminal);
+  border: 1.5px solid var(--ink);
+  box-shadow: 6px 6px 0 var(--ink);
+  color: var(--phosphor);
+}
+
+.retro-layout .download-device-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--terminal-edge);
+  border-bottom: 1px solid rgba(75, 227, 136, 0.18);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--phosphor-dim);
+}
+
+.retro-layout .download-device-top .d {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+}
+
+.retro-layout .download-device-top .d.r { background: var(--red); }
+.retro-layout .download-device-top .d.y { background: var(--amber); }
+.retro-layout .download-device-top .d.g { background: var(--accent); }
+
+.retro-layout .download-screen {
+  position: relative;
+  min-height: 290px;
+  padding: 28px;
+  overflow: hidden;
+}
+
+.retro-layout .download-screen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 3px);
+  mix-blend-mode: multiply;
+}
+
+.retro-layout .download-screen-line {
+  position: relative;
+  z-index: 1;
+  min-height: 1.9em;
+  color: var(--phosphor);
+}
+
+.retro-layout .download-screen-line::before {
+  content: '$ ';
+  color: var(--phosphor-dim);
+}
+
+.retro-layout .download-screen-caret {
+  position: relative;
+  z-index: 1;
+  width: 9px;
+  height: 17px;
+  margin-top: 8px;
+  background: var(--phosphor);
+  animation: retro-cursor-blink 1s steps(1) infinite;
+}
+
+.retro-layout .download-section {
+  padding: 88px 0;
+  border-bottom: 1.5px dashed var(--line);
+}
+
+.retro-layout .download-section-head {
+  margin-bottom: 32px;
+}
+
+.retro-layout .desktop-download-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 28px;
+}
+
+.retro-layout .desktop-download-card {
+  background: var(--card);
+  border: 1.5px solid var(--ink);
+  box-shadow: var(--shadow-card);
+  padding: 24px;
+}
+
+.retro-layout .desktop-platform {
+  font-family: var(--mono-display);
+  color: var(--accent-dim);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.dark .retro-layout .desktop-platform {
+  color: var(--phosphor);
+}
+
+.retro-layout .desktop-download-card p {
+  color: var(--ink-soft);
+  font-size: 12.8px;
+  margin-bottom: 16px;
+}
+
+.retro-layout .desktop-download-card code {
+  display: block;
+  background: var(--terminal);
+  color: var(--phosphor);
+  padding: 10px 12px;
+  font-size: 12px;
+  margin-bottom: 14px;
+  overflow-x: auto;
+}
+
+.retro-layout .desktop-download-card a,
+.retro-layout .mobile-soon-card a {
+  color: var(--accent-dim);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.dark .retro-layout .desktop-download-card a,
+.dark .retro-layout .mobile-soon-card a {
+  color: var(--phosphor);
+}
+
+.retro-layout .download-source-box {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 320px) auto;
+  gap: 24px;
+  align-items: center;
+  background: color-mix(in srgb, var(--accent) 7%, var(--card));
+  border: 1.5px solid var(--ink);
+  padding: 24px;
+  margin-bottom: 28px;
+}
+
+.retro-layout .download-source-box h3 {
+  font-family: var(--mono-display);
+  font-size: 18px;
+  margin-bottom: 6px;
+}
+
+.retro-layout .download-source-box p {
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.retro-layout .download-command {
+  background: var(--terminal);
+  color: var(--phosphor);
+  padding: 14px 16px;
+  font-size: 12px;
+}
+
+.retro-layout .download-command div::before {
+  content: '$ ';
+  color: var(--phosphor-dim);
+}
+
+.retro-layout .download-feature-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 22px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.retro-layout .download-feature-list li {
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.retro-layout .download-feature-list li::before {
+  content: '✓ ';
+  color: var(--accent-dim);
+  font-weight: 700;
+}
+
+.dark .retro-layout .download-feature-list li::before {
+  color: var(--phosphor);
+}
+
+.retro-layout .mobile-coming-soon {
+  border-bottom: 0;
+  background: radial-gradient(ellipse 68% 72% at 84% 42%, var(--green-wash), transparent 64%);
+}
+
+.retro-layout .mobile-soon-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 390px);
+  gap: 52px;
+  align-items: center;
+}
+
+.retro-layout .mobile-soon-card {
+  background: var(--card);
+  border: 1.5px solid var(--ink);
+  box-shadow: 6px 6px 0 var(--ink);
+  padding: 24px;
+}
+
+.retro-layout .mobile-badge {
+  display: inline-flex;
+  border: 2px dashed var(--accent);
+  color: var(--accent-dim);
+  padding: 6px 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  font-size: 11px;
+  transform: rotate(-3deg);
+  margin-bottom: 18px;
+}
+
+.dark .retro-layout .mobile-badge {
+  color: var(--phosphor);
+}
+
+.retro-layout .mobile-frame {
+  max-width: 210px;
+  min-height: 330px;
+  margin: 0 auto 20px;
+  border: 2px solid var(--ink);
+  border-radius: 24px;
+  background: var(--terminal);
+  color: var(--phosphor);
+  padding: 34px 18px 18px;
+  position: relative;
+  box-shadow: inset 0 0 0 5px var(--terminal-edge);
+}
+
+.retro-layout .mobile-notch {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 72px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--terminal-edge);
+}
+
+.retro-layout .mobile-screen-line {
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+
+.retro-layout .mobile-screen-line::before {
+  content: '> ';
+  color: var(--phosphor-dim);
+}
+
+.retro-layout .mobile-screen-line.dim {
+  color: var(--phosphor-dim);
+}
+
+.retro-layout .mobile-soon-card p {
+  color: var(--ink-soft);
+  font-size: 12.8px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 980px) {
+  .retro-layout .download-hero-grid,
+  .retro-layout .mobile-soon-grid,
+  .retro-layout .download-source-box {
+    grid-template-columns: 1fr;
+  }
+
+  .retro-layout .desktop-download-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .retro-layout .download-source-box .btn-retro {
+    justify-self: start;
+  }
+}
+
+@media (max-width: 640px) {
+  .retro-layout .download-hero {
+    padding-top: 48px;
+  }
+
+  .retro-layout .download-feature-list {
+    grid-template-columns: 1fr;
+  }
+
+  .retro-layout .download-screen {
+    min-height: 230px;
+    padding: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .retro-layout .download-screen-caret {
+    animation: none;
+  }
+}
+
+/* ---------- download: OS detection + per-platform logos ---------- */
+
+.retro-layout .download-recommend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1.5px solid var(--ink);
+  background: color-mix(in srgb, var(--accent) 9%, var(--card));
+  padding: 12px 16px;
+  margin-bottom: 24px;
+  max-width: 62ch;
+}
+
+.retro-layout .download-recommend-logo {
+  display: inline-flex;
+  color: var(--accent-dim);
+  flex-shrink: 0;
+}
+
+.dark .retro-layout .download-recommend-logo {
+  color: var(--phosphor);
+}
+
+.retro-layout .download-recommend-text {
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+
+.retro-layout .download-recommend-text strong {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.retro-layout .btn-logo {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 2px;
+}
+
+.retro-layout .desktop-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.retro-layout .desktop-card-logo {
+  display: inline-flex;
+  color: var(--ink);
+}
+
+.retro-layout .desktop-download-card.is-recommended {
+  border-color: var(--accent-dim);
+  box-shadow: 5px 5px 0 var(--accent-dim);
+  background: color-mix(in srgb, var(--accent) 8%, var(--card));
+}
+
+.dark .retro-layout .desktop-download-card.is-recommended {
+  border-color: var(--accent);
+  box-shadow: 5px 5px 0 color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.retro-layout .desktop-recommend-tag {
+  margin-left: auto;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  font-weight: 700;
+  color: var(--accent-dim);
+  border: 1px solid var(--accent-dim);
+  padding: 3px 7px;
+}
+
+.dark .retro-layout .desktop-recommend-tag {
+  color: var(--phosphor);
+  border-color: color-mix(in srgb, var(--phosphor) 55%, transparent);
+}
+
+.retro-layout .mobile-platform-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.retro-layout .mobile-platform-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1.5px solid var(--ink);
+  background: var(--card);
+  padding: 8px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.retro-layout .mobile-platform-chip svg {
+  color: var(--accent-dim);
+}
+
+.dark .retro-layout .mobile-platform-chip svg {
+  color: var(--phosphor);
+}
+
+.retro-layout .mobile-platform-chip.is-detected {
+  border-color: var(--accent-dim);
+  box-shadow: 3px 3px 0 var(--accent-dim);
+}
+
+.retro-layout .mobile-platform-chip em {
+  font-style: normal;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-dim);
+}
+
+.dark .retro-layout .mobile-platform-chip.is-detected {
+  border-color: var(--accent);
+  box-shadow: 3px 3px 0 color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.dark .retro-layout .mobile-platform-chip em {
+  color: var(--phosphor);
+}
+
+/* ---------- legal pages ---------- */
+.retro-layout .legal-page {
+  position: relative;
+  z-index: 2;
+  padding: 54px 0 84px;
+}
+
+.retro-layout .legal-doc {
+  max-width: 860px;
+  padding: 36px;
+}
+
+.retro-layout .legal-doc h1 {
+  font-family: var(--mono-display);
+  font-size: clamp(30px, 4.2vw, 48px);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin: 12px 0 8px;
+  color: var(--accent-dim);
+}
+
+.dark .retro-layout .legal-doc h1 {
+  color: var(--phosphor);
+}
+
+.retro-layout .legal-updated {
+  color: var(--ink-soft);
+  font-size: 12px;
+  margin-bottom: 34px;
+}
+
+.retro-layout .legal-doc section {
+  border-top: 1px solid var(--line-soft);
+  padding-top: 22px;
+  margin-top: 22px;
+}
+
+.retro-layout .legal-doc h2 {
+  font-family: var(--mono-display);
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+.retro-layout .legal-doc p {
+  color: var(--ink-soft);
+  max-width: 72ch;
+  font-size: 14px;
+}
+
+.retro-layout .foot-legal-links {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.retro-layout .foot-legal-links a {
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+
+.retro-layout .foot-legal-links a:hover {
+  color: var(--accent-dim);
+}
+
+.dark .retro-layout .foot-legal-links a:hover {
+  color: var(--phosphor);
+}
+
+@media (max-width: 640px) {
+  .retro-layout .legal-doc {
+    padding: 24px;
+  }
+}
+
+/* ---------- legal doc lists & download ---------- */
+.retro-layout .legal-doc ul {
+  color: var(--ink-soft);
+  max-width: 72ch;
+  font-size: 14px;
+  padding-left: 22px;
+  margin: 8px 0;
+  list-style: square;
+}
+
+.retro-layout .legal-doc ul li {
+  margin: 4px 0;
+}
+
+.retro-layout .legal-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 26px;
+  padding: 8px 14px;
+  font-family: var(--mono-display);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.retro-layout .legal-download:hover {
+  border-color: var(--accent-dim);
+  color: var(--accent-dim);
+}
+
+.dark .retro-layout .legal-download:hover {
+  border-color: var(--phosphor);
+  color: var(--phosphor);
+}
+
+/* ---------- print: legal pages save cleanly as PDF ---------- */
+@media print {
+  .retro-layout.legal-layout nav,
+  .retro-layout.legal-layout footer,
+  .retro-layout.legal-layout .print-hidden {
+    display: none !important;
+  }
+
+  .retro-layout.legal-layout .legal-page {
+    padding: 0;
+  }
+
+  .retro-layout.legal-layout .legal-doc,
+  .retro-layout.legal-layout .legal-doc.paper-fold,
+  .retro-layout.legal-layout .legal-doc.distressed-border {
+    max-width: none;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+    background: #fff;
+  }
+
+  .retro-layout.legal-layout .legal-doc.paper-fold::before,
+  .retro-layout.legal-layout .legal-doc.distressed-border::before {
+    display: none;
+  }
+
+  .retro-layout.legal-layout .legal-doc h1,
+  .retro-layout.legal-layout .legal-doc h2,
+  .retro-layout.legal-layout .legal-doc p,
+  .retro-layout.legal-layout .legal-doc ul,
+  .retro-layout.legal-layout .legal-updated {
+    color: #000;
+  }
+
+  .retro-layout.legal-layout .legal-doc section {
+    break-inside: avoid-page;
+    border-top-color: #ccc;
+  }
+
+  .retro-layout.legal-layout .legal-doc a {
+    color: #000;
+    text-decoration: underline;
+  }
+}

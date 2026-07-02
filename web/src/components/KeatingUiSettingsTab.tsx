@@ -1,15 +1,15 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { Toggle } from "./Toggle";
 import { SettingRow } from "./SettingRow";
+import { SettingsSectionNav } from "./SettingsSectionNav";
 import {
 	FONT_FAMILY_OPTIONS,
 	SHARE_LINK_MODE_OPTIONS,
-	loadKeatingUiSettings,
-	saveKeatingUiSettings,
 	type ReasoningLevel,
 	type ShareLinkMode,
 	type UiFontFamily,
 } from "../keating/ui-settings";
+import { useKeatingUiSettings } from "../hooks/use-ui-settings";
 import { IMAGE_GENERATORS, getImageGenerator, DEFAULT_IMAGE_GENERATOR_ID, type ImageGeneratorId } from "../lib/image-generators";
 
 const REASONING_LEVELS: { value: ReasoningLevel; label: string; description: string }[] = [
@@ -31,13 +31,7 @@ function readImageAsDataUrl(file: File): Promise<string> {
 }
 
 export function KeatingUiSettingsTab() {
-	const [settings, setSettings] = useState(() => loadKeatingUiSettings());
-
-	const update = useCallback((partial: Partial<typeof settings>) => {
-		const next = { ...loadKeatingUiSettings(), ...partial };
-		setSettings(next);
-		saveKeatingUiSettings(next);
-	}, []);
+	const [settings, update] = useKeatingUiSettings();
 
 	const updateProfileImage = useCallback(async (file: File | undefined) => {
 		if (!file) return;
@@ -48,7 +42,17 @@ export function KeatingUiSettingsTab() {
 
 	return (
 		<div className="flex flex-col gap-6">
-			<div>
+			<SettingsSectionNav
+				sections={[
+					{ id: "ui-chat", label: "Chat" },
+					{ id: "ui-share", label: "Share Links" },
+					{ id: "ui-animation", label: "Animation" },
+					{ id: "ui-reasoning", label: "Reasoning" },
+					{ id: "ui-images", label: "Images" },
+				]}
+			/>
+
+			<div id="settings-section-ui-chat" className="scroll-mt-20">
 				<h3 className="text-sm font-semibold text-foreground mb-2">Chat Interface</h3>
 				<p className="text-sm text-muted-foreground">
 					Control how much internal agent activity appears in the conversation.
@@ -119,7 +123,7 @@ export function KeatingUiSettingsTab() {
 				</select>
 			</div>
 
-			<div>
+			<div id="settings-section-ui-share" className="scroll-mt-20">
 				<h3 className="text-sm font-semibold text-foreground mb-2">Share Links</h3>
 				<p className="text-sm text-muted-foreground mb-3">
 					Choose how copied session links carry the transcript.
@@ -196,7 +200,7 @@ export function KeatingUiSettingsTab() {
 				</div>
 			</SettingRow>
 
-			<div>
+			<div id="settings-section-ui-animation" className="scroll-mt-20">
 				<h3 className="text-sm font-semibold text-foreground mb-2">Animation Renderer</h3>
 				<p className="text-sm text-muted-foreground mb-3">
 					Choose the source format Keating uses when creating browser animation artifacts.
@@ -233,17 +237,7 @@ export function KeatingUiSettingsTab() {
 				</div>
 			</div>
 
-			<SettingRow
-				title="Google web grounding"
-				description="Automatically enable Gemini Google Search grounding when a Google key is available. This lets Google-backed chats use current web results and citations."
-			>
-				<Toggle
-					checked={settings.googleGrounding === "auto"}
-					onChange={(checked) => update({ googleGrounding: checked ? "auto" : "off" })}
-				/>
-			</SettingRow>
-
-			<div>
+			<div id="settings-section-ui-reasoning" className="scroll-mt-20">
 				<h3 className="text-sm font-semibold text-foreground mb-2">Reasoning Level</h3>
 				<p className="text-sm text-muted-foreground mb-3">
 					Set how much the model thinks before responding. Higher levels produce more thorough answers but take longer.
@@ -271,7 +265,7 @@ export function KeatingUiSettingsTab() {
 				</div>
 			</div>
 
-			<div>
+			<div id="settings-section-ui-images" className="scroll-mt-20">
 				<h3 className="text-sm font-semibold text-foreground mb-2">Image generation</h3>
 				<p className="text-sm text-muted-foreground mb-3">
 					Choose which generator the <code>generate_image</code> tool uses. When none is configured, the tool returns a message instead of an image.

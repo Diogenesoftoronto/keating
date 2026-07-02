@@ -3147,7 +3147,7 @@ function AssistantThread({
                 <WebGroundingHint
                   hasUrl={composerHasUrl}
                   hasGoogleKey={hasGoogleKey}
-                  groundingEnabled={uiSettings.googleGrounding === "auto"}
+                  groundingEnabled={uiSettings.webSearch === "auto"}
                   usingGoogleModel={usingGoogleModel}
                 />
                 <ComposerPrimitive.Attachments>

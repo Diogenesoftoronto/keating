@@ -1,4 +1,5 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
+import { createLocalSetting } from "./local-setting";
 
 export const KEATING_VOICE_TOOL_NAME = "keating_voice";
 export const GEMINI_LIVE_SPEECH_MODEL = "gemini-3.1-flash-live-preview";
@@ -64,6 +65,33 @@ export const DEFAULT_WEB_SPEECH_SETTINGS: WebSpeechSettings = {
 	microphoneEnabled: false,
 };
 
+const speechSetting = createLocalSetting<WebSpeechSettings>({
+	key: SPEECH_SETTINGS_KEY,
+	event: "keating:web:speech-changed",
+	normalize: (raw) => {
+		if (typeof raw !== "string" || raw.length === 0) return DEFAULT_WEB_SPEECH_SETTINGS;
+		try {
+			const parsed = JSON.parse(raw) as Partial<WebSpeechSettings>;
+			const customModels = Array.isArray(parsed.customModels)
+				? parsed.customModels.filter(
+						(m): m is CustomSpeechModel =>
+							!!m && typeof m.id === "string" && typeof m.baseUrl === "string" && typeof m.model === "string",
+					)
+				: [];
+			return {
+				enabled: parsed.enabled === true,
+				providerId: cleanString(parsed.providerId) || DEFAULT_WEB_SPEECH_SETTINGS.providerId,
+				model: cleanString(parsed.model) || DEFAULT_WEB_SPEECH_SETTINGS.model,
+				voiceName: cleanString(parsed.voiceName) || DEFAULT_WEB_SPEECH_SETTINGS.voiceName,
+				customModels,
+				microphoneEnabled: parsed.microphoneEnabled === true,
+			};
+		} catch {
+			return DEFAULT_WEB_SPEECH_SETTINGS;
+		}
+	},
+});
+
 function cleanString(value: unknown): string {
 	return typeof value === "string" ? value.trim() : "";
 }
@@ -95,33 +123,15 @@ export function voiceTagLine(utterance: VoiceUtterance): string {
 }
 
 export function loadWebSpeechSettings(): WebSpeechSettings {
-	if (typeof window === "undefined") return DEFAULT_WEB_SPEECH_SETTINGS;
-	try {
-		const raw = window.localStorage.getItem(SPEECH_SETTINGS_KEY);
-		if (!raw) return DEFAULT_WEB_SPEECH_SETTINGS;
-		const parsed = JSON.parse(raw) as Partial<WebSpeechSettings>;
-		const customModels = Array.isArray(parsed.customModels)
-			? parsed.customModels.filter(
-					(m): m is CustomSpeechModel =>
-						!!m && typeof m.id === "string" && typeof m.baseUrl === "string" && typeof m.model === "string",
-				)
-			: [];
-		return {
-			enabled: parsed.enabled === true,
-			providerId: cleanString(parsed.providerId) || DEFAULT_WEB_SPEECH_SETTINGS.providerId,
-			model: cleanString(parsed.model) || DEFAULT_WEB_SPEECH_SETTINGS.model,
-			voiceName: cleanString(parsed.voiceName) || DEFAULT_WEB_SPEECH_SETTINGS.voiceName,
-			customModels,
-			microphoneEnabled: parsed.microphoneEnabled === true,
-		};
-	} catch {
-		return DEFAULT_WEB_SPEECH_SETTINGS;
-	}
+	return speechSetting.load();
 }
 
 export function saveWebSpeechSettings(settings: WebSpeechSettings): void {
-	if (typeof window === "undefined") return;
-	window.localStorage.setItem(SPEECH_SETTINGS_KEY, JSON.stringify(settings));
+	speechSetting.save(settings);
+}
+
+export function subscribeWebSpeechSettings(callback: (settings: WebSpeechSettings) => void): () => void {
+	return speechSetting.subscribe(callback);
 }
 
 export type SpeechCredentialProvider = "openai" | "google";

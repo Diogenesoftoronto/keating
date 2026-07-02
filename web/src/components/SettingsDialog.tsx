@@ -11,11 +11,23 @@ interface SettingsDialogProps {
   open: boolean;
   tabs: SettingsTabDef[];
   onClose: () => void;
+  defaultTabId?: string;
 }
 
-export function SettingsDialog({ open, tabs, onClose }: SettingsDialogProps) {
+export function SettingsDialog({ open, tabs, onClose, defaultTabId }: SettingsDialogProps) {
   const [activeTab, setActiveTab] = useState(0);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const mobileTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  useEffect(() => {
+    if (!open) return;
+    const idx = defaultTabId
+      ? tabs.findIndex((t) => t.id === defaultTabId)
+      : activeTab < tabs.length
+        ? activeTab
+        : 0;
+    setActiveTab(idx >= 0 ? idx : 0);
+  }, [open, defaultTabId, tabs]);
 
   useEffect(() => {
     if (!open) return;
@@ -33,6 +45,17 @@ export function SettingsDialog({ open, tabs, onClose }: SettingsDialogProps) {
   const handleBackdropClick = useCallback((e: React.MouseEvent) => {
     if (e.target === dialogRef.current) onClose();
   }, [onClose]);
+
+  const focusMobileTab = useCallback((idx: number) => {
+    requestAnimationFrame(() => mobileTabRefs.current[idx]?.focus());
+  }, []);
+
+  const moveMobileTab = useCallback((idx: number) => {
+    if (tabs.length === 0) return;
+    const next = (idx + tabs.length) % tabs.length;
+    setActiveTab(next);
+    focusMobileTab(next);
+  }, [focusMobileTab, tabs.length]);
 
   if (!open) return null;
 
@@ -73,16 +96,54 @@ export function SettingsDialog({ open, tabs, onClose }: SettingsDialogProps) {
         {/* Content */}
         <div className="flex flex-col flex-1 min-h-0">
           <div className="flex min-h-14 items-center justify-between gap-3 px-4 py-2 border-b border-border">
-            <select
-              className="min-w-0 flex-1 text-sm font-medium bg-transparent border border-border rounded px-2 py-2"
-              value={activeTab}
-              onChange={(e) => setActiveTab(Number(e.target.value))}
+            <div
+              className="sm:hidden flex min-w-0 flex-1 gap-1.5 overflow-x-auto"
+              role="tablist"
               aria-label="Settings tab"
             >
               {tabs.map((tab, i) => (
-                <option key={tab.id} value={i}>{tab.label}</option>
+                <button
+                  key={tab.id}
+                  ref={(node) => {
+                    mobileTabRefs.current[i] = node;
+                  }}
+                  type="button"
+                  role="tab"
+                  aria-selected={i === activeTab}
+                  aria-controls="settings-tabpanel"
+                  tabIndex={i === activeTab ? 0 : -1}
+                  onClick={() => setActiveTab(i)}
+                  onKeyDown={(event) => {
+                    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+                      event.preventDefault();
+                      moveMobileTab(i + 1);
+                    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+                      event.preventDefault();
+                      moveMobileTab(i - 1);
+                    } else if (event.key === "Home") {
+                      event.preventDefault();
+                      setActiveTab(0);
+                      focusMobileTab(0);
+                    } else if (event.key === "End") {
+                      event.preventDefault();
+                      const last = tabs.length - 1;
+                      setActiveTab(last);
+                      focusMobileTab(last);
+                    }
+                  }}
+                  className={`dialog-compact-button whitespace-nowrap rounded-md px-3 py-1.5 text-sm min-h-9 transition-colors ${
+                    i === activeTab
+                      ? "bg-primary/10 text-primary font-medium"
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground border border-border"
+                  }`}
+                >
+                  {tab.label}
+                </button>
               ))}
-            </select>
+            </div>
+            <span className="hidden sm:block text-sm font-medium">
+              {tabs[activeTab]?.label}
+            </span>
             <button
               onClick={onClose}
               className="dialog-icon-button inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -91,7 +152,12 @@ export function SettingsDialog({ open, tabs, onClose }: SettingsDialogProps) {
               <X size={16} />
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto p-4 sm:p-5">
+          <div
+            id="settings-tabpanel"
+            role="tabpanel"
+            aria-label={tabs[activeTab]?.label ?? "Settings"}
+            className="flex-1 overflow-y-auto p-4 sm:p-5"
+          >
             {tabs[activeTab]?.component}
           </div>
         </div>

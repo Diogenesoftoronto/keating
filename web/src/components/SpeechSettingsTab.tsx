@@ -1,24 +1,32 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { SettingsSectionNav } from "./SettingsSectionNav";
 import { Toggle } from "./Toggle";
 import { SettingRow } from "./SettingRow";
 import {
 	listSpeechProviders,
-	loadWebSpeechSettings,
-	saveWebSpeechSettings,
 	type CustomSpeechModel,
 	type SpeechProviderDescriptor,
 	type SpeechProviderId,
 	type WebSpeechSettings,
 } from "../keating/speech";
+import { useKeatingSetting } from "../hooks/use-keating-setting";
 
 interface SpeechSettingsTabProps {
 	onSettingsChange?: (settings: WebSpeechSettings) => void;
+	hideNav?: boolean;
 }
 
-export function SpeechSettingsTab({ onSettingsChange }: SpeechSettingsTabProps) {
-	const [settings, setSettingsState] = useState<WebSpeechSettings>(() => loadWebSpeechSettings());
+export const SPEECH_SECTIONS = [
+	{ id: "speech-enable", label: "Enable" },
+	{ id: "speech-provider", label: "Provider" },
+	{ id: "speech-voice", label: "Voice" },
+	{ id: "speech-mic", label: "Microphone" },
+	{ id: "speech-custom", label: "Custom" },
+];
+
+export function SpeechSettingsTab({ onSettingsChange, hideNav = false }: SpeechSettingsTabProps) {
+	const [settings, patch] = useKeatingSetting("speech");
 	const [providers, setProviders] = useState<SpeechProviderDescriptor[]>([]);
 	const [draftCustom, setDraftCustom] = useState<CustomSpeechModel>({
 		id: "",
@@ -42,15 +50,11 @@ export function SpeechSettingsTab({ onSettingsChange }: SpeechSettingsTabProps) 
 		};
 	}, []);
 
-	const persist = useCallback(
-		(partial: Partial<WebSpeechSettings>) => {
-			const next = { ...loadWebSpeechSettings(), ...partial };
-			setSettingsState(next);
-			saveWebSpeechSettings(next);
-			onSettingsChange?.(next);
-		},
-		[onSettingsChange],
-	);
+	useEffect(() => {
+		onSettingsChange?.(settings);
+	}, [settings, onSettingsChange]);
+
+	const persist = (partial: Partial<WebSpeechSettings>) => patch(partial);
 
 	const activeProvider = providers.find((p) => p.id === settings.providerId);
 	const activeCustom = settings.providerId.startsWith("custom:")
@@ -110,14 +114,6 @@ export function SpeechSettingsTab({ onSettingsChange }: SpeechSettingsTabProps) 
 		persist(patch);
 	};
 
-	const SECTIONS = [
-		{ id: "speech-enable", label: "Enable" },
-		{ id: "speech-provider", label: "Provider" },
-		{ id: "speech-voice", label: "Voice" },
-		{ id: "speech-mic", label: "Microphone" },
-		{ id: "speech-custom", label: "Custom" },
-	];
-
 	const statusBadge = (status: SpeechProviderDescriptor["status"]) => {
 		if (status === "stable") return null;
 		const styles =
@@ -133,7 +129,7 @@ export function SpeechSettingsTab({ onSettingsChange }: SpeechSettingsTabProps) 
 
 	return (
 		<div className="flex flex-col gap-8">
-			<SettingsSectionNav sections={SECTIONS} />
+			{!hideNav && <SettingsSectionNav sections={SPEECH_SECTIONS} />}
 
 			<SettingRow
 				id="settings-section-speech-enable"

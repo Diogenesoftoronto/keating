@@ -8,6 +8,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { ContactShadows, RoundedBox } from "@react-three/drei";
 import { useMemo, useRef, useState, useCallback, useEffect } from "react";
 import * as THREE from "three";
+import { useReducedMotion } from "../../hooks/use-media-query";
 
 const C = {
   cream: "#ece2cb",
@@ -586,10 +587,7 @@ export default function KeatingHero3D({ onNavigate }: { onNavigate?: (to: string
   const navigate = onNavigate ?? ((to: string) => window.location.assign(to));
   const [powered, setPowered] = useState(true);
 
-  const reducedMotion = useMemo(
-    () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-    [],
-  );
+  const reducedMotion = useReducedMotion();
 
   return (
     <Canvas

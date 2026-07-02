@@ -14,26 +14,38 @@ import {
 import { Landing } from "./pages/Landing";
 // Every other route is code-split into its own chunk, fetched on navigation, so
 // the entry bundle no longer ships Chat, the assistant panel, markdown/KaTeX, etc.
-const Tutorial = lazyRouteComponent(() => import("./pages/Tutorial"), "Tutorial");
-const Blog = lazyRouteComponent(() => import("./pages/Blog"), "Blog");
-const Chat = lazyRouteComponent(() => import("./pages/Chat"), "Chat");
-const Paper = lazyRouteComponent(() => import("./pages/Paper"), "Paper");
+const Tutorial = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/Tutorial")), "Tutorial");
+const Blog = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/Blog")), "Blog");
+const Chat = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/Chat")), "Chat");
+const Paper = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/Paper")), "Paper");
 const SharedSession = lazyRouteComponent(
-  () => import("./pages/SharedSession"),
+  () => loadRouteChunk(() => import("./pages/SharedSession")),
   "SharedSession",
 );
-const Usage = lazyRouteComponent(() => import("./pages/Usage"), "Usage");
+const Usage = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/Usage")), "Usage");
 const KeatingBench = lazyRouteComponent(
-  () => import("./pages/KeatingBench"),
+  () => loadRouteChunk(() => import("./pages/KeatingBench")),
   "KeatingBench",
 );
 const OAuthCallback = lazyRouteComponent(
-  () => import("./pages/OAuthCallback"),
+  () => loadRouteChunk(() => import("./pages/OAuthCallback")),
   "OAuthCallback",
 );
 const DioSuccess = lazyRouteComponent(
-  () => import("./pages/DioSuccess"),
+  () => loadRouteChunk(() => import("./pages/DioSuccess")),
   "DioSuccess",
+);
+const Download = lazyRouteComponent(
+  () => loadRouteChunk(() => import("./pages/Download")),
+  "Download",
+);
+const Terms = lazyRouteComponent(
+  () => loadRouteChunk(() => import("./pages/Terms")),
+  "Terms",
+);
+const Privacy = lazyRouteComponent(
+  () => loadRouteChunk(() => import("./pages/Privacy")),
+  "Privacy",
 );
 import {
   applyKeatingUiTypography,
@@ -41,6 +53,7 @@ import {
   subscribeKeatingUiSettings,
 } from "./keating/ui-settings";
 import { getStoredDioIdentity } from "./dio-provider";
+import { loadRouteChunk } from "./lib/stale-build-recovery";
 
 const rootRoute = createRootRoute({ component: () => <Outlet /> });
 
@@ -104,6 +117,24 @@ const dioSuccessRoute = createRoute({
 	component: DioSuccess,
 });
 
+const downloadRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/download",
+	component: Download,
+});
+
+const termsRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/terms",
+	component: Terms,
+});
+
+const privacyRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/privacy",
+	component: Privacy,
+});
+
 const routeTree = rootRoute.addChildren([
 	indexRoute,
 	chatRoute,
@@ -115,6 +146,9 @@ const routeTree = rootRoute.addChildren([
   paperRoute,
   oauthCallbackRoute,
 	dioSuccessRoute,
+	downloadRoute,
+	termsRoute,
+	privacyRoute,
 ]);
 
 // Shown while a lazily-loaded route chunk is in flight (after defaultPendingMs)
