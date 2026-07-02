@@ -20,17 +20,17 @@
     },
     "cost": 0,
     "tokens": {
-      "input": 41301,
-      "output": 598,
-      "reasoning": 168,
+      "input": 42657,
+      "output": 1059,
+      "reasoning": 424,
       "cache": {
-        "read": 122240,
+        "read": 292992,
         "write": 0
       }
     },
     "time": {
       "created": 1782978976169,
-      "updated": 1782979211849
+      "updated": 1782979277160
     }
   },
   "messages": [
@@ -636,19 +636,22 @@
         },
         "cost": 0,
         "tokens": {
-          "input": 0,
-          "output": 0,
-          "reasoning": 0,
+          "total": 42845,
+          "input": 773,
+          "output": 282,
+          "reasoning": 190,
           "cache": {
-            "read": 0,
-            "write": 0
+            "write": 0,
+            "read": 41600
           }
         },
         "modelID": "deepseek-v4-flash-free",
         "providerID": "opencode",
         "time": {
-          "created": 1782979211844
+          "created": 1782979211844,
+          "completed": 1782979233596
         },
+        "finish": "tool-calls",
         "id": "msg_f21d7b244001kST4DfO1OvfTHU",
         "sessionID": "ses_0de2be656ffecKGngMsOe4jll9"
       },
@@ -676,22 +679,327 @@
           "tool": "bash",
           "callID": "call_00_WLL6FPGyfrgMdzFxiTqi8271",
           "state": {
-            "metadata": {
-              "output": "error: unknown option `detach'\nusage: git maintenance run [--auto] [--[no-]quiet] [--task=<task>] [--schedule]\n\n    --auto                run tasks based on the state of the repository\n    --schedule <frequency>\n                          run tasks based on frequency\n    --quiet               do not report progress or other information over stderr\n    --task <task>         run a specific task\n\n",
-              "description": "Commit all staged changes"
-            },
-            "status": "running",
+            "status": "completed",
             "input": {
               "command": "git commit -m 'feat(web): flashcard swipe gestures, sound/streak feedback, runnable code blocks, quiz polish\n\n- Add swipe-based card review with useCardGestures hook (tap, drag-to-rate, undo)\n- Add review-feedback module: AudioContext sound effects, confetti on streaks, reduced-motion respect\n- Add streak tracking with flame indicator and milestone pop animation\n- Add editable RunnableCodeBlock with TSX transpilation via esbuild.wasm\n- Add SettingsDialog with sound toggle and responsive sidebar breakpoint at lg\n- Add autoFocusKeyboard prop to FlashcardRenderer for dedicated surfaces vs inline chat\n- Refactor MarkdownBlock: extracted CodeBlock, remove old FlashcardButton/QuizButton\n- QuizRenderer: use consistent color-scheme buttons, compact again/hard, card-style layout\n- Add tests: interactive-tag-parsing (HTML/escaping/multi-tag), runnable-code-block (language/TSX)\n- CSS: flashcard exit animations, code block styles, horizontal scroll polish'",
               "description": "Commit all staged changes"
             },
+            "output": "error: unknown option `detach'\nusage: git maintenance run [--auto] [--[no-]quiet] [--task=<task>] [--schedule]\n\n    --auto                run tasks based on the state of the repository\n    --schedule <frequency>\n                          run tasks based on frequency\n    --quiet               do not report progress or other information over stderr\n    --task <task>         run a specific task\n\n[main 47ef889] feat(web): flashcard swipe gestures, sound/streak feedback, runnable code blocks, quiz polish\n 19 files changed, 1355 insertions(+), 127 deletions(-)\n create mode 100644 web/src/components/RunnableCodeBlock.tsx\n create mode 100644 web/src/components/SettingsDialog.stories.tsx\n create mode 100644 web/src/components/flashcards/review-feedback.ts\n create mode 100644 web/src/components/flashcards/useCardGestures.ts\n create mode 100644 web/src/test/interactive-tag-parsing.test.ts\n create mode 100644 web/src/test/runnable-code-block.test.ts\n",
+            "metadata": {
+              "output": "error: unknown option `detach'\nusage: git maintenance run [--auto] [--[no-]quiet] [--task=<task>] [--schedule]\n\n    --auto                run tasks based on the state of the repository\n    --schedule <frequency>\n                          run tasks based on frequency\n    --quiet               do not report progress or other information over stderr\n    --task <task>         run a specific task\n\n[main 47ef889] feat(web): flashcard swipe gestures, sound/streak feedback, runnable code blocks, quiz polish\n 19 files changed, 1355 insertions(+), 127 deletions(-)\n create mode 100644 web/src/components/RunnableCodeBlock.tsx\n create mode 100644 web/src/components/SettingsDialog.stories.tsx\n create mode 100644 web/src/components/flashcards/review-feedback.ts\n create mode 100644 web/src/components/flashcards/useCardGestures.ts\n create mode 100644 web/src/test/interactive-tag-parsing.test.ts\n create mode 100644 web/src/test/runnable-code-block.test.ts\n",
+              "exit": 0,
+              "description": "Commit all staged changes",
+              "truncated": false
+            },
+            "title": "Commit all staged changes",
             "time": {
-              "start": 1782979228688
+              "start": 1782979233393,
+              "end": 1782979233402
             }
           },
           "id": "prt_f21d7e4ef001KUAsXbrSqJyh1u",
           "sessionID": "ses_0de2be656ffecKGngMsOe4jll9",
           "messageID": "msg_f21d7b244001kST4DfO1OvfTHU"
+        },
+        {
+          "reason": "tool-calls",
+          "snapshot": "eadbfe2fa1b508aeb09f3fd12238c37fbe2caed8",
+          "type": "step-finish",
+          "tokens": {
+            "total": 42845,
+            "input": 773,
+            "output": 282,
+            "reasoning": 190,
+            "cache": {
+              "write": 0,
+              "read": 41600
+            }
+          },
+          "cost": 0,
+          "id": "prt_f21d806da001o4To1nzqUPLhxt",
+          "sessionID": "ses_0de2be656ffecKGngMsOe4jll9",
+          "messageID": "msg_f21d7b244001kST4DfO1OvfTHU"
+        }
+      ]
+    },
+    {
+      "info": {
+        "parentID": "msg_f21d76d6d00139KPB5VgQJxUVC",
+        "role": "assistant",
+        "mode": "build",
+        "agent": "build",
+        "variant": "high",
+        "path": {
+          "cwd": "/home/diogenes/Projects/keating",
+          "root": "/home/diogenes/Projects/keating"
+        },
+        "cost": 0,
+        "tokens": {
+          "total": 43192,
+          "input": 343,
+          "output": 71,
+          "reasoning": 26,
+          "cache": {
+            "write": 0,
+            "read": 42752
+          }
+        },
+        "modelID": "deepseek-v4-flash-free",
+        "providerID": "opencode",
+        "time": {
+          "created": 1782979233605,
+          "completed": 1782979253509
+        },
+        "finish": "tool-calls",
+        "id": "msg_f21d80745001WzaLKIiPs4xYR8",
+        "sessionID": "ses_0de2be656ffecKGngMsOe4jll9"
+      },
+      "parts": [
+        {
+          "snapshot": "eadbfe2fa1b508aeb09f3fd12238c37fbe2caed8",
+          "type": "step-start",
+          "id": "prt_f21d84eef001OqN2HKXrfp1Vr1",
+          "sessionID": "ses_0de2be656ffecKGngMsOe4jll9",
+          "messageID": "msg_f21d80745001WzaLKIiPs4xYR8"
+        },
+        {
+          "type": "reasoning",
+          "text": "The commit succeeded. Now I need to push. Let me check what remote we're pushing to and what branch we're on.",
+          "time": {
+            "start": 1782979252289,
+            "end": 1782979252807
+          },
+          "id": "prt_f21d85041001JndWL3ANkZo2lh",
+          "sessionID": "ses_0de2be656ffecKGngMsOe4jll9",
+          "messageID": "msg_f21d80745001WzaLKIiPs4xYR8"
+        },
+        {
+          "type": "tool",
+          "tool": "bash",
+          "callID": "call_00_L9CwCquGTqkLBvLVWUIc1076",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git branch --show-current && git remote -v",
+              "description": "Check branch and remote"
+            },
+            "output": "main\norigin\tgit@github.com:Diogenesoftoronto/keating.git (fetch)\norigin\tgit@github.com:Diogenesoftoronto/keating.git (push)\n",
+            "metadata": {
+              "output": "main\norigin\tgit@github.com:Diogenesoftoronto/keating.git (fetch)\norigin\tgit@github.com:Diogenesoftoronto/keating.git (push)\n",
+              "exit": 0,
+              "description": "Check branch and remote",
+              "truncated": false
+            },
+            "title": "Check branch and remote",
+            "time": {
+              "start": 1782979253080,
+              "end": 1782979253089
+            }
+          },
+          "id": "prt_f21d8524c001yq2vqycg5B7bB3",
+          "sessionID": "ses_0de2be656ffecKGngMsOe4jll9",
+          "messageID": "msg_f21d80745001WzaLKIiPs4xYR8"
+        },
+        {
+          "reason": "tool-calls",
+          "snapshot": "eadbfe2fa1b508aeb09f3fd12238c37fbe2caed8",
+          "type": "step-finish",
+          "tokens": {
+            "total": 43192,
+            "input": 343,
+            "output": 71,
+            "reasoning": 26,
+            "cache": {
+              "write": 0,
+              "read": 42752
+            }
+          },
+          "cost": 0,
+          "id": "prt_f21d85464001z2INfURBOd2bJl",
+          "sessionID": "ses_0de2be656ffecKGngMsOe4jll9",
+          "messageID": "msg_f21d80745001WzaLKIiPs4xYR8"
+        }
+      ]
+    },
+    {
+      "info": {
+        "parentID": "msg_f21d76d6d00139KPB5VgQJxUVC",
+        "role": "assistant",
+        "mode": "build",
+        "agent": "build",
+        "variant": "high",
+        "path": {
+          "cwd": "/home/diogenes/Projects/keating",
+          "root": "/home/diogenes/Projects/keating"
+        },
+        "cost": 0,
+        "tokens": {
+          "total": 43340,
+          "input": 108,
+          "output": 64,
+          "reasoning": 32,
+          "cache": {
+            "write": 0,
+            "read": 43136
+          }
+        },
+        "modelID": "deepseek-v4-flash-free",
+        "providerID": "opencode",
+        "time": {
+          "created": 1782979253517,
+          "completed": 1782979277150
+        },
+        "finish": "tool-calls",
+        "id": "msg_f21d8550d001uXxOVrUOlYdi7B",
+        "sessionID": "ses_0de2be656ffecKGngMsOe4jll9"
+      },
+      "parts": [
+        {
+          "snapshot": "eadbfe2fa1b508aeb09f3fd12238c37fbe2caed8",
+          "type": "step-start",
+          "id": "prt_f21d8a214001pWGFMdPZ1coJVK",
+          "sessionID": "ses_0de2be656ffecKGngMsOe4jll9",
+          "messageID": "msg_f21d8550d001uXxOVrUOlYdi7B"
+        },
+        {
+          "type": "reasoning",
+          "text": "Branch is `main`, remote is `origin` pointing to `git@github.com:Diogenesoftoronto/keating.git`. Let me push.",
+          "time": {
+            "start": 1782979273722,
+            "end": 1782979274125
+          },
+          "id": "prt_f21d8a3fa0011EYqPbqDhPgZrk",
+          "sessionID": "ses_0de2be656ffecKGngMsOe4jll9",
+          "messageID": "msg_f21d8550d001uXxOVrUOlYdi7B"
+        },
+        {
+          "type": "tool",
+          "tool": "bash",
+          "callID": "call_00_Cme7KN2MseEVouUIfPjg1351",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git push origin main",
+              "description": "Push to remote"
+            },
+            "output": "[entire] Pushing entire/checkpoints/v1 to origin.... done\nTo github.com:Diogenesoftoronto/keating.git\n   17d4964..47ef889  main -> main\n",
+            "metadata": {
+              "output": "[entire] Pushing entire/checkpoints/v1 to origin.... done\nTo github.com:Diogenesoftoronto/keating.git\n   17d4964..47ef889  main -> main\n",
+              "exit": 0,
+              "description": "Push to remote",
+              "truncated": false
+            },
+            "title": "Push to remote",
+            "time": {
+              "start": 1782979276970,
+              "end": 1782979276979
+            }
+          },
+          "id": "prt_f21d8a592001hPBPe44iu9xJyn",
+          "sessionID": "ses_0de2be656ffecKGngMsOe4jll9",
+          "messageID": "msg_f21d8550d001uXxOVrUOlYdi7B"
+        },
+        {
+          "reason": "tool-calls",
+          "snapshot": "eadbfe2fa1b508aeb09f3fd12238c37fbe2caed8",
+          "type": "step-finish",
+          "tokens": {
+            "total": 43340,
+            "input": 108,
+            "output": 64,
+            "reasoning": 32,
+            "cache": {
+              "write": 0,
+              "read": 43136
+            }
+          },
+          "cost": 0,
+          "id": "prt_f21d8b1050016dC4yQsap6OTzt",
+          "sessionID": "ses_0de2be656ffecKGngMsOe4jll9",
+          "messageID": "msg_f21d8550d001uXxOVrUOlYdi7B"
+        }
+      ]
+    },
+    {
+      "info": {
+        "parentID": "msg_f21d76d6d00139KPB5VgQJxUVC",
+        "role": "assistant",
+        "mode": "build",
+        "agent": "build",
+        "variant": "high",
+        "path": {
+          "cwd": "/home/diogenes/Projects/keating",
+          "root": "/home/diogenes/Projects/keating"
+        },
+        "cost": 0,
+        "tokens": {
+          "total": 43448,
+          "input": 132,
+          "output": 44,
+          "reasoning": 8,
+          "cache": {
+            "write": 0,
+            "read": 43264
+          }
+        },
+        "modelID": "deepseek-v4-flash-free",
+        "providerID": "opencode",
+        "time": {
+          "created": 1782979277157,
+          "completed": 1782979279396
+        },
+        "finish": "stop",
+        "id": "msg_f21d8b165001IBmF1W3FcaDOVl",
+        "sessionID": "ses_0de2be656ffecKGngMsOe4jll9"
+      },
+      "parts": [
+        {
+          "snapshot": "eadbfe2fa1b508aeb09f3fd12238c37fbe2caed8",
+          "type": "step-start",
+          "id": "prt_f21d8b557001OVY4wPy2a5nc3c",
+          "sessionID": "ses_0de2be656ffecKGngMsOe4jll9",
+          "messageID": "msg_f21d8b165001IBmF1W3FcaDOVl"
+        },
+        {
+          "type": "reasoning",
+          "text": "Done. The commit was pushed successfully.",
+          "time": {
+            "start": 1782979278657,
+            "end": 1782979278895
+          },
+          "id": "prt_f21d8b741001B2Xdo2GGZKe3Im",
+          "sessionID": "ses_0de2be656ffecKGngMsOe4jll9",
+          "messageID": "msg_f21d8b165001IBmF1W3FcaDOVl"
+        },
+        {
+          "type": "text",
+          "text": "Done. Commit `47ef889` pushed to `main` on `github.com:Diogenesoftoronto/keating.git` — 19 files, 1355 insertions, 127 deletions.",
+          "time": {
+            "start": 1782979278899,
+            "end": 1782979279211
+          },
+          "id": "prt_f21d8b8330010XxNCS0SqN5i0r",
+          "sessionID": "ses_0de2be656ffecKGngMsOe4jll9",
+          "messageID": "msg_f21d8b165001IBmF1W3FcaDOVl"
+        },
+        {
+          "reason": "stop",
+          "snapshot": "eadbfe2fa1b508aeb09f3fd12238c37fbe2caed8",
+          "type": "step-finish",
+          "tokens": {
+            "total": 43448,
+            "input": 132,
+            "output": 44,
+            "reasoning": 8,
+            "cache": {
+              "write": 0,
+              "read": 43264
+            }
+          },
+          "cost": 0,
+          "id": "prt_f21d8b9b9001rBtNH4NDHp4FZQ",
+          "sessionID": "ses_0de2be656ffecKGngMsOe4jll9",
+          "messageID": "msg_f21d8b165001IBmF1W3FcaDOVl"
         }
       ]
     }
