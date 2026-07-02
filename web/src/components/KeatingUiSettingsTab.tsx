@@ -173,6 +173,13 @@ export function KeatingUiSettingsTab() {
 			</SettingRow>
 
 			<SettingRow
+				title="Flashcard sounds"
+				description="Play subtle audio ticks when flipping and grading flashcards. A mute toggle is also available on the card itself."
+			>
+				<Toggle checked={settings.flashcardSoundEnabled} onChange={(checked) => update({ flashcardSoundEnabled: checked })} />
+			</SettingRow>
+
+			<SettingRow
 				title="Alternative response chance"
 				description="Occasionally generate a background forked answer to the same prompt for DPO preference data."
 			>

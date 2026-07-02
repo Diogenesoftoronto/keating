@@ -1,8 +1,14 @@
+/* Import base styles from pi-web-ui (compiled Tailwind + KaTeX + themes).
+   MUST come before the local Tailwind import: pi-web-ui's compiled bundle
+   contains base utilities (.hidden, .flex, .w-full) without responsive
+   variants, and whichever stylesheet is imported later wins within the
+   merged `utilities` layer. Importing it first lets local responsive
+   variants (e.g. `sm:flex`) override its base utilities as Tailwind
+   intends. */
+@import "@earendil-works/pi-web-ui/app.css";
+
 /* Import Tailwind CSS */
 @import "tailwindcss";
-
-/* Import base styles from pi-web-ui which includes Tailwind + KaTeX + themes */
-@import "@earendil-works/pi-web-ui/app.css";
 
 /* Retro theme for landing, tutorial, blog */
 @import "./styles/retro.css";
@@ -877,5 +883,109 @@ message-editor textarea::placeholder {
   .chat-page-shell .sb-dot {
     transition: none;
     animation: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Flashcards — 3D flip, swipe drag, exit/enter transitions, streak pop
+   --------------------------------------------------------------------------- */
+
+.flashcard-stage {
+  perspective: 1200px;
+  touch-action: pan-y;
+}
+
+.flashcard-3d {
+  display: grid;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 320ms cubic-bezier(0.4, 0.2, 0.2, 1);
+  will-change: transform;
+}
+
+.flashcard-3d.flashcard-flipped {
+  transform: rotateY(180deg);
+}
+
+/* While dragging, the inline transform drives position — kill the transition
+   so the card tracks the pointer 1:1. */
+.flashcard-3d.flashcard-dragging {
+  transition: none;
+}
+
+.flashcard-face {
+  grid-area: 1 / 1;
+  min-width: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: rotateY(0deg);
+  transition: opacity 120ms ease-out;
+}
+
+.flashcard-face-back {
+  transform: rotateY(180deg);
+}
+
+.flashcard-3d:not(.flashcard-flipped) .flashcard-face-back,
+.flashcard-3d.flashcard-flipped .flashcard-face:not(.flashcard-face-back) {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes flashcard-exit-left {
+  to { transform: translateX(-130%) rotate(-10deg); opacity: 0; }
+}
+@keyframes flashcard-exit-right {
+  to { transform: translateX(130%) rotate(10deg); opacity: 0; }
+}
+@keyframes flashcard-exit-up {
+  to { transform: translateY(-120%) rotate(3deg); opacity: 0; }
+}
+@keyframes flashcard-exit-down {
+  to { transform: translateY(120%) rotate(-3deg); opacity: 0; }
+}
+@keyframes flashcard-exit-fade {
+  to { transform: scale(0.92); opacity: 0; }
+}
+
+.flashcard-exit-left  { animation: flashcard-exit-left 200ms ease-in forwards; }
+.flashcard-exit-right { animation: flashcard-exit-right 200ms ease-in forwards; }
+.flashcard-exit-up    { animation: flashcard-exit-up 200ms ease-in forwards; }
+.flashcard-exit-down  { animation: flashcard-exit-down 200ms ease-in forwards; }
+.flashcard-exit-fade  { animation: flashcard-exit-fade 170ms ease-in forwards; }
+
+@keyframes flashcard-enter {
+  from { transform: translateY(14px) scale(0.97); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+.flashcard-enter { animation: flashcard-enter 200ms ease-out; }
+
+@keyframes flashcard-streak-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+.flashcard-streak-pop { animation: flashcard-streak-pop 320ms ease-out; }
+
+@keyframes flashcard-milestone-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.55); }
+  100% { box-shadow: 0 0 0 12px rgba(245, 158, 11, 0); }
+}
+.flashcard-milestone-pulse { animation: flashcard-milestone-pulse 650ms ease-out 2; }
+
+@media (prefers-reduced-motion: reduce) {
+  .flashcard-3d {
+    transition: none;
+  }
+  .flashcard-exit-left,
+  .flashcard-exit-right,
+  .flashcard-exit-up,
+  .flashcard-exit-down,
+  .flashcard-exit-fade,
+  .flashcard-enter,
+  .flashcard-streak-pop,
+  .flashcard-milestone-pulse {
+    animation-duration: 1ms;
+    animation-iteration-count: 1;
   }
 }

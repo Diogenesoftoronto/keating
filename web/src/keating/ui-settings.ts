@@ -31,6 +31,7 @@ export interface KeatingUiSettings {
 	imageQuality: string;
 	localImageBaseUrl: string;
 	webSearch: "auto" | "off";
+	flashcardSoundEnabled: boolean;
 }
 
 export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
@@ -49,6 +50,7 @@ export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
 	imageQuality: "",
 	localImageBaseUrl: "",
 	webSearch: "auto",
+	flashcardSoundEnabled: false,
 };
 
 type FontStack = {
@@ -163,6 +165,7 @@ function normalizeSettings(value: LegacyUiSettingsInput | null): KeatingUiSettin
 		imageQuality: typeof value?.imageQuality === "string" ? value.imageQuality : DEFAULT_UI_SETTINGS.imageQuality,
 		localImageBaseUrl: typeof value?.localImageBaseUrl === "string" ? value.localImageBaseUrl : DEFAULT_UI_SETTINGS.localImageBaseUrl,
 		webSearch,
+		flashcardSoundEnabled: value?.flashcardSoundEnabled === true,
 	};
 }
 
