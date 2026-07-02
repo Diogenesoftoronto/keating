@@ -5,6 +5,7 @@ import { Nav } from "../components/Nav";
 import { Footer } from "../components/Footer";
 import { BootSequence } from "../components/BootSequence";
 import { useSeo } from "../hooks/useSeo";
+import { useReducedMotion } from "../hooks/use-media-query";
 
 const KeatingHero3D = lazy(() => import("../components/three/KeatingHero3D"));
 

@@ -31,7 +31,7 @@ function hasGoogleSearchTool(payload: any): boolean {
 }
 
 export function applyGoogleSearchGrounding(payload: unknown, model: Model<Api>, hasApiKey: boolean): unknown | undefined {
-	if (!hasApiKey || loadKeatingUiSettings().googleGrounding === "off" || !isGoogleGroundingModel(model)) {
+	if (!hasApiKey || loadKeatingUiSettings().webSearch === "off" || !isGoogleGroundingModel(model)) {
 		return undefined;
 	}
 
@@ -121,8 +121,8 @@ function applyAnthropicWebSearch(payload: unknown, model: Model<Api>, hasApiKey:
 
 /**
  * Inject provider-native web search for keyed requests when the active model
- * supports it. Google grounding is gated by its own setting; OpenAI and
- * Anthropic native search are gated by the shared `webSearch` setting.
+ * supports it. Google grounding, OpenAI native search, and Anthropic native
+ * search all share the same `webSearch` setting.
  */
 export function applyProviderWebSearch(payload: unknown, model: Model<Api>, hasApiKey: boolean): unknown | undefined {
 	switch (model.provider) {

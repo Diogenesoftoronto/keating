@@ -2,13 +2,12 @@ import { describe, expect, it, beforeEach } from "bun:test";
 import {
 	loadKeatingUiSettings,
 	saveKeatingUiSettings,
-	addRecentModel,
-	getRecentModels,
-	addCustomModel,
-	removeCustomModel,
-	toggleProviderVisibility,
+	subscribeKeatingUiSettings,
 	DEFAULT_UI_SETTINGS,
+	type KeatingUiSettings,
 } from "../keating/ui-settings";
+
+const LEGACY_GOOGLE_GROUNDING_KEY = "google" + "Grounding";
 
 function createMockStorage() {
 	const store = new Map<string, string>();
@@ -56,9 +55,6 @@ describe("Keating UI Settings", () => {
 			expect(settings.showToolUi).toBe(DEFAULT_UI_SETTINGS.showToolUi);
 			expect(settings.fontFamily).toBe(DEFAULT_UI_SETTINGS.fontFamily);
 			expect(settings.shareLinkMode).toBe("portable-short");
-			expect(settings.hiddenProviders).toEqual([]);
-			expect(settings.recentModels).toEqual([]);
-			expect(settings.customModels).toEqual([]);
 			expect(settings.animationRenderer).toBe("hyperframes");
 			expect(settings.alternativeResponseChance).toBe(0.05);
 			expect(settings.webSearch).toBe("auto");
@@ -73,11 +69,10 @@ describe("Keating UI Settings", () => {
 		it("merges partial stored settings with defaults", () => {
 			localStorage.setItem(
 				"keating_ui_settings",
-				JSON.stringify({ reasoningLevel: "high", hiddenProviders: ["openai"], fontFamily: "space-mono", shareLinkMode: "compressed-hash" }),
+				JSON.stringify({ reasoningLevel: "high", fontFamily: "space-mono", shareLinkMode: "compressed-hash" }),
 			);
 			const settings = loadKeatingUiSettings();
 			expect(settings.reasoningLevel).toBe("high");
-			expect(settings.hiddenProviders).toEqual(["openai"]);
 			expect(settings.fontFamily).toBe("space-mono");
 			expect(settings.shareLinkMode).toBe("compressed-hash");
 			expect(settings.showToolUi).toBe(DEFAULT_UI_SETTINGS.showToolUi);
@@ -87,6 +82,16 @@ describe("Keating UI Settings", () => {
 			localStorage.setItem("keating_ui_settings", JSON.stringify({ webSearch: "off" }));
 			expect(loadKeatingUiSettings().webSearch).toBe("off");
 			localStorage.setItem("keating_ui_settings", JSON.stringify({ webSearch: "garbage" }));
+			expect(loadKeatingUiSettings().webSearch).toBe("auto");
+		});
+
+		it("migrates the legacy grounding key to webSearch off when webSearch is missing", () => {
+			localStorage.setItem("keating_ui_settings", JSON.stringify({ [LEGACY_GOOGLE_GROUNDING_KEY]: "off" }));
+			expect(loadKeatingUiSettings().webSearch).toBe("off");
+		});
+
+		it("keeps explicit webSearch when the legacy grounding key disagrees", () => {
+			localStorage.setItem("keating_ui_settings", JSON.stringify({ [LEGACY_GOOGLE_GROUNDING_KEY]: "off", webSearch: "auto" }));
 			expect(loadKeatingUiSettings().webSearch).toBe("auto");
 		});
 
@@ -118,94 +123,17 @@ describe("Keating UI Settings", () => {
 			expect(stored.showToolUi).toBe(true);
 			expect(stored.fontFamily).toBe("space-mono");
 			expect(stored.shareLinkMode).toBe("local-short");
-		});
-	});
-
-	describe("toggleProviderVisibility", () => {
-		it("adds provider to hidden list", () => {
-			toggleProviderVisibility("openai", true);
-			const settings = loadKeatingUiSettings();
-			expect(settings.hiddenProviders).toContain("openai");
+			expect(LEGACY_GOOGLE_GROUNDING_KEY in stored).toBe(false);
 		});
 
-		it("removes provider from hidden list", () => {
-			toggleProviderVisibility("openai", true);
-			toggleProviderVisibility("openai", false);
-			const settings = loadKeatingUiSettings();
-			expect(settings.hiddenProviders).not.toContain("openai");
-		});
-
-		it("prevents duplicate hidden providers", () => {
-			toggleProviderVisibility("openai", true);
-			toggleProviderVisibility("openai", true);
-			const settings = loadKeatingUiSettings();
-			expect(settings.hiddenProviders.filter((p) => p === "openai")).toHaveLength(1);
-		});
-	});
-
-	describe("addRecentModel / getRecentModels", () => {
-		it("adds a model to recent list", () => {
-			addRecentModel("openai::openai-completions::gpt-4");
-			const recent = getRecentModels();
-			expect(recent).toHaveLength(1);
-			expect(recent[0].key).toBe("openai::openai-completions::gpt-4");
-		});
-
-		it("moves existing model to front on re-add", () => {
-			addRecentModel("a");
-			addRecentModel("b");
-			addRecentModel("a");
-			const recent = getRecentModels();
-			expect(recent[0].key).toBe("a");
-			expect(recent).toHaveLength(2);
-		});
-
-		it("caps at 7 recent models", () => {
-			for (let i = 0; i < 10; i++) {
-				addRecentModel(`model-${i}`);
-			}
-			const recent = getRecentModels();
-			expect(recent).toHaveLength(7);
-		});
-
-		it("returns models sorted by timestamp descending", () => {
-			addRecentModel("a");
-			addRecentModel("b");
-			const recent = getRecentModels();
-			expect(recent[0].key).toBe("b");
-			expect(recent[1].key).toBe("a");
-		});
-	});
-
-	describe("addCustomModel / removeCustomModel", () => {
-		it("adds a custom model", () => {
-			addCustomModel({
-				key: "test::api::model",
-				id: "model",
-				name: "Test Model",
-				provider: "test",
-				api: "api",
-				reasoning: false,
-				vision: true,
+		it("notifies subscribers when settings change", () => {
+			const seen: KeatingUiSettings[] = [];
+			const unsubscribe = subscribeKeatingUiSettings((settings) => {
+				seen.push(settings);
 			});
-			const settings = loadKeatingUiSettings();
-			expect(settings.customModels).toHaveLength(1);
-			expect(settings.customModels[0].name).toBe("Test Model");
-		});
-
-		it("replaces model with same key", () => {
-			addCustomModel({ key: "k", id: "a", name: "Old", provider: "p", api: "a", reasoning: false, vision: false });
-			addCustomModel({ key: "k", id: "b", name: "New", provider: "p", api: "a", reasoning: false, vision: false });
-			const settings = loadKeatingUiSettings();
-			expect(settings.customModels).toHaveLength(1);
-			expect(settings.customModels[0].name).toBe("New");
-		});
-
-		it("removes a custom model by key", () => {
-			addCustomModel({ key: "k", id: "a", name: "Model", provider: "p", api: "a", reasoning: false, vision: false });
-			removeCustomModel("k");
-			const settings = loadKeatingUiSettings();
-			expect(settings.customModels).toHaveLength(0);
+			saveKeatingUiSettings({ ...DEFAULT_UI_SETTINGS, fontFamily: "space-mono" });
+			unsubscribe();
+			expect(seen.at(-1)?.fontFamily).toBe("space-mono");
 		});
 	});
 });

@@ -18,6 +18,7 @@ import {
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useKeatingAgent } from "../hooks/useKeatingAgent";
 import { useSeo } from "../hooks/useSeo";
+import { useMediaQuery } from "../hooks/use-media-query";
 import { ChatIntro } from "../components/ChatIntro";
 import { ArtifactBrowserOverlay } from "../components/ArtifactBrowserOverlay";
 import { ArtifactSidePanel } from "../components/ArtifactSidePanel";
@@ -65,11 +66,7 @@ function ChatContent() {
     () => sessionStorage.getItem("keating_chat_intro") === "dismissed",
   );
   const [artifactBrowserOpen, setArtifactBrowserOpen] = useState(false);
-  const [isWideViewport, setIsWideViewport] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      window.matchMedia("(min-width: 1024px)").matches,
-  );
+  const isWideViewport = useMediaQuery("(min-width: 1024px)");
   const [uiSettings, setUiSettings] = useState(() => loadKeatingUiSettings());
   const [shareState, setShareState] = useState<
     "idle" | "sharing" | "copied" | "error"
@@ -114,14 +111,6 @@ function ChatContent() {
     if (typeof document === "undefined") return;
     document.body.classList.add("chat-shell-active");
     return () => document.body.classList.remove("chat-shell-active");
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const mq = window.matchMedia("(min-width: 1024px)");
-    const handler = (e: MediaQueryListEvent) => setIsWideViewport(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
   }, []);
 
   const [artifactTarget, setArtifactTarget] = useState<string | undefined>(
@@ -220,7 +209,7 @@ function ChatContent() {
         <span className="chat-mode-badge chat-only-desktop">MODE: SOCRATIC</span>
 
         {/* Actions */}
-        <div className="chat-actions ml-auto flex min-w-0 flex-1 items-center justify-end gap-1 overflow-hidden">
+        <div className="chat-actions ml-auto flex min-w-0 items-center justify-end gap-1 overflow-hidden sm:flex-1">
           <button
             className={`${actionButtonClass} chat-only-desktop`}
             title="New session"

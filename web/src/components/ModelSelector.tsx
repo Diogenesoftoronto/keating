@@ -3,7 +3,8 @@ import { RefreshCw, Search, X } from "lucide-react";
 import { getProviders, type Api, type Model } from "@earendil-works/pi-ai/compat";
 import { localModel, getModelName, getModelId, type LocalModel } from "../stores/local-model";
 import { getSelectableModels, buildSavedModel } from "../lib/provider-models";
-import { addRecentModel, getRecentModels, loadKeatingUiSettings } from "../keating/ui-settings";
+import { addRecentModel, getRecentModels } from "../keating/ui-settings";
+import { loadModelPrefs } from "../keating/model-prefs";
 
 function makeBrowserModel(): Model<Api> {
 	return {
@@ -74,12 +75,12 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 		setLoading(true);
 		setError("");
 		try {
-			const uiSettings = loadKeatingUiSettings();
-			const hidden = new Set(uiSettings.hiddenProviders);
+			const modelPrefs = loadModelPrefs();
+			const hidden = new Set(modelPrefs.hiddenProviders);
 			const all = await getSelectableModels((provider) => !hidden.has(provider));
 
 			// Append saved custom models
-			for (const saved of uiSettings.customModels) {
+			for (const saved of modelPrefs.customModels) {
 				all.push(buildSavedModel(saved));
 			}
 

@@ -5,6 +5,7 @@ import {
 	Loader2,
 	MoreVertical,
 	Pencil,
+	Sparkles,
 	Trash2,
 	X,
 } from "lucide-react";
@@ -18,6 +19,7 @@ export interface ForkMapCardProps {
 	forkingSessionId?: string | null;
 	onLoad: (sessionId: string) => void | Promise<void>;
 	onFork: (sessionId: string) => void | Promise<void>;
+	onSuggestTitle?: (sessionId: string) => Promise<string>;
 	onRename: (sessionId: string, title: string) => void | Promise<void>;
 	onDelete: (sessionId: string) => void | Promise<void>;
 }
@@ -38,6 +40,7 @@ export function ForkMapCard({
 	forkingSessionId,
 	onLoad,
 	onFork,
+	onSuggestTitle,
 	onRename,
 	onDelete,
 }: ForkMapCardProps) {
@@ -83,6 +86,7 @@ export function ForkMapCard({
 							forking={row.session.id === forkingSessionId}
 							onLoad={onLoad}
 							onFork={onFork}
+							onSuggestTitle={onSuggestTitle}
 							onRename={onRename}
 							onDelete={onDelete}
 						/>
@@ -100,16 +104,28 @@ interface ForkNodeProps {
 	forking: boolean;
 	onLoad: (sessionId: string) => void | Promise<void>;
 	onFork: (sessionId: string) => void | Promise<void>;
+	onSuggestTitle?: (sessionId: string) => Promise<string>;
 	onRename: (sessionId: string, title: string) => void | Promise<void>;
 	onDelete: (sessionId: string) => void | Promise<void>;
 }
 
-function ForkNode({ session, isRoot, active, forking, onLoad, onFork, onRename, onDelete }: ForkNodeProps) {
+function ForkNode({
+	session,
+	isRoot,
+	active,
+	forking,
+	onLoad,
+	onFork,
+	onSuggestTitle,
+	onRename,
+	onDelete,
+}: ForkNodeProps) {
 	const [menuOpen, setMenuOpen] = useState(false);
 	const [renaming, setRenaming] = useState(false);
 	const [confirmingDelete, setConfirmingDelete] = useState(false);
 	const [draft, setDraft] = useState(session.title);
 	const [busy, setBusy] = useState(false);
+	const [suggesting, setSuggesting] = useState(false);
 	const menuRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
@@ -143,6 +159,20 @@ function ForkNode({ session, isRoot, active, forking, onLoad, onFork, onRename, 
 		} finally {
 			setBusy(false);
 			setConfirmingDelete(false);
+		}
+	};
+
+	const suggestTitle = async () => {
+		if (!onSuggestTitle) return;
+		setSuggesting(true);
+		try {
+			const suggestion = await onSuggestTitle(session.id);
+			setMenuOpen(false);
+			setConfirmingDelete(false);
+			setDraft(suggestion);
+			setRenaming(true);
+		} finally {
+			setSuggesting(false);
 		}
 	};
 
@@ -204,6 +234,7 @@ function ForkNode({ session, isRoot, active, forking, onLoad, onFork, onRename, 
 					aria-label="Fork actions"
 					aria-haspopup="menu"
 					aria-expanded={menuOpen}
+					disabled={suggesting}
 					onClick={() => setMenuOpen((open) => !open)}
 				>
 					{busy ? <Loader2 size={13} className="animate-spin" /> : <MoreVertical size={14} />}
@@ -214,12 +245,16 @@ function ForkNode({ session, isRoot, active, forking, onLoad, onFork, onRename, 
 							{forking ? <Loader2 size={12} className="animate-spin" /> : <GitBranch size={12} />}
 							Fork
 						</button>
-						{session.aiGeneratedTitle ? (
-							<button type="button" role="menuitem" className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs hover:bg-accent" onClick={() => { setMenuOpen(false); setDraft(session.title); setRenaming(true); }}>
-								<Pencil size={12} />
-								Rename
+						{onSuggestTitle ? (
+							<button type="button" role="menuitem" className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs hover:bg-accent disabled:opacity-50" disabled={busy || suggesting} onClick={() => void suggestTitle()}>
+								{suggesting ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+								Suggest
 							</button>
 						) : null}
+						<button type="button" role="menuitem" className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs hover:bg-accent" onClick={() => { setMenuOpen(false); setDraft(session.title); setRenaming(true); }}>
+							<Pencil size={12} />
+							Rename
+						</button>
 						<button type="button" role="menuitem" className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-destructive hover:bg-destructive/10" onClick={() => { setMenuOpen(false); setConfirmingDelete(true); }}>
 							<Trash2 size={12} />
 							Delete

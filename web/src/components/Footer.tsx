@@ -16,6 +16,9 @@ export function Footer() {
             <h5>Product</h5>
             <ul>
               <li>
+                <Link to="/download">Download</Link>
+              </li>
+              <li>
                 <Link to="/tutorial">Tutorial</Link>
               </li>
               <li>
@@ -91,6 +94,11 @@ export function Footer() {
               MPL_2.0
             </a>
           </span>
+          <span className="foot-legal-links" aria-label="Legal links">
+            <Link to="/terms">Terms of Service</Link>
+            <span aria-hidden="true">//</span>
+            <Link to="/privacy">Privacy Policy</Link>
+          </span>
           <span>
             system status: <span className="ok">online</span> // uptime:{" "}
             <span className="ok">optimal</span>
@@ -104,9 +112,17 @@ export function Footer() {
 export function SimpleFooter() {
   return (
     <footer className="py-8 px-6 border-t-2 border-border">
-      <div className="max-w-6xl mx-auto text-center font-terminal text-foreground/60">
+      <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-center font-terminal text-foreground/60">
         <Link to="/" className="hover:text-[#d5604b] transition-colors">
           [BACK_TO_HOME]
+        </Link>
+        <span aria-hidden="true">//</span>
+        <Link to="/terms" className="hover:text-[#d5604b] transition-colors">
+          Terms of Service
+        </Link>
+        <span aria-hidden="true">//</span>
+        <Link to="/privacy" className="hover:text-[#d5604b] transition-colors">
+          Privacy Policy
         </Link>
       </div>
     </footer>

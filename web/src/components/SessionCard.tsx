@@ -77,6 +77,7 @@ export interface SessionCardProps {
 	justForked?: boolean;
 	onLoad: (sessionId: string) => void | Promise<void>;
 	onFork: (sessionId: string) => void | Promise<void>;
+	onSuggestTitle?: (sessionId: string) => Promise<string>;
 	onRename: (sessionId: string, title: string) => void | Promise<void>;
 	onDelete: (sessionId: string) => void | Promise<void>;
 }
@@ -90,6 +91,7 @@ export function SessionCard({
 	justForked = false,
 	onLoad,
 	onFork,
+	onSuggestTitle,
 	onRename,
 	onDelete,
 }: SessionCardProps) {
@@ -100,6 +102,7 @@ export function SessionCard({
 	const [confirmingDelete, setConfirmingDelete] = useState(false);
 	const [draft, setDraft] = useState(session.title);
 	const [busy, setBusy] = useState(false);
+	const [suggesting, setSuggesting] = useState(false);
 	const menuRef = useRef<HTMLDivElement>(null);
 	const safeHeroSvg = useMemo(() => (hero?.svg ? sanitizeSvg(hero.svg) : ""), [hero?.svg]);
 
@@ -134,6 +137,20 @@ export function SessionCard({
 		} finally {
 			setBusy(false);
 			setConfirmingDelete(false);
+		}
+	};
+
+	const suggestTitle = async () => {
+		if (!onSuggestTitle) return;
+		setSuggesting(true);
+		try {
+			const suggestion = await onSuggestTitle(session.id);
+			setMenuOpen(false);
+			setConfirmingDelete(false);
+			setDraft(suggestion);
+			setRenaming(true);
+		} finally {
+			setSuggesting(false);
 		}
 	};
 
@@ -206,13 +223,25 @@ export function SessionCard({
 			</button>
 
 			{/* Overflow menu */}
-			<div ref={menuRef} className="absolute right-1.5 top-1.5">
+			<div ref={menuRef} className="absolute right-1.5 top-1.5 flex items-center gap-1">
+				{onSuggestTitle ? (
+					<button
+						type="button"
+						className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-background/80 text-muted-foreground backdrop-blur hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+						aria-label="Suggest title with AI"
+						disabled={busy || suggesting}
+						onClick={() => void suggestTitle()}
+					>
+						{suggesting ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+					</button>
+				) : null}
 				<button
 					type="button"
 					className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-background/80 text-muted-foreground backdrop-blur hover:bg-accent hover:text-accent-foreground"
 					aria-label="Session actions"
 					aria-haspopup="menu"
 					aria-expanded={menuOpen}
+					disabled={suggesting}
 					onClick={() => setMenuOpen((open) => !open)}
 				>
 					{busy ? <Loader2 size={14} className="animate-spin" /> : <MoreVertical size={15} />}
@@ -235,22 +264,20 @@ export function SessionCard({
 							{forking ? <Loader2 size={13} className="animate-spin" /> : <GitBranch size={13} />}
 							Fork
 						</button>
-						{session.aiGeneratedTitle ? (
-							<button
-								type="button"
-								role="menuitem"
-								className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-accent"
-								onClick={() => {
-									setMenuOpen(false);
-									setConfirmingDelete(false);
-									setDraft(session.title);
-									setRenaming(true);
-								}}
-							>
-								<Pencil size={13} />
-								Rename
-							</button>
-						) : null}
+						<button
+							type="button"
+							role="menuitem"
+							className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-accent"
+							onClick={() => {
+								setMenuOpen(false);
+								setConfirmingDelete(false);
+								setDraft(session.title);
+								setRenaming(true);
+							}}
+						>
+							<Pencil size={13} />
+							Rename
+						</button>
 						<button
 							type="button"
 							role="menuitem"

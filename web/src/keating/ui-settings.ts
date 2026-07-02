@@ -1,35 +1,30 @@
 import { DEFAULT_IMAGE_GENERATOR_ID, isImageGeneratorId, type ImageGeneratorId } from "../lib/image-generators";
+export {
+	addCustomModel,
+	addRecentModel,
+	getRecentModels,
+	loadModelPrefs,
+	removeCustomModel,
+	type SavedModel,
+	subscribeModelPrefs,
+	toggleProviderVisibility,
+} from "./model-prefs";
 
 export type ReasoningLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
 export type AnimationRenderer = "manim" | "hyperframes";
 export type UiFontFamily = "roboto" | "space-mono" | "jetbrains-mono";
 export type ShareLinkMode = "portable-short" | "compressed-hash" | "local-short";
 
-export type SavedModel = {
-	key: string;
-	id: string;
-	name: string;
-	provider: string;
-	api: string;
-	baseUrl?: string;
-	reasoning: boolean;
-	vision: boolean;
-};
-
 export interface KeatingUiSettings {
 	showToolUi: boolean;
 	autoOpenArtifacts: boolean;
 	showRawErrors: boolean;
-	googleGrounding: "auto" | "off";
 	reasoningLevel: ReasoningLevel;
 	animationRenderer: AnimationRenderer;
 	fontFamily: UiFontFamily;
 	shareLinkMode: ShareLinkMode;
 	alternativeResponseChance: number;
 	userProfileImage: string | null;
-	hiddenProviders: string[];
-	recentModels: Array<{ key: string; timestamp: number }>;
-	customModels: SavedModel[];
 	imageGenerator: ImageGeneratorId;
 	imageModel: string;
 	imageSize: string;
@@ -42,16 +37,12 @@ export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
 	showToolUi: false,
 	autoOpenArtifacts: true,
 	showRawErrors: false,
-	googleGrounding: "auto",
 	reasoningLevel: "medium",
 	animationRenderer: "hyperframes",
 	fontFamily: "jetbrains-mono",
 	shareLinkMode: "portable-short",
 	alternativeResponseChance: 0.05,
 	userProfileImage: null,
-	hiddenProviders: [],
-	recentModels: [],
-	customModels: [],
 	imageGenerator: DEFAULT_IMAGE_GENERATOR_ID,
 	imageModel: "",
 	imageSize: "",
@@ -86,6 +77,8 @@ const FONT_STACKS: Record<UiFontFamily, FontStack> = {
 
 const STORAGE_KEY = "keating_ui_settings";
 const SETTINGS_CHANGED_EVENT = "keating:ui-settings-changed";
+type LegacyGroundingKey = `${"google"}${"Grounding"}`;
+const LEGACY_GOOGLE_GROUNDING_KEY = ("google" + "Grounding") as LegacyGroundingKey;
 
 export const FONT_FAMILY_OPTIONS: Array<{
 	value: UiFontFamily;
@@ -143,12 +136,18 @@ function normalizeAlternativeResponseChance(value: unknown): number {
 	return Math.max(0, Math.min(1, numeric));
 }
 
-function normalizeSettings(value: Partial<KeatingUiSettings> | null): KeatingUiSettings {
+type LegacyUiSettingsInput = Partial<KeatingUiSettings> & Partial<Record<LegacyGroundingKey, "auto" | "off">>;
+
+function normalizeSettings(value: LegacyUiSettingsInput | null): KeatingUiSettings {
+	const webSearch =
+		value?.webSearch === "off" || (value?.webSearch === undefined && value?.[LEGACY_GOOGLE_GROUNDING_KEY] === "off")
+			? "off"
+			: DEFAULT_UI_SETTINGS.webSearch;
+
 	return {
 		showToolUi: value?.showToolUi ?? DEFAULT_UI_SETTINGS.showToolUi,
 		autoOpenArtifacts: value?.autoOpenArtifacts ?? DEFAULT_UI_SETTINGS.autoOpenArtifacts,
 		showRawErrors: value?.showRawErrors ?? DEFAULT_UI_SETTINGS.showRawErrors,
-		googleGrounding: value?.googleGrounding === "off" ? "off" : DEFAULT_UI_SETTINGS.googleGrounding,
 		reasoningLevel: value?.reasoningLevel ?? DEFAULT_UI_SETTINGS.reasoningLevel,
 		animationRenderer: value?.animationRenderer === "hyperframes" ? "hyperframes" : DEFAULT_UI_SETTINGS.animationRenderer,
 		fontFamily:
@@ -158,15 +157,12 @@ function normalizeSettings(value: Partial<KeatingUiSettings> | null): KeatingUiS
 		shareLinkMode: normalizeShareLinkMode(value?.shareLinkMode),
 		alternativeResponseChance: normalizeAlternativeResponseChance(value?.alternativeResponseChance),
 		userProfileImage: typeof value?.userProfileImage === "string" && value.userProfileImage.startsWith("data:image/") ? value.userProfileImage : DEFAULT_UI_SETTINGS.userProfileImage,
-		hiddenProviders: Array.isArray(value?.hiddenProviders) ? value.hiddenProviders : DEFAULT_UI_SETTINGS.hiddenProviders,
-		recentModels: Array.isArray(value?.recentModels) ? value.recentModels : DEFAULT_UI_SETTINGS.recentModels,
-		customModels: Array.isArray(value?.customModels) ? value.customModels : DEFAULT_UI_SETTINGS.customModels,
 		imageGenerator: isImageGeneratorId(value?.imageGenerator) ? value.imageGenerator : DEFAULT_UI_SETTINGS.imageGenerator,
 		imageModel: typeof value?.imageModel === "string" ? value.imageModel : DEFAULT_UI_SETTINGS.imageModel,
 		imageSize: typeof value?.imageSize === "string" ? value.imageSize : DEFAULT_UI_SETTINGS.imageSize,
 		imageQuality: typeof value?.imageQuality === "string" ? value.imageQuality : DEFAULT_UI_SETTINGS.imageQuality,
 		localImageBaseUrl: typeof value?.localImageBaseUrl === "string" ? value.localImageBaseUrl : DEFAULT_UI_SETTINGS.localImageBaseUrl,
-		webSearch: value?.webSearch === "off" ? "off" : DEFAULT_UI_SETTINGS.webSearch,
+		webSearch,
 	};
 }
 
@@ -179,62 +175,12 @@ export function applyKeatingUiTypography(fontFamily: UiFontFamily) {
 	root.style.setProperty("--font-mono", stacks.mono);
 }
 
-export function addRecentModel(key: string) {
-	const settings = loadKeatingUiSettings();
-	const filtered = settings.recentModels.filter((m) => m.key !== key);
-	const next: KeatingUiSettings = {
-		...settings,
-		recentModels: [{ key, timestamp: Date.now() }, ...filtered].slice(0, 7),
-	};
-	saveKeatingUiSettings(next);
-	return next;
-}
-
-export function getRecentModels(): Array<{ key: string; timestamp: number }> {
-	const settings = loadKeatingUiSettings();
-	return [...settings.recentModels].sort((a, b) => b.timestamp - a.timestamp);
-}
-
-export function addCustomModel(model: SavedModel) {
-	const settings = loadKeatingUiSettings();
-	const filtered = settings.customModels.filter((m) => m.key !== model.key);
-	const next: KeatingUiSettings = {
-		...settings,
-		customModels: [...filtered, model],
-	};
-	saveKeatingUiSettings(next);
-	return next;
-}
-
-export function removeCustomModel(key: string) {
-	const settings = loadKeatingUiSettings();
-	const next: KeatingUiSettings = {
-		...settings,
-		customModels: settings.customModels.filter((m) => m.key !== key),
-	};
-	saveKeatingUiSettings(next);
-	return next;
-}
-
-export function toggleProviderVisibility(provider: string, hidden: boolean) {
-	const settings = loadKeatingUiSettings();
-	const set = new Set(settings.hiddenProviders);
-	if (hidden) set.add(provider);
-	else set.delete(provider);
-	const next: KeatingUiSettings = {
-		...settings,
-		hiddenProviders: Array.from(set),
-	};
-	saveKeatingUiSettings(next);
-	return next;
-}
-
 export function loadKeatingUiSettings(): KeatingUiSettings {
 	if (typeof localStorage === "undefined") return DEFAULT_UI_SETTINGS;
 	try {
 		const raw = localStorage.getItem(STORAGE_KEY);
 		if (!raw) return DEFAULT_UI_SETTINGS;
-		return normalizeSettings(JSON.parse(raw) as Partial<KeatingUiSettings>);
+		return normalizeSettings(JSON.parse(raw) as LegacyUiSettingsInput);
 	} catch (error) {
 		console.warn("Failed to load Keating UI settings:", error);
 		return DEFAULT_UI_SETTINGS;

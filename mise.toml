@@ -1,5 +1,6 @@
 [tools]
 bun = "latest"
+crush = "latest"
 
 [tasks.build]
 description = "Build the project"

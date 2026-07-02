@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-07-02
+
+### Added
+- Added the Electron desktop app workspace with typed P2P IPC, a sandboxed preload bridge, persisted per-user swarm secrets, and a Hyperbee/Corestore-backed storage adapter.
+- Added `@keating/p2p-core` for shared Hypercore/Hyperswarm storage, cloud seeder support, P2P RPC types, and desktop storage integration.
+- Added the public download, privacy, and terms pages, plus sitemap entries for the new public routes.
+- Added the session browser replacement surfaces and model preference hooks that move session/model management out of the older dialog/sidebar split.
+- Added stale-build recovery for lazy route chunks so deployed users can reload cleanly when a new web bundle replaces old chunks.
+
+### Changed
+- Bumped Keating to `2.0.0` for the desktop/P2P release line.
+- Reworked settings, provider, speech, and UI preference surfaces around shared local-setting hooks.
+- Moved more retro visual styling into shared CSS so the app, landing, settings, and public pages read as one product surface.
+- Updated the desktop build so it builds `@keating/p2p-core` before compiling Electron main/preload code.
+
+### Fixed
+- Fixed `@keating/p2p-core` package exports so Electron/Node resolve runnable JavaScript from `dist/` instead of TypeScript source.
+- Fixed Bun test startup for `@keating/p2p-core` by removing eager `sodium-native` loading from `deriveTopic` and deferring native Hyperbee loading until storage opens.
+- Fixed the speech settings subscription path through the shared Keating setting hook.
+
 ## [1.4.1] - 2026-06-30
 
 ### Added
@@ -423,7 +443,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v1.4.1...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/Diogenesoftoronto/keating/compare/v1.4.1...v2.0.0
 [1.4.1]: https://github.com/Diogenesoftoronto/keating/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/Diogenesoftoronto/keating/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/Diogenesoftoronto/keating/compare/v1.2.0...v1.3.0

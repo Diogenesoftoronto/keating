@@ -428,6 +428,7 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
+        importScripts: ['sw-update-reload.js'],
         // Never substitute the precached SPA shell for share routes, API
         // routes, or hashed assets. A stale service worker serving the old
         // index.html for /s/:id caused "module script … MIME type text/html"

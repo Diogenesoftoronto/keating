@@ -121,6 +121,13 @@ export default defineNitroConfig({
       handler: "server/api/dio/openai/[...path].ts",
     },
     {
+      // Static middleware serves valid built files first. If an old service
+      // worker or cached shell asks for a stale content-hash, this handler
+      // catches the miss and returns a real 404 instead of the SPA shell.
+      route: "/assets/**",
+      handler: "server/routes/assets/[...path].ts",
+    },
+    {
       // Per-share OpenGraph image (no .png suffix — a `.png` route would be
       // shadowed by the fallthrough:false static rule above).
       route: "/api/og/**",

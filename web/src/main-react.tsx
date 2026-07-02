@@ -7,6 +7,7 @@ import "./hooks/keating-storage";
 import { App } from "./App";
 import { applyKeatingUiTypography, loadKeatingUiSettings } from "./keating/ui-settings";
 import { initPostHog } from "./lib/posthog";
+import { installStaleBuildRecovery } from "./lib/stale-build-recovery";
 import { initThemeSync } from "./theme-sync";
 
 if (import.meta.env.DEV) {
@@ -14,6 +15,7 @@ if (import.meta.env.DEV) {
 }
 
 initThemeSync();
+installStaleBuildRecovery();
 applyKeatingUiTypography(loadKeatingUiSettings().fontFamily);
 const posthogClient = initPostHog();
 

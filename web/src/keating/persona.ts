@@ -8,6 +8,7 @@
  *
  * Defaults to John Keating, the English teacher from Dead Poets Society.
  */
+import { createLocalSetting } from "./local-setting";
 
 const PERSONA_STORAGE_KEY = "keating:teacher-persona";
 const PERSONA_CHANGED_EVENT = "keating:persona-changed";
@@ -31,13 +32,19 @@ Stand on the desk: remind the learner — and yourself — to look at things fro
 
 Your role is to ensure every learner is equipped to contribute their own verse. O Captain, my Captain — but the ship is theirs to steer.`;
 
-export function loadPersona(): string {
-	if (typeof localStorage === "undefined") return DEFAULT_TEACHER_PERSONA;
-	try {
-		const raw = localStorage.getItem(PERSONA_STORAGE_KEY);
-		if (raw === null) return DEFAULT_TEACHER_PERSONA;
+const personaSetting = createLocalSetting<string>({
+	key: PERSONA_STORAGE_KEY,
+	event: PERSONA_CHANGED_EVENT,
+	normalize: (raw) => {
+		if (typeof raw !== "string") return DEFAULT_TEACHER_PERSONA;
 		const trimmed = raw.trim();
 		return trimmed.length > 0 ? raw : DEFAULT_TEACHER_PERSONA;
+	},
+});
+
+export function loadPersona(): string {
+	try {
+		return personaSetting.load();
 	} catch (error) {
 		console.warn("Failed to load teacher persona:", error);
 		return DEFAULT_TEACHER_PERSONA;
@@ -46,12 +53,9 @@ export function loadPersona(): string {
 
 export function savePersona(text: string): void {
 	try {
-		localStorage.setItem(PERSONA_STORAGE_KEY, text);
+		personaSetting.save(text);
 	} catch (error) {
 		console.warn("Failed to save teacher persona:", error);
-	}
-	if (typeof window !== "undefined") {
-		window.dispatchEvent(new CustomEvent<string>(PERSONA_CHANGED_EVENT, { detail: text }));
 	}
 }
 
@@ -72,16 +76,5 @@ export function isDefaultPersona(text: string = loadPersona()): boolean {
 }
 
 export function subscribePersona(callback: (persona: string) => void): () => void {
-	if (typeof window === "undefined") return () => {};
-	const onCustom = (event: Event) => {
-		const detail = (event as CustomEvent<string>).detail;
-		callback(typeof detail === "string" ? detail : loadPersona());
-	};
-	const onStorage = () => callback(loadPersona());
-	window.addEventListener(PERSONA_CHANGED_EVENT, onCustom);
-	window.addEventListener("storage", onStorage);
-	return () => {
-		window.removeEventListener(PERSONA_CHANGED_EVENT, onCustom);
-		window.removeEventListener("storage", onStorage);
-	};
+	return personaSetting.subscribe(callback);
 }

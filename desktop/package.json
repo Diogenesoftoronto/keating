@@ -1,0 +1,31 @@
+{
+  "name": "@keating/desktop",
+  "version": "2.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Keating desktop (Electron) app — P2P, local-first teaching client.",
+  "license": "MPL-2.0",
+  "main": "dist/main.js",
+  "scripts": {
+    "build:main": "bun run --cwd ../packages/p2p-core build && tsc -p tsconfig.json",
+    "dev": "KEATING_DEV_SERVER=http://localhost:5173 electron .",
+    "start": "electron .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "dist": "electron-builder"
+  },
+  "dependencies": {
+    "@keating/p2p-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0",
+    "typescript": "^5.7.0"
+  },
+  "build": {
+    "appId": "help.keating.desktop",
+    "productName": "Keating",
+    "files": ["dist/**/*", "../web/dist/**/*"],
+    "directories": { "output": "release" }
+  }
+}
