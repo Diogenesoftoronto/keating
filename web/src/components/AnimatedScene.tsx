@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { buildManimSceneHtml, buildHyperframesHtml } from "./animation-host";
 
@@ -83,14 +84,33 @@ function AnimationBody({ payload }: { payload: AnimationPayload }) {
 }
 
 function CodeFrame({ html, sandbox }: { html: string; sandbox: string }) {
+	const src = useBlobUrl(html);
 	return (
 		<iframe
 			title="Keating animation"
-			srcDoc={html}
+			src={src}
 			sandbox={sandbox}
 			className="block aspect-video w-full border-0 bg-black"
 		/>
 	);
+}
+
+/**
+ * Wrap the model-authored HTML in a blob URL so the iframe shares the
+ * parent's origin. With `srcDoc`, the iframe has a unique opaque origin
+ * and cross-origin module imports (e.g. `/manim-web/index.js`) are
+ * blocked by COEP/CORP even when served with the right headers — which
+ * is exactly what was breaking the animate tool in production.
+ */
+function useBlobUrl(html: string): string {
+	const blob = useMemo(() => new Blob([html], { type: "text/html" }), [html]);
+	const [url, setUrl] = useState<string>("");
+	useEffect(() => {
+		const next = URL.createObjectURL(blob);
+		setUrl(next);
+		return () => URL.revokeObjectURL(next);
+	}, [blob]);
+	return url;
 }
 
 function ErrorBody({ message }: { message: string }) {
