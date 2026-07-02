@@ -1,0 +1,104 @@
+{
+  "cli_version": "0.7.7",
+  "checkpoint_id": "70d2e68c63a4",
+  "session_id": "ses_0de2be656ffecKGngMsOe4jll9",
+  "strategy": "manual-commit",
+  "created_at": "2026-07-02T08:00:33.07229443Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "web/bun.lock",
+    "web/package.json",
+    "web/src/app.css",
+    "web/src/components/AssistantChatPanel.tsx",
+    "web/src/components/FlashcardRenderer.stories.tsx",
+    "web/src/components/FlashcardRenderer.tsx",
+    "web/src/components/KeatingUiSettingsTab.tsx",
+    "web/src/components/MarkdownBlock.stories.tsx",
+    "web/src/components/MarkdownBlock.tsx",
+    "web/src/components/QuizRenderer.stories.tsx",
+    "web/src/components/QuizRenderer.tsx",
+    "web/src/components/RunnableCodeBlock.tsx",
+    "web/src/components/SettingsDialog.stories.tsx",
+    "web/src/components/SettingsDialog.tsx",
+    "web/src/components/flashcards/review-feedback.ts",
+    "web/src/components/flashcards/useCardGestures.ts",
+    "web/src/keating/ui-settings.ts",
+    "web/src/test/interactive-tag-parsing.test.ts",
+    "web/src/test/runnable-code-block.test.ts"
+  ],
+  "agent": "OpenCode",
+  "model": "deepseek-v4-flash-free",
+  "turn_id": "c5791fc7876d",
+  "token_usage": {
+    "input_tokens": 41301,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 122240,
+    "output_tokens": 598,
+    "api_call_count": 6
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-07-02T08:00:33.065155349Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 127,
+    "total_committed": 0,
+    "total_lines_changed": 127,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 1355,
+      "user_lines_removed": 127,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "web/bun.lock": 6,
+        "web/package.json": 2,
+        "web/src/app.css": 113,
+        "web/src/components/AssistantChatPanel.tsx": 17,
+        "web/src/components/FlashcardRenderer.stories.tsx": 36,
+        "web/src/components/FlashcardRenderer.tsx": 239,
+        "web/src/components/KeatingUiSettingsTab.tsx": 7,
+        "web/src/components/MarkdownBlock.stories.tsx": 28,
+        "web/src/components/MarkdownBlock.tsx": 7,
+        "web/src/components/QuizRenderer.stories.tsx": 49,
+        "web/src/components/QuizRenderer.tsx": 38,
+        "web/src/components/RunnableCodeBlock.tsx": 193,
+        "web/src/components/SettingsDialog.stories.tsx": 193,
+        "web/src/components/SettingsDialog.tsx": 18,
+        "web/src/components/flashcards/review-feedback.ts": 113,
+        "web/src/components/flashcards/useCardGestures.ts": 150,
+        "web/src/keating/ui-settings.ts": 3,
+        "web/src/test/interactive-tag-parsing.test.ts": 119,
+        "web/src/test/runnable-code-block.test.ts": 24
+      },
+      "user_removed_per_file": {
+        "web/src/app.css": 3,
+        "web/src/components/AssistantChatPanel.tsx": 7,
+        "web/src/components/FlashcardRenderer.stories.tsx": 1,
+        "web/src/components/FlashcardRenderer.tsx": 34,
+        "web/src/components/MarkdownBlock.stories.tsx": 4,
+        "web/src/components/MarkdownBlock.tsx": 34,
+        "web/src/components/QuizRenderer.stories.tsx": 1,
+        "web/src/components/QuizRenderer.tsx": 36,
+        "web/src/components/SettingsDialog.tsx": 7
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1355,
+      "agent_lines_removed": 127
+    }
+  ]
+}
