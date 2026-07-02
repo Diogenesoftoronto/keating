@@ -1,0 +1,45 @@
+{
+  "cli_version": "0.7.7",
+  "checkpoint_id": "af2cb63e3ad1",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 5,
+  "files_touched": [
+    "Dockerfile.web",
+    "bun.lock",
+    "desktop/package.json",
+    "desktop/src/ipc.ts",
+    "desktop/src/main.ts",
+    "desktop/src/preload.ts",
+    "desktop/tsconfig.json",
+    "docs/p2p-electron-plan.md",
+    "package.json",
+    "packages/p2p-core/CRUSH_SPEC.md",
+    "packages/p2p-core/package.json",
+    "packages/p2p-core/src/index.ts",
+    "packages/p2p-core/src/rpc.ts",
+    "packages/p2p-core/src/seeder.ts",
+    "packages/p2p-core/src/storage-adapter.ts",
+    "packages/p2p-core/src/store.ts",
+    "packages/p2p-core/src/swarm.ts",
+    "packages/p2p-core/src/types.ts",
+    "packages/p2p-core/tsconfig.json",
+    "web/src/lib/p2p-storage-backend.ts",
+    "web/src/types.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/af/2cb63e3ad1/0/metadata.json",
+      "transcript": "/af/2cb63e3ad1/0/full.jsonl",
+      "content_hash": "/af/2cb63e3ad1/0/content_hash.txt",
+      "prompt": "/af/2cb63e3ad1/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 13280,
+    "cache_creation_tokens": 895911,
+    "cache_read_tokens": 6412647,
+    "output_tokens": 59078,
+    "api_call_count": 72
+  }
+}

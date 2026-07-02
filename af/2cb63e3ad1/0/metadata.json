@@ -1,0 +1,115 @@
+{
+  "cli_version": "0.7.7",
+  "checkpoint_id": "af2cb63e3ad1",
+  "session_id": "062a82f8-b126-4fda-b2c3-ad0ad93776fb",
+  "strategy": "manual-commit",
+  "created_at": "2026-07-02T01:58:02.179281444Z",
+  "branch": "main",
+  "checkpoints_count": 5,
+  "save_step_count": 3,
+  "files_touched": [
+    "Dockerfile.web",
+    "bun.lock",
+    "desktop/package.json",
+    "desktop/src/ipc.ts",
+    "desktop/src/main.ts",
+    "desktop/src/preload.ts",
+    "desktop/tsconfig.json",
+    "docs/p2p-electron-plan.md",
+    "package.json",
+    "packages/p2p-core/CRUSH_SPEC.md",
+    "packages/p2p-core/package.json",
+    "packages/p2p-core/src/index.ts",
+    "packages/p2p-core/src/rpc.ts",
+    "packages/p2p-core/src/seeder.ts",
+    "packages/p2p-core/src/storage-adapter.ts",
+    "packages/p2p-core/src/store.ts",
+    "packages/p2p-core/src/swarm.ts",
+    "packages/p2p-core/src/types.ts",
+    "packages/p2p-core/tsconfig.json",
+    "web/src/lib/p2p-storage-backend.ts",
+    "web/src/types.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-4-8",
+  "turn_id": "58319b944cd5",
+  "token_usage": {
+    "input_tokens": 13280,
+    "cache_creation_tokens": 895911,
+    "cache_read_tokens": 6412647,
+    "output_tokens": 59078,
+    "api_call_count": 72
+  },
+  "session_metrics": {
+    "turn_count": 5
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-07-02T01:58:02.163313161Z",
+    "agent_lines": 1575,
+    "agent_removed": 0,
+    "human_added": 6394,
+    "human_modified": 275,
+    "human_removed": 0,
+    "total_committed": 8235,
+    "total_lines_changed": 10560,
+    "agent_percentage": 14.914772727272727,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 194,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "web/src/lib/cloud-storage-backend.ts": 194
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 2139,
+      "agent_lines_removed": 3
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 2146,
+      "agent_lines_removed": 4
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 1233,
+      "user_lines_removed": 252,
+      "agent_lines_added": 2146,
+      "agent_lines_removed": 4,
+      "user_added_per_file": {
+        "desktop/src/ambient.d.ts": 108,
+        "desktop/src/ipc.ts": 190,
+        "desktop/src/main.ts": 89,
+        "packages/p2p-core/src/ambient.d.ts": 106,
+        "packages/p2p-core/src/seeder.ts": 91,
+        "packages/p2p-core/src/storage-adapter.ts": 195,
+        "packages/p2p-core/src/store.ts": 215,
+        "packages/p2p-core/src/swarm.ts": 75,
+        "packages/p2p-core/test/store.test.ts": 106,
+        "web/src/hooks/keating-storage.ts": 8,
+        "web/src/lib/p2p-storage-backend.ts": 50
+      },
+      "user_removed_per_file": {
+        "desktop/src/ipc.ts": 26,
+        "desktop/src/main.ts": 40,
+        "desktop/src/preload.ts": 4,
+        "packages/p2p-core/src/seeder.ts": 22,
+        "packages/p2p-core/src/storage-adapter.ts": 31,
+        "packages/p2p-core/src/store.ts": 70,
+        "packages/p2p-core/src/swarm.ts": 25,
+        "web/src/hooks/keating-storage.ts": 2,
+        "web/src/lib/p2p-storage-backend.ts": 32
+      }
+    }
+  ]
+}
