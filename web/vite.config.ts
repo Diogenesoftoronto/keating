@@ -7,7 +7,7 @@ import nodepod from '@scelar/nodepod/vite';
 import { visualizer } from 'rollup-plugin-visualizer';
 import * as https from 'https';
 import * as http from 'http';
-import { copyFileSync, mkdirSync, readdirSync, statSync, existsSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, existsSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { buildValidatedProxyUrl } from './server/utils/proxy-target';
 import { isAllowedDioOpenAiProxyRequest } from './src/dio-provider/server';
@@ -20,21 +20,19 @@ type AgentRuntimeMode = 'browser-only' | 'remote' | 'cloud';
  * and render them in an iframe that imports the library at this stable
  * public path. Works in both dev (Vite serves /manim-web/) and prod
  * (Nitro bundles the public/ dir).
+ *
+ * If the manim-web source directory is missing or stale, fall back to
+ * any sibling copy in web/dist/manim-web (left over from a prior build)
+ * and warn loudly. Without this fallback, an empty `public/manim-web/`
+ * silently ships to production and the animate tool fails at runtime
+ * with `disallowed MIME type ("text/html")` because the SPA shell
+ * fills in for the missing file.
  */
 function manimWebPublicPlugin(): Plugin {
 	const SOURCE = resolve(__dirname, '../node_modules/manim-web/dist');
+	const FALLBACK_DIST = resolve(__dirname, 'dist/manim-web');
 	let publicDir: string | null = null;
-	const ensureCopied = (): boolean => {
-		if (!publicDir) return false;
-		const target = join(publicDir, 'manim-web');
-		if (existsSync(target)) return true;
-		try {
-			mkdirSync(target, { recursive: true });
-		} catch {
-			return false;
-		}
-		return true;
-	};
+	const markerName = '.keating-manim-web-source-mtime';
 	const copyRecursive = (src: string, dst: string): void => {
 		if (!existsSync(src)) return;
 		for (const entry of readdirSync(src)) {
@@ -50,32 +48,56 @@ function manimWebPublicPlugin(): Plugin {
 			}
 		}
 	};
+	const ensureCopied = (): boolean => {
+		if (!publicDir) return false;
+		const target = join(publicDir, 'manim-web');
+		const source = existsSync(SOURCE)
+			? SOURCE
+			: existsSync(FALLBACK_DIST)
+				? FALLBACK_DIST
+				: null;
+		if (!source) {
+			// eslint-disable-next-line no-console
+			console.error(
+				`[manim-web] source not found at ${SOURCE} (and no fallback at ${FALLBACK_DIST}); ` +
+					`/manim-web/** will be missing from the build and the animate tool will fail at runtime. ` +
+					`Run \`bun add manim-web\` (or \`bun install\`) at the repo root.`,
+			);
+			return false;
+		}
+		const sourceMtime = statSync(source).mtimeMs.toString();
+		const markerPath = join(target, markerName);
+		const previousMtime = existsSync(markerPath)
+			? readFileSync(markerPath, 'utf8').trim()
+			: '';
+		if (previousMtime === sourceMtime && existsSync(join(target, 'index.js'))) {
+			return true;
+		}
+		try {
+			rmSync(target, { recursive: true, force: true });
+			mkdirSync(target, { recursive: true });
+			copyRecursive(source, target);
+			writeFileSync(markerPath, sourceMtime);
+			// eslint-disable-next-line no-console
+			console.log(`[manim-web] copied ${source} -> ${target}`);
+			return true;
+		} catch (e) {
+			// eslint-disable-next-line no-console
+			console.error(`[manim-web] copy failed:`, e);
+			return false;
+		}
+	};
 	return {
 		name: 'keating-manim-web-public',
 		apply: () => true,
 		configResolved(config) {
 			publicDir = config.publicDir;
-			if (publicDir) {
-				const target = join(publicDir, 'manim-web');
-				if (!existsSync(target)) {
-					try {
-						mkdirSync(target, { recursive: true });
-						copyRecursive(SOURCE, target);
-						// eslint-disable-next-line no-console
-						console.log(`[manim-web] copied ${SOURCE} -> ${target}`);
-					} catch (e) {
-						// eslint-disable-next-line no-console
-						console.error(`[manim-web] copy failed:`, e);
-					}
-				}
-			}
+			if (publicDir) ensureCopied();
 		},
 		configureServer(server) {
 			if (!server.config.publicDir) return;
-			const target = join(server.config.publicDir, 'manim-web');
-			if (existsSync(target)) return;
-			mkdirSync(target, { recursive: true });
-			copyRecursive(SOURCE, target);
+			publicDir = server.config.publicDir;
+			ensureCopied();
 		},
 	};
 }
