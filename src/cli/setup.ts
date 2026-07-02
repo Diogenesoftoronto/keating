@@ -43,7 +43,7 @@ const MODELS_BY_PROVIDER: Record<string, Choice[]> = {
   google: [
     { label: "Gemini 3.1 Pro Preview", value: "gemini-3.1-pro-preview", hint: "Recommended" },
     { label: "Gemini 3.5 Flash", value: "gemini-3.5-flash", hint: "Faster" },
-    { label: "Gemini 3 Pro Preview", value: "gemini-3-pro-preview" },
+    { label: "Gemma 31b", value: "gemma-31b-it", hint: "Free" },
     { label: "Custom", value: "custom", hint: "Type a model name" }
   ],
   openai: [
@@ -53,8 +53,9 @@ const MODELS_BY_PROVIDER: Record<string, Choice[]> = {
     { label: "Custom", value: "custom", hint: "Type a model name" }
   ],
   anthropic: [
-    { label: "Claude Sonnet 4.6", value: "claude-sonnet-4-6", hint: "Recommended" },
+    { label: "Claude Sonnet 5", value: "claude-sonnet-5", hint: "Recommended" },
     { label: "Claude Opus 4.8", value: "claude-opus-4-8" },
+    { label: "Claude Fable 5", value: "claude-fable-5" },
     { label: "Claude Haiku 4.5", value: "claude-haiku-4-5", hint: "Faster" },
     { label: "Custom", value: "custom", hint: "Type a model name" }
   ],
