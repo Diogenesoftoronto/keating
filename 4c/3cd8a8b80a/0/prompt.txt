@@ -3,3 +3,7 @@ create a pricing page for inference, packs for purchase as well. pay per token m
 ---
 
 continue on here
+
+---
+
+just do a regular git commit and push
