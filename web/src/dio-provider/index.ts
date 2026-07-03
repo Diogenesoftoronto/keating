@@ -1,4 +1,5 @@
 import type { Api, Model } from "@earendil-works/pi-ai";
+import { DIO_TOKEN_RATES } from "./packs";
 
 export const DIO_PROVIDER_ID = "dio";
 export const DIO_BASE_PATH = "/api/dio/openai/v1";
@@ -29,7 +30,13 @@ export const DIO_DEFAULT_MODEL: Model<"openai-completions"> = {
 	baseUrl: DIO_BASE_URL,
 	reasoning: true,
 	input: ["text"],
-	cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+	// USD per million tokens (pi-ai cost convention) — the advertised Dio rates.
+	cost: {
+		input: DIO_TOKEN_RATES.inputPerMTok,
+		output: DIO_TOKEN_RATES.outputPerMTok,
+		cacheRead: 0,
+		cacheWrite: 0,
+	},
 	contextWindow: 256_000,
 	maxTokens: 8192,
 };
@@ -82,11 +89,11 @@ export async function getStoredDioIdentity(): Promise<DioStoredIdentity | null> 
 	return isValidDioIdentityEmail(normalized) ? { email: normalized } : null;
 }
 
-export async function startDioCheckout(email: string): Promise<DioCheckoutResult> {
+export async function startDioCheckout(email: string, packId?: string): Promise<DioCheckoutResult> {
 	const response = await fetch("/api/dio/checkout", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ email: normalizeEmail(email) }),
+		body: JSON.stringify({ email: normalizeEmail(email), ...(packId ? { packId } : {}) }),
 	});
 	const body = await response.json().catch(() => ({}));
 	if (!response.ok) {

@@ -13,6 +13,7 @@ import {
 
 type DioPromptRequest = {
 	id: string;
+	packId?: string;
 	resolve: (success: boolean) => void;
 };
 
@@ -26,12 +27,16 @@ function emitDioPromptChange() {
 	window.dispatchEvent(new CustomEvent("keating:dio-prompt-changed"));
 }
 
-export async function promptDioAccess(): Promise<boolean> {
+export async function promptDioAccess(options?: { packId?: string }): Promise<boolean> {
 	if (typeof window === "undefined") return false;
 	if (!isDioFeatureEnabled()) return false;
 
-	const existing = await getAppStorage().providerKeys.get(DIO_PROVIDER_ID);
-	if (existing) return true;
+	// Buying a specific pack must open checkout even when a key already exists
+	// (top-ups add credits to the same key).
+	if (!options?.packId) {
+		const existing = await getAppStorage().providerKeys.get(DIO_PROVIDER_ID);
+		if (existing) return true;
+	}
 
 	if (activeDioPrompt) {
 		activeDioPrompt.resolve(false);
@@ -40,6 +45,7 @@ export async function promptDioAccess(): Promise<boolean> {
 	return new Promise((resolve) => {
 		activeDioPrompt = {
 			id: crypto.randomUUID(),
+			packId: options?.packId,
 			resolve,
 		};
 		emitDioPromptChange();
@@ -112,7 +118,7 @@ export function DioAccessPromptDialog() {
 		setLoading(true);
 		setError("");
 		try {
-			const result = await startDioCheckout(normalized);
+			const result = await startDioCheckout(normalized, request.packId);
 			setPurchaseReference(result.purchaseReference);
 			window.open(result.checkoutUrl, "_blank", "noopener,noreferrer");
 		} catch (err) {

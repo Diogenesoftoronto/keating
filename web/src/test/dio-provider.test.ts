@@ -41,9 +41,10 @@ describe("dio provider constants", () => {
 		expect(DIO_DEFAULT_MODEL.input).toEqual(["text"]);
 		expect(DIO_DEFAULT_MODEL.contextWindow).toBeGreaterThanOrEqual(256_000);
 		expect(DIO_DEFAULT_MODEL.maxTokens).toBeGreaterThan(0);
+		// Advertised Dio rates in USD per million tokens (pi-ai cost convention).
 		expect(DIO_DEFAULT_MODEL.cost).toEqual({
-			input: 0,
-			output: 0,
+			input: 1,
+			output: 4,
 			cacheRead: 0,
 			cacheWrite: 0,
 		});

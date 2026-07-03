@@ -1,5 +1,6 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { normalizeEmail } from "./index";
+import { DIO_PACKS, type DioPack, type DioPackId } from "./packs";
 export { normalizeEmail };
 
 /** Minimal storage interface used by the Dio provider helpers. */
@@ -8,13 +9,19 @@ export interface DioStorage {
 	setItem: (key: string, value: any, opts?: any) => Promise<void>;
 }
 
+export interface DioServerPack extends DioPack {
+	/** Creem product id for this pack; packs without one cannot be purchased. */
+	productId?: string;
+	/** Bifrost virtual-key budget (USD) granted per purchase of this pack. */
+	budget: number;
+}
+
 export interface DioEnvConfig {
 	enabled: boolean;
 	creemApiKey: string;
 	creemWebhookSecret: string;
-	creemProductId: string;
 	creemBaseUrl: string;
-	dioCreditBudget: number;
+	packs: Record<DioPackId, DioServerPack>;
 	bifrostApiKey: string;
 	bifrostBaseUrl: string;
 	bifrostModelAlias: string;
@@ -36,22 +43,16 @@ export function isDioEnabled(): boolean {
 export function getDioEnvConfig(): DioEnvConfig {
 	const creemApiKey = getRequiredEnv("CREEM_API_KEY");
 	const creemWebhookSecret = getRequiredEnv("CREEM_WEBHOOK_SECRET");
-	const creemProductId = getRequiredEnv("CREEM_PRODUCT_ID_DIO_CREDITS");
-	const dioCreditBudget = Number.parseInt(getRequiredEnv("DIO_CREDIT_BUDGET"), 10);
+	const packs = getDioPacksFromEnv(process.env);
 	const bifrostApiKey = getRequiredEnv("BIFROST_API_KEY");
 	const bifrostBaseUrl = getDioGatewayBaseUrl();
-
-	if (!Number.isFinite(dioCreditBudget) || dioCreditBudget <= 0) {
-		throw new Error("DIO_CREDIT_BUDGET must be a positive integer");
-	}
 
 	return {
 		enabled: isDioEnabled(),
 		creemApiKey,
 		creemWebhookSecret,
-		creemProductId,
 		creemBaseUrl: resolveCreemBaseUrl(creemApiKey, process.env.CREEM_BASE_URL),
-		dioCreditBudget,
+		packs,
 		bifrostApiKey,
 		bifrostBaseUrl,
 		bifrostModelAlias: process.env.BIFROST_MODEL_ALIAS || "kimi-k2.6",
@@ -59,6 +60,50 @@ export function getDioEnvConfig(): DioEnvConfig {
 		recoveryFromEmail: process.env.DIO_RECOVERY_FROM_EMAIL?.trim() || "support@keating.help",
 		recoveryDevCode: process.env.DIO_RECOVERY_DEV_CODE === "true" || process.env.NODE_ENV === "development",
 	};
+}
+
+/**
+ * Build the purchasable pack config from the environment.
+ *
+ * Per pack: `CREEM_PRODUCT_ID_DIO_PACK_<ID>` (Creem product) and optional
+ * `DIO_PACK_BUDGET_<ID>` (Bifrost budget, defaults to the pack price). The
+ * legacy single-product vars `CREEM_PRODUCT_ID_DIO_CREDITS` and
+ * `DIO_CREDIT_BUDGET` map to the starter pack so existing deployments keep
+ * working. At least one pack must have a product id.
+ */
+export function getDioPacksFromEnv(env: Record<string, string | undefined>): Record<DioPackId, DioServerPack> {
+	const packs = {} as Record<DioPackId, DioServerPack>;
+	for (const pack of DIO_PACKS) {
+		const suffix = pack.id.toUpperCase();
+		let productId = env[`CREEM_PRODUCT_ID_DIO_PACK_${suffix}`]?.trim() || undefined;
+		let budgetRaw = env[`DIO_PACK_BUDGET_${suffix}`]?.trim();
+		if (pack.id === "starter") {
+			productId = productId || env.CREEM_PRODUCT_ID_DIO_CREDITS?.trim() || undefined;
+			budgetRaw = budgetRaw || env.DIO_CREDIT_BUDGET?.trim();
+		}
+		const budget = budgetRaw ? Number.parseFloat(budgetRaw) : pack.priceUsd;
+		if (!Number.isFinite(budget) || budget <= 0) {
+			throw new Error(`DIO_PACK_BUDGET_${suffix} must be a positive number`);
+		}
+		packs[pack.id] = { ...pack, productId, budget };
+	}
+	if (!Object.values(packs).some((pack) => pack.productId)) {
+		throw new Error("Missing required environment variable: CREEM_PRODUCT_ID_DIO_PACK_* (or legacy CREEM_PRODUCT_ID_DIO_CREDITS)");
+	}
+	return packs;
+}
+
+/** A pack that can actually be purchased (has a Creem product configured). */
+export function getPurchasableDioPack(config: DioEnvConfig, packId: string): DioServerPack | null {
+	const pack = config.packs[packId as DioPackId];
+	return pack?.productId ? pack : null;
+}
+
+export function findDioPackByProductId(config: DioEnvConfig, productId: string): DioServerPack | null {
+	for (const pack of Object.values(config.packs)) {
+		if (pack.productId && pack.productId === productId) return pack;
+	}
+	return null;
 }
 
 export function getDioGatewayBaseUrl(): string {
@@ -109,10 +154,16 @@ export interface CreemCheckoutResponse {
 export async function createCreemCheckout(
 	config: DioEnvConfig,
 	email: string,
+	packId: string,
 ): Promise<CreemCheckoutResponse> {
 	const normalized = normalizeEmail(email);
 	if (!isValidEmail(normalized)) {
 		throw new Error("Invalid email address");
+	}
+
+	const pack = getPurchasableDioPack(config, packId);
+	if (!pack) {
+		throw new Error(`Unknown or unavailable Dio pack: ${packId}`);
 	}
 
 	const purchaseReference = `dio_${cryptoUUID()}`;
@@ -124,11 +175,12 @@ export async function createCreemCheckout(
 			"x-api-key": config.creemApiKey,
 		},
 		body: JSON.stringify({
-			product_id: config.creemProductId,
+			product_id: pack.productId,
 			success_url: `${process.env.KEATING_WEB_ORIGIN || ""}/dio/success?dio_ref=${encodeURIComponent(purchaseReference)}&dio_email=${encodeURIComponent(normalized)}`,
 			request_id: purchaseReference,
 			metadata: {
 				dio_purchase_reference: purchaseReference,
+				dio_pack_id: pack.id,
 				customer_email: normalized,
 			},
 		}),
@@ -249,6 +301,32 @@ export async function createBifrostVirtualKey(
 	return { id: virtualKey.id, value: virtualKey.value };
 }
 
+/**
+ * Raise the spending cap of an existing Bifrost virtual key. Used to top up
+ * credits when an email that already has an entitlement buys another pack.
+ */
+export async function updateBifrostVirtualKeyBudget(
+	config: DioEnvConfig,
+	virtualKeyId: string,
+	newMaxBudget: number,
+): Promise<void> {
+	const url = `${config.bifrostBaseUrl.replace(/\/+$/, "")}/api/governance/virtual-keys/${encodeURIComponent(virtualKeyId)}`;
+	const response = await fetch(url, {
+		method: "PUT",
+		headers: {
+			"Content-Type": "application/json",
+			Authorization: `Bearer ${config.bifrostApiKey}`,
+		},
+		body: JSON.stringify({ budget: { max: newMaxBudget } }),
+	});
+
+	if (!response.ok) {
+		const body = await response.json().catch(() => ({}));
+		const message = body?.message || body?.error || `Bifrost virtual key budget update failed (${response.status})`;
+		throw new Error(message);
+	}
+}
+
 export interface DioEntitlement {
 	email: string;
 	virtualKeyId: string;
@@ -259,6 +337,10 @@ export interface DioEntitlement {
 	productId?: string;
 	customerId?: string;
 	createdAt: string;
+	/** Running Bifrost budget cap across all purchases (USD). */
+	budgetMax?: number;
+	/** Last purchased pack id. */
+	packId?: string;
 }
 
 const ENTITLEMENT_KEY_PREFIX = "entitlement:";

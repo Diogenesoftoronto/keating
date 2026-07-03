@@ -47,6 +47,10 @@ const Privacy = lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/Privacy")),
   "Privacy",
 );
+const Pricing = lazyRouteComponent(
+  () => loadRouteChunk(() => import("./pages/Pricing")),
+  "Pricing",
+);
 import {
   applyKeatingUiTypography,
   loadKeatingUiSettings,
@@ -135,6 +139,12 @@ const privacyRoute = createRoute({
 	component: Privacy,
 });
 
+const pricingRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/pricing",
+	component: Pricing,
+});
+
 const routeTree = rootRoute.addChildren([
 	indexRoute,
 	chatRoute,
@@ -149,6 +159,7 @@ const routeTree = rootRoute.addChildren([
 	downloadRoute,
 	termsRoute,
 	privacyRoute,
+	pricingRoute,
 ]);
 
 // Shown while a lazily-loaded route chunk is in flight (after defaultPendingMs)
