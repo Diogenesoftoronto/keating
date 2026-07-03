@@ -1,0 +1,60 @@
+{
+  "cli_version": "0.7.7",
+  "checkpoint_id": "4c3cd8a8b80a",
+  "session_id": "ses_0d9fbc2daffe7UDk7VM3ULQIe7",
+  "strategy": "manual-commit",
+  "created_at": "2026-07-03T03:39:02.12577501Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "web/server/api/dio/checkout.ts",
+    "web/server/api/dio/webhook.ts",
+    "web/src/dio-provider/server.ts"
+  ],
+  "agent": "OpenCode",
+  "model": "deepseek-v4-flash-free",
+  "turn_id": "311ba7181ecd",
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 1
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-07-03T03:39:02.124115976Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 544,
+    "human_modified": 23,
+    "human_removed": 0,
+    "total_committed": 544,
+    "total_lines_changed": 581,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 253,
+      "user_lines_removed": 23,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "web/server/api/dio/checkout.ts": 9,
+        "web/server/api/dio/webhook.ts": 66,
+        "web/src/dio-provider/packs.ts": 85,
+        "web/src/dio-provider/server.ts": 93
+      },
+      "user_removed_per_file": {
+        "web/server/api/dio/checkout.ts": 2,
+        "web/server/api/dio/webhook.ts": 10,
+        "web/src/dio-provider/server.ts": 11
+      }
+    }
+  ]
+}

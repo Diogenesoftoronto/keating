@@ -1,0 +1,97 @@
+{
+  "info": {
+    "id": "ses_0d9fbc2daffe7UDk7VM3ULQIe7",
+    "slug": "playful-island",
+    "projectID": "a22a21fb6b0ce9d72f5871a7851df49ec28c3ac4",
+    "directory": "/home/diogenes/Projects/keating",
+    "path": "",
+    "title": "New session - 2026-07-03T03:27:19.845Z",
+    "agent": "build",
+    "model": {
+      "id": "deepseek-v4-flash-free",
+      "providerID": "opencode",
+      "variant": "high"
+    },
+    "version": "1.17.9",
+    "summary": {
+      "additions": 0,
+      "deletions": 0,
+      "files": 0
+    },
+    "cost": 0,
+    "tokens": {
+      "input": 0,
+      "output": 0,
+      "reasoning": 0,
+      "cache": {
+        "read": 0,
+        "write": 0
+      }
+    },
+    "time": {
+      "created": 1783049239845,
+      "updated": 1783049242527
+    }
+  },
+  "messages": [
+    {
+      "info": {
+        "role": "user",
+        "time": {
+          "created": 1783049239916
+        },
+        "agent": "build",
+        "model": {
+          "providerID": "opencode",
+          "modelID": "deepseek-v4-flash-free",
+          "variant": "high"
+        },
+        "summary": {
+          "diffs": []
+        },
+        "id": "msg_f26043d6c0016PDKQ4Wc6eRioV",
+        "sessionID": "ses_0d9fbc2daffe7UDk7VM3ULQIe7"
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "review current code and update and the commit all uncommited changes",
+          "id": "prt_f26043d710018lXXEUKdW3d7Hq",
+          "sessionID": "ses_0d9fbc2daffe7UDk7VM3ULQIe7",
+          "messageID": "msg_f26043d6c0016PDKQ4Wc6eRioV"
+        }
+      ]
+    },
+    {
+      "info": {
+        "parentID": "msg_f26043d6c0016PDKQ4Wc6eRioV",
+        "role": "assistant",
+        "mode": "build",
+        "agent": "build",
+        "variant": "high",
+        "path": {
+          "cwd": "/home/diogenes/Projects/keating",
+          "root": "/home/diogenes/Projects/keating"
+        },
+        "cost": 0,
+        "tokens": {
+          "input": 0,
+          "output": 0,
+          "reasoning": 0,
+          "cache": {
+            "read": 0,
+            "write": 0
+          }
+        },
+        "modelID": "deepseek-v4-flash-free",
+        "providerID": "opencode",
+        "time": {
+          "created": 1783049242052
+        },
+        "id": "msg_f260445c4001O3Vx1Tga57GQl4",
+        "sessionID": "ses_0d9fbc2daffe7UDk7VM3ULQIe7"
+      },
+      "parts": []
+    }
+  ]
+}
