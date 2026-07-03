@@ -1,0 +1,111 @@
+{
+  "cli_version": "0.7.7",
+  "checkpoint_id": "4c3cd8a8b80a",
+  "session_id": "92a9fdb7-b473-4755-a24e-abe4d4c951a7",
+  "strategy": "manual-commit",
+  "created_at": "2026-07-03T03:39:02.085967207Z",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "save_step_count": 1,
+  "files_touched": [
+    "web/server/api/dio/checkout.ts",
+    "web/server/api/dio/webhook.ts",
+    "web/src/App.tsx",
+    "web/src/components/DioAccessPromptDialog.tsx",
+    "web/src/components/Nav.tsx",
+    "web/src/dio-provider/index.ts",
+    "web/src/dio-provider/server.ts",
+    "web/src/pages/Pricing.tsx",
+    "web/src/test/dio-packs.test.ts",
+    "web/src/test/dio-provider.test.ts",
+    "web/test/dio-server.test.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-fable-5[1m]",
+  "turn_id": "f97e7e56abfc",
+  "checkpoint_transcript_start": 324,
+  "transcript_lines_at_start": 324,
+  "token_usage": {
+    "input_tokens": 25969,
+    "cache_creation_tokens": 410490,
+    "cache_read_tokens": 8913384,
+    "output_tokens": 48376,
+    "api_call_count": 68
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01AiovCzh3a2vzJWWmaveeSX",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "hivemind-search"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "f97e7e56abfc",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 81,
+        "end": 82,
+        "entry_ids": [
+          "2cf5fedd-b0ae-4fa5-8408-d424f8e387f3"
+        ],
+        "tool_use_id": "toolu_01AiovCzh3a2vzJWWmaveeSX"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01AiovCzh3a2vzJWWmaveeSX"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: hivemind-search",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 5
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-07-03T03:39:02.021588723Z",
+    "agent_lines": 544,
+    "agent_removed": 14,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 23,
+    "total_committed": 544,
+    "total_lines_changed": 581,
+    "agent_percentage": 96.04130808950086,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 253,
+      "user_lines_removed": 23,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "web/server/api/dio/checkout.ts": 9,
+        "web/server/api/dio/webhook.ts": 66,
+        "web/src/dio-provider/packs.ts": 85,
+        "web/src/dio-provider/server.ts": 93
+      },
+      "user_removed_per_file": {
+        "web/server/api/dio/checkout.ts": 2,
+        "web/server/api/dio/webhook.ts": 10,
+        "web/src/dio-provider/server.ts": 11
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 820,
+      "agent_lines_removed": 37
+    }
+  ]
+}
