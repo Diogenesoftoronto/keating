@@ -90,6 +90,9 @@ export function Nav() {
           <Link to="/download" className="nav-link glitch-hover font-terminal nav-desktop-link">
             [DOWNLOAD]
           </Link>
+          <Link to="/pricing" className="nav-link glitch-hover font-terminal nav-desktop-link">
+            [PRICING]
+          </Link>
           <Link to="/tutorial" className="nav-link glitch-hover font-terminal nav-desktop-link">
             [TUTORIAL]
           </Link>
@@ -179,6 +182,14 @@ export function Nav() {
               onClick={closeMobile}
             >
               [DOWNLOAD]
+            </Link>
+            <Link
+              to="/pricing"
+              className="nav-link glitch-hover"
+              style={{ padding: "0.75rem 0.5rem" }}
+              onClick={closeMobile}
+            >
+              [PRICING]
             </Link>
             <Link
               to="/tutorial"

@@ -99,8 +99,10 @@ describe("dio env config", () => {
 		const config = getDioEnvConfig();
 		expect(config.enabled).toBe(true);
 		expect(config.creemApiKey).toBe("creem_test_key");
-		expect(config.creemProductId).toBe("prod_dio_credits");
-		expect(config.dioCreditBudget).toBe(500);
+		// Legacy single-product env vars map onto the starter pack.
+		expect(config.packs.starter.productId).toBe("prod_dio_credits");
+		expect(config.packs.starter.budget).toBe(500);
+		expect(config.packs.plus.productId).toBeUndefined();
 		expect(config.bifrostApiKey).toBe("bifrost_test_key");
 		expect(config.bifrostBaseUrl).toBe("https://bifrost.test");
 		expect(config.bifrostModelAlias).toBe("kimi-k2.6");
@@ -110,7 +112,7 @@ describe("dio env config", () => {
 	it("rejects invalid budget", async () => {
 		process.env.DIO_CREDIT_BUDGET = "not-a-number";
 		const { getDioEnvConfig } = await import("../src/dio-provider/server");
-		expect(() => getDioEnvConfig()).toThrow(/positive integer/);
+		expect(() => getDioEnvConfig()).toThrow(/positive number/);
 	});
 
 	it("requires the gateway base URL from server env", async () => {
@@ -215,7 +217,7 @@ describe("creem checkout creation", () => {
 
 		try {
 			const config = getDioEnvConfig();
-			const result = await createCreemCheckout(config, "Buyer@Example.com");
+			const result = await createCreemCheckout(config, "Buyer@Example.com", "starter");
 			expect(result.checkoutUrl).toBe("https://checkout.test/123");
 			expect(result.purchaseReference).toMatch(/^dio_[0-9a-f-]+/);
 			expect(requestUrl).toMatch(/\/checkouts$/);
@@ -228,7 +230,7 @@ describe("creem checkout creation", () => {
 
 	it("rejects invalid email", async () => {
 		const { createCreemCheckout, getDioEnvConfig } = await import("../src/dio-provider/server");
-		await expect(createCreemCheckout(getDioEnvConfig(), "not-an-email")).rejects.toThrow(/Invalid email/);
+		await expect(createCreemCheckout(getDioEnvConfig(), "not-an-email", "starter")).rejects.toThrow(/Invalid email/);
 	});
 });
 
@@ -462,6 +464,171 @@ describe("creem webhook verification", () => {
 			expect(bifrostCalls).toBe(0);
 			const entitlement = storage.get("entitlement:buyer@example.com") as { virtualKeyId: string };
 			expect(entitlement.virtualKeyId).toBe("vk_recover");
+		} finally {
+			globalThis.fetch = originalFetch;
+		}
+	});
+
+	it("provisions with the purchased pack's budget when multiple packs are configured", async () => {
+		process.env.CREEM_PRODUCT_ID_DIO_PACK_PLUS = "prod_dio_plus";
+		try {
+			const handler = (await import("../server/api/dio/webhook")).default;
+			const originalFetch = globalThis.fetch;
+			let requestBody: Record<string, unknown> = {};
+			(globalThis as any).fetch = async (url: string | URL | Request, init?: RequestInit) => {
+				if (url.toString().includes("virtual-keys")) {
+					requestBody = JSON.parse((init?.body as string) ?? "{}");
+					return new Response(JSON.stringify({ virtual_key: { id: "vk_plus", value: "secret" } }), { status: 200 });
+				}
+				return new Response("{}");
+			};
+
+			try {
+				const body = {
+					id: "evt_plus_1",
+					eventType: "checkout.completed",
+					object: {
+						request_id: "dio_purchase_plus_1",
+						order: { product: "prod_dio_plus" },
+						product: { id: "prod_dio_plus" },
+						customer: { email: "plusbuyer@example.com" },
+					},
+				};
+				const payload = JSON.stringify(body);
+				const signature = createHmac("sha256", "whsec_test").update(payload).digest("hex");
+				const event = createFakeEvent({ url: "http://localhost/api/dio/webhook", body, headers: { "creem-signature": signature } });
+
+				const result = (await handler(event)) as { handled: boolean };
+				expect(result.handled).toBe(true);
+				expect(requestBody.budget).toEqual({ max: 25 });
+				const entitlement = storage.get("entitlement:plusbuyer@example.com") as { packId: string; budgetMax: number };
+				expect(entitlement.packId).toBe("plus");
+				expect(entitlement.budgetMax).toBe(25);
+			} finally {
+				globalThis.fetch = originalFetch;
+			}
+		} finally {
+			delete process.env.CREEM_PRODUCT_ID_DIO_PACK_PLUS;
+		}
+	});
+
+	it("tops up the existing key's budget on a repeat purchase", async () => {
+		const handler = (await import("../server/api/dio/webhook")).default;
+		const originalFetch = globalThis.fetch;
+		const bifrostCalls: Array<{ url: string; method: string; body: Record<string, unknown> }> = [];
+		(globalThis as any).fetch = async (url: string | URL | Request, init?: RequestInit) => {
+			if (url.toString().includes("virtual-keys")) {
+				bifrostCalls.push({
+					url: url.toString(),
+					method: init?.method ?? "GET",
+					body: JSON.parse((init?.body as string) ?? "{}"),
+				});
+				return new Response(JSON.stringify({ virtual_key: { id: "vk_topup", value: "secret" } }), { status: 200 });
+			}
+			return new Response("{}");
+		};
+
+		try {
+			storage.set("entitlement:repeat@example.com", {
+				email: "repeat@example.com",
+				virtualKeyId: "vk_topup",
+				virtualKeyValue: "secret",
+				purchaseReference: "dio_purchase_first",
+				createdAt: new Date().toISOString(),
+				budgetMax: 500,
+				packId: "starter",
+			});
+
+			const body = {
+				id: "evt_topup_1",
+				eventType: "checkout.completed",
+				object: {
+					request_id: "dio_purchase_second",
+					order: { product: "prod_dio_credits" },
+					product: { id: "prod_dio_credits" },
+					customer: { email: "repeat@example.com" },
+				},
+			};
+			const payload = JSON.stringify(body);
+			const signature = createHmac("sha256", "whsec_test").update(payload).digest("hex");
+			const event = createFakeEvent({ url: "http://localhost/api/dio/webhook", body, headers: { "creem-signature": signature } });
+
+			const result = (await handler(event)) as { handled: boolean; toppedUp?: boolean; entitlement: { virtualKeyId: string } };
+			expect(result.handled).toBe(true);
+			expect(result.toppedUp).toBe(true);
+			expect(result.entitlement.virtualKeyId).toBe("vk_topup");
+
+			// Budget is raised on the existing key via PUT, not a new key.
+			expect(bifrostCalls).toHaveLength(1);
+			expect(bifrostCalls[0].method).toBe("PUT");
+			expect(bifrostCalls[0].url).toBe("https://bifrost.test/api/governance/virtual-keys/vk_topup");
+			expect(bifrostCalls[0].body).toEqual({ budget: { max: 1000 } });
+
+			// Entitlement now points at the latest purchase so /dio/success can claim it.
+			const entitlement = storage.get("entitlement:repeat@example.com") as {
+				purchaseReference: string;
+				budgetMax: number;
+			};
+			expect(entitlement.purchaseReference).toBe("dio_purchase_second");
+			expect(entitlement.budgetMax).toBe(1000);
+
+			const provision = storage.get("provisioning:dio_purchase_second") as { status: string };
+			expect(provision.status).toBe("completed");
+		} finally {
+			globalThis.fetch = originalFetch;
+		}
+	});
+
+	it("does not top up twice for the same purchase reference", async () => {
+		const handler = (await import("../server/api/dio/webhook")).default;
+		const originalFetch = globalThis.fetch;
+		let bifrostCalls = 0;
+		(globalThis as any).fetch = async (url: string | URL | Request) => {
+			if (url.toString().includes("virtual-keys")) {
+				bifrostCalls++;
+				return new Response("{}", { status: 200 });
+			}
+			return new Response("{}");
+		};
+
+		try {
+			storage.set("entitlement:repeat2@example.com", {
+				email: "repeat2@example.com",
+				virtualKeyId: "vk_dup",
+				virtualKeyValue: "secret",
+				purchaseReference: "dio_purchase_dup",
+				createdAt: new Date().toISOString(),
+				budgetMax: 500,
+			});
+			storage.set("provisioning:dio_purchase_dup", {
+				purchaseReference: "dio_purchase_dup",
+				email: "repeat2@example.com",
+				status: "completed",
+				virtualKeyId: "vk_dup",
+				virtualKeyValue: "secret",
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
+			});
+
+			const body = {
+				id: "evt_topup_dup_retry",
+				eventType: "checkout.completed",
+				object: {
+					request_id: "dio_purchase_dup",
+					order: { product: "prod_dio_credits" },
+					product: { id: "prod_dio_credits" },
+					customer: { email: "repeat2@example.com" },
+				},
+			};
+			const payload = JSON.stringify(body);
+			const signature = createHmac("sha256", "whsec_test").update(payload).digest("hex");
+			const event = createFakeEvent({ url: "http://localhost/api/dio/webhook", body, headers: { "creem-signature": signature } });
+
+			const result = (await handler(event)) as { handled: boolean };
+			expect(result.handled).toBe(true);
+			expect(bifrostCalls).toBe(0);
+			const entitlement = storage.get("entitlement:repeat2@example.com") as { budgetMax: number };
+			expect(entitlement.budgetMax).toBe(500);
 		} finally {
 			globalThis.fetch = originalFetch;
 		}
@@ -717,5 +884,47 @@ describe("dio checkout route", () => {
 		const handler = (await import("../server/api/dio/checkout")).default;
 		const event = createFakeEvent({ url: "http://localhost/api/dio/checkout", body: {} });
 		await expect(handler(event)).rejects.toThrow(/Valid email is required/);
+	});
+
+	it("rejects unknown or unconfigured packs", async () => {
+		const handler = (await import("../server/api/dio/checkout")).default;
+		const unknown = createFakeEvent({
+			url: "http://localhost/api/dio/checkout",
+			body: { email: "buyer@example.com", packId: "mega" },
+		});
+		await expect(handler(unknown)).rejects.toThrow(/Unknown or unavailable pack/);
+
+		// plus has no Creem product configured in this env (legacy starter only).
+		const unconfigured = createFakeEvent({
+			url: "http://localhost/api/dio/checkout",
+			body: { email: "buyer@example.com", packId: "plus" },
+		});
+		await expect(handler(unconfigured)).rejects.toThrow(/Unknown or unavailable pack/);
+	});
+
+	it("stores the selected pack on the pending record", async () => {
+		process.env.CREEM_PRODUCT_ID_DIO_PACK_PRO = "prod_dio_pro";
+		const handler = (await import("../server/api/dio/checkout")).default;
+		const originalFetch = globalThis.fetch;
+		let requestBody: Record<string, unknown> = {};
+		(globalThis as any).fetch = async (_url: string | URL | Request, init?: RequestInit) => {
+			requestBody = JSON.parse((init?.body as string) ?? "{}");
+			return new Response(JSON.stringify({ checkout_url: "https://checkout.test/pro" }), { status: 200 });
+		};
+
+		try {
+			const event = createFakeEvent({
+				url: "http://localhost/api/dio/checkout",
+				body: { email: "buyer@example.com", packId: "pro" },
+			});
+			const result = (await handler(event)) as { checkoutUrl: string };
+			expect(result.checkoutUrl).toBe("https://checkout.test/pro");
+			expect(requestBody.product_id).toBe("prod_dio_pro");
+			const pending = storage.get("pending:buyer@example.com") as { packId: string };
+			expect(pending.packId).toBe("pro");
+		} finally {
+			globalThis.fetch = originalFetch;
+			delete process.env.CREEM_PRODUCT_ID_DIO_PACK_PRO;
+		}
 	});
 });
