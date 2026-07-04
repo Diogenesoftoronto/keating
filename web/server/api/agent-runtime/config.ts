@@ -15,12 +15,17 @@ function modeFromEnv(): Mode {
 export default defineEventHandler(() => {
   const mode = modeFromEnv();
 
+  const projectRootRaw = env("KEATING_WEB_PROJECT_ROOT");
+  const projectRoot = projectRootRaw ?? null;
+
   if (mode === "browser-only") {
     return {
       mode,
       label: "Browser-only agent",
       executionEndpoint: null,
       cloudEndpoint: null,
+      projectRoot,
+      projectFilesEndpoint: projectRoot ? "/api/project-files" : null,
       remote: null,
       capabilities: {
         browserLocal: true,
@@ -29,6 +34,7 @@ export default defineEventHandler(() => {
         nativeBinaries: false,
         serverBrokeredSecrets: false,
         durableCompute: false,
+        hostProjectAccess: !!projectRoot,
       },
       fallback: {
         localFirst: true,
@@ -44,6 +50,8 @@ export default defineEventHandler(() => {
       label: "Remote microVM agent",
       executionEndpoint: "/api/agent-runtime/remote",
       cloudEndpoint: null,
+      projectRoot,
+      projectFilesEndpoint: projectRoot ? "/api/project-files" : null,
       remote: {
         provider: env("KEATING_WEB_REMOTE_PROVIDER") ?? "microsandbox",
         endpoint: env("KEATING_WEB_REMOTE_ENDPOINT"),
@@ -60,6 +68,7 @@ export default defineEventHandler(() => {
         nativeBinaries: true,
         serverBrokeredSecrets: true,
         durableCompute: true,
+        hostProjectAccess: !!projectRoot,
       },
       fallback: {
         localFirst: true,
@@ -74,6 +83,8 @@ export default defineEventHandler(() => {
     label: "Keating Cloud agent",
     executionEndpoint: "/api/agent-runtime/remote",
     cloudEndpoint: env("KEATING_WEB_CLOUD_ENDPOINT") ?? "https://keating.help",
+    projectRoot,
+    projectFilesEndpoint: projectRoot ? "/api/project-files" : null,
     remote: null,
     capabilities: {
       browserLocal: true,
@@ -82,6 +93,7 @@ export default defineEventHandler(() => {
       nativeBinaries: true,
       serverBrokeredSecrets: true,
       durableCompute: true,
+      hostProjectAccess: !!projectRoot,
     },
     fallback: {
       localFirst: true,

@@ -20,6 +20,7 @@ export interface KeatingAgentRuntimeCapabilities {
   nativeBinaries: boolean;
   serverBrokeredSecrets: boolean;
   durableCompute: boolean;
+  hostProjectAccess: boolean;
 }
 
 export interface KeatingAgentRuntimeConfig {
@@ -27,6 +28,8 @@ export interface KeatingAgentRuntimeConfig {
   label: string;
   executionEndpoint: string | null;
   cloudEndpoint: string | null;
+  projectRoot: string | null;
+  projectFilesEndpoint: string | null;
   remote: KeatingRemoteAgentRuntimeConfig | null;
   capabilities: KeatingAgentRuntimeCapabilities;
   fallback: {
@@ -43,6 +46,8 @@ export const DEFAULT_AGENT_RUNTIME_CONFIG: KeatingAgentRuntimeConfig = {
   label: "Browser-only agent",
   executionEndpoint: null,
   cloudEndpoint: null,
+  projectRoot: null,
+  projectFilesEndpoint: null,
   remote: null,
   capabilities: {
     browserLocal: true,
@@ -51,6 +56,7 @@ export const DEFAULT_AGENT_RUNTIME_CONFIG: KeatingAgentRuntimeConfig = {
     nativeBinaries: false,
     serverBrokeredSecrets: false,
     durableCompute: false,
+    hostProjectAccess: false,
   },
   fallback: {
     localFirst: true,
@@ -68,7 +74,18 @@ export function normalizeAgentRuntimeConfig(value: unknown): KeatingAgentRuntime
     ? raw.mode
     : "browser-only";
 
-  if (mode === "browser-only") return DEFAULT_AGENT_RUNTIME_CONFIG;
+  if (mode === "browser-only") {
+    const projectFilesEndpoint = raw.projectFilesEndpoint ?? null;
+    return {
+      ...DEFAULT_AGENT_RUNTIME_CONFIG,
+      projectRoot: raw.projectRoot ?? null,
+      projectFilesEndpoint,
+      capabilities: {
+        ...DEFAULT_AGENT_RUNTIME_CONFIG.capabilities,
+        hostProjectAccess: !!projectFilesEndpoint,
+      },
+    };
+  }
 
   const remote = raw.remote && typeof raw.remote === "object"
     ? {
@@ -88,6 +105,8 @@ export function normalizeAgentRuntimeConfig(value: unknown): KeatingAgentRuntime
       label: "Remote microVM agent",
       executionEndpoint: "/api/agent-runtime/remote",
       cloudEndpoint: null,
+      projectRoot: raw.projectRoot ?? null,
+      projectFilesEndpoint: raw.projectFilesEndpoint ?? null,
       remote: remote ?? {
         provider: "microsandbox",
         endpoint: null,
@@ -104,6 +123,7 @@ export function normalizeAgentRuntimeConfig(value: unknown): KeatingAgentRuntime
         nativeBinaries: true,
         serverBrokeredSecrets: true,
         durableCompute: true,
+        hostProjectAccess: !!raw.projectFilesEndpoint,
       },
       fallback: {
         localFirst: true,
@@ -118,6 +138,8 @@ export function normalizeAgentRuntimeConfig(value: unknown): KeatingAgentRuntime
     label: "Keating Cloud agent",
     executionEndpoint: "/api/agent-runtime/remote",
     cloudEndpoint: raw.cloudEndpoint || DEFAULT_CLOUD_ENDPOINT,
+    projectRoot: raw.projectRoot ?? null,
+    projectFilesEndpoint: raw.projectFilesEndpoint ?? null,
     remote: null,
     capabilities: {
       browserLocal: true,
@@ -126,6 +148,7 @@ export function normalizeAgentRuntimeConfig(value: unknown): KeatingAgentRuntime
       nativeBinaries: true,
       serverBrokeredSecrets: true,
       durableCompute: true,
+      hostProjectAccess: !!raw.projectFilesEndpoint,
     },
     fallback: {
       localFirst: true,
