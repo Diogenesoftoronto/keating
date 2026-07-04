@@ -8,6 +8,18 @@ export type WebAgentRuntimeMode = "browser-only" | "remote" | "cloud";
 
 export interface ServeWebOptions {
   agentRuntimeMode?: WebAgentRuntimeMode;
+  /**
+   * Absolute path to the host directory the web server should treat as the
+   * current project root. When set (or when defaulted to the CLI's cwd),
+   * the Nitro server exposes /api/project-files/** for the browser agent to
+   * read project sources on demand. Defaults to undefined when unset.
+   */
+  projectRoot?: string;
+  /**
+   * When true, the project-files route skips .gitignore/.ignore filtering.
+   * Hard-blocked dirs (.git, node_modules) are still refused for safety.
+   */
+  noIgnore?: boolean;
   remoteProvider?: string;
   remoteEndpoint?: string;
   remoteRegion?: string;
@@ -100,13 +112,17 @@ export async function serveWeb(port = 3000, options: ServeWebOptions = {}): Prom
   await warnIfWebBuildIsStale(pkgRoot, nitroServerPath);
 
   const mode = options.agentRuntimeMode ?? "browser-only";
-  process.stdout.write(`${color.ok}${color.bold} Keating Web Server ${color.reset}  ${color.parchment}port ${port}${color.reset}  ${color.sepia}agent=${mode}${color.reset}\n`);
+  const projectRoot = options.projectRoot ?? "";
+  const noIgnore = options.noIgnore ?? false;
+  process.stdout.write(`${color.ok}${color.bold} Keating Web Server ${color.reset}  ${color.parchment}port ${port}${color.reset}  ${color.sepia}agent=${mode}${color.reset}${projectRoot ? `  ${color.sepia}root=${projectRoot}${color.reset}` : ""}${noIgnore ? `  ${color.sepia}no-ignore${color.reset}` : ""}\n`);
 
-  const env = { 
-    ...process.env, 
+  const env = {
+    ...process.env,
     PORT: port.toString(),
     NITRO_PORT: port.toString(),
     KEATING_WEB_AGENT_MODE: mode,
+    KEATING_WEB_PROJECT_ROOT: projectRoot,
+    KEATING_WEB_PROJECT_NO_IGNORE: noIgnore ? "1" : "",
     KEATING_WEB_REMOTE_PROVIDER: options.remoteProvider ?? process.env.KEATING_WEB_REMOTE_PROVIDER ?? "",
     KEATING_WEB_REMOTE_ENDPOINT: options.remoteEndpoint ?? process.env.KEATING_WEB_REMOTE_ENDPOINT ?? "",
     KEATING_WEB_REMOTE_REGION: options.remoteRegion ?? process.env.KEATING_WEB_REMOTE_REGION ?? "",

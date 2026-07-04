@@ -1,6 +1,6 @@
 import { access } from "node:fs/promises";
 import { relative } from "node:path";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
 import { DEFAULT_KEATING_CONFIG, configPath, loadKeatingConfig, writeKeatingConfig } from "../core/config.js";
@@ -57,7 +57,7 @@ function printUsage(): void {
   console.log(`  ${color.primary}setup${color.reset}  [--yes]             Configure Keating for this project`);
   console.log(`  ${color.primary}doctor${color.reset}                    Inspect AI runtime and oxdraw availability`);
   console.log(`  ${color.primary}package${color.reset} list|add|remove|recommended  Manage extra Pi packages`);
-  console.log(`  ${color.primary}web${color.reset}     [port] [--browser-only-agent|--remote|--cloud]  Start the browser UI`);
+  console.log(`  ${color.primary}web${color.reset}     [port] [--browser-only-agent|--remote|--cloud] [--root=PATH] [--no-ignore]  Start the browser UI. --root attaches the browser agent to a host project directory (defaults to $CWD). --no-ignore disables .gitignore/.ignore filtering of project files.`);
   console.log(`  ${color.primary}webmcp${color.reset}  [port] [--host=127.0.0.1]  Expose Keating tools over MCP Streamable HTTP`);
   console.log(`  ${color.primary}policy${color.reset}                    Print the active teaching policy`);
   console.log(`  ${color.primary}trace${color.reset}   [substring]        Browse debug traces and artifacts`);
@@ -149,6 +149,8 @@ function parseWebCommand(args: string[]): { port: number; options: ServeWebOptio
     port,
     options: {
       agentRuntimeMode: modes[0] ?? "browser-only",
+      projectRoot: optionValue(args, "--root"),
+      noIgnore: args.includes("--no-ignore"),
       remoteProvider: optionValue(args, "--remote-provider"),
       remoteEndpoint: optionValue(args, "--remote-endpoint"),
       remoteRegion: optionValue(args, "--remote-region"),
@@ -467,7 +469,7 @@ async function run(): Promise<void> {
     }
     case "web": {
       const { port, options } = parseWebCommand(args);
-      await serveWeb(port, options);
+      await serveWeb(port, { ...options, projectRoot: options.projectRoot ?? cwd });
       return;
     }
     case "webmcp": {

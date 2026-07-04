@@ -8,6 +8,20 @@ describe("agent runtime config", () => {
     expect(normalizeAgentRuntimeConfig({ mode: "free" })).toEqual(DEFAULT_AGENT_RUNTIME_CONFIG);
   });
 
+  it("preserves project file access in browser-only mode", () => {
+    const config = normalizeAgentRuntimeConfig({
+      mode: "browser-only",
+      projectRoot: "/repo",
+      projectFilesEndpoint: "/api/project-files",
+    });
+
+    expect(config.mode).toBe("browser-only");
+    expect(config.executionEndpoint).toBeNull();
+    expect(config.projectRoot).toBe("/repo");
+    expect(config.projectFilesEndpoint).toBe("/api/project-files");
+    expect(config.capabilities.hostProjectAccess).toBe(true);
+  });
+
   it("normalizes remote microVM config", () => {
     const config = normalizeAgentRuntimeConfig({
       mode: "remote",

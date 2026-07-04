@@ -522,6 +522,8 @@ export async function createKeatingTools(
 					`- label: ${runtime.label}`,
 					`- execution endpoint: ${runtime.executionEndpoint ?? "none"}`,
 					`- cloud endpoint: ${runtime.cloudEndpoint ?? "none"}`,
+					`- project root: ${runtime.projectRoot ?? "none"}`,
+					`- project files endpoint: ${runtime.projectFilesEndpoint ?? "none"}`,
 					"",
 					"## Capabilities",
 					capabilities,
@@ -2015,6 +2017,78 @@ ${topicList}
 					return `# Snapshot Restored\n\nNodePod sandbox rolled back${id ? ` to ${id}` : ""}.`;
 				} catch (e) {
 					return `# Restore Failed\n\n${e instanceof Error ? e.message : String(e)}`;
+				}
+			}
+		),
+		// list_project_files - List files in a directory of the host project
+		createTool(
+			"list_project_files",
+			"List files in a directory of the host project root. Returns entries with relative paths and whether each is a directory. Use this to explore the project structure. Directories matching .gitignore/.ignore rules are filtered out (unless --no-ignore was passed at server launch).",
+			{
+				path: {
+					type: "string",
+					description: "Relative path from the project root (e.g. \"src/core\" or \"\"). Defaults to the root directory.",
+				},
+			},
+			async (params) => {
+				const runtime = options.agentRuntime;
+				if (!runtime?.projectFilesEndpoint) {
+					return "Project files endpoint is not available. Launch `keating web` from a project directory or pass --root=PATH to enable host project access.";
+				}
+				const relPath = String(params.path ?? "").replace(/^\/+/, "");
+				const url = `${runtime.projectFilesEndpoint}/${relPath}`;
+				try {
+					const res = await fetch(url, { headers: { accept: "application/json" } });
+					if (!res.ok) {
+						const text = await res.text().catch(() => "");
+						return `# List Failed\n\n- status: ${res.status}\n- error: ${text || res.statusText}`;
+					}
+					const data = await res.json() as { entries: Array<{ path: string; isDir: boolean }> };
+					const lines = [
+						`# Project Files: ${relPath || "/"}`,
+						"",
+						...data.entries.map((e) => `${e.isDir ? "📁" : "📄"} ${e.path}`),
+					];
+					return lines.join("\n");
+				} catch (e) {
+					return `# List Failed\n\n${e instanceof Error ? e.message : String(e)}`;
+				}
+			}
+		),
+
+		// read_project_file - Read a file from the host project root
+		createTool(
+			"read_project_file",
+			"Read the contents of a file from the host project root. The path must be relative to the project root (e.g. \"src/core/policy.ts\"). Files matching .gitignore/.ignore rules are blocked (unless --no-ignore was passed at server launch). Returns the file content as text.",
+			{
+				path: {
+					type: "string",
+					description: "Relative path from the project root (e.g. \"src/core/policy.ts\").",
+				},
+			},
+			async (params) => {
+				const runtime = options.agentRuntime;
+				if (!runtime?.projectFilesEndpoint) {
+					return "Project files endpoint is not available. Launch `keating web` from a project directory or pass --root=PATH to enable host project access.";
+				}
+				const relPath = String(params.path ?? "").replace(/^\/+/, "");
+				if (!relPath) return "Error: path is required.";
+				const url = `${runtime.projectFilesEndpoint}/${relPath}`;
+				try {
+					const res = await fetch(url, { headers: { accept: "application/json" } });
+					if (!res.ok) {
+						const text = await res.text().catch(() => "");
+						return `# Read Failed\n\n- status: ${res.status}\n- error: ${text || res.statusText}`;
+					}
+					const data = await res.json() as { path: string; content: string; size: number };
+					return [
+						`# ${data.path}`,
+						`(${data.size} bytes)`,
+						"",
+						data.content,
+					].join("\n");
+				} catch (e) {
+					return `# Read Failed\n\n${e instanceof Error ? e.message : String(e)}`;
 				}
 			}
 		),
