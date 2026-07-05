@@ -3,6 +3,20 @@ import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { usePostHog } from "@posthog/react";
 import { getAppStorage } from "@earendil-works/pi-web-ui";
 import { claimDioAccess, DIO_PROVIDER_ID, normalizeEmail, rememberDioIdentity } from "../dio-provider";
+import { css, cx } from "../../styled-system/css";
+
+const styles = {
+	page: css({ display: "flex", minH: "100vh", flexDir: "column", alignItems: "center", justifyContent: "center", bg: "var(--background)", p: "1.5rem", color: "var(--foreground)" }),
+	card: css({ w: "100%", maxW: "24rem", textAlign: "center", "& > * + *": { mt: "1.5rem" } }),
+	icon: css({ mx: "auto", h: "2.5rem", w: "2.5rem" }),
+	spinning: css({ animation: "spin 1s linear infinite" }),
+	primary: css({ color: "var(--primary)" }),
+	success: css({ color: "#22c55e" }),
+	error: css({ color: "var(--destructive)" }),
+	title: css({ fontSize: "1.25rem", fontWeight: "600" }),
+	message: css({ color: "var(--muted-foreground)" }),
+	link: css({ display: "inline-flex", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", bg: "var(--primary)", px: "1rem", py: "0.5rem", fontSize: "0.875rem", fontWeight: "500", color: "var(--primary-foreground)", _hover: { bg: "color-mix(in srgb, var(--primary) 90%, transparent)" } }),
+};
 
 export function DioSuccess() {
 	const posthog = usePostHog();
@@ -52,17 +66,17 @@ export function DioSuccess() {
 	}, [posthog]);
 
 	return (
-		<div className="flex min-h-screen flex-col items-center justify-center bg-background p-6 text-foreground">
-			<div className="w-full max-w-sm space-y-6 text-center">
-				{status === "claiming" && <Loader2 className="mx-auto h-10 w-10 animate-spin text-primary" />}
-				{status === "success" && <CheckCircle2 className="mx-auto h-10 w-10 text-green-500" />}
-				{status === "error" && <AlertCircle className="mx-auto h-10 w-10 text-destructive" />}
-				<h1 className="text-xl font-semibold">Dio setup</h1>
-				<p className="text-muted-foreground">{message}</p>
+		<div className={styles.page}>
+			<div className={styles.card}>
+				{status === "claiming" && <Loader2 className={cx(styles.icon, styles.spinning, styles.primary)} />}
+				{status === "success" && <CheckCircle2 className={cx(styles.icon, styles.success)} />}
+				{status === "error" && <AlertCircle className={cx(styles.icon, styles.error)} />}
+				<h1 className={styles.title}>Dio setup</h1>
+				<p className={styles.message}>{message}</p>
 				{status === "error" && (
 					<a
 						href="/chat"
-						className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+						className={styles.link}
 					>
 						Return to Keating
 					</a>

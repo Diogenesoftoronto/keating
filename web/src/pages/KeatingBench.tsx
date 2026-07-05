@@ -11,6 +11,7 @@ import type { SessionData } from "../types/session";
 import { feedbackToOutcomeScore, inferBrowserLearnerTurnSignal, MIN_REAL_OUTCOMES } from "../keating/core";
 import { listCachedSharedSessions, type SharedModelInfo } from "../keating/shared-sessions";
 import { downloadTextFile } from "../lib/browser-download";
+import { css, cx } from "../../styled-system/css";
 
 type BenchmarkSource = "shared" | "local" | "all";
 
@@ -88,6 +89,99 @@ const READINESS_THRESHOLDS = {
 	provisional: 20,
 	rankable: 50,
 	stable: 100,
+};
+
+const styles = {
+	page: css({ minH: "100vh", bg: "var(--background)", color: "var(--foreground)", fontFamily: "monospace" }),
+	header: css({ borderBottom: "1px solid var(--border)" }),
+	headerInner: css({ mx: "auto", display: "flex", maxW: "80rem", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", px: "1rem", py: "1rem" }),
+	min0: css({ minW: 0 }),
+	kicker: css({ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted-foreground)" }),
+	title: css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "1.5rem", fontWeight: "600" }),
+	headerActions: css({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem" }),
+	main: css({ mx: "auto", maxW: "80rem", px: "1rem", py: "1.5rem" }),
+	button: css({ display: "inline-flex", h: "2.25rem", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", border: "1px solid var(--border)", px: "0.75rem", fontSize: "0.875rem", _hover: { bg: "var(--accent)" } }),
+	sourceTabs: css({ display: "inline-flex", overflow: "hidden", borderRadius: "0.375rem", border: "1px solid var(--border)" }),
+	sourceButton: css({ h: "2.25rem", px: "0.75rem", fontSize: "0.875rem" }),
+	sourceActive: css({ bg: "var(--primary)", color: "var(--primary-foreground)" }),
+	sourceInactive: css({ bg: "var(--background)", _hover: { bg: "var(--accent)" } }),
+	metricGrid: css({ display: "grid", gap: "0.75rem", sm: { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }, xl: { gridTemplateColumns: "repeat(4, minmax(0, 1fr))" } }),
+	metricTile: css({ minW: 0, borderRadius: "0.375rem", border: "1px solid var(--border)", bg: "var(--background)", p: "1rem" }),
+	metricHead: css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", fontSize: "0.75rem", textTransform: "uppercase", color: "var(--muted-foreground)" }),
+	truncate: css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }),
+	shrink0: css({ flexShrink: 0 }),
+	metricValue: css({ mt: "0.75rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "1.5rem", fontWeight: "600" }),
+	metricDetail: css({ mt: "0.25rem", minW: 0, overflowWrap: "break-word", fontSize: "0.75rem", color: "var(--muted-foreground)" }),
+	readinessBase: css({ display: "inline-flex", borderRadius: "0.375rem", border: "1px solid", px: "0.5rem", py: "0.25rem", fontSize: "11px", fontWeight: "500" }),
+	readinessGood: css({ borderColor: "color-mix(in srgb, #059669 70%, transparent)", bg: "color-mix(in srgb, #22c55e 10%, transparent)", color: "#047857" }),
+	readinessProvisional: css({ borderColor: "color-mix(in srgb, #0284c7 70%, transparent)", bg: "color-mix(in srgb, #0ea5e9 10%, transparent)", color: "#0369a1" }),
+	readinessSparse: css({ borderColor: "color-mix(in srgb, #d97706 70%, transparent)", bg: "color-mix(in srgb, #f59e0b 10%, transparent)", color: "#b45309" }),
+	readinessWaiting: css({ borderColor: "color-mix(in srgb, var(--muted-foreground) 30%, transparent)", bg: "var(--muted)", color: "var(--muted-foreground)" }),
+	pill: css({ borderRadius: "0.375rem", border: "1px solid var(--border)", bg: "var(--muted)", px: "0.5rem", py: "0.25rem", fontSize: "11px", color: "var(--muted-foreground)" }),
+	block: css({ minW: 0, borderRadius: "0.375rem", border: "1px solid var(--border)", bg: "var(--background)", p: "1rem" }),
+	blockHead: css({ mb: "0.75rem", display: "flex", alignItems: "center", gap: "0.5rem" }),
+	mutedIcon: css({ color: "var(--muted-foreground)" }),
+	blockTitle: css({ fontSize: "0.875rem", fontWeight: "600" }),
+	bodyText: css({ "& > * + *": { mt: "0.5rem" }, fontSize: "0.75rem", lineHeight: "1.25rem", color: "var(--muted-foreground)" }),
+	definitionRow: css({ display: "grid", gap: "0.25rem", borderRadius: "0.375rem", bg: "var(--muted)", p: "0.75rem", sm: { gridTemplateColumns: "8rem minmax(0, 1fr)", gap: "0.75rem" } }),
+	definitionLabel: css({ fontSize: "0.75rem", fontWeight: "500", color: "var(--foreground)" }),
+	definitionValue: css({ fontSize: "0.75rem", lineHeight: "1.25rem", color: "var(--muted-foreground)" }),
+	explainerGrid: css({ mt: "1.5rem", display: "grid", gap: "1rem", lg: { gridTemplateColumns: "minmax(0, 1.05fr) minmax(0, 0.95fr)" } }),
+	methodology: css({ mt: "1.5rem", borderRadius: "0.375rem", border: "1px solid var(--border)", bg: "var(--background)", p: "1rem" }),
+	methodologyHead: css({ mb: "1rem", display: "flex", alignItems: "center", gap: "0.5rem" }),
+	twoGrid: css({ display: "grid", gap: "0.75rem", lg: { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" } }),
+	section: css({ mt: "1.5rem", overflow: "hidden", borderRadius: "0.375rem", border: "1px solid var(--border)", bg: "var(--background)" }),
+	sectionHeader: css({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", borderBottom: "1px solid var(--border)", px: "1rem", py: "0.75rem" }),
+	sectionTitle: css({ fontSize: "0.875rem", fontWeight: "600" }),
+	sectionSubtitle: css({ mt: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" }),
+	inlineMuted: css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" }),
+	overflowX: css({ overflowX: "auto" }),
+	table: css({ w: "100%", minW: "1040px", textAlign: "left", fontSize: "0.875rem" }),
+	thead: css({ borderBottom: "1px solid var(--border)", bg: "color-mix(in srgb, var(--muted) 60%, transparent)", fontSize: "0.75rem", textTransform: "uppercase", color: "var(--muted-foreground)" }),
+	thRank: css({ w: "4rem", px: "1rem", py: "0.75rem" }),
+	th: css({ px: "1rem", py: "0.75rem" }),
+	tbody: css({ "& > * + *": { borderTop: "1px solid var(--border)" } }),
+	emptyCell: css({ px: "1rem", py: "3rem", textAlign: "center", fontSize: "0.875rem", color: "var(--muted-foreground)" }),
+	tableRow: css({ verticalAlign: "top", _hover: { bg: "color-mix(in srgb, var(--accent) 50%, transparent)" } }),
+	tdRank: css({ px: "1rem", py: "1rem", fontSize: "1.125rem", fontWeight: "600", fontVariantNumeric: "tabular-nums" }),
+	td: css({ px: "1rem", py: "1rem" }),
+	modelCell: css({ maxW: "18rem", px: "1rem", py: "1rem" }),
+	fontMedium: css({ fontWeight: "500" }),
+	smallMuted: css({ fontSize: "0.75rem", color: "var(--muted-foreground)" }),
+	tinyMuted: css({ fontSize: "11px", color: "var(--muted-foreground)" }),
+	scoreRow: css({ display: "flex", alignItems: "center", gap: "0.75rem" }),
+	scoreNumber: css({ w: "5rem", fontSize: "1.125rem", fontWeight: "600", fontVariantNumeric: "tabular-nums" }),
+	barTrack: css({ h: "0.5rem", w: "7rem", overflow: "hidden", borderRadius: "0.125rem", bg: "var(--muted)" }),
+	prosperFill: css({ h: "100%", bg: "linear-gradient(90deg, #1e9b50, #0ea5e9, #f59e0b)" }),
+	outcomeScore: css({ fontSize: "1.125rem", fontWeight: "600", fontVariantNumeric: "tabular-nums" }),
+	wrapGap1: css({ display: "flex", flexWrap: "wrap", gap: "0.25rem" }),
+	stageCount: css({ borderRadius: "0.375rem", bg: "var(--muted)", px: "0.5rem", py: "0.25rem", fontSize: "11px" }),
+	tabular: css({ fontVariantNumeric: "tabular-nums" }),
+	belowGrid: css({ mt: "1.5rem", display: "grid", gap: "1.5rem", lg: { gridTemplateColumns: "minmax(0, 1fr) minmax(0, 0.85fr)" } }),
+	cardSection: css({ borderRadius: "0.375rem", border: "1px solid var(--border)", bg: "var(--background)", p: "1rem" }),
+	cardSectionHead: css({ mb: "1rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }),
+	paragraph: css({ mb: "1rem", fontSize: "0.75rem", lineHeight: "1.25rem", color: "var(--muted-foreground)" }),
+	stack3: css({ "& > * + *": { mt: "0.75rem" } }),
+	dimensionCard: css({ borderRadius: "0.375rem", border: "1px solid var(--border)", p: "0.75rem" }),
+	dimensionHead: css({ mb: "0.75rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }),
+	dimensionGrid: css({ display: "grid", gap: "0.5rem", sm: { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" } }),
+	dimensionRow: css({ display: "grid", gridTemplateColumns: "4.5rem minmax(0, 1fr) 2.5rem", alignItems: "center", gap: "0.5rem" }),
+	progressTrack: css({ h: "0.5rem", overflow: "hidden", borderRadius: "0.125rem", bg: "var(--muted)" }),
+	progressFill: css({ h: "100%", bg: "var(--primary)" }),
+	rightTiny: css({ textAlign: "right", fontSize: "11px", fontVariantNumeric: "tabular-nums" }),
+	empty: css({ py: "2rem", textAlign: "center", fontSize: "0.875rem", color: "var(--muted-foreground)" }),
+	divideText: css({ fontSize: "0.875rem", "& > * + *": { borderTop: "1px solid var(--border)" } }),
+	replayStep: css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", py: "0.75rem" }),
+	statusPill: css({ borderRadius: "0.375rem", border: "1px solid var(--border)", px: "0.5rem", py: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" }),
+	replayList: css({ "& > * + *": { borderTop: "1px solid var(--border)" } }),
+	replayCase: css({ display: "grid", gap: "0.75rem", px: "1rem", py: "0.75rem", lg: { gridTemplateColumns: "10rem minmax(0, 1fr) 12rem" } }),
+	replayLeft: css({ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: "0.5rem" }),
+	lineClamp2: css({ mt: "0.25rem", overflow: "hidden", fontSize: "0.75rem", lineHeight: "1.25rem", color: "var(--muted-foreground)", lineClamp: 2 }),
+	twoColNums: css({ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "0.5rem", fontSize: "0.75rem", fontVariantNumeric: "tabular-nums" }),
+	statBox: css({ borderRadius: "0.375rem", bg: "var(--muted)", p: "0.5rem" }),
+	mt1FontMedium: css({ mt: "0.25rem", fontWeight: "500" }),
+	centerPage: css({ minH: "100vh", bg: "var(--background)", color: "var(--foreground)" }),
+	centerContent: css({ display: "flex", minH: "100vh", alignItems: "center", justifyContent: "center", fontSize: "0.875rem", color: "var(--muted-foreground)" }),
 };
 
 function textFromMessage(message: AgentMessage): string {
@@ -386,13 +480,13 @@ function percent(value: number) {
 
 function MetricTile({ icon, label, value, detail }: { icon: React.ReactNode; label: string; value: string; detail: string }) {
 	return (
-		<div className="min-w-0 rounded-md border border-border bg-background p-4">
-			<div className="flex items-center justify-between gap-3 text-xs uppercase text-muted-foreground">
-				<span className="truncate">{label}</span>
-				<span className="shrink-0">{icon}</span>
+		<div className={styles.metricTile}>
+			<div className={styles.metricHead}>
+				<span className={styles.truncate}>{label}</span>
+				<span className={styles.shrink0}>{icon}</span>
 			</div>
-			<div className="mt-3 truncate text-2xl font-semibold">{value}</div>
-			<div className="mt-1 min-w-0 break-words text-xs text-muted-foreground">{detail}</div>
+			<div className={styles.metricValue}>{value}</div>
+			<div className={styles.metricDetail}>{detail}</div>
 		</div>
 	);
 }
@@ -404,12 +498,12 @@ function SourceTabs({ value, onChange }: { value: BenchmarkSource; onChange: (va
 		{ value: "local", label: "Private" },
 	];
 	return (
-		<div className="inline-flex overflow-hidden rounded-md border border-border">
+		<div className={styles.sourceTabs}>
 			{options.map((option) => (
 				<button
 					key={option.value}
 					type="button"
-					className={`h-9 px-3 text-sm ${value === option.value ? "bg-primary text-primary-foreground" : "bg-background hover:bg-accent"}`}
+					className={cx(styles.sourceButton, value === option.value ? styles.sourceActive : styles.sourceInactive)}
 					onClick={() => onChange(option.value)}
 				>
 					{option.label}
@@ -422,13 +516,13 @@ function SourceTabs({ value, onChange }: { value: BenchmarkSource; onChange: (va
 function ReadinessBadge({ readiness }: { readiness: ModelAggregate["readiness"] }) {
 	const label = readiness === "stable" ? "Stable" : readiness === "rankable" ? "Rankable" : readiness === "provisional" ? "Provisional" : readiness === "sparse" ? "Sparse" : "Waiting";
 	const className = readiness === "stable" || readiness === "rankable"
-		? "border-emerald-600/70 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+		? styles.readinessGood
 		: readiness === "provisional"
-			? "border-sky-600/70 bg-sky-500/10 text-sky-700 dark:text-sky-300"
+			? styles.readinessProvisional
 			: readiness === "sparse"
-			? "border-amber-600/70 bg-amber-500/10 text-amber-700 dark:text-amber-300"
-			: "border-muted-foreground/30 bg-muted text-muted-foreground";
-	return <span className={`inline-flex rounded-md border px-2 py-1 text-[11px] font-medium ${className}`}>{label}</span>;
+			? styles.readinessSparse
+			: styles.readinessWaiting;
+	return <span className={cx(styles.readinessBase, className)}>{label}</span>;
 }
 
 function filteredSamples(samples: SessionSample[], source: BenchmarkSource) {
@@ -440,7 +534,7 @@ function replayCasesFor(samples: SessionSample[], source: BenchmarkSource) {
 }
 
 function StagePill({ stage }: { stage: ReplayStage }) {
-	return <span className="rounded-md border border-border bg-muted px-2 py-1 text-[11px] text-muted-foreground">{stage}</span>;
+	return <span className={styles.pill}>{stage}</span>;
 }
 
 function ExplainerBlock({
@@ -453,28 +547,28 @@ function ExplainerBlock({
 	children: React.ReactNode;
 }) {
 	return (
-		<div className="min-w-0 rounded-md border border-border bg-background p-4">
-			<div className="mb-3 flex items-center gap-2">
-				<span className="text-muted-foreground">{icon}</span>
-				<h3 className="text-sm font-semibold">{title}</h3>
+		<div className={styles.block}>
+			<div className={styles.blockHead}>
+				<span className={styles.mutedIcon}>{icon}</span>
+				<h3 className={styles.blockTitle}>{title}</h3>
 			</div>
-			<div className="space-y-2 text-xs leading-5 text-muted-foreground">{children}</div>
+			<div className={styles.bodyText}>{children}</div>
 		</div>
 	);
 }
 
 function DefinitionRow({ label, value }: { label: string; value: string }) {
 	return (
-		<div className="grid gap-1 rounded-md bg-muted p-3 sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-3">
-			<div className="text-xs font-medium text-foreground">{label}</div>
-			<div className="text-xs leading-5 text-muted-foreground">{value}</div>
+		<div className={styles.definitionRow}>
+			<div className={styles.definitionLabel}>{label}</div>
+			<div className={styles.definitionValue}>{value}</div>
 		</div>
 	);
 }
 
 function KeatingBenchExplainer() {
 	return (
-		<section className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+		<section className={styles.explainerGrid}>
 			<ExplainerBlock icon={<BookOpenCheck size={18} />} title="What KeatingBench Tests">
 				<p>
 					KeatingBench evaluates teaching models by learner outcomes, not by generic chat preference. It looks for moments where a learner signals understanding, confusion, correction, transfer, review need, or dissatisfaction during a teaching session.
@@ -516,12 +610,12 @@ function KeatingBenchExplainer() {
 
 function MethodologyExplainer() {
 	return (
-		<section className="mt-6 rounded-md border border-border bg-background p-4">
-			<div className="mb-4 flex items-center gap-2">
-				<FileText size={18} className="text-muted-foreground" />
-				<h2 className="text-sm font-semibold">Methodology</h2>
+		<section className={styles.methodology}>
+			<div className={styles.methodologyHead}>
+				<FileText size={18} className={styles.mutedIcon} />
+				<h2 className={styles.blockTitle}>Methodology</h2>
 			</div>
-			<div className="grid gap-3 lg:grid-cols-2">
+			<div className={styles.twoGrid}>
 				<DefinitionRow label="Outcome" value="A normalized learner signal. Thumbs up maps high, confused maps mid-low, thumbs down maps low. Inferred learner turns use the same score scale." />
 				<DefinitionRow label="PROSPER" value="A multi-objective judgement over performance, robustness, outcome lift, sparse-data caution, personalization, evidence quality, and retention or transfer." />
 				<DefinitionRow label="Performance" value="How well the observed learner signal turned out for the model in that session context." />
@@ -580,18 +674,18 @@ function KeatingBenchContent() {
 	};
 
 	return (
-		<div className="min-h-screen bg-background text-foreground font-mono">
-			<header className="border-b border-border">
-				<div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4">
-					<div className="min-w-0">
-						<p className="text-xs uppercase tracking-wide text-muted-foreground">KeatingBench</p>
-						<h1 className="truncate text-2xl font-semibold">Model learning leaderboard</h1>
+		<div className={styles.page}>
+			<header className={styles.header}>
+				<div className={styles.headerInner}>
+					<div className={styles.min0}>
+						<p className={styles.kicker}>KeatingBench</p>
+						<h1 className={styles.title}>Model learning leaderboard</h1>
 					</div>
-					<div className="flex flex-wrap items-center gap-2">
+					<div className={styles.headerActions}>
 						<SourceTabs value={source} onChange={setSource} />
 						<button
 							type="button"
-							className="inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 text-sm hover:bg-accent"
+							className={styles.button}
 							onClick={exportLeaderboard}
 						>
 							<Download size={16} />
@@ -599,7 +693,7 @@ function KeatingBenchContent() {
 						</button>
 						<button
 							type="button"
-							className="inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 text-sm hover:bg-accent"
+							className={styles.button}
 							onClick={() => navigate({ to: "/chat" })}
 						>
 							<ArrowLeft size={16} />
@@ -609,8 +703,8 @@ function KeatingBenchContent() {
 				</div>
 			</header>
 
-			<main className="mx-auto max-w-7xl px-4 py-6">
-				<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+			<main className={styles.main}>
+				<div className={styles.metricGrid}>
 					<MetricTile icon={<Database size={18} />} label="Sessions" value={formatNumber(totals.sessions)} detail={`${formatNumber(samples.filter((sample) => sample.source === "shared").length)} shared cached`} />
 					<MetricTile icon={<BarChart3 size={18} />} label="Models" value={formatNumber(totals.models)} detail={`${formatNumber(totals.ready)} ready for ranking`} />
 					<MetricTile icon={<Activity size={18} />} label="Feedback signals" value={formatNumber(totals.signals)} detail={`${READINESS_THRESHOLDS.rankable} signals for ranked status`} />
@@ -619,78 +713,78 @@ function KeatingBenchContent() {
 
 				<KeatingBenchExplainer />
 
-				<section className="mt-6 overflow-hidden rounded-md border border-border bg-background">
-					<div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
+				<section className={styles.section}>
+					<div className={styles.sectionHeader}>
 						<div>
-							<h2 className="text-sm font-semibold">Leaderboard</h2>
-							<p className="mt-1 text-xs text-muted-foreground">PROSPER is the rank score; outcome is the direct learner signal score.</p>
+							<h2 className={styles.sectionTitle}>Leaderboard</h2>
+							<p className={styles.sectionSubtitle}>PROSPER is the rank score; outcome is the direct learner signal score.</p>
 						</div>
-						<div className="flex items-center gap-2 text-xs text-muted-foreground">
+						<div className={styles.inlineMuted}>
 							<Scale size={15} />
 							<span>{source === "shared" ? "Shared session data" : source === "local" ? "Private session data" : "Shared plus private data"}</span>
 						</div>
 					</div>
-					<div className="overflow-x-auto">
-						<table className="w-full min-w-[1040px] text-left text-sm">
-							<thead className="border-b border-border bg-muted/60 text-xs uppercase text-muted-foreground">
+					<div className={styles.overflowX}>
+						<table className={styles.table}>
+							<thead className={styles.thead}>
 								<tr>
-									<th className="w-16 px-4 py-3">Rank</th>
-									<th className="px-4 py-3">Model</th>
-									<th className="px-4 py-3">PROSPER</th>
-									<th className="px-4 py-3">Outcome</th>
-									<th className="px-4 py-3">Replay mix</th>
-									<th className="px-4 py-3">Signals</th>
-									<th className="px-4 py-3">Sessions</th>
-									<th className="px-4 py-3">Tokens</th>
-									<th className="px-4 py-3">Cost</th>
-									<th className="px-4 py-3">Status</th>
+									<th className={styles.thRank}>Rank</th>
+									<th className={styles.th}>Model</th>
+									<th className={styles.th}>PROSPER</th>
+									<th className={styles.th}>Outcome</th>
+									<th className={styles.th}>Replay mix</th>
+									<th className={styles.th}>Signals</th>
+									<th className={styles.th}>Sessions</th>
+									<th className={styles.th}>Tokens</th>
+									<th className={styles.th}>Cost</th>
+									<th className={styles.th}>Status</th>
 								</tr>
 							</thead>
-							<tbody className="divide-y divide-border">
+							<tbody className={styles.tbody}>
 								{rows.length === 0 ? (
 									<tr>
-										<td colSpan={10} className="px-4 py-12 text-center text-sm text-muted-foreground">
+										<td colSpan={10} className={styles.emptyCell}>
 											No benchmarkable sessions in this view.
 										</td>
 									</tr>
 								) : rows.map((row, index) => (
-									<tr key={row.key} className="align-top hover:bg-accent/50">
-										<td className="px-4 py-4 text-lg font-semibold tabular-nums">{index + 1}</td>
-										<td className="max-w-[18rem] px-4 py-4">
-											<div className="truncate font-medium">{row.name}</div>
-											<div className="mt-1 truncate text-xs text-muted-foreground">{row.provider} | {row.key.split(":").slice(1).join(":")}</div>
+									<tr key={row.key} className={styles.tableRow}>
+										<td className={styles.tdRank}>{index + 1}</td>
+										<td className={styles.modelCell}>
+											<div className={cx(styles.truncate, styles.fontMedium)}>{row.name}</div>
+											<div className={cx(styles.smallMuted, styles.truncate, css({ mt: "0.25rem" }))}>{row.provider} | {row.key.split(":").slice(1).join(":")}</div>
 										</td>
-										<td className="px-4 py-4">
-											<div className="flex items-center gap-3">
-												<div className="w-20 text-lg font-semibold tabular-nums">{row.prosperScore.toFixed(1)}</div>
-												<div className="h-2 w-28 overflow-hidden rounded-sm bg-muted">
-													<div className="h-full bg-[linear-gradient(90deg,#1e9b50,#0ea5e9,#f59e0b)]" style={{ width: `${Math.max(2, Math.min(100, row.prosperScore))}%` }} />
+										<td className={styles.td}>
+											<div className={styles.scoreRow}>
+												<div className={styles.scoreNumber}>{row.prosperScore.toFixed(1)}</div>
+												<div className={styles.barTrack}>
+													<div className={styles.prosperFill} style={{ width: `${Math.max(2, Math.min(100, row.prosperScore))}%` }} />
 												</div>
 											</div>
-											<div className="mt-1 text-xs text-muted-foreground">Evidence {Math.round(row.confidence * 100)}%</div>
+											<div className={cx(styles.smallMuted, css({ mt: "0.25rem" }))}>Evidence {Math.round(row.confidence * 100)}%</div>
 										</td>
-										<td className="px-4 py-4">
-											<div className="text-lg font-semibold tabular-nums">{row.score.toFixed(1)}</div>
-											<div className="mt-1 text-xs text-muted-foreground">Learner outcome</div>
+										<td className={styles.td}>
+											<div className={styles.outcomeScore}>{row.score.toFixed(1)}</div>
+											<div className={cx(styles.smallMuted, css({ mt: "0.25rem" }))}>Learner outcome</div>
 										</td>
-										<td className="px-4 py-4">
-											<div className="flex flex-wrap gap-1">
+										<td className={styles.td}>
+											<div className={styles.wrapGap1}>
 												{(["confusion-recovery", "correction", "transfer", "retention"] as ReplayStage[]).map((stage) => {
 													const count = row.outcomes.filter((outcome) => outcome.stage === stage).length;
-													return count > 0 ? <span key={stage} className="rounded-md bg-muted px-2 py-1 text-[11px]">{stage}: {count}</span> : null;
+													return count > 0 ? <span key={stage} className={styles.stageCount}>{stage}: {count}</span> : null;
 												})}
 											</div>
 										</td>
-										<td className="px-4 py-4 tabular-nums">{formatNumber(row.signals)}</td>
-										<td className="px-4 py-4">
-											<div className="tabular-nums">{formatNumber(row.sessions)}</div>
-											<div className="mt-1 text-xs text-muted-foreground">{formatNumber(row.sharedSessions)} shared | {formatNumber(row.localSessions)} private</div>
+										<td className={cx(styles.td, styles.tabular)}>{formatNumber(row.signals)}</td>
+										<td className={styles.td}>
+											<div className={styles.tabular}>{formatNumber(row.sessions)}</div>
+											<div className={cx(styles.smallMuted, css({ mt: "0.25rem" }))}>{formatNumber(row.sharedSessions)} shared | {formatNumber(row.localSessions)} private</div>
 										</td>
-										<td className="px-4 py-4 tabular-nums">{formatNumber(row.tokens)}</td>
-										<td className="px-4 py-4 tabular-nums">{formatCost(row.cost)}</td>
-										<td className="px-4 py-4">
+										<td className={cx(styles.td, styles.tabular)}>{formatNumber(row.tokens)}</td>
+										<td className={cx(styles.td, styles.tabular)}>{formatCost(row.cost)}</td>
+										<td className={styles.td}>
 											<ReadinessBadge readiness={row.readiness} />
-											<div className="mt-2 text-xs text-muted-foreground">Latest {formatDate(row.latestAt)}</div>
+											<div className={cx(styles.smallMuted, css({ mt: "0.5rem" }))}>Latest {formatDate(row.latestAt)}</div>
 										</td>
 									</tr>
 								))}
@@ -699,23 +793,23 @@ function KeatingBenchContent() {
 					</div>
 				</section>
 
-				<div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)]">
-					<section className="rounded-md border border-border bg-background p-4">
-						<div className="mb-4 flex items-center justify-between gap-3">
-							<h2 className="text-sm font-semibold">PROSPER dimensions</h2>
-							<LineChart size={18} className="text-muted-foreground" />
+				<div className={styles.belowGrid}>
+					<section className={styles.cardSection}>
+						<div className={styles.cardSectionHead}>
+							<h2 className={styles.sectionTitle}>PROSPER dimensions</h2>
+							<LineChart size={18} className={styles.mutedIcon} />
 						</div>
-						<p className="mb-4 text-xs leading-5 text-muted-foreground">
+						<p className={styles.paragraph}>
 							Each bar shows one objective in the judgement vector. The final score is weighted across these objectives so narrow wins are less likely to outrank balanced teaching behavior.
 						</p>
-						<div className="space-y-3">
+						<div className={styles.stack3}>
 							{rows.slice(0, 5).map((row) => (
-								<div key={row.key} className="rounded-md border border-border p-3">
-									<div className="mb-3 flex items-center justify-between gap-3">
-										<div className="truncate text-sm font-medium">{row.name}</div>
-										<div className="text-xs tabular-nums text-muted-foreground">{row.prosperScore.toFixed(1)}</div>
+								<div key={row.key} className={styles.dimensionCard}>
+									<div className={styles.dimensionHead}>
+										<div className={cx(styles.truncate, css({ fontSize: "0.875rem", fontWeight: "500" }))}>{row.name}</div>
+										<div className={cx(styles.smallMuted, styles.tabular)}>{row.prosperScore.toFixed(1)}</div>
 									</div>
-									<div className="grid gap-2 sm:grid-cols-2">
+									<div className={styles.dimensionGrid}>
 										{[
 											["Perf", row.prosper.performance],
 											["Robust", row.prosper.robustness],
@@ -725,81 +819,81 @@ function KeatingBenchContent() {
 											["Evidence", row.prosper.evidenceQuality],
 											["Transfer", row.prosper.retentionTransfer],
 										].map(([label, value]) => (
-											<div key={label as string} className="grid grid-cols-[4.5rem_minmax(0,1fr)_2.5rem] items-center gap-2">
-												<div className="text-[11px] text-muted-foreground">{label}</div>
-												<div className="h-2 overflow-hidden rounded-sm bg-muted">
-													<div className="h-full bg-primary" style={{ width: percent(value as number) }} />
+											<div key={label as string} className={styles.dimensionRow}>
+												<div className={styles.tinyMuted}>{label}</div>
+												<div className={styles.progressTrack}>
+													<div className={styles.progressFill} style={{ width: percent(value as number) }} />
 												</div>
-												<div className="text-right text-[11px] tabular-nums">{percent(value as number)}</div>
+												<div className={styles.rightTiny}>{percent(value as number)}</div>
 											</div>
 										))}
 									</div>
 								</div>
 							))}
-							{rows.length === 0 && <div className="py-8 text-center text-sm text-muted-foreground">No PROSPER dimensions yet</div>}
+							{rows.length === 0 && <div className={styles.empty}>No PROSPER dimensions yet</div>}
 						</div>
 					</section>
 
-					<section className="rounded-md border border-border bg-background p-4">
-						<div className="mb-4 flex items-center justify-between gap-3">
-							<h2 className="text-sm font-semibold">Cross-model replay</h2>
-							<UploadCloud size={18} className="text-muted-foreground" />
+					<section className={styles.cardSection}>
+						<div className={styles.cardSectionHead}>
+							<h2 className={styles.sectionTitle}>Cross-model replay</h2>
+							<UploadCloud size={18} className={styles.mutedIcon} />
 						</div>
-						<p className="mb-4 text-xs leading-5 text-muted-foreground">
+						<p className={styles.paragraph}>
 							Replay turns human session data into reusable benchmark states. The live steps score observed sessions; the queued provider step will send matched learner states to different models.
 						</p>
-						<div className="divide-y divide-border text-sm">
+						<div className={styles.divideText}>
 							{[
 								{ item: "shared-session ingestion", detail: `${formatNumber(replayCases.length)} replay states extracted`, status: "live" },
 								{ item: "deterministic replay scoring", detail: "PROSPER vector runs over observed learner states", status: "live" },
 								{ item: "provider replay execution", detail: "same state prompts can be sent to each model next", status: "queued" },
 							].map(({ item, detail, status }) => (
-								<div key={item} className="flex items-center justify-between gap-3 py-3">
-									<div className="min-w-0">
-										<div className="truncate font-medium">{item}</div>
-										<div className="mt-1 text-xs text-muted-foreground">{detail}</div>
+								<div key={item} className={styles.replayStep}>
+									<div className={styles.min0}>
+										<div className={cx(styles.truncate, styles.fontMedium)}>{item}</div>
+										<div className={cx(styles.smallMuted, css({ mt: "0.25rem" }))}>{detail}</div>
 									</div>
-									<span className="rounded-md border border-border px-2 py-1 text-xs text-muted-foreground">{status}</span>
+									<span className={styles.statusPill}>{status}</span>
 								</div>
 							))}
 						</div>
 					</section>
 				</div>
 
-				<section className="mt-6 overflow-hidden rounded-md border border-border bg-background">
-					<div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
+				<section className={styles.section}>
+					<div className={styles.sectionHeader}>
 						<div>
-							<h2 className="text-sm font-semibold">Replay case bank</h2>
-							<p className="mt-1 text-xs text-muted-foreground">Inspectable learner states used to build the model judgement.</p>
+							<h2 className={styles.sectionTitle}>Replay case bank</h2>
+							<p className={styles.sectionSubtitle}>Inspectable learner states used to build the model judgement.</p>
 						</div>
-						<Medal size={18} className="text-muted-foreground" />
+						<Medal size={18} className={styles.mutedIcon} />
 					</div>
-					<div className="divide-y divide-border">
+					<div className={styles.replayList}>
 						{replayCases.slice(0, 8).map((replayCase) => (
-							<div key={replayCase.id} className="grid gap-3 px-4 py-3 lg:grid-cols-[10rem_minmax(0,1fr)_12rem]">
-								<div className="flex flex-wrap items-start gap-2">
+							<div key={replayCase.id} className={styles.replayCase}>
+								<div className={styles.replayLeft}>
 									<StagePill stage={replayCase.stage} />
-									<span className="rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground">{replayCase.signal}</span>
+									<span className={styles.pill}>{replayCase.signal}</span>
 								</div>
-								<div className="min-w-0">
-									<div className="truncate text-sm font-medium">{replayCase.sessionTitle}</div>
-									<p className="mt-1 overflow-hidden text-xs leading-5 text-muted-foreground [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
+								<div className={styles.min0}>
+									<div className={cx(styles.truncate, css({ fontSize: "0.875rem", fontWeight: "500" }))}>{replayCase.sessionTitle}</div>
+									<p className={styles.lineClamp2}>
 										{replayCase.learnerText}
 									</p>
 								</div>
-								<div className="grid grid-cols-2 gap-2 text-xs tabular-nums">
-									<div className="rounded-md bg-muted p-2">
-										<div className="text-muted-foreground">Outcome</div>
-										<div className="mt-1 font-medium">{Math.round(replayCase.outcomeScore * 100)}%</div>
+								<div className={styles.twoColNums}>
+									<div className={styles.statBox}>
+										<div className={styles.mutedIcon}>Outcome</div>
+										<div className={styles.mt1FontMedium}>{Math.round(replayCase.outcomeScore * 100)}%</div>
 									</div>
-									<div className="rounded-md bg-muted p-2">
-										<div className="text-muted-foreground">PROSPER</div>
-										<div className="mt-1 font-medium">{prosperTotal(replayCase.prosper).toFixed(1)}</div>
+									<div className={styles.statBox}>
+										<div className={styles.mutedIcon}>PROSPER</div>
+										<div className={styles.mt1FontMedium}>{prosperTotal(replayCase.prosper).toFixed(1)}</div>
 									</div>
 								</div>
 							</div>
 						))}
-						{replayCases.length === 0 && <div className="px-4 py-10 text-center text-sm text-muted-foreground">No replay cases yet</div>}
+						{replayCases.length === 0 && <div className={styles.empty}>No replay cases yet</div>}
 					</div>
 				</section>
 
@@ -817,8 +911,8 @@ export function KeatingBench() {
 	});
 	return (
 		<Suspense fallback={
-			<div className="min-h-screen bg-background text-foreground">
-				<div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
+			<div className={styles.centerPage}>
+				<div className={styles.centerContent}>
 					Loading KeatingBench...
 				</div>
 			</div>

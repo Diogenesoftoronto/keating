@@ -14,6 +14,7 @@ import {
 	parseKeatingPortableDataBundle,
 	type KeatingPortableImportResult,
 } from "../keating/portable-data";
+import { css, cx } from "../../styled-system/css";
 
 let metadataPromise: Promise<SessionMetadata[]> | null = null;
 
@@ -50,6 +51,74 @@ function sessionModelLabel(session: SessionMetadata): string | null {
 	return provider ? `${provider}/${model}` : model;
 }
 
+const styles = {
+	page: css({ minH: "100vh", bg: "var(--background)", color: "var(--foreground)", fontFamily: "monospace" }),
+	header: css({ borderBottom: "1px solid var(--border)" }),
+	headerInner: css({ mx: "auto", display: "flex", maxW: "72rem", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", px: "1rem", py: "1rem" }),
+	kicker: css({ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted-foreground)" }),
+	title: css({ fontSize: "1.5rem", fontWeight: "600" }),
+	main: css({ mx: "auto", minW: 0, maxW: "72rem", overflow: "hidden", px: "1rem", py: "1.5rem" }),
+	metricGrid: css({ display: "grid", minW: 0, gap: "0.75rem", sm: { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }, lg: { gridTemplateColumns: "repeat(4, minmax(0, 1fr))" } }),
+	metricGridThree: css({ mt: "1.5rem", display: "grid", minW: 0, gap: "0.75rem", sm: { gridTemplateColumns: "repeat(3, minmax(0, 1fr))" } }),
+	card: css({ minW: 0, borderRadius: "0.5rem", border: "1px solid var(--border)", bg: "var(--background)", p: "1rem" }),
+	cardHead: css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }),
+	cardLabel: css({ fontSize: "0.875rem", color: "var(--muted-foreground)" }),
+	muted: css({ color: "var(--muted-foreground)" }),
+	cardValue: css({ mt: "0.75rem", fontSize: "1.5rem", fontWeight: "600" }),
+	cardDetail: css({ mt: "0.25rem", minW: 0, overflowWrap: "break-word", fontSize: "0.75rem", color: "var(--muted-foreground)" }),
+	controlWrap: css({ w: "100%", maxW: "100%", sm: { minW: "18rem", flex: "1 1 0%" }, lg: { minW: "22rem" } }),
+	labelText: css({ mb: "0.5rem", fontSize: "0.75rem", fontWeight: "500", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted-foreground)" }),
+	segmented: css({ display: "grid", minW: 0, gridTemplateColumns: "repeat(2, minmax(0, 1fr))", overflow: "hidden", borderRadius: "0.375rem", border: "1px solid var(--border)", sm: { display: "flex", flexWrap: "nowrap", overflowX: "auto" } }),
+	segmentButton: css({ minW: 0, whiteSpace: "nowrap", px: "0.375rem", py: "0.125rem", fontSize: "10px", transitionProperty: "color, background-color", transitionDuration: "150ms", sm: { minW: "max-content", flex: "1 0 auto", px: "0.5rem", py: "0.25rem", fontSize: "11px" }, lg: { px: "0.75rem", py: "0.375rem", fontSize: "0.75rem" } }),
+	segmentActive: css({ bg: "var(--primary)", color: "var(--primary-foreground)" }),
+	segmentInactive: css({ _hover: { bg: "var(--accent)" } }),
+	panel: css({ mt: "1.5rem", borderRadius: "0.5rem", border: "1px solid var(--border)", bg: "var(--background)" }),
+	panelHeader: css({ borderBottom: "1px solid var(--border)", px: "1rem", py: "0.75rem" }),
+	panelTitle: css({ fontSize: "0.875rem", fontWeight: "600" }),
+	panelSubtitle: css({ mt: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" }),
+	exportBody: css({ display: "flex", minW: 0, flexDir: "column", gap: "1rem", p: "1rem", xl: { flexDir: "row", alignItems: "flex-end", justifyContent: "space-between" } }),
+	formGroup: css({ display: "flex", minW: 0, flex: "1 1 0%", flexWrap: "wrap", alignItems: "flex-end", gap: "1rem" }),
+	inputLabel: css({ display: "flex", minW: "9rem", maxW: "100%", flexDir: "column", gap: "0.5rem" }),
+	numberInput: css({ h: "2.25rem", minW: 0, borderRadius: "0.375rem", border: "1px solid var(--border)", bg: "var(--background)", px: "0.5rem", fontSize: "0.875rem" }),
+	checkLabel: css({ display: "flex", h: "2.25rem", maxW: "100%", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", border: "1px solid var(--border)", px: "0.75rem", fontSize: "0.875rem" }),
+	checkLabelRedact: css({ minW: "14rem" }),
+	checkLabelJudge: css({ minW: "18rem" }),
+	checkbox: css({ h: "1rem", w: "1rem", flexShrink: 0 }),
+	truncate: css({ minW: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }),
+	actionColumn: css({ display: "flex", flexShrink: 0, flexDir: "column", alignItems: "flex-start", gap: "0.5rem", xl: { alignItems: "flex-end" } }),
+	actionRow: css({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem", xl: { justifyContent: "flex-end" } }),
+	button: css({ display: "inline-flex", h: "2.25rem", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", px: "0.75rem", fontSize: "0.875rem" }),
+	primaryButton: css({ bg: "var(--primary)", fontWeight: "500", color: "var(--primary-foreground)", _hover: { bg: "color-mix(in srgb, var(--primary) 90%, transparent)" }, _disabled: { opacity: 0.5 } }),
+	borderButton: css({ border: "1px solid var(--border)", _hover: { bg: "var(--accent)" }, _disabled: { opacity: 0.5 } }),
+	fileLabel: css({ cursor: "pointer", "&:has(:disabled)": { cursor: "not-allowed", opacity: 0.5 } }),
+	srOnly: css({ position: "absolute", w: "1px", h: "1px", p: 0, m: "-1px", overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", borderWidth: 0 }),
+	smallMuted: css({ fontSize: "0.75rem", color: "var(--muted-foreground)" }),
+	error: css({ maxW: "24rem", fontSize: "0.75rem", color: "var(--destructive)" }),
+	portableBody: css({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "1rem", p: "1rem" }),
+	inlineLabel: css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem" }),
+	basisFull: css({ flexBasis: "100%", fontSize: "0.75rem", color: "var(--muted-foreground)" }),
+	errorFull: css({ flexBasis: "100%", fontSize: "0.75rem", color: "var(--destructive)" }),
+	contentGrid: css({ mt: "1.5rem", display: "grid", minW: 0, gap: "1.5rem", lg: { gridTemplateColumns: "minmax(0, 1.25fr) minmax(0, 0.75fr)" } }),
+	section: css({ minW: 0, overflow: "hidden", borderRadius: "0.5rem", border: "1px solid var(--border)", bg: "var(--background)" }),
+	dividerList: css({ "& > * + *": { borderTop: "1px solid var(--border)" } }),
+	emptyState: css({ px: "1rem", py: "2rem", textAlign: "center", fontSize: "0.875rem", color: "var(--muted-foreground)" }),
+	stack3: css({ "& > * + *": { mt: "0.75rem" }, p: "1rem" }),
+	deepRow: css({ display: "flex", minW: 0, alignItems: "flex-start", gap: "0.75rem" }),
+	rankBox: css({ display: "flex", h: "1.75rem", w: "1.75rem", flexShrink: 0, alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", bg: "var(--muted)", fontSize: "0.75rem", fontWeight: "500" }),
+	flex1: css({ minW: 0, flex: "1 1 0%" }),
+	lineClamp2: css({ overflow: "hidden", textOverflow: "ellipsis", lineClamp: 2 }),
+	lineClamp4: css({ overflow: "hidden", textOverflow: "ellipsis", lineClamp: 4 }),
+	metaRow: css({ mt: "0.25rem", display: "flex", minW: 0, flexWrap: "wrap", alignItems: "center", columnGap: "0.5rem", rowGap: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" }),
+	sessionRow: css({ display: "flex", minH: "9rem", minW: 0, flexDir: "column", gap: "0.75rem", px: "1rem", py: "0.75rem" }),
+	sessionTitle: css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: "500" }),
+	sessionPreview: css({ mt: "0.5rem", overflow: "hidden", fontSize: "0.75rem", lineHeight: "1.25rem", color: "var(--muted-foreground)", lineClamp: 4 }),
+	badgeRow: css({ display: "flex", minW: 0, flexWrap: "wrap", gap: "0.5rem", fontSize: "11px", color: "var(--muted-foreground)" }),
+	badge: css({ display: "inline-flex", minW: 0, alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", bg: "var(--muted)", px: "0.5rem", py: "0.25rem" }),
+	shrink0: css({ flexShrink: 0 }),
+	centerPage: css({ minH: "100vh", bg: "var(--background)", color: "var(--foreground)" }),
+	centerContent: css({ display: "flex", minH: "100vh", alignItems: "center", justifyContent: "center", fontSize: "0.875rem", color: "var(--muted-foreground)" }),
+};
+
 function useSessionMetadata() {
 	use(getInitPromise());
 	if (!metadataPromise) {
@@ -70,13 +139,13 @@ function MetricCard({
 	detail: string;
 }) {
 	return (
-		<div className="min-w-0 rounded-lg border border-border bg-background p-4">
-			<div className="flex items-center justify-between gap-3">
-				<div className="text-sm text-muted-foreground">{label}</div>
-				<div className="text-muted-foreground">{icon}</div>
+		<div className={styles.card}>
+			<div className={styles.cardHead}>
+				<div className={styles.cardLabel}>{label}</div>
+				<div className={styles.muted}>{icon}</div>
 			</div>
-			<div className="mt-3 text-2xl font-semibold">{value}</div>
-			<div className="mt-1 min-w-0 break-words text-xs text-muted-foreground">{detail}</div>
+			<div className={styles.cardValue}>{value}</div>
+			<div className={styles.cardDetail}>{detail}</div>
 		</div>
 	);
 }
@@ -93,14 +162,14 @@ function SegmentedControl<T extends string>({
 	onChange: (value: T) => void;
 }) {
 	return (
-		<div className="w-full max-w-full sm:min-w-[18rem] sm:flex-1 lg:min-w-[22rem]">
-			<div className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
-			<div className="grid min-w-0 grid-cols-2 overflow-hidden rounded-md border border-border sm:flex sm:flex-nowrap sm:overflow-x-auto">
+		<div className={styles.controlWrap}>
+			<div className={styles.labelText}>{label}</div>
+			<div className={styles.segmented}>
 				{options.map((option) => (
 					<button
 						key={option.value}
 						type="button"
-						className={`min-w-0 whitespace-nowrap px-1.5 py-0.5 text-[10px] transition-colors sm:min-w-max sm:flex-1 sm:shrink-0 sm:px-2 sm:py-1 sm:text-[11px] lg:px-3 lg:py-1.5 lg:text-xs ${value === option.value ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}
+						className={cx(styles.segmentButton, value === option.value ? styles.segmentActive : styles.segmentInactive)}
 						onClick={() => onChange(option.value)}
 					>
 						{option.label}
@@ -193,13 +262,13 @@ function FineTuneExportPanel() {
 	};
 
 	return (
-		<section className="mt-6 rounded-lg border border-border bg-background">
-			<div className="border-b border-border px-4 py-3">
-				<h2 className="text-sm font-semibold">Fine-tune export</h2>
-				<p className="mt-1 text-xs text-muted-foreground">Download training JSONL from Keating sessions, artifacts, and sandbox self-edit history.</p>
+		<section className={styles.panel}>
+			<div className={styles.panelHeader}>
+				<h2 className={styles.panelTitle}>Fine-tune export</h2>
+				<p className={styles.panelSubtitle}>Download training JSONL from Keating sessions, artifacts, and sandbox self-edit history.</p>
 			</div>
-			<div className="flex min-w-0 flex-col gap-4 p-4 xl:flex-row xl:items-end xl:justify-between">
-				<div className="flex min-w-0 flex-1 flex-wrap items-end gap-4">
+			<div className={styles.exportBody}>
+				<div className={styles.formGroup}>
 					<SegmentedControl
 						label="Format"
 						value={format}
@@ -221,54 +290,54 @@ function FineTuneExportPanel() {
 							{ value: "sandbox", label: "Sandbox" },
 						]}
 					/>
-					<label className="flex min-w-[9rem] max-w-full flex-col gap-2">
-						<span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Minimum assistant length</span>
+					<label className={styles.inputLabel}>
+						<span className={styles.labelText}>Minimum assistant length</span>
 						<input
 							type="number"
 							min={1}
-							className="h-9 min-w-0 rounded-md border border-border bg-background px-2 text-sm"
+							className={styles.numberInput}
 							value={minAssistantChars}
 							onChange={(event) => setMinAssistantChars(Math.max(1, Number.parseInt(event.target.value, 10) || 1))}
 						/>
 					</label>
-					<label className="flex h-9 min-w-[14rem] max-w-full items-center gap-2 rounded-md border border-border px-3 text-sm">
+					<label className={cx(styles.checkLabel, styles.checkLabelRedact)}>
 						<input
 							type="checkbox"
-							className="h-4 w-4 shrink-0"
+							className={styles.checkbox}
 							checked={redact}
 							onChange={(event) => setRedact(event.target.checked)}
 						/>
-						<span className="min-w-0 truncate">Redact secrets</span>
+						<span className={styles.truncate}>Redact secrets</span>
 					</label>
-					<label className="flex h-9 min-w-[18rem] max-w-full items-center gap-2 rounded-md border border-border px-3 text-sm">
+					<label className={cx(styles.checkLabel, styles.checkLabelJudge)}>
 						<input
 							type="checkbox"
-							className="h-4 w-4 shrink-0"
+							className={styles.checkbox}
 							checked={judgeScoring}
 							onChange={(event) => setJudgeScoring(event.target.checked)}
 						/>
-						<span className="min-w-0 truncate">LLM judge scoring (slower, uses API credits)</span>
+						<span className={styles.truncate}>LLM judge scoring (slower, uses API credits)</span>
 					</label>
 				</div>
-				<div className="flex shrink-0 flex-col items-start gap-2 xl:items-end">
-					<div className="flex flex-wrap items-center gap-2 xl:justify-end">
+				<div className={styles.actionColumn}>
+					<div className={styles.actionRow}>
 						<button
 							type="button"
-							className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+							className={cx(styles.button, styles.primaryButton)}
 							onClick={handleExport}
 							disabled={exporting}
 						>
 							<Download size={16} />
 							{exporting ? "Working..." : "Export fine-tune data"}
 						</button>
-						<label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md border border-border px-3 text-sm hover:bg-accent has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50">
+						<label className={cx(styles.button, styles.borderButton, styles.fileLabel)}>
 							<Upload size={16} />
 							Import JSONL
 							<input
 								type="file"
 								accept=".jsonl,application/jsonl,application/x-ndjson"
 								multiple
-								className="sr-only"
+								className={styles.srOnly}
 								disabled={exporting}
 								onChange={(event) => {
 									void handleImport(event.target.files);
@@ -278,7 +347,7 @@ function FineTuneExportPanel() {
 						</label>
 					</div>
 					{result && (
-						<div className="text-xs text-muted-foreground">
+						<div className={styles.smallMuted}>
 							{formatNumber(result.examples)} examples · {formatNumber(result.skipped)} skipped · {formatNumber(result.redactions)} redactions
 							{typeof result.scored === "number" && typeof result.unscored === "number"
 								? ` · ${formatNumber(result.scored)} scored · ${formatNumber(result.unscored)} unscored`
@@ -286,11 +355,11 @@ function FineTuneExportPanel() {
 						</div>
 					)}
 					{importResult && (
-						<div className="text-xs text-muted-foreground">
+						<div className={styles.smallMuted}>
 							Imported {formatNumber(importResult.examplesImported)} examples into {formatNumber(importResult.sessionsImported)} session{importResult.sessionsImported === 1 ? "" : "s"} · {formatNumber(importResult.skipped)} skipped
 						</div>
 					)}
-					{error && <div className="max-w-sm text-xs text-destructive">{error}</div>}
+					{error && <div className={styles.error}>{error}</div>}
 				</div>
 			</div>
 		</section>
@@ -351,13 +420,13 @@ function PortableDataPanel() {
 	};
 
 	return (
-		<section className="mt-6 rounded-lg border border-border bg-background">
-			<div className="border-b border-border px-4 py-3">
-				<h2 className="text-sm font-semibold">Portable data</h2>
-				<p className="mt-1 text-xs text-muted-foreground">Move Keating sessions, learner state, artifacts, goals, and sandbox history between browsers.</p>
+		<section className={styles.panel}>
+			<div className={styles.panelHeader}>
+				<h2 className={styles.panelTitle}>Portable data</h2>
+				<p className={styles.panelSubtitle}>Move Keating sessions, learner state, artifacts, goals, and sandbox history between browsers.</p>
 			</div>
-			<div className="flex flex-wrap items-center justify-between gap-4 p-4">
-				<label className="flex items-center gap-2 text-sm">
+			<div className={styles.portableBody}>
+				<label className={styles.inlineLabel}>
 					<input
 						type="checkbox"
 						checked={includeSandbox}
@@ -365,23 +434,23 @@ function PortableDataPanel() {
 					/>
 					Include sandbox code history
 				</label>
-				<div className="flex flex-wrap items-center gap-2">
+				<div className={styles.actionRow}>
 					<button
 						type="button"
-						className="inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 text-sm hover:bg-accent disabled:opacity-50"
+						className={cx(styles.button, styles.borderButton)}
 						onClick={handlePortableExport}
 						disabled={busy}
 					>
 						<Download size={16} />
 						Export portable JSON
 					</button>
-					<label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50">
+					<label className={cx(styles.button, styles.primaryButton, styles.fileLabel)}>
 						<Upload size={16} />
 						Import portable JSON
 						<input
 							type="file"
 							accept="application/json,.json"
-							className="sr-only"
+							className={styles.srOnly}
 							disabled={busy}
 							onChange={(event) => {
 								const file = event.target.files?.[0] ?? null;
@@ -391,8 +460,8 @@ function PortableDataPanel() {
 						/>
 					</label>
 				</div>
-				{result && <div className="basis-full text-xs text-muted-foreground">{result}</div>}
-				{error && <div className="basis-full text-xs text-destructive">{error}</div>}
+				{result && <div className={styles.basisFull}>{result}</div>}
+				{error && <div className={styles.errorFull}>{error}</div>}
 			</div>
 		</section>
 	);
@@ -451,15 +520,15 @@ function UsageContent() {
 	const teachingMats = artifactMetrics ? artifactMetrics.plans + artifactMetrics.maps + artifactMetrics.animations : 0;
 
 	return (
-		<div className="min-h-screen bg-background text-foreground font-mono">
-			<header className="border-b border-border">
-				<div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4">
+		<div className={styles.page}>
+			<header className={styles.header}>
+				<div className={styles.headerInner}>
 					<div>
-						<p className="text-xs uppercase tracking-wide text-muted-foreground">Keating usage</p>
-						<h1 className="text-2xl font-semibold">Learning activity</h1>
+						<p className={styles.kicker}>Keating usage</p>
+						<h1 className={styles.title}>Learning activity</h1>
 					</div>
 					<button
-						className="inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 text-sm hover:bg-accent"
+						className={cx(styles.button, styles.borderButton)}
 						onClick={() => navigate({ to: "/chat" })}
 					>
 						<ArrowLeft size={16} />
@@ -468,8 +537,8 @@ function UsageContent() {
 				</div>
 			</header>
 
-			<main className="mx-auto min-w-0 max-w-6xl overflow-hidden px-4 py-6">
-				<div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+			<main className={styles.main}>
+				<div className={styles.metricGrid}>
 					<MetricCard
 						icon={<BookOpenCheck size={18} />}
 						label="Learning sessions"
@@ -497,7 +566,7 @@ function UsageContent() {
 				</div>
 
 				{/* Self-improvement vs Learning distinction */}
-				<div className="mt-6 grid min-w-0 gap-3 sm:grid-cols-3">
+				<div className={styles.metricGridThree}>
 					<MetricCard
 						icon={<Gem size={18} />}
 						label="Teaching materials"
@@ -521,15 +590,15 @@ function UsageContent() {
 				<PortableDataPanel />
 				<FineTuneExportPanel />
 
-				<div className="mt-6 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)]">
-					<section className="min-w-0 overflow-hidden rounded-lg border border-border bg-background">
-						<div className="border-b border-border px-4 py-3">
-							<h2 className="text-sm font-semibold">Recent learning</h2>
-							<p className="mt-1 text-xs text-muted-foreground">Latest saved sessions and their focus</p>
+				<div className={styles.contentGrid}>
+					<section className={styles.section}>
+						<div className={styles.panelHeader}>
+							<h2 className={styles.panelTitle}>Recent learning</h2>
+							<p className={styles.panelSubtitle}>Latest saved sessions and their focus</p>
 						</div>
-						<div className="divide-y divide-border">
+						<div className={styles.dividerList}>
 							{recent.length === 0 ? (
-								<div className="px-4 py-8 text-center text-sm text-muted-foreground">
+								<div className={styles.emptyState}>
 									Start a chat and Keating will track your learning activity here.
 								</div>
 							) : recent.map((session) => (
@@ -538,24 +607,24 @@ function UsageContent() {
 						</div>
 					</section>
 
-					<section className="min-w-0 overflow-hidden rounded-lg border border-border bg-background">
-						<div className="border-b border-border px-4 py-3">
-							<h2 className="text-sm font-semibold">Deepest dives</h2>
-							<p className="mt-1 text-xs text-muted-foreground">Sessions with the most back-and-forth</p>
+					<section className={styles.section}>
+						<div className={styles.panelHeader}>
+							<h2 className={styles.panelTitle}>Deepest dives</h2>
+							<p className={styles.panelSubtitle}>Sessions with the most back-and-forth</p>
 						</div>
-						<div className="space-y-3 p-4">
+						<div className={styles.stack3}>
 							{deepest.length === 0 ? (
-								<div className="py-8 text-center text-sm text-muted-foreground">No learning history yet</div>
+								<div className={styles.emptyState}>No learning history yet</div>
 							) : deepest.map((session, index) => (
-								<div key={session.id} className="flex min-w-0 items-start gap-3">
-									<div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-xs font-medium">
+								<div key={session.id} className={styles.deepRow}>
+									<div className={styles.rankBox}>
 										{index + 1}
 									</div>
-									<div className="min-w-0 flex-1">
-										<div className="overflow-hidden text-ellipsis text-sm font-medium [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
+									<div className={styles.flex1}>
+										<div className={cx(styles.lineClamp2, css({ fontSize: "0.875rem", fontWeight: "500" }))}>
 											{session.title}
 										</div>
-										<div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+										<div className={styles.metaRow}>
 											<Clock3 size={13} />
 											<span>{session.messageCount} messages</span>
 											<span aria-hidden="true">|</span>
@@ -578,30 +647,30 @@ function SessionRow({ session }: { session: SessionMetadata }) {
 	const tokens = session.usage.totalTokens || session.usage.input + session.usage.output;
 	const modelLabel = sessionModelLabel(session);
 	return (
-		<div className="flex min-h-36 min-w-0 flex-col gap-3 px-4 py-3">
-			<div className="min-w-0 flex-1">
-				<div className="truncate text-sm font-medium">{session.title}</div>
-				<p className="mt-2 overflow-hidden text-xs leading-5 text-muted-foreground [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:4]">
+		<div className={styles.sessionRow}>
+			<div className={styles.flex1}>
+				<div className={styles.sessionTitle}>{session.title}</div>
+				<p className={styles.sessionPreview}>
 					{firstSentence(session.preview)}
 				</p>
 			</div>
-			<div className="flex min-w-0 flex-wrap gap-2 text-[11px] text-muted-foreground">
-				<span className="inline-flex min-w-0 items-center gap-1 rounded-md bg-muted px-2 py-1">
-					<CalendarDays size={12} className="shrink-0" />
-					<span className="truncate">{formatDate(session.lastModified)}</span>
+			<div className={styles.badgeRow}>
+				<span className={styles.badge}>
+					<CalendarDays size={12} className={styles.shrink0} />
+					<span className={styles.truncate}>{formatDate(session.lastModified)}</span>
 				</span>
-				<span className="inline-flex min-w-0 items-center gap-1 rounded-md bg-muted px-2 py-1">
-					<MessageSquareText size={12} className="shrink-0" />
-					<span className="truncate">{session.messageCount} turns</span>
+				<span className={styles.badge}>
+					<MessageSquareText size={12} className={styles.shrink0} />
+					<span className={styles.truncate}>{session.messageCount} turns</span>
 				</span>
-				<span className="inline-flex min-w-0 items-center gap-1 rounded-md bg-muted px-2 py-1">
-					<Brain size={12} className="shrink-0" />
-					<span className="truncate">{formatNumber(tokens)} tokens</span>
+				<span className={styles.badge}>
+					<Brain size={12} className={styles.shrink0} />
+					<span className={styles.truncate}>{formatNumber(tokens)} tokens</span>
 				</span>
 				{modelLabel && (
-					<span className="inline-flex min-w-0 items-center gap-1 rounded-md bg-muted px-2 py-1">
-						<Cpu size={12} className="shrink-0" />
-						<span className="truncate">{modelLabel}</span>
+					<span className={styles.badge}>
+						<Cpu size={12} className={styles.shrink0} />
+						<span className={styles.truncate}>{modelLabel}</span>
 					</span>
 				)}
 			</div>
@@ -617,8 +686,8 @@ export function Usage() {
 	});
 	return (
 		<Suspense fallback={
-			<div className="min-h-screen bg-background text-foreground">
-				<div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
+			<div className={styles.centerPage}>
+				<div className={styles.centerContent}>
 					Loading usage...
 				</div>
 			</div>

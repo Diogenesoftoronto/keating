@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, RotateCcw, Save } from "lucide-react";
+import { css } from "../../styled-system/css";
+import { primaryButton, outlineButton, textarea } from "../../styled-system/recipes";
 import {
 	DEFAULT_TEACHER_PERSONA,
 	isDefaultPersona,
@@ -8,6 +10,16 @@ import {
 	savePersona,
 	subscribePersona,
 } from "../keating/persona";
+
+const stackClass = css({ display: "flex", flexDirection: "column", gap: "1.25rem" });
+const headerClass = css({ display: "flex", flexDirection: "column", gap: "0.25rem" });
+const titleClass = css({ marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 600, color: "var(--foreground)" });
+const descriptionClass = css({ fontSize: "0.875rem", color: "var(--muted-foreground)" });
+const fieldStackClass = css({ display: "flex", flexDirection: "column", gap: "0.5rem" });
+const fieldLabelClass = css({ fontSize: "0.75rem", fontWeight: 500, color: "var(--muted-foreground)" });
+const metaRowClass = css({ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "11px", color: "var(--muted-foreground)" });
+const actionRowClass = css({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem" });
+const footnoteClass = css({ fontSize: "11px", lineHeight: "1.25rem", color: "var(--muted-foreground)" });
 
 export function TeacherPersonaTab() {
 	const [draft, setDraft] = useState(() => loadPersona());
@@ -45,40 +57,40 @@ export function TeacherPersonaTab() {
 	}, [flashSaved]);
 
 	return (
-		<div className="flex flex-col gap-5">
-			<div>
-				<h3 className="mb-2 text-sm font-semibold text-foreground">Teacher Persona</h3>
-				<p className="text-sm text-muted-foreground">
+		<div className={stackClass}>
+			<div className={headerClass}>
+				<h3 className={titleClass}>Teacher Persona</h3>
+				<p className={descriptionClass}>
 					This is the editable identity and voice of your tutor — the "who" of the
 					system prompt. It defaults to John Keating from <em>Dead Poets Society</em>.
 					The agent's tools and teaching protocol are kept separate and always apply.
 				</p>
 			</div>
 
-			<div className="flex flex-col gap-2">
-				<label htmlFor="teacher-persona" className="text-xs font-medium text-muted-foreground">
+			<div className={fieldStackClass}>
+				<label htmlFor="teacher-persona" className={fieldLabelClass}>
 					Persona
 				</label>
 				<textarea
 					id="teacher-persona"
-					className="min-h-[280px] w-full resize-y rounded-lg border border-border bg-background p-3 font-mono text-xs leading-5 text-foreground outline-none focus:border-primary"
+					className={textarea()}
 					value={draft}
 					spellCheck={false}
 					onChange={(e) => setDraft(e.target.value)}
 					placeholder="Describe who the teacher is, their values, and their voice…"
 				/>
-				<div className="flex items-center justify-between text-[11px] text-muted-foreground">
+				<div className={metaRowClass}>
 					<span>{draft.trim().length} characters</span>
 					<span>{isDefault ? "Default persona" : "Custom persona"}</span>
 				</div>
 			</div>
 
-			<div className="flex flex-wrap items-center gap-2">
+			<div className={actionRowClass}>
 				<button
 					type="button"
 					onClick={handleSave}
 					disabled={!dirty}
-					className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+					className={primaryButton()}
 				>
 					{saved ? <Check size={15} /> : <Save size={15} />}
 					{saved ? "Saved" : "Save persona"}
@@ -87,14 +99,14 @@ export function TeacherPersonaTab() {
 					type="button"
 					onClick={handleReset}
 					disabled={isDefault && !dirty}
-					className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-background px-4 text-sm font-medium transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+					className={outlineButton()}
 				>
 					<RotateCcw size={14} />
 					Reset to John Keating
 				</button>
 			</div>
 
-			<p className="text-[11px] leading-5 text-muted-foreground">
+			<p className={footnoteClass}>
 				Changes apply to the current conversation on the next message, and to all new sessions.
 			</p>
 		</div>

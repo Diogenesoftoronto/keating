@@ -14,7 +14,6 @@ import {
 	CopyPlus,
 	GitBranch,
 	History,
-	Loader2,
 	MoreHorizontal,
 	PanelLeftOpen,
 	PanelLeftClose,
@@ -32,6 +31,9 @@ import {
 	type SessionTreeNode,
 } from "./session-tree";
 import type { SessionBrowserProps } from "./SessionBrowser";
+import { css, cx } from "../../styled-system/css";
+import { OverflowMenu, type OverflowMenuItem } from "./OverflowMenu";
+import { Spinner } from "./Spinner";
 
 export interface SessionBrowserDesktopProps extends SessionBrowserProps {
 	store: UseSessionsResult;
@@ -152,17 +154,6 @@ function DesktopRow({
 	const hasChildren = children.length > 0;
 	const expanded = hasChildren && !collapsedNodes.has(session.id);
 	const showToggle = hasChildren && !isSearching;
-	const menuRef = useRef<HTMLDivElement>(null);
-	const [menuOpen, setMenuOpen] = useState(false);
-
-	useEffect(() => {
-		if (!menuOpen) return;
-		const onDown = (event: MouseEvent) => {
-			if (!menuRef.current?.contains(event.target as Node)) setMenuOpen(false);
-		};
-		window.addEventListener("mousedown", onDown);
-		return () => window.removeEventListener("mousedown", onDown);
-	}, [menuOpen]);
 
 	return (
 		<li
@@ -171,21 +162,30 @@ function DesktopRow({
 			aria-level={depth + 1}
 			aria-expanded={hasChildren ? expanded : undefined}
 			aria-selected={isFocused}
-			className={`${justForked ? "session-fork-arrive" : ""} ${isFocused ? "ring-1 ring-primary/40 rounded-lg" : ""}`.trim()}
+			className={cx(
+				justForked ? "session-fork-arrive" : "",
+				isFocused ? css({ borderRadius: "0.5rem", boxShadow: "0 0 0 1px color-mix(in srgb, var(--primary) 40%, transparent)" }) : "",
+			)}
 			style={{ marginLeft: `${Math.min(depth, 5) * 0.9}rem` }}
 		>
 			<div
-				className={`group rounded-lg border p-3 transition-colors ${
-					active
-						? "border-primary bg-primary/10 text-primary"
-						: "border-border text-foreground hover:bg-muted/40"
-				}`}
+				className={css({
+					borderRadius: "0.5rem",
+					border: "1px solid",
+					borderColor: active ? "var(--primary)" : "var(--border)",
+					background: active ? "color-mix(in srgb, var(--primary) 10%, transparent)" : undefined,
+					padding: "0.75rem",
+					color: active ? "var(--primary)" : "var(--foreground)",
+					transition: "color 150ms, background-color 150ms, border-color 150ms",
+					_hover: active ? undefined : { background: "color-mix(in srgb, var(--muted) 40%, transparent)" },
+					"&:hover [data-row-fork-action]": { opacity: 1 },
+				})}
 			>
-				<div className="flex min-w-0 items-start gap-1">
+				<div className={css({ display: "flex", minWidth: 0, alignItems: "flex-start", gap: "0.25rem" })}>
 					{showToggle ? (
 						<button
 							type="button"
-							className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+							className={css({ marginTop: "0.125rem", display: "inline-flex", height: "2.5rem", width: "2.5rem", flexShrink: 0, alignItems: "center", justifyContent: "center", borderRadius: "0.25rem", color: "var(--muted-foreground)", _hover: { background: "var(--accent)", color: "var(--accent-foreground)" } })}
 							title={expanded ? "Collapse forks" : "Expand forks"}
 							aria-label={
 								expanded
@@ -197,33 +197,33 @@ function DesktopRow({
 							{expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
 						</button>
 					) : (
-						<span aria-hidden="true" className="mt-0.5 inline-block h-10 w-10 shrink-0" />
+						<span aria-hidden="true" className={css({ marginTop: "0.125rem", display: "inline-block", height: "2.5rem", width: "2.5rem", flexShrink: 0 })} />
 					)}
 					<button
 						type="button"
-						className="min-w-0 flex-1 text-left"
+						className={css({ minWidth: 0, flex: 1, textAlign: "left" })}
 						onClick={() => void onLoad(session.id)}
 					>
-						<div className="flex min-w-0 items-center gap-2">
+						<div className={css({ display: "flex", minWidth: 0, alignItems: "center", gap: "0.5rem" })}>
 							{session.parentSessionId ? (
-								<GitBranch size={13} className="shrink-0 text-primary" />
+								<GitBranch size={13} className={css({ flexShrink: 0, color: "var(--primary)" })} />
 							) : null}
-							<span className="truncate text-sm font-medium">{session.title}</span>
+							<span className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500 })}>{session.title}</span>
 							{hasChildren ? (
-								<span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+								<span className={css({ flexShrink: 0, borderRadius: "0.25rem", background: "var(--muted)", padding: "0.125rem 0.375rem", fontSize: "0.625rem", color: "var(--muted-foreground)" })}>
 									{children.length}
 								</span>
 							) : null}
 							{justForkedSource ? (
-								<span className="shrink-0 rounded bg-primary px-1.5 py-0.5 text-[10px] text-primary-foreground">
+								<span className={css({ flexShrink: 0, borderRadius: "0.25rem", background: "var(--primary)", padding: "0.125rem 0.375rem", fontSize: "0.625rem", color: "var(--primary-foreground)" })}>
 									Forked
 								</span>
 							) : null}
 						</div>
-						<p className="mt-2 overflow-hidden text-xs leading-5 text-muted-foreground [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
+						<p className={css({ marginTop: "0.5rem", lineClamp: 2, fontSize: "0.75rem", lineHeight: "1.25rem", color: "var(--muted-foreground)" })}>
 							{session.preview || "No preview saved"}
 						</p>
-						<div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+						<div className={css({ marginTop: "0.75rem", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem", fontSize: "0.6875rem", color: "var(--muted-foreground)" })}>
 							<span>
 								{session.parentSessionId ? "Fork | " : ""}
 								{formatRelativeSessionDate(session.lastModified)}
@@ -234,88 +234,90 @@ function DesktopRow({
 					</button>
 					<button
 						type="button"
-						className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50 md:group-hover:opacity-100 ${
-							justForkedSource ? "text-primary md:opacity-100" : "md:opacity-0"
-						}`}
+						data-row-fork-action
+						className={css({
+							display: "inline-flex",
+							height: "2.5rem",
+							width: "2.5rem",
+							flexShrink: 0,
+							alignItems: "center",
+							justifyContent: "center",
+							borderRadius: "0.375rem",
+							color: justForkedSource ? "var(--primary)" : "var(--muted-foreground)",
+							md: { opacity: justForkedSource ? 1 : 0 },
+							_hover: { background: "var(--accent)", color: "var(--accent-foreground)" },
+							_disabled: { opacity: 0.5 },
+						})}
 						title={justForkedSource ? "Session forked" : "Fork session"}
 						aria-label={justForkedSource ? "Session forked" : "Fork session"}
 						disabled={forking}
 						onClick={() => void onFork(session.id)}
 					>
 						{forking ? (
-							<Loader2 size={14} className="animate-spin" />
+							<Spinner size={14} />
 						) : justForkedSource ? (
 							<Check size={14} />
 						) : (
 							<CopyPlus size={14} />
 						)}
 					</button>
-					<div ref={menuRef} className="relative shrink-0">
-						<button
-							type="button"
-							className="inline-flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
-							aria-label="Session actions"
-							aria-haspopup="menu"
-							aria-expanded={menuOpen}
-							disabled={isBusy}
-							onClick={() => setMenuOpen((open) => !open)}
-						>
-							{isBusy ? <Loader2 size={14} className="animate-spin" /> : <MoreHorizontal size={16} />}
-						</button>
-						{menuOpen ? (
-							<div
-								role="menu"
-								className="absolute right-0 top-11 z-20 w-40 overflow-hidden rounded-lg border border-border bg-background py-1 shadow-lg"
+					<OverflowMenu
+						width="10rem"
+						offset={4}
+						items={[
+							{
+								key: "rename",
+								label: "Rename",
+								onSelect: () => {
+									onCancelDelete();
+									onRenameStart(session.id, session.title);
+								},
+							},
+							...(onSuggestTitle
+								? [
+										{
+											key: "suggest",
+											label: "Suggest title",
+											icon: <Sparkles size={13} />,
+											disabled: isBusy,
+											onSelect: () => void onSuggest(item),
+										} satisfies OverflowMenuItem,
+									]
+								: []),
+							{
+								key: "delete",
+								label: "Delete",
+								icon: <Trash2 size={13} />,
+								destructive: true,
+								onSelect: () => {
+									onCancelRename();
+									onDeleteStart(session.id);
+								},
+							},
+						]}
+					>
+						{({ open, toggle }) => (
+							<button
+								type="button"
+								className={css({ display: "inline-flex", height: "2.5rem", width: "2.5rem", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", color: "var(--muted-foreground)", _hover: { background: "var(--accent)", color: "var(--accent-foreground)" }, _disabled: { opacity: 0.5 } })}
+								aria-label="Session actions"
+								aria-haspopup="menu"
+								aria-expanded={open}
+								disabled={isBusy}
+								onClick={toggle}
 							>
-								<button
-									type="button"
-									role="menuitem"
-									className="flex min-h-10 w-full items-center gap-2 px-3 text-left text-xs hover:bg-accent"
-									onClick={() => {
-										setMenuOpen(false);
-										onCancelDelete();
-										onRenameStart(session.id, session.title);
-									}}
-								>
-									Rename
-								</button>
-								{onSuggestTitle ? (
-									<button
-										type="button"
-										role="menuitem"
-										className="flex min-h-10 w-full items-center gap-2 px-3 text-left text-xs hover:bg-accent disabled:opacity-50"
-										disabled={isBusy}
-										onClick={() => {
-											setMenuOpen(false);
-											void onSuggest(item);
-										}}
-									>
-										<Sparkles size={13} />
-										Suggest title
-									</button>
-								) : null}
-								<button
-									type="button"
-									role="menuitem"
-									className="flex min-h-10 w-full items-center gap-2 px-3 text-left text-xs text-destructive hover:bg-destructive/10"
-									onClick={() => {
-										setMenuOpen(false);
-										onCancelRename();
-										onDeleteStart(session.id);
-									}}
-								>
-									<Trash2 size={13} />
-									Delete
-								</button>
-							</div>
-						) : null}
-					</div>
+								<Spinner size={14} loading={isBusy}>
+									<MoreHorizontal size={16} />
+								</Spinner>
+							</button>
+						)}
+					</OverflowMenu>
 				</div>
 
 				{isRenaming ? (
-					<div className="mt-3 flex items-center gap-2 rounded-md border border-border bg-background/50 p-3">
+					<div className={css({ marginTop: "0.75rem", display: "flex", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", border: "1px solid var(--border)", background: "color-mix(in srgb, var(--background) 50%, transparent)", padding: "0.75rem" })}>
 						<input
-							className="min-h-10 flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-ring"
+							className={css({ minHeight: "2.5rem", flex: 1, borderRadius: "0.375rem", border: "1px solid var(--border)", background: "var(--background)", padding: "0.5rem 0.75rem", fontSize: "0.875rem", outline: "none", _focus: { borderColor: "var(--ring)" } })}
 							value={renameDraft}
 							disabled={isBusy}
 							autoFocus
@@ -327,14 +329,14 @@ function DesktopRow({
 						/>
 						<button
 							type="button"
-							className="inline-flex h-10 w-10 items-center justify-center rounded-md hover:bg-accent"
+							className={css({ display: "inline-flex", height: "2.5rem", width: "2.5rem", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", _hover: { background: "var(--accent)" } })}
 							onClick={onCancelRename}
 						>
 							<X size={16} />
 						</button>
 						<button
 							type="button"
-							className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-primary text-primary-foreground disabled:opacity-50"
+							className={css({ display: "inline-flex", height: "2.5rem", width: "2.5rem", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", background: "var(--primary)", color: "var(--primary-foreground)", _disabled: { opacity: 0.5 } })}
 							disabled={isBusy}
 							onClick={() => void onSaveRename(item)}
 						>
@@ -344,12 +346,12 @@ function DesktopRow({
 				) : null}
 
 				{isDeleting ? (
-					<div className="mt-3 flex items-center justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/5 p-3">
-						<p className="text-sm text-foreground">Delete this session?</p>
-						<div className="flex gap-2">
+					<div className={css({ marginTop: "0.75rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", borderRadius: "0.375rem", border: "1px solid color-mix(in srgb, var(--destructive) 30%, transparent)", background: "color-mix(in srgb, var(--destructive) 5%, transparent)", padding: "0.75rem" })}>
+						<p className={css({ fontSize: "0.875rem", color: "var(--foreground)" })}>Delete this session?</p>
+						<div className={css({ display: "flex", gap: "0.5rem" })}>
 							<button
 								type="button"
-								className="rounded-md px-3 py-2 text-sm hover:bg-accent"
+								className={css({ borderRadius: "0.375rem", padding: "0.5rem 0.75rem", fontSize: "0.875rem", _hover: { background: "var(--accent)" } })}
 								disabled={isBusy}
 								onClick={onCancelDelete}
 							>
@@ -357,7 +359,7 @@ function DesktopRow({
 							</button>
 							<button
 								type="button"
-								className="rounded-md bg-destructive px-3 py-2 text-sm text-destructive-foreground disabled:opacity-50"
+								className={css({ borderRadius: "0.375rem", background: "var(--destructive)", padding: "0.5rem 0.75rem", fontSize: "0.875rem", color: "var(--destructive-foreground)", _disabled: { opacity: 0.5 } })}
 								disabled={isBusy}
 								onClick={() => void onConfirmDelete(item)}
 							>
@@ -533,7 +535,7 @@ export function SessionBrowserDesktop({
 				await store.rename(
 					item.session.id,
 					nextTitle,
-					aiSuggestionForSessionId === item.session.id || item.session.aiGeneratedTitle,
+					aiSuggestionForSessionId === item.session.id,
 				);
 				setEditingSessionId(null);
 				setAiSuggestionForSessionId(null);
@@ -651,21 +653,21 @@ export function SessionBrowserDesktop({
 
 	if (collapsed) {
 		return (
-			<aside className="session-sidebar flex w-14 shrink-0 flex-col items-center gap-3 border-r-2 border-border bg-background py-3">
+			<aside className={`${css({ width: "3.5rem", flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem", borderRight: "2px solid var(--border)", background: "var(--background)", paddingBlock: "0.75rem" })} session-sidebar`}>
 				<button
 					type="button"
-					className="inline-flex h-10 w-10 items-center justify-center rounded-md text-foreground hover:bg-accent hover:text-accent-foreground"
+					className={css({ display: "inline-flex", height: "2.5rem", width: "2.5rem", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", color: "var(--foreground)", transitionProperty: "background-color, color", transitionDuration: "150ms", _hover: { background: "var(--accent)", color: "var(--accent-foreground)" } })}
 					title="Expand sessions panel"
 					aria-label="Expand sessions panel"
 					onClick={() => onCollapsedChange?.(false)}
 				>
 					<PanelLeftOpen size={16} />
 				</button>
-				<div className="my-1 h-px w-8 bg-border" />
+				<div className={css({ marginBlock: "0.25rem", height: "1px", width: "2rem", background: "var(--border)" })} />
 				{onNewSession ? (
 					<button
 						type="button"
-						className="inline-flex h-10 w-10 items-center justify-center rounded-md text-foreground hover:bg-accent hover:text-accent-foreground"
+						className={css({ display: "inline-flex", height: "2.5rem", width: "2.5rem", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", color: "var(--foreground)", transitionProperty: "background-color, color", transitionDuration: "150ms", _hover: { background: "var(--accent)", color: "var(--accent-foreground)" } })}
 						title="New session"
 						aria-label="New session"
 						onClick={onNewSession}
@@ -679,24 +681,24 @@ export function SessionBrowserDesktop({
 
 	return (
 		<aside
-			className="session-sidebar relative flex shrink-0 flex-col border-r-2 border-border bg-background"
+			className={`${css({ position: "relative", display: "flex", flexShrink: 0, flexDirection: "column", borderRight: "2px solid var(--border)", background: "var(--background)" })} session-sidebar`}
 			style={{ width: `${sidebarWidth}px` }}
 		>
 			<div
-				className="group absolute inset-y-0 right-0 z-10 flex w-2 cursor-col-resize items-center justify-center"
+				className={`${css({ position: "absolute", insetBlock: 0, right: 0, zIndex: 10, display: "flex", width: "0.5rem", cursor: "col-resize", alignItems: "center", justifyContent: "center" })} group`}
 				onMouseDown={handleResizeStart}
 				onTouchStart={handleResizeStart}
 			>
-				<div className="h-8 w-0.5 rounded-full bg-border opacity-0 transition-opacity group-hover:opacity-100 group-active:opacity-100" />
+				<div className={css({ height: "2rem", width: "0.125rem", borderRadius: "9999px", background: "var(--border)", opacity: 0, transitionProperty: "opacity", transitionDuration: "150ms", _groupHover: { opacity: 1 }, _groupActive: { opacity: 1 } })} />
 			</div>
 
-			<header className="border-b border-border px-4 py-4">
-				<div className="flex items-start gap-3">
-					<div className="flex shrink-0 items-center gap-1">
+			<header className={css({ borderBottom: "1px solid var(--border)", paddingInline: "1rem", paddingBlock: "1rem" })}>
+				<div className={css({ display: "flex", alignItems: "flex-start", gap: "0.75rem" })}>
+					<div className={css({ display: "flex", flexShrink: 0, alignItems: "center", gap: "0.25rem" })}>
 						{onCollapsedChange ? (
 							<button
 								type="button"
-								className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+								className={css({ display: "inline-flex", height: "2.5rem", width: "2.5rem", flexShrink: 0, alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "1px solid var(--border)", color: "var(--muted-foreground)", transitionProperty: "background-color, color", transitionDuration: "150ms", _hover: { background: "var(--accent)", color: "var(--accent-foreground)" } })}
 								title="Collapse sessions panel"
 								aria-label="Collapse sessions panel"
 								onClick={() => onCollapsedChange(true)}
@@ -705,12 +707,12 @@ export function SessionBrowserDesktop({
 							</button>
 						) : null}
 					</div>
-					<div className="min-w-0 flex-1 text-right">
-						<div className="flex items-center justify-end gap-2 text-sm font-semibold">
+					<div className={css({ minWidth: 0, flex: 1, textAlign: "right" })}>
+						<div className={css({ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "0.5rem", fontSize: "0.875rem", fontWeight: 600 })}>
 							Sessions
 							<History size={15} />
 						</div>
-						<p className="mt-1 text-xs leading-5 text-muted-foreground">
+						<p className={css({ marginTop: "0.25rem", fontSize: "0.75rem", lineHeight: "1.25rem", color: "var(--muted-foreground)" })}>
 							Search, fork, rename, or load a previous conversation
 						</p>
 					</div>
@@ -718,17 +720,17 @@ export function SessionBrowserDesktop({
 				{onNewSession ? (
 					<button
 						type="button"
-						className="sb-new mt-3 inline-flex h-10 w-full items-center justify-center gap-2 text-sm font-semibold"
+						className={`${css({ marginTop: "0.75rem", display: "inline-flex", height: "2.5rem", width: "100%", alignItems: "center", justifyContent: "center", gap: "0.5rem", fontSize: "0.875rem", fontWeight: 600 })} sb-new`}
 						onClick={onNewSession}
 					>
 						<Plus size={16} />
 						New_Session
 					</button>
 				) : null}
-				<label className="mt-3 flex min-h-10 items-center gap-2 rounded-md border border-border bg-background px-3 text-xs">
-					<Search size={14} className="shrink-0 text-muted-foreground" />
+				<label className={css({ marginTop: "0.75rem", display: "flex", minHeight: "2.5rem", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", border: "1px solid var(--border)", background: "var(--background)", paddingInline: "0.75rem", fontSize: "0.75rem" })}>
+					<Search size={14} className={css({ flexShrink: 0, color: "var(--muted-foreground)" })} />
 					<input
-						className="min-w-0 flex-1 bg-transparent py-2 outline-none placeholder:text-muted-foreground"
+						className={css({ minWidth: 0, flex: 1, background: "transparent", paddingBlock: "0.5rem", outline: "none", _placeholder: { color: "var(--muted-foreground)" } })}
 						value={store.query}
 						placeholder="Search sessions"
 						onChange={(event) => store.setQuery(event.target.value)}
@@ -736,27 +738,27 @@ export function SessionBrowserDesktop({
 				</label>
 				{(errorMessage || store.error) ? (
 					<div
-						className="mt-3 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive"
+						className={css({ marginTop: "0.75rem", borderRadius: "0.375rem", border: "1px solid color-mix(in srgb, var(--destructive) 30%, transparent)", background: "color-mix(in srgb, var(--destructive) 5%, transparent)", paddingInline: "0.75rem", paddingBlock: "0.5rem", fontSize: "0.75rem", color: "var(--destructive)" })}
 						role="status"
 					>
 						{errorMessage || store.error}
 					</div>
 				) : null}
 			</header>
-			<div className="min-h-0 flex-1 overflow-y-auto p-3">
+			<div className={css({ minHeight: 0, flex: 1, overflowY: "auto", padding: "0.75rem" })}>
 				{store.loading && store.items.length === 0 ? (
-					<div className="flex items-center justify-center gap-2 py-8 text-xs text-muted-foreground">
-						<Loader2 size={14} className="animate-spin" />
+					<div className={css({ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", paddingBlock: "2rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+						<Spinner size={14} />
 						Loading
 					</div>
 				) : visibleItems.length === 0 ? (
-					<div className="px-2 py-8 text-center text-xs text-muted-foreground">
+					<div className={css({ paddingInline: "0.5rem", paddingBlock: "2rem", textAlign: "center", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
 						{store.items.length === 0 ? "No sessions yet" : "No sessions match your search"}
 					</div>
 				) : (
 					<ul
 						id={TREE_ID}
-						className="space-y-2 outline-none"
+						className={css({ display: "flex", flexDirection: "column", gap: "0.5rem", outline: "none" })}
 						role="tree"
 						aria-label="Session tree"
 						aria-activedescendant={visibleItems[focusedIndex] ? rowId(focusedIndex) : undefined}

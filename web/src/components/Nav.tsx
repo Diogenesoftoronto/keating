@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ThemeToggle } from "./ThemeToggle";
+import { css, cx } from "../../styled-system/css";
+import { btnRetro } from "../../styled-system/recipes";
 
 export function Nav() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -85,7 +87,7 @@ export function Nav() {
           <span className="nav-version font-terminal">v{import.meta.env.APP_VERSION}</span>
         </Link>
 
-        {/* Desktop links — visible at md (768px) and up, controlled by retro.css */}
+        {/* Desktop links — visible at md (768px) and up, controlled by Panda globalCss */}
         <div className="nav-desktop" style={{ alignItems: "center", gap: "1.5rem" }}>
           <Link to="/download" className="nav-link glitch-hover font-terminal nav-desktop-link">
             [DOWNLOAD]
@@ -114,7 +116,7 @@ export function Nav() {
           </div>
           <ThemeToggle />
           <button
-            className="btn-retro nav-desktop-link"
+            className={cx(btnRetro(), "nav-desktop-link")}
             style={{
               padding: "0.5rem 1rem",
               fontWeight: 700,
@@ -128,7 +130,16 @@ export function Nav() {
         </div>
 
         {/* Mobile actions + hamburger — visible below md (768px) */}
-        <div className="nav-mobile-actions flex md:hidden items-center gap-2">
+        <div
+          className={cx(
+            "nav-mobile-actions",
+            css({
+              display: { base: "flex", md: "none" },
+              alignItems: "center",
+              gap: "0.5rem"
+            })
+          )}
+        >
           <ThemeToggle />
           <button
             ref={toggleButtonRef}
@@ -242,7 +253,7 @@ export function Nav() {
               [GITHUB]
             </a>
             <button
-              className="btn-retro"
+              className={btnRetro()}
               style={{
                 padding: "0.75rem 1rem",
                 fontWeight: 700,

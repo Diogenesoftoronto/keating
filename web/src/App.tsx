@@ -51,6 +51,10 @@ const Pricing = lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/Pricing")),
   "Pricing",
 );
+const LatestCommitReview = lazyRouteComponent(
+  () => loadRouteChunk(() => import("./pages/LatestCommitReview")),
+  "LatestCommitReview",
+);
 import {
   applyKeatingUiTypography,
   loadKeatingUiSettings,
@@ -58,6 +62,7 @@ import {
 } from "./keating/ui-settings";
 import { getStoredDioIdentity } from "./dio-provider";
 import { loadRouteChunk } from "./lib/stale-build-recovery";
+import { css } from "../styled-system/css";
 
 const rootRoute = createRootRoute({ component: () => <Outlet /> });
 
@@ -145,6 +150,12 @@ const pricingRoute = createRoute({
 	component: Pricing,
 });
 
+const latestCommitReviewRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/review/latest-commit",
+  component: LatestCommitReview,
+});
+
 const routeTree = rootRoute.addChildren([
 	indexRoute,
 	chatRoute,
@@ -160,6 +171,7 @@ const routeTree = rootRoute.addChildren([
 	termsRoute,
 	privacyRoute,
 	pricingRoute,
+  latestCommitReviewRoute,
 ]);
 
 // Shown while a lazily-loaded route chunk is in flight (after defaultPendingMs)
@@ -175,7 +187,9 @@ function RoutePending() {
       }}
     >
       <div
-        className="animate-spin"
+        className={css({
+          animation: "spin 1s linear infinite"
+        })}
         aria-label="Loading"
         style={{
           width: 28,

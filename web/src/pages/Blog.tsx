@@ -3,6 +3,8 @@ import { Nav } from "../components/Nav";
 import { useSeo } from "../hooks/useSeo";
 import { SimpleFooter } from "../components/Footer";
 import { ChevronDown, ChevronUp, Hash, Search } from "lucide-react";
+import { css, cx } from "../../styled-system/css";
+import { paperCard } from "../../styled-system/recipes";
 
 type BadgeColor = "fix" | "release" | "feature" | "pwa" | "update" | "tech" | "devlog";
 
@@ -22,25 +24,227 @@ interface Post {
 }
 
 const BADGE_CLASSES: Record<BadgeColor, string> = {
-  fix: "bg-[#d97706]/10 text-[#d97706]",
-  release: "bg-[#1e9b50]/10 text-[#1e9b50]",
-  feature: "bg-[#1e9b50]/10 text-[#1e9b50]",
-  pwa: "bg-[#6366f1]/10 text-[#6366f1]",
-  update: "bg-[#d97706]/10 text-[#d97706]",
-  tech: "bg-[#6366f1]/10 text-[#6366f1]",
-  devlog: "bg-[#d97706]/10 text-[#d97706]",
+  fix: css({ bg: "rgba(217, 119, 6, 0.1)", color: "#d97706" }),
+  release: css({ bg: "rgba(30, 155, 80, 0.1)", color: "#1e9b50" }),
+  feature: css({ bg: "rgba(30, 155, 80, 0.1)", color: "#1e9b50" }),
+  pwa: css({ bg: "rgba(99, 102, 241, 0.1)", color: "#6366f1" }),
+  update: css({ bg: "rgba(217, 119, 6, 0.1)", color: "#d97706" }),
+  tech: css({ bg: "rgba(99, 102, 241, 0.1)", color: "#6366f1" }),
+  devlog: css({ bg: "rgba(217, 119, 6, 0.1)", color: "#d97706" }),
+};
+
+const styles = {
+  code: css({
+    bg: "#1c211b",
+    color: "#f1ece0",
+    px: "0.25rem",
+    borderRadius: "0.25rem",
+    fontSize: "0.875rem",
+  }),
+  codeBlock: cx("code-block", css({ mb: "1rem", overflowX: "auto" })),
+  codePre: css({ whiteSpace: "pre-wrap", overflowWrap: "break-word" }),
+  paragraph: css({ mb: "1rem" }),
+  leadParagraph: css({ mb: "1rem", lineHeight: "1.5rem" }),
+  smallParagraph: css({ mb: "1rem", fontSize: "0.875rem" }),
+  sectionHeading: css({ mt: "1rem", mb: "0.5rem", fontWeight: "700" }),
+  underlinedHeading: css({
+    mb: "0.25rem",
+    fontWeight: "700",
+    textDecoration: "underline",
+    textDecorationColor: "#d5604b",
+  }),
+  mutedText: css({ color: "var(--muted-foreground)" }),
+  smallMutedText: css({ fontSize: "0.875rem", color: "var(--muted-foreground)" }),
+  smallText: css({ fontSize: "0.875rem" }),
+  italicMutedNote: css({ mt: "1.5rem", fontSize: "0.875rem", fontStyle: "italic", color: "var(--muted-foreground)" }),
+  unorderedList: css({ ml: "1rem", mb: "1rem", fontSize: "0.875rem", "& > * + *": { mt: "0.5rem" } }),
+  tightList: css({ ml: "1rem", fontSize: "0.875rem", "& > * + *": { mt: "0.25rem" } }),
+  listDisc: css({ mb: "1rem", pl: "1.5rem", fontSize: "0.875rem", listStyleType: "disc", "& > * + *": { mt: "0.25rem" } }),
+  spacedList3: css({ ml: "1rem", mb: "1rem", fontSize: "0.875rem", "& > * + *": { mt: "0.75rem" } }),
+  spacedList4: css({ ml: "1rem", mb: "1rem", fontSize: "0.875rem", "& > * + *": { mt: "1rem" } }),
+  stack5: css({ mb: "1rem", "& > * + *": { mt: "1.25rem" } }),
+  table: css({ w: "100%", minW: "520px", borderCollapse: "collapse", fontSize: "0.875rem" }),
+  tableHeaderCell: css({ borderBottom: "1px solid var(--border)", textAlign: "left" }),
+  tableRow: css({ borderBottom: "1px solid color-mix(in srgb, var(--border) 30%, transparent)" }),
+  tableHeadPadded: css({ py: "0.5rem", pr: "1rem", fontWeight: "700" }),
+  tableHead: css({ py: "0.5rem", fontWeight: "700" }),
+  tableCellPadded: css({ py: "0.5rem", pr: "1rem", verticalAlign: "top" }),
+  tableCell: css({ py: "0.5rem", verticalAlign: "top" }),
+  article: cx(paperCard(), "post-card", css({ p: "1.5rem", scrollMarginTop: "7rem" })),
+  articleMeta: css({ display: "flex", alignItems: "center", gap: "0.75rem", mb: "0.75rem" }),
+  date: cx("font-terminal", css({ color: "#d5604b" })),
+  badge: css({ borderRadius: "0.25rem", px: "0.5rem", py: "0.25rem", fontSize: "0.75rem" }),
+  version: cx("font-terminal", css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })),
+  postTitle: css({ mb: "0.5rem", fontSize: "1.25rem", fontWeight: "700" }),
+  summary: css({ fontSize: "0.875rem", lineHeight: "1.5rem" }),
+  lineClamp2: css({
+    lineClamp: 2,
+  }),
+  contentsPanel: css({
+    mt: "0.75rem",
+    mb: "1rem",
+    borderRadius: "0.375rem",
+    border: "1px solid var(--border)",
+    bg: "color-mix(in srgb, var(--muted) 30%, transparent)",
+    p: "0.75rem",
+  }),
+  contentsLabel: css({
+    mb: "0.5rem",
+    display: "flex",
+    alignItems: "center",
+    gap: "0.375rem",
+    fontSize: "0.75rem",
+    fontWeight: "600",
+    color: "var(--muted-foreground)",
+    textTransform: "uppercase",
+    letterSpacing: "0.05em",
+  }),
+  wrapRow: css({ display: "flex", flexWrap: "wrap", gap: "0.5rem" }),
+  sectionLink: css({
+    borderRadius: "0.25rem",
+    border: "1px solid var(--border)",
+    bg: "var(--background)",
+    px: "0.5rem",
+    py: "0.25rem",
+    fontSize: "0.75rem",
+    transitionProperty: "color, background-color, border-color",
+    transitionDuration: "150ms",
+    _hover: { borderColor: "var(--primary)", color: "var(--primary)" },
+  }),
+  expandedBody: css({ mt: "1rem" }),
+  toggleButton: cx(
+    "font-terminal",
+    css({
+      mt: "1rem",
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "0.375rem",
+      fontSize: "0.75rem",
+      color: "var(--muted-foreground)",
+      transitionProperty: "color",
+      transitionDuration: "150ms",
+      _hover: { color: "var(--foreground)" },
+    }),
+  ),
+  panel: cx(paperCard(), css({ mb: "1.5rem", p: "1.25rem" })),
+  panelTight: cx(paperCard(), css({ p: "1.25rem" })),
+  filtersStack: css({ display: "flex", flexDir: "column", gap: "1rem" }),
+  labelStack: css({ display: "flex", flexDir: "column", gap: "0.5rem" }),
+  terminalLabel: cx("font-terminal", css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })),
+  relative: css({ position: "relative" }),
+  searchIcon: css({
+    pointerEvents: "none",
+    position: "absolute",
+    left: "0.75rem",
+    top: "50%",
+    transform: "translateY(-50%)",
+    color: "var(--muted-foreground)",
+  }),
+  input: css({
+    w: "100%",
+    borderRadius: "0.375rem",
+    border: "2px solid var(--border)",
+    bg: "var(--background)",
+    py: "0.5rem",
+    pl: "2.25rem",
+    pr: "0.75rem",
+    fontSize: "0.875rem",
+    color: "var(--foreground)",
+  }),
+  twoColumnGrid: css({ display: "grid", gap: "0.75rem", md: { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" } }),
+  filterHeading: cx("font-terminal", css({ mb: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })),
+  filterButton: css({
+    borderRadius: "0.375rem",
+    border: "1px solid",
+    px: "0.625rem",
+    py: "0.375rem",
+    fontSize: "0.75rem",
+    transitionProperty: "color, background-color, border-color",
+    transitionDuration: "150ms",
+  }),
+  filterButtonActive: css({ borderColor: "var(--primary)", bg: "color-mix(in srgb, var(--primary) 15%, transparent)", color: "var(--primary)" }),
+  filterButtonInactive: css({
+    borderColor: "var(--border)",
+    bg: "var(--background)",
+    color: "var(--foreground)",
+    _hover: { bg: "color-mix(in srgb, var(--muted) 60%, transparent)" },
+  }),
+  toc: cx(paperCard(), css({ position: "sticky", top: "5rem", p: "1.25rem" })),
+  tocTitle: cx("font-terminal", css({ mb: "0.25rem", fontSize: "0.875rem", color: "var(--accent)" })),
+  tocIntro: css({ mb: "1rem", fontSize: "0.75rem", lineHeight: "1.25rem", color: "var(--muted-foreground)" }),
+  stack3: css({ "& > * + *": { mt: "0.75rem" } }),
+  tocVersion: cx("font-terminal", css({ mb: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.05em" })),
+  stack1: css({ "& > * + *": { mt: "0.25rem" } }),
+  tocButton: css({
+    w: "100%",
+    borderRadius: "0.25rem",
+    px: "0.375rem",
+    py: "0.25rem",
+    textAlign: "left",
+    fontSize: "0.75rem",
+    lineHeight: "1rem",
+    transitionProperty: "color, background-color, border-color",
+    transitionDuration: "150ms",
+  }),
+  tocButtonActive: css({ border: "1px solid color-mix(in srgb, var(--primary) 20%, transparent)", bg: "color-mix(in srgb, var(--primary) 10%, transparent)", color: "var(--primary)" }),
+  tocButtonInactive: css({ color: "color-mix(in srgb, var(--foreground) 80%, transparent)", _hover: { bg: "color-mix(in srgb, var(--muted) 50%, transparent)" } }),
+  blockMedium: css({ display: "block", fontWeight: "500" }),
+  tinyMutedTerminal: cx("font-terminal", css({ fontSize: "10px", color: "var(--muted-foreground)" })),
+  featuredGrid: css({ mb: "1.5rem", display: "grid", gap: "0.75rem", md: { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" } }),
+  featuredCard: css({
+    borderRadius: "0.375rem",
+    border: "2px solid var(--border)",
+    bg: "var(--background)",
+    p: "1rem",
+    textAlign: "left",
+    transitionProperty: "color, background-color, border-color",
+    transitionDuration: "150ms",
+    _hover: { bg: "color-mix(in srgb, var(--muted) 50%, transparent)" },
+  }),
+  cardMeta: css({ mb: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem" }),
+  smallBadge: css({ borderRadius: "0.25rem", px: "0.5rem", py: "0.125rem", fontSize: "10px" }),
+  elevenTerminalMuted: cx("font-terminal", css({ fontSize: "11px", color: "var(--muted-foreground)" })),
+  cardTitle: css({ fontSize: "0.875rem", fontWeight: "600", lineHeight: "1.25rem" }),
+  cardSummary: css({ mt: "0.25rem", fontSize: "0.75rem", lineHeight: "1.25rem", color: "var(--muted-foreground)" }),
+  resourceHeader: css({ mb: "0.75rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }),
+  resourceTitle: css({ fontSize: "1.125rem", fontWeight: "700" }),
+  resourceLink: css({
+    borderRadius: "0.375rem",
+    border: "1px solid var(--border)",
+    bg: "var(--background)",
+    p: "0.75rem",
+    transitionProperty: "color, background-color, border-color",
+    transitionDuration: "150ms",
+    _hover: { bg: "color-mix(in srgb, var(--muted) 50%, transparent)" },
+  }),
+  blockSemibold: css({ display: "block", fontSize: "0.875rem", fontWeight: "600" }),
+  page: cx("retro-layout", "retro-page"),
+  main: css({ pt: "1.5rem", pb: "4rem", px: "1.5rem" }),
+  container: css({ maxW: "72rem", mx: "auto" }),
+  hero: cx(paperCard(), css({ mb: "2rem", p: "2rem" })),
+  heroTitle: css({ mb: "0.5rem", fontSize: "1.875rem", fontWeight: "700", md: { fontSize: "2.25rem" } }),
+  heroSubtitle: cx("font-terminal", css({ color: "var(--muted-foreground)" })),
+  contentLayout: css({ display: "flex", flexDir: "column", gap: "2rem", lg: { flexDir: "row" } }),
+  postsColumn: css({ minW: 0, flex: "1 1 0%", "& > * + *": { mt: "1.5rem" } }),
+  emptyState: cx(paperCard(), css({ p: "2rem", textAlign: "center" })),
+  emptyTitle: css({ fontSize: "1.125rem", fontWeight: "700" }),
+  sidebar: css({ flexShrink: 0, lg: { w: "16rem" } }),
+  stayUpdated: css({ mt: "3rem", bg: "var(--foreground)", p: "1.5rem", color: "var(--background)" }),
+  stayTitle: cx("font-terminal", css({ mb: "0.5rem", fontSize: "1.125rem" })),
+  inverseMuted: css({ fontSize: "0.875rem", color: "color-mix(in srgb, var(--background) 70%, transparent)" }),
+  redLink: css({ color: "#d5604b", textDecoration: "underline" }),
 };
 
 function Code({ children }: { children: React.ReactNode }) {
   return (
-    <code className="bg-[#1c211b] text-[#f1ece0] px-1 rounded text-sm">{children}</code>
+    <code className={styles.code}>{children}</code>
   );
 }
 
 function CodeBlock({ children }: { children: string }) {
   return (
-    <div className="code-block mb-4 overflow-x-auto">
-      <pre className="whitespace-pre-wrap break-words">{children}</pre>
+    <div className={styles.codeBlock}>
+      <pre className={styles.codePre}>{children}</pre>
     </div>
   );
 }
@@ -73,7 +277,7 @@ const POSTS: Post[] = [
     ],
     body: (
       <>
-        <p className="mb-4 leading-6">
+        <p className={styles.leadParagraph}>
           2.0.0 is the first Keating release that treats the desktop app and the
           peer-to-peer storage layer as first-class product surfaces. The web app
           is still the fastest way to start learning, but the architecture now has
@@ -81,17 +285,17 @@ const POSTS: Post[] = [
           core package for local-first storage and replication work.
         </p>
 
-        <h3 id="desktop-p2p" className="font-bold mt-4 mb-2">
+        <h3 id="desktop-p2p" className={styles.sectionHeading}>
           Desktop and P2P Storage
         </h3>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           The new desktop workspace boots Keating through Electron with the
           renderer sandboxed and all storage calls crossing a typed IPC boundary.
           The main process owns the P2P store, persists a per-user swarm secret,
           exposes peer stats, and adapts Hyperbee/Corestore storage to the same
           storage shape the browser app already expects.
         </p>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           That shared storage logic lives in <Code>@keating/p2p-core</Code>. It
           now builds runnable JavaScript into <Code>dist/</Code>, exports that JS
           for Node and Electron, and keeps the seeder entrypoint on the same
@@ -99,10 +303,10 @@ const POSTS: Post[] = [
           source through workspace exports.
         </p>
 
-        <h3 id="settings-sessions" className="font-bold mt-4 mb-2">
+        <h3 id="settings-sessions" className={styles.sectionHeading}>
           Settings and Sessions
         </h3>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           The settings surface has been reworked around shared local-setting
           hooks. Speech, model preferences, and UI settings now follow the same
           subscription pattern, which makes settings changes easier to reason
@@ -111,10 +315,10 @@ const POSTS: Post[] = [
           split.
         </p>
 
-        <h3 id="public-app-surface" className="font-bold mt-4 mb-2">
+        <h3 id="public-app-surface" className={styles.sectionHeading}>
           Public App Surface
         </h3>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           Keating now has public <Code>/download</Code>, <Code>/privacy</Code>,
           and <Code>/terms</Code> routes, with navigation, footer, and sitemap
           updates so the app has a clearer release and policy surface. The retro
@@ -122,10 +326,10 @@ const POSTS: Post[] = [
           landing, app, settings, and public pages feel less stitched together.
         </p>
 
-        <h3 id="release-runtime" className="font-bold mt-4 mb-2">
+        <h3 id="release-runtime" className={styles.sectionHeading}>
           Release Runtime Fixes
         </h3>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           The lazy-route loader now goes through stale-build recovery, so users
           with an old HTML shell can reload cleanly when a deployed chunk has
           been replaced. On the P2P side, <Code>deriveTopic</Code> uses a
@@ -134,8 +338,8 @@ const POSTS: Post[] = [
           the transitive <Code>sodium-native</Code> addon is unavailable.
         </p>
 
-        <h3 id="verification-2" className="font-bold mt-4 mb-2">Verification</h3>
-        <p className="text-sm mb-4">
+        <h3 id="verification-2" className={styles.sectionHeading}>Verification</h3>
+        <p className={styles.smallParagraph}>
           This release was checked with the P2P package build/typecheck/tests,
           the desktop main build/typecheck path, and the web TypeScript check.
           The native Hypercore-backed storage tests remain conditional: they run
@@ -161,7 +365,7 @@ const POSTS: Post[] = [
     ],
     body: (
       <>
-        <p className="mb-4 leading-6">
+        <p className={styles.leadParagraph}>
           1.4.1 is a correctness release for the shipped web app. The last
           release added analytics, richer model/provider surfaces, Dio provider
           plumbing, and more public-facing instrumentation. This patch makes the
@@ -171,10 +375,10 @@ const POSTS: Post[] = [
           disappear because a safety check was stricter than Mermaid's SVG output.
         </p>
 
-        <h3 id="production-analytics" className="font-bold mt-4 mb-2">
+        <h3 id="production-analytics" className={styles.sectionHeading}>
           Production Analytics Actually Starts
         </h3>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           The previous integration had the right event call sites in the bundle,
           but production builds could compile PostHog initialization away when{" "}
           <Code>VITE_POSTHOG_PROJECT_TOKEN</Code> was missing at build time. The
@@ -182,7 +386,7 @@ const POSTS: Post[] = [
           so <Code>initPostHog()</Code> can create the provider client in the
           deployed app instead of returning <Code>null</Code>.
         </p>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           The second half of the fix is server-side: Nitro now proxies{" "}
           <Code>/ingest</Code>, <Code>/ingest/static</Code>, and{" "}
           <Code>/ingest/array</Code> in production, matching the Vite development
@@ -190,10 +394,10 @@ const POSTS: Post[] = [
           proxy routes fall through to the SPA HTML shell.
         </p>
 
-        <h3 id="mermaid-diagrams" className="font-bold mt-4 mb-2">
+        <h3 id="mermaid-diagrams" className={styles.sectionHeading}>
           Mermaid Diagrams Render Again
         </h3>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           A security hardening pass added SVG sanitization before diagrams are
           inserted into the page. That was the right boundary, but the first
           implementation parsed Mermaid's SVG with a strict XML parser and
@@ -202,7 +406,7 @@ const POSTS: Post[] = [
           when Mermaid emits safe-but-not-XML-perfect markup, and still strips
           unsafe elements, event handlers, JavaScript URLs, and unsafe CSS.
         </p>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           Mermaid handling is also more direct in chat. Fenced{" "}
           <Code>mermaid</Code> blocks now render as diagrams in live chat,
           shared-session markdown, and artifact markdown instead of only being
@@ -210,10 +414,10 @@ const POSTS: Post[] = [
           parameterized fences such as <Code>```Mermaid title="..."</Code>.
         </p>
 
-        <h3 id="teaching-and-data-features" className="font-bold mt-4 mb-2">
+        <h3 id="teaching-and-data-features" className={styles.sectionHeading}>
           Quiz Grading and Fine-Tune Import
         </h3>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           Open-ended quiz questions no longer pretend a string match is a real
           grade. Short-answer, transfer, and single-blank fill-in questions now
           render as "pending review" with the reference answer and a clearly
@@ -223,7 +427,7 @@ const POSTS: Post[] = [
           the result card. Markdown also gained <Code>||spoiler||</Code>{" "}
           click-to-reveal masks so hints can be hidden until the learner is ready.
         </p>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           On the data side, Keating can now import fine-tune datasets in the CLI
           and the web app. ChatML, Alpaca, and JSONL inputs are parsed by a
           dependency-free shared parser, paired with export improvements and
@@ -231,10 +435,10 @@ const POSTS: Post[] = [
           only out of it.
         </p>
 
-        <h3 id="release-and-provider-notes" className="font-bold mt-4 mb-2">
+        <h3 id="release-and-provider-notes" className={styles.sectionHeading}>
           Release and Provider Notes
         </h3>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           The public update trail now covers the provider-auth recovery, voice
           default, and provider-aware search cleanup that landed after the last
           tagged release. The repo also has a documented <Code>devenv.nix</Code>{" "}
@@ -243,8 +447,8 @@ const POSTS: Post[] = [
           dependent on memory.
         </p>
 
-        <h3 id="verification" className="font-bold mt-4 mb-2">Verification</h3>
-        <p className="text-sm mb-4">
+        <h3 id="verification" className={styles.sectionHeading}>Verification</h3>
+        <p className={styles.smallParagraph}>
           This patch adds a Mermaid regression test for uppercase and
           parameterized fences, keeps the existing SVG safety checks in place,
           and verifies the web app through the Bun test suite plus the full
@@ -267,7 +471,7 @@ const POSTS: Post[] = [
     ],
     body: (
       <>
-        <p className="mb-4 leading-6">
+        <p className={styles.leadParagraph}>
           This update is about making Keating less brittle around the edges. The
           teaching engine did not change direction, but the setup path, speech
           path, and provider defaults were tightened so the product behaves more
@@ -275,8 +479,8 @@ const POSTS: Post[] = [
           capabilities.
         </p>
 
-        <h3 id="provider-auth-recovery" className="font-bold mt-4 mb-2">Provider Auth Recovery</h3>
-        <p className="text-sm mb-4">
+        <h3 id="provider-auth-recovery" className={styles.sectionHeading}>Provider Auth Recovery</h3>
+        <p className={styles.smallParagraph}>
           Recent CLI, runtime, and settings work makes provider credential
           resolution fail earlier and explain itself more clearly. That matters
           because setup friction is not a cosmetic problem for a tutoring tool:
@@ -286,8 +490,8 @@ const POSTS: Post[] = [
           consistent across surfaces.
         </p>
 
-        <h3 id="voice-defaults" className="font-bold mt-4 mb-2">Voice Defaults</h3>
-        <p className="text-sm mb-4">
+        <h3 id="voice-defaults" className={styles.sectionHeading}>Voice Defaults</h3>
+        <p className={styles.smallParagraph}>
           The voice stack also got a correctness pass. Keating now does a better
           job of choosing sane defaults for speech providers and avoiding the
           feeling that voice is available in principle but misconfigured in
@@ -295,8 +499,8 @@ const POSTS: Post[] = [
           source of confusing half-on states.
         </p>
 
-        <h3 id="provider-aware-search" className="font-bold mt-4 mb-2">Provider-Aware Search</h3>
-        <p className="text-sm mb-4">
+        <h3 id="provider-aware-search" className={styles.sectionHeading}>Provider-Aware Search</h3>
+        <p className={styles.smallParagraph}>
           Provider-specific web search and grounding defaults were cleaned up so
           the browser side is less surprising. The important part is not a new
           toggle; it is that the toggle now follows provider capability more
@@ -304,8 +508,8 @@ const POSTS: Post[] = [
           about when switching models.
         </p>
 
-        <h3 id="release-guardrails" className="font-bold mt-4 mb-2">Release Guardrails</h3>
-        <p className="text-sm mb-4">
+        <h3 id="release-guardrails" className={styles.sectionHeading}>Release Guardrails</h3>
+        <p className={styles.smallParagraph}>
           The repo now also has a proper <Code>devenv.nix</Code> path for release
           hygiene. It exposes <Code>bumpy</Code> when the current nixpkgs revision
           provides it, adds a small <Code>bump-version</Code> helper that runs{" "}
@@ -333,15 +537,15 @@ const POSTS: Post[] = [
     ],
     body: (
       <>
-        <p className="mb-4 leading-6">
+        <p className={styles.leadParagraph}>
           1.3.0 is a surface release. The teaching engine is the same Socratic
           loop, but the way you meet it - on the landing page and inside the chat -
           got a lot more deliberate. The headline is a hero you can actually
           touch, and a transcript you can actually read.
         </p>
 
-        <h3 id="interactive-hero" className="font-bold mt-4 mb-2">An Interactive Hero</h3>
-        <p className="text-sm mb-4">
+        <h3 id="interactive-hero" className={styles.sectionHeading}>An Interactive Hero</h3>
+        <p className={styles.smallParagraph}>
           The front page now renders a 3D CRT monitor in WebGL. It is not a
           screenshot - the screen boots a live <Code>keating</Code> terminal
           sequence, the power LED and buttons respond to hover, and the mascot
@@ -351,14 +555,14 @@ const POSTS: Post[] = [
           gracefully falls back to the existing 2D terminal demo, so nothing is
           lost on lower-end hardware.
         </p>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           The goal is honest: the home page should feel like the tool. A retro
           machine that responds to you is a better promise than a static banner
           claiming the same thing.
         </p>
 
-        <h3 id="readable-chat" className="font-bold mt-4 mb-2">Readable Chat</h3>
-        <p className="text-sm mb-4">
+        <h3 id="readable-chat" className={styles.sectionHeading}>Readable Chat</h3>
+        <p className={styles.smallParagraph}>
           Keating's replies render on a retro panel, but that panel is now
           theme-aware instead of forced dark. In light mode it is a readable cream
           panel with dark ink and a barely-there scanline; in dark mode it becomes
@@ -368,8 +572,8 @@ const POSTS: Post[] = [
           instead of fighting a narrow box.
         </p>
 
-        <h3 id="retro-and-mobile-polish" className="font-bold mt-4 mb-2">Retro and Mobile Polish</h3>
-        <p className="text-sm mb-4">
+        <h3 id="retro-and-mobile-polish" className={styles.sectionHeading}>Retro and Mobile Polish</h3>
+        <p className={styles.smallParagraph}>
           A broad pass tightened the rest of the interface, with particular
           attention to mobile. The landing page, navigation, footer, session
           cards, session sidebar, and session manager were all reworked, and the
@@ -380,8 +584,8 @@ const POSTS: Post[] = [
           review in isolation rather than only inside a running session.
         </p>
 
-        <h3 id="usage-and-runtime" className="font-bold mt-4 mb-2">Usage and Browser Runtime</h3>
-        <p className="text-sm mb-4">
+        <h3 id="usage-and-runtime" className={styles.sectionHeading}>Usage and Browser Runtime</h3>
+        <p className={styles.smallParagraph}>
           The usage page and its charts were overhauled, backed by a dedicated
           chart-data pipeline and topic grouping so your learning history is
           easier to read at a glance. Under the hood, the in-browser runtime
@@ -393,8 +597,8 @@ const POSTS: Post[] = [
           grouping, and snapshot paths.
         </p>
 
-        <h3 id="single-source-of-truth" className="font-bold mt-4 mb-2">One Version, Everywhere</h3>
-        <p className="text-sm mb-4">
+        <h3 id="single-source-of-truth" className={styles.sectionHeading}>One Version, Everywhere</h3>
+        <p className={styles.smallParagraph}>
           Version numbers used to drift between the CLI, the package shim, the web
           app, the Pi extension, and the page metadata. Now a single{" "}
           <Code>scripts/sync-version.ts</Code> reads the canonical version from the
@@ -425,14 +629,14 @@ const POSTS: Post[] = [
     ],
     body: (
       <>
-        <p className="mb-4 leading-6">
+        <p className={styles.leadParagraph}>
           KeatingBench is a new benchmark surface for a narrower question than
           most model leaderboards ask: which model actually teaches better in
           learner interactions? It sits at <Code>/bench</Code>, separate from
           chat and usage, and ranks models using the session data learners choose
           to share.
         </p>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           The page is deliberately closer to an evaluation dashboard than a
           release note. It shows the model leaderboard, replay evidence, PROSPER
           scoring dimensions, readiness bands, and an explainer for how each
@@ -440,15 +644,15 @@ const POSTS: Post[] = [
           trusted.
         </p>
 
-        <h3 id="why-keatingbench-exists" className="font-bold mt-4 mb-2">Why KeatingBench Exists</h3>
-        <p className="text-sm mb-4">
+        <h3 id="why-keatingbench-exists" className={styles.sectionHeading}>Why KeatingBench Exists</h3>
+        <p className={styles.smallParagraph}>
           A generic answer-quality benchmark is not enough for a tutoring system.
           A teaching model should diagnose where the learner is, recover from
           confusion, correct mistakes, invite practice, and help the learner
           transfer the idea to a new case. KeatingBench treats those learner
           outcomes as first-class evidence.
         </p>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           That also changes how data should be used. Synthetic learners can be
           useful for stress tests, but the primary benchmark should be grounded
           in real learner interaction. KeatingBench starts from shared sessions
@@ -456,15 +660,15 @@ const POSTS: Post[] = [
           replayable learner states.
         </p>
 
-        <h3 id="what-gets-tested" className="font-bold mt-4 mb-2">What Gets Tested</h3>
-        <p className="text-sm mb-4">
+        <h3 id="what-gets-tested" className={styles.sectionHeading}>What Gets Tested</h3>
+        <p className={styles.smallParagraph}>
           KeatingBench looks for teaching moments inside learner turns. A turn
           may signal understanding, confusion, correction, transfer, retention
           need, or dissatisfaction. Those are different from simple thumbs up or
           thumbs down ratings because they reveal where the learner is in the
           teaching loop.
         </p>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           The benchmark currently classifies replay stages as{" "}
           <Code>diagnosis</Code>, <Code>confusion-recovery</Code>,{" "}
           <Code>correction</Code>, <Code>transfer</Code>, and{" "}
@@ -473,8 +677,8 @@ const POSTS: Post[] = [
           cases.
         </p>
 
-        <h3 id="from-session-to-signal" className="font-bold mt-4 mb-2">From Session to Signal</h3>
-        <p className="text-sm mb-4">
+        <h3 id="from-session-to-signal" className={styles.sectionHeading}>From Session to Signal</h3>
+        <p className={styles.smallParagraph}>
           The data path starts with a shared or local session. KeatingBench reads
           the learner messages, extracts feedback-like signals from the learner's
           own words, and records the nearby assistant context. Each extracted
@@ -483,15 +687,15 @@ const POSTS: Post[] = [
         <CodeBlock>{`thumbs-up   -> high outcome signal
 confused    -> mid-low outcome signal
 thumbs-down -> low outcome signal`}</CodeBlock>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           Explicit feedback remains valuable, but the benchmark also uses
           learner-turn analysis because a confused follow-up or a correction is
           meaningful evidence even when the learner never clicks a feedback
           button.
         </p>
 
-        <h3 id="prosper-judgement" className="font-bold mt-4 mb-2">PROSPER Judgement</h3>
-        <p className="text-sm mb-4">
+        <h3 id="prosper-judgement" className={styles.sectionHeading}>PROSPER Judgement</h3>
+        <p className={styles.smallParagraph}>
           The headline rank is not the raw outcome score. It is a PROSPER score:
           a weighted multi-objective judgement designed to avoid rewarding narrow
           or brittle behavior. Raw outcome is still shown in the table, but it is
@@ -505,29 +709,29 @@ thumbs-down -> low outcome signal`}</CodeBlock>
   personalization
   evidence quality
   retention / transfer`}</CodeBlock>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           This means a model can rank well only when it balances learner outcome
           with evidence quality and teaching behavior. A model that gets a few
           positive signals but has little evidence remains marked as sparse.
         </p>
 
-        <h3 id="replay-case-bank" className="font-bold mt-4 mb-2">Replay Case Bank</h3>
-        <p className="text-sm mb-4">
+        <h3 id="replay-case-bank" className={styles.sectionHeading}>Replay Case Bank</h3>
+        <p className={styles.smallParagraph}>
           The replay case bank is the most important part of the page. It shows
           the learner states KeatingBench is actually using: stage, inferred
           feedback signal, learner text, outcome score, and PROSPER score. This
           makes the benchmark auditable instead of just producing a mysterious
           rank.
         </p>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           The same case bank is also the foundation for cross-model replay. Once
           provider replay is wired in, the harness can send the same extracted
           learner state to multiple models and compare their responses under the
           same judgement criteria.
         </p>
 
-        <h3 id="readiness-and-sparsity" className="font-bold mt-4 mb-2">Readiness and Sparsity</h3>
-        <p className="text-sm mb-4">
+        <h3 id="readiness-and-sparsity" className={styles.sectionHeading}>Readiness and Sparsity</h3>
+        <p className={styles.smallParagraph}>
           KeatingBench does not treat all data volumes equally. Sparse data is
           visible but should not drive strong conclusions or policy evolution.
           The page currently uses explicit readiness bands:
@@ -537,35 +741,35 @@ sparse       >= 5 signals
 provisional  >= 20 signals
 rankable     >= 50 signals
 stable       >= 100 signals`}</CodeBlock>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           The policy-evolution gate is still stricter about caution: if the
           system does not have enough real learner signal, it should say it is
           not ready to evolve rather than pretending a thin sample is a reliable
           improvement target.
         </p>
 
-        <h3 id="privacy-and-analytics" className="font-bold mt-4 mb-2">Privacy and Analytics</h3>
-        <p className="text-sm mb-4">
+        <h3 id="privacy-and-analytics" className={styles.sectionHeading}>Privacy and Analytics</h3>
+        <p className={styles.smallParagraph}>
           KeatingBench uses shared sessions as benchmark material only when those
           sessions are available to the app. Local private sessions stay in the
           local view. The new PostHog integration is opt-in through Vite
           environment variables, with autocapture and session recording disabled
           so learner text is not automatically sent as analytics data.
         </p>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           The analytics events are aggregate events such as opening or exporting
           the benchmark. The benchmark data itself remains the session corpus,
           not a hidden analytics stream.
         </p>
 
-        <h3 id="next-step-cross-model-replay" className="font-bold mt-4 mb-2">Next Step</h3>
-        <p className="text-sm mb-4">
+        <h3 id="next-step-cross-model-replay" className={styles.sectionHeading}>Next Step</h3>
+        <p className={styles.smallParagraph}>
           The current implementation scores observed sessions deterministically.
           The next real step is provider replay: take the same replay case, send
           it to multiple models, and judge the resulting teaching move with the
           same PROSPER vector.
         </p>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           That is the path from a useful local leaderboard to a proper
           KeatingBench: human-grounded cases, comparable model responses,
           transparent scoring, and enough evidence to know when the system is
@@ -590,7 +794,7 @@ stable       >= 100 signals`}</CodeBlock>
     ],
     body: (
       <>
-        <p className="mb-4 leading-6">
+        <p className={styles.leadParagraph}>
           1.2.0 is a hardening release for Keating's most sensitive loop: the
           part where the system evaluates and changes itself. The release makes
           those changes visible to humans, strengthens quiz feedback, and cleans
@@ -598,8 +802,8 @@ stable       >= 100 signals`}</CodeBlock>
           what version they are running.
         </p>
 
-        <h3 id="observable-self-evolution" className="font-bold mt-4 mb-2">Observable Self-Evolution</h3>
-        <p className="text-sm mb-4">
+        <h3 id="observable-self-evolution" className={styles.sectionHeading}>Observable Self-Evolution</h3>
+        <p className={styles.smallParagraph}>
           <Code>auto-improve</Code> now writes a more complete transaction trail:
           baseline and after snapshots, structured JSON, Mermaid diagrams,
           trace entries, and policy/prompt state that can be compared after the
@@ -607,43 +811,43 @@ stable       >= 100 signals`}</CodeBlock>
           improvement loops show their verdict, score delta, policy signature,
           and rollback state without asking someone to dig through hidden files.
         </p>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           Prompt evolution is stricter too. If the best generated candidate
           scores worse than the current prompt, Keating records the attempt but
           does not apply it. That keeps the audit trail useful without letting a
           bad prompt candidate quietly become the new baseline.
         </p>
 
-        <h3 id="timed-quizzes" className="font-bold mt-4 mb-2">Timed Quiz Sessions</h3>
-        <p className="text-sm mb-4">
+        <h3 id="timed-quizzes" className={styles.sectionHeading}>Timed Quiz Sessions</h3>
+        <p className={styles.smallParagraph}>
           Quiz sessions now show timing where learners expect it: before start,
           while answering, and after completion. Time-limited questions display a
           countdown, completed attempts report total time, and review rows retain
           per-question timing so slow or uncertain answers are easier to spot.
         </p>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           Quiz result cards were tightened at the same time. Durations render as
           readable minute/second values, low scores use a clearer result tone,
           and light-mode contrast was raised so metadata and result details stay
           legible in chat.
         </p>
 
-        <h3 id="debugging-surfaces" className="font-bold mt-4 mb-2">Debugging Surfaces</h3>
-        <p className="text-sm mb-4">
+        <h3 id="debugging-surfaces" className={styles.sectionHeading}>Debugging Surfaces</h3>
+        <p className={styles.smallParagraph}>
           Tool calls are easier to inspect in the transcript. Structured
           arguments and results can render as expandable JSON views instead of
           raw preformatted dumps, which makes it faster to tell whether a tool
           received the right inputs and returned the right shape.
         </p>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           Session forking also got a correctness pass. Forking from an earlier
           assistant turn now creates a branch ending at that turn, keeps the
           related tool results, and shows a banner linking back to the original
           session.
         </p>
 
-        <h3 id="storage-and-state" className="font-bold mt-4 mb-2">Storage and State</h3>
-        <p className="text-sm mb-4">
+        <h3 id="storage-and-state" className={styles.sectionHeading}>Storage and State</h3>
+        <p className={styles.smallParagraph}>
           The browser persistence request path now uses the native storage API
           directly. When a browser refuses persistent storage, Keating shows the
           durable-storage risk without spamming the console with a misleading
@@ -651,8 +855,8 @@ stable       >= 100 signals`}</CodeBlock>
           agent surface toward a dedicated Zustand store.
         </p>
 
-        <h3 id="release-hygiene" className="font-bold mt-4 mb-2">Release Hygiene</h3>
-        <p className="text-sm mb-4">
+        <h3 id="release-hygiene" className={styles.sectionHeading}>Release Hygiene</h3>
+        <p className={styles.smallParagraph}>
           The CLI help banner and package shim now report the current version
           with <Code>keating --version</Code>, and the version sync script updates
           those surfaces alongside the web app, Pi extension, HTML metadata, and
@@ -681,7 +885,7 @@ stable       >= 100 signals`}</CodeBlock>
     ],
     body: (
       <>
-        <p className="mb-4 leading-6">
+        <p className={styles.leadParagraph}>
           Forking lets you take a conversation in a new direction without losing
           the original. Until now it cloned the entire transcript no matter which
           reply you forked from, so branching off an earlier point still dragged
@@ -689,8 +893,8 @@ stable       >= 100 signals`}</CodeBlock>
           branch and makes the branch relationship visible in the chat itself.
         </p>
 
-        <h3 id="fork-truncation" className="font-bold mt-4 mb-2">Forks End Where You Branch</h3>
-        <p className="text-sm mb-4">
+        <h3 id="fork-truncation" className={styles.sectionHeading}>Forks End Where You Branch</h3>
+        <p className={styles.smallParagraph}>
           The fork button on each Keating reply now creates a session that ends
           right after that reply's turn. Everything after the branch point — the
           next question and all that followed it — is left behind in the original,
@@ -698,7 +902,7 @@ stable       >= 100 signals`}</CodeBlock>
           are kept with it, so the branched conversation stays coherent when you
           pick it back up.
         </p>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           Because the chat folds tool results and merges consecutive assistant
           turns before rendering, the displayed position can't be mapped straight
           back to stored messages. The truncation is anchored on the forked
@@ -709,8 +913,8 @@ stable       >= 100 signals`}</CodeBlock>
           — that branch point is simply the end of the session.
         </p>
 
-        <h3 id="fork-indicator" className="font-bold mt-4 mb-2">A Clear Fork Indicator</h3>
-        <p className="text-sm mb-4">
+        <h3 id="fork-indicator" className={styles.sectionHeading}>A Clear Fork Indicator</h3>
+        <p className={styles.smallParagraph}>
           When the active session is a fork, a slim banner now sits under the chat
           header reading <em>Forked from "&lt;original title&gt;"</em> with an{" "}
           <strong>Open original</strong> button to jump back to the parent in one
@@ -719,8 +923,8 @@ stable       >= 100 signals`}</CodeBlock>
           you are genuinely inside a branch.
         </p>
 
-        <h3 id="fork-testing" className="font-bold mt-4 mb-2">Tested and Storied</h3>
-        <p className="text-sm mb-4">
+        <h3 id="fork-testing" className={styles.sectionHeading}>Tested and Storied</h3>
+        <p className={styles.smallParagraph}>
           The branch-point logic ships with unit tests covering the cases that
           matter: ending after the forked turn, keeping that turn's tool results,
           matching merged assistant turns, forking the final reply, and the
@@ -750,7 +954,7 @@ stable       >= 100 signals`}</CodeBlock>
     ],
     body: (
       <>
-        <p className="mb-4 leading-6">
+        <p className={styles.leadParagraph}>
           1.1.0 is the follow-through release for the web learning experience.
           The chat, artifact viewer, tutorial, blog, model chooser, quiz
           renderer, animation player, and benchmark plumbing all got touched so
@@ -758,8 +962,8 @@ stable       >= 100 signals`}</CodeBlock>
           collection of separate demos.
         </p>
 
-        <h3 id="image-generation" className="font-bold mt-4 mb-2">Image Generation Tooling</h3>
-        <p className="text-sm mb-4">
+        <h3 id="image-generation" className={styles.sectionHeading}>Image Generation Tooling</h3>
+        <p className={styles.smallParagraph}>
           The browser <Code>generate_image</Code> tool now supports image models
           directly, including model, size, quality, mode, and diagram-kind
           controls. When a configured provider is unavailable, Keating falls
@@ -768,14 +972,14 @@ stable       >= 100 signals`}</CodeBlock>
           anatomy sketches, comparison cards, and structured study visuals
           inside the same artifact flow as plans, maps, and animations.
         </p>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           Generated image payloads also render in chat with copy affordances, so
           learners can keep the prompt, metadata, and generated artifact details
           instead of losing the useful parts behind a tool call.
         </p>
 
-        <h3 id="interactive-quizzes" className="font-bold mt-4 mb-2">Interactive Lesson Quizzes</h3>
-        <p className="text-sm mb-4">
+        <h3 id="interactive-quizzes" className={styles.sectionHeading}>Interactive Lesson Quizzes</h3>
+        <p className={styles.smallParagraph}>
           Lesson-plan artifacts now expose <Code>Lesson</Code> and{" "}
           <Code>Quiz</Code> modes. The quiz mode turns the saved plan into an
           interactive quiz taker with multiple-choice, multi-select, true/false,
@@ -783,15 +987,15 @@ stable       >= 100 signals`}</CodeBlock>
           missed topics are visible, and the learner can redo a quiz with a
           stronger focus on the sections they missed.
         </p>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           Adaptive quiz scoring was fixed at the same time: remedial fallback
           questions that are skipped because the learner already answered the
           primary question correctly no longer count against the raw score,
           weighted score, denominator, submitted payload, or persisted stats.
         </p>
 
-        <h3 id="chat-rendering" className="font-bold mt-4 mb-2">Cleaner Chat Output</h3>
-        <p className="text-sm mb-4">
+        <h3 id="chat-rendering" className={styles.sectionHeading}>Cleaner Chat Output</h3>
+        <p className={styles.smallParagraph}>
           Assistant output is now much easier to work with. Text blocks, code
           blocks, reasoning, tool arguments, tool output, generated images, and
           structured response blocks all have copy affordances where they are
@@ -800,7 +1004,7 @@ stable       >= 100 signals`}</CodeBlock>
           auto-collapse after the response completes so older turns stop taking
           over the transcript.
         </p>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           Chat persistence also got a correctness pass. User messages are now
           preserved when a provider throws before streaming begins, which fixes
           the case where a first message appeared to disappear after an initial
@@ -809,38 +1013,38 @@ stable       >= 100 signals`}</CodeBlock>
           tags, duplicated headers, or blank assistant bubbles.
         </p>
 
-        <h3 id="artifact-viewers" className="font-bold mt-4 mb-2">Artifact and Animation Viewers</h3>
-        <p className="text-sm mb-4">
+        <h3 id="artifact-viewers" className={styles.sectionHeading}>Artifact and Animation Viewers</h3>
+        <p className={styles.smallParagraph}>
           The artifact side panel was tightened up by removing the redundant
           header block and moving the close control into the search row. The
           animation player now renders playable visual motion instead of only
           displaying storyboard text, and artifact viewers gained clearer
           handling for generated lesson, quiz, image, and animation outputs.
         </p>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           Question cards now support collapsing, and the duplicate visible
           question header was removed from the expanded state. The compact
           summary only appears when the question is hidden, which keeps the
           transcript from repeating the same prompt twice.
         </p>
 
-        <h3 id="model-provider-updates" className="font-bold mt-4 mb-2">Model and Provider Updates</h3>
-        <p className="text-sm mb-4">
+        <h3 id="model-provider-updates" className={styles.sectionHeading}>Model and Provider Updates</h3>
+        <p className={styles.smallParagraph}>
           The model chooser now supports provider filtering as well as search,
           making large provider lists easier to scan. MiniMax M3 compatibility
           entries were added to the MiniMax model lists, and Keating packages
           were updated to the Pi <Code>0.78.0</Code> package line where
           available.
         </p>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           Provider setup copy and tutorial navigation were also tuned so the
           browser, llama.cpp, Ollama, LiteLLM, and related setup buttons behave
           like in-page navigation controls without unexpectedly jumping the
           learner back to the top of the tutorial.
         </p>
 
-        <h3 id="benchmark-runtime-fixes" className="font-bold mt-4 mb-2">Benchmark and Runtime Fixes</h3>
-        <p className="text-sm mb-4">
+        <h3 id="benchmark-runtime-fixes" className={styles.sectionHeading}>Benchmark and Runtime Fixes</h3>
+        <p className={styles.smallParagraph}>
           Real-learner benchmark scoring, deterministic synthetic learner
           simulation, outcome thresholds, and real/synthetic blending were
           centralized in a shared browser-safe helper. Real and synthetic blend
@@ -848,7 +1052,7 @@ stable       >= 100 signals`}</CodeBlock>
           accumulates, so benchmark scores do not distort once a topic has more
           real outcomes.
         </p>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           Browser benchmark traces now report real learner outcome counts and
           synthetic fallback state correctly. Vite development mode also gained
           the same <Code>/api/agent-runtime/remote/**</Code> proxy path as the
@@ -856,8 +1060,8 @@ stable       >= 100 signals`}</CodeBlock>
           production builds.
         </p>
 
-        <h3 id="site-navigation-polish" className="font-bold mt-4 mb-2">Site Navigation Polish</h3>
-        <p className="text-sm mb-4">
+        <h3 id="site-navigation-polish" className={styles.sectionHeading}>Site Navigation Polish</h3>
+        <p className={styles.smallParagraph}>
           The blog itself now has search, release-line filtering, update types,
           a version-oriented table of contents, featured docs, and resource
           links. The tutorial learned the same lesson: topic navigation is more
@@ -865,7 +1069,7 @@ stable       >= 100 signals`}</CodeBlock>
           groups avoid cramped layouts, and selecting a tutorial section no
           longer force-scrolls the page to the top.
         </p>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           Redundant Keating and Features nav links were removed from the landing
           and blog contexts, while logo hover affordances were brought closer to
           the chat-page treatment for a more consistent site shell.
@@ -889,7 +1093,7 @@ stable       >= 100 signals`}</CodeBlock>
     ],
     body: (
       <>
-        <p className="mb-4 leading-6">
+        <p className={styles.leadParagraph}>
           1.0.0 is the line where Keating stops treating browser execution,
           local CLI execution, and cloud execution as separate worlds. The
           browser agent now starts by asking what runtime it is in, and
@@ -897,8 +1101,8 @@ stable       >= 100 signals`}</CodeBlock>
           server fallback.
         </p>
 
-        <h3 id="serving-modes" className="font-bold mt-4 mb-2">Three Serving Modes</h3>
-        <p className="text-sm mb-4">
+        <h3 id="serving-modes" className={styles.sectionHeading}>Three Serving Modes</h3>
+        <p className={styles.smallParagraph}>
           <Code>keating web</Code> now has an explicit agent mode. Browser-only
           is the free local default. Remote mode points at a self-hosted
           sandbox service. Cloud mode points at the canonical Keating backend.
@@ -913,15 +1117,15 @@ keating web --remote 3000 \\
 
 keating web --cloud 3000
 keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           The web server exposes <Code>/api/agent-runtime/config</Code> so the
           app can discover its mode, and <Code>/api/agent-runtime/remote/**</Code>{" "}
           as the controlled proxy path for remote/cloud execution. In
           browser-only mode that proxy returns a fallback error by design.
         </p>
 
-        <h3 id="runtime-tools" className="font-bold mt-4 mb-2">Runtime-Aware Tools</h3>
-        <p className="text-sm mb-4">
+        <h3 id="runtime-tools" className={styles.sectionHeading}>Runtime-Aware Tools</h3>
+        <p className={styles.smallParagraph}>
           The web agent now gets <Code>agent_runtime</Code> and{" "}
           <Code>remote_execute</Code>. The first reports the current mode,
           capabilities, and fallback policy. The second posts remote-only
@@ -929,8 +1133,8 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
           the task cannot run in browser-only mode.
         </p>
 
-        <h3 id="shared-runtime" className="font-bold mt-4 mb-2">Shared Browser Agent Runtime</h3>
-        <p className="text-sm mb-4">
+        <h3 id="shared-runtime" className={styles.sectionHeading}>Shared Browser Agent Runtime</h3>
+        <p className={styles.smallParagraph}>
           A new <Code>packages/browser-agent-runtime</Code> package provides
           the shared execution vocabulary: memory sandboxes, capability
           routing, transactional snapshots, rollback helpers, Daytona-shaped
@@ -939,8 +1143,8 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
           microsandbox, and future providers adapters behind one boundary.
         </p>
 
-        <h3 id="what-stays-local" className="font-bold mt-4 mb-2">What Stays Local</h3>
-        <p className="text-sm mb-4">
+        <h3 id="what-stays-local" className={styles.sectionHeading}>What Stays Local</h3>
+        <p className={styles.smallParagraph}>
           The free browser surface is intentionally browser-only. It is
           lower-risk than running arbitrary learner code on a shared Keating
           server, but it cannot provide native binaries, Docker or microVM
@@ -949,8 +1153,8 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
           Those belong behind <Code>--remote</Code> or <Code>--cloud</Code>.
         </p>
 
-        <h3 id="storage-roadmap" className="font-bold mt-4 mb-2">PDS and Educator Roadmap</h3>
-        <p className="text-sm mb-4">
+        <h3 id="storage-roadmap" className={styles.sectionHeading}>PDS and Educator Roadmap</h3>
+        <p className={styles.smallParagraph}>
           The docs now separate private learning state, portable public
           educational artifacts, and operational sandbox state. AT Protocol
           and PDS integration is a good fit for public lesson packs, rubrics,
@@ -959,7 +1163,7 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
           tutoring transcripts, API keys, private goals, or classroom roster
           analytics.
         </p>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           Educator tooling is also being scoped as an explicit product layer:
           lesson packs, misconception banks, rubrics, class goals, review
           sets, portfolio artifacts, and privacy-preserving class analytics.
@@ -986,7 +1190,7 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
     ],
     body: (
       <>
-        <p className="mb-4 leading-6">
+        <p className={styles.leadParagraph}>
           0.3.13 hardens the self-improvement loop and adds the first
           first-class way for Keating to edit its own source files. The web
           chat gets a resizable session sidebar, a multi-year activity
@@ -994,8 +1198,8 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
           policy is loaded.
         </p>
 
-        <h3 id="edit-cli" className="font-bold mt-4 mb-2">Source-Edit CLI</h3>
-        <p className="text-sm mb-4">
+        <h3 id="edit-cli" className={styles.sectionHeading}>Source-Edit CLI</h3>
+        <p className={styles.smallParagraph}>
           A new <Code>keating edit &lt;file&gt;</Code> command applies a single
           search/replace edit to any file under the project root. The search
           block must match exactly and uniquely — duplicate matches are
@@ -1008,8 +1212,8 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
           internally, exposed for direct human and agent use.
         </p>
 
-        <h3 id="safer-auto-improve" className="font-bold mt-4 mb-2">Safer Auto-Improve Loop</h3>
-        <p className="text-sm mb-4">
+        <h3 id="safer-auto-improve" className={styles.sectionHeading}>Safer Auto-Improve Loop</h3>
+        <p className={styles.smallParagraph}>
           <Code>auto-improve</Code> now snapshots the active teaching policy
           before running and automatically rolls back when the post-loop
           verdict is REGRESSED, so a bad run can no longer corrupt your
@@ -1021,14 +1225,14 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
           pending proposal using the snapshots stored alongside it — no need
           to thread snapshots through the call yourself.
         </p>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           The same gating now applies in the web chat: the{" "}
           <Code>auto_improve</Code> tool runs at most once per session unless
           the learner explicitly asks again with a <Code>force</Code> flag.
         </p>
 
-        <h3 id="persistent-mapelites" className="font-bold mt-4 mb-2">Persistent MAP-Elites Grids</h3>
-        <p className="text-sm mb-4">
+        <h3 id="persistent-mapelites" className={styles.sectionHeading}>Persistent MAP-Elites Grids</h3>
+        <p className={styles.smallParagraph}>
           The MAP-Elites quality-diversity archive now reads and writes a
           per-topic grid JSON under{" "}
           <Code>.keating/outputs/evolution/</Code>. Successive runs build on
@@ -1040,8 +1244,8 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
           its own evolution machinery.
         </p>
 
-        <h3 id="real-pareto" className="font-bold mt-4 mb-2">Real Pareto Benchmarks</h3>
-        <p className="text-sm mb-4">
+        <h3 id="real-pareto" className={styles.sectionHeading}>Real Pareto Benchmarks</h3>
+        <p className={styles.smallParagraph}>
           The Ax/GEPA optimizer used to report its Pareto front using a
           baseline placeholder for every point. It now actually benchmarks
           every candidate on the front against the focus topic, with the
@@ -1052,8 +1256,8 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
           given result.
         </p>
 
-        <h3 id="feedback-bench" className="font-bold mt-4 mb-2">Feedback-Weighted Benchmarks</h3>
-        <p className="text-sm mb-4">
+        <h3 id="feedback-bench" className={styles.sectionHeading}>Feedback-Weighted Benchmarks</h3>
+        <p className={styles.smallParagraph}>
           <Code>keating bench</Code> now derives its objective weights from
           the learner's recorded thumbs-up, thumbs-down, and confused
           signals. A history skewed toward confusion increases the weight on
@@ -1063,8 +1267,8 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
           history rather than a fixed default profile.
         </p>
 
-        <h3 id="web-polish" className="font-bold mt-4 mb-2">Web Polish</h3>
-        <p className="text-sm mb-4">
+        <h3 id="web-polish" className={styles.sectionHeading}>Web Polish</h3>
+        <p className={styles.smallParagraph}>
           The desktop session sidebar gained a drag-resize handle on its
           right edge and remembers its width in <Code>localStorage</Code>;
           the old desktop collapse toggle was removed in favor of the
@@ -1075,7 +1279,7 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
           restyled from amber to green for stronger learner/assistant
           contrast.
         </p>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           Under the hood, the active teaching policy is now actually parsed
           out of stored markdown (either a JSON block or{" "}
           <Code>field: value</Code> lines) instead of silently falling back
@@ -1103,15 +1307,15 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
     ],
     body: (
       <>
-        <p className="mb-4 leading-6">
+        <p className={styles.leadParagraph}>
           0.3.12 brings session sharing to the web: you can now share a Keating
           learning session as a short link, a compressed snapshot embedded in the
           URL, or a local-only shared link. The backend is powered by Nitro
           endpoints for publishing and loading sessions from server storage.
         </p>
 
-        <h3 id="session-sharing" className="font-bold mt-4 mb-2">Portable Session Sharing</h3>
-        <p className="text-sm mb-4">
+        <h3 id="session-sharing" className={styles.sectionHeading}>Portable Session Sharing</h3>
+        <p className={styles.smallParagraph}>
           The chat header now includes a share button with three sharing modes:
           server-backed short links (persisted on the Keating server), compressed
           snapshot links (the full session payload is embedded in a base64 URL
@@ -1120,8 +1324,8 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
           the full message history, model selection, and thinking-level settings.
         </p>
 
-        <h3 id="nitro-share" className="font-bold mt-4 mb-2">Nitro Share Storage Backend</h3>
-        <p className="text-sm mb-4">
+        <h3 id="nitro-share" className={styles.sectionHeading}>Nitro Share Storage Backend</h3>
+        <p className={styles.smallParagraph}>
           Server-backed sharing is handled by a new Nitro API route at{" "}
           <Code>/api/share</Code>. Sessions are published with a short random slug,
           stored server-side, and loaded on demand. The endpoint also supports
@@ -1131,8 +1335,8 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
           zero-dependency sharing.
         </p>
 
-        <h3 id="ui-settings" className="font-bold mt-4 mb-2">UI Settings Expansion</h3>
-        <p className="text-sm mb-4">
+        <h3 id="ui-settings" className={styles.sectionHeading}>UI Settings Expansion</h3>
+        <p className={styles.smallParagraph}>
           A new Settings section lets you choose the default share-link mode
           (server, snapshot, or local) and select your app-wide font family.
           Forked sessions now preserve parent metadata and appear as part of
@@ -1156,15 +1360,15 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
     ],
     body: (
       <>
-        <p className="mb-4 leading-6">
+        <p className={styles.leadParagraph}>
           0.3.11 brings a dedicated session sidebar to the chat view so you can
           navigate your learning history without leaving the conversation. Forked
           sessions are now threaded into an explorable tree, and the web app
           supports custom user avatars and a choice of animation renderers.
         </p>
 
-        <h3 id="session-sidebar" className="font-bold mt-4 mb-2">Persistent Session Sidebar</h3>
-        <p className="text-sm mb-4">
+        <h3 id="session-sidebar" className={styles.sectionHeading}>Persistent Session Sidebar</h3>
+        <p className={styles.smallParagraph}>
           A collapsible sidebar on the left of the chat view lists every saved
           session with search, load, fork, rename, and delete actions. Nested
           forks are indented under their parent and the current session is
@@ -1172,23 +1376,23 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
           up and collapses to a drawer on smaller screens.
         </p>
 
-        <h3 id="fork-trees" className="font-bold mt-4 mb-2">Fork Session Trees</h3>
-        <p className="text-sm mb-4">
+        <h3 id="fork-trees" className={styles.sectionHeading}>Fork Session Trees</h3>
+        <p className={styles.smallParagraph}>
           Forking a session now keeps a reference to the parent session id and
           the fork timestamp. The sidebar renders this as a nested tree so you
           can trace how a conversation branched. A forking transition on the
           active session card makes the split easy to track visually.
         </p>
 
-        <h3 id="profile-images" className="font-bold mt-4 mb-2">User Profile Images</h3>
-        <p className="text-sm mb-4">
+        <h3 id="profile-images" className={styles.sectionHeading}>User Profile Images</h3>
+        <p className={styles.smallParagraph}>
           Settings now accepts a profile-image URL which renders as a user avatar
           throughout the chat UI. The Keating logo replaces the generic robot icon
           on assistant messages for brand consistency.
         </p>
 
-        <h3 id="animation-renderer" className="font-bold mt-4 mb-2">Animation Renderer Setting</h3>
-        <p className="text-sm mb-4">
+        <h3 id="animation-renderer" className={styles.sectionHeading}>Animation Renderer Setting</h3>
+        <p className={styles.smallParagraph}>
           The generated animation artifacts can now use either Hyperframes (the
           default) or Manim-web as the renderer. Hyperframes is the lightweight
           in-browser path for timed clip compositions, while Manim-web remains
@@ -1210,15 +1414,15 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
     ],
     body: (
       <>
-        <p className="mb-4 leading-6">
+        <p className={styles.leadParagraph}>
           0.3.10 adds an opt-in Google Search grounding toggle for Gemini/Google
           chat requests. When enabled, the model receives live web results as
           grounding context, improving accuracy on current events and factual
           questions.
         </p>
 
-        <h3 id="google-grounding" className="font-bold mt-4 mb-2">Google Search Grounding</h3>
-        <p className="text-sm mb-4">
+        <h3 id="google-grounding" className={styles.sectionHeading}>Google Search Grounding</h3>
+        <p className={styles.smallParagraph}>
           A new Settings toggle <em>Google Search Grounding</em> appears when a
           Gemini model is active. Turning it on appends a{" "}
           <Code>googleSearch</Code> tool to the request payload so the model can
@@ -1226,8 +1430,8 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
           as numbered references when the model uses them.
         </p>
 
-        <h3 id="url-suggestions" className="font-bold mt-4 mb-2">URL Prompt Suggestions</h3>
-        <p className="text-sm mb-4">
+        <h3 id="url-suggestions" className={styles.sectionHeading}>URL Prompt Suggestions</h3>
+        <p className={styles.smallParagraph}>
           If your prompt contains URLs or looks like a question about recent
           facts, Keating now surfaces a subtle suggestion to enable Google
           Grounding. This only appears when the feature is available and off,
@@ -1250,23 +1454,23 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
     ],
     body: (
       <>
-        <p className="mb-4 leading-6">
+        <p className={styles.leadParagraph}>
           0.3.9 fixes the biggest remaining mismatch between Keating&apos;s chat UI and
           the underlying model stream. Assistant replies no longer wait for the final
           committed message before appearing in the transcript: the thread now renders
           the live partial assistant message as it arrives.
         </p>
 
-        <h3 id="live-reply-stream" className="font-bold mt-4 mb-2">Live Reply Stream</h3>
-        <p className="text-sm mb-4">
+        <h3 id="live-reply-stream" className={styles.sectionHeading}>Live Reply Stream</h3>
+        <p className={styles.smallParagraph}>
           The chat panel now merges <Code>agent.state.streamingMessage</Code> into the
           visible transcript while a run is active. That means token streaming works for
           the browser model path and for provider-backed models that already emit normal
           text deltas through <Code>@earendil-works/pi-ai</Code>.
         </p>
 
-        <h3 id="thinking-stream" className="font-bold mt-4 mb-2">Thinking Stream</h3>
-        <p className="text-sm mb-4">
+        <h3 id="thinking-stream" className={styles.sectionHeading}>Thinking Stream</h3>
+        <p className={styles.smallParagraph}>
           Keating already had a dedicated Reasoning renderer for assistant content parts
           of type <Code>thinking</Code>. 0.3.9 connects that renderer to the live stream,
           so models that emit <Code>thinking_start</Code>, <Code>thinking_delta</Code>,
@@ -1274,8 +1478,8 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
           real time instead of only after the assistant turn finishes.
         </p>
 
-        <h3 id="prefill-state" className="font-bold mt-4 mb-2">Prefill State</h3>
-        <p className="text-sm mb-4">
+        <h3 id="prefill-state" className={styles.sectionHeading}>Prefill State</h3>
+        <p className={styles.smallParagraph}>
           Before the first streamed text or reasoning chunk arrives, the thread keeps a
           lightweight rotating status line in place. Once the stream contains real
           content, Keating swaps that placeholder for the live assistant bubble rather
@@ -1299,15 +1503,15 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
     ],
     body: (
       <>
-        <p className="mb-4 leading-6">
+        <p className={styles.leadParagraph}>
           0.3.8 makes the chat composer feel like a real working surface. The prompt
           bar now includes a standard <Code>Paperclip</Code> control, selected files appear
           as removable chips before send, and the agent receives the attachment content
           instead of a placeholder string.
         </p>
 
-        <h3 id="paperclip-composer" className="font-bold mt-4 mb-2">Paperclip Composer</h3>
-        <p className="text-sm mb-4">
+        <h3 id="paperclip-composer" className={styles.sectionHeading}>Paperclip Composer</h3>
+        <p className={styles.smallParagraph}>
           The chat panel now enables the <Code>@assistant-ui/react</Code> attachment adapter
           on the external-store runtime. <Code>ComposerPrimitive.AddAttachment</Code> opens
           the browser file picker, accepts multiple files, and renders a familiar paperclip
@@ -1315,8 +1519,8 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
           attachment as a compact chip with a remove button.
         </p>
 
-        <h3 id="attachment-routing" className="font-bold mt-4 mb-2">Attachment Routing</h3>
-        <p className="text-sm mb-4">
+        <h3 id="attachment-routing" className={styles.sectionHeading}>Attachment Routing</h3>
+        <p className={styles.smallParagraph}>
           Image files are read locally as data URLs and converted into Pi&apos;s image-content
           shape: <Code>{"{ type: \"image\", mimeType, data }"}</Code>. Text-like files,
           including markdown, JSON, CSV, code, YAML, and plain text, are read in the browser
@@ -1324,8 +1528,8 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
           Unsupported binary files are rejected before they reach the model.
         </p>
 
-        <h3 id="vision-guard" className="font-bold mt-4 mb-2">Vision Model Guard</h3>
-        <p className="text-sm mb-4">
+        <h3 id="vision-guard" className={styles.sectionHeading}>Vision Model Guard</h3>
+        <p className={styles.smallParagraph}>
           The send path now checks <Code>model.input.includes(&quot;image&quot;)</Code> before
           dispatching an image message. If the active model is text-only, Keating records
           the user&apos;s attempted message and immediately shows a chat error telling the user
@@ -1333,8 +1537,8 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
           the image again.
         </p>
 
-        <h3 id="transcript-rendering" className="font-bold mt-4 mb-2">Transcript Rendering</h3>
-        <p className="text-sm mb-4">
+        <h3 id="transcript-rendering" className={styles.sectionHeading}>Transcript Rendering</h3>
+        <p className={styles.smallParagraph}>
           Sent images render inline in the user transcript. Text file attachments show a
           short <Code>[attached file: name]</Code> summary in the message bubble while the
           full file contents remain available in the actual model context. That keeps chat
@@ -1360,15 +1564,15 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
     ],
     body: (
       <>
-        <p className="mb-4 leading-6">
+        <p className={styles.leadParagraph}>
           0.3.7 is a layout-and-voice release. The chat header keeps every action visible
           across <Code>sm</Code>, <Code>md</Code>, and <Code>lg</Code>, the Settings dialog gets
           a wider sidebar and in-tab sub-navigation, speech grows from a single Gemini Live
           path into a pluggable provider system, and the Usage page learns to draw charts.
         </p>
 
-        <h3 id="session-title" className="font-bold mt-4 mb-2">Model-Generated Session Titles</h3>
-        <p className="text-sm mb-4">
+        <h3 id="session-title" className={styles.sectionHeading}>Model-Generated Session Titles</h3>
+        <p className={styles.smallParagraph}>
           A new <Code>Sparkles</Code> button in the chat header (and a matching mobile-menu
           entry) asks the active model to rename the current session based on its content.
           The handler snapshots the live messages, feeds a preview to the model with a
@@ -1377,31 +1581,31 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
           <em>"Generating title…"</em>, <em>"Renamed to …"</em>, or the error message.
         </p>
 
-        <h3 id="speech-providers" className="font-bold mt-4 mb-2">Speech & Voice — New Tab, New Providers</h3>
-        <p className="text-sm mb-4">
+        <h3 id="speech-providers" className={styles.sectionHeading}>Speech & Voice — New Tab, New Providers</h3>
+        <p className={styles.smallParagraph}>
           Speech is now its own Settings tab, and{" "}
           <Code>src/keating/speech.ts</Code> exposes a <Code>SpeechProvider</Code> interface
           backed by a lazy registry. Built-in providers:
         </p>
-        <ul className="text-sm mb-4 list-disc pl-6 space-y-1">
+        <ul className={styles.listDisc}>
           <li><strong>Gemini Live</strong> — existing audio-out path, refactored behind the interface. Stable.</li>
           <li><strong>OpenAI TTS</strong> — <Code>gpt-4o-mini-tts</Code>, <Code>tts-1</Code>, and <Code>tts-1-hd</Code> via <Code>/v1/audio/speech</Code>, with steerable affect/pace on the mini model. Stable.</li>
           <li><strong>OpenAI Realtime</strong> — full WebRTC duplex: mints an ephemeral session, exchanges SDP, attaches the mic when enabled, and plays the remote audio track. Flagged <strong>preview</strong> (per-utterance session, untested against your account).</li>
           <li><strong>Supertonic-3 (local)</strong> — wires <Code>onnxruntime-web</Code> and downloads the 4 ONNX files plus <Code>tts.json</Code> and <Code>unicode_indexer.json</Code> from the Hugging Face repo. Flagged <strong>experimental</strong>: sessions load and warm up, but the text→tokens→duration→vectors→vocoder synthesis pipeline still needs to be ported from the Python <Code>supertonic</Code> package.</li>
           <li><strong>Custom TTS</strong> — paste any OpenAI-compatible <Code>/v1/audio/speech</Code> endpoint: label, base URL, model id, voice, provider-key name, and optional API path.</li>
         </ul>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           A microphone toggle in the same tab is honored by duplex providers like OpenAI
           Realtime. The voice tool the agent calls (<Code>keating_voice</Code>) dispatches to
           the active provider through the registry instead of hard-coding Gemini.
         </p>
 
-        <h3 id="usage-charts" className="font-bold mt-4 mb-2">Usage Charts</h3>
-        <p className="text-sm mb-4">
+        <h3 id="usage-charts" className={styles.sectionHeading}>Usage Charts</h3>
+        <p className={styles.smallParagraph}>
           The Usage page now includes five panels powered by{" "}
           <Code>src/components/UsageCharts.tsx</Code>:
         </p>
-        <ul className="text-sm mb-4 list-disc pl-6 space-y-1">
+        <ul className={styles.listDisc}>
           <li><strong>Topic mix donut</strong> — artifacts grouped by topic, recharts <Code>PieChart</Code> with a shared palette.</li>
           <li><strong>Feedback signal donut</strong> — confident / off-track / confused from <Code>learnerState.feedbackHistory</Code>.</li>
           <li><strong>Curriculum timeline</strong> — a hand-rolled SVG Gantt across <Code>learnerState.sessions</Code> (start/end + topics covered), color-matched to the donut.</li>
@@ -1409,8 +1613,8 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
           <li><strong>Coming up</strong> — open <Code>Verification</Code> checklists plus <Code>learnerState.weaknesses[]</Code> / <Code>strengths[]</Code>. Honest stand-in for "due" work since storage has no SRS field yet.</li>
         </ul>
 
-        <h3 id="responsive-fixes" className="font-bold mt-4 mb-2">Responsive Layout & Settings Navigation</h3>
-        <p className="text-sm mb-4">
+        <h3 id="responsive-fixes" className={styles.sectionHeading}>Responsive Layout & Settings Navigation</h3>
+        <p className={styles.smallParagraph}>
           At the <Code>md</Code> breakpoint the chat header was silently dropping
           Settings, New Session, History, Speech, and Artifacts: the hamburger was hidden
           (<Code>md:hidden</Code>) before the inline icons started showing. All seven
@@ -1418,7 +1622,7 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
           collapses to <Code>xs</Code> only; the mobile dropdown gained the missing
           New Session / Session history entries.
         </p>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           The Settings dialog widened to <Code>max-w-5xl</Code> with a wider sidebar on
           md/lg, and the heavy <strong>Providers & Models</strong> tab gained a sticky
           chip-style sub-section navigator (Cloud / Visibility / My Models / Custom
@@ -1426,8 +1630,8 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
           <Code>scroll-mt-20</Code>. The Speech & Voice tab uses the same pattern.
         </p>
 
-        <h3 id="suggested-prompts" className="font-bold mt-4 mb-2">Suggested-Prompts Auto-Load-More</h3>
-        <p className="text-sm mb-4">
+        <h3 id="suggested-prompts" className={styles.sectionHeading}>Suggested-Prompts Auto-Load-More</h3>
+        <p className={styles.smallParagraph}>
           The suggested-prompts strip used to randomize three items and only let the
           "More" pill swap them out. Pressing the right-arrow at the end of the list now
           appends fresh suggestions filtered against what's already been shown, growing
@@ -1435,8 +1639,8 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
           same semantics and hides once nothing new is left.
         </p>
 
-        <h3 id="honest-status" className="font-bold mt-4 mb-2">Honest Status: Preview vs. Experimental</h3>
-        <p className="text-sm mb-4">
+        <h3 id="honest-status" className={styles.sectionHeading}>Honest Status: Preview vs. Experimental</h3>
+        <p className={styles.smallParagraph}>
           The Speech tab uses badge color to tell you exactly where each provider stands.
           Stable providers ship no badge. <em>Preview</em> means the integration is wired
           end-to-end but hasn't been validated against a live account in this release —
@@ -1466,14 +1670,14 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
     ],
     body: (
       <>
-        <p className="mb-4 leading-6">
+        <p className={styles.leadParagraph}>
           If you ran <Code>curl -fsSL https://keating.help/install | bash</Code> and
           then typed <Code>keating</Code>, you got a confusing "No such file or directory"
           error. The installer reported success — it downloaded, extracted, and linked — but
           the resulting binary could not run. Two independent bugs caused this.
         </p>
-        <h3 id="broken-install" className="font-bold mt-4 mb-2">What Was Broken</h3>
-        <p className="text-sm mb-4">
+        <h3 id="broken-install" className={styles.sectionHeading}>What Was Broken</h3>
+        <p className={styles.smallParagraph}>
           The GitHub Actions release workflow archived the bundle contents without
           a top-level versioned directory. The install script extracted the tarball
           into <Code>~/.local/share/keating/</Code> and expected a subdirectory
@@ -1484,8 +1688,8 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
           contains a Node.js project where the real entry point
           is <Code>bin/keating.js</Code>.
         </p>
-        <h3 id="tarball-structure" className="font-bold mt-4 mb-2">Tarball Structure Fix</h3>
-        <p className="text-sm mb-4">
+        <h3 id="tarball-structure" className={styles.sectionHeading}>Tarball Structure Fix</h3>
+        <p className={styles.smallParagraph}>
           The release workflow now stages all bundle files inside a
           versioned <Code>keating-VERSION-OS-ARCH/</Code> directory before
           running <Code>tar</Code>. This means the tarball root is
@@ -1497,8 +1701,8 @@ tar -czf "\${BUNDLE_NAME}.tar.gz" -C bundle .
 
 # After (fixed): tar archives the versioned directory
 tar -czf "\${BUNDLE_NAME}.tar.gz" "\${STAGE_DIR}"`}</CodeBlock>
-        <h3 id="node-entry-point" className="font-bold mt-4 mb-2">Node.js Entry Point Fix</h3>
-        <p className="text-sm mb-4">
+        <h3 id="node-entry-point" className={styles.sectionHeading}>Node.js Entry Point Fix</h3>
+        <p className={styles.smallParagraph}>
           The install wrapper now launches Keating through Node.js instead of
           trying to exec a standalone binary:
         </p>
@@ -1507,14 +1711,14 @@ exec "$INSTALL_APP_DIR/$bundle_name/keating" "$@"
 
 # After (fixed):
 exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
-        <h3 id="early-node-check" className="font-bold mt-4 mb-2">Early Node.js Check</h3>
-        <p className="text-sm mb-4">
+        <h3 id="early-node-check" className={styles.sectionHeading}>Early Node.js Check</h3>
+        <p className={styles.smallParagraph}>
           The install script now checks for <Code>node</Code> alongside <Code>tar</Code> and
           <Code>mktemp</Code>. If Node.js is not on <Code>PATH</Code>, the installer
           exits immediately with a clear message instead of waiting until runtime to
           discover the missing dependency.
         </p>
-        <p className="text-sm text-muted-foreground">
+        <p className={styles.smallMutedText}>
           Reinstall with the updated script to get a working binary:&nbsp;
           <Code>curl -fsSL https://keating.help/install | bash</Code>
         </p>
@@ -1535,7 +1739,7 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
     ],
     body: (
       <>
-        <p className="mb-4 leading-6">
+        <p className={styles.leadParagraph}>
           0.3.6 polishes the onboarding experience and rebrands the package. A
           new interactive setup flow guides you through provider, model, thinking
           level, and runtime configuration. The npm package is now simply
@@ -1543,8 +1747,8 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
           <Code>@interleavelove/keating</Code>.
         </p>
 
-        <h3 id="ink-setup" className="font-bold mt-4 mb-2">Ink Setup Flow</h3>
-        <p className="text-sm mb-4">
+        <h3 id="ink-setup" className={styles.sectionHeading}>Ink Setup Flow</h3>
+        <p className={styles.smallParagraph}>
           Running <Code>keating setup</Code> drops you into an interactive Ink
           terminal UI. It asks which AI provider to use, which model, reasoning
           level, and whether to enable the Pi shell runtime. Pass{" "}
@@ -1552,8 +1756,8 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
           writes <Code>keating.config.json</Code> with sensible defaults.
         </p>
 
-        <h3 id="package-rename" className="font-bold mt-4 mb-2">Package Rename</h3>
-        <p className="text-sm mb-4">
+        <h3 id="package-rename" className={styles.sectionHeading}>Package Rename</h3>
+        <p className={styles.smallParagraph}>
           The npm package was renamed from{" "}
           <Code>@interleavelove/keating</Code> to plain{" "}
           <Code>keating</Code>. Existing installations will continue to work via
@@ -1561,8 +1765,8 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
           <Code>npm install -g keating</Code>.
         </p>
 
-        <h3 id="provider-defaults" className="font-bold mt-4 mb-2">Provider Defaults & Credential Checks</h3>
-        <p className="text-sm mb-4">
+        <h3 id="provider-defaults" className={styles.sectionHeading}>Provider Defaults & Credential Checks</h3>
+        <p className={styles.smallParagraph}>
           The default shell provider is now <Code>google</Code> with{" "}
           <Code>gemini-3.1-pro-preview</Code>. Before launching the Pi shell,
           Keating checks that the selected provider has valid credentials and
@@ -1570,7 +1774,7 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
           provider is configured, it prints recovery commands instead of a
           generic error.
         </p>
-        <p className="text-sm text-muted-foreground">
+        <p className={styles.smallMutedText}>
           Legacy configs referencing the removed{" "}
           <Code>google-gemini-cli</Code> provider are automatically normalized to{" "}
           <Code>google</Code> on read.
@@ -1591,25 +1795,25 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
     ],
     body: (
       <>
-        <p className="mb-4 leading-6">
+        <p className={styles.leadParagraph}>
           Keating 0.3.4 improves the chat rendering pipeline with two long-requested
           features: properly formatted markdown tables and LaTeX math expressions.
         </p>
-        <h3 id="markdown-tables" className="font-bold mt-4 mb-2">Markdown Table Support</h3>
-        <p className="text-sm mb-4">
+        <h3 id="markdown-tables" className={styles.sectionHeading}>Markdown Table Support</h3>
+        <p className={styles.smallParagraph}>
           The chat panel now includes <Code>remark-gfm</Code> so GitHub-flavored
           markdown tables render correctly. Inline table components use theme-aware
           borders and spacing so data is readable in both light and dark modes.
         </p>
-        <h3 id="latex-math" className="font-bold mt-4 mb-2">LaTeX Math Rendering</h3>
-        <p className="text-sm mb-4">
+        <h3 id="latex-math" className={styles.sectionHeading}>LaTeX Math Rendering</h3>
+        <p className={styles.smallParagraph}>
           The <Code>react-markdown</Code> renderer now includes <Code>remark-math</Code>
           {" "}and <Code>rehype-katex</Code> plugins. Inline math delimited by{" "}
           <Code>$...$</Code> and block math delimited by <Code>$$...$$</Code> are
           passed through KaTeX for proper typesetting. The KaTeX stylesheet is loaded
           in the app entry point so expressions render consistently across the UI.
         </p>
-        <p className="text-sm text-muted-foreground">
+        <p className={styles.smallMutedText}>
           The v0.3.4 build compiles cleanly and all 18 tests pass.
         </p>
       </>
@@ -1631,35 +1835,35 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
     ],
     body: (
       <>
-        <p className="mb-4 leading-6">
+        <p className={styles.leadParagraph}>
           Keating 0.3.3 brings interactive teaching artifacts directly into the
           chat stream. Quizzes render as live forms with multiple-choice,
           fill-in-the-blank, true/false, and open-ended questions. Animation
           storyboards become navigable scene cards. Dark mode on the retro
           landing pages no longer shows black-on-black text.
         </p>
-        <h3 id="quiz-ui" className="font-bold mt-4 mb-2">Interactive Quiz Tool UI</h3>
-        <p className="text-sm mb-4">
+        <h3 id="quiz-ui" className={styles.sectionHeading}>Interactive Quiz Tool UI</h3>
+        <p className={styles.smallParagraph}>
           When the model calls <Code>quiz</Code>, the returned content now
           includes an inline <Code>&lt;keating-quiz /&gt;</Code> tag that the
           chat panel parses and renders into a live form. Each question type is
           handled with the right interaction pattern:
         </p>
-        <ul className="text-sm space-y-2 ml-4 mb-4">
+        <ul className={styles.unorderedList}>
           <li><strong>Multiple choice:</strong> radio-style options</li>
           <li><strong>Fill in the blank:</strong> textareas that strip and compare against the correct answer</li>
           <li><strong>True / False:</strong> paired toggle buttons</li>
           <li><strong>Short answer / transfer:</strong> open text fields with rubrics shown after submission</li>
         </ul>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           After pressing Submit, every question shows whether the answer is
           correct, reveals the right answer, displays the explanation, and
           surfaces the rubric. A Retake button resets the form. The quiz engine
           now generates <Code>fill_in</Code> and <Code>true_false</Code>
           questions alongside the existing types so the UI sees real variety.
         </p>
-        <h3 id="scene-renderer" className="font-bold mt-4 mb-2">Interactive Animated Scenes</h3>
-        <p className="text-sm mb-4">
+        <h3 id="scene-renderer" className={styles.sectionHeading}>Interactive Animated Scenes</h3>
+        <p className={styles.smallParagraph}>
           The <Code>animate</Code> tool now emits a <Code>&lt;keating-animation /&gt;</Code>
           tag carrying a structured <Code>AnimationPayload</Code>: an ordered
           list of frames, each with typed visual elements (boxes, circles,
@@ -1675,8 +1879,8 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
           check-your-understanding, so visuals and assessments compose in
           the same chat flow.
         </p>
-        <h3 id="dark-mode-fix" className="font-bold mt-4 mb-2">Dark Mode Contrast Fix</h3>
-        <p className="text-sm mb-4">
+        <h3 id="dark-mode-fix" className={styles.sectionHeading}>Dark Mode Contrast Fix</h3>
+        <p className={styles.smallParagraph}>
           Hardcoded hex colors (<Code>#1c211b</Code>, <Code>#64748b</Code>,
           <Code>#f1ece0</Code>) on the landing, tutorial, blog, paper, and
           footer pages have been replaced with theme-aware Tailwind classes
@@ -1684,21 +1888,21 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
           etc.). Text and dividers now adapt automatically between light and
           dark modes.
         </p>
-        <h3 id="chat-viewport" className="font-bold mt-4 mb-2">Chat Viewport Fix</h3>
-        <p className="text-sm mb-4">
+        <h3 id="chat-viewport" className={styles.sectionHeading}>Chat Viewport Fix</h3>
+        <p className={styles.smallParagraph}>
           The <Code>.chat-page-panel</Code> was <Code>display: block</Code>,
           which broke flex height propagation. Messages pushed the composer
           outside the viewport. Switched to <Code>display: flex; flex-direction:
           column; height: 100%</Code> so the scroll area stays bounded.
         </p>
-        <h3 id="version-sync" className="font-bold mt-4 mb-2">Version Sync Script</h3>
-        <p className="text-sm mb-4">
+        <h3 id="version-sync" className={styles.sectionHeading}>Version Sync Script</h3>
+        <p className={styles.smallParagraph}>
           A new <Code>scripts/sync-version.mjs</Code> utility reads the root
           <Code>package.json</Code> version and enforces it across the web
           package, the CLI extension, and hardcoded web strings. Run it with
           <Code>--check</Code> in CI or without flags to auto-update.
         </p>
-        <p className="text-sm text-muted-foreground">
+        <p className={styles.smallMutedText}>
           The v0.3.3 build compiles cleanly, all 18 tests pass, and the
           monorepo version strings are aligned.
         </p>
@@ -1722,38 +1926,38 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
     ],
     body: (
       <>
-        <p className="mb-4 leading-6">
+        <p className={styles.leadParagraph}>
           The Assistant UI rewrite has stabilized. After migrating the chat layer from Lit to React,
           a series of refinements landed across mobile layout, artifact integration, CLI theming,
           and crash prevention. This release also introduces per-message fork and feedback actions.
         </p>
-        <h3 id="rewrite-matures" className="font-bold mt-4 mb-2">Chat Rewrite Matures</h3>
-        <p className="text-sm mb-4">
+        <h3 id="rewrite-matures" className={styles.sectionHeading}>Chat Rewrite Matures</h3>
+        <p className={styles.smallParagraph}>
           The chat UI is now built on <Code>@assistant-ui/react</Code> instead of the previous Lit-based
           message list. This gives us better streaming message handling, built-in composer primitives,
           and a cleaner React integration. The migration took several iterations — text rendering fixes,
           prose layout adjustments, mobile toolbar improvements — but the result is a more reliable
           chat experience.
         </p>
-        <h3 id="mobile" className="font-bold mt-4 mb-2">Mobile Responsiveness</h3>
-        <ul className="text-sm space-y-2 ml-4 mb-4">
+        <h3 id="mobile" className={styles.sectionHeading}>Mobile Responsiveness</h3>
+        <ul className={styles.unorderedList}>
           <li>Adaptive toolbar buttons that show/hide based on viewport size</li>
           <li>Touch-friendly targets across the header, model selector, and settings</li>
           <li>Responsive message bubbles and composer layout</li>
         </ul>
-        <h3 id="artifacts-chat" className="font-bold mt-4 mb-2">Artifacts in Conversation</h3>
-        <p className="text-sm mb-4">
+        <h3 id="artifacts-chat" className={styles.sectionHeading}>Artifacts in Conversation</h3>
+        <p className={styles.smallParagraph}>
           Lesson plans, concept maps, animations, and benchmark outputs generated during chat now
           appear as clickable artifact chips inside assistant messages. Clicking a chip opens the
           artifact browser directly to that item.
         </p>
-        <h3 id="cli-theme" className="font-bold mt-4 mb-2">CLI Theme Refresh</h3>
-        <p className="text-sm mb-4">
+        <h3 id="cli-theme" className={styles.sectionHeading}>CLI Theme Refresh</h3>
+        <p className={styles.smallParagraph}>
           The shell palette now matches the web retro-green terminal theme. The boot screen,
           ASCII headers, and progress indicators share the same dark mode-aware palette.
         </p>
-        <h3 id="crash-fix" className="font-bold mt-4 mb-2">React #310 Crash Fix</h3>
-        <p className="text-sm mb-4">
+        <h3 id="crash-fix" className={styles.sectionHeading}>React #310 Crash Fix</h3>
+        <p className={styles.smallParagraph}>
           A hook-count mismatch crash (React error #310) was traced to <Code>@assistant-ui/react</Code>&apos;s
           internal use of conditional hooks. The library calls <Code>useRef</Code> and <Code>useState</Code>
           inside conditional blocks (annotated with biome-ignore). Under React 19 StrictMode&apos;s
@@ -1761,16 +1965,16 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
           Removing StrictMode eliminates the crash path while the adapter object is now memoized
           for additional stability.
         </p>
-        <h3 id="fork-feedback" className="font-bold mt-4 mb-2">Per-Message Fork and Feedback</h3>
-        <p className="text-sm mb-4">
+        <h3 id="fork-feedback" className={styles.sectionHeading}>Per-Message Fork and Feedback</h3>
+        <p className={styles.smallParagraph}>
           Each assistant message now shows three action buttons:
         </p>
-        <ul className="text-sm space-y-2 ml-4 mb-4">
+        <ul className={styles.unorderedList}>
           <li><strong>Thumbs Up:</strong> Open a modal for optional positive feedback comments</li>
           <li><strong>Thumbs Down:</strong> Open a modal for optional improvement suggestions</li>
           <li><strong>Fork:</strong> Create a copy of the current session starting from this message</li>
         </ul>
-        <p className="text-sm text-muted-foreground">
+        <p className={styles.smallMutedText}>
           The v0.3.2 web build compiles cleanly with all TypeScript checks passing and 18 tests green.
         </p>
       </>
@@ -1791,14 +1995,14 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
     ],
     body: (
       <>
-        <p className="mb-4 leading-6">
+        <p className={styles.leadParagraph}>
           Keating 0.3.1 is a web reliability release: saved sessions are easier to resume and
           manage, generated teaching artifacts are reachable from chat, the browser model gets
           real tool schemas, and custom providers no longer make direct cross-origin discovery
           calls from the page.
         </p>
-        <h3 id="session-continuity" className="font-bold mt-4 mb-2">Session Continuity</h3>
-        <ul className="text-sm space-y-2 ml-4 mb-4">
+        <h3 id="session-continuity" className={styles.sectionHeading}>Session Continuity</h3>
+        <ul className={styles.unorderedList}>
           <li>
             <strong>Persistent storage prompt:</strong> Keating asks once for durable browser storage so longer learning histories are less likely to be evicted.
           </li>
@@ -1812,31 +2016,31 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
             <strong>Session-end recording:</strong> switching sessions or starting a new one records the end of the current learner session.
           </li>
         </ul>
-        <h3 id="artifacts-chat-031" className="font-bold mt-4 mb-2">Artifacts in Chat</h3>
-        <p className="text-sm mb-4">
+        <h3 id="artifacts-chat-031" className={styles.sectionHeading}>Artifacts in Chat</h3>
+        <p className={styles.smallParagraph}>
           The chat header now includes an Artifacts button. It opens a side overlay for browsing
           lesson plans, maps, animations, benchmark reports, and evolution outputs without leaving
           the current conversation.
         </p>
-        <h3 id="provider-proxy" className="font-bold mt-4 mb-2">Provider Proxy Fixes</h3>
-        <p className="text-sm mb-4">
+        <h3 id="provider-proxy" className={styles.sectionHeading}>Provider Proxy Fixes</h3>
+        <p className={styles.smallParagraph}>
           Custom-provider model discovery now calls Keating's same-origin backend proxy before
           reaching servers like Ollama, llama.cpp, vLLM, LM Studio, Synthetic, or Anthropic-compatible
           endpoints. That prevents browser CORS failures such as a direct request to{" "}
           <Code>http://localhost:11434/api/tags</Code> from <Code>https://keating.help</Code>.
         </p>
-        <p className="text-sm mb-4">
+        <p className={styles.smallParagraph}>
           The same proxy path now handles both discovery GET requests and chat POST requests, so
           non-standard custom providers and Anthropic-compatible endpoints share one backend route.
         </p>
-        <h3 id="tool-schemas-031" className="font-bold mt-4 mb-2">Tool Schemas</h3>
-        <p className="text-sm mb-4">
+        <h3 id="tool-schemas-031" className={styles.sectionHeading}>Tool Schemas</h3>
+        <p className={styles.smallParagraph}>
           The web model still gets the full 19-tool Keating surface, but now each tool exposes real
           JSON Schema parameters instead of empty <Code>properties</Code> objects. The result is a
           teacher that can call planning, mapping, verification, benchmarking, prompt evaluation,
           due-work, timeline, feedback, and voice tools with valid arguments.
         </p>
-        <p className="text-sm text-muted-foreground">
+        <p className={styles.smallMutedText}>
           Version strings, package metadata, changelog, and the web build are aligned for v0.3.1.
         </p>
       </>
@@ -1855,25 +2059,25 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
     ],
     body: (
       <>
-        <p className="mb-4 leading-6">
+        <p className={styles.leadParagraph}>
           Keating&apos;s web model now receives the full teaching tool surface with proper JSON
           Schema parameter definitions. The important fix was replacing createSimpleTool, which
           produced empty properties objects, with createTool registrations that describe each
           tool&apos;s actual arguments.
         </p>
-        <h3 id="what-changed-schemas" className="font-bold mt-4 mb-2">What Changed</h3>
-        <p className="text-sm mb-4">
+        <h3 id="what-changed-schemas" className={styles.sectionHeading}>What Changed</h3>
+        <p className={styles.smallParagraph}>
           All 19 Keating tools are now available to the web model with schemas it can
           actually call. Topic-driven tools expose <Code>topic</Code>, feedback exposes
           a constrained <Code>signal</Code>, prompt evaluation requires <Code>prompt</Code>,
           and the optional speech path exposes the full <Code>keating_voice</Code> shape.
         </p>
-        <div className="mb-4 overflow-x-auto">
-          <table className="w-full min-w-[520px] border-collapse text-sm">
+        <div className={css({ mb: "1rem", overflowX: "auto" })}>
+          <table className={styles.table}>
             <thead>
-              <tr className="border-b border-border text-left">
-                <th className="py-2 pr-4 font-bold">Tool</th>
-                <th className="py-2 font-bold">Parameters</th>
+              <tr className={styles.tableHeaderCell}>
+                <th className={styles.tableHeadPadded}>Tool</th>
+                <th className={styles.tableHead}>Parameters</th>
               </tr>
             </thead>
             <tbody>
@@ -1898,24 +2102,24 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
                 ["due", "none"],
                 ["keating_voice", "text, tags, voice, pace, affect"],
               ].map(([tool, params]) => (
-                <tr key={tool} className="border-b border-border/30">
-                  <td className="py-2 pr-4 align-top">
+                <tr key={tool} className={styles.tableRow}>
+                  <td className={styles.tableCellPadded}>
                     <Code>{tool}</Code>
                   </td>
-                  <td className="py-2 align-top">{params}</td>
+                  <td className={styles.tableCell}>{params}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <h3 id="why-it-matters" className="font-bold mt-4 mb-2">Why It Matters</h3>
-        <p className="text-sm mb-4">
+        <h3 id="why-it-matters" className={styles.sectionHeading}>Why It Matters</h3>
+        <p className={styles.smallParagraph}>
           Empty tool schemas make the model guess at invisible arguments. With real
           schemas, the web teacher can reliably choose the right tool and pass valid
           arguments for lessons, checks, benchmarks, learner feedback, prompt evaluation,
           due work, timelines, and voice output.
         </p>
-        <p className="text-sm text-muted-foreground">
+        <p className={styles.smallMutedText}>
           The web build compiles successfully with the new tool definitions.
         </p>
       </>
@@ -1934,13 +2138,13 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
     ],
     body: (
       <>
-        <p className="mb-4 leading-6">
+        <p className={styles.leadParagraph}>
           Keating now has an optional speech layer. The teacher still thinks, verifies, plans, and
           steers through the normal model/tool loop, but it can hand short learner-facing moments
           to a dedicated voice tool when speech is useful.
         </p>
-        <h3 id="speech-how" className="font-bold mt-4 mb-2">How It Works</h3>
-        <ul className="text-sm space-y-2 ml-4 mb-4">
+        <h3 id="speech-how" className={styles.sectionHeading}>How It Works</h3>
+        <ul className={styles.unorderedList}>
           <li>
             <strong>Opt-in by design:</strong> Speech stays disabled until you turn it on. In the web app, use the speaker button in the chat header.
           </li>
@@ -1954,13 +2158,13 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
             <strong>Normal model remains in charge:</strong> Reasoning, verification, and correction still happen through the regular teaching tools instead of being hidden inside the voice layer.
           </li>
         </ul>
-        <h3 id="shell-support" className="font-bold mt-4 mb-2">Shell Support</h3>
-        <p className="text-sm mb-4">
+        <h3 id="shell-support" className={styles.sectionHeading}>Shell Support</h3>
+        <p className={styles.smallParagraph}>
           The CLI config now includes a disabled-by-default <Code>speech</Code> block. When enabled,
           the Pi extension registers <Code>keating_voice</Code> and emits transcript-safe voice tags:
         </p>
         <CodeBlock>{`[voice voice=conversational tags=question,verify pace=normal affect=curious] What would you expect to happen next?`}</CodeBlock>
-        <p className="text-sm text-muted-foreground">
+        <p className={styles.smallMutedText}>
           The first shell version is provider-neutral and tag-based. The web version is the first audio-backed path.
         </p>
       </>
@@ -1982,116 +2186,116 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
     ],
     body: (
       <>
-        <p className="mb-4 leading-6">
+        <p className={styles.leadParagraph}>
           Keating 0.3.0 is out. This release lays the groundwork for a much richer learning loop:
           flashcards, quizzes, mastery tracking, and multi-week projects. It also gives the brand
           a long-overdue polish at both ends of the stack.
         </p>
-        <h3 id="ped-engines" className="font-bold mt-4 mb-2">New Pedagogical Engines</h3>
-        <ul className="text-sm space-y-3 ml-4 mb-4">
+        <h3 id="ped-engines" className={styles.sectionHeading}>New Pedagogical Engines</h3>
+        <ul className={styles.spacedList3}>
           <li>
-            <div className="font-bold mb-1 underline decoration-[#d5604b]">Flashcards:</div>
+            <div className={styles.underlinedHeading}>Flashcards:</div>
             <p>
               Spaced-repetition decks with definitions, intuitions, common misconceptions,
               transfer prompts, and optional mnemonics, generated per topic.
             </p>
           </li>
           <li>
-            <div className="font-bold mb-1 underline decoration-[#d5604b]">Quizzes & Workbooks:</div>
+            <div className={styles.underlinedHeading}>Quizzes & Workbooks:</div>
             <p>
               Structured question sets across recall, comprehension, application, analysis, and
               transfer levels, with rubrics for short-answer items and a generated answer key.
             </p>
           </li>
           <li>
-            <div className="font-bold mb-1 underline decoration-[#d5604b]">Mastery Tracking:</div>
+            <div className={styles.underlinedHeading}>Mastery Tracking:</div>
             <p>
               Longitudinal mastery curves so the system can decide what to revisit and when,
               instead of treating every session as fresh.
             </p>
           </li>
           <li>
-            <div className="font-bold mb-1 underline decoration-[#d5604b]">Long-Horizon Projects:</div>
+            <div className={styles.underlinedHeading}>Long-Horizon Projects:</div>
             <p>
               Multi-stage assignments with milestones, deliverables, and rubrics: the path from
               one-off lessons toward weeks-long studio work.
             </p>
           </li>
         </ul>
-        <h3 id="sharper-logo" className="font-bold mt-4 mb-2">A Sharper KEATING</h3>
-        <p className="text-sm mb-4">
+        <h3 id="sharper-logo" className={styles.sectionHeading}>A Sharper KEATING</h3>
+        <p className={styles.smallParagraph}>
           The CLI logo was misaligned (the &quot;T&quot; was lopsided and the rows
           drifted). It has been rebuilt in the ANSI Shadow font so the shell now
           matches the web. The web boot screen also picked up a vertical emerald
           gradient and a subtle CRT-style glow.
         </p>
-        <h3 id="recorded-workflows" className="font-bold mt-4 mb-2">Recorded Workflows</h3>
-        <p className="text-sm mb-4">
+        <h3 id="recorded-workflows" className={styles.sectionHeading}>Recorded Workflows</h3>
+        <p className={styles.smallParagraph}>
           Four new <Code>vhs</Code> tapes live in <Code>docs/</Code> and record
           the workflows we actually demo. The rendered videos:
         </p>
-        <div className="space-y-5 mb-4">
+        <div className={styles.stack5}>
           <figure>
-            <figcaption className="text-xs text-muted-foreground mb-1">
+            <figcaption className={css({ mb: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
               <Code>intro.tape</Code> — boot the Keating shell, show the refreshed logo, list commands.
             </figcaption>
-            <video src="/tapes/intro.mp4" controls muted loop playsInline className="w-full rounded border border-border" />
+            <video src="/tapes/intro.mp4" controls muted loop playsInline className={css({ w: "100%", borderRadius: "0.25rem", border: "1px solid var(--border)" })} />
           </figure>
           <figure>
-            <figcaption className="text-xs text-muted-foreground mb-1">
+            <figcaption className={css({ mb: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
               <Code>learning-flow.tape</Code> — <Code>plan → map → animate → verify → trace</Code>.
             </figcaption>
-            <video src="/tapes/learning-flow.mp4" controls muted loop playsInline className="w-full rounded border border-border" />
+            <video src="/tapes/learning-flow.mp4" controls muted loop playsInline className={css({ w: "100%", borderRadius: "0.25rem", border: "1px solid var(--border)" })} />
           </figure>
           <figure>
-            <figcaption className="text-xs text-muted-foreground mb-1">
+            <figcaption className={css({ mb: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
               <Code>improve-flow.tape</Code> — <Code>bench → evolve → prompt-evolve → improve</Code>.
             </figcaption>
-            <video src="/tapes/improve-flow.mp4" controls muted loop playsInline className="w-full rounded border border-border" />
+            <video src="/tapes/improve-flow.mp4" controls muted loop playsInline className={css({ w: "100%", borderRadius: "0.25rem", border: "1px solid var(--border)" })} />
           </figure>
           <figure>
-            <figcaption className="text-xs text-muted-foreground mb-1">
+            <figcaption className={css({ mb: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
               <Code>feedback-flow.tape</Code> — record signals, then <Code>due</Code> and <Code>timeline</Code>.
             </figcaption>
-            <video src="/tapes/feedback-flow.mp4" controls muted loop playsInline className="w-full rounded border border-border" />
+            <video src="/tapes/feedback-flow.mp4" controls muted loop playsInline className={css({ w: "100%", borderRadius: "0.25rem", border: "1px solid var(--border)" })} />
           </figure>
           <figure>
-            <figcaption className="text-xs text-muted-foreground mb-1">
+            <figcaption className={css({ mb: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
               <Code>teacher-flow.tape</Code> — generate a plan, inspect it, then verify the output.
             </figcaption>
-            <video src="/tapes/teacher-flow.mp4" controls muted loop playsInline className="w-full rounded border border-border" />
+            <video src="/tapes/teacher-flow.mp4" controls muted loop playsInline className={css({ w: "100%", borderRadius: "0.25rem", border: "1px solid var(--border)" })} />
           </figure>
           <figure>
-            <figcaption className="text-xs text-muted-foreground mb-1">
+            <figcaption className={css({ mb: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
               <Code>session-flow.tape</Code> — launch the shell, check policy, browse outputs, send feedback.
             </figcaption>
-            <video src="/tapes/session-flow.mp4" controls muted loop playsInline className="w-full rounded border border-border" />
+            <video src="/tapes/session-flow.mp4" controls muted loop playsInline className={css({ w: "100%", borderRadius: "0.25rem", border: "1px solid var(--border)" })} />
           </figure>
         </div>
-        <h3 id="quality-checks" className="font-bold mt-4 mb-2">Quality Checks</h3>
-        <div className="space-y-5 mb-4">
+        <h3 id="quality-checks" className={styles.sectionHeading}>Quality Checks</h3>
+        <div className={styles.stack5}>
           <figure>
-            <figcaption className="text-xs text-muted-foreground mb-1">
+            <figcaption className={css({ mb: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
               <Code>doctor.tape</Code> — run <Code>just doctor</Code> to check your setup.
             </figcaption>
-            <video src="/tapes/doctor.mp4" controls muted loop playsInline className="w-full rounded border border-border" />
+            <video src="/tapes/doctor.mp4" controls muted loop playsInline className={css({ w: "100%", borderRadius: "0.25rem", border: "1px solid var(--border)" })} />
           </figure>
           <figure>
-            <figcaption className="text-xs text-muted-foreground mb-1">
+            <figcaption className={css({ mb: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
               <Code>tests.tape</Code> — run <Code>just test</Code> to exercise the suite.
             </figcaption>
-            <video src="/tapes/tests.mp4" controls muted loop playsInline className="w-full rounded border border-border" />
+            <video src="/tapes/tests.mp4" controls muted loop playsInline className={css({ w: "100%", borderRadius: "0.25rem", border: "1px solid var(--border)" })} />
           </figure>
         </div>
-        <p className="text-sm mb-2">Render any of them yourself with:</p>
+        <p className={css({ mb: "0.5rem", fontSize: "0.875rem" })}>Render any of them yourself with:</p>
         <CodeBlock>{`vhs docs/learning-flow.tape`}</CodeBlock>
-        <h3 id="plumbing" className="font-bold mt-4 mb-2">Plumbing</h3>
-        <ul className="text-sm space-y-2 ml-4 mb-4">
+        <h3 id="plumbing" className={styles.sectionHeading}>Plumbing</h3>
+        <ul className={styles.unorderedList}>
           <li><strong>Command Spec Registry</strong> — <Code>core/commands.ts</Code> is now the single source of truth for CLI/shell command surfaces.</li>
           <li><strong>Terminal &amp; Theme Modules</strong> — palette, ASCII headers, and section helpers extracted to <Code>core/terminal.ts</Code> and <Code>core/theme.ts</Code>.</li>
           <li><strong>Browser Tools / Storage</strong> — broader tool surfaces and persistence improvements in <Code>web/src/keating/</Code>.</li>
         </ul>
-        <p className="text-sm italic text-muted-foreground mt-6">
+        <p className={styles.italicMutedNote}>
           The new engines ship as libraries first; CLI subcommands and web UI surfaces will land
           behind them in the next point releases.
         </p>
@@ -2113,7 +2317,7 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
     ],
     body: (
       <>
-        <p className="mb-4 leading-6">
+        <p className={styles.leadParagraph}>
           0.2.0 is a foundational release. It introduces multi-objective policy
           and prompt evolution powered by{" "}
           <Code>@ax-llm/ax</Code>, quality-diversity search via MAP-Elites, and
@@ -2121,8 +2325,8 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
           Feynman to Keating across every page and file.
         </p>
 
-        <h3 id="ax-optimization" className="font-bold mt-4 mb-2">Ax Optimization Framework</h3>
-        <p className="text-sm mb-4">
+        <h3 id="ax-optimization" className={styles.sectionHeading}>Ax Optimization Framework</h3>
+        <p className={styles.smallParagraph}>
           Integrated <Code>@ax-llm/ax</Code> for multi-objective optimization.
           GEPA (Generative Evolutionary Prompt Augmentation) and ACE (Adaptive
           Context Evolution) now optimize both teaching policy parameters and
@@ -2131,8 +2335,8 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
           confusion.
         </p>
 
-        <h3 id="map-elites" className="font-bold mt-4 mb-2">MAP-Elites Archive</h3>
-        <p className="text-sm mb-4">
+        <h3 id="map-elites" className={styles.sectionHeading}>MAP-Elites Archive</h3>
+        <p className={styles.smallParagraph}>
           MAP-Elites provides quality-diversity search: instead of converging to
           a single best policy, it discovers a diverse archive of policies that
           excel across different behavioral dimensions. This gives Keating a
@@ -2140,16 +2344,16 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
           learner state.
         </p>
 
-        <h3 id="engagement-policies" className="font-bold mt-4 mb-2">Engagement Policies</h3>
-        <p className="text-sm mb-4">
+        <h3 id="engagement-policies" className={styles.sectionHeading}>Engagement Policies</h3>
+        <p className={styles.smallParagraph}>
           New temporal awareness lets the system track when topics were last
           visited, how confident the learner appeared, and when to reintroduce
           material for spaced repetition. Engagement policies optimize the timing
           of teaching actions rather than just their content.
         </p>
 
-        <h3 id="rebrand" className="font-bold mt-4 mb-2">Rebrand to Keating</h3>
-        <p className="text-sm mb-4">
+        <h3 id="rebrand" className={styles.sectionHeading}>Rebrand to Keating</h3>
+        <p className={styles.smallParagraph}>
           All Feynman references, paths, assets, and branding have been migrated
           to Keating. The retro aesthetic is finalized: VT323 terminal
           typography, emerald green theme, pixel-art identity, and the Dead Poets
@@ -2171,50 +2375,50 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
     ],
     body: (
       <>
-        <p className="mb-4 leading-6">
+        <p className={styles.leadParagraph}>
           Today we&apos;ve completed a major architectural shift: moving from deterministic
           mathematical stubs to true AI-powered verification across our core pedagogical engines.
         </p>
-        <h3 id="whats-new-stubs" className="font-bold mt-4 mb-2">What's New?</h3>
-        <ul className="text-sm space-y-4 ml-4 mb-4">
+        <h3 id="whats-new-stubs" className={styles.sectionHeading}>What's New?</h3>
+        <ul className={styles.spacedList4}>
           <li>
-            <div className="font-bold mb-1 underline decoration-[#d5604b]">Real-Time Animation Generation:</div>
+            <div className={styles.underlinedHeading}>Real-Time Animation Generation:</div>
             <p>
               The animation engine no longer relies on hardcoded ManimJS templates. It now uses
               the pi agent to generate custom, context-aware visual teaching beats for any topic.
             </p>
           </li>
           <li>
-            <div className="font-bold mb-1 underline decoration-[#d5604b]">Realistic Teaching Simulations:</div>
+            <div className={styles.underlinedHeading}>Realistic Teaching Simulations:</div>
             <p>
               Our synthetic benchmarks now use LLM-backed simulations to evaluate teaching
               outcomes (mastery, retention, confusion) instead of algebraic approximations.
             </p>
           </li>
           <li>
-            <div className="font-bold mb-1 underline decoration-[#d5604b]">Dynamic Learner Profiles:</div>
+            <div className={styles.underlinedHeading}>Dynamic Learner Profiles:</div>
             <p>
               Learner state updates are now driven by AI-inferred pedagogical shifts based on
               historical performance and feedback.
             </p>
           </li>
           <li>
-            <div className="font-bold mb-1 underline decoration-[#d5604b]">Research Paper Integration:</div>
+            <div className={styles.underlinedHeading}>Research Paper Integration:</div>
             <p>
               The formal account of the Keating metaharness is now served directly in the web
               application with a dedicated [PAPER] section and PDF download.
             </p>
           </li>
         </ul>
-        <div className="my-4">
+        <div className={css({ my: "1rem" })}>
           <figure>
-            <figcaption className="text-xs text-muted-foreground mb-1">
+            <figcaption className={css({ mb: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
               <Code>teacher-flow.tape</Code> — generate a plan, then verify the output.
             </figcaption>
-            <video src="/tapes/teacher-flow.mp4" controls muted loop playsInline className="w-full rounded border border-border" />
+            <video src="/tapes/teacher-flow.mp4" controls muted loop playsInline className={css({ w: "100%", borderRadius: "0.25rem", border: "1px solid var(--border)" })} />
           </figure>
         </div>
-        <p className="text-sm italic text-muted-foreground mt-6">
+        <p className={styles.italicMutedNote}>
           These changes ensure that Keating&apos;s self-improvement loop is grounded in actual
           semantic understanding rather than pre-baked formulas.
         </p>
@@ -2232,13 +2436,13 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
     ],
     body: (
       <>
-        <p className="mb-4">
+        <p className={styles.paragraph}>
           We&apos;ve leveled up the Keating server stack by migrating to <Code>Nitro</Code> and{" "}
           <Code>Vite</Code>. This provides a high-performance, completely runtime-agnostic
           engine that integrates directly with our build pipeline.
         </p>
-        <h3 id="why-nitro" className="font-bold mt-4 mb-2">Why Nitro?</h3>
-        <ul className="text-sm space-y-2 ml-4 mb-4">
+        <h3 id="why-nitro" className={styles.sectionHeading}>Why Nitro?</h3>
+        <ul className={styles.unorderedList}>
           <li>
             <strong>Universal Deployment:</strong> Nitro allows Keating to run seamlessly on
             Node.js, Bun, or even edge workers with zero code changes.
@@ -2253,7 +2457,7 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
             Web UI, reducing overhead.
           </li>
         </ul>
-        <p className="text-sm text-muted-foreground">
+        <p className={styles.smallMutedText}>
           The CLI has been updated to launch this new engine automatically—just run{" "}
           <Code>keating web</Code> and experience the speed.
         </p>
@@ -2274,14 +2478,14 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
     ],
     body: (
       <>
-        <p className="mb-4 leading-6">
+        <p className={styles.leadParagraph}>
           0.1.4 fixes global CLI installation, completes the React rewrite of
           the web app, and moves the server stack to Nitro + Vite for a
           runtime-agnostic build.
         </p>
 
-        <h3 id="cli-fixes" className="font-bold mt-4 mb-2">CLI Fixes</h3>
-        <p className="text-sm mb-4">
+        <h3 id="cli-fixes" className={styles.sectionHeading}>CLI Fixes</h3>
+        <p className={styles.smallParagraph}>
           When installed globally via <Code>npm install -g keating</Code> or{" "}
           <Code>bun install -g keating</Code>, the CLI now resolves internal
           paths relative to the package installation directory instead of the
@@ -2290,16 +2494,16 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
           arbitrary directories.
         </p>
 
-        <h3 id="react-migration" className="font-bold mt-4 mb-2">React Migration</h3>
-        <p className="text-sm mb-4">
+        <h3 id="react-migration" className={styles.sectionHeading}>React Migration</h3>
+        <p className={styles.smallParagraph}>
           The web app was rebuilt from Lit components to React, integrating
           Keating browser tools directly into the component tree. The model
           selector was rewritten with dynamic provider discovery, and agent state
           updates now persist correctly across the boot sequence.
         </p>
 
-        <h3 id="nitro-vite" className="font-bold mt-4 mb-2">Nitro + Vite</h3>
-        <p className="text-sm mb-4">
+        <h3 id="nitro-vite" className={styles.sectionHeading}>Nitro + Vite</h3>
+        <p className={styles.smallParagraph}>
           The previous Bun server was replaced with Nitro, enabling deployment
           on Node.js, Bun, or edge workers from the same build. Vite handles the
           client build, and the two share a unified pipeline. New mise tasks{" "}
@@ -2321,14 +2525,14 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
     ],
     body: (
       <>
-        <p className="mb-4">
+        <p className={styles.paragraph}>
           Fixed the web UI bug where the chat window kept showing{" "}
           <Code>gemini-3.1-pro-preview</Code> even after picking a different model. The selected
           model now updates the agent state directly, so the chat button and the runtime stay in
           sync.
         </p>
-        <h3 id="model-selector-changed" className="font-bold mt-4 mb-2">What Changed</h3>
-        <ul className="text-sm space-y-2 ml-4 mb-4">
+        <h3 id="model-selector-changed" className={styles.sectionHeading}>What Changed</h3>
+        <ul className={styles.unorderedList}>
           <li>
             <strong>State Sync:</strong> Selecting a model now writes the chosen model back into
             the active agent state instead of leaving the old Gemini placeholder in place.
@@ -2343,7 +2547,7 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
             Gemini.
           </li>
         </ul>
-        <p className="text-sm text-muted-foreground">
+        <p className={styles.smallMutedText}>
           This fixes the mismatch between the picker and the chat header, which made it look like
           model changes were being ignored.
         </p>
@@ -2362,14 +2566,14 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
     ],
     body: (
       <>
-        <p className="mb-4">
+        <p className={styles.paragraph}>
           Keating now exposes Synthetic as a first-class custom provider in the Pi settings flow.
           The provider is configured as an OpenAI-compatible endpoint at{" "}
           <Code>https://api.synthetic.new/openai/v1</Code>, with matching setup guidance in the
           tutorial.
         </p>
-        <h3 id="key-changes-013" className="font-bold mt-4 mb-2">Key Changes</h3>
-        <ul className="text-sm space-y-2 ml-4 mb-4">
+        <h3 id="key-changes-013" className={styles.sectionHeading}>Key Changes</h3>
+        <ul className={styles.unorderedList}>
           <li>
             <strong>Synthetic Provider:</strong> Added a dedicated custom-provider entry so users
             can select Synthetic directly from the provider picker.
@@ -2383,7 +2587,7 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
             homepage, model selector, settings dialog, and install tabs.
           </li>
         </ul>
-        <p className="text-sm text-muted-foreground">
+        <p className={styles.smallMutedText}>
           This release keeps the UI consistent with the current provider flow while making the
           browser experience less cramped on small screens.
         </p>
@@ -2402,20 +2606,20 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
     ],
     body: (
       <>
-        <p className="mb-4">
+        <p className={styles.paragraph}>
           Fixed the text disappearing issue in the chat panel that occurred after sending
           messages. Also added a one-time model loading animation when the browser model
           initializes.
         </p>
-        <h3 id="chat-panel-lifecycle" className="font-bold mt-4 mb-2">Bug Fix: Chat Panel Lifecycle</h3>
-        <p className="mb-4">
+        <h3 id="chat-panel-lifecycle" className={styles.sectionHeading}>Bug Fix: Chat Panel Lifecycle</h3>
+        <p className={styles.paragraph}>
           The root cause was Lit re-rendering replacing the ChatPanel element on every state
           update. Separated the static header from the dynamic chat panel with distinct DOM
           containers. The header renders via Lit&apos;s templating, while the ChatPanel is appended
           once and never replaced.
         </p>
-        <h3 id="model-loading-overlay" className="font-bold mt-4 mb-2">New: Model Loading Overlay</h3>
-        <p className="mb-4">
+        <h3 id="model-loading-overlay" className={styles.sectionHeading}>New: Model Loading Overlay</h3>
+        <p className={styles.paragraph}>
           When using the browser model (Gemma 4 E4B), a loading overlay now appears showing
           real-time download progress. This only shows once — the first time the model is
           loaded. Subsequent visits skip the overlay since the model is cached locally.
@@ -2425,7 +2629,7 @@ localModel.subscribe((state) => {
   if (state.loading) showLoadingOverlay(state.loadingProgress);
   if (state.loaded) hideLoadingOverlay();
 });`}</CodeBlock>
-        <p className="text-sm text-muted-foreground">
+        <p className={styles.smallMutedText}>
           The overlay includes a progress bar, percentage display, and explains that the ~2GB
           download only happens once.
         </p>
@@ -2445,13 +2649,13 @@ localModel.subscribe((state) => {
     ],
     body: (
       <>
-        <p className="mb-4">
+        <p className={styles.paragraph}>
           Keating is now a fully installable Progressive Web App. Install it from your browser
           and run it offline with the browser model. The WebGPU-powered Gemma 4 E4B model
           streams tokens in real-time directly in your browser.
         </p>
-        <h3 id="pwa-key-changes" className="font-bold mt-4 mb-2">Key Changes</h3>
-        <ul className="text-sm space-y-2 ml-4 mb-4">
+        <h3 id="pwa-key-changes" className={styles.sectionHeading}>Key Changes</h3>
+        <ul className={styles.unorderedList}>
           <li>
             <strong>Browser Model → Agent:</strong> The local Gemma model is now fully wired
             into the Agent infrastructure. Token streaming works via a custom stream function
@@ -2471,7 +2675,7 @@ localModel.subscribe((state) => {
             WASM files and model weights from HuggingFace CDN.
           </li>
         </ul>
-        <h3 id="pwa-how" className="font-bold mt-4 mb-2">How It Works</h3>
+        <h3 id="pwa-how" className={styles.sectionHeading}>How It Works</h3>
         <CodeBlock>{`// Hybrid stream function dispatches based on model selection
 const hybridStreamFn = async (model, context, options) => {
   if (selectedModelId === 'browser' && webGpuAvailable) {
@@ -2479,7 +2683,7 @@ const hybridStreamFn = async (model, context, options) => {
   }
   return streamSimple(model, context, options);
 };`}</CodeBlock>
-        <p className="text-sm text-muted-foreground">
+        <p className={styles.smallMutedText}>
           Install: Visit keating.help in Chrome/Edge and click &quot;Install&quot; in the address bar, or
           use the browser&apos;s menu → &quot;Install app&quot;.
         </p>
@@ -2494,12 +2698,12 @@ const hybridStreamFn = async (model, context, options) => {
       "Updated the default cloud model to gemini-3.1-pro-preview for latest Gemini capabilities when WebGPU is unavailable.",
     body: (
       <>
-        <p className="mb-4">
+        <p className={styles.paragraph}>
           Updated the default cloud model from <Code>gemini-3.1-pro-preview</Code> to{" "}
           <Code>gemini-3.1-pro-preview</Code>. This gives access to the latest Gemini
           capabilities when WebGPU is unavailable.
         </p>
-        <p className="text-sm text-muted-foreground">
+        <p className={styles.smallMutedText}>
           The model selector UI has been updated to reflect this change, showing &quot;Gemini 3.1 Pro
           Preview&quot; instead of the previous version.
         </p>
@@ -2514,7 +2718,7 @@ const hybridStreamFn = async (model, context, options) => {
       "Async WebGPU detection before rendering prevents showing the browser model option when it won't actually work.",
     body: (
       <>
-        <p className="mb-4">
+        <p className={styles.paragraph}>
           The model selector now performs async WebGPU detection before rendering. This prevents
           the UI from showing the browser option when it won&apos;t actually work.
         </p>
@@ -2527,7 +2731,7 @@ const hybridStreamFn = async (model, context, options) => {
     return false;
   }
 }`}</CodeBlock>
-        <p className="text-sm text-muted-foreground">
+        <p className={styles.smallMutedText}>
           If WebGPU is unavailable, the browser model option shows &quot;WebGPU not available&quot; and is
           grayed out.
         </p>
@@ -2542,12 +2746,12 @@ const hybridStreamFn = async (model, context, options) => {
       "Run Gemma 4 E4B entirely in browser using WebGPU — no API keys, progressively loaded, locally cached.",
     body: (
       <>
-        <p className="mb-4">
+        <p className={styles.paragraph}>
           Keating now runs entirely in your browser using WebGPU. Run Gemma 4 E4B locally
           without any API keys. The model loads progressively and caches in your browser for
           subsequent sessions.
         </p>
-        <p className="text-sm text-muted-foreground">
+        <p className={styles.smallMutedText}>
           Requires Chrome 113+ or Edge 113+ with WebGPU support. Model size: ~5GB cached
           locally.
         </p>
@@ -2567,15 +2771,15 @@ const hybridStreamFn = async (model, context, options) => {
     ],
     body: (
       <>
-        <p className="mb-4 leading-6">
+        <p className={styles.leadParagraph}>
           Keating 0.1.2 is the first public release. It ships a complete
           hyperteacher CLI built on the Pi agent framework, with deterministic
           pedagogical engines for lesson planning, concept mapping, animation
           generation, and teaching verification.
         </p>
 
-        <h3 id="core-tools" className="font-bold mt-4 mb-2">Core Teaching Tools</h3>
-        <ul className="text-sm space-y-2 ml-4 mb-4">
+        <h3 id="core-tools" className={styles.sectionHeading}>Core Teaching Tools</h3>
+        <ul className={styles.unorderedList}>
           <li><Code>keating plan &lt;topic&gt;</Code> — Generate structured lesson plans</li>
           <li><Code>keating map &lt;topic&gt;</Code> — Create Mermaid concept maps</li>
           <li><Code>keating animate &lt;topic&gt;</Code> — Build Manim-web animation bundles</li>
@@ -2583,8 +2787,8 @@ const hybridStreamFn = async (model, context, options) => {
           <li><Code>keating bench</Code> — Benchmark teaching policies against synthetic learners</li>
         </ul>
 
-        <h3 id="self-improvement" className="font-bold mt-4 mb-2">Self-Improvement Loop</h3>
-        <p className="text-sm mb-4">
+        <h3 id="self-improvement" className={styles.sectionHeading}>Self-Improvement Loop</h3>
+        <p className={styles.smallParagraph}>
           <Code>keating evolve</Code> runs policy evolution by mutating teaching
           parameters against benchmark scores. <Code>keating improve</Code>
           generates targeted improvement proposals from benchmark weakness
@@ -2603,12 +2807,12 @@ const hybridStreamFn = async (model, context, options) => {
       "First public release. Socratic AI tutor built on Pi agent framework with multi-provider support, local persistence, and dark mode.",
     body: (
       <>
-        <p className="mb-4">
+        <p className={styles.paragraph}>
           First public release of Keating hyperteacher. Built on the Pi agent framework with
           support for Google Gemini, Anthropic Claude, and OpenAI GPT models. Features Socratic
           teaching methodology with diagnostic-first approach.
         </p>
-        <ul className="text-sm space-y-1 ml-4">
+        <ul className={styles.tightList}>
           <li>- Chat-based teaching interface</li>
           <li>- Multi-provider support</li>
           <li>- Local session persistence</li>
@@ -2625,12 +2829,12 @@ const hybridStreamFn = async (model, context, options) => {
       "Why Keating is named after John Keating from Dead Poets Society. Education should ignite minds, not fill them.",
     body: (
       <>
-        <p className="mb-4">
+        <p className={styles.paragraph}>
           Keating is named after John Keating from Dead Poets Society, who taught that the
           purpose of education is not to fill minds but to ignite them. Our AI doesn&apos;t give
           answers — it forces you to reconstruct understanding from memory.
         </p>
-        <p className="text-sm text-muted-foreground">
+        <p className={styles.smallMutedText}>
           Core principle: struggle is the feature, not the bug. Neural pathways form through
           effort.
         </p>
@@ -2688,34 +2892,34 @@ function groupByVersion(posts: Post[]): VersionGroup[] {
 
 function PostCard({ post, expanded, onToggle }: { post: Post; expanded: boolean; onToggle: () => void }) {
   return (
-    <article id={postId(post)} className="paper-fold distressed-border p-6 post-card scroll-mt-28">
-      <div className="flex items-center gap-3 mb-3">
-        <span className="font-terminal text-[#d5604b]">{post.date}</span>
-        <span className={`text-xs px-2 py-1 rounded ${BADGE_CLASSES[post.badge.color]}`}>
+    <article id={postId(post)} className={styles.article}>
+      <div className={styles.articleMeta}>
+        <span className={styles.date}>{post.date}</span>
+        <span className={cx(styles.badge, BADGE_CLASSES[post.badge.color])}>
           {post.badge.label}
         </span>
         {post.version && (
-          <span className="text-xs font-terminal text-muted-foreground">v{post.version}</span>
+          <span className={styles.version}>v{post.version}</span>
         )}
       </div>
 
-      <h2 className="text-xl font-bold mb-2">{post.title}</h2>
+      <h2 className={styles.postTitle}>{post.title}</h2>
 
-      <p className={`text-sm leading-6 ${expanded ? "" : "line-clamp-2"}`}>{post.summary}</p>
+      <p className={cx(styles.summary, !expanded && styles.lineClamp2)}>{post.summary}</p>
 
       {/* Section links when expanded */}
       {expanded && post.sections && post.sections.length > 0 && (
-        <div className="mt-3 mb-4 rounded-md bg-muted/30 border border-border p-3">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+        <div className={styles.contentsPanel}>
+          <div className={styles.contentsLabel}>
             <Hash size={12} />
             Contents
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className={styles.wrapRow}>
             {post.sections.map((s) => (
               <a
                 key={s.id}
                 href={`#${s.id}`}
-                className="text-xs px-2 py-1 rounded border border-border bg-background hover:border-primary hover:text-primary transition-colors"
+                className={styles.sectionLink}
               >
                 {s.title}
               </a>
@@ -2724,11 +2928,11 @@ function PostCard({ post, expanded, onToggle }: { post: Post; expanded: boolean;
         </div>
       )}
 
-      {expanded && <div className="mt-4">{post.body}</div>}
+      {expanded && <div className={styles.expandedBody}>{post.body}</div>}
 
       <button
         onClick={onToggle}
-        className="mt-4 inline-flex items-center gap-1.5 text-xs font-terminal text-muted-foreground hover:text-foreground transition-colors"
+        className={styles.toggleButton}
       >
         {expanded ? (
           <>
@@ -2768,35 +2972,34 @@ function UpdateFilters({
   filtered: number;
 }) {
   return (
-    <section className="paper-fold distressed-border p-5 mb-6" aria-label="Filter updates">
-      <div className="flex flex-col gap-4">
-        <label className="flex flex-col gap-2">
-          <span className="font-terminal text-xs text-muted-foreground">SEARCH_UPDATES</span>
-          <span className="relative">
-            <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+    <section className={styles.panel} aria-label="Filter updates">
+      <div className={styles.filtersStack}>
+        <label className={styles.labelStack}>
+          <span className={styles.terminalLabel}>SEARCH_UPDATES</span>
+          <span className={styles.relative}>
+            <Search size={16} className={styles.searchIcon} />
             <input
               value={query}
               onChange={(event) => onQueryChange(event.target.value)}
               placeholder="Search versions, providers, runtime, sharing, PWA..."
-              className="w-full rounded-md border-2 border-border bg-background py-2 pl-9 pr-3 text-sm text-foreground"
+              className={styles.input}
             />
           </span>
         </label>
 
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className={styles.twoColumnGrid}>
           <div>
-            <div className="mb-2 font-terminal text-xs text-muted-foreground">TYPE</div>
-            <div className="flex flex-wrap gap-2">
+            <div className={styles.filterHeading}>TYPE</div>
+            <div className={styles.wrapRow}>
               {[ALL_CATEGORIES, ...categories].map((category) => (
                 <button
                   key={category}
                   type="button"
                   onClick={() => onCategoryChange(category)}
-                  className={`rounded-md border px-2.5 py-1.5 text-xs transition-colors ${
-                    selectedCategory === category
-                      ? "border-primary bg-primary/15 text-primary"
-                      : "border-border bg-background text-foreground hover:bg-muted/60"
-                  }`}
+                  className={cx(
+                    styles.filterButton,
+                    selectedCategory === category ? styles.filterButtonActive : styles.filterButtonInactive,
+                  )}
                 >
                   {category === ALL_CATEGORIES ? "All" : category}
                 </button>
@@ -2805,18 +3008,17 @@ function UpdateFilters({
           </div>
 
           <div>
-            <div className="mb-2 font-terminal text-xs text-muted-foreground">VERSION</div>
-            <div className="flex flex-wrap gap-2">
+            <div className={styles.filterHeading}>VERSION</div>
+            <div className={styles.wrapRow}>
               {[ALL_VERSIONS, ...versions].map((version) => (
                 <button
                   key={version}
                   type="button"
                   onClick={() => onVersionChange(version)}
-                  className={`rounded-md border px-2.5 py-1.5 text-xs transition-colors ${
-                    selectedVersion === version
-                      ? "border-primary bg-primary/15 text-primary"
-                      : "border-border bg-background text-foreground hover:bg-muted/60"
-                  }`}
+                  className={cx(
+                    styles.filterButton,
+                    selectedVersion === version ? styles.filterButtonActive : styles.filterButtonInactive,
+                  )}
                 >
                   {version === ALL_VERSIONS ? "All" : version}
                 </button>
@@ -2825,7 +3027,7 @@ function UpdateFilters({
           </div>
         </div>
 
-        <div className="font-terminal text-xs text-muted-foreground">
+        <div className={styles.terminalLabel}>
           Showing {filtered} of {total} updates
         </div>
       </div>
@@ -2835,37 +3037,36 @@ function UpdateFilters({
 
 function VersionTOC({ groups, expandedMap, onJump }: { groups: VersionGroup[]; expandedMap: Set<string>; onJump: (post: Post) => void }) {
   return (
-    <div className="paper-fold distressed-border p-5 sticky top-20">
-      <h3 className="font-terminal text-sm mb-1 text-accent">$ browse UPDATES</h3>
-      <p className="mb-4 text-xs leading-5 text-muted-foreground">
+    <div className={styles.toc}>
+      <h3 className={styles.tocTitle}>$ browse UPDATES</h3>
+      <p className={styles.tocIntro}>
         Jump by release line, feature note, or dev log. Filters update this list.
       </p>
       {groups.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No matching updates.</p>
+        <p className={styles.smallMutedText}>No matching updates.</p>
       ) : (
-        <div className="space-y-3">
+        <div className={styles.stack3}>
           {groups.map((g) => (
             <div key={g.version}>
-              <div className="font-terminal text-xs text-muted-foreground mb-1 uppercase tracking-wider">
+              <div className={styles.tocVersion}>
                 {g.version}
               </div>
-              <div className="space-y-1">
+              <div className={styles.stack1}>
                 {g.posts.map((p) => {
                   const isExpanded = expandedMap.has(p.title);
                   return (
                     <button
                       key={p.title}
                       onClick={() => onJump(p)}
-                      className={`w-full rounded px-1.5 py-1 text-left text-xs leading-4 transition-colors ${
-                        isExpanded
-                          ? "border border-primary/20 bg-primary/10 text-primary"
-                          : "text-foreground/80 hover:bg-muted/50"
-                      }`}
+                      className={cx(
+                        styles.tocButton,
+                        isExpanded ? styles.tocButtonActive : styles.tocButtonInactive,
+                      )}
                     >
-                      <span className="block font-medium">
+                      <span className={styles.blockMedium}>
                         {p.title.replace(/^v\d+\.\d+\.\d+\s*[-—]\s*/, "")}
                       </span>
-                      <span className="font-terminal text-[10px] text-muted-foreground">
+                      <span className={styles.tinyMutedTerminal}>
                         {p.date} / {p.badge.label}
                       </span>
                     </button>
@@ -2886,22 +3087,22 @@ function FeaturedDocs({ onJump }: { onJump: (post: Post) => void }) {
   ).slice(0, 4);
 
   return (
-    <section className="grid gap-3 md:grid-cols-2 mb-6">
+    <section className={styles.featuredGrid}>
       {picks.map((post) => (
         <button
           key={post.title}
           type="button"
           onClick={() => onJump(post)}
-          className="rounded-md border-2 border-border bg-background p-4 text-left transition-colors hover:bg-muted/50"
+          className={styles.featuredCard}
         >
-          <div className="mb-2 flex items-center gap-2">
-            <span className={`rounded px-2 py-0.5 text-[10px] ${BADGE_CLASSES[post.badge.color]}`}>
+          <div className={styles.cardMeta}>
+            <span className={cx(styles.smallBadge, BADGE_CLASSES[post.badge.color])}>
               {post.badge.label}
             </span>
-            <span className="font-terminal text-[11px] text-muted-foreground">{post.date}</span>
+            <span className={styles.elevenTerminalMuted}>{post.date}</span>
           </div>
-          <h3 className="text-sm font-semibold leading-5">{post.title}</h3>
-          <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">{post.summary}</p>
+          <h3 className={styles.cardTitle}>{post.title}</h3>
+          <p className={cx(styles.cardSummary, styles.lineClamp2)}>{post.summary}</p>
         </button>
       ))}
     </section>
@@ -2933,24 +3134,24 @@ function ResourceLibrary() {
   ];
 
   return (
-    <section className="paper-fold distressed-border p-5 mb-6">
-      <div className="mb-3 flex items-center justify-between gap-3">
+    <section className={styles.panel}>
+      <div className={styles.resourceHeader}>
         <div>
-          <h2 className="text-lg font-bold">Docs Worth Reading</h2>
-          <p className="text-sm text-muted-foreground">
+          <h2 className={styles.resourceTitle}>Docs Worth Reading</h2>
+          <p className={styles.smallMutedText}>
             Design notes and implementation plans that explain where Keating is going.
           </p>
         </div>
       </div>
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className={styles.twoColumnGrid}>
         {resources.map((resource) => (
           <a
             key={resource.label}
             href={resource.href}
-            className="rounded-md border border-border bg-background p-3 transition-colors hover:bg-muted/50"
+            className={styles.resourceLink}
           >
-            <span className="block text-sm font-semibold">{resource.label}</span>
-            <span className="mt-1 block text-xs leading-5 text-muted-foreground">{resource.detail}</span>
+            <span className={styles.blockSemibold}>{resource.label}</span>
+            <span className={css({ mt: "0.25rem", display: "block", fontSize: "0.75rem", lineHeight: "1.25rem", color: "var(--muted-foreground)" })}>{resource.detail}</span>
           </a>
         ))}
       </div>
@@ -3013,20 +3214,20 @@ export function Blog() {
   const versionGroups = useMemo(() => groupByVersion(filteredPosts), [filteredPosts]);
 
   return (
-    <div className="retro-layout retro-page">
+    <div className={styles.page}>
       <Nav />
 
-      <main className="pt-6 pb-16 px-6">
-        <div className="max-w-6xl mx-auto">
+      <main className={styles.main}>
+        <div className={styles.container}>
           {/* Hero */}
-          <div className="paper-fold distressed-border p-8 mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold mb-2">Keating Updates</h1>
-            <p className="text-muted-foreground font-terminal">Searchable release notes, feature notes, and dev logs</p>
+          <div className={styles.hero}>
+            <h1 className={styles.heroTitle}>Keating Updates</h1>
+            <p className={styles.heroSubtitle}>Searchable release notes, feature notes, and dev logs</p>
           </div>
 
-          <div className="flex flex-col lg:flex-row gap-8">
+          <div className={styles.contentLayout}>
             {/* Posts */}
-            <div className="flex-1 min-w-0 space-y-6">
+            <div className={styles.postsColumn}>
               <UpdateFilters
                 query={query}
                 onQueryChange={setQuery}
@@ -3042,9 +3243,9 @@ export function Blog() {
               <ResourceLibrary />
               <FeaturedDocs onJump={jumpToPost} />
               {filteredPosts.length === 0 ? (
-                <div className="paper-fold distressed-border p-8 text-center">
-                  <h2 className="text-lg font-bold">No matching updates</h2>
-                  <p className="mt-2 text-sm text-muted-foreground">
+                <div className={styles.emptyState}>
+                  <h2 className={styles.emptyTitle}>No matching updates</h2>
+                  <p className={css({ mt: "0.5rem", fontSize: "0.875rem", color: "var(--muted-foreground)" })}>
                     Try a broader search, another version, or the All type filter.
                   </p>
                 </div>
@@ -3061,7 +3262,7 @@ export function Blog() {
             </div>
 
             {/* Sidebar TOC */}
-            <aside className="lg:w-64 shrink-0">
+            <aside className={styles.sidebar}>
               <VersionTOC
                 groups={versionGroups}
                 expandedMap={expanded}
@@ -3070,13 +3271,13 @@ export function Blog() {
             </aside>
           </div>
 
-          <div className="mt-12 p-6 bg-foreground text-background">
-            <h3 className="font-terminal text-lg mb-2">STAY_UPDATED</h3>
-            <p className="text-sm text-background/70">
+          <div className={styles.stayUpdated}>
+            <h3 className={styles.stayTitle}>STAY_UPDATED</h3>
+            <p className={styles.inverseMuted}>
               Follow development on{" "}
               <a
                 href="https://github.com/Diogenesoftoronto/keating"
-                className="text-[#d5604b] underline"
+                className={styles.redLink}
               >
                 GitHub
               </a>{" "}

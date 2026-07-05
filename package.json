@@ -1,6 +1,6 @@
 {
   "name": "keating",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "type": "module",
   "description": "A Pi-powered hyperteacher package with self-improving teaching policies, lesson maps, and animated visual teaching artifacts.",
   "keywords": [
@@ -69,6 +69,7 @@
   "dependencies": {
     "@ax-llm/ax": "^22.0.7",
     "@earendil-works/pi-coding-agent": "^0.80.2",
+    "@earendil-works/pi-tui": "^0.80.2",
     "@google/generative-ai": "^0.24.1",
     "@lix-js/sdk": "^0.7.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
@@ -90,6 +91,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "@varlock/bumpy": "^1.18.1",
     "fast-check": "^4.8.0",
     "react-dom": "^19.2.7",
     "remotion": "^4.0.482"

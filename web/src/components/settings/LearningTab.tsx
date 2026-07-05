@@ -1,3 +1,5 @@
+import { css } from "../../../styled-system/css";
+import { settingsSection } from "../../../styled-system/recipes";
 import { SettingsSectionNav } from "../SettingsSectionNav";
 import { TeacherPersonaTab } from "../TeacherPersonaTab";
 import {
@@ -10,6 +12,11 @@ interface LearningTabProps {
 	onSpeechSettingsChange?: (settings: WebSpeechSettings) => void;
 }
 
+const stackClass = css({ display: "flex", flexDirection: "column", gap: "2rem" });
+const sectionAnchorClass = css({ display: "flex", flexDirection: "column", gap: "1rem", scrollMarginTop: "5rem" });
+const sectionTitleClass = css({ fontSize: "1rem", fontWeight: 600, color: "var(--foreground)" });
+const subSectionClass = css({ display: "flex", flexDirection: "column", gap: "1rem" });
+
 /**
  * "Learning" settings tab: everything that shapes the tutoring experience —
  * who the teacher is (persona) and how it speaks (speech & voice).
@@ -17,20 +24,22 @@ interface LearningTabProps {
  */
 export function LearningTab({ onSpeechSettingsChange }: LearningTabProps) {
 	return (
-		<div className="flex flex-col gap-8">
+		<div className={stackClass}>
 			<SettingsSectionNav
 				sections={[{ id: "persona", label: "Persona" }, ...SPEECH_SECTIONS]}
 			/>
 
-			<div id="settings-section-persona" className="flex flex-col gap-4 scroll-mt-20">
-				<h3 className="text-base font-semibold text-foreground">Teacher Persona</h3>
+			<div id="settings-section-persona" className={sectionAnchorClass}>
+				<h3 className={sectionTitleClass}>Teacher Persona</h3>
 				<TeacherPersonaTab />
 			</div>
 
-			<div className="flex flex-col gap-4">
-				<h3 className="text-base font-semibold text-foreground">Speech &amp; Voice</h3>
+			<div className={settingsSection()}>
+				<h3 className={sectionTitleClass}>Speech &amp; Voice</h3>
 				<SpeechSettingsTab hideNav onSettingsChange={onSpeechSettingsChange} />
 			</div>
+
+			<div className={subSectionClass} />
 		</div>
 	);
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import {
 	Atom,
 	Check,
@@ -9,7 +9,6 @@ import {
 	Landmark,
 	Languages,
 	ListChecks,
-	Loader2,
 	Map as MapIcon,
 	MoreVertical,
 	Palette,
@@ -29,6 +28,9 @@ import {
 } from "./session-card-visuals";
 import { formatRelativeSessionDate } from "../lib/session-date";
 import { sanitizeSvg } from "../lib/sanitize-svg";
+import { css, cx } from "../../styled-system/css";
+import { OverflowMenu, type OverflowMenuItem } from "./OverflowMenu";
+import { Spinner } from "./Spinner";
 
 const CATEGORY_ICON: Record<CategoryKey, LucideIcon> = {
 	science: FlaskConical,
@@ -97,23 +99,12 @@ export function SessionCard({
 }: SessionCardProps) {
 	const category = categorize(session.title);
 	const Icon = CATEGORY_ICON[category.key];
-	const [menuOpen, setMenuOpen] = useState(false);
 	const [renaming, setRenaming] = useState(false);
 	const [confirmingDelete, setConfirmingDelete] = useState(false);
 	const [draft, setDraft] = useState(session.title);
 	const [busy, setBusy] = useState(false);
 	const [suggesting, setSuggesting] = useState(false);
-	const menuRef = useRef<HTMLDivElement>(null);
 	const safeHeroSvg = useMemo(() => (hero?.svg ? sanitizeSvg(hero.svg) : ""), [hero?.svg]);
-
-	useEffect(() => {
-		if (!menuOpen) return;
-		const onDown = (event: MouseEvent) => {
-			if (!menuRef.current?.contains(event.target as Node)) setMenuOpen(false);
-		};
-		window.addEventListener("mousedown", onDown);
-		return () => window.removeEventListener("mousedown", onDown);
-	}, [menuOpen]);
 
 	const saveRename = async () => {
 		const next = draft.trim();
@@ -145,7 +136,6 @@ export function SessionCard({
 		setSuggesting(true);
 		try {
 			const suggestion = await onSuggestTitle(session.id);
-			setMenuOpen(false);
 			setConfirmingDelete(false);
 			setDraft(suggestion);
 			setRenaming(true);
@@ -158,30 +148,43 @@ export function SessionCard({
 
 	return (
 		<div
-			className={`group relative flex h-full flex-col overflow-hidden rounded-2xl border text-left shadow-sm transition-colors ${
-				active ? "border-primary ring-1 ring-primary" : "border-border"
-			} ${justForked ? "session-fork-arrive" : ""}`}
+			className={cx(
+				justForked ? "session-fork-arrive" : "",
+				css({
+					position: "relative",
+					display: "flex",
+					height: "100%",
+					flexDirection: "column",
+					overflow: "hidden",
+					borderRadius: "1rem",
+					border: "1px solid",
+					borderColor: active ? "var(--primary)" : "var(--border)",
+					textAlign: "left",
+					boxShadow: active ? "0 0 0 1px var(--primary), var(--shadow-sm)" : "var(--shadow-sm)",
+					transition: "color 150ms, background-color 150ms, border-color 150ms",
+				}),
+			)}
 		>
 			{/* Hero band: rendered map SVG when available, otherwise a category tile. */}
 			<button
 				type="button"
-				className="relative block w-full text-left"
+				className={css({ position: "relative", display: "block", width: "100%", textAlign: "left" })}
 				onClick={() => void onLoad(session.id)}
 				aria-label={`Open session ${session.title}`}
 			>
 				{safeHeroSvg ? (
 					<div
-						className="session-card-hero-svg flex h-20 sm:h-28 w-full items-center justify-center overflow-hidden bg-muted/40"
+						className={cx("session-card-hero-svg", css({ display: "flex", height: { base: "5rem", sm: "7rem" }, width: "100%", alignItems: "center", justifyContent: "center", overflow: "hidden", background: "color-mix(in srgb, var(--muted) 40%, transparent)" }))}
 						dangerouslySetInnerHTML={{ __html: safeHeroSvg }}
 					/>
 				) : (
 					<div
-						className="flex h-12 sm:h-20 w-full items-center justify-between px-3 sm:px-4"
+						className={css({ display: "flex", height: { base: "3rem", sm: "5rem" }, width: "100%", alignItems: "center", justifyContent: "space-between", paddingInline: { base: "0.75rem", sm: "1rem" } })}
 						style={{ background: categoryGradient(category.accent) }}
 					>
-						<Icon size={20} className="sm:size-[26px]" style={{ color: category.accent }} aria-hidden="true" />
+						<Icon size={20} className={css({ sm: { width: "26px", height: "26px" } })} style={{ color: category.accent }} aria-hidden="true" />
 						<span
-							className="rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide"
+							className={css({ borderRadius: "9999px", padding: "0.125rem 0.5rem", fontSize: "0.625rem", fontWeight: 500, letterSpacing: "0.025em", textTransform: "uppercase" })}
 							style={{ color: category.accent, background: `${category.accent}1f` }}
 						>
 							{category.label}
@@ -189,7 +192,7 @@ export function SessionCard({
 					</div>
 				)}
 				{HeroBadgeIcon ? (
-					<span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-background/85 px-2 py-0.5 text-[10px] font-medium text-foreground backdrop-blur">
+					<span className={css({ position: "absolute", left: "0.5rem", top: "0.5rem", display: "inline-flex", alignItems: "center", gap: "0.25rem", borderRadius: "9999px", background: "color-mix(in srgb, var(--background) 85%, transparent)", padding: "0.125rem 0.5rem", fontSize: "0.625rem", fontWeight: 500, color: "var(--foreground)", backdropFilter: "blur(8px)" })}>
 						<HeroBadgeIcon size={11} />
 						{hero?.type}
 					</span>
@@ -198,23 +201,23 @@ export function SessionCard({
 
 			<button
 				type="button"
-				className="flex min-w-0 flex-1 flex-col px-2.5 sm:px-3.5 pb-2.5 sm:pb-3 pt-2 sm:pt-2.5 text-left"
+				className={css({ display: "flex", minWidth: 0, flex: 1, flexDirection: "column", paddingInline: { base: "0.625rem", sm: "0.875rem" }, paddingBottom: { base: "0.625rem", sm: "0.75rem" }, paddingTop: { base: "0.5rem", sm: "0.625rem" }, textAlign: "left" })}
 				onClick={() => void onLoad(session.id)}
 			>
-				<span className="text-[11px] text-muted-foreground">{formatRelativeSessionDate(session.lastModified, { today: "time" })}</span>
-				<h3 className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs sm:text-sm font-semibold leading-snug text-foreground">
+				<span className={css({ fontSize: "0.6875rem", color: "var(--muted-foreground)" })}>{formatRelativeSessionDate(session.lastModified, { today: "time" })}</span>
+				<h3 className={css({ marginTop: "0.125rem", display: "flex", minWidth: 0, alignItems: "center", gap: "0.375rem", fontSize: { base: "0.75rem", sm: "0.875rem" }, fontWeight: 600, lineHeight: 1.375, color: "var(--foreground)" })}>
 					{session.parentSessionId ? (
-						<GitBranch size={13} className="mt-0.5 shrink-0 self-start text-primary" />
+						<GitBranch size={13} className={css({ marginTop: "0.125rem", flexShrink: 0, alignSelf: "flex-start", color: "var(--primary)" })} />
 					) : null}
-					<span className="line-clamp-2 sm:line-clamp-3 break-words">{session.title}</span>
+					<span className={css({ overflow: "hidden", lineClamp: { base: 2, sm: 3 }, overflowWrap: "break-word" })}>{session.title}</span>
 				</h3>
 				{session.preview ? (
-					<p className="mt-1 line-clamp-2 sm:line-clamp-3 break-words text-xs leading-snug sm:leading-5 text-muted-foreground">{session.preview}</p>
+					<p className={css({ marginTop: "0.25rem", lineClamp: { base: 2, sm: 3 }, overflowWrap: "break-word", fontSize: "0.75rem", lineHeight: { base: 1.375, sm: "1.25rem" }, color: "var(--muted-foreground)" })}>{session.preview}</p>
 				) : null}
-				<div className="mt-1.5 sm:mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-muted-foreground">
+				<div className={css({ marginTop: { base: "0.375rem", sm: "0.5rem" }, display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: "0.5rem", rowGap: "0.25rem", fontSize: "0.625rem", color: "var(--muted-foreground)" })}>
 					<span>{session.messageCount} messages</span>
 					{childCount > 0 ? (
-						<span className="inline-flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.5">
+						<span className={css({ display: "inline-flex", alignItems: "center", gap: "0.125rem", borderRadius: "0.25rem", background: "var(--muted)", padding: "0.125rem 0.375rem" })}>
 							<GitBranch size={9} />
 							{childCount}
 						</span>
@@ -223,82 +226,73 @@ export function SessionCard({
 			</button>
 
 			{/* Overflow menu */}
-			<div ref={menuRef} className="absolute right-1.5 top-1.5 flex items-center gap-1">
+			<div className={css({ position: "absolute", right: "0.375rem", top: "0.375rem", display: "flex", alignItems: "center", gap: "0.25rem" })}>
 				{onSuggestTitle ? (
 					<button
 						type="button"
-						className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-background/80 text-muted-foreground backdrop-blur hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+						className={css({ display: "inline-flex", height: "1.75rem", width: "1.75rem", alignItems: "center", justifyContent: "center", borderRadius: "9999px", background: "color-mix(in srgb, var(--background) 80%, transparent)", color: "var(--muted-foreground)", backdropFilter: "blur(8px)", _hover: { background: "var(--accent)", color: "var(--accent-foreground)" }, _disabled: { opacity: 0.5 } })}
 						aria-label="Suggest title with AI"
 						disabled={busy || suggesting}
 						onClick={() => void suggestTitle()}
 					>
-						{suggesting ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+						<Spinner size={14} loading={suggesting}>
+							<Sparkles size={14} />
+						</Spinner>
 					</button>
 				) : null}
-				<button
-					type="button"
-					className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-background/80 text-muted-foreground backdrop-blur hover:bg-accent hover:text-accent-foreground"
-					aria-label="Session actions"
-					aria-haspopup="menu"
-					aria-expanded={menuOpen}
-					disabled={suggesting}
-					onClick={() => setMenuOpen((open) => !open)}
-				>
-					{busy ? <Loader2 size={14} className="animate-spin" /> : <MoreVertical size={15} />}
-				</button>
-				{menuOpen ? (
-					<div
-						role="menu"
-						className="absolute right-0 top-8 z-20 w-36 overflow-hidden rounded-lg border border-border bg-background py-1 shadow-lg"
-					>
-						<button
-							type="button"
-							role="menuitem"
-							className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-accent disabled:opacity-50"
-							disabled={forking}
-							onClick={() => {
-								setMenuOpen(false);
-								void onFork(session.id);
-							}}
-						>
-							{forking ? <Loader2 size={13} className="animate-spin" /> : <GitBranch size={13} />}
-							Fork
-						</button>
-						<button
-							type="button"
-							role="menuitem"
-							className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-accent"
-							onClick={() => {
-								setMenuOpen(false);
+				<OverflowMenu
+					offset={4}
+					items={[
+						{
+							key: "fork",
+							label: "Fork",
+							icon: forking ? <Spinner size={13} /> : <GitBranch size={13} />,
+							disabled: forking,
+							onSelect: () => void onFork(session.id),
+						},
+						{
+							key: "rename",
+							label: "Rename",
+							icon: <Pencil size={13} />,
+							onSelect: () => {
 								setConfirmingDelete(false);
 								setDraft(session.title);
 								setRenaming(true);
-							}}
-						>
-							<Pencil size={13} />
-							Rename
-						</button>
-						<button
-							type="button"
-							role="menuitem"
-							className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-destructive hover:bg-destructive/10"
-							onClick={() => {
-								setMenuOpen(false);
+							},
+						},
+						{
+							key: "delete",
+							label: "Delete",
+							icon: <Trash2 size={13} />,
+							destructive: true,
+							onSelect: () => {
 								setRenaming(false);
 								setConfirmingDelete(true);
-							}}
+							},
+						},
+					] satisfies OverflowMenuItem[]}
+				>
+					{({ open }) => (
+						<button
+							type="button"
+							className={css({ display: "inline-flex", height: "1.75rem", width: "1.75rem", alignItems: "center", justifyContent: "center", borderRadius: "9999px", background: "color-mix(in srgb, var(--background) 80%, transparent)", color: "var(--muted-foreground)", backdropFilter: "blur(8px)", _hover: { background: "var(--accent)", color: "var(--accent-foreground)" } })}
+							aria-label="Session actions"
+							aria-haspopup="menu"
+							aria-expanded={open}
+							disabled={suggesting}
 						>
-							<Trash2 size={13} />
-							Delete
+							<Spinner size={14} loading={busy}>
+								<MoreVertical size={15} />
+							</Spinner>
 						</button>
-					</div>
-				) : null}
+					)}
+				</OverflowMenu>
 			</div>
 
 			{renaming ? (
-				<div className="flex items-center gap-1.5 border-t border-border bg-background/60 p-2">
+				<div className={css({ display: "flex", alignItems: "center", gap: "0.375rem", borderTop: "1px solid var(--border)", background: "color-mix(in srgb, var(--background) 60%, transparent)", padding: "0.5rem" })}>
 					<input
-						className="min-w-0 flex-1 rounded-md border border-border bg-background px-2 py-1.5 text-xs outline-none focus:border-ring"
+						className={css({ minWidth: 0, flex: 1, borderRadius: "0.375rem", border: "1px solid var(--border)", background: "var(--background)", padding: "0.375rem 0.5rem", fontSize: "0.75rem", outline: "none", _focus: { borderColor: "var(--ring)" } })}
 						value={draft}
 						autoFocus
 						disabled={busy}
@@ -310,7 +304,7 @@ export function SessionCard({
 					/>
 					<button
 						type="button"
-						className="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-accent"
+						className={css({ display: "inline-flex", height: "1.75rem", width: "1.75rem", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", _hover: { background: "var(--accent)" } })}
 						aria-label="Cancel rename"
 						onClick={() => setRenaming(false)}
 					>
@@ -318,7 +312,7 @@ export function SessionCard({
 					</button>
 					<button
 						type="button"
-						className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground disabled:opacity-50"
+						className={css({ display: "inline-flex", height: "1.75rem", width: "1.75rem", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", background: "var(--primary)", color: "var(--primary-foreground)", _disabled: { opacity: 0.5 } })}
 						aria-label="Save rename"
 						disabled={busy}
 						onClick={() => void saveRename()}
@@ -329,19 +323,19 @@ export function SessionCard({
 			) : null}
 
 			{confirmingDelete ? (
-				<div className="flex items-center justify-between gap-2 border-t border-destructive/30 bg-destructive/5 p-2">
-					<span className="text-[11px] text-foreground">Delete session?</span>
-					<div className="flex gap-1.5">
+				<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", borderTop: "1px solid color-mix(in srgb, var(--destructive) 30%, transparent)", background: "color-mix(in srgb, var(--destructive) 5%, transparent)", padding: "0.5rem" })}>
+					<span className={css({ fontSize: "0.6875rem", color: "var(--foreground)" })}>Delete session?</span>
+					<div className={css({ display: "flex", gap: "0.375rem" })}>
 						<button
 							type="button"
-							className="rounded-md px-2 py-1 text-[11px] hover:bg-accent"
+							className={css({ borderRadius: "0.375rem", padding: "0.25rem 0.5rem", fontSize: "0.6875rem", _hover: { background: "var(--accent)" } })}
 							onClick={() => setConfirmingDelete(false)}
 						>
 							Cancel
 						</button>
 						<button
 							type="button"
-							className="rounded-md bg-destructive px-2 py-1 text-[11px] text-destructive-foreground disabled:opacity-50"
+							className={css({ borderRadius: "0.375rem", background: "var(--destructive)", padding: "0.25rem 0.5rem", fontSize: "0.6875rem", color: "var(--destructive-foreground)", _disabled: { opacity: 0.5 } })}
 							disabled={busy}
 							onClick={() => void confirmDelete()}
 						>

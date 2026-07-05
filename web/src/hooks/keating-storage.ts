@@ -13,7 +13,7 @@ import {
 	hasP2PBackend,
 } from "../lib/p2p-storage-backend";
 import { syncCustomProviderKeys } from "../lib/provider-models";
-import { sessionModelMetadata, sessionPreview, sessionUsage } from "./session-metadata";
+import { sessionModelMetadata, sessionPreview, sessionSearchText, sessionUsage } from "./session-metadata";
 import type { SessionData, SessionMetadata } from "../types/session";
 
 const settingsStore = new SettingsStore();
@@ -79,9 +79,16 @@ export async function updateSessionTitle(
 		thinkingLevel: data.thinkingLevel,
 		...sessionModelMetadata(data.model),
 		preview: sessionPreview(data.messages),
+		searchText: sessionSearchText(data.messages),
 		aiGeneratedTitle: aiGeneratedTitle ?? data.aiGeneratedTitle,
 	};
 
-	await sessions.save({ ...data, title, lastModified: now }, metadata);
+	const nextData: SessionData = {
+		...data,
+		title,
+		lastModified: now,
+		aiGeneratedTitle: metadata.aiGeneratedTitle,
+	};
+	await sessions.save(nextData, metadata);
 	window.dispatchEvent(new CustomEvent("keating:sessions-changed"));
 }

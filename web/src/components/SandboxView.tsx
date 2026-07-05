@@ -17,7 +17,6 @@ import {
   GitCompare,
   HardDrive,
   Home,
-  Loader2,
   Maximize2,
   Play,
   Plus,
@@ -33,6 +32,7 @@ import {
   X,
 } from "lucide-react";
 import { JsonCrackBlock } from "./JsonCrackBlock";
+import { Spinner } from "./Spinner";
 import {
   loadAgentRuntimeConfig,
   type KeatingAgentRuntimeConfig,
@@ -80,6 +80,7 @@ import {
   importSandboxPortableBundle,
   type KeatingSandboxPortableBundle,
 } from "../keating/sandbox-export";
+import { css, cx } from "../../styled-system/css";
 
 type DiffChange = Awaited<ReturnType<typeof lixDiffCommits>>[number];
 
@@ -98,10 +99,10 @@ interface LogEvent {
 /* ─── helpers ─────────────────────────────────────────────── */
 
 function modeTone(mode: KeatingAgentRuntimeConfig["mode"]): string {
-  if (mode === "browser-only") return "bg-amber-500/12 text-amber-700 dark:text-amber-300 border-amber-500/40";
-  if (mode === "browser-nodepod") return "bg-teal-500/12 text-teal-700 dark:text-teal-300 border-teal-500/40";
-  if (mode === "remote") return "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300 border-emerald-500/40";
-  return "bg-sky-500/12 text-sky-700 dark:text-sky-300 border-sky-500/40";
+  if (mode === "browser-only") return css({ background: "rgb(245 158 11 / 0.12)", color: "#b45309", borderColor: "rgb(245 158 11 / 0.4)", _dark: { color: "#fcd34d" } });
+  if (mode === "browser-nodepod") return css({ background: "rgb(20 184 166 / 0.12)", color: "#0f766e", borderColor: "rgb(20 184 166 / 0.4)", _dark: { color: "#5eead4" } });
+  if (mode === "remote") return css({ background: "rgb(16 185 129 / 0.12)", color: "#047857", borderColor: "rgb(16 185 129 / 0.4)", _dark: { color: "#6ee7b7" } });
+  return css({ background: "rgb(14 165 233 / 0.12)", color: "#0369a1", borderColor: "rgb(14 165 233 / 0.4)", _dark: { color: "#7dd3fc" } });
 }
 
 function formatJson(value: unknown): string {
@@ -131,6 +132,48 @@ function runtimeLabel(mode: KeatingAgentRuntimeConfig["mode"]): string {
     default: return "Unknown";
   }
 }
+
+const styles = {
+  overlay: css({ position: "fixed", inset: 0, zIndex: 1000, background: "rgb(0 0 0 / 0.35)", backdropFilter: "blur(4px)" }),
+  panel: css({ marginLeft: "auto", display: "flex", height: "100%", width: "100%", maxWidth: "40rem", flexDirection: "column", borderLeftWidth: "2px", borderColor: "var(--border)", background: "var(--background)", color: "var(--foreground)", boxShadow: "var(--shadow-2xl, 0 25px 50px -12px rgb(0 0 0 / 0.25))" }),
+  header: css({ display: "flex", flexShrink: 0, alignItems: "center", justifyContent: "space-between", gap: "0.75rem", borderBottomWidth: "2px", borderColor: "var(--border)", padding: "0.75rem 1rem" }),
+  minW0: css({ minWidth: 0 }),
+  flexCenter: css({ display: "flex", alignItems: "center", gap: "0.5rem" }),
+  titleIcon: css({ color: "var(--primary)" }),
+  title: css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "1rem", fontWeight: 600 }),
+  subtitle: css({ marginTop: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" }),
+  iconButton: css({ display: "inline-flex", height: "2.25rem", width: "2.25rem", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", _hover: { background: "var(--accent)", color: "var(--accent-foreground)" } }),
+  tabBar: css({ display: "flex", flexShrink: 0, gap: "0.25rem", overflowX: "auto", borderBottomWidth: "1px", borderColor: "var(--border)", background: "rgb(from var(--muted) r g b / 0.2)", padding: "0.375rem 0.5rem" }),
+  tabButton: css({ display: "inline-flex", alignItems: "center", gap: "0.375rem", borderRadius: "0.375rem", padding: "0.375rem 0.625rem", fontSize: "0.75rem", fontWeight: 500, transitionProperty: "color, background-color, border-color", transitionDuration: "150ms" }),
+  tabButtonActive: css({ background: "var(--primary)", color: "var(--primary-foreground)" }),
+  tabButtonIdle: css({ color: "var(--muted-foreground)", _hover: { background: "var(--muted)", color: "var(--foreground)" } }),
+  tabActions: css({ marginLeft: "auto", display: "flex", alignItems: "center", gap: "0.5rem" }),
+  body: css({ flex: 1, overflowY: "auto", padding: "1rem" }),
+  grid2: css({ display: "grid", gap: "0.5rem" }),
+  grid3: css({ display: "grid", gap: "0.75rem" }),
+  grid4: css({ display: "grid", gap: "1rem" }),
+  card: css({ borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)" }),
+  mutedCard: css({ borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "rgb(from var(--muted) r g b / 0.25)", padding: "1rem" }),
+  textXs: css({ fontSize: "0.75rem" }),
+  textXsMuted: css({ fontSize: "0.75rem", color: "var(--muted-foreground)" }),
+  text10Muted: css({ fontSize: "10px", color: "var(--muted-foreground)" }),
+  text10: css({ fontSize: "10px" }),
+  semiboldXs: css({ fontSize: "0.75rem", fontWeight: 600 }),
+  mono: css({ fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)" }),
+  monoXs: css({ fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "0.75rem" }),
+  primaryButtonSm: css({ display: "inline-flex", height: "1.75rem", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", background: "var(--primary)", paddingInline: "0.5rem", fontSize: "0.75rem", color: "var(--primary-foreground)", _hover: { background: "color-mix(in srgb, var(--primary) 90%, transparent)" }, _disabled: { opacity: 0.5 } }),
+  primaryButton: css({ display: "inline-flex", height: "2.25rem", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", background: "var(--primary)", paddingInline: "0.75rem", fontSize: "0.75rem", fontWeight: 500, color: "var(--primary-foreground)", _hover: { background: "color-mix(in srgb, var(--primary) 90%, transparent)" }, _disabled: { opacity: 0.5 } }),
+  outlineButtonSm: css({ display: "inline-flex", height: "1.75rem", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", paddingInline: "0.5rem", fontSize: "0.75rem", _hover: { background: "var(--accent)" }, _disabled: { opacity: 0.5 } }),
+  outlineButtonSmBg: css({ display: "inline-flex", height: "1.75rem", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "var(--background)", paddingInline: "0.5rem", fontSize: "0.75rem", _hover: { background: "rgb(from var(--muted) r g b / 0.5)" }, _disabled: { opacity: 0.5 } }),
+  outlineButton: css({ display: "inline-flex", height: "2.25rem", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", paddingInline: "0.75rem", fontSize: "0.75rem", _hover: { background: "var(--accent)" }, _disabled: { opacity: 0.5 } }),
+  pillBase: css({ display: "inline-flex", alignItems: "center", borderRadius: "9999px", paddingInline: "0.375rem", height: "1.25rem", fontSize: "10px", fontWeight: 600 }),
+  okPill: css({ background: "rgb(from var(--primary) r g b / 0.15)", color: "var(--primary)" }),
+  errPill: css({ background: "rgb(from var(--destructive) r g b / 0.15)", color: "var(--destructive)" }),
+  inputBase: css({ borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "var(--background)", padding: "0.5rem 0.75rem", fontSize: "0.75rem" }),
+  inputMono: css({ flex: 1, borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "var(--background)", padding: "0.5rem 0.75rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "0.75rem" }),
+  hidden: css({ display: "none" }),
+  sectionLabel: css({ marginBottom: "0.5rem", fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.025em", color: "var(--muted-foreground)" }),
+};
 
 /* ─── component ───────────────────────────────────────────── */
 
@@ -675,22 +718,22 @@ export function SandboxView({
     : "browser-only fallback";
 
   return (
-    <div className="fixed inset-0 z-[1000] bg-black/35 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Sandbox runtime view">
-      <div className="ml-auto flex h-full w-full max-w-[40rem] flex-col border-l-2 border-border bg-background text-foreground shadow-2xl">
+    <div className={styles.overlay} role="dialog" aria-modal="true" aria-label="Sandbox runtime view">
+      <div className={styles.panel}>
         {/* header */}
-        <header className="flex shrink-0 items-center justify-between gap-3 border-b-2 border-border px-4 py-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <Cpu size={18} className="text-primary" />
-              <h2 className="truncate text-base font-semibold">Sandbox View</h2>
+        <header className={styles.header}>
+          <div className={styles.minW0}>
+            <div className={styles.flexCenter}>
+              <Cpu size={18} className={styles.titleIcon} />
+              <h2 className={styles.title}>Sandbox View</h2>
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className={styles.subtitle}>
               {runtime ? runtimeLabel(runtime.mode) : "Loading runtime config…"}
             </p>
           </div>
           <button
             type="button"
-            className="chat-action-button inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground"
+            className={cx("chat-action-button", styles.iconButton)}
             aria-label="Close sandbox view"
             onClick={onClose}
           >
@@ -699,27 +742,28 @@ export function SandboxView({
         </header>
 
         {/* tab bar */}
-        <div className="flex shrink-0 gap-1 border-b border-border bg-muted/20 px-2 py-1.5 overflow-x-auto">
+        <div className={styles.tabBar}>
           {availableTabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+              className={cx(
+                styles.tabButton,
                 activeTab === tab.id
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
+                  ? styles.tabButtonActive
+                  : styles.tabButtonIdle
+              )}
             >
               {tab.icon}
               {tab.label}
             </button>
           ))}
-          <div className="ml-auto flex items-center gap-2">
+          <div className={styles.tabActions}>
             {nodePodActive ? (
               <button
                 type="button"
                 onClick={handleTeardown}
-                className="inline-flex h-7 items-center gap-1 rounded-md border border-border px-2 text-xs text-destructive hover:bg-destructive/10"
+                className={css({ display: "inline-flex", height: "1.75rem", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", paddingInline: "0.5rem", fontSize: "0.75rem", color: "var(--destructive)", _hover: { background: "rgb(from var(--destructive) r g b / 0.1)" } })}
               >
                 <PowerOff size={12} /> Stop
               </button>
@@ -728,23 +772,23 @@ export function SandboxView({
                 type="button"
                 onClick={handleBoot}
                 disabled={booting}
-                className="inline-flex h-7 items-center gap-1 rounded-md bg-primary px-2 text-xs text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                className={styles.primaryButtonSm}
               >
-                {booting ? <Loader2 size={12} className="animate-spin" /> : <Power size={12} />}
+                {booting ? <Spinner size={12} /> : <Power size={12} />}
                 Boot
               </button>
             )}
             <button
               type="button"
               onClick={refreshAll}
-              className="inline-flex h-7 items-center gap-1 rounded-md border border-border px-2 text-xs hover:bg-accent"
+              className={styles.outlineButtonSm}
             >
               <RefreshCw size={12} /> Refresh
             </button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 py-4">{renderTab()}</div>
+        <div className={styles.body}>{renderTab()}</div>
       </div>
     </div>
   );
@@ -770,48 +814,48 @@ export function SandboxView({
     const vfsFileCount = vfsEntries.filter((e) => !e.isDir).length;
 
     return (
-      <div className="grid gap-4">
+      <div className={styles.grid4}>
         {/* ── runtime identity card ── */}
-        <div className="rounded-md border border-border bg-muted/25 p-4">
-          <div className="flex items-center justify-between gap-3 mb-3">
-            <div className="flex items-center gap-2">
-              <span className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium ${modeTone(runtime?.mode ?? "browser-only")}`}>
+        <div className={styles.mutedCard}>
+          <div className={css({ marginBottom: "0.75rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" })}>
+            <div className={styles.flexCenter}>
+              <span className={cx(css({ display: "inline-flex", alignItems: "center", gap: "0.375rem", borderRadius: "0.375rem", borderWidth: "1px", padding: "0.25rem 0.625rem", fontSize: "0.75rem", fontWeight: 500 }), modeTone(runtime?.mode ?? "browser-only"))}>
                 <Activity size={13} />
                 {runtime?.label ?? "Loading runtime"}
               </span>
               {hasRecentErrors && (
-                <span className="inline-flex items-center gap-1 rounded-md bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold text-destructive">
+                <span className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", background: "rgb(from var(--destructive) r g b / 0.1)", padding: "0.125rem 0.5rem", fontSize: "10px", fontWeight: 600, color: "var(--destructive)" })}>
                   <Bug size={10} /> Errors in log
                 </span>
               )}
             </div>
-            <span className="text-xs font-medium text-muted-foreground">{runtimeHealth}</span>
+            <span className={css({ fontSize: "0.75rem", fontWeight: 500, color: "var(--muted-foreground)" })}>{runtimeHealth}</span>
           </div>
 
-          <dl className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 text-xs">
+          <dl className={css({ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", columnGap: "1rem", rowGap: "0.5rem", fontSize: "0.75rem", sm: { gridTemplateColumns: "repeat(4, minmax(0, 1fr))" } })}>
             <div>
-              <dt className="text-muted-foreground">Mode</dt>
-              <dd className="mt-0.5 font-mono text-sm">{runtime?.mode ?? "—"}</dd>
+              <dt className={css({ color: "var(--muted-foreground)" })}>Mode</dt>
+              <dd className={css({ marginTop: "0.125rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "0.875rem" })}>{runtime?.mode ?? "—"}</dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">Endpoint</dt>
-              <dd className="mt-0.5 break-all font-mono text-sm">{runtime?.executionEndpoint ?? "—"}</dd>
+              <dt className={css({ color: "var(--muted-foreground)" })}>Endpoint</dt>
+              <dd className={css({ marginTop: "0.125rem", wordBreak: "break-all", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "0.875rem" })}>{runtime?.executionEndpoint ?? "—"}</dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">Snapshots</dt>
-              <dd className="mt-0.5 font-mono text-sm">{snapshotCount}</dd>
+              <dt className={css({ color: "var(--muted-foreground)" })}>Snapshots</dt>
+              <dd className={css({ marginTop: "0.125rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "0.875rem" })}>{snapshotCount}</dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">Probes</dt>
-              <dd className="mt-0.5 font-mono text-sm">{probeCount}</dd>
+              <dt className={css({ color: "var(--muted-foreground)" })}>Probes</dt>
+              <dd className={css({ marginTop: "0.125rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "0.875rem" })}>{probeCount}</dd>
             </div>
           </dl>
         </div>
 
         {/* ── capabilities grid ── */}
         <div>
-          <div className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Capabilities</div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className={styles.sectionLabel}>Capabilities</div>
+          <div className={css({ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "0.5rem", sm: { gridTemplateColumns: "repeat(4, minmax(0, 1fr))" } })}>
             {[
               { label: "Source Editing", available: runtime?.mode !== "browser-only" },
               { label: "File System", available: nodePodActive },
@@ -824,13 +868,14 @@ export function SandboxView({
             ].map((cap) => (
               <div
                 key={cap.label}
-                className={`flex items-center gap-2 rounded-md border px-3 py-2 text-xs ${
+                className={cx(
+                  css({ display: "flex", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", borderWidth: "1px", padding: "0.5rem 0.75rem", fontSize: "0.75rem" }),
                   cap.available
-                    ? "border-border bg-muted/20"
-                    : "border-dashed border-muted-foreground/20 text-muted-foreground/60"
-                }`}
+                    ? css({ borderColor: "var(--border)", background: "rgb(from var(--muted) r g b / 0.2)" })
+                    : css({ borderStyle: "dashed", borderColor: "rgb(from var(--muted-foreground) r g b / 0.2)", color: "rgb(from var(--muted-foreground) r g b / 0.6)" })
+                )}
               >
-                {cap.available ? <CheckCircle2 size={12} className="text-primary shrink-0" /> : <div className="w-3 h-3 rounded-full border border-muted-foreground/30 shrink-0" />}
+                {cap.available ? <CheckCircle2 size={12} className={css({ flexShrink: 0, color: "var(--primary)" })} /> : <div className={css({ height: "0.75rem", width: "0.75rem", flexShrink: 0, borderRadius: "9999px", borderWidth: "1px", borderColor: "rgb(from var(--muted-foreground) r g b / 0.3)" })} />}
                 {cap.label}
               </div>
             ))}
@@ -839,89 +884,89 @@ export function SandboxView({
 
         {/* ── runtime-specific detail panel ── */}
         {runtime?.mode === "browser-nodepod" && (
-          <div className="rounded-md border border-teal-500/30 bg-teal-500/5 p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2 text-xs font-semibold">
-                <Cpu size={14} className="text-teal-600 dark:text-teal-300" />
+          <div className={css({ borderRadius: "0.375rem", borderWidth: "1px", borderColor: "rgb(20 184 166 / 0.3)", background: "rgb(20 184 166 / 0.05)", padding: "1rem" })}>
+            <div className={css({ marginBottom: "0.75rem", display: "flex", alignItems: "center", justifyContent: "space-between" })}>
+              <div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", fontWeight: 600 })}>
+                <Cpu size={14} className={css({ color: "#0d9488", _dark: { color: "#5eead4" } })} />
                 NodePod Sandbox
               </div>
               {nodePodActive && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-teal-500/15 px-2 py-0.5 text-[10px] font-medium text-teal-700 dark:text-teal-300">
+                <span className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", borderRadius: "9999px", background: "rgb(20 184 166 / 0.15)", padding: "0.125rem 0.5rem", fontSize: "10px", fontWeight: 500, color: "#0f766e", _dark: { color: "#5eead4" } })}>
                   <Activity size={9} /> Active
                 </span>
               )}
             </div>
 
             {nodePodInfoState ? (
-              <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 text-xs">
+              <dl className={css({ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", columnGap: "1rem", rowGap: "0.5rem", fontSize: "0.75rem", sm: { gridTemplateColumns: "repeat(3, minmax(0, 1fr))" } })}>
                 <div>
-                  <dt className="text-muted-foreground">Instance</dt>
-                  <dd className="mt-0.5 break-all font-mono">{nodePodInfoState.instanceId}</dd>
+                  <dt className={css({ color: "var(--muted-foreground)" })}>Instance</dt>
+                  <dd className={css({ marginTop: "0.125rem", wordBreak: "break-all", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)" })}>{nodePodInfoState.instanceId}</dd>
                 </div>
                 <div>
-                  <dt className="text-muted-foreground">SharedArrayBuffer</dt>
-                  <dd className="mt-0.5 font-mono">{nodePodInfoState.sabEnabled ? "enabled" : "disabled"}</dd>
+                  <dt className={css({ color: "var(--muted-foreground)" })}>SharedArrayBuffer</dt>
+                  <dd className={css({ marginTop: "0.125rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)" })}>{nodePodInfoState.sabEnabled ? "enabled" : "disabled"}</dd>
                 </div>
                 {nodePodInfoState.memoryStats ? (
                   <>
                     <div>
-                      <dt className="text-muted-foreground">VFS Files</dt>
-                      <dd className="mt-0.5 font-mono">{nodePodInfoState.memoryStats.vfs.fileCount} <span className="text-muted-foreground">({fmtBytes(nodePodInfoState.memoryStats.vfs.totalBytes)})</span></dd>
+                      <dt className={css({ color: "var(--muted-foreground)" })}>VFS Files</dt>
+                      <dd className={css({ marginTop: "0.125rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)" })}>{nodePodInfoState.memoryStats.vfs.fileCount} <span className={css({ color: "var(--muted-foreground)" })}>({fmtBytes(nodePodInfoState.memoryStats.vfs.totalBytes)})</span></dd>
                     </div>
                     <div>
-                      <dt className="text-muted-foreground">Heap</dt>
-                      <dd className="mt-0.5 font-mono">{nodePodInfoState.memoryStats.heap ? `${nodePodInfoState.memoryStats.heap.usedMB.toFixed(1)} / ${nodePodInfoState.memoryStats.heap.limitMB.toFixed(1)} MB` : "—"}</dd>
+                      <dt className={css({ color: "var(--muted-foreground)" })}>Heap</dt>
+                      <dd className={css({ marginTop: "0.125rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)" })}>{nodePodInfoState.memoryStats.heap ? `${nodePodInfoState.memoryStats.heap.usedMB.toFixed(1)} / ${nodePodInfoState.memoryStats.heap.limitMB.toFixed(1)} MB` : "—"}</dd>
                     </div>
                     <div>
-                      <dt className="text-muted-foreground">Module Cache</dt>
-                      <dd className="mt-0.5 font-mono">{nodePodInfoState.memoryStats.engine.moduleCacheSize}</dd>
+                      <dt className={css({ color: "var(--muted-foreground)" })}>Module Cache</dt>
+                      <dd className={css({ marginTop: "0.125rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)" })}>{nodePodInfoState.memoryStats.engine.moduleCacheSize}</dd>
                     </div>
                     <div>
-                      <dt className="text-muted-foreground">Transform Cache</dt>
-                      <dd className="mt-0.5 font-mono">{nodePodInfoState.memoryStats.engine.transformCacheSize}</dd>
+                      <dt className={css({ color: "var(--muted-foreground)" })}>Transform Cache</dt>
+                      <dd className={css({ marginTop: "0.125rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)" })}>{nodePodInfoState.memoryStats.engine.transformCacheSize}</dd>
                     </div>
                   </>
                 ) : null}
               </dl>
             ) : nodePodActive ? (
-              <div className="text-xs text-muted-foreground">Sandbox is active but introspection is not available.</div>
+              <div className={styles.textXsMuted}>Sandbox is active but introspection is not available.</div>
             ) : (
-              <div className="text-xs text-muted-foreground">NodePod is not running.</div>
+              <div className={styles.textXsMuted}>NodePod is not running.</div>
             )}
           </div>
         )}
 
         {runtime?.mode === "remote" && (
-          <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2 text-xs font-semibold">
-                <Cpu size={14} className="text-emerald-600 dark:text-emerald-300" />
+          <div className={css({ borderRadius: "0.375rem", borderWidth: "1px", borderColor: "rgb(16 185 129 / 0.3)", background: "rgb(16 185 129 / 0.05)", padding: "1rem" })}>
+            <div className={css({ marginBottom: "0.75rem", display: "flex", alignItems: "center", justifyContent: "space-between" })}>
+              <div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", fontWeight: 600 })}>
+                <Cpu size={14} className={css({ color: "#059669", _dark: { color: "#6ee7b7" } })} />
                 Remote Runtime
               </div>
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-300">
+              <span className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", borderRadius: "9999px", background: "rgb(16 185 129 / 0.15)", padding: "0.125rem 0.5rem", fontSize: "10px", fontWeight: 500, color: "#047857", _dark: { color: "#6ee7b7" } })}>
                 <Activity size={9} /> Connected
               </span>
             </div>
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+            <dl className={css({ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", columnGap: "1rem", rowGap: "0.5rem", fontSize: "0.75rem" })}>
               <div>
-                <dt className="text-muted-foreground">Endpoint</dt>
-                <dd className="mt-0.5 break-all font-mono">{runtime.executionEndpoint}</dd>
+                <dt className={css({ color: "var(--muted-foreground)" })}>Endpoint</dt>
+                <dd className={css({ marginTop: "0.125rem", wordBreak: "break-all", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)" })}>{runtime.executionEndpoint}</dd>
               </div>
               <div>
-                <dt className="text-muted-foreground">Fallback</dt>
-                <dd className="mt-0.5 font-mono">{runtime.fallback.message ?? "none"}</dd>
+                <dt className={css({ color: "var(--muted-foreground)" })}>Fallback</dt>
+                <dd className={css({ marginTop: "0.125rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)" })}>{runtime.fallback.message ?? "none"}</dd>
               </div>
             </dl>
           </div>
         )}
 
         {runtime?.mode === "browser-only" && (
-          <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-4">
-            <div className="flex items-center gap-2 mb-2 text-xs font-semibold">
-              <Bug size={14} className="text-amber-600 dark:text-amber-300" />
+          <div className={css({ borderRadius: "0.375rem", borderWidth: "1px", borderColor: "rgb(245 158 11 / 0.3)", background: "rgb(245 158 11 / 0.05)", padding: "1rem" })}>
+            <div className={css({ marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", fontWeight: 600 })}>
+              <Bug size={14} className={css({ color: "#d97706", _dark: { color: "#fcd34d" } })} />
               Browser-Only Mode
             </div>
-            <p className="text-xs text-muted-foreground leading-relaxed">
+            <p className={css({ fontSize: "0.75rem", lineHeight: 1.625, color: "var(--muted-foreground)" })}>
               Running without a Node.js sandbox. Source editing, file system, shell, and snapshots are unavailable. Switch to <strong>NodePod</strong> via the Boot button, or configure a <strong>Remote runtime</strong> in Settings.
             </p>
           </div>
@@ -930,15 +975,15 @@ export function SandboxView({
         {/* ── recent activity ── */}
         {recentEvents.length > 0 && (
           <div>
-            <div className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Recent Activity</div>
-            <div className="grid gap-1.5">
+            <div className={styles.sectionLabel}>Recent Activity</div>
+            <div className={css({ display: "grid", gap: "0.375rem" })}>
               {recentEvents.map((ev) => (
-                <div key={ev.id} className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-xs">
-                  <span className={`inline-flex h-5 items-center rounded-full px-1.5 text-[10px] font-semibold ${ev.ok ? "bg-primary/15 text-primary" : "bg-destructive/15 text-destructive"}`}>
+                <div key={ev.id} className={css({ display: "flex", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", padding: "0.5rem 0.75rem", fontSize: "0.75rem" })}>
+                  <span className={cx(styles.pillBase, ev.ok ? styles.okPill : styles.errPill)}>
                     {ev.ok ? "OK" : "ERR"}
                   </span>
-                  <span className="text-muted-foreground">{new Date(ev.timestamp).toLocaleTimeString()}</span>
-                  <span className="font-mono text-muted-foreground">{ev.operation}</span>
+                  <span className={css({ color: "var(--muted-foreground)" })}>{new Date(ev.timestamp).toLocaleTimeString()}</span>
+                  <span className={css({ fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", color: "var(--muted-foreground)" })}>{ev.operation}</span>
                 </div>
               ))}
             </div>
@@ -951,38 +996,38 @@ export function SandboxView({
   function renderVfs() {
     if (!nodePodActive) {
       return (
-        <div className="text-xs text-muted-foreground">
+        <div className={styles.textXsMuted}>
           Sandbox is not active. Boot NodePod to use the file system.
         </div>
       );
     }
     return (
-      <div className="grid gap-3">
-        <div className="flex items-center gap-2">
-          <button type="button" onClick={() => openDir("/workspace")} className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border hover:bg-accent" title="Go to /workspace"><Home size={13} /></button>
-          <button type="button" onClick={goUp} className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border hover:bg-accent" title="Go up"><ChevronLeft size={13} /></button>
-          <span className="text-xs font-mono text-muted-foreground">{vfsPath}</span>
+      <div className={styles.grid3}>
+        <div className={styles.flexCenter}>
+          <button type="button" onClick={() => openDir("/workspace")} className={css({ display: "inline-flex", height: "1.75rem", width: "1.75rem", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", _hover: { background: "var(--accent)" } })} title="Go to /workspace"><Home size={13} /></button>
+          <button type="button" onClick={goUp} className={css({ display: "inline-flex", height: "1.75rem", width: "1.75rem", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", _hover: { background: "var(--accent)" } })} title="Go up"><ChevronLeft size={13} /></button>
+          <span className={css({ fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>{vfsPath}</span>
         </div>
 
         {vfsLoading ? (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 size={13} className="animate-spin" /> Loading…</div>
+          <div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}><Spinner size={13} /> Loading…</div>
         ) : (
-          <div className="rounded-md border border-border">
+          <div className={styles.card}>
             {vfsEntries.length === 0 ? (
-              <div className="p-3 text-xs text-muted-foreground">Empty directory</div>
+              <div className={css({ padding: "0.75rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>Empty directory</div>
             ) : (
               vfsEntries.map((entry) => (
-                <div key={entry.path} className="flex items-center gap-2 border-b border-border px-3 py-2 text-xs last:border-b-0 hover:bg-muted/30">
-                  <span className="shrink-0">{entry.isDir ? <FolderOpen size={14} className="text-primary" /> : <FileCode size={14} className="text-muted-foreground" />}</span>
+                <div key={entry.path} className={css({ display: "flex", alignItems: "center", gap: "0.5rem", borderBottomWidth: "1px", borderColor: "var(--border)", padding: "0.5rem 0.75rem", fontSize: "0.75rem", _last: { borderBottomWidth: 0 }, _hover: { background: "rgb(from var(--muted) r g b / 0.3)" } })}>
+                  <span className={css({ flexShrink: 0 })}>{entry.isDir ? <FolderOpen size={14} className={css({ color: "var(--primary)" })} /> : <FileCode size={14} className={css({ color: "var(--muted-foreground)" })} />}</span>
                   <button
                     type="button"
-                    className="min-w-0 truncate text-left font-mono hover:text-primary"
+                    className={css({ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "left", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", _hover: { color: "var(--primary)" } })}
                     onClick={() => entry.isDir ? openDir(entry.path) : openFile(entry.path)}
                   >
                     {entry.name}
                   </button>
-                  <span className="ml-auto shrink-0 text-xs text-muted-foreground">{entry.isDir ? "dir" : fmtBytes(entry.size)}</span>
-                  <button type="button" className="shrink-0 text-destructive/70 hover:text-destructive" onClick={() => deleteSelected(entry.path, entry.isDir)}><Trash2 size={12} /></button>
+                  <span className={css({ marginLeft: "auto", flexShrink: 0, fontSize: "0.75rem", color: "var(--muted-foreground)" })}>{entry.isDir ? "dir" : fmtBytes(entry.size)}</span>
+                  <button type="button" className={css({ flexShrink: 0, color: "rgb(from var(--destructive) r g b / 0.7)", _hover: { color: "var(--destructive)" } })} onClick={() => deleteSelected(entry.path, entry.isDir)}><Trash2 size={12} /></button>
                 </div>
               ))
             )}
@@ -990,63 +1035,69 @@ export function SandboxView({
         )}
 
         {/* create + editor */}
-        <div className="flex gap-2">
+        <div className={css({ display: "flex", gap: "0.5rem" })}>
           <input
-            className="flex-1 rounded-md border border-border bg-background px-2 py-1.5 text-xs font-mono"
+            className={css({ flex: 1, borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "var(--background)", padding: "0.375rem 0.5rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "0.75rem" })}
             placeholder="new_name.js"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && createItem()}
           />
-          <select className="rounded-md border border-border bg-background px-2 py-1.5 text-xs" value={createType} onChange={(e) => setCreateType(e.target.value as "file" | "dir")}>
+          <select className={css({ borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "var(--background)", padding: "0.375rem 0.5rem", fontSize: "0.75rem" })} value={createType} onChange={(e) => setCreateType(e.target.value as "file" | "dir")}>
             <option value="file">File</option>
             <option value="dir">Dir</option>
           </select>
-          <button type="button" onClick={createItem} className="inline-flex h-8 items-center gap-1 rounded-md border border-border px-2 text-xs hover:bg-accent">
+          <button type="button" onClick={createItem} className={css({ display: "inline-flex", height: "2rem", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", paddingInline: "0.5rem", fontSize: "0.75rem", _hover: { background: "var(--accent)" } })}>
             <Plus size={12} /> Add
           </button>
         </div>
 
         {selectedFile && (
-          <div className="rounded-md border border-border">
-            <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/20 px-3 py-2">
-              <span className="text-xs font-semibold">{selectedFile}</span>
-              <div className="flex items-center gap-1">
-                {fileDirty && <span className="text-xs text-amber-600 dark:text-amber-300">unsaved</span>}
+          <div className={styles.card}>
+            <div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", borderBottomWidth: "1px", borderColor: "var(--border)", background: "rgb(from var(--muted) r g b / 0.2)", padding: "0.5rem 0.75rem" })}>
+              <span className={styles.semiboldXs}>{selectedFile}</span>
+              <div className={css({ display: "flex", alignItems: "center", gap: "0.25rem" })}>
+                {fileDirty && <span className={css({ fontSize: "0.75rem", color: "#d97706", _dark: { color: "#fcd34d" } })}>unsaved</span>}
                 <button
                   type="button"
                   onClick={() => { setShowDiff((s) => !s); if (!showDiff) computeDiff(); }}
-                  className={`inline-flex h-7 items-center gap-1 rounded-md border px-2 text-xs ${showDiff ? "bg-secondary border-secondary text-secondary-foreground" : "border-border hover:bg-accent"}`}
+                  className={cx(
+                    css({ display: "inline-flex", height: "1.75rem", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", borderWidth: "1px", paddingInline: "0.5rem", fontSize: "0.75rem" }),
+                    showDiff
+                      ? css({ borderColor: "var(--secondary)", background: "var(--secondary)", color: "var(--secondary-foreground)" })
+                      : css({ borderColor: "var(--border)", _hover: { background: "var(--accent)" } })
+                  )}
                 >
                   <GitCompare size={12} /> {showDiff ? "Hide diff" : "Show diff"}
                 </button>
-                <button type="button" onClick={saveFile} className="inline-flex h-7 items-center gap-1 rounded-md bg-primary px-2 text-xs text-primary-foreground hover:bg-primary/90"><Save size={12} /> Save</button>
+                <button type="button" onClick={saveFile} className={styles.primaryButtonSm}><Save size={12} /> Save</button>
               </div>
             </div>
 
             {showDiff ? (
-              <div className="min-h-48 w-full overflow-auto bg-background px-3 py-2 font-mono text-xs leading-relaxed">
+              <div className={css({ minHeight: "12rem", width: "100%", overflow: "auto", background: "var(--background)", padding: "0.5rem 0.75rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "0.75rem", lineHeight: 1.625 })}>
                 {diffLoading ? (
-                  <div className="flex items-center gap-2 text-muted-foreground"><Loader2 size={13} className="animate-spin" /> Computing diff…</div>
+                  <div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--muted-foreground)" })}><Spinner size={13} /> Computing diff…</div>
                 ) : diffLines.length === 0 ? (
-                  <div className="text-muted-foreground">No changes — file matches baseline.</div>
+                  <div className={css({ color: "var(--muted-foreground)" })}>No changes — file matches baseline.</div>
                 ) : (
-                  <div className="grid gap-0">
+                  <div className={css({ display: "grid", gap: 0 })}>
                     {diffLines.map((line, idx) => (
                       <div
                         key={idx}
-                        className={`flex gap-2 px-1 ${
+                        className={cx(
+                          css({ display: "flex", gap: "0.5rem", paddingInline: "0.25rem" }),
                           line.type === "removed"
-                            ? "bg-red-500/10 text-red-700 dark:text-red-300"
+                            ? css({ background: "rgb(239 68 68 / 0.1)", color: "#b91c1c", _dark: { color: "#fca5a5" } })
                             : line.type === "added"
-                            ? "bg-green-500/10 text-green-700 dark:text-green-300"
-                            : "text-muted-foreground"
-                        }`}
+                            ? css({ background: "rgb(34 197 94 / 0.1)", color: "#15803d", _dark: { color: "#86efac" } })
+                            : css({ color: "var(--muted-foreground)" })
+                        )}
                       >
-                        <span className="shrink-0 select-none w-4 text-center text-[10px] opacity-50">
+                        <span className={css({ width: "1rem", flexShrink: 0, userSelect: "none", textAlign: "center", fontSize: "10px", opacity: 0.5 })}>
                           {line.type === "removed" ? "-" : line.type === "added" ? "+" : " "}
                         </span>
-                        <span className="break-all">{line.content}</span>
+                        <span className={css({ wordBreak: "break-all" })}>{line.content}</span>
                       </div>
                     ))}
                   </div>
@@ -1054,7 +1105,7 @@ export function SandboxView({
               </div>
             ) : (
               <textarea
-                className="min-h-48 w-full resize-y bg-background px-3 py-2 font-mono text-xs leading-relaxed"
+                className={css({ minHeight: "12rem", width: "100%", resize: "vertical", background: "var(--background)", padding: "0.5rem 0.75rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "0.75rem", lineHeight: 1.625 })}
                 spellCheck={false}
                 value={fileContent}
                 onChange={(e) => { setFileContent(e.target.value); setFileDirty(true); }}
@@ -1069,20 +1120,20 @@ export function SandboxView({
   function renderShell() {
     if (!nodePodActive) {
       return (
-        <div className="text-xs text-muted-foreground">
+        <div className={styles.textXsMuted}>
           Sandbox is not active. Boot NodePod to use the shell.
         </div>
       );
     }
     return (
-      <div className="grid gap-2 h-full" style={{ height: "calc(100% - 40px)" }}>
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold">NodePod Terminal</span>
-          <div className="flex gap-1">
+      <div className={css({ display: "grid", height: "100%", gap: "0.5rem" })} style={{ height: "calc(100% - 40px)" }}>
+        <div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between" })}>
+          <span className={styles.semiboldXs}>NodePod Terminal</span>
+          <div className={css({ display: "flex", gap: "0.25rem" })}>
             <button
               type="button"
               onClick={clearTerminal}
-              className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-background px-2 text-xs hover:bg-muted/50"
+              className={styles.outlineButtonSmBg}
             >
               <RotateCcw size={12} />
               Clear
@@ -1090,7 +1141,7 @@ export function SandboxView({
             <button
               type="button"
               onClick={focusTerminal}
-              className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-background px-2 text-xs hover:bg-muted/50"
+              className={styles.outlineButtonSmBg}
             >
               <Maximize2 size={12} />
               Fit
@@ -1099,11 +1150,11 @@ export function SandboxView({
         </div>
         <div
           ref={terminalContainerRef}
-          className="w-full rounded-md border border-border bg-black overflow-hidden"
+          className={css({ width: "100%", overflow: "hidden", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "black" })}
           style={{ height: "400px", minHeight: "300px" }}
         />
         {!terminalReady && (
-          <div className="text-xs text-muted-foreground">Booting terminal…</div>
+          <div className={styles.textXsMuted}>Booting terminal…</div>
         )}
       </div>
     );
@@ -1112,32 +1163,32 @@ export function SandboxView({
   function renderSnapshots() {
     if (!nodePodActive) {
       return (
-        <div className="text-xs text-muted-foreground">
+        <div className={styles.textXsMuted}>
           Sandbox is not active. Boot NodePod to use snapshots.
         </div>
       );
     }
     return (
-      <div className="grid gap-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold">
+      <div className={styles.grid3}>
+        <div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between" })}>
+          <div className={css({ display: "flex", alignItems: "center", gap: "0.75rem" })}>
+            <span className={styles.semiboldXs}>
               {showDbSnapshots ? `Persisted (${dbSnapshots.length})` : `Session (${snapshots.length})`}
             </span>
             <button
               type="button"
               onClick={() => setShowDbSnapshots((v) => !v)}
-              className="text-[10px] underline text-muted-foreground hover:text-foreground"
+              className={css({ fontSize: "10px", color: "var(--muted-foreground)", textDecorationLine: "underline", _hover: { color: "var(--foreground)" } })}
             >
               {showDbSnapshots ? "Show session" : "Show persisted"}
             </button>
           </div>
-          <div className="flex gap-1">
+          <div className={css({ display: "flex", gap: "0.25rem" })}>
             {showDbSnapshots && (
               <button
                 type="button"
                 onClick={refreshDbSnapshots}
-                className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-background px-2 text-xs hover:bg-muted/50"
+                className={styles.outlineButtonSmBg}
               >
                 <RefreshCw size={12} /> Refresh
               </button>
@@ -1146,9 +1197,9 @@ export function SandboxView({
               type="button"
               onClick={createSnapshotAction}
               disabled={snapLoading}
-              className="inline-flex h-7 items-center gap-1 rounded-md bg-primary px-2 text-xs text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              className={styles.primaryButtonSm}
             >
-              {snapLoading ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
+              {snapLoading ? <Spinner size={12} /> : <Plus size={12} />}
               Create
             </button>
           </div>
@@ -1156,19 +1207,19 @@ export function SandboxView({
 
         {showDbSnapshots ? (
           dbSnapshots.length === 0 ? (
-            <div className="text-xs text-muted-foreground">No persisted snapshots yet. They are saved to IndexedDB and survive page reloads.</div>
+            <div className={styles.textXsMuted}>No persisted snapshots yet. They are saved to IndexedDB and survive page reloads.</div>
           ) : (
-            <div className="grid gap-2">
+            <div className={styles.grid2}>
               {dbSnapshots.map((snap) => (
-                <div key={snap.id} className="flex items-center justify-between rounded-md border border-border px-3 py-2">
-                  <div className="min-w-0">
-                    <div className="text-xs font-mono font-medium">{snap.id}</div>
-                    <div className="text-[10px] text-muted-foreground">{snap.instanceId} · {new Date(snap.createdAt).toLocaleString()}</div>
+                <div key={snap.id} className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", padding: "0.5rem 0.75rem" })}>
+                  <div className={styles.minW0}>
+                    <div className={css({ fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "0.75rem", fontWeight: 500 })}>{snap.id}</div>
+                    <div className={styles.text10Muted}>{snap.instanceId} · {new Date(snap.createdAt).toLocaleString()}</div>
                   </div>
                   <button
                     type="button"
                     onClick={() => restoreSnapshotAction(snap.data)}
-                    className="ml-2 shrink-0 inline-flex h-7 items-center gap-1 rounded-md border border-border px-2 text-xs hover:bg-accent"
+                    className={css({ marginLeft: "0.5rem", display: "inline-flex", height: "1.75rem", flexShrink: 0, alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", paddingInline: "0.5rem", fontSize: "0.75rem", _hover: { background: "var(--accent)" } })}
                   >
                     <RotateCcw size={12} /> Restore
                   </button>
@@ -1178,19 +1229,19 @@ export function SandboxView({
           )
         ) : (
           snapshots.length === 0 ? (
-            <div className="text-xs text-muted-foreground">No session snapshots yet.</div>
+            <div className={styles.textXsMuted}>No session snapshots yet.</div>
           ) : (
-            <div className="grid gap-2">
+            <div className={styles.grid2}>
               {snapshots.map((snap) => (
-                <div key={snap.id} className="flex items-center justify-between rounded-md border border-border px-3 py-2">
-                  <div className="min-w-0">
-                    <div className="text-xs font-mono font-medium">{snap.id}</div>
-                    <div className="text-[10px] text-muted-foreground">{snap.instanceId} · {new Date(snap.createdAt).toLocaleString()}</div>
+                <div key={snap.id} className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", padding: "0.5rem 0.75rem" })}>
+                  <div className={styles.minW0}>
+                    <div className={css({ fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "0.75rem", fontWeight: 500 })}>{snap.id}</div>
+                    <div className={styles.text10Muted}>{snap.instanceId} · {new Date(snap.createdAt).toLocaleString()}</div>
                   </div>
                   <button
                     type="button"
                     onClick={() => restoreSnapshotAction(snap.data)}
-                    className="ml-2 shrink-0 inline-flex h-7 items-center gap-1 rounded-md border border-border px-2 text-xs hover:bg-accent"
+                    className={css({ marginLeft: "0.5rem", display: "inline-flex", height: "1.75rem", flexShrink: 0, alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", paddingInline: "0.5rem", fontSize: "0.75rem", _hover: { background: "var(--accent)" } })}
                   >
                     <RotateCcw size={12} /> Restore
                   </button>
@@ -1206,24 +1257,24 @@ export function SandboxView({
   function renderVC() {
     if (!nodePodActive) {
       return (
-        <div className="text-xs text-muted-foreground">
+        <div className={styles.textXsMuted}>
           Sandbox is not active. Boot NodePod to use version control.
         </div>
       );
     }
     return (
-      <div className="grid gap-3">
+      <div className={styles.grid3}>
         {/* Branch controls */}
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold">
-            Branch: <span className="font-mono">{vcActiveBranch}</span>
+        <div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between" })}>
+          <span className={styles.semiboldXs}>
+            Branch: <span className={styles.mono}>{vcActiveBranch}</span>
           </span>
-          <div className="flex items-center gap-1.5">
+          <div className={css({ display: "flex", alignItems: "center", gap: "0.375rem" })}>
             <input
               ref={importInputRef}
               type="file"
               accept="application/json,.json"
-              className="hidden"
+              className={styles.hidden}
               onChange={(event) => {
                 const file = event.target.files?.[0];
                 if (file) void importPortableAction(file);
@@ -1233,7 +1284,7 @@ export function SandboxView({
               type="button"
               onClick={exportPortableAction}
               disabled={portableBusy}
-              className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-background px-2 text-xs hover:bg-muted/50 disabled:opacity-50"
+              className={styles.outlineButtonSmBg}
             >
               <Download size={12} /> Export
             </button>
@@ -1241,14 +1292,14 @@ export function SandboxView({
               type="button"
               onClick={() => importInputRef.current?.click()}
               disabled={portableBusy}
-              className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-background px-2 text-xs hover:bg-muted/50 disabled:opacity-50"
+              className={styles.outlineButtonSmBg}
             >
               <Upload size={12} /> Import
             </button>
             <button
               type="button"
               onClick={refreshVc}
-              className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-background px-2 text-xs hover:bg-muted/50"
+              className={styles.outlineButtonSmBg}
             >
               <RefreshCw size={12} /> Refresh
             </button>
@@ -1256,9 +1307,9 @@ export function SandboxView({
         </div>
 
         {/* New branch */}
-        <div className="flex gap-2">
+        <div className={css({ display: "flex", gap: "0.5rem" })}>
           <input
-            className="flex-1 rounded-md border border-border bg-background px-3 py-2 font-mono text-xs"
+            className={styles.inputMono}
             placeholder="experiment-name"
             value={vcNewBranchName}
             onChange={(e) => setVcNewBranchName(e.target.value)}
@@ -1267,16 +1318,16 @@ export function SandboxView({
             type="button"
             onClick={createBranchAction}
             disabled={vcLoading || !vcNewBranchName.trim()}
-            className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            className={styles.primaryButton}
           >
             <GitBranch size={13} /> Branch
           </button>
         </div>
 
         {/* Commit */}
-        <div className="flex gap-2">
+        <div className={css({ display: "flex", gap: "0.5rem" })}>
           <input
-            className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-xs"
+            className={cx(styles.inputBase, css({ flex: 1 }))}
             placeholder="Commit message (optional)"
             value={vcCommitMessage}
             onChange={(e) => setVcCommitMessage(e.target.value)}
@@ -1285,7 +1336,7 @@ export function SandboxView({
             type="button"
             onClick={commitToVcAction}
             disabled={vcLoading}
-            className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            className={styles.primaryButton}
           >
             <GitCommit size={13} /> Commit
           </button>
@@ -1293,17 +1344,17 @@ export function SandboxView({
 
         {/* Branches list */}
         {vcBranches.length > 0 && (
-          <div className="grid gap-1">
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Branches</span>
+          <div className={css({ display: "grid", gap: "0.25rem" })}>
+            <span className={css({ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.025em", color: "var(--muted-foreground)" })}>Branches</span>
             {vcBranches.map((b) => (
-              <div key={b.id} className="flex items-center justify-between rounded-md border border-border px-3 py-1.5">
-                <span className="font-mono text-xs">{b.name}</span>
+              <div key={b.id} className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", padding: "0.375rem 0.75rem" })}>
+                <span className={styles.monoXs}>{b.name}</span>
                 {b.id !== vcActiveBranch && (
                   <button
                     type="button"
                     onClick={() => switchBranchAction(b.id)}
                     disabled={vcLoading}
-                    className="inline-flex h-6 items-center gap-1 rounded-md border border-border px-2 text-[10px] hover:bg-accent disabled:opacity-50"
+                    className={css({ display: "inline-flex", height: "1.5rem", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", paddingInline: "0.5rem", fontSize: "10px", _hover: { background: "var(--accent)" }, _disabled: { opacity: 0.5 } })}
                   >
                     <RotateCcw size={10} /> Switch
                   </button>
@@ -1315,21 +1366,21 @@ export function SandboxView({
 
         {/* Commits list */}
         {vcCommits.length > 0 ? (
-          <div className="grid gap-2">
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Commits</span>
+          <div className={styles.grid2}>
+            <span className={css({ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.025em", color: "var(--muted-foreground)" })}>Commits</span>
             {vcCommits.map((c, i) => (
-              <div key={c.id} className="rounded-md border border-border px-3 py-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-medium">{c.id.slice(0, 24)}</span>
-                  <span className="text-[10px] text-muted-foreground">{c.fileCount} files</span>
+              <div key={c.id} className={css({ borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", padding: "0.5rem 0.75rem" })}>
+                <div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between" })}>
+                  <span className={css({ fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "0.75rem", fontWeight: 500 })}>{c.id.slice(0, 24)}</span>
+                  <span className={styles.text10Muted}>{c.fileCount} files</span>
                 </div>
-                <div className="text-xs mt-0.5">{c.message}</div>
-                <div className="text-[10px] text-muted-foreground">{new Date(c.createdAt).toLocaleString()}</div>
+                <div className={css({ marginTop: "0.125rem", fontSize: "0.75rem" })}>{c.message}</div>
+                <div className={styles.text10Muted}>{new Date(c.createdAt).toLocaleString()}</div>
                 {i < vcCommits.length - 1 && (
                   <button
                     type="button"
                     onClick={() => diffCommitsAction(c.id, vcCommits[i + 1].id)}
-                    className="mt-1.5 inline-flex h-6 items-center gap-1 rounded-md border border-border px-2 text-[10px] hover:bg-accent"
+                    className={css({ marginTop: "0.375rem", display: "inline-flex", height: "1.5rem", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", paddingInline: "0.5rem", fontSize: "10px", _hover: { background: "var(--accent)" } })}
                   >
                     <GitCompare size={10} /> Diff with next
                   </button>
@@ -1338,39 +1389,35 @@ export function SandboxView({
             ))}
           </div>
         ) : (
-          <div className="text-xs text-muted-foreground">
+          <div className={styles.textXsMuted}>
             No commits yet. Make changes in the VFS tab and press Commit to track them.
           </div>
         )}
 
         {/* Diff view */}
         {vcDiff && (
-          <div className="rounded-md border border-border bg-muted/10 p-3">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold">Diff</span>
+          <div className={css({ borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "rgb(from var(--muted) r g b / 0.1)", padding: "0.75rem" })}>
+            <div className={css({ marginBottom: "0.5rem", display: "flex", alignItems: "center", justifyContent: "space-between" })}>
+              <span className={styles.semiboldXs}>Diff</span>
               <button
                 type="button"
                 onClick={() => setVcDiff(null)}
-                className="text-[10px] text-muted-foreground hover:text-foreground"
+                className={css({ fontSize: "10px", color: "var(--muted-foreground)", _hover: { color: "var(--foreground)" } })}
               >
                 Close
               </button>
             </div>
-            <div className="grid gap-1 max-h-60 overflow-auto">
+            <div className={css({ display: "grid", maxHeight: "15rem", gap: "0.25rem", overflow: "auto" })}>
               {vcDiff.changes.filter((c) => c.status !== "unchanged").map((c) => (
-                <div key={c.path} className="flex items-center gap-2 text-xs font-mono">
-                  <span className={`shrink-0 w-16 text-[10px] font-bold ${
-                    c.status === "added" ? "text-green-600" :
-                    c.status === "removed" ? "text-red-600" :
-                    "text-amber-600"
-                  }`}>
+                <div key={c.path} className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "0.75rem" })}>
+                  <span className={cx(css({ width: "4rem", flexShrink: 0, fontSize: "10px", fontWeight: 700 }), c.status === "added" ? css({ color: "#16a34a" }) : c.status === "removed" ? css({ color: "#dc2626" }) : css({ color: "#d97706" }))}>
                     {c.status.toUpperCase()}
                   </span>
-                  <span className="truncate">{c.path}</span>
+                  <span className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" })}>{c.path}</span>
                 </div>
               ))}
               {vcDiff.changes.filter((c) => c.status !== "unchanged").length === 0 && (
-                <div className="text-xs text-muted-foreground">No changes</div>
+                <div className={styles.textXsMuted}>No changes</div>
               )}
             </div>
           </div>
@@ -1381,18 +1428,18 @@ export function SandboxView({
 
   function renderLog() {
     return (
-      <div className="grid gap-2" ref={logRef}>
+      <div className={styles.grid2} ref={logRef}>
         {events.length === 0 ? (
-          <div className="text-xs text-muted-foreground">No events yet. Run a probe, shell command, or VFS operation.</div>
+          <div className={styles.textXsMuted}>No events yet. Run a probe, shell command, or VFS operation.</div>
         ) : (
           events.map((ev, idx) => (
-            <div key={ev.id} className="rounded-md border border-border p-2.5">
-              <div className="mb-1 flex flex-wrap items-center gap-2">
-                <span className={`inline-flex h-5 items-center rounded-full px-1.5 text-[10px] font-semibold ${ev.ok ? "bg-primary/15 text-primary" : "bg-destructive/15 text-destructive"}`}>{ev.ok ? "OK" : "ERR"}</span>
-                <span className="text-[10px] text-muted-foreground">{new Date(ev.timestamp).toLocaleTimeString()}</span>
-                <span className="text-[10px] font-medium text-muted-foreground">{ev.tab}</span>
-                <span className="text-[10px] font-mono">{ev.operation}</span>
-                {ev.durationMs !== undefined && <span className="text-[10px] text-muted-foreground">{ev.durationMs}ms</span>}
+            <div key={ev.id} className={css({ borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", padding: "0.625rem" })}>
+              <div className={css({ marginBottom: "0.25rem", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem" })}>
+                <span className={cx(styles.pillBase, ev.ok ? styles.okPill : styles.errPill)}>{ev.ok ? "OK" : "ERR"}</span>
+                <span className={styles.text10Muted}>{new Date(ev.timestamp).toLocaleTimeString()}</span>
+                <span className={css({ fontSize: "10px", fontWeight: 500, color: "var(--muted-foreground)" })}>{ev.tab}</span>
+                <span className={css({ fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "10px" })}>{ev.operation}</span>
+                {ev.durationMs !== undefined && <span className={styles.text10Muted}>{ev.durationMs}ms</span>}
               </div>
               <JsonCrackBlock value={ev.output} maxHeight="10rem" />
             </div>
@@ -1404,10 +1451,10 @@ export function SandboxView({
 
   function renderProbes() {
     return (
-      <div className="grid gap-3">
-        <label className="mb-0.5 block text-xs font-medium text-muted-foreground">Operation</label>
+      <div className={styles.grid3}>
+        <label className={css({ marginBottom: "0.125rem", display: "block", fontSize: "0.75rem", fontWeight: 500, color: "var(--muted-foreground)" })}>Operation</label>
         <select
-          className="mb-1 w-full rounded-md border border-border bg-background px-2 py-2 text-xs"
+          className={css({ marginBottom: "0.25rem", width: "100%", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "var(--background)", padding: "0.5rem", fontSize: "0.75rem" })}
           value={probeKind}
           onChange={(e) => setProbeKind(e.target.value)}
         >
@@ -1417,34 +1464,34 @@ export function SandboxView({
           <option value="snapshot.create">snapshot.create</option>
         </select>
 
-        <label className="mb-0.5 block text-xs font-medium text-muted-foreground">Payload JSON</label>
+        <label className={css({ marginBottom: "0.125rem", display: "block", fontSize: "0.75rem", fontWeight: 500, color: "var(--muted-foreground)" })}>Payload JSON</label>
         <textarea
-          className="min-h-28 w-full resize-y rounded-md border border-border bg-muted/20 px-3 py-2 font-mono text-xs leading-relaxed"
+          className={css({ minHeight: "7rem", width: "100%", resize: "vertical", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "rgb(from var(--muted) r g b / 0.2)", padding: "0.5rem 0.75rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "0.75rem", lineHeight: 1.625 })}
           spellCheck={false}
           value={payloadText}
           onChange={(e) => setPayloadText(e.target.value)}
         />
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem" })}>
           <button
             type="button"
             onClick={runProbe}
             disabled={runningProbe}
-            className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            className={styles.primaryButton}
           >
-            {runningProbe ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />}
+            {runningProbe ? <Spinner size={15} /> : <Play size={15} />}
             Run probe
           </button>
           {events.some((e) => e.tab === "probes") && (
-            <button type="button" onClick={copyOutput} className="inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 text-xs hover:bg-accent">
+            <button type="button" onClick={copyOutput} className={styles.outlineButton}>
               <Copy size={14} /> {copiedIndex !== null ? "Copied" : "Copy latest"}
             </button>
           )}
         </div>
 
         {events.filter((e) => e.tab === "probes").length > 0 && (
-          <div className="mt-2 rounded-md border border-border bg-muted/20 p-3">
-            <h3 className="mb-2 text-xs font-semibold">Latest probe result</h3>
+          <div className={css({ marginTop: "0.5rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "rgb(from var(--muted) r g b / 0.2)", padding: "0.75rem" })}>
+            <h3 className={css({ marginBottom: "0.5rem", fontSize: "0.75rem", fontWeight: 600 })}>Latest probe result</h3>
             <JsonCrackBlock
               value={events.find((e) => e.tab === "probes")?.output ?? null}
               maxHeight="18rem"

@@ -1,7 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn, userEvent, within } from "storybook/test";
+import { css } from "../../styled-system/css";
 import { QuizRenderer } from "./QuizRenderer";
 import type { Quiz } from "../keating/core";
+
+const storyWidthClass = css({ width: "min(58rem, calc(100vw - 2rem))" });
 
 const review = {
 	status: "passed" as const,
@@ -184,7 +187,7 @@ const meta = {
 	},
 	decorators: [
 		(Story) => (
-			<div className="w-[min(58rem,calc(100vw-2rem))]">
+			<div className={storyWidthClass}>
 				<Story />
 			</div>
 		),

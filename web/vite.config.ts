@@ -2,7 +2,6 @@ import { defineConfig, Plugin } from 'vite';
 import { resolve } from 'path';
 import { VitePWA } from 'vite-plugin-pwa';
 import react from '@vitejs/plugin-react';
-import tailwindcss from '@tailwindcss/vite';
 import nodepod from '@scelar/nodepod/vite';
 import { visualizer } from 'rollup-plugin-visualizer';
 import * as https from 'https';
@@ -408,7 +407,6 @@ export default defineConfig({
   publicDir: 'public',
   plugins: [
     react(),
-    tailwindcss(),
     nodepod(),
     chatProxyPlugin(),
     manimWebPublicPlugin(),

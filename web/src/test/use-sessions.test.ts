@@ -66,15 +66,17 @@ describe("use-sessions helpers", () => {
 		]);
 	});
 
-	it("filters against both title and preview, case-insensitively", () => {
+	it("filters against title, preview, and full message text case-insensitively", () => {
 		const items = [
 			makeSession("1", { title: "Quantum Basics", preview: "Wave functions" }),
 			makeSession("2", { title: "History", preview: "Roman empire" }),
+			makeSession("3", { title: "Code", preview: "Short summary", searchText: "The detailed turn mentions memoized recursion." }),
 		];
 
 		expect(filterSessions(items, "quantum").map((session) => session.id)).toEqual(["1"]);
 		expect(filterSessions(items, "ROMAN").map((session) => session.id)).toEqual(["2"]);
-		expect(filterSessions(items, "").map((session) => session.id)).toEqual(["1", "2"]);
+		expect(filterSessions(items, "memoized").map((session) => session.id)).toEqual(["3"]);
+		expect(filterSessions(items, "").map((session) => session.id)).toEqual(["1", "2", "3"]);
 	});
 
 	it("dispatches the shared sessions-changed event", () => {

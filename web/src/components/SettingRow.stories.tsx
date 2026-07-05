@@ -1,6 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { css } from "../../styled-system/css";
 import { Toggle } from "./Toggle";
 import { SettingRow } from "./SettingRow";
+
+const rowClass = css({ display: "flex", alignItems: "center", gap: "0.5rem" });
+const rangeRowClass = css({ width: "6rem", accentColor: "var(--primary)" });
+const monoClass = css({ fontSize: "0.875rem", fontFamily: "var(--mono-display)" });
 
 const meta = {
 	title: "UI/SettingRow",
@@ -40,9 +45,9 @@ export const WithCustomChild: Story = {
 		title: "Model Temperature",
 		description: "Controls randomness in generated responses.",
 		children: (
-			<div className="flex items-center gap-2">
-				<span className="text-sm font-mono">0.7</span>
-				<input type="range" min={0} max={1} step={0.1} defaultValue={0.7} className="w-24 accent-primary" />
+			<div className={rowClass}>
+				<span className={monoClass}>0.7</span>
+				<input type="range" min={0} max={1} step={0.1} defaultValue={0.7} className={rangeRowClass} />
 			</div>
 		),
 	},

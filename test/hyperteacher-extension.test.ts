@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 
 import { configPath } from "../src/core/config.js";
 import { ensureProjectScaffold } from "../src/core/project.js";
-import hyperteacher, { createKeatingHeaderComponent } from "../src/pi/hyperteacher-extension.js";
+import hyperteacher, { createKeatingHeaderComponent } from "../src/pi/hyper-teacher/index.js";
 
 const ANSI_RE = /\x1b\[[0-9;]*[a-zA-Z]/g;
 

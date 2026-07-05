@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { ChevronRight, ChevronLeft, Clock, Eye, Volume2, AlertTriangle, Lightbulb, BookOpen, ArrowRight } from "lucide-react";
+import { css, cx } from "../../styled-system/css";
 
 interface Scene {
 	number: number;
@@ -99,28 +100,45 @@ function SceneCard({
 }) {
 	return (
 		<div
-			className={`rounded-lg border-2 p-4 transition-all ${
-				isActive
-					? "border-primary bg-primary/5 shadow-sm"
-					: "border-border bg-muted/20 opacity-90"
-				}`}
+			className={css({
+				borderRadius: "0.5rem",
+				border: "2px solid",
+				borderColor: isActive ? "var(--primary)" : "var(--border)",
+				background: isActive
+					? "color-mix(in srgb, var(--primary) 5%, transparent)"
+					: "color-mix(in srgb, var(--muted) 20%, transparent)",
+				padding: "1rem",
+				opacity: isActive ? 1 : 0.9,
+				boxShadow: isActive ? "var(--shadow-sm)" : undefined,
+				transition: "all 150ms",
+			})}
 		>
-			<div className="flex items-center gap-3 mb-3">
-				<div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+			<div className={css({ marginBottom: "0.75rem", display: "flex", alignItems: "center", gap: "0.75rem" })}>
+				<div className={css({
+					display: "flex",
+					height: "2rem",
+					width: "2rem",
+					flexShrink: 0,
+					alignItems: "center",
+					justifyContent: "center",
+					borderRadius: "9999px",
+					background: isActive ? "var(--primary)" : "var(--muted)",
+					color: isActive ? "var(--primary-foreground)" : "var(--muted-foreground)",
+				})}>
 					<SceneIcon title={scene.title} />
 				</div>
-				<div className="min-w-0 flex-1">
-					<div className="flex items-center justify-between">
-						<span className="text-sm font-semibold truncate">{scene.title}</span>
-						<span className="flex items-center gap-1 text-xs text-muted-foreground font-terminal">
+				<div className={css({ minWidth: 0, flex: 1 })}>
+					<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between" })}>
+						<span className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 600 })}>{scene.title}</span>
+						<span className={cx("font-terminal", css({ display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" }))}>
 							<Clock size={12} />
 							{scene.duration}
 						</span>
 					</div>
 					{isActive && (
-						<div className="mt-1 h-1 w-full rounded-full bg-muted overflow-hidden">
+						<div className={css({ marginTop: "0.25rem", height: "0.25rem", width: "100%", overflow: "hidden", borderRadius: "9999px", background: "var(--muted)" })}>
 							<div
-								className="h-full rounded-full bg-primary transition-all"
+								className={css({ height: "100%", borderRadius: "9999px", background: "var(--primary)", transition: "all 150ms" })}
 								style={{ width: `${progress}%` }}
 							/>
 						</div>
@@ -129,31 +147,31 @@ function SceneCard({
 			</div>
 
 			{scene.visual && (
-				<div className="rounded-md bg-muted/50 p-3 mb-2">
-					<div className="flex items-start gap-2">
-						<Eye size={14} className="shrink-0 mt-0.5 text-muted-foreground" />
-						<p className="text-xs leading-5">{scene.visual}</p>
+				<div className={css({ marginBottom: "0.5rem", borderRadius: "0.375rem", background: "color-mix(in srgb, var(--muted) 50%, transparent)", padding: "0.75rem" })}>
+					<div className={css({ display: "flex", alignItems: "flex-start", gap: "0.5rem" })}>
+						<Eye size={14} className={css({ marginTop: "0.125rem", flexShrink: 0, color: "var(--muted-foreground)" })} />
+						<p className={css({ fontSize: "0.75rem", lineHeight: "1.25rem" })}>{scene.visual}</p>
 					</div>
 				</div>
 			)}
 
-			<div className="flex flex-wrap gap-x-4 gap-y-1">
+			<div className={css({ display: "flex", flexWrap: "wrap", columnGap: "1rem", rowGap: "0.25rem" })}>
 				{scene.audio && (
-					<div className="flex items-center gap-1 text-xs text-muted-foreground">
+					<div className={css({ display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
 						<Volume2 size={12} />
-						<span className="truncate max-w-[240px]">{scene.audio}</span>
+						<span className={css({ maxWidth: "240px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" })}>{scene.audio}</span>
 					</div>
 				)}
 				{scene.transition && (
-					<div className="flex items-center gap-1 text-xs text-muted-foreground">
+					<div className={css({ display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
 						<ArrowRight size={12} />
 						<span>{scene.transition}</span>
 					</div>
 				)}
 				{scene.highlight && (
-					<div className="flex items-center gap-1 text-xs text-accent">
+					<div className={css({ display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", color: "var(--accent)" })}>
 						<Lightbulb size={12} />
-						<span className="truncate max-w-[200px]">{scene.highlight}</span>
+						<span className={css({ maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" })}>{scene.highlight}</span>
 					</div>
 				)}
 			</div>
@@ -170,29 +188,61 @@ export function SceneRenderer({ storyboard }: { storyboard: string }) {
 	const active = scenes[activeIdx];
 
 	return (
-		<div className="rounded-xl border-2 border-border bg-background p-4 sm:p-5 space-y-4 my-3 shadow-sm">
-			<div className="flex items-center justify-between gap-2">
+		<div className={css({
+			marginBlock: "0.75rem",
+			borderRadius: "0.75rem",
+			border: "2px solid var(--border)",
+			background: "var(--background)",
+			padding: { base: "1rem", sm: "1.25rem" },
+			boxShadow: "var(--shadow-sm)",
+			"& > * + *": { marginTop: "1rem" },
+		})}>
+			<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" })}>
 				<div>
-					<h3 className="text-base font-bold">{title || "Animation Storyboard"}</h3>
-					<p className="text-xs text-muted-foreground font-terminal">
+					<h3 className={css({ fontSize: "1rem", fontWeight: 700 })}>{title || "Animation Storyboard"}</h3>
+					<p className={cx("font-terminal", css({ fontSize: "0.75rem", color: "var(--muted-foreground)" }))}>
 						{scenes.length} SCENES // {totalDuration}s TOTAL
 					</p>
 				</div>
-				<div className="flex items-center gap-1">
+				<div className={css({ display: "flex", alignItems: "center", gap: "0.25rem" })}>
 					<button
 						onClick={() => setActiveIdx((i) => Math.max(0, i - 1))}
 						disabled={activeIdx === 0}
-						className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent disabled:opacity-30 transition-colors"
+						className={css({
+							display: "inline-flex",
+							height: "2rem",
+							width: "2rem",
+							alignItems: "center",
+							justifyContent: "center",
+							borderRadius: "0.375rem",
+							border: "1px solid var(--border)",
+							color: "var(--muted-foreground)",
+							transition: "color 150ms, background-color 150ms",
+							_hover: { background: "var(--accent)" },
+							_disabled: { opacity: 0.3 },
+						})}
 					>
 						<ChevronLeft size={16} />
 					</button>
-					<span className="text-xs font-terminal min-w-[3rem] text-center">
+					<span className={cx("font-terminal", css({ minWidth: "3rem", textAlign: "center", fontSize: "0.75rem" }))}>
 						{activeIdx + 1}/{scenes.length}
 					</span>
 					<button
 						onClick={() => setActiveIdx((i) => Math.min(scenes.length - 1, i + 1))}
 						disabled={activeIdx === scenes.length - 1}
-						className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent disabled:opacity-30 transition-colors"
+						className={css({
+							display: "inline-flex",
+							height: "2rem",
+							width: "2rem",
+							alignItems: "center",
+							justifyContent: "center",
+							borderRadius: "0.375rem",
+							border: "1px solid var(--border)",
+							color: "var(--muted-foreground)",
+							transition: "color 150ms, background-color 150ms",
+							_hover: { background: "var(--accent)" },
+							_disabled: { opacity: 0.3 },
+						})}
 					>
 						<ChevronRight size={16} />
 					</button>
@@ -201,22 +251,33 @@ export function SceneRenderer({ storyboard }: { storyboard: string }) {
 
 			<SceneCard scene={active} isActive={true} progress={60} />
 
-			<div className="space-y-2">
+			<div className={css({ "& > * + *": { marginTop: "0.5rem" } })}>
 				{scenes.map((s, i) => (
 					<button
 						key={s.number}
 						onClick={() => setActiveIdx(i)}
-						className={`w-full flex items-center gap-3 rounded-md px-3 py-2 text-left transition-all ${
-							i === activeIdx
-								? "bg-primary/10 border border-primary/30"
-								: "bg-muted/30 border border-transparent hover:bg-muted/50"
-						}`}
+						className={css({
+							display: "flex",
+							width: "100%",
+							alignItems: "center",
+							gap: "0.75rem",
+							borderRadius: "0.375rem",
+							border: "1px solid",
+							borderColor: i === activeIdx ? "color-mix(in srgb, var(--primary) 30%, transparent)" : "transparent",
+							background: i === activeIdx
+								? "color-mix(in srgb, var(--primary) 10%, transparent)"
+								: "color-mix(in srgb, var(--muted) 30%, transparent)",
+							padding: "0.5rem 0.75rem",
+							textAlign: "left",
+							transition: "all 150ms",
+							_hover: i === activeIdx ? undefined : { background: "color-mix(in srgb, var(--muted) 50%, transparent)" },
+						})}
 					>
-						<div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground text-[10px] font-bold">
+						<div className={css({ display: "flex", height: "1.5rem", width: "1.5rem", flexShrink: 0, alignItems: "center", justifyContent: "center", borderRadius: "9999px", background: "var(--muted)", fontSize: "0.625rem", fontWeight: 700, color: "var(--muted-foreground)" })}>
 							{s.number}
 						</div>
-						<span className="text-xs font-medium truncate flex-1">{s.title}</span>
-						<span className="text-[10px] text-muted-foreground font-terminal">{s.duration}</span>
+						<span className={css({ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.75rem", fontWeight: 500 })}>{s.title}</span>
+						<span className={cx("font-terminal", css({ fontSize: "0.625rem", color: "var(--muted-foreground)" }))}>{s.duration}</span>
 					</button>
 				))}
 			</div>

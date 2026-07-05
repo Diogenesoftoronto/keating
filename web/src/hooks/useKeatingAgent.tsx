@@ -36,7 +36,7 @@ import {
 import { subscribeAgentEvents } from "./agent-subscriptions";
 import { DEFAULT_MODEL, hybridStreamFn } from "./keating-stream";
 import { getInitPromise, keatingStorage, sessions, updateSessionTitle } from "./keating-storage";
-import { cloneMessages, createSessionId, sessionModelMetadata, sessionPreview, sessionTitle, sessionUsage, truncateAtForkPoint } from "./session-metadata";
+import { cloneMessages, createSessionId, sessionModelMetadata, sessionPreview, sessionSearchText, sessionTitle, sessionUsage, truncateAtForkPoint } from "./session-metadata";
 import { saveSharedSession, sharedSessionUrl, type SharedSessionUrlResult } from "../keating/shared-sessions";
 import { loadKeatingUiSettings } from "../keating/ui-settings";
 import {
@@ -278,6 +278,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
 
   const unsubRef = useRef<(() => void) | null>(null);
   const persistUnsubRef = useRef<(() => void) | null>(null);
+  const autoTitleRequestedRef = useRef<Set<string>>(new Set());
 
   const toolOptions = useCallback((settings: WebSpeechSettings, agentRuntime?: KeatingAgentRuntimeConfig) => ({
     agentRuntime,
@@ -302,7 +303,19 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
 
     const now = new Date().toISOString();
     const messages = [...agent.state.messages];
-    const title = sessionTitle(messages);
+    const fallbackTitle = sessionTitle(messages);
+    const existing = await sessions.loadSession(sessionId) as SessionData | null;
+    const existingFallbackTitle = existing ? sessionTitle(existing.messages) : "";
+    const hasManualTitle = Boolean(
+      existing &&
+      existing.aiGeneratedTitle !== true &&
+      existing.title.trim() &&
+      existing.title.trim() !== existingFallbackTitle.trim(),
+    );
+    const title = existing && (hasManualTitle || existing.aiGeneratedTitle)
+      ? existing.title
+      : fallbackTitle;
+    const aiGeneratedTitle = existing?.aiGeneratedTitle ?? false;
     const metadata: SessionMetadata = {
       id: sessionId,
       title,
@@ -315,7 +328,8 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       thinkingLevel: agent.state.thinkingLevel,
       ...sessionModelMetadata(agent.state.model),
       preview: sessionPreview(messages),
-      aiGeneratedTitle: false,
+      searchText: sessionSearchText(messages),
+      aiGeneratedTitle,
     };
     const data: SessionData = {
       id: sessionId,
@@ -327,12 +341,51 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       messages,
       createdAt,
       lastModified: now,
-      aiGeneratedTitle: false,
+      aiGeneratedTitle,
     };
 
     await sessions.save(data, metadata);
     await keatingStorage.recordLearnerTurnFeedback(messages as Array<{ role?: unknown; content?: unknown }>);
     window.dispatchEvent(new CustomEvent("keating:sessions-changed"));
+
+    const hasAssistantMessage = messages.some((message) => (message as { role?: unknown }).role === "assistant");
+    if (!hasManualTitle && !aiGeneratedTitle && hasAssistantMessage && !autoTitleRequestedRef.current.has(sessionId)) {
+      autoTitleRequestedRef.current.add(sessionId);
+      void (async () => {
+        const model = agent.state.model as Model<Api>;
+        try {
+          if (model.provider === "browser") {
+            await loadBrowserModel();
+          } else if (!(await getProviderApiKey(model.provider))) {
+            return;
+          }
+          const apiKey = model.provider === "browser" ? undefined : await getProviderApiKey(model.provider);
+          const context: Context = {
+            systemPrompt: "You rename learning chat sessions. Return only a concise, specific title. No quotes. No punctuation-only titles. Maximum 7 words.",
+            messages: [{
+              role: "user",
+              timestamp: Date.now(),
+              content: `Conversation preview:\n${sessionPreview(messages).slice(0, 2400)}\n\nCurrent title: ${title}`,
+            }],
+          };
+          const stream = await hybridStreamFn(model, context, {
+            apiKey,
+            maxTokens: 32,
+            temperature: 0.2,
+            reasoning: "minimal",
+          });
+          const message = await stream.result();
+          const text = message.content
+            .filter((part) => part.type === "text")
+            .map((part) => part.text)
+            .join(" ");
+          const nextTitle = cleanSuggestedTitle(text);
+          if (nextTitle) await updateSessionTitle(sessionId, nextTitle, true);
+        } catch (error) {
+          console.warn("Failed to auto-generate session title:", error);
+        }
+      })();
+    }
   }, []);
 
   const maybeGenerateAlternativeResponse = useCallback(async (
@@ -393,6 +446,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
         thinkingLevel: agent.state.thinkingLevel,
         ...sessionModelMetadata(agent.state.model),
         preview: sessionPreview(messages),
+        searchText: sessionSearchText(messages),
         aiGeneratedTitle: false,
       };
       const data: SessionData = {
@@ -732,10 +786,11 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       messageCount: messages.length,
       usage: sessionUsage(messages),
       thinkingLevel: source.thinkingLevel,
-      ...sessionModelMetadata(source.model),
-      preview: sessionPreview(messages),
-      aiGeneratedTitle: false,
-    };
+        ...sessionModelMetadata(source.model),
+        preview: sessionPreview(messages),
+        searchText: sessionSearchText(messages),
+        aiGeneratedTitle: false,
+      };
     const data: SessionData = {
       ...source,
       id,

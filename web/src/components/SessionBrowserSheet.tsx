@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { History, Loader2, Plus, Search, X } from "lucide-react";
+import { History, Plus, Search, X } from "lucide-react";
+import { Spinner } from "./Spinner";
 import type { UseSessionsResult } from "../hooks/use-sessions";
 import { ForkMapCard } from "./ForkMapCard";
 import type { SessionBrowserProps } from "./SessionBrowser";
@@ -9,6 +10,7 @@ import {
 	MASONRY_ROW_PX,
 	pxToSpan,
 } from "./session-card-visuals";
+import { css, cx } from "../../styled-system/css";
 
 export interface SessionBrowserSheetProps extends SessionBrowserProps {
 	store: UseSessionsResult;
@@ -36,10 +38,10 @@ function MasonryItem({
 
 	return (
 		<div
-			className="min-w-0"
+			className={css({ minWidth: 0 })}
 			style={{ gridRow: `span ${span}`, gridColumn: fullWidth ? "1 / -1" : undefined }}
 		>
-			<div ref={ref} className="min-w-0">
+			<div ref={ref} className={css({ minWidth: 0 })}>
 				{children}
 			</div>
 		</div>
@@ -52,8 +54,8 @@ function MasonryItem({
  * of SessionCard + ForkMapCard, search, New Session) — with data/search
  * from `store` instead of local state, no "Manage" button, rename and
  * delete routed through the store, and an AI-suggest action on cards.
- * Deliberately NOT role="dialog": the global mobile CSS stretches
- * dialog buttons full-width (see app.css).
+ * Deliberately NOT role="dialog": the global mobile Panda rules stretch
+ * dialog buttons full-width.
  */
 export function SessionBrowserSheet({
 	activeSessionId,
@@ -81,21 +83,21 @@ export function SessionBrowserSheet({
 
 	return (
 		<>
-			<div className="fixed inset-0 z-40 bg-black/40" onClick={onMobileClose} aria-hidden="true" />
+			<div className={css({ position: "fixed", inset: 0, zIndex: 40, background: "rgba(0, 0, 0, 0.4)" })} onClick={onMobileClose} aria-hidden="true" />
 			{/* Intentionally not role="dialog": a global mobile rule
 			    (`[role=dialog] button { width: 100% }`) would stretch every card
 			    and chrome button. The overlay is labelled for assistive tech instead. */}
 			<aside
-				className="session-card-grid fixed inset-0 z-50 flex flex-col bg-background"
+				className={cx("session-card-grid", css({ position: "fixed", inset: 0, zIndex: 50, display: "flex", flexDirection: "column", background: "var(--background)" }))}
 				aria-label="Sessions"
 			>
-				<header className="flex items-center gap-2 border-b border-border px-4 py-3">
-					<History size={16} className="shrink-0 text-foreground" />
-					<h2 className="flex-1 text-base font-semibold">Sessions</h2>
+				<header className={css({ display: "flex", alignItems: "center", gap: "0.5rem", borderBottom: "1px solid var(--border)", padding: "0.75rem 1rem" })}>
+					<History size={16} className={css({ flexShrink: 0, color: "var(--foreground)" })} />
+					<h2 className={css({ flex: 1, fontSize: "1rem", fontWeight: 600 })}>Sessions</h2>
 					{onMobileClose ? (
 						<button
 							type="button"
-							className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+							className={css({ display: "inline-flex", height: "2.5rem", width: "2.5rem", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "1px solid var(--border)", color: "var(--muted-foreground)", _hover: { background: "var(--accent)", color: "var(--accent-foreground)" } })}
 							aria-label="Close sessions"
 							onClick={onMobileClose}
 						>
@@ -104,11 +106,11 @@ export function SessionBrowserSheet({
 					) : null}
 				</header>
 
-				<div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
+				<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", borderBottom: "1px solid var(--border)", padding: "0.625rem 1rem" })}>
 					{onNewSession ? (
 						<button
 							type="button"
-							className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+							className={css({ display: "inline-flex", height: "2.5rem", flexShrink: 0, alignItems: "center", gap: "0.375rem", borderRadius: "0.375rem", background: "var(--primary)", paddingInline: "0.75rem", fontSize: "0.875rem", fontWeight: 500, color: "var(--primary-foreground)", _hover: { background: "color-mix(in srgb, var(--primary) 90%, black)" } })}
 							onClick={() => {
 								onNewSession();
 								onMobileClose?.();
@@ -118,10 +120,10 @@ export function SessionBrowserSheet({
 							New
 						</button>
 					) : null}
-					<label className="flex min-h-10 flex-1 items-center gap-2 rounded-md border border-border bg-background px-3 text-sm">
-						<Search size={15} className="shrink-0 text-muted-foreground" />
+					<label className={css({ display: "flex", minHeight: "2.5rem", flex: 1, alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", border: "1px solid var(--border)", background: "var(--background)", paddingInline: "0.75rem", fontSize: "0.875rem" })}>
+						<Search size={15} className={css({ flexShrink: 0, color: "var(--muted-foreground)" })} />
 						<input
-							className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
+							className={css({ minWidth: 0, flex: 1, background: "transparent", outline: "none", _placeholder: { color: "var(--muted-foreground)" } })}
 							value={store.query}
 							placeholder="Search sessions"
 							onChange={(event) => store.setQuery(event.target.value)}
@@ -129,27 +131,27 @@ export function SessionBrowserSheet({
 					</label>
 				</div>
 
-				<div className="min-h-0 flex-1 overflow-y-auto p-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+				<div className={css({ minHeight: 0, flex: 1, overflowY: "auto", padding: "0.75rem", paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" })}>
 					{store.error ? (
 						<div
-							className="mb-3 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+							className={css({ marginBottom: "0.75rem", borderRadius: "0.375rem", border: "1px solid color-mix(in srgb, var(--destructive) 30%, transparent)", background: "color-mix(in srgb, var(--destructive) 5%, transparent)", padding: "0.5rem 0.75rem", fontSize: "0.875rem", color: "var(--destructive)" })}
 							role="status"
 						>
 							{store.error}
 						</div>
 					) : null}
 					{store.loading ? (
-						<div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
-							<Loader2 className="h-4 w-4 animate-spin" />
+						<div className={css({ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", paddingBlock: "3rem", fontSize: "0.875rem", color: "var(--muted-foreground)" })}>
+							<Spinner size={16} />
 							Loading…
 						</div>
 					) : isEmpty ? (
-						<div className="py-12 text-center text-sm text-muted-foreground">
+						<div className={css({ paddingBlock: "3rem", textAlign: "center", fontSize: "0.875rem", color: "var(--muted-foreground)" })}>
 							{store.items.length === 0 ? "No sessions yet" : "No sessions match your search"}
 						</div>
 					) : (
 						<div
-							className="grid grid-cols-2 items-start"
+							className={css({ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", alignItems: "start" })}
 							style={{ gridAutoRows: `${MASONRY_ROW_PX}px`, gap: `${MASONRY_GAP_PX}px` }}
 						>
 							{cards

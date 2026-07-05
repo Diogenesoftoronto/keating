@@ -28,6 +28,84 @@ import {
 	type ModelUsageBreakdown,
 	type ModelUsageEntry,
 } from "./usage-chart-data";
+import { css, cx } from "../../styled-system/css";
+import { EmptyState } from "./EmptyState";
+
+const styles = {
+	panel: css({ borderRadius: "0.5rem", border: "1px solid var(--border)", bg: "var(--background)" }),
+	panelHeader: css({ borderBottom: "1px solid var(--border)", px: "1rem", py: "0.75rem" }),
+	panelTitle: css({ fontSize: "0.875rem", fontWeight: "600" }),
+	panelSubtitle: css({ mt: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" }),
+	panelBody: css({ p: "1rem" }),
+	loading: css({ mt: "1.5rem", borderRadius: "0.5rem", border: "1px solid var(--border)", bg: "var(--background)", p: "2rem", textAlign: "center", fontSize: "0.875rem", color: "var(--muted-foreground)" }),
+	stack: css({ mt: "1.5rem", display: "flex", flexDir: "column", gap: "1.5rem" }),
+	threeGrid: css({ display: "grid", gap: "1.5rem", lg: { gridTemplateColumns: "repeat(3, minmax(0, 1fr))" } }),
+	modelWheelGrid: css({ display: "grid", gap: "1rem", xl: { gridTemplateColumns: "minmax(0, 0.9fr) minmax(12rem, 1fr)", alignItems: "center" } }),
+	pieBox: css({ h: "14rem", minW: 0 }),
+	stack2: css({ minW: 0, "& > * + *": { mt: "0.5rem" } }),
+	modelRow: css({ minW: 0, borderBottom: "1px solid color-mix(in srgb, var(--border) 60%, transparent)", pb: "0.5rem", _last: { borderBottom: 0, pb: 0 } }),
+	between: css({ display: "flex", minW: 0, alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }),
+	row: css({ display: "flex", minW: 0, alignItems: "center", gap: "0.5rem" }),
+	dot: css({ h: "0.625rem", w: "0.625rem", flexShrink: 0, borderRadius: "9999px" }),
+	truncateStrong: css({ minW: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.75rem", fontWeight: "600" }),
+	smallMuted: css({ fontSize: "0.75rem", color: "var(--muted-foreground)" }),
+	shareText: css({ flexShrink: 0, fontSize: "0.75rem", fontVariantNumeric: "tabular-nums", color: "var(--muted-foreground)" }),
+	modelDetail: css({ mt: "0.25rem", minW: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", pl: "1rem", fontSize: "11px", color: "var(--muted-foreground)" }),
+	metricGrid: css({ mb: "1rem", display: "grid", gap: "0.75rem", sm: { gridTemplateColumns: "repeat(4, minmax(0, 1fr))" } }),
+	mutedNotice: css({ borderRadius: "0.375rem", border: "1px solid var(--border)", bg: "color-mix(in srgb, var(--muted) 20%, transparent)", px: "1rem", py: "1.5rem", fontSize: "0.875rem", color: "var(--muted-foreground)" }),
+	chartGrid: css({ display: "grid", gridTemplateColumns: "2.75rem minmax(0, 1fr)", gap: "0.75rem" }),
+	axisLabels: css({ position: "relative", fontSize: "11px", fontVariantNumeric: "tabular-nums", color: "var(--muted-foreground)" }),
+	axisLabel: css({ position: "absolute", right: 0, transform: "translateY(-50%)" }),
+	legendRow: css({ mt: "0.5rem", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.75rem", fontSize: "0.75rem" }),
+	legendItem: css({ display: "flex", alignItems: "center", gap: "0.375rem" }),
+	legendSwatch: css({ display: "inline-block", h: "0.375rem", w: "1rem", borderRadius: "9999px" }),
+	improvementTitle: css({ mb: "0.5rem", fontSize: "0.75rem", fontWeight: "600", textTransform: "uppercase", color: "var(--muted-foreground)" }),
+	barWrap: css({ display: "flex", h: "3rem", alignItems: "flex-end", gap: "0.25rem" }),
+	flex1: css({ flex: "1 1 0%" }),
+	improvementBar: css({ borderRadius: "0.125rem", transitionProperty: "all", transitionDuration: "150ms" }),
+	improvementBarGood: css({ bg: "#22c55e" }),
+	improvementBarBad: css({ bg: "var(--destructive)" }),
+	barFooter: css({ mt: "0.25rem", display: "flex", justifyContent: "space-between", fontSize: "10px", color: "var(--muted-foreground)" }),
+	metricTile: css({ borderRadius: "0.375rem", border: "1px solid var(--border)", bg: "color-mix(in srgb, var(--muted) 20%, transparent)", px: "0.75rem", py: "0.5rem" }),
+	metricTileLabel: css({ fontSize: "11px", fontWeight: "500", textTransform: "uppercase", color: "var(--muted-foreground)" }),
+	metricTileValue: css({ mt: "0.25rem", fontSize: "1.125rem", fontWeight: "600" }),
+	wheelGrid: css({ display: "grid", gap: "1rem", xl: { gridTemplateColumns: "minmax(0, 1fr) minmax(16rem, 0.8fr)" } }),
+	relative: css({ position: "relative" }),
+	breadcrumbs: css({ position: "absolute", left: "0.75rem", top: "0.5rem", zIndex: 10, display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.25rem" }),
+	crumbButton: css({ borderRadius: "0.375rem", bg: "color-mix(in srgb, var(--background) 90%, transparent)", px: "0.5rem", py: "0.125rem", fontSize: "11px", fontWeight: "500", color: "var(--muted-foreground)", backdropFilter: "blur(8px)", transitionProperty: "color, background-color", transitionDuration: "150ms", _hover: { bg: "var(--accent)", color: "var(--accent-foreground)" } }),
+	crumbColored: css({ borderRadius: "0.375rem", bg: "color-mix(in srgb, var(--background) 90%, transparent)", px: "0.5rem", py: "0.125rem", fontSize: "11px", fontWeight: "500", backdropFilter: "blur(8px)", transitionProperty: "color, background-color", transitionDuration: "150ms", _hover: { bg: "var(--accent)", color: "var(--accent-foreground)" } }),
+	mutedSlash: css({ color: "var(--muted-foreground)" }),
+	fullSvg: css({ h: "100%", w: "100%" }),
+	clickPath: css({ cursor: "pointer", transitionProperty: "opacity", transitionDuration: "150ms" }),
+	cursorPointer: css({ cursor: "pointer" }),
+	noPointer: css({ pointerEvents: "none" }),
+	tooltip: css({ pointerEvents: "none", position: "absolute", zIndex: 20, borderRadius: "0.375rem", border: "1px solid var(--border)", bg: "var(--popover)", px: "0.75rem", py: "0.5rem", color: "var(--popover-foreground)", boxShadow: "var(--shadow, 0 4px 6px rgb(0 0 0 / 0.1))" }),
+	semibold: css({ fontWeight: "600" }),
+	tinyMuted: css({ fontSize: "11px", color: "var(--muted-foreground)" }),
+	tinyPrimary: css({ mt: "0.25rem", fontSize: "10px", color: "var(--primary)" }),
+	detailPanel: css({ minW: 0, "& > * + *": { mt: "0.5rem" } }),
+	detailHeader: css({ display: "flex", alignItems: "center", justifyContent: "space-between" }),
+	sectionLabel: css({ fontSize: "0.75rem", fontWeight: "600", textTransform: "uppercase", color: "var(--muted-foreground)" }),
+	backButton: css({ borderRadius: "0.375rem", px: "0.5rem", py: "0.125rem", fontSize: "11px", color: "var(--primary)", transitionProperty: "background-color", transitionDuration: "150ms", _hover: { bg: "color-mix(in srgb, var(--primary) 10%, transparent)" } }),
+	detailCard: css({ borderRadius: "0.375rem", border: "1px solid var(--border)", bg: "color-mix(in srgb, var(--muted) 20%, transparent)", p: "0.625rem" }),
+	childTopics: css({ mt: "0.5rem", display: "flex", flexWrap: "wrap", gap: "0.25rem" }),
+	topicPill: css({ borderRadius: "9999px", bg: "var(--background)", px: "0.5rem", py: "0.125rem", fontSize: "10px", color: "var(--muted-foreground)" }),
+	overflowX: css({ overflowX: "auto" }),
+	heatmapRoot: css({ position: "relative" }),
+	yearTabs: css({ mb: "0.75rem", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.375rem" }),
+	yearButton: css({ borderRadius: "0.375rem", px: "0.625rem", py: "0.25rem", fontSize: "0.75rem", fontWeight: "500", transitionProperty: "color, background-color", transitionDuration: "150ms", md: { fontSize: "1.125rem" } }),
+	yearActive: css({ bg: "var(--primary)", color: "var(--primary-foreground)" }),
+	yearInactive: css({ color: "var(--muted-foreground)", _hover: { bg: "var(--accent)", color: "var(--accent-foreground)" } }),
+	heatTooltip: css({ pointerEvents: "none", position: "absolute", zIndex: 20, transform: "translate(-50%, -100%)", borderRadius: "0.375rem", border: "1px solid var(--border)", bg: "var(--popover)", px: "0.75rem", py: "0.5rem", color: "var(--popover-foreground)", boxShadow: "var(--shadow, 0 4px 6px rgb(0 0 0 / 0.1))" }),
+	comingGrid: css({ display: "grid", gap: "1rem", md: { gridTemplateColumns: "repeat(3, minmax(0, 1fr))" } }),
+	mt2SmallMuted: css({ mt: "0.5rem", fontSize: "0.875rem", color: "var(--muted-foreground)" }),
+	listStack: css({ mt: "0.5rem", fontSize: "0.875rem", "& > * + *": { mt: "0.375rem" } }),
+	checkItem: css({ borderRadius: "0.375rem", border: "1px solid var(--border)", px: "0.5rem", py: "0.375rem" }),
+	fontMediumTruncate: css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: "500" }),
+	wrapPills: css({ mt: "0.5rem", display: "flex", flexWrap: "wrap", gap: "0.375rem" }),
+	weakPill: css({ borderRadius: "9999px", border: "1px solid color-mix(in srgb, var(--destructive) 30%, transparent)", bg: "color-mix(in srgb, var(--destructive) 5%, transparent)", px: "0.625rem", py: "0.25rem", fontSize: "0.75rem", color: "var(--destructive)" }),
+	strongPill: css({ borderRadius: "9999px", border: "1px solid color-mix(in srgb, var(--primary) 30%, transparent)", bg: "color-mix(in srgb, var(--primary) 5%, transparent)", px: "0.625rem", py: "0.25rem", fontSize: "0.75rem", color: "var(--primary)" }),
+};
 
 function ChartPanel({
 	title,
@@ -41,12 +119,12 @@ function ChartPanel({
 	className?: string;
 }) {
 	return (
-		<section className={`rounded-lg border border-border bg-background ${className}`}>
-			<div className="border-b border-border px-4 py-3">
-				<h2 className="text-sm font-semibold">{title}</h2>
-				{subtitle && <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>}
+		<section className={cx(styles.panel, className)}>
+			<div className={styles.panelHeader}>
+				<h2 className={styles.panelTitle}>{title}</h2>
+				{subtitle && <p className={styles.panelSubtitle}>{subtitle}</p>}
 			</div>
-			<div className="p-4">{children}</div>
+			<div className={styles.panelBody}>{children}</div>
 		</section>
 	);
 }
@@ -129,7 +207,7 @@ export function UsageCharts({ sessionMetadata }: UsageChartsProps) {
 
 	if (!data) {
 		return (
-			<div className="mt-6 rounded-lg border border-border bg-background p-8 text-center text-sm text-muted-foreground">
+			<div className={styles.loading}>
 				Loading charts…
 			</div>
 		);
@@ -140,8 +218,8 @@ export function UsageCharts({ sessionMetadata }: UsageChartsProps) {
 	const modelMix = buildModelUsageBreakdown(sessionMetadata);
 
 	return (
-		<div className="mt-6 flex flex-col gap-6">
-			<div className="grid gap-6 lg:grid-cols-3">
+		<div className={styles.stack}>
+			<div className={styles.threeGrid}>
 				<ChartPanel
 					title="Topic mix"
 					subtitle={`Artifacts grouped into learning domains${totalTopicArtifacts ? ` (${totalTopicArtifacts} total)` : ""}`}
@@ -246,8 +324,8 @@ function modelUsageTooltipLabel(basis: ModelUsageBreakdown["basis"]) {
 function ModelUsageWheel({ breakdown }: { breakdown: ModelUsageBreakdown }) {
 	const metricLabel = modelUsageTooltipLabel(breakdown.basis);
 	return (
-		<div className="grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(12rem,1fr)] xl:items-center">
-			<div className="h-56 min-w-0">
+		<div className={styles.modelWheelGrid}>
+			<div className={styles.pieBox}>
 				<ResponsiveContainer>
 					<PieChart>
 						<Pie
@@ -282,19 +360,19 @@ function ModelUsageWheel({ breakdown }: { breakdown: ModelUsageBreakdown }) {
 					</PieChart>
 				</ResponsiveContainer>
 			</div>
-			<div className="min-w-0 space-y-2">
+			<div className={styles.stack2}>
 				{breakdown.entries.map((entry) => (
-					<div key={entry.key} className="min-w-0 border-b border-border/60 pb-2 last:border-b-0 last:pb-0">
-						<div className="flex min-w-0 items-center justify-between gap-3">
-							<div className="flex min-w-0 items-center gap-2">
-								<span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: entry.color }} />
-								<div className="min-w-0 truncate text-xs font-semibold">{entry.label}</div>
+					<div key={entry.key} className={styles.modelRow}>
+						<div className={styles.between}>
+							<div className={styles.row}>
+								<span className={styles.dot} style={{ background: entry.color }} />
+								<div className={styles.truncateStrong}>{entry.label}</div>
 							</div>
-							<div className="shrink-0 text-xs tabular-nums text-muted-foreground">
+							<div className={styles.shareText}>
 								{Math.round(entry.share * 100)}%
 							</div>
 						</div>
-						<div className="mt-1 min-w-0 truncate pl-4 text-[11px] text-muted-foreground">
+						<div className={styles.modelDetail}>
 							{entry.provider}/{entry.modelId} · {formatCompactNumber(entry.tokens)} tokens · {entry.sessions} session{entry.sessions === 1 ? "" : "s"}
 						</div>
 					</div>
@@ -369,29 +447,29 @@ function PolicyGrowthPanel({
 
 	return (
 		<div>
-			<div className="mb-4 grid gap-3 sm:grid-cols-4">
+			<div className={styles.metricGrid}>
 				<MetricTile label="Latest benchmark" value={latestBenchmark ? latestBenchmark.score.toFixed(1) : "none"} />
 				<MetricTile label="Latest evolution" value={latestEvolution ? latestEvolution.bestScore.toFixed(1) : "none"} />
 				<MetricTile label="Active policies" value={`${activePolicies}/${policies.length}`} />
 				<MetricTile label="Attempts" value={`${acceptedAttempts} kept / ${rejectedAttempts} rejected`} />
 			</div>
 
-			<div className="mb-4">
+			<div className={css({ mb: "1rem" })}>
 				{allScores.length === 0 ? (
 					<EmptyState message="Policy records exist, but no benchmark scores have been recorded yet." />
 				) : !scoreSignalsAreMeaningful ? (
-					<div className="rounded-md border border-border bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
+					<div className={styles.mutedNotice}>
 						Scores are recorded, but they are still all 0.0. Add feedback signals and rerun benchmark or evolution before treating this as a trend.
 					</div>
 				) : (
-					<div className="grid grid-cols-[2.75rem_minmax(0,1fr)] gap-3">
-						<div className="relative text-[11px] tabular-nums text-muted-foreground" style={{ height }}>
+					<div className={styles.chartGrid}>
+						<div className={styles.axisLabels} style={{ height }}>
 							{[0, 25, 50, 75, 100].map((tick) => {
 								const y = chartBottom - (tick / maxScore) * (chartBottom - chartTop);
 								return (
 									<div
 										key={tick}
-										className="absolute right-0 -translate-y-1/2"
+										className={styles.axisLabel}
 										style={{ top: `${(y / height) * 100}%` }}
 									>
 										{tick}
@@ -425,17 +503,17 @@ function PolicyGrowthPanel({
 					</div>
 				)}
 
-				<div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
+				<div className={styles.legendRow}>
 					{benchmarkLine && (
-						<div className="flex items-center gap-1.5">
-							<span className="inline-block h-1.5 w-4 rounded-full" style={{ background: benchmarkLine.color }} />
-							<span className="text-muted-foreground">Benchmark scores</span>
+						<div className={styles.legendItem}>
+							<span className={styles.legendSwatch} style={{ background: benchmarkLine.color }} />
+							<span className={styles.smallMuted}>Benchmark scores</span>
 						</div>
 					)}
 					{evolutionLine && (
-						<div className="flex items-center gap-1.5">
-							<span className="inline-block h-1.5 w-4 rounded-full" style={{ background: evolutionLine.color }} />
-							<span className="text-muted-foreground">Evolved policy scores</span>
+						<div className={styles.legendItem}>
+							<span className={styles.legendSwatch} style={{ background: evolutionLine.color }} />
+							<span className={styles.smallMuted}>Evolved policy scores</span>
 						</div>
 					)}
 				</div>
@@ -443,15 +521,15 @@ function PolicyGrowthPanel({
 
 			{improvementBars.length > 0 && (
 				<div>
-					<div className="text-xs font-semibold uppercase text-muted-foreground mb-2">Recent improvements</div>
-					<div className="flex h-12 items-end gap-1">
+					<div className={styles.improvementTitle}>Recent improvements</div>
+					<div className={styles.barWrap}>
 						{improvementBars.map((bar, i) => {
 							const delta = bar.scoreDelta ?? 0;
 							const positive = delta >= 0;
 							return (
-								<div key={i} className="flex-1">
+								<div key={i} className={styles.flex1}>
 									<div
-										className={`rounded-sm ${positive ? "bg-emerald-500" : "bg-destructive"} transition-all`}
+										className={cx(styles.improvementBar, positive ? styles.improvementBarGood : styles.improvementBarBad)}
 										style={{ height: `${Math.min(Math.abs(delta) * 40 + 4, 40)}px`, opacity: 0.75 }}
 										title={`Delta ${delta >= 0 ? "+" : ""}${delta.toFixed(2)} on ${fmtDate(bar.createdAt)}`}
 									/>
@@ -459,7 +537,7 @@ function PolicyGrowthPanel({
 							);
 						})}
 					</div>
-					<div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
+					<div className={styles.barFooter}>
 						<span>{improvementBars.length} latest</span>
 						<span>{activePolicies} active policy{activePolicies === 1 ? "" : "ies"} / {policies.length} total</span>
 					</div>
@@ -471,9 +549,9 @@ function PolicyGrowthPanel({
 
 function MetricTile({ label, value }: { label: string; value: string }) {
 	return (
-		<div className="rounded-md border border-border bg-muted/20 px-3 py-2">
-			<div className="text-[11px] font-medium uppercase text-muted-foreground">{label}</div>
-			<div className="mt-1 text-lg font-semibold">{value}</div>
+		<div className={styles.metricTile}>
+			<div className={styles.metricTileLabel}>{label}</div>
+			<div className={styles.metricTileValue}>{value}</div>
 		</div>
 	);
 }
@@ -655,23 +733,23 @@ function TopicGroupWheel({ groups }: { groups: TopicArtifactGroup[] }) {
 	const detailChildren = detailNode.children.filter((c) => c.count > 0);
 
 	return (
-		<div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(16rem,0.8fr)]">
-			<div className="relative" style={{ width: "100%", height: 400 }}>
+		<div className={styles.wheelGrid}>
+			<div className={styles.relative} style={{ width: "100%", height: 400 }}>
 				{/* Breadcrumb */}
-				<div className="absolute left-3 top-2 z-10 flex flex-wrap items-center gap-1">
+				<div className={styles.breadcrumbs}>
 					<button
 						type="button"
 						onClick={() => setSelected(null)}
-						className="rounded-md bg-background/90 px-2 py-0.5 text-[11px] font-medium text-muted-foreground backdrop-blur hover:bg-accent hover:text-accent-foreground transition-colors"
+						className={styles.crumbButton}
 					>
 						All domains
 					</button>
 					{breadcrumbs.map((node, i) => (
-						<span key={node.key} className="flex items-center gap-1">
-							<span className="text-muted-foreground">/</span>
+						<span key={node.key} className={styles.row}>
+							<span className={styles.mutedSlash}>/</span>
 							<button
 								type="button"
-								className="rounded-md bg-background/90 px-2 py-0.5 text-[11px] font-medium backdrop-blur hover:bg-accent hover:text-accent-foreground transition-colors"
+								className={styles.crumbColored}
 								style={{ color: node.color }}
 								onClick={() => setSelected(i === breadcrumbs.length - 1 ? node : breadcrumbs[i])}
 							>
@@ -684,7 +762,7 @@ function TopicGroupWheel({ groups }: { groups: TopicArtifactGroup[] }) {
 				<svg
 					ref={svgRef}
 					viewBox="0 0 400 400"
-					className="h-full w-full"
+					className={styles.fullSvg}
 					onMouseMove={handleMouseMove}
 					onMouseLeave={() => { setHovered(null); setTooltipPos(null); }}
 				>
@@ -696,7 +774,7 @@ function TopicGroupWheel({ groups }: { groups: TopicArtifactGroup[] }) {
 							stroke="var(--background, #fff)"
 							strokeWidth={1.5}
 							opacity={hovered && hovered !== seg ? 0.45 : 0.92}
-							className="cursor-pointer transition-opacity duration-150"
+							className={styles.clickPath}
 							onMouseEnter={() => setHovered(seg)}
 							onClick={() => handleSegmentClick(seg)}
 						>
@@ -712,7 +790,7 @@ function TopicGroupWheel({ groups }: { groups: TopicArtifactGroup[] }) {
 						fill="var(--background, #fff)"
 						stroke="var(--border, #e5e7eb)"
 						strokeWidth={1}
-						className={selected ? "cursor-pointer" : ""}
+						className={selected ? styles.cursorPointer : undefined}
 						onClick={() => selected && setSelected(null)}
 					/>
 					<text
@@ -722,7 +800,7 @@ function TopicGroupWheel({ groups }: { groups: TopicArtifactGroup[] }) {
 						fontSize={13}
 						fontWeight={600}
 						fill="currentColor"
-						className="pointer-events-none"
+						className={styles.noPointer}
 					>
 						{detailNode.label.length > 18 ? detailNode.label.slice(0, 16) + "…" : detailNode.label}
 					</text>
@@ -732,7 +810,7 @@ function TopicGroupWheel({ groups }: { groups: TopicArtifactGroup[] }) {
 						textAnchor="middle"
 						fontSize={11}
 						fill="var(--muted-foreground, #6b7280)"
-						className="pointer-events-none"
+						className={styles.noPointer}
 					>
 						{detailNode.count} artifact{detailNode.count === 1 ? "" : "s"}
 					</text>
@@ -743,7 +821,7 @@ function TopicGroupWheel({ groups }: { groups: TopicArtifactGroup[] }) {
 							textAnchor="middle"
 							fontSize={10}
 							fill="var(--primary, #6366f1)"
-							className="pointer-events-none"
+							className={styles.noPointer}
 						>
 							Click center to zoom out
 						</text>
@@ -753,61 +831,61 @@ function TopicGroupWheel({ groups }: { groups: TopicArtifactGroup[] }) {
 				{/* Floating tooltip */}
 				{hovered && tooltipPos && (
 					<div
-						className="pointer-events-none absolute z-20 rounded-md border border-border bg-popover px-3 py-2 text-popover-foreground shadow-md"
+						className={styles.tooltip}
 						style={{
 							left: tooltipPos.x + 12,
 							top: tooltipPos.y - 8,
 							fontSize: 12,
 						}}
 					>
-						<div className="font-semibold">{hovered.label}</div>
-						<div className="text-[11px] text-muted-foreground">
+						<div className={styles.semibold}>{hovered.label}</div>
+						<div className={styles.tinyMuted}>
 							{hovered.node.count} artifact{hovered.node.count === 1 ? "" : "s"}
 							{hovered.level < 2 && hovered.node.children.length > 0
 								? ` · ${hovered.node.children.length} sub-categorie${hovered.node.children.length === 1 ? "" : "s"}`
 								: ""}
 						</div>
 						{hovered.level < 2 && (
-							<div className="mt-1 text-[10px] text-primary">Click to explore</div>
+							<div className={styles.tinyPrimary}>Click to explore</div>
 						)}
 					</div>
 				)}
 			</div>
 
 			{/* Detail panel */}
-			<div className="min-w-0 space-y-2">
-				<div className="flex items-center justify-between">
-					<div className="text-xs font-semibold uppercase text-muted-foreground">
+			<div className={styles.detailPanel}>
+				<div className={styles.detailHeader}>
+					<div className={styles.sectionLabel}>
 						{selected ? "Sub-categories" : "Domains"}
 					</div>
 					{selected && (
 						<button
 							type="button"
 							onClick={() => setSelected(null)}
-							className="rounded-md px-2 py-0.5 text-[11px] text-primary hover:bg-primary/10 transition-colors"
+							className={styles.backButton}
 						>
 							← Back
 						</button>
 					)}
 				</div>
 				{detailChildren.slice(0, 8).map((child) => (
-					<div key={child.key} className="rounded-md border border-border bg-muted/20 p-2.5">
-						<div className="flex min-w-0 items-center justify-between gap-2">
-							<div className="flex min-w-0 items-center gap-2">
-								<span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: child.color }} />
-								<div className="truncate text-xs font-semibold">{child.label}</div>
+					<div key={child.key} className={styles.detailCard}>
+						<div className={styles.between}>
+							<div className={styles.row}>
+								<span className={styles.dot} style={{ background: child.color }} />
+								<div className={styles.truncateStrong}>{child.label}</div>
 							</div>
-							<div className="shrink-0 text-xs tabular-nums text-muted-foreground">{child.count}</div>
+							<div className={styles.shareText}>{child.count}</div>
 						</div>
 						{child.children.length > 0 && (
-							<div className="mt-2 flex flex-wrap gap-1">
+							<div className={styles.childTopics}>
 								{child.children.slice(0, 4).map((topic) => (
-									<span key={topic.key} className="rounded-full bg-background px-2 py-0.5 text-[10px] text-muted-foreground">
+									<span key={topic.key} className={styles.topicPill}>
 										{topic.label} ×{topic.count}
 									</span>
 								))}
 								{child.children.length > 4 && (
-									<span className="rounded-full bg-background px-2 py-0.5 text-[10px] text-muted-foreground">
+									<span className={styles.topicPill}>
 										+{child.children.length - 4}
 									</span>
 								)}
@@ -818,10 +896,6 @@ function TopicGroupWheel({ groups }: { groups: TopicArtifactGroup[] }) {
 			</div>
 		</div>
 	);
-}
-
-function EmptyState({ message }: { message: string }) {
-	return <div className="py-12 text-center text-sm text-muted-foreground">{message}</div>;
 }
 
 function aggregateFeedback(entries: FeedbackEntry[]) {
@@ -899,7 +973,7 @@ function CurriculumGantt({
 		new Date(ts).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
 	return (
-		<div className="overflow-x-auto">
+		<div className={styles.overflowX}>
 			<svg
 				width="100%"
 				viewBox={`0 0 800 ${totalHeight}`}
@@ -1043,18 +1117,14 @@ function ActivityHeatmap({ sessions }: { sessions: SessionMetadata[] }) {
 	).reverse();
 
 	return (
-		<div ref={containerRef} className="relative">
+		<div ref={containerRef} className={styles.heatmapRoot}>
 			{/* Year tabs — GitHub style */}
-			<div className="mb-3 flex flex-wrap items-center gap-1.5">
+			<div className={styles.yearTabs}>
 				{allNavYears.map((y) => (
 					<button
 						key={y}
 						type="button"
-						className={`rounded-md px-2.5 py-1 text-xs md:text-lg font-medium transition-colors ${
-							y === year
-								? "bg-primary text-primary-foreground"
-								: "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-						}`}
+						className={cx(styles.yearButton, y === year ? styles.yearActive : styles.yearInactive)}
 						onClick={() => setYear(y)}
 					>
 						{y}
@@ -1062,7 +1132,7 @@ function ActivityHeatmap({ sessions }: { sessions: SessionMetadata[] }) {
 				))}
 			</div>
 
-			<div className="overflow-x-auto">
+			<div className={styles.overflowX}>
 				<svg
 					width="100%"
 					viewBox={`0 0 ${gridWidth + 28} ${svgHeight}`}
@@ -1155,16 +1225,16 @@ function ActivityHeatmap({ sessions }: { sessions: SessionMetadata[] }) {
 			{/* Rich tooltip */}
 			{tooltip && (
 				<div
-					className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-full rounded-md border border-border bg-popover px-3 py-2 text-popover-foreground shadow-md"
+					className={styles.heatTooltip}
 					style={{
 						left: tooltip.x,
 						top: tooltip.y - 8,
 					}}
 				>
-					<div className="text-xs font-semibold">
+					<div className={styles.truncateStrong}>
 						{tooltip.count} session{tooltip.count === 1 ? "" : "s"}
 					</div>
-					<div className="text-[11px] text-muted-foreground">
+					<div className={styles.tinyMuted}>
 						{tooltip.date.toLocaleDateString(undefined, {
 							weekday: "short",
 							month: "short",
@@ -1192,17 +1262,17 @@ function ComingUpPanel({
 		return <EmptyState message="Nothing on the runway yet — checklists and weak spots will surface here as you learn." />;
 	}
 	return (
-		<div className="grid gap-4 md:grid-cols-3">
+		<div className={styles.comingGrid}>
 			<div>
-				<div className="text-xs font-semibold uppercase text-muted-foreground">Open checklists</div>
+				<div className={styles.sectionLabel}>Open checklists</div>
 				{openChecklists.length === 0 ? (
-					<div className="mt-2 text-sm text-muted-foreground">All caught up.</div>
+					<div className={styles.mt2SmallMuted}>All caught up.</div>
 				) : (
-					<ul className="mt-2 space-y-1.5 text-sm">
+					<ul className={styles.listStack}>
 						{openChecklists.slice(0, 8).map((v) => (
-							<li key={v.id} className="rounded-md border border-border px-2 py-1.5">
-								<div className="font-medium truncate">{v.topic}</div>
-								<div className="text-xs text-muted-foreground">
+							<li key={v.id} className={styles.checkItem}>
+								<div className={styles.fontMediumTruncate}>{v.topic}</div>
+								<div className={styles.smallMuted}>
 									opened {new Date(v.createdAt).toLocaleDateString()}
 								</div>
 							</li>
@@ -1211,13 +1281,13 @@ function ComingUpPanel({
 				)}
 			</div>
 			<div>
-				<div className="text-xs font-semibold uppercase text-muted-foreground">Weak spots</div>
+				<div className={styles.sectionLabel}>Weak spots</div>
 				{weaknesses.length === 0 ? (
-					<div className="mt-2 text-sm text-muted-foreground">None flagged.</div>
+					<div className={styles.mt2SmallMuted}>None flagged.</div>
 				) : (
-					<ul className="mt-2 flex flex-wrap gap-1.5">
+					<ul className={styles.wrapPills}>
 						{weaknesses.map((w) => (
-							<li key={w} className="rounded-full border border-destructive/30 bg-destructive/5 px-2.5 py-1 text-xs text-destructive">
+							<li key={w} className={styles.weakPill}>
 								{w}
 							</li>
 						))}
@@ -1225,13 +1295,13 @@ function ComingUpPanel({
 				)}
 			</div>
 			<div>
-				<div className="text-xs font-semibold uppercase text-muted-foreground">Strengths</div>
+				<div className={styles.sectionLabel}>Strengths</div>
 				{strengths.length === 0 ? (
-					<div className="mt-2 text-sm text-muted-foreground">Building.</div>
+					<div className={styles.mt2SmallMuted}>Building.</div>
 				) : (
-					<ul className="mt-2 flex flex-wrap gap-1.5">
+					<ul className={styles.wrapPills}>
 						{strengths.map((s) => (
-							<li key={s} className="rounded-full border border-primary/30 bg-primary/5 px-2.5 py-1 text-xs text-primary">
+							<li key={s} className={styles.strongPill}>
 								{s}
 							</li>
 						))}

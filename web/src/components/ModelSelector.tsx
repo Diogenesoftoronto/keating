@@ -5,6 +5,7 @@ import { localModel, getModelName, getModelId, type LocalModel } from "../stores
 import { getSelectableModels, buildSavedModel } from "../lib/provider-models";
 import { addRecentModel, getRecentModels } from "../keating/ui-settings";
 import { loadModelPrefs } from "../keating/model-prefs";
+import { css } from "../../styled-system/css";
 
 function makeBrowserModel(): Model<Api> {
 	return {
@@ -156,34 +157,56 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 	if (!open) return null;
 
 	return (
-		<div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 px-3 sm:px-4 font-mono" onClick={onClose}>
+		<div
+			className={css({
+				position: "fixed",
+				inset: 0,
+				zIndex: 1000,
+				display: "flex",
+				alignItems: "center",
+				justifyContent: "center",
+				background: "rgba(0, 0, 0, 0.6)",
+				paddingInline: { base: "0.75rem", sm: "1rem" },
+				fontFamily: "monospace",
+			})}
+			onClick={onClose}
+		>
 			<div
 				role="dialog"
 				aria-modal="true"
-				className="flex flex-col rounded-lg border-2 border-border bg-background overflow-hidden w-[min(720px,96vw)] max-h-[92vh] sm:max-h-[85vh]"
+				className={css({
+					display: "flex",
+					width: "min(720px, 96vw)",
+					maxHeight: { base: "92vh", sm: "85vh" },
+					flexDirection: "column",
+					overflow: "hidden",
+					borderRadius: "0.5rem",
+					border: "2px solid var(--border)",
+					background: "var(--background)",
+				})}
 				onClick={(e) => e.stopPropagation()}
 			>
-				<div className="p-3 sm:p-4 border-b border-border shrink-0">
+				<div className={css({ flexShrink: 0, borderBottom: "1px solid var(--border)", padding: { base: "0.75rem", sm: "1rem" } })}>
 					<div>
-						<h2 className="text-sm sm:text-base font-semibold text-foreground">Select Model</h2>
-						<p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">Built-in providers and discovered custom-provider models.</p>
+						<h2 className={css({ fontSize: { base: "0.875rem", sm: "1rem" }, fontWeight: 600, color: "var(--foreground)" })}>Select Model</h2>
+						<p className={css({ marginTop: "0.125rem", fontSize: { base: "0.6875rem", sm: "0.75rem" }, color: "var(--muted-foreground)" })}>Built-in providers and discovered custom-provider models.</p>
 					</div>
-					<div className="mt-2 sm:mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(10rem,14rem)_auto]">
-						<label className="min-w-0">
-							<span className="sr-only">Search models</span>
+					<div className={css({ marginTop: { base: "0.5rem", sm: "0.75rem" }, display: "grid", gap: "0.5rem", sm: { gridTemplateColumns: "minmax(0, 1fr) minmax(10rem, 14rem) auto" } })}>
+						<label className={css({ minWidth: 0 })}>
+							<span className={css({ position: "absolute", width: "1px", height: "1px", padding: 0, margin: "-1px", overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", borderWidth: 0 })}>Search models</span>
 							<input
 								ref={inputRef}
 								type="text"
 								placeholder="Search models"
-								className="w-full rounded-md border-2 border-border bg-background px-2.5 py-1.5 text-xs sm:text-sm"
+								className={css({ width: "100%", borderRadius: "0.375rem", border: "2px solid var(--border)", background: "var(--background)", padding: "0.375rem 0.625rem", fontSize: { base: "0.75rem", sm: "0.875rem" } })}
 								value={search}
 								onChange={(e) => setSearch(e.target.value)}
 							/>
 						</label>
-						<label className="min-w-0">
-							<span className="sr-only">Filter by provider</span>
+						<label className={css({ minWidth: 0 })}>
+							<span className={css({ position: "absolute", width: "1px", height: "1px", padding: 0, margin: "-1px", overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", borderWidth: 0 })}>Filter by provider</span>
 							<select
-								className="w-full rounded-md border-2 border-border bg-background px-2.5 py-1.5 text-xs sm:text-sm"
+								className={css({ width: "100%", borderRadius: "0.375rem", border: "2px solid var(--border)", background: "var(--background)", padding: "0.375rem 0.625rem", fontSize: { base: "0.75rem", sm: "0.875rem" } })}
 								value={providerFilter}
 								onChange={(e) => setProviderFilter(e.target.value)}
 							>
@@ -200,7 +223,18 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 								setLoading(true);
 								loadModels();
 							}}
-							className="inline-flex items-center justify-center gap-1 rounded-md border-2 border-border px-2.5 py-1.5 text-xs sm:text-sm hover:bg-ink hover:text-paper transition-colors"
+							className={css({
+								display: "inline-flex",
+								alignItems: "center",
+								justifyContent: "center",
+								gap: "0.25rem",
+								borderRadius: "0.375rem",
+								border: "2px solid var(--border)",
+								padding: "0.375rem 0.625rem",
+								fontSize: { base: "0.75rem", sm: "0.875rem" },
+								transition: "color 150ms, background-color 150ms",
+								_hover: { background: "var(--ink)", color: "var(--paper)" },
+							})}
 						>
 							<RefreshCw size={13} />
 							Refresh
@@ -208,13 +242,13 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 					</div>
 				</div>
 
-				<div className="flex-1 overflow-y-auto border border-border m-1 bg-muted/20">
+				<div className={css({ margin: "0.25rem", flex: 1, overflowY: "auto", border: "1px solid var(--border)", background: "color-mix(in srgb, var(--muted) 20%, transparent)" })}>
 					{loading ? (
-						<div className="p-3 sm:p-4 text-sm text-muted-foreground text-center">Loading models…</div>
+						<div className={css({ padding: { base: "0.75rem", sm: "1rem" }, textAlign: "center", fontSize: "0.875rem", color: "var(--muted-foreground)" })}>Loading models…</div>
 						) : error ? (
-						<div className="p-3 sm:p-4 text-sm text-destructive text-center">{error}</div>
+						<div className={css({ padding: { base: "0.75rem", sm: "1rem" }, textAlign: "center", fontSize: "0.875rem", color: "var(--destructive)" })}>{error}</div>
 					) : filtered.length === 0 ? (
-						<div className="p-3 sm:p-4 text-sm text-muted-foreground text-center">No models matched the current search.</div>
+						<div className={css({ padding: { base: "0.75rem", sm: "1rem" }, textAlign: "center", fontSize: "0.875rem", color: "var(--muted-foreground)" })}>No models matched the current search.</div>
 					) : (
 						<>
 							{renderGroup("Recent", recentModels, selectedKey, setSelectedKey, localState, webGpuAvailable)}
@@ -225,16 +259,34 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 					)}
 				</div>
 
-				<div className="flex justify-end gap-2 p-3 sm:p-4 border-t border-border shrink-0">
+				<div className={css({ display: "flex", flexShrink: 0, justifyContent: "flex-end", gap: "0.5rem", borderTop: "1px solid var(--border)", padding: { base: "0.75rem", sm: "1rem" } })}>
 					<button
 						onClick={onClose}
-						className="rounded-md border-2 border-border px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm hover:bg-ink hover:text-paper transition-colors"
+						className={css({
+							borderRadius: "0.375rem",
+							border: "2px solid var(--border)",
+							paddingInline: { base: "0.75rem", sm: "1rem" },
+							paddingBlock: { base: "0.375rem", sm: "0.5rem" },
+							fontSize: { base: "0.75rem", sm: "0.875rem" },
+							transition: "color 150ms, background-color 150ms",
+							_hover: { background: "var(--ink)", color: "var(--paper)" },
+						})}
 					>
 						Cancel
 					</button>
 					<button
 						onClick={handleSelect}
-						className="rounded-md bg-primary border-2 border-primary px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm text-primary-foreground hover:bg-primary/90 transition-colors"
+						className={css({
+							borderRadius: "0.375rem",
+							border: "2px solid var(--primary)",
+							background: "var(--primary)",
+							paddingInline: { base: "0.75rem", sm: "1rem" },
+							paddingBlock: { base: "0.375rem", sm: "0.5rem" },
+							fontSize: { base: "0.75rem", sm: "0.875rem" },
+							color: "var(--primary-foreground)",
+							transition: "color 150ms, background-color 150ms",
+							_hover: { background: "color-mix(in srgb, var(--primary) 90%, black)" },
+						})}
 					>
 						Use Selected Model
 					</button>
@@ -255,7 +307,21 @@ function renderGroup(
 	if (models.length === 0) return null;
 	return (
 		<div>
-			<div className="sticky top-0 z-10 bg-muted/80 border-y border-border px-3 sm:px-4 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground backdrop-blur">
+			<div className={css({
+				position: "sticky",
+				top: 0,
+				zIndex: 10,
+				borderBlock: "1px solid var(--border)",
+				background: "color-mix(in srgb, var(--muted) 80%, transparent)",
+				paddingInline: { base: "0.75rem", sm: "1rem" },
+				paddingBlock: "0.25rem",
+				fontSize: "0.625rem",
+				fontWeight: 600,
+				letterSpacing: "0.05em",
+				textTransform: "uppercase",
+				color: "var(--muted-foreground)",
+				backdropFilter: "blur(8px)",
+			})}>
 				{title}
 			</div>
 			{models.map((entry) => (
@@ -308,9 +374,19 @@ function ModelOption({
 
 	return (
 		<div
-			className={`flex gap-2.5 sm:gap-3 items-start px-3 sm:px-4 py-2 sm:py-3 border-b border-border cursor-pointer transition-colors ${
-				isSelected ? "bg-primary/5" : ""
-			} ${disabled ? "opacity-45 cursor-not-allowed" : "hover:bg-accent/30"}`}
+			className={css({
+				display: "flex",
+				alignItems: "flex-start",
+				gap: { base: "0.625rem", sm: "0.75rem" },
+				borderBottom: "1px solid var(--border)",
+				background: isSelected ? "color-mix(in srgb, var(--primary) 5%, transparent)" : undefined,
+				paddingInline: { base: "0.75rem", sm: "1rem" },
+				paddingBlock: { base: "0.5rem", sm: "0.75rem" },
+				cursor: disabled ? "not-allowed" : "pointer",
+				opacity: disabled ? 0.45 : undefined,
+				transition: "color 150ms, background-color 150ms",
+				_hover: disabled ? undefined : { background: "color-mix(in srgb, var(--accent) 30%, transparent)" },
+			})}
 			onClick={() => {
 				if (!disabled) onClick();
 			}}
@@ -321,29 +397,39 @@ function ModelOption({
 				checked={isSelected}
 				readOnly
 				disabled={disabled}
-				className="mt-0.5 sm:mt-1 shrink-0"
+				className={css({ marginTop: { base: "0.125rem", sm: "0.25rem" }, flexShrink: 0 })}
 			/>
-			<div className="min-w-0 flex-1">
-				<div className="text-sm font-bold leading-tight">{model.name}</div>
-				<div className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
+			<div className={css({ minWidth: 0, flex: 1 })}>
+				<div className={css({ fontSize: "0.875rem", fontWeight: 700, lineHeight: 1.25 })}>{model.name}</div>
+				<div className={css({ marginTop: "0.125rem", fontSize: { base: "0.6875rem", sm: "0.75rem" }, color: "var(--muted-foreground)" })}>
 					{isBrowser ? "Runs in this browser" : `Provider: ${model.provider}`}
 				</div>
-				<div className="text-[11px] sm:text-xs text-muted-foreground">{model.id}</div>
+				<div className={css({ fontSize: { base: "0.6875rem", sm: "0.75rem" }, color: "var(--muted-foreground)" })}>{model.id}</div>
 				{badges.length > 0 && (
-					<div className="flex flex-wrap gap-1 mt-1.5">
+					<div className={css({ marginTop: "0.375rem", display: "flex", flexWrap: "wrap", gap: "0.25rem" })}>
 						{badges.map((b) => (
-							<span key={b} className="inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold bg-muted text-muted-foreground">
+							<span key={b} className={css({ display: "inline-flex", borderRadius: "9999px", background: "var(--muted)", padding: "0.125rem 0.5rem", fontSize: "0.625rem", fontWeight: 600, color: "var(--muted-foreground)" })}>
 								{b}
 							</span>
 							))}
 						</div>
 					)}
 					{status() && (
-						<div className={`text-xs mt-1 ${status().includes("error") || status().includes("not available") ? "text-destructive" : status().includes("ready") ? "text-primary" : status().includes("Loading") ? "text-blue-600" : "text-muted-foreground"}`}>
+						<div className={css({
+							marginTop: "0.25rem",
+							fontSize: "0.75rem",
+							color: status().includes("error") || status().includes("not available")
+								? "var(--destructive)"
+								: status().includes("ready")
+									? "var(--primary)"
+									: status().includes("Loading")
+										? "#2563eb"
+										: "var(--muted-foreground)",
+						})}>
 							{status()}
 							{localState?.loading && (
-								<div className="w-full h-1 bg-muted-foreground/20 rounded-full mt-1 overflow-hidden">
-									<div className="h-full bg-blue-600 rounded-full transition-all" style={{ width: `${localState.loadingProgress}%` }} />
+								<div className={css({ marginTop: "0.25rem", height: "0.25rem", width: "100%", overflow: "hidden", borderRadius: "9999px", background: "color-mix(in srgb, var(--muted-foreground) 20%, transparent)" })}>
+									<div className={css({ height: "100%", borderRadius: "9999px", background: "#2563eb", transition: "all 150ms" })} style={{ width: `${localState.loadingProgress}%` }} />
 								</div>
 							)}
 						</div>

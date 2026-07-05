@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { ChevronRight, Copy, Eye, FileJson } from "lucide-react";
 
+import { css } from "../../styled-system/css";
 interface JsonCrackBlockProps {
   value: unknown;
   maxHeight?: string;
@@ -28,25 +29,35 @@ export function JsonCrackBlock({
   }, [jsonText]);
 
   return (
-    <div className={`rounded-md border border-border ${className}`}>
-      <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/20 px-3 py-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <FileJson size={13} className="shrink-0 text-muted-foreground" />
-          {title && <span className="truncate text-xs font-medium">{title}</span>}
-          <span className="shrink-0 text-[10px] text-muted-foreground">
+    <div className={`${css({ borderRadius: "0.375rem", border: "1px solid var(--border)" })} ${className}`}>
+      <div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", borderBottom: "1px solid var(--border)", backgroundColor: "color-mix(in srgb, var(--muted) 20%, transparent)", paddingInline: "0.75rem", paddingBlock: "0.5rem" })}>
+        <div className={css({ display: "flex", minWidth: 0, alignItems: "center", gap: "0.5rem" })}>
+          <FileJson size={13} className={css({ flexShrink: 0, color: "var(--muted-foreground)" })} />
+          {title && <span className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.75rem", fontWeight: 500 })}>{title}</span>}
+          <span className={css({ flexShrink: 0, fontSize: "10px", color: "var(--muted-foreground)" })}>
             {jsonText.length > 1024 ? `${(jsonText.length / 1024).toFixed(1)} KB` : `${jsonText.length} B`}
           </span>
         </div>
-        <div className="flex shrink-0 items-center gap-1">
+        <div className={css({ display: "flex", flexShrink: 0, alignItems: "center", gap: "0.25rem" })}>
           {isValidJson && (
             <button
               type="button"
               onClick={() => setMode((m) => (m === "raw" ? "graph" : "raw"))}
-              className={`inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-medium transition-colors ${
-                mode === "graph"
-                  ? "bg-primary text-primary-foreground"
-                  : "border border-border hover:bg-accent"
-              }`}
+              className={css({
+                display: "inline-flex",
+                height: "1.75rem",
+                alignItems: "center",
+                gap: "0.25rem",
+                borderRadius: "0.375rem",
+                paddingInline: "0.5rem",
+                fontSize: "11px",
+                fontWeight: 500,
+                transitionProperty: "color, background-color, border-color",
+                transitionDuration: "150ms",
+                ...(mode === "graph"
+                  ? { backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }
+                  : { border: "1px solid var(--border)", _hover: { background: "var(--accent)" } }),
+              })}
             >
               <Eye size={11} />
               {mode === "graph" ? "Tree" : "Visualize"}
@@ -55,7 +66,7 @@ export function JsonCrackBlock({
           <button
             type="button"
             onClick={copyText}
-            className="inline-flex h-7 items-center gap-1 rounded-md border border-border px-2 text-[11px] hover:bg-accent"
+            className={css({ display: "inline-flex", height: "1.75rem", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", border: "1px solid var(--border)", paddingInline: "0.5rem", fontSize: "11px", transitionProperty: "color, background-color, border-color", transitionDuration: "150ms", _hover: { background: "var(--accent)" } })}
           >
             <Copy size={11} /> Copy
           </button>
@@ -64,13 +75,13 @@ export function JsonCrackBlock({
 
       {mode === "raw" || !parsed.ok ? (
         <pre
-          className="overflow-auto whitespace-pre-wrap break-words p-3 text-[11px] font-mono leading-relaxed"
+          className={css({ overflow: "auto", whiteSpace: "pre-wrap", overflowWrap: "break-word", padding: "0.75rem", fontSize: "11px", fontFamily: "var(--mono-display)", lineHeight: "1.625" })}
           style={{ maxHeight }}
         >
           {jsonText.length > 10000 ? `${jsonText.slice(0, 10000)}\n\n... (truncated)` : jsonText}
         </pre>
       ) : (
-        <div className="overflow-auto p-3 text-[11px] font-mono leading-relaxed" style={{ maxHeight }}>
+        <div className={css({ overflow: "auto", padding: "0.75rem", fontSize: "11px", fontFamily: "var(--mono-display)", lineHeight: "1.625" })} style={{ maxHeight }}>
           <JsonTree value={parsed.value} name="root" depth={0} initiallyOpen />
         </div>
       )}
@@ -95,8 +106,8 @@ function JsonTree({
 
   if (!isArray && !isObject) {
     return (
-      <div className="flex min-w-max items-baseline gap-1" style={{ paddingLeft: depth * 14 }}>
-        <span className="text-muted-foreground">{name}:</span>
+      <div className={css({ display: "flex", minWidth: "max-content", alignItems: "baseline", gap: "0.25rem" })} style={{ paddingLeft: depth * 14 }}>
+        <span className={css({ color: "var(--muted-foreground)" })}>{name}:</span>
         <JsonPrimitive value={value} />
       </div>
     );
@@ -106,15 +117,18 @@ function JsonTree({
   const summary = isArray ? `Array(${entries.length})` : `Object(${entries.length})`;
 
   return (
-    <div className="min-w-max">
+    <div className={css({ minWidth: "max-content" })}>
       <button
         type="button"
         onClick={() => setOpen((next) => !next)}
-        className="flex items-center gap-1 rounded-sm py-0.5 pr-1 text-left hover:bg-accent"
+        className={css({ display: "flex", alignItems: "center", gap: "0.25rem", borderRadius: "0.125rem", paddingBlock: "0.125rem", paddingRight: "0.25rem", textAlign: "left", transitionProperty: "color, background-color, border-color", transitionDuration: "150ms", _hover: { background: "var(--accent)" } })}
         style={{ paddingLeft: depth * 14 }}
       >
-        <ChevronRight size={12} className={`transition-transform ${open ? "rotate-90" : ""}`} />
-        <span className="text-muted-foreground">{name}:</span>
+        <ChevronRight
+          size={12}
+          className={css({ transitionProperty: "transform", transitionDuration: "150ms", transform: open ? "rotate(90deg)" : "rotate(0deg)" })}
+        />
+        <span className={css({ color: "var(--muted-foreground)" })}>{name}:</span>
         <span>{summary}</span>
       </button>
       {open && (
@@ -129,10 +143,10 @@ function JsonTree({
 }
 
 function JsonPrimitive({ value }: { value: Exclude<JsonNode, JsonNode[] | { [key: string]: JsonNode }> }) {
-  if (value === null) return <span className="text-muted-foreground">null</span>;
-  if (typeof value === "string") return <span className="text-emerald-700 dark:text-emerald-300">"{value}"</span>;
-  if (typeof value === "number") return <span className="text-sky-700 dark:text-sky-300">{value}</span>;
-  return <span className="text-violet-700 dark:text-violet-300">{String(value)}</span>;
+  if (value === null) return <span className={css({ color: "var(--muted-foreground)" })}>null</span>;
+  if (typeof value === "string") return <span className={css({ color: "#047857" })}>"{value}"</span>;
+  if (typeof value === "number") return <span className={css({ color: "#0369a1" })}>{value}</span>;
+  return <span className={css({ color: "#6d28d9" })}>{String(value)}</span>;
 }
 
 function parseJson(value: string): { ok: true; value: JsonNode } | { ok: false } {

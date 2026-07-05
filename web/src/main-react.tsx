@@ -1,6 +1,7 @@
 import ReactDOM from "react-dom/client";
 import { PostHogProvider } from "@posthog/react";
-import "./app.css";
+import "@earendil-works/pi-web-ui/app.css";
+import "../styled-system/styles.css";
 import "./hooks/keating-storage";
 // KaTeX CSS is imported by the components that actually render math
 // (MarkdownBlock, AssistantChatPanel, Blog) so the entry/Landing chunk skips it.

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Sparkles } from "lucide-react";
+import { css, cx } from "../../styled-system/css";
 import { buildManimSceneHtml, buildHyperframesHtml } from "./animation-host";
 
 /**
@@ -33,22 +34,32 @@ export interface AnimatedSceneProps {
 export function AnimatedScene({ payload, className }: AnimatedSceneProps) {
 	return (
 		<div
-			className={`overflow-hidden rounded-xl border-2 border-border bg-background shadow-sm ${className ?? ""}`}
+			className={cx(
+				css({
+					overflow: "hidden",
+					borderRadius: "0.75rem",
+					borderWidth: "2px",
+					borderColor: "var(--border)",
+					background: "var(--background)",
+					boxShadow: "var(--shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.05))",
+				}),
+				className,
+			)}
 		>
-			<header className="flex items-center justify-between gap-3 border-b border-border bg-muted/30 px-4 py-2">
-				<div className="min-w-0">
-					<div className="flex items-center gap-2 text-xs text-muted-foreground">
-						<Sparkles size={12} className="text-amber-500" />
-						<span className="font-terminal uppercase tracking-wide">Animation</span>
-						<span className="text-border">·</span>
-						<span className="truncate">{payload.topic}</span>
-						<span className="text-border">·</span>
-						<span className="font-terminal text-[10px] uppercase tracking-wider">
+			<header className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", borderBottom: "1px solid var(--border)", background: "color-mix(in srgb, var(--muted) 30%, transparent)", padding: "0.5rem 1rem" })}>
+				<div className={css({ minWidth: 0 })}>
+					<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+						<Sparkles size={12} className={css({ color: "#f59e0b" })} />
+						<span className={cx("font-terminal", css({ textTransform: "uppercase", letterSpacing: "0.025em" }))}>Animation</span>
+						<span className={css({ color: "var(--border)" })}>·</span>
+						<span className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" })}>{payload.topic}</span>
+						<span className={css({ color: "var(--border)" })}>·</span>
+						<span className={cx("font-terminal", css({ fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.05em" }))}>
 							{payload.kind}
 						</span>
 					</div>
 					{payload.summary && (
-						<p className="mt-0.5 text-sm text-foreground">{payload.summary}</p>
+						<p className={css({ marginTop: "0.125rem", fontSize: "0.875rem", color: "var(--foreground)" })}>{payload.summary}</p>
 					)}
 				</div>
 			</header>
@@ -90,7 +101,7 @@ function CodeFrame({ html, sandbox }: { html: string; sandbox: string }) {
 			title="Keating animation"
 			src={src}
 			sandbox={sandbox}
-			className="block aspect-video w-full border-0 bg-black"
+			className={css({ display: "block", aspectRatio: "16 / 9", width: "100%", border: 0, background: "black" })}
 		/>
 	);
 }
@@ -114,7 +125,7 @@ function useBlobUrl(html: string): string {
 }
 
 function ErrorBody({ message }: { message: string }) {
-	return <div className="p-4 text-sm text-rose-500">{message}</div>;
+	return <div className={css({ padding: "1rem", fontSize: "0.875rem", color: "#f43f5e" })}>{message}</div>;
 }
 
 export function parseAnimationPayload(payload: string): AnimationPayload | null {

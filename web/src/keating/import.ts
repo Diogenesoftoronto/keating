@@ -107,7 +107,7 @@ export async function importFineTuneFiles(
 	files: WebFineTuneImportFile[],
 	options: { title?: string; model?: Model<Api>; thinkingLevel?: ThinkingLevel } = {},
 ): Promise<WebFineTuneImportResult> {
-	const [{ sessionPreview, sessionUsage }, { getInitPromise, sessions }, { resolveAvailableChatModel }, { loadKeatingUiSettings }] =
+	const [{ sessionPreview, sessionSearchText, sessionUsage }, { getInitPromise, sessions }, { resolveAvailableChatModel }, { loadKeatingUiSettings }] =
 		await Promise.all([
 			import("../hooks/session-metadata"),
 			import("../hooks/keating-storage"),
@@ -129,6 +129,7 @@ export async function importFineTuneFiles(
 			thinkingLevel: session.thinkingLevel,
 			...sessionModelMetadata(session.model),
 			preview: sessionPreview(session.messages),
+			searchText: sessionSearchText(session.messages),
 		};
 		await sessions.save(session, metadata);
 	}

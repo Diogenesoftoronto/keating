@@ -1,5 +1,13 @@
+import { css } from "../../../styled-system/css";
+import { settingsCard } from "../../../styled-system/recipes";
 import { Toggle } from "../Toggle";
 import type { ModelPrefs } from "../../keating/model-prefs";
+
+const sectionClass = css({ display: "flex", flexDirection: "column", gap: "1rem", scrollMarginTop: "5rem" });
+const sectionTitleClass = css({ marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 600, color: "var(--foreground)" });
+const sectionDescriptionClass = css({ fontSize: "0.875rem", color: "var(--muted-foreground)" });
+const rowStackClass = css({ display: "flex", flexDirection: "column", gap: "0.75rem" });
+const providerLabelClass = css({ fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)", textTransform: "capitalize" });
 
 export function ProviderVisibilitySection({
 	providers,
@@ -11,19 +19,19 @@ export function ProviderVisibilitySection({
 	onToggle: (provider: string, hidden: boolean) => void;
 }) {
 	return (
-		<div id="settings-section-provider-visibility" className="flex flex-col gap-4 scroll-mt-20">
+		<div id="settings-section-provider-visibility" className={sectionClass}>
 			<div>
-				<h3 className="text-sm font-semibold text-foreground mb-2">Provider Visibility</h3>
-				<p className="text-sm text-muted-foreground">
+				<h3 className={sectionTitleClass}>Provider Visibility</h3>
+				<p className={sectionDescriptionClass}>
 					Hide providers you don't use to declutter the model selector.
 				</p>
 			</div>
-			<div className="flex flex-col gap-3">
+			<div className={rowStackClass}>
 				{providers.map((provider) => {
 					const hidden = modelPrefs.hiddenProviders.includes(provider);
 					return (
-						<div key={provider} className="flex items-center justify-between gap-4 rounded-lg border border-border p-3">
-							<div className="text-sm font-medium text-foreground capitalize">{provider}</div>
+						<div key={provider} className={settingsCard({ tone: "subtle" })}>
+							<div className={providerLabelClass}>{provider}</div>
 							<Toggle
 								tone="success"
 								aria-label={hidden ? "Hidden" : "Visible"}

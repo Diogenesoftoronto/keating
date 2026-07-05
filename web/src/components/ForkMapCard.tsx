@@ -1,14 +1,14 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import {
 	Check,
 	GitBranch,
-	Loader2,
 	MoreVertical,
 	Pencil,
 	Sparkles,
 	Trash2,
 	X,
 } from "lucide-react";
+import { css } from "../../styled-system/css";
 import type { SessionMetadata } from "../types/session";
 import type { SessionTreeNode } from "./session-tree";
 import { countDescendants, flattenWithGuides } from "./fork-map-layout";
@@ -23,6 +23,9 @@ export interface ForkMapCardProps {
 	onRename: (sessionId: string, title: string) => void | Promise<void>;
 	onDelete: (sessionId: string) => void | Promise<void>;
 }
+
+import { OverflowMenu, type OverflowMenuItem } from "./OverflowMenu";
+import { Spinner } from "./Spinner";
 
 function formatTime(isoString: string) {
 	const date = new Date(isoString);
@@ -48,35 +51,35 @@ export function ForkMapCard({
 	const forkCount = countDescendants(root);
 
 	return (
-		<section className="flex flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-sm">
+		<section className={css({ display: "flex", flexDirection: "column", overflow: "hidden", borderRadius: "1rem", border: "1px solid var(--border)", background: "var(--background)", boxShadow: "var(--shadow-sm)" })}>
 			<header
-				className="flex items-center gap-2 px-3.5 py-2.5"
+				className={css({ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.625rem 0.875rem" })}
 				style={{ background: "linear-gradient(135deg, var(--accent) 0%, transparent 70%)" }}
 			>
-				<GitBranch size={15} className="shrink-0 text-primary" />
-				<span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">{root.session.title}</span>
-				<span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-medium text-primary">
+				<GitBranch size={15} className={css({ flexShrink: 0, color: "var(--primary)" })} />
+				<span className={css({ minWidth: 0, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 600, color: "var(--foreground)" })}>{root.session.title}</span>
+				<span className={css({ flexShrink: 0, borderRadius: "9999px", background: "color-mix(in srgb, var(--primary) 15%, transparent)", padding: "0.125rem 0.5rem", fontSize: "0.625rem", fontWeight: 500, color: "var(--primary)" })}>
 					{forkCount} {forkCount === 1 ? "fork" : "forks"}
 				</span>
 			</header>
 
-			<div className="px-2 pb-2.5 pt-1">
+			<div className={css({ padding: "0.25rem 0.5rem 0.625rem" })}>
 				{rows.map((row) => (
-					<div key={row.session.id} className="flex items-stretch">
+					<div key={row.session.id} className={css({ display: "flex", alignItems: "stretch" })}>
 						{row.ancestorHasNext.map((cont, i) => (
-							<span key={i} className="relative w-4 shrink-0">
+							<span key={i} className={css({ position: "relative", width: "1rem", flexShrink: 0 })}>
 								{cont ? (
-									<span className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-border" />
+									<span className={css({ position: "absolute", left: "50%", top: 0, height: "100%", width: "1px", transform: "translateX(-50%)", background: "var(--border)" })} />
 								) : null}
 							</span>
 						))}
 						{row.depth >= 1 ? (
-							<span className="relative w-4 shrink-0" aria-hidden="true">
-								<span className="absolute left-1/2 top-0 h-1/2 w-px -translate-x-1/2 bg-border" />
+							<span className={css({ position: "relative", width: "1rem", flexShrink: 0 })} aria-hidden="true">
+								<span className={css({ position: "absolute", left: "50%", top: 0, height: "50%", width: "1px", transform: "translateX(-50%)", background: "var(--border)" })} />
 								{!row.isLast ? (
-									<span className="absolute left-1/2 top-1/2 h-1/2 w-px -translate-x-1/2 bg-border" />
+									<span className={css({ position: "absolute", left: "50%", top: "50%", height: "50%", width: "1px", transform: "translateX(-50%)", background: "var(--border)" })} />
 								) : null}
-								<span className="absolute left-1/2 top-1/2 h-px w-1/2 bg-border" />
+								<span className={css({ position: "absolute", left: "50%", top: "50%", height: "1px", width: "50%", background: "var(--border)" })} />
 							</span>
 						) : null}
 						<ForkNode
@@ -120,22 +123,11 @@ function ForkNode({
 	onRename,
 	onDelete,
 }: ForkNodeProps) {
-	const [menuOpen, setMenuOpen] = useState(false);
 	const [renaming, setRenaming] = useState(false);
 	const [confirmingDelete, setConfirmingDelete] = useState(false);
 	const [draft, setDraft] = useState(session.title);
 	const [busy, setBusy] = useState(false);
 	const [suggesting, setSuggesting] = useState(false);
-	const menuRef = useRef<HTMLDivElement>(null);
-
-	useEffect(() => {
-		if (!menuOpen) return;
-		const onDown = (event: MouseEvent) => {
-			if (!menuRef.current?.contains(event.target as Node)) setMenuOpen(false);
-		};
-		window.addEventListener("mousedown", onDown);
-		return () => window.removeEventListener("mousedown", onDown);
-	}, [menuOpen]);
 
 	const saveRename = async () => {
 		const next = draft.trim();
@@ -167,7 +159,6 @@ function ForkNode({
 		setSuggesting(true);
 		try {
 			const suggestion = await onSuggestTitle(session.id);
-			setMenuOpen(false);
 			setConfirmingDelete(false);
 			setDraft(suggestion);
 			setRenaming(true);
@@ -178,9 +169,9 @@ function ForkNode({
 
 	if (renaming) {
 		return (
-			<div className="my-0.5 flex flex-1 items-center gap-1.5 rounded-lg border border-border bg-background/60 p-1.5">
+			<div className={css({ marginBlock: "0.125rem", display: "flex", flex: 1, alignItems: "center", gap: "0.375rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "color-mix(in srgb, var(--background) 60%, transparent)", padding: "0.375rem" })}>
 				<input
-					className="min-w-0 flex-1 rounded-md border border-border bg-background px-2 py-1 text-xs outline-none focus:border-ring"
+					className={css({ minWidth: 0, flex: 1, borderRadius: "0.375rem", border: "1px solid var(--border)", background: "var(--background)", padding: "0.25rem 0.5rem", fontSize: "0.75rem", outline: "none", _focus: { borderColor: "var(--ring)" } })}
 					value={draft}
 					autoFocus
 					disabled={busy}
@@ -190,10 +181,10 @@ function ForkNode({
 						if (event.key === "Escape") setRenaming(false);
 					}}
 				/>
-				<button type="button" className="inline-flex h-6 w-6 items-center justify-center rounded hover:bg-accent" aria-label="Cancel rename" onClick={() => setRenaming(false)}>
+				<button type="button" className={css({ display: "inline-flex", height: "1.5rem", width: "1.5rem", alignItems: "center", justifyContent: "center", borderRadius: "0.25rem", _hover: { background: "var(--accent)" } })} aria-label="Cancel rename" onClick={() => setRenaming(false)}>
 					<X size={13} />
 				</button>
-				<button type="button" className="inline-flex h-6 w-6 items-center justify-center rounded bg-primary text-primary-foreground disabled:opacity-50" aria-label="Save rename" disabled={busy} onClick={() => void saveRename()}>
+				<button type="button" className={css({ display: "inline-flex", height: "1.5rem", width: "1.5rem", alignItems: "center", justifyContent: "center", borderRadius: "0.25rem", background: "var(--primary)", color: "var(--primary-foreground)", _disabled: { opacity: 0.5 } })} aria-label="Save rename" disabled={busy} onClick={() => void saveRename()}>
 					<Check size={13} />
 				</button>
 			</div>
@@ -202,11 +193,11 @@ function ForkNode({
 
 	if (confirmingDelete) {
 		return (
-			<div className="my-0.5 flex flex-1 items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-1.5">
-				<span className="text-[11px] text-foreground">Delete fork?</span>
-				<div className="flex gap-1.5">
-					<button type="button" className="rounded px-2 py-1 text-[11px] hover:bg-accent" onClick={() => setConfirmingDelete(false)}>Cancel</button>
-					<button type="button" className="rounded bg-destructive px-2 py-1 text-[11px] text-destructive-foreground disabled:opacity-50" disabled={busy} onClick={() => void confirmDelete()}>Delete</button>
+			<div className={css({ marginBlock: "0.125rem", display: "flex", flex: 1, alignItems: "center", justifyContent: "space-between", gap: "0.5rem", borderRadius: "0.5rem", border: "1px solid color-mix(in srgb, var(--destructive) 30%, transparent)", background: "color-mix(in srgb, var(--destructive) 5%, transparent)", padding: "0.375rem" })}>
+				<span className={css({ fontSize: "0.6875rem", color: "var(--foreground)" })}>Delete fork?</span>
+				<div className={css({ display: "flex", gap: "0.375rem" })}>
+					<button type="button" className={css({ borderRadius: "0.25rem", padding: "0.25rem 0.5rem", fontSize: "0.6875rem", _hover: { background: "var(--accent)" } })} onClick={() => setConfirmingDelete(false)}>Cancel</button>
+					<button type="button" className={css({ borderRadius: "0.25rem", background: "var(--destructive)", padding: "0.25rem 0.5rem", fontSize: "0.6875rem", color: "var(--destructive-foreground)", _disabled: { opacity: 0.5 } })} disabled={busy} onClick={() => void confirmDelete()}>Delete</button>
 				</div>
 			</div>
 		);
@@ -214,54 +205,86 @@ function ForkNode({
 
 	return (
 		<div
-			className={`group my-0.5 flex min-w-0 flex-1 items-center gap-1 rounded-lg border px-2 py-1.5 transition-colors ${
-				active ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:bg-accent/40"
-			}`}
+			className={css({
+				marginBlock: "0.125rem",
+				display: "flex",
+				minWidth: 0,
+				flex: 1,
+				alignItems: "center",
+				gap: "0.25rem",
+				borderRadius: "0.5rem",
+				border: "1px solid",
+				borderColor: active ? "var(--primary)" : "var(--border)",
+				background: active ? "color-mix(in srgb, var(--primary) 5%, transparent)" : undefined,
+				padding: "0.375rem 0.5rem",
+				boxShadow: active ? "0 0 0 1px var(--primary)" : undefined,
+				transition: "color 150ms, background-color 150ms, border-color 150ms",
+				_hover: active ? undefined : { background: "color-mix(in srgb, var(--accent) 40%, transparent)" },
+			})}
 		>
-			<button type="button" className="flex min-w-0 flex-1 flex-col text-left" onClick={() => void onLoad(session.id)}>
-				<span className="flex items-center gap-1.5">
-					<span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: isRoot ? "var(--primary)" : "var(--muted-foreground)" }} aria-hidden="true" />
-					<span className="truncate text-xs font-medium text-foreground">{session.title}</span>
+			<button type="button" className={css({ display: "flex", minWidth: 0, flex: 1, flexDirection: "column", textAlign: "left" })} onClick={() => void onLoad(session.id)}>
+				<span className={css({ display: "flex", alignItems: "center", gap: "0.375rem" })}>
+					<span className={css({ height: "0.375rem", width: "0.375rem", flexShrink: 0, borderRadius: "9999px" })} style={{ background: isRoot ? "var(--primary)" : "var(--muted-foreground)" }} aria-hidden="true" />
+					<span className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.75rem", fontWeight: 500, color: "var(--foreground)" })}>{session.title}</span>
 				</span>
-				<span className="ml-3 text-[10px] text-muted-foreground">
+				<span className={css({ marginLeft: "0.75rem", fontSize: "0.625rem", color: "var(--muted-foreground)" })}>
 					{isRoot ? "Original" : "Fork"} · {formatTime(session.lastModified)} · {session.messageCount} msg
 				</span>
 			</button>
-			<div ref={menuRef} className="relative shrink-0">
-				<button
-					type="button"
-					className="inline-flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-					aria-label="Fork actions"
-					aria-haspopup="menu"
-					aria-expanded={menuOpen}
-					disabled={suggesting}
-					onClick={() => setMenuOpen((open) => !open)}
-				>
-					{busy ? <Loader2 size={13} className="animate-spin" /> : <MoreVertical size={14} />}
-				</button>
-				{menuOpen ? (
-					<div role="menu" className="absolute right-0 top-7 z-20 w-32 overflow-hidden rounded-lg border border-border bg-background py-1 shadow-lg">
-						<button type="button" role="menuitem" className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs hover:bg-accent disabled:opacity-50" disabled={forking} onClick={() => { setMenuOpen(false); void onFork(session.id); }}>
-							{forking ? <Loader2 size={12} className="animate-spin" /> : <GitBranch size={12} />}
-							Fork
-						</button>
-						{onSuggestTitle ? (
-							<button type="button" role="menuitem" className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs hover:bg-accent disabled:opacity-50" disabled={busy || suggesting} onClick={() => void suggestTitle()}>
-								{suggesting ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
-								Suggest
-							</button>
-						) : null}
-						<button type="button" role="menuitem" className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs hover:bg-accent" onClick={() => { setMenuOpen(false); setDraft(session.title); setRenaming(true); }}>
-							<Pencil size={12} />
-							Rename
-						</button>
-						<button type="button" role="menuitem" className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-destructive hover:bg-destructive/10" onClick={() => { setMenuOpen(false); setConfirmingDelete(true); }}>
-							<Trash2 size={12} />
-							Delete
-						</button>
-					</div>
-				) : null}
-			</div>
+			<OverflowMenu
+				width="8rem"
+				items={[
+					{
+						key: "fork",
+						label: "Fork",
+						icon: forking ? <Spinner size={12} /> : <GitBranch size={12} />,
+						disabled: forking,
+						onSelect: () => void onFork(session.id),
+					},
+					...(onSuggestTitle
+						? [
+								{
+									key: "suggest",
+									label: "Suggest",
+									icon: suggesting ? <Spinner size={12} /> : <Sparkles size={12} />,
+									disabled: busy || suggesting,
+									onSelect: () => void suggestTitle(),
+								} satisfies OverflowMenuItem,
+							]
+						: []),
+					{
+						key: "rename",
+						label: "Rename",
+						icon: <Pencil size={12} />,
+						onSelect: () => {
+							setDraft(session.title);
+							setRenaming(true);
+						},
+					},
+					{
+						key: "delete",
+						label: "Delete",
+						icon: <Trash2 size={12} />,
+						destructive: true,
+						onSelect: () => setConfirmingDelete(true),
+					},
+				]}
+			>
+				{({ open }) => (
+					<button
+						type="button"
+						className={css({ display: "inline-flex", height: "1.5rem", width: "1.5rem", alignItems: "center", justifyContent: "center", borderRadius: "9999px", color: "var(--muted-foreground)", _hover: { background: "var(--accent)", color: "var(--accent-foreground)" } })}
+						aria-label="Fork actions"
+						aria-haspopup="menu"
+						aria-expanded={open}
+						disabled={suggesting}
+					>
+						<Spinner size={13} loading={busy}>
+							<MoreVertical size={14} />
+						</Spinner>
+					</button>
+				)}
+			</OverflowMenu>
 		</div>
 	);
 }

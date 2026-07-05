@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { css, cx } from "../../styled-system/css";
 
 export function Footer() {
   return (
@@ -111,17 +112,57 @@ export function Footer() {
 
 export function SimpleFooter() {
   return (
-    <footer className="py-8 px-6 border-t-2 border-border">
-      <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-center font-terminal text-foreground/60">
-        <Link to="/" className="hover:text-[#d5604b] transition-colors">
+    <footer
+      className={css({
+        paddingBlock: "2rem",
+        paddingInline: "1.5rem",
+        borderTop: "2px solid var(--border)"
+      })}
+    >
+      <div
+        className={cx(
+          "font-terminal",
+          css({
+            maxWidth: "72rem",
+            marginInline: "auto",
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            justifyContent: "center",
+            columnGap: "0.75rem",
+            rowGap: "0.5rem",
+            textAlign: "center",
+            color: "color-mix(in srgb, var(--foreground) 60%, transparent)"
+          })
+        )}
+      >
+        <Link
+          to="/"
+          className={css({
+            transition: "color 0.15s ease",
+            _hover: { color: "#d5604b" }
+          })}
+        >
           [BACK_TO_HOME]
         </Link>
         <span aria-hidden="true">//</span>
-        <Link to="/terms" className="hover:text-[#d5604b] transition-colors">
+        <Link
+          to="/terms"
+          className={css({
+            transition: "color 0.15s ease",
+            _hover: { color: "#d5604b" }
+          })}
+        >
           Terms of Service
         </Link>
         <span aria-hidden="true">//</span>
-        <Link to="/privacy" className="hover:text-[#d5604b] transition-colors">
+        <Link
+          to="/privacy"
+          className={css({
+            transition: "color 0.15s ease",
+            _hover: { color: "#d5604b" }
+          })}
+        >
           Privacy Policy
         </Link>
       </div>

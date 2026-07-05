@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getAppStorage } from "@earendil-works/pi-web-ui";
 import { KeyRound, X } from "lucide-react";
+import { css } from "../../styled-system/css";
 import { handleTutorialLinkClick, tutorialApiKeyHref } from "../lib/tutorial-links";
 import { isDioProvider } from "../dio-provider";
 import { DioAccessPromptDialog, promptDioAccess } from "./DioAccessPromptDialog";
@@ -112,29 +113,29 @@ export function KeatingApiKeyPromptDialog() {
 	};
 
 	return (
-		<div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/70 p-4 backdrop-blur-sm">
-			<div className="w-full max-w-md rounded-lg border border-border bg-background shadow-xl">
-				<div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-					<div className="flex items-center gap-2">
-						<KeyRound size={16} className="text-primary" />
-						<h2 className="text-sm font-semibold">API key required</h2>
+		<div className={css({ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "color-mix(in srgb, var(--background) 70%, transparent)", padding: "1rem", backdropFilter: "blur(4px)" })}>
+			<div className={css({ width: "100%", maxWidth: "28rem", borderRadius: "0.5rem", border: "1px solid var(--border)", backgroundColor: "var(--background)", boxShadow: "var(--shadow-xl)" })}>
+				<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", borderBottom: "1px solid var(--border)", paddingInline: "1rem", paddingBlock: "0.75rem" })}>
+					<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
+						<KeyRound size={16} className={css({ color: "var(--primary)" })} />
+						<h2 className={css({ fontSize: "0.875rem", fontWeight: 600 })}>API key required</h2>
 					</div>
 					<button
 						type="button"
-						className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+						className={css({ display: "inline-flex", height: "2rem", width: "2rem", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", color: "var(--muted-foreground)", transitionProperty: "color, background-color, border-color", transitionDuration: "150ms", _hover: { background: "var(--accent)", color: "var(--foreground)" } })}
 						onClick={() => closePrompt(false)}
 						aria-label="Close"
 					>
 						<X size={16} />
 					</button>
 				</div>
-				<div className="space-y-3 p-4">
-					<p className="text-sm text-muted-foreground">
+				<div className={css({ display: "flex", flexDirection: "column", gap: "0.75rem", padding: "1rem" })}>
+					<p className={css({ fontSize: "0.875rem", color: "var(--muted-foreground)" })}>
 						Add a local browser API key for {label || request.provider} to use this model.
 					</p>
 					<input
 						type="password"
-						className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+						className={css({ width: "100%", borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "var(--background)", paddingInline: "0.75rem", paddingBlock: "0.5rem", fontSize: "0.875rem" })}
 						placeholder={`${request.provider} API key`}
 						value={apiKey}
 						onChange={(event) => setApiKey(event.target.value)}
@@ -144,24 +145,24 @@ export function KeatingApiKeyPromptDialog() {
 						}}
 						autoFocus
 					/>
-					<div className="flex flex-wrap items-center justify-between gap-3">
+					<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" })}>
 						<a
 							href={tutorialApiKeyHref(request.provider)}
-							className="text-xs text-primary underline underline-offset-2"
+							className={css({ fontSize: "0.75rem", color: "var(--primary)", textDecorationLine: "underline", textUnderlineOffset: "2px" })}
 							onClick={(event) => handleTutorialLinkClick(event.nativeEvent, tutorialApiKeyHref(request.provider))}
 						>
 							Need a key? Follow the tutorial
 						</a>
 						<button
 							type="button"
-							className="inline-flex h-9 items-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+							className={css({ display: "inline-flex", height: "2.25rem", alignItems: "center", borderRadius: "0.375rem", backgroundColor: "var(--primary)", paddingInline: "0.75rem", fontSize: "0.875rem", fontWeight: 500, color: "var(--primary-foreground)", transitionProperty: "color, background-color, border-color", transitionDuration: "150ms", _hover: { backgroundColor: "color-mix(in srgb, var(--primary) 90%, black)" }, _disabled: { opacity: 0.5 } })}
 							onClick={save}
 							disabled={saving}
 						>
 							{saving ? "Saving..." : "Save key"}
 						</button>
 					</div>
-					{error && <div className="text-xs text-destructive">{error}</div>}
+					{error && <div className={css({ fontSize: "0.75rem", color: "var(--destructive)" })}>{error}</div>}
 				</div>
 			</div>
 		</div>

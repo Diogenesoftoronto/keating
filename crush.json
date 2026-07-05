@@ -1,0 +1,85 @@
+{
+  "$schema": "https://charm.land/crush.json",
+  "lsp": {
+    "typescript": {
+      "command": "typescript-language-server",
+      "args": ["--stdio"],
+      "root_markers": ["tsconfig.json", "package.json"],
+      "options": {
+        "tsserver": {
+          "log": "off"
+        }
+      }
+    },
+    "css": {
+      "command": "vscode-css-language-server",
+      "args": ["--stdio"]
+    },
+    "json": {
+      "command": "vscode-json-language-server",
+      "args": ["--stdio"]
+    },
+    "yaml": {
+      "command": "yaml-language-server",
+      "args": ["--stdio"]
+    },
+    "toml": {
+      "command": "taplo",
+      "args": ["lsp", "stdio"]
+    },
+    "dockerfile": {
+      "command": "docker-langserver",
+      "args": ["--stdio"]
+    }
+  },
+  "options": {
+    "skills_paths": ["./.claude/skills"],
+    "disabled_skills": [
+      "crush-config",
+      "impeccable",
+      "playwriter",
+      "modern-llms",
+      "find-skills",
+      "hivemind-search",
+      "hivemind-store",
+      "hivemind-vote",
+      "managing-den",
+      "managing-guix",
+      "managing-nix",
+      "using-replay",
+      "using-skate",
+      "dhall-guix-nix",
+      "open-prose",
+      "prose-program-orchestrator",
+      "vet",
+      "curry",
+      "working-with-qwik",
+      "jq"
+    ],
+    "tui": {
+      "compact_mode": false,
+      "diff_mode": "unified"
+    },
+    "auto_lsp": true
+  },
+  "permissions": {
+    "allowed_tools": [
+      "view",
+      "ls",
+      "grep",
+      "glob",
+      "edit",
+      "multiedit",
+      "write",
+      "bash",
+      "agent",
+      "fetch",
+      "download",
+      "lsp_diagnostics",
+      "lsp_references",
+      "lsp_restart",
+      "crush_info",
+      "crush_logs"
+    ]
+  }
+}
