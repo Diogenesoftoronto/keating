@@ -1,0 +1,65 @@
+{
+  "cli_version": "0.7.7",
+  "checkpoint_id": "6ea22ba871fd",
+  "session_id": "06fd7ae3-ed1e-415c-85b9-3122ebcf90e0",
+  "strategy": "manual-commit",
+  "created_at": "2026-07-05T18:42:11.221094426Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "bun.lock",
+    "package.json",
+    "src/core/goal-state.ts",
+    "src/core/goals.ts",
+    "src/core/paths.ts",
+    "src/pi/hyperteacher-extension.ts",
+    "web/src/App.tsx",
+    "web/src/components/CommitReviewArticle.tsx",
+    "web/src/pages/LatestCommitReview.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5[1m]",
+  "turn_id": "6bbf83753e8d",
+  "token_usage": {
+    "input_tokens": 538,
+    "cache_creation_tokens": 4356766,
+    "cache_read_tokens": 48407693,
+    "output_tokens": 158797,
+    "api_call_count": 270
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-07-05T18:42:11.135830233Z",
+    "agent_lines": 722,
+    "agent_removed": 1367,
+    "human_added": 14304,
+    "human_modified": 5,
+    "human_removed": 0,
+    "total_committed": 15031,
+    "total_lines_changed": 25087,
+    "agent_percentage": 8.327021963566787,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 85,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "crush.json": 85
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 1357,
+      "agent_lines_removed": 17
+    }
+  ]
+}

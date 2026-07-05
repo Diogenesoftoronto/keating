@@ -1,0 +1,1 @@
+the cli does not have the comparable tooling and interface design compared to the web ui. I  would like that parity to be resolved similar rendering should occur in the tui as well

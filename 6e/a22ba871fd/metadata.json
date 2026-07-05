@@ -3,10 +3,12 @@
   "checkpoint_id": "6ea22ba871fd",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 25,
+  "checkpoints_count": 26,
   "files_touched": [
     "bun.lock",
     "package.json",
+    "src/core/goal-state.ts",
+    "src/core/goals.ts",
     "src/core/paths.ts",
     "src/pi/hyper-teacher/commands/packages.ts",
     "src/pi/hyper-teacher/header-component.ts",
@@ -25,13 +27,19 @@
       "transcript": "/6e/a22ba871fd/0/full.jsonl",
       "content_hash": "/6e/a22ba871fd/0/content_hash.txt",
       "prompt": "/6e/a22ba871fd/0/prompt.txt"
+    },
+    {
+      "metadata": "/6e/a22ba871fd/1/metadata.json",
+      "transcript": "/6e/a22ba871fd/1/full.jsonl",
+      "content_hash": "/6e/a22ba871fd/1/content_hash.txt",
+      "prompt": "/6e/a22ba871fd/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 258562,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 3736064,
-    "output_tokens": 38696,
-    "api_call_count": 66
+    "input_tokens": 259100,
+    "cache_creation_tokens": 4356766,
+    "cache_read_tokens": 52143757,
+    "output_tokens": 197493,
+    "api_call_count": 336
   }
 }
