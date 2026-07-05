@@ -1,0 +1,72 @@
+{
+  "cli_version": "0.7.7",
+  "checkpoint_id": "6ea22ba871fd",
+  "session_id": "92a9fdb7-b473-4755-a24e-abe4d4c951a7",
+  "strategy": "manual-commit",
+  "created_at": "2026-07-05T18:42:12.484307906Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "web/src/components/settings/CloudProviderKeysSection.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-fable-5[1m]",
+  "turn_id": "f97e7e56abfc",
+  "token_usage": {
+    "input_tokens": 33163,
+    "cache_creation_tokens": 1109561,
+    "cache_read_tokens": 18316246,
+    "output_tokens": 100070,
+    "api_call_count": 149
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01AiovCzh3a2vzJWWmaveeSX",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "hivemind-search"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "f97e7e56abfc",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 81,
+        "end": 82,
+        "entry_ids": [
+          "2cf5fedd-b0ae-4fa5-8408-d424f8e387f3"
+        ],
+        "tool_use_id": "toolu_01AiovCzh3a2vzJWWmaveeSX"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01AiovCzh3a2vzJWWmaveeSX"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: hivemind-search",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 6
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-07-05T18:42:12.437635929Z",
+    "agent_lines": 72,
+    "agent_removed": 26,
+    "human_added": 15112,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 15184,
+    "total_lines_changed": 25263,
+    "agent_percentage": 0.38791909116098644,
+    "metric_version": 2
+  }
+}
