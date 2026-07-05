@@ -23,6 +23,7 @@ import {
   X,
 } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { css, cx } from "../../styled-system/css";
 import { useKeatingAgent } from "../hooks/useKeatingAgent";
 import { keatingStorage, sessions } from "../hooks/keating-storage";
 import { useSeo } from "../hooks/useSeo";
@@ -53,6 +54,66 @@ import type {
 } from "../keating/storage";
 
 const GITHUB_ISSUE_URL = "https://github.com/Diogenesoftoronto/keating/issues/new";
+
+const proseBlockClass = css({
+  maxWidth: "none",
+  "& p": { marginBlock: "0.75rem" },
+  "& ul, & ol": { marginBlock: "0.75rem", paddingInlineStart: "1.5rem" },
+  "& code": {
+    fontFamily: "var(--mono-body)",
+    fontSize: "0.875em",
+  },
+});
+
+const iconButtonClass = css({
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: "0.375rem",
+  color: "var(--muted-foreground)",
+  transitionProperty: "color, background-color, border-color, opacity",
+  transitionDuration: "150ms",
+  _hover: {
+    backgroundColor: "var(--accent)",
+    color: "var(--accent-foreground)",
+  },
+});
+
+const actionButtonPandaClass = css({
+  flexShrink: 0,
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: "0.375rem",
+  fontSize: "0.875rem",
+  fontWeight: 500,
+  transitionProperty: "color, background-color, border-color, opacity",
+  transitionDuration: "150ms",
+  _hover: {
+    backgroundColor: "var(--accent)",
+    color: "var(--accent-foreground)",
+  },
+  _disabled: {
+    pointerEvents: "none",
+    opacity: 0.5,
+  },
+});
+
+const menuItemClass = css({
+  display: "flex",
+  alignItems: "center",
+  gap: "0.5rem",
+  borderRadius: "0.375rem",
+  paddingInline: "0.75rem",
+  paddingBlock: "0.5rem",
+  textAlign: "left",
+  fontSize: "0.875rem",
+  transitionProperty: "color, background-color, border-color",
+  transitionDuration: "150ms",
+  _hover: {
+    backgroundColor: "var(--accent)",
+    color: "var(--accent-foreground)",
+  },
+});
 
 // ── Inline artifact types ──────────────────────────────────────────────
 // Mirrors the storage record unions but kept narrow so the inline renderer
@@ -110,7 +171,16 @@ function splitMermaidBlocks(content: string): Array<
 // diagrams without delegating to a child component.
 function InlineMermaidDiagram({ source }: { source: string }) {
   return (
-    <div className="my-3 overflow-auto rounded-lg border border-border bg-muted/30 p-4">
+    <div
+      className={css({
+        marginBlock: "0.75rem",
+        overflow: "auto",
+        borderRadius: "0.5rem",
+        border: "1px solid var(--border)",
+        backgroundColor: "color-mix(in srgb, var(--muted) 30%, transparent)",
+        padding: "1rem",
+      })}
+    >
       <MermaidRenderer content={source} />
     </div>
   );
@@ -122,18 +192,18 @@ function InlineMarkdownWithDiagrams({ content }: { content: string }) {
   const parts = splitMermaidBlocks(content);
   if (parts.length === 0) {
     return (
-      <div className="prose prose-sm dark:prose-invert max-w-none">
+      <div className={proseBlockClass}>
         <MarkdownBlock content={content} />
       </div>
     );
   }
   return (
-    <div className="space-y-3">
+    <div className={css({ display: "grid", gap: "0.75rem" })}>
       {parts.map((part, i) =>
         part.type === "mermaid" ? (
           <InlineMermaidDiagram key={i} source={part.content} />
         ) : (
-          <div key={i} className="prose prose-sm dark:prose-invert max-w-none">
+          <div key={i} className={proseBlockClass}>
             <MarkdownBlock content={part.content} />
           </div>
         ),
@@ -195,32 +265,102 @@ function InlineArtifactCard({
   })();
 
   return (
-    <article className="rounded-lg border border-border bg-card text-card-foreground shadow-sm">
-      <header className="flex items-start gap-3 border-b border-border px-4 py-3">
+    <article
+      className={css({
+        borderRadius: "0.5rem",
+        border: "1px solid var(--border)",
+        backgroundColor: "var(--card)",
+        color: "var(--card-foreground)",
+        boxShadow: "var(--shadow-card)",
+      })}
+    >
+      <header
+        className={css({
+          display: "flex",
+          alignItems: "flex-start",
+          gap: "0.75rem",
+          borderBottom: "1px solid var(--border)",
+          paddingInline: "1rem",
+          paddingBlock: "0.75rem",
+        })}
+      >
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+          className={cx(
+            iconButtonClass,
+            css({ marginTop: "0.125rem", width: "1.5rem", height: "1.5rem", flexShrink: 0 }),
+          )}
           aria-label={expanded ? "Collapse artifact" : "Expand artifact"}
           aria-expanded={expanded}
         >
           {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         </button>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-            <span className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-2 py-0.5">
+        <div className={css({ minWidth: 0, flex: 1 })}>
+          <div
+            className={css({
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              fontSize: "0.75rem",
+              fontWeight: 500,
+              color: "var(--muted-foreground)",
+            })}
+          >
+            <span
+              className={css({
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.25rem",
+                borderRadius: "0.375rem",
+                border: "1px solid var(--border)",
+                backgroundColor: "color-mix(in srgb, var(--muted) 40%, transparent)",
+                paddingInline: "0.5rem",
+                paddingBlock: "0.125rem",
+              })}
+            >
               {meta.icon}
               {meta.label}
             </span>
-            {subline && <span className="text-muted-foreground">· {subline}</span>}
+            {subline && (
+              <span className={css({ color: "var(--muted-foreground)" })}>
+                · {subline}
+              </span>
+            )}
           </div>
-          <h3 className="mt-0.5 truncate text-sm font-semibold">{heading}</h3>
+          <h3
+            className={css({
+              marginTop: "0.125rem",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              fontSize: "0.875rem",
+              fontWeight: 600,
+            })}
+          >
+            {heading}
+          </h3>
         </div>
-        <div className="flex shrink-0 items-center gap-1">
+        <div
+          className={css({
+            display: "flex",
+            flexShrink: 0,
+            alignItems: "center",
+            gap: "0.25rem",
+          })}
+        >
           <button
             type="button"
             onClick={onOpenInBrowser}
-            className="inline-flex h-7 items-center rounded-md border border-border px-2 text-xs hover:bg-accent hover:text-accent-foreground"
+            className={cx(
+              iconButtonClass,
+              css({
+                height: "1.75rem",
+                border: "1px solid var(--border)",
+                paddingInline: "0.5rem",
+                fontSize: "0.75rem",
+              }),
+            )}
             title="Open in artifact browser"
           >
             Open
@@ -228,7 +368,7 @@ function InlineArtifactCard({
           <button
             type="button"
             onClick={onDismiss}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            className={cx(iconButtonClass, css({ width: "1.75rem", height: "1.75rem" }))}
             aria-label="Dismiss artifact"
             title="Dismiss"
           >
@@ -237,7 +377,7 @@ function InlineArtifactCard({
         </div>
       </header>
       {expanded && (
-        <div className="px-4 py-3 text-sm">
+        <div className={css({ paddingInline: "1rem", paddingBlock: "0.75rem", fontSize: "0.875rem" })}>
           {renderInlineArtifactBody(artifact)}
         </div>
       )}
@@ -253,8 +393,17 @@ function renderInlineArtifactBody(artifact: InlineArtifact) {
       return <InlineMermaidDiagram source={artifact.data.mmdContent} />;
     case "animation":
       return (
-        <div className="space-y-3">
-          <div className="rounded-md border border-border bg-muted/20 p-3 text-xs text-muted-foreground">
+        <div className={css({ display: "grid", gap: "0.75rem" })}>
+          <div
+            className={css({
+              borderRadius: "0.375rem",
+              border: "1px solid var(--border)",
+              backgroundColor: "color-mix(in srgb, var(--muted) 20%, transparent)",
+              padding: "0.75rem",
+              fontSize: "0.75rem",
+              color: "var(--muted-foreground)",
+            })}
+          >
             {artifact.data.scene ? "Scene ready" : "Storyboard only"} ·{" "}
             {artifact.data.manifest ? "manifest attached" : "no manifest"}
           </div>
@@ -263,25 +412,37 @@ function renderInlineArtifactBody(artifact: InlineArtifact) {
       );
     case "deck":
       return (
-        <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">
+        <div className={css({ display: "grid", gap: "0.5rem" })}>
+          <p className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
             {artifact.data.cards.length} cards · open in the browser for spaced
             repetition review.
           </p>
-          <ul className="space-y-1 text-sm">
+          <ul className={css({ display: "grid", gap: "0.25rem", fontSize: "0.875rem" })}>
             {artifact.data.cards.slice(0, 5).map((c) => (
               <li
                 key={c.id}
-                className="rounded-md border border-border bg-background px-3 py-2"
+                className={css({
+                  borderRadius: "0.375rem",
+                  border: "1px solid var(--border)",
+                  backgroundColor: "var(--background)",
+                  paddingInline: "0.75rem",
+                  paddingBlock: "0.5rem",
+                })}
               >
-                <div className="text-xs uppercase text-muted-foreground">
+                <div
+                  className={css({
+                    fontSize: "0.75rem",
+                    textTransform: "uppercase",
+                    color: "var(--muted-foreground)",
+                  })}
+                >
                   {c.front}
                 </div>
-                <div className="text-sm">{c.back}</div>
+                <div className={css({ fontSize: "0.875rem" })}>{c.back}</div>
               </li>
             ))}
             {artifact.data.cards.length > 5 && (
-              <li className="text-xs text-muted-foreground">
+              <li className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
                 +{artifact.data.cards.length - 5} more…
               </li>
             )}
@@ -300,11 +461,19 @@ function renderInlineArtifactBody(artifact: InlineArtifact) {
       return <InlineMarkdownWithDiagrams content={artifact.data.report} />;
     case "improvement":
       return (
-        <div className="space-y-2">
-          <p className="text-sm">{artifact.data.hypothesis}</p>
-          <div className="rounded-md border border-border bg-background p-3 text-xs">
-            <div className="font-medium">Targets</div>
-            <div className="mt-1 text-muted-foreground">
+        <div className={css({ display: "grid", gap: "0.5rem" })}>
+          <p className={css({ fontSize: "0.875rem" })}>{artifact.data.hypothesis}</p>
+          <div
+            className={css({
+              borderRadius: "0.375rem",
+              border: "1px solid var(--border)",
+              backgroundColor: "var(--background)",
+              padding: "0.75rem",
+              fontSize: "0.75rem",
+            })}
+          >
+            <div className={css({ fontWeight: 500 })}>Targets</div>
+            <div className={css({ marginTop: "0.25rem", color: "var(--muted-foreground)" })}>
               {artifact.data.targets || "(unspecified)"}
             </div>
           </div>
@@ -326,11 +495,33 @@ function InlineArtifacts({
   return (
     <section
       aria-label="Inline artifacts"
-      className="border-t border-border bg-muted/20 px-3 py-3 sm:px-4"
+      className={css({
+        borderTop: "1px solid var(--border)",
+        backgroundColor: "color-mix(in srgb, var(--muted) 20%, transparent)",
+        paddingInline: "0.75rem",
+        paddingBlock: "0.75rem",
+        sm: { paddingInline: "1rem" },
+      })}
     >
-      <div className="mx-auto flex max-w-4xl flex-col gap-3">
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span className="font-medium">
+      <div
+        className={css({
+          marginInline: "auto",
+          display: "flex",
+          maxWidth: "56rem",
+          flexDirection: "column",
+          gap: "0.75rem",
+        })}
+      >
+        <div
+          className={css({
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            fontSize: "0.75rem",
+            color: "var(--muted-foreground)",
+          })}
+        >
+          <span className={css({ fontWeight: 500 })}>
             {artifacts.length} inline artifact
             {artifacts.length === 1 ? "" : "s"}
           </span>
@@ -681,28 +872,49 @@ function ChatContent() {
   };
 
   // NOTE: responsive Tailwind display variants (e.g. `hidden md:inline-flex`) are
-  // NOT reliable here. Tailwind is compiled twice — once via `@import "tailwindcss"`
-  // in app.css and again transitively through `@earendil-works/pi-web-ui/app.css`.
-  // The second copy re-emits base `.hidden`/`.inline-flex` AFTER the first copy's
-  // `md:/lg:` variants, so (same layer, same specificity) base wins and the variant
-  // is dead at every width. We instead drive show/hide from unlayered CSS in
-  // app.css via `.chat-only-desktop` (header icons, md+) and `.chat-only-compact`
-  // (overflow-menu duplicates, < md). Unlayered rules beat Tailwind's @layer
-  // utilities regardless of import order, so this is deterministic.
-  const actionButtonClass =
-    "chat-action-button shrink-0 items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50";
+  // NOT reliable here because pi-web-ui ships its own compiled utilities. We
+  // drive show/hide from Panda globalCss via `.chat-only-desktop` (header icons,
+  // md+) and `.chat-only-compact` (overflow-menu duplicates, < md).
+  const actionButtonClass = cx("chat-action-button", actionButtonPandaClass);
   const showPersistenceBanner = persistentStorageStatus === "declined" && !persistentBannerDismissed;
 
   return (
-    <div className={`chat-page-shell w-full flex flex-col bg-background text-foreground overflow-hidden ${forkingSessionId ? "session-forking" : ""}`}>
+    <div
+      className={cx(
+        "chat-page-shell",
+        forkingSessionId ? "session-forking" : "",
+        css({
+          display: "flex",
+          width: "100%",
+          flexDirection: "column",
+          overflow: "hidden",
+          backgroundColor: "var(--background)",
+          color: "var(--foreground)",
+        }),
+      )}
+    >
       {/* Header */}
       <nav
-        className="chat-header flex items-center gap-2 border-b border-border shrink-0 px-2 sm:px-4 py-2 h-14 relative"
+        className={cx(
+          "chat-header",
+          css({
+            position: "relative",
+            display: "flex",
+            height: "3.5rem",
+            flexShrink: 0,
+            alignItems: "center",
+            gap: "0.5rem",
+            borderBottom: "1px solid var(--border)",
+            paddingInline: "0.5rem",
+            paddingBlock: "0.5rem",
+            sm: { paddingInline: "1rem" },
+          }),
+        )}
         aria-label="Chat navigation"
       >
         <button
           type="button"
-          className={`${actionButtonClass} inline-flex lg:hidden`}
+          className={cx(actionButtonClass, css({ display: "inline-flex", lg: { display: "none" } }))}
           title={mobileSidebarOpen ? "Close sessions panel" : "Open sessions panel"}
           aria-label={mobileSidebarOpen ? "Close sessions panel" : "Open sessions panel"}
           aria-pressed={mobileSidebarOpen}
@@ -712,21 +924,47 @@ function ChatContent() {
         </button>
         <Link
           to="/"
-          className="chat-brand inline-flex min-w-0 shrink-0 items-center gap-2 rounded-md px-2 py-1"
+          className={cx(
+            "chat-brand",
+            css({
+              display: "inline-flex",
+              minWidth: 0,
+              flexShrink: 0,
+              alignItems: "center",
+              gap: "0.5rem",
+              borderRadius: "0.375rem",
+              paddingInline: "0.5rem",
+              paddingBlock: "0.25rem",
+            }),
+          )}
           aria-label="Go to Keating home"
         >
           <img
             src="/brand/logo-lockup.png"
             alt="Keating"
-            className="h-6 w-auto object-contain"
+            className={css({ height: "1.5rem", width: "auto", objectFit: "contain" })}
           />
         </Link>
         <span className="chat-mode-badge chat-only-desktop">MODE: SOCRATIC</span>
 
         {/* Actions */}
-        <div className="chat-actions ml-auto flex min-w-0 items-center justify-end gap-1 overflow-hidden sm:flex-1">
+        <div
+          className={cx(
+            "chat-actions",
+            css({
+              marginLeft: "auto",
+              display: "flex",
+              minWidth: 0,
+              alignItems: "center",
+              justifyContent: "flex-end",
+              gap: "0.25rem",
+              overflow: "hidden",
+              sm: { flex: 1 },
+            }),
+          )}
+        >
           <button
-            className={`${actionButtonClass} chat-only-desktop`}
+            className={cx(actionButtonClass, "chat-only-desktop")}
             title="New session"
             aria-label="New session"
             disabled={isPending}
@@ -735,7 +973,7 @@ function ChatContent() {
             <Plus size={16} />
           </button>
           <button
-            className={`${actionButtonClass} inline-flex`}
+            className={cx(actionButtonClass, css({ display: "inline-flex" }))}
             title="Settings"
             aria-label="Settings"
             onClick={openSettings}
@@ -746,7 +984,12 @@ function ChatContent() {
             <ThemeToggle />
           </span>
           <button
-            className={`${actionButtonClass} chat-only-desktop ${shareState === "copied" ? "text-primary" : ""} ${shareState === "error" ? "text-destructive" : ""}`}
+            className={cx(
+              actionButtonClass,
+              "chat-only-desktop",
+              shareState === "copied" ? css({ color: "var(--primary)" }) : "",
+              shareState === "error" ? css({ color: "var(--destructive)" }) : "",
+            )}
             title={
               shareState === "copied"
                 ? "Copied share link"
@@ -761,7 +1004,11 @@ function ChatContent() {
             <Share2 size={16} />
           </button>
           <button
-            className={`${actionButtonClass} chat-only-desktop ${speechEnabled ? "text-primary" : ""}`}
+            className={cx(
+              actionButtonClass,
+              "chat-only-desktop",
+              speechEnabled ? css({ color: "var(--primary)" }) : "",
+            )}
             title={speechEnabled ? "Disable speech" : "Enable speech"}
             aria-pressed={speechEnabled}
             onClick={toggleSpeech}
@@ -769,7 +1016,7 @@ function ChatContent() {
             {speechEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
           </button>
           <button
-            className={`${actionButtonClass} chat-only-desktop`}
+            className={cx(actionButtonClass, "chat-only-desktop")}
             title="Artifacts"
             aria-label="Artifacts"
             onClick={() => setArtifactBrowserOpen(true)}
@@ -778,7 +1025,7 @@ function ChatContent() {
           </button>
           {import.meta.env.DEV && (
             <button
-              className={`${actionButtonClass} chat-only-desktop`}
+              className={cx(actionButtonClass, "chat-only-desktop")}
               title="NodePod runtime"
               aria-label="NodePod runtime"
               onClick={() => setNodePodOpen(true)}
@@ -787,7 +1034,7 @@ function ChatContent() {
             </button>
           )}
           <button
-            className={`${actionButtonClass} chat-only-desktop`}
+            className={cx(actionButtonClass, "chat-only-desktop")}
             title="Learning usage"
             aria-label="Learning usage"
             onClick={() => navigate({ to: "/usage" })}
@@ -795,7 +1042,7 @@ function ChatContent() {
             <BarChart3 size={16} />
           </button>
           <a
-            className={`${actionButtonClass} chat-only-desktop`}
+            className={cx(actionButtonClass, "chat-only-desktop")}
             title="Report an issue"
             aria-label="Report an issue on GitHub"
             href={GITHUB_ISSUE_URL}
@@ -805,7 +1052,7 @@ function ChatContent() {
             <Bug size={16} />
           </a>
           <button
-            className={`${actionButtonClass} inline-flex`}
+            className={cx(actionButtonClass, css({ display: "inline-flex" }))}
             title="Menu"
             aria-label="More menu"
             aria-expanded={mobileMenuOpen}
@@ -821,12 +1068,26 @@ function ChatContent() {
           <div
             ref={mobileMenuRef}
             role="menu"
-            className="absolute right-2 top-full z-50 mt-1 w-56 rounded-md border border-border bg-background shadow-lg font-terminal"
-            style={{ fontSize: "0.875rem" }}
+            className={cx(
+              "font-terminal",
+              css({
+                position: "absolute",
+                right: "0.5rem",
+                top: "100%",
+                zIndex: 50,
+                marginTop: "0.25rem",
+                width: "14rem",
+                borderRadius: "0.375rem",
+                border: "1px solid var(--border)",
+                backgroundColor: "var(--background)",
+                boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
+                fontSize: "0.875rem",
+              }),
+            )}
           >
-            <div className="flex flex-col p-1">
+            <div className={css({ display: "flex", flexDirection: "column", padding: "0.25rem" })}>
               <button
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors chat-only-compact"
+                className={cx(menuItemClass, "chat-only-compact")}
                 disabled={isPending}
                 onClick={() => {
                   setMobileMenuOpen(false);
@@ -837,7 +1098,12 @@ function ChatContent() {
                 New session
               </button>
               <button
-                className={`flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors chat-only-compact ${shareState === "copied" ? "text-primary" : ""} ${shareState === "error" ? "text-destructive" : ""}`}
+                className={cx(
+                  menuItemClass,
+                  "chat-only-compact",
+                  shareState === "copied" ? css({ color: "var(--primary)" }) : "",
+                  shareState === "error" ? css({ color: "var(--destructive)" }) : "",
+                )}
                 onClick={() => {
                   setMobileMenuOpen(false);
                   handleShare();
@@ -848,7 +1114,11 @@ function ChatContent() {
                 {shareState === "copied" ? "Link copied" : "Share session"}
               </button>
               <button
-                className={`flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors chat-only-compact ${speechEnabled ? "text-primary" : ""}`}
+                className={cx(
+                  menuItemClass,
+                  "chat-only-compact",
+                  speechEnabled ? css({ color: "var(--primary)" }) : "",
+                )}
                 onClick={() => {
                   setMobileMenuOpen(false);
                   toggleSpeech();
@@ -863,7 +1133,7 @@ function ChatContent() {
                 onToggled={() => setMobileMenuOpen(false)}
               />
               <button
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors chat-only-compact"
+                className={cx(menuItemClass, "chat-only-compact")}
                 onClick={() => {
                   setMobileMenuOpen(false);
                   setArtifactBrowserOpen(true);
@@ -874,7 +1144,7 @@ function ChatContent() {
               </button>
               {import.meta.env.DEV && (
                 <button
-                  className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors chat-only-compact"
+                  className={cx(menuItemClass, "chat-only-compact")}
                   onClick={() => {
                     setMobileMenuOpen(false);
                     setNodePodOpen(true);
@@ -885,7 +1155,7 @@ function ChatContent() {
                 </button>
               )}
               <button
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors chat-only-compact"
+                className={cx(menuItemClass, "chat-only-compact")}
                 onClick={() => {
                   setMobileMenuOpen(false);
                   navigate({ to: "/usage" });
@@ -894,31 +1164,36 @@ function ChatContent() {
                 <BarChart3 size={14} />
                 Learning usage
               </button>
-              <div className="my-1 border-t border-border chat-only-compact" />
+              <div
+                className={cx(
+                  "chat-only-compact",
+                  css({ marginBlock: "0.25rem", borderTop: "1px solid var(--border)" }),
+                )}
+              />
               <Link
                 to="/"
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                className={menuItemClass}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Home
               </Link>
               <Link
                 to="/tutorial"
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                className={menuItemClass}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Tutorial
               </Link>
               <Link
                 to="/blog"
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                className={menuItemClass}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Blog
               </Link>
               <Link
                 to="/paper"
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                className={menuItemClass}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Paper
@@ -927,7 +1202,7 @@ function ChatContent() {
                 href="https://github.com/Diogenesoftoronto/keating"
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                className={menuItemClass}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 GitHub
@@ -936,7 +1211,7 @@ function ChatContent() {
                 href={GITHUB_ISSUE_URL}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors chat-only-compact"
+                className={cx(menuItemClass, "chat-only-compact")}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Report issue
@@ -954,23 +1229,61 @@ function ChatContent() {
       )}
 
       {showPersistenceBanner && (
-        <div className="shrink-0 border-b border-border bg-amber-500/10 px-3 py-2">
-          <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-xs font-medium text-amber-800 dark:text-amber-200">
-              <span className="hidden sm:inline">Browser storage persistence is not enabled. Sessions still save locally, but the browser may clear them under storage pressure.</span>
-              <span className="sm:hidden">Storage persistence is not enabled.</span>
+        <div
+          className={css({
+            flexShrink: 0,
+            borderBottom: "1px solid var(--border)",
+            backgroundColor: "rgb(245 158 11 / 0.1)",
+            paddingInline: "0.75rem",
+            paddingBlock: "0.5rem",
+          })}
+        >
+          <div
+            className={css({
+              marginInline: "auto",
+              display: "flex",
+              maxWidth: "48rem",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "0.75rem",
+            })}
+          >
+            <div
+              className={css({
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                fontSize: "0.75rem",
+                fontWeight: 500,
+                color: "rgb(146 64 14)",
+                _dark: { color: "rgb(253 230 138)" },
+              })}
+            >
+              <span className={css({ display: "none", sm: { display: "inline" } })}>Browser storage persistence is not enabled. Sessions still save locally, but the browser may clear them under storage pressure.</span>
+              <span className={css({ sm: { display: "none" } })}>Storage persistence is not enabled.</span>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className={css({ display: "flex", flexShrink: 0, alignItems: "center", gap: "0.5rem" })}>
               <button
                 type="button"
-                className="inline-flex h-6 items-center rounded bg-primary px-2 text-[10px] font-medium text-primary-foreground hover:bg-primary/90"
+                className={css({
+                  display: "inline-flex",
+                  height: "1.5rem",
+                  alignItems: "center",
+                  borderRadius: "0.25rem",
+                  backgroundColor: "var(--primary)",
+                  paddingInline: "0.5rem",
+                  fontSize: "10px",
+                  fontWeight: 500,
+                  color: "var(--primary-foreground)",
+                  _hover: { backgroundColor: "color-mix(in srgb, var(--primary) 90%, transparent)" },
+                })}
                 onClick={retryPersistentStorage}
               >
                 Try again
               </button>
               <button
                 type="button"
-                className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                className={cx(iconButtonClass, css({ width: "1.5rem", height: "1.5rem" }))}
                 onClick={dismissPersistentBanner}
                 aria-label="Dismiss persistence warning"
               >
@@ -982,15 +1295,21 @@ function ChatContent() {
       )}
 
       {introDismissed ? (
-        <div className="flex flex-1 min-h-0 overflow-hidden">
+        <div className={css({ display: "flex", minHeight: 0, flex: 1, overflow: "hidden" })}>
           {sessionSidebar}
           <AssistantChatPanel
             ref={chatPanelRef}
-            className="chat-page-panel flex-1 min-w-0"
+            className={cx("chat-page-panel", css({ minWidth: 0, flex: 1 }))}
             speechEnabled={speechEnabled}
           />
           {isWideViewport && artifactBrowserOpen && (
-            <div className="shrink-0 border-l border-border h-full">
+            <div
+              className={css({
+                height: "100%",
+                flexShrink: 0,
+                borderLeft: "1px solid var(--border)",
+              })}
+            >
               <ArtifactSidePanel
                 open={artifactBrowserOpen}
                 artifactId={artifactTarget}
@@ -1003,11 +1322,31 @@ function ChatContent() {
           )}
         </div>
       ) : (
-        <div className="relative flex-1 overflow-hidden">
+        <div className={css({ position: "relative", flex: 1, overflow: "hidden" })}>
           <ChatIntro />
           <button
             onClick={dismissIntro}
-            className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 px-6 py-2.5 border-2 border-primary text-primary font-terminal text-sm hover:bg-primary hover:text-primary-foreground transition-colors"
+            className={cx(
+              "font-terminal",
+              css({
+                position: "absolute",
+                bottom: "1.5rem",
+                left: "50%",
+                zIndex: 20,
+                transform: "translateX(-50%)",
+                border: "2px solid var(--primary)",
+                paddingInline: "1.5rem",
+                paddingBlock: "0.625rem",
+                fontSize: "0.875rem",
+                color: "var(--primary)",
+                transitionProperty: "color, background-color, border-color",
+                transitionDuration: "150ms",
+                _hover: {
+                  backgroundColor: "var(--primary)",
+                  color: "var(--primary-foreground)",
+                },
+              }),
+            )}
           >
             [ GET STARTED → ]
           </button>
@@ -1028,27 +1367,65 @@ function ChatContent() {
       )}
 
       {(shareUrl || shareMessage) && (
-        <div className="border-t border-border bg-background px-4 py-3 text-sm">
-          <div className="mx-auto flex max-w-4xl flex-col gap-2 sm:flex-row sm:items-center">
+        <div
+          className={css({
+            borderTop: "1px solid var(--border)",
+            backgroundColor: "var(--background)",
+            paddingInline: "1rem",
+            paddingBlock: "0.75rem",
+            fontSize: "0.875rem",
+          })}
+        >
+          <div
+            className={css({
+              marginInline: "auto",
+              display: "flex",
+              maxWidth: "56rem",
+              flexDirection: "column",
+              gap: "0.5rem",
+              sm: { flexDirection: "row", alignItems: "center" },
+            })}
+          >
             <span
               className={
                 shareState === "error"
-                  ? "text-destructive"
-                  : "text-muted-foreground"
+                  ? css({ color: "var(--destructive)" })
+                  : css({ color: "var(--muted-foreground)" })
               }
             >
               {shareMessage}
             </span>
             {shareUrl && (
               <input
-                className="min-w-0 flex-1 rounded-md border border-border bg-muted px-3 py-2 font-mono text-xs text-foreground"
+                className={css({
+                  minWidth: 0,
+                  flex: 1,
+                  borderRadius: "0.375rem",
+                  border: "1px solid var(--border)",
+                  backgroundColor: "var(--muted)",
+                  paddingInline: "0.75rem",
+                  paddingBlock: "0.5rem",
+                  fontFamily: "var(--mono-body)",
+                  fontSize: "0.75rem",
+                  color: "var(--foreground)",
+                })}
                 readOnly
                 value={shareUrl}
                 onFocus={(event) => event.currentTarget.select()}
               />
             )}
             <button
-              className="inline-flex h-8 items-center justify-center rounded-md border border-border px-3 text-xs hover:bg-accent"
+              className={css({
+                display: "inline-flex",
+                height: "2rem",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "0.375rem",
+                border: "1px solid var(--border)",
+                paddingInline: "0.75rem",
+                fontSize: "0.75rem",
+                _hover: { backgroundColor: "var(--accent)" },
+              })}
               onClick={() => {
                 setShareUrl(null);
                 setShareMessage(null);
@@ -1078,8 +1455,29 @@ export function Chat() {
   return (
     <Suspense
       fallback={
-        <div className="chat-page-shell w-full flex flex-col bg-background text-foreground overflow-hidden">
-          <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
+        <div
+          className={cx(
+            "chat-page-shell",
+            css({
+              display: "flex",
+              width: "100%",
+              flexDirection: "column",
+              overflow: "hidden",
+              backgroundColor: "var(--background)",
+              color: "var(--foreground)",
+            }),
+          )}
+        >
+          <div
+            className={css({
+              display: "flex",
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "0.875rem",
+              color: "var(--muted-foreground)",
+            })}
+          >
             Initializing…
           </div>
         </div>

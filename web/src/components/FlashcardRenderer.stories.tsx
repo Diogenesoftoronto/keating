@@ -1,7 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn, userEvent, within } from "storybook/test";
+import { css } from "../../styled-system/css";
 import { DeckSummary, FlashcardRenderer, initialSrsState } from "./FlashcardRenderer";
 import type { FlashcardDeck } from "../keating/srs";
+
+const storyWidthClass = css({ width: "min(42rem, calc(100vw - 2rem))" });
+const compactStoryWidthClass = css({ width: "min(34rem, calc(100vw - 1rem))" });
 
 const now = Date.now();
 
@@ -52,7 +56,7 @@ const meta = {
 	},
 	decorators: [
 		(Story) => (
-			<div className="w-[min(42rem,calc(100vw-2rem))]">
+			<div className={storyWidthClass}>
 				<Story />
 			</div>
 		),
@@ -92,7 +96,7 @@ export const DueSubset: Story = {
 export const CompactChatEmbed: Story = {
 	decorators: [
 		(Story) => (
-			<div className="w-[min(34rem,calc(100vw-1rem))]">
+			<div className={compactStoryWidthClass}>
 				<Story />
 			</div>
 		),

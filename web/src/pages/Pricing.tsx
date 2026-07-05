@@ -4,6 +4,8 @@ import { Footer } from "../components/Footer";
 import { useSeo } from "../hooks/useSeo";
 import { DioAccessPromptDialog, promptDioAccess } from "../components/DioAccessPromptDialog";
 import { DIO_PACKS, DIO_TOKEN_RATES, formatPackTokenVolume, type DioPack } from "../dio-provider/packs";
+import { cx } from "../../styled-system/css";
+import { btnRetro, eyebrow } from "../../styled-system/recipes";
 
 const FAQ_ITEMS: Array<{ q: string; a: string }> = [
 	{
@@ -39,20 +41,20 @@ export function Pricing() {
 	};
 
 	return (
-		<div className="retro-layout retro-page">
+		<div className={cx("retro-layout", "retro-page")}>
 			<Nav />
-			<main className="download-page">
-				<section className="download-hero">
-					<div className="wrap">
-						<div className="eyebrow prompt">cat PRICING.txt</div>
+			<main className={cx("download-page")}>
+				<section className={cx("download-hero")}>
+					<div className={cx("wrap")}>
+						<div className={cx(eyebrow(), "prompt")}>cat PRICING.txt</div>
 						<h1>Pay for tokens. Nothing else.</h1>
-						<p className="download-hero-copy">
+						<p className={cx("download-hero-copy")}>
 							Keating's hosted model (Kimi K2.6) runs on prepaid credits with transparent
 							per-token rates. No subscription, no expiry, no minimum. Bring your own API
 							keys instead and Keating stays free.
 						</p>
 
-						<div className="download-source-box" style={{ marginTop: "1.5rem" }}>
+						<div className={cx("download-source-box")} style={{ marginTop: "1.5rem" }}>
 							<div>
 								<h3>Token rates — Kimi K2.6</h3>
 								<p>
@@ -60,7 +62,7 @@ export function Pricing() {
 									dashboard is what you pay.
 								</p>
 							</div>
-							<div className="download-command" aria-label="Token rates">
+							<div className={cx("download-command")} aria-label="Token rates">
 								<div>input&nbsp;&nbsp;${DIO_TOKEN_RATES.inputPerMTok.toFixed(2)} / 1M tokens</div>
 								<div>output&nbsp;${DIO_TOKEN_RATES.outputPerMTok.toFixed(2)} / 1M tokens</div>
 							</div>
@@ -69,17 +71,17 @@ export function Pricing() {
 				</section>
 
 				<section aria-label="Credit packs">
-					<div className="wrap">
-						<div className="eyebrow prompt">ls PACKS/</div>
-						<div className="desktop-download-grid">
+					<div className={cx("wrap")}>
+						<div className={cx(eyebrow(), "prompt")}>ls PACKS/</div>
+						<div className={cx("desktop-download-grid")}>
 							{DIO_PACKS.map((pack) => (
 								<article
 									key={pack.id}
-									className={`desktop-download-card${pack.popular ? " is-recommended" : ""}`}
+									className={cx("desktop-download-card", pack.popular && "is-recommended")}
 								>
-									<div className="desktop-card-head">
-										<div className="desktop-platform">{pack.label.toUpperCase()}</div>
-										{pack.popular && <span className="desktop-recommend-tag">POPULAR</span>}
+									<div className={cx("desktop-card-head")}>
+										<div className={cx("desktop-platform")}>{pack.label.toUpperCase()}</div>
+										{pack.popular && <span className={cx("desktop-recommend-tag")}>POPULAR</span>}
 									</div>
 									<p>{pack.blurb}</p>
 									<code>
@@ -87,7 +89,7 @@ export function Pricing() {
 									</code>
 									<button
 										type="button"
-										className="btn-retro"
+										className={btnRetro()}
 										style={{ padding: "0.5rem 1rem", fontWeight: 700 }}
 										onClick={() => buyPack(pack)}
 									>
@@ -100,12 +102,12 @@ export function Pricing() {
 				</section>
 
 				<section aria-label="Pricing FAQ">
-					<div className="wrap">
-						<div className="eyebrow prompt">man CREDITS</div>
-						<div className="desktop-download-grid">
+					<div className={cx("wrap")}>
+						<div className={cx(eyebrow(), "prompt")}>man CREDITS</div>
+						<div className={cx("desktop-download-grid")}>
 							{FAQ_ITEMS.map((item) => (
-								<article className="desktop-download-card" key={item.q}>
-									<div className="desktop-platform">{item.q}</div>
+								<article className={cx("desktop-download-card")} key={item.q}>
+									<div className={cx("desktop-platform")}>{item.q}</div>
 									<p>{item.a}</p>
 								</article>
 							))}

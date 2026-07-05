@@ -25,6 +25,7 @@ import { downloadTextFile } from "../lib/browser-download";
 import { KeatingStorage, type LessonPlan, type LessonMap, type Animation, type BenchmarkResult, type EvolutionResult, type Verification, type PromptEvolutionResult, type ImprovementAttemptRecord, type FlashcardDeck } from "../keating/storage";
 import { sessions, getInitPromise } from "../hooks/keating-storage";
 import type { SessionMetadata } from "../types/session";
+import { css, cx } from "../../styled-system/css";
 
 interface ArtifactViewerProps {
 	storage: KeatingStorage;
@@ -352,42 +353,57 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 
 	if (loading) {
 		return (
-			<div className="p-8 text-center text-muted-foreground">
-				<div className="animate-pulse">Loading artifacts...</div>
+			<div className={css({ padding: "2rem", textAlign: "center", color: "var(--muted-foreground)" })}>
+				<div className={css({ animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite" })}>Loading artifacts...</div>
 			</div>
 		);
 	}
 
 	if (selected) {
 		return (
-			<div className="artifact-detail text-foreground">
-				<div className="mb-4 pb-2 border-b border-border">
-					<div className="flex items-center justify-between gap-3">
-						<button onClick={() => setSelected(null)} className="text-sm text-muted-foreground hover:underline">
+			<div className={cx("artifact-detail", css({ color: "var(--foreground)" }))}>
+				<div className={css({ marginBottom: "1rem", paddingBottom: "0.5rem", borderBottomWidth: "1px", borderColor: "var(--border)" })}>
+					<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" })}>
+						<button onClick={() => setSelected(null)} className={css({ fontSize: "0.875rem", color: "var(--muted-foreground)", _hover: { textDecoration: "underline" } })}>
 							← Back to list
 						</button>
 						<button
 							type="button"
 							onClick={() => downloadSelected(selected)}
-							className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+							className={css({
+								display: "inline-flex",
+								height: "2rem",
+								alignItems: "center",
+								gap: "0.375rem",
+								borderRadius: "0.375rem",
+								borderWidth: "1px",
+								borderColor: "var(--border)",
+								paddingInline: "0.625rem",
+								fontSize: "0.75rem",
+								fontWeight: 500,
+								color: "var(--muted-foreground)",
+								transitionProperty: "color, background-color, border-color, text-decoration-color, fill, stroke",
+								transitionDuration: "150ms",
+								_hover: { background: "var(--accent)", color: "var(--accent-foreground)" },
+							})}
 						>
 							<Download size={14} />
 							Download
 						</button>
 					</div>
-					<h2 className="text-lg font-semibold mt-1 text-foreground truncate">{selected.label}</h2>
-					<div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-						<span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-muted">
+					<h2 className={css({ marginTop: "0.25rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "1.125rem", fontWeight: 600, color: "var(--foreground)" })}>{selected.label}</h2>
+					<div className={css({ marginTop: "0.25rem", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+						<span className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", borderRadius: "0.25rem", background: "var(--muted)", paddingInline: "0.375rem", paddingBlock: "0.125rem" })}>
 							{TYPE_META[selected.type].icon}
 							{TYPE_META[selected.type].label}
 						</span>
 						<span>{new Date(selected.createdAt).toLocaleString()}</span>
 						{AUDIENCE_MAP[selected.type] === "agent" && (
-							<span className="text-[10px] uppercase tracking-wider text-amber-500">Agent</span>
+							<span className={css({ fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.05em", color: "#f59e0b" })}>Agent</span>
 						)}
 					</div>
 				</div>
-				<div className="artifact-content text-foreground">
+				<div className={cx("artifact-content", css({ color: "var(--foreground)" }))}>
 					{selected.type === "plan" && <PlanViewer plan={selected.data as LessonPlan} />}
 					{selected.type === "map" && <MapView map={selected.data as LessonMap} />}
 					{selected.type === "animation" && <AnimationViewer animation={selected.data as Animation} />}
@@ -403,19 +419,26 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 	}
 
 	return (
-		<div className="artifact-list text-foreground">
+		<div className={cx("artifact-list", css({ color: "var(--foreground)" }))}>
 			{artifacts.length === 0 ? (
-				<p className="text-muted-foreground text-sm">
+				<p className={css({ fontSize: "0.875rem", color: "var(--muted-foreground)" })}>
 					No artifacts yet. Use /plan, /map, /animate, /bench, or /evolve to create some.
 				</p>
 			) : (
-				<div className="space-y-4">
+				<div className={css({ "& > * + *": { marginTop: "1rem" } })}>
 					{/* Search + Toggle */}
-					<div className="flex items-center gap-2">
-						<label className="flex min-h-9 flex-1 items-center gap-2 rounded-md border border-border bg-background px-3 text-xs">
-							<Search size={14} className="shrink-0 text-muted-foreground" />
+					<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
+						<label className={css({ display: "flex", minHeight: "2.25rem", flex: 1, alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "var(--background)", paddingInline: "0.75rem", fontSize: "0.75rem" })}>
+							<Search size={14} className={css({ flexShrink: 0, color: "var(--muted-foreground)" })} />
 							<input
-								className="min-w-0 flex-1 bg-transparent py-2 outline-none placeholder:text-muted-foreground"
+								className={css({
+									minWidth: 0,
+									flex: 1,
+									background: "transparent",
+									paddingBlock: "0.5rem",
+									outline: "none",
+									"&::placeholder": { color: "var(--muted-foreground)" },
+								})}
 								value={query}
 								placeholder="Search artifacts"
 								onChange={(event) => setQuery(event.target.value)}
@@ -424,7 +447,21 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 						{onClose && (
 							<button
 								type="button"
-								className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+								className={css({
+									display: "inline-flex",
+									height: "2.25rem",
+									width: "2.25rem",
+									flexShrink: 0,
+									alignItems: "center",
+									justifyContent: "center",
+									borderRadius: "0.375rem",
+									borderWidth: "1px",
+									borderColor: "var(--border)",
+									color: "var(--muted-foreground)",
+									transitionProperty: "color, background-color, border-color, text-decoration-color, fill, stroke",
+									transitionDuration: "150ms",
+									_hover: { background: "var(--accent)", color: "var(--accent-foreground)" },
+								})}
 								aria-label="Close artifact panel"
 								title="Close panel"
 								onClick={onClose}
@@ -437,11 +474,31 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 								type="button"
 								onClick={toggleShowAgent}
 								title={showAgentArtifacts ? "Hide agent artifacts" : "Show agent artifacts"}
-								className={`inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors ${
-									showAgentArtifacts
-										? "border-primary/30 bg-primary/10 text-primary hover:bg-primary/20"
-										: "border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-								}`}
+								className={cx(css({
+									display: "inline-flex",
+									flexShrink: 0,
+									alignItems: "center",
+									gap: "0.375rem",
+									borderRadius: "0.375rem",
+									borderWidth: "1px",
+									paddingInline: "0.625rem",
+									paddingBlock: "0.375rem",
+									fontSize: "0.75rem",
+									fontWeight: 500,
+									transitionProperty: "color, background-color, border-color, text-decoration-color, fill, stroke",
+									transitionDuration: "150ms",
+								}), showAgentArtifacts
+									? css({
+										borderColor: "color-mix(in srgb, var(--primary) 30%, transparent)",
+										background: "color-mix(in srgb, var(--primary) 10%, transparent)",
+										color: "var(--primary)",
+										_hover: { background: "color-mix(in srgb, var(--primary) 20%, transparent)" },
+									})
+									: css({
+										borderColor: "var(--border)",
+										color: "var(--muted-foreground)",
+										_hover: { background: "var(--accent)", color: "var(--accent-foreground)" },
+									}))}
 							>
 								{showAgentArtifacts ? <Eye size={13} /> : <EyeOff size={13} />}
 								{showAgentArtifacts ? `Hide ${agentArtifactCount} agent` : `Show ${agentArtifactCount} agent`}
@@ -452,7 +509,21 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 								type="button"
 								onClick={downloadVisibleArtifacts}
 								title="Download visible artifacts"
-								className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+								className={css({
+									display: "inline-flex",
+									height: "2.25rem",
+									width: "2.25rem",
+									flexShrink: 0,
+									alignItems: "center",
+									justifyContent: "center",
+									borderRadius: "0.375rem",
+									borderWidth: "1px",
+									borderColor: "var(--border)",
+									color: "var(--muted-foreground)",
+									transitionProperty: "color, background-color, border-color, text-decoration-color, fill, stroke",
+									transitionDuration: "150ms",
+									_hover: { background: "var(--accent)", color: "var(--accent-foreground)" },
+								})}
 							>
 								<Download size={15} />
 							</button>
@@ -460,11 +531,11 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 					</div>
 
 					{filteredArtifacts.length === 0 ? (
-						<div className="py-8 text-center text-sm text-muted-foreground">
+						<div className={css({ paddingBlock: "2rem", textAlign: "center", fontSize: "0.875rem", color: "var(--muted-foreground)" })}>
 							{artifacts.length > 0 ? "No artifacts match your search" : "No artifacts yet"}
 						</div>
 					) : (
-						<div className="space-y-6">
+						<div className={css({ "& > * + *": { marginTop: "1.5rem" } })}>
 							{sortedGroupKeys.map((groupKey) => {
 								const groupArtifacts = groupedBySession.get(groupKey)!;
 								const isOther = groupKey === "__other__";
@@ -473,41 +544,41 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 								return (
 									<section key={groupKey}>
 										{/* Session header */}
-										<div className="mb-2 flex items-center gap-2 min-w-0">
+										<div className={css({ marginBottom: "0.5rem", display: "flex", minWidth: 0, alignItems: "center", gap: "0.5rem" })}>
 											{isOther ? (
 												<>
-													<span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+													<span className={css({ fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted-foreground)" })}>
 														Other artifacts
 													</span>
-													<span className="text-[10px] text-muted-foreground">
+													<span className={css({ fontSize: "10px", color: "var(--muted-foreground)" })}>
 														(no session)
 													</span>
 												</>
 											) : sessionMeta ? (
 												<>
-													<MessageSquare size={12} className="shrink-0 text-muted-foreground" />
-													<span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate min-w-0">
+													<MessageSquare size={12} className={css({ flexShrink: 0, color: "var(--muted-foreground)" })} />
+													<span className={css({ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted-foreground)" })}>
 														{sessionMeta.title}
 													</span>
-													<span className="text-[10px] text-muted-foreground shrink-0">
+													<span className={css({ flexShrink: 0, fontSize: "10px", color: "var(--muted-foreground)" })}>
 														{formatArtifactDate(new Date(sessionMeta.lastModified ?? sessionMeta.createdAt).getTime())} · {sessionMeta.messageCount} messages
 													</span>
 													{sessionMeta.parentSessionId && (
-														<GitBranch size={10} className="shrink-0 text-primary" />
+														<GitBranch size={10} className={css({ flexShrink: 0, color: "var(--primary)" })} />
 													)}
 												</>
 											) : (
-												<span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+												<span className={css({ fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted-foreground)" })}>
 													Unknown session
 												</span>
 											)}
-											<span className="ml-auto text-[10px] text-muted-foreground shrink-0">
+											<span className={css({ marginLeft: "auto", flexShrink: 0, fontSize: "10px", color: "var(--muted-foreground)" })}>
 												{groupArtifacts.length} artifact{groupArtifacts.length === 1 ? "" : "s"}
 											</span>
 										</div>
 
 										{/* Artifact list */}
-										<div className="space-y-1.5">
+										<div className={css({ "& > * + *": { marginTop: "0.375rem" } })}>
 											{groupArtifacts.map((artifact) => {
 												const meta = TYPE_META[artifact.type];
 												const isAgent = AUDIENCE_MAP[artifact.type] === "agent";
@@ -515,34 +586,58 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 													<button
 														key={artifact.id}
 														onClick={() => setSelected(artifact)}
-														className={`group w-full text-left rounded-lg border p-2.5 transition-colors ${
-															isAgent
-																? "border-border/50 bg-muted/20 hover:bg-muted/40"
-																: "border-border bg-muted/30 hover:bg-muted/50"
-														}`}
+														className={cx("group", css({
+															width: "100%",
+															borderRadius: "0.5rem",
+															borderWidth: "1px",
+															padding: "0.625rem",
+															textAlign: "left",
+															transitionProperty: "color, background-color, border-color, text-decoration-color, fill, stroke",
+															transitionDuration: "150ms",
+														}), isAgent
+															? css({
+																borderColor: "color-mix(in srgb, var(--border) 50%, transparent)",
+																background: "color-mix(in srgb, var(--muted) 20%, transparent)",
+																_hover: { background: "color-mix(in srgb, var(--muted) 40%, transparent)" },
+															})
+															: css({
+																borderColor: "var(--border)",
+																background: "color-mix(in srgb, var(--muted) 30%, transparent)",
+																_hover: { background: "color-mix(in srgb, var(--muted) 50%, transparent)" },
+															}))}
 													>
-														<div className="flex items-start gap-2.5">
-															<span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-background border border-border text-muted-foreground">
+														<div className={css({ display: "flex", alignItems: "flex-start", gap: "0.625rem" })}>
+															<span className={css({ marginTop: "0.125rem", display: "inline-flex", height: "1.5rem", width: "1.5rem", flexShrink: 0, alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "var(--background)", color: "var(--muted-foreground)" })}>
 																{meta.icon}
 															</span>
-															<div className="min-w-0 flex-1">
-																<div className="flex items-center gap-2">
-																	<span className="text-sm font-medium truncate text-foreground">
+															<div className={css({ minWidth: 0, flex: 1 })}>
+																<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
+																	<span className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)" })}>
 																		{artifact.label}
 																	</span>
 																	{isAgent && (
-																		<span className="shrink-0 rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+																		<span className={css({
+																			flexShrink: 0,
+																			borderRadius: "0.25rem",
+																			background: "rgb(245 158 11 / 0.1)",
+																			paddingInline: "0.375rem",
+																			paddingBlock: "0.125rem",
+																			fontSize: "10px",
+																			fontWeight: 500,
+																			color: "#d97706",
+																			_dark: { color: "#fbbf24" },
+																		})}>
 																		Agent
 																	</span>
 																	)}
 																</div>
-												<div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground min-w-0">
-														<span className="shrink-0">{meta.label}</span>
-														<span className="shrink-0">·</span>
-														<span className="shrink-0">{formatArtifactDate(artifact.createdAt)}</span>
-														<span className="shrink-0">·</span>
-														<span className="truncate">{artifactPreviewText(artifact)}</span>
-													</div>
+																<div className={css({ marginTop: "0.125rem", display: "flex", minWidth: 0, alignItems: "center", gap: "0.5rem", fontSize: "11px", color: "var(--muted-foreground)" })}>
+																	<span className={css({ flexShrink: 0 })}>{meta.label}</span>
+																	<span className={css({ flexShrink: 0 })}>·</span>
+																	<span className={css({ flexShrink: 0 })}>{formatArtifactDate(artifact.createdAt)}</span>
+																	<span className={css({ flexShrink: 0 })}>·</span>
+																	<span className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" })}>{artifactPreviewText(artifact)}</span>
+																</div>
 															</div>
 														</div>
 													</button>
@@ -583,23 +678,23 @@ function ArtifactMarkdownViewer({ content }: { content: string }) {
 	const parts = splitMermaidBlocks(content);
 	if (parts.length === 0) {
 		return (
-			<div className="prose prose-sm dark:prose-invert max-w-none">
+			<div className={css({ maxWidth: "none", fontSize: "0.875rem", lineHeight: "1.714" })}>
 				<MarkdownBlock content={content} />
 			</div>
 		);
 	}
 	return (
-		<div className="space-y-4">
+		<div className={css({ "& > * + *": { marginTop: "1rem" } })}>
 			{parts.map((part, index) => {
 				if (part.type === "mermaid") {
 					return (
-						<div key={index} className="overflow-auto rounded-lg border border-border bg-background p-4">
+						<div key={index} className={css({ overflow: "auto", borderRadius: "0.5rem", borderWidth: "1px", borderColor: "var(--border)", background: "var(--background)", padding: "1rem" })}>
 							<MermaidRenderer content={part.content} />
 						</div>
 					);
 				}
 				return (
-					<div key={index} className="prose prose-sm dark:prose-invert max-w-none">
+					<div key={index} className={css({ maxWidth: "none", fontSize: "0.875rem", lineHeight: "1.714" })}>
 						<MarkdownBlock content={part.content} />
 					</div>
 				);
@@ -613,10 +708,10 @@ function ArtifactMarkdownViewer({ content }: { content: string }) {
 // as standalone interactive cards in chat, so there is no quiz tab here.
 function PlanViewer({ plan }: { plan: LessonPlan }) {
 	return (
-		<div className="space-y-4">
-			<div className="rounded-lg border border-border bg-muted/20 p-3">
-				<p className="text-sm font-medium text-foreground">Lesson artifact</p>
-				<p className="text-xs text-muted-foreground">
+		<div className={css({ "& > * + *": { marginTop: "1rem" } })}>
+			<div className={css({ borderRadius: "0.5rem", borderWidth: "1px", borderColor: "var(--border)", background: "color-mix(in srgb, var(--muted) 20%, transparent)", padding: "0.75rem" })}>
+				<p className={css({ fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)" })}>Lesson artifact</p>
+				<p className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
 					Work through the lesson below. When you're ready, ask for a quiz and the tutor will craft one from what you covered.
 				</p>
 			</div>
@@ -629,11 +724,11 @@ function MapView({ map }: { map: LessonMap }) {
 	const safeSvg = useMemo(() => (map.svgContent ? sanitizeSvg(map.svgContent) : ""), [map.svgContent]);
 	return (
 		<div>
-			<MermaidRenderer content={map.mmdContent} className="bg-background" />
+			<MermaidRenderer content={map.mmdContent} className={css({ background: "var(--background)" })} />
 			{safeSvg && (
-				<details className="mt-4">
-					<summary className="text-sm text-muted-foreground cursor-pointer">View SVG</summary>
-					<div dangerouslySetInnerHTML={{ __html: safeSvg }} className="mt-2" />
+				<details className={css({ marginTop: "1rem" })}>
+					<summary className={css({ cursor: "pointer", fontSize: "0.875rem", color: "var(--muted-foreground)" })}>View SVG</summary>
+					<div dangerouslySetInnerHTML={{ __html: safeSvg }} className={css({ marginTop: "0.5rem" })} />
 				</details>
 			)}
 		</div>
@@ -648,10 +743,10 @@ function AnimationViewer({ animation }: { animation: Animation }) {
 
 function DeckViewer({ deck }: { deck: FlashcardDeck }) {
 	return (
-		<div className="space-y-4">
-			<div className="rounded-lg border border-border bg-muted/20 p-3">
-				<p className="text-sm font-medium text-foreground">{deck.cards.length} flashcards</p>
-				{deck.description && <p className="text-xs text-muted-foreground">{deck.description}</p>}
+		<div className={css({ "& > * + *": { marginTop: "1rem" } })}>
+			<div className={css({ borderRadius: "0.5rem", borderWidth: "1px", borderColor: "var(--border)", background: "color-mix(in srgb, var(--muted) 20%, transparent)", padding: "0.75rem" })}>
+				<p className={css({ fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)" })}>{deck.cards.length} flashcards</p>
+				{deck.description && <p className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>{deck.description}</p>}
 			</div>
 			<FlashcardRenderer deck={deck} />
 		</div>
@@ -660,16 +755,16 @@ function DeckViewer({ deck }: { deck: FlashcardDeck }) {
 
 function BenchmarkViewer({ benchmark }: { benchmark: BenchmarkResult }) {
 	return (
-		<div className="space-y-4">
-			<div className="flex items-center gap-4">
-				<div className="text-3xl font-bold text-primary">{benchmark.score.toFixed(1)}</div>
-				<div className="text-sm text-muted-foreground">/ 100</div>
+		<div className={css({ "& > * + *": { marginTop: "1rem" } })}>
+			<div className={css({ display: "flex", alignItems: "center", gap: "1rem" })}>
+				<div className={css({ fontSize: "1.875rem", lineHeight: "2.25rem", fontWeight: 700, color: "var(--primary)" })}>{benchmark.score.toFixed(1)}</div>
+				<div className={css({ fontSize: "0.875rem", color: "var(--muted-foreground)" })}>/ 100</div>
 			</div>
 			<ArtifactMarkdownViewer content={benchmark.report} />
 			{benchmark.trace && (
 				<details>
-					<summary className="text-sm text-muted-foreground cursor-pointer">View Trace</summary>
-					<pre className="mt-2 whitespace-pre-wrap bg-muted/20 p-3 rounded text-xs overflow-auto max-h-96">{benchmark.trace}</pre>
+					<summary className={css({ cursor: "pointer", fontSize: "0.875rem", color: "var(--muted-foreground)" })}>View Trace</summary>
+					<pre className={css({ marginTop: "0.5rem", maxHeight: "24rem", overflow: "auto", whiteSpace: "pre-wrap", borderRadius: "0.25rem", background: "color-mix(in srgb, var(--muted) 20%, transparent)", padding: "0.75rem", fontSize: "0.75rem" })}>{benchmark.trace}</pre>
 				</details>
 			)}
 		</div>
@@ -678,16 +773,16 @@ function BenchmarkViewer({ benchmark }: { benchmark: BenchmarkResult }) {
 
 function EvolutionViewer({ evolution }: { evolution: EvolutionResult }) {
 	return (
-		<div className="space-y-4">
-			<div className="flex items-center gap-4">
-				<div className="text-3xl font-bold text-primary">{evolution.bestScore.toFixed(1)}</div>
-				<div className="text-sm text-muted-foreground">/ 100 best score</div>
+		<div className={css({ "& > * + *": { marginTop: "1rem" } })}>
+			<div className={css({ display: "flex", alignItems: "center", gap: "1rem" })}>
+				<div className={css({ fontSize: "1.875rem", lineHeight: "2.25rem", fontWeight: 700, color: "var(--primary)" })}>{evolution.bestScore.toFixed(1)}</div>
+				<div className={css({ fontSize: "0.875rem", color: "var(--muted-foreground)" })}>/ 100 best score</div>
 			</div>
 			<ArtifactMarkdownViewer content={evolution.report} />
 			{evolution.trace && (
 				<details>
-					<summary className="text-sm text-muted-foreground cursor-pointer">View Trace</summary>
-					<pre className="mt-2 whitespace-pre-wrap bg-muted/20 p-3 rounded text-xs overflow-auto max-h-96">{evolution.trace}</pre>
+					<summary className={css({ cursor: "pointer", fontSize: "0.875rem", color: "var(--muted-foreground)" })}>View Trace</summary>
+					<pre className={css({ marginTop: "0.5rem", maxHeight: "24rem", overflow: "auto", whiteSpace: "pre-wrap", borderRadius: "0.25rem", background: "color-mix(in srgb, var(--muted) 20%, transparent)", padding: "0.75rem", fontSize: "0.75rem" })}>{evolution.trace}</pre>
 				</details>
 			)}
 		</div>
@@ -696,15 +791,15 @@ function EvolutionViewer({ evolution }: { evolution: EvolutionResult }) {
 
 function PromptEvolutionViewer({ promptEvolution }: { promptEvolution: PromptEvolutionResult }) {
 	return (
-		<div className="space-y-4">
-			<div className="flex items-center gap-4">
-				<div className="text-3xl font-bold text-primary">{promptEvolution.bestScore.toFixed(1)}</div>
-				<div className="text-sm text-muted-foreground">best prompt score</div>
+		<div className={css({ "& > * + *": { marginTop: "1rem" } })}>
+			<div className={css({ display: "flex", alignItems: "center", gap: "1rem" })}>
+				<div className={css({ fontSize: "1.875rem", lineHeight: "2.25rem", fontWeight: 700, color: "var(--primary)" })}>{promptEvolution.bestScore.toFixed(1)}</div>
+				<div className={css({ fontSize: "0.875rem", color: "var(--muted-foreground)" })}>best prompt score</div>
 			</div>
 			<ArtifactMarkdownViewer content={promptEvolution.report} />
 			<details>
-				<summary className="text-sm text-muted-foreground cursor-pointer">View Prompt</summary>
-				<pre className="mt-2 whitespace-pre-wrap bg-muted/20 p-3 rounded text-xs overflow-auto max-h-96">{promptEvolution.bestPrompt}</pre>
+				<summary className={css({ cursor: "pointer", fontSize: "0.875rem", color: "var(--muted-foreground)" })}>View Prompt</summary>
+				<pre className={css({ marginTop: "0.5rem", maxHeight: "24rem", overflow: "auto", whiteSpace: "pre-wrap", borderRadius: "0.25rem", background: "color-mix(in srgb, var(--muted) 20%, transparent)", padding: "0.75rem", fontSize: "0.75rem" })}>{promptEvolution.bestPrompt}</pre>
 			</details>
 		</div>
 	);

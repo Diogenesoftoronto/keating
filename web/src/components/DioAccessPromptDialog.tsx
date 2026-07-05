@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { getAppStorage } from "@earendil-works/pi-web-ui";
 import { KeyRound, X } from "lucide-react";
+import { css, cx } from "../../styled-system/css";
+import { iconButton, primaryButton } from "../../styled-system/recipes";
 import {
 	DIO_PROVIDER_ID,
 	claimDioAccess,
@@ -59,6 +61,12 @@ export function closeDioPrompt(success: boolean) {
 	request.resolve(success);
 	emitDioPromptChange();
 }
+
+const helperTextClass = css({ fontSize: "0.875rem", color: "var(--muted-foreground)" });
+const smallHelperTextClass = css({ fontSize: "0.75rem", color: "var(--muted-foreground)" });
+const linkButtonClass = css({ fontSize: "0.75rem", color: "var(--primary)", textDecoration: "underline", textUnderlineOffset: "2px" });
+const mutedLinkButtonClass = css({ fontSize: "0.75rem", color: "var(--muted-foreground)", textDecoration: "underline", textUnderlineOffset: "2px" });
+const errorTextClass = css({ fontSize: "0.75rem", color: "var(--destructive)" });
 
 export function DioAccessPromptDialog() {
 	const [request, setRequest] = useState(activeDioPrompt);
@@ -183,31 +191,31 @@ export function DioAccessPromptDialog() {
 	};
 
 	return (
-		<div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/70 p-4 backdrop-blur-sm">
-			<div className="w-full max-w-md rounded-lg border border-border bg-background shadow-xl">
-				<div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-					<div className="flex items-center gap-2">
-						<KeyRound size={16} className="text-primary" />
-						<h2 className="text-sm font-semibold">Dio access</h2>
+		<div className={css({ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "color-mix(in srgb, var(--background) 70%, transparent)", padding: "1rem", backdropFilter: "blur(4px)" })}>
+			<div className={css({ width: "100%", maxWidth: "28rem", borderRadius: "0.5rem", border: "1px solid var(--border)", backgroundColor: "var(--background)", boxShadow: "var(--shadow-xl)" })}>
+				<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", borderBottom: "1px solid var(--border)", paddingInline: "1rem", paddingBlock: "0.75rem" })}>
+					<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
+						<KeyRound size={16} className={css({ color: "var(--primary)" })} />
+						<h2 className={css({ fontSize: "0.875rem", fontWeight: 600 })}>Dio access</h2>
 					</div>
 					<button
 						type="button"
-						className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+						className={cx(iconButton({ size: "md", tone: "ghost" }), css({ _hover: { color: "var(--foreground)" } }))}
 						onClick={() => closeDioPrompt(false)}
 						aria-label="Close"
 					>
 						<X size={16} />
 					</button>
 				</div>
-				<div className="space-y-3 p-4">
+				<div className={css({ display: "flex", flexDirection: "column", gap: "0.75rem", padding: "1rem" })}>
 					{mode === "purchase" && (
 						<>
-							<p className="text-sm text-muted-foreground">
+							<p className={helperTextClass}>
 								Kimi K2.6 runs through Dio. Buy credits to get a Bifrost API key automatically.
 							</p>
 							<input
 								type="email"
-								className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+								className={css({ width: "100%", borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "var(--background)", paddingInline: "0.75rem", paddingBlock: "0.5rem", fontSize: "0.875rem" })}
 								placeholder="Your email address"
 								value={email}
 								onChange={(event) => setEmail(event.target.value)}
@@ -218,23 +226,23 @@ export function DioAccessPromptDialog() {
 								autoFocus
 							/>
 							{purchaseReference && (
-								<p className="text-xs text-muted-foreground">
+								<p className={smallHelperTextClass}>
 									After completing checkout, you'll return here automatically with your key.
 								</p>
 							)}
-							<div className="flex flex-wrap items-center justify-between gap-3">
+							<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" })}>
 								<button
 									type="button"
-									className="text-xs text-primary underline underline-offset-2"
+									className={linkButtonClass}
 									onClick={() => setMode("recover")}
 								>
 									Recover access by email
 								</button>
-								<div className="flex gap-2">
+								<div className={css({ display: "flex", gap: "0.5rem" })}>
 									{purchaseReference && (
 										<button
 											type="button"
-											className="inline-flex h-9 items-center rounded-md bg-secondary px-3 text-sm font-medium hover:bg-secondary/80 disabled:opacity-50"
+											className={css({ display: "inline-flex", height: "2.25rem", alignItems: "center", borderRadius: "0.375rem", backgroundColor: "var(--secondary)", paddingInline: "0.75rem", fontSize: "0.875rem", fontWeight: 500, transitionProperty: "color, background-color, border-color", transitionDuration: "150ms", _hover: { backgroundColor: "color-mix(in srgb, var(--secondary) 80%, black)" }, _disabled: { opacity: 0.5 } })}
 											onClick={doClaim}
 											disabled={loading}
 										>
@@ -243,7 +251,7 @@ export function DioAccessPromptDialog() {
 									)}
 									<button
 										type="button"
-										className="inline-flex h-9 items-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+										className={cx(primaryButton(), css({ paddingInline: "0.75rem" }))}
 										onClick={doCheckout}
 										disabled={loading}
 									>
@@ -259,12 +267,12 @@ export function DioAccessPromptDialog() {
 					)}
 					{mode === "recover" && (
 						<>
-							<p className="text-sm text-muted-foreground">
+							<p className={helperTextClass}>
 								Enter the email you used to buy Dio credits. We'll email you a verification code to restore your Bifrost key.
 							</p>
 							<input
 								type="email"
-								className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+								className={css({ width: "100%", borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "var(--background)", paddingInline: "0.75rem", paddingBlock: "0.5rem", fontSize: "0.875rem" })}
 								placeholder="Your email address"
 								value={email}
 								onChange={(event) => {
@@ -282,7 +290,7 @@ export function DioAccessPromptDialog() {
 								<input
 									type="text"
 									inputMode="numeric"
-									className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+									className={css({ width: "100%", borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "var(--background)", paddingInline: "0.75rem", paddingBlock: "0.5rem", fontSize: "0.875rem" })}
 									placeholder="Verification code"
 									value={otp}
 									onChange={(event) => setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))}
@@ -294,21 +302,21 @@ export function DioAccessPromptDialog() {
 								/>
 							)}
 							{devCode && (
-								<div className="rounded-md border border-dashed border-yellow-500/50 bg-yellow-500/10 p-2 text-xs text-yellow-700 dark:text-yellow-400">
-									Development code: <strong className="font-mono">{devCode}</strong>
+								<div className={css({ borderRadius: "0.375rem", border: "1px dashed color-mix(in srgb, #eab308 50%, transparent)", backgroundColor: "color-mix(in srgb, #eab308 10%, transparent)", padding: "0.5rem", fontSize: "0.75rem", color: "#a16207" })}>
+									Development code: <strong className={css({ fontFamily: "var(--font-mono)" })}>{devCode}</strong>
 								</div>
 							)}
-							<div className="flex flex-wrap items-center justify-between gap-3">
+							<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" })}>
 								<button
 									type="button"
-									className="text-xs text-primary underline underline-offset-2"
+									className={linkButtonClass}
 									onClick={() => setMode("purchase")}
 								>
 									Buy credits
 								</button>
 								<button
 									type="button"
-									className="inline-flex h-9 items-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+									className={cx(primaryButton(), css({ paddingInline: "0.75rem" }))}
 									onClick={doRecover}
 									disabled={loading}
 								>
@@ -319,12 +327,12 @@ export function DioAccessPromptDialog() {
 					)}
 					{mode === "manual" && (
 						<>
-							<p className="text-sm text-muted-foreground">
+							<p className={helperTextClass}>
 								Paste a Bifrost virtual key manually. For development and support only.
 							</p>
 							<input
 								type="password"
-								className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+								className={css({ width: "100%", borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "var(--background)", paddingInline: "0.75rem", paddingBlock: "0.5rem", fontSize: "0.875rem" })}
 								placeholder="Dio virtual key"
 								value={apiKey}
 								onChange={(event) => setApiKey(event.target.value)}
@@ -334,17 +342,17 @@ export function DioAccessPromptDialog() {
 								}}
 								autoFocus
 							/>
-							<div className="flex flex-wrap items-center justify-between gap-3">
+							<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" })}>
 								<button
 									type="button"
-									className="text-xs text-primary underline underline-offset-2"
+									className={linkButtonClass}
 									onClick={() => setMode("purchase")}
 								>
 									Back to purchase
 								</button>
 								<button
 									type="button"
-									className="inline-flex h-9 items-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+									className={cx(primaryButton(), css({ paddingInline: "0.75rem" }))}
 									onClick={saveManualKey}
 									disabled={loading}
 								>
@@ -353,18 +361,18 @@ export function DioAccessPromptDialog() {
 							</div>
 						</>
 					)}
-					<div className="flex items-center justify-between">
+					<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between" })}>
 						{mode !== "manual" && (
 							<button
 								type="button"
-								className="text-xs text-muted-foreground underline underline-offset-2"
+								className={mutedLinkButtonClass}
 								onClick={() => setMode("manual")}
 							>
 								Advanced: paste key manually
 							</button>
 						)}
 					</div>
-					{error && <div className="text-xs text-destructive">{error}</div>}
+					{error && <div className={errorTextClass}>{error}</div>}
 				</div>
 			</div>
 		</div>

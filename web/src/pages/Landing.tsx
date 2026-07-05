@@ -6,6 +6,16 @@ import { Footer } from "../components/Footer";
 import { BootSequence } from "../components/BootSequence";
 import { useSeo } from "../hooks/useSeo";
 import { useReducedMotion } from "../hooks/use-media-query";
+import { cx } from "../../styled-system/css";
+import {
+  btnRetro,
+  capCard,
+  capIcon,
+  eyebrow,
+  sectionHead,
+  sectionLede,
+  sectionTitle
+} from "../../styled-system/recipes";
 
 const KeatingHero3D = lazy(() => import("../components/three/KeatingHero3D"));
 
@@ -304,7 +314,7 @@ export function Landing() {
             </div>
             <div className="hero-grid">
               <div>
-                <div className="eyebrow">The Hyperteacher</div>
+                <div className={eyebrow()}>The Hyperteacher</div>
                 <h1 className="hero-brand">
                   KEATING<span className="hero-brand-suffix">.help</span>
                 </h1>
@@ -321,7 +331,7 @@ export function Landing() {
                 </p>
                 <div className="hero-ctas">
                   <button
-                    className="btn-retro btn-retro-primary"
+                    className={btnRetro({ tone: "primary" })}
                     onClick={() => {
                       posthog.capture('cta_clicked', { label: 'Initialize_Session', location: 'hero' });
                       navigate({ to: "/chat" });
@@ -329,7 +339,7 @@ export function Landing() {
                   >
                     Initialize_Session →
                   </button>
-                  <a className="btn-retro" href="#install">
+                  <a className={btnRetro()} href="#install">
                     Build_From_Source
                   </a>
                 </div>
@@ -366,30 +376,30 @@ export function Landing() {
           <div className="wrap">
             <div className="caps-head">
               <span className="eyebrow prompt">cat CAPABILITIES.txt</span>
-              <h2 className="section-title">What Keating does.</h2>
-              <p className="section-lede">
+              <h2 className={sectionTitle()}>What Keating does.</h2>
+              <p className={sectionLede()}>
                 Not a chatbot that answers. A harness that forces you to reconstruct understanding
                 from memory — and adapts while you struggle.
               </p>
             </div>
           <div className="caps-grid">
-            <div className="cap-card">
-              <img className="cap-icon" src="/brand/cap-adaptive.png" alt="" aria-hidden="true" />
+            <div className={capCard()}>
+              <img className={capIcon()} src="/brand/cap-adaptive.png" alt="" aria-hidden="true" />
               <h3>Adaptive Tutoring</h3>
               <p>Keating adapts to your thinking, pace, and goals. You argue, it adjusts.</p>
             </div>
-            <div className="cap-card">
-              <img className="cap-icon" src="/brand/cap-evolutionary.png" alt="" aria-hidden="true" />
+            <div className={capCard()}>
+              <img className={capIcon()} src="/brand/cap-evolutionary.png" alt="" aria-hidden="true" />
               <h3>Evolutionary Feedback</h3>
               <p>Continuous evaluation refines the harness — and your understanding — every session.</p>
             </div>
-            <div className="cap-card">
-              <img className="cap-icon" src="/brand/cap-agent.png" alt="" aria-hidden="true" />
+            <div className={capCard()}>
+              <img className={capIcon()} src="/brand/cap-agent.png" alt="" aria-hidden="true" />
               <h3>Agent Harness</h3>
               <p>Specialized agents plan, probe, evaluate, and improve in concert.</p>
             </div>
-            <div className="cap-card">
-              <img className="cap-icon" src="/brand/cap-teaching.png" alt="" aria-hidden="true" />
+            <div className={capCard()}>
+              <img className={capIcon()} src="/brand/cap-teaching.png" alt="" aria-hidden="true" />
               <h3>Learn by Teaching</h3>
               <p>Turn explanations into mastery. If you can&apos;t teach it back, you don&apos;t own it yet.</p>
             </div>
@@ -416,11 +426,11 @@ export function Landing() {
         {/* Manifesto */}
         <section className="manifesto" id="manifesto">
           <div className="wrap">
-            <div className="section-head">
+            <div className={sectionHead()}>
               <span className="eyebrow prompt">cat MANIFESTO.txt</span>
             </div>
-            <h2 className="section-title">Real teaching is reconstruction, not explanation.</h2>
-            <p className="section-lede">
+            <h2 className={sectionTitle()}>Real teaching is reconstruction, not explanation.</h2>
+            <p className={sectionLede()}>
               An answer you were handed evaporates by Friday. An answer you rebuilt from first
               principles is yours for good. Keating runs every session on that thesis.
             </p>
@@ -442,11 +452,11 @@ export function Landing() {
         {/* CLI surface */}
         <section className="use" id="use">
           <div className="wrap">
-            <div className="section-head">
+            <div className={sectionHead()}>
               <span className="eyebrow prompt">keating help</span>
             </div>
-            <h2 className="section-title">Everything you can run.</h2>
-            <p className="section-lede">
+            <h2 className={sectionTitle()}>Everything you can run.</h2>
+            <p className={sectionLede()}>
               One CLI, one web shell, the same brain. Every command below works in your terminal
               after <code>npm install -g keating</code> — or right now in the browser shell.
             </p>
@@ -470,7 +480,7 @@ export function Landing() {
             </div>
             <div className="use-links">
               <button
-                className="btn-retro btn-retro-primary"
+                className={btnRetro({ tone: "primary" })}
                 onClick={() => {
                   posthog.capture('cta_clicked', { label: 'Open_Web_Shell', location: 'use_section' });
                   navigate({ to: "/chat" });
@@ -478,10 +488,10 @@ export function Landing() {
               >
                 Open_Web_Shell →
               </button>
-              <button className="btn-retro" onClick={() => navigate({ to: "/tutorial" })}>
+              <button className={btnRetro()} onClick={() => navigate({ to: "/tutorial" })}>
                 Read_Tutorial
               </button>
-              <button className="btn-retro" onClick={() => navigate({ to: "/usage" })}>
+              <button className={btnRetro()} onClick={() => navigate({ to: "/usage" })}>
                 Usage_Dashboard
               </button>
             </div>
@@ -491,11 +501,11 @@ export function Landing() {
         {/* Install — CRT terminal style */}
         <section id="install" className="install">
           <div className="wrap">
-            <div className="section-head">
+            <div className={sectionHead()}>
               <span className="eyebrow prompt">./install.sh</span>
             </div>
-            <h2 className="section-title">Get Keating.</h2>
-            <p className="section-lede">
+            <h2 className={sectionTitle()}>Get Keating.</h2>
+            <p className={sectionLede()}>
               Terminal-first. Your API keys stay local. No cloud dependency.
             </p>
 
@@ -605,7 +615,7 @@ export function Landing() {
             </p>
             <div className="hero-ctas">
               <button
-                className="btn-retro btn-retro-primary"
+                className={btnRetro({ tone: "primary" })}
                 onClick={() => {
                   posthog.capture('cta_clicked', { label: 'Initialize_Session', location: 'final_cta' });
                   navigate({ to: "/chat" });
@@ -613,7 +623,7 @@ export function Landing() {
               >
                 Initialize_Session →
               </button>
-              <button className="btn-retro" onClick={() => navigate({ to: "/paper" })}>
+              <button className={btnRetro()} onClick={() => navigate({ to: "/paper" })}>
                 Read_The_Paper
               </button>
             </div>

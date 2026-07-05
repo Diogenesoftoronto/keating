@@ -69,6 +69,10 @@ export function learnerStatePath(cwd: string): string {
   return join(stateDir(cwd), "learner.json");
 }
 
+export function goalsStatePath(cwd: string): string {
+  return join(stateDir(cwd), "goals.json");
+}
+
 export function verificationsDir(cwd: string): string {
   return join(outputsDir(cwd), "verifications");
 }

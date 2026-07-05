@@ -324,8 +324,8 @@ export async function launchShell(cwd: string, args: string[]): Promise<number> 
   const isDist = __dirname.replace(/\\/g, "/").includes("/dist/src/runtime");
 
   const extensionPath = isDist
-    ? join(__dirname, "..", "pi", "hyperteacher-extension.js")
-    : join(packageRoot, "dist", "src", "pi", "hyperteacher-extension.js");
+    ? join(__dirname, "..", "pi", "hyper-teacher", "index.js")
+    : join(packageRoot, "dist", "src", "pi", "hyper-teacher", "index.js");
 
   if (!existsSync(extensionPath)) {
     throw new Error([

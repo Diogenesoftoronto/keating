@@ -1,7 +1,7 @@
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import type { Model } from "@earendil-works/pi-ai";
 import type { SessionData, SessionMetadata } from "../types/session";
-import { createSessionId, sessionModelMetadata, sessionPreview, sessionTitle, sessionUsage } from "../hooks/session-metadata";
+import { createSessionId, sessionModelMetadata, sessionPreview, sessionSearchText, sessionTitle, sessionUsage } from "../hooks/session-metadata";
 import { sessions } from "../hooks/keating-storage";
 import { DEFAULT_MODEL } from "../hooks/keating-stream";
 import { loadKeatingUiSettings, type ShareLinkMode } from "./ui-settings";
@@ -256,6 +256,7 @@ export async function forkSharedSession(shared: SharedSession): Promise<string> 
 		thinkingLevel: shared.thinkingLevel ?? "medium",
 		...sessionModelMetadata(model),
 		preview: sessionPreview(messages),
+		searchText: sessionSearchText(messages),
 	};
 	const data: SessionData = {
 		id,

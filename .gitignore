@@ -9,6 +9,9 @@ node_modules/
 .gemini/
 .pi/
 .zero/
+.flox/
+.devenv/
+devenv.lock
 
 # Build outputs
 dist/

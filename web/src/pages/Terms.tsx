@@ -3,6 +3,8 @@ import { Nav } from "../components/Nav";
 import { Footer } from "../components/Footer";
 import { DownloadPdfButton } from "../components/DownloadPdfButton";
 import { useSeo } from "../hooks/useSeo";
+import { cx } from "../../styled-system/css";
+import { eyebrow, paperCard } from "../../styled-system/recipes";
 
 const LAST_UPDATED = "July 1, 2026";
 
@@ -15,13 +17,13 @@ export function Terms() {
   });
 
   return (
-    <div className="retro-layout retro-page legal-layout">
+    <div className={cx("retro-layout", "retro-page", "legal-layout")}>
       <Nav />
-      <main className="legal-page">
-        <article className="wrap legal-doc paper-fold distressed-border">
-          <div className="eyebrow prompt">cat TERMS_OF_SERVICE.txt</div>
+      <main className={cx("legal-page")}>
+        <article className={cx("wrap", "legal-doc", paperCard())}>
+          <div className={cx(eyebrow(), "prompt")}>cat TERMS_OF_SERVICE.txt</div>
           <h1>Terms of Service</h1>
-          <p className="legal-updated">Last updated: {LAST_UPDATED}</p>
+          <p className={cx("legal-updated")}>Last updated: {LAST_UPDATED}</p>
           <DownloadPdfButton label="Terms of Service" />
 
           <section>

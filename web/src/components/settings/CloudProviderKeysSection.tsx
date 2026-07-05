@@ -11,17 +11,63 @@ import {
 	type OAuthProviderId,
 } from "../../keating/oauth";
 import { DIO_PROVIDER_ID } from "../../dio-provider";
+import { css } from "../../../styled-system/css";
+
+const sectionClass = css({ display: "flex", flexDirection: "column", gap: "1rem", scrollMarginTop: "5rem" });
+const titleClass = css({ marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 600, color: "var(--foreground)" });
+const descriptionClass = css({ fontSize: "0.875rem", color: "var(--muted-foreground)" });
+const providerStackClass = css({ display: "flex", flexDirection: "column", gap: "0.25rem" });
+const labelRowClass = css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" });
+const labelClass = css({ fontSize: "0.75rem", fontWeight: 500, color: "var(--muted-foreground)", textTransform: "capitalize" });
+const linkClass = css({ fontSize: "0.75rem", color: "var(--primary)", textDecoration: "underline", textUnderlineOffset: "2px" });
+const inputClass = css({
+	borderRadius: "0.375rem",
+	border: "1px solid var(--border)",
+	backgroundColor: "var(--background)",
+	paddingInline: "0.75rem",
+	paddingBlock: "0.5rem",
+	fontSize: "0.875rem",
+	color: "var(--foreground)",
+});
+const primaryButtonClass = css({
+	display: "inline-flex",
+	alignItems: "center",
+	justifyContent: "center",
+	borderRadius: "0.375rem",
+	backgroundColor: "var(--primary)",
+	paddingInline: "0.75rem",
+	paddingBlock: "0.5rem",
+	fontSize: "0.875rem",
+	fontWeight: 500,
+	color: "var(--primary-foreground)",
+	transitionProperty: "color, background-color",
+	transitionDuration: "150ms",
+	_hover: { backgroundColor: "color-mix(in srgb, var(--primary) 90%, transparent)" },
+	_disabled: { opacity: 0.5 },
+});
+const smallButtonClass = css({
+	borderRadius: "0.375rem",
+	border: "1px solid var(--border)",
+	paddingInline: "0.5rem",
+	paddingBlock: "0.375rem",
+	fontSize: "0.75rem",
+	fontWeight: 500,
+	transitionProperty: "color, background-color",
+	transitionDuration: "150ms",
+	_hover: { backgroundColor: "var(--accent)", color: "var(--accent-foreground)" },
+	_disabled: { opacity: 0.5 },
+});
 
 export function CloudProviderKeysSection({ providers }: { providers: string[] }) {
 	return (
-		<div id="settings-section-cloud-providers" className="flex flex-col gap-4 scroll-mt-20">
+		<div id="settings-section-cloud-providers" className={sectionClass}>
 			<div>
-				<h3 className="text-sm font-semibold text-foreground mb-2">Cloud Providers</h3>
-				<p className="text-sm text-muted-foreground">
+				<h3 className={titleClass}>Cloud Providers</h3>
+				<p className={descriptionClass}>
 					Cloud LLM providers with predefined models. API keys are stored locally in your browser.
 				</p>
 			</div>
-			<div className="flex flex-col gap-3">
+			<div className={css({ display: "flex", flexDirection: "column", gap: "0.75rem" })}>
 				<OAuthProviderKeys providers={providers} />
 			</div>
 		</div>
@@ -174,53 +220,53 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 
 				if (isOAuth) {
 					return (
-						<div key={provider} className="flex flex-col gap-1">
-							<div className="flex items-center justify-between gap-3">
-								<label className="text-xs font-medium text-muted-foreground capitalize">
+						<div key={provider} className={providerStackClass}>
+							<div className={labelRowClass}>
+								<label className={labelClass}>
 									{OAUTH_PROVIDER_LABELS[provider] ?? provider}
 								</label>
 								<a
 									href={tutorialApiKeyHref(provider)}
 									onClick={(event) => handleTutorialLinkClick(event.nativeEvent, tutorialApiKeyHref(provider))}
-									className="text-xs text-primary underline underline-offset-2"
+									className={linkClass}
 								>
 									Get a key
 								</a>
 							</div>
 							{hasOAuth ? (
-								<div className="flex items-center justify-between gap-3 rounded-md border border-border bg-muted/30 px-3 py-2">
-									<span className="text-sm text-muted-foreground">Signed in</span>
+								<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "color-mix(in srgb, var(--muted) 30%, transparent)", paddingInline: "0.75rem", paddingBlock: "0.5rem" })}>
+									<span className={css({ fontSize: "0.875rem", color: "var(--muted-foreground)" })}>Signed in</span>
 									<button
-										className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+										className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)", textDecoration: "underline", textUnderlineOffset: "2px", _hover: { color: "var(--foreground)" } })}
 										onClick={() => handleSignOut(provider)}
 									>
 										Sign out
 									</button>
 								</div>
 							) : (
-								<div className="flex flex-col gap-2">
+								<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
 									<button
-										className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+										className={primaryButtonClass}
 										disabled={loading}
 										onClick={() => handleSignIn(provider)}
 									>
 										{loading ? "Waiting for sign-in…" : `Sign in with ${OAUTH_PROVIDER_LABELS[provider] ?? provider}`}
 									</button>
 									{loading && (
-										<div className="rounded-md border border-border bg-muted/20 p-2">
-											<p className="mb-2 text-xs text-muted-foreground">
-												After you approve access, the browser lands on a localhost page that won't load — that's expected. Copy that page's full URL (or the code it shows) and paste it here.
+										<div className={css({ borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "color-mix(in srgb, var(--muted) 20%, transparent)", padding: "0.5rem" })}>
+											<p className={css({ marginBottom: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+												After you approve access, the browser lands on a localhost page that won&apos;t load — that&apos;s expected. Copy that page&apos;s full URL (or the code it shows) and paste it here.
 											</p>
-											<div className="flex gap-2">
+											<div className={css({ display: "flex", gap: "0.5rem" })}>
 												<input
 													type="text"
-													className="min-w-0 flex-1 rounded-md border border-border bg-background px-2 py-1.5 text-xs"
+													className={css({ minWidth: 0, flex: 1, borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "var(--background)", paddingInline: "0.5rem", paddingBlock: "0.375rem", fontSize: "0.75rem" })}
 													placeholder="Callback URL or authorization code"
 													value={oauthInputs[provider] ?? ""}
 													onChange={(e) => setOAuthInputs((prev) => ({ ...prev, [provider]: e.target.value }))}
 												/>
 												<button
-													className="rounded-md border border-border px-2 py-1.5 text-xs font-medium hover:bg-accent hover:text-accent-foreground transition-colors disabled:opacity-50"
+													className={smallButtonClass}
 													disabled={!oauthInputs[provider]?.trim()}
 													onClick={() => handleCompleteOAuth(provider)}
 												>
@@ -230,7 +276,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 										</div>
 									)}
 									{oauthErrors[provider] && (
-										<div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+										<div className={css({ borderRadius: "0.375rem", border: "1px solid color-mix(in srgb, var(--destructive) 30%, transparent)", backgroundColor: "color-mix(in srgb, var(--destructive) 5%, transparent)", paddingInline: "0.75rem", paddingBlock: "0.5rem", fontSize: "0.75rem", color: "var(--destructive)" })}>
 											{oauthErrors[provider]}
 										</div>
 									)}
@@ -241,20 +287,20 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 				}
 
 				return (
-					<div key={provider} className="flex flex-col gap-1">
-						<div className="flex items-center justify-between gap-3">
-							<label className="text-xs font-medium text-muted-foreground capitalize">{provider} API Key</label>
+					<div key={provider} className={providerStackClass}>
+						<div className={labelRowClass}>
+							<label className={labelClass}>{provider} API Key</label>
 							<a
 								href={tutorialApiKeyHref(provider)}
 								onClick={(event) => handleTutorialLinkClick(event.nativeEvent, tutorialApiKeyHref(provider))}
-								className="text-xs text-primary underline underline-offset-2"
+								className={linkClass}
 							>
 								Get a key
 							</a>
 						</div>
 						<input
 							type="password"
-							className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+							className={inputClass}
 							placeholder={`${provider} API key`}
 							value={keys[provider] ?? ""}
 							onChange={(e) => setKeys((prev) => ({ ...prev, [provider]: e.target.value }))}

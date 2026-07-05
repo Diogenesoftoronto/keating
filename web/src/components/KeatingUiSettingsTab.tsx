@@ -11,6 +11,7 @@ import {
 } from "../keating/ui-settings";
 import { useKeatingUiSettings } from "../hooks/use-ui-settings";
 import { IMAGE_GENERATORS, getImageGenerator, DEFAULT_IMAGE_GENERATOR_ID, type ImageGeneratorId } from "../lib/image-generators";
+import { css, cx } from "../../styled-system/css";
 
 const REASONING_LEVELS: { value: ReasoningLevel; label: string; description: string }[] = [
 	{ value: "off", label: "Off", description: "Fastest responses, no reasoning tokens" },
@@ -20,6 +21,83 @@ const REASONING_LEVELS: { value: ReasoningLevel; label: string; description: str
 	{ value: "high", label: "High", description: "Deeper analysis for complex questions" },
 	{ value: "xhigh", label: "Maximum", description: "Most thorough reasoning (select models only)" },
 ];
+
+const stackClass = css({ display: "flex", flexDirection: "column", gap: "1.5rem" });
+const sectionAnchorClass = css({ scrollMarginTop: "5rem" });
+const sectionTitleClass = css({ marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 600, color: "var(--foreground)" });
+const sectionDescriptionClass = css({ fontSize: "0.875rem", color: "var(--muted-foreground)" });
+const sectionDescriptionSpacedClass = cx(sectionDescriptionClass, css({ marginBottom: "0.75rem" }));
+const cardClass = css({
+	display: "flex",
+	flexDirection: "column",
+	gap: "0.75rem",
+	borderRadius: "0.5rem",
+	border: "1px solid var(--border)",
+	padding: "1rem",
+	sm: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: "1rem" },
+});
+const responsiveSelectClass = css({
+	width: "100%",
+	borderRadius: "0.375rem",
+	border: "1px solid var(--border)",
+	backgroundColor: "var(--background)",
+	paddingInline: "0.75rem",
+	paddingBlock: "0.5rem",
+	fontSize: "0.875rem",
+	color: "var(--foreground)",
+	sm: { width: "auto", minWidth: "11rem" },
+});
+const wideResponsiveInputClass = css({
+	width: "100%",
+	borderRadius: "0.375rem",
+	border: "1px solid var(--border)",
+	backgroundColor: "var(--background)",
+	paddingInline: "0.75rem",
+	paddingBlock: "0.5rem",
+	fontSize: "0.875rem",
+	color: "var(--foreground)",
+	sm: { width: "auto", minWidth: "16rem" },
+});
+const labelCardClass = css({
+	display: "flex",
+	cursor: "pointer",
+	alignItems: "center",
+	gap: "0.75rem",
+	borderRadius: "0.375rem",
+	border: "1px solid var(--border)",
+	paddingInline: "0.75rem",
+	paddingBlock: "0.5rem",
+	transitionProperty: "color, background-color, border-color",
+	transitionDuration: "150ms",
+	_hover: { backgroundColor: "color-mix(in srgb, var(--accent) 50%, transparent)" },
+});
+const smallHeadingClass = css({ fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)" });
+const mutedSmallClass = css({ fontSize: "0.875rem", color: "var(--muted-foreground)" });
+const mutedXsClass = css({ fontSize: "0.75rem", color: "var(--muted-foreground)" });
+const compactButtonClass = css({
+	display: "inline-flex",
+	height: "2.25rem",
+	alignItems: "center",
+	justifyContent: "center",
+	borderRadius: "0.375rem",
+	border: "1px solid var(--border)",
+	paddingInline: "0.75rem",
+	fontSize: "0.75rem",
+	fontWeight: 500,
+	_hover: { backgroundColor: "var(--accent)", color: "var(--accent-foreground)" },
+	_disabled: { opacity: 0.5 },
+});
+const srOnlyClass = css({
+	position: "absolute",
+	width: "1px",
+	height: "1px",
+	padding: 0,
+	margin: "-1px",
+	overflow: "hidden",
+	clip: "rect(0, 0, 0, 0)",
+	whiteSpace: "nowrap",
+	borderWidth: 0,
+});
 
 function readImageAsDataUrl(file: File): Promise<string> {
 	return new Promise((resolve, reject) => {
@@ -41,7 +119,7 @@ export function KeatingUiSettingsTab() {
 	}, [update]);
 
 	return (
-		<div className="flex flex-col gap-6">
+		<div className={stackClass}>
 			<SettingsSectionNav
 				sections={[
 					{ id: "ui-chat", label: "Chat" },
@@ -52,40 +130,40 @@ export function KeatingUiSettingsTab() {
 				]}
 			/>
 
-			<div id="settings-section-ui-chat" className="scroll-mt-20">
-				<h3 className="text-sm font-semibold text-foreground mb-2">Chat Interface</h3>
-				<p className="text-sm text-muted-foreground">
+			<div id="settings-section-ui-chat" className={sectionAnchorClass}>
+				<h3 className={sectionTitleClass}>Chat Interface</h3>
+				<p className={sectionDescriptionClass}>
 					Control how much internal agent activity appears in the conversation.
 				</p>
 			</div>
 
-			<div className="flex flex-col gap-4 rounded-lg border border-border p-4 sm:flex-row sm:items-center sm:justify-between">
-				<div className="flex min-w-0 items-center gap-3">
-					<div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-muted text-xs text-muted-foreground">
+			<div className={cx(cardClass, css({ gap: "1rem", sm: { alignItems: "center" } }))}>
+				<div className={css({ display: "flex", minWidth: 0, alignItems: "center", gap: "0.75rem" })}>
+					<div className={css({ display: "flex", height: "3rem", width: "3rem", flexShrink: 0, alignItems: "center", justifyContent: "center", overflow: "hidden", borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "var(--muted)", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
 						{settings.userProfileImage ? (
 							<img
 								src={settings.userProfileImage}
 								alt="Your profile"
-								className="h-full w-full object-cover"
+								className={css({ height: "100%", width: "100%", objectFit: "cover" })}
 							/>
 						) : (
 							<span>YOU</span>
 						)}
 					</div>
-					<div className="min-w-0">
-						<div className="text-sm font-medium text-foreground">Your profile image</div>
-						<p className="mt-1 text-sm text-muted-foreground">
+					<div className={css({ minWidth: 0 })}>
+						<div className={smallHeadingClass}>Your profile image</div>
+						<p className={cx(mutedSmallClass, css({ marginTop: "0.25rem" }))}>
 							Shown beside your chat messages on this device.
 						</p>
 					</div>
 				</div>
-				<div className="flex shrink-0 flex-wrap items-center gap-2">
-					<label className="inline-flex h-9 cursor-pointer items-center justify-center rounded-md border border-border px-3 text-xs font-medium text-foreground hover:bg-accent hover:text-accent-foreground">
+				<div className={css({ display: "flex", flexShrink: 0, flexWrap: "wrap", alignItems: "center", gap: "0.5rem" })}>
+					<label className={cx(compactButtonClass, css({ cursor: "pointer", color: "var(--foreground)" }))}>
 						Upload
 						<input
 							type="file"
 							accept="image/*"
-							className="sr-only"
+							className={srOnlyClass}
 							onChange={(event) => {
 								void updateProfileImage(event.target.files?.[0]);
 								event.currentTarget.value = "";
@@ -94,7 +172,7 @@ export function KeatingUiSettingsTab() {
 					</label>
 					<button
 						type="button"
-						className="dialog-compact-button inline-flex h-9 items-center justify-center rounded-md border border-border px-3 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+						className={cx("dialog-compact-button", compactButtonClass, css({ color: "var(--muted-foreground)" }))}
 						disabled={!settings.userProfileImage}
 						onClick={() => update({ userProfileImage: null })}
 					>
@@ -103,15 +181,15 @@ export function KeatingUiSettingsTab() {
 				</div>
 			</div>
 
-			<div className="flex flex-col gap-3 rounded-lg border border-border p-4 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-				<div className="min-w-0">
-					<div className="text-sm font-medium text-foreground">Font family</div>
-					<p className="mt-1 text-sm text-muted-foreground">
+			<div className={cardClass}>
+				<div className={css({ minWidth: 0 })}>
+					<div className={smallHeadingClass}>Font family</div>
+					<p className={cx(mutedSmallClass, css({ marginTop: "0.25rem" }))}>
 						Choose the default typeface for the app interface.
 					</p>
 				</div>
 				<select
-					className="w-full sm:w-auto sm:min-w-44 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
+					className={responsiveSelectClass}
 					value={settings.fontFamily}
 					onChange={(e) => update({ fontFamily: e.target.value as UiFontFamily })}
 				>
@@ -123,16 +201,16 @@ export function KeatingUiSettingsTab() {
 				</select>
 			</div>
 
-			<div id="settings-section-ui-share" className="scroll-mt-20">
-				<h3 className="text-sm font-semibold text-foreground mb-2">Share Links</h3>
-				<p className="text-sm text-muted-foreground mb-3">
+			<div id="settings-section-ui-share" className={sectionAnchorClass}>
+				<h3 className={sectionTitleClass}>Share Links</h3>
+				<p className={sectionDescriptionSpacedClass}>
 					Choose how copied session links carry the transcript.
 				</p>
-				<div className="flex flex-col gap-2">
+				<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
 					{SHARE_LINK_MODE_OPTIONS.map((option) => (
 						<label
 							key={option.value}
-							className="flex items-center gap-3 rounded-md border border-border px-3 py-2 cursor-pointer hover:bg-accent/50 transition-colors"
+							className={labelCardClass}
 						>
 							<input
 								type="radio"
@@ -140,11 +218,11 @@ export function KeatingUiSettingsTab() {
 								value={option.value}
 								checked={settings.shareLinkMode === option.value}
 								onChange={() => update({ shareLinkMode: option.value as ShareLinkMode })}
-								className="shrink-0"
+								className={css({ flexShrink: 0 })}
 							/>
-							<div className="min-w-0">
-								<div className="text-sm font-medium text-foreground">{option.label}</div>
-								<div className="text-xs text-muted-foreground">{option.description}</div>
+							<div className={css({ minWidth: 0 })}>
+								<div className={smallHeadingClass}>{option.label}</div>
+								<div className={mutedXsClass}>{option.description}</div>
 							</div>
 						</label>
 					))}
@@ -183,13 +261,13 @@ export function KeatingUiSettingsTab() {
 				title="Alternative response chance"
 				description="Occasionally generate a background forked answer to the same prompt for DPO preference data."
 			>
-				<div className="flex min-w-[12rem] items-center gap-3">
+				<div className={css({ display: "flex", minWidth: "12rem", alignItems: "center", gap: "0.75rem" })}>
 					<input
 						type="range"
 						min={0}
 						max={100}
 						step={1}
-						className="w-36"
+						className={css({ width: "9rem" })}
 						value={Math.round(settings.alternativeResponseChance * 100)}
 						onChange={(event) => update({ alternativeResponseChance: Math.max(0, Math.min(1, Number(event.target.value) / 100)) })}
 					/>
@@ -198,62 +276,62 @@ export function KeatingUiSettingsTab() {
 						min={0}
 						max={100}
 						step={1}
-						className="h-9 w-16 rounded-md border border-border bg-background px-2 text-sm text-foreground"
+						className={css({ height: "2.25rem", width: "4rem", borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "var(--background)", paddingInline: "0.5rem", fontSize: "0.875rem", color: "var(--foreground)" })}
 						value={Math.round(settings.alternativeResponseChance * 100)}
 						onChange={(event) => update({ alternativeResponseChance: Math.max(0, Math.min(1, Number(event.target.value) / 100)) })}
 						aria-label="Alternative response chance percent"
 					/>
-					<span className="text-sm text-muted-foreground">%</span>
+					<span className={mutedSmallClass}>%</span>
 				</div>
 			</SettingRow>
 
-			<div id="settings-section-ui-animation" className="scroll-mt-20">
-				<h3 className="text-sm font-semibold text-foreground mb-2">Animation Renderer</h3>
-				<p className="text-sm text-muted-foreground mb-3">
+			<div id="settings-section-ui-animation" className={sectionAnchorClass}>
+				<h3 className={sectionTitleClass}>Animation Renderer</h3>
+				<p className={sectionDescriptionSpacedClass}>
 					Choose the source format Keating uses when creating browser animation artifacts.
 				</p>
-				<div className="flex flex-col gap-2">
-					<label className="flex items-center gap-3 rounded-md border border-border px-3 py-2 cursor-pointer hover:bg-accent/50 transition-colors">
+				<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
+					<label className={labelCardClass}>
 						<input
 							type="radio"
 							name="animation-renderer"
 							value="manim"
 							checked={settings.animationRenderer === "manim"}
 							onChange={() => update({ animationRenderer: "manim" })}
-							className="shrink-0"
+							className={css({ flexShrink: 0 })}
 						/>
-						<div className="min-w-0">
-							<div className="text-sm font-medium text-foreground">Manim-web</div>
-							<div className="text-xs text-muted-foreground">Manim-web JavaScript scene source.</div>
+						<div className={css({ minWidth: 0 })}>
+							<div className={smallHeadingClass}>Manim-web</div>
+							<div className={mutedXsClass}>Manim-web JavaScript scene source.</div>
 						</div>
 					</label>
-					<label className="flex items-center gap-3 rounded-md border border-border px-3 py-2 cursor-pointer hover:bg-accent/50 transition-colors">
+					<label className={labelCardClass}>
 						<input
 							type="radio"
 							name="animation-renderer"
 							value="hyperframes"
 							checked={settings.animationRenderer === "hyperframes"}
 							onChange={() => update({ animationRenderer: "hyperframes" })}
-							className="shrink-0"
+							className={css({ flexShrink: 0 })}
 						/>
-						<div className="min-w-0">
-							<div className="text-sm font-medium text-foreground">Hyperframes</div>
-							<div className="text-xs text-muted-foreground">Default HTML composition with timed clips and a GSAP timeline.</div>
+						<div className={css({ minWidth: 0 })}>
+							<div className={smallHeadingClass}>Hyperframes</div>
+							<div className={mutedXsClass}>Default HTML composition with timed clips and a GSAP timeline.</div>
 						</div>
 					</label>
 				</div>
 			</div>
 
-			<div id="settings-section-ui-reasoning" className="scroll-mt-20">
-				<h3 className="text-sm font-semibold text-foreground mb-2">Reasoning Level</h3>
-				<p className="text-sm text-muted-foreground mb-3">
+			<div id="settings-section-ui-reasoning" className={sectionAnchorClass}>
+				<h3 className={sectionTitleClass}>Reasoning Level</h3>
+				<p className={sectionDescriptionSpacedClass}>
 					Set how much the model thinks before responding. Higher levels produce more thorough answers but take longer.
 				</p>
-				<div className="flex flex-col gap-2">
+				<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
 					{REASONING_LEVELS.map((level) => (
 						<label
 							key={level.value}
-							className="flex items-center gap-3 rounded-md border border-border px-3 py-2 cursor-pointer hover:bg-accent/50 transition-colors"
+							className={labelCardClass}
 						>
 							<input
 								type="radio"
@@ -261,33 +339,33 @@ export function KeatingUiSettingsTab() {
 								value={level.value}
 								checked={settings.reasoningLevel === level.value}
 								onChange={() => update({ reasoningLevel: level.value })}
-								className="shrink-0"
+								className={css({ flexShrink: 0 })}
 							/>
-							<div className="min-w-0">
-								<div className="text-sm font-medium text-foreground">{level.label}</div>
-								<div className="text-xs text-muted-foreground">{level.description}</div>
+							<div className={css({ minWidth: 0 })}>
+								<div className={smallHeadingClass}>{level.label}</div>
+								<div className={mutedXsClass}>{level.description}</div>
 							</div>
 						</label>
 					))}
 				</div>
 			</div>
 
-			<div id="settings-section-ui-images" className="scroll-mt-20">
-				<h3 className="text-sm font-semibold text-foreground mb-2">Image generation</h3>
-				<p className="text-sm text-muted-foreground mb-3">
+			<div id="settings-section-ui-images" className={sectionAnchorClass}>
+				<h3 className={sectionTitleClass}>Image generation</h3>
+				<p className={sectionDescriptionSpacedClass}>
 					Choose which generator the <code>generate_image</code> tool uses. When none is configured, the tool returns a message instead of an image.
 				</p>
 				{(() => {
 					const generator = getImageGenerator(settings.imageGenerator) ?? getImageGenerator(DEFAULT_IMAGE_GENERATOR_ID)!;
 					return (
-						<div className="flex flex-col gap-4">
-							<div className="flex flex-col gap-3 rounded-lg border border-border p-4 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-								<div className="min-w-0">
-									<div className="text-sm font-medium text-foreground">Generator</div>
-									<p className="mt-1 text-sm text-muted-foreground">{generator.description}</p>
+						<div className={css({ display: "flex", flexDirection: "column", gap: "1rem" })}>
+							<div className={cardClass}>
+								<div className={css({ minWidth: 0 })}>
+									<div className={smallHeadingClass}>Generator</div>
+									<p className={cx(mutedSmallClass, css({ marginTop: "0.25rem" }))}>{generator.description}</p>
 								</div>
 								<select
-									className="w-full sm:w-auto sm:min-w-44 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
+									className={responsiveSelectClass}
 									value={settings.imageGenerator}
 									onChange={(e) =>
 										update({
@@ -307,17 +385,17 @@ export function KeatingUiSettingsTab() {
 							</div>
 
 							{generator.needsBaseUrl && (
-								<div className="flex flex-col gap-3 rounded-lg border border-border p-4 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-									<div className="min-w-0">
-										<div className="text-sm font-medium text-foreground">Local endpoint base URL</div>
-										<p className="mt-1 text-sm text-muted-foreground">
+								<div className={cardClass}>
+									<div className={css({ minWidth: 0 })}>
+										<div className={smallHeadingClass}>Local endpoint base URL</div>
+										<p className={cx(mutedSmallClass, css({ marginTop: "0.25rem" }))}>
 											Base URL of your local OpenAI-compatible server, e.g. <code>http://localhost:1234</code>. If it needs a key,
 											store it under the provider name <code>{generator.providerKey}</code> in Providers &amp; Models.
 										</p>
 									</div>
 									<input
 										type="text"
-										className="w-full sm:w-auto sm:min-w-64 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
+										className={wideResponsiveInputClass}
 										placeholder="http://localhost:1234"
 										value={settings.localImageBaseUrl}
 										onChange={(e) => update({ localImageBaseUrl: e.target.value })}
@@ -325,10 +403,10 @@ export function KeatingUiSettingsTab() {
 								</div>
 							)}
 
-							<div className="flex flex-col gap-3 rounded-lg border border-border p-4 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-								<div className="min-w-0">
-									<div className="text-sm font-medium text-foreground">Model</div>
-									<p className="mt-1 text-sm text-muted-foreground">
+							<div className={cardClass}>
+								<div className={css({ minWidth: 0 })}>
+									<div className={smallHeadingClass}>Model</div>
+									<p className={cx(mutedSmallClass, css({ marginTop: "0.25rem" }))}>
 										{generator.models.length > 0
 											? "Image model used for this generator."
 											: "Model id exposed by your local server."}
@@ -336,7 +414,7 @@ export function KeatingUiSettingsTab() {
 								</div>
 								{generator.models.length > 0 ? (
 									<select
-										className="w-full sm:w-auto sm:min-w-44 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
+										className={responsiveSelectClass}
 										value={settings.imageModel || generator.models[0]}
 										onChange={(e) => update({ imageModel: e.target.value })}
 									>
@@ -349,7 +427,7 @@ export function KeatingUiSettingsTab() {
 								) : (
 									<input
 										type="text"
-										className="w-full sm:w-auto sm:min-w-64 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
+										className={wideResponsiveInputClass}
 										placeholder="e.g. sd3.5, flux.1-dev"
 										value={settings.imageModel}
 										onChange={(e) => update({ imageModel: e.target.value })}
@@ -357,14 +435,14 @@ export function KeatingUiSettingsTab() {
 								)}
 							</div>
 
-							<div className="flex flex-col gap-3 rounded-lg border border-border p-4 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-								<div className="min-w-0">
-									<div className="text-sm font-medium text-foreground">Size &amp; quality</div>
-									<p className="mt-1 text-sm text-muted-foreground">Defaults used when the tool does not override them.</p>
+							<div className={cardClass}>
+								<div className={css({ minWidth: 0 })}>
+									<div className={smallHeadingClass}>Size &amp; quality</div>
+									<p className={cx(mutedSmallClass, css({ marginTop: "0.25rem" }))}>Defaults used when the tool does not override them.</p>
 								</div>
-								<div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+								<div className={css({ display: "flex", width: "100%", flexWrap: "wrap", alignItems: "center", gap: "0.5rem", sm: { width: "auto" } })}>
 									<select
-										className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
+										className={css({ borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "var(--background)", paddingInline: "0.75rem", paddingBlock: "0.5rem", fontSize: "0.875rem", color: "var(--foreground)" })}
 										value={settings.imageSize || generator.sizes[0]}
 										onChange={(e) => update({ imageSize: e.target.value })}
 										aria-label="Image size"
@@ -376,7 +454,7 @@ export function KeatingUiSettingsTab() {
 										))}
 									</select>
 									<select
-										className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
+										className={css({ borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "var(--background)", paddingInline: "0.75rem", paddingBlock: "0.5rem", fontSize: "0.875rem", color: "var(--foreground)" })}
 										value={settings.imageQuality || generator.qualities[0]}
 										onChange={(e) => update({ imageQuality: e.target.value })}
 										aria-label="Image quality"

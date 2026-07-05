@@ -1,30 +1,39 @@
 { pkgs, lib, config, ... }:
 {
   # Per-project devenv config. See https://devenv.sh
-  # This shell complements the Flox setup with lightweight release hygiene:
-  # - bumpy for canonical package-version bumps when available in nixpkgs
+  # Provides lightweight release hygiene:
+  # - @varlock/bumpy for canonical package-version bumps
   # - repo-local git hooks that enforce version sync and run tests before push
 
-  packages =
-    (with pkgs; [
-      bun
-      just
-    ])
-    ++ lib.optionals (pkgs ? bumpy) [ pkgs.bumpy ];
+  packages = with pkgs; [
+    bun
+    just
+  ];
+
+  scripts.bumpy.exec = ''
+    bumpy_bin="$DEVENV_ROOT/node_modules/.bin/bumpy"
+    if [ ! -x "$bumpy_bin" ]; then
+      echo "bumpy is not installed. Run: bun install" >&2
+      exit 1
+    fi
+
+    exec "$bumpy_bin" "$@"
+  '';
 
   scripts.bump-version.exec = ''
     if [ "$#" -eq 0 ]; then
       echo "usage: bump-version <bumpy args>" >&2
-      echo "example: bump-version patch" >&2
+      echo "example: bump-version version" >&2
       exit 1
     fi
 
-    if ! command -v bumpy >/dev/null 2>&1; then
-      echo "bumpy is not available in this nixpkgs revision." >&2
+    bumpy_bin="$DEVENV_ROOT/node_modules/.bin/bumpy"
+    if [ ! -x "$bumpy_bin" ]; then
+      echo "bumpy is not installed. Run: bun install" >&2
       exit 1
     fi
 
-    bumpy "$@"
+    "$bumpy_bin" "$@"
     just sync-version
   '';
 

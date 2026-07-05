@@ -15,6 +15,7 @@ import {
 import type { Quiz, QuizQuestion } from "../keating/core";
 import type { QuizResult } from "./QuizRenderer";
 import { isOpenEnded, questionCredit } from "./QuizRenderer";
+import { css, cx } from "../../styled-system/css";
 
 export interface QuizSessionProps {
   quiz: Quiz;
@@ -34,6 +35,131 @@ function formatCountdown(seconds: number): string {
   const minutes = Math.floor(safeSeconds / 60);
   const remainder = safeSeconds % 60;
   return `${minutes}:${remainder.toString().padStart(2, "0")}`;
+}
+
+const sm = "@media (min-width: 640px)";
+const dark = ".dark &";
+
+const qs = {
+  panel: css({
+    marginBlock: "0.75rem",
+    borderRadius: "0.75rem",
+    border: "1px solid var(--border)",
+    background: "var(--background)",
+    padding: "1rem",
+    boxShadow: "var(--shadow-card)",
+    [sm]: { padding: "1.25rem" },
+  }),
+  startPanel: css({
+    marginBlock: "0.75rem",
+    borderRadius: "0.75rem",
+    border: "1px solid var(--border)",
+    background: "var(--background)",
+    padding: "1rem",
+    boxShadow: "var(--shadow-card)",
+    [sm]: { padding: "1.5rem" },
+  }),
+  rowStart: css({ display: "flex", alignItems: "flex-start", gap: "0.75rem", [sm]: { gap: "1rem" } }),
+  rowCenter: css({ display: "flex", alignItems: "center", gap: "0.5rem" }),
+  iconBox: css({
+    display: "flex",
+    height: "2.5rem",
+    width: "2.5rem",
+    flexShrink: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "0.5rem",
+    background: "color-mix(in srgb, var(--primary) 10%, transparent)",
+  }),
+  minFlex: css({ minWidth: 0, flex: 1 }),
+  muted: css({ color: "var(--muted-foreground)" }),
+  primaryIcon: css({ color: "var(--primary)" }),
+  primaryButton: css({
+    display: "inline-flex",
+    height: "2.25rem",
+    alignItems: "center",
+    gap: "0.5rem",
+    borderRadius: "0.5rem",
+    background: "var(--primary)",
+    paddingInline: "0.75rem",
+    fontSize: "0.875rem",
+    fontWeight: 500,
+    color: "var(--primary-foreground)",
+    _hover: { background: "color-mix(in srgb, var(--primary) 90%, transparent)" },
+    [sm]: { paddingInline: "1rem" },
+  }),
+  outlineButton: css({
+    display: "inline-flex",
+    height: "2.25rem",
+    alignItems: "center",
+    borderRadius: "0.5rem",
+    border: "1px solid var(--border)",
+    paddingInline: "0.75rem",
+    fontSize: "0.875rem",
+    _hover: { background: "var(--accent)" },
+    [sm]: { paddingInline: "1rem" },
+  }),
+  progressTrack: css({
+    height: "0.375rem",
+    width: "100%",
+    overflow: "hidden",
+    borderRadius: "9999px",
+    background: "var(--muted)",
+  }),
+  progressFill: css({
+    height: "100%",
+    borderRadius: "9999px",
+    background: "var(--primary)",
+    transition: "all 150ms",
+  }),
+  navButton: css({
+    display: "inline-flex",
+    height: "2.25rem",
+    alignItems: "center",
+    gap: "0.25rem",
+    borderRadius: "0.5rem",
+    border: "1px solid var(--border)",
+    paddingInline: "0.75rem",
+    fontSize: "0.875rem",
+    _hover: { background: "var(--accent)" },
+    _disabled: { pointerEvents: "none", opacity: 0.4 },
+  }),
+  input: css({
+    height: "2.5rem",
+    width: "100%",
+    borderRadius: "0.5rem",
+    border: "1px solid var(--border)",
+    background: "var(--background)",
+    paddingInline: "0.75rem",
+    fontSize: "0.875rem",
+    outline: "none",
+    _focus: { borderColor: "var(--primary)" },
+  }),
+  selectInput: css({
+    width: "100%",
+    accentColor: "var(--primary)",
+  }),
+};
+
+function choiceButtonClass(active: boolean) {
+  return css({
+    display: "flex",
+    width: "100%",
+    alignItems: "center",
+    gap: "0.75rem",
+    borderRadius: "0.5rem",
+    border: "2px solid",
+    borderColor: active ? "var(--primary)" : "var(--border)",
+    background: active
+      ? "color-mix(in srgb, var(--primary) 10%, transparent)"
+      : "color-mix(in srgb, var(--muted) 20%, transparent)",
+    padding: "0.625rem 1rem",
+    textAlign: "left",
+    fontSize: "0.875rem",
+    color: active ? "var(--primary)" : undefined,
+    transition: "all 150ms",
+    _hover: active ? {} : { borderColor: "color-mix(in srgb, var(--primary) 50%, transparent)" },
+  });
 }
 
 /**
@@ -203,33 +329,33 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
 
   if (!started) {
     return (
-      <div className="my-3 rounded-xl border border-border bg-background p-4 sm:p-6 shadow-sm">
-        <div className="flex items-start gap-3 sm:gap-4">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-            <GraduationCap size={20} className="text-primary" />
+      <div className={qs.startPanel}>
+        <div className={qs.rowStart}>
+          <div className={qs.iconBox}>
+            <GraduationCap size={20} className={qs.primaryIcon} />
           </div>
-          <div className="min-w-0 flex-1 space-y-2">
-            <h3 className="text-base font-semibold">{quiz.topic}</h3>
-            <p className="text-sm text-muted-foreground">
+          <div className={cx(qs.minFlex, css({ display: "grid", gap: "0.5rem" }))}>
+            <h3 className={css({ fontSize: "1rem", fontWeight: 600 })}>{quiz.topic}</h3>
+            <p className={cx(qs.muted, css({ fontSize: "0.875rem" }))}>
               {total} question{total !== 1 ? "s" : ""} · Mixed difficulty
             </p>
-            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-              <span className="inline-flex items-center gap-1 tabular-nums">
+            <div className={cx(qs.muted, css({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.75rem", fontSize: "0.75rem" }))}>
+              <span className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", fontVariantNumeric: "tabular-nums" })}>
                 <Clock size={13} />
                 Timer starts when you begin
               </span>
               {totalTimeLimit > 0 && (
-                <span className="inline-flex items-center gap-1 tabular-nums">
+                <span className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", fontVariantNumeric: "tabular-nums" })}>
                   <AlertTriangle size={13} />
                   {timedQuestions.length} timed · {formatCountdown(totalTimeLimit)} total limit
                 </span>
               )}
             </div>
-            <div className="flex gap-2 pt-2">
+            <div className={css({ display: "flex", gap: "0.5rem", paddingTop: "0.5rem" })}>
               <button
                 type="button"
                 onClick={handleStart}
-                className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-3 sm:px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                className={qs.primaryButton}
               >
                 Start Quiz
               </button>
@@ -237,7 +363,7 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
                 <button
                   type="button"
                   onClick={onDismiss}
-                  className="inline-flex h-9 items-center rounded-lg border border-border px-3 sm:px-4 text-sm hover:bg-accent"
+                  className={qs.outlineButton}
                 >
                   Skip
                 </button>
@@ -270,18 +396,27 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
     const ratio = decided > 0 ? correctCount / decided : 0;
 
     return (
-      <div className="my-3 rounded-xl border border-border bg-background p-4 sm:p-5 shadow-sm">
-        <div className="flex items-center gap-3 mb-4">
-          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${decided === 0 || ratio >= 0.7 ? "bg-emerald-500/10" : "bg-amber-500/10"}`}>
+      <div className={qs.panel}>
+        <div className={css({ marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.75rem" })}>
+          <div className={css({
+            display: "flex",
+            height: "2.5rem",
+            width: "2.5rem",
+            flexShrink: 0,
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: "0.5rem",
+            background: decided === 0 || ratio >= 0.7 ? "rgba(16, 185, 129, 0.1)" : "rgba(245, 158, 11, 0.1)",
+          })}>
             {decided === 0 || ratio >= 0.7 ? (
-              <CheckCircle2 size={20} className="text-emerald-600" />
+              <CheckCircle2 size={20} className={css({ color: "#059669" })} />
             ) : (
-              <AlertTriangle size={20} className="text-amber-600" />
+              <AlertTriangle size={20} className={css({ color: "#d97706" })} />
             )}
           </div>
           <div>
-            <h3 className="font-semibold">{quiz.topic}: Completed</h3>
-            <p className="text-sm text-muted-foreground">
+            <h3 className={css({ fontWeight: 600 })}>{quiz.topic}: Completed</h3>
+            <p className={cx(qs.muted, css({ fontSize: "0.875rem" }))}>
               {decided === 0 ? "Pending review" : `${correctCount}/${decided} correct`}
               {pendingCount > 0 ? ` · ${pendingCount} pending review` : ""} ·{" "}
               {formatDuration(finalTiming?.totalMs ?? elapsedMs)}
@@ -296,24 +431,31 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
 
   // In-progress quiz
   return (
-    <div className="my-3 rounded-xl border border-border bg-background p-4 sm:p-5 shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <div className="min-w-0 flex items-center gap-2">
-          <GraduationCap size={16} className="shrink-0 text-primary" />
-          <span className="truncate text-sm font-medium">{quiz.topic}</span>
+    <div className={qs.panel}>
+      <div className={css({ marginBottom: "1rem", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" })}>
+        <div className={css({ minWidth: 0, display: "flex", alignItems: "center", gap: "0.5rem" })}>
+          <GraduationCap size={16} className={cx(css({ flexShrink: 0 }), qs.primaryIcon)} />
+          <span className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500 })}>{quiz.topic}</span>
         </div>
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/20 px-2 py-1 tabular-nums">
+        <div className={cx(qs.muted, css({ display: "flex", flexShrink: 0, flexWrap: "wrap", alignItems: "center", justifyContent: "flex-end", gap: "0.5rem", fontSize: "0.75rem" }))}>
+          <span className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", border: "1px solid var(--border)", background: "color-mix(in srgb, var(--muted) 20%, transparent)", padding: "0.25rem 0.5rem", fontVariantNumeric: "tabular-nums" })}>
             <Clock size={13} />
             Total {formatDuration(elapsedMs)}
           </span>
           {typeof timeRemaining === "number" && (
             <span
-              className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 tabular-nums ${
-                timeRemaining <= 5
-                  ? "border-destructive/30 bg-destructive/10 text-destructive"
-                  : "border-border bg-muted/20"
-              }`}
+              className={css({
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.25rem",
+                borderRadius: "0.375rem",
+                border: "1px solid",
+                borderColor: timeRemaining <= 5 ? "color-mix(in srgb, var(--destructive) 30%, transparent)" : "var(--border)",
+                background: timeRemaining <= 5 ? "color-mix(in srgb, var(--destructive) 10%, transparent)" : "color-mix(in srgb, var(--muted) 20%, transparent)",
+                padding: "0.25rem 0.5rem",
+                color: timeRemaining <= 5 ? "var(--destructive)" : undefined,
+                fontVariantNumeric: "tabular-nums",
+              })}
             >
               <AlertTriangle size={13} />
               Question {formatCountdown(timeRemaining)}
@@ -323,20 +465,31 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
         </div>
       </div>
 
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted mb-4">
+      <div className={cx(qs.progressTrack, css({ marginBottom: "1rem" }))}>
         <div
-          className="h-full rounded-full bg-primary transition-all"
+          className={qs.progressFill}
           style={{ width: `${((currentIndex + 1) / total) * 100}%` }}
         />
       </div>
 
-      <div className="space-y-4">
-        <div className="flex items-start justify-between gap-3">
-          <p className="text-sm font-medium leading-relaxed flex-1">{q.question}</p>
+      <div className={css({ display: "grid", gap: "1rem" })}>
+        <div className={css({ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.75rem" })}>
+          <p className={css({ flex: 1, fontSize: "0.875rem", fontWeight: 500, lineHeight: 1.625 })}>{q.question}</p>
           <button
             type="button"
             onClick={() => toggleFlag(q.id)}
-            className={`shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors ${flagged.has(q.id) ? "text-amber-500" : "text-muted-foreground hover:bg-accent"}`}
+            className={css({
+              display: "inline-flex",
+              height: "2rem",
+              width: "2rem",
+              flexShrink: 0,
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: "0.375rem",
+              color: flagged.has(q.id) ? "#f59e0b" : "var(--muted-foreground)",
+              transition: "color 150ms, background-color 150ms",
+              _hover: flagged.has(q.id) ? {} : { background: "var(--accent)" },
+            })}
             title={flagged.has(q.id) ? "Unflag" : "Flag for review"}
           >
             <Bookmark size={14} fill={flagged.has(q.id) ? "currentColor" : "none"} />
@@ -346,12 +499,12 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
         <QuizAnswerInput question={q} value={answers[q.id] ?? ""} onChange={(v) => setAnswer(q.id, v)} />
       </div>
 
-      <div className="flex items-center justify-between gap-2 mt-5">
+      <div className={css({ marginTop: "1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" })}>
         <button
           type="button"
           disabled={currentIndex === 0}
           onClick={() => goToQuestion(currentIndex - 1)}
-          className="inline-flex h-9 items-center gap-1 rounded-lg border border-border px-3 text-sm hover:bg-accent disabled:opacity-40 disabled:pointer-events-none"
+          className={qs.navButton}
         >
           Previous
         </button>
@@ -359,7 +512,7 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
           <button
             type="button"
             onClick={() => goToQuestion(currentIndex + 1)}
-            className="inline-flex h-9 items-center gap-1 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            className={qs.primaryButton}
           >
             Next
           </button>
@@ -367,7 +520,7 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
           <button
             type="button"
             onClick={handleSubmit}
-            className="inline-flex h-9 items-center gap-1 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            className={qs.primaryButton}
           >
             Submit
           </button>
@@ -389,20 +542,16 @@ function QuizAnswerInput({
 }) {
   if (question.type === "multiple_choice" && question.options) {
     return (
-      <div className="space-y-1.5">
+      <div className={css({ display: "grid", gap: "0.375rem" })}>
         {question.options.map((opt) => (
           <button
             key={opt}
             type="button"
             onClick={() => onChange(opt)}
-            className={`flex w-full items-center gap-3 rounded-lg border-2 px-4 py-2.5 text-left text-sm transition-all ${
-              value === opt
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border bg-muted/20 hover:border-primary/50"
-            }`}
+            className={choiceButtonClass(value === opt)}
           >
-            <div className={`h-4 w-4 shrink-0 rounded-full border-2 ${value === opt ? "border-primary bg-primary" : "border-border"}`} />
-            <span className="flex-1">{opt}</span>
+            <div className={css({ height: "1rem", width: "1rem", flexShrink: 0, borderRadius: "9999px", border: "2px solid", borderColor: value === opt ? "var(--primary)" : "var(--border)", background: value === opt ? "var(--primary)" : undefined })} />
+            <span className={css({ flex: 1 })}>{opt}</span>
           </button>
         ))}
       </div>
@@ -418,22 +567,18 @@ function QuizAnswerInput({
       onChange(Array.from(next).join(", "));
     };
     return (
-      <div className="space-y-1.5">
+      <div className={css({ display: "grid", gap: "0.375rem" })}>
         {question.options.map((opt) => (
           <button
             key={opt}
             type="button"
             onClick={() => toggle(opt)}
-            className={`flex w-full items-center gap-3 rounded-lg border-2 px-4 py-2.5 text-left text-sm transition-all ${
-              selected.has(opt)
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border bg-muted/20 hover:border-primary/50"
-            }`}
+            className={choiceButtonClass(selected.has(opt))}
           >
-            <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 ${selected.has(opt) ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>
+            <span className={css({ display: "flex", height: "1rem", width: "1rem", flexShrink: 0, alignItems: "center", justifyContent: "center", borderRadius: "0.25rem", border: "2px solid", borderColor: selected.has(opt) ? "var(--primary)" : "var(--border)", background: selected.has(opt) ? "var(--primary)" : undefined, color: selected.has(opt) ? "var(--primary-foreground)" : undefined })}>
               {selected.has(opt) ? <CheckCircle2 size={12} /> : null}
             </span>
-            <span className="flex-1">{opt}</span>
+            <span className={css({ flex: 1 })}>{opt}</span>
           </button>
         ))}
       </div>
@@ -442,17 +587,13 @@ function QuizAnswerInput({
 
   if (question.type === "true_false") {
     return (
-      <div className="flex gap-2">
+      <div className={css({ display: "flex", gap: "0.5rem" })}>
         {["True", "False"].map((opt) => (
           <button
             key={opt}
             type="button"
             onClick={() => onChange(opt)}
-            className={`flex-1 rounded-lg border-2 px-4 py-2.5 text-sm font-medium transition-all ${
-              value === opt
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border bg-muted/20 hover:border-primary/50"
-            }`}
+            className={cx(choiceButtonClass(value === opt), css({ flex: 1, justifyContent: "center", fontWeight: 500 }))}
           >
             {opt}
           </button>
@@ -464,7 +605,7 @@ function QuizAnswerInput({
   if (question.type === "slider" && typeof question.min === "number" && typeof question.max === "number") {
     const numValue = value ? parseFloat(value) : question.min;
     return (
-      <div className="space-y-2">
+      <div className={css({ display: "grid", gap: "0.5rem" })}>
         <input
           type="range"
           min={question.min}
@@ -472,11 +613,11 @@ function QuizAnswerInput({
           step={question.step ?? 1}
           value={numValue}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full accent-primary"
+          className={qs.selectInput}
         />
-        <div className="flex justify-between text-xs text-muted-foreground">
+        <div className={cx(qs.muted, css({ display: "flex", justifyContent: "space-between", fontSize: "0.75rem" }))}>
           <span>{question.min}</span>
-          <span className="font-medium text-foreground">{numValue}</span>
+          <span className={css({ fontWeight: 500, color: "var(--foreground)" })}>{numValue}</span>
           <span>{question.max}</span>
         </div>
       </div>
@@ -491,7 +632,7 @@ function QuizAnswerInput({
   return (
     <input
       type="text"
-      className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+      className={qs.input}
       placeholder={question.type === "fill_in" ? "Fill in the blank..." : "Type your answer..."}
       value={value}
       onChange={(e) => onChange(e.target.value)}
@@ -538,21 +679,34 @@ function MultiBlankInput({
 
   let blankCounter = 0;
   return (
-    <div className="text-sm leading-relaxed">
+    <div className={css({ fontSize: "0.875rem", lineHeight: 1.625 })}>
       {parts.map((part, idx) => {
         if (!part.isBlank) return <span key={idx}>{part.text}</span>;
         const bIdx = blankCounter++;
         const blankDef = blanks[bIdx];
         return (
-          <span key={idx} className="inline-flex items-center gap-1 mx-1">
+          <span key={idx} className={css({ marginInline: "0.25rem", display: "inline-flex", alignItems: "center", gap: "0.25rem" })}>
             <input
               type="text"
-              className="inline-block w-20 h-7 rounded border border-border bg-background px-2 text-sm text-center outline-none focus:border-primary placeholder:text-muted-foreground/50"
+              className={css({
+                display: "inline-block",
+                height: "1.75rem",
+                width: "5rem",
+                borderRadius: "0.25rem",
+                border: "1px solid var(--border)",
+                background: "var(--background)",
+                paddingInline: "0.5rem",
+                textAlign: "center",
+                fontSize: "0.875rem",
+                outline: "none",
+                _focus: { borderColor: "var(--primary)" },
+                "&::placeholder": { color: "color-mix(in srgb, var(--muted-foreground) 50%, transparent)" },
+              })}
               placeholder={blankDef?.placeholder ?? "___"}
               value={values[bIdx] ?? ""}
               onChange={(e) => setValue(bIdx, e.target.value)}
             />
-            {blankDef?.hint && <span className="text-[10px] text-muted-foreground">{blankDef.hint}</span>}
+            {blankDef?.hint && <span className={cx(qs.muted, css({ fontSize: "0.625rem" }))}>{blankDef.hint}</span>}
           </span>
         );
       })}
@@ -582,7 +736,7 @@ function QuizReview({
   };
 
   return (
-    <div className="space-y-2">
+    <div className={css({ display: "grid", gap: "0.5rem" })}>
       {questions.map((q, idx) => {
         const answer = (answers[q.id] ?? "").trim();
         const isExpanded = expanded.has(q.id);
@@ -602,48 +756,53 @@ function QuizReview({
         return (
           <div
             key={q.id}
-            className={`rounded-lg border p-3 transition-colors ${
-              correct ? "border-emerald-500/30 bg-emerald-500/5" : "border-border bg-muted/20"
-            }`}
+            className={css({
+              borderRadius: "0.5rem",
+              border: "1px solid",
+              borderColor: correct ? "rgba(16, 185, 129, 0.3)" : "var(--border)",
+              background: correct ? "rgba(16, 185, 129, 0.05)" : "color-mix(in srgb, var(--muted) 20%, transparent)",
+              padding: "0.75rem",
+              transition: "color 150ms, background-color 150ms, border-color 150ms",
+            })}
           >
             <button
               type="button"
               onClick={() => toggle(q.id)}
-              className="flex w-full items-start gap-2 text-left"
+              className={css({ display: "flex", width: "100%", alignItems: "flex-start", gap: "0.5rem", textAlign: "left" })}
             >
               {correct ? (
-                <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-emerald-600" />
+                <CheckCircle2 size={14} className={css({ marginTop: "0.125rem", flexShrink: 0, color: "#059669" })} />
               ) : (
-                <XCircle size={14} className="mt-0.5 shrink-0 text-destructive" />
+                <XCircle size={14} className={css({ marginTop: "0.125rem", flexShrink: 0, color: "var(--destructive)" })} />
               )}
-              <span className="min-w-0 flex-1 text-sm">
-                <span className="text-muted-foreground mr-2">{idx + 1}.</span>
+              <span className={css({ minWidth: 0, flex: 1, fontSize: "0.875rem" })}>
+                <span className={cx(qs.muted, css({ marginRight: "0.5rem" }))}>{idx + 1}.</span>
                 {q.question}
               </span>
-              {isExpanded ? <ChevronUp size={14} className="shrink-0 text-muted-foreground" /> : <ChevronDown size={14} className="shrink-0 text-muted-foreground" />}
+              {isExpanded ? <ChevronUp size={14} className={cx(qs.muted, css({ flexShrink: 0 }))} /> : <ChevronDown size={14} className={cx(qs.muted, css({ flexShrink: 0 }))} />}
             </button>
             {isExpanded && (
-              <div className="mt-2 space-y-1.5 pl-6 text-sm">
+              <div className={css({ marginTop: "0.5rem", display: "grid", gap: "0.375rem", paddingLeft: "1.5rem", fontSize: "0.875rem" })}>
                 <p>
-                  <span className="text-muted-foreground">Your answer:</span>{" "}
-                  <span className={correct ? "text-emerald-700 dark:text-emerald-300" : "text-destructive"}>
+                  <span className={qs.muted}>Your answer:</span>{" "}
+                  <span className={correct ? css({ color: "#047857", [dark]: { color: "#6ee7b7" } }) : css({ color: "var(--destructive)" })}>
                     {answer || "(blank)"}
                   </span>
                 </p>
                 {!correct && (
                   <p>
-                    <span className="text-muted-foreground">Correct:</span>{" "}
-                    <span className="text-emerald-700 dark:text-emerald-300">{q.correctAnswer}</span>
+                    <span className={qs.muted}>Correct:</span>{" "}
+                    <span className={css({ color: "#047857", [dark]: { color: "#6ee7b7" } })}>{q.correctAnswer}</span>
                   </p>
                 )}
                 {q.explanation && (
-                  <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
-                    <Lightbulb size={12} className="mt-0.5 shrink-0" />
+                  <p className={cx(qs.muted, css({ display: "flex", alignItems: "flex-start", gap: "0.375rem", fontSize: "0.75rem" }))}>
+                    <Lightbulb size={12} className={css({ marginTop: "0.125rem", flexShrink: 0 })} />
                     {q.explanation}
                   </p>
                 )}
                 {typeof timing?.perQuestionMs?.[q.id] === "number" && (
-                  <p className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                  <p className={cx(qs.muted, css({ display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.625rem" }))}>
                     <Clock size={10} />
                     Time: {formatDuration(timing.perQuestionMs[q.id])}
                   </p>

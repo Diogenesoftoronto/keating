@@ -155,7 +155,7 @@ Browser-only mode is intentionally the free-tier default. It is lower-risk than 
 
 ### Development
 
-All development dependencies (bun, node, oxdraw, typst, similarity, just, etc.) are managed by **Flox**. Run `flox activate` to enter the dev environment, then use **just** as the task runner.
+All development dependencies (bun, node, oxdraw, typst, similarity, just, etc.) are managed by **devenv** (`devenv.nix`). Run `devenv shell` to enter the dev environment, then use **just** as the task runner.
 
 <video src="docs/assets/doctor.mp4" autoplay loop muted width="100%"></video>
 

@@ -1,6 +1,7 @@
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { dirname, join, relative } from "node:path";
 
+import { artifactScenePalette, prepareArtifactTheme } from "./artifact-theme.js";
 import { buildLessonPlan } from "./lesson-plan.js";
 import { animationsDir } from "./paths.js";
 import { resolveTopic } from "./topics.js";
@@ -132,14 +133,7 @@ export async function animationSceneSource(cwd: string, topicName: string, polic
   const misconception = topic.misconceptions[0] ?? `Avoid flattening ${topic.title} into a slogan.`;
   const bridge = topic.interdisciplinaryHooks[0] ?? "application";
 
-  const palette = {
-    background: "#08111f",
-    ink: "#f8f5ec",
-    accent: "#ff7a59",
-    support: "#7bb0ff",
-    soft: "#9dd7c8",
-    warning: "#ff8e72"
-  };
+  const palette = artifactScenePalette;
 
   const commonHelpers = `
 const palette = ${JSON.stringify(palette, null, 2)};
@@ -251,70 +245,38 @@ export async function writeLessonAnimation(
   const readmePath = join(topicDir, "README.md");
   const manifest = buildAnimationManifest(topicName, policy);
   const sceneSource = await animationSceneSource(cwd, topicName, policy, importSpecifier);
+  const theme = await prepareArtifactTheme(cwd, topicDir);
   const playerHtml = `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Keating Animation: ${manifest.topic}</title>
+    <link rel="stylesheet" href="${theme.href}" data-keating-artifact-theme="${theme.source}" />
     <style>
-      :root {
-        color-scheme: dark;
-        --paper: #f8f5ec;
-        --ink: #07111d;
-        --frame: #10223a;
-        --muted: #90a3b8;
-      }
       body {
-        margin: 0;
-        min-height: 100vh;
         display: grid;
-        place-items: center;
-        background:
-          radial-gradient(circle at top, rgba(121, 168, 255, 0.25), transparent 28rem),
-          linear-gradient(180deg, #08111f 0%, #050a12 100%);
-        color: var(--paper);
-        font-family: "Iowan Old Style", Georgia, serif;
-      }
-      main {
-        width: min(92vw, 1280px);
-        display: grid;
-        gap: 1rem;
-      }
-      header {
-        display: flex;
-        justify-content: space-between;
-        gap: 1rem;
-        align-items: end;
-      }
-      .meta {
-        color: var(--muted);
-        font-size: 0.95rem;
+        align-items: center;
       }
       #scene {
         height: min(72vh, 760px);
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        border-radius: 20px;
-        overflow: hidden;
-        box-shadow: 0 24px 90px rgba(0, 0, 0, 0.35);
-        background: #08111f;
+        background: ${JSON.stringify(artifactScenePalette.background)};
       }
-      a { color: #b5d2ff; }
     </style>
   </head>
   <body>
-    <main>
-      <header>
+    <main class="keating-artifact keating-artifact-shell">
+      <header class="keating-artifact-header">
         <div>
-          <div class="meta">Keating visual artifact</div>
-          <h1>${manifest.topic}</h1>
+          <div class="keating-artifact-meta">Keating visual artifact</div>
+          <h1 class="keating-artifact-title">${manifest.topic}</h1>
         </div>
-        <div class="meta">
+        <div class="keating-artifact-links keating-artifact-meta">
           <div><a href="./storyboard.md">storyboard.md</a></div>
           <div><a href="./manifest.json">manifest.json</a></div>
         </div>
       </header>
-      <div id="scene"></div>
+      <div id="scene" class="keating-crt-panel"></div>
     </main>
     <script type="module">
       import { Scene } from ${JSON.stringify(importSpecifier)};
@@ -324,7 +286,7 @@ export async function writeLessonAnimation(
       const scene = new Scene(container, {
         width: 1280,
         height: 720,
-        backgroundColor: "#08111f"
+        backgroundColor: ${JSON.stringify(artifactScenePalette.background)}
       });
 
       await construct(scene);

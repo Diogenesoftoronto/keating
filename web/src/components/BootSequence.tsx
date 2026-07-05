@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { css, cx } from "../../styled-system/css";
 
 const BOOT_LINES = [
   { text: "BIOS DATE 01/15/25 14:22:51 VER 0.1.3", delay: 0.1 },
@@ -37,10 +38,34 @@ export function BootSequence() {
 
   return (
     <div
-      className="fixed inset-0 bg-[#0c1510] z-[60] font-terminal text-[#4be388] p-8 overflow-hidden"
-      style={{ opacity: fading ? 0 : 1, transition: "opacity 0.5s" }}
+      className={cx(
+        "font-terminal",
+        css({
+          position: "fixed",
+          inset: 0,
+          background: "#0c1510",
+          zIndex: 60,
+          color: "#4be388",
+          padding: "2rem",
+          overflow: "hidden",
+          transitionProperty: "opacity",
+          transitionDuration: "500ms"
+        })
+      )}
+      style={{ opacity: fading ? 0 : 1 }}
     >
-      <div className="crt max-w-2xl mx-auto mt-20 text-lg leading-relaxed">
+      <div
+        className={cx(
+          "crt",
+          css({
+            maxWidth: "42rem",
+            marginInline: "auto",
+            marginTop: "5rem",
+            fontSize: "1.125rem",
+            lineHeight: "1.625"
+          })
+        )}
+      >
         {BOOT_LINES.map((line, i) => (
           <div
             key={i}
@@ -51,7 +76,7 @@ export function BootSequence() {
           </div>
         ))}
         <div
-          className="boot-line cursor-blink"
+          className={cx("boot-line", "cursor-blink")}
           style={{ animationDelay: "2.7s" }}
         >
           _

@@ -1,6 +1,7 @@
 import type { Preview } from "@storybook/react-vite";
-// Load the app's global stylesheet so Tailwind tokens, themes, and fonts apply.
-import "../src/app.css";
+import "@earendil-works/pi-web-ui/app.css";
+// Load Panda's generated stylesheet so tokens/recipes, themes, and fonts apply.
+import "../styled-system/styles.css";
 
 const preview: Preview = {
 	parameters: {

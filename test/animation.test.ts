@@ -1,7 +1,10 @@
 import { test, expect } from "bun:test";
 import * as fc from "fast-check";
+import { mkdtemp, readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 
-import { animationSceneSource, buildAnimationManifest } from "../src/core/animation.js";
+import { animationSceneSource, buildAnimationManifest, writeLessonAnimation } from "../src/core/animation.js";
 import { lessonPlanToMermaid } from "../src/core/map.js";
 import { DEFAULT_POLICY, clampPolicy } from "../src/core/policy.js";
 import { arbPolicy, CANONICAL_TOPICS, suppressConsoleError } from "./helpers.js";
@@ -93,5 +96,22 @@ test("animation scene source contains expected boilerplate", async () => {
     const scene = await animationSceneSource(process.cwd(), "derivative", DEFAULT_POLICY, "./vendor/manim-web.js");
     expect(scene.includes('from "./vendor/manim-web.js"')).toBe(true);
     expect(scene.includes("export async function construct(scene)")).toBe(true);
+    expect(scene.includes('"background": "#0c1510"')).toBe(true);
+  });
+});
+
+test("animation player generation hooks in the shared artifact theme before local CSS", async () => {
+  await suppressConsoleError(async () => {
+    const workdir = await mkdtemp(join(tmpdir(), "keating-animation-theme-"));
+    const artifact = await writeLessonAnimation(workdir, "derivative", DEFAULT_POLICY);
+    const html = await readFile(artifact.playerPath, "utf8");
+    const themeCss = await readFile(join(artifact.topicDir, "keating-artifact-theme.css"), "utf8");
+
+    expect(html.includes('rel="stylesheet" href="./keating-artifact-theme.css"')).toBe(true);
+    expect(html.indexOf("keating-artifact-theme.css")).toBeLessThan(html.indexOf("<style>"));
+    expect(html.includes('class="keating-artifact keating-artifact-shell"')).toBe(true);
+    expect(html.includes('data-keating-artifact-theme=')).toBe(true);
+    expect(themeCss.includes(".keating-artifact-shell")).toBe(true);
+    expect(themeCss.includes("--colors-accent: #1e9b50")).toBe(true);
   });
 });

@@ -37,6 +37,7 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
+import { css, cx } from "../../styled-system/css";
 import {
   ChevronRight,
   CircleAlert,
@@ -78,6 +79,7 @@ import { QuizRenderer } from "./QuizRenderer";
 import type { QuizResult } from "./QuizRenderer";
 import { QuizSessionPanel } from "./QuizSessionPanel";
 import { QuizResultCard } from "./QuizResultCard";
+import { Spinner } from "./Spinner";
 import { SceneRenderer } from "./SceneRenderer";
 import { AnimatedScene, parseAnimationPayload } from "./AnimatedScene";
 import { QuestionRenderer, normalizeQuestionForm } from "./QuestionRenderer";
@@ -105,6 +107,67 @@ const AuthErrorContext = createContext<(provider: string) => Promise<boolean>>(
   () => Promise.resolve(false),
 );
 
+const mutedTextClass = css({ color: "var(--muted-foreground)" });
+const foregroundTextClass = css({ color: "var(--foreground)" });
+const destructiveTextClass = css({ color: "var(--destructive)" });
+const primaryTextClass = css({ color: "var(--primary)" });
+const pulseClass = css({ animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite" });
+const srInteractiveClass = css({
+  transitionProperty: "color, background-color, border-color, opacity, box-shadow, transform",
+  transitionDuration: "150ms",
+});
+const iconButtonClass = css({
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: "0.375rem",
+  color: "var(--muted-foreground)",
+  _hover: {
+    backgroundColor: "var(--accent)",
+    color: "var(--accent-foreground)",
+  },
+  _disabled: { opacity: 0.5 },
+});
+const composerIconButtonClass = cx(
+  srInteractiveClass,
+  css({
+    display: "inline-flex",
+    width: "2rem",
+    height: "2rem",
+    flexShrink: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "0.375rem",
+    border: "1px solid var(--border)",
+    color: "var(--muted-foreground)",
+    _hover: {
+      backgroundColor: "var(--accent)",
+      color: "var(--accent-foreground)",
+    },
+    _disabled: { opacity: 0.5 },
+    sm: { width: "2.25rem", height: "2.25rem" },
+  }),
+);
+const dialogButtonClass = cx(
+  "dialog-compact-button",
+  css({
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "0.375rem",
+    border: "1px solid var(--border)",
+    paddingInline: "0.75rem",
+    paddingBlock: "0.375rem",
+    fontSize: "0.75rem",
+    _hover: { backgroundColor: "var(--muted)" },
+  }),
+);
+const messageActionButtonClass = cx(
+  srInteractiveClass,
+  iconButtonClass,
+  css({ width: "1.5rem", height: "1.5rem" }),
+);
+
 /**
  * Renders nothing visible beyond a small confirmation; its job is to push the
  * model's grade payload into QuizGradesContext when the grade tag mounts.
@@ -117,7 +180,14 @@ function QuizGradeApplier({ payload }: { payload: QuizGradePayload }) {
     }
   }, [payload, applyGrades]);
   return (
-    <p className="my-1 text-xs text-muted-foreground italic">
+    <p
+      className={css({
+        marginBlock: "0.25rem",
+        fontSize: "0.75rem",
+        fontStyle: "italic",
+        color: "var(--muted-foreground)",
+      })}
+    >
       Reviewed your open-ended answers above.
     </p>
   );
@@ -639,24 +709,52 @@ function ErrorBadge({
 }) {
   const ErrorIcon = classified.icon;
   return (
-    <div className="space-y-1.5">
-      <div className="flex items-center gap-1.5 font-medium">
+    <div className={css({ display: "grid", gap: "0.375rem" })}>
+      <div className={css({ display: "flex", alignItems: "center", gap: "0.375rem", fontWeight: 500 })}>
         <ErrorIcon size={13} />
         <span>{classified.title}</span>
         {classified.statusCode && (
-          <span className="rounded bg-background/70 px-1.5 py-0.5 font-mono text-[10px]">
+          <span
+            className={css({
+              borderRadius: "0.25rem",
+              backgroundColor: "color-mix(in srgb, var(--background) 70%, transparent)",
+              paddingInline: "0.375rem",
+              paddingBlock: "0.125rem",
+              fontFamily: "var(--mono-body)",
+              fontSize: "10px",
+            })}
+          >
             {classified.statusCode}
           </span>
         )}
       </div>
-      <p className="text-muted-foreground">{classified.description}</p>
+      <p className={mutedTextClass}>{classified.description}</p>
       {showRaw && (
-        <details className="mt-2">
-          <summary className="flex cursor-pointer list-none items-center gap-1 text-muted-foreground hover:text-foreground">
+        <details className={css({ marginTop: "0.5rem" })}>
+          <summary
+            className={css({
+              display: "flex",
+              cursor: "pointer",
+              listStyle: "none",
+              alignItems: "center",
+              gap: "0.25rem",
+              color: "var(--muted-foreground)",
+              _hover: { color: "var(--foreground)" },
+            })}
+          >
             <ChevronRight size={13} />
             Raw details
           </summary>
-          <pre className="mt-2 max-h-44 overflow-auto whitespace-pre-wrap text-[11px] text-muted-foreground">
+          <pre
+            className={css({
+              marginTop: "0.5rem",
+              maxHeight: "11rem",
+              overflow: "auto",
+              whiteSpace: "pre-wrap",
+              fontSize: "11px",
+              color: "var(--muted-foreground)",
+            })}
+          >
             {rawMessage}
           </pre>
         </details>
@@ -667,14 +765,30 @@ function ErrorBadge({
 
 function ImagePart({ image, filename }: { image: string; filename?: string }) {
   return (
-    <figure className="my-2 overflow-hidden rounded-md border border-border bg-background/60">
+    <figure
+      className={css({
+        marginBlock: "0.5rem",
+        overflow: "hidden",
+        borderRadius: "0.375rem",
+        border: "1px solid var(--border)",
+        backgroundColor: "color-mix(in srgb, var(--background) 60%, transparent)",
+      })}
+    >
       <img
         src={image}
         alt={filename ?? "Attached image"}
-        className="max-h-80 w-full object-contain"
+        className={css({ maxHeight: "20rem", width: "100%", objectFit: "contain" })}
       />
       {filename ? (
-        <figcaption className="border-t border-border px-2 py-1 text-[11px] text-muted-foreground">
+        <figcaption
+          className={css({
+            borderTop: "1px solid var(--border)",
+            paddingInline: "0.5rem",
+            paddingBlock: "0.25rem",
+            fontSize: "11px",
+            color: "var(--muted-foreground)",
+          })}
+        >
           {filename}
         </figcaption>
       ) : null}
@@ -778,12 +892,22 @@ function SpeechMicButton() {
         title={title}
         aria-label={title}
         aria-pressed={recording}
-        className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50 sm:h-9 sm:w-9 ${
-          recording ? "animate-pulse border-destructive text-destructive" : ""
-        }`}
+        className={cx(
+          composerIconButtonClass,
+          css({
+            _hover: { backgroundColor: "var(--muted)", color: "var(--foreground)" },
+          }),
+          recording
+            ? css({
+                animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+                borderColor: "var(--destructive)",
+                color: "var(--destructive)",
+              })
+            : "",
+        )}
       >
         {busy ? (
-          <Loader2 size={16} className="animate-spin" />
+          <Spinner size={16} />
         ) : recording ? (
           <MicOff size={16} />
         ) : (
@@ -886,32 +1010,78 @@ function LiveVoiceOverlay({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
+      className={css({
+        position: "fixed",
+        inset: 0,
+        zIndex: 50,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "color-mix(in srgb, var(--background) 80%, transparent)",
+        padding: "1rem",
+        backdropFilter: "blur(4px)",
+      })}
       role="dialog"
       aria-modal="true"
       aria-label="Live voice conversation"
     >
-      <div className="w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-xl">
-        <div className="flex items-center gap-3">
+      <div
+        className={css({
+          width: "100%",
+          maxWidth: "28rem",
+          borderRadius: "0.75rem",
+          border: "1px solid var(--border)",
+          backgroundColor: "var(--card)",
+          padding: "1.25rem",
+          boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)",
+        })}
+      >
+        <div className={css({ display: "flex", alignItems: "center", gap: "0.75rem" })}>
           <span
-            className={`inline-flex h-10 w-10 items-center justify-center rounded-full border ${
+            className={cx(
+              css({
+                display: "inline-flex",
+                width: "2.5rem",
+                height: "2.5rem",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "9999px",
+                border: "1px solid",
+              }),
               error
-                ? "border-destructive text-destructive"
+                ? css({ borderColor: "var(--destructive)", color: "var(--destructive)" })
                 : state === "speaking"
-                  ? "border-primary text-primary"
-                  : "border-border text-foreground"
-            } ${state === "listening" && !error ? "animate-pulse" : ""}`}
+                  ? css({ borderColor: "var(--primary)", color: "var(--primary)" })
+                  : css({ borderColor: "var(--border)", color: "var(--foreground)" }),
+              state === "listening" && !error ? pulseClass : "",
+            )}
           >
-            {error ? <MicOff size={18} /> : state === "connecting" ? <Loader2 size={18} className="animate-spin" /> : <Mic size={18} />}
+            {error ? <MicOff size={18} /> : state === "connecting" ? <Spinner size={18} /> : <Mic size={18} />}
           </span>
-          <div className="min-w-0 flex-1">
-            <div className="text-sm font-medium">{error ? "Voice session error" : LIVE_STATE_LABEL[state]}</div>
-            <div className="truncate text-xs text-muted-foreground">Live voice with Keating</div>
+          <div className={css({ minWidth: 0, flex: 1 })}>
+            <div className={css({ fontSize: "0.875rem", fontWeight: 500 })}>{error ? "Voice session error" : LIVE_STATE_LABEL[state]}</div>
+            <div
+              className={css({
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                fontSize: "0.75rem",
+                color: "var(--muted-foreground)",
+              })}
+            >
+              Live voice with Keating
+            </div>
           </div>
           <button
             type="button"
             onClick={finish}
-            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+            className={cx(
+              composerIconButtonClass,
+              css({
+                _hover: { backgroundColor: "var(--muted)", color: "var(--foreground)" },
+                sm: { width: "2rem", height: "2rem" },
+              }),
+            )}
             aria-label="Close live voice"
             title="Close"
           >
@@ -920,42 +1090,79 @@ function LiveVoiceOverlay({
         </div>
 
         {error ? (
-          <div className="mt-4 space-y-3">
-            <p className="text-xs text-destructive">{error}</p>
-            <div className="flex gap-2">
+          <div className={css({ marginTop: "1rem", display: "grid", gap: "0.75rem" })}>
+            <p className={css({ fontSize: "0.75rem", color: "var(--destructive)" })}>{error}</p>
+            <div className={css({ display: "flex", gap: "0.5rem" })}>
               <button
                 type="button"
                 onClick={onFallback}
-                className="dialog-compact-button inline-flex items-center justify-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs hover:bg-muted"
+                className={cx(dialogButtonClass, css({ gap: "0.375rem" }))}
               >
                 <Mic size={14} /> Use dictation instead
               </button>
               <button
                 type="button"
                 onClick={finish}
-                className="dialog-compact-button inline-flex items-center justify-center rounded-md border border-border px-3 py-1.5 text-xs hover:bg-muted"
+                className={dialogButtonClass}
               >
                 Close
               </button>
             </div>
           </div>
         ) : (
-          <div className="mt-4 space-y-3">
-            <div className="max-h-40 space-y-2 overflow-y-auto text-sm">
+          <div className={css({ marginTop: "1rem", display: "grid", gap: "0.75rem" })}>
+            <div
+              className={css({
+                display: "grid",
+                maxHeight: "10rem",
+                gap: "0.5rem",
+                overflowY: "auto",
+                fontSize: "0.875rem",
+              })}
+            >
               {assistantText ? (
-                <p className="rounded-md bg-muted/50 px-3 py-2 text-foreground">{assistantText}</p>
+                <p
+                  className={css({
+                    borderRadius: "0.375rem",
+                    backgroundColor: "color-mix(in srgb, var(--muted) 50%, transparent)",
+                    paddingInline: "0.75rem",
+                    paddingBlock: "0.5rem",
+                    color: "var(--foreground)",
+                  })}
+                >
+                  {assistantText}
+                </p>
               ) : null}
               {userText ? (
-                <p className="text-right text-muted-foreground">{userText}</p>
+                <p className={css({ textAlign: "right", color: "var(--muted-foreground)" })}>{userText}</p>
               ) : null}
               {!assistantText && !userText ? (
-                <p className="text-xs text-muted-foreground">Start speaking — Keating is listening.</p>
+                <p className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>Start speaking — Keating is listening.</p>
               ) : null}
             </div>
             <button
               type="button"
               onClick={finish}
-              className="dialog-compact-button inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-destructive bg-destructive/10 px-3 py-2 text-sm text-destructive hover:bg-destructive/20"
+              className={cx(
+                "dialog-compact-button",
+                css({
+                  display: "inline-flex",
+                  width: "100%",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "0.375rem",
+                  borderRadius: "0.375rem",
+                  border: "1px solid var(--destructive)",
+                  backgroundColor: "color-mix(in srgb, var(--destructive) 10%, transparent)",
+                  paddingInline: "0.75rem",
+                  paddingBlock: "0.5rem",
+                  fontSize: "0.875rem",
+                  color: "var(--destructive)",
+                  _hover: {
+                    backgroundColor: "color-mix(in srgb, var(--destructive) 20%, transparent)",
+                  },
+                }),
+              )}
             >
               <MicOff size={16} /> End conversation
             </button>
@@ -974,11 +1181,25 @@ function FilePart({
   mimeType?: string;
 }) {
   return (
-    <div className="my-2 inline-flex max-w-full items-center gap-2 rounded-md border border-border bg-background/60 px-2 py-1 text-xs">
-      <Paperclip size={13} className="shrink-0 text-muted-foreground" />
-      <span className="truncate">{filename ?? "attachment"}</span>
+    <div
+      className={css({
+        marginBlock: "0.5rem",
+        display: "inline-flex",
+        maxWidth: "100%",
+        alignItems: "center",
+        gap: "0.5rem",
+        borderRadius: "0.375rem",
+        border: "1px solid var(--border)",
+        backgroundColor: "color-mix(in srgb, var(--background) 60%, transparent)",
+        paddingInline: "0.5rem",
+        paddingBlock: "0.25rem",
+        fontSize: "0.75rem",
+      })}
+    >
+      <Paperclip size={13} className={css({ flexShrink: 0, color: "var(--muted-foreground)" })} />
+      <span className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" })}>{filename ?? "attachment"}</span>
       {mimeType ? (
-        <span className="shrink-0 text-muted-foreground">{mimeType}</span>
+        <span className={css({ flexShrink: 0, color: "var(--muted-foreground)" })}>{mimeType}</span>
       ) : null}
     </div>
   );
@@ -991,14 +1212,36 @@ function ComposerAttachmentChip({
 }) {
   const isImage = attachment.type === "image";
   return (
-    <div className="inline-flex max-w-48 items-center gap-1.5 rounded-md border border-border bg-muted/40 px-2 py-1 text-xs text-foreground">
-      <Paperclip size={12} className="shrink-0 text-muted-foreground" />
-      <span className="truncate">{attachment.name}</span>
+    <div
+      className={css({
+        display: "inline-flex",
+        maxWidth: "12rem",
+        alignItems: "center",
+        gap: "0.375rem",
+        borderRadius: "0.375rem",
+        border: "1px solid var(--border)",
+        backgroundColor: "color-mix(in srgb, var(--muted) 40%, transparent)",
+        paddingInline: "0.5rem",
+        paddingBlock: "0.25rem",
+        fontSize: "0.75rem",
+        color: "var(--foreground)",
+      })}
+    >
+      <Paperclip size={12} className={css({ flexShrink: 0, color: "var(--muted-foreground)" })} />
+      <span className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" })}>{attachment.name}</span>
       {isImage ? (
-        <span className="shrink-0 text-muted-foreground">image</span>
+        <span className={css({ flexShrink: 0, color: "var(--muted-foreground)" })}>image</span>
       ) : null}
       <AttachmentPrimitive.Remove
-        className="ml-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+        className={cx(
+          iconButtonClass,
+          css({
+            marginLeft: "0.125rem",
+            width: "1.25rem",
+            height: "1.25rem",
+            flexShrink: 0,
+          }),
+        )}
         aria-label={`Remove ${attachment.name}`}
         title="Remove attachment"
       >
@@ -1031,7 +1274,7 @@ function ArtifactChips({ text }: { text: string }) {
   const matches = Array.from(text.matchAll(artifactLinkPattern));
   if (matches.length === 0) return null;
   return (
-    <div className="flex flex-wrap gap-2 mb-3">
+    <div className={css({ marginBottom: "0.75rem", display: "flex", flexWrap: "wrap", gap: "0.5rem" })}>
       {matches.map((m, i) => {
         const type = m[1];
         const id = m[2];
@@ -1039,7 +1282,25 @@ function ArtifactChips({ text }: { text: string }) {
         return (
           <button
             key={i}
-            className="inline-flex items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+            className={cx(
+              srInteractiveClass,
+              css({
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.25rem",
+                borderRadius: "0.375rem",
+                border: "1px solid color-mix(in srgb, var(--primary) 40%, transparent)",
+                backgroundColor: "color-mix(in srgb, var(--primary) 10%, transparent)",
+                paddingInline: "0.5rem",
+                paddingBlock: "0.25rem",
+                fontSize: "0.75rem",
+                fontWeight: 500,
+                color: "var(--primary)",
+                _hover: {
+                  backgroundColor: "color-mix(in srgb, var(--primary) 20%, transparent)",
+                },
+              }),
+            )}
             onClick={() =>
               window.dispatchEvent(
                 new CustomEvent("keating:open-artifact", {
@@ -1050,7 +1311,7 @@ function ArtifactChips({ text }: { text: string }) {
             title={`View ${label}`}
           >
             <LibraryBig size={12} />
-            <span className="capitalize">{label}</span>
+            <span className={css({ textTransform: "capitalize" })}>{label}</span>
           </button>
         );
       })}
@@ -1442,18 +1703,25 @@ function CopyButton({
 
   const base =
     variant === "ghost"
-      ? "h-6 w-6 rounded text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-      : "h-7 w-7 rounded-md border border-border bg-background/85 text-muted-foreground hover:bg-accent hover:text-accent-foreground";
+      ? css({ width: "1.5rem", height: "1.5rem", borderRadius: "0.25rem" })
+      : css({
+          width: "1.75rem",
+          height: "1.75rem",
+          borderRadius: "0.375rem",
+          border: "1px solid var(--border)",
+          backgroundColor: "color-mix(in srgb, var(--background) 85%, transparent)",
+        });
 
   return (
     <button
       type="button"
       onClick={copy}
-      className={`inline-flex items-center justify-center transition-colors ${base} ${className}`}
+      data-copy-on-hover
+      className={cx(srInteractiveClass, iconButtonClass, base, className)}
       aria-label={copied ? "Copied" : label}
       title={copied ? "Copied" : label}
     >
-      {copied ? <Check size={13} className="text-green-500" /> : <Copy size={13} />}
+      {copied ? <Check size={13} className={css({ color: "rgb(34 197 94)" })} /> : <Copy size={13} />}
     </button>
   );
 }
@@ -1481,14 +1749,52 @@ function GeneratedImageCard({ payload }: { payload: string }) {
   const src = data.dataUrl ?? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(data.svg ?? "")}`;
   const copyText = data.svg ?? data.dataUrl ?? "";
   return (
-    <figure className="my-3 overflow-hidden rounded-lg border border-border bg-background">
-      <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
-        <div className="min-w-0">
-          <figcaption className="truncate text-xs font-medium text-foreground">
+    <figure
+      className={css({
+        marginBlock: "0.75rem",
+        overflow: "hidden",
+        borderRadius: "0.5rem",
+        border: "1px solid var(--border)",
+        backgroundColor: "var(--background)",
+      })}
+    >
+      <div
+        className={css({
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "0.5rem",
+          borderBottom: "1px solid var(--border)",
+          paddingInline: "0.75rem",
+          paddingBlock: "0.5rem",
+        })}
+      >
+        <div className={css({ minWidth: 0 })}>
+          <figcaption
+            className={css({
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              fontSize: "0.75rem",
+              fontWeight: 500,
+              color: "var(--foreground)",
+            })}
+          >
             {data.title ?? "Generated learning image"}
           </figcaption>
           {data.model && (
-            <div className="truncate font-terminal text-[10px] text-muted-foreground">
+            <div
+              className={cx(
+                "font-terminal",
+                css({
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  fontSize: "10px",
+                  color: "var(--muted-foreground)",
+                }),
+              )}
+            >
               {data.model}
             </div>
           )}
@@ -1498,7 +1804,7 @@ function GeneratedImageCard({ payload }: { payload: string }) {
       <img
         src={src}
         alt={data.alt ?? data.title ?? "Generated learning image"}
-        className="w-full bg-white"
+        className={css({ width: "100%", backgroundColor: "white" })}
       />
     </figure>
   );
@@ -1515,28 +1821,59 @@ const MARKDOWN_COMPONENTS: Components = {
                 const raw = typeof props?.children === "string" ? props.children : copyTextFromReactNode(children);
                 if (lang === "mermaid") {
                   return (
-                    <div className="group/code my-2 overflow-auto rounded-lg border border-border bg-muted/30 p-4">
+                    <div
+                      className={css({
+                        marginBlock: "0.5rem",
+                        overflow: "auto",
+                        borderRadius: "0.5rem",
+                        border: "1px solid var(--border)",
+                        backgroundColor: "color-mix(in srgb, var(--muted) 30%, transparent)",
+                        padding: "1rem",
+                        _hover: {
+                          "& [data-copy-on-hover]": { opacity: 1 },
+                        },
+                      })}
+                    >
                       <MermaidRenderer content={raw} />
-                      <div className="mt-1 flex justify-end">
+                      <div className={css({ marginTop: "0.25rem", display: "flex", justifyContent: "flex-end" })}>
                         <CopyButton
                           text={raw.replace(/\n$/, "")}
                           label="Copy diagram"
-                          className="opacity-0 group-hover/code:opacity-100 focus:opacity-100"
+                          className={css({
+                            opacity: 0,
+                            _focus: { opacity: 1 },
+                          })}
                         />
                       </div>
                     </div>
                   );
                 }
                 return (
-                  <div className="group/code my-2">
-                    <pre className="overflow-x-auto rounded-md bg-muted p-3 text-xs">
+                  <div
+                    className={css({
+                      marginBlock: "0.5rem",
+                      _hover: { "& [data-copy-on-hover]": { opacity: 1 } },
+                    })}
+                  >
+                    <pre
+                      className={css({
+                        overflowX: "auto",
+                        borderRadius: "0.375rem",
+                        backgroundColor: "var(--muted)",
+                        padding: "0.75rem",
+                        fontSize: "0.75rem",
+                      })}
+                    >
                       {children}
                     </pre>
-                    <div className="mt-1 flex justify-end">
+                    <div className={css({ marginTop: "0.25rem", display: "flex", justifyContent: "flex-end" })}>
                       <CopyButton
                         text={raw.replace(/\n$/, "")}
                         label="Copy code"
-                        className="opacity-0 group-hover/code:opacity-100 focus:opacity-100"
+                        className={css({
+                          opacity: 0,
+                          _focus: { opacity: 1 },
+                        })}
                       />
                     </div>
                   </div>
@@ -1548,7 +1885,14 @@ const MARKDOWN_COMPONENTS: Components = {
                 if (isInline) {
                   return (
                     <code
-                      className="rounded bg-muted px-1.5 py-0.5 text-sm font-mono"
+                      className={css({
+                        borderRadius: "0.25rem",
+                        backgroundColor: "var(--muted)",
+                        paddingInline: "0.375rem",
+                        paddingBlock: "0.125rem",
+                        fontFamily: "var(--mono-body)",
+                        fontSize: "0.875rem",
+                      })}
                       {...props}
                     >
                       {children}
@@ -1556,50 +1900,50 @@ const MARKDOWN_COMPONENTS: Components = {
                   );
                 }
                 return (
-                  <code className="font-mono text-sm" {...props}>
+                  <code className={css({ fontFamily: "var(--mono-body)", fontSize: "0.875rem" })} {...props}>
                     {children}
                   </code>
                 );
               },
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               p: ({ children }: any) => (
-                <p className="mb-3 last:mb-0">{children}</p>
+                <p className={css({ marginBottom: "0.75rem", _last: { marginBottom: 0 } })}>{children}</p>
               ),
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               ul: ({ children }: any) => (
-                <ul className="mb-3 list-disc pl-5">{children}</ul>
+                <ul className={css({ marginBottom: "0.75rem", listStyleType: "disc", paddingLeft: "1.25rem" })}>{children}</ul>
               ),
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               ol: ({ children }: any) => (
-                <ol className="mb-3 list-decimal pl-5">{children}</ol>
+                <ol className={css({ marginBottom: "0.75rem", listStyleType: "decimal", paddingLeft: "1.25rem" })}>{children}</ol>
               ),
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              li: ({ children }: any) => <li className="mb-1">{children}</li>,
+              li: ({ children }: any) => <li className={css({ marginBottom: "0.25rem" })}>{children}</li>,
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               h1: ({ children }: any) => (
-                <h1 className="mb-2 mt-4 text-lg font-semibold">{children}</h1>
+                <h1 className={css({ marginTop: "1rem", marginBottom: "0.5rem", fontSize: "1.125rem", fontWeight: 600 })}>{children}</h1>
               ),
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               h2: ({ children }: any) => (
-                <h2 className="mb-2 mt-3 text-base font-semibold">
+                <h2 className={css({ marginTop: "0.75rem", marginBottom: "0.5rem", fontSize: "1rem", fontWeight: 600 })}>
                   {children}
                 </h2>
               ),
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               h3: ({ children }: any) => (
-                <h3 className="mb-1 mt-2 text-sm font-semibold">{children}</h3>
+                <h3 className={css({ marginTop: "0.5rem", marginBottom: "0.25rem", fontSize: "0.875rem", fontWeight: 600 })}>{children}</h3>
               ),
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               strong: ({ children }: any) => (
-                <strong className="font-semibold">{children}</strong>
+                <strong className={css({ fontWeight: 600 })}>{children}</strong>
               ),
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              em: ({ children }: any) => <em className="italic">{children}</em>,
+              em: ({ children }: any) => <em className={css({ fontStyle: "italic" })}>{children}</em>,
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               a: ({ children, href }: any) => (
                 <a
                   href={href}
-                  className="text-primary underline text-green-600"
+                  className={css({ color: "var(--primary)", textDecoration: "underline" })}
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -1608,31 +1952,31 @@ const MARKDOWN_COMPONENTS: Components = {
               ),
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               blockquote: ({ children }: any) => (
-                <blockquote className="my-2 border-l-2 border-border pl-3 text-muted-foreground">
+                <blockquote className={css({ marginBlock: "0.5rem", borderLeft: "2px solid var(--border)", paddingLeft: "0.75rem", color: "var(--muted-foreground)" })}>
                   {children}
                 </blockquote>
               ),
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               table: ({ children }: any) => (
-                <table className="mb-3 w-full border-collapse text-sm">
+                <table className={css({ marginBottom: "0.75rem", width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" })}>
                   {children}
                 </table>
               ),
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               thead: ({ children }: any) => (
-                <thead className="border-b border-border bg-muted/50">
+                <thead className={css({ borderBottom: "1px solid var(--border)", backgroundColor: "color-mix(in srgb, var(--muted) 50%, transparent)" })}>
                   {children}
                 </thead>
               ),
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               th: ({ children }: any) => (
-                <th className="px-3 py-2 text-left font-semibold">
+                <th className={css({ paddingInline: "0.75rem", paddingBlock: "0.5rem", textAlign: "left", fontWeight: 600 })}>
                   {children}
                 </th>
               ),
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               td: ({ children }: any) => (
-                <td className="border-b border-border px-3 py-2">{children}</td>
+                <td className={css({ borderBottom: "1px solid var(--border)", paddingInline: "0.75rem", paddingBlock: "0.5rem" })}>{children}</td>
               ),
 };
 
@@ -1654,7 +1998,7 @@ const MarkdownText = memo(function MarkdownText({
     [displayText],
   );
   return (
-    <div className="group/text-block break-words text-sm leading-6">
+    <div className={css({ overflowWrap: "break-word", fontSize: "0.875rem", lineHeight: "1.5rem" })}>
       <ArtifactChips text={text} />
       {segments.map((seg, i) => {
         const card = renderInteractiveSegment(seg, i);
@@ -1670,7 +2014,7 @@ const MarkdownText = memo(function MarkdownText({
           </ReactMarkdown>
         );
       })}
-      {isRunning ? <span className="ml-0.5 animate-pulse">|</span> : null}
+      {isRunning ? <span className={cx(pulseClass, css({ marginLeft: "0.125rem" }))}>|</span> : null}
     </div>
   );
 });
@@ -1702,13 +2046,32 @@ function ReasoningPart({
         userToggledRef.current = true;
         setOpen(event.currentTarget.open);
       }}
-      className="mb-3 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
+      className={css({
+        marginBottom: "0.75rem",
+        borderRadius: "0.375rem",
+        border: "1px solid var(--border)",
+        backgroundColor: "color-mix(in srgb, var(--muted) 40%, transparent)",
+        paddingInline: "0.75rem",
+        paddingBlock: "0.5rem",
+        fontSize: "0.75rem",
+        color: "var(--muted-foreground)",
+      })}
     >
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 font-medium">
+      <summary
+        className={css({
+          display: "flex",
+          cursor: "pointer",
+          listStyle: "none",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "0.5rem",
+          fontWeight: 500,
+        })}
+      >
         <span>Reasoning</span>
         <CopyButton text={text} label="Copy" />
       </summary>
-      <div className="mt-2 whitespace-pre-wrap">{text}</div>
+      <div className={css({ marginTop: "0.5rem", whiteSpace: "pre-wrap" })}>{text}</div>
     </details>
   );
 }
@@ -1757,15 +2120,29 @@ function ToolPart({
   const interactiveCards =
     state === "success" ? extractInteractiveCards(resultText) : [];
   if (interactiveCards.length > 0) {
-    return <div className="w-full">{interactiveCards}</div>;
+    return <div className={css({ width: "100%" })}>{interactiveCards}</div>;
   }
 
   const stateClass =
     state === "error"
-      ? "border-destructive/60 bg-destructive/10 text-destructive"
+      ? css({
+          borderLeftColor: "color-mix(in srgb, var(--destructive) 60%, transparent)",
+          backgroundColor: "color-mix(in srgb, var(--destructive) 10%, transparent)",
+          color: "var(--destructive)",
+        })
       : state === "running"
-        ? "border-amber-500/60 bg-green-500/10 text-amber-600 dark:text-amber-300"
-        : "border-emerald-500/60 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
+        ? css({
+            borderLeftColor: "rgb(245 158 11 / 0.6)",
+            backgroundColor: "rgb(34 197 94 / 0.1)",
+            color: "rgb(217 119 6)",
+            _dark: { color: "rgb(252 211 77)" },
+          })
+        : css({
+            borderLeftColor: "rgb(16 185 129 / 0.6)",
+            backgroundColor: "rgb(16 185 129 / 0.1)",
+            color: "rgb(4 120 87)",
+            _dark: { color: "rgb(110 231 183)" },
+          });
   const StateIcon =
     state === "error"
       ? CircleAlert
@@ -1775,28 +2152,58 @@ function ToolPart({
   const classifiedError = state === "error" ? classifyError(resultText) : null;
   return (
     <div
-      className={`my-2 w-full rounded-md border-l-4 px-3 py-2 text-xs ${stateClass}`}
+      className={cx(
+        stateClass,
+        css({
+          marginBlock: "0.5rem",
+          width: "100%",
+          borderRadius: "0.375rem",
+          borderLeftWidth: "4px",
+          paddingInline: "0.75rem",
+          paddingBlock: "0.5rem",
+          fontSize: "0.75rem",
+        }),
+      )}
     >
-      <div className="flex min-w-0 flex-wrap items-center gap-2">
-        <StateIcon
-          size={14}
-          className={state === "running" ? "animate-spin" : ""}
-        />
+      <div className={css({ display: "flex", minWidth: 0, flexWrap: "wrap", alignItems: "center", gap: "0.5rem" })}>
+        {state === "running" ? <Spinner size={14} /> : <StateIcon size={14} />}
         <Wrench size={13} />
-        <span className="font-medium">Tool</span>
-        <span className="max-w-full truncate rounded bg-background/70 px-1.5 py-0.5 font-mono text-foreground">
+        <span className={css({ fontWeight: 500 })}>Tool</span>
+        <span
+          className={css({
+            maxWidth: "100%",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            borderRadius: "0.25rem",
+            backgroundColor: "color-mix(in srgb, var(--background) 70%, transparent)",
+            paddingInline: "0.375rem",
+            paddingBlock: "0.125rem",
+            fontFamily: "var(--mono-body)",
+            color: "var(--foreground)",
+          })}
+        >
           {toolName}
         </span>
-        <span className="ml-auto shrink-0 uppercase tracking-wide">
+        <span className={css({ marginLeft: "auto", flexShrink: 0, textTransform: "uppercase", letterSpacing: "0.025em" })}>
           {state}
         </span>
       </div>
       {showDetails &&
       args !== undefined &&
       Object.keys(args as Record<string, unknown>).length > 0 ? (
-        <details className="mt-2 text-foreground/80">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-2">
-            <span className="inline-flex items-center gap-1">
+        <details className={css({ marginTop: "0.5rem", color: "color-mix(in srgb, var(--foreground) 80%, transparent)" })}>
+          <summary
+            className={css({
+              display: "flex",
+              cursor: "pointer",
+              listStyle: "none",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "0.5rem",
+            })}
+          >
+            <span className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem" })}>
               <ChevronRight size={13} />
               Arguments
             </span>
@@ -1806,7 +2213,7 @@ function ToolPart({
         </details>
       ) : null}
       {state === "error" && classifiedError ? (
-        <div className="mt-2">
+        <div className={css({ marginTop: "0.5rem" })}>
           <ErrorBadge
             classified={classifiedError}
             rawMessage={resultText}
@@ -1814,15 +2221,23 @@ function ToolPart({
           />
         </div>
       ) : showDetails && resultText ? (
-        <div className="mt-2 text-foreground">
+        <div className={css({ marginTop: "0.5rem", color: "var(--foreground)" })}>
           {typeof result === "object" && result !== null ? (
             <JsonCrackBlock value={result} maxHeight="16rem" title="Result" />
           ) : (
             <>
-              <div className="mb-1 flex justify-end">
+              <div className={css({ marginBottom: "0.25rem", display: "flex", justifyContent: "flex-end" })}>
                 <CopyButton text={resultText} label="Copy output" />
               </div>
-              <pre className="max-h-44 overflow-auto whitespace-pre-wrap font-mono leading-5">
+              <pre
+                className={css({
+                  maxHeight: "11rem",
+                  overflow: "auto",
+                  whiteSpace: "pre-wrap",
+                  fontFamily: "var(--mono-body)",
+                  lineHeight: "1.25rem",
+                })}
+              >
                 {resultText}
               </pre>
             </>
@@ -2478,22 +2893,57 @@ function SuggestedPrompts({ onSelect }: { onSelect: (text: string) => void }) {
   const refresh = () => appendMore();
 
   return (
-    <div className="mx-auto flex h-full w-full min-w-0 max-w-3xl flex-col items-center justify-center gap-3 px-1 sm:px-4">
-      <div className="text-sm text-muted-foreground font-terminal">
+    <div
+      className={css({
+        marginInline: "auto",
+        display: "flex",
+        height: "100%",
+        width: "100%",
+        minWidth: 0,
+        maxWidth: "48rem",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "0.75rem",
+        paddingInline: "0.25rem",
+        sm: { paddingInline: "1rem" },
+      })}
+    >
+      <div className={cx("font-terminal", css({ fontSize: "0.875rem", color: "var(--muted-foreground)" }))}>
         Start a conversation
       </div>
-      <div className="flex w-full min-w-0 items-center gap-1">
+      <div className={css({ display: "flex", width: "100%", minWidth: 0, alignItems: "center", gap: "0.25rem" })}>
         <button
           type="button"
           onClick={() => scroll("left")}
-          className="shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+          className={cx(
+            iconButtonClass,
+            srInteractiveClass,
+            css({
+              width: "2rem",
+              height: "2rem",
+              flexShrink: 0,
+              borderRadius: "9999px",
+              border: "1px solid var(--border)",
+            }),
+          )}
           aria-label="Scroll left"
         >
-          <ChevronRight size={14} className="rotate-180" />
+          <ChevronRight size={14} className={css({ transform: "rotate(180deg)" })} />
         </button>
         <div
           ref={scrollRef}
-          className="flex min-w-0 flex-1 gap-2 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide py-1"
+          className={css({
+            display: "flex",
+            minWidth: 0,
+            flex: 1,
+            gap: "0.5rem",
+            overflowX: "auto",
+            scrollBehavior: "smooth",
+            scrollSnapType: "x mandatory",
+            paddingBlock: "0.25rem",
+            scrollbarWidth: "none",
+          })}
           style={{ scrollbarWidth: "none" }}
         >
           {prompts.map((p) => (
@@ -2501,21 +2951,69 @@ function SuggestedPrompts({ onSelect }: { onSelect: (text: string) => void }) {
               key={p.text}
               type="button"
               onClick={() => onSelect(p.text)}
-              className="snap-start w-[min(13rem,calc(100vw-7rem))] shrink-0 rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-left transition-all hover:border-primary hover:bg-primary/10 hover:text-primary hover:shadow-sm active:scale-[0.98]"
+              className={cx(
+                srInteractiveClass,
+                css({
+                  width: "min(13rem, calc(100vw - 7rem))",
+                  flexShrink: 0,
+                  scrollSnapAlign: "start",
+                  borderRadius: "0.5rem",
+                  border: "1px solid var(--border)",
+                  backgroundColor: "color-mix(in srgb, var(--muted) 30%, transparent)",
+                  paddingInline: "0.75rem",
+                  paddingBlock: "0.625rem",
+                  textAlign: "left",
+                  _hover: {
+                    borderColor: "var(--primary)",
+                    backgroundColor: "color-mix(in srgb, var(--primary) 10%, transparent)",
+                    color: "var(--primary)",
+                    boxShadow: "var(--shadow-card)",
+                  },
+                  _active: { transform: "scale(0.98)" },
+                }),
+              )}
             >
-              <span className="block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+              <span
+                className={css({
+                  marginBottom: "0.25rem",
+                  display: "block",
+                  fontSize: "10px",
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  color: "var(--muted-foreground)",
+                })}
+              >
                 {p.label}
               </span>
-              <span className="block text-xs leading-snug">{p.text}</span>
+              <span className={css({ display: "block", fontSize: "0.75rem", lineHeight: 1.375 })}>{p.text}</span>
             </button>
           ))}
           {!exhausted && (
             <button
               type="button"
               onClick={refresh}
-              className="snap-start shrink-0 w-20 rounded-lg border border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-all flex items-center justify-center"
+              className={cx(
+                srInteractiveClass,
+                css({
+                  display: "flex",
+                  width: "5rem",
+                  flexShrink: 0,
+                  scrollSnapAlign: "start",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: "0.5rem",
+                  border: "1px dashed var(--border)",
+                  color: "var(--muted-foreground)",
+                  _hover: {
+                    borderColor: "var(--primary)",
+                    backgroundColor: "color-mix(in srgb, var(--primary) 5%, transparent)",
+                    color: "var(--primary)",
+                  },
+                }),
+              )}
             >
-              <span className="text-xs">More</span>
+              <span className={css({ fontSize: "0.75rem" })}>More</span>
             </button>
           )}
         </div>
@@ -2523,7 +3021,17 @@ function SuggestedPrompts({ onSelect }: { onSelect: (text: string) => void }) {
           type="button"
           onClick={() => scroll("right")}
           title={exhausted ? "No more suggestions" : "Scroll right"}
-          className="shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+          className={cx(
+            iconButtonClass,
+            srInteractiveClass,
+            css({
+              width: "2rem",
+              height: "2rem",
+              flexShrink: 0,
+              borderRadius: "9999px",
+              border: "1px solid var(--border)",
+            }),
+          )}
           aria-label="Scroll right"
         >
           <ChevronRight size={14} />
@@ -2571,35 +3079,116 @@ function ReasoningLevelSelector({
   }, [open]);
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className={css({ position: "relative" })}>
       <button
         type="button"
-        className={`hidden h-9 shrink-0 items-center gap-1 rounded-md border border-border px-2 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50 sm:inline-flex ${level === "off" ? "" : "border-primary/50 text-primary"}`}
+        className={cx(
+          srInteractiveClass,
+          css({
+            display: "none",
+            height: "2.25rem",
+            flexShrink: 0,
+            alignItems: "center",
+            gap: "0.25rem",
+            borderRadius: "0.375rem",
+            border: "1px solid var(--border)",
+            paddingInline: "0.5rem",
+            fontSize: "0.75rem",
+            color: "var(--muted-foreground)",
+            _hover: {
+              backgroundColor: "var(--accent)",
+              color: "var(--accent-foreground)",
+            },
+            _disabled: { opacity: 0.5 },
+            sm: { display: "inline-flex" },
+          }),
+          level === "off"
+            ? ""
+            : css({
+                borderColor: "color-mix(in srgb, var(--primary) 50%, transparent)",
+                color: "var(--primary)",
+              }),
+        )}
         disabled={disabled}
         title={`Reasoning: ${current.label}`}
         onClick={() => setOpen((o) => !o)}
       >
         <Lightbulb size={12} />
-        <span className="font-medium">{current.short}</span>
+        <span className={css({ fontWeight: 500 })}>{current.short}</span>
       </button>
       {open && (
-        <div className="absolute bottom-full right-0 z-50 mb-1 w-40 rounded-md border border-border bg-background shadow-lg font-terminal">
-          <div className="flex flex-col p-1">
-            <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <div
+          className={cx(
+            "font-terminal",
+            css({
+              position: "absolute",
+              right: 0,
+              bottom: "100%",
+              zIndex: 50,
+              marginBottom: "0.25rem",
+              width: "10rem",
+              borderRadius: "0.375rem",
+              border: "1px solid var(--border)",
+              backgroundColor: "var(--background)",
+              boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
+            }),
+          )}
+        >
+          <div className={css({ display: "flex", flexDirection: "column", padding: "0.25rem" })}>
+            <div
+              className={css({
+                paddingInline: "0.5rem",
+                paddingBlock: "0.25rem",
+                fontSize: "10px",
+                fontWeight: 600,
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                color: "var(--muted-foreground)",
+              })}
+            >
               Reasoning
             </div>
             {REASONING_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
                 type="button"
-                className={`flex items-center gap-2 rounded px-2 py-1.5 text-xs text-left transition-colors ${opt.value === level ? "bg-primary/10 text-primary font-medium" : "text-foreground hover:bg-accent hover:text-accent-foreground"}`}
+                className={cx(
+                  srInteractiveClass,
+                  css({
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    borderRadius: "0.25rem",
+                    paddingInline: "0.5rem",
+                    paddingBlock: "0.375rem",
+                    textAlign: "left",
+                    fontSize: "0.75rem",
+                  }),
+                  opt.value === level
+                    ? css({
+                        backgroundColor: "color-mix(in srgb, var(--primary) 10%, transparent)",
+                        color: "var(--primary)",
+                        fontWeight: 500,
+                      })
+                    : css({
+                        color: "var(--foreground)",
+                        _hover: {
+                          backgroundColor: "var(--accent)",
+                          color: "var(--accent-foreground)",
+                        },
+                      }),
+                )}
                 onClick={() => {
                   onChange(opt.value);
                   setOpen(false);
                 }}
               >
                 <span
-                  className="w-2 h-2 rounded-full"
+                  className={css({
+                    width: "0.5rem",
+                    height: "0.5rem",
+                    borderRadius: "9999px",
+                  })}
                   style={{
                     background:
                       opt.value === "off"
@@ -2642,15 +3231,30 @@ function WebGroundingHint({
   if (!needsKey && !needsGrounding && !needsGoogleModel) return null;
 
   return (
-    <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs leading-5 text-muted-foreground">
-      <span className="font-medium text-foreground">URL detected.</span>{" "}
+    <div
+      className={css({
+        borderRadius: "0.375rem",
+        border: "1px solid var(--border)",
+        backgroundColor: "color-mix(in srgb, var(--muted) 30%, transparent)",
+        paddingInline: "0.75rem",
+        paddingBlock: "0.5rem",
+        fontSize: "0.75rem",
+        lineHeight: "1.25rem",
+        color: "var(--muted-foreground)",
+      })}
+    >
+      <span className={css({ fontWeight: 500, color: "var(--foreground)" })}>URL detected.</span>{" "}
       To let Keating read current web pages, use a Google Gemini model with Google web grounding enabled
       {needsKey ? " and add a Google API key" : ""}.
       {needsKey && (
         <>
           {" "}Get one from{" "}
           <a
-            className="text-primary underline underline-offset-2"
+            className={css({
+              color: "var(--primary)",
+              textDecoration: "underline",
+              textUnderlineOffset: "2px",
+            })}
             href="https://aistudio.google.com/app/apikey"
             target="_blank"
             rel="noreferrer"
@@ -3093,17 +3697,57 @@ function AssistantThread({
     >
       <QuizGradesContext.Provider value={quizGradesContextValue}>
       <AssistantRuntimeProvider runtime={runtime}>
-        <ThreadPrimitive.Root className="flex h-full min-h-0 flex-col bg-background text-foreground">
-          <ThreadPrimitive.Viewport className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-3 py-4 sm:px-4 sm:py-6">
-            <div className="flex flex-1 flex-col">
+        <ThreadPrimitive.Root
+          className={css({
+            display: "flex",
+            height: "100%",
+            minHeight: 0,
+            flexDirection: "column",
+            backgroundColor: "var(--background)",
+            color: "var(--foreground)",
+          })}
+        >
+          <ThreadPrimitive.Viewport
+            className={css({
+              display: "flex",
+              minHeight: 0,
+              flex: 1,
+              flexDirection: "column",
+              overflowY: "auto",
+              overflowX: "hidden",
+              paddingInline: "0.75rem",
+              paddingBlock: "1rem",
+              sm: { paddingInline: "1rem", paddingBlock: "1.5rem" },
+            })}
+          >
+            <div className={css({ display: "flex", flex: 1, flexDirection: "column" })}>
               <AuiIf condition={(state) => state.thread.isEmpty}>
                 <SuggestedPrompts onSelect={sendText} />
               </AuiIf>
               <ThreadPrimitive.Messages components={threadComponents} />
             </div>
-            <ThreadPrimitive.ViewportFooter className="sticky bottom-0 min-w-0 bg-background/95 pt-3 backdrop-blur">
+            <ThreadPrimitive.ViewportFooter
+              className={css({
+                position: "sticky",
+                bottom: 0,
+                minWidth: 0,
+                backgroundColor: "color-mix(in srgb, var(--background) 95%, transparent)",
+                paddingTop: "0.75rem",
+                backdropFilter: "blur(8px)",
+              })}
+            >
               {activeQuiz && (
-                <div className="mx-auto mb-1.5 sm:mb-2 w-full max-w-4xl overflow-x-hidden px-1.5 sm:px-0">
+                <div
+                  className={css({
+                    marginInline: "auto",
+                    marginBottom: "0.375rem",
+                    width: "100%",
+                    maxWidth: "56rem",
+                    overflowX: "hidden",
+                    paddingInline: "0.375rem",
+                    sm: { marginBottom: "0.5rem", paddingInline: 0 },
+                  })}
+                >
                   <QuizSessionPanel
                     quiz={activeQuiz}
                     onSubmit={(result) => {
@@ -3138,7 +3782,17 @@ function AssistantThread({
                 </div>
               )}
               {activeQuestion && (
-                <div className="mx-auto mb-1.5 sm:mb-2 w-full max-w-4xl overflow-x-hidden px-1.5 sm:px-0">
+                <div
+                  className={css({
+                    marginInline: "auto",
+                    marginBottom: "0.375rem",
+                    width: "100%",
+                    maxWidth: "56rem",
+                    overflowX: "hidden",
+                    paddingInline: "0.375rem",
+                    sm: { marginBottom: "0.5rem", paddingInline: 0 },
+                  })}
+                >
                   <QuestionRenderer
                     data={activeQuestion}
                     onSubmit={(answers) => {
@@ -3151,7 +3805,25 @@ function AssistantThread({
                   />
                 </div>
               )}
-              <ComposerPrimitive.Root className="composer-root mx-auto flex w-[calc(100%-6px)] max-w-4xl flex-col gap-1.5 sm:gap-2 rounded-lg border border-border bg-background p-1.5 sm:p-2 shadow-sm sm:w-full">
+              <ComposerPrimitive.Root
+                className={cx(
+                  "composer-root",
+                  css({
+                    marginInline: "auto",
+                    display: "flex",
+                    width: "calc(100% - 6px)",
+                    maxWidth: "56rem",
+                    flexDirection: "column",
+                    gap: "0.375rem",
+                    borderRadius: "0.5rem",
+                    border: "1px solid var(--border)",
+                    backgroundColor: "var(--background)",
+                    padding: "0.375rem",
+                    boxShadow: "var(--shadow-card)",
+                    sm: { width: "100%", gap: "0.5rem", padding: "0.5rem" },
+                  }),
+                )}
+              >
                 <WebGroundingHint
                   hasUrl={composerHasUrl}
                   hasGoogleKey={hasGoogleKey}
@@ -3163,10 +3835,47 @@ function AssistantThread({
                     <ComposerAttachmentChip attachment={attachment} />
                   )}
                 </ComposerPrimitive.Attachments>
-                <div className="flex w-full min-w-0 items-center gap-1.5 sm:gap-2">
+                <div
+                  className={css({
+                    display: "flex",
+                    width: "100%",
+                    minWidth: 0,
+                    alignItems: "center",
+                    gap: "0.375rem",
+                    sm: { gap: "0.5rem" },
+                  })}
+                >
                   <button
                     type="button"
-                    className="inline-flex h-8 max-w-16 shrink-0 items-center overflow-hidden truncate whitespace-nowrap rounded-md border border-border px-1.5 text-[11px] text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50 sm:h-9 sm:max-w-20 sm:px-2 sm:text-xs"
+                    className={cx(
+                      srInteractiveClass,
+                      css({
+                        display: "inline-flex",
+                        height: "2rem",
+                        maxWidth: "4rem",
+                        flexShrink: 0,
+                        alignItems: "center",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        borderRadius: "0.375rem",
+                        border: "1px solid var(--border)",
+                        paddingInline: "0.375rem",
+                        fontSize: "11px",
+                        color: "var(--muted-foreground)",
+                        _hover: {
+                          backgroundColor: "var(--accent)",
+                          color: "var(--accent-foreground)",
+                        },
+                        _disabled: { opacity: 0.5 },
+                        sm: {
+                          height: "2.25rem",
+                          maxWidth: "5rem",
+                          paddingInline: "0.5rem",
+                          fontSize: "0.75rem",
+                        },
+                      }),
+                    )}
                     disabled={!callbacks.onModelSelect}
                     onClick={() => callbacks.onModelSelect?.()}
                     title={modelLabel}
@@ -3185,37 +3894,90 @@ function AssistantThread({
                   />
                   <ComposerPrimitive.AddAttachment
                     multiple
-                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50 sm:h-9 sm:w-9"
+                    className={composerIconButtonClass}
                     title="Attach files or images"
                     aria-label="Attach files or images"
                   >
-                    <Paperclip size={15} className="sm:size-4" />
+                    <Paperclip size={15} className={css({ sm: { width: "1rem", height: "1rem" } })} />
                   </ComposerPrimitive.AddAttachment>
                   <SpeechMicButton />
                   <ComposerPrimitive.Input
-                    className="max-h-40 min-h-8 min-w-0 flex-1 resize-none self-center bg-transparent px-1 py-1.5 text-sm leading-5 text-foreground outline-none placeholder:text-muted-foreground sm:min-h-9 sm:px-1 sm:py-2"
+                    className={css({
+                      maxHeight: "10rem",
+                      minHeight: "2rem",
+                      minWidth: 0,
+                      flex: 1,
+                      resize: "none",
+                      alignSelf: "center",
+                      backgroundColor: "transparent",
+                      paddingInline: "0.25rem",
+                      paddingBlock: "0.375rem",
+                      fontSize: "0.875rem",
+                      lineHeight: "1.25rem",
+                      color: "var(--foreground)",
+                      outline: "none",
+                      _placeholder: { color: "var(--muted-foreground)" },
+                      sm: { minHeight: "2.25rem", paddingBlock: "0.5rem" },
+                    })}
                     placeholder="Message Keating"
                     rows={1}
                     onChange={(event) => setComposerHasUrl(URL_IN_TEXT_PATTERN.test(event.currentTarget.value))}
                   />
                   {/* Only show Send OR Cancel — never both */}
                   {isRunning ? (
-                    <ComposerPrimitive.Cancel className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border-2 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground animate-pulse sm:h-9 sm:w-9">
-                      <Square size={15} className="sm:size-4" />
+                    <ComposerPrimitive.Cancel
+                      className={cx(
+                        composerIconButtonClass,
+                        pulseClass,
+                        css({
+                          borderWidth: "2px",
+                          borderColor: "var(--destructive)",
+                          color: "var(--destructive)",
+                          _hover: {
+                            backgroundColor: "var(--destructive)",
+                            color: "var(--destructive-foreground)",
+                          },
+                        }),
+                      )}
+                    >
+                      <Square size={15} className={css({ sm: { width: "1rem", height: "1rem" } })} />
                     </ComposerPrimitive.Cancel>
                   ) : (
-                    <ComposerPrimitive.Send className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground disabled:opacity-50 sm:h-9 sm:w-9">
-                      <Send size={15} className="sm:size-4" />
+                    <ComposerPrimitive.Send
+                      className={cx(
+                        composerIconButtonClass,
+                        css({
+                          borderColor: "transparent",
+                          backgroundColor: "var(--primary)",
+                          color: "var(--primary-foreground)",
+                        }),
+                      )}
+                    >
+                      <Send size={15} className={css({ sm: { width: "1rem", height: "1rem" } })} />
                     </ComposerPrimitive.Send>
                   )}
                 </div>
               </ComposerPrimitive.Root>
-              <div className="composer-hint mx-auto flex w-full max-w-4xl justify-between gap-3 px-1 pt-1.5">
+              <div
+                className={cx(
+                  "composer-hint",
+                  css({
+                    marginInline: "auto",
+                    display: "flex",
+                    width: "100%",
+                    maxWidth: "56rem",
+                    justifyContent: "space-between",
+                    gap: "0.75rem",
+                    paddingInline: "0.25rem",
+                    paddingTop: "0.375rem",
+                  }),
+                )}
+              >
                 <span>
                   keating won&apos;t give you the answer —{" "}
                   <span className="ok">that&apos;s the point</span>
                 </span>
-                <span className="hidden sm:inline">
+                <span className={css({ display: "none", sm: { display: "inline" } })}>
                   enter to send // shift+enter for newline
                 </span>
               </div>
@@ -3236,20 +3998,40 @@ function UserMessage({
   profileImage?: string | null;
 }) {
   return (
-    <MessagePrimitive.Root className="mx-auto mb-4 flex w-full max-w-4xl justify-end">
-      <div className="flex max-w-[88%] flex-row-reverse gap-3 px-1 text-sm text-foreground sm:max-w-[82%]">
-        <div className="chat-avatar chat-avatar-you mt-0.5">
+    <MessagePrimitive.Root
+      className={css({
+        marginInline: "auto",
+        marginBottom: "1rem",
+        display: "flex",
+        width: "100%",
+        maxWidth: "56rem",
+        justifyContent: "flex-end",
+      })}
+    >
+      <div
+        className={css({
+          display: "flex",
+          maxWidth: "88%",
+          flexDirection: "row-reverse",
+          gap: "0.75rem",
+          paddingInline: "0.25rem",
+          fontSize: "0.875rem",
+          color: "var(--foreground)",
+          sm: { maxWidth: "82%" },
+        })}
+      >
+        <div className={cx("chat-avatar chat-avatar-you", css({ marginTop: "0.125rem" }))}>
           {profileImage ? (
             <img src={profileImage} alt="You" />
           ) : (
-            <User className="h-4 w-4 shrink-0" />
+            <User className={css({ width: "1rem", height: "1rem", flexShrink: 0 })} />
           )}
         </div>
-        <div className="flex min-w-0 flex-col items-end">
+        <div className={css({ display: "flex", minWidth: 0, flexDirection: "column", alignItems: "flex-end" })}>
           <div className="msg-meta">
             <b>YOU</b>
           </div>
-          <div className="you-bubble whitespace-pre-wrap leading-6 font-ui">
+          <div className={cx("you-bubble", css({ whiteSpace: "pre-wrap", lineHeight: "1.5rem", fontFamily: "var(--font-ui)" }))}>
             <MessagePrimitive.Content components={components} />
           </div>
         </div>
@@ -3279,20 +4061,38 @@ function FeedbackModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
+      className={css({
+        position: "fixed",
+        inset: 0,
+        zIndex: 50,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "rgb(0 0 0 / 0.5)",
+        paddingInline: "1rem",
+        backdropFilter: "blur(4px)",
+      })}
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-lg border border-border bg-background p-5 shadow-lg"
+        className={css({
+          width: "100%",
+          maxWidth: "28rem",
+          borderRadius: "0.5rem",
+          border: "1px solid var(--border)",
+          backgroundColor: "var(--background)",
+          padding: "1.25rem",
+          boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
+        })}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-foreground">
+        <div className={css({ marginBottom: "0.75rem", display: "flex", alignItems: "center", justifyContent: "space-between" })}>
+          <h3 className={css({ fontSize: "0.875rem", fontWeight: 600, color: "var(--foreground)" })}>
             {type === "up" ? "What was helpful?" : "What could be improved?"}
           </h3>
           <button
             type="button"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            className={cx(iconButtonClass, css({ width: "1.75rem", height: "1.75rem" }))}
             onClick={onClose}
             aria-label="Close"
           >
@@ -3300,24 +4100,45 @@ function FeedbackModal({
           </button>
         </div>
         <textarea
-          className="w-full rounded-md border border-border bg-muted/30 px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground resize-none"
+          className={css({
+            width: "100%",
+            resize: "none",
+            borderRadius: "0.375rem",
+            border: "1px solid var(--border)",
+            backgroundColor: "color-mix(in srgb, var(--muted) 30%, transparent)",
+            paddingInline: "0.75rem",
+            paddingBlock: "0.5rem",
+            fontSize: "0.875rem",
+            color: "var(--foreground)",
+            outline: "none",
+            _placeholder: { color: "var(--muted-foreground)" },
+          })}
           rows={4}
           placeholder="Optional comment..."
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           autoFocus
         />
-        <div className="mt-3 flex justify-end gap-2">
+        <div className={css({ marginTop: "0.75rem", display: "flex", justifyContent: "flex-end", gap: "0.5rem" })}>
           <button
             type="button"
-            className="inline-flex h-8 items-center justify-center rounded-md border border-border px-3 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            className={cx(dialogButtonClass, css({ height: "2rem", color: "var(--muted-foreground)", _hover: { backgroundColor: "var(--accent)", color: "var(--accent-foreground)" } }))}
             onClick={onClose}
           >
             Skip
           </button>
           <button
             type="button"
-            className="inline-flex h-8 items-center justify-center rounded-md bg-primary px-3 text-xs text-primary-foreground hover:bg-primary/90"
+            className={cx(
+              dialogButtonClass,
+              css({
+                height: "2rem",
+                borderColor: "transparent",
+                backgroundColor: "var(--primary)",
+                color: "var(--primary-foreground)",
+                _hover: { backgroundColor: "color-mix(in srgb, var(--primary) 90%, transparent)" },
+              }),
+            )}
             onClick={() => onSubmit(type, comment)}
           >
             Submit
@@ -3389,39 +4210,76 @@ function AssistantMessage({
 
   return (
     <>
-      <MessagePrimitive.Root className="group mx-auto mb-4 flex w-full max-w-4xl justify-start">
-        <div className="flex w-full gap-3 px-1 text-sm text-foreground">
-          <div className="chat-avatar mt-0.5">
+      <MessagePrimitive.Root
+        className={css({
+          marginInline: "auto",
+          marginBottom: "1rem",
+          display: "flex",
+          width: "100%",
+          maxWidth: "56rem",
+          justifyContent: "flex-start",
+          _hover: { "& [data-fork-action]": { opacity: 1 } },
+        })}
+      >
+        <div className={css({ display: "flex", width: "100%", gap: "0.75rem", paddingInline: "0.25rem", fontSize: "0.875rem", color: "var(--foreground)" })}>
+          <div className={cx("chat-avatar", css({ marginTop: "0.125rem" }))}>
             <img src="/brand/mascot-head.png" alt="Keating" />
           </div>
-          <div className="min-w-0 flex-1 leading-6">
+          <div className={css({ minWidth: 0, flex: 1, lineHeight: "1.5rem" })}>
             <div className="msg-meta">
               <b>KEATING</b>
             </div>
-            <div className="keating-bubble text-foreground">
+            <div className={cx("keating-bubble", foregroundTextClass)}>
             <MessagePrimitive.Content components={components} />
             {authError && (
-              <div className="my-2 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm">
-                <div className="flex items-start gap-2">
+              <div
+                className={css({
+                  marginBlock: "0.5rem",
+                  borderRadius: "0.5rem",
+                  border: "1px solid color-mix(in srgb, var(--destructive) 50%, transparent)",
+                  backgroundColor: "color-mix(in srgb, var(--destructive) 10%, transparent)",
+                  padding: "0.75rem",
+                  fontSize: "0.875rem",
+                })}
+              >
+                <div className={css({ display: "flex", alignItems: "flex-start", gap: "0.5rem" })}>
                   <KeyRound
                     size={16}
-                    className="mt-0.5 shrink-0 text-destructive"
+                    className={css({ marginTop: "0.125rem", flexShrink: 0, color: "var(--destructive)" })}
                   />
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-destructive mb-1">
+                  <div className={css({ minWidth: 0, flex: 1 })}>
+                    <p className={css({ marginBottom: "0.25rem", fontWeight: 500, color: "var(--destructive)" })}>
                       Authentication failed
                     </p>
-                    <p className="text-xs text-muted-foreground mb-2">
+                    <p className={css({ marginBottom: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
                       {authError.error}
                     </p>
                     <button
                       type="button"
                       onClick={handleAuthRetry}
                       disabled={retrying}
-                      className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                      className={cx(
+                        srInteractiveClass,
+                        css({
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "0.375rem",
+                          borderRadius: "0.375rem",
+                          backgroundColor: "var(--primary)",
+                          paddingInline: "0.75rem",
+                          paddingBlock: "0.375rem",
+                          fontSize: "0.75rem",
+                          fontWeight: 500,
+                          color: "var(--primary-foreground)",
+                          _hover: {
+                            backgroundColor: "color-mix(in srgb, var(--primary) 90%, transparent)",
+                          },
+                          _disabled: { opacity: 0.5 },
+                        }),
+                      )}
                     >
                       {retrying ? (
-                        <Loader2 size={12} className="animate-spin" />
+                        <Spinner size={12} />
                       ) : (
                         <KeyRound size={12} />
                       )}
@@ -3430,7 +4288,15 @@ function AssistantMessage({
                     <a
                       href={tutorialApiKeyHref(authError.provider)}
                       onClick={(event) => handleTutorialLinkClick(event.nativeEvent, tutorialApiKeyHref(authError.provider))}
-                      className="ml-2 inline-flex items-center text-xs text-primary underline underline-offset-2"
+                      className={css({
+                        marginLeft: "0.5rem",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        fontSize: "0.75rem",
+                        color: "var(--primary)",
+                        textDecoration: "underline",
+                        textUnderlineOffset: "2px",
+                      })}
                     >
                       Need a key?
                     </a>
@@ -3439,15 +4305,19 @@ function AssistantMessage({
               </div>
             )}
             </div>
-            <div className="mt-2 flex items-center gap-1">
+            <div className={css({ marginTop: "0.5rem", display: "flex", alignItems: "center", gap: "0.25rem" })}>
               {copyText && <CopyButton variant="ghost" text={copyText} label="Copy message" />}
               <button
                 type="button"
-                className={`inline-flex h-6 w-6 items-center justify-center rounded-md transition-colors ${
+                className={cx(
+                  messageActionButtonClass,
                   feedback === "up"
-                    ? "bg-primary/20 text-primary"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                }`}
+                    ? css({
+                        backgroundColor: "color-mix(in srgb, var(--primary) 20%, transparent)",
+                        color: "var(--primary)",
+                      })
+                    : "",
+                )}
                 title="Helpful"
                 onClick={() => handleFeedbackClick("up")}
                 aria-pressed={feedback === "up"}
@@ -3456,11 +4326,15 @@ function AssistantMessage({
               </button>
               <button
                 type="button"
-                className={`inline-flex h-6 w-6 items-center justify-center rounded-md transition-colors ${
+                className={cx(
+                  messageActionButtonClass,
                   feedback === "down"
-                    ? "bg-destructive/20 text-destructive"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                }`}
+                    ? css({
+                        backgroundColor: "color-mix(in srgb, var(--destructive) 20%, transparent)",
+                        color: "var(--destructive)",
+                      })
+                    : "",
+                )}
                 title="Not helpful"
                 onClick={() => handleFeedbackClick("down")}
                 aria-pressed={feedback === "down"}
@@ -3470,7 +4344,8 @@ function AssistantMessage({
               {onFork && (
                 <button
                   type="button"
-                  className="inline-flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-all opacity-0 group-hover:opacity-100"
+                  data-fork-action
+                  className={cx(messageActionButtonClass, css({ opacity: 0, _focus: { opacity: 1 } }))}
                   title="Fork session from here"
                   onClick={handleFork}
                   aria-label="Fork session from here"

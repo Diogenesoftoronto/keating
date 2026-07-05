@@ -1,5 +1,31 @@
 import { useEffect, useRef, useState } from "react";
+import { css, cx } from "../../styled-system/css";
 import { sanitizeSvg } from "../lib/sanitize-svg";
+
+const errorContainerClass = css({
+	padding: "1rem",
+	backgroundColor: "color-mix(in srgb, #ef4444 10%, transparent)",
+	border: "1px solid color-mix(in srgb, #ef4444 30%, transparent)",
+	borderRadius: "0.5rem",
+});
+const errorTitleClass = css({ color: "#f87171", fontSize: "0.875rem" });
+const errorPreClass = css({
+	marginTop: "0.5rem",
+	fontSize: "0.75rem",
+	color: "var(--muted-foreground)",
+	overflow: "auto",
+});
+const containerClass = css({
+	backgroundColor: "color-mix(in srgb, var(--muted) 20%, transparent)",
+	borderRadius: "0.5rem",
+});
+const loadingClass = css({ padding: "2rem", textAlign: "center", color: "var(--muted-foreground)" });
+const wrapperClass = css({ marginBlock: "1rem", overflow: "auto" });
+const cardClass = css({
+	backgroundColor: "color-mix(in srgb, var(--muted) 30%, transparent)",
+	borderRadius: "0.5rem",
+	padding: "1rem",
+});
 
 interface MermaidRendererProps {
 	content: string;
@@ -120,9 +146,9 @@ export function MermaidRenderer({ content, className }: MermaidRendererProps) {
 
 	if (error) {
 		return (
-			<div className={`p-4 bg-red-500/10 border border-red-500/30 rounded-lg ${className}`}>
-				<p className="text-red-400 text-sm">Failed to render diagram: {error}</p>
-				<pre className="mt-2 text-xs text-muted-foreground overflow-auto">{content}</pre>
+			<div className={cx(errorContainerClass, className)}>
+				<p className={errorTitleClass}>Failed to render diagram: {error}</p>
+				<pre className={errorPreClass}>{content}</pre>
 			</div>
 		);
 	}
@@ -130,10 +156,10 @@ export function MermaidRenderer({ content, className }: MermaidRendererProps) {
 	return (
 		<div
 			ref={containerRef}
-			className={`mermaid-container ${className} ${loading ? "animate-pulse bg-muted/20 rounded-lg" : ""}`}
+			className={`mermaid-container ${className} ${loading ? containerClass : ""}`}
 		>
 			{loading ? (
-				<div className="p-8 text-center text-muted-foreground">Rendering diagram...</div>
+				<div className={loadingClass}>Rendering diagram...</div>
 			) : svg ? (
 				<div dangerouslySetInnerHTML={{ __html: svg }} />
 			) : null}
@@ -151,8 +177,8 @@ export function MermaidMessageRenderer({ content }: { content: string }) {
 	}
 
 	return (
-		<div className="my-4 overflow-auto">
-			<MermaidRenderer content={mermaidMatch[1]} className="bg-muted/30 rounded-lg p-4" />
+		<div className={wrapperClass}>
+			<MermaidRenderer content={mermaidMatch[1]} className={cardClass} />
 		</div>
 	);
 }

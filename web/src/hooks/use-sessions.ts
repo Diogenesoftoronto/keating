@@ -49,8 +49,8 @@ export function filterSessions(items: SessionMetadata[], query: string): Session
 	const normalizedQuery = query.trim().toLowerCase();
 	if (!normalizedQuery) return items;
 	return items.filter((session) =>
-		[session.title, session.preview].some((value) =>
-			value.toLowerCase().includes(normalizedQuery),
+		[session.title, session.preview, session.searchText].some((value) =>
+			(value ?? "").toLowerCase().includes(normalizedQuery),
 		),
 	);
 }

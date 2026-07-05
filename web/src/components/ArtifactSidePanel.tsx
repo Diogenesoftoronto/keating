@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArtifactViewer } from "./ArtifactViewer";
 import { KeatingStorage } from "../keating/storage";
+import { css, cx } from "../../styled-system/css";
 
 interface ArtifactSidePanelProps {
 	open: boolean;
@@ -86,18 +87,55 @@ export function ArtifactSidePanel({ open, artifactId, onClose }: ArtifactSidePan
 	}, [width]);
 
 	return (
-		<div className="relative flex h-full flex-col bg-background" style={{ width: `${width}px` }}>
+		<div
+			className={css({
+				position: "relative",
+				display: "flex",
+				height: "100%",
+				flexDirection: "column",
+				background: "var(--background)",
+			})}
+			style={{ width: `${width}px` }}
+		>
 			{/* Resize handle — left edge drag bar */}
 			<div
-				className="group absolute inset-y-0 left-0 z-10 flex w-2 cursor-col-resize items-center justify-center"
+				className={cx("group", css({
+					position: "absolute",
+					top: 0,
+					bottom: 0,
+					left: 0,
+					zIndex: 10,
+					display: "flex",
+					width: "0.5rem",
+					cursor: "col-resize",
+					alignItems: "center",
+					justifyContent: "center",
+				}))}
 				onMouseDown={handleDragStart}
 				onTouchStart={handleDragStart}
 			>
-				<div className="h-8 w-0.5 rounded-full bg-border opacity-0 transition-opacity group-hover:opacity-100 group-active:opacity-100" />
+				<div className={css({
+					height: "2rem",
+					width: "0.125rem",
+					borderRadius: "9999px",
+					background: "var(--border)",
+					opacity: 0,
+					transitionProperty: "opacity",
+					transitionDuration: "150ms",
+					".group:is(:hover, :active) &": {
+						opacity: 1,
+					},
+				})} />
 			</div>
 
 			{open && (
-				<div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4">
+				<div className={css({
+					minHeight: 0,
+					flex: 1,
+					overflowY: "auto",
+					padding: "0.75rem",
+					sm: { padding: "1rem" },
+				})}>
 					<ArtifactViewer storage={artifactStorage} artifactId={artifactId} onClose={onClose} />
 				</div>
 			)}

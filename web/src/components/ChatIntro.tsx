@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { css, cx } from "../../styled-system/css";
 
 const KEATING_ASCII = `
 ██╗  ██╗███████╗ █████╗ ████████╗██╗███╗   ██╗ ██████╗
@@ -10,7 +11,7 @@ const KEATING_ASCII = `
 `.trim();
 
 const INTRO_LINES = [
-  { text: "INIT SEQUENCE v2.0.0", delay: 100 },
+  { text: "INIT SEQUENCE v2.1.0", delay: 100 },
   { text: "─────────────────────────────────────────", delay: 200 },
   { text: "model   : Kimi k2.6", delay: 300 },
   { text: "policy  : keating-default", delay: 400 },
@@ -43,11 +44,30 @@ export function ChatIntro({ onDismiss }: { onDismiss?: () => void }) {
   }, []);
 
   return (
-    <div className="w-full h-full bg-[#0c1510] text-[#4be388] font-terminal overflow-auto p-6 sm:p-8">
-      <div className="crt max-w-2xl mx-auto">
+    <div
+      className={cx(
+        "font-terminal",
+        css({
+          width: "100%",
+          height: "100%",
+          background: "#0c1510",
+          color: "#4be388",
+          overflow: "auto",
+          padding: { base: "1.5rem", sm: "2rem" }
+        })
+      )}
+    >
+      <div className={cx("crt", css({ maxWidth: "42rem", marginInline: "auto" }))}>
         {/* ASCII logo */}
         <pre
-          className="text-[0.55rem] sm:text-xs md:text-sm leading-[1.05] mb-4 whitespace-pre font-bold tracking-tight"
+          className={css({
+            fontSize: { base: "0.55rem", sm: "0.75rem", md: "0.875rem" },
+            lineHeight: "1.05",
+            marginBottom: "1rem",
+            whiteSpace: "pre",
+            fontWeight: 700,
+            letterSpacing: "-0.025em"
+          })}
           style={{
             background: "linear-gradient(180deg, #4be388 0%, #1e9b50 55%, #14743c 100%)",
             WebkitBackgroundClip: "text",
@@ -61,20 +81,26 @@ export function ChatIntro({ onDismiss }: { onDismiss?: () => void }) {
         </pre>
 
         {/* Terminal lines */}
-        <div className="text-sm sm:text-base leading-relaxed space-y-0.5">
+        <div
+          className={css({
+            fontSize: { base: "0.875rem", sm: "1rem" },
+            lineHeight: "1.625",
+            "& > * + *": { marginTop: "0.125rem" }
+          })}
+        >
           {INTRO_LINES.slice(0, visibleLines).map((line, i) => (
             <div
               key={i}
-              className="boot-line font-terminal"
+              className={cx("boot-line", "font-terminal")}
               style={{ opacity: 1 }}
             >
               {line.text ? (
                 line.text.startsWith("▸") ? (
-                  <span className="text-[#1e9b50]">{line.text}</span>
+                  <span className={css({ color: "#1e9b50" })}>{line.text}</span>
                 ) : line.text.startsWith('"') ? (
-                  <span className="text-[#888]">{line.text}</span>
+                  <span className={css({ color: "#888" })}>{line.text}</span>
                 ) : line.text.startsWith("—") ? (
-                  <span className="text-[#666]">{line.text}</span>
+                  <span className={css({ color: "#666" })}>{line.text}</span>
                 ) : (
                   line.text
                 )
@@ -87,9 +113,15 @@ export function ChatIntro({ onDismiss }: { onDismiss?: () => void }) {
 
         {/* Cursor + dismiss hint */}
         {typingDone && (
-          <div className="mt-4 flex items-center gap-3">
+          <div className={css({ marginTop: "1rem", display: "flex", alignItems: "center", gap: "0.75rem" })}>
             <span className="cursor-blink">_</span>
-            <span className="text-[#666] text-sm animate-pulse">
+            <span
+              className={css({
+                color: "#666",
+                fontSize: "0.875rem",
+                animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite"
+              })}
+            >
               Press getting started below to begin your session...
             </span>
           </div>
@@ -98,7 +130,12 @@ export function ChatIntro({ onDismiss }: { onDismiss?: () => void }) {
 
       {/* Scanline overlay */}
       <div
-        className="fixed inset-0 pointer-events-none z-10"
+        className={css({
+          position: "fixed",
+          inset: 0,
+          pointerEvents: "none",
+          zIndex: 10
+        })}
         style={{
           background: "repeating-linear-gradient(0deg, rgba(0,0,0,0.03), rgba(0,0,0,0.03) 1px, transparent 1px, transparent 2px)",
         }}

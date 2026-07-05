@@ -1,5 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { css } from "../../styled-system/css";
 import { AnimationPlayer } from "./AnimationPlayer";
+
+const storyWidthClass = css({ width: "min(58rem, calc(100vw - 2rem))" });
 
 const storyboard = `# Animation Storyboard: Entropy
 
@@ -62,7 +65,7 @@ const meta = {
 	},
 	decorators: [
 		(Story) => (
-			<div className="w-[min(58rem,calc(100vw-2rem))]">
+			<div className={storyWidthClass}>
 				<Story />
 			</div>
 		),

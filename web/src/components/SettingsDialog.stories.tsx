@@ -1,10 +1,61 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { fn } from "storybook/test";
+import { css } from "../../styled-system/css";
 
 import { SettingsDialog, type SettingsTabDef } from "./SettingsDialog";
 import { SettingsSectionNav } from "./SettingsSectionNav";
 import { Toggle } from "./Toggle";
+
+const sectionClass = css({
+	display: "flex",
+	flexDirection: "column",
+	gap: "0.75rem",
+	scrollMarginTop: "5rem",
+});
+const sectionTitleClass = css({
+	fontSize: "1rem",
+	fontWeight: 600,
+	color: "var(--foreground)",
+});
+const sectionDescriptionClass = css({
+	borderRadius: "0.375rem",
+	border: "1px solid var(--border)",
+	backgroundColor: "color-mix(in srgb, var(--muted) 20%, transparent)",
+	padding: "0.75rem",
+	fontSize: "0.875rem",
+	lineHeight: "1.5rem",
+	color: "var(--muted-foreground)",
+});
+const stackClass = css({ display: "flex", flexDirection: "column", gap: "2rem" });
+const innerCardStackClass = css({ display: "flex", flexDirection: "column", gap: "0.75rem" });
+const rowClass = css({
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "space-between",
+	gap: "1rem",
+	borderRadius: "0.375rem",
+	border: "1px solid var(--border)",
+	backgroundColor: "var(--background)",
+	paddingInline: "0.75rem",
+	paddingBlock: "0.5rem",
+});
+const rowTitleClass = css({ fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)" });
+const rowDescriptionClass = css({
+	fontSize: "0.75rem",
+	lineHeight: "1.25rem",
+	color: "var(--muted-foreground)",
+});
+const storyWrapperClass = css({ minHeight: "720px", backgroundColor: "#07150f", padding: "1.5rem" });
+const openButtonClass = css({
+	borderRadius: "0.375rem",
+	border: "1px solid var(--border)",
+	backgroundColor: "var(--background)",
+	paddingInline: "0.75rem",
+	paddingBlock: "0.5rem",
+	fontSize: "0.875rem",
+	fontWeight: 500,
+});
 
 function Section({
 	id,
@@ -16,11 +67,9 @@ function Section({
 	children: React.ReactNode;
 }) {
 	return (
-		<section id={`settings-section-${id}`} className="flex flex-col gap-3 scroll-mt-20">
-			<h3 className="text-base font-semibold text-foreground">{title}</h3>
-			<div className="rounded-md border border-border bg-muted/20 p-3 text-sm leading-6 text-muted-foreground">
-				{children}
-			</div>
+		<section id={`settings-section-${id}`} className={sectionClass}>
+			<h3 className={sectionTitleClass}>{title}</h3>
+			<div className={sectionDescriptionClass}>{children}</div>
 		</section>
 	);
 }
@@ -35,10 +84,10 @@ function SettingRow({
 	children: React.ReactNode;
 }) {
 	return (
-		<div className="flex items-center justify-between gap-4 rounded-md border border-border bg-background px-3 py-2">
-			<div className="min-w-0">
-				<p className="text-sm font-medium text-foreground">{title}</p>
-				<p className="text-xs leading-5 text-muted-foreground">{description}</p>
+		<div className={rowClass}>
+			<div className={css({ minWidth: 0 })}>
+				<p className={rowTitleClass}>{title}</p>
+				<p className={rowDescriptionClass}>{description}</p>
 			</div>
 			{children}
 		</div>
@@ -47,7 +96,7 @@ function SettingRow({
 
 function ModelsContent() {
 	return (
-		<div className="flex flex-col gap-8">
+		<div className={stackClass}>
 			<SettingsSectionNav
 				sections={[
 					{ id: "cloud", label: "Cloud" },
@@ -57,7 +106,7 @@ function ModelsContent() {
 				]}
 			/>
 			<Section id="cloud" title="Cloud Providers">
-				<div className="flex flex-col gap-3">
+				<div className={innerCardStackClass}>
 					<SettingRow title="OpenAI Codex" description="Signed in. Used for reasoning-heavy tutoring and code examples.">
 						<Toggle checked onChange={fn()} aria-label="OpenAI Codex enabled" />
 					</SettingRow>
@@ -86,7 +135,7 @@ function ModelsContent() {
 
 function LearningContent() {
 	return (
-		<div className="flex flex-col gap-8">
+		<div className={stackClass}>
 			<SettingsSectionNav
 				sections={[
 					{ id: "persona", label: "Persona" },
@@ -111,7 +160,7 @@ function LearningContent() {
 
 function AppContent() {
 	return (
-		<div className="flex flex-col gap-8">
+		<div className={stackClass}>
 			<SettingsSectionNav
 				sections={[
 					{ id: "chat", label: "Chat" },
@@ -145,11 +194,11 @@ const tabs: SettingsTabDef[] = [
 function SettingsDialogStory({ defaultTabId = "models" }: { defaultTabId?: string }) {
 	const [open, setOpen] = useState(true);
 	return (
-		<div className="min-h-[720px] bg-[#07150f] p-6">
+		<div className={storyWrapperClass}>
 			<button
 				type="button"
 				onClick={() => setOpen(true)}
-				className="dialog-compact-button rounded-md border border-border bg-background px-3 py-2 text-sm font-medium"
+				className={openButtonClass}
 			>
 				Open settings
 			</button>

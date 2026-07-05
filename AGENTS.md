@@ -24,12 +24,12 @@ Keating is a Pi-powered "hyperteacher" — a CLI tool + web app that generates p
 ## Build & Test Commands
 
 This project uses **Bun** as its runtime. Do not assume npm/pnpm.
-All dev dependencies (bun, node, oxdraw, typst, similarity, just, etc.) are managed by **Flox**. Run `flox activate` to enter the dev environment.
+All dev dependencies (bun, node, oxdraw, typst, similarity, just, etc.) are managed by **devenv** (`devenv.nix`). Run `devenv shell` (or use direnv with the existing `.envrc`) to enter the dev environment.
 Task runner is **just** — run `just` to list available tasks.
 
 | Task | Command |
 |------|---------|
-| Install deps | `just install` (root + web; auto-runs on `flox activate` if missing) |
+| Install deps | `just install` (root + web; auto-runs on `devenv shell` if missing) |
 | Build root | `just build` — compiles to `dist/` via `tsc` with NodeNext resolution |
 | Build everything | `just build-all` — root + web (vite + nitro) |
 | Test root | `just test` — uses `bun:test` runtime with `fast-check` for property-based testing |
@@ -178,20 +178,18 @@ Successive runs resume from the prior `*.evolved.md` artifact when available, so
 
 The selector is PROSPER-style: balanced multi-objective candidates beat narrow overfit edits.
 
-## Flox Environment
+## Devenv Environment
 
-All system-level dev dependencies are managed by Flox (`.flox/env/manifest.toml`):
+All system-level dev dependencies are managed by devenv (`devenv.nix`):
 - **bun** — JS runtime, bundler, package manager
-- **nodejs_22** — Node.js for tools that need it
-- **oxdraw** — diagram rendering (Mermaid → SVG, Linux only)
-- **typst** — Typesetting for doc generation
-- **imagemagick** — image processing for diagram export
-- **similarity** — code similarity detection (`similarity-ts`)
-- **just** — task runner (replaces mise)
-- **gh** — GitHub CLI
-- **ripgrep**, **fd** — fast search utilities
+- **just** — task runner
+- **bumpy** — canonical package-version bumps (when available in nixpkgs)
 
-Run `flox activate` to enter the dev environment. The activation hook auto-installs `node_modules` if missing. An `alias k="bun src/cli/main.ts"` is provided for quick CLI access.
+Run `devenv shell` to enter the dev environment (or use direnv via the existing `.envrc`). Repo-local git hooks are also configured via devenv:
+- `pre-commit`: `just check-version`
+- `pre-push`: `just test` + `just test-web`
+
+A `bump-version` script wraps `bumpy` and syncs version strings.
 
 ## Speech Module
 

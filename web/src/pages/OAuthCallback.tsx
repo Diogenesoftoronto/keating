@@ -1,6 +1,21 @@
 import { useEffect, useState } from "react";
 import { usePostHog } from "@posthog/react";
 import { completeOAuthFromInput, type OAuthCallbackResult } from "../keating/oauth";
+import { css, cx } from "../../styled-system/css";
+
+const styles = {
+	page: css({ display: "flex", minH: "100vh", alignItems: "center", justifyContent: "center", bg: "var(--background)" }),
+	card: css({ maxW: "28rem", borderRadius: "0.5rem", border: "1px solid var(--border)", bg: "var(--card)", p: "2rem", textAlign: "center", boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)" }),
+	spinner: css({ mx: "auto", mb: "1rem", h: "2rem", w: "2rem", animation: "spin 1s linear infinite", borderRadius: "9999px", border: "2px solid var(--primary)", borderTopColor: "transparent" }),
+	icon: css({ mx: "auto", mb: "1rem", display: "flex", h: "2.5rem", w: "2.5rem", alignItems: "center", justifyContent: "center", borderRadius: "9999px" }),
+	successIcon: css({ bg: "color-mix(in srgb, var(--primary) 10%, transparent)", color: "var(--primary)" }),
+	errorIcon: css({ bg: "color-mix(in srgb, var(--destructive) 10%, transparent)", color: "var(--destructive)" }),
+	svg: css({ h: "1.5rem", w: "1.5rem" }),
+	title: css({ fontSize: "1.125rem", fontWeight: "600", color: "var(--foreground)" }),
+	copy: css({ mt: "0.5rem", fontSize: "0.875rem", color: "var(--muted-foreground)" }),
+	error: css({ mt: "0.5rem", fontSize: "0.875rem", color: "var(--destructive)" }),
+	copySpaced: css({ mt: "0.75rem", fontSize: "0.875rem", color: "var(--muted-foreground)" }),
+};
 
 export function OAuthCallback() {
 	const posthog = usePostHog();
@@ -15,36 +30,36 @@ export function OAuthCallback() {
 	}, [posthog]);
 
 	return (
-		<div className="flex min-h-screen items-center justify-center bg-background">
-			<div className="max-w-md rounded-lg border border-border bg-card p-8 text-center shadow-lg">
+		<div className={styles.page}>
+			<div className={styles.card}>
 				{result === null ? (
 					<>
-						<div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-						<h2 className="text-lg font-semibold text-foreground">Signing in...</h2>
-						<p className="mt-2 text-sm text-muted-foreground">Completing authentication, please wait.</p>
+						<div className={styles.spinner} />
+						<h2 className={styles.title}>Signing in...</h2>
+						<p className={styles.copy}>Completing authentication, please wait.</p>
 					</>
 				) : result.success ? (
 					<>
-						<div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-							<svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+						<div className={cx(styles.icon, styles.successIcon)}>
+							<svg className={styles.svg} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
 								<path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
 							</svg>
 						</div>
-						<h2 className="text-lg font-semibold text-foreground">Signed in successfully</h2>
-						<p className="mt-2 text-sm text-muted-foreground">
+						<h2 className={styles.title}>Signed in successfully</h2>
+						<p className={styles.copy}>
 							You can close this window and return to Keating.
 						</p>
 					</>
 				) : (
 					<>
-						<div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10 text-destructive">
-							<svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+						<div className={cx(styles.icon, styles.errorIcon)}>
+							<svg className={styles.svg} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
 								<path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
 							</svg>
 						</div>
-						<h2 className="text-lg font-semibold text-foreground">Sign-in failed</h2>
-						<p className="mt-2 text-sm text-destructive">{result.error}</p>
-						<p className="mt-3 text-sm text-muted-foreground">
+						<h2 className={styles.title}>Sign-in failed</h2>
+						<p className={styles.error}>{result.error}</p>
+						<p className={styles.copySpaced}>
 							You can close this window and try again.
 						</p>
 					</>

@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { ArtifactViewer } from "./ArtifactViewer";
 import { KeatingStorage } from "../keating/storage";
+import { css, cx } from "../../styled-system/css";
 
 interface ArtifactBrowserOverlayProps {
   open: boolean;
@@ -36,24 +37,67 @@ export function ArtifactBrowserOverlay({ open, artifactId, onClose }: ArtifactBr
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 bg-background/70 backdrop-blur-sm"
+      className={css({
+        position: "fixed",
+        inset: 0,
+        zIndex: 50,
+        background: "color-mix(in srgb, var(--background) 70%, transparent)",
+        backdropFilter: "blur(4px)",
+      })}
       role="dialog"
       aria-modal="true"
       aria-label="Artifact browser"
       onClick={onClose}
     >
       <div
-        className="absolute inset-y-0 right-0 flex h-full w-full max-w-[100vw] flex-col border-l border-border bg-background shadow-2xl sm:max-w-[960px]"
+        className={css({
+          position: "absolute",
+          top: 0,
+          bottom: 0,
+          right: 0,
+          display: "flex",
+          height: "100%",
+          width: "100%",
+          maxWidth: "100vw",
+          flexDirection: "column",
+          borderLeftWidth: "1px",
+          borderColor: "var(--border)",
+          background: "var(--background)",
+          boxShadow: "0 25px 50px -12px rgb(0 0 0 / 0.25)",
+          sm: { maxWidth: "960px" },
+        })}
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
-          <div className="min-w-0">
-            <div className="text-sm font-medium text-foreground">Artifact browser</div>
-            <div className="text-xs text-muted-foreground">Browse lesson plans, maps, animations, benchmarks, and evolutions.</div>
+        <div className={css({
+          display: "flex",
+          height: "3.5rem",
+          flexShrink: 0,
+          alignItems: "center",
+          justifyContent: "space-between",
+          borderBottomWidth: "1px",
+          borderColor: "var(--border)",
+          paddingInline: "1rem",
+        })}>
+          <div className={css({ minWidth: 0 })}>
+            <div className={css({ fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)" })}>Artifact browser</div>
+            <div className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>Browse lesson plans, maps, animations, benchmarks, and evolutions.</div>
           </div>
           <button
             type="button"
-            className="dialog-icon-button inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-accent hover:text-accent-foreground"
+            className={cx("dialog-icon-button", css({
+              display: "inline-flex",
+              height: "2rem",
+              width: "2rem",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: "0.375rem",
+              transitionProperty: "color, background-color, border-color, text-decoration-color, fill, stroke",
+              transitionDuration: "150ms",
+              _hover: {
+                background: "var(--accent)",
+                color: "var(--accent-foreground)",
+              },
+            }))}
             aria-label="Close artifact browser"
             title="Close"
             onClick={onClose}
@@ -62,7 +106,14 @@ export function ArtifactBrowserOverlay({ open, artifactId, onClose }: ArtifactBr
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6">
+        <div className={css({
+          minHeight: 0,
+          flex: 1,
+          overflowY: "auto",
+          overflowX: "hidden",
+          padding: "0.75rem",
+          sm: { padding: "1.5rem" },
+        })}>
           <ArtifactViewer storage={artifactStorage} artifactId={artifactId} onClose={onClose} />
         </div>
       </div>

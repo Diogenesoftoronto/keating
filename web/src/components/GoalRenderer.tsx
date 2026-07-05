@@ -1,5 +1,7 @@
 import { useCallback, useState } from "react";
-import { Check, Circle, Flag, Loader2, Target } from "lucide-react";
+import { Check, Circle, Flag, Target } from "lucide-react";
+import { css } from "../../styled-system/css";
+import { Spinner } from "./Spinner";
 import {
 	advanceGoalStep,
 	computeGoalProgress,
@@ -61,54 +63,73 @@ export function GoalRenderer({ goal: initialGoal }: GoalRendererProps) {
 	);
 
 	return (
-		<div className="my-3 rounded-xl border-2 border-primary/30 bg-primary/5 p-4 shadow-sm">
-			<div className="flex items-start gap-3">
-				<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/15">
-					<Target size={18} className="text-primary" />
+		<div className={css({
+			marginBlock: "0.75rem",
+			borderRadius: "0.75rem",
+			border: "2px solid color-mix(in srgb, var(--primary) 30%, transparent)",
+			background: "color-mix(in srgb, var(--primary) 5%, transparent)",
+			padding: "1rem",
+			boxShadow: "var(--shadow-sm)",
+		})}>
+			<div className={css({ display: "flex", alignItems: "flex-start", gap: "0.75rem" })}>
+				<div className={css({ display: "flex", height: "2.25rem", width: "2.25rem", flexShrink: 0, alignItems: "center", justifyContent: "center", borderRadius: "0.5rem", background: "color-mix(in srgb, var(--primary) 15%, transparent)" })}>
+					<Target size={18} className={css({ color: "var(--primary)" })} />
 				</div>
-				<div className="min-w-0 flex-1">
-					<div className="flex items-center gap-2">
-						<h3 className="text-base font-bold leading-tight">{goal.title}</h3>
+				<div className={css({ minWidth: 0, flex: 1 })}>
+					<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
+						<h3 className={css({ fontSize: "1rem", fontWeight: 700, lineHeight: 1.25 })}>{goal.title}</h3>
 						{goal.status === "completed" && (
-							<span className="shrink-0 rounded bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase text-emerald-600 dark:text-emerald-400">
+							<span className={css({ flexShrink: 0, borderRadius: "0.25rem", background: "rgba(16, 185, 129, 0.15)", padding: "0.125rem 0.5rem", fontSize: "0.625rem", fontWeight: 600, textTransform: "uppercase", color: "#059669", ".dark &": { color: "#34d399" } })}>
 								Done
 							</span>
 						)}
 					</div>
 					{goal.description && (
-						<p className="mt-1 text-xs leading-5 text-muted-foreground">{goal.description}</p>
+						<p className={css({ marginTop: "0.25rem", fontSize: "0.75rem", lineHeight: "1.25rem", color: "var(--muted-foreground)" })}>{goal.description}</p>
 					)}
 				</div>
 			</div>
 
 			{/* Progress */}
-			<div className="mt-3 flex items-center gap-2">
-				<div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+			<div className={css({ marginTop: "0.75rem", display: "flex", alignItems: "center", gap: "0.5rem" })}>
+				<div className={css({ height: "0.375rem", flex: 1, overflow: "hidden", borderRadius: "9999px", background: "var(--muted)" })}>
 					<div
-						className="h-full rounded-full bg-primary transition-all"
+						className={css({ height: "100%", borderRadius: "9999px", background: "var(--primary)", transition: "all 150ms" })}
 						style={{ width: `${progress.percent}%` }}
 					/>
 				</div>
-				<span className="font-terminal text-[11px] text-muted-foreground tabular-nums">
+				<span className={css({ fontSize: "0.6875rem", color: "var(--muted-foreground)", fontVariantNumeric: "tabular-nums" })}>
 					{progress.done}/{progress.total}
 				</span>
 			</div>
 
 			{/* Steps */}
-			<ol className="mt-4 space-y-2">
+			<ol className={css({ marginTop: "1rem", "& > * + *": { marginTop: "0.5rem" } })}>
 				{goal.steps.map((step) => {
 					const isNext = progress.nextStep?.id === step.id;
 					const saving = savingStep === step.id;
 					return (
 						<li key={step.id}>
 							<div
-								className={`flex items-start gap-3 rounded-lg border p-3 transition-colors ${
-									step.status === "done"
-										? "border-emerald-500/40 bg-emerald-500/5"
+								className={css({
+									display: "flex",
+									alignItems: "flex-start",
+									gap: "0.75rem",
+									borderRadius: "0.5rem",
+									border: "1px solid",
+									borderColor: step.status === "done"
+										? "rgba(16, 185, 129, 0.4)"
 										: isNext
-											? "border-primary/50 bg-background"
-											: "border-border bg-background/60"
-								}`}
+											? "color-mix(in srgb, var(--primary) 50%, transparent)"
+											: "var(--border)",
+									background: step.status === "done"
+										? "rgba(16, 185, 129, 0.05)"
+										: isNext
+											? "var(--background)"
+											: "color-mix(in srgb, var(--background) 60%, transparent)",
+									padding: "0.75rem",
+									transition: "color 150ms, background-color 150ms, border-color 150ms",
+								})}
 							>
 								<button
 									type="button"
@@ -116,48 +137,65 @@ export function GoalRenderer({ goal: initialGoal }: GoalRendererProps) {
 									title={`Status: ${step.status.replace("_", " ")} (tap to advance)`}
 									disabled={saving}
 									onClick={() => void cycleStep(step)}
-									className={`mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
-										step.status === "done"
-											? "border-emerald-500 bg-emerald-500 text-white"
+									className={css({
+										marginTop: "0.125rem",
+										display: "inline-flex",
+										height: "1.75rem",
+										width: "1.75rem",
+										flexShrink: 0,
+										alignItems: "center",
+										justifyContent: "center",
+										borderRadius: "9999px",
+										border: "2px solid",
+										borderColor: step.status === "done"
+											? "#10b981"
 											: step.status === "in_progress"
-												? "border-primary text-primary"
-												: "border-border text-muted-foreground hover:border-primary/60"
-									}`}
+												? "var(--primary)"
+												: "var(--border)",
+										background: step.status === "done" ? "#10b981" : undefined,
+										color: step.status === "done"
+											? "white"
+											: step.status === "in_progress"
+												? "var(--primary)"
+												: "var(--muted-foreground)",
+										transition: "color 150ms, background-color 150ms, border-color 150ms",
+										_hover: step.status === "not_started" ? { borderColor: "color-mix(in srgb, var(--primary) 60%, transparent)" } : undefined,
+									})}
 								>
 									{saving ? (
-										<Loader2 size={14} className="animate-spin" />
+										<Spinner size={14} />
 									) : step.status === "done" ? (
 										<Check size={15} />
 									) : step.status === "in_progress" ? (
-										<Loader2 size={14} />
+										<Spinner size={14} />
 									) : step.kind === "milestone" || step.kind === "project" ? (
 										<Flag size={13} />
 									) : (
 										<Circle size={12} />
 									)}
 								</button>
-								<div className="min-w-0 flex-1">
-									<div className="flex flex-wrap items-center gap-2">
-										<span className="text-sm font-medium">
+								<div className={css({ minWidth: 0, flex: 1 })}>
+									<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem" })}>
+										<span className={css({ fontSize: "0.875rem", fontWeight: 500 })}>
 											{step.order + 1}. {step.title}
 										</span>
-										<span className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase text-muted-foreground">
+										<span className={css({ borderRadius: "0.25rem", background: "var(--muted)", padding: "0.125rem 0.375rem", fontSize: "0.625rem", textTransform: "uppercase", color: "var(--muted-foreground)" })}>
 											{KIND_LABEL[step.kind]}
 										</span>
 										{isNext && step.status !== "done" && (
-											<span className="rounded bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-primary">
+											<span className={css({ borderRadius: "0.25rem", background: "color-mix(in srgb, var(--primary) 15%, transparent)", padding: "0.125rem 0.375rem", fontSize: "0.625rem", fontWeight: 600, textTransform: "uppercase", color: "var(--primary)" })}>
 												Next
 											</span>
 										)}
 									</div>
 									{step.description && (
-										<p className="mt-1 text-xs leading-5 text-muted-foreground">{step.description}</p>
+										<p className={css({ marginTop: "0.25rem", fontSize: "0.75rem", lineHeight: "1.25rem", color: "var(--muted-foreground)" })}>{step.description}</p>
 									)}
 									{step.successCriteria.length > 0 && (
-										<ul className="mt-2 space-y-1">
+										<ul className={css({ marginTop: "0.5rem", "& > * + *": { marginTop: "0.25rem" } })}>
 											{step.successCriteria.map((c, i) => (
-												<li key={i} className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
-													<span aria-hidden="true" className="mt-1.5 inline-block h-1 w-1 shrink-0 rounded-full bg-muted-foreground/60" />
+												<li key={i} className={css({ display: "flex", alignItems: "flex-start", gap: "0.375rem", fontSize: "0.6875rem", color: "var(--muted-foreground)" })}>
+													<span aria-hidden="true" className={css({ marginTop: "0.375rem", display: "inline-block", height: "0.25rem", width: "0.25rem", flexShrink: 0, borderRadius: "9999px", background: "color-mix(in srgb, var(--muted-foreground) 60%, transparent)" })} />
 													{c}
 												</li>
 											))}

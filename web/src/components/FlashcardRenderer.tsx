@@ -25,6 +25,7 @@ import type { FlashcardSrsState } from "../keating/storage";
 import { KeatingStorage } from "../keating/storage";
 import { useKeatingUiSettings } from "../hooks/use-ui-settings";
 import { useCardGestures } from "./flashcards/useCardGestures";
+import { css, cx } from "../../styled-system/css";
 import {
 	fireCompletionConfetti,
 	isStreakMilestone,
@@ -99,22 +100,41 @@ function dispatchCardReviewed(detail: ReviewEventDetail) {
 const RATING_META: Record<SrsRating, { label: string; badgeClass: string; exitClass: string }> = {
 	0: {
 		label: "Again",
-		badgeClass: "border-destructive/60 bg-destructive/15 text-destructive",
+		badgeClass: css({
+			borderColor: "color-mix(in srgb, var(--destructive) 60%, transparent)",
+			background: "color-mix(in srgb, var(--destructive) 15%, transparent)",
+			color: "var(--destructive)",
+		}),
 		exitClass: "flashcard-exit-left",
 	},
 	1: {
 		label: "Hard",
-		badgeClass: "border-amber-500/60 bg-amber-500/15 text-amber-700 dark:text-amber-300",
+		badgeClass: css({
+			borderColor: "rgba(245, 158, 11, 0.6)",
+			background: "rgba(245, 158, 11, 0.15)",
+			color: "#b45309",
+			".dark &": { color: "#fcd34d" },
+		}),
 		exitClass: "flashcard-exit-down",
 	},
 	2: {
 		label: "Good",
-		badgeClass: "border-emerald-500/60 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+		badgeClass: css({
+			borderColor: "rgba(16, 185, 129, 0.6)",
+			background: "rgba(16, 185, 129, 0.15)",
+			color: "#047857",
+			".dark &": { color: "#6ee7b7" },
+		}),
 		exitClass: "flashcard-exit-right",
 	},
 	3: {
 		label: "Easy",
-		badgeClass: "border-sky-500/60 bg-sky-500/15 text-sky-700 dark:text-sky-300",
+		badgeClass: css({
+			borderColor: "rgba(14, 165, 233, 0.6)",
+			background: "rgba(14, 165, 233, 0.15)",
+			color: "#0369a1",
+			".dark &": { color: "#7dd3fc" },
+		}),
 		exitClass: "flashcard-exit-up",
 	},
 };
@@ -124,7 +144,7 @@ function RatingButton({
 	label,
 	subLabel,
 	intervalDays,
-	color,
+	colorClass,
 	disabled,
 	onClick,
 }: {
@@ -132,7 +152,7 @@ function RatingButton({
 	label: string;
 	subLabel: string;
 	intervalDays: number;
-	color: string;
+	colorClass: string;
 	disabled?: boolean;
 	onClick: () => void;
 }) {
@@ -142,11 +162,30 @@ function RatingButton({
 			onClick={onClick}
 			disabled={disabled}
 			data-rating={rating}
-			className={`dialog-compact-button flex flex-1 flex-col items-center justify-center gap-0.5 rounded-lg border-2 px-3 py-2 text-xs font-medium transition-colors ${color} ${disabled ? "cursor-not-allowed opacity-50" : "hover:brightness-110"}`}
+			className={cx(
+				"dialog-compact-button",
+				css({
+					display: "flex",
+					flex: 1,
+					flexDirection: "column",
+					alignItems: "center",
+					justifyContent: "center",
+					gap: "0.125rem",
+					borderRadius: "0.5rem",
+					border: "2px solid",
+					padding: "0.5rem 0.75rem",
+					fontSize: "0.75rem",
+					fontWeight: 500,
+					transition: "color 150ms, background-color 150ms, filter 150ms",
+					_hover: disabled ? undefined : { filter: "brightness(1.1)" },
+					_disabled: { cursor: "not-allowed", opacity: 0.5 },
+				}),
+				colorClass,
+			)}
 		>
-			<span className="text-sm font-bold">{label}</span>
-			<span className="font-terminal text-[10px] opacity-80">{subLabel}</span>
-			<span className="font-terminal text-[10px] opacity-80">{formatInterval(intervalDays)}</span>
+			<span className={css({ fontSize: "0.875rem", fontWeight: 700 })}>{label}</span>
+			<span className={cx("font-terminal", css({ fontSize: "0.625rem", opacity: 0.8 }))}>{subLabel}</span>
+			<span className={cx("font-terminal", css({ fontSize: "0.625rem", opacity: 0.8 }))}>{formatInterval(intervalDays)}</span>
 		</button>
 	);
 }
@@ -348,23 +387,32 @@ export function FlashcardRenderer({
 
 	if (finished) {
 		return (
-			<div className="rounded-xl border-2 border-border bg-background p-5 my-3 shadow-sm space-y-3 text-center">
-				<div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+			<div className={css({
+				marginBlock: "0.75rem",
+				borderRadius: "0.75rem",
+				border: "2px solid var(--border)",
+				background: "var(--background)",
+				padding: "1.25rem",
+				textAlign: "center",
+				boxShadow: "var(--shadow-sm)",
+				"& > * + *": { marginTop: "0.75rem" },
+			})}>
+				<div className={css({ marginInline: "auto", display: "flex", height: "3rem", width: "3rem", alignItems: "center", justifyContent: "center", borderRadius: "9999px", background: "rgba(16, 185, 129, 0.15)", color: "#059669", ".dark &": { color: "#34d399" } })}>
 					<Check size={22} />
 				</div>
-				<h3 className="text-base font-bold">Session complete</h3>
-				<p className="text-xs text-muted-foreground">
+				<h3 className={css({ fontSize: "1rem", fontWeight: 700 })}>Session complete</h3>
+				<p className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
 					{reviewedCount} card{reviewedCount === 1 ? "" : "s"} reviewed
 					{lapseCount > 0 ? `, ${lapseCount} lapse${lapseCount === 1 ? "" : "s"}` : ""}.
 				</p>
 				{streak >= 2 && (
-					<p className="flex items-center justify-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400">
+					<p className={css({ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.25rem", fontSize: "0.75rem", fontWeight: 500, color: "#d97706", ".dark &": { color: "#fbbf24" } })}>
 						<Flame size={14} />
 						Finished on a {streak}-card streak
 					</p>
 				)}
-				<div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-					<Sparkles size={14} className="text-amber-500" />
+				<div className={css({ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+					<Sparkles size={14} className={css({ color: "#f59e0b" })} />
 					<span>Next reviews are scheduled automatically.</span>
 				</div>
 			</div>
@@ -398,21 +446,48 @@ export function FlashcardRenderer({
 			onBlur={(e) => {
 				if (!e.currentTarget.contains(e.relatedTarget as Node)) setKeyboardHint(false);
 			}}
-			className="rounded-xl border-2 border-border bg-background p-4 sm:p-5 my-3 shadow-sm space-y-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+			className={css({
+				marginBlock: "0.75rem",
+				borderRadius: "0.75rem",
+				border: "2px solid var(--border)",
+				background: "var(--background)",
+				padding: { base: "1rem", sm: "1.25rem" },
+				boxShadow: "var(--shadow-sm)",
+				_focus: { outline: "none" },
+				_focusVisible: { boxShadow: "0 0 0 2px var(--primary)" },
+				"& > * + *": { marginTop: "1rem" },
+			})}
 		>
 			{showMeta && (
-				<div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-					<div className="min-w-0">
-						<h3 className="text-sm font-bold text-foreground truncate">{deck.title}</h3>
-						<p className="font-terminal text-[11px]">
+				<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+					<div className={css({ minWidth: 0 })}>
+						<h3 className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 700, color: "var(--foreground)" })}>{deck.title}</h3>
+						<p className={cx("font-terminal", css({ fontSize: "0.6875rem" }))}>
 							{deck.cards.length} CARDS // {stats.dueNow} DUE NOW // avg ease {averageEase(deck).toFixed(2)}
 						</p>
 					</div>
-					<div className="flex items-center gap-2">
+					<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
 						{streak >= 2 && (
 							<span
 								key={streakPopKey}
-								className={`flashcard-streak-pop inline-flex items-center gap-1 rounded-full border border-amber-500/50 bg-amber-500/10 px-2 py-0.5 font-terminal text-[11px] font-bold text-amber-600 dark:text-amber-400 ${isStreakMilestone(streak) ? "flashcard-milestone-pulse" : ""}`}
+								className={cx(
+									"flashcard-streak-pop",
+									isStreakMilestone(streak) ? "flashcard-milestone-pulse" : "",
+									"font-terminal",
+									css({
+										display: "inline-flex",
+										alignItems: "center",
+										gap: "0.25rem",
+										borderRadius: "9999px",
+										border: "1px solid rgba(245, 158, 11, 0.5)",
+										background: "rgba(245, 158, 11, 0.1)",
+										padding: "0.125rem 0.5rem",
+										fontSize: "0.6875rem",
+										fontWeight: 700,
+										color: "#d97706",
+										".dark &": { color: "#fbbf24" },
+									}),
+								)}
 								title={`${streak} consecutive Good/Easy recalls`}
 							>
 								<Flame size={11} />
@@ -422,48 +497,64 @@ export function FlashcardRenderer({
 						<button
 							type="button"
 							onClick={() => updateSettings({ flashcardSoundEnabled: !soundOn })}
-							className="dialog-icon-button inline-flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+							className={cx("dialog-icon-button", css({
+								display: "inline-flex",
+								height: "1.75rem",
+								width: "1.75rem",
+								alignItems: "center",
+								justifyContent: "center",
+								borderRadius: "0.25rem",
+								color: "var(--muted-foreground)",
+								transition: "color 150ms, background-color 150ms",
+								_hover: { background: "var(--accent)", color: "var(--accent-foreground)" },
+							}))}
 							aria-label={soundOn ? "Mute flashcard sounds" : "Enable flashcard sounds"}
 							title={soundOn ? "Sounds on" : "Sounds off"}
 						>
 							{soundOn ? <Volume2 size={14} /> : <VolumeX size={14} />}
 						</button>
-						<span className="font-terminal tabular-nums text-[11px]">
+						<span className={cx("font-terminal", css({ fontSize: "0.6875rem", fontVariantNumeric: "tabular-nums" }))}>
 							{index + 1}/{cards.length}
 						</span>
 					</div>
 				</div>
 			)}
 
-			<div className="flashcard-stage relative">
+			<div className={cx("flashcard-stage", css({ position: "relative" }))}>
 				<div
 					key={current.id}
 					{...gestureHandlers}
 					style={dragStyle}
-					className={`flashcard-3d cursor-pointer select-none ${revealed ? "flashcard-flipped" : ""} ${drag.dragging ? "flashcard-dragging" : ""} ${exitClass || "flashcard-enter"}`}
+					className={cx(
+						"flashcard-3d",
+						revealed ? "flashcard-flipped" : "",
+						drag.dragging ? "flashcard-dragging" : "",
+						exitClass || "flashcard-enter",
+						css({ cursor: "pointer", userSelect: "none" }),
+					)}
 					onAnimationEnd={(e) => {
 						if (exiting && e.animationName.startsWith("flashcard-exit")) {
 							void commitRate(exiting.rating);
 						}
 					}}
 				>
-					<div className="flashcard-face relative w-full rounded-lg border border-border bg-muted/30 p-5 text-left">
-						<div className="text-[10px] uppercase tracking-wider text-muted-foreground font-terminal">
+					<div className={cx("flashcard-face", css({ position: "relative", width: "100%", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "color-mix(in srgb, var(--muted) 30%, transparent)", padding: "1.25rem", textAlign: "left" }))}>
+						<div className={cx("font-terminal", css({ fontSize: "0.625rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted-foreground)" }))}>
 							Front
 						</div>
-						<div className="mt-2 min-h-[88px] text-base font-medium leading-relaxed">
+						<div className={css({ marginTop: "0.5rem", minHeight: "88px", fontSize: "1rem", fontWeight: 500, lineHeight: 1.625 })}>
 							{current.front}
 						</div>
-						<div className="mt-3 flex items-center gap-1 text-[11px] text-muted-foreground font-terminal">
-							<Lightbulb size={12} className="text-accent" />
+						<div className={cx("font-terminal", css({ marginTop: "0.75rem", display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.6875rem", color: "var(--muted-foreground)" }))}>
+							<Lightbulb size={12} className={css({ color: "var(--accent)" })} />
 							<span>Think of the answer, then tap or press Space to flip</span>
 						</div>
 					</div>
-					<div className="flashcard-face flashcard-face-back overflow-y-auto rounded-lg border border-border bg-muted/30 p-5 text-left">
-						<div className="text-[10px] uppercase tracking-wider text-muted-foreground font-terminal">
+					<div className={cx("flashcard-face", "flashcard-face-back", css({ overflowY: "auto", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "color-mix(in srgb, var(--muted) 30%, transparent)", padding: "1.25rem", textAlign: "left" }))}>
+						<div className={cx("font-terminal", css({ fontSize: "0.625rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted-foreground)" }))}>
 							Back
 						</div>
-						<div className="mt-2 min-h-[88px] text-base font-medium leading-relaxed">
+						<div className={css({ marginTop: "0.5rem", minHeight: "88px", fontSize: "1rem", fontWeight: 500, lineHeight: 1.625 })}>
 							{current.back}
 						</div>
 					</div>
@@ -471,11 +562,11 @@ export function FlashcardRenderer({
 
 				{previewMeta && (
 					<div
-						className="pointer-events-none absolute inset-0 flex items-center justify-center"
+						className={css({ pointerEvents: "none", position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" })}
 						style={{ opacity: Math.min(1, drag.progress * 1.2) }}
 					>
 						<span
-							className={`rounded-lg border-2 px-4 py-2 text-lg font-bold shadow-sm backdrop-blur-sm ${previewMeta.badgeClass}`}
+							className={cx(previewMeta.badgeClass, css({ borderRadius: "0.5rem", border: "2px solid", padding: "0.5rem 1rem", fontSize: "1.125rem", fontWeight: 700, boxShadow: "var(--shadow-sm)", backdropFilter: "blur(4px)" }))}
 						>
 							{previewMeta.label}
 						</span>
@@ -483,15 +574,15 @@ export function FlashcardRenderer({
 				)}
 			</div>
 
-			<div className="flex items-center justify-between gap-2">
-				<div className="flex items-center gap-1 text-[11px] text-muted-foreground font-terminal">
+			<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" })}>
+				<div className={cx("font-terminal", css({ display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.6875rem", color: "var(--muted-foreground)" }))}>
 					<span>Reps {current.srs.reps}</span>
 					<span aria-hidden>·</span>
 					<span>Ease {current.srs.ease.toFixed(2)}</span>
 					{current.srs.lapses > 0 && (
 						<>
 							<span aria-hidden>·</span>
-							<span className="text-destructive">Lapses {current.srs.lapses}</span>
+							<span className={css({ color: "var(--destructive)" })}>Lapses {current.srs.lapses}</span>
 						</>
 					)}
 					{current.srs.dueAt > 0 && current.srs.reps > 0 && (
@@ -501,11 +592,21 @@ export function FlashcardRenderer({
 						</>
 					)}
 				</div>
-				<div className="flex items-center gap-1">
+				<div className={css({ display: "flex", alignItems: "center", gap: "0.25rem" })}>
 					<button
 						type="button"
 						onClick={() => toggleBookmark(current.id)}
-						className={`dialog-icon-button inline-flex h-7 w-7 items-center justify-center rounded transition-colors ${bookmarkIds.has(current.id) ? "text-amber-500" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}
+						className={cx("dialog-icon-button", css({
+							display: "inline-flex",
+							height: "1.75rem",
+							width: "1.75rem",
+							alignItems: "center",
+							justifyContent: "center",
+							borderRadius: "0.25rem",
+							color: bookmarkIds.has(current.id) ? "#f59e0b" : "var(--muted-foreground)",
+							transition: "color 150ms, background-color 150ms",
+							_hover: bookmarkIds.has(current.id) ? undefined : { background: "var(--accent)", color: "var(--accent-foreground)" },
+						}))}
 						aria-label={bookmarkIds.has(current.id) ? "Remove bookmark" : "Bookmark card"}
 						title={bookmarkIds.has(current.id) ? "Bookmarked" : "Bookmark for review"}
 					>
@@ -515,12 +616,25 @@ export function FlashcardRenderer({
 			</div>
 
 			{!revealed ? (
-				<div className="flex items-center justify-between gap-2">
+				<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" })}>
 					<button
 						type="button"
 						onClick={() => goTo(-1)}
 						disabled={index === 0}
-						className="dialog-compact-button inline-flex items-center gap-1 rounded-lg border-2 border-border bg-background px-3 py-2 text-sm font-medium hover:bg-accent disabled:opacity-40 disabled:pointer-events-none transition-colors"
+						className={cx("dialog-compact-button", css({
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "0.25rem",
+							borderRadius: "0.5rem",
+							border: "2px solid var(--border)",
+							background: "var(--background)",
+							padding: "0.5rem 0.75rem",
+							fontSize: "0.875rem",
+							fontWeight: 500,
+							transition: "color 150ms, background-color 150ms",
+							_hover: { background: "var(--accent)" },
+							_disabled: { pointerEvents: "none", opacity: 0.4 },
+						}))}
 					>
 						<ChevronLeft size={14} />
 						Back
@@ -528,7 +642,20 @@ export function FlashcardRenderer({
 					<button
 						type="button"
 						onClick={toggleReveal}
-						className="dialog-compact-button inline-flex items-center gap-2 rounded-lg border-2 border-primary bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+						className={cx("dialog-compact-button", css({
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "0.5rem",
+							borderRadius: "0.5rem",
+							border: "2px solid var(--primary)",
+							background: "var(--primary)",
+							padding: "0.5rem 1rem",
+							fontSize: "0.875rem",
+							fontWeight: 500,
+							color: "var(--primary-foreground)",
+							transition: "color 150ms, background-color 150ms",
+							_hover: { background: "color-mix(in srgb, var(--primary) 90%, black)" },
+						}))}
 					>
 						<Lightbulb size={14} />
 						Reveal
@@ -537,24 +664,42 @@ export function FlashcardRenderer({
 						type="button"
 						onClick={() => goTo(1)}
 						disabled={index >= cards.length - 1}
-						className="dialog-compact-button inline-flex items-center gap-1 rounded-lg border-2 border-border bg-background px-3 py-2 text-sm font-medium hover:bg-accent disabled:opacity-40 disabled:pointer-events-none transition-colors"
+						className={cx("dialog-compact-button", css({
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "0.25rem",
+							borderRadius: "0.5rem",
+							border: "2px solid var(--border)",
+							background: "var(--background)",
+							padding: "0.5rem 0.75rem",
+							fontSize: "0.875rem",
+							fontWeight: 500,
+							transition: "color 150ms, background-color 150ms",
+							_hover: { background: "var(--accent)" },
+							_disabled: { pointerEvents: "none", opacity: 0.4 },
+						}))}
 					>
 						Skip
 						<ChevronRight size={14} />
 					</button>
 				</div>
 			) : (
-				<div className="space-y-2">
-					<div className="text-[10px] uppercase tracking-wider text-muted-foreground font-terminal text-center">
+				<div className={css({ "& > * + *": { marginTop: "0.5rem" } })}>
+					<div className={cx("font-terminal", css({ textAlign: "center", fontSize: "0.625rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted-foreground)" }))}>
 						How well did you recall? Swipe the card or grade below.
 					</div>
-					<div className="grid grid-cols-4 gap-2">
+					<div className={css({ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: "0.5rem" })}>
 						<RatingButton
 							rating={0}
 							label="Again"
 							subLabel="<10m"
 							intervalDays={nextIntervals.again}
-							color="border-destructive/50 bg-destructive/10 text-destructive hover:bg-destructive/20"
+							colorClass={css({
+								borderColor: "color-mix(in srgb, var(--destructive) 50%, transparent)",
+								background: "color-mix(in srgb, var(--destructive) 10%, transparent)",
+								color: "var(--destructive)",
+								_hover: { background: "color-mix(in srgb, var(--destructive) 20%, transparent)" },
+							})}
 							onClick={() => handleRate(0)}
 						/>
 						<RatingButton
@@ -562,7 +707,13 @@ export function FlashcardRenderer({
 							label="Hard"
 							subLabel="Recalled w/ struggle"
 							intervalDays={nextIntervals.hard}
-							color="border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20"
+							colorClass={css({
+								borderColor: "rgba(245, 158, 11, 0.5)",
+								background: "rgba(245, 158, 11, 0.1)",
+								color: "#b45309",
+								_hover: { background: "rgba(245, 158, 11, 0.2)" },
+								".dark &": { color: "#fcd34d" },
+							})}
 							onClick={() => handleRate(1)}
 						/>
 						<RatingButton
@@ -570,7 +721,13 @@ export function FlashcardRenderer({
 							label="Good"
 							subLabel="Some effort"
 							intervalDays={nextIntervals.good}
-							color="border-emerald-500/50 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20"
+							colorClass={css({
+								borderColor: "rgba(16, 185, 129, 0.5)",
+								background: "rgba(16, 185, 129, 0.1)",
+								color: "#047857",
+								_hover: { background: "rgba(16, 185, 129, 0.2)" },
+								".dark &": { color: "#6ee7b7" },
+							})}
 							onClick={() => handleRate(2)}
 						/>
 						<RatingButton
@@ -578,7 +735,13 @@ export function FlashcardRenderer({
 							label="Easy"
 							subLabel="Instant"
 							intervalDays={nextIntervals.easy}
-							color="border-sky-500/50 bg-sky-500/10 text-sky-700 dark:text-sky-300 hover:bg-sky-500/20"
+							colorClass={css({
+								borderColor: "rgba(14, 165, 233, 0.5)",
+								background: "rgba(14, 165, 233, 0.1)",
+								color: "#0369a1",
+								_hover: { background: "rgba(14, 165, 233, 0.2)" },
+								".dark &": { color: "#7dd3fc" },
+							})}
 							onClick={() => handleRate(3)}
 						/>
 					</div>
@@ -586,7 +749,7 @@ export function FlashcardRenderer({
 			)}
 
 			{keyboardHint && (
-				<div className="text-center font-terminal text-[10px] text-muted-foreground">
+				<div className={cx("font-terminal", css({ textAlign: "center", fontSize: "0.625rem", color: "var(--muted-foreground)" }))}>
 					Space flip · 1-4 grade · ←/→ navigate · swipe ←Again ↓Hard →Good ↑Easy
 				</div>
 			)}
@@ -629,13 +792,13 @@ export interface DeckSummaryProps {
 export function DeckSummary({ deck, now = Date.now(), onStart }: DeckSummaryProps) {
 	const stats = getDeckStats(deck, now);
 	return (
-		<div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/20 p-3">
-			<div className="min-w-0">
-				<div className="flex items-center gap-2">
-					<Star size={14} className="text-amber-500 shrink-0" />
-					<p className="text-sm font-medium truncate">{deck.title}</p>
+		<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "color-mix(in srgb, var(--muted) 20%, transparent)", padding: "0.75rem" })}>
+			<div className={css({ minWidth: 0 })}>
+				<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
+					<Star size={14} className={css({ flexShrink: 0, color: "#f59e0b" })} />
+					<p className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500 })}>{deck.title}</p>
 				</div>
-				<p className="text-[11px] text-muted-foreground font-terminal mt-0.5">
+				<p className={cx("font-terminal", css({ marginTop: "0.125rem", fontSize: "0.6875rem", color: "var(--muted-foreground)" }))}>
 					{stats.total} cards // {stats.dueNow} due // {stats.mature} mature
 				</p>
 			</div>
@@ -643,7 +806,22 @@ export function DeckSummary({ deck, now = Date.now(), onStart }: DeckSummaryProp
 				type="button"
 				onClick={() => onStart?.(deck)}
 				disabled={stats.dueNow === 0}
-				className="shrink-0 inline-flex items-center gap-1 rounded-md border-2 border-primary bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+				className={css({
+					display: "inline-flex",
+					flexShrink: 0,
+					alignItems: "center",
+					gap: "0.25rem",
+					borderRadius: "0.375rem",
+					border: "2px solid var(--primary)",
+					background: "var(--primary)",
+					padding: "0.375rem 0.75rem",
+					fontSize: "0.75rem",
+					fontWeight: 500,
+					color: "var(--primary-foreground)",
+					transition: "color 150ms, background-color 150ms",
+					_hover: { background: "color-mix(in srgb, var(--primary) 90%, black)" },
+					_disabled: { pointerEvents: "none", opacity: 0.4 },
+				})}
 			>
 				{stats.dueNow === 0 ? "All caught up" : `Review ${stats.dueNow}`}
 			</button>

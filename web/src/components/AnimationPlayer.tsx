@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Pause, Play, RotateCcw } from "lucide-react";
+import { css, cx } from "../../styled-system/css";
 import { SceneRenderer, parseStoryboard } from "./SceneRenderer";
 import { buildManimSceneHtml } from "./animation-host";
 
@@ -104,36 +105,44 @@ function AnimatedStoryboardStage({
 	};
 
 	return (
-		<div className="space-y-3">
-			<div className="relative aspect-video overflow-hidden rounded-lg border border-border bg-neutral-950 text-white">
-				<div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(34,197,94,0.24),transparent_32%),radial-gradient(circle_at_80%_30%,rgba(245,158,11,0.28),transparent_30%),linear-gradient(135deg,#050505,#111827_52%,#1f1305)]" />
+		<div className={css({ display: "grid", gap: "0.75rem" })}>
+			<div className={css({ position: "relative", aspectRatio: "16 / 9", overflow: "hidden", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "#0a0a0a", color: "white" })}>
+				<div className={css({ position: "absolute", inset: 0, background: "radial-gradient(circle at 20% 20%, rgba(34,197,94,0.24), transparent 32%), radial-gradient(circle at 80% 30%, rgba(245,158,11,0.28), transparent 30%), linear-gradient(135deg, #050505, #111827 52%, #1f1305)" })} />
 				<div
 					key={active.number}
-					className="absolute inset-0 grid grid-cols-[1fr_1.1fr] gap-6 p-6 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300 sm:p-8"
+					className={css({
+						position: "absolute",
+						inset: 0,
+						display: "grid",
+						gridTemplateColumns: "1fr 1.1fr",
+						gap: "1.5rem",
+						padding: "1.5rem",
+						"@media (min-width: 640px)": { padding: "2rem" },
+					})}
 				>
-					<div className="relative flex min-w-0 flex-col justify-between">
+					<div className={css({ position: "relative", display: "flex", minWidth: 0, flexDirection: "column", justifyContent: "space-between" })}>
 						<div>
-							<div className="mb-3 inline-flex rounded border border-amber-400/50 bg-black/30 px-2 py-1 font-terminal text-[10px] uppercase tracking-wide text-amber-200">
+							<div className={cx("font-terminal", css({ marginBottom: "0.75rem", display: "inline-flex", borderRadius: "0.25rem", border: "1px solid rgb(251 191 36 / 0.5)", background: "rgb(0 0 0 / 0.3)", padding: "0.25rem 0.5rem", fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.025em", color: "#fde68a" }))}>
 								Scene {active.number} / {scenes.length}
 							</div>
-							<h3 className="max-w-[18rem] text-xl font-semibold leading-tight text-white sm:text-3xl">
+							<h3 className={css({ maxWidth: "18rem", fontSize: "1.25rem", fontWeight: 600, lineHeight: 1.25, color: "white", "@media (min-width: 640px)": { fontSize: "1.875rem" } })}>
 								{active.title}
 							</h3>
 						</div>
-						<p className="max-w-md text-xs leading-5 text-neutral-200 sm:text-sm">
+						<p className={css({ maxWidth: "28rem", fontSize: "0.75rem", lineHeight: "1.25rem", color: "#e5e5e5", "@media (min-width: 640px)": { fontSize: "0.875rem" } })}>
 							{active.visual}
 						</p>
 					</div>
-					<div className="relative min-h-0">
-						<div className="absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-300/50 bg-emerald-300/10 motion-safe:animate-pulse sm:h-56 sm:w-56" />
+					<div className={css({ position: "relative", minHeight: 0 })}>
+						<div className={css({ position: "absolute", left: "50%", top: "50%", height: "10rem", width: "10rem", transform: "translate(-50%, -50%)", borderRadius: "9999px", border: "1px solid rgb(110 231 183 / 0.5)", background: "rgb(110 231 183 / 0.1)", "@media (min-width: 640px)": { height: "14rem", width: "14rem" }, "@media (prefers-reduced-motion: no-preference)": { animation: "pulse 2s cubic-bezier(0.4,0,0.6,1) infinite" } })} />
 						<div
-							className="absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-amber-300/80 bg-black/35 shadow-[0_0_36px_rgba(245,158,11,0.35)] transition-transform duration-300"
+							className={css({ position: "absolute", left: "50%", top: "50%", height: "6rem", width: "6rem", borderRadius: "9999px", border: "2px solid rgb(252 211 77 / 0.8)", background: "rgb(0 0 0 / 0.35)", boxShadow: "0 0 36px rgba(245,158,11,0.35)", transitionProperty: "transform", transitionDuration: "300ms" })}
 							style={{ transform: `translate(-50%, -50%) rotate(${progress * 180}deg) scale(${1 + progress * 0.08})` }}
 						>
-							<div className="absolute left-1/2 top-0 h-1/2 w-0.5 -translate-x-1/2 bg-amber-300" />
-							<div className="absolute bottom-0 left-1/2 h-1/2 w-0.5 -translate-x-1/2 bg-emerald-300" />
-							<div className="absolute left-0 top-1/2 h-0.5 w-1/2 -translate-y-1/2 bg-sky-300" />
-							<div className="absolute right-0 top-1/2 h-0.5 w-1/2 -translate-y-1/2 bg-rose-300" />
+							<div className={css({ position: "absolute", left: "50%", top: 0, height: "50%", width: "0.125rem", transform: "translateX(-50%)", background: "#fcd34d" })} />
+							<div className={css({ position: "absolute", bottom: 0, left: "50%", height: "50%", width: "0.125rem", transform: "translateX(-50%)", background: "#6ee7b7" })} />
+							<div className={css({ position: "absolute", left: 0, top: "50%", height: "0.125rem", width: "50%", transform: "translateY(-50%)", background: "#7dd3fc" })} />
+							<div className={css({ position: "absolute", right: 0, top: "50%", height: "0.125rem", width: "50%", transform: "translateY(-50%)", background: "#fda4af" })} />
 						</div>
 						{tokens.map((token, index) => {
 							const angle = (index / Math.max(1, tokens.length)) * Math.PI * 2 + progress * Math.PI * 0.65;
@@ -143,7 +152,7 @@ function AnimatedStoryboardStage({
 							return (
 								<div
 									key={`${active.number}-${token}-${index}`}
-									className="absolute max-w-28 rounded border border-white/15 bg-black/45 px-2 py-1 text-center text-[10px] font-medium text-white shadow-sm backdrop-blur"
+									className={css({ position: "absolute", maxWidth: "7rem", borderRadius: "0.25rem", border: "1px solid rgb(255 255 255 / 0.15)", background: "rgb(0 0 0 / 0.45)", padding: "0.25rem 0.5rem", textAlign: "center", fontSize: "10px", fontWeight: 500, color: "white", boxShadow: "var(--shadow-sm, 0 1px 2px rgb(0 0 0 / 0.05))", backdropFilter: "blur(8px)" })}
 									style={{ left: `${x}%`, top: `${y}%`, transform: "translate(-50%, -50%)" }}
 								>
 									{token}
@@ -152,48 +161,56 @@ function AnimatedStoryboardStage({
 						})}
 					</div>
 				</div>
-				<div className="absolute bottom-0 left-0 right-0 h-1 bg-white/15">
-					<div className="h-full bg-amber-300 transition-[width]" style={{ width: `${progress * 100}%` }} />
+				<div className={css({ position: "absolute", bottom: 0, left: 0, right: 0, height: "0.25rem", background: "rgb(255 255 255 / 0.15)" })}>
+					<div className={css({ height: "100%", background: "#fcd34d", transitionProperty: "width" })} style={{ width: `${progress * 100}%` }} />
 				</div>
 			</div>
 
-			<div className="flex flex-wrap items-center justify-between gap-2">
-				<div className="min-w-0">
-					<div className="truncate text-sm font-medium">{title || "Animation"}</div>
-					<div className="font-terminal text-[11px] text-muted-foreground">
+			<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" })}>
+				<div className={css({ minWidth: 0 })}>
+					<div className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500 })}>{title || "Animation"}</div>
+					<div className={cx("font-terminal", css({ fontSize: "11px", color: "var(--muted-foreground)" }))}>
 						{scenes.length} scenes // {totalDuration}s
 					</div>
 				</div>
-				<div className="flex items-center gap-1">
-					<button type="button" onClick={() => goTo(activeIdx - 1)} className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border hover:bg-accent" aria-label="Previous scene">
+				<div className={css({ display: "flex", alignItems: "center", gap: "0.25rem" })}>
+					<button type="button" onClick={() => goTo(activeIdx - 1)} className={css({ display: "inline-flex", height: "2rem", width: "2rem", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "1px solid var(--border)", _hover: { background: "var(--accent)" } })} aria-label="Previous scene">
 						<ChevronLeft size={15} />
 					</button>
-					<button type="button" onClick={() => setPlaying((value) => !value)} className="inline-flex h-8 items-center gap-1 rounded-md border border-border px-2 text-xs font-medium hover:bg-accent">
+					<button type="button" onClick={() => setPlaying((value) => !value)} className={css({ display: "inline-flex", height: "2rem", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", border: "1px solid var(--border)", paddingInline: "0.5rem", fontSize: "0.75rem", fontWeight: 500, _hover: { background: "var(--accent)" } })}>
 						{playing ? <Pause size={14} /> : <Play size={14} />}
 						{playing ? "Pause" : "Play"}
 					</button>
-					<button type="button" onClick={() => { setElapsed(0); setPlaying(true); }} className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border hover:bg-accent" aria-label="Restart scene">
+					<button type="button" onClick={() => { setElapsed(0); setPlaying(true); }} className={css({ display: "inline-flex", height: "2rem", width: "2rem", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "1px solid var(--border)", _hover: { background: "var(--accent)" } })} aria-label="Restart scene">
 						<RotateCcw size={14} />
 					</button>
-					<button type="button" onClick={() => goTo(activeIdx + 1)} className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border hover:bg-accent" aria-label="Next scene">
+					<button type="button" onClick={() => goTo(activeIdx + 1)} className={css({ display: "inline-flex", height: "2rem", width: "2rem", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "1px solid var(--border)", _hover: { background: "var(--accent)" } })} aria-label="Next scene">
 						<ChevronRight size={15} />
 					</button>
 				</div>
 			</div>
 
-			<div className="grid grid-cols-3 gap-1 sm:grid-cols-6">
+			<div className={css({ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "0.25rem", "@media (min-width: 640px)": { gridTemplateColumns: "repeat(6, minmax(0, 1fr))" } })}>
 				{scenes.map((scene, index) => (
 					<button
 						key={scene.number}
 						type="button"
 						onClick={() => goTo(index)}
-						className={`min-w-0 rounded-md border px-2 py-1.5 text-left text-[11px] transition-colors ${
-							index === activeIdx
-								? "border-primary bg-primary/10 text-primary"
-								: "border-border bg-background hover:bg-accent"
-						}`}
+						className={css({
+							minWidth: 0,
+							borderRadius: "0.375rem",
+							border: "1px solid",
+							borderColor: index === activeIdx ? "var(--primary)" : "var(--border)",
+							background: index === activeIdx ? "color-mix(in srgb, var(--primary) 10%, transparent)" : "var(--background)",
+							padding: "0.375rem 0.5rem",
+							textAlign: "left",
+							fontSize: "11px",
+							color: index === activeIdx ? "var(--primary)" : undefined,
+							transitionProperty: "color, background-color, border-color",
+							_hover: index === activeIdx ? undefined : { background: "var(--accent)" },
+						})}
 					>
-						<span className="block truncate">{scene.title}</span>
+						<span className={css({ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" })}>{scene.title}</span>
 					</button>
 				))}
 			</div>
@@ -220,18 +237,18 @@ export function AnimationPlayer({ scene, manifest, storyboard, renderer: storedR
 	const isManim = renderer === "manim";
 
 	return (
-		<div className={`animation-player bg-muted/20 rounded-lg overflow-hidden ${className ?? ""}`}>
+		<div className={cx("animation-player", css({ overflow: "hidden", borderRadius: "0.5rem", background: "color-mix(in srgb, var(--muted) 20%, transparent)" }), className)}>
 			{/* Header */}
-			<div className="flex items-center justify-between px-4 py-2 bg-muted/30 border-b border-border">
-				<div className="flex items-center gap-2">
-					<span className="text-sm font-medium">Animation</span>
-					{manifestData && <span className="text-xs text-muted-foreground">({manifestData.topic})</span>}
-					{isHyperframes && <span className="text-xs text-muted-foreground">Hyperframes</span>}
+			<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid var(--border)", background: "color-mix(in srgb, var(--muted) 30%, transparent)", padding: "0.5rem 1rem" })}>
+				<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
+					<span className={css({ fontSize: "0.875rem", fontWeight: 500 })}>Animation</span>
+					{manifestData && <span className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>({manifestData.topic})</span>}
+					{isHyperframes && <span className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>Hyperframes</span>}
 				</div>
-				<div className="flex items-center gap-2">
+				<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
 					<button
 						onClick={() => setShowSource(!showSource)}
-						className="text-xs px-2 py-1 rounded bg-muted hover:bg-muted/80 transition-colors"
+						className={css({ borderRadius: "0.25rem", background: "var(--muted)", padding: "0.25rem 0.5rem", fontSize: "0.75rem", transitionProperty: "color, background-color, border-color", _hover: { background: "color-mix(in srgb, var(--muted) 80%, transparent)" } })}
 					>
 						{showSource ? "Hide" : "Show"} Source
 					</button>
@@ -239,25 +256,25 @@ export function AnimationPlayer({ scene, manifest, storyboard, renderer: storedR
 			</div>
 
 			{/* Content */}
-			<div className="p-4">
+			<div className={css({ padding: "1rem" })}>
 				{isHyperframes && scene ? (
 					<iframe
 						title={`${manifestData?.topic ?? "Keating"} Hyperframes composition`}
 						srcDoc={scene}
 						sandbox="allow-scripts"
-						className="aspect-video w-full rounded-md border border-border bg-black"
+						className={css({ aspectRatio: "16 / 9", width: "100%", borderRadius: "0.375rem", border: "1px solid var(--border)", background: "black" })}
 					/>
 				) : isManim && scene ? (
-					<div className="space-y-3">
+					<div className={css({ display: "grid", gap: "0.75rem" })}>
 						<iframe
 							title={`${manifestData?.topic ?? "Keating"} manim animation`}
 							srcDoc={buildManimSceneHtml(scene, manifestData?.topic ?? "Keating Animation")}
 							sandbox="allow-scripts"
-							className="aspect-video w-full rounded-md border border-border bg-black"
+							className={css({ aspectRatio: "16 / 9", width: "100%", borderRadius: "0.375rem", border: "1px solid var(--border)", background: "black" })}
 						/>
 						{storyboardData?.scenes.length ? (
-							<details className="rounded-md border border-border bg-background/70 p-3">
-								<summary className="cursor-pointer text-xs font-medium text-muted-foreground">
+							<details className={css({ borderRadius: "0.375rem", border: "1px solid var(--border)", background: "color-mix(in srgb, var(--background) 70%, transparent)", padding: "0.75rem" })}>
+								<summary className={css({ cursor: "pointer", fontSize: "0.75rem", fontWeight: 500, color: "var(--muted-foreground)" })}>
 									Storyboard notes
 								</summary>
 								<SceneRenderer storyboard={storyboard ?? ""} />
@@ -265,47 +282,47 @@ export function AnimationPlayer({ scene, manifest, storyboard, renderer: storedR
 						) : null}
 					</div>
 				) : storyboardData?.scenes.length ? (
-					<div className="space-y-3">
+					<div className={css({ display: "grid", gap: "0.75rem" })}>
 						<AnimatedStoryboardStage
 							title={storyboardData.title}
 							scenes={storyboardData.scenes}
 							totalDuration={storyboardData.totalDuration}
 						/>
-						<details className="rounded-md border border-border bg-background/70 p-3">
-							<summary className="cursor-pointer text-xs font-medium text-muted-foreground">
+						<details className={css({ borderRadius: "0.375rem", border: "1px solid var(--border)", background: "color-mix(in srgb, var(--background) 70%, transparent)", padding: "0.75rem" })}>
+							<summary className={css({ cursor: "pointer", fontSize: "0.75rem", fontWeight: 500, color: "var(--muted-foreground)" })}>
 								Storyboard notes
 							</summary>
 							<SceneRenderer storyboard={storyboard ?? ""} />
 						</details>
 					</div>
 				) : scene ? (
-					<div className="space-y-3">
-						<h3 className="font-medium">Scene Source</h3>
-						<pre className="text-xs text-muted-foreground whitespace-pre-wrap bg-muted/30 p-3 rounded overflow-auto max-h-64">
+					<div className={css({ display: "grid", gap: "0.75rem" })}>
+						<h3 className={css({ fontWeight: 500 })}>Scene Source</h3>
+						<pre className={css({ maxHeight: "16rem", overflow: "auto", borderRadius: "0.25rem", background: "color-mix(in srgb, var(--muted) 30%, transparent)", padding: "0.75rem", whiteSpace: "pre-wrap", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
 							{scene}
 						</pre>
 					</div>
 				) : (
-					<div className="text-center text-muted-foreground py-8">No animation loaded</div>
+					<div className={css({ paddingBlock: "2rem", textAlign: "center", color: "var(--muted-foreground)" })}>No animation loaded</div>
 				)}
 
 				{showSource && storyboard && (
-					<div className="mt-3 space-y-2">
-						<div className="text-xs font-medium text-muted-foreground">
+					<div className={css({ marginTop: "0.75rem", display: "grid", gap: "0.5rem" })}>
+						<div className={css({ fontSize: "0.75rem", fontWeight: 500, color: "var(--muted-foreground)" })}>
 							Storyboard Source ({storyboardData?.scenes.length ?? 0} scenes)
 						</div>
-						<pre className="text-xs text-muted-foreground whitespace-pre-wrap bg-muted/30 p-3 rounded overflow-auto max-h-64">
+						<pre className={css({ maxHeight: "16rem", overflow: "auto", borderRadius: "0.25rem", background: "color-mix(in srgb, var(--muted) 30%, transparent)", padding: "0.75rem", whiteSpace: "pre-wrap", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
 							{storyboard}
 						</pre>
 					</div>
 				)}
 
 				{showSource && scene && (
-					<div className="mt-3 space-y-2">
-						<div className="text-xs font-medium text-muted-foreground">
+					<div className={css({ marginTop: "0.75rem", display: "grid", gap: "0.5rem" })}>
+						<div className={css({ fontSize: "0.75rem", fontWeight: 500, color: "var(--muted-foreground)" })}>
 							{isHyperframes ? "Hyperframes HTML" : "Scene Code"}
 						</div>
-						<pre className="text-xs text-muted-foreground whitespace-pre-wrap bg-muted/30 p-3 rounded overflow-auto max-h-64">
+						<pre className={css({ maxHeight: "16rem", overflow: "auto", borderRadius: "0.25rem", background: "color-mix(in srgb, var(--muted) 30%, transparent)", padding: "0.75rem", whiteSpace: "pre-wrap", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
 							{scene}
 						</pre>
 					</div>
@@ -314,10 +331,10 @@ export function AnimationPlayer({ scene, manifest, storyboard, renderer: storedR
 
 			{/* Manifest Info */}
 			{manifestData && (
-				<div className="px-4 py-2 bg-muted/30 border-t border-border text-xs text-muted-foreground">
-					<span className="mr-4">Duration: {manifestData.duration ?? 0}s</span>
+				<div className={css({ borderTop: "1px solid var(--border)", background: "color-mix(in srgb, var(--muted) 30%, transparent)", padding: "0.5rem 1rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+					<span className={css({ marginRight: "1rem" })}>Duration: {manifestData.duration ?? 0}s</span>
 					<span>Scenes: {Array.isArray(manifestData.scenes) ? manifestData.scenes.length : 0}</span>
-					{renderer && <span className="ml-4">Renderer: {renderer}</span>}
+					{renderer && <span className={css({ marginLeft: "1rem" })}>Renderer: {renderer}</span>}
 				</div>
 			)}
 
@@ -347,7 +364,7 @@ export function AnimationPreview({
 		return (
 			<button
 				onClick={() => setExpanded(true)}
-				className="text-xs text-primary hover:underline flex items-center gap-1"
+				className={css({ display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", color: "var(--primary)", _hover: { textDecoration: "underline" } })}
 			>
 				Show Animation
 			</button>
@@ -355,9 +372,9 @@ export function AnimationPreview({
 	}
 
 	return (
-		<div className="my-4">
+		<div className={css({ marginBlock: "1rem" })}>
 			{compact && (
-				<button onClick={() => setExpanded(false)} className="text-xs text-muted-foreground hover:underline mb-2">
+				<button onClick={() => setExpanded(false)} className={css({ marginBottom: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)", _hover: { textDecoration: "underline" } })}>
 					Collapse
 				</button>
 			)}

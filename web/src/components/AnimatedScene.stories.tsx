@@ -1,5 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { css } from "../../styled-system/css";
 import { AnimatedScene } from "./AnimatedScene";
+
+const storyWidthClass = css({ width: "min(58rem, calc(100vw - 2rem))" });
 
 const manimBody = `async function construct(scene, M) {
   const title = new M.Text({ text: "Bayes rule", fontSize: 48, color: "#f4f1e8" });
@@ -53,7 +56,7 @@ const meta = {
 	},
 	decorators: [
 		(Story) => (
-			<div className="w-[min(58rem,calc(100vw-2rem))]">
+			<div className={storyWidthClass}>
 				<Story />
 			</div>
 		),

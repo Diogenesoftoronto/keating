@@ -75,6 +75,13 @@ export function sessionPreview(messages: AgentMessage[]) {
 		.slice(0, 8192);
 }
 
+export function sessionSearchText(messages: AgentMessage[]) {
+	return messages
+		.map(messageText)
+		.filter(Boolean)
+		.join("\n");
+}
+
 export function sessionUsage(messages: AgentMessage[]): SessionMetadata["usage"] {
 	return messages.reduce<SessionMetadata["usage"]>((usage, message) => {
 		const messageUsage = (message as any).usage;

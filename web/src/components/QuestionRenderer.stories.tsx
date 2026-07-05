@@ -1,6 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
+import { css } from "../../styled-system/css";
 import { QuestionRenderer } from "./QuestionRenderer";
+
+const storyWidthClass = css({ width: "min(72rem, calc(100vw - 2rem))" });
 
 const meta = {
 	title: "Questions/QuestionRenderer",
@@ -10,7 +13,7 @@ const meta = {
 	},
 	decorators: [
 		(Story) => (
-			<div className="w-[min(72rem,calc(100vw-2rem))]">
+			<div className={storyWidthClass}>
 				<Story />
 			</div>
 		),

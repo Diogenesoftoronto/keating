@@ -9,6 +9,7 @@ import {
 	ChevronUp,
 	MessageSquare,
 } from "lucide-react";
+import { css, cx } from "../../styled-system/css";
 
 /** A single blank within a fill-in-the-blank question. */
 export interface BlankField {
@@ -74,6 +75,100 @@ interface QuestionRendererProps {
 	data: QuestionFormData;
 	onSubmit?: (answers: AnsweredQuestion[]) => void;
 }
+
+const sm = "@media (min-width: 640px)";
+
+const questionStyles = {
+	shell: css({
+		marginBlock: "0.5rem",
+		width: "100%",
+		maxWidth: "100%",
+		overflowX: "hidden",
+		borderRadius: "0.5rem",
+		border: "1px solid color-mix(in srgb, var(--primary) 30%, transparent)",
+		background: "color-mix(in srgb, var(--primary) 5%, transparent)",
+		padding: "0.5rem",
+		boxShadow: "var(--shadow-sm)",
+		[sm]: { marginBlock: "0.75rem", borderRadius: "0.75rem", padding: "1rem" },
+	}),
+	submittedShell: css({
+		marginBlock: "0.5rem",
+		width: "100%",
+		maxWidth: "100%",
+		overflowX: "hidden",
+		borderRadius: "0.5rem",
+		border: "1px solid color-mix(in srgb, var(--primary) 30%, transparent)",
+		background: "color-mix(in srgb, var(--primary) 5%, transparent)",
+		padding: "0.625rem",
+		boxShadow: "var(--shadow-sm)",
+		[sm]: { marginBlock: "0.75rem", borderRadius: "0.75rem", padding: "1rem" },
+	}),
+	iconBox: css({
+		display: "flex",
+		height: "2rem",
+		width: "2rem",
+		flexShrink: 0,
+		alignItems: "center",
+		justifyContent: "center",
+		borderRadius: "0.5rem",
+		background: "color-mix(in srgb, var(--primary) 10%, transparent)",
+	}),
+	rowStart: css({ display: "flex", alignItems: "flex-start", gap: "0.5rem", [sm]: { gap: "0.75rem" } }),
+	rowCenter: css({ display: "flex", alignItems: "center", gap: "0.5rem" }),
+	minFlex: css({ minWidth: 0, flex: 1 }),
+	stack1: css({ display: "grid", gap: "0.25rem" }),
+	stack15: css({ display: "grid", gap: "0.375rem" }),
+	stack2: css({ display: "grid", gap: "0.5rem" }),
+	stack3: css({ display: "grid", gap: "0.75rem" }),
+	primaryText: css({ color: "var(--primary)" }),
+	mutedText: css({ color: "var(--muted-foreground)" }),
+	breakWords: css({ overflowWrap: "break-word" }),
+	field: css({
+		height: "2.25rem",
+		width: "100%",
+		borderRadius: "0.375rem",
+		border: "1px solid var(--border)",
+		background: "var(--background)",
+		paddingInline: "0.5rem",
+		fontSize: "0.875rem",
+		outline: "none",
+		_focus: { borderColor: "var(--primary)" },
+		"&::placeholder": { color: "color-mix(in srgb, var(--muted-foreground) 70%, transparent)" },
+	}),
+	buttonSecondary: css({
+		display: "inline-flex",
+		alignItems: "center",
+		gap: "0.25rem",
+		borderRadius: "0.5rem",
+		borderWidth: "2px",
+		borderColor: "var(--border)",
+		background: "var(--background)",
+		padding: "0.375rem 0.625rem",
+		fontSize: "0.75rem",
+		fontWeight: 500,
+		transition: "background-color 150ms",
+		_hover: { background: "var(--accent)" },
+		_disabled: { opacity: 0.4, pointerEvents: "none" },
+		[sm]: { padding: "0.5rem 0.75rem", fontSize: "0.875rem" },
+	}),
+	buttonPrimary: css({
+		display: "inline-flex",
+		alignItems: "center",
+		gap: "0.25rem",
+		borderRadius: "0.5rem",
+		borderWidth: "2px",
+		borderColor: "var(--primary)",
+		background: "var(--primary)",
+		padding: "0.375rem 0.75rem",
+		fontSize: "0.75rem",
+		fontWeight: 500,
+		color: "var(--primary-foreground)",
+		transition: "background-color 150ms",
+		_hover: { background: "color-mix(in srgb, var(--primary) 90%, transparent)" },
+		_disabled: { opacity: 0.4, pointerEvents: "none" },
+		[sm]: { padding: "0.5rem 1rem", fontSize: "0.875rem" },
+	}),
+};
 
 /**
  * Accepts either the new multi-field shape `{ questions: [...] }` or the legacy
@@ -419,46 +514,54 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 
 	if (submitted) {
 		return (
-			<div className="my-2 sm:my-3 rounded-lg sm:rounded-xl border border-primary/30 bg-primary/5 p-2.5 sm:p-4 shadow-sm w-full max-w-full overflow-x-hidden">
-				<div className="flex items-start gap-2 sm:gap-3">
-					<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-						<CheckCircle2 size={18} className="text-primary" />
+			<div className={questionStyles.submittedShell}>
+				<div className={questionStyles.rowStart}>
+					<div className={questionStyles.iconBox}>
+						<CheckCircle2 size={18} className={questionStyles.primaryText} />
 					</div>
-					<div className="min-w-0 flex-1 space-y-2">
-						<p className="text-sm font-medium text-primary">Submitted</p>
-						<div className="space-y-2 text-sm text-primary">
+					<div className={cx(questionStyles.minFlex, questionStyles.stack2)}>
+						<p className={css({ fontSize: "0.875rem", fontWeight: 500, color: "var(--primary)" })}>Submitted</p>
+						<div className={css({ display: "grid", gap: "0.5rem", fontSize: "0.875rem", color: "var(--primary)" })}>
 							{questions.map((q, index) => {
 								const state = states[index];
 								if (isMatchingQuestion(q) && q.correctMatches && state) {
 									return (
-										<div key={index} className="space-y-2">
-											<div className="flex items-start gap-2">
-												<MessageSquare size={14} className="mt-1 shrink-0" />
-												<span className="min-w-0 break-words">
+										<div key={index} className={questionStyles.stack2}>
+											<div className={questionStyles.rowStart}>
+												<MessageSquare size={14} className={css({ marginTop: "0.25rem", flexShrink: 0 })} />
+												<span className={cx(questionStyles.minFlex, questionStyles.breakWords)}>
 													{q.header ? `${q.header}: ` : ""}
 													<strong>{q.question}</strong>
 												</span>
 											</div>
-											<div className="space-y-1.5">
+											<div className={questionStyles.stack15}>
 												{state.classifications.map((row, rowIndex) => {
 													const status = matchingCorrectness(q, rowIndex, row.choice);
 													const correct = q.correctMatches?.[rowIndex];
 													return (
 														<div
 															key={`${row.item}-${rowIndex}`}
-															className={`grid gap-2 rounded-md border px-2 py-1.5 sm:grid-cols-[minmax(0,1fr)_minmax(11rem,0.42fr)] ${
+															className={cx(
+																css({
+																	display: "grid",
+																	gap: "0.5rem",
+																	borderRadius: "0.375rem",
+																	border: "1px solid",
+																	padding: "0.375rem 0.5rem",
+																	[sm]: { gridTemplateColumns: "minmax(0,1fr) minmax(11rem,0.42fr)" },
+																}),
 																status === "correct"
-																	? "border-primary/40 bg-primary/10 text-primary"
+																	? css({ borderColor: "color-mix(in srgb, var(--primary) 40%, transparent)", background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: "var(--primary)" })
 																	: status === "wrong"
-																		? "border-destructive/50 bg-destructive/10 text-destructive"
-																		: "border-border bg-background text-foreground"
-															}`}
+																		? css({ borderColor: "color-mix(in srgb, var(--destructive) 50%, transparent)", background: "color-mix(in srgb, var(--destructive) 10%, transparent)", color: "var(--destructive)" })
+																		: css({ borderColor: "var(--border)", background: "var(--background)", color: "var(--foreground)" }),
+															)}
 														>
-															<div className="min-w-0 break-words">{row.item}</div>
-															<div className="min-w-0">
-																<strong className="break-words">{row.choice}</strong>
+															<div className={cx(questionStyles.minFlex, questionStyles.breakWords)}>{row.item}</div>
+															<div className={css({ minWidth: 0 })}>
+																<strong className={questionStyles.breakWords}>{row.choice}</strong>
 																{status === "wrong" && correct && (
-																	<div className="mt-0.5 text-[11px] text-muted-foreground">
+																	<div className={css({ marginTop: "0.125rem", fontSize: "0.6875rem", color: "var(--muted-foreground)" })}>
 																		Correct: {correct}
 																	</div>
 																)}
@@ -471,9 +574,9 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 									);
 								}
 								return (
-									<div key={index} className="flex items-start gap-2">
-										<MessageSquare size={14} className="mt-1 shrink-0" />
-										<span className="min-w-0 whitespace-pre-line break-words">
+									<div key={index} className={questionStyles.rowStart}>
+										<MessageSquare size={14} className={css({ marginTop: "0.25rem", flexShrink: 0 })} />
+										<span className={css({ minWidth: 0, whiteSpace: "pre-line", overflowWrap: "break-word" })}>
 											{q.header ? `${q.header}: ` : ""}
 											<strong>{answerFor(index)}</strong>
 										</span>
@@ -498,17 +601,17 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 	const selectedMatches = new Set(state.classifications.map((row) => row.choice).filter(Boolean));
 
 	return (
-			<div className="my-2 sm:my-3 rounded-lg sm:rounded-xl border border-primary/30 bg-primary/5 p-2 sm:p-4 shadow-sm w-full max-w-full overflow-x-hidden">
-				<div className="flex items-start gap-1.5 sm:gap-3">
-					<div className="hidden sm:flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-						<CheckCircle2 size={18} className="text-primary" />
+			<div className={questionStyles.shell}>
+				<div className={css({ display: "flex", alignItems: "flex-start", gap: "0.375rem", [sm]: { gap: "0.75rem" } })}>
+					<div className={css({ display: "none", height: "2rem", width: "2rem", flexShrink: 0, alignItems: "center", justifyContent: "center", borderRadius: "0.5rem", background: "color-mix(in srgb, var(--primary) 10%, transparent)", [sm]: { display: "flex" } })}>
+						<CheckCircle2 size={18} className={questionStyles.primaryText} />
 					</div>
-				<div className="min-w-0 flex-1 space-y-2 sm:space-y-4">
-					<div className="flex items-center justify-between gap-2 sm:gap-3">
-						<div className="min-w-0">
-							<p className="text-xs sm:text-sm font-medium text-primary">Question</p>
+				<div className={css({ minWidth: 0, flex: 1, display: "grid", gap: "0.5rem", [sm]: { gap: "1rem" } })}>
+					<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", [sm]: { gap: "0.75rem" } })}>
+						<div className={css({ minWidth: 0 })}>
+							<p className={css({ fontSize: "0.75rem", fontWeight: 500, color: "var(--primary)", [sm]: { fontSize: "0.875rem" } })}>Question</p>
 							{collapsed && (
-								<p className="line-clamp-2 text-xs leading-5 text-muted-foreground break-words">
+								<p className={css({ lineClamp: 2, fontSize: "0.75rem", lineHeight: "1.25rem", color: "var(--muted-foreground)", overflowWrap: "break-word" })}>
 									{data.intro || q.question}
 								</p>
 							)}
@@ -519,63 +622,83 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 							aria-expanded={!collapsed}
 							aria-label={collapsed ? "Show" : "Hide"}
 							title={collapsed ? "Show" : "Hide"}
-							className="inline-flex h-6 sm:h-8 shrink-0 items-center gap-1 rounded-md border border-border bg-background px-1.5 sm:px-2 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/60 hover:bg-primary/10 hover:text-primary"
+							className={css({
+								display: "inline-flex",
+								height: "1.5rem",
+								flexShrink: 0,
+								alignItems: "center",
+								gap: "0.25rem",
+								borderRadius: "0.375rem",
+								border: "1px solid var(--border)",
+								background: "var(--background)",
+								paddingInline: "0.375rem",
+								fontSize: "0.75rem",
+								fontWeight: 500,
+								color: "var(--muted-foreground)",
+								transition: "color 150ms, background-color 150ms, border-color 150ms",
+								_hover: {
+									borderColor: "color-mix(in srgb, var(--primary) 60%, transparent)",
+									background: "color-mix(in srgb, var(--primary) 10%, transparent)",
+									color: "var(--primary)",
+								},
+								[sm]: { height: "2rem", paddingInline: "0.5rem" },
+							})}
 						>
 							{collapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
-							<span className="hidden sm:inline">{collapsed ? "Show" : "Hide"}</span>
+							<span className={css({ display: "none", [sm]: { display: "inline" } })}>{collapsed ? "Show" : "Hide"}</span>
 						</button>
 					</div>
 					{collapsed ? (
-						<div className="flex items-center gap-2 rounded-lg border border-border/60 bg-background/40 p-3">
-							<div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+						<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", borderRadius: "0.5rem", border: "1px solid color-mix(in srgb, var(--border) 60%, transparent)", background: "color-mix(in srgb, var(--background) 40%, transparent)", padding: "0.75rem" })}>
+							<div className={css({ height: "0.375rem", flex: 1, overflow: "hidden", borderRadius: "9999px", background: "var(--muted)" })}>
 								<div
-									className="h-full rounded-full bg-primary transition-all"
+									className={css({ height: "100%", borderRadius: "9999px", background: "var(--primary)", transition: "all 150ms" })}
 									style={{ width: `${progress}%` }}
 								/>
 							</div>
-							<span className="font-terminal text-[11px] text-muted-foreground tabular-nums">
+							<span className={cx("font-terminal", css({ fontSize: "0.6875rem", color: "var(--muted-foreground)", fontVariantNumeric: "tabular-nums" }))}>
 								{current + 1}/{total}
 							</span>
 						</div>
 					) : (
 						<>
 					{data.intro && (
-						<p className="text-xs leading-snug sm:text-sm sm:leading-6 text-muted-foreground break-words">{data.intro}</p>
+						<p className={css({ fontSize: "0.75rem", lineHeight: 1.375, color: "var(--muted-foreground)", overflowWrap: "break-word", [sm]: { fontSize: "0.875rem", lineHeight: "1.5rem" } })}>{data.intro}</p>
 					)}
 
 					{/* Progress bar */}
-					<div className="flex items-center gap-2">
-						<div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+					<div className={questionStyles.rowCenter}>
+						<div className={css({ height: "0.375rem", flex: 1, overflow: "hidden", borderRadius: "9999px", background: "var(--muted)" })}>
 							<div
-								className="h-full rounded-full bg-primary transition-all"
+								className={css({ height: "100%", borderRadius: "9999px", background: "var(--primary)", transition: "all 150ms" })}
 								style={{ width: `${progress}%` }}
 							/>
 						</div>
-						<span className="font-terminal text-[11px] text-muted-foreground tabular-nums">
+						<span className={cx("font-terminal", css({ fontSize: "0.6875rem", color: "var(--muted-foreground)", fontVariantNumeric: "tabular-nums" }))}>
 							{current + 1}/{total}
 						</span>
 					</div>
 
 					{/* Current question card */}
-					<div className="space-y-2 sm:space-y-3 rounded-none sm:rounded-lg border-0 sm:border border-border/60 bg-transparent sm:bg-background/40 p-0 sm:p-3 max-w-full">
+					<div className={css({ display: "grid", gap: "0.5rem", maxWidth: "100%", borderRadius: 0, border: "0 solid transparent", background: "transparent", padding: 0, [sm]: { gap: "0.75rem", borderRadius: "0.5rem", border: "1px solid color-mix(in srgb, var(--border) 60%, transparent)", background: "color-mix(in srgb, var(--background) 40%, transparent)", padding: "0.75rem" } })}>
 						{q.header && (
-							<span className="inline-flex rounded bg-primary/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-primary">
+							<span className={css({ display: "inline-flex", borderRadius: "0.25rem", background: "color-mix(in srgb, var(--primary) 10%, transparent)", padding: "0.125rem 0.5rem", fontSize: "0.6875rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.025em", color: "var(--primary)" })}>
 								{q.header}
 							</span>
 						)}
 
 						{isMatching ? (
-							<div className="space-y-3 max-w-full">
-								<p className="text-xs sm:text-sm font-medium leading-snug sm:leading-6 break-words">{q.question}</p>
-								<div className="rounded-lg border border-border bg-background p-2.5">
-									<div className="mb-2 text-xs font-medium text-muted-foreground">
+							<div className={css({ display: "grid", gap: "0.75rem", maxWidth: "100%" })}>
+								<p className={css({ fontSize: "0.75rem", fontWeight: 500, lineHeight: 1.375, overflowWrap: "break-word", [sm]: { fontSize: "0.875rem", lineHeight: "1.5rem" } })}>{q.question}</p>
+								<div className={css({ borderRadius: "0.5rem", border: "1px solid var(--border)", background: "var(--background)", padding: "0.625rem" })}>
+									<div className={css({ marginBottom: "0.5rem", fontSize: "0.75rem", fontWeight: 500, color: "var(--muted-foreground)" })}>
 										{q.choiceLabel ?? "Answer bank"}
 									</div>
-									<ol className="grid gap-2 sm:grid-cols-[repeat(auto-fit,minmax(11rem,1fr))]">
+									<ol className={css({ display: "grid", gap: "0.5rem", [sm]: { gridTemplateColumns: "repeat(auto-fit,minmax(11rem,1fr))" } })}>
 										{q.choices?.map((choice, choiceIndex) => {
 											const used = selectedMatches.has(choice);
 											return (
-												<li key={choice} className="min-w-0">
+												<li key={choice} className={css({ minWidth: 0 })}>
 													<button
 														type="button"
 														draggable={!submitted && (!used || q.uniqueMatches === false)}
@@ -589,24 +712,39 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 															setDraggingMatch(null);
 															setDragOverRow(null);
 														}}
-														className={`inline-flex min-h-8 w-full max-w-full items-center gap-2 rounded-md border px-2.5 py-1.5 text-left text-xs transition-colors sm:text-sm ${
+														className={cx(
+															css({
+																display: "inline-flex",
+																minHeight: "2rem",
+																width: "100%",
+																maxWidth: "100%",
+																alignItems: "center",
+																gap: "0.5rem",
+																borderRadius: "0.375rem",
+																border: "1px solid",
+																padding: "0.375rem 0.625rem",
+																textAlign: "left",
+																fontSize: "0.75rem",
+																transition: "color 150ms, background-color 150ms, border-color 150ms",
+																[sm]: { fontSize: "0.875rem" },
+															}),
 															used
-																? "border-primary/40 bg-primary/10 text-primary disabled:opacity-70"
-																: "border-border bg-muted/20 hover:border-primary/50 hover:bg-primary/10"
-														}`}
+																? css({ borderColor: "color-mix(in srgb, var(--primary) 40%, transparent)", background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: "var(--primary)", _disabled: { opacity: 0.7 } })
+																: css({ borderColor: "var(--border)", background: "color-mix(in srgb, var(--muted) 20%, transparent)", _hover: { borderColor: "color-mix(in srgb, var(--primary) 50%, transparent)", background: "color-mix(in srgb, var(--primary) 10%, transparent)" } }),
+														)}
 														title={used && q.uniqueMatches !== false ? "Already matched" : "Drag to a row"}
 													>
-														<span className="font-terminal text-[11px] text-muted-foreground">
+														<span className={cx("font-terminal", css({ fontSize: "0.6875rem", color: "var(--muted-foreground)" }))}>
 															{String.fromCharCode(65 + choiceIndex)}
 														</span>
-														<span className="min-w-0 break-words">{choice}</span>
+														<span className={cx(questionStyles.minFlex, questionStyles.breakWords)}>{choice}</span>
 													</button>
 												</li>
 											);
 										})}
 									</ol>
 								</div>
-								<div className="space-y-2">
+								<div className={questionStyles.stack2}>
 									{state.classifications.map((row, rowIndex) => (
 										<div
 											key={`${row.item}-${rowIndex}`}
@@ -620,29 +758,39 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 												const value = event.dataTransfer.getData("text/plain") || draggingMatch;
 												if (value) handleMatchingDrop(rowIndex, value);
 											}}
-											className={`grid gap-3 rounded-lg border bg-background p-2.5 transition-colors sm:grid-cols-[2rem_minmax(0,1fr)_minmax(13rem,0.38fr)] sm:items-center ${
+											className={cx(
+												css({
+													display: "grid",
+													gap: "0.75rem",
+													borderRadius: "0.5rem",
+													border: "1px solid",
+													background: "var(--background)",
+													padding: "0.625rem",
+													transition: "color 150ms, background-color 150ms, border-color 150ms",
+													[sm]: { gridTemplateColumns: "2rem minmax(0,1fr) minmax(13rem,0.38fr)", alignItems: "center" },
+												}),
 												dragOverRow === rowIndex
-													? "border-primary bg-primary/10"
+													? css({ borderColor: "var(--primary)", background: "color-mix(in srgb, var(--primary) 10%, transparent)" })
 													: row.choice
-														? "border-primary/40"
-														: "border-border"
-											}`}
+														? css({ borderColor: "color-mix(in srgb, var(--primary) 40%, transparent)" })
+														: css({ borderColor: "var(--border)" }),
+											)}
 										>
-											<div className="font-terminal text-xs text-muted-foreground tabular-nums">
+											<div className={cx("font-terminal", css({ fontSize: "0.75rem", color: "var(--muted-foreground)", fontVariantNumeric: "tabular-nums" }))}>
 												{rowIndex + 1}.
 											</div>
-											<div className="min-w-0 break-words text-sm font-medium">
+											<div className={css({ minWidth: 0, overflowWrap: "break-word", fontSize: "0.875rem", fontWeight: 500 })}>
 												{row.item}
 											</div>
-											<div className="min-w-0">
+											<div className={css({ minWidth: 0 })}>
 												{row.choice ? (
-													<div className="flex min-h-9 items-center justify-between gap-2 rounded-md border border-primary/50 bg-primary/10 px-2 py-1.5 text-sm text-primary">
-														<span className="min-w-0 flex-1 break-words">{row.choice}</span>
+													<div className={css({ display: "flex", minHeight: "2.25rem", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", borderRadius: "0.375rem", border: "1px solid color-mix(in srgb, var(--primary) 50%, transparent)", background: "color-mix(in srgb, var(--primary) 10%, transparent)", padding: "0.375rem 0.5rem", fontSize: "0.875rem", color: "var(--primary)" })}>
+														<span className={cx(questionStyles.minFlex, questionStyles.breakWords)}>{row.choice}</span>
 														<button
 															type="button"
 															disabled={submitted}
 															onClick={() => setMatchingChoice(current, rowIndex, "", q.uniqueMatches !== false)}
-															className="shrink-0 rounded border border-border bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground hover:border-primary/60 hover:text-primary"
+															className={css({ flexShrink: 0, borderRadius: "0.25rem", border: "1px solid var(--border)", background: "var(--background)", padding: "0.125rem 0.375rem", fontSize: "0.625rem", color: "var(--muted-foreground)", _hover: { borderColor: "color-mix(in srgb, var(--primary) 60%, transparent)", color: "var(--primary)" } })}
 														>
 															Clear
 														</button>
@@ -652,7 +800,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 														value={row.choice}
 														disabled={submitted}
 														onChange={(e) => setMatchingChoice(current, rowIndex, e.target.value, q.uniqueMatches !== false)}
-														className="h-9 w-full rounded-md border border-dashed border-border bg-muted/20 px-2 text-xs text-muted-foreground outline-none focus:border-primary sm:text-sm"
+														className={css({ height: "2.25rem", width: "100%", borderRadius: "0.375rem", border: "1px dashed var(--border)", background: "color-mix(in srgb, var(--muted) 20%, transparent)", paddingInline: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)", outline: "none", _focus: { borderColor: "var(--primary)" }, [sm]: { fontSize: "0.875rem" } })}
 													>
 														<option value="">Drop or choose...</option>
 														{q.choices?.map((choice, choiceIndex) => {
@@ -671,34 +819,34 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 								</div>
 							</div>
 						) : isClassification ? (
-							<div className="space-y-3 max-w-full">
-								<p className="text-xs sm:text-sm font-medium leading-snug sm:leading-6 break-words">{q.question}</p>
-								<div className="hidden sm:grid grid-cols-[minmax(7rem,0.9fr)_minmax(9rem,0.9fr)_minmax(12rem,1.4fr)] gap-2 text-[11px] font-medium text-muted-foreground">
+							<div className={css({ display: "grid", gap: "0.75rem", maxWidth: "100%" })}>
+								<p className={css({ fontSize: "0.75rem", fontWeight: 500, lineHeight: 1.375, overflowWrap: "break-word", [sm]: { fontSize: "0.875rem", lineHeight: "1.5rem" } })}>{q.question}</p>
+								<div className={css({ display: "none", gap: "0.5rem", fontSize: "0.6875rem", fontWeight: 500, color: "var(--muted-foreground)", [sm]: { display: "grid", gridTemplateColumns: "minmax(7rem,0.9fr) minmax(9rem,0.9fr) minmax(12rem,1.4fr)" } })}>
 									<span>{q.itemLabel ?? "Item"}</span>
 									<span>{q.choiceLabel ?? "Choice"}</span>
 									<span>{q.reasonLabel ?? "Justification"}</span>
 								</div>
-								<div className="space-y-2">
+								<div className={questionStyles.stack2}>
 									{state.classifications.map((row, rowIndex) => (
 										<div
 											key={`${row.item}-${rowIndex}`}
-											className="grid gap-2 rounded-lg border border-border bg-background p-2 sm:grid-cols-[minmax(7rem,0.9fr)_minmax(9rem,0.9fr)_minmax(12rem,1.4fr)] sm:items-center"
+											className={css({ display: "grid", gap: "0.5rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "var(--background)", padding: "0.5rem", [sm]: { gridTemplateColumns: "minmax(7rem,0.9fr) minmax(9rem,0.9fr) minmax(12rem,1.4fr)", alignItems: "center" } })}
 										>
-											<div className="min-w-0">
-												<span className="sm:hidden text-[10px] font-medium text-muted-foreground">
+											<div className={css({ minWidth: 0 })}>
+												<span className={css({ fontSize: "0.625rem", fontWeight: 500, color: "var(--muted-foreground)", [sm]: { display: "none" } })}>
 													{q.itemLabel ?? "Item"}
 												</span>
-												<div className="break-words text-sm font-medium">{row.item}</div>
+												<div className={css({ overflowWrap: "break-word", fontSize: "0.875rem", fontWeight: 500 })}>{row.item}</div>
 											</div>
-											<label className="min-w-0 space-y-1">
-												<span className="sm:hidden text-[10px] font-medium text-muted-foreground">
+											<label className={cx(questionStyles.stack1, css({ minWidth: 0 }))}>
+												<span className={css({ fontSize: "0.625rem", fontWeight: 500, color: "var(--muted-foreground)", [sm]: { display: "none" } })}>
 													{q.choiceLabel ?? "Choice"}
 												</span>
 												<select
 													value={row.choice}
 													disabled={submitted}
 													onChange={(e) => setClassificationValue(current, rowIndex, "choice", e.target.value)}
-													className="h-9 w-full rounded-md border border-border bg-background px-2 text-sm outline-none focus:border-primary"
+													className={questionStyles.field}
 												>
 													<option value="">Select...</option>
 													{q.choices?.map((choice) => (
@@ -708,8 +856,8 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 													))}
 												</select>
 											</label>
-											<label className="min-w-0 space-y-1">
-												<span className="sm:hidden text-[10px] font-medium text-muted-foreground">
+											<label className={cx(questionStyles.stack1, css({ minWidth: 0 }))}>
+												<span className={css({ fontSize: "0.625rem", fontWeight: 500, color: "var(--muted-foreground)", [sm]: { display: "none" } })}>
 													{q.reasonLabel ?? "Justification"}
 												</span>
 												<input
@@ -724,7 +872,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 														}
 													}}
 													placeholder={q.requireReasons ? "One phrase..." : "Optional..."}
-													className="h-9 w-full rounded-md border border-border bg-background px-2 text-sm outline-none focus:border-primary placeholder:text-muted-foreground/70"
+													className={questionStyles.field}
 												/>
 											</label>
 										</div>
@@ -732,21 +880,21 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 								</div>
 							</div>
 						) : isBlanks ? (
-							<div className="space-y-3 max-w-full">
-								<div className="text-sm font-medium leading-relaxed break-words">
+							<div className={css({ display: "grid", gap: "0.75rem", maxWidth: "100%" })}>
+								<div className={css({ fontSize: "0.875rem", fontWeight: 500, lineHeight: 1.625, overflowWrap: "break-word" })}>
 									{parseTemplate(q.question).map((part, idx) => {
 										if (!part.isBlank) {
-											return <span key={idx} className="break-words">{part.text}</span>;
+											return <span key={idx} className={questionStyles.breakWords}>{part.text}</span>;
 										}
 										const blankIdx = part.index;
 										const blankDef = q.blanks?.[blankIdx];
 										return (
-											<span key={idx} className="inline-flex items-center gap-1 mx-0.5 sm:mx-1">
+											<span key={idx} className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", marginInline: "0.125rem", [sm]: { marginInline: "0.25rem" } })}>
 												<input
 													ref={(el) => { blankRefs.current[blankIdx] = el; }}
 													type="text"
 													disabled={submitted}
-													className="inline-block w-16 sm:w-20 h-7 rounded border border-border bg-background px-1.5 sm:px-2 text-sm text-center outline-none focus:border-primary placeholder:text-muted-foreground/50"
+													className={css({ display: "inline-block", height: "1.75rem", width: "4rem", borderRadius: "0.25rem", border: "1px solid var(--border)", background: "var(--background)", paddingInline: "0.375rem", textAlign: "center", fontSize: "0.875rem", outline: "none", _focus: { borderColor: "var(--primary)" }, "&::placeholder": { color: "color-mix(in srgb, var(--muted-foreground) 50%, transparent)" }, [sm]: { width: "5rem", paddingInline: "0.5rem" } })}
 													placeholder={blankDef?.placeholder ?? "___"}
 													value={state.values[blankIdx] ?? ""}
 													onChange={(e) => setBlankValue(current, blankIdx, e.target.value)}
@@ -762,7 +910,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 													}}
 												/>
 												{blankDef?.hint && (
-													<span className="text-[10px] text-muted-foreground hidden sm:inline">{blankDef.hint}</span>
+													<span className={css({ display: "none", fontSize: "0.625rem", color: "var(--muted-foreground)", [sm]: { display: "inline" } })}>{blankDef.hint}</span>
 												)}
 											</span>
 										);
@@ -771,10 +919,10 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 							</div>
 						) : (
 							<>
-								<p className="text-xs sm:text-sm font-medium leading-snug sm:leading-6 break-words">{q.question}</p>
+								<p className={css({ fontSize: "0.75rem", fontWeight: 500, lineHeight: 1.375, overflowWrap: "break-word", [sm]: { fontSize: "0.875rem", lineHeight: "1.5rem" } })}>{q.question}</p>
 
 								{q.choices && q.choices.length > 0 && (
-									<div className="space-y-1.5 sm:space-y-2">
+									<div className={css({ display: "grid", gap: "0.375rem", [sm]: { gap: "0.5rem" } })}>
 										{q.choices.map((choice) => {
 											const isSelected = state.selected.includes(choice);
 											return (
@@ -783,27 +931,45 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 													type="button"
 													disabled={submitted}
 													aria-pressed={isSelected}
-													className={`flex w-full items-center gap-2 sm:gap-3 rounded-lg border sm:border-2 px-2 py-1.5 sm:px-4 sm:py-3 text-left text-xs sm:text-sm leading-snug transition-all ${
+													className={cx(
+														css({
+															display: "flex",
+															width: "100%",
+															alignItems: "center",
+															gap: "0.5rem",
+															borderRadius: "0.5rem",
+															border: "1px solid",
+															padding: "0.375rem 0.5rem",
+															textAlign: "left",
+															fontSize: "0.75rem",
+															lineHeight: 1.375,
+															transition: "all 150ms",
+															[sm]: { gap: "0.75rem", borderWidth: "2px", padding: "0.75rem 1rem", fontSize: "0.875rem" },
+														}),
 														isSelected
-															? "border-primary bg-primary/10 text-primary"
-															: "border-border bg-background hover:border-primary/50"
-													} ${submitted ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
+															? css({ borderColor: "var(--primary)", background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: "var(--primary)" })
+															: css({ borderColor: "var(--border)", background: "var(--background)", _hover: { borderColor: "color-mix(in srgb, var(--primary) 50%, transparent)" } }),
+														submitted ? css({ cursor: "not-allowed", opacity: 0.7 }) : css({ cursor: "pointer" }),
+													)}
 													onClick={() => toggleChoice(current, choice, q.multiSelect ?? false)}
 												>
 													{q.multiSelect ? (
 														<span
-															className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 ${
-																isSelected ? "border-primary bg-primary text-primary-foreground" : "border-border"
-															}`}
+															className={cx(
+																css({ display: "flex", height: "1rem", width: "1rem", flexShrink: 0, alignItems: "center", justifyContent: "center", borderRadius: "0.25rem", borderWidth: "2px" }),
+																isSelected
+																	? css({ borderColor: "var(--primary)", background: "var(--primary)", color: "var(--primary-foreground)" })
+																	: css({ borderColor: "var(--border)" }),
+															)}
 														>
 															{isSelected ? <Check size={12} /> : null}
 														</span>
 													) : isSelected ? (
-														<CheckCircle2 size={16} className="shrink-0" />
+														<CheckCircle2 size={16} className={css({ flexShrink: 0 })} />
 													) : (
-														<div className="h-4 w-4 shrink-0 rounded-full border-2 border-border" />
+														<div className={css({ height: "1rem", width: "1rem", flexShrink: 0, borderRadius: "9999px", borderWidth: "2px", borderColor: "var(--border)" })} />
 													)}
-													<span className="flex-1 min-w-0 break-words">{choice}</span>
+													<span className={cx(questionStyles.minFlex, questionStyles.breakWords)}>{choice}</span>
 												</button>
 											);
 										})}
@@ -811,17 +977,17 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 								)}
 
 								{q.allowText && (
-									<div className="space-y-2">
+									<div className={questionStyles.stack2}>
 										{q.choices && q.choices.length > 0 && (
-											<div className="flex items-center gap-2 text-xs text-muted-foreground">
-												<div className="h-px flex-1 bg-border" />
+											<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+												<div className={css({ height: "1px", flex: 1, background: "var(--border)" })} />
 												<span>or type your own</span>
-												<div className="h-px flex-1 bg-border" />
+												<div className={css({ height: "1px", flex: 1, background: "var(--border)" })} />
 											</div>
 										)}
 										<input
 											type="text"
-											className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+											className={cx(questionStyles.field, css({ paddingInline: "0.75rem" }))}
 											placeholder="Your answer..."
 											value={state.text}
 											disabled={submitted}
@@ -839,17 +1005,17 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 						)}
 
 						{q.hint && !submitted && (
-							<p className="text-xs italic text-muted-foreground break-words">💡 {q.hint}</p>
+							<p className={css({ fontSize: "0.75rem", fontStyle: "italic", color: "var(--muted-foreground)", overflowWrap: "break-word" })}>💡 {q.hint}</p>
 						)}
 					</div>
 
 					{/* Navigation */}
-					<div className="flex items-center justify-between gap-2">
+					<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" })}>
 						<button
 							type="button"
 							onClick={goPrev}
 							disabled={current === 0}
-							className="inline-flex items-center gap-1 rounded-lg border-2 border-border bg-background px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium hover:bg-accent disabled:opacity-40 disabled:pointer-events-none transition-colors"
+							className={questionStyles.buttonSecondary}
 						>
 							<ChevronLeft size={14} />
 							Back
@@ -859,7 +1025,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 							<button
 								type="button"
 								onClick={goNext}
-								className="inline-flex items-center gap-1 rounded-lg border-2 border-primary bg-primary px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+								className={questionStyles.buttonPrimary}
 							>
 								Next
 								<ChevronRight size={14} />
@@ -868,7 +1034,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 							<button
 								type="button"
 								disabled={!allAnswered}
-								className="inline-flex items-center gap-1.5 sm:gap-2 rounded-lg border-2 border-primary bg-primary px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+								className={cx(questionStyles.buttonPrimary, css({ gap: "0.375rem", [sm]: { gap: "0.5rem" } }))}
 								onClick={handleSubmit}
 							>
 								<ArrowRight size={16} />

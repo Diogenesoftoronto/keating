@@ -1,5 +1,24 @@
 import { useCallback, useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
+import { css } from "../../styled-system/css";
+import { iconButton } from "../../styled-system/recipes";
+
+const menuButtonClass = css({
+  display: "flex",
+  alignItems: "center",
+  gap: "0.5rem",
+  borderRadius: "0.375rem",
+  paddingInline: "0.75rem",
+  paddingBlock: "0.5rem",
+  textAlign: "left",
+  fontSize: "0.875rem",
+  transitionProperty: "color, background-color",
+  transitionDuration: "{durations.fast}",
+  transitionTimingFunction: "{easings.standard}",
+  _hover: { background: "var(--accent)", color: "var(--accent-foreground)" },
+});
+
+const iconButtonClass = iconButton({ size: "lg", tone: "ghost" });
 
 function getInitialTheme(): boolean {
   if (typeof document === "undefined") return false;
@@ -53,7 +72,7 @@ export function ThemeToggle({ className = "", variant = "icon", onToggled }: The
       <button
         type="button"
         onClick={toggle}
-        className={`flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors ${className}`.trim()}
+        className={`${menuButtonClass} ${className}`.trim()}
         aria-label={label}
       >
         {isDark ? <Sun size={14} /> : <Moon size={14} />}
@@ -66,7 +85,7 @@ export function ThemeToggle({ className = "", variant = "icon", onToggled }: The
     <button
       type="button"
       onClick={toggle}
-      className={`chat-action-button inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors ${className}`.trim()}
+      className={`chat-action-button ${iconButtonClass} ${className}`.trim()}
       title={label}
       aria-label={label}
     >

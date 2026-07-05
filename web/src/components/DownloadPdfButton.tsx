@@ -2,7 +2,7 @@ import { FileDown } from "lucide-react";
 
 /**
  * "Download PDF" for legal pages: opens the browser print dialog, where
- * the document prints via the `@media print` rules in retro.css (nav,
+ * the document prints via the Panda `@media print` global rules (nav,
  * footer, and chrome hidden; the legal article formatted for paper).
  * Every modern browser offers "Save as PDF" as a print destination, so
  * this stays dependency-free.

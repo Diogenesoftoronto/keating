@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { getProviders } from "@earendil-works/pi-ai/compat";
 import { getAppStorage } from "@earendil-works/pi-web-ui";
+import { css } from "../../styled-system/css";
+import { settingsSection } from "../../styled-system/recipes";
 import {
 	addCustomModel,
 	toggleProviderVisibility,
@@ -46,6 +48,9 @@ function sortProvidersByPriority(list: string[]): string[] {
 		return a.localeCompare(b);
 	});
 }
+
+const stackClass = css({ display: "flex", flexDirection: "column", gap: "2rem" });
+const dividerClass = css({ borderTop: "1px solid var(--border)" });
 
 export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: SettingsSection[] } = {}) {
 	const [customProviders, setCustomProviders] = useState<KeatingCustomProvider[]>([]);
@@ -174,7 +179,7 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
 	};
 
 	return (
-		<div className="flex flex-col gap-8">
+		<div className={settingsSection()}>
 			<SettingsSectionNav
 				sections={[
 					{ id: "cloud-providers", label: "Cloud" },
@@ -188,11 +193,11 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
 
 			<CloudProviderKeysSection providers={providers.filter((p) => !modelPrefs.hiddenProviders.includes(p))} />
 
-			<div className="border-t border-border" />
+			<div className={dividerClass} />
 
 			<WebSearchSection settings={settings} onPatch={patch} />
 
-			<div className="border-t border-border" />
+			<div className={dividerClass} />
 
 			<ProviderVisibilitySection
 				providers={providers}
@@ -200,11 +205,11 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
 				onToggle={handleToggleProvider}
 			/>
 
-			<div className="border-t border-border" />
+			<div className={dividerClass} />
 
 			<MyModelsSection modelPrefs={modelPrefs} onAddModel={handleAddModel} />
 
-			<div className="border-t border-border" />
+			<div className={dividerClass} />
 
 			<CustomProvidersSection
 				customProviders={customProviders}

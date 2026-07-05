@@ -2,6 +2,7 @@ import { useState } from "react";
 import { getProviders } from "@earendil-works/pi-ai/compat";
 import { removeCustomModel } from "../../keating/ui-settings";
 import type { ModelPrefs } from "../../keating/model-prefs";
+import { css, cx } from "../../../styled-system/css";
 
 const ADD_MODEL_APIS = [
 	{ value: "openai-completions", label: "OpenAI Completions" },
@@ -9,6 +10,56 @@ const ADD_MODEL_APIS = [
 	{ value: "anthropic-messages", label: "Anthropic Messages" },
 	{ value: "google", label: "Google" },
 ];
+
+const sectionClass = css({ display: "flex", flexDirection: "column", gap: "1rem", scrollMarginTop: "5rem" });
+const headerRowClass = css({
+	display: "flex",
+	flexDirection: "column",
+	gap: "0.75rem",
+	sm: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: "1rem" },
+});
+const titleClass = css({ marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 600, color: "var(--foreground)" });
+const descriptionClass = css({ fontSize: "0.875rem", color: "var(--muted-foreground)" });
+const inputClass = css({
+	borderRadius: "0.375rem",
+	border: "1px solid var(--border)",
+	backgroundColor: "var(--background)",
+	paddingInline: "0.75rem",
+	paddingBlock: "0.5rem",
+	fontSize: "0.875rem",
+	color: "var(--foreground)",
+});
+const labelClass = css({ fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)" });
+const secondaryButtonClass = css({
+	display: "inline-flex",
+	alignItems: "center",
+	justifyContent: "center",
+	borderRadius: "0.375rem",
+	border: "1px solid var(--border)",
+	paddingInline: "0.75rem",
+	paddingBlock: "0.375rem",
+	fontSize: "0.75rem",
+	fontWeight: 500,
+	transitionProperty: "color, background-color, border-color",
+	transitionDuration: "150ms",
+	_hover: { backgroundColor: "var(--accent)", color: "var(--accent-foreground)" },
+});
+const primaryButtonClass = css({
+	display: "inline-flex",
+	alignItems: "center",
+	justifyContent: "center",
+	borderRadius: "0.375rem",
+	backgroundColor: "var(--primary)",
+	paddingInline: "0.75rem",
+	paddingBlock: "0.375rem",
+	fontSize: "0.75rem",
+	fontWeight: 500,
+	color: "var(--primary-foreground)",
+	transitionProperty: "color, background-color",
+	transitionDuration: "150ms",
+	_hover: { backgroundColor: "color-mix(in srgb, var(--primary) 90%, transparent)" },
+	_disabled: { opacity: 0.5 },
+});
 
 export function MyModelsSection({
 	modelPrefs,
@@ -60,16 +111,16 @@ export function MyModelsSection({
 	};
 
 	return (
-		<div id="settings-section-my-models" className="flex flex-col gap-4 scroll-mt-20">
-			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-				<div className="min-w-0">
-					<h3 className="text-sm font-semibold text-foreground mb-2">My Models</h3>
-					<p className="text-sm text-muted-foreground">
+		<div id="settings-section-my-models" className={sectionClass}>
+			<div className={headerRowClass}>
+				<div className={css({ minWidth: 0 })}>
+					<h3 className={titleClass}>My Models</h3>
+					<p className={descriptionClass}>
 						Manually add models that aren't auto-discovered.
 					</p>
 				</div>
 				<button
-					className="dialog-compact-button inline-flex shrink-0 items-center justify-center rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+					className={cx("dialog-compact-button", secondaryButtonClass, css({ flexShrink: 0 }))}
 					onClick={() => setShowAddModel((s) => !s)}
 				>
 					{showAddModel ? "Cancel" : "Add Model"}
@@ -77,36 +128,36 @@ export function MyModelsSection({
 			</div>
 
 			{showAddModel && (
-				<div className="flex flex-col gap-3 rounded-lg border border-border p-4 bg-muted/30">
+				<div className={css({ display: "flex", flexDirection: "column", gap: "0.75rem", borderRadius: "0.5rem", border: "1px solid var(--border)", backgroundColor: "color-mix(in srgb, var(--muted) 30%, transparent)", padding: "1rem" })}>
 					{modelError && (
-						<div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+						<div className={css({ borderRadius: "0.375rem", border: "1px solid color-mix(in srgb, var(--destructive) 30%, transparent)", backgroundColor: "color-mix(in srgb, var(--destructive) 5%, transparent)", paddingInline: "0.75rem", paddingBlock: "0.5rem", fontSize: "0.875rem", color: "var(--destructive)" })}>
 							{modelError}
 						</div>
 					)}
-					<div className="flex flex-col gap-2">
-						<label className="text-sm font-medium text-foreground">Model Name</label>
+					<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
+						<label className={labelClass}>Model Name</label>
 						<input
 							type="text"
-							className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+							className={inputClass}
 							placeholder="e.g., GPT-5"
 							value={modelForm.name}
 							onChange={(e) => setModelForm((f) => ({ ...f, name: e.target.value }))}
 						/>
 					</div>
-					<div className="flex flex-col gap-2">
-						<label className="text-sm font-medium text-foreground">Model ID</label>
+					<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
+						<label className={labelClass}>Model ID</label>
 						<input
 							type="text"
-							className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+							className={inputClass}
 							placeholder="e.g., gpt-5"
 							value={modelForm.id}
 							onChange={(e) => setModelForm((f) => ({ ...f, id: e.target.value }))}
 						/>
 					</div>
-					<div className="flex flex-col gap-2">
-						<label className="text-sm font-medium text-foreground">Provider</label>
+					<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
+						<label className={labelClass}>Provider</label>
 						<select
-							className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+							className={inputClass}
 							value={modelForm.provider}
 							onChange={(e) => setModelForm((f) => ({ ...f, provider: e.target.value }))}
 						>
@@ -116,10 +167,10 @@ export function MyModelsSection({
 							<option value="custom">Custom</option>
 						</select>
 					</div>
-					<div className="flex flex-col gap-2">
-						<label className="text-sm font-medium text-foreground">API Type</label>
+					<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
+						<label className={labelClass}>API Type</label>
 						<select
-							className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+							className={inputClass}
 							value={modelForm.api}
 							onChange={(e) => setModelForm((f) => ({ ...f, api: e.target.value }))}
 						>
@@ -128,18 +179,18 @@ export function MyModelsSection({
 							))}
 						</select>
 					</div>
-					<div className="flex flex-col gap-2">
-						<label className="text-sm font-medium text-foreground">Base URL (Optional)</label>
+					<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
+						<label className={labelClass}>Base URL (Optional)</label>
 						<input
 							type="text"
-							className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+							className={inputClass}
 							placeholder="e.g., https://api.openai.com/v1"
 							value={modelForm.baseUrl}
 							onChange={(e) => setModelForm((f) => ({ ...f, baseUrl: e.target.value }))}
 						/>
 					</div>
-					<div className="flex gap-4">
-						<label className="flex items-center gap-2 text-sm">
+					<div className={css({ display: "flex", gap: "1rem" })}>
+						<label className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem" })}>
 							<input
 								type="checkbox"
 								checked={modelForm.reasoning}
@@ -147,7 +198,7 @@ export function MyModelsSection({
 							/>
 							Reasoning
 						</label>
-						<label className="flex items-center gap-2 text-sm">
+						<label className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem" })}>
 							<input
 								type="checkbox"
 								checked={modelForm.vision}
@@ -156,9 +207,9 @@ export function MyModelsSection({
 							Vision
 						</label>
 					</div>
-					<div className="flex justify-end">
+					<div className={css({ display: "flex", justifyContent: "flex-end" })}>
 						<button
-							className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+							className={primaryButtonClass}
 							disabled={!modelForm.name.trim() || !modelForm.id.trim() || !modelForm.provider.trim()}
 							onClick={handleSaveModel}
 						>
@@ -169,17 +220,17 @@ export function MyModelsSection({
 			)}
 
 			{modelPrefs.customModels.length === 0 ? (
-				<div className="text-sm text-muted-foreground text-center py-6">No custom models added yet.</div>
+				<div className={css({ paddingBlock: "1.5rem", textAlign: "center", fontSize: "0.875rem", color: "var(--muted-foreground)" })}>No custom models added yet.</div>
 			) : (
-				<div className="flex flex-col gap-3">
+				<div className={css({ display: "flex", flexDirection: "column", gap: "0.75rem" })}>
 					{modelPrefs.customModels.map((model) => (
-						<div key={model.key} className="flex items-center justify-between gap-4 rounded-lg border border-border p-3">
-							<div className="min-w-0">
-								<div className="text-sm font-medium text-foreground">{model.name}</div>
-								<div className="text-xs text-muted-foreground">{model.provider} / {model.id} / {model.api}</div>
+						<div key={model.key} className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", borderRadius: "0.5rem", border: "1px solid var(--border)", padding: "0.75rem" })}>
+							<div className={css({ minWidth: 0 })}>
+								<div className={css({ fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)" })}>{model.name}</div>
+								<div className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>{model.provider} / {model.id} / {model.api}</div>
 							</div>
 							<button
-								className="inline-flex items-center justify-center rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+								className={css({ display: "inline-flex", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", paddingInline: "0.5rem", paddingBlock: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)", transitionProperty: "color, background-color", transitionDuration: "150ms", _hover: { backgroundColor: "var(--accent)", color: "var(--accent-foreground)" } })}
 								onClick={() => {
 									removeCustomModel(model.key);
 								}}

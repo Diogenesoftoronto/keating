@@ -11,6 +11,7 @@ import {
 	type WebSpeechSettings,
 } from "../keating/speech";
 import { useKeatingSetting } from "../hooks/use-keating-setting";
+import { css, cx } from "../../styled-system/css";
 
 interface SpeechSettingsTabProps {
 	onSettingsChange?: (settings: WebSpeechSettings) => void;
@@ -24,6 +25,79 @@ export const SPEECH_SECTIONS = [
 	{ id: "speech-mic", label: "Microphone" },
 	{ id: "speech-custom", label: "Custom" },
 ];
+
+const stackClass = css({ display: "flex", flexDirection: "column", gap: "2rem" });
+const sectionClass = css({ display: "flex", flexDirection: "column", gap: "1rem", scrollMarginTop: "5rem" });
+const sectionTitleClass = css({ marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 600, color: "var(--foreground)" });
+const sectionDescriptionClass = css({ fontSize: "0.875rem", color: "var(--muted-foreground)" });
+const fieldStackClass = css({ display: "flex", flexDirection: "column", gap: "0.5rem" });
+const fieldLabelClass = css({ fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)" });
+const inputClass = css({
+	borderRadius: "0.375rem",
+	border: "1px solid var(--border)",
+	backgroundColor: "var(--background)",
+	paddingInline: "0.75rem",
+	paddingBlock: "0.5rem",
+	fontSize: "0.875rem",
+	color: "var(--foreground)",
+});
+const monoInputClass = cx(inputClass, css({ fontFamily: "var(--mono-body)" }));
+const providerCardClass = css({
+	display: "flex",
+	cursor: "pointer",
+	alignItems: "flex-start",
+	gap: "0.75rem",
+	borderRadius: "0.375rem",
+	border: "1px solid var(--border)",
+	paddingInline: "0.75rem",
+	paddingBlock: "0.625rem",
+	transitionProperty: "color, background-color, border-color",
+	transitionDuration: "150ms",
+	_hover: { backgroundColor: "color-mix(in srgb, var(--accent) 40%, transparent)" },
+});
+const activeProviderClass = css({
+	borderColor: "var(--primary)",
+	backgroundColor: "color-mix(in srgb, var(--accent) 30%, transparent)",
+});
+const badgeClass = css({
+	display: "inline-flex",
+	alignItems: "center",
+	borderRadius: "9999px",
+	border: "1px solid var(--border)",
+	backgroundColor: "var(--muted)",
+	paddingInline: "0.375rem",
+	paddingBlock: "0.125rem",
+	fontSize: "10px",
+	textTransform: "uppercase",
+	letterSpacing: "0.025em",
+	color: "var(--muted-foreground)",
+});
+const iconButtonClass = css({
+	display: "inline-flex",
+	height: "1.75rem",
+	width: "1.75rem",
+	alignItems: "center",
+	justifyContent: "center",
+	borderRadius: "0.375rem",
+	color: "var(--muted-foreground)",
+	_hover: { backgroundColor: "color-mix(in srgb, var(--destructive) 10%, transparent)", color: "var(--destructive)" },
+});
+const primaryButtonClass = css({
+	display: "inline-flex",
+	alignItems: "center",
+	justifyContent: "center",
+	borderRadius: "0.375rem",
+	backgroundColor: "var(--primary)",
+	paddingInline: "0.75rem",
+	paddingBlock: "0.375rem",
+	fontSize: "0.75rem",
+	fontWeight: 500,
+	color: "var(--primary-foreground)",
+	transitionProperty: "color, background-color, border-color",
+	transitionDuration: "150ms",
+	_hover: { backgroundColor: "color-mix(in srgb, var(--primary) 90%, transparent)" },
+	_disabled: { opacity: 0.5 },
+});
 
 export function SpeechSettingsTab({ onSettingsChange, hideNav = false }: SpeechSettingsTabProps) {
 	const [settings, patch] = useKeatingSetting("speech");
@@ -118,40 +192,40 @@ export function SpeechSettingsTab({ onSettingsChange, hideNav = false }: SpeechS
 		if (status === "stable") return null;
 		const styles =
 			status === "preview"
-				? "border-amber-500/40 bg-amber-500/10 text-amber-600"
-				: "border-purple-500/40 bg-purple-500/10 text-purple-600";
+				? css({ borderColor: "rgb(245 158 11 / 0.4)", backgroundColor: "rgb(245 158 11 / 0.1)", color: "rgb(217 119 6)" })
+				: css({ borderColor: "rgb(168 85 247 / 0.4)", backgroundColor: "rgb(168 85 247 / 0.1)", color: "rgb(147 51 234)" });
 		return (
-			<span className={`ml-2 inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide ${styles}`}>
+			<span className={cx(css({ marginLeft: "0.5rem", display: "inline-flex", alignItems: "center", borderRadius: "9999px", border: "1px solid", paddingInline: "0.375rem", paddingBlock: "0.125rem", fontSize: "10px", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.025em" }), styles)}>
 				{status}
 			</span>
 		);
 	};
 
 	return (
-		<div className="flex flex-col gap-8">
+		<div className={stackClass}>
 			{!hideNav && <SettingsSectionNav sections={SPEECH_SECTIONS} />}
 
 			<SettingRow
 				id="settings-section-speech-enable"
 				title="Enable spoken responses"
 				description="When on, Keating can call its voice tool to speak short learner-facing lines through the active provider."
-				className="scroll-mt-20"
+				className={css({ scrollMarginTop: "5rem" })}
 			>
 				<Toggle checked={settings.enabled} onChange={(checked) => persist({ enabled: checked })} />
 			</SettingRow>
 
-			<div id="settings-section-speech-provider" className="flex flex-col gap-4 scroll-mt-20">
+			<div id="settings-section-speech-provider" className={sectionClass}>
 				<div>
-					<h3 className="text-sm font-semibold text-foreground mb-2">Provider</h3>
-					<p className="text-sm text-muted-foreground">
+					<h3 className={sectionTitleClass}>Provider</h3>
+					<p className={sectionDescriptionClass}>
 						Choose which speech engine generates audio. Cloud providers need an API key in Providers & Models.
 					</p>
 				</div>
-				<div className="flex flex-col gap-2">
+				<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
 					{providers.map((p) => (
 						<label
 							key={p.id}
-							className={`flex items-start gap-3 rounded-md border border-border px-3 py-2.5 cursor-pointer hover:bg-accent/40 transition-colors ${settings.providerId === p.id ? "bg-accent/30 border-primary" : ""}`}
+							className={cx(providerCardClass, settings.providerId === p.id ? activeProviderClass : "")}
 						>
 							<input
 								type="radio"
@@ -159,20 +233,20 @@ export function SpeechSettingsTab({ onSettingsChange, hideNav = false }: SpeechS
 								value={p.id}
 								checked={settings.providerId === p.id}
 								onChange={() => handleProviderChange(p.id)}
-								className="mt-1 shrink-0"
+								className={css({ marginTop: "0.25rem", flexShrink: 0 })}
 							/>
-							<div className="min-w-0 flex-1">
-								<div className="flex items-center gap-2 text-sm font-medium text-foreground">
+							<div className={css({ minWidth: 0, flex: 1 })}>
+								<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)" })}>
 									<span>{p.label}</span>
-									<span className="inline-flex items-center rounded-full border border-border bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+									<span className={badgeClass}>
 										{p.kind === "duplex" ? "duplex" : "tts"}
 									</span>
 									{statusBadge(p.status)}
 								</div>
-								<div className="mt-1 text-xs text-muted-foreground">{p.description}</div>
+								<div className={css({ marginTop: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>{p.description}</div>
 								{p.needsApiKey && (
-									<div className="mt-1 text-[11px] text-muted-foreground">
-										Needs <span className="font-mono">{p.needsApiKey}</span> API key in Providers & Models.
+									<div className={css({ marginTop: "0.25rem", fontSize: "11px", color: "var(--muted-foreground)" })}>
+										Needs <span className={css({ fontFamily: "var(--mono-body)" })}>{p.needsApiKey}</span> API key in Providers & Models.
 									</div>
 								)}
 							</div>
@@ -182,7 +256,7 @@ export function SpeechSettingsTab({ onSettingsChange, hideNav = false }: SpeechS
 					{settings.customModels.map((m) => (
 						<label
 							key={`custom:${m.id}`}
-							className={`flex items-start gap-3 rounded-md border border-border px-3 py-2.5 cursor-pointer hover:bg-accent/40 transition-colors ${settings.providerId === `custom:${m.id}` ? "bg-accent/30 border-primary" : ""}`}
+							className={cx(providerCardClass, settings.providerId === `custom:${m.id}` ? activeProviderClass : "")}
 						>
 							<input
 								type="radio"
@@ -190,17 +264,17 @@ export function SpeechSettingsTab({ onSettingsChange, hideNav = false }: SpeechS
 								value={`custom:${m.id}`}
 								checked={settings.providerId === `custom:${m.id}`}
 								onChange={() => handleProviderChange(`custom:${m.id}`)}
-								className="mt-1 shrink-0"
+								className={css({ marginTop: "0.25rem", flexShrink: 0 })}
 							/>
-							<div className="min-w-0 flex-1">
-								<div className="text-sm font-medium text-foreground">{m.label}</div>
-								<div className="mt-1 text-xs text-muted-foreground truncate">
+							<div className={css({ minWidth: 0, flex: 1 })}>
+								<div className={css({ fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)" })}>{m.label}</div>
+								<div className={css({ marginTop: "0.25rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
 									{m.baseUrl} · {m.model} · voice {m.voice}
 								</div>
 							</div>
 							<button
 								type="button"
-								className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+								className={iconButtonClass}
 								aria-label={`Remove ${m.label}`}
 								onClick={(e) => {
 									e.preventDefault();
@@ -216,18 +290,18 @@ export function SpeechSettingsTab({ onSettingsChange, hideNav = false }: SpeechS
 			</div>
 
 			{(activeProvider || activeCustom) && (
-				<div id="settings-section-speech-voice" className="flex flex-col gap-4 scroll-mt-20">
+				<div id="settings-section-speech-voice" className={sectionClass}>
 					<div>
-						<h3 className="text-sm font-semibold text-foreground mb-2">Model & voice</h3>
-						<p className="text-sm text-muted-foreground">
+						<h3 className={sectionTitleClass}>Model & voice</h3>
+						<p className={sectionDescriptionClass}>
 							Fine-tune the active provider's model and voice.
 						</p>
 					</div>
 					{activeProvider && activeProvider.models.length > 1 && (
-						<div className="flex flex-col gap-2">
-							<label className="text-sm font-medium text-foreground">Model</label>
+						<div className={fieldStackClass}>
+							<label className={fieldLabelClass}>Model</label>
 							<select
-								className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+								className={inputClass}
 								value={settings.model}
 								onChange={(e) => persist({ model: e.target.value })}
 							>
@@ -237,11 +311,11 @@ export function SpeechSettingsTab({ onSettingsChange, hideNav = false }: SpeechS
 							</select>
 						</div>
 					)}
-					<div className="flex flex-col gap-2">
-						<label className="text-sm font-medium text-foreground">Voice</label>
+					<div className={fieldStackClass}>
+						<label className={fieldLabelClass}>Voice</label>
 						{activeProvider && activeProvider.voices.length > 0 ? (
 							<select
-								className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+								className={inputClass}
 								value={settings.voiceName}
 								onChange={(e) => persist({ voiceName: e.target.value })}
 							>
@@ -252,7 +326,7 @@ export function SpeechSettingsTab({ onSettingsChange, hideNav = false }: SpeechS
 						) : (
 							<input
 								type="text"
-								className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+								className={inputClass}
 								value={settings.voiceName}
 								onChange={(e) => persist({ voiceName: e.target.value })}
 								placeholder="Voice name"
@@ -266,74 +340,74 @@ export function SpeechSettingsTab({ onSettingsChange, hideNav = false }: SpeechS
 				id="settings-section-speech-mic"
 				title="Microphone (duplex providers)"
 				description="When enabled, duplex providers like OpenAI Realtime may capture your microphone for back-and-forth voice. TTS-only providers ignore this."
-				className="scroll-mt-20"
+				className={css({ scrollMarginTop: "5rem" })}
 			>
 				<Toggle checked={settings.microphoneEnabled} onChange={(checked) => persist({ microphoneEnabled: checked })} />
 			</SettingRow>
 
-			<div id="settings-section-speech-custom" className="flex flex-col gap-4 scroll-mt-20">
+			<div id="settings-section-speech-custom" className={sectionClass}>
 				<div>
-					<h3 className="text-sm font-semibold text-foreground mb-2">Add custom TTS endpoint</h3>
-					<p className="text-sm text-muted-foreground">
+					<h3 className={sectionTitleClass}>Add custom TTS endpoint</h3>
+					<p className={sectionDescriptionClass}>
 						Any OpenAI-compatible <code>/v1/audio/speech</code> endpoint can be plugged in here.
 					</p>
 				</div>
-				<div className="grid gap-3 sm:grid-cols-2">
-					<div className="flex flex-col gap-2">
-						<label className="text-sm font-medium text-foreground">Label</label>
+				<div className={css({ display: "grid", gap: "0.75rem", sm: { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" } })}>
+					<div className={fieldStackClass}>
+						<label className={fieldLabelClass}>Label</label>
 						<input
 							type="text"
-							className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+							className={inputClass}
 							placeholder="e.g. My Self-Hosted TTS"
 							value={draftCustom.label}
 							onChange={(e) => setDraftCustom((d) => ({ ...d, label: e.target.value }))}
 						/>
 					</div>
-					<div className="flex flex-col gap-2">
-						<label className="text-sm font-medium text-foreground">Base URL</label>
+					<div className={fieldStackClass}>
+						<label className={fieldLabelClass}>Base URL</label>
 						<input
 							type="text"
-							className="rounded-md border border-border bg-background px-3 py-2 text-sm font-mono"
+							className={monoInputClass}
 							placeholder="https://tts.example.com"
 							value={draftCustom.baseUrl}
 							onChange={(e) => setDraftCustom((d) => ({ ...d, baseUrl: e.target.value }))}
 						/>
 					</div>
-					<div className="flex flex-col gap-2">
-						<label className="text-sm font-medium text-foreground">Model id</label>
+					<div className={fieldStackClass}>
+						<label className={fieldLabelClass}>Model id</label>
 						<input
 							type="text"
-							className="rounded-md border border-border bg-background px-3 py-2 text-sm font-mono"
+							className={monoInputClass}
 							placeholder="e.g. piper-en-us"
 							value={draftCustom.model}
 							onChange={(e) => setDraftCustom((d) => ({ ...d, model: e.target.value }))}
 						/>
 					</div>
-					<div className="flex flex-col gap-2">
-						<label className="text-sm font-medium text-foreground">Default voice</label>
+					<div className={fieldStackClass}>
+						<label className={fieldLabelClass}>Default voice</label>
 						<input
 							type="text"
-							className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+							className={inputClass}
 							placeholder="e.g. alloy"
 							value={draftCustom.voice}
 							onChange={(e) => setDraftCustom((d) => ({ ...d, voice: e.target.value }))}
 						/>
 					</div>
-					<div className="flex flex-col gap-2">
-						<label className="text-sm font-medium text-foreground">Auth key from provider</label>
+					<div className={fieldStackClass}>
+						<label className={fieldLabelClass}>Auth key from provider</label>
 						<input
 							type="text"
-							className="rounded-md border border-border bg-background px-3 py-2 text-sm font-mono"
+							className={monoInputClass}
 							placeholder="openai"
 							value={draftCustom.providerKey}
 							onChange={(e) => setDraftCustom((d) => ({ ...d, providerKey: e.target.value }))}
 						/>
 					</div>
-					<div className="flex flex-col gap-2">
-						<label className="text-sm font-medium text-foreground">API path (optional)</label>
+					<div className={fieldStackClass}>
+						<label className={fieldLabelClass}>API path (optional)</label>
 						<input
 							type="text"
-							className="rounded-md border border-border bg-background px-3 py-2 text-sm font-mono"
+							className={monoInputClass}
 							placeholder="/v1/audio/speech"
 							value={draftCustom.apiPath ?? ""}
 							onChange={(e) => setDraftCustom((d) => ({ ...d, apiPath: e.target.value }))}
@@ -341,13 +415,13 @@ export function SpeechSettingsTab({ onSettingsChange, hideNav = false }: SpeechS
 					</div>
 				</div>
 				{customError && (
-					<div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+					<div className={css({ borderRadius: "0.375rem", border: "1px solid color-mix(in srgb, var(--destructive) 30%, transparent)", backgroundColor: "color-mix(in srgb, var(--destructive) 5%, transparent)", paddingInline: "0.75rem", paddingBlock: "0.5rem", fontSize: "0.875rem", color: "var(--destructive)" })}>
 						{customError}
 					</div>
 				)}
-				<div className="flex justify-end">
+				<div className={css({ display: "flex", justifyContent: "flex-end" })}>
 					<button
-						className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+						className={primaryButtonClass}
 						onClick={addCustomModel}
 					>
 						Add custom model
