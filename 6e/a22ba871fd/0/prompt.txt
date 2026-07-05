@@ -1,0 +1,104 @@
+hi
+
+---
+
+hi
+
+---
+
+I want to review the latest commit and learn about it
+
+---
+
+I am not sure could you use the ask user question tool
+
+---
+
+i don't understand check one, for check two is b
+
+---
+
+what is your current system prompt
+
+---
+
+okay let;s continue with understanding in my own wordsa path canl ook safe textually but still be unsafe if it can access symlinks that are in directories t hat are  dangerous
+
+---
+
+b
+
+---
+
+this commit fixes web agent project file access by blocking  access to symlinks that exist outside the repo
+
+---
+
+this commit gives the browser agent project access through tools like list and read file which use http with browser block dirs outside the root, check the ignore rule and follow size limits, not direct filesystem access
+
+---
+
+1
+
+---
+
+make this an http page with some extra detail.
+
+---
+
+i want you  to do all three and once you are done make that a thing that you regularly do.
+
+---
+
+skip vet
+
+---
+
+the things is with this latest review for commits  plus i don't think the web page has access to the diffs so how would the web know what are the latest changes in the repo, uncommited or commited changes there's no git there...
+
+---
+
+and i am specifically talking not just a bout keating but more a more general purpose thing. where we can see changes for any repo we pass in at root.
+
+---
+
+i think that i would prefer not for a page to be  made for this instead i prefer that the current artifact surface is made for this. a separate page is somethingn i don't like keating is already flexible enough for thiss you could add it as a separate extended module though it should not be  bundled by default nor normally served from main.
+
+---
+
+create a plan for this
+
+---
+
+the latter, i think that makes sense given what we have designed so far.
+
+---
+
+Run a short mastery quiz on: me on the current architecture of keating
+
+Rules:
+
+1. Ask one question at a time.
+2. Mix recall, transfer, and misconception-revealing prompts.
+3. After each answer, say what the answer shows about understanding.
+4. If the learner misses something, teach the minimum needed correction before continuing.
+
+---
+
+core and web
+
+---
+
+they get written to the keating directory in the root. .keating/outputs is where allmost all artifacts go and that means that they  can all be audited and changed easily because the agent has one repo to look at. lessons plans maps benchmarks all have their dedicated dirs
+
+---
+
+i would disagree because all the traces are version controlled, exportable, and the code is clearaly available. While there is some basic black box in parts of the system for example the under lying moddel weighths the overall harness has a large set of deterministically generated checks for evolution. weighths and is a lot more interpretable. That said many of t he judge metrics are not quite transparent. The algorithm is but the core judges responses are not.
+
+---
+
+wait but at runtime evolution is not deterministic because the actual logic has llm judge determine part of the metrics
+
+---
+
+before we get to that i want to understand how the algorithms behind keating evolution work in detail now
