@@ -1687,11 +1687,17 @@ export default defineConfig({
       color: "var(--ink-soft)",
       opacity: "0.75"
     },
+    ".retro-layout .hero-wrap": {
+      display: "grid"
+    },
     ".retro-layout .hero-grid": {
       display: "grid",
       gridTemplateColumns: "minmax(0, 46fr) minmax(0, 54fr)",
       gap: "48px",
       alignItems: "start"
+    },
+    ".retro-layout .hero-content": {
+      minWidth: "0"
     },
     ".retro-layout .hero h1": {
       fontFamily: "var(--mono-display)",
@@ -1795,35 +1801,10 @@ export default defineConfig({
     },
     ".retro-layout .hero-stage": {
       position: "relative",
-      paddingLeft: "120px",
-      minHeight: "480px"
-    },
-    ".retro-layout .hero-sprite": {
-      position: "absolute",
-      left: "auto",
-      right: "18px",
-      top: "-42px",
-      bottom: "auto",
-      width: "188px",
-      zIndex: "1",
-      filter: "drop-shadow(0 18px 22px rgba(28, 33, 27, 0.28))",
-      animation: "retro-hover-bob 5.5s ease-in-out infinite",
-      transition: "transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)"
-    },
-    ".retro-layout .hero-sprite:hover": {
-      transform: "rotate(-4deg) scale(1.04)"
-    },
-    ".retro-layout .sprite-shadow": {
-      position: "absolute",
-      display: "none",
-      left: "auto",
-      right: "-8px",
-      bottom: "-26px",
-      width: "150px",
-      height: "20px",
-      zIndex: "0",
-      background: "radial-gradient(ellipse at center, rgba(28, 33, 27, 0.28), transparent 70%)",
-      animation: "retro-shadow-bob 5.5s ease-in-out infinite"
+      display: "grid",
+      justifyItems: "center",
+      alignContent: "start",
+      minHeight: "0"
     },
     ".retro-layout .term-3d": {
       position: "relative",
@@ -2994,20 +2975,136 @@ export default defineConfig({
         minHeight: "2rem",
         padding: "0"
       },
+      "html,\n  body,\n  #root": {
+        maxWidth: "100%",
+        overflowX: "clip"
+      },
       ".retro-layout .hero": {
-        paddingTop: "40px"
+        padding: "40px 0 56px"
+      },
+      ".retro-layout.retro-page": {
+        width: "100%",
+        maxWidth: "100vw",
+        overflowX: "clip"
+      },
+      ".retro-layout.retro-page main,\n  .retro-layout.retro-page section,\n  .retro-layout.retro-page footer": {
+        width: "100%",
+        maxWidth: "100vw",
+        overflowX: "clip"
+      },
+      "#main-nav > div": {
+        width: "100%",
+        maxWidth: "100%",
+        minWidth: "0",
+        boxSizing: "border-box"
+      },
+      "#main-nav .nav-logo": {
+        minWidth: "0",
+        overflow: "hidden"
+      },
+      "#main-nav .nav-mobile-actions": {
+        flexShrink: "0"
+      },
+      ".retro-layout .wrap": {
+        width: "100%",
+        maxWidth: "100%",
+        boxSizing: "border-box",
+        margin: "0 auto",
+        padding: "0 20px"
+      },
+      ".retro-layout .hero-wrap": {
+        width: "100%",
+        maxWidth: "100% !important",
+        overflowX: "clip"
+      },
+      ".retro-layout .wrap > *": {
+        minWidth: "0",
+        maxWidth: "100%"
+      },
+      ".retro-layout .hero-grid": {
+        display: "grid",
+        gridTemplateColumns: "minmax(0, 1fr) !important",
+        gap: "28px",
+        width: "100%",
+        maxWidth: "100%",
+        minWidth: "0",
+        justifyItems: "stretch"
+      },
+      ".retro-layout .hero-content": {
+        width: "100% !important",
+        maxWidth: "100% !important",
+        minWidth: "0",
+        overflowX: "clip"
+      },
+      ".retro-layout .hero-coords": {
+        width: "100%",
+        maxWidth: "100%",
+        marginBottom: "28px",
+        lineHeight: "1.65",
+        whiteSpace: "normal",
+        overflowWrap: "anywhere"
+      },
+      ".retro-layout .hero-brand": {
+        fontSize: "clamp(36px, 13.5vw, 52px)",
+        lineHeight: "1",
+        letterSpacing: "-0.02em",
+        overflowWrap: "anywhere"
+      },
+      ".retro-layout .hero-brand-suffix": {
+        fontSize: "0.34em"
+      },
+      ".retro-layout .hero-headline": {
+        maxWidth: "100%",
+        fontSize: "clamp(18px, 6.2vw, 22px)",
+        lineHeight: "1.28",
+        letterSpacing: "0"
+      },
+      ".retro-layout .hero-sub": {
+        fontSize: "14px",
+        lineHeight: "1.35",
+        overflowWrap: "anywhere"
+      },
+      ".retro-layout .hero-copy": {
+        width: "100%",
+        maxWidth: "100% !important",
+        fontSize: "15px",
+        lineHeight: "1.75",
+        overflowWrap: "anywhere"
+      },
+      ".retro-layout .hero-ctas": {
+        display: "grid",
+        gridTemplateColumns: "minmax(0, 1fr)",
+        gap: "12px",
+        width: "100%",
+        maxWidth: "100%",
+        marginBottom: "24px"
+      },
+      ".retro-layout .hero-ctas .keating-btn-retro": {
+        width: "100%",
+        minWidth: "0",
+        maxWidth: "100%",
+        whiteSpace: "normal",
+        textAlign: "center",
+        justifyContent: "center",
+        overflowWrap: "anywhere"
+      },
+      ".retro-layout .hero-tags": {
+        display: "grid",
+        gap: "12px 18px",
+        maxWidth: "100%",
+        lineHeight: "1.4"
       },
       ".retro-layout .caps-grid": {
-        gridTemplateColumns: "1fr"
+        gridTemplateColumns: "1fr !important"
       },
       ".retro-layout .term-3d": {
         height: "330px"
       },
       ".retro-layout .man-grid": {
-        gridTemplateColumns: "1fr"
+        gridTemplateColumns: "1fr !important"
       },
       ".retro-layout .use-grid": {
-        gridTemplateColumns: "1fr"
+        gridTemplateColumns: "1fr !important"
       },
       ".retro-layout .man-stamp": {
         right: "4px",
@@ -3015,7 +3112,7 @@ export default defineConfig({
         fontSize: "11px"
       },
       ".retro-layout .foot-grid": {
-        gridTemplateColumns: "1fr"
+        gridTemplateColumns: "1fr !important"
       },
       ".retro-layout .term-foot div:nth-child(2)": {
         display: "none"
@@ -3050,6 +3147,54 @@ export default defineConfig({
         width: "100%"
       }
     },
+    "@media (max-width: 360px)": {
+      ".retro-layout .hero-wrap": {
+        padding: "0 18px"
+      },
+      ".retro-layout .nav-logo": {
+        gap: "0.375rem !important",
+        padding: "0.125rem 0.25rem !important"
+      },
+      ".retro-layout .nav-logo img": {
+        height: "1.55rem !important"
+      },
+      ".retro-layout .nav-version": {
+        fontSize: "0.66rem",
+        letterSpacing: "0.04em"
+      },
+      ".retro-layout .nav-mobile-actions": {
+        gap: "0.375rem"
+      },
+      ".retro-layout .nav-mobile-toggle": {
+        minHeight: "40px !important",
+        padding: "0.25rem 0.5rem !important",
+        fontSize: "0.9rem !important"
+      },
+      ".retro-layout .hero-copy": {
+        maxWidth: "100% !important"
+      },
+      ".retro-layout .hero-ctas": {
+        display: "grid",
+        gridTemplateColumns: "minmax(0, 1fr)",
+        gap: "10px",
+        width: "100%",
+        maxWidth: "100%",
+        alignItems: "stretch"
+      },
+      ".retro-layout .hero-ctas .keating-btn-retro": {
+        width: "100%",
+        minWidth: "0",
+        minHeight: "44px",
+        padding: "0.5rem 0.375rem !important",
+        justifyContent: "center",
+        textAlign: "center",
+        fontSize: "10px",
+        lineHeight: "1.15",
+        letterSpacing: "0.03em",
+        whiteSpace: "nowrap",
+        overflowWrap: "normal"
+      }
+    },
     "@media (prefers-reduced-motion: reduce)": {
       ".chat-brand,\n  .chat-brand img,\n  .chat-page-shell .sb-dot": {
         transition: "none",
@@ -3062,7 +3207,7 @@ export default defineConfig({
         animationDuration: "1ms",
         animationIterationCount: "1"
       },
-      ".retro-layout .hero-sprite,\n  .retro-layout .sprite-shadow,\n  .retro-layout .hero h1 .cursor,\n  .retro-layout .t-caret,\n  .retro-layout .nav-status .dot": {
+      ".retro-layout .hero h1 .cursor,\n  .retro-layout .t-caret,\n  .retro-layout .nav-status .dot": {
         animation: "none !important"
       },
       ".retro-layout .download-screen-caret": {
@@ -3073,9 +3218,6 @@ export default defineConfig({
       ".retro-layout .hero-grid": {
         gridTemplateColumns: "minmax(0, 41fr) minmax(620px, 59fr)",
         gap: "56px"
-      },
-      ".retro-layout .hero-stage": {
-        paddingLeft: "96px"
       },
       ".retro-layout .term-3d": {
         minHeight: "500px"
@@ -3102,13 +3244,7 @@ export default defineConfig({
         marginBottom: "24px"
       },
       ".retro-layout .hero-stage": {
-        paddingLeft: "72px",
         minHeight: "430px"
-      },
-      ".retro-layout .hero-sprite": {
-        width: "152px",
-        right: "0",
-        top: "-24px"
       },
       ".retro-layout .term-3d": {
         minHeight: "380px",
@@ -3132,7 +3268,25 @@ export default defineConfig({
       },
       ".retro-layout .hero-grid": {
         gridTemplateColumns: "1fr",
-        gap: "18px"
+        gap: "28px",
+        justifyItems: "center"
+      },
+      ".retro-layout .hero-wrap": {
+        maxWidth: "720px"
+      },
+      ".retro-layout .hero-content": {
+        width: "min(100%, 42rem)",
+        margin: "0 auto"
+      },
+      ".retro-layout .hero-coords": {
+        width: "min(100%, 42rem)",
+        marginLeft: "auto",
+        marginRight: "auto"
+      },
+      ".retro-layout .hero-grid,\n  .retro-layout .caps-grid,\n  .retro-layout .man-grid,\n  .retro-layout .use-grid,\n  .retro-layout .foot-grid,\n  .retro-layout .download-hero-grid,\n  .retro-layout .mobile-soon-grid,\n  .retro-layout .download-source-box,\n  .retro-layout .desktop-download-grid": {
+        width: "100%",
+        maxWidth: "100%",
+        minWidth: "0"
       },
       ".retro-layout .hero-copy": {
         maxWidth: "48rem"
@@ -3140,24 +3294,20 @@ export default defineConfig({
       ".retro-layout .hero-stage": {
         paddingLeft: "0",
         paddingTop: "86px",
-        minHeight: "0"
-      },
-      ".retro-layout .hero-sprite": {
-        width: "150px",
-        left: "28px",
-        right: "auto",
-        top: "0",
-        bottom: "auto"
+        minHeight: "0",
+        width: "100%",
+        maxWidth: "620px",
+        overflowX: "clip"
       },
       ".retro-layout .term-3d": {
         height: "360px",
-        minHeight: "320px"
+        minHeight: "320px",
+        width: "100%",
+        maxWidth: "100%",
+        overflow: "hidden"
       },
       ".retro-layout .caps-grid": {
         gridTemplateColumns: "1fr 1fr"
-      },
-      ".retro-layout .sprite-shadow": {
-        display: "none"
       },
       ".retro-layout .use-grid": {
         gridTemplateColumns: "1fr 1fr"
