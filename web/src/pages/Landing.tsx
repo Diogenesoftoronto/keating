@@ -308,12 +308,12 @@ export function Landing() {
       <main>
         {/* Hero */}
         <section className="hero">
-          <div className="wrap">
+          <div className="wrap hero-wrap">
             <div className="hero-coords">
               42.2961° N, 71.2925° W // HYPERTEACHER PROTOCOL // UPTIME: OPTIMAL
             </div>
             <div className="hero-grid">
-              <div>
+              <div className="hero-content">
                 <div className={eyebrow()}>The Hyperteacher</div>
                 <h1 className="hero-brand">
                   KEATING<span className="hero-brand-suffix">.help</span>
@@ -357,14 +357,6 @@ export function Landing() {
               </div>
 
               <div className="hero-stage">
-                <img
-                  className="hero-sprite"
-                  src="/brand/mascot-full.png"
-                  alt="Keating robot mascot — a cream and green retro robot with a CRT screen face"
-                  width={486}
-                  height={760}
-                />
-                <div className="sprite-shadow" aria-hidden="true" />
                 <HeroTerminal />
               </div>
             </div>
