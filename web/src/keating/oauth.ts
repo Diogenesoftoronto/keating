@@ -1,4 +1,13 @@
-import { getAppStorage } from "@earendil-works/pi-web-ui";
+type AppStorage = Awaited<ReturnType<typeof import("@earendil-works/pi-web-ui").getAppStorage>>;
+
+let _getAppStorage: (() => AppStorage) | null = null;
+async function getAppStorage(): Promise<AppStorage> {
+	if (!_getAppStorage) {
+		const mod = await import("@earendil-works/pi-web-ui");
+		_getAppStorage = mod.getAppStorage;
+	}
+	return _getAppStorage();
+}
 
 export type OAuthProviderId = "anthropic" | "openai-codex" | "google-gemini-cli";
 
@@ -324,13 +333,13 @@ function oauthStorageKey(provider: OAuthProviderId): string {
 }
 
 export async function saveOAuthCredentials(credentials: OAuthCredentials): Promise<void> {
-	const storage = getAppStorage();
+	const storage = await getAppStorage();
 	const key = oauthStorageKey(credentials.provider);
 	await storage.providerKeys.set(key, JSON.stringify(credentials));
 }
 
 export async function loadOAuthCredentials(provider: OAuthProviderId): Promise<OAuthCredentials | null> {
-	const storage = getAppStorage();
+	const storage = await getAppStorage();
 	const key = oauthStorageKey(provider);
 	const raw = await storage.providerKeys.get(key);
 	if (!raw) return null;
@@ -346,7 +355,7 @@ export async function loadOAuthCredentials(provider: OAuthProviderId): Promise<O
 }
 
 export async function deleteOAuthCredentials(provider: OAuthProviderId): Promise<void> {
-	const storage = getAppStorage();
+	const storage = await getAppStorage();
 	const key = oauthStorageKey(provider);
 	await storage.providerKeys.delete(key);
 }
