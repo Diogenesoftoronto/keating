@@ -61,7 +61,7 @@ export default function hyperteacher(pi: any): void {
   });
 
   pi.registerCommand("map", {
-    description: "Generate a Mermaid lesson map and render it with oxdraw when available.",
+    description: "Generate a Mermaid lesson map.",
     handler: async (args: string[], ctx: any) => {
       const topic = topicFromArgs(args);
       if (!topic) {
@@ -70,14 +70,13 @@ export default function hyperteacher(pi: any): void {
       }
       const artifact = await mapTopicArtifact(ctx.cwd, topic);
       const outputs = [relative(ctx.cwd, artifact.mmdPath)];
-      if (artifact.svgPath) outputs.push(relative(ctx.cwd, artifact.svgPath));
       ctx.ui.setEditorText(`read ${outputs[0]}`);
       info(ctx, `Generated ${outputs.join(" and ")}`);
     }
   });
 
   pi.registerCommand("animate", {
-    description: "Generate a manim-web animation bundle for a topic.",
+    description: "Generate a Hyperframes animation bundle for a topic.",
     handler: async (args: string[], ctx: any) => {
       const topic = topicFromArgs(args);
       if (!topic) {

@@ -8,10 +8,9 @@ graph TD
   policy[Teacher Policy]:::source
   plan[Lesson Plan]:::source
   map[Mermaid Meaning Map]:::static
-  oxdraw[oxdraw SVG Render]:::static
   storyboard[Storyboard]:::dynamic
   manifest[Animation Manifest]:::dynamic
-  scene[manim-web Scene Bundle]:::dynamic
+  scene[Hyperframes Scene Bundle]:::dynamic
   learner[Synthetic Learner Benchmark]:::eval
   evolve[Policy Evolution Engine]:::eval
   promptEval[Prompt Evolution Report]:::eval
@@ -20,7 +19,6 @@ graph TD
   topic --> plan
   policy --> plan
   plan --> map
-  map --> oxdraw
   topic --> storyboard
   policy --> storyboard
   topic --> manifest
@@ -32,13 +30,12 @@ graph TD
   evolve --> policy
   promptLoop --> promptEval
   learner --> manifest
-  oxdraw --> learner
+  map --> learner
   plan --> promptLoop
   promptLoop --> scene
 
   subgraph static_visual["Static Visuals"]
     map
-    oxdraw
   end
 
   subgraph animated_visual["Animated Visuals"]

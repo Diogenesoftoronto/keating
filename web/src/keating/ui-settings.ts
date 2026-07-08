@@ -11,7 +11,7 @@ export {
 } from "./model-prefs";
 
 export type ReasoningLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
-export type AnimationRenderer = "manim" | "hyperframes";
+export type AnimationRenderer = "hyperframes";
 export type UiFontFamily = "roboto" | "space-mono" | "jetbrains-mono";
 export type ShareLinkMode = "portable-short" | "compressed-hash" | "local-short";
 
@@ -151,7 +151,7 @@ function normalizeSettings(value: LegacyUiSettingsInput | null): KeatingUiSettin
 		autoOpenArtifacts: value?.autoOpenArtifacts ?? DEFAULT_UI_SETTINGS.autoOpenArtifacts,
 		showRawErrors: value?.showRawErrors ?? DEFAULT_UI_SETTINGS.showRawErrors,
 		reasoningLevel: value?.reasoningLevel ?? DEFAULT_UI_SETTINGS.reasoningLevel,
-		animationRenderer: value?.animationRenderer === "hyperframes" ? "hyperframes" : DEFAULT_UI_SETTINGS.animationRenderer,
+		animationRenderer: "hyperframes",
 		fontFamily:
 			value?.fontFamily === "space-mono" || value?.fontFamily === "roboto" || value?.fontFamily === "jetbrains-mono"
 				? value.fontFamily

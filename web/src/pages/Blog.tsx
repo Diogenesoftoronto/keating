@@ -1393,10 +1393,9 @@ keating web --cloud 3000 --cloud-endpoint=https://keating.help`}</CodeBlock>
 
         <h3 id="animation-renderer" className={styles.sectionHeading}>Animation Renderer Setting</h3>
         <p className={styles.smallParagraph}>
-          The generated animation artifacts can now use either Hyperframes (the
-          default) or Manim-web as the renderer. Hyperframes is the lightweight
-          in-browser path for timed clip compositions, while Manim-web remains
-          available for mathematical scene source.
+          Generated animation artifacts now use Hyperframes as the single
+          in-browser renderer, with replay, pause, scrub, and loop controls
+          built into the player.
         </p>
       </>
     ),
@@ -2384,8 +2383,8 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
           <li>
             <div className={styles.underlinedHeading}>Real-Time Animation Generation:</div>
             <p>
-              The animation engine no longer relies on hardcoded ManimJS templates. It now uses
-              the pi agent to generate custom, context-aware visual teaching beats for any topic.
+              The animation engine generates Hyperframes scenes with custom,
+              context-aware visual teaching beats for any topic.
             </p>
           </li>
           <li>
@@ -2782,7 +2781,7 @@ const hybridStreamFn = async (model, context, options) => {
         <ul className={styles.unorderedList}>
           <li><Code>keating plan &lt;topic&gt;</Code> — Generate structured lesson plans</li>
           <li><Code>keating map &lt;topic&gt;</Code> — Create Mermaid concept maps</li>
-          <li><Code>keating animate &lt;topic&gt;</Code> — Build Manim-web animation bundles</li>
+          <li><Code>keating animate &lt;topic&gt;</Code> — Build Hyperframes animation bundles</li>
           <li><Code>keating verify &lt;topic&gt;</Code> — Run verification checklists</li>
           <li><Code>keating bench</Code> — Benchmark teaching policies against synthetic learners</li>
         </ul>

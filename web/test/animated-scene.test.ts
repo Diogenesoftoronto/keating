@@ -1,22 +1,18 @@
 import { describe, expect, test } from "bun:test";
 import { parseAnimationPayload } from "../src/components/AnimatedScene";
-import { buildManimSceneHtml, buildHyperframesHtml } from "../src/components/animation-host";
+import { buildHyperframesHtml } from "../src/components/animation-host";
 
 describe("parseAnimationPayload", () => {
-	test("parses a manim payload with body code", () => {
+	test("returns null for a legacy renderer payload", () => {
 		const tagged = JSON.stringify(
 			JSON.stringify({
 				topic: "DNS",
-				kind: "manim",
+				kind: "legacy-renderer",
 				summary: "How a name becomes an IP",
 				body: "async function construct(scene, M) { const t = new M.Text({ text: 'Hello' }); }",
 			}),
 		);
-		const parsed = parseAnimationPayload(tagged);
-		expect(parsed?.kind).toBe("manim");
-		expect(parsed?.topic).toBe("DNS");
-		expect(parsed?.summary).toBe("How a name becomes an IP");
-		expect(parsed?.body).toContain("construct(scene, M)");
+		expect(parseAnimationPayload(tagged)).toBeNull();
 	});
 
 	test("parses a hyperframes payload with HTML body", () => {
@@ -54,38 +50,12 @@ describe("parseAnimationPayload", () => {
 		expect(parseAnimationPayload("")).toBeNull();
 	});
 
-	test("returns null when kind is set but body is empty", () => {
-		const tagged = JSON.stringify(JSON.stringify({ topic: "X", kind: "manim" }));
+	test("allows the renderer to surface empty hyperframes bodies", () => {
+		const tagged = JSON.stringify(JSON.stringify({ topic: "X", kind: "hyperframes" }));
 		// Empty body is allowed by parser; renderer is what surfaces an error.
 		const parsed = parseAnimationPayload(tagged);
-		expect(parsed?.kind).toBe("manim");
+		expect(parsed?.kind).toBe("hyperframes");
 		expect(parsed?.body).toBeUndefined();
-	});
-});
-
-describe("buildManimSceneHtml", () => {
-	test("produces a self-contained HTML page that imports manim-web", () => {
-		const html = buildManimSceneHtml(
-			"async function construct(scene, M) { const t = new M.Text({ text: 'Hello' }); await scene.play(new M.FadeIn(t)); }",
-			"Test topic",
-		);
-		expect(html).toContain("<!doctype html>");
-		expect(html).toContain("Keating Animation: Test topic");
-		expect(html).toContain("import * as M from \"/manim-web/index.js\"");
-		expect(html).toContain("async function construct(scene, M)");
-		expect(html).toContain("new M.Scene(container,");
-	});
-
-	test("escapes the topic in the title", () => {
-		const html = buildManimSceneHtml("async function construct() {}", `Tom & Jerry's <Fun>`);
-		expect(html).toContain("Tom &amp; Jerry&#39;s &lt;Fun&gt;");
-	});
-
-	test("includes the model-authored construct body verbatim", () => {
-		const source = "async function construct(scene, M) { const a = M.Axes(); await scene.play(new M.Create(a)); }";
-		const html = buildManimSceneHtml(source, "t");
-		expect(html).toContain("M.Axes()");
-		expect(html).toContain("new M.Create(a)");
 	});
 });
 

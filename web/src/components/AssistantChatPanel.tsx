@@ -1958,9 +1958,11 @@ const MARKDOWN_COMPONENTS: Components = {
               ),
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               table: ({ children }: any) => (
-                <table className={css({ marginBottom: "0.75rem", width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" })}>
-                  {children}
-                </table>
+                <div className={css({ marginBlock: "0.75rem", maxWidth: "100%", overflowX: "auto" })}>
+                  <table className={css({ width: "max-content", minWidth: "100%", borderCollapse: "collapse", fontSize: "0.875rem" })}>
+                    {children}
+                  </table>
+                </div>
               ),
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               thead: ({ children }: any) => (

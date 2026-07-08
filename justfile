@@ -95,10 +95,6 @@ web-build:
 web-preview:
     cd web && bun run build && bun run preview
 
-# Render documentation diagrams
-docs-diagrams:
-    bun scripts/render-docs-diagrams.mjs
-
 # Render the narrated Keating intro video
 video-intro:
     bun scripts/render-keating-intro.mjs

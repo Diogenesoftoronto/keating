@@ -427,8 +427,8 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 			) : (
 				<div className={css({ "& > * + *": { marginTop: "1rem" } })}>
 					{/* Search + Toggle */}
-					<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
-						<label className={css({ display: "flex", minHeight: "2.25rem", flex: 1, alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "var(--background)", paddingInline: "0.75rem", fontSize: "0.75rem" })}>
+					<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem" })}>
+						<label className={css({ display: "flex", minHeight: "2.25rem", minWidth: 0, flex: "1 1 14rem", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "var(--background)", paddingInline: "0.75rem", fontSize: "0.75rem" })}>
 							<Search size={14} className={css({ flexShrink: 0, color: "var(--muted-foreground)" })} />
 							<input
 								className={css({
@@ -476,6 +476,7 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 								title={showAgentArtifacts ? "Hide agent artifacts" : "Show agent artifacts"}
 								className={cx(css({
 									display: "inline-flex",
+									minWidth: 0,
 									flexShrink: 0,
 									alignItems: "center",
 									gap: "0.375rem",
@@ -501,7 +502,9 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 									}))}
 							>
 								{showAgentArtifacts ? <Eye size={13} /> : <EyeOff size={13} />}
-								{showAgentArtifacts ? `Hide ${agentArtifactCount} agent` : `Show ${agentArtifactCount} agent`}
+								<span className={css({ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" })}>
+									{showAgentArtifacts ? `Hide ${agentArtifactCount} agent` : `Show ${agentArtifactCount} agent`}
+								</span>
 							</button>
 						)}
 						{filteredArtifacts.length > 0 && (
@@ -544,7 +547,7 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 								return (
 									<section key={groupKey}>
 										{/* Session header */}
-										<div className={css({ marginBottom: "0.5rem", display: "flex", minWidth: 0, alignItems: "center", gap: "0.5rem" })}>
+										<div className={css({ marginBottom: "0.5rem", display: "flex", minWidth: 0, flexWrap: "wrap", alignItems: "center", gap: "0.375rem 0.5rem" })}>
 											{isOther ? (
 												<>
 													<span className={css({ fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted-foreground)" })}>
@@ -560,7 +563,7 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 													<span className={css({ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted-foreground)" })}>
 														{sessionMeta.title}
 													</span>
-													<span className={css({ flexShrink: 0, fontSize: "10px", color: "var(--muted-foreground)" })}>
+													<span className={css({ minWidth: 0, flexShrink: 1, fontSize: "10px", color: "var(--muted-foreground)" })}>
 														{formatArtifactDate(new Date(sessionMeta.lastModified ?? sessionMeta.createdAt).getTime())} · {sessionMeta.messageCount} messages
 													</span>
 													{sessionMeta.parentSessionId && (
@@ -588,6 +591,7 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 														onClick={() => setSelected(artifact)}
 														className={cx("group", css({
 															width: "100%",
+															minWidth: 0,
 															borderRadius: "0.5rem",
 															borderWidth: "1px",
 															padding: "0.625rem",
@@ -606,13 +610,13 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 																_hover: { background: "color-mix(in srgb, var(--muted) 50%, transparent)" },
 															}))}
 													>
-														<div className={css({ display: "flex", alignItems: "flex-start", gap: "0.625rem" })}>
+														<div className={css({ display: "flex", minWidth: 0, alignItems: "flex-start", gap: "0.625rem" })}>
 															<span className={css({ marginTop: "0.125rem", display: "inline-flex", height: "1.5rem", width: "1.5rem", flexShrink: 0, alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "var(--background)", color: "var(--muted-foreground)" })}>
 																{meta.icon}
 															</span>
 															<div className={css({ minWidth: 0, flex: 1 })}>
-																<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
-																	<span className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)" })}>
+																<div className={css({ display: "flex", minWidth: 0, alignItems: "center", gap: "0.5rem" })}>
+																	<span className={css({ minWidth: 0, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)" })}>
 																		{artifact.label}
 																	</span>
 																	{isAgent && (
@@ -631,12 +635,12 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 																	</span>
 																	)}
 																</div>
-																<div className={css({ marginTop: "0.125rem", display: "flex", minWidth: 0, alignItems: "center", gap: "0.5rem", fontSize: "11px", color: "var(--muted-foreground)" })}>
+																<div className={css({ marginTop: "0.125rem", display: "flex", minWidth: 0, flexWrap: "wrap", alignItems: "center", gap: "0.125rem 0.5rem", fontSize: "11px", color: "var(--muted-foreground)" })}>
 																	<span className={css({ flexShrink: 0 })}>{meta.label}</span>
 																	<span className={css({ flexShrink: 0 })}>·</span>
 																	<span className={css({ flexShrink: 0 })}>{formatArtifactDate(artifact.createdAt)}</span>
 																	<span className={css({ flexShrink: 0 })}>·</span>
-																	<span className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" })}>{artifactPreviewText(artifact)}</span>
+																	<span className={css({ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" })}>{artifactPreviewText(artifact)}</span>
 																</div>
 															</div>
 														</div>

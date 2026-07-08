@@ -1,7 +1,5 @@
-import { access } from "node:fs/promises";
 import { relative } from "node:path";
 import { join, resolve } from "node:path";
-import { spawnSync } from "node:child_process";
 
 import { DEFAULT_KEATING_CONFIG, configPath, loadKeatingConfig, writeKeatingConfig } from "../core/config.js";
 import { learnerStatePath } from "../core/paths.js";
@@ -55,7 +53,7 @@ function printUsage(): void {
   console.log(bold("primary", "General Commands"));
   console.log(`  ${color.primary}shell${color.reset}  [initial prompt...]  Launch the AI-powered hyperteacher shell`);
   console.log(`  ${color.primary}setup${color.reset}  [--yes]             Configure Keating for this project`);
-  console.log(`  ${color.primary}doctor${color.reset}                    Inspect AI runtime and oxdraw availability`);
+  console.log(`  ${color.primary}doctor${color.reset}                    Inspect AI runtime and renderer configuration`);
   console.log(`  ${color.primary}package${color.reset} list|add|remove|recommended  Manage extra Pi packages`);
   console.log(`  ${color.primary}web${color.reset}     [port] [--browser-only-agent|--remote|--cloud] [--root=PATH] [--no-ignore]  Start the browser UI. --root attaches the browser agent to a host project directory (defaults to $CWD). --no-ignore disables .gitignore/.ignore filtering of project files.`);
   console.log(`  ${color.primary}webmcp${color.reset}  [port] [--host=127.0.0.1]  Expose Keating tools over MCP Streamable HTTP`);
@@ -501,7 +499,6 @@ async function run(): Promise<void> {
       if (!topic) throw commandUsage("map", "keating map derivative");
       const artifact = await mapTopicArtifact(cwd, topic);
       console.log(relative(cwd, artifact.mmdPath));
-      if (artifact.svgPath) console.log(relative(cwd, artifact.svgPath));
       return;
     }
     case "animate": {
@@ -697,12 +694,6 @@ async function run(): Promise<void> {
       await ensureProjectScaffold(cwd);
       const config = await loadKeatingConfig(cwd);
       const runtime = await detectAiRuntime(cwd);
-      const oxdraw = spawnSync("which", ["oxdraw"], { encoding: "utf8" });
-      const manimWebPath = join(cwd, "node_modules", "manim-web", "dist", "index.js");
-      const manimWebInstalled = await access(manimWebPath).then(
-        () => true,
-        () => false
-      );
       console.log(`${bold("primary", "Keating Doctor")}  ${color.sepia}diagnostic report${color.reset}\n`);
       console.log(`  ${color.cream}config_path${color.reset}           ${color.sepia}${configPath(cwd)}${color.reset}`);
       console.log(`  ${color.cream}ai_runtime_preference${color.reset} ${color.primary}${config.pi.runtimePreference}${color.reset}`);
@@ -716,8 +707,8 @@ async function run(): Promise<void> {
       console.log(`  ${color.cream}ai_standalone${color.reset}         ${runtime.standalone ? color.primary + runtime.standalone.command : color.err + "missing"}${color.reset}`);
       console.log(`  ${color.cream}ai_embedded${color.reset}           ${runtime.embedded ? color.primary + (runtime.embedded.cliPath ?? runtime.embedded.command) : color.err + "missing"}${color.reset}`);
       if (runtime.selected) console.log(`  ${color.cream}ai_command${color.reset}            ${color.primary}${runtime.selected.command}${color.reset}`);
-      console.log(`  ${color.cream}oxdraw${color.reset}                ${oxdraw.status === 0 ? color.ok + oxdraw.stdout.trim() : color.err + "missing"}${color.reset}`);
-      console.log(`  ${color.cream}manim_web${color.reset}             ${manimWebInstalled ? color.ok + manimWebPath : color.err + "missing"}${color.reset}`);
+      console.log(`  ${color.cream}map_renderer${color.reset}          ${color.ok}mermaid-source${color.reset}`);
+      console.log(`  ${color.cream}animation_renderer${color.reset}    ${color.ok}hyperframes${color.reset}`);
       return;
     }
     case "help":

@@ -6,10 +6,6 @@ crush = "latest"
 description = "Build the project"
 run = "bun x tsc -p tsconfig.json"
 
-[tasks.docs-diagrams]
-description = "Render documentation diagrams"
-run = "bun scripts/render-docs-diagrams.mjs"
-
 [tasks.test]
 description = "Run tests"
 run = "bun test ./test/*.test.ts"

@@ -9,8 +9,8 @@ export interface CommandSpec {
 
 export const extensionCommandSpecs: CommandSpec[] = [
 	{ name: "plan",         args: "<topic>",        section: "Teaching",      description: "Generate a deterministic lesson plan artifact." },
-	{ name: "map",          args: "<topic>",        section: "Teaching",      description: "Generate a Mermaid concept map with oxdraw rendering." },
-	{ name: "animate",      args: "<topic>",        section: "Teaching",      description: "Generate a manim-web animation bundle." },
+	{ name: "map",          args: "<topic>",        section: "Teaching",      description: "Generate a Mermaid concept map." },
+	{ name: "animate",      args: "<topic>",        section: "Teaching",      description: "Generate a Hyperframes animation bundle." },
 	{ name: "learn",        args: "<topic>",        section: "Teaching",      description: "Start a Socratic teaching session.", shellOnly: true },
 	{ name: "diagnose",     args: "<topic>",        section: "Teaching",      description: "Map prerequisites and knowledge gaps.", shellOnly: true },
 	{ name: "quiz",         args: "<topic>",        section: "Assessment",    description: "Generate retrieval practice questions." },
@@ -40,7 +40,7 @@ export const cliCommandSpecs: CommandSpec[] = [
 	{ name: "shell",        args: "[prompt]",       section: "Core",          description: "Launch the AI-powered hyperteacher shell." },
 	{ name: "web",          args: "[port]",         section: "Core",          description: "Start the browser UI dev server." },
 	{ name: "webmcp",       args: "[port] [--host=127.0.0.1]", section: "Core", description: "Expose Keating tools over MCP Streamable HTTP." },
-	{ name: "doctor",       args: "",               section: "Core",          description: "Inspect AI runtime and oxdraw availability." },
+	{ name: "doctor",       args: "",               section: "Core",          description: "Inspect AI runtime and renderer configuration." },
 	{ name: "package",      args: "list|add <source>|remove <source>|recommended", section: "Core", description: "Manage extra Pi packages loaded by Keating." },
 	{ name: "version",      args: "",               section: "Core",          description: "Show the Keating version number." },
 	...extensionCommandSpecs.filter(s => !s.shellOnly),

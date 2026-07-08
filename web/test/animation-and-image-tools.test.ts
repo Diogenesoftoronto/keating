@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
 	parseStoryboardScenes,
-	__test_buildManimScene,
 	__test_buildHyperframesComposition,
 	__test_parseStoryboardDurationSeconds,
 	__test_storyboardTitle,
@@ -55,60 +54,6 @@ describe("animate storyboard parsing", () => {
 		const scenes = parseStoryboardScenes(generic);
 		expect(scenes).toHaveLength(1);
 		expect(scenes[0].visual).toMatch(/Title card with "Generic"/);
-	});
-});
-
-describe("buildManimScene from authored storyboard", () => {
-	test("emits a play() line for every authored scene with real visual content", () => {
-		const resolved = resolveTopic("DNS");
-		const storyboard = `# Animation Storyboard: DNS Resolution
-
-## Scene 1: Browser cache (0-3s)
-- **Visual**: Browser checks local DNS cache; show a "cache hit" pill.
-- **Audio**: The OS asks the resolver for the IP.
-
-## Scene 2: Recursive resolver (3-7s)
-- **Visual**: A packet leaves the laptop to the ISP's recursive resolver.
-- **Audio**: The resolver does the heavy lifting.
-
-## Scene 3: Root and TLD (7-12s)
-- **Visual**: Two stacked arrows: root . then .com TLD.
-- **Audio**: Walk down the namespace from right to left.
-`;
-
-		const source = __test_buildManimScene(resolved, storyboard);
-		// Real authored scene titles and visuals should appear in the source,
-		// not the generic FadeIn(title("...")) placeholder.
-		expect(source).toContain("Browser cache");
-		expect(source).toContain("Recursive resolver");
-		expect(source).toContain("Root and TLD");
-		expect(source).toContain("Browser checks local DNS cache");
-		expect(source).toContain("recursive resolver");
-		// The generic placeholder that used to ship should be gone.
-		expect(source).not.toContain("Title card with");
-	});
-
-	test("falls back to a minimal scene when storyboard is empty", () => {
-		const resolved = resolveTopic("DNS");
-		const source = __test_buildManimScene(resolved, "");
-		expect(source).toContain("async function construct(scene, M)");
-		expect(source).toContain("new M.FadeIn");
-		expect(source).not.toMatch(/class .* extends Scene/);
-	});
-
-	test("emits construct(scene, M) source that the iframe host can execute", () => {
-		const resolved = resolveTopic("DNS");
-		const storyboard = `# Animation Storyboard: DNS
-
-## Scene 1: Query path (0-2s)
-- **Visual**: A packet moves from browser cache to resolver.
-`;
-		const source = __test_buildManimScene(resolved, storyboard);
-		expect(source).toContain("async function construct(scene, M)");
-		expect(source).toContain("new M.Text");
-		expect(source).toContain("await scene.play");
-		expect(source).not.toContain("extends Scene");
-		expect(source).not.toContain("this.play");
 	});
 });
 

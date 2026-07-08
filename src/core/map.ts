@@ -1,4 +1,3 @@
-import { spawnSync } from "node:child_process";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
@@ -89,18 +88,9 @@ export async function writeLessonMap(
   cwd: string,
   topicName: string,
   policy: TeacherPolicy
-): Promise<{ mmdPath: string; svgPath: string | null }> {
+): Promise<{ mmdPath: string }> {
   const slug = slugify(topicName);
   const mmdPath = join(mapsDir(cwd), `${slug}.mmd`);
-  const svgPath = join(mapsDir(cwd), `${slug}.svg`);
   await writeFile(mmdPath, lessonPlanToMermaid(topicName, policy), "utf8");
-
-  const render = spawnSync("oxdraw", ["--input", mmdPath, "--output", svgPath], {
-    cwd,
-    encoding: "utf8"
-  });
-  if (render.status === 0) {
-    return { mmdPath, svgPath };
-  }
-  return { mmdPath, svgPath: null };
+  return { mmdPath };
 }

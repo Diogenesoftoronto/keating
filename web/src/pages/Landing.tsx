@@ -249,7 +249,7 @@ const USE_GROUPS: Array<{
       { cmd: "diagnose <topic>", desc: "Map prerequisites and knowledge gaps" },
       { cmd: "plan <topic>", desc: "Generate a lesson plan artifact" },
       { cmd: "map <topic>", desc: "Draw a concept map of the territory" },
-      { cmd: "animate <topic>", desc: "Render a manim-style animation" },
+      { cmd: "animate <topic>", desc: "Render a Hyperframes animation" },
     ],
   },
   {

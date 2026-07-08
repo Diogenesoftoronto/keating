@@ -36,7 +36,6 @@ export const teachingTools = [
       if (!topic) return { content: [{ type: "text", text: "Topic required." }] };
       const artifact = await mapTopicArtifact(getCwd(), topic);
       const outputs = [relative(getCwd(), artifact.mmdPath)];
-      if (artifact.svgPath) outputs.push(relative(getCwd(), artifact.svgPath));
       return {
         content: [{ type: "text", text: `[artifact://map]\nGenerated ${outputs.join(" and ")}` }],
         details: artifact

@@ -2,17 +2,17 @@
 
 Keating treats visual explanation as part of the teaching system, not as decoration added after the fact.
 
-![Visual Pipeline](./visual-pipeline.svg)
+Source diagram: `docs/visual-pipeline.mmd`
 
 ## Layers
 
 1. Meaning maps
    - generated from lesson structure and topic semantics
-   - rendered from Mermaid to SVG through `oxdraw`
-   - used for static inspection, navigation, and “map of meaning” style teaching
+   - stored as Mermaid source
+   - used for static inspection, navigation, and "map of meaning" style teaching
 
 2. Animated scenes
-   - generated as `manim-web` source bundles
+   - generated as Hyperframes source bundles
    - used for graph motion, probability updates, entropy distributions, and concept emphasis
    - stored as source so they can be versioned, tested, and evolved
 
@@ -36,19 +36,18 @@ Keating treats visual explanation as part of the teaching system, not as decorat
 - `src/core/map.ts`
   - converts the plan into Mermaid meaning maps
 - `src/core/animation.ts`
-  - selects a scene grammar and emits `player.html`, `scene.mjs`, `storyboard.md`, and `manifest.json`
+  - selects a scene grammar and emits `player.html`, `scene.html`, `storyboard.md`, and `manifest.json`
 - `src/core/project.ts`
   - persists visual artifacts under `.keating/outputs/`
 - `src/core/prompt-evolution.ts`
   - scores prompt templates across multiple teaching objectives and writes evolved prompt artifacts that can later inform visual teaching behavior
 
-## Why `oxdraw`
+## Why Mermaid Source
 
-`oxdraw` is the right fit for the static part of the pipeline because it keeps the diagram source legible:
+Mermaid source is the right fit for the static part of the pipeline because it keeps the diagram source legible:
 
 - Mermaid remains easy to diff and hand-edit
-- SVG output is deterministic enough for artifact workflows
-- generated diagrams can sit beside benchmark and evolution reports as equal citizens
+- generated maps can sit beside benchmark and evolution reports as equal citizens
 - visual artifacts can now sit beside prompt-evolution reports too, which makes prompt changes inspectable instead of hidden inside the runtime
 
 ## Near-Term Direction

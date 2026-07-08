@@ -18,7 +18,6 @@ Open source (MIT), runs in the browser or CLI. Supports local inference via WebG
 - Architecture: https://github.com/Diogenesoftoronto/keating/blob/main/docs/ARCHITECTURE.md
 - Visual Architecture: https://github.com/Diogenesoftoronto/keating/blob/main/docs/VISUAL-ARCHITECTURE.md
 - Testing Strategy: https://github.com/Diogenesoftoronto/keating/blob/main/docs/TESTING.md
-- Oxdraw Tutorial: https://github.com/Diogenesoftoronto/keating/blob/main/docs/OXDRAW-TUTORIAL.md
 - Changelog: https://github.com/Diogenesoftoronto/keating/blob/main/CHANGELOG.md
 
 ## Core Prompts
@@ -36,8 +35,8 @@ Open source (MIT), runs in the browser or CLI. Supports local inference via WebG
 - Policy evolution with safety gates: `src/core/evolution.ts`
 - Prompt evolution with multi-objective selection: `src/core/prompt-evolution.ts`
 - Lesson plan generator: `src/core/lesson-plan.ts`
-- Animation bundle generator (manim-web): `src/core/animation.ts`
-- Concept map generator (Mermaid / oxdraw): `src/core/map.ts`
+- Animation bundle generator (Hyperframes): `src/core/animation.ts`
+- Concept map generator (Mermaid): `src/core/map.ts`
 - CLI shell and commands: `src/cli/main.ts`
 - Pi extension entrypoint: `src/pi/hyperteacher-extension.ts`
 - Web chat runtime: `web/src/hooks/useKeatingAgent.ts`

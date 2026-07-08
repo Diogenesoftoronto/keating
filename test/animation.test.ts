@@ -93,10 +93,10 @@ test("ALWAYS: animation manifest is deterministic for same inputs", () => {
 
 test("animation scene source contains expected boilerplate", async () => {
   await suppressConsoleError(async () => {
-    const scene = await animationSceneSource(process.cwd(), "derivative", DEFAULT_POLICY, "./vendor/manim-web.js");
-    expect(scene.includes('from "./vendor/manim-web.js"')).toBe(true);
-    expect(scene.includes("export async function construct(scene)")).toBe(true);
-    expect(scene.includes('"background": "#0c1510"')).toBe(true);
+    const scene = await animationSceneSource(process.cwd(), "derivative", DEFAULT_POLICY);
+    expect(scene.includes("<!doctype html>")).toBe(true);
+    expect(scene.includes("gsap")).toBe(true);
+    expect(scene.includes("#0c1510")).toBe(true);
   });
 });
 
@@ -110,6 +110,10 @@ test("animation player generation hooks in the shared artifact theme before loca
     expect(html.includes('rel="stylesheet" href="./keating-artifact-theme.css"')).toBe(true);
     expect(html.indexOf("keating-artifact-theme.css")).toBeLessThan(html.indexOf("<style>"));
     expect(html.includes('class="keating-artifact keating-artifact-shell"')).toBe(true);
+    expect(html.includes('data-action="toggle"')).toBe(true);
+    expect(html.includes('data-action="replay"')).toBe(true);
+    expect(html.includes('data-action="loop" aria-pressed="true"')).toBe(true);
+    expect(artifact.scenePath.endsWith("scene.html")).toBe(true);
     expect(html.includes('data-keating-artifact-theme=')).toBe(true);
     expect(themeCss.includes(".keating-artifact-shell")).toBe(true);
     expect(themeCss.includes("--colors-accent: #1e9b50")).toBe(true);

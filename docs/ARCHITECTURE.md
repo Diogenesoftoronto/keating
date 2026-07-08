@@ -4,7 +4,7 @@
 
 Keating is not just "an AI tutor." It is an attempt to make tutoring behavior inspectable and self-improvable without collapsing the system into opaque prompt churn.
 
-![Hyperteacher Architecture](./hyperteacher-architecture.svg)
+Source diagram: `docs/hyperteacher-architecture.mmd`
 
 ## Design Split
 
@@ -16,8 +16,8 @@ The project is intentionally divided into four layers:
 
 2. Deterministic pedagogy layer
    - builds lesson plans
-   - generates richer concept and meaning maps through `oxdraw`
-   - generates self-contained `manim-web` animation bundles
+   - generates richer concept and meaning maps as Mermaid source
+   - generates self-contained Hyperframes animation bundles
    - stores verification, benchmark, evolution, and prompt-evolution artifacts
    - gives the system a stable non-LLM substrate
 
@@ -126,14 +126,12 @@ The visual layer has two distinct roles:
 The visual path has its own internal pipeline:
 
 - `src/core/map.ts` generates semantic Mermaid graphs for teaching structure.
-- `oxdraw` turns those Mermaid sources into SVG artifacts that are cheap to diff and inspect.
-- `src/core/animation.ts` generates `manim-web` source bundles for animated explanation.
+- `src/core/animation.ts` generates Hyperframes source bundles for animated explanation.
 - `src/core/project.ts` makes both of those first-class outputs under `.keating/outputs/`.
 
 See also:
 
 - `docs/VISUAL-ARCHITECTURE.md`
-- `docs/OXDRAW-TUTORIAL.md`
 
 ## Why Synthetic Learners
 

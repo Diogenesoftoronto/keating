@@ -89,7 +89,7 @@ export interface Animation {
 	storyboard: string;
 	scene: string;
 	manifest: string;
-	renderer?: "manim" | "hyperframes";
+	renderer?: "hyperframes";
 	sessionId?: string;
 }
 
@@ -609,7 +609,7 @@ export class KeatingStorage {
 		storyboard: string,
 		scene: string,
 		manifest: string,
-		renderer: "manim" | "hyperframes" = "hyperframes",
+		renderer: "hyperframes" = "hyperframes",
 	): Promise<Animation> {
 		const animation: Animation = {
 			id: this.generateId(),

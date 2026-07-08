@@ -32,11 +32,11 @@ describe("interactive tag parsing", () => {
 		});
 	});
 
-	it("parses a manim animation body containing arrow functions ('=>')", () => {
+	it("parses a hyperframes animation body containing arrow functions ('=>')", () => {
 		const payload = {
 			topic: "Derivatives",
-			kind: "manim",
-			body: "async function construct(scene, M) { const pts = [1, 2].map((x) => x * 2); }",
+			kind: "hyperframes",
+			body: "<!doctype html><html><body><script>const pts = [1, 2].map((x) => x * 2);</script></body></html>",
 		};
 		const segments = parseInteractiveSegments(emitTag("animation", payload));
 		expect(segments.filter((s) => s.type === "animation")).toHaveLength(1);

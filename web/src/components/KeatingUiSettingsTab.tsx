@@ -288,37 +288,13 @@ export function KeatingUiSettingsTab() {
 			<div id="settings-section-ui-animation" className={sectionAnchorClass}>
 				<h3 className={sectionTitleClass}>Animation Renderer</h3>
 				<p className={sectionDescriptionSpacedClass}>
-					Choose the source format Keating uses when creating browser animation artifacts.
+					Keating creates browser animation artifacts as Hyperframes HTML compositions.
 				</p>
-				<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
-					<label className={labelCardClass}>
-						<input
-							type="radio"
-							name="animation-renderer"
-							value="manim"
-							checked={settings.animationRenderer === "manim"}
-							onChange={() => update({ animationRenderer: "manim" })}
-							className={css({ flexShrink: 0 })}
-						/>
-						<div className={css({ minWidth: 0 })}>
-							<div className={smallHeadingClass}>Manim-web</div>
-							<div className={mutedXsClass}>Manim-web JavaScript scene source.</div>
-						</div>
-					</label>
-					<label className={labelCardClass}>
-						<input
-							type="radio"
-							name="animation-renderer"
-							value="hyperframes"
-							checked={settings.animationRenderer === "hyperframes"}
-							onChange={() => update({ animationRenderer: "hyperframes" })}
-							className={css({ flexShrink: 0 })}
-						/>
-						<div className={css({ minWidth: 0 })}>
-							<div className={smallHeadingClass}>Hyperframes</div>
-							<div className={mutedXsClass}>Default HTML composition with timed clips and a GSAP timeline.</div>
-						</div>
-					</label>
+				<div className={labelCardClass}>
+					<div className={css({ minWidth: 0 })}>
+						<div className={smallHeadingClass}>Hyperframes</div>
+						<div className={mutedXsClass}>HTML composition with timed clips and a GSAP timeline.</div>
+					</div>
 				</div>
 			</div>
 
