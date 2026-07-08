@@ -1,5 +1,5 @@
-import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
-import { dirname, join, relative } from "node:path";
+import { mkdir, writeFile } from "node:fs/promises";
+import { join, relative } from "node:path";
 
 import { artifactScenePalette, prepareArtifactTheme } from "./artifact-theme.js";
 import { buildLessonPlan } from "./lesson-plan.js";
@@ -56,36 +56,6 @@ function pickSceneKind(topicName: string): AnimationSceneKind {
   }
 }
 
-function importSpecifierFrom(dirPath: string, targetPath: string): string {
-  const specifier = relative(dirPath, targetPath).replaceAll("\\", "/");
-  return specifier.startsWith(".") ? specifier : `./${specifier}`;
-}
-
-function installedManimWebDistDir(): string {
-  const moduleUrl = (import.meta as unknown as { url: string }).url;
-  const modulePath = decodeURIComponent(moduleUrl.replace(/^file:\/\//, ""));
-  const packageRoot = modulePath.includes("/src/")
-    ? modulePath.split("/src/")[0]
-    : modulePath.includes("/dist/src/")
-      ? modulePath.split("/dist/src/")[0]
-      : join(dirname(modulePath), "../../../");
-  return join(packageRoot, "node_modules/manim-web/dist");
-}
-
-async function copyDir(sourceDir: string, targetDir: string): Promise<void> {
-  await mkdir(targetDir, { recursive: true });
-  const entries = await readdir(sourceDir, { withFileTypes: true });
-  for (const entry of entries) {
-    const sourcePath = join(sourceDir, entry.name);
-    const targetPath = join(targetDir, entry.name);
-    if (entry.isDirectory()) {
-      await copyDir(sourcePath, targetPath);
-    } else if (entry.isFile()) {
-      await writeFile(targetPath, await readFile(sourcePath));
-    }
-  }
-}
-
 function sceneRationale(topicName: string, policy: TeacherPolicy, sceneKind: AnimationSceneKind): string[] {
   const topic = resolveTopic(topicName);
   return [
@@ -126,7 +96,106 @@ export function buildAnimationManifest(topicName: string, policy: TeacherPolicy)
 
 import { piComplete } from "./pi-agent.js";
 
-export async function animationSceneSource(cwd: string, topicName: string, policy: TeacherPolicy, importSpecifier: string): Promise<string> {
+function stripMarkdownFences(value: string): string {
+  return value.replace(/^```(?:html|javascript|js)?\n?/gim, "").replace(/```$/gm, "").trim();
+}
+
+function normalizeHyperframesDocument(source: string, topicTitle: string): string {
+  const trimmed = stripMarkdownFences(source);
+  if (trimmed.toLowerCase().startsWith("<!doctype") || trimmed.toLowerCase().startsWith("<html")) {
+    return trimmed;
+  }
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Keating Animation: ${topicTitle}</title>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+</head>
+<body>
+${trimmed}
+</body>
+</html>`;
+}
+
+function fallbackHyperframesDocument(topicName: string, policy: TeacherPolicy): string {
+  const topic = resolveTopic(topicName);
+  const manifest = buildAnimationManifest(topicName, policy);
+  const thesis = topic.formalCore[0] ?? topic.summary;
+  const misconception = topic.misconceptions[0] ?? `Avoid flattening ${topic.title} into a slogan.`;
+  const bridge = topic.interdisciplinaryHooks[0] ?? "application";
+  const nodes = topic.diagramNodes.slice(0, 5);
+  const palette = artifactScenePalette;
+  const cards = nodes.map((node, index) => `<article class="node" id="node-${index}" style="--i:${index}">${node}</article>`).join("\n      ");
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Keating Animation: ${topic.title}</title>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: ${palette.background};
+      --ink: ${palette.ink};
+      --accent: ${palette.accent};
+      --support: ${palette.support};
+      --soft: ${palette.soft};
+      --warning: ${palette.warning};
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--ink); }
+    body { font-family: "Iowan Old Style", Georgia, serif; }
+    .stage { position: relative; width: 100vw; height: 100vh; padding: 6vh 7vw; display: grid; grid-template-columns: 0.95fr 1.05fr; gap: 5vw; align-items: center; }
+    .stage::before { content: ""; position: absolute; inset: 0; background: linear-gradient(135deg, rgb(255 122 89 / 0.18), transparent 36%), linear-gradient(315deg, rgb(123 176 255 / 0.2), transparent 42%); pointer-events: none; }
+    .copy, .diagram { position: relative; z-index: 1; }
+    .eyebrow { margin: 0 0 1rem; color: var(--soft); font: 700 0.8rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; text-transform: uppercase; letter-spacing: 0.08em; }
+    h1 { margin: 0; font-size: clamp(2.4rem, 6vw, 5.8rem); line-height: 0.94; max-width: 9ch; }
+    .thesis { margin: 1.5rem 0 0; max-width: 38rem; font-size: clamp(1.05rem, 2vw, 1.45rem); line-height: 1.45; color: rgb(248 245 236 / 0.82); }
+    .misconception { margin-top: 1rem; color: var(--warning); font: 600 0.9rem/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .diagram { min-height: 68vh; display: grid; place-items: center; }
+    .orbit { position: relative; width: min(42vw, 34rem); aspect-ratio: 1; border: 1px solid rgb(248 245 236 / 0.16); border-radius: 999px; }
+    .core { position: absolute; inset: 28%; display: grid; place-items: center; border-radius: 999px; background: rgb(248 245 236 / 0.1); border: 1px solid rgb(248 245 236 / 0.2); text-align: center; padding: 1.2rem; color: var(--ink); font-weight: 700; }
+    .node { position: absolute; left: 50%; top: 50%; width: 11rem; min-height: 4rem; display: grid; place-items: center; padding: 0.75rem; border: 1px solid rgb(248 245 236 / 0.2); background: rgb(0 0 0 / 0.34); backdrop-filter: blur(12px); color: var(--ink); text-align: center; font: 600 0.82rem/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; transform: rotate(calc(var(--i) * 72deg)) translateX(15rem) rotate(calc(var(--i) * -72deg)); }
+    .bridge { position: absolute; left: 7vw; right: 7vw; bottom: 5vh; z-index: 2; color: var(--support); font: 600 0.9rem/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  </style>
+</head>
+<body>
+  <main class="stage">
+    <section class="copy">
+      <p class="eyebrow">${manifest.sceneKind} / ${topic.domain}</p>
+      <h1>${topic.title}</h1>
+      <p class="thesis">${thesis}</p>
+      <p class="misconception">Common trap: ${misconception}</p>
+    </section>
+    <section class="diagram" aria-label="Animated concept structure">
+      <div class="orbit">
+        <div class="core">${topic.title}</div>
+        ${cards}
+      </div>
+    </section>
+    <div class="bridge">Transfer hook: ${bridge}</div>
+  </main>
+  <script>
+    const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+    tl.from(".eyebrow", { y: 16, opacity: 0, duration: 0.5 })
+      .from("h1", { y: 42, opacity: 0, duration: 0.75 }, "-=0.25")
+      .from(".thesis", { y: 24, opacity: 0, duration: 0.6 }, "-=0.25")
+      .from(".orbit", { scale: 0.82, opacity: 0, rotate: -12, duration: 0.8 }, "-=0.25")
+      .from(".node", { scale: 0.3, opacity: 0, stagger: 0.12, duration: 0.55 }, "-=0.25")
+      .from(".misconception", { x: -18, opacity: 0, duration: 0.55 })
+      .from(".bridge", { y: 18, opacity: 0, duration: 0.55 }, "-=0.2")
+      .to(".orbit", { rotate: 360, duration: 18, repeat: -1, ease: "none" }, 0.8)
+      .to(".node", { rotate: "-=360", duration: 18, repeat: -1, ease: "none" }, 0.8);
+  </script>
+</body>
+</html>`;
+}
+
+export async function animationSceneSource(cwd: string, topicName: string, policy: TeacherPolicy): Promise<string> {
   const topic = resolveTopic(topicName);
   const manifest = buildAnimationManifest(topicName, policy);
   const thesis = topic.formalCore[0] ?? topic.summary;
@@ -135,23 +204,7 @@ export async function animationSceneSource(cwd: string, topicName: string, polic
 
   const palette = artifactScenePalette;
 
-  const commonHelpers = `
-const palette = ${JSON.stringify(palette, null, 2)};
-
-function textLine(text, y, fontSize = 28, color = palette.ink, fontFamily = "Iowan Old Style, Georgia, serif") {
-  const node = new Text({
-    text,
-    fontSize,
-    color,
-    fontFamily,
-    lineHeight: 1.15
-  });
-  node.moveTo([0, y, 0]);
-  return node;
-}
-`;
-
-  const prompt = `You are an expert ManimJS animation developer. Output the body of the 'construct(scene)' function for an animation explaining the academic topic: "${topic.title}".
+  const prompt = `You are an expert Hyperframes animation developer. Output one complete, browser-runnable HTML document for an animation explaining the academic topic: "${topic.title}".
   
 Domain: ${topic.domain}
 Focus: ${manifest.sceneKind}
@@ -162,42 +215,18 @@ Topic Details:
 - Diagram Nodes available: ${JSON.stringify(topic.diagramNodes)}
 
 Environment Context:
-We are using manim-web. You have imported Scene, Text, MathTex, Axes, BarChart, Create, Write, FadeIn, FadeOut, Transform. 
-You can use the helper \`textLine(text, y, fontSize, color)\` which returns a Text node centered at (0, y).
-Colors available: palette.accent, palette.support, palette.soft, palette.warning, palette.ink.
+We are using Hyperframes: one self-contained HTML document with semantic sections, CSS, and a GSAP timeline loaded from https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js.
+Use these colors: ${JSON.stringify(palette)}.
 
-Respond ONLY with the JavaScript code that belongs inside \`export async function construct(scene) { ... }\`. Do NOT wrap it in markdown block quotes. Do not provide a pre-amble or explanation. Generate sequential scene animations using \`await scene.play(...)\` and \`await scene.wait(...)\` in a way that matches the requested topic's depth. Ensure it looks impressive and dynamic.`;
+Respond ONLY with the complete HTML document. Do NOT wrap it in markdown fences. Do not provide a preamble or explanation. The animation must use GSAP timelines for real motion, be 16:9 friendly, and visibly teach the exact topic instead of showing a generic title card.`;
 
-  let sceneLogic = "";
   try {
-    sceneLogic = await piComplete(cwd, prompt, { thinking: "medium" });
-    // Remove markdown code blocks if the LLM leaked them
-    sceneLogic = sceneLogic.replace(/^```[a-z]*\n?/gm, "").replace(/```$/g, "").trim();
+    const html = await piComplete(cwd, prompt, { thinking: "medium" });
+    return normalizeHyperframesDocument(html, topic.title);
   } catch (error) {
-    console.error("Failed to dynamically generate scene logic, falling back to basic stub:", error);
-    sceneLogic = `
-  const thesisNode = textLine(${JSON.stringify(thesis)}, 1.25, 26);
-  const warningNode = textLine(${JSON.stringify(`Misconception: ${misconception}`)}, -0.15, 24, palette.warning);
-  await scene.play(new FadeIn(thesisNode), new FadeIn(warningNode));
-`;
+    console.error("Failed to dynamically generate Hyperframes scene, falling back to deterministic stub:", error);
+    return fallbackHyperframesDocument(topicName, policy);
   }
-
-  return `import { 
-  Scene, Text, MathTex, Axes, BarChart, 
-  Create, Write, FadeIn, FadeOut, Transform 
-} from ${JSON.stringify(importSpecifier)};
-
-${commonHelpers}
-
-export async function construct(scene) {
-  const title = textLine(${JSON.stringify(`${topic.title}: ${manifest.sceneKind}`)}, 3.2, 34, palette.accent);
-  await scene.play(new Write(title));
-
-  ${sceneLogic}
-
-  await scene.wait(2.0);
-}
-`;
 }
 
 export function animationStoryboardMarkdown(topicName: string, policy: TeacherPolicy): string {
@@ -234,17 +263,13 @@ export async function writeLessonAnimation(
   const topicDir = join(animationsDir(cwd), slug);
   await mkdir(topicDir, { recursive: true });
 
-  const vendorDir = join(topicDir, "_vendor", "manim-web");
-  await copyDir(installedManimWebDistDir(), vendorDir);
-  const importSpecifier = importSpecifierFrom(topicDir, join(vendorDir, "index.js"));
-
   const playerPath = join(topicDir, "player.html");
-  const scenePath = join(topicDir, "scene.mjs");
+  const scenePath = join(topicDir, "scene.html");
   const storyboardPath = join(topicDir, "storyboard.md");
   const manifestPath = join(topicDir, "manifest.json");
   const readmePath = join(topicDir, "README.md");
   const manifest = buildAnimationManifest(topicName, policy);
-  const sceneSource = await animationSceneSource(cwd, topicName, policy, importSpecifier);
+  const sceneSource = await animationSceneSource(cwd, topicName, policy);
   const theme = await prepareArtifactTheme(cwd, topicDir);
   const playerHtml = `<!doctype html>
 <html lang="en">
@@ -261,6 +286,40 @@ export async function writeLessonAnimation(
       #scene {
         height: min(72vh, 760px);
         background: ${JSON.stringify(artifactScenePalette.background)};
+        border: 0;
+        width: 100%;
+      }
+      .keating-animation-player {
+        display: grid;
+        gap: 0.75rem;
+      }
+      .keating-animation-controls {
+        display: grid;
+        grid-template-columns: auto auto minmax(8rem, 1fr) auto;
+        gap: 0.5rem;
+        align-items: center;
+        border: 1px solid color-mix(in srgb, var(--colors-border, #d7cbb6) 70%, transparent);
+        border-radius: 8px;
+        padding: 0.5rem;
+        background: color-mix(in srgb, var(--colors-background, #f8f1df) 72%, transparent);
+      }
+      .keating-animation-controls button {
+        min-height: 2rem;
+        border: 1px solid color-mix(in srgb, var(--colors-border, #d7cbb6) 80%, transparent);
+        border-radius: 6px;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+        padding: 0 0.65rem;
+      }
+      .keating-animation-controls button[aria-pressed="true"] {
+        border-color: var(--colors-accent, #1e9b50);
+        color: var(--colors-accent, #1e9b50);
+      }
+      .keating-animation-controls input {
+        min-width: 0;
+        accent-color: var(--colors-accent, #1e9b50);
       }
     </style>
   </head>
@@ -276,20 +335,76 @@ export async function writeLessonAnimation(
           <div><a href="./manifest.json">manifest.json</a></div>
         </div>
       </header>
-      <div id="scene" class="keating-crt-panel"></div>
+      <section class="keating-animation-player">
+        <iframe id="scene" class="keating-crt-panel" src="./scene.html" title="${manifest.topic} Hyperframes animation" allow="fullscreen"></iframe>
+        <div class="keating-animation-controls">
+          <button type="button" data-action="toggle">Pause</button>
+          <button type="button" data-action="replay">Replay</button>
+          <input type="range" min="0" max="1000" value="0" aria-label="Animation progress" />
+          <button type="button" data-action="loop" aria-pressed="true">Loop</button>
+        </div>
+      </section>
     </main>
-    <script type="module">
-      import { Scene } from ${JSON.stringify(importSpecifier)};
-      import { construct } from "./scene.mjs";
-
-      const container = document.getElementById("scene");
-      const scene = new Scene(container, {
-        width: 1280,
-        height: 720,
-        backgroundColor: ${JSON.stringify(artifactScenePalette.background)}
+    <script>
+      const frame = document.getElementById("scene");
+      const toggle = document.querySelector('[data-action="toggle"]');
+      const replay = document.querySelector('[data-action="replay"]');
+      const loop = document.querySelector('[data-action="loop"]');
+      const range = document.querySelector('input[type="range"]');
+      let playing = true;
+      let looping = true;
+      let scrubbing = false;
+      function timeline() {
+        return frame.contentWindow && frame.contentWindow.gsap && frame.contentWindow.gsap.globalTimeline;
+      }
+      function duration(tl) {
+        const total = typeof tl.totalDuration === "function" ? tl.totalDuration() : tl.duration();
+        return Number.isFinite(total) && total > 0 && total < 100000 ? total : 0;
+      }
+      function setPlaying(next) {
+        playing = next;
+        toggle.textContent = playing ? "Pause" : "Play";
+        const tl = timeline();
+        if (!tl) return;
+        if (playing) tl.play();
+        else tl.pause();
+      }
+      function restart() {
+        const tl = timeline();
+        if (!tl) return;
+        tl.pause(0);
+        tl.play();
+        setPlaying(true);
+      }
+      toggle.addEventListener("click", () => setPlaying(!playing));
+      replay.addEventListener("click", restart);
+      loop.addEventListener("click", () => {
+        looping = !looping;
+        loop.setAttribute("aria-pressed", String(looping));
       });
-
-      await construct(scene);
+      range.addEventListener("input", () => {
+        const tl = timeline();
+        if (!tl) return;
+        const total = duration(tl);
+        if (!total) return;
+        scrubbing = true;
+        tl.pause((Number(range.value) / 1000) * total);
+        setPlaying(false);
+        scrubbing = false;
+      });
+      function tick() {
+        const tl = timeline();
+        if (tl) {
+          const total = duration(tl);
+          if (total) {
+            const progress = Math.max(0, Math.min(1, tl.time() / total));
+            if (!scrubbing) range.value = String(Math.round(progress * 1000));
+            if (looping && playing && progress >= 0.995) restart();
+          }
+        }
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
     </script>
   </body>
 </html>
@@ -298,9 +413,9 @@ export async function writeLessonAnimation(
 
 - Serve the repository root with a static file server, for example: \`python3 -m http.server 4173\`
 - Open: \`http://localhost:4173/${relative(cwd, playerPath).replaceAll("\\", "/")}\`
-- Inspect the bundle in \`scene.mjs\`, \`storyboard.md\`, and \`manifest.json\`
+- Inspect the bundle in \`scene.html\`, \`storyboard.md\`, and \`manifest.json\`
 
-This bundle is deterministic source output. Keating does not yet export a video in Node; it generates a browser-runnable \`manim-web\` scene so the visual teaching layer can evolve under versioned prompts and tests.
+This bundle is deterministic source output. Keating does not yet export a video in Node; it generates a browser-runnable Hyperframes scene so the visual teaching layer can evolve under versioned prompts and tests.
 `;
 
   await Promise.all([

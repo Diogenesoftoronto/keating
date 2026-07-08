@@ -208,49 +208,6 @@ function escapeHtml(value: string): string {
 		.replace(/'/g, "&#39;");
 }
 
-function buildManimScene(resolved: ResolvedTopic, storyboard: string): string {
-	// Pull the agent-authored scene list out of the storyboard so the generated
-	// manim scene source actually reflects the lesson beats (titles + visuals)
-	// rather than the generic placeholder template we used to ship.
-	const scenes = parseStoryboardScenes(storyboard);
-	if (scenes.length === 0) {
-		return `// Scene: ${resolved.title}
-// Manim-web compatible scene definition (no authored scenes found)
-async function construct(scene, M) {
-  const title = new M.Text({ text: ${JSON.stringify(resolved.title)}, fontSize: 48, color: "#f4f1e8" });
-  title.moveTo([0, 1.2, 0]);
-  const summary = new M.Text({ text: ${JSON.stringify(resolved.summary)}, fontSize: 26, color: "#c7d2fe" });
-  summary.moveTo([0, -0.4, 0]);
-  await scene.play(new M.Write(title));
-  await scene.play(new M.FadeIn(summary));
-  await scene.wait(1.5);
-}`;
-	}
-
-	const body = scenes
-		.map((scene, index) => {
-			const titleLiteral = JSON.stringify(scene.title);
-			const visualLiteral = JSON.stringify(scene.visual || scene.highlight || "");
-			const y = index % 2 === 0 ? 0.7 : -0.7;
-			return [
-				`  const title${index} = new M.Text({ text: ${titleLiteral}, fontSize: 38, color: "#f4f1e8" });`,
-				`  title${index}.moveTo([0, ${y + 0.8}, 0]);`,
-				`  const visual${index} = new M.Text({ text: ${visualLiteral}, fontSize: 24, color: "#c7d2fe" });`,
-				`  visual${index}.moveTo([0, ${y - 0.05}, 0]);`,
-				`  await scene.play(new M.FadeIn(title${index}), new M.Write(visual${index}));`,
-				`  await scene.wait(${parseStoryboardDurationSeconds(scene.duration).toFixed(2)});`,
-				`  await scene.play(new M.FadeOut(title${index}), new M.FadeOut(visual${index}));`,
-			].join("\n");
-		})
-		.join("\n");
-
-	return `// Scene: ${resolved.title}
-// Manim-web compatible scene definition (agent-authored scenes)
-async function construct(scene, M) {
-${body}
-}`;
-}
-
 interface StoryboardScene {
 	number: number;
 	title: string;
@@ -307,7 +264,7 @@ function storyboardTitle(markdown: string): string {
 	return match ? match[1].trim() : "";
 }
 
-function buildAuthoredAnimationStoryboard(resolved: ResolvedTopic, kind: "manim" | "hyperframes", summary: string): string {
+function buildAuthoredAnimationStoryboard(resolved: ResolvedTopic, summary: string): string {
 	const premise = summary || resolved.summary;
 	return [
 		`# Animation Storyboard: ${resolved.title}`,
@@ -318,7 +275,7 @@ function buildAuthoredAnimationStoryboard(resolved: ResolvedTopic, kind: "manim"
 		"- **Highlight**: Name the thing that will change on screen.",
 		"",
 		"## Scene 2: Show the motion (3-8s)",
-		`- **Visual**: Use the authored ${kind} scene to animate the central relationship, not just a static title card.`,
+		"- **Visual**: Use the authored Hyperframes scene to animate the central relationship, not just a static title card.",
 		"- **Narration**: Point to the moving parts and connect them to the learner's intuition.",
 		"- **Highlight**: The animation source is stored in the scene field.",
 		"",
@@ -624,15 +581,15 @@ export async function createKeatingTools(
 			}
 		),
 
-		// animate - The model authors and renders a real manim-web or hyperframes animation
+		// animate - The model authors and renders a real Hyperframes animation
 		createTool(
 			"animate",
-			"You write the animation itself. The tool renders whatever you author in a sandboxed iframe inline in the chat. Pass `kind` (manim|hyperframes) and authored `body`. For `manim`, write an `async function construct(scene, M) { ... }` that uses manim-web primitives (M.Text, M.FadeIn, M.Create, M.Axes, M.BarChart, M.Transform, M.Write, M.LaggedStart, M.Succession, etc.) to drive a real motion-based explanation. For `hyperframes`, write a full HTML document with GSAP timelines. The tool does not synthesize a template. Calling without authored `body` is rejected with the exact shape required.",
+			"You write the animation itself. The tool renders whatever Hyperframes HTML document you author in a sandboxed iframe inline in the chat. Pass authored `body` as a full HTML document with GSAP timelines. The tool does not synthesize a template. Calling without authored `body` is rejected with the exact shape required.",
 			{
 				topic: { type: "string", description: "The topic this animation explains" },
-				kind: { type: "string", enum: ["manim", "hyperframes"], description: "Renderer: manim (raw JS scene using manim-web) or hyperframes (HTML + GSAP)." },
+				kind: { type: "string", enum: ["hyperframes"], description: "Renderer. Only hyperframes is supported." },
 				summary: { type: "string", description: "One-line summary shown above the animation. Recommended." },
-				body: { type: "string", description: "REQUIRED. The JavaScript construct function or full HTML document you author — must explain THIS topic with real content, not a placeholder." },
+				body: { type: "string", description: "REQUIRED. The full Hyperframes HTML document you author — must explain THIS topic with real content, not a placeholder." },
 				storyboard: { type: "string", description: "Optional markdown storyboard with `# Animation Storyboard:` and `## Scene N: Title (start-ends)` sections. If omitted, Keating saves a concise generated storyboard around the authored scene." },
 			},
 			async (params) => {
@@ -640,36 +597,19 @@ export async function createKeatingTools(
 				if (!topic) return "Topic required.";
 
 				const kindRaw = typeof params.kind === "string" ? params.kind : "";
-				if (kindRaw && kindRaw !== "manim" && kindRaw !== "hyperframes") {
+				if (kindRaw && kindRaw !== "hyperframes") {
 					return [
-						"Pick a valid `kind`: manim or hyperframes.",
-						"  - `manim`: write an `async function construct(scene, M) { ... }` using manim-web primitives. The construct function runs against a real Scene and animates with real motion.",
-						"  - `hyperframes`: write a full HTML document with GSAP timelines.",
+						"Pick a valid `kind`: hyperframes.",
+						"Write a full HTML document with GSAP timelines.",
 						"You MUST pass `body` with real content for THIS topic. No template fallback exists.",
 					].join("\n");
 				}
 
-				const kind: "manim" | "hyperframes" = kindRaw === "manim" ? "manim" : "hyperframes";
+				const kind = "hyperframes";
 				const body = typeof params.body === "string" ? params.body : "";
 				const summary = typeof params.summary === "string" ? params.summary.trim() : "";
 
-				if ((kind === "manim" || kind === "hyperframes") && body.trim().length < 50) {
-					const manimExample =
-						"async function construct(scene, M) {\n" +
-						"  const title = new M.Text({ text: 'How DNS works', fontSize: 48, color: '#f4f1e8' });\n" +
-						"  title.moveTo([0, 3, 0]);\n" +
-						"  await scene.play(new M.Write(title));\n" +
-						"  await scene.wait(0.5);\n" +
-						"  const laptop = new M.Text({ text: 'Laptop', fontSize: 28 });\n" +
-						"  laptop.moveTo([-4, 1, 0]);\n" +
-						"  await scene.play(new M.FadeIn(laptop));\n" +
-						"  const resolver = new M.Text({ text: 'Recursive resolver', fontSize: 28 });\n" +
-						"  resolver.moveTo([4, 1, 0]);\n" +
-						"  await scene.play(new M.FadeIn(resolver));\n" +
-						"  await scene.play(new M.Create(new M.Arrow([-3, 0.5, 0], [3, 0.5, 0], { color: '#0f766e' })));\n" +
-						"  await scene.wait(1.5);\n" +
-						"}\n\n" +
-						"Use any manim-web primitive via M.* and drive scene.play(...) / scene.wait(...) for real motion.";
+				if (body.trim().length < 50) {
 					const hyperframesExample =
 						"<!doctype html><html><body style=\"background:#0a0a0a;color:#f4f1e8;font-family:ui-monospace,monospace;margin:0;\">\n" +
 						"  <section id=\"clip-0\" data-start=\"0\" data-duration=\"3\" style=\"opacity:0;\"><h2>Browser cache</h2><p>The OS asks the resolver</p></section>\n" +
@@ -683,11 +623,11 @@ export async function createKeatingTools(
 						"    tl.play(0);\n" +
 						"  </script>\n</body></html>";
 					return [
-						`Author the ${kind} animation yourself. Pass \`body\` as real, non-placeholder ${kind === "manim" ? "JavaScript" : "HTML"} code for THIS topic (>=50 chars).`,
+						"Author the Hyperframes animation yourself. Pass `body` as real, non-placeholder HTML for THIS topic (>=50 chars).",
 						"",
 						"Example body shape:",
 						"",
-						kind === "manim" ? manimExample : hyperframesExample,
+						hyperframesExample,
 					].join("\n");
 				}
 
@@ -696,9 +636,9 @@ export async function createKeatingTools(
 				const storyboard =
 					typeof params.storyboard === "string" && params.storyboard.trim()
 						? params.storyboard.trim()
-						: buildAuthoredAnimationStoryboard(resolved, kind, summary);
+						: buildAuthoredAnimationStoryboard(resolved, summary);
 				const scene = body;
-				const renderer: "manim" | "hyperframes" = kind === "hyperframes" ? "hyperframes" : "manim";
+				const renderer = "hyperframes";
 				const animationPayload: Record<string, unknown> = {
 					topic: resolved.title,
 					kind,
@@ -2120,7 +2060,6 @@ function draftDeckCardId(deckSlug: string, index: number): string {
 // Internal-only exports so unit tests can drive the helpers without needing
 // to instantiate the full agent tool set.
 export {
-	buildManimScene as __test_buildManimScene,
 	buildHyperframesComposition as __test_buildHyperframesComposition,
 	parseStoryboardDurationSeconds as __test_parseStoryboardDurationSeconds,
 	storyboardTitle as __test_storyboardTitle,

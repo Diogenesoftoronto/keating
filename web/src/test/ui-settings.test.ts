@@ -102,7 +102,7 @@ describe("Keating UI Settings", () => {
 			expect(loadKeatingUiSettings().alternativeResponseChance).toBe(0);
 		});
 
-		it("loads Hyperframes as an optional animation renderer", () => {
+		it("normalizes the animation renderer to Hyperframes", () => {
 			localStorage.setItem("keating_ui_settings", JSON.stringify({ animationRenderer: "hyperframes" }));
 			const settings = loadKeatingUiSettings();
 			expect(settings.animationRenderer).toBe("hyperframes");

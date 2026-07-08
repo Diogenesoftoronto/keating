@@ -2,21 +2,21 @@ import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Pause, Play, RotateCcw } from "lucide-react";
 import { css, cx } from "../../styled-system/css";
 import { SceneRenderer, parseStoryboard } from "./SceneRenderer";
-import { buildManimSceneHtml } from "./animation-host";
+import { HyperframesPlayer } from "./HyperframesPlayer";
 
 interface AnimationPlayerProps {
 	scene?: string;
 	manifest?: string;
 	storyboard?: string;
-	renderer?: "manim" | "hyperframes";
+	renderer?: "hyperframes";
 	className?: string;
 }
 
 interface Manifest {
 	topic: string;
 	slug: string;
-	renderer?: "manim" | "hyperframes";
-	kind?: "manim" | "hyperframes";
+	renderer?: string;
+	kind?: string;
 	compositionId?: string;
 	width?: number;
 	height?: number;
@@ -232,9 +232,11 @@ export function AnimationPlayer({ scene, manifest, storyboard, renderer: storedR
 	}
 
 	const storyboardData = storyboard ? parseStoryboard(storyboard) : null;
-	const renderer = manifestData?.renderer ?? manifestData?.kind ?? storedRenderer;
-	const isHyperframes = renderer === "hyperframes";
-	const isManim = renderer === "manim";
+	const renderer = manifestData?.renderer === "hyperframes" || manifestData?.kind === "hyperframes" || storedRenderer === "hyperframes"
+		? "hyperframes"
+		: undefined;
+	const sceneLooksLikeHtml = scene?.trim().toLowerCase().startsWith("<!doctype") || scene?.trim().toLowerCase().startsWith("<html");
+	const canRenderHyperframes = Boolean(scene && (renderer === "hyperframes" || sceneLooksLikeHtml));
 
 	return (
 		<div className={cx("animation-player", css({ overflow: "hidden", borderRadius: "0.5rem", background: "color-mix(in srgb, var(--muted) 20%, transparent)" }), className)}>
@@ -243,7 +245,7 @@ export function AnimationPlayer({ scene, manifest, storyboard, renderer: storedR
 				<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
 					<span className={css({ fontSize: "0.875rem", fontWeight: 500 })}>Animation</span>
 					{manifestData && <span className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>({manifestData.topic})</span>}
-					{isHyperframes && <span className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>Hyperframes</span>}
+					{canRenderHyperframes && <span className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>Hyperframes</span>}
 				</div>
 				<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
 					<button
@@ -257,30 +259,11 @@ export function AnimationPlayer({ scene, manifest, storyboard, renderer: storedR
 
 			{/* Content */}
 			<div className={css({ padding: "1rem" })}>
-				{isHyperframes && scene ? (
-					<iframe
+				{canRenderHyperframes && scene ? (
+					<HyperframesPlayer
 						title={`${manifestData?.topic ?? "Keating"} Hyperframes composition`}
-						srcDoc={scene}
-						sandbox="allow-scripts"
-						className={css({ aspectRatio: "16 / 9", width: "100%", borderRadius: "0.375rem", border: "1px solid var(--border)", background: "black" })}
+						html={scene}
 					/>
-				) : isManim && scene ? (
-					<div className={css({ display: "grid", gap: "0.75rem" })}>
-						<iframe
-							title={`${manifestData?.topic ?? "Keating"} manim animation`}
-							srcDoc={buildManimSceneHtml(scene, manifestData?.topic ?? "Keating Animation")}
-							sandbox="allow-scripts"
-							className={css({ aspectRatio: "16 / 9", width: "100%", borderRadius: "0.375rem", border: "1px solid var(--border)", background: "black" })}
-						/>
-						{storyboardData?.scenes.length ? (
-							<details className={css({ borderRadius: "0.375rem", border: "1px solid var(--border)", background: "color-mix(in srgb, var(--background) 70%, transparent)", padding: "0.75rem" })}>
-								<summary className={css({ cursor: "pointer", fontSize: "0.75rem", fontWeight: 500, color: "var(--muted-foreground)" })}>
-									Storyboard notes
-								</summary>
-								<SceneRenderer storyboard={storyboard ?? ""} />
-							</details>
-						) : null}
-					</div>
 				) : storyboardData?.scenes.length ? (
 					<div className={css({ display: "grid", gap: "0.75rem" })}>
 						<AnimatedStoryboardStage
@@ -320,7 +303,7 @@ export function AnimationPlayer({ scene, manifest, storyboard, renderer: storedR
 				{showSource && scene && (
 					<div className={css({ marginTop: "0.75rem", display: "grid", gap: "0.5rem" })}>
 						<div className={css({ fontSize: "0.75rem", fontWeight: 500, color: "var(--muted-foreground)" })}>
-							{isHyperframes ? "Hyperframes HTML" : "Scene Code"}
+							{canRenderHyperframes ? "Hyperframes HTML" : "Scene Source"}
 						</div>
 						<pre className={css({ maxHeight: "16rem", overflow: "auto", borderRadius: "0.25rem", background: "color-mix(in srgb, var(--muted) 30%, transparent)", padding: "0.75rem", whiteSpace: "pre-wrap", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
 							{scene}

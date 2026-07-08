@@ -1,26 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { css, cx } from "../../styled-system/css";
-import { buildManimSceneHtml, buildHyperframesHtml } from "./animation-host";
+import { buildHyperframesHtml } from "./animation-host";
+import { HyperframesPlayer } from "./HyperframesPlayer";
 
 /**
- * The agent authors the animation itself. Two code-authored kinds are supported:
- *
- * - `manim` — the agent writes raw JavaScript: an `async function construct(scene, M)`
- *   that uses manim-web primitives (M.Text, M.FadeIn, M.Create, M.Axes, M.BarChart,
- *   M.Transform, etc.) to stage a real, motion-driven explanation. `M` is the
- *   full manim-web namespace. The host page loads the library from /manim-web/
- *   and runs the construct function inside a fresh Scene.
- *
- * - `hyperframes` — the agent writes a full HTML document with GSAP timelines.
- *   Rendered verbatim in an iframe.
+ * The agent authors the animation as a Hyperframes HTML document with GSAP
+ * timelines. It is rendered verbatim in a sandboxed iframe.
  */
-export type AnimationKind = "manim" | "hyperframes";
+export type AnimationKind = "hyperframes";
 
 export interface AnimationPayload {
 	topic: string;
 	kind: AnimationKind;
-	/** Required for `manim` and `hyperframes`. The model-authored code/HTML. */
+	/** Required. The model-authored Hyperframes HTML. */
 	body?: string;
 	/** Optional one-line summary shown above the animation. */
 	summary?: string;
@@ -69,59 +61,19 @@ export function AnimatedScene({ payload, className }: AnimatedSceneProps) {
 }
 
 function AnimationBody({ payload }: { payload: AnimationPayload }) {
-	if (payload.kind === "manim") {
-		if (!payload.body || payload.body.trim().length < 20) {
-			return <ErrorBody message="Missing manim scene body." />;
-		}
-		return (
-			<CodeFrame
-				html={buildManimSceneHtml(payload.body, payload.topic)}
-				sandbox="allow-scripts"
-			/>
-		);
-	}
 	if (payload.kind === "hyperframes") {
 		if (!payload.body || payload.body.trim().length < 20) {
 			return <ErrorBody message="Missing hyperframes HTML body." />;
 		}
 		return (
-			<CodeFrame
+			<HyperframesPlayer
 				html={buildHyperframesHtml(payload.body, payload.topic)}
-				sandbox="allow-scripts"
+				title={`${payload.topic} Hyperframes animation`}
+				className={css({ padding: "0.75rem" })}
 			/>
 		);
 	}
 	return <ErrorBody message={`Unknown animation kind: ${String((payload as { kind?: unknown }).kind)}`} />;
-}
-
-function CodeFrame({ html, sandbox }: { html: string; sandbox: string }) {
-	const src = useBlobUrl(html);
-	return (
-		<iframe
-			title="Keating animation"
-			src={src}
-			sandbox={sandbox}
-			className={css({ display: "block", aspectRatio: "16 / 9", width: "100%", border: 0, background: "black" })}
-		/>
-	);
-}
-
-/**
- * Wrap the model-authored HTML in a blob URL so the iframe shares the
- * parent's origin. With `srcDoc`, the iframe has a unique opaque origin
- * and cross-origin module imports (e.g. `/manim-web/index.js`) are
- * blocked by COEP/CORP even when served with the right headers — which
- * is exactly what was breaking the animate tool in production.
- */
-function useBlobUrl(html: string): string {
-	const blob = useMemo(() => new Blob([html], { type: "text/html" }), [html]);
-	const [url, setUrl] = useState<string>("");
-	useEffect(() => {
-		const next = URL.createObjectURL(blob);
-		setUrl(next);
-		return () => URL.revokeObjectURL(next);
-	}, [blob]);
-	return url;
 }
 
 function ErrorBody({ message }: { message: string }) {
@@ -134,10 +86,7 @@ export function parseAnimationPayload(payload: string): AnimationPayload | null 
 		const inner = typeof parsed === "string" ? JSON.parse(parsed) : parsed;
 		if (!inner || typeof inner !== "object") return null;
 		const topic = typeof inner.topic === "string" ? inner.topic : "Animation";
-		const kind: AnimationKind | null =
-			inner.kind === "manim" || inner.kind === "hyperframes"
-				? inner.kind
-				: null;
+		const kind: AnimationKind | null = inner.kind === "hyperframes" ? "hyperframes" : null;
 		if (!kind) return null;
 		return {
 			topic,

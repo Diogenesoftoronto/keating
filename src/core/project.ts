@@ -102,7 +102,7 @@ export async function planTopicArtifact(cwd: string, topicName: string): Promise
 export async function mapTopicArtifact(
   cwd: string,
   topicName: string
-): Promise<{ mmdPath: string; svgPath: string | null }> {
+): Promise<{ mmdPath: string }> {
   await ensureProjectScaffold(cwd);
   const policy = await loadPolicy(currentPolicyPath(cwd));
   return writeLessonMap(cwd, topicName, policy);

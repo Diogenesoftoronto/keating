@@ -16,14 +16,6 @@ const storyboard = `# Animation Storyboard: Entropy
 - **Narration**: The messy shelf has many more ways to be messy.
 - **Transition**: Match the concrete shelf to the formal distribution.`;
 
-const manimManifest = JSON.stringify({
-	topic: "Entropy",
-	slug: "entropy",
-	renderer: "manim",
-	scenes: ["intuition", "transfer"],
-	duration: 7,
-}, null, 2);
-
 const hyperframesManifest = JSON.stringify({
 	topic: "Entropy",
 	slug: "entropy",
@@ -45,15 +37,16 @@ const hyperframesScene = `<!doctype html>
     .stage { width: min(760px, 90vw); text-align: center; }
     h1 { font-size: 48px; margin: 0 0 32px; }
     .bars { display: flex; align-items: end; justify-content: center; gap: 14px; height: 220px; }
-    i { width: 54px; background: #4be388; animation: spread 2.8s infinite alternate cubic-bezier(.16,1,.3,1); }
-    i:nth-child(1) { height: 30%; animation-delay: 0ms; }
-    i:nth-child(2) { height: 54%; animation-delay: 110ms; }
-    i:nth-child(3) { height: 86%; animation-delay: 220ms; }
-    i:nth-child(4) { height: 48%; animation-delay: 330ms; }
-    i:nth-child(5) { height: 24%; animation-delay: 440ms; }
+    i { width: 54px; height: 28%; background: #4be388; }
     p { color: #c7d2fe; }
-    @keyframes spread { to { height: 52%; transform: translateY(var(--shift, 0)); opacity: .78; } }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+  <script>
+    gsap.timeline({ repeat: 0 })
+      .from("h1", { y: 24, opacity: 0, duration: 0.5 })
+      .to(".bars i", { height: "82%", opacity: 0.78, stagger: 0.12, duration: 1.3, ease: "power2.inOut" })
+      .from("p", { y: 18, opacity: 0, duration: 0.45 }, "-=0.25");
+  </script>
 </body>
 </html>`;
 
@@ -75,14 +68,6 @@ const meta = {
 export default meta;
 
 type Story = StoryObj<typeof meta>;
-
-export const ManimStoryboardArtifact: Story = {
-	args: {
-		storyboard,
-		scene: "async function construct(scene, M) { /* stored manim scene source */ }",
-		manifest: manimManifest,
-	},
-};
 
 export const HyperframesArtifact: Story = {
 	args: {

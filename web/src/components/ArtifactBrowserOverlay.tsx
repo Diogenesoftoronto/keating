@@ -58,7 +58,7 @@ export function ArtifactBrowserOverlay({ open, artifactId, onClose }: ArtifactBr
           display: "flex",
           height: "100%",
           width: "100%",
-          maxWidth: "100vw",
+          maxWidth: "100dvw",
           flexDirection: "column",
           borderLeftWidth: "1px",
           borderColor: "var(--border)",
@@ -70,17 +70,19 @@ export function ArtifactBrowserOverlay({ open, artifactId, onClose }: ArtifactBr
       >
         <div className={css({
           display: "flex",
-          height: "3.5rem",
+          minHeight: "3.5rem",
           flexShrink: 0,
           alignItems: "center",
           justifyContent: "space-between",
+          gap: "0.75rem",
           borderBottomWidth: "1px",
           borderColor: "var(--border)",
-          paddingInline: "1rem",
+          paddingInline: { base: "0.75rem", sm: "1rem" },
+          paddingBlock: "0.625rem",
         })}>
           <div className={css({ minWidth: 0 })}>
             <div className={css({ fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)" })}>Artifact browser</div>
-            <div className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>Browse lesson plans, maps, animations, benchmarks, and evolutions.</div>
+            <div className={css({ maxWidth: "100%", overflowWrap: "break-word", fontSize: "0.75rem", lineHeight: "1.25rem", color: "var(--muted-foreground)" })}>Browse lesson plans, maps, animations, benchmarks, and evolutions.</div>
           </div>
           <button
             type="button"
@@ -111,7 +113,7 @@ export function ArtifactBrowserOverlay({ open, artifactId, onClose }: ArtifactBr
           flex: 1,
           overflowY: "auto",
           overflowX: "hidden",
-          padding: "0.75rem",
+          padding: { base: "0.625rem", sm: "0.75rem" },
           sm: { padding: "1.5rem" },
         })}>
           <ArtifactViewer storage={artifactStorage} artifactId={artifactId} onClose={onClose} />

@@ -190,7 +190,11 @@ const COMPONENTS: Components = {
 			{children}
 		</blockquote>
 	),
-	table: ({ children }) => <table className={css({ marginBottom: "0.75rem", width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" })}>{children}</table>,
+	table: ({ children }) => (
+		<div className={css({ marginBlock: "0.75rem", maxWidth: "100%", overflowX: "auto" })}>
+			<table className={css({ width: "max-content", minWidth: "100%", borderCollapse: "collapse", fontSize: "0.875rem" })}>{children}</table>
+		</div>
+	),
 	thead: ({ children }) => <thead className={css({ borderBottom: "1px solid var(--border)", backgroundColor: "color-mix(in srgb, var(--muted) 50%, transparent)" })}>{children}</thead>,
 	th: ({ children }) => <th className={css({ paddingInline: "0.75rem", paddingBlock: "0.5rem", textAlign: "left", fontWeight: 600 })}>{children}</th>,
 	td: ({ children }) => <td className={css({ borderBottom: "1px solid var(--border)", paddingInline: "0.75rem", paddingBlock: "0.5rem" })}>{children}</td>,

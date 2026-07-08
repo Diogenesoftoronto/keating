@@ -24,7 +24,7 @@ Keating is a Pi-powered "hyperteacher" — a CLI tool + web app that generates p
 ## Build & Test Commands
 
 This project uses **Bun** as its runtime. Do not assume npm/pnpm.
-All dev dependencies (bun, node, oxdraw, typst, similarity, just, etc.) are managed by **devenv** (`devenv.nix`). Run `devenv shell` (or use direnv with the existing `.envrc`) to enter the dev environment.
+All dev dependencies (bun, node, typst, similarity, just, etc.) are managed by **devenv** (`devenv.nix`). Run `devenv shell` (or use direnv with the existing `.envrc`) to enter the dev environment.
 Task runner is **just** — run `just` to list available tasks.
 
 | Task | Command |
@@ -39,7 +39,6 @@ Task runner is **just** — run `just` to list available tasks.
 | Dev server (web) | `just web` (Vite dev on port 3000) |
 | Web build | `just web-build` — `vite build && nitro build`, outputs to `web/dist/` and `web/.output/` |
 | Web preview | `just web-preview` |
-| Render docs diagrams | `just docs-diagrams` |
 | Render intro video | `just video-intro` |
 | Check versions | `just check-version` — CI-friendly read-only version sync check |
 | Sync versions | `just sync-version` — auto-fix all tracked version strings |
@@ -56,7 +55,7 @@ Task runner is **just** — run `just` to list available tasks.
 ### Deterministic vs Non-Deterministic Boundary
 
 Everything in `src/core/` is deterministic **except**:
-- `animation.ts` — calls `piComplete()` (LLM) to generate `manim-web` scene JavaScript. Falls back to a basic stub if the LLM call fails.
+- `animation.ts` — calls `piComplete()` (LLM) to generate Hyperframes HTML. Falls back to a basic stub if the LLM call fails.
 - `pi-agent.ts` — thin wrapper over the Pi AI runtime for completions.
 
 All topic definitions, lesson plans, benchmarks, policy mutations, and prompt scoring are deterministic — this makes the test suite fast and LLM-independent.
@@ -78,8 +77,8 @@ Artifacts are written under `.keating/` in the current working directory (gitign
 ```
 .keating/
   plans/<topic>.md
-  maps/<topic>.mmd          (+ .svg if oxdraw available)
-  outputs/animations/<topic>/player.html, scene.mjs, storyboard.md, manifest.json
+  maps/<topic>.mmd
+  outputs/animations/<topic>/player.html, scene.html, storyboard.md, manifest.json
   outputs/benchmarks/<topic>-
   outputs/evolution/
   outputs/prompt-evolution/
@@ -266,7 +265,7 @@ Used by the web app's Dio credit purchase and Bifrost virtual-key provisioning r
 | `src/core/topics.ts` | Hardcoded topic definitions + domain keyword heuristics for fallback generation. |
 | `src/core/policy.ts` | Default policy, clamping, signature hashing. |
 | `src/core/project.ts` | Central artifact coordinator. All CLI and Pi commands funnel through here. |
-| `src/core/animation.ts` | Manim-web bundle generation. Only core file that calls LLM. |
+| `src/core/animation.ts` | Hyperframes animation bundle generation. Only core file that calls LLM. |
 | `src/core/benchmark.ts` | Synthetic learner suite. Deterministic unless using real LLM judge mode. |
 | `src/core/prompt-evolution.ts` | Prompt scoring + PROSPER selection. |
 | `web/src/hooks/useKeatingAgent.tsx` | Web app state machine (Agent, sessions, speech, storage). |

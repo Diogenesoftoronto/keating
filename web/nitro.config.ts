@@ -5,12 +5,6 @@ const crossOriginIsolationHeaders = {
   "Cross-Origin-Embedder-Policy": "credentialless",
 };
 
-const crossOriginScriptHeaders = {
-  ...crossOriginIsolationHeaders,
-  "Cross-Origin-Resource-Policy": "cross-origin",
-  "Access-Control-Allow-Origin": "*",
-};
-
 export default defineNitroConfig({
   renderer: {
     // Nitro was inlining the source web/index.html template into the server
@@ -45,7 +39,6 @@ export default defineNitroConfig({
         "Cache-Control": "public, max-age=31536000, immutable",
       },
     },
-    "/manim-web/**": { fallthrough: false, headers: crossOriginScriptHeaders },
     "/**/*.js": { fallthrough: false, headers: crossOriginIsolationHeaders },
     "/**/*.css": { fallthrough: false, headers: crossOriginIsolationHeaders },
     "/**/*.svg": { fallthrough: false, headers: crossOriginIsolationHeaders },

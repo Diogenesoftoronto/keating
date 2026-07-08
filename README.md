@@ -37,8 +37,8 @@ It is designed around five influences:
 - 12 domains: math, science, philosophy, code, law, politics, psychology, medicine, arts, history, and general.
 - Deterministic artifacts under `.keating/`:
   - lesson plans with domain-specific guidance (code gets live-code phases, law gets case citations, etc.)
-  - richer Mermaid meaning maps rendered through `oxdraw`
-  - self-contained `manim-web` animation bundles: function-graphs, distribution-bars, belief-updates, code-traces, timelines, case-diagrams, mind-maps, and concept-cards
+  - Mermaid meaning maps stored as editable source
+  - self-contained Hyperframes animation bundles: function-graphs, distribution-bars, belief-updates, code-traces, timelines, case-diagrams, mind-maps, and concept-cards
   - fact-checking verification checklists that must be completed before teaching
   - benchmark reports
   - evolution reports
@@ -155,14 +155,13 @@ Browser-only mode is intentionally the free-tier default. It is lower-risk than 
 
 ### Development
 
-All development dependencies (bun, node, oxdraw, typst, similarity, just, etc.) are managed by **devenv** (`devenv.nix`). Run `devenv shell` to enter the dev environment, then use **just** as the task runner.
+All development dependencies (bun, node, typst, similarity, just, etc.) are managed by **devenv** (`devenv.nix`). Run `devenv shell` to enter the dev environment, then use **just** as the task runner.
 
 <video src="docs/assets/doctor.mp4" autoplay loop muted width="100%"></video>
 
 ```bash
 just build
 just doctor
-just docs-diagrams
 just bench
 just evolve
 just prompt-evolve learn
@@ -304,7 +303,7 @@ Detailed results are available in our latest study: `docs/study.typ`.
 ## Project Layout
 
 - `src/core/`: lesson planning, benchmarks, policy mutation, artifact helpers.
-- `src/core/animation.ts`: `manim-web` bundle generation for visual teaching artifacts.
+- `src/core/animation.ts`: Hyperframes bundle generation for visual teaching artifacts.
 - `src/runtime/`: Pi/Feynman runtime detection and shell launcher.
 - `src/pi/`: the compiled Pi extension entrypoint.
 - `pi/prompts/`: teaching prompt templates.
@@ -315,7 +314,6 @@ Detailed results are available in our latest study: `docs/study.typ`.
 Key docs:
 
 - `docs/ARCHITECTURE.md`
-- `docs/OXDRAW-TUTORIAL.md`
 - `docs/VISUAL-ARCHITECTURE.md`
 - `docs/self-modifying-agent-architecture.md`
 - `docs/plans/storage-atproto-educator-tools.md`
@@ -348,11 +346,11 @@ The test suite covers:
 
 Keating now treats diagrams and animations as first-class teaching artifacts instead of optional garnish.
 
-- `keating map <topic>` writes a meaning map with teaching loop, concept structure, misconceptions, practice, and transfer hooks, then renders it with `oxdraw` when available.
-- `keating animate <topic>` writes a browser-runnable `manim-web` bundle under `.keating/outputs/animations/<topic>/`.
+- `keating map <topic>` writes a Mermaid meaning map with teaching loop, concept structure, misconceptions, practice, and transfer hooks.
+- `keating animate <topic>` writes a browser-runnable Hyperframes bundle under `.keating/outputs/animations/<topic>/`.
 - Each animation bundle includes:
   - `player.html`
-  - `scene.mjs`
+  - `scene.html`
   - `storyboard.md`
   - `manifest.json`
 - The animation manifest explains why a particular scene grammar was selected, so the visual layer is inspectable alongside benchmark and evolution traces.
@@ -392,12 +390,5 @@ keating trace derivative
 
 - Architecture overview: `docs/ARCHITECTURE.md`
 - Visual system architecture: `docs/VISUAL-ARCHITECTURE.md`
-- `oxdraw` authoring and rendering tutorial: `docs/OXDRAW-TUTORIAL.md`
 - Browser/remote self-modifying agent plan: `docs/self-modifying-agent-architecture.md`
 - Storage, AT Protocol, and educator-tools roadmap: `docs/plans/storage-atproto-educator-tools.md`
-
-Regenerate the checked-in docs SVGs with:
-
-```bash
-just docs-diagrams
-```

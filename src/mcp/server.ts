@@ -213,7 +213,7 @@ export function createKeatingMcpServer(cwd: string): McpServer {
         const mmd = artifactRef(artifact.mmdPath.replace(`${cwd}/`, ""));
         return asToolResult({
           topic,
-          artifacts: [mmd, ...(artifact.svgPath ? [artifactRef(artifact.svgPath.replace(`${cwd}/`, ""))] : [])],
+          artifacts: [mmd],
           mermaid: await readArtifact(cwd, mmd.path)
         });
       } catch (error) {
@@ -300,7 +300,6 @@ export function createKeatingMcpServer(cwd: string): McpServer {
           const map = await mapTopicArtifact(cwd, topic);
           const mapRef = artifactRef(map.mmdPath.replace(`${cwd}/`, ""));
           artifacts.push(mapRef);
-          if (map.svgPath) artifacts.push(artifactRef(map.svgPath.replace(`${cwd}/`, "")));
           mermaid = await readArtifact(cwd, mapRef.path);
         }
 

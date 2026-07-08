@@ -573,9 +573,8 @@ export function Tutorial() {
                   </li>
                   <li>
                     <span className={styles.strongLabel}>Animation renderer:</span>{" "}
-                    the format Keating uses for animations — <em>Hyperframes</em> by default
-                    (lightweight in-browser frames) or <em>Manim</em> for mathematical, film-style
-                    scenes.
+                    Keating uses <em>Hyperframes</em> for lightweight in-browser
+                    scenes with player controls.
                   </li>
                   <li>
                     <span className={styles.strongLabel}>Font &amp; profile image:</span>{" "}
