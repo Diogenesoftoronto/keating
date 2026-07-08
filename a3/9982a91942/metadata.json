@@ -3,7 +3,7 @@
   "checkpoint_id": "a39982a91942",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 2,
+  "checkpoints_count": 5,
   "files_touched": [
     "AGENTS.md",
     "README.md",
@@ -40,6 +40,7 @@
     "web/src/components/ArtifactBrowserOverlay.tsx",
     "web/src/components/ArtifactViewer.tsx",
     "web/src/components/AssistantChatPanel.tsx",
+    "web/src/components/HyperframesPlayer.tsx",
     "web/src/components/KeatingUiSettingsTab.tsx",
     "web/src/components/MarkdownBlock.tsx",
     "web/src/components/animation-host.ts",
@@ -69,13 +70,19 @@
       "transcript": "/a3/9982a91942/1/full.jsonl",
       "content_hash": "/a3/9982a91942/1/content_hash.txt",
       "prompt": "/a3/9982a91942/1/prompt.txt"
+    },
+    {
+      "metadata": "/a3/9982a91942/2/metadata.json",
+      "transcript": "/a3/9982a91942/2/full.jsonl",
+      "content_hash": "/a3/9982a91942/2/content_hash.txt",
+      "prompt": "/a3/9982a91942/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 64033,
+    "input_tokens": 120981,
     "cache_creation_tokens": 118568,
-    "cache_read_tokens": 423808,
-    "output_tokens": 9307,
-    "api_call_count": 15
+    "cache_read_tokens": 830464,
+    "output_tokens": 11595,
+    "api_call_count": 25
   }
 }
