@@ -1,0 +1,13 @@
+I need to understand how Keating's setup flow works, specifically around model selection and the "list models" functionality. 
+
+Please search the codebase thoroughly for:
+1. The setup command implementation - look in src/cli/setup.ts or similar files
+2. Any "list models" functionality or API
+3. How models are selected during setup
+4. Any rejection/error handling when API keys aren't configured
+
+Return:
+- The exact file paths and line numbers for the relevant code
+- How the current setup flow works for model selection
+- Where the rejection happens when no API keys are set up
+- Any existing "list models" endpoint or function that could be used
