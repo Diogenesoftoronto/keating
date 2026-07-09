@@ -9,7 +9,7 @@ async function getAppStorage(): Promise<AppStorage> {
 	return _getAppStorage();
 }
 
-export type OAuthProviderId = "anthropic" | "openai-codex" | "google-gemini-cli";
+export type OAuthProviderId = "anthropic" | "openai-codex";
 
 export interface OAuthCredentials {
 	refresh: string;
@@ -68,26 +68,6 @@ const OAUTH_PROVIDERS: Record<OAuthProviderId, OAuthProviderConfig> = {
 			id_token_add_organizations: "true",
 			codex_cli_simplified_flow: "true",
 			originator: "pi",
-		},
-	},
-	"google-gemini-cli": {
-		id: "google-gemini-cli",
-		name: "Google Gemini CLI",
-		clientId: "681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com",
-		authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
-		tokenUrl: "https://oauth2.googleapis.com/token",
-		// The Gemini CLI client is a Google "installed app", which only allows
-		// loopback redirects (any port). The localhost page won't load — the user
-		// pastes the final URL back into the app to finish sign-in.
-		redirectUri: "http://localhost:7777/oauth2callback",
-		scopes: [
-			"https://www.googleapis.com/auth/cloud-platform",
-			"https://www.googleapis.com/auth/userinfo.email",
-			"https://www.googleapis.com/auth/userinfo.profile",
-		],
-		extraAuthParams: {
-			access_type: "offline",
-			prompt: "consent",
 		},
 	},
 };
@@ -420,6 +400,5 @@ export function providerToOAuthId(providerName: string): OAuthProviderId | null 
 	if (providerName === "anthropic") return "anthropic";
 	if (providerName === "openai") return "openai-codex";
 	if (providerName === "openai-codex") return "openai-codex";
-	if (providerName === "google") return "google-gemini-cli";
 	return null;
 }

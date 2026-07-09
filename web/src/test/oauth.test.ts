@@ -20,11 +20,6 @@ describe("OAuth provider wiring", () => {
 		expect(config.authorizeUrl).toBe("https://auth.openai.com/oauth/authorize");
 	});
 
-	it("uses a loopback callback for the Gemini CLI installed-app client", () => {
-		const config = getOAuthProviderConfig("google-gemini-cli");
-		expect(config.redirectUri).toBe("http://localhost:7777/oauth2callback");
-	});
-
 	it("redirects to the keating.help web callback in production", () => {
 		(globalThis as { location?: unknown }).location = {
 			hostname: "keating.help",
@@ -32,7 +27,6 @@ describe("OAuth provider wiring", () => {
 		};
 		try {
 			expect(resolveOAuthRedirectUri("openai-codex")).toBe("https://keating.help/oauth/callback");
-			expect(resolveOAuthRedirectUri("google-gemini-cli")).toBe("https://keating.help/oauth/callback");
 			// Anthropic keeps its provider-hosted code-display callback everywhere.
 			expect(resolveOAuthRedirectUri("anthropic")).toBe("https://platform.claude.com/oauth/code/callback");
 		} finally {
@@ -47,7 +41,6 @@ describe("OAuth provider wiring", () => {
 		};
 		try {
 			expect(resolveOAuthRedirectUri("openai-codex")).toBe("http://localhost:1455/auth/callback");
-			expect(resolveOAuthRedirectUri("google-gemini-cli")).toBe("http://localhost:7777/oauth2callback");
 		} finally {
 			delete (globalThis as { location?: unknown }).location;
 		}

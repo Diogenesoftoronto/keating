@@ -314,7 +314,6 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 }
 
 function oauthProviderToProviderNames(provider: OAuthProviderId | string | undefined): string[] {
-	if (provider === "google-gemini-cli") return ["google"];
 	if (provider === "openai-codex") return ["openai", "openai-codex"];
 	if (provider === "anthropic") return ["anthropic"];
 	return provider ? [provider] : [];
