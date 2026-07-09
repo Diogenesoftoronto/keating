@@ -34,7 +34,7 @@ import {
 	type ProviderFormState,
 } from "./settings/CustomProvidersSection";
 
-const PROVIDER_PRIORITY = ["dio", "openai", "anthropic", "google"];
+const PROVIDER_PRIORITY = ["dio", "openai", "openai-codex", "anthropic", "google", "google-gemini-cli"];
 
 function sortProvidersByPriority(list: string[]): string[] {
 	const rank = (name: string) => {
@@ -97,7 +97,7 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
 		}
 	}, [providerDialog.provider, providerDialog.type]);
 
-	const providers = sortProvidersByPriority(Array.from(new Set([DIO_PROVIDER_ID, ...getProviders()])));
+	const providers = sortProvidersByPriority(Array.from(new Set([DIO_PROVIDER_ID, "google-gemini-cli", ...getProviders()])));
 
 	const handleToggleProvider = (provider: string, hidden: boolean) => {
 		toggleProviderVisibility(provider, hidden);

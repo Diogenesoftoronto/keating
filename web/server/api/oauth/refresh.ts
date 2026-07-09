@@ -1,6 +1,6 @@
 import { defineEventHandler, readBody, createError } from "h3";
 import { getOAuthServerConfigs, type OAuthServerProviderId } from "./config";
-import { exchangeOpenAiCodexApiKey } from "./openai-codex";
+import { discoverGoogleCloudProject } from "./google-gemini";
 
 interface RefreshRequestBody {
 	provider: string;
@@ -56,21 +56,19 @@ export default defineEventHandler(async (event) => {
 			console.error(`[oauth/refresh] ${body.provider} refresh failed: ${response.status} ${errorText}`);
 			throw createError({
 				statusCode: response.status === 401 || response.status === 403 ? 401 : 502,
-				statusMessage: `Token refresh failed: ${response.status}`,
+				statusMessage: `Token refresh failed (${response.status}): ${errorText.slice(0, 240)}`,
 			});
 		}
 
-		const tokenData = await response.json();
-		if (body.provider === "openai-codex" && typeof tokenData.id_token === "string") {
-			tokenData.api_key = await exchangeOpenAiCodexApiKey(config.clientId, tokenData.id_token, config.clientSecret, "refresh");
+		const tokenData = await response.json() as Record<string, unknown>;
+		if (body.provider === "google-gemini-cli" && typeof tokenData.access_token === "string") {
+			tokenData.project_id = await discoverGoogleCloudProject(tokenData.access_token);
 		}
 		return tokenData;
 	} catch (error) {
 		if ((error as any).statusCode) throw error;
 		console.error(`[oauth/refresh] Error refreshing token for ${body.provider}:`, error);
-		throw createError({
-			statusCode: 500,
-			statusMessage: "Token refresh request failed",
-		});
+		const message = error instanceof Error ? error.message : String(error);
+		throw createError({ statusCode: 502, statusMessage: `Token refresh request failed: ${message}` });
 	}
 });

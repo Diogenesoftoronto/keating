@@ -351,15 +351,15 @@ export async function syncCustomProviderKeys(): Promise<void> {
 }
 
 export async function getProviderApiKey(providerName: string): Promise<string | undefined> {
+	const storage = getAppStorage();
+	const storedKey = await storage.providerKeys.get(providerName);
+	if (storedKey) return storedKey;
+
 	const oauthId = providerToOAuthId(providerName);
 	if (oauthId) {
 		const token = await getOAuthAccessToken(oauthId);
 		if (token) return token;
 	}
-
-	const storage = getAppStorage();
-	const storedKey = await storage.providerKeys.get(providerName);
-	if (storedKey) return storedKey;
 
 	const customProviders = await getCustomProviders();
 	return customProviders.find((provider) => provider.name === providerName)?.apiKey;
@@ -367,9 +367,11 @@ export async function getProviderApiKey(providerName: string): Promise<string | 
 
 const FALLBACK_CHAT_MODEL_IDS: Record<string, string[]> = {
 	[DIO_PROVIDER_ID]: [DIO_DEFAULT_MODEL.id],
+	"openai-codex": ["gpt-5.5", "gpt-5.4", "gpt-5.3-codex", "gpt-5.2-codex"],
 	openai: ["gpt-5.5", "gpt-5.5-pro", "gpt-5.4", "gpt-5.3-chat-latest", "gpt-5.2", "gpt-5.1", "gpt-5"],
 	anthropic: ["claude-sonnet-4-6", "claude-opus-4-8", "claude-opus-4-7", "claude-sonnet-4-5", "claude-haiku-4-5"],
 	google: ["gemini-3.1-pro-preview", "gemini-3.5-flash", "gemini-3-pro-preview", "gemini-2.5-pro"],
+	"google-gemini-cli": ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash"],
 };
 
 function providerNeedsKey(provider: string): boolean {
@@ -387,12 +389,33 @@ function preferredModelForProvider(models: Array<Model<Api>>, provider: string):
 }
 
 export async function resolveAvailableChatModel(current: Model<Api>): Promise<Model<Api>> {
-	if (!providerNeedsKey(current.provider) || await getProviderApiKey(current.provider)) {
+	if (!providerNeedsKey(current.provider)) {
 		return current;
 	}
 
+	// Codex OAuth tokens are valid for the Codex backend, not api.openai.com.
+	// If the user has no explicit OpenAI API key, move a normal OpenAI model to
+	// the matching Codex catalog entry before the request is sent.
+	if (current.provider === "openai") {
+		const explicitOpenAiKey = await getAppStorage().providerKeys.get("openai");
+		if (!explicitOpenAiKey && await getProviderApiKey("openai-codex")) {
+			const models = await getSelectableModels();
+			const codexModel = preferredModelForProvider(models, "openai-codex");
+			if (codexModel) return codexModel;
+		}
+	}
+	if (current.provider === "google") {
+		const explicitGoogleKey = await getAppStorage().providerKeys.get("google");
+		if (!explicitGoogleKey && await getProviderApiKey("google-gemini-cli")) {
+			const models = await getSelectableModels();
+			const geminiCliModel = preferredModelForProvider(models, "google-gemini-cli");
+			if (geminiCliModel) return geminiCliModel;
+		}
+	}
+	if (await getProviderApiKey(current.provider)) return current;
+
 	const models = await getSelectableModels();
-	for (const provider of [DIO_PROVIDER_ID, "openai", "anthropic", "google"]) {
+	for (const provider of [DIO_PROVIDER_ID, "openai-codex", "openai", "anthropic", "google-gemini-cli", "google"]) {
 		if (!(await getProviderApiKey(provider))) continue;
 		const model = preferredModelForProvider(models, provider);
 		if (model) return model;
@@ -445,6 +468,23 @@ export async function getSelectableModels(
 	for (const provider of getProviders()) {
 		if (!filter || filter(provider)) {
 			models.push(...(getModels(provider as any) as Array<Model<Api>>));
+		}
+	}
+
+	if (!filter || filter("google-gemini-cli")) {
+		for (const id of FALLBACK_CHAT_MODEL_IDS["google-gemini-cli"]) {
+			models.push({
+				id,
+				name: `Gemini CLI ${id}`,
+				api: "google-gemini-cli" as Api,
+				provider: "google-gemini-cli",
+				baseUrl: "https://cloudcode-pa.googleapis.com",
+				reasoning: id.includes("pro"),
+				input: ["text"],
+				cost: UNKNOWN_COST,
+				contextWindow: 1_048_576,
+				maxTokens: 8192,
+			});
 		}
 	}
 
