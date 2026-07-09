@@ -85,7 +85,7 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 				all.push(buildSavedModel(saved));
 			}
 
-			const knownProviders = new Set<string>(getProviders());
+			const knownProviders = new Set<string>([...getProviders(), "google-gemini-cli"]);
 			const selectable: SelectableModel[] = all.map((model) => ({
 				key: modelKey(model),
 				model,

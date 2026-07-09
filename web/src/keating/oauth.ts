@@ -18,7 +18,11 @@ export interface OAuthCredentials {
 	provider: OAuthProviderId;
 	apiKey?: string;
 	idToken?: string;
+	projectId?: string;
+	email?: string;
 }
+
+export const OAUTH_MESSAGE_CHANNEL = "keating-oauth-result";
 
 interface OAuthProviderConfig {
 	id: OAuthProviderId;
@@ -76,10 +80,7 @@ const OAUTH_PROVIDERS: Record<OAuthProviderId, OAuthProviderConfig> = {
 		clientId: "681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com",
 		authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
 		tokenUrl: "https://oauth2.googleapis.com/token",
-		// The Gemini CLI client is a Google "installed app", which only allows
-		// loopback redirects (any port). The localhost page won't load — the user
-		// pastes the final URL back into the app to finish sign-in.
-		redirectUri: "http://localhost:7777/oauth2callback",
+		redirectUri: "http://localhost:8085/oauth2callback",
 		scopes: [
 			"https://www.googleapis.com/auth/cloud-platform",
 			"https://www.googleapis.com/auth/userinfo.email",
@@ -310,8 +311,10 @@ export async function handleOAuthCallback(code: string, state?: string | null): 
 			access: tokens.access_token,
 			expires: Date.now() + (tokens.expires_in ?? 3600) * 1000,
 			provider: pending.provider,
-			apiKey: typeof tokens.api_key === "string" ? tokens.api_key : undefined,
+			apiKey: pending.provider === "openai-codex" ? undefined : typeof tokens.api_key === "string" ? tokens.api_key : undefined,
 			idToken: typeof tokens.id_token === "string" ? tokens.id_token : undefined,
+			projectId: typeof tokens.project_id === "string" ? tokens.project_id : undefined,
+			email: typeof tokens.email === "string" ? tokens.email : undefined,
 		};
 
 		await saveOAuthCredentials(credentials);
@@ -367,10 +370,19 @@ export async function getOAuthAccessToken(provider: OAuthProviderId): Promise<st
 	if (Date.now() >= credentials.expires - 60_000) {
 		const refreshed = await refreshOAuthToken(provider, credentials);
 		if (!refreshed) return null;
-		return refreshed.apiKey ?? refreshed.access;
+		return oauthCredentialToken(provider, refreshed);
 	}
 
-	return credentials.apiKey ?? credentials.access;
+	return oauthCredentialToken(provider, credentials);
+}
+
+function oauthCredentialToken(provider: OAuthProviderId, credentials: OAuthCredentials): string {
+	if (provider === "google-gemini-cli") {
+		return JSON.stringify({ token: credentials.access, projectId: credentials.projectId });
+	}
+	// Codex models authenticate against chatgpt.com with the OAuth access token.
+	// Ignore the stale API-key field written by older Keating builds.
+	return provider === "openai-codex" ? credentials.access : credentials.apiKey ?? credentials.access;
 }
 
 async function refreshOAuthToken(
@@ -401,8 +413,10 @@ async function refreshOAuthToken(
 			access: tokens.access_token,
 			expires: Date.now() + (tokens.expires_in ?? 3600) * 1000,
 			provider,
-			apiKey: typeof tokens.api_key === "string" ? tokens.api_key : credentials.apiKey,
+			apiKey: provider === "openai-codex" ? undefined : typeof tokens.api_key === "string" ? tokens.api_key : credentials.apiKey,
 			idToken: typeof tokens.id_token === "string" ? tokens.id_token : credentials.idToken,
+			projectId: typeof tokens.project_id === "string" ? tokens.project_id : credentials.projectId,
+			email: typeof tokens.email === "string" ? tokens.email : credentials.email,
 		};
 
 		await saveOAuthCredentials(newCredentials);
@@ -421,5 +435,6 @@ export function providerToOAuthId(providerName: string): OAuthProviderId | null 
 	if (providerName === "openai") return "openai-codex";
 	if (providerName === "openai-codex") return "openai-codex";
 	if (providerName === "google") return "google-gemini-cli";
+	if (providerName === "google-gemini-cli") return "google-gemini-cli";
 	return null;
 }

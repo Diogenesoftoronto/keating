@@ -11,6 +11,50 @@ import { isAllowedDioOpenAiProxyRequest } from './src/dio-provider/server';
 
 type AgentRuntimeMode = 'browser-only' | 'remote' | 'cloud';
 
+function oauthCallbackBridgePlugin(): Plugin {
+  return {
+    name: 'oauth-callback-bridge',
+    configureServer(server) {
+      const bridges: http.Server[] = [];
+      const callbacks = [
+        { port: 1455, path: '/auth/callback' },
+        { port: 8085, path: '/oauth2callback' },
+      ];
+
+      const startBridges = () => {
+        const address = server.httpServer?.address();
+        const appPort = typeof address === 'object' && address ? address.port : server.config.server.port ?? 3000;
+        for (const callback of callbacks) {
+          const bridge = http.createServer((req, res) => {
+            const requestUrl = new URL(req.url ?? '/', `http://localhost:${callback.port}`);
+            if (requestUrl.pathname !== callback.path) {
+              res.statusCode = 404;
+              res.end('OAuth callback route not found.');
+              return;
+            }
+
+            const target = `http://localhost:${appPort}/oauth/callback${requestUrl.search}`;
+            res.statusCode = 302;
+            res.setHeader('Location', target);
+            res.end('Returning to Keating...');
+          });
+          bridge.on('error', (error) => {
+            console.warn(`[oauth] Could not bind localhost:${callback.port}: ${error.message}`);
+          });
+          bridge.listen(callback.port);
+          bridges.push(bridge);
+        }
+      };
+
+      if (server.httpServer?.listening) startBridges();
+      else server.httpServer?.once('listening', startBridges);
+      server.httpServer?.once('close', () => {
+        for (const bridge of bridges) bridge.close();
+      });
+    },
+  };
+}
+
 function env(name: string): string | null {
   const value = process.env[name]?.trim();
   return value ? value : null;
@@ -318,6 +362,7 @@ export default defineConfig({
   plugins: [
     react(),
     nodepod(),
+    oauthCallbackBridgePlugin(),
     chatProxyPlugin(),
     ...analyzePlugins,
     VitePWA({

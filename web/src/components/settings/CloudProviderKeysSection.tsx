@@ -8,6 +8,7 @@ import {
 	providerToOAuthId,
 	loadOAuthCredentials,
 	deleteOAuthCredentials,
+	OAUTH_MESSAGE_CHANNEL,
 	type OAuthProviderId,
 } from "../../keating/oauth";
 import { DIO_PROVIDER_ID } from "../../dio-provider";
@@ -114,9 +115,9 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 	}, [providers.join(",")]);
 
 	useEffect(() => {
-		const handler = (event: MessageEvent) => {
-			if (event.data?.type !== "keating-oauth-result") return;
-			const { success, provider: oauthProvider } = event.data;
+		const handler = (event: MessageEvent | { data: unknown }) => {
+			if ((event.data as any)?.type !== OAUTH_MESSAGE_CHANNEL) return;
+			const { success, provider: oauthProvider } = event.data as any;
 			const providerNames = oauthProviderToProviderNames(oauthProvider);
 			if (success && oauthProvider) {
 				setOAuthStatus((prev) => setProviderAliases(prev, providerNames, true));
@@ -132,7 +133,15 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 			});
 		};
 		window.addEventListener("message", handler);
-		return () => window.removeEventListener("message", handler);
+		let channel: BroadcastChannel | undefined;
+		try {
+			channel = new BroadcastChannel(OAUTH_MESSAGE_CHANNEL);
+			channel.addEventListener("message", handler);
+		} catch {}
+		return () => {
+			window.removeEventListener("message", handler);
+			channel?.close();
+		};
 	}, []);
 
 	const save = async (provider: string, value: string) => {
@@ -208,6 +217,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 		anthropic: "Anthropic",
 		"openai-codex": "OpenAI Codex",
 		google: "Google Gemini",
+		"google-gemini-cli": "Google Gemini CLI",
 	};
 
 	return (
@@ -314,7 +324,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 }
 
 function oauthProviderToProviderNames(provider: OAuthProviderId | string | undefined): string[] {
-	if (provider === "google-gemini-cli") return ["google"];
+	if (provider === "google-gemini-cli") return ["google", "google-gemini-cli"];
 	if (provider === "openai-codex") return ["openai", "openai-codex"];
 	if (provider === "anthropic") return ["anthropic"];
 	return provider ? [provider] : [];

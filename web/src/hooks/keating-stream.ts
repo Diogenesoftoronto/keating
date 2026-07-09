@@ -7,12 +7,13 @@ import {
 	type SimpleStreamOptions,
 } from "@earendil-works/pi-ai";
 import { streamSimple } from "@earendil-works/pi-ai/compat";
+import { streamSimpleGoogleGeminiCli } from "@mariozechner/pi-ai/google-gemini-cli";
 import { normalizeToolCallStream } from "../keating/tool-call-normalizer";
 import { streamWithApiRetry } from "../keating/api-retry";
 import { chatProxyBaseUrl, proxyTargetHeader, shouldProxyModel } from "../lib/provider-proxy";
 import { DIO_DEFAULT_MODEL } from "../dio-provider";
 import { loadKeatingUiSettings } from "../keating/ui-settings";
-import { getProviderApiKey } from "../lib/provider-models";
+import { getProviderApiKey, resolveAvailableChatModel } from "../lib/provider-models";
 import { localModel, getModelName, getModelId } from "../stores/local-model";
 
 export const DEFAULT_MODEL = DIO_DEFAULT_MODEL;
@@ -269,39 +270,44 @@ function createBrowserStreamFn() {
 }
 
 export async function hybridStreamFn(model: Model<Api>, context: Context, options?: SimpleStreamOptions) {
-	if (model.provider === "browser") {
-		return normalizeToolCallStream(await createBrowserStreamFn()(model, context, options), context);
-	}
+	const activeModel = await resolveAvailableChatModel(model);
 
-	const apiKey = options?.apiKey ?? await getProviderApiKey(model.provider);
+	if (activeModel.provider === "browser") {
+		return normalizeToolCallStream(await createBrowserStreamFn()(activeModel, context, options), context);
+	}
+	const streamSimpleForModel = activeModel.provider === "google-gemini-cli"
+		? streamSimpleGoogleGeminiCli as any
+		: streamSimple;
+
+	const apiKey = options?.apiKey ?? await getProviderApiKey(activeModel.provider);
 	const streamOptions: SimpleStreamOptions | undefined = apiKey ? { ...options, apiKey } : options;
 
-	if (shouldProxyModel(model)) {
+	if (shouldProxyModel(activeModel)) {
 		const proxiedModel = {
-			...model,
+			...activeModel,
 			baseUrl: chatProxyBaseUrl(),
 		};
 		const proxiedOptions: SimpleStreamOptions = {
 			...streamOptions,
 			headers: {
 				...streamOptions?.headers,
-				"x-target-url": proxyTargetHeader(model.baseUrl),
+				"x-target-url": proxyTargetHeader(activeModel.baseUrl),
 			},
 		};
 		if (import.meta.env.DEV) {
 			const hasApiKey = !!proxiedOptions.apiKey;
-			console.log(`[keating:stream] proxy ${model.provider} -> ${model.baseUrl} (apiKey=${hasApiKey})`);
+			console.log(`[keating:stream] proxy ${activeModel.provider} -> ${activeModel.baseUrl} (apiKey=${hasApiKey})`);
 		}
 		const mergedOptions = mergeOnPayload(proxiedOptions, proxiedModel);
 		return normalizeToolCallStream(
-			streamWithApiRetry(proxiedModel, context, mergedOptions, (nextOptions) => streamSimple(proxiedModel, context, nextOptions)),
+			streamWithApiRetry(proxiedModel, context, mergedOptions, (nextOptions) => streamSimpleForModel(proxiedModel, context, nextOptions)),
 			context,
 		);
 	}
 
-	const mergedOptions = mergeOnPayload(streamOptions, model);
+	const mergedOptions = mergeOnPayload(streamOptions, activeModel);
 	return normalizeToolCallStream(
-		streamWithApiRetry(model, context, mergedOptions, (nextOptions) => streamSimple(model, context, nextOptions)),
+		streamWithApiRetry(activeModel, context, mergedOptions, (nextOptions) => streamSimpleForModel(activeModel, context, nextOptions)),
 		context,
 	);
 }
