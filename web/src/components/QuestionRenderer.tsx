@@ -54,6 +54,8 @@ export interface QuestionField {
 /** Normalized multi-field form payload. */
 export interface QuestionFormData {
 	intro?: string;
+	/** Topic attribution lets answers become durable learning evidence. */
+	topic?: string;
 	questions: QuestionField[];
 }
 
@@ -69,6 +71,9 @@ export interface AnsweredQuestion {
 	header?: string;
 	question: string;
 	answer: string;
+	/** Present only when the form has an objective answer key. */
+	score?: number;
+	grading: "auto" | "pending";
 }
 
 interface QuestionRendererProps {
@@ -254,13 +259,18 @@ export function normalizeQuestionForm(raw: unknown): QuestionFormData | null {
 		if (questions.length === 0) return null;
 		return {
 			intro: typeof obj.intro === "string" ? obj.intro : undefined,
+			topic: typeof obj.topic === "string" ? obj.topic : undefined,
 			questions,
 		};
 	}
 
 	const single = coerceField(obj);
 	if (!single) return null;
-	return { intro: typeof obj.intro === "string" ? obj.intro : undefined, questions: [single] };
+	return {
+		intro: typeof obj.intro === "string" ? obj.intro : undefined,
+		topic: typeof obj.topic === "string" ? obj.topic : undefined,
+		questions: [single],
+	};
 }
 
 interface BlankState {
@@ -495,14 +505,24 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 
 	const handleSubmit = useCallback(() => {
 		if (submitted || !allAnswered) return;
-		const answers: AnsweredQuestion[] = questions.map((q, index) => ({
-			header: q.header,
-			question: q.question,
-			answer: answerFor(index),
-		}));
+		const answers: AnsweredQuestion[] = questions.map((q, index) => {
+			const matching = isMatchingQuestion(q) && q.correctMatches?.length
+				? states[index]?.classifications ?? []
+				: null;
+			const score = matching
+				? matching.filter((row, rowIndex) => matchingCorrectness(q, rowIndex, row.choice) === "correct").length / matching.length
+				: undefined;
+			return {
+				header: q.header,
+				question: q.question,
+				answer: answerFor(index),
+				score,
+				grading: score === undefined ? "pending" : "auto",
+			};
+		});
 		setSubmitted(true);
 		onSubmit?.(answers);
-	}, [submitted, allAnswered, questions, answerFor, onSubmit]);
+	}, [submitted, allAnswered, questions, answerFor, onSubmit, states]);
 
 	const goNext = useCallback(() => {
 		if (current < total - 1) setCurrent((c) => c + 1);

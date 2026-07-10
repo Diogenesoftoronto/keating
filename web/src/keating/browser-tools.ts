@@ -18,7 +18,16 @@ import {
 	type GoalStepInput,
 	type GoalStepStatus,
 } from "./goals";
-import { extractBrowserOutcomes, type BrowserLearnerOutcome } from "./core";
+import {
+	extractBrowserOutcomes,
+	extractSessionTurnOutcomes,
+	quizRecordsToOutcomes,
+	benchmarkPerModel,
+	perModelBreakdownToMarkdown,
+	benchModelLabel,
+	type BenchSessionSample,
+	type BrowserLearnerOutcome,
+} from "./core";
 import { DEFAULT_TEACHER_PERSONA } from "./persona";
 import operationalProtocolMarkdown from "./prompts/operational-protocol.md?raw";
 import speechSystemPromptMarkdown from "./prompts/speech-system-prompt.md?raw";
@@ -426,12 +435,33 @@ export interface KeatingToolsOptions {
 		getApiKey: (provider: string) => Promise<string | undefined>;
 	};
 	setSystemPrompt?: (basePrompt: string) => void;
+	/** Loads stored chat sessions so benchmarks can mine real transcripts and attribute signals to the model that taught them. */
+	getSessionSamples?: () => Promise<BenchSessionSample[]>;
 }
 
 export async function createKeatingTools(
 	storage: KeatingStorage,
 	options: KeatingToolsOptions = {}
 ): Promise<AgentTool[]> {
+	// All real learner evidence in one place: explicit feedback, signals inferred
+	// from stored session transcripts, and graded quiz results — each attributed
+	// to the model that was teaching where possible.
+	const collectRealOutcomes = async (): Promise<BrowserLearnerOutcome[]> => {
+		const learnerState = await storage.getLearnerState();
+		const samples = options.getSessionSamples
+			? await options.getSessionSamples().catch(() => [] as BenchSessionSample[])
+			: [];
+		const modelBySessionId = new Map(
+			samples.filter((sample) => sample.id).map((sample) => [sample.id, benchModelLabel(sample.model)])
+		);
+		const quizRecords = await storage.getQuizResults().catch(() => []);
+		return [
+			...extractBrowserOutcomes(learnerState.feedbackHistory, learnerState.topicsExplored),
+			...extractSessionTurnOutcomes(samples),
+			...quizRecordsToOutcomes(quizRecords, modelBySessionId),
+		];
+	};
+
 	const tools: AgentTool[] = [
 		// agent_runtime - Inspect current agent execution mode and fallback policy
 		createTool(
@@ -936,13 +966,21 @@ export async function createKeatingTools(
 			async (params) => {
 				const topic = params.topic as string | undefined;
 				const teacherPolicy = parsePolicyFromStorage(await storage.getActivePolicy());
-				const learnerState = await storage.getLearnerState();
-				const realOutcomes = extractBrowserOutcomes(learnerState.feedbackHistory, learnerState.topicsExplored);
+				const realOutcomes = await collectRealOutcomes();
 
 				const result = runBenchmarkSuite(teacherPolicy, topic, 20260401, 3, DEFAULT_WEIGHTS, realOutcomes);
-				const report = benchmarkToMarkdown(result);
+				const perModel = benchmarkPerModel(teacherPolicy, realOutcomes, topic);
+				const perModelReport = perModelBreakdownToMarkdown(perModel);
+				const report = perModelReport
+					? `${benchmarkToMarkdown(result).trimEnd()}\n\n${perModelReport}\n`
+					: benchmarkToMarkdown(result);
 
-				const saved = await storage.saveBenchmark(result.overallScore, report, topic, JSON.stringify(result.trace, null, 2));
+				const saved = await storage.saveBenchmark(
+					result.overallScore,
+					report,
+					topic,
+					JSON.stringify({ ...result.trace, perModel }, null, 2)
+				);
 
 				return `[artifact://benchmark/${saved.id}]\n\n**Overall Score:** ${result.overallScore.toFixed(2)}/100\n\n${report}`;
 			}
@@ -958,8 +996,7 @@ export async function createKeatingTools(
 			async (params) => {
 				const topic = params.topic as string | undefined;
 				const basePolicy = parsePolicyFromStorage(await storage.getActivePolicy());
-				const learnerState = await storage.getLearnerState();
-				const realOutcomesRef = extractBrowserOutcomes(learnerState.feedbackHistory, learnerState.topicsExplored);
+				const realOutcomesRef = await collectRealOutcomes();
 				if (!hasEnoughRealData(realOutcomesRef)) {
 					return `Not ready to evolve: need at least ${MIN_REAL_OUTCOMES} learner feedback signals; found ${realOutcomesRef.length}. Keep teaching and collecting explicit or inferred feedback.`;
 				}
@@ -1245,8 +1282,7 @@ ${topicList}
 				}
 
 				const basePolicy = parsePolicyFromStorage(await storage.getActivePolicy());
-				const learnerState = await storage.getLearnerState();
-				const realOutcomes = extractBrowserOutcomes(learnerState.feedbackHistory, learnerState.topicsExplored);
+				const realOutcomes = await collectRealOutcomes();
 				if (!hasEnoughRealData(realOutcomes)) {
 					return `Not ready to auto-improve: need at least ${MIN_REAL_OUTCOMES} learner feedback signals; found ${realOutcomes.length}.`;
 				}
@@ -1347,7 +1383,9 @@ ${topicList}
 
 				const teacherPolicy = parsePolicyFromStorage(await storage.getActivePolicy());
 
-				const benchmark = runBenchmarkSuite(teacherPolicy);
+				// Diagnose against the same real-data benchmark used everywhere else,
+				// not the synthetic fallback.
+				const benchmark = runBenchmarkSuite(teacherPolicy, undefined, 20260401, 3, DEFAULT_WEIGHTS, await collectRealOutcomes());
 				const proposal = generateImprovementProposal(benchmark);
 				const report = proposalToMarkdown(proposal);
 
@@ -1519,6 +1557,7 @@ ${topicList}
 			"ask_user_question",
 			"Ask the learner one or more questions as an interactive form (choices, multi-select, free text, fill-in-the-blank, classification table, or matching worksheet). The learner fills it in and their answers are sent back automatically. Use to check understanding, gather goals/preferences, or branch the lesson. Pass `questions` for a multi-field form, or the single-question fields for a quick one-off.",
 			{
+				topic: { type: "string", description: "Optional topic this diagnostic checks; use the current lesson topic so the result updates the learner profile." },
 				question: { type: "string", description: "A single question to ask (use `questions` for a multi-field form). For fill-in-the-blank, use ___ or {{blank}} as placeholders." },
 				choices: { type: "array", items: { type: "string" }, description: "Optional answer choices. For classification questions, these are categories/slots; for matching questions, these are the answer-bank entries." },
 				items: { type: "array", items: { type: "string" }, description: "Rows to classify or prompts to match when type is 'classification' or 'matching'." },
@@ -1633,9 +1672,57 @@ ${topicList}
 				if (fields.length === 0) return "Error: at least one question is required.";
 
 				const intro = params.intro ? String(params.intro) : undefined;
-				const payload = JSON.stringify({ intro, questions: fields });
+				const topic = typeof params.topic === "string" && params.topic.trim() ? params.topic.trim() : undefined;
+				const payload = JSON.stringify({ intro, topic, questions: fields });
 				const summary = fields.map((f) => f.question).join(" | ");
 				return `[question] Asking learner: ${summary}\n\n<keating-question json=${JSON.stringify(payload)} />`;
+			}
+		),
+
+		createTool(
+			"grade_question_checks",
+			"Grade pending ask_user_question responses after reading them in the conversation. Use this only for actual comprehension checks, not preference or goal questions. A partial verdict means the core idea is incomplete or contains a recoverable misconception.",
+			{
+				topic: { type: "string", description: "Topic used when the questions were asked." },
+				results: {
+					type: "array",
+					description: "One verdict for each pending response being graded.",
+					items: {
+						type: "object",
+						properties: {
+							question: { type: "string", description: "The exact question text from the learner response." },
+							verdict: { type: "string", enum: ["correct", "partial", "incorrect"], description: "Meaning-based assessment of the learner's answer." },
+							misconception: { type: "string", description: "Optional concise misconception supported by the answer." },
+						},
+					},
+				},
+			},
+			async (params) => {
+				const topic = String(params.topic ?? "").trim();
+				const results = Array.isArray(params.results) ? params.results : [];
+				if (!topic || results.length === 0) return "Error: topic and at least one result are required.";
+				const pending = (await storage.getQuestionChecks(topic))
+					.filter((check) => check.grading === "pending")
+					.sort((left, right) => right.createdAt - left.createdAt);
+				let graded = 0;
+				for (const result of results) {
+					if (!result || typeof result !== "object") continue;
+					const item = result as Record<string, unknown>;
+					const question = String(item.question ?? "").trim();
+					const verdict = item.verdict;
+					if (!question || (verdict !== "correct" && verdict !== "partial" && verdict !== "incorrect")) continue;
+					const check = pending.find((candidate) => candidate.question === question);
+					if (!check) continue;
+					const score = verdict === "correct" ? 1 : verdict === "partial" ? 0.5 : 0;
+					await storage.gradeQuestionCheck(check.id, {
+						score,
+						misconception: typeof item.misconception === "string" ? item.misconception : undefined,
+					});
+					graded += 1;
+				}
+				return graded > 0
+					? `Recorded ${graded} graded diagnostic check${graded === 1 ? "" : "s"} for "${topic}".`
+					: `No pending diagnostic checks matched the supplied questions for "${topic}".`;
 			}
 		),
 
@@ -2033,6 +2120,149 @@ ${topicList}
 			}
 		),
 	];
+
+	// Local exec tools are registered ONLY when the server advertises the
+	// opt-in endpoint (keating web --allow-local-exec). Presence-as-capability:
+	// the model never sees these tools unless they actually work.
+	const localExecEndpoint = options.agentRuntime?.localExecEndpoint ?? null;
+	if (localExecEndpoint) {
+		const projectFilesEndpoint = options.agentRuntime?.projectFilesEndpoint ?? null;
+
+		tools.push(
+			createTool(
+				"bash",
+				"Run a shell command on the local host, scoped to the project root. Available only when Keating web was launched with --allow-local-exec. Commands run WITHOUT a shell: pass the program in `command` and its arguments in `args`. To run a shell one-liner, use command \"bash\" with args [\"-lc\", \"<script>\"]. Returns stdout, stderr, and the exit code.",
+				{
+					command: { type: "string", description: "Program to run, e.g. \"git\" or \"bash\"." },
+					args: { type: "array", items: { type: "string" }, description: "Arguments array, e.g. [\"status\", \"--short\"]." },
+					cwd: { type: "string", description: "Directory relative to the project root (defaults to the root)." },
+					timeoutMs: { type: "number", description: "Optional timeout in ms (default 30000, max 120000)." },
+				},
+				async (params) => {
+					const command = typeof params.command === "string" ? params.command.trim() : "";
+					if (!command) return "Error: command is required.";
+					const args = Array.isArray(params.args) ? params.args.map(String) : [];
+					const cwd = typeof params.cwd === "string" ? params.cwd : "";
+					const timeoutMs = typeof params.timeoutMs === "number" ? params.timeoutMs : undefined;
+					try {
+						const res = await fetch(`${localExecEndpoint}/exec`, {
+							method: "POST",
+							headers: { accept: "application/json", "content-type": "application/json" },
+							body: JSON.stringify({ command, args, cwd, timeoutMs }),
+						});
+						if (!res.ok) {
+							const text = await res.text().catch(() => "");
+							return `# Command Failed\n\n- status: ${res.status}\n- error: ${text || res.statusText}`;
+						}
+						const data = (await res.json()) as {
+							command: string;
+							args: string[];
+							exitCode: number | null;
+							signal: string | null;
+							stdout: string;
+							stderr: string;
+							stdoutTruncated: boolean;
+							stderrTruncated: boolean;
+							durationMs: number;
+							timedOut: boolean;
+						};
+						const lines = [
+							`# $ ${data.command}${data.args.length ? " " + data.args.join(" ") : ""}`,
+							`- exit code: ${data.exitCode ?? (data.signal ? `signal ${data.signal}` : "unknown")}`,
+							`- duration: ${data.durationMs}ms${data.timedOut ? " (timed out)" : ""}`,
+							"",
+						];
+						if (data.stdout) lines.push("## stdout", "```", data.stdout + (data.stdoutTruncated ? "\n[truncated]" : ""), "```");
+						if (data.stderr) lines.push("## stderr", "```", data.stderr + (data.stderrTruncated ? "\n[truncated]" : ""), "```");
+						if (!data.stdout && !data.stderr) lines.push("(no output)");
+						return lines.join("\n");
+					} catch (e) {
+						return `# Command Failed\n\n${e instanceof Error ? e.message : String(e)}`;
+					}
+				},
+				["command"],
+			),
+		);
+
+		tools.push(
+			createTool(
+				"write_project_file",
+				"Create or overwrite a file in the host project root. Available only when Keating web was launched with --allow-local-exec. The path is relative to the project root.",
+				{
+					path: { type: "string", description: "Relative path from the project root, e.g. \"src/core/policy.ts\"." },
+					content: { type: "string", description: "Full file content to write." },
+				},
+				async (params) => {
+					const relPath = typeof params.path === "string" ? params.path.replace(/^\/+/, "") : "";
+					if (!relPath) return "Error: path is required.";
+					const content = typeof params.content === "string" ? params.content : "";
+					try {
+						const res = await fetch(`${localExecEndpoint}/write`, {
+							method: "POST",
+							headers: { accept: "application/json", "content-type": "application/json" },
+							body: JSON.stringify({ path: relPath, content }),
+						});
+						if (!res.ok) {
+							const text = await res.text().catch(() => "");
+							return `# Write Failed\n\n- status: ${res.status}\n- error: ${text || res.statusText}`;
+						}
+						const data = (await res.json()) as { path: string; bytes: number };
+						return `# Wrote ${data.path}\n\n(${data.bytes} bytes)`;
+					} catch (e) {
+						return `# Write Failed\n\n${e instanceof Error ? e.message : String(e)}`;
+					}
+				},
+				["path", "content"],
+			),
+		);
+
+		if (projectFilesEndpoint) {
+			tools.push(
+				createTool(
+					"edit_project_file",
+					"Apply a precise search/replace edit to a host project file. Available only when Keating web was launched with --allow-local-exec. The `search` block must appear exactly once in the file (include surrounding context to make it unique).",
+					{
+						path: { type: "string", description: "Relative path from the project root." },
+						search: { type: "string", description: "Exact text to find. Must be unique in the file." },
+						replace: { type: "string", description: "Replacement text." },
+					},
+					async (params) => {
+						const relPath = typeof params.path === "string" ? params.path.replace(/^\/+/, "") : "";
+						if (!relPath) return "Error: path is required.";
+						const search = typeof params.search === "string" ? params.search : "";
+						const replace = typeof params.replace === "string" ? params.replace : "";
+						if (!search) return "Error: search is required.";
+						try {
+							const readRes = await fetch(`${projectFilesEndpoint}/${relPath}`, { headers: { accept: "application/json" } });
+							if (!readRes.ok) {
+								const text = await readRes.text().catch(() => "");
+								return `# Edit Failed\n\n- status: ${readRes.status}\n- error: ${text || readRes.statusText}`;
+							}
+							const file = (await readRes.json()) as { content: string };
+							const occurrences = file.content.split(search).length - 1;
+							if (occurrences === 0) return `# Edit Failed\n\nSearch block not found in ${relPath}.`;
+							if (occurrences > 1) return `# Edit Failed\n\nSearch block appears ${occurrences} times in ${relPath}; add more surrounding context to make it unique.`;
+							const updated = file.content.replace(search, replace);
+							const writeRes = await fetch(`${localExecEndpoint}/write`, {
+								method: "POST",
+								headers: { accept: "application/json", "content-type": "application/json" },
+								body: JSON.stringify({ path: relPath, content: updated }),
+							});
+							if (!writeRes.ok) {
+								const text = await writeRes.text().catch(() => "");
+								return `# Edit Failed\n\n- status: ${writeRes.status}\n- error: ${text || writeRes.statusText}`;
+							}
+							const data = (await writeRes.json()) as { path: string; bytes: number };
+							return `# Edited ${data.path}\n\n(${data.bytes} bytes)`;
+						} catch (e) {
+							return `# Edit Failed\n\n${e instanceof Error ? e.message : String(e)}`;
+						}
+					},
+					["path", "search", "replace"],
+				),
+			);
+		}
+	}
 
 	if (options.speech?.settings.enabled) {
 		tools.push(createSpeechTool(options.speech.settings, options.speech.getApiKey));

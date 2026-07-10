@@ -69,6 +69,7 @@ import type {
   ChatPanelHandle,
   ChatPanelSetupCallbacks,
 } from "../types/chat-panel";
+import { usePostHog } from "@posthog/react";
 import {
   loadKeatingUiSettings,
   subscribeKeatingUiSettings,
@@ -106,6 +107,9 @@ import { MermaidRenderer } from "./MermaidRenderer";
 const AuthErrorContext = createContext<(provider: string) => Promise<boolean>>(
   () => Promise.resolve(false),
 );
+
+const capturedApiErrorKeys = new Set<string>();
+const MAX_CAPTURED_API_ERROR_KEYS = 256;
 
 const mutedTextClass = css({ color: "var(--muted-foreground)" });
 const foregroundTextClass = css({ color: "var(--foreground)" });
@@ -406,6 +410,7 @@ function StreamingTextPart({
   status?: { type: string; reason?: string; error?: string };
   showRawErrors?: boolean;
 }) {
+  const posthog = usePostHog();
   const isMarkedError = text.startsWith(ERROR_TEXT_PREFIX);
   const displayText = isMarkedError
     ? text.slice(ERROR_TEXT_PREFIX.length)
@@ -413,6 +418,7 @@ function StreamingTextPart({
   const [visibleText, setVisibleText] = useState(displayText);
   const visibleLengthRef = useRef(displayText.length);
   const previousTextRef = useRef(displayText);
+  const capturedErrorRef = useRef<string | null>(null);
 
   useEffect(() => {
     const isGrowing = displayText.startsWith(previousTextRef.current);
@@ -447,6 +453,20 @@ function StreamingTextPart({
       cancelled = true;
     };
   }, [status?.type, displayText]);
+
+  useEffect(() => {
+    if (!isMarkedError || status?.type === "running") return;
+    const capturedKey = displayText.slice(0, 2048);
+    if (capturedErrorRef.current === capturedKey || capturedApiErrorKeys.has(capturedKey)) return;
+    capturedErrorRef.current = capturedKey;
+    capturedApiErrorKeys.add(capturedKey);
+    if (capturedApiErrorKeys.size > MAX_CAPTURED_API_ERROR_KEYS) {
+      const oldest = capturedApiErrorKeys.values().next().value;
+      if (oldest) capturedApiErrorKeys.delete(oldest);
+    }
+    const classified = classifyError(displayText);
+    posthog.capture('api_error', { error_type: classified.category, status_code: classified.statusCode });
+  }, [displayText, isMarkedError, posthog, status?.type]);
 
   if (isMarkedError) {
     const classified = classifyError(visibleText);
@@ -1607,7 +1627,7 @@ function renderInteractiveSegment(
           data={form}
           onSubmit={(answers) => {
             window.dispatchEvent(
-              new CustomEvent("keating:question-answered", { detail: { answers } }),
+              new CustomEvent("keating:question-answered", { detail: { answers, topic: form.topic } }),
             );
           }}
         />
@@ -3283,6 +3303,7 @@ function AssistantThread({
   version: number;
   speechEnabled: boolean;
 }) {
+  const posthog = usePostHog();
   const [uiSettings, setUiSettings] = useState(() => loadKeatingUiSettings());
   const [localVersion, setLocalVersion] = useState(0);
   const [loadingStep, setLoadingStep] = useState(0);
@@ -3345,6 +3366,7 @@ function AssistantThread({
         await agent.prompt(text);
       } catch (error) {
         console.error("Keating send failed before the model stream started:", error);
+        posthog.capture('message_send_failed', { error_type: 'prompt_error' });
         if (!hasUserTextMessage(agent.state.messages, text)) {
           agent.state.messages.push(makeUserTextMessage(text));
         }
@@ -3353,7 +3375,7 @@ function AssistantThread({
         await callbacks.onLocalMessagesChanged?.();
       }
     },
-    [agent, callbacks],
+    [agent, callbacks, posthog],
   );
 
   const onNew = useCallback(
@@ -3392,6 +3414,7 @@ function AssistantThread({
         await agent.prompt(userMessage);
       } catch (error) {
         console.error("Keating send failed before the model stream started:", error);
+        posthog.capture('message_send_failed', { error_type: 'prompt_error' });
         const userText = textFromContent((userMessage as any).content);
         if (!userText || !hasUserTextMessage(agent.state.messages, userText)) {
           agent.state.messages.push(userMessage);
@@ -3401,12 +3424,13 @@ function AssistantThread({
         await callbacks.onLocalMessagesChanged?.();
       }
     },
-    [agent, callbacks],
+    [agent, callbacks, posthog],
   );
 
   const onCancel = useCallback(async () => {
+    posthog.capture('message_cancelled', {});
     agent?.abort();
-  }, [agent]);
+  }, [agent, posthog]);
 
   // System-initiated sends (quiz remediation/reframe requests, etc.) can fire
   // while the agent is mid-stream, where onNew silently drops them. Queue those
@@ -3445,7 +3469,7 @@ function AssistantThread({
   useEffect(() => {
     const handler = (event: Event) => {
       const detail = (event as CustomEvent).detail as
-        | { answers?: AnsweredQuestion[] }
+        | { answers?: AnsweredQuestion[]; topic?: string }
         | undefined;
       const answers = detail?.answers;
       if (!agent || !answers || answers.length === 0) return;
@@ -3458,9 +3482,12 @@ function AssistantThread({
                   `- ${a.header ? `${a.header} — ` : ""}${a.question}: ${a.answer}`,
               )
               .join("\n");
+      const diagnosticInstruction = answers.some((answer) => answer.grading === "pending")
+        ? `\n\nThese are diagnostic responses. After evaluating them against the lesson, call grade_question_checks with correct, partial, or incorrect verdicts${detail?.topic?.trim() ? ` for topic "${detail.topic.trim()}"` : " for the current lesson topic"}; only record a misconception you can support from the response.`
+        : "";
       void onNew({
         role: "user",
-        content: [{ type: "text", text }],
+        content: [{ type: "text", text: text + diagnosticInstruction }],
       } as unknown as AppendMessage);
     };
     window.addEventListener("keating:question-answered", handler);
@@ -3583,6 +3610,7 @@ function AssistantThread({
         | { level?: string; topic?: string; slug?: string }
         | undefined;
       if (!detail?.level) return;
+      posthog.capture('quiz_remediation_requested', { level: detail.level, topic: detail.topic ?? detail.slug });
       queueOrSend({
         role: "user",
         content: [
@@ -3604,6 +3632,7 @@ function AssistantThread({
         | { questionId?: string; mode?: string; topic?: string }
         | undefined;
       if (!detail?.mode || !detail?.questionId) return;
+      posthog.capture('quiz_reframe_requested', { question_id: detail.questionId, mode: detail.mode, topic: detail.topic });
       queueOrSend({
         role: "user",
         content: [
@@ -3724,7 +3753,10 @@ function AssistantThread({
           >
             <div className={css({ display: "flex", flex: 1, flexDirection: "column" })}>
               <AuiIf condition={(state) => state.thread.isEmpty}>
-                <SuggestedPrompts onSelect={sendText} />
+                <SuggestedPrompts onSelect={(text) => {
+                  posthog.capture('suggested_prompt_clicked', { prompt_text: text.slice(0, 80) });
+                  sendText(text);
+                }} />
               </AuiIf>
               <ThreadPrimitive.Messages components={threadComponents} />
             </div>
@@ -3800,7 +3832,7 @@ function AssistantThread({
                     onSubmit={(answers) => {
                       window.dispatchEvent(
                         new CustomEvent("keating:question-answered", {
-                          detail: { answers },
+                          detail: { answers, topic: activeQuestion.topic },
                         }),
                       );
                     }}
@@ -4007,19 +4039,26 @@ function UserMessage({
         display: "flex",
         width: "100%",
         maxWidth: "56rem",
-        justifyContent: "flex-end",
+        // Mobile: let the user message span the full chat width instead of the
+        // narrow right-aligned "reply" bubble, so text uses the available space.
+        // Desktop (sm+): keep the classic right-aligned reply bubble.
+        justifyContent: "stretch",
+        sm: { justifyContent: "flex-end" },
       })}
     >
       <div
         className={css({
           display: "flex",
-          maxWidth: "88%",
+          // Full width on mobile (with the avatar + viewport padding still
+          // providing comfortable side gaps); constrained reply bubble on sm+.
+          width: "100%",
+          maxWidth: "100%",
           flexDirection: "row-reverse",
-          gap: "0.75rem",
+          gap: "0.5rem",
           paddingInline: "0.25rem",
-          fontSize: "0.875rem",
+          fontSize: "0.8125rem",
           color: "var(--foreground)",
-          sm: { maxWidth: "82%" },
+          sm: { width: "auto", maxWidth: "82%", gap: "0.75rem", fontSize: "0.875rem" },
         })}
       >
         <div className={cx("chat-avatar chat-avatar-you", css({ marginTop: "0.125rem" }))}>
@@ -4029,7 +4068,18 @@ function UserMessage({
             <User className={css({ width: "1rem", height: "1rem", flexShrink: 0 })} />
           )}
         </div>
-        <div className={css({ display: "flex", minWidth: 0, flexDirection: "column", alignItems: "flex-end" })}>
+        <div
+          className={css({
+            display: "flex",
+            minWidth: 0,
+            // Grow to fill the row on mobile so the bubble/text spans the width;
+            // shrink back to content width and right-align on sm+.
+            flex: 1,
+            flexDirection: "column",
+            alignItems: "stretch",
+            sm: { flex: "initial", alignItems: "flex-end" },
+          })}
+        >
           <div className="msg-meta">
             <b>YOU</b>
           </div>
@@ -4195,7 +4245,13 @@ function AssistantMessage({
     try {
       window.dispatchEvent(
         new CustomEvent("keating:message-feedback", {
-          detail: { type, comment, messageId },
+          detail: {
+            type,
+            comment,
+            messageId,
+            messageText: copyText,
+            messageCreatedAt: Number(messageId.slice(messageId.lastIndexOf("-") + 1)) || undefined,
+          },
         }),
       );
     } catch {
@@ -4223,7 +4279,19 @@ function AssistantMessage({
           _hover: { "& [data-fork-action]": { opacity: 1 } },
         })}
       >
-        <div className={css({ display: "flex", width: "100%", gap: "0.75rem", paddingInline: "0.25rem", fontSize: "0.875rem", color: "var(--foreground)" })}>
+        <div
+          className={css({
+            display: "flex",
+            width: "100%",
+            // Tighter avatar gap on mobile reclaims horizontal space for text.
+            gap: "0.5rem",
+            paddingInline: "0.25rem",
+            // Slightly smaller body text on mobile; full size on sm+.
+            fontSize: "0.8125rem",
+            color: "var(--foreground)",
+            sm: { gap: "0.75rem", fontSize: "0.875rem" },
+          })}
+        >
           <div className={cx("chat-avatar", css({ marginTop: "0.125rem" }))}>
             <img src="/brand/mascot-head.png" alt="Keating" />
           </div>

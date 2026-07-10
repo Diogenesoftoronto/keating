@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-07-10
+
+### Added
+- Added evidence-led browser learner profiles: quizzes, flashcard reviews, structured diagnostics, message-level feedback, and tutor-supported misconceptions now contribute to cautious topic-level mastery, retention, confidence, strengths, weaknesses, and reported challenges.
+- Added automatic and model-assisted diagnostic grading. Keyed matching checks are scored immediately; free-text checks remain pending until the tutor records a correct, partial, or incorrect verdict.
+- Added browser local-execution routes and project-file access hardening for the agent runtime, plus per-model benchmark outcomes and richer reward/export attribution.
+- Added a two-turn automatic session-title trigger so AI titles are based on an actual learner exchange rather than the opening prompt alone.
+
+### Changed
+- Reworked real-learner benchmark and evolution inputs around performance-shaped evidence, while preserving learner comments and the exact generated response they refer to.
+- Refined browser teaching interactions across flashcards, quizzes, question forms, session feedback, and Hyperframes playback controls.
+- Updated the web OAuth/provider path: the prior Gemini CLI OAuth isolation is included in this release, keeping Gemini-specific credentials and flows distinct from the standard Google provider path.
+
+### Fixed
+- Fixed assistant-message feedback attribution: feedback now persists the referenced response, message timestamp, and session context instead of assigning the latest session topic as if it were message-level evidence.
+- Fixed OpenAI Codex OAuth callback/token wiring, agent-runtime configuration, and browser project-file/local-execution safeguards.
+- Fixed Hyperframes bridge handling so interactive playback controls remain reliable through iframe boundaries.
+
 ## [2.0.0] - 2026-07-02
 
 ### Added
@@ -443,7 +461,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v2.2.0...HEAD
+[2.2.0]: https://github.com/Diogenesoftoronto/keating/compare/v2.0.0...v2.2.0
 [2.0.0]: https://github.com/Diogenesoftoronto/keating/compare/v1.4.1...v2.0.0
 [1.4.1]: https://github.com/Diogenesoftoronto/keating/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/Diogenesoftoronto/keating/compare/v1.3.0...v1.4.0

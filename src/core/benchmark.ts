@@ -60,6 +60,21 @@ export function extractRealOutcomes(state: LearnerState): RealLearnerOutcome[] {
     });
   }
 
+  for (const quizResult of state.quizResults ?? []) {
+    const topicSlug = resolveTopic(quizResult.topic).slug;
+    const covered = state.coveredTopics.find((ct) => ct.slug === topicSlug);
+    outcomes.push({
+      learnerId: state.profile.id,
+      topic: topicSlug,
+      feedbackSignal:
+        quizResult.score >= 0.75 ? "thumbs-up" : quizResult.score < 0.4 ? "thumbs-down" : "confused",
+      quizScore: quizResult.score,
+      sessionDurationMs: null,
+      masteryEstimate: covered?.masteryEstimate ?? quizResult.score,
+      outcomeScore: quizResult.score,
+    });
+  }
+
   return outcomes;
 }
 

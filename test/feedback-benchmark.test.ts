@@ -7,7 +7,7 @@ import { runBenchmarkSuite } from "../src/core/benchmark.js";
 import { DEFAULT_POLICY } from "../src/core/policy.js";
 import { evolvePolicyArtifact, ensureProjectScaffold } from "../src/core/project.js";
 import { learnerStatePath } from "../src/core/paths.js";
-import { loadLearnerState, recordFeedback, saveLearnerState } from "../src/core/learner-state.js";
+import { loadLearnerState, recordFeedback, recordQuizResult, saveLearnerState } from "../src/core/learner-state.js";
 
 test("learner-state benchmark uses sparse feedback without synthetic learners", async () => {
   const workdir = await mkdtemp(join(tmpdir(), "keating-feedback-bench-"));
@@ -49,4 +49,30 @@ test("policy evolution refuses to run before learner feedback is sufficient", as
   await ensureProjectScaffold(workdir);
 
   await expect(evolvePolicyArtifact(workdir, "derivative")).rejects.toThrow("Not ready to evolve");
+});
+
+test("benchmark counts graded quiz results as real learner outcomes", async () => {
+  const workdir = await mkdtemp(join(tmpdir(), "keating-quiz-bench-"));
+  const state = await loadLearnerState(learnerStatePath(workdir));
+  recordQuizResult(state, "derivative", 4, 5);
+
+  const result = await runBenchmarkSuite(workdir, DEFAULT_POLICY, "derivative", 20260401, 3, undefined, state);
+
+  expect(result.trace.realOutcomeCount).toBe(1);
+  expect(result.trace.dataSource).toBe("learner-feedback-sparse");
+  expect(result.trace.topicTraces[0]!.topLearners[0]!.learnerId).toBe("real-learner");
+});
+
+test("higher quiz scores raise the real-outcome benchmark score", async () => {
+  const lowDir = await mkdtemp(join(tmpdir(), "keating-quiz-low-"));
+  const lowState = await loadLearnerState(learnerStatePath(lowDir));
+  recordQuizResult(lowState, "derivative", 1, 5);
+  const lowResult = await runBenchmarkSuite(lowDir, DEFAULT_POLICY, "derivative", 20260401, 3, undefined, lowState);
+
+  const highDir = await mkdtemp(join(tmpdir(), "keating-quiz-high-"));
+  const highState = await loadLearnerState(learnerStatePath(highDir));
+  recordQuizResult(highState, "derivative", 5, 5);
+  const highResult = await runBenchmarkSuite(highDir, DEFAULT_POLICY, "derivative", 20260401, 3, undefined, highState);
+
+  expect(highResult.overallScore).toBeGreaterThan(lowResult.overallScore);
 });

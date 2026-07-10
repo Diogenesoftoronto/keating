@@ -20,8 +20,6 @@ type HyperframesStateMessage = {
 	hasTimeline: boolean;
 };
 
-const hyperframesBridgeUrl = new URL("./hyperframes-frame-bridge.ts", import.meta.url).href;
-
 function isHyperframesStateMessage(value: unknown): value is HyperframesStateMessage {
 	if (!value || typeof value !== "object") return false;
 	const message = value as Partial<HyperframesStateMessage>;
@@ -37,7 +35,7 @@ export function HyperframesPlayer({ html, title, className }: HyperframesPlayerP
 	const [playing, setPlaying] = useState(true);
 	const [looping, setLooping] = useState(true);
 	const [progress, setProgress] = useState(0);
-	const sandboxedHtml = useMemo(() => withHyperframesBridge(html, hyperframesBridgeUrl), [html]);
+	const sandboxedHtml = useMemo(() => withHyperframesBridge(html), [html]);
 	const src = useBlobUrl(sandboxedHtml, "text/html");
 
 	const postCommand = (command: HyperframesCommand) => {

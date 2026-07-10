@@ -5,9 +5,10 @@
 
 import type { LearnerGoal } from "./goals";
 import { inferBrowserLearnerTurnSignal } from "./core";
+import { deriveLearnerProfile, type LearnerTopicProfile } from "./learner-profile";
 
 const DB_NAME = "keating-db";
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 
 // Store names
 const STORES = {
@@ -26,6 +27,7 @@ const STORES = {
 	QUIZ_RESULTS: "quiz-results",
 	DECKS: "decks",
 	CARD_REVIEWS: "card-reviews",
+	QUESTION_CHECKS: "question-checks",
 } as const;
 
 export interface KeatingStoragePortableData {
@@ -44,6 +46,7 @@ export interface KeatingStoragePortableData {
 	quizResults: QuizResultRecord[];
 	decks: FlashcardDeck[];
 	cardReviews: CardReviewRecord[];
+	questionChecks: QuestionCheckRecord[];
 }
 
 export interface KeatingStorageImportResult {
@@ -61,6 +64,7 @@ export interface KeatingStorageImportResult {
 	quizResults: number;
 	decks: number;
 	cardReviews: number;
+	questionChecks: number;
 }
 
 export interface LessonPlan {
@@ -140,6 +144,15 @@ export interface FeedbackEntry {
 	evidence?: string;
 	sessionId?: string;
 	messageId?: string;
+	/** The generated assistant message the learner was reacting to. */
+	referent?: {
+		sessionId: string;
+		messageId: string;
+		content: string;
+		createdAt?: number;
+	};
+	/** Makes it clear whether topic attribution is exact or merely session context. */
+	topicSource?: "session-title" | "explicit" | "turn-analysis";
 }
 
 export interface LearnerState {
@@ -147,6 +160,7 @@ export interface LearnerState {
 	feedbackHistory: FeedbackEntry[];
 	strengths: string[];
 	weaknesses: string[];
+	topicProfiles: LearnerTopicProfile[];
 	lastSessionAt?: number;
 	sessionsCount: number;
 	sessions: Array<{
@@ -235,6 +249,23 @@ export interface CardReviewRecord {
 	rating: 0 | 1 | 2 | 3;
 	appliedIntervalDays: number;
 	easeAfter: number;
+	/** The interval the learner was asked to recall over, before this review. */
+	previousIntervalDays?: number;
+	isLapse?: boolean;
+	createdAt: number;
+	sessionId?: string;
+}
+
+/** A structured comprehension checkpoint from ask_user_question. */
+export interface QuestionCheckRecord {
+	id: string;
+	topic: string;
+	question: string;
+	answer: string;
+	/** Undefined means the response is preserved for the tutor but has not been graded. */
+	score?: number;
+	grading: "auto" | "model" | "pending";
+	misconception?: string;
 	createdAt: number;
 	sessionId?: string;
 }
@@ -366,6 +397,7 @@ export class KeatingStorage {
 			feedbackHistory: [],
 			strengths: [],
 			weaknesses: [],
+			topicProfiles: [],
 			sessionsCount: 0,
 			sessions: [],
 		};
@@ -378,6 +410,9 @@ export class KeatingStorage {
 			feedbackHistory: Array.isArray(raw.feedbackHistory) ? raw.feedbackHistory.filter((entry): entry is FeedbackEntry => !!entry && typeof entry === "object") : [],
 			strengths: Array.isArray(raw.strengths) ? raw.strengths.filter((item): item is string => typeof item === "string") : [],
 			weaknesses: Array.isArray(raw.weaknesses) ? raw.weaknesses.filter((item): item is string => typeof item === "string") : [],
+			topicProfiles: Array.isArray(raw.topicProfiles)
+				? raw.topicProfiles.filter((item): item is LearnerTopicProfile => !!item && typeof item === "object" && typeof (item as LearnerTopicProfile).topic === "string")
+				: [],
 			lastSessionAt: typeof raw.lastSessionAt === "number" ? raw.lastSessionAt : undefined,
 			sessionsCount: typeof raw.sessionsCount === "number" ? raw.sessionsCount : 0,
 			sessions: Array.isArray(raw.sessions) ? raw.sessions.filter((session): session is LearnerState["sessions"][number] => !!session && typeof session === "object") : [],
@@ -424,6 +459,62 @@ export class KeatingStorage {
 			request.onsuccess = () => resolve(this.normalizeLearnerState(request.result || this.defaultLearnerState()));
 			request.onerror = () => reject(request.error);
 		});
+	}
+
+	/** Rebuild the displayed learner profile from its durable evidence records. */
+	private async refreshDerivedLearnerProfile(): Promise<LearnerState> {
+		const [state, feedback, quizResults, questionChecks, cardReviews] = await Promise.all([
+			this.loadLearnerStateRecord(),
+			this.getAll<FeedbackEntry>(STORES.FEEDBACK),
+			this.getAll<QuizResultRecord>(STORES.QUIZ_RESULTS),
+			this.getAll<QuestionCheckRecord>(STORES.QUESTION_CHECKS),
+			this.getAll<CardReviewRecord>(STORES.CARD_REVIEWS),
+		]);
+		const profile = deriveLearnerProfile([
+			...feedback.map((entry) => ({
+				topic: entry.topic,
+				kind: "feedback" as const,
+				score: entry.signal === "thumbs-up" ? 0.85 : entry.signal === "confused" ? 0.35 : 0.15,
+				createdAt: entry.createdAt,
+				weight: entry.source === "explicit" ? 0.25 : 0.1,
+				note: entry.evidence,
+			})),
+			...quizResults.filter((result) => result.totalQuestions > 0).map((result) => ({
+				topic: result.topic,
+				kind: "quiz" as const,
+				score: typeof result.weightedScore === "number" ? result.weightedScore : result.score / result.totalQuestions,
+				createdAt: result.createdAt,
+				weight: 1.2,
+			})),
+			...questionChecks.filter((check): check is QuestionCheckRecord & { score: number } => typeof check.score === "number").map((check) => ({
+				topic: check.topic,
+				kind: "diagnostic" as const,
+				score: check.score,
+				createdAt: check.createdAt,
+				weight: 0.8,
+				note: check.misconception,
+			})),
+			...cardReviews.map((review) => ({
+				topic: review.topic,
+				kind: "review" as const,
+				score: review.rating === 0 ? 0.05 : review.rating === 1 ? 0.45 : review.rating === 2 ? 0.75 : 0.9,
+				createdAt: review.createdAt,
+				weight: 0.3 + Math.min(0.7, Math.max(0, review.previousIntervalDays ?? 0) / 21),
+			})),
+		]);
+		const topicsExplored = [...new Set([
+			...state.topicsExplored,
+			...profile.topics.map((topic) => topic.topic),
+		])];
+		const next = {
+			...state,
+			topicsExplored,
+			topicProfiles: profile.topics,
+			strengths: profile.strengths,
+			weaknesses: profile.weaknesses,
+		};
+		if (JSON.stringify(next) !== JSON.stringify(state)) await this.saveLearnerState(next);
+		return next;
 	}
 
 	private async updateLearnerState(mutator: (state: LearnerState) => void | Promise<void>): Promise<LearnerState> {
@@ -515,6 +606,7 @@ export class KeatingStorage {
 			quizResults,
 			decks,
 			cardReviews,
+			questionChecks: await this.getQuestionChecks(),
 		};
 	}
 
@@ -534,6 +626,7 @@ export class KeatingStorage {
 			quizResults: await this.putMany(STORES.QUIZ_RESULTS, data.quizResults),
 			decks: await this.putMany(STORES.DECKS, data.decks),
 			cardReviews: await this.putMany(STORES.CARD_REVIEWS, data.cardReviews),
+			questionChecks: await this.putMany(STORES.QUESTION_CHECKS, data.questionChecks),
 		};
 		if (data.learnerState) {
 			const current = await this.getLearnerState();
@@ -557,6 +650,7 @@ export class KeatingStorage {
 		} else if (data.feedback?.length) {
 			await this.getLearnerState();
 		}
+		await this.refreshDerivedLearnerProfile();
 		return result;
 	}
 
@@ -687,6 +781,7 @@ export class KeatingStorage {
 			sessionId: this.currentSessionId ?? undefined,
 		};
 		await this.put(STORES.QUIZ_RESULTS, record);
+		await this.refreshDerivedLearnerProfile();
 		return record;
 	}
 
@@ -769,7 +864,14 @@ export class KeatingStorage {
 	async recordFeedback(
 		topic: string,
 		signal: "thumbs-up" | "thumbs-down" | "confused",
-		options: { source?: "explicit" | "turn-analysis"; evidence?: string; sessionId?: string; messageId?: string } = {},
+		options: {
+			source?: "explicit" | "turn-analysis";
+			evidence?: string;
+			sessionId?: string;
+			messageId?: string;
+			referent?: FeedbackEntry["referent"];
+			topicSource?: FeedbackEntry["topicSource"];
+		} = {},
 	): Promise<FeedbackEntry> {
 		const entry: FeedbackEntry = {
 			id: this.generateId(),
@@ -780,6 +882,8 @@ export class KeatingStorage {
 			evidence: options.evidence,
 			sessionId: options.sessionId ?? this.currentSessionId ?? undefined,
 			messageId: options.messageId,
+			referent: options.referent,
+			topicSource: options.topicSource ?? (options.source === "turn-analysis" ? "turn-analysis" : "explicit"),
 		};
 		await this.put(STORES.FEEDBACK, entry);
 
@@ -792,6 +896,7 @@ export class KeatingStorage {
 			}
 			state.lastSessionAt = Date.now();
 		});
+		await this.refreshDerivedLearnerProfile();
 
 		return entry;
 	}
@@ -832,6 +937,7 @@ export class KeatingStorage {
 				}
 				nextState.lastSessionAt = Date.now();
 			});
+			await this.refreshDerivedLearnerProfile();
 		}
 
 		return count;
@@ -852,7 +958,7 @@ export class KeatingStorage {
 		if (merged.changed) {
 			await this.saveLearnerState(merged.state);
 		}
-		return merged.state;
+		return this.refreshDerivedLearnerProfile();
 	}
 
 	async saveLearnerState(state: LearnerState): Promise<void> {
@@ -1081,10 +1187,13 @@ export class KeatingStorage {
 			rating: review.rating,
 			appliedIntervalDays: review.appliedIntervalDays,
 			easeAfter: review.easeAfter,
+			previousIntervalDays: review.previousIntervalDays,
+			isLapse: review.isLapse,
 			createdAt: review.createdAt ?? Date.now(),
 			sessionId: review.sessionId ?? this.currentSessionId ?? undefined,
 		};
 		await this.put(STORES.CARD_REVIEWS, record);
+		await this.refreshDerivedLearnerProfile();
 		return record;
 	}
 
@@ -1093,6 +1202,42 @@ export class KeatingStorage {
 			return this.getByTopic<CardReviewRecord>(STORES.CARD_REVIEWS, topic);
 		}
 		return this.getAll<CardReviewRecord>(STORES.CARD_REVIEWS);
+	}
+
+	async recordQuestionCheck(check: Omit<QuestionCheckRecord, "id" | "createdAt"> & { id?: string; createdAt?: number }): Promise<QuestionCheckRecord> {
+		const record: QuestionCheckRecord = {
+			id: check.id ?? this.generateId(),
+			topic: check.topic,
+			question: check.question,
+			answer: check.answer,
+			score: typeof check.score === "number" ? Math.max(0, Math.min(1, check.score)) : undefined,
+			grading: check.grading,
+			createdAt: check.createdAt ?? Date.now(),
+			sessionId: check.sessionId ?? this.currentSessionId ?? undefined,
+		};
+		await this.put(STORES.QUESTION_CHECKS, record);
+		await this.refreshDerivedLearnerProfile();
+		return record;
+	}
+
+	async getQuestionChecks(topic?: string): Promise<QuestionCheckRecord[]> {
+		if (topic) return this.getByTopic<QuestionCheckRecord>(STORES.QUESTION_CHECKS, topic);
+		return this.getAll<QuestionCheckRecord>(STORES.QUESTION_CHECKS);
+	}
+
+	async gradeQuestionCheck(id: string, grade: { score: number; misconception?: string }): Promise<QuestionCheckRecord | null> {
+		const checks = await this.getQuestionChecks();
+		const current = checks.find((check) => check.id === id);
+		if (!current) return null;
+		const updated: QuestionCheckRecord = {
+			...current,
+			score: Math.max(0, Math.min(1, grade.score)),
+			grading: "model",
+			misconception: grade.misconception?.trim() || undefined,
+		};
+		await this.put(STORES.QUESTION_CHECKS, updated);
+		await this.refreshDerivedLearnerProfile();
+		return updated;
 	}
 
 	// List all artifacts

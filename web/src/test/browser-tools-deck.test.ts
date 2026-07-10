@@ -78,4 +78,45 @@ describe("deck tool", () => {
 		expect(text).toContain("No template fallback exists.");
 		expect(text).toContain("at least 2");
 	});
+
+	test("grades pending free-text diagnostic checks by exact question", async () => {
+		const { createKeatingTools } = await import("../keating/browser-tools");
+		const graded: Array<{ id: string; score: number; misconception?: string }> = [];
+		const tools = await createKeatingTools({
+			getQuestionChecks: async () => [{
+				id: "check-1",
+				topic: "DNS",
+				question: "Why does a recursive resolver cache answers?",
+				answer: "It makes DNS faster.",
+				grading: "pending",
+				createdAt: 1,
+			}],
+			gradeQuestionCheck: async (id: string, grade: { score: number; misconception?: string }) => {
+				graded.push({ id, ...grade });
+				return null;
+			},
+		} as any);
+		const tool = tools.find((candidate) => candidate.name === "grade_question_checks");
+		expect(tool).toBeDefined();
+
+		const result = await tool!.execute("tool-call-3", {
+			topic: "DNS",
+			results: [{
+				question: "Why does a recursive resolver cache answers?",
+				verdict: "partial",
+				misconception: "Treats caching as only a speed feature.",
+			}],
+		});
+		const text = result.content
+			.filter((entry): entry is { type: "text"; text: string } => entry.type === "text")
+			.map((entry) => entry.text)
+			.join("\n");
+
+		expect(text).toContain("Recorded 1 graded diagnostic check");
+		expect(graded).toEqual([{
+			id: "check-1",
+			score: 0.5,
+			misconception: "Treats caching as only a speed feature.",
+		}]);
+	});
 });

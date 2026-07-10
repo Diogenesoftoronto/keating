@@ -22,6 +22,19 @@ describe("agent runtime config", () => {
     expect(config.capabilities.hostProjectAccess).toBe(true);
   });
 
+  it("preserves opt-in local exec access in browser-only mode", () => {
+    const config = normalizeAgentRuntimeConfig({
+      mode: "browser-only",
+      projectRoot: "/repo",
+      projectFilesEndpoint: "/api/project-files",
+      localExecEndpoint: "/api/local-exec",
+    });
+
+    expect(config.mode).toBe("browser-only");
+    expect(config.localExecEndpoint).toBe("/api/local-exec");
+    expect(config.capabilities.localCommandExecution).toBe(true);
+  });
+
   it("normalizes remote microVM config", () => {
     const config = normalizeAgentRuntimeConfig({
       mode: "remote",

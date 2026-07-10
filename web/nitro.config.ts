@@ -1,9 +1,12 @@
 import { defineNitroConfig } from "nitro/config";
 
-const crossOriginIsolationHeaders = {
+const crossOriginIsolationHeaders: Record<string, string> = {
   "Cross-Origin-Opener-Policy": "same-origin",
   "Cross-Origin-Embedder-Policy": "credentialless",
 };
+
+const noFallthroughStaticAsset = (headers = crossOriginIsolationHeaders) =>
+  ({ fallthrough: false, headers }) as unknown as { static: false; headers: Record<string, string> };
 
 export default defineNitroConfig({
   renderer: {
@@ -33,26 +36,22 @@ export default defineNitroConfig({
     // Assets under /assets/** are content-hashed, so they can be cached
     // immutably for a year — a new build emits new filenames.
     "/assets/**": {
-      fallthrough: false,
-      headers: {
+      ...noFallthroughStaticAsset({
         ...crossOriginIsolationHeaders,
         "Cache-Control": "public, max-age=31536000, immutable",
-      },
+      }),
     },
-    "/**/*.js": { fallthrough: false, headers: crossOriginIsolationHeaders },
-    "/**/*.css": { fallthrough: false, headers: crossOriginIsolationHeaders },
-    "/**/*.svg": { fallthrough: false, headers: crossOriginIsolationHeaders },
-    "/**/*.png": { fallthrough: false, headers: crossOriginIsolationHeaders },
-    "/**/*.ico": { fallthrough: false, headers: crossOriginIsolationHeaders },
-    "/**/*.wasm": { fallthrough: false, headers: crossOriginIsolationHeaders },
-    "/**/*.onnx": { fallthrough: false, headers: crossOriginIsolationHeaders },
-    "/**/*.pdf": {
-      fallthrough: false,
-      headers: crossOriginIsolationHeaders,
-    },
-    "/**/*.mp4": { fallthrough: false, headers: crossOriginIsolationHeaders },
-    "/**/*.webp": { fallthrough: false, headers: crossOriginIsolationHeaders },
-    "/**/*.gif": { fallthrough: false, headers: crossOriginIsolationHeaders },
+    "/**/*.js": noFallthroughStaticAsset(),
+    "/**/*.css": noFallthroughStaticAsset(),
+    "/**/*.svg": noFallthroughStaticAsset(),
+    "/**/*.png": noFallthroughStaticAsset(),
+    "/**/*.ico": noFallthroughStaticAsset(),
+    "/**/*.wasm": noFallthroughStaticAsset(),
+    "/**/*.onnx": noFallthroughStaticAsset(),
+    "/**/*.pdf": noFallthroughStaticAsset(),
+    "/**/*.mp4": noFallthroughStaticAsset(),
+    "/**/*.webp": noFallthroughStaticAsset(),
+    "/**/*.gif": noFallthroughStaticAsset(),
     "/**": { static: true, headers: crossOriginIsolationHeaders },
   },
   publicAssets: [
@@ -76,6 +75,25 @@ export default defineNitroConfig({
     {
       route: "/api/agent-runtime/remote/**",
       handler: "server/api/agent-runtime/remote/[...path].ts",
+    },
+    {
+      // Host project file access for the browser agent's list_project_files /
+      // read_project_file tools. Must be registered explicitly: routes in this
+      // config are hand-declared, and without this entry requests fall through
+      // to the `/**` static SPA rule and return index.html instead of JSON.
+      route: "/api/project-files/**",
+      handler: "server/api/project-files/[...path].ts",
+    },
+    {
+      // Opt-in trusted-localhost command execution, enabled only when
+      // `keating web --allow-local-exec` sets KEATING_WEB_LOCAL_EXEC=1.
+      route: "/api/local-exec/exec",
+      handler: "server/api/local-exec/exec.ts",
+    },
+    {
+      // Opt-in project-root-scoped file writes for local tinkering.
+      route: "/api/local-exec/write",
+      handler: "server/api/local-exec/write.ts",
     },
     {
       route: "/api/share",

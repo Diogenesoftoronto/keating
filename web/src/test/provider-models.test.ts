@@ -71,6 +71,18 @@ describe("gateway model discovery", () => {
 });
 
 describe("chat model fallback selection", () => {
+	it("keeps Gemini CLI OAuth on the current Gemini model family", async () => {
+		const { getSelectableModels } = await import("../lib/provider-models");
+		const models = await getSelectableModels((providerName) => providerName === "google-gemini-cli");
+
+		expect(models.map((model) => model.id)).toEqual([
+			"gemini-3.1-pro-preview",
+			"gemini-3.5-flash",
+			"gemini-3-pro-preview",
+			"gemini-2.5-pro",
+		]);
+	});
+
 	it("uses an available OpenAI key when the default Dio model has no key", async () => {
 		providerKeys = { openai: "openai-test-key" };
 		const { resolveAvailableChatModel } = await import("../lib/provider-models");

@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test";
 import * as fc from "fast-check";
 
-import { recordTopicCoverage, recordMisconception, recordFeedback, recordSessionStart, recordSessionEnd } from "../src/core/learner-state.js";
+import { recordTopicCoverage, recordMisconception, recordFeedback, recordQuizResult, recordSessionStart, recordSessionEnd } from "../src/core/learner-state.js";
 import type { LearnerState, TopicDefinition, Domain } from "../src/core/types.js";
 import { clamp } from "../src/core/util.js";
 
@@ -182,4 +182,47 @@ test("ALWAYS: recordSessionEnd closes the last session", () => {
     expect(lastSession!.endedAt).toBeDefined();
     expect(lastSession!.topicsCovered).toEqual(["derivative"]);
   }));
+});
+
+// ─── recordQuizResult properties ─────────────────────────────────────────────
+
+test("ALWAYS: recordQuizResult appends a clamped quiz record", () => {
+  fc.assert(fc.property(
+    arbLearnerState,
+    fc.string({ minLength: 1, maxLength: 24 }),
+    fc.double({ min: 0, max: 20, noNaN: true }),
+    fc.integer({ min: 1, max: 20 }),
+    (state, topic, correct, total) => {
+      const prevCount = state.quizResults?.length ?? 0;
+      const updated = recordQuizResult(state, topic, correct, total);
+      expect(updated.quizResults!.length).toBe(prevCount + 1);
+      const last = updated.quizResults![updated.quizResults!.length - 1]!;
+      expect(last.topic).toBe(topic);
+      expect(last.score).toBeGreaterThanOrEqual(0);
+      expect(last.score).toBeLessThanOrEqual(1);
+    }
+  ));
+});
+
+test("recordQuizResult ignores empty quizzes and nudges covered-topic mastery", () => {
+  const state: LearnerState = {
+    id: "learner-1",
+    coveredTopics: [{ slug: "derivative", domain: "math", lastSeen: new Date().toISOString(), masteryEstimate: 0.2, sessionCount: 1 }],
+    identifiedMisconceptions: [],
+    feedback: [],
+    quizResults: [],
+    sessions: [],
+    profile: {
+      id: "default", priorKnowledge: 0.5, abstractionComfort: 0.5, analogyNeed: 0.5,
+      dialoguePreference: 0.5, diagramAffinity: 0.5, persistence: 0.5, transferDesire: 0.5, anxiety: 0.3
+    }
+  };
+
+  recordQuizResult(state, "derivative", 0, 0);
+  expect(state.quizResults!.length).toBe(0);
+
+  recordQuizResult(state, "derivative", 5, 5);
+  expect(state.quizResults!.length).toBe(1);
+  expect(state.quizResults![0]!.score).toBe(1);
+  expect(state.coveredTopics[0]!.masteryEstimate).toBeCloseTo(0.2 * 0.6 + 1 * 0.4);
 });

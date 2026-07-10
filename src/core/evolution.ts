@@ -1,6 +1,6 @@
 import { readFile, writeFile } from "node:fs/promises";
 
-import { BenchmarkResult, EvolutionCandidate, SimulationWeights, TeacherPolicy } from "./types.js";
+import { BenchmarkResult, EvolutionCandidate, LearnerState, SimulationWeights, TeacherPolicy } from "./types.js";
 import { Prng } from "./random.js";
 import { DEFAULT_POLICY, DEFAULT_WEIGHTS, clampPolicy, clampWeights } from "./policy.js";
 import { benchmarkToMarkdown, runBenchmarkSuite } from "./benchmark.js";
@@ -105,10 +105,11 @@ export async function evolvePolicy(
   focusTopic?: string,
   iterations = 24,
   seed = 20260401,
-  baseWeights: SimulationWeights = DEFAULT_WEIGHTS
+  baseWeights: SimulationWeights = DEFAULT_WEIGHTS,
+  learnerState?: LearnerState
 ): Promise<EvolutionRun> {
   const archive = await loadArchive(archivePath);
-  const baseline = await runBenchmarkSuite(process.cwd(), basePolicy, focusTopic, seed, 3, baseWeights);
+  const baseline = await runBenchmarkSuite(process.cwd(), basePolicy, focusTopic, seed, 3, baseWeights, learnerState);
   let best = baseline;
   let bestWeights = baseWeights;
   const acceptedCandidates: EvolutionCandidate[] = [];
@@ -120,7 +121,7 @@ export async function evolvePolicy(
     const candidatePolicy = mutatePolicy(best.policy, prng, iteration, "keating-candidate");
     const candidateWeights = mutateWeights(bestWeights, prng);
     const novelty = noveltyScore(seen, candidatePolicy);
-    const candidateBenchmark = await runBenchmarkSuite(process.cwd(), candidatePolicy, focusTopic, seed + iteration * 11, 3, candidateWeights);
+    const candidateBenchmark = await runBenchmarkSuite(process.cwd(), candidatePolicy, focusTopic, seed + iteration * 11, 3, candidateWeights, learnerState);
     const parameterDelta = diffPolicy(best.policy, candidatePolicy);
     const candidate: EvolutionCandidate = {
       policy: candidatePolicy,

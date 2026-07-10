@@ -1152,6 +1152,14 @@ export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) 
 	const [reframeModes, setReframeModes] = useState<Record<string, string | null>>({});
 	const [fetchedStats, setFetchedStats] = useState<TopicStats | null | undefined>(topicStats);
 
+	// Track quiz_started once on mount
+	useEffect(() => {
+		posthog.capture('quiz_started', {
+			topic: quiz.slug ?? quiz.topic,
+			question_count: quiz.questions.length,
+		});
+	}, []);
+
 	// Timing: total wall-clock plus accrued time per question while stepping.
 	const startRef = useRef<number>(Date.now());
 	const questionEnteredRef = useRef<number>(Date.now());
