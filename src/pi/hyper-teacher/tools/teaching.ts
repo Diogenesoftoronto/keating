@@ -6,8 +6,18 @@ import {
   verifyTopicArtifact
 } from "../../../core/project.js";
 import { generateQuiz, quizToMarkdown, quizAnswerKeyToMarkdown, type Quiz } from "../../../core/quiz.js";
+import { learnerStatePath } from "../../../core/paths.js";
+import { loadLearnerState, recordQuizResult, saveLearnerState } from "../../../core/learner-state.js";
 import { renderQuizCard, AnswerFormComponent, type AnswerFormQuestion } from "../tui-components.js";
 import { keatingToolMaker, artifactPreviewRenderer, getCwd, pendingQuizResults } from "./shared.js";
+
+async function persistQuizResult(topicSlug: string, correct: number, total: number): Promise<void> {
+  if (total <= 0) return;
+  const statePath = learnerStatePath(getCwd());
+  const state = await loadLearnerState(statePath);
+  recordQuizResult(state, topicSlug, correct, total);
+  await saveLearnerState(statePath, state);
+}
 
 export const teachingTools = [
   keatingToolMaker(
@@ -113,6 +123,9 @@ export const teachingTools = [
 
         let text = `Objective score: ${correctCount}/${objectiveTotal}.`;
         let resultId: string | undefined;
+        if (openEndedIds.length === 0) {
+          await persistQuizResult(quiz.slug, correctCount, objectiveTotal);
+        }
         if (openEndedIds.length > 0) {
           resultId = `quiz-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
           pendingQuizResults.set(resultId, { quiz, answers: rawAnswers, objectiveResults });
@@ -186,6 +199,13 @@ export const teachingTools = [
       const objectiveTotal = Object.keys(pending.objectiveResults).length;
       const openEndedCorrect = Object.values(openEndedGrades).filter((g) => g.verdict === "correct").length;
       const openEndedTotal = Object.keys(openEndedGrades).length;
+
+      const openEndedPoints = Object.values(openEndedGrades).reduce(
+        (sum, g) => sum + (g.verdict === "correct" ? 1 : g.verdict === "partial" ? 0.5 : 0),
+        0
+      );
+      await persistQuizResult(pending.quiz.slug, objectiveCorrect + openEndedPoints, objectiveTotal + openEndedTotal);
+      pendingQuizResults.delete(resultId);
 
       return {
         content: [{ type: "text", text: `Final quiz score: ${objectiveCorrect + openEndedCorrect}/${objectiveTotal + openEndedTotal}.` }],

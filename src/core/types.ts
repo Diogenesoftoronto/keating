@@ -141,6 +141,16 @@ export interface CandidateDecision {
   reasons: string[];
 }
 
+export interface QuizResultRecord {
+  topic: string;
+  timestamp: string;
+  /** Points earned; partial credit allowed, so may be fractional. */
+  correct: number;
+  total: number;
+  /** correct / total, clamped to [0, 1]. */
+  score: number;
+}
+
 export interface RealLearnerOutcome {
   learnerId: string;
   topic: string;
@@ -291,6 +301,7 @@ export interface LearnerState {
     signal: "thumbs-up" | "thumbs-down" | "confused";
     comment?: string;
   }>;
+  quizResults?: QuizResultRecord[];
   sessions: Array<{
     startedAt: string;
     endedAt?: string;

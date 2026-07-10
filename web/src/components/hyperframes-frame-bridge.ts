@@ -1,105 +1,101 @@
-type HyperframesCommand =
-	| { type: "keating-hyperframes-command"; action: "play" | "pause" | "replay" | "request-state" }
-	| { type: "keating-hyperframes-command"; action: "seek"; progress: number };
+// Bridge script injected into the sandboxed Hyperframes iframe.
+//
+// IMPORTANT: this must be plain, browser-runnable JavaScript that we inline as
+// an inline <script> in the generated iframe document (see hyperframes-bridge.ts).
+// It is intentionally NOT loaded as a separate module/asset: referencing this
+// file via `new URL("./hyperframes-frame-bridge.ts", import.meta.url)` caused the
+// bundler to emit the *raw TypeScript* as a `data:video/mp2t` asset, which the
+// browser cannot execute — so the bridge never installed and every play/pause/
+// replay/seek/loop command was silently dropped. Keeping the runtime payload as
+// a string of valid JS avoids any TypeScript-compilation, MIME-type, and CSP
+// sub-resource pitfalls, and works identically in dev and production builds.
+//
+// The parent controller counterpart lives in HyperframesPlayer.tsx. The two
+// sides communicate via window.postMessage using these message shapes:
+//   command (parent -> iframe): { type: "keating-hyperframes-command", action, progress? }
+//   state   (iframe -> parent): { type: "keating-hyperframes-state", progress, playing, hasTimeline }
 
-type HyperframesStateMessage = {
-	type: "keating-hyperframes-state";
-	progress: number;
-	playing: boolean;
-	hasTimeline: boolean;
-};
+export const HYPERFRAMES_BRIDGE_SCRIPT = String.raw`
+(function () {
+  "use strict";
 
-type GsapTimeline = {
-	duration(): number;
-	pause(time?: number): unknown;
-	paused?(): boolean;
-	play(): unknown;
-	time(): number;
-	totalDuration?(): number;
-};
+  var commandType = "keating-hyperframes-command";
+  var stateType = "keating-hyperframes-state";
 
-type HyperframesWindow = Window & {
-	gsap?: {
-		globalTimeline?: GsapTimeline;
-	};
-};
+  function timeline(win) {
+    return (win.gsap && win.gsap.globalTimeline) || null;
+  }
 
-const commandType = "keating-hyperframes-command";
-const stateType = "keating-hyperframes-state";
+  function duration(tl) {
+    var total = typeof tl.totalDuration === "function" ? tl.totalDuration() : tl.duration();
+    return isFinite(total) && total > 0 && total < 100000 ? total : 0;
+  }
 
-function timeline(win: HyperframesWindow): GsapTimeline | null {
-	return win.gsap?.globalTimeline ?? null;
-}
+  function timelineProgress(tl) {
+    var total = duration(tl);
+    return total ? Math.max(0, Math.min(1, tl.time() / total)) : 0;
+  }
 
-function duration(tl: GsapTimeline): number {
-	const total = typeof tl.totalDuration === "function" ? tl.totalDuration() : tl.duration();
-	return Number.isFinite(total) && total > 0 && total < 100000 ? total : 0;
-}
+  function isPlaying(tl) {
+    return typeof tl.paused === "function" ? !tl.paused() : true;
+  }
 
-function timelineProgress(tl: GsapTimeline): number {
-	const total = duration(tl);
-	return total ? Math.max(0, Math.min(1, tl.time() / total)) : 0;
-}
+  function isHyperframesCommand(value) {
+    if (!value || typeof value !== "object") return false;
+    if (value.type !== commandType) return false;
+    if (value.action === "seek") return typeof value.progress === "number" && isFinite(value.progress);
+    return value.action === "play"
+      || value.action === "pause"
+      || value.action === "replay"
+      || value.action === "request-state";
+  }
 
-function isPlaying(tl: GsapTimeline): boolean {
-	return typeof tl.paused === "function" ? !tl.paused() : true;
-}
+  function postState(win) {
+    var tl = timeline(win);
+    var state = {
+      type: stateType,
+      progress: tl ? timelineProgress(tl) : 0,
+      playing: tl ? isPlaying(tl) : false,
+      hasTimeline: Boolean(tl),
+    };
+    win.parent.postMessage(state, "*");
+  }
 
-function isHyperframesCommand(value: unknown): value is HyperframesCommand {
-	if (!value || typeof value !== "object") return false;
-	const message = value as Partial<HyperframesCommand>;
-	if (message.type !== commandType) return false;
-	if (message.action === "seek") return typeof message.progress === "number" && Number.isFinite(message.progress);
-	return message.action === "play"
-		|| message.action === "pause"
-		|| message.action === "replay"
-		|| message.action === "request-state";
-}
+  function handleCommand(win, message) {
+    var tl = timeline(win);
+    if (!tl) {
+      postState(win);
+      return;
+    }
 
-function postState(win: HyperframesWindow): void {
-	const tl = timeline(win);
-	const state: HyperframesStateMessage = {
-		type: stateType,
-		progress: tl ? timelineProgress(tl) : 0,
-		playing: tl ? isPlaying(tl) : false,
-		hasTimeline: Boolean(tl),
-	};
-	win.parent.postMessage(state, "*");
-}
+    if (message.action === "play") tl.play();
+    else if (message.action === "pause") tl.pause();
+    else if (message.action === "replay") {
+      tl.pause(0);
+      tl.play();
+    } else if (message.action === "seek") {
+      var total = duration(tl);
+      var progress = Math.max(0, Math.min(1, message.progress));
+      if (total) tl.pause(progress * total);
+    }
 
-function handleCommand(win: HyperframesWindow, message: HyperframesCommand): void {
-	const tl = timeline(win);
-	if (!tl) {
-		postState(win);
-		return;
-	}
+    postState(win);
+  }
 
-	if (message.action === "play") tl.play();
-	else if (message.action === "pause") tl.pause();
-	else if (message.action === "replay") {
-		tl.pause(0);
-		tl.play();
-	} else if (message.action === "seek") {
-		const total = duration(tl);
-		const progress = Math.max(0, Math.min(1, message.progress));
-		if (total) tl.pause(progress * total);
-	}
+  function installHyperframesBridge(win) {
+    win.addEventListener("message", function (event) {
+      if (!isHyperframesCommand(event.data)) return;
+      handleCommand(win, event.data);
+    });
 
-	postState(win);
-}
+    function tick() {
+      postState(win);
+      win.requestAnimationFrame(tick);
+    }
 
-function installHyperframesBridge(win: HyperframesWindow): void {
-	win.addEventListener("message", (event: MessageEvent<unknown>) => {
-		if (!isHyperframesCommand(event.data)) return;
-		handleCommand(win, event.data);
-	});
+    win.requestAnimationFrame(tick);
+  }
 
-	function tick() {
-		postState(win);
-		win.requestAnimationFrame(tick);
-	}
-
-	win.requestAnimationFrame(tick);
-}
-
-installHyperframesBridge(window);
+  installHyperframesBridge(window);
+})();
+`;

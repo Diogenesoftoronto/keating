@@ -1,5 +1,12 @@
-import { describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it } from "bun:test";
+import { exchangeOpenAiCodexApiKey } from "../../server/api/oauth/openai-codex";
 import { getOAuthProviderConfig, providerToOAuthId, resolveOAuthRedirectUri } from "../keating/oauth";
+
+const originalFetch = globalThis.fetch;
+
+afterEach(() => {
+	globalThis.fetch = originalFetch;
+});
 
 describe("OAuth provider wiring", () => {
 	it("uses Codex OAuth for the built-in OpenAI provider", () => {
@@ -25,7 +32,7 @@ describe("OAuth provider wiring", () => {
 		};
 		try {
 			expect(resolveOAuthRedirectUri("openai-codex")).toBe("https://keating.help/oauth/callback");
-			expect(resolveOAuthRedirectUri("google-gemini-cli")).toBe("https://keating.help/oauth/callback");
+			expect(resolveOAuthRedirectUri("google-gemini-cli")).toBe("http://localhost:8085/oauth2callback");
 			// Anthropic keeps its provider-hosted code-display callback everywhere.
 			expect(resolveOAuthRedirectUri("anthropic")).toBe("https://platform.claude.com/oauth/code/callback");
 		} finally {
@@ -57,4 +64,23 @@ describe("OAuth provider wiring", () => {
 		expect(config.extraAuthParams?.code).toBe("true");
 	});
 
+	it("exchanges a Codex id_token for an OpenAI API key", async () => {
+		let requestBody = "";
+		globalThis.fetch = (async (_url: string | URL | Request, init?: RequestInit) => {
+			requestBody = String(init?.body ?? "");
+			return new Response(JSON.stringify({ api_key: "sk-test" }), {
+				status: 200,
+				headers: { "Content-Type": "application/json" },
+			});
+		}) as typeof fetch;
+
+		const apiKey = await exchangeOpenAiCodexApiKey("client-id", "id-token", undefined, "token");
+
+		expect(apiKey).toBe("sk-test");
+		const params = new URLSearchParams(requestBody);
+		expect(params.get("grant_type")).toBe("urn:ietf:params:oauth:grant-type:token-exchange");
+		expect(params.get("requested_token")).toBe("openai-api-key");
+		expect(params.get("subject_token")).toBe("id-token");
+		expect(params.get("subject_token_type")).toBe("urn:ietf:params:oauth:token-type:id_token");
+	});
 });

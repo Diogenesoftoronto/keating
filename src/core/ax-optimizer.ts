@@ -15,7 +15,7 @@ import {
   optimize
 } from "./ax-trial.js";
 import { mean } from "./util.js";
-import { TeacherPolicy, BenchmarkResult } from "./types.js";
+import { TeacherPolicy, BenchmarkResult, LearnerState } from "./types.js";
 import { stateDir, currentPolicyPath } from "./paths.js";
 import { DEFAULT_POLICY, loadPolicy } from "./policy.js";
 import { EvolutionRun, evolvePolicy as fallbackEvolvePolicy } from "./evolution.js";
@@ -30,6 +30,7 @@ export interface OptimizePolicyOptions {
   objectives?: string[]; // e.g. ["voice", "diagnosis", "engagement", "transfer", "cost"]
   focusTopic?: string;
   seed?: number;
+  learnerState?: LearnerState;
 }
 
 /**
@@ -40,14 +41,14 @@ export async function optimizePolicy(
   basePolicy: TeacherPolicy,
   options: OptimizePolicyOptions = {}
 ): Promise<EvolutionRun> {
-  const { nTrials = 24, objectives = ["score", "transfer", "engagement"], focusTopic, seed = 20260401 } = options;
+  const { nTrials = 24, objectives = ["score", "transfer", "engagement"], focusTopic, seed = 20260401, learnerState } = options;
 
   console.log(`Starting GEPA Policy Optimization (${nTrials} trials, objectives: ${objectives.join(", ")})`);
 
   const objective: KeatingObjective = async (trial) => {
     const policy = trialToPolicy(trial, `gepa-candidate-${trial.params.iteration ?? 0}`);
     const weights = trialToWeights(trial);
-    const benchmark = await runBenchmarkSuite(cwd, policy, focusTopic, seed, 3, weights);
+    const benchmark = await runBenchmarkSuite(cwd, policy, focusTopic, seed, 3, weights, learnerState);
     
     const result: Record<string, number> = {};
     for (const obj of objectives) {
@@ -75,13 +76,13 @@ export async function optimizePolicy(
     const archiveContent = await readFile(join(stateDir(cwd), "policy-archive.json"), "utf8").catch(() => "[]");
     const archive = JSON.parse(archiveContent);
 
-    const baseline = await runBenchmarkSuite(cwd, basePolicy, focusTopic, seed);
-    const best = await runBenchmarkSuite(cwd, bestPolicy, focusTopic, seed);
+    const baseline = await runBenchmarkSuite(cwd, basePolicy, focusTopic, seed, 3, undefined, learnerState);
+    const best = await runBenchmarkSuite(cwd, bestPolicy, focusTopic, seed, 3, undefined, learnerState);
     const paretoBenchmarks = await Promise.all(
       study.paretoFront.map((p, i) => {
         const policy = trialToPolicy(new PolicyTrial(p.params), `gepa-pareto-${i}`);
         const weights = trialToWeights(new PolicyTrial(p.params));
-        return runBenchmarkSuite(cwd, policy, focusTopic, seed + i * 17, 3, weights);
+        return runBenchmarkSuite(cwd, policy, focusTopic, seed + i * 17, 3, weights, learnerState);
       })
     );
 
@@ -118,7 +119,7 @@ export async function optimizePolicy(
     return run;
   } catch (error) {
     console.warn("GEPA Optimization failed, falling back to MAP-Elites.", error);
-    const meRun = await mapElitesEvolve(cwd, basePolicy, { iterations: nTrials, focusTopic, seed });
+    const meRun = await mapElitesEvolve(cwd, basePolicy, { iterations: nTrials, focusTopic, seed, learnerState });
     const run = mapElitesToEvolutionRun(meRun);
     run.metadata = {
       ...(run.metadata ?? {}),

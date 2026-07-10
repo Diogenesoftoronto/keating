@@ -735,6 +735,7 @@ function ChatContent() {
     openOriginalSession,
     mobileSidebarOpen,
     toggleMobileSidebar,
+    activeSessionId,
   } = useKeatingAgent();
   const [introDismissed, setIntroDismissed] = useState(
     () =>
@@ -857,7 +858,7 @@ function ChatContent() {
         `${linkType} ready${result.fallback ? " after portable storage was unavailable" : ""}. It was copied if your browser allowed clipboard access.`,
       );
       setShareState("copied");
-      posthog.capture('session_shared', { share_mode: result.mode, fallback: result.fallback });
+      posthog.capture('session_shared', { share_mode: result.mode, fallback: result.fallback, session_id: activeSessionId });
       window.setTimeout(() => setShareState("idle"), 1600);
     } catch (error) {
       console.warn("Failed to share session:", error);
@@ -1011,7 +1012,10 @@ function ChatContent() {
             )}
             title={speechEnabled ? "Disable speech" : "Enable speech"}
             aria-pressed={speechEnabled}
-            onClick={toggleSpeech}
+            onClick={() => {
+              posthog.capture('speech_toggled', { enabled: !speechEnabled });
+              toggleSpeech();
+            }}
           >
             {speechEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
           </button>
@@ -1019,7 +1023,10 @@ function ChatContent() {
             className={cx(actionButtonClass, "chat-only-desktop")}
             title="Artifacts"
             aria-label="Artifacts"
-            onClick={() => setArtifactBrowserOpen(true)}
+            onClick={() => {
+              posthog.capture('artifact_browser_opened', { source: 'toolbar' });
+              setArtifactBrowserOpen(true);
+            }}
           >
             <LibraryBig size={16} />
           </button>
@@ -1121,6 +1128,7 @@ function ChatContent() {
                 )}
                 onClick={() => {
                   setMobileMenuOpen(false);
+                  posthog.capture('speech_toggled', { enabled: !speechEnabled });
                   toggleSpeech();
                 }}
               >
@@ -1136,6 +1144,7 @@ function ChatContent() {
                 className={cx(menuItemClass, "chat-only-compact")}
                 onClick={() => {
                   setMobileMenuOpen(false);
+                  posthog.capture('artifact_browser_opened', { source: 'mobile_menu' });
                   setArtifactBrowserOpen(true);
                 }}
               >

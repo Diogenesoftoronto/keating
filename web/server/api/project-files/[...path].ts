@@ -1,4 +1,4 @@
-import { defineEventHandler, getRouterParam, createError } from "h3";
+import { defineEventHandler, getRequestURL, createError } from "h3";
 import { resolve, sep, relative } from "node:path";
 import { stat, readFile, readdir, realpath } from "node:fs/promises";
 import ignore from "ignore";
@@ -72,6 +72,15 @@ function pathEscapesRoot(relPath: string): boolean {
     return relPath === ".." || relPath.startsWith(`..${sep}`) || relPath.split(sep).includes("..");
 }
 
+export function projectFilesPathFromUrlPathname(pathname: string): string {
+    const rawPath = pathname.replace(/^\/api\/project-files\/?/, "");
+    try {
+        return decodeURIComponent(rawPath).replace(/^\/+/, "");
+    } catch {
+        throw createError({ statusCode: 400, statusMessage: "Invalid project file path encoding" });
+    }
+}
+
 export async function resolveProjectPath(
     root: string,
     relPath: string
@@ -98,7 +107,17 @@ export async function resolveProjectPath(
     return { lexicalRel, resolvedRel, realTarget };
 }
 
-function enforcePathFilters(relPath: string, ig: ignore.Ignore | null): void {
+// `ignore` matches directory-only patterns (e.g. ".keating/", "dist/") only when
+// the queried path carries a trailing slash. Callers that know a path refers to a
+// directory must pass `isDir: true` so those patterns are honored; otherwise a
+// bare directory name like ".keating" slips past the filter.
+export function pathIsIgnored(relPosix: string, ig: ignore.Ignore, isDir: boolean): boolean {
+    if (!relPosix) return false;
+    if (ig.ignores(relPosix)) return true;
+    return isDir && ig.ignores(`${relPosix}/`);
+}
+
+function enforcePathFilters(relPath: string, ig: ignore.Ignore | null, isDir = false): void {
     const relPosix = toPosix(relPath);
 
     if (isHardBlocked(relPath)) {
@@ -108,7 +127,7 @@ function enforcePathFilters(relPath: string, ig: ignore.Ignore | null): void {
         });
     }
 
-    if (ig && relPosix && ig.ignores(relPosix)) {
+    if (ig && pathIsIgnored(relPosix, ig, isDir)) {
         throw createError({
             statusCode: 403,
             statusMessage: `"${relPosix}" is ignored by .gitignore/.ignore. Use --no-ignore to access ignored paths.`,
@@ -122,8 +141,9 @@ async function listDirectory(
     ig: ignore.Ignore | null
 ): Promise<{ entries: Array<{ path: string; isDir: boolean; size: number }> }> {
     const { lexicalRel, realTarget, resolvedRel } = await resolveProjectPath(root, relDir);
-    enforcePathFilters(lexicalRel, ig);
-    if (resolvedRel !== lexicalRel) enforcePathFilters(resolvedRel, ig);
+    // The path being listed is itself a directory.
+    enforcePathFilters(lexicalRel, ig, true);
+    if (resolvedRel !== lexicalRel) enforcePathFilters(resolvedRel, ig, true);
 
     const entries = await readdir(realTarget, { withFileTypes: true });
     const out: Array<{ path: string; isDir: boolean; size: number }> = [];
@@ -134,10 +154,13 @@ async function listDirectory(
         // Hard-blocked dirs are always filtered
         if (isHardBlocked(childRel)) continue;
 
-        // If ignore filtering is active, skip ignored entries
-        if (ig && ig.ignores(childPosix)) continue;
+        const childIsDir = entry.isDirectory();
 
-        out.push({ path: childPosix, isDir: entry.isDirectory(), size: 0 });
+        // If ignore filtering is active, skip ignored entries. Directory entries
+        // must be tested with a trailing slash so directory-only patterns match.
+        if (ig && pathIsIgnored(childPosix, ig, childIsDir)) continue;
+
+        out.push({ path: childPosix, isDir: childIsDir, size: 0 });
     }
     out.sort((a, b) => {
         if (a.isDir !== b.isDir) return a.isDir ? -1 : 1;
@@ -168,8 +191,7 @@ export default defineEventHandler(async (event) => {
     const skipIgnore = noIgnoreEnabled();
     const ig = skipIgnore ? null : await buildIgnoreFilter(root);
 
-    const rawPath = getRouterParam(event, "path") ?? "";
-    const cleanPath = rawPath.replace(/^\/+/, "");
+    const cleanPath = projectFilesPathFromUrlPathname(getRequestURL(event).pathname);
 
     if (!cleanPath || cleanPath.endsWith("/")) {
         const dirPath = cleanPath.replace(/\/+$/, "");

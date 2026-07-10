@@ -1,6 +1,7 @@
 import { defineEventHandler, readBody, createError } from "h3";
 import { getOAuthServerConfigs, type OAuthServerProviderId } from "./config";
 import { discoverGoogleCloudProject } from "./google-gemini";
+import { exchangeOpenAiCodexApiKey } from "./openai-codex";
 
 interface RefreshRequestBody {
 	provider: string;
@@ -61,6 +62,9 @@ export default defineEventHandler(async (event) => {
 		}
 
 		const tokenData = await response.json() as Record<string, unknown>;
+		if (body.provider === "openai-codex" && typeof tokenData.id_token === "string") {
+			tokenData.api_key = await exchangeOpenAiCodexApiKey(config.clientId, tokenData.id_token, config.clientSecret, "refresh");
+		}
 		if (body.provider === "google-gemini-cli" && typeof tokenData.access_token === "string") {
 			tokenData.project_id = await discoverGoogleCloudProject(tokenData.access_token);
 		}

@@ -20,6 +20,12 @@ export interface ServeWebOptions {
    * Hard-blocked dirs (.git, node_modules) are still refused for safety.
    */
   noIgnore?: boolean;
+  /**
+   * Opt-in local command/file mutation capability for trusted localhost use.
+   * When enabled, the web server exposes /api/local-exec/** so browser tools
+   * can run commands and write files scoped to the configured project root.
+   */
+  allowLocalExec?: boolean;
   remoteProvider?: string;
   remoteEndpoint?: string;
   remoteRegion?: string;
@@ -114,7 +120,11 @@ export async function serveWeb(port = 3000, options: ServeWebOptions = {}): Prom
   const mode = options.agentRuntimeMode ?? "browser-only";
   const projectRoot = options.projectRoot ?? "";
   const noIgnore = options.noIgnore ?? false;
-  process.stdout.write(`${color.ok}${color.bold} Keating Web Server ${color.reset}  ${color.parchment}port ${port}${color.reset}  ${color.sepia}agent=${mode}${color.reset}${projectRoot ? `  ${color.sepia}root=${projectRoot}${color.reset}` : ""}${noIgnore ? `  ${color.sepia}no-ignore${color.reset}` : ""}\n`);
+  const allowLocalExec = options.allowLocalExec ?? false;
+  process.stdout.write(`${color.ok}${color.bold} Keating Web Server ${color.reset}  ${color.parchment}port ${port}${color.reset}  ${color.sepia}agent=${mode}${color.reset}${projectRoot ? `  ${color.sepia}root=${projectRoot}${color.reset}` : ""}${noIgnore ? `  ${color.sepia}no-ignore${color.reset}` : ""}${allowLocalExec ? `  ${color.warn}local-exec${color.reset}` : ""}\n`);
+  if (allowLocalExec) {
+    console.warn(`${color.warn}Warning: local exec is enabled. Browser tools can run commands and write files inside ${projectRoot || "the project root"}.${color.reset}`);
+  }
 
   const env = {
     ...process.env,
@@ -123,6 +133,7 @@ export async function serveWeb(port = 3000, options: ServeWebOptions = {}): Prom
     KEATING_WEB_AGENT_MODE: mode,
     KEATING_WEB_PROJECT_ROOT: projectRoot,
     KEATING_WEB_PROJECT_NO_IGNORE: noIgnore ? "1" : "",
+    KEATING_WEB_LOCAL_EXEC: allowLocalExec ? "1" : "",
     KEATING_WEB_REMOTE_PROVIDER: options.remoteProvider ?? process.env.KEATING_WEB_REMOTE_PROVIDER ?? "",
     KEATING_WEB_REMOTE_ENDPOINT: options.remoteEndpoint ?? process.env.KEATING_WEB_REMOTE_ENDPOINT ?? "",
     KEATING_WEB_REMOTE_REGION: options.remoteRegion ?? process.env.KEATING_WEB_REMOTE_REGION ?? "",

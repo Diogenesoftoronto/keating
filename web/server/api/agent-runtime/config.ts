@@ -18,6 +18,13 @@ export default defineEventHandler(() => {
   const projectRootRaw = env("KEATING_WEB_PROJECT_ROOT");
   const projectRoot = projectRootRaw ?? null;
 
+  // Local exec is opt-in, requires a project root, and is a localhost-only
+  // trust surface. The endpoint is only advertised when both are satisfied.
+  const localExecEnabled =
+    !!projectRoot &&
+    (process.env.KEATING_WEB_LOCAL_EXEC === "1" || process.env.KEATING_WEB_LOCAL_EXEC === "true");
+  const localExecEndpoint = localExecEnabled ? "/api/local-exec" : null;
+
   if (mode === "browser-only") {
     return {
       mode,
@@ -26,6 +33,7 @@ export default defineEventHandler(() => {
       cloudEndpoint: null,
       projectRoot,
       projectFilesEndpoint: projectRoot ? "/api/project-files" : null,
+      localExecEndpoint,
       remote: null,
       capabilities: {
         browserLocal: true,
@@ -35,6 +43,7 @@ export default defineEventHandler(() => {
         serverBrokeredSecrets: false,
         durableCompute: false,
         hostProjectAccess: !!projectRoot,
+        localCommandExecution: localExecEnabled,
       },
       fallback: {
         localFirst: true,
@@ -52,6 +61,7 @@ export default defineEventHandler(() => {
       cloudEndpoint: null,
       projectRoot,
       projectFilesEndpoint: projectRoot ? "/api/project-files" : null,
+      localExecEndpoint,
       remote: {
         provider: env("KEATING_WEB_REMOTE_PROVIDER") ?? "microsandbox",
         endpoint: env("KEATING_WEB_REMOTE_ENDPOINT"),
@@ -69,6 +79,7 @@ export default defineEventHandler(() => {
         serverBrokeredSecrets: true,
         durableCompute: true,
         hostProjectAccess: !!projectRoot,
+        localCommandExecution: localExecEnabled,
       },
       fallback: {
         localFirst: true,
@@ -85,6 +96,7 @@ export default defineEventHandler(() => {
     cloudEndpoint: env("KEATING_WEB_CLOUD_ENDPOINT") ?? "https://keating.help",
     projectRoot,
     projectFilesEndpoint: projectRoot ? "/api/project-files" : null,
+    localExecEndpoint,
     remote: null,
     capabilities: {
       browserLocal: true,
@@ -94,6 +106,7 @@ export default defineEventHandler(() => {
       serverBrokeredSecrets: true,
       durableCompute: true,
       hostProjectAccess: !!projectRoot,
+      localCommandExecution: localExecEnabled,
     },
     fallback: {
       localFirst: true,

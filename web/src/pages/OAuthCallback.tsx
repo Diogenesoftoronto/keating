@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { usePostHog } from "@posthog/react";
-import { completeOAuthFromInput, type OAuthCallbackResult } from "../keating/oauth";
+import { completeOAuthFromInput, OAUTH_MESSAGE_CHANNEL, type OAuthCallbackResult } from "../keating/oauth";
 import { css, cx } from "../../styled-system/css";
 
 const styles = {
@@ -70,10 +70,17 @@ export function OAuthCallback() {
 }
 
 function notifyOpener(result: OAuthCallbackResult): void {
+	const message = { type: OAUTH_MESSAGE_CHANNEL, ...result };
+	try {
+		const channel = new BroadcastChannel(OAUTH_MESSAGE_CHANNEL);
+		channel.postMessage(message);
+		channel.close();
+	} catch {}
+
 	try {
 		if (window.opener && !window.opener.closed) {
 			window.opener.postMessage(
-				{ type: "keating-oauth-result", ...result },
+				message,
 				window.location.origin,
 			);
 		}

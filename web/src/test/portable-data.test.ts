@@ -22,6 +22,7 @@ function emptyPortableStorage(overrides: Partial<KeatingStoragePortableData> = {
 			feedbackHistory: [],
 			strengths: [],
 			weaknesses: [],
+			topicProfiles: [],
 			sessionsCount: 0,
 			sessions: [],
 		},
@@ -31,6 +32,7 @@ function emptyPortableStorage(overrides: Partial<KeatingStoragePortableData> = {
 		quizResults: [],
 		decks: [],
 		cardReviews: [],
+		questionChecks: [],
 		...overrides,
 	};
 }
@@ -71,7 +73,8 @@ describe("portable Keating data bundle", () => {
 			generatedAt: "2026-06-10T00:00:00.000Z",
 			sessions: [{ data: session, metadata }],
 			storage: emptyPortableStorage({
-				feedback: [{ id: "f1", topic: "Derivative", signal: "thumbs-up", createdAt: 1 }],
+			feedback: [{ id: "f1", topic: "Derivative", signal: "thumbs-up", createdAt: 1 }],
+			questionChecks: [{ id: "c1", topic: "Derivative", question: "What is a derivative?", answer: "Rate of change", score: 1, grading: "auto", createdAt: 2 }],
 			}),
 		});
 
@@ -79,6 +82,7 @@ describe("portable Keating data bundle", () => {
 		expect(bundle.sessions[0].data).toEqual(session);
 		expect(bundle.sessions[0].metadata.messageCount).toBe(2);
 		expect(bundle.storage.feedback[0].id).toBe("f1");
+		expect(bundle.storage.questionChecks[0]?.grading).toBe("auto");
 		expect(parseKeatingPortableDataBundle(bundle)).toBe(bundle);
 	});
 
@@ -95,6 +99,13 @@ describe("portable Keating data bundle", () => {
 			createdAt: 1,
 			sessionId: "s1",
 			messageId: "assistant-0-2000",
+			topicSource: "session-title" as const,
+			referent: {
+				sessionId: "s1",
+				messageId: "assistant-0-2000",
+				content: "A derivative measures local change.",
+				createdAt: 2000,
+			},
 		};
 		const bundle = buildKeatingPortableDataBundleFromSources({
 			generatedAt: "2026-06-10T00:00:00.000Z",
