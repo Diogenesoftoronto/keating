@@ -262,6 +262,59 @@ function majorMinor(version: string): string {
 
 const POSTS: Post[] = [
   {
+    date: "2026-07-10",
+    badge: { label: "RELEASE", color: "release" },
+    title: "v2.2.0 - Learning Evidence That Remembers What Happened",
+    version: "2.2.0",
+    summary:
+      "Keating 2.2 makes the learning loop more accountable: feedback now points at the exact response a learner reacted to, quizzes, diagnostics, and spaced reviews build a cautious learner profile over time, and the browser agent gains safer local execution, stronger OAuth paths, and better session naming.",
+    sections: [
+      { id: "evidence-led-learning", title: "Evidence-Led Learning" },
+      { id: "feedback-with-a-referent", title: "Feedback With a Referent" },
+      { id: "browser-runtime", title: "Browser Runtime and Identity" },
+      { id: "last-commit", title: "What the Previous Commit Changed" },
+      { id: "verification-22", title: "Verification" },
+    ],
+    body: (
+      <>
+        <p className={styles.leadParagraph}>
+          A teaching system should distinguish <em>that a learner liked a reply</em> from <em>what they could retrieve later</em>. Keating 2.2 starts making that distinction durable. It keeps the original learning events, then derives cautious beliefs from them instead of collapsing a session into a thumbs-up or thumbs-down.
+        </p>
+
+        <h3 id="evidence-led-learning" className={styles.sectionHeading}>Evidence-led learning</h3>
+        <p className={styles.paragraph}>
+          Quiz results, structured diagnostic answers, and flashcard reviews now converge in a topic-level learner profile. The profile tracks mastery, retention, confidence, strengths, weaknesses, and the learner&apos;s reported challenges. Performance carries more weight than sentiment; a single excellent quiz remains provisional, while repeated retrieval over time can become real evidence of retention.
+        </p>
+        <p className={styles.paragraph}>
+          Matching diagnostics score immediately when they have an answer key. Free-text answers are saved as pending checks and can be judged by the tutor as correct, partial, or incorrect, with a misconception note only when the response supports one. That keeps the record useful without pretending every learning question has a simple right answer.
+        </p>
+
+        <h3 id="feedback-with-a-referent" className={styles.sectionHeading}>Feedback with a referent</h3>
+        <p className={styles.paragraph}>
+          Message feedback is now an attribution record. It saves the stable assistant-message id, cleaned generated response, timestamp, session id, comment, and a clearly labeled session-title topic context. Later analysis can therefore inspect the answer the learner actually reacted to instead of guessing from whichever topic happened to be current.
+        </p>
+        <p className={styles.paragraph}>
+          The session title itself is also calmer: automatic AI titling waits for two completed learner–assistant exchanges, giving it enough material to name the work rather than echoing the opening request.
+        </p>
+
+        <h3 id="browser-runtime" className={styles.sectionHeading}>Browser runtime and identity</h3>
+        <p className={styles.paragraph}>
+          This release also strengthens the browser-side operating surface: safer local-execution and project-file routes for the agent runtime, richer per-model benchmark and reward attribution, hardened Hyperframes iframe controls, and repaired OAuth callback and token paths for OpenAI Codex.
+        </p>
+
+        <h3 id="last-commit" className={styles.sectionHeading}>What the previous commit changed</h3>
+        <p className={styles.paragraph}>
+          The commit immediately before this release, <Code>fix(web): isolate Gemini CLI OAuth on gemini branch</Code>, separated Gemini CLI OAuth handling from the ordinary Google provider flow. It moved Gemini-specific configuration and token handling onto their own path, refreshed provider selection, and kept standard Google sign-in from inheriting CLI-only assumptions. That work is included here alongside the broader browser and learning-state improvements.
+        </p>
+
+        <h3 id="verification-22" className={styles.sectionHeading}>Verification</h3>
+        <p className={styles.paragraph}>
+          Keating 2.2 ships with focused learner-profile, diagnostic, OAuth, agent-runtime, project-file, benchmark, and Hyperframes coverage, plus the normal root and web type/build checks used for release preparation.
+        </p>
+      </>
+    ),
+  },
+  {
     date: "2026-07-02",
     badge: { label: "RELEASE", color: "release" },
     title: "v2.0.0 - Desktop, P2P Storage, and a Bigger App Surface",

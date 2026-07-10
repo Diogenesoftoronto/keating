@@ -5,7 +5,8 @@ import { Activity, ArrowLeft, BarChart3, BookOpenCheck, ClipboardList, Database,
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import type { Model } from "@earendil-works/pi-ai";
 import { useSeo } from "../hooks/useSeo";
-import { getInitPromise, sessions } from "../hooks/keating-storage";
+import { getInitPromise, keatingStorage, sessions } from "../hooks/keating-storage";
+import type { FeedbackEntry, QuizResultRecord } from "../keating/storage";
 import { sessionUsage } from "../hooks/session-metadata";
 import type { SessionData } from "../types/session";
 import { feedbackToOutcomeScore, inferBrowserLearnerTurnSignal, MIN_REAL_OUTCOMES } from "../keating/core";
@@ -43,9 +44,18 @@ interface ModelAggregate {
 	readiness: ReadinessBand;
 	outcomes: ModelOutcome[];
 	replayCases: ReplayCase[];
+	quizCount: number;
+	quizAverage: number | null;
+	explicitSignals: number;
 }
 
-let samplesPromise: Promise<SessionSample[]> | null = null;
+interface BenchmarkData {
+	samples: SessionSample[];
+	quizRecords: QuizResultRecord[];
+	feedbackEntries: FeedbackEntry[];
+}
+
+let dataPromise: Promise<BenchmarkData> | null = null;
 
 type ReadinessBand = "waiting" | "sparse" | "provisional" | "rankable" | "stable";
 type ReplayStage = "diagnosis" | "confusion-recovery" | "correction" | "transfer" | "retention";
@@ -64,7 +74,7 @@ interface ProsperVector {
 interface ModelOutcome {
 	score: number;
 	signal: FeedbackSignal;
-	source: "inferred-turn";
+	source: "inferred-turn" | "explicit-feedback" | "quiz";
 	stage: ReplayStage;
 	prosper: ProsperVector;
 }
@@ -136,7 +146,7 @@ const styles = {
 	sectionSubtitle: css({ mt: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" }),
 	inlineMuted: css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" }),
 	overflowX: css({ overflowX: "auto" }),
-	table: css({ w: "100%", minW: "1040px", textAlign: "left", fontSize: "0.875rem" }),
+	table: css({ w: "100%", minW: "1140px", textAlign: "left", fontSize: "0.875rem" }),
 	thead: css({ borderBottom: "1px solid var(--border)", bg: "color-mix(in srgb, var(--muted) 60%, transparent)", fontSize: "0.75rem", textTransform: "uppercase", color: "var(--muted-foreground)" }),
 	thRank: css({ w: "4rem", px: "1rem", py: "0.75rem" }),
 	th: css({ px: "1rem", py: "0.75rem" }),
@@ -204,7 +214,7 @@ function serializeModel(model: Model<any> | SharedModelInfo | undefined): Shared
 	};
 }
 
-async function loadBenchmarkSamples(): Promise<SessionSample[]> {
+async function loadBenchmarkData(): Promise<BenchmarkData> {
 	await getInitPromise();
 	const localMetadata = await sessions.getAllMetadata();
 	const localSessions = await Promise.all(
@@ -229,16 +239,24 @@ async function loadBenchmarkSamples(): Promise<SessionSample[]> {
 		model: session.model,
 		messages: session.messages,
 	}));
-	return [
-		...shared,
-		...localSessions.filter((session): session is NonNullable<typeof session> => Boolean(session)),
-	];
+	const [quizRecords, learnerState] = await Promise.all([
+		keatingStorage.getQuizResults().catch(() => [] as QuizResultRecord[]),
+		keatingStorage.getLearnerState().catch(() => null),
+	]);
+	return {
+		samples: [
+			...shared,
+			...localSessions.filter((session): session is NonNullable<typeof session> => Boolean(session)),
+		],
+		quizRecords,
+		feedbackEntries: learnerState?.feedbackHistory ?? [],
+	};
 }
 
-function useBenchmarkSamples() {
+function useBenchmarkData() {
 	use(getInitPromise());
-	if (!samplesPromise) samplesPromise = loadBenchmarkSamples();
-	return use(samplesPromise);
+	if (!dataPromise) dataPromise = loadBenchmarkData();
+	return use(dataPromise);
 }
 
 function modelKey(model: SharedModelInfo) {
@@ -376,7 +394,12 @@ function extractReplayCases(sample: SessionSample, model: SharedModelInfo): Repl
 	return cases;
 }
 
-function aggregateSamples(samples: SessionSample[], source: BenchmarkSource): ModelAggregate[] {
+function aggregateSamples(
+	samples: SessionSample[],
+	source: BenchmarkSource,
+	quizRecords: QuizResultRecord[] = [],
+	feedbackEntries: FeedbackEntry[] = []
+): ModelAggregate[] {
 	const filtered = source === "all" ? samples : samples.filter((sample) => sample.source === source);
 	const aggregates = new Map<string, ModelAggregate>();
 
@@ -402,6 +425,9 @@ function aggregateSamples(samples: SessionSample[], source: BenchmarkSource): Mo
 			readiness: "waiting" as const,
 			outcomes: [],
 			replayCases: [],
+			quizCount: 0,
+			quizAverage: null,
+			explicitSignals: 0,
 		};
 		existing.sessions += 1;
 		existing.sharedSessions += sample.source === "shared" ? 1 : 0;
@@ -427,6 +453,58 @@ function aggregateSamples(samples: SessionSample[], source: BenchmarkSource): Mo
 		aggregates.set(key, existing);
 	}
 
+	// Graded quizzes and explicit feedback attach to the model that taught the
+	// session they were recorded in. Records without a session in the current
+	// view are skipped rather than mis-attributed.
+	const aggregateBySessionId = new Map(
+		filtered.map((sample) => [sample.id, aggregates.get(modelKey(serializeModel(sample.model)))])
+	);
+	for (const record of quizRecords) {
+		if (!(record.totalQuestions > 0) || !record.sessionId) continue;
+		const aggregate = aggregateBySessionId.get(record.sessionId);
+		if (!aggregate) continue;
+		const score = clamp01(record.score / record.totalQuestions);
+		aggregate.quizCount += 1;
+		aggregate.outcomes.push({
+			score,
+			signal: score >= 0.75 ? "thumbs-up" : score < 0.4 ? "thumbs-down" : "confused",
+			source: "quiz",
+			stage: "retention",
+			prosper: {
+				performance: score,
+				robustness: 0.5,
+				outcomeLift: score,
+				sparseCaution: 0,
+				personalization: 0.4,
+				evidenceQuality: 1,
+				retentionTransfer: score,
+			},
+		});
+	}
+	for (const entry of feedbackEntries) {
+		// Turn-analysis entries duplicate the transcript-inferred replay cases.
+		if (entry.source === "turn-analysis" || !entry.sessionId) continue;
+		const aggregate = aggregateBySessionId.get(entry.sessionId);
+		if (!aggregate) continue;
+		const score = feedbackToOutcomeScore(entry.signal);
+		aggregate.explicitSignals += 1;
+		aggregate.outcomes.push({
+			score,
+			signal: entry.signal,
+			source: "explicit-feedback",
+			stage: classifyReplayStage(entry.evidence ?? "", entry.signal),
+			prosper: {
+				performance: score,
+				robustness: 0.5,
+				outcomeLift: score,
+				sparseCaution: 0,
+				personalization: 0.5,
+				evidenceQuality: 0.8,
+				retentionTransfer: 0.4,
+			},
+		});
+	}
+
 	return [...aggregates.values()]
 		.map((aggregate) => {
 			const mean = aggregate.outcomes.length
@@ -445,8 +523,10 @@ function aggregateSamples(samples: SessionSample[], source: BenchmarkSource): Mo
 							? 0.9
 							: 1;
 			const prosper = { ...prosperBase, sparseCaution };
+			const quizScores = aggregate.outcomes.filter((outcome) => outcome.source === "quiz").map((outcome) => outcome.score);
 			return {
 				...aggregate,
+				quizAverage: quizScores.length > 0 ? quizScores.reduce((sum, value) => sum + value, 0) / quizScores.length : null,
 				score: mean * 100,
 				prosper,
 				prosperScore: prosperTotal(prosper),
@@ -601,7 +681,7 @@ function KeatingBenchExplainer() {
 					Today this is deterministic scoring over observed session data. Provider replay execution is queued, so the page does not yet call every model on the same extracted learner states.
 				</p>
 				<p>
-					Inferred feedback is useful but imperfect. Explicit thumbs up, thumbs down, confused, quiz outcomes, and retention checks should carry more weight as the corpus grows.
+					Inferred feedback is useful but imperfect. Explicit thumbs up / down / confused signals and graded quiz results are now folded into each model's score — quizzes are the strongest evidence because they measure observed retrieval, not sentiment.
 				</p>
 			</ExplainerBlock>
 		</section>
@@ -617,6 +697,7 @@ function MethodologyExplainer() {
 			</div>
 			<div className={styles.twoGrid}>
 				<DefinitionRow label="Outcome" value="A normalized learner signal. Thumbs up maps high, confused maps mid-low, thumbs down maps low. Inferred learner turns use the same score scale." />
+				<DefinitionRow label="Quiz evidence" value="Graded quiz results (objective auto-grading plus teacher-judged open answers) attributed to the model that taught the session. Scored as fraction correct; the highest-quality evidence in the vector." />
 				<DefinitionRow label="PROSPER" value="A multi-objective judgement over performance, robustness, outcome lift, sparse-data caution, personalization, evidence quality, and retention or transfer." />
 				<DefinitionRow label="Performance" value="How well the observed learner signal turned out for the model in that session context." />
 				<DefinitionRow label="Robustness" value="Whether the response appears concrete, checks understanding, and has enough instructional substance to handle similar learners." />
@@ -634,9 +715,9 @@ function MethodologyExplainer() {
 function KeatingBenchContent() {
 	const posthog = usePostHog();
 	const navigate = useNavigate();
-	const samples = useBenchmarkSamples();
+	const { samples, quizRecords, feedbackEntries } = useBenchmarkData();
 	const [source, setSource] = useState<BenchmarkSource>("shared");
-	const rows = useMemo(() => aggregateSamples(samples, source), [samples, source]);
+	const rows = useMemo(() => aggregateSamples(samples, source, quizRecords, feedbackEntries), [samples, source, quizRecords, feedbackEntries]);
 	const replayCases = useMemo(() => replayCasesFor(samples, source), [samples, source]);
 	const totals = useMemo(() => rows.reduce(
 		(acc, row) => {
@@ -644,9 +725,11 @@ function KeatingBenchContent() {
 			acc.sessions += row.sessions;
 			acc.models += 1;
 			acc.ready += row.readiness === "rankable" || row.readiness === "stable" ? 1 : 0;
+			acc.quizzes += row.quizCount;
+			acc.explicit += row.explicitSignals;
 			return acc;
 		},
-		{ signals: 0, sessions: 0, models: 0, ready: 0 },
+		{ signals: 0, sessions: 0, models: 0, ready: 0, quizzes: 0, explicit: 0 },
 	), [rows]);
 
 	useEffect(() => {
@@ -707,8 +790,8 @@ function KeatingBenchContent() {
 				<div className={styles.metricGrid}>
 					<MetricTile icon={<Database size={18} />} label="Sessions" value={formatNumber(totals.sessions)} detail={`${formatNumber(samples.filter((sample) => sample.source === "shared").length)} shared cached`} />
 					<MetricTile icon={<BarChart3 size={18} />} label="Models" value={formatNumber(totals.models)} detail={`${formatNumber(totals.ready)} ready for ranking`} />
-					<MetricTile icon={<Activity size={18} />} label="Feedback signals" value={formatNumber(totals.signals)} detail={`${READINESS_THRESHOLDS.rankable} signals for ranked status`} />
-					<MetricTile icon={<ClipboardList size={18} />} label="Replay cases" value={formatNumber(replayCases.length)} detail={`${formatNumber(replayCases.filter((item) => item.stage === "confusion-recovery").length)} confusion cases`} />
+					<MetricTile icon={<Activity size={18} />} label="Feedback signals" value={formatNumber(totals.signals)} detail={`${formatNumber(totals.explicit)} explicit | ${READINESS_THRESHOLDS.rankable} for ranked status`} />
+					<MetricTile icon={<BookOpenCheck size={18} />} label="Graded quizzes" value={formatNumber(totals.quizzes)} detail="Strongest evidence: observed retrieval performance" />
 				</div>
 
 				<KeatingBenchExplainer />
@@ -732,6 +815,7 @@ function KeatingBenchContent() {
 									<th className={styles.th}>Model</th>
 									<th className={styles.th}>PROSPER</th>
 									<th className={styles.th}>Outcome</th>
+									<th className={styles.th}>Quiz avg</th>
 									<th className={styles.th}>Replay mix</th>
 									<th className={styles.th}>Signals</th>
 									<th className={styles.th}>Sessions</th>
@@ -743,7 +827,7 @@ function KeatingBenchContent() {
 							<tbody className={styles.tbody}>
 								{rows.length === 0 ? (
 									<tr>
-										<td colSpan={10} className={styles.emptyCell}>
+										<td colSpan={11} className={styles.emptyCell}>
 											No benchmarkable sessions in this view.
 										</td>
 									</tr>
@@ -768,6 +852,10 @@ function KeatingBenchContent() {
 											<div className={cx(styles.smallMuted, css({ mt: "0.25rem" }))}>Learner outcome</div>
 										</td>
 										<td className={styles.td}>
+											<div className={styles.outcomeScore}>{row.quizAverage === null ? "—" : `${Math.round(row.quizAverage * 100)}%`}</div>
+											<div className={cx(styles.smallMuted, css({ mt: "0.25rem" }))}>{row.quizCount > 0 ? `${formatNumber(row.quizCount)} graded` : "No quizzes yet"}</div>
+										</td>
+										<td className={styles.td}>
 											<div className={styles.wrapGap1}>
 												{(["confusion-recovery", "correction", "transfer", "retention"] as ReplayStage[]).map((stage) => {
 													const count = row.outcomes.filter((outcome) => outcome.stage === stage).length;
@@ -775,7 +863,10 @@ function KeatingBenchContent() {
 												})}
 											</div>
 										</td>
-										<td className={cx(styles.td, styles.tabular)}>{formatNumber(row.signals)}</td>
+										<td className={styles.td}>
+												<div className={styles.tabular}>{formatNumber(row.signals)}</div>
+												<div className={cx(styles.smallMuted, css({ mt: "0.25rem" }))}>{formatNumber(row.explicitSignals)} explicit | {formatNumber(row.quizCount)} quiz</div>
+											</td>
 										<td className={styles.td}>
 											<div className={styles.tabular}>{formatNumber(row.sessions)}</div>
 											<div className={cx(styles.smallMuted, css({ mt: "0.25rem" }))}>{formatNumber(row.sharedSessions)} shared | {formatNumber(row.localSessions)} private</div>

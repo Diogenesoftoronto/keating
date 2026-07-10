@@ -296,7 +296,7 @@ export function Landing() {
     navigator.clipboard.writeText(TAB_COPY_TEXT[activeTab]).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-      posthog.capture('install_command_copied', { tab: activeTab });
+      posthog.capture('install_intent', { method: activeTab });
     });
   }
 
@@ -333,7 +333,7 @@ export function Landing() {
                   <button
                     className={btnRetro({ tone: "primary" })}
                     onClick={() => {
-                      posthog.capture('cta_clicked', { label: 'Initialize_Session', location: 'hero' });
+                      posthog.capture('start_session_clicked', { source: 'landing_hero' });
                       navigate({ to: "/chat" });
                     }}
                   >
@@ -474,7 +474,7 @@ export function Landing() {
               <button
                 className={btnRetro({ tone: "primary" })}
                 onClick={() => {
-                  posthog.capture('cta_clicked', { label: 'Open_Web_Shell', location: 'use_section' });
+                  posthog.capture('start_session_clicked', { source: 'landing_use_section' });
                   navigate({ to: "/chat" });
                 }}
               >
@@ -609,7 +609,7 @@ export function Landing() {
               <button
                 className={btnRetro({ tone: "primary" })}
                 onClick={() => {
-                  posthog.capture('cta_clicked', { label: 'Initialize_Session', location: 'final_cta' });
+                  posthog.capture('start_session_clicked', { source: 'landing_final_cta' });
                   navigate({ to: "/chat" });
                 }}
               >

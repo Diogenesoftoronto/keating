@@ -6,6 +6,7 @@ const DEFAULT_LEARNER_STATE: Omit<LearnerState, "id"> = {
   coveredTopics: [],
   identifiedMisconceptions: [],
   feedback: [],
+  quizResults: [],
   sessions: [],
   profile: {
     id: "default",
@@ -28,7 +29,9 @@ export async function loadLearnerState(filePath: string): Promise<LearnerState> 
   // Read JSON from filePath. If file doesn't exist or is invalid, return default with id "learner-1"
   try {
     const raw = await readFile(filePath, "utf8");
-    return JSON.parse(raw) as LearnerState;
+    const state = JSON.parse(raw) as LearnerState;
+    if (!Array.isArray(state.quizResults)) state.quizResults = [];
+    return state;
   } catch {
     return defaultLearnerState();
   }
@@ -86,6 +89,29 @@ export function recordFeedback(
     signal,
     comment
   });
+  return state;
+}
+
+export function recordQuizResult(
+  state: LearnerState,
+  topicSlug: string,
+  correct: number,
+  total: number
+): LearnerState {
+  if (total <= 0) return state;
+  if (!state.quizResults) state.quizResults = [];
+  const score = clamp(correct / total);
+  state.quizResults.push({
+    topic: topicSlug,
+    timestamp: new Date().toISOString(),
+    correct,
+    total,
+    score
+  });
+  const covered = state.coveredTopics.find((t) => t.slug === topicSlug);
+  if (covered) {
+    covered.masteryEstimate = clamp(covered.masteryEstimate * 0.6 + score * 0.4);
+  }
   return state;
 }
 

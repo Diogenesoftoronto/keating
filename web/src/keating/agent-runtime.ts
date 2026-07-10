@@ -21,6 +21,8 @@ export interface KeatingAgentRuntimeCapabilities {
   serverBrokeredSecrets: boolean;
   durableCompute: boolean;
   hostProjectAccess: boolean;
+  /** Opt-in localhost host command execution + file writes (keating web --allow-local-exec). */
+  localCommandExecution: boolean;
 }
 
 export interface KeatingAgentRuntimeConfig {
@@ -30,6 +32,8 @@ export interface KeatingAgentRuntimeConfig {
   cloudEndpoint: string | null;
   projectRoot: string | null;
   projectFilesEndpoint: string | null;
+  /** Base endpoint for local exec/write routes, or null when disabled. */
+  localExecEndpoint: string | null;
   remote: KeatingRemoteAgentRuntimeConfig | null;
   capabilities: KeatingAgentRuntimeCapabilities;
   fallback: {
@@ -48,6 +52,7 @@ export const DEFAULT_AGENT_RUNTIME_CONFIG: KeatingAgentRuntimeConfig = {
   cloudEndpoint: null,
   projectRoot: null,
   projectFilesEndpoint: null,
+  localExecEndpoint: null,
   remote: null,
   capabilities: {
     browserLocal: true,
@@ -57,6 +62,7 @@ export const DEFAULT_AGENT_RUNTIME_CONFIG: KeatingAgentRuntimeConfig = {
     serverBrokeredSecrets: false,
     durableCompute: false,
     hostProjectAccess: false,
+    localCommandExecution: false,
   },
   fallback: {
     localFirst: true,
@@ -76,13 +82,16 @@ export function normalizeAgentRuntimeConfig(value: unknown): KeatingAgentRuntime
 
   if (mode === "browser-only") {
     const projectFilesEndpoint = raw.projectFilesEndpoint ?? null;
+    const localExecEndpoint = raw.localExecEndpoint ?? null;
     return {
       ...DEFAULT_AGENT_RUNTIME_CONFIG,
       projectRoot: raw.projectRoot ?? null,
       projectFilesEndpoint,
+      localExecEndpoint,
       capabilities: {
         ...DEFAULT_AGENT_RUNTIME_CONFIG.capabilities,
         hostProjectAccess: !!projectFilesEndpoint,
+        localCommandExecution: !!localExecEndpoint,
       },
     };
   }
@@ -107,6 +116,7 @@ export function normalizeAgentRuntimeConfig(value: unknown): KeatingAgentRuntime
       cloudEndpoint: null,
       projectRoot: raw.projectRoot ?? null,
       projectFilesEndpoint: raw.projectFilesEndpoint ?? null,
+      localExecEndpoint: raw.localExecEndpoint ?? null,
       remote: remote ?? {
         provider: "microsandbox",
         endpoint: null,
@@ -124,6 +134,7 @@ export function normalizeAgentRuntimeConfig(value: unknown): KeatingAgentRuntime
         serverBrokeredSecrets: true,
         durableCompute: true,
         hostProjectAccess: !!raw.projectFilesEndpoint,
+        localCommandExecution: !!raw.localExecEndpoint,
       },
       fallback: {
         localFirst: true,
@@ -140,6 +151,7 @@ export function normalizeAgentRuntimeConfig(value: unknown): KeatingAgentRuntime
     cloudEndpoint: raw.cloudEndpoint || DEFAULT_CLOUD_ENDPOINT,
     projectRoot: raw.projectRoot ?? null,
     projectFilesEndpoint: raw.projectFilesEndpoint ?? null,
+    localExecEndpoint: raw.localExecEndpoint ?? null,
     remote: null,
     capabilities: {
       browserLocal: true,
@@ -149,6 +161,7 @@ export function normalizeAgentRuntimeConfig(value: unknown): KeatingAgentRuntime
       serverBrokeredSecrets: true,
       durableCompute: true,
       hostProjectAccess: !!raw.projectFilesEndpoint,
+      localCommandExecution: !!raw.localExecEndpoint,
     },
     fallback: {
       localFirst: true,

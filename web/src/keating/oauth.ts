@@ -20,6 +20,8 @@ export interface OAuthCredentials {
 	idToken?: string;
 }
 
+export const OAUTH_MESSAGE_CHANNEL = "keating-oauth-result";
+
 interface OAuthProviderConfig {
 	id: OAuthProviderId;
 	name: string;
@@ -86,11 +88,10 @@ function isProdWebHost(): boolean {
 
 export function resolveOAuthRedirectUri(providerId: OAuthProviderId): string {
 	const config = OAUTH_PROVIDERS[providerId];
-	// Anthropic always uses its provider-hosted code-display callback. For the
-	// others, production uses the keating.help web callback registered with the
-	// providers; everywhere else (dev/self-hosted) falls back to the CLI clients'
-	// loopback URIs, finished via manual URL paste.
-	if (providerId !== "anthropic" && isProdWebHost()) return getRedirectUri();
+	// Anthropic always uses its provider-hosted code-display callback. OpenAI is
+	// the only browser OAuth flow that uses the keating.help callback in prod.
+	if (providerId === "anthropic") return config.redirectUri ?? getRedirectUri();
+	if (isProdWebHost()) return getRedirectUri();
 	return config.redirectUri ?? getRedirectUri();
 }
 

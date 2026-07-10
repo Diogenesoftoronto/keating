@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "bun:test";
 import { exchangeOpenAiCodexApiKey } from "../../server/api/oauth/openai-codex";
-import { getOAuthProviderConfig, providerToOAuthId, resolveOAuthRedirectUri } from "../keating/oauth";
+import { getOAuthProviderConfig, OAUTH_MESSAGE_CHANNEL, providerToOAuthId, resolveOAuthRedirectUri } from "../keating/oauth";
 
 const originalFetch = globalThis.fetch;
 
@@ -9,6 +9,10 @@ afterEach(() => {
 });
 
 describe("OAuth provider wiring", () => {
+	it("exports the browser callback message channel", () => {
+		expect(OAUTH_MESSAGE_CHANNEL).toBe("keating-oauth-result");
+	});
+
 	it("uses Codex OAuth for the built-in OpenAI provider", () => {
 		expect(providerToOAuthId("openai")).toBe("openai-codex");
 		expect(providerToOAuthId("openai-codex")).toBe("openai-codex");

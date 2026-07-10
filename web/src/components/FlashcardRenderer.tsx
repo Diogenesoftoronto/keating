@@ -304,6 +304,8 @@ export function FlashcardRenderer({
 					rating,
 					appliedIntervalDays: outcome.appliedIntervalDays,
 					easeAfter: nextSrs.ease,
+					previousIntervalDays: current.srs.intervalDays,
+					isLapse: outcome.isLapse,
 				});
 			} catch {
 				/* storage failure should not block the review flow */
