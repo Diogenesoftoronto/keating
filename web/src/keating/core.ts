@@ -108,6 +108,7 @@ export interface TeachingSimulation {
 export interface ScoreableLearnerOutcome {
 	topic: string;
 	feedbackSignal: "thumbs-up" | "thumbs-down" | "confused";
+	quizScore?: number | null;
 	masteryEstimate: number;
 	outcomeScore: number;
 }
@@ -282,8 +283,17 @@ export function computeRealOutcomeScore(
 		outcomes.filter((outcome) => outcome.feedbackSignal === "thumbs-down").length /
 		outcomes.length;
 	const avgMastery = mean(outcomes.map((outcome) => outcome.masteryEstimate));
+	const quizScores = outcomes
+		.map((outcome) => outcome.quizScore)
+		.filter((value): value is number => typeof value === "number" && !Number.isNaN(value));
+	const avgQuiz = quizScores.length > 0 ? mean(quizScores) : null;
 
-	const masteryGain = clamp(avgOutcome * 0.6 + avgMastery * 0.4);
+	// Graded quiz results are direct evidence of mastery, so when present they
+	// dominate the inferred feedback/mastery signals.
+	const masteryGain =
+		avgQuiz === null
+			? clamp(avgOutcome * 0.6 + avgMastery * 0.4)
+			: clamp(avgQuiz * 0.5 + avgOutcome * 0.3 + avgMastery * 0.2);
 	const retention = clamp(
 		masteryGain * (0.55 + policy.retrievalPractice * 0.45)
 	);
@@ -308,6 +318,9 @@ export function computeRealOutcomeScore(
 	if (downRatio > 0.2) explanations.push("learner gave substantial negative feedback");
 	if (avgMastery > 0.7) explanations.push("mastery estimates are high");
 	if (avgMastery < 0.3) explanations.push("mastery estimates are low");
+	if (avgQuiz !== null) {
+		explanations.push(`graded quiz average is ${(avgQuiz * 100).toFixed(0)}% across ${quizScores.length} quiz(zes)`);
+	}
 	if (explanations.length === 0) explanations.push("learner feedback is mixed");
 
 	return {
@@ -956,6 +969,8 @@ export interface BrowserLearnerOutcome extends ScoreableLearnerOutcome {
 	feedbackSignal: "thumbs-up" | "thumbs-down" | "confused";
 	masteryEstimate: number;
 	outcomeScore: number;
+	/** Label of the model that was teaching when this signal was collected. */
+	model?: string;
 }
 
 export interface BrowserLearnerTurnSignal {
@@ -991,6 +1006,147 @@ export function extractBrowserOutcomes(feedbackHistory: Array<{ topic: string; s
 		masteryEstimate: topicsExplored.includes(fb.topic) ? 0.6 : 0.4,
 		outcomeScore: feedbackToOutcomeScore(fb.signal),
 	}));
+}
+
+export interface BenchSessionSample {
+	id: string;
+	title: string;
+	model?: { provider?: string; id?: string; name?: string };
+	messages: unknown[];
+}
+
+export function benchModelLabel(model?: BenchSessionSample["model"]): string {
+	if (!model) return "unattributed";
+	const name = model.name ?? model.id;
+	if (!name) return model.provider ?? "unattributed";
+	return model.provider ? `${model.provider}/${name}` : name;
+}
+
+function benchMessageText(message: unknown): string {
+	const content = (message as { content?: unknown }).content;
+	if (typeof content === "string") return content.trim();
+	if (!Array.isArray(content)) return "";
+	return content
+		.map((item) => {
+			if (typeof item === "string") return item;
+			if (item && typeof item === "object" && typeof (item as { text?: unknown }).text === "string") {
+				return (item as { text: string }).text;
+			}
+			return "";
+		})
+		.filter(Boolean)
+		.join(" ")
+		.trim();
+}
+
+export function extractSessionTurnOutcomes(samples: BenchSessionSample[]): BrowserLearnerOutcome[] {
+	const outcomes: BrowserLearnerOutcome[] = [];
+	for (const sample of samples) {
+		const model = benchModelLabel(sample.model);
+		for (const message of sample.messages) {
+			if (!message || typeof message !== "object") continue;
+			const role = (message as { role?: unknown }).role;
+			if (role !== "user" && role !== "user-with-attachments") continue;
+			const text = benchMessageText(message);
+			if (!text) continue;
+			const inferred = inferBrowserLearnerTurnSignal(text, sample.title);
+			if (!inferred || inferred.topic === "general") continue;
+			outcomes.push({
+				topic: inferred.topic,
+				feedbackSignal: inferred.signal,
+				masteryEstimate: inferred.masteryEstimate,
+				outcomeScore: feedbackToOutcomeScore(inferred.signal),
+				model,
+			});
+		}
+	}
+	return outcomes;
+}
+
+export function quizRecordsToOutcomes(
+	records: Array<{ topic: string; score: number; totalQuestions: number; sessionId?: string }>,
+	modelBySessionId?: Map<string, string>
+): BrowserLearnerOutcome[] {
+	const outcomes: BrowserLearnerOutcome[] = [];
+	for (const record of records) {
+		if (!(record.totalQuestions > 0)) continue;
+		const score = clamp(record.score / record.totalQuestions);
+		outcomes.push({
+			topic: resolveTopic(record.topic).slug,
+			feedbackSignal: score >= 0.75 ? "thumbs-up" : score < 0.4 ? "thumbs-down" : "confused",
+			quizScore: score,
+			masteryEstimate: score,
+			outcomeScore: score,
+			model: (record.sessionId && modelBySessionId?.get(record.sessionId)) || "unattributed",
+		});
+	}
+	return outcomes;
+}
+
+export interface ModelBenchmarkBreakdown {
+	model: string;
+	overallScore: number;
+	outcomes: number;
+	thumbsUp: number;
+	thumbsDown: number;
+	confused: number;
+	quizCount: number;
+	quizAverage: number | null;
+	dataSource: string;
+}
+
+export function benchmarkPerModel(
+	policy: TeacherPolicy,
+	outcomes: BrowserLearnerOutcome[],
+	focusTopic?: string,
+	seed = 20260401,
+	weights: SimulationWeights = DEFAULT_WEIGHTS
+): ModelBenchmarkBreakdown[] {
+	const groups = new Map<string, BrowserLearnerOutcome[]>();
+	for (const outcome of outcomes) {
+		const key = outcome.model ?? "unattributed";
+		const group = groups.get(key) ?? [];
+		group.push(outcome);
+		groups.set(key, group);
+	}
+	return [...groups.entries()]
+		.map(([model, group]) => {
+			const result = runBenchmarkSuite(policy, focusTopic, seed, 3, weights, group);
+			const quizScores = group
+				.map((outcome) => outcome.quizScore)
+				.filter((value): value is number => typeof value === "number" && !Number.isNaN(value));
+			return {
+				model,
+				overallScore: result.overallScore,
+				outcomes: group.length,
+				thumbsUp: group.filter((outcome) => outcome.feedbackSignal === "thumbs-up").length,
+				thumbsDown: group.filter((outcome) => outcome.feedbackSignal === "thumbs-down").length,
+				confused: group.filter((outcome) => outcome.feedbackSignal === "confused").length,
+				quizCount: quizScores.length,
+				quizAverage: quizScores.length > 0 ? mean(quizScores) : null,
+				dataSource: result.trace.dataSource ?? "learner-feedback",
+			};
+		})
+		.sort((a, b) => b.overallScore - a.overallScore);
+}
+
+export function perModelBreakdownToMarkdown(breakdown: ModelBenchmarkBreakdown[]): string {
+	if (breakdown.length === 0) return "";
+	const lines = [
+		"## Per-Model Results",
+		"",
+		"Each signal is attributed to the model that was teaching in the session where it was collected.",
+		"",
+		"| Model | Score | Signals | 👍 | 👎 | 🤔 | Quiz avg | Evidence |",
+		"| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+	];
+	for (const row of breakdown) {
+		const quiz = row.quizAverage === null ? "—" : `${Math.round(row.quizAverage * 100)}% (n=${row.quizCount})`;
+		lines.push(
+			`| ${row.model} | ${row.overallScore.toFixed(2)} | ${row.outcomes} | ${row.thumbsUp} | ${row.thumbsDown} | ${row.confused} | ${quiz} | ${row.dataSource} |`
+		);
+	}
+	return lines.join("\n");
 }
 
 export function runBenchmarkSuite(

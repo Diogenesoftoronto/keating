@@ -36,6 +36,7 @@ import {
 import { subscribeAgentEvents } from "./agent-subscriptions";
 import { DEFAULT_MODEL, hybridStreamFn } from "./keating-stream";
 import { getInitPromise, keatingStorage, sessions, updateSessionTitle } from "./keating-storage";
+import { hasAutoTitleContext } from "./session-auto-title";
 import { cloneMessages, createSessionId, sessionModelMetadata, sessionPreview, sessionSearchText, sessionTitle, sessionUsage, truncateAtForkPoint } from "./session-metadata";
 import { saveSharedSession, sharedSessionUrl, type SharedSessionUrlResult } from "../keating/shared-sessions";
 import { loadKeatingUiSettings } from "../keating/ui-settings";
@@ -191,8 +192,9 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const settingsDeepLinkRef = useRef<{ tabId: string; sectionId: string | null } | null>(null);
 
   const openSettings = useCallback(() => {
+    posthog.capture('settings_opened', { source: 'toolbar' });
     settingsDialog.onOpen();
-  }, [settingsDialog]);
+  }, [posthog, settingsDialog]);
 
   // Deep-link support: ?settings=<tabId> or ?settings=<tabId>-<sectionId>.
   // Opens the settings dialog on the matching tab, scrolls to the section
@@ -247,25 +249,75 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
 
   useEffect(() => {
     const onMessageFeedback = async (event: Event) => {
-      const detail = (event as CustomEvent<{ type?: unknown; comment?: unknown; messageId?: unknown }>).detail;
+      const detail = (event as CustomEvent<{
+        type?: unknown;
+        comment?: unknown;
+        messageId?: unknown;
+        messageText?: unknown;
+        messageCreatedAt?: unknown;
+      }>).detail;
       const signal = detail?.type === "up"
         ? "thumbs-up"
         : detail?.type === "down"
           ? "thumbs-down"
           : null;
       if (!signal) return;
-      const state = await keatingStorage.getLearnerState();
-      const topic = state.topicsExplored.at(-1) ?? "general";
+      const sessionId = sessionIdRef.current;
+      const session = await sessions.loadSession(sessionId) as SessionData | null;
+      // The session title is context only; the referent retains the exact
+      // generated answer, so later analysis need not guess from a topic bucket.
+      const topic = session?.title?.trim() || "general";
+      const messageId = typeof detail.messageId === "string" ? detail.messageId : undefined;
+      const messageText = typeof detail.messageText === "string" ? detail.messageText.trim() : "";
       posthog.capture('message_feedback_given', { signal, topic, session_id: sessionIdRef.current });
       await keatingStorage.recordFeedback(topic, signal, {
         source: "explicit",
         evidence: typeof detail.comment === "string" && detail.comment.trim() ? detail.comment : undefined,
-        messageId: typeof detail.messageId === "string" ? detail.messageId : undefined,
-        sessionId: sessionIdRef.current,
+        messageId,
+        sessionId,
+        topicSource: "session-title",
+        referent: messageId && messageText
+          ? {
+              sessionId,
+              messageId,
+              content: messageText.slice(0, 12_000),
+              createdAt: typeof detail.messageCreatedAt === "number" ? detail.messageCreatedAt : undefined,
+            }
+          : undefined,
       });
     };
     window.addEventListener("keating:message-feedback", onMessageFeedback);
     return () => window.removeEventListener("keating:message-feedback", onMessageFeedback);
+  }, []);
+
+  useEffect(() => {
+    const onQuestionAnswered = (event: Event) => {
+      const detail = (event as CustomEvent<{
+        topic?: unknown;
+        answers?: Array<{ question?: unknown; answer?: unknown; score?: unknown; grading?: unknown }>;
+      }>).detail;
+      const answers = detail?.answers?.filter(
+        (answer): answer is { question: string; answer: string; score?: unknown; grading?: unknown } =>
+          typeof answer?.question === "string" && typeof answer.answer === "string",
+      ) ?? [];
+      if (answers.length === 0) return;
+      void (async () => {
+        const state = await keatingStorage.getLearnerState();
+        const topic = typeof detail?.topic === "string" && detail.topic.trim()
+          ? detail.topic.trim()
+          : state.topicsExplored.at(-1) ?? "general";
+        await Promise.all(answers.map((answer) => keatingStorage.recordQuestionCheck({
+          topic,
+          question: answer.question,
+          answer: answer.answer,
+          score: typeof answer.score === "number" ? answer.score : undefined,
+          grading: answer.grading === "auto" ? "auto" : "pending",
+          sessionId: sessionIdRef.current,
+        })));
+      })();
+    };
+    window.addEventListener("keating:question-answered", onQuestionAnswered);
+    return () => window.removeEventListener("keating:question-answered", onQuestionAnswered);
   }, []);
 
   async function loadBrowserModel() {
@@ -291,6 +343,20 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       if (agentRef.current) {
         agentRef.current.state.systemPrompt = buildKeatingSystemPrompt(settings.enabled, basePrompt);
       }
+    },
+    getSessionSamples: async () => {
+      const metadata = await sessions.getAllMetadata();
+      const loaded = await Promise.all(metadata.map((entry) => sessions.loadSession(entry.id) as Promise<SessionData | null>));
+      return loaded
+        .filter((data): data is SessionData => Boolean(data))
+        .map((data) => ({
+          id: data.id,
+          title: data.title,
+          model: data.model
+            ? { provider: data.model.provider, id: data.model.id, name: data.model.name }
+            : undefined,
+          messages: data.messages as unknown[],
+        }));
     },
   }), []);
 
@@ -348,8 +414,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     await keatingStorage.recordLearnerTurnFeedback(messages as Array<{ role?: unknown; content?: unknown }>);
     window.dispatchEvent(new CustomEvent("keating:sessions-changed"));
 
-    const hasAssistantMessage = messages.some((message) => (message as { role?: unknown }).role === "assistant");
-    if (!hasManualTitle && !aiGeneratedTitle && hasAssistantMessage && !autoTitleRequestedRef.current.has(sessionId)) {
+    if (!hasManualTitle && !aiGeneratedTitle && hasAutoTitleContext(messages) && !autoTitleRequestedRef.current.has(sessionId)) {
       autoTitleRequestedRef.current.add(sessionId);
       void (async () => {
         const model = agent.state.model as Model<Api>;
@@ -522,10 +587,22 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     unsubRef.current = subscribeAgentEvents(agent, panel as any);
     if (persistUnsubRef.current) persistUnsubRef.current();
     persistUnsubRef.current = agent.subscribe((ev) => {
-      if (ev.type === "tool_execution_end" && !ev.isError && ARTIFACT_TOOL_NAMES.has(ev.toolName)) {
-        window.dispatchEvent(new CustomEvent("keating:artifact-created", { detail: { toolName: ev.toolName, result: ev.result } }));
+      if (ev.type === "tool_execution_end") {
+        const succeeded = !ev.isError;
+        posthog.capture('tool_invoked', {
+          tool_name: ev.toolName,
+          session_id: agentSessionId,
+          succeeded,
+          is_artifact: ARTIFACT_TOOL_NAMES.has(ev.toolName),
+        });
+        if (succeeded && ARTIFACT_TOOL_NAMES.has(ev.toolName)) {
+          posthog.capture('artifact_created', { tool_name: ev.toolName, session_id: agentSessionId });
+          window.dispatchEvent(new CustomEvent("keating:artifact-created", { detail: { toolName: ev.toolName, result: ev.result } }));
+        }
       }
       if (ev.type === "agent_end") {
+        const turnIndex = agent.state.messages.filter((m) => m.role === "assistant").length;
+        posthog.capture('agent_turn_completed', { session_id: agentSessionId, turn_index: turnIndex });
         agent.waitForIdle()
           .then(() => saveSessionSnapshot(agent, agentSessionId, agentCreatedAt))
           .then(() => maybeGenerateAlternativeResponse(agent, agentSessionId))
@@ -541,6 +618,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       },
       onAuthError: async (provider: string) => {
         if (provider === "browser") return false;
+        posthog.capture('api_error', { error_type: 'auth', provider, session_id: agentSessionId });
         const ok = await promptKeatingApiKey(provider, { force: true });
         if (!ok) return false;
         // Key re-entered — actually recover by retrying the failed turn:
@@ -553,6 +631,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
         }
         agent.continue().catch((error) => {
           console.error("Keating retry after API key re-entry failed:", error);
+          posthog.capture('api_error', { error_type: 'retry_failed', provider, session_id: agentSessionId });
         });
         return true;
       },
@@ -560,9 +639,15 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
         if (import.meta.env.DEV) {
           console.log(`[keating:send] model=${agent.state.model.provider}/${agent.state.model.id} messages=${agent.state.messages.length}`);
         }
+        const turnIndex = agent.state.messages.filter((m) => m.role === "user").length;
+        posthog.capture('message_sent', { session_id: agentSessionId, turn_index: turnIndex });
+        if (turnIndex === 0) {
+          posthog.capture('first_message_sent', { session_id: agentSessionId });
+        }
       },
       onLocalMessagesChanged: () => saveSessionSnapshot(agent, agentSessionId, agentCreatedAt),
       onModelSelect: () => {
+        posthog.capture('model_selector_opened', { session_id: agentSessionId });
         modelSelectorDialog.onOpen();
       },
       onFork: (forkPoint?: number) => forkSession(agentSessionId, forkPoint),
@@ -570,12 +655,13 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       onThinkingLevelChange: (level: ThinkingLevel) => {
         if (agentRef.current) {
           agentRef.current.state.thinkingLevel = level;
+          posthog.capture('thinking_level_changed', { level, session_id: agentSessionId });
         }
       },
     };
 
     await panel.setAgent(agent, setupCallbacks);
-  }, [maybeGenerateAlternativeResponse, saveSessionSnapshot, speechSettings, toolOptions]);
+  }, [maybeGenerateAlternativeResponse, posthog, saveSessionSnapshot, speechSettings, toolOptions]);
 
   useEffect(() => {
     const agent = agentRef.current;
@@ -636,14 +722,16 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
         setPersistentStorageStatus(nextStatus);
         savePersistentStorageStatus(nextStatus as Exclude<PersistentStorageStatus, "unknown">);
         setPersistentStorageChecked(true);
+        posthog.capture('persistent_storage_requested', { granted: nextStatus === "granted" });
       })
       .catch((error) => {
         setPersistentStorageStatus("declined");
         savePersistentStorageStatus("declined");
         setPersistentStorageChecked(true);
+        posthog.capture('persistent_storage_requested', { granted: false });
         console.warn("Persistent storage request failed:", error);
       });
-  }, [persistentBannerDismissed, persistentStorageStatus, setPersistentStorageChecked, setPersistentStorageStatus]);
+  }, [persistentBannerDismissed, persistentStorageStatus, posthog, setPersistentStorageChecked, setPersistentStorageStatus]);
 
   const retryPersistentStorage = useCallback(() => {
     persistentStorageRequestedRef.current = false;
@@ -652,17 +740,19 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
         setPersistentStorageStatus(nextStatus);
         savePersistentStorageStatus(nextStatus as Exclude<PersistentStorageStatus, "unknown">);
         setPersistentStorageChecked(true);
+        posthog.capture('persistent_storage_retried', { granted: nextStatus === "granted" });
       })
       .catch((error) => {
         setPersistentStorageStatus("declined");
         savePersistentStorageStatus("declined");
         setPersistentStorageChecked(true);
+        posthog.capture('persistent_storage_retried', { granted: false });
         console.warn("Persistent storage retry failed:", error);
       })
       // If the browser silently denies persistence, stop nagging for this
       // session instead of leaving a banner the user cannot resolve.
       .finally(() => dismissPersistentBanner());
-  }, [dismissPersistentBanner, setPersistentStorageChecked, setPersistentStorageStatus]);
+  }, [dismissPersistentBanner, posthog, setPersistentStorageChecked, setPersistentStorageStatus]);
 
   const endLearnerSession = useCallback(async () => {
     try {
@@ -699,7 +789,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       setActiveSessionId(sessionIdRef.current);
       setForkInfo(null);
       await createAgent(panel, { messages: [], model: selectedModelRef.current });
-      posthog.capture('session_started', { session_id: sessionIdRef.current });
+      posthog.capture('session_started', { session_id: sessionIdRef.current, source: 'new_button', is_initial: false });
     });
   }, [createAgent, endLearnerSession, posthog, saveSessionSnapshot]);
 
@@ -748,6 +838,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       setForkInfo(null);
     }
     selectedModelRef.current = session.model;
+    posthog.capture('session_loaded', { session_id: session.id, is_restored: true, has_parent: !!session.parentSessionId });
     await createAgent(panel, {
       model: session.model,
       thinkingLevel: session.thinkingLevel,
@@ -809,6 +900,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     try {
       await sessions.save(data, metadata);
       window.dispatchEvent(new CustomEvent("keating:sessions-changed", { detail: { sessionId: id, parentSessionId: source.id } }));
+      posthog.capture('session_forked', { parent_session_id: source.id, new_session_id: id });
       if (panel) await loadSession(data);
       setForkedSessionId(id);
       window.dispatchEvent(new CustomEvent("keating:session-fork-end", { detail: { sourceId: sessionId, sessionId: id } }));
@@ -918,6 +1010,8 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       onClose={modelSelectorDialog.onClose}
       onSelect={(model: Model<Api>) => {
         modelSelectorDialog.onClose();
+        const prevModel = selectedModelRef.current;
+        posthog.capture('model_changed', { from_model: `${prevModel.provider}/${prevModel.id}`, to_model: `${model.provider}/${model.id}`, session_id: sessionIdRef.current });
         startTransition(async () => {
           if (model.provider === "browser") await loadBrowserModel();
           selectedModelRef.current = model;
@@ -963,9 +1057,15 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
             if (import.meta.env.DEV) {
               console.log(`[keating:send] model=${existingAgent.state.model.provider}/${existingAgent.state.model.id} messages=${existingAgent.state.messages.length}`);
             }
+            const turnIndex = existingAgent.state.messages.filter((m) => m.role === "user").length;
+            posthog.capture('message_sent', { session_id: sessionIdRef.current, turn_index: turnIndex });
+            if (turnIndex === 0) {
+              posthog.capture('first_message_sent', { session_id: sessionIdRef.current });
+            }
           },
           onLocalMessagesChanged: () => saveSessionSnapshot(existingAgent),
           onModelSelect: () => {
+            posthog.capture('model_selector_opened', { session_id: sessionIdRef.current });
             modelSelectorDialog.onOpen();
           },
           onFork: (forkPoint?: number) => forkSession(sessionIdRef.current, forkPoint),
@@ -1011,6 +1111,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
             }
 
             await createAgent(node);
+            posthog.capture('session_started', { session_id: sessionIdRef.current, source: 'initial', is_initial: true });
           } catch (error) {
             console.warn("Could not restore the latest saved session; starting a new chat session.", error);
             if (!agentRef.current && panelRef.current === node && bootstrapGenerationRef.current === generation) {

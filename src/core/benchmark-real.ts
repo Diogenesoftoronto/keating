@@ -14,6 +14,7 @@ type OutcomeSignal = "thumbs-up" | "thumbs-down" | "confused";
 export interface ScoreableLearnerOutcome {
   topic: string;
   feedbackSignal: OutcomeSignal;
+  quizScore?: number | null;
   masteryEstimate: number;
   outcomeScore: number;
 }
@@ -74,8 +75,17 @@ export function computeRealOutcomeScore(
     outcomes.filter((outcome) => outcome.feedbackSignal === "thumbs-down").length /
     outcomes.length;
   const avgMastery = mean(outcomes.map((outcome) => outcome.masteryEstimate));
+  const quizScores = outcomes
+    .map((outcome) => outcome.quizScore)
+    .filter((value): value is number => typeof value === "number" && !Number.isNaN(value));
+  const avgQuiz = quizScores.length > 0 ? mean(quizScores) : null;
 
-  const masteryGain = clamp(avgOutcome * 0.6 + avgMastery * 0.4);
+  // Graded quiz results are direct evidence of mastery, so when present they
+  // dominate the inferred feedback/mastery signals.
+  const masteryGain =
+    avgQuiz === null
+      ? clamp(avgOutcome * 0.6 + avgMastery * 0.4)
+      : clamp(avgQuiz * 0.5 + avgOutcome * 0.3 + avgMastery * 0.2);
   const retention = clamp(
     masteryGain * (0.55 + policy.retrievalPractice * 0.45)
   );
@@ -100,6 +110,9 @@ export function computeRealOutcomeScore(
   if (downRatio > 0.2) explanations.push("learner gave substantial negative feedback");
   if (avgMastery > 0.7) explanations.push("mastery estimates are high");
   if (avgMastery < 0.3) explanations.push("mastery estimates are low");
+  if (avgQuiz !== null) {
+    explanations.push(`graded quiz average is ${(avgQuiz * 100).toFixed(0)}% across ${quizScores.length} quiz(zes)`);
+  }
   if (explanations.length === 0) explanations.push("learner feedback is mixed");
 
   return {

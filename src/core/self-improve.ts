@@ -219,7 +219,10 @@ export async function generateImprovementProposal(
   cwd: string
 ): Promise<ImprovementProposal> {
   const policy = await loadPolicy(currentPolicyPath(cwd));
-  const benchmark = await runBenchmarkSuite(cwd, policy);
+  // Same data source as evaluateImprovement: the accept/reject delta is only
+  // meaningful when baseline and after-score come from the same real corpus.
+  const learnerState = await loadLearnerState(learnerStatePath(cwd));
+  const benchmark = await runBenchmarkSuite(cwd, policy, undefined, 20260401, 3, undefined, learnerState);
   const weaknesses = diagnoseFromBenchmark(benchmark);
 
   // Prioritize: pick the top 3 weaknesses by severity
