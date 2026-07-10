@@ -1,0 +1,17 @@
+what do you think of the current evals and the self improvement loop
+
+---
+
+let's wire the quize results into  the outcome here. as for the other part of this, i am not sure i understand theh longer term her. the llm as judge should already be workingn over theh session trtanscripts...
+
+---
+
+okay for one we need to send the real session data  for the run benchmark actually and the benchmark suite in the ui should have per model results so that we can see how  each model performed as w ell
+
+---
+
+This benchmark report didn't actually touch the ui at so users can  not tell what model performed well or didn't as that might be something thaht would be cool to post and show. What models are actually good with kekating?? in this way we might be  able to tell what makes a good education model.
+
+---
+
+what do you think of learner state overall, the feed back seems... i don't know flat. I guess thata there is t he added comments users can add as well  but the session feedback also included other things annd i guess quiz scores can help feedback as well, there's the ask user question tool as well and then the flashcard artifacts too. those seem like possible ways to increase signal in sessions.
