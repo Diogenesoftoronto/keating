@@ -15,6 +15,7 @@ import {
   providerSetupMessage
 } from "../core/provider-auth.js";
 import { normalizePiPackages } from "../core/pi-packages.js";
+import { RpcClient } from "@earendil-works/pi-coding-agent";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -392,4 +393,66 @@ export async function launchShell(cwd: string, args: string[]): Promise<number> 
     child.on("error", reject);
     child.on("exit", (code: number | null) => resolvePromise(code ?? 0));
   });
+}
+
+/**
+ * Start the same configured Pi runtime as `keating shell`, but over the
+ * headless RPC transport so alternate hosts can render it. The caller owns
+ * the returned client's lifecycle and must call `stop()`.
+ */
+export async function launchRpcClient(cwd: string, args: string[] = []): Promise<RpcClient> {
+  await ensureProjectScaffold(cwd);
+  const config = await loadKeatingConfig(cwd);
+  await syncPiSettings(cwd, config);
+  await syncZyphraProvider(cwd, process.env);
+
+  const report = await detectAiRuntime(cwd);
+  const runtime = report.selected;
+  if (!runtime) throw new Error(missingRuntimeMessage(report));
+
+  const packageRoot = resolvePackageRoot();
+  const isDist = __dirname.replace(/\\/g, "/").includes("/dist/src/runtime");
+  const extensionPath = isDist
+    ? join(__dirname, "..", "pi", "hyper-teacher", "index.js")
+    : join(packageRoot, "dist", "src", "pi", "hyper-teacher", "index.js");
+  if (!existsSync(extensionPath)) {
+    throw new Error(`Missing built extension: ${extensionPath}. Run bun run build before keating tui.`);
+  }
+
+  const promptDir = join(packageRoot, "pi", "prompts");
+  const skillsDir = join(packageRoot, "pi", "skills");
+  const systemPrompt = readFileSync(join(packageRoot, "SYSTEM.md"), "utf8");
+  const authSelection = selectAuthenticatedProvider(cwd, config, args);
+  if (authSelection.note) console.error(authSelection.note);
+
+  const sharedArgs = mergePiDefaultsWithOverrides(config, [
+    "--session-dir",
+    sessionsDir(cwd),
+    "--extension",
+    extensionPath,
+    "--prompt-template",
+    promptDir,
+    "--skill",
+    skillsDir,
+    "--append-system-prompt",
+    systemPrompt,
+    "--tools",
+    "read,bash,edit,write,grep,find,ls",
+    ...args,
+  ], { provider: authSelection.provider, model: authSelection.model });
+
+  const cliPath = runtime.cliPath ?? runtime.command;
+  const client = new RpcClient({
+    cliPath,
+    cwd,
+    args: sharedArgs,
+    env: {
+      ...authSelection.env,
+      KEATING_AUTH_MISSING_PROVIDER: authSelection.missingProvider ?? "",
+      PI_SKIP_VERSION_CHECK: process.env.PI_SKIP_VERSION_CHECK ?? "1",
+      PI_CODING_AGENT_DIR: configDir(cwd),
+    } as Record<string, string>,
+  });
+  await client.start();
+  return client;
 }

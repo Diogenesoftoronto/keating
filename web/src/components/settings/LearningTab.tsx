@@ -2,6 +2,7 @@ import { css } from "../../../styled-system/css";
 import { settingsSection } from "../../../styled-system/recipes";
 import { SettingsSectionNav } from "../SettingsSectionNav";
 import { TeacherPersonaTab } from "../TeacherPersonaTab";
+import { LearnerProfileTab } from "../LearnerProfileTab";
 import {
 	SPEECH_SECTIONS,
 	SpeechSettingsTab,
@@ -26,8 +27,13 @@ export function LearningTab({ onSpeechSettingsChange }: LearningTabProps) {
 	return (
 		<div className={stackClass}>
 			<SettingsSectionNav
-				sections={[{ id: "persona", label: "Persona" }, ...SPEECH_SECTIONS]}
+				sections={[{ id: "learner-profile", label: "About You" }, { id: "persona", label: "Persona" }, ...SPEECH_SECTIONS]}
 			/>
+
+			<div id="settings-section-learner-profile" className={sectionAnchorClass}>
+				<h3 className={sectionTitleClass}>About You</h3>
+				<LearnerProfileTab />
+			</div>
 
 			<div id="settings-section-persona" className={sectionAnchorClass}>
 				<h3 className={sectionTitleClass}>Teacher Persona</h3>

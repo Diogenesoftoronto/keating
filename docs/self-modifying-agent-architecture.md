@@ -32,11 +32,12 @@ The result is now a staged architecture. Keating v1 establishes the serving and 
 
 ### v1 Serving Contract
 
-Keating now has three explicit web serving modes:
+Keating now has four explicit web serving modes:
 
 | Mode | Command | Runtime meaning |
 |---|---|---|
 | Browser-only | `keating web --browser-only-agent [port]` | Free/local default. Browser-compatible agent work runs on the learner's device. Remote-only work returns a clear fallback. |
+| Host | `keating web --host [port] --allow-local-exec --root=...` | Trusted-machine execution scoped to the selected project root. Native binaries are available, but this is not a security sandbox. |
 | Remote | `keating web --remote [port] --remote-provider=... --remote-endpoint=...` | Self-hosted local-first mode. The browser runs what it can locally and routes remote-only operations through the configured sandbox endpoint. |
 | Cloud | `keating web --cloud [port]` | Canonical hosted mode. Remote-only operations route through the Keating backend at `https://keating.help` unless `--cloud-endpoint` overrides it. |
 

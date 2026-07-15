@@ -32,6 +32,7 @@ import { ChatIntro } from "../components/ChatIntro";
 import { ArtifactBrowserOverlay } from "../components/ArtifactBrowserOverlay";
 import { ArtifactSidePanel } from "../components/ArtifactSidePanel";
 import { AssistantChatPanel } from "../components/AssistantChatPanel";
+import { ResponseComparisonPanel } from "../components/ResponseComparisonPanel";
 import { ForkBanner } from "../components/ForkBanner";
 import { MermaidRenderer } from "../components/MermaidRenderer";
 import { MarkdownBlock } from "../components/MarkdownBlock";
@@ -736,6 +737,8 @@ function ChatContent() {
     mobileSidebarOpen,
     toggleMobileSidebar,
     activeSessionId,
+    responseComparison,
+    chooseResponse,
   } = useKeatingAgent();
   const [introDismissed, setIntroDismissed] = useState(
     () =>
@@ -1310,6 +1313,12 @@ function ChatContent() {
             ref={chatPanelRef}
             className={cx("chat-page-panel", css({ minWidth: 0, flex: 1 }))}
             speechEnabled={speechEnabled}
+            responseComparison={responseComparison ? (
+              <ResponseComparisonPanel
+                comparison={responseComparison}
+                onChoose={chooseResponse}
+              />
+            ) : null}
           />
           {isWideViewport && artifactBrowserOpen && (
             <div

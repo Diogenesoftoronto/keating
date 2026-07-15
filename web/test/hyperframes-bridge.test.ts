@@ -88,6 +88,7 @@ describe("hyperframes-frame-bridge", () => {
 		let rafCallback: (() => void) | null = null;
 		const fakeWindow = {
 			gsap: { globalTimeline: timeline },
+			document: { getAnimations: () => [] },
 			parent: { postMessage: (message: unknown) => posted.push(message) },
 			addEventListener: (type: string, listener: (event: { data: unknown }) => void) => {
 				listeners.set(type, listener);
@@ -112,10 +113,46 @@ describe("hyperframes-frame-bridge", () => {
 			progress: 0.2,
 			playing: false,
 			hasTimeline: true,
+			seekable: true,
 		});
 		expect(posted.at(-1)).toMatchObject({
 			type: "keating-hyperframes-state",
 			hasTimeline: true,
+			seekable: true,
+		});
+	});
+
+	test("controls native browser animations when a GSAP timeline is absent", () => {
+		const listeners = new Map<string, (event: { data: unknown }) => void>();
+		const calls: string[] = [];
+		const animation = {
+			currentTime: 1000,
+			playState: "running",
+			effect: { getComputedTiming: () => ({ endTime: 4000 }) },
+			play() { calls.push("play"); this.playState = "running"; },
+			pause() { calls.push("pause"); this.playState = "paused"; },
+		};
+		const posted: Array<Record<string, unknown>> = [];
+		const fakeWindow = {
+			document: { getAnimations: () => [animation] },
+			parent: { postMessage: (message: Record<string, unknown>) => posted.push(message) },
+			addEventListener: (type: string, listener: (event: { data: unknown }) => void) => listeners.set(type, listener),
+			requestAnimationFrame: () => 1,
+		};
+
+		new Function("window", HYPERFRAMES_BRIDGE_SCRIPT)(fakeWindow);
+		listeners.get("message")?.({ data: { type: "keating-hyperframes-command", action: "pause" } });
+		listeners.get("message")?.({ data: { type: "keating-hyperframes-command", action: "seek", progress: 0.5 } });
+		listeners.get("message")?.({ data: { type: "keating-hyperframes-command", action: "replay" } });
+
+		expect(calls).toEqual(["pause", "pause", "play"]);
+		expect(animation.currentTime).toBe(0);
+		expect(posted).toContainEqual({
+			type: "keating-hyperframes-state",
+			progress: 0.25,
+			playing: false,
+			hasTimeline: true,
+			seekable: true,
 		});
 	});
 

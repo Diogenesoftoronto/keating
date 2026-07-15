@@ -9,6 +9,7 @@ import {
 	type SimpleStreamOptions,
 } from "@earendil-works/pi-ai";
 import {
+	classifyLlmError,
 	DEFAULT_API_RETRY_POLICY,
 	isRetryableApiError,
 	retryDelayMs,
@@ -16,11 +17,14 @@ import {
 } from "../core/api-retry.js";
 
 export {
+	classifyLlmError,
 	isRetryableApiError,
 	retryAfterDelayMs,
 	retryDelayMs,
 	retryableStatusCode,
 	type ApiRetryPolicy,
+	type LlmErrorCategory,
+	type LlmErrorDetails,
 } from "../core/api-retry.js";
 
 export const WEB_API_RETRY_POLICY: ApiRetryPolicy = DEFAULT_API_RETRY_POLICY;
@@ -122,6 +126,27 @@ function forwardBuffered(target: AssistantMessageEventStream, pending: Assistant
 	pending.length = 0;
 }
 
+function commitsAttempt(event: AssistantMessageEvent): boolean {
+	if (event.type === "text_delta" || event.type === "thinking_delta") return event.delta.length > 0;
+	return event.type === "toolcall_end" || event.type === "done";
+}
+
+type RetryAnnotatedMessage = AssistantMessage & {
+	__keatingRetryAttempts?: number;
+	__keatingRetryExhausted?: boolean;
+};
+
+function annotateRetryOutcome(
+	message: AssistantMessage,
+	attempts: number,
+	exhausted: boolean,
+): AssistantMessage {
+	const annotated = message as RetryAnnotatedMessage;
+	annotated.__keatingRetryAttempts = attempts;
+	annotated.__keatingRetryExhausted = exhausted;
+	return annotated;
+}
+
 export function streamWithApiRetry(
 	model: Model<Api>,
 	context: Context,
@@ -153,12 +178,11 @@ export function streamWithApiRetry(
 					}
 
 					if (!forwarded) {
-						if (event.type === "start") {
-							pending.push(event);
-							continue;
-						}
+						pending.push(event);
+						if (!commitsAttempt(event)) continue;
 						forwardBuffered(target, pending);
 						forwarded = true;
+						continue;
 					}
 					target.push(event);
 				}
@@ -169,10 +193,11 @@ export function streamWithApiRetry(
 			if (!attemptError) return;
 			finalError = attemptError.errorMessage ?? "API request failed";
 
+			const details = classifyLlmError(finalError);
 			const canRetry = !forwarded
 				&& !options?.signal?.aborted
 				&& attempt < policy.maxAttempts - 1
-				&& isRetryableApiError(finalError);
+				&& details.automaticRetry;
 
 			if (canRetry) {
 				await sleep(retryDelayMs(attempt, finalError, policy), options?.signal);
@@ -180,7 +205,12 @@ export function streamWithApiRetry(
 			}
 
 			forwardBuffered(target, pending);
-			target.push({ type: "error", reason: attemptError.stopReason === "aborted" ? "aborted" : "error", error: attemptError });
+			const exhausted = details.automaticRetry && attempt >= policy.maxAttempts - 1;
+			target.push({
+				type: "error",
+				reason: attemptError.stopReason === "aborted" ? "aborted" : "error",
+				error: annotateRetryOutcome(attemptError, attempt + 1, exhausted),
+			});
 			return;
 		}
 

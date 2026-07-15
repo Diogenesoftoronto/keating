@@ -131,6 +131,25 @@ export async function resolveCwdWithinRoot(root: string, relDir: string): Promis
     return realTarget;
 }
 
+/** Resolve an existing file or directory and verify its real target stays in-root. */
+export async function resolveExistingPathWithinRoot(root: string, relPath: string): Promise<string> {
+    const rel = (relPath ?? "").replace(/^\/+/, "");
+    const target = resolve(root, rel);
+    if (escapesRoot(relative(root, target))) {
+        throw createError({ statusCode: 400, statusMessage: "path escapes project root" });
+    }
+    try {
+        const [realRoot, realTarget] = await Promise.all([realpath(root), realpath(target)]);
+        if (escapesRoot(relative(realRoot, realTarget))) {
+            throw createError({ statusCode: 400, statusMessage: "path escapes project root" });
+        }
+        return realTarget;
+    } catch (err) {
+        if ((err as { statusCode?: number }).statusCode) throw err;
+        throw createError({ statusCode: 404, statusMessage: `path not found: ${rel || "."}` });
+    }
+}
+
 /**
  * Resolve a relative file path for writing. The file itself need not exist, but
  * its (real) parent directory must exist and stay inside the project root.

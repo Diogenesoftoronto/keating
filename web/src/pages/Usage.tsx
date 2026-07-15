@@ -1,13 +1,14 @@
 import { Suspense, use, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, BookOpenCheck, Brain, CalendarDays, Clock3, Cpu, Download, Flame, Gem, MessageSquareText, TrendingUp, Upload } from "lucide-react";
+import { ArrowLeft, BookOpenCheck, Brain, CalendarDays, ChevronRight, Clock3, Cpu, Download, Flame, Gem, MessageSquareText, TrendingUp, Upload } from "lucide-react";
 import { useSeo } from "../hooks/useSeo";
 import { getInitPromise, keatingStorage, sessions } from "../hooks/keating-storage";
 import type { SessionMetadata } from "../types/session";
 import { UsageCharts } from "../components/UsageCharts";
 import { buildWebFineTuneExport, type WebExportSource, type WebFineTuneFormat } from "../keating/export";
 import { importFineTuneFiles, type WebFineTuneImportResult } from "../keating/import";
-import { downloadTextFile } from "../lib/browser-download";
+import { buildWebTrainingArchive } from "../keating/training-archive";
+import { downloadFile, downloadTextFile } from "../lib/browser-download";
 import {
 	buildKeatingPortableDataBundle,
 	importKeatingPortableDataBundle,
@@ -104,12 +105,13 @@ const styles = {
 	emptyState: css({ px: "1rem", py: "2rem", textAlign: "center", fontSize: "0.875rem", color: "var(--muted-foreground)" }),
 	stack3: css({ "& > * + *": { mt: "0.75rem" }, p: "1rem" }),
 	deepRow: css({ display: "flex", minW: 0, alignItems: "flex-start", gap: "0.75rem" }),
+	deepButton: css({ display: "flex", w: "100%", minW: 0, cursor: "pointer", alignItems: "flex-start", gap: "0.75rem", borderRadius: "0.375rem", p: "0.5rem", textAlign: "left", _hover: { bg: "var(--accent)" }, _focusVisible: { outline: "2px solid var(--ring)", outlineOffset: "2px" } }),
 	rankBox: css({ display: "flex", h: "1.75rem", w: "1.75rem", flexShrink: 0, alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", bg: "var(--muted)", fontSize: "0.75rem", fontWeight: "500" }),
 	flex1: css({ minW: 0, flex: "1 1 0%" }),
 	lineClamp2: css({ overflow: "hidden", textOverflow: "ellipsis", lineClamp: 2 }),
 	lineClamp4: css({ overflow: "hidden", textOverflow: "ellipsis", lineClamp: 4 }),
 	metaRow: css({ mt: "0.25rem", display: "flex", minW: 0, flexWrap: "wrap", alignItems: "center", columnGap: "0.5rem", rowGap: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" }),
-	sessionRow: css({ display: "flex", minH: "9rem", minW: 0, flexDir: "column", gap: "0.75rem", px: "1rem", py: "0.75rem" }),
+	sessionRow: css({ display: "flex", minH: "9rem", w: "100%", minW: 0, cursor: "pointer", flexDir: "column", gap: "0.75rem", px: "1rem", py: "0.75rem", textAlign: "left", transitionProperty: "background-color", transitionDuration: "150ms", _hover: { bg: "var(--accent)" }, _focusVisible: { outline: "2px solid var(--ring)", outlineOffset: "-2px" } }),
 	sessionTitle: css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: "500" }),
 	sessionPreview: css({ mt: "0.5rem", overflow: "hidden", fontSize: "0.75rem", lineHeight: "1.25rem", color: "var(--muted-foreground)", lineClamp: 4 }),
 	badgeRow: css({ display: "flex", minW: 0, flexWrap: "wrap", gap: "0.5rem", fontSize: "11px", color: "var(--muted-foreground)" }),
@@ -187,7 +189,7 @@ function FineTuneExportPanel() {
 	const [minAssistantChars, setMinAssistantChars] = useState(80);
 	const [judgeScoring, setJudgeScoring] = useState(false);
 	const [exporting, setExporting] = useState(false);
-	const [result, setResult] = useState<{ examples: number; skipped: number; redactions: number; scored?: number; unscored?: number } | null>(null);
+	const [result, setResult] = useState<{ examples: number; records: number; skipped: number; redactions: number; scored?: number; unscored?: number } | null>(null);
 	const [importResult, setImportResult] = useState<WebFineTuneImportResult | null>(null);
 	const [error, setError] = useState("");
 
@@ -205,10 +207,11 @@ function FineTuneExportPanel() {
 				minAssistantChars,
 				judge,
 			});
-			if (bundle.exampleCount === 0) {
-				setError("No fine-tuning examples were generated. Create sessions or artifacts first.");
+			if (bundle.recordCount === 0) {
+				setError("No training records were generated. Create sessions or artifacts first.");
 				setResult({
 					examples: 0,
+					records: 0,
 					skipped: bundle.skippedCount,
 					redactions: bundle.redactionCount,
 					scored: bundle.rewardStats?.scored,
@@ -216,16 +219,11 @@ function FineTuneExportPanel() {
 				});
 				return;
 			}
-			if (bundle.chatmlJsonl) downloadTextFile("keating-finetune.chatml.jsonl", bundle.chatmlJsonl);
-			if (bundle.alpacaJsonl) downloadTextFile("keating-finetune.alpaca.jsonl", bundle.alpacaJsonl);
-			if (bundle.rewardedJsonl) downloadTextFile("train.rewarded.jsonl", bundle.rewardedJsonl);
-			if (bundle.ktoJsonl) downloadTextFile("train.kto.jsonl", bundle.ktoJsonl);
-			if (bundle.preferenceJsonl) downloadTextFile("train.preference.jsonl", bundle.preferenceJsonl);
-			if (bundle.dpoTextJsonl) downloadTextFile("train.dpo.text.jsonl", bundle.dpoTextJsonl);
-			if (bundle.grpoPromptsJsonl) downloadTextFile("prompts.grpo.jsonl", bundle.grpoPromptsJsonl);
-			downloadTextFile("keating-finetune.manifest.json", bundle.manifestJson);
+			const archive = buildWebTrainingArchive(bundle);
+			downloadFile(archive.filename, archive.bytes, "application/zip");
 			setResult({
 				examples: bundle.exampleCount,
+				records: bundle.recordCount,
 				skipped: bundle.skippedCount,
 				redactions: bundle.redactionCount,
 				scored: bundle.rewardStats?.scored,
@@ -264,8 +262,8 @@ function FineTuneExportPanel() {
 	return (
 		<section className={styles.panel}>
 			<div className={styles.panelHeader}>
-				<h2 className={styles.panelTitle}>Fine-tune export</h2>
-				<p className={styles.panelSubtitle}>Download training JSONL from Keating sessions, artifacts, and sandbox self-edit history.</p>
+				<h2 className={styles.panelTitle}>Training data export</h2>
+				<p className={styles.panelSubtitle}>Download one documented ZIP with canonical records, SFT files, rewards, preferences, schema, and quality notes.</p>
 			</div>
 			<div className={styles.exportBody}>
 				<div className={styles.formGroup}>
@@ -328,7 +326,7 @@ function FineTuneExportPanel() {
 							disabled={exporting}
 						>
 							<Download size={16} />
-							{exporting ? "Working..." : "Export fine-tune data"}
+							{exporting ? "Building ZIP..." : "Export training ZIP"}
 						</button>
 						<label className={cx(styles.button, styles.borderButton, styles.fileLabel)}>
 							<Upload size={16} />
@@ -348,7 +346,7 @@ function FineTuneExportPanel() {
 					</div>
 					{result && (
 						<div className={styles.smallMuted}>
-							{formatNumber(result.examples)} examples · {formatNumber(result.skipped)} skipped · {formatNumber(result.redactions)} redactions
+							{formatNumber(result.records)} rich records · {formatNumber(result.examples)} SFT examples · {formatNumber(result.skipped)} skipped · {formatNumber(result.redactions)} redactions
 							{typeof result.scored === "number" && typeof result.unscored === "number"
 								? ` · ${formatNumber(result.scored)} scored · ${formatNumber(result.unscored)} unscored`
 								: ""}
@@ -518,6 +516,7 @@ function UsageContent() {
 
 	const selfImprovement = artifactMetrics ? artifactMetrics.benchmarks + artifactMetrics.evolutions + artifactMetrics.promptEvolutions + artifactMetrics.improvements : 0;
 	const teachingMats = artifactMetrics ? artifactMetrics.plans + artifactMetrics.maps + artifactMetrics.animations : 0;
+	const openSession = (sessionId: string) => navigate({ to: "/chat", search: { session: sessionId } });
 
 	return (
 		<div className={styles.page}>
@@ -602,7 +601,7 @@ function UsageContent() {
 									Start a chat and Keating will track your learning activity here.
 								</div>
 							) : recent.map((session) => (
-								<SessionRow key={session.id} session={session} />
+								<SessionRow key={session.id} session={session} onOpen={openSession} />
 							))}
 						</div>
 					</section>
@@ -616,7 +615,7 @@ function UsageContent() {
 							{deepest.length === 0 ? (
 								<div className={styles.emptyState}>No learning history yet</div>
 							) : deepest.map((session, index) => (
-								<div key={session.id} className={styles.deepRow}>
+								<button key={session.id} type="button" className={styles.deepButton} onClick={() => openSession(session.id)}>
 									<div className={styles.rankBox}>
 										{index + 1}
 									</div>
@@ -631,23 +630,24 @@ function UsageContent() {
 											<span>{formatDate(session.lastModified)}</span>
 										</div>
 									</div>
-								</div>
+									<ChevronRight size={16} className={styles.shrink0} aria-hidden="true" />
+								</button>
 							))}
 						</div>
 					</section>
 				</div>
 
-				<UsageCharts sessionMetadata={metadata} />
+				<UsageCharts sessionMetadata={metadata} onOpenSession={openSession} />
 			</main>
 		</div>
 	);
 }
 
-function SessionRow({ session }: { session: SessionMetadata }) {
+function SessionRow({ session, onOpen }: { session: SessionMetadata; onOpen: (sessionId: string) => void }) {
 	const tokens = session.usage.totalTokens || session.usage.input + session.usage.output;
 	const modelLabel = sessionModelLabel(session);
 	return (
-		<div className={styles.sessionRow}>
+		<button type="button" className={styles.sessionRow} onClick={() => onOpen(session.id)} aria-label={`Open session ${session.title}`}>
 			<div className={styles.flex1}>
 				<div className={styles.sessionTitle}>{session.title}</div>
 				<p className={styles.sessionPreview}>
@@ -673,8 +673,16 @@ function SessionRow({ session }: { session: SessionMetadata }) {
 						<span className={styles.truncate}>{modelLabel}</span>
 					</span>
 				)}
+				<span className={styles.badge}>
+					<Brain size={12} className={styles.shrink0} />
+					<span className={styles.truncate}>Thinking: {session.thinkingLevel}</span>
+				</span>
+				<span className={styles.badge}>
+					<span>Open session</span>
+					<ChevronRight size={12} className={styles.shrink0} />
+				</span>
 			</div>
-		</div>
+		</button>
 	);
 }
 

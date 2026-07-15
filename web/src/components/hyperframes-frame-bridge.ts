@@ -21,14 +21,60 @@ export const HYPERFRAMES_BRIDGE_SCRIPT = String.raw`
 
   var commandType = "keating-hyperframes-command";
   var stateType = "keating-hyperframes-state";
+  var pendingCommand = null;
+  var hadTargets = false;
+  var lastStateAt = 0;
+
+  function isTimeline(value) {
+    return Boolean(value)
+      && typeof value.play === "function"
+      && typeof value.pause === "function"
+      && typeof value.time === "function";
+  }
 
   function timeline(win) {
-    return (win.gsap && win.gsap.globalTimeline) || null;
+    var registered = win.__timelines;
+    if (registered && typeof registered === "object") {
+      var names = Object.keys(registered);
+      for (var index = 0; index < names.length; index += 1) {
+        var candidate = registered[names[index]];
+        if (isTimeline(candidate)) return candidate;
+      }
+    }
+    var globalTimeline = win.gsap && win.gsap.globalTimeline;
+    return isTimeline(globalTimeline) ? globalTimeline : null;
+  }
+
+  function nativeAnimations(win) {
+    try {
+      if (!win.document || typeof win.document.getAnimations !== "function") return [];
+      return win.document.getAnimations({ subtree: true }).filter(function (animation) {
+        return animation && typeof animation.play === "function" && typeof animation.pause === "function";
+      });
+    } catch (_error) {
+      return [];
+    }
+  }
+
+  function finiteDuration(value) {
+    return typeof value === "number" && isFinite(value) && value > 0 && value < 100000 ? value : 0;
   }
 
   function duration(tl) {
-    var total = typeof tl.totalDuration === "function" ? tl.totalDuration() : tl.duration();
-    return isFinite(total) && total > 0 && total < 100000 ? total : 0;
+    var total = typeof tl.totalDuration === "function" ? finiteDuration(tl.totalDuration()) : 0;
+    if (total) return total;
+    return typeof tl.duration === "function" ? finiteDuration(tl.duration()) : 0;
+  }
+
+  function animationDuration(animation) {
+    try {
+      var timing = animation.effect && typeof animation.effect.getComputedTiming === "function"
+        ? animation.effect.getComputedTiming()
+        : null;
+      return finiteDuration(timing && timing.endTime);
+    } catch (_error) {
+      return 0;
+    }
   }
 
   function timelineProgress(tl) {
@@ -36,8 +82,35 @@ export const HYPERFRAMES_BRIDGE_SCRIPT = String.raw`
     return total ? Math.max(0, Math.min(1, tl.time() / total)) : 0;
   }
 
-  function isPlaying(tl) {
-    return typeof tl.paused === "function" ? !tl.paused() : true;
+  function nativeProgress(animations) {
+    var bestDuration = 0;
+    var bestProgress = 0;
+    for (var index = 0; index < animations.length; index += 1) {
+      var animation = animations[index];
+      var total = animationDuration(animation);
+      var current = finiteDuration(animation.currentTime);
+      if (total > bestDuration) {
+        bestDuration = total;
+        bestProgress = total ? Math.max(0, Math.min(1, current / total)) : 0;
+      }
+    }
+    return { progress: bestProgress, seekable: bestDuration > 0 };
+  }
+
+  function timelineIsPlaying(tl) {
+    return Boolean(tl) && (typeof tl.paused === "function" ? !tl.paused() : true);
+  }
+
+  function nativeIsPlaying(animations) {
+    return animations.some(function (animation) {
+      return animation.playState === "running" || animation.playState === "pending";
+    });
+  }
+
+  function targets(win) {
+    var tl = timeline(win);
+    var animations = nativeAnimations(win);
+    return { timeline: tl, animations: animations, available: Boolean(tl) || animations.length > 0 };
   }
 
   function isHyperframesCommand(value) {
@@ -51,45 +124,73 @@ export const HYPERFRAMES_BRIDGE_SCRIPT = String.raw`
   }
 
   function postState(win) {
-    var tl = timeline(win);
+    var current = targets(win);
+    var nativeState = nativeProgress(current.animations);
+    var timelineDuration = current.timeline ? duration(current.timeline) : 0;
     var state = {
       type: stateType,
-      progress: tl ? timelineProgress(tl) : 0,
-      playing: tl ? isPlaying(tl) : false,
-      hasTimeline: Boolean(tl),
+      progress: timelineDuration ? timelineProgress(current.timeline) : nativeState.progress,
+      playing: timelineIsPlaying(current.timeline) || nativeIsPlaying(current.animations),
+      hasTimeline: current.available,
+      seekable: Boolean(timelineDuration) || nativeState.seekable,
     };
     win.parent.postMessage(state, "*");
   }
 
-  function handleCommand(win, message) {
-    var tl = timeline(win);
-    if (!tl) {
-      postState(win);
-      return;
-    }
+  function applyCommand(win, message) {
+    var current = targets(win);
+    var tl = current.timeline;
+    var animations = current.animations;
 
-    if (message.action === "play") tl.play();
-    else if (message.action === "pause") tl.pause();
-    else if (message.action === "replay") {
-      tl.pause(0);
-      tl.play();
+    if (message.action !== "request-state" && !current.available) {
+      pendingCommand = message;
+    } else if (message.action === "play") {
+      if (tl) tl.play();
+      animations.forEach(function (animation) { animation.play(); });
+    } else if (message.action === "pause") {
+      if (tl) tl.pause();
+      animations.forEach(function (animation) { animation.pause(); });
+    } else if (message.action === "replay") {
+      if (tl) {
+        tl.pause(0);
+        tl.play();
+      }
+      animations.forEach(function (animation) {
+        animation.currentTime = 0;
+        animation.play();
+      });
     } else if (message.action === "seek") {
-      var total = duration(tl);
       var progress = Math.max(0, Math.min(1, message.progress));
-      if (total) tl.pause(progress * total);
+      var total = tl ? duration(tl) : 0;
+      if (tl && total) tl.pause(progress * total);
+      animations.forEach(function (animation) {
+        var animationTotal = animationDuration(animation);
+        if (animationTotal) animation.currentTime = progress * animationTotal;
+        animation.pause();
+      });
     }
-
     postState(win);
   }
 
   function installHyperframesBridge(win) {
     win.addEventListener("message", function (event) {
+      if (event.source && event.source !== win.parent) return;
       if (!isHyperframesCommand(event.data)) return;
-      handleCommand(win, event.data);
+      applyCommand(win, event.data);
     });
 
-    function tick() {
-      postState(win);
+    function tick(now) {
+      var available = targets(win).available;
+      if (available && !hadTargets && pendingCommand) {
+        var command = pendingCommand;
+        pendingCommand = null;
+        applyCommand(win, command);
+      }
+      hadTargets = available;
+      if (typeof now !== "number" || now - lastStateAt >= 80) {
+        postState(win);
+        lastStateAt = typeof now === "number" ? now : lastStateAt;
+      }
       win.requestAnimationFrame(tick);
     }
 

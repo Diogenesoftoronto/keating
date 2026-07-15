@@ -50,7 +50,6 @@ import {
   LibraryBig,
   Lightbulb,
   Loader2,
-  Lock,
   Mic,
   MicOff,
   Paperclip,
@@ -100,9 +99,35 @@ import {
 } from "../keating/speech";
 import { startMicRecording, transcribeAudio, type MicRecorder } from "../keating/speech-providers/stt";
 import { JsonCrackBlock } from "./JsonCrackBlock";
+import { RetryResponseButton } from "./RetryResponseButton";
 import { FlashcardRenderer } from "./FlashcardRenderer";
 import type { FlashcardDeck } from "../keating/srs";
 import { MermaidRenderer } from "./MermaidRenderer";
+import {
+  pickDiverseStarterPrompts,
+  STARTER_PROMPTS,
+  type StarterPrompt,
+} from "../keating/starter-prompts";
+import {
+  parseOpenUIMessageSegments,
+  stripOpenUIPrograms,
+} from "../keating/openui/segments";
+import {
+  KeatingOpenUIActionProvider,
+  KeatingOpenUIRenderer,
+} from "../keating/openui/renderer";
+import type { KeatingOpenUIAction } from "../keating/openui/types";
+import {
+  createOpenUIActionLearnerResponse,
+  createQuestionLearnerResponse,
+  parseLearnerResponse,
+  serializeLearnerResponse,
+} from "../keating/learner-response";
+import { LearnerResponseReview } from "./LearnerResponseReview";
+import {
+  classifyLlmError,
+  type LlmErrorDetails,
+} from "../core/api-retry";
 
 const AuthErrorContext = createContext<(provider: string) => Promise<boolean>>(
   () => Promise.resolve(false),
@@ -399,6 +424,7 @@ const keatingAttachmentAdapter: AttachmentAdapter = {
 interface AssistantChatPanelProps {
   className?: string;
   speechEnabled?: boolean;
+  responseComparison?: ReactNode;
 }
 
 function StreamingTextPart({
@@ -411,6 +437,7 @@ function StreamingTextPart({
   showRawErrors?: boolean;
 }) {
   const posthog = usePostHog();
+  const messageId = useMessage((message) => message.id);
   const isMarkedError = text.startsWith(ERROR_TEXT_PREFIX);
   const displayText = isMarkedError
     ? text.slice(ERROR_TEXT_PREFIX.length)
@@ -479,9 +506,15 @@ function StreamingTextPart({
     );
   }
 
+  const learnerResponse = parseLearnerResponse(visibleText);
+  if (learnerResponse) {
+    return <LearnerResponseReview response={learnerResponse} />;
+  }
+
   return (
     <MarkdownText
       text={visibleText}
+      documentScope={messageId}
       isRunning={
         status?.type === "running" && visibleText.length >= displayText.length
       }
@@ -495,227 +528,44 @@ function stripArtifactLinks(text: string): string {
   return text.replace(artifactLinkPattern, "").trim();
 }
 
-const AUTH_ERROR_PATTERNS =
-  /authentication_error|invalid.api.key|unauthorized|401|api.secret.key|auth.*fail|login.fail|key.*invalid|key.*expired/i;
-const BILLING_ERROR_PATTERNS =
-  /insufficient_quota|insufficient.?(funds|quota|credits?|balance)|exceeded your current quota|not enough (credits?|balance)|billing|payment required|\b402\b/i;
 const VOICE_ERROR_PATTERNS =
   /keating_voice|gemini live speech|voice layer|speech model|speech failed|speech timed out/i;
 
-const HTTP_STATUS_PATTERN = /\b(4[0-9]{2}|5[0-9]{2})\b/;
-
-interface ClassifiedError {
-  statusCode: number | null;
-  title: string;
-  description: string;
+interface ClassifiedError extends LlmErrorDetails {
   icon: typeof CircleAlert;
-  category:
-    | "auth"
-    | "permission"
-    | "not-found"
-    | "rate-limit"
-    | "billing"
-    | "server"
-    | "network"
-    | "speech"
-    | "unknown";
 }
-
-const HTTP_ERROR_MAP: Record<number, Omit<ClassifiedError, "statusCode">> = {
-  400: {
-    title: "Bad Request",
-    description: "The request was malformed or invalid.",
-    icon: CircleAlert,
-    category: "unknown",
-  },
-  401: {
-    title: "Unauthorized",
-    description: "Authentication is required to access this resource.",
-    icon: Lock,
-    category: "auth",
-  },
-  403: {
-    title: "Forbidden",
-    description: "You don't have permission to access this resource.",
-    icon: ShieldAlert,
-    category: "permission",
-  },
-  404: {
-    title: "Not Found",
-    description: "The requested resource does not exist.",
-    icon: CircleAlert,
-    category: "not-found",
-  },
-  408: {
-    title: "Request Timeout",
-    description: "The server took too long to respond.",
-    icon: Wifi,
-    category: "network",
-  },
-  409: {
-    title: "Conflict",
-    description: "The request conflicts with the current state.",
-    icon: CircleAlert,
-    category: "unknown",
-  },
-  422: {
-    title: "Unprocessable",
-    description: "The request was understood but couldn't be processed.",
-    icon: CircleAlert,
-    category: "unknown",
-  },
-  429: {
-    title: "Too Many Requests",
-    description: "Rate limit exceeded. Please wait and try again.",
-    icon: Wifi,
-    category: "rate-limit",
-  },
-  500: {
-    title: "Internal Server Error",
-    description: "Something went wrong on the server side.",
-    icon: Server,
-    category: "server",
-  },
-  502: {
-    title: "Bad Gateway",
-    description:
-      "The server received an invalid response from an upstream service.",
-    icon: Server,
-    category: "server",
-  },
-  503: {
-    title: "Service Unavailable",
-    description: "The server is temporarily unavailable. Try again later.",
-    icon: Server,
-    category: "server",
-  },
-  504: {
-    title: "Gateway Timeout",
-    description: "The server didn't respond in time.",
-    icon: Wifi,
-    category: "network",
-  },
-};
-
-const NETWORK_ERRORS: Record<string, Omit<ClassifiedError, "statusCode">> = {
-  ECONNREFUSED: {
-    title: "Connection Refused",
-    description: "Could not connect to the server.",
-    icon: Wifi,
-    category: "network",
-  },
-  ECONNRESET: {
-    title: "Connection Reset",
-    description: "The connection was unexpectedly closed.",
-    icon: Wifi,
-    category: "network",
-  },
-  ETIMEDOUT: {
-    title: "Connection Timeout",
-    description: "The connection timed out.",
-    icon: Wifi,
-    category: "network",
-  },
-  ENOTFOUND: {
-    title: "DNS Error",
-    description: "Could not resolve the server address.",
-    icon: Wifi,
-    category: "network",
-  },
-  FETCH_ERROR: {
-    title: "Network Error",
-    description: "A network error occurred while making the request.",
-    icon: Wifi,
-    category: "network",
-  },
-};
 
 function classifyError(errorText: string): ClassifiedError {
   const isVoiceError = VOICE_ERROR_PATTERNS.test(errorText);
-  if (isVoiceError && AUTH_ERROR_PATTERNS.test(errorText)) {
-    return {
-      statusCode: errorText.match(HTTP_STATUS_PATTERN)
-        ? parseInt(errorText.match(HTTP_STATUS_PATTERN)![1], 10)
-        : null,
-      title: "Voice Authentication Failed",
-      description:
-        "The speech model rejected its credentials. The main chat model may still be working.",
-      icon: KeyRound,
-      category: "speech",
-    };
-  }
   if (isVoiceError) {
+    const underlying = classifyLlmError(errorText);
     return {
-      statusCode: null,
-      title: "Voice Model Error",
+      ...underlying,
+      title: underlying.category === "auth" ? "Voice sign-in failed" : "Voice model failed",
       description:
         "The optional speech layer failed. The main chat model may still be working.",
-      icon: Wifi,
-      category: "speech",
+      recovery: underlying.category === "auth"
+        ? "Update the speech provider credentials, or turn speech off and continue with text."
+        : "Turn speech off and continue with text, or retry the voice connection.",
+      icon: underlying.category === "auth" ? KeyRound : Wifi,
     };
   }
 
-  // Billing/quota errors are often surfaced as a 429 or 402; classify them
-  // before the generic HTTP handling so they read as a credits problem rather
-  // than a transient rate-limit.
-  if (BILLING_ERROR_PATTERNS.test(errorText)) {
-    return {
-      statusCode: errorText.match(HTTP_STATUS_PATTERN)
-        ? parseInt(errorText.match(HTTP_STATUS_PATTERN)![1], 10)
-        : null,
-      title: "Insufficient Credits or Quota",
-      description:
-        "The provider rejected the request for billing reasons — your account is out of credits or over its quota. Add funds or check your billing settings.",
-      icon: CircleDollarSign,
-      category: "billing",
-    };
-  }
-
-  const httpMatch = errorText.match(HTTP_STATUS_PATTERN);
-  if (httpMatch) {
-    const code = parseInt(httpMatch[1], 10);
-    const mapped = HTTP_ERROR_MAP[code];
-    if (mapped) return { ...mapped, statusCode: code };
-    if (code >= 400 && code < 500)
-      return {
-        statusCode: code,
-        title: `Client Error (${code})`,
-        description: "The request could not be processed.",
-        icon: CircleAlert,
-        category: "unknown",
-      };
-    if (code >= 500)
-      return {
-        statusCode: code,
-        title: `Server Error (${code})`,
-        description: "An error occurred on the server.",
-        icon: Server,
-        category: "server",
-      };
-  }
-
-  for (const [pattern, def] of Object.entries(NETWORK_ERRORS)) {
-    if (errorText.toUpperCase().includes(pattern))
-      return { ...def, statusCode: null };
-  }
-
-  if (AUTH_ERROR_PATTERNS.test(errorText)) {
-    return {
-      statusCode: null,
-      title: "Authentication Failed",
-      description: "The selected model provider rejected its credentials.",
-      icon: KeyRound,
-      category: "auth",
-    };
-  }
-
-  return {
-    statusCode: null,
-    title: "Error",
-    description: "An unexpected error occurred.",
-    icon: CircleAlert,
-    category: "unknown",
-  };
+  const details = classifyLlmError(errorText);
+  const icon = details.category === "auth"
+    ? KeyRound
+    : details.category === "billing"
+      ? CircleDollarSign
+      : details.category === "permission" || details.category === "safety"
+        ? ShieldAlert
+        : details.category === "server" || details.category === "model-unavailable"
+          ? Server
+          : details.category === "network" || details.category === "rate-limit" || details.category === "timeout"
+            ? Wifi
+            : details.category === "aborted"
+              ? Square
+              : CircleAlert;
+  return { ...details, icon };
 }
 
 function ErrorBadge({
@@ -749,6 +599,10 @@ function ErrorBadge({
         )}
       </div>
       <p className={mutedTextClass}>{classified.description}</p>
+      <p className={css({ fontSize: "0.75rem", color: "var(--foreground)" })}>
+        <span className={css({ fontWeight: 600 })}>Recovery: </span>
+        {classified.recovery}
+      </p>
       {showRaw && (
         <details className={css({ marginTop: "0.5rem" })}>
           <summary
@@ -1279,8 +1133,8 @@ function authErrorFromAgentMessage(
 ): AuthErrorEntry | null {
   if (msg.role !== "assistant" || msg.stopReason !== "error") return null;
   const errorText = msg.errorMessage ?? "";
-  if (!AUTH_ERROR_PATTERNS.test(errorText)) return null;
   if (VOICE_ERROR_PATTERNS.test(errorText)) return null;
+  if (classifyLlmError(errorText).category !== "auth") return null;
   const provider =
     msg.provider ??
     msg.model?.provider ??
@@ -2004,37 +1858,50 @@ const MARKDOWN_COMPONENTS: Components = {
 
 const MarkdownText = memo(function MarkdownText({
   text,
+  documentScope,
   isRunning,
 }: {
   text: string;
+  documentScope: string;
   isRunning?: boolean;
 }) {
   const displayText = stripArtifactLinks(text);
-  // Parsing segments is non-trivial and runs on every streaming token; memoize
-  // it on the text so unchanged messages don't re-parse.
+  // OpenUI is the streamable path. Text segments still flow through the legacy
+  // tag parser so saved sessions and existing tools remain compatible.
   const segments = useMemo(
-    () =>
-      parseInteractiveSegments(displayText).filter(
-        (s) => s.type !== "question" && s.type !== "quiz",
-      ),
-    [displayText],
+    () => parseOpenUIMessageSegments(displayText, documentScope),
+    [displayText, documentScope],
   );
   return (
     <div className={css({ overflowWrap: "break-word", fontSize: "0.875rem", lineHeight: "1.5rem" })}>
       <ArtifactChips text={text} />
       {segments.map((seg, i) => {
-        const card = renderInteractiveSegment(seg, i);
-        if (card !== null) return card;
-        return (
-          <ReactMarkdown
-            key={i}
-            remarkPlugins={[remarkGfm, remarkMath]}
-            rehypePlugins={[rehypeKatex]}
-            components={MARKDOWN_COMPONENTS}
-          >
-            {seg.type === "text" ? seg.content : ""}
-          </ReactMarkdown>
-        );
+        if (seg.type === "openui") {
+          return (
+            <KeatingOpenUIRenderer
+              key={`${seg.metadata.id}-${i}`}
+              program={seg.program}
+              metadata={seg.metadata}
+              isStreaming={Boolean(isRunning && !seg.complete)}
+            />
+          );
+        }
+        return parseInteractiveSegments(seg.content)
+          .filter((legacy) => legacy.type !== "question" && legacy.type !== "quiz")
+          .map((legacy, legacyIndex) => {
+            const card = renderInteractiveSegment(legacy, `${i}-${legacyIndex}`);
+            if (card !== null) return card;
+            return (
+              <ReactMarkdown
+                key={`${i}-${legacyIndex}`}
+                remarkPlugins={[remarkGfm, remarkMath]}
+                rehypePlugins={[rehypeKatex]}
+                components={MARKDOWN_COMPONENTS}
+              >
+                {legacy.type === "text" ? legacy.content : ""}
+              </ReactMarkdown>
+            );
+          });
       })}
       {isRunning ? <span className={cx(pulseClass, css({ marginLeft: "0.125rem" }))}>|</span> : null}
     </div>
@@ -2720,15 +2587,45 @@ function toAssistantMessage(
       }
     }
 
+    if (status.type === "incomplete" && status.reason === "cancelled" && !content.some((c: any) => c.type === "text" && c.text)) {
+      content.unshift({
+        type: "text" as const,
+        text: msg.errorMessage ?? "Response interrupted before it finished.",
+      });
+    }
+
     const authError = authErrorFromAgentMessage(msg, fallbackProvider);
+    const llmFailure = status.type === "incomplete"
+      ? classifyLlmError(msg.errorMessage ?? (status.reason === "cancelled" ? "Request aborted" : "Assistant response failed"))
+      : null;
+    const retryAttempts = typeof msg.__keatingRetryAttempts === "number"
+      ? Math.max(1, Math.round(msg.__keatingRetryAttempts))
+      : 1;
+    const retryable = isLastMessage
+      && status.type === "incomplete"
+      && llmFailure?.category !== "auth"
+      && llmFailure?.category !== "billing"
+      && llmFailure?.category !== "context-length"
+      && llmFailure?.category !== "invalid-request"
+      && llmFailure?.category !== "model-unavailable"
+      && llmFailure?.category !== "permission"
+      && llmFailure?.category !== "safety";
     return {
       id,
       role: "assistant",
       createdAt: timestamp,
       status,
       content,
-      metadata: authError
-        ? { custom: { keatingAuthError: authError } }
+      metadata: authError || llmFailure || retryable
+        ? {
+            custom: {
+              keatingAuthError: authError,
+              keatingLlmFailure: llmFailure,
+              keatingRetryAttempts: retryAttempts,
+              keatingRetryExhausted: msg.__keatingRetryExhausted === true,
+              keatingRetryable: retryable,
+            },
+          }
         : undefined,
     };
   }
@@ -2861,36 +2758,26 @@ function makePrefillStatusMessage(agent: Agent, step: number): AgentMessage {
   } as AgentMessage;
 }
 
-const ALL_PROMPTS = [
-  { label: "Learn", text: "Explain quantum entanglement simply" },
-  { label: "Learn", text: "Why does gradient descent work?" },
-  { label: "Plan", text: "Plan a 4-week ML course" },
-  { label: "Plan", text: "Study roadmap for AWS cert" },
-  { label: "Map", text: "Map probability to statistics" },
-  { label: "Map", text: "Map web dev from HTML to React" },
-  { label: "Assess", text: "Quiz me on the Krebs cycle" },
-  { label: "Assess", text: "Test my async/await knowledge" },
-  { label: "Create", text: "Animate how DNS works" },
-  { label: "Create", text: "Flashcards for Spanish verbs" },
-];
-
-function pickN(pool: typeof ALL_PROMPTS, n: number): typeof ALL_PROMPTS {
-  const shuffled = [...pool].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, Math.min(n, shuffled.length));
-}
-
-function SuggestedPrompts({ onSelect }: { onSelect: (text: string) => void }) {
-  const [prompts, setPrompts] = useState(() => pickN(ALL_PROMPTS, 3));
+export function SuggestedPrompts({
+  onSelect,
+  initialPrompts,
+}: {
+  onSelect: (text: string) => void;
+  initialPrompts?: readonly StarterPrompt[];
+}) {
+  const [prompts, setPrompts] = useState(() => (
+    initialPrompts ? [...initialPrompts] : pickDiverseStarterPrompts(STARTER_PROMPTS, 3)
+  ));
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const remaining = ALL_PROMPTS.filter(
+  const remaining = STARTER_PROMPTS.filter(
     (p) => !prompts.some((existing) => existing.text === p.text),
   );
   const exhausted = remaining.length === 0;
 
   const appendMore = (count = 3) => {
     if (remaining.length === 0) return false;
-    setPrompts((prev) => [...prev, ...pickN(remaining, count)]);
+    setPrompts((prev) => [...prev, ...pickDiverseStarterPrompts(remaining, count)]);
     return true;
   };
 
@@ -3297,11 +3184,13 @@ function AssistantThread({
   callbacks,
   version,
   speechEnabled,
+  responseComparison,
 }: {
   agent: Agent | null;
   callbacks: ChatPanelSetupCallbacks;
   version: number;
   speechEnabled: boolean;
+  responseComparison?: ReactNode;
 }) {
   const posthog = usePostHog();
   const [uiSettings, setUiSettings] = useState(() => loadKeatingUiSettings());
@@ -3457,6 +3346,17 @@ function AssistantThread({
     [agent, onNew],
   );
 
+  const handleOpenUIAction = useCallback(
+    (action: KeatingOpenUIAction) => {
+      const response = createOpenUIActionLearnerResponse(action);
+      queueOrSend({
+        role: "user",
+        content: [{ type: "text", text: serializeLearnerResponse(response) }],
+      } as unknown as AppendMessage);
+    },
+    [queueOrSend],
+  );
+
   useEffect(() => {
     if (isRunning || !agent) return;
     if (pendingSendsRef.current.length === 0) return;
@@ -3473,21 +3373,14 @@ function AssistantThread({
         | undefined;
       const answers = detail?.answers;
       if (!agent || !answers || answers.length === 0) return;
-      const text =
-        answers.length === 1 && !answers[0].header
-          ? answers[0].answer
-          : answers
-              .map(
-                (a) =>
-                  `- ${a.header ? `${a.header} — ` : ""}${a.question}: ${a.answer}`,
-              )
-              .join("\n");
-      const diagnosticInstruction = answers.some((answer) => answer.grading === "pending")
-        ? `\n\nThese are diagnostic responses. After evaluating them against the lesson, call grade_question_checks with correct, partial, or incorrect verdicts${detail?.topic?.trim() ? ` for topic "${detail.topic.trim()}"` : " for the current lesson topic"}; only record a misconception you can support from the response.`
-        : "";
+      const response = createQuestionLearnerResponse({
+        answers,
+        topic: detail?.topic,
+        source: "legacy",
+      });
       void onNew({
         role: "user",
-        content: [{ type: "text", text: text + diagnosticInstruction }],
+        content: [{ type: "text", text: serializeLearnerResponse(response) }],
       } as unknown as AppendMessage);
     };
     window.addEventListener("keating:question-answered", handler);
@@ -3710,9 +3603,14 @@ function AssistantThread({
   );
   const AssistantMessageComponent = useCallback(
     () => (
-      <AssistantMessage components={components} onFork={callbacks.onFork} />
+      <AssistantMessage
+        components={components}
+        onFork={callbacks.onFork}
+        onModelSelect={callbacks.onModelSelect}
+        onRetry={callbacks.onRetry}
+      />
     ),
-    [components, callbacks.onFork],
+    [components, callbacks.onFork, callbacks.onModelSelect, callbacks.onRetry],
   );
   const threadComponents = useMemo(
     () => ({
@@ -3727,6 +3625,7 @@ function AssistantThread({
       value={callbacks.onAuthError ?? (() => Promise.resolve(false))}
     >
       <QuizGradesContext.Provider value={quizGradesContextValue}>
+      <KeatingOpenUIActionProvider onAction={handleOpenUIAction}>
       <AssistantRuntimeProvider runtime={runtime}>
         <ThreadPrimitive.Root
           className={css({
@@ -3746,7 +3645,7 @@ function AssistantThread({
               flexDirection: "column",
               overflowY: "auto",
               overflowX: "hidden",
-              paddingInline: "0.75rem",
+              paddingInline: "0.375rem",
               paddingBlock: "1rem",
               sm: { paddingInline: "1rem", paddingBlock: "1.5rem" },
             })}
@@ -3770,6 +3669,7 @@ function AssistantThread({
                 backdropFilter: "blur(8px)",
               })}
             >
+              {responseComparison}
               {activeQuiz && (
                 <div
                   className={css({
@@ -4019,6 +3919,7 @@ function AssistantThread({
           </ThreadPrimitive.Viewport>
         </ThreadPrimitive.Root>
       </AssistantRuntimeProvider>
+      </KeatingOpenUIActionProvider>
       </QuizGradesContext.Provider>
     </AuthErrorContext.Provider>
   );
@@ -4049,19 +3950,18 @@ function UserMessage({
       <div
         className={css({
           display: "flex",
-          // Full width on mobile (with the avatar + viewport padding still
-          // providing comfortable side gaps); constrained reply bubble on sm+.
+          // Full width on mobile; constrained reply bubble on sm+.
           width: "100%",
           maxWidth: "100%",
           flexDirection: "row-reverse",
-          gap: "0.5rem",
-          paddingInline: "0.25rem",
-          fontSize: "0.8125rem",
+          gap: 0,
+          paddingInline: 0,
+          fontSize: "0.875rem",
           color: "var(--foreground)",
-          sm: { width: "auto", maxWidth: "82%", gap: "0.75rem", fontSize: "0.875rem" },
+          sm: { width: "auto", maxWidth: "82%", gap: "0.75rem", paddingInline: "0.25rem" },
         })}
       >
-        <div className={cx("chat-avatar chat-avatar-you", css({ marginTop: "0.125rem" }))}>
+        <div className={cx("chat-avatar chat-avatar-you", css({ display: "none", marginTop: "0.125rem", sm: { display: "flex" } }))}>
           {profileImage ? (
             <img src={profileImage} alt="You" />
           ) : (
@@ -4204,9 +4104,13 @@ function FeedbackModal({
 function AssistantMessage({
   components,
   onFork,
+  onModelSelect,
+  onRetry,
 }: {
   components: ReturnType<typeof messagePartComponents>;
   onFork?: (forkPoint?: number) => void | Promise<void>;
+  onModelSelect?: () => void;
+  onRetry?: () => void | Promise<void>;
 }) {
   const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
@@ -4215,6 +4119,18 @@ function AssistantMessage({
   const authError = useMessage(
     (message) =>
       message.metadata.custom?.keatingAuthError as AuthErrorEntry | undefined,
+  );
+  const canRetry = useMessage(
+    (message) => message.metadata.custom?.keatingRetryable === true,
+  );
+  const llmFailure = useMessage(
+    (message) => message.metadata.custom?.keatingLlmFailure as LlmErrorDetails | undefined,
+  );
+  const retryAttempts = useMessage(
+    (message) => message.metadata.custom?.keatingRetryAttempts as number | undefined,
+  );
+  const retryExhausted = useMessage(
+    (message) => message.metadata.custom?.keatingRetryExhausted === true,
   );
   // The message id is `assistant-${index}-${timestamp}` (see toAssistantMessage).
   // The trailing timestamp is the stable handle we use to fork at this turn.
@@ -4225,9 +4141,9 @@ function AssistantMessage({
       .map((part) => part.text ?? "")
       .join("\n\n"),
   );
-  const copyText = stripQuizTags(
+  const copyText = stripOpenUIPrograms(stripQuizTags(
     stripGeneratedImageTags(stripQuestionTags(stripGoalTags(stripArtifactLinks(messageText)))),
-  ).trim();
+  )).trim();
   const handleFork = () => {
     const ts = Number(messageId.slice(messageId.lastIndexOf("-") + 1));
     onFork?.(Number.isFinite(ts) ? ts : undefined);
@@ -4283,16 +4199,14 @@ function AssistantMessage({
           className={css({
             display: "flex",
             width: "100%",
-            // Tighter avatar gap on mobile reclaims horizontal space for text.
-            gap: "0.5rem",
-            paddingInline: "0.25rem",
-            // Slightly smaller body text on mobile; full size on sm+.
-            fontSize: "0.8125rem",
+            gap: 0,
+            paddingInline: 0,
+            fontSize: "0.875rem",
             color: "var(--foreground)",
-            sm: { gap: "0.75rem", fontSize: "0.875rem" },
+            sm: { gap: "0.75rem", paddingInline: "0.25rem" },
           })}
         >
-          <div className={cx("chat-avatar", css({ marginTop: "0.125rem" }))}>
+          <div className={cx("chat-avatar", css({ display: "none", marginTop: "0.125rem", sm: { display: "flex" } }))}>
             <img src="/brand/mascot-head.png" alt="Keating" />
           </div>
           <div className={css({ minWidth: 0, flex: 1, lineHeight: "1.5rem" })}>
@@ -4322,7 +4236,7 @@ function AssistantMessage({
                       Authentication failed
                     </p>
                     <p className={css({ marginBottom: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-                      {authError.error}
+                      {llmFailure?.recovery ?? "Re-enter the provider credentials, then Keating can retry the same turn."}
                     </p>
                     <button
                       type="button"
@@ -4375,8 +4289,35 @@ function AssistantMessage({
               </div>
             )}
             </div>
+            {llmFailure && retryAttempts && retryAttempts > 1 && (
+              <p
+                className={css({ marginTop: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}
+                role="status"
+              >
+                {retryExhausted
+                  ? `Automatic recovery stopped after ${retryAttempts} attempts.`
+                  : `Keating made ${retryAttempts} recovery attempts before preserving this error.`}
+              </p>
+            )}
             <div className={css({ marginTop: "0.5rem", display: "flex", alignItems: "center", gap: "0.25rem" })}>
               {copyText && <CopyButton variant="ghost" text={copyText} label="Copy message" />}
+              {canRetry && onRetry && (
+                <RetryResponseButton
+                  className={cx(messageActionButtonClass, css({ width: "auto", gap: "0.375rem", paddingInline: "0.5rem" }))}
+                  onRetry={onRetry}
+                />
+              )}
+              {llmFailure && llmFailure.category !== "aborted" && onModelSelect && (
+                <button
+                  type="button"
+                  className={cx(messageActionButtonClass, css({ width: "auto", gap: "0.375rem", paddingInline: "0.5rem" }))}
+                  onClick={onModelSelect}
+                  title="Choose a different model"
+                >
+                  <Server size={13} />
+                  <span>Choose model</span>
+                </button>
+              )}
               <button
                 type="button"
                 className={cx(
@@ -4440,7 +4381,7 @@ function AssistantMessage({
 export const AssistantChatPanel = forwardRef<
   ChatPanelHandle,
   AssistantChatPanelProps
->(({ className, speechEnabled = false }, ref) => {
+>(({ className, speechEnabled = false, responseComparison }, ref) => {
   const [agent, setAgentState] = useState<Agent | null>(null);
   const [callbacks, setCallbacks] = useState<ChatPanelSetupCallbacks>({});
   const [version, setVersion] = useState(0);
@@ -4467,6 +4408,7 @@ export const AssistantChatPanel = forwardRef<
         callbacks={callbacks}
         version={version}
         speechEnabled={speechEnabled}
+        responseComparison={responseComparison}
       />
     </div>
   );

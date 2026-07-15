@@ -8,21 +8,23 @@ import * as https from 'https';
 import * as http from 'http';
 import { buildValidatedProxyUrl } from './server/utils/proxy-target';
 import { isAllowedDioOpenAiProxyRequest } from './src/dio-provider/server';
-
-type AgentRuntimeMode = 'browser-only' | 'remote' | 'cloud';
+import {
+  buildAgentRuntimeConfig,
+  type ServerAgentRuntimeMode,
+} from './src/keating/agent-runtime-config';
 
 function env(name: string): string | null {
   const value = process.env[name]?.trim();
   return value ? value : null;
 }
 
-function agentRuntimeMode(): AgentRuntimeMode {
+function agentRuntimeMode(): ServerAgentRuntimeMode {
   const mode = env('KEATING_WEB_AGENT_MODE');
-  return mode === 'remote' || mode === 'cloud' ? mode : 'browser-only';
+  return mode === 'host' || mode === 'remote' || mode === 'cloud' ? mode : 'browser-only';
 }
 
-function agentRuntimeTargetBase(mode: AgentRuntimeMode): string | null {
-  if (mode === 'browser-only') return null;
+function agentRuntimeTargetBase(mode: ServerAgentRuntimeMode): string | null {
+  if (mode === 'browser-only' || mode === 'host') return null;
   if (mode === 'remote') return env('KEATING_WEB_REMOTE_ENDPOINT');
   return env('KEATING_WEB_CLOUD_ENDPOINT') || 'https://keating.help';
 }
@@ -34,11 +36,17 @@ function chatProxyPlugin(): Plugin {
       server.middlewares.use((req, res, next) => {
         if (req.url === '/api/agent-runtime/config') {
           const mode = agentRuntimeMode();
-          const body = JSON.stringify({
+          const projectRoot = env('KEATING_WEB_PROJECT_ROOT');
+          const localExecEnabled = Boolean(
+            projectRoot &&
+            (process.env.KEATING_WEB_LOCAL_EXEC === '1' || process.env.KEATING_WEB_LOCAL_EXEC === 'true'),
+          );
+          const body = JSON.stringify(buildAgentRuntimeConfig({
             mode,
-            label: mode === 'cloud' ? 'Keating Cloud agent' : mode === 'remote' ? 'Remote microVM agent' : 'Browser-only agent',
-            executionEndpoint: mode === 'browser-only' ? null : '/api/agent-runtime/remote',
-            cloudEndpoint: mode === 'cloud' ? (process.env.KEATING_WEB_CLOUD_ENDPOINT || 'https://keating.help') : null,
+            projectRoot,
+            // Vite serves UI assets only; host execution is available through
+            // the Nitro server started by `keating web`.
+            localExecEnabled: mode === 'host' ? false : localExecEnabled,
             remote: mode === 'remote'
               ? {
                   provider: process.env.KEATING_WEB_REMOTE_PROVIDER || 'microsandbox',
@@ -50,22 +58,8 @@ function chatProxyPlugin(): Plugin {
                   disk: process.env.KEATING_WEB_REMOTE_DISK || null,
                 }
               : null,
-            capabilities: {
-              browserLocal: true,
-              remoteSandbox: mode !== 'browser-only',
-              secureIsolation: mode !== 'browser-only',
-              nativeBinaries: mode !== 'browser-only',
-              serverBrokeredSecrets: mode !== 'browser-only',
-              durableCompute: mode !== 'browser-only',
-            },
-            fallback: {
-              localFirst: true,
-              remoteAvailable: mode !== 'browser-only',
-              message: mode === 'browser-only'
-                ? 'Run supported agent work in the browser. Surface a fallback error for secure isolation, native binaries, brokered secrets, durable compute, or public inbound networking.'
-                : 'Run browser-compatible work locally first. Route remote-only work through the configured backend.',
-            },
-          });
+            cloudEndpoint: env('KEATING_WEB_CLOUD_ENDPOINT'),
+          }));
           res.setHeader('content-type', 'application/json');
           res.end(body);
           return;
@@ -75,11 +69,11 @@ function chatProxyPlugin(): Plugin {
           const mode = agentRuntimeMode();
           const targetBase = agentRuntimeTargetBase(mode);
           if (!targetBase) {
-            res.statusCode = mode === 'browser-only' ? 403 : 503;
+            res.statusCode = mode === 'browser-only' || mode === 'host' ? 403 : 503;
             res.setHeader('content-type', 'application/json');
             res.end(JSON.stringify({
-              error: mode === 'browser-only'
-                ? 'Remote agent runtime is disabled in browser-only mode.'
+              error: mode === 'browser-only' || mode === 'host'
+                ? `Remote agent runtime is disabled in ${mode} mode.`
                 : 'Remote agent runtime endpoint is not configured.',
             }));
             return;

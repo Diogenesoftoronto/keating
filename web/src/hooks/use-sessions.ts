@@ -83,7 +83,7 @@ export function useSessions(opts: UseSessionsOptions = {}): UseSessionsResult {
 						)
 					: Promise.resolve(new Map<string, ArtifactHero>()),
 			]);
-			setItems(sortSessionsByLastModified(metadata));
+			setItems(sortSessionsByLastModified(metadata.filter((session) => !session.hiddenAlternative)));
 			setHeroes(heroMap);
 		} catch (loadError) {
 			setError(
@@ -111,7 +111,7 @@ export function useSessions(opts: UseSessionsOptions = {}): UseSessionsResult {
 						: Promise.resolve(new Map<string, ArtifactHero>()),
 				]);
 				if (cancelled) return;
-				setItems(sortSessionsByLastModified(metadata));
+				setItems(sortSessionsByLastModified(metadata.filter((session) => !session.hiddenAlternative)));
 				setHeroes(heroMap);
 			} catch (loadError) {
 				if (cancelled) return;

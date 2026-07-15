@@ -38,7 +38,8 @@ export const extensionCommandSpecs: CommandSpec[] = [
 
 export const cliCommandSpecs: CommandSpec[] = [
 	{ name: "shell",        args: "[prompt]",       section: "Core",          description: "Launch the AI-powered hyperteacher shell." },
-	{ name: "web",          args: "[port]",         section: "Core",          description: "Start the browser UI dev server." },
+	{ name: "tui",          args: "[prompt]",       section: "Core",          description: "Launch the OpenTUI host over Pi RPC." },
+	{ name: "web",          args: "[port] [runtime options]", section: "Core", description: "Start the browser UI with browser, host, external, or cloud execution." },
 	{ name: "webmcp",       args: "[port] [--host=127.0.0.1]", section: "Core", description: "Expose Keating tools over MCP Streamable HTTP." },
 	{ name: "doctor",       args: "",               section: "Core",          description: "Inspect AI runtime and renderer configuration." },
 	{ name: "package",      args: "list|add <source>|remove <source>|recommended", section: "Core", description: "Manage extra Pi packages loaded by Keating." },

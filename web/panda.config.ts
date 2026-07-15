@@ -2968,6 +2968,15 @@ export default defineConfig({
       }
     },
     "@media (max-width: 640px)": {
+      ".chat-page-shell .chat-avatar": {
+        display: "none"
+      },
+      ".chat-page-shell .you-bubble": {
+        padding: "8px 10px"
+      },
+      ".chat-page-shell .msg-meta": {
+        marginBottom: "4px"
+      },
       ".chat-page-shell .chat-action-button,\n  .chat-page-shell .chat-actions > button": {
         width: "2rem",
         height: "2rem",

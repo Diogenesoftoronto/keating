@@ -47,8 +47,9 @@ It is designed around five influences:
   - persistent learner state and feedback signals
 - Persisted traces that explain why benchmark runs and evolution candidates succeeded or failed.
 - A test suite with property checks, fuzz-style inputs, and an end-to-end acceptance pipeline.
-- A browser-first agent serving model with three explicit modes:
+- A browser-first agent serving model with four explicit modes:
   - `keating web --browser-only-agent` for the free/local default where supported agent work stays on the learner's device.
+  - `keating web --host` for explicit trusted-machine execution inside the selected project root (not a sandbox).
   - `keating web --remote` for a self-hosted server that can proxy remote-only work to a configured microVM or sandbox endpoint.
   - `keating web --cloud` for the canonical Keating Cloud backend at `https://keating.help`.
 - A shared browser agent runtime package under `packages/browser-agent-runtime/` with local memory sandboxes, capability routing, transactional snapshots, Daytona-shaped compatibility, a NodePod adapter seam, and an RPC relay protocol.
@@ -143,13 +144,21 @@ keating web --remote 3000 \
   --remote-region=local \
   --remote-snapshot=keating-base
 
+# Direct host execution, without NodePod or a microVM. This is intentionally
+# localhost-only, opt-in, and confined to the selected project root.
+keating web --host 3000 \
+  --allow-local-exec \
+  --root=/srv/keating-project
+
 # Cloud mode: local-first browser agent with remote-only work routed
 # through the canonical Keating backend.
 keating web --cloud 3000
 keating web --cloud 3000 --cloud-endpoint=https://keating.help
 ```
 
-The browser reads `/api/agent-runtime/config` on startup. In browser-only mode, `/api/agent-runtime/remote/**` is disabled and remote-only work returns a clear fallback. In remote and cloud modes, the browser agent gets an `agent_runtime` tool for capability discovery and a `remote_execute` tool that posts to the server-side proxy for work that cannot safely or practically happen in the browser.
+The browser reads `/api/agent-runtime/config` on startup. In browser-only mode, remote-only work returns a clear fallback. Host mode posts to the local, root-confined `/api/agent-runtime/host` endpoint; remote and cloud modes use the server-side `/api/agent-runtime/remote` proxy.
+
+An external HTTP runtime must accept `POST /api/agent-runtime/execute` with `{ operation, payload }`. Set `KEATING_WEB_REMOTE_AUTH_TOKEN` to inject a server-side bearer token without exposing it to the browser. Explicit `--host` mode needs no second service: it maps `shell.exec`, `fs.list`, `fs.read`, `fs.write`, `fs.edit`, and `source.diff` onto the serving machine using the same loopback, same-origin, timeout, and project-root checks as `--allow-local-exec`. It is convenient trusted-host execution, not a security sandbox.
 
 Browser-only mode is intentionally the free-tier default. It is lower-risk than running arbitrary code on a shared server because code runs on the user's own device, but it still cannot provide native binaries, Docker or microVM isolation, unrestricted host filesystem access, durable background jobs, public inbound networking, or server-brokered secrets. Those belong behind `--remote` or `--cloud`.
 

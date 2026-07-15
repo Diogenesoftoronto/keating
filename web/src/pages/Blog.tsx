@@ -5,6 +5,7 @@ import { SimpleFooter } from "../components/Footer";
 import { ChevronDown, ChevronUp, Hash, Search } from "lucide-react";
 import { css, cx } from "../../styled-system/css";
 import { paperCard } from "../../styled-system/recipes";
+import { V240OpenInterfacesArticle } from "../components/V240OpenInterfacesArticle";
 
 type BadgeColor = "fix" | "release" | "feature" | "pwa" | "update" | "tech" | "devlog";
 
@@ -261,6 +262,29 @@ function majorMinor(version: string): string {
 /* ── Data ────────────────────────────────────────────────────────── */
 
 const POSTS: Post[] = [
+  {
+    date: "2026-07-15",
+    badge: { label: "RELEASE", color: "release" },
+    title: "v2.4.0 - A Streamable Interface for Understanding",
+    version: "2.4.0",
+    summary:
+      "Keating 2.4 moves teaching into streamed OpenUI documents, adds a separate OpenTUI host, makes learning history and self-evolution directly inspectable, improves interrupted-session recovery, and turns training export into a documented, schema-validated evidence package.",
+    sections: [
+      { id: "understanding-bottleneck", title: "Understanding Is a Product Constraint" },
+      { id: "ui-as-protocol", title: "The Interface as Teaching Protocol" },
+      { id: "context-without-ceremony", title: "Context Without Tool Ceremony" },
+      { id: "structured-learner-responses", title: "Structured Learner Responses" },
+      { id: "tools-hooks-capabilities", title: "Tools, Hooks, and Capabilities" },
+      { id: "runtime-boundaries", title: "Runtime and Security Boundaries" },
+      { id: "navigable-learning-history", title: "A Navigable Learning History" },
+      { id: "training-evidence-package", title: "Training Data as Evidence" },
+      { id: "recoverable-teaching-turns", title: "Recoverable Teaching Turns" },
+      { id: "two-terminal-paths", title: "Two Terminal Paths" },
+      { id: "compatibility-not-complete", title: "The Remaining Migration" },
+      { id: "why-2-4", title: "Why 2.4 Instead of 3.0" },
+    ],
+    body: <V240OpenInterfacesArticle />,
+  },
   {
     date: "2026-07-10",
     badge: { label: "RELEASE", color: "release" },
@@ -2134,10 +2158,7 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
             </thead>
             <tbody>
               {[
-                ["plan", "topic"],
-                ["map", "topic"],
                 ["animate", "topic"],
-                ["verify", "topic"],
                 ["bench", "topic (optional)"],
                 ["evolve", "topic (optional)"],
                 ["quiz", "topic"],

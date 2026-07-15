@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 
 import {
+	aggregateFeedback,
 	buildModelUsageBreakdown,
 	getCurriculumDisplayEnd,
 	getPrimaryCurriculumTopic,
@@ -100,5 +101,16 @@ describe("usage chart data shaping", () => {
 		expect(messageBreakdown.basis).toBe("messages");
 		expect(messageBreakdown.entries[0].label).toBe("GPT B");
 		expect(messageBreakdown.entries[0].value).toBe(4);
+	});
+
+	it("keeps feedback evidence attached to its interactive signal group", () => {
+		const groups = aggregateFeedback([
+			{ id: "old", topic: "Recursion", signal: "confused", createdAt: base, evidence: "Stack frames blurred together", sessionId: "session-a" },
+			{ id: "new", topic: "Entropy", signal: "confused", createdAt: base + 1_000, evidence: "Multiplicity clarified it", sessionId: "session-b" },
+			{ id: "up", topic: "Derivatives", signal: "thumbs-up", createdAt: base + 2_000 },
+		]);
+
+		expect(groups.map((group) => group.label)).toEqual(["Confident", "Confused"]);
+		expect(groups[1].entries.map((entry) => entry.id)).toEqual(["new", "old"]);
 	});
 });

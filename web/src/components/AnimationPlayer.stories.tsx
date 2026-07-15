@@ -50,6 +50,26 @@ const hyperframesScene = `<!doctype html>
 </body>
 </html>`;
 
+const cssAnimationScene = `<!doctype html>
+<html>
+<body>
+  <main>
+    <div class="orbit"><div class="particle"></div></div>
+    <h1>Orbital motion</h1>
+    <p>This scene uses the browser animation API without GSAP.</p>
+  </main>
+  <style>
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #08111f; color: #f4f1e8; font-family: ui-monospace, monospace; overflow: hidden; }
+    main { display: grid; place-items: center; gap: 18px; text-align: center; }
+    .orbit { position: relative; width: 180px; height: 180px; border: 1px solid #6ee7b7; border-radius: 50%; animation: turn 5s linear 2; }
+    .particle { position: absolute; left: 50%; top: -10px; width: 20px; height: 20px; border-radius: 50%; background: #fcd34d; box-shadow: 0 0 24px #f59e0b; }
+    h1 { margin: 0; }
+    p { margin: 0; color: #c7d2fe; }
+    @keyframes turn { to { transform: rotate(360deg); } }
+  </style>
+</body>
+</html>`;
+
 const meta = {
 	title: "Artifacts/Animation Player",
 	component: AnimationPlayer,
@@ -74,5 +94,19 @@ export const HyperframesArtifact: Story = {
 		storyboard,
 		scene: hyperframesScene,
 		manifest: hyperframesManifest,
+	},
+};
+
+export const BrowserAnimationFallback: Story = {
+	args: {
+		storyboard,
+		scene: cssAnimationScene,
+		manifest: JSON.stringify({
+			topic: "Orbital motion",
+			slug: "orbital-motion",
+			renderer: "hyperframes",
+			scenes: ["orbit"],
+			duration: 10,
+		}),
 	},
 };

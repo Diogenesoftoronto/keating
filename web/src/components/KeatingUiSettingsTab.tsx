@@ -258,8 +258,8 @@ export function KeatingUiSettingsTab() {
 			</SettingRow>
 
 			<SettingRow
-				title="Alternative response chance"
-				description="Occasionally generate a background forked answer to the same prompt for DPO preference data."
+				title="Response comparison chance"
+				description="Generate a second answer in the background and ask which response helped more. Each comparison uses another model request, so it is off by default."
 			>
 				<div className={css({ display: "flex", minWidth: "12rem", alignItems: "center", gap: "0.75rem" })}>
 					<input
@@ -279,7 +279,7 @@ export function KeatingUiSettingsTab() {
 						className={css({ height: "2.25rem", width: "4rem", borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "var(--background)", paddingInline: "0.5rem", fontSize: "0.875rem", color: "var(--foreground)" })}
 						value={Math.round(settings.alternativeResponseChance * 100)}
 						onChange={(event) => update({ alternativeResponseChance: Math.max(0, Math.min(1, Number(event.target.value) / 100)) })}
-						aria-label="Alternative response chance percent"
+						aria-label="Response comparison chance percent"
 					/>
 					<span className={mutedSmallClass}>%</span>
 				</div>

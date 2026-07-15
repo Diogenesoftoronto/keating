@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { useNavigate } from "@tanstack/react-router";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { keatingStorage } from "../hooks/keating-storage";
 import type {
 	BenchmarkResult,
@@ -21,12 +22,14 @@ import {
 } from "./usage-topic-groups";
 import {
 	buildModelUsageBreakdown,
+	aggregateFeedback,
 	getCurriculumDisplayEnd,
 	getPrimaryCurriculumTopic,
 	getVisibleCurriculumSessions,
 	hasMeaningfulPolicyScores,
 	type ModelUsageBreakdown,
 	type ModelUsageEntry,
+	type FeedbackSignalGroup,
 } from "./usage-chart-data";
 import { css, cx } from "../../styled-system/css";
 import { EmptyState } from "./EmptyState";
@@ -44,6 +47,8 @@ const styles = {
 	pieBox: css({ h: "14rem", minW: 0 }),
 	stack2: css({ minW: 0, "& > * + *": { mt: "0.5rem" } }),
 	modelRow: css({ minW: 0, borderBottom: "1px solid color-mix(in srgb, var(--border) 60%, transparent)", pb: "0.5rem", _last: { borderBottom: 0, pb: 0 } }),
+	modelButton: css({ w: "100%", minW: 0, borderRadius: "0.375rem", border: "1px solid transparent", px: "0.5rem", py: "0.5rem", textAlign: "left", transitionProperty: "background-color, border-color", transitionDuration: "150ms", _hover: { bg: "var(--accent)" }, _focusVisible: { outline: "2px solid var(--ring)", outlineOffset: "2px" } }),
+	selectedButton: css({ borderColor: "var(--border)", bg: "color-mix(in srgb, var(--accent) 65%, transparent)" }),
 	between: css({ display: "flex", minW: 0, alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }),
 	row: css({ display: "flex", minW: 0, alignItems: "center", gap: "0.5rem" }),
 	dot: css({ h: "0.625rem", w: "0.625rem", flexShrink: 0, borderRadius: "9999px" }),
@@ -66,6 +71,11 @@ const styles = {
 	improvementBarGood: css({ bg: "#22c55e" }),
 	improvementBarBad: css({ bg: "var(--destructive)" }),
 	barFooter: css({ mt: "0.25rem", display: "flex", justifyContent: "space-between", fontSize: "10px", color: "var(--muted-foreground)" }),
+	evolutionList: css({ mt: "1rem", borderTop: "1px solid var(--border)" }),
+	evolutionButton: css({ display: "flex", w: "100%", minW: 0, alignItems: "center", justifyContent: "space-between", gap: "1rem", borderBottom: "1px solid color-mix(in srgb, var(--border) 65%, transparent)", px: "0.75rem", py: "0.625rem", textAlign: "left", _last: { borderBottom: 0 }, _hover: { bg: "var(--accent)" }, _focusVisible: { outline: "2px solid var(--ring)", outlineOffset: "-2px" } }),
+	evolutionName: css({ minW: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.75rem", fontWeight: "600" }),
+	evolutionMeta: css({ mt: "0.125rem", fontSize: "11px", color: "var(--muted-foreground)" }),
+	viewDiff: css({ flexShrink: 0, fontSize: "0.75rem", color: "var(--primary)" }),
 	metricTile: css({ borderRadius: "0.375rem", border: "1px solid var(--border)", bg: "color-mix(in srgb, var(--muted) 20%, transparent)", px: "0.75rem", py: "0.5rem" }),
 	metricTileLabel: css({ fontSize: "11px", fontWeight: "500", textTransform: "uppercase", color: "var(--muted-foreground)" }),
 	metricTileValue: css({ mt: "0.25rem", fontSize: "1.125rem", fontWeight: "600" }),
@@ -88,6 +98,11 @@ const styles = {
 	sectionLabel: css({ fontSize: "0.75rem", fontWeight: "600", textTransform: "uppercase", color: "var(--muted-foreground)" }),
 	backButton: css({ borderRadius: "0.375rem", px: "0.5rem", py: "0.125rem", fontSize: "11px", color: "var(--primary)", transitionProperty: "background-color", transitionDuration: "150ms", _hover: { bg: "color-mix(in srgb, var(--primary) 10%, transparent)" } }),
 	detailCard: css({ borderRadius: "0.375rem", border: "1px solid var(--border)", bg: "color-mix(in srgb, var(--muted) 20%, transparent)", p: "0.625rem" }),
+	selectionCard: css({ mt: "0.75rem", borderRadius: "0.375rem", border: "1px solid var(--border)", bg: "color-mix(in srgb, var(--muted) 20%, transparent)", p: "0.75rem" }),
+	selectionTitle: css({ fontSize: "0.8rem", fontWeight: "600" }),
+	selectionMeta: css({ mt: "0.25rem", fontSize: "0.75rem", lineHeight: "1.5", color: "var(--muted-foreground)" }),
+	selectionActions: css({ mt: "0.625rem", display: "flex", flexWrap: "wrap", gap: "0.375rem" }),
+	selectionAction: css({ borderRadius: "0.375rem", border: "1px solid var(--border)", px: "0.625rem", py: "0.375rem", fontSize: "0.75rem", color: "var(--primary)", _hover: { bg: "var(--accent)" }, _focusVisible: { outline: "2px solid var(--ring)", outlineOffset: "2px" } }),
 	childTopics: css({ mt: "0.5rem", display: "flex", flexWrap: "wrap", gap: "0.25rem" }),
 	topicPill: css({ borderRadius: "9999px", bg: "var(--background)", px: "0.5rem", py: "0.125rem", fontSize: "10px", color: "var(--muted-foreground)" }),
 	overflowX: css({ overflowX: "auto" }),
@@ -97,6 +112,11 @@ const styles = {
 	yearActive: css({ bg: "var(--primary)", color: "var(--primary-foreground)" }),
 	yearInactive: css({ color: "var(--muted-foreground)", _hover: { bg: "var(--accent)", color: "var(--accent-foreground)" } }),
 	heatTooltip: css({ pointerEvents: "none", position: "absolute", zIndex: 20, transform: "translate(-50%, -100%)", borderRadius: "0.375rem", border: "1px solid var(--border)", bg: "var(--popover)", px: "0.75rem", py: "0.5rem", color: "var(--popover-foreground)", boxShadow: "var(--shadow, 0 4px 6px rgb(0 0 0 / 0.1))" }),
+	dayDetail: css({ mt: "1rem", borderTop: "1px solid var(--border)", pt: "0.75rem" }),
+	dayTitle: css({ mb: "0.5rem", fontSize: "0.75rem", fontWeight: "600" }),
+	daySession: css({ display: "flex", w: "100%", minW: 0, alignItems: "center", justifyContent: "space-between", gap: "0.75rem", borderRadius: "0.375rem", px: "0.625rem", py: "0.5rem", textAlign: "left", _hover: { bg: "var(--accent)" }, _focusVisible: { outline: "2px solid var(--ring)", outlineOffset: "2px" } }),
+	daySessionTitle: css({ minW: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.75rem", fontWeight: "600" }),
+	daySessionMeta: css({ mt: "0.125rem", minW: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "11px", color: "var(--muted-foreground)" }),
 	comingGrid: css({ display: "grid", gap: "1rem", md: { gridTemplateColumns: "repeat(3, minmax(0, 1fr))" } }),
 	mt2SmallMuted: css({ mt: "0.5rem", fontSize: "0.875rem", color: "var(--muted-foreground)" }),
 	listStack: css({ mt: "0.5rem", fontSize: "0.875rem", "& > * + *": { mt: "0.375rem" } }),
@@ -131,9 +151,11 @@ function ChartPanel({
 
 interface UsageChartsProps {
 	sessionMetadata: SessionMetadata[];
+	onOpenSession: (sessionId: string) => void;
 }
 
-export function UsageCharts({ sessionMetadata }: UsageChartsProps) {
+export function UsageCharts({ sessionMetadata, onOpenSession }: UsageChartsProps) {
+	const navigate = useNavigate();
 	const [data, setData] = useState<{
 		topicGroups: TopicArtifactGroup[];
 		sessions: LearnerState["sessions"];
@@ -215,7 +237,7 @@ export function UsageCharts({ sessionMetadata }: UsageChartsProps) {
 
 	const totalTopicArtifacts = data.topicGroups.reduce((sum, t) => sum + t.count, 0);
 	const feedbackMix = aggregateFeedback(data.feedback);
-	const modelMix = buildModelUsageBreakdown(sessionMetadata);
+	const modelMix = buildModelUsageBreakdown(sessionMetadata, Math.max(1, sessionMetadata.length));
 
 	return (
 		<div className={styles.stack}>
@@ -249,26 +271,7 @@ export function UsageCharts({ sessionMetadata }: UsageChartsProps) {
 					{feedbackMix.length === 0 ? (
 						<EmptyState message="No feedback recorded yet." />
 					) : (
-						<div style={{ width: "100%", height: 260 }}>
-							<ResponsiveContainer>
-								<PieChart>
-									<Pie data={feedbackMix} dataKey="count" nameKey="label" innerRadius={50} outerRadius={90} paddingAngle={2}>
-										{feedbackMix.map((entry) => (
-											<Cell key={entry.label} fill={entry.color} />
-										))}
-									</Pie>
-									<Tooltip
-										contentStyle={{
-											background: "var(--background, #fff)",
-											border: "1px solid var(--border, #e5e7eb)",
-											borderRadius: 6,
-											fontSize: 12,
-										}}
-									/>
-									<Legend verticalAlign="bottom" wrapperStyle={{ fontSize: 11 }} />
-								</PieChart>
-							</ResponsiveContainer>
-						</div>
+						<FeedbackSignalWheel groups={feedbackMix} onOpenSession={onOpenSession} />
 					)}
 				</ChartPanel>
 			</div>
@@ -277,14 +280,14 @@ export function UsageCharts({ sessionMetadata }: UsageChartsProps) {
 				title="Curriculum timeline"
 				subtitle="Each row is a learning session — bar length is duration, color is the first topic covered"
 			>
-				<CurriculumGantt sessions={data.sessions} colorFor={(t) => categorizeUsageTopic(t).color} />
+				<CurriculumGantt sessions={data.sessions} colorFor={(t) => categorizeUsageTopic(t).color} onOpenSession={onOpenSession} />
 			</ChartPanel>
 
 			<ChartPanel
 				title="Daily activity"
-				subtitle="Sessions per day year by year"
+				subtitle="Select an active day to see what you discussed"
 			>
-				<ActivityHeatmap sessions={sessionMetadata} />
+				<ActivityHeatmap sessions={sessionMetadata} onOpenSession={onOpenSession} />
 			</ChartPanel>
 
 			<ChartPanel
@@ -296,6 +299,7 @@ export function UsageCharts({ sessionMetadata }: UsageChartsProps) {
 					evolutions={data.evolutions}
 					improvements={data.improvements}
 					policies={data.policies}
+					onOpenEvolution={(evolutionId) => navigate({ to: "/usage/evolution/$evolutionId", params: { evolutionId } })}
 				/>
 			</ChartPanel>
 
@@ -323,61 +327,70 @@ function modelUsageTooltipLabel(basis: ModelUsageBreakdown["basis"]) {
 
 function ModelUsageWheel({ breakdown }: { breakdown: ModelUsageBreakdown }) {
 	const metricLabel = modelUsageTooltipLabel(breakdown.basis);
+	const [selectedKey, setSelectedKey] = useState(breakdown.entries[0]?.key ?? "");
+	const selected = breakdown.entries.find((entry) => entry.key === selectedKey) ?? breakdown.entries[0];
 	return (
-		<div className={styles.modelWheelGrid}>
-			<div className={styles.pieBox}>
-				<ResponsiveContainer>
-					<PieChart>
-						<Pie
-							data={breakdown.entries}
-							dataKey="value"
-							nameKey="label"
-							innerRadius={52}
-							outerRadius={84}
-							paddingAngle={2}
-							stroke="var(--background, #fff)"
-							strokeWidth={1}
-						>
-							{breakdown.entries.map((entry) => (
-								<Cell key={entry.key} fill={entry.color} />
-							))}
-						</Pie>
-						<Tooltip
-							formatter={(value, _name, item) => {
-								const entry = item.payload as ModelUsageEntry;
-								return [
-									`${formatCompactNumber(Number(value))} ${metricLabel} (${Math.round(entry.share * 100)}%)`,
-									entry.label,
-								];
-							}}
-							contentStyle={{
-								background: "var(--background, #fff)",
-								border: "1px solid var(--border, #e5e7eb)",
-								borderRadius: 6,
-								fontSize: 12,
-							}}
-						/>
-					</PieChart>
-				</ResponsiveContainer>
+		<div>
+			<div className={styles.modelWheelGrid}>
+				<div className={styles.pieBox}>
+					<ResponsiveContainer>
+						<PieChart>
+							<Pie
+								data={breakdown.entries}
+								dataKey="value"
+								nameKey="label"
+								innerRadius={52}
+								outerRadius={84}
+								paddingAngle={2}
+								stroke="var(--background, #fff)"
+								strokeWidth={1}
+								onClick={(_, index) => setSelectedKey(breakdown.entries[index]?.key ?? selectedKey)}
+							>
+								{breakdown.entries.map((entry) => (
+									<Cell key={entry.key} fill={entry.color} opacity={entry.key === selected?.key ? 1 : 0.52} className={styles.cursorPointer} />
+								))}
+							</Pie>
+							<Tooltip
+								formatter={(value, _name, item) => {
+									const entry = item.payload as ModelUsageEntry;
+									return [
+										`${formatCompactNumber(Number(value))} ${metricLabel} (${Math.round(entry.share * 100)}%)`,
+										entry.label,
+									];
+								}}
+								contentStyle={{
+									background: "var(--background, #fff)",
+									border: "1px solid var(--border, #e5e7eb)",
+									borderRadius: 6,
+									fontSize: 12,
+								}}
+							/>
+						</PieChart>
+					</ResponsiveContainer>
+				</div>
+				<div className={styles.stack2} aria-label="Select a model to inspect">
+					{breakdown.entries.map((entry) => (
+						<button key={entry.key} type="button" className={cx(styles.modelButton, entry.key === selected?.key ? styles.selectedButton : "")} onClick={() => setSelectedKey(entry.key)}>
+							<div className={styles.between}>
+								<div className={styles.row}>
+									<span className={styles.dot} style={{ background: entry.color }} />
+									<div className={styles.truncateStrong}>{entry.label}</div>
+								</div>
+								<div className={styles.shareText}>{Math.round(entry.share * 100)}%</div>
+							</div>
+							<div className={styles.modelDetail}>{entry.provider}/{entry.modelId}</div>
+						</button>
+					))}
+				</div>
 			</div>
-			<div className={styles.stack2}>
-				{breakdown.entries.map((entry) => (
-					<div key={entry.key} className={styles.modelRow}>
-						<div className={styles.between}>
-							<div className={styles.row}>
-								<span className={styles.dot} style={{ background: entry.color }} />
-								<div className={styles.truncateStrong}>{entry.label}</div>
-							</div>
-							<div className={styles.shareText}>
-								{Math.round(entry.share * 100)}%
-							</div>
-						</div>
-						<div className={styles.modelDetail}>
-							{entry.provider}/{entry.modelId} · {formatCompactNumber(entry.tokens)} tokens · {entry.sessions} session{entry.sessions === 1 ? "" : "s"}
-						</div>
+			{selected && (
+				<div className={styles.selectionCard} aria-live="polite">
+					<div className={styles.selectionTitle}>{selected.label}</div>
+					<div className={styles.selectionMeta}>
+						{selected.provider}/{selected.modelId} · {formatCompactNumber(selected.tokens)} tokens · {selected.messages} messages · {selected.sessions} session{selected.sessions === 1 ? "" : "s"} · {Math.round(selected.share * 100)}% of recorded {metricLabel}
 					</div>
-				))}
-			</div>
+				</div>
+			)}
 		</div>
 	);
 }
@@ -387,12 +400,20 @@ function PolicyGrowthPanel({
  evolutions,
  improvements,
  policies,
+ onOpenEvolution,
 }: {
- benchmarks: { score: number; createdAt: number }[];
- evolutions: { bestScore: number; createdAt: number }[];
+ benchmarks: BenchmarkResult[];
+ evolutions: EvolutionResult[];
  improvements: { baselineScore: number; afterScore: number | null; scoreDelta: number | null; createdAt: number }[];
  policies: { active: boolean; createdAt: number; updatedAt: number }[];
+ onOpenEvolution: (evolutionId: string) => void;
 }) {
+	const [selectedTrend, setSelectedTrend] = useState<{
+		kind: "Benchmark" | "Evolution";
+		id?: string;
+		score: number;
+		createdAt: number;
+	} | null>(null);
 	const hasAny = benchmarks.length > 0 || evolutions.length > 0 || improvements.length > 0 || policies.length > 0;
 	if (!hasAny) {
 		return <EmptyState message="No self-evolution records yet — run a benchmark or evolution to see health signals here." />;
@@ -406,15 +427,19 @@ function PolicyGrowthPanel({
 	const chartTop = 12;
 
 	const fmtDate = (t: number) => new Date(t).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-	const benchmarkScores = benchmarks.map((b) => ({ score: b.score, createdAt: b.createdAt }));
-	const evolutionScores = evolutions.map((e) => ({ score: e.bestScore, createdAt: e.createdAt }));
+	const benchmarkScores = benchmarks.map((b) => ({ id: b.id, score: b.score, createdAt: b.createdAt }));
+	const evolutionScores = evolutions.map((e) => ({ id: e.id, score: e.bestScore, createdAt: e.createdAt }));
 	const allScores = [...benchmarkScores, ...evolutionScores].sort((a, b) => a.createdAt - b.createdAt);
 	const scoreSignalsAreMeaningful = hasMeaningfulPolicyScores(allScores);
 	const minT = allScores[0]?.createdAt ?? Date.now();
 	const maxT = allScores[allScores.length - 1]?.createdAt ?? minT;
 	const span = Math.max(maxT - minT, 1);
 
-	const makePoints = (arr: { score: number; createdAt: number }[], color: string, label: string) => {
+	const makePoints = (
+		arr: Array<{ id?: string; score: number; createdAt: number }>,
+		color: string,
+		label: "Benchmark" | "Evolution",
+	) => {
 		if (arr.length === 0) return null;
 		const sorted = [...arr].sort((a, b) => a.createdAt - b.createdAt);
 		const usableW = 100 - leftPad - rightPad;
@@ -422,9 +447,11 @@ function PolicyGrowthPanel({
 			label,
 			color,
 			points: sorted.map((d) => ({
+				id: d.id,
 				x: leftPad + ((d.createdAt - minT) / span) * usableW,
 				y: chartBottom - (d.score / maxScore) * (chartBottom - chartTop),
 				score: d.score,
+				createdAt: d.createdAt,
 				date: fmtDate(d.createdAt),
 			})),
 		};
@@ -444,6 +471,7 @@ function PolicyGrowthPanel({
 		.slice(-12);
 	const acceptedAttempts = improvements.filter((i) => (i.scoreDelta ?? -Infinity) >= 0).length;
 	const rejectedAttempts = improvements.filter((i) => (i.scoreDelta ?? 0) < 0).length;
+	const recentEvolutions = [...evolutions].sort((left, right) => right.createdAt - left.createdAt).slice(0, 6);
 
 	return (
 		<div>
@@ -492,7 +520,26 @@ function PolicyGrowthPanel({
 									<g key={line.label}>
 										<path d={d} fill="none" stroke={line.color} strokeWidth={0.8} opacity={0.8} />
 										{line.points.map((p, i) => (
-											<circle key={i} cx={p.x - leftPad} cy={p.y} r={1.2} fill={line.color}>
+											<circle
+												key={i}
+												cx={p.x - leftPad}
+												cy={p.y}
+												r={selectedTrend?.kind === line.label && selectedTrend.createdAt === p.createdAt ? 2.1 : 1.4}
+												fill={line.color}
+												stroke="var(--background)"
+												strokeWidth={0.5}
+												className={styles.cursorPointer}
+												role="button"
+												tabIndex={0}
+												aria-label={`Inspect ${line.label.toLowerCase()} score ${p.score.toFixed(1)} on ${p.date}`}
+												onClick={() => setSelectedTrend({ kind: line.label, id: p.id, score: p.score, createdAt: p.createdAt })}
+												onKeyDown={(event) => {
+													if (event.key === "Enter" || event.key === " ") {
+														event.preventDefault();
+														setSelectedTrend({ kind: line.label, id: p.id, score: p.score, createdAt: p.createdAt });
+													}
+												}}
+											>
 												<title>{line.label}: {p.score.toFixed(1)} on {p.date}</title>
 											</circle>
 										))}
@@ -517,6 +564,19 @@ function PolicyGrowthPanel({
 						</div>
 					)}
 				</div>
+				{selectedTrend && (
+					<div className={styles.selectionCard} aria-live="polite">
+						<div className={styles.selectionTitle}>{selectedTrend.kind} score {selectedTrend.score.toFixed(2)}</div>
+						<div className={styles.selectionMeta}>{new Date(selectedTrend.createdAt).toLocaleString()}</div>
+						{selectedTrend.kind === "Evolution" && selectedTrend.id && (
+							<div className={styles.selectionActions}>
+								<button type="button" className={styles.selectionAction} onClick={() => onOpenEvolution(selectedTrend.id!)}>
+									View exact diff
+								</button>
+							</div>
+						)}
+					</div>
+				)}
 			</div>
 
 			{improvementBars.length > 0 && (
@@ -541,6 +601,20 @@ function PolicyGrowthPanel({
 						<span>{improvementBars.length} latest</span>
 						<span>{activePolicies} active policy{activePolicies === 1 ? "" : "ies"} / {policies.length} total</span>
 					</div>
+				</div>
+			)}
+
+			{recentEvolutions.length > 0 && (
+				<div className={styles.evolutionList}>
+					{recentEvolutions.map((evolution) => (
+						<button key={evolution.id} type="button" className={styles.evolutionButton} onClick={() => onOpenEvolution(evolution.id)}>
+							<div className={styles.flex1}>
+								<div className={styles.evolutionName}>{evolution.topic || "General teaching policy"}</div>
+								<div className={styles.evolutionMeta}>Score {evolution.bestScore.toFixed(2)} · {new Date(evolution.createdAt).toLocaleString()}</div>
+							</div>
+							<span className={styles.viewDiff}>View exact diff</span>
+						</button>
+					))}
 				</div>
 			)}
 		</div>
@@ -898,16 +972,77 @@ function TopicGroupWheel({ groups }: { groups: TopicArtifactGroup[] }) {
 	);
 }
 
-function aggregateFeedback(entries: FeedbackEntry[]) {
-	const counts: Record<string, number> = { "thumbs-up": 0, "thumbs-down": 0, confused: 0 };
-	for (const e of entries) {
-		counts[e.signal] = (counts[e.signal] ?? 0) + 1;
-	}
-	const out: { label: string; count: number; color: string }[] = [];
-	if (counts["thumbs-up"]) out.push({ label: "Confident", count: counts["thumbs-up"], color: "#22c55e" });
-	if (counts["thumbs-down"]) out.push({ label: "Off-track", count: counts["thumbs-down"], color: "#ef4444" });
-	if (counts["confused"]) out.push({ label: "Confused", count: counts["confused"], color: "#f97316" });
-	return out;
+function FeedbackSignalWheel({
+	groups,
+	onOpenSession,
+}: {
+	groups: FeedbackSignalGroup[];
+	onOpenSession: (sessionId: string) => void;
+}) {
+	const [selectedLabel, setSelectedLabel] = useState(groups[0]?.label ?? "");
+	const selected = groups.find((group) => group.label === selectedLabel) ?? groups[0];
+	const total = groups.reduce((sum, group) => sum + group.count, 0);
+	const latestWithSession = selected?.entries.find((entry) => entry.sessionId || entry.referent?.sessionId);
+
+	return (
+		<div>
+			<div className={styles.modelWheelGrid}>
+				<div className={styles.pieBox}>
+					<ResponsiveContainer>
+						<PieChart>
+							<Pie
+								data={groups}
+								dataKey="count"
+								nameKey="label"
+								innerRadius={52}
+								outerRadius={84}
+								paddingAngle={2}
+								onClick={(_, index) => setSelectedLabel(groups[index]?.label ?? selectedLabel)}
+							>
+								{groups.map((entry) => (
+									<Cell key={entry.label} fill={entry.color} opacity={entry.label === selected?.label ? 1 : 0.52} className={styles.cursorPointer} />
+								))}
+							</Pie>
+							<Tooltip
+								formatter={(value) => [`${value} signal${Number(value) === 1 ? "" : "s"}`, "Feedback"]}
+								contentStyle={{ background: "var(--background, #fff)", border: "1px solid var(--border, #e5e7eb)", borderRadius: 6, fontSize: 12 }}
+							/>
+						</PieChart>
+					</ResponsiveContainer>
+				</div>
+				<div className={styles.stack2} aria-label="Select a feedback signal to inspect">
+					{groups.map((group) => (
+						<button key={group.label} type="button" className={cx(styles.modelButton, group.label === selected?.label ? styles.selectedButton : "")} onClick={() => setSelectedLabel(group.label)}>
+							<div className={styles.between}>
+								<div className={styles.row}>
+									<span className={styles.dot} style={{ background: group.color }} />
+									<span className={styles.truncateStrong}>{group.label}</span>
+								</div>
+								<span className={styles.shareText}>{Math.round((group.count / total) * 100)}%</span>
+							</div>
+							<div className={styles.modelDetail}>{group.count} signal{group.count === 1 ? "" : "s"}</div>
+						</button>
+					))}
+				</div>
+			</div>
+			{selected && (
+				<div className={styles.selectionCard} aria-live="polite">
+					<div className={styles.selectionTitle}>{selected.label}: {selected.count} signal{selected.count === 1 ? "" : "s"}</div>
+					<div className={styles.selectionMeta}>
+						{selected.entries.slice(0, 3).map((entry) => entry.topic || "Untitled topic").join(" · ")}
+						{selected.entries[0]?.evidence ? ` · Latest evidence: ${selected.entries[0].evidence}` : ""}
+					</div>
+					{latestWithSession && (
+						<div className={styles.selectionActions}>
+							<button type="button" className={styles.selectionAction} onClick={() => onOpenSession(latestWithSession.sessionId ?? latestWithSession.referent!.sessionId)}>
+								Open latest source session
+							</button>
+						</div>
+					)}
+				</div>
+			)}
+		</div>
+	);
 }
 
 function getAvailableYears(sessions: SessionMetadata[]): number[] {
@@ -943,9 +1078,11 @@ function buildYearActivity(year: number, sessions: SessionMetadata[]) {
 function CurriculumGantt({
 	sessions,
 	colorFor,
+	onOpenSession,
 }: {
 	sessions: LearnerState["sessions"];
 	colorFor: (topic: string) => string | undefined;
+	onOpenSession: (sessionId: string) => void;
 }) {
 	if (!sessions || sessions.length === 0) {
 		return <EmptyState message="No sessions yet — once you start exploring topics, your curriculum timeline appears here." />;
@@ -1002,7 +1139,20 @@ function CurriculumGantt({
 					const color = colorFor(primary) ?? "#94a3b8";
 					const label = primary.length > 16 ? primary.slice(0, 15) + "…" : primary;
 					return (
-						<g key={`${s.startedAt}-${i}`}>
+						<g
+							key={`${s.startedAt}-${i}`}
+							role={s.id ? "button" : undefined}
+							tabIndex={s.id ? 0 : undefined}
+							className={s.id ? styles.cursorPointer : undefined}
+							aria-label={s.id ? `Open ${primary} learning session` : undefined}
+							onClick={() => { if (s.id) onOpenSession(s.id); }}
+							onKeyDown={(event) => {
+								if (s.id && (event.key === "Enter" || event.key === " ")) {
+									event.preventDefault();
+									onOpenSession(s.id);
+								}
+							}}
+						>
 							<text
 								x={leftPad - 8}
 								y={y + rowH / 2 + 3}
@@ -1039,7 +1189,7 @@ function CurriculumGantt({
 	);
 }
 
-function ActivityHeatmap({ sessions }: { sessions: SessionMetadata[] }) {
+function ActivityHeatmap({ sessions, onOpenSession }: { sessions: SessionMetadata[]; onOpenSession: (sessionId: string) => void }) {
 	const availableYears = useMemo(() => getAvailableYears(sessions), [sessions]);
 	const [year, setYear] = useState(() => {
 		const now = new Date().getFullYear();
@@ -1051,6 +1201,7 @@ function ActivityHeatmap({ sessions }: { sessions: SessionMetadata[] }) {
 		date: Date;
 		count: number;
 	} | null>(null);
+	const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
 
 	const { days, maxCount } = useMemo(() => {
@@ -1058,6 +1209,17 @@ function ActivityHeatmap({ sessions }: { sessions: SessionMetadata[] }) {
 		const max = Math.max(1, ...d.map((x) => x.count));
 		return { days: d, maxCount: max };
 	}, [year, sessions]);
+	const selectedSessions = useMemo(() => {
+		if (!selectedDate) return [];
+		return sessions
+			.filter((session) => {
+				const date = new Date(session.lastModified);
+				return date.getFullYear() === selectedDate.getFullYear()
+					&& date.getMonth() === selectedDate.getMonth()
+					&& date.getDate() === selectedDate.getDate();
+			})
+			.sort((left, right) => right.lastModified.localeCompare(left.lastModified));
+	}, [selectedDate, sessions]);
 
 	const handleCellHover = useCallback(
 		(e: React.MouseEvent<SVGRectElement>, date: Date, count: number) => {
@@ -1125,7 +1287,7 @@ function ActivityHeatmap({ sessions }: { sessions: SessionMetadata[] }) {
 						key={y}
 						type="button"
 						className={cx(styles.yearButton, y === year ? styles.yearActive : styles.yearInactive)}
-						onClick={() => setYear(y)}
+						onClick={() => { setYear(y); setSelectedDate(null); }}
 					>
 						{y}
 					</button>
@@ -1173,8 +1335,19 @@ function ActivityHeatmap({ sessions }: { sessions: SessionMetadata[] }) {
 									fill={shade(d.count)}
 									stroke="currentColor"
 									strokeOpacity={0.05}
+									role={d.count > 0 ? "button" : undefined}
+									tabIndex={d.count > 0 ? 0 : undefined}
+									className={d.count > 0 ? styles.cursorPointer : undefined}
+									aria-label={d.count > 0 ? `${d.count} sessions on ${d.date.toLocaleDateString()}` : undefined}
 									onMouseEnter={(e) => handleCellHover(e, d.date, d.count)}
 									onMouseLeave={() => setTooltip(null)}
+									onClick={() => { if (d.count > 0) setSelectedDate(d.date); }}
+									onKeyDown={(event) => {
+										if (d.count > 0 && (event.key === "Enter" || event.key === " ")) {
+											event.preventDefault();
+											setSelectedDate(d.date);
+										}
+									}}
 								/>
 							);
 						})}
@@ -1242,6 +1415,26 @@ function ActivityHeatmap({ sessions }: { sessions: SessionMetadata[] }) {
 							year: "numeric",
 						})}
 					</div>
+				</div>
+			)}
+
+			{selectedDate && (
+				<div className={styles.dayDetail}>
+					<div className={styles.dayTitle}>
+						{selectedDate.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+					</div>
+					{selectedSessions.map((session) => {
+						const model = session.modelName?.trim() || session.modelId?.trim() || "Unknown model";
+						return (
+							<button key={session.id} type="button" className={styles.daySession} onClick={() => onOpenSession(session.id)}>
+								<div className={styles.flex1}>
+									<div className={styles.daySessionTitle}>{session.title}</div>
+									<div className={styles.daySessionMeta}>{model} · thinking {session.thinkingLevel} · {session.messageCount} turns</div>
+								</div>
+								<span className={styles.viewDiff}>Open session</span>
+							</button>
+						);
+					})}
 				</div>
 			)}
 		</div>

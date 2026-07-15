@@ -81,6 +81,10 @@ export async function updateSessionTitle(
 		preview: sessionPreview(data.messages),
 		searchText: sessionSearchText(data.messages),
 		aiGeneratedTitle: aiGeneratedTitle ?? data.aiGeneratedTitle,
+		generatedAlternative: data.generatedAlternative,
+		hiddenAlternative: data.hiddenAlternative,
+		alternativeForMessageTimestamp: data.alternativeForMessageTimestamp,
+		responsePreference: data.responsePreference,
 	};
 
 	const nextData: SessionData = {
