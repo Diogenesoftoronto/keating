@@ -7,6 +7,7 @@ import {
 	buildPreferencePairs,
 	buildDpoChatExamples,
 	buildDpoTextExamples,
+	buildExplicitResponsePreference,
 	applyJudgeScores,
 	computeRewardStats,
 	computeSessionRewardedTurns,
@@ -152,6 +153,33 @@ describe("reward annotated turns", () => {
 			chosen: "good",
 			rejected: "bad",
 		}]);
+	});
+
+	it("turns an explicit response comparison into a direct DPO pair", () => {
+		const pair = buildExplicitResponsePreference({
+			originalMessages: [
+				{ role: "user", content: "Explain promises", timestamp: 1000 },
+				{ role: "assistant", content: "Original answer", timestamp: 2000 },
+			],
+			alternativeMessages: [
+				{ role: "user", content: "Explain promises", timestamp: 1000 },
+				{ role: "assistant", content: "Alternative answer", timestamp: 3000 },
+			],
+			originalMessageTimestamp: 2000,
+			preference: "alternative",
+			persona: "teacher persona",
+		});
+		expect(pair).toEqual({
+			prompt: [
+				{ role: "system", content: "teacher persona" },
+				{ role: "user", content: "Explain promises" },
+			],
+			chosen: "Alternative answer",
+			rejected: "Original answer",
+			chosenReward: 1,
+			rejectedReward: 0,
+			rewardGap: 1,
+		});
 	});
 
 	it("keeps full prior context with persona in order", () => {

@@ -16,6 +16,7 @@ import {
   GitCommit,
   GitCompare,
   HardDrive,
+  CircleHelp,
   Home,
   Maximize2,
   Play,
@@ -35,6 +36,7 @@ import { JsonCrackBlock } from "./JsonCrackBlock";
 import { Spinner } from "./Spinner";
 import {
   loadAgentRuntimeConfig,
+  nodePodControlAction,
   type KeatingAgentRuntimeConfig,
 } from "../keating/agent-runtime";
 import {
@@ -58,6 +60,7 @@ import {
   nodePodGetTerminal,
   nodePodLoadSnapshotsFromDB,
   nodePodGetAllFileContents,
+  isNodePodActive,
 } from "../keating/nodepod-runtime";
 import { Terminal as XTerm } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
@@ -101,6 +104,7 @@ interface LogEvent {
 function modeTone(mode: KeatingAgentRuntimeConfig["mode"]): string {
   if (mode === "browser-only") return css({ background: "rgb(245 158 11 / 0.12)", color: "#b45309", borderColor: "rgb(245 158 11 / 0.4)", _dark: { color: "#fcd34d" } });
   if (mode === "browser-nodepod") return css({ background: "rgb(20 184 166 / 0.12)", color: "#0f766e", borderColor: "rgb(20 184 166 / 0.4)", _dark: { color: "#5eead4" } });
+  if (mode === "host") return css({ background: "rgb(249 115 22 / 0.12)", color: "#c2410c", borderColor: "rgb(249 115 22 / 0.4)", _dark: { color: "#fdba74" } });
   if (mode === "remote") return css({ background: "rgb(16 185 129 / 0.12)", color: "#047857", borderColor: "rgb(16 185 129 / 0.4)", _dark: { color: "#6ee7b7" } });
   return css({ background: "rgb(14 165 233 / 0.12)", color: "#0369a1", borderColor: "rgb(14 165 233 / 0.4)", _dark: { color: "#7dd3fc" } });
 }
@@ -127,6 +131,7 @@ function runtimeLabel(mode: KeatingAgentRuntimeConfig["mode"]): string {
   switch (mode) {
     case "browser-nodepod": return "NodePod (local)";
     case "browser-only": return "Browser-only (no sandbox)";
+    case "host": return "Host execution (trusted)";
     case "remote": return "Remote server";
     case "cloud": return "Cloud container";
     default: return "Unknown";
@@ -173,6 +178,13 @@ const styles = {
   inputMono: css({ flex: 1, borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "var(--background)", padding: "0.5rem 0.75rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "0.75rem" }),
   hidden: css({ display: "none" }),
   sectionLabel: css({ marginBottom: "0.5rem", fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.025em", color: "var(--muted-foreground)" }),
+	helpDetails: css({ borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "color-mix(in srgb, var(--muted) 18%, transparent)" }),
+	helpSummary: css({ display: "flex", cursor: "pointer", listStyle: "none", alignItems: "center", gap: "0.5rem", padding: "0.75rem 1rem", fontSize: "0.8125rem", fontWeight: 600, _hover: { background: "var(--accent)" }, _focusVisible: { outline: "2px solid var(--ring)", outlineOffset: "-2px" } }),
+	helpBody: css({ borderTopWidth: "1px", borderColor: "var(--border)", padding: "1rem", fontSize: "0.75rem", lineHeight: "1.55", color: "var(--muted-foreground)" }),
+	helpModeGrid: css({ marginTop: "0.75rem", display: "grid", gap: "0.5rem" }),
+	helpMode: css({ borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "var(--background)", padding: "0.75rem" }),
+	helpModeTitle: css({ color: "var(--foreground)", fontWeight: 600 }),
+	helpCode: css({ marginTop: "0.375rem", overflowX: "auto", borderRadius: "0.25rem", background: "#1c211b", padding: "0.5rem", color: "#f1ece0", fontFamily: "var(--font-mono, ui-monospace, monospace)", fontSize: "0.6875rem", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }),
 };
 
 /* ─── component ───────────────────────────────────────────── */
@@ -311,7 +323,7 @@ export function SandboxView({
   const refreshConfig = useCallback(async () => {
     const config = await loadAgentRuntimeConfig(true);
     setRuntime(config);
-    const active = config.mode === "browser-nodepod";
+    const active = isNodePodActive();
     setNodePodActive(active);
     if (active || getSnapshotLog().length > 0) {
       const info = await nodePodInfo().catch(() => null);
@@ -713,9 +725,10 @@ export function SandboxView({
     ? "unknown"
     : runtime.mode === "browser-nodepod"
     ? "sandbox active"
-    : runtime.mode !== "browser-only"
-    ? "remote available"
+    : runtime.executionEndpoint
+    ? runtime.mode === "host" ? "host available" : "remote available"
     : "browser-only fallback";
+  const nodePodAction = nodePodControlAction(runtime, nodePodActive);
 
   return (
     <div className={styles.overlay} role="dialog" aria-modal="true" aria-label="Sandbox runtime view">
@@ -759,7 +772,7 @@ export function SandboxView({
             </button>
           ))}
           <div className={styles.tabActions}>
-            {nodePodActive ? (
+            {nodePodAction === "stop" ? (
               <button
                 type="button"
                 onClick={handleTeardown}
@@ -767,7 +780,7 @@ export function SandboxView({
               >
                 <PowerOff size={12} /> Stop
               </button>
-            ) : (
+            ) : nodePodAction === "boot" ? (
               <button
                 type="button"
                 onClick={handleBoot}
@@ -777,7 +790,7 @@ export function SandboxView({
                 {booting ? <Spinner size={12} /> : <Power size={12} />}
                 Boot
               </button>
-            )}
+            ) : null}
             <button
               type="button"
               onClick={refreshAll}
@@ -852,19 +865,50 @@ export function SandboxView({
           </dl>
         </div>
 
+		<details className={styles.helpDetails}>
+			<summary className={styles.helpSummary}>
+				<CircleHelp size={15} aria-hidden="true" /> Which execution mode should I use?
+			</summary>
+			<div className={styles.helpBody}>
+				Keating keeps the teaching UI in the browser while execution can happen locally, directly on a trusted host, or behind an isolated external service. Choose based on the code&apos;s trust level and the capabilities it needs.
+				<div className={styles.helpModeGrid}>
+					<div className={styles.helpMode}>
+						<div className={styles.helpModeTitle}>NodePod: local and contained in the browser</div>
+						<div>Best for ordinary lesson artifacts, JavaScript experiments, snapshots, and offline work. It is not a hard security boundary and cannot run arbitrary native binaries.</div>
+						<pre className={styles.helpCode}>keating web --browser-only-agent 3000</pre>
+					</div>
+					<div className={styles.helpMode}>
+						<div className={styles.helpModeTitle}>Host: direct commands on this machine</div>
+						<div>Best for a trusted personal machine when you need installed binaries. Commands and file operations are localhost-only and confined to the selected root, but this is not a sandbox.</div>
+						<pre className={styles.helpCode}>keating web --host 3000 --allow-local-exec --root=/path/to/project</pre>
+					</div>
+					<div className={styles.helpMode}>
+						<div className={styles.helpModeTitle}>External: isolated provider or custom gateway</div>
+						<div>Best for untrusted code, native binaries, durable jobs, or provider-managed isolation. The service receives POST /api/agent-runtime/execute with an operation and payload.</div>
+						<pre className={styles.helpCode}>KEATING_WEB_REMOTE_AUTH_TOKEN=... keating web --remote 3000 --remote-provider=daytona --remote-endpoint=https://sandbox.example</pre>
+					</div>
+					<div className={styles.helpMode}>
+						<div className={styles.helpModeTitle}>Cloud: Keating&apos;s configured hosted runtime</div>
+						<div>Best when the deployment already supplies a canonical remote execution service and server-brokered credentials.</div>
+						<pre className={styles.helpCode}>keating web --cloud 3000 --cloud-endpoint=https://keating.help</pre>
+					</div>
+				</div>
+			</div>
+		</details>
+
         {/* ── capabilities grid ── */}
         <div>
           <div className={styles.sectionLabel}>Capabilities</div>
           <div className={css({ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "0.5rem", sm: { gridTemplateColumns: "repeat(4, minmax(0, 1fr))" } })}>
             {[
-              { label: "Source Editing", available: runtime?.mode !== "browser-only" },
-              { label: "File System", available: nodePodActive },
-              { label: "Shell", available: nodePodActive },
-              { label: "Snapshots", available: nodePodActive },
+			  { label: "Source Editing", available: nodePodActive || !!runtime?.capabilities.remoteSandbox || !!runtime?.capabilities.localCommandExecution },
+			  { label: "File System", available: nodePodActive || !!runtime?.capabilities.remoteSandbox || !!runtime?.capabilities.hostProjectAccess },
+			  { label: "Shell", available: nodePodActive || !!runtime?.capabilities.remoteSandbox || !!runtime?.capabilities.localCommandExecution },
+			  { label: "Snapshots", available: nodePodActive || !!runtime?.capabilities.durableCompute },
               { label: "Benchmarks", available: true },
               { label: "Policy Evolution", available: true },
               { label: "Prompt Evolution", available: true },
-              { label: "Self-Improve", available: runtime?.mode !== "browser-only" },
+			  { label: "Self-Improve", available: nodePodActive || !!runtime?.executionEndpoint },
             ].map((cap) => (
               <div
                 key={cap.label}
@@ -936,15 +980,15 @@ export function SandboxView({
           </div>
         )}
 
-        {runtime?.mode === "remote" && (
+        {(runtime?.mode === "host" || runtime?.mode === "remote") && (
           <div className={css({ borderRadius: "0.375rem", borderWidth: "1px", borderColor: "rgb(16 185 129 / 0.3)", background: "rgb(16 185 129 / 0.05)", padding: "1rem" })}>
             <div className={css({ marginBottom: "0.75rem", display: "flex", alignItems: "center", justifyContent: "space-between" })}>
               <div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", fontWeight: 600 })}>
                 <Cpu size={14} className={css({ color: "#059669", _dark: { color: "#6ee7b7" } })} />
-                Remote Runtime
+				{runtime.mode === "host" ? "Host Runtime" : "Remote Runtime"}
               </div>
               <span className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", borderRadius: "9999px", background: "rgb(16 185 129 / 0.15)", padding: "0.125rem 0.5rem", fontSize: "10px", fontWeight: 500, color: "#047857", _dark: { color: "#6ee7b7" } })}>
-                <Activity size={9} /> Connected
+				<Activity size={9} /> {runtime.executionEndpoint ? "Connected" : "Unavailable"}
               </span>
             </div>
             <dl className={css({ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", columnGap: "1rem", rowGap: "0.5rem", fontSize: "0.75rem" })}>

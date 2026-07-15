@@ -42,7 +42,7 @@ export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
 	animationRenderer: "hyperframes",
 	fontFamily: "jetbrains-mono",
 	shareLinkMode: "portable-short",
-	alternativeResponseChance: 0.05,
+	alternativeResponseChance: 0,
 	userProfileImage: null,
 	imageGenerator: DEFAULT_IMAGE_GENERATOR_ID,
 	imageModel: "",
@@ -78,6 +78,7 @@ const FONT_STACKS: Record<UiFontFamily, FontStack> = {
 };
 
 const STORAGE_KEY = "keating_ui_settings";
+const UI_SETTINGS_SCHEMA_VERSION = 2;
 const SETTINGS_CHANGED_EVENT = "keating:ui-settings-changed";
 type LegacyGroundingKey = `${"google"}${"Grounding"}`;
 const LEGACY_GOOGLE_GROUNDING_KEY = ("google" + "Grounding") as LegacyGroundingKey;
@@ -138,7 +139,9 @@ function normalizeAlternativeResponseChance(value: unknown): number {
 	return Math.max(0, Math.min(1, numeric));
 }
 
-type LegacyUiSettingsInput = Partial<KeatingUiSettings> & Partial<Record<LegacyGroundingKey, "auto" | "off">>;
+type LegacyUiSettingsInput = Partial<KeatingUiSettings>
+	& Partial<Record<LegacyGroundingKey, "auto" | "off">>
+	& { schemaVersion?: number };
 
 function normalizeSettings(value: LegacyUiSettingsInput | null): KeatingUiSettings {
 	const webSearch =
@@ -157,7 +160,14 @@ function normalizeSettings(value: LegacyUiSettingsInput | null): KeatingUiSettin
 				? value.fontFamily
 				: DEFAULT_UI_SETTINGS.fontFamily,
 		shareLinkMode: normalizeShareLinkMode(value?.shareLinkMode),
-		alternativeResponseChance: normalizeAlternativeResponseChance(value?.alternativeResponseChance),
+		// Version 1 shipped a 5% background response rate by default. Those
+		// responses were stored as child sessions, which made ordinary chats look
+		// as if they had forked themselves. Reset only that legacy default; any
+		// other saved value was an explicit user choice.
+		alternativeResponseChance:
+			value?.schemaVersion !== UI_SETTINGS_SCHEMA_VERSION && value?.alternativeResponseChance === 0.05
+				? 0
+				: normalizeAlternativeResponseChance(value?.alternativeResponseChance),
 		userProfileImage: typeof value?.userProfileImage === "string" && value.userProfileImage.startsWith("data:image/") ? value.userProfileImage : DEFAULT_UI_SETTINGS.userProfileImage,
 		imageGenerator: isImageGeneratorId(value?.imageGenerator) ? value.imageGenerator : DEFAULT_UI_SETTINGS.imageGenerator,
 		imageModel: typeof value?.imageModel === "string" ? value.imageModel : DEFAULT_UI_SETTINGS.imageModel,
@@ -193,7 +203,7 @@ export function loadKeatingUiSettings(): KeatingUiSettings {
 export function saveKeatingUiSettings(next: KeatingUiSettings) {
 	const normalized = normalizeSettings(next);
 	try {
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+		localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...normalized, schemaVersion: UI_SETTINGS_SCHEMA_VERSION }));
 	} catch (error) {
 		console.warn("Failed to save Keating UI settings:", error);
 	}

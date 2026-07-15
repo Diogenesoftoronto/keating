@@ -15,6 +15,8 @@
         "@huggingface/transformers": "^4.2.0",
         "@jason.today/webmcp": "0.1.13",
         "@lix-js/sdk": "^0.7.0",
+        "@openuidev/lang-core": "^0.2.9",
+        "@openuidev/react-lang": "^0.2.8",
         "@posthog/react": "^1.10.3",
         "@react-three/drei": "^10.7.7",
         "@react-three/fiber": "^9.6.1",
@@ -41,6 +43,7 @@
         "remark-gfm": "^4.0.1",
         "remark-math": "^6.0.0",
         "three": "^0.184.0",
+        "zod": "^4.4.3",
         "zustand": "^5.0.14",
       },
       "devDependencies": {
@@ -574,6 +577,10 @@
     "@opentelemetry/api": ["@opentelemetry/api@1.9.0", "", {}, "sha512-3giAOQvZiH5F9bMlMiv8+GSPMeqg0dbaeo58/0SlA9sxSqZhnUtxzX9/2FzyhS9sWQf5S0GJE0AKBrFqjpeYcg=="],
 
     "@opentelemetry/semantic-conventions": ["@opentelemetry/semantic-conventions@1.41.1", "", {}, "sha512-/UhIkaZgPutTFmQ7RnIJGgDXZmtEJ7Dvi86xNTFWcnRxVRNk/aotsqDJYeEvDP+FSMB2SdW+pQzNMcWP0rwuNA=="],
+
+    "@openuidev/lang-core": ["@openuidev/lang-core@0.2.9", "", { "peerDependencies": { "@modelcontextprotocol/sdk": ">=1.0.0", "zod": "^3.25.0 || ^4.0.0" }, "optionalPeers": ["@modelcontextprotocol/sdk"] }, "sha512-LRSzjCUTuNAAUNlO5xbKDJYoe1PGoPXVosK1QTexBOD9mzOHk2Da5/BuXEqHBVdRoH+y4upfm3y9CTb2Z/Q4fg=="],
+
+    "@openuidev/react-lang": ["@openuidev/react-lang@0.2.8", "", { "dependencies": { "@openuidev/lang-core": "^0.2.7" }, "peerDependencies": { "@modelcontextprotocol/sdk": ">=1.0.0", "react": "^18.3.1 || ^19.0.0", "zod": "^3.25.0 || ^4.0.0" }, "optionalPeers": ["@modelcontextprotocol/sdk"] }, "sha512-SsbZes76oIviuZH3RW/VL+pZZjx6cOGjhkaeiSwuEnV24jWBgT9qswL4bDaQXpFG2e6sZKWjH/f0fRyqWQzhDA=="],
 
     "@oxc-parser/binding-android-arm-eabi": ["@oxc-parser/binding-android-arm-eabi@0.127.0", "", { "os": "android", "cpu": "arm" }, "sha512-0LC7ye4hvqbIKxAzThzvswgHLFu2AURKzYLeSVvLdu2TBOYWQDmHnTqPLeA597BcUCxiLqLsS4CJ5uoI5WYWCQ=="],
 

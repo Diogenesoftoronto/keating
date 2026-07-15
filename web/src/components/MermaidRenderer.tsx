@@ -36,6 +36,18 @@ interface MermaidRendererProps {
 const renderCache = new Map<string, string>();
 const mermaidFencePattern = /```mermaid[^\n]*\n([\s\S]*?)```/i;
 
+// Strip a leading ```mermaid fence so the model can paste a fenced diagram
+// verbatim and we still pass clean Mermaid source to the renderer. We keep
+// the model-authored `<br/>` markers inside node labels — Mermaid honors
+// them natively when `htmlLabels: true` is set, and `lib/sanitize-svg.ts`
+// now allows the `<foreignObject>` wrapper Mermaid emits for those labels
+// through.
+function extractMermaidSource(input: string): string {
+	const trimmed = input.trim();
+	const match = trimmed.match(mermaidFencePattern);
+	return match ? match[1].trim() : trimmed;
+}
+
 export function MermaidRenderer({ content, className }: MermaidRendererProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const renderTargetRef = useRef<HTMLDivElement | null>(null);
@@ -52,8 +64,10 @@ export function MermaidRenderer({ content, className }: MermaidRendererProps) {
 				return;
 			}
 
+			const mermaidCode = extractMermaidSource(content);
+
 			// Check cache first
-			const cacheKey = content.slice(0, 100);
+			const cacheKey = mermaidCode.slice(0, 200);
 			if (renderCache.has(cacheKey)) {
 				if (!cancelled) {
 					setSvg(renderCache.get(cacheKey)!);
@@ -74,16 +88,13 @@ export function MermaidRenderer({ content, className }: MermaidRendererProps) {
 					securityLevel: "strict",
 					flowchart: {
 						useMaxWidth: true,
-						htmlLabels: false,
+						// Render `<br/>` markers inside node labels as real line
+						// breaks. The output SVG is passed through sanitizeSvg,
+						// which explicitly permits the `<foreignObject>` Mermaid wraps
+						// around htmlLabels content only on this strict-rendered path.
+						htmlLabels: true,
 					},
 				});
-
-				// Extract mermaid code from markdown code block if present
-				let mermaidCode = content;
-				const mermaidMatch = content.match(mermaidFencePattern);
-				if (mermaidMatch) {
-					mermaidCode = mermaidMatch[1];
-				}
 
 				// Generate unique ID — must not already exist in the DOM
 				const id = `mermaid-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -105,7 +116,7 @@ export function MermaidRenderer({ content, className }: MermaidRendererProps) {
 
 				// Render into detached container
 				const { svg: renderedSvg } = await mermaid.default.render(id, mermaidCode, renderTargetRef.current);
-				const safeSvg = sanitizeSvg(renderedSvg);
+				const safeSvg = sanitizeSvg(renderedSvg, { allowForeignObject: true });
 				if (!safeSvg) {
 					throw new Error("Rendered diagram failed SVG safety checks");
 				}

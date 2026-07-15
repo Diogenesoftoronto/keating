@@ -1,4 +1,4 @@
-import { useRef, useTransition, useCallback, use, useEffect } from "react";
+import { useRef, useTransition, useCallback, use, useEffect, useState } from "react";
 import { usePostHog } from "@posthog/react";
 import { Agent, type AgentMessage, type AgentState, type ThinkingLevel } from "@earendil-works/pi-agent-core";
 import { useDialogState } from "./useDialogState";
@@ -22,8 +22,18 @@ import { KeatingApiKeyPromptDialog, promptKeatingApiKey } from "../components/Ke
 import { getProviderApiKey, resolveAvailableChatModel } from "../lib/provider-models";
 import { localModel } from "../stores/local-model";
 import { buildKeatingSystemPrompt, composeKeatingSystemPrompt, createKeatingTools, getActiveKeatingPrompt } from "../keating/browser-tools";
-import { loadAgentRuntimeConfig, type KeatingAgentRuntimeConfig } from "../keating/agent-runtime";
+import { loadAgentRuntimeConfig, shouldAutoBootNodePod, type KeatingAgentRuntimeConfig } from "../keating/agent-runtime";
+import { KeatingCapabilityController } from "../keating/capabilities";
+import { keatingLifecycle } from "../keating/lifecycle";
+import { keatingOpenUIPrompt } from "../keating/openui/library";
 import { isDefaultPersona, loadPersona, subscribePersona } from "../keating/persona";
+import { loadLearnerContext, subscribeLearnerContext } from "../keating/learner-context";
+import { composeSessionStartSystemPrompt, runSessionStartHooks } from "../keating/session-start-hooks";
+import {
+  buildPendingResponseComparison,
+  type PendingResponseComparison,
+  type ResponseComparisonDecision,
+} from "../keating/response-comparison";
 import { bootNodePod } from "../keating/nodepod-runtime";
 import { registerKeatingWebMcp } from "../keating/webmcp";
 import { type WebSpeechSettings } from "../keating/speech";
@@ -38,6 +48,7 @@ import { DEFAULT_MODEL, hybridStreamFn } from "./keating-stream";
 import { getInitPromise, keatingStorage, sessions, updateSessionTitle } from "./keating-storage";
 import { hasAutoTitleContext } from "./session-auto-title";
 import { cloneMessages, createSessionId, sessionModelMetadata, sessionPreview, sessionSearchText, sessionTitle, sessionUsage, truncateAtForkPoint } from "./session-metadata";
+import { messagesForSessionSnapshot, prepareMessagesForRetry } from "./session-recovery";
 import { saveSharedSession, sharedSessionUrl, type SharedSessionUrlResult } from "../keating/shared-sessions";
 import { loadKeatingUiSettings } from "../keating/ui-settings";
 import {
@@ -49,6 +60,17 @@ import {
 import type { ChatPanelHandle } from "../types/chat-panel";
 import type { SessionData, SessionMetadata } from "../types/session";
 
+function buildAgentSystemPrompt(
+  speechEnabled: boolean,
+  basePrompt: string,
+  learnerContext: string,
+  sessionStartContext = "",
+): string {
+  const prompt = buildKeatingSystemPrompt(speechEnabled, basePrompt, learnerContext);
+  const promptWithOpenUi = basePrompt.includes(keatingOpenUIPrompt) ? prompt : `${prompt}\n\n${keatingOpenUIPrompt}`;
+  return composeSessionStartSystemPrompt(promptWithOpenUi, sessionStartContext);
+}
+
 function cleanSuggestedTitle(text: string) {
   return text
     .replace(/^["'`]+|["'`]+$/g, "")
@@ -58,16 +80,22 @@ function cleanSuggestedTitle(text: string) {
     .slice(0, 80);
 }
 
+// Lesson plans, concept maps, and verification checklists are no longer
+// agent tools — they are streamed as OpenUI components (StudyPlan,
+// ConceptMap, SharedNotes, Explanation) inside LearningSurface. Keep the
+// durable-saved artifact tools here so the chat can still surface historical
+// plans/maps alongside media and self-improvement work.
 const ARTIFACT_TOOL_NAMES = new Set([
-  "plan",
-  "map",
-  "animate",
-  "verify",
-  "quiz",
-  "bench",
-  "evolve",
-  "auto_improve",
-  "prompt_evolve",
+	"animate",
+	"quiz",
+	"deck",
+	"generate_image",
+	"bench",
+	"evolve",
+	"auto_improve",
+	"prompt_evolve",
+	"evaluate_teaching",
+	"request_teaching_improvement",
 ]);
 
 const SESSION_RESTORE_TIMEOUT_MS = 5_000;
@@ -142,6 +170,8 @@ export interface UseKeatingAgentReturn {
   mobileSidebarOpen: boolean;
   toggleMobileSidebar: () => void;
   closeMobileSidebar: () => void;
+	responseComparison: PendingResponseComparison | null;
+	chooseResponse: (preference: ResponseComparisonDecision) => Promise<void>;
 }
 
 export function useKeatingAgent(): UseKeatingAgentReturn {
@@ -173,6 +203,8 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const toggleMobileSidebar = useKeatingAgentStore((state) => state.toggleMobileSidebar);
   const closeMobileSidebar = useKeatingAgentStore((state) => state.closeMobileSidebar);
   const speechSettings = useKeatingAgentStore((state) => state.speechSettings);
+  const speechEnabledRef = useRef(speechSettings.enabled);
+  speechEnabledRef.current = speechSettings.enabled;
   const setSpeechSettings = useKeatingAgentStore((state) => state.setSpeechSettings);
   const toggleSpeech = useKeatingAgentStore((state) => state.toggleSpeech);
   const persistentStorageStatus = useKeatingAgentStore((state) => state.persistentStorageStatus);
@@ -188,8 +220,31 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const bootstrapGenerationRef = useRef(0);
   const persistentStorageRequestedRef = useRef(false);
   const systemPromptBaseRef = useRef<string>("");
+  const sessionStartContextRef = useRef<{
+    sessionId: string;
+    context: string;
+    promise: Promise<string> | null;
+  }>({ sessionId: "", context: "", promise: null });
+  const ensureSessionStartContextRef = useRef<() => Promise<void>>(async () => {});
   const alternativeGenerationRef = useRef(new Set<string>());
   const settingsDeepLinkRef = useRef<{ tabId: string; sectionId: string | null } | null>(null);
+  const [responseComparison, setResponseComparison] = useState<PendingResponseComparison | null>(null);
+
+  const restorePendingResponseComparison = useCallback(async (sourceSessionId: string) => {
+    const metadata = await sessions.getAllMetadata() as SessionMetadata[];
+    const pending = metadata
+      .filter((entry) => entry.parentSessionId === sourceSessionId && entry.generatedAlternative && !entry.responsePreference)
+      .sort((left, right) => right.lastModified.localeCompare(left.lastModified))[0];
+    if (!pending) {
+      setResponseComparison(null);
+      return;
+    }
+    const [source, alternative] = await Promise.all([
+      sessions.loadSession(sourceSessionId) as Promise<SessionData | null>,
+      sessions.loadSession(pending.id) as Promise<SessionData | null>,
+    ]);
+    setResponseComparison(source && alternative ? buildPendingResponseComparison(source, alternative) : null);
+  }, []);
 
   const openSettings = useCallback(() => {
     posthog.capture('settings_opened', { source: 'toolbar' });
@@ -330,6 +385,8 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
 
   const unsubRef = useRef<(() => void) | null>(null);
   const persistUnsubRef = useRef<(() => void) | null>(null);
+  const persistCurrentSnapshotRef = useRef<() => Promise<void>>(async () => {});
+  const capabilityControllerRef = useRef<KeatingCapabilityController | null>(null);
   const autoTitleRequestedRef = useRef<Set<string>>(new Set());
 
   const toolOptions = useCallback((settings: WebSpeechSettings, agentRuntime?: KeatingAgentRuntimeConfig) => ({
@@ -341,7 +398,12 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     setSystemPrompt: (basePrompt: string) => {
       systemPromptBaseRef.current = basePrompt;
       if (agentRef.current) {
-        agentRef.current.state.systemPrompt = buildKeatingSystemPrompt(settings.enabled, basePrompt);
+        agentRef.current.state.systemPrompt = buildAgentSystemPrompt(
+          settings.enabled,
+          basePrompt,
+          loadLearnerContext(),
+          sessionStartContextRef.current.context,
+        );
       }
     },
     getSessionSamples: async () => {
@@ -368,7 +430,8 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     if (!agent || agent.state.messages.length === 0) return;
 
     const now = new Date().toISOString();
-    const messages = [...agent.state.messages];
+    const snapshot = messagesForSessionSnapshot(agent.state.messages, agent.state.streamingMessage);
+    const messages = snapshot.messages;
     const fallbackTitle = sessionTitle(messages);
     const existing = await sessions.loadSession(sessionId) as SessionData | null;
     const existingFallbackTitle = existing ? sessionTitle(existing.messages) : "";
@@ -396,6 +459,10 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       preview: sessionPreview(messages),
       searchText: sessionSearchText(messages),
       aiGeneratedTitle,
+		generatedAlternative: existing?.generatedAlternative,
+		hiddenAlternative: existing?.hiddenAlternative,
+		alternativeForMessageTimestamp: existing?.alternativeForMessageTimestamp,
+		responsePreference: existing?.responsePreference,
     };
     const data: SessionData = {
       id: sessionId,
@@ -408,11 +475,20 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       createdAt,
       lastModified: now,
       aiGeneratedTitle,
+		generatedAlternative: existing?.generatedAlternative,
+		hiddenAlternative: existing?.hiddenAlternative,
+		alternativeForMessageTimestamp: existing?.alternativeForMessageTimestamp,
+		responsePreference: existing?.responsePreference,
     };
 
     await sessions.save(data, metadata);
-    await keatingStorage.recordLearnerTurnFeedback(messages as Array<{ role?: unknown; content?: unknown }>);
     window.dispatchEvent(new CustomEvent("keating:sessions-changed"));
+
+    // Live snapshots exist only so a suspended or killed tab can recover the
+    // visible response. Derive learner signals and titles from settled turns.
+    if (snapshot.interrupted) return;
+
+    await keatingStorage.recordLearnerTurnFeedback(messages as Array<{ role?: unknown; content?: unknown }>);
 
     if (!hasManualTitle && !aiGeneratedTitle && hasAutoTitleContext(messages) && !autoTitleRequestedRef.current.has(sessionId)) {
       autoTitleRequestedRef.current.add(sessionId);
@@ -484,7 +560,10 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       }, {
         temperature: 0.85,
       });
-      const alternative = await stream.result() as AgentMessage;
+      const streamedAlternative = await stream.result() as AgentMessage;
+      const alternative = typeof (streamedAlternative as { timestamp?: unknown }).timestamp === "number"
+        ? streamedAlternative
+        : ({ ...streamedAlternative, timestamp: Date.now() } as AgentMessage);
       const alternativeContent = (alternative as any).content;
       const text = Array.isArray(alternativeContent)
         ? alternativeContent
@@ -513,6 +592,9 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
         preview: sessionPreview(messages),
         searchText: sessionSearchText(messages),
         aiGeneratedTitle: false,
+		generatedAlternative: true,
+		hiddenAlternative: true,
+		alternativeForMessageTimestamp: assistantTimestamp,
       };
       const data: SessionData = {
         id,
@@ -525,8 +607,13 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
         createdAt: now,
         lastModified: now,
         aiGeneratedTitle: false,
+		generatedAlternative: true,
+		hiddenAlternative: true,
+		alternativeForMessageTimestamp: assistantTimestamp,
       };
       await sessions.save(data, metadata);
+		const source = await sessions.loadSession(sourceSessionId) as SessionData | null;
+		if (source) setResponseComparison(buildPendingResponseComparison(source, data));
       window.dispatchEvent(new CustomEvent("keating:sessions-changed", { detail: { sessionId: id, parentSessionId: sourceSessionId, generatedAlternative: true } }));
       window.dispatchEvent(new CustomEvent("keating:dpo-alternative-created", { detail: { sessionId: id, parentSessionId: sourceSessionId } }));
     } catch (error) {
@@ -541,23 +628,43 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     // evolved prompt produced by the self-improvement loop.
     const persona = loadPersona();
     const promptBase =
-      initialState?.systemPrompt ??
+      (initialState?.systemPrompt && systemPromptBaseRef.current) ||
+      initialState?.systemPrompt ||
       (isDefaultPersona(persona)
         ? await getActiveKeatingPrompt(keatingStorage)
         : composeKeatingSystemPrompt(persona));
     systemPromptBaseRef.current = promptBase;
+    if (sessionStartContextRef.current.sessionId !== agentSessionId) {
+      sessionStartContextRef.current = { sessionId: agentSessionId, context: "", promise: null };
+    }
+    const sessionStartRecord = sessionStartContextRef.current;
     const agentRuntime = await loadAgentRuntimeConfig();
-    const tools = await createKeatingTools(keatingStorage, toolOptions(speechSettings, agentRuntime));
+    const allTools = await createKeatingTools(keatingStorage, toolOptions(speechSettings, agentRuntime));
+    const capabilityController = new KeatingCapabilityController({
+      runtime: agentRuntime,
+      speechEnabled: speechSettings.enabled,
+    });
+		let capabilityContinuationPending = false;
+		capabilityController.setActivationListener((result) => {
+			if (result.activated.length > 0) capabilityContinuationPending = true;
+		});
+    capabilityControllerRef.current = capabilityController;
+    const tools = capabilityController.setAllTools(allTools);
     registerKeatingWebMcp(keatingStorage, tools).catch(console.warn);
     const resolvedModel = await resolveAvailableChatModel(initialState?.model ?? selectedModelRef.current);
     selectedModelRef.current = resolvedModel;
     const nextState: Partial<AgentState> = {
-      systemPrompt: buildKeatingSystemPrompt(speechSettings.enabled, promptBase),
       model: resolvedModel,
       thinkingLevel: initialState?.thinkingLevel ?? loadKeatingUiSettings().reasoningLevel,
       messages: [],
       tools,
       ...initialState,
+      systemPrompt: buildAgentSystemPrompt(
+        speechSettings.enabled,
+        promptBase,
+        loadLearnerContext(),
+        sessionStartRecord.context,
+      ),
     };
 
     const agent = new Agent({
@@ -567,26 +674,83 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       sessionId: agentSessionId,
     });
     agent.getApiKey = (provider: string) => getProviderApiKey(provider);
+		agent.state.tools = tools;
     agentRef.current = agent;
+		capabilityController.setListener((activeTools) => {
+			if (agentRef.current !== agent) return;
+			agent.state.tools = activeTools;
+			registerKeatingWebMcp(keatingStorage, activeTools).catch(console.warn);
+		});
+		const sessionAlreadyAnswered = agent.state.messages.some((message) => {
+			const candidate = message as { role?: unknown; stopReason?: unknown };
+			return candidate.role === "assistant" && candidate.stopReason !== "error" && candidate.stopReason !== "aborted";
+		});
+		const ensureSessionStartContext = async () => {
+			if (!sessionStartRecord.context && sessionAlreadyAnswered) return;
+			sessionStartRecord.promise ??= (async () => {
+				await keatingLifecycle.emit({ type: "session_start", sessionId: agentSessionId });
+				return runSessionStartHooks(keatingStorage, undefined, {
+					capabilityCatalog: capabilityController.catalog(),
+				});
+			})();
+			sessionStartRecord.context = await sessionStartRecord.promise;
+			agent.state.systemPrompt = buildAgentSystemPrompt(
+				speechEnabledRef.current,
+				systemPromptBaseRef.current,
+				loadLearnerContext(),
+				sessionStartRecord.context,
+			);
+		};
+		ensureSessionStartContextRef.current = ensureSessionStartContext;
 
-    // Boot NodePod lazily in the background; update tools when ready
-    bootNodePod()
-      .then((pod) => {
-        if (!pod || !agentRef.current) return;
-        return loadAgentRuntimeConfig(true)
-          .then((runtime) => createKeatingTools(keatingStorage, toolOptions(speechSettings, runtime)))
-          .then((tools) => {
-            if (!agentRef.current) return;
-            agentRef.current.state.tools = tools;
-            registerKeatingWebMcp(keatingStorage, tools).catch(console.warn);
-          });
-      })
-      .catch(console.warn);
+    // NodePod is the browser-only local sandbox. Explicit remote/cloud modes
+    // stay external and must never be silently captured by a local pod.
+    if (shouldAutoBootNodePod(agentRuntime)) {
+      bootNodePod()
+        .then((pod) => {
+          if (!pod || !agentRef.current) return;
+          return loadAgentRuntimeConfig(true)
+						.then(async (runtime) => ({
+							runtime,
+							tools: await createKeatingTools(keatingStorage, toolOptions(speechSettings, runtime)),
+						}))
+						.then(({ runtime, tools: refreshedTools }) => {
+              if (agentRef.current !== agent) return;
+							capabilityController.setEnvironment({ runtime, speechEnabled: speechSettings.enabled });
+							const activeTools = capabilityController.setAllTools(refreshedTools);
+							registerKeatingWebMcp(keatingStorage, activeTools).catch(console.warn);
+            });
+        })
+        .catch(console.warn);
+    }
 
     if (unsubRef.current) unsubRef.current();
     unsubRef.current = subscribeAgentEvents(agent, panel as any);
     if (persistUnsubRef.current) persistUnsubRef.current();
-    persistUnsubRef.current = agent.subscribe((ev) => {
+    let snapshotTimer: number | null = null;
+    let snapshotQueue = Promise.resolve();
+    const persistSnapshot = () => {
+      snapshotQueue = snapshotQueue
+        .catch(() => {})
+        .then(() => saveSessionSnapshot(agent, agentSessionId, agentCreatedAt));
+      return snapshotQueue;
+    };
+    const scheduleSnapshot = () => {
+      if (snapshotTimer !== null) return;
+      snapshotTimer = window.setTimeout(() => {
+        snapshotTimer = null;
+        void persistSnapshot();
+      }, 400);
+    };
+    persistCurrentSnapshotRef.current = persistSnapshot;
+    const unsubscribePersistence = agent.subscribe((ev) => {
+      if (ev.type === "message_update") {
+        scheduleSnapshot();
+      } else if (ev.type === "message_end") {
+        if (snapshotTimer !== null) window.clearTimeout(snapshotTimer);
+        snapshotTimer = null;
+        void persistSnapshot();
+      }
       if (ev.type === "tool_execution_end") {
         const succeeded = !ev.isError;
         posthog.capture('tool_invoked', {
@@ -598,17 +762,48 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
         if (succeeded && ARTIFACT_TOOL_NAMES.has(ev.toolName)) {
           posthog.capture('artifact_created', { tool_name: ev.toolName, session_id: agentSessionId });
           window.dispatchEvent(new CustomEvent("keating:artifact-created", { detail: { toolName: ev.toolName, result: ev.result } }));
+					void keatingLifecycle.emit({
+						type: "artifact_finalized",
+						sessionId: agentSessionId,
+						artifact: { kind: ev.toolName, payload: ev.result },
+					});
         }
       }
       if (ev.type === "agent_end") {
         const turnIndex = agent.state.messages.filter((m) => m.role === "assistant").length;
         posthog.capture('agent_turn_completed', { session_id: agentSessionId, turn_index: turnIndex });
+				const continueWithActivatedCapabilities = capabilityContinuationPending;
+				capabilityContinuationPending = false;
         agent.waitForIdle()
-          .then(() => saveSessionSnapshot(agent, agentSessionId, agentCreatedAt))
-          .then(() => maybeGenerateAlternativeResponse(agent, agentSessionId))
+          .then(() => persistSnapshot())
+					.then(async () => {
+						if (continueWithActivatedCapabilities) {
+							if (agentRef.current === agent && !agent.state.isStreaming) await agent.continue();
+							return;
+						}
+						await keatingLifecycle.emit({ type: "session_idle", sessionId: agentSessionId });
+						await maybeGenerateAlternativeResponse(agent, agentSessionId);
+					})
           .catch(console.error);
       }
     });
+    persistUnsubRef.current = () => {
+      unsubscribePersistence();
+      if (snapshotTimer !== null) window.clearTimeout(snapshotTimer);
+      if (persistCurrentSnapshotRef.current === persistSnapshot) {
+        persistCurrentSnapshotRef.current = async () => {};
+      }
+    };
+
+    const retryLastResponse = async () => {
+      if (agent.state.isStreaming) return;
+      const retryMessages = prepareMessagesForRetry(agent.state.messages);
+      if (!retryMessages) return;
+			await ensureSessionStartContext();
+      agent.state.messages = retryMessages;
+      await persistSnapshot();
+      await agent.continue();
+    };
 
     const setupCallbacks = {
       onApiKeyRequired: async (provider: string) => {
@@ -624,18 +819,15 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
         // Key re-entered — actually recover by retrying the failed turn:
         // drop the trailing errored assistant message and resume generation
         // from the last user message.
-        const messages = agent.state.messages;
-        const last = messages[messages.length - 1] as any;
-        if (last && last.role === "assistant" && last.stopReason === "error") {
-          agent.state.messages = messages.slice(0, -1);
-        }
-        agent.continue().catch((error) => {
+        retryLastResponse().catch((error) => {
           console.error("Keating retry after API key re-entry failed:", error);
           posthog.capture('api_error', { error_type: 'retry_failed', provider, session_id: agentSessionId });
         });
         return true;
       },
-      onBeforeSend: () => {
+      onBeforeSend: async () => {
+			await ensureSessionStartContext();
+			await keatingLifecycle.emit({ type: "before_turn", sessionId: agentSessionId });
         if (import.meta.env.DEV) {
           console.log(`[keating:send] model=${agent.state.model.provider}/${agent.state.model.id} messages=${agent.state.messages.length}`);
         }
@@ -651,6 +843,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
         modelSelectorDialog.onOpen();
       },
       onFork: (forkPoint?: number) => forkSession(agentSessionId, forkPoint),
+      onRetry: retryLastResponse,
       thinkingLevel: agent.state.thinkingLevel,
       onThinkingLevelChange: (level: ThinkingLevel) => {
         if (agentRef.current) {
@@ -664,17 +857,48 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   }, [maybeGenerateAlternativeResponse, posthog, saveSessionSnapshot, speechSettings, toolOptions]);
 
   useEffect(() => {
+    const persistIfBackgrounded = () => {
+      if (document.visibilityState === "hidden") {
+        void persistCurrentSnapshotRef.current();
+      }
+    };
+    const persistBeforePageHide = () => {
+      void persistCurrentSnapshotRef.current();
+    };
+    document.addEventListener("visibilitychange", persistIfBackgrounded);
+    window.addEventListener("pagehide", persistBeforePageHide);
+    return () => {
+      document.removeEventListener("visibilitychange", persistIfBackgrounded);
+      window.removeEventListener("pagehide", persistBeforePageHide);
+    };
+  }, []);
+
+  useEffect(() => {
     const agent = agentRef.current;
     if (!agent) return;
 
     let cancelled = false;
     loadAgentRuntimeConfig()
-      .then((agentRuntime) => createKeatingTools(keatingStorage, toolOptions(speechSettings, agentRuntime)))
-      .then((tools) => {
+      .then(async (agentRuntime) => ({
+			agentRuntime,
+			tools: await createKeatingTools(keatingStorage, toolOptions(speechSettings, agentRuntime)),
+		}))
+      .then(({ agentRuntime, tools }) => {
         if (cancelled) return;
-        agent.state.tools = tools;
-        agent.state.systemPrompt = buildKeatingSystemPrompt(speechSettings.enabled, systemPromptBaseRef.current);
-        registerKeatingWebMcp(keatingStorage, tools).catch(console.warn);
+			const controller = capabilityControllerRef.current;
+			if (controller) {
+				controller.setEnvironment({ runtime: agentRuntime, speechEnabled: speechSettings.enabled });
+				agent.state.tools = controller.setAllTools(tools);
+			} else {
+				agent.state.tools = tools;
+			}
+        agent.state.systemPrompt = buildAgentSystemPrompt(
+          speechSettings.enabled,
+          systemPromptBaseRef.current,
+          loadLearnerContext(),
+          sessionStartContextRef.current.context,
+        );
+			registerKeatingWebMcp(keatingStorage, agent.state.tools).catch(console.warn);
       })
       .catch(console.error);
 
@@ -690,9 +914,24 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       const base = composeKeatingSystemPrompt(persona);
       systemPromptBaseRef.current = base;
       if (agentRef.current) {
-        agentRef.current.state.systemPrompt = buildKeatingSystemPrompt(
+        agentRef.current.state.systemPrompt = buildAgentSystemPrompt(
           speechSettings.enabled,
           base,
+          loadLearnerContext(),
+          sessionStartContextRef.current.context,
+        );
+      }
+    });
+  }, [speechSettings.enabled]);
+
+  useEffect(() => {
+    return subscribeLearnerContext((context) => {
+      if (agentRef.current) {
+        agentRef.current.state.systemPrompt = buildAgentSystemPrompt(
+          speechSettings.enabled,
+          systemPromptBaseRef.current,
+          context,
+          sessionStartContextRef.current.context,
         );
       }
     });
@@ -760,6 +999,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     } catch (error) {
       console.warn("Failed to record session end:", error);
     }
+		await keatingLifecycle.emit({ type: "session_end", sessionId: sessionIdRef.current });
   }, []);
 
   useEffect(() => {
@@ -788,6 +1028,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       sessionForkedAtRef.current = undefined;
       setActiveSessionId(sessionIdRef.current);
       setForkInfo(null);
+		setResponseComparison(null);
       await createAgent(panel, { messages: [], model: selectedModelRef.current });
       posthog.capture('session_started', { session_id: sessionIdRef.current, source: 'new_button', is_initial: false });
     });
@@ -826,6 +1067,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     sessionParentIdRef.current = session.parentSessionId ?? null;
     sessionForkedAtRef.current = session.forkedAt;
     setActiveSessionId(session.id);
+		setResponseComparison(null);
     if (session.parentSessionId && session.forkedAt) {
       const parentId = session.parentSessionId;
       const parentMeta = await sessions.getMetadata(parentId).catch(() => null);
@@ -844,7 +1086,51 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       thinkingLevel: session.thinkingLevel,
       messages: session.messages,
     });
-  }, [createAgent, endLearnerSession, saveSessionSnapshot]);
+		if (!session.generatedAlternative) await restorePendingResponseComparison(session.id);
+  }, [createAgent, endLearnerSession, restorePendingResponseComparison, saveSessionSnapshot]);
+
+	const chooseResponse = useCallback(async (preference: ResponseComparisonDecision) => {
+		const comparison = responseComparison;
+		if (!comparison) return;
+		const alternative = await sessions.loadSession(comparison.alternativeSessionId) as SessionData | null;
+		if (!alternative) {
+			setResponseComparison(null);
+			return;
+		}
+		const now = new Date().toISOString();
+		const nextAlternative: SessionData = {
+			...alternative,
+			hiddenAlternative: preference !== "alternative",
+			responsePreference: preference,
+			lastModified: now,
+		};
+		const existingMetadata = await sessions.getMetadata(alternative.id) as SessionMetadata | null;
+		const nextMetadata: SessionMetadata = {
+			...(existingMetadata ?? {
+				id: alternative.id,
+				title: alternative.title,
+				createdAt: alternative.createdAt,
+				messageCount: alternative.messages.length,
+				usage: sessionUsage(alternative.messages),
+				thinkingLevel: alternative.thinkingLevel,
+				preview: sessionPreview(alternative.messages),
+			}),
+			lastModified: now,
+			generatedAlternative: true,
+			hiddenAlternative: preference !== "alternative",
+			alternativeForMessageTimestamp: comparison.originalMessageTimestamp,
+			responsePreference: preference,
+		};
+		await sessions.save(nextAlternative, nextMetadata);
+		setResponseComparison(null);
+		window.dispatchEvent(new CustomEvent("keating:sessions-changed"));
+		posthog.capture("response_comparison_selected", {
+			preference,
+			session_id: comparison.sourceSessionId,
+			alternative_session_id: comparison.alternativeSessionId,
+		});
+		if (preference === "alternative") await loadSession(nextAlternative);
+	}, [loadSession, posthog, responseComparison]);
 
   const openOriginalSession = useCallback(() => {
     const parentId = forkInfo?.parentId;
@@ -1043,6 +1329,15 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
         // Re-attach existing agent if component re-mounted (e.g. strict mode)
         if (unsubRef.current) unsubRef.current();
         unsubRef.current = subscribeAgentEvents(existingAgent, node as any);
+        const retryExistingResponse = async () => {
+          if (existingAgent.state.isStreaming) return;
+          const retryMessages = prepareMessagesForRetry(existingAgent.state.messages);
+          if (!retryMessages) return;
+          await ensureSessionStartContextRef.current();
+          existingAgent.state.messages = retryMessages;
+          await persistCurrentSnapshotRef.current();
+          await existingAgent.continue();
+        };
         const setupCallbacks = {
           onApiKeyRequired: async (provider: string) => {
             if (provider === "browser") return true;
@@ -1051,9 +1346,13 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
           },
           onAuthError: async (provider: string) => {
             if (provider === "browser") return false;
-            return promptKeatingApiKey(provider, { force: true });
+            const ok = await promptKeatingApiKey(provider, { force: true });
+            if (ok) void retryExistingResponse();
+            return ok;
           },
-          onBeforeSend: () => {
+          onBeforeSend: async () => {
+            await ensureSessionStartContextRef.current();
+            await keatingLifecycle.emit({ type: "before_turn", sessionId: sessionIdRef.current });
             if (import.meta.env.DEV) {
               console.log(`[keating:send] model=${existingAgent.state.model.provider}/${existingAgent.state.model.id} messages=${existingAgent.state.messages.length}`);
             }
@@ -1069,6 +1368,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
             modelSelectorDialog.onOpen();
           },
           onFork: (forkPoint?: number) => forkSession(sessionIdRef.current, forkPoint),
+          onRetry: retryExistingResponse,
           thinkingLevel: existingAgent.state.thinkingLevel,
           onThinkingLevelChange: (level: ThinkingLevel) => {
             if (agentRef.current) {
@@ -1089,8 +1389,16 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
         requestPersistentStorageOnce();
 
         void (async () => {
-          try {
-            const latestSessionId = await withSessionRestoreTimeout(sessions.getLatestSessionId(), "Restoring latest session");
+		  try {
+			const requestedSessionId = new URLSearchParams(window.location.search).get("session")?.trim() || null;
+			const latestSessionId = await withSessionRestoreTimeout(
+				requestedSessionId
+					? Promise.resolve(requestedSessionId)
+					: (sessions.getAllMetadata() as Promise<SessionMetadata[]>).then((items) => items
+						.filter((item) => !item.hiddenAlternative)
+						.sort((left, right) => right.lastModified.localeCompare(left.lastModified))[0]?.id ?? null),
+				"Restoring latest session",
+			);
             if (bootstrapGenerationRef.current !== generation || panelRef.current !== node || agentRef.current) {
               return;
             }
@@ -1100,9 +1408,15 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
               if (bootstrapGenerationRef.current !== generation || panelRef.current !== node || agentRef.current) {
                 return;
               }
-              if (session) {
-                await loadSession(session);
-                return;
+			  if (session) {
+				await loadSession(session);
+				if (requestedSessionId) {
+					const params = new URLSearchParams(window.location.search);
+					params.delete("session");
+					const next = params.toString();
+					window.history.replaceState({}, "", `${window.location.pathname}${next ? `?${next}` : ""}${window.location.hash}`);
+				}
+				return;
               }
             }
 
@@ -1176,5 +1490,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     mobileSidebarOpen,
     toggleMobileSidebar,
     closeMobileSidebar,
+		responseComparison,
+		chooseResponse,
   };
 }

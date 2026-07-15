@@ -4,7 +4,7 @@ import { access, readdir, stat } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { color } from "../core/theme.js";
 
-export type WebAgentRuntimeMode = "browser-only" | "remote" | "cloud";
+export type WebAgentRuntimeMode = "browser-only" | "host" | "remote" | "cloud";
 
 export interface ServeWebOptions {
   agentRuntimeMode?: WebAgentRuntimeMode;

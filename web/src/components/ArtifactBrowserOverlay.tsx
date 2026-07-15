@@ -110,6 +110,7 @@ export function ArtifactBrowserOverlay({ open, artifactId, onClose }: ArtifactBr
 
         <div className={css({
           minHeight: 0,
+          minWidth: 0,
           flex: 1,
           overflowY: "auto",
           overflowX: "hidden",

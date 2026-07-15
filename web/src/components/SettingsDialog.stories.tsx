@@ -240,3 +240,13 @@ export const Learning: Story = {
 export const App: Story = {
 	args: { defaultTabId: "app" },
 };
+
+export const MobileFullscreen: Story = {
+	args: { defaultTabId: "learning" },
+	parameters: {
+		viewport: { defaultViewport: "mobile1" },
+	},
+	globals: {
+		viewport: { value: "mobile1", isRotated: false },
+	},
+};

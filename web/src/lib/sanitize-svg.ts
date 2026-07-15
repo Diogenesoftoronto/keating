@@ -1,5 +1,18 @@
-const FORBIDDEN_ELEMENTS = new Set(["script", "foreignobject", "iframe", "object", "embed", "link", "meta", "base"]);
+// `foreignObject` is blocked by default because it crosses from SVG into HTML.
+// The live Mermaid renderer may opt in after rendering with Mermaid's strict
+// security mode; stored/imported SVGs keep the stronger default.
+const FORBIDDEN_ELEMENTS = new Set(["script", "iframe", "object", "embed", "link", "meta", "base", "foreignobject"]);
 const URL_ATTRIBUTES = new Set(["href", "xlink:href", "src"]);
+
+export interface SanitizeSvgOptions {
+	allowForeignObject?: boolean;
+}
+
+export function isForbiddenSvgElement(tagName: string, options: SanitizeSvgOptions = {}): boolean {
+	const normalized = tagName.toLowerCase();
+	return FORBIDDEN_ELEMENTS.has(normalized)
+		&& !(normalized === "foreignobject" && options.allowForeignObject === true);
+}
 
 function hasUnsafeCss(value: string): boolean {
 	const lower = value.toLowerCase();
@@ -41,7 +54,7 @@ function parseSvgRoot(svg: string): SVGElement | null {
 	return htmlRoot ?? null;
 }
 
-export function sanitizeSvg(svg: string): string {
+export function sanitizeSvg(svg: string, options: SanitizeSvgOptions = {}): string {
 	if (typeof DOMParser === "undefined" || typeof XMLSerializer === "undefined") {
 		return "";
 	}
@@ -58,7 +71,7 @@ export function sanitizeSvg(svg: string): string {
 	while (current) {
 		const element = current as Element;
 		const tagName = element.tagName.toLowerCase();
-		if (FORBIDDEN_ELEMENTS.has(tagName)) {
+		if (isForbiddenSvgElement(tagName, options)) {
 			removals.push(element);
 		} else {
 			for (const attribute of Array.from(element.attributes)) {

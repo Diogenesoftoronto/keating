@@ -18,6 +18,7 @@ type HyperframesStateMessage = {
 	progress: number;
 	playing: boolean;
 	hasTimeline: boolean;
+	seekable: boolean;
 };
 
 function isHyperframesStateMessage(value: unknown): value is HyperframesStateMessage {
@@ -27,14 +28,18 @@ function isHyperframesStateMessage(value: unknown): value is HyperframesStateMes
 		&& typeof message.progress === "number"
 		&& Number.isFinite(message.progress)
 		&& typeof message.playing === "boolean"
-		&& typeof message.hasTimeline === "boolean";
+		&& typeof message.hasTimeline === "boolean"
+		&& typeof message.seekable === "boolean";
 }
 
 export function HyperframesPlayer({ html, title, className }: HyperframesPlayerProps) {
 	const iframeRef = useRef<HTMLIFrameElement | null>(null);
-	const [playing, setPlaying] = useState(true);
+	const [playing, setPlaying] = useState(false);
 	const [looping, setLooping] = useState(true);
 	const [progress, setProgress] = useState(0);
+	const [bridgeReady, setBridgeReady] = useState(false);
+	const [hasTimeline, setHasTimeline] = useState(false);
+	const [seekable, setSeekable] = useState(false);
 	const sandboxedHtml = useMemo(() => withHyperframesBridge(html), [html]);
 	const src = useBlobUrl(sandboxedHtml, "text/html");
 
@@ -46,6 +51,9 @@ export function HyperframesPlayer({ html, title, className }: HyperframesPlayerP
 		const handleMessage = (event: MessageEvent<unknown>) => {
 			if (event.source !== iframeRef.current?.contentWindow || !isHyperframesStateMessage(event.data)) return;
 			const next = Math.max(0, Math.min(1, event.data.progress));
+			setBridgeReady(true);
+			setHasTimeline(event.data.hasTimeline);
+			setSeekable(event.data.seekable);
 			setProgress(next);
 			setPlaying(event.data.playing);
 			if (event.data.hasTimeline && looping && event.data.playing && next >= 0.995) {
@@ -64,22 +72,30 @@ export function HyperframesPlayer({ html, title, className }: HyperframesPlayerP
 	}, [src]);
 
 	useEffect(() => {
-		setPlaying(true);
+		setPlaying(false);
 		setProgress(0);
+		setBridgeReady(false);
+		setHasTimeline(false);
+		setSeekable(false);
 	}, [src]);
+
+	const controlLabel = !bridgeReady ? "Loading" : !hasTimeline ? "Unavailable" : playing ? "Pause" : "Play";
 
 	return (
 		<div className={cx(css({ display: "grid", gap: "0.5rem" }), className)}>
 			<iframe
 				ref={iframeRef}
 				title={title}
-				src={src}
+				src={src || undefined}
 				sandbox="allow-scripts"
+				onLoad={() => postCommand({ type: "keating-hyperframes-command", action: "request-state" })}
 				className={css({ display: "block", aspectRatio: "16 / 9", width: "100%", borderRadius: "0.375rem", border: "1px solid var(--border)", background: "black" })}
 			/>
 			<div className={css({ display: "grid", gridTemplateColumns: "auto auto 1fr auto", alignItems: "center", gap: "0.5rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "color-mix(in srgb, var(--background) 80%, transparent)", padding: "0.5rem" })}>
 				<button
 					type="button"
+					disabled={!hasTimeline}
+					aria-label={controlLabel}
 					onClick={() => {
 						const next = !playing;
 						setPlaying(next);
@@ -87,8 +103,8 @@ export function HyperframesPlayer({ html, title, className }: HyperframesPlayerP
 					}}
 					className={controlButtonClass}
 				>
-					{playing ? <Pause size={14} /> : <Play size={14} />}
-					{playing ? "Pause" : "Play"}
+					{playing && hasTimeline ? <Pause size={14} /> : <Play size={14} />}
+					{controlLabel}
 				</button>
 				<button
 					type="button"
@@ -107,6 +123,7 @@ export function HyperframesPlayer({ html, title, className }: HyperframesPlayerP
 					min={0}
 					max={1000}
 					value={Math.round(progress * 1000)}
+					disabled={!seekable}
 					onChange={(event) => {
 						const next = Math.max(0, Math.min(1, Number(event.target.value) / 1000));
 						setProgress(next);
@@ -120,6 +137,7 @@ export function HyperframesPlayer({ html, title, className }: HyperframesPlayerP
 					type="button"
 					onClick={() => setLooping((value) => !value)}
 					aria-pressed={looping}
+					disabled={!seekable}
 					className={cx(controlButtonClass, looping && css({ color: "var(--primary)", borderColor: "var(--primary)" }))}
 				>
 					<Repeat size={14} />
@@ -153,5 +171,6 @@ const controlButtonClass = css({
 	fontSize: "0.75rem",
 	fontWeight: 500,
 	whiteSpace: "nowrap",
+	_disabled: { cursor: "not-allowed", opacity: 0.55 },
 	_hover: { background: "var(--accent)" },
 });

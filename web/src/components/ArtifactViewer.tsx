@@ -361,7 +361,7 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 
 	if (selected) {
 		return (
-			<div className={cx("artifact-detail", css({ color: "var(--foreground)" }))}>
+			<div className={cx("artifact-detail", css({ minWidth: 0, maxWidth: "100%", color: "var(--foreground)" }))}>
 				<div className={css({ marginBottom: "1rem", paddingBottom: "0.5rem", borderBottomWidth: "1px", borderColor: "var(--border)" })}>
 					<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" })}>
 						<button onClick={() => setSelected(null)} className={css({ fontSize: "0.875rem", color: "var(--muted-foreground)", _hover: { textDecoration: "underline" } })}>
@@ -392,7 +392,7 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 						</button>
 					</div>
 					<h2 className={css({ marginTop: "0.25rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "1.125rem", fontWeight: 600, color: "var(--foreground)" })}>{selected.label}</h2>
-					<div className={css({ marginTop: "0.25rem", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+					<div className={css({ marginTop: "0.25rem", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.375rem 0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
 						<span className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", borderRadius: "0.25rem", background: "var(--muted)", paddingInline: "0.375rem", paddingBlock: "0.125rem" })}>
 							{TYPE_META[selected.type].icon}
 							{TYPE_META[selected.type].label}
@@ -403,7 +403,20 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 						)}
 					</div>
 				</div>
-				<div className={cx("artifact-content", css({ color: "var(--foreground)" }))}>
+				<div
+					className={cx("artifact-content", css({
+						minWidth: 0,
+						maxWidth: "100%",
+						overflowX: "auto",
+						overflowY: "visible",
+						overscrollBehaviorX: "contain",
+						touchAction: "pan-x pan-y",
+						color: "var(--foreground)",
+					}))}
+					role="region"
+					aria-label={`${selected.label} artifact content`}
+					tabIndex={0}
+				>
 					{selected.type === "plan" && <PlanViewer plan={selected.data as LessonPlan} />}
 					{selected.type === "map" && <MapView map={selected.data as LessonMap} />}
 					{selected.type === "animation" && <AnimationViewer animation={selected.data as Animation} />}
@@ -682,13 +695,13 @@ function ArtifactMarkdownViewer({ content }: { content: string }) {
 	const parts = splitMermaidBlocks(content);
 	if (parts.length === 0) {
 		return (
-			<div className={css({ maxWidth: "none", fontSize: "0.875rem", lineHeight: "1.714" })}>
+			<div className={css({ minWidth: 0, maxWidth: "none", fontSize: "0.875rem", lineHeight: "1.714" })}>
 				<MarkdownBlock content={content} />
 			</div>
 		);
 	}
 	return (
-		<div className={css({ "& > * + *": { marginTop: "1rem" } })}>
+		<div className={css({ minWidth: 0, maxWidth: "100%", "& > * + *": { marginTop: "1rem" } })}>
 			{parts.map((part, index) => {
 				if (part.type === "mermaid") {
 					return (
@@ -698,7 +711,7 @@ function ArtifactMarkdownViewer({ content }: { content: string }) {
 					);
 				}
 				return (
-					<div key={index} className={css({ maxWidth: "none", fontSize: "0.875rem", lineHeight: "1.714" })}>
+					<div key={index} className={css({ minWidth: 0, maxWidth: "none", fontSize: "0.875rem", lineHeight: "1.714" })}>
 						<MarkdownBlock content={part.content} />
 					</div>
 				);
@@ -727,7 +740,7 @@ function PlanViewer({ plan }: { plan: LessonPlan }) {
 function MapView({ map }: { map: LessonMap }) {
 	const safeSvg = useMemo(() => (map.svgContent ? sanitizeSvg(map.svgContent) : ""), [map.svgContent]);
 	return (
-		<div>
+		<div className={css({ minWidth: 0, maxWidth: "100%", overflowX: "auto", overscrollBehaviorX: "contain", touchAction: "pan-x pan-y" })}>
 			<MermaidRenderer content={map.mmdContent} className={css({ background: "var(--background)" })} />
 			{safeSvg && (
 				<details className={css({ marginTop: "1rem" })}>

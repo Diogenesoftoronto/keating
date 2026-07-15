@@ -81,6 +81,45 @@ export interface PreferencePair {
 	rewardGap: number;
 }
 
+export function buildExplicitResponsePreference({
+	originalMessages,
+	alternativeMessages,
+	originalMessageTimestamp,
+	preference,
+	persona,
+}: {
+	originalMessages: NormalizedRewardMessage[];
+	alternativeMessages: NormalizedRewardMessage[];
+	originalMessageTimestamp: number;
+	preference: "original" | "alternative";
+	persona?: string;
+}): PreferencePair | null {
+	const originalIndex = originalMessages.findIndex((message) => (
+		message.role === "assistant" && message.timestamp === originalMessageTimestamp
+	));
+	const alternative = [...alternativeMessages].reverse().find((message) => message.role === "assistant");
+	if (originalIndex < 0 || !alternative) return null;
+	const original = originalMessages[originalIndex];
+	const prior = originalMessages.slice(0, originalIndex).map((message): RewardChatMessage => ({
+		role: message.role,
+		content: message.content,
+	}));
+	const prompt: RewardChatMessage[] = persona?.trim()
+		? [{ role: "system", content: persona.trim() }, ...prior]
+		: prior;
+	const chosen = preference === "alternative" ? alternative.content : original.content;
+	const rejected = preference === "alternative" ? original.content : alternative.content;
+	if (!chosen.trim() || !rejected.trim() || chosen === rejected) return null;
+	return {
+		prompt,
+		chosen,
+		rejected,
+		chosenReward: 1,
+		rejectedReward: 0,
+		rewardGap: 1,
+	};
+}
+
 function clamp01(value: number): number {
 	if (!Number.isFinite(value)) return REWARD_NEUTRAL;
 	return Math.max(0, Math.min(1, value));

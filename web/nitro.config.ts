@@ -64,6 +64,10 @@ export default defineNitroConfig({
   // via useStorage("assets:server") (see server/utils/og-render.ts).
   serverAssets: [{ baseName: "server", dir: "server/assets" }],
   handlers: [
+	{
+	  route: "/api/agent-runtime/host/execute",
+	  handler: "server/api/agent-runtime/host/execute.ts",
+	},
     {
       route: "/api/chat-proxy/**",
       handler: "server/api/chat-proxy/[...slug].ts",

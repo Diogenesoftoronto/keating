@@ -1,4 +1,4 @@
-import type { LearnerState } from "../keating/storage";
+import type { FeedbackEntry, LearnerState } from "../keating/storage";
 import type { SessionMetadata } from "../types/session";
 
 export type LearnerSession = LearnerState["sessions"][number];
@@ -24,6 +24,13 @@ export interface ModelUsageBreakdown {
 	entries: ModelUsageEntry[];
 }
 
+export interface FeedbackSignalGroup {
+	label: string;
+	count: number;
+	color: string;
+	entries: FeedbackEntry[];
+}
+
 const DEFAULT_OPEN_SESSION_DISPLAY_MS = 30 * 60 * 1000;
 const MODEL_USAGE_COLORS = ["#6366f1", "#22c55e", "#f97316", "#06b6d4", "#d946ef", "#eab308", "#ef4444"];
 
@@ -47,6 +54,22 @@ export function getCurriculumDisplayEnd(session: LearnerSession, now = Date.now(
 
 export function hasMeaningfulPolicyScores(scores: Array<{ score: number }>): boolean {
 	return scores.some((entry) => entry.score > 0);
+}
+
+export function aggregateFeedback(entries: FeedbackEntry[]): FeedbackSignalGroup[] {
+	const definitions: Array<{ signal: FeedbackEntry["signal"]; label: string; color: string }> = [
+		{ signal: "thumbs-up", label: "Confident", color: "#22c55e" },
+		{ signal: "thumbs-down", label: "Off-track", color: "#ef4444" },
+		{ signal: "confused", label: "Confused", color: "#f97316" },
+	];
+	return definitions.flatMap((definition) => {
+		const matching = entries
+			.filter((entry) => entry.signal === definition.signal)
+			.sort((left, right) => right.createdAt - left.createdAt);
+		return matching.length > 0
+			? [{ ...definition, count: matching.length, entries: matching }]
+			: [];
+	});
 }
 
 function sessionTokenCount(session: SessionMetadata): number {

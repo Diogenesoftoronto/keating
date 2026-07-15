@@ -281,6 +281,53 @@ describe("web fine-tune export", () => {
 		expect(JSON.parse(result.manifestJson).counts.dpoTextLines).toBe(1);
 	});
 
+	it("exports an explicit response choice as a redacted DPO pair", async () => {
+		const base = {
+			title: "Response comparison",
+			model: {} as any,
+			thinkingLevel: "medium" as const,
+			createdAt: new Date().toISOString(),
+			lastModified: new Date().toISOString(),
+		};
+		const result = await buildWebFineTuneExportFromSources({
+			persona: "Use learner key sk-testsecret1234567890 carefully.",
+			sessions: [
+				{
+					...base,
+					id: "original",
+					messages: [
+						{ role: "user", content: "Explain recursion.", timestamp: 1000 },
+						{ role: "assistant", content: "The original response explains recursion through a base case and progressively smaller subproblems.", timestamp: 2000 },
+					] as any,
+				},
+				{
+					...base,
+					id: "alternative",
+					parentSessionId: "original",
+					generatedAlternative: true,
+					hiddenAlternative: false,
+					alternativeForMessageTimestamp: 2000,
+					responsePreference: "alternative",
+					messages: [
+						{ role: "user", content: "Explain recursion.", timestamp: 1000 },
+						{ role: "assistant", content: "The selected alternative uses nested boxes to make the recursive call and stopping condition concrete.", timestamp: 3000 },
+					] as any,
+				},
+			],
+		}, {
+			source: "sessions",
+			format: "chatml",
+			redact: true,
+			minAssistantChars: 10,
+		});
+
+		const pair = JSON.parse(result.preferenceJsonl!.trim());
+		expect(pair.prompt[0]).toEqual({ role: "system", content: "Use learner key [REDACTED] carefully." });
+		expect(pair.chosen).toContain("nested boxes");
+		expect(pair.rejected).toContain("base case");
+		expect(result.preferenceJsonl).not.toContain("sk-testsecret");
+	});
+
 	it("imports ChatML and Alpaca JSONL as one session per example", () => {
 		const model = {
 			id: "gpt-test",

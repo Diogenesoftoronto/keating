@@ -1,6 +1,6 @@
 {
   "name": "keating",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "type": "module",
   "description": "A Pi-powered hyperteacher package with self-improving teaching policies, lesson maps, and animated visual teaching artifacts.",
   "keywords": [
@@ -73,6 +73,7 @@
     "@google/generative-ai": "^0.24.1",
     "@lix-js/sdk": "^0.7.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "@opentui/core": "^0.4.3",
     "dotenv": "^17.4.2",
     "h3": "^2.0.1-rc.22",
     "ink": "^7.1.0",

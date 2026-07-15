@@ -11,15 +11,15 @@ const KEATING_ASCII = `
 `.trim();
 
 const INTRO_LINES = [
-  { text: "INIT SEQUENCE v2.2.0", delay: 100 },
+  { text: "INIT SEQUENCE v2.3.0", delay: 100 },
   { text: "─────────────────────────────────────────", delay: 200 },
   { text: "model   : Kimi k2.6", delay: 300 },
   { text: "policy  : keating-default", delay: 400 },
   { text: "system  : Socratic teaching engine", delay: 500 },
-  { text: "tools   : plan, map, verify, animate, bench, evolve", delay: 600 },
+  { text: "tools   : StudyPlan, ConceptMap, Explanation, animate, bench, evolve", delay: 600 },
   { text: "", delay: 700 },
   { text: "▸ Type a topic to begin learning", delay: 800 },
-  { text: "▸ Available: /plan /map /verify /animate /bench /evolve", delay: 900 },
+  { text: "▸ OpenUI surfaces stream inline — plans, maps, notes all stay editable", delay: 900 },
   { text: "", delay: 1000 },
   { text: '\"That the powerful play goes on, and you may contribute a verse.\"', delay: 1200 },
   { text: "                                                          — Whitman", delay: 1300 },

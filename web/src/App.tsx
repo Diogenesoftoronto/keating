@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { usePostHog } from "@posthog/react";
+import { z } from "zod";
 import {
   RouterProvider,
   createRouter,
@@ -23,6 +24,10 @@ const SharedSession = lazyRouteComponent(
   "SharedSession",
 );
 const Usage = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/Usage")), "Usage");
+const EvolutionDetail = lazyRouteComponent(
+	() => loadRouteChunk(() => import("./pages/EvolutionDetail")),
+	"EvolutionDetail",
+);
 const KeatingBench = lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/KeatingBench")),
   "KeatingBench",
@@ -75,6 +80,10 @@ const indexRoute = createRoute({
 const chatRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/chat",
+  validateSearch: (search) => z.object({
+		settings: z.string().max(128).optional(),
+		session: z.string().min(1).max(256).optional(),
+	}).passthrough().parse(search),
   component: Chat,
 });
 
@@ -82,6 +91,12 @@ const usageRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/usage",
 	component: Usage,
+});
+
+const evolutionDetailRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/usage/evolution/$evolutionId",
+	component: EvolutionDetail,
 });
 
 const benchRoute = createRoute({
@@ -160,6 +175,7 @@ const routeTree = rootRoute.addChildren([
 	indexRoute,
 	chatRoute,
 	usageRoute,
+	evolutionDetailRoute,
 	benchRoute,
 	sharedSessionRoute,
   tutorialRoute,

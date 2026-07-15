@@ -1,6 +1,6 @@
 {
   "name": "keating-web",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "type": "module",
   "private": true,
   "scripts": {
@@ -48,6 +48,8 @@
     "@huggingface/transformers": "^4.2.0",
     "@jason.today/webmcp": "0.1.13",
     "@lix-js/sdk": "^0.7.0",
+    "@openuidev/lang-core": "^0.2.9",
+    "@openuidev/react-lang": "^0.2.8",
     "@posthog/react": "^1.10.3",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
@@ -74,6 +76,7 @@
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
     "three": "^0.184.0",
+    "zod": "^4.4.3",
     "zustand": "^5.0.14"
   },
   "devDependencies": {

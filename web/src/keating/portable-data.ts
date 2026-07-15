@@ -48,6 +48,10 @@ function metadataForSession(data: SessionData, existing?: Partial<SessionMetadat
 		preview: existing?.preview ?? sessionPreview(data.messages),
 		searchText: existing?.searchText ?? sessionSearchText(data.messages),
 		aiGeneratedTitle: existing?.aiGeneratedTitle ?? data.aiGeneratedTitle,
+		generatedAlternative: existing?.generatedAlternative ?? data.generatedAlternative,
+		hiddenAlternative: existing?.hiddenAlternative ?? data.hiddenAlternative,
+		alternativeForMessageTimestamp: existing?.alternativeForMessageTimestamp ?? data.alternativeForMessageTimestamp,
+		responsePreference: existing?.responsePreference ?? data.responsePreference,
 	};
 }
 

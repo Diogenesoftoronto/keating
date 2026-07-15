@@ -20,24 +20,33 @@ const overlayClass = css({
 	inset: 0,
 	zIndex: 1000,
 	display: "flex",
-	alignItems: "flex-start",
+	alignItems: "stretch",
 	justifyContent: "center",
 	backgroundColor: "rgba(0, 0, 0, 0.5)",
 	backdropFilter: "blur(4px)",
-	paddingInline: "1rem",
-	paddingTop: "1.5rem",
-	paddingBottom: "1.5rem",
+	padding: 0,
+	md: {
+		alignItems: "center",
+		padding: "1.5rem",
+	},
 });
 const panelClass = css({
 	display: "flex",
+	height: "100dvh",
 	width: "100%",
 	maxWidth: "64rem",
-	maxHeight: "90vh",
+	maxHeight: "100dvh",
 	overflow: "hidden",
-	borderRadius: "0.5rem",
-	border: "2px solid var(--border)",
+	borderRadius: 0,
+	border: 0,
 	backgroundColor: "var(--background)",
 	boxShadow: "var(--shadow-lg)",
+	md: {
+		height: "min(52rem, calc(100dvh - 3rem))",
+		maxHeight: "calc(100dvh - 3rem)",
+		borderRadius: "0.5rem",
+		border: "2px solid var(--border)",
+	},
 });
 const sidebarClass = css({
 	display: "none",
@@ -90,6 +99,7 @@ const contentColumnClass = css({
 	display: "flex",
 	flexDirection: "column",
 	flex: 1,
+	minWidth: 0,
 	minHeight: 0,
 });
 const headerClass = css({
@@ -151,7 +161,9 @@ const closeButtonClass = css({
 });
 const tabpanelClass = css({
 	flex: 1,
+	minWidth: 0,
 	overflowY: "auto",
+	overflowX: "hidden",
 	padding: "1rem",
 	sm: { padding: "1.25rem" },
 });
