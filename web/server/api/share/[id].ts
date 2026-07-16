@@ -1,7 +1,6 @@
 import { createError, defineEventHandler, getRequestURL } from "h3";
 import { useStorage } from "nitro/storage";
-
-const SHARE_ID_PATTERN = /^[A-Za-z0-9_-]{8,32}$/;
+import { isValidShareId } from "../../../src/keating/share-contract";
 
 function shareIdFromPath(pathname: string) {
 	const id = pathname.split("/").filter(Boolean).pop() ?? "";
@@ -14,7 +13,7 @@ export default defineEventHandler(async (event) => {
 	}
 
 	const id = shareIdFromPath(getRequestURL(event).pathname);
-	if (!SHARE_ID_PATTERN.test(id)) {
+	if (!isValidShareId(id)) {
 		throw createError({ statusCode: 400, statusMessage: "Invalid shared session id" });
 	}
 

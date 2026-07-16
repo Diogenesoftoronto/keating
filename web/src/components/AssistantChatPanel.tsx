@@ -3199,6 +3199,22 @@ function AssistantThread({
   const [composerHasUrl, setComposerHasUrl] = useState(false);
   const [hasGoogleKey, setHasGoogleKey] = useState<boolean | null>(null);
   const isRunning = agent?.state.isStreaming ?? false;
+  const currentThinkingLevel =
+    agent?.state.thinkingLevel ??
+    callbacks.thinkingLevel ??
+    "medium";
+  const [selectedThinkingLevel, setSelectedThinkingLevel] =
+    useState<ThinkingLevel>(currentThinkingLevel);
+  useEffect(() => {
+    setSelectedThinkingLevel(currentThinkingLevel);
+  }, [currentThinkingLevel]);
+  const handleThinkingLevelChange = useCallback(
+    (level: ThinkingLevel) => {
+      setSelectedThinkingLevel(level);
+      callbacks.onThinkingLevelChange?.(level);
+    },
+    [callbacks],
+  );
   const messages = useMemo(
     () => {
       const visibleMessages = visibleAgentMessages(agent, speechEnabled);
@@ -3818,12 +3834,8 @@ function AssistantThread({
                   </button>
                   {/* Reasoning level — visible on landscape/tablet+ */}
                   <ReasoningLevelSelector
-                    level={
-                      agent?.state.thinkingLevel ??
-                      callbacks.thinkingLevel ??
-                      "medium"
-                    }
-                    onChange={callbacks.onThinkingLevelChange ?? (() => {})}
+                    level={selectedThinkingLevel}
+                    onChange={handleThinkingLevelChange}
                     disabled={isRunning}
                   />
                   <ComposerPrimitive.AddAttachment

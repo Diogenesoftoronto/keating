@@ -2,7 +2,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Bot, Copy, GitFork, MessageSquareText, User } from "lucide-react";
 import { useSeo } from "../hooks/useSeo";
-import { forkSharedSession, loadSharedSessionFromUrl, type SharedSession as SharedSessionData } from "../keating/shared-sessions";
+import { forkSharedSession, loadSharedSessionResultFromUrl, type SharedSession as SharedSessionData } from "../keating/shared-sessions";
 import { MarkdownBlock } from "../components/MarkdownBlock";
 import { css, cx } from "../../styled-system/css";
 
@@ -96,12 +96,18 @@ function SharedSessionContent() {
 		let cancelled = false;
 		setLoading(true);
 		setSession(null);
-		loadSharedSessionFromUrl(shareId, window.location.hash)
-			.then((shared) => {
-				if (!cancelled) setSession(shared);
+		setError("");
+		loadSharedSessionResultFromUrl(shareId, window.location.hash)
+			.then((result) => {
+				if (cancelled) return;
+				if (result.ok) setSession(result.session);
+				else setError(result.message);
 			})
-			.catch(() => {
-				if (!cancelled) setSession(null);
+			.catch((error) => {
+				if (!cancelled) {
+					setError(error instanceof Error ? error.message : "Could not load the shared session.");
+					setSession(null);
+				}
 			})
 			.finally(() => {
 				if (!cancelled) setLoading(false);
@@ -148,7 +154,7 @@ function SharedSessionContent() {
 					<MessageSquareText className={styles.iconMuted} size={32} />
 					<h1 className={styles.h1}>Shared session not found</h1>
 					<p className={styles.notFoundCopy}>
-						This share link is missing its session snapshot. Ask for a fresh link or open a cached share from this browser.
+						{error || "This share link is missing its session snapshot. Ask for a fresh link or open a cached share from this browser."}
 					</p>
 					<button
 						className={styles.backButton}

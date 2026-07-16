@@ -372,6 +372,10 @@ async function refreshOAuthToken(
 			if (response.status === 401 || response.status === 403) {
 				await deleteOAuthCredentials(provider);
 			}
+			const detail = await response.text().catch(() => "");
+			console.warn(
+				`OAuth refresh failed for ${provider}: ${response.status}${detail ? ` ${detail.slice(0, 240)}` : ""}`,
+			);
 			return null;
 		}
 
@@ -388,7 +392,10 @@ async function refreshOAuthToken(
 
 		await saveOAuthCredentials(newCredentials);
 		return newCredentials;
-	} catch {
+	} catch (error) {
+		console.warn(
+			`OAuth refresh request failed for ${provider}: ${error instanceof Error ? error.message : String(error)}`,
+		);
 		return null;
 	}
 }

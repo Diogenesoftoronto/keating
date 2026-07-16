@@ -4,6 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 import react from '@vitejs/plugin-react';
 import nodepod from '@scelar/nodepod/vite';
 import { visualizer } from 'rollup-plugin-visualizer';
+import { randomBytes } from 'node:crypto';
 import * as https from 'https';
 import * as http from 'http';
 import { buildValidatedProxyUrl } from './server/utils/proxy-target';
@@ -12,6 +13,13 @@ import {
   buildAgentRuntimeConfig,
   type ServerAgentRuntimeMode,
 } from './src/keating/agent-runtime-config';
+import {
+  compactShareIdFromBytes,
+  isValidShareId,
+  SHARE_ID_BYTES,
+  SHARE_MAX_BYTES,
+  validateSharedSessionPayload,
+} from './src/keating/share-contract';
 
 function env(name: string): string | null {
   const value = process.env[name]?.trim();
@@ -29,11 +37,98 @@ function agentRuntimeTargetBase(mode: ServerAgentRuntimeMode): string | null {
   return env('KEATING_WEB_CLOUD_ENDPOINT') || 'https://keating.help';
 }
 
+const devShareStore = new Map<string, unknown>();
+
+function compactDevShareId() {
+  return compactShareIdFromBytes(randomBytes(SHARE_ID_BYTES));
+}
+
+function readRequestBody(req: http.IncomingMessage): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    req.on('data', (chunk: Buffer) => chunks.push(chunk));
+    req.on('error', reject);
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+  });
+}
+
+function sendJson(res: http.ServerResponse, statusCode: number, body: unknown) {
+  res.statusCode = statusCode;
+  res.setHeader('content-type', 'application/json');
+  res.end(JSON.stringify(body));
+}
+
 function chatProxyPlugin(): Plugin {
   return {
     name: 'chat-proxy',
     configureServer(server) {
-      server.middlewares.use((req, res, next) => {
+      server.middlewares.use(async (req, res, next) => {
+        const pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
+
+        // Nitro serves /api/share in production. Vite dev needs the same
+        // endpoint; otherwise the browser falls back to a massive compressed
+        // hash URL, which is exactly what makes Discord sharing unreasonable.
+        if (pathname === '/api/share') {
+          if (req.method !== 'POST') {
+            sendJson(res, 405, { error: 'Method not allowed' });
+            return;
+          }
+
+          try {
+            const bodyBuffer = await readRequestBody(req);
+            if (bodyBuffer.byteLength > SHARE_MAX_BYTES) {
+              sendJson(res, 413, { error: 'Shared session is too large' });
+              return;
+            }
+
+            const body = JSON.parse(bodyBuffer.toString('utf8'));
+            const validationError = validateSharedSessionPayload(body);
+            if (validationError) {
+              sendJson(res, 400, { error: validationError });
+              return;
+            }
+
+            let id = compactDevShareId();
+            for (let attempt = 0; attempt < 4 && devShareStore.has(id); attempt++) {
+              id = compactDevShareId();
+            }
+
+            const shared = {
+              ...body,
+              id,
+              schemaVersion: 2,
+              messageCount: body.messages.length,
+            };
+            devShareStore.set(id, shared);
+            sendJson(res, 200, { id });
+          } catch (error) {
+            sendJson(res, 400, { error: error instanceof Error ? error.message : 'Invalid shared session payload' });
+          }
+          return;
+        }
+
+        if (pathname.startsWith('/api/share/')) {
+          if (req.method !== 'GET') {
+            sendJson(res, 405, { error: 'Method not allowed' });
+            return;
+          }
+
+          const id = decodeURIComponent(pathname.replace(/^\/api\/share\//, ''));
+          if (!isValidShareId(id)) {
+            sendJson(res, 400, { error: 'Invalid shared session id' });
+            return;
+          }
+
+          const shared = devShareStore.get(id);
+          if (!shared) {
+            sendJson(res, 404, { error: 'Shared session not found' });
+            return;
+          }
+
+          sendJson(res, 200, shared);
+          return;
+        }
+
         if (req.url === '/api/agent-runtime/config') {
           const mode = agentRuntimeMode();
           const projectRoot = env('KEATING_WEB_PROJECT_ROOT');
@@ -210,7 +305,23 @@ function chatProxyPlugin(): Plugin {
           return;
         }
 
-        if (!req.url?.startsWith('/api/chat-proxy')) return next();
+        if (!req.url?.startsWith('/api/chat-proxy')) {
+          // Any other /api/* request is not handled above by the Vite dev
+          // server. In production these are Nitro handlers; in dev most do not
+          // exist. The default next() would let Vite serve the SPA index.html,
+          // so the browser receives HTML for an API call and then fails with a
+          // confusing "unexpected token '<' in JSON" (or silently corrupts a
+          // JSON.parse). This is the same silent dev/prod parity gap that hid
+          // the /api/share failure. Return an explicit 404 JSON so unhandled
+          // dev endpoints fail legibly and match fetch() error handling.
+          if (pathname.startsWith('/api/')) {
+            sendJson(res, 404, {
+              error: `No Vite dev handler for ${pathname}. This endpoint only exists in the production Nitro server (run \`keating web\` against the built app).`,
+            });
+            return;
+          }
+          return next();
+        }
 
         const targetBaseUrl = req.headers['x-target-url'] as string;
         if (!targetBaseUrl) {

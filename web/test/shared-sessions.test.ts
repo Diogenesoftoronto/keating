@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import type { SharedSession } from "../src/keating/shared-sessions";
-import { loadSharedSessionFromUrl, sharedSessionUrl } from "../src/keating/shared-sessions";
+import { loadSharedSessionFromUrl, loadSharedSessionResultFromUrl, sharedSessionUrl, shouldWarnBeforePublicShare } from "../src/keating/shared-sessions";
 
 function createMockStorage() {
 	const store = new Map<string, string>();
@@ -64,6 +64,12 @@ afterEach(() => {
 });
 
 describe("shared session URLs", () => {
+	const originalFetch = globalThis.fetch;
+
+	afterEach(() => {
+		globalThis.fetch = originalFetch;
+	});
+
 	test("compressed-hash mode produces an actually compressed gz. URL without CompressionStream", async () => {
 		(globalThis as any).CompressionStream = undefined;
 		const session = sharedSession();
@@ -90,5 +96,66 @@ describe("shared session URLs", () => {
 		expect((loaded?.messages[1] as any).content[0].text).toContain("Recursion reduces");
 		expect((loaded?.messages[1] as any).responseId).toBeUndefined();
 		expect((loaded?.messages[1] as any).usage).toBeUndefined();
+	});
+
+	test("shared session result reports invalid snapshot links instead of only null", async () => {
+		const loaded = await loadSharedSessionResultFromUrl("share1234", "#session=not-valid");
+		expect(loaded.ok).toBe(false);
+		if (!loaded.ok) {
+			expect(loaded.reason).toBe("invalid-link");
+			expect(loaded.message).toContain("unreadable");
+		}
+	});
+
+	test("shared session result reports share server status failures", async () => {
+		globalThis.fetch = (async () => new Response("bad id", { status: 400 })) as unknown as typeof fetch;
+		const loaded = await loadSharedSessionResultFromUrl("bad-id", "");
+		expect(loaded.ok).toBe(false);
+		if (!loaded.ok) {
+			expect(loaded.reason).toBe("server-error");
+			expect(loaded.status).toBe(400);
+			expect(loaded.message).toContain("bad id");
+		}
+	});
+
+	test("portable-short mode does not fall back to a giant snapshot URL when share storage fails", async () => {
+		globalThis.fetch = (async () => new Response("not found", { status: 404 })) as unknown as typeof fetch;
+
+		await expect(sharedSessionUrl(sharedSession(), "https://keating.help", "portable-short"))
+			.rejects
+			.toThrow("Could not save the session to the share server");
+	});
+
+	test("portable-short upload omits the local UUID id and uses the server-minted short id", async () => {
+		let uploadedBody: any = null;
+		globalThis.fetch = (async (_url: string, init?: RequestInit) => {
+			uploadedBody = JSON.parse(String(init?.body ?? "{}"));
+			return new Response(JSON.stringify({ id: "srv12345" }), { status: 200 });
+		}) as unknown as typeof fetch;
+
+		const result = await sharedSessionUrl(sharedSession(), "https://keating.help", "portable-short");
+
+		// The client must not send its 36-char UUID; the server validates ids as
+		// /^[A-Za-z0-9_-]{8,32}$/ and would 400 on it.
+		expect(uploadedBody.id).toBeUndefined();
+		expect(uploadedBody.title).toBe("Recursion");
+		expect(result.mode).toBe("portable-short");
+		expect(result.fallback).toBe(false);
+		expect(result.url).toBe("https://keating.help/s/srv12345");
+		expect(result.url).not.toContain("#session=");
+	});
+});
+
+describe("public share warning", () => {
+	test("warns for public modes until acknowledged", () => {
+		expect(shouldWarnBeforePublicShare("portable-short", false)).toBe(true);
+		expect(shouldWarnBeforePublicShare("compressed-hash", false)).toBe(true);
+		expect(shouldWarnBeforePublicShare("portable-short", true)).toBe(false);
+		expect(shouldWarnBeforePublicShare("compressed-hash", true)).toBe(false);
+	});
+
+	test("never warns for on-device local links", () => {
+		expect(shouldWarnBeforePublicShare("local-short", false)).toBe(false);
+		expect(shouldWarnBeforePublicShare("local-short", true)).toBe(false);
 	});
 });
