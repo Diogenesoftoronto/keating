@@ -50,7 +50,7 @@ import { hasAutoTitleContext } from "./session-auto-title";
 import { cloneMessages, createSessionId, sessionModelMetadata, sessionPreview, sessionSearchText, sessionTitle, sessionUsage, truncateAtForkPoint } from "./session-metadata";
 import { messagesForSessionSnapshot, prepareMessagesForRetry } from "./session-recovery";
 import { saveSharedSession, sharedSessionUrl, type SharedSessionUrlResult } from "../keating/shared-sessions";
-import { loadKeatingUiSettings } from "../keating/ui-settings";
+import { loadKeatingUiSettings, saveKeatingUiSettings } from "../keating/ui-settings";
 import {
   branchBeforeAssistantTurn,
   canGenerateAlternativeFromBranch,
@@ -388,6 +388,20 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const persistCurrentSnapshotRef = useRef<() => Promise<void>>(async () => {});
   const capabilityControllerRef = useRef<KeatingCapabilityController | null>(null);
   const autoTitleRequestedRef = useRef<Set<string>>(new Set());
+
+  const applyThinkingLevel = useCallback((level: ThinkingLevel) => {
+    const agent = agentRef.current;
+    if (agent) {
+      agent.state.thinkingLevel = level;
+    }
+
+    const settings = loadKeatingUiSettings();
+    if (settings.reasoningLevel !== level) {
+      saveKeatingUiSettings({ ...settings, reasoningLevel: level });
+    }
+
+    void persistCurrentSnapshotRef.current();
+  }, []);
 
   const toolOptions = useCallback((settings: WebSpeechSettings, agentRuntime?: KeatingAgentRuntimeConfig) => ({
     agentRuntime,
@@ -846,15 +860,13 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       onRetry: retryLastResponse,
       thinkingLevel: agent.state.thinkingLevel,
       onThinkingLevelChange: (level: ThinkingLevel) => {
-        if (agentRef.current) {
-          agentRef.current.state.thinkingLevel = level;
-          posthog.capture('thinking_level_changed', { level, session_id: agentSessionId });
-        }
+        applyThinkingLevel(level);
+        posthog.capture('thinking_level_changed', { level, session_id: agentSessionId });
       },
     };
 
     await panel.setAgent(agent, setupCallbacks);
-  }, [maybeGenerateAlternativeResponse, posthog, saveSessionSnapshot, speechSettings, toolOptions]);
+  }, [applyThinkingLevel, maybeGenerateAlternativeResponse, posthog, saveSessionSnapshot, speechSettings, toolOptions]);
 
   useEffect(() => {
     const persistIfBackgrounded = () => {
@@ -1371,9 +1383,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
           onRetry: retryExistingResponse,
           thinkingLevel: existingAgent.state.thinkingLevel,
           onThinkingLevelChange: (level: ThinkingLevel) => {
-            if (agentRef.current) {
-              agentRef.current.state.thinkingLevel = level;
-            }
+            applyThinkingLevel(level);
           },
         };
         node.setAgent(existingAgent, setupCallbacks).catch(console.error);
@@ -1435,14 +1445,11 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
         })();
       }, 0);
     }
-  }, [createAgent, loadSession, requestPersistentStorageOnce]);
+  }, [applyThinkingLevel, createAgent, loadSession, requestPersistentStorageOnce]);
 
   const setThinkingLevel = useCallback((level: ThinkingLevel) => {
-    const agent = agentRef.current;
-    if (agent) {
-      agent.state.thinkingLevel = level;
-    }
-  }, []);
+    applyThinkingLevel(level);
+  }, [applyThinkingLevel]);
 
   const allDialogs = (
     <>

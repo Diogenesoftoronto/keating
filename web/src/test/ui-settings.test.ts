@@ -4,6 +4,7 @@ import {
 	saveKeatingUiSettings,
 	subscribeKeatingUiSettings,
 	DEFAULT_UI_SETTINGS,
+	shareModeExposesDataPublicly,
 	type KeatingUiSettings,
 } from "../keating/ui-settings";
 
@@ -122,6 +123,28 @@ describe("Keating UI Settings", () => {
 			localStorage.setItem("keating_ui_settings", JSON.stringify({ shareLinkMode: "tiny-magic" }));
 			const settings = loadKeatingUiSettings();
 			expect(settings.shareLinkMode).toBe("portable-short");
+		});
+
+		it("defaults the share warning acknowledgement to false", () => {
+			expect(loadKeatingUiSettings().shareWarningAcknowledged).toBe(false);
+		});
+
+		it("persists an explicit share warning acknowledgement", () => {
+			localStorage.setItem("keating_ui_settings", JSON.stringify({ shareWarningAcknowledged: true }));
+			expect(loadKeatingUiSettings().shareWarningAcknowledged).toBe(true);
+			localStorage.setItem("keating_ui_settings", JSON.stringify({ shareWarningAcknowledged: "yes" }));
+			expect(loadKeatingUiSettings().shareWarningAcknowledged).toBe(false);
+		});
+	});
+
+	describe("shareModeExposesDataPublicly", () => {
+		it("treats server-backed and snapshot links as public", () => {
+			expect(shareModeExposesDataPublicly("portable-short")).toBe(true);
+			expect(shareModeExposesDataPublicly("compressed-hash")).toBe(true);
+		});
+
+		it("treats local-only links as private", () => {
+			expect(shareModeExposesDataPublicly("local-short")).toBe(false);
 		});
 	});
 

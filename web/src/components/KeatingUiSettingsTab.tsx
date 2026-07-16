@@ -204,7 +204,9 @@ export function KeatingUiSettingsTab() {
 			<div id="settings-section-ui-share" className={sectionAnchorClass}>
 				<h3 className={sectionTitleClass}>Share Links</h3>
 				<p className={sectionDescriptionSpacedClass}>
-					Choose how copied session links carry the transcript.
+					Choose how copied session links carry the transcript. Public modes upload or embed the
+					session so anyone with the link can read it; the first public share asks for a one-time
+					confirmation. Local links stay in this browser's cache only.
 				</p>
 				<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
 					{SHARE_LINK_MODE_OPTIONS.map((option) => (
@@ -221,7 +223,10 @@ export function KeatingUiSettingsTab() {
 								className={css({ flexShrink: 0 })}
 							/>
 							<div className={css({ minWidth: 0 })}>
-								<div className={smallHeadingClass}>{option.label}</div>
+								<div className={smallHeadingClass}>
+									{option.label}
+									{option.public ? " · shared publicly" : " · stays on this device"}
+								</div>
 								<div className={mutedXsClass}>{option.description}</div>
 							</div>
 						</label>

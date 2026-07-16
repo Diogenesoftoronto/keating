@@ -40,7 +40,9 @@ import { SandboxView } from "../components/SandboxView";
 import { ThemeToggle } from "../components/ThemeToggle";
 import {
   loadKeatingUiSettings,
+  saveKeatingUiSettings,
   subscribeKeatingUiSettings,
+  shareModeExposesDataPublicly,
 } from "../keating/ui-settings";
 import type {
   LessonPlan,
@@ -749,7 +751,7 @@ function ChatContent() {
   const isWideViewport = useMediaQuery("(min-width: 1024px)");
   const [uiSettings, setUiSettings] = useState(() => loadKeatingUiSettings());
   const [shareState, setShareState] = useState<
-    "idle" | "sharing" | "copied" | "error"
+    "idle" | "confirm" | "sharing" | "copied" | "error"
   >("idle");
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [shareMessage, setShareMessage] = useState<string | null>(null);
@@ -846,9 +848,10 @@ function ChatContent() {
     };
   }, [uiSettings.autoOpenArtifacts]);
 
-  const handleShare = async () => {
+  const performShare = async () => {
     setShareState("sharing");
     setShareMessage(null);
+    setShareUrl(null);
     try {
       const result = await shareSession();
       setShareUrl(result.url);
@@ -873,6 +876,34 @@ function ChatContent() {
       setShareState("error");
       window.setTimeout(() => setShareState("idle"), 2200);
     }
+  };
+
+  // Gate the first public share behind a one-time confirmation. `portable-short`
+  // and `compressed-hash` both make the transcript readable by anyone with the
+  // link, so warn once, remember the acknowledgement in settings, and never nag
+  // again. `local-short` stays on-device, so it shares immediately.
+  const handleShare = async () => {
+    const settings = loadKeatingUiSettings();
+    const exposesPublicly = shareModeExposesDataPublicly(settings.shareLinkMode);
+    if (exposesPublicly && !settings.shareWarningAcknowledged) {
+      setShareUrl(null);
+      setShareMessage(
+        "Heads up: this share link makes the whole session readable by anyone who has it. Share again to confirm — you won't be asked next time.",
+      );
+      setShareState("confirm");
+      return;
+    }
+    await performShare();
+  };
+
+  // Second click after the warning: remember the acknowledgement so the prompt
+  // never shows again, then create the link.
+  const confirmShare = async () => {
+    const settings = loadKeatingUiSettings();
+    if (!settings.shareWarningAcknowledged) {
+      saveKeatingUiSettings({ ...settings, shareWarningAcknowledged: true });
+    }
+    await performShare();
   };
 
   // NOTE: responsive Tailwind display variants (e.g. `hidden md:inline-flex`) are
@@ -999,11 +1030,13 @@ function ChatContent() {
                 ? "Copied share link"
                 : shareState === "error"
                   ? "Could not share yet"
-                  : "Share session"
+                  : shareState === "confirm"
+                    ? "Confirm public share"
+                    : "Share session"
             }
             aria-label="Share session"
             disabled={isPending || shareState === "sharing"}
-            onClick={handleShare}
+            onClick={shareState === "confirm" ? confirmShare : handleShare}
           >
             <Share2 size={16} />
           </button>
@@ -1114,15 +1147,20 @@ function ChatContent() {
                   shareState === "copied" ? css({ color: "var(--primary)" }) : "",
                   shareState === "error" ? css({ color: "var(--destructive)" }) : "",
                 )}
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  handleShare();
-                }}
-                disabled={isPending || shareState === "sharing"}
-              >
-                <Share2 size={14} />
-                {shareState === "copied" ? "Link copied" : "Share session"}
-              </button>
+              onClick={() => {
+                setMobileMenuOpen(false);
+                if (shareState === "confirm") confirmShare();
+                else handleShare();
+              }}
+              disabled={isPending || shareState === "sharing"}
+            >
+              <Share2 size={14} />
+              {shareState === "copied"
+                ? "Link copied"
+                : shareState === "confirm"
+                  ? "Confirm public share"
+                  : "Share session"}
+            </button>
               <button
                 className={cx(
                   menuItemClass,
@@ -1432,6 +1470,26 @@ function ChatContent() {
                 onFocus={(event) => event.currentTarget.select()}
               />
             )}
+            {shareState === "confirm" && (
+              <button
+                className={css({
+                  display: "inline-flex",
+                  height: "2rem",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: "0.375rem",
+                  border: "1px solid var(--border)",
+                  backgroundColor: "var(--primary)",
+                  paddingInline: "0.75rem",
+                  fontSize: "0.75rem",
+                  color: "var(--primary-foreground)",
+                  _hover: { backgroundColor: "color-mix(in srgb, var(--primary) 90%, transparent)" },
+                })}
+                onClick={confirmShare}
+              >
+                Share publicly
+              </button>
+            )}
             <button
               className={css({
                 display: "inline-flex",
@@ -1445,11 +1503,12 @@ function ChatContent() {
                 _hover: { backgroundColor: "var(--accent)" },
               })}
               onClick={() => {
+                setShareState("idle");
                 setShareUrl(null);
                 setShareMessage(null);
               }}
             >
-              Dismiss
+              {shareState === "confirm" ? "Cancel" : "Dismiss"}
             </button>
           </div>
         </div>

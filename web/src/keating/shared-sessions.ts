@@ -4,7 +4,7 @@ import type { SessionData, SessionMetadata } from "../types/session";
 import { createSessionId, sessionModelMetadata, sessionPreview, sessionSearchText, sessionTitle, sessionUsage } from "../hooks/session-metadata";
 import { sessions } from "../hooks/keating-storage";
 import { DEFAULT_MODEL } from "../hooks/keating-stream";
-import { loadKeatingUiSettings, type ShareLinkMode } from "./ui-settings";
+import { loadKeatingUiSettings, shareModeExposesDataPublicly, type ShareLinkMode } from "./ui-settings";
 import { decodeSharedSessionPayload, encodeSharedSession } from "./share-codec";
 
 const SHARE_INDEX_KEY = "keating_shared_sessions";
@@ -40,6 +40,21 @@ export interface SharedSessionUrlResult {
 	url: string;
 	mode: ShareLinkMode;
 	fallback: boolean;
+}
+
+export type SharedSessionLoadResult =
+	| { ok: true; session: SharedSession; source: "hash" | "cache" | "server" }
+	| { ok: false; reason: "not-found" | "invalid-link" | "mismatch" | "server-error" | "network"; message: string; status?: number };
+
+// Whether the caller should warn the user that a share exposes the transcript
+// publicly before creating the link. Returns false once the user has
+// acknowledged the warning (so it is a one-time prompt, not a nag) and for
+// modes that keep the data on-device (`local-short`).
+export function shouldWarnBeforePublicShare(
+	mode: ShareLinkMode = loadKeatingUiSettings().shareLinkMode,
+	acknowledged: boolean = loadKeatingUiSettings().shareWarningAcknowledged,
+): boolean {
+	return shareModeExposesDataPublicly(mode) && !acknowledged;
 }
 
 function serializeModel(model: Model<any> | undefined): SharedModelInfo {
@@ -171,12 +186,20 @@ function sharedSessionPath(id: string, origin: string) {
 }
 
 async function publishSharedSession(shared: SharedSession): Promise<SharedSession> {
+	// The server assigns its own compact share id and validates any client id
+	// against /^[A-Za-z0-9_-]{8,32}$/. `shared.id` is a 36-char UUID from
+	// createSessionId(), which fails that check and 400s. Drop it before upload
+	// and let the server mint the id it returns.
+	const { id: _localId, ...payload } = shared;
 	const response = await fetch("/api/share", {
 		method: "POST",
 		headers: { "content-type": "application/json" },
-		body: JSON.stringify(shared),
+		body: JSON.stringify(payload),
 	});
-	if (!response.ok) throw new Error(`Share storage returned ${response.status}`);
+	if (!response.ok) {
+		const detail = await response.text().catch(() => "");
+		throw new Error(`Share storage returned ${response.status}${detail ? `: ${detail.slice(0, 240)}` : ""}`);
+	}
 	const result = await response.json() as { id?: unknown };
 	if (typeof result.id !== "string" || !result.id) throw new Error("Share storage did not return an id");
 	return { ...shared, id: result.id };
@@ -203,35 +226,71 @@ export async function sharedSessionUrl(
 		cacheSharedSession(published);
 		return { url: sharedSessionPath(published.id, origin), mode, fallback: false };
 	} catch (error) {
-		console.warn("Portable share storage failed; falling back to snapshot link:", error);
-		const url = new URL(`/s/${encodeURIComponent(shared.id)}`, origin);
-		url.hash = `${SHARE_HASH_PARAM}=${encodeSharedSession(shared)}`;
-		return { url: url.toString(), mode: "compressed-hash", fallback: true };
+		console.warn("Portable share storage failed:", error);
+		throw new Error("Could not save the session to the share server. Try again, or switch Settings → Share Links to Compressed snapshot if you explicitly want a long self-contained link.");
 	}
 }
 
-async function fetchSharedSession(id: string): Promise<SharedSession | null> {
+async function fetchSharedSessionResult(id: string): Promise<SharedSessionLoadResult> {
 	try {
 		const response = await fetch(`/api/share/${encodeURIComponent(id)}`);
-		if (!response.ok) return null;
+		if (response.status === 404) {
+			return { ok: false, reason: "not-found", status: response.status, message: "Shared session was not found on the share server." };
+		}
+		if (!response.ok) {
+			const detail = await response.text().catch(() => "");
+			return {
+				ok: false,
+				reason: "server-error",
+				status: response.status,
+				message: `Share server returned ${response.status}${detail ? `: ${detail.slice(0, 240)}` : ""}`,
+			};
+		}
 		const shared = normalizeSharedSession(await response.json() as SharedSession);
-		if (!shared || shared.id !== id) return null;
+		if (!shared) {
+			return { ok: false, reason: "invalid-link", message: "Share server returned an invalid shared session payload." };
+		}
+		if (shared.id !== id) {
+			return { ok: false, reason: "mismatch", message: "Share server returned a different session id than the link requested." };
+		}
 		cacheSharedSession(shared);
-		return shared;
-	} catch {
-		return null;
+		return { ok: true, session: shared, source: "server" };
+	} catch (error) {
+		return {
+			ok: false,
+			reason: "network",
+			message: error instanceof Error ? error.message : "Could not reach the share server.",
+		};
 	}
+}
+
+export async function loadSharedSessionResultFromUrl(id: string, hash: string): Promise<SharedSessionLoadResult> {
+	const params = new URLSearchParams(hash.startsWith("#") ? hash.slice(1) : hash);
+	const encoded = params.get(SHARE_HASH_PARAM);
+	if (!encoded) {
+		const cached = loadSharedSession(id);
+		if (cached) return { ok: true, session: cached, source: "cache" };
+		return await fetchSharedSessionResult(id);
+	}
+
+	const shared = decodeSharedSession(encoded);
+	if (!shared) {
+		const cached = loadSharedSession(id);
+		if (cached) return { ok: true, session: cached, source: "cache" };
+		return { ok: false, reason: "invalid-link", message: "This share link contains an unreadable session snapshot." };
+	}
+	if (shared.id !== id) {
+		const cached = loadSharedSession(id);
+		if (cached) return { ok: true, session: cached, source: "cache" };
+		return { ok: false, reason: "mismatch", message: "This share link snapshot does not match the session id in the URL." };
+	}
+	cacheSharedSession(shared);
+	return { ok: true, session: shared, source: "hash" };
 }
 
 export async function loadSharedSessionFromUrl(id: string, hash: string): Promise<SharedSession | null> {
-	const params = new URLSearchParams(hash.startsWith("#") ? hash.slice(1) : hash);
-	const encoded = params.get(SHARE_HASH_PARAM);
-	if (!encoded) return loadSharedSession(id) ?? await fetchSharedSession(id);
-
-	const shared = decodeSharedSession(encoded);
-	if (!shared || shared.id !== id) return loadSharedSession(id);
-	cacheSharedSession(shared);
-	return shared;
+	const result = await loadSharedSessionResultFromUrl(id, hash);
+	return result.ok ? result.session : null;
 }
 
 export async function forkSharedSession(shared: SharedSession): Promise<string> {

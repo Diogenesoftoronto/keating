@@ -23,6 +23,7 @@ export interface KeatingUiSettings {
 	animationRenderer: AnimationRenderer;
 	fontFamily: UiFontFamily;
 	shareLinkMode: ShareLinkMode;
+	shareWarningAcknowledged: boolean;
 	alternativeResponseChance: number;
 	userProfileImage: string | null;
 	imageGenerator: ImageGeneratorId;
@@ -42,6 +43,7 @@ export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
 	animationRenderer: "hyperframes",
 	fontFamily: "jetbrains-mono",
 	shareLinkMode: "portable-short",
+	shareWarningAcknowledged: false,
 	alternativeResponseChance: 0,
 	userProfileImage: null,
 	imageGenerator: DEFAULT_IMAGE_GENERATOR_ID,
@@ -109,21 +111,25 @@ export const SHARE_LINK_MODE_OPTIONS: Array<{
 	value: ShareLinkMode;
 	label: string;
 	description: string;
+	public: boolean;
 }> = [
 	{
 		value: "portable-short",
 		label: "Portable short",
 		description: "Short links that work across browsers when share storage is available.",
+		public: true,
 	},
 	{
 		value: "compressed-hash",
 		label: "Compressed snapshot",
 		description: "Embeds the session snapshot in the URL for server-free sharing.",
+		public: true,
 	},
 	{
 		value: "local-short",
 		label: "Local short",
 		description: "Shortest links, available from this browser's cache only.",
+		public: false,
 	},
 ];
 
@@ -131,6 +137,15 @@ function normalizeShareLinkMode(value: unknown): ShareLinkMode {
 	return value === "compressed-hash" || value === "local-short" || value === "portable-short"
 		? value
 		: DEFAULT_UI_SETTINGS.shareLinkMode;
+}
+
+// Modes that make the session readable by anyone who receives the link. Both
+// `portable-short` (session uploaded to the share server) and `compressed-hash`
+// (session snapshot embedded in the URL) expose the transcript publicly. Only
+// `local-short` keeps the data in this browser's cache, so it is not publicly
+// resolvable by a recipient.
+export function shareModeExposesDataPublicly(mode: ShareLinkMode): boolean {
+	return mode === "portable-short" || mode === "compressed-hash";
 }
 
 function normalizeAlternativeResponseChance(value: unknown): number {
@@ -160,6 +175,7 @@ function normalizeSettings(value: LegacyUiSettingsInput | null): KeatingUiSettin
 				? value.fontFamily
 				: DEFAULT_UI_SETTINGS.fontFamily,
 		shareLinkMode: normalizeShareLinkMode(value?.shareLinkMode),
+		shareWarningAcknowledged: value?.shareWarningAcknowledged === true,
 		// Version 1 shipped a 5% background response rate by default. Those
 		// responses were stored as child sessions, which made ordinary chats look
 		// as if they had forked themselves. Reset only that legacy default; any
