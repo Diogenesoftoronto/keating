@@ -47,6 +47,7 @@ import {
   Copy,
   CopyPlus,
   KeyRound,
+	Keyboard,
   LibraryBig,
   Lightbulb,
   Loader2,
@@ -670,17 +671,24 @@ function ImagePart({ image, filename }: { image: string; filename?: string }) {
   );
 }
 
-// Adaptive speech input for the composer. Shown only when a usable speech
-// credential (genuine OpenAI key, or Google/Gemini key) is configured. Push to
-// talk: records the mic, transcribes via the resolved provider, and inserts the
-// text into the composer for review before sending.
-function SpeechMicButton() {
+// Voice is a real composer mode, not a small attachment action. Duplex models
+// open the realtime surface; other providers use press-and-hold dictation and
+// place the transcript back into the text composer for review.
+function SpeechComposerControl({
+	expanded,
+	onExpandedChange,
+}: {
+	expanded: boolean;
+	onExpandedChange: (expanded: boolean) => void;
+}) {
   const composer = useComposerRuntime();
-  const [available, setAvailable] = useState(false);
+  const [available, setAvailable] = useState<boolean | null>(null);
   const [recording, setRecording] = useState(false);
   const [busy, setBusy] = useState(false);
   const [liveOpen, setLiveOpen] = useState(false);
+	const [forceStt, setForceStt] = useState(false);
   const recorderRef = useRef<MicRecorder | null>(null);
+	const recordingPromiseRef = useRef<Promise<MicRecorder> | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -702,6 +710,10 @@ function SpeechMicButton() {
     };
   }, []);
 
+	useEffect(() => {
+		if (available === false && expanded) onExpandedChange(false);
+	}, [available, expanded, onExpandedChange]);
+
   const appendToComposer = (text: string) => {
     const trimmed = text.trim();
     if (!trimmed) return;
@@ -709,92 +721,123 @@ function SpeechMicButton() {
     composer.setText(existing ? `${existing.trimEnd()} ${trimmed}` : trimmed);
   };
 
-  // Push-to-talk one-shot dictation (used when no duplex provider is active,
-  // and as the fallback when a live session cannot start).
-  const runPushToTalk = async () => {
-    if (busy) return;
-    if (recording) {
-      const recorder = recorderRef.current;
-      recorderRef.current = null;
-      setRecording(false);
-      if (!recorder) return;
-      setBusy(true);
-      try {
-        const blob = await recorder.stop();
-        const cred = await resolveSpeechCredential(getProviderApiKey);
-        if (!cred) throw new Error("No speech credential available.");
-        const text = await transcribeAudio(blob, { provider: cred.provider, apiKey: cred.apiKey });
-        appendToComposer(text);
-      } catch (error) {
-        console.warn("[keating:stt] transcription failed", error);
-      } finally {
-        setBusy(false);
-      }
-      return;
-    }
-    try {
-      recorderRef.current = await startMicRecording();
-      setRecording(true);
-    } catch (error) {
-      console.warn("[keating:stt] microphone unavailable", error);
-    }
-  };
+  const beginPushToTalk = () => {
+		if (busy || recordingPromiseRef.current) return;
+		setRecording(true);
+		const pending = startMicRecording();
+		recordingPromiseRef.current = pending;
+		void pending.then((recorder) => {
+			recorderRef.current = recorder;
+		}).catch((error) => {
+			recordingPromiseRef.current = null;
+			setRecording(false);
+			console.warn("[keating:stt] microphone unavailable", error);
+		});
+	};
+
+	const finishPushToTalk = async () => {
+		const pending = recordingPromiseRef.current;
+		if (!pending) return;
+		setRecording(false);
+		setBusy(true);
+		try {
+			const recorder = recorderRef.current ?? await pending;
+			const blob = await recorder.stop();
+			const cred = await resolveSpeechCredential(getProviderApiKey);
+			if (!cred) throw new Error("No speech credential available.");
+			const text = await transcribeAudio(blob, { provider: cred.provider, apiKey: cred.apiKey });
+			appendToComposer(text);
+			onExpandedChange(false);
+		} catch (error) {
+			console.warn("[keating:stt] transcription failed", error);
+		} finally {
+			recorderRef.current = null;
+			recordingPromiseRef.current = null;
+			setBusy(false);
+		}
+	};
 
   if (!available) return null;
 
-  const mode = speechInputMode(loadWebSpeechSettings());
-  const title =
-    mode === "duplex"
-      ? "Start a live voice conversation with Keating"
-      : "Dictate your message (push to talk)";
-
-  const handleClick = () => {
-    if (busy) return;
-    if (mode === "duplex" && !recording) {
-      setLiveOpen(true);
-      return;
-    }
-    void runPushToTalk();
-  };
+	const mode = forceStt ? "stt" : speechInputMode(loadWebSpeechSettings());
+  if (!expanded) {
+		return (
+			<button
+				type="button"
+				onClick={() => onExpandedChange(true)}
+				title="Switch to voice"
+				aria-label="Switch to voice"
+				className={cx(composerIconButtonClass, css({ _hover: { backgroundColor: "var(--muted)", color: "var(--foreground)" } }))}
+			>
+				<Mic size={16} />
+			</button>
+		);
+	}
 
   return (
     <>
-      <button
-        type="button"
-        onClick={handleClick}
-        disabled={busy}
-        title={title}
-        aria-label={title}
-        aria-pressed={recording}
-        className={cx(
-          composerIconButtonClass,
-          css({
-            _hover: { backgroundColor: "var(--muted)", color: "var(--foreground)" },
-          }),
-          recording
-            ? css({
-                animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-                borderColor: "var(--destructive)",
-                color: "var(--destructive)",
-              })
-            : "",
-        )}
-      >
-        {busy ? (
-          <Spinner size={16} />
-        ) : recording ? (
-          <MicOff size={16} />
-        ) : (
-          <Mic size={16} />
-        )}
-      </button>
+			<div className={css({ display: "flex", minWidth: 0, flex: 1, alignItems: "center", gap: "0.375rem" })}>
+				<button
+					type="button"
+					disabled={busy}
+					onClick={mode === "duplex" ? () => setLiveOpen(true) : undefined}
+					onPointerDown={mode === "stt" ? (event) => {
+						event.currentTarget.setPointerCapture(event.pointerId);
+						beginPushToTalk();
+					} : undefined}
+					onPointerUp={mode === "stt" ? () => void finishPushToTalk() : undefined}
+					onPointerCancel={mode === "stt" ? () => void finishPushToTalk() : undefined}
+					onKeyDown={mode === "stt" ? (event) => {
+						if ((event.key === " " || event.key === "Enter") && !event.repeat) {
+							event.preventDefault();
+							beginPushToTalk();
+						}
+					} : undefined}
+					onKeyUp={mode === "stt" ? (event) => {
+						if (event.key === " " || event.key === "Enter") {
+							event.preventDefault();
+							void finishPushToTalk();
+						}
+					} : undefined}
+					aria-label={mode === "duplex" ? "Start live voice conversation" : "Hold to speak"}
+					aria-pressed={recording}
+					className={cx(
+						css({
+							display: "inline-flex",
+							minWidth: 0,
+							minHeight: "2.25rem",
+							flex: 1,
+							alignItems: "center",
+							justifyContent: "center",
+							gap: "0.5rem",
+							borderRadius: "0.375rem",
+							backgroundColor: "var(--primary)",
+							paddingInline: "0.75rem",
+							fontSize: "0.8125rem",
+							fontWeight: 650,
+							color: "var(--primary-foreground)",
+							touchAction: "none",
+							userSelect: "none",
+							_hover: { backgroundColor: "color-mix(in srgb, var(--primary) 88%, black)" },
+							_disabled: { opacity: 0.65 },
+						}),
+						recording ? pulseClass : "",
+					)}
+				>
+					{busy ? <Spinner size={16} /> : recording ? <MicOff size={16} /> : <Mic size={16} />}
+					<span>{busy ? "Transcribing" : recording ? "Release to transcribe" : mode === "duplex" ? "Talk with Keating" : "Hold to speak"}</span>
+				</button>
+				<button type="button" onClick={() => onExpandedChange(false)} aria-label="Switch to keyboard" title="Switch to keyboard" className={composerIconButtonClass}>
+					<Keyboard size={16} />
+				</button>
+			</div>
       {liveOpen ? (
         <LiveVoiceOverlay
           onClose={() => setLiveOpen(false)}
           onTranscript={appendToComposer}
           onFallback={() => {
             setLiveOpen(false);
-            void runPushToTalk();
+							setForceStt(true);
           }}
         />
       ) : null}
@@ -889,11 +932,12 @@ function LiveVoiceOverlay({
         inset: 0,
         zIndex: 50,
         display: "flex",
-        alignItems: "center",
+				alignItems: "stretch",
         justifyContent: "center",
         backgroundColor: "color-mix(in srgb, var(--background) 80%, transparent)",
-        padding: "1rem",
+				padding: 0,
         backdropFilter: "blur(4px)",
+				sm: { alignItems: "center", padding: "1rem" },
       })}
       role="dialog"
       aria-modal="true"
@@ -902,25 +946,28 @@ function LiveVoiceOverlay({
       <div
         className={css({
           width: "100%",
+					height: "100dvh",
           maxWidth: "28rem",
-          borderRadius: "0.75rem",
-          border: "1px solid var(--border)",
+					display: "flex",
+					flexDirection: "column",
           backgroundColor: "var(--card)",
-          padding: "1.25rem",
-          boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)",
+					padding: "1rem",
+					sm: { height: "auto", maxHeight: "min(80dvh, 42rem)", borderRadius: "0.75rem", border: "1px solid var(--border)", padding: "1.25rem" },
         })}
       >
         <div className={css({ display: "flex", alignItems: "center", gap: "0.75rem" })}>
-          <span
+						<span
             className={cx(
               css({
+								position: "relative",
                 display: "inline-flex",
-                width: "2.5rem",
-                height: "2.5rem",
+								width: "3.5rem",
+								height: "3.5rem",
                 alignItems: "center",
                 justifyContent: "center",
-                borderRadius: "9999px",
+								borderRadius: "0.75rem",
                 border: "1px solid",
+								backgroundColor: "var(--background)",
               }),
               error
                 ? css({ borderColor: "var(--destructive)", color: "var(--destructive)" })
@@ -930,7 +977,10 @@ function LiveVoiceOverlay({
               state === "listening" && !error ? pulseClass : "",
             )}
           >
-            {error ? <MicOff size={18} /> : state === "connecting" ? <Spinner size={18} /> : <Mic size={18} />}
+							<img src="/brand/mascot-head.png" alt="" className={css({ width: "2.5rem", height: "auto" })} />
+							<span className={css({ position: "absolute", right: "-0.25rem", bottom: "-0.25rem", display: "inline-flex", height: "1.5rem", width: "1.5rem", alignItems: "center", justifyContent: "center", borderRadius: "9999px", border: "1px solid var(--border)", backgroundColor: "var(--background)" })}>
+								{error ? <MicOff size={13} /> : state === "connecting" ? <Spinner size={13} /> : <Mic size={13} />}
+							</span>
           </span>
           <div className={css({ minWidth: 0, flex: 1 })}>
             <div className={css({ fontSize: "0.875rem", fontWeight: 500 })}>{error ? "Voice session error" : LIVE_STATE_LABEL[state]}</div>
@@ -964,7 +1014,7 @@ function LiveVoiceOverlay({
         </div>
 
         {error ? (
-          <div className={css({ marginTop: "1rem", display: "grid", gap: "0.75rem" })}>
+						<div className={css({ marginTop: "1rem", display: "flex", minHeight: 0, flex: 1, flexDirection: "column", gap: "0.75rem" })}>
             <p className={css({ fontSize: "0.75rem", color: "var(--destructive)" })}>{error}</p>
             <div className={css({ display: "flex", gap: "0.5rem" })}>
               <button
@@ -984,14 +1034,18 @@ function LiveVoiceOverlay({
             </div>
           </div>
         ) : (
-          <div className={css({ marginTop: "1rem", display: "grid", gap: "0.75rem" })}>
-            <div
+						<div className={css({ marginTop: "1rem", display: "flex", minHeight: 0, flex: 1, flexDirection: "column", gap: "0.75rem" })}>
+							<div
               className={css({
                 display: "grid",
-                maxHeight: "10rem",
+								minHeight: "12rem",
+								maxHeight: "none",
+								flex: 1,
                 gap: "0.5rem",
                 overflowY: "auto",
                 fontSize: "0.875rem",
+								alignContent: "start",
+								sm: { minHeight: "8rem", maxHeight: "18rem" },
               })}
             >
               {assistantText ? (
@@ -1011,7 +1065,7 @@ function LiveVoiceOverlay({
                 <p className={css({ textAlign: "right", color: "var(--muted-foreground)" })}>{userText}</p>
               ) : null}
               {!assistantText && !userText ? (
-                <p className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>Start speaking — Keating is listening.</p>
+								<p className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>Start speaking. Keating is listening.</p>
               ) : null}
             </div>
             <button
@@ -1873,7 +1927,14 @@ const MarkdownText = memo(function MarkdownText({
     [displayText, documentScope],
   );
   return (
-    <div className={css({ overflowWrap: "break-word", fontSize: "0.875rem", lineHeight: "1.5rem" })}>
+    <div
+      className={css({
+        overflowWrap: "break-word",
+        fontSize: "0.6875rem",
+        lineHeight: "1.125rem",
+        sm: { fontSize: "0.875rem", lineHeight: "1.5rem" },
+      })}
+    >
       <ArtifactChips text={text} />
       {segments.map((seg, i) => {
         if (seg.type === "openui") {
@@ -2015,19 +2076,19 @@ function ToolPart({
   const stateClass =
     state === "error"
       ? css({
-          borderLeftColor: "color-mix(in srgb, var(--destructive) 60%, transparent)",
+					borderColor: "color-mix(in srgb, var(--destructive) 60%, transparent)",
           backgroundColor: "color-mix(in srgb, var(--destructive) 10%, transparent)",
           color: "var(--destructive)",
         })
       : state === "running"
         ? css({
-            borderLeftColor: "rgb(245 158 11 / 0.6)",
+							borderColor: "rgb(245 158 11 / 0.6)",
             backgroundColor: "rgb(34 197 94 / 0.1)",
             color: "rgb(217 119 6)",
             _dark: { color: "rgb(252 211 77)" },
           })
         : css({
-            borderLeftColor: "rgb(16 185 129 / 0.6)",
+							borderColor: "rgb(16 185 129 / 0.6)",
             backgroundColor: "rgb(16 185 129 / 0.1)",
             color: "rgb(4 120 87)",
             _dark: { color: "rgb(110 231 183)" },
@@ -2047,7 +2108,7 @@ function ToolPart({
           marginBlock: "0.5rem",
           width: "100%",
           borderRadius: "0.375rem",
-          borderLeftWidth: "4px",
+						borderWidth: "1px",
           paddingInline: "0.75rem",
           paddingBlock: "0.5rem",
           fontSize: "0.75rem",
@@ -2081,7 +2142,7 @@ function ToolPart({
       {showDetails &&
       args !== undefined &&
       Object.keys(args as Record<string, unknown>).length > 0 ? (
-        <details className={css({ marginTop: "0.5rem", color: "color-mix(in srgb, var(--foreground) 80%, transparent)" })}>
+				<details open className={css({ marginTop: "0.5rem", color: "color-mix(in srgb, var(--foreground) 80%, transparent)" })}>
           <summary
             className={css({
               display: "flex",
@@ -2616,7 +2677,7 @@ function toAssistantMessage(
       createdAt: timestamp,
       status,
       content,
-      metadata: authError || llmFailure || retryable
+			metadata: authError || llmFailure || retryable || msg.__keatingPrefillStatus === true
         ? {
             custom: {
               keatingAuthError: authError,
@@ -2624,6 +2685,7 @@ function toAssistantMessage(
               keatingRetryAttempts: retryAttempts,
               keatingRetryExhausted: msg.__keatingRetryExhausted === true,
               keatingRetryable: retryable,
+								keatingPrefillStatus: msg.__keatingPrefillStatus === true,
             },
           }
         : undefined,
@@ -2755,7 +2817,8 @@ function makePrefillStatusMessage(agent: Agent, step: number): AgentMessage {
       },
     },
     timestamp: Date.now(),
-  } as AgentMessage;
+		__keatingPrefillStatus: true,
+  } as unknown as AgentMessage;
 }
 
 export function SuggestedPrompts({
@@ -3197,6 +3260,7 @@ function AssistantThread({
   const [localVersion, setLocalVersion] = useState(0);
   const [loadingStep, setLoadingStep] = useState(0);
   const [composerHasUrl, setComposerHasUrl] = useState(false);
+	const [voiceComposerOpen, setVoiceComposerOpen] = useState(false);
   const [hasGoogleKey, setHasGoogleKey] = useState<boolean | null>(null);
   const isRunning = agent?.state.isStreaming ?? false;
   const currentThinkingLevel =
@@ -3661,7 +3725,7 @@ function AssistantThread({
               flexDirection: "column",
               overflowY: "auto",
               overflowX: "hidden",
-              paddingInline: "0.375rem",
+							paddingInline: "0.75rem",
               paddingBlock: "1rem",
               sm: { paddingInline: "1rem", paddingBlock: "1.5rem" },
             })}
@@ -3761,7 +3825,7 @@ function AssistantThread({
                   css({
                     marginInline: "auto",
                     display: "flex",
-                    width: "calc(100% - 6px)",
+									width: "100%",
                     maxWidth: "56rem",
                     flexDirection: "column",
                     gap: "0.375rem",
@@ -3846,8 +3910,11 @@ function AssistantThread({
                   >
                     <Paperclip size={15} className={css({ sm: { width: "1rem", height: "1rem" } })} />
                   </ComposerPrimitive.AddAttachment>
-                  <SpeechMicButton />
-                  <ComposerPrimitive.Input
+									{!voiceComposerOpen ? <SpeechComposerControl expanded={false} onExpandedChange={setVoiceComposerOpen} /> : null}
+									{voiceComposerOpen ? (
+										<SpeechComposerControl expanded onExpandedChange={setVoiceComposerOpen} />
+									) : voiceComposerOpen ? null : (
+									<ComposerPrimitive.Input
                     className={css({
                       maxHeight: "10rem",
                       minHeight: "2rem",
@@ -3868,7 +3935,8 @@ function AssistantThread({
                     placeholder="Message Keating"
                     rows={1}
                     onChange={(event) => setComposerHasUrl(URL_IN_TEXT_PATTERN.test(event.currentTarget.value))}
-                  />
+									/>
+									)}
                   {/* Only show Send OR Cancel — never both */}
                   {isRunning ? (
                     <ComposerPrimitive.Cancel
@@ -3888,7 +3956,7 @@ function AssistantThread({
                     >
                       <Square size={15} className={css({ sm: { width: "1rem", height: "1rem" } })} />
                     </ComposerPrimitive.Cancel>
-                  ) : (
+                  ) : voiceComposerOpen ? null : (
                     <ComposerPrimitive.Send
                       className={cx(
                         composerIconButtonClass,
@@ -3968,9 +4036,15 @@ function UserMessage({
           flexDirection: "row-reverse",
           gap: 0,
           paddingInline: 0,
-          fontSize: "0.875rem",
+          fontSize: "0.6875rem",
           color: "var(--foreground)",
-          sm: { width: "auto", maxWidth: "82%", gap: "0.75rem", paddingInline: "0.25rem" },
+          sm: {
+            width: "auto",
+            maxWidth: "82%",
+            gap: "0.75rem",
+            paddingInline: "0.25rem",
+            fontSize: "0.875rem",
+          },
         })}
       >
         <div className={cx("chat-avatar chat-avatar-you", css({ display: "none", marginTop: "0.125rem", sm: { display: "flex" } }))}>
@@ -3995,7 +4069,17 @@ function UserMessage({
           <div className="msg-meta">
             <b>YOU</b>
           </div>
-          <div className={cx("you-bubble", css({ whiteSpace: "pre-wrap", lineHeight: "1.5rem", fontFamily: "var(--font-ui)" }))}>
+          <div
+            className={cx(
+              "you-bubble",
+              css({
+                whiteSpace: "pre-wrap",
+                lineHeight: "1.125rem",
+                fontFamily: "var(--font-ui)",
+                sm: { lineHeight: "1.5rem" },
+              }),
+            )}
+          >
             <MessagePrimitive.Content components={components} />
           </div>
         </div>
@@ -4144,6 +4228,9 @@ function AssistantMessage({
   const retryExhausted = useMessage(
     (message) => message.metadata.custom?.keatingRetryExhausted === true,
   );
+	const isPrefillStatus = useMessage(
+		(message) => message.metadata.custom?.keatingPrefillStatus === true,
+	);
   // The message id is `assistant-${index}-${timestamp}` (see toAssistantMessage).
   // The trailing timestamp is the stable handle we use to fork at this turn.
   const messageId = useMessage((message) => message.id);
@@ -4193,6 +4280,10 @@ function AssistantMessage({
     await onAuthError(authError.provider);
     setRetrying(false);
   };
+
+	if (isPrefillStatus) {
+		return <KeatingThinkingIndicator status={messageText} />;
+	}
 
   return (
     <>
@@ -4388,6 +4479,55 @@ function AssistantMessage({
       />
     </>
   );
+}
+
+function KeatingThinkingIndicator({ status }: { status: string }) {
+	return (
+		<div
+			role="status"
+			aria-live="polite"
+			className={css({
+				marginInline: "auto",
+				marginBottom: "1rem",
+				display: "flex",
+				width: "100%",
+				maxWidth: "56rem",
+				alignItems: "center",
+				gap: "0.75rem",
+				color: "var(--muted-foreground)",
+			})}
+		>
+			<div
+				className={cx(
+					"keating-thinking-mascot",
+					css({
+						display: "flex",
+						height: "2.5rem",
+						width: "2.5rem",
+						flexShrink: 0,
+						alignItems: "center",
+						justifyContent: "center",
+						borderRadius: "0.5rem",
+						border: "1px solid var(--border)",
+						backgroundColor: "var(--card)",
+					}),
+				)}
+			>
+				<img src="/brand/mascot-head.png" alt="" className={css({ width: "1.875rem", height: "auto" })} />
+			</div>
+			<div className={css({ minWidth: 0 })}>
+				<div className={css({ display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", fontWeight: 600, color: "var(--foreground)" })}>
+					Keating is thinking
+					<span aria-hidden="true" className={css({ display: "inline-flex", gap: "0.1875rem" })}>
+						{[0, 1, 2].map((index) => (
+							<span key={index} className="keating-thinking-dot" style={{ animationDelay: `${index * 140}ms` }} />
+						))}
+					</span>
+				</div>
+				<p className={css({ marginTop: "0.125rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "11px" })}>{status}</p>
+			</div>
+		</div>
+	);
 }
 
 export const AssistantChatPanel = forwardRef<

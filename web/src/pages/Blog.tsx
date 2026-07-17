@@ -263,22 +263,27 @@ function majorMinor(version: string): string {
 
 const POSTS: Post[] = [
   {
-    date: "2026-07-15",
+    date: "2026-07-17",
     badge: { label: "RELEASE", color: "release" },
     title: "v2.4.0 - A Streamable Interface for Understanding",
     version: "2.4.0",
     summary:
-      "Keating 2.4 moves teaching into streamed OpenUI documents, adds a separate OpenTUI host, makes learning history and self-evolution directly inspectable, improves interrupted-session recovery, and turns training export into a documented, schema-validated evidence package.",
+      "Keating 2.4 moves teaching into streamed OpenUI documents, adds mobile voice and a separate OpenTUI host, makes providers, storage, and learning history more legible, improves interrupted-session recovery, and turns training export into a documented evidence package.",
     sections: [
       { id: "understanding-bottleneck", title: "Understanding Is a Product Constraint" },
       { id: "ui-as-protocol", title: "The Interface as Teaching Protocol" },
       { id: "context-without-ceremony", title: "Context Without Tool Ceremony" },
       { id: "structured-learner-responses", title: "Structured Learner Responses" },
       { id: "tools-hooks-capabilities", title: "Tools, Hooks, and Capabilities" },
+      { id: "streaming-artifacts", title: "Streaming Plans and Maps" },
       { id: "runtime-boundaries", title: "Runtime and Security Boundaries" },
       { id: "navigable-learning-history", title: "A Navigable Learning History" },
       { id: "training-evidence-package", title: "Training Data as Evidence" },
       { id: "recoverable-teaching-turns", title: "Recoverable Teaching Turns" },
+      { id: "mobile-voice", title: "Voice Belongs in the Composer" },
+      { id: "storage-authority", title: "Storage With One Authority" },
+      { id: "provider-setup", title: "Provider Setup Without Guesswork" },
+      { id: "calmer-learning-surfaces", title: "Calmer Learning Surfaces" },
       { id: "two-terminal-paths", title: "Two Terminal Paths" },
       { id: "compatibility-not-complete", title: "The Remaining Migration" },
       { id: "why-2-4", title: "Why 2.4 Instead of 3.0" },

@@ -42,6 +42,16 @@ describe("session-start hooks", () => {
 				sessionsCount: 3,
 				strengths: ["syntax"],
 				weaknesses: ["precedence"],
+				profileBeliefs: [{
+					id: "belief-1",
+					category: "communication-preference",
+					value: "prefers concise explanations followed by code",
+					source: "explicit",
+					confidence: 1,
+					evidence: "Please keep it concise and show code.",
+					createdAt: Date.now(),
+					updatedAt: Date.now(),
+				}],
 				topicProfiles: [{
 					topic: "operator precedence",
 					status: "needs-review",
@@ -60,6 +70,7 @@ describe("session-start hooks", () => {
 		});
 		expect(sessionStarts).toBe(1);
 		expect(context).toContain("operator precedence");
+		expect(context).toContain("prefers concise explanations followed by code");
 		expect(context).toContain("Parse expressions");
 		expect(context).toContain("Optional capability bundles");
 		expect(context).toContain("workspace");

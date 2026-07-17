@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback, useTransition } from "react";
 import type { ReactNode } from "react";
 import {
   Activity,
@@ -200,6 +200,7 @@ export function SandboxView({
   const [nodePodActive, setNodePodActive] = useState(false);
   const [booting, setBooting] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>("status");
+  const [isTabPending, startTabTransition] = useTransition();
   const [events, setEvents] = useState<LogEvent[]>([]);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
@@ -759,7 +760,8 @@ export function SandboxView({
           {availableTabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => startTabTransition(() => setActiveTab(tab.id))}
+              aria-busy={isTabPending && activeTab !== tab.id}
               className={cx(
                 styles.tabButton,
                 activeTab === tab.id
@@ -801,7 +803,7 @@ export function SandboxView({
           </div>
         </div>
 
-        <div className={styles.body}>{renderTab()}</div>
+        <div className={styles.body} aria-busy={isTabPending} style={{ opacity: isTabPending ? 0.72 : 1, transition: "opacity 120ms ease-out" }}>{renderTab()}</div>
       </div>
     </div>
   );

@@ -22,7 +22,7 @@ export const PROVIDER_TYPE_OPTIONS = [
 	{ value: "gateway", label: "AI Gateway" },
 	{ value: "openai-completions", label: "OpenAI Completions Compatible" },
 	{ value: "openai-responses", label: "OpenAI Responses Compatible" },
-	{ value: "anthropic-messages", label: "Anthropic Messages Compatible" },
+	{ value: "anthropic-messages", label: "Anthropic Messages Compatible (including Inkling)" },
 	{ value: "synthetic", label: "Synthetic (OpenAI Compatible)" },
 ];
 
@@ -73,6 +73,11 @@ export const INITIAL_PROVIDER_FORM: ProviderFormState = {
 	baseUrl: "",
 	apiKey: "",
 };
+
+const INKLING_PROVIDER_DEFAULTS = {
+	name: "Thinking Machines",
+	baseUrl: "https://tinker.thinkingmachines.dev/services/tinker-prod/anthropic/api",
+} as const;
 
 const sectionClass = css({ display: "flex", flexDirection: "column", gap: "1rem", scrollMarginTop: "5rem" });
 const headerRowClass = css({
@@ -130,11 +135,13 @@ export async function loadCustomProviders(): Promise<KeatingCustomProvider[]> {
 
 export function CustomProvidersSection({
 	customProviders,
+	notice,
 	onEdit,
 	onDelete,
 	onAddType,
 }: {
 	customProviders: KeatingCustomProvider[];
+	notice?: string;
 	onEdit: (provider: KeatingCustomProvider) => void;
 	onDelete: (provider: KeatingCustomProvider) => void;
 	onAddType: (type: KeatingCustomProviderType) => void;
@@ -200,6 +207,22 @@ export function CustomProvidersSection({
 				</div>
 			</div>
 
+			{notice ? (
+				<div
+					role="status"
+					className={css({
+						borderLeft: "3px solid var(--primary)",
+						backgroundColor: "color-mix(in srgb, var(--primary) 7%, transparent)",
+						padding: "0.625rem 0.75rem",
+						fontSize: "0.75rem",
+						lineHeight: 1.45,
+						color: "var(--foreground)",
+					})}
+				>
+					{notice}
+				</div>
+			) : null}
+
 			{customProviders.length === 0 ? (
 				<div className={css({ paddingBlock: "2rem", textAlign: "center", fontSize: "0.875rem", color: "var(--muted-foreground)" })}>
 					No custom providers configured. Click &quot;Add Provider&quot; to get started.
@@ -225,6 +248,7 @@ export function ProviderDialog({
 	dialog,
 	form,
 	error,
+	saving,
 	onChange,
 	onClose,
 	onSave,
@@ -232,6 +256,7 @@ export function ProviderDialog({
 	dialog: ProviderDialogState;
 	form: ProviderFormState;
 	error: string;
+	saving: boolean;
 	onChange: (next: ProviderFormState) => void;
 	onClose: () => void;
 	onSave: () => void;
@@ -265,6 +290,20 @@ export function ProviderDialog({
 							onChange={(e) => onChange({ ...form, name: e.target.value })}
 						/>
 					</div>
+					{form.type === "anthropic-messages" ? (
+						<div className={css({ borderLeft: "2px solid var(--primary)", paddingLeft: "0.75rem", fontSize: "0.75rem", lineHeight: 1.5, color: "var(--muted-foreground)" })}>
+							<p>
+								Thinking Machines Inkling uses this protocol. Its model ID is <code>thinkingmachines/Inkling</code>; add it under My Models after saving the provider.
+							</p>
+							<button
+								type="button"
+								className={cx(compactButtonClass, css({ marginTop: "0.5rem", color: "var(--primary)" }))}
+								onClick={() => onChange({ ...form, ...INKLING_PROVIDER_DEFAULTS })}
+							>
+								Use Inkling defaults
+							</button>
+						</div>
+					) : null}
 					<div className={css({ display: "flex", flexDirection: "column", gap: "0.25rem" })}>
 						<label className={labelClass}>Provider Type</label>
 						<select
@@ -319,7 +358,11 @@ export function ProviderDialog({
 							placeholder="Leave empty if not required"
 							value={form.apiKey}
 							onChange={(e) => onChange({ ...form, apiKey: e.target.value })}
+							disabled={saving}
 						/>
+						<p className={css({ fontSize: "0.6875rem", color: "var(--muted-foreground)" })}>
+							Stored for this provider and reused by every model assigned to it.
+						</p>
 					</div>
 					{error && (
 						<div className={css({ borderRadius: "0.375rem", border: "1px solid color-mix(in srgb, var(--destructive) 30%, transparent)", backgroundColor: "color-mix(in srgb, var(--destructive) 5%, transparent)", paddingInline: "0.75rem", paddingBlock: "0.5rem", fontSize: "0.875rem", color: "var(--destructive)" })}>
@@ -335,10 +378,10 @@ export function ProviderDialog({
 						</button>
 						<button
 							className={css({ borderRadius: "0.375rem", backgroundColor: "var(--primary)", paddingInline: "0.75rem", paddingBlock: "0.375rem", fontSize: "0.75rem", fontWeight: 500, color: "var(--primary-foreground)", transitionProperty: "background-color", transitionDuration: "150ms", _hover: { backgroundColor: "color-mix(in srgb, var(--primary) 90%, transparent)" }, _disabled: { opacity: 0.5 } })}
-							disabled={!form.name.trim() || !form.baseUrl.trim()}
+							disabled={saving || !form.name.trim() || !form.baseUrl.trim()}
 							onClick={onSave}
 						>
-							Save
+							{saving ? "Saving…" : "Save provider"}
 						</button>
 					</div>
 				</div>
@@ -370,6 +413,11 @@ function CustomProviderCard({
 						<span className={css({ display: "inline-flex", alignItems: "center", borderRadius: "9999px", backgroundColor: "var(--muted)", paddingInline: "0.5rem", paddingBlock: "0.125rem", fontSize: "10px", fontWeight: 500, color: "var(--muted-foreground)" })}>
 							{isAutoDiscovery ? "Auto-discovery" : "Manual"}
 						</span>
+						{provider.apiKey ? (
+							<span className={css({ display: "inline-flex", alignItems: "center", borderRadius: "9999px", backgroundColor: "var(--muted)", paddingInline: "0.5rem", paddingBlock: "0.125rem", fontSize: "10px", fontWeight: 500, color: "var(--muted-foreground)" })}>
+								Key saved
+							</span>
+						) : null}
 						<span className={css({ display: "inline-flex", alignItems: "center", borderRadius: "9999px", backgroundColor: "var(--muted)", paddingInline: "0.5rem", paddingBlock: "0.125rem", fontSize: "10px", fontWeight: 500, color: "var(--muted-foreground)" })}>
 							{isAutoDiscovery
 								? `${provider.models?.length ?? 0} discovered models`

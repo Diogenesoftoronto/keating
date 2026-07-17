@@ -171,7 +171,7 @@ export function isDuplexSpeechProvider(id: SpeechProviderId): boolean {
  * active provider is a duplex provider (OpenAI Realtime / Gemini Live).
  */
 export function speechInputMode(settings: WebSpeechSettings): "duplex" | "stt" {
-	return settings.enabled && isDuplexSpeechProvider(settings.providerId) ? "duplex" : "stt";
+	return settings.enabled && settings.microphoneEnabled && isDuplexSpeechProvider(settings.providerId) ? "duplex" : "stt";
 }
 
 let audioContext: AudioContext | null = null;

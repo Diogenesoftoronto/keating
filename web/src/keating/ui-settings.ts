@@ -36,7 +36,7 @@ export interface KeatingUiSettings {
 }
 
 export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
-	showToolUi: false,
+	showToolUi: true,
 	autoOpenArtifacts: true,
 	showRawErrors: false,
 	reasoningLevel: "medium",
@@ -44,7 +44,7 @@ export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
 	fontFamily: "jetbrains-mono",
 	shareLinkMode: "portable-short",
 	shareWarningAcknowledged: false,
-	alternativeResponseChance: 0,
+	alternativeResponseChance: 0.01,
 	userProfileImage: null,
 	imageGenerator: DEFAULT_IMAGE_GENERATOR_ID,
 	imageModel: "",
@@ -80,7 +80,7 @@ const FONT_STACKS: Record<UiFontFamily, FontStack> = {
 };
 
 const STORAGE_KEY = "keating_ui_settings";
-const UI_SETTINGS_SCHEMA_VERSION = 2;
+const UI_SETTINGS_SCHEMA_VERSION = 3;
 const SETTINGS_CHANGED_EVENT = "keating:ui-settings-changed";
 type LegacyGroundingKey = `${"google"}${"Grounding"}`;
 const LEGACY_GOOGLE_GROUNDING_KEY = ("google" + "Grounding") as LegacyGroundingKey;
@@ -176,13 +176,13 @@ function normalizeSettings(value: LegacyUiSettingsInput | null): KeatingUiSettin
 				: DEFAULT_UI_SETTINGS.fontFamily,
 		shareLinkMode: normalizeShareLinkMode(value?.shareLinkMode),
 		shareWarningAcknowledged: value?.shareWarningAcknowledged === true,
-		// Version 1 shipped a 5% background response rate by default. Those
-		// responses were stored as child sessions, which made ordinary chats look
-		// as if they had forked themselves. Reset only that legacy default; any
-		// other saved value was an explicit user choice.
+		// Older builds shipped either 5% or 0% as automatic defaults. Version 3
+		// makes comparisons deliberately rare at 1%, while preserving every other
+		// explicitly chosen probability.
 		alternativeResponseChance:
-			value?.schemaVersion !== UI_SETTINGS_SCHEMA_VERSION && value?.alternativeResponseChance === 0.05
-				? 0
+			value?.schemaVersion !== UI_SETTINGS_SCHEMA_VERSION
+				&& (value?.alternativeResponseChance === 0.05 || value?.alternativeResponseChance === 0)
+				? DEFAULT_UI_SETTINGS.alternativeResponseChance
 				: normalizeAlternativeResponseChance(value?.alternativeResponseChance),
 		userProfileImage: typeof value?.userProfileImage === "string" && value.userProfileImage.startsWith("data:image/") ? value.userProfileImage : DEFAULT_UI_SETTINGS.userProfileImage,
 		imageGenerator: isImageGeneratorId(value?.imageGenerator) ? value.imageGenerator : DEFAULT_UI_SETTINGS.imageGenerator,

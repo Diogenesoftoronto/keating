@@ -8,7 +8,9 @@ import { inferBrowserLearnerTurnSignal } from "./core";
 import { deriveLearnerProfile, type LearnerTopicProfile } from "./learner-profile";
 
 const DB_NAME = "keating-db";
-const DB_VERSION = 6;
+const DB_VERSION = 7;
+const LEARNER_STATE_SCHEMA_VERSION = 2;
+const META_STORE = "_meta";
 
 // Store names
 const STORES = {
@@ -156,6 +158,7 @@ export interface FeedbackEntry {
 }
 
 export interface LearnerState {
+	schemaVersion: typeof LEARNER_STATE_SCHEMA_VERSION;
 	topicsExplored: string[];
 	feedbackHistory: FeedbackEntry[];
 	strengths: string[];
@@ -169,6 +172,24 @@ export interface LearnerState {
 		endedAt?: number;
 		topicsCovered: string[];
 	}>;
+	profileBeliefs: LearnerProfileBelief[];
+}
+
+export type LearnerProfileCategory =
+	| "motivation"
+	| "communication-preference"
+	| "learning-preference"
+	| "interest";
+
+export interface LearnerProfileBelief {
+	id: string;
+	category: LearnerProfileCategory;
+	value: string;
+	source: "explicit" | "observed";
+	confidence: number;
+	evidence: string;
+	createdAt: number;
+	updatedAt: number;
 }
 
 export interface QuizResultRecord {
@@ -300,10 +321,21 @@ export class KeatingStorage {
 		this.dbPromise = new Promise((resolve, reject) => {
 			const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-			request.onerror = () => reject(request.error);
+			request.onerror = () => {
+				this.dbPromise = null;
+				reject(request.error);
+			};
+			request.onblocked = () => {
+				console.warn("Keating storage upgrade is waiting for another tab to close its old database connection.");
+			};
 
 			request.onsuccess = () => {
 				this.db = request.result;
+				this.db.onversionchange = () => {
+					this.db?.close();
+					this.db = null;
+					this.dbPromise = null;
+				};
 				resolve(this.db);
 			};
 
@@ -318,6 +350,15 @@ export class KeatingStorage {
 						store.createIndex("createdAt", "createdAt", { unique: false });
 						store.createIndex("promptName", "promptName", { unique: false });
 					}
+				});
+				const metaStore = db.objectStoreNames.contains(META_STORE)
+					? request.transaction!.objectStore(META_STORE)
+					: db.createObjectStore(META_STORE, { keyPath: "key" });
+				metaStore.put({
+					key: "schema",
+					version: DB_VERSION,
+					upgradedFrom: event.oldVersion,
+					upgradedAt: Date.now(),
 				});
 			};
 		});
@@ -393,6 +434,7 @@ export class KeatingStorage {
 
 	private defaultLearnerState(): LearnerState {
 		return {
+			schemaVersion: LEARNER_STATE_SCHEMA_VERSION,
 			topicsExplored: [],
 			feedbackHistory: [],
 			strengths: [],
@@ -400,12 +442,14 @@ export class KeatingStorage {
 			topicProfiles: [],
 			sessionsCount: 0,
 			sessions: [],
+			profileBeliefs: [],
 		};
 	}
 
 	private normalizeLearnerState(value: unknown): LearnerState {
 		const raw = value && typeof value === "object" ? value as Partial<LearnerState> : {};
 		return {
+			schemaVersion: LEARNER_STATE_SCHEMA_VERSION,
 			topicsExplored: Array.isArray(raw.topicsExplored) ? raw.topicsExplored.filter((topic): topic is string => typeof topic === "string") : [],
 			feedbackHistory: Array.isArray(raw.feedbackHistory) ? raw.feedbackHistory.filter((entry): entry is FeedbackEntry => !!entry && typeof entry === "object") : [],
 			strengths: Array.isArray(raw.strengths) ? raw.strengths.filter((item): item is string => typeof item === "string") : [],
@@ -416,6 +460,16 @@ export class KeatingStorage {
 			lastSessionAt: typeof raw.lastSessionAt === "number" ? raw.lastSessionAt : undefined,
 			sessionsCount: typeof raw.sessionsCount === "number" ? raw.sessionsCount : 0,
 			sessions: Array.isArray(raw.sessions) ? raw.sessions.filter((session): session is LearnerState["sessions"][number] => !!session && typeof session === "object") : [],
+			profileBeliefs: Array.isArray(raw.profileBeliefs)
+				? raw.profileBeliefs.filter((belief): belief is LearnerProfileBelief => {
+					if (!belief || typeof belief !== "object") return false;
+					const candidate = belief as Partial<LearnerProfileBelief>;
+					return typeof candidate.id === "string"
+						&& typeof candidate.value === "string"
+						&& typeof candidate.evidence === "string"
+						&& ["motivation", "communication-preference", "learning-preference", "interest"].includes(String(candidate.category));
+				})
+				: [],
 		};
 	}
 
@@ -964,10 +1018,64 @@ export class KeatingStorage {
 	async saveLearnerState(state: LearnerState): Promise<void> {
 		const store = await this.getStore(STORES.LEARNER_STATE, "readwrite");
 		return new Promise((resolve, reject) => {
-			const request = store.put({ ...state, id: "learner-state" });
+			const request = store.put({
+				...state,
+				schemaVersion: LEARNER_STATE_SCHEMA_VERSION,
+				id: "learner-state",
+			});
 			request.onsuccess = () => resolve();
 			request.onerror = () => reject(request.error);
 		});
+	}
+
+	async rememberLearnerProfileBelief(input: {
+		category: LearnerProfileCategory;
+		value: string;
+		source: "explicit" | "observed";
+		evidence: string;
+		confidence?: number;
+	}): Promise<LearnerProfileBelief> {
+		const value = input.value.trim().slice(0, 240);
+		const evidence = input.evidence.trim().slice(0, 500);
+		if (!value || !evidence) throw new Error("A profile belief needs both a value and supporting evidence.");
+		const now = Date.now();
+		let saved: LearnerProfileBelief | null = null;
+		await this.updateLearnerState((state) => {
+			const normalized = value.toLocaleLowerCase();
+			const existing = state.profileBeliefs.find((belief) =>
+				belief.category === input.category && belief.value.toLocaleLowerCase() === normalized
+			);
+			const requestedConfidence = Number.isFinite(input.confidence)
+				? Math.max(0, Math.min(1, input.confidence!))
+				: input.source === "explicit" ? 1 : 0.45;
+			const confidence = input.source === "explicit"
+				? 1
+				: Math.min(0.65, requestedConfidence);
+			if (existing) {
+				existing.source = existing.source === "explicit" ? "explicit" : input.source;
+				existing.confidence = existing.source === "explicit"
+					? 1
+					: Math.max(existing.confidence, confidence);
+				existing.evidence = evidence;
+				existing.updatedAt = now;
+				saved = { ...existing };
+				return;
+			}
+			const belief: LearnerProfileBelief = {
+				id: this.generateId(),
+				category: input.category,
+				value,
+				source: input.source,
+				confidence,
+				evidence,
+				createdAt: now,
+				updatedAt: now,
+			};
+			state.profileBeliefs.push(belief);
+			saved = belief;
+		});
+		if (!saved) throw new Error("Learner profile belief was not saved.");
+		return saved;
 	}
 
 	async recordSessionStart(): Promise<void> {

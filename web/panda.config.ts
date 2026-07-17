@@ -669,6 +669,14 @@ export default defineConfig({
             boxShadow: "0 0 0 6px rgba(30, 155, 80, 0)"
           }
         },
+		"keating-mascot-think": {
+			"0%, 100%": { transform: "translateY(0) rotate(-2deg)" },
+			"50%": { transform: "translateY(-3px) rotate(3deg)" }
+		},
+		"keating-thinking-dot": {
+			"0%, 60%, 100%": { opacity: 0.28, transform: "translateY(0)" },
+			"30%": { opacity: 1, transform: "translateY(-2px)" }
+		},
         "flashcard-exit-left": {
           to: { transform: "translateX(-130%) rotate(-10deg)", opacity: 0 }
         },
@@ -1180,6 +1188,18 @@ export default defineConfig({
       width: "30px",
       height: "auto"
     },
+		".keating-thinking-mascot img": {
+			animation: "keating-mascot-think 1.8s ease-in-out infinite",
+			transformOrigin: "50% 80%"
+		},
+		".keating-thinking-dot": {
+			display: "inline-block",
+			width: "4px",
+			height: "4px",
+			borderRadius: "9999px",
+			background: "var(--primary)",
+			animation: "keating-thinking-dot 1.1s ease-in-out infinite"
+		},
     ".chat-page-shell .chat-avatar-you": {
       background: "var(--green-wash)",
       color: "var(--green-deep)"
@@ -3205,7 +3225,7 @@ export default defineConfig({
       }
     },
     "@media (prefers-reduced-motion: reduce)": {
-      ".chat-brand,\n  .chat-brand img,\n  .chat-page-shell .sb-dot": {
+		".chat-brand,\n  .chat-brand img,\n  .chat-page-shell .sb-dot,\n  .keating-thinking-mascot img,\n  .keating-thinking-dot": {
         transition: "none",
         animation: "none"
       },

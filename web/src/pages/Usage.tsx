@@ -1,6 +1,6 @@
 import { Suspense, use, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, BookOpenCheck, Brain, CalendarDays, ChevronRight, Clock3, Cpu, Download, Flame, Gem, MessageSquareText, TrendingUp, Upload } from "lucide-react";
+import { BookOpenCheck, Brain, CalendarDays, ChevronRight, Clock3, Cpu, Download, Flame, Gem, MessageSquareText, TrendingUp, Upload } from "lucide-react";
 import { useSeo } from "../hooks/useSeo";
 import { getInitPromise, keatingStorage, sessions } from "../hooks/keating-storage";
 import type { SessionMetadata } from "../types/session";
@@ -16,6 +16,8 @@ import {
 	type KeatingPortableImportResult,
 } from "../keating/portable-data";
 import { css, cx } from "../../styled-system/css";
+import { Nav } from "../components/Nav";
+import { LearningInsightsHeader, LearningMetric } from "../components/LearningInsightsHeader";
 
 let metadataPromise: Promise<SessionMetadata[]> | null = null;
 
@@ -53,27 +55,18 @@ function sessionModelLabel(session: SessionMetadata): string | null {
 }
 
 const styles = {
-	page: css({ minH: "100vh", bg: "var(--background)", color: "var(--foreground)", fontFamily: "monospace" }),
-	header: css({ borderBottom: "1px solid var(--border)" }),
-	headerInner: css({ mx: "auto", display: "flex", maxW: "72rem", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", px: "1rem", py: "1rem" }),
-	kicker: css({ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted-foreground)" }),
-	title: css({ fontSize: "1.5rem", fontWeight: "600" }),
+	page: css({ minH: "100vh", bg: "var(--paper)", color: "var(--ink)" }),
 	main: css({ mx: "auto", minW: 0, maxW: "72rem", overflow: "hidden", px: "1rem", py: "1.5rem" }),
 	metricGrid: css({ display: "grid", minW: 0, gap: "0.75rem", sm: { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }, lg: { gridTemplateColumns: "repeat(4, minmax(0, 1fr))" } }),
 	metricGridThree: css({ mt: "1.5rem", display: "grid", minW: 0, gap: "0.75rem", sm: { gridTemplateColumns: "repeat(3, minmax(0, 1fr))" } }),
-	card: css({ minW: 0, borderRadius: "0.5rem", border: "1px solid var(--border)", bg: "var(--background)", p: "1rem" }),
-	cardHead: css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }),
-	cardLabel: css({ fontSize: "0.875rem", color: "var(--muted-foreground)" }),
 	muted: css({ color: "var(--muted-foreground)" }),
-	cardValue: css({ mt: "0.75rem", fontSize: "1.5rem", fontWeight: "600" }),
-	cardDetail: css({ mt: "0.25rem", minW: 0, overflowWrap: "break-word", fontSize: "0.75rem", color: "var(--muted-foreground)" }),
 	controlWrap: css({ w: "100%", maxW: "100%", sm: { minW: "18rem", flex: "1 1 0%" }, lg: { minW: "22rem" } }),
 	labelText: css({ mb: "0.5rem", fontSize: "0.75rem", fontWeight: "500", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted-foreground)" }),
 	segmented: css({ display: "grid", minW: 0, gridTemplateColumns: "repeat(2, minmax(0, 1fr))", overflow: "hidden", borderRadius: "0.375rem", border: "1px solid var(--border)", sm: { display: "flex", flexWrap: "nowrap", overflowX: "auto" } }),
 	segmentButton: css({ minW: 0, whiteSpace: "nowrap", px: "0.375rem", py: "0.125rem", fontSize: "10px", transitionProperty: "color, background-color", transitionDuration: "150ms", sm: { minW: "max-content", flex: "1 0 auto", px: "0.5rem", py: "0.25rem", fontSize: "11px" }, lg: { px: "0.75rem", py: "0.375rem", fontSize: "0.75rem" } }),
 	segmentActive: css({ bg: "var(--primary)", color: "var(--primary-foreground)" }),
 	segmentInactive: css({ _hover: { bg: "var(--accent)" } }),
-	panel: css({ mt: "1.5rem", borderRadius: "0.5rem", border: "1px solid var(--border)", bg: "var(--background)" }),
+	panel: css({ mt: "1.5rem", overflow: "hidden", border: "1px solid var(--ink)", bg: "var(--card)" }),
 	panelHeader: css({ borderBottom: "1px solid var(--border)", px: "1rem", py: "0.75rem" }),
 	panelTitle: css({ fontSize: "0.875rem", fontWeight: "600" }),
 	panelSubtitle: css({ mt: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" }),
@@ -100,7 +93,7 @@ const styles = {
 	basisFull: css({ flexBasis: "100%", fontSize: "0.75rem", color: "var(--muted-foreground)" }),
 	errorFull: css({ flexBasis: "100%", fontSize: "0.75rem", color: "var(--destructive)" }),
 	contentGrid: css({ mt: "1.5rem", display: "grid", minW: 0, gap: "1.5rem", lg: { gridTemplateColumns: "minmax(0, 1.25fr) minmax(0, 0.75fr)" } }),
-	section: css({ minW: 0, overflow: "hidden", borderRadius: "0.5rem", border: "1px solid var(--border)", bg: "var(--background)" }),
+	section: css({ minW: 0, overflow: "hidden", border: "1px solid var(--ink)", bg: "var(--card)" }),
 	dividerList: css({ "& > * + *": { borderTop: "1px solid var(--border)" } }),
 	emptyState: css({ px: "1rem", py: "2rem", textAlign: "center", fontSize: "0.875rem", color: "var(--muted-foreground)" }),
 	stack3: css({ "& > * + *": { mt: "0.75rem" }, p: "1rem" }),
@@ -117,8 +110,7 @@ const styles = {
 	badgeRow: css({ display: "flex", minW: 0, flexWrap: "wrap", gap: "0.5rem", fontSize: "11px", color: "var(--muted-foreground)" }),
 	badge: css({ display: "inline-flex", minW: 0, alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", bg: "var(--muted)", px: "0.5rem", py: "0.25rem" }),
 	shrink0: css({ flexShrink: 0 }),
-	centerPage: css({ minH: "100vh", bg: "var(--background)", color: "var(--foreground)" }),
-	centerContent: css({ display: "flex", minH: "100vh", alignItems: "center", justifyContent: "center", fontSize: "0.875rem", color: "var(--muted-foreground)" }),
+	centerContent: css({ display: "flex", minH: "16rem", alignItems: "center", justifyContent: "center", fontSize: "0.875rem", color: "var(--ink-soft)" }),
 };
 
 function useSessionMetadata() {
@@ -127,29 +119,6 @@ function useSessionMetadata() {
 		metadataPromise = sessions.getAllMetadata();
 	}
 	return use(metadataPromise);
-}
-
-function MetricCard({
-	icon,
-	label,
-	value,
-	detail,
-}: {
-	icon: React.ReactNode;
-	label: string;
-	value: string;
-	detail: string;
-}) {
-	return (
-		<div className={styles.card}>
-			<div className={styles.cardHead}>
-				<div className={styles.cardLabel}>{label}</div>
-				<div className={styles.muted}>{icon}</div>
-			</div>
-			<div className={styles.cardValue}>{value}</div>
-			<div className={styles.cardDetail}>{detail}</div>
-		</div>
-	);
 }
 
 function SegmentedControl<T extends string>({
@@ -519,44 +488,34 @@ function UsageContent() {
 	const openSession = (sessionId: string) => navigate({ to: "/chat", search: { session: sessionId } });
 
 	return (
-		<div className={styles.page}>
-			<header className={styles.header}>
-				<div className={styles.headerInner}>
-					<div>
-						<p className={styles.kicker}>Keating usage</p>
-						<h1 className={styles.title}>Learning activity</h1>
-					</div>
-					<button
-						className={cx(styles.button, styles.borderButton)}
-						onClick={() => navigate({ to: "/chat" })}
-					>
-						<ArrowLeft size={16} />
-						Back to chat
-					</button>
-				</div>
-			</header>
-
+		<>
+			<LearningInsightsHeader
+				current="usage"
+				context="Learning intelligence // Activity"
+				title="Learning activity"
+				description="Your sessions, learning materials, model usage, and improvement history in one local-first view."
+			/>
 			<main className={styles.main}>
 				<div className={styles.metricGrid}>
-					<MetricCard
+					<LearningMetric
 						icon={<BookOpenCheck size={18} />}
 						label="Learning sessions"
 						value={formatNumber(metadata.length)}
 						detail={activeSpan ? `${activeSpan} day learning window` : "No sessions yet"}
 					/>
-					<MetricCard
+					<LearningMetric
 						icon={<MessageSquareText size={18} />}
 						label="Socratic turns"
 						value={formatNumber(totals.messages)}
 						detail={`${dailyMessages.toFixed(1)} messages per active day`}
 					/>
-					<MetricCard
+					<LearningMetric
 						icon={<Brain size={18} />}
 						label="Model tokens"
 						value={formatNumber(totals.tokens || totals.input + totals.output)}
 						detail={`${formatNumber(totals.input)} in / ${formatNumber(totals.output)} out`}
 					/>
-					<MetricCard
+					<LearningMetric
 						icon={<TrendingUp size={18} />}
 						label="Estimated spend"
 						value={formatCost(totals.cost)}
@@ -566,19 +525,19 @@ function UsageContent() {
 
 				{/* Self-improvement vs Learning distinction */}
 				<div className={styles.metricGridThree}>
-					<MetricCard
+					<LearningMetric
 						icon={<Gem size={18} />}
 						label="Teaching materials"
 						value={formatNumber(teachingMats)}
 						detail={`${formatNumber(artifactMetrics?.plans ?? 0)} plans · ${formatNumber(artifactMetrics?.maps ?? 0)} maps · ${formatNumber(artifactMetrics?.animations ?? 0)} animations`}
 					/>
-					<MetricCard
+					<LearningMetric
 						icon={<Cpu size={18} />}
 						label="Self-improvement runs"
 						value={formatNumber(selfImprovement)}
 						detail={`${formatNumber(artifactMetrics?.evolutions ?? 0)} evolutions · ${formatNumber(artifactMetrics?.promptEvolutions ?? 0)} prompt evos`}
 					/>
-					<MetricCard
+					<LearningMetric
 						icon={<Flame size={18} />}
 						label="Improvement attempts"
 						value={formatNumber(artifactMetrics?.improvements ?? 0)}
@@ -639,7 +598,7 @@ function UsageContent() {
 
 				<UsageCharts sessionMetadata={metadata} onOpenSession={openSession} />
 			</main>
-		</div>
+		</>
 	);
 }
 
@@ -693,14 +652,15 @@ export function Usage() {
 		canonical: "https://keating.help/usage",
 	});
 	return (
-		<Suspense fallback={
-			<div className={styles.centerPage}>
+		<div className={cx("retro-layout", "retro-page", styles.page)}>
+			<Nav />
+			<Suspense fallback={
 				<div className={styles.centerContent}>
 					Loading usage...
 				</div>
-			</div>
-		}>
-			<UsageContent />
-		</Suspense>
+			}>
+				<UsageContent />
+			</Suspense>
+		</div>
 	);
 }

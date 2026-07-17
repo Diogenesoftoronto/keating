@@ -41,6 +41,7 @@ export const BASELINE_TEACHING_TOOLS = new Set([
 	"feedback",
 	"grade_quiz",
 	"grade_question_checks",
+	"remember_learner_profile",
 	"set_learner_goal",
 	"update_goal_step",
 ]);

@@ -49,6 +49,7 @@ export interface QuotaInfo {
  * (browser) and `P2PStorageBackend` (Electron, over IPC to packages/p2p-core).
  */
 export interface StorageBackend {
+	readonly kind: "indexeddb" | "p2p" | "server";
 	get<T = unknown>(storeName: string, key: string): Promise<T | null>;
 	set<T = unknown>(storeName: string, key: string, value: T): Promise<void>;
 	delete(storeName: string, key: string): Promise<void>;

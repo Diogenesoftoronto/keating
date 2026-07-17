@@ -6,6 +6,7 @@ import type { IndexedDBConfig, StorageBackend, StorageTransaction } from "../typ
  * Provides multi-store key-value storage with transactions and quota management.
  */
 export class IndexedDBStorageBackend implements StorageBackend {
+	readonly kind = "indexeddb" as const;
 	private dbPromise: Promise<IDBDatabase> | null = null;
 
 	constructor(private config: IndexedDBConfig) {}
@@ -15,23 +16,39 @@ export class IndexedDBStorageBackend implements StorageBackend {
 			this.dbPromise = new Promise((resolve, reject) => {
 				const request = indexedDB.open(this.config.dbName, this.config.version);
 
-				request.onerror = () => reject(request.error);
-				request.onsuccess = () => resolve(request.result);
+				request.onerror = () => {
+					this.dbPromise = null;
+					reject(request.error);
+				};
+				request.onblocked = () => {
+					console.warn(`${this.config.dbName} storage upgrade is blocked by an older open tab.`);
+				};
+				request.onsuccess = () => {
+					const db = request.result;
+					db.onversionchange = () => {
+						db.close();
+						this.dbPromise = null;
+					};
+					resolve(db);
+				};
 
 				request.onupgradeneeded = (_event) => {
 					const db = request.result;
 
-					// Create object stores from config
+					// Declaratively reconcile stores and indices on every version bump.
+					// Earlier versions only configured indices when creating a store,
+					// which made later schema versions unable to add an index safely.
 					for (const storeConfig of this.config.stores) {
-						if (!db.objectStoreNames.contains(storeConfig.name)) {
-							const store = db.createObjectStore(storeConfig.name, {
+						const store = db.objectStoreNames.contains(storeConfig.name)
+							? request.transaction!.objectStore(storeConfig.name)
+							: db.createObjectStore(storeConfig.name, {
 								keyPath: storeConfig.keyPath,
 								autoIncrement: storeConfig.autoIncrement,
 							});
 
-							// Create indices
-							if (storeConfig.indices) {
-								for (const indexConfig of storeConfig.indices) {
+						if (storeConfig.indices) {
+							for (const indexConfig of storeConfig.indices) {
+								if (!store.indexNames.contains(indexConfig.name)) {
 									store.createIndex(indexConfig.name, indexConfig.keyPath, {
 										unique: indexConfig.unique,
 									});

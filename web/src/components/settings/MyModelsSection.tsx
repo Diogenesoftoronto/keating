@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useReducer } from "react";
 import { getProviders } from "@earendil-works/pi-ai/compat";
 import { removeCustomModel } from "../../keating/ui-settings";
 import type { ModelPrefs } from "../../keating/model-prefs";
+import type { KeatingCustomProvider } from "../../lib/provider-models";
 import { css, cx } from "../../../styled-system/css";
 
 const ADD_MODEL_APIS = [
@@ -61,53 +62,122 @@ const primaryButtonClass = css({
 	_disabled: { opacity: 0.5 },
 });
 
+type ModelForm = {
+	name: string;
+	id: string;
+	provider: string;
+	api: string;
+	baseUrl: string;
+	apiKey: string;
+	reasoning: boolean;
+	vision: boolean;
+};
+
+type ModelEditorState = {
+	open: boolean;
+	form: ModelForm;
+	error: string;
+	saving: boolean;
+};
+
+type ModelEditorAction =
+	| { type: "toggle" }
+	| { type: "change"; form: ModelForm }
+	| { type: "saving" }
+	| { type: "failed"; message: string }
+	| { type: "saved" };
+
+const INITIAL_MODEL_FORM: ModelForm = {
+	name: "",
+	id: "",
+	provider: "openai",
+	api: "openai-completions",
+	baseUrl: "",
+	apiKey: "",
+	reasoning: false,
+	vision: false,
+};
+
+const INITIAL_MODEL_EDITOR: ModelEditorState = {
+	open: false,
+	form: INITIAL_MODEL_FORM,
+	error: "",
+	saving: false,
+};
+
+function modelEditorReducer(state: ModelEditorState, action: ModelEditorAction): ModelEditorState {
+	switch (action.type) {
+		case "toggle":
+			return state.open ? INITIAL_MODEL_EDITOR : { ...INITIAL_MODEL_EDITOR, open: true };
+		case "change":
+			return { ...state, form: action.form, error: "" };
+		case "saving":
+			return { ...state, saving: true, error: "" };
+		case "failed":
+			return { ...state, saving: false, error: action.message };
+		case "saved":
+			return INITIAL_MODEL_EDITOR;
+	}
+}
+
+function providerApi(provider: KeatingCustomProvider): string {
+	if (provider.type === "anthropic-messages") return "anthropic-messages";
+	if (provider.type === "openai-responses") return "openai-responses";
+	return "openai-completions";
+}
+
 export function MyModelsSection({
 	modelPrefs,
+	customProviders,
 	onAddModel,
 }: {
 	modelPrefs: ModelPrefs;
+	customProviders: KeatingCustomProvider[];
 	onAddModel: (model: {
 		name: string;
 		id: string;
 		provider: string;
 		api: string;
 		baseUrl: string;
+		apiKey: string;
 		reasoning: boolean;
 		vision: boolean;
-	}) => void;
+	}) => void | Promise<void>;
 }) {
-	const [showAddModel, setShowAddModel] = useState(false);
-	const [modelError, setModelError] = useState("");
-	const [modelForm, setModelForm] = useState({
-		name: "",
-		id: "",
-		provider: "openai",
-		api: "openai-completions",
-		baseUrl: "",
-		reasoning: false,
-		vision: false,
-	});
+	const [editor, dispatch] = useReducer(modelEditorReducer, INITIAL_MODEL_EDITOR);
+	const modelForm = editor.form;
+	const providerOptions = Array.from(new Set([
+		...getProviders(),
+		...customProviders.map((provider) => provider.name),
+	]));
 
-	const handleSaveModel = () => {
-		setModelError("");
+	const handleSaveModel = async () => {
 		const name = modelForm.name.trim();
 		const id = modelForm.id.trim();
 		const provider = modelForm.provider.trim();
 		if (!name || !id || !provider) {
-			setModelError("Name, ID, and Provider are required");
+			dispatch({ type: "failed", message: "Name, ID, and Provider are required" });
 			return;
 		}
-		onAddModel({
-			name,
-			id,
-			provider,
-			api: modelForm.api,
-			baseUrl: modelForm.baseUrl,
-			reasoning: modelForm.reasoning,
-			vision: modelForm.vision,
-		});
-		setShowAddModel(false);
-		setModelForm({ name: "", id: "", provider: "openai", api: "openai-completions", baseUrl: "", reasoning: false, vision: false });
+		dispatch({ type: "saving" });
+		try {
+			await onAddModel({
+				name,
+				id,
+				provider,
+				api: modelForm.api,
+				baseUrl: modelForm.baseUrl,
+				apiKey: modelForm.apiKey,
+				reasoning: modelForm.reasoning,
+				vision: modelForm.vision,
+			});
+			dispatch({ type: "saved" });
+		} catch (error) {
+			dispatch({
+				type: "failed",
+				message: error instanceof Error ? error.message : "Could not save the model",
+			});
+		}
 	};
 
 	return (
@@ -121,17 +191,17 @@ export function MyModelsSection({
 				</div>
 				<button
 					className={cx("dialog-compact-button", secondaryButtonClass, css({ flexShrink: 0 }))}
-					onClick={() => setShowAddModel((s) => !s)}
+					onClick={() => dispatch({ type: "toggle" })}
 				>
-					{showAddModel ? "Cancel" : "Add Model"}
+					{editor.open ? "Cancel" : "Add Model"}
 				</button>
 			</div>
 
-			{showAddModel && (
+			{editor.open && (
 				<div className={css({ display: "flex", flexDirection: "column", gap: "0.75rem", borderRadius: "0.5rem", border: "1px solid var(--border)", backgroundColor: "color-mix(in srgb, var(--muted) 30%, transparent)", padding: "1rem" })}>
-					{modelError && (
+					{editor.error && (
 						<div className={css({ borderRadius: "0.375rem", border: "1px solid color-mix(in srgb, var(--destructive) 30%, transparent)", backgroundColor: "color-mix(in srgb, var(--destructive) 5%, transparent)", paddingInline: "0.75rem", paddingBlock: "0.5rem", fontSize: "0.875rem", color: "var(--destructive)" })}>
-							{modelError}
+							{editor.error}
 						</div>
 					)}
 					<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
@@ -141,7 +211,7 @@ export function MyModelsSection({
 							className={inputClass}
 							placeholder="e.g., GPT-5"
 							value={modelForm.name}
-							onChange={(e) => setModelForm((f) => ({ ...f, name: e.target.value }))}
+							onChange={(e) => dispatch({ type: "change", form: { ...modelForm, name: e.target.value } })}
 						/>
 					</div>
 					<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
@@ -151,7 +221,7 @@ export function MyModelsSection({
 							className={inputClass}
 							placeholder="e.g., gpt-5"
 							value={modelForm.id}
-							onChange={(e) => setModelForm((f) => ({ ...f, id: e.target.value }))}
+							onChange={(e) => dispatch({ type: "change", form: { ...modelForm, id: e.target.value } })}
 						/>
 					</div>
 					<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
@@ -159,20 +229,34 @@ export function MyModelsSection({
 						<select
 							className={inputClass}
 							value={modelForm.provider}
-							onChange={(e) => setModelForm((f) => ({ ...f, provider: e.target.value }))}
+							onChange={(e) => {
+								const providerName = e.target.value;
+								const customProvider = customProviders.find((provider) => provider.name === providerName);
+								dispatch({
+									type: "change",
+									form: {
+										...modelForm,
+										provider: providerName,
+										api: customProvider ? providerApi(customProvider) : modelForm.api,
+										baseUrl: customProvider?.baseUrl ?? modelForm.baseUrl,
+									},
+								});
+							}}
 						>
-							{getProviders().map((p) => (
+							{providerOptions.map((p) => (
 								<option key={p} value={p}>{p}</option>
 							))}
-							<option value="custom">Custom</option>
 						</select>
+						<p className={css({ fontSize: "0.6875rem", color: "var(--muted-foreground)" })}>
+							Create a custom provider first so the model and its credentials share one provider identity.
+						</p>
 					</div>
 					<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
 						<label className={labelClass}>API Type</label>
 						<select
 							className={inputClass}
 							value={modelForm.api}
-							onChange={(e) => setModelForm((f) => ({ ...f, api: e.target.value }))}
+							onChange={(e) => dispatch({ type: "change", form: { ...modelForm, api: e.target.value } })}
 						>
 							{ADD_MODEL_APIS.map((a) => (
 								<option key={a.value} value={a.value}>{a.label}</option>
@@ -186,15 +270,28 @@ export function MyModelsSection({
 							className={inputClass}
 							placeholder="e.g., https://api.openai.com/v1"
 							value={modelForm.baseUrl}
-							onChange={(e) => setModelForm((f) => ({ ...f, baseUrl: e.target.value }))}
+							onChange={(e) => dispatch({ type: "change", form: { ...modelForm, baseUrl: e.target.value } })}
 						/>
+					</div>
+					<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
+						<label className={labelClass}>API Key (Optional)</label>
+						<input
+							type="password"
+							className={inputClass}
+							placeholder="Stored for the selected provider"
+							value={modelForm.apiKey}
+							onChange={(e) => dispatch({ type: "change", form: { ...modelForm, apiKey: e.target.value } })}
+						/>
+						<p className={css({ fontSize: "0.6875rem", color: "var(--muted-foreground)" })}>
+							This updates the provider key; it is not duplicated per model.
+						</p>
 					</div>
 					<div className={css({ display: "flex", gap: "1rem" })}>
 						<label className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem" })}>
 							<input
 								type="checkbox"
 								checked={modelForm.reasoning}
-								onChange={(e) => setModelForm((f) => ({ ...f, reasoning: e.target.checked }))}
+								onChange={(e) => dispatch({ type: "change", form: { ...modelForm, reasoning: e.target.checked } })}
 							/>
 							Reasoning
 						</label>
@@ -202,7 +299,7 @@ export function MyModelsSection({
 							<input
 								type="checkbox"
 								checked={modelForm.vision}
-								onChange={(e) => setModelForm((f) => ({ ...f, vision: e.target.checked }))}
+								onChange={(e) => dispatch({ type: "change", form: { ...modelForm, vision: e.target.checked } })}
 							/>
 							Vision
 						</label>
@@ -210,10 +307,10 @@ export function MyModelsSection({
 					<div className={css({ display: "flex", justifyContent: "flex-end" })}>
 						<button
 							className={primaryButtonClass}
-							disabled={!modelForm.name.trim() || !modelForm.id.trim() || !modelForm.provider.trim()}
+							disabled={editor.saving || !modelForm.name.trim() || !modelForm.id.trim() || !modelForm.provider.trim()}
 							onClick={handleSaveModel}
 						>
-							Save Model
+							{editor.saving ? "Saving…" : "Save Model"}
 						</button>
 					</div>
 				</div>

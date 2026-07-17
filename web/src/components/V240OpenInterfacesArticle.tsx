@@ -83,6 +83,9 @@ export function V240OpenInterfacesArticle() {
 			<p className={styles.paragraph}>
 				The model can still request deeper history through the optional <Code>learner-details</Code> capability and its single <Code>inspect_learning_context</Code> operation. The difference is intent: detailed inspection is available when the compact context is insufficient, not treated as a mandatory greeting ritual.
 			</p>
+			<p className={styles.paragraph}>
+				That context can now improve during ordinary teaching. When a learner reveals a motivation, preferred communication style, recurring friction, or an approach that clearly helps, the tutor can record a cautious learner-context update instead of waiting for a settings form. The prompt treats those observations as revisable evidence rather than personality labels, so personalization can become more specific without becoming overconfident.
+			</p>
 
 			<h3 id="structured-learner-responses" className={styles.heading}>A clean answer for the learner, structured evidence for the tutor</h3>
 			<p className={styles.paragraph}>
@@ -190,7 +193,39 @@ export function V240OpenInterfacesArticle() {
 				Keating now treats an interrupted generation as recoverable session state. Partial output is persisted before the agent lifecycle closes, and the chat can offer a retry or continuation path instead of silently discarding the work. Suggested prompts and focused retry controls make the next action legible on both desktop and narrow screens.
 			</p>
 			<p className={styles.paragraph}>
-				When more than one answer is worth considering, response comparison keeps the alternatives attached to the learner&apos;s actual prompt and records the explicit preference as training evidence. That closes a loop across the release: a learner can inspect what happened, choose the response that helped, and later export that choice without pretending the preference was an automatically inferred fact.
+				When more than one answer is worth considering, response comparison keeps the alternatives attached to the learner&apos;s actual prompt and records the explicit preference as training evidence. Comparisons now happen for one percent of eligible responses by default, and narrow screens show one response at a time behind an explicit alternative switcher instead of squeezing two essays into columns. That closes a loop across the release: a learner can inspect what happened, choose the response that helped, and later export that choice without pretending the preference was an automatically inferred fact.
+			</p>
+
+			<h3 id="mobile-voice" className={styles.heading}>Voice belongs in the composer</h3>
+			<p className={styles.paragraph}>
+				Voice is no longer a tiny microphone action pretending every speech provider behaves the same way. On mobile, the composer can become a press-and-hold surface for dictation, return the transcript to text for review, and switch back to the keyboard without losing the draft. Providers with duplex support can instead open a full-height realtime conversation with a live transcript, explicit connection state, and an escape route to speech-to-text when a live session cannot start.
+			</p>
+			<p className={styles.paragraph}>
+				The Keating mascot now carries the waiting state in both text and voice. That motion is intentionally small: it makes latency feel inhabited without turning the product into an imitation of Kimi, Claude, or DeepSeek. The surrounding paper-and-ink materials, compact terminal type, and pedagogical status copy remain Keating&apos;s own visual language.
+			</p>
+
+			<h3 id="storage-authority" className={styles.heading}>Storage needs one authority at a time</h3>
+			<p className={styles.paragraph}>
+				Keating&apos;s browser data is now organized by lifetime and authority. Tiny bootstrap preferences that must exist before React or IndexedDB hydration may remain in <Code>localStorage</Code>. Durable app records, including provider definitions and provider-scoped keys, go through the selected storage backend. Learning evidence, goals, reviews, quizzes, and artifacts remain in the versioned learning-record database and portable archive boundary.
+			</p>
+			<p className={styles.paragraph}>
+				The IndexedDB layers now close stale connections on <Code>versionchange</Code>, report blocked upgrades, reconcile required stores and indexes, and keep record-schema normalization separate from database layout versions. A future server backend must implement the same interface and own offline synchronization itself; feature code must not quietly dual-write a server and the browser and hope they converge.
+			</p>
+
+			<h3 id="provider-setup" className={styles.heading}>Provider setup should survive an imperfect provider</h3>
+			<p className={styles.paragraph}>
+				Saving a custom provider no longer depends on its model-list endpoint working. Discovery is advisory: if <Code>/models</Code> returns an error or an empty list, Keating saves the provider, explains what happened, and lets the learner enter the model manually. Custom models can carry an API key, while a provider-scoped key is reused by every model assigned to that provider instead of being copied into several records.
+			</p>
+			<p className={styles.paragraph}>
+				Thinking Machines Inkling now has copyable defaults for its Anthropic Messages-compatible endpoint and model identifier. The Proxy settings surface also explains the real architecture: browser calls use Keating&apos;s same-origin <Code>/api/chat-proxy</Code> bridge automatically when CORS requires it. There is no mystery proxy daemon or separate URL that a learner has to invent.
+			</p>
+
+			<h3 id="calmer-learning-surfaces" className={styles.heading}>More information, fewer boxes</h3>
+			<p className={styles.paragraph}>
+				The ask and quiz flows now use reducer-owned form state, tighter internal spacing, and transitions for non-urgent navigation. Tool results open in their structured visualizer by default, and deeply nested values wrap within the available width instead of forcing a horizontal excavation. The shared blank-template parser also removes a small but risky split between the two assessment renderers.
+			</p>
+			<p className={styles.paragraph}>
+				Usage and Benchmark now share the application navigation, page width, learning-insights header, metric treatment, and responsive filters. Mobile chat text is 11px with an 18px line height and real gutters on both sides. These are modest choices, but together they let a learner read the work rather than the containers around it.
 			</p>
 
 			<h3 id="two-terminal-paths" className={styles.heading}>A second terminal host without abandoning Pi</h3>
@@ -207,7 +242,7 @@ export function V240OpenInterfacesArticle() {
 			</p>
 			<ul className={styles.list}>
 				<li>Legacy quiz, deck, goal, image, and animation tools still produce their established artifacts when durable behavior has not moved to OpenUI actions.</li>
-				<li>Resumable and workspace component state currently uses a local persistence adapter. It still needs to move into session storage and artifact storage respectively.</li>
+				<li>Resumable and workspace OpenUI component state still needs domain-specific session and artifact adapters on top of the clarified storage authority model.</li>
 				<li>OpenUI assessments still need to join the web app&apos;s existing interaction registry so one active check can become the same focused, sticky learning surface used by legacy questions and quizzes.</li>
 				<li>Long-running tool results still move from a pending indicator to a completed result. Progress streaming remains to be added for image generation, animation, evaluation, and workspace execution.</li>
 				<li>The terminal needs renderers for the same semantic document model before web and OpenTUI can claim component parity.</li>
@@ -219,7 +254,7 @@ export function V240OpenInterfacesArticle() {
 
 			<h3 id="why-2-4" className={styles.heading}>Why 2.4 instead of 3.0?</h3>
 			<p className={styles.paragraph}>
-				This is a large release, but release size and semantic-versioning impact are different questions. We are intentionally skipping 2.3; version numbers do not have to be contiguous, and 2.4 better marks the breadth of this transition. The new web protocol and terminal host are additive. The classic Pi shell still works, historical transcripts still render, and existing deterministic implementations remain behind compatibility adapters. That makes 2.4 an appropriate version while the old contracts continue to function.
+				This is a large release, but release size and semantic-versioning impact are different questions. Keating 2.4 follows the 2.3.1 maintenance release and marks a broader additive transition. The new web protocol and terminal host are additive. The classic Pi shell still works, historical transcripts still render, and existing deterministic implementations remain behind compatibility adapters. That makes 2.4 an appropriate version while the old contracts continue to function.
 			</p>
 			<p className={styles.paragraph}>
 				A future removal of legacy transcript support, a breaking Pi extension contract, or a required switch to the new semantic document model would be a stronger case for 3.0. For now, 2.4 marks the point where Keating starts treating the learner&apos;s understanding, and their ability to participate in the next turn, as an interface responsibility.

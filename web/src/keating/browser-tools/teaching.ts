@@ -112,12 +112,17 @@ export function createTeachingTools(storage: KeatingStorage): AgentTool[] {
 				const confusedCount = state.feedbackHistory.filter((f) => f.signal === "confused").length;
 
 				const topicList = state.topicsExplored.slice(-10).map((t) => `- ${t}`).join("\n") || "None yet";
+				const profileBeliefs = (state.profileBeliefs ?? []).slice(-10).map((belief) =>
+					`- ${belief.category}: ${belief.value} (${belief.source}, ${Math.round(belief.confidence * 100)}%)`
+				).join("\n") || "- None recorded yet";
 
 				return `Learner Profile:
 - Sessions: ${state.sessionsCount || 0}
 - Topics explored: ${state.topicsExplored.length}
 ${topicList}
 - Feedback: 👍${upCount} 👎${downCount} 🤔${confusedCount}
+- Motivations and preferences:
+${profileBeliefs}
 - Last session: ${state.lastSessionAt ? new Date(state.lastSessionAt).toLocaleString() : "First session"}`;
 			}
 		),
@@ -189,6 +194,37 @@ ${topicList}
 		),
 
 		// ask_user_question - Ask the learner one or more questions as an interactive form
+		createTool(
+			"remember_learner_profile",
+			"Preserve a useful, non-sensitive fact about how this learner wants to learn or communicate. Use this proactively when the learner states a preference, motivation, or interest, or when repeated behavior provides concrete evidence. Explicit statements are certain; observations must remain tentative. Never infer protected, medical, psychological, or identity traits.",
+			{
+				category: {
+					type: "string",
+					enum: ["motivation", "communication-preference", "learning-preference", "interest"],
+					description: "The kind of learner-specific fact being remembered.",
+				},
+				value: { type: "string", description: "A short, actionable description, such as 'prefers concise answers followed by examples'." },
+				source: { type: "string", enum: ["explicit", "observed"], description: "Use explicit only when the learner actually said it; otherwise observed." },
+				evidence: { type: "string", description: "The learner statement or repeated interaction pattern supporting this belief." },
+				confidence: { type: "number", minimum: 0, maximum: 1, description: "Optional confidence for observed evidence. Observations are capped at 0.65." },
+			},
+			async (params) => {
+				const category = String(params.category ?? "") as import("../storage").LearnerProfileCategory;
+				const allowed = new Set(["motivation", "communication-preference", "learning-preference", "interest"]);
+				if (!allowed.has(category)) return "Choose a valid learner profile category.";
+				const source = params.source === "explicit" ? "explicit" : "observed";
+				const belief = await storage.rememberLearnerProfileBelief({
+					category,
+					value: String(params.value ?? ""),
+					source,
+					evidence: String(params.evidence ?? ""),
+					confidence: typeof params.confidence === "number" ? params.confidence : undefined,
+				});
+				return `Remembered ${belief.category}: ${belief.value} (${belief.source}, ${Math.round(belief.confidence * 100)}% confidence).`;
+			},
+			["category", "value", "source", "evidence"],
+		),
+
 		createTool(
 			"set_learner_goal",
 			"Capture what the learner wants to ACCOMPLISH (a task or project) and build a long-horizon, multi-step curriculum that scaffolds toward it. The goal is persisted and its progress is tracked across sessions. Design the `steps` yourself as an ordered path (concept → practice → project → reflection); if you omit steps, a scaffold is generated from the anchor topic. Use update_goal_step to advance it later.",
