@@ -1,7 +1,6 @@
 import { Suspense, use, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
 import { usePostHog } from "@posthog/react";
-import { Activity, ArrowLeft, BarChart3, BookOpenCheck, ClipboardList, Database, Download, FileText, Info, LineChart, Medal, Scale, UploadCloud } from "lucide-react";
+import { Activity, BarChart3, BookOpenCheck, ClipboardList, Database, Download, FileText, Info, LineChart, Medal, Scale, UploadCloud } from "lucide-react";
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import type { Model } from "@earendil-works/pi-ai";
 import { useSeo } from "../hooks/useSeo";
@@ -13,6 +12,8 @@ import { feedbackToOutcomeScore, inferBrowserLearnerTurnSignal, MIN_REAL_OUTCOME
 import { listCachedSharedSessions, type SharedModelInfo } from "../keating/shared-sessions";
 import { downloadTextFile } from "../lib/browser-download";
 import { css, cx } from "../../styled-system/css";
+import { Nav } from "../components/Nav";
+import { LearningInsightsHeader, LearningMetric } from "../components/LearningInsightsHeader";
 
 type BenchmarkSource = "shared" | "local" | "all";
 
@@ -102,33 +103,26 @@ const READINESS_THRESHOLDS = {
 };
 
 const styles = {
-	page: css({ minH: "100vh", bg: "var(--background)", color: "var(--foreground)", fontFamily: "monospace" }),
-	header: css({ borderBottom: "1px solid var(--border)" }),
-	headerInner: css({ mx: "auto", display: "flex", maxW: "80rem", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", px: "1rem", py: "1rem" }),
+	page: css({ minH: "100vh", bg: "var(--paper)", color: "var(--ink)" }),
 	min0: css({ minW: 0 }),
-	kicker: css({ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted-foreground)" }),
-	title: css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "1.5rem", fontWeight: "600" }),
-	headerActions: css({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem" }),
-	main: css({ mx: "auto", maxW: "80rem", px: "1rem", py: "1.5rem" }),
-	button: css({ display: "inline-flex", h: "2.25rem", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", border: "1px solid var(--border)", px: "0.75rem", fontSize: "0.875rem", _hover: { bg: "var(--accent)" } }),
-	sourceTabs: css({ display: "inline-flex", overflow: "hidden", borderRadius: "0.375rem", border: "1px solid var(--border)" }),
-	sourceButton: css({ h: "2.25rem", px: "0.75rem", fontSize: "0.875rem" }),
-	sourceActive: css({ bg: "var(--primary)", color: "var(--primary-foreground)" }),
-	sourceInactive: css({ bg: "var(--background)", _hover: { bg: "var(--accent)" } }),
+	main: css({ mx: "auto", maxW: "72rem", px: "1rem", py: "1.5rem" }),
+	button: css({ display: "inline-flex", h: "2.25rem", w: "100%", alignItems: "center", justifyContent: "center", gap: "0.5rem", border: "1px solid var(--ink)", bg: "var(--card)", px: "0.75rem", fontSize: "0.875rem", sm: { w: "auto" }, _hover: { bg: "var(--accent)", color: "var(--accent-foreground)" }, _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "2px" } }),
+	sourceTabs: css({ display: "grid", w: "100%", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", overflow: "hidden", border: "1px solid var(--ink)", sm: { display: "inline-flex", w: "auto" } }),
+	sourceButton: css({ minW: 0, h: "2.25rem", px: "0.25rem", fontSize: "0.75rem", sm: { px: "0.75rem", fontSize: "0.875rem" } }),
+	sourceCompactLabel: css({ sm: { display: "none" } }),
+	sourceWideLabel: css({ display: "none", sm: { display: "inline" } }),
+	sourceActive: css({ bg: "var(--ink)", color: "var(--paper)" }),
+	sourceInactive: css({ bg: "var(--card)", _hover: { bg: "var(--accent)", color: "var(--accent-foreground)" } }),
 	metricGrid: css({ display: "grid", gap: "0.75rem", sm: { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }, xl: { gridTemplateColumns: "repeat(4, minmax(0, 1fr))" } }),
-	metricTile: css({ minW: 0, borderRadius: "0.375rem", border: "1px solid var(--border)", bg: "var(--background)", p: "1rem" }),
-	metricHead: css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", fontSize: "0.75rem", textTransform: "uppercase", color: "var(--muted-foreground)" }),
 	truncate: css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }),
 	shrink0: css({ flexShrink: 0 }),
-	metricValue: css({ mt: "0.75rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "1.5rem", fontWeight: "600" }),
-	metricDetail: css({ mt: "0.25rem", minW: 0, overflowWrap: "break-word", fontSize: "0.75rem", color: "var(--muted-foreground)" }),
 	readinessBase: css({ display: "inline-flex", borderRadius: "0.375rem", border: "1px solid", px: "0.5rem", py: "0.25rem", fontSize: "11px", fontWeight: "500" }),
 	readinessGood: css({ borderColor: "color-mix(in srgb, #059669 70%, transparent)", bg: "color-mix(in srgb, #22c55e 10%, transparent)", color: "#047857" }),
 	readinessProvisional: css({ borderColor: "color-mix(in srgb, #0284c7 70%, transparent)", bg: "color-mix(in srgb, #0ea5e9 10%, transparent)", color: "#0369a1" }),
 	readinessSparse: css({ borderColor: "color-mix(in srgb, #d97706 70%, transparent)", bg: "color-mix(in srgb, #f59e0b 10%, transparent)", color: "#b45309" }),
 	readinessWaiting: css({ borderColor: "color-mix(in srgb, var(--muted-foreground) 30%, transparent)", bg: "var(--muted)", color: "var(--muted-foreground)" }),
 	pill: css({ borderRadius: "0.375rem", border: "1px solid var(--border)", bg: "var(--muted)", px: "0.5rem", py: "0.25rem", fontSize: "11px", color: "var(--muted-foreground)" }),
-	block: css({ minW: 0, borderRadius: "0.375rem", border: "1px solid var(--border)", bg: "var(--background)", p: "1rem" }),
+	block: css({ minW: 0, border: "1px solid var(--border)", bg: "var(--card)", p: "1rem" }),
 	blockHead: css({ mb: "0.75rem", display: "flex", alignItems: "center", gap: "0.5rem" }),
 	mutedIcon: css({ color: "var(--muted-foreground)" }),
 	blockTitle: css({ fontSize: "0.875rem", fontWeight: "600" }),
@@ -137,10 +131,10 @@ const styles = {
 	definitionLabel: css({ fontSize: "0.75rem", fontWeight: "500", color: "var(--foreground)" }),
 	definitionValue: css({ fontSize: "0.75rem", lineHeight: "1.25rem", color: "var(--muted-foreground)" }),
 	explainerGrid: css({ mt: "1.5rem", display: "grid", gap: "1rem", lg: { gridTemplateColumns: "minmax(0, 1.05fr) minmax(0, 0.95fr)" } }),
-	methodology: css({ mt: "1.5rem", borderRadius: "0.375rem", border: "1px solid var(--border)", bg: "var(--background)", p: "1rem" }),
+	methodology: css({ mt: "1.5rem", border: "1px solid var(--ink)", bg: "var(--card)", p: "1rem" }),
 	methodologyHead: css({ mb: "1rem", display: "flex", alignItems: "center", gap: "0.5rem" }),
 	twoGrid: css({ display: "grid", gap: "0.75rem", lg: { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" } }),
-	section: css({ mt: "1.5rem", overflow: "hidden", borderRadius: "0.375rem", border: "1px solid var(--border)", bg: "var(--background)" }),
+	section: css({ mt: "1.5rem", overflow: "hidden", border: "1px solid var(--ink)", bg: "var(--card)" }),
 	sectionHeader: css({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", borderBottom: "1px solid var(--border)", px: "1rem", py: "0.75rem" }),
 	sectionTitle: css({ fontSize: "0.875rem", fontWeight: "600" }),
 	sectionSubtitle: css({ mt: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" }),
@@ -168,7 +162,7 @@ const styles = {
 	stageCount: css({ borderRadius: "0.375rem", bg: "var(--muted)", px: "0.5rem", py: "0.25rem", fontSize: "11px" }),
 	tabular: css({ fontVariantNumeric: "tabular-nums" }),
 	belowGrid: css({ mt: "1.5rem", display: "grid", gap: "1.5rem", lg: { gridTemplateColumns: "minmax(0, 1fr) minmax(0, 0.85fr)" } }),
-	cardSection: css({ borderRadius: "0.375rem", border: "1px solid var(--border)", bg: "var(--background)", p: "1rem" }),
+	cardSection: css({ border: "1px solid var(--ink)", bg: "var(--card)", p: "1rem" }),
 	cardSectionHead: css({ mb: "1rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }),
 	paragraph: css({ mb: "1rem", fontSize: "0.75rem", lineHeight: "1.25rem", color: "var(--muted-foreground)" }),
 	stack3: css({ "& > * + *": { mt: "0.75rem" } }),
@@ -190,8 +184,7 @@ const styles = {
 	twoColNums: css({ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "0.5rem", fontSize: "0.75rem", fontVariantNumeric: "tabular-nums" }),
 	statBox: css({ borderRadius: "0.375rem", bg: "var(--muted)", p: "0.5rem" }),
 	mt1FontMedium: css({ mt: "0.25rem", fontWeight: "500" }),
-	centerPage: css({ minH: "100vh", bg: "var(--background)", color: "var(--foreground)" }),
-	centerContent: css({ display: "flex", minH: "100vh", alignItems: "center", justifyContent: "center", fontSize: "0.875rem", color: "var(--muted-foreground)" }),
+	centerContent: css({ display: "flex", minH: "16rem", alignItems: "center", justifyContent: "center", fontSize: "0.875rem", color: "var(--ink-soft)" }),
 };
 
 function textFromMessage(message: AgentMessage): string {
@@ -558,24 +551,11 @@ function percent(value: number) {
 	return `${Math.round(value * 100)}%`;
 }
 
-function MetricTile({ icon, label, value, detail }: { icon: React.ReactNode; label: string; value: string; detail: string }) {
-	return (
-		<div className={styles.metricTile}>
-			<div className={styles.metricHead}>
-				<span className={styles.truncate}>{label}</span>
-				<span className={styles.shrink0}>{icon}</span>
-			</div>
-			<div className={styles.metricValue}>{value}</div>
-			<div className={styles.metricDetail}>{detail}</div>
-		</div>
-	);
-}
-
 function SourceTabs({ value, onChange }: { value: BenchmarkSource; onChange: (value: BenchmarkSource) => void }) {
-	const options: Array<{ value: BenchmarkSource; label: string }> = [
-		{ value: "shared", label: "Shared" },
-		{ value: "all", label: "All local" },
-		{ value: "local", label: "Private" },
+	const options: Array<{ value: BenchmarkSource; label: string; compactLabel: string; accessibleLabel: string }> = [
+		{ value: "shared", label: "Shared", compactLabel: "Shared", accessibleLabel: "Shared sessions" },
+		{ value: "all", label: "All local", compactLabel: "All", accessibleLabel: "Shared and private sessions" },
+		{ value: "local", label: "Private", compactLabel: "Local", accessibleLabel: "Private local sessions" },
 	];
 	return (
 		<div className={styles.sourceTabs}>
@@ -583,10 +563,12 @@ function SourceTabs({ value, onChange }: { value: BenchmarkSource; onChange: (va
 				<button
 					key={option.value}
 					type="button"
+					aria-label={option.accessibleLabel}
 					className={cx(styles.sourceButton, value === option.value ? styles.sourceActive : styles.sourceInactive)}
 					onClick={() => onChange(option.value)}
 				>
-					{option.label}
+					<span className={styles.sourceCompactLabel}>{option.compactLabel}</span>
+					<span className={styles.sourceWideLabel}>{option.label}</span>
 				</button>
 			))}
 		</div>
@@ -714,7 +696,6 @@ function MethodologyExplainer() {
 
 function KeatingBenchContent() {
 	const posthog = usePostHog();
-	const navigate = useNavigate();
 	const { samples, quizRecords, feedbackEntries } = useBenchmarkData();
 	const [source, setSource] = useState<BenchmarkSource>("shared");
 	const rows = useMemo(() => aggregateSamples(samples, source, quizRecords, feedbackEntries), [samples, source, quizRecords, feedbackEntries]);
@@ -757,14 +738,14 @@ function KeatingBenchContent() {
 	};
 
 	return (
-		<div className={styles.page}>
-			<header className={styles.header}>
-				<div className={styles.headerInner}>
-					<div className={styles.min0}>
-						<p className={styles.kicker}>KeatingBench</p>
-						<h1 className={styles.title}>Model learning leaderboard</h1>
-					</div>
-					<div className={styles.headerActions}>
+		<>
+			<LearningInsightsHeader
+				current="bench"
+				context="Learning intelligence // Benchmark"
+				title="Model learning benchmark"
+				description="Compare teaching models using learner outcomes, quiz evidence, feedback signals, and inspectable replay cases."
+				actions={
+					<>
 						<SourceTabs value={source} onChange={setSource} />
 						<button
 							type="button"
@@ -772,26 +753,17 @@ function KeatingBenchContent() {
 							onClick={exportLeaderboard}
 						>
 							<Download size={16} />
-							Export
+							Export results
 						</button>
-						<button
-							type="button"
-							className={styles.button}
-							onClick={() => navigate({ to: "/chat" })}
-						>
-							<ArrowLeft size={16} />
-							Chat
-						</button>
-					</div>
-				</div>
-			</header>
-
+					</>
+				}
+			/>
 			<main className={styles.main}>
 				<div className={styles.metricGrid}>
-					<MetricTile icon={<Database size={18} />} label="Sessions" value={formatNumber(totals.sessions)} detail={`${formatNumber(samples.filter((sample) => sample.source === "shared").length)} shared cached`} />
-					<MetricTile icon={<BarChart3 size={18} />} label="Models" value={formatNumber(totals.models)} detail={`${formatNumber(totals.ready)} ready for ranking`} />
-					<MetricTile icon={<Activity size={18} />} label="Feedback signals" value={formatNumber(totals.signals)} detail={`${formatNumber(totals.explicit)} explicit | ${READINESS_THRESHOLDS.rankable} for ranked status`} />
-					<MetricTile icon={<BookOpenCheck size={18} />} label="Graded quizzes" value={formatNumber(totals.quizzes)} detail="Strongest evidence: observed retrieval performance" />
+					<LearningMetric icon={<Database size={18} />} label="Sessions" value={formatNumber(totals.sessions)} detail={`${formatNumber(samples.filter((sample) => sample.source === "shared").length)} shared cached`} />
+					<LearningMetric icon={<BarChart3 size={18} />} label="Models" value={formatNumber(totals.models)} detail={`${formatNumber(totals.ready)} ready for ranking`} />
+					<LearningMetric icon={<Activity size={18} />} label="Feedback signals" value={formatNumber(totals.signals)} detail={`${formatNumber(totals.explicit)} explicit | ${READINESS_THRESHOLDS.rankable} for ranked status`} />
+					<LearningMetric icon={<BookOpenCheck size={18} />} label="Graded quizzes" value={formatNumber(totals.quizzes)} detail="Strongest evidence: observed retrieval performance" />
 				</div>
 
 				<KeatingBenchExplainer />
@@ -990,7 +962,7 @@ function KeatingBenchContent() {
 
 				<MethodologyExplainer />
 			</main>
-		</div>
+		</>
 	);
 }
 
@@ -1001,14 +973,15 @@ export function KeatingBench() {
 		canonical: "https://keating.help/bench",
 	});
 	return (
-		<Suspense fallback={
-			<div className={styles.centerPage}>
+		<div className={cx("retro-layout", "retro-page", styles.page)}>
+			<Nav />
+			<Suspense fallback={
 				<div className={styles.centerContent}>
 					Loading KeatingBench...
 				</div>
-			</div>
-		}>
-			<KeatingBenchContent />
-		</Suspense>
+			}>
+				<KeatingBenchContent />
+			</Suspense>
+		</div>
 	);
 }

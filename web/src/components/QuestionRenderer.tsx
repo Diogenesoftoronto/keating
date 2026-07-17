@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, useRef } from "react";
+import { useCallback, useMemo, useReducer, useRef, useTransition } from "react";
 import {
 	ArrowRight,
 	Check,
@@ -10,6 +10,7 @@ import {
 	MessageSquare,
 } from "lucide-react";
 import { css, cx } from "../../styled-system/css";
+import { parseQuestionTemplate } from "./question-template";
 
 /** A single blank within a fill-in-the-blank question. */
 export interface BlankField {
@@ -85,38 +86,32 @@ const sm = "@media (min-width: 640px)";
 
 const questionStyles = {
 	shell: css({
-		marginBlock: "0.5rem",
+		marginBlock: "0.375rem",
 		width: "100%",
 		maxWidth: "100%",
 		overflowX: "hidden",
-		borderRadius: "0.5rem",
-		border: "1px solid color-mix(in srgb, var(--primary) 30%, transparent)",
-		background: "color-mix(in srgb, var(--primary) 5%, transparent)",
-		padding: "0.5rem",
-		boxShadow: "var(--shadow-sm)",
-		[sm]: { marginBlock: "0.75rem", borderRadius: "0.75rem", padding: "1rem" },
+		borderLeft: "2px solid color-mix(in srgb, var(--primary) 55%, transparent)",
+		background: "transparent",
+		padding: "0.375rem 0 0.375rem 0.625rem",
+		[sm]: { marginBlock: "0.5rem", padding: "0.5rem 0 0.5rem 0.75rem" },
 	}),
 	submittedShell: css({
-		marginBlock: "0.5rem",
+		marginBlock: "0.375rem",
 		width: "100%",
 		maxWidth: "100%",
 		overflowX: "hidden",
-		borderRadius: "0.5rem",
-		border: "1px solid color-mix(in srgb, var(--primary) 30%, transparent)",
-		background: "color-mix(in srgb, var(--primary) 5%, transparent)",
-		padding: "0.625rem",
-		boxShadow: "var(--shadow-sm)",
-		[sm]: { marginBlock: "0.75rem", borderRadius: "0.75rem", padding: "1rem" },
+		borderLeft: "2px solid color-mix(in srgb, var(--primary) 55%, transparent)",
+		background: "transparent",
+		padding: "0.375rem 0 0.375rem 0.625rem",
+		[sm]: { marginBlock: "0.5rem", padding: "0.5rem 0 0.5rem 0.75rem" },
 	}),
 	iconBox: css({
 		display: "flex",
-		height: "2rem",
-		width: "2rem",
+		height: "1.25rem",
+		width: "1.25rem",
 		flexShrink: 0,
 		alignItems: "center",
 		justifyContent: "center",
-		borderRadius: "0.5rem",
-		background: "color-mix(in srgb, var(--primary) 10%, transparent)",
 	}),
 	rowStart: css({ display: "flex", alignItems: "flex-start", gap: "0.5rem", [sm]: { gap: "0.75rem" } }),
 	rowCenter: css({ display: "flex", alignItems: "center", gap: "0.5rem" }),
@@ -286,6 +281,67 @@ interface ClassificationAnswer {
 	reason: string;
 }
 
+type QuestionInteractionState = {
+	answers: BlankState[];
+	submitted: boolean;
+	current: number;
+	collapsed: boolean;
+	draggingMatch: string | null;
+	dragOverRow: number | null;
+};
+
+type QuestionInteractionAction =
+	| { type: "update-answers"; update: (answers: BlankState[]) => BlankState[] }
+	| { type: "submit" }
+	| { type: "navigate"; current: number }
+	| { type: "toggle-collapsed" }
+	| { type: "drag-start"; value: string }
+	| { type: "drag-over"; row: number | null }
+	| { type: "drag-end" };
+
+function blankCount(template: string): number {
+	const matches = template.match(/_{3,}|\{\{blank\}\}/g);
+	return matches ? matches.length : 0;
+}
+
+function createQuestionInteractionState(questions: QuestionField[]): QuestionInteractionState {
+	return {
+		answers: questions.map((question) => ({
+			values: Array(question.blanks?.length ?? blankCount(question.question)).fill(""),
+			selected: [],
+			text: "",
+			classifications: (question.items ?? []).map((item) => ({ item, choice: "", reason: "" })),
+		})),
+		submitted: false,
+		current: 0,
+		collapsed: false,
+		draggingMatch: null,
+		dragOverRow: null,
+	};
+}
+
+function questionInteractionReducer(
+	state: QuestionInteractionState,
+	action: QuestionInteractionAction,
+): QuestionInteractionState {
+	switch (action.type) {
+		case "update-answers":
+			return { ...state, answers: action.update(state.answers) };
+		case "submit":
+			return { ...state, submitted: true };
+		case "navigate":
+			return { ...state, current: action.current };
+		case "toggle-collapsed":
+			return { ...state, collapsed: !state.collapsed };
+		case "drag-start":
+			return { ...state, draggingMatch: action.value };
+		case "drag-over":
+			return { ...state, dragOverRow: action.row };
+		case "drag-end":
+			return { ...state, draggingMatch: null, dragOverRow: null };
+	}
+}
+
 function isClassificationQuestion(question: QuestionField): boolean {
 	return question.type === "classification" && !!question.items?.length && !!question.choices?.length;
 }
@@ -305,27 +361,20 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 	const total = questions.length;
 	const blankRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-	const countBlanks = (template: string): number => {
-		const matches = template.match(/_{3,}|\{\{blank\}\}/g);
-		return matches ? matches.length : 0;
-	};
-
-	const [states, setStates] = useState<BlankState[]>(() =>
-		questions.map((q) => {
-			const blankCount = q.blanks?.length ?? countBlanks(q.question);
-			return {
-				values: Array(blankCount).fill(""),
-				selected: [],
-				text: "",
-				classifications: (q.items ?? []).map((item) => ({ item, choice: "", reason: "" })),
-			};
-		}),
+	const [interaction, dispatch] = useReducer(
+		questionInteractionReducer,
+		questions,
+		createQuestionInteractionState,
 	);
-	const [submitted, setSubmitted] = useState(false);
-	const [current, setCurrent] = useState(0);
-	const [collapsed, setCollapsed] = useState(false);
-	const [draggingMatch, setDraggingMatch] = useState<string | null>(null);
-	const [dragOverRow, setDragOverRow] = useState<number | null>(null);
+	const [isQuestionPending, startQuestionTransition] = useTransition();
+	const {
+		answers: states,
+		submitted,
+		current,
+		collapsed,
+		draggingMatch,
+		dragOverRow,
+	} = interaction;
 
 	const answerFor = useCallback(
 		(index: number): string => {
@@ -406,7 +455,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 
 	const toggleChoice = (index: number, choice: string, multiSelect: boolean) => {
 		if (submitted) return;
-		setStates((current) =>
+		dispatch({ type: "update-answers", update: (current) =>
 			current.map((state, i) => {
 				if (i !== index) return state;
 				if (multiSelect) {
@@ -417,14 +466,14 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 				}
 				return { ...state, selected: state.selected[0] === choice ? [] : [choice] };
 			}),
-		);
+		});
 	};
 
 	const setText = (index: number, value: string) => {
 		if (submitted) return;
-		setStates((current) =>
+		dispatch({ type: "update-answers", update: (current) =>
 			current.map((state, i) => (i === index ? { ...state, text: value } : state)),
-		);
+		});
 	};
 
 	const setClassificationValue = (
@@ -434,7 +483,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 		value: string,
 	) => {
 		if (submitted) return;
-		setStates((current) =>
+		dispatch({ type: "update-answers", update: (current) =>
 			current.map((state, i) => {
 				if (i !== index) return state;
 				return {
@@ -444,12 +493,12 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 					),
 				};
 			}),
-		);
+		});
 	};
 
 	const setMatchingChoice = (index: number, rowIndex: number, value: string, unique: boolean) => {
 		if (submitted) return;
-		setStates((current) =>
+		dispatch({ type: "update-answers", update: (current) =>
 			current.map((state, i) => {
 				if (i !== index) return state;
 				return {
@@ -461,46 +510,24 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 					}),
 				};
 			}),
-		);
+		});
 	};
 
 	const handleMatchingDrop = (rowIndex: number, value: string) => {
 		setMatchingChoice(current, rowIndex, value, q.uniqueMatches !== false);
-		setDraggingMatch(null);
-		setDragOverRow(null);
+		dispatch({ type: "drag-end" });
 	};
 
 	const setBlankValue = (index: number, blankIdx: number, value: string) => {
 		if (submitted) return;
-		setStates((current) =>
+		dispatch({ type: "update-answers", update: (current) =>
 			current.map((state, i) => {
 				if (i !== index) return state;
 				const values = [...state.values];
 				values[blankIdx] = value;
 				return { ...state, values };
 			}),
-		);
-	};
-
-	/** Split a template into text parts and blank positions */
-	const parseTemplate = (template: string): { text: string; isBlank: boolean; index: number }[] => {
-		const parts: { text: string; isBlank: boolean; index: number }[] = [];
-		const regex = /_{3,}|\{\{blank\}\}/g;
-		let lastIndex = 0;
-		let blankIndex = 0;
-		let match: RegExpExecArray | null;
-
-		while ((match = regex.exec(template)) !== null) {
-			if (match.index > lastIndex) {
-				parts.push({ text: template.slice(lastIndex, match.index), isBlank: false, index: -1 });
-			}
-			parts.push({ text: match[0], isBlank: true, index: blankIndex++ });
-			lastIndex = match.index + match[0].length;
-		}
-		if (lastIndex < template.length) {
-			parts.push({ text: template.slice(lastIndex), isBlank: false, index: -1 });
-		}
-		return parts;
+		});
 	};
 
 	const handleSubmit = useCallback(() => {
@@ -520,16 +547,20 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 				grading: score === undefined ? "pending" : "auto",
 			};
 		});
-		setSubmitted(true);
+		dispatch({ type: "submit" });
 		onSubmit?.(answers);
 	}, [submitted, allAnswered, questions, answerFor, onSubmit, states]);
 
 	const goNext = useCallback(() => {
-		if (current < total - 1) setCurrent((c) => c + 1);
+		if (current < total - 1) {
+			startQuestionTransition(() => dispatch({ type: "navigate", current: current + 1 }));
+		}
 	}, [current, total]);
 
 	const goPrev = useCallback(() => {
-		if (current > 0) setCurrent((c) => c - 1);
+		if (current > 0) {
+			startQuestionTransition(() => dispatch({ type: "navigate", current: current - 1 }));
+		}
 	}, [current]);
 
 	if (submitted) {
@@ -621,11 +652,8 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 	const selectedMatches = new Set(state.classifications.map((row) => row.choice).filter(Boolean));
 
 	return (
-			<div className={questionStyles.shell}>
-				<div className={css({ display: "flex", alignItems: "flex-start", gap: "0.375rem", [sm]: { gap: "0.75rem" } })}>
-					<div className={css({ display: "none", height: "2rem", width: "2rem", flexShrink: 0, alignItems: "center", justifyContent: "center", borderRadius: "0.5rem", background: "color-mix(in srgb, var(--primary) 10%, transparent)", [sm]: { display: "flex" } })}>
-						<CheckCircle2 size={18} className={questionStyles.primaryText} />
-					</div>
+			<div className={questionStyles.shell} aria-busy={isQuestionPending} style={{ opacity: isQuestionPending ? 0.72 : 1, transition: "opacity 120ms ease-out" }}>
+				<div className={css({ display: "flex", alignItems: "flex-start" })}>
 				<div className={css({ minWidth: 0, flex: 1, display: "grid", gap: "0.5rem", [sm]: { gap: "1rem" } })}>
 					<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", [sm]: { gap: "0.75rem" } })}>
 						<div className={css({ minWidth: 0 })}>
@@ -638,7 +666,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 						</div>
 						<button
 							type="button"
-							onClick={() => setCollapsed((value) => !value)}
+							onClick={() => dispatch({ type: "toggle-collapsed" })}
 							aria-expanded={!collapsed}
 							aria-label={collapsed ? "Show" : "Hide"}
 							title={collapsed ? "Show" : "Hide"}
@@ -669,7 +697,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 						</button>
 					</div>
 					{collapsed ? (
-						<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", borderRadius: "0.5rem", border: "1px solid color-mix(in srgb, var(--border) 60%, transparent)", background: "color-mix(in srgb, var(--background) 40%, transparent)", padding: "0.75rem" })}>
+						<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", paddingBlock: "0.25rem" })}>
 							<div className={css({ height: "0.375rem", flex: 1, overflow: "hidden", borderRadius: "9999px", background: "var(--muted)" })}>
 								<div
 									className={css({ height: "100%", borderRadius: "9999px", background: "var(--primary)", transition: "all 150ms" })}
@@ -700,7 +728,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 					</div>
 
 					{/* Current question card */}
-					<div className={css({ display: "grid", gap: "0.5rem", maxWidth: "100%", borderRadius: 0, border: "0 solid transparent", background: "transparent", padding: 0, [sm]: { gap: "0.75rem", borderRadius: "0.5rem", border: "1px solid color-mix(in srgb, var(--border) 60%, transparent)", background: "color-mix(in srgb, var(--background) 40%, transparent)", padding: "0.75rem" } })}>
+					<div className={css({ display: "grid", gap: "0.5rem", maxWidth: "100%", [sm]: { gap: "0.625rem" } })}>
 						{q.header && (
 							<span className={css({ display: "inline-flex", borderRadius: "0.25rem", background: "color-mix(in srgb, var(--primary) 10%, transparent)", padding: "0.125rem 0.5rem", fontSize: "0.6875rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.025em", color: "var(--primary)" })}>
 								{q.header}
@@ -726,11 +754,10 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 														onDragStart={(event) => {
 															event.dataTransfer.setData("text/plain", choice);
 															event.dataTransfer.effectAllowed = "move";
-															setDraggingMatch(choice);
+													dispatch({ type: "drag-start", value: choice });
 														}}
 														onDragEnd={() => {
-															setDraggingMatch(null);
-															setDragOverRow(null);
+													dispatch({ type: "drag-end" });
 														}}
 														className={cx(
 															css({
@@ -770,9 +797,11 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 											key={`${row.item}-${rowIndex}`}
 											onDragOver={(event) => {
 												event.preventDefault();
-												setDragOverRow(rowIndex);
+											dispatch({ type: "drag-over", row: rowIndex });
 											}}
-											onDragLeave={() => setDragOverRow((current) => current === rowIndex ? null : current)}
+										onDragLeave={() => {
+											if (dragOverRow === rowIndex) dispatch({ type: "drag-over", row: null });
+										}}
 											onDrop={(event) => {
 												event.preventDefault();
 												const value = event.dataTransfer.getData("text/plain") || draggingMatch;
@@ -902,7 +931,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 						) : isBlanks ? (
 							<div className={css({ display: "grid", gap: "0.75rem", maxWidth: "100%" })}>
 								<div className={css({ fontSize: "0.875rem", fontWeight: 500, lineHeight: 1.625, overflowWrap: "break-word" })}>
-									{parseTemplate(q.question).map((part, idx) => {
+									{parseQuestionTemplate(q.question).map((part, idx) => {
 										if (!part.isBlank) {
 											return <span key={idx} className={questionStyles.breakWords}>{part.text}</span>;
 										}
@@ -1034,7 +1063,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 						<button
 							type="button"
 							onClick={goPrev}
-							disabled={current === 0}
+							disabled={isQuestionPending || current === 0}
 							className={questionStyles.buttonSecondary}
 						>
 							<ChevronLeft size={14} />
@@ -1045,6 +1074,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 							<button
 								type="button"
 								onClick={goNext}
+								disabled={isQuestionPending}
 								className={questionStyles.buttonPrimary}
 							>
 								Next

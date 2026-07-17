@@ -16,7 +16,7 @@ const meta = {
 			},
 		},
 		title: "config.json",
-		defaultMode: "raw",
+		defaultMode: "graph",
 	},
 } satisfies Meta<typeof JsonCrackBlock>;
 
@@ -25,6 +25,10 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Raw: Story = {};
+
+export const RawText: Story = {
+	args: { defaultMode: "raw" },
+};
 
 export const TreeView: Story = {
 	args: { defaultMode: "graph" },

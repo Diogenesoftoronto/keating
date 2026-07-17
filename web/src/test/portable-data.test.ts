@@ -18,6 +18,7 @@ function emptyPortableStorage(overrides: Partial<KeatingStoragePortableData> = {
 		policies: [],
 		feedback: [],
 		learnerState: {
+			schemaVersion: 2,
 			topicsExplored: [],
 			feedbackHistory: [],
 			strengths: [],
@@ -25,6 +26,7 @@ function emptyPortableStorage(overrides: Partial<KeatingStoragePortableData> = {
 			topicProfiles: [],
 			sessionsCount: 0,
 			sessions: [],
+			profileBeliefs: [],
 		},
 		promptEvolutions: [],
 		improvements: [],

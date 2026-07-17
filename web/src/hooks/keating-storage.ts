@@ -25,7 +25,7 @@ const backend = hasP2PBackend() && window.keatingP2P
 	? new P2PStorageBackend(window.keatingP2P)
 	: new IndexedDBStorageBackend({
 	dbName: "keating",
-	version: 1,
+	version: 2,
 	stores: [
 		settingsStore.getConfig(),
 		providerKeys.getConfig(),
@@ -34,6 +34,8 @@ const backend = hasP2PBackend() && window.keatingP2P
 		customProviders.getConfig(),
 	],
 });
+
+export const storageBackendKind = backend.kind;
 
 settingsStore.setBackend(backend);
 providerKeys.setBackend(backend);

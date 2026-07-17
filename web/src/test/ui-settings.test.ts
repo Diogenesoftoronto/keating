@@ -57,7 +57,7 @@ describe("Keating UI Settings", () => {
 			expect(settings.fontFamily).toBe(DEFAULT_UI_SETTINGS.fontFamily);
 			expect(settings.shareLinkMode).toBe("portable-short");
 			expect(settings.animationRenderer).toBe("hyperframes");
-			expect(settings.alternativeResponseChance).toBe(0);
+			expect(settings.alternativeResponseChance).toBe(0.01);
 			expect(settings.webSearch).toBe("auto");
 		});
 
@@ -103,13 +103,13 @@ describe("Keating UI Settings", () => {
 			expect(loadKeatingUiSettings().alternativeResponseChance).toBe(0);
 		});
 
-		it("migrates the old automatic alternative-response default to off", () => {
+		it("migrates the old automatic alternative-response default to one percent", () => {
 			localStorage.setItem("keating_ui_settings", JSON.stringify({ alternativeResponseChance: 0.05 }));
-			expect(loadKeatingUiSettings().alternativeResponseChance).toBe(0);
+			expect(loadKeatingUiSettings().alternativeResponseChance).toBe(0.01);
 		});
 
 		it("preserves an explicitly enabled alternative-response chance", () => {
-			localStorage.setItem("keating_ui_settings", JSON.stringify({ schemaVersion: 2, alternativeResponseChance: 0.05 }));
+			localStorage.setItem("keating_ui_settings", JSON.stringify({ schemaVersion: 3, alternativeResponseChance: 0.05 }));
 			expect(loadKeatingUiSettings().alternativeResponseChance).toBe(0.05);
 		});
 
@@ -156,7 +156,7 @@ describe("Keating UI Settings", () => {
 			expect(stored.showToolUi).toBe(true);
 			expect(stored.fontFamily).toBe("space-mono");
 			expect(stored.shareLinkMode).toBe("local-short");
-			expect(stored.schemaVersion).toBe(2);
+			expect(stored.schemaVersion).toBe(3);
 			expect(LEGACY_GOOGLE_GROUNDING_KEY in stored).toBe(false);
 		});
 

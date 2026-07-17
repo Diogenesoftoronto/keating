@@ -21,11 +21,18 @@ function formatLearnerProfile(state: LearnerState): string {
 		const challenge = topic.reportedChallenges.at(-1);
 		return `- ${topic.topic}: ${topic.status}, mastery ${Math.round(topic.mastery * 100)}%, retention ${retention}${challenge ? `; reported challenge: ${challenge}` : ""}`;
 	});
+	const personal = (state.profileBeliefs ?? []).slice(-10).map((belief) => {
+		const certainty = belief.source === "explicit" ? "learner stated" : `tentative observation, ${Math.round(belief.confidence * 100)}%`;
+		return `- ${belief.category}: ${belief.value} (${certainty})`;
+	});
 	return [
 		`Sessions recorded: ${state.sessionsCount}`,
 		`Strengths: ${state.strengths.join(", ") || "none established yet"}`,
 		`Needs review: ${state.weaknesses.join(", ") || "none established yet"}`,
 		topicProfiles.length > 0 ? `Recent topic evidence:\n${topicProfiles.join("\n")}` : "No demonstrated topic evidence yet.",
+		personal.length > 0
+			? `Personalization cues:\n${personal.join("\n")}`
+			: "No durable motivations or communication preferences recorded yet.",
 	].join("\n");
 }
 

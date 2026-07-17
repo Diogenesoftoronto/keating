@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { getProviders } from "@earendil-works/pi-ai/compat";
 import { getAppStorage } from "@earendil-works/pi-web-ui";
 import { css } from "../../styled-system/css";
@@ -52,50 +52,85 @@ function sortProvidersByPriority(list: string[]): string[] {
 const stackClass = css({ display: "flex", flexDirection: "column", gap: "2rem" });
 const dividerClass = css({ borderTop: "1px solid var(--border)" });
 
+type ProviderEditorState = {
+	dialog: ProviderDialogState;
+	form: ProviderFormState;
+	error: string;
+	notice: string;
+	saving: boolean;
+};
+
+type ProviderEditorAction =
+	| { type: "open-add"; providerType: import("../lib/provider-models").KeatingCustomProviderType }
+	| { type: "open-edit"; provider: KeatingCustomProvider; apiKey: string }
+	| { type: "change"; form: ProviderFormState }
+	| { type: "save-start" }
+	| { type: "save-failed"; message: string }
+	| { type: "save-finished"; notice: string }
+	| { type: "close" };
+
+const INITIAL_PROVIDER_EDITOR: ProviderEditorState = {
+	dialog: { open: false },
+	form: INITIAL_PROVIDER_FORM,
+	error: "",
+	notice: "",
+	saving: false,
+};
+
+function providerEditorReducer(
+	state: ProviderEditorState,
+	action: ProviderEditorAction,
+): ProviderEditorState {
+	switch (action.type) {
+		case "open-add":
+			return {
+				...INITIAL_PROVIDER_EDITOR,
+				dialog: { open: true, type: action.providerType },
+				form: {
+					...INITIAL_PROVIDER_FORM,
+					type: action.providerType,
+					baseUrl: PROVIDER_TYPE_DEFAULTS[action.providerType] || "",
+				},
+				notice: state.notice,
+			};
+		case "open-edit":
+			return {
+				...INITIAL_PROVIDER_EDITOR,
+				dialog: { open: true, provider: action.provider },
+				form: {
+					name: action.provider.name,
+					type: action.provider.type,
+					gatewayKind: action.provider.gatewayKind ?? "bifrost",
+					baseUrl: action.provider.baseUrl,
+					apiKey: action.apiKey || action.provider.apiKey || "",
+				},
+				notice: state.notice,
+			};
+		case "change":
+			return { ...state, form: action.form, error: "" };
+		case "save-start":
+			return { ...state, saving: true, error: "" };
+		case "save-failed":
+			return { ...state, saving: false, error: action.message };
+		case "save-finished":
+			return { ...INITIAL_PROVIDER_EDITOR, notice: action.notice };
+		case "close":
+			return { ...INITIAL_PROVIDER_EDITOR, notice: state.notice };
+	}
+}
+
 export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: SettingsSection[] } = {}) {
 	const [customProviders, setCustomProviders] = useState<KeatingCustomProvider[]>([]);
 	const [settings, patch] = useKeatingUiSettings();
 	const [modelPrefs] = useModelPrefs();
-	const [providerDialog, setProviderDialog] = useState<ProviderDialogState>({ open: false });
-	const [providerError, setProviderError] = useState("");
-	const [providerForm, setProviderForm] = useState<ProviderFormState>(INITIAL_PROVIDER_FORM);
+	const [providerEditor, dispatchProviderEditor] = useReducer(
+		providerEditorReducer,
+		INITIAL_PROVIDER_EDITOR,
+	);
 
 	useEffect(() => {
 		loadCustomProviders().then(setCustomProviders);
-	}, [providerDialog.open]);
-
-	useEffect(() => {
-		setProviderError("");
-		if (!providerDialog.open) {
-			setProviderForm(INITIAL_PROVIDER_FORM);
-			return;
-		}
-		if (providerDialog.provider) {
-			// Also fetch apiKey from providerKeys storage in case it was stored separately
-			const storage = getAppStorage();
-			const apiKey = providerDialog.provider.apiKey ?? "";
-			storage.providerKeys.get(providerDialog.provider.name).then((key) => {
-				if (key) {
-					setProviderForm((prev) => ({ ...prev, apiKey: key }));
-				}
-			}).catch(() => {});
-			setProviderForm({
-				name: providerDialog.provider.name,
-				type: providerDialog.provider.type,
-				gatewayKind: providerDialog.provider.gatewayKind ?? "bifrost",
-				baseUrl: providerDialog.provider.baseUrl,
-				apiKey,
-			});
-		} else if (providerDialog.type) {
-			setProviderForm({
-				name: "",
-				type: providerDialog.type,
-				gatewayKind: "bifrost",
-				baseUrl: PROVIDER_TYPE_DEFAULTS[providerDialog.type] || "",
-				apiKey: "",
-			});
-		}
-	}, [providerDialog.provider, providerDialog.type]);
+	}, []);
 
 	const providers = sortProvidersByPriority(Array.from(new Set([DIO_PROVIDER_ID, ...getProviders()])));
 
@@ -103,7 +138,7 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
 		toggleProviderVisibility(provider, hidden);
 	};
 
-	const handleAddModel = (model: { name: string; id: string; provider: string; api: string; baseUrl: string; reasoning: boolean; vision: boolean }) => {
+	const handleAddModel = async (model: { name: string; id: string; provider: string; api: string; baseUrl: string; apiKey: string; reasoning: boolean; vision: boolean }) => {
 		const key = `${model.provider}::${model.api}::${model.id}`;
 		addCustomModel({
 			key,
@@ -115,46 +150,66 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
 			reasoning: model.reasoning,
 			vision: model.vision,
 		});
+		if (model.apiKey.trim()) {
+			await getAppStorage().providerKeys.set(model.provider, model.apiKey.trim());
+		}
 	};
 
 	const handleSaveProvider = async () => {
-		setProviderError("");
-		if (!providerForm.name.trim() || !providerForm.baseUrl.trim()) {
-			setProviderError("Name and Base URL are required");
+		const { dialog, form } = providerEditor;
+		if (!form.name.trim() || !form.baseUrl.trim()) {
+			dispatchProviderEditor({ type: "save-failed", message: "Name and Base URL are required" });
 			return;
 		}
-		const isEdit = !!providerDialog.provider;
+		const isEdit = !!dialog.provider;
+		dispatchProviderEditor({ type: "save-start" });
 		try {
 			const storage = getAppStorage();
-			const providerId = providerDialog.provider?.id ?? crypto.randomUUID();
+			const providerId = dialog.provider?.id ?? crypto.randomUUID();
 			let provider: KeatingCustomProvider = {
 				id: providerId,
-				name: providerForm.name.trim(),
-				type: providerForm.type,
-				gatewayKind: providerForm.type === "gateway" ? providerForm.gatewayKind : undefined,
-				baseUrl: providerForm.baseUrl.trim(),
-				apiKey: providerForm.apiKey.trim() || undefined,
-				models: providerDialog.provider?.models ?? [],
+				name: form.name.trim(),
+				type: form.type,
+				gatewayKind: form.type === "gateway" ? form.gatewayKind : undefined,
+				baseUrl: form.baseUrl.trim(),
+				apiKey: form.apiKey.trim() || undefined,
+				models: dialog.provider?.models ?? [],
 			};
+			let discoveryWarning = "";
 			if (AUTO_DISCOVERY_TYPES.has(provider.type)) {
-				const models = await discoverCustomProviderModels(provider);
-				if (models.length === 0) {
-					setProviderError("Connected successfully, but the provider returned no models. Check the base URL and key.");
-					return;
+				try {
+					const models = await discoverCustomProviderModels(provider);
+					provider = { ...provider, models };
+					if (models.length === 0) {
+						discoveryWarning = " Saved, but no models were listed. Add the model manually below.";
+					}
+				} catch (error) {
+					const message = error instanceof Error ? error.message : "model listing failed";
+					discoveryWarning = ` Saved, but automatic model discovery failed (${message}). Add the model manually below.`;
 				}
-				provider = { ...provider, models };
 			}
 			await storage.customProviders.set(provider as any);
-			if (providerForm.apiKey.trim()) {
-				await storage.providerKeys.set(provider.name, providerForm.apiKey.trim());
+			const oldName = dialog.provider?.name;
+			if (oldName && oldName !== provider.name) {
+				await storage.providerKeys.delete(oldName);
+			}
+			if (form.apiKey.trim()) {
+				await storage.providerKeys.set(provider.name, form.apiKey.trim());
+			} else {
+				await storage.providerKeys.delete(provider.name);
 			}
 			await loadCustomProviders().then(setCustomProviders);
-			setProviderDialog({ open: false });
-			setProviderForm(INITIAL_PROVIDER_FORM);
+			dispatchProviderEditor({
+				type: "save-finished",
+				notice: `${provider.name} ${isEdit ? "updated" : "saved"}.${discoveryWarning}`,
+			});
 		} catch (error) {
 			console.error("Failed to save provider:", error);
 			const message = error instanceof Error ? error.message : "Unknown connection error";
-			setProviderError(`${isEdit ? "Failed to update" : "Failed to save"} provider: ${message}`);
+			dispatchProviderEditor({
+				type: "save-failed",
+				message: `${isEdit ? "Failed to update" : "Failed to save"} provider: ${message}`,
+			});
 		}
 	};
 
@@ -171,11 +226,12 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
 	};
 
 	const openAddType = (type: import("../lib/provider-models").KeatingCustomProviderType) => {
-		setProviderDialog({ open: true, type });
+		dispatchProviderEditor({ type: "open-add", providerType: type });
 	};
 
-	const openEdit = (provider: KeatingCustomProvider) => {
-		setProviderDialog({ open: true, provider });
+	const openEdit = async (provider: KeatingCustomProvider) => {
+		const apiKey = await getAppStorage().providerKeys.get(provider.name).catch(() => undefined);
+		dispatchProviderEditor({ type: "open-edit", provider, apiKey: apiKey ?? "" });
 	};
 
 	return (
@@ -207,23 +263,29 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
 
 			<div className={dividerClass} />
 
-			<MyModelsSection modelPrefs={modelPrefs} onAddModel={handleAddModel} />
+			<MyModelsSection
+				modelPrefs={modelPrefs}
+				customProviders={customProviders}
+				onAddModel={handleAddModel}
+			/>
 
 			<div className={dividerClass} />
 
 			<CustomProvidersSection
 				customProviders={customProviders}
+				notice={providerEditor.notice}
 				onEdit={openEdit}
 				onDelete={handleDeleteProvider}
 				onAddType={openAddType}
 			/>
 
 			<ProviderDialog
-				dialog={providerDialog}
-				form={providerForm}
-				error={providerError}
-				onChange={setProviderForm}
-				onClose={() => setProviderDialog({ open: false })}
+				dialog={providerEditor.dialog}
+				form={providerEditor.form}
+				error={providerEditor.error}
+				saving={providerEditor.saving}
+				onChange={(form) => dispatchProviderEditor({ type: "change", form })}
+				onClose={() => dispatchProviderEditor({ type: "close" })}
 				onSave={handleSaveProvider}
 			/>
 		</div>

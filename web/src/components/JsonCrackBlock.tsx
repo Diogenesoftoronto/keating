@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useTransition } from "react";
 import { ChevronRight, Copy, Eye, FileJson } from "lucide-react";
 
 import { css } from "../../styled-system/css";
@@ -17,9 +17,10 @@ export function JsonCrackBlock({
   maxHeight = "24rem",
   className = "",
   title,
-  defaultMode = "raw",
+  defaultMode = "graph",
 }: JsonCrackBlockProps) {
   const [mode, setMode] = useState<"raw" | "graph">(defaultMode);
+  const [isModePending, startModeTransition] = useTransition();
   const jsonText = typeof value === "string" ? value : safeStringify(value);
   const parsed = useMemo(() => parseJson(jsonText), [jsonText]);
   const isValidJson = parsed.ok;
@@ -42,7 +43,8 @@ export function JsonCrackBlock({
           {isValidJson && (
             <button
               type="button"
-              onClick={() => setMode((m) => (m === "raw" ? "graph" : "raw"))}
+              onClick={() => startModeTransition(() => setMode((m) => (m === "raw" ? "graph" : "raw")))}
+              aria-busy={isModePending}
               className={css({
                 display: "inline-flex",
                 height: "1.75rem",
@@ -73,6 +75,7 @@ export function JsonCrackBlock({
         </div>
       </div>
 
+      <div style={{ opacity: isModePending ? 0.72 : 1, transition: "opacity 120ms ease-out" }}>
       {mode === "raw" || !parsed.ok ? (
         <pre
           className={css({ overflow: "auto", whiteSpace: "pre-wrap", overflowWrap: "break-word", padding: "0.75rem", fontSize: "11px", fontFamily: "var(--mono-display)", lineHeight: "1.625" })}
@@ -81,10 +84,11 @@ export function JsonCrackBlock({
           {jsonText.length > 10000 ? `${jsonText.slice(0, 10000)}\n\n... (truncated)` : jsonText}
         </pre>
       ) : (
-        <div className={css({ overflow: "auto", padding: "0.75rem", fontSize: "11px", fontFamily: "var(--mono-display)", lineHeight: "1.625" })} style={{ maxHeight }}>
+        <div className={css({ overflowY: "auto", overflowX: "hidden", padding: "0.75rem", fontSize: "11px", fontFamily: "var(--mono-display)", lineHeight: "1.625" })} style={{ maxHeight }}>
           <JsonTree value={parsed.value} name="root" depth={0} initiallyOpen />
         </div>
       )}
+      </div>
     </div>
   );
 }
@@ -101,13 +105,14 @@ function JsonTree({
   initiallyOpen?: boolean;
 }) {
   const [open, setOpen] = useState(initiallyOpen || depth < 2);
+  const [isOpenPending, startOpenTransition] = useTransition();
   const isArray = Array.isArray(value);
   const isObject = value !== null && typeof value === "object";
 
   if (!isArray && !isObject) {
     return (
-      <div className={css({ display: "flex", minWidth: "max-content", alignItems: "baseline", gap: "0.25rem" })} style={{ paddingLeft: depth * 14 }}>
-        <span className={css({ color: "var(--muted-foreground)" })}>{name}:</span>
+      <div className={css({ display: "flex", minWidth: 0, width: "100%", alignItems: "baseline", gap: "0.25rem" })} style={{ paddingLeft: Math.min(depth, 6) * 12 }}>
+        <span className={css({ flexShrink: 0, color: "var(--muted-foreground)" })}>{name}:</span>
         <JsonPrimitive value={value} />
       </div>
     );
@@ -117,12 +122,14 @@ function JsonTree({
   const summary = isArray ? `Array(${entries.length})` : `Object(${entries.length})`;
 
   return (
-    <div className={css({ minWidth: "max-content" })}>
+    <div className={css({ minWidth: 0, width: "100%" })}>
       <button
         type="button"
-        onClick={() => setOpen((next) => !next)}
+        onClick={() => startOpenTransition(() => setOpen((next) => !next))}
+        aria-expanded={open}
+        aria-busy={isOpenPending}
         className={css({ display: "flex", alignItems: "center", gap: "0.25rem", borderRadius: "0.125rem", paddingBlock: "0.125rem", paddingRight: "0.25rem", textAlign: "left", transitionProperty: "color, background-color, border-color", transitionDuration: "150ms", _hover: { background: "var(--accent)" } })}
-        style={{ paddingLeft: depth * 14 }}
+        style={{ paddingLeft: Math.min(depth, 6) * 12 }}
       >
         <ChevronRight
           size={12}
@@ -144,7 +151,7 @@ function JsonTree({
 
 function JsonPrimitive({ value }: { value: Exclude<JsonNode, JsonNode[] | { [key: string]: JsonNode }> }) {
   if (value === null) return <span className={css({ color: "var(--muted-foreground)" })}>null</span>;
-  if (typeof value === "string") return <span className={css({ color: "#047857" })}>"{value}"</span>;
+  if (typeof value === "string") return <span className={css({ minWidth: 0, whiteSpace: "pre-wrap", overflowWrap: "anywhere", color: "#047857" })}>"{value}"</span>;
   if (typeof value === "number") return <span className={css({ color: "#0369a1" })}>{value}</span>;
   return <span className={css({ color: "#6d28d9" })}>{String(value)}</span>;
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { usePostHog } from "@posthog/react";
 import {
 	AlertTriangle,
@@ -21,6 +21,7 @@ import {
 import type { Quiz, QuizQuestion } from "../keating/core";
 import { KeatingStorage } from "../keating/storage";
 import { css, cx } from "../../styled-system/css";
+import { parseQuestionTemplate } from "./question-template";
 
 const quizStorage = new KeatingStorage();
 
@@ -579,30 +580,6 @@ function QuizResultBadge({ correct }: { correct: boolean }) {
 	);
 }
 
-/**
- * Parse a fill-in-the-blank template into text parts and blank positions.
- * Supports ___ and {{blank}} as placeholders.
- */
-function parseBlanks(template: string): { text: string; isBlank: boolean; index: number }[] {
-	const parts: { text: string; isBlank: boolean; index: number }[] = [];
-	const regex = /_{3,}|\{\{blank\}\}/g;
-	let lastIndex = 0;
-	let blankIndex = 0;
-	let match: RegExpExecArray | null;
-
-	while ((match = regex.exec(template)) !== null) {
-		if (match.index > lastIndex) {
-			parts.push({ text: template.slice(lastIndex, match.index), isBlank: false, index: -1 });
-		}
-		parts.push({ text: match[0], isBlank: true, index: blankIndex++ });
-		lastIndex = match.index + match[0].length;
-	}
-	if (lastIndex < template.length) {
-		parts.push({ text: template.slice(lastIndex), isBlank: false, index: -1 });
-	}
-	return parts;
-}
-
 function MultiBlankFillIn({
 	question,
 	blanks,
@@ -619,7 +596,7 @@ function MultiBlankFillIn({
 	correctAnswers: string[];
 }) {
 	const values = useMemo(() => answer.split("|").map((s) => s.trim()), [answer]);
-	const parts = useMemo(() => parseBlanks(question), [question]);
+	const parts = useMemo(() => parseQuestionTemplate(question), [question]);
 	const blankRefs = useRef<(HTMLInputElement | null)[]>([]);
 
 	const setValue = (idx: number, val: string) => {
@@ -1146,6 +1123,7 @@ export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) 
 	const [confidence, setConfidence] = useState<Record<string, number>>({});
 	const [revealed, setRevealed] = useState(false);
 	const [current, setCurrent] = useState(0);
+	const [isQuestionPending, startQuestionTransition] = useTransition();
 	const [elapsed, setElapsed] = useState(0);
 	const [bookmarkIds, setBookmarkIds] = useState<string[]>(() => loadBookmarkIds());
 	const [skippedIds, setSkippedIds] = useState<Set<string>>(new Set());
@@ -1296,7 +1274,7 @@ export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) 
 		(index: number) => {
 			if (index < 0 || index >= totalVisible) return;
 			accrueCurrent();
-			setCurrent(index);
+			startQuestionTransition(() => setCurrent(index));
 			questionEnteredRef.current = Date.now();
 		},
 		[accrueCurrent, totalVisible],
@@ -1447,6 +1425,7 @@ export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) 
 					)}
 
 					{cq && (
+						<div aria-busy={isQuestionPending} style={{ opacity: isQuestionPending ? 0.72 : 1, transition: "opacity 120ms ease-out" }}>
 						<QuestionCard
 							key={cq.id}
 							q={cq}
@@ -1465,12 +1444,13 @@ export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) 
 								setReframeModes((prev) => ({ ...prev, [cq.id]: mode }));
 							}}
 						/>
+						</div>
 					)}
 
 					<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" })}>
 						<button
 							onClick={() => goTo(current - 1)}
-							disabled={current === 0}
+							disabled={isQuestionPending || current === 0}
 							className={quizStyles.buttonSecondary}
 						>
 							<ChevronLeft size={14} />
@@ -1480,6 +1460,7 @@ export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) 
 						{!isLast ? (
 							<button
 								onClick={() => goTo(current + 1)}
+								disabled={isQuestionPending}
 								className={quizStyles.buttonPrimary}
 							>
 								Next

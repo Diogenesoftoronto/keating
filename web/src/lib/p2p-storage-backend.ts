@@ -51,6 +51,7 @@ export function hasP2PBackend(): boolean {
  *     call("batch", { mutations }); reads inside go straight through `get`.
  */
 export class P2PStorageBackend implements StorageBackend {
+	readonly kind = "p2p" as const;
 	constructor(private readonly bridge: KeatingP2PBridge) {}
 
 	get<T = unknown>(storeName: string, key: string): Promise<T | null> {

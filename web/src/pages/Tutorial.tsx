@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { Nav } from "../components/Nav";
 import { SimpleFooter } from "../components/Footer";
 import { useSeo } from "../hooks/useSeo";
@@ -249,6 +249,7 @@ export function Tutorial() {
     canonical: "https://keating.help/tutorial",
   });
   const [activeTab, setActiveTab] = useState<TutorialTab>(() => tutorialTabFromUrl());
+  const [isTabPending, startTabTransition] = useTransition();
   const [guideQuery, setGuideQuery] = useState("");
 
   useEffect(() => {
@@ -264,7 +265,7 @@ export function Tutorial() {
   const selectTab = (tab: TutorialTab) => {
     const scrollX = window.scrollX;
     const scrollY = window.scrollY;
-    setActiveTab(tab);
+    startTabTransition(() => setActiveTab(tab));
     const url = new URL(window.location.href);
     url.searchParams.set("tab", tab);
     url.hash = "";
@@ -686,7 +687,12 @@ export function Tutorial() {
           </div>
 
           {/* Detailed Tabs */}
-          <div id="model-setup" className={cx("paper-fold distressed-border", styles.tabsShell)}>
+          <div
+            id="model-setup"
+            aria-busy={isTabPending}
+            className={cx("paper-fold distressed-border", styles.tabsShell)}
+            style={{ opacity: isTabPending ? 0.72 : 1, transition: "opacity 120ms ease-out" }}
+          >
             <div
               className={styles.tabList}
               role="tablist"

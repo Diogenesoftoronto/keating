@@ -35,12 +35,12 @@ import { css, cx } from "../../styled-system/css";
 import { EmptyState } from "./EmptyState";
 
 const styles = {
-	panel: css({ borderRadius: "0.5rem", border: "1px solid var(--border)", bg: "var(--background)" }),
+	panel: css({ overflow: "hidden", border: "1px solid var(--ink)", bg: "var(--card)" }),
 	panelHeader: css({ borderBottom: "1px solid var(--border)", px: "1rem", py: "0.75rem" }),
 	panelTitle: css({ fontSize: "0.875rem", fontWeight: "600" }),
 	panelSubtitle: css({ mt: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" }),
 	panelBody: css({ p: "1rem" }),
-	loading: css({ mt: "1.5rem", borderRadius: "0.5rem", border: "1px solid var(--border)", bg: "var(--background)", p: "2rem", textAlign: "center", fontSize: "0.875rem", color: "var(--muted-foreground)" }),
+	loading: css({ mt: "1.5rem", border: "1px solid var(--ink)", bg: "var(--card)", p: "2rem", textAlign: "center", fontSize: "0.875rem", color: "var(--ink-soft)" }),
 	stack: css({ mt: "1.5rem", display: "flex", flexDir: "column", gap: "1.5rem" }),
 	threeGrid: css({ display: "grid", gap: "1.5rem", lg: { gridTemplateColumns: "repeat(3, minmax(0, 1fr))" } }),
 	modelWheelGrid: css({ display: "grid", gap: "1rem", xl: { gridTemplateColumns: "minmax(0, 0.9fr) minmax(12rem, 1fr)", alignItems: "center" } }),

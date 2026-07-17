@@ -264,18 +264,9 @@ export function KeatingUiSettingsTab() {
 
 			<SettingRow
 				title="Response comparison chance"
-				description="Generate a second answer in the background and ask which response helped more. Each comparison uses another model request, so it is off by default."
+				description="Occasionally generate a second answer and ask which response helped more. The 1% default keeps comparisons useful without interrupting ordinary chats."
 			>
-				<div className={css({ display: "flex", minWidth: "12rem", alignItems: "center", gap: "0.75rem" })}>
-					<input
-						type="range"
-						min={0}
-						max={100}
-						step={1}
-						className={css({ width: "9rem" })}
-						value={Math.round(settings.alternativeResponseChance * 100)}
-						onChange={(event) => update({ alternativeResponseChance: Math.max(0, Math.min(1, Number(event.target.value) / 100)) })}
-					/>
+				<label className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
 					<input
 						type="number"
 						min={0}
@@ -287,7 +278,7 @@ export function KeatingUiSettingsTab() {
 						aria-label="Response comparison chance percent"
 					/>
 					<span className={mutedSmallClass}>%</span>
-				</div>
+				</label>
 			</SettingRow>
 
 			<div id="settings-section-ui-animation" className={sectionAnchorClass}>

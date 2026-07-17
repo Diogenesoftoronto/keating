@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
   AlertTriangle,
   Bookmark,
@@ -170,6 +170,7 @@ function choiceButtonClass(active: boolean) {
 export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps) {
   const [started, setStarted] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isQuestionPending, startQuestionTransition] = useTransition();
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [flagged, setFlagged] = useState<Set<string>>(new Set());
@@ -230,7 +231,7 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
       if (nextIndex < 0 || nextIndex >= total) return;
       accrueCurrentQuestion();
       questionEnteredRef.current = Date.now();
-      setCurrentIndex(nextIndex);
+      startQuestionTransition(() => setCurrentIndex(nextIndex));
     },
     [accrueCurrentQuestion, total],
   );
@@ -472,7 +473,7 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
         />
       </div>
 
-      <div className={css({ display: "grid", gap: "1rem" })}>
+      <div aria-busy={isQuestionPending} className={css({ display: "grid", gap: "1rem" })} style={{ opacity: isQuestionPending ? 0.72 : 1, transition: "opacity 120ms ease-out" }}>
         <div className={css({ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.75rem" })}>
           <p className={css({ flex: 1, fontSize: "0.875rem", fontWeight: 500, lineHeight: 1.625 })}>{q.question}</p>
           <button
@@ -502,7 +503,7 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
       <div className={css({ marginTop: "1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" })}>
         <button
           type="button"
-          disabled={currentIndex === 0}
+          disabled={isQuestionPending || currentIndex === 0}
           onClick={() => goToQuestion(currentIndex - 1)}
           className={qs.navButton}
         >
@@ -512,6 +513,7 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
           <button
             type="button"
             onClick={() => goToQuestion(currentIndex + 1)}
+            disabled={isQuestionPending}
             className={qs.primaryButton}
           >
             Next

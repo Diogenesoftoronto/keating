@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { BookOpen, Brain, Cpu, Settings2, X } from "lucide-react";
 import { css, cx } from "../../styled-system/css";
 
@@ -170,6 +170,7 @@ const tabpanelClass = css({
 
 export function SettingsDialog({ open, tabs, onClose, defaultTabId }: SettingsDialogProps) {
 	const [activeTab, setActiveTab] = useState(0);
+	const [isTabPending, startTabTransition] = useTransition();
 	const dialogRef = useRef<HTMLDivElement>(null);
 	const mobileTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
@@ -204,12 +205,16 @@ export function SettingsDialog({ open, tabs, onClose, defaultTabId }: SettingsDi
 		requestAnimationFrame(() => mobileTabRefs.current[idx]?.focus());
 	}, []);
 
+	const selectTab = useCallback((idx: number) => {
+		startTabTransition(() => setActiveTab(idx));
+	}, []);
+
 	const moveMobileTab = useCallback((idx: number) => {
 		if (tabs.length === 0) return;
 		const next = (idx + tabs.length) % tabs.length;
-		setActiveTab(next);
+		selectTab(next);
 		focusMobileTab(next);
-	}, [focusMobileTab, tabs.length]);
+	}, [focusMobileTab, selectTab, tabs.length]);
 
 	if (!open) return null;
 
@@ -241,7 +246,7 @@ export function SettingsDialog({ open, tabs, onClose, defaultTabId }: SettingsDi
 						{tabs.map((tab, i) => (
 							<button
 								key={tab.id}
-								onClick={() => setActiveTab(i)}
+								onClick={() => selectTab(i)}
 								className={cx(sidebarTabBaseClass, i === activeTab ? sidebarTabActiveClass : sidebarTabIdleClass)}
 							>
 								{iconForTab(tab.id)}
@@ -270,7 +275,7 @@ export function SettingsDialog({ open, tabs, onClose, defaultTabId }: SettingsDi
 									aria-selected={i === activeTab}
 									aria-controls="settings-tabpanel"
 									tabIndex={i === activeTab ? 0 : -1}
-									onClick={() => setActiveTab(i)}
+									onClick={() => selectTab(i)}
 									onKeyDown={(event) => {
 										if (event.key === "ArrowRight" || event.key === "ArrowDown") {
 											event.preventDefault();
@@ -280,12 +285,12 @@ export function SettingsDialog({ open, tabs, onClose, defaultTabId }: SettingsDi
 											moveMobileTab(i - 1);
 										} else if (event.key === "Home") {
 											event.preventDefault();
-											setActiveTab(0);
+											selectTab(0);
 											focusMobileTab(0);
 										} else if (event.key === "End") {
 											event.preventDefault();
 											const last = tabs.length - 1;
-											setActiveTab(last);
+											selectTab(last);
 											focusMobileTab(last);
 										}
 									}}
@@ -310,8 +315,10 @@ export function SettingsDialog({ open, tabs, onClose, defaultTabId }: SettingsDi
 					<div
 						id="settings-tabpanel"
 						role="tabpanel"
+						aria-busy={isTabPending}
 						aria-label={tabs[activeTab]?.label ?? "Settings"}
 						className={tabpanelClass}
+						style={{ opacity: isTabPending ? 0.72 : 1, transition: "opacity 120ms ease-out" }}
 					>
 						{tabs[activeTab]?.component}
 					</div>

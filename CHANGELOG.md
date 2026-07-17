@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-07-17
+
+### Added
+- Added streamed OpenUI learning documents, lifecycle-aware learning surfaces, and a smaller capability-driven browser tool protocol that keeps learner-facing composition in the teaching response.
+- Added the separate OpenTUI host, explicit browser/cloud/external/host runtime boundaries, recoverable interrupted turns, and a schema-validated training evidence archive.
+- Added a mobile-first voice composer with press-and-hold dictation, a full-screen realtime conversation surface, keyboard switching, and provider-aware fallback between duplex voice and speech-to-text.
+- Added proactive learner-context updates so the tutor can record observed motivations, communication preferences, learning style, strengths, and challenges as evidence accumulates.
+- Added a documented storage ownership model for UI bootstrap values, durable app records, learning records, IndexedDB migrations, P2P authority, and future server-backed storage.
+
+### Changed
+- Reduced response comparison to a 1% default chance and replaced the cramped mobile side-by-side layout with a focused alternative switcher while preserving explicit preference evidence.
+- Reworked custom-provider and custom-model setup around reducer-driven forms, provider-scoped API keys, Inkling defaults, non-blocking model discovery, and clear same-origin proxy documentation.
+- Made the Keating mascot part of loading and voice states, reduced chat text to 11px on narrow screens, restored mobile transcript gutters, and made the ask, quiz, and settings surfaces more space-efficient.
+- Made structured tool visualization the default, improved deeply nested JSON wrapping, and consolidated the shared fill-in-the-blank template parser used by ask and quiz renderers.
+- Unified Usage and Benchmark under the application navigation, paper-and-ink theme, shared learning-insights header, responsive metrics, and mobile-safe filters.
+- Moved coordinated provider, model, question, and quiz state toward reducers and used transitions for non-urgent visualizer and navigation updates.
+
+### Fixed
+- Fixed custom providers being rejected when their `/models` endpoint is missing or incompatible; providers can now be saved and models added manually after an advisory discovery warning.
+- Fixed missing API-key entry and reuse for custom models and providers, including Thinking Machines Inkling-compatible Anthropic Messages endpoints.
+- Fixed duplicate range and number controls for response comparison settings.
+- Fixed IndexedDB upgrade/version-change behavior, migration metadata, blocked-upgrade reporting, and inconsistent backend capability declarations.
+- Fixed nested tool-call text overflowing or becoming unreadable and fixed visualizer mode opening in the less useful raw view.
+- Fixed narrow-screen chat content touching the viewport edges and comparison alternatives becoming effectively unusable on mobile.
+
 ## [2.2.0] - 2026-07-10
 
 ### Added
@@ -461,7 +486,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v2.2.0...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v2.4.0...HEAD
+[2.4.0]: https://github.com/Diogenesoftoronto/keating/compare/v2.3.1...v2.4.0
 [2.2.0]: https://github.com/Diogenesoftoronto/keating/compare/v2.0.0...v2.2.0
 [2.0.0]: https://github.com/Diogenesoftoronto/keating/compare/v1.4.1...v2.0.0
 [1.4.1]: https://github.com/Diogenesoftoronto/keating/compare/v1.4.0...v1.4.1
