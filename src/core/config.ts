@@ -40,7 +40,8 @@ export const FALLBACK_PI_MODELS: Record<string, string> = {
   openai: DEFAULT_PI_MODEL,
   anthropic: "claude-sonnet-5",
   openrouter: "poolside/laguna-m.1:free",
-  zyphra: "zyphra/ZAYA1-8B"
+  zyphra: "zyphra/ZAYA1-8B",
+	minimax: "MiniMax-M2.7-highspeed"
 };
 
 export const DEFAULT_KEATING_CONFIG: KeatingConfig = {

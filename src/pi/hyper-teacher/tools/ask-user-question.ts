@@ -43,9 +43,27 @@ export const askUserQuestionTools = [
           allowText,
           requireReasons: typeof params.require_reasons === "boolean" ? params.require_reasons : true,
         };
-        const rawAnswers: Record<string, string> = await ctx.ui.custom((_tui: any, theme: any, _keybindings: any, done: (result: Record<string, string>) => void) => {
+        const customAnswers: Record<string, string> | undefined = await ctx.ui.custom((_tui: any, theme: any, _keybindings: any, done: (result: Record<string, string>) => void) => {
           return new AnswerFormComponent(theme, [formQuestion], done);
         });
+        const rawAnswers: Record<string, string> = customAnswers ?? {};
+        if (!customAnswers) {
+          if (resolvedKind === "classification" || resolvedKind === "matching") {
+            for (const [idx, item] of (items ?? []).entries()) {
+              const answer = await ctx.ui.select(`${question}\n${item}`, choices ?? []);
+              rawAnswers[`q1::${idx}`] = answer ?? "";
+              if (resolvedKind === "classification" && formQuestion.requireReasons) {
+                rawAnswers[`q1::${idx}::reason`] = await ctx.ui.input(`Why for “${item}”?`, "Short reason") ?? "";
+              }
+            }
+          } else {
+            const prompt = hint ? `${question}\n(hint: ${hint})` : question;
+            const answer = choices && choices.length > 0
+              ? await ctx.ui.select(prompt, choices)
+              : await ctx.ui.input(prompt, "Type your answer");
+            rawAnswers.q1 = answer ?? "";
+          }
+        }
         const summary =
           resolvedKind === "classification" || resolvedKind === "matching"
             ? (items ?? [])

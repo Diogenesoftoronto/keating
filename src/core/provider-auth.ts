@@ -8,7 +8,8 @@ export const PROVIDER_ENV_KEYS: Record<string, string[]> = {
   openai: ["OPENAI_API_KEY"],
   anthropic: ["ANTHROPIC_OAUTH_TOKEN", "ANTHROPIC_API_KEY"],
   openrouter: ["OPENROUTER_API_KEY"],
-  zyphra: ["ZYPHRA_API_KEY"]
+  zyphra: ["ZYPHRA_API_KEY"],
+  minimax: ["MINIMAX_API_KEY"]
 };
 
 export const PROVIDER_SETUP_HINTS: Record<string, string[]> = {
@@ -33,6 +34,11 @@ export const PROVIDER_SETUP_HINTS: Record<string, string[]> = {
     "export ZYPHRA_API_KEY=your_zyphra_key",
     "get a key at https://cloud.zyphra.com",
     "or run `/login zyphra` inside the Keating shell"
+  ],
+  minimax: [
+    "export MINIMAX_API_KEY=your_minimax_key",
+    "get a key at https://platform.minimax.io",
+    "or run `/login minimax` inside the Keating shell"
   ]
 };
 

@@ -91,6 +91,7 @@ import type { Quiz, QuizGradePayload, QuizQuestionGrade } from "../keating/core"
 import { QuizGradesContext, type QuizGradesContextValue } from "./quiz-grades-context";
 import {
   getSpeechProvider,
+	getLiveSpeechBridge,
   KEATING_VOICE_TOOL_NAME,
   loadWebSpeechSettings,
   resolveSpeechCredential,
@@ -886,10 +887,14 @@ function LiveVoiceOverlay({
         if (!provider?.startLiveSession) {
           throw new Error("The selected speech provider does not support live voice.");
         }
+		const bridge = getLiveSpeechBridge();
         const session = await provider.startLiveSession({
           settings,
           getApiKey: getProviderApiKey,
           signal: abort.signal,
+		  instructions: "You are Keating, a warm collaborative teacher. Use tools whenever they improve the lesson, especially for current facts, quizzes, goals, and visual learning artifacts. Keep spoken turns concise and invite interruption.",
+		  tools: bridge?.tools,
+		  onToolCall: bridge ? (call) => bridge.execute(call, abort.signal) : undefined,
           onState: (next) => { if (active) setState(next); },
           onUserTranscript: (text, final) => {
             if (!active || !text) return;

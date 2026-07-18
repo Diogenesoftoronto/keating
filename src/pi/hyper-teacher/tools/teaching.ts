@@ -102,9 +102,22 @@ export const teachingTools = [
           kind: q.options && q.options.length > 0 ? "choice" : "text",
           choices: q.options,
         }));
-        const rawAnswers: Record<string, string> = await ctx.ui.custom((_tui: any, theme: any, _keybindings: any, done: (result: Record<string, string>) => void) => {
+        const customAnswers: Record<string, string> | undefined = await ctx.ui.custom((_tui: any, theme: any, _keybindings: any, done: (result: Record<string, string>) => void) => {
           return new AnswerFormComponent(theme, formQuestions, done);
         });
+        const rawAnswers: Record<string, string> = customAnswers ?? {};
+
+        // Pi RPC exposes custom() for API compatibility but resolves it to undefined.
+        // Fall back to the standard dialog methods that RPC hosts can transport.
+        if (!customAnswers) {
+          for (const q of quiz.questions) {
+            const prompt = `${q.level ? `[${q.level}] ` : ""}${q.question}`;
+            const answer = q.options && q.options.length > 0
+              ? await ctx.ui.select(prompt, q.options)
+              : await ctx.ui.input(prompt, "Type your answer");
+            rawAnswers[q.id] = answer ?? "";
+          }
+        }
 
         const objectiveResults: Record<string, boolean> = {};
         const openEndedIds: string[] = [];

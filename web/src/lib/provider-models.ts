@@ -413,20 +413,26 @@ export const UNKNOWN_MAX_TOKENS = 4096;
 
 function keatingCompatibilityModels(filter?: (provider: string) => boolean): Array<Model<Api>> {
 	const models: Array<Model<Api>> = [];
+	const minimaxModels: Array<[id: string, name: string]> = [
+		["MiniMax-M3", "MiniMax-M3"],
+		["minimax-m2.7-highspeed", "MiniMax M2.7 Highspeed"],
+	];
 	const maybeAdd = (provider: string, baseUrl: string) => {
 		if (filter && !filter(provider)) return;
-		models.push({
-			id: "MiniMax-M3",
-			name: "MiniMax-M3",
-			api: "openai-completions" as Api,
-			provider,
-			baseUrl,
-			reasoning: true,
-			input: ["text"],
-			cost: UNKNOWN_COST,
-			contextWindow: 1_000_000,
-			maxTokens: 4096,
-		});
+		for (const [id, name] of minimaxModels) {
+			models.push({
+				id,
+				name,
+				api: "openai-completions" as Api,
+				provider,
+				baseUrl,
+				reasoning: true,
+				input: ["text"],
+				cost: UNKNOWN_COST,
+				contextWindow: 1_000_000,
+				maxTokens: 4096,
+			});
+		}
 	};
 	maybeAdd("minimax", "https://api.minimax.io/v1");
 	maybeAdd("minimax-cn", "https://api.minimaxi.com/v1");

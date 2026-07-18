@@ -3,14 +3,49 @@ import {
 	type LiveSpeechRequest,
 	type LiveSpeechSession,
 	type LiveSpeechState,
+	type LiveSpeechTool,
 	type SpeechProvider,
 	type SpeechSynthesisRequest,
 	type SpeechSynthesisResult,
 } from "../speech";
 import { withApiRetry } from "../api-retry";
 
+export function buildRealtimeSessionUpdate(
+	settings: LiveSpeechRequest["settings"],
+	instructions?: string,
+	tools: LiveSpeechTool[] = [],
+): Record<string, unknown> {
+	return {
+		type: "session.update",
+		session: {
+			type: "realtime",
+			turn_detection: { type: "server_vad", create_response: true, interrupt_response: true },
+			input_audio_transcription: { model: "gpt-4o-mini-transcribe" },
+			...(settings.model.startsWith("gpt-realtime-2") ? { reasoning: { effort: settings.reasoningEffort } } : {}),
+			...(instructions ? { instructions } : {}),
+			...(tools.length > 0 ? {
+				tools: tools.map((tool) => ({ type: "function", ...tool })),
+				tool_choice: "auto",
+			} : {}),
+		},
+	};
+}
+
+export function realtimeFunctionOutput(callId: string, output: unknown): Record<string, unknown> {
+	return {
+		type: "conversation.item.create",
+		item: {
+			type: "function_call_output",
+			call_id: callId,
+			output: typeof output === "string" ? output : JSON.stringify(output),
+		},
+	};
+}
+
 const REALTIME_MODELS = [
-	{ value: "gpt-realtime-2", label: "gpt-realtime-2 (latest)" },
+	{ value: "gpt-realtime-2.1", label: "gpt-realtime-2.1 (latest)" },
+	{ value: "gpt-realtime-2.1-mini", label: "gpt-realtime-2.1-mini" },
+	{ value: "gpt-realtime-2", label: "gpt-realtime-2" },
 	{ value: "gpt-realtime", label: "gpt-realtime" },
 	{ value: "gpt-realtime-mini", label: "gpt-realtime-mini" },
 	{ value: "gpt-4o-realtime-preview-2024-12-17", label: "gpt-4o-realtime-preview" },
@@ -86,7 +121,7 @@ async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthe
 		throw new Error("No OpenAI API key configured. Add one in Settings → Providers & Models.");
 	}
 
-	const model = settings.model || "gpt-realtime-2";
+	const model = settings.model || "gpt-realtime-2.1";
 	const voice = cleanRealtimeVoice(utterance.voice || settings.voiceName);
 
 	const ephemeralKey = await mintEphemeralKey(apiKey, model, voice, signal);
@@ -208,13 +243,13 @@ async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthe
 }
 
 async function startLiveSession(request: LiveSpeechRequest): Promise<LiveSpeechSession> {
-	const { settings, getApiKey, signal, instructions, onState, onUserTranscript, onAssistantTranscript, onError } = request;
+	const { settings, getApiKey, signal, instructions, tools, onToolCall, onState, onUserTranscript, onAssistantTranscript, onError } = request;
 	const apiKey = await getApiKey("openai");
 	if (!apiKey) {
 		throw new Error("No OpenAI API key configured. Add one in Settings → Providers & Models.");
 	}
 
-	const model = settings.model || "gpt-realtime-2";
+	const model = settings.model || "gpt-realtime-2.1";
 	const voice = cleanRealtimeVoice(settings.voiceName);
 
 	let state: LiveSpeechState = "connecting";
@@ -264,6 +299,7 @@ async function startLiveSession(request: LiveSpeechRequest): Promise<LiveSpeechS
 	};
 
 	const dataChannel = pc.createDataChannel("oai-events");
+	let responseActive = false;
 
 	micStream = await attachMicrophone(pc);
 	if (!micStream) {
@@ -274,15 +310,7 @@ async function startLiveSession(request: LiveSpeechRequest): Promise<LiveSpeechS
 	dataChannel.addEventListener("open", () => {
 		// Enable continuous server-side voice-activity turn detection so the
 		// model keeps listening and replies without an explicit response.create.
-		dataChannel.send(JSON.stringify({
-			type: "session.update",
-			session: {
-				type: "realtime",
-				turn_detection: { type: "server_vad" },
-				input_audio_transcription: { model: "gpt-4o-mini-transcribe" },
-				...(instructions ? { instructions } : {}),
-			},
-		}));
+		dataChannel.send(JSON.stringify(buildRealtimeSessionUpdate(settings, instructions, tools)));
 		setState("listening");
 	});
 
@@ -290,11 +318,17 @@ async function startLiveSession(request: LiveSpeechRequest): Promise<LiveSpeechS
 		try {
 			const msg = JSON.parse(event.data);
 			switch (msg.type) {
-				case "input_audio_buffer.speech_started":
-					setState("listening");
-					break;
-				case "response.created":
-				case "response.output_audio.delta":
+			case "input_audio_buffer.speech_started":
+				if (responseActive) {
+					dataChannel.send(JSON.stringify({ type: "response.cancel" }));
+					dataChannel.send(JSON.stringify({ type: "output_audio_buffer.clear" }));
+					responseActive = false;
+				}
+				setState("listening");
+				break;
+			case "response.created":
+				responseActive = true;
+			case "response.output_audio.delta":
 				case "response.audio.delta":
 					setState("speaking");
 					break;
@@ -312,9 +346,27 @@ async function startLiveSession(request: LiveSpeechRequest): Promise<LiveSpeechS
 				case "conversation.item.input_audio_transcription.completed":
 					onUserTranscript?.(typeof msg.transcript === "string" ? msg.transcript : "", true);
 					break;
-				case "response.done":
-					setState("listening");
-					break;
+			case "response.done":
+				responseActive = false;
+				setState("listening");
+				break;
+			case "response.function_call_arguments.done": {
+				if (!onToolCall || typeof msg.name !== "string" || typeof msg.call_id !== "string") break;
+				void (async () => {
+					try {
+						const parsed = typeof msg.arguments === "string" && msg.arguments ? JSON.parse(msg.arguments) : {};
+						const output = await onToolCall({ callId: msg.call_id, name: msg.name, arguments: parsed });
+						dataChannel.send(JSON.stringify(realtimeFunctionOutput(msg.call_id, output)));
+						dataChannel.send(JSON.stringify({ type: "response.create" }));
+					} catch (error) {
+						dataChannel.send(JSON.stringify(realtimeFunctionOutput(msg.call_id, {
+							error: error instanceof Error ? error.message : String(error),
+						})));
+						dataChannel.send(JSON.stringify({ type: "response.create" }));
+					}
+				})();
+				break;
+			}
 				case "error":
 					onError?.(new Error(`Realtime error: ${msg.error?.message ?? "unknown"}`));
 					break;
