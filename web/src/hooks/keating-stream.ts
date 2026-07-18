@@ -11,26 +11,41 @@ import { normalizeToolCallStream } from "../keating/tool-call-normalizer";
 import { streamWithApiRetry } from "../keating/api-retry";
 import { chatProxyBaseUrl, proxyTargetHeader, shouldProxyModel } from "../lib/provider-proxy";
 import { DIO_DEFAULT_MODEL } from "../dio-provider";
-import { applyProviderWebSearch } from "../keating/provider-web-search";
+import {
+	applyGoogleSearchGrounding,
+	applyProviderWebSearch,
+	resolveProviderWebSearchRoute,
+} from "../keating/provider-web-search";
+import { signalHostedSearchActivation } from "../keating/search";
+
+// Compatibility exports for existing integrations and tests. New routing should
+// prefer applyProviderWebSearch so capability negotiation stays centralized.
+export { applyGoogleSearchGrounding, applyProviderWebSearch };
 import { getProviderApiKey } from "../lib/provider-models";
 import { localModel, getModelName, getModelId } from "../stores/local-model";
 
 export const DEFAULT_MODEL = DIO_DEFAULT_MODEL;
 
-function mergeOnPayload(
+export function withProviderWebSearch(
 	options: SimpleStreamOptions | undefined,
 	model: Model<Api>,
+	hasApiKey: boolean,
 ): SimpleStreamOptions | undefined {
 	if (model.provider !== "google" && model.provider !== "openai" && model.provider !== "anthropic") {
 		return options;
 	}
+	let signalled = false;
 
 	return {
 		...options,
 		onPayload: async (payload, payloadModel) => {
 			const userPayload = await options?.onPayload?.(payload, payloadModel);
 			const nextPayload = userPayload ?? payload;
-			const groundedPayload = applyProviderWebSearch(nextPayload, payloadModel, !!options?.apiKey);
+			const groundedPayload = applyProviderWebSearch(nextPayload, payloadModel, hasApiKey);
+			if (groundedPayload !== undefined && !signalled) {
+				signalled = true;
+				signalHostedSearchActivation(resolveProviderWebSearchRoute(payloadModel, hasApiKey));
+			}
 			return groundedPayload ?? userPayload;
 		},
 	};
@@ -172,14 +187,14 @@ export async function hybridStreamFn(model: Model<Api>, context: Context, option
 			const hasApiKey = !!proxiedOptions.apiKey;
 			console.log(`[keating:stream] proxy ${model.provider} -> ${model.baseUrl} (apiKey=${hasApiKey})`);
 		}
-		const mergedOptions = mergeOnPayload(proxiedOptions, proxiedModel);
+		const mergedOptions = withProviderWebSearch(proxiedOptions, proxiedModel, !!apiKey);
 		return normalizeToolCallStream(
 			streamWithApiRetry(proxiedModel, context, mergedOptions, (nextOptions) => streamSimple(proxiedModel, context, nextOptions)),
 			context,
 		);
 	}
 
-	const mergedOptions = mergeOnPayload(streamOptions, model);
+	const mergedOptions = withProviderWebSearch(streamOptions, model, !!apiKey);
 	return normalizeToolCallStream(
 		streamWithApiRetry(model, context, mergedOptions, (nextOptions) => streamSimple(model, context, nextOptions)),
 		context,

@@ -21,6 +21,12 @@ import {
 	type TopicArtifactInput,
 } from "./usage-topic-groups";
 import {
+	TOPIC_CATEGORIES_CHANGED_EVENT,
+	ensureModelTopicCategories,
+	loadTopicCategoryAssignments,
+	pickCategorizationModel,
+} from "../keating/topic-categorization";
+import {
 	buildModelUsageBreakdown,
 	aggregateFeedback,
 	getCurriculumDisplayEnd,
@@ -157,7 +163,7 @@ interface UsageChartsProps {
 export function UsageCharts({ sessionMetadata, onOpenSession }: UsageChartsProps) {
 	const navigate = useNavigate();
 	const [data, setData] = useState<{
-		topicGroups: TopicArtifactGroup[];
+		topicArtifacts: TopicArtifactInput[];
 		sessions: LearnerState["sessions"];
 		openChecklists: Verification[];
 		weaknesses: string[];
@@ -203,11 +209,9 @@ export function UsageCharts({ sessionMetadata, onOpenSession }: UsageChartsProps
 					...animations.map((a) => ({ topic: a.topic, type: "animation" as const })),
 					...verifications.map((v) => ({ topic: v.topic, type: "verification" as const })),
 				];
-				const topicGroups = buildTopicArtifactGroups(topicArtifacts);
-
 				if (cancelled) return;
 				setData({
-					topicGroups,
+					topicArtifacts,
 					sessions: learnerState.sessions ?? [],
 					openChecklists: verifications.filter((v) => !v.completed),
 					weaknesses: learnerState.weaknesses ?? [],
@@ -227,6 +231,37 @@ export function UsageCharts({ sessionMetadata, onOpenSession }: UsageChartsProps
 		};
 	}, []);
 
+	// Model-authored topic → category assignments; keyword matching is only the
+	// fallback while a topic is still unclassified.
+	const [assignments, setAssignments] = useState<Record<string, string>>(() => loadTopicCategoryAssignments());
+	useEffect(() => {
+		const onChanged = () => setAssignments(loadTopicCategoryAssignments());
+		window.addEventListener(TOPIC_CATEGORIES_CHANGED_EVENT, onChanged);
+		return () => window.removeEventListener(TOPIC_CATEGORIES_CHANGED_EVENT, onChanged);
+	}, []);
+
+	// Ask a configured model to classify any topics the cache hasn't seen yet.
+	useEffect(() => {
+		if (!data || data.topicArtifacts.length === 0) return;
+		void (async () => {
+			try {
+				const model = await pickCategorizationModel();
+				if (!model) return;
+				const topics = data.topicArtifacts
+					.map((artifact) => artifact.topic ?? "")
+					.filter(Boolean);
+				await ensureModelTopicCategories(model, topics);
+			} catch (error) {
+				console.warn("Background topic categorization failed:", error);
+			}
+		})();
+	}, [data]);
+
+	const topicGroups = useMemo(
+		() => (data ? buildTopicArtifactGroups(data.topicArtifacts, assignments) : []),
+		[data, assignments],
+	);
+
 	if (!data) {
 		return (
 			<div className={styles.loading}>
@@ -235,7 +270,7 @@ export function UsageCharts({ sessionMetadata, onOpenSession }: UsageChartsProps
 		);
 	}
 
-	const totalTopicArtifacts = data.topicGroups.reduce((sum, t) => sum + t.count, 0);
+	const totalTopicArtifacts = topicGroups.reduce((sum, t) => sum + t.count, 0);
 	const feedbackMix = aggregateFeedback(data.feedback);
 	const modelMix = buildModelUsageBreakdown(sessionMetadata, Math.max(1, sessionMetadata.length));
 
@@ -246,10 +281,10 @@ export function UsageCharts({ sessionMetadata, onOpenSession }: UsageChartsProps
 					title="Topic mix"
 					subtitle={`Artifacts grouped into learning domains${totalTopicArtifacts ? ` (${totalTopicArtifacts} total)` : ""}`}
 				>
-					{data.topicGroups.length === 0 ? (
+					{topicGroups.length === 0 ? (
 						<EmptyState message="No topic artifacts yet — start a lesson to see this fill in." />
 					) : (
-						<TopicGroupWheel groups={data.topicGroups} />
+						<TopicGroupWheel groups={topicGroups} />
 					)}
 				</ChartPanel>
 
@@ -280,7 +315,7 @@ export function UsageCharts({ sessionMetadata, onOpenSession }: UsageChartsProps
 				title="Curriculum timeline"
 				subtitle="Each row is a learning session — bar length is duration, color is the first topic covered"
 			>
-				<CurriculumGantt sessions={data.sessions} colorFor={(t) => categorizeUsageTopic(t).color} onOpenSession={onOpenSession} />
+				<CurriculumGantt sessions={data.sessions} colorFor={(t) => categorizeUsageTopic(t, assignments).color} onOpenSession={onOpenSession} />
 			</ChartPanel>
 
 			<ChartPanel

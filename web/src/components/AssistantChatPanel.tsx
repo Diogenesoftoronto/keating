@@ -17,6 +17,7 @@ import type {
   ThinkingLevel,
 } from "@earendil-works/pi-agent-core";
 import type { ImageContent, TextContent } from "@earendil-works/pi-ai";
+import type { Api, Model } from "@earendil-works/pi-ai/compat";
 import {
   AssistantRuntimeProvider,
   AttachmentPrimitive,
@@ -110,6 +111,7 @@ import {
   STARTER_PROMPTS,
   type StarterPrompt,
 } from "../keating/starter-prompts";
+import { getTailoredOpening } from "../keating/tailored-opening";
 import {
   parseOpenUIMessageSegments,
   stripOpenUIPrograms,
@@ -130,6 +132,7 @@ import {
   classifyLlmError,
   type LlmErrorDetails,
 } from "../core/api-retry";
+import type { ToolConfirmationRequestDetail } from "../keating/security";
 
 const AuthErrorContext = createContext<(provider: string) => Promise<boolean>>(
   () => Promise.resolve(false),
@@ -427,6 +430,77 @@ interface AssistantChatPanelProps {
   className?: string;
   speechEnabled?: boolean;
   responseComparison?: ReactNode;
+}
+
+function ToolConfirmationDialog({ request, onDone }: {
+  request: ToolConfirmationRequestDetail;
+  onDone: () => void;
+}) {
+  const approveRef = useRef<HTMLButtonElement>(null);
+  const finish = useCallback((approved: boolean) => {
+    if (approved) request.approve();
+    else request.cancel();
+    onDone();
+  }, [onDone, request]);
+
+  useEffect(() => {
+    approveRef.current?.focus();
+    const remaining = Math.max(0, request.review.expiresAt - Date.now());
+    const timeout = window.setTimeout(() => finish(false), remaining);
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") finish(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.clearTimeout(timeout);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [finish, request.review.expiresAt]);
+
+  return (
+    <div
+      role="presentation"
+      className={css({
+        position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center",
+        justifyContent: "center", padding: "1rem", backgroundColor: "rgba(0, 0, 0, 0.55)",
+      })}
+      onMouseDown={(event) => { if (event.target === event.currentTarget) finish(false); }}
+    >
+      <section
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="keating-tool-confirmation-title"
+        aria-describedby="keating-tool-confirmation-description"
+        className={css({
+          width: "100%", maxWidth: "28rem", borderRadius: "0.75rem", border: "1px solid var(--border)",
+          backgroundColor: "var(--card)", padding: "1.25rem", boxShadow: "0 24px 80px rgba(0,0,0,.35)",
+        })}
+      >
+        <div className={css({ display: "flex", alignItems: "flex-start", gap: "0.75rem" })}>
+          <ShieldAlert aria-hidden="true" className={css({ marginTop: "0.125rem", flexShrink: 0, color: "var(--destructive)" })} />
+          <div>
+            <h2 id="keating-tool-confirmation-title" className={css({ fontSize: "1rem", fontWeight: 700 })}>
+              Review tool action
+            </h2>
+            <p id="keating-tool-confirmation-description" className={css({ marginTop: "0.375rem", fontSize: "0.875rem", color: "var(--muted-foreground)" })}>
+              Keating wants to run <strong className={foregroundTextClass}>{request.review.toolName}</strong>.
+              This is classified as <strong className={foregroundTextClass}>{request.review.risk}</strong>.
+              {request.review.surface === "voice" ? " This request came from voice and requires a separate visual confirmation." : ""}
+            </p>
+            <p className={css({ marginTop: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+              Arguments and credentials are intentionally hidden. Cancel if you did not independently request this action.
+            </p>
+          </div>
+        </div>
+        <div className={css({ marginTop: "1rem", display: "flex", justifyContent: "flex-end", gap: "0.5rem" })}>
+          <button type="button" className={dialogButtonClass} onClick={() => finish(false)}>Cancel</button>
+          <button ref={approveRef} type="button" className={cx(dialogButtonClass, css({ backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }))} onClick={() => finish(true)}>
+            Confirm action
+          </button>
+        </div>
+      </section>
+    </div>
+  );
 }
 
 function StreamingTextPart({
@@ -888,6 +962,8 @@ function LiveVoiceOverlay({
           throw new Error("The selected speech provider does not support live voice.");
         }
 		const bridge = getLiveSpeechBridge();
+		const conversationDetail: { ids?: { sessionId: string } } = {};
+		window.dispatchEvent(new CustomEvent("keating:conversation-ids", { detail: conversationDetail }));
         const session = await provider.startLiveSession({
           settings,
           getApiKey: getProviderApiKey,
@@ -895,6 +971,8 @@ function LiveVoiceOverlay({
 		  instructions: "You are Keating, a warm collaborative teacher. Use tools whenever they improve the lesson, especially for current facts, quizzes, goals, and visual learning artifacts. Keep spoken turns concise and invite interruption.",
 		  tools: bridge?.tools,
 		  onToolCall: bridge ? (call) => bridge.execute(call, abort.signal) : undefined,
+		  onConversationEvent: (event) => window.dispatchEvent(new CustomEvent("keating:conversation-event", { detail: event })),
+		  conversationIds: conversationDetail.ids,
           onState: (next) => { if (active) setState(next); },
           onUserTranscript: (text, final) => {
             if (!active || !text) return;
@@ -2829,14 +2907,43 @@ function makePrefillStatusMessage(agent: Agent, step: number): AgentMessage {
 export function SuggestedPrompts({
   onSelect,
   initialPrompts,
+  model,
 }: {
   onSelect: (text: string) => void;
   initialPrompts?: readonly StarterPrompt[];
+  /** Currently selected chat model; enables the personalized opening. */
+  model?: Model<Api> | null;
 }) {
   const [prompts, setPrompts] = useState(() => (
     initialPrompts ? [...initialPrompts] : pickDiverseStarterPrompts(STARTER_PROMPTS, 3)
   ));
+  const [greeting, setGreeting] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // With a usable model, replace the generic header with a greeting tailored
+  // to the learner's history and surface model-suggested next steps. Without
+  // one (or without history) the generic experience stays.
+  useEffect(() => {
+    if (!model) return;
+    let cancelled = false;
+    getTailoredOpening(model)
+      .then((opening) => {
+        if (cancelled || !opening) return;
+        setGreeting(opening.greeting);
+        if (opening.prompts.length > 0) {
+          setPrompts((prev) => {
+            const seen = new Set(prev.map((p) => p.text));
+            return [...opening.prompts.filter((p) => !seen.has(p.text)), ...prev];
+          });
+        }
+      })
+      .catch((error) => {
+        console.warn("Tailored opening unavailable:", error);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [model?.provider, model?.id]);
 
   const remaining = STARTER_PROMPTS.filter(
     (p) => !prompts.some((existing) => existing.text === p.text),
@@ -2887,7 +2994,7 @@ export function SuggestedPrompts({
       })}
     >
       <div className={cx("font-terminal", css({ fontSize: "0.875rem", color: "var(--muted-foreground)" }))}>
-        Start a conversation
+        {greeting ?? "Start a conversation"}
       </div>
       <div className={css({ display: "flex", width: "100%", minWidth: 0, alignItems: "center", gap: "0.25rem" })}>
         <button
@@ -3433,6 +3540,7 @@ function AssistantThread({
 
   const handleOpenUIAction = useCallback(
     (action: KeatingOpenUIAction) => {
+      window.dispatchEvent(new CustomEvent("keating:openui-action", { detail: action }));
       const response = createOpenUIActionLearnerResponse(action);
       queueOrSend({
         role: "user",
@@ -3737,7 +3845,7 @@ function AssistantThread({
           >
             <div className={css({ display: "flex", flex: 1, flexDirection: "column" })}>
               <AuiIf condition={(state) => state.thread.isEmpty}>
-                <SuggestedPrompts onSelect={(text) => {
+                <SuggestedPrompts model={agent?.state.model ?? null} onSelect={(text) => {
                   posthog.capture('suggested_prompt_clicked', { prompt_text: text.slice(0, 80) });
                   sendText(text);
                 }} />
@@ -4542,6 +4650,23 @@ export const AssistantChatPanel = forwardRef<
   const [agent, setAgentState] = useState<Agent | null>(null);
   const [callbacks, setCallbacks] = useState<ChatPanelSetupCallbacks>({});
   const [version, setVersion] = useState(0);
+  const [toolConfirmation, setToolConfirmation] = useState<ToolConfirmationRequestDetail | null>(null);
+
+  useEffect(() => {
+    const receiveConfirmation = (event: Event) => {
+      const detail = (event as CustomEvent<ToolConfirmationRequestDetail>).detail;
+      if (!detail?.review || typeof detail.approve !== "function" || typeof detail.cancel !== "function") return;
+      setToolConfirmation((current) => {
+        if (current) {
+          detail.cancel();
+          return current;
+        }
+        return detail;
+      });
+    };
+    window.addEventListener("keating:tool-confirmation-request", receiveConfirmation);
+    return () => window.removeEventListener("keating:tool-confirmation-request", receiveConfirmation);
+  }, []);
 
   const refresh = useCallback(() => setVersion((current) => current + 1), []);
 
@@ -4567,6 +4692,9 @@ export const AssistantChatPanel = forwardRef<
         speechEnabled={speechEnabled}
         responseComparison={responseComparison}
       />
+      {toolConfirmation ? (
+        <ToolConfirmationDialog request={toolConfirmation} onDone={() => setToolConfirmation(null)} />
+      ) : null}
     </div>
   );
 });

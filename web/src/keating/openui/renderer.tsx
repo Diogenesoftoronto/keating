@@ -13,6 +13,7 @@ import {
 } from "@openuidev/react-lang";
 import { CircleAlert, Loader2 } from "lucide-react";
 import { css } from "../../../styled-system/css";
+import type { StorageLike as EventStoreStorage } from "../event-store";
 import { keatingOpenUILibrary } from "./library";
 import type {
 	KeatingOpenUIAction,
@@ -27,10 +28,7 @@ interface StoredOpenUIState {
 	state: Record<string, unknown>;
 }
 
-interface StorageLike {
-	getItem(key: string): string | null;
-	setItem(key: string, value: string): void;
-}
+type StorageLike = Pick<EventStoreStorage, "getItem" | "setItem">;
 
 export type KeatingOpenUIActionHandler = (action: KeatingOpenUIAction) => void;
 
@@ -134,6 +132,7 @@ export function KeatingOpenUIRenderer({
 		<div
 			data-openui-document={metadata.id}
 			data-openui-lifecycle={metadata.lifecycle}
+			data-openui-revision={metadata.revision}
 			aria-busy={isStreaming}
 		>
 			{isStreaming ? (

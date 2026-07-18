@@ -53,13 +53,13 @@ describe("learner response envelopes", () => {
 				answers: [{ question: "What accelerates?", answer: "The object", grading: "pending" }],
 			},
 			formState: { confidence: 3 },
-			document: { id: "gravity-check", lifecycle: "resumable" },
+			document: { id: "gravity-check", lifecycle: "resumable", revision: 0 },
 		}, fixed);
 
 		expect(envelope.kind).toBe("question");
 		if (envelope.kind !== "question") throw new Error("expected question response");
 		expect(envelope.payload.source).toBe("openui");
-		expect(envelope.payload.document).toEqual({ id: "gravity-check", lifecycle: "resumable" });
+		expect(envelope.payload.document).toEqual({ id: "gravity-check", lifecycle: "resumable", revision: 0 });
 	});
 
 	it("keeps complete OpenUI action data but renders only useful quiz results", () => {
@@ -75,7 +75,7 @@ describe("learner response envelopes", () => {
 				flagged: ["q3"],
 			},
 			formState: { confidence: { q1: 4 } },
-			document: { id: "cells-quiz", lifecycle: "resumable" },
+			document: { id: "cells-quiz", lifecycle: "resumable", revision: 0 },
 		}, fixed);
 		const serialized = serializeLearnerResponse(envelope);
 

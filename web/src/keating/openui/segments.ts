@@ -21,6 +21,13 @@ function parseLifecycle(value: string | undefined): OpenUIInteractionLifecycle {
 	return "ephemeral";
 }
 
+function parseRevision(value: string | undefined): number {
+	if (value === undefined) return 0;
+	if (!/^\d+$/.test(value)) return 0;
+	const revision = Number(value);
+	return Number.isSafeInteger(revision) ? revision : 0;
+}
+
 function parseMetadata(
 	header: string | undefined,
 	program: string,
@@ -41,6 +48,7 @@ function parseMetadata(
 				? `${documentScope}:${header ?? ""}:${sourceIndex}`
 				: `${header ?? ""}:${sourceIndex}:${program}`)}`,
 		lifecycle: parseLifecycle(entries.get("lifecycle")),
+		revision: parseRevision(entries.get("revision")),
 	};
 }
 

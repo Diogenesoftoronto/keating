@@ -1,4 +1,6 @@
 import { readFileSync } from "node:fs";
+import { toolResultToUiDocument } from "../tui/ui/adapter.js";
+import { uiDocumentPresentation } from "../tui/ui/render.js";
 
 /**
  * Theme-free card renderers shared by RPC hosts (keating tui, e2e tests).
@@ -195,6 +197,11 @@ const ARTIFACT_TOOL_CARDS: Record<string, { title: string; pathKey: string }> = 
  * tool has no card representation (callers fall back to plain text).
  */
 export function toolResultCardLines(toolName: string, result: unknown): string[] | undefined {
+  const direct = result as { protocol?: unknown } | undefined;
+  if (direct?.protocol === "keating.ui") {
+    const presentation = uiDocumentPresentation(toolResultToUiDocument(toolName, result));
+    return cardLines(presentation.heading, presentation.body);
+  }
   const details = (result as { details?: Record<string, unknown> } | undefined)?.details;
   if (!details) return undefined;
 
@@ -226,5 +233,6 @@ export function toolResultCardLines(toolName: string, result: unknown): string[]
     return cardLines(`Web Search: ${query}`, body.length > 0 ? body : ["(no sources)"]);
   }
 
-  return undefined;
+  const presentation = uiDocumentPresentation(toolResultToUiDocument(toolName, result));
+  return cardLines(presentation.heading, presentation.body);
 }

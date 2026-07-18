@@ -1,5 +1,6 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { createLocalSetting } from "./local-setting";
+import type { ConversationEvent } from "./protocol";
 
 export const KEATING_VOICE_TOOL_NAME = "keating_voice";
 export const GEMINI_LIVE_SPEECH_MODEL = "gemini-3.1-flash-live-preview";
@@ -308,6 +309,10 @@ export interface LiveSpeechRequest {
 	tools?: LiveSpeechTool[];
 	onToolCall?: (call: LiveSpeechToolCall) => Promise<unknown>;
 	onError?: (error: Error) => void;
+	/** Optional provider-neutral event stream for persistence, replay, and alternate UIs. */
+	onConversationEvent?: (event: ConversationEvent) => void;
+	/** Stable identifiers supplied by a host that is continuing an existing conversation. */
+	conversationIds?: { sessionId?: string; runId?: string };
 }
 
 export interface LiveSpeechSession {

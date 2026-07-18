@@ -213,13 +213,34 @@ const CATEGORIES: UsageTopicCategory[] = [
 const CATEGORY_BY_KEY = new Map(CATEGORIES.map((category) => [category.key, category]));
 const GENERAL_CATEGORY = CATEGORY_BY_KEY.get("general")!;
 
-function normalizeTopic(topic: string): string {
+/** All fixed categories a topic can be assigned to (last entry is the general fallback). */
+export const USAGE_TOPIC_CATEGORIES: readonly UsageTopicCategory[] = CATEGORIES;
+
+export function usageTopicCategoryByKey(key: string): UsageTopicCategory | undefined {
+	return CATEGORY_BY_KEY.get(key);
+}
+
+export function normalizeUsageTopic(topic: string): string {
 	return topic.toLowerCase().replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim();
 }
 
-export function categorizeUsageTopic(topic: string | undefined | null): UsageTopicCategory {
-	const normalized = normalizeTopic(topic ?? "");
+/**
+ * Assign a topic to a category. `assignments` maps normalized topic →
+ * category key and takes precedence — it carries model-authored
+ * categorization; the keyword scan below is only the deterministic fallback
+ * for topics no model has classified yet.
+ */
+export function categorizeUsageTopic(
+	topic: string | undefined | null,
+	assignments?: Record<string, string>,
+): UsageTopicCategory {
+	const normalized = normalizeUsageTopic(topic ?? "");
 	if (!normalized) return GENERAL_CATEGORY;
+	const assigned = assignments?.[normalized];
+	if (assigned) {
+		const category = CATEGORY_BY_KEY.get(assigned);
+		if (category) return category;
+	}
 	for (const category of CATEGORIES) {
 		if (category.key === "general") continue;
 		if (category.keywords.some((keyword) => normalized.includes(keyword))) return category;
@@ -315,13 +336,16 @@ export function buildTopicHierarchy(groups: TopicArtifactGroup[]): HierarchyNode
 	return root;
 }
 
-export function buildTopicArtifactGroups(artifacts: TopicArtifactInput[]): TopicArtifactGroup[] {
+export function buildTopicArtifactGroups(
+	artifacts: TopicArtifactInput[],
+	assignments?: Record<string, string>,
+): TopicArtifactGroup[] {
 	const groups = new Map<string, TopicArtifactGroup>();
 
 	for (const artifact of artifacts) {
 		const topic = (artifact.topic ?? "").trim();
 		if (!topic) continue;
-		const category = categorizeUsageTopic(topic);
+		const category = categorizeUsageTopic(topic, assignments);
 		const group = groups.get(category.key) ?? {
 			key: category.key,
 			label: category.label,

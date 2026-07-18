@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { keatingStorage, sessions, updateSessionTitle } from "./keating-storage";
-import type { SessionMetadata } from "../types/session";
+import { sessionSearchText } from "./session-metadata";
+import type { SessionData, SessionMetadata } from "../types/session";
 import { buildSessionTree, type SessionTreeNode } from "../components/session-tree";
 import {
 	type ArtifactHero,
@@ -45,14 +46,29 @@ export function sortSessionsByLastModified(items: SessionMetadata[]): SessionMet
 	});
 }
 
-export function filterSessions(items: SessionMetadata[], query: string): SessionMetadata[] {
-	const normalizedQuery = query.trim().toLowerCase();
-	if (!normalizedQuery) return items;
-	return items.filter((session) =>
-		[session.title, session.preview, session.searchText].some((value) =>
-			(value ?? "").toLowerCase().includes(normalizedQuery),
-		),
-	);
+/**
+ * Full-text session filter: every whitespace-separated query term must appear
+ * somewhere in the title, preview, or full transcript text. `fullTextById`
+ * supplies transcript text for sessions whose metadata predates `searchText`
+ * (backfilled lazily by `useSessions` while a search is active).
+ */
+export function filterSessions(
+	items: SessionMetadata[],
+	query: string,
+	fullTextById?: Map<string, string>,
+): SessionMetadata[] {
+	const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+	if (terms.length === 0) return items;
+	return items.filter((session) => {
+		const haystack = [
+			session.title,
+			session.preview,
+			session.searchText ?? fullTextById?.get(session.id),
+		]
+			.map((value) => (value ?? "").toLowerCase())
+			.join("\n");
+		return terms.every((term) => haystack.includes(term));
+	});
 }
 
 /**
@@ -70,6 +86,8 @@ export function useSessions(opts: UseSessionsOptions = {}): UseSessionsResult {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [query, setQuery] = useState("");
+	const [backfilledSearchText, setBackfilledSearchText] = useState<Map<string, string>>(new Map());
+	const backfillRequested = useRef<Set<string>>(new Set());
 
 	const reload = useCallback(async () => {
 		setLoading(true);
@@ -133,7 +151,43 @@ export function useSessions(opts: UseSessionsOptions = {}): UseSessionsResult {
 		};
 	}, [opts.withHeroes]);
 
-	const filtered = useMemo(() => filterSessions(items, query), [items, query]);
+	// While a search is active, backfill transcript text for sessions whose
+	// stored metadata predates the `searchText` field, so full-text search
+	// covers every session (not just recently saved ones).
+	useEffect(() => {
+		if (!query.trim()) return;
+		const missing = items.filter(
+			(session) => session.searchText === undefined && !backfillRequested.current.has(session.id),
+		);
+		if (missing.length === 0) return;
+		for (const session of missing) backfillRequested.current.add(session.id);
+		let cancelled = false;
+		void Promise.all(
+			missing.map(async (session): Promise<[string, string]> => {
+				try {
+					const data = (await sessions.loadSession(session.id)) as SessionData | null;
+					return [session.id, data ? sessionSearchText(data.messages) : ""];
+				} catch {
+					return [session.id, ""];
+				}
+			}),
+		).then((entries) => {
+			if (cancelled) return;
+			setBackfilledSearchText((previous) => {
+				const next = new Map(previous);
+				for (const [id, text] of entries) next.set(id, text);
+				return next;
+			});
+		});
+		return () => {
+			cancelled = true;
+		};
+	}, [query, items]);
+
+	const filtered = useMemo(
+		() => filterSessions(items, query, backfilledSearchText),
+		[items, query, backfilledSearchText],
+	);
 	const flatResults = useMemo(() => {
 		if (!query.trim()) return null;
 		return filtered.slice(0, opts.flatLimit ?? 50);

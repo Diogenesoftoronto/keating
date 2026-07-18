@@ -5,6 +5,7 @@ export type OpenUIInteractionLifecycle = "ephemeral" | "resumable" | "workspace"
 export interface OpenUIDocumentMetadata {
 	id: string;
 	lifecycle: OpenUIInteractionLifecycle;
+	revision: number;
 }
 
 export type OpenUIMessageSegment =
@@ -25,4 +26,3 @@ export interface KeatingOpenUIAction {
 	formName?: string;
 	document: OpenUIDocumentMetadata;
 }
-

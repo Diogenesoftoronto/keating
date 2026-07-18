@@ -32,6 +32,25 @@ function modelKey(model: Model<any>): string {
 	return `${model.provider}::${model.api}::${model.id}`;
 }
 
+const CAPABILITY_FILTERS = [
+	{ value: "all", label: "All capabilities" },
+	{ value: "thinking", label: "Thinking" },
+	{ value: "vision", label: "Vision" },
+] as const;
+
+type CapabilityFilter = (typeof CAPABILITY_FILTERS)[number]["value"];
+
+function modelHasCapability(model: Model<Api>, capability: CapabilityFilter): boolean {
+	switch (capability) {
+		case "thinking":
+			return model.reasoning;
+		case "vision":
+			return model.input.includes("image");
+		default:
+			return true;
+	}
+}
+
 export interface ModelSelectorDialogProps {
 	open: boolean;
 	currentModel: Model<Api> | null;
@@ -45,6 +64,7 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 	const [error, setError] = useState("");
 	const [search, setSearch] = useState("");
 	const [providerFilter, setProviderFilter] = useState("all");
+	const [capabilityFilter, setCapabilityFilter] = useState<CapabilityFilter>("all");
 	const [selectedKey, setSelectedKey] = useState(currentModel ? modelKey(currentModel) : modelKey(makeBrowserModel()));
 	const [localState, setLocalState] = useState<LocalModel | null>(null);
 	const [webGpuAvailable, setWebGpuAvailable] = useState(false);
@@ -54,6 +74,7 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 		if (!open) return;
 		setSearch("");
 		setProviderFilter("all");
+		setCapabilityFilter("all");
 		setSelectedKey(currentModel ? modelKey(currentModel) : modelKey(makeBrowserModel()));
 		checkWebGpu().then(setWebGpuAvailable);
 		const unsub = localModel.subscribe(setLocalState);
@@ -118,11 +139,12 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 		const provider = providerFilter;
 		return models.filter(({ model }) => {
 			if (provider !== "all" && model.provider !== provider) return false;
+			if (!modelHasCapability(model, capabilityFilter)) return false;
 			if (!q) return true;
 			const haystack = `${model.name} ${model.id} ${model.provider}`.toLowerCase();
 			return haystack.includes(q);
 		});
-	}, [search, providerFilter, models]);
+	}, [search, providerFilter, capabilityFilter, models]);
 
 	const providerOptions = useMemo(
 		() =>
@@ -191,7 +213,7 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 						<h2 className={css({ fontSize: { base: "0.875rem", sm: "1rem" }, fontWeight: 600, color: "var(--foreground)" })}>Select Model</h2>
 						<p className={css({ marginTop: "0.125rem", fontSize: { base: "0.6875rem", sm: "0.75rem" }, color: "var(--muted-foreground)" })}>Built-in providers and discovered custom-provider models.</p>
 					</div>
-					<div className={css({ marginTop: { base: "0.5rem", sm: "0.75rem" }, display: "grid", gap: "0.5rem", sm: { gridTemplateColumns: "minmax(0, 1fr) minmax(10rem, 14rem) auto" } })}>
+					<div className={css({ marginTop: { base: "0.5rem", sm: "0.75rem" }, display: "grid", gap: "0.5rem", sm: { gridTemplateColumns: "minmax(0, 1fr) minmax(8rem, 12rem) minmax(8rem, 12rem) auto" } })}>
 						<label className={css({ minWidth: 0 })}>
 							<span className={css({ position: "absolute", width: "1px", height: "1px", padding: 0, margin: "-1px", overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", borderWidth: 0 })}>Search models</span>
 							<input
@@ -214,6 +236,20 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 								{providerOptions.map((provider) => (
 									<option key={provider} value={provider}>
 										{provider}
+									</option>
+								))}
+							</select>
+						</label>
+						<label className={css({ minWidth: 0 })}>
+							<span className={css({ position: "absolute", width: "1px", height: "1px", padding: 0, margin: "-1px", overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", borderWidth: 0 })}>Filter by capability</span>
+							<select
+								className={css({ width: "100%", borderRadius: "0.375rem", border: "2px solid var(--border)", background: "var(--background)", padding: "0.375rem 0.625rem", fontSize: { base: "0.75rem", sm: "0.875rem" } })}
+								value={capabilityFilter}
+								onChange={(e) => setCapabilityFilter(e.target.value as CapabilityFilter)}
+							>
+								{CAPABILITY_FILTERS.map((capability) => (
+									<option key={capability.value} value={capability.value}>
+										{capability.label}
 									</option>
 								))}
 							</select>
