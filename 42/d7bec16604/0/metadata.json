@@ -1,0 +1,78 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "42d7bec16604",
+  "session_id": "5ca48946-47aa-4265-86bd-21bbd2caa92b",
+  "strategy": "manual-commit",
+  "created_at": "2026-07-18T05:31:29.586616589Z",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "save_step_count": 2,
+  "files_touched": [
+    "src/core/cards.ts",
+    "src/core/config.ts",
+    "src/core/provider-auth.ts",
+    "src/runtime/pi.ts",
+    "src/tui/host-controller.ts",
+    "web/src/components/AssistantChatPanel.tsx",
+    "web/src/hooks/useKeatingAgent.tsx",
+    "web/src/lib/provider-models.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-fable-5",
+  "turn_id": "59be6b55e6d9",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 98,
+    "cache_creation_tokens": 126564,
+    "cache_read_tokens": 4538905,
+    "output_tokens": 47082,
+    "api_call_count": 54
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-07-18T05:31:29.542298435Z",
+    "agent_lines": 458,
+    "agent_removed": 6,
+    "human_added": 580,
+    "human_modified": 64,
+    "human_removed": 0,
+    "total_committed": 1099,
+    "total_lines_changed": 1331,
+    "agent_percentage": 34.86100676183321,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 124,
+      "agent_lines_removed": 13
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 49,
+      "user_lines_removed": 17,
+      "agent_lines_added": 764,
+      "agent_lines_removed": 35,
+      "user_added_per_file": {
+        "src/core/skate-secrets.ts": 25,
+        "src/runtime/pi.ts": 6,
+        "web/src/lib/provider-models.ts": 18
+      },
+      "user_removed_per_file": {
+        "src/runtime/pi.ts": 5,
+        "web/src/lib/provider-models.ts": 12
+      }
+    }
+  ]
+}
