@@ -1,39 +1,17 @@
 import {
   BoxRenderable,
   InputRenderable,
+  SelectRenderable,
+  SelectRenderableEvents,
   ScrollBoxRenderable,
   TextRenderable,
   createCliRenderer,
 } from "@opentui/core";
 
 import { launchRpcClient } from "../runtime/pi.js";
+import { HostController, type HostSurface } from "./host-controller.js";
 
 export type OpenTuiExitAction = "exit" | "shell";
-
-interface RpcAgentMessage {
-  role?: string;
-  content?: unknown;
-}
-
-function messageText(message: RpcAgentMessage): string {
-  const content = (message as { content?: unknown }).content;
-  if (typeof content === "string") return content;
-  if (!Array.isArray(content)) return "";
-  return content
-    .map((part) => {
-      if (!part || typeof part !== "object") return "";
-      const candidate = part as { type?: string; text?: string };
-      return candidate.type === "text" && typeof candidate.text === "string" ? candidate.text : "";
-    })
-    .filter(Boolean)
-    .join("\n");
-}
-
-function eventMessage(event: unknown): RpcAgentMessage | null {
-  if (!event || typeof event !== "object") return null;
-  const message = (event as { message?: unknown }).message;
-  return message && typeof message === "object" ? message as RpcAgentMessage : null;
-}
 
 /** Run the alternate OpenTUI host over Pi RPC. `keating shell` remains intact. */
 export async function launchOpenTui(cwd: string, initialPrompt?: string): Promise<OpenTuiExitAction> {
@@ -89,7 +67,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string): Promis
   });
   const transcript = new TextRenderable(renderer, {
     id: "keating-open-tui-transcript",
-    content: "Ask a question, continue a learning goal, or type /shell for Pi-specific UI extensions.",
+    content: "Ask a question, continue a learning goal, or type /shell for the classic Pi interface.",
     fg: "#eee8dc",
     width: "100%",
   });
@@ -125,59 +103,99 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string): Promis
   const turns: string[] = [];
   let streaming = "";
   let busy = false;
+  let dialogCancel: (() => void) | null = null;
   const renderTranscript = () => {
     transcript.content = [...turns, streaming].filter(Boolean).join("\n\n");
     scroll.scrollTo({ y: scroll.scrollHeight, x: 0 });
   };
-  const appendNotice = (message: string) => {
-    turns.push(`[Keating] ${message}`);
+  const appendTurn = (message: string) => {
+    turns.push(message);
     renderTranscript();
   };
 
-  const sendUiResponse = async (requestId: string, response: Record<string, unknown>) => {
-    const internal = client as unknown as { send(command: Record<string, unknown>): Promise<unknown> };
-    await internal.send({ type: "extension_ui_response", id: requestId, ...response });
+  const presentSelect = (title: string, options: string[]): Promise<string | undefined> =>
+    new Promise((resolve) => {
+      const modal = new BoxRenderable(renderer, {
+        id: `keating-dialog-${Date.now()}`,
+        width: "100%",
+        height: Math.min(Math.max(options.length + 4, 6), 16),
+        flexDirection: "column",
+        border: true,
+        borderStyle: "single",
+        borderColor: "#d6a84d",
+        padding: 1,
+      });
+      const titleView = new TextRenderable(renderer, { content: `${title}  ·  Esc cancels`, fg: "#d6a84d", height: 1 });
+      const select = new SelectRenderable(renderer, {
+        id: `keating-select-${Date.now()}`,
+        flexGrow: 1,
+        options: options.map((option) => ({ name: option, description: "", value: option })),
+        showDescription: false,
+        wrapSelection: true,
+        selectedBackgroundColor: "#d6a84d",
+        selectedTextColor: "#11100e",
+      });
+      modal.add(titleView);
+      modal.add(select);
+      shell.add(modal, 3);
+      let done = false;
+      const finish = (value?: string) => {
+        if (done) return;
+        done = true;
+        dialogCancel = null;
+        shell.remove(modal);
+        renderer.focusRenderable(input);
+        resolve(value);
+      };
+      dialogCancel = () => finish(undefined);
+      select.on(SelectRenderableEvents.ITEM_SELECTED, () => finish(select.getSelectedOption()?.value as string | undefined));
+      renderer.focusRenderable(select);
+    });
+
+  const presentTextInput = (title: string, prefill?: string, placeholder?: string): Promise<string | undefined> =>
+    new Promise((resolve) => {
+      status.content = `${title}  ·  Enter submits  ·  Esc cancels`;
+      input.value = prefill ?? "";
+      input.placeholder = placeholder ?? "Type a response…";
+      const previousSubmit = input.onSubmit;
+      let done = false;
+      const finish = (value?: string) => {
+        if (done) return;
+        done = true;
+        dialogCancel = null;
+        input.onSubmit = previousSubmit;
+        input.placeholder = "Message Keating…";
+        input.value = "";
+        status.content = "Ready  ·  /shell switches to classic Pi  ·  Ctrl+C exits";
+        resolve(value);
+      };
+      dialogCancel = () => finish(undefined);
+      input.onSubmit = () => finish(input.value);
+      renderer.focusRenderable(input);
+    });
+
+  const surface: HostSurface = {
+    appendTurn,
+    setStreaming(text) { streaming = text ?? ""; renderTranscript(); },
+    setStatus(text) { status.content = text; },
+    setBusy(value) {
+      busy = value;
+      status.content = value
+        ? "Keating is thinking…  ·  Enter queues a follow-up"
+        : "Ready  ·  /shell switches to classic Pi  ·  Ctrl+C exits";
+    },
+    setEditorText(text) { input.value = text; },
+    setWidget(key, lines, placement) {
+      if (lines?.length) appendTurn(`[${key}${placement ? ` · ${placement}` : ""}]\n${lines.join("\n")}`);
+    },
+    setTitle(title) { header.content = title; },
+    presentSelect,
+    presentConfirm(title, message) { return presentSelect(`${title}\n${message}`, ["Yes", "No"]).then((value) => value === undefined ? undefined : value === "Yes"); },
+    presentInput(title, placeholder) { return presentTextInput(title, undefined, placeholder); },
+    presentEditor(title, prefill) { return presentTextInput(title, prefill, "Edit response…"); },
   };
-
-  client.onEvent((event: unknown) => {
-    const candidate = event as { type?: string; id?: string; method?: string; message?: string; statusText?: string; text?: string };
-    if (candidate.type === "message_update") {
-      const message = eventMessage(event);
-      if (message && (message as { role?: string }).role === "assistant") {
-        streaming = `Keating\n${messageText(message)}`;
-        renderTranscript();
-      }
-      return;
-    }
-    if (candidate.type === "message_end") {
-      const message = eventMessage(event);
-      if (message && (message as { role?: string }).role === "assistant") {
-        streaming = "";
-        turns.push(`Keating\n${messageText(message)}`);
-        renderTranscript();
-      }
-      return;
-    }
-    if (candidate.type === "agent_start") {
-      busy = true;
-      status.content = "Keating is thinking…  ·  Enter queues a follow-up";
-      return;
-    }
-    if (candidate.type === "agent_end") {
-      busy = false;
-      status.content = "Ready  ·  /shell switches to classic Pi  ·  Ctrl+C exits";
-      return;
-    }
-    if (candidate.type !== "extension_ui_request") return;
-
-    if (candidate.method === "notify" && candidate.message) appendNotice(candidate.message);
-    if (candidate.method === "setStatus") status.content = candidate.statusText || "Ready";
-    if (candidate.method === "set_editor_text" && typeof candidate.text === "string") input.value = candidate.text;
-    if (["select", "confirm", "input", "editor"].includes(candidate.method ?? "") && candidate.id) {
-      appendNotice("This extension requested a Pi-specific input surface. Switch with /shell to use it.");
-      void sendUiResponse(candidate.id, { cancelled: true }).catch((error) => appendNotice(String(error)));
-    }
-  });
+  const controller = new HostController(client, surface);
+  controller.attach();
 
   const submit = async (raw: string) => {
     const message = raw.trim();
@@ -196,11 +214,17 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string): Promis
       if (busy) await client.followUp(message);
       else await client.prompt(message);
     } catch (error) {
-      appendNotice(error instanceof Error ? error.message : String(error));
+      appendTurn(`[Keating] ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
   input.onSubmit = () => { void submit(input.value); };
+  renderer.keyInput.on("keypress", (key) => {
+    if (key.name === "escape" && dialogCancel) {
+      key.preventDefault();
+      dialogCancel();
+    }
+  });
   renderer.focusRenderable(input);
   renderer.start();
   if (initialPrompt?.trim()) void submit(initialPrompt);

@@ -99,14 +99,35 @@ const CLI_AGENT_PACKAGES = [
 const ZYPHRA_PI_PROVIDER = {
   baseUrl: "https://api.zyphracloud.com/v1",
   api: "openai-completions",
-  apiKey: "ZYPHRA_API_KEY",
+  apiKey: "$ZYPHRA_API_KEY",
   models: [
     { id: "zyphra/ZAYA1-8B", name: "ZAYA1-8B" }
   ]
 } as const;
 
-async function syncZyphraProvider(cwd: string, env: NodeJS.ProcessEnv): Promise<void> {
-  if (!env.ZYPHRA_API_KEY) return;
+const MINIMAX_PI_PROVIDER = {
+  baseUrl: "https://api.minimax.io/v1",
+  api: "openai-completions",
+  apiKey: "$MINIMAX_API_KEY",
+	compat: { supportsDeveloperRole: false, supportsReasoningEffort: false },
+  models: [
+	{
+		id: "MiniMax-M2.7-highspeed", name: "MiniMax M2.7 Highspeed", reasoning: true,
+		input: ["text"], contextWindow: 204_800, maxTokens: 32_768,
+		cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }
+	},
+    { id: "MiniMax-M3", name: "MiniMax-M3", reasoning: true }
+  ]
+} as const;
+
+const EXTRA_PI_PROVIDERS: Record<string, { envKey: string; provider: unknown }> = {
+  zyphra: { envKey: "ZYPHRA_API_KEY", provider: ZYPHRA_PI_PROVIDER },
+  minimax: { envKey: "MINIMAX_API_KEY", provider: MINIMAX_PI_PROVIDER }
+};
+
+export async function syncExtraProviders(cwd: string, env: NodeJS.ProcessEnv): Promise<void> {
+  const active = Object.entries(EXTRA_PI_PROVIDERS).filter(([, entry]) => env[entry.envKey]);
+  if (active.length === 0) return;
 
   const modelsPath = join(configDir(cwd), "models.json");
   let existing: Record<string, unknown> = {};
@@ -120,8 +141,11 @@ async function syncZyphraProvider(cwd: string, env: NodeJS.ProcessEnv): Promise<
     existing = {};
   }
 
-  const providers = (existing.providers as Record<string, unknown>) ?? {};
-  const merged = { ...existing, providers: { ...providers, zyphra: ZYPHRA_PI_PROVIDER } };
+  const providers = { ...((existing.providers as Record<string, unknown>) ?? {}) };
+  for (const [name, entry] of active) {
+    providers[name] = entry.provider;
+  }
+  const merged = { ...existing, providers };
   await mkdir(configDir(cwd), { recursive: true });
   await writeFile(modelsPath, `${JSON.stringify(merged, null, 2)}\n`, "utf8");
 }
@@ -187,7 +211,7 @@ function selectAuthenticatedProvider(cwd: string, config: KeatingConfig, args: s
     return { env };
   }
 
-  const candidates = [configuredProvider, "google", "openai", "anthropic", "openrouter", "zyphra"].filter((provider, index, all) =>
+  const candidates = [configuredProvider, "google", "openai", "anthropic", "openrouter", "zyphra", "minimax"].filter((provider, index, all) =>
     provider && all.indexOf(provider) === index
   );
   const selected = candidates.find((provider) => providerIsConfigured(cwd, env, provider));
@@ -198,13 +222,14 @@ function selectAuthenticatedProvider(cwd: string, config: KeatingConfig, args: s
       note: [
       providerSetupMessage(configuredProvider),
       "",
-      "Keating also checked for OpenAI, Anthropic, OpenRouter, and Zyphra credentials and did not find them.",
+      "Keating also checked for OpenAI, Anthropic, OpenRouter, Zyphra, and MiniMax credentials and did not find them.",
       "Supported fallback env vars:",
       "  GEMINI_API_KEY or GOOGLE_API_KEY",
       "  OPENAI_API_KEY",
       "  ANTHROPIC_API_KEY or ANTHROPIC_OAUTH_TOKEN",
       "  OPENROUTER_API_KEY (free models available at https://openrouter.ai)",
-      "  ZYPHRA_API_KEY (ZAYA1-8B via https://cloud.zyphra.com)"
+      "  ZYPHRA_API_KEY (ZAYA1-8B via https://cloud.zyphra.com)",
+      "  MINIMAX_API_KEY (minimax-m2.7-highspeed via https://platform.minimax.io)"
     ].join("\n")
     };
   }
@@ -314,7 +339,7 @@ export async function launchShell(cwd: string, args: string[]): Promise<number> 
   await ensureProjectScaffold(cwd);
   const config = await loadKeatingConfig(cwd);
   await syncPiSettings(cwd, config);
-  await syncZyphraProvider(cwd, process.env);
+  await syncExtraProviders(cwd, process.env);
   const report = await detectAiRuntime(cwd);
   const runtime = report.selected;
   if (!runtime) {
@@ -404,7 +429,7 @@ export async function launchRpcClient(cwd: string, args: string[] = []): Promise
   await ensureProjectScaffold(cwd);
   const config = await loadKeatingConfig(cwd);
   await syncPiSettings(cwd, config);
-  await syncZyphraProvider(cwd, process.env);
+  await syncExtraProviders(cwd, process.env);
 
   const report = await detectAiRuntime(cwd);
   const runtime = report.selected;

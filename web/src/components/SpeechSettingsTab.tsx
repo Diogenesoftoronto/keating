@@ -311,6 +311,22 @@ export function SpeechSettingsTab({ onSettingsChange, hideNav = false }: SpeechS
 							</select>
 						</div>
 					)}
+					{settings.providerId === "openai-realtime" && settings.model.startsWith("gpt-realtime-2") && (
+						<div className={fieldStackClass}>
+							<label className={fieldLabelClass}>Reasoning effort</label>
+							<select
+								className={inputClass}
+								value={settings.reasoningEffort}
+								onChange={(e) => persist({ reasoningEffort: e.target.value as WebSpeechSettings["reasoningEffort"] })}
+							>
+								<option value="minimal">Minimal — lowest latency</option>
+								<option value="low">Low</option>
+								<option value="medium">Medium</option>
+								<option value="high">High</option>
+								<option value="xhigh">Extra high</option>
+							</select>
+						</div>
+					)}
 					<div className={fieldStackClass}>
 						<label className={fieldLabelClass}>Voice</label>
 						{activeProvider && activeProvider.voices.length > 0 ? (

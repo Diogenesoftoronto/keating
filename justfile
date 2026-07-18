@@ -39,6 +39,10 @@ test:
 test-web:
     cd web && bun test
 
+# Real Pi RPC + MiniMax tool-loop smoke test. Reads minimax@secrets from Skate.
+test-e2e: build
+    KEATING_E2E=1 bun test ./test/e2e/tui.e2e.test.ts
+
 # Run mutation testing
 mutate:
     stryker run

@@ -46,6 +46,8 @@ export interface WebSpeechSettings {
 	customModels: CustomSpeechModel[];
 	/** When true, Realtime providers may capture mic input. */
 	microphoneEnabled: boolean;
+	/** Reasoning budget for Realtime reasoning models. */
+	reasoningEffort: "minimal" | "low" | "medium" | "high" | "xhigh";
 }
 
 export interface VoiceUtterance {
@@ -63,6 +65,7 @@ export const DEFAULT_WEB_SPEECH_SETTINGS: WebSpeechSettings = {
 	voiceName: DEFAULT_SPEECH_VOICE,
 	customModels: [],
 	microphoneEnabled: false,
+	reasoningEffort: "medium",
 };
 
 const speechSetting = createLocalSetting<WebSpeechSettings>({
@@ -85,6 +88,9 @@ const speechSetting = createLocalSetting<WebSpeechSettings>({
 				voiceName: cleanString(parsed.voiceName) || DEFAULT_WEB_SPEECH_SETTINGS.voiceName,
 				customModels,
 				microphoneEnabled: parsed.microphoneEnabled === true,
+				reasoningEffort: ["minimal", "low", "medium", "high", "xhigh"].includes(parsed.reasoningEffort ?? "")
+					? parsed.reasoningEffort as WebSpeechSettings["reasoningEffort"]
+					: DEFAULT_WEB_SPEECH_SETTINGS.reasoningEffort,
 			};
 		} catch {
 			return DEFAULT_WEB_SPEECH_SETTINGS;
@@ -265,6 +271,30 @@ export interface SpeechProviderDescriptor {
 
 export type LiveSpeechState = "connecting" | "listening" | "speaking" | "closed";
 
+export interface LiveSpeechTool {
+	name: string;
+	description: string;
+	parameters: Record<string, unknown>;
+}
+
+export interface LiveSpeechToolCall {
+	callId: string;
+	name: string;
+	arguments: Record<string, unknown>;
+}
+
+export interface LiveSpeechBridge {
+	tools: LiveSpeechTool[];
+	execute(call: LiveSpeechToolCall, signal?: AbortSignal): Promise<unknown>;
+}
+
+export function getLiveSpeechBridge(): LiveSpeechBridge | undefined {
+	if (typeof window === "undefined") return undefined;
+	const detail: { bridge?: LiveSpeechBridge } = {};
+	window.dispatchEvent(new CustomEvent("keating:live-speech-bridge", { detail }));
+	return detail.bridge;
+}
+
 export interface LiveSpeechRequest {
 	settings: WebSpeechSettings;
 	customModel?: CustomSpeechModel;
@@ -275,6 +305,8 @@ export interface LiveSpeechRequest {
 	onState?: (state: LiveSpeechState) => void;
 	onUserTranscript?: (text: string, final: boolean) => void;
 	onAssistantTranscript?: (text: string, final: boolean) => void;
+	tools?: LiveSpeechTool[];
+	onToolCall?: (call: LiveSpeechToolCall) => Promise<unknown>;
 	onError?: (error: Error) => void;
 }
 

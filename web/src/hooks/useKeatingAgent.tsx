@@ -36,7 +36,7 @@ import {
 } from "../keating/response-comparison";
 import { bootNodePod } from "../keating/nodepod-runtime";
 import { registerKeatingWebMcp } from "../keating/webmcp";
-import { type WebSpeechSettings } from "../keating/speech";
+import { type LiveSpeechBridge, type WebSpeechSettings } from "../keating/speech";
 import {
   savePersistentStorageStatus,
   useKeatingAgentStore,
@@ -918,6 +918,32 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       cancelled = true;
     };
   }, [speechSettings, toolOptions]);
+
+	// Realtime voice has its own WebRTC model connection. Expose the active Pi
+	// tool catalog synchronously so voice function calls use the same tools and
+	// learner state as typed chat.
+	useEffect(() => {
+		const handleBridgeRequest = (event: Event) => {
+			const detail = (event as CustomEvent<{ bridge?: LiveSpeechBridge }>).detail;
+			const agent = agentRef.current;
+			if (!detail || !agent) return;
+			const tools = (agent.state.tools ?? []) as any[];
+			detail.bridge = {
+				tools: tools.map((tool) => ({
+					name: tool.name,
+					description: tool.description ?? tool.label ?? tool.name,
+					parameters: tool.parameters ?? { type: "object", properties: {} },
+				})),
+				async execute(call, signal) {
+					const tool = tools.find((candidate) => candidate.name === call.name);
+					if (!tool?.execute) throw new Error(`Unknown live voice tool: ${call.name}`);
+					return tool.execute(call.callId, call.arguments, signal, () => {});
+				},
+			};
+		};
+		window.addEventListener("keating:live-speech-bridge", handleBridgeRequest);
+		return () => window.removeEventListener("keating:live-speech-bridge", handleBridgeRequest);
+	}, []);
 
   // Apply teacher-persona edits to the live agent so changes take effect on the
   // next turn without needing a new session.
