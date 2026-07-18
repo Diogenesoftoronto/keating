@@ -20,7 +20,7 @@ describe("OpenUI message segments", () => {
 		const document = segments[1];
 		if (document.type !== "openui") throw new Error("expected OpenUI segment");
 		expect(document.complete).toBe(true);
-		expect(document.metadata).toEqual({ id: "fractions-check", lifecycle: "resumable" });
+		expect(document.metadata).toEqual({ id: "fractions-check", lifecycle: "resumable", revision: 0 });
 		expect(document.program).toContain("partitioned");
 	});
 
@@ -75,10 +75,17 @@ describe("OpenUI message segments", () => {
 	});
 
 	it("defaults malformed metadata safely", () => {
-		const [document] = parseOpenUIMessageSegments("```openui lifecycle=forever id=bad/id\nroot = Nope({})\n```");
+		const [document] = parseOpenUIMessageSegments("```openui lifecycle=forever id=bad/id revision=-1\nroot = Nope({})\n```");
 		if (document.type !== "openui") throw new Error("expected OpenUI segment");
 		expect(document.metadata.lifecycle).toBe("ephemeral");
 		expect(document.metadata.id).toMatch(/^openui-/);
+		expect(document.metadata.revision).toBe(0);
+	});
+
+	it("parses a validated non-negative document revision", () => {
+		const [document] = parseOpenUIMessageSegments("```openui id=quiz-1 revision=3\nroot = Quiz({})\n```");
+		if (document.type !== "openui") throw new Error("expected OpenUI segment");
+		expect(document.metadata.revision).toBe(3);
 	});
 
 	it("removes programs without discarding surrounding prose", () => {

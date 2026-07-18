@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-07-18
+
+### Added
+- Added GPT Realtime 2.1 full-duplex voice around canonical conversation events, including interruption and barge-in handling, parallel tool-call lifecycles, reconnect state, and privacy-safe realtime telemetry.
+- Added provider-capability negotiation and provider-native search routing for OpenAI, Google, and Anthropic, with explicit MiniMax client-adapter and citation semantics.
+- Added shared, serializable generative UI documents and actions for quizzes, questions, goals, decks, images, scenes, and artifacts, with compatible web, Pi, and OpenTUI rendering paths.
+- Added durable conversation replay with corruption-tolerant recovery, pending UI actions, checkpoints, and privacy-safe persistence that excludes audio and sensitive tool payloads by default.
+- Added fail-closed tool authorization, untrusted-search provenance enforcement, and a bound visual confirmation flow for effectful operations.
+- Added tailored tutor openings, topic categorization and topic-shift handling, and richer session insights across the existing learning and usage surfaces.
+
+### Changed
+- Consolidated overlapping browser storage contracts and documented intentional browser, core, OpenUI, and TUI protocol mirrors through the similarity audit.
+- Expanded the live MiniMax harness to verify a real Pi RPC tool call and assistant completion with `MiniMax-M2.7-highspeed` while keeping credentials out of output and persistence.
+
+## [2.4.1] - 2026-07-18
+
+### Added
+- Added the initial realtime voice and interactive OpenTUI release foundation, including hosted web-search routing and a live MiniMax Pi RPC harness.
+
 ## [2.4.0] - 2026-07-17
 
 ### Added
@@ -486,7 +505,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v2.4.0...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v2.5.0...HEAD
+[2.5.0]: https://github.com/Diogenesoftoronto/keating/compare/v2.4.1...v2.5.0
+[2.4.1]: https://github.com/Diogenesoftoronto/keating/compare/v2.4.0...v2.4.1
 [2.4.0]: https://github.com/Diogenesoftoronto/keating/compare/v2.3.1...v2.4.0
 [2.2.0]: https://github.com/Diogenesoftoronto/keating/compare/v2.0.0...v2.2.0
 [2.0.0]: https://github.com/Diogenesoftoronto/keating/compare/v1.4.1...v2.0.0

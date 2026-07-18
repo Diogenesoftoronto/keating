@@ -21,10 +21,15 @@ import { ModelSelectorDialog } from "../components/ModelSelector";
 import { KeatingApiKeyPromptDialog, promptKeatingApiKey } from "../components/KeatingApiKeyPromptDialog";
 import { getProviderApiKey, resolveAvailableChatModel } from "../lib/provider-models";
 import { localModel } from "../stores/local-model";
-import { buildKeatingSystemPrompt, composeKeatingSystemPrompt, createKeatingTools, getActiveKeatingPrompt } from "../keating/browser-tools";
+import { buildKeatingSystemPrompt, composeKeatingSystemPrompt, createKeatingTools, executeRawKeatingTool, getActiveKeatingPrompt } from "../keating/browser-tools";
 import { loadAgentRuntimeConfig, shouldAutoBootNodePod, type KeatingAgentRuntimeConfig } from "../keating/agent-runtime";
 import { KeatingCapabilityController } from "../keating/capabilities";
 import { keatingLifecycle } from "../keating/lifecycle";
+import { detectTopicCategoryShift } from "../keating/topic-shift-hook";
+import { browserConversationRuntime, recordAgentEvent, recordOpenUIAction, type ConversationRuntime } from "../keating/integration";
+import { AuthorizedToolExecutor, type ToolConfirmationRequestDetail, type ToolConfirmationReview } from "../keating/security";
+import type { ConversationEvent } from "../keating/protocol";
+import type { KeatingOpenUIAction } from "../keating/openui/types";
 import { keatingOpenUIPrompt } from "../keating/openui/library";
 import { isDefaultPersona, loadPersona, subscribePersona } from "../keating/persona";
 import { loadLearnerContext, subscribeLearnerContext } from "../keating/learner-context";
@@ -183,6 +188,8 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const agentRef = useRef<Agent | null>(null);
   const panelRef = useRef<ChatPanelHandle | null>(null);
   const sessionIdRef = useRef<string>(createSessionId());
+	const toolExecutorRef = useRef(new AuthorizedToolExecutor());
+	const untrustedSearchProvenanceRef = useRef(false);
   const sessionCreatedAtRef = useRef(new Date().toISOString());
   const sessionParentIdRef = useRef<string | null>(null);
   const sessionForkedAtRef = useRef<string | undefined>(undefined);
@@ -229,6 +236,15 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const alternativeGenerationRef = useRef(new Set<string>());
   const settingsDeepLinkRef = useRef<{ tabId: string; sectionId: string | null } | null>(null);
   const [responseComparison, setResponseComparison] = useState<PendingResponseComparison | null>(null);
+
+	useEffect(() => {
+		const updateSearchTrust = (event: Event) => {
+			const detail = (event as CustomEvent<{ untrusted?: boolean }>).detail;
+			untrustedSearchProvenanceRef.current = detail?.untrusted === true;
+		};
+		window.addEventListener("keating:search-provenance", updateSearchTrust);
+		return () => window.removeEventListener("keating:search-provenance", updateSearchTrust);
+	}, []);
 
   const restorePendingResponseComparison = useCallback(async (sourceSessionId: string) => {
     const metadata = await sessions.getAllMetadata() as SessionMetadata[];
@@ -387,7 +403,67 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const persistUnsubRef = useRef<(() => void) | null>(null);
   const persistCurrentSnapshotRef = useRef<() => Promise<void>>(async () => {});
   const capabilityControllerRef = useRef<KeatingCapabilityController | null>(null);
+  const conversationRuntimeRef = useRef<ConversationRuntime | null>(null);
   const autoTitleRequestedRef = useRef<Set<string>>(new Set());
+
+  const conversationRuntime = useCallback((sessionId = sessionIdRef.current) => {
+    if (typeof window === "undefined") return null;
+    const current = conversationRuntimeRef.current;
+    if (current?.sessionId === sessionId) return current;
+    const runtime = browserConversationRuntime(sessionId, window.localStorage);
+    conversationRuntimeRef.current = runtime;
+    const pendingActions = runtime.pendingActions();
+    if (pendingActions.length > 0) {
+      window.dispatchEvent(new CustomEvent("keating:pending-ui-actions-restored", { detail: { sessionId, actions: pendingActions } }));
+    }
+    return runtime;
+  }, []);
+
+	const requestToolConfirmation = useCallback((review: ToolConfirmationReview): Promise<boolean> => {
+		if (typeof window === "undefined") return Promise.resolve(false);
+		return new Promise((resolve) => {
+			let settled = false;
+			const settle = (approved: boolean) => {
+				if (settled) return;
+				settled = true;
+				resolve(approved);
+			};
+			const detail: ToolConfirmationRequestDetail = {
+				review,
+				approve: () => settle(true),
+				cancel: () => settle(false),
+			};
+			window.dispatchEvent(new CustomEvent("keating:tool-confirmation-request", { detail }));
+		});
+	}, []);
+
+  useEffect(() => {
+    const receiveCanonicalEvent = (event: Event) => {
+      const canonical = (event as CustomEvent<ConversationEvent>).detail;
+      if (!canonical || canonical.sessionId !== sessionIdRef.current) return;
+      conversationRuntime(canonical.sessionId)?.accept(canonical);
+    };
+    window.addEventListener("keating:conversation-event", receiveCanonicalEvent);
+    return () => window.removeEventListener("keating:conversation-event", receiveCanonicalEvent);
+  }, [conversationRuntime]);
+
+  useEffect(() => {
+    const provideConversationIds = (event: Event) => {
+      const detail = (event as CustomEvent<{ ids?: { sessionId: string } }>).detail;
+      if (detail) detail.ids = { sessionId: sessionIdRef.current };
+    };
+    window.addEventListener("keating:conversation-ids", provideConversationIds);
+    return () => window.removeEventListener("keating:conversation-ids", provideConversationIds);
+  }, []);
+
+  useEffect(() => {
+    const receiveOpenUIAction = (event: Event) => {
+      const action = (event as CustomEvent<KeatingOpenUIAction>).detail;
+      if (action) recordOpenUIAction(conversationRuntime()!, action);
+    };
+    window.addEventListener("keating:openui-action", receiveOpenUIAction);
+    return () => window.removeEventListener("keating:openui-action", receiveOpenUIAction);
+  }, [conversationRuntime]);
 
   const applyThinkingLevel = useCallback((level: ThinkingLevel) => {
     const agent = agentRef.current;
@@ -434,7 +510,18 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
           messages: data.messages as unknown[],
         }));
     },
-  }), []);
+	security: {
+		executor: toolExecutorRef.current,
+		requestConfirmation: requestToolConfirmation,
+		getContext: () => ({
+			sessionId: sessionIdRef.current,
+			surface: "text" as const,
+			provenance: untrustedSearchProvenanceRef.current
+				? { trust: "untrusted-web" as const, userAuthorized: false }
+				: { trust: "trusted" as const, userAuthorized: true },
+		}),
+	},
+	  }), [requestToolConfirmation]);
 
   const saveSessionSnapshot = useCallback(async (
     agent: Agent | null = agentRef.current,
@@ -503,6 +590,14 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     if (snapshot.interrupted) return;
 
     await keatingStorage.recordLearnerTurnFeedback(messages as Array<{ role?: unknown; content?: unknown }>);
+
+    void detectTopicCategoryShift(
+      agent.state.model as Model<Api>,
+      sessionId,
+      messages as Array<{ role?: unknown; content?: unknown }>,
+    ).catch((error) => {
+      console.warn("Topic-shift detection failed:", error);
+    });
 
     if (!hasManualTitle && !aiGeneratedTitle && hasAutoTitleContext(messages) && !autoTitleRequestedRef.current.has(sessionId)) {
       autoTitleRequestedRef.current.add(sessionId);
@@ -758,6 +853,8 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     };
     persistCurrentSnapshotRef.current = persistSnapshot;
     const unsubscribePersistence = agent.subscribe((ev) => {
+      const canonicalRuntime = conversationRuntime(agentSessionId);
+      if (canonicalRuntime) recordAgentEvent(canonicalRuntime, ev);
       if (ev.type === "message_update") {
         scheduleSnapshot();
       } else if (ev.type === "message_end") {
@@ -937,13 +1034,25 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
 				async execute(call, signal) {
 					const tool = tools.find((candidate) => candidate.name === call.name);
 					if (!tool?.execute) throw new Error(`Unknown live voice tool: ${call.name}`);
-					return tool.execute(call.callId, call.arguments, signal, () => {});
+					return toolExecutorRef.current.executeWithTrustedConfirmation({
+						toolName: call.name,
+						arguments: call.arguments,
+						context: {
+						sessionId: sessionIdRef.current,
+							surface: "voice",
+						provenance: untrustedSearchProvenanceRef.current
+							? { trust: "untrusted-web", userAuthorized: false }
+							: { trust: "unknown", userAuthorized: false },
+						},
+						run: () => executeRawKeatingTool(tool, [call.callId, call.arguments, signal, () => {}]),
+						requestConfirmation: requestToolConfirmation,
+					});
 				},
 			};
 		};
 		window.addEventListener("keating:live-speech-bridge", handleBridgeRequest);
 		return () => window.removeEventListener("keating:live-speech-bridge", handleBridgeRequest);
-	}, []);
+	}, [requestToolConfirmation]);
 
   // Apply teacher-persona edits to the live agent so changes take effect on the
   // next turn without needing a new session.

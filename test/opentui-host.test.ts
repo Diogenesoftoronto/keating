@@ -59,6 +59,31 @@ describe("OpenTUI host controller", () => {
     expect(h.turns.join("\n")).toContain("Goal: Calculus");
     expect(h.turns.join("\n")).toContain("Limits");
   });
+
+  test("explicitly answers unsupported custom UI requests", async () => {
+    const h = harness();
+    h.emit({ type: "extension_ui_request", id: "custom-1", method: "custom", title: "Rich form" });
+    await deferredTick();
+    expect(h.turns.join("\n")).toContain("Unsupported Pi UI request: custom");
+    expect(h.sent).toContainEqual({ type: "extension_ui_response", id: "custom-1", cancelled: true, reason: "unsupported_ui_request" });
+  });
+
+  test("renders every serializable UI document family with a generic fallback", () => {
+    const fixtures = [
+      ["quiz", { topic: "Math", questions: [{ prompt: "Why?" }] }],
+      ["question", { fields: [{ prompt: "Explain" }] }],
+      ["goal", { title: "Learn", steps: [{ title: "Start", status: "active" }] }],
+      ["deck", { title: "Cards", cards: [{ front: "A", back: "B" }] }],
+      ["image", { title: "Diagram", alt: "A graph", url: "https://example.test/a.png" }],
+      ["scene", { topic: "Motion", summary: "Moving point" }],
+      ["artifact", { label: "Plan", uri: "artifact://plan/1" }],
+      ["generic", { format: "json", data: { ok: true } }],
+    ] as const;
+    for (const [kind, payload] of fixtures) {
+      const lines = toolResultCardLines("ui_document", { protocol: "keating.ui", version: 1, id: kind, revision: 0, kind, payload });
+      expect(lines?.length).toBeGreaterThan(3);
+    }
+  });
 });
 
 describe("plain terminal cards", () => {

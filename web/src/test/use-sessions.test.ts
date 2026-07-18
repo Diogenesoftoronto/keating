@@ -79,6 +79,27 @@ describe("use-sessions helpers", () => {
 		expect(filterSessions(items, "").map((session) => session.id)).toEqual(["1", "2", "3"]);
 	});
 
+	it("requires every query term to match somewhere in the session text", () => {
+		const items = [
+			makeSession("1", { title: "Quantum Basics", searchText: "Wave functions and superposition." }),
+			makeSession("2", { title: "Quantum Circuits", searchText: "Gates and entanglement." }),
+		];
+
+		expect(filterSessions(items, "quantum superposition").map((session) => session.id)).toEqual(["1"]);
+		expect(filterSessions(items, "quantum missing").map((session) => session.id)).toEqual([]);
+	});
+
+	it("falls back to backfilled full text for sessions without stored searchText", () => {
+		const items = [
+			makeSession("1", { title: "Old session", preview: "Preview only" }),
+			makeSession("2", { title: "Other", preview: "Nothing here" }),
+		];
+		const fullTextById = new Map([["1", "A deep dive into monads and functors."]]);
+
+		expect(filterSessions(items, "monads", fullTextById).map((session) => session.id)).toEqual(["1"]);
+		expect(filterSessions(items, "monads").map((session) => session.id)).toEqual([]);
+	});
+
 	it("dispatches the shared sessions-changed event", () => {
 		const target = new EventTarget();
 		const windowStub = {

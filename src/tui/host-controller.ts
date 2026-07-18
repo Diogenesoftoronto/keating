@@ -44,6 +44,7 @@ interface UiRequestEvent {
   widgetKey?: string;
   widgetLines?: string[];
   widgetPlacement?: string;
+  document?: unknown;
 }
 
 function messageText(message: unknown): string {
@@ -139,6 +140,12 @@ export class HostController {
       case "extension_ui_request":
         this.handleUiRequest(event as UiRequestEvent);
         return;
+      case "ui_document": {
+        const { document } = event as { document?: unknown };
+        const card = toolResultCardLines("ui_document", document);
+        if (card) this.surface.appendTurn(card.join("\n"));
+        return;
+      }
       default:
         return;
     }
@@ -168,6 +175,12 @@ export class HostController {
         if (request.id) this.enqueueDialog(request as UiRequestEvent & { id: string });
         return;
       default:
+        this.surface.appendTurn(`[Keating] Unsupported Pi UI request${request.method ? `: ${request.method}` : ""}. The request was cancelled explicitly.`);
+        if (request.id) {
+          void this.sendUiResponse(request.id, { cancelled: true, reason: "unsupported_ui_request" }).catch((error) => {
+            this.surface.appendTurn(`[Keating] Could not answer UI request: ${error instanceof Error ? error.message : String(error)}`);
+          });
+        }
         return;
     }
   }

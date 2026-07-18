@@ -39,8 +39,8 @@ describe("Keating OpenUI library", () => {
 
 	it("persists resumable state and skips ephemeral state", () => {
 		const storage = new MemoryStorage();
-		const resumable = { id: "quiz-1", lifecycle: "resumable" as const };
-		const ephemeral = { id: "question-1", lifecycle: "ephemeral" as const };
+		const resumable = { id: "quiz-1", lifecycle: "resumable" as const, revision: 0 };
+		const ephemeral = { id: "question-1", lifecycle: "ephemeral" as const, revision: 0 };
 
 		expect(saveOpenUIState(storage, resumable, { answer: "1/2" })).toBe(true);
 		expect(loadOpenUIState(storage, resumable)).toEqual({ answer: "1/2" });

@@ -1,4 +1,6 @@
 import type { Api, Model } from "@earendil-works/pi-ai";
+import { negotiateProviderCapabilities } from "./providers";
+import type { SearchRoute } from "./search";
 import { loadKeatingUiSettings } from "./ui-settings";
 
 function enabled(hasApiKey: boolean): boolean {
@@ -64,12 +66,47 @@ export function applyAnthropicWebSearch(payload: unknown, model: Model<Api>, has
 	return { ...params, tools: [...tools, { type: "web_search_20250305", name: "web_search" }] };
 }
 
+/**
+ * Resolve hosted search versus Keating's client adapter. This describes the
+ * route only; adapter execution happens outside provider request payloads.
+ */
+export function resolveProviderWebSearchRoute(
+	model: Model<Api>,
+	hasApiKey: boolean,
+): SearchRoute {
+	const negotiation = negotiateProviderCapabilities(model, {
+		webSearch: true,
+		citations: true,
+		allowAdapters: true,
+	});
+	const available = enabled(hasApiKey);
+	const kind = !available
+		? "unavailable"
+		: negotiation.webSearch === "native"
+			? "native"
+			: negotiation.webSearch === "adapter"
+				? "client-adapter"
+				: "unavailable";
+	return {
+		provider: model.provider,
+		modelId: model.id,
+		kind,
+		tool: kind === "unavailable" ? undefined : negotiation.searchTool,
+		citationKind: kind === "unavailable" ? undefined : negotiation.capabilities.citationKind,
+		providerNative: kind === "native",
+	};
+}
+
 /** Add the active provider's hosted search tool without disturbing app tools. */
 export function applyProviderWebSearch(payload: unknown, model: Model<Api>, hasApiKey: boolean): unknown | undefined {
-	switch (model.provider) {
-		case "google": return applyGoogleSearchGrounding(payload, model, hasApiKey);
-		case "openai": return applyOpenAiWebSearch(payload, model, hasApiKey);
-		case "anthropic": return applyAnthropicWebSearch(payload, model, hasApiKey);
+	const route = resolveProviderWebSearchRoute(model, hasApiKey);
+	switch (route.tool) {
+		case "google-search-grounding": return applyGoogleSearchGrounding(payload, model, hasApiKey);
+		case "openai-web-search": return applyOpenAiWebSearch(payload, model, hasApiKey);
+		case "anthropic-web-search": return applyAnthropicWebSearch(payload, model, hasApiKey);
+		// Client adapters are app tools; never pretend they are provider-hosted
+		// by injecting them into an unknown provider's request payload.
+		case "client-web-search":
 		default: return undefined;
 	}
 }

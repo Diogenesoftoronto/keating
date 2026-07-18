@@ -30,6 +30,7 @@ describe("OpenAI speech providers", () => {
 				voiceName: "Kore",
 				customModels: [],
 				microphoneEnabled: false,
+				reasoningEffort: "medium",
 			},
 			getApiKey: async () => "openai-test-key",
 		});
@@ -61,6 +62,7 @@ describe("OpenAI speech providers", () => {
 				voiceName: "marin",
 				customModels: [],
 				microphoneEnabled: false,
+				reasoningEffort: "medium",
 			},
 			getApiKey: async () => "openai-test-key",
 		});
