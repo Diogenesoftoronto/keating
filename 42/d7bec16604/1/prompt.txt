@@ -1,0 +1,82 @@
+.
+
+---
+
+<task-notification>
+<task-id>a0135f8506e87247f</task-id>
+<output-file>/tmp/claude-1000/-home-diogenes-Projects-keating/ad25f66a-06b7-4a89-931f-6825c4e35846/tasks/a0135f8506e87247f.output</output-file>
+<status>completed</status>
+<summary>Agent "Explore TUI, pi plugins, harness" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>I have a comprehensive picture. Here is my report.
+
+## Keating: TUI, pi framework, Generative UI tools, and E2E testing
+
+### 1. The TUI implementation
+
+Keating has **two separate terminal UIs**, both launched from `src/cli/main.ts` (dispatch at lines ~501–513):
+
+- **`keating shell` → the classic Pi TUI** (`launchShell`). This is the real, full-featured interface. It runs the hyperteacher extension in-process on top of `@earendil-works/pi-coding-agent` + `@earendil-works/pi-tui`. Interactive tool cards and `ctx.ui.custom` forms work here.
+- **`keating tui` → the OpenTUI host** (`src/tui/opentui-host.ts`, `launchOpenTui`). Built on `@opentui/core` (`BoxRenderable`, `InputRenderable`, `ScrollBoxRenderable`, `TextRenderable`, `createCliRenderer`). It is a **thin RPC client** that talks to Pi over RPC (`launchRpcClient` from `src/runtime/pi.ts`).
+
+State of the OpenTUI host: **partial / text-only**. It renders a header, a status line, a scrollable transcript, and an input box. It streams assistant `message_update`/`message_end` events as plain text. Critically, it does **not** render any interactive/generative UI. When an extension issues an `extension_ui_request` with method `select`/`confirm`/`input`/`editor`, it posts a notice ("This extension requested a Pi-specific input surface. Switch with /shell to use it.") and **cancels the request** (`sendUiResponse(id, { cancelled: true })`, opentui-host.ts lines 176–179). Typing `/shell` tears down OpenTUI and hands off to the classic Pi shell.
+
+TUI-side rendering code (used by the classic Pi shell, not OpenTUI):
+- `src/pi/hyper-teacher/tui-components.ts` — `renderCard`, `renderArtifactPreview`, `renderQuizCard`, `renderGoalCard`, `renderGoalListCard`, and the interactive `AnswerFormComponent` (keyboard-driven quiz form built from pi-tui `Input`/`SelectList`).
+- `src/pi/hyper-teacher/header-component.ts`, `setup-wizard.ts`, `ui-helpers.ts`.
+
+### 2. Generative UI tools — web vs TUI support
+
+Two parallel tool implementations exist:
+- **CLI/TUI extension tools:** `src/pi/hyper-teacher/tools/*` registered via `registerKeatingTools` (`tools/index.ts`), built with `keatingToolMaker` in `tools/shared.ts`. Each tool can attach a `renderResult(result, options, theme)` that returns a pi-tui `Component`.
+- **Web browser tools:** `web/src/keating/browser-tools/*` (`assessment.ts`, `teaching.ts`, `media.ts`, `improvement.ts`, `workspace.ts`), built with `createTool` (`browser-tools/shared.ts`), returning **strings that embed interactive tags**.
+
+**Web rendering mechanism (per project memory, confirmed):** tools emit a self-closing custom tag with a **double-JSON-encoded** payload: `` `&lt;keating-quiz json=${JSON.stringify(JSON.stringify(quiz))} /&gt;` `` (e.g. `assessment.ts:177`, `teaching.ts:76/287/338`, `media.ts:298/422`, `AssistantChatPanel.tsx:3569`). `web/src/components/AssistantChatPanel.tsx` parses these with regexes (`quizTagPattern`, `sceneTagPattern`, `questionTagPattern`, `goalTagPattern`, `generatedImageTagPattern`, `quizResultTagPattern`, ~lines 1255–1260) and renders React components (`QuizRenderer`, `QuestionRenderer`, `GoalRenderer`, `QuizResultCard`, `FlashcardRenderer`, `MermaidRenderer`, `SceneRenderer`). User interaction dispatches **window CustomEvents** (`keating:quiz-submitted`, `keating:question-answered`, `keating:card-reviewed`, `keating:quiz-remediation-requested`, `keating:quiz-reframe-requested`), which listeners feed back into the agent via **`onNew(...)`** (AssistantChatPanel.tsx ~3350, 3421, 3461, 3570). The **`resultId` feedback loop**: the `quiz` tool stores open-ended answers under a generated `resultId` (`pendingQuizResults`, shared.ts) and instructs the model to call `grade_quiz`/`grade_question_checks` with that id (teaching.ts:126–136 CLI; assessment.ts:210–248 web emits `&lt;keating-quiz-grade …/&gt;`).
+
+Interactive/generative tool inventory and where handled:
+
+| Tool | Web tool (browser-tools) | Web tag / renderer | TUI/CLI tool (hyper-teacher) | TUI render support |
+|---|---|---|---|---|
+| **quiz** | `assessment.ts` "quiz" | `&lt;keating-quiz&gt;` → QuizRenderer | `tools/teaching.ts` "quiz" | Yes — `ctx.ui.custom` → `AnswerFormComponent` (interactive) + `renderQuizCard`; falls back to markdown when no UI |
+| **grade_quiz** | `assessment.ts` "grade_quiz" | `&lt;keating-quiz-grade&gt;` / QuizResultCard | `tools/teaching.ts` "grade_quiz" | Yes — `renderQuizCard` with grades |
+| **quiz-result** (learner submission) | AssistantChatPanel.tsx:3569 | `&lt;keating-quiz-result&gt;` → QuizResultCard | — | No (web-only feedback tag) |
+| **question / ask_user_question** | `assessment.ts` "ask_user_question" | `&lt;keating-question&gt;` → QuestionRenderer | `tools/ask-user-question.ts` | Partial — pi shell `ctx.ui`; OpenTUI cancels it |
+| **grade_question_checks** | `assessment.ts` "grade_question_checks" | (question grading) | — | n/a |
+| **goal / set_learner_goal / update_goal_step / list_learner_goals** | `teaching.ts` | `&lt;keating-goal&gt;` → GoalRenderer | `tools/goals.ts` | Card-only — `renderGoalCard`/`renderGoalListCard` (non-interactive) |
+| **plan** | `assessment.ts` (artifact) | `[artifact://plan/...]` markdown | `tools/teaching.ts` "plan" | Card — `artifactPreviewRenderer("Lesson Plan")` |
+| **map** | (concept map) | Mermaid → MermaidRenderer | `tools/teaching.ts` "map" | Card — `artifactPreviewRenderer("Concept Map")` |
+| **verify** | — | — | `tools/teaching.ts` "verify" | Card — `artifactPreviewRenderer("Verification Checklist")` |
+| **animate** | `media.ts` "animate" | `&lt;keating-animation&gt;` → SceneRenderer | `tools/teaching.ts` "animate" | Card — `artifactPreviewRenderer("Animation Storyboard")` |
+| **generate_image** | `media.ts` "generate_image" | `&lt;keating-image&gt;` | — | No (web-only) |
+| **deck (flashcards)** | `teaching.ts` "deck" | `&lt;keating-deck&gt;` → FlashcardRenderer | — | No (web-only) |
+| **scene** | — | `&lt;keating-scene&gt;` → SceneRenderer | — | No (web-only) |
+
+Bottom line on TUI support: the **classic Pi shell** renders all hyper-teacher tools as bordered cards and supports one genuinely interactive form (quiz via `AnswerFormComponent`). The **OpenTUI host renders none of them** — it explicitly declines every extension UI request. Several generative tools (`generate_image`, `deck`/flashcards, `scene`, `quiz-result`) are **web-only** with no CLI/TUI equivalent.
+
+### 3. The pi framework interface and plugins
+
+pi packages in use (all `@earendil-works`, pinned in `bun.lock`):
+- **Root (`package.json`):** `@earendil-works/pi-coding-agent ^0.80.2` (locked 0.80.2), `@earendil-works/pi-tui ^0.80.2` (0.80.2). Also `@opentui/core ^0.4.3` and `ink ^7.1.0` (ink is a dependency but the active alternate TUI is OpenTUI, not ink).
+- **Web (`web/package.json`):** `@earendil-works/pi-agent-core ^0.80.2`, `@earendil-works/pi-ai ^0.80.2`, `@earendil-works/pi-web-ui ^0.75.3`.
+- **No `pi-proxy`** package is present anywhere.
+
+Plugin/extension system: Keating declares itself a pi package (`package.json` `"pi": { "extensions": ["./dist/src/pi"], "skills": ["./pi/skills"], "prompts": ["./pi/prompts"] }`). The extension entry is `src/pi/hyper-teacher/index.ts` — `export default function hyperteacher(pi)` which calls `pi.registerCommand(...)` (plan, map, animate, bench, evolve, prompt-evolve, setup, packages, verify, feedback, improve, outputs, speech, policy, version, …) and `registerKeatingTools(pi)` / `registerSpeechTool(pi)`. Tools use `pi.registerTool` (guarded by a `WeakSet` to avoid double registration). The extension talks to the UI through `ctx.ui` (`setEditorText`, `select`, `custom`, `notify`, `setStatus`) and stores the active context via `setActiveCtx` (shared.ts). The web app does not load the pi extension; it re-implements the tools as browser tools and drives the agent via `useKeatingAgent` (`web/src/hooks/useKeatingAgent.tsx`) using `@earendil-works/pi-agent-core` `Agent`, `@earendil-works/pi-ai`, and `defaultConvertToLlm` from `@earendil-works/pi-web-ui`.
+
+**Gaps where the OpenTUI host lags web/classic shell:** no interactive cards, no `select`/`confirm`/`input`/`editor` surfaces (cancelled outright), no quiz/goal/question/flashcard/image/scene rendering, no `resultId` feedback loop UI — it only streams text and offers `/shell` as an escape hatch.
+
+### 4. Testing harness and API keys
+
+- Tests run with **`bun test`**: root suite `bun test ./test/*.test.ts` (justfile `test`), web suite `cd web &amp;&amp; bun test` (justfile `test-web`). Web has two dirs: `web/src/test/*.test.ts` (~65 files) and `web/test/*.test.ts`. Strategy doc: `docs/TESTING.md` (Antithesis-style "system laws", property/fuzz tests via `fast-check`; also Stryker mutation testing via `stryker.config.json`).
+- **How e2e tests obtain API keys:** environment variables, gated with early-return guards — **not** a secret manager. The real-model tests use Gemini by default: `test/fuzz.test.ts:16`, `test/evolution.test.ts:168/189`, `test/map-elites.test.ts:279` all do `if (!process.env.GOOGLE_API_KEY &amp;&amp; !process.env.GEMINI_API_KEY) return;` (silently skip when no key). `test/package.test.ts` exercises env plumbing for `OPENAI_API_KEY`, `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `ANTHROPIC_API_KEY`, `OPENROUTER_API_KEY`, `ZYPHRA_API_KEY`. No test hardcodes or fetches a live key.
+- **Skate:** there is **no skate integration in code or tests**. The only references are `docs/TUTORIAL.md:45` ("...or use the `skate` secret manager if available") as an optional suggestion for storing keys, and `crush.json:50` where `"using-skate"` is a **disabled Crush skill** (unrelated to Keating runtime). Provider auth/env handling lives in `src/core/provider-auth.ts` (`PROVIDER_ENV_KEYS`, `envWithProviderAliases`) — env-var based.
+- **minimax / minimax-m2.7-highspeed:** **not found.** No `minimax-m2.7-highspeed` anywhere. The only minimax presence is a normal provider entry — `MiniMax-M3` model id and `minimax`/`minimax-cn` base URLs in `web/src/lib/provider-models.ts:419–432` (and a CHANGELOG note). There is no dedicated test model or e2e harness wired to minimax.
+
+Key file paths:
+- TUI: `/home/diogenes/Projects/keating/src/tui/opentui-host.ts`, `/home/diogenes/Projects/keating/src/cli/main.ts`, `/home/diogenes/Projects/keating/src/runtime/pi.ts`
+- CLI/TUI tools + cards: `/home/diogenes/Projects/keating/src/pi/hyper-teacher/index.ts`, `/home/diogenes/Projects/keating/src/pi/hyper-teacher/tools/{teaching,goals,ask-user-question,feedback,self-evaluation,self-evolution,index,shared}.ts`, `/home/diogenes/Projects/keating/src/pi/hyper-teacher/tui-components.ts`
+- Web tools + rendering: `/home/diogenes/Projects/keating/web/src/keating/browser-tools/{assessment,teaching,media,improvement,workspace,shared}.ts`, `/home/diogenes/Projects/keating/web/src/components/AssistantChatPanel.tsx`, `/home/diogenes/Projects/keating/web/src/components/{QuizRenderer,QuestionRenderer,GoalRenderer,QuizResultCard,FlashcardRenderer,MermaidRenderer,SceneRenderer}.tsx`, `/home/diogenes/Projects/keating/web/src/hooks/useKeatingAgent.tsx`
+- Tests: `/home/diogenes/Projects/keating/test/*.test.ts` (`fuzz`, `evolution`, `map-elites`, `package` for key gating), `/home/diogenes/Projects/keating/web/src/test/`, `/home/diogenes/Projects/keating/web/test/`, `/home/diogenes/Projects/keating/docs/TESTING.md`
+
+Note: I did not create a plan file since this was a read-only search/report task; findings are delivered above.</result>
+<usage><subagent_tokens>61264</subagent_tokens><tool_uses>15</tool_uses><duration_ms>260238</duration_ms></usage>
+</task-notification>
