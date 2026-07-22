@@ -1,0 +1,39 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "f14091b6fa94",
+  "session_id": "5ca48946-47aa-4265-86bd-21bbd2caa92b",
+  "strategy": "manual-commit",
+  "created_at": "2026-07-22T04:23:57.793406018Z",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "save_step_count": 1,
+  "files_touched": [
+    "web/src/components/AssistantChatPanel.tsx"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-fable-5",
+  "turn_id": "59be6b55e6d9",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 98,
+    "cache_creation_tokens": 126564,
+    "cache_read_tokens": 4538905,
+    "output_tokens": 47082,
+    "api_call_count": 54
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-07-22T04:23:57.735512423Z",
+    "agent_lines": 27,
+    "agent_removed": 2,
+    "human_added": 7584,
+    "human_modified": 6,
+    "human_removed": 0,
+    "total_committed": 7617,
+    "total_lines_changed": 7880,
+    "agent_percentage": 0.3680203045685279,
+    "metric_version": 2
+  }
+}
