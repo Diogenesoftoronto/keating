@@ -263,6 +263,91 @@ function majorMinor(version: string): string {
 
 const POSTS: Post[] = [
   {
+    date: "2026-07-22",
+    badge: { label: "RELEASE", color: "release" },
+    title: "v2.5.0 - Multimodal Runtime, Mobile, and Calmer Artifacts",
+    version: "2.5.0",
+    summary:
+      "Keating 2.5 ships the multimodal runtime release line: realtime voice, provider-native search, durable UI documents, a native Android client, Canadian localization, Markdown-rendered reasoning, and calmer artifact previews that keep the chat surface under control.",
+    sections: [
+      { id: "realtime-runtime", title: "Realtime Runtime" },
+      { id: "mobile-local", title: "Native Mobile and Local Storage" },
+      { id: "localized-shell", title: "Canadian Localization" },
+      { id: "reasoning-artifacts", title: "Reasoning and Artifact UX" },
+      { id: "release-25-verification", title: "Verification" },
+    ],
+    body: (
+      <>
+        <p className={styles.leadParagraph}>
+          Keating 2.5 is the release where the teaching interface becomes more
+          multimodal without becoming less inspectable. Voice, search, mobile,
+          translation, and artifact rendering all now share the same bias:
+          preserve the learner&apos;s trail, expose durable objects, and keep the
+          chat surface from turning into a pile of disconnected widgets.
+        </p>
+
+        <h3 id="realtime-runtime" className={styles.sectionHeading}>Realtime runtime</h3>
+        <p className={styles.paragraph}>
+          The browser runtime now includes GPT Realtime 2.1 full-duplex voice on
+          top of canonical conversation events. Interruptions, barge-in,
+          parallel tool-call lifecycles, reconnect state, and privacy-safe
+          telemetry all flow through the same durable event vocabulary used by
+          ordinary text sessions.
+        </p>
+        <p className={styles.paragraph}>
+          Provider capabilities are also more explicit. OpenAI, Google, and
+          Anthropic search paths use provider-native tools, MiniMax has an
+          explicit client adapter, and untrusted search provenance is kept
+          visible instead of being treated like ordinary tutor knowledge.
+        </p>
+
+        <h3 id="mobile-local" className={styles.sectionHeading}>Native mobile and local storage</h3>
+        <p className={styles.paragraph}>
+          This release adds a native Android app under <Code>mobile/</Code>,
+          built with React Native and Expo rather than as a web view. It keeps
+          provider keys in Android Keystore, persists lessons on-device, and
+          brings the portable Keating pedagogy engine to offline-capable plans,
+          maps, and quizzes. Mobile storage is intentionally local-only in this
+          release; it does not join the desktop P2P mesh yet.
+        </p>
+
+        <h3 id="localized-shell" className={styles.sectionHeading}>Canadian localization</h3>
+        <p className={styles.paragraph}>
+          The web and mobile shells now have General Translation wiring for
+          Canadian English and French Canadian. The web navigation/footer shell
+          uses the GT provider and local bundles, while mobile lets
+          <Code>gt-react-native</Code> resolve the device locale so a
+          French-Canadian phone can actually activate <Code>fr-CA</Code> once
+          translations are generated.
+        </p>
+
+        <h3 id="reasoning-artifacts" className={styles.sectionHeading}>Reasoning and artifact UX</h3>
+        <p className={styles.paragraph}>
+          Reasoning display is now separate from reasoning effort. A learner can
+          keep model thinking enabled while hiding reasoning cards entirely, and
+          visible reasoning now has an explicit disclosure arrow plus the same
+          Markdown, math, table, and code rendering as assistant messages.
+        </p>
+        <p className={styles.paragraph}>
+          Artifact previews are calmer too. The chat can keep only one inline
+          artifact preview open at a time, so new lesson plans, concept maps,
+          animations, decks, and verification reports replace the previous
+          preview instead of stacking indefinitely. The artifact button in the
+          chat nav also behaves like a real toggle now: click once to open the
+          browser or side panel, click again to close it.
+        </p>
+
+        <h3 id="release-25-verification" className={styles.sectionHeading}>Verification</h3>
+        <p className={styles.paragraph}>
+          The release was checked with the mobile unit/type/export path, web
+          settings and chat parser tests, the full web test suite, typechecking,
+          Vite and Nitro builds, and the version synchronizer used by the
+          release pipeline.
+        </p>
+      </>
+    ),
+  },
+  {
     date: "2026-07-17",
     badge: { label: "RELEASE", color: "release" },
     title: "v2.4.0 - A Streamable Interface for Understanding",

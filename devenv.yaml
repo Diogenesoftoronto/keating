@@ -1,0 +1,4 @@
+nixpkgs:
+  allow_unfree: true
+  android_sdk:
+    accept_license: true

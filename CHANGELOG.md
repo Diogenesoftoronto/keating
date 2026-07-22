@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.5.0] - 2026-07-18
+## [2.5.0] - 2026-07-22
 
 ### Added
 - Added GPT Realtime 2.1 full-duplex voice around canonical conversation events, including interruption and barge-in handling, parallel tool-call lifecycles, reconnect state, and privacy-safe realtime telemetry.
@@ -16,10 +16,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added durable conversation replay with corruption-tolerant recovery, pending UI actions, checkpoints, and privacy-safe persistence that excludes audio and sensitive tool payloads by default.
 - Added fail-closed tool authorization, untrusted-search provenance enforcement, and a bound visual confirmation flow for effectful operations.
 - Added tailored tutor openings, topic categorization and topic-shift handling, and richer session insights across the existing learning and usage surfaces.
+- Added a native Android client built with Expo and React Native, including secure provider-key storage, on-device lesson artifacts, offline-capable plans/maps/quizzes, and General Translation wiring for English Canadian and French Canadian locales.
+- Added web General Translation wiring for the shared navigation/footer shell and local translation bundles for Canadian English and French.
 
 ### Changed
 - Consolidated overlapping browser storage contracts and documented intentional browser, core, OpenUI, and TUI protocol mirrors through the similarity audit.
 - Expanded the live MiniMax harness to verify a real Pi RPC tool call and assistant completion with `MiniMax-M2.7-highspeed` while keeping credentials out of output and persistence.
+- Made reasoning display a separate UI preference from reasoning effort; reasoning cards now have an explicit disclosure arrow and render Markdown, math, tables, and code consistently with assistant messages.
+- Made inline artifact previews optionally single-card so new lesson plans, maps, animations, and other artifacts can replace the previous preview instead of stacking in the chat chrome.
+
+### Fixed
+- Fixed French Canadian mobile localization being unreachable by letting `gt-react-native` resolve the device locale instead of pinning the provider to English Canadian.
+- Fixed the chat nav artifact button so it toggles the artifact browser/side panel closed as well as open.
 
 ## [2.4.1] - 2026-07-18
 

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { T, useGT } from "gt-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { css, cx } from "../../styled-system/css";
 import { btnRetro } from "../../styled-system/recipes";
@@ -7,6 +8,7 @@ import { btnRetro } from "../../styled-system/recipes";
 export function Nav() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
+  const gt = useGT();
   const closeMobile = () => setMobileOpen(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const toggleButtonRef = useRef<HTMLButtonElement>(null);
@@ -90,29 +92,29 @@ export function Nav() {
         {/* Desktop links — visible at md (768px) and up, controlled by Panda globalCss */}
         <div className="nav-desktop" style={{ alignItems: "center", gap: "1.5rem" }}>
           <Link to="/download" className="nav-link glitch-hover font-terminal nav-desktop-link">
-            [DOWNLOAD]
+            <T>[DOWNLOAD]</T>
           </Link>
           <Link to="/pricing" className="nav-link glitch-hover font-terminal nav-desktop-link">
-            [PRICING]
+            <T>[PRICING]</T>
           </Link>
           <Link to="/tutorial" className="nav-link glitch-hover font-terminal nav-desktop-link">
-            [TUTORIAL]
+            <T>[TUTORIAL]</T>
           </Link>
           <Link to="/blog" className="nav-link glitch-hover font-terminal nav-desktop-link">
-            [BLOG]
+            <T>[BLOG]</T>
           </Link>
           <Link to="/paper" className="nav-link glitch-hover font-terminal nav-desktop-link">
-            [PAPER]
+            <T>[PAPER]</T>
           </Link>
           <Link to="/usage" className="nav-link glitch-hover font-terminal nav-desktop-link">
-            [USAGE]
+            <T>[USAGE]</T>
           </Link>
           <Link to="/bench" className="nav-link glitch-hover font-terminal nav-desktop-link">
-            [BENCH]
+            <T>[BENCH]</T>
           </Link>
           <div className="nav-status" role="status">
             <span className="dot" />
-            SYSTEM ONLINE
+            <T>SYSTEM ONLINE</T>
           </div>
           <ThemeToggle />
           <button
@@ -125,7 +127,7 @@ export function Nav() {
             }}
             onClick={() => navigate({ to: "/chat" })}
           >
-            TRY_KEATING
+            <T>TRY_KEATING</T>
           </button>
         </div>
 
@@ -157,9 +159,9 @@ export function Nav() {
             onClick={() => setMobileOpen((o) => !o)}
             aria-expanded={mobileOpen}
             aria-controls="mobile-menu"
-            aria-label="Toggle navigation menu"
+            aria-label={gt("Toggle navigation menu")}
           >
-            {mobileOpen ? "[CLOSE]" : "[MENU]"}
+            {mobileOpen ? <T>[CLOSE]</T> : <T>[MENU]</T>}
           </button>
         </div>
       </div>
@@ -192,7 +194,7 @@ export function Nav() {
               style={{ padding: "0.75rem 0.5rem" }}
               onClick={closeMobile}
             >
-              [DOWNLOAD]
+              <T>[DOWNLOAD]</T>
             </Link>
             <Link
               to="/pricing"
@@ -200,7 +202,7 @@ export function Nav() {
               style={{ padding: "0.75rem 0.5rem" }}
               onClick={closeMobile}
             >
-              [PRICING]
+              <T>[PRICING]</T>
             </Link>
             <Link
               to="/tutorial"
@@ -208,7 +210,7 @@ export function Nav() {
               style={{ padding: "0.75rem 0.5rem" }}
               onClick={closeMobile}
             >
-              [TUTORIAL]
+              <T>[TUTORIAL]</T>
             </Link>
             <Link
               to="/blog"
@@ -216,7 +218,7 @@ export function Nav() {
               style={{ padding: "0.75rem 0.5rem" }}
               onClick={closeMobile}
             >
-              [BLOG]
+              <T>[BLOG]</T>
             </Link>
             <Link
               to="/paper"
@@ -224,7 +226,7 @@ export function Nav() {
               style={{ padding: "0.75rem 0.5rem" }}
               onClick={closeMobile}
             >
-              [PAPER]
+              <T>[PAPER]</T>
             </Link>
             <Link
               to="/usage"
@@ -232,7 +234,7 @@ export function Nav() {
               style={{ padding: "0.75rem 0.5rem" }}
               onClick={closeMobile}
             >
-              [USAGE]
+              <T>[USAGE]</T>
             </Link>
             <Link
               to="/bench"
@@ -240,7 +242,7 @@ export function Nav() {
               style={{ padding: "0.75rem 0.5rem" }}
               onClick={closeMobile}
             >
-              [BENCH]
+              <T>[BENCH]</T>
             </Link>
             <a
               href="https://github.com/Diogenesoftoronto/keating"
@@ -250,7 +252,7 @@ export function Nav() {
               style={{ padding: "0.75rem 0.5rem" }}
               onClick={closeMobile}
             >
-              [GITHUB]
+              <T>[GITHUB]</T>
             </a>
             <button
               className={btnRetro()}
@@ -267,7 +269,7 @@ export function Nav() {
                 navigate({ to: "/chat" });
               }}
             >
-              TRY_KEATING
+              <T>TRY_KEATING</T>
             </button>
           </div>
         </div>

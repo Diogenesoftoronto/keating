@@ -2055,9 +2055,11 @@ const MarkdownText = memo(function MarkdownText({
 function ReasoningPart({
   text,
   status,
+  show = true,
 }: {
   text: string;
   status?: { type: string };
+  show?: boolean;
 }) {
   const [open, setOpen] = useState(() => status?.type === "running");
   const userToggledRef = useRef(false);
@@ -2071,6 +2073,7 @@ function ReasoningPart({
     if (!userToggledRef.current) setOpen(false);
   }, [status?.type]);
 
+  if (!show) return null;
   if (!text.trim()) return null;
   return (
     <details
@@ -2101,10 +2104,38 @@ function ReasoningPart({
           fontWeight: 500,
         })}
       >
-        <span>Reasoning</span>
+        <span className={css({ display: "flex", alignItems: "center", gap: "0.375rem" })}>
+          <ChevronRight
+            size={13}
+            aria-hidden="true"
+            className={css({
+              flexShrink: 0,
+              transitionProperty: "transform",
+              transitionDuration: "150ms",
+              transform: open ? "rotate(90deg)" : "rotate(0deg)",
+            })}
+          />
+          <span>Reasoning</span>
+        </span>
         <CopyButton text={text} label="Copy" />
       </summary>
-      <div className={css({ marginTop: "0.5rem", whiteSpace: "pre-wrap" })}>{text}</div>
+      <div
+        className={cx(
+          "keating-reasoning-markdown",
+          css({
+            marginTop: "0.5rem",
+            overflowWrap: "break-word",
+          }),
+        )}
+      >
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm, remarkMath]}
+          rehypePlugins={[rehypeKatex]}
+          components={MARKDOWN_COMPONENTS}
+        >
+          {text}
+        </ReactMarkdown>
+      </div>
     </details>
   );
 }
@@ -2281,14 +2312,16 @@ function ToolPart({
   );
 }
 
-function messagePartComponents(showToolUi: boolean, showRawErrors: boolean) {
+function messagePartComponents(showToolUi: boolean, showRawErrors: boolean, showReasoning: boolean) {
   return {
     Text: (props: any) => (
       <StreamingTextPart {...props} showRawErrors={showRawErrors} />
     ),
     Image: ImagePart,
     File: FilePart,
-    Reasoning: ReasoningPart,
+    Reasoning: (props: Parameters<typeof ReasoningPart>[0]) => (
+      <ReasoningPart {...props} show={showReasoning} />
+    ),
     tools: {
       Fallback: (props: Parameters<typeof ToolPart>[0]) => (
         <ToolPart
@@ -3412,8 +3445,8 @@ function AssistantThread({
   );
   const components = useMemo(
     () =>
-      messagePartComponents(uiSettings.showToolUi, uiSettings.showRawErrors),
-    [uiSettings.showToolUi, uiSettings.showRawErrors],
+      messagePartComponents(uiSettings.showToolUi, uiSettings.showRawErrors, uiSettings.showReasoning),
+    [uiSettings.showToolUi, uiSettings.showRawErrors, uiSettings.showReasoning],
   );
   const modelRef = useRef(agent?.state.model);
   if (agent) modelRef.current = agent.state.model;

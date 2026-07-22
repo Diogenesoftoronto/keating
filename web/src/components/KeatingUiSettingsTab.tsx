@@ -242,6 +242,13 @@ export function KeatingUiSettingsTab() {
 			</SettingRow>
 
 			<SettingRow
+				title="Show reasoning"
+				description="Show the model's collapsible reasoning summary inside chat messages. When off, reasoning is hidden entirely. This does not change how much the model thinks — use Reasoning Level for that."
+			>
+				<Toggle checked={settings.showReasoning} onChange={(checked) => update({ showReasoning: checked })} />
+			</SettingRow>
+
+			<SettingRow
 				title="Show raw error details"
 				description="Display full error messages and response bodies in tool failures. When off, only a short summary is shown."
 			>
@@ -253,6 +260,13 @@ export function KeatingUiSettingsTab() {
 				description="Open the artifact side panel when Keating creates a plan, map, animation, benchmark, or evolution."
 			>
 				<Toggle checked={settings.autoOpenArtifacts} onChange={(checked) => update({ autoOpenArtifacts: checked })} />
+			</SettingRow>
+
+			<SettingRow
+				title="Keep one inline artifact preview"
+				description="When a lesson plan, map, animation, or other artifact appears below chat, replace the previous inline preview instead of stacking several open cards."
+			>
+				<Toggle checked={settings.limitInlineArtifactPreviews} onChange={(checked) => update({ limitInlineArtifactPreviews: checked })} />
 			</SettingRow>
 
 			<SettingRow

@@ -6,6 +6,7 @@ import "./hooks/keating-storage";
 // KaTeX CSS is imported by the components that actually render math
 // (MarkdownBlock, AssistantChatPanel, Blog) so the entry/Landing chunk skips it.
 import { App } from "./App";
+import { initializeKeatingGT, KeatingGTProvider } from "./i18n/general-translation";
 import { applyKeatingUiTypography, loadKeatingUiSettings } from "./keating/ui-settings";
 import { initPostHog } from "./lib/posthog";
 import { installStaleBuildRecovery } from "./lib/stale-build-recovery";
@@ -20,10 +21,22 @@ installStaleBuildRecovery();
 applyKeatingUiTypography(loadKeatingUiSettings().fontFamily);
 const posthogClient = initPostHog();
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
-	posthogClient ? (
-		<PostHogProvider client={posthogClient}>
-			<App />
-		</PostHogProvider>
-	) : <App />,
-);
+const root = ReactDOM.createRoot(document.getElementById("root")!);
+
+function renderApp() {
+  root.render(
+    <KeatingGTProvider>
+      {posthogClient ? (
+        <PostHogProvider client={posthogClient}>
+          <App />
+        </PostHogProvider>
+      ) : <App />}
+    </KeatingGTProvider>,
+  );
+}
+
+initializeKeatingGT()
+  .catch((error) => {
+    if (import.meta.env.DEV) console.warn("General Translation failed to initialize:", error);
+  })
+  .finally(renderApp);
