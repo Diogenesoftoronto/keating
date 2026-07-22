@@ -1,0 +1,50 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "f14091b6fa94",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    ".gitignore",
+    "README.md",
+    "bun.lock",
+    "devenv.nix",
+    "justfile",
+    "mobile/README.md",
+    "mobile/src/app/(tabs)/index.tsx",
+    "mobile/src/app/(tabs)/settings.tsx",
+    "mobile/src/components/MessageBubble.tsx",
+    "mobile/src/components/MessageContent.tsx",
+    "mobile/src/components/cards/GoalCard.tsx",
+    "mobile/src/components/cards/QuestionCard.tsx",
+    "mobile/src/components/cards/QuizCard.tsx",
+    "mobile/src/lib/interactive-tags.ts",
+    "mobile/src/lib/persona-storage.ts",
+    "mobile/src/lib/persona.ts",
+    "mobile/src/lib/provider-client.ts",
+    "mobile/src/lib/quiz-grading.ts",
+    "mobile/src/lib/system-prompt.ts",
+    "mobile/src/state/KeatingProvider.tsx",
+    "mobile/src/state/card-state.ts",
+    "mobile/test/interactive-cards.test.ts",
+    "mobile/test/streaming.test.ts",
+    "package.json",
+    "scripts/sync-version.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/f1/4091b6fa94/0/metadata.json",
+      "transcript": "/f1/4091b6fa94/0/full.jsonl",
+      "compact_transcript": "/f1/4091b6fa94/0/transcript.jsonl",
+      "content_hash": "/f1/4091b6fa94/0/content_hash.txt",
+      "prompt": "/f1/4091b6fa94/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 216,
+    "cache_creation_tokens": 213361,
+    "cache_read_tokens": 9146173,
+    "output_tokens": 73463,
+    "api_call_count": 109
+  }
+}
