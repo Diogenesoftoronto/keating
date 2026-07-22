@@ -816,6 +816,14 @@ function ChatContent() {
     undefined,
   );
   const [inlineArtifacts, setInlineArtifacts] = useState<InlineArtifact[]>([]);
+  const toggleArtifactBrowser = (source: "toolbar" | "mobile_menu") => {
+    setArtifactBrowserOpen((open) => {
+      const next = !open;
+      if (!next) setArtifactTarget(undefined);
+      posthog.capture(next ? 'artifact_browser_opened' : 'artifact_browser_closed', { source });
+      return next;
+    });
+  };
 
   useEffect(() => {
     const openArtifacts = () => {
@@ -834,6 +842,7 @@ function ChatContent() {
       if (!next) return;
       setInlineArtifacts((prev) => {
         if (prev.some((a) => a.id === next.id && a.type === next.type)) return prev;
+        if (uiSettings.limitInlineArtifactPreviews) return [next];
         return [...prev, next];
       });
       if (uiSettings.autoOpenArtifacts) setArtifactBrowserOpen(true);
@@ -846,7 +855,7 @@ function ChatContent() {
       window.removeEventListener("keating:artifact-created", captureInlineArtifact);
       window.removeEventListener("keating:open-artifact", openArtifactTarget);
     };
-  }, [uiSettings.autoOpenArtifacts]);
+  }, [uiSettings.autoOpenArtifacts, uiSettings.limitInlineArtifactPreviews]);
 
   const performShare = async () => {
     setShareState("sharing");
@@ -1056,13 +1065,15 @@ function ChatContent() {
             {speechEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
           </button>
           <button
-            className={cx(actionButtonClass, "chat-only-desktop")}
-            title="Artifacts"
-            aria-label="Artifacts"
-            onClick={() => {
-              posthog.capture('artifact_browser_opened', { source: 'toolbar' });
-              setArtifactBrowserOpen(true);
-            }}
+            className={cx(
+              actionButtonClass,
+              "chat-only-desktop",
+              artifactBrowserOpen ? css({ color: "var(--primary)" }) : "",
+            )}
+            title={artifactBrowserOpen ? "Close artifacts" : "Open artifacts"}
+            aria-label={artifactBrowserOpen ? "Close artifacts" : "Open artifacts"}
+            aria-pressed={artifactBrowserOpen}
+            onClick={() => toggleArtifactBrowser("toolbar")}
           >
             <LibraryBig size={16} />
           </button>
@@ -1185,12 +1196,11 @@ function ChatContent() {
                 className={cx(menuItemClass, "chat-only-compact")}
                 onClick={() => {
                   setMobileMenuOpen(false);
-                  posthog.capture('artifact_browser_opened', { source: 'mobile_menu' });
-                  setArtifactBrowserOpen(true);
+                  toggleArtifactBrowser("mobile_menu");
                 }}
               >
                 <LibraryBig size={14} />
-                Artifacts
+                {artifactBrowserOpen ? "Close artifacts" : "Open artifacts"}
               </button>
               {import.meta.env.DEV && (
                 <button

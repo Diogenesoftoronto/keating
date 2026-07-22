@@ -10,6 +10,29 @@
     just
   ];
 
+  # Expo SDK 56 / React Native 0.85 native Android toolchain. Keep these
+  # versions aligned with react-native/gradle/libs.versions.toml.
+  android = {
+    enable = true;
+    reactNative.enable = true;
+    platforms.version = [ "36" ];
+    # The app targets 36, while Expo SDK 56's Android library project still
+    # resolves Build Tools 35 during dependency configuration.
+    buildTools.version = [ "36.0.0" "35.0.0" ];
+    cmake.version = [ "3.22.1" ];
+    ndk = {
+      enable = true;
+      version = [ "27.1.12297006" ];
+    };
+    abis = [ "arm64-v8a" ];
+    emulator.enable = false;
+    sources.enable = false;
+    systemImages.enable = false;
+    googleAPIs.enable = false;
+    googleTVAddOns.enable = false;
+    extras = [ ];
+  };
+
   scripts.bumpy.exec = ''
     bumpy_bin="$DEVENV_ROOT/node_modules/.bin/bumpy"
     if [ ! -x "$bumpy_bin" ]; then

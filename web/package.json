@@ -19,7 +19,9 @@
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "gt:translate": "gt translate --config gt.config.json",
+    "gt:check": "gt translate --config gt.config.json --dry-run"
   },
   "overrides": {
     "@babel/core": "7.29.7",
@@ -61,6 +63,7 @@
     "@xterm/xterm": "^6.0.0",
     "canvas-confetti": "^1.9.4",
     "fflate": "^0.8.3",
+    "gt-react": "^11.0.12",
     "katex": "^0.17.0",
     "lucide-react": "^1.21.0",
     "mermaid": "^11.15.0",
@@ -88,6 +91,7 @@
     "@types/react-dom": "^19.2.3",
     "@types/three": "^0.184.1",
     "@vitejs/plugin-react": "^6.0.3",
+    "gt": "^2.14.64",
     "h3": "^2.0.1-rc.22",
     "ignore": "^7.0.5",
     "nitro": "^3.0.260610-beta",

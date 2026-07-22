@@ -1,0 +1,13 @@
+{
+  "defaultLocale": "en-CA",
+  "locales": ["fr-CA"],
+  "src": ["src/**/*.{ts,tsx}"],
+  "files": {
+    "gt": {
+      "output": "src/_gt/[locale].json",
+      "parsingFlags": {
+        "includeSourceCodeContext": true
+      }
+    }
+  }
+}

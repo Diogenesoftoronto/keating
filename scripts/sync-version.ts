@@ -35,6 +35,18 @@ const targets: Target[] = [
     replacer: (v) => `"version": "${v}"`,
   },
   {
+    path: "mobile/package.json",
+    description: "Mobile package manifest",
+    matcher: /"version":\s*"[\d.]+"/,
+    replacer: (v) => `"version": "${v}"`,
+  },
+  {
+    path: "mobile/app.json",
+    description: "Expo application manifest",
+    matcher: /"version":\s*"[\d.]+"/,
+    replacer: (v) => `"version": "${v}"`,
+  },
+  {
     path: "packages/browser-agent-runtime/package.json",
     description: "Browser agent runtime package manifest",
     matcher: /"version":\s*"[\d.]+"/,

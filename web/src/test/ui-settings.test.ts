@@ -129,6 +129,24 @@ describe("Keating UI Settings", () => {
 			expect(loadKeatingUiSettings().shareWarningAcknowledged).toBe(false);
 		});
 
+		it("defaults reasoning display to visible", () => {
+			expect(loadKeatingUiSettings().showReasoning).toBe(true);
+		});
+
+		it("defaults inline artifact previews to one visible preview", () => {
+			expect(loadKeatingUiSettings().limitInlineArtifactPreviews).toBe(true);
+		});
+
+		it("persists an explicit request to hide reasoning", () => {
+			localStorage.setItem("keating_ui_settings", JSON.stringify({ showReasoning: false }));
+			expect(loadKeatingUiSettings().showReasoning).toBe(false);
+		});
+
+		it("persists an explicit request to stack inline artifact previews", () => {
+			localStorage.setItem("keating_ui_settings", JSON.stringify({ limitInlineArtifactPreviews: false }));
+			expect(loadKeatingUiSettings().limitInlineArtifactPreviews).toBe(false);
+		});
+
 		it("persists an explicit share warning acknowledgement", () => {
 			localStorage.setItem("keating_ui_settings", JSON.stringify({ shareWarningAcknowledged: true }));
 			expect(loadKeatingUiSettings().shareWarningAcknowledged).toBe(true);

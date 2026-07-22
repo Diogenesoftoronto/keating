@@ -18,7 +18,9 @@ export type ShareLinkMode = "portable-short" | "compressed-hash" | "local-short"
 export interface KeatingUiSettings {
 	showToolUi: boolean;
 	autoOpenArtifacts: boolean;
+	limitInlineArtifactPreviews: boolean;
 	showRawErrors: boolean;
+	showReasoning: boolean;
 	reasoningLevel: ReasoningLevel;
 	animationRenderer: AnimationRenderer;
 	fontFamily: UiFontFamily;
@@ -38,7 +40,9 @@ export interface KeatingUiSettings {
 export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
 	showToolUi: true,
 	autoOpenArtifacts: true,
+	limitInlineArtifactPreviews: true,
 	showRawErrors: false,
+	showReasoning: true,
 	reasoningLevel: "medium",
 	animationRenderer: "hyperframes",
 	fontFamily: "jetbrains-mono",
@@ -167,7 +171,9 @@ function normalizeSettings(value: LegacyUiSettingsInput | null): KeatingUiSettin
 	return {
 		showToolUi: value?.showToolUi ?? DEFAULT_UI_SETTINGS.showToolUi,
 		autoOpenArtifacts: value?.autoOpenArtifacts ?? DEFAULT_UI_SETTINGS.autoOpenArtifacts,
+		limitInlineArtifactPreviews: value?.limitInlineArtifactPreviews ?? DEFAULT_UI_SETTINGS.limitInlineArtifactPreviews,
 		showRawErrors: value?.showRawErrors ?? DEFAULT_UI_SETTINGS.showRawErrors,
+		showReasoning: value?.showReasoning ?? DEFAULT_UI_SETTINGS.showReasoning,
 		reasoningLevel: value?.reasoningLevel ?? DEFAULT_UI_SETTINGS.reasoningLevel,
 		animationRenderer: "hyperframes",
 		fontFamily:

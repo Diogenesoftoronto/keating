@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "Keating",
+    "slug": "keating",
+    "version": "2.5.0",
+    "orientation": "portrait",
+    "scheme": "keating",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0c1510",
+    "primaryColor": "#1e9b50",
+    "icon": "./assets/keating-mark.png",
+    "android": {
+      "package": "com.diogenesoftoronto.keating",
+      "versionCode": 1,
+      "predictiveBackGestureEnabled": true,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/keating-mark-512.png",
+        "backgroundColor": "#0c1510"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-dev-client",
+        {
+          "launchMode": "most-recent"
+        }
+      ],
+      [
+        "expo-secure-store",
+        {
+          "configureAndroidBackup": true
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0c1510",
+          "image": "./assets/keating-mark-512.png",
+          "imageWidth": 220,
+          "resizeMode": "contain"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}

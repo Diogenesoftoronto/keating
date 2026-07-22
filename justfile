@@ -5,10 +5,39 @@
 default:
     @just --list
 
-# Install dependencies (root + web)
+# Install dependencies (root workspaces, including mobile, plus web)
 install:
     bun install
     cd web && bun install
+
+# Build, install, and launch the native Expo development client on Android
+mobile:
+    cd mobile && bun run android
+
+# Start Metro for the installed native development client
+mobile-start:
+    cd mobile && bun run start
+
+# Generate the Android native project from Expo configuration
+mobile-prebuild:
+    cd mobile && bun run android:prebuild
+
+# Regenerate the Android native project after native dependency/config changes
+mobile-prebuild-clean:
+    cd mobile && bun run android:prebuild:clean
+
+# Build a locally installable Android debug APK
+mobile-apk:
+    cd mobile && bun run android:apk
+
+# Check the React Native app without producing build artifacts
+mobile-check:
+    cd mobile && bun run typecheck
+    cd mobile && bun run test
+
+# Produce a production Android JavaScript bundle locally
+mobile-export:
+    cd mobile && bun run export:android
 
 # Sync version numbers across all manifests and source files
 sync-version:

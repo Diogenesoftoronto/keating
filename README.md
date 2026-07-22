@@ -53,6 +53,7 @@ It is designed around five influences:
   - `keating web --remote` for a self-hosted server that can proxy remote-only work to a configured microVM or sandbox endpoint.
   - `keating web --cloud` for the canonical Keating Cloud backend at `https://keating.help`.
 - A shared browser agent runtime package under `packages/browser-agent-runtime/` with local memory sandboxes, capability routing, transactional snapshots, Daytona-shaped compatibility, a NodePod adapter seam, and an RPC relay protocol.
+- A native Android app under `mobile/`, built with React Native and Expo. It keeps provider keys in Android Keystore, persists lessons on-device, and reuses Keating's portable pedagogy engine for offline plans, maps, and quizzes. Mobile storage is local-only in this release; it does not join the desktop Electron P2P mesh yet.
 
 ## Quick Start
 
@@ -114,6 +115,18 @@ keating export --finetune --source=all --format=both
 ```
 
 The web app exposes the same dataset export from the Usage page.
+
+### On Android
+
+The native app is a React Native client, not a web view. From a checkout with a connected Android device and USB debugging enabled:
+
+```bash
+devenv shell
+just install
+just mobile
+```
+
+Use `just mobile-check` for its tests and typecheck, `just mobile-export` to verify the production Metro bundle, or `just mobile-apk` to build a locally installable debug APK. See [mobile/README.md](mobile/README.md) for the Android toolchain, EAS profiles, local-model networking details, and the current local-only storage boundary.
 
 From a local checkout, build first and run the repo binary directly:
 

@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { T } from "gt-react";
 import { css, cx } from "../../styled-system/css";
 
 export function Footer() {
@@ -9,41 +10,40 @@ export function Footer() {
           <div className="foot-brand">
             <img src="/brand/logo-lockup.png" alt="Keating" />
             <p>
-              The hyperteacher. Socratic reconstruction for people who&apos;d rather understand
-              than memorize.
+              <T>The hyperteacher. Socratic reconstruction for people who&apos;d rather understand than memorize.</T>
             </p>
           </div>
           <div className="foot-col">
-            <h5>Product</h5>
+            <h5><T>Product</T></h5>
             <ul>
               <li>
-                <Link to="/download">Download</Link>
+                <Link to="/download"><T>Download</T></Link>
               </li>
               <li>
-                <Link to="/tutorial">Tutorial</Link>
+                <Link to="/tutorial"><T>Tutorial</T></Link>
               </li>
               <li>
-                <a href="/#manifesto">Manifesto</a>
+                <a href="/#manifesto"><T>Manifesto</T></a>
               </li>
               <li>
-                <a href="/#loop">Harness</a>
+                <a href="/#loop"><T>Harness</T></a>
               </li>
               <li>
-                <Link to="/bench">Bench</Link>
+                <Link to="/bench"><T>Bench</T></Link>
               </li>
             </ul>
           </div>
           <div className="foot-col">
-            <h5>Resources</h5>
+            <h5><T>Resources</T></h5>
             <ul>
               <li>
-                <Link to="/paper">Paper</Link>
+                <Link to="/paper"><T>Paper</T></Link>
               </li>
               <li>
-                <Link to="/blog">Blog</Link>
+                <Link to="/blog"><T>Blog</T></Link>
               </li>
               <li>
-                <Link to="/usage">Usage</Link>
+                <Link to="/usage"><T>Usage</T></Link>
               </li>
               <li>
                 <a
@@ -57,7 +57,7 @@ export function Footer() {
             </ul>
           </div>
           <div className="foot-col">
-            <h5>Source</h5>
+            <h5><T>Source</T></h5>
             <ul>
               <li>
                 <a
@@ -96,13 +96,12 @@ export function Footer() {
             </a>
           </span>
           <span className="foot-legal-links" aria-label="Legal links">
-            <Link to="/terms">Terms of Service</Link>
+            <Link to="/terms"><T>Terms of Service</T></Link>
             <span aria-hidden="true">//</span>
-            <Link to="/privacy">Privacy Policy</Link>
+            <Link to="/privacy"><T>Privacy Policy</T></Link>
           </span>
           <span>
-            system status: <span className="ok">online</span> // uptime:{" "}
-            <span className="ok">optimal</span>
+            <T>system status: <span className="ok">online</span> // uptime: <span className="ok">optimal</span></T>
           </span>
         </div>
       </div>

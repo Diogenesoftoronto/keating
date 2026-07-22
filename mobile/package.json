@@ -1,0 +1,49 @@
+{
+  "name": "keating-mobile",
+  "version": "2.5.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start --dev-client",
+    "android": "expo run:android --device",
+    "android:prebuild": "expo prebuild --platform android",
+    "android:prebuild:clean": "expo prebuild --clean --platform android",
+    "android:apk": "expo prebuild --platform android --no-install && node scripts/pin-gradle-wrapper.mjs && cd android && ./gradlew assembleDebug",
+    "ios": "expo run:ios",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test ./test/*.test.ts",
+    "export:android": "expo export --platform android --output-dir dist/android",
+    "doctor": "expo-doctor",
+    "gt:translate": "gt translate --config gt.config.json",
+    "gt:check": "gt translate --config gt.config.json --dry-run"
+  },
+  "dependencies": {
+    "@expo-google-fonts/space-mono": "^0.4.2",
+    "@expo/vector-icons": "^15.1.1",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "expo": "~56.0.16",
+    "expo-clipboard": "~56.0.4",
+    "expo-constants": "~56.0.21",
+    "expo-dev-client": "~56.0.23",
+    "expo-font": "~56.0.7",
+    "expo-haptics": "~56.0.3",
+    "expo-linking": "~56.0.15",
+    "expo-router": "~56.2.15",
+    "expo-secure-store": "~56.0.4",
+    "expo-splash-screen": "~56.0.13",
+    "expo-status-bar": "~56.0.4",
+    "expo-system-ui": "~56.0.5",
+    "gt-react-native": "^11.0.12",
+    "react": "19.2.3",
+    "react-native": "0.85.3",
+    "react-native-gesture-handler": "~2.31.1",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "4.25.2"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.2",
+    "expo-doctor": "^1.20.1",
+    "gt": "^2.14.64",
+    "typescript": "~6.0.3"
+  }
+}
