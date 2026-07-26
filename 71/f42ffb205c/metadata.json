@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "71f42ffb205c",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "web/server/api/dio/openai/[...path].ts",
+    "web/src/components/ProvidersModelsTab.tsx",
+    "web/src/components/settings/CloudProviderKeysSection.tsx",
+    "web/src/hooks/keating-stream.ts",
+    "web/src/keating/prompts/operational-protocol.md",
+    "web/src/lib/provider-models.ts",
+    "web/src/lib/provider-proxy.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/71/f42ffb205c/0/metadata.json",
+      "transcript": "/71/f42ffb205c/0/full.jsonl",
+      "compact_transcript": "/71/f42ffb205c/0/transcript.jsonl",
+      "content_hash": "/71/f42ffb205c/0/content_hash.txt",
+      "prompt": "/71/f42ffb205c/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 64,
+    "cache_creation_tokens": 86519,
+    "cache_read_tokens": 2307093,
+    "output_tokens": 19437,
+    "api_call_count": 34
+  }
+}

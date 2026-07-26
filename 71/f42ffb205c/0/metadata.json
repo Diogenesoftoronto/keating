@@ -1,0 +1,76 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "71f42ffb205c",
+  "session_id": "03964e35-9219-4393-be05-acd927a23311",
+  "strategy": "manual-commit",
+  "created_at": "2026-07-26T19:02:19.654618641Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "web/server/api/dio/openai/[...path].ts",
+    "web/src/components/ProvidersModelsTab.tsx",
+    "web/src/components/settings/CloudProviderKeysSection.tsx",
+    "web/src/hooks/keating-stream.ts",
+    "web/src/keating/prompts/operational-protocol.md",
+    "web/src/lib/provider-models.ts",
+    "web/src/lib/provider-proxy.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-4-8[1m]",
+  "turn_id": "064204781445",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 64,
+    "cache_creation_tokens": 86519,
+    "cache_read_tokens": 2307093,
+    "output_tokens": 19437,
+    "api_call_count": 34
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-07-26T19:02:19.621762934Z",
+    "agent_lines": 0,
+    "agent_removed": 2,
+    "human_added": 1315,
+    "human_modified": 148,
+    "human_removed": 0,
+    "total_committed": 1317,
+    "total_lines_changed": 4884,
+    "agent_percentage": 0.040950040950040956,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 896,
+      "user_lines_removed": 11,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "web/server/api/dio/openai/[...path].ts": 52,
+        "web/server/api/dio/provider/[resource].ts": 79,
+        "web/server/api/dio/provider/migrate.ts": 37,
+        "web/src/components/ProvidersModelsTab.tsx": 10,
+        "web/src/components/settings/CloudProviderKeysSection.tsx": 84,
+        "web/src/hooks/keating-stream.ts": 22,
+        "web/src/lib/provider-models.ts": 16,
+        "web/src/lib/provider-proxy.ts": 1,
+        "web/src/notorganic-provider/OPERATIONS.md": 32,
+        "web/src/notorganic-provider/fetch-adapter.ts": 79,
+        "web/src/notorganic-provider/index.ts": 148,
+        "web/src/notorganic-provider/server.ts": 152,
+        "web/src/test/notorganic-provider.test.ts": 184
+      },
+      "user_removed_per_file": {
+        "web/server/api/dio/openai/[...path].ts": 5,
+        "web/src/components/ProvidersModelsTab.tsx": 2,
+        "web/src/hooks/keating-stream.ts": 2,
+        "web/src/lib/provider-models.ts": 1,
+        "web/src/lib/provider-proxy.ts": 1
+      }
+    }
+  ]
+}
