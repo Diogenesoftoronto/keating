@@ -61,7 +61,7 @@ jobs:
           tar -tzf "${BUNDLE_NAME}.tar.gz" > bundle-files.txt
           grep -Fx "${BUNDLE_NAME}/bin/keating.js" bundle-files.txt
           grep -Fx "${BUNDLE_NAME}/dist/src/cli/main.js" bundle-files.txt
-          grep -Fx "${BUNDLE_NAME}/dist/src/pi/hyperteacher-extension.js" bundle-files.txt
+          grep -Fx "${BUNDLE_NAME}/dist/src/pi/hyper-teacher/index.js" bundle-files.txt
           ! grep -F "${BUNDLE_NAME}/bin/.keating/" bundle-files.txt
           ! grep -F "${BUNDLE_NAME}/bin/keating.config.json" bundle-files.txt
 

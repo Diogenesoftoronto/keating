@@ -3,8 +3,11 @@ import { getAppStorage } from "@earendil-works/pi-web-ui";
 import { KeyRound, X } from "lucide-react";
 import { css } from "../../styled-system/css";
 import { handleTutorialLinkClick, tutorialApiKeyHref } from "../lib/tutorial-links";
-import { isDioProvider } from "../dio-provider";
-import { DioAccessPromptDialog, promptDioAccess } from "./DioAccessPromptDialog";
+import { isNotOrganicProvider } from "../notorganic-provider";
+import {
+	NotOrganicAccessPromptDialog,
+	promptNotOrganicAccess,
+} from "./NotOrganicAccessPromptDialog";
 
 type PromptRequest = {
 	id: string;
@@ -28,8 +31,8 @@ export async function promptKeatingApiKey(
 		if (existing) return true;
 	}
 
-	if (isDioProvider(provider)) {
-		return promptDioAccess();
+	if (isNotOrganicProvider(provider)) {
+		return promptNotOrganicAccess({ force: options.force });
 	}
 
 	if (activePrompt) {
@@ -92,7 +95,7 @@ export function KeatingApiKeyPromptDialog() {
 		return () => window.removeEventListener("keating:api-key-prompt-changed", sync);
 	}, []);
 
-	if (!request) return <DioAccessPromptDialog />;
+	if (!request) return <NotOrganicAccessPromptDialog />;
 
 	const save = async () => {
 		const trimmed = apiKey.trim();

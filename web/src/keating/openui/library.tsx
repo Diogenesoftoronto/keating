@@ -7,7 +7,7 @@ import {
 	useTriggerAction,
 } from "@openuidev/react-lang";
 import { z } from "zod";
-import { BookOpen, CircleAlert, CircleCheck, Info, Lightbulb, NotebookPen } from "lucide-react";
+import { CircleAlert, CircleCheck, Info, Lightbulb, NotebookPen } from "lucide-react";
 import { css, cx } from "../../../styled-system/css";
 import { MarkdownBlock } from "../../components/MarkdownBlock";
 import { MermaidRenderer } from "../../components/MermaidRenderer";
@@ -17,6 +17,7 @@ import { FlashcardRenderer } from "../../components/FlashcardRenderer";
 import { AnimatedScene } from "../../components/AnimatedScene";
 import { initialSrsState, type FlashcardDeck } from "../srs";
 import type { Quiz } from "../core";
+import { StudyPlan } from "./study-plan";
 
 const lifecycleSchema = z
 	.enum(["ephemeral", "resumable", "workspace"])
@@ -263,56 +264,6 @@ export const Flashcards = defineComponent({
 	component: OpenUIFlashcards,
 });
 
-const planItemSchema = z.object({ id: z.string(), title: z.string(), detail: z.string().optional() });
-
-const studyPlanPropsSchema = z.object({
-	id: z.string(),
-	title: z.string(),
-	items: z.array(planItemSchema).min(1).max(30),
-	lifecycle: lifecycleSchema.default("workspace"),
-});
-
-function OpenUIStudyPlan({ props }: { props: z.infer<typeof studyPlanPropsSchema> }) {
-	const progress = useStateField<Record<string, boolean>>(`${props.id}:progress`, {});
-	const completed = props.items.filter((item) => progress.value[item.id]).length;
-	return (
-		<section className={surfaceClass}>
-			<header className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", borderBottom: "1px solid var(--border)", padding: "0.75rem 1rem" })}>
-				<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
-					<BookOpen aria-hidden="true" size={16} className={css({ color: "var(--primary)" })} />
-					<h3 className={css({ fontSize: "0.9375rem", fontWeight: 650 })}>{props.title}</h3>
-				</div>
-				<span className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)", fontVariantNumeric: "tabular-nums" })}>{completed}/{props.items.length}</span>
-			</header>
-			<ol className={css({ display: "grid", gap: "0.25rem", padding: "0.75rem" })}>
-				{props.items.map((item) => (
-					<li key={item.id}>
-						<label className={css({ display: "flex", cursor: "pointer", alignItems: "flex-start", gap: "0.625rem", borderRadius: "0.5rem", padding: "0.625rem", _hover: { background: "var(--muted)" }, _focusWithin: { outline: "2px solid var(--primary)", outlineOffset: "2px" } })}>
-							<input
-								type="checkbox"
-								checked={Boolean(progress.value[item.id])}
-								onChange={(event) => progress.setValue({ ...progress.value, [item.id]: event.currentTarget.checked })}
-								className={css({ marginTop: "0.1875rem", accentColor: "var(--primary)" })}
-							/>
-							<span className={css({ minWidth: 0 })}>
-								<span className={cx(css({ display: "block", fontSize: "0.875rem", fontWeight: 550 }), progress.value[item.id] && css({ textDecoration: "line-through", color: "var(--muted-foreground)" }))}>{item.title}</span>
-								{item.detail ? <span className={css({ display: "block", marginTop: "0.125rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>{item.detail}</span> : null}
-							</span>
-						</label>
-					</li>
-				))}
-			</ol>
-		</section>
-	);
-}
-
-export const StudyPlan = defineComponent({
-	name: "StudyPlan",
-	description: "A persistent learning plan or verification checklist with learner-controlled progress.",
-	props: studyPlanPropsSchema,
-	component: OpenUIStudyPlan,
-});
-
 export const ConceptMap = defineComponent({
 	name: "ConceptMap",
 	description: "A Mermaid concept map. Keep labels concise and relationships explicit.",
@@ -457,8 +408,7 @@ export const keatingOpenUILibrary = createLibrary({
 	],
 });
 
-/** Prompt fragment for hosts that enable OpenUI output. */
-export const keatingOpenUIPrompt = keatingOpenUILibrary.prompt({
+const openUILibraryPrompt = keatingOpenUILibrary.prompt({
 	inlineMode: true,
 	toolCalls: false,
 	bindings: true,
@@ -474,3 +424,34 @@ export const keatingOpenUIPrompt = keatingOpenUILibrary.prompt({
 		"Never repeat the same question, quiz, or flashcard content outside its component.",
 	],
 });
+
+/** Canonical, parser-valid pattern models can imitate when learner input should guide the next turn. */
+export const keatingOpenUIQuestionExampleProgram = [
+	'root = LearningSurface([check], "Check your model", "Your answer determines what we unpack next.", "ephemeral")',
+	'check = Question([{ question: "Why can a repeated DNS lookup be faster?", type: "choice", choices: ["A cached record can be reused until its TTL expires", "The browser permanently memorizes every address", "The second request skips DNS entirely"], allowText: true, hint: "Choose the mechanism, or write your own explanation." }], "ephemeral", "DNS caching", "Pick the closest explanation.")',
+].join("\n");
+
+/** Canonical detailed plan with nested coverage areas and explicit prerequisite links. */
+export const keatingOpenUIStudyPlanExampleProgram = [
+	'root = LearningSurface([plan], "DNS learning path", "A structured route from names to resilient resolution.", "workspace")',
+	'plan = StudyPlan("dns-learning-path", "DNS resolution", [{ id: "foundations", title: "1. Foundations", detail: "Establish the vocabulary used throughout the resolution path.", estimatedMinutes: 20, outcomes: ["Distinguish names, addresses, zones, and records"], children: [{ id: "names-addresses", title: "Names and addresses", detail: "Explain why stable names are mapped to changing network locations." }, { id: "record-types", title: "Core record types", detail: "Compare A, AAAA, CNAME, and NS records.", dependsOn: ["names-addresses"] }] }, { id: "resolution", title: "2. Resolution path", detail: "Trace one lookup through every responsible system.", dependsOn: ["foundations"], estimatedMinutes: 35, children: [{ id: "recursive-resolver", title: "Recursive resolver", detail: "Follow the client request and resolver cache check." }, { id: "authoritative-chain", title: "Root to authoritative", detail: "Trace referrals from root through TLD to the authoritative server.", dependsOn: ["recursive-resolver"] }] }, { id: "caching", title: "3. Caching and TTL", detail: "Connect performance gains to freshness tradeoffs.", dependsOn: ["resolution"], estimatedMinutes: 25, children: [{ id: "cache-lifecycle", title: "Cache lifecycle", detail: "Predict when a cached answer is reused or refreshed." }] }, { id: "failure-modes", title: "4. Failure modes", detail: "Diagnose stale records, propagation delays, and resolver failures.", dependsOn: ["caching"], estimatedMinutes: 30, outcomes: ["Use dig output to locate the failing layer"], children: [{ id: "diagnostic-trace", title: "Diagnostic trace", detail: "Interpret a failed lookup one delegation at a time." }] }], "workspace", "Cover the mechanism, performance tradeoffs, and practical diagnosis. Each area builds on the one before it.")',
+].join("\n");
+
+/** Prompt fragment appended to every web-agent system prompt when OpenUI output is enabled. */
+export const keatingOpenUIPrompt = [
+	openUILibraryPrompt,
+	"## Canonical Question interaction",
+	"Whenever the next useful teaching step depends on the learner's understanding, prediction, preference, or choice, render one focused OpenUI Question instead of asking only in prose.",
+	"Use this pattern after a compact explanation, at a genuine decision point, or for a Socratic check. Adapt the topic, wording, choices, and hint to the conversation; do not copy the subject matter mechanically.",
+	"After emitting the Question, stop and wait for the learner's submitted answer. Do not answer it yourself, continue the lesson past it, or repeat it outside the component.",
+	"```openui lifecycle=ephemeral id=dns-caching-check",
+	keatingOpenUIQuestionExampleProgram,
+	"```",
+	"## Canonical detailed lesson plan",
+	"When the learner asks for a lesson plan, create a StudyPlan with at least four meaningful top-level coverage areas. Nest concrete subtopics or activities under each area, describe the intended work and outcomes, and use stable unique ids.",
+	"Use dependsOn ids to encode real prerequisite relationships. Keating derives the expandable dependency graph from those links, so do not emit a second ConceptMap containing the same plan dependencies.",
+	"Make the plan specific enough to teach from: include foundations, core mechanism or theory, guided application, misconceptions or failure modes, transfer, and review where they fit the subject. Do not generate a shallow checklist.",
+	"```openui lifecycle=workspace id=dns-learning-path",
+	keatingOpenUIStudyPlanExampleProgram,
+	"```",
+].join("\n\n");

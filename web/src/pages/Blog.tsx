@@ -263,6 +263,96 @@ function majorMinor(version: string): string {
 
 const POSTS: Post[] = [
   {
+    date: "2026-07-26",
+    badge: { label: "RELEASE", color: "release" },
+    title: "v2.6.0 - Learning Paths You Can See, Expand, and Retry",
+    version: "2.6.0",
+    summary:
+      "Keating 2.6 replaces the Dio hosted-model bridge with Not Organic's provider-owned account flow, turns lesson plans into nested and resumable learning paths, makes dependency diagrams genuinely inspectable, and gives interrupted prompts an obvious way back.",
+    sections: [
+      { id: "notorganic-provider", title: "Provider-Owned Access" },
+      { id: "nested-learning-paths", title: "Nested Learning Paths" },
+      { id: "expandable-diagrams", title: "Expandable Diagrams" },
+      { id: "retry-without-rewriting", title: "Retry Without Rewriting" },
+      { id: "release-26-verification", title: "Verification" },
+    ],
+    body: (
+      <>
+        <p className={styles.leadParagraph}>
+          A good teaching interface should preserve orientation. The learner
+          should be able to see where a lesson is going, understand which ideas
+          depend on which others, inspect a diagram at a useful scale, and
+          recover from a failed model turn without reconstructing the question.
+          Keating 2.6 treats those as parts of the same problem: keeping the path
+          through a subject legible.
+        </p>
+
+        <h3 id="notorganic-provider" className={styles.sectionHeading}>Provider-owned access</h3>
+        <p className={styles.paragraph}>
+          Keating&apos;s hosted-model option now uses Not Organic instead of the
+          legacy Dio and Bifrost implementation. Identity, wallet balance,
+          checkout, usage records, and DPoP capabilities remain account-scoped
+          and provider-owned. The browser no longer receives or recovers a
+          virtual provider key; Keating&apos;s same-origin routes exchange the
+          active product session for narrowly scoped model access on the server.
+        </p>
+        <p className={styles.paragraph}>
+          Pricing and settings now describe that relationship directly. Credit
+          packs top up one shared wallet, another device can resume through the
+          same Not Organic identity, and bringing an independent provider key
+          remains available for learners who prefer it.
+        </p>
+
+        <h3 id="nested-learning-paths" className={styles.sectionHeading}>Nested learning paths</h3>
+        <p className={styles.paragraph}>
+          Study plans are no longer flat checklists. A plan can contain several
+          substantial coverage areas, each with nested concepts or activities,
+          expected outcomes, time estimates, and resumable progress. Stable
+          identifiers connect prerequisites across the hierarchy, and Keating
+          derives the dependency graph from those relationships rather than
+          asking the model to describe the same structure twice.
+        </p>
+        <p className={styles.paragraph}>
+          The OpenUI operating prompt now includes canonical interactive-question
+          and detailed-plan programs that are validated against the live
+          component grammar. This gives the model a concrete example of when to
+          ask through the structured interface and what a useful multi-area
+          lesson plan looks like.
+        </p>
+
+        <h3 id="expandable-diagrams" className={styles.sectionHeading}>Expandable diagrams</h3>
+        <p className={styles.paragraph}>
+          Every shared Mermaid surface can now expand into a full-viewport
+          inspector. Wide maps remain scrollable at their natural scale instead
+          of shrinking into illegibility. The inspector closes by button,
+          backdrop, or Escape and returns keyboard focus to the control that
+          opened it. Nested study-plan dependencies use this same renderer, so
+          the graph can begin as a compact disclosure and grow when the learner
+          needs to trace it.
+        </p>
+
+        <h3 id="retry-without-rewriting" className={styles.sectionHeading}>Retry without rewriting</h3>
+        <p className={styles.paragraph}>
+          Keating already knew how to remove a trailing failed response and
+          replay the preceding prompt, but the action was easy to miss. Failed
+          turns now end with an accessible recovery alert and a primary
+          <Code>Retry prompt</Code> action. The recovery reuses the original
+          learner turn and existing session state; it does not ask the learner
+          to copy, edit, or remember what was lost.
+        </p>
+
+        <h3 id="release-26-verification" className={styles.sectionHeading}>Verification</h3>
+        <p className={styles.paragraph}>
+          The release was checked through the full web test suite, TypeScript
+          validation, Vite and Nitro production builds, Storybook&apos;s static
+          build, generated NodePod prompt snapshots, and rendered browser passes
+          for retry recovery, nested plans, dependency disclosure, diagram
+          expansion, Escape dismissal, and focus restoration.
+        </p>
+      </>
+    ),
+  },
+  {
     date: "2026-07-22",
     badge: { label: "RELEASE", color: "release" },
     title: "v2.5.0 - Multimodal Runtime, Mobile, and Calmer Artifacts",

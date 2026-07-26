@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { usePostHog } from "@posthog/react";
 import { z } from "zod";
 import {
   RouterProvider,
@@ -36,10 +35,6 @@ const OAuthCallback = lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/OAuthCallback")),
   "OAuthCallback",
 );
-const DioSuccess = lazyRouteComponent(
-  () => loadRouteChunk(() => import("./pages/DioSuccess")),
-  "DioSuccess",
-);
 const Download = lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/Download")),
   "Download",
@@ -65,7 +60,6 @@ import {
   loadKeatingUiSettings,
   subscribeKeatingUiSettings,
 } from "./keating/ui-settings";
-import { getStoredDioIdentity } from "./dio-provider";
 import { loadRouteChunk } from "./lib/stale-build-recovery";
 import { css } from "../styled-system/css";
 
@@ -135,12 +129,6 @@ const oauthCallbackRoute = createRoute({
   component: OAuthCallback,
 });
 
-const dioSuccessRoute = createRoute({
-	getParentRoute: () => rootRoute,
-	path: "/dio/success",
-	component: DioSuccess,
-});
-
 const downloadRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/download",
@@ -182,7 +170,6 @@ const routeTree = rootRoute.addChildren([
   blogRoute,
   paperRoute,
   oauthCallbackRoute,
-	dioSuccessRoute,
 	downloadRoute,
 	termsRoute,
 	privacyRoute,
@@ -244,34 +231,10 @@ function KeatingUiPreferencesSync() {
   return null;
 }
 
-function PostHogIdentitySync() {
-  const posthog = usePostHog();
-
-  useEffect(() => {
-    let cancelled = false;
-    getStoredDioIdentity()
-      .then((identity) => {
-        if (cancelled || !identity) return;
-        posthog.identify(identity.email, { email: identity.email, dio_access: true });
-      })
-      .catch((error) => {
-        if (import.meta.env.DEV) {
-          console.warn("Failed to sync Dio analytics identity:", error);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [posthog]);
-
-  return null;
-}
-
 export function App() {
   return (
     <>
       <KeatingUiPreferencesSync />
-      <PostHogIdentitySync />
       <RouterProvider router={router} />
     </>
   );

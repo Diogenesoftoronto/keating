@@ -10,7 +10,10 @@ import { streamSimple } from "@earendil-works/pi-ai/compat";
 import { normalizeToolCallStream } from "../keating/tool-call-normalizer";
 import { streamWithApiRetry } from "../keating/api-retry";
 import { chatProxyBaseUrl, proxyTargetHeader, shouldProxyModel } from "../lib/provider-proxy";
-import { DIO_DEFAULT_MODEL } from "../dio-provider";
+import {
+	isNotOrganicProvider,
+	NOTORGANIC_DEFAULT_MODEL,
+} from "../notorganic-provider";
 import {
 	applyGoogleSearchGrounding,
 	applyProviderWebSearch,
@@ -24,7 +27,7 @@ export { applyGoogleSearchGrounding, applyProviderWebSearch };
 import { getProviderApiKey } from "../lib/provider-models";
 import { localModel, getModelName, getModelId } from "../stores/local-model";
 
-export const DEFAULT_MODEL = DIO_DEFAULT_MODEL;
+export const DEFAULT_MODEL = NOTORGANIC_DEFAULT_MODEL;
 
 export function withProviderWebSearch(
 	options: SimpleStreamOptions | undefined,
@@ -169,7 +172,16 @@ export async function hybridStreamFn(model: Model<Api>, context: Context, option
 	}
 
 	const apiKey = options?.apiKey ?? await getProviderApiKey(model.provider);
-	const streamOptions: SimpleStreamOptions | undefined = apiKey ? { ...options, apiKey } : options;
+	let streamOptions: SimpleStreamOptions | undefined = apiKey ? { ...options, apiKey } : options;
+	if (isNotOrganicProvider(model.provider)) {
+		streamOptions = {
+			...streamOptions,
+			headers: {
+				...streamOptions?.headers,
+				"idempotency-key": `keating_${crypto.randomUUID()}`,
+			},
+		};
+	}
 
 	if (shouldProxyModel(model)) {
 		const proxiedModel = {

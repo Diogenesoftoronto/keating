@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { Maximize2, X } from "lucide-react";
 import { css, cx } from "../../styled-system/css";
 import { sanitizeSvg } from "../lib/sanitize-svg";
 
@@ -21,10 +23,117 @@ const containerClass = css({
 });
 const loadingClass = css({ padding: "2rem", textAlign: "center", color: "var(--muted-foreground)" });
 const wrapperClass = css({ marginBlock: "1rem", overflow: "auto" });
+const rendererClass = css({ position: "relative" });
 const cardClass = css({
 	backgroundColor: "color-mix(in srgb, var(--muted) 30%, transparent)",
 	borderRadius: "0.5rem",
 	padding: "1rem",
+});
+const diagramClass = css({
+	position: "relative",
+	overflow: "auto",
+	"& svg": {
+		display: "block",
+		maxWidth: "100%",
+		height: "auto",
+		marginInline: "auto",
+	},
+});
+const expandButtonClass = cx(
+	"dialog-icon-button",
+	css({
+		position: "absolute",
+		top: "0.5rem",
+		right: "0.5rem",
+		display: "inline-flex",
+		width: "2rem",
+		height: "2rem",
+		alignItems: "center",
+		justifyContent: "center",
+		border: "1px solid var(--border)",
+		borderRadius: "0.5rem",
+		backgroundColor: "color-mix(in srgb, var(--background) 92%, transparent)",
+		color: "var(--foreground)",
+		boxShadow: "0 2px 6px rgb(0 0 0 / 0.16)",
+		backdropFilter: "blur(4px)",
+		transition: "background-color 160ms ease-out, color 160ms ease-out",
+		_hover: { backgroundColor: "var(--accent)", color: "var(--accent-foreground)" },
+		_focusVisible: { outline: "2px solid var(--primary)", outlineOffset: "2px" },
+	}),
+);
+const expandedBackdropClass = css({
+	position: "fixed",
+	inset: 0,
+	zIndex: 1000,
+	display: "flex",
+	backgroundColor: "rgb(0 0 0 / 0.72)",
+	padding: "clamp(0.5rem, 2vw, 1.5rem)",
+});
+const expandedPanelClass = css({
+	display: "flex",
+	width: "100%",
+	height: "100%",
+	minHeight: 0,
+	flexDirection: "column",
+	overflow: "hidden",
+	borderRadius: "0.75rem",
+	backgroundColor: "var(--background)",
+	color: "var(--foreground)",
+	smDown: { borderRadius: 0 },
+});
+const expandedToolbarClass = css({
+	display: "flex",
+	minHeight: "3rem",
+	flexShrink: 0,
+	alignItems: "center",
+	justifyContent: "space-between",
+	gap: "1rem",
+	borderBottom: "1px solid var(--border)",
+	paddingInline: "0.75rem",
+});
+const expandedTitleClass = css({
+	overflow: "hidden",
+	fontSize: "0.875rem",
+	fontWeight: 650,
+	textOverflow: "ellipsis",
+	whiteSpace: "nowrap",
+});
+const closeButtonClass = cx(
+	"dialog-icon-button",
+	css({
+		display: "inline-flex",
+		width: "2rem",
+		height: "2rem",
+		flexShrink: 0,
+		alignItems: "center",
+		justifyContent: "center",
+		borderRadius: "0.5rem",
+		color: "var(--muted-foreground)",
+		_hover: { backgroundColor: "var(--accent)", color: "var(--accent-foreground)" },
+		_focusVisible: { outline: "2px solid var(--primary)", outlineOffset: "2px" },
+	}),
+);
+const expandedViewportClass = css({
+	minHeight: 0,
+	flex: 1,
+	overflow: "auto",
+	overscrollBehavior: "contain",
+	backgroundColor: "color-mix(in srgb, var(--muted) 22%, var(--background))",
+	padding: "clamp(1rem, 3vw, 2.5rem)",
+});
+const expandedDiagramClass = css({
+	display: "flex",
+	minWidth: "100%",
+	minHeight: "100%",
+	alignItems: "flex-start",
+	justifyContent: "center",
+	"& svg": {
+		display: "block",
+		width: "auto",
+		minWidth: "100%",
+		maxWidth: "none !important",
+		height: "auto !important",
+	},
 });
 
 interface MermaidRendererProps {
@@ -51,9 +160,12 @@ function extractMermaidSource(input: string): string {
 export function MermaidRenderer({ content, className }: MermaidRendererProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const renderTargetRef = useRef<HTMLDivElement | null>(null);
+	const expandButtonRef = useRef<HTMLButtonElement>(null);
+	const closeButtonRef = useRef<HTMLButtonElement>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [svg, setSvg] = useState<string | null>(null);
+	const [expanded, setExpanded] = useState(false);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -155,6 +267,29 @@ export function MermaidRenderer({ content, className }: MermaidRendererProps) {
 		};
 	}, [content]);
 
+	useEffect(() => {
+		if (!expanded || typeof document === "undefined") return;
+
+		const previousOverflow = document.body.style.overflow;
+		document.body.style.overflow = "hidden";
+		const focusFrame = window.requestAnimationFrame(() => closeButtonRef.current?.focus());
+		const handleDialogKeydown = (event: KeyboardEvent) => {
+			if (event.key === "Escape") setExpanded(false);
+			if (event.key === "Tab") {
+				event.preventDefault();
+				closeButtonRef.current?.focus();
+			}
+		};
+		document.addEventListener("keydown", handleDialogKeydown);
+
+		return () => {
+			window.cancelAnimationFrame(focusFrame);
+			document.removeEventListener("keydown", handleDialogKeydown);
+			document.body.style.overflow = previousOverflow;
+			expandButtonRef.current?.focus();
+		};
+	}, [expanded]);
+
 	if (error) {
 		return (
 			<div className={cx(errorContainerClass, className)}>
@@ -167,12 +302,60 @@ export function MermaidRenderer({ content, className }: MermaidRendererProps) {
 	return (
 		<div
 			ref={containerRef}
-			className={`mermaid-container ${className} ${loading ? containerClass : ""}`}
+			className={cx("mermaid-container", rendererClass, className, loading && containerClass)}
 		>
 			{loading ? (
 				<div className={loadingClass}>Rendering diagram...</div>
 			) : svg ? (
-				<div dangerouslySetInnerHTML={{ __html: svg }} />
+				<>
+					<div className={diagramClass} dangerouslySetInnerHTML={{ __html: svg }} />
+					<button
+						ref={expandButtonRef}
+						type="button"
+						className={expandButtonClass}
+						aria-label="Expand diagram"
+						aria-expanded={expanded}
+						title="Expand diagram"
+						onClick={() => setExpanded(true)}
+					>
+						<Maximize2 aria-hidden="true" size={16} />
+					</button>
+					{expanded && typeof document !== "undefined"
+						? createPortal(
+								<div
+									className={expandedBackdropClass}
+									onMouseDown={(event) => {
+										if (event.target === event.currentTarget) setExpanded(false);
+									}}
+								>
+									<section
+										className={expandedPanelClass}
+										role="dialog"
+										aria-modal="true"
+										aria-label="Expanded Mermaid diagram"
+									>
+										<header className={expandedToolbarClass}>
+											<h2 className={expandedTitleClass}>Expanded diagram</h2>
+											<button
+												ref={closeButtonRef}
+												type="button"
+												className={closeButtonClass}
+												aria-label="Close expanded diagram"
+												title="Close expanded diagram"
+												onClick={() => setExpanded(false)}
+											>
+												<X aria-hidden="true" size={18} />
+											</button>
+										</header>
+										<div className={expandedViewportClass}>
+											<div className={expandedDiagramClass} dangerouslySetInnerHTML={{ __html: svg }} />
+										</div>
+									</section>
+								</div>,
+								document.body,
+							)
+						: null}
+				</>
 			) : null}
 		</div>
 	);

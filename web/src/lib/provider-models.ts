@@ -1,7 +1,12 @@
 import { getModels, getProviders, type Api, type Model } from "@earendil-works/pi-ai/compat";
 import { getAppStorage, type CustomProvider } from "@earendil-works/pi-web-ui";
 import { proxiedProviderRequestUrl } from "./provider-proxy";
-import { DIO_DEFAULT_MODEL, DIO_PROVIDER_ID } from "../dio-provider";
+import {
+	getNotOrganicAccount,
+	isNotOrganicFeatureEnabled,
+	NOTORGANIC_DEFAULT_MODEL,
+	NOTORGANIC_PROVIDER_ID,
+} from "../notorganic-provider";
 import { getOAuthAccessToken, providerToOAuthId } from "../keating/oauth";
 import { withApiRetry } from "../keating/api-retry";
 
@@ -351,6 +356,17 @@ export async function syncCustomProviderKeys(): Promise<void> {
 }
 
 export async function getProviderApiKey(providerName: string): Promise<string | undefined> {
+	if (providerName === NOTORGANIC_PROVIDER_ID && isNotOrganicFeatureEnabled()) {
+		try {
+			await getNotOrganicAccount();
+			// Pi's OpenAI-compatible transport expects a non-empty key. This
+			// marker never leaves the same-origin route; Nitro replaces it with
+			// the server-owned DPoP capability.
+			return "notorganic-product-session";
+		} catch {
+			return undefined;
+		}
+	}
 	const oauthId = providerToOAuthId(providerName);
 	if (oauthId) {
 		const token = await getOAuthAccessToken(oauthId);
@@ -366,7 +382,7 @@ export async function getProviderApiKey(providerName: string): Promise<string | 
 }
 
 const FALLBACK_CHAT_MODEL_IDS: Record<string, string[]> = {
-	[DIO_PROVIDER_ID]: [DIO_DEFAULT_MODEL.id],
+	[NOTORGANIC_PROVIDER_ID]: [NOTORGANIC_DEFAULT_MODEL.id],
 	openai: ["gpt-5.5", "gpt-5.5-pro", "gpt-5.4", "gpt-5.3-chat-latest", "gpt-5.2", "gpt-5.1", "gpt-5"],
 	anthropic: ["claude-sonnet-4-6", "claude-opus-4-8", "claude-opus-4-7", "claude-sonnet-4-5", "claude-haiku-4-5"],
 	google: ["gemini-3.1-pro-preview", "gemini-3.5-flash", "gemini-3-pro-preview", "gemini-2.5-pro"],
@@ -392,7 +408,7 @@ export async function resolveAvailableChatModel(current: Model<Api>): Promise<Mo
 	}
 
 	const models = await getSelectableModels();
-	for (const provider of [DIO_PROVIDER_ID, "openai", "anthropic", "google"]) {
+	for (const provider of [NOTORGANIC_PROVIDER_ID, "openai", "anthropic", "google"]) {
 		if (!(await getProviderApiKey(provider))) continue;
 		const model = preferredModelForProvider(models, provider);
 		if (model) return model;
@@ -444,8 +460,8 @@ export async function getSelectableModels(
 ): Promise<Array<Model<Api>>> {
 	const models: Array<Model<Api>> = [];
 
-	if (!filter || filter(DIO_PROVIDER_ID)) {
-		models.push(DIO_DEFAULT_MODEL);
+	if (isNotOrganicFeatureEnabled() && (!filter || filter(NOTORGANIC_PROVIDER_ID))) {
+		models.push(NOTORGANIC_DEFAULT_MODEL);
 	}
 
 	for (const provider of getProviders()) {

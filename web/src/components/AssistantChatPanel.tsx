@@ -103,6 +103,7 @@ import {
 import { startMicRecording, transcribeAudio, type MicRecorder } from "../keating/speech-providers/stt";
 import { JsonCrackBlock } from "./JsonCrackBlock";
 import { RetryResponseButton } from "./RetryResponseButton";
+import { FailedResponseRecovery } from "./FailedResponseRecovery";
 import { FlashcardRenderer } from "./FlashcardRenderer";
 import type { FlashcardDeck } from "../keating/srs";
 import { MermaidRenderer } from "./MermaidRenderer";
@@ -4538,6 +4539,9 @@ function AssistantMessage({
               </div>
             )}
             </div>
+            {llmFailure && canRetry && onRetry && (
+              <FailedResponseRecovery recovery={llmFailure.recovery} onRetry={onRetry} />
+            )}
             {llmFailure && retryAttempts && retryAttempts > 1 && (
               <p
                 className={css({ marginTop: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}
@@ -4550,12 +4554,6 @@ function AssistantMessage({
             )}
             <div className={css({ marginTop: "0.5rem", display: "flex", alignItems: "center", gap: "0.25rem" })}>
               {copyText && <CopyButton variant="ghost" text={copyText} label="Copy message" />}
-              {canRetry && onRetry && (
-                <RetryResponseButton
-                  className={cx(messageActionButtonClass, css({ width: "auto", gap: "0.375rem", paddingInline: "0.5rem" }))}
-                  onRetry={onRetry}
-                />
-              )}
               {llmFailure && llmFailure.category !== "aborted" && onModelSelect && (
                 <button
                   type="button"

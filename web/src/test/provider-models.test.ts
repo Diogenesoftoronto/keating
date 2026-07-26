@@ -71,16 +71,16 @@ describe("gateway model discovery", () => {
 });
 
 describe("chat model fallback selection", () => {
-	it("uses an available OpenAI key when the default Dio model has no key", async () => {
+	it("uses an available OpenAI key when Not Organic has no product session", async () => {
 		providerKeys = { openai: "openai-test-key" };
 		const { resolveAvailableChatModel } = await import("../lib/provider-models");
 
 		const selected = await resolveAvailableChatModel({
-			id: "kimi-k2.6",
-			name: "Kimi K2.6",
+			id: "balanced",
+			name: "Not Organic Balanced",
 			api: "openai-completions" as any,
-			provider: "dio",
-			baseUrl: "/api/dio/openai/v1",
+			provider: "notorganic",
+			baseUrl: "/api/notorganic/openai/v1",
 			reasoning: true,
 			input: ["text"],
 			cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
@@ -92,16 +92,16 @@ describe("chat model fallback selection", () => {
 		expect(selected.id).toBe("gpt-5.5");
 	});
 
-	it("uses an available Anthropic key when no Dio or OpenAI key exists", async () => {
+	it("uses an available Anthropic key when Not Organic and OpenAI are unavailable", async () => {
 		providerKeys = { anthropic: "anthropic-test-key" };
 		const { resolveAvailableChatModel } = await import("../lib/provider-models");
 
 		const selected = await resolveAvailableChatModel({
-			id: "kimi-k2.6",
-			name: "Kimi K2.6",
+			id: "balanced",
+			name: "Not Organic Balanced",
 			api: "openai-completions" as any,
-			provider: "dio",
-			baseUrl: "/api/dio/openai/v1",
+			provider: "notorganic",
+			baseUrl: "/api/notorganic/openai/v1",
 			reasoning: true,
 			input: ["text"],
 			cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },

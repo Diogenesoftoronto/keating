@@ -26,3 +26,10 @@ export const Ready: Story = {};
 export const Retrying: Story = {
 	args: { loading: true },
 };
+
+export const ProminentFailureRecovery: Story = {
+	args: {
+		label: "Retry prompt",
+		variant: "primary",
+	},
+};

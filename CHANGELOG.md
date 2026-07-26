@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.0] - 2026-07-26
+
+### Added
+- Added detailed, recursively nestable OpenUI study plans with durable leaf progress, concrete outcomes, time estimates, explicit prerequisites, and automatically derived dependency graphs.
+- Added full-screen expansion for Mermaid diagrams across chat, Markdown, artifacts, and OpenUI, with keyboard dismissal and focus restoration.
+- Added a prominent failed-response recovery card that retries the original prompt without making the learner reconstruct it.
+- Added canonical OpenUI prompt examples for interactive questions and substantial lesson plans so the model reliably emits the live component grammar.
+
+### Changed
+- Replaced the legacy Dio/Bifrost hosted-model implementation with Not Organic's account-scoped DPoP provider contract, shared wallet, provider-owned checkout, and dedicated `/api/notorganic/**` routes.
+- Reworked hosted-model settings, pricing, proxy routing, and deployment configuration around the Not Organic provider-owned account and wallet flow.
+- Made lesson-plan prompts require multiple meaningful coverage areas, nested subtopics, outcomes, stable identifiers, and explicit dependency links instead of shallow checklists.
+
+### Fixed
+- Fixed failed assistant turns being difficult to retry by moving recovery out of the quiet message-action row and into an accessible alert with a primary action.
+- Fixed wide Mermaid diagrams being constrained to an unreadably small inline viewport.
+- Fixed release bundle and npm-package verification expecting the removed top-level Pi extension path instead of the current `dist/src/pi/hyper-teacher/index.js` entrypoint.
+
 ## [2.5.0] - 2026-07-22
 
 ### Added
@@ -513,7 +531,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v2.5.0...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v2.6.0...HEAD
+[2.6.0]: https://github.com/Diogenesoftoronto/keating/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/Diogenesoftoronto/keating/compare/v2.4.1...v2.5.0
 [2.4.1]: https://github.com/Diogenesoftoronto/keating/compare/v2.4.0...v2.4.1
 [2.4.0]: https://github.com/Diogenesoftoronto/keating/compare/v2.3.1...v2.4.0
