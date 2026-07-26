@@ -60,7 +60,8 @@ describe("composeKeatingSystemPrompt", () => {
 		const composed = composeKeatingSystemPrompt("You are Socrates.");
 		expect(composed).toContain("You are Socrates.");
 		expect(composed).toContain("## Self-Evolution Protocol");
-		expect(composed).toContain("ask_user_question");
+		expect(composed).toContain("OpenUI `Question`");
+		expect(composed).toContain("stop and wait for its submitted answer");
 	});
 
 	it("uses the default persona when given blank text", () => {

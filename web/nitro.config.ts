@@ -116,24 +116,12 @@ export default defineNitroConfig({
       handler: "server/api/oauth/refresh.ts",
     },
     {
-      route: "/api/dio/checkout",
-      handler: "server/api/dio/checkout.ts",
+      route: "/api/notorganic/openai/**",
+      handler: "server/api/notorganic/openai/[...path].ts",
     },
     {
-      route: "/api/dio/webhook",
-      handler: "server/api/dio/webhook.ts",
-    },
-    {
-      route: "/api/dio/claim",
-      handler: "server/api/dio/claim.ts",
-    },
-    {
-      route: "/api/dio/recover",
-      handler: "server/api/dio/recover.ts",
-    },
-    {
-      route: "/api/dio/openai/**",
-      handler: "server/api/dio/openai/[...path].ts",
+      route: "/api/notorganic/provider/**",
+      handler: "server/api/notorganic/provider/[resource].ts",
     },
     {
       // Static middleware serves valid built files first. If an old service

@@ -8,7 +8,6 @@ import { randomBytes } from 'node:crypto';
 import * as https from 'https';
 import * as http from 'http';
 import { buildValidatedProxyUrl } from './server/utils/proxy-target';
-import { isAllowedDioOpenAiProxyRequest } from './src/dio-provider/server';
 import {
   buildAgentRuntimeConfig,
   type ServerAgentRuntimeMode,
@@ -212,91 +211,6 @@ function chatProxyPlugin(): Plugin {
               if (!res.headersSent) {
                 res.statusCode = 502;
                 res.end('Agent runtime proxy error: ' + err.message);
-              }
-            });
-            proxyReq.write(body);
-            proxyReq.end();
-          });
-          return;
-        }
-
-        if (req.url?.startsWith('/api/dio/openai')) {
-          if (process.env.DIO_ENABLED === 'false') {
-            res.statusCode = 404;
-            res.end('Not found');
-            return;
-          }
-
-          const targetBase = env('BIFROST_BASE_URL');
-          if (!targetBase) {
-            res.statusCode = 503;
-            res.end('Dio gateway endpoint is not configured.');
-            return;
-          }
-
-          const proxyPath = req.url.replace(/^\/api\/dio\/openai\/?/, '');
-          if (!isAllowedDioOpenAiProxyRequest(req.method, proxyPath)) {
-            res.statusCode = 404;
-            res.end('Not found');
-            return;
-          }
-
-          let targetUrl: URL;
-          try {
-            targetUrl = new URL(buildValidatedProxyUrl(targetBase, proxyPath, {
-              allowHttp: process.env.NODE_ENV !== 'production',
-              allowLocal: process.env.NODE_ENV !== 'production',
-            }));
-          } catch (error) {
-            res.statusCode = 503;
-            res.end(error instanceof Error ? error.message : 'Dio gateway endpoint is not configured.');
-            return;
-          }
-          const forbiddenHeaders = [
-            'x-stainless-os', 'x-stainless-lang', 'x-stainless-package-version',
-            'x-stainless-runtime', 'x-stainless-runtime-version',
-            'x-stainless-arch', 'x-stainless-os-version',
-            'origin', 'host', 'referer', 'x-target-url',
-          ];
-
-          const outHeaders: Record<string, string> = {};
-          for (const [key, value] of Object.entries(req.headers)) {
-            if (value && !forbiddenHeaders.includes(key.toLowerCase())) {
-              outHeaders[key] = Array.isArray(value) ? value.join(', ') : value;
-            }
-          }
-          outHeaders['host'] = targetUrl.host;
-
-          const hasAuth = 'authorization' in outHeaders;
-          const hasApiKey = 'x-api-key' in outHeaders;
-          console.log(`[dio-proxy] ${req.method} ${proxyPath} -> configured gateway (auth=${hasAuth}, xApiKey=${hasApiKey})`);
-
-          const chunks: Buffer[] = [];
-          req.on('data', (chunk: Buffer) => chunks.push(chunk));
-          req.on('end', () => {
-            const body = Buffer.concat(chunks);
-            const isHttps = targetUrl.protocol === 'https:';
-            const lib = isHttps ? https : http;
-            const proxyReq = lib.request(
-              {
-                hostname: targetUrl.hostname,
-                port: targetUrl.port || (isHttps ? 443 : 80),
-                path: targetUrl.pathname + targetUrl.search,
-                method: req.method,
-                headers: outHeaders,
-              },
-              (proxyRes) => {
-                const resHeaders = { ...proxyRes.headers } as Record<string, string>;
-                delete resHeaders['transfer-encoding'];
-                res.writeHead(proxyRes.statusCode!, resHeaders);
-                proxyRes.pipe(res);
-              },
-            );
-            proxyReq.on('error', (err) => {
-              console.error('[dio-proxy] request error:', err.message);
-              if (!res.headersSent) {
-                res.statusCode = 502;
-                res.end('Dio proxy error: ' + err.message);
               }
             });
             proxyReq.write(body);

@@ -14,7 +14,10 @@ import {
 	MODELS_TAB_SECTION_IDS,
 	MODELS_TAB_SECTION_LABELS,
 } from "./settings/section-ids";
-import { DIO_PROVIDER_ID } from "../dio-provider";
+import {
+	isNotOrganicFeatureEnabled,
+	NOTORGANIC_PROVIDER_ID,
+} from "../notorganic-provider";
 import { CloudProviderKeysSection } from "./settings/CloudProviderKeysSection";
 import { WebSearchSection } from "./settings/WebSearchSection";
 import { ProviderVisibilitySection } from "./settings/ProviderVisibilitySection";
@@ -34,7 +37,7 @@ import {
 	type ProviderFormState,
 } from "./settings/CustomProvidersSection";
 
-const PROVIDER_PRIORITY = ["dio", "openai", "anthropic", "google"];
+const PROVIDER_PRIORITY = ["notorganic", "openai", "anthropic", "google"];
 
 function sortProvidersByPriority(list: string[]): string[] {
 	const rank = (name: string) => {
@@ -132,7 +135,10 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
 		loadCustomProviders().then(setCustomProviders);
 	}, []);
 
-	const providers = sortProvidersByPriority(Array.from(new Set([DIO_PROVIDER_ID, ...getProviders()])));
+	const providers = sortProvidersByPriority(Array.from(new Set([
+		...(isNotOrganicFeatureEnabled() ? [NOTORGANIC_PROVIDER_ID] : []),
+		...getProviders(),
+	])));
 
 	const handleToggleProvider = (provider: string, hidden: boolean) => {
 		toggleProviderVisibility(provider, hidden);

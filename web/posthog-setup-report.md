@@ -14,7 +14,7 @@ The wizard has completed a deep integration of PostHog analytics into the Keatin
 | `message_feedback_given` | User gives thumbs-up or thumbs-down feedback on a Keating response | `src/hooks/useKeatingAgent.tsx` |
 | `quiz_completed` | User submits a quiz (retrieval practice), includes score and topic | `src/components/QuizRenderer.tsx` |
 | `oauth_login_completed` | OAuth login flow completed for an AI provider (success or failure) | `src/pages/OAuthCallback.tsx` |
-| `dio_access_claimed` | User successfully claims Dio paid access after checkout — key conversion event; also calls `posthog.identify()` with user email | `src/pages/DioSuccess.tsx` |
+| `pricing_pack_selected` | User selects a Not Organic Keating credit pack before provider-owned checkout | `src/pages/Pricing.tsx` |
 
 ## Other changes
 
@@ -32,7 +32,7 @@ We've built some insights and a dashboard for you to keep an eye on user behavio
 - **Funnel** — Landing-to-session conversion: [PMJgyiq5](https://us.posthog.com/project/473463/insights/PMJgyiq5)
 - **Trend** — CTA clicks by location: [92vaapZ7](https://us.posthog.com/project/473463/insights/92vaapZ7)
 - **Trend** — Quiz completions per day: [8odZ9bsi](https://us.posthog.com/project/473463/insights/8odZ9bsi)
-- **Trend** — Dio access claimed (revenue): [cG1up9pR](https://us.posthog.com/project/473463/insights/cG1up9pR)
+- **Trend** — The former hosted-access claim insight is retired; checkout conversion now belongs to the Not Organic provider boundary.
 - **Trend** — Session engagement signals: [nBHrkts9](https://us.posthog.com/project/473463/insights/nBHrkts9)
 
 ## Verify before merging
@@ -41,7 +41,7 @@ We've built some insights and a dashboard for you to keep an eye on user behavio
 - [ ] Run the test suite (`bun test`) — call sites that were rewritten or instrumented may need updated mocks or fixtures.
 - [x] Add `VITE_POSTHOG_PROJECT_TOKEN` and `VITE_POSTHOG_HOST` to `.env.example` (or any monorepo bootstrap scripts) so collaborators know what values to set.
 - [ ] Wire source-map upload (`posthog-cli sourcemap` or equivalent) into CI so production stack traces de-minify — this app ships a minified Vite bundle.
-- [x] Confirm the returning-visitor path also calls `identify` — Dio purchase and recovery paths now store the normalized email, and app startup re-identifies returning Dio users when a saved key is present.
+- [x] Removed browser email identification and provider-key persistence with the Not Organic migration.
 
 ### Agent skill
 

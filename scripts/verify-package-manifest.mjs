@@ -51,7 +51,7 @@ const files = new Set(pack.flatMap((entry) => entry.files.map((file) => file.pat
 const required = [
   "bin/keating.js",
   "dist/src/cli/main.js",
-  "dist/src/pi/hyperteacher-extension.js",
+  "dist/src/pi/hyper-teacher/index.js",
   "dist/src/core/templates/finetune/requirements.txt",
   "dist/src/core/templates/finetune/unsloth_train.py",
   "dist/src/core/templates/finetune/runpod/README.md",

@@ -238,22 +238,25 @@ keating feedback up|down|confused [topic] [--comment=...]
 
 Keating tries the configured provider first, then falls back to OpenAI/Anthropic if the default key is missing.
 
-### Web / Dio provider
+### Web / Not Organic provider
 
-Used by the web app's Dio credit purchase and Bifrost virtual-key provisioning routes. Never expose `BIFROST_API_KEY` client-side.
+The web app uses Not Organic for hosted inference, account-scoped wallets, and
+credit checkout. Provider capabilities and DPoP private keys stay server-side;
+the browser only talks to same-origin `/api/notorganic/**` routes.
 
-- `DIO_ENABLED` — Master switch for the Dio provider; defaults to `true` only when `NODE_ENV=development`.
-- `VITE_DIO_ENABLED` — Client-side mirror of `DIO_ENABLED`; controls whether the UI offers Dio access.
-- `CREEM_API_KEY` — Creem API key for server-side checkout creation.
-- `CREEM_WEBHOOK_SECRET` — Secret used to verify Creem webhook signatures.
-- `CREEM_PRODUCT_ID_DIO_CREDITS` — The configured Creem product ID for Dio credits.
-- `DIO_CREDIT_BUDGET` — Bifrost virtual-key budget (credits) assigned to each purchase.
-- `BIFROST_API_KEY` — Server-side Bifrost API key. In local dev, set via `export BIFROST_API_KEY="$(fnox get bifrost_api_key)"`.
-- `BIFROST_BASE_URL` — Server-only Bifrost gateway URL. Keep the real endpoint in environment/secrets, not in tracked client code or env examples.
-- `BIFROST_MODEL_ALIAS` — Model allowed for the provisioned virtual key (default: `kimi-k2.6`).
-- `RESEND_API_KEY` — Resend API key for sending recovery OTP emails.
-- `DIO_RECOVERY_FROM_EMAIL` — Sender address for recovery emails (default: `support@keating.help`).
-- `DIO_RECOVERY_DEV_CODE` — When `true`, recovery OTPs are logged and returned instead of emailed (default: `true` when `NODE_ENV=development`).
+- `VITE_NOTORGANIC_ENABLED` — Public build flag controlling whether the hosted model and account surfaces are visible.
+- `NOTORGANIC_ENABLED` — Server switch for the Not Organic integration.
+- `NOTORGANIC_ISSUER` — Server-only provider gateway origin, normally `https://api.notorganic.info`, without `/v1`.
+- `NOTORGANIC_MAX_COST_MICROUSD` — Positive per-request reservation ceiling sent to the provider.
+- `NOTORGANIC_ASSERTION_PRIVATE_KEY` — Adapter-owned Ed25519 product assertion key. Never expose it through a `VITE_*` variable.
+- `NOTORGANIC_ASSERTION_KEY_ID` — Optional product assertion key id used by the deployment adapter.
+
+An authenticated Nitro middleware/plugin must provide
+`event.context.notOrganicSessionAdapter`. It resolves the durable product
+session, signs and exchanges the short-lived Keating assertion, and retains the
+five-minute access token plus DPoP key server-side. Creem, Portkey, wallet
+ledger, and webhook credentials belong to the Not Organic deployment, not
+Keating.
 
 ## Important Files & Their Roles
 

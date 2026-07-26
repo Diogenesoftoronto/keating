@@ -7,6 +7,8 @@ interface RetryResponseButtonProps {
 	onRetry: () => void | Promise<void>;
 	className?: string;
 	loading?: boolean;
+	label?: string;
+	variant?: "quiet" | "primary";
 }
 
 const buttonClass = css({
@@ -24,8 +26,26 @@ const buttonClass = css({
 	_focusVisible: { outline: "2px solid var(--ring)", outlineOffset: "2px" },
 	_disabled: { cursor: "not-allowed", opacity: 0.6 },
 });
+const primaryButtonClass = css({
+	height: "2rem",
+	borderRadius: "0.5rem",
+	backgroundColor: "var(--primary)",
+	paddingInline: "0.75rem",
+	fontWeight: 600,
+	color: "var(--primary-foreground)",
+	_hover: {
+		backgroundColor: "color-mix(in srgb, var(--primary) 88%, var(--background))",
+		color: "var(--primary-foreground)",
+	},
+});
 
-export function RetryResponseButton({ onRetry, className, loading }: RetryResponseButtonProps) {
+export function RetryResponseButton({
+	onRetry,
+	className,
+	loading,
+	label = "Retry response",
+	variant = "quiet",
+}: RetryResponseButtonProps) {
 	const [pending, setPending] = useState(false);
 	const busy = loading ?? pending;
 
@@ -42,14 +62,14 @@ export function RetryResponseButton({ onRetry, className, loading }: RetryRespon
 	return (
 		<button
 			type="button"
-			className={cx(buttonClass, className)}
-			title="Retry the interrupted response"
+			className={cx(buttonClass, variant === "primary" && primaryButtonClass, className)}
+			title="Retry the same prompt"
 			onClick={() => void retry()}
 			disabled={busy}
-			aria-label="Retry response"
+			aria-label={label}
 		>
 			{busy ? <Spinner size={13} /> : <RotateCcw size={13} />}
-			<span>{busy ? "Retrying" : "Retry response"}</span>
+			<span>{busy ? "Retrying" : label}</span>
 		</button>
 	);
 }

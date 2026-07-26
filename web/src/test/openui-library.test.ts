@@ -4,6 +4,8 @@ import { createParser } from "@openuidev/react-lang";
 import {
 	keatingOpenUILibrary,
 	keatingOpenUIPrompt,
+	keatingOpenUIQuestionExampleProgram,
+	keatingOpenUIStudyPlanExampleProgram,
 } from "../keating/openui/library";
 import {
 	loadOpenUIState,
@@ -35,6 +37,30 @@ describe("Keating OpenUI library", () => {
 		expect(keatingOpenUIPrompt).toContain("LearningSurface");
 		expect(keatingOpenUIPrompt).toContain("Question(");
 		expect(keatingOpenUIPrompt).toContain("lifecycle=ephemeral|resumable|workspace");
+		expect(keatingOpenUIPrompt).toContain("## Canonical Question interaction");
+		expect(keatingOpenUIPrompt).toContain("stop and wait for the learner's submitted answer");
+		expect(keatingOpenUIPrompt).toContain("```openui lifecycle=ephemeral id=dns-caching-check");
+		expect(keatingOpenUIPrompt).toContain("## Canonical detailed lesson plan");
+		expect(keatingOpenUIPrompt).toContain("at least four meaningful top-level coverage areas");
+		expect(keatingOpenUIPrompt).toContain("expandable dependency graph");
+	});
+
+	it("keeps the canonical question example valid against the live component grammar", () => {
+		const parser = createParser(keatingOpenUILibrary.toJSONSchema());
+		const result = parser.parse(keatingOpenUIQuestionExampleProgram);
+
+		expect(result.root?.typeName).toBe("LearningSurface");
+		expect(result.meta.errors).toEqual([]);
+		expect(result.meta.unresolved).toEqual([]);
+	});
+
+	it("keeps the nested lesson-plan example valid against the live component grammar", () => {
+		const parser = createParser(keatingOpenUILibrary.toJSONSchema());
+		const result = parser.parse(keatingOpenUIStudyPlanExampleProgram);
+
+		expect(result.root?.typeName).toBe("LearningSurface");
+		expect(result.meta.errors).toEqual([]);
+		expect(result.meta.unresolved).toEqual([]);
 	});
 
 	it("persists resumable state and skips ephemeral state", () => {

@@ -2,23 +2,29 @@ import { usePostHog } from "@posthog/react";
 import { Nav } from "../components/Nav";
 import { Footer } from "../components/Footer";
 import { useSeo } from "../hooks/useSeo";
-import { DioAccessPromptDialog, promptDioAccess } from "../components/DioAccessPromptDialog";
-import { DIO_PACKS, DIO_TOKEN_RATES, formatPackTokenVolume, type DioPack } from "../dio-provider/packs";
+import {
+	NotOrganicAccessPromptDialog,
+	promptNotOrganicAccess,
+} from "../components/NotOrganicAccessPromptDialog";
+import {
+	NOTORGANIC_PACKS,
+	type NotOrganicPack,
+} from "../notorganic-provider/packs";
 import { cx } from "../../styled-system/css";
 import { btnRetro, eyebrow } from "../../styled-system/recipes";
 
 const FAQ_ITEMS: Array<{ q: string; a: string }> = [
 	{
 		q: "How do credits work?",
-		a: "Each pack loads a dollar budget onto your personal API key. Usage draws it down at the advertised per-token rates — no subscription, and credits never expire.",
+		a: "Each pack adds prepaid value to your shared Not Organic wallet. Usage is metered against the provider's published route and rate configuration; one-time Keating packs do not expire.",
 	},
 	{
 		q: "What happens if I buy again?",
-		a: "Top-ups stack. A second purchase raises the budget on your existing key instead of creating a new one, so nothing to reconfigure.",
+		a: "Top-ups stack in the same wallet, so there is no browser key to rotate or reconfigure.",
 	},
 	{
-		q: "I lost my key. Can I get it back?",
-		a: "Yes — recover access with the email you purchased with. We'll send a verification code and restore the same key.",
+		q: "How do I use credits on another device?",
+		a: "Sign in with the same Not Organic identity. Your wallet is account-scoped and no provider credential is copied between browsers.",
 	},
 	{
 		q: "Do I have to buy credits to use Keating?",
@@ -31,13 +37,13 @@ export function Pricing() {
 	useSeo({
 		title: "Pricing — Keating",
 		description:
-			"Transparent pay-per-token pricing for Keating's hosted inference. Buy credit packs; pay $1 per million input tokens and $4 per million output tokens.",
+			"Prepaid Not Organic inference credits for Keating, with account-scoped wallet access and no browser-held provider key.",
 		canonical: "https://keating.help/pricing",
 	});
 
-	const buyPack = (pack: DioPack) => {
+	const buyPack = (pack: NotOrganicPack) => {
 		posthog.capture("pricing_pack_selected", { pack_id: pack.id, price_usd: pack.priceUsd });
-		void promptDioAccess({ packId: pack.id });
+		void promptNotOrganicAccess({ packId: pack.id });
 	};
 
 	return (
@@ -49,22 +55,22 @@ export function Pricing() {
 						<div className={cx(eyebrow(), "prompt")}>cat PRICING.txt</div>
 						<h1>Pay for tokens. Nothing else.</h1>
 						<p className={cx("download-hero-copy")}>
-							Keating's hosted model (Kimi K2.6) runs on prepaid credits with transparent
-							per-token rates. No subscription, no expiry, no minimum. Bring your own API
-							keys instead and Keating stays free.
+							Keating&apos;s hosted models route through Not Organic&apos;s prepaid shared wallet.
+							There is no browser-held virtual key. Bring your own API keys instead and
+							Keating stays free.
 						</p>
 
 						<div className={cx("download-source-box")} style={{ marginTop: "1.5rem" }}>
 							<div>
-								<h3>Token rates — Kimi K2.6</h3>
+								<h3>Hosted routing — Not Organic</h3>
 								<p>
-									Credits draw down at exactly these rates. What you see in the usage
-									dashboard is what you pay.
+									Keating uses the provider&apos;s balanced model alias. Wallet and usage
+									records remain visible through your account session.
 								</p>
 							</div>
-							<div className={cx("download-command")} aria-label="Token rates">
-								<div>input&nbsp;&nbsp;${DIO_TOKEN_RATES.inputPerMTok.toFixed(2)} / 1M tokens</div>
-								<div>output&nbsp;${DIO_TOKEN_RATES.outputPerMTok.toFixed(2)} / 1M tokens</div>
+							<div className={cx("download-command")} aria-label="Hosted provider">
+								<div>provider&nbsp;&nbsp;Not Organic</div>
+								<div>model&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;balanced</div>
 							</div>
 						</div>
 					</div>
@@ -74,7 +80,7 @@ export function Pricing() {
 					<div className={cx("wrap")}>
 						<div className={cx(eyebrow(), "prompt")}>ls PACKS/</div>
 						<div className={cx("desktop-download-grid")}>
-							{DIO_PACKS.map((pack) => (
+							{NOTORGANIC_PACKS.map((pack) => (
 								<article
 									key={pack.id}
 									className={cx("desktop-download-card", pack.popular && "is-recommended")}
@@ -85,7 +91,7 @@ export function Pricing() {
 									</div>
 									<p>{pack.blurb}</p>
 									<code>
-										${pack.priceUsd} — {formatPackTokenVolume(pack)}
+										${pack.priceUsd} in prepaid inference value
 									</code>
 									<button
 										type="button"
@@ -116,7 +122,7 @@ export function Pricing() {
 				</section>
 			</main>
 			<Footer />
-			<DioAccessPromptDialog />
+			<NotOrganicAccessPromptDialog />
 		</div>
 	);
 }

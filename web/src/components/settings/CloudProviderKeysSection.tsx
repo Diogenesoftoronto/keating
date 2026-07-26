@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { getAppStorage } from "@earendil-works/pi-web-ui";
 import { handleTutorialLinkClick, tutorialApiKeyHref } from "../../lib/tutorial-links";
-import { promptDioAccess } from "../DioAccessPromptDialog";
 import {
 	completeOAuthFromInput,
 	initiateOAuth,
@@ -10,7 +9,11 @@ import {
 	deleteOAuthCredentials,
 	type OAuthProviderId,
 } from "../../keating/oauth";
-import { DIO_PROVIDER_ID } from "../../dio-provider";
+import {
+	getNotOrganicAccount,
+	getNotOrganicWallet,
+	NOTORGANIC_PROVIDER_ID,
+} from "../../notorganic-provider";
 import { css } from "../../../styled-system/css";
 
 const sectionClass = css({ display: "flex", flexDirection: "column", gap: "1rem", scrollMarginTop: "5rem" });
@@ -80,6 +83,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 	const [oauthLoading, setOauthLoading] = useState<Record<string, boolean>>({});
 	const [oauthInputs, setOAuthInputs] = useState<Record<string, string>>({});
 	const [oauthErrors, setOAuthErrors] = useState<Record<string, string>>({});
+	const [hostedSummary, setHostedSummary] = useState<string>("");
 
 	useEffect(() => {
 		const storage = getAppStorage();
@@ -98,8 +102,20 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 			const storage = getAppStorage();
 			const status: Record<string, boolean> = {};
 			for (const provider of providers) {
-				if (provider === DIO_PROVIDER_ID) {
-					status[provider] = !!(await storage.providerKeys.get(DIO_PROVIDER_ID));
+				if (provider === NOTORGANIC_PROVIDER_ID) {
+					try {
+						const [account, wallet] = await Promise.all([
+							getNotOrganicAccount(),
+							getNotOrganicWallet(),
+						]);
+						status[provider] = true;
+						const balance = typeof wallet.balance_microusd === "number"
+							? `$${(wallet.balance_microusd / 1_000_000).toFixed(2)} available`
+							: "Wallet connected";
+						setHostedSummary(`${account.did ?? account.id} · ${balance}`);
+					} catch {
+						status[provider] = false;
+					}
 					continue;
 				}
 				const oauthId = providerToOAuthId(provider);
@@ -145,17 +161,29 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 	};
 
 	const handleSignIn = (provider: string) => {
-		if (provider === DIO_PROVIDER_ID) {
+		if (provider === NOTORGANIC_PROVIDER_ID) {
 			setOAuthErrors((prev) => ({ ...prev, [provider]: "" }));
 			setOauthLoading((prev) => ({ ...prev, [provider]: true }));
-			void promptDioAccess().then(async (success) => {
-				const hasKey = !!(await getAppStorage().providerKeys.get(DIO_PROVIDER_ID));
-				setOAuthStatus((prev) => ({ ...prev, [provider]: success || hasKey }));
-				setOauthLoading((prev) => ({ ...prev, [provider]: false }));
-				if (!success && !hasKey) {
-					setOAuthErrors((prev) => ({ ...prev, [provider]: "Dio sign-in was not completed." }));
-				}
-			});
+			void Promise.all([getNotOrganicAccount(), getNotOrganicWallet()])
+				.then(([account, wallet]) => {
+					setOAuthStatus((prev) => ({ ...prev, [provider]: true }));
+					const balance = typeof wallet.balance_microusd === "number"
+						? `$${(wallet.balance_microusd / 1_000_000).toFixed(2)} available`
+						: "Wallet connected";
+					setHostedSummary(`${account.did ?? account.id} · ${balance}`);
+				})
+				.catch((error) => {
+					setOAuthStatus((prev) => ({ ...prev, [provider]: false }));
+					setOAuthErrors((prev) => ({
+						...prev,
+						[provider]: error instanceof Error
+							? error.message
+							: "The deployment-owned product session is unavailable.",
+					}));
+				})
+				.finally(() => {
+					setOauthLoading((prev) => ({ ...prev, [provider]: false }));
+				});
 			return;
 		}
 		const oauthId = providerToOAuthId(provider);
@@ -186,13 +214,6 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 	};
 
 	const handleSignOut = async (provider: string) => {
-		if (provider === DIO_PROVIDER_ID) {
-			const storage = getAppStorage();
-			await storage.providerKeys.delete(DIO_PROVIDER_ID);
-			setOAuthStatus((prev) => ({ ...prev, [provider]: false }));
-			setKeys((prev) => ({ ...prev, [provider]: "" }));
-			return;
-		}
 		const oauthId = providerToOAuthId(provider);
 		if (!oauthId) return;
 		await deleteOAuthCredentials(oauthId);
@@ -203,7 +224,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 	};
 
 	const OAUTH_PROVIDER_LABELS: Record<string, string> = {
-		dio: "Dio (Kimi K2.6)",
+		notorganic: "Not Organic Hosted",
 		openai: "OpenAI Codex",
 		anthropic: "Anthropic",
 		"openai-codex": "OpenAI Codex",
@@ -214,7 +235,43 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 		<>
 			{providers.map((provider) => {
 				const oauthId = providerToOAuthId(provider);
-				const isOAuth = !!oauthId || provider === DIO_PROVIDER_ID;
+				if (provider === NOTORGANIC_PROVIDER_ID) {
+					const hasSession = oauthStatus[provider] === true;
+					const loading = oauthLoading[provider] === true;
+					return (
+						<div key={provider} className={providerStackClass}>
+							<div className={labelRowClass}>
+								<label className={labelClass}>Not Organic Hosted</label>
+								<span className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+									Balanced routing
+								</span>
+							</div>
+							<div className={css({ borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "color-mix(in srgb, var(--muted) 20%, transparent)", padding: "0.75rem" })}>
+								<p className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+									Hosted sign-in is owned by Keating&apos;s server session. Browser DID and email values are never treated as authentication.
+								</p>
+								{hasSession && hostedSummary && (
+									<p className={css({ marginTop: "0.5rem", fontSize: "0.75rem", color: "var(--foreground)" })}>
+										{hostedSummary}
+									</p>
+								)}
+								<button
+									className={smallButtonClass}
+									disabled={loading}
+									onClick={() => handleSignIn(provider)}
+								>
+									{loading ? "Checking session…" : hasSession ? "Refresh account" : "Check product session"}
+								</button>
+								{oauthErrors[provider] && (
+									<p className={css({ marginTop: "0.5rem", fontSize: "0.75rem", color: "var(--destructive)" })}>
+										{oauthErrors[provider]}
+									</p>
+								)}
+							</div>
+						</div>
+					);
+				}
+				const isOAuth = !!oauthId;
 				const hasOAuth = oauthStatus[provider] === true;
 				const loading = oauthLoading[provider] === true;
 
