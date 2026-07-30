@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 
 import { animationSceneSource, buildAnimationManifest, writeLessonAnimation } from "../src/core/animation.js";
+import { artifactThemeTokens } from "../src/core/artifact-theme.js";
 import { lessonPlanToMermaid } from "../src/core/map.js";
 import { DEFAULT_POLICY, clampPolicy } from "../src/core/policy.js";
 import { arbPolicy, CANONICAL_TOPICS, suppressConsoleError } from "./helpers.js";
@@ -116,6 +117,9 @@ test("animation player generation hooks in the shared artifact theme before loca
     expect(artifact.scenePath.endsWith("scene.html")).toBe(true);
     expect(html.includes('data-keating-artifact-theme=')).toBe(true);
     expect(themeCss.includes(".keating-artifact-shell")).toBe(true);
-    expect(themeCss.includes("--colors-accent: #1e9b50")).toBe(true);
+    // A development checkout copies Panda's `--colors-accent` output, while a
+    // clean package/CI checkout intentionally falls back to the standalone
+    // `--accent` theme. Both must carry the same canonical colour token.
+    expect(themeCss.includes(artifactThemeTokens.accent)).toBe(true);
   });
 });
