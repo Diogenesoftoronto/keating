@@ -7,6 +7,7 @@ import { css, cx } from "../../styled-system/css";
 import { paperCard } from "../../styled-system/recipes";
 import { V240OpenInterfacesArticle } from "../components/V240OpenInterfacesArticle";
 import { V270TeachingContinuityArticle } from "../components/V270TeachingContinuityArticle";
+import { V280InspectableTutorArticle } from "../components/V280InspectableTutorArticle";
 
 type BadgeColor = "fix" | "release" | "feature" | "pwa" | "update" | "tech" | "devlog";
 
@@ -263,6 +264,23 @@ function majorMinor(version: string): string {
 /* ── Data ────────────────────────────────────────────────────────── */
 
 const POSTS: Post[] = [
+  {
+    date: "2026-07-30",
+    badge: { label: "RELEASE", color: "release" },
+    title: "v2.8.0 - A Tutor That Can Look Before It Guesses",
+    version: "2.8.0",
+    summary:
+      "Keating 2.8 tells the tutor when and how to inspect its own live code, connects NodePod workspace reads to the mounted source tree, and gives learners separate control over reasoning visibility and whether it starts expanded.",
+    sections: [
+      { id: "runtime-can-read", title: "A Runtime That Can Read" },
+      { id: "tools-match-runtime", title: "Truthful Tool Guidance" },
+      { id: "nodepod-source-paths", title: "NodePod Source Paths" },
+      { id: "reasoning-controls", title: "Reasoning on Your Terms" },
+      { id: "reasoning-storybook", title: "Reasoning in Storybook" },
+      { id: "release-28-verification", title: "Release Integrity" },
+    ],
+    body: <V280InspectableTutorArticle />,
+  },
   {
     date: "2026-07-30",
     badge: { label: "RELEASE", color: "release" },

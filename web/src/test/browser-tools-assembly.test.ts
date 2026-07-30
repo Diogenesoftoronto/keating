@@ -252,4 +252,65 @@ describe("browser tool assembly contract", () => {
 			globalThis.fetch = originalFetch;
 		}
 	});
+
+	test("routes NodePod workspace inspection to its VFS using readable source paths", async () => {
+		const { createWorkspaceCapabilityTools } = await import("../keating/browser-tools/workspace");
+		const invocations: Array<{ name: string; params: Record<string, unknown> }> = [];
+		const registry = {
+			has: () => true,
+			invoke: async (name: string, params: Record<string, unknown>) => {
+				invocations.push({ name, params });
+				return `${name}:${String(params.operation ?? "direct")}`;
+			},
+		};
+		const [inspect] = createWorkspaceCapabilityTools(registry, {
+			agentRuntime: {
+				...baseRuntime,
+				mode: "browser-nodepod",
+				label: "Browser + NodePod agent",
+				executionEndpoint: "nodepod://local",
+				capabilities: {
+					...baseRuntime.capabilities,
+					remoteSandbox: true,
+				},
+				fallback: {
+					localFirst: true,
+					remoteAvailable: true,
+					message: "NodePod test runtime.",
+				},
+			},
+		});
+
+		await inspect.execute("inspect-own-code", {
+			requests: [
+				{ operation: "list", path: "" },
+				{ operation: "read", path: "web/src/keating/capabilities.ts" },
+				{ operation: "diff" },
+			],
+		});
+
+		expect(invocations).toEqual([
+			{
+				name: "remote_execute",
+				params: {
+					operation: "fs.list",
+					payload: { path: "/workspace" },
+				},
+			},
+			{
+				name: "remote_execute",
+				params: {
+					operation: "fs.read",
+					payload: {
+						path: "/workspace/web/src/keating/capabilities.ts",
+						encoding: "utf8",
+					},
+				},
+			},
+			{
+				name: "source_diff",
+				params: {},
+			},
+		]);
+	});
 });

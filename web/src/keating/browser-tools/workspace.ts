@@ -634,18 +634,31 @@ export function createWorkspaceCapabilityTools(registry: ToolRegistry, options: 
 			async (params) => {
 				const requests = Array.isArray(params.requests) ? params.requests : [];
 				const sections: string[] = [];
-				const remote = options.agentRuntime?.mode === "host" || options.agentRuntime?.mode === "remote" || options.agentRuntime?.mode === "cloud";
+				const runtime = options.agentRuntime;
+				const nodePod = shouldRouteExecutionToNodePod(runtime);
+				const remote = runtime?.mode === "host" || runtime?.mode === "remote" || runtime?.mode === "cloud";
 				for (const request of requests) {
 					if (!request || typeof request !== "object") continue;
 					const item = request as Record<string, unknown>;
 					const operation = String(item.operation ?? "");
 					const toolName = operation === "list" ? "list_project_files" : operation === "read" ? "read_project_file" : operation === "diff" ? "source_diff" : "";
 					if (!toolName) continue;
-					if (remote) {
+					if (nodePod && operation === "diff") {
+						sections.push(await registry.invoke("source_diff", {}));
+					} else if (nodePod || remote) {
 						const remoteOperation = operation === "list" ? "fs.list" : operation === "read" ? "fs.read" : "source.diff";
+						const rawPath = typeof item.path === "string" ? item.path.trim() : "";
+						const path = nodePod
+							? rawPath.startsWith("/workspace")
+								? rawPath
+								: `/workspace${rawPath ? `/${rawPath.replace(/^\.?\//, "")}` : ""}`
+							: rawPath;
 						sections.push(await registry.invoke("remote_execute", {
 							operation: remoteOperation,
-							payload: { path: item.path },
+							payload: {
+								path,
+								...(nodePod && operation === "read" ? { encoding: "utf8" } : {}),
+							},
 						}));
 					} else {
 						sections.push(await registry.invoke(toolName, { path: item.path }));

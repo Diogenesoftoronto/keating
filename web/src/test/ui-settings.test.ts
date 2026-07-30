@@ -130,7 +130,9 @@ describe("Keating UI Settings", () => {
 		});
 
 		it("defaults reasoning display to visible", () => {
-			expect(loadKeatingUiSettings().showReasoning).toBe(true);
+			const settings = loadKeatingUiSettings();
+			expect(settings.showReasoning).toBe(true);
+			expect(settings.autoExpandReasoning).toBe(false);
 		});
 
 		it("defaults inline artifact previews to one visible preview", () => {
@@ -140,6 +142,13 @@ describe("Keating UI Settings", () => {
 		it("persists an explicit request to hide reasoning", () => {
 			localStorage.setItem("keating_ui_settings", JSON.stringify({ showReasoning: false }));
 			expect(loadKeatingUiSettings().showReasoning).toBe(false);
+		});
+
+		it("persists an explicit request to open reasoning automatically", () => {
+			localStorage.setItem("keating_ui_settings", JSON.stringify({ autoExpandReasoning: true }));
+			expect(loadKeatingUiSettings().autoExpandReasoning).toBe(true);
+			localStorage.setItem("keating_ui_settings", JSON.stringify({ autoExpandReasoning: "yes" }));
+			expect(loadKeatingUiSettings().autoExpandReasoning).toBe(false);
 		});
 
 		it("persists an explicit request to stack inline artifact previews", () => {

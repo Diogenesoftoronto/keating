@@ -23,7 +23,10 @@ import { getProviderApiKey, resolveAvailableChatModel } from "../lib/provider-mo
 import { localModel } from "../stores/local-model";
 import { buildKeatingSystemPrompt, composeKeatingSystemPrompt, createKeatingTools, executeRawKeatingTool, getActiveKeatingPrompt } from "../keating/browser-tools";
 import { loadAgentRuntimeConfig, shouldAutoBootNodePod, type KeatingAgentRuntimeConfig } from "../keating/agent-runtime";
-import { filterAvailableKeatingTools } from "../keating/capabilities";
+import {
+	appendWorkspaceCapabilityPrompt,
+	filterAvailableKeatingTools,
+} from "../keating/capabilities";
 import { keatingLifecycle } from "../keating/lifecycle";
 import { detectTopicCategoryShift } from "../keating/topic-shift-hook";
 import { browserConversationRuntime, recordAgentEvent, recordOpenUIAction, type ConversationRuntime } from "../keating/integration";
@@ -70,10 +73,12 @@ function buildAgentSystemPrompt(
   basePrompt: string,
   learnerContext: string,
   sessionStartContext = "",
+  agentRuntime?: KeatingAgentRuntimeConfig,
 ): string {
   const prompt = buildKeatingSystemPrompt(speechEnabled, basePrompt, learnerContext);
   const promptWithOpenUi = basePrompt.includes(keatingOpenUIPrompt) ? prompt : `${prompt}\n\n${keatingOpenUIPrompt}`;
-  return composeSessionStartSystemPrompt(promptWithOpenUi, sessionStartContext);
+  const promptWithSessionContext = composeSessionStartSystemPrompt(promptWithOpenUi, sessionStartContext);
+  return appendWorkspaceCapabilityPrompt(promptWithSessionContext, { runtime: agentRuntime });
 }
 
 function cleanSuggestedTitle(text: string) {
@@ -227,6 +232,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const bootstrapGenerationRef = useRef(0);
   const persistentStorageRequestedRef = useRef(false);
   const systemPromptBaseRef = useRef<string>("");
+  const agentRuntimeRef = useRef<KeatingAgentRuntimeConfig | undefined>(undefined);
   const sessionStartContextRef = useRef<{
     sessionId: string;
     context: string;
@@ -474,6 +480,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
           basePrompt,
           loadLearnerContext(),
           sessionStartContextRef.current.context,
+          agentRuntime,
         );
       }
     },
@@ -728,6 +735,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     }
     const sessionStartRecord = sessionStartContextRef.current;
     const agentRuntime = await loadAgentRuntimeConfig();
+    agentRuntimeRef.current = agentRuntime;
     const tools = filterAvailableKeatingTools(
       await createKeatingTools(keatingStorage, toolOptions(speechSettings, agentRuntime)),
       { runtime: agentRuntime, speechEnabled: speechSettings.enabled },
@@ -746,6 +754,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
         promptBase,
         loadLearnerContext(),
         sessionStartRecord.context,
+        agentRuntime,
       ),
     };
 
@@ -774,6 +783,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
 				systemPromptBaseRef.current,
 				loadLearnerContext(),
 				sessionStartRecord.context,
+				agentRuntimeRef.current,
 			);
 		};
 		ensureSessionStartContextRef.current = ensureSessionStartContext;
@@ -791,11 +801,19 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
 						}))
 						.then(({ runtime, tools: refreshedTools }) => {
               if (agentRef.current !== agent) return;
+							agentRuntimeRef.current = runtime;
 							const availableTools = filterAvailableKeatingTools(refreshedTools, {
 								runtime,
 								speechEnabled: speechSettings.enabled,
 							});
 							agent.state.tools = availableTools;
+							agent.state.systemPrompt = buildAgentSystemPrompt(
+								speechSettings.enabled,
+								systemPromptBaseRef.current,
+								loadLearnerContext(),
+								sessionStartContextRef.current.context,
+								runtime,
+							);
 							registerKeatingWebMcp(keatingStorage, availableTools).catch(console.warn);
             });
         })
@@ -960,6 +978,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
 		}))
       .then(({ agentRuntime, tools }) => {
         if (cancelled) return;
+			agentRuntimeRef.current = agentRuntime;
 			agent.state.tools = filterAvailableKeatingTools(tools, {
 				runtime: agentRuntime,
 				speechEnabled: speechSettings.enabled,
@@ -969,6 +988,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
           systemPromptBaseRef.current,
           loadLearnerContext(),
           sessionStartContextRef.current.context,
+          agentRuntime,
         );
 			registerKeatingWebMcp(keatingStorage, agent.state.tools).catch(console.warn);
       })
@@ -1028,6 +1048,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
           base,
           loadLearnerContext(),
           sessionStartContextRef.current.context,
+          agentRuntimeRef.current,
         );
       }
     });
@@ -1041,6 +1062,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
           systemPromptBaseRef.current,
           context,
           sessionStartContextRef.current.context,
+          agentRuntimeRef.current,
         );
       }
     });

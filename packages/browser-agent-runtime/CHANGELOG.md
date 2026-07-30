@@ -1,5 +1,11 @@
 # Changelog
 
+
+## 2.8.0
+<sub>2026-07-30</sub>
+
+- *(minor)* Keep the browser runtime package aligned with Keating's live workspace inspection and NodePod source-access contract.
+
 ## 2.7.0
 <sub>2026-07-30</sub>
 

@@ -2,6 +2,8 @@ import { describe, expect, it } from "bun:test";
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { DEFAULT_AGENT_RUNTIME_CONFIG } from "../keating/agent-runtime";
 import {
+	appendWorkspaceCapabilityPrompt,
+	buildWorkspaceCapabilityPrompt,
 	buildCapabilityCatalog,
 	filterAvailableKeatingTools,
 } from "../keating/capabilities";
@@ -103,5 +105,38 @@ describe("capability availability", () => {
 		});
 		expect(catalog.find((bundle) => bundle.id === "workspace")?.availability).toBe("unavailable");
 		expect(catalog.find((bundle) => bundle.id === "voice")?.availability).toBe("unavailable");
+	});
+
+	it("gives NodePod sessions explicit, non-evolvable guidance to inspect Keating's own code", () => {
+		const nodePodEnvironment = {
+			runtime: {
+				...DEFAULT_AGENT_RUNTIME_CONFIG,
+				mode: "browser-nodepod",
+				executionEndpoint: "nodepod://local",
+				capabilities: {
+					...DEFAULT_AGENT_RUNTIME_CONFIG.capabilities,
+					remoteSandbox: true,
+				},
+			},
+		} as const;
+		const prompt = buildWorkspaceCapabilityPrompt(nodePodEnvironment);
+
+		expect(prompt).toContain("Keating's own bundled source snapshot");
+		expect(prompt).toContain("/workspace/web/src/keating");
+		expect(prompt).toContain("Use `workspace_inspect` proactively");
+		expect(prompt).toContain("Do not claim that you cannot inspect your own code");
+		const appended = appendWorkspaceCapabilityPrompt("An older evolved prompt.", nodePodEnvironment);
+		expect(appended).toContain("An older evolved prompt.\n\n<!-- keating:live-workspace:start -->\n## Live Workspace Access");
+		expect(appendWorkspaceCapabilityPrompt(appended, nodePodEnvironment)
+			.match(/## Live Workspace Access/g)).toHaveLength(1);
+		expect(appendWorkspaceCapabilityPrompt(appended, {
+			runtime: DEFAULT_AGENT_RUNTIME_CONFIG,
+		})).toBe("An older evolved prompt.");
+	});
+
+	it("omits workspace guidance when no inspection adapter is connected", () => {
+		expect(buildWorkspaceCapabilityPrompt({
+			runtime: DEFAULT_AGENT_RUNTIME_CONFIG,
+		})).toBe("");
 	});
 });

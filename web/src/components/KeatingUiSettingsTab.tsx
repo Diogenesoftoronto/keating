@@ -243,9 +243,20 @@ export function KeatingUiSettingsTab() {
 
 			<SettingRow
 				title="Show reasoning"
-				description="Show the model's collapsible reasoning summary inside chat messages. When off, reasoning is hidden entirely. This does not change how much the model thinks — use Reasoning Level for that."
+				description="Keep a Reasoning control available inside chat messages. When off, reasoning is hidden entirely. This does not change how much the model thinks; use Reasoning Level for that."
 			>
 				<Toggle checked={settings.showReasoning} onChange={(checked) => update({ showReasoning: checked })} />
+			</SettingRow>
+
+			<SettingRow
+				title="Open reasoning automatically"
+				description="Start each Reasoning disclosure expanded. Leave this off to keep reasoning available but collapsed."
+			>
+				<Toggle
+					checked={settings.autoExpandReasoning}
+					disabled={!settings.showReasoning}
+					onChange={(checked) => update({ autoExpandReasoning: checked })}
+				/>
 			</SettingRow>
 
 			<SettingRow
