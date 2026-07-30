@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.8.0] - 2026-07-30
+
+### Added
+- Added runtime-derived system guidance that tells the model when live workspace inspection is connected, where Keating's bundled source is mounted, and when to inspect its own implementation before answering.
+- Added a persisted **Open reasoning automatically** preference, separate from reasoning visibility and model effort, plus Storybook coverage for collapsed, manually opened, and preference-expanded reasoning disclosures.
+- Added NodePod directory listing support for the composed workspace inspection tool.
+
+### Changed
+- Rebuilt the active system prompt when the workspace runtime initializes or changes, keeping live capability guidance outside evolvable persona prompts and preventing duplicate capability sections.
+- Kept reasoning available but collapsed by default during streaming; learners can still open it manually or opt into initially expanded disclosures.
+- Routed NodePod workspace listings, UTF-8 source reads, and diffs through the mounted `/workspace` VFS with normalized source paths.
+- Regenerated the browser NodePod boot snapshot to match the live workspace contracts.
+
+### Fixed
+- Fixed browser-sandbox sessions advertising workspace inspection while the model remained unaware that it could inspect Keating's own source.
+- Fixed composed NodePod inspection requests treating the sandbox like a remote host filesystem and failing to list or read the mounted source tree reliably.
+
 ## [2.7.0] - 2026-07-30
 
 ### Added

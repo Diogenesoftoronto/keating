@@ -829,6 +829,12 @@ export async function nodePodExecute(operation: string, payload: unknown): Promi
 			return { content: uint8ArrayToBase64(content), encoding: "base64" };
 		}
 
+		case "fs.list": {
+			const p = (payload || {}) as Record<string, unknown>;
+			const path = String(p.path ?? "/workspace") || "/workspace";
+			return await nodePodReaddir(path);
+		}
+
 		case "fs.write": {
 			const p = (payload || {}) as Record<string, unknown>;
 			const path = String(p.path ?? "");

@@ -41,7 +41,10 @@ const TOOL_NAMES: Record<KeatingCapabilityId, string[]> = {
 	voice: ["keating_voice"],
 };
 
-function availableWorkspaceTools(environment: CapabilityEnvironment): string[] {
+const LIVE_WORKSPACE_PROMPT_START = "<!-- keating:live-workspace:start -->";
+const LIVE_WORKSPACE_PROMPT_END = "<!-- keating:live-workspace:end -->";
+
+export function availableWorkspaceTools(environment: CapabilityEnvironment): string[] {
 	const runtime = environment.runtime;
 	if (!runtime) return [];
 	const tools = new Set<string>();
@@ -54,6 +57,75 @@ function availableWorkspaceTools(environment: CapabilityEnvironment): string[] {
 	if (canExecute) tools.add("workspace_exec");
 	if (canChange) tools.add("workspace_change");
 	return [...tools];
+}
+
+/**
+ * Runtime-derived workspace guidance is appended outside the evolvable persona
+ * prompt. That keeps restored sessions and older evolved prompts from hiding
+ * source access that is actually available in the current runtime.
+ */
+export function buildWorkspaceCapabilityPrompt(
+	environment: CapabilityEnvironment = {},
+): string {
+	const runtime = environment.runtime;
+	const tools = availableWorkspaceTools(environment);
+	if (!runtime || !tools.includes("workspace_inspect")) return "";
+
+	const nodePod = runtime.mode === "browser-nodepod";
+	const attachedRoot = runtime.projectRoot?.trim();
+	const location = nodePod
+		? [
+			"Keating's own bundled source snapshot is mounted at `/workspace`.",
+			"Important paths include `/workspace/src/core`, `/workspace/pi/prompts`, and `/workspace/web/src/keating`.",
+		].join(" ")
+		: attachedRoot
+			? `The attached project root is \`${attachedRoot}\`.`
+			: "The connected workspace exposes the attached project's files.";
+
+	const abilities = [
+		"- `workspace_inspect` can batch directory listings, source reads, and diffs.",
+		tools.includes("workspace_exec")
+			? "- `workspace_exec` can run commands and focused validation in the connected workspace."
+			: "",
+		tools.includes("workspace_change")
+			? nodePod
+				? "- `workspace_change` can edit the sandbox snapshot with validation and rollback; those edits do not silently patch the running application."
+				: "- `workspace_change` can apply precise, reviewable edits through the connected adapter."
+			: "",
+	].filter(Boolean);
+
+	return [
+		LIVE_WORKSPACE_PROMPT_START,
+		"## Live Workspace Access",
+		"",
+		"You have direct source-inspection access in this session. When the learner asks why Keating behaves a certain way, reports a bug, questions a tool, or asks you to improve yourself, inspect the relevant implementation before guessing.",
+		"",
+		location,
+		"",
+		...abilities,
+		"",
+		"Use `workspace_inspect` proactively and batch related reads in one call. Do not claim that you cannot inspect your own code, and do not ask the learner to paste files that this tool can read.",
+		LIVE_WORKSPACE_PROMPT_END,
+	].join("\n");
+}
+
+function withoutWorkspaceCapabilityPrompt(systemPrompt: string): string {
+	const start = systemPrompt.indexOf(LIVE_WORKSPACE_PROMPT_START);
+	if (start < 0) return systemPrompt;
+	const end = systemPrompt.indexOf(LIVE_WORKSPACE_PROMPT_END, start);
+	if (end < 0) return systemPrompt.slice(0, start).trimEnd();
+	return `${systemPrompt.slice(0, start)}${systemPrompt.slice(end + LIVE_WORKSPACE_PROMPT_END.length)}`
+		.replace(/\n{3,}/g, "\n\n")
+		.trimEnd();
+}
+
+export function appendWorkspaceCapabilityPrompt(
+	systemPrompt: string,
+	environment: CapabilityEnvironment = {},
+): string {
+	const basePrompt = withoutWorkspaceCapabilityPrompt(systemPrompt);
+	const workspacePrompt = buildWorkspaceCapabilityPrompt(environment);
+	return workspacePrompt ? `${basePrompt.trimEnd()}\n\n${workspacePrompt}` : basePrompt;
 }
 
 export function buildCapabilityCatalog(environment: CapabilityEnvironment = {}): CapabilityBundle[] {

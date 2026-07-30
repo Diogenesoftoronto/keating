@@ -1982,36 +1982,28 @@ const MarkdownText = memo(function MarkdownText({
   );
 });
 
-function ReasoningPart({
+export function ReasoningPart({
   text,
-  status,
   show = true,
+  defaultOpen = false,
 }: {
   text: string;
   status?: { type: string };
   show?: boolean;
+  defaultOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(() => status?.type === "running");
-  const userToggledRef = useRef(false);
+  const [open, setOpen] = useState(defaultOpen);
 
   useEffect(() => {
-    if (status?.type === "running") {
-      userToggledRef.current = false;
-      setOpen(true);
-      return;
-    }
-    if (!userToggledRef.current) setOpen(false);
-  }, [status?.type]);
+    setOpen(defaultOpen);
+  }, [defaultOpen]);
 
   if (!show) return null;
   if (!text.trim()) return null;
   return (
     <details
       open={open}
-      onToggle={(event) => {
-        userToggledRef.current = true;
-        setOpen(event.currentTarget.open);
-      }}
+      onToggle={(event) => setOpen(event.currentTarget.open)}
       className={css({
         marginBottom: "0.75rem",
         borderRadius: "0.375rem",
@@ -2242,7 +2234,12 @@ function ToolPart({
   );
 }
 
-function messagePartComponents(showToolUi: boolean, showRawErrors: boolean, showReasoning: boolean) {
+function messagePartComponents(
+  showToolUi: boolean,
+  showRawErrors: boolean,
+  showReasoning: boolean,
+  autoExpandReasoning: boolean,
+) {
   return {
     Text: (props: any) => (
       <StreamingTextPart {...props} showRawErrors={showRawErrors} />
@@ -2250,7 +2247,11 @@ function messagePartComponents(showToolUi: boolean, showRawErrors: boolean, show
     Image: ImagePart,
     File: FilePart,
     Reasoning: (props: Parameters<typeof ReasoningPart>[0]) => (
-      <ReasoningPart {...props} show={showReasoning} />
+      <ReasoningPart
+        {...props}
+        show={showReasoning}
+        defaultOpen={autoExpandReasoning}
+      />
     ),
     tools: {
       Fallback: (props: Parameters<typeof ToolPart>[0]) => (
@@ -3376,8 +3377,18 @@ function AssistantThread({
     activeQuiz && activeQuiz.slug !== dismissedQuizId ? activeQuiz : null;
   const components = useMemo(
     () =>
-      messagePartComponents(uiSettings.showToolUi, uiSettings.showRawErrors, uiSettings.showReasoning),
-    [uiSettings.showToolUi, uiSettings.showRawErrors, uiSettings.showReasoning],
+      messagePartComponents(
+        uiSettings.showToolUi,
+        uiSettings.showRawErrors,
+        uiSettings.showReasoning,
+        uiSettings.autoExpandReasoning,
+      ),
+    [
+      uiSettings.showToolUi,
+      uiSettings.showRawErrors,
+      uiSettings.showReasoning,
+      uiSettings.autoExpandReasoning,
+    ],
   );
   const modelRef = useRef(agent?.state.model);
   if (agent) modelRef.current = agent.state.model;

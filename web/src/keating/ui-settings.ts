@@ -21,6 +21,7 @@ export interface KeatingUiSettings {
 	limitInlineArtifactPreviews: boolean;
 	showRawErrors: boolean;
 	showReasoning: boolean;
+	autoExpandReasoning: boolean;
 	reasoningLevel: ReasoningLevel;
 	animationRenderer: AnimationRenderer;
 	fontFamily: UiFontFamily;
@@ -43,6 +44,7 @@ export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
 	limitInlineArtifactPreviews: true,
 	showRawErrors: false,
 	showReasoning: true,
+	autoExpandReasoning: false,
 	reasoningLevel: "medium",
 	animationRenderer: "hyperframes",
 	fontFamily: "jetbrains-mono",
@@ -174,6 +176,7 @@ function normalizeSettings(value: LegacyUiSettingsInput | null): KeatingUiSettin
 		limitInlineArtifactPreviews: value?.limitInlineArtifactPreviews ?? DEFAULT_UI_SETTINGS.limitInlineArtifactPreviews,
 		showRawErrors: value?.showRawErrors ?? DEFAULT_UI_SETTINGS.showRawErrors,
 		showReasoning: value?.showReasoning ?? DEFAULT_UI_SETTINGS.showReasoning,
+		autoExpandReasoning: value?.autoExpandReasoning === true,
 		reasoningLevel: value?.reasoningLevel ?? DEFAULT_UI_SETTINGS.reasoningLevel,
 		animationRenderer: "hyperframes",
 		fontFamily:
