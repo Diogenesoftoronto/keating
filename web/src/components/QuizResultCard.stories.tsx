@@ -67,11 +67,11 @@ const baseQuiz: Quiz = {
 
 function makeResult(answers: Record<string, string>, overrides?: Partial<QuizResult>): QuizResult {
 	return {
+		resultId: "quiz-story-result",
 		answers,
 		score: 0,
-		weightedScore: 0,
+		partialCreditPoints: 0,
 		timing: { totalMs: 145_000, perQuestionMs: { q1: 30_000, q2: 25_000, q3: 50_000, q4: 40_000 } },
-		confidence: { q1: 85, q2: 60, q3: 70, q4: 90 },
 		partialCredits: {},
 		flagged: ["q3"],
 		...overrides,
@@ -104,7 +104,7 @@ export const Default: Story = {};
 
 export const PerfectScore: Story = {
 	args: {
-		data: stored({ q1: "Thylakoid membrane", q2: "False", q3: "chlorophyll", q4: "Oxygen" }, { score: 4, weightedScore: 3.8 }),
+		data: stored({ q1: "Thylakoid membrane", q2: "False", q3: "chlorophyll", q4: "Oxygen" }, { score: 4, partialCreditPoints: 3.8 }),
 	},
 };
 
@@ -112,7 +112,7 @@ export const LowScore: Story = {
 	args: {
 		data: stored(
 			{ q1: "Stroma", q2: "True", q3: "melanin", q4: "Carbon dioxide" },
-			{ score: 0, weightedScore: 0.2 }
+			{ score: 0, partialCreditPoints: 0.2 }
 		),
 	},
 };

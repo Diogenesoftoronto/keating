@@ -11,8 +11,11 @@ export interface OpenUIDocumentMetadata {
 export type OpenUIMessageSegment =
 	| { type: "text"; content: string }
 	| {
-			type: "openui";
+		type: "openui";
+			/** Longest prefix containing only complete top-level statements. */
 			program: string;
+			/** Full source received so far, including an unfinished tail. */
+			rawProgram: string;
 			complete: boolean;
 			metadata: OpenUIDocumentMetadata;
 	  };

@@ -141,17 +141,19 @@ export function KeatingOpenUIRenderer({
 					Building interaction
 				</div>
 			) : null}
-			<div className={isStreaming ? css({ pointerEvents: "none", opacity: 0.78 }) : undefined}>
-				<Renderer
-					response={program}
-					library={keatingOpenUILibrary}
-					isStreaming={isStreaming}
-					initialState={initialState}
-					onAction={handleAction}
-					onStateUpdate={handleStateUpdate}
-					onError={setErrors}
-				/>
-			</div>
+			{program ? (
+				<div className={isStreaming ? css({ pointerEvents: "none", opacity: 0.78 }) : undefined}>
+					<Renderer
+						response={program}
+						library={keatingOpenUILibrary}
+						isStreaming={isStreaming}
+						initialState={initialState}
+						onAction={handleAction}
+						onStateUpdate={handleStateUpdate}
+						onError={setErrors}
+					/>
+				</div>
+			) : null}
 			{!isStreaming && errors.length > 0 ? (
 				<div className={css({ marginBlock: "0.75rem", display: "flex", alignItems: "flex-start", gap: "0.5rem", borderRadius: "0.5rem", background: "color-mix(in srgb, var(--destructive) 10%, transparent)", padding: "0.75rem", fontSize: "0.75rem", color: "var(--destructive)" })} role="alert">
 					<CircleAlert aria-hidden="true" size={15} className={css({ marginTop: "0.0625rem", flexShrink: 0 })} />

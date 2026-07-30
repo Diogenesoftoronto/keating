@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.0] - 2026-07-30
+
+### Added
+- Added an explicit model-facing catalogue for all five conversational Question formats and all eight scored Quiz formats, including selection guidance, type-specific controls, and a parser-valid mixed-format example.
+- Added reciprocal links between prerequisite, follow-up, and related OpenUI study plans through stable plan identifiers.
+- Added complete learner-profile hydration before the first model turn, including full session, goal, quiz, question-check, card-review, and flashcard evidence plus explicit coverage gaps.
+- Added durable quiz-attempt evidence with stable result identifiers, answers, partial credits, timing, flags, pending open-ended questions, and merged model grades.
+- Added Storybook coverage for open questions, mobile quizzes and recovery, quiz sessions, and linked multi-level plans, plus a canonical `just storybook` command.
+
+### Changed
+- Made canonical StudyPlans require at least two nested layers beneath each top-level area and expanded the model example into linked core and lab plans with concrete activities, outcomes, timing, and dependencies.
+- Replaced capability activation and automatic continuation with a runtime-filtered tool set that exposes every currently supported schema from the first turn.
+- Removed generic confirmation prompts for known trusted interactions while preserving fail-closed rejection for unknown tools, unsafe voice invocations, and untrusted-web code execution or destructive actions.
+- Replaced confidence-weighted quiz scores with explicit partial-credit points and normalized objective plus model-graded open-ended evidence for learner profiles and reward exports.
+- Improved narrow-screen quiz, result, recovery, and navigation layouts with wrapping content, scrollable sticky assessments, dismissible sessions, and mobile-safe touch targets.
+- Updated generated NodePod runtime files and historical architecture prose to match the complete-context and immediate-tool model.
+
+### Fixed
+- Prevented incomplete streamed OpenUI statements from mounting partial questions or controls before their required fields arrive.
+- Persisted asynchronous open-ended quiz grades into the original attempt and refreshed derived learner evidence after grading.
+- Fixed linked study-plan navigation, default hierarchy disclosure, and empty-program OpenUI rendering.
+- Fixed retry availability for model-unavailable and permission failures and clarified the recovery action as `Retry response`.
+
 ## [2.6.0] - 2026-07-26
 
 ### Added
@@ -531,7 +554,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v2.6.0...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v2.7.0...HEAD
+[2.7.0]: https://github.com/Diogenesoftoronto/keating/compare/v2.6.0...v2.7.0
 [2.6.0]: https://github.com/Diogenesoftoronto/keating/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/Diogenesoftoronto/keating/compare/v2.4.1...v2.5.0
 [2.4.1]: https://github.com/Diogenesoftoronto/keating/compare/v2.4.0...v2.4.1

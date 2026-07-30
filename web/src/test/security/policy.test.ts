@@ -12,16 +12,16 @@ describe("tool permission policy", () => {
 	test("classifies every registered Keating tool", () => {
 		for (const name of TOOL_REGISTRATION_ORDER) expect(classifyTool(name).known, name).toBe(true);
 	});
-	test("allows trusted informational tools without confirmation", () => {
+	test("allows trusted tools without confirmation", () => {
 		expect(evaluateToolPermission({
 			tool: classifyTool("timeline"), surface: "text", provenance: trusted,
 		}).outcome).toBe("allow");
-	});
-
-	test("requires confirmation for external side effects", () => {
 		expect(evaluateToolPermission({
 			tool: classifyTool("generate_image"), surface: "text", provenance: trusted,
-		}).outcome).toBe("confirm");
+		}).outcome).toBe("allow");
+		expect(evaluateToolPermission({
+			tool: classifyTool("workspace_exec"), surface: "text", provenance: trusted,
+		}).outcome).toBe("allow");
 	});
 
 	test("denies voice-triggered code execution", () => {
@@ -47,11 +47,19 @@ describe("tool permission policy", () => {
 		}).outcome).toBe("deny");
 	});
 
-	test("untrusted web content elevates sensitive reads to confirmation", () => {
+	test("untrusted web content can still use non-executing tools without a prompt", () => {
 		expect(evaluateToolPermission({
 			tool: classifyTool("read_project_file"),
 			surface: "text",
 			provenance: provenanceFromWeb(),
-		}).outcome).toBe("confirm");
+		}).outcome).toBe("allow");
+	});
+
+	test("denies unknown tools instead of asking the learner", () => {
+		expect(evaluateToolPermission({
+			tool: classifyTool("future_tool"),
+			surface: "text",
+			provenance: trusted,
+		}).outcome).toBe("deny");
 	});
 });

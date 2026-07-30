@@ -1,4 +1,4 @@
-import { ChevronRight, Clock3, Network, Route } from "lucide-react";
+import { ChevronRight, Clock3, Link2, Network, Route } from "lucide-react";
 import { defineComponent, useStateField } from "@openuidev/react-lang";
 import { z } from "zod";
 import { css, cx } from "../../../styled-system/css";
@@ -14,6 +14,13 @@ export interface StudyPlanItem {
 	children?: StudyPlanItem[];
 }
 
+export interface StudyPlanLink {
+	planId: string;
+	title: string;
+	relation?: "prerequisite" | "follow-up" | "related";
+	detail?: string;
+}
+
 const planItemSchema: z.ZodType<StudyPlanItem> = z.lazy(() =>
 	z.object({
 		id: z.string().describe("Stable unique id used by progress and dependency links"),
@@ -26,16 +33,26 @@ const planItemSchema: z.ZodType<StudyPlanItem> = z.lazy(() =>
 	}),
 );
 
+const studyPlanLinkSchema: z.ZodType<StudyPlanLink> = z.object({
+	planId: z.string().describe("Stable id of the StudyPlan this link should open"),
+	title: z.string().describe("Learner-facing title of the linked plan"),
+	relation: z.enum(["prerequisite", "follow-up", "related"]).default("related"),
+	detail: z.string().optional().describe("Why this plan is relevant to the current plan"),
+});
+
 const studyPlanPropsSchema = z.object({
 	id: z.string(),
 	title: z.string(),
 	items: z.array(planItemSchema).min(1).max(12).describe("Top-level coverage areas, each optionally containing nested subtopics"),
 	lifecycle: z.enum(["ephemeral", "resumable", "workspace"]).default("workspace"),
 	overview: z.string().optional().describe("Short statement of scope and intended outcome"),
+	relatedPlans: z.array(studyPlanLinkSchema).max(8).optional().describe("Links to prerequisite, follow-up, or related StudyPlan ids"),
 });
 
 const planClass = css({
 	minWidth: 0,
+	scrollMarginTop: "5rem",
+	_focusVisible: { outline: "2px solid var(--primary)", outlineOffset: "2px" },
 });
 const planHeaderClass = css({
 	display: "flex",
@@ -147,6 +164,52 @@ const dependencySummaryClass = css({
 	"&::-webkit-details-marker": { display: "none" },
 });
 const dependencyBodyClass = css({ padding: "0.75rem" });
+const relatedPlansClass = css({
+	borderTop: "1px solid var(--border)",
+	padding: "0.75rem 1rem 0.875rem",
+});
+const relatedPlansHeadingClass = css({
+	display: "flex",
+	alignItems: "center",
+	gap: "0.5rem",
+	fontSize: "0.75rem",
+	fontWeight: 600,
+});
+const relatedPlansListClass = css({
+	marginTop: "0.5rem",
+	display: "grid",
+	gap: "0.25rem",
+});
+const relatedPlanLinkClass = css({
+	display: "flex",
+	alignItems: "flex-start",
+	gap: "0.625rem",
+	borderRadius: "0.375rem",
+	padding: "0.5rem",
+	color: "inherit",
+	textDecoration: "none",
+	_hover: { backgroundColor: "var(--muted)" },
+	_focusVisible: { outline: "2px solid var(--primary)", outlineOffset: "1px" },
+});
+
+export function studyPlanAnchorId(planId: string): string {
+	const safeId = planId
+		.trim()
+		.replace(/[^a-zA-Z0-9_-]+/g, "-")
+		.replace(/^-+|-+$/g, "");
+	return `study-plan-${safeId || "plan"}`;
+}
+
+function relationLabel(relation: StudyPlanLink["relation"]): string {
+	switch (relation) {
+		case "prerequisite":
+			return "Prerequisite";
+		case "follow-up":
+			return "Continue with";
+		default:
+			return "Related";
+	}
+}
 
 export function flattenStudyPlanItems(items: readonly StudyPlanItem[]): StudyPlanItem[] {
 	return items.flatMap((item) => [item, ...flattenStudyPlanItems(item.children ?? [])]);
@@ -201,7 +264,7 @@ function PlanBranch({ item, depth, planId, progress, expansion }: PlanBranchProp
 	const children = item.children ?? [];
 	const leafItems = studyPlanLeafItems([item]);
 	const completedLeaves = leafItems.filter((leaf) => progress.value[leaf.id]).length;
-	const isExpanded = expansion.value[item.id] ?? depth === 0;
+	const isExpanded = expansion.value[item.id] ?? depth < 2;
 
 	if (children.length === 0) {
 		const checked = Boolean(progress.value[item.id]);
@@ -291,7 +354,11 @@ function OpenUIStudyPlan({ props }: { props: z.infer<typeof studyPlanPropsSchema
 	const dependencyGraph = studyPlanDependencyGraph(props.items);
 
 	return (
-		<section className={planClass}>
+		<section
+			id={studyPlanAnchorId(props.id)}
+			className={planClass}
+			tabIndex={-1}
+		>
 			<header className={planHeaderClass}>
 				<div className={css({ minWidth: 0 })}>
 					<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
@@ -328,13 +395,45 @@ function OpenUIStudyPlan({ props }: { props: z.infer<typeof studyPlanPropsSchema
 					</div>
 				</details>
 			) : null}
+			{props.relatedPlans?.length ? (
+				<nav className={relatedPlansClass} aria-label={`Study plans linked to ${props.title}`}>
+					<p className={relatedPlansHeadingClass}>
+						<Link2 aria-hidden="true" size={14} />
+						Linked study plans
+					</p>
+					<ul className={relatedPlansListClass}>
+						{props.relatedPlans.map((link) => (
+							<li key={`${link.relation ?? "related"}:${link.planId}`}>
+								<a
+									href={`#${studyPlanAnchorId(link.planId)}`}
+									className={relatedPlanLinkClass}
+								>
+									<span className={css({ minWidth: 0, flex: 1 })}>
+										<span className={css({ display: "block", fontSize: "0.8125rem", fontWeight: 600 })}>
+											{relationLabel(link.relation)}: {link.title}
+										</span>
+										{link.detail ? (
+											<span className={itemDetailClass}>{link.detail}</span>
+										) : null}
+									</span>
+									<ChevronRight
+										aria-hidden="true"
+										size={15}
+										className={css({ marginTop: "0.125rem", flexShrink: 0, color: "var(--muted-foreground)" })}
+									/>
+								</a>
+							</li>
+						))}
+					</ul>
+				</nav>
+			) : null}
 		</section>
 	);
 }
 
 export const StudyPlan = defineComponent({
 	name: "StudyPlan",
-	description: "A detailed, nestable lesson plan with coverage areas, learner-controlled progress, and explicit dependency links.",
+	description: "A detailed, recursively nested lesson plan with learner-controlled progress, internal dependencies, and links to other study plans.",
 	props: studyPlanPropsSchema,
 	component: OpenUIStudyPlan,
 });

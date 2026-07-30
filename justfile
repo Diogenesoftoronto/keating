@@ -120,6 +120,10 @@ trace substring="":
 web:
     cd web && bun run dev
 
+# Launch the Storybook component explorer
+storybook:
+    cd web && bun run storybook
+
 # Build the Keating web UI for production
 web-build:
     cd web && bun run build

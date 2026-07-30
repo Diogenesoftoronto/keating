@@ -31,7 +31,6 @@ const baseRuntime = {
 } as const;
 
 const consolidatedTools = [
-	"inspect_learning_context",
 	"evaluate_teaching",
 	"request_teaching_improvement",
 	"workspace_inspect",
@@ -170,8 +169,8 @@ describe("browser tool assembly contract", () => {
 		expect(credentialCalls).toBe(0);
 	});
 
-	test("makes every advertised optional bundle callable after activation", async () => {
-		const [{ createKeatingTools }, { KeatingCapabilityController }] = await Promise.all([
+	test("makes every runtime-supported public schema callable immediately", async () => {
+		const [{ createKeatingTools }, { filterAvailableKeatingTools }] = await Promise.all([
 			import("../keating/browser-tools"),
 			import("../keating/capabilities"),
 		]);
@@ -198,16 +197,12 @@ describe("browser tool assembly contract", () => {
 				getApiKey: async () => undefined,
 			},
 		});
-		const controller = new KeatingCapabilityController({ runtime: remoteRuntime, speechEnabled: true });
-		controller.setAllTools(tools);
+		const activeNames = filterAvailableKeatingTools(tools, {
+			runtime: remoteRuntime,
+			speechEnabled: true,
+		}).map((tool) => tool.name);
 
-		const result = controller.activate(["learner-details", "media", "workspace", "improvement", "voice"]);
-		const activeNames = controller.tools().map((tool) => tool.name);
-
-		expect(result.unavailable).toEqual([]);
-		expect(result.activated).toEqual(["learner-details", "media", "workspace", "improvement", "voice"]);
 		for (const expected of [
-			"inspect_learning_context",
 			"animate",
 			"generate_image",
 			"workspace_inspect",

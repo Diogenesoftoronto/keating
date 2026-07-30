@@ -103,7 +103,7 @@ describe("reward annotated turns", () => {
 				{ role: "assistant", content: "a1", timestamp: 2000 },
 			],
 			feedback: [{ id: "f1", topic: "x", signal: "thumbs-up", createdAt: 2100, messageId: "assistant-0-2000", sessionId: "s1" }],
-			quizResults: [{ id: "q1", topic: "x", createdAt: 2500, score: 1, weightedScore: 0.5, totalQuestions: 2, sessionId: "s1" }],
+			quizResults: [{ id: "q1", topic: "x", createdAt: 2500, score: 1, partialCreditPoints: 1, totalQuestions: 2, sessionId: "s1" }],
 			usedFeedbackIds: new Set(),
 		});
 		expect(turns[0].signals.quiz?.joinedBy).toBe("sessionId");

@@ -15,7 +15,7 @@ export function FailedResponseRecovery({ recovery, onRetry }: FailedResponseReco
 				marginTop: "0.625rem",
 				display: "flex",
 				flexWrap: "wrap",
-				alignItems: "center",
+				alignItems: "flex-start",
 				gap: "0.75rem",
 				borderRadius: "0.625rem",
 				backgroundColor: "color-mix(in srgb, var(--destructive) 9%, var(--background))",
@@ -27,7 +27,7 @@ export function FailedResponseRecovery({ recovery, onRetry }: FailedResponseReco
 				size={17}
 				className={css({ flexShrink: 0, color: "var(--destructive)" })}
 			/>
-			<div className={css({ minWidth: "12rem", flex: 1 })}>
+			<div className={css({ minWidth: 0, flex: 1, sm: { minWidth: "12rem" } })}>
 				<p className={css({ fontSize: "0.8125rem", fontWeight: 650 })}>
 					This response did not finish
 				</p>
@@ -35,7 +35,12 @@ export function FailedResponseRecovery({ recovery, onRetry }: FailedResponseReco
 					{recovery || "Retry the same prompt without rewriting it."}
 				</p>
 			</div>
-			<RetryResponseButton onRetry={onRetry} label="Retry prompt" variant="primary" />
+			<RetryResponseButton
+				onRetry={onRetry}
+				label="Retry response"
+				variant="primary"
+				className={css({ width: "100%", sm: { width: "auto" } })}
+			/>
 		</div>
 	);
 }

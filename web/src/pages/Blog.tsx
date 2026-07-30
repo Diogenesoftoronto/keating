@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp, Hash, Search } from "lucide-react";
 import { css, cx } from "../../styled-system/css";
 import { paperCard } from "../../styled-system/recipes";
 import { V240OpenInterfacesArticle } from "../components/V240OpenInterfacesArticle";
+import { V270TeachingContinuityArticle } from "../components/V270TeachingContinuityArticle";
 
 type BadgeColor = "fix" | "release" | "feature" | "pwa" | "update" | "tech" | "devlog";
 
@@ -262,6 +263,25 @@ function majorMinor(version: string): string {
 /* ── Data ────────────────────────────────────────────────────────── */
 
 const POSTS: Post[] = [
+  {
+    date: "2026-07-30",
+    badge: { label: "RELEASE", color: "release" },
+    title: "v2.7.0 - Questions, Context, and Learning Evidence",
+    version: "2.7.0",
+    summary:
+      "Keating 2.7 gives the model a complete question vocabulary, streams only finished interactions, links genuinely nested study plans, starts from complete learner evidence, removes tool ceremony, and makes quiz results durable and honest.",
+    sections: [
+      { id: "question-language", title: "The Question Language" },
+      { id: "complete-interactions", title: "Complete Interactions" },
+      { id: "linked-study-plans", title: "Linked Study Plans" },
+      { id: "complete-learner-context", title: "Complete Learner Context" },
+      { id: "tools-without-ceremony", title: "Tools Without Ceremony" },
+      { id: "durable-quiz-evidence", title: "Durable Quiz Evidence" },
+      { id: "mobile-component-workshop", title: "Mobile and Storybook" },
+      { id: "release-27-verification", title: "Release Integrity" },
+    ],
+    body: <V270TeachingContinuityArticle />,
+  },
   {
     date: "2026-07-26",
     badge: { label: "RELEASE", color: "release" },
@@ -1248,7 +1268,8 @@ stable       >= 100 signals`}</CodeBlock>
           Adaptive quiz scoring was fixed at the same time: remedial fallback
           questions that are skipped because the learner already answered the
           primary question correctly no longer count against the raw score,
-          weighted score, denominator, submitted payload, or persisted stats.
+          partial-credit points, denominator, submitted payload, or persisted
+          stats.
         </p>
 
         <h3 id="chat-rendering" className={styles.sectionHeading}>Cleaner Chat Output</h3>

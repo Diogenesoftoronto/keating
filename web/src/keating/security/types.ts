@@ -40,14 +40,12 @@ export interface ToolExecutionContext {
 	surface: InvocationSurface;
 	provenance: ToolProvenance;
 	documentRevision?: number;
-	confirmationToken?: string;
 }
 
-export type PermissionOutcome = "allow" | "confirm" | "deny";
+export type PermissionOutcome = "allow" | "deny";
 
 export interface ToolPermissionDecision {
 	outcome: PermissionOutcome;
 	reasons: readonly string[];
 	risk: ToolRiskClass;
-	requiresTrustedUserConfirmation: boolean;
 }

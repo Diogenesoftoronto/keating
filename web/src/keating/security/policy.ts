@@ -7,12 +7,6 @@ import type {
 	ToolSecurityDescriptor,
 } from "./types";
 
-const ALWAYS_CONFIRM = new Set<ToolRiskClass>([
-	"external-side-effect",
-	"code-execution",
-	"destructive",
-]);
-
 const NEVER_VOICE = new Set<ToolRiskClass>(["code-execution", "destructive"]);
 
 export const KEATING_TOOL_RISKS: Readonly<Record<string, ToolRiskClass>> = {
@@ -54,7 +48,6 @@ export const KEATING_TOOL_RISKS: Readonly<Record<string, ToolRiskClass>> = {
 	timeline: "sensitive-read",
 	due: "sensitive-read",
 	list_learner_goals: "sensitive-read",
-	inspect_learning_context: "sensitive-read",
 	bench: "informational",
 	deck: "informational",
 	prompt_eval: "informational",
@@ -74,49 +67,31 @@ export function evaluateToolPermission(request: ToolPermissionRequest): ToolPerm
 	const independentlyAuthorized = hasIndependentUserAuthorization(provenance);
 	const secretBearing = tool.sensitiveArguments === true || containsLikelySecret(request.arguments);
 
-	if (tool.known === false && surface !== "text") {
-		return decision("deny", tool.risk, ["Unknown tools are denied on voice and automation surfaces."], true);
+	if (tool.known === false) {
+		return decision("deny", tool.risk, ["Unknown tools are not part of Keating's callable surface."]);
 	}
-	if (tool.known === false) reasons.push("Unknown tools require explicit confirmation.");
 
 	if (surface === "voice" && (tool.allowVoice === false || NEVER_VOICE.has(tool.risk))) {
-		return decision("deny", tool.risk, ["This tool is not permitted from voice input."], true);
+		return decision("deny", tool.risk, ["This tool is not available from voice input."]);
 	}
 
 	if (surface === "voice" && secretBearing) {
-		return decision("deny", tool.risk, ["Secret-bearing arguments are not permitted from voice input."], true);
+		return decision("deny", tool.risk, ["Secret-bearing arguments are not available from voice input."]);
 	}
 
 	if (untrusted && !independentlyAuthorized) {
 		if (tool.risk === "code-execution" || tool.risk === "destructive") {
-			return decision("deny", tool.risk, ["Untrusted web content cannot authorize code execution or destructive actions."], true);
-		}
-		if (tool.risk !== "informational") {
-			reasons.push("Untrusted web content cannot independently authorize this action.");
+			return decision("deny", tool.risk, ["Untrusted web content cannot trigger code execution or destructive actions."]);
 		}
 	}
 
-	if (ALWAYS_CONFIRM.has(tool.risk)) reasons.push(`Risk class ${tool.risk} requires confirmation.`);
-	if (tool.risk === "state-change" && (surface !== "text" || untrusted)) {
-		reasons.push("State changes require confirmation on this surface or provenance.");
-	}
-	if (tool.risk === "sensitive-read" && (untrusted || surface === "voice")) {
-		reasons.push("Sensitive reads require confirmation on this surface or provenance.");
-	}
-	if (secretBearing && tool.risk !== "informational") {
-		reasons.push("The invocation contains sensitive arguments.");
-	}
-
-	return reasons.length > 0
-		? decision("confirm", tool.risk, reasons, true)
-		: decision("allow", tool.risk, [], false);
+	return decision("allow", tool.risk, reasons);
 }
 
 function decision(
 	outcome: ToolPermissionDecision["outcome"],
 	risk: ToolRiskClass,
 	reasons: readonly string[],
-	requiresTrustedUserConfirmation: boolean,
 ): ToolPermissionDecision {
-	return { outcome, risk, reasons, requiresTrustedUserConfirmation };
+	return { outcome, risk, reasons };
 }

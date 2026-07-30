@@ -88,11 +88,53 @@ function findClosingFence(text: string, bodyStart: number): { index: number; end
 }
 
 /**
+ * Return only top-level statements terminated by a newline. The OpenUI parser
+ * intentionally auto-closes unfinished input, so passing it a partial
+ * Question can mount a control before its choices or answer field exist.
+ */
+export function committedOpenUIProgram(program: string, fenceComplete = false): string {
+	if (fenceComplete) return program.trimEnd();
+
+	const stack: string[] = [];
+	let inString = false;
+	let escaped = false;
+	let lastCommit = 0;
+
+	for (let index = 0; index < program.length; index += 1) {
+		const character = program[index];
+		if (inString) {
+			if (escaped) escaped = false;
+			else if (character === "\\") escaped = true;
+			else if (character === '"') inString = false;
+			continue;
+		}
+
+		if (character === '"') {
+			inString = true;
+			continue;
+		}
+		if (character === "(" || character === "[" || character === "{") {
+			stack.push(character);
+			continue;
+		}
+		if (character === ")" || character === "]" || character === "}") {
+			const expected = character === ")" ? "(" : character === "]" ? "[" : "{";
+			if (stack.at(-1) !== expected) return program.slice(0, lastCommit).trimEnd();
+			stack.pop();
+			continue;
+		}
+		if (character === "\n" && stack.length === 0) lastCommit = index + 1;
+	}
+
+	return program.slice(0, lastCommit).trimEnd();
+}
+
+/**
  * Split assistant text into Markdown and OpenUI programs.
  *
- * An opening fence is enough to produce an OpenUI segment, so the renderer can
- * consume the program while the assistant is still streaming it. Existing
- * Markdown and legacy `<keating-*>` tags remain untouched in text segments.
+ * An opening fence produces a segment immediately, but only whole top-level
+ * statements are committed to the renderer. Existing Markdown and legacy
+ * `<keating-*>` tags remain untouched in text segments.
  */
 export function parseOpenUIMessageSegments(text: string, documentScope = ""): OpenUIMessageSegment[] {
 	const segments: OpenUIMessageSegment[] = [];
@@ -108,12 +150,13 @@ export function parseOpenUIMessageSegments(text: string, documentScope = ""): Op
 		const bodyStart = OPENUI_FENCE.lastIndex;
 		const closing = findClosingFence(text, bodyStart);
 		const bodyEnd = closing?.index ?? text.length;
-		const program = text.slice(bodyStart, bodyEnd);
+		const rawProgram = text.slice(bodyStart, bodyEnd);
 		segments.push({
 			type: "openui",
-			program,
+			program: committedOpenUIProgram(rawProgram, closing !== null),
+			rawProgram,
 			complete: closing !== null,
-			metadata: parseMetadata(match[1], program, match.index, documentScope),
+			metadata: parseMetadata(match[1], rawProgram, match.index, documentScope),
 		});
 
 		if (!closing) {
