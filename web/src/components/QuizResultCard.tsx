@@ -47,15 +47,16 @@ const dark = ".dark &";
 
 const shared = {
   srCard: css({
-    marginBlock: "0.75rem",
+    marginBlock: "0.5rem",
     borderRadius: "0.75rem",
     border: "1px solid var(--border)",
     background: "var(--background)",
-    padding: "1rem",
+    padding: "0.75rem",
     color: "var(--foreground)",
     boxShadow: "var(--shadow-card)",
+    [sm]: { marginBlock: "0.75rem", padding: "1rem" },
   }),
-  rowStart: css({ display: "flex", alignItems: "flex-start", gap: "0.75rem" }),
+  rowStart: css({ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: "0.75rem", [sm]: { flexWrap: "nowrap" } }),
   iconBox: css({
     display: "flex",
     height: "2.25rem",
@@ -75,7 +76,8 @@ const shared = {
     justifyContent: "center",
     gap: "0.25rem",
     borderRadius: "0.375rem",
-    paddingBlock: "0.375rem",
+    minHeight: "2.75rem",
+    paddingBlock: "0.5rem",
     fontSize: "0.75rem",
     color: "color-mix(in srgb, var(--foreground) 75%, transparent)",
     transition: "color 150ms, background-color 150ms",
@@ -254,7 +256,7 @@ export function QuizResultCard({ data, onReview }: QuizResultCardProps) {
               {new Date(data.timestamp).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
             </span>
           </div>
-          <p className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", color: "var(--foreground)" })}>
+          <p className={css({ overflowWrap: "anywhere", fontSize: "0.875rem", color: "var(--foreground)", sm: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } })}>
             {quiz.topic}{" "}
             <span className={shared.mutedText}>
               · {allPending ? "Pending review" : `${correctWhole}/${decided} correct`}
@@ -262,7 +264,7 @@ export function QuizResultCard({ data, onReview }: QuizResultCardProps) {
             </span>
           </p>
         </div>
-        <div className={css({ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.125rem" })}>
+        <div className={css({ marginLeft: "auto", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.125rem" })}>
           <span className={cx(css({ fontSize: "1.125rem", fontWeight: 700, fontVariantNumeric: "tabular-nums" }), tone.scoreText)}>
             {percentage}%
           </span>
@@ -372,10 +374,10 @@ export function QuizResultCard({ data, onReview }: QuizResultCardProps) {
                 <button
                   type="button"
                   onClick={() => toggleQuestion(q.id)}
-                  className={css({ display: "flex", width: "100%", alignItems: "flex-start", gap: "0.5rem", textAlign: "left" })}
+                  className={css({ display: "flex", minHeight: "2.75rem", width: "100%", flexWrap: "wrap", alignItems: "flex-start", gap: "0.5rem", textAlign: "left" })}
                 >
                   <Icon size={12} className={cx(css({ marginTop: "0.125rem", flexShrink: 0 }), iconClass)} />
-                  <span className={css({ minWidth: 0, flex: 1, lineHeight: 1.625 })}>
+                  <span className={css({ minWidth: "12rem", flex: "1 1 12rem", overflowWrap: "anywhere", lineHeight: 1.625 })}>
                     <span className={css({ marginRight: "0.25rem", color: "color-mix(in srgb, var(--foreground) 70%, transparent)" })}>{idx + 1}.</span>
                     {q.question}
                   </span>
@@ -433,7 +435,10 @@ export function QuizResultCard({ data, onReview }: QuizResultCardProps) {
             onClick={() => onReview(data)}
             className={css({
               display: "inline-flex",
+              minHeight: "2.75rem",
+              width: "100%",
               alignItems: "center",
+              justifyContent: "center",
               gap: "0.25rem",
               borderRadius: "0.375rem",
               border: "1px solid var(--border)",
@@ -441,6 +446,7 @@ export function QuizResultCard({ data, onReview }: QuizResultCardProps) {
               fontSize: "0.75rem",
               color: "var(--foreground)",
               _hover: { background: "var(--accent)" },
+              sm: { width: "auto" },
             })}
           >
             <TrendingUp size={12} /> Review topic

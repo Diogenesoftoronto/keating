@@ -1,83 +1,168 @@
-import type { KeatingStorage, LearnerState } from "./storage";
+import type {
+	CardReviewRecord,
+	FlashcardDeck,
+	KeatingStorage,
+	LearnerState,
+	QuestionCheckRecord,
+	QuizResultRecord,
+} from "./storage";
 import type { LearnerGoal } from "./goals";
-import { capabilityCatalogPrompt, type CapabilityBundle } from "./capabilities";
 
-type SessionStartStorage = Pick<KeatingStorage, "recordSessionStart" | "getLearnerState" | "getGoals">;
+type SessionStartStorage = Pick<
+	KeatingStorage,
+	| "recordSessionStart"
+	| "getLearnerState"
+	| "getGoals"
+	| "getQuizResults"
+	| "getQuestionChecks"
+	| "getCardReviews"
+	| "getDecks"
+>;
 
 export const SESSION_START_CONTEXT_HEADING = "## Session-start context (loaded automatically)";
 
-export interface SessionStartContext {
-	capabilityCatalog?: CapabilityBundle[];
-}
+export interface SessionStartContext {}
 
 export interface SessionStartHook {
 	id: string;
 	run(storage: SessionStartStorage, context: SessionStartContext): Promise<string>;
 }
 
-function formatLearnerProfile(state: LearnerState): string {
-	const topicProfiles = state.topicProfiles.slice(0, 8).map((topic) => {
-		const retention = topic.retention === null ? "unknown" : `${Math.round(topic.retention * 100)}%`;
-		const challenge = topic.reportedChallenges.at(-1);
-		return `- ${topic.topic}: ${topic.status}, mastery ${Math.round(topic.mastery * 100)}%, retention ${retention}${challenge ? `; reported challenge: ${challenge}` : ""}`;
-	});
-	const personal = (state.profileBeliefs ?? []).slice(-10).map((belief) => {
-		const certainty = belief.source === "explicit" ? "learner stated" : `tentative observation, ${Math.round(belief.confidence * 100)}%`;
-		return `- ${belief.category}: ${belief.value} (${certainty})`;
-	});
-	return [
-		`Sessions recorded: ${state.sessionsCount}`,
-		`Strengths: ${state.strengths.join(", ") || "none established yet"}`,
-		`Needs review: ${state.weaknesses.join(", ") || "none established yet"}`,
-		topicProfiles.length > 0 ? `Recent topic evidence:\n${topicProfiles.join("\n")}` : "No demonstrated topic evidence yet.",
-		personal.length > 0
-			? `Personalization cues:\n${personal.join("\n")}`
-			: "No durable motivations or communication preferences recorded yet.",
-	].join("\n");
+export interface LearnerProfileCoverageGaps {
+	missingProfileBeliefCategories: string[];
+	topicsWithoutPerformanceEvidence: string[];
+	topicsWithoutRetentionEvidence: string[];
+	ungradedQuizQuestionIds: string[];
+	ungradedQuestionCheckIds: string[];
+	goalsWithoutCurriculumSteps: string[];
+	cardsWithoutReviewEvidence: string[];
 }
 
-function nextGoalStep(goal: LearnerGoal): string {
-	const step = goal.steps.find((candidate) => candidate.status !== "done");
-	return step ? `${goal.title}: next step is ${step.title}` : `${goal.title}: all planned steps complete`;
+export interface CompleteLearnerStartupContext {
+	schemaVersion: 1;
+	learnerState: LearnerState;
+	goals: LearnerGoal[];
+	evidence: {
+		quizResults: QuizResultRecord[];
+		questionChecks: QuestionCheckRecord[];
+		cardReviews: CardReviewRecord[];
+	};
+	flashcards: {
+		decks: FlashcardDeck[];
+	};
+	coverageGaps: LearnerProfileCoverageGaps;
 }
 
-export const DEFAULT_SESSION_START_HOOKS: SessionStartHook[] = [
-	{
-		id: "learner-profile",
-		async run(storage) {
-			await storage.recordSessionStart();
-			return `### Derived learner profile\n${formatLearnerProfile(await storage.getLearnerState())}`;
-		},
+const PROFILE_BELIEF_CATEGORIES = [
+	"motivation",
+	"communication-preference",
+	"learning-preference",
+	"interest",
+] as const;
+
+export function buildLearnerProfileCoverageGaps(input: {
+	learnerState: LearnerState;
+	goals: LearnerGoal[];
+	quizResults: QuizResultRecord[];
+	questionChecks: QuestionCheckRecord[];
+	cardReviews: CardReviewRecord[];
+	decks: FlashcardDeck[];
+}): LearnerProfileCoverageGaps {
+	const topicKey = (topic: string) => topic.trim().toLocaleLowerCase();
+	const knownTopics = new Map<string, string>();
+	const rememberTopic = (topic?: string) => {
+		const value = topic?.trim();
+		if (value && !knownTopics.has(topicKey(value))) knownTopics.set(topicKey(value), value);
+	};
+	input.learnerState.topicsExplored.forEach(rememberTopic);
+	input.learnerState.topicProfiles.forEach((profile) => rememberTopic(profile.topic));
+	input.goals.forEach((goal) => goal.steps.forEach((step) => rememberTopic(step.topic)));
+	input.quizResults.forEach((result) => rememberTopic(result.topic));
+	input.questionChecks.forEach((check) => rememberTopic(check.topic));
+	input.cardReviews.forEach((review) => rememberTopic(review.topic));
+	input.decks.forEach((deck) => rememberTopic(deck.topic));
+
+	const performanceTopics = new Set<string>();
+	input.quizResults
+		.filter((result) => result.totalQuestions > 0 || (result.openEndedGrades?.length ?? 0) > 0)
+		.forEach((result) => performanceTopics.add(topicKey(result.topic)));
+	input.questionChecks
+		.filter((check) => typeof check.score === "number")
+		.forEach((check) => performanceTopics.add(topicKey(check.topic)));
+
+	const retentionTopics = new Set<string>();
+	input.cardReviews.forEach((review) => retentionTopics.add(topicKey(review.topic)));
+	input.learnerState.topicProfiles
+		.filter((profile) => profile.retention !== null)
+		.forEach((profile) => retentionTopics.add(topicKey(profile.topic)));
+
+	const beliefCategories = new Set(input.learnerState.profileBeliefs.map((belief) => belief.category));
+	const reviewedCardKeys = new Set(input.cardReviews.map((review) => `${review.deckId}:${review.cardId}`));
+	return {
+		missingProfileBeliefCategories: PROFILE_BELIEF_CATEGORIES.filter((category) => !beliefCategories.has(category)),
+		topicsWithoutPerformanceEvidence: [...knownTopics]
+			.filter(([key]) => !performanceTopics.has(key))
+			.map(([, topic]) => topic),
+		topicsWithoutRetentionEvidence: [...knownTopics]
+			.filter(([key]) => !retentionTopics.has(key))
+			.map(([, topic]) => topic),
+		ungradedQuizQuestionIds: input.quizResults.flatMap((result) =>
+			(result.pendingGradeQuestionIds ?? []).map((questionId) => `${result.id}:${questionId}`)
+		),
+		ungradedQuestionCheckIds: input.questionChecks
+			.filter((check) => typeof check.score !== "number")
+			.map((check) => check.id),
+		goalsWithoutCurriculumSteps: input.goals
+			.filter((goal) => goal.steps.length === 0)
+			.map((goal) => goal.id),
+		cardsWithoutReviewEvidence: input.decks.flatMap((deck) =>
+			deck.cards
+				.filter((card) => !reviewedCardKeys.has(`${deck.id}:${card.id}`))
+				.map((card) => `${deck.id}:${card.id}`)
+		),
+	};
+}
+
+export async function loadCompleteLearnerStartupContext(
+	storage: SessionStartStorage,
+): Promise<CompleteLearnerStartupContext> {
+	const [learnerState, goals, quizResults, questionChecks, cardReviews, decks] = await Promise.all([
+		storage.getLearnerState(),
+		storage.getGoals(),
+		storage.getQuizResults(),
+		storage.getQuestionChecks(),
+		storage.getCardReviews(),
+		storage.getDecks(),
+	]);
+	return {
+		schemaVersion: 1,
+		learnerState,
+		goals,
+		evidence: { quizResults, questionChecks, cardReviews },
+		flashcards: { decks },
+		coverageGaps: buildLearnerProfileCoverageGaps({
+			learnerState,
+			goals,
+			quizResults,
+			questionChecks,
+			cardReviews,
+			decks,
+		}),
+	};
+}
+
+export const DEFAULT_SESSION_START_HOOKS: SessionStartHook[] = [{
+	id: "complete-learner-profile",
+	async run(storage) {
+		await storage.recordSessionStart();
+		const profile = await loadCompleteLearnerStartupContext(storage);
+		return [
+			"### Complete durable learner profile",
+			"All stored learner-related records are included below without top-N truncation. `coverageGaps` identifies absent evidence; it is not a diagnosis and should not trigger an opening interview.",
+			`Complete learner profile payload (JSON): ${JSON.stringify(profile)}`,
+		].join("\n");
 	},
-	{
-		id: "active-goals",
-		async run(storage) {
-			const active = (await storage.getGoals()).filter((goal) => goal.status === "active").slice(0, 5);
-			if (active.length === 0) return "";
-			return `### Active learning goals\n${active.map((goal) => `- ${nextGoalStep(goal)}`).join("\n")}`;
-		},
-	},
-	{
-		id: "due-reviews",
-		async run(storage) {
-			const due = (await storage.getLearnerState()).topicProfiles
-				.filter((topic) => topic.status === "needs-review" || (topic.retention !== null && topic.retention < 0.5))
-				.sort((left, right) => (left.retention ?? 1) - (right.retention ?? 1))
-				.slice(0, 5);
-			if (due.length === 0) return "";
-			return `### Reviews worth considering\n${due.map((topic) => {
-				const retention = topic.retention === null ? "retention unknown" : `${Math.round(topic.retention * 100)}% estimated retention`;
-				return `- ${topic.topic}: ${retention}; mastery ${Math.round(topic.mastery * 100)}%`;
-			}).join("\n")}`;
-		},
-	},
-	{
-		id: "capability-catalog",
-		async run(_storage, context) {
-			return context.capabilityCatalog?.length ? capabilityCatalogPrompt(context.capabilityCatalog) : "";
-		},
-	},
-];
+}];
 
 /** Load durable teaching context once, immediately before a session's first model turn. */
 export async function runSessionStartHooks(

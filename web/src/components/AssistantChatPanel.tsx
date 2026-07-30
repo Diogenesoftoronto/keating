@@ -77,7 +77,7 @@ import {
 } from "../keating/ui-settings";
 import { getProviderApiKey } from "../lib/provider-models";
 import { handleTutorialLinkClick, tutorialApiKeyHref } from "../lib/tutorial-links";
-import { QuizRenderer } from "./QuizRenderer";
+import { isOpenEnded, QuizRenderer } from "./QuizRenderer";
 import type { QuizResult } from "./QuizRenderer";
 import { QuizSessionPanel } from "./QuizSessionPanel";
 import { QuizResultCard } from "./QuizResultCard";
@@ -89,6 +89,7 @@ import type { AnsweredQuestion, QuestionFormData } from "./QuestionRenderer";
 import { GoalRenderer } from "./GoalRenderer";
 import { normalizeGoal } from "../keating/goals";
 import type { Quiz, QuizGradePayload, QuizQuestionGrade } from "../keating/core";
+import { KeatingStorage } from "../keating/storage";
 import { QuizGradesContext, type QuizGradesContextValue } from "./quiz-grades-context";
 import {
   getSpeechProvider,
@@ -102,7 +103,6 @@ import {
 } from "../keating/speech";
 import { startMicRecording, transcribeAudio, type MicRecorder } from "../keating/speech-providers/stt";
 import { JsonCrackBlock } from "./JsonCrackBlock";
-import { RetryResponseButton } from "./RetryResponseButton";
 import { FailedResponseRecovery } from "./FailedResponseRecovery";
 import { FlashcardRenderer } from "./FlashcardRenderer";
 import type { FlashcardDeck } from "../keating/srs";
@@ -133,11 +133,11 @@ import {
   classifyLlmError,
   type LlmErrorDetails,
 } from "../core/api-retry";
-import type { ToolConfirmationRequestDetail } from "../keating/security";
 
 const AuthErrorContext = createContext<(provider: string) => Promise<boolean>>(
   () => Promise.resolve(false),
 );
+const quizGradeStorage = new KeatingStorage();
 
 const capturedApiErrorKeys = new Set<string>();
 const MAX_CAPTURED_API_ERROR_KEYS = 256;
@@ -212,6 +212,7 @@ function QuizGradeApplier({ payload }: { payload: QuizGradePayload }) {
   useEffect(() => {
     if (payload.resultId && payload.grades.length > 0) {
       applyGrades(payload.resultId, payload.grades);
+      void quizGradeStorage.saveQuizGrades(payload.resultId, payload.grades);
     }
   }, [payload, applyGrades]);
   return (
@@ -433,77 +434,6 @@ interface AssistantChatPanelProps {
   responseComparison?: ReactNode;
 }
 
-function ToolConfirmationDialog({ request, onDone }: {
-  request: ToolConfirmationRequestDetail;
-  onDone: () => void;
-}) {
-  const approveRef = useRef<HTMLButtonElement>(null);
-  const finish = useCallback((approved: boolean) => {
-    if (approved) request.approve();
-    else request.cancel();
-    onDone();
-  }, [onDone, request]);
-
-  useEffect(() => {
-    approveRef.current?.focus();
-    const remaining = Math.max(0, request.review.expiresAt - Date.now());
-    const timeout = window.setTimeout(() => finish(false), remaining);
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") finish(false);
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => {
-      window.clearTimeout(timeout);
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [finish, request.review.expiresAt]);
-
-  return (
-    <div
-      role="presentation"
-      className={css({
-        position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center",
-        justifyContent: "center", padding: "1rem", backgroundColor: "rgba(0, 0, 0, 0.55)",
-      })}
-      onMouseDown={(event) => { if (event.target === event.currentTarget) finish(false); }}
-    >
-      <section
-        role="alertdialog"
-        aria-modal="true"
-        aria-labelledby="keating-tool-confirmation-title"
-        aria-describedby="keating-tool-confirmation-description"
-        className={css({
-          width: "100%", maxWidth: "28rem", borderRadius: "0.75rem", border: "1px solid var(--border)",
-          backgroundColor: "var(--card)", padding: "1.25rem", boxShadow: "0 24px 80px rgba(0,0,0,.35)",
-        })}
-      >
-        <div className={css({ display: "flex", alignItems: "flex-start", gap: "0.75rem" })}>
-          <ShieldAlert aria-hidden="true" className={css({ marginTop: "0.125rem", flexShrink: 0, color: "var(--destructive)" })} />
-          <div>
-            <h2 id="keating-tool-confirmation-title" className={css({ fontSize: "1rem", fontWeight: 700 })}>
-              Review tool action
-            </h2>
-            <p id="keating-tool-confirmation-description" className={css({ marginTop: "0.375rem", fontSize: "0.875rem", color: "var(--muted-foreground)" })}>
-              Keating wants to run <strong className={foregroundTextClass}>{request.review.toolName}</strong>.
-              This is classified as <strong className={foregroundTextClass}>{request.review.risk}</strong>.
-              {request.review.surface === "voice" ? " This request came from voice and requires a separate visual confirmation." : ""}
-            </p>
-            <p className={css({ marginTop: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-              Arguments and credentials are intentionally hidden. Cancel if you did not independently request this action.
-            </p>
-          </div>
-        </div>
-        <div className={css({ marginTop: "1rem", display: "flex", justifyContent: "flex-end", gap: "0.5rem" })}>
-          <button type="button" className={dialogButtonClass} onClick={() => finish(false)}>Cancel</button>
-          <button ref={approveRef} type="button" className={cx(dialogButtonClass, css({ backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }))} onClick={() => finish(true)}>
-            Confirm action
-          </button>
-        </div>
-      </section>
-    </div>
-  );
-}
-
 function StreamingTextPart({
   text,
   status,
@@ -592,9 +522,7 @@ function StreamingTextPart({
     <MarkdownText
       text={visibleText}
       documentScope={messageId}
-      isRunning={
-        status?.type === "running" && visibleText.length >= displayText.length
-      }
+      isRunning={status?.type === "running"}
     />
   );
 }
@@ -1551,6 +1479,7 @@ function renderInteractiveSegment(
             window.dispatchEvent(
               new CustomEvent("keating:quiz-submitted", {
                 detail: {
+                  resultId: result.resultId,
                   quizId: parsed.slug,
                   topic: parsed.topic,
                   total: parsed.questions.length,
@@ -1559,11 +1488,11 @@ function renderInteractiveSegment(
                     question: q.question,
                     correctAnswer: q.correctAnswer,
                     type: q.type,
+                    openEnded: isOpenEnded(q),
                   })),
                   answers: result.answers,
                   score: result.score,
-                  weightedScore: result.weightedScore,
-                  confidence: result.confidence,
+                  partialCreditPoints: result.partialCreditPoints,
                   partialCredits: result.partialCredits,
                   flagged: result.flagged,
                   timing: result.timing,
@@ -2024,10 +1953,10 @@ const MarkdownText = memo(function MarkdownText({
         if (seg.type === "openui") {
           return (
             <KeatingOpenUIRenderer
-              key={`${seg.metadata.id}-${i}`}
+              key={`${seg.metadata.id}-${seg.metadata.revision}-${i}`}
               program={seg.program}
               metadata={seg.metadata}
-              isStreaming={Boolean(isRunning && !seg.complete)}
+              isStreaming={Boolean(isRunning && seg.program !== seg.rawProgram.trimEnd())}
             />
           );
         }
@@ -2785,8 +2714,6 @@ function toAssistantMessage(
       && llmFailure?.category !== "billing"
       && llmFailure?.category !== "context-length"
       && llmFailure?.category !== "invalid-request"
-      && llmFailure?.category !== "model-unavailable"
-      && llmFailure?.category !== "permission"
       && llmFailure?.category !== "safety";
     return {
       id,
@@ -3407,6 +3334,7 @@ function AssistantThread({
   const [loadingStep, setLoadingStep] = useState(0);
   const [composerHasUrl, setComposerHasUrl] = useState(false);
 	const [voiceComposerOpen, setVoiceComposerOpen] = useState(false);
+  const [dismissedQuizId, setDismissedQuizId] = useState<string | null>(null);
   const [hasGoogleKey, setHasGoogleKey] = useState<boolean | null>(null);
   const isRunning = agent?.state.isStreaming ?? false;
   const currentThinkingLevel =
@@ -3444,6 +3372,8 @@ function AssistantThread({
     () => extractActiveQuiz(messages),
     [messages],
   );
+  const visibleActiveQuiz =
+    activeQuiz && activeQuiz.slug !== dismissedQuizId ? activeQuiz : null;
   const components = useMemo(
     () =>
       messagePartComponents(uiSettings.showToolUi, uiSettings.showRawErrors, uiSettings.showReasoning),
@@ -3614,51 +3544,57 @@ function AssistantThread({
     return () => window.removeEventListener("keating:question-answered", handler);
   }, [agent, onNew]);
 
-  // When the learner finishes a quiz, report their score, timing, confidence,
-  // partial credits, and flagged questions back to the agent.
+  // When the learner finishes a quiz, report their score, timing, partial
+  // credits, and flagged questions back to the agent.
   useEffect(() => {
     const handler = (event: Event) => {
       const detail = (event as CustomEvent).detail as
 	        | {
+	            resultId?: string;
 	            quizId?: string;
 	            topic?: string;
 	            total?: number;
             score?: number;
-            weightedScore?: number;
-            confidence?: Record<string, number>;
+            partialCreditPoints?: number;
             partialCredits?: Record<string, number>;
             flagged?: string[];
             timing?: { totalMs: number; perQuestionMs: Record<string, number> };
-            questions?: Array<{ id: string; question: string; correctAnswer: string; type?: string }>;
+            questions?: Array<{
+              id: string;
+              question: string;
+              correctAnswer: string;
+              type?: string;
+              openEnded?: boolean;
+            }>;
             answers?: Record<string, string>;
           }
         | undefined;
       if (!agent || !detail || typeof detail.score !== "number") return;
       const total = detail.total ?? 0;
-      const resultId = `${detail.quizId ?? "quiz"}-${Date.now()}`;
+      const resultId = detail.resultId ?? `${detail.quizId ?? "quiz"}-${Date.now()}`;
       // Open-ended answers (short answer / transfer / free-text fill-in) have no
       // single correct string, so they're not auto-scored — the model judges them
       // by meaning via grade_quiz. detail.score counts objective questions only.
-      const isOpen = (type?: string) =>
-        type === "short_answer" || type === "transfer" || type === "fill_in";
-      const openEndedTotal = (detail.questions ?? []).filter((q) => isOpen(q.type)).length;
+      const isOpen = (question: { type?: string; openEnded?: boolean }) =>
+        question.openEnded ??
+        (question.type === "short_answer" || question.type === "transfer" || question.type === "fill_in");
+      const openEndedTotal = (detail.questions ?? []).filter(isOpen).length;
       const objectiveTotal = total - openEndedTotal;
       const seconds = detail.timing ? Math.round(detail.timing.totalMs / 1000) : null;
       const lines: string[] = [
         `I finished the quiz${detail.topic ? ` on "${detail.topic}"` : ""}.`,
         `Objective score: ${detail.score}/${objectiveTotal}${openEndedTotal > 0 ? ` (${openEndedTotal} open-ended pending your review)` : ""}${seconds !== null ? ` in ${seconds}s` : ""}.`,
       ];
-      if (typeof detail.weightedScore === "number") {
-        lines.push(`Weighted score: ${detail.weightedScore.toFixed(2)}.`);
+      if (typeof detail.partialCreditPoints === "number") {
+        lines.push(`Partial-credit points: ${detail.partialCreditPoints.toFixed(2)}/${objectiveTotal}.`);
       }
       if (detail.questions && detail.answers && detail.timing) {
         const perQ = detail.timing.perQuestionMs;
         let hasOpenEnded = false;
         for (const q of detail.questions) {
           const mine = (detail.answers[q.id] ?? "").trim();
-          const conf = detail.confidence?.[q.id];
           const parts: string[] = [];
-          if (isOpen(q.type)) {
+          if (isOpen(q)) {
             hasOpenEnded = true;
             parts.push(
               `- [open-ended id=${q.id}] ${q.question} → my answer: "${mine || "(blank)"}" (reference: "${q.correctAnswer}")`,
@@ -3670,9 +3606,6 @@ function AssistantThread({
             if (typeof pc === "number" && !correct) {
               parts.push(`(partial credit: ${Math.round(pc * 100)}%)`);
             }
-          }
-          if (typeof conf === "number") {
-            parts.push(`[confidence: ${conf}%]`);
           }
           const t = perQ[q.id] ? ` (${Math.round(perQ[q.id] / 1000)}s)` : "";
           parts.push(t);
@@ -3687,13 +3620,6 @@ function AssistantThread({
       if (detail.flagged && detail.flagged.length > 0) {
         lines.push(`Bookmarked ${detail.flagged.length} question${detail.flagged.length > 1 ? "s" : ""} for review.`);
       }
-      const lowConfidence = Object.entries(detail.confidence ?? {})
-        .filter(([, v]) => v < 70)
-        .map(([id]) => detail.questions?.find((q) => q.id === id)?.question)
-        .filter(Boolean);
-      if (lowConfidence.length > 0) {
-        lines.push(`Low confidence on: ${lowConfidence.join("; ")}.`);
-      }
       lines.push("Please review my answers and timing, then guide what to work on next.");
       const resultPayload = {
         id: resultId,
@@ -3706,9 +3632,8 @@ function AssistantThread({
         result: {
           answers: detail.answers ?? {},
           score: detail.score ?? 0,
-          weightedScore: detail.weightedScore ?? 0,
+          partialCreditPoints: detail.partialCreditPoints ?? 0,
           timing: detail.timing ?? { totalMs: 0, perQuestionMs: {} },
-          confidence: detail.confidence ?? {},
           partialCredits: detail.partialCredits ?? {},
           flagged: detail.flagged ?? [],
         },
@@ -3897,7 +3822,7 @@ function AssistantThread({
               })}
             >
               {responseComparison}
-              {activeQuiz && (
+              {visibleActiveQuiz && (
                 <div
                   className={css({
                     marginInline: "auto",
@@ -3905,29 +3830,38 @@ function AssistantThread({
                     width: "100%",
                     maxWidth: "56rem",
                     overflowX: "hidden",
+                    maxHeight: "min(55dvh, 30rem)",
+                    overflowY: "auto",
+                    overscrollBehavior: "contain",
                     paddingInline: "0.375rem",
-                    sm: { marginBottom: "0.5rem", paddingInline: 0 },
+                    sm: {
+                      marginBottom: "0.5rem",
+                      maxHeight: "none",
+                      overflowY: "visible",
+                      paddingInline: 0,
+                    },
                   })}
                 >
                   <QuizSessionPanel
-                    quiz={activeQuiz}
+                    quiz={visibleActiveQuiz}
                     onSubmit={(result) => {
                       window.dispatchEvent(
                         new CustomEvent("keating:quiz-submitted", {
                           detail: {
-                            quizId: activeQuiz.slug,
-                            topic: activeQuiz.topic,
-                            total: activeQuiz.questions.length,
-                            questions: activeQuiz.questions.map((q) => ({
+                            resultId: result.resultId,
+                            quizId: visibleActiveQuiz.slug,
+                            topic: visibleActiveQuiz.topic,
+                            total: visibleActiveQuiz.questions.length,
+                            questions: visibleActiveQuiz.questions.map((q) => ({
                               id: q.id,
                               question: q.question,
                               correctAnswer: q.correctAnswer,
                               type: q.type,
+                              openEnded: isOpenEnded(q),
                             })),
                             answers: result.answers,
                             score: result.score,
-                            weightedScore: result.weightedScore,
-                            confidence: result.confidence,
+                            partialCreditPoints: result.partialCreditPoints,
                             partialCredits: result.partialCredits,
                             flagged: result.flagged,
                             timing: result.timing,
@@ -3936,8 +3870,7 @@ function AssistantThread({
                       );
                     }}
                     onDismiss={() => {
-                      // Dismiss just hides the active quiz panel; quiz remains
-                      // visible in chat thread as a result card if completed.
+                      setDismissedQuizId(visibleActiveQuiz.slug);
                     }}
                   />
                 </div>
@@ -4424,8 +4357,11 @@ function AssistantMessage({
   const handleAuthRetry = async () => {
     if (!authError) return;
     setRetrying(true);
-    await onAuthError(authError.provider);
-    setRetrying(false);
+    try {
+      await onAuthError(authError.provider);
+    } finally {
+      setRetrying(false);
+    }
   };
 
 	if (isPrefillStatus) {
@@ -4681,23 +4617,6 @@ export const AssistantChatPanel = forwardRef<
   const [agent, setAgentState] = useState<Agent | null>(null);
   const [callbacks, setCallbacks] = useState<ChatPanelSetupCallbacks>({});
   const [version, setVersion] = useState(0);
-  const [toolConfirmation, setToolConfirmation] = useState<ToolConfirmationRequestDetail | null>(null);
-
-  useEffect(() => {
-    const receiveConfirmation = (event: Event) => {
-      const detail = (event as CustomEvent<ToolConfirmationRequestDetail>).detail;
-      if (!detail?.review || typeof detail.approve !== "function" || typeof detail.cancel !== "function") return;
-      setToolConfirmation((current) => {
-        if (current) {
-          detail.cancel();
-          return current;
-        }
-        return detail;
-      });
-    };
-    window.addEventListener("keating:tool-confirmation-request", receiveConfirmation);
-    return () => window.removeEventListener("keating:tool-confirmation-request", receiveConfirmation);
-  }, []);
 
   const refresh = useCallback(() => setVersion((current) => current + 1), []);
 
@@ -4723,9 +4642,6 @@ export const AssistantChatPanel = forwardRef<
         speechEnabled={speechEnabled}
         responseComparison={responseComparison}
       />
-      {toolConfirmation ? (
-        <ToolConfirmationDialog request={toolConfirmation} onDone={() => setToolConfirmation(null)} />
-      ) : null}
     </div>
   );
 });

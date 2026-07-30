@@ -78,10 +78,10 @@ export function V240OpenInterfacesArticle() {
 
 			<h3 id="context-without-ceremony" className={styles.heading}>Learner context without an opening round of tool calls</h3>
 			<p className={styles.paragraph}>
-				Previously, the default prompt could encourage the model to call learner-state, timeline, due-review, and goal tools at the start of a conversation. That repeated work the host already knew how to do, consumed model turns, and risked recording the same session start twice. Session-start hooks now load a derived learner summary, active goals, due reviews, and the available capability catalog before the first model turn.
+				Previously, the default prompt could encourage the model to call learner-state, timeline, due-review, and goal tools at the start of a conversation. That repeated work the host already knew how to do, consumed model turns, and risked recording the same session start twice. Session-start hooks now load the complete durable learner profile before the first model turn: full learner state and session history, every goal and curriculum step, raw quiz and question-check evidence, card reviews, and current flashcard SRS state.
 			</p>
 			<p className={styles.paragraph}>
-				The model can still request deeper history through the optional <Code>learner-details</Code> capability and its single <Code>inspect_learning_context</Code> operation. The difference is intent: detailed inspection is available when the compact context is insufficient, not treated as a mandatory greeting ritual.
+				Those records are not top-N truncated, so there is no follow-up inspection schema or capability ceremony. The startup payload also identifies missing profile, performance, retention, grading, curriculum, and review evidence explicitly. Missing evidence stays uncertainty rather than silently becoming a learner trait or triggering an opening interview.
 			</p>
 			<p className={styles.paragraph}>
 				That context can now improve during ordinary teaching. When a learner reveals a motivation, preferred communication style, recurring friction, or an approach that clearly helps, the tutor can record a cautious learner-context update instead of waiting for a settings form. The prompt treats those observations as revisable evidence rather than personality labels, so personalization can become more specific without becoming overconfident.
@@ -129,14 +129,14 @@ export function V240OpenInterfacesArticle() {
 						</tr>
 						<tr>
 							<td className={styles.tableCell}>Optional specialist work</td>
-							<td className={styles.tableCell}>Capability bundles</td>
-							<td className={styles.tableCell}>Learner details, media, workspace, improvement, voice</td>
+							<td className={styles.tableCell}>Runtime-supported tool bundles</td>
+							<td className={styles.tableCell}>Media, workspace, improvement, voice</td>
 						</tr>
 					</tbody>
 				</table>
 			</div>
 			<p className={styles.paragraph}>
-				The baseline is now ten teaching tools, down from fifteen, and optional schemas are activated only when needed. Workspace work is presented through three consolidated operations, and teaching improvement through two. The older granular implementations remain internal adapters, preserving their tested behavior without making the model choose among a long list of narrowly different calls. The former 2,490-line browser-tools module was also split by responsibility, leaving a small assembly facade over teaching, assessment, media, improvement, and workspace modules.
+				The model-visible surface is consolidated by responsibility, and every schema supported by the current runtime is available immediately. Workspace work is presented through three consolidated operations, and teaching improvement through two. The older granular implementations remain internal adapters, preserving their tested behavior without making the model choose among a long list of narrowly different calls. The former 2,490-line browser-tools module was also split by responsibility, leaving a small assembly facade over teaching, assessment, media, improvement, and workspace modules.
 			</p>
 
 			<h3 id="streaming-artifacts" className={styles.heading}>Lesson plans and concept maps stopped being tools</h3>
@@ -158,7 +158,7 @@ export function V240OpenInterfacesArticle() {
 
 			<h3 id="runtime-boundaries" className={styles.heading}>Choose the runtime boundary instead of inheriting one</h3>
 			<p className={styles.paragraph}>
-				The browser agent can now run against four explicit runtime families: its built-in browser and NodePod sandbox, Keating Cloud, a generic external HTTP runtime, or the machine hosting Keating itself. Capability activation refreshes the model&apos;s tool schemas after a runtime comes online, so late-bound execution features become reliable without advertising unavailable tools at session start.
+				The browser agent can now run against four explicit runtime families: its built-in browser and NodePod sandbox, Keating Cloud, a generic external HTTP runtime, or the machine hosting Keating itself. The model&apos;s tool schemas are filtered against the live runtime and refreshed when that runtime changes, so supported tools are immediately available without advertising execution features that are actually offline.
 			</p>
           <CodeBlock>{`keating web 3000 --host \\
   --allow-local-exec --root=/path/to/project`}</CodeBlock>

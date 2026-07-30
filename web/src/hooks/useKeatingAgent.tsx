@@ -23,11 +23,11 @@ import { getProviderApiKey, resolveAvailableChatModel } from "../lib/provider-mo
 import { localModel } from "../stores/local-model";
 import { buildKeatingSystemPrompt, composeKeatingSystemPrompt, createKeatingTools, executeRawKeatingTool, getActiveKeatingPrompt } from "../keating/browser-tools";
 import { loadAgentRuntimeConfig, shouldAutoBootNodePod, type KeatingAgentRuntimeConfig } from "../keating/agent-runtime";
-import { KeatingCapabilityController } from "../keating/capabilities";
+import { filterAvailableKeatingTools } from "../keating/capabilities";
 import { keatingLifecycle } from "../keating/lifecycle";
 import { detectTopicCategoryShift } from "../keating/topic-shift-hook";
 import { browserConversationRuntime, recordAgentEvent, recordOpenUIAction, type ConversationRuntime } from "../keating/integration";
-import { AuthorizedToolExecutor, type ToolConfirmationRequestDetail, type ToolConfirmationReview } from "../keating/security";
+import { AuthorizedToolExecutor } from "../keating/security";
 import type { ConversationEvent } from "../keating/protocol";
 import type { KeatingOpenUIAction } from "../keating/openui/types";
 import { keatingOpenUIPrompt } from "../keating/openui/library";
@@ -237,15 +237,6 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const settingsDeepLinkRef = useRef<{ tabId: string; sectionId: string | null } | null>(null);
   const [responseComparison, setResponseComparison] = useState<PendingResponseComparison | null>(null);
 
-	useEffect(() => {
-		const updateSearchTrust = (event: Event) => {
-			const detail = (event as CustomEvent<{ untrusted?: boolean }>).detail;
-			untrustedSearchProvenanceRef.current = detail?.untrusted === true;
-		};
-		window.addEventListener("keating:search-provenance", updateSearchTrust);
-		return () => window.removeEventListener("keating:search-provenance", updateSearchTrust);
-	}, []);
-
   const restorePendingResponseComparison = useCallback(async (sourceSessionId: string) => {
     const metadata = await sessions.getAllMetadata() as SessionMetadata[];
     const pending = metadata
@@ -261,6 +252,15 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     ]);
     setResponseComparison(source && alternative ? buildPendingResponseComparison(source, alternative) : null);
   }, []);
+
+	useEffect(() => {
+		const updateSearchTrust = (event: Event) => {
+			const detail = (event as CustomEvent<{ untrusted?: boolean }>).detail;
+			untrustedSearchProvenanceRef.current = detail?.untrusted === true;
+		};
+		window.addEventListener("keating:search-provenance", updateSearchTrust);
+		return () => window.removeEventListener("keating:search-provenance", updateSearchTrust);
+	}, []);
 
   const openSettings = useCallback(() => {
     posthog.capture('settings_opened', { source: 'toolbar' });
@@ -402,7 +402,6 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const unsubRef = useRef<(() => void) | null>(null);
   const persistUnsubRef = useRef<(() => void) | null>(null);
   const persistCurrentSnapshotRef = useRef<() => Promise<void>>(async () => {});
-  const capabilityControllerRef = useRef<KeatingCapabilityController | null>(null);
   const conversationRuntimeRef = useRef<ConversationRuntime | null>(null);
   const autoTitleRequestedRef = useRef<Set<string>>(new Set());
 
@@ -418,24 +417,6 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     }
     return runtime;
   }, []);
-
-	const requestToolConfirmation = useCallback((review: ToolConfirmationReview): Promise<boolean> => {
-		if (typeof window === "undefined") return Promise.resolve(false);
-		return new Promise((resolve) => {
-			let settled = false;
-			const settle = (approved: boolean) => {
-				if (settled) return;
-				settled = true;
-				resolve(approved);
-			};
-			const detail: ToolConfirmationRequestDetail = {
-				review,
-				approve: () => settle(true),
-				cancel: () => settle(false),
-			};
-			window.dispatchEvent(new CustomEvent("keating:tool-confirmation-request", { detail }));
-		});
-	}, []);
 
   useEffect(() => {
     const receiveCanonicalEvent = (event: Event) => {
@@ -512,7 +493,6 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     },
 	security: {
 		executor: toolExecutorRef.current,
-		requestConfirmation: requestToolConfirmation,
 		getContext: () => ({
 			sessionId: sessionIdRef.current,
 			surface: "text" as const,
@@ -521,7 +501,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
 				: { trust: "trusted" as const, userAuthorized: true },
 		}),
 	},
-	  }), [requestToolConfirmation]);
+	  }), []);
 
   const saveSessionSnapshot = useCallback(async (
     agent: Agent | null = agentRef.current,
@@ -748,17 +728,10 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     }
     const sessionStartRecord = sessionStartContextRef.current;
     const agentRuntime = await loadAgentRuntimeConfig();
-    const allTools = await createKeatingTools(keatingStorage, toolOptions(speechSettings, agentRuntime));
-    const capabilityController = new KeatingCapabilityController({
-      runtime: agentRuntime,
-      speechEnabled: speechSettings.enabled,
-    });
-		let capabilityContinuationPending = false;
-		capabilityController.setActivationListener((result) => {
-			if (result.activated.length > 0) capabilityContinuationPending = true;
-		});
-    capabilityControllerRef.current = capabilityController;
-    const tools = capabilityController.setAllTools(allTools);
+    const tools = filterAvailableKeatingTools(
+      await createKeatingTools(keatingStorage, toolOptions(speechSettings, agentRuntime)),
+      { runtime: agentRuntime, speechEnabled: speechSettings.enabled },
+    );
     registerKeatingWebMcp(keatingStorage, tools).catch(console.warn);
     const resolvedModel = await resolveAvailableChatModel(initialState?.model ?? selectedModelRef.current);
     selectedModelRef.current = resolvedModel;
@@ -785,11 +758,6 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     agent.getApiKey = (provider: string) => getProviderApiKey(provider);
 		agent.state.tools = tools;
     agentRef.current = agent;
-		capabilityController.setListener((activeTools) => {
-			if (agentRef.current !== agent) return;
-			agent.state.tools = activeTools;
-			registerKeatingWebMcp(keatingStorage, activeTools).catch(console.warn);
-		});
 		const sessionAlreadyAnswered = agent.state.messages.some((message) => {
 			const candidate = message as { role?: unknown; stopReason?: unknown };
 			return candidate.role === "assistant" && candidate.stopReason !== "error" && candidate.stopReason !== "aborted";
@@ -798,9 +766,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
 			if (!sessionStartRecord.context && sessionAlreadyAnswered) return;
 			sessionStartRecord.promise ??= (async () => {
 				await keatingLifecycle.emit({ type: "session_start", sessionId: agentSessionId });
-				return runSessionStartHooks(keatingStorage, undefined, {
-					capabilityCatalog: capabilityController.catalog(),
-				});
+				return runSessionStartHooks(keatingStorage);
 			})();
 			sessionStartRecord.context = await sessionStartRecord.promise;
 			agent.state.systemPrompt = buildAgentSystemPrompt(
@@ -825,9 +791,12 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
 						}))
 						.then(({ runtime, tools: refreshedTools }) => {
               if (agentRef.current !== agent) return;
-							capabilityController.setEnvironment({ runtime, speechEnabled: speechSettings.enabled });
-							const activeTools = capabilityController.setAllTools(refreshedTools);
-							registerKeatingWebMcp(keatingStorage, activeTools).catch(console.warn);
+							const availableTools = filterAvailableKeatingTools(refreshedTools, {
+								runtime,
+								speechEnabled: speechSettings.enabled,
+							});
+							agent.state.tools = availableTools;
+							registerKeatingWebMcp(keatingStorage, availableTools).catch(console.warn);
             });
         })
         .catch(console.warn);
@@ -881,17 +850,12 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
         }
       }
       if (ev.type === "agent_end") {
+				untrustedSearchProvenanceRef.current = false;
         const turnIndex = agent.state.messages.filter((m) => m.role === "assistant").length;
         posthog.capture('agent_turn_completed', { session_id: agentSessionId, turn_index: turnIndex });
-				const continueWithActivatedCapabilities = capabilityContinuationPending;
-				capabilityContinuationPending = false;
         agent.waitForIdle()
           .then(() => persistSnapshot())
 					.then(async () => {
-						if (continueWithActivatedCapabilities) {
-							if (agentRef.current === agent && !agent.state.isStreaming) await agent.continue();
-							return;
-						}
 						await keatingLifecycle.emit({ type: "session_idle", sessionId: agentSessionId });
 						await maybeGenerateAlternativeResponse(agent, agentSessionId);
 					})
@@ -911,6 +875,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       const retryMessages = prepareMessagesForRetry(agent.state.messages);
       if (!retryMessages) return;
 			await ensureSessionStartContext();
+			untrustedSearchProvenanceRef.current = false;
       agent.state.messages = retryMessages;
       await persistSnapshot();
       await agent.continue();
@@ -937,6 +902,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
         return true;
       },
       onBeforeSend: async () => {
+			untrustedSearchProvenanceRef.current = false;
 			await ensureSessionStartContext();
 			await keatingLifecycle.emit({ type: "before_turn", sessionId: agentSessionId });
         if (import.meta.env.DEV) {
@@ -994,13 +960,10 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
 		}))
       .then(({ agentRuntime, tools }) => {
         if (cancelled) return;
-			const controller = capabilityControllerRef.current;
-			if (controller) {
-				controller.setEnvironment({ runtime: agentRuntime, speechEnabled: speechSettings.enabled });
-				agent.state.tools = controller.setAllTools(tools);
-			} else {
-				agent.state.tools = tools;
-			}
+			agent.state.tools = filterAvailableKeatingTools(tools, {
+				runtime: agentRuntime,
+				speechEnabled: speechSettings.enabled,
+			});
         agent.state.systemPrompt = buildAgentSystemPrompt(
           speechSettings.enabled,
           systemPromptBaseRef.current,
@@ -1034,25 +997,24 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
 				async execute(call, signal) {
 					const tool = tools.find((candidate) => candidate.name === call.name);
 					if (!tool?.execute) throw new Error(`Unknown live voice tool: ${call.name}`);
-					return toolExecutorRef.current.executeWithTrustedConfirmation({
+					return toolExecutorRef.current.execute({
 						toolName: call.name,
 						arguments: call.arguments,
 						context: {
-						sessionId: sessionIdRef.current,
+							sessionId: sessionIdRef.current,
 							surface: "voice",
-						provenance: untrustedSearchProvenanceRef.current
-							? { trust: "untrusted-web", userAuthorized: false }
-							: { trust: "unknown", userAuthorized: false },
+							provenance: untrustedSearchProvenanceRef.current
+								? { trust: "untrusted-web", userAuthorized: false }
+								: { trust: "unknown", userAuthorized: false },
 						},
 						run: () => executeRawKeatingTool(tool, [call.callId, call.arguments, signal, () => {}]),
-						requestConfirmation: requestToolConfirmation,
 					});
 				},
 			};
 		};
 		window.addEventListener("keating:live-speech-bridge", handleBridgeRequest);
 		return () => window.removeEventListener("keating:live-speech-bridge", handleBridgeRequest);
-	}, [requestToolConfirmation]);
+	}, []);
 
   // Apply teacher-persona edits to the live agent so changes take effect on the
   // next turn without needing a new session.
@@ -1481,6 +1443,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
           const retryMessages = prepareMessagesForRetry(existingAgent.state.messages);
           if (!retryMessages) return;
           await ensureSessionStartContextRef.current();
+          untrustedSearchProvenanceRef.current = false;
           existingAgent.state.messages = retryMessages;
           await persistCurrentSnapshotRef.current();
           await existingAgent.continue();
@@ -1498,6 +1461,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
             return ok;
           },
           onBeforeSend: async () => {
+            untrustedSearchProvenanceRef.current = false;
             await ensureSessionStartContextRef.current();
             await keatingLifecycle.emit({ type: "before_turn", sessionId: sessionIdRef.current });
             if (import.meta.env.DEV) {

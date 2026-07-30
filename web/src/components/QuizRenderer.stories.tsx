@@ -197,7 +197,7 @@ const meta = {
 		topicStats: {
 			count: 24,
 			avgScore: 4.9,
-			avgWeightedScore: 4.2,
+			avgPartialCreditPoints: 4.2,
 			topQuartile: 7,
 		},
 		onSubmit: fn(),
@@ -209,6 +209,21 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const FullMiniApplication: Story = {};
+
+export const MobileFullMini: Story = {
+	parameters: {
+		layout: "fullscreen",
+		viewport: { defaultViewport: "mobile1" },
+	},
+	play: async ({ canvasElement }) => {
+		const canvas = within(canvasElement);
+		const firstChoice = await canvas.findByRole("button", {
+			name: /native-inputs/i,
+		});
+		firstChoice.focus();
+		await userEvent.keyboard("{Enter}");
+	},
+};
 
 export const FillInTheMiddle: Story = {
 	args: {

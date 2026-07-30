@@ -145,7 +145,9 @@ function promptKey(context: RewardChatMessage[]): string {
 }
 
 function quizScore(record: QuizResultRecord): number {
-	if (typeof record.weightedScore === "number") return clamp01(record.weightedScore);
+	if (typeof record.partialCreditPoints === "number") {
+		return clamp01(record.partialCreditPoints / Math.max(1, record.totalQuestions));
+	}
 	return clamp01(record.score / Math.max(1, record.totalQuestions));
 }
 

@@ -4,7 +4,7 @@
  */
 
 import type { LearnerGoal } from "./goals";
-import { inferBrowserLearnerTurnSignal } from "./core";
+import { inferBrowserLearnerTurnSignal, type QuizQuestionGrade } from "./core";
 import { deriveLearnerProfile, type LearnerTopicProfile } from "./learner-profile";
 
 const DB_NAME = "keating-db";
@@ -197,9 +197,43 @@ export interface QuizResultRecord {
 	topic: string;
 	createdAt: number;
 	score: number;
-	weightedScore?: number;
+	partialCreditPoints?: number;
 	totalQuestions: number;
+	answers?: Record<string, string>;
+	partialCredits?: Record<string, number>;
+	timing?: {
+		totalMs: number;
+		perQuestionMs: Record<string, number>;
+	};
+	flaggedQuestionIds?: string[];
+	pendingGradeQuestionIds?: string[];
+	openEndedGrades?: QuizQuestionGrade[];
 	sessionId?: string;
+}
+
+export interface QuizResultDetails {
+	resultId?: string;
+	answers?: Record<string, string>;
+	partialCredits?: Record<string, number>;
+	timing?: {
+		totalMs: number;
+		perQuestionMs: Record<string, number>;
+	};
+	flaggedQuestionIds?: string[];
+	pendingGradeQuestionIds?: string[];
+}
+
+/** Convert persisted answer evidence into a normalized 0..1 learner signal. */
+export function quizEvidenceScore(result: QuizResultRecord): number {
+	const openEndedPoints = (result.openEndedGrades ?? []).reduce((sum, grade) =>
+		sum + (grade.verdict === "correct" ? 1 : grade.verdict === "partial" ? 0.5 : 0), 0);
+	const totalQuestions = result.totalQuestions + (result.openEndedGrades?.length ?? 0);
+	const objectivePoints = typeof result.partialCreditPoints === "number"
+		? result.partialCreditPoints
+		: result.score;
+	return totalQuestions > 0
+		? Math.max(0, Math.min(1, (objectivePoints + openEndedPoints) / totalQuestions))
+		: 0;
 }
 
 export interface PromptEvolutionResult {
@@ -533,13 +567,15 @@ export class KeatingStorage {
 				weight: entry.source === "explicit" ? 0.25 : 0.1,
 				note: entry.evidence,
 			})),
-			...quizResults.filter((result) => result.totalQuestions > 0).map((result) => ({
+			...quizResults
+				.filter((result) => result.totalQuestions > 0 || (result.openEndedGrades?.length ?? 0) > 0)
+				.map((result) => ({
 				topic: result.topic,
 				kind: "quiz" as const,
-				score: typeof result.weightedScore === "number" ? result.weightedScore : result.score / result.totalQuestions,
+				score: quizEvidenceScore(result),
 				createdAt: result.createdAt,
 				weight: 1.2,
-			})),
+				})),
 			...questionChecks.filter((check): check is QuestionCheckRecord & { score: number } => typeof check.score === "number").map((check) => ({
 				topic: check.topic,
 				kind: "diagnostic" as const,
@@ -824,14 +860,28 @@ export class KeatingStorage {
 	}
 
 	// Quiz Results
-	async saveQuizResult(score: number, weightedScore: number | undefined, totalQuestions: number, topic?: string): Promise<QuizResultRecord> {
+	async saveQuizResult(
+		score: number,
+		partialCreditPoints: number | undefined,
+		totalQuestions: number,
+		topic?: string,
+		details?: QuizResultDetails,
+	): Promise<QuizResultRecord> {
 		const record: QuizResultRecord = {
-			id: this.generateId(),
+			id: details?.resultId || this.generateId(),
 			topic: topic || "general",
 			createdAt: Date.now(),
 			score,
-			weightedScore,
+			partialCreditPoints,
 			totalQuestions,
+			answers: details?.answers ? { ...details.answers } : undefined,
+			partialCredits: details?.partialCredits ? { ...details.partialCredits } : undefined,
+			timing: details?.timing ? {
+				totalMs: details.timing.totalMs,
+				perQuestionMs: { ...details.timing.perQuestionMs },
+			} : undefined,
+			flaggedQuestionIds: details?.flaggedQuestionIds ? [...details.flaggedQuestionIds] : undefined,
+			pendingGradeQuestionIds: details?.pendingGradeQuestionIds ? [...details.pendingGradeQuestionIds] : undefined,
 			sessionId: this.currentSessionId ?? undefined,
 		};
 		await this.put(STORES.QUIZ_RESULTS, record);
@@ -839,22 +889,49 @@ export class KeatingStorage {
 		return record;
 	}
 
-	async getQuizResults(topic?: string): Promise<QuizResultRecord[]> {
-		if (topic) {
-			return this.getByTopic<QuizResultRecord>(STORES.QUIZ_RESULTS, topic);
-		}
-		return this.getAll<QuizResultRecord>(STORES.QUIZ_RESULTS);
+	async saveQuizGrades(resultId: string, grades: QuizQuestionGrade[]): Promise<QuizResultRecord | null> {
+		const current = (await this.getQuizResults()).find((result) => result.id === resultId);
+		if (!current) return null;
+		const byQuestionId = new Map((current.openEndedGrades ?? []).map((grade) => [grade.questionId, grade]));
+		for (const grade of grades) byQuestionId.set(grade.questionId, { ...grade });
+		const gradedIds = new Set(grades.map((grade) => grade.questionId));
+		const updated: QuizResultRecord = {
+			...current,
+			openEndedGrades: [...byQuestionId.values()],
+			pendingGradeQuestionIds: (current.pendingGradeQuestionIds ?? []).filter((id) => !gradedIds.has(id)),
+		};
+		await this.put(STORES.QUIZ_RESULTS, updated);
+		await this.refreshDerivedLearnerProfile();
+		return updated;
 	}
 
-	async getTopicQuizStats(topic: string): Promise<{ count: number; avgScore: number; avgWeightedScore: number; topQuartile: number } | null> {
+	async getQuizResults(topic?: string): Promise<QuizResultRecord[]> {
+		const results = topic
+			? await this.getByTopic<QuizResultRecord>(STORES.QUIZ_RESULTS, topic)
+			: await this.getAll<QuizResultRecord>(STORES.QUIZ_RESULTS);
+		return results.map((record) => {
+			const current = { ...record } as QuizResultRecord & {
+				confidence?: unknown;
+				weightedScore?: unknown;
+			};
+			delete current.confidence;
+			delete current.weightedScore;
+			return current;
+		});
+	}
+
+	async getTopicQuizStats(topic: string): Promise<{ count: number; avgScore: number; avgPartialCreditPoints: number; topQuartile: number } | null> {
 		const results = await this.getQuizResults(topic);
 		if (results.length < 5) return null;
 		const sorted = [...results].sort((a, b) => b.score - a.score);
 		const avgScore = sorted.reduce((s, r) => s + r.score, 0) / sorted.length;
-		const avgWeighted = sorted.filter((r) => typeof r.weightedScore === "number").reduce((s, r) => s + (r.weightedScore ?? 0), 0) / sorted.length;
+		const partialCreditResults = sorted.filter((r) => typeof r.partialCreditPoints === "number");
+		const avgPartialCreditPoints = partialCreditResults.length > 0
+			? partialCreditResults.reduce((sum, result) => sum + (result.partialCreditPoints ?? 0), 0) / partialCreditResults.length
+			: 0;
 		const qIdx = Math.floor(sorted.length * 0.25);
 		const topQuartile = sorted[qIdx]?.score ?? sorted[0]?.score ?? 0;
-		return { count: sorted.length, avgScore, avgWeightedScore: avgWeighted, topQuartile };
+		return { count: sorted.length, avgScore, avgPartialCreditPoints, topQuartile };
 	}
 
 	// Evolutions

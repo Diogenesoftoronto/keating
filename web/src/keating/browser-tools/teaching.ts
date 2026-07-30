@@ -11,7 +11,7 @@ import {
 } from "../core";
 import { initialSrsState, validateDeckDraft } from "../srs";
 import { buildGoal, advanceGoalStep, computeGoalProgress, type GoalStepInput, type GoalStepStatus } from "../goals";
-import { createTool, type ToolRegistry } from "./shared";
+import { createTool } from "./shared";
 
 export function createTeachingTools(storage: KeatingStorage): AgentTool[] {
 	return [
@@ -102,7 +102,7 @@ export function createTeachingTools(storage: KeatingStorage): AgentTool[] {
 		// learner_state - Load learner profile (agent-facing, renamed from /state)
 		createTool(
 			"learner_state",
-			"Legacy on-demand learner profile inspection. A compact learner summary is loaded automatically before the first model turn, so do not call this at session start. Prefer inspect_learning_context when deeper details are genuinely needed.",
+			"Legacy on-demand learner profile inspection. The complete durable learner profile and its underlying evidence are loaded automatically before the first model turn, so do not call this at session start.",
 			{},
 			async () => {
 				const state = await storage.getLearnerState();
@@ -130,7 +130,7 @@ ${profileBeliefs}
 		// auto_improve - Full autonomous self-improvement loop
 		createTool(
 			"timeline",
-			"Legacy on-demand engagement timeline. Review priorities are loaded automatically before the first model turn; prefer inspect_learning_context when the full timeline is needed.",
+			"Legacy on-demand engagement timeline. Complete learner history and review evidence are loaded automatically before the first model turn.",
 			{},
 			async () => {
 				const state = await storage.getLearnerState();
@@ -161,7 +161,7 @@ ${profileBeliefs}
 		// due - Show topics due for review
 		createTool(
 			"due",
-			"Legacy on-demand due-review inspection. A compact due-review summary is loaded automatically before the first model turn; prefer inspect_learning_context for deeper review details.",
+			"Legacy on-demand due-review inspection. Complete topic and flashcard review evidence are loaded automatically before the first model turn.",
 			{},
 			async () => {
 				const state = await storage.getLearnerState();
@@ -291,7 +291,7 @@ ${profileBeliefs}
 		// list_learner_goals - Show the learner's goals and progress
 		createTool(
 			"list_learner_goals",
-			"Legacy on-demand goal listing. Active goals and next steps are loaded automatically before the first model turn; prefer inspect_learning_context when full goal details are needed.",
+			"Legacy on-demand goal listing. Every saved goal and curriculum step is loaded automatically before the first model turn.",
 			{
 				status: { type: "string", description: "Optional filter: active, completed, or paused" },
 			},
@@ -340,56 +340,6 @@ ${profileBeliefs}
 		),
 
 		// source_edit - Apply a search/replace edit inside the NodePod VFS
-	];
-}
-
-/**
- * Optional, consolidated access to learner history that is intentionally kept
- * out of the baseline schema set. Session hooks already provide the compact
- * context needed for ordinary teaching.
- */
-export function createLearnerContextCapabilityTools(registry: ToolRegistry): AgentTool[] {
-	return [
-		createTool(
-			"inspect_learning_context",
-			"Inspect selected parts of the learner's durable context when the automatically loaded session summary is not enough. Request all related sections in one call. Do not call this merely to bootstrap a conversation.",
-			{
-				sections: {
-					type: "array",
-					minItems: 1,
-					uniqueItems: true,
-					items: { type: "string", enum: ["profile", "timeline", "due_reviews", "goals"] },
-					description: "The deeper learner-context sections needed for the current teaching decision.",
-				},
-				goal_status: {
-					type: "string",
-					enum: ["active", "completed", "paused"],
-					description: "Optional status filter, used only when goals is requested.",
-				},
-			},
-			async (params) => {
-				const requested = Array.isArray(params.sections)
-					? [...new Set(params.sections.filter((section): section is string => typeof section === "string"))]
-					: [];
-				const toolBySection: Record<string, string> = {
-					profile: "learner_state",
-					timeline: "timeline",
-					due_reviews: "due",
-					goals: "list_learner_goals",
-				};
-				const sections: string[] = [];
-				for (const section of requested) {
-					const toolName = toolBySection[section];
-					if (!toolName) continue;
-					const output = await registry.invoke(toolName, section === "goals" && params.goal_status
-						? { status: params.goal_status }
-						: {});
-					sections.push(`## ${section.replaceAll("_", " ")}\n\n${output}`);
-				}
-				return sections.join("\n\n---\n\n") || "No valid learner-context sections were requested.";
-			},
-			["sections"],
-		),
 	];
 }
 

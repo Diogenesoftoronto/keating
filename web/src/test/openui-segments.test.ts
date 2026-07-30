@@ -31,7 +31,36 @@ describe("OpenUI message segments", () => {
 		const document = segments[0];
 		if (document.type !== "openui") throw new Error("expected OpenUI segment");
 		expect(document.complete).toBe(false);
+		expect(document.program).toBe("");
+		expect(document.rawProgram).toContain("graph TD");
 		expect(document.metadata.lifecycle).toBe("workspace");
+	});
+
+	it("commits only whole OpenUI statements while a question streams", () => {
+		const root = 'root = LearningSurface([check], "Check", "Answer once ready.", "ephemeral")\n';
+		const question = 'check = Question([{ question: "Why?", type: "choice", choices: ["A", "B"], allowText: true }], "ephemeral", "topic", "Pick one.")';
+		const source = `\`\`\`openui id=atomic-question\n${root}${question}`;
+
+		for (let length = root.length + "```openui id=atomic-question\n".length; length < source.length; length += 1) {
+			const [segment] = parseOpenUIMessageSegments(source.slice(0, length));
+			if (segment.type !== "openui") throw new Error("expected OpenUI segment");
+			expect(segment.program).not.toContain("check = Question");
+		}
+
+		const [committed] = parseOpenUIMessageSegments(`${source}\n`);
+		if (committed.type !== "openui") throw new Error("expected OpenUI segment");
+		expect(committed.program).toContain(question);
+	});
+
+	it("keeps completed static statements while withholding a partial question", () => {
+		const [segment] = parseOpenUIMessageSegments([
+			"```openui id=progressive",
+			'root = Explanation("A complete explanation.")',
+			'check = Question([{ question: "Why?", choices: ["A"',
+		].join("\n"));
+		if (segment.type !== "openui") throw new Error("expected OpenUI segment");
+		expect(segment.program).toContain("A complete explanation.");
+		expect(segment.program).not.toContain("check = Question");
 	});
 
 	it("keeps an inferred document id stable as a program streams", () => {

@@ -10,10 +10,10 @@ import type { KeatingStorage } from "./storage";
 import { createAssessmentTools, createOutcomeCollector } from "./browser-tools/assessment";
 import { createImprovementCapabilityTools, createImprovementTools } from "./browser-tools/improvement";
 import { createMediaTools } from "./browser-tools/media";
-import { createLearnerContextCapabilityTools, createTeachingTools } from "./browser-tools/teaching";
+import { createTeachingTools } from "./browser-tools/teaching";
 import { createToolRegistry, type KeatingToolsOptions } from "./browser-tools/shared";
 import { createWorkspaceCapabilityTools, createWorkspaceTools } from "./browser-tools/workspace";
-import { AuthorizedToolExecutor, type ToolConfirmationReview, type ToolExecutionContext } from "./security";
+import { AuthorizedToolExecutor, type ToolExecutionContext } from "./security";
 
 export {
 	KEATING_OPERATIONAL_PROTOCOL,
@@ -73,12 +73,11 @@ export const TOOL_REGISTRATION_ORDER = [
 	"workspace_change",
 	"evaluate_teaching",
 	"request_teaching_improvement",
-	"inspect_learning_context",
 ] as const;
 
 const rawToolExecutions = new WeakMap<object, (...args: any[]) => Promise<unknown>>();
 
-/** Used by independently authorized transports so an approved call is not wrapped a second time. */
+/** Used by independently authorized transports so a call is not wrapped twice. */
 export function executeRawKeatingTool(tool: AgentTool, args: any[]): Promise<unknown> {
 	const execute = rawToolExecutions.get(tool as object);
 	if (!execute) throw new Error(`No executable implementation for tool ${tool.name}.`);
@@ -105,7 +104,6 @@ export async function createKeatingTools(
 		security?: {
 			executor: AuthorizedToolExecutor;
 			getContext: () => ToolExecutionContext;
-			requestConfirmation: (review: ToolConfirmationReview) => Promise<boolean>;
 		};
 	}).security;
 	const collectRealOutcomes = createOutcomeCollector(storage, options.getSessionSamples);
@@ -119,7 +117,6 @@ export async function createKeatingTools(
 
 	const registry = createToolRegistry(tools);
 	tools.push(
-		...createLearnerContextCapabilityTools(registry),
 		...createImprovementCapabilityTools(registry),
 		...createWorkspaceCapabilityTools(registry, options),
 	);
@@ -134,12 +131,11 @@ export async function createKeatingTools(
 		const execute = tool.execute.bind(tool) as (...args: any[]) => Promise<unknown>;
 		const securedTool = {
 			...tool,
-			execute: async (...args: any[]) => security.executor.executeWithTrustedConfirmation({
+			execute: async (...args: any[]) => security.executor.execute({
 				toolName: tool.name,
 				arguments: args[1],
 				context: security.getContext(),
 				run: () => execute(...args),
-				requestConfirmation: security.requestConfirmation,
 			}),
 		} as AgentTool;
 		rawToolExecutions.set(securedTool as object, execute);

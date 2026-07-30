@@ -13,21 +13,20 @@ interface RetryResponseButtonProps {
 
 const buttonClass = css({
 	display: "inline-flex",
-	height: "1.5rem",
+	minHeight: "2.75rem",
 	width: "auto",
 	alignItems: "center",
 	justifyContent: "center",
 	gap: "0.375rem",
 	borderRadius: "0.375rem",
-	paddingInline: "0.5rem",
-	fontSize: "0.75rem",
+	paddingInline: "0.75rem",
+	fontSize: "0.8125rem",
 	color: "var(--muted-foreground)",
 	_hover: { backgroundColor: "var(--accent)", color: "var(--accent-foreground)" },
 	_focusVisible: { outline: "2px solid var(--ring)", outlineOffset: "2px" },
 	_disabled: { cursor: "not-allowed", opacity: 0.6 },
 });
 const primaryButtonClass = css({
-	height: "2rem",
 	borderRadius: "0.5rem",
 	backgroundColor: "var(--primary)",
 	paddingInline: "0.75rem",
@@ -37,6 +36,7 @@ const primaryButtonClass = css({
 		backgroundColor: "color-mix(in srgb, var(--primary) 88%, var(--background))",
 		color: "var(--primary-foreground)",
 	},
+	sm: { minHeight: "2.5rem" },
 });
 
 export function RetryResponseButton({

@@ -13,9 +13,11 @@ import {
   XCircle,
 } from "lucide-react";
 import type { Quiz, QuizQuestion } from "../keating/core";
-import type { QuizResult } from "./QuizRenderer";
-import { isOpenEnded, questionCredit } from "./QuizRenderer";
+import { KeatingStorage } from "../keating/storage";
+import { createQuizResultId, isOpenEnded, questionCredit, type QuizResult } from "./QuizRenderer";
 import { css, cx } from "../../styled-system/css";
+
+const quizStorage = new KeatingStorage();
 
 export interface QuizSessionProps {
   quiz: Quiz;
@@ -42,22 +44,22 @@ const dark = ".dark &";
 
 const qs = {
   panel: css({
-    marginBlock: "0.75rem",
+    marginBlock: "0.25rem",
     borderRadius: "0.75rem",
     border: "1px solid var(--border)",
     background: "var(--background)",
-    padding: "1rem",
+    padding: "0.75rem",
     boxShadow: "var(--shadow-card)",
-    [sm]: { padding: "1.25rem" },
+    [sm]: { marginBlock: "0.75rem", padding: "1.25rem" },
   }),
   startPanel: css({
-    marginBlock: "0.75rem",
+    marginBlock: "0.25rem",
     borderRadius: "0.75rem",
     border: "1px solid var(--border)",
     background: "var(--background)",
-    padding: "1rem",
+    padding: "0.75rem",
     boxShadow: "var(--shadow-card)",
-    [sm]: { padding: "1.5rem" },
+    [sm]: { marginBlock: "0.75rem", padding: "1.5rem" },
   }),
   rowStart: css({ display: "flex", alignItems: "flex-start", gap: "0.75rem", [sm]: { gap: "1rem" } }),
   rowCenter: css({ display: "flex", alignItems: "center", gap: "0.5rem" }),
@@ -76,7 +78,7 @@ const qs = {
   primaryIcon: css({ color: "var(--primary)" }),
   primaryButton: css({
     display: "inline-flex",
-    height: "2.25rem",
+    minHeight: "2.75rem",
     alignItems: "center",
     gap: "0.5rem",
     borderRadius: "0.5rem",
@@ -90,7 +92,7 @@ const qs = {
   }),
   outlineButton: css({
     display: "inline-flex",
-    height: "2.25rem",
+    minHeight: "2.75rem",
     alignItems: "center",
     borderRadius: "0.5rem",
     border: "1px solid var(--border)",
@@ -114,7 +116,7 @@ const qs = {
   }),
   navButton: css({
     display: "inline-flex",
-    height: "2.25rem",
+    minHeight: "2.75rem",
     alignItems: "center",
     gap: "0.25rem",
     borderRadius: "0.5rem",
@@ -144,6 +146,7 @@ const qs = {
 function choiceButtonClass(active: boolean) {
   return css({
     display: "flex",
+    minHeight: "2.75rem",
     width: "100%",
     alignItems: "center",
     gap: "0.75rem",
@@ -153,7 +156,7 @@ function choiceButtonClass(active: boolean) {
     background: active
       ? "color-mix(in srgb, var(--primary) 10%, transparent)"
       : "color-mix(in srgb, var(--muted) 20%, transparent)",
-    padding: "0.625rem 1rem",
+    padding: "0.625rem 0.75rem",
     textAlign: "left",
     fontSize: "0.875rem",
     color: active ? "var(--primary)" : undefined,
@@ -180,6 +183,7 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
   const startRef = useRef<number>(Date.now());
   const questionEnteredRef = useRef<number>(Date.now());
   const perQuestionRef = useRef<Record<string, number>>({});
+  const resultIdRef = useRef(createQuizResultId(quiz.slug ?? quiz.topic));
 
   const total = quiz.questions.length;
   const q = quiz.questions[currentIndex];
@@ -201,6 +205,7 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
     setElapsedMs(0);
     setFinalTiming(null);
     setTimeRemaining(quiz.questions[0]?.timeLimit);
+    resultIdRef.current = createQuizResultId(quiz.slug ?? quiz.topic);
     setStarted(true);
   };
 
@@ -275,18 +280,30 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
       totalMs: Date.now() - startRef.current,
       perQuestionMs: { ...perQuestionRef.current },
     };
+    const partialCreditScore = quiz.questions
+      .filter((question) => !isOpenEnded(question))
+      .reduce((sum, question) => sum + (partialCredits[question.id] ?? 0), 0);
     const result: QuizResult = {
+      resultId: resultIdRef.current,
       answers,
       score,
-      weightedScore: score,
+      partialCreditPoints: partialCreditScore,
       timing,
-      confidence: {},
       partialCredits,
       flagged: Array.from(flagged),
     };
     setElapsedMs(timing.totalMs);
     setFinalTiming(timing);
     setSubmitted(true);
+    const objectiveTotal = quiz.questions.filter((question) => !isOpenEnded(question)).length;
+    void quizStorage.saveQuizResult(score, result.partialCreditPoints, objectiveTotal, quiz.slug, {
+      resultId: result.resultId,
+      answers,
+      partialCredits,
+      timing,
+      flaggedQuestionIds: result.flagged,
+      pendingGradeQuestionIds: quiz.questions.filter(isOpenEnded).map((question) => question.id),
+    });
     onSubmit(result);
   }, [accrueCurrentQuestion, answers, flagged, onSubmit, quiz.questions, submitted]);
 
@@ -352,11 +369,11 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
                 </span>
               )}
             </div>
-            <div className={css({ display: "flex", gap: "0.5rem", paddingTop: "0.5rem" })}>
+            <div className={css({ display: "flex", flexWrap: "wrap", gap: "0.5rem", paddingTop: "0.5rem" })}>
               <button
                 type="button"
                 onClick={handleStart}
-                className={qs.primaryButton}
+                className={cx(qs.primaryButton, css({ flex: "1 1 9rem", justifyContent: "center", sm: { flex: "0 0 auto" } }))}
               >
                 Start Quiz
               </button>
@@ -364,7 +381,7 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
                 <button
                   type="button"
                   onClick={onDismiss}
-                  className={qs.outlineButton}
+                  className={cx(qs.outlineButton, css({ flex: "1 1 6rem", justifyContent: "center", sm: { flex: "0 0 auto" } }))}
                 >
                   Skip
                 </button>
@@ -436,7 +453,7 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
       <div className={css({ marginBottom: "1rem", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" })}>
         <div className={css({ minWidth: 0, display: "flex", alignItems: "center", gap: "0.5rem" })}>
           <GraduationCap size={16} className={cx(css({ flexShrink: 0 }), qs.primaryIcon)} />
-          <span className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500 })}>{quiz.topic}</span>
+          <span className={css({ overflowWrap: "anywhere", fontSize: "0.875rem", fontWeight: 500, sm: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } })}>{quiz.topic}</span>
         </div>
         <div className={cx(qs.muted, css({ display: "flex", flexShrink: 0, flexWrap: "wrap", alignItems: "center", justifyContent: "flex-end", gap: "0.5rem", fontSize: "0.75rem" }))}>
           <span className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", border: "1px solid var(--border)", background: "color-mix(in srgb, var(--muted) 20%, transparent)", padding: "0.25rem 0.5rem", fontVariantNumeric: "tabular-nums" })}>
@@ -475,14 +492,14 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
 
       <div aria-busy={isQuestionPending} className={css({ display: "grid", gap: "1rem" })} style={{ opacity: isQuestionPending ? 0.72 : 1, transition: "opacity 120ms ease-out" }}>
         <div className={css({ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.75rem" })}>
-          <p className={css({ flex: 1, fontSize: "0.875rem", fontWeight: 500, lineHeight: 1.625 })}>{q.question}</p>
+          <p className={css({ minWidth: 0, flex: 1, overflowWrap: "anywhere", fontSize: "0.875rem", fontWeight: 500, lineHeight: 1.625 })}>{q.question}</p>
           <button
             type="button"
             onClick={() => toggleFlag(q.id)}
             className={css({
               display: "inline-flex",
-              height: "2rem",
-              width: "2rem",
+              height: "2.75rem",
+              width: "2.75rem",
               flexShrink: 0,
               alignItems: "center",
               justifyContent: "center",
@@ -505,7 +522,7 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
           type="button"
           disabled={isQuestionPending || currentIndex === 0}
           onClick={() => goToQuestion(currentIndex - 1)}
-          className={qs.navButton}
+          className={cx(qs.navButton, css({ flex: 1, justifyContent: "center", sm: { flex: "0 0 auto" } }))}
         >
           Previous
         </button>
@@ -514,7 +531,7 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
             type="button"
             onClick={() => goToQuestion(currentIndex + 1)}
             disabled={isQuestionPending}
-            className={qs.primaryButton}
+            className={cx(qs.primaryButton, css({ flex: 1, justifyContent: "center", sm: { flex: "0 0 auto" } }))}
           >
             Next
           </button>
@@ -522,7 +539,7 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
           <button
             type="button"
             onClick={handleSubmit}
-            className={qs.primaryButton}
+            className={cx(qs.primaryButton, css({ flex: 1, justifyContent: "center", sm: { flex: "0 0 auto" } }))}
           >
             Submit
           </button>
@@ -550,6 +567,7 @@ function QuizAnswerInput({
             key={opt}
             type="button"
             onClick={() => onChange(opt)}
+            aria-pressed={value === opt}
             className={choiceButtonClass(value === opt)}
           >
             <div className={css({ height: "1rem", width: "1rem", flexShrink: 0, borderRadius: "9999px", border: "2px solid", borderColor: value === opt ? "var(--primary)" : "var(--border)", background: value === opt ? "var(--primary)" : undefined })} />
@@ -575,6 +593,7 @@ function QuizAnswerInput({
             key={opt}
             type="button"
             onClick={() => toggle(opt)}
+            aria-pressed={selected.has(opt)}
             className={choiceButtonClass(selected.has(opt))}
           >
             <span className={css({ display: "flex", height: "1rem", width: "1rem", flexShrink: 0, alignItems: "center", justifyContent: "center", borderRadius: "0.25rem", border: "2px solid", borderColor: selected.has(opt) ? "var(--primary)" : "var(--border)", background: selected.has(opt) ? "var(--primary)" : undefined, color: selected.has(opt) ? "var(--primary-foreground)" : undefined })}>
@@ -595,6 +614,7 @@ function QuizAnswerInput({
             key={opt}
             type="button"
             onClick={() => onChange(opt)}
+            aria-pressed={value === opt}
             className={cx(choiceButtonClass(value === opt), css({ flex: 1, justifyContent: "center", fontWeight: 500 }))}
           >
             {opt}
@@ -687,13 +707,13 @@ function MultiBlankInput({
         const bIdx = blankCounter++;
         const blankDef = blanks[bIdx];
         return (
-          <span key={idx} className={css({ marginInline: "0.25rem", display: "inline-flex", alignItems: "center", gap: "0.25rem" })}>
+          <span key={idx} className={css({ marginInline: "0.25rem", display: "inline-flex", flexWrap: "wrap", alignItems: "center", gap: "0.25rem" })}>
             <input
               type="text"
               className={css({
                 display: "inline-block",
-                height: "1.75rem",
-                width: "5rem",
+                height: "2.75rem",
+                width: "min(8rem, 42vw)",
                 borderRadius: "0.25rem",
                 border: "1px solid var(--border)",
                 background: "var(--background)",

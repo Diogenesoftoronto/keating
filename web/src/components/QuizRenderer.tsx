@@ -33,19 +33,26 @@ export interface QuizTiming {
 }
 
 export interface QuizResult {
+	resultId: string;
 	answers: Record<string, string>;
 	score: number;
-	weightedScore: number;
+	partialCreditPoints: number;
 	timing: QuizTiming;
-	confidence: Record<string, number>;
 	partialCredits: Record<string, number>;
 	flagged: string[];
+}
+
+export function createQuizResultId(slug: string): string {
+	const suffix = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+		? crypto.randomUUID()
+		: Math.random().toString(36).slice(2);
+	return `${slug || "quiz"}-${Date.now()}-${suffix}`;
 }
 
 export interface TopicStats {
 	count: number;
 	avgScore: number;
-	avgWeightedScore: number;
+	avgPartialCreditPoints: number;
 	topQuartile: number;
 }
 
@@ -219,12 +226,15 @@ const shared = {
 const quizStyles = {
 	optionBase: css({
 		display: "flex",
+		minHeight: "2.75rem",
+		width: "100%",
 		alignItems: "center",
 		gap: "0.75rem",
 		borderRadius: "0.5rem",
 		borderWidth: "2px",
 		padding: "0.75rem 1rem",
 		fontSize: "0.875rem",
+		textAlign: "left",
 		cursor: "pointer",
 		transition: "all 150ms",
 	}),
@@ -268,8 +278,8 @@ const quizStyles = {
 	checkboxNeutral: css({ borderColor: "var(--border)" }),
 	iconButton: css({
 		display: "inline-flex",
-		height: "1.75rem",
-		width: "1.75rem",
+		height: "2.75rem",
+		width: "2.75rem",
 		alignItems: "center",
 		justifyContent: "center",
 		borderRadius: "0.25rem",
@@ -307,6 +317,7 @@ const quizStyles = {
 	}),
 	buttonSecondary: css({
 		display: "inline-flex",
+		minHeight: "2.75rem",
 		alignItems: "center",
 		gap: "0.25rem",
 		borderRadius: "0.5rem",
@@ -322,6 +333,7 @@ const quizStyles = {
 	}),
 	buttonPrimary: css({
 		display: "inline-flex",
+		minHeight: "2.75rem",
 		alignItems: "center",
 		gap: "0.25rem",
 		borderRadius: "0.5rem",
@@ -389,9 +401,12 @@ function QuizOption({
 					? quizStyles.optionSelected
 					: quizStyles.optionNeutral;
 	return (
-		<label
+		<button
+			type="button"
 			className={cx(quizStyles.optionBase, stateClass, disabled && quizStyles.disabled)}
-			onClick={() => !disabled && onClick()}
+			onClick={onClick}
+			disabled={disabled}
+			aria-pressed={selected}
 		>
 			{checkbox ? (
 				<span
@@ -411,8 +426,8 @@ function QuizOption({
 			) : (
 				<Circle size={16} />
 			)}
-			<span className={css({ flex: 1 })}>{label}</span>
-		</label>
+			<span className={css({ minWidth: 0, flex: 1, overflowWrap: "anywhere" })}>{label}</span>
+		</button>
 	);
 }
 
@@ -443,39 +458,6 @@ function QuestionTimer({
 			<Clock size={14} />
 			{display}
 		</span>
-	);
-}
-
-function ConfidenceSlider({
-	value,
-	onChange,
-	disabled,
-}: {
-	value: number;
-	onChange: (v: number) => void;
-	disabled?: boolean;
-}) {
-	return (
-		<div className={shared.stack2}>
-			<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-				<span className={css({ fontWeight: 500 })}>Confidence</span>
-				<span className={cx("font-terminal")}>{value}%</span>
-			</div>
-			<input
-				type="range"
-				min={50}
-				max={100}
-				step={5}
-				value={value}
-				onChange={(e) => onChange(parseInt(e.target.value, 10))}
-				disabled={disabled}
-				className={css({ width: "100%", accentColor: "var(--primary)" })}
-			/>
-			<div className={css({ display: "flex", justifyContent: "space-between", fontSize: "0.625rem", color: "var(--muted-foreground)" })}>
-				<span>Guessing</span>
-				<span>Certain</span>
-			</div>
-		</div>
 	);
 }
 
@@ -658,8 +640,6 @@ function QuestionCard({
 	index,
 	answer,
 	onChange,
-	confidence,
-	onConfidenceChange,
 	revealed,
 	timeMs,
 	timeRemaining,
@@ -673,8 +653,6 @@ function QuestionCard({
 	index: number;
 	answer: string;
 	onChange: (val: string) => void;
-	confidence: number;
-	onConfidenceChange: (v: number) => void;
 	revealed: boolean;
 	timeMs?: number;
 	timeRemaining?: number;
@@ -716,7 +694,7 @@ function QuestionCard({
 
 	return (
 		<div className={quizStyles.card}>
-			<div className={shared.rowStart2}>
+			<div className={css({ display: "flex", flexDirection: "column", alignItems: "stretch", gap: "0.5rem", [sm]: { flexDirection: "row", alignItems: "flex-start" } })}>
 				<span className={cx("font-terminal", css({ marginTop: "0.25rem", flexShrink: 0, fontSize: "0.75rem", color: "var(--accent)" }))}>
 					[{index + 1}/{q.level.toUpperCase()}]
 				</span>
@@ -734,7 +712,7 @@ function QuestionCard({
 								/>
 							</div>
 						) : (
-							<p className={css({ minWidth: 0, flex: 1, fontSize: "0.875rem", fontWeight: 500, lineHeight: "1.5rem" })}>{displayQuestion}</p>
+							<p className={css({ minWidth: 0, flex: 1, overflowWrap: "anywhere", fontSize: "0.875rem", fontWeight: 500, lineHeight: "1.5rem" })}>{displayQuestion}</p>
 						)}
 						{revealed && showsBinaryResult(q) && <QuizResultBadge correct={binaryCorrect} />}
 					</div>
@@ -756,7 +734,7 @@ function QuestionCard({
 						/>
 					)}
 				</div>
-				<div className={css({ display: "flex", flexShrink: 0, alignItems: "center", gap: "0.25rem" })}>
+				<div className={css({ display: "flex", flexShrink: 0, alignItems: "center", justifyContent: "flex-end", gap: "0.25rem" })}>
 					<button
 						type="button"
 						onClick={onSpeak}
@@ -968,15 +946,6 @@ function QuestionCard({
 				</div>
 			)}
 
-			{/* Confidence slider - always show when answered, hide on revealed */}
-			{!revealed && (
-				<ConfidenceSlider
-					value={confidence}
-					onChange={onConfidenceChange}
-					disabled={revealed}
-				/>
-			)}
-
 			{/* Partial credit badge */}
 			{revealed && credit < 1 && credit > 0 && (
 				<div className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", borderRadius: "9999px", background: "rgba(245, 158, 11, 0.1)", padding: "0.25rem 0.625rem", fontSize: "0.6875rem", fontWeight: 500, color: "#d97706", [dark]: { color: "#f59e0b" } })}>
@@ -1063,12 +1032,12 @@ function RemediationDashboard({
 
 function BenchmarkComparison({
 	score,
-	weightedScore,
+	partialCreditPoints,
 	total,
 	stats,
 }: {
 	score: number;
-	weightedScore: number;
+	partialCreditPoints: number;
 	total: number;
 	stats: TopicStats | null | undefined;
 }) {
@@ -1106,9 +1075,9 @@ function BenchmarkComparison({
 					</div>
 				))}
 			</div>
-			{typeof weightedScore === "number" && stats.avgWeightedScore > 0 && (
+			{typeof partialCreditPoints === "number" && stats.avgPartialCreditPoints > 0 && (
 				<div className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-					Weighted: {weightedScore.toFixed(2)} vs avg {stats.avgWeightedScore.toFixed(2)}
+					Partial-credit points: {partialCreditPoints.toFixed(2)}/{total} vs avg {stats.avgPartialCreditPoints.toFixed(2)}
 				</div>
 			)}
 		</div>
@@ -1120,7 +1089,6 @@ QuizRenderer.displayName = "QuizRenderer";
 export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) {
 	const posthog = usePostHog();
 	const [answers, setAnswers] = useState<AnswerState>({});
-	const [confidence, setConfidence] = useState<Record<string, number>>({});
 	const [revealed, setRevealed] = useState(false);
 	const [current, setCurrent] = useState(0);
 	const [isQuestionPending, startQuestionTransition] = useTransition();
@@ -1129,6 +1097,7 @@ export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) 
 	const [skippedIds, setSkippedIds] = useState<Set<string>>(new Set());
 	const [reframeModes, setReframeModes] = useState<Record<string, string | null>>({});
 	const [fetchedStats, setFetchedStats] = useState<TopicStats | null | undefined>(topicStats);
+	const resultIdRef = useRef(createQuizResultId(quiz.slug ?? quiz.topic));
 
 	// Track quiz_started once on mount
 	useEffect(() => {
@@ -1250,10 +1219,6 @@ export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) 
 		setAnswers((prev) => ({ ...prev, [qid]: val }));
 	}, []);
 
-	const setConfidenceValue = useCallback((qid: string, val: number) => {
-		setConfidence((prev) => ({ ...prev, [qid]: val }));
-	}, []);
-
 	const toggleBookmark = useCallback((qid: string) => {
 		setBookmarkIds((prev) => {
 			const next = prev.includes(qid) ? prev.filter((id) => id !== qid) : [...prev, qid];
@@ -1296,15 +1261,9 @@ export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) 
 		return correct;
 	}, [answers, scorableQuestions]);
 
-	const weightedScore = useMemo(() => {
-		let sum = 0;
-		for (const q of scorableQuestions) {
-			const c = partialCredits[q.id] ?? 0;
-			const conf = (confidence[q.id] ?? 50) / 100;
-			sum += c * conf;
-		}
-		return sum;
-	}, [scorableQuestions, partialCredits, confidence]);
+	const partialCreditPoints = useMemo(() => {
+		return scorableQuestions.reduce((sum, question) => sum + (partialCredits[question.id] ?? 0), 0);
+	}, [scorableQuestions, partialCredits]);
 
 	const percent = totalScored > 0 ? Math.round((rawScore / totalScored) * 100) : 0;
 	const answeredCount = visibleQuestions.filter((q) => (answers[q.id] || "").trim().length > 0).length;
@@ -1323,26 +1282,33 @@ export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) 
 			topic: quiz.slug ?? quiz.topic,
 			question_count: quiz.questions.length,
 			score: rawScore,
-			weighted_score: weightedScore,
+			partial_credit_points: partialCreditPoints,
 			duration_ms: timing.totalMs,
 		});
 		onSubmit?.({
+			resultId: resultIdRef.current,
 			answers,
 			score: rawScore,
-			weightedScore,
+			partialCreditPoints,
 			timing,
-			confidence,
 			partialCredits,
 			flagged: bookmarkIds,
 		});
 		// Save quiz result to storage
-		quizStorage.saveQuizResult(rawScore, weightedScore, totalScored, quiz.slug).catch(() => {});
+		quizStorage.saveQuizResult(rawScore, partialCreditPoints, totalScored, quiz.slug, {
+			resultId: resultIdRef.current,
+			answers,
+			partialCredits,
+			timing,
+			flaggedQuestionIds: bookmarkIds,
+			pendingGradeQuestionIds: quiz.questions.filter(isOpenEnded).map((question) => question.id),
+		}).catch(() => {});
 		window.speechSynthesis?.cancel();
-	}, [accrueCurrent, answers, rawScore, weightedScore, onSubmit, confidence, partialCredits, bookmarkIds, totalScored, quiz.slug]);
+	}, [accrueCurrent, answers, rawScore, partialCreditPoints, onSubmit, partialCredits, bookmarkIds, totalScored, quiz.questions, quiz.slug]);
 
 	const handleReset = useCallback(() => {
 		setAnswers({});
-		setConfidence({});
+		resultIdRef.current = createQuizResultId(quiz.slug ?? quiz.topic);
 		setRevealed(false);
 		setCurrent(0);
 		setElapsed(0);
@@ -1354,7 +1320,7 @@ export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) 
 		perQuestionRef.current = {};
 		finalTimingRef.current = null;
 		window.speechSynthesis?.cancel();
-	}, [quiz.questions]);
+	}, [quiz.questions, quiz.slug, quiz.topic]);
 
 	const handleRequestRemediation = useCallback((level: string) => {
 		window.dispatchEvent(
@@ -1369,10 +1335,10 @@ export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) 
 	const hasTimeLimit = typeof timeRemaining === "number";
 
 	return (
-		<div className={css({ marginBlock: "0.75rem", display: "grid", gap: "1rem", borderRadius: "0.75rem", borderWidth: "2px", borderColor: "var(--border)", background: "var(--background)", padding: "1rem", boxShadow: "var(--shadow-sm)", [sm]: { padding: "1.25rem" } })}>
-			<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" })}>
+		<div className={css({ marginBlock: "0.5rem", display: "grid", gap: "0.75rem", borderRadius: "0.75rem", borderWidth: "2px", borderColor: "var(--border)", background: "var(--background)", padding: "0.75rem", boxShadow: "var(--shadow-sm)", [sm]: { marginBlock: "0.75rem", gap: "1rem", padding: "1.25rem" } })}>
+			<div className={css({ display: "flex", flexDirection: "column", alignItems: "stretch", gap: "0.5rem", [sm]: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" } })}>
 				<div className={css({ minWidth: 0 })}>
-					<h3 className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "1rem", fontWeight: 700 })}>{quiz.topic}</h3>
+					<h3 className={css({ overflowWrap: "anywhere", fontSize: "1rem", fontWeight: 700, sm: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } })}>{quiz.topic}</h3>
 					<p className={cx("font-terminal", css({ fontSize: "0.75rem", color: "var(--muted-foreground)" }))}>
 						{totalVisible} QUESTIONS // {quiz.totalPoints} POINTS
 						{skippedIds.size > 0 && (
@@ -1382,7 +1348,7 @@ export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) 
 						)}
 					</p>
 				</div>
-				<div className={css({ display: "flex", flexShrink: 0, alignItems: "center", gap: "0.75rem" })}>
+				<div className={css({ display: "flex", width: "100%", flexShrink: 0, alignItems: "center", justifyContent: "space-between", gap: "0.75rem", sm: { width: "auto", justifyContent: "flex-end" } })}>
 					<span className={cx("font-terminal", css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", fontSize: "0.875rem", color: "var(--muted-foreground)", fontVariantNumeric: "tabular-nums" }))}>
 						<Clock size={14} />
 						{formatDuration(elapsed)}
@@ -1432,8 +1398,6 @@ export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) 
 							index={current}
 							answer={answers[cq.id] || ""}
 							onChange={(val) => setAnswer(cq.id, val)}
-							confidence={confidence[cq.id] ?? 75}
-							onConfidenceChange={(v) => setConfidenceValue(cq.id, v)}
 							revealed={false}
 							timeRemaining={timeRemaining}
 							bookmarked={bookmarkIds.includes(cq.id)}
@@ -1451,7 +1415,7 @@ export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) 
 						<button
 							onClick={() => goTo(current - 1)}
 							disabled={isQuestionPending || current === 0}
-							className={quizStyles.buttonSecondary}
+							className={cx(quizStyles.buttonSecondary, css({ flex: 1, justifyContent: "center", sm: { flex: "0 0 auto" } }))}
 						>
 							<ChevronLeft size={14} />
 							Back
@@ -1461,7 +1425,7 @@ export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) 
 							<button
 								onClick={() => goTo(current + 1)}
 								disabled={isQuestionPending}
-								className={quizStyles.buttonPrimary}
+								className={cx(quizStyles.buttonPrimary, css({ flex: 1, justifyContent: "center", sm: { flex: "0 0 auto" } }))}
 							>
 								Next
 								<ChevronRight size={14} />
@@ -1471,7 +1435,7 @@ export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) 
 								onClick={doSubmit}
 								disabled={!allAnswered}
 								title={allAnswered ? undefined : `${totalVisible - answeredCount} unanswered`}
-								className={cx(quizStyles.buttonPrimary, css({ gap: "0.5rem" }))}
+								className={cx(quizStyles.buttonPrimary, css({ flex: 1, justifyContent: "center", gap: "0.5rem", sm: { flex: "0 0 auto" } }))}
 							>
 								<Send size={14} />
 								{allAnswered ? "Submit Quiz" : `${totalVisible - answeredCount} left`}
@@ -1488,8 +1452,8 @@ export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) 
 							<span className={cx("font-terminal")}>{rawScore}/{totalScored}</span>
 						</div>
 						<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.875rem" })}>
-							<span className={css({ fontWeight: 500 })}>Weighted score</span>
-							<span className={cx("font-terminal")}>{weightedScore.toFixed(2)}</span>
+							<span className={css({ fontWeight: 500 })}>Partial-credit points</span>
+							<span className={cx("font-terminal")}>{partialCreditPoints.toFixed(2)}/{totalScored}</span>
 						</div>
 						{bookmarkIds.length > 0 && (
 							<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", color: "#d97706", [dark]: { color: "#f59e0b" } })}>
@@ -1507,7 +1471,7 @@ export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) 
 
 					<BenchmarkComparison
 						score={rawScore}
-						weightedScore={weightedScore}
+						partialCreditPoints={partialCreditPoints}
 						total={totalScored}
 						stats={fetchedStats}
 					/>
@@ -1520,8 +1484,6 @@ export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) 
 								index={i}
 								answer={answers[q.id] || ""}
 								onChange={(val) => setAnswer(q.id, val)}
-								confidence={confidence[q.id] ?? 75}
-								onConfidenceChange={(v) => setConfidenceValue(q.id, v)}
 								revealed
 								timeMs={finalTimingRef.current?.perQuestionMs[q.id]}
 								bookmarked={bookmarkIds.includes(q.id)}

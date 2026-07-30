@@ -153,7 +153,7 @@ describe("web fine-tune export", () => {
 				] as any,
 			}],
 			feedback: [{ id: "f1", topic: "Derivative", signal: "thumbs-up", createdAt: 2200, messageId: "assistant-0-2000", sessionId: "s1" }],
-			quizResults: [{ id: "q1", topic: "Derivative", createdAt: 2500, score: 1, weightedScore: 0.75, totalQuestions: 1, sessionId: "s1" }],
+			quizResults: [{ id: "q1", topic: "Derivative", createdAt: 2500, score: 1, partialCreditPoints: 0.75, totalQuestions: 1, sessionId: "s1" }],
 		}, {
 			source: "sessions",
 			format: "chatml",

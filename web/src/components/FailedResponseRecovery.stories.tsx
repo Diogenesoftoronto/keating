@@ -27,3 +27,10 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const RetrySamePrompt: Story = {};
+
+export const MobileRetry: Story = {
+	parameters: {
+		layout: "fullscreen",
+		viewport: { defaultViewport: "mobile1" },
+	},
+};

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { isOpenEnded, questionCredit } from "../components/QuizRenderer";
 import type { QuizQuestion } from "../keating/core";
+import { quizEvidenceScore } from "../keating/storage";
 
 function q(overrides: Partial<QuizQuestion>): QuizQuestion {
 	return {
@@ -50,5 +51,32 @@ describe("questionCredit (open-ended heuristic)", () => {
 		const unrelated = questionCredit(question, "bananas are yellow");
 		expect(close).toBeGreaterThan(unrelated);
 		expect(close).toBeGreaterThan(0.4);
+	});
+});
+
+describe("quizEvidenceScore", () => {
+	test("uses answer-derived partial-credit points and saved model grades", () => {
+		expect(quizEvidenceScore({
+			id: "quiz-1",
+			topic: "fluid mechanics",
+			createdAt: 1,
+			score: 1,
+			partialCreditPoints: 1.5,
+			totalQuestions: 2,
+			openEndedGrades: [
+				{ questionId: "open-1", verdict: "correct" },
+				{ questionId: "open-2", verdict: "partial" },
+			],
+		})).toBe(0.75);
+	});
+
+	test("falls back to the objective score when partial-credit evidence is absent", () => {
+		expect(quizEvidenceScore({
+			id: "legacy-quiz",
+			topic: "fluid mechanics",
+			createdAt: 1,
+			score: 1,
+			totalQuestions: 2,
+		})).toBe(0.5);
 	});
 });
