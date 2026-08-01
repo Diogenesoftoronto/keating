@@ -256,12 +256,10 @@ export function QuizResultCard({ data, onReview }: QuizResultCardProps) {
               {new Date(data.timestamp).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
             </span>
           </div>
+          {/* Topic only. The percentage, the bar and the summary row below already
+              report the score three other ways. */}
           <p className={css({ overflowWrap: "anywhere", fontSize: "0.875rem", color: "var(--foreground)", sm: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } })}>
-            {quiz.topic}{" "}
-            <span className={shared.mutedText}>
-              · {allPending ? "Pending review" : `${correctWhole}/${decided} correct`}
-              {pendingCount > 0 && !allPending ? ` · ${pendingCount} pending` : ""}
-            </span>
+            {quiz.topic}
           </p>
         </div>
         <div className={css({ marginLeft: "auto", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.125rem" })}>

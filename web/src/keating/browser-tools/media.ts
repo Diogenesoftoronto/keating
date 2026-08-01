@@ -5,6 +5,13 @@ import { getProviderApiKey } from "../../lib/provider-models";
 import { proxiedProviderRequestUrl } from "../../lib/provider-proxy";
 import { DEFAULT_IMAGE_GENERATOR_ID, getImageGenerator, localImageEndpoint } from "../../lib/image-generators";
 import { loadKeatingUiSettings } from "../ui-settings";
+import {
+	createImageRequestId,
+	emitImageProgress,
+	isEventStream,
+	pngDataUrl,
+	readImageStream,
+} from "../image-stream";
 import { createTool } from "./shared";
 
 type ResolvedTopic = ReturnType<typeof resolveTopic>;
@@ -169,6 +176,9 @@ function asStringArray(value: unknown, fallback: string[] = []): string[] {
 		.slice(0, 6);
 }
 
+/** How many progressive renders to ask for. 2 is enough to feel live. */
+const PARTIAL_IMAGE_COUNT = 2;
+
 async function generateImageViaEndpoint(params: {
 	endpoint: string;
 	apiKey?: string;
@@ -176,10 +186,12 @@ async function generateImageViaEndpoint(params: {
 	model: string;
 	size: string;
 	quality: string;
+	onPartial?: (dataUrl: string, index: number) => void;
 }): Promise<{ dataUrl: string; mimeType: string }> {
 	const proxied = proxiedProviderRequestUrl(params.endpoint);
 	const headers: Record<string, string> = {
-		accept: "application/json",
+		// Accept both so a server that ignores `stream` can still answer JSON.
+		accept: "text/event-stream, application/json",
 		"content-type": "application/json",
 		"x-target-url": proxied.targetBaseUrl,
 	};
@@ -194,21 +206,36 @@ async function generateImageViaEndpoint(params: {
 			size: params.size,
 			quality: params.quality,
 			n: 1,
+			stream: true,
+			partial_images: PARTIAL_IMAGE_COUNT,
 		}),
 	});
 
-	const payload = await response.json().catch(async () => ({ error: { message: await response.text().catch(() => response.statusText) } }));
 	if (!response.ok) {
+		const payload = await response.json().catch(async () => ({
+			error: { message: await response.text().catch(() => response.statusText) },
+		}));
 		const message = payload?.error?.message ?? response.statusText;
 		throw new Error(`Image generation failed (${response.status}): ${String(message).slice(0, 500)}`);
 	}
 
+	// Streaming path: progressive renders arrive as SSE and are forwarded to the
+	// UI as they land.
+	if (response.body && isEventStream(response.headers.get("content-type"))) {
+		const { b64 } = await readImageStream(response.body, params.onPartial);
+		return { dataUrl: pngDataUrl(b64), mimeType: "image/png" };
+	}
+
+	// Non-streaming fallback for servers that ignore `stream` (many local ones).
+	const payload = await response.json().catch(async () => ({
+		error: { message: await response.text().catch(() => response.statusText) },
+	}));
 	const b64 = payload?.data?.[0]?.b64_json;
 	if (!b64 || typeof b64 !== "string") {
 		throw new Error("Image generation returned no base64 image data.");
 	}
 
-	return { dataUrl: `data:image/png;base64,${b64}`, mimeType: "image/png" };
+	return { dataUrl: pngDataUrl(b64), mimeType: "image/png" };
 }
 
 export function createMediaTools(storage: KeatingStorage): AgentTool[] {
@@ -403,7 +430,25 @@ export function createMediaTools(storage: KeatingStorage): AgentTool[] {
 				// propagates so it surfaces through the standard classified-error
 				// UI like every other API error. The plain-message returns above
 				// are reserved for the "no generator configured" case.
-				const generated = await generateImageViaEndpoint({ endpoint, apiKey, prompt, model: imageModel, size, quality });
+				const requestId = createImageRequestId();
+				emitImageProgress({ requestId, title: finalTitle, status: "started" });
+				let generated: { dataUrl: string; mimeType: string };
+				try {
+					generated = await generateImageViaEndpoint({
+						endpoint,
+						apiKey,
+						prompt,
+						model: imageModel,
+						size,
+						quality,
+						onPartial: (dataUrl, index) =>
+							emitImageProgress({ requestId, title: finalTitle, dataUrl, index, status: "partial" }),
+					});
+				} catch (error) {
+					emitImageProgress({ requestId, title: finalTitle, status: "error" });
+					throw error;
+				}
+				emitImageProgress({ requestId, title: finalTitle, status: "done" });
 
 				const payload = {
 					title: finalTitle,

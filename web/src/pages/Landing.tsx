@@ -319,15 +319,15 @@ export function Landing() {
                   KEATING<span className="hero-brand-suffix">.help</span>
                 </h1>
                 <div className="hero-headline">
-                  Teaching that makes you do the work.
+                  Bring the question. Keep the thinking.
                   <span className="cursor" />
                 </div>
-                <div className="hero-sub">THINK_FOR_YOURSELF</div>
+                <div className="hero-sub">LEARN BY RECONSTRUCTING</div>
                 <p className="hero-copy">
-                  Keating is an <strong>open-source AI teacher</strong> for your terminal and
-                  browser. It won&apos;t give you answers — it diagnoses what you don&apos;t know,
-                  plans the lesson, quizzes you, and verifies what stuck. The Socratic method,
-                  powered by silicon.
+                  Keating is a Socratic teacher for your terminal and browser. It listens to your
+                  explanation, finds where it thins out, and asks the next useful question. You do
+                  not advance by recognizing the right answer. You advance when you can build one
+                  and teach it back in your own words.
                 </p>
                 <div className="hero-ctas">
                   <button
@@ -342,17 +342,6 @@ export function Landing() {
                   <a className={btnRetro()} href="#install">
                     Build_From_Source
                   </a>
-                </div>
-                <div className="hero-tags">
-                  <span>
-                    <i>◈</i> Diagnoses gaps
-                  </span>
-                  <span>
-                    <i>↻</i> Adapts to you
-                  </span>
-                  <span>
-                    <i>▣</i> Open source
-                  </span>
                 </div>
               </div>
 

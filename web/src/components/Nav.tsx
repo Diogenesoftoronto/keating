@@ -112,6 +112,9 @@ export function Nav() {
           <Link to="/bench" className="nav-link glitch-hover font-terminal nav-desktop-link">
             <T>[BENCH]</T>
           </Link>
+          <Link to="/live" className="nav-link glitch-hover font-terminal nav-desktop-link">
+            <T>[LIVE]</T>
+          </Link>
           <div className="nav-status" role="status">
             <span className="dot" />
             <T>SYSTEM ONLINE</T>
@@ -243,6 +246,14 @@ export function Nav() {
               onClick={closeMobile}
             >
               <T>[BENCH]</T>
+            </Link>
+            <Link
+              to="/live"
+              className="nav-link glitch-hover"
+              style={{ padding: "0.75rem 0.5rem" }}
+              onClick={closeMobile}
+            >
+              <T>[LIVE]</T>
             </Link>
             <a
               href="https://github.com/Diogenesoftoronto/keating"

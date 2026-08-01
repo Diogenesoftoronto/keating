@@ -1,5 +1,6 @@
 import {
 	getAudioContext,
+	type LiveHistoryTurn,
 	type LiveSpeechRequest,
 	type LiveSpeechSession,
 	type LiveSpeechState,
@@ -14,12 +15,35 @@ import {
 	createRealtimeTelemetry,
 	type RealtimeTelemetryObserver,
 } from "../observability";
+import type { CapturedFrame } from "../video-capture";
 import {
-	conversationEvent,
-	type ConversationEvent,
-	type JsonValue,
-	type ProtocolError,
-} from "../protocol";
+	createRealtimeCanonicalBridge,
+	jsonRecord,
+	parseToolArguments,
+	protocolError as sharedProtocolError,
+	runLiveToolCall,
+} from "./live-session-shared";
+
+export {
+	createRealtimeCanonicalBridge,
+	type RealtimeCanonicalBridge,
+} from "./live-session-shared";
+
+/** Tool the model can call to look at what the learner is showing right now. */
+export const LOOK_AT_SCREEN_TOOL_NAME = "look_at_screen";
+
+const LOOK_AT_SCREEN_TOOL: LiveSpeechTool = {
+	name: LOOK_AT_SCREEN_TOOL_NAME,
+	description:
+		"Look at what the learner is currently showing on their camera or shared screen. "
+		+ "Call this when the learner refers to something visual ('this', 'here', 'what I'm holding') "
+		+ "or when you need to check their work before answering.",
+	parameters: { type: "object", properties: {}, additionalProperties: false },
+};
+
+function protocolError(error: unknown, code: string) {
+	return sharedProtocolError(error, code, "openai");
+}
 
 export function negotiateOpenAIRealtimeSession(model: string) {
 	return negotiateProviderCapabilities(
@@ -28,66 +52,46 @@ export function negotiateOpenAIRealtimeSession(model: string) {
 	);
 }
 
-function randomId(prefix: string): string {
-	const id = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-		? crypto.randomUUID()
-		: `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-	return `${prefix}-${id}`;
+/** Only the reasoning-capable realtime models accept a reasoning budget. */
+function supportsReasoningEffort(model: string): boolean {
+	return /^gpt-realtime-2/i.test(model);
 }
 
-function jsonValue(value: unknown): JsonValue {
-	if (value === undefined) return null;
-	try {
-		return JSON.parse(JSON.stringify(value)) as JsonValue;
-	} catch {
-		return String(value);
-	}
-}
-
-function jsonRecord(value: unknown): Record<string, JsonValue> {
-	const converted = jsonValue(value);
-	return converted && typeof converted === "object" && !Array.isArray(converted)
-		? converted as Record<string, JsonValue>
-		: {};
-}
-
-function protocolError(error: unknown, code: string): ProtocolError {
+/**
+ * Session configuration in the current nested shape.
+ *
+ * Turn detection, transcription, and voice all live under `audio.input` /
+ * `audio.output`. The older flat layout (`turn_detection` and
+ * `input_audio_transcription` at the session root) is silently ignored by the
+ * GA endpoint, which means those settings never took effect.
+ */
+export function buildRealtimeSessionConfig(
+	settings: LiveSpeechRequest["settings"],
+	instructions?: string,
+	tools: LiveSpeechTool[] = [],
+): Record<string, unknown> {
 	return {
-		code,
-		message: error instanceof Error ? error.message : String(error),
-		provider: "openai",
-	};
-}
-
-export interface RealtimeCanonicalBridge {
-	readonly sessionId: string;
-	readonly runId: string;
-	emit<T extends ConversationEvent["type"]>(
-		type: T,
-		payload: Extract<ConversationEvent, { type: T }>["payload"],
-	): void;
-}
-
-export function createRealtimeCanonicalBridge(
-	onEvent?: (event: ConversationEvent) => void,
-	ids: { sessionId?: string; runId?: string } = {},
-): RealtimeCanonicalBridge {
-	const sessionId = ids.sessionId ?? randomId("voice-session");
-	const runId = ids.runId ?? randomId("voice-run");
-	let sequence = 0;
-	return {
-		sessionId,
-		runId,
-		emit(type, payload) {
-			if (!onEvent) return;
-			onEvent(conversationEvent(type, payload as never, {
-				id: randomId("voice-event"),
-				sequence: sequence++,
-				timestamp: new Date().toISOString(),
-				sessionId,
-				runId,
-			}));
+		type: "realtime",
+		output_modalities: ["audio"],
+		audio: {
+			input: {
+				format: { type: "audio/pcm", rate: 24_000 },
+				// Semantic VAD waits on meaning rather than a fixed silence
+				// window, so a learner thinking mid-sentence is not cut off.
+				turn_detection: { type: "semantic_vad", create_response: true, interrupt_response: true },
+				transcription: { model: "gpt-4o-transcribe" },
+			},
+			output: {
+				format: { type: "audio/pcm" },
+				voice: cleanRealtimeVoice(settings.voiceName),
+			},
 		},
+		...(supportsReasoningEffort(settings.model) ? { reasoning: { effort: settings.reasoningEffort } } : {}),
+		...(instructions ? { instructions } : {}),
+		...(tools.length > 0 ? {
+			tools: tools.map((tool) => ({ type: "function", ...tool })),
+			tool_choice: "auto",
+		} : {}),
 	};
 }
 
@@ -98,17 +102,7 @@ export function buildRealtimeSessionUpdate(
 ): Record<string, unknown> {
 	return {
 		type: "session.update",
-		session: {
-			type: "realtime",
-			turn_detection: { type: "server_vad", create_response: true, interrupt_response: true },
-			input_audio_transcription: { model: "gpt-4o-mini-transcribe" },
-			...(settings.model.startsWith("gpt-realtime-2") ? { reasoning: { effort: settings.reasoningEffort } } : {}),
-			...(instructions ? { instructions } : {}),
-			...(tools.length > 0 ? {
-				tools: tools.map((tool) => ({ type: "function", ...tool })),
-				tool_choice: "auto",
-			} : {}),
-		},
+		session: buildRealtimeSessionConfig(settings, instructions, tools),
 	};
 }
 
@@ -119,6 +113,40 @@ export function realtimeFunctionOutput(callId: string, output: unknown): Record<
 			type: "function_call_output",
 			call_id: callId,
 			output: typeof output === "string" ? output : JSON.stringify(output),
+		},
+	};
+}
+
+/**
+ * A sampled frame, as a conversation item.
+ *
+ * Realtime has no video lane, so vision arrives as still images attached to the
+ * conversation. Deliberately not followed by `response.create`: a frame is
+ * context for the next turn, not a turn of its own, and forcing a response on
+ * every frame would make the model narrate the camera feed.
+ */
+export function realtimeImageItem(dataUrl: string): Record<string, unknown> {
+	return {
+		type: "conversation.item.create",
+		item: {
+			type: "message",
+			role: "user",
+			content: [{ type: "input_image", image_url: dataUrl }],
+		},
+	};
+}
+
+/** Seed a prior chat turn so a voice session continues the same conversation. */
+export function realtimeHistoryItem(turn: LiveHistoryTurn): Record<string, unknown> {
+	return {
+		type: "conversation.item.create",
+		item: {
+			type: "message",
+			role: turn.role,
+			content: [{
+				type: turn.role === "assistant" ? "output_text" : "input_text",
+				text: turn.text,
+			}],
 		},
 	};
 }
@@ -181,6 +209,51 @@ async function mintEphemeralKey(apiKey: string, model: string, voice: string, si
 	const value = data.value ?? data.client_secret?.value;
 	if (!value) throw new Error("Realtime session mint returned no ephemeral secret value");
 	return value;
+}
+
+/**
+ * Exchange the local SDP offer for the provider's answer.
+ *
+ * Session config rides along in the same multipart request so turn detection,
+ * voice, and tools are correct from the very first utterance. Waiting for the
+ * data channel to open before sending `session.update` leaves a window where
+ * the model is listening under default settings.
+ */
+async function exchangeSdp(
+	offerSdp: string,
+	ephemeralKey: string,
+	session: Record<string, unknown> | null,
+	signal?: AbortSignal,
+): Promise<string> {
+	const response = await withApiRetry(async () => {
+		const body = session === null ? offerSdp : (() => {
+			const form = new FormData();
+			form.set("sdp", offerSdp);
+			form.set("session", JSON.stringify(session));
+			return form;
+		})();
+		const result = await fetch("https://api.openai.com/v1/realtime/calls", {
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${ephemeralKey}`,
+				// FormData sets its own multipart boundary; setting it by hand breaks the parse.
+				...(session === null ? { "Content-Type": "application/sdp" } : {}),
+			},
+			body,
+			signal,
+		});
+		if (!result.ok) {
+			const errText = await result.text().catch(() => "");
+			const retryAfter = result.headers.get("retry-after");
+			throw new Error(
+				`Realtime SDP exchange failed (${result.status})`
+				+ `${errText ? `: ${errText.slice(0, 200)}` : ""}`
+				+ `${retryAfter ? ` retry-after: ${retryAfter}` : ""}`,
+			);
+		}
+		return result;
+	}, { signal });
+	return await response.text();
 }
 
 async function attachMicrophone(pc: RTCPeerConnection): Promise<MediaStream | null> {
@@ -262,7 +335,7 @@ async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthe
 			dataChannel.send(JSON.stringify({
 				type: "response.create",
 				response: {
-					modalities: ["audio", "text"],
+					output_modalities: ["audio"],
 					instructions: `Speak this learner-facing line exactly. Affect: ${utterance.affect}. Pace: ${utterance.pace}.\n\n${utterance.text}`,
 				},
 			}));
@@ -294,27 +367,9 @@ async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthe
 			const offer = await pc.createOffer();
 			await pc.setLocalDescription(offer);
 
-			const sdpResponse = await withApiRetry(async () => {
-				const result = await fetch("https://api.openai.com/v1/realtime/calls", {
-					method: "POST",
-					headers: {
-						Authorization: `Bearer ${ephemeralKey}`,
-						"Content-Type": "application/sdp",
-					},
-					body: offer.sdp,
-					signal,
-				});
-				if (!result.ok) {
-					const retryAfter = result.headers.get("retry-after");
-					throw new Error(`Realtime SDP exchange failed (${result.status})${retryAfter ? ` retry-after: ${retryAfter}` : ""}`);
-				}
-				return result;
-			}, { signal });
-			const answer: RTCSessionDescriptionInit = {
-				type: "answer",
-				sdp: await sdpResponse.text(),
-			};
-			await pc.setRemoteDescription(answer);
+			// One-shot synthesis needs no session config beyond the minted voice.
+			const answerSdp = await exchangeSdp(offer.sdp ?? "", ephemeralKey, null, signal);
+			await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
 		} catch (error) {
 			clearTimeout(timer);
 			cleanup();
@@ -327,7 +382,7 @@ async function startLiveSession(
 	request: LiveSpeechRequest,
 	observer?: RealtimeTelemetryObserver,
 ): Promise<LiveSpeechSession> {
-	const { settings, getApiKey, signal, instructions, tools, onToolCall, onState, onUserTranscript, onAssistantTranscript, onError } = request;
+	const { settings, getApiKey, signal, instructions, tools, history, video, onToolCall, onState, onUserTranscript, onAssistantTranscript, onError } = request;
 	const telemetry = createRealtimeTelemetry(observer);
 	const canonical = createRealtimeCanonicalBridge(request.onConversationEvent, request.conversationIds);
 	const setupStartedAt = telemetry.start();
@@ -342,7 +397,10 @@ async function startLiveSession(
 		telemetry.emit("session.completed", { provider: "openai", outcome: "error" });
 		throw new Error(`OpenAI Realtime model ${settings.model} cannot satisfy duplex WebRTC and native tool-call requirements.`);
 	}
-	canonical.emit("run.started", { mode: "voice" });
+	// Vision is only offered when the model can actually accept still images;
+	// on a legacy preview model the frame sink stays dark rather than erroring.
+	const visionEnabled = Boolean(video) && capability.capabilities.realtimeImage === "native";
+	canonical.emit("run.started", { mode: visionEnabled ? "multimodal" : "voice" });
 	const apiKey = await getApiKey("openai");
 	if (!apiKey) {
 		const error = new Error("No OpenAI API key configured. Add one in Settings → Providers & Models.");
@@ -400,9 +458,16 @@ async function startLiveSession(
 
 	let micStream: MediaStream | null = null;
 	let cleanedUp = false;
+	// Declared before cleanup(), which runs on the abort-before-start path.
+	let unsubscribeFrames: (() => void) | null = null;
+	let framesSent = 0;
 	const cleanup = () => {
 		if (cleanedUp) return;
 		cleanedUp = true;
+		// Only detach from the frame feed; the caller owns the capture handle
+		// and may still be rendering a preview from it.
+		unsubscribeFrames?.();
+		unsubscribeFrames = null;
 		try { pc.close(); } catch {}
 		micStream?.getTracks().forEach((track) => track.stop());
 		if (audioEl) {
@@ -457,6 +522,10 @@ async function startLiveSession(
 	const dataChannel = pc.createDataChannel("oai-events");
 	let responseActive = false;
 
+	// The frame drip gives the model ambient context; look_at_screen lets it
+	// deliberately check the learner's work at the moment it matters.
+	const sessionTools = visionEnabled ? [...(tools ?? []), LOOK_AT_SCREEN_TOOL] : (tools ?? []);
+
 	micStream = await attachMicrophone(pc);
 	if (!micStream) {
 		const error = new Error("Microphone unavailable for live voice.");
@@ -470,10 +539,34 @@ async function startLiveSession(
 		throw error;
 	}
 
+	const send = (payload: Record<string, unknown>) => {
+		if (dataChannel.readyState !== "open") return;
+		try {
+			dataChannel.send(JSON.stringify(payload));
+		} catch (error) {
+			console.warn("[keating:realtime] send failed", error);
+		}
+	};
+
+	const sendFrame = (frame: CapturedFrame) => {
+		send(realtimeImageItem(frame.dataUrl));
+		framesSent += 1;
+	};
+
 	dataChannel.addEventListener("open", () => {
-		// Enable continuous server-side voice-activity turn detection so the
-		// model keeps listening and replies without an explicit response.create.
-		dataChannel.send(JSON.stringify(buildRealtimeSessionUpdate(settings, instructions, tools)));
+		// Re-sent even though the same config rode along with the SDP offer: the
+		// update is idempotent and guarantees tools are registered before the
+		// learner's first utterance.
+		send(buildRealtimeSessionUpdate(settings, instructions, sessionTools));
+
+		// Replay prior chat turns so the voice session continues the same
+		// conversation instead of reintroducing itself.
+		for (const turnItem of history ?? []) {
+			if (turnItem.text.trim()) send(realtimeHistoryItem(turnItem));
+		}
+
+		if (visionEnabled && video) unsubscribeFrames = video.onFrame(sendFrame);
+
 		setState("listening");
 		telemetry.emit("connection.setup.completed", {
 			provider: "openai", model, transport: "webrtc", outcome: "success",
@@ -562,35 +655,37 @@ async function startLiveSession(
 				activeTurnStartedAt = null;
 				break;
 			case "response.function_call_arguments.done": {
-				if (!onToolCall || typeof msg.name !== "string" || typeof msg.call_id !== "string") break;
-				let parsed: Record<string, unknown> = {};
-				try { parsed = typeof msg.arguments === "string" && msg.arguments ? JSON.parse(msg.arguments) : {}; } catch {}
-				canonical.emit("tool.requested", { callId: msg.call_id, name: msg.name, arguments: jsonRecord(parsed) });
-				canonical.emit("tool.started", { callId: msg.call_id });
-				toolStartedAt.set(msg.call_id, telemetry.start());
-				telemetry.emit("tool.started", { provider: "openai", toolName: msg.name });
-				void (async () => {
-					try {
-						const output = await onToolCall({ callId: msg.call_id, name: msg.name, arguments: parsed });
-						canonical.emit("tool.completed", { callId: msg.call_id, result: jsonValue(output) });
-						const startedAt = toolStartedAt.get(msg.call_id);
-						telemetry.emit("tool.completed", { provider: "openai", toolName: msg.name, outcome: "success" },
-							startedAt === undefined ? undefined : telemetry.durationSince(startedAt));
-						toolStartedAt.delete(msg.call_id);
-						dataChannel.send(JSON.stringify(realtimeFunctionOutput(msg.call_id, output)));
-						dataChannel.send(JSON.stringify({ type: "response.create" }));
-					} catch (error) {
-						canonical.emit("tool.failed", { callId: msg.call_id, error: protocolError(error, "tool_execution_failed") });
-						const startedAt = toolStartedAt.get(msg.call_id);
-						telemetry.emit("tool.completed", { provider: "openai", toolName: msg.name, outcome: "failed" },
-							startedAt === undefined ? undefined : telemetry.durationSince(startedAt));
-						toolStartedAt.delete(msg.call_id);
-						dataChannel.send(JSON.stringify(realtimeFunctionOutput(msg.call_id, {
-							error: error instanceof Error ? error.message : String(error),
-						})));
-						dataChannel.send(JSON.stringify({ type: "response.create" }));
-					}
-				})();
+				if (typeof msg.name !== "string" || typeof msg.call_id !== "string") break;
+				const call = {
+					callId: msg.call_id,
+					name: msg.name,
+					arguments: parseToolArguments(msg.arguments),
+				};
+				void runLiveToolCall({
+					call,
+					provider: "openai",
+					canonical,
+					telemetry,
+					execute: async (pending) => {
+						// look_at_screen is served locally from the capture handle
+						// rather than round-tripping through the agent tool catalog.
+						if (pending.name === LOOK_AT_SCREEN_TOOL_NAME) {
+							const frame = await video?.captureFrameNow();
+							if (!frame) return { ok: false, error: "No video frame is available right now." };
+							return { ok: true, note: "A current frame has been added to the conversation." };
+						}
+						if (!onToolCall) throw new Error(`No handler is available for tool ${pending.name}.`);
+						return await onToolCall(pending);
+					},
+					respond: (callId, output) => {
+						send(realtimeFunctionOutput(callId, output));
+						send({ type: "response.create" });
+					},
+					respondError: (callId, message) => {
+						send(realtimeFunctionOutput(callId, { error: message }));
+						send({ type: "response.create" });
+					},
+				});
 				break;
 			}
 				case "error":
@@ -613,23 +708,15 @@ async function startLiveSession(
 		const offer = await pc.createOffer();
 		await pc.setLocalDescription(offer);
 
-		const sdpResponse = await withApiRetry(async () => {
-			const result = await fetch("https://api.openai.com/v1/realtime/calls", {
-				method: "POST",
-				headers: {
-					Authorization: `Bearer ${ephemeralKey}`,
-					"Content-Type": "application/sdp",
-				},
-				body: offer.sdp,
-				signal,
-			});
-			if (!result.ok) {
-				const retryAfter = result.headers.get("retry-after");
-				throw new Error(`Realtime SDP exchange failed (${result.status})${retryAfter ? ` retry-after: ${retryAfter}` : ""}`);
-			}
-			return result;
-		}, { signal });
-		await pc.setRemoteDescription({ type: "answer", sdp: await sdpResponse.text() });
+		// Session config travels with the offer so turn detection, voice, and
+		// tools are in force before the learner's first word.
+		const answerSdp = await exchangeSdp(
+			offer.sdp ?? "",
+			ephemeralKey,
+			buildRealtimeSessionConfig(settings, instructions, sessionTools),
+			signal,
+		);
+		await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
 	} catch (error) {
 		telemetry.emit("connection.setup.completed", { provider: "openai", model, transport: "webrtc", outcome: "failed" }, telemetry.durationSince(setupStartedAt));
 		telemetry.emit("session.error", { provider: "openai", errorCode: "session_setup_failed" });
@@ -643,6 +730,10 @@ async function startLiveSession(
 		get state() {
 			return state;
 		},
+		get framesSent() {
+			return framesSent;
+		},
+		videoRoute: visionEnabled ? "sampled" : "none",
 		async stop() {
 			complete("cancelled");
 			cleanup();

@@ -1,6 +1,12 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { createLocalSetting } from "./local-setting";
 import type { ConversationEvent } from "./protocol";
+import type { VideoCaptureHandle, VideoSource } from "./video-capture";
+import {
+	resolveRealtimeTier,
+	type ProviderModelDescriptor,
+	type RealtimeTierDescriptor,
+} from "./providers";
 
 export const KEATING_VOICE_TOOL_NAME = "keating_voice";
 export const GEMINI_LIVE_SPEECH_MODEL = "gemini-3.1-flash-live-preview";
@@ -47,6 +53,12 @@ export interface WebSpeechSettings {
 	customModels: CustomSpeechModel[];
 	/** When true, Realtime providers may capture mic input. */
 	microphoneEnabled: boolean;
+	/** When true, live sessions may capture camera or screen frames. */
+	videoEnabled: boolean;
+	/** Where live-session frames come from. */
+	videoSource: VideoSource;
+	/** Milliseconds between sampled frames; floored to 1 fps by the capture layer. */
+	frameIntervalMs: number;
 	/** Reasoning budget for Realtime reasoning models. */
 	reasoningEffort: "minimal" | "low" | "medium" | "high" | "xhigh";
 }
@@ -66,6 +78,9 @@ export const DEFAULT_WEB_SPEECH_SETTINGS: WebSpeechSettings = {
 	voiceName: DEFAULT_SPEECH_VOICE,
 	customModels: [],
 	microphoneEnabled: false,
+	videoEnabled: false,
+	videoSource: "camera",
+	frameIntervalMs: 1000,
 	reasoningEffort: "medium",
 };
 
@@ -89,6 +104,11 @@ const speechSetting = createLocalSetting<WebSpeechSettings>({
 				voiceName: cleanString(parsed.voiceName) || DEFAULT_WEB_SPEECH_SETTINGS.voiceName,
 				customModels,
 				microphoneEnabled: parsed.microphoneEnabled === true,
+				videoEnabled: parsed.videoEnabled === true,
+				videoSource: parsed.videoSource === "screen" ? "screen" : "camera",
+				frameIntervalMs: Number.isFinite(parsed.frameIntervalMs) && (parsed.frameIntervalMs ?? 0) > 0
+					? Math.floor(parsed.frameIntervalMs as number)
+					: DEFAULT_WEB_SPEECH_SETTINGS.frameIntervalMs,
 				reasoningEffort: ["minimal", "low", "medium", "high", "xhigh"].includes(parsed.reasoningEffort ?? "")
 					? parsed.reasoningEffort as WebSpeechSettings["reasoningEffort"]
 					: DEFAULT_WEB_SPEECH_SETTINGS.reasoningEffort,
@@ -181,8 +201,35 @@ export function speechInputMode(settings: WebSpeechSettings): "duplex" | "stt" {
 	return settings.enabled && settings.microphoneEnabled && isDuplexSpeechProvider(settings.providerId) ? "duplex" : "stt";
 }
 
+/** Which LLM provider backs a speech provider, for capability lookup. */
+export function speechProviderModel(settings: WebSpeechSettings): ProviderModelDescriptor | null {
+	if (settings.providerId === "openai-realtime") return { provider: "openai", id: settings.model, api: "openai-realtime" };
+	if (settings.providerId === "gemini-live") return { provider: "google", id: settings.model, api: "google-live" };
+	return null;
+}
+
+/**
+ * The realtime tier the current speech settings can actually be driven at.
+ * Non-duplex providers (plain TTS, custom endpoints) are tier 0 by definition.
+ */
+export function resolveSpeechRealtimeTier(settings: WebSpeechSettings): RealtimeTierDescriptor {
+	const model = speechProviderModel(settings);
+	if (!model) {
+		return {
+			tier: 0,
+			label: "Half duplex (push to talk)",
+			video: false,
+			videoRoute: "none",
+			capReason: "This provider only synthesizes speech; it cannot hold a live session.",
+		};
+	}
+	return resolveRealtimeTier(model);
+}
+
 let audioContext: AudioContext | null = null;
 let scheduledUntil = 0;
+/** Sources queued but not yet finished, so barge-in can cut them off. */
+const scheduledSources = new Set<AudioBufferSourceNode>();
 
 export function getAudioContext(): AudioContext | null {
 	if (typeof window === "undefined") return null;
@@ -221,7 +268,33 @@ export function schedulePcmAudio(base64: string, sampleRate = RECEIVE_SAMPLE_RAT
 	const startAt = Math.max(context.currentTime + 0.03, scheduledUntil);
 	source.start(startAt);
 	scheduledUntil = startAt + buffer.duration;
+	trackScheduledSource(source);
 	return true;
+}
+
+function trackScheduledSource(source: AudioBufferSourceNode): void {
+	scheduledSources.add(source);
+	source.addEventListener("ended", () => scheduledSources.delete(source), { once: true });
+}
+
+/**
+ * Cut off audio that has been queued but not yet played.
+ *
+ * Providers that stream PCM (rather than delivering a WebRTC track) can have
+ * seconds of assistant speech buffered ahead of the speaker. Without this, a
+ * learner interrupting would keep hearing the sentence they just cut off.
+ */
+export function stopScheduledAudio(): void {
+	for (const source of scheduledSources) {
+		try {
+			source.stop();
+		} catch {
+			// Already stopped or never started; either way it is not audible.
+		}
+	}
+	scheduledSources.clear();
+	const context = getAudioContext();
+	scheduledUntil = context ? context.currentTime : 0;
 }
 
 export async function scheduleAudioBlob(blob: Blob): Promise<boolean> {
@@ -235,6 +308,7 @@ export async function scheduleAudioBlob(blob: Blob): Promise<boolean> {
 	const startAt = Math.max(context.currentTime + 0.03, scheduledUntil);
 	source.start(startAt);
 	scheduledUntil = startAt + audioBuffer.duration;
+	trackScheduledSource(source);
 	return true;
 }
 
@@ -284,9 +358,22 @@ export interface LiveSpeechToolCall {
 	arguments: Record<string, unknown>;
 }
 
+/** A prior chat turn, replayed into a live session so voice continues the conversation. */
+export interface LiveHistoryTurn {
+	role: "user" | "assistant";
+	text: string;
+}
+
 export interface LiveSpeechBridge {
 	tools: LiveSpeechTool[];
 	execute(call: LiveSpeechToolCall, signal?: AbortSignal): Promise<unknown>;
+	/**
+	 * The real Keating system prompt, so the voice session is the same teacher
+	 * as the text session rather than a generic assistant.
+	 */
+	instructions?: string;
+	/** Recent conversation turns, oldest first. */
+	history?: LiveHistoryTurn[];
 }
 
 export function getLiveSpeechBridge(): LiveSpeechBridge | undefined {
@@ -303,6 +390,14 @@ export interface LiveSpeechRequest {
 	signal?: AbortSignal;
 	/** Optional persona / system instructions for the live voice agent. */
 	instructions?: string;
+	/** Prior conversation turns to seed the session with, oldest first. */
+	history?: LiveHistoryTurn[];
+	/**
+	 * An already-running frame source. The caller owns capture so the same
+	 * MediaStream can be previewed in the UI; the provider only consumes frames
+	 * and routes them however its tier allows.
+	 */
+	video?: VideoCaptureHandle | null;
 	onState?: (state: LiveSpeechState) => void;
 	onUserTranscript?: (text: string, final: boolean) => void;
 	onAssistantTranscript?: (text: string, final: boolean) => void;
@@ -317,6 +412,10 @@ export interface LiveSpeechRequest {
 
 export interface LiveSpeechSession {
 	readonly state: LiveSpeechState;
+	/** Frames delivered to the model so far, for the live HUD. */
+	readonly framesSent?: number;
+	/** How vision reached the model in this session, if at all. */
+	readonly videoRoute?: "native" | "sampled" | "none";
 	stop(): Promise<void>;
 }
 

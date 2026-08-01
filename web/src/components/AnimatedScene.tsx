@@ -24,37 +24,22 @@ export interface AnimatedSceneProps {
 }
 
 export function AnimatedScene({ payload, className }: AnimatedSceneProps) {
+	// One frame only: no card border, no tinted header bar, no separate body
+	// padding. The animation itself is the object; the label sits above it as a
+	// quiet eyebrow. `kind` is dropped — "hyperframes" means nothing to a learner
+	// and it is the only renderer.
 	return (
-		<div
-			className={cx(
-				css({
-					overflow: "hidden",
-					borderRadius: "0.75rem",
-					borderWidth: "2px",
-					borderColor: "var(--border)",
-					background: "var(--background)",
-					boxShadow: "var(--shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.05))",
-				}),
-				className,
-			)}
-		>
-			<header className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", borderBottom: "1px solid var(--border)", background: "color-mix(in srgb, var(--muted) 30%, transparent)", padding: "0.5rem 1rem" })}>
-				<div className={css({ minWidth: 0 })}>
-					<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-						<Sparkles size={12} className={css({ color: "#f59e0b" })} />
-						<span className={cx("font-terminal", css({ textTransform: "uppercase", letterSpacing: "0.025em" }))}>Animation</span>
-						<span className={css({ color: "var(--border)" })}>·</span>
-						<span className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" })}>{payload.topic}</span>
-						<span className={css({ color: "var(--border)" })}>·</span>
-						<span className={cx("font-terminal", css({ fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.05em" }))}>
-							{payload.kind}
-						</span>
-					</div>
-					{payload.summary && (
-						<p className={css({ marginTop: "0.125rem", fontSize: "0.875rem", color: "var(--foreground)" })}>{payload.summary}</p>
-					)}
+		<div className={cx(css({ marginBlock: "1.25rem", display: "grid", gap: "0.75rem" }), className)}>
+			<div className={css({ display: "grid", gap: "0.25rem" })}>
+				<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", minWidth: 0, fontSize: "0.6875rem", color: "var(--muted-foreground)" })}>
+					<Sparkles size={12} className={css({ color: "#f59e0b" })} />
+					<span className={cx("font-terminal", css({ textTransform: "uppercase", letterSpacing: "0.06em" }))}>Animation</span>
+					<span className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" })}>{payload.topic}</span>
 				</div>
-			</header>
+				{payload.summary && (
+					<p className={css({ fontSize: "0.875rem", color: "var(--foreground)" })}>{payload.summary}</p>
+				)}
+			</div>
 			<AnimationBody payload={payload} />
 		</div>
 	);
@@ -69,7 +54,6 @@ function AnimationBody({ payload }: { payload: AnimationPayload }) {
 			<HyperframesPlayer
 				html={buildHyperframesHtml(payload.body, payload.topic)}
 				title={`${payload.topic} Hyperframes animation`}
-				className={css({ padding: "0.75rem" })}
 			/>
 		);
 	}

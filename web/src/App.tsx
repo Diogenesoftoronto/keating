@@ -18,6 +18,7 @@ const Tutorial = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/T
 const Blog = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/Blog")), "Blog");
 const Chat = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/Chat")), "Chat");
 const Paper = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/Paper")), "Paper");
+const Live = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/Live")), "Live");
 const SharedSession = lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/SharedSession")),
   "SharedSession",
@@ -79,6 +80,12 @@ const chatRoute = createRoute({
 		session: z.string().min(1).max(256).optional(),
 	}).passthrough().parse(search),
   component: Chat,
+});
+
+const liveRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/live",
+	component: Live,
 });
 
 const usageRoute = createRoute({
@@ -162,6 +169,7 @@ const latestCommitReviewRoute = createRoute({
 const routeTree = rootRoute.addChildren([
 	indexRoute,
 	chatRoute,
+	liveRoute,
 	usageRoute,
 	evolutionDetailRoute,
 	benchRoute,

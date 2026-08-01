@@ -1,6 +1,11 @@
 # Changelog
 
 
+## 2.9.0
+<sub>2026-07-31</sub>
+
+- *(minor)* Add the live multimodal session surface: duplex voice (OpenAI Realtime / Gemini Live), camera and screen-share vision with frame dedup, conversation seeding, AudioWorklet microphone capture, and streaming progressive image/animation renders.
+
 ## 2.8.0
 <sub>2026-07-30</sub>
 

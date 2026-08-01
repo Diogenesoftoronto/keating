@@ -5,6 +5,7 @@ import { Toggle } from "./Toggle";
 import { SettingRow } from "./SettingRow";
 import {
 	listSpeechProviders,
+	resolveSpeechRealtimeTier,
 	type CustomSpeechModel,
 	type SpeechProviderDescriptor,
 	type SpeechProviderId,
@@ -111,6 +112,9 @@ export function SpeechSettingsTab({ onSettingsChange, hideNav = false }: SpeechS
 		providerKey: "openai",
 	});
 	const [customError, setCustomError] = useState<string>("");
+	// Vision availability is a property of the chosen model, so the control
+	// explains itself rather than failing when the session starts.
+	const videoTier = resolveSpeechRealtimeTier(settings);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -360,6 +364,52 @@ export function SpeechSettingsTab({ onSettingsChange, hideNav = false }: SpeechS
 			>
 				<Toggle checked={settings.microphoneEnabled} onChange={(checked) => persist({ microphoneEnabled: checked })} />
 			</SettingRow>
+
+			<SettingRow
+				id="settings-section-speech-video"
+				title="Camera or screen (live sessions)"
+				description={videoTier.video
+					? `${videoTier.label}. ${videoTier.videoRoute === "native"
+						? "This model has a live video lane, so Keating streams frames straight to it."
+						: "This model has no video lane, so Keating samples still frames instead."}`
+					: `Not available on this model. ${videoTier.capReason ?? ""}`}
+				className={css({ scrollMarginTop: "5rem" })}
+			>
+				<Toggle
+					checked={settings.videoEnabled && videoTier.video}
+					disabled={!videoTier.video}
+					onChange={(checked) => persist({ videoEnabled: checked })}
+				/>
+			</SettingRow>
+
+			{settings.videoEnabled && videoTier.video && (
+				<div className={css({ display: "grid", gap: "0.75rem", sm: { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" } })}>
+					<div className={fieldStackClass}>
+						<label className={fieldLabelClass}>Source</label>
+						<select
+							className={inputClass}
+							value={settings.videoSource}
+							onChange={(e) => persist({ videoSource: e.target.value as WebSpeechSettings["videoSource"] })}
+						>
+							<option value="camera">Camera</option>
+							<option value="screen">Screen share</option>
+						</select>
+					</div>
+					<div className={fieldStackClass}>
+						<label className={fieldLabelClass}>Frame rate</label>
+						<select
+							className={inputClass}
+							value={String(settings.frameIntervalMs)}
+							onChange={(e) => persist({ frameIntervalMs: Number(e.target.value) })}
+						>
+							{/* Both providers cap video at one frame per second. */}
+							<option value="1000">1 frame per second — most responsive</option>
+							<option value="2000">1 frame every 2 seconds</option>
+							<option value="5000">1 frame every 5 seconds — cheapest</option>
+						</select>
+					</div>
+				</div>
+			)}
 
 			<div id="settings-section-speech-custom" className={sectionClass}>
 				<div>

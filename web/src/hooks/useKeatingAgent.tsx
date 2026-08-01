@@ -45,6 +45,7 @@ import {
 import { bootNodePod } from "../keating/nodepod-runtime";
 import { registerKeatingWebMcp } from "../keating/webmcp";
 import { type LiveSpeechBridge, type WebSpeechSettings } from "../keating/speech";
+import { buildLiveHistory } from "../keating/live-history";
 import {
   savePersistentStorageStatus,
   useKeatingAgentStore,
@@ -1009,6 +1010,10 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
 			if (!detail || !agent) return;
 			const tools = (agent.state.tools ?? []) as any[];
 			detail.bridge = {
+				// The real Keating system prompt, so a voice session is the same
+				// teacher as the text session rather than a generic assistant.
+				instructions: agent.state.systemPrompt,
+				history: buildLiveHistory(agent.state.messages ?? []),
 				tools: tools.map((tool) => ({
 					name: tool.name,
 					description: tool.description ?? tool.label ?? tool.name,

@@ -101,6 +101,9 @@ import {
   type LiveSpeechSession,
   type LiveSpeechState,
 } from "../keating/speech";
+import { startVideoCapture, type VideoCaptureHandle } from "../keating/video-capture";
+import { IMAGE_PROGRESS_EVENT, type ImageProgressDetail } from "../keating/image-stream";
+import { ANIMATION_PROGRESS_EVENT, type AnimationProgressDetail } from "../keating/tool-arg-stream";
 import { startMicRecording, transcribeAudio, type MicRecorder } from "../keating/speech-providers/stt";
 import { JsonCrackBlock } from "./JsonCrackBlock";
 import { FailedResponseRecovery } from "./FailedResponseRecovery";
@@ -689,10 +692,11 @@ function SpeechComposerControl({
   const [available, setAvailable] = useState<boolean | null>(null);
   const [recording, setRecording] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [liveOpen, setLiveOpen] = useState(false);
+	const [liveOpen, setLiveOpen] = useState(false);
 	const [forceStt, setForceStt] = useState(false);
   const recorderRef = useRef<MicRecorder | null>(null);
 	const recordingPromiseRef = useRef<Promise<MicRecorder> | null>(null);
+	const pendingLiveVideoRef = useRef<Promise<VideoCaptureHandle | null> | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -761,6 +765,26 @@ function SpeechComposerControl({
 		}
 	};
 
+	const openLiveVoice = () => {
+		const settings = loadWebSpeechSettings();
+		// getDisplayMedia requires transient user activation in browsers that
+		// enforce the screen-sharing permission contract. Start this request from
+		// the button click; the overlay will consume the resulting handle after
+		// the provider connection is ready.
+		if (settings.videoEnabled && settings.videoSource === "screen") {
+			pendingLiveVideoRef.current = startVideoCapture({
+				source: settings.videoSource,
+				intervalMs: settings.frameIntervalMs,
+			}).catch((error) => {
+				console.warn("[keating:live] screen capture unavailable", error);
+				return null;
+			});
+		} else {
+			pendingLiveVideoRef.current = null;
+		}
+		setLiveOpen(true);
+	};
+
   if (!available) return null;
 
 	const mode = forceStt ? "stt" : speechInputMode(loadWebSpeechSettings());
@@ -784,7 +808,7 @@ function SpeechComposerControl({
 				<button
 					type="button"
 					disabled={busy}
-					onClick={mode === "duplex" ? () => setLiveOpen(true) : undefined}
+					onClick={mode === "duplex" ? openLiveVoice : undefined}
 					onPointerDown={mode === "stt" ? (event) => {
 						event.currentTarget.setPointerCapture(event.pointerId);
 						beginPushToTalk();
@@ -839,6 +863,7 @@ function SpeechComposerControl({
         <LiveVoiceOverlay
           onClose={() => setLiveOpen(false)}
           onTranscript={appendToComposer}
+          initialVideoPromise={pendingLiveVideoRef.current}
           onFallback={() => {
             setLiveOpen(false);
 							setForceStt(true);
@@ -860,13 +885,15 @@ const LIVE_STATE_LABEL: Record<LiveSpeechState, string> = {
 // speech provider (OpenAI Realtime / Gemini Live) and degrades to push-to-talk
 // dictation if the live session cannot be established.
 function LiveVoiceOverlay({
-  onClose,
-  onTranscript,
-  onFallback,
+	onClose,
+	onTranscript,
+	onFallback,
+	initialVideoPromise,
 }: {
-  onClose: () => void;
-  onTranscript: (text: string) => void;
-  onFallback: () => void;
+	onClose: () => void;
+	onTranscript: (text: string) => void;
+	onFallback: () => void;
+	initialVideoPromise?: Promise<VideoCaptureHandle | null> | null;
 }) {
   const [state, setState] = useState<LiveSpeechState>("connecting");
   const [userText, setUserText] = useState("");
@@ -874,6 +901,7 @@ function LiveVoiceOverlay({
   const [error, setError] = useState<string | null>(null);
   const sessionRef = useRef<LiveSpeechSession | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const videoRef = useRef<VideoCaptureHandle | null>(null);
   const userTextRef = useRef("");
 
   useEffect(() => {
@@ -893,11 +921,33 @@ function LiveVoiceOverlay({
 		const bridge = getLiveSpeechBridge();
 		const conversationDetail: { ids?: { sessionId: string } } = {};
 		window.dispatchEvent(new CustomEvent("keating:conversation-ids", { detail: conversationDetail }));
+
+		// Vision is opt-in and best-effort: a learner who declines the camera
+		// prompt should still get a working voice session.
+		let video: VideoCaptureHandle | null = null;
+		if (settings.videoEnabled) {
+			const videoPromise = initialVideoPromise ?? startVideoCapture({
+				source: settings.videoSource,
+				intervalMs: settings.frameIntervalMs,
+			}).catch((err) => {
+				console.warn("[keating:live] video capture unavailable", err);
+				return null;
+			});
+			video = await videoPromise;
+			if (!active) {
+				video?.stop();
+				return;
+			}
+			videoRef.current = video;
+		}
+
         const session = await provider.startLiveSession({
           settings,
           getApiKey: getProviderApiKey,
           signal: abort.signal,
-		  instructions: "You are Keating, a warm collaborative teacher. Use tools whenever they improve the lesson, especially for current facts, quizzes, goals, and visual learning artifacts. Keep spoken turns concise and invite interruption.",
+		  instructions: bridge?.instructions,
+		  history: bridge?.history,
+		  video,
 		  tools: bridge?.tools,
 		  onToolCall: bridge ? (call) => bridge.execute(call, abort.signal) : undefined,
 		  onConversationEvent: (event) => window.dispatchEvent(new CustomEvent("keating:conversation-event", { detail: event })),
@@ -927,8 +977,10 @@ function LiveVoiceOverlay({
       active = false;
       abort.abort();
       void sessionRef.current?.stop().catch(() => {});
+      videoRef.current?.stop();
+      videoRef.current = null;
     };
-  }, []);
+	}, []);
 
   const finish = () => {
     abortRef.current?.abort();
@@ -1689,65 +1741,171 @@ function GeneratedImageCard({ payload }: { payload: string }) {
 
   const src = data.dataUrl ?? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(data.svg ?? "")}`;
   const copyText = data.svg ?? data.dataUrl ?? "";
+  const title = data.title ?? "Generated learning image";
+
+  // Image-first: no frame around the picture and no header bar above it. The
+  // caption sits under the image as quiet metadata, and the copy control only
+  // appears on hover/focus so it never competes with the visual.
   return (
-    <figure
-      className={css({
-        marginBlock: "0.75rem",
-        overflow: "hidden",
-        borderRadius: "0.5rem",
-        border: "1px solid var(--border)",
-        backgroundColor: "var(--background)",
-      })}
-    >
+    <figure className={css({ marginBlock: "1.25rem", display: "grid", gap: "0.625rem" })}>
+      <a
+        href={src}
+        target="_blank"
+        rel="noreferrer"
+        title="Open full size"
+        className={css({
+          display: "block",
+          overflow: "hidden",
+          borderRadius: "0.75rem",
+          backgroundColor: "color-mix(in srgb, var(--muted) 30%, transparent)",
+          _hover: { "& img": { transform: "scale(1.01)" } },
+        })}
+      >
+        <img
+          src={src}
+          alt={data.alt ?? title}
+          loading="lazy"
+          className={css({
+            display: "block",
+            width: "100%",
+            transition: "transform 200ms ease-out",
+          })}
+        />
+      </a>
       <div
         className={css({
           display: "flex",
-          alignItems: "center",
+          alignItems: "baseline",
           justifyContent: "space-between",
-          gap: "0.5rem",
-          borderBottom: "1px solid var(--border)",
-          paddingInline: "0.75rem",
-          paddingBlock: "0.5rem",
+          gap: "0.75rem",
+          _hover: { "& [data-image-copy]": { opacity: 1 } },
         })}
       >
-        <div className={css({ minWidth: 0 })}>
-          <figcaption
-            className={css({
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              fontSize: "0.75rem",
-              fontWeight: 500,
-              color: "var(--foreground)",
-            })}
-          >
-            {data.title ?? "Generated learning image"}
-          </figcaption>
+        <figcaption className={css({ minWidth: 0, fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+          <span className={css({ color: "var(--foreground)" })}>{title}</span>
           {data.model && (
-            <div
-              className={cx(
-                "font-terminal",
-                css({
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  fontSize: "10px",
-                  color: "var(--muted-foreground)",
-                }),
-              )}
-            >
+            <span className={cx("font-terminal", css({ marginLeft: "0.5rem", fontSize: "0.6875rem" }))}>
               {data.model}
-            </div>
+            </span>
           )}
-        </div>
-        <CopyButton text={copyText} label={data.svg ? "Copy SVG" : "Copy image"} />
+        </figcaption>
+        <span data-image-copy className={css({ flexShrink: 0, opacity: 0, transition: "opacity 150ms", _focusWithin: { opacity: 1 } })}>
+          <CopyButton text={copyText} label={data.svg ? "Copy SVG" : "Copy image"} variant="ghost" />
+        </span>
       </div>
-      <img
-        src={src}
-        alt={data.alt ?? data.title ?? "Generated learning image"}
-        className={css({ width: "100%", backgroundColor: "white" })}
-      />
     </figure>
+  );
+}
+
+/**
+ * Live preview while `animate` is running. The animation is authored as a tool
+ * argument, so the HTML arrives token by token and can be rendered as it grows.
+ * The partial document has unclosed tags and no timeline script yet — browsers
+ * render it fine, and it reads as the scene assembling itself.
+ */
+function StreamingAnimationPreview() {
+  const [frame, setFrame] = useState<{ html: string; topic?: string } | null>(null);
+
+  useEffect(() => {
+    const onProgress = (event: Event) => {
+      const detail = (event as CustomEvent<AnimationProgressDetail>).detail;
+      if (!detail) return;
+      if (detail.status === "done") {
+        setFrame(null);
+        return;
+      }
+      setFrame({ html: detail.html, topic: detail.topic });
+    };
+    window.addEventListener(ANIMATION_PROGRESS_EVENT, onProgress);
+    return () => window.removeEventListener(ANIMATION_PROGRESS_EVENT, onProgress);
+  }, []);
+
+  if (!frame) return null;
+
+  return (
+    <div className={css({ marginTop: "0.75rem", display: "grid", gap: "0.5rem" })}>
+      <iframe
+        title={`${frame.topic ?? "Animation"} — building`}
+        srcDoc={frame.html}
+        sandbox=""
+        className={css({
+          display: "block",
+          aspectRatio: "16 / 9",
+          width: "100%",
+          borderRadius: "0.75rem",
+          border: "none",
+          background: "black",
+        })}
+      />
+      <div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+        <Spinner size={12} />
+        <span>Building animation{frame.topic ? ` · ${frame.topic}` : ""}</span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Live preview while `generate_image` is running. The tool streams progressive
+ * renders as window events (it runs outside React), so this listens rather than
+ * taking props. Shows the newest partial, blurred until it sharpens.
+ */
+function StreamingImagePreview() {
+  const [frame, setFrame] = useState<{ dataUrl?: string; title: string; index: number } | null>(null);
+
+  useEffect(() => {
+    const onProgress = (event: Event) => {
+      const detail = (event as CustomEvent<ImageProgressDetail>).detail;
+      if (!detail) return;
+      if (detail.status === "done" || detail.status === "error") {
+        setFrame(null);
+        return;
+      }
+      setFrame({ dataUrl: detail.dataUrl, title: detail.title, index: detail.index ?? 0 });
+    };
+    window.addEventListener(IMAGE_PROGRESS_EVENT, onProgress);
+    return () => window.removeEventListener(IMAGE_PROGRESS_EVENT, onProgress);
+  }, []);
+
+  if (!frame) return null;
+
+  return (
+    <div className={css({ marginTop: "0.75rem", display: "grid", gap: "0.5rem" })}>
+      <div
+        className={css({
+          position: "relative",
+          overflow: "hidden",
+          borderRadius: "0.75rem",
+          aspectRatio: "1 / 1",
+          maxHeight: "22rem",
+          backgroundColor: "color-mix(in srgb, var(--muted) 40%, transparent)",
+        })}
+      >
+        {frame.dataUrl ? (
+          <img
+            src={frame.dataUrl}
+            alt={`${frame.title} — partial render`}
+            className={css({
+              display: "block",
+              height: "100%",
+              width: "100%",
+              objectFit: "cover",
+              // Early passes are noisy; a little blur reads as "still resolving"
+              // and clears as later frames arrive.
+              filter: "blur(6px)",
+              transition: "filter 400ms ease-out",
+            })}
+            style={{ filter: `blur(${Math.max(0, 6 - frame.index * 3)}px)` }}
+          />
+        ) : (
+          <div className={cx(pulseClass, css({ height: "100%", width: "100%" }))} />
+        )}
+      </div>
+      <div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+        <Spinner size={12} />
+        <span>{frame.dataUrl ? "Refining image" : "Generating image"} · {frame.title}</span>
+      </div>
+    </div>
   );
 }
 
@@ -2175,6 +2333,8 @@ function ToolPart({
           {state}
         </span>
       </div>
+      {state === "running" && toolName === "generate_image" && <StreamingImagePreview />}
+      {state === "running" && toolName === "animate" && <StreamingAnimationPreview />}
       {showDetails &&
       args !== undefined &&
       Object.keys(args as Record<string, unknown>).length > 0 ? (

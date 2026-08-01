@@ -8,6 +8,7 @@ import { paperCard } from "../../styled-system/recipes";
 import { V240OpenInterfacesArticle } from "../components/V240OpenInterfacesArticle";
 import { V270TeachingContinuityArticle } from "../components/V270TeachingContinuityArticle";
 import { V280InspectableTutorArticle } from "../components/V280InspectableTutorArticle";
+import { V290LiveSessionsArticle } from "../components/V290LiveSessionsArticle";
 
 type BadgeColor = "fix" | "release" | "feature" | "pwa" | "update" | "tech" | "devlog";
 
@@ -264,6 +265,24 @@ function majorMinor(version: string): string {
 /* ── Data ────────────────────────────────────────────────────────── */
 
 const POSTS: Post[] = [
+  {
+    date: "2026-07-31",
+    badge: { label: "RELEASE", color: "release" },
+    title: "v2.9.0 - Keating in the Room with You",
+    version: "2.9.0",
+    summary:
+      "Keating 2.9 adds a live multimodal teaching surface: full-duplex voice over OpenAI Realtime and Gemini Live, camera or screen-share vision with frame dedup, microphone capture on the audio thread, and streaming progressive image and animation renders — all seeded with the real conversation and system prompt so voice continues the lesson.",
+    sections: [
+      { id: "live-surface", title: "A Surface Built for One Screen" },
+      { id: "duplex-voice", title: "Duplex Voice" },
+      { id: "vision", title: "Eyes on the Work" },
+      { id: "conversation-seed", title: "A Voice That Remembers" },
+      { id: "audio-thread", title: "Microphone on the Audio Thread" },
+      { id: "streaming-renders", title: "Streaming Renders" },
+      { id: "release-29-verification", title: "Release Integrity" },
+    ],
+    body: <V290LiveSessionsArticle />,
+  },
   {
     date: "2026-07-30",
     badge: { label: "RELEASE", color: "release" },

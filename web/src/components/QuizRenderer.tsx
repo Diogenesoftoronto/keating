@@ -231,8 +231,8 @@ const quizStyles = {
 		alignItems: "center",
 		gap: "0.75rem",
 		borderRadius: "0.5rem",
-		borderWidth: "2px",
-		padding: "0.75rem 1rem",
+		borderWidth: "1px",
+		padding: "0.5rem 0.875rem",
 		fontSize: "0.875rem",
 		textAlign: "left",
 		cursor: "pointer",
@@ -287,13 +287,28 @@ const quizStyles = {
 		transition: "color 150ms, background-color 150ms",
 		_hover: { background: "var(--accent)", color: "var(--accent-foreground)" },
 	}),
+	// The quiz shell already draws a frame; question bodies are spacing only so
+	// options don't read as boxes nested inside a box.
 	card: css({
-		borderRadius: "0.5rem",
-		border: "1px solid var(--border)",
-		background: "color-mix(in srgb, var(--muted) 20%, transparent)",
-		padding: "1rem",
+		display: "grid",
+		gap: "1rem",
+	}),
+	// Frameless result sections, separated by a rule rather than another border.
+	section: css({
 		display: "grid",
 		gap: "0.75rem",
+		borderTop: "1px solid var(--border)",
+		paddingTop: "1.25rem",
+	}),
+	sectionTitle: css({
+		display: "flex",
+		alignItems: "center",
+		gap: "0.5rem",
+		fontSize: "0.75rem",
+		fontWeight: 600,
+		letterSpacing: "0.04em",
+		textTransform: "uppercase",
+		color: "var(--muted-foreground)",
 	}),
 	fieldBase: css({
 		width: "100%",
@@ -321,7 +336,7 @@ const quizStyles = {
 		alignItems: "center",
 		gap: "0.25rem",
 		borderRadius: "0.5rem",
-		borderWidth: "2px",
+		borderWidth: "1px",
 		borderColor: "var(--border)",
 		background: "var(--background)",
 		padding: "0.5rem 0.75rem",
@@ -337,7 +352,7 @@ const quizStyles = {
 		alignItems: "center",
 		gap: "0.25rem",
 		borderRadius: "0.5rem",
-		borderWidth: "2px",
+		borderWidth: "1px",
 		borderColor: "var(--primary)",
 		background: "var(--primary)",
 		padding: "0.5rem 1rem",
@@ -695,10 +710,12 @@ function QuestionCard({
 	return (
 		<div className={quizStyles.card}>
 			<div className={css({ display: "flex", flexDirection: "column", alignItems: "stretch", gap: "0.5rem", [sm]: { flexDirection: "row", alignItems: "flex-start" } })}>
-				<span className={cx("font-terminal", css({ marginTop: "0.25rem", flexShrink: 0, fontSize: "0.75rem", color: "var(--accent)" }))}>
-					[{index + 1}/{q.level.toUpperCase()}]
-				</span>
-				<div className={cx(shared.minFlex, shared.stack1)}>
+				<div className={cx(shared.minFlex, shared.stack2)}>
+					{/* Level is the eyebrow. The index only appears in the revealed list,
+					    where there is no progress row to carry it. */}
+					<span className={cx("font-terminal", css({ fontSize: "0.6875rem", letterSpacing: "0.06em", color: "var(--muted-foreground)" }))}>
+						{revealed ? `${index + 1} · ${q.level.toUpperCase()}` : q.level.toUpperCase()}
+					</span>
 					<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: "0.5rem" })}>
 						{isMultiBlankFillIn ? (
 							<div className={shared.minFlex}>
@@ -987,12 +1004,12 @@ function RemediationDashboard({
 	if (!hasMissed) return null;
 
 	return (
-		<div className={quizStyles.card}>
-			<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", fontWeight: 500 })}>
-				<GraduationCap size={16} className={css({ color: "var(--primary)" })} />
-				<span>Remediation Dashboard</span>
+		<div className={quizStyles.section}>
+			<div className={quizStyles.sectionTitle}>
+				<GraduationCap size={14} className={css({ color: "var(--primary)" })} />
+				<span>Review these</span>
 			</div>
-			<div className={shared.stack2}>
+			<div className={css({ display: "grid", gap: "0.875rem" })}>
 				{levels.map((level) => {
 					const s = stats[level];
 					if (!s || s.missed === 0) return null;
@@ -1048,10 +1065,10 @@ function BenchmarkComparison({
 	const maxBar = Math.max(pct, avgPct, qPct, 1);
 
 	return (
-		<div className={quizStyles.card}>
-			<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", fontWeight: 500 })}>
-				<TrendingUp size={16} className={css({ color: "var(--primary)" })} />
-				<span>Benchmark Comparison ({stats.count} sessions)</span>
+		<div className={quizStyles.section}>
+			<div className={quizStyles.sectionTitle}>
+				<TrendingUp size={14} className={css({ color: "var(--primary)" })} />
+				<span>vs {stats.count} past sessions</span>
 			</div>
 			<div className={shared.stack2}>
 				{[
@@ -1077,7 +1094,7 @@ function BenchmarkComparison({
 			</div>
 			{typeof partialCreditPoints === "number" && stats.avgPartialCreditPoints > 0 && (
 				<div className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-					Partial-credit points: {partialCreditPoints.toFixed(2)}/{total} vs avg {stats.avgPartialCreditPoints.toFixed(2)}
+					Average partial credit {stats.avgPartialCreditPoints.toFixed(2)}/{total}
 				</div>
 			)}
 		</div>
@@ -1335,18 +1352,15 @@ export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) 
 	const hasTimeLimit = typeof timeRemaining === "number";
 
 	return (
-		<div className={css({ marginBlock: "0.5rem", display: "grid", gap: "0.75rem", borderRadius: "0.75rem", borderWidth: "2px", borderColor: "var(--border)", background: "var(--background)", padding: "0.75rem", boxShadow: "var(--shadow-sm)", [sm]: { marginBlock: "0.75rem", gap: "1rem", padding: "1.25rem" } })}>
+		<div className={css({ marginBlock: "0.5rem", display: "grid", gap: "1.25rem", borderRadius: "0.75rem", borderWidth: "1px", borderColor: "var(--border)", background: "var(--background)", padding: "1.25rem", boxShadow: "var(--shadow-sm)", [sm]: { marginBlock: "0.75rem", gap: "1.5rem", padding: "1.75rem" } })}>
 			<div className={css({ display: "flex", flexDirection: "column", alignItems: "stretch", gap: "0.5rem", [sm]: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" } })}>
 				<div className={css({ minWidth: 0 })}>
 					<h3 className={css({ overflowWrap: "anywhere", fontSize: "1rem", fontWeight: 700, sm: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } })}>{quiz.topic}</h3>
-					<p className={cx("font-terminal", css({ fontSize: "0.75rem", color: "var(--muted-foreground)" }))}>
-						{totalVisible} QUESTIONS // {quiz.totalPoints} POINTS
-						{skippedIds.size > 0 && (
-							<span className={css({ marginLeft: "0.5rem", color: "#059669", [dark]: { color: "#34d399" } })}>
-								({skippedIds.size} skipped by adaptive rules)
-							</span>
-						)}
-					</p>
+					{skippedIds.size > 0 && (
+						<p className={cx("font-terminal", css({ fontSize: "0.75rem", color: "#059669", [dark]: { color: "#34d399" } }))}>
+							{skippedIds.size} skipped by adaptive rules
+						</p>
+					)}
 				</div>
 				<div className={css({ display: "flex", width: "100%", flexShrink: 0, alignItems: "center", justifyContent: "space-between", gap: "0.75rem", sm: { width: "auto", justifyContent: "flex-end" } })}>
 					<span className={cx("font-terminal", css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", fontSize: "0.875rem", color: "var(--muted-foreground)", fontVariantNumeric: "tabular-nums" }))}>
@@ -1445,14 +1459,11 @@ export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) 
 				</>
 			) : (
 				<>
-					{/* Summary */}
-					<div className={cx(quizStyles.card, css({ padding: "0.75rem", gap: "0.5rem" }))}>
+					{/* Summary. The header already shows the raw score, so this only adds
+					    what it does not: partial credit and anything flagged for review. */}
+					<div className={css({ display: "grid", gap: "0.5rem" })}>
 						<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.875rem" })}>
-							<span className={css({ fontWeight: 500 })}>Raw score</span>
-							<span className={cx("font-terminal")}>{rawScore}/{totalScored}</span>
-						</div>
-						<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.875rem" })}>
-							<span className={css({ fontWeight: 500 })}>Partial-credit points</span>
+							<span className={shared.mutedText}>Partial-credit points</span>
 							<span className={cx("font-terminal")}>{partialCreditPoints.toFixed(2)}/{totalScored}</span>
 						</div>
 						{bookmarkIds.length > 0 && (
@@ -1476,7 +1487,9 @@ export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) 
 						stats={fetchedStats}
 					/>
 
-					<div className={shared.stack3}>
+					{/* Question bodies have no frame of their own, so hairlines keep the
+					    revealed list readable without nesting another box. */}
+					<div className={css({ display: "grid", gap: "1.5rem", "& > * + *": { borderTop: "1px solid var(--border)", paddingTop: "1.5rem" } })}>
 						{visibleQuestions.map((q, i) => (
 							<QuestionCard
 								key={q.id}
