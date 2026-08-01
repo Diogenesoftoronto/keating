@@ -8,7 +8,7 @@ import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import { MermaidRenderer } from "./MermaidRenderer";
 import { css } from "../../styled-system/css";
-import { RunnableCodeBlock } from "./RunnableCodeBlock";
+import { RunnableCodeBlock, StreamingCodeContext, inProgressFenceCode } from "./RunnableCodeBlock";
 
 // Syntax highlighter (react-syntax-highlighter + Prism language packs) is the
 // heaviest part of this module. Load it on demand only when a code block renders.
@@ -16,6 +16,11 @@ const CodeHighlighter = lazy(() => import("./CodeHighlighter"));
 
 interface MarkdownBlockProps {
 	content: string;
+	/**
+	 * True while the model is still writing this message. Enables the "writing…"
+	 * state on the code fence that is still open.
+	 */
+	streaming?: boolean;
 }
 
 // Click-to-reveal "spoiler" / mask: authors wrap a clue or answer in ||double
@@ -200,15 +205,24 @@ const COMPONENTS: Components = {
 	td: ({ children }) => <td className={css({ borderBottom: "1px solid var(--border)", paddingInline: "0.75rem", paddingBlock: "0.5rem" })}>{children}</td>,
 };
 
-export function MarkdownBlock({ content }: MarkdownBlockProps) {
+export function MarkdownBlock({ content, streaming = false }: MarkdownBlockProps) {
 	const plugins = useMemo(
 		() => ({ remark: [remarkGfm, remarkMath, remarkSpoiler], rehype: [rehypeKatex] }),
 		[],
 	);
 
+	// Only an unterminated fence is still being written; a closed one is done
+	// even if the message itself keeps streaming prose after it.
+	const openFenceCode = useMemo(
+		() => (streaming ? inProgressFenceCode(content) : null),
+		[content, streaming],
+	);
+
 	return (
-		<ReactMarkdown remarkPlugins={plugins.remark} rehypePlugins={plugins.rehype} components={COMPONENTS}>
-			{content}
-		</ReactMarkdown>
+		<StreamingCodeContext.Provider value={openFenceCode}>
+			<ReactMarkdown remarkPlugins={plugins.remark} rehypePlugins={plugins.rehype} components={COMPONENTS}>
+				{content}
+			</ReactMarkdown>
+		</StreamingCodeContext.Provider>
 	);
 }

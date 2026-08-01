@@ -465,7 +465,7 @@ export function FlashcardRenderer({
 					<div className={css({ minWidth: 0 })}>
 						<h3 className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 700, color: "var(--foreground)" })}>{deck.title}</h3>
 						<p className={cx("font-terminal", css({ fontSize: "0.6875rem" }))}>
-							{deck.cards.length} CARDS // {stats.dueNow} DUE NOW // avg ease {averageEase(deck).toFixed(2)}
+							{deck.cards.length} CARDS // {stats.dueNow} DUE NOW
 						</p>
 					</div>
 					<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
@@ -540,23 +540,15 @@ export function FlashcardRenderer({
 						}
 					}}
 				>
-					<div className={cx("flashcard-face", css({ position: "relative", width: "100%", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "color-mix(in srgb, var(--muted) 30%, transparent)", padding: "1.25rem", textAlign: "left" }))}>
-						<div className={cx("font-terminal", css({ fontSize: "0.625rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted-foreground)" }))}>
-							Front
-						</div>
-						<div className={css({ marginTop: "0.5rem", minHeight: "88px", fontSize: "1rem", fontWeight: 500, lineHeight: 1.625 })}>
+					{/* No Front/Back labels and no "press Space to flip" hint: the Reveal
+					    button and the shortcut legend below already say both. */}
+					<div className={cx("flashcard-face", css({ position: "relative", width: "100%", borderRadius: "0.5rem", background: "color-mix(in srgb, var(--muted) 30%, transparent)", padding: "1.75rem 1.5rem", textAlign: "left" }))}>
+						<div className={css({ minHeight: "88px", fontSize: "1rem", fontWeight: 500, lineHeight: 1.625 })}>
 							{current.front}
 						</div>
-						<div className={cx("font-terminal", css({ marginTop: "0.75rem", display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.6875rem", color: "var(--muted-foreground)" }))}>
-							<Lightbulb size={12} className={css({ color: "var(--accent)" })} />
-							<span>Think of the answer, then tap or press Space to flip</span>
-						</div>
 					</div>
-					<div className={cx("flashcard-face", "flashcard-face-back", css({ overflowY: "auto", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "color-mix(in srgb, var(--muted) 30%, transparent)", padding: "1.25rem", textAlign: "left" }))}>
-						<div className={cx("font-terminal", css({ fontSize: "0.625rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted-foreground)" }))}>
-							Back
-						</div>
-						<div className={css({ marginTop: "0.5rem", minHeight: "88px", fontSize: "1rem", fontWeight: 500, lineHeight: 1.625 })}>
+					<div className={cx("flashcard-face", "flashcard-face-back", css({ overflowY: "auto", borderRadius: "0.5rem", background: "color-mix(in srgb, var(--muted) 30%, transparent)", padding: "1.75rem 1.5rem", textAlign: "left" }))}>
+						<div className={css({ minHeight: "88px", fontSize: "1rem", fontWeight: 500, lineHeight: 1.625 })}>
 							{current.back}
 						</div>
 					</div>
@@ -773,12 +765,6 @@ function computeNextIntervals(state: FlashcardSrsState): {
 		good: applyReview(state, 2, Date.now()).appliedIntervalDays,
 		easy: applyReview(state, 3, Date.now()).appliedIntervalDays,
 	};
-}
-
-function averageEase(deck: FlashcardDeck): number {
-	if (deck.cards.length === 0) return initialSrsState().ease;
-	const sum = deck.cards.reduce((s, c) => s + c.srs.ease, 0);
-	return sum / deck.cards.length;
 }
 
 // ---------------------------------------------------------------------------

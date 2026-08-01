@@ -82,16 +82,18 @@ export function HyperframesPlayer({ html, title, className }: HyperframesPlayerP
 	const controlLabel = !bridgeReady ? "Loading" : !hasTimeline ? "Unavailable" : playing ? "Pause" : "Play";
 
 	return (
-		<div className={cx(css({ display: "grid", gap: "0.5rem" }), className)}>
+		// The stage is the only framed element; controls sit on open space beneath
+		// it rather than inside a second box.
+		<div className={cx(css({ display: "grid", gap: "0.75rem" }), className)}>
 			<iframe
 				ref={iframeRef}
 				title={title}
 				src={src || undefined}
 				sandbox="allow-scripts"
 				onLoad={() => postCommand({ type: "keating-hyperframes-command", action: "request-state" })}
-				className={css({ display: "block", aspectRatio: "16 / 9", width: "100%", borderRadius: "0.375rem", border: "1px solid var(--border)", background: "black" })}
+				className={css({ display: "block", aspectRatio: "16 / 9", width: "100%", borderRadius: "0.75rem", border: "none", background: "black" })}
 			/>
-			<div className={css({ display: "grid", gridTemplateColumns: "auto auto 1fr auto", alignItems: "center", gap: "0.5rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "color-mix(in srgb, var(--background) 80%, transparent)", padding: "0.5rem" })}>
+			<div className={css({ display: "grid", gridTemplateColumns: "auto auto 1fr auto", alignItems: "center", gap: "0.75rem" })}>
 				<button
 					type="button"
 					disabled={!hasTimeline}
@@ -138,7 +140,7 @@ export function HyperframesPlayer({ html, title, className }: HyperframesPlayerP
 					onClick={() => setLooping((value) => !value)}
 					aria-pressed={looping}
 					disabled={!seekable}
-					className={cx(controlButtonClass, looping && css({ color: "var(--primary)", borderColor: "var(--primary)" }))}
+					className={cx(controlButtonClass, looping && css({ color: "var(--primary)", _hover: { color: "var(--primary)" } }))}
 				>
 					<Repeat size={14} />
 					Loop
@@ -159,18 +161,20 @@ function useBlobUrl(source: string, type: string): string {
 	return url;
 }
 
+// Borderless: the controls read as a row of actions, not a strip of boxes.
 const controlButtonClass = css({
 	display: "inline-flex",
 	height: "2rem",
 	alignItems: "center",
 	justifyContent: "center",
-	gap: "0.25rem",
+	gap: "0.375rem",
 	borderRadius: "0.375rem",
-	border: "1px solid var(--border)",
 	paddingInline: "0.5rem",
 	fontSize: "0.75rem",
 	fontWeight: 500,
 	whiteSpace: "nowrap",
+	color: "var(--muted-foreground)",
+	transition: "color 150ms, background-color 150ms",
 	_disabled: { cursor: "not-allowed", opacity: 0.55 },
-	_hover: { background: "var(--accent)" },
+	_hover: { background: "var(--accent)", color: "var(--accent-foreground)" },
 });

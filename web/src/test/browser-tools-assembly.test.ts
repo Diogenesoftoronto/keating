@@ -155,6 +155,9 @@ describe("browser tool assembly contract", () => {
 					voiceName: "Kore",
 					customModels: [],
 					microphoneEnabled: false,
+					videoEnabled: false,
+					videoSource: "camera",
+					frameIntervalMs: 1000,
 					reasoningEffort: "medium",
 				},
 				getApiKey: async () => {
@@ -193,7 +196,7 @@ describe("browser tool assembly contract", () => {
 		const tools = await createKeatingTools({} as any, {
 			agentRuntime: remoteRuntime,
 			speech: {
-				settings: { enabled: true, providerId: "gemini-live", model: "test", voiceName: "Kore", customModels: [], microphoneEnabled: false, reasoningEffort: "medium" },
+				settings: { enabled: true, providerId: "gemini-live", model: "test", voiceName: "Kore", customModels: [], microphoneEnabled: false, videoEnabled: false, videoSource: "camera", frameIntervalMs: 1000, reasoningEffort: "medium" },
 				getApiKey: async () => undefined,
 			},
 		});

@@ -1803,22 +1803,6 @@ export default defineConfig({
       padding: "0.5rem",
       textDecoration: "none"
     },
-    ".retro-layout .hero-tags": {
-      display: "flex",
-      gap: "22px",
-      flexWrap: "wrap",
-      fontSize: "12px",
-      color: "var(--ink-soft)"
-    },
-    ".retro-layout .hero-tags span": {
-      display: "flex",
-      alignItems: "center",
-      gap: "7px"
-    },
-    ".retro-layout .hero-tags i": {
-      fontStyle: "normal",
-      color: "var(--accent)"
-    },
     ".retro-layout .hero-stage": {
       position: "relative",
       display: "grid",
@@ -3116,12 +3100,6 @@ export default defineConfig({
         textAlign: "center",
         justifyContent: "center",
         overflowWrap: "anywhere"
-      },
-      ".retro-layout .hero-tags": {
-        display: "grid",
-        gap: "12px 18px",
-        maxWidth: "100%",
-        lineHeight: "1.4"
       },
       ".retro-layout .caps-grid": {
         gridTemplateColumns: "1fr !important"

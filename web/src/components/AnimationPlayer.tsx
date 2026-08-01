@@ -239,26 +239,31 @@ export function AnimationPlayer({ scene, manifest, storyboard, renderer: storedR
 	const canRenderHyperframes = Boolean(scene && (renderer === "hyperframes" || sceneLooksLikeHtml));
 
 	return (
-		<div className={cx("animation-player", css({ overflow: "hidden", borderRadius: "0.5rem", background: "color-mix(in srgb, var(--muted) 20%, transparent)" }), className)}>
-			{/* Header */}
-			<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid var(--border)", background: "color-mix(in srgb, var(--muted) 30%, transparent)", padding: "0.5rem 1rem" })}>
-				<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
-					<span className={css({ fontSize: "0.875rem", fontWeight: 500 })}>Animation</span>
-					{manifestData && <span className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>({manifestData.topic})</span>}
-					{canRenderHyperframes && <span className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>Hyperframes</span>}
+		// One surface: no card fill, no tinted header/footer bands. The topic is the
+		// heading, and the renderer name is dropped — it repeated the footer and
+		// means nothing to a learner.
+		<div className={cx("animation-player", css({ display: "grid", gap: "1rem" }), className)}>
+			<div className={css({ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "1rem" })}>
+				<div className={css({ minWidth: 0 })}>
+					<h3 className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 600 })}>
+						{manifestData?.topic ?? "Animation"}
+					</h3>
+					{manifestData && (
+						<p className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+							{manifestData.duration ?? 0}s · {Array.isArray(manifestData.scenes) ? manifestData.scenes.length : 0} scenes
+						</p>
+					)}
 				</div>
-				<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
-					<button
-						onClick={() => setShowSource(!showSource)}
-						className={css({ borderRadius: "0.25rem", background: "var(--muted)", padding: "0.25rem 0.5rem", fontSize: "0.75rem", transitionProperty: "color, background-color, border-color", _hover: { background: "color-mix(in srgb, var(--muted) 80%, transparent)" } })}
-					>
-						{showSource ? "Hide" : "Show"} Source
-					</button>
-				</div>
+				<button
+					onClick={() => setShowSource(!showSource)}
+					className={css({ flexShrink: 0, borderRadius: "0.25rem", padding: "0.25rem 0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)", transitionProperty: "color, background-color", _hover: { background: "var(--accent)", color: "var(--accent-foreground)" } })}
+				>
+					{showSource ? "Hide" : "Show"} source
+				</button>
 			</div>
 
 			{/* Content */}
-			<div className={css({ padding: "1rem" })}>
+			<div>
 				{canRenderHyperframes && scene ? (
 					<HyperframesPlayer
 						title={`${manifestData?.topic ?? "Keating"} Hyperframes composition`}
@@ -311,16 +316,6 @@ export function AnimationPlayer({ scene, manifest, storyboard, renderer: storedR
 					</div>
 				)}
 				</div>
-
-			{/* Manifest Info */}
-			{manifestData && (
-				<div className={css({ borderTop: "1px solid var(--border)", background: "color-mix(in srgb, var(--muted) 30%, transparent)", padding: "0.5rem 1rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-					<span className={css({ marginRight: "1rem" })}>Duration: {manifestData.duration ?? 0}s</span>
-					<span>Scenes: {Array.isArray(manifestData.scenes) ? manifestData.scenes.length : 0}</span>
-					{renderer && <span className={css({ marginLeft: "1rem" })}>Renderer: {renderer}</span>}
-				</div>
-			)}
-
 		</div>
 	);
 }

@@ -140,7 +140,7 @@ const questionStyles = {
 		alignItems: "center",
 		gap: "0.25rem",
 		borderRadius: "0.5rem",
-		borderWidth: "2px",
+		borderWidth: "1px",
 		borderColor: "var(--border)",
 		background: "var(--background)",
 		padding: "0.375rem 0.625rem",
@@ -156,7 +156,7 @@ const questionStyles = {
 		alignItems: "center",
 		gap: "0.25rem",
 		borderRadius: "0.5rem",
-		borderWidth: "2px",
+		borderWidth: "1px",
 		borderColor: "var(--primary)",
 		background: "var(--primary)",
 		padding: "0.375rem 0.75rem",
@@ -656,12 +656,19 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 				<div className={css({ display: "flex", alignItems: "flex-start" })}>
 				<div className={css({ minWidth: 0, flex: 1, display: "grid", gap: "0.5rem", [sm]: { gap: "1rem" } })}>
 					<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", [sm]: { gap: "0.75rem" } })}>
+						{/* No "Question" label: the question text says what this is. The intro
+						    shares this row so the toggle is not stranded on an empty line. */}
 						<div className={css({ minWidth: 0 })}>
-							<p className={css({ fontSize: "0.75rem", fontWeight: 500, color: "var(--primary)", [sm]: { fontSize: "0.875rem" } })}>Question</p>
-							{collapsed && (
+							{collapsed ? (
 								<p className={css({ lineClamp: 2, fontSize: "0.75rem", lineHeight: "1.25rem", color: "var(--muted-foreground)", overflowWrap: "break-word" })}>
 									{data.intro || q.question}
 								</p>
+							) : (
+								data.intro && (
+									<p className={css({ fontSize: "0.75rem", lineHeight: 1.375, color: "var(--muted-foreground)", overflowWrap: "break-word", [sm]: { fontSize: "0.875rem", lineHeight: "1.5rem" } })}>
+										{data.intro}
+									</p>
+								)
 							)}
 						</div>
 						<button
@@ -710,27 +717,25 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 						</div>
 					) : (
 						<>
-					{data.intro && (
-						<p className={css({ fontSize: "0.75rem", lineHeight: 1.375, color: "var(--muted-foreground)", overflowWrap: "break-word", [sm]: { fontSize: "0.875rem", lineHeight: "1.5rem" } })}>{data.intro}</p>
+					{/* Progress bar. A single-question form has no progress to report. */}
+					{total > 1 && (
+						<div className={questionStyles.rowCenter}>
+							<div className={css({ height: "0.375rem", flex: 1, overflow: "hidden", borderRadius: "9999px", background: "var(--muted)" })}>
+								<div
+									className={css({ height: "100%", borderRadius: "9999px", background: "var(--primary)", transition: "all 150ms" })}
+									style={{ width: `${progress}%` }}
+								/>
+							</div>
+							<span className={cx("font-terminal", css({ fontSize: "0.6875rem", color: "var(--muted-foreground)", fontVariantNumeric: "tabular-nums" }))}>
+								{current + 1}/{total}
+							</span>
+						</div>
 					)}
 
-					{/* Progress bar */}
-					<div className={questionStyles.rowCenter}>
-						<div className={css({ height: "0.375rem", flex: 1, overflow: "hidden", borderRadius: "9999px", background: "var(--muted)" })}>
-							<div
-								className={css({ height: "100%", borderRadius: "9999px", background: "var(--primary)", transition: "all 150ms" })}
-								style={{ width: `${progress}%` }}
-							/>
-						</div>
-						<span className={cx("font-terminal", css({ fontSize: "0.6875rem", color: "var(--muted-foreground)", fontVariantNumeric: "tabular-nums" }))}>
-							{current + 1}/{total}
-						</span>
-					</div>
-
 					{/* Current question card */}
-					<div className={css({ display: "grid", gap: "0.5rem", maxWidth: "100%", [sm]: { gap: "0.625rem" } })}>
+					<div className={css({ display: "grid", gap: "0.75rem", maxWidth: "100%", [sm]: { gap: "0.875rem" } })}>
 						{q.header && (
-							<span className={css({ display: "inline-flex", borderRadius: "0.25rem", background: "color-mix(in srgb, var(--primary) 10%, transparent)", padding: "0.125rem 0.5rem", fontSize: "0.6875rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.025em", color: "var(--primary)" })}>
+							<span className={cx("font-terminal", css({ fontSize: "0.6875rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted-foreground)" }))}>
 								{q.header}
 							</span>
 						)}
@@ -738,8 +743,10 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 						{isMatching ? (
 							<div className={css({ display: "grid", gap: "0.75rem", maxWidth: "100%" })}>
 								<p className={css({ fontSize: "0.75rem", fontWeight: 500, lineHeight: 1.375, overflowWrap: "break-word", [sm]: { fontSize: "0.875rem", lineHeight: "1.5rem" } })}>{q.question}</p>
-								<div className={css({ borderRadius: "0.5rem", border: "1px solid var(--border)", background: "var(--background)", padding: "0.625rem" })}>
-									<div className={css({ marginBottom: "0.5rem", fontSize: "0.75rem", fontWeight: 500, color: "var(--muted-foreground)" })}>
+								{/* Frameless: the choices are already outlined, so a wrapper border
+								    would just be a box around boxes. */}
+								<div>
+									<div className={css({ marginBottom: "0.5rem", fontSize: "0.6875rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted-foreground)" })}>
 										{q.choiceLabel ?? "Answer bank"}
 									</div>
 									<ol className={css({ display: "grid", gap: "0.5rem", [sm]: { gridTemplateColumns: "repeat(auto-fit,minmax(11rem,1fr))" } })}>
@@ -808,21 +815,19 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 												if (value) handleMatchingDrop(rowIndex, value);
 											}}
 											className={cx(
+												// Rows are separated by a hairline rather than boxed: the answer
+												// chip inside already has its own outline.
 												css({
 													display: "grid",
 													gap: "0.75rem",
-													borderRadius: "0.5rem",
-													border: "1px solid",
-													background: "var(--background)",
-													padding: "0.625rem",
-													transition: "color 150ms, background-color 150ms, border-color 150ms",
+													borderRadius: "0.375rem",
+													padding: "0.625rem 0.5rem",
+													transition: "color 150ms, background-color 150ms",
+													"&:not(:last-child)": { borderBottom: "1px solid var(--border)" },
 													[sm]: { gridTemplateColumns: "2rem minmax(0,1fr) minmax(13rem,0.38fr)", alignItems: "center" },
 												}),
-												dragOverRow === rowIndex
-													? css({ borderColor: "var(--primary)", background: "color-mix(in srgb, var(--primary) 10%, transparent)" })
-													: row.choice
-														? css({ borderColor: "color-mix(in srgb, var(--primary) 40%, transparent)" })
-														: css({ borderColor: "var(--border)" }),
+												dragOverRow === rowIndex &&
+													css({ background: "color-mix(in srgb, var(--primary) 10%, transparent)" }),
 											)}
 										>
 											<div className={cx("font-terminal", css({ fontSize: "0.75rem", color: "var(--muted-foreground)", fontVariantNumeric: "tabular-nums" }))}>
@@ -870,16 +875,18 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 						) : isClassification ? (
 							<div className={css({ display: "grid", gap: "0.75rem", maxWidth: "100%" })}>
 								<p className={css({ fontSize: "0.75rem", fontWeight: 500, lineHeight: 1.375, overflowWrap: "break-word", [sm]: { fontSize: "0.875rem", lineHeight: "1.5rem" } })}>{q.question}</p>
-								<div className={css({ display: "none", gap: "0.5rem", fontSize: "0.6875rem", fontWeight: 500, color: "var(--muted-foreground)", [sm]: { display: "grid", gridTemplateColumns: "minmax(7rem,0.9fr) minmax(9rem,0.9fr) minmax(12rem,1.4fr)" } })}>
+								<div className={css({ display: "none", gap: "0.5rem", paddingInline: "0.5rem", fontSize: "0.6875rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted-foreground)", [sm]: { display: "grid", gridTemplateColumns: "minmax(7rem,0.9fr) minmax(9rem,0.9fr) minmax(12rem,1.4fr)" } })}>
 									<span>{q.itemLabel ?? "Item"}</span>
 									<span>{q.choiceLabel ?? "Choice"}</span>
 									<span>{q.reasonLabel ?? "Justification"}</span>
 								</div>
-								<div className={questionStyles.stack2}>
+								{/* Rows read as a table, not as stacked boxes: hairlines only, and the
+								    select/input inside each row carries the visible edge. */}
+								<div className={css({ display: "grid" })}>
 									{state.classifications.map((row, rowIndex) => (
 										<div
 											key={`${row.item}-${rowIndex}`}
-											className={css({ display: "grid", gap: "0.5rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "var(--background)", padding: "0.5rem", [sm]: { gridTemplateColumns: "minmax(7rem,0.9fr) minmax(9rem,0.9fr) minmax(12rem,1.4fr)", alignItems: "center" } })}
+											className={css({ display: "grid", gap: "0.5rem", padding: "0.625rem 0.5rem", "&:not(:last-child)": { borderBottom: "1px solid var(--border)" }, [sm]: { gridTemplateColumns: "minmax(7rem,0.9fr) minmax(9rem,0.9fr) minmax(12rem,1.4fr)", alignItems: "center" } })}
 										>
 											<div className={css({ minWidth: 0 })}>
 												<span className={css({ fontSize: "0.625rem", fontWeight: 500, color: "var(--muted-foreground)", [sm]: { display: "none" } })}>

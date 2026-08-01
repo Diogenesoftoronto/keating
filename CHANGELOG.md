@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.9.0] - 2026-07-31
+
+### Added
+- Added a dedicated `/live` surface for real-time multimodal teaching sessions, rendered as Keating's CRT monitor: the learner's camera or screen becomes the phosphor screen, with a boot-style status bar, live transcript, and an in-flight tool-call feed.
+- Added full-duplex live voice sessions through OpenAI Realtime and Gemini Live, including interruption and barge-in, a shared tool-call lifecycle, and a provider-neutral canonical event stream so persistence and replay work regardless of provider.
+- Added optional camera or screen-share vision for live sessions, with provider-aware routing (native video lane or sampled still frames) and luma-histogram dedup that drops static frames while still catching a page scroll or a hand entering frame.
+- Added conversation seeding for voice sessions: recent text turns are replayed and the real Keating system prompt is adopted, so a live session continues the lesson rather than starting as a generic assistant.
+- Added microphone capture on the audio rendering thread via an AudioWorklet (with a ScriptProcessorNode fallback), so React renders and tool execution no longer drop or glitch microphone audio.
+- Added streaming progressive renders for image generation (SSE partial-image events) and live animation authoring shown from in-flight tool-call argument deltas.
+- Added Speech settings for camera/screen source, frame rate, and Realtime reasoning effort, with capability-aware controls that explain themselves when a model lacks vision.
+
+### Changed
+- Refreshed the landing hero copy and call to action.
+- Extended provider capability negotiation to resolve realtime tiers and decide how vision reaches each model.
+
 ## [2.8.0] - 2026-07-30
 
 ### Added

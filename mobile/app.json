@@ -2,7 +2,7 @@
   "expo": {
     "name": "Keating",
     "slug": "keating",
-    "version": "2.8.0",
+    "version": "2.9.0",
     "orientation": "portrait",
     "scheme": "keating",
     "userInterfaceStyle": "dark",

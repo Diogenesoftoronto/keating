@@ -230,3 +230,28 @@ export const LongContent: Story = {
 		).join("\n"),
 	},
 };
+
+export const StreamingCodeBlock: Story = {
+	args: {
+		streaming: true,
+		content: `Here is the recursive version:
+
+\`\`\`ts
+function fib(n: number): number {
+	if (n < 2) return n;
+	return fib(n - 1) + fib(`,
+	},
+};
+
+export const StreamingFinishedBlockStaysEditable: Story = {
+	args: {
+		streaming: true,
+		content: `The helper is done, so it is runnable while the prose keeps streaming:
+
+\`\`\`ts
+export const double = (n: number) => n * 2;
+\`\`\`
+
+Now let us walk through why that`,
+	},
+};

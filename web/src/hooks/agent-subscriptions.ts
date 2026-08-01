@@ -1,4 +1,5 @@
 import type { Agent } from "@earendil-works/pi-agent-core";
+import { createAnimationArgAccumulator, emitAnimationProgress } from "../keating/tool-arg-stream";
 
 interface AgentInterfaceLike {
   requestUpdate?: () => unknown;
@@ -19,11 +20,38 @@ interface AgentPanelLike {
 // resolves (post-finishRun), at which point `isStreaming` is false and the
 // Send button comes back.
 export function subscribeAgentEvents(agent: Agent, panel: AgentPanelLike) {
+  // `animate` writes its HTML as a tool argument, so the authored source is
+  // available token by token. Accumulate it and publish partial renders the
+  // same way image generation publishes partial frames.
+  const animationArgs = createAnimationArgAccumulator();
+
   return agent.subscribe((ev) => {
     if (ev.type === "message_end" || ev.type === "agent_end" || ev.type === "message_update" || ev.type === "message_start") {
       const msgs = agent.state.messages;
       agent.state.messages = [...msgs];
     }
+
+    if (ev.type === "message_update") {
+      const streamEvent = (ev as any).assistantMessageEvent;
+      const contentIndex = streamEvent?.contentIndex;
+      if (typeof contentIndex === "number") {
+        const part = streamEvent.partial?.content?.[contentIndex];
+        const callId: string = part?.id ?? `call-${contentIndex}`;
+        if (streamEvent.type === "toolcall_start") {
+          animationArgs.start(contentIndex, part?.name ?? "");
+        } else if (streamEvent.type === "toolcall_delta") {
+          const html = animationArgs.delta(contentIndex, streamEvent.delta ?? "", part?.name);
+          if (html) {
+            emitAnimationProgress({ callId, topic: animationArgs.topic(contentIndex), html, status: "streaming" });
+          }
+        } else if (streamEvent.type === "toolcall_end") {
+          emitAnimationProgress({ callId, topic: animationArgs.topic(contentIndex), html: "", status: "done" });
+          animationArgs.end(contentIndex);
+        }
+      }
+    }
+
+    if (ev.type === "agent_end") animationArgs.clear();
     if (ev.type === "agent_end") {
       agent.waitForIdle().then(() => panel.agentInterface?.requestUpdate?.());
     }
