@@ -16,6 +16,24 @@ function messageId(message: AgentMessage): string {
 	return id;
 }
 
+function toolFailureMessage(result: unknown): string {
+	const content = (result as { content?: unknown })?.content;
+	if (Array.isArray(content)) {
+		const text = content
+			.map((part) => part && typeof part === "object" && (part as { type?: unknown }).type === "text"
+				? (part as { text?: unknown }).text
+				: "")
+			.filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+			.join("\n");
+		if (text) return text;
+	}
+	const details = (result as { details?: unknown })?.details;
+	if (details && typeof details === "object" && typeof (details as { message?: unknown }).message === "string") {
+		return (details as { message: string }).message;
+	}
+	return "Tool execution failed.";
+}
+
 export function recordAgentEvent(runtime: ConversationRuntime, event: AgentEvent): void {
 	switch (event.type) {
 		case "agent_start":
@@ -37,7 +55,7 @@ export function recordAgentEvent(runtime: ConversationRuntime, event: AgentEvent
 			runtime.emit("tool.progress", { callId: event.toolCallId, update: jsonSafe(event.partialResult) });
 			break;
 		case "tool_execution_end":
-			if (event.isError) runtime.emit("tool.failed", { callId: event.toolCallId, error: { code: "tool-error", message: "Tool execution failed." } });
+			if (event.isError) runtime.emit("tool.failed", { callId: event.toolCallId, error: { code: "tool-error", message: toolFailureMessage(event.result) } });
 			else runtime.emit("tool.completed", { callId: event.toolCallId, result: jsonSafe(event.result) });
 			break;
 		case "agent_end":

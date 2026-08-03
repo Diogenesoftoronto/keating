@@ -48,6 +48,9 @@ describe("hyperframes-frame-bridge", () => {
 	test("ships a runnable JS bridge payload with the shared postMessage contract", () => {
 		expect(HYPERFRAMES_BRIDGE_SCRIPT).toContain("keating-hyperframes-command");
 		expect(HYPERFRAMES_BRIDGE_SCRIPT).toContain("keating-hyperframes-state");
+		expect(HYPERFRAMES_BRIDGE_SCRIPT).toContain("keating-hyperframes-error");
+		expect(HYPERFRAMES_BRIDGE_SCRIPT).toContain("[data-width][data-height]");
+		expect(HYPERFRAMES_BRIDGE_SCRIPT).toContain("transformOrigin");
 		expect(HYPERFRAMES_BRIDGE_SCRIPT).toContain("installHyperframesBridge");
 		// Runnable browser JS: no TypeScript-only syntax that would fail to parse.
 		expect(HYPERFRAMES_BRIDGE_SCRIPT).not.toContain(": void");
@@ -156,9 +159,79 @@ describe("hyperframes-frame-bridge", () => {
 		});
 	});
 
+	test("reports runtime, promise, and external script failures to the parent", () => {
+		const listeners = new Map<string, Array<(event: any) => void>>();
+		const posted: Array<Record<string, unknown>> = [];
+		const fakeWindow = {
+			document: { getAnimations: () => [] },
+			parent: { postMessage: (message: Record<string, unknown>) => posted.push(message) },
+			addEventListener: (type: string, listener: (event: any) => void) => {
+				listeners.set(type, [...(listeners.get(type) ?? []), listener]);
+			},
+			requestAnimationFrame: () => 1,
+		};
+
+		new Function("window", HYPERFRAMES_BRIDGE_SCRIPT)(fakeWindow);
+		listeners.get("error")?.forEach((listener) => listener({ error: new Error("GSAP exploded") }));
+		listeners.get("error")?.forEach((listener) => listener({
+			target: { tagName: "SCRIPT", src: "https://cdn.example/gsap.js" },
+		}));
+		listeners.get("unhandledrejection")?.forEach((listener) => listener({ reason: "async failure" }));
+
+		expect(posted).toContainEqual({
+			type: "keating-hyperframes-error",
+			message: "GSAP exploded",
+			source: "runtime",
+		});
+		expect(posted).toContainEqual({
+			type: "keating-hyperframes-error",
+			message: "Animation dependency failed to load: https://cdn.example/gsap.js",
+			source: "resource",
+		});
+		expect(posted).toContainEqual({
+			type: "keating-hyperframes-error",
+			message: "async failure",
+			source: "promise",
+		});
+	});
+
+	test("scales fixed-size Hyperframes compositions into the iframe viewport", () => {
+		const listeners = new Map<string, Array<(event: any) => void>>();
+		const style: Record<string, string> = {};
+		const root = {
+			style,
+			getAttribute: (name: string) => name === "data-width" ? "1920" : "1080",
+		};
+		const fakeWindow = {
+			innerWidth: 960,
+			innerHeight: 540,
+			document: {
+				querySelector: () => root,
+				getAnimations: () => [],
+				documentElement: { style: {} },
+				body: { style: {} },
+			},
+			parent: { postMessage: () => {} },
+			addEventListener: (type: string, listener: (event: any) => void) => {
+				listeners.set(type, [...(listeners.get(type) ?? []), listener]);
+			},
+			requestAnimationFrame: () => 1,
+		};
+
+		new Function("window", HYPERFRAMES_BRIDGE_SCRIPT)(fakeWindow);
+		expect(style.transform).toBe("scale(0.5)");
+		expect(style.left).toBe("0px");
+		expect(style.top).toBe("0px");
+
+		fakeWindow.innerWidth = 800;
+		listeners.get("resize")?.forEach((listener) => listener({}));
+		expect(style.transform).toStartWith("scale(");
+	});
+
 	test("player loads the bridge via the inline injector, not a .ts asset URL", () => {
 		const playerSource = readFileSync(new URL("../src/components/HyperframesPlayer.tsx", import.meta.url), "utf8");
 		expect(playerSource).toContain("withHyperframesBridge(html)");
+		expect(playerSource).toContain("Animation failed to render:");
 		expect(playerSource).not.toContain('new URL("./hyperframes-frame-bridge.ts"');
 	});
 });

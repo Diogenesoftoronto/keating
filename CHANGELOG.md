@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.10.0] - 2026-08-03
+
+### Added
+- Added structured browser-tool argument validation with nested object and array checks, explicit required and optional parameter guidance, enum/default documentation, and classified execution errors.
+- Added visible Hyperframes diagnostics for runtime exceptions, rejected promises, blocked dependencies, and animations that load without a controllable timeline.
+- Added responsive scaling and centering for fixed-size Hyperframes compositions inside chat and artifact iframes.
+
+### Changed
+- Expanded the model chooser search control across medium layouts and gave it the dominant desktop column, with model/provider-aware placeholder copy and a keyboard-accessible clear action.
+- Promoted legacy textual failure responses into real tool failures so the model, canonical event stream, and learner-facing tool cards receive the same failure state and actionable message.
+- Migrated the repository's canonical development commands from duplicated `just` and `mise` definitions into `devenv tasks`, including build, test, web, mobile, CLI, release-hygiene, and git-hook commands.
+- Deferred NodePod, its generated source bundle, and Lix sandbox loading until the browser sandbox is actually booted, and split heavyweight web dependencies into dedicated production chunks.
+- Regenerated the NodePod boot source bundle after the tool-contract and runtime changes.
+
+### Fixed
+- Fixed the model search field becoming too narrow beside provider and capability filters on medium and large displays.
+- Fixed authored 1920×1080 Hyperframes scenes being clipped rather than fitted to the responsive player.
+- Fixed missing, malformed, unavailable, and failed tool calls being reported as successful results or reduced to a generic failure message.
+- Fixed OAuth storage access typing after the `pi-web-ui` storage API became synchronous.
+
 ## [2.9.0] - 2026-07-31
 
 ### Added
@@ -586,7 +606,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v2.7.0...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v2.10.0...HEAD
+[2.10.0]: https://github.com/Diogenesoftoronto/keating/compare/v2.9.0...v2.10.0
+[2.9.0]: https://github.com/Diogenesoftoronto/keating/compare/v2.8.0...v2.9.0
+[2.8.0]: https://github.com/Diogenesoftoronto/keating/compare/v2.7.0...v2.8.0
 [2.7.0]: https://github.com/Diogenesoftoronto/keating/compare/v2.6.0...v2.7.0
 [2.6.0]: https://github.com/Diogenesoftoronto/keating/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/Diogenesoftoronto/keating/compare/v2.4.1...v2.5.0

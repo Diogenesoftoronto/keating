@@ -37,7 +37,6 @@ export function createTeachingTools(storage: KeatingStorage): AgentTool[] {
 			},
 			async (params) => {
 				const topic = String(params.topic ?? "").trim();
-				if (!topic) return "Topic required.";
 
 				const validated = validateDeckDraft(params.cards);
 				if (!validated.ok) {
@@ -75,7 +74,8 @@ export function createTeachingTools(storage: KeatingStorage): AgentTool[] {
 					"",
 					`<keating-deck json=${JSON.stringify(JSON.stringify(saved))} />`,
 				].join("\n");
-			}
+			},
+			["topic", "cards"],
 		),
 
 		// bench - Run learner-feedback benchmark
@@ -285,7 +285,8 @@ ${profileBeliefs}
 					.filter(Boolean)
 					.join(" ");
 				return `${summary}\n\n<keating-goal json=${JSON.stringify(JSON.stringify(saved))} />`;
-			}
+			},
+			["title"],
 		),
 
 		// list_learner_goals - Show the learner's goals and progress
@@ -336,7 +337,8 @@ ${profileBeliefs}
 				const progress = computeGoalProgress(saved);
 				const next = progress.nextStep ? `Next: ${progress.nextStep.title}` : "All steps complete! 🎉";
 				return `Updated "${saved.title}" → ${progress.done}/${progress.total} steps (${progress.percent}%). ${next}\n\n<keating-goal json=${JSON.stringify(JSON.stringify(saved))} />`;
-			}
+			},
+			["goal_id", "step_id", "status"],
 		),
 
 		// source_edit - Apply a search/replace edit inside the NodePod VFS

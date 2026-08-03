@@ -364,7 +364,8 @@ export function createImprovementTools(
 						: "\n## Feedback\n- No major issues detected.";
 
 				return `**Score:** ${result.score.toFixed(2)}/100\n\n## Objectives\n${objectiveList}${feedbackSection}`;
-			}
+			},
+			["prompt"],
 		),
 
 		// timeline - Show engagement timeline

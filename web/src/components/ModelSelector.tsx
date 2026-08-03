@@ -213,17 +213,75 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 						<h2 className={css({ fontSize: { base: "0.875rem", sm: "1rem" }, fontWeight: 600, color: "var(--foreground)" })}>Select Model</h2>
 						<p className={css({ marginTop: "0.125rem", fontSize: { base: "0.6875rem", sm: "0.75rem" }, color: "var(--muted-foreground)" })}>Built-in providers and discovered custom-provider models.</p>
 					</div>
-					<div className={css({ marginTop: { base: "0.5rem", sm: "0.75rem" }, display: "grid", gap: "0.5rem", sm: { gridTemplateColumns: "minmax(0, 1fr) minmax(8rem, 12rem) minmax(8rem, 12rem) auto" } })}>
-						<label className={css({ minWidth: 0 })}>
+					<div
+						className={css({
+							marginTop: { base: "0.5rem", sm: "0.75rem" },
+							display: "grid",
+							gap: "0.5rem",
+							sm: { gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr) auto" },
+							lg: { gridTemplateColumns: "minmax(18rem, 1.7fr) minmax(9rem, 0.8fr) minmax(9rem, 0.8fr) auto" },
+						})}
+					>
+						<label className={css({ minWidth: 0, sm: { gridColumn: "1 / -1" }, lg: { gridColumn: "auto" } })}>
 							<span className={css({ position: "absolute", width: "1px", height: "1px", padding: 0, margin: "-1px", overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", borderWidth: 0 })}>Search models</span>
-							<input
-								ref={inputRef}
-								type="text"
-								placeholder="Search models"
-								className={css({ width: "100%", borderRadius: "0.375rem", border: "2px solid var(--border)", background: "var(--background)", padding: "0.375rem 0.625rem", fontSize: { base: "0.75rem", sm: "0.875rem" } })}
-								value={search}
-								onChange={(e) => setSearch(e.target.value)}
-							/>
+							<div className={css({ position: "relative" })}>
+								<Search
+									size={15}
+									aria-hidden="true"
+									className={css({
+										position: "absolute",
+										left: "0.625rem",
+										top: "50%",
+										transform: "translateY(-50%)",
+										color: "var(--muted-foreground)",
+										pointerEvents: "none",
+									})}
+								/>
+								<input
+									ref={inputRef}
+									type="search"
+									placeholder="Search by model, ID, or provider"
+									className={css({
+										width: "100%",
+										minHeight: "2.25rem",
+										borderRadius: "0.375rem",
+										border: "2px solid var(--border)",
+										background: "var(--background)",
+										paddingBlock: "0.375rem",
+										paddingLeft: "2rem",
+										paddingRight: search ? "2rem" : "0.625rem",
+										fontSize: { base: "0.75rem", sm: "0.875rem" },
+									})}
+									value={search}
+									onChange={(e) => setSearch(e.target.value)}
+								/>
+								{search && (
+									<button
+										type="button"
+										aria-label="Clear model search"
+										onClick={() => {
+											setSearch("");
+											inputRef.current?.focus();
+										}}
+										className={css({
+											position: "absolute",
+											right: "0.375rem",
+											top: "50%",
+											display: "inline-flex",
+											height: "1.5rem",
+											width: "1.5rem",
+											transform: "translateY(-50%)",
+											alignItems: "center",
+											justifyContent: "center",
+											borderRadius: "0.25rem",
+											color: "var(--muted-foreground)",
+											_hover: { background: "var(--accent)", color: "var(--accent-foreground)" },
+										})}
+									>
+										<X size={13} />
+									</button>
+								)}
+							</div>
 						</label>
 						<label className={css({ minWidth: 0 })}>
 							<span className={css({ position: "absolute", width: "1px", height: "1px", padding: 0, margin: "-1px", overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", borderWidth: 0 })}>Filter by provider</span>

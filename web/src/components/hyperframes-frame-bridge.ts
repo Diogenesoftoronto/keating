@@ -14,6 +14,7 @@
 // sides communicate via window.postMessage using these message shapes:
 //   command (parent -> iframe): { type: "keating-hyperframes-command", action, progress? }
 //   state   (iframe -> parent): { type: "keating-hyperframes-state", progress, playing, hasTimeline }
+//   error   (iframe -> parent): { type: "keating-hyperframes-error", message, source? }
 
 export const HYPERFRAMES_BRIDGE_SCRIPT = String.raw`
 (function () {
@@ -21,9 +22,56 @@ export const HYPERFRAMES_BRIDGE_SCRIPT = String.raw`
 
   var commandType = "keating-hyperframes-command";
   var stateType = "keating-hyperframes-state";
+  var errorType = "keating-hyperframes-error";
   var pendingCommand = null;
   var hadTargets = false;
   var lastStateAt = 0;
+
+  function errorMessage(value) {
+    if (value && typeof value.message === "string" && value.message.trim()) return value.message.trim();
+    if (typeof value === "string" && value.trim()) return value.trim();
+    try {
+      var serialized = JSON.stringify(value);
+      return serialized && serialized !== "{}" ? serialized : "Animation runtime failed.";
+    } catch (_error) {
+      return "Animation runtime failed.";
+    }
+  }
+
+  function postError(win, value, source) {
+    win.parent.postMessage({
+      type: errorType,
+      message: errorMessage(value),
+      source: source || undefined,
+    }, "*");
+  }
+
+  function fitComposition(win) {
+    try {
+      if (!win.document || typeof win.document.querySelector !== "function") return;
+      var root = win.document.querySelector("[data-width][data-height]");
+      if (!root || !root.style) return;
+      var width = Number(root.getAttribute("data-width"));
+      var height = Number(root.getAttribute("data-height"));
+      if (!(width > 0) || !(height > 0)) return;
+      var viewportWidth = Math.max(1, win.innerWidth || width);
+      var viewportHeight = Math.max(1, win.innerHeight || height);
+      var scale = Math.min(viewportWidth / width, viewportHeight / height);
+      root.style.transformOrigin = "top left";
+      root.style.transform = "scale(" + scale + ")";
+      root.style.position = "absolute";
+      root.style.left = Math.max(0, (viewportWidth - width * scale) / 2) + "px";
+      root.style.top = Math.max(0, (viewportHeight - height * scale) / 2) + "px";
+      if (win.document.documentElement && win.document.documentElement.style) {
+        win.document.documentElement.style.overflow = "hidden";
+      }
+      if (win.document.body && win.document.body.style) {
+        win.document.body.style.overflow = "hidden";
+      }
+    } catch (error) {
+      postError(win, error, "layout");
+    }
+  }
 
   function isTimeline(value) {
     return Boolean(value)
@@ -173,6 +221,22 @@ export const HYPERFRAMES_BRIDGE_SCRIPT = String.raw`
   }
 
   function installHyperframesBridge(win) {
+    fitComposition(win);
+    win.addEventListener("resize", function () { fitComposition(win); });
+
+    win.addEventListener("error", function (event) {
+      var target = event && event.target;
+      if (target && target !== win && target.tagName === "SCRIPT") {
+        postError(win, "Animation dependency failed to load: " + (target.src || "external script"), "resource");
+        return;
+      }
+      postError(win, event && (event.error || event.message), "runtime");
+    }, true);
+
+    win.addEventListener("unhandledrejection", function (event) {
+      postError(win, event && event.reason, "promise");
+    });
+
     win.addEventListener("message", function (event) {
       if (event.source && event.source !== win.parent) return;
       if (!isHyperframesCommand(event.data)) return;

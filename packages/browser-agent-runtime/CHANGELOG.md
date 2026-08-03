@@ -1,6 +1,11 @@
 # Changelog
 
 
+## 2.10.0
+<sub>2026-08-03</sub>
+
+- *(minor)* Add explicit nested tool-schema validation and failure propagation, responsive Hyperframes fitting and diagnostics, deferred NodePod source loading, and the regenerated browser sandbox bundle.
+
 ## 2.9.0
 <sub>2026-07-31</sub>
 

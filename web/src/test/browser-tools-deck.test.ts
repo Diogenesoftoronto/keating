@@ -54,7 +54,7 @@ describe("deck tool", () => {
 		});
 	});
 
-	test("rejects underspecified card drafts", async () => {
+	test("surfaces underspecified card drafts as tool failures", async () => {
 		const { createKeatingTools } = await import("../keating/browser-tools");
 		const tools = await createKeatingTools({
 			getDeckBySlug: async () => null,
@@ -65,18 +65,12 @@ describe("deck tool", () => {
 		const deckTool = tools.find((tool) => tool.name === "deck");
 		expect(deckTool).toBeDefined();
 
-		const result = await deckTool!.execute("tool-call-2", {
-			topic: "DNS",
-			cards: [{ front: "Q?", back: "A." }],
-		});
-
-		const text = result.content
-			.filter((entry): entry is { type: "text"; text: string } => entry.type === "text")
-			.map((entry) => entry.text)
-			.join("\n");
-
-		expect(text).toContain("No template fallback exists.");
-		expect(text).toContain("at least 2");
+		await expect(
+			deckTool!.execute("tool-call-2", {
+				topic: "DNS",
+				cards: [{ front: "Q?", back: "A." }],
+			}),
+		).rejects.toThrow("Author at least 2 cards");
 	});
 
 	test("grades pending free-text diagnostic checks by exact question", async () => {
