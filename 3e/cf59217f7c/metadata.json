@@ -3,10 +3,13 @@
   "checkpoint_id": "3ecf59217f7c",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 4,
   "files_touched": [
     "web/src/components/HyperframesPlayer.tsx",
-    "web/src/keating/browser-tools/media.ts"
+    "web/src/keating/browser-tools/media.ts",
+    "web/src/keating/nodepod-runtime.ts",
+    "web/src/keating/oauth.ts",
+    "web/vite.config.ts"
   ],
   "sessions": [
     {
@@ -15,13 +18,20 @@
       "compact_transcript": "/3e/cf59217f7c/0/transcript.jsonl",
       "content_hash": "/3e/cf59217f7c/0/content_hash.txt",
       "prompt": "/3e/cf59217f7c/0/prompt.txt"
+    },
+    {
+      "metadata": "/3e/cf59217f7c/1/metadata.json",
+      "transcript": "/3e/cf59217f7c/1/full.jsonl",
+      "compact_transcript": "/3e/cf59217f7c/1/transcript.jsonl",
+      "content_hash": "/3e/cf59217f7c/1/content_hash.txt",
+      "prompt": "/3e/cf59217f7c/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 30390,
+    "input_tokens": 399663,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 181696,
-    "output_tokens": 7762,
-    "api_call_count": 11
+    "cache_read_tokens": 6620928,
+    "output_tokens": 41503,
+    "api_call_count": 77
   }
 }
