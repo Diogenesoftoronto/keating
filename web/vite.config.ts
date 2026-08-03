@@ -452,6 +452,18 @@ export default defineConfig({
     chunkSizeWarningLimit: 5000,
     reportCompressedSize: false,
     ssr: false,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return;
+          if (id.includes('@scelar/nodepod')) return 'nodepod-wasm';
+          if (id.includes('react-syntax-highlighter') || id.includes('refractor') || id.includes('prismjs')) return 'syntax-highlighter';
+          if (id.includes('@remotion')) return 'remotion';
+          if (id.includes('cytoscape')) return 'cytoscape';
+          if (id.includes('@react-pdf') || id.includes('pdf-lib')) return 'pdf';
+        },
+      },
+    },
   },
   resolve: {
     alias: {

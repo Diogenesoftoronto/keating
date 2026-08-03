@@ -182,7 +182,8 @@ export function createWorkspaceTools(options: KeatingToolsOptions): AgentTool[] 
 					"",
 					stringifyRemoteResult(body),
 				].join("\n");
-			}
+			},
+			["operation"],
 		),
 
 		// animate - The model authors and renders a real Hyperframes animation
@@ -234,7 +235,8 @@ export function createWorkspaceTools(options: KeatingToolsOptions): AgentTool[] 
 					"- Call `validate_source_edit` with a test script to confirm the change works.",
 					"- Call `source_diff` to review all changes.",
 				].join("\n");
-			}
+			},
+			["file", "search", "replace"],
 		),
 
 		// source_diff - Show differences between baseline and current VFS
@@ -295,7 +297,8 @@ export function createWorkspaceTools(options: KeatingToolsOptions): AgentTool[] 
 					session.stdout ? `## stdout\n\`\`\`\n${session.stdout}\n\`\`\`` : "",
 					session.stderr ? `## stderr\n\`\`\`\n${session.stderr}\n\`\`` : "",
 				].filter(Boolean).join("\n");
-			}
+			},
+			["code"],
 		),
 
 		// validate_source_edit - Run a test to confirm an edit is correct
@@ -334,7 +337,8 @@ export function createWorkspaceTools(options: KeatingToolsOptions): AgentTool[] 
 					result.stderr ? `\`\`\`\n${result.stderr}\n\`\`\`` : "",
 				];
 				return lines.filter(Boolean).join("\n");
-			}
+			},
+			["file", "testScript"],
 		),
 
 		// source_snapshot - Capture the current NodePod VFS state for rollback

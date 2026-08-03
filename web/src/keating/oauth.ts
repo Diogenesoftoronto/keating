@@ -1,12 +1,9 @@
-type AppStorage = Awaited<ReturnType<typeof import("@earendil-works/pi-web-ui").getAppStorage>>;
+import { getAppStorage as piGetAppStorage } from "@earendil-works/pi-web-ui";
 
-let _getAppStorage: (() => AppStorage) | null = null;
-async function getAppStorage(): Promise<AppStorage> {
-	if (!_getAppStorage) {
-		const mod = await import("@earendil-works/pi-web-ui");
-		_getAppStorage = mod.getAppStorage;
-	}
-	return _getAppStorage();
+type AppStorage = Awaited<ReturnType<typeof piGetAppStorage>>;
+
+function getAppStorage(): AppStorage {
+	return piGetAppStorage();
 }
 
 export type OAuthProviderId = "anthropic" | "openai-codex";

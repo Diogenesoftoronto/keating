@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Pause, Play, RotateCcw, Repeat } from "lucide-react";
+import { CircleAlert, Pause, Play, RotateCcw, Repeat } from "lucide-react";
 import { css, cx } from "../../styled-system/css";
 import { withHyperframesBridge } from "./hyperframes-bridge";
 
@@ -21,6 +21,12 @@ type HyperframesStateMessage = {
 	seekable: boolean;
 };
 
+type HyperframesErrorMessage = {
+	type: "keating-hyperframes-error";
+	message: string;
+	source?: string;
+};
+
 function isHyperframesStateMessage(value: unknown): value is HyperframesStateMessage {
 	if (!value || typeof value !== "object") return false;
 	const message = value as Partial<HyperframesStateMessage>;
@@ -32,6 +38,14 @@ function isHyperframesStateMessage(value: unknown): value is HyperframesStateMes
 		&& typeof message.seekable === "boolean";
 }
 
+function isHyperframesErrorMessage(value: unknown): value is HyperframesErrorMessage {
+	if (!value || typeof value !== "object") return false;
+	const message = value as Partial<HyperframesErrorMessage>;
+	return message.type === "keating-hyperframes-error"
+		&& typeof message.message === "string"
+		&& message.message.trim().length > 0;
+}
+
 export function HyperframesPlayer({ html, title, className }: HyperframesPlayerProps) {
 	const iframeRef = useRef<HTMLIFrameElement | null>(null);
 	const [playing, setPlaying] = useState(false);
@@ -40,6 +54,8 @@ export function HyperframesPlayer({ html, title, className }: HyperframesPlayerP
 	const [bridgeReady, setBridgeReady] = useState(false);
 	const [hasTimeline, setHasTimeline] = useState(false);
 	const [seekable, setSeekable] = useState(false);
+	const [runtimeError, setRuntimeError] = useState("");
+	const [loadTimedOut, setLoadTimedOut] = useState(false);
 	const sandboxedHtml = useMemo(() => withHyperframesBridge(html), [html]);
 	const src = useBlobUrl(sandboxedHtml, "text/html");
 
@@ -49,9 +65,15 @@ export function HyperframesPlayer({ html, title, className }: HyperframesPlayerP
 
 	useEffect(() => {
 		const handleMessage = (event: MessageEvent<unknown>) => {
-			if (event.source !== iframeRef.current?.contentWindow || !isHyperframesStateMessage(event.data)) return;
+			if (event.source !== iframeRef.current?.contentWindow) return;
+			if (isHyperframesErrorMessage(event.data)) {
+				setRuntimeError(event.data.message);
+				return;
+			}
+			if (!isHyperframesStateMessage(event.data)) return;
 			const next = Math.max(0, Math.min(1, event.data.progress));
 			setBridgeReady(true);
+			setLoadTimedOut(false);
 			setHasTimeline(event.data.hasTimeline);
 			setSeekable(event.data.seekable);
 			setProgress(next);
@@ -72,11 +94,19 @@ export function HyperframesPlayer({ html, title, className }: HyperframesPlayerP
 	}, [src]);
 
 	useEffect(() => {
+		if (!src || bridgeReady || runtimeError) return;
+		const timer = window.setTimeout(() => setLoadTimedOut(true), 5000);
+		return () => window.clearTimeout(timer);
+	}, [bridgeReady, runtimeError, src]);
+
+	useEffect(() => {
 		setPlaying(false);
 		setProgress(0);
 		setBridgeReady(false);
 		setHasTimeline(false);
 		setSeekable(false);
+		setRuntimeError("");
+		setLoadTimedOut(false);
 	}, [src]);
 
 	const controlLabel = !bridgeReady ? "Loading" : !hasTimeline ? "Unavailable" : playing ? "Pause" : "Play";
@@ -93,6 +123,42 @@ export function HyperframesPlayer({ html, title, className }: HyperframesPlayerP
 				onLoad={() => postCommand({ type: "keating-hyperframes-command", action: "request-state" })}
 				className={css({ display: "block", aspectRatio: "16 / 9", width: "100%", borderRadius: "0.75rem", border: "none", background: "black" })}
 			/>
+			{runtimeError && (
+				<div
+					role="alert"
+					className={css({
+						display: "flex",
+						alignItems: "flex-start",
+						gap: "0.5rem",
+						borderRadius: "0.375rem",
+						background: "color-mix(in srgb, var(--destructive) 10%, transparent)",
+						padding: "0.75rem",
+						fontSize: "0.75rem",
+						color: "var(--destructive)",
+					})}
+				>
+					<CircleAlert size={14} className={css({ marginTop: "0.0625rem", flexShrink: 0 })} />
+					<span>Animation failed to render: {runtimeError}</span>
+				</div>
+			)}
+			{!runtimeError && loadTimedOut && (
+				<div
+					role="status"
+					className={css({
+						display: "flex",
+						alignItems: "flex-start",
+						gap: "0.5rem",
+						borderRadius: "0.375rem",
+						background: "color-mix(in srgb, #f59e0b 12%, transparent)",
+						padding: "0.75rem",
+						fontSize: "0.75rem",
+						color: "var(--foreground)",
+					})}
+				>
+					<CircleAlert size={14} className={css({ marginTop: "0.0625rem", flexShrink: 0, color: "#d97706" })} />
+					<span>The animation loaded without a controllable timeline. Its script may be blocked or still loading.</span>
+				</div>
+			)}
 			<div className={css({ display: "grid", gridTemplateColumns: "auto auto 1fr auto", alignItems: "center", gap: "0.75rem" })}>
 				<button
 					type="button"

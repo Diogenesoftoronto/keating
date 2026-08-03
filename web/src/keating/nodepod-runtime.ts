@@ -1,23 +1,13 @@
-import { Nodepod } from "@scelar/nodepod";
+import type { Nodepod } from "@scelar/nodepod";
 import type * as TypeScript from "typescript";
-import { NODEPOD_BOOT_FILES } from "./nodepod-boot-files";
 import { persistSnapshot, loadSnapshots, type SnapshotRecord } from "./nodepod-snapshot-db";
-import {
-	openSandboxLix,
-	closeSandboxLix,
-	lixCommit,
-	lixCreateBranch,
-	lixSwitchBranch,
-	lixListBranches,
-	lixListCommits,
-	lixDiffCommits,
-} from "./lix-sandbox";
 
 let nodePodInstance: Nodepod | null = null;
 let nodePodBootPromise: Promise<Nodepod | null> | null = null;
 
 // Baseline content for diff computation
 const baselineContent = new Map<string, string>();
+let bootFileCount = 0;
 
 export const NODEPOD_LOCAL_ENDPOINT = "nodepod://local";
 
@@ -37,6 +27,12 @@ export async function bootNodePod(): Promise<Nodepod | null> {
 
 	nodePodBootPromise = (async () => {
 		try {
+			const [{ Nodepod }, { NODEPOD_BOOT_FILES }, { openSandboxLix }] = await Promise.all([
+				import("@scelar/nodepod"),
+				import("./nodepod-boot-files"),
+				import("./lix-sandbox"),
+			]);
+			bootFileCount = Object.keys(NODEPOD_BOOT_FILES).length;
 			const pod = await Nodepod.boot({
 				files: {},
 				workdir: "/workspace",
@@ -110,7 +106,7 @@ globalThis.assertEq = assertEq;
 			await openSandboxLix();
 
 			nodePodInstance = pod;
-			console.log("[nodepod] Booted successfully with", Object.keys(NODEPOD_BOOT_FILES).length, "source files, instanceId:", pod.instanceId);
+			console.log("[nodepod] Booted successfully with", bootFileCount, "source files, instanceId:", pod.instanceId);
 			return pod;
 		} catch (err) {
 			console.warn("[nodepod] Boot failed:", err instanceof Error ? err.message : String(err));
@@ -127,6 +123,7 @@ export async function teardownNodePod(): Promise<void> {
 			activeTerminal.detach();
 			activeTerminal = null;
 		}
+		const { closeSandboxLix } = await import("./lix-sandbox");
 		closeSandboxLix();
 		nodePodInstance.teardown();
 		nodePodInstance = null;
@@ -174,7 +171,7 @@ export async function nodePodInfo(): Promise<NodePodInfo | null> {
 	} catch {
 		// memoryStats may throw in some nodepod versions
 	}
-	return { instanceId: pod.instanceId, sabEnabled: pod.isSharedArrayBufferEnabled, memoryStats, bootFileCount: Object.keys(NODEPOD_BOOT_FILES).length };
+	return { instanceId: pod.instanceId, sabEnabled: pod.isSharedArrayBufferEnabled, memoryStats, bootFileCount };
 }
 
 /* ─── VFS ───────────────────────────────────────────────── */

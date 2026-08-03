@@ -85,7 +85,7 @@ export function createAssessmentTools(storage: KeatingStorage, collectRealOutcom
 					questions: {
 						type: "array",
 						minItems: 2,
-						description: "Author each question yourself from the real lesson material. Provide 4-10 for a good quiz. When 2+ valid questions are given, they fully replace the generic templates.",
+						description: "REQUIRED. Pass a `questions` array authored from the real lesson material. Provide 4-10 for a good quiz. When 2+ valid questions are given, they fully replace the generic templates.",
 						items: {
 							type: "object",
 							properties: {
@@ -203,7 +203,8 @@ export function createAssessmentTools(storage: KeatingStorage, collectRealOutcom
 				await storage.recordFeedback(topic, signal);
 
 				return `Recorded ${signal} feedback for "${topic}".`;
-			}
+			},
+			["signal"],
 		),
 
 		// grade_quiz - Record the teacher's judgment of open-ended answers
@@ -219,11 +220,17 @@ export function createAssessmentTools(storage: KeatingStorage, collectRealOutcom
 						type: "object",
 						properties: {
 							question_id: { type: "string", description: "The question's id." },
-							verdict: { type: "string", enum: ["correct", "partial", "incorrect"], description: "Your judgment of the learner's answer by meaning." },
+								verdict: {
+									type: "string",
+									enum: ["correct", "partial", "incorrect"],
+									description: "Your judgment of the learner's answer by meaning. Invalid values are normalized to partial for backward compatibility.",
+									"x-keating-normalize-invalid-enum": true,
+								},
 							note: { type: "string", description: "Short feedback shown to the learner (what was right/wrong)." },
 						},
 						required: ["question_id", "verdict"],
 						additionalProperties: false,
+						"x-keating-drop-invalid-item": true,
 					},
 				},
 			},
@@ -421,7 +428,8 @@ export function createAssessmentTools(storage: KeatingStorage, collectRealOutcom
 				return graded > 0
 					? `Recorded ${graded} graded diagnostic check${graded === 1 ? "" : "s"} for "${topic}".`
 					: `No pending diagnostic checks matched the supplied questions for "${topic}".`;
-			}
+			},
+			["topic", "results"],
 		),
 
 		// set_learner_goal - Capture a long-horizon goal and scaffold a tracked curriculum

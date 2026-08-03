@@ -252,7 +252,6 @@ export function createMediaTools(storage: KeatingStorage): AgentTool[] {
 			},
 			async (params) => {
 				const topic = (params.topic as string) || "";
-				if (!topic) return "Topic required.";
 
 				const kindRaw = typeof params.kind === "string" ? params.kind : "";
 				if (kindRaw && kindRaw !== "hyperframes") {
@@ -324,7 +323,8 @@ export function createMediaTools(storage: KeatingStorage): AgentTool[] {
 					"",
 					`<keating-animation json=${JSON.stringify(JSON.stringify(animationPayload))} />`,
 				].join("\n");
-			}
+			},
+			["topic", "body"],
 		),
 
 		createTool(
@@ -466,7 +466,8 @@ export function createMediaTools(storage: KeatingStorage): AgentTool[] {
 					"",
 					`<keating-image json=${JSON.stringify(JSON.stringify(payload))} />`,
 				].join("\n");
-			}
+			},
+			["title", "subtitle", "points"],
 		),
 
 		// verify - Self-check knowledge before teaching
