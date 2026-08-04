@@ -9,6 +9,17 @@ const noFallthroughStaticAsset = (headers = crossOriginIsolationHeaders) =>
   ({ fallthrough: false, headers }) as unknown as { static: false; headers: Record<string, string> };
 
 export default defineNitroConfig({
+  features: {
+    websocket: true,
+  },
+  // Courses are account state, not ephemeral share payloads. Deployments should
+  // point this at a persistent volume (for example /data/keating-courses).
+  storage: {
+    "keating:courses": {
+      driver: "fs",
+      base: process.env.KEATING_COURSES_STORAGE_DIR ?? ".data/keating-courses",
+    },
+  },
   renderer: {
     // Nitro was inlining the source web/index.html template into the server
     // bundle, which still references /src/main-react.tsx. In production that
@@ -65,6 +76,26 @@ export default defineNitroConfig({
   serverAssets: [{ baseName: "server", dir: "server/assets" }],
   handlers: [
 	{
+	  route: "/api/blog",
+	  handler: "server/api/blog/index.ts",
+	},
+	{
+	  route: "/.well-known/site.standard.publication",
+	  handler: "server/routes/well-known/site-standard-publication.ts",
+	},
+	{
+	  route: "/blog",
+	  handler: "server/routes/blog/[...path].ts",
+	},
+	{
+	  route: "/blog/**",
+	  handler: "server/routes/blog/[...path].ts",
+	},
+	{
+	  route: "/api/courses/realtime",
+	  handler: "server/api/courses/realtime.ts",
+	},
+	{
 	  route: "/api/agent-runtime/host/execute",
 	  handler: "server/api/agent-runtime/host/execute.ts",
 	},
@@ -106,6 +137,14 @@ export default defineNitroConfig({
     {
       route: "/api/share/**",
       handler: "server/api/share/[id].ts",
+    },
+    {
+      route: "/api/courses",
+      handler: "server/api/courses/[...path].ts",
+    },
+    {
+      route: "/api/courses/**",
+      handler: "server/api/courses/[...path].ts",
     },
     {
       route: "/api/oauth/token",

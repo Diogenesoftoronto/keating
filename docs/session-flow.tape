@@ -9,7 +9,7 @@ Set Theme "Catppuccin Mocha"
 
 # 1. Launch the Hyperteacher Shell. Pi boot is variable, so use a
 #    generous fixed sleep instead of guessing a short window.
-Type "just shell"
+Type "devenv tasks run keating:shell"
 Enter
 Sleep 6s
 

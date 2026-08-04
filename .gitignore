@@ -53,6 +53,7 @@ web/public/manim-web/
 
 # Project-specific state
 .keating/
+.data/
 .chrysalis/
 .codex/
 .mise/

@@ -1,0 +1,4 @@
+{"id":"video_001","type":"video","path":"assets/cli-artifacts.mp4","source":"existing","description":"cli artifacts","provenance":{"provider":"local","adopted":true}}
+{"id":"video_002","type":"video","path":"assets/tui-collaborative.mp4","source":"existing","description":"tui collaborative","provenance":{"provider":"local","adopted":true}}
+{"id":"video_003","type":"video","path":"assets/web-classroom.mp4","source":"existing","description":"web classroom","provenance":{"provider":"local","adopted":true}}
+{"id":"video_004","type":"video","path":"assets/tui-tour.mp4","source":"existing","description":"tui tour","provenance":{"provider":"local","adopted":true}}

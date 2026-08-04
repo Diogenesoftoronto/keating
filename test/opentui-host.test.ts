@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { cardLines, toolResultCardLines } from "../src/core/cards.js";
 import { HostController, type HostSurface } from "../src/tui/host-controller.js";
+import type { TranscriptEntry } from "../src/tui/view-model.js";
 
 function deferredTick(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 0));
@@ -10,16 +11,27 @@ function deferredTick(): Promise<void> {
 function harness() {
   let listener: ((event: unknown) => void) | undefined;
   const sent: Array<Record<string, unknown>> = [];
-  const turns: string[] = [];
+  const entries: TranscriptEntry[] = [];
+  const hydrated: TranscriptEntry[][] = [];
+  const headers: Array<Record<string, unknown>> = [];
   const client = {
     onEvent(next: (event: unknown) => void) { listener = next; },
     async send(command: Record<string, unknown>) { sent.push(command); },
+    async getMessages() { return [{ role: "user", content: "Earlier question", timestamp: 1 }]; },
+    async getState() {
+      return { model: { provider: "google", id: "gemini" }, thinkingLevel: "high", sessionName: "Limits", sessionId: "s1", isStreaming: false };
+    },
+    async cycleModel() { return { model: { provider: "openai", id: "gpt" }, thinkingLevel: "medium" }; },
+    async cycleThinkingLevel() { return { level: "low" }; },
+    async newSession() { return { cancelled: false }; },
+    async abort() {},
   };
   const surface: HostSurface = {
-    appendTurn(text) { turns.push(text); },
+    hydrateEntries(next) { hydrated.push(next); },
+    appendEntry(entry) { entries.push(entry); },
     setStreaming() {},
     setStatus() {},
-    setBusy() {},
+    setHeaderState(state) { headers.push(state); },
     setEditorText() {},
     setWidget() {},
     setTitle() {},
@@ -30,7 +42,7 @@ function harness() {
   };
   const controller = new HostController(client, surface);
   controller.attach();
-  return { emit: (event: unknown) => listener?.(event), sent, turns };
+  return { emit: (event: unknown) => listener?.(event), sent, entries, hydrated, headers, controller };
 }
 
 describe("OpenTUI host controller", () => {
@@ -56,15 +68,49 @@ describe("OpenTUI host controller", () => {
       result: { details: { goal: { title: "Calculus", status: "active", steps: [{ order: 0, title: "Limits", status: "in_progress" }] } } },
       isError: false,
     });
-    expect(h.turns.join("\n")).toContain("Goal: Calculus");
-    expect(h.turns.join("\n")).toContain("Limits");
+    expect(h.entries.map((entry) => entry.body).join("\n")).toContain("Goal: Calculus");
+    expect(h.entries.map((entry) => entry.body).join("\n")).toContain("Limits");
+  });
+
+  test("hydrates the existing session and publishes header state", async () => {
+    const h = harness();
+    await h.controller.initialize();
+    expect(h.hydrated.at(-1)?.[0]).toMatchObject({ kind: "user", title: "You", body: "Earlier question" });
+    expect(h.headers.at(-1)).toEqual({ model: "google/gemini", thinking: "high", session: "Limits", busy: false });
+  });
+
+  test("exposes model, thinking, session, and abort controls to the host", async () => {
+    const h = harness();
+    await h.controller.cycleModel();
+    await h.controller.cycleThinking();
+    await h.controller.newSession();
+    await h.controller.abort();
+
+    expect(h.headers).toContainEqual({ model: "openai/gpt", thinking: "medium" });
+    expect(h.headers).toContainEqual({ thinking: "low" });
+    expect(h.hydrated.at(-1)).toEqual([]);
+    expect(h.entries.map((entry) => entry.title)).toContain("Response stopped");
+  });
+
+  test("shows sanitized tool failures instead of silently dropping them", () => {
+    const h = harness();
+    h.emit({
+      type: "tool_execution_end",
+      toolName: "read",
+      result: "ANTHROPIC_API_KEY=verysecretvalue",
+      isError: true,
+    });
+    expect(h.entries.at(-1)).toMatchObject({ kind: "error", title: "read failed" });
+    expect(h.entries.at(-1)?.body).toContain("ANTHROPIC_API_KEY=[redacted]");
+    expect(h.entries.at(-1)?.body).not.toContain("verysecretvalue");
   });
 
   test("explicitly answers unsupported custom UI requests", async () => {
     const h = harness();
     h.emit({ type: "extension_ui_request", id: "custom-1", method: "custom", title: "Rich form" });
     await deferredTick();
-    expect(h.turns.join("\n")).toContain("Unsupported Pi UI request: custom");
+    expect(h.entries.at(-1)).toMatchObject({ kind: "error", title: "Unsupported Pi UI request" });
+    expect(h.entries.at(-1)?.body).toContain("custom");
     expect(h.sent).toContainEqual({ type: "extension_ui_response", id: "custom-1", cancelled: true, reason: "unsupported_ui_request" });
   });
 

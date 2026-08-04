@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-08-04
+
+### Added
+- Added authenticated course workspaces with a course library, role-aware membership, consent controls, invitation links and QR joining, shared lessons and notes, submissions, realtime conflict handling, and an optional Pear peer-to-peer mirror.
+- Added the **Coming Up** study board, which unifies due flashcards, verifications, learner priorities, and spaced-repetition evidence into actionable lanes with completion controls.
+- Added safe Anki `.apkg`, CSV, and TSV import/export support, preserving stable deck, note, and card identities while omitting unsupported active media.
+- Added a rebuilt terminal teaching cockpit with model, thinking, session, and busy status; typed transcript rendering; lesson and artifact rails; history; and a searchable command palette.
+- Added an AT Protocol blog surface and Standard.site publication workflow, including discovery routes, a dry-run publisher, and explicit deployment configuration.
+- Added feature-led landing and product-tour surfaces for the web classroom, live multimodal teaching, Courses, Coming Up, publication, CLI artifacts, and the new TUI.
+- Added capability-aware model selection, live transcript improvements, and an explicit retry action for failed image generation.
+
+### Changed
+- Reorganized primary navigation and landing content around the complete Keating product, with responsive header behavior across phone, tablet, and desktop widths.
+- Replaced coupled course-workspace `useState` groups with typed reducers and consolidated shared flashcard, storyboard, and local-setting contracts after a repository-wide `similarity-ts` review.
+- Consolidated persisted React settings behind a stable `useSyncExternalStore` adapter so model, speech, and interface preferences share one typed synchronization path.
+- Upgraded learner state from schema 2 to schema 3 to persist Coming Up priorities and Anki identities; existing state migrates with safe empty defaults.
+- Namespaced the canonical devenv tasks under `keating:*`; topic-bearing tasks now accept `--input topic=<topic>`, while direct CLI commands remain available for positional workflows.
+- Expanded production release validation to test, build, verify synchronized versions, inspect the npm archive, and produce native Linux and macOS archives for x64 and arm64 runners before publication.
+
+### Fixed
+- Fixed pending OAuth handoffs and subscription authentication recovery across production redirects.
+- Fixed persisted settings snapshots changing identity without a notification, which could cause unnecessary React rerenders and subscription loops.
+- Fixed crowded intermediate-width headers where navigation, actions, and account controls competed for space.
+- Fixed course sharing projections exposing identity and private learner metadata to the optional peer mirror.
+
+### Security
+- Reduced Pear course projections to identity-neutral shared content and excluded private activity, consent, progress, comments, and unshared submissions.
+- Kept course authorization, durable session resolution, hosted-provider credentials, and publication credentials on server-side boundaries.
+
 ## [2.10.0] - 2026-08-03
 
 ### Added
@@ -606,7 +635,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v2.10.0...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v3.0.0...HEAD
+[3.0.0]: https://github.com/Diogenesoftoronto/keating/compare/v2.10.0...v3.0.0
 [2.10.0]: https://github.com/Diogenesoftoronto/keating/compare/v2.9.0...v2.10.0
 [2.9.0]: https://github.com/Diogenesoftoronto/keating/compare/v2.8.0...v2.9.0
 [2.8.0]: https://github.com/Diogenesoftoronto/keating/compare/v2.7.0...v2.8.0

@@ -4,9 +4,10 @@ interface SeoOptions {
   title: string;
   description: string;
   canonical?: string;
+  standardSiteDocument?: string;
 }
 
-export function useSeo({ title, description, canonical }: SeoOptions) {
+export function useSeo({ title, description, canonical, standardSiteDocument }: SeoOptions) {
   useEffect(() => {
     const originalTitle = document.title;
     document.title = title;
@@ -46,6 +47,16 @@ export function useSeo({ title, description, canonical }: SeoOptions) {
       canonicalLink.setAttribute("href", canonical);
     }
 
+    let standardSiteLink = document.querySelector('link[rel="site.standard.document"]');
+    if (standardSiteDocument) {
+      if (!standardSiteLink) {
+        standardSiteLink = document.createElement("link");
+        standardSiteLink.setAttribute("rel", "site.standard.document");
+        document.head.appendChild(standardSiteLink);
+      }
+      standardSiteLink.setAttribute("href", standardSiteDocument);
+    }
+
     return () => {
       document.title = originalTitle;
       if (descMeta) descMeta.setAttribute("content", originalDesc);
@@ -57,6 +68,15 @@ export function useSeo({ title, description, canonical }: SeoOptions) {
         const href = canonicalLink.getAttribute("href");
         if (href === canonical) canonicalLink.remove();
       }
+			// Optional chaining alone is insufficient here: when both values are
+			// undefined, the comparison is true and `null.remove()` would throw.
+			if (
+				standardSiteLink &&
+				standardSiteDocument &&
+				standardSiteLink.getAttribute("href") === standardSiteDocument
+			) {
+				standardSiteLink.remove();
+			}
     };
-  }, [title, description, canonical]);
+  }, [title, description, canonical, standardSiteDocument]);
 }

@@ -1,3 +1,20 @@
+export function subscribeLocalSetting<T>(
+	config: { event: string; load: () => T },
+	callback: (value: T) => void,
+): () => void {
+	if (typeof window === "undefined") return () => {};
+	const onCustom = (event: Event) => {
+		callback((event as CustomEvent<T>).detail ?? config.load());
+	};
+	const onStorage = () => callback(config.load());
+	window.addEventListener(config.event, onCustom);
+	window.addEventListener("storage", onStorage);
+	return () => {
+		window.removeEventListener(config.event, onCustom);
+		window.removeEventListener("storage", onStorage);
+	};
+}
+
 export function createLocalSetting<T>(config: {
 	key: string;
 	event: string;
@@ -34,17 +51,7 @@ export function createLocalSetting<T>(config: {
 	};
 
 	const subscribe = (cb: (value: T) => void) => {
-		if (typeof window === "undefined") return () => {};
-		const onCustom = (event: Event) => {
-			cb((event as CustomEvent<T>).detail ?? load());
-		};
-		const onStorage = () => cb(load());
-		window.addEventListener(config.event, onCustom);
-		window.addEventListener("storage", onStorage);
-		return () => {
-			window.removeEventListener(config.event, onCustom);
-			window.removeEventListener("storage", onStorage);
-		};
+		return subscribeLocalSetting({ event: config.event, load }, cb);
 	};
 
 	return { load, save, subscribe };

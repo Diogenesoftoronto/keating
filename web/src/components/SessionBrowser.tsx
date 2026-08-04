@@ -29,6 +29,10 @@ export interface SessionBrowserProps {
 	onSuggestTitle?: (sessionId: string) => Promise<string>;
 }
 
+export interface SessionBrowserSurfaceProps extends SessionBrowserProps {
+	store: ReturnType<typeof useSessions>;
+}
+
 function useIsDesktop(): boolean {
 	return useMediaQuery(`(min-width: ${SESSION_BROWSER_BREAKPOINT}px)`);
 }

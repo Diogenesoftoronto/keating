@@ -1,4 +1,5 @@
 import { DEFAULT_IMAGE_GENERATOR_ID, isImageGeneratorId, type ImageGeneratorId } from "../lib/image-generators";
+import { subscribeLocalSetting } from "./local-setting";
 export {
 	addCustomModel,
 	addRecentModel,
@@ -236,14 +237,5 @@ export function saveKeatingUiSettings(next: KeatingUiSettings) {
 }
 
 export function subscribeKeatingUiSettings(callback: (settings: KeatingUiSettings) => void) {
-	const notify = () => callback(loadKeatingUiSettings());
-	const onCustom = (event: Event) => {
-		callback((event as CustomEvent<KeatingUiSettings>).detail ?? loadKeatingUiSettings());
-	};
-	window.addEventListener(SETTINGS_CHANGED_EVENT, onCustom);
-	window.addEventListener("storage", notify);
-	return () => {
-		window.removeEventListener(SETTINGS_CHANGED_EVENT, onCustom);
-		window.removeEventListener("storage", notify);
-	};
+	return subscribeLocalSetting({ event: SETTINGS_CHANGED_EVENT, load: loadKeatingUiSettings }, callback);
 }

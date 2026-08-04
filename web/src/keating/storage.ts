@@ -6,10 +6,12 @@
 import type { LearnerGoal } from "./goals";
 import { inferBrowserLearnerTurnSignal, type QuizQuestionGrade } from "./core";
 import { deriveLearnerProfile, type LearnerTopicProfile } from "./learner-profile";
+import type { Flashcard, FlashcardDeck, FlashcardSrsState } from "./flashcard-types";
+export type { Flashcard, FlashcardDeck, FlashcardSrsState } from "./flashcard-types";
 
 const DB_NAME = "keating-db";
 const DB_VERSION = 7;
-const LEARNER_STATE_SCHEMA_VERSION = 2;
+const LEARNER_STATE_SCHEMA_VERSION = 3;
 const META_STORE = "_meta";
 
 // Store names
@@ -173,6 +175,54 @@ export interface LearnerState {
 		topicsCovered: string[];
 	}>;
 	profileBeliefs: LearnerProfileBelief[];
+	/** Explicit learner intent for the Coming Up board. Scheduling evidence remains separate. */
+	studyPriorities: StudyPriorityRecord[];
+}
+
+export type StudyPriority = "focus" | "maintain" | "low";
+export type StudyPriorityTarget = "deck" | "verification" | "topic";
+
+export interface StudyPriorityRecord {
+	targetId: string;
+	targetType: StudyPriorityTarget;
+	priority: StudyPriority;
+	updatedAt: number;
+}
+
+const STUDY_PRIORITIES: StudyPriority[] = ["focus", "maintain", "low"];
+const STUDY_PRIORITY_TARGETS: StudyPriorityTarget[] = ["deck", "verification", "topic"];
+
+export function normalizeStudyPriorities(value: unknown): StudyPriorityRecord[] {
+	if (!Array.isArray(value)) return [];
+	const byTarget = new Map<string, StudyPriorityRecord>();
+	for (const item of value) {
+		if (!item || typeof item !== "object") continue;
+		const candidate = item as Partial<StudyPriorityRecord>;
+		if (
+			typeof candidate.targetId !== "string"
+			|| !candidate.targetId.trim()
+			|| !STUDY_PRIORITY_TARGETS.includes(candidate.targetType as StudyPriorityTarget)
+			|| !STUDY_PRIORITIES.includes(candidate.priority as StudyPriority)
+			|| typeof candidate.updatedAt !== "number"
+			|| !Number.isFinite(candidate.updatedAt)
+		) continue;
+		const normalized: StudyPriorityRecord = {
+			targetId: candidate.targetId,
+			targetType: candidate.targetType as StudyPriorityTarget,
+			priority: candidate.priority as StudyPriority,
+			updatedAt: candidate.updatedAt,
+		};
+		const key = `${normalized.targetType}:${normalized.targetId}`;
+		const current = byTarget.get(key);
+		if (!current || normalized.updatedAt >= current.updatedAt) byTarget.set(key, normalized);
+	}
+	return [...byTarget.values()].sort((left, right) => left.updatedAt - right.updatedAt);
+}
+
+export function mergeStudyPriorities(
+	...lists: Array<StudyPriorityRecord[] | undefined>
+): StudyPriorityRecord[] {
+	return normalizeStudyPriorities(lists.flatMap((list) => list ?? []));
 }
 
 export type LearnerProfileCategory =
@@ -262,38 +312,6 @@ export interface ImprovementAttemptRecord {
 // ---------------------------------------------------------------------------
 // Flashcard decks & spaced-repetition state (SM-2 variant)
 // ---------------------------------------------------------------------------
-
-export interface FlashcardSrsState {
-	ease: number;
-	intervalDays: number;
-	reps: number;
-	lapses: number;
-	dueAt: number;
-	lastReviewedAt: number;
-	lastRating: 0 | 1 | 2 | 3 | null;
-}
-
-export interface Flashcard {
-	id: string;
-	front: string;
-	back: string;
-	tags?: string[];
-	srs: FlashcardSrsState;
-	createdAt: number;
-	updatedAt: number;
-}
-
-export interface FlashcardDeck {
-	id: string;
-	topic: string;
-	slug: string;
-	title: string;
-	description?: string;
-	cards: Flashcard[];
-	createdAt: number;
-	updatedAt: number;
-	sessionId?: string;
-}
 
 export interface CardReviewRecord {
 	id: string;
@@ -477,6 +495,7 @@ export class KeatingStorage {
 			sessionsCount: 0,
 			sessions: [],
 			profileBeliefs: [],
+			studyPriorities: [],
 		};
 	}
 
@@ -504,6 +523,7 @@ export class KeatingStorage {
 						&& ["motivation", "communication-preference", "learning-preference", "interest"].includes(String(candidate.category));
 				})
 				: [],
+			studyPriorities: normalizeStudyPriorities(raw.studyPriorities),
 		};
 	}
 
@@ -735,6 +755,7 @@ export class KeatingStorage {
 				strengths: [...new Set([...(current.strengths ?? []), ...(data.learnerState.strengths ?? [])])],
 				weaknesses: [...new Set([...(current.weaknesses ?? []), ...(data.learnerState.weaknesses ?? [])])],
 				sessions: [...bySessionId.values()],
+				studyPriorities: mergeStudyPriorities(current.studyPriorities, data.learnerState.studyPriorities),
 			});
 			await this.saveLearnerState(mergedState);
 		} else if (data.feedback?.length) {
@@ -835,6 +856,15 @@ export class KeatingStorage {
 			return this.getByTopic<Verification>(STORES.VERIFICATIONS, topic);
 		}
 		return this.getAll<Verification>(STORES.VERIFICATIONS);
+	}
+
+	async setVerificationCompleted(id: string, completed: boolean): Promise<Verification | null> {
+		const verifications = await this.getVerifications();
+		const current = verifications.find((verification) => verification.id === id);
+		if (!current) return null;
+		const updated = { ...current, completed };
+		await this.put(STORES.VERIFICATIONS, updated);
+		return updated;
 	}
 
 	// Benchmarks
@@ -1105,6 +1135,14 @@ export class KeatingStorage {
 		});
 	}
 
+	async setStudyPriority(input: Omit<StudyPriorityRecord, "updatedAt">): Promise<LearnerState> {
+		return this.updateLearnerState((state) => {
+			state.studyPriorities = state.studyPriorities.filter((record) =>
+				record.targetId !== input.targetId || record.targetType !== input.targetType);
+			state.studyPriorities.push({ ...input, updatedAt: Date.now() });
+		});
+	}
+
 	async rememberLearnerProfileBelief(input: {
 		category: LearnerProfileCategory;
 		value: string;
@@ -1316,7 +1354,8 @@ export class KeatingStorage {
 			topic: deck.topic,
 			slug: deck.slug,
 			title: deck.title,
-			description: deck.description,
+				description: deck.description,
+				anki: deck.anki,
 			cards: deck.cards,
 			createdAt: deck.createdAt ?? now,
 			updatedAt: now,

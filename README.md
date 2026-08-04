@@ -27,6 +27,24 @@ It is designed around five influences:
 - `HyperAgent` for role separation between planning, execution, and verification.
 - `Meta-Harness` for harness-level improvement rather than prompt-only tweaking.
 
+## Table of Contents
+
+- [What Exists](#what-exists)
+- [Quick Start](#quick-start)
+  - [From the Web](#from-the-web)
+  - [From the Command Line](#from-the-command-line)
+  - [On Android](#on-android)
+  - [Serving the Web Agent](#serving-the-web-agent)
+  - [Development](#development)
+- [Prompt Evolution](#prompt-evolution)
+- [Benchmarking Cognitive Friction](#benchmarking-cognitive-friction)
+- [Project Layout](#project-layout)
+- [Design Notes](#design-notes)
+- [Testing](#testing)
+- [Visual Teaching Layer](#visual-teaching-layer)
+- [Debugging Self-Evolution](#debugging-self-evolution)
+- [Documentation](#documentation)
+
 ## What Exists
 
 - A Pi launcher that prefers a fresh standalone `pi` install by default and only uses the bundled Feynman runtime when you explicitly allow it.
@@ -122,11 +140,11 @@ The native app is a React Native client, not a web view. From a checkout with a 
 
 ```bash
 devenv shell
-just install
-just mobile
+devenv tasks run keating:install
+devenv tasks run keating:mobile
 ```
 
-Use `just mobile-check` for its tests and typecheck, `just mobile-export` to verify the production Metro bundle, or `just mobile-apk` to build a locally installable debug APK. See [mobile/README.md](mobile/README.md) for the Android toolchain, EAS profiles, local-model networking details, and the current local-only storage boundary.
+Use `devenv tasks run keating:mobile-check` for its tests and typecheck, `devenv tasks run keating:mobile-export` to verify the production Metro bundle, or `devenv tasks run keating:mobile-apk` to build a locally installable debug APK. See [mobile/README.md](mobile/README.md) for the Android toolchain, EAS profiles, local-model networking details, and the current local-only storage boundary.
 
 From a local checkout, build first and run the repo binary directly:
 
@@ -177,20 +195,30 @@ Browser-only mode is intentionally the free-tier default. It is lower-risk than 
 
 ### Development
 
-All development dependencies (bun, node, typst, similarity, just, etc.) are managed by **devenv** (`devenv.nix`). Run `devenv shell` to enter the dev environment, then use **just** as the task runner.
+All development dependencies (bun, node, typst, similarity, etc.) are managed by **devenv** (`devenv.nix`). Run `devenv shell` to enter the dev environment.
+
+Every build, test, and release workflow is a **devenv task**, namespaced with `keating:`:
+
+```bash
+devenv tasks list          # List all available tasks
+devenv tasks run keating:test
+devenv tasks run keating:web
+```
+
+The full task reference lives in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md); the [devenv tasks documentation](https://devenv.sh/tasks/) covers how tasks work, arguments, and dependencies.
 
 <video src="docs/assets/doctor.mp4" autoplay loop muted width="100%"></video>
 
 ```bash
-just build
-just doctor
-just bench
-just evolve
-just prompt-evolve learn
-just map derivative
-just animate derivative
-just trace
-just shell
+devenv tasks run keating:build
+devenv tasks run keating:doctor
+devenv tasks run keating:bench
+devenv tasks run keating:evolve
+devenv tasks run keating:prompt-evolve learn
+devenv tasks run keating:map derivative
+devenv tasks run keating:animate derivative
+devenv tasks run keating:trace
+devenv tasks run keating:shell
 ```
 
 Keating reads runtime/model defaults from `keating.config.json`.
@@ -355,7 +383,7 @@ That split keeps the interactive shell flexible while making the improvement loo
 <video src="docs/assets/tests.mp4" autoplay loop muted width="100%"></video>
 
 ```bash
-just test
+devenv tasks run keating:test
 ```
 
 The test suite covers:
@@ -411,6 +439,7 @@ keating trace derivative
 ## Documentation
 
 - Architecture overview: `docs/ARCHITECTURE.md`
+- Development environment and task reference: `docs/DEVELOPMENT.md`
 - Visual system architecture: `docs/VISUAL-ARCHITECTURE.md`
 - Browser/remote self-modifying agent plan: `docs/self-modifying-agent-architecture.md`
 - Storage, AT Protocol, and educator-tools roadmap: `docs/plans/storage-atproto-educator-tools.md`

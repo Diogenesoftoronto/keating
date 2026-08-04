@@ -74,7 +74,7 @@ async function warnIfWebBuildIsStale(pkgRoot: string, nitroServerPath: string): 
 
   console.warn(`${color.warn}Warning: web sources are newer than web/.output.${color.reset}`);
   console.warn("`keating web` serves the last production build, not the live Vite source tree.");
-  console.warn("Use `just web` for hot reload, or rebuild with `bun run --cwd web build` before launching.");
+  console.warn("Use `devenv tasks run keating:web` for hot reload, or rebuild with `devenv tasks run keating:web-build` before launching.");
 }
 
 async function resolvePackageRoot(currentDir: string): Promise<string> {
@@ -111,7 +111,7 @@ export async function serveWeb(port = 3000, options: ServeWebOptions = {}): Prom
   } catch (error) {
     console.error(`${color.err}Error: Could not find Nitro server at ${nitroServerPath}${color.reset}`);
     console.error("Please run the build command first:");
-    console.error("  bun run --cwd web build");
+    console.error("  devenv tasks run keating:web-build");
     process.exit(1);
   }
 

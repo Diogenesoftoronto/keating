@@ -2,15 +2,54 @@
 
 ## Scope
 
-This review used:
+The Keating 3.0 release review used the checksum-verified official
+`similarity-ts` v0.5.0 Linux binary. The historical npm invocation no longer
+works because `similarity-ts` is distributed as a Rust binary rather than an
+npm package.
 
 ```sh
-bunx similarity-ts src web/src --types --threshold 0.87 --min-lines 6 --exclude node_modules --exclude dist --exclude styled-system
+similarity-ts src web/src --types --threshold 0.87 --min-lines 6 \
+  --exclude node_modules --exclude dist --exclude styled-system
 ```
 
 The review focused on voice, provider search, authorization, serializable UI, OpenUI, persistence, and the Pi/OpenTUI bridge. It did not treat a high AST score alone as evidence that two implementations share semantics.
 
+The first 3.0 pass reported 19 direct function pairs and 53 type pairs. After
+the safe consolidations below, the same command reported 17 direct function
+pairs and 49 type pairs. The large function clusters remain review queues rather
+than duplicate counts: their members often share only control-flow shape.
+
 ## Consolidation performed
+
+### Course workspace state machine
+
+`web/src/pages/CourseWorkspace.tsx` held load status, errors, saving state,
+course snapshots, active lessons, modal state, and several coupled drafts in 19
+independent `useState` calls. The page now uses a typed reducer for workspace
+transitions and a second reducer for course/lesson edit drafts. Note and answer
+synchronization remain separate so a remote note update cannot erase an
+unsaved exercise response. The only remaining `useState` in the file is the
+independent teacher-review draft map owned by `RoomView`.
+
+### Flashcard domain contract
+
+`web/src/keating/srs.ts` and `web/src/keating/storage.ts` independently defined
+nearly identical card, deck, and scheduling state. They now re-export the
+canonical definitions in `web/src/keating/flashcard-types.ts`, including the
+optional Anki identities and persisted session id.
+
+### Persisted settings subscriptions
+
+Model preferences and UI settings duplicated the same custom-event plus
+`storage` listener lifecycle. Both now use `subscribeLocalSetting()` from
+`web/src/keating/local-setting.ts`. Their individual normalization and storage
+formats remain separate.
+
+### Storyboard scene contract
+
+The renderer and browser animation tool had exact private copies of
+`StoryboardScene`. Both now consume the runtime-neutral contract in
+`web/src/keating/storyboard.ts`.
 
 ### Browser storage contract
 
@@ -62,3 +101,19 @@ Create a runtime-neutral shared protocol package only when at least one of these
 3. The repository adopts workspace package boundaries that both root and web can consume without pulling runtime-specific dependencies.
 
 Until then, wire-level tests are safer than forcing root and browser code into the same module graph.
+
+## Remaining architectural signals
+
+- The exact root/browser benchmark, goal, engagement, MAP-Elites, quiz, retry,
+  and policy types confirm that the hand-maintained browser port remains the
+  largest duplication boundary. Move it only into a runtime-neutral workspace
+  package; importing the Node core into the browser would violate the build
+  contract.
+- `src/core/export.ts` still contains a high-scoring artifact/session example
+  pair. It is a worthwhile local extraction after the release, once both
+  redaction and counter semantics can be covered by focused fixtures.
+- The root and browser `ApiRetryPolicy` definitions are exact. They should join
+  a future shared contracts package if retry behavior gains a third consumer.
+- Small formatting and markdown pairs remain below the threshold for a new
+  abstraction. Prefer an existing domain helper when editing them, but do not
+  introduce a catch-all utility module solely to reduce the scanner count.

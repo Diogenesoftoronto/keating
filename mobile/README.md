@@ -8,29 +8,29 @@ From the repository root:
 
 ```bash
 devenv shell
-just install
-just mobile
+devenv tasks run keating:install
+devenv tasks run keating:mobile
 ```
 
-`just mobile` generates the native Android project when needed, builds the Keating development client, installs it on a connected device, starts Metro, and launches the app. Enable USB debugging and approve the computer on the phone before running it.
+`devenv tasks run keating:mobile` generates the native Android project when needed, builds the Keating development client, installs it on a connected device, starts Metro, and launches the app. Enable USB debugging and approve the computer on the phone before running it.
 
 The devenv shell supplies JDK 17, Android API 36, Build Tools 36.0.0 plus Expo's 35.0.0 fallback, CMake 3.22.1, NDK 27.1.12297006, and platform tools. Android Studio and emulator images are intentionally omitted from the default environment because the primary workflow targets a physical arm64 device.
 
-After the first native build, use `just mobile-start` for JavaScript-only iterations. Run `just mobile-prebuild-clean` before rebuilding after changing native dependencies or `app.json`.
+After the first native build, use `devenv tasks run keating:mobile-start` for JavaScript-only iterations. Run `devenv tasks run keating:mobile-prebuild-clean` before rebuilding after changing native dependencies or `app.json`.
 
 For an emulator-hosted local model server, use `http://10.0.2.2:<port>/v1` as the custom provider URL because Android maps `10.0.2.2` to the development machine.
 
 ## Checks and builds
 
 ```bash
-just mobile-check
-just mobile-export
-just mobile-apk
+devenv tasks run keating:mobile-check
+devenv tasks run keating:mobile-export
+devenv tasks run keating:mobile-apk
 ```
 
-`just mobile-export` verifies Metro can produce the production Android bundle. For EAS, the `development` profile emits a development-client APK, `preview` emits an internal release APK, and `production` emits the Play Store AAB.
+`devenv tasks run keating:mobile-export` verifies Metro can produce the production Android bundle. For EAS, the `development` profile emits a development-client APK, `preview` emits an internal release APK, and `production` emits the Play Store AAB.
 
-`just mobile-apk` prebuilds the native Android project and produces a locally installable debug APK at `mobile/android/app/build/outputs/apk/debug/app-debug.apk`.
+`devenv tasks run keating:mobile-apk` prebuilds the native Android project and produces a locally installable debug APK at `mobile/android/app/build/outputs/apk/debug/app-debug.apk`.
 
 Expo SDK 56 currently generates a Gradle 9 wrapper while React Native 0.85's bundled Foojay resolver still targets Gradle 8. The APK task pins the generated, gitignored wrapper to Gradle 8.14.3 after every prebuild so clean builds remain reproducible.
 

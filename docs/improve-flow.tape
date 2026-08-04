@@ -8,17 +8,17 @@ Set Padding 40
 Set Theme "Catppuccin Mocha"
 
 # 1. Benchmark the current policy
-Type "just bench"
+Type "devenv tasks run keating:bench"
 Enter
 Sleep 4s
 
 # 2. Run the evolutionary policy search
-Type "just evolve"
+Type "devenv tasks run keating:evolve"
 Enter
 Sleep 5s
 
 # 3. Evolve the underlying learn prompt
-Type "just prompt-evolve"
+Type "devenv tasks run keating:prompt-evolve"
 Enter
 Sleep 5s
 

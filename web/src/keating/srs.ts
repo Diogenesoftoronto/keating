@@ -15,7 +15,8 @@
  * This is pure logic, easily testable, no LLM, no IO.
  */
 
-export type SrsRating = 0 | 1 | 2 | 3;
+import type { CardSrsState, Flashcard, FlashcardDeck, SrsRating } from "./flashcard-types";
+export type { CardSrsState, Flashcard, FlashcardDeck, SrsRating } from "./flashcard-types";
 
 export const SRS_RATING_LABELS: Record<SrsRating, string> = {
 	0: "Again",
@@ -35,23 +36,6 @@ export function initialSrsState(now: number = Date.now()): CardSrsState {
 		lastReviewedAt: 0,
 		lastRating: null,
 	};
-}
-
-export interface CardSrsState {
-	/** SM-2 ease factor (E-Factor). Clamped to >= 1.3. */
-	ease: number;
-	/** Current interval in days. < 1 means "due later today" (intra-day re-show). */
-	intervalDays: number;
-	/** Number of successful consecutive reviews (resets to 0 on Again). */
-	reps: number;
-	/** Total times this card was rated Again. */
-	lapses: number;
-	/** Timestamp at which the card becomes due. */
-	dueAt: number;
-	/** Timestamp of the most recent review (0 if never reviewed). */
-	lastReviewedAt: number;
-	/** Most recent rating, or null if never reviewed. */
-	lastRating: SrsRating | null;
 }
 
 export const MS_PER_DAY = 86_400_000;
@@ -160,27 +144,6 @@ export function formatDueIn(dueAt: number, now: number = Date.now()): string {
 // ---------------------------------------------------------------------------
 // Deck-level operations
 // ---------------------------------------------------------------------------
-
-export interface Flashcard {
-	id: string;
-	front: string;
-	back: string;
-	tags?: string[];
-	srs: CardSrsState;
-	createdAt: number;
-	updatedAt: number;
-}
-
-export interface FlashcardDeck {
-	id: string;
-	topic: string;
-	slug: string;
-	title: string;
-	description?: string;
-	cards: Flashcard[];
-	createdAt: number;
-	updatedAt: number;
-}
 
 export function getDueCards(deck: FlashcardDeck, now: number = Date.now()): Flashcard[] {
 	return deck.cards.filter((c) => isDue(c.srs, now));

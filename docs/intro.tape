@@ -9,7 +9,7 @@ Set Theme "Catppuccin Mocha"
 
 # Boot the Keating shell — the Pi extension load takes a few seconds,
 # so give it a generous fixed sleep instead of failing flakily.
-Type "just shell"
+Type "devenv tasks run keating:shell"
 Enter
 Sleep 6s
 

@@ -1,5 +1,6 @@
 import {
   BoxRenderable,
+  CliRenderEvents,
   InputRenderable,
   SelectRenderable,
   SelectRenderableEvents,
@@ -10,6 +11,19 @@ import {
 
 import { launchRpcClient } from "../runtime/pi.js";
 import { HostController, type HostSurface } from "./host-controller.js";
+import {
+  EMPTY_HEADER_STATE,
+  TUI_COMMANDS,
+  activityText,
+  commandOption,
+  headerText,
+  sanitizeDiagnostic,
+  showActivityRail,
+  transcriptText,
+  type TranscriptEntry,
+  type TuiCommand,
+  type TuiHeaderState,
+} from "./view-model.js";
 
 export type OpenTuiExitAction = "exit" | "shell";
 
@@ -38,25 +52,31 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string): Promis
     height: "100%",
     flexDirection: "column",
     padding: 1,
-    gap: 1,
+    gap: 0,
     backgroundColor: "#11100e",
   });
   const header = new TextRenderable(renderer, {
     id: "keating-open-tui-header",
-    content: "KEATING  ·  collaborative teaching host",
+    content: headerText(EMPTY_HEADER_STATE),
     fg: "#d6a84d",
     height: 1,
   });
   const status = new TextRenderable(renderer, {
     id: "keating-open-tui-status",
-    content: "Pi RPC connected  ·  /shell switches to the classic Pi interface",
+    content: "Ctrl+P commands  ·  Ctrl+M model  ·  Ctrl+T thinking  ·  Ctrl+N new  ·  Ctrl+X stop",
     fg: "#9d9485",
     height: 1,
+  });
+  const workspace = new BoxRenderable(renderer, {
+    id: "keating-open-tui-workspace",
+    flexGrow: 1,
+    width: "100%",
+    flexDirection: "row",
+    gap: 1,
   });
   const scroll = new ScrollBoxRenderable(renderer, {
     id: "keating-open-tui-transcript-scroll",
     flexGrow: 1,
-    width: "100%",
     border: true,
     borderStyle: "single",
     borderColor: "#4c463d",
@@ -69,6 +89,21 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string): Promis
     id: "keating-open-tui-transcript",
     content: "Ask a question, continue a learning goal, or type /shell for the classic Pi interface.",
     fg: "#eee8dc",
+    width: "100%",
+  });
+  const activityRail = new BoxRenderable(renderer, {
+    id: "keating-open-tui-activity-rail",
+    width: 30,
+    height: "100%",
+    border: true,
+    borderStyle: "single",
+    borderColor: "#4c463d",
+    padding: 1,
+  });
+  const activity = new TextRenderable(renderer, {
+    id: "keating-open-tui-activity",
+    content: "SESSION\nnew session\n\nACTIVITY\n· No tool activity yet",
+    fg: "#9d9485",
     width: "100%",
   });
   const inputFrame = new BoxRenderable(renderer, {
@@ -93,25 +128,39 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string): Promis
   });
 
   scroll.add(transcript);
+  activityRail.add(activity);
+  workspace.add(scroll);
+  workspace.add(activityRail);
   inputFrame.add(input);
   shell.add(header);
   shell.add(status);
-  shell.add(scroll);
+  shell.add(workspace);
   shell.add(inputFrame);
   renderer.root.add(shell);
 
-  const turns: string[] = [];
-  let streaming = "";
+  const entries: TranscriptEntry[] = [];
+  let streaming: TranscriptEntry | null = null;
+  let headerState: TuiHeaderState = { ...EMPTY_HEADER_STATE };
+  let headerLabel = "KEATING";
   let busy = false;
   let dialogCancel: (() => void) | null = null;
   const renderTranscript = () => {
-    transcript.content = [...turns, streaming].filter(Boolean).join("\n\n");
+    transcript.content = transcriptText(entries, streaming);
+    activity.content = activityText(entries, headerState);
     scroll.scrollTo({ y: scroll.scrollHeight, x: 0 });
   };
-  const appendTurn = (message: string) => {
-    turns.push(message);
+  const renderHeader = () => {
+    header.content = headerText(headerState).replace(/^KEATING/, headerLabel.toUpperCase());
+  };
+  const appendEntry = (entry: TranscriptEntry) => {
+    entries.push(entry);
     renderTranscript();
   };
+  const updateResponsiveLayout = (width: number) => {
+    activityRail.visible = showActivityRail(width);
+  };
+  updateResponsiveLayout(renderer.terminalWidth);
+  renderer.on(CliRenderEvents.RESIZE, updateResponsiveLayout);
 
   const presentSelect = (title: string, options: string[]): Promise<string | undefined> =>
     new Promise((resolve) => {
@@ -154,41 +203,74 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string): Promis
 
   const presentTextInput = (title: string, prefill?: string, placeholder?: string): Promise<string | undefined> =>
     new Promise((resolve) => {
-      status.content = `${title}  ·  Enter submits  ·  Esc cancels`;
-      input.value = prefill ?? "";
-      input.placeholder = placeholder ?? "Type a response…";
-      const previousSubmit = input.onSubmit;
+      const modal = new BoxRenderable(renderer, {
+        id: `keating-input-dialog-${Date.now()}`,
+        width: "100%",
+        height: 5,
+        flexDirection: "column",
+        border: true,
+        borderStyle: "single",
+        borderColor: "#d6a84d",
+        padding: 1,
+      });
+      const titleView = new TextRenderable(renderer, {
+        content: `${title}  ·  Enter submits  ·  Esc cancels`,
+        fg: "#d6a84d",
+        height: 1,
+      });
+      const dialogInput = new InputRenderable(renderer, {
+        id: `keating-dialog-input-${Date.now()}`,
+        width: "100%",
+        value: prefill ?? "",
+        placeholder: placeholder ?? "Type a response…",
+        textColor: "#eee8dc",
+        placeholderColor: "#81786b",
+        backgroundColor: "#11100e",
+        focusedBackgroundColor: "#11100e",
+        focusedTextColor: "#ffffff",
+      });
+      modal.add(titleView);
+      modal.add(dialogInput);
+      shell.add(modal, 3);
       let done = false;
       const finish = (value?: string) => {
         if (done) return;
         done = true;
         dialogCancel = null;
-        input.onSubmit = previousSubmit;
-        input.placeholder = "Message Keating…";
-        input.value = "";
-        status.content = "Ready  ·  /shell switches to classic Pi  ·  Ctrl+C exits";
+        shell.remove(modal);
+        renderer.focusRenderable(input);
         resolve(value);
       };
       dialogCancel = () => finish(undefined);
-      input.onSubmit = () => finish(input.value);
-      renderer.focusRenderable(input);
+      dialogInput.onSubmit = () => finish(dialogInput.value);
+      renderer.focusRenderable(dialogInput);
     });
 
   const surface: HostSurface = {
-    appendTurn,
-    setStreaming(text) { streaming = text ?? ""; renderTranscript(); },
+    hydrateEntries(next) { entries.splice(0, entries.length, ...next); renderTranscript(); },
+    appendEntry,
+    setStreaming(entry) { streaming = entry; renderTranscript(); },
     setStatus(text) { status.content = text; },
-    setBusy(value) {
-      busy = value;
-      status.content = value
-        ? "Keating is thinking…  ·  Enter queues a follow-up"
-        : "Ready  ·  /shell switches to classic Pi  ·  Ctrl+C exits";
+    setHeaderState(next) {
+      headerState = { ...headerState, ...next };
+      busy = headerState.busy;
+      renderHeader();
+      renderTranscript();
+      status.content = busy
+        ? "Keating is thinking…  ·  Enter queues a follow-up  ·  Ctrl+X stops"
+        : "Ctrl+P commands  ·  Ctrl+M model  ·  Ctrl+T thinking  ·  Ctrl+N new  ·  Ctrl+X stop";
     },
     setEditorText(text) { input.value = text; },
     setWidget(key, lines, placement) {
-      if (lines?.length) appendTurn(`[${key}${placement ? ` · ${placement}` : ""}]\n${lines.join("\n")}`);
+      if (lines?.length) appendEntry({
+        id: `widget-${key}-${Date.now()}`,
+        kind: "artifact",
+        title: key,
+        body: lines.join("\n"),
+        detail: placement,
+      });
     },
-    setTitle(title) { header.content = title; },
+    setTitle(title) { headerLabel = title || "KEATING"; renderHeader(); },
     presentSelect,
     presentConfirm(title, message) { return presentSelect(`${title}\n${message}`, ["Yes", "No"]).then((value) => value === undefined ? undefined : value === "Yes"); },
     presentInput(title, placeholder) { return presentTextInput(title, undefined, placeholder); },
@@ -196,25 +278,80 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string): Promis
   };
   const controller = new HostController(client, surface);
   controller.attach();
+  await controller.initialize();
+
+  const exitToShell = async () => {
+    settled = true;
+    settle?.("shell");
+    renderer.destroy();
+    await client.stop();
+  };
+
+  const runCommand = async (command: TuiCommand): Promise<void> => {
+    switch (command.id) {
+      case "model":
+        await controller.cycleModel();
+        return;
+      case "thinking":
+        await controller.cycleThinking();
+        return;
+      case "new-session": {
+        const confirmed = entries.length === 0
+          ? true
+          : await surface.presentConfirm("Start a new session?", "Your current session remains saved and can be reopened in Pi.");
+        if (confirmed) await controller.newSession();
+        return;
+      }
+      case "abort":
+        await controller.abort();
+        return;
+      case "shell":
+        await exitToShell();
+    }
+  };
+
+  const showCommandPalette = async () => {
+    const options = TUI_COMMANDS.map(commandOption);
+    const selected = await presentSelect("Keating commands", options);
+    const index = selected === undefined ? -1 : options.indexOf(selected);
+    if (index >= 0) await runCommand(TUI_COMMANDS[index]!);
+  };
 
   const submit = async (raw: string) => {
     const message = raw.trim();
     if (!message) return;
     input.value = "";
     if (message === "/shell") {
-      settled = true;
-      settle?.("shell");
-      renderer.destroy();
-      await client.stop();
+      await exitToShell();
       return;
     }
-    turns.push(`You\n${message}`);
-    renderTranscript();
+    const slashCommands: Record<string, TuiCommand["id"] | "palette"> = {
+      "/commands": "palette",
+      "/model": "model",
+      "/thinking": "thinking",
+      "/new": "new-session",
+      "/abort": "abort",
+    };
+    const commandId = slashCommands[message];
+    if (commandId) {
+      if (commandId === "palette") await showCommandPalette();
+      else {
+        const command = TUI_COMMANDS.find((candidate) => candidate.id === commandId);
+        if (command) await runCommand(command);
+      }
+      return;
+    }
+    appendEntry({ id: `user-${Date.now()}`, kind: "user", title: "You", body: message });
     try {
       if (busy) await client.followUp(message);
       else await client.prompt(message);
     } catch (error) {
-      appendTurn(`[Keating] ${error instanceof Error ? error.message : String(error)}`);
+      appendEntry({
+        id: `submit-error-${Date.now()}`,
+        kind: "error",
+        title: "Message not sent",
+        body: sanitizeDiagnostic(error),
+      });
     }
   };
 
@@ -223,6 +360,24 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string): Promis
     if (key.name === "escape" && dialogCancel) {
       key.preventDefault();
       dialogCancel();
+      return;
+    }
+    if (dialogCancel || !key.ctrl) return;
+    const commandByKey: Partial<Record<string, TuiCommand["id"] | "palette">> = {
+      p: "palette",
+      m: "model",
+      t: "thinking",
+      n: "new-session",
+      x: "abort",
+    };
+    const commandId = commandByKey[key.name];
+    if (!commandId) return;
+    key.preventDefault();
+    key.stopPropagation();
+    if (commandId === "palette") void showCommandPalette();
+    else {
+      const command = TUI_COMMANDS.find((candidate) => candidate.id === commandId);
+      if (command) void runCommand(command);
     }
   });
   renderer.focusRenderable(input);

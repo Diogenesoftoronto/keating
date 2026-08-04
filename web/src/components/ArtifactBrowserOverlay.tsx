@@ -2,18 +2,13 @@ import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { ArtifactViewer } from "./ArtifactViewer";
-import { KeatingStorage } from "../keating/storage";
+import {
+  artifactBrowserStorage,
+  type ArtifactBrowserSurfaceProps,
+} from "./artifact-browser-shared";
 import { css, cx } from "../../styled-system/css";
 
-interface ArtifactBrowserOverlayProps {
-  open: boolean;
-  artifactId?: string;
-  onClose: () => void;
-}
-
-const artifactStorage = new KeatingStorage();
-
-export function ArtifactBrowserOverlay({ open, artifactId, onClose }: ArtifactBrowserOverlayProps) {
+export function ArtifactBrowserOverlay({ open, artifactId, onClose }: ArtifactBrowserSurfaceProps) {
   useEffect(() => {
     if (!open) return;
 
@@ -117,7 +112,7 @@ export function ArtifactBrowserOverlay({ open, artifactId, onClose }: ArtifactBr
           padding: { base: "0.625rem", sm: "0.75rem" },
           sm: { padding: "1.5rem" },
         })}>
-          <ArtifactViewer storage={artifactStorage} artifactId={artifactId} onClose={onClose} />
+          <ArtifactViewer storage={artifactBrowserStorage} artifactId={artifactId} onClose={onClose} />
         </div>
       </div>
     </div>,

@@ -48,7 +48,7 @@ describe("session-start hooks", () => {
 				},
 			],
 			getLearnerState: async () => ({
-				schemaVersion: 2,
+			schemaVersion: 3,
 				sessionsCount: 3,
 				topicsExplored: ["syntax", "operator precedence"],
 				feedbackHistory: [{
@@ -86,6 +86,12 @@ describe("session-start hooks", () => {
 					evidenceCount: 2,
 					lastEvidenceAt: now,
 					reportedChallenges: [],
+				}],
+				studyPriorities: [{
+					targetId: "deck-1",
+					targetType: "deck",
+					priority: "focus",
+					updatedAt: now,
 				}],
 			}),
 			getQuizResults: async () => [{
@@ -145,6 +151,8 @@ describe("session-start hooks", () => {
 		expect(context).toContain("The learner's complete saved answer.");
 		expect(context).toContain("check-pending");
 		expect(context).toContain("card-unreviewed");
+		expect(context).toContain('"priority":"focus"');
+		expect(context).toContain("Never change or misrepresent the evidence-based flashcard due dates");
 		expect(context).toContain('"ungradedQuizQuestionIds":["quiz-oldest:quiz-open-ended"]');
 		expect(context).toContain('"ungradedQuestionCheckIds":["check-pending"]');
 		expect(context).toContain('"cardsWithoutReviewEvidence":["deck-1:card-unreviewed"]');
@@ -165,7 +173,8 @@ describe("session-start hooks", () => {
 					reportedChallenges: [],
 					status: "developing",
 				}],
-				profileBeliefs: [],
+			profileBeliefs: [],
+			studyPriorities: [],
 			} as any,
 			goals: [{ id: "empty-goal", steps: [] }] as any,
 			quizResults: [{ id: "quiz-result", pendingGradeQuestionIds: ["pending-quiz-question"] }] as any,

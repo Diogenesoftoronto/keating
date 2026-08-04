@@ -23,21 +23,16 @@ import {
 	Trash2,
 	X,
 } from "lucide-react";
-import type { UseSessionsResult } from "../hooks/use-sessions";
 import { formatRelativeSessionDate } from "../lib/session-date";
 import {
 	buildSessionTree,
 	flattenSessionTree,
 	type SessionTreeNode,
 } from "./session-tree";
-import type { SessionBrowserProps } from "./SessionBrowser";
+import type { SessionBrowserSurfaceProps } from "./SessionBrowser";
 import { css, cx } from "../../styled-system/css";
 import { OverflowMenu, type OverflowMenuItem } from "./OverflowMenu";
 import { Spinner } from "./Spinner";
-
-export interface SessionBrowserDesktopProps extends SessionBrowserProps {
-	store: UseSessionsResult;
-}
 
 const TREE_COLLAPSED_STORAGE_KEY = "keating:session-tree-collapsed";
 const SIDEBAR_MIN_W = 288;
@@ -394,7 +389,7 @@ export function SessionBrowserDesktop({
 	onNewSession,
 	onSuggestTitle,
 	store,
-}: SessionBrowserDesktopProps) {
+}: SessionBrowserSurfaceProps) {
 	const [forkedSourceSessionId, setForkedSourceSessionId] = useState<string | null>(null);
 	const [collapsedNodes, setCollapsedNodes] = useState<Set<string>>(() => readCollapsedTreeNodes());
 	const [sidebarWidth, setSidebarWidth] = useState(loadSidebarWidth);

@@ -15,7 +15,8 @@ import { Landing } from "./pages/Landing";
 // Every other route is code-split into its own chunk, fetched on navigation, so
 // the entry bundle no longer ships Chat, the assistant panel, markdown/KaTeX, etc.
 const Tutorial = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/Tutorial")), "Tutorial");
-const Blog = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/Blog")), "Blog");
+const AtprotoBlog = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/AtprotoBlog")), "AtprotoBlog");
+const AtprotoBlogPost = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/AtprotoBlog")), "AtprotoBlogPost");
 const Chat = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/Chat")), "Chat");
 const Paper = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/Paper")), "Paper");
 const Live = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/Live")), "Live");
@@ -24,6 +25,7 @@ const SharedSession = lazyRouteComponent(
   "SharedSession",
 );
 const Usage = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/Usage")), "Usage");
+const ComingUp = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/ComingUp")), "ComingUp");
 const EvolutionDetail = lazyRouteComponent(
 	() => loadRouteChunk(() => import("./pages/EvolutionDetail")),
 	"EvolutionDetail",
@@ -56,6 +58,12 @@ const LatestCommitReview = lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/LatestCommitReview")),
   "LatestCommitReview",
 );
+const Courses = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/Courses")), "Courses");
+const CourseWorkspace = lazyRouteComponent(
+  () => loadRouteChunk(() => import("./pages/CourseWorkspace")),
+  "CourseWorkspace",
+);
+const CourseJoin = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/CourseJoin")), "CourseJoin");
 import {
   applyKeatingUiTypography,
   loadKeatingUiSettings,
@@ -94,6 +102,12 @@ const usageRoute = createRoute({
 	component: Usage,
 });
 
+const comingUpRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/coming-up",
+	component: ComingUp,
+});
+
 const evolutionDetailRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/usage/evolution/$evolutionId",
@@ -121,7 +135,13 @@ const tutorialRoute = createRoute({
 const blogRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/blog",
-  component: Blog,
+  component: AtprotoBlog,
+});
+
+const blogPostRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/blog/$slug",
+  component: AtprotoBlogPost,
 });
 
 const paperRoute = createRoute({
@@ -166,16 +186,36 @@ const latestCommitReviewRoute = createRoute({
   component: LatestCommitReview,
 });
 
+const coursesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/courses",
+  component: Courses,
+});
+
+const courseJoinRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/courses/join/$token",
+  component: CourseJoin,
+});
+
+const courseWorkspaceRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/courses/$courseId",
+  component: CourseWorkspace,
+});
+
 const routeTree = rootRoute.addChildren([
 	indexRoute,
 	chatRoute,
 	liveRoute,
 	usageRoute,
+	comingUpRoute,
 	evolutionDetailRoute,
 	benchRoute,
 	sharedSessionRoute,
   tutorialRoute,
   blogRoute,
+  blogPostRoute,
   paperRoute,
   oauthCallbackRoute,
 	downloadRoute,
@@ -183,6 +223,9 @@ const routeTree = rootRoute.addChildren([
 	privacyRoute,
 	pricingRoute,
   latestCommitReviewRoute,
+	coursesRoute,
+	courseJoinRoute,
+	courseWorkspaceRoute,
 ]);
 
 // Shown while a lazily-loaded route chunk is in flight (after defaultPendingMs)

@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { Toggle } from "./Toggle";
 import { SettingRow } from "./SettingRow";
 import { SettingsSectionNav } from "./SettingsSectionNav";
@@ -11,6 +11,7 @@ import {
 } from "../keating/ui-settings";
 import { useKeatingUiSettings } from "../hooks/use-ui-settings";
 import { IMAGE_GENERATORS, getImageGenerator, DEFAULT_IMAGE_GENERATOR_ID, type ImageGeneratorId } from "../lib/image-generators";
+import { ImageGenerationModelSelectorDialog } from "./ModelSelector";
 import { css, cx } from "../../styled-system/css";
 
 const REASONING_LEVELS: { value: ReasoningLevel; label: string; description: string }[] = [
@@ -110,6 +111,7 @@ function readImageAsDataUrl(file: File): Promise<string> {
 
 export function KeatingUiSettingsTab() {
 	const [settings, update] = useKeatingUiSettings();
+	const [imageModelPickerOpen, setImageModelPickerOpen] = useState(false);
 
 	const updateProfileImage = useCallback(async (file: File | undefined) => {
 		if (!file) return;
@@ -410,17 +412,14 @@ export function KeatingUiSettingsTab() {
 									</p>
 								</div>
 								{generator.models.length > 0 ? (
-									<select
-										className={responsiveSelectClass}
-										value={settings.imageModel || generator.models[0]}
-										onChange={(e) => update({ imageModel: e.target.value })}
+									<button
+										type="button"
+										aria-haspopup="dialog"
+										className={cx(responsiveSelectClass, css({ maxWidth: "100%", cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "left", _hover: { borderColor: "var(--primary)" } }))}
+										onClick={() => setImageModelPickerOpen(true)}
 									>
-										{generator.models.map((model) => (
-											<option key={model} value={model}>
-												{model}
-											</option>
-										))}
-									</select>
+										{settings.imageModel || generator.models[0]}
+									</button>
 								) : (
 									<input
 										type="text"
@@ -431,6 +430,17 @@ export function KeatingUiSettingsTab() {
 									/>
 								)}
 							</div>
+
+							<ImageGenerationModelSelectorDialog
+								open={imageModelPickerOpen}
+								generator={generator}
+								currentModelId={settings.imageModel || generator.models[0] || ""}
+								onClose={() => setImageModelPickerOpen(false)}
+								onSelect={(modelId) => {
+									update({ imageModel: modelId });
+									setImageModelPickerOpen(false);
+								}}
+							/>
 
 							<div className={cardClass}>
 								<div className={css({ minWidth: 0 })}>

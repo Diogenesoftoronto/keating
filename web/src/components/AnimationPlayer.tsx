@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Pause, Play, RotateCcw } from "lucide-react";
 import { css, cx } from "../../styled-system/css";
-import { SceneRenderer, parseStoryboard } from "./SceneRenderer";
+import { SceneRenderer, parseStoryboard, type StoryboardScene } from "./SceneRenderer";
 import { HyperframesPlayer } from "./HyperframesPlayer";
 
 interface AnimationPlayerProps {
@@ -22,16 +22,6 @@ interface Manifest {
 	height?: number;
 	scenes: string[];
 	duration: number;
-}
-
-interface StoryboardScene {
-	number: number;
-	title: string;
-	duration: string;
-	visual: string;
-	audio?: string;
-	transition?: string;
-	highlight?: string;
 }
 
 function durationSeconds(label: string): number {

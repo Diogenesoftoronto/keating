@@ -4,8 +4,8 @@ import { usePostHog } from "@posthog/react";
 import { Nav } from "../components/Nav";
 import { Footer } from "../components/Footer";
 import { BootSequence } from "../components/BootSequence";
+import { SurfaceScreencasts } from "../components/SurfaceScreencasts";
 import { useSeo } from "../hooks/useSeo";
-import { useReducedMotion } from "../hooks/use-media-query";
 import { cx } from "../../styled-system/css";
 import {
   btnRetro,
@@ -351,6 +351,8 @@ export function Landing() {
             </div>
           </div>
         </section>
+
+        <SurfaceScreencasts />
 
         {/* What Keating Does */}
         <section className="caps" aria-label="What Keating does">

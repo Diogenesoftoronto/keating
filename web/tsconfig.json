@@ -15,6 +15,13 @@
     "useDefineForClassFields": false,
     "types": ["vite/client", "bun"]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "test/**/*.ts", ".storybook/**/*.ts", "styled-system"],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "test/**/*.ts",
+    ".storybook/**/*.ts",
+    "styled-system",
+    "../packages/p2p-core/src/ambient.d.ts"
+  ],
   "exclude": ["node_modules", "dist"]
 }

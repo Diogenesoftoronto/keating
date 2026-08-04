@@ -1,15 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArtifactViewer } from "./ArtifactViewer";
-import { KeatingStorage } from "../keating/storage";
+import {
+	artifactBrowserStorage,
+	type ArtifactBrowserSurfaceProps,
+} from "./artifact-browser-shared";
 import { css, cx } from "../../styled-system/css";
-
-interface ArtifactSidePanelProps {
-	open: boolean;
-	artifactId?: string;
-	onClose: () => void;
-}
-
-const artifactStorage = new KeatingStorage();
 
 const MIN_WIDTH = 288;
 const MAX_WIDTH = 960;
@@ -37,7 +32,7 @@ function saveWidth(value: number) {
 	}
 }
 
-export function ArtifactSidePanel({ open, artifactId, onClose }: ArtifactSidePanelProps) {
+export function ArtifactSidePanel({ open, artifactId, onClose }: ArtifactBrowserSurfaceProps) {
 	const [width, setWidth] = useState(loadSavedWidth);
 	const dragState = useRef({ active: false, startX: 0, startWidth: 0 });
 
@@ -136,7 +131,7 @@ export function ArtifactSidePanel({ open, artifactId, onClose }: ArtifactSidePan
 					padding: "0.75rem",
 					sm: { padding: "1rem" },
 				})}>
-					<ArtifactViewer storage={artifactStorage} artifactId={artifactId} onClose={onClose} />
+					<ArtifactViewer storage={artifactBrowserStorage} artifactId={artifactId} onClose={onClose} />
 				</div>
 			)}
 		</div>

@@ -824,13 +824,14 @@ const POSTS: Post[] = [
 
         <h3 id="release-guardrails" className={styles.sectionHeading}>Release Guardrails</h3>
         <p className={styles.smallParagraph}>
-          The repo now also has a proper <Code>devenv.nix</Code> path for release
-          hygiene. It exposes <Code>bumpy</Code> when the current nixpkgs revision
-          provides it, adds a small <Code>bump-version</Code> helper that runs{" "}
-          <Code>just sync-version</Code> afterwards, and wires repo-local git
-          hooks so version drift is checked before commit while root and web
-          tests run before push. Keating already had the right tasks; now the dev
-          shell actually helps enforce them.
+          At the time of this release, the repo gained a proper{" "}
+          <Code>devenv.nix</Code> path for release hygiene. It exposed{" "}
+          <Code>bumpy</Code> when the pinned nixpkgs revision provided it, added a
+          small <Code>bump-version</Code> helper that ran{" "}
+          <Code>just sync-version</Code> afterwards, and wired repo-local git
+          hooks so version drift was checked before commit while root and web
+          tests ran before push. Those command names describe the release-era
+          workflow rather than today&apos;s task interface.
         </p>
       </>
     ),
@@ -917,7 +918,8 @@ const POSTS: Post[] = [
           app, the Pi extension, and the page metadata. Now a single{" "}
           <Code>scripts/sync-version.ts</Code> reads the canonical version from the
           root <Code>package.json</Code> and writes it everywhere it appears, with{" "}
-          <Code>just check-version</Code> as a read-only CI guard. The CLI reports
+          the then-current <Code>just check-version</Code> task as a read-only CI
+          guard. The CLI reports
           it directly with <Code>keating version</Code>. It is a small thing that
           quietly removes a whole class of "which version am I actually running"
           confusion.
@@ -2587,13 +2589,13 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
         <div className={styles.stack5}>
           <figure>
             <figcaption className={css({ mb: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-              <Code>doctor.tape</Code> — run <Code>just doctor</Code> to check your setup.
+              <Code>doctor.tape</Code> — the original recording ran <Code>just doctor</Code> to check your setup.
             </figcaption>
             <video src="/tapes/doctor.mp4" controls muted loop playsInline className={css({ w: "100%", borderRadius: "0.25rem", border: "1px solid var(--border)" })} />
           </figure>
           <figure>
             <figcaption className={css({ mb: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-              <Code>tests.tape</Code> — run <Code>just test</Code> to exercise the suite.
+              <Code>tests.tape</Code> — the original recording ran <Code>just test</Code> to exercise the suite.
             </figcaption>
             <video src="/tapes/tests.mp4" controls muted loop playsInline className={css({ w: "100%", borderRadius: "0.25rem", border: "1px solid var(--border)" })} />
           </figure>
@@ -3153,6 +3155,11 @@ const hybridStreamFn = async (model, context, options) => {
     ),
   },
 ];
+
+// Migration source only. The live /blog route reads Standard.site records via
+// AtprotoBlog; this export lets the one-time publisher move the historical JSX
+// archive into Keating's PDS without keeping two public sources of truth.
+export const LEGACY_BLOG_POSTS = POSTS;
 
 /* ── TOC helpers ─────────────────────────────────────────────────── */
 

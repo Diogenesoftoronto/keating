@@ -3,6 +3,7 @@ import { Trash2 } from "lucide-react";
 import { SettingsSectionNav } from "./SettingsSectionNav";
 import { Toggle } from "./Toggle";
 import { SettingRow } from "./SettingRow";
+import { AudioModelSelectorDialog } from "./ModelSelector";
 import {
 	listSpeechProviders,
 	resolveSpeechRealtimeTier,
@@ -112,6 +113,7 @@ export function SpeechSettingsTab({ onSettingsChange, hideNav = false }: SpeechS
 		providerKey: "openai",
 	});
 	const [customError, setCustomError] = useState<string>("");
+	const [audioModelPickerOpen, setAudioModelPickerOpen] = useState(false);
 	// Vision availability is a property of the chosen model, so the control
 	// explains itself rather than failing when the session starts.
 	const videoTier = resolveSpeechRealtimeTier(settings);
@@ -140,6 +142,7 @@ export function SpeechSettingsTab({ onSettingsChange, hideNav = false }: SpeechS
 		: undefined;
 
 	const handleProviderChange = (providerId: SpeechProviderId) => {
+		setAudioModelPickerOpen(false);
 		if (providerId.startsWith("custom:")) {
 			const id = providerId.slice("custom:".length);
 			const model = settings.customModels.find((m) => m.id === id);
@@ -303,17 +306,28 @@ export function SpeechSettingsTab({ onSettingsChange, hideNav = false }: SpeechS
 					</div>
 					{activeProvider && activeProvider.models.length > 1 && (
 						<div className={fieldStackClass}>
-							<label className={fieldLabelClass}>Model</label>
-							<select
-								className={inputClass}
-								value={settings.model}
-								onChange={(e) => persist({ model: e.target.value })}
+							<span className={fieldLabelClass}>Model</span>
+							<button
+								type="button"
+								aria-haspopup="dialog"
+								className={cx(inputClass, css({ cursor: "pointer", textAlign: "left", _hover: { borderColor: "var(--primary)" } }))}
+								onClick={() => setAudioModelPickerOpen(true)}
 							>
-								{activeProvider.models.map((m) => (
-									<option key={m.value} value={m.value}>{m.label}</option>
-								))}
-							</select>
+								{activeProvider.models.find((model) => model.value === settings.model)?.label ?? settings.model}
+							</button>
 						</div>
+					)}
+					{activeProvider && (
+						<AudioModelSelectorDialog
+							open={audioModelPickerOpen}
+							provider={activeProvider}
+							currentModelId={settings.model}
+							onClose={() => setAudioModelPickerOpen(false)}
+							onSelect={(modelId) => {
+								persist({ model: modelId });
+								setAudioModelPickerOpen(false);
+							}}
+						/>
 					)}
 					{settings.providerId === "openai-realtime" && settings.model.startsWith("gpt-realtime-2") && (
 						<div className={fieldStackClass}>

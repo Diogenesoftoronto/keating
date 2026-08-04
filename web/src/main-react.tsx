@@ -4,7 +4,7 @@ import "@earendil-works/pi-web-ui/app.css";
 import "../styled-system/styles.css";
 import "./hooks/keating-storage";
 // KaTeX CSS is imported by the components that actually render math
-// (MarkdownBlock, AssistantChatPanel, Blog) so the entry/Landing chunk skips it.
+// (MarkdownBlock, AssistantChatPanel, blog reader) so the entry/Landing chunk skips it.
 import { App } from "./App";
 import { initializeKeatingGT, KeatingGTProvider } from "./i18n/general-translation";
 import { applyKeatingUiTypography, loadKeatingUiSettings } from "./keating/ui-settings";
