@@ -1,4 +1,4 @@
-import { getOAuthProviderConfig } from "../../../src/keating/oauth";
+import { getOAuthProviderConfig } from "../../../src/keating/oauth-provider-config";
 
 export type OAuthServerProviderId = "anthropic" | "openai-codex";
 

@@ -116,6 +116,14 @@ export default defineNitroConfig({
       handler: "server/api/oauth/refresh.ts",
     },
     {
+      route: "/api/oauth/github-copilot/device",
+      handler: "server/api/oauth/github-copilot-device.ts",
+    },
+    {
+      route: "/api/oauth/github-copilot/poll",
+      handler: "server/api/oauth/github-copilot-poll.ts",
+    },
+    {
       route: "/api/notorganic/openai/**",
       handler: "server/api/notorganic/openai/[...path].ts",
     },

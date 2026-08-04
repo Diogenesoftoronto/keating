@@ -3,6 +3,7 @@ import { getAppStorage } from "@earendil-works/pi-web-ui";
 import { handleTutorialLinkClick, tutorialApiKeyHref } from "../../lib/tutorial-links";
 import {
 	completeOAuthFromInput,
+	completeOAuthDeviceFlow,
 	initiateOAuth,
 	providerToOAuthId,
 	loadOAuthCredentials,
@@ -83,6 +84,9 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 	const [oauthLoading, setOauthLoading] = useState<Record<string, boolean>>({});
 	const [oauthInputs, setOAuthInputs] = useState<Record<string, string>>({});
 	const [oauthErrors, setOAuthErrors] = useState<Record<string, string>>({});
+	const [oauthDevices, setOAuthDevices] = useState<
+		Record<string, { userCode: string; verificationUri: string; expiresAt: number } | undefined>
+	>({});
 	const [hostedSummary, setHostedSummary] = useState<string>("");
 
 	useEffect(() => {
@@ -191,7 +195,38 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 		setOAuthErrors((prev) => ({ ...prev, [provider]: "" }));
 		setOAuthInputs((prev) => ({ ...prev, [provider]: "" }));
 		setOauthLoading((prev) => ({ ...prev, [provider]: true }));
-		initiateOAuth(oauthId);
+		void initiateOAuth(oauthId)
+			.then(async (initiation) => {
+				if (initiation.flow !== "device-code") return;
+				setOAuthDevices((prev) => ({
+					...prev,
+					[provider]: {
+						userCode: initiation.userCode,
+						verificationUri: initiation.verificationUri,
+						expiresAt: initiation.expiresAt,
+					},
+				}));
+				const result = await completeOAuthDeviceFlow(initiation.provider);
+				if (result.success && result.provider) {
+					const providerNames = oauthProviderToProviderNames(result.provider);
+					setOAuthStatus((prev) => setProviderAliases(prev, providerNames, true));
+					setOAuthErrors((prev) => setProviderAliases(prev, providerNames, ""));
+				} else {
+					setOAuthErrors((prev) => ({
+						...prev,
+						[provider]: result.error ?? "GitHub Copilot sign-in failed.",
+					}));
+				}
+				setOAuthDevices((prev) => ({ ...prev, [provider]: undefined }));
+				setOauthLoading((prev) => ({ ...prev, [provider]: false }));
+			})
+			.catch((error) => {
+				setOAuthErrors((prev) => ({
+					...prev,
+					[provider]: error instanceof Error ? error.message : "OAuth sign-in failed.",
+				}));
+				setOauthLoading((prev) => ({ ...prev, [provider]: false }));
+			});
 	};
 
 	const handleCompleteOAuth = async (provider: string) => {
@@ -228,6 +263,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 		openai: "OpenAI Codex",
 		anthropic: "Anthropic",
 		"openai-codex": "OpenAI Codex",
+		"github-copilot": "GitHub Copilot",
 		google: "Google Gemini",
 	};
 
@@ -274,6 +310,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 				const isOAuth = !!oauthId;
 				const hasOAuth = oauthStatus[provider] === true;
 				const loading = oauthLoading[provider] === true;
+				const device = oauthDevices[provider];
 
 				if (isOAuth) {
 					return (
@@ -309,10 +346,27 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 									>
 										{loading ? "Waiting for sign-in…" : `Sign in with ${OAUTH_PROVIDER_LABELS[provider] ?? provider}`}
 									</button>
-									{loading && (
+									{loading && device && (
+										<div className={css({ borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "color-mix(in srgb, var(--muted) 20%, transparent)", padding: "0.75rem" })}>
+											<p className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+												Enter this one-time code in the GitHub window. Keating will finish connecting after GitHub approves your Copilot subscription.
+											</p>
+											<div className={css({ marginTop: "0.5rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" })}>
+												<code className={css({ fontSize: "1rem", fontWeight: 700, letterSpacing: "0.08em", color: "var(--foreground)" })}>
+													{device.userCode}
+												</code>
+												<a href={device.verificationUri} target="_blank" rel="noreferrer" className={linkClass}>
+													Open GitHub
+												</a>
+											</div>
+										</div>
+									)}
+									{loading && !device && oauthId !== "github-copilot" && (
 										<div className={css({ borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "color-mix(in srgb, var(--muted) 20%, transparent)", padding: "0.5rem" })}>
 											<p className={css({ marginBottom: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-												After you approve access, the browser lands on a localhost page that won&apos;t load — that&apos;s expected. Copy that page&apos;s full URL (or the code it shows) and paste it here.
+												{oauthId === "anthropic"
+													? "After you approve access, Claude displays an authorization code. Copy the code and paste it here."
+													: "After you approve access, the browser lands on a localhost page that will not load. Copy that page's full URL and paste it here."}
 											</p>
 											<div className={css({ display: "flex", gap: "0.5rem" })}>
 												<input
@@ -373,6 +427,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 function oauthProviderToProviderNames(provider: OAuthProviderId | string | undefined): string[] {
 	if (provider === "openai-codex") return ["openai", "openai-codex"];
 	if (provider === "anthropic") return ["anthropic"];
+	if (provider === "github-copilot") return ["github-copilot"];
 	return provider ? [provider] : [];
 }
 
