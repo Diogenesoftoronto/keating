@@ -4,6 +4,15 @@ FROM oven/bun:1 AS builder
 WORKDIR /app/web
 COPY web/package.json web/bun.lock* ./
 RUN bun install
+
+# The Nitro course gateway bundles the shared Pear feed directly from the
+# monorepo. Keep that source and its native runtime dependencies inside the
+# Docker build context so Railway resolves the same graph as local builds.
+WORKDIR /app/packages/p2p-core
+COPY packages/p2p-core/package.json ./
+RUN bun install --production
+COPY packages/p2p-core/src ./src
+
 WORKDIR /app
 COPY shared/ ./shared/
 COPY web/ ./web/
