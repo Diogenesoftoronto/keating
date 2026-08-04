@@ -36,11 +36,10 @@ jobs:
 
       - name: Test and build
         run: |
+          bun run build
           bun test ./test/*.test.ts
           cd web
           bun test
-          cd ..
-          bun run build
 
       - name: Verify npm package contents
         run: |
