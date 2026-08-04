@@ -1,6 +1,19 @@
 import { afterEach, describe, expect, it } from "bun:test";
+import { mockEvent } from "h3";
+import { getOAuthServerConfigs } from "../../server/api/oauth/config";
+import {
+	pollGitHubCopilotDeviceFlow,
+	refreshGitHubCopilotToken,
+	startGitHubCopilotDeviceFlow,
+} from "../../server/api/oauth/github-copilot";
 import { exchangeOpenAiCodexApiKey } from "../../server/api/oauth/openai-codex";
-import { getOAuthProviderConfig, OAUTH_MESSAGE_CHANNEL, providerToOAuthId, resolveOAuthRedirectUri } from "../keating/oauth";
+import {
+	getOAuthProviderConfig,
+	getOAuthProviderIds,
+	OAUTH_MESSAGE_CHANNEL,
+	providerToOAuthId,
+	resolveOAuthRedirectUri,
+} from "../keating/oauth";
 
 const originalFetch = globalThis.fetch;
 
@@ -18,19 +31,25 @@ describe("OAuth provider wiring", () => {
 		expect(providerToOAuthId("openai-codex")).toBe("openai-codex");
 	});
 
+	it("uses OAuth for every subscription-backed catalog provider", () => {
+		expect(providerToOAuthId("anthropic")).toBe("anthropic");
+		expect(providerToOAuthId("github-copilot")).toBe("github-copilot");
+		expect(getOAuthProviderIds()).toEqual(["anthropic", "openai-codex", "github-copilot"]);
+	});
+
 	it("uses the registered CLI loopback callback for Codex OAuth", () => {
 		const config = getOAuthProviderConfig("openai-codex");
 		expect(config.redirectUri).toBe("http://localhost:1455/auth/callback");
 		expect(config.authorizeUrl).toBe("https://auth.openai.com/oauth/authorize");
 	});
 
-	it("redirects to the keating.help web callback in production", () => {
+	it("keeps registered provider callbacks in production", () => {
 		(globalThis as { location?: unknown }).location = {
 			hostname: "keating.help",
 			origin: "https://keating.help",
 		};
 		try {
-			expect(resolveOAuthRedirectUri("openai-codex")).toBe("https://keating.help/oauth/callback");
+			expect(resolveOAuthRedirectUri("openai-codex")).toBe("http://localhost:1455/auth/callback");
 			// Anthropic keeps its provider-hosted code-display callback everywhere.
 			expect(resolveOAuthRedirectUri("anthropic")).toBe("https://platform.claude.com/oauth/code/callback");
 		} finally {
@@ -52,8 +71,14 @@ describe("OAuth provider wiring", () => {
 
 	it("uses Anthropic's manual OAuth callback instead of a dead localhost redirect", () => {
 		const config = getOAuthProviderConfig("anthropic");
-		expect(config.authorizeUrl).toBe("https://platform.claude.com/oauth/authorize");
+		expect(config.authorizeUrl).toBe("https://claude.ai/oauth/authorize");
 		expect(config.redirectUri).toBe("https://platform.claude.com/oauth/code/callback");
+	});
+
+	it("keeps Nitro provider config independent from browser storage modules", () => {
+		const configs = getOAuthServerConfigs();
+		expect(configs.anthropic.clientId).toBe(getOAuthProviderConfig("anthropic").clientId);
+		expect(configs["openai-codex"].clientId).toBe(getOAuthProviderConfig("openai-codex").clientId);
 	});
 
 	it("requests the copy-paste code display flow for Anthropic", () => {
@@ -79,5 +104,106 @@ describe("OAuth provider wiring", () => {
 		expect(params.get("requested_token")).toBe("openai-api-key");
 		expect(params.get("subject_token")).toBe("id-token");
 		expect(params.get("subject_token_type")).toBe("urn:ietf:params:oauth:token-type:id_token");
+	});
+});
+
+describe("GitHub Copilot device OAuth", () => {
+	it("starts a trusted github.com device authorization", async () => {
+		let requestBody = "";
+		const device = await startGitHubCopilotDeviceFlow((async (input, init) => {
+			expect(String(input)).toBe("https://github.com/login/device/code");
+			requestBody = String(init?.body ?? "");
+			return Response.json({
+				device_code: "device-secret",
+				user_code: "ABCD-EFGH",
+				verification_uri: "https://github.com/login/device",
+				interval: 5,
+				expires_in: 900,
+			});
+		}) as typeof fetch);
+
+		expect(new URLSearchParams(requestBody).get("scope")).toBe("read:user");
+		expect(device).toEqual({
+			device_code: "device-secret",
+			user_code: "ABCD-EFGH",
+			verification_uri: "https://github.com/login/device",
+			interval: 5,
+			expires_in: 900,
+		});
+	});
+
+	it("reports authorization_pending without exposing an upstream token", async () => {
+		const result = await pollGitHubCopilotDeviceFlow("device-secret", (async () =>
+			Response.json({ error: "authorization_pending" })) as unknown as typeof fetch);
+		expect(result).toEqual({ status: "pending" });
+	});
+
+	it("exchanges an approved device code for a refreshable Copilot credential", async () => {
+		const urls: string[] = [];
+		const fetcher = (async (input, init) => {
+			urls.push(String(input));
+			if (urls.length === 1) {
+				expect(new URLSearchParams(String(init?.body)).get("device_code")).toBe("device-secret");
+				return Response.json({ access_token: "github-access" });
+			}
+			expect(new Headers(init?.headers).get("authorization")).toBe("Bearer github-access");
+			return Response.json({ token: "copilot-access", expires_at: Math.floor(Date.now() / 1000) + 1800 });
+		}) as typeof fetch;
+
+		const result = await pollGitHubCopilotDeviceFlow("device-secret", fetcher);
+		expect(urls).toEqual([
+			"https://github.com/login/oauth/access_token",
+			"https://api.github.com/copilot_internal/v2/token",
+		]);
+		expect(result.status).toBe("complete");
+		if (result.status === "complete") {
+			expect(result.access_token).toBe("copilot-access");
+			expect(result.refresh_token).toBe("github-access");
+			expect(result.expires_in).toBeGreaterThan(1400);
+		}
+	});
+
+	it("refreshes through the Nitro route using the durable GitHub token", async () => {
+		globalThis.fetch = (async (_input, init) => {
+			expect(new Headers(init?.headers).get("authorization")).toBe("Bearer github-access");
+			return Response.json({ token: "copilot-refreshed", expires_at: Math.floor(Date.now() / 1000) + 1800 });
+		}) as typeof fetch;
+		const handler = (await import("../../server/api/oauth/refresh")).default;
+		const event = mockEvent(
+			new Request("https://keating.test/api/oauth/refresh", {
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({ provider: "github-copilot", refresh_token: "github-access" }),
+			}),
+		);
+		const result = await handler(event);
+		expect(result.status).toBe("complete");
+		expect(result.access_token).toBe("copilot-refreshed");
+	});
+
+	it("supports direct refresh helper coverage for a production smoke harness", async () => {
+		const result = await refreshGitHubCopilotToken(
+			"github-access",
+			(async () => Response.json({ token: "copilot-refreshed", expires_at: Math.floor(Date.now() / 1000) + 1800 })) as unknown as typeof fetch,
+		);
+		expect(result.status).toBe("complete");
+	});
+
+	it("preserves a GitHub credential when refresh fails transiently", async () => {
+		globalThis.fetch = (async () => new Response("unavailable", { status: 503 })) as unknown as typeof fetch;
+		const handler = (await import("../../server/api/oauth/refresh")).default;
+		const event = mockEvent(
+			new Request("https://keating.test/api/oauth/refresh", {
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({ provider: "github-copilot", refresh_token: "github-access" }),
+			}),
+		);
+		try {
+			await handler(event);
+			throw new Error("Expected refresh to fail");
+		} catch (error) {
+			expect((error as { statusCode?: number }).statusCode).toBe(502);
+		}
 	});
 });

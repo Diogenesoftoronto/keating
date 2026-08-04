@@ -1,6 +1,7 @@
 import { defineEventHandler, readBody, createError } from "h3";
 import { getOAuthServerConfigs, type OAuthServerProviderId } from "./config";
 import { exchangeOpenAiCodexApiKey } from "./openai-codex";
+import { OAuthUpstreamError, refreshGitHubCopilotToken } from "./github-copilot";
 
 interface RefreshRequestBody {
 	provider: string;
@@ -15,6 +16,21 @@ export default defineEventHandler(async (event) => {
 			statusCode: 400,
 			statusMessage: "Missing required fields: provider, refresh_token",
 		});
+	}
+
+	if (body.provider === "github-copilot") {
+		try {
+			return await refreshGitHubCopilotToken(body.refresh_token);
+		} catch (error) {
+			console.error(
+				"[oauth/refresh] GitHub Copilot refresh failed:",
+				error instanceof Error ? error.message : "Unknown error",
+			);
+			throw createError({
+				statusCode: error instanceof OAuthUpstreamError && (error.status === 401 || error.status === 403) ? 401 : 502,
+				statusMessage: "GitHub Copilot token refresh failed",
+			});
+		}
 	}
 
 	const configs = getOAuthServerConfigs();
