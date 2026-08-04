@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getAppStorage } from "@earendil-works/pi-web-ui";
 import { handleTutorialLinkClick, tutorialApiKeyHref } from "../../lib/tutorial-links";
 import {
 	completeOAuthFromInput,
 	completeOAuthDeviceFlow,
+	cancelPendingOAuthRequest,
+	getPendingOAuthRequest,
 	initiateOAuth,
 	providerToOAuthId,
 	loadOAuthCredentials,
@@ -88,6 +90,30 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 		Record<string, { userCode: string; verificationUri: string; expiresAt: number } | undefined>
 	>({});
 	const [hostedSummary, setHostedSummary] = useState<string>("");
+	const devicePollAbortRef = useRef<AbortController | null>(null);
+
+	const finishDeviceSignIn = useCallback(async (provider: string, oauthProvider: "github-copilot") => {
+		devicePollAbortRef.current?.abort();
+		const controller = new AbortController();
+		devicePollAbortRef.current = controller;
+		const result = await completeOAuthDeviceFlow(oauthProvider, controller.signal);
+		if (controller.signal.aborted) return;
+		if (result.success && result.provider) {
+			const providerNames = oauthProviderToProviderNames(result.provider);
+			setOAuthStatus((prev) => setProviderAliases(prev, providerNames, true));
+			setOAuthErrors((prev) => setProviderAliases(prev, providerNames, ""));
+		} else {
+			setOAuthErrors((prev) => ({
+				...prev,
+				[provider]: result.error ?? "GitHub Copilot sign-in failed.",
+			}));
+		}
+		setOAuthDevices((prev) => ({ ...prev, [provider]: undefined }));
+		setOauthLoading((prev) => ({ ...prev, [provider]: false }));
+		if (devicePollAbortRef.current === controller) devicePollAbortRef.current = null;
+	}, []);
+
+	useEffect(() => () => devicePollAbortRef.current?.abort(), []);
 
 	useEffect(() => {
 		const storage = getAppStorage();
@@ -132,6 +158,24 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 		};
 		checkOAuth();
 	}, [providers.join(",")]);
+
+	useEffect(() => {
+		const pending = getPendingOAuthRequest();
+		if (!pending) return;
+		const providerNames = oauthProviderToProviderNames(pending.provider);
+		setOauthLoading((prev) => setProviderAliases(prev, providerNames, true));
+		setOAuthErrors((prev) => setProviderAliases(prev, providerNames, ""));
+		if (pending.flow !== "device-code") return;
+
+		const device = {
+			userCode: pending.userCode,
+			verificationUri: pending.verificationUri,
+			expiresAt: pending.expiresAt,
+		};
+		setOAuthDevices((prev) => setProviderAliases(prev, providerNames, device));
+		const provider = providerNames.find((name) => providers.includes(name)) ?? pending.provider;
+		void finishDeviceSignIn(provider, pending.provider);
+	}, [providers.join(","), finishDeviceSignIn]);
 
 	useEffect(() => {
 		const handler = (event: MessageEvent) => {
@@ -196,7 +240,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 		setOAuthInputs((prev) => ({ ...prev, [provider]: "" }));
 		setOauthLoading((prev) => ({ ...prev, [provider]: true }));
 		void initiateOAuth(oauthId)
-			.then(async (initiation) => {
+			.then((initiation) => {
 				if (initiation.flow !== "device-code") return;
 				setOAuthDevices((prev) => ({
 					...prev,
@@ -206,19 +250,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 						expiresAt: initiation.expiresAt,
 					},
 				}));
-				const result = await completeOAuthDeviceFlow(initiation.provider);
-				if (result.success && result.provider) {
-					const providerNames = oauthProviderToProviderNames(result.provider);
-					setOAuthStatus((prev) => setProviderAliases(prev, providerNames, true));
-					setOAuthErrors((prev) => setProviderAliases(prev, providerNames, ""));
-				} else {
-					setOAuthErrors((prev) => ({
-						...prev,
-						[provider]: result.error ?? "GitHub Copilot sign-in failed.",
-					}));
-				}
-				setOAuthDevices((prev) => ({ ...prev, [provider]: undefined }));
-				setOauthLoading((prev) => ({ ...prev, [provider]: false }));
+				void finishDeviceSignIn(provider, initiation.provider);
 			})
 			.catch((error) => {
 				setOAuthErrors((prev) => ({
@@ -227,6 +259,17 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 				}));
 				setOauthLoading((prev) => ({ ...prev, [provider]: false }));
 			});
+	};
+
+	const handleCancelOAuth = (provider: string) => {
+		devicePollAbortRef.current?.abort();
+		devicePollAbortRef.current = null;
+		cancelPendingOAuthRequest();
+		const providerNames = oauthProviderToProviderNames(providerToOAuthId(provider) ?? provider);
+		setOauthLoading((prev) => setProviderAliases(prev, providerNames, false));
+		setOAuthInputs((prev) => setProviderAliases(prev, providerNames, ""));
+		setOAuthDevices((prev) => setProviderAliases(prev, providerNames, undefined));
+		setOAuthErrors((prev) => setProviderAliases(prev, providerNames, ""));
 	};
 
 	const handleCompleteOAuth = async (provider: string) => {
@@ -241,11 +284,13 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 		if (result.success && result.provider) {
 			const statusProviders = oauthProviderToProviderNames(result.provider);
 			setOAuthStatus((prev) => setProviderAliases(prev, statusProviders, true));
-			setOAuthInputs((prev) => ({ ...prev, [provider]: "" }));
+			setOAuthInputs((prev) => setProviderAliases(prev, statusProviders, ""));
+			setOAuthErrors((prev) => setProviderAliases(prev, statusProviders, ""));
+			setOauthLoading((prev) => setProviderAliases(prev, statusProviders, false));
 		} else {
 			setOAuthErrors((prev) => ({ ...prev, [provider]: result.error ?? "OAuth sign-in failed." }));
+			setOauthLoading((prev) => ({ ...prev, [provider]: false }));
 		}
-		setOauthLoading((prev) => ({ ...prev, [provider]: false }));
 	};
 
 	const handleSignOut = async (provider: string) => {
@@ -344,7 +389,11 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 										disabled={loading}
 										onClick={() => handleSignIn(provider)}
 									>
-										{loading ? "Waiting for sign-in…" : `Sign in with ${OAUTH_PROVIDER_LABELS[provider] ?? provider}`}
+										{loading
+											? device
+												? "Waiting for GitHub approval…"
+												: "Finish sign-in below"
+											: `Sign in with ${OAUTH_PROVIDER_LABELS[provider] ?? provider}`}
 									</button>
 									{loading && device && (
 										<div className={css({ borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "color-mix(in srgb, var(--muted) 20%, transparent)", padding: "0.75rem" })}>
@@ -359,14 +408,17 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 													Open GitHub
 												</a>
 											</div>
+											<button className={smallButtonClass} type="button" onClick={() => handleCancelOAuth(provider)}>
+												Cancel and restart
+											</button>
 										</div>
 									)}
 									{loading && !device && oauthId !== "github-copilot" && (
 										<div className={css({ borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "color-mix(in srgb, var(--muted) 20%, transparent)", padding: "0.5rem" })}>
 											<p className={css({ marginBottom: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
 												{oauthId === "anthropic"
-													? "After you approve access, Claude displays an authorization code. Copy the code and paste it here."
-													: "After you approve access, the browser lands on a localhost page that will not load. Copy that page's full URL and paste it here."}
+													? "After approval, Claude displays an authorization code. Copy it, return to this Keating tab, paste it below, and choose Complete."
+													: "The localhost error page after approval is expected. Copy its full URL, return to this Keating tab, paste it below, and choose Complete."}
 											</p>
 											<div className={css({ display: "flex", gap: "0.5rem" })}>
 												<input
@@ -377,13 +429,16 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 													onChange={(e) => setOAuthInputs((prev) => ({ ...prev, [provider]: e.target.value }))}
 												/>
 												<button
-													className={smallButtonClass}
-													disabled={!oauthInputs[provider]?.trim()}
-													onClick={() => handleCompleteOAuth(provider)}
-												>
-													Complete
-												</button>
-											</div>
+											className={smallButtonClass}
+											disabled={!oauthInputs[provider]?.trim()}
+											onClick={() => handleCompleteOAuth(provider)}
+										>
+											Complete
+										</button>
+										<button className={smallButtonClass} type="button" onClick={() => handleCancelOAuth(provider)}>
+											Cancel
+										</button>
+									</div>
 										</div>
 									)}
 									{oauthErrors[provider] && (

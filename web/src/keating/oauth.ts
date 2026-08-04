@@ -75,6 +75,8 @@ interface PendingDeviceOAuthState {
 	flow: "device-code";
 	provider: "github-copilot";
 	deviceCode: string;
+	userCode: string;
+	verificationUri: string;
 	intervalSeconds: number;
 	expiresAt: number;
 	createdAt: number;
@@ -82,7 +84,24 @@ interface PendingDeviceOAuthState {
 
 type PendingOAuthState = PendingAuthorizationCodeOAuthState | PendingDeviceOAuthState;
 
+export type PendingOAuthRequest =
+	| {
+			flow: "authorization-code";
+			provider: AuthorizationCodeOAuthProviderId;
+			createdAt: number;
+			expiresAt: number;
+		}
+	| {
+			flow: "device-code";
+			provider: "github-copilot";
+			userCode: string;
+			verificationUri: string;
+			createdAt: number;
+			expiresAt: number;
+		};
+
 const PENDING_KEY = "keating_oauth_pending";
+const AUTHORIZATION_CODE_TTL_MS = 10 * 60 * 1000;
 
 function savePendingOAuth(state: PendingOAuthState): void {
 	localStorage.setItem(PENDING_KEY, JSON.stringify(state));
@@ -100,6 +119,50 @@ function loadPendingOAuth(): PendingOAuthState | null {
 
 function clearPendingOAuth(): void {
 	localStorage.removeItem(PENDING_KEY);
+}
+
+/**
+ * Return only the non-secret portion of an unfinished sign-in so the settings
+ * UI can restore its completion controls after a reload or browser restore.
+ */
+export function getPendingOAuthRequest(now = Date.now()): PendingOAuthRequest | null {
+	const pending = loadPendingOAuth();
+	if (!pending) return null;
+
+	if (pending.flow === "authorization-code") {
+		const expiresAt = pending.createdAt + AUTHORIZATION_CODE_TTL_MS;
+		if (now >= expiresAt) {
+			clearPendingOAuth();
+			return null;
+		}
+		return {
+			flow: pending.flow,
+			provider: pending.provider,
+			createdAt: pending.createdAt,
+			expiresAt,
+		};
+	}
+
+	if (
+		now >= pending.expiresAt ||
+		typeof pending.userCode !== "string" ||
+		typeof pending.verificationUri !== "string"
+	) {
+		clearPendingOAuth();
+		return null;
+	}
+	return {
+		flow: pending.flow,
+		provider: pending.provider,
+		userCode: pending.userCode,
+		verificationUri: pending.verificationUri,
+		createdAt: pending.createdAt,
+		expiresAt: pending.expiresAt,
+	};
+}
+
+export function cancelPendingOAuthRequest(): void {
+	clearPendingOAuth();
 }
 
 function createState(): string {
@@ -154,6 +217,8 @@ export async function initiateOAuth(providerId: OAuthProviderId): Promise<OAuthI
 				flow: "device-code",
 				provider: providerId,
 				deviceCode: device.device_code,
+				userCode: device.user_code,
+				verificationUri: device.verification_uri,
 				intervalSeconds: typeof device.interval === "number" ? device.interval : 5,
 				expiresAt,
 				createdAt: Date.now(),
@@ -263,7 +328,7 @@ export async function handleOAuthCallback(code: string, state?: string | null): 
 	}
 
 	const age = Date.now() - pending.createdAt;
-	if (age > 10 * 60 * 1000) {
+	if (age >= AUTHORIZATION_CODE_TTL_MS) {
 		clearPendingOAuth();
 		return { success: false, error: "OAuth request expired. Please try again." };
 	}
