@@ -10,16 +10,37 @@ import { exchangeOpenAiCodexApiKey } from "../../server/api/oauth/openai-codex";
 import {
 	getOAuthProviderConfig,
 	getOAuthProviderIds,
+	getPendingOAuthRequest,
 	OAUTH_MESSAGE_CHANNEL,
 	providerToOAuthId,
 	resolveOAuthRedirectUri,
 } from "../keating/oauth";
 
 const originalFetch = globalThis.fetch;
+const originalLocalStorage = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
 
 afterEach(() => {
 	globalThis.fetch = originalFetch;
+	if (originalLocalStorage) {
+		Object.defineProperty(globalThis, "localStorage", originalLocalStorage);
+	} else {
+		delete (globalThis as { localStorage?: unknown }).localStorage;
+	}
 });
+
+function installLocalStorage() {
+	const entries = new Map<string, string>();
+	const storage = {
+		getItem: (key: string) => entries.get(key) ?? null,
+		setItem: (key: string, value: string) => entries.set(key, value),
+		removeItem: (key: string) => entries.delete(key),
+	};
+	Object.defineProperty(globalThis, "localStorage", {
+		configurable: true,
+		value: storage,
+	});
+	return storage;
+}
 
 describe("OAuth provider wiring", () => {
 	it("exports the browser callback message channel", () => {
@@ -84,6 +105,68 @@ describe("OAuth provider wiring", () => {
 	it("requests the copy-paste code display flow for Anthropic", () => {
 		const config = getOAuthProviderConfig("anthropic");
 		expect(config.extraAuthParams?.code).toBe("true");
+	});
+
+	it("restores a pending Codex handoff after reload without exposing PKCE secrets", () => {
+		const storage = installLocalStorage();
+		storage.setItem("keating_oauth_pending", JSON.stringify({
+			flow: "authorization-code",
+			provider: "openai-codex",
+			verifier: "pkce-secret",
+			state: "oauth-state",
+			redirectUri: "http://localhost:1455/auth/callback",
+			createdAt: 1_000,
+		}));
+
+		const pending = getPendingOAuthRequest(2_000);
+		expect(pending).toEqual({
+			flow: "authorization-code",
+			provider: "openai-codex",
+			createdAt: 1_000,
+			expiresAt: 601_000,
+		});
+		expect(JSON.stringify(pending)).not.toContain("pkce-secret");
+		expect(JSON.stringify(pending)).not.toContain("oauth-state");
+	});
+
+	it("clears expired authorization-code handoffs instead of restoring stale UI", () => {
+		const storage = installLocalStorage();
+		storage.setItem("keating_oauth_pending", JSON.stringify({
+			flow: "authorization-code",
+			provider: "openai-codex",
+			verifier: "pkce-secret",
+			state: "oauth-state",
+			redirectUri: "http://localhost:1455/auth/callback",
+			createdAt: 1_000,
+		}));
+
+		expect(getPendingOAuthRequest(601_000)).toBeNull();
+		expect(storage.getItem("keating_oauth_pending")).toBeNull();
+	});
+
+	it("restores a GitHub challenge without exposing its device credential", () => {
+		const storage = installLocalStorage();
+		storage.setItem("keating_oauth_pending", JSON.stringify({
+			flow: "device-code",
+			provider: "github-copilot",
+			deviceCode: "device-secret",
+			userCode: "ABCD-EFGH",
+			verificationUri: "https://github.com/login/device",
+			intervalSeconds: 5,
+			expiresAt: 901_000,
+			createdAt: 1_000,
+		}));
+
+		const pending = getPendingOAuthRequest(2_000);
+		expect(pending).toEqual({
+			flow: "device-code",
+			provider: "github-copilot",
+			userCode: "ABCD-EFGH",
+			verificationUri: "https://github.com/login/device",
+			createdAt: 1_000,
+			expiresAt: 901_000,
+		});
+		expect(JSON.stringify(pending)).not.toContain("device-secret");
 	});
 
 	it("exchanges a Codex id_token for an OpenAI API key", async () => {
