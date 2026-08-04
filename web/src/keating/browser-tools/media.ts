@@ -5,6 +5,7 @@ import { getProviderApiKey } from "../../lib/provider-models";
 import { proxiedProviderRequestUrl } from "../../lib/provider-proxy";
 import { DEFAULT_IMAGE_GENERATOR_ID, getImageGenerator, localImageEndpoint } from "../../lib/image-generators";
 import { loadKeatingUiSettings } from "../ui-settings";
+import type { StoryboardScene } from "../storyboard";
 import {
 	createImageRequestId,
 	emitImageProgress,
@@ -23,16 +24,6 @@ function escapeHtml(value: string): string {
 		.replace(/>/g, "&gt;")
 		.replace(/"/g, "&quot;")
 		.replace(/'/g, "&#39;");
-}
-
-interface StoryboardScene {
-	number: number;
-	title: string;
-	duration: string;
-	visual: string;
-	audio?: string;
-	transition?: string;
-	highlight?: string;
 }
 
 /** Extract agent-authored scenes from a storyboard markdown document. */

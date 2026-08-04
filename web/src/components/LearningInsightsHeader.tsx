@@ -62,7 +62,7 @@ const styles = {
   }),
   switcher: css({
     display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
     borderTop: "1px solid var(--ink)",
     bg: "color-mix(in srgb, var(--paper) 76%, var(--card))",
   }),
@@ -129,7 +129,7 @@ export function LearningInsightsHeader({
   description,
   actions,
 }: {
-  current: "usage" | "bench";
+  current: "usage" | "coming-up" | "bench";
   context: string;
   title: string;
   description: string;
@@ -156,6 +156,16 @@ export function LearningInsightsHeader({
             )}
           >
             Learning activity
+          </Link>
+          <Link
+            to="/coming-up"
+            aria-current={current === "coming-up" ? "page" : undefined}
+            className={cx(
+              styles.switchLink,
+              current === "coming-up" ? styles.switchActive : styles.switchInactive,
+            )}
+          >
+            Coming up
           </Link>
           <Link
             to="/bench"

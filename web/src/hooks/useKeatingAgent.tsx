@@ -17,9 +17,10 @@ import { KeatingUiSettingsTab } from "../components/KeatingUiSettingsTab";
 import { LearningTab } from "../components/settings/LearningTab";
 import { ModelsProvidersTab } from "../components/settings/ModelsProvidersTab";
 import { SessionBrowser, SESSION_BROWSER_BREAKPOINT } from "../components/SessionBrowser";
-import { ModelSelectorDialog } from "../components/ModelSelector";
+import { ImageGenerationModelSelectorDialog, ModelSelectorDialog } from "../components/ModelSelector";
 import { KeatingApiKeyPromptDialog, promptKeatingApiKey } from "../components/KeatingApiKeyPromptDialog";
 import { getProviderApiKey, resolveAvailableChatModel } from "../lib/provider-models";
+import { DEFAULT_IMAGE_GENERATOR_ID, getImageGenerator } from "../lib/image-generators";
 import { localModel } from "../stores/local-model";
 import { buildKeatingSystemPrompt, composeKeatingSystemPrompt, createKeatingTools, executeRawKeatingTool, getActiveKeatingPrompt } from "../keating/browser-tools";
 import { loadAgentRuntimeConfig, shouldAutoBootNodePod, type KeatingAgentRuntimeConfig } from "../keating/agent-runtime";
@@ -228,6 +229,8 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const dismissPersistentBanner = useKeatingAgentStore((state) => state.dismissPersistentBanner);
   const settingsDialog = useDialogState();
   const modelSelectorDialog = useDialogState();
+	const imageModelSelectorDialog = useDialogState();
+	const imageModelRetryRef = useRef<null | (() => Promise<void>)>(null);
   const [isPending, startTransition] = useTransition();
   const bootstrapTimerRef = useRef<number | null>(null);
   const bootstrapGenerationRef = useRef(0);
@@ -938,6 +941,10 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
         posthog.capture('model_selector_opened', { session_id: agentSessionId });
         modelSelectorDialog.onOpen();
       },
+		onImageGenerationModelSelect: () => {
+			imageModelRetryRef.current = retryLastResponse;
+			imageModelSelectorDialog.onOpen();
+		},
       onFork: (forkPoint?: number) => forkSession(agentSessionId, forkPoint),
       onRetry: retryLastResponse,
       thinkingLevel: agent.state.thinkingLevel,
@@ -1447,6 +1454,31 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     />
   );
 
+	const imageSettings = loadKeatingUiSettings();
+	const selectedImageGenerator = getImageGenerator(imageSettings.imageGenerator)
+		?? getImageGenerator(DEFAULT_IMAGE_GENERATOR_ID)!;
+	const imageModelSelectorDialogElement = (
+		<ImageGenerationModelSelectorDialog
+			open={imageModelSelectorDialog.open}
+			generator={selectedImageGenerator}
+			currentModelId={imageSettings.imageModel || selectedImageGenerator.models[0] || ""}
+			onClose={() => {
+				imageModelRetryRef.current = null;
+				imageModelSelectorDialog.onClose();
+			}}
+			onSelect={(modelId) => {
+				saveKeatingUiSettings({ ...loadKeatingUiSettings(), imageModel: modelId });
+				imageModelSelectorDialog.onClose();
+				const retry = imageModelRetryRef.current;
+				imageModelRetryRef.current = null;
+				void retry?.().catch((error) => {
+					console.error("Keating image generation retry failed:", error);
+					posthog.capture("image_generation_retry_failed", { session_id: sessionIdRef.current });
+				});
+			}}
+		/>
+	);
+
   // Use a callback ref to safely initialize the agent when the DOM node resolves
   const chatPanelRef = useCallback((node: ChatPanelHandle | null) => {
     if (bootstrapTimerRef.current !== null) {
@@ -1505,6 +1537,10 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
             posthog.capture('model_selector_opened', { session_id: sessionIdRef.current });
             modelSelectorDialog.onOpen();
           },
+			onImageGenerationModelSelect: () => {
+				imageModelRetryRef.current = retryExistingResponse;
+				imageModelSelectorDialog.onOpen();
+			},
           onFork: (forkPoint?: number) => forkSession(sessionIdRef.current, forkPoint),
           onRetry: retryExistingResponse,
           thinkingLevel: existingAgent.state.thinkingLevel,
@@ -1581,6 +1617,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     <>
       {settingsDialogElement}
       {modelSelectorDialogElement}
+		{imageModelSelectorDialogElement}
       <KeatingApiKeyPromptDialog />
     </>
   );

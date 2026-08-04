@@ -9,7 +9,7 @@ Set Padding 30
 Set Theme "Catppuccin Mocha"
 
 # Run tests
-Type "just test"
+Type "devenv tasks run keating:test"
 Enter
 
 # Wait for tests to finish

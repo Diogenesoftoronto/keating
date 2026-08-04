@@ -3258,15 +3258,20 @@ export default defineConfig({
         maxHeight: "460px"
       }
     },
-    "@media (min-width: 1024px)": {
-      ".retro-layout .nav-status": {
-        display: "flex"
-      },
+    "@media (min-width: 1152px)": {
       ".nav-desktop": {
-        gap: "2rem"
+        display: "flex !important",
+        alignItems: "center",
+        gap: "1rem"
+      },
+      ".nav-mobile-actions": {
+        display: "none !important"
       },
       ".nav-desktop-link": {
-        fontSize: "1.125rem"
+        fontSize: "0.875rem"
+      },
+      ".nav-mobile-toggle": {
+        display: "none !important"
       }
     },
     "@media (max-width: 980px)": {
@@ -3330,19 +3335,6 @@ export default defineConfig({
       },
       ".retro-layout .download-source-box .keating-btn-retro": {
         justifySelf: "start"
-      }
-    },
-    "@media (min-width: 768px)": {
-      ".nav-desktop": {
-        display: "flex !important",
-        alignItems: "center",
-        gap: "1.5rem"
-      },
-      ".nav-desktop-link": {
-        fontSize: "1rem"
-      },
-      ".nav-mobile-toggle": {
-        display: "none !important"
       }
     },
     "@media print": {

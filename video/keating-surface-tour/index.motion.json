@@ -1,0 +1,25 @@
+{
+  "duration": 32,
+  "assertions": [
+    { "kind": "appearsBy", "selector": "#tour-web-video", "bySec": 0.8 },
+    { "kind": "appearsBy", "selector": "#model-frame", "bySec": 4.8 },
+    { "kind": "appearsBy", "selector": "#live-frame", "bySec": 8.8 },
+    { "kind": "appearsBy", "selector": "#coming-frame", "bySec": 12.8 },
+    { "kind": "appearsBy", "selector": "#courses-frame", "bySec": 16.8 },
+    { "kind": "appearsBy", "selector": "#blog-frame", "bySec": 20.8 },
+    { "kind": "appearsBy", "selector": "#tour-tui-video", "bySec": 24.8 },
+    { "kind": "appearsBy", "selector": "#tour-cli-video", "bySec": 28.8 },
+    { "kind": "before", "a": "#tour-web-video", "b": "#model-frame" },
+    { "kind": "before", "a": "#model-frame", "b": "#live-frame" },
+    { "kind": "before", "a": "#live-frame", "b": "#coming-frame" },
+    { "kind": "before", "a": "#coming-frame", "b": "#courses-frame" },
+    { "kind": "before", "a": "#courses-frame", "b": "#blog-frame" },
+    { "kind": "before", "a": "#blog-frame", "b": "#tour-tui-video" },
+    { "kind": "before", "a": "#tour-tui-video", "b": "#tour-cli-video" },
+    { "kind": "staysInFrame", "selector": "#model-frame" },
+    { "kind": "staysInFrame", "selector": "#live-frame" },
+    { "kind": "staysInFrame", "selector": "#coming-frame" },
+    { "kind": "staysInFrame", "selector": "#courses-frame" },
+    { "kind": "staysInFrame", "selector": "#blog-frame" }
+  ]
+}

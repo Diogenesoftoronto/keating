@@ -159,6 +159,7 @@ export const DEFAULT_SESSION_START_HOOKS: SessionStartHook[] = [{
 		return [
 			"### Complete durable learner profile",
 			"All stored learner-related records are included below without top-N truncation. `coverageGaps` identifies absent evidence; it is not a diagnosis and should not trigger an opening interview.",
+			"User-set `studyPriorities` are explicit learner intent: prefer Focus work when choosing optional practice, then Maintain, then Low. Never change or misrepresent the evidence-based flashcard due dates, and do not hide overdue work because its priority is Low.",
 			`Complete learner profile payload (JSON): ${JSON.stringify(profile)}`,
 		].join("\n");
 	},

@@ -1,16 +1,8 @@
 import { useMemo, useState } from "react";
 import { ChevronRight, ChevronLeft, Clock, Eye, Volume2, AlertTriangle, Lightbulb, BookOpen, ArrowRight } from "lucide-react";
 import { css, cx } from "../../styled-system/css";
-
-interface Scene {
-	number: number;
-	title: string;
-	duration: string;
-	visual: string;
-	audio?: string;
-	transition?: string;
-	highlight?: string;
-}
+import type { StoryboardScene } from "../keating/storyboard";
+export type { StoryboardScene } from "../keating/storyboard";
 
 function durationSeconds(label: string): number {
 	const cleaned = label.trim().replace(/s$/i, "");
@@ -22,11 +14,11 @@ function durationSeconds(label: string): number {
 	return Number.isFinite(value) ? Math.max(0, value) : 0;
 }
 
-export function parseStoryboard(markdown: string): { title: string; scenes: Scene[]; totalDuration: number } {
+export function parseStoryboard(markdown: string): { title: string; scenes: StoryboardScene[]; totalDuration: number } {
 	const lines = markdown.split("\n");
-	const scenes: Scene[] = [];
+	const scenes: StoryboardScene[] = [];
 	let title = "";
-	let current: Partial<Scene> = {};
+	let current: Partial<StoryboardScene> = {};
 
 	for (const line of lines) {
 		const titleMatch = line.match(/^# Animation Storyboard: (.+)$/);
@@ -38,7 +30,7 @@ export function parseStoryboard(markdown: string): { title: string; scenes: Scen
 		const sceneMatch = line.match(/^## Scene (\d+): (.+) \((.+)\)$/);
 		if (sceneMatch) {
 			if (current.title) {
-				scenes.push(current as Scene);
+				scenes.push(current as StoryboardScene);
 			}
 			const [, num, name, dur] = sceneMatch;
 			current = { number: parseInt(num, 10), title: name, duration: dur };
@@ -72,7 +64,7 @@ export function parseStoryboard(markdown: string): { title: string; scenes: Scen
 		if (stepMatch) current.highlight = stepMatch[1];
 	}
 
-	if (current.title) scenes.push(current as Scene);
+	if (current.title) scenes.push(current as StoryboardScene);
 
 	const totalDuration = scenes.reduce((sum, scene) => sum + durationSeconds(scene.duration), 0);
 	return { title, scenes, totalDuration };
@@ -94,7 +86,7 @@ function SceneCard({
 	isActive,
 	progress,
 }: {
-	scene: Scene;
+	scene: StoryboardScene;
 	isActive: boolean;
 	progress: number;
 }) {

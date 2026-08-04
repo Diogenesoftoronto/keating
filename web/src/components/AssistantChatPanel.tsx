@@ -11,6 +11,7 @@ import {
   useState,
 } from "react";
 import type { Key, ReactNode } from "react";
+import { createPortal } from "react-dom";
 import type {
   Agent,
   AgentMessage,
@@ -44,6 +45,7 @@ import {
   CircleAlert,
   CircleCheck,
   CircleDollarSign,
+  Camera,
   Check,
   Copy,
   CopyPlus,
@@ -54,6 +56,7 @@ import {
   Loader2,
   Mic,
   MicOff,
+  MonitorUp,
   Paperclip,
   Send,
   Server,
@@ -82,6 +85,7 @@ import type { QuizResult } from "./QuizRenderer";
 import { QuizSessionPanel } from "./QuizSessionPanel";
 import { QuizResultCard } from "./QuizResultCard";
 import { Spinner } from "./Spinner";
+import { ImageGenerationRetryButton } from "./ImageGenerationRetryButton";
 import { SceneRenderer } from "./SceneRenderer";
 import { AnimatedScene, parseAnimationPayload } from "./AnimatedScene";
 import { QuestionRenderer, normalizeQuestionForm } from "./QuestionRenderer";
@@ -94,14 +98,22 @@ import { QuizGradesContext, type QuizGradesContextValue } from "./quiz-grades-co
 import {
   getSpeechProvider,
 	getLiveSpeechBridge,
+  isDuplexSpeechProvider,
   KEATING_VOICE_TOOL_NAME,
   loadWebSpeechSettings,
+  primeSpeechAudio,
   resolveSpeechCredential,
-  speechInputMode,
+  resolveSpeechRealtimeTier,
   type LiveSpeechSession,
   type LiveSpeechState,
 } from "../keating/speech";
 import { startVideoCapture, type VideoCaptureHandle } from "../keating/video-capture";
+import {
+	appendLiveTranscript,
+	emptyLiveTranscript,
+	flushLiveTranscript,
+	type LiveTranscriptTurn,
+} from "../keating/live-transcript";
 import { IMAGE_PROGRESS_EVENT, type ImageProgressDetail } from "../keating/image-stream";
 import { ANIMATION_PROGRESS_EVENT, type AnimationProgressDetail } from "../keating/tool-arg-stream";
 import { startMicRecording, transcribeAudio, type MicRecorder } from "../keating/speech-providers/stt";
@@ -681,12 +693,22 @@ function ImagePart({ image, filename }: { image: string; filename?: string }) {
 // Voice is a real composer mode, not a small attachment action. Duplex models
 // open the realtime surface; other providers use press-and-hold dictation and
 // place the transcript back into the text composer for review.
+function liveCredentialProvider(providerId: string): "google" | "openai" | null {
+	if (providerId === "gemini-live") return "google";
+	if (providerId === "openai-realtime") return "openai";
+	return null;
+}
+
 function SpeechComposerControl({
 	expanded,
 	onExpandedChange,
+	onConversationComplete,
+	onRequestCredential,
 }: {
 	expanded: boolean;
 	onExpandedChange: (expanded: boolean) => void;
+	onConversationComplete: (turns: LiveTranscriptTurn[]) => void | Promise<void>;
+	onRequestCredential?: (provider: string) => Promise<boolean>;
 }) {
   const composer = useComposerRuntime();
   const [available, setAvailable] = useState<boolean | null>(null);
@@ -701,10 +723,15 @@ function SpeechComposerControl({
   useEffect(() => {
     let cancelled = false;
     const check = () => {
-      resolveSpeechCredential(getProviderApiKey)
-        .then((cred) => {
-          if (!cancelled) setAvailable(cred !== null);
-        })
+			const settings = loadWebSpeechSettings();
+			const requiredProvider = liveCredentialProvider(settings.providerId);
+			const credential = requiredProvider
+				? getProviderApiKey(requiredProvider)
+				: resolveSpeechCredential(getProviderApiKey).then((value) => value?.apiKey);
+			credential
+				.then((apiKey) => {
+					if (!cancelled) setAvailable(Boolean(apiKey));
+				})
         .catch(() => {
           if (!cancelled) setAvailable(false);
         });
@@ -719,8 +746,10 @@ function SpeechComposerControl({
   }, []);
 
 	useEffect(() => {
-		if (available === false && expanded) onExpandedChange(false);
-	}, [available, expanded, onExpandedChange]);
+		if (!forceStt && isDuplexSpeechProvider(loadWebSpeechSettings().providerId) && expanded) {
+			onExpandedChange(false);
+		}
+	}, [expanded, forceStt, onExpandedChange]);
 
   const appendToComposer = (text: string) => {
     const trimmed = text.trim();
@@ -765,8 +794,8 @@ function SpeechComposerControl({
 		}
 	};
 
-	const openLiveVoice = () => {
-		const settings = loadWebSpeechSettings();
+	const openLiveVoice = (settings = loadWebSpeechSettings()) => {
+		void primeSpeechAudio().catch(() => {});
 		// getDisplayMedia requires transient user activation in browsers that
 		// enforce the screen-sharing permission contract. Start this request from
 		// the button click; the overlay will consume the resulting handle after
@@ -785,20 +814,75 @@ function SpeechComposerControl({
 		setLiveOpen(true);
 	};
 
-  if (!available) return null;
+	const settings = loadWebSpeechSettings();
+	const mode = forceStt || !isDuplexSpeechProvider(settings.providerId) ? "stt" : "duplex";
+	const activateVoice = () => {
+		if (mode === "stt") {
+			onExpandedChange(true);
+			return;
+		}
+		// Unlock playback from this direct learner gesture even when credential
+		// setup has to finish before the provider session can be opened.
+		void primeSpeechAudio().catch(() => {});
+		if (available === true) {
+			openLiveVoice(settings);
+			return;
+		}
+		const requiredProvider = liveCredentialProvider(settings.providerId);
+		if (!requiredProvider || !onRequestCredential) {
+			openLiveVoice(settings);
+			return;
+		}
+		void onRequestCredential(requiredProvider).then((allowed) => {
+			if (!allowed) return;
+			setAvailable(true);
+			openLiveVoice(loadWebSpeechSettings());
+		});
+	};
+	const liveOverlay = liveOpen && typeof document !== "undefined"
+		? createPortal(
+			<LiveVoiceOverlay
+				onClose={() => setLiveOpen(false)}
+				onConversationComplete={onConversationComplete}
+				initialVideoPromise={pendingLiveVideoRef.current}
+				onFallback={() => {
+					setLiveOpen(false);
+					setForceStt(true);
+					onExpandedChange(true);
+				}}
+			/>,
+			document.body,
+		)
+		: null;
 
-	const mode = forceStt ? "stt" : speechInputMode(loadWebSpeechSettings());
   if (!expanded) {
 		return (
-			<button
-				type="button"
-				onClick={() => onExpandedChange(true)}
-				title="Switch to voice"
-				aria-label="Switch to voice"
-				className={cx(composerIconButtonClass, css({ _hover: { backgroundColor: "var(--muted)", color: "var(--foreground)" } }))}
-			>
-				<Mic size={16} />
-			</button>
+			<>
+				<button
+					type="button"
+					onClick={activateVoice}
+					title={mode === "duplex" ? "Start a live conversation" : "Use voice input"}
+					aria-label={mode === "duplex" ? "Start a live conversation" : "Use voice input"}
+					aria-haspopup={mode === "duplex" ? "dialog" : undefined}
+					className={cx(
+						composerIconButtonClass,
+						mode === "duplex"
+							? css({
+								width: "auto",
+								gap: "0.375rem",
+								paddingInline: "0.5rem",
+								color: "var(--primary)",
+								_hover: { backgroundColor: "color-mix(in srgb, var(--primary) 10%, transparent)" },
+								sm: { width: "auto" },
+							})
+							: css({ _hover: { backgroundColor: "var(--muted)", color: "var(--foreground)" } }),
+					)}
+				>
+					<Mic size={16} />
+					{mode === "duplex" ? <span className={css({ display: "none", sm: { display: "inline" } })}>Live</span> : null}
+				</button>
+				{liveOverlay}
+			</>
 		);
 	}
 
@@ -808,7 +892,7 @@ function SpeechComposerControl({
 				<button
 					type="button"
 					disabled={busy}
-					onClick={mode === "duplex" ? openLiveVoice : undefined}
+					onClick={mode === "duplex" ? () => openLiveVoice() : undefined}
 					onPointerDown={mode === "stt" ? (event) => {
 						event.currentTarget.setPointerCapture(event.pointerId);
 						beginPushToTalk();
@@ -859,17 +943,7 @@ function SpeechComposerControl({
 					<Keyboard size={16} />
 				</button>
 			</div>
-      {liveOpen ? (
-        <LiveVoiceOverlay
-          onClose={() => setLiveOpen(false)}
-          onTranscript={appendToComposer}
-          initialVideoPromise={pendingLiveVideoRef.current}
-          onFallback={() => {
-            setLiveOpen(false);
-							setForceStt(true);
-          }}
-        />
-      ) : null}
+	  {liveOverlay}
     </>
   );
 }
@@ -886,34 +960,48 @@ const LIVE_STATE_LABEL: Record<LiveSpeechState, string> = {
 // dictation if the live session cannot be established.
 function LiveVoiceOverlay({
 	onClose,
-	onTranscript,
+	onConversationComplete,
 	onFallback,
 	initialVideoPromise,
 }: {
 	onClose: () => void;
-	onTranscript: (text: string) => void;
+	onConversationComplete: (turns: LiveTranscriptTurn[]) => void | Promise<void>;
 	onFallback: () => void;
 	initialVideoPromise?: Promise<VideoCaptureHandle | null> | null;
 }) {
+  const settings = useMemo(() => loadWebSpeechSettings(), []);
+  const tier = useMemo(() => resolveSpeechRealtimeTier(settings), [settings]);
   const [state, setState] = useState<LiveSpeechState>("connecting");
-  const [userText, setUserText] = useState("");
-  const [assistantText, setAssistantText] = useState("");
+  const [transcript, setTranscript] = useState(emptyLiveTranscript);
   const [error, setError] = useState<string | null>(null);
+  const [videoLive, setVideoLive] = useState(false);
+  const [videoNote, setVideoNote] = useState<string | null>(null);
   const sessionRef = useRef<LiveSpeechSession | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const videoRef = useRef<VideoCaptureHandle | null>(null);
-  const userTextRef = useRef("");
+  const previewRef = useRef<HTMLVideoElement | null>(null);
+  const transcriptRef = useRef(transcript);
+  const transcriptViewportRef = useRef<HTMLDivElement | null>(null);
+
+	const receiveTranscript = useCallback((role: "user" | "assistant", text: string, final: boolean) => {
+		setTranscript((current) => {
+			const next = appendLiveTranscript(current, role, text, final);
+			transcriptRef.current = next;
+			return next;
+		});
+	}, []);
+
+	useEffect(() => {
+		const viewport = transcriptViewportRef.current;
+		if (viewport) viewport.scrollTop = viewport.scrollHeight;
+	}, [transcript]);
 
   useEffect(() => {
     const abort = new AbortController();
     abortRef.current = abort;
     let active = true;
-    // Delta chunks (final=false) append; a standalone final replaces only when
-    // no deltas were seen, covering providers that emit either style.
-    const merge = (prev: string, text: string, final: boolean) => (final && prev === "" ? text : prev + text);
     (async () => {
       try {
-        const settings = loadWebSpeechSettings();
         const provider = await getSpeechProvider(settings.providerId);
         if (!provider?.startLiveSession) {
           throw new Error("The selected speech provider does not support live voice.");
@@ -939,6 +1027,15 @@ function LiveVoiceOverlay({
 				return;
 			}
 			videoRef.current = video;
+			if (video) {
+				if (previewRef.current) {
+					previewRef.current.srcObject = video.stream;
+					void previewRef.current.play().catch(() => {});
+				}
+				setVideoLive(true);
+			} else {
+				setVideoNote("Video is unavailable. The live conversation is continuing with audio.");
+			}
 		}
 
         const session = await provider.startLiveSession({
@@ -954,14 +1051,11 @@ function LiveVoiceOverlay({
 		  conversationIds: conversationDetail.ids,
           onState: (next) => { if (active) setState(next); },
           onUserTranscript: (text, final) => {
-            if (!active || !text) return;
-            userTextRef.current = merge(userTextRef.current, text, final);
-            setUserText(userTextRef.current);
-          },
+			if (active) receiveTranscript("user", text, final);
+		  },
           onAssistantTranscript: (text, final) => {
-            if (!active || !text) return;
-            setAssistantText((prev) => merge(prev, text, final));
-          },
+			if (active) receiveTranscript("assistant", text, final);
+		  },
           onError: (err) => { if (active) setError(err.message); },
         });
         if (!active) {
@@ -979,13 +1073,20 @@ function LiveVoiceOverlay({
       void sessionRef.current?.stop().catch(() => {});
       videoRef.current?.stop();
       videoRef.current = null;
+		if (previewRef.current) previewRef.current.srcObject = null;
     };
-	}, []);
+	}, [initialVideoPromise, receiveTranscript, settings]);
 
   const finish = () => {
     abortRef.current?.abort();
     void sessionRef.current?.stop().catch(() => {});
-    onTranscript(userTextRef.current);
+	const completed = flushLiveTranscript(transcriptRef.current);
+	transcriptRef.current = completed;
+	if (completed.turns.length > 0) {
+		void Promise.resolve(onConversationComplete(completed.turns)).catch((err) => {
+			console.error("Could not preserve the live conversation in chat:", err);
+		});
+	}
     onClose();
   };
 
@@ -994,7 +1095,7 @@ function LiveVoiceOverlay({
       className={css({
         position: "fixed",
         inset: 0,
-        zIndex: 50,
+        zIndex: 100,
         display: "flex",
 				alignItems: "stretch",
         justifyContent: "center",
@@ -1057,7 +1158,7 @@ function LiveVoiceOverlay({
                 color: "var(--muted-foreground)",
               })}
             >
-              Live voice with Keating
+			  {tier.label}
             </div>
           </div>
           <button
@@ -1076,6 +1177,70 @@ function LiveVoiceOverlay({
             <X size={16} />
           </button>
         </div>
+
+		<div
+			className={css({
+				position: "relative",
+				marginTop: "1rem",
+				display: "grid",
+				minHeight: "9rem",
+				placeItems: "center",
+				overflow: "hidden",
+				borderRadius: "0.5rem",
+				backgroundColor: "var(--muted)",
+			})}
+		>
+			<video
+				ref={previewRef}
+				muted
+				playsInline
+				aria-label={settings.videoSource === "screen" ? "Shared screen preview" : "Camera preview"}
+				className={css({
+					position: "absolute",
+					inset: 0,
+					display: videoLive ? "block" : "none",
+					width: "100%",
+					height: "100%",
+					objectFit: "cover",
+				})}
+			/>
+			{!videoLive ? (
+				<div className={css({ display: "grid", justifyItems: "center", gap: "0.5rem", padding: "1rem", textAlign: "center" })}>
+					<img src="/brand/mascot-head.png" alt="" className={css({ width: "4rem", height: "auto" })} />
+					<p className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+						{settings.videoEnabled && !videoNote ? "Starting video…" : "Audio conversation"}
+					</p>
+				</div>
+			) : null}
+			<div
+				className={css({
+					position: "absolute",
+					right: "0.5rem",
+					bottom: "0.5rem",
+					display: "inline-flex",
+					alignItems: "center",
+					gap: "0.375rem",
+					borderRadius: "9999px",
+					backgroundColor: "color-mix(in srgb, var(--background) 88%, transparent)",
+					paddingInline: "0.5rem",
+					paddingBlock: "0.25rem",
+					fontSize: "0.6875rem",
+					color: "var(--foreground)",
+				})}
+			>
+				{settings.videoEnabled
+					? settings.videoSource === "screen" ? <MonitorUp size={12} /> : <Camera size={12} />
+					: <Mic size={12} />}
+				{videoLive
+					? `${settings.videoSource === "screen" ? "Screen" : "Camera"} · ${tier.videoRoute === "sampled" ? "sampled" : "live"}`
+					: "Microphone live"}
+			</div>
+		</div>
+		{videoNote ? (
+			<p role="status" className={css({ marginTop: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+				{videoNote}
+			</p>
+		) : null}
 
         {error ? (
 						<div className={css({ marginTop: "1rem", display: "flex", minHeight: 0, flex: 1, flexDirection: "column", gap: "0.75rem" })}>
@@ -1100,35 +1265,38 @@ function LiveVoiceOverlay({
         ) : (
 						<div className={css({ marginTop: "1rem", display: "flex", minHeight: 0, flex: 1, flexDirection: "column", gap: "0.75rem" })}>
 							<div
+								ref={transcriptViewportRef}
               className={css({
                 display: "grid",
-								minHeight: "12rem",
+								minHeight: "8rem",
 								maxHeight: "none",
 								flex: 1,
-                gap: "0.5rem",
+				gap: "0.75rem",
                 overflowY: "auto",
                 fontSize: "0.875rem",
 								alignContent: "start",
-								sm: { minHeight: "8rem", maxHeight: "18rem" },
+								sm: { maxHeight: "14rem" },
               })}
             >
-              {assistantText ? (
-                <p
-                  className={css({
-                    borderRadius: "0.375rem",
-                    backgroundColor: "color-mix(in srgb, var(--muted) 50%, transparent)",
-                    paddingInline: "0.75rem",
-                    paddingBlock: "0.5rem",
-                    color: "var(--foreground)",
-                  })}
-                >
-                  {assistantText}
-                </p>
-              ) : null}
-              {userText ? (
-                <p className={css({ textAlign: "right", color: "var(--muted-foreground)" })}>{userText}</p>
-              ) : null}
-              {!assistantText && !userText ? (
+			  {transcript.turns.map((turn, index) => (
+				<div key={index} className={css({ display: "grid", gap: "0.375rem" })}>
+					{turn.user ? (
+						<p className={css({ marginLeft: "auto", maxWidth: "85%", textAlign: "right", color: "var(--muted-foreground)" })}>
+							{turn.user}
+						</p>
+					) : null}
+					{turn.assistant ? <p className={css({ maxWidth: "90%", color: "var(--foreground)" })}>{turn.assistant}</p> : null}
+				</div>
+			  ))}
+			  {transcript.draft.user ? (
+				<p className={css({ marginLeft: "auto", maxWidth: "85%", textAlign: "right", color: "var(--muted-foreground)" })}>
+					{transcript.draft.user}
+				</p>
+			  ) : null}
+			  {transcript.draft.assistant ? (
+				<p className={css({ maxWidth: "90%", color: "var(--foreground)" })}>{transcript.draft.assistant}</p>
+			  ) : null}
+			  {transcript.turns.length === 0 && !transcript.draft.user && !transcript.draft.assistant ? (
 								<p className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>Start speaking. Keating is listening.</p>
               ) : null}
             </div>
@@ -2245,6 +2413,7 @@ function ToolPart({
   status,
   showDetails,
   showRawErrors,
+	onImageGenerationModelSelect,
 }: {
   toolName: string;
   args?: unknown;
@@ -2253,6 +2422,7 @@ function ToolPart({
   status?: { type: string };
   showDetails?: boolean;
   showRawErrors?: boolean;
+	onImageGenerationModelSelect?: () => void;
 }) {
   const resultText = formatToolResult(result);
   const state =
@@ -2358,13 +2528,18 @@ function ToolPart({
           <JsonCrackBlock value={args} maxHeight="16rem" title="Arguments" />
         </details>
       ) : null}
-      {state === "error" && classifiedError ? (
+      {state === "error" ? (
         <div className={css({ marginTop: "0.5rem" })}>
-          <ErrorBadge
-            classified={classifiedError}
-            rawMessage={resultText}
-            showRaw={!!showRawErrors}
-          />
+					{classifiedError && (
+						<ErrorBadge
+							classified={classifiedError}
+							rawMessage={resultText}
+							showRaw={!!showRawErrors}
+						/>
+					)}
+					{toolName === "generate_image" && onImageGenerationModelSelect && (
+						<ImageGenerationRetryButton onRetry={onImageGenerationModelSelect} />
+					)}
         </div>
       ) : showDetails && resultText ? (
         <div className={css({ marginTop: "0.5rem", color: "var(--foreground)" })}>
@@ -2399,6 +2574,7 @@ function messagePartComponents(
   showRawErrors: boolean,
   showReasoning: boolean,
   autoExpandReasoning: boolean,
+	onImageGenerationModelSelect?: () => void,
 ) {
   return {
     Text: (props: any) => (
@@ -2419,6 +2595,7 @@ function messagePartComponents(
           {...props}
           showDetails={showToolUi}
           showRawErrors={showRawErrors}
+				onImageGenerationModelSelect={onImageGenerationModelSelect}
         />
       ),
     },
@@ -2943,6 +3120,40 @@ function makeUserTextMessage(text: string): AgentMessage {
     content: [{ type: "text", text }],
     timestamp: Date.now(),
   } as AgentMessage;
+}
+
+function messagesFromLiveTranscript(agent: Agent, turns: LiveTranscriptTurn[]): AgentMessage[] {
+	const messages: AgentMessage[] = [];
+	let timestamp = Date.now();
+	for (const turn of turns) {
+		if (turn.user.trim()) {
+			messages.push({
+				role: "user",
+				content: [{ type: "text", text: turn.user.trim() }],
+				timestamp: timestamp++,
+			} as AgentMessage);
+		}
+		if (turn.assistant.trim()) {
+			messages.push({
+				role: "assistant",
+				content: [{ type: "text", text: turn.assistant.trim() }],
+				api: agent.state.model.api,
+				provider: agent.state.model.provider,
+				model: agent.state.model.id,
+				usage: {
+					input: 0,
+					output: 0,
+					cacheRead: 0,
+					cacheWrite: 0,
+					totalTokens: 0,
+					cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+				},
+				stopReason: "stop",
+				timestamp: timestamp++,
+			} as AgentMessage);
+		}
+	}
+	return messages;
 }
 
 function hasUserTextMessage(messages: AgentMessage[], text: string): boolean {
@@ -3507,6 +3718,14 @@ function AssistantThread({
   useEffect(() => {
     setSelectedThinkingLevel(currentThinkingLevel);
   }, [currentThinkingLevel]);
+	const preserveLiveConversation = useCallback(async (turns: LiveTranscriptTurn[]) => {
+		if (!agent || turns.length === 0) return;
+		const messages = messagesFromLiveTranscript(agent, turns);
+		if (messages.length === 0) return;
+		agent.state.messages.push(...messages);
+		setLocalVersion((current) => current + 1);
+		await callbacks.onLocalMessagesChanged?.();
+	}, [agent, callbacks]);
   const handleThinkingLevelChange = useCallback(
     (level: ThinkingLevel) => {
       setSelectedThinkingLevel(level);
@@ -3542,12 +3761,14 @@ function AssistantThread({
         uiSettings.showRawErrors,
         uiSettings.showReasoning,
         uiSettings.autoExpandReasoning,
+				callbacks.onImageGenerationModelSelect,
       ),
     [
       uiSettings.showToolUi,
       uiSettings.showRawErrors,
       uiSettings.showReasoning,
       uiSettings.autoExpandReasoning,
+		callbacks.onImageGenerationModelSelect,
     ],
   );
   const modelRef = useRef(agent?.state.model);
@@ -4161,10 +4382,13 @@ function AssistantThread({
                   >
                     <Paperclip size={15} className={css({ sm: { width: "1rem", height: "1rem" } })} />
                   </ComposerPrimitive.AddAttachment>
-									{!voiceComposerOpen ? <SpeechComposerControl expanded={false} onExpandedChange={setVoiceComposerOpen} /> : null}
-									{voiceComposerOpen ? (
-										<SpeechComposerControl expanded onExpandedChange={setVoiceComposerOpen} />
-									) : voiceComposerOpen ? null : (
+									<SpeechComposerControl
+										expanded={voiceComposerOpen}
+										onExpandedChange={setVoiceComposerOpen}
+										onConversationComplete={preserveLiveConversation}
+										onRequestCredential={callbacks.onApiKeyRequired}
+									/>
+									{voiceComposerOpen ? null : (
 									<ComposerPrimitive.Input
                     className={css({
                       maxHeight: "10rem",

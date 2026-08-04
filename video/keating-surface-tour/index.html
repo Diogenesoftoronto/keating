@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080">
+    <title>Keating feature tour</title>
+    <script src="node_modules/gsap/dist/gsap.min.js"></script>
+    <style>
+      :root {
+        --paper: #f1ece0;
+        --paper-deep: #e5dfd1;
+        --mint: #b7f1ce;
+        --ink: #1c211b;
+        --ink-soft: #4a5247;
+        --green: #1e9b50;
+        --green-dark: #14743c;
+        --terminal: #0c1510;
+        --terminal-edge: #354036;
+        --phosphor: #75e7a4;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        margin: 0;
+        overflow: hidden;
+        background: var(--ink);
+      }
+
+      body {
+        color: var(--ink);
+        font-family: system-ui, sans-serif;
+      }
+
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+      }
+
+      .clip {
+        position: absolute;
+        inset: 0;
+        visibility: hidden;
+      }
+
+      #tour-ground {
+        background: var(--paper);
+      }
+
+      .ground-accent {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        width: 420px;
+        height: 230px;
+        background: var(--mint);
+        border-top: 4px solid var(--ink);
+        border-left: 4px solid var(--ink);
+      }
+
+      .ground-rule {
+        position: absolute;
+        top: 82px;
+        right: 64px;
+        left: 64px;
+        height: 4px;
+        background: var(--ink);
+        transform-origin: left center;
+      }
+
+      .tour-kicker,
+      .tour-chip,
+      .scene-label,
+      .scene-detail,
+      .progress-step,
+      .ui-kicker,
+      .ui-stamp,
+      .mono,
+      .ui-button,
+      .ui-filter,
+      .metric-label,
+      .protocol-row,
+      .post-date {
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+      }
+
+      .tour-kicker {
+        position: absolute;
+        top: 28px;
+        left: 64px;
+        font-size: 24px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .tour-chip {
+        position: absolute;
+        top: 22px;
+        right: 64px;
+        border: 3px solid var(--ink);
+        border-radius: 999px;
+        padding: 9px 22px;
+        background: var(--paper);
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: 0.07em;
+      }
+
+      .surface-video,
+      .product-stage {
+        position: absolute;
+        top: 120px;
+        left: 344px;
+        width: 1500px;
+        height: 844px;
+        border: 4px solid var(--ink);
+        background: var(--terminal);
+        box-shadow: 16px 16px 0 var(--green);
+        transform-origin: center center;
+        will-change: transform, opacity;
+      }
+
+      .surface-video {
+        object-fit: cover;
+        opacity: 0;
+      }
+
+      .product-stage {
+        overflow: hidden;
+        background: var(--paper);
+        opacity: 0;
+      }
+
+      .feature-capture {
+        width: 100%;
+        height: 100%;
+        display: block;
+        object-fit: cover;
+        object-position: center;
+        transform-origin: center center;
+        will-change: transform;
+      }
+
+      .capture-badge {
+        position: absolute;
+        right: 22px;
+        bottom: 22px;
+        z-index: 2;
+        border: 3px solid var(--ink);
+        padding: 9px 14px;
+        background: var(--mint);
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 15px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        box-shadow: 5px 5px 0 var(--ink);
+      }
+
+      .scene-rail {
+        position: absolute;
+        top: 120px;
+        left: 64px;
+        width: 224px;
+        height: 844px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+
+      .scene-number {
+        margin: 0;
+        font-family: "Archivo Black", system-ui, sans-serif;
+        font-size: 144px;
+        font-weight: 900;
+        line-height: 0.82;
+        letter-spacing: -0.04em;
+      }
+
+      .scene-label {
+        display: inline-block;
+        margin-top: 34px;
+        border: 4px solid var(--ink);
+        padding: 13px 17px;
+        background: var(--ink);
+        color: var(--paper);
+        font-size: 27px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .scene-action {
+        margin: 0 0 4px;
+        font-size: 26px;
+        font-weight: 750;
+        line-height: 1.18;
+      }
+
+      .scene-detail {
+        margin: 16px 0 0;
+        color: var(--ink-soft);
+        font-size: 18px;
+        line-height: 1.48;
+      }
+
+      .scene-detail span {
+        display: block;
+      }
+
+      .scene-accent-line {
+        width: 100%;
+        height: 12px;
+        margin-top: 22px;
+        background: var(--green);
+        transform-origin: left center;
+      }
+
+      .progress-track {
+        position: absolute;
+        right: 64px;
+        bottom: 30px;
+        left: 344px;
+        display: grid;
+        grid-template-columns: repeat(8, minmax(0, 1fr));
+        border: 3px solid var(--ink);
+        background: var(--paper);
+      }
+
+      .progress-step {
+        min-width: 0;
+        border-right: 2px solid var(--ink);
+        padding: 9px 5px;
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: 0.035em;
+        text-align: center;
+        white-space: nowrap;
+      }
+
+      .progress-step:last-child {
+        border-right: 0;
+      }
+
+      .ui-topbar {
+        height: 78px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        border-bottom: 3px solid var(--ink);
+        padding: 0 30px;
+        background: var(--paper);
+      }
+
+      .ui-kicker {
+        font-size: 18px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .ui-stamp {
+        border: 2px solid var(--green-dark);
+        padding: 7px 11px;
+        background: var(--mint);
+        color: var(--green-dark);
+        font-size: 14px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+      }
+
+      .ui-heading {
+        margin: 0;
+        font-family: "Archivo Black", system-ui, sans-serif;
+        font-size: 34px;
+        line-height: 1;
+        text-transform: uppercase;
+      }
+
+      .ui-copy {
+        margin: 8px 0 0;
+        color: var(--ink-soft);
+        font-size: 19px;
+        line-height: 1.45;
+      }
+
+      .ui-button,
+      .ui-filter {
+        border: 2px solid var(--ink);
+        background: var(--paper);
+        color: var(--ink);
+        font-size: 16px;
+        font-weight: 800;
+      }
+
+      .ui-button {
+        padding: 12px 18px;
+      }
+
+      .ui-button.primary {
+        background: var(--ink);
+        color: var(--paper);
+      }
+
+      .ui-filter {
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 0 15px;
+      }
+
+      .model-controls {
+        display: grid;
+        grid-template-columns: minmax(0, 1.55fr) minmax(230px, 0.75fr) minmax(230px, 0.75fr) 122px;
+        gap: 14px;
+        padding: 20px 28px;
+        border-bottom: 2px solid var(--ink);
+        background: var(--paper-deep);
+      }
+
+      .model-search {
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        border: 2px solid var(--ink);
+        padding: 0 16px;
+        background: var(--paper);
+        color: var(--ink-soft);
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 16px;
+      }
+
+      .model-body {
+        display: grid;
+        grid-template-columns: 1.35fr 0.65fr;
+        height: 666px;
+      }
+
+      .model-list {
+        border-right: 3px solid var(--ink);
+        padding: 20px 24px;
+        background: var(--paper);
+      }
+
+      .group-label {
+        margin: 0 0 9px;
+        color: var(--green-dark);
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 15px;
+        font-weight: 900;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .model-row {
+        min-height: 91px;
+        display: grid;
+        grid-template-columns: 30px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 14px;
+        border: 2px solid var(--ink);
+        padding: 12px 16px;
+        background: var(--paper);
+      }
+
+      .model-row + .model-row {
+        margin-top: 10px;
+      }
+
+      .model-radio {
+        width: 21px;
+        height: 21px;
+        border: 3px solid var(--ink);
+        border-radius: 50%;
+        background: var(--paper);
+      }
+
+      .model-radio.active {
+        box-shadow: inset 0 0 0 4px var(--paper);
+        background: var(--green);
+      }
+
+      .model-name {
+        font-size: 21px;
+        font-weight: 850;
+      }
+
+      .model-meta {
+        margin-top: 4px;
+        color: var(--ink-soft);
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 14px;
+      }
+
+      .model-badges {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 6px;
+      }
+
+      .model-badge {
+        border: 1px solid var(--ink);
+        border-radius: 999px;
+        padding: 5px 8px;
+        background: var(--mint);
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .model-side {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 27px;
+        background: var(--mint);
+      }
+
+      .model-side-title {
+        margin: 0;
+        font-family: "Archivo Black", system-ui, sans-serif;
+        font-size: 42px;
+        line-height: 0.95;
+        text-transform: uppercase;
+      }
+
+      .model-side-list {
+        display: grid;
+        gap: 12px;
+        margin-top: 28px;
+      }
+
+      .model-side-item {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 2px solid var(--ink);
+        padding-bottom: 9px;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 15px;
+      }
+
+      .live-body {
+        height: 762px;
+        display: grid;
+        grid-template-columns: 1.05fr 0.95fr;
+        gap: 0;
+      }
+
+      .live-left,
+      .live-right {
+        padding: 28px;
+      }
+
+      .live-left {
+        border-right: 3px solid var(--ink);
+        background: var(--paper-deep);
+      }
+
+      .live-crt {
+        height: 440px;
+        display: flex;
+        flex-direction: column;
+        border: 4px solid var(--terminal-edge);
+        background: var(--terminal);
+        color: var(--phosphor);
+      }
+
+      .live-face {
+        flex: 1;
+        display: grid;
+        place-items: center;
+        padding: 30px;
+        text-align: center;
+      }
+
+      .live-face-mark {
+        font-family: "Archivo Black", system-ui, sans-serif;
+        font-size: 92px;
+        line-height: 0.8;
+        letter-spacing: -0.02em;
+      }
+
+      .live-wave {
+        height: 88px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 13px;
+        margin-top: 27px;
+      }
+
+      .wave-bar {
+        width: 14px;
+        height: 72px;
+        background: var(--phosphor);
+        transform-origin: center bottom;
+      }
+
+      .live-status {
+        display: flex;
+        justify-content: space-between;
+        border-top: 2px solid var(--terminal-edge);
+        padding: 12px 16px;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 16px;
+      }
+
+      .start-session {
+        width: 100%;
+        margin-top: 19px;
+        border: 3px solid var(--green-dark);
+        padding: 14px;
+        background: var(--mint);
+        color: var(--green-dark);
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 19px;
+        font-weight: 900;
+        text-align: center;
+      }
+
+      .transcript {
+        height: 420px;
+        border: 3px solid var(--terminal-edge);
+        padding: 21px;
+        background: var(--terminal);
+        color: var(--paper);
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+      }
+
+      .transcript-line {
+        border-bottom: 1px solid var(--terminal-edge);
+        padding: 16px 0;
+        font-size: 17px;
+        line-height: 1.55;
+      }
+
+      .transcript-speaker {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--phosphor);
+        font-size: 13px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+      }
+
+      .capability-ledger {
+        display: grid;
+        gap: 0;
+        margin-top: 20px;
+        border: 2px solid var(--ink);
+      }
+
+      .protocol-row {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--ink);
+        padding: 11px 14px;
+        font-size: 14px;
+        font-weight: 800;
+      }
+
+      .protocol-row:last-child {
+        border-bottom: 0;
+      }
+
+      .protocol-ok {
+        color: var(--green-dark);
+      }
+
+      .coming-body {
+        height: 762px;
+        padding: 24px 28px;
+        background: var(--paper-deep);
+      }
+
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 13px;
+      }
+
+      .metric {
+        border: 2px solid var(--ink);
+        padding: 14px 17px;
+        background: var(--paper);
+      }
+
+      .metric-label {
+        font-size: 13px;
+        font-weight: 900;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+      }
+
+      .metric-value {
+        margin-top: 6px;
+        font-family: "Archivo Black", system-ui, sans-serif;
+        font-size: 31px;
+      }
+
+      .review-strip {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        margin-top: 14px;
+        border: 3px solid var(--ink);
+        padding: 15px 19px;
+        background: var(--mint);
+      }
+
+      .review-strip h3 {
+        margin: 0;
+        font-size: 23px;
+      }
+
+      .review-strip p {
+        margin: 4px 0 0;
+        font-size: 15px;
+      }
+
+      .board-head {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 20px;
+        margin-top: 18px;
+      }
+
+      .board-title {
+        margin: 0;
+        font-family: "Archivo Black", system-ui, sans-serif;
+        font-size: 31px;
+        text-transform: uppercase;
+      }
+
+      .board-actions {
+        display: flex;
+        gap: 9px;
+      }
+
+      .priority-board {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 13px;
+        margin-top: 13px;
+      }
+
+      .priority-lane {
+        height: 290px;
+        border: 2px solid var(--ink);
+        background: var(--paper);
+      }
+
+      .lane-head {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 2px solid var(--ink);
+        padding: 12px 14px;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 15px;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+
+      .lane-body {
+        display: grid;
+        gap: 9px;
+        padding: 11px;
+      }
+
+      .queue-item {
+        border: 2px solid var(--ink);
+        padding: 12px;
+        background: var(--paper-deep);
+        font-size: 16px;
+        font-weight: 750;
+      }
+
+      .queue-meta {
+        display: block;
+        margin-top: 6px;
+        color: var(--ink-soft);
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .course-body {
+        height: 762px;
+        display: grid;
+        grid-template-columns: 1.08fr 0.92fr;
+      }
+
+      .course-copy {
+        padding: 68px 58px;
+        background: var(--paper);
+      }
+
+      .course-badge {
+        display: inline-block;
+        border: 2px solid var(--green-dark);
+        padding: 8px 12px;
+        background: var(--mint);
+        color: var(--green-dark);
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 15px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .course-title {
+        max-width: 680px;
+        margin: 34px 0 0;
+        font-family: "EB Garamond", serif;
+        font-size: 66px;
+        font-weight: 700;
+        line-height: 1.02;
+        letter-spacing: -0.035em;
+      }
+
+      .course-description {
+        max-width: 660px;
+        margin: 26px 0 0;
+        color: var(--ink-soft);
+        font-size: 23px;
+        line-height: 1.58;
+      }
+
+      .course-gateway {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        border-left: 3px solid var(--ink);
+        padding: 58px;
+        background: var(--terminal);
+        color: var(--paper);
+      }
+
+      .gateway-mark {
+        color: var(--phosphor);
+        font-family: "Archivo Black", system-ui, sans-serif;
+        font-size: 54px;
+        line-height: 0.95;
+        text-transform: uppercase;
+      }
+
+      .gateway-list {
+        display: grid;
+        gap: 0;
+        margin-top: 38px;
+        border: 2px solid var(--terminal-edge);
+      }
+
+      .gateway-item {
+        border-bottom: 1px solid var(--terminal-edge);
+        padding: 15px 17px;
+        color: var(--phosphor);
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 17px;
+        font-weight: 750;
+      }
+
+      .gateway-item:last-child {
+        border-bottom: 0;
+      }
+
+      .gateway-note {
+        margin: 28px 0 0;
+        color: #b9c7bc;
+        font-size: 18px;
+        line-height: 1.55;
+      }
+
+      .blog-body {
+        height: 762px;
+        padding: 34px 44px;
+        background: var(--paper);
+      }
+
+      .blog-hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: end;
+        gap: 40px;
+        border-bottom: 3px solid var(--ink);
+        padding-bottom: 24px;
+      }
+
+      .blog-title {
+        margin: 0;
+        font-family: "EB Garamond", serif;
+        font-size: 62px;
+        line-height: 1;
+      }
+
+      .blog-intro {
+        max-width: 760px;
+        margin: 14px 0 0;
+        color: var(--ink-soft);
+        font-size: 20px;
+        line-height: 1.48;
+      }
+
+      .standard-site {
+        border: 3px solid var(--ink);
+        padding: 12px 15px;
+        background: var(--mint);
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 16px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+      }
+
+      .blog-protocol {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 2px solid var(--ink);
+        padding: 16px 0;
+        color: var(--green-dark);
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 16px;
+        font-weight: 800;
+      }
+
+      .blog-state-grid {
+        display: grid;
+        grid-template-columns: 1.12fr 0.88fr;
+        gap: 24px;
+        margin-top: 26px;
+      }
+
+      .blog-unavailable {
+        min-height: 410px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        border: 3px solid var(--ink);
+        padding: 46px;
+        background: var(--paper-deep);
+      }
+
+      .blog-unavailable h2 {
+        margin: 0;
+        font-family: "Archivo Black", system-ui, sans-serif;
+        font-size: 48px;
+        line-height: 1;
+        text-transform: uppercase;
+      }
+
+      .blog-unavailable p {
+        margin: 19px 0 0;
+        color: var(--ink-soft);
+        font-size: 22px;
+      }
+
+      .blog-unavailable .ui-button {
+        align-self: flex-start;
+        margin-top: 30px;
+      }
+
+      .blog-status {
+        min-height: 410px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        border: 3px solid var(--ink);
+        padding: 28px;
+        background: var(--terminal);
+        color: var(--paper);
+      }
+
+      .status-title {
+        color: var(--phosphor);
+        font-family: "Archivo Black", system-ui, sans-serif;
+        font-size: 42px;
+        line-height: 1;
+        text-transform: uppercase;
+      }
+
+      .status-ledger {
+        display: grid;
+        gap: 10px;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 16px;
+      }
+
+      .status-ledger div {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--terminal-edge);
+        padding-bottom: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div data-hf-id="hf-anwa" id="root" data-composition-id="keating-surface-tour" data-start="0" data-duration="32" data-width="1920" data-height="1080" data-fps="30">
+      <div data-hf-id="hf-rmer" id="tour-ground" class="clip" data-start="0" data-duration="32" data-track-index="0">
+        <div data-hf-id="hf-2v1h" class="ground-accent" data-layout-ignore=""></div>
+        <div data-hf-id="hf-9ogb" id="tour-ground-rule" class="ground-rule"></div>
+        <div data-hf-id="hf-ak6v" class="tour-kicker">Keating // one thread, every surface</div>
+        <div data-hf-id="hf-od15" class="tour-chip">REAL PRODUCT CAPTURES</div>
+      </div>
+
+      <video data-hf-id="hf-x60c" id="tour-web-video" class="clip surface-video" src="assets/web-classroom.mp4" data-start="0.2" data-duration="3.8" data-media-start="4" data-track-index="1" muted playsinline></video>
+
+      <section data-hf-id="hf-6wec" id="tour-model" class="clip" data-start="4" data-duration="4" data-track-index="2">
+        <div data-hf-id="hf-hexx" id="model-frame" class="product-stage">
+          <img data-hf-id="hf-todb" id="model-capture" class="feature-capture" src="assets/feature-models.jpg" alt="Keating model selector showing searchable cloud models and capabilities" data-layout-allow-overflow="">
+          <div data-hf-id="hf-isil" class="capture-badge">Real product capture</div>
+        </div>
+      </section>
+
+      <section data-hf-id="hf-6hes" id="tour-live" class="clip" data-start="8" data-duration="4" data-track-index="3">
+        <div data-hf-id="hf-oj50" id="live-frame" class="product-stage">
+          <img data-hf-id="hf-8u80" id="live-capture" class="feature-capture" src="assets/feature-live.jpg" alt="Keating live audio and video duplex interface" data-layout-allow-overflow="">
+          <div data-hf-id="hf-8i5t" class="capture-badge">Real product capture</div>
+        </div>
+      </section>
+
+      <section data-hf-id="hf-ig93" id="tour-coming" class="clip" data-start="12" data-duration="4" data-track-index="4">
+        <div data-hf-id="hf-0a3r" id="coming-frame" class="product-stage">
+          <img data-hf-id="hf-x2x9" id="coming-capture" class="feature-capture" src="assets/feature-coming-up.jpg" alt="Keating Coming Up review runway and Anki controls" data-layout-allow-overflow="">
+          <div data-hf-id="hf-9p2w" class="capture-badge">Real product capture</div>
+        </div>
+      </section>
+
+      <section data-hf-id="hf-05lx" id="tour-courses" class="clip" data-start="16" data-duration="4" data-track-index="5">
+        <div data-hf-id="hf-theg" id="courses-frame" class="product-stage">
+          <img data-hf-id="hf-c6q5" id="courses-capture" class="feature-capture" src="assets/feature-courses.jpg" alt="Keating course access boundary and authenticated gateway ledger" data-layout-allow-overflow="">
+          <div data-hf-id="hf-9arv" class="capture-badge">Real product capture</div>
+        </div>
+      </section>
+
+      <section data-hf-id="hf-3akj" id="tour-blog" class="clip" data-start="20" data-duration="4" data-track-index="6">
+        <div data-hf-id="hf-8fo2" id="blog-frame" class="product-stage">
+          <img data-hf-id="hf-ivys" id="blog-capture" class="feature-capture" src="assets/feature-publish.jpg" alt="Keating Standard.site blog showing the current unavailable state" data-layout-allow-overflow="">
+          <div data-hf-id="hf-7b8q" class="capture-badge">Real product capture</div>
+        </div>
+      </section>
+
+      <video data-hf-id="hf-vphb" id="tour-tui-video" class="clip surface-video" src="assets/tui-collaborative.mp4" data-start="24.2" data-duration="3.8" data-media-start="5.4" data-track-index="7" muted playsinline></video>
+
+      <video data-hf-id="hf-yfs4" id="tour-cli-video" class="clip surface-video" src="assets/cli-artifacts.mp4" data-start="28.2" data-duration="3.8" data-media-start="12" data-track-index="8" muted playsinline></video>
+
+      <section data-hf-id="hf-4boo" id="chrome-web" class="clip" data-start="0" data-duration="4" data-track-index="10">
+        <div data-hf-id="hf-2hv9" class="scene-rail"><div data-hf-id="hf-yeow"><p data-hf-id="hf-twow" class="scene-number rail-reveal">01</p><div data-hf-id="hf-qvrv" class="scene-label rail-reveal">WEB</div></div><div data-hf-id="hf-y7yw"><p data-hf-id="hf-9g26" class="scene-action rail-reveal">Ask and reconstruct.</p><p data-hf-id="hf-4zhb" class="scene-detail rail-reveal"><span data-hf-id="hf-rvrn">REAL CAPTURE</span><span data-hf-id="hf-72q7">STREAMED RESPONSE</span></p><div data-hf-id="hf-9f85" class="scene-accent-line rail-line"></div></div></div>
+      </section>
+      <section data-hf-id="hf-z5s8" id="chrome-model" class="clip" data-start="4" data-duration="4" data-track-index="11">
+        <div data-hf-id="hf-83zd" class="scene-rail"><div data-hf-id="hf-x11t"><p data-hf-id="hf-sprt" class="scene-number rail-reveal">02</p><div data-hf-id="hf-yqn4" class="scene-label rail-reveal">MODEL</div></div><div data-hf-id="hf-xfcu"><p data-hf-id="hf-mkcj" class="scene-action rail-reveal">Fit the tool to the task.</p><p data-hf-id="hf-ztwf" class="scene-detail rail-reveal"><span data-hf-id="hf-zeez">PROVIDER FILTERS</span><span data-hf-id="hf-56rh">CAPABILITY ROUTING</span></p><div data-hf-id="hf-awll" class="scene-accent-line rail-line"></div></div></div>
+      </section>
+      <section data-hf-id="hf-i27u" id="chrome-live" class="clip" data-start="8" data-duration="4" data-track-index="12">
+        <div data-hf-id="hf-9awg" class="scene-rail"><div data-hf-id="hf-w8fr"><p data-hf-id="hf-t42u" class="scene-number rail-reveal">03</p><div data-hf-id="hf-ffs1" class="scene-label rail-reveal">LIVE</div></div><div data-hf-id="hf-wmqs"><p data-hf-id="hf-ptyc" class="scene-action rail-reveal">Speak, show, respond.</p><p data-hf-id="hf-zfle" class="scene-detail rail-reveal"><span data-hf-id="hf-qjhf">FULL-DUPLEX AUDIO</span><span data-hf-id="hf-ozsf">VISION ROUTING</span></p><div data-hf-id="hf-c3io" class="scene-accent-line rail-line"></div></div></div>
+      </section>
+      <section data-hf-id="hf-ie25" id="chrome-coming" class="clip" data-start="12" data-duration="4" data-track-index="13">
+        <div data-hf-id="hf-8wlf" class="scene-rail"><div data-hf-id="hf-vftp"><p data-hf-id="hf-rx5r" class="scene-number rail-reveal">04</p><div data-hf-id="hf-bmuz" class="scene-label rail-reveal">REVIEW</div></div><div data-hf-id="hf-vu4q"><p data-hf-id="hf-e6od" class="scene-action rail-reveal">Return when recall is due.</p><p data-hf-id="hf-z1ad" class="scene-detail rail-reveal"><span data-hf-id="hf-p08t">PRIORITY BOARD</span><span data-hf-id="hf-3ore">ANKI ROUND-TRIP</span></p><div data-hf-id="hf-bp7n" class="scene-accent-line rail-line"></div></div></div>
+      </section>
+      <section data-hf-id="hf-p8j5" id="chrome-courses" class="clip" data-start="16" data-duration="4" data-track-index="14">
+        <div data-hf-id="hf-6x2a" class="scene-rail"><div data-hf-id="hf-1043"><p data-hf-id="hf-sbgs" class="scene-number rail-reveal">05</p><div data-hf-id="hf-grue" class="scene-label rail-reveal">COURSE</div></div><div data-hf-id="hf-1ef4"><p data-hf-id="hf-lur6" class="scene-action rail-reveal">Keep learning durable.</p><p data-hf-id="hf-1tfk" class="scene-detail rail-reveal"><span data-hf-id="hf-752r">AUTHENTICATED GATE</span><span data-hf-id="hf-kw1e">CONSENTED ACCESS</span></p><div data-hf-id="hf-9poi" class="scene-accent-line rail-line"></div></div></div>
+      </section>
+      <section data-hf-id="hf-h9cr" id="chrome-blog" class="clip" data-start="20" data-duration="4" data-track-index="15">
+        <div data-hf-id="hf-6ir9" class="scene-rail"><div data-hf-id="hf-c4s8"><p data-hf-id="hf-r4jp" class="scene-number rail-reveal">06</p><div data-hf-id="hf-m55f" class="scene-label rail-reveal">BLOG</div></div><div data-hf-id="hf-bqh7"><p data-hf-id="hf-enag" class="scene-action rail-reveal">Publish without hiding failure.</p><p data-hf-id="hf-1f4j" class="scene-detail rail-reveal"><span data-hf-id="hf-xwvx">STANDARD.SITE</span><span data-hf-id="hf-hjg5">AT PROTOCOL STATE</span></p><div data-hf-id="hf-9bdh" class="scene-accent-line rail-line"></div></div></div>
+      </section>
+      <section data-hf-id="hf-vnek" id="chrome-tui" class="clip" data-start="24" data-duration="4" data-track-index="16">
+        <div data-hf-id="hf-7poc" class="scene-rail"><div data-hf-id="hf-bc66"><p data-hf-id="hf-riuq" class="scene-number rail-reveal">07</p><div data-hf-id="hf-3wkr" class="scene-label rail-reveal">TUI</div></div><div data-hf-id="hf-axv5"><p data-hf-id="hf-0vjd" class="scene-action rail-reveal">Stay in the dialogue.</p><p data-hf-id="hf-10ti" class="scene-detail rail-reveal"><span data-hf-id="hf-ddyr">REAL CAPTURE</span><span data-hf-id="hf-aukp">PROJECT CONTEXT</span></p><div data-hf-id="hf-aiak" class="scene-accent-line rail-line"></div></div></div>
+      </section>
+      <section data-hf-id="hf-c4fd" id="chrome-cli" class="clip" data-start="28" data-duration="4" data-track-index="17">
+        <div data-hf-id="hf-7bdb" class="scene-rail"><div data-hf-id="hf-ajk4"><p data-hf-id="hf-qbxn" class="scene-number rail-reveal">08</p><div data-hf-id="hf-tr07" class="scene-label rail-reveal">CLI</div></div><div data-hf-id="hf-a593"><p data-hf-id="hf-12zh" class="scene-action rail-reveal">Inspect what remains.</p><p data-hf-id="hf-0mih" class="scene-detail rail-reveal"><span data-hf-id="hf-cznq">REAL CAPTURE</span><span data-hf-id="hf-xlk1">TRACEABLE ARTIFACTS</span></p><div data-hf-id="hf-a3zj" class="scene-accent-line rail-line"></div></div></div>
+      </section>
+
+      <div data-hf-id="hf-raur" id="tour-progress" class="clip" data-start="0" data-duration="32" data-track-index="20">
+        <div data-hf-id="hf-lxwj" class="progress-track">
+          <div data-hf-id="hf-57of" id="progress-web" class="progress-step">01 // WEB</div>
+          <div data-hf-id="hf-13ms" id="progress-model" class="progress-step">02 // MODEL</div>
+          <div data-hf-id="hf-vgf3" id="progress-live" class="progress-step">03 // LIVE</div>
+          <div data-hf-id="hf-a2a7" id="progress-coming" class="progress-step">04 // REVIEW</div>
+          <div data-hf-id="hf-u516" id="progress-courses" class="progress-step">05 // COURSE</div>
+          <div data-hf-id="hf-hx10" id="progress-blog" class="progress-step">06 // BLOG</div>
+          <div data-hf-id="hf-0lrd" id="progress-tui" class="progress-step">07 // TUI</div>
+          <div data-hf-id="hf-tjpm" id="progress-cli" class="progress-step">08 // CLI</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+
+      tl.fromTo("#tour-ground-rule", { scaleX: 0 }, { scaleX: 1, duration: 0.62, ease: "power3.out" }, 0.08);
+
+      const scenes = [
+        { at: 0, target: "#tour-web-video", chrome: "#chrome-web", reveal: null },
+        { at: 4, target: "#model-frame", chrome: "#chrome-model", reveal: null },
+        { at: 8, target: "#live-frame", chrome: "#chrome-live", reveal: null },
+        { at: 12, target: "#coming-frame", chrome: "#chrome-coming", reveal: null },
+        { at: 16, target: "#courses-frame", chrome: "#chrome-courses", reveal: null },
+        { at: 20, target: "#blog-frame", chrome: "#chrome-blog", reveal: null },
+        { at: 24, target: "#tour-tui-video", chrome: "#chrome-tui", reveal: null },
+        { at: 28, target: "#tour-cli-video", chrome: "#chrome-cli", reveal: null },
+      ];
+
+      scenes.forEach(({ at, target, chrome, reveal }, sceneIndex) => {
+        tl.fromTo(
+          target,
+          { opacity: 0, scale: sceneIndex % 2 === 0 ? 0.988 : 1.012 },
+          { opacity: 1, scale: 1, duration: sceneIndex % 3 === 0 ? 0.58 : 0.46, ease: sceneIndex % 2 === 0 ? "power4.out" : "expo.out", immediateRender: false },
+          at + 0.2,
+        );
+
+        const railItems = `${chrome} .rail-reveal`;
+        tl.set(railItems, { opacity: 1, y: 64 }, at + 0.12);
+        tl.to(railItems, { y: 0, duration: 0.18, stagger: 0.045, ease: "power4.out" }, at + 0.12);
+        tl.fromTo(`${chrome} .rail-line`, { scaleX: 0 }, { scaleX: 1, duration: 0.44, ease: "power2.out", immediateRender: false }, at + 0.42);
+
+        if (reveal) {
+          const x = sceneIndex % 2 === 0 ? 28 : -28;
+          tl.fromTo(
+            reveal,
+            { opacity: 0, x },
+            { opacity: 1, x: 0, duration: 0.38, stagger: 0.045, ease: sceneIndex % 2 === 0 ? "power3.out" : "power4.out", immediateRender: false },
+            at + 0.34,
+          );
+        }
+      });
+
+      const captureDrifts = [
+        { at: 4.34, target: "#model-capture", x: -10, y: 0 },
+        { at: 8.34, target: "#live-capture", x: 0, y: -8 },
+        { at: 12.34, target: "#coming-capture", x: 0, y: 10 },
+        { at: 16.34, target: "#courses-capture", x: -8, y: 0 },
+        { at: 20.34, target: "#blog-capture", x: 0, y: -8 },
+      ];
+
+      captureDrifts.forEach(({ at, target, x, y }) => {
+        tl.fromTo(
+          target,
+          { scale: 1, x: 0, y: 0 },
+          { scale: 1.035, x, y, duration: 3.26, ease: "sine.inOut", immediateRender: false },
+          at,
+        );
+      });
+
+      const progress = ["web", "model", "live", "coming", "courses", "blog", "tui", "cli"];
+      progress.forEach((id, index) => {
+        if (index > 0) {
+          tl.set(`#progress-${progress[index - 1]}`, { backgroundColor: "#f1ece0", color: "#1c211b" }, index * 4);
+        }
+        tl.set(`#progress-${id}`, { backgroundColor: "#14743c", color: "#f1ece0" }, index * 4);
+      });
+
+      window.__timelines["keating-surface-tour"] = tl;
+    </script>
+  </body>
+</html>

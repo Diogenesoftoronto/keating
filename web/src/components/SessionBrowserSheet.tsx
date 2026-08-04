@@ -1,9 +1,8 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { History, Plus, Search, X } from "lucide-react";
 import { Spinner } from "./Spinner";
-import type { UseSessionsResult } from "../hooks/use-sessions";
 import { ForkMapCard } from "./ForkMapCard";
-import type { SessionBrowserProps } from "./SessionBrowser";
+import type { SessionBrowserSurfaceProps } from "./SessionBrowser";
 import { SessionCard } from "./SessionCard";
 import {
 	MASONRY_GAP_PX,
@@ -11,10 +10,6 @@ import {
 	pxToSpan,
 } from "./session-card-visuals";
 import { css, cx } from "../../styled-system/css";
-
-export interface SessionBrowserSheetProps extends SessionBrowserProps {
-	store: UseSessionsResult;
-}
 
 function MasonryItem({
 	children,
@@ -67,7 +62,7 @@ export function SessionBrowserSheet({
 	onMobileClose,
 	onSuggestTitle,
 	store,
-}: SessionBrowserSheetProps) {
+}: SessionBrowserSurfaceProps) {
 	const [forkedSource, setForkedSource] = useState<string | null>(null);
 
 	const handleFork = async (id: string) => {

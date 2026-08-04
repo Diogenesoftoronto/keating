@@ -1,3 +1,5 @@
+import { subscribeLocalSetting } from "./local-setting";
+
 const STORAGE_KEY = "keating_model_prefs";
 const PREFS_CHANGED_EVENT = "keating:model-prefs-changed";
 const LEGACY_UI_SETTINGS_KEY = "keating_ui_settings";
@@ -111,16 +113,7 @@ export function saveModelPrefs(next: ModelPrefs): void {
 }
 
 export function subscribeModelPrefs(callback: (value: ModelPrefs) => void): () => void {
-	const notify = () => callback(loadModelPrefs());
-	const onCustom = (event: Event) => {
-		callback((event as CustomEvent<ModelPrefs>).detail ?? loadModelPrefs());
-	};
-	window.addEventListener(PREFS_CHANGED_EVENT, onCustom);
-	window.addEventListener("storage", notify);
-	return () => {
-		window.removeEventListener(PREFS_CHANGED_EVENT, onCustom);
-		window.removeEventListener("storage", notify);
-	};
+	return subscribeLocalSetting({ event: PREFS_CHANGED_EVENT, load: loadModelPrefs }, callback);
 }
 
 export function addRecentModel(key: string) {

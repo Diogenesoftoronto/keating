@@ -17,21 +17,34 @@ function mapToAxModel(keatingModel: string): string {
 export interface LearnPromptOptions {
   maxEpochs?: number;
   onlineUpdates?: boolean;
+  optimizer?: PromptOptimizer;
 }
 
 const GEPA_PLAYBOOK_FILE = "gepa-prompt-playbook.json";
 
-export async function learnPrompt(
-  cwd: string,
-  promptName: string = "learn",
-  options: LearnPromptOptions = {}
-): Promise<{ playbook: any }> {
-  const { maxEpochs = 3 } = options;
-  const promptPath = join(cwd, "pi", "prompts", `${promptName}.md`);
-  const basePrompt = await readFile(promptPath, "utf8");
+export type PromptPlaybook = Record<string, unknown>;
 
-  const config = await loadKeatingConfig(cwd);
+export interface PromptOptimizerInput {
+  cwd: string;
+  promptName: string;
+  promptPath: string;
+  basePrompt: string;
+  maxEpochs: number;
+  config: Awaited<ReturnType<typeof loadKeatingConfig>>;
+}
 
+export type PromptOptimizer = (
+  input: PromptOptimizerInput,
+) => Promise<PromptPlaybook>;
+
+const optimizePromptWithAx: PromptOptimizer = async ({
+  cwd,
+  promptName,
+  promptPath,
+  basePrompt,
+  maxEpochs,
+  config,
+}) => {
   const studentAI = ai({
     name: config.pi.defaultProvider === "openai" ? "openai" : "google-gemini",
     apiKey: process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "",
@@ -79,33 +92,56 @@ export async function learnPrompt(
     return Math.max(0, Math.min(1, evalResult.score / 100));
   };
 
-  try {
-    const numTrials = Math.max(1, Math.floor(maxEpochs));
+  const numTrials = Math.max(1, Math.floor(maxEpochs));
 
-    console.log(`Running GEPA Prompt Learning for ${promptName}...`);
-    const result = await optimize(analyzer, examples, metric, {
-      studentAI,
-      teacherAI,
-      numTrials,
-      validationExamples,
-      maxMetricCalls: Math.max(12, (numTrials + 2) * (examples.length + validationExamples.length)),
-      minibatch: true,
-      minibatchSize: Math.min(2, examples.length),
-      sampleCount: 1,
-      earlyStoppingTrials: Math.max(1, Math.ceil(numTrials / 2)),
-      bootstrap: false,
-      verbose: true
+  console.log(`Running GEPA Prompt Learning for ${promptName}...`);
+  const result = await optimize(analyzer, examples, metric, {
+    studentAI,
+    teacherAI,
+    numTrials,
+    validationExamples,
+    maxMetricCalls: Math.max(12, (numTrials + 2) * (examples.length + validationExamples.length)),
+    minibatch: true,
+    minibatchSize: Math.min(2, examples.length),
+    sampleCount: 1,
+    earlyStoppingTrials: Math.max(1, Math.ceil(numTrials / 2)),
+    bootstrap: false,
+    verbose: true
+  });
+
+  return result.optimizedProgram
+    ? axSerializeOptimizedProgram(result.optimizedProgram)
+    : {};
+};
+
+export async function learnPrompt(
+  cwd: string,
+  promptName: string = "learn",
+  options: LearnPromptOptions = {}
+): Promise<{ playbook: PromptPlaybook }> {
+  const { maxEpochs = 3, optimizer = optimizePromptWithAx } = options;
+  const promptPath = join(cwd, "pi", "prompts", `${promptName}.md`);
+  const basePrompt = await readFile(promptPath, "utf8");
+
+  const config = await loadKeatingConfig(cwd);
+
+  try {
+    const playbook = await optimizer({
+      cwd,
+      promptName,
+      promptPath,
+      basePrompt,
+      maxEpochs,
+      config,
     });
-    
-    if (result.optimizedProgram) {
-      const playbook = axSerializeOptimizedProgram(result.optimizedProgram);
+
+    if (Object.keys(playbook).length > 0) {
       const playbookPath = join(stateDir(cwd), GEPA_PLAYBOOK_FILE);
       await mkdir(stateDir(cwd), { recursive: true });
       await writeFile(playbookPath, JSON.stringify(playbook, null, 2), "utf8");
-      
-      return { playbook };
     }
-    return { playbook: {} };
+
+    return { playbook };
   } catch (error) {
     console.warn("Ax GEPA prompt optimization failed or API key missing, falling back to heuristics.", error);
     return { playbook: {} };

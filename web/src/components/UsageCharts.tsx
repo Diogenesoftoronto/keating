@@ -9,7 +9,6 @@ import type {
 	ImprovementAttemptRecord,
 	LearnerState,
 	Policy,
-	Verification,
 } from "../keating/storage";
 import type { SessionMetadata } from "../types/session";
 import {
@@ -123,14 +122,6 @@ const styles = {
 	daySession: css({ display: "flex", w: "100%", minW: 0, alignItems: "center", justifyContent: "space-between", gap: "0.75rem", borderRadius: "0.375rem", px: "0.625rem", py: "0.5rem", textAlign: "left", _hover: { bg: "var(--accent)" }, _focusVisible: { outline: "2px solid var(--ring)", outlineOffset: "2px" } }),
 	daySessionTitle: css({ minW: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.75rem", fontWeight: "600" }),
 	daySessionMeta: css({ mt: "0.125rem", minW: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "11px", color: "var(--muted-foreground)" }),
-	comingGrid: css({ display: "grid", gap: "1rem", md: { gridTemplateColumns: "repeat(3, minmax(0, 1fr))" } }),
-	mt2SmallMuted: css({ mt: "0.5rem", fontSize: "0.875rem", color: "var(--muted-foreground)" }),
-	listStack: css({ mt: "0.5rem", fontSize: "0.875rem", "& > * + *": { mt: "0.375rem" } }),
-	checkItem: css({ borderRadius: "0.375rem", border: "1px solid var(--border)", px: "0.5rem", py: "0.375rem" }),
-	fontMediumTruncate: css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: "500" }),
-	wrapPills: css({ mt: "0.5rem", display: "flex", flexWrap: "wrap", gap: "0.375rem" }),
-	weakPill: css({ borderRadius: "9999px", border: "1px solid color-mix(in srgb, var(--destructive) 30%, transparent)", bg: "color-mix(in srgb, var(--destructive) 5%, transparent)", px: "0.625rem", py: "0.25rem", fontSize: "0.75rem", color: "var(--destructive)" }),
-	strongPill: css({ borderRadius: "9999px", border: "1px solid color-mix(in srgb, var(--primary) 30%, transparent)", bg: "color-mix(in srgb, var(--primary) 5%, transparent)", px: "0.625rem", py: "0.25rem", fontSize: "0.75rem", color: "var(--primary)" }),
 };
 
 function ChartPanel({
@@ -165,9 +156,6 @@ export function UsageCharts({ sessionMetadata, onOpenSession }: UsageChartsProps
 	const [data, setData] = useState<{
 		topicArtifacts: TopicArtifactInput[];
 		sessions: LearnerState["sessions"];
-		openChecklists: Verification[];
-		weaknesses: string[];
-		strengths: string[];
 		feedback: FeedbackEntry[];
 		benchmarks: BenchmarkResult[];
 		evolutions: EvolutionResult[];
@@ -213,9 +201,6 @@ export function UsageCharts({ sessionMetadata, onOpenSession }: UsageChartsProps
 				setData({
 					topicArtifacts,
 					sessions: learnerState.sessions ?? [],
-					openChecklists: verifications.filter((v) => !v.completed),
-					weaknesses: learnerState.weaknesses ?? [],
-					strengths: learnerState.strengths ?? [],
 					feedback,
 					benchmarks,
 					evolutions,
@@ -338,16 +323,6 @@ export function UsageCharts({ sessionMetadata, onOpenSession }: UsageChartsProps
 				/>
 			</ChartPanel>
 
-			<ChartPanel
-				title="Coming up"
-				subtitle="Open checklists and weak spots that could use another pass"
-			>
-				<ComingUpPanel
-					openChecklists={data.openChecklists}
-					weaknesses={data.weaknesses}
-					strengths={data.strengths}
-				/>
-			</ChartPanel>
 		</div>
 	);
 }
@@ -1472,70 +1447,6 @@ function ActivityHeatmap({ sessions, onOpenSession }: { sessions: SessionMetadat
 					})}
 				</div>
 			)}
-		</div>
-	);
-}
-
-function ComingUpPanel({
-	openChecklists,
-	weaknesses,
-	strengths,
-}: {
-	openChecklists: Verification[];
-	weaknesses: string[];
-	strengths: string[];
-}) {
-	const hasAny = openChecklists.length > 0 || weaknesses.length > 0 || strengths.length > 0;
-	if (!hasAny) {
-		return <EmptyState message="Nothing on the runway yet — checklists and weak spots will surface here as you learn." />;
-	}
-	return (
-		<div className={styles.comingGrid}>
-			<div>
-				<div className={styles.sectionLabel}>Open checklists</div>
-				{openChecklists.length === 0 ? (
-					<div className={styles.mt2SmallMuted}>All caught up.</div>
-				) : (
-					<ul className={styles.listStack}>
-						{openChecklists.slice(0, 8).map((v) => (
-							<li key={v.id} className={styles.checkItem}>
-								<div className={styles.fontMediumTruncate}>{v.topic}</div>
-								<div className={styles.smallMuted}>
-									opened {new Date(v.createdAt).toLocaleDateString()}
-								</div>
-							</li>
-						))}
-					</ul>
-				)}
-			</div>
-			<div>
-				<div className={styles.sectionLabel}>Weak spots</div>
-				{weaknesses.length === 0 ? (
-					<div className={styles.mt2SmallMuted}>None flagged.</div>
-				) : (
-					<ul className={styles.wrapPills}>
-						{weaknesses.map((w) => (
-							<li key={w} className={styles.weakPill}>
-								{w}
-							</li>
-						))}
-					</ul>
-				)}
-			</div>
-			<div>
-				<div className={styles.sectionLabel}>Strengths</div>
-				{strengths.length === 0 ? (
-					<div className={styles.mt2SmallMuted}>Building.</div>
-				) : (
-					<ul className={styles.wrapPills}>
-						{strengths.map((s) => (
-							<li key={s} className={styles.strongPill}>
-								{s}
-							</li>
-						))}
-					</ul>
-				)}
-			</div>
 		</div>
 	);
 }

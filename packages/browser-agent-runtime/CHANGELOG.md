@@ -1,6 +1,13 @@
 # Changelog
 
 
+
+## 3.0.0
+<sub>2026-08-04</sub>
+
+- *(major)*
+  Keating 3.0 adds courses, Coming Up study workflows, a rebuilt TUI cockpit, Standard.site publishing, expanded model and live-media UX, and a feature-led product tour.
+
 ## 2.10.0
 <sub>2026-08-03</sub>
 

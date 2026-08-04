@@ -9,7 +9,7 @@ Set Padding 30
 Set Theme "Catppuccin Mocha"
 
 # Run doctor
-Type "just doctor"
+Type "devenv tasks run keating:doctor"
 Enter
 
 # Wait for doctor to finish

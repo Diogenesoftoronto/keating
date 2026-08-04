@@ -6,6 +6,7 @@ export interface ChatPanelSetupCallbacks {
 	onBeforeSend?: () => void | Promise<void>;
 	onCostClick?: () => void;
 	onModelSelect?: () => void;
+	onImageGenerationModelSelect?: () => void;
 	onFork?: (forkPoint?: number) => void | Promise<void>;
 	onRetry?: () => void | Promise<void>;
 	onLocalMessagesChanged?: () => void | Promise<void>;
