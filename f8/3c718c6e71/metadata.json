@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.9.0",
+  "checkpoint_id": "f83c718c6e71",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "web/src/components/SandboxView.tsx",
+    "web/src/keating/export.ts",
+    "web/src/keating/nodepod-runtime.ts",
+    "web/src/keating/sandbox-export.ts",
+    "web/src/keating/sandbox-git.ts",
+    "web/src/test/export.test.ts",
+    "web/src/test/sandbox-git-lightningfs.test.ts",
+    "web/src/test/sandbox-git.test.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/f8/3c718c6e71/0/metadata.json",
+      "transcript": "/f8/3c718c6e71/0/full.jsonl",
+      "compact_transcript": "/f8/3c718c6e71/0/transcript.jsonl",
+      "content_hash": "/f8/3c718c6e71/0/content_hash.txt",
+      "prompt": "/f8/3c718c6e71/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 167,
+    "cache_creation_tokens": 199919,
+    "cache_read_tokens": 14449316,
+    "output_tokens": 46155,
+    "api_call_count": 89
+  }
+}
