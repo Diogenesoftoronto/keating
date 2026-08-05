@@ -3,9 +3,10 @@
   "checkpoint_id": "5b4f9373eb18",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
-    "Dockerfile.web"
+    "Dockerfile.web",
+    "web/src/components/QuizRenderer.tsx"
   ],
   "sessions": [
     {
@@ -14,6 +15,13 @@
       "compact_transcript": "/5b/4f9373eb18/0/transcript.jsonl",
       "content_hash": "/5b/4f9373eb18/0/content_hash.txt",
       "prompt": "/5b/4f9373eb18/0/prompt.txt"
+    },
+    {
+      "metadata": "/5b/4f9373eb18/1/metadata.json",
+      "transcript": "/5b/4f9373eb18/1/full.jsonl",
+      "compact_transcript": "/5b/4f9373eb18/1/transcript.jsonl",
+      "content_hash": "/5b/4f9373eb18/1/content_hash.txt",
+      "prompt": "/5b/4f9373eb18/1/prompt.txt"
     }
   ],
   "token_usage": {

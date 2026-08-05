@@ -1,0 +1,11 @@
+Explore the repository at /home/diogenes/Projects/keating to find:
+
+1. **Blog posts** — any directory containing blog posts, release notes, or announcement articles (look in web/, docs/, posts/, blog/, content/, etc.). Report the exact directory path(s) and list the files there, plus show the format/structure of the most recent 1-2 blog posts (read the first ~60 lines of each).
+
+2. **Image assets used in blog posts** — find any images (png, jpg, gif, svg, webp) that are referenced by blog posts or release announcements. Report their directory paths.
+
+3. **Release workflow files** — look in .github/workflows/ for any release or deploy GitHub Actions workflows. Report file names and summarize what each does (the triggers, jobs, and key steps).
+
+4. **Video / intro assets** — check docs/assets/ and video/ for any packaged media that's part of releases.
+
+Be very thorough. Report exact file paths and key content snippets so I can understand the structure.
