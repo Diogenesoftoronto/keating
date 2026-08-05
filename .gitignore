@@ -83,3 +83,11 @@ local.properties
 # Outreach & Private Drafts
 docs/outreach-email.md
 docs/drafts/
+
+# Local shell scratch
+/atuin
+/history.txt
+
+# HyperFrames render artifacts
+video/*/snapshots/
+video/*/.thumbnails/
