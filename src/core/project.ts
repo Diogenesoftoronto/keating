@@ -84,8 +84,9 @@ import {
 import { importFineTuneDataset, type KeatingImportOptions, type KeatingImportResult } from "./import.js";
 import { classifyObservationError, exportEvaluationObservation } from "../observability/arize.js";
 import { EVALUATION_OBSERVATION_VERSION, type EvaluationEngine, type EvaluationObservationV1, type EvaluationOperation } from "../observability/types.js";
+import { KEATING_VERSION } from "./version.js";
 
-const OBSERVABILITY_APP_VERSION = process.env.npm_package_version ?? "3.0.0";
+const OBSERVABILITY_APP_VERSION = process.env.npm_package_version ?? KEATING_VERSION;
 
 async function observeEvaluation(
   operation: EvaluationOperation,

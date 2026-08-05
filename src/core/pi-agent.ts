@@ -4,8 +4,9 @@ import { configDir } from "./paths.js";
 import { detectAiRuntime } from "../runtime/pi.js";
 import { withApiRetry } from "./api-retry.js";
 import { classifyObservationError, exportProviderCompletion } from "../observability/arize.js";
+import { KEATING_VERSION } from "./version.js";
 
-const OBSERVABILITY_APP_VERSION = process.env.npm_package_version ?? "3.0.0";
+const OBSERVABILITY_APP_VERSION = process.env.npm_package_version ?? KEATING_VERSION;
 
 export interface PiCompletionOptions {
   systemPrompt?: string;
