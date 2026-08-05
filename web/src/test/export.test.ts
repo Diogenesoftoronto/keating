@@ -104,7 +104,7 @@ describe("web fine-tune export", () => {
 	it("can emit sandbox source and commit history for fine-tuning", async () => {
 		const result = await buildWebFineTuneExportFromSources({
 			sandbox: {
-				schemaVersion: 1,
+				schemaVersion: 2,
 				kind: "keating-sandbox-portable",
 				generatedAt: new Date().toISOString(),
 				nodepod: {
@@ -116,12 +116,17 @@ describe("web fine-tune export", () => {
 					snapshots: [],
 				},
 				vc: {
-					schemaVersion: 1,
+					schemaVersion: 2,
 					generatedAt: new Date().toISOString(),
-					activeBranchId: "main",
-					branches: [{ id: "main", name: "main", commitId: "c1", hidden: false, createdAt: new Date().toISOString() }],
-					commits: [{ id: "c1", branchId: "main", parentId: null, message: "tighten retrieval policy", createdAt: new Date().toISOString() }],
-					commitFiles: [{ commitId: "c1", path: "/workspace/src/core/policy.ts", contentHash: "abc123" }],
+					objects: {},
+					commits: [{
+						id: "c1",
+						branchId: "main",
+						message: "tighten retrieval policy",
+						createdAt: new Date().toISOString(),
+						fileCount: 1,
+						files: [{ path: "/workspace/src/core/policy.ts", hash: "abc123" }],
+					}],
 				},
 			},
 		}, {

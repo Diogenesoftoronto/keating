@@ -373,9 +373,8 @@ function addSandboxExamples(
 		conversations?.push({ source: "sandbox", messages });
 	}
 	for (const commit of sandbox.vc.commits) {
-		const files = sandbox.vc.commitFiles
-			.filter((file) => file.commitId === commit.id)
-			.map((file) => `${file.path} ${file.contentHash}`)
+		const files = commit.files
+			.map((file) => `${file.path} ${file.hash}`)
 			.join("\n");
 		const summary = `Commit: ${commit.message}\nBranch: ${commit.branchId}\nFiles:\n${files}`.trim();
 		if (!files) {

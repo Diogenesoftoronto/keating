@@ -5,14 +5,15 @@ import {
 	isNodePodActive,
 } from "./nodepod-runtime";
 import { persistSnapshot, type SnapshotRecord } from "./nodepod-snapshot-db";
-import { exportSandboxVc, importSandboxVc, type SandboxVcExport } from "./lix-sandbox";
+import { exportSandboxGit, importSandboxGit, type SandboxGitExport } from "./sandbox-git";
 
 export interface PortableSnapshotRecord extends Omit<SnapshotRecord, "data"> {
 	data: JsonValue;
 }
 
 export interface KeatingSandboxPortableBundle {
-	schemaVersion: 1;
+	/** 2 since the sandbox history moved from the hash-only store to git. */
+	schemaVersion: 2;
 	kind: "keating-sandbox-portable";
 	generatedAt: string;
 	nodepod: {
@@ -20,7 +21,7 @@ export interface KeatingSandboxPortableBundle {
 		files: Array<{ path: string; content: string }>;
 		snapshots: PortableSnapshotRecord[];
 	};
-	vc: SandboxVcExport;
+	vc: SandboxGitExport;
 }
 
 type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
@@ -80,11 +81,11 @@ function decodeSnapshotData(value: JsonValue): unknown {
 export async function buildSandboxPortableBundle(): Promise<KeatingSandboxPortableBundle> {
 	const [snapshots, vc] = await Promise.all([
 		nodePodLoadSnapshotsFromDB(),
-		exportSandboxVc(),
+		exportSandboxGit(),
 	]);
 	const files = isNodePodActive() ? await nodePodGetAllFileContents() : [];
 	return {
-		schemaVersion: 1,
+		schemaVersion: 2,
 		kind: "keating-sandbox-portable",
 		generatedAt: new Date().toISOString(),
 		nodepod: {
@@ -104,7 +105,15 @@ export async function importSandboxPortableBundle(bundle: KeatingSandboxPortable
 	snapshotsImported: number;
 	commitsImported: number;
 }> {
-	if (!bundle || bundle.schemaVersion !== 1 || bundle.kind !== "keating-sandbox-portable") {
+	if (!bundle || bundle.kind !== "keating-sandbox-portable") {
+		throw new Error("Unsupported Keating sandbox portable bundle.");
+	}
+	if ((bundle.schemaVersion as number) === 1) {
+		throw new Error(
+			"This bundle was created by an older version of Keating, whose sandbox history recorded only file hashes. That history cannot be migrated to the git-backed sandbox and the bundle cannot be imported.",
+		);
+	}
+	if (bundle.schemaVersion !== 2) {
 		throw new Error("Unsupported Keating sandbox portable bundle.");
 	}
 	if (isNodePodActive()) {
@@ -118,7 +127,7 @@ export async function importSandboxPortableBundle(bundle: KeatingSandboxPortable
 			data: decodeSnapshotData(snapshot.data),
 		});
 	}
-	await importSandboxVc(bundle.vc);
+	await importSandboxGit(bundle.vc);
 	return {
 		filesImported: isNodePodActive() ? bundle.nodepod.files.length : 0,
 		snapshotsImported: bundle.nodepod.snapshots.length,
