@@ -24,8 +24,8 @@ const SURFACES: SurfaceClip[] = [
     eyebrow: "01 // LEARN",
     title: "Ask in the classroom.",
     description:
-      "A real Gemini-backed session: the learner asks why cities form where they do, Keating reasons in public, then returns the next useful question.",
-    handoff: "Continue in the TUI when the browser should become a working session.",
+      "A live Gemini session: the learner asks why cities form where they do. Keating reasons in the open, then hands back the one question worth answering next.",
+    handoff: "Move to the TUI when reading turns into working.",
     src: "/tapes/web-classroom.mp4",
     poster: "/tapes/posters/web-classroom.jpg",
   },
@@ -35,8 +35,8 @@ const SURFACES: SurfaceClip[] = [
     eyebrow: "02 // COLLABORATE",
     title: "Keep the dialogue in your terminal.",
     description:
-      "The collaborative OpenTUI host sends the same kind of question through Pi and keeps Keating's plans, maps, and learner state within reach.",
-    handoff: "Drop to the CLI when the conversation needs a durable artifact.",
+      "The collaborative OpenTUI host runs the same conversation through Pi — plans, concept maps, and everything Keating knows about you stay one keystroke away.",
+    handoff: "Drop to the CLI when the conversation should leave something behind.",
     src: "/tapes/tui-collaborative.mp4",
     poster: "/tapes/posters/tui-collaborative.jpg",
   },
@@ -46,8 +46,8 @@ const SURFACES: SurfaceClip[] = [
     eyebrow: "03 // INSPECT",
     title: "Turn the lesson into files.",
     description:
-      "Keating generates a Special Relativity plan, concept map, verification checklist, and trace with the current Bun CLI—not a staged terminal mockup.",
-    handoff: "Open the web shell again when it is time to teach the artifact back.",
+      "One Special Relativity session becomes a plan, a concept map, a verification checklist, and a full trace — generated live by the Bun CLI, not staged for the camera.",
+    handoff: "Head back to the web shell when it is time to teach it back.",
     src: "/tapes/cli-artifacts.mp4",
     poster: "/tapes/posters/cli-artifacts.jpg",
   },
@@ -69,7 +69,7 @@ const PRODUCT_FEATURES: ProductFeature[] = [
     label: "MODEL ROUTING",
     title: "Choose by capability, not logo.",
     description:
-      "Search discovered cloud and local models, then filter for vision, thinking, long context, and the lane the lesson actually needs.",
+      "Search every cloud and local model Keating can reach, then filter by vision, thinking, or context length — whatever the lesson actually demands.",
     poster: "/tapes/posters/feature-models.jpg",
     to: "/chat",
     action: "Open the classroom",
@@ -79,7 +79,7 @@ const PRODUCT_FEATURES: ProductFeature[] = [
     label: "LIVE MEDIA",
     title: "Keep voice, vision, and tools in one session.",
     description:
-      "The duplex workspace exposes camera readiness, audio state, first-response timing, sent frames, and tool activity instead of hiding the live system.",
+      "Live shows you the machinery: camera state, audio state, time to first response, frames sent, tools fired. When something stalls, you can see exactly where.",
     poster: "/tapes/posters/feature-live.jpg",
     to: "/live",
     action: "Open Live",
@@ -89,7 +89,7 @@ const PRODUCT_FEATURES: ProductFeature[] = [
     label: "REVIEW RUNWAY",
     title: "Turn sessions into a return path.",
     description:
-      "Coming Up joins due reviews, learning priorities, verification work, and bidirectional Anki transfer without turning the page into another inbox.",
+      "What is due, what you flagged as important, and what still needs verifying — collected in one place, with two-way Anki transfer. A runway, not another inbox.",
     poster: "/tapes/posters/feature-coming-up.jpg",
     to: "/coming-up",
     action: "See Coming Up",
@@ -99,7 +99,7 @@ const PRODUCT_FEATURES: ProductFeature[] = [
     label: "COURSES",
     title: "Make learning a room you can return to.",
     description:
-      "Lessons, sources, shared notes, decks, peer work, and consented teacher review stay together behind the authenticated Not Organic gateway.",
+      "Lessons, sources, shared notes, decks, peer work, and the teacher review you consented to — kept together behind the Not Organic gateway.",
     poster: "/tapes/posters/feature-courses.jpg",
     to: "/courses",
     action: "Explore Courses",
@@ -109,7 +109,7 @@ const PRODUCT_FEATURES: ProductFeature[] = [
     label: "STANDARD.SITE",
     title: "Publish the record. Keep failure visible.",
     description:
-      "The AT Protocol publishing surface carries release notes and field work to Standard.site, while upstream-unavailable states remain explicit and recoverable.",
+      "Release notes and field work publish to Standard.site over the AT Protocol. When upstream is down, the page says so — and says how to recover.",
     poster: "/tapes/posters/feature-publish.jpg",
     to: "/blog",
     action: "Open the publication",
@@ -187,8 +187,8 @@ export function SurfaceScreencasts() {
           Watch Keating work.
         </h2>
         <p className={cx(sectionLede(), css({ maxWidth: "48rem" }))}>
-          These are recorded product sessions, not UI stand-ins. Move between the browser,
-          collaborative TUI, and artifact CLI—the question stays at the center.
+          Every clip is a real session, recorded against the shipping build. Follow one question
+          from the browser, into the terminal, out to the files it leaves behind.
         </p>
 
         <div
@@ -437,13 +437,13 @@ export function SurfaceScreencasts() {
                   lineHeight: 1,
                 })}
               >
-                Continue through the product.
+                Eight surfaces. One thread.
               </h3>
             </div>
             <p className={css({ margin: 0, color: "var(--muted-foreground)", lineHeight: 1.7 })}>
-              The same eight-beat sequence drives the Hyperframes tour. These frames come from
-              the current routes and component stories, including their real loading, access,
-              and recovery states.
+              The tour picks the thread up and carries it through the rest of Keating. Every frame
+              comes from the routes shipping today — loading states, access gates, and recovery
+              paths included.
             </p>
           </div>
 
@@ -491,7 +491,7 @@ export function SurfaceScreencasts() {
                 })}
                 aria-hidden="true"
               >
-                32 SEC // REAL PRODUCT TOUR
+                32 SEC // FULL PRODUCT TOUR
               </span>
             </div>
             <figcaption
@@ -507,7 +507,7 @@ export function SurfaceScreencasts() {
                 lineHeight: 1.6,
               })}
             >
-              <span>One learning thread, shown with current Keating pixels.</span>
+              <span>One question, carried across every surface Keating ships.</span>
               <span>WEB → MODEL → LIVE → REVIEW → COURSE → BLOG → TUI → CLI</span>
             </figcaption>
           </figure>
