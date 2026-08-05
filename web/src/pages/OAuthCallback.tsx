@@ -3,6 +3,16 @@ import { usePostHog } from "@posthog/react";
 import { completeOAuthFromInput, OAUTH_MESSAGE_CHANNEL, type OAuthCallbackResult } from "../keating/oauth";
 import { css, cx } from "../../styled-system/css";
 
+function oauthErrorType(error: string): string {
+	const normalized = error.toLowerCase();
+	if (normalized.includes("denied") || normalized.includes("cancel")) return "access_denied";
+	if (normalized.includes("state")) return "state_mismatch";
+	if (normalized.includes("code")) return "missing_or_invalid_code";
+	if (normalized.includes("exchange") || normalized.includes("token")) return "token_exchange";
+	if (normalized.includes("timeout") || normalized.includes("network")) return "network";
+	return "unknown";
+}
+
 const styles = {
 	page: css({ display: "flex", minH: "100vh", alignItems: "center", justifyContent: "center", bg: "var(--background)" }),
 	card: css({ maxW: "28rem", borderRadius: "0.5rem", border: "1px solid var(--border)", bg: "var(--card)", p: "2rem", textAlign: "center", boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)" }),
@@ -24,7 +34,10 @@ export function OAuthCallback() {
 	useEffect(() => {
 		completeOAuthFromInput(window.location.href).then((r) => {
 			setResult(r);
-			posthog.capture('oauth_login_completed', { success: r.success, error: r.success ? undefined : r.error });
+			posthog.capture('oauth_login_completed', {
+				success: r.success,
+				error_type: r.success ? undefined : oauthErrorType(r.error ?? ""),
+			});
 			notifyOpener(r);
 		});
 	}, [posthog]);

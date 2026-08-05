@@ -82,6 +82,36 @@ import {
   generateDiagnosticQuestions
 } from "./mastery.js";
 import { importFineTuneDataset, type KeatingImportOptions, type KeatingImportResult } from "./import.js";
+import { classifyObservationError, exportEvaluationObservation } from "../observability/arize.js";
+import { EVALUATION_OBSERVATION_VERSION, type EvaluationEngine, type EvaluationObservationV1, type EvaluationOperation } from "../observability/types.js";
+
+const OBSERVABILITY_APP_VERSION = process.env.npm_package_version ?? "3.0.0";
+
+async function observeEvaluation(
+  operation: EvaluationOperation,
+  engine: EvaluationEngine,
+  suite: string,
+  startedAt: number,
+  surface: EvaluationObservationV1["surface"],
+  fields: Record<string, number | string | undefined> = {},
+): Promise<void> {
+  await exportEvaluationObservation({
+    schemaVersion: EVALUATION_OBSERVATION_VERSION,
+    operation,
+    engine,
+    status: fields.status === "rolled_back" ? "rolled_back" : fields.status === "rejected" ? "rejected" : fields.status === "error" ? "error" : "success",
+    suite,
+    duration_ms: Math.max(0, Date.now() - startedAt),
+    ...(typeof fields.score === "number" ? { score: fields.score } : {}),
+    ...(typeof fields.before_score === "number" ? { before_score: fields.before_score } : {}),
+    ...(typeof fields.after_score === "number" ? { after_score: fields.after_score } : {}),
+    ...(typeof fields.outcome_count === "number" ? { outcome_count: fields.outcome_count } : {}),
+    ...(typeof fields.candidate_count === "number" ? { candidate_count: fields.candidate_count } : {}),
+    ...(typeof fields.error_category === "string" ? { error_category: fields.error_category } : {}),
+    app_version: OBSERVABILITY_APP_VERSION,
+    surface,
+  });
+}
 
 export async function ensureProjectScaffold(cwd: string): Promise<void> {
   await ensureKeatingDirs(cwd);
@@ -185,8 +215,10 @@ async function restoreOptionalSnapshot(filePath: string, snapshot: string | null
 
 export async function benchPolicyArtifact(
   cwd: string,
-  focusTopic?: string
+  focusTopic?: string,
+  surface: EvaluationObservationV1["surface"] = "cli",
 ): Promise<{ reportPath: string; tracePath: string | null; overallScore: number }> {
+  const startedAt = Date.now();
   await ensureProjectScaffold(cwd);
   const policy = await loadPolicy(currentPolicyPath(cwd));
   const learnerState = await loadLearnerState(learnerStatePath(cwd));
@@ -197,6 +229,10 @@ export async function benchPolicyArtifact(
   const { reportPath, tracePath } = await writeArtifactWithTrace(
     cwd, benchmarksDir(cwd), slug, benchmarkToMarkdown(result), "benchmark", result
   );
+  await observeEvaluation("benchmark", "deterministic", focusTopic ? "focused" : "core", startedAt, surface, {
+    score: result.overallScore,
+    outcome_count: result.trace.realOutcomeCount,
+  });
   return { reportPath, tracePath, overallScore: result.overallScore };
 }
 
@@ -216,14 +252,21 @@ function summarizeFeedback(feedback: Array<{ signal: "thumbs-up" | "thumbs-down"
 
 export async function evolvePolicyArtifact(
   cwd: string,
-  focusTopic?: string
+  focusTopic?: string,
+  surface: EvaluationObservationV1["surface"] = "cli",
 ): Promise<{ reportPath: string; tracePath: string | null; bestScore: number; policyPath: string }> {
+  const startedAt = Date.now();
   await ensureProjectScaffold(cwd);
   const policyPath = currentPolicyPath(cwd);
   const basePolicy = await loadPolicy(policyPath);
   const learnerState = await loadLearnerState(learnerStatePath(cwd));
   const realOutcomes = await extractHarnessOutcomes(cwd, learnerState);
   if (!hasEnoughRealData(realOutcomes)) {
+    await observeEvaluation("policy_evolution", "learner-feedback", focusTopic ? "focused" : "core", startedAt, surface, {
+      status: "rejected",
+      outcome_count: realOutcomes.length,
+      error_category: "insufficient_feedback",
+    });
     throw new Error(`Not ready to evolve: need at least ${MIN_REAL_OUTCOMES} learner feedback signals; found ${realOutcomes.length}.`);
   }
   const meRun = await mapElitesEvolve(cwd, basePolicy, { focusTopic, learnerState });
@@ -234,15 +277,35 @@ export async function evolvePolicyArtifact(
   const { reportPath, tracePath } = await writeArtifactWithTrace(
     cwd, evolutionDir(cwd), slug, mapElitesToMarkdown(meRun), "evolution", run
   );
+  await observeEvaluation("policy_evolution", "learner-feedback", focusTopic ? "focused" : "core", startedAt, surface, {
+    score: run.best.overallScore,
+    outcome_count: realOutcomes.length,
+    candidate_count: run.archive.candidates.length,
+  });
   return { reportPath, tracePath, bestScore: run.best.overallScore, policyPath };
 }
 
 export async function evolvePromptArtifact(
   cwd: string,
-  promptName = "learn"
+  promptName = "learn",
+  surface: EvaluationObservationV1["surface"] = "cli",
 ): Promise<{ reportPath: string; evolvedPromptPath: string; bestScore: number; promptPath: string; accepted: boolean }> {
+  const startedAt = Date.now();
   await ensureProjectScaffold(cwd);
-  return writePromptEvolutionArtifacts(cwd, promptName);
+  try {
+    const result = await writePromptEvolutionArtifacts(cwd, promptName);
+    await observeEvaluation("prompt_evolution", "heuristic", "prompt-template", startedAt, surface, {
+      score: result.bestScore,
+      candidate_count: 1,
+    });
+    return result;
+  } catch (error) {
+    await observeEvaluation("prompt_evolution", "heuristic", "prompt-template", startedAt, surface, {
+      status: "error",
+      error_category: classifyObservationError(error),
+    });
+    throw error;
+  }
 }
 
 export async function verifyTopicArtifact(
@@ -351,7 +414,7 @@ function assertAutoImproveAllowed(state: AutoImproveState, force: boolean): void
 export async function autoImproveArtifact(
   cwd: string,
   focusTopic?: string,
-  options: { force?: boolean } = {}
+  options: { force?: boolean; surface?: EvaluationObservationV1["surface"] } = {}
 ): Promise<{
   baselineScore: number;
   afterScore: number;
@@ -360,6 +423,7 @@ export async function autoImproveArtifact(
   observabilityPath: string;
   diagramPath: string;
 }> {
+  const startedAt = Date.now();
   await ensureProjectScaffold(cwd);
   const state = await loadAutoImproveState(cwd);
   assertAutoImproveAllowed(state, options.force === true);
@@ -369,7 +433,8 @@ export async function autoImproveArtifact(
   const evolvedPromptPath = join(promptEvolutionDir(cwd), "learn.evolved.md");
   const previousPrompt = await readOptionalFile(evolvedPromptPath);
 
-  const baseline = await benchPolicyArtifact(cwd, focusTopic);
+  const surface = options.surface ?? "cli";
+  const baseline = await benchPolicyArtifact(cwd, focusTopic, surface);
   const baselineReportPath = await snapshotFile(
     baseline.reportPath,
     join(benchmarksDir(cwd), `${autoSlug}-baseline.md`)
@@ -379,11 +444,11 @@ export async function autoImproveArtifact(
     join(tracesDir(cwd), `${autoSlug}-baseline-benchmark.json`)
   );
 
-  const evolved = await evolvePolicyArtifact(cwd, focusTopic);
+  const evolved = await evolvePolicyArtifact(cwd, focusTopic, surface);
 
-  const promptEvo = await evolvePromptArtifact(cwd, "learn");
+  const promptEvo = await evolvePromptArtifact(cwd, "learn", surface);
 
-  const after = await benchPolicyArtifact(cwd, focusTopic);
+  const after = await benchPolicyArtifact(cwd, focusTopic, surface);
   const afterReportPath = await snapshotFile(
     after.reportPath,
     join(benchmarksDir(cwd), `${autoSlug}-after.md`)
@@ -494,13 +559,21 @@ export async function autoImproveArtifact(
   await writeFile(observabilityPath, `${JSON.stringify(observability, null, 2)}\n`, "utf8");
   await writeFile(diagramPath, `${diagram}\n`, "utf8");
 
+  await observeEvaluation("auto_improve", "heuristic", focusTopic ? "focused" : "core", startedAt, surface, {
+    before_score: baseline.overallScore,
+    after_score: after.overallScore,
+    status: rolledBack ? "rolled_back" : undefined,
+  });
+
   return { baselineScore: baseline.overallScore, afterScore: after.overallScore, delta, reportPath, observabilityPath, diagramPath };
 }
 
 export async function promptEvalArtifact(
   cwd: string,
-  promptContent: string
+  promptContent: string,
+  surface: EvaluationObservationV1["surface"] = "cli",
 ): Promise<{ reportPath: string; score: number; objectives: PromptObjectiveVector; feedback: string[] }> {
+  const startedAt = Date.now();
   await ensureProjectScaffold(cwd);
   const slug = `eval-${Date.now().toString(36)}`;
   const tmpPath = join(promptEvolutionDir(cwd), `${slug}.md`);
@@ -521,6 +594,11 @@ export async function promptEvalArtifact(
   ];
   const reportPath = join(promptEvolutionDir(cwd), `${slug}-eval.md`);
   await writeFile(reportPath, lines.join("\n"), "utf8");
+
+  await observeEvaluation("prompt_eval", "heuristic", "prompt-template", startedAt, surface, {
+    score: result.score,
+    outcome_count: result.feedback.length,
+  });
 
   return { reportPath, score: result.score, objectives: result.objectives, feedback: result.feedback };
 }

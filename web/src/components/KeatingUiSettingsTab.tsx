@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Toggle } from "./Toggle";
 import { SettingRow } from "./SettingRow";
 import { SettingsSectionNav } from "./SettingsSectionNav";
@@ -12,6 +12,13 @@ import {
 import { useKeatingUiSettings } from "../hooks/use-ui-settings";
 import { IMAGE_GENERATORS, getImageGenerator, DEFAULT_IMAGE_GENERATOR_ID, type ImageGeneratorId } from "../lib/image-generators";
 import { ImageGenerationModelSelectorDialog } from "./ModelSelector";
+import {
+	isPostHogEnabled,
+	isSessionReplayAvailable,
+	updateAnalyticsPreferences,
+} from "../lib/posthog";
+import { readAnalyticsPreferences, writeAnalyticsPreferences } from "../lib/analytics-preferences";
+import { getArizePublicConfig, subscribeArizeTraceStatus, type ArizePublicConfig, type ArizeTraceStatus } from "../lib/arize-observability";
 import { css, cx } from "../../styled-system/css";
 
 const REASONING_LEVELS: { value: ReasoningLevel; label: string; description: string }[] = [
@@ -112,6 +119,52 @@ function readImageAsDataUrl(file: File): Promise<string> {
 export function KeatingUiSettingsTab() {
 	const [settings, update] = useKeatingUiSettings();
 	const [imageModelPickerOpen, setImageModelPickerOpen] = useState(false);
+	const replayAvailable = isSessionReplayAvailable();
+	const [analyticsPreferences, setAnalyticsPreferences] = useState(() =>
+		readAnalyticsPreferences(replayAvailable),
+	);
+	const analyticsAvailable = isPostHogEnabled();
+	const [arizeConfig, setArizeConfig] = useState<ArizePublicConfig>({
+		enabled: false,
+		reason: "checking availability",
+		evaluationContentEnabled: false,
+		maxContentChars: 16_000,
+		rateLimitPerMinute: 30,
+	});
+	const [arizeTraceStatus, setArizeTraceStatus] = useState<ArizeTraceStatus>({ state: "idle" });
+
+	useEffect(() => {
+		void getArizePublicConfig().then(setArizeConfig);
+		return subscribeArizeTraceStatus((status) => {
+			setArizeTraceStatus(status);
+			if (status.state === "disabled") {
+				setAnalyticsPreferences(readAnalyticsPreferences(replayAvailable));
+			}
+		});
+	}, [replayAvailable]);
+
+	const setAnalytics = useCallback((captureEnabled: boolean) => {
+		const next = { ...analyticsPreferences, captureEnabled };
+		setAnalyticsPreferences(next);
+		updateAnalyticsPreferences(next);
+	}, [analyticsPreferences]);
+
+	const setReplay = useCallback((replayEnabled: boolean) => {
+		const next = { ...analyticsPreferences, replayEnabled };
+		setAnalyticsPreferences(next);
+		updateAnalyticsPreferences(next);
+	}, [analyticsPreferences]);
+
+	const setArizeEvaluation = useCallback((arizeEvaluationEnabled: boolean) => {
+		const next = { ...analyticsPreferences, arizeEvaluationEnabled };
+		setAnalyticsPreferences(next);
+		// Arize consent is independent from PostHog and must not emit a product event.
+		writeAnalyticsPreferences(next);
+		if (!arizeEvaluationEnabled) {
+			window.dispatchEvent(new Event("keating:arize-trace-turn-off"));
+			setArizeTraceStatus({ state: "disabled" });
+		}
+	}, [analyticsPreferences]);
 
 	const updateProfileImage = useCallback(async (file: File | undefined) => {
 		if (!file) return;
@@ -129,6 +182,7 @@ export function KeatingUiSettingsTab() {
 					{ id: "ui-animation", label: "Animation" },
 					{ id: "ui-reasoning", label: "Reasoning" },
 					{ id: "ui-images", label: "Images" },
+					{ id: "ui-privacy", label: "Privacy" },
 				]}
 			/>
 
@@ -478,6 +532,71 @@ export function KeatingUiSettingsTab() {
 					);
 				})()}
 			</div>
+
+			<div id="settings-section-ui-privacy" className={sectionAnchorClass}>
+				<h3 className={sectionTitleClass}>Privacy and diagnostics</h3>
+				<p className={sectionDescriptionSpacedClass}>
+					Control anonymous product analytics and optional evaluation sharing for this browser.
+					Keating never sends prompts, replies, file contents, provider keys, or full share links to PostHog. Read the{" "}
+					<a className={css({ textDecoration: "underline" })} href="/privacy">privacy policy</a>.
+				</p>
+			</div>
+
+			<SettingRow
+				title="Anonymous product analytics"
+				description={analyticsAvailable
+					? "Measure activation, feature use, AI response timing, errors, and release health. Turning this off stops future analytics events on this browser."
+					: "Analytics is not configured in this build, so no product events are sent."}
+			>
+				<Toggle
+					checked={analyticsAvailable && analyticsPreferences.captureEnabled}
+					disabled={!analyticsAvailable}
+					onChange={setAnalytics}
+				/>
+			</SettingRow>
+
+			<SettingRow
+				title="Privacy-masked session replay"
+				description={replayAvailable
+					? "Record interaction shape for debugging while masking all text, inputs, element attributes, dynamic route IDs, and network bodies."
+					: "Session replay is not available in this build. A deployment must explicitly enable it."}
+			>
+				<Toggle
+					checked={replayAvailable && analyticsPreferences.captureEnabled && analyticsPreferences.replayEnabled}
+					disabled={!analyticsAvailable || !replayAvailable || !analyticsPreferences.captureEnabled}
+					onChange={setReplay}
+				/>
+			</SettingRow>
+
+			<SettingRow
+				title="Share future turns for Arize evaluation"
+				description={!arizeConfig.enabled
+					? `Arize evaluation is unavailable (${arizeConfig.reason}); no turn data is sent.`
+					: !arizeConfig.evaluationContentEnabled
+						? "This deployment allows metadata-only Arize traces. Visible prompt and reply text are not permitted."
+						: "Off by default. When enabled, Keating sends each future turn's current visible prompt and final visible reply until you turn this off. Thinking, tool arguments/results, files, prior turns, and provider keys are excluded."}
+			>
+				<Toggle
+					checked={arizeConfig.enabled && analyticsPreferences.arizeEvaluationEnabled}
+					disabled={!arizeConfig.enabled}
+					onChange={setArizeEvaluation}
+				/>
+			</SettingRow>
+
+			{arizeTraceStatus.state === "failed" && (
+				<div className={cardClass} role="alert">
+					<div className={css({ minWidth: 0 })}>
+						<div className={smallHeadingClass}>Arize trace was not sent</div>
+						<p className={cx(mutedSmallClass, css({ marginTop: "0.25rem" }))}>
+							Your answer and local session are safe. The one retry payload stays only in memory.
+						</p>
+					</div>
+					<div className={css({ display: "flex", flexShrink: 0, flexWrap: "wrap", gap: "0.5rem" })}>
+						<button type="button" className={compactButtonClass} onClick={() => void arizeTraceStatus.retry()}>Retry</button>
+						<button type="button" className={compactButtonClass} onClick={arizeTraceStatus.turnOff}>Turn off</button>
+					</div>
+				</div>
+			)}
 
 		</div>
 	);

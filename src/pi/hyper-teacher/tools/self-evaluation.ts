@@ -18,7 +18,7 @@ export const selfEvaluationTools = [
     { topic: { type: "string", description: "Optional topic to focus the benchmark on" } },
     async (params) => {
       const topic = (params.topic as string) || undefined;
-      const artifact = await benchPolicyArtifact(getCwd(), topic);
+      const artifact = await benchPolicyArtifact(getCwd(), topic, "pi");
       return {
         content: [{ type: "text", text: `[artifact://benchmark]\nOverall Score: ${artifact.overallScore.toFixed(2)}/100\nReport: ${relative(getCwd(), artifact.reportPath)}` }],
         details: artifact

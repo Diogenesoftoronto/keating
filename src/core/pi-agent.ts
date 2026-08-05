@@ -3,6 +3,9 @@ import { loadKeatingConfig, mergePiDefaults } from "./config.js";
 import { configDir } from "./paths.js";
 import { detectAiRuntime } from "../runtime/pi.js";
 import { withApiRetry } from "./api-retry.js";
+import { classifyObservationError, exportProviderCompletion } from "../observability/arize.js";
+
+const OBSERVABILITY_APP_VERSION = process.env.npm_package_version ?? "3.0.0";
 
 export interface PiCompletionOptions {
   systemPrompt?: string;
@@ -15,6 +18,7 @@ export interface PiCompletionOptions {
  * This ensures we use the same provider, model, and thinking settings as the user's agent install.
  */
 export async function piComplete(cwd: string, prompt: string, options: PiCompletionOptions = {}): Promise<string> {
+  const startedAt = Date.now();
   const config = await loadKeatingConfig(cwd);
   const runtime = await detectAiRuntime(cwd);
 
@@ -41,7 +45,8 @@ export async function piComplete(cwd: string, prompt: string, options: PiComplet
 
   const finalArgs = mergePiDefaults(config, [...args, prompt]);
 
-  return withApiRetry(() => {
+  try {
+    const response = await withApiRetry(() => {
     let result;
     try {
       const isBinary = selectedRuntime.kind === "binary";
@@ -76,30 +81,83 @@ export async function piComplete(cwd: string, prompt: string, options: PiComplet
     }
 
     return result.stdout.trim();
-  }, config.apiRetry);
+    }, config.apiRetry);
+    if (!options.json) {
+      await exportProviderCompletion({
+        provider: config.pi.defaultProvider ?? "unknown",
+        model: config.pi.defaultModel ?? "unknown",
+        duration_ms: Math.max(0, Date.now() - startedAt),
+        status: "success",
+        parse_outcome: "not_requested",
+        app_version: OBSERVABILITY_APP_VERSION,
+        surface: "cli",
+      });
+    }
+    return response;
+  } catch (error) {
+    await exportProviderCompletion({
+      provider: config.pi.defaultProvider ?? "unknown",
+      model: config.pi.defaultModel ?? "unknown",
+      duration_ms: Math.max(0, Date.now() - startedAt),
+      status: "error",
+      parse_outcome: "not_requested",
+      error_category: classifyObservationError(error),
+      app_version: OBSERVABILITY_APP_VERSION,
+      surface: "cli",
+    });
+    throw error;
+  }
 }
 
 /**
  * Specialized helper for JSON completions.
  */
 export async function piCompleteJson<T>(cwd: string, prompt: string, options: PiCompletionOptions = {}): Promise<T> {
+  const startedAt = Date.now();
   const response = await piComplete(cwd, prompt, { ...options, json: true });
+  const config = await loadKeatingConfig(cwd).catch(() => undefined);
   try {
     // Some models output reasoning BEFORE the JSON block.
     // We try to find all JSON-like blocks and pick the one that parses successfully,
     // prioritizing the last one.
     const matches = response.match(/\{[\s\S]*?\}/g);
-    if (!matches) return JSON.parse(response) as T;
-    
-    for (let i = matches.length - 1; i >= 0; i--) {
-      try {
-        return JSON.parse(matches[i]) as T;
-      } catch {
-        continue;
+    let parsed: T;
+    if (!matches) parsed = JSON.parse(response) as T;
+    else {
+      let matched: T | undefined;
+      for (let i = matches.length - 1; i >= 0; i--) {
+        try {
+          matched = JSON.parse(matches[i]) as T;
+          break;
+        } catch {
+          continue;
+        }
       }
+      if (matched === undefined) throw new Error("No valid JSON block found in response.");
+      parsed = matched;
     }
-    throw new Error("No valid JSON block found in response.");
+
+    await exportProviderCompletion({
+      provider: config?.pi.defaultProvider ?? "unknown",
+      model: config?.pi.defaultModel ?? "unknown",
+      duration_ms: Math.max(0, Date.now() - startedAt),
+      status: "success",
+      parse_outcome: "success",
+      app_version: OBSERVABILITY_APP_VERSION,
+      surface: "cli",
+    });
+    return parsed;
   } catch (error) {
+    await exportProviderCompletion({
+      provider: config?.pi.defaultProvider ?? "unknown",
+      model: config?.pi.defaultModel ?? "unknown",
+      duration_ms: Math.max(0, Date.now() - startedAt),
+      status: "error",
+      parse_outcome: "invalid",
+      error_category: "parse",
+      app_version: OBSERVABILITY_APP_VERSION,
+      surface: "cli",
+    });
     throw new Error(`Failed to parse agent JSON response: ${response}\nError: ${error}`);
   }
 }

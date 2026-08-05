@@ -3,6 +3,7 @@ import { resolve } from 'path';
 import { VitePWA } from 'vite-plugin-pwa';
 import react from '@vitejs/plugin-react';
 import nodepod from '@scelar/nodepod/vite';
+import posthog from '@posthog/rollup-plugin';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { randomBytes } from 'node:crypto';
 import * as https from 'https';
@@ -316,6 +317,25 @@ function chatProxyPlugin(): Plugin {
 
 import pkg from './package.json';
 
+const posthogPersonalApiKey = env('POSTHOG_API_KEY');
+const posthogProjectId = env('POSTHOG_PROJECT_ID');
+const posthogSourceMapPlugins: Plugin[] =
+  posthogPersonalApiKey && posthogProjectId
+    ? [
+        posthog({
+          personalApiKey: posthogPersonalApiKey,
+          projectId: posthogProjectId,
+          host: env('POSTHOG_HOST') ?? undefined,
+          sourcemaps: {
+            enabled: true,
+            releaseName: 'keating-web',
+            releaseVersion: pkg.version,
+            deleteAfterUpload: true,
+          },
+        }) as Plugin,
+      ]
+    : [];
+
 // Opt-in bundle analysis: `ANALYZE=1 vite build` emits dist/stats.html.
 const analyzePlugins: Plugin[] = process.env.ANALYZE
   ? [
@@ -339,6 +359,7 @@ export default defineConfig({
     nodepod(),
     chatProxyPlugin(),
     ...analyzePlugins,
+    ...posthogSourceMapPlugins,
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.svg'],
@@ -448,7 +469,7 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     assetsDir: 'assets',
-    sourcemap: false,
+    sourcemap: posthogSourceMapPlugins.length > 0 ? 'hidden' : false,
     chunkSizeWarningLimit: 5000,
     reportCompressedSize: false,
     ssr: false,

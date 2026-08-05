@@ -3242,7 +3242,7 @@ export function SuggestedPrompts({
   initialPrompts,
   model,
 }: {
-  onSelect: (text: string) => void;
+  onSelect: (text: string, context: Pick<StarterPrompt, "label" | "domain"> & { position: number }) => void;
   initialPrompts?: readonly StarterPrompt[];
   /** Currently selected chat model; enables the personalized opening. */
   model?: Model<Api> | null;
@@ -3252,6 +3252,18 @@ export function SuggestedPrompts({
   ));
   const [greeting, setGreeting] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const posthog = usePostHog();
+  const exposureCapturedRef = useRef(false);
+
+  useEffect(() => {
+    if (exposureCapturedRef.current) return;
+    exposureCapturedRef.current = true;
+    posthog.capture("starter_prompts_viewed", {
+      prompt_count: prompts.length,
+      model: model ? `${model.provider}/${model.id}` : "unavailable",
+      provider: model?.provider ?? "unavailable",
+    });
+  }, [model, posthog, prompts.length]);
 
   // With a usable model, replace the generic header with a greeting tailored
   // to the learner's history and surface model-suggested next steps. Without
@@ -3263,6 +3275,11 @@ export function SuggestedPrompts({
       .then((opening) => {
         if (cancelled || !opening) return;
         setGreeting(opening.greeting);
+        posthog.capture("tailored_opening_loaded", {
+          prompt_count: opening.prompts.length,
+          model: `${model.provider}/${model.id}`,
+          provider: model.provider,
+        });
         if (opening.prompts.length > 0) {
           setPrompts((prev) => {
             const seen = new Set(prev.map((p) => p.text));
@@ -3276,7 +3293,7 @@ export function SuggestedPrompts({
     return () => {
       cancelled = true;
     };
-  }, [model?.provider, model?.id]);
+  }, [model?.provider, model?.id, posthog]);
 
   const remaining = STARTER_PROMPTS.filter(
     (p) => !prompts.some((existing) => existing.text === p.text),
@@ -3326,8 +3343,13 @@ export function SuggestedPrompts({
         sm: { paddingInline: "1rem" },
       })}
     >
-      <div className={cx("font-terminal", css({ fontSize: "0.875rem", color: "var(--muted-foreground)" }))}>
-        {greeting ?? "Start a conversation"}
+      <div className={css({ maxWidth: "36rem", textAlign: "center" })}>
+        <h1 className={css({ fontSize: "1rem", fontWeight: 600, lineHeight: 1.35, color: "var(--foreground)" })}>
+          {greeting ?? "What do you want to understand?"}
+        </h1>
+        <p className={css({ marginTop: "0.25rem", fontSize: "0.8125rem", lineHeight: 1.5, color: "var(--muted-foreground)" })}>
+          Ask in your own words or choose a starting point. Keating will begin from what you already know.
+        </p>
       </div>
       <div className={css({ display: "flex", width: "100%", minWidth: 0, alignItems: "center", gap: "0.25rem" })}>
         <button
@@ -3363,11 +3385,11 @@ export function SuggestedPrompts({
           })}
           style={{ scrollbarWidth: "none" }}
         >
-          {prompts.map((p) => (
+          {prompts.map((p, position) => (
             <button
               key={p.text}
               type="button"
-              onClick={() => onSelect(p.text)}
+              onClick={() => onSelect(p.text, { label: p.label, domain: p.domain, position })}
               className={cx(
                 srInteractiveClass,
                 css({
@@ -4047,7 +4069,7 @@ function AssistantThread({
         | { level?: string; topic?: string; slug?: string }
         | undefined;
       if (!detail?.level) return;
-      posthog.capture('quiz_remediation_requested', { level: detail.level, topic: detail.topic ?? detail.slug });
+      posthog.capture('quiz_remediation_requested', { level: detail.level });
       queueOrSend({
         role: "user",
         content: [
@@ -4069,7 +4091,7 @@ function AssistantThread({
         | { questionId?: string; mode?: string; topic?: string }
         | undefined;
       if (!detail?.mode || !detail?.questionId) return;
-      posthog.capture('quiz_reframe_requested', { question_id: detail.questionId, mode: detail.mode, topic: detail.topic });
+      posthog.capture('quiz_reframe_requested', { mode: detail.mode });
       queueOrSend({
         role: "user",
         content: [
@@ -4196,8 +4218,15 @@ function AssistantThread({
           >
             <div className={css({ display: "flex", flex: 1, flexDirection: "column" })}>
               <AuiIf condition={(state) => state.thread.isEmpty}>
-                <SuggestedPrompts model={agent?.state.model ?? null} onSelect={(text) => {
-                  posthog.capture('suggested_prompt_clicked', { prompt_text: text.slice(0, 80) });
+                <SuggestedPrompts model={agent?.state.model ?? null} onSelect={(text, context) => {
+                  posthog.capture('suggested_prompt_clicked', {
+                    prompt_label: context.label,
+                    prompt_domain: context.domain,
+                    prompt_position: context.position,
+                    prompt_origin: context.domain === "tailored" ? "tailored" : "starter",
+                    model: agent ? `${agent.state.model.provider}/${agent.state.model.id}` : "unavailable",
+                    provider: agent?.state.model.provider ?? "unavailable",
+                  });
                   sendText(text);
                 }} />
               </AuiIf>

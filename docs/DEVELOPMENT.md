@@ -79,6 +79,38 @@ See the [devenv tasks documentation](https://devenv.sh/tasks/) for how tasks wor
 | `keating:web-preview` | Build and preview the Keating web UI production build |
 | `keating:storybook` | Launch the Storybook component explorer |
 
+### Product analytics
+
+The event contracts, activation funnel, AI observability fields, survey plan,
+privacy boundary, dashboards, and production validation checklist live in the
+[PostHog operating plan](analytics/posthog-operating-plan.md). Update that plan
+with any analytics behavior change so events keep a clear consumer and stable
+meaning.
+
+### Optional Arize AX observability
+
+Arize is a separate, optional OpenTelemetry/OpenInference destination for
+evaluation metadata and explicitly shared web-turn content. Its contract,
+privacy boundary, relay schema, and verification scenarios live in the
+[Arize integration plan](analytics/arize-integration-plan.md). It does not
+replace PostHog, local `.keating/` artifacts, or browser session persistence.
+
+Leave all `ARIZE_*` variables unset for ordinary local development: the root
+observer and Nitro relay are inert, and `/api/observability/v1/arize/config`
+reports that Arize is disabled. A configured deployment needs
+`ARIZE_ENABLED=true`, `ARIZE_API_KEY`, and `ARIZE_SPACE_ID`; it may also set
+`ARIZE_PROJECT_NAME`, `ARIZE_OTLP_ENDPOINT`, and the separately default-off
+`ARIZE_EVALUATION_CONTENT_ENABLED=true`. Set `ARIZE_TRUST_PROXY_IP=true` only
+behind a deployment-controlled proxy that replaces caller forwarding headers.
+Never use a `VITE_` prefix for these values or expose collector headers to the
+browser.
+
+Use the focused Arize tests for a safe local smoke check. They use a recording
+export seam and validate disabled mode, strict relay parsing, span hierarchy,
+and in-memory retry behavior without network credentials. A live AX trace and
+evaluator mapping still require a non-sensitive synthetic turn plus operator
+credentials after the production Nitro build is running.
+
 ### CLI shortcuts
 
 | Task | Description |

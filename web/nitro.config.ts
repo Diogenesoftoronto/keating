@@ -108,6 +108,14 @@ export default defineNitroConfig({
       handler: "server/api/agent-runtime/config.ts",
     },
     {
+      route: "/api/observability/v1/arize/config",
+      handler: "server/api/observability/v1/arize/config.ts",
+    },
+    {
+      route: "/api/observability/v1/arize/traces",
+      handler: "server/api/observability/v1/arize/traces.ts",
+    },
+    {
       route: "/api/agent-runtime/remote/**",
       handler: "server/api/agent-runtime/remote/[...path].ts",
     },

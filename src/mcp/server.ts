@@ -341,7 +341,7 @@ export function createKeatingMcpServer(cwd: string): McpServer {
     },
     async ({ topic }) => {
       try {
-        const result = await benchPolicyArtifact(cwd, topic);
+        const result = await benchPolicyArtifact(cwd, topic, "mcp");
         return asToolResult({
           topic,
           overallScore: result.overallScore,
@@ -366,7 +366,7 @@ export function createKeatingMcpServer(cwd: string): McpServer {
     },
     async ({ topic }) => {
       try {
-        const result = await evolvePolicyArtifact(cwd, topic);
+        const result = await evolvePolicyArtifact(cwd, topic, "mcp");
         return asToolResult({
           topic,
           bestScore: result.bestScore,

@@ -69,6 +69,11 @@ import {
 } from "../keating/alternative-responses";
 import type { ChatPanelHandle } from "../types/chat-panel";
 import type { SessionData, SessionMetadata } from "../types/session";
+import { subscribeAgentAnalytics } from "../lib/agent-analytics";
+import { ArizeTraceClient, getArizePublicConfig, publishArizeTraceStatus, type ArizePublicConfig } from "../lib/arize-observability";
+import { readAnalyticsPreferences, writeAnalyticsPreferences } from "../lib/analytics-preferences";
+import { isSessionReplayAvailable } from "../lib/posthog";
+import { currentTurnEvaluationContent } from "../lib/arize-evaluation-content";
 
 function buildAgentSystemPrompt(
   speechEnabled: boolean,
@@ -111,6 +116,7 @@ const ARTIFACT_TOOL_NAMES = new Set([
 ]);
 
 const SESSION_RESTORE_TIMEOUT_MS = 5_000;
+
 async function browserPersistentStorageGranted(): Promise<boolean> {
   if (typeof navigator === "undefined" || !navigator.storage?.persisted) return false;
   try {
@@ -246,6 +252,29 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const alternativeGenerationRef = useRef(new Set<string>());
   const settingsDeepLinkRef = useRef<{ tabId: string; sectionId: string | null } | null>(null);
   const [responseComparison, setResponseComparison] = useState<PendingResponseComparison | null>(null);
+  const arizeConfigRef = useRef<ArizePublicConfig>({ enabled: false, reason: "loading", evaluationContentEnabled: false, maxContentChars: 16_000, rateLimitPerMinute: 30 });
+  const arizeTraceClientRef = useRef<ArizeTraceClient | null>(null);
+
+  if (!arizeTraceClientRef.current && typeof window !== "undefined") {
+    arizeTraceClientRef.current = new ArizeTraceClient(
+      fetch,
+      publishArizeTraceStatus,
+      () => {
+        const current = readAnalyticsPreferences(isSessionReplayAvailable());
+        writeAnalyticsPreferences({ ...current, arizeEvaluationEnabled: false });
+      },
+    );
+  }
+
+	useEffect(() => {
+		void getArizePublicConfig().then((config) => { arizeConfigRef.current = config; });
+	}, []);
+
+	useEffect(() => {
+		const turnOffArize = () => arizeTraceClientRef.current?.turnOff();
+		window.addEventListener("keating:arize-trace-turn-off", turnOffArize);
+		return () => window.removeEventListener("keating:arize-trace-turn-off", turnOffArize);
+	}, []);
 
   const restorePendingResponseComparison = useCallback(async (sourceSessionId: string) => {
     const metadata = await sessions.getAllMetadata() as SessionMetadata[];
@@ -350,7 +379,11 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       const topic = session?.title?.trim() || "general";
       const messageId = typeof detail.messageId === "string" ? detail.messageId : undefined;
       const messageText = typeof detail.messageText === "string" ? detail.messageText.trim() : "";
-      posthog.capture('message_feedback_given', { signal, topic, session_id: sessionIdRef.current });
+      posthog.capture('message_feedback_given', {
+        signal,
+        has_comment: typeof detail.comment === "string" && detail.comment.trim().length > 0,
+        session_id: sessionIdRef.current,
+      });
       await keatingStorage.recordFeedback(topic, signal, {
         source: "explicit",
         evidence: typeof detail.comment === "string" && detail.comment.trim() ? detail.comment : undefined,
@@ -411,6 +444,8 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
 
   const unsubRef = useRef<(() => void) | null>(null);
   const persistUnsubRef = useRef<(() => void) | null>(null);
+  const analyticsUnsubRef = useRef<(() => void) | null>(null);
+  const analyticsTurnIndexRef = useRef(0);
   const persistCurrentSnapshotRef = useRef<() => Promise<void>>(async () => {});
   const conversationRuntimeRef = useRef<ConversationRuntime | null>(null);
   const autoTitleRequestedRef = useRef<Set<string>>(new Set());
@@ -826,6 +861,25 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
 
     if (unsubRef.current) unsubRef.current();
     unsubRef.current = subscribeAgentEvents(agent, panel as any);
+    if (analyticsUnsubRef.current) analyticsUnsubRef.current();
+    analyticsUnsubRef.current = subscribeAgentAnalytics(agent, {
+      capture: (event, properties) => posthog.capture(event, properties),
+      sessionId: agentSessionId,
+      getModel: () => ({ id: agent.state.model.id, provider: agent.state.model.provider }),
+      getSource: () => agent.state.model.provider === "browser" ? "local" : "provider",
+      getTurnIndex: () => analyticsTurnIndexRef.current,
+		appVersion: String(import.meta.env.APP_VERSION ?? "dev"),
+      isArtifactTool: (toolName) => ARTIFACT_TOOL_NAMES.has(toolName),
+			getEvaluationContent: () => {
+				const preference = readAnalyticsPreferences(false);
+				if (!preference.arizeEvaluationEnabled || !arizeConfigRef.current.evaluationContentEnabled) return undefined;
+				return currentTurnEvaluationContent(agent.state.messages);
+			},
+			onCompletedRun: (envelope) => {
+				const preference = readAnalyticsPreferences(false);
+				void arizeTraceClientRef.current?.submit(envelope, arizeConfigRef.current, preference.arizeEvaluationEnabled);
+			},
+    });
     if (persistUnsubRef.current) persistUnsubRef.current();
     let snapshotTimer: number | null = null;
     let snapshotQueue = Promise.resolve();
@@ -855,12 +909,6 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       }
       if (ev.type === "tool_execution_end") {
         const succeeded = !ev.isError;
-        posthog.capture('tool_invoked', {
-          tool_name: ev.toolName,
-          session_id: agentSessionId,
-          succeeded,
-          is_artifact: ARTIFACT_TOOL_NAMES.has(ev.toolName),
-        });
         if (succeeded && ARTIFACT_TOOL_NAMES.has(ev.toolName)) {
           posthog.capture('artifact_created', { tool_name: ev.toolName, session_id: agentSessionId });
           window.dispatchEvent(new CustomEvent("keating:artifact-created", { detail: { toolName: ev.toolName, result: ev.result } }));
@@ -873,8 +921,6 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       }
       if (ev.type === "agent_end") {
 				untrustedSearchProvenanceRef.current = false;
-        const turnIndex = agent.state.messages.filter((m) => m.role === "assistant").length;
-        posthog.capture('agent_turn_completed', { session_id: agentSessionId, turn_index: turnIndex });
         agent.waitForIdle()
           .then(() => persistSnapshot())
 					.then(async () => {
@@ -900,6 +946,10 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
 			untrustedSearchProvenanceRef.current = false;
       agent.state.messages = retryMessages;
       await persistSnapshot();
+      analyticsTurnIndexRef.current = Math.max(
+        0,
+        retryMessages.filter((message) => message.role === "user").length - 1,
+      );
       await agent.continue();
     };
 
@@ -912,7 +962,13 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       onAuthError: async (provider: string) => {
         if (provider === "browser") return false;
         posthog.capture('api_error', { error_type: 'auth', provider, session_id: agentSessionId });
+        posthog.capture('auth_recovery_prompted', { provider, session_id: agentSessionId });
         const ok = await promptKeatingApiKey(provider, { force: true });
+        posthog.capture('auth_recovery_action', {
+          provider,
+          session_id: agentSessionId,
+          outcome: ok ? 'credentials_submitted' : 'dismissed',
+        });
         if (!ok) return false;
         // Key re-entered — actually recover by retrying the failed turn:
         // drop the trailing errored assistant message and resume generation
@@ -931,9 +987,24 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
           console.log(`[keating:send] model=${agent.state.model.provider}/${agent.state.model.id} messages=${agent.state.messages.length}`);
         }
         const turnIndex = agent.state.messages.filter((m) => m.role === "user").length;
-        posthog.capture('message_sent', { session_id: agentSessionId, turn_index: turnIndex });
+        analyticsTurnIndexRef.current = turnIndex;
+        const model = `${agent.state.model.provider}/${agent.state.model.id}`;
+        posthog.capture('message_sent', {
+          session_id: agentSessionId,
+          turn_index: turnIndex,
+          turn_number: turnIndex + 1,
+          model,
+          provider: agent.state.model.provider,
+        });
+        window.dispatchEvent(new CustomEvent("keating:message-sent", {
+          detail: { sessionId: agentSessionId, turnIndex },
+        }));
         if (turnIndex === 0) {
-          posthog.capture('first_message_sent', { session_id: agentSessionId });
+          posthog.capture('first_message_sent', {
+            session_id: agentSessionId,
+            model,
+            provider: agent.state.model.provider,
+          });
         }
       },
       onLocalMessagesChanged: () => saveSessionSnapshot(agent, agentSessionId, agentCreatedAt),
@@ -1149,6 +1220,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     return () => {
       if (unsubRef.current) unsubRef.current();
       if (persistUnsubRef.current) persistUnsubRef.current();
+      if (analyticsUnsubRef.current) analyticsUnsubRef.current();
     };
   }, []);
 
@@ -1440,7 +1512,26 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
       onSelect={(model: Model<Api>) => {
         modelSelectorDialog.onClose();
         const prevModel = selectedModelRef.current;
-        posthog.capture('model_changed', { from_model: `${prevModel.provider}/${prevModel.id}`, to_model: `${model.provider}/${model.id}`, session_id: sessionIdRef.current });
+        const activeAgent = agentRef.current;
+        if (activeAgent?.state.isStreaming) {
+          posthog.capture('model_change_blocked', {
+            reason: 'active_turn',
+            from_model: `${prevModel.provider}/${prevModel.id}`,
+            to_model: `${model.provider}/${model.id}`,
+            session_id: sessionIdRef.current,
+          });
+          return;
+        }
+        posthog.capture('model_changed', {
+          model: `${model.provider}/${model.id}`,
+          provider: model.provider,
+          from_model: `${prevModel.provider}/${prevModel.id}`,
+          to_model: `${model.provider}/${model.id}`,
+          from_provider: prevModel.provider,
+          to_provider: model.provider,
+          during_turn: false,
+          session_id: sessionIdRef.current,
+        });
         startTransition(async () => {
           if (model.provider === "browser") await loadBrowserModel();
           selectedModelRef.current = model;
@@ -1505,6 +1596,10 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
           untrustedSearchProvenanceRef.current = false;
           existingAgent.state.messages = retryMessages;
           await persistCurrentSnapshotRef.current();
+          analyticsTurnIndexRef.current = Math.max(
+            0,
+            retryMessages.filter((message) => message.role === "user").length - 1,
+          );
           await existingAgent.continue();
         };
         const setupCallbacks = {
@@ -1515,7 +1610,14 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
           },
           onAuthError: async (provider: string) => {
             if (provider === "browser") return false;
+            posthog.capture('api_error', { error_type: 'auth', provider, session_id: sessionIdRef.current });
+            posthog.capture('auth_recovery_prompted', { provider, session_id: sessionIdRef.current });
             const ok = await promptKeatingApiKey(provider, { force: true });
+            posthog.capture('auth_recovery_action', {
+              provider,
+              session_id: sessionIdRef.current,
+              outcome: ok ? 'credentials_submitted' : 'dismissed',
+            });
             if (ok) void retryExistingResponse();
             return ok;
           },
@@ -1527,9 +1629,24 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
               console.log(`[keating:send] model=${existingAgent.state.model.provider}/${existingAgent.state.model.id} messages=${existingAgent.state.messages.length}`);
             }
             const turnIndex = existingAgent.state.messages.filter((m) => m.role === "user").length;
-            posthog.capture('message_sent', { session_id: sessionIdRef.current, turn_index: turnIndex });
+            analyticsTurnIndexRef.current = turnIndex;
+            const model = `${existingAgent.state.model.provider}/${existingAgent.state.model.id}`;
+            posthog.capture('message_sent', {
+              session_id: sessionIdRef.current,
+              turn_index: turnIndex,
+              turn_number: turnIndex + 1,
+              model,
+              provider: existingAgent.state.model.provider,
+            });
+            window.dispatchEvent(new CustomEvent("keating:message-sent", {
+              detail: { sessionId: sessionIdRef.current, turnIndex },
+            }));
             if (turnIndex === 0) {
-              posthog.capture('first_message_sent', { session_id: sessionIdRef.current });
+              posthog.capture('first_message_sent', {
+                session_id: sessionIdRef.current,
+                model,
+                provider: existingAgent.state.model.provider,
+              });
             }
           },
           onLocalMessagesChanged: () => saveSessionSnapshot(existingAgent),
