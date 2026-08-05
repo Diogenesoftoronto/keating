@@ -68,16 +68,17 @@ import { SerializeAddon } from "@xterm/addon-serialize";
 import "@xterm/xterm/css/xterm.css";
 import { diffStrings, type LineDiff } from "../keating/sandbox-engine";
 import {
-	lixCommit,
-	lixCreateBranch,
-	lixSwitchBranch,
-	lixListBranches,
-	lixListCommits,
-	lixDiffCommits,
-	getSandboxLix,
+	sandboxCommit,
+	sandboxCreateBranch,
+	sandboxCheckoutBranch,
+	sandboxListBranches,
+	sandboxListCommits,
+	sandboxDiffCommits,
+	sandboxReadCommitFiles,
+	getSandboxRepo,
 	type SandboxCommit,
 	type SandboxBranch,
-} from "../keating/lix-sandbox";
+} from "../keating/sandbox-git";
 import {
   buildSandboxPortableBundle,
   importSandboxPortableBundle,
@@ -85,7 +86,7 @@ import {
 } from "../keating/sandbox-export";
 import { css, cx } from "../../styled-system/css";
 
-type DiffChange = Awaited<ReturnType<typeof lixDiffCommits>>[number];
+type DiffChange = Awaited<ReturnType<typeof sandboxDiffCommits>>[number];
 
 type TabId = "status" | "vfs" | "shell" | "snapshots" | "vc" | "log" | "probes";
 
@@ -522,16 +523,16 @@ export function SandboxView({
     }
   }, [pushEvent, refreshVfs]);
 
-  /* ── version control (Lix) actions ────────────────────── */
+  /* ── version control (git) actions ────────────────────── */
 
   const refreshVc = useCallback(async () => {
     try {
       const [branches, commits] = await Promise.all([
-        lixListBranches(),
-        lixListCommits(),
+        sandboxListBranches(),
+        sandboxListCommits(),
       ]);
-      const lix = await getSandboxLix();
-      const activeId = await lix.activeBranchId();
+      const repo = await getSandboxRepo();
+      const activeId = await repo.activeBranchId();
       setVcBranches(branches);
       setVcCommits(commits);
       setVcActiveBranch(activeId);
@@ -545,7 +546,7 @@ export function SandboxView({
     if (!vcNewBranchName.trim()) return;
     setVcLoading(true);
     try {
-      await lixCreateBranch(vcNewBranchName.trim());
+      await sandboxCreateBranch(vcNewBranchName.trim());
       setVcNewBranchName("");
       await refreshVc();
       pushEvent("vc", "branch.create", true, { name: vcNewBranchName.trim() });
@@ -559,7 +560,7 @@ export function SandboxView({
   const switchBranchAction = useCallback(async (branchId: string) => {
     setVcLoading(true);
     try {
-      await lixSwitchBranch(branchId);
+      await sandboxCheckoutBranch(branchId);
       await refreshVc();
       pushEvent("vc", "branch.switch", true, { branchId });
     } catch (e) {
@@ -574,7 +575,7 @@ export function SandboxView({
     setVcLoading(true);
     try {
       const files = await nodePodGetAllFileContents();
-      const commitId = await lixCommit(files, message);
+      const commitId = await sandboxCommit(files, message);
       setVcCommitMessage("");
       await refreshVc();
       pushEvent("vc", "commit", true, { commitId, files: files.length });
@@ -588,7 +589,7 @@ export function SandboxView({
   const diffCommitsAction = useCallback(async (fromCommitId: string, toCommitId: string) => {
     setVcLoading(true);
     try {
-      const changes = await lixDiffCommits(fromCommitId, toCommitId);
+      const changes = await sandboxDiffCommits(fromCommitId, toCommitId);
       setVcDiff({ fromCommit: fromCommitId, toCommit: toCommitId, changes });
     } catch {
       setVcDiff(null);
@@ -596,6 +597,23 @@ export function SandboxView({
       setVcLoading(false);
     }
   }, []);
+
+  const restoreCommitAction = useCallback(async (commitId: string) => {
+    const started = performance.now();
+    setVcLoading(true);
+    try {
+      const files = await sandboxReadCommitFiles(commitId);
+      for (const file of files) {
+        await nodePodWriteTextFile(file.path, file.content);
+      }
+      await refreshVfs();
+      pushEvent("vc", "commit.restore", true, { commitId, files: files.length }, Math.round(performance.now() - started));
+    } catch (e) {
+      pushEvent("vc", "commit.restore", false, { error: e instanceof Error ? e.message : String(e) }, Math.round(performance.now() - started));
+    } finally {
+      setVcLoading(false);
+    }
+  }, [pushEvent, refreshVfs]);
 
   const exportPortableAction = useCallback(async () => {
     setPortableBusy(true);
@@ -614,7 +632,7 @@ export function SandboxView({
       pushEvent("vc", "portable.export", true, {
         files: bundle.nodepod.files.length,
         snapshots: bundle.nodepod.snapshots.length,
-        commits: bundle.vc.commits.length,
+        gitObjects: Object.keys(bundle.vc.objects).length,
       });
     } catch (e) {
       pushEvent("vc", "portable.export", false, { error: e instanceof Error ? e.message : String(e) });
@@ -1422,15 +1440,26 @@ export function SandboxView({
                 </div>
                 <div className={css({ marginTop: "0.125rem", fontSize: "0.75rem" })}>{c.message}</div>
                 <div className={styles.text10Muted}>{new Date(c.createdAt).toLocaleString()}</div>
-                {i < vcCommits.length - 1 && (
+                <div className={css({ marginTop: "0.375rem", display: "flex", flexWrap: "wrap", gap: "0.25rem" })}>
+                  {i < vcCommits.length - 1 && (
+                    <button
+                      type="button"
+                      onClick={() => diffCommitsAction(c.id, vcCommits[i + 1].id)}
+                      className={css({ display: "inline-flex", height: "1.5rem", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", paddingInline: "0.5rem", fontSize: "10px", _hover: { background: "var(--accent)" } })}
+                    >
+                      <GitCompare size={10} /> Diff with next
+                    </button>
+                  )}
                   <button
                     type="button"
-                    onClick={() => diffCommitsAction(c.id, vcCommits[i + 1].id)}
-                    className={css({ marginTop: "0.375rem", display: "inline-flex", height: "1.5rem", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", paddingInline: "0.5rem", fontSize: "10px", _hover: { background: "var(--accent)" } })}
+                    onClick={() => restoreCommitAction(c.id)}
+                    disabled={vcLoading}
+                    title="Write this commit's files back into the sandbox"
+                    className={css({ display: "inline-flex", height: "1.5rem", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", paddingInline: "0.5rem", fontSize: "10px", _hover: { background: "var(--accent)" }, _disabled: { opacity: 0.5 } })}
                   >
-                    <GitCompare size={10} /> Diff with next
+                    <RotateCcw size={10} /> Restore
                   </button>
-                )}
+                </div>
               </div>
             ))}
           </div>

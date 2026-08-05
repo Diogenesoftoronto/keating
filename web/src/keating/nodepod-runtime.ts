@@ -27,10 +27,10 @@ export async function bootNodePod(): Promise<Nodepod | null> {
 
 	nodePodBootPromise = (async () => {
 		try {
-			const [{ Nodepod }, { NODEPOD_BOOT_FILES }, { openSandboxLix }] = await Promise.all([
+			const [{ Nodepod }, { NODEPOD_BOOT_FILES }, { openSandboxRepo }] = await Promise.all([
 				import("@scelar/nodepod"),
 				import("./nodepod-boot-files"),
-				import("./lix-sandbox"),
+				import("./sandbox-git"),
 			]);
 			bootFileCount = Object.keys(NODEPOD_BOOT_FILES).length;
 			const pod = await Nodepod.boot({
@@ -102,8 +102,8 @@ globalThis.assertEq = assertEq;
 `
 			);
 
-			// Open Lix for version tracking
-			await openSandboxLix();
+			// Open the git-backed sandbox repository for version tracking
+			await openSandboxRepo();
 
 			nodePodInstance = pod;
 			console.log("[nodepod] Booted successfully with", bootFileCount, "source files, instanceId:", pod.instanceId);
@@ -123,8 +123,8 @@ export async function teardownNodePod(): Promise<void> {
 			activeTerminal.detach();
 			activeTerminal = null;
 		}
-		const { closeSandboxLix } = await import("./lix-sandbox");
-		closeSandboxLix();
+		const { closeSandboxRepo } = await import("./sandbox-git");
+		closeSandboxRepo();
 		nodePodInstance.teardown();
 		nodePodInstance = null;
 		nodePodBootPromise = null;
