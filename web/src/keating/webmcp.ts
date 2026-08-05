@@ -16,6 +16,8 @@ type WebMcpInstance = {
 
 type WebMcpConstructor = new (options?: Record<string, unknown>) => WebMcpInstance;
 
+let webMcpConstructorPromise: Promise<WebMcpConstructor | null> | null = null;
+
 declare global {
 	interface Window {
 		webMCP?: WebMcpInstance;
@@ -37,21 +39,33 @@ function artifactUri(type: string, id: string): string {
 
 async function loadWebMcpConstructor(): Promise<WebMcpConstructor | null> {
 	if (window.__KeatingWebMCP) return window.__KeatingWebMCP;
+	if (webMcpConstructorPromise) return webMcpConstructorPromise;
 
-	const script = document.createElement("script");
-	const source = `${webMcpSource}\n;window.__KeatingWebMCP = WebMCP;`;
-	const url = URL.createObjectURL(new Blob([source], { type: "text/javascript" }));
-	script.src = url;
-	script.async = true;
+	webMcpConstructorPromise = (async () => {
+		const script = document.createElement("script");
+		const source = `${webMcpSource}\n;window.__KeatingWebMCP = WebMCP;`;
+		const url = URL.createObjectURL(new Blob([source], { type: "text/javascript" }));
+		script.src = url;
+		script.async = true;
 
-	await new Promise<void>((resolve, reject) => {
-		script.onload = () => resolve();
-		script.onerror = () => reject(new Error("Failed to load WebMCP browser bridge."));
-		document.head.appendChild(script);
-	});
+		try {
+			await new Promise<void>((resolve, reject) => {
+				script.onload = () => resolve();
+				script.onerror = () => reject(new Error("Failed to load WebMCP browser bridge."));
+				document.head.appendChild(script);
+			});
+			return window.__KeatingWebMCP ?? null;
+		} finally {
+			URL.revokeObjectURL(url);
+		}
+	})();
 
-	URL.revokeObjectURL(url);
-	return window.__KeatingWebMCP ?? null;
+	try {
+		return await webMcpConstructorPromise;
+	} catch (error) {
+		webMcpConstructorPromise = null;
+		throw error;
+	}
 }
 
 async function ensureWebMcp(): Promise<WebMcpInstance | null> {
@@ -59,6 +73,7 @@ async function ensureWebMcp(): Promise<WebMcpInstance | null> {
 
 	const Constructor = await loadWebMcpConstructor();
 	if (!Constructor) return null;
+	if (window.webMCP) return window.webMCP;
 
 	window.webMCP = new Constructor({
 		color: "#b7791f",
