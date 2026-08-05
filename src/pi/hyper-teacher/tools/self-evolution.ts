@@ -20,7 +20,7 @@ export const selfEvolutionTools = [
     },
     async (params) => {
       const topic = (params.topic as string) || undefined;
-      const result = await autoImproveArtifact(getCwd(), topic, { force: params.force === true });
+      const result = await autoImproveArtifact(getCwd(), topic, { force: params.force === true, surface: "pi" });
       const verdict = result.delta > 0 ? "IMPROVED" : result.delta < -0.5 ? "REGRESSED" : "NO SIGNIFICANT CHANGE";
       return {
         content: [{ type: "text", text: `Auto-improve: ${result.baselineScore.toFixed(2)} → ${result.afterScore.toFixed(2)} (${verdict}, Δ${result.delta >= 0 ? "+" : ""}${result.delta.toFixed(2)})\nReport: ${relative(getCwd(), result.reportPath)}` }],
@@ -35,7 +35,7 @@ export const selfEvolutionTools = [
     { topic: { type: "string", description: "Optional topic to focus the evolution on" } },
     async (params) => {
       const topic = (params.topic as string) || undefined;
-      const artifact = await evolvePolicyArtifact(getCwd(), topic);
+      const artifact = await evolvePolicyArtifact(getCwd(), topic, "pi");
       return {
         content: [{ type: "text", text: `[artifact://evolution]\nBest: ${artifact.bestScore.toFixed(2)}\nPolicy: ${relative(getCwd(), artifact.policyPath)}` }],
         details: artifact
@@ -67,7 +67,7 @@ export const selfEvolutionTools = [
     { name: { type: "string", description: "Name of the prompt template to evolve (defaults to 'learn')" } },
     async (params) => {
       const promptName = (params.name as string) || "learn";
-      const artifact = await evolvePromptArtifact(getCwd(), promptName);
+      const artifact = await evolvePromptArtifact(getCwd(), promptName, "pi");
       return {
         content: [{ type: "text", text: `Prompt "${promptName}" evolved to ${artifact.bestScore.toFixed(2)}\n${relative(getCwd(), artifact.reportPath)}` }],
         details: artifact
@@ -82,7 +82,7 @@ export const selfEvolutionTools = [
     async (params) => {
       const promptContent = (params.prompt as string) || "";
       if (!promptContent) return { content: [{ type: "text", text: "Prompt content required." }] };
-      const result = await promptEvalArtifact(getCwd(), promptContent);
+      const result = await promptEvalArtifact(getCwd(), promptContent, "pi");
       const objectives = Object.entries(result.objectives).map(([k, v]) => `- ${k}: ${Number(v).toFixed(2)}`).join("\n");
       const feedback = result.feedback.length > 0 ? result.feedback.map((f: string) => `- ${f}`).join("\n") : "- No major issues detected.";
       return {

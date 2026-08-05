@@ -34,6 +34,17 @@ function toolFailureMessage(result: unknown): string {
 	return "Tool execution failed.";
 }
 
+function runCompletionReason(messages: AgentMessage[]): "completed" | "cancelled" | "error" {
+	for (let index = messages.length - 1; index >= 0; index -= 1) {
+		const message = messages[index];
+		if (!message || typeof message !== "object" || !("role" in message) || message.role !== "assistant") continue;
+		if (message.stopReason === "error") return "error";
+		if (message.stopReason === "aborted") return "cancelled";
+		return "completed";
+	}
+	return "completed";
+}
+
 export function recordAgentEvent(runtime: ConversationRuntime, event: AgentEvent): void {
 	switch (event.type) {
 		case "agent_start":
@@ -59,7 +70,7 @@ export function recordAgentEvent(runtime: ConversationRuntime, event: AgentEvent
 			else runtime.emit("tool.completed", { callId: event.toolCallId, result: jsonSafe(event.result) });
 			break;
 		case "agent_end":
-			runtime.emit("run.completed", { reason: "completed" });
+			runtime.emit("run.completed", { reason: runCompletionReason(event.messages) });
 			break;
 	}
 }

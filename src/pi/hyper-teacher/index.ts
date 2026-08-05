@@ -96,7 +96,7 @@ export default function hyperteacher(pi: any): void {
     description: "Run the learner-feedback benchmark suite against the current teaching policy.",
     handler: async (args: string[], ctx: any) => {
       const topic = topicFromArgs(args) || undefined;
-      const artifact = await benchPolicyArtifact(ctx.cwd, topic);
+      const artifact = await benchPolicyArtifact(ctx.cwd, topic, "pi");
       ctx.ui.setEditorText(`read ${relative(ctx.cwd, artifact.reportPath)}`);
       info(
         ctx,
@@ -109,7 +109,7 @@ export default function hyperteacher(pi: any): void {
     description: "Mutate and benchmark teaching policies, then keep the strongest safe candidate.",
     handler: async (args: string[], ctx: any) => {
       const topic = topicFromArgs(args) || undefined;
-      const artifact = await evolvePolicyArtifact(ctx.cwd, topic);
+      const artifact = await evolvePolicyArtifact(ctx.cwd, topic, "pi");
       ctx.ui.setEditorText(`read ${relative(ctx.cwd, artifact.reportPath)}`);
       info(
         ctx,
@@ -122,7 +122,7 @@ export default function hyperteacher(pi: any): void {
     description: "Evolve a prompt template using prompt-learning feedback and PROSPER-style selection.",
     handler: async (args: string[], ctx: any) => {
       const promptName = topicFromArgs(args) || "learn";
-      const artifact = await evolvePromptArtifact(ctx.cwd, promptName);
+      const artifact = await evolvePromptArtifact(ctx.cwd, promptName, "pi");
       ctx.ui.setEditorText(`read ${relative(ctx.cwd, artifact.reportPath)}`);
       info(
         ctx,
@@ -139,7 +139,7 @@ export default function hyperteacher(pi: any): void {
         info(ctx, "Usage: /prompt-eval <prompt text>");
         return;
       }
-      const result = await promptEvalArtifact(ctx.cwd, promptContent);
+      const result = await promptEvalArtifact(ctx.cwd, promptContent, "pi");
       ctx.ui.setEditorText(`read ${relative(ctx.cwd, result.reportPath)}`);
       info(ctx, `Prompt scored ${result.score.toFixed(2)}/100`);
     }
@@ -278,7 +278,7 @@ export default function hyperteacher(pi: any): void {
     handler: async (args: string[], ctx: any) => {
       const topic = topicFromArgs(args) || undefined;
       info(ctx, "Running auto-improve loop (bench → evolve → prompt-evolve → bench)...");
-      const result = await autoImproveArtifact(ctx.cwd, topic);
+      const result = await autoImproveArtifact(ctx.cwd, topic, { surface: "pi" });
       const verdict = result.delta > 0 ? "IMPROVED" : result.delta < -0.5 ? "REGRESSED" : "NO SIGNIFICANT CHANGE";
       ctx.ui.setEditorText(`read ${relative(ctx.cwd, result.reportPath)}`);
       info(ctx, `Auto-improve: ${result.baselineScore.toFixed(2)} → ${result.afterScore.toFixed(2)} (${verdict}, Δ${result.delta >= 0 ? "+" : ""}${result.delta.toFixed(2)})`);

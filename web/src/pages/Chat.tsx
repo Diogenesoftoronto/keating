@@ -28,7 +28,6 @@ import { useKeatingAgent } from "../hooks/useKeatingAgent";
 import { keatingStorage, sessions } from "../hooks/keating-storage";
 import { useSeo } from "../hooks/useSeo";
 import { useMediaQuery } from "../hooks/use-media-query";
-import { ChatIntro } from "../components/ChatIntro";
 import { ArtifactBrowserOverlay } from "../components/ArtifactBrowserOverlay";
 import { ArtifactSidePanel } from "../components/ArtifactSidePanel";
 import { AssistantChatPanel } from "../components/AssistantChatPanel";
@@ -742,11 +741,6 @@ function ChatContent() {
     responseComparison,
     chooseResponse,
   } = useKeatingAgent();
-  const [introDismissed, setIntroDismissed] = useState(
-    () =>
-      localStorage.getItem("keating_chat_intro") === "dismissed" ||
-      sessionStorage.getItem("keating_chat_intro") === "dismissed",
-  );
   const [artifactBrowserOpen, setArtifactBrowserOpen] = useState(false);
   const isWideViewport = useMediaQuery("(min-width: 1024px)");
   const [uiSettings, setUiSettings] = useState(() => loadKeatingUiSettings());
@@ -758,6 +752,34 @@ function ChatContent() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [nodePodOpen, setNodePodOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const sessionId = activeSessionId;
+    let activated = false;
+    posthog.capture("chat_composer_viewed", {
+      session_id: sessionId,
+      activation_wait_ms: 45_000,
+    });
+
+    const handleMessageSent = (event: Event) => {
+      const detail = (event as CustomEvent<{ sessionId?: string }>).detail;
+      if (!detail?.sessionId || detail.sessionId === sessionId) activated = true;
+    };
+    window.addEventListener("keating:message-sent", handleMessageSent);
+    const timer = window.setTimeout(() => {
+      if (activated || document.visibilityState !== "visible") return;
+      posthog.capture("chat_activation_stalled", {
+        session_id: sessionId,
+        wait_ms: 45_000,
+        survey_trigger: "activation_blocker",
+      });
+    }, 45_000);
+
+    return () => {
+      window.removeEventListener("keating:message-sent", handleMessageSent);
+      window.clearTimeout(timer);
+    };
+  }, [activeSessionId, posthog]);
 
   // Close mobile menu on click outside or escape
   useEffect(() => {
@@ -780,29 +802,6 @@ function ChatContent() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [mobileMenuOpen]);
-
-  const dismissIntro = () => {
-    setIntroDismissed(true);
-    localStorage.setItem("keating_chat_intro", "dismissed");
-    posthog.capture('chat_intro_dismissed');
-  };
-
-  // Returning users with saved sessions shouldn't be gated by the intro.
-  useEffect(() => {
-    if (introDismissed) return;
-    let cancelled = false;
-    sessions
-      .getAllMetadata()
-      .then((items) => {
-        if (cancelled || items.length === 0) return;
-        setIntroDismissed(true);
-        localStorage.setItem("keating_chat_intro", "dismissed");
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [introDismissed]);
 
   useEffect(() => subscribeKeatingUiSettings(setUiSettings), []);
 
@@ -1354,72 +1353,40 @@ function ChatContent() {
         </div>
       )}
 
-      {introDismissed ? (
-        <div className={css({ display: "flex", minHeight: 0, flex: 1, overflow: "hidden" })}>
-          {sessionSidebar}
-          <AssistantChatPanel
-            ref={chatPanelRef}
-            className={cx("chat-page-panel", css({ minWidth: 0, flex: 1 }))}
-            speechEnabled={speechEnabled}
-            responseComparison={responseComparison ? (
-              <ResponseComparisonPanel
-                comparison={responseComparison}
-                onChoose={chooseResponse}
-              />
-            ) : null}
-          />
-          {isWideViewport && artifactBrowserOpen && (
-            <div
-              className={css({
-                height: "100%",
-                flexShrink: 0,
-                borderLeft: "1px solid var(--border)",
-              })}
-            >
-              <ArtifactSidePanel
-                open={artifactBrowserOpen}
-                artifactId={artifactTarget}
-                onClose={() => {
-                  setArtifactBrowserOpen(false);
-                  setArtifactTarget(undefined);
-                }}
-              />
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className={css({ position: "relative", flex: 1, overflow: "hidden" })}>
-          <ChatIntro />
-          <button
-            onClick={dismissIntro}
-            className={cx(
-              "font-terminal",
-              css({
-                position: "absolute",
-                bottom: "1.5rem",
-                left: "50%",
-                zIndex: 20,
-                transform: "translateX(-50%)",
-                border: "2px solid var(--primary)",
-                paddingInline: "1.5rem",
-                paddingBlock: "0.625rem",
-                fontSize: "0.875rem",
-                color: "var(--primary)",
-                transitionProperty: "color, background-color, border-color",
-                transitionDuration: "150ms",
-                _hover: {
-                  backgroundColor: "var(--primary)",
-                  color: "var(--primary-foreground)",
-                },
-              }),
-            )}
+      <div className={css({ display: "flex", minHeight: 0, flex: 1, overflow: "hidden" })}>
+        {sessionSidebar}
+        <AssistantChatPanel
+          ref={chatPanelRef}
+          className={cx("chat-page-panel", css({ minWidth: 0, flex: 1 }))}
+          speechEnabled={speechEnabled}
+          responseComparison={responseComparison ? (
+            <ResponseComparisonPanel
+              comparison={responseComparison}
+              onChoose={chooseResponse}
+            />
+          ) : null}
+        />
+        {isWideViewport && artifactBrowserOpen && (
+          <div
+            className={css({
+              height: "100%",
+              flexShrink: 0,
+              borderLeft: "1px solid var(--border)",
+            })}
           >
-            [ GET STARTED → ]
-          </button>
-        </div>
-      )}
+            <ArtifactSidePanel
+              open={artifactBrowserOpen}
+              artifactId={artifactTarget}
+              onClose={() => {
+                setArtifactBrowserOpen(false);
+                setArtifactTarget(undefined);
+              }}
+            />
+          </div>
+        )}
+      </div>
 
-      {inlineArtifacts.length > 0 && introDismissed && (
+      {inlineArtifacts.length > 0 && (
         <InlineArtifacts
           artifacts={inlineArtifacts}
           onDismiss={(id) =>

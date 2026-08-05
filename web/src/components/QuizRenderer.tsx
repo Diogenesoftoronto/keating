@@ -1119,8 +1119,8 @@ export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) 
 	// Track quiz_started once on mount
 	useEffect(() => {
 		posthog.capture('quiz_started', {
-			topic: quiz.slug ?? quiz.topic,
 			question_count: quiz.questions.length,
+			has_stable_slug: Boolean(quiz.slug),
 		});
 	}, []);
 
@@ -1296,7 +1296,6 @@ export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) 
 		setElapsed(timing.totalMs);
 		setRevealed(true);
 		posthog.capture('quiz_completed', {
-			topic: quiz.slug ?? quiz.topic,
 			question_count: quiz.questions.length,
 			score: rawScore,
 			partial_credit_points: partialCreditPoints,

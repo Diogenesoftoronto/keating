@@ -69,12 +69,18 @@
     "ws": "8.21.0"
   },
   "dependencies": {
+    "@arizeai/openinference-semantic-conventions": "^2.5.0",
     "@ax-llm/ax": "^22.0.7",
     "@earendil-works/pi-coding-agent": "^0.80.2",
     "@earendil-works/pi-tui": "^0.80.2",
     "@google/generative-ai": "^0.24.1",
     "@lix-js/sdk": "^0.7.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/exporter-trace-otlp-proto": "^0.208.0",
+    "@opentelemetry/resources": "^2.6.0",
+    "@opentelemetry/sdk-trace-base": "^2.6.0",
+    "@opentelemetry/sdk-trace-node": "^2.6.0",
     "@opentui/core": "^0.4.3",
     "dotenv": "^17.4.2",
     "h3": "^2.0.1-rc.22",

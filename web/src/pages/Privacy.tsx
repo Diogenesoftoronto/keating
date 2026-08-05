@@ -5,7 +5,7 @@ import { useSeo } from "../hooks/useSeo";
 import { cx } from "../../styled-system/css";
 import { eyebrow, paperCard } from "../../styled-system/recipes";
 
-const LAST_UPDATED = "July 1, 2026";
+const LAST_UPDATED = "August 4, 2026";
 
 export function Privacy() {
   useSeo({
@@ -107,13 +107,27 @@ export function Privacy() {
             <h2>7. Analytics and diagnostics</h2>
             <p>
               Hosted web pages use product analytics (currently PostHog) to understand feature
-              usage, reliability, and release health — for example page views and events like “a
-              session was shared”. We aim to collect product-level signals, not the content of your
-              learning material: analytics events do not include your prompts, session content, or
-              keys. Browser privacy settings, content blockers, and Do-Not-Track/consent tooling
-              can limit or block this collection, and the app continues to work with analytics
-              blocked.
+              usage, reliability, AI response timing, errors, and release health, for example page
+              views and events like “a session was shared”. Analytics events do not include your
+              prompts, replies, uploaded file contents, provider keys, or complete share and course
+              links. Dynamic identifiers are removed from page paths before collection.
             </p>
+            <p>
+              A hosted deployment may enable session replay to diagnose interaction problems. When
+              enabled, Keating masks all page text, form inputs, and element attributes, and removes
+              request bodies and dynamic route identifiers before recording. Console recording is
+              disabled. You can independently turn analytics and session replay on or off in
+              Settings. Browser privacy settings, content blockers, and Do Not Track can also limit
+              or block collection, and the app continues to work with analytics blocked.
+            </p>
+			<p>
+				A deployment may also offer optional Arize evaluation tracing. It is separate from
+					PostHog and off by default. Only after both the deployment and you enable it can
+					Keating send the current visible prompt and final visible reply for that turn to
+					the deployment operator&apos;s Arize project. It does not send reasoning, tool
+					arguments or results, files, prior turns, provider keys, or raw error messages.
+					Turning it off stops future submissions; a failed retry is held only in memory.
+			</p>
           </section>
 
           <section>
@@ -152,7 +166,7 @@ export function Privacy() {
               <li>Remove saved provider keys in Settings.</li>
               <li>Avoid share links, or remove shared content (cached copies held by recipients may persist).</li>
               <li>Use local models to keep prompts entirely on your machine.</li>
-              <li>Block analytics with standard browser tooling.</li>
+				<li>Turn analytics, session replay, or optional Arize evaluation sharing off in Settings, or block them with standard browser tooling.</li>
             </ul>
             <p>
               Because we do not hold your learning data, most access/deletion rights are exercised
