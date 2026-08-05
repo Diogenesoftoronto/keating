@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.9.0",
+  "checkpoint_id": "201d4ffdcdac",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "src/core/pi-agent.ts",
+    "src/core/project.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/20/1d4ffdcdac/0/metadata.json",
+      "transcript": "/20/1d4ffdcdac/0/full.jsonl",
+      "compact_transcript": "/20/1d4ffdcdac/0/transcript.jsonl",
+      "content_hash": "/20/1d4ffdcdac/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 27,
+    "cache_creation_tokens": 62113,
+    "cache_read_tokens": 1461900,
+    "output_tokens": 5033,
+    "api_call_count": 15
+  }
+}
