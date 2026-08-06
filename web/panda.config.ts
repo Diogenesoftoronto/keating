@@ -817,6 +817,19 @@ export default defineConfig({
           "55%": {
             boxShadow: "0 0 0 6px rgba(30, 155, 80, 0)"
           }
+        },
+        /** Sweeps a highlight across the bar while a size is still unknown. */
+        "model-download-sweep": {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(300%)" }
+        },
+        /**
+         * Drifting stripes over the filled part: on a multi-GB download the
+         * width can look frozen for a minute even while bytes are arriving.
+         */
+        "model-download-stripes": {
+          "0%": { backgroundPosition: "0 0" },
+          "100%": { backgroundPosition: "24px 0" }
         }
 }
     }

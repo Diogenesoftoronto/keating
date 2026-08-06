@@ -2,6 +2,18 @@
 // library plus its ONNX runtime is ~100MB and is only needed once a browser
 // model is actually selected.
 
+import {
+	deleteCachedModel,
+	readCachedModelInfo,
+	type CachedModelInfo,
+} from "../lib/model-cache";
+import {
+	DownloadTracker,
+	IDLE_DOWNLOAD_PROGRESS,
+	parseSizeLabel,
+	type DownloadProgress,
+} from "../lib/model-download-progress";
+
 export type BrowserModelKind = "multimodal" | "text";
 
 export interface BrowserModelSpec {
@@ -26,10 +38,20 @@ export interface BrowserModelSpec {
 }
 
 /**
- * Gemma-family ONNX exports that exist under the `onnx-community` org and ship
- * the weights for the dtype named here. Adding an entry means verifying both.
+ * Hugging Face exports that ship weights for the dtype named here. Adding an
+ * entry means verifying both model and runtime integration before exposing it in
+ * the selector.
  */
 export const BROWSER_MODELS: readonly BrowserModelSpec[] = [
+	{
+		// LiquidAI's own export, and the only LFM2.5 published as ONNX.
+		id: "LiquidAI/LFM2.5-2.6B-ONNX",
+		name: "LFM 2.5 2.6B (Browser)",
+		downloadLabel: "~1.6 GB",
+		kind: "text",
+		dtype: "q4f16",
+		blurb: "Best quality per byte here: 2.6B parameters in a download smaller than every other option.",
+	},
 	{
 		id: "onnx-community/gemma-4-E4B-it-ONNX",
 		name: "Gemma 4 E4B (Browser)",
@@ -46,47 +68,17 @@ export const BROWSER_MODELS: readonly BrowserModelSpec[] = [
 		dtype: "q4f16",
 		blurb: "Same generation as E4B, roughly two thirds the download.",
 	},
-	{
-		id: "onnx-community/gemma-4-E2B-it-qat-mobile-ONNX",
-		name: "Gemma 4 E2B QAT (Browser)",
-		downloadLabel: "~2.6 GB",
-		kind: "multimodal",
-		// This repo publishes only q2f16 weights; the vision encoder is fp16 only.
-		dtype: {
-			embed_tokens: "q2f16",
-			decoder_model_merged: "q2f16",
-			audio_encoder: "q2f16",
-			vision_encoder: "fp16",
-		},
-		blurb: "Quantization-aware export tuned for low-memory devices.",
-	},
-	{
-		id: "onnx-community/gemma-3n-E2B-it-ONNX",
-		name: "Gemma 3n E2B (Browser)",
-		downloadLabel: "~3.3 GB",
-		kind: "multimodal",
-		dtype: "q4f16",
-		blurb: "Previous generation. Useful as a fallback if Gemma 4 misbehaves.",
-	},
-	{
-		id: "onnx-community/gemma-3-1b-it-ONNX",
-		name: "Gemma 3 1B (Browser)",
-		downloadLabel: "~760 MB",
-		kind: "text",
-		dtype: "q4f16",
-		blurb: "Text only, but downloads in about a minute on a normal connection.",
-	},
-	{
-		id: "onnx-community/gemma-3-270m-it-ONNX",
-		name: "Gemma 3 270M (Browser)",
-		downloadLabel: "~270 MB",
-		kind: "text",
-		dtype: "q4f16",
-		blurb: "Text only and very small. Best for trying the offline path out.",
-	},
+	// Models evaluated and not shipped — the ones that load but were held back,
+	// and the ones that cannot load at all — are recorded with their measured
+	// sizes and the reason in docs/browser-models.md. Read it before adding an
+	// entry here; several obvious candidates are already ruled out.
 ];
 
-export const DEFAULT_BROWSER_MODEL_ID = "onnx-community/gemma-4-E4B-it-ONNX";
+/**
+ * Smallest download of the three by a wide margin, so first run is cheap. Text
+ * only — the Gemma entries stay for anyone who needs the multimodal path.
+ */
+export const DEFAULT_BROWSER_MODEL_ID = "LiquidAI/LFM2.5-2.6B-ONNX";
 
 export function getBrowserModel(id: string): BrowserModelSpec | undefined {
 	return BROWSER_MODELS.find((entry) => entry.id === id);
@@ -118,7 +110,13 @@ export function classifyLocalModelError(message: string, spec: BrowserModelSpec)
 	}
 
 	if (lower.includes("shader-f16") || lower.includes("shader_f16")) {
-		return `Your GPU does not support the WebGPU shader-f16 feature, which ${spec.name} needs. Try Gemma 3 1B or Gemma 3 270M instead.`;
+		return `Your GPU does not support the WebGPU shader-f16 feature, which ${spec.name} needs. Try a smaller browser model instead.`;
+	}
+
+	// ONNX Runtime's MatMulNBits kernel accepts 4-bit and 8-bit weights only, so
+	// q2/ternary exports fail at session creation no matter how they are loaded.
+	if (lower.includes("bits must be") || lower.includes("matmulnbits")) {
+		return `${spec.name} ships weights quantized below 4 bits, which the browser ONNX runtime cannot execute yet. Pick a 4-bit model from the list instead.`;
 	}
 
 	if (lower.includes("webgpu") || lower.includes("no adapter")) {
@@ -172,12 +170,12 @@ async function checkWebGpuAvailable(
 		}
 		// Every f16 export fails at session creation without this feature, with an
 		// error that is far less legible than saying so up front.
-		if (needsShaderF16(spec) && !adapterHasFeature(adapter, "shader-f16")) {
-			return {
-				available: false,
-				reason: `Your GPU reports no shader-f16 support, which ${spec.name} requires. Try Gemma 3 1B or Gemma 3 270M instead.`,
-			};
-		}
+	if (needsShaderF16(spec) && !adapterHasFeature(adapter, "shader-f16")) {
+		return {
+			available: false,
+			reason: `Your GPU reports no shader-f16 support, which ${spec.name} requires. Try a smaller browser model instead.`,
+		};
+	}
 		return { available: true };
 	} catch {
 		return {
@@ -190,7 +188,10 @@ async function checkWebGpuAvailable(
 export interface LocalModel {
 	loaded: boolean;
 	loading: boolean;
+	/** Rounded percentage of `download.percent`, kept for simple consumers. */
 	loadingProgress: number;
+	/** Size, rate and phase behind that percentage. */
+	download: DownloadProgress;
 	error: string | null;
 	/** Repo id of the model that is loaded or currently loading. */
 	modelId: string | null;
@@ -204,6 +205,7 @@ const IDLE_STATE: LocalModel = {
 	loaded: false,
 	loading: false,
 	loadingProgress: 0,
+	download: IDLE_DOWNLOAD_PROGRESS,
 	error: null,
 	modelId: null,
 	model: null,
@@ -211,11 +213,26 @@ const IDLE_STATE: LocalModel = {
 	tokenizer: null,
 };
 
+/** Progress fires far faster than a person can read; repaint at ~7fps. */
+const PROGRESS_NOTIFY_INTERVAL_MS = 140;
+/**
+ * Files finish in bursts with gaps between them, so "every file done" is only
+ * meaningful once it has held for a while. Past that, the remaining wait is
+ * graph compilation rather than network.
+ */
+const PREPARING_DELAY_MS = 1200;
+
 class LocalModelStore {
 	private state: LocalModel = IDLE_STATE;
 	private listeners: Set<(state: LocalModel) => void> = new Set();
 	private inFlight: Promise<void> | null = null;
 	private loadEpoch = 0;
+	private preparingTimer: ReturnType<typeof setTimeout> | null = null;
+	private lastProgressNotifyAt = 0;
+	private abortLoad: AbortController | null = null;
+	/** transformers.js's own fetch, before any cancellation wrapper. */
+	private baseFetch: ((input: string | URL, init?: any) => Promise<any>) | null = null;
+	private restoreFetch: (() => void) | null = null;
 
 	subscribe(listener: (state: LocalModel) => void): () => void {
 		this.listeners.add(listener);
@@ -229,9 +246,36 @@ class LocalModelStore {
 
 	private fail(spec: BrowserModelSpec, rawMessage: string): void {
 		const message = classifyLocalModelError(rawMessage, spec);
+		this.clearPreparingTimer();
 		this.state = { ...IDLE_STATE, error: message, modelId: spec.id };
 		this.notify();
 		console.error(`[local-model] ${spec.id} failed:`, rawMessage);
+	}
+
+	private clearPreparingTimer(): void {
+		if (this.preparingTimer === null) return;
+		clearTimeout(this.preparingTimer);
+		this.preparingTimer = null;
+	}
+
+	/** Store a progress snapshot, repainting no more often than the interval. */
+	private applyProgress(download: DownloadProgress, epoch: number, immediate: boolean): void {
+		if (!this.isCurrentLoad(epoch)) return;
+		this.state = { ...this.state, download, loadingProgress: Math.round(download.percent) };
+		const now = Date.now();
+		if (!immediate && now - this.lastProgressNotifyAt < PROGRESS_NOTIFY_INTERVAL_MS) return;
+		this.lastProgressNotifyAt = now;
+		this.notify();
+	}
+
+	/** Flip to "preparing" once the transfers have stayed quiet long enough. */
+	private schedulePreparingPhase(tracker: DownloadTracker, epoch: number): void {
+		this.clearPreparingTimer();
+		if (tracker.getPhase() !== "downloading" || !tracker.snapshot().allFilesDone) return;
+		this.preparingTimer = setTimeout(() => {
+			this.preparingTimer = null;
+			this.applyProgress(tracker.setPhase("preparing"), epoch, true);
+		}, PREPARING_DELAY_MS);
 	}
 
 	async load(modelId: string = DEFAULT_BROWSER_MODEL_ID): Promise<void> {
@@ -257,6 +301,50 @@ class LocalModelStore {
 		return epoch === this.loadEpoch;
 	}
 
+	/**
+	 * Stop an in-flight download. Bumping the epoch makes the abort error that
+	 * surfaces inside `from_pretrained` a no-op instead of a failure banner.
+	 */
+	cancel(): void {
+		if (!this.state.loading) return;
+		this.loadEpoch += 1;
+		this.clearPreparingTimer();
+		this.abortLoad?.abort();
+		// Unhook the aborted signal now; the rejected load may settle much later.
+		this.restoreFetch?.();
+		this.restoreFetch = null;
+		this.abortLoad = null;
+		this.state = { ...IDLE_STATE };
+		this.notify();
+	}
+
+	/** Drop the loaded model, freeing GPU memory. Cached files are untouched. */
+	async unload(): Promise<void> {
+		this.cancel();
+		const model = this.state.model as { dispose?: () => Promise<void> | void } | null;
+		this.state = { ...IDLE_STATE };
+		this.notify();
+		try {
+			await model?.dispose?.();
+		} catch {
+			// A model that fails to dispose is still unreachable from here.
+		}
+	}
+
+	/** How much of a model is already downloaded, in bytes. */
+	async cachedSize(modelId: string): Promise<number> {
+		return (await readCachedModelInfo(modelId)).bytes;
+	}
+
+	/**
+	 * Delete a model's cached weights. Unloads first when it is the live model,
+	 * so the deletion also frees GPU memory rather than only disk.
+	 */
+	async removeDownload(modelId: string): Promise<CachedModelInfo> {
+		if (this.state.modelId === modelId) await this.unload();
+		return deleteCachedModel(modelId);
+	}
+
 	private async performLoad(modelId: string, epoch: number): Promise<void> {
 		const spec = getBrowserModel(modelId);
 		if (!spec) {
@@ -272,9 +360,18 @@ class LocalModelStore {
 		}
 
 		if (!this.isCurrentLoad(epoch)) return;
-		this.state = { ...IDLE_STATE, loading: true, modelId };
+		this.clearPreparingTimer();
+		this.lastProgressNotifyAt = 0;
+		const tracker = new DownloadTracker(parseSizeLabel(spec.downloadLabel));
+		this.state = {
+			...IDLE_STATE,
+			loading: true,
+			modelId,
+			download: tracker.setPhase("checking"),
+		};
 		this.notify();
 
+		let restoreFetch: (() => void) | null = null;
 		try {
 			const gpuCheck = await checkWebGpuAvailable(spec);
 			if (!this.isCurrentLoad(epoch)) return;
@@ -285,8 +382,6 @@ class LocalModelStore {
 				return;
 			}
 
-			console.log(`[local-model] loading ${spec.id} (${spec.downloadLabel})`);
-
 			const { AutoProcessor, AutoTokenizer, AutoModelForCausalLM, env } = await import(
 				"@huggingface/transformers"
 			);
@@ -294,6 +389,32 @@ class LocalModelStore {
 			// Never attempt to resolve models from the app's own origin.
 			env.allowLocalModels = false;
 			env.useBrowserCache = true;
+			// `from_pretrained` takes no abort signal, but every request it makes
+			// goes through this hook, so cancelling really does stop the transfer.
+			const controller = new AbortController();
+			this.abortLoad = controller;
+			// Captured once. Wrapping whatever is currently installed would chain a
+			// cancelled load's wrapper — and its already-aborted signal — into the
+			// retry that replaced it.
+			this.baseFetch ??= env.fetch;
+			const baseFetch = this.baseFetch;
+			env.fetch = (input: string | URL, init?: any) =>
+				baseFetch(input, { ...init, signal: controller.signal });
+			restoreFetch = () => {
+				// Whichever of cancel() and the finally block runs first restores the
+				// hook; a newer load owning it means neither should touch it.
+				if (this.abortLoad !== controller) return;
+				env.fetch = baseFetch;
+				this.abortLoad = null;
+			};
+			this.restoreFetch = restoreFetch;
+			// The ONNX runtime narrates every session it builds; the progress bar
+			// already says what is happening, so keep the console for real errors.
+			env.backends.onnx.logLevel = "error";
+
+			// Cached weights emit no progress events at all, so say "preparing"
+			// rather than sitting at 0% for the whole load.
+			this.applyProgress(tracker.setPhase("preparing"), epoch, true);
 
 			// Text-only repos have no processor_config.json; AutoProcessor throws on them.
 			const processor =
@@ -305,22 +426,21 @@ class LocalModelStore {
 			const model = await AutoModelForCausalLM.from_pretrained(spec.id, {
 				dtype: spec.dtype as any,
 				device: "webgpu",
-				progress_callback: (progress: any) => {
+				progress_callback: (event: any) => {
 					if (!this.isCurrentLoad(epoch)) return;
-					if (progress.status === "progress" || progress.status === "progress_total") {
-						const pct = Math.round(progress.progress ?? 0);
-						this.state = { ...this.state, loadingProgress: pct };
-						this.notify();
-					}
+					this.applyProgress(tracker.update(event), epoch, false);
+					this.schedulePreparingPhase(tracker, epoch);
 				},
 			});
 
+			this.clearPreparingTimer();
 			if (!this.isCurrentLoad(epoch)) return;
 
 			this.state = {
 				loaded: true,
 				loading: false,
 				loadingProgress: 100,
+				download: tracker.setPhase("ready"),
 				error: null,
 				modelId: spec.id,
 				model,
@@ -328,10 +448,13 @@ class LocalModelStore {
 				tokenizer,
 			};
 			this.notify();
-			console.log(`[local-model] ${spec.id} ready`);
 		} catch (error) {
+			// A cancelled load has already bumped the epoch, so its abort error
+			// lands here and is correctly ignored.
 			if (!this.isCurrentLoad(epoch)) return;
 			this.fail(spec, error instanceof Error ? error.message : String(error));
+		} finally {
+			restoreFetch?.();
 		}
 	}
 
@@ -348,13 +471,13 @@ class LocalModelStore {
 		if (!spec) throw new Error(`Unknown browser model: ${modelId}`);
 
 		try {
-			// Multimodal templates expect typed content parts; the text-only Gemma 3
-			// templates take a plain string.
-			const messages = [
-				{
-					role: "user",
-					content:
-						spec.kind === "multimodal" ? [{ type: "text", text: prompt }] : prompt,
+				// Multimodal templates expect typed content parts; text-only templates
+				// take a plain string.
+				const messages = [
+					{
+						role: "user",
+						content:
+							spec.kind === "multimodal" ? [{ type: "text", text: prompt }] : prompt,
 				},
 			];
 

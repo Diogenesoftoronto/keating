@@ -20,6 +20,8 @@ import {
 	type ChatCapabilityFilter,
 } from "../keating/model-capabilities";
 import { MultiSelectDropdown } from "./MultiSelectDropdown";
+import { ModelCacheControls, ModelDownloadBar } from "./ModelDownloadBar";
+import { refreshCachedModelSizes, useCachedModelSize } from "../hooks/useCachedModelSize";
 import { css } from "../../styled-system/css";
 
 function makeBrowserModels(): Model<Api>[] {
@@ -503,11 +505,19 @@ function ModelOption({
 	// row whose id it actually refers to.
 	const isActive = isBrowser && localState?.modelId === model.id;
 	const spec = isBrowser ? getBrowserModel(model.id) : undefined;
+	const cached = useCachedModelSize(model.id, isBrowser);
+	const justLoaded = Boolean(isActive && localState?.loaded);
+
+	// A finished download changes what is on disk, so the size shown alongside
+	// the delete control has to be re-read.
+	useEffect(() => {
+		if (justLoaded) refreshCachedModelSizes();
+	}, [justLoaded]);
 
 	const status = (): string => {
 		if (!isBrowser) return "";
 		if (!webGpuAvailable) return "WebGPU not available";
-		if (isActive && localState?.loading) return `Downloading… ${localState.loadingProgress}%`;
+		// The loading case renders ModelDownloadBar instead of a status line.
 		if (isActive && localState?.loaded) return "Model ready";
 		if (isActive && localState?.error) return localState.error;
 		return `Downloads on demand — ${spec?.downloadLabel ?? "size unknown"}`;
@@ -555,25 +565,41 @@ function ModelOption({
 							))}
 						</div>
 					)}
-					{status() && (
-						<div className={css({
-							marginTop: "0.25rem",
-							fontSize: "0.75rem",
-							color: (isActive && localState?.error) || !webGpuAvailable
-								? "var(--destructive)"
-								: isActive && localState?.loaded
-									? "var(--primary)"
-									: isActive && localState?.loading
-										? "#2563eb"
+					{isActive && localState?.loading ? (
+						<ModelDownloadBar
+							progress={localState.download}
+							modelName={model.name.replace(/\s*\(Browser\)$/, "")}
+							sizeLabel={spec?.downloadLabel}
+							onCancel={() => {
+								localModel.cancel();
+								// Partial transfers leave cached files behind.
+								refreshCachedModelSizes();
+							}}
+						/>
+					) : (
+						status() && (
+							<div className={css({
+								marginTop: "0.25rem",
+								fontSize: "0.75rem",
+								color: (isActive && localState?.error) || !webGpuAvailable
+									? "var(--destructive)"
+									: isActive && localState?.loaded
+										? "var(--primary)"
 										: "var(--muted-foreground)",
-						})}>
-							{status()}
-							{isActive && localState?.loading && (
-								<div className={css({ marginTop: "0.25rem", height: "0.25rem", width: "100%", overflow: "hidden", borderRadius: "9999px", background: "color-mix(in srgb, var(--muted-foreground) 20%, transparent)" })}>
-									<div className={css({ height: "100%", borderRadius: "9999px", background: "#2563eb", transition: "all 150ms" })} style={{ width: `${localState.loadingProgress}%` }} />
-								</div>
-							)}
-						</div>
+							})}>
+								{status()}
+							</div>
+						)
+					)}
+					{isBrowser && !(isActive && localState?.loading) && (
+						<ModelCacheControls
+							cachedBytes={cached.bytes}
+							loaded={Boolean(isActive && localState?.loaded)}
+							onRemove={async () => {
+								await localModel.removeDownload(model.id);
+								refreshCachedModelSizes();
+							}}
+						/>
 					)}
 				</div>
 			</div>
