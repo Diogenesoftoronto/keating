@@ -25,7 +25,7 @@ import { signalHostedSearchActivation } from "../keating/search";
 // prefer applyProviderWebSearch so capability negotiation stays centralized.
 export { applyGoogleSearchGrounding, applyProviderWebSearch };
 import { getProviderApiKey } from "../lib/provider-models";
-import { localModel, getModelName, getModelId } from "../stores/local-model";
+import { localModel, DEFAULT_BROWSER_MODEL_ID } from "../stores/local-model";
 
 export const DEFAULT_MODEL = NOTORGANIC_DEFAULT_MODEL;
 
@@ -55,14 +55,16 @@ export function withProviderWebSearch(
 }
 
 function createBrowserStreamFn() {
-	return async (_model: Model<Api>, context: Context, options?: SimpleStreamOptions) => {
+	return async (model: Model<Api>, context: Context, options?: SimpleStreamOptions) => {
 		const stream = createAssistantMessageEventStream();
 		const abortSignal = options?.signal;
+		// Report the model that was actually selected, not the catalog default.
+		const modelId = model.id || DEFAULT_BROWSER_MODEL_ID;
 
 		const defaultFields = {
 			api: "browser" as const,
 			provider: "browser" as const,
-			model: getModelId(),
+			model: modelId,
 			usage: {
 				input: 0,
 				output: 0,
@@ -85,6 +87,16 @@ function createBrowserStreamFn() {
 						timestamp: Date.now(),
 					} as AssistantMessage);
 					return;
+				}
+
+				// Selecting a different browser model has to swap the loaded weights
+				// before any tokens are generated.
+				if (localModel.getState().modelId !== modelId || !localModel.getState().loaded) {
+					await localModel.load(modelId);
+					const loadState = localModel.getState();
+					if (!loadState.loaded) {
+						throw new Error(loadState.error ?? `Could not load ${modelId}`);
+					}
 				}
 
 				const userMessages = context.messages
@@ -151,12 +163,16 @@ function createBrowserStreamFn() {
 					timestamp: Date.now(),
 				} as AssistantMessage);
 			} catch (error) {
+				const message = error instanceof Error ? error.message : String(error);
+				// Without this the failure is invisible: the UI shows the generic
+				// "Request failed" card and nothing reaches the console.
+				console.error(`[keating-stream] browser model ${modelId} failed:`, error);
 				stream.end({
 					...defaultFields,
 					role: "assistant",
 					content: [],
 					stopReason: "error",
-					errorMessage: error instanceof Error ? error.message : String(error),
+					errorMessage: message,
 					timestamp: Date.now(),
 				} as AssistantMessage);
 			}
