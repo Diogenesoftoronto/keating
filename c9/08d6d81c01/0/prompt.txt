@@ -1,0 +1,41 @@
+hey can you improve the download bar for the browser models?
+
+---
+
+add a cancel button as well and a delete.
+
+---
+
+.
+
+---
+
+btw when loading the qat model on prod i got the error bits must be 4 or 8
+
+---
+
+.
+
+---
+
+.
+
+---
+
+figure out the actual load size of maple ternary should be lower tbh and the other issue is that gguf that binary and ternary needs to get converted to work with onnx look for people doing that
+
+---
+
+what about gemma 12b and could you make onnx versions?
+
+---
+
+okay what about lfm2.5 2.6b?
+
+---
+
+get rid o ft he other models options but not the models mentioned here put those in a document to introduce later
+
+---
+
+we can also keep the gemma e4b and e2b

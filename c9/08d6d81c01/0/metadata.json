@@ -1,0 +1,161 @@
+{
+  "cli_version": "0.9.0",
+  "checkpoint_id": "c908d6d81c01",
+  "session_id": "dee818fb-bdc0-4f15-93a5-a4743ecdbc1e",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-06T21:17:13.976663939Z",
+  "branch": "fix-browser-model-dtypes",
+  "checkpoints_count": 6,
+  "save_step_count": 6,
+  "files_touched": [
+    "CHANGELOG.md",
+    "docs/browser-models.md",
+    "web/panda.config.ts",
+    "web/src/components/ModelDownloadBar.tsx",
+    "web/src/components/ModelSelector.tsx",
+    "web/src/lib/model-download-progress.ts",
+    "web/src/stores/local-model.ts",
+    "web/src/test/model-cache.test.ts",
+    "web/src/test/model-download-progress.test.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-5[1m]",
+  "turn_id": "0638af06461d",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 293,
+    "cache_creation_tokens": 1390406,
+    "cache_read_tokens": 19648939,
+    "output_tokens": 99506,
+    "api_call_count": 157
+  },
+  "session_metrics": {
+    "turn_count": 6
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-08-06T21:17:13.913449623Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 2040,
+    "human_modified": 93,
+    "human_removed": 0,
+    "total_committed": 2040,
+    "total_lines_changed": 2133,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 62,
+      "user_lines_removed": 41,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "CHANGELOG.md": 1,
+        "web/src/stores/local-model.ts": 61
+      },
+      "user_removed_per_file": {
+        "CHANGELOG.md": 1,
+        "web/src/stores/local-model.ts": 40
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 402,
+      "user_lines_removed": 7,
+      "agent_lines_added": 700,
+      "agent_lines_removed": 70,
+      "user_added_per_file": {
+        "web/src/components/ModelDownloadBar.tsx": 143,
+        "web/src/components/ModelSelector.tsx": 25,
+        "web/src/hooks/useCachedModelSize.ts": 46,
+        "web/src/lib/model-cache.ts": 125,
+        "web/src/stores/local-model.ts": 63
+      },
+      "user_removed_per_file": {
+        "web/src/components/ModelDownloadBar.tsx": 6,
+        "web/src/components/ModelSelector.tsx": 1
+      }
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 314,
+      "user_lines_removed": 6,
+      "agent_lines_added": 902,
+      "agent_lines_removed": 70,
+      "user_added_per_file": {
+        "web/src/components/ModelDownloadBar.tsx": 143,
+        "web/src/hooks/useCachedModelSize.ts": 46,
+        "web/src/lib/model-cache.ts": 125
+      },
+      "user_removed_per_file": {
+        "web/src/components/ModelDownloadBar.tsx": 6
+      }
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 314,
+      "user_lines_removed": 6,
+      "agent_lines_added": 913,
+      "agent_lines_removed": 82,
+      "user_added_per_file": {
+        "web/src/components/ModelDownloadBar.tsx": 143,
+        "web/src/hooks/useCachedModelSize.ts": 46,
+        "web/src/lib/model-cache.ts": 125
+      },
+      "user_removed_per_file": {
+        "web/src/components/ModelDownloadBar.tsx": 6
+      }
+    },
+    {
+      "checkpoint_number": 5,
+      "user_lines_added": 314,
+      "user_lines_removed": 6,
+      "agent_lines_added": 923,
+      "agent_lines_removed": 82,
+      "user_added_per_file": {
+        "web/src/components/ModelDownloadBar.tsx": 143,
+        "web/src/hooks/useCachedModelSize.ts": 46,
+        "web/src/lib/model-cache.ts": 125
+      },
+      "user_removed_per_file": {
+        "web/src/components/ModelDownloadBar.tsx": 6
+      }
+    },
+    {
+      "checkpoint_number": 6,
+      "user_lines_added": 322,
+      "user_lines_removed": 13,
+      "agent_lines_added": 923,
+      "agent_lines_removed": 82,
+      "user_added_per_file": {
+        "web/src/components/ModelDownloadBar.tsx": 143,
+        "web/src/hooks/useCachedModelSize.ts": 46,
+        "web/src/lib/model-cache.ts": 125,
+        "web/src/stores/local-model.ts": 8
+      },
+      "user_removed_per_file": {
+        "web/src/components/ModelDownloadBar.tsx": 6,
+        "web/src/stores/local-model.ts": 7
+      }
+    },
+    {
+      "checkpoint_number": 7,
+      "user_lines_added": 319,
+      "user_lines_removed": 7,
+      "agent_lines_added": 987,
+      "agent_lines_removed": 84,
+      "user_added_per_file": {
+        "web/src/components/ModelDownloadBar.tsx": 143,
+        "web/src/hooks/useCachedModelSize.ts": 46,
+        "web/src/lib/model-cache.ts": 125,
+        "web/src/stores/local-model.ts": 5
+      },
+      "user_removed_per_file": {
+        "web/src/components/ModelDownloadBar.tsx": 6,
+        "web/src/stores/local-model.ts": 1
+      }
+    }
+  ]
+}
