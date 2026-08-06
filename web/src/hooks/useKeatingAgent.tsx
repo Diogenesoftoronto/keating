@@ -434,9 +434,11 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     return () => window.removeEventListener("keating:question-answered", onQuestionAnswered);
   }, []);
 
-  async function loadBrowserModel() {
+  async function loadBrowserModel(modelId?: string) {
     const state = localModel.getState();
-    if (!state.loaded && !state.loading) await localModel.load();
+    if (!state.loaded || (modelId && state.modelId !== modelId)) {
+      await localModel.load(modelId);
+    }
     if (!localModel.getState().loaded) {
       throw new Error(localModel.getState().error ?? "Failed to load browser model");
     }
@@ -631,7 +633,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
         const model = agent.state.model as Model<Api>;
         try {
           if (model.provider === "browser") {
-            await loadBrowserModel();
+            await loadBrowserModel(model.id);
           } else if (!(await getProviderApiKey(model.provider))) {
             return;
           }
@@ -685,7 +687,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     const model = agent.state.model as Model<Api>;
     try {
       if (model.provider === "browser") {
-        await loadBrowserModel();
+        await loadBrowserModel(model.id);
       } else if (!(await getProviderApiKey(model.provider))) {
         return;
       }
@@ -1417,7 +1419,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
 
     const model = session.model ?? selectedModelRef.current;
     if (model.provider === "browser") {
-      await loadBrowserModel();
+      await loadBrowserModel(model.id);
     } else if (!(await getProviderApiKey(model.provider))) {
       const allowed = await promptKeatingApiKey(model.provider);
       if (!allowed) throw new Error(`No API key available for ${model.provider}`);
@@ -1533,7 +1535,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
           session_id: sessionIdRef.current,
         });
         startTransition(async () => {
-          if (model.provider === "browser") await loadBrowserModel();
+          if (model.provider === "browser") await loadBrowserModel(model.id);
           selectedModelRef.current = model;
           const agent = agentRef.current;
           if (agent) {

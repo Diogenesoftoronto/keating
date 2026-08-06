@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { RefreshCw, Search, X } from "lucide-react";
 import { getProviders, type Api, type Model } from "@earendil-works/pi-ai/compat";
-import { localModel, getModelName, getModelId, type LocalModel } from "../stores/local-model";
+import {
+	localModel,
+	BROWSER_MODELS,
+	DEFAULT_BROWSER_MODEL_ID,
+	getBrowserModel,
+	type LocalModel,
+} from "../stores/local-model";
 import { getSelectableModels, buildSavedModel } from "../lib/provider-models";
 import type { ImageGeneratorOption } from "../lib/image-generators";
 import type { SpeechProviderDescriptor } from "../keating/speech";
@@ -16,10 +22,10 @@ import {
 import { MultiSelectDropdown } from "./MultiSelectDropdown";
 import { css } from "../../styled-system/css";
 
-function makeBrowserModel(): Model<Api> {
-	return {
-		id: getModelId(),
-		name: getModelName(),
+function makeBrowserModels(): Model<Api>[] {
+	return BROWSER_MODELS.map((spec) => ({
+		id: spec.id,
+		name: spec.name,
 		api: "browser" as Api,
 		provider: "browser",
 		baseUrl: "",
@@ -28,7 +34,12 @@ function makeBrowserModel(): Model<Api> {
 		cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
 		contextWindow: 0,
 		maxTokens: 0,
-	};
+	}));
+}
+
+function defaultBrowserModel(): Model<Api> {
+	const models = makeBrowserModels();
+	return models.find((model) => model.id === DEFAULT_BROWSER_MODEL_ID) ?? models[0];
 }
 
 type SelectableModel = {
@@ -107,7 +118,13 @@ async function discoverModels(webGpuAvailable: boolean): Promise<SelectableModel
 	}));
 
 	if (webGpuAvailable) {
-		selectable.unshift({ key: modelKey(makeBrowserModel()), model: makeBrowserModel(), group: "browser" });
+		selectable.unshift(
+			...makeBrowserModels().map((model) => ({
+				key: modelKey(model),
+				model,
+				group: "browser" as const,
+			})),
+		);
 	}
 
 	return Array.from(new Map(selectable.map((entry) => [entry.key, entry])).values());
@@ -125,7 +142,7 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 	const [search, setSearch] = useState("");
 	const [providerFilters, setProviderFilters] = useState<string[]>([]);
 	const [capabilityFilters, setCapabilityFilters] = useState<ChatCapabilityFilter[]>([]);
-	const [selectedKey, setSelectedKey] = useState(currentModel ? modelKey(currentModel) : modelKey(makeBrowserModel()));
+	const [selectedKey, setSelectedKey] = useState(currentModel ? modelKey(currentModel) : modelKey(defaultBrowserModel()));
 	const [localState, setLocalState] = useState<LocalModel | null>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const loadRequestRef = useRef(0);
@@ -143,7 +160,11 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 		} catch (err) {
 			if (requestId !== loadRequestRef.current) return;
 			const fallbackModels = browserAvailable
-				? [{ key: modelKey(makeBrowserModel()), model: makeBrowserModel(), group: "browser" as const }]
+				? makeBrowserModels().map((model) => ({
+						key: modelKey(model),
+						model,
+						group: "browser" as const,
+					}))
 				: [];
 			dispatchCatalog({
 				type: "error",
@@ -162,7 +183,7 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 		setSearch("");
 		setProviderFilters([]);
 		setCapabilityFilters([]);
-		setSelectedKey(currentModel ? modelKey(currentModel) : modelKey(makeBrowserModel()));
+		setSelectedKey(currentModel ? modelKey(currentModel) : modelKey(defaultBrowserModel()));
 		const unsub = localModel.subscribe(setLocalState);
 		void refreshModels();
 		const focusTimer = window.setTimeout(() => inputRef.current?.focus(), 50);
@@ -205,8 +226,8 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 	const handleSelect = async () => {
 		const selected = models.find((e) => e.key === selectedKey)?.model;
 		if (!selected) return;
-		if (selected.provider === "browser" && !localState?.loaded) {
-			await localModel.load();
+		if (selected.provider === "browser" && localModel.getState().modelId !== selected.id) {
+			await localModel.load(selected.id);
 			if (!localModel.getState().loaded) return;
 		}
 		addRecentModel(modelKey(selected));
@@ -478,13 +499,18 @@ function ModelOption({
 		...modelCapabilityBadges(model),
 	].filter(Boolean);
 
+	// The store holds one model at a time, so every status below is scoped to the
+	// row whose id it actually refers to.
+	const isActive = isBrowser && localState?.modelId === model.id;
+	const spec = isBrowser ? getBrowserModel(model.id) : undefined;
+
 	const status = (): string => {
-		if (model.provider !== "browser") return "";
+		if (!isBrowser) return "";
 		if (!webGpuAvailable) return "WebGPU not available";
-		if (localState?.loading) return `Loading browser model... ${localState.loadingProgress}%`;
-		if (localState?.loaded) return "Model ready";
-		if (localState?.error) return localState.error;
-		return "Loads on demand when selected";
+		if (isActive && localState?.loading) return `Downloading… ${localState.loadingProgress}%`;
+		if (isActive && localState?.loaded) return "Model ready";
+		if (isActive && localState?.error) return localState.error;
+		return `Downloads on demand — ${spec?.downloadLabel ?? "size unknown"}`;
 	};
 
 	return (
@@ -517,7 +543,7 @@ function ModelOption({
 			<div className={css({ minWidth: 0, flex: 1 })}>
 				<div className={css({ fontSize: "0.875rem", fontWeight: 700, lineHeight: 1.25 })}>{model.name}</div>
 				<div className={css({ marginTop: "0.125rem", fontSize: { base: "0.6875rem", sm: "0.75rem" }, color: "var(--muted-foreground)" })}>
-					{isBrowser ? "Runs in this browser" : `Provider: ${model.provider}`}
+					{isBrowser ? spec?.blurb ?? "Runs in this browser" : `Provider: ${model.provider}`}
 				</div>
 				<div className={css({ fontSize: { base: "0.6875rem", sm: "0.75rem" }, color: "var(--muted-foreground)" })}>{model.id}</div>
 				{badges.length > 0 && (
@@ -533,16 +559,16 @@ function ModelOption({
 						<div className={css({
 							marginTop: "0.25rem",
 							fontSize: "0.75rem",
-							color: status().includes("error") || status().includes("not available")
+							color: (isActive && localState?.error) || !webGpuAvailable
 								? "var(--destructive)"
-								: status().includes("ready")
+								: isActive && localState?.loaded
 									? "var(--primary)"
-									: status().includes("Loading")
+									: isActive && localState?.loading
 										? "#2563eb"
 										: "var(--muted-foreground)",
 						})}>
 							{status()}
-							{localState?.loading && (
+							{isActive && localState?.loading && (
 								<div className={css({ marginTop: "0.25rem", height: "0.25rem", width: "100%", overflow: "hidden", borderRadius: "9999px", background: "color-mix(in srgb, var(--muted-foreground) 20%, transparent)" })}>
 									<div className={css({ height: "100%", borderRadius: "9999px", background: "#2563eb", transition: "all 150ms" })} style={{ width: `${localState.loadingProgress}%` }} />
 								</div>
