@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-08-06
+
 ### Changed
 - Browser model downloads now aggregate progress across every file instead of following the newest one, so the bar no longer rewinds each time a shard starts, and report transferred size, transfer rate, and a coarse ETA. A separate indeterminate "Preparing model…" state covers cached loads and on-device graph compilation, and the bar carries `role="progressbar"` with live values.
 - Quieted routine browser-model console output: the store no longer logs load start/ready, and the ONNX runtime log level is pinned to errors.
@@ -18,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `docs/browser-models.md`: the four requirements a model must meet to run in the browser, measured download sizes for every candidate evaluated, verified-loadable models queued for later (LFM2 1.2B, Bonsai 8B/4B/1.7B), and what was ruled out and why (Gemma 12B, Maple, Bonsai 27B, the ternary and QAT exports).
 - Cancel button on an in-flight browser model download. `from_pretrained` takes no abort signal, so the store routes transformers.js's `env.fetch` hook through an `AbortController` — cancelling stops the transfer rather than just hiding the bar.
 - Delete control on any browser model with cached weights, showing what it occupies and freeing it from the Cache API on confirm. Deleting the live model unloads it first so GPU memory is released too.
+- Synchronized runtime metadata and package manifests to `3.2.0` across root, web, mobile, package, and bundled artifact entry points.
+- The default browser model is now LFM 2.5 2.6B (1.55 GB) rather than Gemma 4 E4B (~5.2 GB), so a first run costs a third of the download. It is text-only; the Gemma entries remain for the multimodal path.
 
 ## [3.1.1] - 2026-08-06
 
