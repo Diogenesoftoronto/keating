@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.9.0",
+  "checkpoint_id": "deac9e02fce4",
+  "strategy": "manual-commit",
+  "branch": "fix-browser-model-dtypes",
+  "checkpoints_count": 6,
+  "files_touched": [
+    "CHANGELOG.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/de/ac9e02fce4/0/metadata.json",
+      "transcript": "/de/ac9e02fce4/0/full.jsonl",
+      "compact_transcript": "/de/ac9e02fce4/0/transcript.jsonl",
+      "content_hash": "/de/ac9e02fce4/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 9,
+    "cache_creation_tokens": 2628,
+    "cache_read_tokens": 1044009,
+    "output_tokens": 1650,
+    "api_call_count": 5
+  }
+}
