@@ -7,10 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Browser model downloads now aggregate progress across every file instead of following the newest one, so the bar no longer rewinds each time a shard starts, and report transferred size, transfer rate, and a coarse ETA. A separate indeterminate "Preparing model…" state covers cached loads and on-device graph compilation, and the bar carries `role="progressbar"` with live values.
+- Quieted routine browser-model console output: the store no longer logs load start/ready, and the ONNX runtime log level is pinned to errors.
+
+### Removed
+- Cut the browser model list to three verified entries: LFM 2.5 2.6B, Gemma 4 E4B, and Gemma 4 E2B. The Bonsai 27B GGUF, Maple Preview, and Gemma 4 E2B QAT entries could never load — GGUF and safetensors are not ONNX, and the QAT repo's q2f16 weights fail ONNX Runtime's 4-bit/8-bit `MatMulNBits` limit with "bits must be 4 or 8". Sub-4-bit exports now get a legible error instead of the raw kernel message.
+
+### Added
+- `docs/browser-models.md`: the four requirements a model must meet to run in the browser, measured download sizes for every candidate evaluated, verified-loadable models queued for later (LFM2 1.2B, Bonsai 8B/4B/1.7B), and what was ruled out and why (Gemma 12B, Maple, Bonsai 27B, the ternary and QAT exports).
+- Cancel button on an in-flight browser model download. `from_pretrained` takes no abort signal, so the store routes transformers.js's `env.fetch` hook through an `AbortController` — cancelling stops the transfer rather than just hiding the bar.
+- Delete control on any browser model with cached weights, showing what it occupies and freeing it from the Cache API on confirm. Deleting the live model unloads it first so GPU memory is released too.
+
 ## [3.1.1] - 2026-08-06
 
 ### Added
-- Added multiple browser model options for on-device inference (Gemma 4/3 families with download size metadata and usage notes) so learners can choose model size/latency tradeoffs for their device.
+- Added new browser model registry entries for LFM 2.6B, LFM 2.5 1.2B, Bonsai 27B, and Maple Preview, alongside existing Gemma 4 options, with usage notes and download size metadata for on-device selection.
 
 ### Changed
 - Updated browser model selection plumbing so model-specific state is tracked end-to-end (`selector` → stream execution → session dispatch), including explicit default fallback handling and per-model loading.
