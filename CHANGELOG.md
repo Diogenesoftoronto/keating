@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.1] - 2026-08-06
+
+### Added
+- Added multiple browser model options for on-device inference (Gemma 4/3 families with download size metadata and usage notes) so learners can choose model size/latency tradeoffs for their device.
+
+### Changed
+- Updated browser model selection plumbing so model-specific state is tracked end-to-end (`selector` → stream execution → session dispatch), including explicit default fallback handling and per-model loading.
+- Synchronized runtime metadata and package manifests to `3.1.1` across root, web, mobile, package, and bundled artifact entry points as part of the release.
+
+### Fixed
+- Fixed browser model status behavior to show loading/error readiness for the currently selected model row rather than stale global loading state.
+- Fixed browser model inference failures to include actionable model-specific error messages in stream payloads and console output.
+
 ## [3.0.0] - 2026-08-04
 
 ### Added
@@ -635,7 +648,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v3.0.0...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v3.1.1...HEAD
+[3.1.1]: https://github.com/Diogenesoftoronto/keating/compare/v3.0.0...v3.1.1
 [3.0.0]: https://github.com/Diogenesoftoronto/keating/compare/v2.10.0...v3.0.0
 [2.10.0]: https://github.com/Diogenesoftoronto/keating/compare/v2.9.0...v2.10.0
 [2.9.0]: https://github.com/Diogenesoftoronto/keating/compare/v2.8.0...v2.9.0
