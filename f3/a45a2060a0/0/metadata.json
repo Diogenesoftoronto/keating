@@ -1,0 +1,75 @@
+{
+  "cli_version": "0.9.0",
+  "checkpoint_id": "f3a45a2060a0",
+  "session_id": "ses_01c4edd04ffeumB3L2GaZwMbxT",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-08T23:26:23.915521984Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "CHANGELOG.md"
+  ],
+  "agent": "OpenCode",
+  "model": "",
+  "turn_id": "8dc55b374911",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 65029,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1262080,
+    "output_tokens": 8259,
+    "api_call_count": 24
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-08-08T23:26:23.893728878Z",
+    "agent_lines": 15,
+    "agent_removed": 0,
+    "human_added": 10,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 25,
+    "total_lines_changed": 35,
+    "agent_percentage": 42.857142857142854,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 3186,
+      "user_lines_removed": 1187,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "SYSTEM.md": 59,
+        "web/src/components/AssistantChatPanel.tsx": 282,
+        "web/src/components/live/LiveConversation.tsx": 626,
+        "web/src/components/live/LiveVisualizer.tsx": 213,
+        "web/src/components/live/use-live-session.ts": 466,
+        "web/src/hooks/useKeatingAgent.tsx": 31,
+        "web/src/keating/live-audio-level.ts": 120,
+        "web/src/keating/live-errors.ts": 308,
+        "web/src/keating/live-models.ts": 165,
+        "web/src/keating/speech-providers/gemini-live.ts": 46,
+        "web/src/keating/speech-providers/openai-realtime.ts": 50,
+        "web/src/keating/speech.ts": 26,
+        "web/src/keating/video-capture.ts": 102,
+        "web/src/pages/Chat.tsx": 38,
+        "web/src/pages/Live.tsx": 286,
+        "web/src/test/live-audio-level.test.ts": 92,
+        "web/src/test/live-errors.test.ts": 138,
+        "web/src/test/live-models.test.ts": 99,
+        "web/src/test/video-capture.test.ts": 39
+      },
+      "user_removed_per_file": {
+        "SYSTEM.md": 25,
+        "web/src/components/AssistantChatPanel.tsx": 610,
+        "web/src/hooks/useKeatingAgent.tsx": 3,
+        "web/src/keating/speech-providers/gemini-live.ts": 16,
+        "web/src/keating/speech-providers/openai-realtime.ts": 8,
+        "web/src/keating/video-capture.ts": 11,
+        "web/src/pages/Live.tsx": 513,
+        "web/src/test/video-capture.test.ts": 1
+      }
+    }
+  ]
+}
