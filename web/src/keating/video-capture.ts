@@ -24,6 +24,9 @@ const HISTOGRAM_BINS = 32;
 
 export type VideoSource = "camera" | "screen";
 
+/** Which camera to open. "user" is the selfie camera, "environment" the rear one. */
+export type CameraFacing = "user" | "environment";
+
 export interface VideoCaptureOptions {
 	source?: VideoSource;
 	/** Milliseconds between sampled frames. Floored to MIN_FRAME_INTERVAL_MS. */
@@ -33,6 +36,10 @@ export interface VideoCaptureOptions {
 	jpegQuality?: number;
 	/** Set to 0 to emit every frame regardless of similarity. */
 	similarityThreshold?: number;
+	/** Camera side to prefer. Ignored for screen capture. */
+	facing?: CameraFacing;
+	/** Exact camera to open, when the learner has picked one. */
+	deviceId?: string;
 }
 
 export interface NormalizedCaptureOptions {
@@ -41,6 +48,8 @@ export interface NormalizedCaptureOptions {
 	maxEdge: number;
 	jpegQuality: number;
 	similarityThreshold: number;
+	facing: CameraFacing;
+	deviceId?: string;
 }
 
 export interface CapturedFrame {
@@ -60,12 +69,21 @@ export interface VideoCaptureHandle {
 	/** Live stream, for rendering a local preview. */
 	readonly stream: MediaStream;
 	readonly source: VideoSource;
+	/** Which camera this handle opened, for the flip control. */
+	readonly facing: CameraFacing;
 	/** Frames emitted so far, including on-demand captures. */
 	readonly frameCount: number;
 	/** Subscribe to the sampled frame feed. Returns an unsubscribe function. */
 	onFrame(listener: FrameListener): () => void;
 	/** Grab a frame immediately, bypassing the interval and similarity skip. */
 	captureFrameNow(): Promise<CapturedFrame | null>;
+	/**
+	 * Fires when capture ends on its own — the learner pressed the browser's
+	 * "stop sharing" chrome, or the device was unplugged. Without it the UI keeps
+	 * showing a preview of a stream that is already dead.
+	 */
+	onEnded(listener: () => void): () => void;
+	readonly stopped: boolean;
 	stop(): void;
 }
 
@@ -76,6 +94,8 @@ export function normalizeCaptureOptions(options: VideoCaptureOptions = {}): Norm
 		maxEdge: Math.max(64, Math.floor(options.maxEdge ?? DEFAULT_MAX_EDGE)),
 		jpegQuality: Math.min(1, Math.max(0.1, options.jpegQuality ?? DEFAULT_JPEG_QUALITY)),
 		similarityThreshold: Math.max(0, options.similarityThreshold ?? DEFAULT_SIMILARITY_THRESHOLD),
+		facing: options.facing === "environment" ? "environment" : "user",
+		deviceId: typeof options.deviceId === "string" && options.deviceId ? options.deviceId : undefined,
 	};
 }
 
@@ -137,25 +157,48 @@ export function framesAreSimilar(
 }
 
 /**
- * True when a frame should not be sent: the document is hidden, or the frame is
- * indistinguishable from the last one we sent. Extracted so the policy is
- * testable without a camera.
+ * True when a frame should not be sent: nobody is looking at the tab, or the
+ * frame is indistinguishable from the last one we sent. Extracted so the policy
+ * is testable without a camera.
+ *
+ * A hidden document stops camera frames — the learner has walked away from the
+ * page and the camera is pointed at nothing they care about. Screen sharing is
+ * the opposite: the whole point is to show another window, which necessarily
+ * makes this tab hidden. Dropping those frames was why "show Keating my screen"
+ * appeared to do nothing at all.
  */
 export function shouldSkipFrame(input: {
 	documentHidden: boolean;
 	previousHistogram: ArrayLike<number> | null;
 	nextHistogram: ArrayLike<number>;
 	similarityThreshold: number;
+	source?: VideoSource;
 }): boolean {
-	if (input.documentHidden) return true;
+	if (input.documentHidden && input.source !== "screen") return true;
 	return framesAreSimilar(input.previousHistogram, input.nextHistogram, input.similarityThreshold);
 }
 
-async function requestStream(source: VideoSource): Promise<MediaStream> {
+/**
+ * Cameras this device exposes, for the picker.
+ *
+ * Labels are empty until the page has held a camera permission at least once,
+ * which is why the picker only appears once video is already running.
+ */
+export async function listCameras(): Promise<MediaDeviceInfo[]> {
+	if (typeof navigator === "undefined" || !navigator.mediaDevices?.enumerateDevices) return [];
+	try {
+		const devices = await navigator.mediaDevices.enumerateDevices();
+		return devices.filter((device) => device.kind === "videoinput");
+	} catch {
+		return [];
+	}
+}
+
+async function requestStream(config: NormalizedCaptureOptions): Promise<MediaStream> {
 	if (typeof navigator === "undefined" || !navigator.mediaDevices) {
 		throw new Error("Video capture is unavailable in this environment.");
 	}
-	if (source === "screen") {
+	if (config.source === "screen") {
 		if (!navigator.mediaDevices.getDisplayMedia) {
 			throw new Error("Screen sharing is not supported by this browser.");
 		}
@@ -164,10 +207,36 @@ async function requestStream(source: VideoSource): Promise<MediaStream> {
 	if (!navigator.mediaDevices.getUserMedia) {
 		throw new Error("Camera capture is not supported by this browser.");
 	}
-	return await navigator.mediaDevices.getUserMedia({
-		video: { width: { ideal: 1280 }, height: { ideal: 720 } },
-		audio: false,
-	});
+
+	const size = { width: { ideal: 1280 }, height: { ideal: 720 } };
+	if (config.deviceId) {
+		try {
+			return await navigator.mediaDevices.getUserMedia({
+				video: { ...size, deviceId: { exact: config.deviceId } },
+				audio: false,
+			});
+		} catch (error) {
+			// A remembered camera can disappear between sessions (unplugged, or a
+			// phone that renumbers its devices). Falling back to any camera beats
+			// telling the learner their camera is broken.
+			if (!(error instanceof Error) || error.name !== "OverconstrainedError") throw error;
+		}
+	}
+
+	try {
+		// `ideal` rather than `exact`: a desktop with one webcam has no
+		// "environment" camera, and an exact facingMode would fail outright
+		// instead of returning the only camera there is.
+		return await navigator.mediaDevices.getUserMedia({
+			video: { ...size, facingMode: { ideal: config.facing } },
+			audio: false,
+		});
+	} catch (error) {
+		if (error instanceof Error && error.name === "OverconstrainedError") {
+			return await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+		}
+		throw error;
+	}
 }
 
 /**
@@ -177,7 +246,7 @@ async function requestStream(source: VideoSource): Promise<MediaStream> {
  */
 export async function startVideoCapture(options: VideoCaptureOptions = {}): Promise<VideoCaptureHandle> {
 	const config = normalizeCaptureOptions(options);
-	const stream = await requestStream(config.source);
+	const stream = await requestStream(config);
 
 	const video = document.createElement("video");
 	video.autoplay = true;
@@ -189,6 +258,7 @@ export async function startVideoCapture(options: VideoCaptureOptions = {}): Prom
 	const context = canvas.getContext("2d", { willReadFrequently: true });
 
 	const listeners = new Set<FrameListener>();
+	const endListeners = new Set<() => void>();
 	let previousHistogram: Float64Array | null = null;
 	let frameCount = 0;
 	let stopped = false;
@@ -217,6 +287,7 @@ export async function startVideoCapture(options: VideoCaptureOptions = {}): Prom
 				previousHistogram,
 				nextHistogram: histogram,
 				similarityThreshold: config.similarityThreshold,
+				source: config.source,
 			});
 			if (skip) return null;
 		}
@@ -261,6 +332,14 @@ export async function startVideoCapture(options: VideoCaptureOptions = {}): Prom
 		try {
 			video.remove();
 		} catch {}
+		for (const listener of endListeners) {
+			try {
+				listener();
+			} catch (error) {
+				console.warn("[keating:video] end listener failed", error);
+			}
+		}
+		endListeners.clear();
 	};
 
 	// A screen share ends when the user clicks the browser's "stop sharing"
@@ -270,8 +349,20 @@ export async function startVideoCapture(options: VideoCaptureOptions = {}): Prom
 	return {
 		stream,
 		source: config.source,
+		facing: config.facing,
+		get stopped() {
+			return stopped;
+		},
 		get frameCount() {
 			return frameCount;
+		},
+		onEnded(listener) {
+			if (stopped) {
+				listener();
+				return () => {};
+			}
+			endListeners.add(listener);
+			return () => endListeners.delete(listener);
 		},
 		onFrame(listener) {
 			listeners.add(listener);

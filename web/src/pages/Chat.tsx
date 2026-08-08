@@ -721,6 +721,8 @@ function ChatContent() {
   const {
     isPending,
     openSettings,
+    modelLabel,
+    openModelSelector,
     newSession,
     shareSession,
     chatPanelRef,
@@ -988,6 +990,42 @@ function ChatContent() {
             className={css({ height: "1.5rem", width: "auto", objectFit: "contain" })}
           />
         </Link>
+        {/*
+         * Model belongs in the top-left, next to the identity, not buried in
+         * the composer: it frames the whole conversation rather than the one
+         * message you are typing, and it needs to be readable at a glance
+         * without opening anything.
+         */}
+        <button
+          type="button"
+          onClick={openModelSelector}
+          title={`Model: ${modelLabel}`}
+          aria-label={`Change model. Current model: ${modelLabel}`}
+          className={cx(
+            "chat-model-button",
+            css({
+              display: "inline-flex",
+              minWidth: 0,
+              maxWidth: "11rem",
+              flexShrink: 1,
+              alignItems: "center",
+              gap: "0.25rem",
+              borderRadius: "0.5rem",
+              paddingInline: "0.5rem",
+              paddingBlock: "0.25rem",
+              fontSize: "0.8125rem",
+              fontWeight: 500,
+              color: "var(--muted-foreground)",
+              cursor: "pointer",
+              _hover: { backgroundColor: "var(--accent)", color: "var(--accent-foreground)" },
+            }),
+          )}
+        >
+          <span className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" })}>
+            {modelLabel}
+          </span>
+          <ChevronDown size={13} className={css({ flexShrink: 0 })} />
+        </button>
         <span className="chat-mode-badge chat-only-desktop">MODE: SOCRATIC</span>
 
         {/* Actions */}

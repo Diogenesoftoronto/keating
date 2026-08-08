@@ -49,6 +49,19 @@ describe("capture options", () => {
 	test("rejects unknown sources rather than passing them through", () => {
 		expect(normalizeCaptureOptions({ source: "hologram" as never }).source).toBe("camera");
 	});
+
+	test("defaults to the front camera and honours an explicit side", () => {
+		expect(normalizeCaptureOptions().facing).toBe("user");
+		expect(normalizeCaptureOptions({ facing: "environment" }).facing).toBe("environment");
+		expect(normalizeCaptureOptions({ facing: "sideways" as never }).facing).toBe("user");
+	});
+
+	test("an empty device id is dropped rather than sent as a constraint", () => {
+		// getUserMedia treats deviceId: { exact: "" } as unsatisfiable, so a blank
+		// stored preference would break the camera outright.
+		expect(normalizeCaptureOptions({ deviceId: "" }).deviceId).toBeUndefined();
+		expect(normalizeCaptureOptions({ deviceId: "cam-2" }).deviceId).toBe("cam-2");
+	});
 });
 
 describe("downscale math", () => {
@@ -114,13 +127,38 @@ describe("frame skip policy", () => {
 	const changed = lumaHistogram(solid(64, 200));
 	const unchanged = lumaHistogram(solid(64, 20));
 
-	test("suppresses frames while the tab is hidden", () => {
+	test("suppresses camera frames while the tab is hidden", () => {
 		// A backgrounded tab must not keep billing the user for frames.
 		expect(shouldSkipFrame({
 			documentHidden: true,
 			previousHistogram: unchanged,
 			nextHistogram: changed,
 			similarityThreshold: 0.02,
+			source: "camera",
+		})).toBe(true);
+	});
+
+	test("keeps sending screen frames while the tab is hidden", () => {
+		// Sharing a screen means looking at another window, which necessarily
+		// hides this tab. Dropping those frames is dropping the entire point.
+		expect(shouldSkipFrame({
+			documentHidden: true,
+			previousHistogram: unchanged,
+			nextHistogram: changed,
+			similarityThreshold: 0.02,
+			source: "screen",
+		})).toBe(false);
+	});
+
+	test("a hidden, unchanging screen is still suppressed", () => {
+		// The visibility exemption must not defeat de-duplication: a shared
+		// window nobody is touching should not stream identical frames.
+		expect(shouldSkipFrame({
+			documentHidden: true,
+			previousHistogram: unchanged,
+			nextHistogram: unchanged,
+			similarityThreshold: 0.02,
+			source: "screen",
 		})).toBe(true);
 	});
 

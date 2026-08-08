@@ -164,6 +164,9 @@ export interface UseKeatingAgentReturn {
   sessionSidebar: React.ReactNode;
   // Top-level actions
   openSettings: () => void;
+  /** Display name of the active chat model, for the header's model button. */
+  modelLabel: string;
+  openModelSelector: () => void;
   openSessions: () => void;
   newSession: () => void;
   shareSession: () => Promise<SharedSessionUrlResult>;
@@ -207,6 +210,13 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
   const sessionParentIdRef = useRef<string | null>(null);
   const sessionForkedAtRef = useRef<string | undefined>(undefined);
   const selectedModelRef = useRef<Model<Api>>(DEFAULT_MODEL);
+  // The ref is what the agent reads; this mirrors it for anything that has to
+  // re-render when the model changes, such as the chat header's model button.
+  const [modelLabel, setModelLabel] = useState<string>(DEFAULT_MODEL.name ?? DEFAULT_MODEL.id);
+  const selectModel = useCallback((model: Model<Api>) => {
+    selectedModelRef.current = model;
+    setModelLabel(model.name ?? model.id);
+  }, []);
   const activeSessionId = useKeatingAgentStore((state) => state.activeSessionId);
   const setActiveSessionId = useKeatingAgentStore((state) => state.setActiveSessionId);
   const forkingSessionId = useKeatingAgentStore((state) => state.forkingSessionId);
@@ -305,6 +315,22 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     posthog.capture('settings_opened', { source: 'toolbar' });
     settingsDialog.onOpen();
   }, [posthog, settingsDialog]);
+
+  // In-app request to open settings on a particular tab. The live surface uses
+  // this to turn "no API key" into a button that lands on the right page,
+  // without the URL churn the ?settings= deep link involves.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onOpenSettingsTab = (event: Event) => {
+      const detail = (event as CustomEvent<{ tab?: unknown }>).detail;
+      const requested = typeof detail?.tab === "string" ? detail.tab : "";
+      const tabId = (SETTINGS_DIALOG_TAB_IDS as readonly string[]).includes(requested) ? requested : "models";
+      settingsDeepLinkRef.current = { tabId, sectionId: null };
+      settingsDialog.onOpen();
+    };
+    window.addEventListener("keating:open-settings", onOpenSettingsTab);
+    return () => window.removeEventListener("keating:open-settings", onOpenSettingsTab);
+  }, [settingsDialog]);
 
   // Deep-link support: ?settings=<tabId> or ?settings=<tabId>-<sectionId>.
   // Opens the settings dialog on the matching tab, scrolls to the section
@@ -783,7 +809,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     );
     registerKeatingWebMcp(keatingStorage, tools).catch(console.warn);
     const resolvedModel = await resolveAvailableChatModel(initialState?.model ?? selectedModelRef.current);
-    selectedModelRef.current = resolvedModel;
+    selectModel(resolvedModel);
     const nextState: Partial<AgentState> = {
       model: resolvedModel,
       thinkingLevel: initialState?.thinkingLevel ?? loadKeatingUiSettings().reasoningLevel,
@@ -1296,7 +1322,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     } else {
       setForkInfo(null);
     }
-    selectedModelRef.current = session.model;
+    selectModel(session.model);
     posthog.capture('session_loaded', { session_id: session.id, is_restored: true, has_parent: !!session.parentSessionId });
     await createAgent(panel, {
       model: session.model,
@@ -1536,7 +1562,7 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
         });
         startTransition(async () => {
           if (model.provider === "browser") await loadBrowserModel(model.id);
-          selectedModelRef.current = model;
+          selectModel(model);
           const agent = agentRef.current;
           if (agent) {
             const current = agent.state;
@@ -1755,6 +1781,8 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
     sessionSidebar: sessionSidebarElement,
     // Top-level actions
     openSettings,
+    modelLabel,
+    openModelSelector: modelSelectorDialog.onOpen,
     openSessions,
     newSession,
     shareSession,

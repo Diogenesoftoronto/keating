@@ -416,6 +416,32 @@ export interface LiveSpeechSession {
 	readonly framesSent?: number;
 	/** How vision reached the model in this session, if at all. */
 	readonly videoRoute?: "native" | "sampled" | "none";
+	/** True when this model could accept frames, even if none are flowing yet. */
+	readonly visionCapable?: boolean;
+	/**
+	 * The learner's microphone, for metering.
+	 *
+	 * Exposed so the UI can show the actual sound of the room rather than a
+	 * decorative animation: a learner who cannot tell whether they are being
+	 * heard will talk into a dead session indefinitely. Read-only by contract —
+	 * the session owns the tracks and stops them itself.
+	 */
+	readonly inputStream?: MediaStream | null;
+	/**
+	 * Stop sending the learner's microphone without tearing the session down.
+	 * Muting by dropping the connection would lose the conversation, so every
+	 * duplex provider gates its own input instead.
+	 */
+	setMicrophoneMuted?(muted: boolean): void;
+	/**
+	 * Attach, replace, or drop the frame source mid-session.
+	 *
+	 * Camera and screen sharing are things a learner turns on halfway through a
+	 * sentence ("look at this"), so the session has to accept a new capture
+	 * handle without reconnecting. Passing null detaches without stopping the
+	 * handle — the caller owns capture and may still be previewing it.
+	 */
+	setVideo?(video: VideoCaptureHandle | null): void;
 	stop(): Promise<void>;
 }
 

@@ -1,556 +1,329 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Camera, MonitorUp, Power } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { ArrowLeft, Camera, Mic, MonitorUp, Settings2 } from "lucide-react";
 
 import { Nav } from "../components/Nav";
 import { AssistantChatPanel } from "../components/AssistantChatPanel";
 import { css, cx } from "../../styled-system/css";
 import { useKeatingAgent } from "../hooks/useKeatingAgent";
-import {
-	getLiveSpeechBridge,
-	getSpeechProvider,
-	loadWebSpeechSettings,
-	primeSpeechAudio,
-	resolveSpeechRealtimeTier,
-	speechErrorMessage,
-	type LiveSpeechSession,
-	type LiveSpeechState,
-} from "../keating/speech";
-import { startVideoCapture, type VideoCaptureHandle } from "../keating/video-capture";
-import type { ConversationEvent } from "../keating/protocol";
+import { loadWebSpeechSettings, primeSpeechAudio, saveWebSpeechSettings } from "../keating/speech";
+import { describeLiveModel, liveModelsFor, recommendedLiveModel } from "../keating/live-models";
 import { getProviderApiKey } from "../lib/provider-models";
+import { liveCredentialProvider } from "../components/live/use-live-session";
+import { useSeo } from "../hooks/useSeo";
 
 /**
- * The live session surface.
+ * /live — the pre-flight room for a live conversation.
  *
- * Keating's mascot is a CRT monitor with a face, so a live A/V session gets
- * rendered as exactly that: the learner's camera feed becomes the phosphor
- * screen behind the bezel, and Keating's own face takes over whenever he has
- * nothing to look at. Status, tools, and transcript are all terminal readouts,
- * matching the boot sequence and the landing hero.
+ * Live mode is not a separate product from chat, and the old page treated it as
+ * one: its own session, its own transcript, its own copy of the connection
+ * logic, and no way back into the conversation you were already having. Now the
+ * conversation itself is owned by the chat panel and appears as a full-screen
+ * surface over it, exactly as it does when you press the mic in the composer.
+ *
+ * What is left here is worth having as a page: somewhere to arrive from a link
+ * or a bookmark, check that a key and a model are in place, choose whether the
+ * camera starts on, and then step into the call. Everything after "start" is
+ * the same code path as the composer button.
  */
+export function Live() {
+	useSeo({
+		title: "Live with Keating",
+		description: "Talk to Keating out loud, and show it what you are working on.",
+	});
 
-const STATE_LABEL: Record<LiveSpeechState, string> = {
-	connecting: "connecting",
-	listening: "listening",
-	speaking: "speaking",
-	closed: "standby",
-};
+	const { chatPanelRef, dialogs } = useKeatingAgent();
+	const [settings, setSettings] = useState(() => loadWebSpeechSettings());
+	const [hasKey, setHasKey] = useState<boolean | null>(null);
+	const [started, setStarted] = useState(false);
 
-interface ToolEntry {
-	callId: string;
-	name: string;
-	status: "running" | "completed" | "failed";
-}
-
-interface TranscriptEntry {
-	role: "user" | "assistant";
-	text: string;
-}
-
-/**
- * Keep the normal Keating agent lifecycle mounted when /live is opened
- * directly. Chat normally owns this hook, but the live surface still needs
- * its prompt, history, tools, executor, and canonical-event persistence.
- */
-function StandaloneLiveAgentBridge() {
-	const { chatPanelRef } = useKeatingAgent();
-
-	return (
-		<div aria-hidden="true" className={css({ display: "none" })}>
-			<AssistantChatPanel ref={chatPanelRef} />
-		</div>
+	const model = useMemo(
+		() => describeLiveModel(settings.providerId, settings.model),
+		[settings.providerId, settings.model],
 	);
-}
+	const models = useMemo(() => liveModelsFor(settings.providerId), [settings.providerId]);
+	const credentialProvider = liveCredentialProvider(settings.providerId);
 
-/**
- * Dotted leader between a label and its status, as in the boot sequence.
- *
- * The dots are a border rather than repeated glyphs: a run of non-breaking
- * characters contributes its full width to max-content sizing and will drag the
- * whole grid column wider than its cell.
- */
-function Leader({ label, value, tone }: { label: string; value: string; tone?: "ok" | "fail" | "pending" }) {
+	useEffect(() => {
+		let cancelled = false;
+		const check = () => {
+			if (!credentialProvider) {
+				setHasKey(false);
+				return;
+			}
+			getProviderApiKey(credentialProvider)
+				.then((key) => { if (!cancelled) setHasKey(Boolean(key)); })
+				.catch(() => { if (!cancelled) setHasKey(false); });
+		};
+		check();
+		window.addEventListener("keating:api-key-prompt-changed", check);
+		return () => {
+			cancelled = true;
+			window.removeEventListener("keating:api-key-prompt-changed", check);
+		};
+	}, [credentialProvider]);
+
+	const update = (patch: Partial<ReturnType<typeof loadWebSpeechSettings>>) => {
+		const next = { ...loadWebSpeechSettings(), ...patch };
+		saveWebSpeechSettings(next);
+		setSettings(next);
+	};
+
+	const start = () => {
+		// Unlock audio playback from this gesture; browsers will not let the
+		// session do it later on its own.
+		void primeSpeechAudio().catch(() => {});
+		setStarted(true);
+		window.dispatchEvent(new CustomEvent("keating:start-live"));
+	};
+
+	const providerName = settings.providerId === "openai-realtime" ? "OpenAI" : "Google";
+	const notInCatalog = !models.some((entry) => entry.value === model.value);
+
 	return (
-		<div className={css({ display: "flex", alignItems: "baseline", gap: "0.5rem", fontSize: "0.8125rem", minWidth: 0 })}>
-			<span className={css({ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" })}>
-				{label}
-			</span>
-			<span
-				aria-hidden="true"
+		<div className={css({ minHeight: "100dvh", backgroundColor: "var(--background)", color: "var(--foreground)" })}>
+			<Nav />
+
+			{/*
+			 * The chat panel is mounted but not shown: it owns the agent, the tool
+			 * bridge, the live surface, and the transcript that a finished
+			 * conversation is folded back into. Hiding it rather than skipping it is
+			 * what makes /live a door into the same conversation instead of a
+			 * parallel one.
+			 */}
+			<div aria-hidden="true" className={css({ display: "none" })}>
+				<AssistantChatPanel ref={chatPanelRef} />
+			</div>
+			{dialogs}
+
+			<main
 				className={css({
-					flex: "1 1 auto",
-					minWidth: "0.75rem",
-					alignSelf: "center",
-					borderBottom: "1px dotted currentColor",
-					opacity: 0.35,
-				})}
-			/>
-			<span
-				className={css({
-					whiteSpace: "nowrap",
-					flexShrink: 0,
-					color: tone === "fail"
-						? "var(--red)"
-						: tone === "pending"
-							? "var(--amber)"
-							: "var(--phosphor)",
+					maxWidth: "34rem",
+					marginInline: "auto",
+					paddingInline: "1.25rem",
+					paddingTop: "3rem",
+					paddingBottom: "4rem",
+					display: "flex",
+					flexDirection: "column",
+					gap: "1.5rem",
 				})}
 			>
-				{value}
-			</span>
+				<div className={css({ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem", textAlign: "center" })}>
+					<img src="/brand/mascot-head.png" alt="" className={css({ width: "5.5rem", height: "auto" })} />
+					<h1 className={css({ fontSize: "1.75rem", fontWeight: 700, lineHeight: 1.15 })}>Live with Keating</h1>
+					<p className={css({ color: "var(--muted-foreground)", fontSize: "0.9375rem", maxWidth: "26rem" })}>
+						Talk out loud and get answers out loud. Turn the camera on and Keating can look at what you are
+						working on while you explain it.
+					</p>
+				</div>
+
+				{hasKey === false ? (
+					<div
+						className={css({
+							borderRadius: "0.875rem",
+							border: "1px solid color-mix(in srgb, var(--destructive) 40%, transparent)",
+							backgroundColor: "color-mix(in srgb, var(--destructive) 8%, var(--background))",
+							padding: "1rem 1.125rem",
+						})}
+					>
+						<p className={css({ fontWeight: 600, fontSize: "0.9375rem" })}>
+							{credentialProvider ? `${providerName} key needed` : "No live provider selected"}
+						</p>
+						<p className={css({ fontSize: "0.875rem", color: "var(--muted-foreground)", marginTop: "0.25rem" })}>
+							{credentialProvider
+								? `Live mode talks to ${providerName} straight from this browser, and there is no key stored for it yet.`
+								: "The current speech provider only synthesizes speech; it cannot hold a conversation."}
+						</p>
+						<button
+							type="button"
+							onClick={() => window.dispatchEvent(new CustomEvent("keating:open-settings", {
+								detail: { tab: credentialProvider ? "models" : "learning" },
+							}))}
+							className={cx("dialog-compact-button", css({
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "0.375rem",
+								marginTop: "0.75rem",
+								borderRadius: "0.5rem",
+								border: "1px solid var(--border)",
+								paddingInline: "0.75rem",
+								paddingBlock: "0.4375rem",
+								fontSize: "0.8125rem",
+								cursor: "pointer",
+								_hover: { backgroundColor: "var(--accent)", color: "var(--accent-foreground)" },
+							}))}
+						>
+							<Settings2 size={14} /> {credentialProvider ? "Add a key" : "Choose a live model"}
+						</button>
+					</div>
+				) : null}
+
+				<div
+					className={css({
+						borderRadius: "0.875rem",
+						border: "1px solid var(--border)",
+						backgroundColor: "color-mix(in srgb, var(--foreground) 3%, var(--background))",
+						padding: "1rem 1.125rem",
+						display: "flex",
+						flexDirection: "column",
+						gap: "0.875rem",
+					})}
+				>
+					<label className={css({ display: "flex", flexDirection: "column", gap: "0.375rem" })}>
+						<span className={css({ fontSize: "0.8125rem", fontWeight: 600 })}>Model</span>
+						<select
+							value={model.value}
+							onChange={(event) => update({ model: event.target.value })}
+							className={css({
+								width: "100%",
+								borderRadius: "0.5rem",
+								border: "1px solid var(--border)",
+								backgroundColor: "var(--background)",
+								color: "var(--foreground)",
+								paddingInline: "0.625rem",
+								paddingBlock: "0.5rem",
+								fontSize: "0.875rem",
+							})}
+						>
+							{notInCatalog ? <option value={model.value}>{model.label}</option> : null}
+							{models.map((entry) => (
+								<option key={entry.value} value={entry.value}>
+									{entry.label}
+									{entry.grade === "recommended" ? " · recommended" : ""}
+								</option>
+							))}
+						</select>
+						{model.note ? (
+							<span className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>{model.note}</span>
+						) : null}
+					</label>
+
+					<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
+						<span className={css({ fontSize: "0.8125rem", fontWeight: 600 })}>Start with</span>
+						<div className={css({ display: "flex", flexWrap: "wrap", gap: "0.5rem" })}>
+							<StartToggle
+								icon={<Mic size={15} />}
+								label="Voice"
+								active
+								disabled
+								hint="Always on"
+							/>
+							<StartToggle
+								icon={<Camera size={15} />}
+								label="Camera"
+								active={settings.videoEnabled && settings.videoSource === "camera"}
+								disabled={model.video === "none"}
+								hint={model.video === "none" ? "This model cannot see" : undefined}
+								onClick={() => update(
+									settings.videoEnabled && settings.videoSource === "camera"
+										? { videoEnabled: false }
+										: { videoEnabled: true, videoSource: "camera" },
+								)}
+							/>
+							<StartToggle
+								icon={<MonitorUp size={15} />}
+								label="Screen"
+								active={settings.videoEnabled && settings.videoSource === "screen"}
+								disabled={model.video === "none"}
+								hint={model.video === "none" ? "This model cannot see" : undefined}
+								onClick={() => update(
+									settings.videoEnabled && settings.videoSource === "screen"
+										? { videoEnabled: false }
+										: { videoEnabled: true, videoSource: "screen" },
+								)}
+							/>
+						</div>
+						<p className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+							{model.video === "none"
+								? `Pick a model with vision — ${recommendedLiveModel(settings.providerId)?.label ?? "a newer live model"} can see your camera.`
+								: "You can turn either on or off at any point during the conversation."}
+						</p>
+					</div>
+				</div>
+
+				<button
+					type="button"
+					onClick={start}
+					disabled={started || hasKey === false}
+					className={cx("dialog-compact-button", css({
+						display: "inline-flex",
+						alignItems: "center",
+						justifyContent: "center",
+						gap: "0.5rem",
+						width: "100%",
+						borderRadius: "9999px",
+						border: "1px solid var(--primary)",
+						backgroundColor: "var(--primary)",
+						color: "var(--primary-foreground)",
+						paddingBlock: "0.875rem",
+						fontSize: "1rem",
+						fontWeight: 600,
+						cursor: "pointer",
+						_disabled: { opacity: 0.5, cursor: "not-allowed" },
+					}))}
+				>
+					<Mic size={18} /> {started ? "Connecting…" : "Start talking"}
+				</button>
+
+				<Link
+					to="/chat"
+					className={css({
+						display: "inline-flex",
+						alignItems: "center",
+						justifyContent: "center",
+						gap: "0.375rem",
+						fontSize: "0.8125rem",
+						color: "var(--muted-foreground)",
+						_hover: { color: "var(--foreground)" },
+					})}
+				>
+					<ArrowLeft size={14} /> Back to the conversation
+				</Link>
+			</main>
 		</div>
 	);
 }
 
-export function Live() {
-	const settings = useMemo(() => loadWebSpeechSettings(), []);
-	const tier = useMemo(() => resolveSpeechRealtimeTier(settings), [settings]);
-
-	const [state, setState] = useState<LiveSpeechState>("closed");
-	const [active, setActive] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-	const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
-	const [tools, setTools] = useState<ToolEntry[]>([]);
-	const [framesSent, setFramesSent] = useState(0);
-	const [firstAudioMs, setFirstAudioMs] = useState<number | null>(null);
-	const [videoLive, setVideoLive] = useState(false);
-
-	const sessionRef = useRef<LiveSpeechSession | null>(null);
-	const videoRef = useRef<VideoCaptureHandle | null>(null);
-	const abortRef = useRef<AbortController | null>(null);
-	const previewRef = useRef<HTMLVideoElement | null>(null);
-	const transcriptRef = useRef<HTMLDivElement | null>(null);
-	const startedAtRef = useRef<number>(0);
-
-	const appendTranscript = useCallback((role: "user" | "assistant", text: string) => {
-		if (!text) return;
-		setTranscript((prev) => {
-			const last = prev[prev.length - 1];
-			// Deltas from the same speaker coalesce; a change of speaker starts a
-			// new line.
-			if (last && last.role === role) {
-				return [...prev.slice(0, -1), { role, text: last.text + text }];
-			}
-			return [...prev, { role, text }];
-		});
-	}, []);
-
-	// Keep the newest line in view without yanking the page around.
-	useEffect(() => {
-		const node = transcriptRef.current;
-		if (node) node.scrollTop = node.scrollHeight;
-	}, [transcript]);
-
-	const stop = useCallback(() => {
-		abortRef.current?.abort();
-		abortRef.current = null;
-		void sessionRef.current?.stop().catch(() => {});
-		sessionRef.current = null;
-		videoRef.current?.stop();
-		videoRef.current = null;
-		if (previewRef.current) previewRef.current.srcObject = null;
-		setVideoLive(false);
-		setActive(false);
-		setState("closed");
-	}, []);
-
-	// A live session holds the microphone, the camera, and a paid socket; it
-	// must not survive the user navigating away.
-	useEffect(() => stop, [stop]);
-
-	const onConversationEvent = useCallback((event: ConversationEvent) => {
-		switch (event.type) {
-			case "tool.requested":
-				setTools((prev) => [
-					...prev,
-					{ callId: event.payload.callId, name: event.payload.name, status: "running" },
-				]);
-				break;
-			case "tool.completed":
-			case "tool.failed":
-				setTools((prev) => prev.map((entry) =>
-					entry.callId === event.payload.callId
-						? { ...entry, status: event.type === "tool.completed" ? "completed" : "failed" }
-						: entry));
-				break;
-			default:
-				break;
-		}
-	}, []);
-
-	const start = useCallback(async () => {
-		setError(null);
-		setTranscript([]);
-		setTools([]);
-		setFramesSent(0);
-		setFirstAudioMs(null);
-		setState("connecting");
-		setActive(true);
-		startedAtRef.current = Date.now();
-
-		const abort = new AbortController();
-		abortRef.current = abort;
-		// Screen sharing requires transient user activation. Begin the request
-		// synchronously from the Start Session button before provider setup awaits
-		// can consume that activation; the resolved handle is used below.
-		const pendingScreenCapture = settings.videoEnabled && tier.video && settings.videoSource === "screen"
-			? startVideoCapture({
-				source: settings.videoSource,
-				intervalMs: settings.frameIntervalMs,
-			}).catch((err) => {
-				console.warn("[keating:live] screen capture unavailable", err);
-				return null;
-			})
-			: null;
-
-		try {
-			// Browsers only unlock audio playback inside a user gesture, and this
-			// runs from the power button's handler.
-			await primeSpeechAudio();
-
-			const provider = await getSpeechProvider(settings.providerId);
-			if (!provider?.startLiveSession) {
-				throw new Error("This speech provider cannot hold a live session. Pick OpenAI Realtime or Gemini Live in Settings → Speech.");
-			}
-
-			let video: VideoCaptureHandle | null = null;
-			if (settings.videoEnabled && tier.video) {
-				try {
-					video = await (pendingScreenCapture ?? startVideoCapture({
-						source: settings.videoSource,
-						intervalMs: settings.frameIntervalMs,
-					}));
-					if (!video) throw new Error("Video capture was unavailable.");
-					videoRef.current = video;
-					if (previewRef.current) {
-						previewRef.current.srcObject = video.stream;
-						void previewRef.current.play().catch(() => {});
-					}
-					video.onFrame(() => setFramesSent((count) => count + 1));
-					setVideoLive(true);
-				} catch (err) {
-					// Vision is optional; a declined camera prompt must not cost the
-					// learner their voice session.
-					console.warn("[keating:live] video capture unavailable", err);
-					setError(speechErrorMessage(err, "Camera or screen capture was unavailable. Continuing with audio only."));
-				}
-			}
-
-			const bridge = getLiveSpeechBridge();
-			const session = await provider.startLiveSession({
-				settings,
-				getApiKey: getProviderApiKey,
-				signal: abort.signal,
-				instructions: bridge?.instructions,
-				history: bridge?.history,
-				tools: bridge?.tools,
-				video,
-				onToolCall: bridge ? (call) => bridge.execute(call, abort.signal) : undefined,
-				onConversationEvent,
-				onState: (next) => {
-					setState(next);
-					if (next === "speaking") {
-						setFirstAudioMs((current) => current ?? Date.now() - startedAtRef.current);
-					}
-				},
-				onUserTranscript: (text) => appendTranscript("user", text),
-				onAssistantTranscript: (text) => appendTranscript("assistant", text),
-				onError: (err) => setError(err.message),
-			});
-			sessionRef.current = session;
-		} catch (err) {
-			setError(speechErrorMessage(err, "The live session could not be started."));
-			stop();
-		}
-	}, [appendTranscript, onConversationEvent, settings, stop, tier.video]);
-
-	const speaking = state === "speaking";
-
+function StartToggle({
+	icon,
+	label,
+	active,
+	disabled,
+	hint,
+	onClick,
+}: {
+	icon: React.ReactNode;
+	label: string;
+	active?: boolean;
+	disabled?: boolean;
+	hint?: string;
+	onClick?: () => void;
+}) {
 	return (
-		<div className={cx("retro-layout", "retro-page")}>
-			<StandaloneLiveAgentBridge />
-			<Nav />
-			<main className={css({ maxWidth: "68rem", marginInline: "auto", padding: "1.5rem", display: "grid", gap: "1.5rem" })}>
-				<header className={css({ display: "grid", gap: "0.5rem" })}>
-					<div className={cx("prompt", css({ fontSize: "0.8125rem", opacity: 0.75 }))}>
-						keating --live --tier={tier.tier}
-					</div>
-					<h1 className={css({ fontFamily: "var(--mono-display)", fontSize: "1.75rem", fontWeight: 700, lineHeight: 1.2 })}>
-						{tier.label}
-					</h1>
-					{tier.capReason && (
-						<p className={css({ fontSize: "0.875rem", opacity: 0.75, maxWidth: "48rem" })}>
-							{tier.capReason}
-						</p>
-					)}
-				</header>
-
-				{error && (
-					<div
-						role="alert"
-						className={css({
-							border: "1px solid var(--red)",
-							borderRadius: "0.375rem",
-							padding: "0.75rem 1rem",
-							fontSize: "0.875rem",
-							color: "var(--red)",
-							background: "color-mix(in srgb, var(--red) 8%, transparent)",
-						})}
-					>
-						{error}
-					</div>
-				)}
-
-				<div className={css({ display: "grid", gap: "1.5rem", gridTemplateColumns: "minmax(0, 1fr)", lg: { gridTemplateColumns: "minmax(0, 1.15fr) minmax(0, 1fr)" } })}>
-					{/* The viewport — Keating's CRT face, showing whatever he can see. */}
-					{/* minmax(0, 1fr) so a wide child can never stretch the column. */}
-					<section className={css({ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: "1rem", alignContent: "start", minWidth: 0 })}>
-						<div
-							className={cx(
-								"crt",
-								"terminal-glow",
-								css({
-									position: "relative",
-									overflow: "hidden",
-									aspectRatio: "4 / 3",
-									// Never let the viewport eat a whole phone screen.
-									maxHeight: "min(56dvh, 30rem)",
-									minWidth: 0,
-									borderRadius: "0.75rem",
-									border: "3px solid var(--terminal-edge)",
-									background: "var(--terminal)",
-									// Column flow: content region above, status row below, so
-									// nothing can overlap at any viewport size.
-									display: "flex",
-									flexDirection: "column",
-									transitionProperty: "box-shadow, border-color",
-									transitionDuration: "300ms",
-								}),
-								// The bezel brightens while Keating is talking, so the
-								// speaking state is legible from across a room.
-								speaking ? css({ borderColor: "var(--phosphor)" }) : "",
-							)}
-						>
-						{/* Content region: the feed, or Keating's own face when blind. */}
-							<div className={css({ position: "relative", flex: 1, minHeight: 0, display: "grid", placeItems: "center", overflow: "hidden" })}>
-								<video
-									ref={previewRef}
-									muted
-									playsInline
-									className={css({
-										position: "absolute",
-										inset: 0,
-										width: "100%",
-										height: "100%",
-										objectFit: "cover",
-										// Tint the feed toward phosphor so it reads as part of
-										// the monitor rather than a webcam pasted on top.
-										filter: "saturate(0.75) contrast(1.05)",
-										display: videoLive ? "block" : "none",
-									})}
-								/>
-
-								{!videoLive && (
-									<div className={css({ display: "grid", gap: "0.5rem", justifyItems: "center", padding: "0.75rem", textAlign: "center" })}>
-										<img
-											src="/brand/mascot-head.png"
-											alt=""
-											className={cx(
-												css({ width: "4rem", md: { width: "5.5rem" }, height: "auto", imageRendering: "pixelated" }),
-												speaking ? css({ animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite" }) : "",
-											)}
-										/>
-										<p className={cx("font-terminal", css({ color: "var(--phosphor-dim)", fontSize: "0.9375rem", letterSpacing: "0.04em" }))}>
-											{tier.video ? "NO VIDEO INPUT" : "THIS MODEL HAS NO VISION"}
-										</p>
-										{tier.video && (
-											// Supplementary guidance; the phone viewport is too
-											// short to carry it alongside the mascot.
-											<p className={css({ display: "none", md: { display: "block" }, color: "var(--phosphor-dim)", fontSize: "0.75rem", opacity: 0.7, maxWidth: "16rem" })}>
-												Enable the camera in Settings → Speech.
-											</p>
-										)}
-									</div>
-								)}
-							</div>
-
-						{/* Status bar, in flow along the bottom edge of the bezel. */}
-							<div
-								className={cx(
-									"font-terminal",
-									css({
-										flexShrink: 0,
-										display: "flex",
-										alignItems: "center",
-										justifyContent: "space-between",
-										gap: "0.5rem",
-										paddingInline: "0.75rem",
-										paddingBlock: "0.375rem",
-										borderTop: "1px solid color-mix(in srgb, var(--phosphor) 18%, transparent)",
-										background: "color-mix(in srgb, var(--terminal) 88%, black)",
-										fontSize: "0.875rem",
-										letterSpacing: "0.06em",
-									}),
-								)}
-							>
-								<span
-									className={cx(
-										active && state !== "closed" ? "cursor-blink" : "",
-										css({
-											color: speaking ? "var(--phosphor)" : "var(--phosphor-dim)",
-											textShadow: speaking ? "0 0 8px color-mix(in srgb, var(--phosphor) 60%, transparent)" : "none",
-											whiteSpace: "nowrap",
-											overflow: "hidden",
-											textOverflow: "ellipsis",
-										}),
-									)}
-								>
-									{`> ${STATE_LABEL[state]}`}
-								</span>
-
-								{videoLive && (
-									<span
-										className={css({
-											display: "inline-flex",
-											alignItems: "center",
-											gap: "0.375rem",
-											flexShrink: 0,
-											color: "var(--phosphor)",
-										})}
-									>
-										{settings.videoSource === "screen" ? <MonitorUp size={12} /> : <Camera size={12} />}
-										{settings.videoSource === "screen" ? "SCREEN" : "CAM"}
-										{tier.videoRoute === "sampled" ? " · SAMPLED" : " · LIVE"}
-									</span>
-								)}
-							</div>
-						</div>
-
-						<button
-							type="button"
-							onClick={active ? stop : () => void start()}
-							className={cx(
-								"font-terminal",
-								css({
-									display: "inline-flex",
-									alignItems: "center",
-									justifyContent: "center",
-									gap: "0.5rem",
-									width: "100%",
-									minHeight: "3rem",
-									borderRadius: "0.375rem",
-									border: "2px solid",
-									fontSize: "1.25rem",
-									letterSpacing: "0.08em",
-									cursor: "pointer",
-									transitionProperty: "background-color, color, border-color, box-shadow, transform",
-									transitionDuration: "150ms",
-									_active: { transform: "translate(1px, 1px)" },
-								}),
-								active
-									? css({
-										borderColor: "var(--red)",
-										color: "var(--red)",
-										background: "color-mix(in srgb, var(--red) 10%, transparent)",
-										boxShadow: "2px 2px 0 color-mix(in srgb, var(--red) 45%, transparent)",
-									})
-									: css({
-										borderColor: "var(--accent-green)",
-										color: "var(--accent-green)",
-										background: "color-mix(in srgb, var(--accent-green) 10%, transparent)",
-										boxShadow: "2px 2px 0 color-mix(in srgb, var(--accent-green) 45%, transparent)",
-										_hover: { background: "color-mix(in srgb, var(--accent-green) 18%, transparent)" },
-									}),
-							)}
-						>
-							<Power size={18} />
-							{active ? "END SESSION" : "START SESSION"}
-						</button>
-
-						{/* Boot-style capability readout. */}
-						<div className={cx("font-terminal", css({ display: "grid", gap: "0.25rem", padding: "0.875rem 1rem", border: "1px solid var(--line)", borderRadius: "0.375rem" }))}>
-							<Leader label="audio duplex" value="[OK]" />
-							<Leader
-								label="vision"
-								value={tier.videoRoute === "native" ? "[LIVE LANE]" : tier.videoRoute === "sampled" ? "[SAMPLED]" : "[NONE]"}
-								tone={tier.videoRoute === "none" ? "fail" : "ok"}
-							/>
-							<Leader label="tool calls" value={tier.tier > 0 ? "[OK]" : "[NONE]"} tone={tier.tier > 0 ? "ok" : "fail"} />
-							<Leader label="frames sent" value={String(framesSent)} tone="pending" />
-							<Leader
-								label="first audio"
-								value={firstAudioMs === null ? "--" : `${(firstAudioMs / 1000).toFixed(1)}s`}
-								tone="pending"
-							/>
-						</div>
-					</section>
-
-					{/* Transcript and tool feed, as terminal output. */}
-					{/* Flex column so the transcript reliably absorbs the leftover
-					    height and the tool feed stays pinned below it. */}
-					<section className={css({ display: "flex", flexDirection: "column", gap: "1rem", minWidth: 0 })}>
-						<div
-							ref={transcriptRef}
-							// `terminal-window` carries its own scanline ::before; adding
-							// `crt` here would collide on the same pseudo-element.
-							className={cx(
-								"terminal-window",
-								css({
-									position: "relative",
-									borderRadius: "0.5rem",
-									border: "1px solid var(--terminal-edge)",
-									padding: "1rem",
-									// Fixed on phones so the transcript and the viewport both
-									// stay reachable; on wide screens it fills the column.
-									height: "14rem",
-									md: { height: "18rem" },
-									lg: { height: "auto", flex: 1, minHeight: "18rem" },
-									overflowY: "auto",
-									overflowWrap: "anywhere",
-									fontSize: "0.9375rem",
-									lineHeight: 1.55,
-								}),
-							)}
-						>
-							{transcript.length === 0 ? (
-								<p className={css({ color: "var(--phosphor-dim)" })}>
-									{active ? "> awaiting speech_" : "> press start to begin_"}
-								</p>
-							) : (
-								transcript.map((entry, index) => (
-									<p key={index} className={css({ marginBottom: "0.5rem" })}>
-										<span className={css({ color: entry.role === "user" ? "var(--amber)" : "var(--phosphor)", opacity: 0.9 })}>
-											{entry.role === "user" ? "YOU> " : "KEATING> "}
-										</span>
-										<span className={css({ color: entry.role === "user" ? "var(--phosphor-dim)" : "var(--phosphor)" })}>
-											{entry.text}
-										</span>
-									</p>
-								))
-							)}
-						</div>
-
-						<div className={cx("font-terminal", css({ display: "grid", gap: "0.25rem", padding: "0.875rem 1rem", border: "1px solid var(--line)", borderRadius: "0.375rem", minHeight: "6rem", alignContent: "start" }))}>
-							<div className={css({ fontSize: "0.9375rem", opacity: 0.6, letterSpacing: "0.06em", marginBottom: "0.25rem" })}>
-								TOOL CALLS
-							</div>
-							{tools.length === 0 ? (
-								<p className={css({ fontSize: "0.9375rem", opacity: 0.55 })}>none yet</p>
-							) : (
-								tools.map((tool) => (
-									<Leader
-										key={`${tool.callId}-${tool.name}`}
-										label={tool.name}
-										value={tool.status === "running" ? "[····]" : tool.status === "completed" ? "[OK]" : "[FAIL]"}
-										tone={tool.status === "running" ? "pending" : tool.status === "completed" ? "ok" : "fail"}
-									/>
-								))
-							)}
-						</div>
-					</section>
-				</div>
-			</main>
-		</div>
+		<button
+			type="button"
+			onClick={onClick}
+			disabled={disabled}
+			aria-pressed={active}
+			title={hint}
+			className={cx("dialog-compact-button", css({
+				display: "inline-flex",
+				alignItems: "center",
+				gap: "0.4375rem",
+				borderRadius: "9999px",
+				border: "1px solid",
+				borderColor: active ? "var(--primary)" : "var(--border)",
+				backgroundColor: active ? "color-mix(in srgb, var(--primary) 14%, transparent)" : "transparent",
+				color: active ? "var(--foreground)" : "var(--muted-foreground)",
+				paddingInline: "0.875rem",
+				paddingBlock: "0.5rem",
+				fontSize: "0.8125rem",
+				cursor: "pointer",
+				_disabled: { opacity: 0.45, cursor: "not-allowed" },
+			}))}
+		>
+			{icon} {label}
+		</button>
 	);
 }
 
