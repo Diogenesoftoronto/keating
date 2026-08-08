@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.3.0] - 2026-08-08
+
+### Changed
+- Live mode is no longer a parallel product: it now lives inside the chat panel as a recurring full-screen live conversation, while `/live` becomes a pre-flight page that checks key, model, and camera defaults before stepping into the call. The chat composer gets separate Dictation and Live buttons instead of one button whose meaning depended on an invisible setting.
+- The chat header now shows the active model with a one-click opener to the model selector, so the model framing the whole conversation is visible without opening settings.
+- Camera and screen-sharing video can be attached, replaced, or dropped mid-session; camera buttons can flip between front and rear (with an exact-device picker), and mic muting now gates provider input without tearing the session down.
+- Every live-session failure is classified once into an actionable kind (missing key, auth, model unavailable, rate-limit, mic/camera/webcam denied, screen denied, vision unsupported, network, unsupported provider) with offered recoveries — retry, switch model, open the right settings tab, or fall back to dictation — instead of showing the raw provider error string.
+
+### Added
+- `web/src/components/live/` — `use-live-session.ts` hook, `LiveConversation.tsx`, and `LiveVisualizer.tsx`: a single stateful runtime shared by the page, the dialog, and the chat panel's live button.
+- `web/src/keating/live-models.ts` — an opinionated live-model catalog with recommended/capable/legacy grades and an explicit fallback order, so a retired preview model id recovers into the next working model instead of dead-ending.
+- `web/src/keating/live-errors.ts` and `web/src/keating/live-audio-level.ts` — pure classification and RMS metering, unit-tested without a browser or socket.
+- Video capture now surfaces camera facing, on-ended events (browser "stop sharing" chrome, unplugged devices), and `listCameras()` for a picker, and no longer drops screen-share frames when the tab is hidden.
+- `SYSTEM.md`: the tutor system prompt was rewritten for autonomous tool use — the learner profile/summary is loaded at session start, the full tool catalog is documented, and the tutor is instructed to never ask the learner to run commands.
+
 ## [3.2.0] - 2026-08-06
 
 ### Changed
