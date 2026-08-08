@@ -1,0 +1,39 @@
+{
+  "cli_version": "0.9.0",
+  "checkpoint_id": "649968bad990",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "web/src/components/AssistantChatPanel.tsx",
+    "web/src/components/live/LiveConversation.tsx",
+    "web/src/components/live/LiveVisualizer.tsx",
+    "web/src/components/live/use-live-session.ts",
+    "web/src/hooks/useKeatingAgent.tsx",
+    "web/src/keating/live-audio-level.ts",
+    "web/src/keating/speech-providers/gemini-live.ts",
+    "web/src/keating/speech-providers/openai-realtime.ts",
+    "web/src/keating/speech.ts",
+    "web/src/keating/video-capture.ts",
+    "web/src/pages/Chat.tsx",
+    "web/src/pages/Live.tsx",
+    "web/src/test/live-audio-level.test.ts",
+    "web/src/test/video-capture.test.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/64/9968bad990/0/metadata.json",
+      "transcript": "/64/9968bad990/0/full.jsonl",
+      "compact_transcript": "/64/9968bad990/0/transcript.jsonl",
+      "content_hash": "/64/9968bad990/0/content_hash.txt",
+      "prompt": "/64/9968bad990/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 378,
+    "cache_creation_tokens": 1767814,
+    "cache_read_tokens": 32599527,
+    "output_tokens": 106844,
+    "api_call_count": 200
+  }
+}
