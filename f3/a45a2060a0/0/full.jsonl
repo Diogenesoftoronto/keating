@@ -20,17 +20,17 @@
     },
     "cost": 0,
     "tokens": {
-      "input": 65029,
-      "output": 8259,
+      "input": 66778,
+      "output": 8660,
       "reasoning": 0,
       "cache": {
-        "read": 1262080,
+        "read": 1540864,
         "write": 0
       }
     },
     "time": {
       "created": 1786231464699,
-      "updated": 1786231577246
+      "updated": 1786231612264
     }
   },
   "messages": [
@@ -2820,19 +2820,22 @@
         },
         "cost": 0,
         "tokens": {
-          "input": 0,
-          "output": 0,
+          "total": 69926,
+          "input": 712,
+          "output": 94,
           "reasoning": 0,
           "cache": {
-            "read": 0,
-            "write": 0
+            "write": 0,
+            "read": 69120
           }
         },
         "modelID": "deepseek-v4-flash-free",
         "providerID": "opencode",
         "time": {
-          "created": 1786231577245
+          "created": 1786231577245,
+          "completed": 1786231583989
         },
+        "finish": "tool-calls",
         "id": "msg_fe3b2da9d001fYn1eHCFxd82JX",
         "sessionID": "ses_01c4edd04ffeumB3L2GaZwMbxT"
       },
@@ -2860,20 +2863,299 @@
           "tool": "bash",
           "callID": "call_714fd4b7e3bd4a3a8796ca79",
           "state": {
-            "metadata": {
-              "output": "Using config file: /home/diogenes/Projects/keating/.pre-commit-config.yaml\nkeating-version-check....................................................Passed\n"
-            },
-            "status": "running",
+            "status": "completed",
             "input": {
               "command": "git add -A && git commit -m \"release: publish Keating 3.3.0\" -m \"Entire-Checkpoint: 119ca20\" && git tag v3.3.0"
             },
+            "output": "Using config file: /home/diogenes/Projects/keating/.pre-commit-config.yaml\nkeating-version-check....................................................Passed\n[main 3d03d81] release: publish Keating 3.3.0\n 11 files changed, 25 insertions(+), 10 deletions(-)\n",
+            "metadata": {
+              "output": "Using config file: /home/diogenes/Projects/keating/.pre-commit-config.yaml\nkeating-version-check....................................................Passed\n[main 3d03d81] release: publish Keating 3.3.0\n 11 files changed, 25 insertions(+), 10 deletions(-)\n",
+              "exit": 0,
+              "truncated": false
+            },
+            "title": "git add -A && git commit -m \"release: publish Keating 3.3.0\" -m \"Entire-Checkpoint: 119ca20\" && git tag v3.3.0",
             "time": {
-              "start": 1786231580714
+              "start": 1786231583929,
+              "end": 1786231583932
             }
           },
           "id": "prt_fe3b2e6ab001HEBN5yKSsOX8WT",
           "sessionID": "ses_01c4edd04ffeumB3L2GaZwMbxT",
           "messageID": "msg_fe3b2da9d001fYn1eHCFxd82JX"
+        },
+        {
+          "reason": "tool-calls",
+          "snapshot": "c7e66d53e98891be6a2c37b7921adfddb0822121",
+          "type": "step-finish",
+          "tokens": {
+            "total": 69926,
+            "input": 712,
+            "output": 94,
+            "reasoning": 0,
+            "cache": {
+              "write": 0,
+              "read": 69120
+            }
+          },
+          "cost": 0,
+          "id": "prt_fe3b2f4d7001kJpRnIdrHYJmzT",
+          "sessionID": "ses_01c4edd04ffeumB3L2GaZwMbxT",
+          "messageID": "msg_fe3b2da9d001fYn1eHCFxd82JX"
+        }
+      ]
+    },
+    {
+      "info": {
+        "parentID": "msg_fe3b12320001Mxofl5bEZAZX9H",
+        "role": "assistant",
+        "mode": "build",
+        "agent": "build",
+        "variant": "max",
+        "path": {
+          "cwd": "/home/diogenes/Projects/keating",
+          "root": "/home/diogenes/Projects/keating"
+        },
+        "cost": 0,
+        "tokens": {
+          "total": 70075,
+          "input": 373,
+          "output": 70,
+          "reasoning": 0,
+          "cache": {
+            "write": 0,
+            "read": 69632
+          }
+        },
+        "modelID": "deepseek-v4-flash-free",
+        "providerID": "opencode",
+        "time": {
+          "created": 1786231583993,
+          "completed": 1786231586686
+        },
+        "finish": "tool-calls",
+        "id": "msg_fe3b2f4f9001tushpeWDsIl0Vo",
+        "sessionID": "ses_01c4edd04ffeumB3L2GaZwMbxT"
+      },
+      "parts": [
+        {
+          "snapshot": "c7e66d53e98891be6a2c37b7921adfddb0822121",
+          "type": "step-start",
+          "id": "prt_fe3b2fd920015H5o1c1bQ1cioo",
+          "sessionID": "ses_01c4edd04ffeumB3L2GaZwMbxT",
+          "messageID": "msg_fe3b2f4f9001tushpeWDsIl0Vo"
+        },
+        {
+          "type": "tool",
+          "tool": "bash",
+          "callID": "call_46f6fbfa181a43208e9900a0",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "bun scripts/sync-version.ts --check && echo SYNC-OK && git log --oneline -5 && git status"
+            },
+            "output": "Canonical version: 3.3.0\n\n\nAll files already in sync.\nSYNC-OK\n3d03d81 release: publish Keating 3.3.0\n8b5efb2 docs: rewrite the tutor system prompt for autonomous tool use\n119ca20 feat(web): rework live mode into a shared pre-flight conversation surface\n7f6b02a release: publish Keating 3.2.0\n84eb587 feat(web): rework browser model downloads and prune the model list\nOn branch main\nYour branch is ahead of 'origin/main' by 3 commits.\n  (use \"git push\" to publish your local commits)\n\nnothing to commit, working tree clean\n",
+            "metadata": {
+              "output": "Canonical version: 3.3.0\n\n\nAll files already in sync.\nSYNC-OK\n3d03d81 release: publish Keating 3.3.0\n8b5efb2 docs: rewrite the tutor system prompt for autonomous tool use\n119ca20 feat(web): rework live mode into a shared pre-flight conversation surface\n7f6b02a release: publish Keating 3.2.0\n84eb587 feat(web): rework browser model downloads and prune the model list\nOn branch main\nYour branch is ahead of 'origin/main' by 3 commits.\n  (use \"git push\" to publish your local commits)\n\nnothing to commit, working tree clean\n",
+              "exit": 0,
+              "truncated": false
+            },
+            "title": "bun scripts/sync-version.ts --check && echo SYNC-OK && git log --oneline -5 && git status",
+            "time": {
+              "start": 1786231586614,
+              "end": 1786231586616
+            }
+          },
+          "id": "prt_fe3b2fdbf001iDOFWe5HhMY97G",
+          "sessionID": "ses_01c4edd04ffeumB3L2GaZwMbxT",
+          "messageID": "msg_fe3b2f4f9001tushpeWDsIl0Vo"
+        },
+        {
+          "reason": "tool-calls",
+          "snapshot": "c7e66d53e98891be6a2c37b7921adfddb0822121",
+          "type": "step-finish",
+          "tokens": {
+            "total": 70075,
+            "input": 373,
+            "output": 70,
+            "reasoning": 0,
+            "cache": {
+              "write": 0,
+              "read": 69632
+            }
+          },
+          "cost": 0,
+          "id": "prt_fe3b2ff5a001EkJZ3mXv2fMobQ",
+          "sessionID": "ses_01c4edd04ffeumB3L2GaZwMbxT",
+          "messageID": "msg_fe3b2f4f9001tushpeWDsIl0Vo"
+        }
+      ]
+    },
+    {
+      "info": {
+        "parentID": "msg_fe3b12320001Mxofl5bEZAZX9H",
+        "role": "assistant",
+        "mode": "build",
+        "agent": "build",
+        "variant": "max",
+        "path": {
+          "cwd": "/home/diogenes/Projects/keating",
+          "root": "/home/diogenes/Projects/keating"
+        },
+        "cost": 0,
+        "tokens": {
+          "total": 70304,
+          "input": 350,
+          "output": 66,
+          "reasoning": 0,
+          "cache": {
+            "write": 0,
+            "read": 69888
+          }
+        },
+        "modelID": "deepseek-v4-flash-free",
+        "providerID": "opencode",
+        "time": {
+          "created": 1786231586694,
+          "completed": 1786231612255
+        },
+        "finish": "tool-calls",
+        "id": "msg_fe3b2ff86001fbyKjWAwM2rN7h",
+        "sessionID": "ses_01c4edd04ffeumB3L2GaZwMbxT"
+      },
+      "parts": [
+        {
+          "snapshot": "c7e66d53e98891be6a2c37b7921adfddb0822121",
+          "type": "step-start",
+          "id": "prt_fe3b30cb2001rU2t8W6V0H92WA",
+          "sessionID": "ses_01c4edd04ffeumB3L2GaZwMbxT",
+          "messageID": "msg_fe3b2ff86001fbyKjWAwM2rN7h"
+        },
+        {
+          "type": "text",
+          "text": "Everything is verified. Pushing commits and tag",
+          "time": {
+            "start": 1786231590096,
+            "end": 1786231590364
+          },
+          "id": "prt_fe3b30cd0001Vbp6Sk7AzUKMM2",
+          "sessionID": "ses_01c4edd04ffeumB3L2GaZwMbxT",
+          "messageID": "msg_fe3b2ff86001fbyKjWAwM2rN7h"
+        },
+        {
+          "type": "tool",
+          "tool": "bash",
+          "callID": "call_9cdcda69fede411bbc3455d6",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git push origin main && git push origin v3.3.0"
+            },
+            "output": "[entire] Pushing entire/checkpoints/v1 to origin.... done\nUsing config file: /home/diogenes/Projects/keating/.pre-commit-config.yaml\nkeating-root-tests.......................................................Passed\nkeating-web-tests........................................................Passed\nTo github.com:Diogenesoftoronto/keating.git\n   7f6b02a..3d03d81  main -> main\nUsing config file: /home/diogenes/Projects/keating/.pre-commit-config.yaml\nTo github.com:Diogenesoftoronto/keating.git\n * [new tag]         v3.3.0 -> v3.3.0\n",
+            "metadata": {
+              "output": "[entire] Pushing entire/checkpoints/v1 to origin.... done\nUsing config file: /home/diogenes/Projects/keating/.pre-commit-config.yaml\nkeating-root-tests.......................................................Passed\nkeating-web-tests........................................................Passed\nTo github.com:Diogenesoftoronto/keating.git\n   7f6b02a..3d03d81  main -> main\nUsing config file: /home/diogenes/Projects/keating/.pre-commit-config.yaml\nTo github.com:Diogenesoftoronto/keating.git\n * [new tag]         v3.3.0 -> v3.3.0\n",
+              "exit": 0,
+              "truncated": false
+            },
+            "title": "git push origin main && git push origin v3.3.0",
+            "time": {
+              "start": 1786231612155,
+              "end": 1786231612164
+            }
+          },
+          "id": "prt_fe3b30d40001rM8pDqv82646lt",
+          "sessionID": "ses_01c4edd04ffeumB3L2GaZwMbxT",
+          "messageID": "msg_fe3b2ff86001fbyKjWAwM2rN7h"
+        },
+        {
+          "reason": "tool-calls",
+          "snapshot": "c7e66d53e98891be6a2c37b7921adfddb0822121",
+          "type": "step-finish",
+          "tokens": {
+            "total": 70304,
+            "input": 350,
+            "output": 66,
+            "reasoning": 0,
+            "cache": {
+              "write": 0,
+              "read": 69888
+            }
+          },
+          "cost": 0,
+          "id": "prt_fe3b3632c0014CsojnglH4JaNh",
+          "sessionID": "ses_01c4edd04ffeumB3L2GaZwMbxT",
+          "messageID": "msg_fe3b2ff86001fbyKjWAwM2rN7h"
+        }
+      ]
+    },
+    {
+      "info": {
+        "parentID": "msg_fe3b12320001Mxofl5bEZAZX9H",
+        "role": "assistant",
+        "mode": "build",
+        "agent": "build",
+        "variant": "max",
+        "path": {
+          "cwd": "/home/diogenes/Projects/keating",
+          "root": "/home/diogenes/Projects/keating"
+        },
+        "cost": 0,
+        "tokens": {
+          "total": 70629,
+          "input": 314,
+          "output": 171,
+          "reasoning": 0,
+          "cache": {
+            "write": 0,
+            "read": 70144
+          }
+        },
+        "modelID": "deepseek-v4-flash-free",
+        "providerID": "opencode",
+        "time": {
+          "created": 1786231612262,
+          "completed": 1786231615606
+        },
+        "finish": "stop",
+        "id": "msg_fe3b36366001h6jqLI8kRLDgLd",
+        "sessionID": "ses_01c4edd04ffeumB3L2GaZwMbxT"
+      },
+      "parts": [
+        {
+          "snapshot": "c7e66d53e98891be6a2c37b7921adfddb0822121",
+          "type": "step-start",
+          "id": "prt_fe3b36d55001u0IfKj5EsVSgLY",
+          "sessionID": "ses_01c4edd04ffeumB3L2GaZwMbxT",
+          "messageID": "msg_fe3b36366001h6jqLI8kRLDgLd"
+        },
+        {
+          "type": "text",
+          "text": "Released **Keating 3.3.0** and pushed:\n\n- `119ca20` feat(web): live mode merged into the chat panel as a shared conversation — `use-live-session` hook, pre-flight `/live` page, live-model catalog, failure classification, RMS mic metering, mid-session camera/flip/device switching\n- `8b5efb2` docs: SYSTEM.md rewritten for autonomous tool use\n- `3d03d81` release: publish Keating 3.3.0 (versions synced, CHANGELOG updated)\n\nTests passed locally; pushing ran the pre-push hooks (root + web suites) green. The `v3.3.0` tag now triggers CI (`validate → build → release → npm publish → web deploy`).",
+          "time": {
+            "start": 1786231614818,
+            "end": 1786231615520
+          },
+          "id": "prt_fe3b36d62001XwB14z2iPMzO9i",
+          "sessionID": "ses_01c4edd04ffeumB3L2GaZwMbxT",
+          "messageID": "msg_fe3b36366001h6jqLI8kRLDgLd"
+        },
+        {
+          "reason": "stop",
+          "snapshot": "c7e66d53e98891be6a2c37b7921adfddb0822121",
+          "type": "step-finish",
+          "tokens": {
+            "total": 70629,
+            "input": 314,
+            "output": 171,
+            "reasoning": 0,
+            "cache": {
+              "write": 0,
+              "read": 70144
+            }
+          },
+          "cost": 0,
+          "id": "prt_fe3b370460015wiLP1JSzPFGBO",
+          "sessionID": "ses_01c4edd04ffeumB3L2GaZwMbxT",
+          "messageID": "msg_fe3b36366001h6jqLI8kRLDgLd"
         }
       ]
     }
