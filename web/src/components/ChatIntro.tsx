@@ -11,7 +11,7 @@ const KEATING_ASCII = `
 `.trim();
 
 const INTRO_LINES = [
-  { text: "INIT SEQUENCE v3.2.0", delay: 100 },
+  { text: "INIT SEQUENCE v3.3.0", delay: 100 },
   { text: "─────────────────────────────────────────", delay: 200 },
   { text: "model   : Kimi k2.6", delay: 300 },
   { text: "policy  : keating-default", delay: 400 },
