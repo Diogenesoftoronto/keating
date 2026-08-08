@@ -399,8 +399,11 @@ async function startLiveSession(
 	}
 	// Vision is only offered when the model can actually accept still images;
 	// on a legacy preview model the frame sink stays dark rather than erroring.
-	const visionEnabled = Boolean(video) && capability.capabilities.realtimeImage === "native";
-	canonical.emit("run.started", { mode: visionEnabled ? "multimodal" : "voice" });
+	// Capability is fixed for the session, but whether frames are flowing is not:
+	// the learner can turn the camera on and off mid-conversation.
+	const visionCapable = capability.capabilities.realtimeImage === "native";
+	let activeVideo: typeof video = visionCapable ? video ?? null : null;
+	canonical.emit("run.started", { mode: activeVideo ? "multimodal" : "voice" });
 	const apiKey = await getApiKey("openai");
 	if (!apiKey) {
 		const error = new Error("No OpenAI API key configured. Add one in Settings → Providers & Models.");
@@ -523,8 +526,10 @@ async function startLiveSession(
 	let responseActive = false;
 
 	// The frame drip gives the model ambient context; look_at_screen lets it
-	// deliberately check the learner's work at the moment it matters.
-	const sessionTools = visionEnabled ? [...(tools ?? []), LOOK_AT_SCREEN_TOOL] : (tools ?? []);
+	// deliberately check the learner's work at the moment it matters. Registered
+	// on capability rather than on the camera being on right now, because tools
+	// are fixed at session setup and the camera is not.
+	const sessionTools = visionCapable ? [...(tools ?? []), LOOK_AT_SCREEN_TOOL] : (tools ?? []);
 
 	micStream = await attachMicrophone(pc);
 	if (!micStream) {
@@ -553,6 +558,21 @@ async function startLiveSession(
 		framesSent += 1;
 	};
 
+	/**
+	 * Point the frame drip at a different capture handle (or none).
+	 *
+	 * Only the subscription moves — the handle belongs to the caller, which is
+	 * still rendering a preview from it.
+	 */
+	const attachVideo = (next: typeof video) => {
+		unsubscribeFrames?.();
+		unsubscribeFrames = null;
+		activeVideo = visionCapable ? next ?? null : null;
+		if (activeVideo && dataChannel.readyState === "open") {
+			unsubscribeFrames = activeVideo.onFrame(sendFrame);
+		}
+	};
+
 	dataChannel.addEventListener("open", () => {
 		// Re-sent even though the same config rode along with the SDP offer: the
 		// update is idempotent and guarantees tools are registered before the
@@ -565,7 +585,7 @@ async function startLiveSession(
 			if (turnItem.text.trim()) send(realtimeHistoryItem(turnItem));
 		}
 
-		if (visionEnabled && video) unsubscribeFrames = video.onFrame(sendFrame);
+		if (activeVideo) unsubscribeFrames = activeVideo.onFrame(sendFrame);
 
 		setState("listening");
 		telemetry.emit("connection.setup.completed", {
@@ -670,8 +690,15 @@ async function startLiveSession(
 						// look_at_screen is served locally from the capture handle
 						// rather than round-tripping through the agent tool catalog.
 						if (pending.name === LOOK_AT_SCREEN_TOOL_NAME) {
-							const frame = await video?.captureFrameNow();
-							if (!frame) return { ok: false, error: "No video frame is available right now." };
+							const frame = await activeVideo?.captureFrameNow();
+							if (!frame) {
+								return {
+									ok: false,
+									error: activeVideo
+										? "The camera is still warming up. Ask the learner to describe what they are showing."
+										: "The learner's camera and screen sharing are both off. Ask them to turn one on if you need to see it.",
+								};
+							}
 							return { ok: true, note: "A current frame has been added to the conversation." };
 						}
 						if (!onToolCall) throw new Error(`No handler is available for tool ${pending.name}.`);
@@ -733,7 +760,22 @@ async function startLiveSession(
 		get framesSent() {
 			return framesSent;
 		},
-		videoRoute: visionEnabled ? "sampled" : "none",
+		get videoRoute() {
+			return activeVideo ? "sampled" as const : "none" as const;
+		},
+		visionCapable,
+		get inputStream() {
+			return micStream;
+		},
+		setMicrophoneMuted(muted: boolean) {
+			// Disabling the track keeps the WebRTC sender alive and transmitting
+			// silence, which is what the server's turn detection expects; removing
+			// the track would end the session's input stream outright.
+			micStream?.getAudioTracks().forEach((track) => { track.enabled = !muted; });
+		},
+		setVideo(next) {
+			attachVideo(next);
+		},
 		async stop() {
 			complete("cancelled");
 			cleanup();

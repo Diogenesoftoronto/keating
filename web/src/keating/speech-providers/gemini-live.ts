@@ -252,8 +252,11 @@ async function startLiveSession(
 	}
 
 	// Gemini has a real video lane, so frames go straight in at full tier.
-	const visionEnabled = Boolean(video) && capability.realtimeVideo === "native";
-	canonical.emit("run.started", { mode: visionEnabled ? "multimodal" : "voice" });
+	// Capability is decided once; whether frames are actually flowing follows the
+	// learner's camera button and can change at any point in the conversation.
+	const visionCapable = capability.realtimeVideo === "native";
+	let activeVideo = visionCapable ? video ?? null : null;
+	canonical.emit("run.started", { mode: activeVideo ? "multimodal" : "voice" });
 
 	const apiKey = await getApiKey("google");
 	if (!apiKey) {
@@ -297,6 +300,7 @@ async function startLiveSession(
 	let capture: Awaited<ReturnType<typeof startPcmCapture>> | null = null;
 	let unsubscribeFrames: (() => void) | null = null;
 	let cleanedUp = false;
+	let muted = false;
 
 	const cleanup = () => {
 		if (cleanedUp) return;
@@ -457,7 +461,7 @@ async function startLiveSession(
 				},
 				// Frames are already downscaled client-side; low resolution keeps
 				// the token cost of continuous vision manageable.
-				...(visionEnabled ? { mediaResolution: MediaResolution.MEDIA_RESOLUTION_LOW } : {}),
+				...(visionCapable ? { mediaResolution: MediaResolution.MEDIA_RESOLUTION_LOW } : {}),
 				...(buildGeminiToolConfig(tools ?? [], model) ? { tools: buildGeminiToolConfig(tools ?? [], model) } : {}),
 				systemInstruction:
 					instructions ||
@@ -490,7 +494,7 @@ async function startLiveSession(
 		capture = await startPcmCapture({
 			sampleRate: GEMINI_INPUT_SAMPLE_RATE,
 			onChunk: (base64) => {
-				if (!session || state === "closed") return;
+				if (!session || state === "closed" || muted) return;
 				try {
 					session.sendRealtimeInput({
 						audio: { data: base64, mimeType: `audio/pcm;rate=${GEMINI_INPUT_SAMPLE_RATE}` },
@@ -508,17 +512,28 @@ async function startLiveSession(
 		throw error;
 	}
 
-	if (visionEnabled && video) {
-		unsubscribeFrames = video.onFrame((frame: CapturedFrame) => {
-			if (!session || state === "closed") return;
-			try {
-				session.sendRealtimeInput({ video: { data: frame.data, mimeType: frame.mimeType } });
-				framesSent += 1;
-			} catch {
-				// Same as audio: a dead socket reports through the callbacks.
-			}
-		});
-	}
+	const sendFrame = (frame: CapturedFrame) => {
+		if (!session || state === "closed") return;
+		try {
+			session.sendRealtimeInput({ video: { data: frame.data, mimeType: frame.mimeType } });
+			framesSent += 1;
+		} catch {
+			// Same as audio: a dead socket reports through the callbacks.
+		}
+	};
+
+	/**
+	 * Move the frame feed onto a different capture handle, or off entirely.
+	 * The handle stays the caller's to stop; only the subscription moves.
+	 */
+	const attachVideo = (next: typeof video) => {
+		unsubscribeFrames?.();
+		unsubscribeFrames = null;
+		activeVideo = visionCapable ? next ?? null : null;
+		if (activeVideo) unsubscribeFrames = activeVideo.onFrame(sendFrame);
+	};
+
+	if (activeVideo) unsubscribeFrames = activeVideo.onFrame(sendFrame);
 
 	setState("listening");
 	telemetry.emit("connection.setup.completed", {
@@ -532,7 +547,22 @@ async function startLiveSession(
 		get framesSent() {
 			return framesSent;
 		},
-		videoRoute: visionEnabled ? "native" : "none",
+		get videoRoute() {
+			return activeVideo ? "native" as const : "none" as const;
+		},
+		visionCapable,
+		get inputStream() {
+			return capture?.stream ?? null;
+		},
+		setMicrophoneMuted(next: boolean) {
+			muted = next;
+			// Belt and braces: the flag stops chunks reaching the socket, and
+			// disabling the track means the worklet only ever sees silence.
+			capture?.stream.getAudioTracks().forEach((track) => { track.enabled = !next; });
+		},
+		setVideo(next) {
+			attachVideo(next);
+		},
 		async stop() {
 			complete("cancelled");
 			cleanup();

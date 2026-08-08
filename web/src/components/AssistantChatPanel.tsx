@@ -41,11 +41,13 @@ import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import { css, cx } from "../../styled-system/css";
 import {
+  AudioLines,
+  Cpu,
+  Plus,
   ChevronRight,
   CircleAlert,
   CircleCheck,
   CircleDollarSign,
-  Camera,
   Check,
   Copy,
   CopyPlus,
@@ -56,7 +58,6 @@ import {
   Loader2,
   Mic,
   MicOff,
-  MonitorUp,
   Paperclip,
   Send,
   Server,
@@ -96,24 +97,16 @@ import type { Quiz, QuizGradePayload, QuizQuestionGrade } from "../keating/core"
 import { KeatingStorage } from "../keating/storage";
 import { QuizGradesContext, type QuizGradesContextValue } from "./quiz-grades-context";
 import {
-  getSpeechProvider,
-	getLiveSpeechBridge,
   isDuplexSpeechProvider,
   KEATING_VOICE_TOOL_NAME,
   loadWebSpeechSettings,
   primeSpeechAudio,
   resolveSpeechCredential,
-  resolveSpeechRealtimeTier,
-  type LiveSpeechSession,
-  type LiveSpeechState,
 } from "../keating/speech";
 import { startVideoCapture, type VideoCaptureHandle } from "../keating/video-capture";
-import {
-	appendLiveTranscript,
-	emptyLiveTranscript,
-	flushLiveTranscript,
-	type LiveTranscriptTurn,
-} from "../keating/live-transcript";
+import { type LiveTranscriptTurn } from "../keating/live-transcript";
+import LiveConversation from "./live/LiveConversation";
+import { liveCredentialProvider, useLiveSession } from "./live/use-live-session";
 import { IMAGE_PROGRESS_EVENT, type ImageProgressDetail } from "../keating/image-stream";
 import { ANIMATION_PROGRESS_EVENT, type AnimationProgressDetail } from "../keating/tool-arg-stream";
 import { startMicRecording, transcribeAudio, type MicRecorder } from "../keating/speech-providers/stt";
@@ -159,7 +152,6 @@ const MAX_CAPTURED_API_ERROR_KEYS = 256;
 
 const mutedTextClass = css({ color: "var(--muted-foreground)" });
 const foregroundTextClass = css({ color: "var(--foreground)" });
-const destructiveTextClass = css({ color: "var(--destructive)" });
 const primaryTextClass = css({ color: "var(--primary)" });
 const pulseClass = css({ animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite" });
 const srInteractiveClass = css({
@@ -693,12 +685,6 @@ function ImagePart({ image, filename }: { image: string; filename?: string }) {
 // Voice is a real composer mode, not a small attachment action. Duplex models
 // open the realtime surface; other providers use press-and-hold dictation and
 // place the transcript back into the text composer for review.
-function liveCredentialProvider(providerId: string): "google" | "openai" | null {
-	if (providerId === "gemini-live") return "google";
-	if (providerId === "openai-realtime") return "openai";
-	return null;
-}
-
 function SpeechComposerControl({
 	expanded,
 	onExpandedChange,
@@ -750,6 +736,22 @@ function SpeechComposerControl({
 			onExpandedChange(false);
 		}
 	}, [expanded, forceStt, onExpandedChange]);
+
+	// Let anything outside the composer start a live conversation — the /live
+	// route is just this event fired on arrival. Kept as an event rather than a
+	// prop so the trigger does not have to be a descendant of the chat panel.
+	useEffect(() => {
+		const onExternalStart = () => {
+			// No pre-flight screen capture here: without a click of its own this
+			// has no transient user activation to spend, and the learner can turn
+			// sharing on from inside the session.
+			pendingLiveVideoRef.current = null;
+			void primeSpeechAudio().catch(() => {});
+			setLiveOpen(true);
+		};
+		window.addEventListener("keating:start-live", onExternalStart);
+		return () => window.removeEventListener("keating:start-live", onExternalStart);
+	}, []);
 
   const appendToComposer = (text: string) => {
     const trimmed = text.trim();
@@ -845,6 +847,11 @@ function SpeechComposerControl({
 				onClose={() => setLiveOpen(false)}
 				onConversationComplete={onConversationComplete}
 				initialVideoPromise={pendingLiveVideoRef.current}
+				onOpenSettings={(tab) => {
+					window.dispatchEvent(new CustomEvent("keating:open-settings", {
+						detail: { tab: tab === "speech" ? "learning" : "models" },
+					}));
+				}}
 				onFallback={() => {
 					setLiveOpen(false);
 					setForceStt(true);
@@ -856,30 +863,45 @@ function SpeechComposerControl({
 		: null;
 
   if (!expanded) {
+		// Dictation and live conversation are different jobs, so they get
+		// different buttons rather than one button whose meaning depends on a
+		// setting the learner cannot see from here. Dictation puts words in the
+		// composer to edit before sending; live opens a conversation that Keating
+		// answers out loud.
 		return (
 			<>
 				<button
 					type="button"
-					onClick={activateVoice}
-					title={mode === "duplex" ? "Start a live conversation" : "Use voice input"}
-					aria-label={mode === "duplex" ? "Start a live conversation" : "Use voice input"}
-					aria-haspopup={mode === "duplex" ? "dialog" : undefined}
+					onClick={() => {
+						setForceStt(true);
+						onExpandedChange(true);
+					}}
+					title="Dictate a message"
+					aria-label="Dictate a message"
 					className={cx(
 						composerIconButtonClass,
-						mode === "duplex"
-							? css({
-								width: "auto",
-								gap: "0.375rem",
-								paddingInline: "0.5rem",
-								color: "var(--primary)",
-								_hover: { backgroundColor: "color-mix(in srgb, var(--primary) 10%, transparent)" },
-								sm: { width: "auto" },
-							})
-							: css({ _hover: { backgroundColor: "var(--muted)", color: "var(--foreground)" } }),
+						css({ _hover: { backgroundColor: "var(--muted)", color: "var(--foreground)" } }),
 					)}
 				>
 					<Mic size={16} />
-					{mode === "duplex" ? <span className={css({ display: "none", sm: { display: "inline" } })}>Live</span> : null}
+				</button>
+				<button
+					type="button"
+					onClick={activateVoice}
+					title="Start a live conversation"
+					aria-label="Start a live conversation"
+					aria-haspopup="dialog"
+					className={cx(
+						composerIconButtonClass,
+						css({
+							borderColor: "transparent",
+							backgroundColor: "var(--foreground)",
+							color: "var(--background)",
+							_hover: { backgroundColor: "color-mix(in srgb, var(--foreground) 85%, var(--background))", color: "var(--background)" },
+						}),
+					)}
+				>
+					<AudioLines size={16} />
 				</button>
 				{liveOverlay}
 			</>
@@ -892,26 +914,25 @@ function SpeechComposerControl({
 				<button
 					type="button"
 					disabled={busy}
-					onClick={mode === "duplex" ? () => openLiveVoice() : undefined}
-					onPointerDown={mode === "stt" ? (event) => {
+					onPointerDown={(event) => {
 						event.currentTarget.setPointerCapture(event.pointerId);
 						beginPushToTalk();
-					} : undefined}
-					onPointerUp={mode === "stt" ? () => void finishPushToTalk() : undefined}
-					onPointerCancel={mode === "stt" ? () => void finishPushToTalk() : undefined}
-					onKeyDown={mode === "stt" ? (event) => {
+					}}
+					onPointerUp={() => void finishPushToTalk()}
+					onPointerCancel={() => void finishPushToTalk()}
+					onKeyDown={(event) => {
 						if ((event.key === " " || event.key === "Enter") && !event.repeat) {
 							event.preventDefault();
 							beginPushToTalk();
 						}
-					} : undefined}
-					onKeyUp={mode === "stt" ? (event) => {
+					}}
+					onKeyUp={(event) => {
 						if (event.key === " " || event.key === "Enter") {
 							event.preventDefault();
 							void finishPushToTalk();
 						}
-					} : undefined}
-					aria-label={mode === "duplex" ? "Start live voice conversation" : "Hold to speak"}
+					}}
+					aria-label="Hold to speak"
 					aria-pressed={recording}
 					className={cx(
 						css({
@@ -937,7 +958,7 @@ function SpeechComposerControl({
 					)}
 				>
 					{busy ? <Spinner size={16} /> : recording ? <MicOff size={16} /> : <Mic size={16} />}
-					<span>{busy ? "Transcribing" : recording ? "Release to transcribe" : mode === "duplex" ? "Talk with Keating" : "Hold to speak"}</span>
+					<span>{busy ? "Transcribing" : recording ? "Release to transcribe" : "Hold to speak"}</span>
 				</button>
 				<button type="button" onClick={() => onExpandedChange(false)} aria-label="Switch to keyboard" title="Switch to keyboard" className={composerIconButtonClass}>
 					<Keyboard size={16} />
@@ -948,389 +969,59 @@ function SpeechComposerControl({
   );
 }
 
-const LIVE_STATE_LABEL: Record<LiveSpeechState, string> = {
-  connecting: "Connecting…",
-  listening: "Listening",
-  speaking: "Keating is speaking",
-  closed: "Ended",
-};
-
-// Live bidirectional voice session overlay. Drives the configured duplex
-// speech provider (OpenAI Realtime / Gemini Live) and degrades to push-to-talk
-// dictation if the live session cannot be established.
+// The live conversation surface, rendered over the chat. The session runtime
+// and every pixel of it live in components/live so the /live route and this
+// overlay cannot drift apart again.
 function LiveVoiceOverlay({
 	onClose,
 	onConversationComplete,
 	onFallback,
 	initialVideoPromise,
+	onOpenSettings,
 }: {
 	onClose: () => void;
 	onConversationComplete: (turns: LiveTranscriptTurn[]) => void | Promise<void>;
 	onFallback: () => void;
 	initialVideoPromise?: Promise<VideoCaptureHandle | null> | null;
+	onOpenSettings?: (tab: "providers" | "speech") => void;
 }) {
-  const settings = useMemo(() => loadWebSpeechSettings(), []);
-  const tier = useMemo(() => resolveSpeechRealtimeTier(settings), [settings]);
-  const [state, setState] = useState<LiveSpeechState>("connecting");
-  const [transcript, setTranscript] = useState(emptyLiveTranscript);
-  const [error, setError] = useState<string | null>(null);
-  const [videoLive, setVideoLive] = useState(false);
-  const [videoNote, setVideoNote] = useState<string | null>(null);
-  const sessionRef = useRef<LiveSpeechSession | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
-  const videoRef = useRef<VideoCaptureHandle | null>(null);
-  const previewRef = useRef<HTMLVideoElement | null>(null);
-  const transcriptRef = useRef(transcript);
-  const transcriptViewportRef = useRef<HTMLDivElement | null>(null);
+	const session = useLiveSession({ onConversationComplete, initialVideoPromise });
 
-	const receiveTranscript = useCallback((role: "user" | "assistant", text: string, final: boolean) => {
-		setTranscript((current) => {
-			const next = appendLiveTranscript(current, role, text, final);
-			transcriptRef.current = next;
-			return next;
-		});
-	}, []);
-
+	// Ending is the learner's decision, so the surface closes only once the
+	// session has flushed its transcript into the chat.
 	useEffect(() => {
-		const viewport = transcriptViewportRef.current;
-		if (viewport) viewport.scrollTop = viewport.scrollHeight;
-	}, [transcript]);
+		if (session.phase === "ended") onClose();
+	}, [session.phase, onClose]);
 
-  useEffect(() => {
-    const abort = new AbortController();
-    abortRef.current = abort;
-    let active = true;
-    (async () => {
-      try {
-        const provider = await getSpeechProvider(settings.providerId);
-        if (!provider?.startLiveSession) {
-          throw new Error("The selected speech provider does not support live voice.");
-        }
-		const bridge = getLiveSpeechBridge();
-		const conversationDetail: { ids?: { sessionId: string } } = {};
-		window.dispatchEvent(new CustomEvent("keating:conversation-ids", { detail: conversationDetail }));
+	// Escape ends the call rather than abandoning an open microphone.
+	useEffect(() => {
+		const onKeyDown = (event: KeyboardEvent) => {
+			if (event.key === "Escape") session.end();
+		};
+		window.addEventListener("keydown", onKeyDown);
+		return () => window.removeEventListener("keydown", onKeyDown);
+	}, [session]);
 
-		// Vision is opt-in and best-effort: a learner who declines the camera
-		// prompt should still get a working voice session.
-		let video: VideoCaptureHandle | null = null;
-		if (settings.videoEnabled) {
-			const videoPromise = initialVideoPromise ?? startVideoCapture({
-				source: settings.videoSource,
-				intervalMs: settings.frameIntervalMs,
-			}).catch((err) => {
-				console.warn("[keating:live] video capture unavailable", err);
-				return null;
-			});
-			video = await videoPromise;
-			if (!active) {
-				video?.stop();
-				return;
-			}
-			videoRef.current = video;
-			if (video) {
-				if (previewRef.current) {
-					previewRef.current.srcObject = video.stream;
-					void previewRef.current.play().catch(() => {});
-				}
-				setVideoLive(true);
-			} else {
-				setVideoNote("Video is unavailable. The live conversation is continuing with audio.");
-			}
-		}
-
-        const session = await provider.startLiveSession({
-          settings,
-          getApiKey: getProviderApiKey,
-          signal: abort.signal,
-		  instructions: bridge?.instructions,
-		  history: bridge?.history,
-		  video,
-		  tools: bridge?.tools,
-		  onToolCall: bridge ? (call) => bridge.execute(call, abort.signal) : undefined,
-		  onConversationEvent: (event) => window.dispatchEvent(new CustomEvent("keating:conversation-event", { detail: event })),
-		  conversationIds: conversationDetail.ids,
-          onState: (next) => { if (active) setState(next); },
-          onUserTranscript: (text, final) => {
-			if (active) receiveTranscript("user", text, final);
-		  },
-          onAssistantTranscript: (text, final) => {
-			if (active) receiveTranscript("assistant", text, final);
-		  },
-          onError: (err) => { if (active) setError(err.message); },
-        });
-        if (!active) {
-          void session.stop();
-          return;
-        }
-        sessionRef.current = session;
-      } catch (err) {
-        if (active) setError(err instanceof Error ? err.message : String(err));
-      }
-    })();
-    return () => {
-      active = false;
-      abort.abort();
-      void sessionRef.current?.stop().catch(() => {});
-      videoRef.current?.stop();
-      videoRef.current = null;
-		if (previewRef.current) previewRef.current.srcObject = null;
-    };
-	}, [initialVideoPromise, receiveTranscript, settings]);
-
-  const finish = () => {
-    abortRef.current?.abort();
-    void sessionRef.current?.stop().catch(() => {});
-	const completed = flushLiveTranscript(transcriptRef.current);
-	transcriptRef.current = completed;
-	if (completed.turns.length > 0) {
-		void Promise.resolve(onConversationComplete(completed.turns)).catch((err) => {
-			console.error("Could not preserve the live conversation in chat:", err);
-		});
-	}
-    onClose();
-  };
-
-  return (
-    <div
-      className={css({
-        position: "fixed",
-        inset: 0,
-        zIndex: 100,
-        display: "flex",
-				alignItems: "stretch",
-        justifyContent: "center",
-        backgroundColor: "color-mix(in srgb, var(--background) 80%, transparent)",
-				padding: 0,
-        backdropFilter: "blur(4px)",
-				sm: { alignItems: "center", padding: "1rem" },
-      })}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Live voice conversation"
-    >
-      <div
-        className={css({
-          width: "100%",
-					height: "100dvh",
-          maxWidth: "28rem",
-					display: "flex",
-					flexDirection: "column",
-          backgroundColor: "var(--card)",
-					padding: "1rem",
-					sm: { height: "auto", maxHeight: "min(80dvh, 42rem)", borderRadius: "0.75rem", border: "1px solid var(--border)", padding: "1.25rem" },
-        })}
-      >
-        <div className={css({ display: "flex", alignItems: "center", gap: "0.75rem" })}>
-						<span
-            className={cx(
-              css({
-								position: "relative",
-                display: "inline-flex",
-								width: "3.5rem",
-								height: "3.5rem",
-                alignItems: "center",
-                justifyContent: "center",
-								borderRadius: "0.75rem",
-                border: "1px solid",
-								backgroundColor: "var(--background)",
-              }),
-              error
-                ? css({ borderColor: "var(--destructive)", color: "var(--destructive)" })
-                : state === "speaking"
-                  ? css({ borderColor: "var(--primary)", color: "var(--primary)" })
-                  : css({ borderColor: "var(--border)", color: "var(--foreground)" }),
-              state === "listening" && !error ? pulseClass : "",
-            )}
-          >
-							<img src="/brand/mascot-head.png" alt="" className={css({ width: "2.5rem", height: "auto" })} />
-							<span className={css({ position: "absolute", right: "-0.25rem", bottom: "-0.25rem", display: "inline-flex", height: "1.5rem", width: "1.5rem", alignItems: "center", justifyContent: "center", borderRadius: "9999px", border: "1px solid var(--border)", backgroundColor: "var(--background)" })}>
-								{error ? <MicOff size={13} /> : state === "connecting" ? <Spinner size={13} /> : <Mic size={13} />}
-							</span>
-          </span>
-          <div className={css({ minWidth: 0, flex: 1 })}>
-            <div className={css({ fontSize: "0.875rem", fontWeight: 500 })}>{error ? "Voice session error" : LIVE_STATE_LABEL[state]}</div>
-            <div
-              className={css({
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                fontSize: "0.75rem",
-                color: "var(--muted-foreground)",
-              })}
-            >
-			  {tier.label}
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={finish}
-            className={cx(
-              composerIconButtonClass,
-              css({
-                _hover: { backgroundColor: "var(--muted)", color: "var(--foreground)" },
-                sm: { width: "2rem", height: "2rem" },
-              }),
-            )}
-            aria-label="Close live voice"
-            title="Close"
-          >
-            <X size={16} />
-          </button>
-        </div>
-
+	return (
 		<div
+			role="dialog"
+			aria-modal="true"
+			aria-label="Live voice conversation"
 			className={css({
-				position: "relative",
-				marginTop: "1rem",
-				display: "grid",
-				minHeight: "9rem",
-				placeItems: "center",
-				overflow: "hidden",
-				borderRadius: "0.5rem",
-				backgroundColor: "var(--muted)",
+				position: "fixed",
+				inset: 0,
+				zIndex: 60,
+				backgroundColor: "var(--background)",
 			})}
 		>
-			<video
-				ref={previewRef}
-				muted
-				playsInline
-				aria-label={settings.videoSource === "screen" ? "Shared screen preview" : "Camera preview"}
-				className={css({
-					position: "absolute",
-					inset: 0,
-					display: videoLive ? "block" : "none",
-					width: "100%",
-					height: "100%",
-					objectFit: "cover",
-				})}
+			<LiveConversation
+				session={session}
+				onClose={session.end}
+				onOpenSettings={onOpenSettings}
+				onUseDictation={onFallback}
 			/>
-			{!videoLive ? (
-				<div className={css({ display: "grid", justifyItems: "center", gap: "0.5rem", padding: "1rem", textAlign: "center" })}>
-					<img src="/brand/mascot-head.png" alt="" className={css({ width: "4rem", height: "auto" })} />
-					<p className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-						{settings.videoEnabled && !videoNote ? "Starting video…" : "Audio conversation"}
-					</p>
-				</div>
-			) : null}
-			<div
-				className={css({
-					position: "absolute",
-					right: "0.5rem",
-					bottom: "0.5rem",
-					display: "inline-flex",
-					alignItems: "center",
-					gap: "0.375rem",
-					borderRadius: "9999px",
-					backgroundColor: "color-mix(in srgb, var(--background) 88%, transparent)",
-					paddingInline: "0.5rem",
-					paddingBlock: "0.25rem",
-					fontSize: "0.6875rem",
-					color: "var(--foreground)",
-				})}
-			>
-				{settings.videoEnabled
-					? settings.videoSource === "screen" ? <MonitorUp size={12} /> : <Camera size={12} />
-					: <Mic size={12} />}
-				{videoLive
-					? `${settings.videoSource === "screen" ? "Screen" : "Camera"} · ${tier.videoRoute === "sampled" ? "sampled" : "live"}`
-					: "Microphone live"}
-			</div>
 		</div>
-		{videoNote ? (
-			<p role="status" className={css({ marginTop: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-				{videoNote}
-			</p>
-		) : null}
-
-        {error ? (
-						<div className={css({ marginTop: "1rem", display: "flex", minHeight: 0, flex: 1, flexDirection: "column", gap: "0.75rem" })}>
-            <p className={css({ fontSize: "0.75rem", color: "var(--destructive)" })}>{error}</p>
-            <div className={css({ display: "flex", gap: "0.5rem" })}>
-              <button
-                type="button"
-                onClick={onFallback}
-                className={cx(dialogButtonClass, css({ gap: "0.375rem" }))}
-              >
-                <Mic size={14} /> Use dictation instead
-              </button>
-              <button
-                type="button"
-                onClick={finish}
-                className={dialogButtonClass}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        ) : (
-						<div className={css({ marginTop: "1rem", display: "flex", minHeight: 0, flex: 1, flexDirection: "column", gap: "0.75rem" })}>
-							<div
-								ref={transcriptViewportRef}
-              className={css({
-                display: "grid",
-								minHeight: "8rem",
-								maxHeight: "none",
-								flex: 1,
-				gap: "0.75rem",
-                overflowY: "auto",
-                fontSize: "0.875rem",
-								alignContent: "start",
-								sm: { maxHeight: "14rem" },
-              })}
-            >
-			  {transcript.turns.map((turn, index) => (
-				<div key={index} className={css({ display: "grid", gap: "0.375rem" })}>
-					{turn.user ? (
-						<p className={css({ marginLeft: "auto", maxWidth: "85%", textAlign: "right", color: "var(--muted-foreground)" })}>
-							{turn.user}
-						</p>
-					) : null}
-					{turn.assistant ? <p className={css({ maxWidth: "90%", color: "var(--foreground)" })}>{turn.assistant}</p> : null}
-				</div>
-			  ))}
-			  {transcript.draft.user ? (
-				<p className={css({ marginLeft: "auto", maxWidth: "85%", textAlign: "right", color: "var(--muted-foreground)" })}>
-					{transcript.draft.user}
-				</p>
-			  ) : null}
-			  {transcript.draft.assistant ? (
-				<p className={css({ maxWidth: "90%", color: "var(--foreground)" })}>{transcript.draft.assistant}</p>
-			  ) : null}
-			  {transcript.turns.length === 0 && !transcript.draft.user && !transcript.draft.assistant ? (
-								<p className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>Start speaking. Keating is listening.</p>
-              ) : null}
-            </div>
-            <button
-              type="button"
-              onClick={finish}
-              className={cx(
-                "dialog-compact-button",
-                css({
-                  display: "inline-flex",
-                  width: "100%",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "0.375rem",
-                  borderRadius: "0.375rem",
-                  border: "1px solid var(--destructive)",
-                  backgroundColor: "color-mix(in srgb, var(--destructive) 10%, transparent)",
-                  paddingInline: "0.75rem",
-                  paddingBlock: "0.5rem",
-                  fontSize: "0.875rem",
-                  color: "var(--destructive)",
-                  _hover: {
-                    backgroundColor: "color-mix(in srgb, var(--destructive) 20%, transparent)",
-                  },
-                }),
-              )}
-            >
-              <MicOff size={16} /> End conversation
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+	);
 }
 
 function FilePart({
@@ -3493,162 +3184,187 @@ const REASONING_OPTIONS: {
   { value: "xhigh", label: "Max", short: "Max" },
 ];
 
-function ReasoningLevelSelector({
-  level,
-  onChange,
-  disabled,
+/**
+ * The composer's "+" menu.
+ *
+ * The action row had grown to a model button, a reasoning button, a paperclip
+ * and two voice controls, which on a phone left almost no room for the thing
+ * you are actually there to do. Everything that is a setting rather than an
+ * action folds in here; only voice and send stay on the row.
+ */
+function ComposerActionsMenu({
+	modelLabel,
+	onModelSelect,
+	thinkingLevel,
+	onThinkingLevelChange,
+	thinkingDisabled,
 }: {
-  level: ThinkingLevel;
-  onChange: (level: ThinkingLevel) => void;
-  disabled?: boolean;
+	modelLabel: string;
+	onModelSelect?: () => void;
+	thinkingLevel: ThinkingLevel;
+	onThinkingLevelChange: (level: ThinkingLevel) => void;
+	thinkingDisabled?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
-  const current =
-    REASONING_OPTIONS.find((o) => o.value === level) ?? REASONING_OPTIONS[3];
-  const ref = useRef<HTMLDivElement>(null);
+	const [open, setOpen] = useState(false);
+	const [reasoningOpen, setReasoningOpen] = useState(false);
+	const ref = useRef<HTMLDivElement>(null);
+	const reasoning = REASONING_OPTIONS.find((option) => option.value === thinkingLevel) ?? REASONING_OPTIONS[3];
 
-  useEffect(() => {
-    if (!open) return;
-    const handle = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node))
-        setOpen(false);
-    };
-    document.addEventListener("mousedown", handle);
-    return () => document.removeEventListener("mousedown", handle);
-  }, [open]);
+	useEffect(() => {
+		if (!open) return;
+		const handlePointer = (event: MouseEvent) => {
+			if (ref.current && !ref.current.contains(event.target as Node)) {
+				setOpen(false);
+				setReasoningOpen(false);
+			}
+		};
+		const handleKey = (event: KeyboardEvent) => {
+			if (event.key !== "Escape") return;
+			// Escape backs out one level at a time rather than closing everything,
+			// so a mis-tap on the submenu does not lose the menu too.
+			if (reasoningOpen) setReasoningOpen(false);
+			else setOpen(false);
+		};
+		document.addEventListener("mousedown", handlePointer);
+		document.addEventListener("keydown", handleKey);
+		return () => {
+			document.removeEventListener("mousedown", handlePointer);
+			document.removeEventListener("keydown", handleKey);
+		};
+	}, [open, reasoningOpen]);
 
-  return (
-    <div ref={ref} className={css({ position: "relative" })}>
-      <button
-        type="button"
-        className={cx(
-          srInteractiveClass,
-          css({
-            display: "none",
-            height: "2.25rem",
-            flexShrink: 0,
-            alignItems: "center",
-            gap: "0.25rem",
-            borderRadius: "0.375rem",
-            border: "1px solid var(--border)",
-            paddingInline: "0.5rem",
-            fontSize: "0.75rem",
-            color: "var(--muted-foreground)",
-            _hover: {
-              backgroundColor: "var(--accent)",
-              color: "var(--accent-foreground)",
-            },
-            _disabled: { opacity: 0.5 },
-            sm: { display: "inline-flex" },
-          }),
-          level === "off"
-            ? ""
-            : css({
-                borderColor: "color-mix(in srgb, var(--primary) 50%, transparent)",
-                color: "var(--primary)",
-              }),
-        )}
-        disabled={disabled}
-        title={`Reasoning: ${current.label}`}
-        onClick={() => setOpen((o) => !o)}
-      >
-        <Lightbulb size={12} />
-        <span className={css({ fontWeight: 500 })}>{current.short}</span>
-      </button>
-      {open && (
-        <div
-          className={cx(
-            "font-terminal",
-            css({
-              position: "absolute",
-              right: 0,
-              bottom: "100%",
-              zIndex: 50,
-              marginBottom: "0.25rem",
-              width: "10rem",
-              borderRadius: "0.375rem",
-              border: "1px solid var(--border)",
-              backgroundColor: "var(--background)",
-              boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
-            }),
-          )}
-        >
-          <div className={css({ display: "flex", flexDirection: "column", padding: "0.25rem" })}>
-            <div
-              className={css({
-                paddingInline: "0.5rem",
-                paddingBlock: "0.25rem",
-                fontSize: "10px",
-                fontWeight: 600,
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-                color: "var(--muted-foreground)",
-              })}
-            >
-              Reasoning
-            </div>
-            {REASONING_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                className={cx(
-                  srInteractiveClass,
-                  css({
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    borderRadius: "0.25rem",
-                    paddingInline: "0.5rem",
-                    paddingBlock: "0.375rem",
-                    textAlign: "left",
-                    fontSize: "0.75rem",
-                  }),
-                  opt.value === level
-                    ? css({
-                        backgroundColor: "color-mix(in srgb, var(--primary) 10%, transparent)",
-                        color: "var(--primary)",
-                        fontWeight: 500,
-                      })
-                    : css({
-                        color: "var(--foreground)",
-                        _hover: {
-                          backgroundColor: "var(--accent)",
-                          color: "var(--accent-foreground)",
-                        },
-                      }),
-                )}
-                onClick={() => {
-                  onChange(opt.value);
-                  setOpen(false);
-                }}
-              >
-                <span
-                  className={css({
-                    width: "0.5rem",
-                    height: "0.5rem",
-                    borderRadius: "9999px",
-                  })}
-                  style={{
-                    background:
-                      opt.value === "off"
-                        ? "var(--muted-foreground, #888)"
-                        : opt.value === "xhigh"
-                          ? "#dc2626"
-                          : opt.value === "high"
-                            ? "#ea580c"
-                            : opt.value === "medium"
-                              ? "#1e9b50"
-                              : "#3b82f6",
-                  }}
-                />
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
+	const itemClass = css({
+		display: "flex",
+		width: "100%",
+		alignItems: "center",
+		gap: "0.625rem",
+		borderRadius: "0.375rem",
+		paddingInline: "0.625rem",
+		paddingBlock: "0.5rem",
+		textAlign: "left",
+		fontSize: "0.8125rem",
+		color: "var(--foreground)",
+		cursor: "pointer",
+		_hover: { backgroundColor: "var(--accent)", color: "var(--accent-foreground)" },
+		_disabled: { opacity: 0.5, cursor: "not-allowed" },
+	});
+	const trailingClass = css({
+		marginLeft: "auto",
+		fontSize: "0.75rem",
+		color: "var(--muted-foreground)",
+		maxWidth: "7rem",
+		overflow: "hidden",
+		textOverflow: "ellipsis",
+		whiteSpace: "nowrap",
+	});
+
+	return (
+		<div ref={ref} className={css({ position: "relative", flexShrink: 0 })}>
+			<button
+				type="button"
+				onClick={() => setOpen((value) => !value)}
+				aria-haspopup="menu"
+				aria-expanded={open}
+				title="More actions"
+				aria-label="More actions"
+				className={cx(
+					composerIconButtonClass,
+					open ? css({ backgroundColor: "var(--accent)", color: "var(--accent-foreground)" }) : undefined,
+				)}
+			>
+				<Plus size={17} />
+			</button>
+
+			{open ? (
+				<div
+					role="menu"
+					className={cx("font-terminal", css({
+						position: "absolute",
+						left: 0,
+						bottom: "100%",
+						zIndex: 50,
+						marginBottom: "0.375rem",
+						minWidth: "14rem",
+						borderRadius: "0.5rem",
+						border: "1px solid var(--border)",
+						backgroundColor: "var(--background)",
+						boxShadow: "var(--shadow-card, 0 8px 24px rgba(0,0,0,0.18))",
+						padding: "0.25rem",
+						display: "flex",
+						flexDirection: "column",
+						gap: "0.125rem",
+					}))}
+				>
+					{/*
+					 * The attachment trigger has to be the library's own element —
+					 * it owns the hidden file input — so it is styled to match the
+					 * neighbouring items rather than reimplemented.
+					 */}
+					<ComposerPrimitive.AddAttachment
+						className={itemClass}
+						onClick={() => setOpen(false)}
+					>
+						<Paperclip size={15} className={css({ flexShrink: 0, color: "var(--muted-foreground)" })} />
+						Attach files
+					</ComposerPrimitive.AddAttachment>
+
+					{onModelSelect ? (
+						<button
+							type="button"
+							role="menuitem"
+							className={itemClass}
+							onClick={() => {
+								setOpen(false);
+								onModelSelect();
+							}}
+						>
+							<Cpu size={15} className={css({ flexShrink: 0, color: "var(--muted-foreground)" })} />
+							Model
+							<span className={trailingClass}>{modelLabel}</span>
+						</button>
+					) : null}
+
+					<button
+						type="button"
+						role="menuitem"
+						aria-haspopup="menu"
+						aria-expanded={reasoningOpen}
+						disabled={thinkingDisabled}
+						className={itemClass}
+						onClick={() => setReasoningOpen((value) => !value)}
+					>
+						<Lightbulb size={15} className={css({ flexShrink: 0, color: "var(--muted-foreground)" })} />
+						Reasoning
+						<span className={trailingClass}>{reasoning.short}</span>
+					</button>
+
+					{reasoningOpen ? (
+						<div className={css({ display: "flex", flexDirection: "column", gap: "0.125rem", paddingLeft: "1.5rem" })}>
+							{REASONING_OPTIONS.map((option) => (
+								<button
+									key={option.value}
+									type="button"
+									role="menuitemradio"
+									aria-checked={option.value === thinkingLevel}
+									className={itemClass}
+									onClick={() => {
+										onThinkingLevelChange(option.value);
+										setReasoningOpen(false);
+										setOpen(false);
+									}}
+								>
+									{option.label}
+									{option.value === thinkingLevel ? (
+										<Check size={14} className={css({ marginLeft: "auto", color: "var(--primary)" })} />
+									) : null}
+								</button>
+							))}
+						</div>
+					) : null}
+				</div>
+			) : null}
+		</div>
+	);
 }
 
 function WebGroundingHint({
@@ -4360,57 +4076,13 @@ function AssistantThread({
                     sm: { gap: "0.5rem" },
                   })}
                 >
-                  <button
-                    type="button"
-                    className={cx(
-                      srInteractiveClass,
-                      css({
-                        display: "inline-flex",
-                        height: "2rem",
-                        maxWidth: "4rem",
-                        flexShrink: 0,
-                        alignItems: "center",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        borderRadius: "0.375rem",
-                        border: "1px solid var(--border)",
-                        paddingInline: "0.375rem",
-                        fontSize: "11px",
-                        color: "var(--muted-foreground)",
-                        _hover: {
-                          backgroundColor: "var(--accent)",
-                          color: "var(--accent-foreground)",
-                        },
-                        _disabled: { opacity: 0.5 },
-                        sm: {
-                          height: "2.25rem",
-                          maxWidth: "5rem",
-                          paddingInline: "0.5rem",
-                          fontSize: "0.75rem",
-                        },
-                      }),
-                    )}
-                    disabled={!callbacks.onModelSelect}
-                    onClick={() => callbacks.onModelSelect?.()}
-                    title={modelLabel}
-                  >
-                    {modelLabel}
-                  </button>
-                  {/* Reasoning level — visible on landscape/tablet+ */}
-                  <ReasoningLevelSelector
-                    level={selectedThinkingLevel}
-                    onChange={handleThinkingLevelChange}
-                    disabled={isRunning}
+                  <ComposerActionsMenu
+                    modelLabel={modelLabel}
+                    onModelSelect={callbacks.onModelSelect}
+                    thinkingLevel={selectedThinkingLevel}
+                    onThinkingLevelChange={handleThinkingLevelChange}
+                    thinkingDisabled={isRunning}
                   />
-                  <ComposerPrimitive.AddAttachment
-                    multiple
-                    className={composerIconButtonClass}
-                    title="Attach files or images"
-                    aria-label="Attach files or images"
-                  >
-                    <Paperclip size={15} className={css({ sm: { width: "1rem", height: "1rem" } })} />
-                  </ComposerPrimitive.AddAttachment>
 									<SpeechComposerControl
 										expanded={voiceComposerOpen}
 										onExpandedChange={setVoiceComposerOpen}
