@@ -1,0 +1,1 @@
+I want you to go and add the same prompt input box that is used for the web to the mobile app
