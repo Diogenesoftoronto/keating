@@ -1,6 +1,11 @@
 # Build stage
 FROM oven/bun:1 AS builder
 
+# The web package consumes the shared learner contracts through a local file
+# dependency, so the package must exist before Bun resolves web dependencies.
+WORKDIR /app/packages/learner-contracts
+COPY packages/learner-contracts/ ./
+
 WORKDIR /app/web
 COPY web/package.json web/bun.lock* ./
 RUN bun install

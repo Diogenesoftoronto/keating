@@ -1,6 +1,6 @@
 {
   "name": "@keating/design-contract",
-  "version": "3.4.0",
+  "version": "3.4.1",
   "type": "module",
   "description": "Dependency-free semantic design roles and terminal degradation rules for Keating surfaces.",
   "license": "MPL-2.0",
