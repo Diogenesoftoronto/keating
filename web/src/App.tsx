@@ -14,21 +14,49 @@ import {
 import { Landing } from "./pages/Landing";
 // Every other route is code-split into its own chunk, fetched on navigation, so
 // the entry bundle no longer ships Chat, the assistant panel, markdown/KaTeX, etc.
-const Tutorial = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/Tutorial")), "Tutorial");
-const AtprotoBlog = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/AtprotoBlog")), "AtprotoBlog");
-const AtprotoBlogPost = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/AtprotoBlog")), "AtprotoBlogPost");
-const Chat = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/Chat")), "Chat");
-const Paper = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/Paper")), "Paper");
-const Live = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/Live")), "Live");
+const Tutorial = lazyRouteComponent(
+  () => loadRouteChunk(() => import("./pages/Tutorial")),
+  "Tutorial",
+);
+const AtprotoBlog = lazyRouteComponent(
+  () => loadRouteChunk(() => import("./pages/AtprotoBlog")),
+  "AtprotoBlog",
+);
+const AtprotoBlogPost = lazyRouteComponent(
+  () => loadRouteChunk(() => import("./pages/AtprotoBlog")),
+  "AtprotoBlogPost",
+);
+const Chat = lazyRouteComponent(
+  () => loadRouteChunk(() => import("./pages/Chat")),
+  "Chat",
+);
+const RenderingSmoke = lazyRouteComponent(
+  () => loadRouteChunk(() => import("./pages/RenderingSmoke")),
+  "RenderingSmoke",
+);
+const Paper = lazyRouteComponent(
+  () => loadRouteChunk(() => import("./pages/Paper")),
+  "Paper",
+);
+const Live = lazyRouteComponent(
+  () => loadRouteChunk(() => import("./pages/Live")),
+  "Live",
+);
 const SharedSession = lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/SharedSession")),
   "SharedSession",
 );
-const Usage = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/Usage")), "Usage");
-const ComingUp = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/ComingUp")), "ComingUp");
+const Usage = lazyRouteComponent(
+  () => loadRouteChunk(() => import("./pages/Usage")),
+  "Usage",
+);
+const ComingUp = lazyRouteComponent(
+  () => loadRouteChunk(() => import("./pages/ComingUp")),
+  "ComingUp",
+);
 const EvolutionDetail = lazyRouteComponent(
-	() => loadRouteChunk(() => import("./pages/EvolutionDetail")),
-	"EvolutionDetail",
+  () => loadRouteChunk(() => import("./pages/EvolutionDetail")),
+  "EvolutionDetail",
 );
 const KeatingBench = lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/KeatingBench")),
@@ -58,12 +86,18 @@ const LatestCommitReview = lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/LatestCommitReview")),
   "LatestCommitReview",
 );
-const Courses = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/Courses")), "Courses");
+const Courses = lazyRouteComponent(
+  () => loadRouteChunk(() => import("./pages/Courses")),
+  "Courses",
+);
 const CourseWorkspace = lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/CourseWorkspace")),
   "CourseWorkspace",
 );
-const CourseJoin = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/CourseJoin")), "CourseJoin");
+const CourseJoin = lazyRouteComponent(
+  () => loadRouteChunk(() => import("./pages/CourseJoin")),
+  "CourseJoin",
+);
 import {
   applyKeatingUiTypography,
   loadKeatingUiSettings,
@@ -83,46 +117,65 @@ const indexRoute = createRoute({
 const chatRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/chat",
-  validateSearch: (search) => z.object({
-		settings: z.string().max(128).optional(),
-		session: z.string().min(1).max(256).optional(),
-	}).passthrough().parse(search),
+  validateSearch: (search) =>
+    z
+      .object({
+        settings: z.string().max(128).optional(),
+        session: z.string().min(1).max(256).optional(),
+        course: z
+          .string()
+          .min(2)
+          .max(96)
+          .regex(/^[A-Za-z0-9][A-Za-z0-9_-]*$/)
+          .optional(),
+        courseMode: z.enum(["create", "edit"]).optional(),
+        /** A request handed over from a course workspace; lands in the composer. */
+        ask: z.string().max(2_000).optional(),
+      })
+      .passthrough()
+      .parse(search),
   component: Chat,
 });
 
+const renderingSmokeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/rendering-smoke",
+  component: RenderingSmoke,
+});
+
 const liveRoute = createRoute({
-	getParentRoute: () => rootRoute,
-	path: "/live",
-	component: Live,
+  getParentRoute: () => rootRoute,
+  path: "/live",
+  component: Live,
 });
 
 const usageRoute = createRoute({
-	getParentRoute: () => rootRoute,
-	path: "/usage",
-	component: Usage,
+  getParentRoute: () => rootRoute,
+  path: "/usage",
+  component: Usage,
 });
 
 const comingUpRoute = createRoute({
-	getParentRoute: () => rootRoute,
-	path: "/coming-up",
-	component: ComingUp,
+  getParentRoute: () => rootRoute,
+  path: "/coming-up",
+  component: ComingUp,
 });
 
 const evolutionDetailRoute = createRoute({
-	getParentRoute: () => rootRoute,
-	path: "/usage/evolution/$evolutionId",
-	component: EvolutionDetail,
+  getParentRoute: () => rootRoute,
+  path: "/usage/evolution/$evolutionId",
+  component: EvolutionDetail,
 });
 
 const benchRoute = createRoute({
-	getParentRoute: () => rootRoute,
-	path: "/bench",
-	component: KeatingBench,
+  getParentRoute: () => rootRoute,
+  path: "/bench",
+  component: KeatingBench,
 });
 
 const sharedSessionRoute = createRoute({
-	getParentRoute: () => rootRoute,
-	path: "/s/$shareId",
+  getParentRoute: () => rootRoute,
+  path: "/s/$shareId",
   component: SharedSession,
 });
 
@@ -157,27 +210,27 @@ const oauthCallbackRoute = createRoute({
 });
 
 const downloadRoute = createRoute({
-	getParentRoute: () => rootRoute,
-	path: "/download",
-	component: Download,
+  getParentRoute: () => rootRoute,
+  path: "/download",
+  component: Download,
 });
 
 const termsRoute = createRoute({
-	getParentRoute: () => rootRoute,
-	path: "/terms",
-	component: Terms,
+  getParentRoute: () => rootRoute,
+  path: "/terms",
+  component: Terms,
 });
 
 const privacyRoute = createRoute({
-	getParentRoute: () => rootRoute,
-	path: "/privacy",
-	component: Privacy,
+  getParentRoute: () => rootRoute,
+  path: "/privacy",
+  component: Privacy,
 });
 
 const pricingRoute = createRoute({
-	getParentRoute: () => rootRoute,
-	path: "/pricing",
-	component: Pricing,
+  getParentRoute: () => rootRoute,
+  path: "/pricing",
+  component: Pricing,
 });
 
 const latestCommitReviewRoute = createRoute({
@@ -205,27 +258,28 @@ const courseWorkspaceRoute = createRoute({
 });
 
 const routeTree = rootRoute.addChildren([
-	indexRoute,
-	chatRoute,
-	liveRoute,
-	usageRoute,
-	comingUpRoute,
-	evolutionDetailRoute,
-	benchRoute,
-	sharedSessionRoute,
+  indexRoute,
+  chatRoute,
+  renderingSmokeRoute,
+  liveRoute,
+  usageRoute,
+  comingUpRoute,
+  evolutionDetailRoute,
+  benchRoute,
+  sharedSessionRoute,
   tutorialRoute,
   blogRoute,
   blogPostRoute,
   paperRoute,
   oauthCallbackRoute,
-	downloadRoute,
-	termsRoute,
-	privacyRoute,
-	pricingRoute,
+  downloadRoute,
+  termsRoute,
+  privacyRoute,
+  pricingRoute,
   latestCommitReviewRoute,
-	coursesRoute,
-	courseJoinRoute,
-	courseWorkspaceRoute,
+  coursesRoute,
+  courseJoinRoute,
+  courseWorkspaceRoute,
 ]);
 
 // Shown while a lazily-loaded route chunk is in flight (after defaultPendingMs)
@@ -242,7 +296,7 @@ function RoutePending() {
     >
       <div
         className={css({
-          animation: "spin 1s linear infinite"
+          animation: "spin 1s linear infinite",
         })}
         aria-label="Loading"
         style={{

@@ -2,6 +2,13 @@
 
 
 
+
+## 3.4.0
+<sub>2026-08-11</sub>
+
+- *(minor)*
+  Ship the cross-platform learner foundation across web, desktop, mobile, and OpenTUI, with shared contracts, durable learner state, richer Courses, and reproducible benchmark evidence.
+
 ## 3.0.0
 <sub>2026-08-04</sub>
 

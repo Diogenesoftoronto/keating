@@ -1,8 +1,11 @@
-import { ChevronRight, Clock3, Link2, Network, Route } from "lucide-react";
+import { useState } from "react";
+import { BookOpenCheck, ChevronRight, Clock3, Link2, Loader2, Network, Route } from "lucide-react";
 import { defineComponent, useStateField } from "@openuidev/react-lang";
 import { z } from "zod";
 import { css, cx } from "../../../styled-system/css";
 import { MermaidRenderer } from "../../components/MermaidRenderer";
+import { createCourse } from "../../courses/client";
+import { courseFromStudyPlan } from "../../courses/from-study-plan";
 
 export interface StudyPlanItem {
 	id: string;
@@ -56,6 +59,7 @@ const planClass = css({
 });
 const planHeaderClass = css({
 	display: "flex",
+	flexWrap: "wrap",
 	alignItems: "flex-start",
 	justifyContent: "space-between",
 	gap: "1rem",
@@ -79,6 +83,43 @@ const progressClass = css({
 	fontSize: "0.6875rem",
 	fontVariantNumeric: "tabular-nums",
 	color: "var(--muted-foreground)",
+});
+const planActionsClass = css({
+	display: "flex",
+	flexShrink: 0,
+	alignItems: "center",
+	gap: "0.5rem",
+});
+const createCourseButtonClass = css({
+	display: "inline-flex",
+	alignItems: "center",
+	justifyContent: "center",
+	gap: "0.375rem",
+	borderRadius: "0.375rem",
+	backgroundColor: "var(--primary)",
+	paddingInline: "0.625rem",
+	paddingBlock: "0.3125rem",
+	fontSize: "0.75rem",
+	fontWeight: 650,
+	color: "var(--primary-foreground)",
+	transitionProperty: "background-color, opacity",
+	transitionDuration: "150ms",
+	_hover: { backgroundColor: "color-mix(in srgb, var(--primary) 88%, black)" },
+	_focusVisible: { outline: "2px solid var(--primary)", outlineOffset: "2px" },
+	_disabled: { cursor: "wait", opacity: 0.65 },
+});
+const courseErrorClass = css({
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "space-between",
+	gap: "0.75rem",
+	borderBottom: "1px solid color-mix(in srgb, var(--destructive) 35%, var(--border))",
+	backgroundColor: "color-mix(in srgb, var(--destructive) 8%, transparent)",
+	paddingInline: "1rem",
+	paddingBlock: "0.625rem",
+	fontSize: "0.75rem",
+	lineHeight: 1.45,
+	color: "var(--destructive)",
 });
 const planListClass = css({ display: "grid", gap: "0.25rem", padding: "0.75rem" });
 const groupClass = css({
@@ -352,6 +393,21 @@ function OpenUIStudyPlan({ props }: { props: z.infer<typeof studyPlanPropsSchema
 	const leafItems = studyPlanLeafItems(props.items);
 	const completed = leafItems.filter((item) => progress.value[item.id]).length;
 	const dependencyGraph = studyPlanDependencyGraph(props.items);
+	const [courseState, setCourseState] = useState<{ status: "idle" | "creating" | "error"; message?: string }>({ status: "idle" });
+
+	const createPlanCourse = async () => {
+		if (courseState.status === "creating") return;
+		setCourseState({ status: "creating" });
+		try {
+			const snapshot = await createCourse(courseFromStudyPlan(props));
+			window.location.assign(`/courses/${encodeURIComponent(snapshot.course.id)}`);
+		} catch (cause) {
+			setCourseState({
+				status: "error",
+				message: cause instanceof Error ? cause.message : "The course workspace could not be reached.",
+			});
+		}
+	};
 
 	return (
 		<section
@@ -367,8 +423,25 @@ function OpenUIStudyPlan({ props }: { props: z.infer<typeof studyPlanPropsSchema
 					</div>
 					{props.overview ? <p className={overviewClass}>{props.overview}</p> : null}
 				</div>
-				<span className={progressClass}>{completed}/{leafItems.length} steps</span>
+				<div className={planActionsClass}>
+					<span className={progressClass}>{completed}/{leafItems.length} steps</span>
+					<button
+						type="button"
+						className={createCourseButtonClass}
+						disabled={courseState.status === "creating"}
+						onClick={() => void createPlanCourse()}
+					>
+						{courseState.status === "creating" ? <Loader2 aria-hidden="true" size={13} className={css({ animation: "spin 1s linear infinite", "@media (prefers-reduced-motion: reduce)": { animation: "none" } })} /> : <BookOpenCheck aria-hidden="true" size={13} />}
+						{courseState.status === "creating" ? "Creating…" : courseState.status === "error" ? "Retry course" : "Create course"}
+					</button>
+				</div>
 			</header>
+			{courseState.status === "error" ? (
+				<div className={courseErrorClass} role="alert">
+					<span>Course not created. {courseState.message}</span>
+					<span>Your plan is still here.</span>
+				</div>
+			) : null}
 			<ol className={planListClass}>
 				{props.items.map((item) => (
 					<PlanBranch

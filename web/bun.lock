@@ -16,6 +16,7 @@
         "@huggingface/transformers": "^4.2.0",
         "@isomorphic-git/lightning-fs": "^4.7.0",
         "@jason.today/webmcp": "0.1.13",
+        "@keating/learner-contracts": "file:../packages/learner-contracts",
         "@opentelemetry/api": "^1.9.0",
         "@opentelemetry/exporter-trace-otlp-proto": "^0.208.0",
         "@opentelemetry/resources": "^2.6.0",
@@ -559,6 +560,8 @@
     "@jsep-plugin/assignment": ["@jsep-plugin/assignment@1.3.0", "", { "peerDependencies": { "jsep": "^0.4.0||^1.0.0" } }, "sha512-VVgV+CXrhbMI3aSusQyclHkenWSAm95WaiKrMxRFam3JSUiIaQjoMIw2sEs/OX4XifnqeQUN4DYbJjlA8EfktQ=="],
 
     "@jsep-plugin/regex": ["@jsep-plugin/regex@1.0.4", "", { "peerDependencies": { "jsep": "^0.4.0||^1.0.0" } }, "sha512-q7qL4Mgjs1vByCaTnDFcBnV9HS7GVPJX5vyVoCgZHNSC9rjwIlmbXG5sUuorR5ndfHAIlJ8pVStxvjXHbNvtUg=="],
+
+    "@keating/learner-contracts": ["@keating/learner-contracts@file:../packages/learner-contracts", {}],
 
     "@lit-labs/ssr-dom-shim": ["@lit-labs/ssr-dom-shim@1.5.1", "", {}, "sha512-Aou5UdlSpr5whQe8AA/bZG0jMj96CoJIWbGfZ91qieWu5AWUMKw8VR/pAkQkJYvBNhmCcWnZlyyk5oze8JIqYA=="],
 

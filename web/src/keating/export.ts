@@ -498,7 +498,7 @@ function buildCanonicalRecords(
 		const quality = example.source === "sandbox"
 			? { status: "reference" as const, recommendedForSft: false, scored: false }
 			: example.source === "artifact"
-				? { status: "accepted" as const, recommendedForSft: true, scored: false }
+				? { status: "unscored" as const, recommendedForSft: false, scored: false }
 				: qualityForTurn(turn);
 		records.push({
 			schemaVersion: 2,
@@ -666,7 +666,7 @@ export async function buildWebFineTuneExportFromSources(
 						kind: example.kind,
 						topic: example.topic,
 						quality: example.source === "artifact"
-							? { status: "accepted", recommendedForSft: true, scored: false }
+							? { status: "unscored", recommendedForSft: false, scored: false }
 							: { status: "reference", recommendedForSft: false, scored: false },
 					},
 				},

@@ -1,12 +1,12 @@
-# Running Keating Benchmarks on RunPod
+# Running Keating Analysis on RunPod
 
-This guide explains how to deploy and execute Keating's pedagogical benchmarks on a RunPod cloud instance. Because the internal synthetic benchmark evaluates the underlying LLM's teaching capacity directly (by simulating conversations across thousands of topics and learner profiles), running it locally can be exceptionally slow. A RunPod serverless or GPU pod is highly recommended for accelerated evaluation.
+This guide explains how to deploy Keating on a RunPod cloud instance for remote analysis or development. The paper's quantitative study does **not** require a GPU: `scripts/study-analysis.mjs` forces the deterministic synthetic fallback, evaluates 14 topics with three simulated learners per topic, and normally completes locally in seconds. The product CLI benchmark likewise uses recorded learner evidence rather than the optional LLM judge. A GPU is useful only for separate model-assisted experiments or when another Keating workflow uses a provider hosted on the pod.
 
 ## 1. Provision a Pod
 
 1. Log into your [RunPod Console](https://www.runpod.io/console/pods).
 2. Click **Deploy** to spin up a new Pod exactly as you would for any heavy ML workload.
-3. **Select your GPU**: Depending on the underlying model you are running via the `pi` CLI, we recommend at least an RTX 3090 or A4000. For API-based models (like Gemini), a basic CPU pod is sufficient.
+3. **Select compute**: A basic CPU pod is sufficient for the documented paper analysis and product benchmark. Choose a GPU only if a separate workflow will run a local model through Pi, vLLM, or Ollama.
 4. **Template**: Choose the **RunPod PyTorch** base image (which sits atop Ubuntu and includes useful build tools) or the standard **Ubuntu 22.04** image.
 5. Deploy and expose any storage volume sizes you need. 
 
@@ -43,7 +43,7 @@ bun install
 bun run build
 ```
 
-## 4. Setting up the `pi` Agent
+## 4. Optional: Setting up the `pi` Agent
 
 Keating requires the `@earendil-works/pi-coding-agent` runtime CLI to talk to the LLMs.
 If you have not already configured it, install it globally:
@@ -58,25 +58,26 @@ pi -p "Say hello"
 
 ## 5. Running the Benchmarks
 
-Keating's benchmarks evaluate 14 core topics mapped across 18 unique learner profile profiles (or 3 profiles during rapid evaluations).
-
-To run the primary study analysis benchmark suite interactively:
+To reproduce the paper's deterministic analysis on the minimal Bun-based pod configured above, run:
 
 ```bash
-node scripts/study-analysis.mjs
+bun scripts/study-analysis.mjs
 ```
 
-### Additional Benchmark Commands
-If you wish to test a targeted pedagogical topic, use the compiled `pi` extension command:
+The script evaluates 14 core topics with three deterministic synthetic learners per topic. It does not call an LLM, even if model credentials are present. The canonical `keating:study-analysis` and `keating:paper` tasks additionally require the repository's declared devenv environment, which supplies Typst; build the PDF there after pulling the generated artifacts back from the pod.
+
+For an ordinary product benchmark, use the CLI. Keating evaluates recorded learner outcomes when they are available and reports insufficient or missing learner evidence when they are not; the CLI does not silently substitute the paper's synthetic fallback:
 
 ```bash
-# Run a targeted benchmark for a specific topic
-pi eval "Provide the hyperteacher interface" --bench="derivative"
+bun src/cli/main.ts bench
+bun src/cli/main.ts bench derivative
 ```
 
 ## 6. Accessing Artifacts
-After the benchmark concludes, reports and JSON traces are emitted to the `benchmarks/` directory inside your Keating installation. You can pull these via SCP/SFTP, or just view the markdown tables using standard terminal tools:
+
+Paper analysis outputs are written to `docs/generated/`. Product benchmark reports are written to `.keating/outputs/benchmarks/` in the working project. You can pull these via SCP/SFTP or inspect them in the terminal:
 
 ```bash
-cat /workspace/keating/benchmarks/core-suite.md
+cat /workspace/keating/docs/generated/study-analysis.md
+ls /workspace/keating/.keating/outputs/benchmarks
 ```

@@ -1,6 +1,6 @@
 {
   "name": "keating-web",
-  "version": "3.3.0",
+  "version": "3.4.0",
   "type": "module",
   "private": true,
   "scripts": {
@@ -12,7 +12,8 @@
     "pretypecheck": "bun run panda",
     "prestorybook": "bun run panda",
     "prebuild-storybook": "bun run panda",
-    "dev": "vite",
+    "dev": "node scripts/dev.mjs",
+    "dev:client": "vite",
     "build": "vite build && npx nitro build",
     "build:analyze": "ANALYZE=1 vite build",
     "preview": "vite preview",
@@ -51,6 +52,7 @@
     "@huggingface/transformers": "^4.2.0",
     "@isomorphic-git/lightning-fs": "^4.7.0",
     "@jason.today/webmcp": "0.1.13",
+    "@keating/learner-contracts": "file:../packages/learner-contracts",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/exporter-trace-otlp-proto": "^0.208.0",
     "@opentelemetry/resources": "^2.6.0",

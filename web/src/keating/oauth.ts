@@ -181,7 +181,15 @@ export type OAuthInitiationResult =
 			expiresAt: number;
 		};
 
-function openOAuthPopup(providerId: OAuthProviderId): Window {
+function isDesktopOAuthHost(): boolean {
+	return typeof window !== "undefined" && !!window.keatingP2P;
+}
+
+function openOAuthPopup(providerId: OAuthProviderId): Window | null {
+	// Electron denies about:blank child windows by policy. Its main process
+	// already validates and externalizes safe HTTPS window.open destinations,
+	// so defer opening until the real provider URL is available.
+	if (isDesktopOAuthHost()) return null;
 	const width = 600;
 	const height = 700;
 	const availableWidth = globalThis.screen?.width ?? width;
@@ -195,6 +203,17 @@ function openOAuthPopup(providerId: OAuthProviderId): Window {
 	);
 	if (!popup) throw new Error("The sign-in popup was blocked. Allow popups for Keating and try again.");
 	return popup;
+}
+
+function openOAuthDestination(popup: Window | null, url: string): void {
+	if (popup) {
+		popup.location.replace(url);
+		return;
+	}
+	// In Electron, setWindowOpenHandler sends this validated HTTPS URL to the
+	// system browser and denies an in-app child window. The manual callback/code
+	// recovery UI remains in the Keating window.
+	window.open(url, "_blank", "noopener,noreferrer");
 }
 
 export async function initiateOAuth(providerId: OAuthProviderId): Promise<OAuthInitiationResult> {
@@ -223,7 +242,7 @@ export async function initiateOAuth(providerId: OAuthProviderId): Promise<OAuthI
 				expiresAt,
 				createdAt: Date.now(),
 			});
-			popup.location.replace(device.verification_uri);
+			openOAuthDestination(popup, device.verification_uri);
 			return {
 				flow: "device-code",
 				provider: providerId,
@@ -262,10 +281,10 @@ export async function initiateOAuth(providerId: OAuthProviderId): Promise<OAuthI
 			}
 		}
 
-		popup.location.replace(`${config.authorizeUrl}?${params.toString()}`);
+		openOAuthDestination(popup, `${config.authorizeUrl}?${params.toString()}`);
 		return { flow: "authorization-code" };
 	} catch (error) {
-		popup.close();
+		popup?.close();
 		throw error;
 	}
 }
@@ -274,6 +293,16 @@ export interface OAuthCallbackResult {
 	success: boolean;
 	provider?: OAuthProviderId;
 	error?: string;
+}
+
+export interface KeatingDesktopOAuthBridge {
+	onOAuthCallback(listener: (callbackUrl: string) => void): () => void;
+}
+
+declare global {
+	interface Window {
+		keatingDesktop?: KeatingDesktopOAuthBridge;
+	}
 }
 
 function parseOAuthCallbackInput(input: string): { code?: string; state?: string; error?: string; errorDescription?: string } {
@@ -316,6 +345,30 @@ export async function completeOAuthFromInput(input: string): Promise<OAuthCallba
 		return { success: false, error: "Paste the final callback URL or authorization code." };
 	}
 	return handleOAuthCallback(parsed.code, parsed.state);
+}
+
+/**
+ * Subscribe to the Electron loopback handoff when present. The main process
+ * supplies only the callback URL; the renderer remains responsible for PKCE
+ * state validation and token exchange through the existing completion path.
+ */
+export function subscribeDesktopOAuthCallback(
+	listener: (result: OAuthCallbackResult) => void,
+): () => void {
+	if (typeof window === "undefined" || !window.keatingDesktop) return () => {};
+	return window.keatingDesktop.onOAuthCallback((callbackUrl) => {
+		const pendingProvider = getPendingOAuthRequest()?.provider;
+		void completeOAuthFromInput(callbackUrl)
+			.then((result) => listener({
+				...result,
+				provider: result.provider ?? pendingProvider,
+			}))
+			.catch((error) => listener({
+				success: false,
+				provider: pendingProvider,
+				error: error instanceof Error ? error.message : "Desktop OAuth completion failed.",
+			}));
+	});
 }
 
 export async function handleOAuthCallback(code: string, state?: string | null): Promise<OAuthCallbackResult> {
@@ -491,10 +544,20 @@ export async function getOAuthAccessToken(provider: OAuthProviderId): Promise<st
 	if (Date.now() >= credentials.expires - 60_000) {
 		const refreshed = await refreshOAuthToken(provider, credentials);
 		if (!refreshed) return null;
-		return refreshed.apiKey ?? refreshed.access;
+		return oauthCredentialToken(refreshed);
 	}
 
-	return credentials.apiKey ?? credentials.access;
+	return oauthCredentialToken(credentials);
+}
+
+function oauthCredentialToken(credentials: OAuthCredentials): string {
+	// Codex's SDK transport needs the ChatGPT OAuth JWT so it can derive the
+	// account id and call the subscription-backed Codex Responses endpoint.
+	// Older Keating builds also stored an exchanged API key; deliberately ignore
+	// that legacy field for Codex while retaining it for any migrated providers.
+	return credentials.provider === "openai-codex"
+		? credentials.access
+		: credentials.apiKey ?? credentials.access;
 }
 
 async function refreshOAuthToken(
@@ -529,7 +592,9 @@ async function refreshOAuthToken(
 			access: tokens.access_token,
 			expires: Date.now() + (tokens.expires_in ?? 3600) * 1000,
 			provider,
-			apiKey: typeof tokens.api_key === "string" ? tokens.api_key : credentials.apiKey,
+			apiKey: provider === "openai-codex"
+				? undefined
+				: typeof tokens.api_key === "string" ? tokens.api_key : credentials.apiKey,
 			idToken: typeof tokens.id_token === "string" ? tokens.id_token : credentials.idToken,
 		};
 
@@ -549,7 +614,6 @@ export function isOAuthProvider(providerName: string): providerName is OAuthProv
 
 export function providerToOAuthId(providerName: string): OAuthProviderId | null {
 	if (providerName === "anthropic") return "anthropic";
-	if (providerName === "openai") return "openai-codex";
 	if (providerName === "openai-codex") return "openai-codex";
 	if (providerName === "github-copilot") return "github-copilot";
 	return null;

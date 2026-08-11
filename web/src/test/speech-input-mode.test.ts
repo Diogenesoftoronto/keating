@@ -1,10 +1,12 @@
 import { describe, expect, it } from "bun:test";
 import {
 	DEFAULT_WEB_SPEECH_SETTINGS,
+	listSpeechProviders,
 	resolveSpeechRealtimeTier,
 	speechInputMode,
 	speechProviderModel,
 } from "../keating/speech";
+import { liveModelsFor } from "../keating/live-models";
 
 describe("speech input mode", () => {
 	it("uses hold-to-speak dictation until microphone access is enabled", () => {
@@ -27,6 +29,27 @@ describe("speech input mode", () => {
 });
 
 describe("realtime tier from speech settings", () => {
+	it("derives every duplex speech selector option from the /live catalog", async () => {
+		const providers = await listSpeechProviders();
+		const duplexProviders = providers.filter((provider) => provider.kind === "duplex");
+
+		expect(duplexProviders.map((provider) => provider.id).sort()).toEqual([
+			"gemini-live",
+			"openai-realtime",
+		]);
+
+		for (const provider of duplexProviders) {
+			expect(provider.models).toEqual(
+				liveModelsFor(provider.id).map(({ value, label }) => ({ value, label })),
+			);
+			for (const model of provider.models) {
+				const settings = { ...DEFAULT_WEB_SPEECH_SETTINGS, providerId: provider.id, model: model.value };
+				expect(speechProviderModel(settings)).not.toBeNull();
+				expect(resolveSpeechRealtimeTier(settings).tier).toBeGreaterThan(0);
+			}
+		}
+	});
+
 	it("maps each duplex speech provider onto its LLM provider", () => {
 		expect(speechProviderModel({
 			...DEFAULT_WEB_SPEECH_SETTINGS,

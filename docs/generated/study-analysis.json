@@ -1,0 +1,2725 @@
+{
+  "generatedAt": "2026-08-11T16:26:41.368Z",
+  "protocol": {
+    "softwareVersion": "3.3.0",
+    "evaluatedPolicyPath": "docs/study/evaluated-policy.json",
+    "benchmarkMode": "deterministic-synthetic-fallback",
+    "syntheticLearnersPerTopic": 3,
+    "benchmarkSeedCount": 200,
+    "evolutionRunCount": 30,
+    "evolutionIterationsPerRun": 24,
+    "evolutionFocusTopic": "derivative",
+    "isolatedEvolutionGrids": true,
+    "inputHashes": {
+      "traceCorpusSha256": "66e93fa46d5d0d8990e92453800d4ac9ecd844db13959a5113ae3557376ef445",
+      "snapshotSha256": "87b91f1724a991abbb3f35630a2a67218156ad55848d998f4299eceadac86638",
+      "evaluatedPolicySha256": "0234046551bd7699e0f4fb3bda1af59c44bfa3e8500a53cb06cb7052fbcd75e1"
+    }
+  },
+  "dataIntegrity": {
+    "rawTraceCount": 22,
+    "latestTraceCount": 16,
+    "excludedDuplicateTraceCount": 6,
+    "excludedDuplicateTraces": [
+      {
+        "topic": "stoicism",
+        "learner": "Llama-3.2-1B",
+        "fileName": "Llama-3.2-1B_stoicism_1775196476.json",
+        "timestamp": 1775196476.1491103
+      },
+      {
+        "topic": "stoicism",
+        "learner": "Llama-3.2-1B",
+        "fileName": "Llama-3.2-1B_stoicism_1775196822.json",
+        "timestamp": 1775196822.6592793
+      },
+      {
+        "topic": "derivative",
+        "learner": "Llama-3.2-1B",
+        "fileName": "Llama-3.2-1B_derivative_1775196897.json",
+        "timestamp": 1775196897.8331273
+      },
+      {
+        "topic": "stoicism",
+        "learner": "LFM-2.5-1.2B",
+        "fileName": "LFM-2.5-1.2B_stoicism_1775197068.json",
+        "timestamp": 1775197068.045085
+      },
+      {
+        "topic": "derivative",
+        "learner": "LFM-2.5-1.2B",
+        "fileName": "LFM-2.5-1.2B_derivative_1775197203.json",
+        "timestamp": 1775197203.9720957
+      },
+      {
+        "topic": "stoicism",
+        "learner": "Qwen-2.5-1.5B",
+        "fileName": "Qwen-2.5-1.5B_stoicism_1775197337.json",
+        "timestamp": 1775197337.5955272
+      }
+    ],
+    "snapshotComparison": {
+      "snapshotCount": 16,
+      "retainedCount": 16,
+      "matchesLatestTraceSelection": true,
+      "mismatches": []
+    }
+  },
+  "externalEvaluation": {
+    "recordCount": 16,
+    "scoreCorrections": [
+      {
+        "topic": "derivative",
+        "learner": "Qwen-2.5-1.5B",
+        "timestamp": 1775201306.3672297,
+        "corrections": [
+          {
+            "metric": "mastery",
+            "before": 8,
+            "after": 0.8,
+            "rule": "divide_by_10_if_score_in_(1,10]"
+          },
+          {
+            "metric": "engagement",
+            "before": 7,
+            "after": 0.7,
+            "rule": "divide_by_10_if_score_in_(1,10]"
+          },
+          {
+            "metric": "clarity",
+            "before": 8,
+            "after": 0.8,
+            "rule": "divide_by_10_if_score_in_(1,10]"
+          }
+        ]
+      }
+    ],
+    "overall": {
+      "mean": 0.61,
+      "ciLow": 0.515,
+      "ciHigh": 0.705
+    },
+    "topicSummary": [
+      {
+        "topic": "relativity",
+        "n": 4,
+        "overall": {
+          "mean": 0.75,
+          "ciLow": 0.596,
+          "ciHigh": 0.883
+        },
+        "mastery": {
+          "mean": 0.695,
+          "ciLow": 0.57,
+          "ciHigh": 0.815
+        },
+        "engagement": {
+          "mean": 0.767,
+          "ciLow": 0.6,
+          "ciHigh": 0.91
+        },
+        "clarity": {
+          "mean": 0.788,
+          "ciLow": 0.6,
+          "ciHigh": 0.925
+        }
+      },
+      {
+        "topic": "derivative",
+        "n": 4,
+        "overall": {
+          "mean": 0.654,
+          "ciLow": 0.454,
+          "ciHigh": 0.767
+        },
+        "mastery": {
+          "mean": 0.6,
+          "ciLow": 0.263,
+          "ciHigh": 0.788
+        },
+        "engagement": {
+          "mean": 0.537,
+          "ciLow": 0.287,
+          "ciHigh": 0.7
+        },
+        "clarity": {
+          "mean": 0.825,
+          "ciLow": 0.762,
+          "ciHigh": 0.913
+        }
+      },
+      {
+        "topic": "social-contract",
+        "n": 4,
+        "overall": {
+          "mean": 0.613,
+          "ciLow": 0.5,
+          "ciHigh": 0.763
+        },
+        "mastery": {
+          "mean": 0.537,
+          "ciLow": 0.462,
+          "ciHigh": 0.65
+        },
+        "engagement": {
+          "mean": 0.6,
+          "ciLow": 0.5,
+          "ciHigh": 0.8
+        },
+        "clarity": {
+          "mean": 0.7,
+          "ciLow": 0.5,
+          "ciHigh": 0.9
+        }
+      },
+      {
+        "topic": "stoicism",
+        "n": 4,
+        "overall": {
+          "mean": 0.425,
+          "ciLow": 0.283,
+          "ciHigh": 0.558
+        },
+        "mastery": {
+          "mean": 0.287,
+          "ciLow": 0.175,
+          "ciHigh": 0.463
+        },
+        "engagement": {
+          "mean": 0.3,
+          "ciLow": 0.15,
+          "ciHigh": 0.45
+        },
+        "clarity": {
+          "mean": 0.688,
+          "ciLow": 0.5,
+          "ciHigh": 0.825
+        }
+      }
+    ],
+    "learnerSummary": [
+      {
+        "learner": "Qwen-2.5-1.5B",
+        "n": 4,
+        "overall": {
+          "mean": 0.779,
+          "ciLow": 0.675,
+          "ciHigh": 0.867
+        },
+        "mastery": {
+          "mean": 0.708,
+          "ciLow": 0.608,
+          "ciHigh": 0.79
+        },
+        "engagement": {
+          "mean": 0.755,
+          "ciLow": 0.6,
+          "ciHigh": 0.91
+        },
+        "clarity": {
+          "mean": 0.875,
+          "ciLow": 0.8,
+          "ciHigh": 0.95
+        }
+      },
+      {
+        "learner": "LFM-2.5-1.2B",
+        "n": 4,
+        "overall": {
+          "mean": 0.613,
+          "ciLow": 0.492,
+          "ciHigh": 0.733
+        },
+        "mastery": {
+          "mean": 0.525,
+          "ciLow": 0.313,
+          "ciHigh": 0.7
+        },
+        "engagement": {
+          "mean": 0.588,
+          "ciLow": 0.45,
+          "ciHigh": 0.725
+        },
+        "clarity": {
+          "mean": 0.725,
+          "ciLow": 0.575,
+          "ciHigh": 0.825
+        }
+      },
+      {
+        "learner": "Cloud-MiniMax-M2.5",
+        "n": 4,
+        "overall": {
+          "mean": 0.592,
+          "ciLow": 0.354,
+          "ciHigh": 0.825
+        },
+        "mastery": {
+          "mean": 0.563,
+          "ciLow": 0.3,
+          "ciHigh": 0.8
+        },
+        "engagement": {
+          "mean": 0.525,
+          "ciLow": 0.225,
+          "ciHigh": 0.8
+        },
+        "clarity": {
+          "mean": 0.688,
+          "ciLow": 0.45,
+          "ciHigh": 0.925
+        }
+      },
+      {
+        "learner": "Llama-3.2-1B",
+        "n": 4,
+        "overall": {
+          "mean": 0.458,
+          "ciLow": 0.367,
+          "ciHigh": 0.55
+        },
+        "mastery": {
+          "mean": 0.325,
+          "ciLow": 0.175,
+          "ciHigh": 0.475
+        },
+        "engagement": {
+          "mean": 0.337,
+          "ciLow": 0.175,
+          "ciHigh": 0.5
+        },
+        "clarity": {
+          "mean": 0.712,
+          "ciLow": 0.575,
+          "ciHigh": 0.825
+        }
+      }
+    ],
+    "contaminationContrast": {
+      "noContamination": {
+        "n": 11,
+        "masteryMean": 0.575,
+        "overallMean": 0.642
+      },
+      "anyContamination": {
+        "n": 5,
+        "masteryMean": 0.43,
+        "overallMean": 0.54
+      }
+    },
+    "records": [
+      {
+        "topic": "relativity",
+        "learner": "Cloud-MiniMax-M2.5",
+        "timestamp": 1775202032.6412337,
+        "overall": 0.883,
+        "mastery": 0.85,
+        "engagement": 0.9,
+        "clarity": 0.9,
+        "features": {
+          "turnCount": 7,
+          "teacherTurns": 4,
+          "studentTurns": 3,
+          "emptyTurns": 0,
+          "teacherWordCount": 1175,
+          "studentWordCount": 99,
+          "roleContaminationCount": 0,
+          "roleContaminationLabels": [],
+          "redirectionCueCount": 3
+        }
+      },
+      {
+        "topic": "relativity",
+        "learner": "Qwen-2.5-1.5B",
+        "timestamp": 1775201456.8878357,
+        "overall": 0.883,
+        "mastery": 0.78,
+        "engagement": 0.92,
+        "clarity": 0.95,
+        "features": {
+          "turnCount": 7,
+          "teacherTurns": 4,
+          "studentTurns": 3,
+          "emptyTurns": 1,
+          "teacherWordCount": 1318,
+          "studentWordCount": 154,
+          "roleContaminationCount": 0,
+          "roleContaminationLabels": [],
+          "redirectionCueCount": 1
+        }
+      },
+      {
+        "topic": "social-contract",
+        "learner": "Qwen-2.5-1.5B",
+        "timestamp": 1775201607.9838707,
+        "overall": 0.85,
+        "mastery": 0.7,
+        "engagement": 0.9,
+        "clarity": 0.95,
+        "features": {
+          "turnCount": 7,
+          "teacherTurns": 4,
+          "studentTurns": 3,
+          "emptyTurns": 0,
+          "teacherWordCount": 1108,
+          "studentWordCount": 140,
+          "roleContaminationCount": 0,
+          "roleContaminationLabels": [],
+          "redirectionCueCount": 2
+        }
+      },
+      {
+        "topic": "derivative",
+        "learner": "Cloud-MiniMax-M2.5",
+        "timestamp": 1775201881.874681,
+        "overall": 0.767,
+        "mastery": 0.75,
+        "engagement": 0.6,
+        "clarity": 0.95,
+        "features": {
+          "turnCount": 7,
+          "teacherTurns": 4,
+          "studentTurns": 3,
+          "emptyTurns": 0,
+          "teacherWordCount": 1440,
+          "studentWordCount": 27,
+          "roleContaminationCount": 0,
+          "roleContaminationLabels": [],
+          "redirectionCueCount": 3
+        }
+      },
+      {
+        "topic": "derivative",
+        "learner": "Qwen-2.5-1.5B",
+        "timestamp": 1775201306.3672297,
+        "overall": 0.767,
+        "mastery": 0.8,
+        "engagement": 0.7,
+        "clarity": 0.8,
+        "features": {
+          "turnCount": 7,
+          "teacherTurns": 4,
+          "studentTurns": 3,
+          "emptyTurns": 0,
+          "teacherWordCount": 888,
+          "studentWordCount": 182,
+          "roleContaminationCount": 0,
+          "roleContaminationLabels": [],
+          "redirectionCueCount": 0
+        }
+      },
+      {
+        "topic": "derivative",
+        "learner": "LFM-2.5-1.2B",
+        "timestamp": 1775200643.9235263,
+        "overall": 0.733,
+        "mastery": 0.75,
+        "engagement": 0.7,
+        "clarity": 0.75,
+        "features": {
+          "turnCount": 7,
+          "teacherTurns": 4,
+          "studentTurns": 3,
+          "emptyTurns": 1,
+          "teacherWordCount": 1114,
+          "studentWordCount": 87,
+          "roleContaminationCount": 3,
+          "roleContaminationLabels": [
+            "summary_recitation",
+            "teacherly_opener"
+          ],
+          "redirectionCueCount": 4
+        }
+      },
+      {
+        "topic": "relativity",
+        "learner": "LFM-2.5-1.2B",
+        "timestamp": 1775200805.561699,
+        "overall": 0.733,
+        "mastery": 0.65,
+        "engagement": 0.75,
+        "clarity": 0.8,
+        "features": {
+          "turnCount": 7,
+          "teacherTurns": 4,
+          "studentTurns": 3,
+          "emptyTurns": 0,
+          "teacherWordCount": 1238,
+          "studentWordCount": 113,
+          "roleContaminationCount": 0,
+          "roleContaminationLabels": [],
+          "redirectionCueCount": 4
+        }
+      },
+      {
+        "topic": "stoicism",
+        "learner": "Qwen-2.5-1.5B",
+        "timestamp": 1775201163.263089,
+        "overall": 0.617,
+        "mastery": 0.55,
+        "engagement": 0.5,
+        "clarity": 0.8,
+        "features": {
+          "turnCount": 7,
+          "teacherTurns": 4,
+          "studentTurns": 3,
+          "emptyTurns": 0,
+          "teacherWordCount": 1273,
+          "studentWordCount": 106,
+          "roleContaminationCount": 0,
+          "roleContaminationLabels": [],
+          "redirectionCueCount": 2
+        }
+      },
+      {
+        "topic": "social-contract",
+        "learner": "Llama-3.2-1B",
+        "timestamp": 1775200413.5904636,
+        "overall": 0.6,
+        "mastery": 0.45,
+        "engagement": 0.5,
+        "clarity": 0.85,
+        "features": {
+          "turnCount": 7,
+          "teacherTurns": 4,
+          "studentTurns": 3,
+          "emptyTurns": 1,
+          "teacherWordCount": 1194,
+          "studentWordCount": 17,
+          "roleContaminationCount": 1,
+          "roleContaminationLabels": [
+            "teacherly_transition"
+          ],
+          "redirectionCueCount": 1
+        }
+      },
+      {
+        "topic": "relativity",
+        "learner": "Llama-3.2-1B",
+        "timestamp": 1775200125.5367758,
+        "overall": 0.5,
+        "mastery": 0.5,
+        "engagement": 0.5,
+        "clarity": 0.5,
+        "features": {
+          "turnCount": 7,
+          "teacherTurns": 4,
+          "studentTurns": 3,
+          "emptyTurns": 1,
+          "teacherWordCount": 1088,
+          "studentWordCount": 72,
+          "roleContaminationCount": 0,
+          "roleContaminationLabels": [],
+          "redirectionCueCount": 2
+        }
+      },
+      {
+        "topic": "social-contract",
+        "learner": "Cloud-MiniMax-M2.5",
+        "timestamp": 1775202131.0364487,
+        "overall": 0.5,
+        "mastery": 0.5,
+        "engagement": 0.5,
+        "clarity": 0.5,
+        "features": {
+          "turnCount": 7,
+          "teacherTurns": 4,
+          "studentTurns": 3,
+          "emptyTurns": 1,
+          "teacherWordCount": 942,
+          "studentWordCount": 120,
+          "roleContaminationCount": 0,
+          "roleContaminationLabels": [],
+          "redirectionCueCount": 1
+        }
+      },
+      {
+        "topic": "social-contract",
+        "learner": "LFM-2.5-1.2B",
+        "timestamp": 1775201003.7900395,
+        "overall": 0.5,
+        "mastery": 0.5,
+        "engagement": 0.5,
+        "clarity": 0.5,
+        "features": {
+          "turnCount": 7,
+          "teacherTurns": 4,
+          "studentTurns": 3,
+          "emptyTurns": 0,
+          "teacherWordCount": 2352,
+          "studentWordCount": 103,
+          "roleContaminationCount": 2,
+          "roleContaminationLabels": [
+            "teacherly_opener"
+          ],
+          "redirectionCueCount": 3
+        }
+      },
+      {
+        "topic": "stoicism",
+        "learner": "LFM-2.5-1.2B",
+        "timestamp": 1775200515.2176886,
+        "overall": 0.483,
+        "mastery": 0.2,
+        "engagement": 0.4,
+        "clarity": 0.85,
+        "features": {
+          "turnCount": 7,
+          "teacherTurns": 4,
+          "studentTurns": 3,
+          "emptyTurns": 0,
+          "teacherWordCount": 431,
+          "studentWordCount": 91,
+          "roleContaminationCount": 1,
+          "roleContaminationLabels": [
+            "teacherly_opener"
+          ],
+          "redirectionCueCount": 0
+        }
+      },
+      {
+        "topic": "stoicism",
+        "learner": "Llama-3.2-1B",
+        "timestamp": 1775199874.7481256,
+        "overall": 0.383,
+        "mastery": 0.25,
+        "engagement": 0.2,
+        "clarity": 0.7,
+        "features": {
+          "turnCount": 7,
+          "teacherTurns": 4,
+          "studentTurns": 3,
+          "emptyTurns": 1,
+          "teacherWordCount": 1287,
+          "studentWordCount": 76,
+          "roleContaminationCount": 3,
+          "roleContaminationLabels": [
+            "assistant_closure",
+            "assistant_disclaimer",
+            "completeness_disclaimer"
+          ],
+          "redirectionCueCount": 6
+        }
+      },
+      {
+        "topic": "derivative",
+        "learner": "Llama-3.2-1B",
+        "timestamp": 1775200021.542028,
+        "overall": 0.35,
+        "mastery": 0.1,
+        "engagement": 0.15,
+        "clarity": 0.8,
+        "features": {
+          "turnCount": 7,
+          "teacherTurns": 4,
+          "studentTurns": 3,
+          "emptyTurns": 0,
+          "teacherWordCount": 1069,
+          "studentWordCount": 17,
+          "roleContaminationCount": 0,
+          "roleContaminationLabels": [],
+          "redirectionCueCount": 1
+        }
+      },
+      {
+        "topic": "stoicism",
+        "learner": "Cloud-MiniMax-M2.5",
+        "timestamp": 1775201721.332345,
+        "overall": 0.217,
+        "mastery": 0.15,
+        "engagement": 0.1,
+        "clarity": 0.4,
+        "features": {
+          "turnCount": 7,
+          "teacherTurns": 4,
+          "studentTurns": 3,
+          "emptyTurns": 0,
+          "teacherWordCount": 531,
+          "studentWordCount": 27,
+          "roleContaminationCount": 0,
+          "roleContaminationLabels": [],
+          "redirectionCueCount": 1
+        }
+      }
+    ]
+  },
+  "syntheticBenchmark": {
+    "policyName": "me-candidate-33",
+    "seedCount": 200,
+    "policyDeltaFromDefault": {
+      "analogyDensity": -0.183,
+      "socraticRatio": 0.032,
+      "formalism": 0.015,
+      "retrievalPractice": 0.26,
+      "exerciseCount": -1,
+      "diagramBias": 0.3,
+      "reflectionBias": 0.265,
+      "interdisciplinaryBias": 0.38,
+      "challengeRate": -0.35
+    },
+    "benchmarkSummary": {
+      "defaultOverall": {
+        "mean": 55.057,
+        "min": 52.726,
+        "p025": 53.459,
+        "median": 55.067,
+        "p975": 56.573,
+        "max": 57.115
+      },
+      "currentOverall": {
+        "mean": 59.039,
+        "min": 56.45,
+        "p025": 57.461,
+        "median": 58.926,
+        "p975": 60.763,
+        "max": 61.139
+      },
+      "deltaOverall": {
+        "mean": 3.982,
+        "min": 2.747,
+        "p025": 3.039,
+        "median": 3.983,
+        "p975": 4.985,
+        "max": 5.204,
+        "wins": 200
+      },
+      "derivativeDelta": {
+        "mean": 4.106,
+        "min": -0.679,
+        "p025": 0.413,
+        "median": 4.043,
+        "p975": 7.799,
+        "max": 9.071
+      },
+      "nonDerivativeDelta": {
+        "mean": 3.973,
+        "min": 2.647,
+        "p025": 2.974,
+        "median": 3.934,
+        "p975": 4.971,
+        "max": 5.161
+      }
+    },
+    "runs": [
+      {
+        "seed": 1,
+        "defaultOverall": 55.605,
+        "currentOverall": 59.528,
+        "deltaOverall": 3.923,
+        "derivativeDelta": 6.423,
+        "nonDerivativeDelta": 3.731
+      },
+      {
+        "seed": 2,
+        "defaultOverall": 55.084,
+        "currentOverall": 58.557,
+        "deltaOverall": 3.473,
+        "derivativeDelta": 5.132,
+        "nonDerivativeDelta": 3.345
+      },
+      {
+        "seed": 3,
+        "defaultOverall": 55.773,
+        "currentOverall": 60.112,
+        "deltaOverall": 4.34,
+        "derivativeDelta": 5.248,
+        "nonDerivativeDelta": 4.27
+      },
+      {
+        "seed": 4,
+        "defaultOverall": 54.768,
+        "currentOverall": 59.363,
+        "deltaOverall": 4.595,
+        "derivativeDelta": 3.258,
+        "nonDerivativeDelta": 4.698
+      },
+      {
+        "seed": 5,
+        "defaultOverall": 55.124,
+        "currentOverall": 58.91,
+        "deltaOverall": 3.786,
+        "derivativeDelta": 4.389,
+        "nonDerivativeDelta": 3.739
+      },
+      {
+        "seed": 6,
+        "defaultOverall": 55.94,
+        "currentOverall": 60.082,
+        "deltaOverall": 4.142,
+        "derivativeDelta": 3.628,
+        "nonDerivativeDelta": 4.182
+      },
+      {
+        "seed": 7,
+        "defaultOverall": 55.359,
+        "currentOverall": 58.747,
+        "deltaOverall": 3.388,
+        "derivativeDelta": 2.954,
+        "nonDerivativeDelta": 3.421
+      },
+      {
+        "seed": 8,
+        "defaultOverall": 54.889,
+        "currentOverall": 58.891,
+        "deltaOverall": 4.001,
+        "derivativeDelta": 5.017,
+        "nonDerivativeDelta": 3.923
+      },
+      {
+        "seed": 9,
+        "defaultOverall": 54.89,
+        "currentOverall": 58.081,
+        "deltaOverall": 3.191,
+        "derivativeDelta": 4.757,
+        "nonDerivativeDelta": 3.071
+      },
+      {
+        "seed": 10,
+        "defaultOverall": 54.245,
+        "currentOverall": 57.781,
+        "deltaOverall": 3.536,
+        "derivativeDelta": -0.679,
+        "nonDerivativeDelta": 3.86
+      },
+      {
+        "seed": 11,
+        "defaultOverall": 55.975,
+        "currentOverall": 60.07,
+        "deltaOverall": 4.095,
+        "derivativeDelta": 5.187,
+        "nonDerivativeDelta": 4.011
+      },
+      {
+        "seed": 12,
+        "defaultOverall": 55.188,
+        "currentOverall": 58.814,
+        "deltaOverall": 3.626,
+        "derivativeDelta": 2.391,
+        "nonDerivativeDelta": 3.722
+      },
+      {
+        "seed": 13,
+        "defaultOverall": 55.205,
+        "currentOverall": 58.842,
+        "deltaOverall": 3.637,
+        "derivativeDelta": 4.901,
+        "nonDerivativeDelta": 3.54
+      },
+      {
+        "seed": 14,
+        "defaultOverall": 55.507,
+        "currentOverall": 60.06,
+        "deltaOverall": 4.553,
+        "derivativeDelta": 5.398,
+        "nonDerivativeDelta": 4.488
+      },
+      {
+        "seed": 15,
+        "defaultOverall": 52.726,
+        "currentOverall": 56.45,
+        "deltaOverall": 3.724,
+        "derivativeDelta": 2.281,
+        "nonDerivativeDelta": 3.835
+      },
+      {
+        "seed": 16,
+        "defaultOverall": 54.785,
+        "currentOverall": 58.236,
+        "deltaOverall": 3.451,
+        "derivativeDelta": 1.392,
+        "nonDerivativeDelta": 3.609
+      },
+      {
+        "seed": 17,
+        "defaultOverall": 55.043,
+        "currentOverall": 58.636,
+        "deltaOverall": 3.593,
+        "derivativeDelta": 1.418,
+        "nonDerivativeDelta": 3.761
+      },
+      {
+        "seed": 18,
+        "defaultOverall": 54.986,
+        "currentOverall": 58.752,
+        "deltaOverall": 3.767,
+        "derivativeDelta": 3.558,
+        "nonDerivativeDelta": 3.783
+      },
+      {
+        "seed": 19,
+        "defaultOverall": 54.216,
+        "currentOverall": 58.302,
+        "deltaOverall": 4.087,
+        "derivativeDelta": 5.088,
+        "nonDerivativeDelta": 4.01
+      },
+      {
+        "seed": 20,
+        "defaultOverall": 54.486,
+        "currentOverall": 59.094,
+        "deltaOverall": 4.609,
+        "derivativeDelta": 5.256,
+        "nonDerivativeDelta": 4.559
+      },
+      {
+        "seed": 21,
+        "defaultOverall": 54.715,
+        "currentOverall": 58.316,
+        "deltaOverall": 3.6,
+        "derivativeDelta": 2.477,
+        "nonDerivativeDelta": 3.687
+      },
+      {
+        "seed": 22,
+        "defaultOverall": 55.175,
+        "currentOverall": 59.443,
+        "deltaOverall": 4.267,
+        "derivativeDelta": 3.693,
+        "nonDerivativeDelta": 4.312
+      },
+      {
+        "seed": 23,
+        "defaultOverall": 55.122,
+        "currentOverall": 60.281,
+        "deltaOverall": 5.16,
+        "derivativeDelta": 5.282,
+        "nonDerivativeDelta": 5.15
+      },
+      {
+        "seed": 24,
+        "defaultOverall": 53.579,
+        "currentOverall": 58.221,
+        "deltaOverall": 4.642,
+        "derivativeDelta": 6.081,
+        "nonDerivativeDelta": 4.532
+      },
+      {
+        "seed": 25,
+        "defaultOverall": 54.881,
+        "currentOverall": 59.592,
+        "deltaOverall": 4.711,
+        "derivativeDelta": 5.865,
+        "nonDerivativeDelta": 4.622
+      },
+      {
+        "seed": 26,
+        "defaultOverall": 55.422,
+        "currentOverall": 59.514,
+        "deltaOverall": 4.091,
+        "derivativeDelta": 5.884,
+        "nonDerivativeDelta": 3.953
+      },
+      {
+        "seed": 27,
+        "defaultOverall": 54.398,
+        "currentOverall": 58.639,
+        "deltaOverall": 4.241,
+        "derivativeDelta": 4.535,
+        "nonDerivativeDelta": 4.218
+      },
+      {
+        "seed": 28,
+        "defaultOverall": 55.175,
+        "currentOverall": 59.245,
+        "deltaOverall": 4.07,
+        "derivativeDelta": 4.479,
+        "nonDerivativeDelta": 4.039
+      },
+      {
+        "seed": 29,
+        "defaultOverall": 53.897,
+        "currentOverall": 58.117,
+        "deltaOverall": 4.22,
+        "derivativeDelta": 2.648,
+        "nonDerivativeDelta": 4.341
+      },
+      {
+        "seed": 30,
+        "defaultOverall": 55.298,
+        "currentOverall": 59.27,
+        "deltaOverall": 3.971,
+        "derivativeDelta": 5.075,
+        "nonDerivativeDelta": 3.886
+      },
+      {
+        "seed": 31,
+        "defaultOverall": 55.424,
+        "currentOverall": 58.482,
+        "deltaOverall": 3.058,
+        "derivativeDelta": 4.144,
+        "nonDerivativeDelta": 2.974
+      },
+      {
+        "seed": 32,
+        "defaultOverall": 54.564,
+        "currentOverall": 58.929,
+        "deltaOverall": 4.366,
+        "derivativeDelta": 3.602,
+        "nonDerivativeDelta": 4.424
+      },
+      {
+        "seed": 33,
+        "defaultOverall": 54.322,
+        "currentOverall": 58.309,
+        "deltaOverall": 3.987,
+        "derivativeDelta": 5.693,
+        "nonDerivativeDelta": 3.856
+      },
+      {
+        "seed": 34,
+        "defaultOverall": 54.457,
+        "currentOverall": 58.464,
+        "deltaOverall": 4.007,
+        "derivativeDelta": 3.713,
+        "nonDerivativeDelta": 4.029
+      },
+      {
+        "seed": 35,
+        "defaultOverall": 57.115,
+        "currentOverall": 60.922,
+        "deltaOverall": 3.807,
+        "derivativeDelta": 2.863,
+        "nonDerivativeDelta": 3.88
+      },
+      {
+        "seed": 36,
+        "defaultOverall": 54.536,
+        "currentOverall": 58.767,
+        "deltaOverall": 4.23,
+        "derivativeDelta": 9.071,
+        "nonDerivativeDelta": 3.858
+      },
+      {
+        "seed": 37,
+        "defaultOverall": 53.958,
+        "currentOverall": 57.915,
+        "deltaOverall": 3.958,
+        "derivativeDelta": 4.605,
+        "nonDerivativeDelta": 3.908
+      },
+      {
+        "seed": 38,
+        "defaultOverall": 54.789,
+        "currentOverall": 58.68,
+        "deltaOverall": 3.892,
+        "derivativeDelta": 6.215,
+        "nonDerivativeDelta": 3.713
+      },
+      {
+        "seed": 39,
+        "defaultOverall": 53.847,
+        "currentOverall": 58.03,
+        "deltaOverall": 4.183,
+        "derivativeDelta": 5.77,
+        "nonDerivativeDelta": 4.061
+      },
+      {
+        "seed": 40,
+        "defaultOverall": 53.459,
+        "currentOverall": 57.461,
+        "deltaOverall": 4.002,
+        "derivativeDelta": 3.331,
+        "nonDerivativeDelta": 4.053
+      },
+      {
+        "seed": 41,
+        "defaultOverall": 55.905,
+        "currentOverall": 59.161,
+        "deltaOverall": 3.256,
+        "derivativeDelta": 1.417,
+        "nonDerivativeDelta": 3.397
+      },
+      {
+        "seed": 42,
+        "defaultOverall": 55.269,
+        "currentOverall": 59.153,
+        "deltaOverall": 3.884,
+        "derivativeDelta": 6.199,
+        "nonDerivativeDelta": 3.706
+      },
+      {
+        "seed": 43,
+        "defaultOverall": 56.281,
+        "currentOverall": 60.336,
+        "deltaOverall": 4.054,
+        "derivativeDelta": 6.465,
+        "nonDerivativeDelta": 3.869
+      },
+      {
+        "seed": 44,
+        "defaultOverall": 55.283,
+        "currentOverall": 60.372,
+        "deltaOverall": 5.089,
+        "derivativeDelta": 8.184,
+        "nonDerivativeDelta": 4.851
+      },
+      {
+        "seed": 45,
+        "defaultOverall": 55.7,
+        "currentOverall": 59.768,
+        "deltaOverall": 4.068,
+        "derivativeDelta": 2.041,
+        "nonDerivativeDelta": 4.224
+      },
+      {
+        "seed": 46,
+        "defaultOverall": 53.977,
+        "currentOverall": 57.717,
+        "deltaOverall": 3.739,
+        "derivativeDelta": 5.975,
+        "nonDerivativeDelta": 3.567
+      },
+      {
+        "seed": 47,
+        "defaultOverall": 55.063,
+        "currentOverall": 58.171,
+        "deltaOverall": 3.108,
+        "derivativeDelta": 4.449,
+        "nonDerivativeDelta": 3.005
+      },
+      {
+        "seed": 48,
+        "defaultOverall": 56.414,
+        "currentOverall": 60.498,
+        "deltaOverall": 4.084,
+        "derivativeDelta": 6.909,
+        "nonDerivativeDelta": 3.867
+      },
+      {
+        "seed": 49,
+        "defaultOverall": 55.005,
+        "currentOverall": 58.362,
+        "deltaOverall": 3.357,
+        "derivativeDelta": 1.001,
+        "nonDerivativeDelta": 3.538
+      },
+      {
+        "seed": 50,
+        "defaultOverall": 55.808,
+        "currentOverall": 58.896,
+        "deltaOverall": 3.088,
+        "derivativeDelta": 4.003,
+        "nonDerivativeDelta": 3.018
+      },
+      {
+        "seed": 51,
+        "defaultOverall": 55.49,
+        "currentOverall": 60.116,
+        "deltaOverall": 4.626,
+        "derivativeDelta": 6.477,
+        "nonDerivativeDelta": 4.484
+      },
+      {
+        "seed": 52,
+        "defaultOverall": 54.762,
+        "currentOverall": 59.033,
+        "deltaOverall": 4.272,
+        "derivativeDelta": 4.93,
+        "nonDerivativeDelta": 4.221
+      },
+      {
+        "seed": 53,
+        "defaultOverall": 54.407,
+        "currentOverall": 58.272,
+        "deltaOverall": 3.866,
+        "derivativeDelta": 3.543,
+        "nonDerivativeDelta": 3.89
+      },
+      {
+        "seed": 54,
+        "defaultOverall": 53.814,
+        "currentOverall": 57.574,
+        "deltaOverall": 3.76,
+        "derivativeDelta": 5.216,
+        "nonDerivativeDelta": 3.648
+      },
+      {
+        "seed": 55,
+        "defaultOverall": 55.494,
+        "currentOverall": 59.073,
+        "deltaOverall": 3.579,
+        "derivativeDelta": 1.994,
+        "nonDerivativeDelta": 3.701
+      },
+      {
+        "seed": 56,
+        "defaultOverall": 56.597,
+        "currentOverall": 59.835,
+        "deltaOverall": 3.238,
+        "derivativeDelta": 5.888,
+        "nonDerivativeDelta": 3.034
+      },
+      {
+        "seed": 57,
+        "defaultOverall": 54.739,
+        "currentOverall": 58.873,
+        "deltaOverall": 4.133,
+        "derivativeDelta": 5.134,
+        "nonDerivativeDelta": 4.056
+      },
+      {
+        "seed": 58,
+        "defaultOverall": 55.025,
+        "currentOverall": 58.178,
+        "deltaOverall": 3.152,
+        "derivativeDelta": 3.558,
+        "nonDerivativeDelta": 3.121
+      },
+      {
+        "seed": 59,
+        "defaultOverall": 54.845,
+        "currentOverall": 58.711,
+        "deltaOverall": 3.866,
+        "derivativeDelta": 3.587,
+        "nonDerivativeDelta": 3.887
+      },
+      {
+        "seed": 60,
+        "defaultOverall": 54.787,
+        "currentOverall": 59.516,
+        "deltaOverall": 4.729,
+        "derivativeDelta": 5.702,
+        "nonDerivativeDelta": 4.654
+      },
+      {
+        "seed": 61,
+        "defaultOverall": 55.633,
+        "currentOverall": 59.152,
+        "deltaOverall": 3.518,
+        "derivativeDelta": 4.47,
+        "nonDerivativeDelta": 3.445
+      },
+      {
+        "seed": 62,
+        "defaultOverall": 54.926,
+        "currentOverall": 58.569,
+        "deltaOverall": 3.643,
+        "derivativeDelta": 6.452,
+        "nonDerivativeDelta": 3.427
+      },
+      {
+        "seed": 63,
+        "defaultOverall": 54.773,
+        "currentOverall": 58.361,
+        "deltaOverall": 3.588,
+        "derivativeDelta": 6.037,
+        "nonDerivativeDelta": 3.399
+      },
+      {
+        "seed": 64,
+        "defaultOverall": 55.634,
+        "currentOverall": 58.618,
+        "deltaOverall": 2.984,
+        "derivativeDelta": 4.496,
+        "nonDerivativeDelta": 2.868
+      },
+      {
+        "seed": 65,
+        "defaultOverall": 56.503,
+        "currentOverall": 60.744,
+        "deltaOverall": 4.241,
+        "derivativeDelta": 6.82,
+        "nonDerivativeDelta": 4.042
+      },
+      {
+        "seed": 66,
+        "defaultOverall": 53.367,
+        "currentOverall": 58.181,
+        "deltaOverall": 4.814,
+        "derivativeDelta": 5.183,
+        "nonDerivativeDelta": 4.785
+      },
+      {
+        "seed": 67,
+        "defaultOverall": 55.909,
+        "currentOverall": 59.932,
+        "deltaOverall": 4.023,
+        "derivativeDelta": 6.39,
+        "nonDerivativeDelta": 3.841
+      },
+      {
+        "seed": 68,
+        "defaultOverall": 54.641,
+        "currentOverall": 59,
+        "deltaOverall": 4.359,
+        "derivativeDelta": 3.313,
+        "nonDerivativeDelta": 4.44
+      },
+      {
+        "seed": 69,
+        "defaultOverall": 56.085,
+        "currentOverall": 60.083,
+        "deltaOverall": 3.998,
+        "derivativeDelta": 3.791,
+        "nonDerivativeDelta": 4.014
+      },
+      {
+        "seed": 70,
+        "defaultOverall": 54.046,
+        "currentOverall": 57.739,
+        "deltaOverall": 3.693,
+        "derivativeDelta": 5.535,
+        "nonDerivativeDelta": 3.551
+      },
+      {
+        "seed": 71,
+        "defaultOverall": 56.571,
+        "currentOverall": 61.103,
+        "deltaOverall": 4.532,
+        "derivativeDelta": 3.309,
+        "nonDerivativeDelta": 4.626
+      },
+      {
+        "seed": 72,
+        "defaultOverall": 54.444,
+        "currentOverall": 58.926,
+        "deltaOverall": 4.482,
+        "derivativeDelta": 3.262,
+        "nonDerivativeDelta": 4.576
+      },
+      {
+        "seed": 73,
+        "defaultOverall": 55.201,
+        "currentOverall": 59.377,
+        "deltaOverall": 4.176,
+        "derivativeDelta": 6.12,
+        "nonDerivativeDelta": 4.026
+      },
+      {
+        "seed": 74,
+        "defaultOverall": 55.298,
+        "currentOverall": 59.521,
+        "deltaOverall": 4.223,
+        "derivativeDelta": 2.157,
+        "nonDerivativeDelta": 4.382
+      },
+      {
+        "seed": 75,
+        "defaultOverall": 53.765,
+        "currentOverall": 58.526,
+        "deltaOverall": 4.76,
+        "derivativeDelta": 4.134,
+        "nonDerivativeDelta": 4.808
+      },
+      {
+        "seed": 76,
+        "defaultOverall": 53.522,
+        "currentOverall": 57.529,
+        "deltaOverall": 4.007,
+        "derivativeDelta": 4.221,
+        "nonDerivativeDelta": 3.99
+      },
+      {
+        "seed": 77,
+        "defaultOverall": 54.877,
+        "currentOverall": 58.524,
+        "deltaOverall": 3.647,
+        "derivativeDelta": 1.779,
+        "nonDerivativeDelta": 3.79
+      },
+      {
+        "seed": 78,
+        "defaultOverall": 56.249,
+        "currentOverall": 60.404,
+        "deltaOverall": 4.155,
+        "derivativeDelta": 6.473,
+        "nonDerivativeDelta": 3.977
+      },
+      {
+        "seed": 79,
+        "defaultOverall": 54.738,
+        "currentOverall": 58.795,
+        "deltaOverall": 4.057,
+        "derivativeDelta": 1.776,
+        "nonDerivativeDelta": 4.233
+      },
+      {
+        "seed": 80,
+        "defaultOverall": 55.142,
+        "currentOverall": 58.9,
+        "deltaOverall": 3.759,
+        "derivativeDelta": 2.496,
+        "nonDerivativeDelta": 3.856
+      },
+      {
+        "seed": 81,
+        "defaultOverall": 55.189,
+        "currentOverall": 59.238,
+        "deltaOverall": 4.049,
+        "derivativeDelta": 4.966,
+        "nonDerivativeDelta": 3.978
+      },
+      {
+        "seed": 82,
+        "defaultOverall": 55.519,
+        "currentOverall": 60.723,
+        "deltaOverall": 5.204,
+        "derivativeDelta": 7.219,
+        "nonDerivativeDelta": 5.049
+      },
+      {
+        "seed": 83,
+        "defaultOverall": 55.149,
+        "currentOverall": 59.796,
+        "deltaOverall": 4.647,
+        "derivativeDelta": 6.141,
+        "nonDerivativeDelta": 4.532
+      },
+      {
+        "seed": 84,
+        "defaultOverall": 56.02,
+        "currentOverall": 59.087,
+        "deltaOverall": 3.068,
+        "derivativeDelta": 2.364,
+        "nonDerivativeDelta": 3.122
+      },
+      {
+        "seed": 85,
+        "defaultOverall": 55.139,
+        "currentOverall": 59.482,
+        "deltaOverall": 4.343,
+        "derivativeDelta": -0.356,
+        "nonDerivativeDelta": 4.704
+      },
+      {
+        "seed": 86,
+        "defaultOverall": 55.405,
+        "currentOverall": 59.495,
+        "deltaOverall": 4.09,
+        "derivativeDelta": 4.263,
+        "nonDerivativeDelta": 4.077
+      },
+      {
+        "seed": 87,
+        "defaultOverall": 55.384,
+        "currentOverall": 59.338,
+        "deltaOverall": 3.954,
+        "derivativeDelta": 2.93,
+        "nonDerivativeDelta": 4.032
+      },
+      {
+        "seed": 88,
+        "defaultOverall": 55.974,
+        "currentOverall": 59.195,
+        "deltaOverall": 3.222,
+        "derivativeDelta": 5.181,
+        "nonDerivativeDelta": 3.071
+      },
+      {
+        "seed": 89,
+        "defaultOverall": 54.664,
+        "currentOverall": 58.426,
+        "deltaOverall": 3.762,
+        "derivativeDelta": 3.158,
+        "nonDerivativeDelta": 3.808
+      },
+      {
+        "seed": 90,
+        "defaultOverall": 54.239,
+        "currentOverall": 57.718,
+        "deltaOverall": 3.479,
+        "derivativeDelta": 3.319,
+        "nonDerivativeDelta": 3.491
+      },
+      {
+        "seed": 91,
+        "defaultOverall": 54.859,
+        "currentOverall": 57.752,
+        "deltaOverall": 2.893,
+        "derivativeDelta": -0.324,
+        "nonDerivativeDelta": 3.141
+      },
+      {
+        "seed": 92,
+        "defaultOverall": 55.973,
+        "currentOverall": 60.245,
+        "deltaOverall": 4.272,
+        "derivativeDelta": 1.798,
+        "nonDerivativeDelta": 4.462
+      },
+      {
+        "seed": 93,
+        "defaultOverall": 55.775,
+        "currentOverall": 60.405,
+        "deltaOverall": 4.63,
+        "derivativeDelta": 3.762,
+        "nonDerivativeDelta": 4.697
+      },
+      {
+        "seed": 94,
+        "defaultOverall": 55.198,
+        "currentOverall": 59.569,
+        "deltaOverall": 4.371,
+        "derivativeDelta": 4.432,
+        "nonDerivativeDelta": 4.366
+      },
+      {
+        "seed": 95,
+        "defaultOverall": 55.429,
+        "currentOverall": 59.457,
+        "deltaOverall": 4.028,
+        "derivativeDelta": 5.642,
+        "nonDerivativeDelta": 3.904
+      },
+      {
+        "seed": 96,
+        "defaultOverall": 54.449,
+        "currentOverall": 58.102,
+        "deltaOverall": 3.653,
+        "derivativeDelta": 3.982,
+        "nonDerivativeDelta": 3.628
+      },
+      {
+        "seed": 97,
+        "defaultOverall": 56.382,
+        "currentOverall": 61.061,
+        "deltaOverall": 4.679,
+        "derivativeDelta": 2.949,
+        "nonDerivativeDelta": 4.812
+      },
+      {
+        "seed": 98,
+        "defaultOverall": 54.84,
+        "currentOverall": 58.537,
+        "deltaOverall": 3.697,
+        "derivativeDelta": 2.678,
+        "nonDerivativeDelta": 3.775
+      },
+      {
+        "seed": 99,
+        "defaultOverall": 54.605,
+        "currentOverall": 58.125,
+        "deltaOverall": 3.521,
+        "derivativeDelta": 3.698,
+        "nonDerivativeDelta": 3.507
+      },
+      {
+        "seed": 100,
+        "defaultOverall": 55.475,
+        "currentOverall": 60.178,
+        "deltaOverall": 4.704,
+        "derivativeDelta": 3.306,
+        "nonDerivativeDelta": 4.811
+      },
+      {
+        "seed": 101,
+        "defaultOverall": 54.582,
+        "currentOverall": 59.426,
+        "deltaOverall": 4.843,
+        "derivativeDelta": 3.912,
+        "nonDerivativeDelta": 4.915
+      },
+      {
+        "seed": 102,
+        "defaultOverall": 54.935,
+        "currentOverall": 58.737,
+        "deltaOverall": 3.801,
+        "derivativeDelta": 4.57,
+        "nonDerivativeDelta": 3.742
+      },
+      {
+        "seed": 103,
+        "defaultOverall": 56.255,
+        "currentOverall": 60.478,
+        "deltaOverall": 4.223,
+        "derivativeDelta": 3.962,
+        "nonDerivativeDelta": 4.243
+      },
+      {
+        "seed": 104,
+        "defaultOverall": 55.343,
+        "currentOverall": 58.893,
+        "deltaOverall": 3.55,
+        "derivativeDelta": 2.29,
+        "nonDerivativeDelta": 3.647
+      },
+      {
+        "seed": 105,
+        "defaultOverall": 55.172,
+        "currentOverall": 58.831,
+        "deltaOverall": 3.659,
+        "derivativeDelta": 0.413,
+        "nonDerivativeDelta": 3.909
+      },
+      {
+        "seed": 106,
+        "defaultOverall": 54.696,
+        "currentOverall": 57.854,
+        "deltaOverall": 3.159,
+        "derivativeDelta": 1.695,
+        "nonDerivativeDelta": 3.271
+      },
+      {
+        "seed": 107,
+        "defaultOverall": 54.553,
+        "currentOverall": 58.34,
+        "deltaOverall": 3.786,
+        "derivativeDelta": 5.283,
+        "nonDerivativeDelta": 3.671
+      },
+      {
+        "seed": 108,
+        "defaultOverall": 55.599,
+        "currentOverall": 59.656,
+        "deltaOverall": 4.057,
+        "derivativeDelta": 3.915,
+        "nonDerivativeDelta": 4.068
+      },
+      {
+        "seed": 109,
+        "defaultOverall": 55.087,
+        "currentOverall": 58.742,
+        "deltaOverall": 3.655,
+        "derivativeDelta": 6.194,
+        "nonDerivativeDelta": 3.46
+      },
+      {
+        "seed": 110,
+        "defaultOverall": 55.63,
+        "currentOverall": 59.572,
+        "deltaOverall": 3.942,
+        "derivativeDelta": 3.892,
+        "nonDerivativeDelta": 3.946
+      },
+      {
+        "seed": 111,
+        "defaultOverall": 55.244,
+        "currentOverall": 59.858,
+        "deltaOverall": 4.614,
+        "derivativeDelta": 4.167,
+        "nonDerivativeDelta": 4.648
+      },
+      {
+        "seed": 112,
+        "defaultOverall": 52.958,
+        "currentOverall": 56.769,
+        "deltaOverall": 3.812,
+        "derivativeDelta": 5.138,
+        "nonDerivativeDelta": 3.71
+      },
+      {
+        "seed": 113,
+        "defaultOverall": 54.627,
+        "currentOverall": 58.431,
+        "deltaOverall": 3.804,
+        "derivativeDelta": 5.214,
+        "nonDerivativeDelta": 3.695
+      },
+      {
+        "seed": 114,
+        "defaultOverall": 54.649,
+        "currentOverall": 58.405,
+        "deltaOverall": 3.756,
+        "derivativeDelta": 2.985,
+        "nonDerivativeDelta": 3.816
+      },
+      {
+        "seed": 115,
+        "defaultOverall": 54.947,
+        "currentOverall": 58.862,
+        "deltaOverall": 3.915,
+        "derivativeDelta": 1.095,
+        "nonDerivativeDelta": 4.132
+      },
+      {
+        "seed": 116,
+        "defaultOverall": 53.979,
+        "currentOverall": 58.178,
+        "deltaOverall": 4.2,
+        "derivativeDelta": 6.617,
+        "nonDerivativeDelta": 4.014
+      },
+      {
+        "seed": 117,
+        "defaultOverall": 54.641,
+        "currentOverall": 59.299,
+        "deltaOverall": 4.658,
+        "derivativeDelta": 3.975,
+        "nonDerivativeDelta": 4.71
+      },
+      {
+        "seed": 118,
+        "defaultOverall": 54.481,
+        "currentOverall": 58.174,
+        "deltaOverall": 3.693,
+        "derivativeDelta": 4.772,
+        "nonDerivativeDelta": 3.61
+      },
+      {
+        "seed": 119,
+        "defaultOverall": 55.478,
+        "currentOverall": 59.76,
+        "deltaOverall": 4.282,
+        "derivativeDelta": 6.516,
+        "nonDerivativeDelta": 4.11
+      },
+      {
+        "seed": 120,
+        "defaultOverall": 55.59,
+        "currentOverall": 60.574,
+        "deltaOverall": 4.985,
+        "derivativeDelta": 8.855,
+        "nonDerivativeDelta": 4.687
+      },
+      {
+        "seed": 121,
+        "defaultOverall": 53.978,
+        "currentOverall": 58.674,
+        "deltaOverall": 4.696,
+        "derivativeDelta": 2.785,
+        "nonDerivativeDelta": 4.843
+      },
+      {
+        "seed": 122,
+        "defaultOverall": 55.15,
+        "currentOverall": 59.714,
+        "deltaOverall": 4.564,
+        "derivativeDelta": 1.75,
+        "nonDerivativeDelta": 4.78
+      },
+      {
+        "seed": 123,
+        "defaultOverall": 55.371,
+        "currentOverall": 59.434,
+        "deltaOverall": 4.064,
+        "derivativeDelta": 6.445,
+        "nonDerivativeDelta": 3.881
+      },
+      {
+        "seed": 124,
+        "defaultOverall": 53.853,
+        "currentOverall": 57.926,
+        "deltaOverall": 4.073,
+        "derivativeDelta": 3.542,
+        "nonDerivativeDelta": 4.114
+      },
+      {
+        "seed": 125,
+        "defaultOverall": 54.795,
+        "currentOverall": 59.052,
+        "deltaOverall": 4.256,
+        "derivativeDelta": 4.043,
+        "nonDerivativeDelta": 4.273
+      },
+      {
+        "seed": 126,
+        "defaultOverall": 54.178,
+        "currentOverall": 58.526,
+        "deltaOverall": 4.349,
+        "derivativeDelta": 0.996,
+        "nonDerivativeDelta": 4.606
+      },
+      {
+        "seed": 127,
+        "defaultOverall": 54.894,
+        "currentOverall": 58.659,
+        "deltaOverall": 3.765,
+        "derivativeDelta": 2.215,
+        "nonDerivativeDelta": 3.884
+      },
+      {
+        "seed": 128,
+        "defaultOverall": 55.725,
+        "currentOverall": 58.472,
+        "deltaOverall": 2.747,
+        "derivativeDelta": 3.741,
+        "nonDerivativeDelta": 2.67
+      },
+      {
+        "seed": 129,
+        "defaultOverall": 54.924,
+        "currentOverall": 59.199,
+        "deltaOverall": 4.274,
+        "derivativeDelta": 3.287,
+        "nonDerivativeDelta": 4.35
+      },
+      {
+        "seed": 130,
+        "defaultOverall": 54.874,
+        "currentOverall": 58.714,
+        "deltaOverall": 3.84,
+        "derivativeDelta": 1.477,
+        "nonDerivativeDelta": 4.022
+      },
+      {
+        "seed": 131,
+        "defaultOverall": 54.654,
+        "currentOverall": 58.686,
+        "deltaOverall": 4.032,
+        "derivativeDelta": 4.003,
+        "nonDerivativeDelta": 4.034
+      },
+      {
+        "seed": 132,
+        "defaultOverall": 56.921,
+        "currentOverall": 60.763,
+        "deltaOverall": 3.842,
+        "derivativeDelta": 3.568,
+        "nonDerivativeDelta": 3.863
+      },
+      {
+        "seed": 133,
+        "defaultOverall": 54.62,
+        "currentOverall": 58.454,
+        "deltaOverall": 3.833,
+        "derivativeDelta": 3.444,
+        "nonDerivativeDelta": 3.863
+      },
+      {
+        "seed": 134,
+        "defaultOverall": 53.843,
+        "currentOverall": 57.935,
+        "deltaOverall": 4.092,
+        "derivativeDelta": 4.05,
+        "nonDerivativeDelta": 4.095
+      },
+      {
+        "seed": 135,
+        "defaultOverall": 54.645,
+        "currentOverall": 58.321,
+        "deltaOverall": 3.676,
+        "derivativeDelta": 3.858,
+        "nonDerivativeDelta": 3.662
+      },
+      {
+        "seed": 136,
+        "defaultOverall": 53.806,
+        "currentOverall": 57.63,
+        "deltaOverall": 3.824,
+        "derivativeDelta": 4.32,
+        "nonDerivativeDelta": 3.785
+      },
+      {
+        "seed": 137,
+        "defaultOverall": 53.829,
+        "currentOverall": 57.839,
+        "deltaOverall": 4.01,
+        "derivativeDelta": 4.419,
+        "nonDerivativeDelta": 3.979
+      },
+      {
+        "seed": 138,
+        "defaultOverall": 55.35,
+        "currentOverall": 58.596,
+        "deltaOverall": 3.246,
+        "derivativeDelta": 6.321,
+        "nonDerivativeDelta": 3.009
+      },
+      {
+        "seed": 139,
+        "defaultOverall": 55.65,
+        "currentOverall": 59.447,
+        "deltaOverall": 3.798,
+        "derivativeDelta": 1.628,
+        "nonDerivativeDelta": 3.964
+      },
+      {
+        "seed": 140,
+        "defaultOverall": 56.589,
+        "currentOverall": 60.529,
+        "deltaOverall": 3.94,
+        "derivativeDelta": 2.544,
+        "nonDerivativeDelta": 4.048
+      },
+      {
+        "seed": 141,
+        "defaultOverall": 55.067,
+        "currentOverall": 59.893,
+        "deltaOverall": 4.826,
+        "derivativeDelta": 5.987,
+        "nonDerivativeDelta": 4.737
+      },
+      {
+        "seed": 142,
+        "defaultOverall": 55.742,
+        "currentOverall": 59.997,
+        "deltaOverall": 4.255,
+        "derivativeDelta": 4.955,
+        "nonDerivativeDelta": 4.201
+      },
+      {
+        "seed": 143,
+        "defaultOverall": 53.994,
+        "currentOverall": 57.624,
+        "deltaOverall": 3.63,
+        "derivativeDelta": 0.924,
+        "nonDerivativeDelta": 3.838
+      },
+      {
+        "seed": 144,
+        "defaultOverall": 54.842,
+        "currentOverall": 57.981,
+        "deltaOverall": 3.138,
+        "derivativeDelta": 4.093,
+        "nonDerivativeDelta": 3.065
+      },
+      {
+        "seed": 145,
+        "defaultOverall": 56.57,
+        "currentOverall": 60.284,
+        "deltaOverall": 3.714,
+        "derivativeDelta": 2.183,
+        "nonDerivativeDelta": 3.831
+      },
+      {
+        "seed": 146,
+        "defaultOverall": 54.71,
+        "currentOverall": 58.119,
+        "deltaOverall": 3.409,
+        "derivativeDelta": 6.995,
+        "nonDerivativeDelta": 3.133
+      },
+      {
+        "seed": 147,
+        "defaultOverall": 56.073,
+        "currentOverall": 59.112,
+        "deltaOverall": 3.039,
+        "derivativeDelta": 4.016,
+        "nonDerivativeDelta": 2.964
+      },
+      {
+        "seed": 148,
+        "defaultOverall": 56.038,
+        "currentOverall": 60.432,
+        "deltaOverall": 4.393,
+        "derivativeDelta": 4.647,
+        "nonDerivativeDelta": 4.374
+      },
+      {
+        "seed": 149,
+        "defaultOverall": 54.618,
+        "currentOverall": 58.803,
+        "deltaOverall": 4.186,
+        "derivativeDelta": 1.557,
+        "nonDerivativeDelta": 4.388
+      },
+      {
+        "seed": 150,
+        "defaultOverall": 54.696,
+        "currentOverall": 58.623,
+        "deltaOverall": 3.928,
+        "derivativeDelta": 0.608,
+        "nonDerivativeDelta": 4.183
+      },
+      {
+        "seed": 151,
+        "defaultOverall": 53.875,
+        "currentOverall": 57.858,
+        "deltaOverall": 3.983,
+        "derivativeDelta": 6.013,
+        "nonDerivativeDelta": 3.827
+      },
+      {
+        "seed": 152,
+        "defaultOverall": 55.803,
+        "currentOverall": 59.78,
+        "deltaOverall": 3.977,
+        "derivativeDelta": 3.846,
+        "nonDerivativeDelta": 3.987
+      },
+      {
+        "seed": 153,
+        "defaultOverall": 56.393,
+        "currentOverall": 59.348,
+        "deltaOverall": 2.954,
+        "derivativeDelta": 6.955,
+        "nonDerivativeDelta": 2.647
+      },
+      {
+        "seed": 154,
+        "defaultOverall": 54.619,
+        "currentOverall": 58.788,
+        "deltaOverall": 4.169,
+        "derivativeDelta": 4.562,
+        "nonDerivativeDelta": 4.139
+      },
+      {
+        "seed": 155,
+        "defaultOverall": 55.23,
+        "currentOverall": 58.539,
+        "deltaOverall": 3.309,
+        "derivativeDelta": 2.938,
+        "nonDerivativeDelta": 3.337
+      },
+      {
+        "seed": 156,
+        "defaultOverall": 54.337,
+        "currentOverall": 58.123,
+        "deltaOverall": 3.786,
+        "derivativeDelta": 3.894,
+        "nonDerivativeDelta": 3.777
+      },
+      {
+        "seed": 157,
+        "defaultOverall": 54.846,
+        "currentOverall": 59.861,
+        "deltaOverall": 5.015,
+        "derivativeDelta": 3.112,
+        "nonDerivativeDelta": 5.161
+      },
+      {
+        "seed": 158,
+        "defaultOverall": 55.518,
+        "currentOverall": 58.885,
+        "deltaOverall": 3.367,
+        "derivativeDelta": 3.942,
+        "nonDerivativeDelta": 3.323
+      },
+      {
+        "seed": 159,
+        "defaultOverall": 55.024,
+        "currentOverall": 58.606,
+        "deltaOverall": 3.582,
+        "derivativeDelta": 2.713,
+        "nonDerivativeDelta": 3.649
+      },
+      {
+        "seed": 160,
+        "defaultOverall": 55.317,
+        "currentOverall": 59.014,
+        "deltaOverall": 3.697,
+        "derivativeDelta": 0.614,
+        "nonDerivativeDelta": 3.934
+      },
+      {
+        "seed": 161,
+        "defaultOverall": 55.161,
+        "currentOverall": 58.23,
+        "deltaOverall": 3.069,
+        "derivativeDelta": 0.753,
+        "nonDerivativeDelta": 3.247
+      },
+      {
+        "seed": 162,
+        "defaultOverall": 56.135,
+        "currentOverall": 60.071,
+        "deltaOverall": 3.936,
+        "derivativeDelta": 6.278,
+        "nonDerivativeDelta": 3.756
+      },
+      {
+        "seed": 163,
+        "defaultOverall": 53.998,
+        "currentOverall": 58.648,
+        "deltaOverall": 4.65,
+        "derivativeDelta": 4.527,
+        "nonDerivativeDelta": 4.66
+      },
+      {
+        "seed": 164,
+        "defaultOverall": 55.364,
+        "currentOverall": 59.083,
+        "deltaOverall": 3.718,
+        "derivativeDelta": 4.773,
+        "nonDerivativeDelta": 3.637
+      },
+      {
+        "seed": 165,
+        "defaultOverall": 54.749,
+        "currentOverall": 59.044,
+        "deltaOverall": 4.295,
+        "derivativeDelta": 4.31,
+        "nonDerivativeDelta": 4.293
+      },
+      {
+        "seed": 166,
+        "defaultOverall": 56.012,
+        "currentOverall": 59.767,
+        "deltaOverall": 3.755,
+        "derivativeDelta": 5.032,
+        "nonDerivativeDelta": 3.657
+      },
+      {
+        "seed": 167,
+        "defaultOverall": 53.58,
+        "currentOverall": 57.291,
+        "deltaOverall": 3.711,
+        "derivativeDelta": 8.616,
+        "nonDerivativeDelta": 3.334
+      },
+      {
+        "seed": 168,
+        "defaultOverall": 56.037,
+        "currentOverall": 60.743,
+        "deltaOverall": 4.706,
+        "derivativeDelta": 2.182,
+        "nonDerivativeDelta": 4.9
+      },
+      {
+        "seed": 169,
+        "defaultOverall": 54.736,
+        "currentOverall": 59.199,
+        "deltaOverall": 4.463,
+        "derivativeDelta": 4.812,
+        "nonDerivativeDelta": 4.436
+      },
+      {
+        "seed": 170,
+        "defaultOverall": 55.058,
+        "currentOverall": 59.109,
+        "deltaOverall": 4.051,
+        "derivativeDelta": 2.103,
+        "nonDerivativeDelta": 4.201
+      },
+      {
+        "seed": 171,
+        "defaultOverall": 55.236,
+        "currentOverall": 59.694,
+        "deltaOverall": 4.458,
+        "derivativeDelta": 7.799,
+        "nonDerivativeDelta": 4.201
+      },
+      {
+        "seed": 172,
+        "defaultOverall": 53.683,
+        "currentOverall": 58.567,
+        "deltaOverall": 4.884,
+        "derivativeDelta": 1.446,
+        "nonDerivativeDelta": 5.149
+      },
+      {
+        "seed": 173,
+        "defaultOverall": 53.095,
+        "currentOverall": 57.081,
+        "deltaOverall": 3.986,
+        "derivativeDelta": 2.236,
+        "nonDerivativeDelta": 4.121
+      },
+      {
+        "seed": 174,
+        "defaultOverall": 54.468,
+        "currentOverall": 58.086,
+        "deltaOverall": 3.618,
+        "derivativeDelta": 3.707,
+        "nonDerivativeDelta": 3.611
+      },
+      {
+        "seed": 175,
+        "defaultOverall": 55.605,
+        "currentOverall": 59.561,
+        "deltaOverall": 3.956,
+        "derivativeDelta": 4.774,
+        "nonDerivativeDelta": 3.893
+      },
+      {
+        "seed": 176,
+        "defaultOverall": 54.935,
+        "currentOverall": 59.107,
+        "deltaOverall": 4.173,
+        "derivativeDelta": 3.939,
+        "nonDerivativeDelta": 4.191
+      },
+      {
+        "seed": 177,
+        "defaultOverall": 55.315,
+        "currentOverall": 59.298,
+        "deltaOverall": 3.983,
+        "derivativeDelta": 5.359,
+        "nonDerivativeDelta": 3.877
+      },
+      {
+        "seed": 178,
+        "defaultOverall": 56.02,
+        "currentOverall": 59.975,
+        "deltaOverall": 3.955,
+        "derivativeDelta": 2.714,
+        "nonDerivativeDelta": 4.051
+      },
+      {
+        "seed": 179,
+        "defaultOverall": 55.274,
+        "currentOverall": 60.29,
+        "deltaOverall": 5.016,
+        "derivativeDelta": 4.093,
+        "nonDerivativeDelta": 5.087
+      },
+      {
+        "seed": 180,
+        "defaultOverall": 55.302,
+        "currentOverall": 60,
+        "deltaOverall": 4.698,
+        "derivativeDelta": 6.646,
+        "nonDerivativeDelta": 4.548
+      },
+      {
+        "seed": 181,
+        "defaultOverall": 55.441,
+        "currentOverall": 58.625,
+        "deltaOverall": 3.183,
+        "derivativeDelta": 0.132,
+        "nonDerivativeDelta": 3.418
+      },
+      {
+        "seed": 182,
+        "defaultOverall": 54.694,
+        "currentOverall": 59.338,
+        "deltaOverall": 4.644,
+        "derivativeDelta": 3.667,
+        "nonDerivativeDelta": 4.72
+      },
+      {
+        "seed": 183,
+        "defaultOverall": 55.089,
+        "currentOverall": 59.094,
+        "deltaOverall": 4.005,
+        "derivativeDelta": 4.971,
+        "nonDerivativeDelta": 3.931
+      },
+      {
+        "seed": 184,
+        "defaultOverall": 54.818,
+        "currentOverall": 58.861,
+        "deltaOverall": 4.043,
+        "derivativeDelta": 5.647,
+        "nonDerivativeDelta": 3.92
+      },
+      {
+        "seed": 185,
+        "defaultOverall": 56.271,
+        "currentOverall": 59.399,
+        "deltaOverall": 3.128,
+        "derivativeDelta": 3.408,
+        "nonDerivativeDelta": 3.107
+      },
+      {
+        "seed": 186,
+        "defaultOverall": 55.384,
+        "currentOverall": 59.243,
+        "deltaOverall": 3.859,
+        "derivativeDelta": 0.999,
+        "nonDerivativeDelta": 4.079
+      },
+      {
+        "seed": 187,
+        "defaultOverall": 54.404,
+        "currentOverall": 57.845,
+        "deltaOverall": 3.44,
+        "derivativeDelta": 2.735,
+        "nonDerivativeDelta": 3.494
+      },
+      {
+        "seed": 188,
+        "defaultOverall": 55.057,
+        "currentOverall": 58.346,
+        "deltaOverall": 3.289,
+        "derivativeDelta": 2.791,
+        "nonDerivativeDelta": 3.327
+      },
+      {
+        "seed": 189,
+        "defaultOverall": 55.886,
+        "currentOverall": 60.173,
+        "deltaOverall": 4.286,
+        "derivativeDelta": 5.512,
+        "nonDerivativeDelta": 4.192
+      },
+      {
+        "seed": 190,
+        "defaultOverall": 55.619,
+        "currentOverall": 60.118,
+        "deltaOverall": 4.499,
+        "derivativeDelta": 5.992,
+        "nonDerivativeDelta": 4.384
+      },
+      {
+        "seed": 191,
+        "defaultOverall": 55.107,
+        "currentOverall": 59.346,
+        "deltaOverall": 4.239,
+        "derivativeDelta": 2.885,
+        "nonDerivativeDelta": 4.343
+      },
+      {
+        "seed": 192,
+        "defaultOverall": 55.169,
+        "currentOverall": 59.217,
+        "deltaOverall": 4.048,
+        "derivativeDelta": 5.308,
+        "nonDerivativeDelta": 3.951
+      },
+      {
+        "seed": 193,
+        "defaultOverall": 55.123,
+        "currentOverall": 58.678,
+        "deltaOverall": 3.555,
+        "derivativeDelta": 3.099,
+        "nonDerivativeDelta": 3.59
+      },
+      {
+        "seed": 194,
+        "defaultOverall": 56.602,
+        "currentOverall": 61.139,
+        "deltaOverall": 4.537,
+        "derivativeDelta": 4.395,
+        "nonDerivativeDelta": 4.547
+      },
+      {
+        "seed": 195,
+        "defaultOverall": 55.442,
+        "currentOverall": 59.346,
+        "deltaOverall": 3.904,
+        "derivativeDelta": 5.142,
+        "nonDerivativeDelta": 3.809
+      },
+      {
+        "seed": 196,
+        "defaultOverall": 54.728,
+        "currentOverall": 58.341,
+        "deltaOverall": 3.614,
+        "derivativeDelta": 5.036,
+        "nonDerivativeDelta": 3.504
+      },
+      {
+        "seed": 197,
+        "defaultOverall": 55.518,
+        "currentOverall": 60.348,
+        "deltaOverall": 4.831,
+        "derivativeDelta": 3.008,
+        "nonDerivativeDelta": 4.971
+      },
+      {
+        "seed": 198,
+        "defaultOverall": 54.847,
+        "currentOverall": 59.666,
+        "deltaOverall": 4.818,
+        "derivativeDelta": 3.635,
+        "nonDerivativeDelta": 4.909
+      },
+      {
+        "seed": 199,
+        "defaultOverall": 54.871,
+        "currentOverall": 58.525,
+        "deltaOverall": 3.654,
+        "derivativeDelta": 8.925,
+        "nonDerivativeDelta": 3.249
+      },
+      {
+        "seed": 200,
+        "defaultOverall": 56.573,
+        "currentOverall": 60.858,
+        "deltaOverall": 4.284,
+        "derivativeDelta": 5.344,
+        "nonDerivativeDelta": 4.203
+      }
+    ],
+    "topicDeltaSummary": [
+      {
+        "topic": "Legal Precedent",
+        "meanDelta": 3.142,
+        "p025": 0.154,
+        "p975": 6.108,
+        "wins": 196
+      },
+      {
+        "topic": "Industrial Revolution",
+        "meanDelta": 3.711,
+        "p025": 0.295,
+        "p975": 6.938,
+        "wins": 197
+      },
+      {
+        "topic": "Entropy",
+        "meanDelta": 3.902,
+        "p025": 0.355,
+        "p975": 7.826,
+        "wins": 197
+      },
+      {
+        "topic": "Social Contract Theory",
+        "meanDelta": 3.928,
+        "p025": 0.673,
+        "p975": 7.593,
+        "wins": 200
+      },
+      {
+        "topic": "Counterpoint",
+        "meanDelta": 4.004,
+        "p025": 0.252,
+        "p975": 7.648,
+        "wins": 198
+      },
+      {
+        "topic": "Stoicism",
+        "meanDelta": 4.012,
+        "p025": 0.331,
+        "p975": 7.27,
+        "wins": 197
+      },
+      {
+        "topic": "Bayes' Rule",
+        "meanDelta": 4.019,
+        "p025": 0.357,
+        "p975": 7.778,
+        "wins": 197
+      },
+      {
+        "topic": "Falsifiability",
+        "meanDelta": 4.065,
+        "p025": 0.42,
+        "p975": 7.463,
+        "wins": 198
+      },
+      {
+        "topic": "Recursion",
+        "meanDelta": 4.074,
+        "p025": 0.273,
+        "p975": 7.73,
+        "wins": 199
+      },
+      {
+        "topic": "Special Relativity",
+        "meanDelta": 4.079,
+        "p025": 0.672,
+        "p975": 7.743,
+        "wins": 198
+      },
+      {
+        "topic": "Separation of Powers",
+        "meanDelta": 4.105,
+        "p025": 0.433,
+        "p975": 7.353,
+        "wins": 198
+      },
+      {
+        "topic": "Derivative",
+        "meanDelta": 4.106,
+        "p025": 0.413,
+        "p975": 7.799,
+        "wins": 197
+      },
+      {
+        "topic": "Evidence-Based Medicine",
+        "meanDelta": 4.291,
+        "p025": 0.265,
+        "p975": 8.035,
+        "wins": 198
+      },
+      {
+        "topic": "Cognitive Bias",
+        "meanDelta": 4.315,
+        "p025": 0.979,
+        "p975": 7.462,
+        "wins": 199
+      }
+    ],
+    "oneAtATimeAblations": [
+      {
+        "field": "challengeRate",
+        "meanDelta": 2.227,
+        "p025": 2.068,
+        "p975": 2.377
+      },
+      {
+        "field": "retrievalPractice",
+        "meanDelta": 1.82,
+        "p025": 1.778,
+        "p975": 1.858
+      },
+      {
+        "field": "interdisciplinaryBias",
+        "meanDelta": 1.182,
+        "p025": 1.155,
+        "p975": 1.207
+      },
+      {
+        "field": "analogyDensity",
+        "meanDelta": 0.657,
+        "p025": -0.153,
+        "p975": 1.281
+      },
+      {
+        "field": "exerciseCount",
+        "meanDelta": 0.343,
+        "p025": -0.018,
+        "p975": 0.795
+      },
+      {
+        "field": "socraticRatio",
+        "meanDelta": -0.118,
+        "p025": -0.202,
+        "p975": -0.019
+      },
+      {
+        "field": "formalism",
+        "meanDelta": -0.189,
+        "p025": -0.247,
+        "p975": -0.132
+      },
+      {
+        "field": "reflectionBias",
+        "meanDelta": -0.376,
+        "p025": -0.501,
+        "p975": -0.277
+      },
+      {
+        "field": "diagramBias",
+        "meanDelta": -1.583,
+        "p025": -1.896,
+        "p975": -1.142
+      }
+    ],
+    "derivativeEvolutionStability": {
+      "comparison": "selected policy and default policy reevaluated on the same seed with DEFAULT_WEIGHTS",
+      "runCount": 30,
+      "deltaSummary": {
+        "mean": -0.014,
+        "min": -8.805,
+        "p025": -8.805,
+        "median": -0.164,
+        "p975": 6.472,
+        "max": 7.142
+      },
+      "selectedIterationSummary": {
+        "mean": 12.7,
+        "min": 0,
+        "p025": 0,
+        "median": 12,
+        "p975": 24,
+        "max": 24
+      },
+      "wins": 11,
+      "runs": [
+        {
+          "seed": 1,
+          "selectedIteration": 10,
+          "baseline": 54.309,
+          "selected": 52.143,
+          "delta": -2.166,
+          "rawSearchScore": 64.829
+        },
+        {
+          "seed": 2,
+          "selectedIteration": 0,
+          "baseline": 57.437,
+          "selected": 57.437,
+          "delta": 0,
+          "rawSearchScore": 57.437
+        },
+        {
+          "seed": 3,
+          "selectedIteration": 0,
+          "baseline": 56.189,
+          "selected": 56.189,
+          "delta": 0,
+          "rawSearchScore": 56.189
+        },
+        {
+          "seed": 4,
+          "selectedIteration": 14,
+          "baseline": 56.43,
+          "selected": 47.625,
+          "delta": -8.805,
+          "rawSearchScore": 60.248
+        },
+        {
+          "seed": 5,
+          "selectedIteration": 10,
+          "baseline": 59.024,
+          "selected": 59.757,
+          "delta": 0.733,
+          "rawSearchScore": 66.16
+        },
+        {
+          "seed": 6,
+          "selectedIteration": 23,
+          "baseline": 51.962,
+          "selected": 48.733,
+          "delta": -3.228,
+          "rawSearchScore": 56.38
+        },
+        {
+          "seed": 7,
+          "selectedIteration": 8,
+          "baseline": 55.375,
+          "selected": 54.558,
+          "delta": -0.816,
+          "rawSearchScore": 55.899
+        },
+        {
+          "seed": 8,
+          "selectedIteration": 17,
+          "baseline": 52.432,
+          "selected": 49.412,
+          "delta": -3.02,
+          "rawSearchScore": 64.245
+        },
+        {
+          "seed": 9,
+          "selectedIteration": 0,
+          "baseline": 57.224,
+          "selected": 57.224,
+          "delta": 0,
+          "rawSearchScore": 57.224
+        },
+        {
+          "seed": 10,
+          "selectedIteration": 14,
+          "baseline": 54.263,
+          "selected": 53.838,
+          "delta": -0.424,
+          "rawSearchScore": 55.573
+        },
+        {
+          "seed": 11,
+          "selectedIteration": 11,
+          "baseline": 60.046,
+          "selected": 59.542,
+          "delta": -0.504,
+          "rawSearchScore": 72.536
+        },
+        {
+          "seed": 12,
+          "selectedIteration": 6,
+          "baseline": 53.224,
+          "selected": 52.515,
+          "delta": -0.709,
+          "rawSearchScore": 63.694
+        },
+        {
+          "seed": 13,
+          "selectedIteration": 22,
+          "baseline": 53.875,
+          "selected": 57.286,
+          "delta": 3.411,
+          "rawSearchScore": 68.278
+        },
+        {
+          "seed": 14,
+          "selectedIteration": 2,
+          "baseline": 53.094,
+          "selected": 59.566,
+          "delta": 6.472,
+          "rawSearchScore": 65.362
+        },
+        {
+          "seed": 15,
+          "selectedIteration": 23,
+          "baseline": 54.397,
+          "selected": 53.198,
+          "delta": -1.199,
+          "rawSearchScore": 53.535
+        },
+        {
+          "seed": 16,
+          "selectedIteration": 23,
+          "baseline": 53.772,
+          "selected": 53.608,
+          "delta": -0.164,
+          "rawSearchScore": 73.615
+        },
+        {
+          "seed": 17,
+          "selectedIteration": 10,
+          "baseline": 57.9,
+          "selected": 58.278,
+          "delta": 0.378,
+          "rawSearchScore": 69.776
+        },
+        {
+          "seed": 18,
+          "selectedIteration": 0,
+          "baseline": 58.456,
+          "selected": 58.456,
+          "delta": 0,
+          "rawSearchScore": 58.456
+        },
+        {
+          "seed": 19,
+          "selectedIteration": 24,
+          "baseline": 57.146,
+          "selected": 58.603,
+          "delta": 1.457,
+          "rawSearchScore": 57.778
+        },
+        {
+          "seed": 20,
+          "selectedIteration": 20,
+          "baseline": 51.379,
+          "selected": 56.028,
+          "delta": 4.649,
+          "rawSearchScore": 61.892
+        },
+        {
+          "seed": 21,
+          "selectedIteration": 12,
+          "baseline": 54.802,
+          "selected": 54.166,
+          "delta": -0.637,
+          "rawSearchScore": 58.932
+        },
+        {
+          "seed": 22,
+          "selectedIteration": 4,
+          "baseline": 53.348,
+          "selected": 51.728,
+          "delta": -1.62,
+          "rawSearchScore": 49.196
+        },
+        {
+          "seed": 23,
+          "selectedIteration": 24,
+          "baseline": 54.992,
+          "selected": 62.134,
+          "delta": 7.142,
+          "rawSearchScore": 60.844
+        },
+        {
+          "seed": 24,
+          "selectedIteration": 13,
+          "baseline": 53.443,
+          "selected": 55.495,
+          "delta": 2.052,
+          "rawSearchScore": 60.54
+        },
+        {
+          "seed": 25,
+          "selectedIteration": 4,
+          "baseline": 55.383,
+          "selected": 57.464,
+          "delta": 2.081,
+          "rawSearchScore": 70.26
+        },
+        {
+          "seed": 26,
+          "selectedIteration": 14,
+          "baseline": 56.047,
+          "selected": 56.618,
+          "delta": 0.571,
+          "rawSearchScore": 69.234
+        },
+        {
+          "seed": 27,
+          "selectedIteration": 24,
+          "baseline": 58.312,
+          "selected": 56.679,
+          "delta": -1.633,
+          "rawSearchScore": 68.066
+        },
+        {
+          "seed": 28,
+          "selectedIteration": 21,
+          "baseline": 55.663,
+          "selected": 53.315,
+          "delta": -2.348,
+          "rawSearchScore": 74.846
+        },
+        {
+          "seed": 29,
+          "selectedIteration": 5,
+          "baseline": 55.568,
+          "selected": 58.822,
+          "delta": 3.254,
+          "rawSearchScore": 61.423
+        },
+        {
+          "seed": 30,
+          "selectedIteration": 23,
+          "baseline": 56.777,
+          "selected": 51.441,
+          "delta": -5.335,
+          "rawSearchScore": 59.768
+        }
+      ]
+    }
+  }
+}

@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import {
   EMPTY_HEADER_STATE,
+  TUI_COMMANDS,
   activityText,
   headerText,
   sanitizeDiagnostic,
@@ -9,6 +10,7 @@ import {
   transcriptEntriesFromMessages,
   transcriptText,
 } from "../src/tui/view-model.js";
+import { createTuiPresentationProfile } from "../src/tui/terminal-profile.js";
 
 describe("TUI view model", () => {
   test("hydrates user, assistant, artifact, and failure entries from RPC history", () => {
@@ -51,9 +53,26 @@ describe("TUI view model", () => {
 
   test("summarizes header state and only shows the activity rail when there is room", () => {
     const state = { ...EMPTY_HEADER_STATE, model: "google/gemini", thinking: "high", session: "limits", busy: true };
-    expect(headerText(state)).toBe("KEATING  ·  THINKING  ·  google/gemini  ·  thinking high  ·  limits");
-    expect(activityText([{ id: "1", kind: "tool", title: "read", body: "package.json" }], state)).toContain("read");
+    const profile = createTuiPresentationProfile({ TERM: "xterm-256color", LANG: "en_CA.UTF-8" });
+    expect(headerText(state, profile)).toBe("KEATING  ·  ◐ THINKING  ·  google/gemini  ·  thinking high  ·  limits");
+    expect(activityText([{ id: "1", kind: "tool", title: "read", body: "package.json" }], state, profile)).toContain("read");
     expect(showActivityRail(99)).toBe(false);
     expect(showActivityRail(100)).toBe(true);
+  });
+
+  test("exposes the connected product surfaces through the command catalog", () => {
+    expect(TUI_COMMANDS.map((command) => command.id)).toEqual([
+      "sessions",
+      "library",
+      "review",
+      "settings",
+      "model",
+      "thinking",
+      "new-session",
+      "abort",
+      "retry",
+      "shell",
+    ]);
+    expect(TUI_COMMANDS.find((command) => command.id === "library")?.shortcut).toBe("Ctrl+L");
   });
 });

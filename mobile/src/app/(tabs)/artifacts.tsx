@@ -5,7 +5,7 @@ import { Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-nativ
 import { EmptyState } from "@/components/EmptyState";
 import { MarkdownText } from "@/components/MarkdownText";
 import { Screen } from "@/components/Screen";
-import { colors, radii, spacing, type } from "@/constants/theme";
+import { radii, spacing, useKeatingTheme } from "@/constants/theme";
 import type { GeneratedArtifactKind, StudyArtifact } from "@/lib/types";
 import { useKeating } from "@/state/KeatingProvider";
 
@@ -18,6 +18,9 @@ const KIND_LABEL: Record<StudyArtifact["kind"], string> = {
 };
 
 export default function ArtifactsScreen() {
+  const theme = useKeatingTheme();
+  const { colors } = theme;
+  const styles = createStyles(theme);
   const [query, setQuery] = useState("");
   const [topic, setTopic] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -147,7 +150,9 @@ export default function ArtifactsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(theme: ReturnType<typeof useKeatingTheme>) {
+  const { colors, type } = theme;
+  return StyleSheet.create({
   creator: {
     paddingBottom: spacing.xl,
     marginBottom: spacing.xl,
@@ -183,7 +188,7 @@ const styles = StyleSheet.create({
   cardHeader: { minHeight: 96, flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.lg },
   cardHeaderPressed: { backgroundColor: colors.surfacePressed },
   cardCopy: { flex: 1, minWidth: 0 },
-  kind: { ...type.caption, ...type.mono, color: colors.primary, fontWeight: "700" },
+  kind: { ...type.caption, ...type.monoBold, color: colors.primaryText },
   title: { ...type.heading, color: colors.text, marginTop: spacing.xs },
   date: { ...type.caption, color: colors.textFaint, marginTop: spacing.xs },
   expandGlyph: { ...type.mono, color: colors.textMuted, fontSize: 24 },
@@ -193,4 +198,5 @@ const styles = StyleSheet.create({
   actionPressed: { backgroundColor: colors.surfacePressed },
   actionText: { ...type.label, color: colors.text },
   deleteText: { ...type.label, color: colors.error },
-});
+  });
+}

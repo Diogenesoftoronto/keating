@@ -29,6 +29,45 @@ describe("conversation integration runtime", () => {
 		expect(runtime.pendingActions()).toHaveLength(0);
 	});
 
+	test("reopens and acknowledges deterministic learner-response deliveries", () => {
+		const storage = new MemoryStorage();
+		const first = createConversationRuntime({ sessionId: "s1", store: new StorageConversationEventStore(storage) });
+		first.putPendingLearnerResponse({
+			version: 1,
+			receiptId: "receipt-1",
+			uiActionId: "action-1",
+			sessionMessageId: "openui:receipt-1",
+			serialized: "serialized once",
+			createdAt: "2026-07-18T00:00:00.000Z",
+		});
+		const reopened = createConversationRuntime({ sessionId: "s1", store: new StorageConversationEventStore(storage) });
+		expect(reopened.pendingLearnerResponses()).toHaveLength(1);
+		expect(reopened.pendingLearnerResponses()[0]?.serialized).toBe("serialized once");
+		expect(reopened.resolveLearnerResponse("receipt-1")).toBe(true);
+		expect(reopened.pendingLearnerResponses()).toEqual([]);
+	});
+
+	test("continues canonical UI actions after the session runtime is reopened", () => {
+		const storage = new MemoryStorage();
+		const store = new StorageConversationEventStore(storage);
+		const first = createConversationRuntime({ sessionId: "s1", runId: "run-1", store });
+		first.emit("ui.document.upserted", {
+			document: { id: "resumable-document", kind: "shared-openui", lifecycle: "resumable", revision: 0, content: {} },
+		});
+
+		const reopened = createConversationRuntime({
+			sessionId: "s1",
+			runId: "run-2",
+			store: new StorageConversationEventStore(storage),
+		});
+		reopened.emit("ui.action", {
+			action: { id: "resume-action", documentId: "resumable-document", documentRevision: 0, type: "complete", params: {} },
+		});
+
+		expect(reopened.replay().uiActions.map((action) => action.id)).toEqual(["resume-action"]);
+		expect(reopened.replay().runId).toBe("run-2");
+	});
+
 	test("rejects malformed, cross-session, cross-run, stale, and duplicate events without consuming sequence", () => {
 		const store = new StorageConversationEventStore(new MemoryStorage());
 		const runtime = createConversationRuntime({ sessionId: "s1", runId: "r1", store, id: (() => { let i = 0; return () => `local-${++i}`; })() });

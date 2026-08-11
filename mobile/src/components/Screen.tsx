@@ -1,7 +1,7 @@
 import type { PropsWithChildren, ReactNode } from "react";
 import { ScrollView, StyleSheet, Text, View, type ScrollViewProps } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { colors, spacing, type } from "@/constants/theme";
+import { spacing, useKeatingTheme } from "@/constants/theme";
 
 interface ScreenProps extends PropsWithChildren {
   title?: string;
@@ -19,6 +19,8 @@ export function Screen({
   scroll = true,
   contentContainerStyle,
 }: ScreenProps) {
+  const theme = useKeatingTheme();
+  const styles = createStyles(theme);
   const content = (
     <View style={[styles.content, contentContainerStyle]}>
       {(title || action) && (
@@ -49,7 +51,9 @@ export function Screen({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(theme: ReturnType<typeof useKeatingTheme>) {
+  const { colors, type } = theme;
+  return StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
   scrollContent: { flexGrow: 1 },
   content: {
@@ -72,4 +76,5 @@ const styles = StyleSheet.create({
   headerCopy: { flex: 1, minWidth: 0 },
   title: { ...type.title, color: colors.text },
   subtitle: { ...type.body, marginTop: spacing.xs, color: colors.textMuted },
-});
+  });
+}

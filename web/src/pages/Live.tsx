@@ -109,7 +109,11 @@ export function Live() {
 				})}
 			>
 				<div className={css({ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem", textAlign: "center" })}>
-					<img src="/brand/mascot-head.png" alt="" className={css({ width: "5.5rem", height: "auto" })} />
+					<img
+						src="/brand/mascot-head-v2.png"
+						alt=""
+						className={`keating-mascot-image keating-static-mascot ${css({ width: "6.5rem", height: "auto" })}`}
+					/>
 					<h1 className={css({ fontSize: "1.75rem", fontWeight: 700, lineHeight: 1.15 })}>Live with Keating</h1>
 					<p className={css({ color: "var(--muted-foreground)", fontSize: "0.9375rem", maxWidth: "26rem" })}>
 						Talk out loud and get answers out loud. Turn the camera on and Keating can look at what you are

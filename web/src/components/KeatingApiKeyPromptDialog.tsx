@@ -4,6 +4,7 @@ import { KeyRound, X } from "lucide-react";
 import { css } from "../../styled-system/css";
 import { handleTutorialLinkClick, tutorialApiKeyHref } from "../lib/tutorial-links";
 import { isNotOrganicProvider } from "../notorganic-provider";
+import { providerToOAuthId } from "../keating/oauth";
 import {
 	NotOrganicAccessPromptDialog,
 	promptNotOrganicAccess,
@@ -35,6 +36,13 @@ export async function promptKeatingApiKey(
 		return promptNotOrganicAccess({ force: options.force });
 	}
 
+	if (providerToOAuthId(provider)) {
+		window.dispatchEvent(
+			new CustomEvent("keating:open-settings", { detail: { tab: "models" } }),
+		);
+		return false;
+	}
+
 	if (activePrompt) {
 		activePrompt.resolve(false);
 	}
@@ -60,6 +68,7 @@ function closePrompt(success: boolean) {
 async function providerLabel(provider: string): Promise<string> {
 	if (provider === "google") return "Google Gemini";
 	if (provider === "openai") return "OpenAI";
+	if (provider === "openai-codex") return "OpenAI Codex";
 	if (provider === "anthropic") return "Anthropic";
 	if (provider === "openrouter") return "OpenRouter";
 	try {

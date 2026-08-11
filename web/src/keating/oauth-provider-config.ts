@@ -45,7 +45,7 @@ const AUTHORIZATION_CODE_OAUTH_PROVIDERS: Record<
 		authorizeUrl: "https://auth.openai.com/oauth/authorize",
 		tokenUrl: "https://auth.openai.com/oauth/token",
 		// This public Codex client registers only the CLI loopback callback. The
-		// browser cannot listen on localhost, so users paste the final URL back.
+		// Electron shell receives it locally; browser users paste the final URL.
 		redirectUri: "http://localhost:1455/auth/callback",
 		scopes: ["openid", "profile", "email", "offline_access"],
 		extraAuthParams: {

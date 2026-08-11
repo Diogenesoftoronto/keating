@@ -9,17 +9,41 @@ import {
 	type Mutation,
 	type PeerStats,
 } from "@keating/p2p-core";
+import {
+	assertAllowedParams,
+	assertBoundedName,
+	assertBoundedSerializablePayload,
+	assertKnownRpcMethod,
+	assertPlainParams,
+	createRequestIdTracker,
+	IpcValidationError,
+	isTrustedAppNavigation,
+	MAX_INDEX_NAME_LENGTH,
+	MAX_KEY_LENGTH,
+	MAX_MUTATION_COUNT,
+	MAX_RPC_ID_LENGTH,
+	MAX_STORE_NAME_LENGTH,
+	sanitizeIpcError,
+} from "./security.js";
+import { PROVIDER_KEYS_STORE } from "./credential-service.js";
 
-/**
- * The bridge object handed to `registerP2PIpc`. This is the StorageBackend-like
- * adapter the renderer talks to via IPC, plus the two P2P-only ops (`batch`,
- * `stats`) that aren't part of the web's `StorageBackend` interface but ARE
- * part of the `rpc.ts` contract.
- */
 export interface P2PBackendBridge extends StorageBackendLike {
 	batch(mutations: Mutation[]): Promise<void>;
 	stats(): PeerStats;
 }
+
+export interface P2PIpcOptions {
+	/** Exact local Nitro or explicitly configured dev origin allowed to use the preload bridge. */
+	appOrigin: string;
+}
+
+interface ParsedRequest {
+	id: string;
+	method: P2PRpcRequest["method"];
+	params: Record<string, unknown> | undefined;
+}
+
+let activeCleanup: (() => void) | null = null;
 
 function fail(id: string, message: string): P2PRpcResponse {
 	return { id, ok: false, error: { message } };
@@ -29,66 +53,144 @@ function ok<T>(id: string, result: T): P2PRpcResponse<T> {
 	return { id, ok: true, result };
 }
 
+function parseRequest(value: unknown): ParsedRequest {
+	const request = assertPlainParams(value);
+	if (!request) throw new IpcValidationError("RPC request is invalid.");
+	assertAllowedParams(request, ["id", "method", "params"]);
+	const id = assertBoundedName(request["id"], "RPC id", MAX_RPC_ID_LENGTH);
+	const method = assertKnownRpcMethod(request["method"]) as P2PRpcRequest["method"];
+	const params = assertPlainParams(request["params"]);
+	assertBoundedSerializablePayload({ id, method, params: params ?? null });
+	return { id, method, params };
+}
+
 function requireString(
 	params: Record<string, unknown> | undefined,
 	key: string,
+	limit = MAX_KEY_LENGTH,
 ): string {
-	const v = params?.[key];
-	if (typeof v !== "string") {
-		throw new Error(`param "${key}" must be a string`);
+	return assertBoundedName(params?.[key], `RPC ${key}`, limit);
+}
+
+function requireReplicatedStoreName(
+	params: Record<string, unknown> | undefined,
+): string {
+	const storeName = requireString(params, "storeName", MAX_STORE_NAME_LENGTH);
+	if (storeName === PROVIDER_KEYS_STORE) {
+		throw new IpcValidationError("Provider credentials require secure credential storage.");
 	}
-	return v;
+	return storeName;
 }
 
 function requireOptionalString(
 	params: Record<string, unknown> | undefined,
 	key: string,
+	limit = MAX_KEY_LENGTH,
 ): string | undefined {
-	if (params === undefined || !(key in params)) return undefined;
-	const v = params[key];
-	if (v === undefined || v === null) return undefined;
-	if (typeof v !== "string") {
-		throw new Error(`param "${key}" must be a string when provided`);
-	}
-	return v;
+	if (params === undefined || !(key in params) || params[key] === undefined || params[key] === null) return undefined;
+	return assertBoundedName(params[key], `RPC ${key}`, limit);
 }
 
-function requireStoreKeys(
-	params: Record<string, unknown> | undefined,
-): { storeName: string; key: string } {
-	const storeName = requireString(params, "storeName");
-	const key = requireString(params, "key");
-	return { storeName, key };
+function requireStoreKeys(params: Record<string, unknown> | undefined): { storeName: string; key: string } {
+	assertAllowedParams(params, ["storeName", "key"]);
+	return {
+		storeName: requireReplicatedStoreName(params),
+		key: requireString(params, "key"),
+	};
+}
+
+function requireValue(params: Record<string, unknown> | undefined): unknown {
+	if (!params || !("value" in params)) throw new IpcValidationError("RPC value is required.");
+	assertBoundedSerializablePayload(params["value"]);
+	return params["value"];
+}
+
+function parseMutations(params: Record<string, unknown> | undefined): Mutation[] {
+	assertAllowedParams(params, ["mutations"]);
+	const raw = params?.["mutations"];
+	if (!Array.isArray(raw) || raw.length > MAX_MUTATION_COUNT) {
+		throw new IpcValidationError("RPC mutations are invalid.");
+	}
+	return raw.map((mutation, index) => {
+		if (!mutation || typeof mutation !== "object" || Array.isArray(mutation)) {
+			throw new IpcValidationError(`RPC mutation ${index} is invalid.`);
+		}
+		const candidate = mutation as Record<string, unknown>;
+		if (candidate["type"] === "put") {
+			assertAllowedParams(candidate, ["type", "store", "key", "value"]);
+			if (!("value" in candidate)) throw new IpcValidationError(`RPC mutation ${index} needs a value.`);
+			assertBoundedSerializablePayload(candidate["value"]);
+			return {
+				type: "put" as const,
+				store: (() => {
+					const store = assertBoundedName(candidate["store"], "RPC store", MAX_STORE_NAME_LENGTH);
+					if (store === PROVIDER_KEYS_STORE) throw new IpcValidationError("Provider credentials require secure credential storage.");
+					return store;
+				})(),
+				key: assertBoundedName(candidate["key"], "RPC key", MAX_KEY_LENGTH),
+				value: candidate["value"],
+			};
+		}
+		if (candidate["type"] === "del") {
+			assertAllowedParams(candidate, ["type", "store", "key"]);
+			return {
+				type: "del" as const,
+				store: (() => {
+					const store = assertBoundedName(candidate["store"], "RPC store", MAX_STORE_NAME_LENGTH);
+					if (store === PROVIDER_KEYS_STORE) throw new IpcValidationError("Provider credentials require secure credential storage.");
+					return store;
+				})(),
+				key: assertBoundedName(candidate["key"], "RPC key", MAX_KEY_LENGTH),
+			};
+		}
+		throw new IpcValidationError(`RPC mutation ${index} has an invalid type.`);
+	});
+}
+
+function senderIsAuthorized(
+	event: { sender: { id: number; getURL(): string }; senderFrame?: { url: string } | null },
+	window: BrowserWindow,
+	appOrigin: string,
+): boolean {
+	if (event.sender.id !== window.webContents.id) return false;
+	return isTrustedAppNavigation(event.senderFrame?.url ?? event.sender.getURL(), appOrigin);
 }
 
 /**
- * Wire the renderer's RPC requests to a StorageBackend (backed by P2PStore in
- * the main process). One `ipcMain.handle` dispatches every method in the
- * rpc.ts contract; payloads are validated by shape before dispatch.
+ * Register one renderer-scoped handler. IPC is a process-global Electron API,
+ * so a replacement tears down the former window before installing the next.
  */
 export function registerP2PIpc(
 	window: BrowserWindow,
 	backend: P2PBackendBridge,
+	options: P2PIpcOptions,
 ): () => void {
+	activeCleanup?.();
+	const requestIds = createRequestIdTracker();
+	let stopped = false;
 	const handle = async (
-		_e: unknown,
-		req: P2PRpcRequest,
+		event: { sender: { id: number; getURL(): string }; senderFrame?: { url: string } | null },
+		req: unknown,
 	): Promise<P2PRpcResponse> => {
-		if (!req || typeof req.id !== "string" || typeof req.method !== "string") {
-			return fail("", "invalid RPC request shape");
+		if (stopped || !senderIsAuthorized(event, window, options.appOrigin)) {
+			return fail("", "IPC sender is not authorized.");
 		}
-		const { id, method, params } = req;
 
+		let request: ParsedRequest | undefined;
 		try {
+			request = parseRequest(req);
+			if (!requestIds.claim(request.id)) return fail(request.id, "RPC id has already been used.");
+			const { id, method, params } = request;
 			switch (method) {
 				case "get": {
 					const { storeName, key } = requireStoreKeys(params);
 					return ok(id, await backend.get(storeName, key));
 				}
 				case "set": {
-					const { storeName, key } = requireStoreKeys(params);
-					const value = params?.["value"];
-					await backend.set(storeName, key, value);
+					assertAllowedParams(params, ["storeName", "key", "value"]);
+					const storeName = requireReplicatedStoreName(params);
+					const key = requireString(params, "key");
+					await backend.set(storeName, key, requireValue(params));
 					return ok(id, undefined);
 				}
 				case "delete": {
@@ -97,26 +199,27 @@ export function registerP2PIpc(
 					return ok(id, undefined);
 				}
 				case "keys": {
-					const storeName = requireString(params, "storeName");
-					const prefix = requireOptionalString(params, "prefix");
-					return ok(id, await backend.keys(storeName, prefix));
+					assertAllowedParams(params, ["storeName", "prefix"]);
+					return ok(id, await backend.keys(
+						requireReplicatedStoreName(params),
+						requireOptionalString(params, "prefix"),
+					));
 				}
 				case "getAllFromIndex": {
-					const storeName = requireString(params, "storeName");
-					const indexName = requireString(params, "indexName");
-					const directionRaw = params?.["direction"];
-					const direction =
-						directionRaw === "desc" || directionRaw === "asc"
-							? directionRaw
-							: "asc";
-					return ok(
-						id,
-						await backend.getAllFromIndex(storeName, indexName, direction),
-					);
+					assertAllowedParams(params, ["storeName", "indexName", "direction"]);
+					const direction = params?.["direction"];
+					if (direction !== undefined && direction !== "asc" && direction !== "desc") {
+						throw new IpcValidationError("RPC direction is invalid.");
+					}
+					return ok(id, await backend.getAllFromIndex(
+						requireReplicatedStoreName(params),
+						requireString(params, "indexName", MAX_INDEX_NAME_LENGTH),
+						direction ?? "asc",
+					));
 				}
 				case "clear": {
-					const storeName = requireString(params, "storeName");
-					await backend.clear(storeName);
+					assertAllowedParams(params, ["storeName"]);
+					await backend.clear(requireReplicatedStoreName(params));
 					return ok(id, undefined);
 				}
 				case "has": {
@@ -124,77 +227,50 @@ export function registerP2PIpc(
 					return ok(id, await backend.has(storeName, key));
 				}
 				case "batch": {
-					const raw = params?.["mutations"];
-					if (!Array.isArray(raw)) {
-						throw new Error('param "mutations" must be an array');
-					}
-					const mutations: Mutation[] = raw.map((m, i) => {
-						if (!m || typeof m !== "object") {
-							throw new Error(`mutation[${i}] must be an object`);
-						}
-						const obj = m as Record<string, unknown>;
-						if (obj["type"] === "put") {
-							return {
-								type: "put",
-								store: requireString({ store: obj["store"] }, "store"),
-								key: requireString({ key: obj["key"] }, "key"),
-								value: obj["value"],
-							};
-						}
-						if (obj["type"] === "del") {
-							return {
-								type: "del",
-								store: requireString({ store: obj["store"] }, "store"),
-								key: requireString({ key: obj["key"] }, "key"),
-							};
-						}
-						throw new Error(`mutation[${i}].type must be "put" or "del"`);
-					});
-					await backend.batch(mutations);
+					await backend.batch(parseMutations(params));
 					return ok(id, undefined);
 				}
-				case "stats": {
+				case "stats":
+					assertAllowedParams(params, []);
 					return ok(id, backend.stats());
-				}
-				case "quota": {
+				case "quota":
+					assertAllowedParams(params, []);
 					return ok(id, await backend.getQuotaInfo());
-				}
-				case "requestPersistence": {
+				case "requestPersistence":
+					assertAllowedParams(params, []);
 					return ok(id, await backend.requestPersistence());
-				}
-				default:
-					return fail(id, `unknown method: ${String(method)}`);
 			}
-		} catch (err) {
-			const message = err instanceof Error ? err.message : String(err);
-			return fail(id, message);
+		} catch (error) {
+			return fail(request?.id ?? "", sanitizeIpcError(error));
 		}
 	};
 
 	ipcMain.handle(P2P_IPC_CHANNEL, handle);
-
-	// Push peer stats when the underlying store changes. We poll every 2s while
-	// the window is alive and forward the latest snapshot.
-	let stopped = false;
 	const send = () => {
-		if (stopped || window.isDestroyed()) return;
+		if (stopped || window.isDestroyed() || window.webContents.isDestroyed()) return;
 		try {
-			const stats = backend.stats();
-			const evt: P2PEvent = { type: "peerstats", payload: stats };
+			const evt: P2PEvent = { type: "peerstats", payload: backend.stats() };
 			window.webContents.send(P2P_EVENT_CHANNEL, evt);
 		} catch {
-			// ignore — store may be closing
+			// The store may be closing; do not expose a native error to the renderer.
 		}
 	};
-
-	const interval = setInterval(send, 2000);
+	const interval = setInterval(send, 2_000);
 	send();
 
 	const cleanup = () => {
+		if (stopped) return;
 		stopped = true;
 		clearInterval(interval);
-		ipcMain.removeHandler(P2P_IPC_CHANNEL);
+		window.removeListener("closed", cleanup);
+		if (!window.webContents.isDestroyed()) window.webContents.removeListener("destroyed", cleanup);
+		if (activeCleanup === cleanup) {
+			activeCleanup = null;
+			ipcMain.removeHandler(P2P_IPC_CHANNEL);
+		}
 	};
+	activeCleanup = cleanup;
 	window.once("closed", cleanup);
+	window.webContents.once("destroyed", cleanup);
 	return cleanup;
 }

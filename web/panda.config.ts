@@ -673,6 +673,30 @@ export default defineConfig({
 			"0%, 100%": { transform: "translateY(0) rotate(-2deg)" },
 			"50%": { transform: "translateY(-3px) rotate(3deg)" }
 		},
+		"keating-live-connect": {
+			"0%, 100%": { transform: "translateY(1px) scale(0.985)" },
+			"50%": { transform: "translateY(-1px) scale(1.015)" }
+		},
+		"keating-live-idle": {
+			"0%, 100%": { transform: "translateY(0) rotate(0deg)" },
+			"45%": { transform: "translateY(-2px) rotate(-0.75deg)" },
+			"55%": { transform: "translateY(-2px) rotate(0.75deg)" }
+		},
+		"keating-live-listen": {
+			"0%, 100%": { transform: "translateX(-1px) rotate(-1.5deg) scale(1.01)" },
+			"50%": { transform: "translateX(1px) rotate(1.5deg) scale(1.025)" }
+		},
+		"keating-live-speak": {
+			"0%, 100%": { transform: "translateY(0) scale(1.02)" },
+			"30%": { transform: "translateY(-3px) rotate(-1deg) scale(1.055)" },
+			"65%": { transform: "translateY(1px) rotate(1deg) scale(1.035)" }
+		},
+		"keating-live-work": {
+			"0%, 100%": { transform: "translateX(0) rotate(0deg)" },
+			"28%": { transform: "translateX(-2px) rotate(-3deg)" },
+			"58%": { transform: "translateX(1px) rotate(1.5deg)" },
+			"78%": { transform: "translateX(2px) rotate(3deg)" }
+		},
 		"keating-thinking-dot": {
 			"0%, 60%, 100%": { opacity: 0.28, transform: "translateY(0)" },
 			"30%": { opacity: 1, transform: "translateY(-2px)" }
@@ -1198,9 +1222,44 @@ export default defineConfig({
       overflow: "hidden"
     },
     ".chat-page-shell .chat-avatar > img": {
-      width: "30px",
-      height: "auto"
-    },
+			width: "34px",
+			height: "auto"
+		},
+		".keating-mascot-image": {
+			objectFit: "contain",
+			filter: "drop-shadow(0 1px 1px rgba(0, 0, 0, 0.16))"
+		},
+		".dark .keating-mascot-image": {
+			filter: "drop-shadow(0 1px 1px rgba(255, 255, 255, 0.2)) drop-shadow(0 3px 5px rgba(0, 0, 0, 0.4))"
+		},
+		".live-mascot-frame": {
+			transformOrigin: "50% 78%",
+			transition: "opacity 200ms cubic-bezier(0.25, 1, 0.5, 1)",
+			willChange: "transform, opacity",
+			opacity: 0
+		},
+		".live-mascot-frame.is-active": {
+			opacity: 1
+		},
+		".live-mascot-connecting.is-active": {
+			animation: "keating-live-connect 2.6s ease-in-out infinite"
+		},
+		".live-mascot-idle.is-active": {
+			animation: "keating-live-idle 4.8s ease-in-out infinite"
+		},
+		".live-mascot-listening.is-active": {
+			animation: "keating-live-listen 1.15s ease-in-out infinite"
+		},
+		".live-mascot-speaking.is-active": {
+			animation: "keating-live-speak 680ms cubic-bezier(0.25, 1, 0.5, 1) infinite"
+		},
+		".live-mascot-working.is-active": {
+			animation: "keating-live-work 1.5s cubic-bezier(0.25, 1, 0.5, 1) infinite"
+		},
+		".keating-static-mascot": {
+			animation: "keating-live-idle 4.8s ease-in-out infinite",
+			transformOrigin: "50% 78%"
+		},
 		".keating-thinking-mascot img": {
 			animation: "keating-mascot-think 1.8s ease-in-out infinite",
 			transformOrigin: "50% 80%"
@@ -3216,7 +3275,7 @@ export default defineConfig({
       }
     },
     "@media (prefers-reduced-motion: reduce)": {
-		".chat-brand,\n  .chat-brand img,\n  .chat-page-shell .sb-dot,\n  .keating-thinking-mascot img,\n  .keating-thinking-dot": {
+		".chat-brand,\n  .chat-brand img,\n  .chat-page-shell .sb-dot,\n  .keating-thinking-mascot img,\n  .keating-thinking-dot,\n  .live-mascot-frame,\n  .keating-static-mascot": {
         transition: "none",
         animation: "none"
       },

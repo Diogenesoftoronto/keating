@@ -19,9 +19,9 @@ Paper 1 established two things and deferred a third:
 
 - **Established:** a formal account of a teaching *metaharness*, plus a
   reproducible two-layer evidence stack (16 archival trace pairs at overall
-  0.61; a synthetic harness where the evolved policy beats default by 6.703
+  0.61; a frozen policy that beats default by 3.982 points on average
   across 200/200 seeds).
-- **Established:** that *policy* matters inside one model's harness.
+- **Established:** that *policy* matters inside one explicit deterministic score model.
 - **Deferred:** whether the *model* matters, and how to compare models without
   re-running a fresh human cohort per model. Paper 1 explicitly names a human
   RCT as the next step for causal claims.

@@ -1,17 +1,26 @@
-import { mkdir, mkdtemp, readdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { createHash } from "node:crypto";
 
 import { runBenchmarkSuite } from "../src/core/benchmark.ts";
-import { evolvePolicy } from "../src/core/evolution.ts";
-import { mapElitesEvolve, mapElitesToEvolutionRun } from "../src/core/map-elites.ts";
-import { DEFAULT_POLICY, loadPolicy } from "../src/core/policy.ts";
+import { mapElitesEvolve } from "../src/core/map-elites.ts";
+import { DEFAULT_POLICY, DEFAULT_WEIGHTS, clampPolicy } from "../src/core/policy.ts";
 
 const SCORE_KEYS = ["mastery", "engagement", "clarity"];
 const GENERATED_DIR = join(process.cwd(), "docs", "generated");
 const TRACE_DIR = join(process.cwd(), "test", "traces");
 const SNAPSHOT_PATH = join(process.cwd(), "test", "final_dataset.json");
-const CURRENT_POLICY_PATH = join(process.cwd(), ".keating", "state", "current-policy.json");
+const EVALUATED_POLICY_PATH = join(process.cwd(), "docs", "study", "evaluated-policy.json");
+const STUDY_SOFTWARE_VERSION = "3.3.0";
+const BENCHMARK_SEED_COUNT = 200;
+const EVOLUTION_RUN_COUNT = 30;
+const EVOLUTION_ITERATIONS = 24;
+const EVOLUTION_FOCUS_TOPIC = "derivative";
+
+// The paper evaluates the deterministic fallback even when the caller's shell
+// enables optional provider judging for interactive benchmark work.
+process.env.KEATING_LLM_BENCHMARK = "0";
 
 const ROLE_CONTAMINATION_PATTERNS = [
   { label: "teacherly_opener", pattern: /^(great|excellent)\b/i },
@@ -97,6 +106,35 @@ function wordCount(text) {
 
 function deepClone(value) {
   return JSON.parse(JSON.stringify(value));
+}
+
+function canonicalJson(value) {
+  if (Array.isArray(value)) {
+    return `[${value.map((entry) => canonicalJson(entry)).join(",")}]`;
+  }
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+async function sha256File(filePath) {
+  return createHash("sha256").update(await readFile(filePath)).digest("hex");
+}
+
+async function sha256TraceCorpus() {
+  const names = (await readdir(TRACE_DIR)).filter((name) => name.endsWith(".json")).sort();
+  const hash = createHash("sha256");
+  for (const name of names) {
+    hash.update(name);
+    hash.update("\0");
+    hash.update(await readFile(join(TRACE_DIR, name)));
+    hash.update("\0");
+  }
+  return hash.digest("hex");
 }
 
 function normalizeScores(record) {
@@ -204,19 +242,25 @@ function selectLatestTracePerPair(records) {
 
 function compareSnapshotAgainstRetained(snapshotRecords, retainedRecords) {
   const snapshotMap = new Map(
-    snapshotRecords.map((record) => [`${record.topic}::${record.learner}`, record.timestamp])
+    snapshotRecords.map((record) => [`${record.topic}::${record.learner}`, record])
   );
   const retainedMap = new Map(
-    retainedRecords.map((record) => [`${record.topic}::${record.learner}`, record.timestamp])
+    retainedRecords.map((record) => {
+      const { fileName: _fileName, ...traceContent } = record;
+      return [`${record.topic}::${record.learner}`, traceContent];
+    })
   );
   const mismatches = [];
   const keys = [...new Set([...snapshotMap.keys(), ...retainedMap.keys()])].sort();
   for (const key of keys) {
-    if (snapshotMap.get(key) !== retainedMap.get(key)) {
+    const snapshotRecord = snapshotMap.get(key);
+    const retainedRecord = retainedMap.get(key);
+    if (canonicalJson(snapshotRecord) !== canonicalJson(retainedRecord)) {
       mismatches.push({
         pair: key,
-        snapshotTimestamp: snapshotMap.get(key) ?? null,
-        retainedTimestamp: retainedMap.get(key) ?? null
+        snapshotTimestamp: snapshotRecord?.timestamp ?? null,
+        retainedTimestamp: retainedRecord?.timestamp ?? null,
+        contentMatches: false
       });
     }
   }
@@ -354,7 +398,7 @@ async function runSyntheticBenchmarkAnalysis(currentPolicy) {
   const runs = [];
   const topicDeltas = new Map();
 
-  for (let seed = 1; seed <= 200; seed += 1) {
+  for (let seed = 1; seed <= BENCHMARK_SEED_COUNT; seed += 1) {
     const baseline = await runBenchmarkSuite(process.cwd(), DEFAULT_POLICY, undefined, seed);
     const current = await runBenchmarkSuite(process.cwd(), currentPolicy, undefined, seed);
 
@@ -407,15 +451,15 @@ async function runSyntheticBenchmarkAnalysis(currentPolicy) {
     "challengeRate"
   ];
 
-  const ablations = ablationFields
-    .map((field) => {
+  const ablations = (await Promise.all(
+    ablationFields.map(async (field) => {
       const deltas = [];
       const ablatedPolicy = {
         ...DEFAULT_POLICY,
         [field]: currentPolicy[field],
         name: `ablate-${field}`
       };
-      for (let seed = 1; seed <= 200; seed += 1) {
+      for (let seed = 1; seed <= BENCHMARK_SEED_COUNT; seed += 1) {
         deltas.push(
           (await runBenchmarkSuite(process.cwd(), ablatedPolicy, undefined, seed)).overallScore -
           (await runBenchmarkSuite(process.cwd(), DEFAULT_POLICY, undefined, seed)).overallScore
@@ -429,25 +473,46 @@ async function runSyntheticBenchmarkAnalysis(currentPolicy) {
         p975: round(quantile(sorted, 0.975))
       };
     })
-    .sort((left, right) => right.meanDelta - left.meanDelta);
+  )).sort((left, right) => right.meanDelta - left.meanDelta);
 
   const evolutionRuns = [];
-  for (let seed = 1; seed <= 30; seed += 1) {
+  for (let seed = 1; seed <= EVOLUTION_RUN_COUNT; seed += 1) {
     const tempDir = await mkdtemp(join(tmpdir(), "keating-study-"));
-    const archivePath = join(tempDir, "archive.json");
-    const meRun = await mapElitesEvolve(process.cwd(), DEFAULT_POLICY, { iterations: 24, focusTopic: "derivative", seed });
-    const run = mapElitesToEvolutionRun(meRun);
-    evolutionRuns.push({
-      seed,
-      baseline: round(run.baseline.overallScore),
-      best: round(run.best.overallScore),
-      delta: round(run.best.overallScore - run.baseline.overallScore),
-      acceptedCandidates: run.acceptedCandidates.length
-    });
+    try {
+      const meRun = await mapElitesEvolve(process.cwd(), DEFAULT_POLICY, {
+        iterations: EVOLUTION_ITERATIONS,
+        focusTopic: EVOLUTION_FOCUS_TOPIC,
+        seed,
+        gridPath: join(tempDir, "map-elites-grid.json")
+      });
+      // Search candidates co-evolve policy coordinates and scoring weights, and
+      // each candidate is sampled on a different seed. Re-evaluate the selected
+      // policy on the baseline seed and DEFAULT_WEIGHTS before comparing scalar
+      // scores; the raw search score is retained only as search provenance.
+      const selected = await runBenchmarkSuite(
+        process.cwd(),
+        meRun.best.policy,
+        EVOLUTION_FOCUS_TOPIC,
+        seed,
+        3,
+        DEFAULT_WEIGHTS
+      );
+      const selectedCandidate = meRun.exploredCandidates.find((candidate) => candidate.accepted);
+      evolutionRuns.push({
+        seed,
+        selectedIteration: selectedCandidate?.iteration ?? 0,
+        baseline: round(meRun.baseline.overallScore),
+        selected: round(selected.overallScore),
+        delta: round(selected.overallScore - meRun.baseline.overallScore),
+        rawSearchScore: round(meRun.best.overallScore)
+      });
+    } finally {
+      await rm(tempDir, { recursive: true, force: true });
+    }
   }
 
   return {
-    seedCount: 200,
+    seedCount: BENCHMARK_SEED_COUNT,
     policyDeltaFromDefault: {
       analogyDensity: round(currentPolicy.analogyDensity - DEFAULT_POLICY.analogyDensity),
       socraticRatio: round(currentPolicy.socraticRatio - DEFAULT_POLICY.socraticRatio),
@@ -466,10 +531,11 @@ async function runSyntheticBenchmarkAnalysis(currentPolicy) {
     topicDeltaSummary: topicSummary,
     oneAtATimeAblations: ablations,
     derivativeEvolutionStability: {
+      comparison: "selected policy and default policy reevaluated on the same seed with DEFAULT_WEIGHTS",
       runCount: evolutionRuns.length,
       deltaSummary: summarizeNumberSeries(evolutionRuns.map((run) => run.delta)),
-      acceptedCandidateSummary: summarizeNumberSeries(
-        evolutionRuns.map((run) => run.acceptedCandidates)
+      selectedIterationSummary: summarizeNumberSeries(
+        evolutionRuns.map((run) => run.selectedIteration)
       ),
       wins: evolutionRuns.filter((run) => run.delta > 0).length,
       runs: evolutionRuns
@@ -478,8 +544,21 @@ async function runSyntheticBenchmarkAnalysis(currentPolicy) {
 }
 
 function toMarkdownReport(data) {
+  const evolutionRuns = data.syntheticBenchmark.derivativeEvolutionStability.runs;
+  const evolutionTies = evolutionRuns.filter((run) => run.delta === 0).length;
+  const evolutionRegressions = evolutionRuns.filter((run) => run.delta < 0).length;
   const lines = [
     "# Study Analysis",
+    "",
+    "## Protocol",
+    "",
+    `- Keating version: ${data.protocol.softwareVersion}`,
+    `- Evaluated policy: ${data.syntheticBenchmark.policyName} (${data.protocol.evaluatedPolicyPath})`,
+    `- Benchmark mode: ${data.protocol.benchmarkMode}`,
+    `- Synthetic learners per topic: ${data.protocol.syntheticLearnersPerTopic}`,
+    `- Trace corpus SHA-256: \`${data.protocol.inputHashes.traceCorpusSha256}\``,
+    `- Curated snapshot SHA-256: \`${data.protocol.inputHashes.snapshotSha256}\``,
+    `- Evaluated policy SHA-256: \`${data.protocol.inputHashes.evaluatedPolicySha256}\``,
     "",
     "## Data Integrity",
     "",
@@ -503,17 +582,29 @@ function toMarkdownReport(data) {
     `- Policy under analysis: ${data.syntheticBenchmark.policyName}`,
     `- Full-suite delta versus default across ${data.syntheticBenchmark.seedCount} seeds: ${data.syntheticBenchmark.benchmarkSummary.deltaOverall.mean} (${data.syntheticBenchmark.benchmarkSummary.deltaOverall.p025}, ${data.syntheticBenchmark.benchmarkSummary.deltaOverall.p975})`,
     `- Positive delta seeds: ${data.syntheticBenchmark.benchmarkSummary.deltaOverall.wins}/${data.syntheticBenchmark.seedCount}`,
-    `- Derivative evolution wins: ${data.syntheticBenchmark.derivativeEvolutionStability.wins}/${data.syntheticBenchmark.derivativeEvolutionStability.runCount}`,
+    `- Evolution comparison: ${data.syntheticBenchmark.derivativeEvolutionStability.comparison}`,
+    `- Isolated derivative evolution: ${data.syntheticBenchmark.derivativeEvolutionStability.wins} wins, ${evolutionTies} ties, ${evolutionRegressions} regressions across ${data.syntheticBenchmark.derivativeEvolutionStability.runCount} runs`,
+    `- Evolution mean delta (observed range): ${data.syntheticBenchmark.derivativeEvolutionStability.deltaSummary.mean} (${data.syntheticBenchmark.derivativeEvolutionStability.deltaSummary.min}, ${data.syntheticBenchmark.derivativeEvolutionStability.deltaSummary.max})`,
     ""
   ];
   return lines.join("\n");
 }
 
 async function main() {
-  const [traceRecords, snapshotRecords, currentPolicy] = await Promise.all([
+  const [
+    traceRecords,
+    snapshotRecords,
+    currentPolicy,
+    traceCorpusSha256,
+    snapshotSha256,
+    evaluatedPolicySha256
+  ] = await Promise.all([
     loadTraceRecords(),
     loadJson(SNAPSHOT_PATH),
-    loadPolicy(CURRENT_POLICY_PATH)
+    loadJson(EVALUATED_POLICY_PATH).then((policy) => clampPolicy(policy)),
+    sha256TraceCorpus(),
+    sha256File(SNAPSHOT_PATH),
+    sha256File(EVALUATED_POLICY_PATH)
   ]);
 
   const latestTraceSelection = selectLatestTracePerPair(traceRecords);
@@ -526,6 +617,22 @@ async function main() {
 
   const payload = {
     generatedAt: new Date().toISOString(),
+    protocol: {
+      softwareVersion: STUDY_SOFTWARE_VERSION,
+      evaluatedPolicyPath: "docs/study/evaluated-policy.json",
+      benchmarkMode: "deterministic-synthetic-fallback",
+      syntheticLearnersPerTopic: 3,
+      benchmarkSeedCount: BENCHMARK_SEED_COUNT,
+      evolutionRunCount: EVOLUTION_RUN_COUNT,
+      evolutionIterationsPerRun: EVOLUTION_ITERATIONS,
+      evolutionFocusTopic: EVOLUTION_FOCUS_TOPIC,
+      isolatedEvolutionGrids: true,
+      inputHashes: {
+        traceCorpusSha256,
+        snapshotSha256,
+        evaluatedPolicySha256
+      }
+    },
     dataIntegrity: {
       rawTraceCount: traceRecords.length,
       latestTraceCount: latestTraceSelection.retained.length,

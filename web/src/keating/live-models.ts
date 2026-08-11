@@ -35,6 +35,16 @@ export interface LiveModelOption {
 }
 
 /**
+ * The subset of live-model metadata a speech-model picker needs. Keeping this
+ * projection here means speech settings cannot quietly grow a separate list of
+ * realtime ids with different availability or ordering.
+ */
+export interface LiveSpeechModelOption {
+	value: string;
+	label: string;
+}
+
+/**
  * Ordered best-first per provider. The order is the fallback chain: when a
  * session fails in a way that implicates the model, the live surface offers the
  * next entry that is not the one that just failed.
@@ -125,6 +135,11 @@ export function isLiveProviderId(id: string): id is LiveProviderId {
 
 export function liveModelsFor(providerId: string): LiveModelOption[] {
 	return LIVE_MODELS.filter((model) => model.providerId === providerId);
+}
+
+/** Model options for a duplex speech picker, in the live fallback order. */
+export function liveSpeechModelsFor(providerId: string): LiveSpeechModelOption[] {
+	return liveModelsFor(providerId).map(({ value, label }) => ({ value, label }));
 }
 
 export function findLiveModel(providerId: string, value: string): LiveModelOption | undefined {

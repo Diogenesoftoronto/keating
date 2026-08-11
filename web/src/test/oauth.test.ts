@@ -6,18 +6,21 @@ import {
 	refreshGitHubCopilotToken,
 	startGitHubCopilotDeviceFlow,
 } from "../../server/api/oauth/github-copilot";
-import { exchangeOpenAiCodexApiKey } from "../../server/api/oauth/openai-codex";
 import {
 	getOAuthProviderConfig,
 	getOAuthProviderIds,
 	getPendingOAuthRequest,
+	initiateOAuth,
 	OAUTH_MESSAGE_CHANNEL,
 	providerToOAuthId,
 	resolveOAuthRedirectUri,
+	subscribeDesktopOAuthCallback,
+	type OAuthCallbackResult,
 } from "../keating/oauth";
 
 const originalFetch = globalThis.fetch;
 const originalLocalStorage = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+const originalWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
 
 afterEach(() => {
 	globalThis.fetch = originalFetch;
@@ -25,6 +28,11 @@ afterEach(() => {
 		Object.defineProperty(globalThis, "localStorage", originalLocalStorage);
 	} else {
 		delete (globalThis as { localStorage?: unknown }).localStorage;
+	}
+	if (originalWindow) {
+		Object.defineProperty(globalThis, "window", originalWindow);
+	} else {
+		delete (globalThis as { window?: unknown }).window;
 	}
 });
 
@@ -47,8 +55,8 @@ describe("OAuth provider wiring", () => {
 		expect(OAUTH_MESSAGE_CHANNEL).toBe("keating-oauth-result");
 	});
 
-	it("uses Codex OAuth for the built-in OpenAI provider", () => {
-		expect(providerToOAuthId("openai")).toBe("openai-codex");
+	it("keeps OpenAI API-key auth separate from Codex subscription auth", () => {
+		expect(providerToOAuthId("openai")).toBeNull();
 		expect(providerToOAuthId("openai-codex")).toBe("openai-codex");
 	});
 
@@ -105,6 +113,55 @@ describe("OAuth provider wiring", () => {
 	it("requests the copy-paste code display flow for Anthropic", () => {
 		const config = getOAuthProviderConfig("anthropic");
 		expect(config.extraAuthParams?.code).toBe("true");
+	});
+
+	it("hands the real provider URL to Electron instead of opening a denied about:blank popup", async () => {
+		installLocalStorage();
+		const opened: Array<{ url: string; target?: string; features?: string }> = [];
+		Object.defineProperty(globalThis, "window", {
+			configurable: true,
+			value: {
+				keatingP2P: {},
+				open: (url: string, target?: string, features?: string) => {
+					opened.push({ url, target, features });
+					return null;
+				},
+			},
+		});
+
+		await initiateOAuth("openai-codex");
+
+		expect(opened).toHaveLength(1);
+		expect(opened[0]?.url).toStartWith("https://auth.openai.com/oauth/authorize?");
+		expect(opened[0]?.url).not.toContain("about:blank");
+		expect(opened[0]).toMatchObject({ target: "_blank", features: "noopener,noreferrer" });
+		expect(getPendingOAuthRequest()).toMatchObject({ flow: "authorization-code", provider: "openai-codex" });
+	});
+
+	it("hands a desktop loopback callback through the existing state-validated completion path", async () => {
+		let callback: ((url: string) => void) | undefined;
+		let unsubscribed = false;
+		Object.defineProperty(globalThis, "window", {
+			configurable: true,
+			value: {
+				keatingDesktop: {
+					onOAuthCallback(listener: (url: string) => void) {
+						callback = listener;
+						return () => { unsubscribed = true; };
+					},
+				},
+			},
+		});
+		const result = new Promise<OAuthCallbackResult>((resolve) => {
+			const unsubscribe = subscribeDesktopOAuthCallback((value) => {
+				unsubscribe();
+				resolve(value);
+			});
+		});
+		callback?.("http://localhost:1455/auth/callback?code=code&state=state");
+
+		expect(await result).toMatchObject({ success: false, error: "No pending OAuth request found. Please try again." });
+		expect(unsubscribed).toBe(true);
 	});
 
 	it("restores a pending Codex handoff after reload without exposing PKCE secrets", () => {
@@ -169,24 +226,36 @@ describe("OAuth provider wiring", () => {
 		expect(JSON.stringify(pending)).not.toContain("device-secret");
 	});
 
-	it("exchanges a Codex id_token for an OpenAI API key", async () => {
-		let requestBody = "";
+	it("preserves the Codex OAuth access token for the SDK transport", async () => {
 		globalThis.fetch = (async (_url: string | URL | Request, init?: RequestInit) => {
-			requestBody = String(init?.body ?? "");
-			return new Response(JSON.stringify({ api_key: "sk-test" }), {
+			const params = new URLSearchParams(String(init?.body ?? ""));
+			expect(params.get("grant_type")).toBe("authorization_code");
+			return new Response(JSON.stringify({
+				access_token: "codex-access-token",
+				refresh_token: "codex-refresh-token",
+				expires_in: 3600,
+				id_token: "codex-id-token",
+			}), {
 				status: 200,
 				headers: { "Content-Type": "application/json" },
 			});
 		}) as typeof fetch;
 
-		const apiKey = await exchangeOpenAiCodexApiKey("client-id", "id-token", undefined, "token");
+		const handler = (await import("../../server/api/oauth/token")).default;
+		const event = mockEvent(new Request("https://keating.test/api/oauth/token", {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({
+				provider: "openai-codex",
+				code: "authorization-code",
+				redirect_uri: "http://localhost:1455/auth/callback",
+				code_verifier: "verifier",
+			}),
+		}));
+		const result = await handler(event) as Record<string, unknown>;
 
-		expect(apiKey).toBe("sk-test");
-		const params = new URLSearchParams(requestBody);
-		expect(params.get("grant_type")).toBe("urn:ietf:params:oauth:grant-type:token-exchange");
-		expect(params.get("requested_token")).toBe("openai-api-key");
-		expect(params.get("subject_token")).toBe("id-token");
-		expect(params.get("subject_token_type")).toBe("urn:ietf:params:oauth:token-type:id_token");
+		expect(result.access_token).toBe("codex-access-token");
+		expect(result.api_key).toBeUndefined();
 	});
 });
 

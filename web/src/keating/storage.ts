@@ -7,12 +7,35 @@ import type { LearnerGoal } from "./goals";
 import { inferBrowserLearnerTurnSignal, type QuizQuestionGrade } from "./core";
 import { deriveLearnerProfile, type LearnerTopicProfile } from "./learner-profile";
 import type { Flashcard, FlashcardDeck, FlashcardSrsState } from "./flashcard-types";
+import { applyReview, initialSrsState } from "./srs";
+import {
+	UI_ACTION_JOURNAL_KIND,
+	UI_CONTRACT_VERSION,
+	UiActionReplayConflictError,
+	canonicalUiAction,
+	receiptForUiAction,
+	validateUiActionAgainstDocument,
+	validateUiActionJournal,
+	validateUiDocument,
+	type UiAction,
+	type UiActionJournal,
+	type UiActionReceipt,
+	type UiActionResult,
+	type UiDeckCard,
+	type UiDocument,
+	type UiDocumentNode,
+	type UiQuestion,
+	type UiQuestionGroupResponse,
+	type UiRowAnswer,
+	type UiStudyPlanItem,
+} from "@keating/learner-contracts";
 export type { Flashcard, FlashcardDeck, FlashcardSrsState } from "./flashcard-types";
 
 const DB_NAME = "keating-db";
 const DB_VERSION = 7;
 const LEARNER_STATE_SCHEMA_VERSION = 3;
 const META_STORE = "_meta";
+const OPENUI_ACTION_JOURNAL_PREFIX = "openui-action-journal:v1:";
 
 // Store names
 const STORES = {
@@ -343,6 +366,237 @@ export interface QuestionCheckRecord {
 	sessionId?: string;
 }
 
+/** The durable result of applying one canonical OpenUI action to learner records. */
+export interface OpenUiLearnerRecordMaterialization {
+	receipt: UiActionReceipt;
+	result: UiActionResult;
+	replayed: boolean;
+}
+
+interface UiActionJournalMetaRecord {
+	key: string;
+	journal: UiActionJournal;
+}
+
+function openUiJournalKey(documentId: string): string {
+	return `${OPENUI_ACTION_JOURNAL_PREFIX}${documentId}`;
+}
+
+function emptyOpenUiJournal(documentId: string): UiActionJournal {
+	return {
+		kind: UI_ACTION_JOURNAL_KIND,
+		schemaVersion: UI_CONTRACT_VERSION,
+		documentId,
+		receipts: [],
+	};
+}
+
+function stableOpenUiRecordId(kind: string, documentId: string, value: string): string {
+	return `openui:${kind}:${documentId}:${value}`;
+}
+
+function openUiTimestamp(now: string): number {
+	const timestamp = Date.parse(now);
+	if (!Number.isFinite(timestamp)) throw new Error("OpenUI materialization requires a valid timestamp.");
+	return timestamp;
+}
+
+function requestValue<T>(request: IDBRequest<T>): Promise<T> {
+	return new Promise((resolve, reject) => {
+		request.onsuccess = () => resolve(request.result);
+		request.onerror = () => reject(request.error ?? new Error("IndexedDB request failed."));
+	});
+}
+
+function transactionCompletion(transaction: IDBTransaction): Promise<void> {
+	return new Promise((resolve, reject) => {
+		transaction.oncomplete = () => resolve();
+		transaction.onerror = () => reject(transaction.error ?? new Error("IndexedDB transaction failed."));
+		transaction.onabort = () => reject(transaction.error ?? new Error("IndexedDB transaction aborted."));
+	});
+}
+
+function targetForOpenUiAction(document: UiDocument, nodeId: string): { node: UiDocumentNode; question?: UiQuestion } | null {
+	for (const node of document.nodes) {
+		if (node.id === nodeId) return { node };
+		if (node.type === "quiz") {
+			const question = node.questions.find((candidate) => candidate.id === nodeId);
+			if (question) return { node, question };
+		}
+	}
+	return null;
+}
+
+function actionQuestion(target: { node: UiDocumentNode; question?: UiQuestion }): UiQuestion | null {
+	return target.node.type === "question" ? target.node : target.question ?? null;
+}
+
+function answerText(action: Extract<UiAction, { type: "submit-answer" | "choose-option" }>, question: UiQuestion): string {
+	if (action.type === "choose-option") {
+		const labels = new Map(question.choices?.map((choice) => [choice.id, choice.label]));
+		return action.optionIds.map((id) => labels.get(id) ?? id).join(", ");
+	}
+	if (typeof action.answer === "string") return action.answer;
+	if (action.answer.every((value): value is string => typeof value === "string")) return action.answer.join("\n");
+	const labels = new Map(question.choices?.map((choice) => [choice.id, choice.label]));
+	return action.answer.map((row) => `${row.item}: ${labels.get(row.optionId) ?? row.optionId}${row.reason ? ` — ${row.reason}` : ""}`).join("\n");
+}
+
+function isRowAnswerList(answer: unknown): answer is UiRowAnswer[] {
+	return Array.isArray(answer) && answer.every((value) => !!value && typeof value === "object" && typeof value.item === "string" && typeof value.optionId === "string");
+}
+
+function automaticallyGrade(
+	action: Extract<UiAction, { type: "submit-answer" | "choose-option" }>,
+	question: UiQuestion,
+): { grading: "auto"; score: number } | { grading: "pending"; score?: undefined } {
+	const actual = action.type === "choose-option"
+		? action.optionIds
+		: typeof action.answer === "string"
+			? [action.answer]
+			: action.answer.every((value): value is string => typeof value === "string")
+				? action.answer
+				: action.answer.map((row) => row.optionId);
+	const rows = action.type === "submit-answer" && isRowAnswerList(action.answer) ? action.answer : undefined;
+	return automaticallyGradeValues(question, actual, rows);
+}
+
+function automaticallyGradeValues(
+	question: UiQuestion,
+	actual: readonly string[],
+	rows?: readonly UiRowAnswer[],
+): { grading: "auto"; score: number } | { grading: "pending"; score?: undefined } {
+	const expected = question.correctAnswers ?? (question.correctAnswer === undefined ? undefined : [question.correctAnswer]);
+	if (expected && expected.length > 0) {
+		const normalize = (value: string) => value.trim().toLocaleLowerCase();
+		const actualSet = new Set(actual.map(normalize));
+		const expectedSet = new Set(expected.map(normalize));
+		return {
+			grading: "auto",
+			 score: actualSet.size === expectedSet.size && [...actualSet].every((value) => expectedSet.has(value)) ? 1 : 0,
+		};
+	}
+	if (question.correctMatches && rows) {
+		return {
+			grading: "auto",
+			score: rows.every((row, index) => row.optionId === question.correctMatches?.[index]) ? 1 : 0,
+		};
+	}
+	return { grading: "pending" };
+}
+
+function questionGroupResponseText(response: UiQuestionGroupResponse, question: UiQuestion): string {
+	switch (response.type) {
+		case "text": return response.answer;
+		case "choice": {
+			const labels = new Map(question.choices?.map((choice) => [choice.id, choice.label]));
+			const selected = response.optionIds.map((id) => labels.get(id) ?? id).join(", ");
+			const text = response.text?.trim() ?? "";
+			if (!selected) return text;
+			return text ? `${selected}\n${text}` : selected;
+		}
+		case "blanks": return response.answers.join("\n");
+		case "rows": {
+			const labels = new Map(question.choices?.map((choice) => [choice.id, choice.label]));
+			return response.rows.map((row) => `${row.item}: ${labels.get(row.optionId) ?? row.optionId}${row.reason ? ` — ${row.reason}` : ""}`).join("\n");
+		}
+	}
+}
+
+function automaticallyGradeQuestionGroupResponse(
+	response: UiQuestionGroupResponse,
+	question: UiQuestion,
+): { grading: "auto"; score: number } | { grading: "pending"; score?: undefined } {
+	switch (response.type) {
+		case "text": return automaticallyGradeValues(question, [response.answer]);
+		case "choice": return automaticallyGradeValues(question, response.optionIds);
+		case "blanks": return automaticallyGradeValues(question, response.answers);
+		case "rows": return automaticallyGradeValues(question, response.rows.map((row) => row.optionId), response.rows);
+	}
+}
+
+function reportedDeckReviewState(
+	state: FlashcardSrsState,
+	rating: Extract<UiAction, { type: "complete-deck" }>["ratings"][number],
+	timestamp: number,
+): FlashcardSrsState {
+	const computed = applyReview(state, rating.rating, timestamp).next;
+	return {
+		...computed,
+		ease: rating.easeAfter,
+		intervalDays: rating.appliedIntervalDays,
+		dueAt: rating.rating === 0
+			? timestamp + 10 * 60 * 1000
+			: timestamp + rating.appliedIntervalDays * 86_400_000,
+	};
+}
+
+function updateStudyPlanItems(items: readonly UiStudyPlanItem[], itemId: string, completed: boolean): UiStudyPlanItem[] {
+	return items.map((item) => ({
+		...item,
+		...(item.id === itemId ? { status: completed ? "done" as const : "not_started" as const } : {}),
+		...(item.children ? { children: updateStudyPlanItems(item.children, itemId, completed) } : {}),
+	}));
+}
+
+function documentAfterOpenUiAction(source: UiDocument, action: UiAction, now: string): UiDocument {
+	const nodes = source.nodes.map((node) => {
+		if (action.type === "complete-goal-step" && node.type === "goal" && node.id === action.nodeId) {
+			const steps = node.steps.map((step) => step.id === action.stepId ? { ...step, status: "done" as const } : step);
+			return { ...node, steps, status: steps.every((step) => step.status === "done") ? "completed" as const : node.status };
+		}
+		if (action.type === "complete-plan-item" && node.type === "study-plan" && node.id === action.nodeId && node.items) {
+			return { ...node, items: updateStudyPlanItems(node.items, action.itemId, action.completed) };
+		}
+		if (action.type === "update-notes" && node.type === "notes" && node.id === action.nodeId) {
+			return { ...node, value: action.value };
+		}
+		return node;
+	});
+	const document: UiDocument = {
+		...source,
+		revision: source.revision + 1,
+		lifecycle: action.type === "retry" ? "ready" : source.lifecycle,
+		nodes,
+		updatedAt: now,
+	};
+	if (!validateUiDocument(document)) throw new Error("OpenUI action produced an invalid resulting document.");
+	return document;
+}
+
+function openUiLessonPlanProjection(document: UiDocument, timestamp: number, sessionId: string | null): LessonPlan {
+	const id = stableOpenUiRecordId("lesson-plan", document.id, "projection");
+	const sections: string[] = [];
+	for (const node of document.nodes) {
+		if (node.type === "study-plan") {
+			const lines = [`## ${node.title ?? "Study plan"}`];
+			if (node.overview) lines.push("", node.overview);
+			const appendItems = (items: readonly UiStudyPlanItem[], depth = 0) => {
+				for (const item of items) {
+					lines.push(`${"  ".repeat(depth)}- [${item.status === "done" ? "x" : " "}] ${item.title}${item.detail ? ` — ${item.detail}` : ""}`);
+					if (item.children) appendItems(item.children, depth + 1);
+				}
+			};
+			if (node.items) appendItems(node.items);
+			sections.push(lines.join("\n"));
+		}
+		if (node.type === "notes") sections.push(`## ${node.title}\n\n${node.value}`);
+		if (node.type === "artifact" || node.type === "image" || node.type === "media") {
+			const resource = node.resource;
+			sections.push(`## ${resource.title}\n\n${resource.content ?? resource.uri ?? ""}`);
+		}
+	}
+	return {
+		id,
+		topic: document.title?.trim() || `OpenUI ${document.id}`,
+		createdAt: timestamp,
+		updatedAt: timestamp,
+		content: [`# ${document.title?.trim() || "OpenUI learning record"}`, ...sections].join("\n\n"),
+		metadata: { source: "openui", documentId: document.id, documentRevision: document.revision },
+		sessionId: sessionId ?? undefined,
+	};
+}
+
 export function mergeFeedbackById(...lists: Array<FeedbackEntry[] | undefined>): FeedbackEntry[] {
 	const byFeedbackId = new Map<string, FeedbackEntry>();
 	for (const list of lists) {
@@ -639,6 +893,308 @@ export class KeatingStorage {
 		this.learnerStateWriteQueue = run.catch(() => {});
 		await run;
 		return updated ?? this.getLearnerState();
+	}
+
+	/**
+	 * Materialize a canonical OpenUI action into the browser's learner records.
+	 * The receipt journal and every affected record share one IndexedDB
+	 * transaction, so a retry can never observe a receipt without its effect.
+	 */
+	async materializeCanonicalOpenUiAction(
+		action: UiAction,
+		sourceDocument: UiDocument,
+		now = new Date().toISOString(),
+	): Promise<OpenUiLearnerRecordMaterialization> {
+		if (!validateUiDocument(sourceDocument) || !validateUiActionAgainstDocument(action, sourceDocument)) {
+			throw new Error("OpenUI action does not apply to its source document.");
+		}
+		const timestamp = openUiTimestamp(now);
+		const target = action.type === "retry" ? null : targetForOpenUiAction(sourceDocument, action.nodeId);
+		if (action.type !== "retry" && !target) throw new Error("OpenUI action target is missing from its source document.");
+
+	const stores = [META_STORE];
+	switch (action.type) {
+		case "submit-answer":
+		case "choose-option":
+		case "submit-question-group":
+		case "complete-quiz": stores.push(STORES.QUESTION_CHECKS); break;
+			case "complete-goal-step": stores.push(STORES.GOALS); break;
+			case "complete-plan-item":
+			case "update-notes":
+			case "save-artifact": stores.push(STORES.LESSON_PLANS); break;
+		case "rate-card":
+		case "complete-deck": stores.push(STORES.DECKS, STORES.CARD_REVIEWS); break;
+			case "retry":
+			case "open-handoff": break;
+		}
+
+		await this.init();
+		if (!this.db) throw new Error("Database not initialized");
+		const transaction = this.db.transaction(stores, "readwrite");
+		const complete = transactionCompletion(transaction);
+		let materialization: OpenUiLearnerRecordMaterialization | null = null;
+
+		try {
+			const metaStore = transaction.objectStore(META_STORE);
+			const journalKey = openUiJournalKey(sourceDocument.id);
+			const stored = await requestValue(metaStore.get(journalKey)) as UiActionJournalMetaRecord | undefined;
+			const journal = stored === undefined
+				? emptyOpenUiJournal(sourceDocument.id)
+				: stored.journal;
+			if (!validateUiActionJournal(journal) || journal.documentId !== sourceDocument.id) {
+				throw new UiActionReplayConflictError("Stored OpenUI action journal is invalid.");
+			}
+			const replay = receiptForUiAction(journal, action);
+			if (replay) {
+				if (replay.state !== "completed" || !replay.result) {
+					throw new UiActionReplayConflictError("Stored OpenUI action receipt is incomplete.");
+				}
+				materialization = { receipt: structuredClone(replay), result: structuredClone(replay.result), replayed: true };
+			} else {
+				const resultingDocument = documentAfterOpenUiAction(sourceDocument, action, now);
+				if (action.type === "submit-answer" || action.type === "choose-option") {
+					const question = target && actionQuestion(target);
+					if (!question) throw new Error("OpenUI question action has no question target.");
+					const grade = automaticallyGrade(action, question);
+					const check: QuestionCheckRecord = {
+						id: stableOpenUiRecordId("question-check", sourceDocument.id, action.idempotencyKey),
+						topic: sourceDocument.title?.trim() || question.header?.trim() || `OpenUI ${sourceDocument.id}`,
+						question: question.prompt,
+						answer: answerText(action, question),
+						...grade,
+						createdAt: timestamp,
+						sessionId: this.currentSessionId ?? undefined,
+					};
+					await requestValue(transaction.objectStore(STORES.QUESTION_CHECKS).put(check));
+				}
+				if (action.type === "submit-question-group") {
+					if (!target || target.node.type !== "question-group") throw new Error("OpenUI group action has no question group target.");
+					const group = target.node;
+					const questionById = new Map(group.questions.map((question) => [question.id, question]));
+					const checks = action.responses.map((response) => {
+						const question = questionById.get(response.questionId);
+						if (!question) throw new Error("OpenUI group response targets a missing question.");
+						return {
+							id: stableOpenUiRecordId("question-check", sourceDocument.id, `${action.idempotencyKey}:${question.id}`),
+							topic: group.topic?.trim() || question.header?.trim() || sourceDocument.title?.trim() || `OpenUI ${sourceDocument.id}`,
+							question: question.prompt,
+							answer: questionGroupResponseText(response, question),
+							...automaticallyGradeQuestionGroupResponse(response, question),
+							createdAt: timestamp,
+							sessionId: this.currentSessionId ?? undefined,
+						} satisfies QuestionCheckRecord;
+					});
+					const questionChecks = transaction.objectStore(STORES.QUESTION_CHECKS);
+					for (const check of checks) await requestValue(questionChecks.put(check));
+				}
+				if (action.type === "complete-quiz") {
+					if (!target || target.node.type !== "quiz") throw new Error("OpenUI quiz action has no quiz target.");
+					const quiz = target.node;
+					const answers = new Map(action.answers.map((answer) => [answer.questionId, answer.answer]));
+					const pending = new Set(action.pendingGradeQuestionIds);
+					const skipped = new Set(action.skippedQuestionIds);
+					const questionChecks = transaction.objectStore(STORES.QUESTION_CHECKS);
+					for (const question of quiz.questions) {
+						const answer = answers.get(question.id) ?? "";
+						const reportedPartialCredit = action.partialCredits[question.id];
+						const grade = pending.has(question.id)
+							? { grading: "pending" as const }
+							: typeof reportedPartialCredit === "number"
+								? { grading: "auto" as const, score: Math.max(0, Math.min(1, reportedPartialCredit)) }
+								: skipped.has(question.id)
+									? { grading: "auto" as const, score: 0 }
+									: automaticallyGradeValues(question, [answer]);
+						const check: QuestionCheckRecord = {
+							id: stableOpenUiRecordId("question-check", sourceDocument.id, `${action.idempotencyKey}:${question.id}`),
+							topic: quiz.title.trim() || question.header?.trim() || sourceDocument.title?.trim() || `OpenUI ${sourceDocument.id}`,
+							question: question.prompt,
+							answer,
+							...grade,
+							createdAt: timestamp,
+							sessionId: this.currentSessionId ?? undefined,
+						};
+						await requestValue(questionChecks.put(check));
+					}
+				}
+				if (action.type === "complete-goal-step") {
+					if (!target || target.node.type !== "goal") throw new Error("OpenUI goal action has no goal target.");
+					const id = stableOpenUiRecordId("goal", sourceDocument.id, target.node.id);
+					const goalStore = transaction.objectStore(STORES.GOALS);
+					const current = await requestValue(goalStore.get(id)) as LearnerGoal | undefined;
+					const base: LearnerGoal = current ?? {
+						id,
+						title: target.node.title,
+						description: target.node.description ?? "",
+						status: target.node.status,
+						steps: target.node.steps.map((step, index) => ({
+							id: step.id,
+							order: index,
+							title: step.title,
+							description: "",
+							kind: "milestone",
+							successCriteria: step.successCriteria ?? [],
+							status: step.status,
+						})),
+						createdAt: timestamp,
+						updatedAt: timestamp,
+						sessionId: this.currentSessionId ?? undefined,
+					};
+					const steps = base.steps.map((step) => step.id === action.stepId
+						? { ...step, status: "done" as const, completedAt: now }
+						: step);
+					const goal: LearnerGoal = {
+						...base,
+						steps,
+						status: steps.length > 0 && steps.every((step) => step.status === "done") ? "completed" : base.status === "completed" ? "active" : base.status,
+						updatedAt: timestamp,
+					};
+					await requestValue(goalStore.put(goal));
+				}
+				if (action.type === "complete-plan-item" || action.type === "update-notes" || action.type === "save-artifact") {
+					const planStore = transaction.objectStore(STORES.LESSON_PLANS);
+					const projection = openUiLessonPlanProjection(resultingDocument, timestamp, this.currentSessionId);
+					const current = await requestValue(planStore.get(projection.id)) as LessonPlan | undefined;
+					await requestValue(planStore.put({
+						...projection,
+						createdAt: current?.createdAt ?? projection.createdAt,
+						sessionId: current?.sessionId ?? projection.sessionId,
+					}));
+				}
+				if (action.type === "rate-card") {
+					if (!target || target.node.type !== "deck") throw new Error("OpenUI card action has no deck target.");
+					const deckStore = transaction.objectStore(STORES.DECKS);
+					const deckId = stableOpenUiRecordId("deck", sourceDocument.id, target.node.id);
+					const current = await requestValue(deckStore.get(deckId)) as FlashcardDeck | undefined;
+					const priorCards = new Map(current?.cards.map((card) => [card.id, card]));
+					const cards: Flashcard[] = target.node.cards.map((card: UiDeckCard) => {
+						const prior = priorCards.get(card.id);
+						return {
+							id: card.id,
+							front: card.front,
+							back: card.back,
+							tags: card.tags,
+							srs: prior?.srs ?? initialSrsState(timestamp),
+							createdAt: prior?.createdAt ?? timestamp,
+							updatedAt: prior?.updatedAt ?? timestamp,
+						};
+					});
+					const card = cards.find((candidate) => candidate.id === action.cardId);
+					if (!card) throw new Error("OpenUI card target is missing from its deck.");
+					const outcome = applyReview(card.srs, action.rating, timestamp);
+					const deck: FlashcardDeck = {
+						id: deckId,
+						topic: target.node.topic,
+						slug: `openui-${sourceDocument.id}-${target.node.id}`,
+						title: target.node.title,
+						cards: cards.map((candidate) => candidate.id === card.id ? { ...candidate, srs: outcome.next, updatedAt: timestamp } : candidate),
+						createdAt: current?.createdAt ?? timestamp,
+						updatedAt: timestamp,
+						sessionId: current?.sessionId ?? this.currentSessionId ?? undefined,
+					};
+					const review: CardReviewRecord = {
+						id: stableOpenUiRecordId("card-review", sourceDocument.id, action.idempotencyKey),
+						deckId,
+						cardId: card.id,
+						topic: deck.topic,
+						slug: deck.slug,
+						rating: action.rating,
+						appliedIntervalDays: outcome.appliedIntervalDays,
+						easeAfter: outcome.next.ease,
+						previousIntervalDays: card.srs.intervalDays,
+						isLapse: outcome.isLapse,
+						createdAt: timestamp,
+						sessionId: this.currentSessionId ?? undefined,
+					};
+					await requestValue(deckStore.put(deck));
+					await requestValue(transaction.objectStore(STORES.CARD_REVIEWS).put(review));
+				}
+				if (action.type === "complete-deck") {
+					if (!target || target.node.type !== "deck") throw new Error("OpenUI deck completion has no deck target.");
+					const sourceDeck = target.node;
+					const deckStore = transaction.objectStore(STORES.DECKS);
+					const deckId = stableOpenUiRecordId("deck", sourceDocument.id, sourceDeck.id);
+					const current = await requestValue(deckStore.get(deckId)) as FlashcardDeck | undefined;
+					const priorCards = new Map(current?.cards.map((card) => [card.id, card]));
+					const cards = sourceDeck.cards.map((card: UiDeckCard): Flashcard => {
+						const prior = priorCards.get(card.id);
+						return {
+							id: card.id,
+							front: card.front,
+							back: card.back,
+							tags: card.tags,
+							srs: prior?.srs ?? initialSrsState(timestamp),
+							createdAt: prior?.createdAt ?? timestamp,
+							updatedAt: prior?.updatedAt ?? timestamp,
+						};
+					});
+					const reviews: CardReviewRecord[] = action.ratings.map((rating) => {
+						const card = cards.find((candidate) => candidate.id === rating.cardId);
+						if (!card) throw new Error("OpenUI card target is missing from its deck.");
+						const priorSrs = card.srs;
+						const nextSrs = reportedDeckReviewState(priorSrs, rating, timestamp);
+						card.srs = nextSrs;
+						card.updatedAt = timestamp;
+						return {
+							id: stableOpenUiRecordId("card-review", sourceDocument.id, `${action.idempotencyKey}:${card.id}`),
+							deckId,
+							cardId: card.id,
+							topic: sourceDeck.topic,
+							slug: `openui-${sourceDocument.id}-${sourceDeck.id}`,
+							rating: rating.rating,
+							appliedIntervalDays: rating.appliedIntervalDays,
+							easeAfter: rating.easeAfter,
+							previousIntervalDays: priorSrs.intervalDays,
+							isLapse: rating.rating === 0,
+							createdAt: timestamp,
+							sessionId: this.currentSessionId ?? undefined,
+						};
+					});
+					const deck: FlashcardDeck = {
+						id: deckId,
+						topic: sourceDeck.topic,
+						slug: `openui-${sourceDocument.id}-${sourceDeck.id}`,
+						title: sourceDeck.title,
+						cards,
+						createdAt: current?.createdAt ?? timestamp,
+						updatedAt: timestamp,
+						sessionId: current?.sessionId ?? this.currentSessionId ?? undefined,
+					};
+					await requestValue(deckStore.put(deck));
+					const reviewStore = transaction.objectStore(STORES.CARD_REVIEWS);
+					for (const review of reviews) await requestValue(reviewStore.put(review));
+				}
+
+				const result: UiActionResult = {
+					schemaVersion: UI_CONTRACT_VERSION,
+					documentId: action.documentId,
+					sourceRevision: action.documentRevision,
+					actionIdempotencyKey: action.idempotencyKey,
+					status: "completed",
+					documentLifecycle: resultingDocument.lifecycle,
+					resultingDocument,
+				};
+				const receipt: UiActionReceipt = {
+					schemaVersion: UI_CONTRACT_VERSION,
+					action,
+					actionFingerprint: canonicalUiAction(action),
+					state: "completed",
+					createdAt: now,
+					updatedAt: now,
+					result,
+				};
+				const nextJournal: UiActionJournal = { ...journal, receipts: [...journal.receipts, receipt] };
+				if (!validateUiActionJournal(nextJournal)) throw new Error("OpenUI action journal is invalid or full.");
+				await requestValue(metaStore.put({ key: journalKey, journal: nextJournal } satisfies UiActionJournalMetaRecord));
+				materialization = { receipt: structuredClone(receipt), result: structuredClone(result), replayed: false };
+			}
+		} catch (error) {
+			try { transaction.abort(); } catch { /* the transaction may already have finished */ }
+			await complete.catch(() => undefined);
+			throw error;
+		}
+		await complete;
+		if (!materialization) throw new Error("OpenUI action materialization did not produce a result.");
+		return materialization;
 	}
 
 	// Learner Goals — long-horizon curricula, tracked across sessions

@@ -15,6 +15,7 @@ devenv.lock
 
 # Build outputs
 dist/
+desktop/release/
 *.tsbuildinfo
 *.pdf
 *.png
@@ -34,9 +35,6 @@ web/.output/
 
 # Build artifacts
 test/bench.log
-test/final_dataset.json
-test/traces/
-docs/generated/
 video/keating-intro/public/generated/
 analysis/__pycache__/
 *.pyc

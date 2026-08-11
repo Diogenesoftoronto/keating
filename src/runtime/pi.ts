@@ -15,7 +15,8 @@ import {
   providerSetupMessage
 } from "../core/provider-auth.js";
 import { normalizePiPackages } from "../core/pi-packages.js";
-import { RpcClient } from "@earendil-works/pi-coding-agent";
+import { KeatingPtyRpcClient, type KeatingRpcExtensionUiResponse } from "./pty-rpc-client.js";
+import { CLASSIC_PI_TOOL_POLICY, OPEN_TUI_TOOL_POLICY, runtimeToolList } from "./tool-policy.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -387,7 +388,7 @@ export async function launchShell(cwd: string, args: string[]): Promise<number> 
     "--append-system-prompt",
     systemPrompt,
     "--tools",
-    "read,bash,edit,write,grep,find,ls",
+    runtimeToolList(CLASSIC_PI_TOOL_POLICY),
     ...args
   ], { provider: authSelection.provider, model: authSelection.model });
 
@@ -425,7 +426,10 @@ export async function launchShell(cwd: string, args: string[]): Promise<number> 
  * headless RPC transport so alternate hosts can render it. The caller owns
  * the returned client's lifecycle and must call `stop()`.
  */
-export async function launchRpcClient(cwd: string, args: string[] = []): Promise<RpcClient> {
+export type KeatingRpcClient = KeatingPtyRpcClient;
+export type { KeatingRpcExtensionUiResponse };
+
+export async function launchRpcClient(cwd: string, args: string[] = []): Promise<KeatingRpcClient> {
   await ensureProjectScaffold(cwd);
   const config = await loadKeatingConfig(cwd);
   await syncPiSettings(cwd, config);
@@ -443,6 +447,18 @@ export async function launchRpcClient(cwd: string, args: string[] = []): Promise
   if (!existsSync(extensionPath)) {
     throw new Error(`Missing built extension: ${extensionPath}. Run bun run build before keating tui.`);
   }
+  const rpcEntryPath = isDist
+    ? join(__dirname, "pi-rpc-entry.js")
+    : join(packageRoot, "dist", "src", "runtime", "pi-rpc-entry.js");
+  if (!existsSync(rpcEntryPath)) {
+    throw new Error(`Missing built RPC bootstrap: ${rpcEntryPath}. Run bun run build before keating tui.`);
+  }
+  const relayPath = isDist
+    ? join(__dirname, "pi-pty-relay.js")
+    : join(packageRoot, "dist", "src", "runtime", "pi-pty-relay.js");
+  if (!existsSync(relayPath)) {
+    throw new Error(`Missing built PTY relay: ${relayPath}. Run bun run build before keating tui.`);
+  }
 
   const promptDir = join(packageRoot, "pi", "prompts");
   const skillsDir = join(packageRoot, "pi", "skills");
@@ -451,6 +467,7 @@ export async function launchRpcClient(cwd: string, args: string[] = []): Promise
   if (authSelection.note) console.error(authSelection.note);
 
   const sharedArgs = mergePiDefaultsWithOverrides(config, [
+    "--no-extensions",
     "--session-dir",
     sessionsDir(cwd),
     "--extension",
@@ -462,13 +479,13 @@ export async function launchRpcClient(cwd: string, args: string[] = []): Promise
     "--append-system-prompt",
     systemPrompt,
     "--tools",
-    "read,bash,edit,write,grep,find,ls",
+    runtimeToolList(OPEN_TUI_TOOL_POLICY),
     ...args,
   ], { provider: authSelection.provider, model: authSelection.model });
 
-  const cliPath = runtime.cliPath ?? runtime.command;
-  const client = new RpcClient({
-    cliPath,
+  const client = new KeatingPtyRpcClient({
+    cliPath: rpcEntryPath,
+    relayPath,
     cwd,
     args: sharedArgs,
     env: {
@@ -478,6 +495,11 @@ export async function launchRpcClient(cwd: string, args: string[] = []): Promise
       PI_CODING_AGENT_DIR: configDir(cwd),
     } as Record<string, string>,
   });
-  await client.start();
+  try {
+    await client.start();
+  } catch (error) {
+    await client.stop();
+    throw error;
+  }
   return client;
 }

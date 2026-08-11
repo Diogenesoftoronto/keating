@@ -37,7 +37,7 @@ import {
 	type ProviderFormState,
 } from "./settings/CustomProvidersSection";
 
-const PROVIDER_PRIORITY = ["notorganic", "openai", "anthropic", "google"];
+const PROVIDER_PRIORITY = ["notorganic", "openai-codex", "anthropic", "openai", "google"];
 
 function sortProvidersByPriority(list: string[]): string[] {
 	const rank = (name: string) => {

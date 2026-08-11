@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Maximize2, X } from "lucide-react";
+import { detectSupportedMermaidGrammar } from "@keating/learner-contracts";
 import { css, cx } from "../../styled-system/css";
 import { sanitizeSvg } from "../lib/sanitize-svg";
 
@@ -145,13 +146,43 @@ interface MermaidRendererProps {
 const renderCache = new Map<string, string>();
 const mermaidFencePattern = /```mermaid[^\n]*\n([\s\S]*?)```/i;
 
+type MermaidTheme = "default" | "dark";
+
+export function currentMermaidTheme(documentElement = typeof document === "undefined" ? null : document.documentElement): MermaidTheme {
+	return documentElement?.classList.contains("dark") ? "dark" : "default";
+}
+
+/** A lossless tuple key prevents same-prefix diagrams from sharing SVG output. */
+export function mermaidRenderCacheKey(source: string, theme: MermaidTheme): string {
+	return JSON.stringify([theme, source]);
+}
+
+export function mermaidSourceError(source: string): string | null {
+	return detectSupportedMermaidGrammar(source) ? null : "This Mermaid grammar is not supported by Keating.";
+}
+
+function useMermaidTheme(): MermaidTheme {
+	const [theme, setTheme] = useState<MermaidTheme>(() => currentMermaidTheme());
+
+	useEffect(() => {
+		if (typeof document === "undefined" || typeof MutationObserver === "undefined") return;
+		const root = document.documentElement;
+		const observer = new MutationObserver(() => setTheme(currentMermaidTheme(root)));
+		observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+		setTheme(currentMermaidTheme(root));
+		return () => observer.disconnect();
+	}, []);
+
+	return theme;
+}
+
 // Strip a leading ```mermaid fence so the model can paste a fenced diagram
 // verbatim and we still pass clean Mermaid source to the renderer. We keep
 // the model-authored `<br/>` markers inside node labels — Mermaid honors
 // them natively when `htmlLabels: true` is set, and `lib/sanitize-svg.ts`
 // now allows the `<foreignObject>` wrapper Mermaid emits for those labels
 // through.
-function extractMermaidSource(input: string): string {
+export function extractMermaidSource(input: string): string {
 	const trimmed = input.trim();
 	const match = trimmed.match(mermaidFencePattern);
 	return match ? match[1].trim() : trimmed;
@@ -166,6 +197,7 @@ export function MermaidRenderer({ content, className }: MermaidRendererProps) {
 	const [loading, setLoading] = useState(true);
 	const [svg, setSvg] = useState<string | null>(null);
 	const [expanded, setExpanded] = useState(false);
+	const theme = useMermaidTheme();
 
 	useEffect(() => {
 		let cancelled = false;
@@ -177,9 +209,17 @@ export function MermaidRenderer({ content, className }: MermaidRendererProps) {
 			}
 
 			const mermaidCode = extractMermaidSource(content);
+			const sourceError = mermaidSourceError(mermaidCode);
+			if (sourceError) {
+				if (!cancelled) {
+					setError(sourceError);
+					setLoading(false);
+				}
+				return;
+			}
 
 			// Check cache first
-			const cacheKey = mermaidCode.slice(0, 200);
+			const cacheKey = mermaidRenderCacheKey(mermaidCode, theme);
 			if (renderCache.has(cacheKey)) {
 				if (!cancelled) {
 					setSvg(renderCache.get(cacheKey)!);
@@ -196,7 +236,7 @@ export function MermaidRenderer({ content, className }: MermaidRendererProps) {
 				// Initialize mermaid with theme
 				mermaid.default.initialize({
 					startOnLoad: false,
-					theme: document.documentElement.classList.contains("dark") ? "dark" : "default",
+					theme,
 					securityLevel: "strict",
 					flowchart: {
 						useMaxWidth: true,
@@ -265,7 +305,7 @@ export function MermaidRenderer({ content, className }: MermaidRendererProps) {
 				renderTargetRef.current = null;
 			}
 		};
-	}, [content]);
+	}, [content, theme]);
 
 	useEffect(() => {
 		if (!expanded || typeof document === "undefined") return;

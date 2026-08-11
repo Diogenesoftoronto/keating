@@ -9,6 +9,7 @@ import {
 	type SpeechSynthesisRequest,
 	type SpeechSynthesisResult,
 } from "../speech";
+import { liveSpeechModelsFor } from "../live-models";
 import { withApiRetry } from "../api-retry";
 import { negotiateProviderCapabilities } from "../providers";
 import {
@@ -151,15 +152,7 @@ export function realtimeHistoryItem(turn: LiveHistoryTurn): Record<string, unkno
 	};
 }
 
-const REALTIME_MODELS = [
-	{ value: "gpt-realtime-2.1", label: "gpt-realtime-2.1 (latest)" },
-	{ value: "gpt-realtime-2.1-mini", label: "gpt-realtime-2.1-mini" },
-	{ value: "gpt-realtime-2", label: "gpt-realtime-2" },
-	{ value: "gpt-realtime", label: "gpt-realtime" },
-	{ value: "gpt-realtime-mini", label: "gpt-realtime-mini" },
-	{ value: "gpt-4o-realtime-preview-2024-12-17", label: "gpt-4o-realtime-preview" },
-	{ value: "gpt-4o-mini-realtime-preview-2024-12-17", label: "gpt-4o-mini-realtime-preview" },
-];
+const REALTIME_MODELS = liveSpeechModelsFor("openai-realtime");
 
 const REALTIME_VOICES = [
 	"alloy",

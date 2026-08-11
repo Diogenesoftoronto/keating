@@ -1,5 +1,6 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { createLocalSetting } from "./local-setting";
+import { isLiveProviderId, liveSpeechModelsFor } from "./live-models";
 import type { ConversationEvent } from "./protocol";
 import type { VideoCaptureHandle, VideoSource } from "./video-capture";
 import {
@@ -454,6 +455,16 @@ export interface SpeechProvider extends SpeechProviderDescriptor {
 const providerRegistry = new Map<SpeechProviderId, SpeechProvider>();
 let registrationPromise: Promise<void> | null = null;
 
+/**
+ * Duplex providers share the curated /live catalog rather than carrying a
+ * second, eventually divergent list of Realtime ids. TTS providers retain
+ * their own model selection contract.
+ */
+function withCanonicalDuplexModels<T extends SpeechProviderDescriptor>(provider: T): T {
+	if (provider.kind !== "duplex" || !isLiveProviderId(provider.id)) return provider;
+	return { ...provider, models: liveSpeechModelsFor(provider.id) } as T;
+}
+
 async function ensureProvidersRegistered(): Promise<void> {
 	if (registrationPromise) return registrationPromise;
 	registrationPromise = (async () => {
@@ -463,9 +474,9 @@ async function ensureProvidersRegistered(): Promise<void> {
 			import("./speech-providers/openai-realtime"),
 			import("./speech-providers/supertonic"),
 		]);
-		providerRegistry.set("gemini-live", gemini.geminiLiveProvider);
+		providerRegistry.set("gemini-live", withCanonicalDuplexModels(gemini.geminiLiveProvider));
 		providerRegistry.set("openai-tts", oaiTts.openAITtsProvider);
-		providerRegistry.set("openai-realtime", oaiRealtime.openAIRealtimeProvider);
+		providerRegistry.set("openai-realtime", withCanonicalDuplexModels(oaiRealtime.openAIRealtimeProvider));
 		providerRegistry.set("supertonic-3", supertonic.supertonicProvider);
 	})();
 	return registrationPromise;
@@ -473,12 +484,13 @@ async function ensureProvidersRegistered(): Promise<void> {
 
 export async function listSpeechProviders(): Promise<SpeechProviderDescriptor[]> {
 	await ensureProvidersRegistered();
-	return Array.from(providerRegistry.values()).map(({ synthesize: _ignored, ...info }) => info);
+	return Array.from(providerRegistry.values()).map(({ synthesize: _ignored, ...info }) => withCanonicalDuplexModels(info));
 }
 
 export async function getSpeechProvider(id: SpeechProviderId): Promise<SpeechProvider | null> {
 	await ensureProvidersRegistered();
-	return providerRegistry.get(id) ?? null;
+	const provider = providerRegistry.get(id);
+	return provider ? withCanonicalDuplexModels(provider) : null;
 }
 
 function resolveCustomModel(settings: WebSpeechSettings): CustomSpeechModel | undefined {

@@ -1,15 +1,15 @@
 #import "preamble.typ": paper-title
 
-#paper-title([Keating: A Metaharness for Agency-Preserving AI Instruction])
+#paper-title([Keating: A Metaharness for \ Agency-Preserving AI Instruction])
 
 #align(center)[
   #v(0.4em)
   Dio the Debugger \
-  #datetime(year: 2026, month: 4, day: 3).display("[month repr:long] [day], [year]")
+  #datetime(year: 2026, month: 8, day: 8).display("[month repr:long] [day], [year]")
 ]
 
 #v(0.9em)
 
 #block(fill: luma(242), inset: 1em, radius: 4pt)[
-  AI tutors can scale explanation, but scaling explanation is not the same as scaling learning. A tutoring system that answers fluently may still weaken the learner's own reconstruction of a concept. Keating is designed around that distinction. It is not a single tutoring chatbot; it is a *metaharness* for teaching, a control layer that organizes planning, prompting, retrieval, transfer, verification, and evaluation around the live teaching exchange. The live system now also records session cadence and topic revisit urgency through an engagement timeline derived from lesson logs and retention decay estimates, although that spaced-review mechanism is not separately evaluated in the present paper. We analyze two evidence layers: an archival trace set of 22 raw sessions curated to 16 topic x learner pairs, and a synthetic benchmark implemented directly in the repository. The archival set yields a normalized overall score of 0.61 (95% bootstrap interval 0.515-0.705), with strong topic heterogeneity: *Special Relativity* is highest at 0.75 and *Stoicism* lowest at 0.425. The synthetic layer shows that the current Keating policy, although evolved on *Derivative* alone, improves the full 14-topic harness by 6.703 points over the default policy across 200/200 seeds, with derivative-only evolution improving in 29/30 reruns. The contribution of this paper is therefore twofold: a formal account of a teaching metaharness and a reproducible benchmark-and-analysis stack for studying agency-preserving instruction. The present evidence supports systems and methodology claims; a human randomized trial remains the necessary next step for causal pedagogical claims.
+  AI tutors can scale explanation, but scaling explanation is not the same as scaling learning. A fluent answer may still weaken the learner's own reconstruction of a concept. Keating is designed around that distinction: a *teaching metaharness* that coordinates live interaction, persistent learner evidence, inspectable artifacts, and evaluation-gated policy improvement. We analyze two deliberately separated evidence layers. An archival set of 22 model-generated sessions, deterministically curated to 16 topic x learner pairs, yields a normalized overall score of 0.61 (95% bootstrap interval 0.515-0.705) and reveals substantial topic heterogeneity and student-role contamination. A deterministic 14-topic benchmark shows that the frozen Keating 3.3.0 policy improves the default policy by 3.982 points on average (2.5th-97.5th percentiles: 3.039-4.985) across 200/200 seeds. In 30 isolated derivative-focused MAP-Elites reruns, selected policies reevaluated against the default on the same seed and fixed objective weights improve in 11, tie in four, and regress in 15 (mean delta -0.014). This exposes a mismatch between co-evolved search objectives and comparable scalar evaluation. These results support a systems-and-methods contribution, not a causal claim about human learning. The policy, traces, curated data, protocol, analysis outputs, and paper build are versioned for audit; a preregistered human trial remains the necessary next step.
 ]

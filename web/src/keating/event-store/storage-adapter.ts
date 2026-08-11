@@ -7,6 +7,7 @@ import type {
 	EventStoreCheckpoint,
 	EventStoreDiagnostic,
 	PendingUIAction,
+	PendingLearnerResponse,
 	SessionReplay,
 	StorageLike,
 	DurableProjectionOptions,
@@ -16,10 +17,11 @@ interface StoredSession {
 	format: 1;
 	events: ConversationEvent[];
 	pendingActions: PendingUIAction[];
+	pendingLearnerResponses: PendingLearnerResponse[];
 	checkpoint?: EventStoreCheckpoint;
 }
 
-const emptySession = (): StoredSession => ({ format: 1, events: [], pendingActions: [] });
+const emptySession = (): StoredSession => ({ format: 1, events: [], pendingActions: [], pendingLearnerResponses: [] });
 
 function isPendingAction(value: unknown): value is PendingUIAction {
 	if (!value || typeof value !== "object") return false;
@@ -28,6 +30,18 @@ function isPendingAction(value: unknown): value is PendingUIAction {
 		&& typeof pending.runId === "string" && !!pending.runId
 		&& typeof pending.createdAt === "string" && Number.isFinite(Date.parse(pending.createdAt))
 		&& isUIAction(pending.action);
+}
+
+function isPendingLearnerResponse(value: unknown): value is PendingLearnerResponse {
+	if (!value || typeof value !== "object") return false;
+	const pending = value as Partial<PendingLearnerResponse>;
+	return pending.version === 1
+		&& typeof pending.sessionId === "string" && !!pending.sessionId
+		&& typeof pending.receiptId === "string" && !!pending.receiptId
+		&& typeof pending.uiActionId === "string" && !!pending.uiActionId
+		&& typeof pending.sessionMessageId === "string" && !!pending.sessionMessageId
+		&& typeof pending.serialized === "string" && !!pending.serialized
+		&& typeof pending.createdAt === "string" && Number.isFinite(Date.parse(pending.createdAt));
 }
 
 /** Produces the privacy-safe event representation written to durable storage. */
@@ -71,7 +85,14 @@ function normalizeSession(value: unknown, key: string, diagnostics: EventStoreDi
 		if (!valid) diagnostics.push({ code: "corrupt-record", key, message: "Ignored an invalid pending UI action" });
 		return valid;
 	});
-	return { format: 1, events, pendingActions, checkpoint: record.checkpoint };
+	const pendingLearnerResponses = (Array.isArray(record.pendingLearnerResponses)
+		? record.pendingLearnerResponses
+		: []).filter((response) => {
+			const valid = isPendingLearnerResponse(response);
+			if (!valid) diagnostics.push({ code: "corrupt-record", key, message: "Ignored an invalid pending learner response" });
+			return valid;
+		});
+	return { format: 1, events, pendingActions, pendingLearnerResponses, checkpoint: record.checkpoint };
 }
 
 export interface StorageEventStoreOptions {
@@ -167,6 +188,38 @@ export class StorageConversationEventStore implements ConversationEventStore {
 		const next = session.pendingActions.filter((item) => item.action.id !== actionId);
 		if (next.length === session.pendingActions.length) return false;
 		session.pendingActions = next;
+		this.write(sessionId, session);
+		return true;
+	}
+
+	putPendingLearnerResponse(response: PendingLearnerResponse): void {
+		if (!isPendingLearnerResponse(response)) {
+			this.diagnose({ code: "corrupt-record", key: this.sessionKey(String((response as { sessionId?: unknown }).sessionId ?? "invalid")), message: "Rejected an invalid pending learner response" });
+			return;
+		}
+		const session = this.read(response.sessionId).record;
+		const index = session.pendingLearnerResponses.findIndex((item) => item.receiptId === response.receiptId);
+		if (index >= 0) {
+			if (JSON.stringify(session.pendingLearnerResponses[index]) !== JSON.stringify(response)) {
+				this.diagnose({ code: "corrupt-record", key: this.sessionKey(response.sessionId), message: "Rejected a conflicting pending learner response" });
+			}
+			return;
+		}
+		session.pendingLearnerResponses.push(response);
+		this.write(response.sessionId, session);
+		this.addToIndex(response.sessionId);
+	}
+
+	listPendingLearnerResponses(sessionId: string): PendingLearnerResponse[] {
+		return [...this.read(sessionId).record.pendingLearnerResponses]
+			.sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.receiptId.localeCompare(b.receiptId));
+	}
+
+	removePendingLearnerResponse(sessionId: string, receiptId: string): boolean {
+		const session = this.read(sessionId).record;
+		const next = session.pendingLearnerResponses.filter((item) => item.receiptId !== receiptId);
+		if (next.length === session.pendingLearnerResponses.length) return false;
+		session.pendingLearnerResponses = next;
 		this.write(sessionId, session);
 		return true;
 	}

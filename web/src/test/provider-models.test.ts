@@ -71,6 +71,38 @@ describe("gateway model discovery", () => {
 });
 
 describe("chat model fallback selection", () => {
+	it("uses the Codex subscription catalog without treating it as an OpenAI API key", async () => {
+		providerKeys = {
+			"oauth:openai-codex": JSON.stringify({
+				provider: "openai-codex",
+				access: "codex-access-token",
+				refresh: "codex-refresh-token",
+				expires: Date.now() + 120_000,
+				apiKey: "legacy-exchanged-api-key",
+			}),
+		};
+		const { getProviderApiKey, resolveAvailableChatModel } = await import("../lib/provider-models");
+
+		expect(await getProviderApiKey("openai")).toBeUndefined();
+		expect(await getProviderApiKey("openai-codex")).toBe("codex-access-token");
+
+		const selected = await resolveAvailableChatModel({
+			id: "balanced",
+			name: "Not Organic Balanced",
+			api: "openai-completions" as any,
+			provider: "notorganic",
+			baseUrl: "/api/notorganic/openai/v1",
+			reasoning: true,
+			input: ["text"],
+			cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+			contextWindow: 256_000,
+			maxTokens: 8192,
+		});
+
+		expect(selected.provider).toBe("openai-codex");
+		expect(selected.api).toBe("openai-codex-responses");
+	});
+
 	it("uses an available OpenAI key when Not Organic has no product session", async () => {
 		providerKeys = { openai: "openai-test-key" };
 		const { resolveAvailableChatModel } = await import("../lib/provider-models");

@@ -10,6 +10,7 @@ import {
 	providerToOAuthId,
 	loadOAuthCredentials,
 	deleteOAuthCredentials,
+	subscribeDesktopOAuthCallback,
 	type OAuthProviderId,
 } from "../../keating/oauth";
 import {
@@ -65,12 +66,15 @@ const smallButtonClass = css({
 });
 
 export function CloudProviderKeysSection({ providers }: { providers: string[] }) {
+	const storageDescription = typeof window !== "undefined" && window.keatingCredentials
+		? "Cloud LLM providers with predefined models. API keys are stored in your operating system credential vault."
+		: "Cloud LLM providers with predefined models. API keys are stored locally in your browser.";
 	return (
 		<div id="settings-section-cloud-providers" className={sectionClass}>
 			<div>
 				<h3 className={titleClass}>Cloud Providers</h3>
 				<p className={descriptionClass}>
-					Cloud LLM providers with predefined models. API keys are stored locally in your browser.
+					{storageDescription}
 				</p>
 			</div>
 			<div className={css({ display: "flex", flexDirection: "column", gap: "0.75rem" })}>
@@ -82,6 +86,7 @@ export function CloudProviderKeysSection({ providers }: { providers: string[] })
 
 function OAuthProviderKeys({ providers }: { providers: string[] }) {
 	const [keys, setKeys] = useState<Record<string, string>>({});
+	const [keyErrors, setKeyErrors] = useState<Record<string, string>>({});
 	const [oauthStatus, setOAuthStatus] = useState<Record<string, boolean>>({});
 	const [oauthLoading, setOauthLoading] = useState<Record<string, boolean>>({});
 	const [oauthInputs, setOAuthInputs] = useState<Record<string, string>>({});
@@ -117,13 +122,25 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 
 	useEffect(() => {
 		const storage = getAppStorage();
-		Promise.all(providers.map(async (p) => ({
-			provider: p,
-			key: (await storage.providerKeys.get(p)) ?? "",
-		}))).then((results) => {
+		Promise.all(providers.map(async (p) => {
+			try {
+				return { provider: p, key: (await storage.providerKeys.get(p)) ?? "", error: "" };
+			} catch (error) {
+				return {
+					provider: p,
+					key: "",
+					error: error instanceof Error ? error.message : "Secure credential storage is unavailable.",
+				};
+			}
+		})).then((results) => {
 			const map: Record<string, string> = {};
-			for (const { provider, key } of results) map[provider] = key;
+			const errors: Record<string, string> = {};
+			for (const { provider, key, error } of results) {
+				map[provider] = key;
+				if (error) errors[provider] = error;
+			}
 			setKeys(map);
+			setKeyErrors(errors);
 		});
 	}, [providers.join(",")]);
 
@@ -196,15 +213,29 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 			});
 		};
 		window.addEventListener("message", handler);
-		return () => window.removeEventListener("message", handler);
+		const unsubscribeDesktop = subscribeDesktopOAuthCallback((result) => handler({
+			data: { type: "keating-oauth-result", ...result },
+		} as MessageEvent));
+		return () => {
+			window.removeEventListener("message", handler);
+			unsubscribeDesktop();
+		};
 	}, []);
 
 	const save = async (provider: string, value: string) => {
 		const storage = getAppStorage();
-		if (value.trim()) {
-			await storage.providerKeys.set(provider, value.trim());
-		} else {
-			await storage.providerKeys.delete(provider);
+		try {
+			if (value.trim()) {
+				await storage.providerKeys.set(provider, value.trim());
+			} else {
+				await storage.providerKeys.delete(provider);
+			}
+			setKeyErrors((prev) => ({ ...prev, [provider]: "" }));
+		} catch (error) {
+			setKeyErrors((prev) => ({
+				...prev,
+				[provider]: error instanceof Error ? error.message : "Secure credential storage is unavailable.",
+			}));
 		}
 	};
 
@@ -364,13 +395,9 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 								<label className={labelClass}>
 									{OAUTH_PROVIDER_LABELS[provider] ?? provider}
 								</label>
-								<a
-									href={tutorialApiKeyHref(provider)}
-									onClick={(event) => handleTutorialLinkClick(event.nativeEvent, tutorialApiKeyHref(provider))}
-									className={linkClass}
-								>
-									Get a key
-								</a>
+								<span className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+									Subscription sign-in
+								</span>
 							</div>
 							{hasOAuth ? (
 								<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "color-mix(in srgb, var(--muted) 30%, transparent)", paddingInline: "0.75rem", paddingBlock: "0.5rem" })}>
@@ -470,8 +497,13 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 							placeholder={`${provider} API key`}
 							value={keys[provider] ?? ""}
 							onChange={(e) => setKeys((prev) => ({ ...prev, [provider]: e.target.value }))}
-							onBlur={(e) => save(provider, e.target.value)}
+							onBlur={(e) => void save(provider, e.target.value)}
 						/>
+						{keyErrors[provider] && (
+							<p role="alert" className={css({ fontSize: "0.75rem", color: "var(--destructive)" })}>
+								{keyErrors[provider]} Your entered key remains in this field; restore OS credential storage and blur the field to retry.
+							</p>
+						)}
 					</div>
 				);
 			})}
@@ -480,7 +512,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 }
 
 function oauthProviderToProviderNames(provider: OAuthProviderId | string | undefined): string[] {
-	if (provider === "openai-codex") return ["openai", "openai-codex"];
+	if (provider === "openai-codex") return ["openai-codex"];
 	if (provider === "anthropic") return ["anthropic"];
 	if (provider === "github-copilot") return ["github-copilot"];
 	return provider ? [provider] : [];

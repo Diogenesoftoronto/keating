@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Button } from "@/components/Buttons";
-import { colors, radii, spacing, type } from "@/constants/theme";
+import { radii, spacing, useKeatingTheme } from "@/constants/theme";
 import type { QuestionField, QuestionForm } from "@/lib/interactive-tags";
 import { buildQuestionReport } from "@/lib/quiz-grading";
 import { readCardState, writeCardState } from "@/state/card-state";
@@ -15,15 +15,29 @@ interface QuestionCardState {
 export function QuestionCard({
   form,
   cardKey,
+  initialState,
   onSubmit,
 }: {
   form: QuestionForm;
   cardKey: string;
-  onSubmit: (report: string) => void;
+  /** Durable answers reconstructed from the portable repository after restart. */
+  initialState?: QuestionCardState;
+  onSubmit: (answers: string[], report: string) => Promise<void>;
 }) {
+  const theme = useKeatingTheme();
+  const styles = createStyles(theme);
   const [state, setState] = useState<QuestionCardState>(
-    () => readCardState<QuestionCardState>(cardKey) ?? { answers: form.questions.map(() => ""), submitted: false },
+    () => readCardState<QuestionCardState>(cardKey) ?? initialState ?? { answers: form.questions.map(() => ""), submitted: false },
   );
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const durableStateSignature = initialState ? JSON.stringify(initialState) : null;
+
+  useEffect(() => {
+    if (!initialState) return;
+    writeCardState(cardKey, initialState);
+    setState((current) => JSON.stringify(current) === durableStateSignature ? current : initialState);
+  }, [cardKey, durableStateSignature]);
 
   const persist = (next: QuestionCardState) => {
     writeCardState(cardKey, next);
@@ -37,9 +51,18 @@ export function QuestionCard({
 
   const answered = state.answers.filter((answer) => answer.trim()).length;
 
-  const submit = () => {
-    persist({ ...state, submitted: true });
-    onSubmit(buildQuestionReport(form.questions, state.answers, form.topic));
+  const submit = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      await onSubmit(state.answers, buildQuestionReport(form.questions, state.answers, form.topic));
+      persist({ ...state, submitted: true });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not save these answers. They are still here; try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -57,10 +80,11 @@ export function QuestionCard({
       {state.submitted ? (
         <Text style={styles.sent}>Answers sent to Keating.</Text>
       ) : (
-        <Button onPress={submit} disabled={answered === 0} compact>
-          Send answers
+        <Button onPress={() => void submit()} disabled={answered === 0 || submitting} compact>
+          {submitting ? "Saving answers…" : "Send answers"}
         </Button>
       )}
+      {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
     </View>
   );
 }
@@ -76,6 +100,9 @@ function QuestionFieldRow({
   submitted: boolean;
   onChange: (value: string) => void;
 }) {
+  const theme = useKeatingTheme();
+  const { colors } = theme;
+  const styles = createStyles(theme);
   // Multi-select answers are stored comma-joined so every field keeps one
   // string, which is also the shape the report needs.
   const selected = field.multiSelect ? answer.split(",").map((value) => value.trim()).filter(Boolean) : [answer.trim()];
@@ -137,17 +164,21 @@ function QuestionFieldRow({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(theme: ReturnType<typeof useKeatingTheme>) {
+  const { colors, type } = theme;
+  return StyleSheet.create({
   card: {
     marginVertical: spacing.md,
     gap: spacing.lg,
-    paddingLeft: spacing.lg,
-    borderLeftWidth: 2,
-    borderLeftColor: colors.primaryStrong,
+    padding: spacing.lg,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.surface,
   },
   intro: { ...type.body, color: colors.textMuted },
   field: { gap: spacing.sm },
-  header: { ...type.caption, ...type.mono, color: colors.primary, letterSpacing: 1 },
+  header: { ...type.caption, ...type.mono, color: colors.primaryText, letterSpacing: 1 },
   question: { ...type.body, color: colors.text },
   hint: { ...type.caption, color: colors.textMuted },
   choices: { gap: spacing.sm },
@@ -175,4 +206,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundDeep,
   },
   sent: { ...type.caption, color: colors.textMuted },
-});
+  error: { ...type.caption, color: colors.warning },
+  });
+}

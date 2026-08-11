@@ -35,6 +35,15 @@ export interface LiveVisualizerProps {
 /** Ring geometry as a fraction of the radius, from the mascot outwards. */
 const RINGS = [0.62, 0.78, 0.94];
 
+/** Preloaded expression frames keep live-state changes immediate and flicker-free. */
+const MASCOT_FRAMES: readonly VisualizerState[] = [
+	"connecting",
+	"listening",
+	"speaking",
+	"working",
+	"idle",
+];
+
 export default function LiveVisualizer({ state, inputStream, size = 208 }: LiveVisualizerProps) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	// The loop reads state through a ref so a state change never restarts it —
@@ -102,6 +111,7 @@ export default function LiveVisualizer({ state, inputStream, size = 208 }: LiveV
 	return (
 		<div
 			className={css({ position: "relative", display: "grid", placeItems: "center" })}
+			data-live-state={state}
 			style={{ width: size, height: size }}
 		>
 			<canvas
@@ -110,21 +120,19 @@ export default function LiveVisualizer({ state, inputStream, size = 208 }: LiveV
 				className={css({ position: "absolute", inset: 0 })}
 				style={{ width: size, height: size }}
 			/>
-			<img
-				src="/brand/mascot-head.png"
-				alt=""
-				className={css({
-					position: "relative",
-					height: "auto",
-					transition: "transform 260ms ease",
-				})}
-				style={{
-					width: size * 0.42,
-					// Keating leans in a touch while speaking. Small enough not to be
-					// a distraction, large enough to register.
-					transform: state === "speaking" ? "scale(1.06)" : "scale(1)",
-				}}
-			/>
+			{MASCOT_FRAMES.map((frameState) => (
+				<img
+					key={frameState}
+					src={`/brand/mascot-live-${frameState}.png`}
+					alt=""
+					aria-hidden="true"
+					draggable={false}
+					className={`keating-mascot-image live-mascot-frame live-mascot-${frameState}${
+						state === frameState ? " is-active" : ""
+					} ${css({ position: "absolute", height: "auto" })}`}
+					style={{ width: size * 0.52 }}
+				/>
+			))}
 		</div>
 	);
 }

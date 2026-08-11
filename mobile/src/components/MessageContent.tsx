@@ -5,7 +5,17 @@ import { QuestionCard } from "@/components/cards/QuestionCard";
 import { QuizCard } from "@/components/cards/QuizCard";
 import { MarkdownText } from "@/components/MarkdownText";
 import { parseInteractiveSegments } from "@/lib/interactive-tags";
+import { interactiveCardFallback } from "@/lib/interactive-card-fallback";
+import {
+  interactiveRecordId,
+  portableGoalFromInteractive,
+  portableQuestionChecksFromInteractive,
+  portableQuizResultFromInteractive,
+} from "@/lib/interactive-learning-records";
 import { cardKey } from "@/state/card-state";
+import { useKeating } from "@/state/KeatingProvider";
+import { useUiSettings } from "@/state/UiSettingsProvider";
+import { hideUiDocumentWireWhileStreaming } from "@/lib/ui-document-wire";
 
 /**
  * Renders an assistant turn: prose as markdown, and any `<keating-… />` tags it
@@ -25,9 +35,17 @@ export function MessageContent({
   content: string;
   streaming?: boolean;
   /** Sends a learner turn built from a card back into the conversation. */
-  onCardResult: (text: string) => void;
+  onCardResult: (text: string) => Promise<void>;
 }) {
   const segments = useMemo(() => parseInteractiveSegments(content), [content]);
+  const { settings } = useUiSettings();
+  const {
+    activeSession,
+    learnerData,
+    saveLearnerGoalStep,
+    saveLearnerQuestionChecks,
+    saveLearnerQuizResult,
+  } = useKeating();
 
   return (
     <View>
@@ -39,13 +57,82 @@ export function MessageContent({
         // Cards stay inert until the reply is complete; submitting mid-stream
         // would interleave a learner turn with the one still arriving.
         if (streaming) return <Fragment key={key} />;
+        // Saved replies may contain cards even after the preference is turned
+        // off. Render the complete activity as Markdown so the learner can
+        // still answer through the normal composer.
+        if (!settings.showToolUi) {
+          return <MarkdownText key={key} content={interactiveCardFallback(segment)} />;
+        }
         if (segment.type === "quiz") {
-          return <QuizCard key={key} cardKey={key} quiz={segment.quiz} onSubmit={onCardResult} />;
+          const saved = learnerData?.quizResults.find((result) => result.id === interactiveRecordId("quiz", key, 0));
+          const savedAnswers = saved ? Object.fromEntries(segment.quiz.questions.map((question, questionIndex) => [
+            question.id,
+            saved.answers[interactiveRecordId("quiz-question", key, questionIndex)] ?? "",
+          ])) : undefined;
+          return (
+            <QuizCard
+              key={key}
+              cardKey={key}
+              quiz={segment.quiz}
+              initialState={saved ? { answers: savedAnswers ?? {}, submitted: true } : undefined}
+              onSubmit={async (answers, report) => {
+                await saveLearnerQuizResult(portableQuizResultFromInteractive(
+                  segment.quiz,
+                  answers,
+                  key,
+                  new Date().toISOString(),
+                  activeSession.id,
+                ));
+                await onCardResult(report);
+              }}
+            />
+          );
         }
         if (segment.type === "question") {
-          return <QuestionCard key={key} cardKey={key} form={segment.form} onSubmit={onCardResult} />;
+          const savedById = new Map(learnerData?.questionChecks.map((check) => [check.id, check]) ?? []);
+          const savedAnswers = segment.form.questions.map((_, questionIndex) => (
+            savedById.get(interactiveRecordId("question-check", key, questionIndex))?.answer ?? ""
+          ));
+          const hasSavedAnswers = savedAnswers.some((answer) => answer.length > 0);
+          return (
+            <QuestionCard
+              key={key}
+              cardKey={key}
+              form={segment.form}
+              initialState={hasSavedAnswers ? { answers: savedAnswers, submitted: true } : undefined}
+              onSubmit={async (answers, report) => {
+                const projected = portableQuestionChecksFromInteractive(
+                  segment.form,
+                  answers,
+                  key,
+                  new Date().toISOString(),
+                  activeSession.id,
+                );
+                await saveLearnerQuestionChecks(projected.checks);
+                await onCardResult(report);
+              }}
+            />
+          );
         }
-        return <GoalCard key={key} cardKey={key} goal={segment.goal} onReport={onCardResult} />;
+        const savedGoal = learnerData?.goals.find((goal) => goal.id === interactiveRecordId("goal", key, 0));
+        const savedStatuses = savedGoal ? Object.fromEntries(segment.goal.steps.map((step, stepIndex) => [
+          step.id,
+          savedGoal.steps.find((savedStep) => savedStep.id === interactiveRecordId("goal-step", key, stepIndex))?.status
+            ?? step.status,
+        ])) : undefined;
+        return (
+          <GoalCard
+            key={key}
+            cardKey={key}
+            goal={segment.goal}
+            initialStatuses={savedStatuses}
+            onStepStatusChange={async (stepIndex, status) => {
+              const portable = portableGoalFromInteractive(segment.goal, key, new Date().toISOString());
+              await saveLearnerGoalStep(portable, portable.steps[stepIndex].id, status);
+            }}
+            onReport={onCardResult}
+          />
+        );
       })}
     </View>
   );
@@ -55,5 +142,6 @@ export function MessageContent({
 function hideUnclosedTag(content: string, streaming: boolean): string {
   if (!streaming) return content;
   const opening = content.lastIndexOf("<keating-");
-  return opening === -1 ? content : content.slice(0, opening).trimEnd();
+  const withoutLegacy = opening === -1 ? content : content.slice(0, opening).trimEnd();
+  return hideUiDocumentWireWhileStreaming(withoutLegacy);
 }

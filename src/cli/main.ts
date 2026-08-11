@@ -31,6 +31,7 @@ import type { ExportSource, FineTuneFormat } from "../core/export.js";
 import type { FineTuneImportFormat } from "../core/import.js";
 import { detectAiRuntime, launchShell } from "../runtime/pi.js";
 import { launchOpenTui } from "../tui/opentui-host.js";
+import { shellHandoffArgs } from "../tui/shell-handoff.js";
 import { serveWeb, type ServeWebOptions, type WebAgentRuntimeMode } from "./web.js";
 import { webHelpText } from "./web-help.js";
 import { serveWebMcp } from "../mcp/server.js";
@@ -504,9 +505,9 @@ async function run(): Promise<void> {
       return;
     }
     case "tui": {
-      const action = await launchOpenTui(cwd, args.join(" ").trim() || undefined);
-      if (action === "shell") {
-        const exitCode = await launchShell(cwd, []);
+      const result = await launchOpenTui(cwd, args.join(" ").trim() || undefined);
+      if (result.action === "shell") {
+        const exitCode = await launchShell(cwd, shellHandoffArgs(result));
         process.exitCode = exitCode;
       }
       return;

@@ -1,11 +1,18 @@
 import type {
 	OpenUIDocumentMetadata,
+	OpenUIDocumentScope,
 	OpenUIInteractionLifecycle,
 	OpenUIMessageSegment,
 } from "./types";
+import { validateUiDocument, type UiDocument } from "@keating/learner-contracts";
 
-const OPENUI_FENCE = /```openui(?:-lang)?(?:[ \t]+([^\n]*))?\n/g;
-const DOCUMENT_ID = /^[a-zA-Z0-9][a-zA-Z0-9._:-]{0,127}$/;
+/**
+ * JSON documents have shipped under several fence labels.  Keep accepting all
+ * of them when replaying persisted turns, while reserving source compilation
+ * for the explicit browser source labels.
+ */
+const OPENUI_FENCE = /```(openui|openui-lang|keating-ui|ui-document|openui-json)(?:[ \t]+([^\n]*))?\n/g;
+const DOCUMENT_ID = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/;
 
 function hashProgram(program: string): string {
 	let hash = 2166136261;
@@ -32,7 +39,7 @@ function parseMetadata(
 	header: string | undefined,
 	program: string,
 	sourceIndex = 0,
-	documentScope = "",
+	documentScope: string | OpenUIDocumentScope = "",
 ): OpenUIDocumentMetadata {
 	const entries = new Map<string, string>();
 	for (const token of header?.trim().split(/\s+/) ?? []) {
@@ -41,14 +48,31 @@ function parseMetadata(
 		entries.set(token.slice(0, separator), token.slice(separator + 1));
 	}
 	const candidateId = entries.get("id");
+	const declaredId = candidateId && DOCUMENT_ID.test(candidateId) ? candidateId : undefined;
+	const scope = typeof documentScope === "string"
+		? documentScope
+		: `${documentScope.sessionId}:${documentScope.messageId}`;
+	const legacyScopes = typeof documentScope === "string" ? [] : [documentScope.messageId];
+	const scopedDeclaredId = declaredId && scope
+		? `openui-${hashProgram(`${scope}:${sourceIndex}`)}-${declaredId}`.slice(0, 128)
+		: declaredId;
+	const legacyIds = declaredId
+		? legacyScopes.flatMap((legacyScope) => [
+			`openui-${hashProgram(`${legacyScope}:${sourceIndex}`)}-${declaredId}`.slice(0, 128),
+			`openui-${hashProgram(legacyScope)}-${declaredId}`.slice(0, 128),
+		])
+		: legacyScopes.map((legacyScope) => `openui-${hashProgram(`${legacyScope}:${header ?? ""}:${sourceIndex}`)}`);
+	const id = scopedDeclaredId
+		? scopedDeclaredId
+		: `openui-${hashProgram(scope
+			? `${scope}:${header ?? ""}:${sourceIndex}`
+			: `${header ?? ""}:${sourceIndex}:${program}`)}`;
 	return {
-		id: candidateId && DOCUMENT_ID.test(candidateId)
-			? candidateId
-			: `openui-${hashProgram(documentScope
-				? `${documentScope}:${header ?? ""}:${sourceIndex}`
-				: `${header ?? ""}:${sourceIndex}:${program}`)}`,
+		id,
 		lifecycle: parseLifecycle(entries.get("lifecycle")),
 		revision: parseRevision(entries.get("revision")),
+		...(typeof documentScope === "string" ? {} : { sessionId: documentScope.sessionId }),
+		...(legacyIds.length > 0 ? { legacyIds: [...new Set(legacyIds)].filter((legacyId) => legacyId !== id) } : {}),
 	};
 }
 
@@ -136,7 +160,7 @@ export function committedOpenUIProgram(program: string, fenceComplete = false): 
  * statements are committed to the renderer. Existing Markdown and legacy
  * `<keating-*>` tags remain untouched in text segments.
  */
-export function parseOpenUIMessageSegments(text: string, documentScope = ""): OpenUIMessageSegment[] {
+export function parseOpenUIMessageSegments(text: string, documentScope: string | OpenUIDocumentScope = ""): OpenUIMessageSegment[] {
 	const segments: OpenUIMessageSegment[] = [];
 	let cursor = 0;
 	OPENUI_FENCE.lastIndex = 0;
@@ -151,13 +175,39 @@ export function parseOpenUIMessageSegments(text: string, documentScope = ""): Op
 		const closing = findClosingFence(text, bodyStart);
 		const bodyEnd = closing?.index ?? text.length;
 		const rawProgram = text.slice(bodyStart, bodyEnd);
-		segments.push({
-			type: "openui",
-			program: committedOpenUIProgram(rawProgram, closing !== null),
-			rawProgram,
-			complete: closing !== null,
-			metadata: parseMetadata(match[1], rawProgram, match.index, documentScope),
-		});
+		const fenceLabel = match[1];
+		const metadata = parseMetadata(match[2], rawProgram, match.index, documentScope);
+		const trimmed = rawProgram.trim();
+		// `openui` and its historical `openui-lang` spelling may carry the
+		// bounded source language. The other aliases are document-only, so a
+		// malformed source-like payload remains inert instead of being compiled.
+		const isDocumentFence = trimmed.startsWith("{")
+			|| (fenceLabel !== "openui" && fenceLabel !== "openui-lang");
+		if (isDocumentFence) {
+			let document: UiDocument | undefined;
+			let error: string | undefined;
+			if (closing) {
+				try {
+					const candidate: unknown = JSON.parse(trimmed);
+					if (!validateUiDocument(candidate)) throw new Error("The OpenUI JSON document does not satisfy the learner contract.");
+					const scoped = { ...candidate, id: metadata.id, revision: metadata.revision };
+					if (!validateUiDocument(scoped)) throw new Error("The scoped OpenUI JSON document does not satisfy the learner contract.");
+					document = scoped;
+				} catch (cause) {
+					error = cause instanceof Error ? cause.message : "The OpenUI JSON document is invalid.";
+				}
+			}
+			segments.push({ type: "openui", format: "document", program: "", rawProgram, complete: closing !== null, ...(document ? { document } : {}), ...(error ? { error } : {}), metadata });
+		} else {
+			segments.push({
+				type: "openui",
+				format: "source",
+				program: committedOpenUIProgram(rawProgram, closing !== null),
+				rawProgram,
+				complete: closing !== null,
+				metadata,
+			});
+		}
 
 		if (!closing) {
 			cursor = text.length;

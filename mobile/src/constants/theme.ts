@@ -1,53 +1,114 @@
-import type { TextStyle, ViewStyle } from "react-native";
+import { keatingDesignContract } from "@keating/design-contract";
+import { createContext, createElement, type PropsWithChildren, useContext, useMemo } from "react";
+import { useColorScheme, type TextStyle, type ViewStyle } from "react-native";
+import { resolveThemeName, type UiFontFamily } from "@/lib/ui-settings";
+import { useUiSettings } from "@/state/UiSettingsProvider";
+import { projectNativeTheme, type NativeTheme } from "./theme-contract";
 
-export const colors = {
-  background: "#0c1510",
-  backgroundDeep: "#08100b",
-  surface: "#11201a",
-  surfaceRaised: "#17291f",
-  surfacePressed: "#20382a",
-  text: "#dcefe0",
-  textMuted: "#9dbfa8",
-  textFaint: "#71907a",
-  primary: "#4be388",
-  primaryStrong: "#1e9b50",
-  primaryInk: "#07150c",
-  border: "#294235",
-  borderStrong: "#3d624b",
-  error: "#ff8b82",
-  errorSurface: "#321a18",
-  warning: "#e8a33d",
-  success: "#4be388",
-  userBubble: "#1b4d31",
-  overlay: "rgba(3, 9, 5, 0.72)",
-} as const;
+export { projectNativeTheme } from "./theme-contract";
+export type { NativeTheme, NativeThemeName } from "./theme-contract";
 
 export const spacing = {
-  xs: 4,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
-  xxl: 32,
+  ...keatingDesignContract.native.spacingDp,
+  xxl: keatingDesignContract.native.spacingDp.xl + keatingDesignContract.native.spacingDp.sm,
 } as const;
-
 export const radii = {
-  sm: 6,
-  md: 10,
-  lg: 14,
-  pill: 999,
+  sm: keatingDesignContract.native.radiiDp.control,
+  md: keatingDesignContract.native.radiiDp.panel,
+  lg: keatingDesignContract.native.radiiDp.panel,
+  pill: keatingDesignContract.native.radiiDp.pill,
 } as const;
 
-export const type = {
-  title: { fontSize: 24, lineHeight: 30, fontWeight: "700" } satisfies TextStyle,
-  heading: { fontSize: 18, lineHeight: 24, fontWeight: "700" } satisfies TextStyle,
-  body: { fontSize: 16, lineHeight: 24 } satisfies TextStyle,
-  label: { fontSize: 14, lineHeight: 20, fontWeight: "600" } satisfies TextStyle,
-  caption: { fontSize: 12, lineHeight: 17 } satisfies TextStyle,
-  mono: { fontFamily: "monospace" } satisfies TextStyle,
-} as const;
+export interface KeatingTypography {
+  readonly title: TextStyle;
+  readonly heading: TextStyle;
+  readonly body: TextStyle;
+  readonly label: TextStyle;
+  readonly caption: TextStyle;
+  /** Spread *after* a scale entry to switch that text to the monospace face. */
+  readonly mono: TextStyle;
+  /** Bold monospace face for terminal-style labels and badges. */
+  readonly monoBold: TextStyle;
+}
 
-export const hairline: ViewStyle = {
-  borderColor: colors.border,
-  borderWidth: 1,
+/**
+ * The loaded font names registered in `_layout.tsx`. `undefined` means "leave
+ * it to the platform", which is how the app rendered before the setting
+ * existed. Roboto is a proportional face, so it keeps Space Mono for the
+ * terminal-style accents — the same split the web build uses.
+ */
+const UI_FONT_FACE: Record<UiFontFamily, string | undefined> = {
+  system: undefined,
+  "space-mono": "SpaceMono",
+  "jetbrains-mono": "JetBrainsMono",
+  roboto: "Roboto",
 };
+
+const UI_FONT_BOLD_FACE: Record<UiFontFamily, string | undefined> = {
+  system: undefined,
+  "space-mono": "SpaceMonoBold",
+  "jetbrains-mono": "JetBrainsMonoBold",
+  roboto: "RobotoBold",
+};
+
+const MONO_FONT_FACE: Record<UiFontFamily, string> = {
+  system: "SpaceMono",
+  "space-mono": "SpaceMono",
+  "jetbrains-mono": "JetBrainsMono",
+  roboto: "SpaceMono",
+};
+
+const MONO_FONT_BOLD_FACE: Record<UiFontFamily, string> = {
+  system: "SpaceMonoBold",
+  "space-mono": "SpaceMonoBold",
+  "jetbrains-mono": "JetBrainsMonoBold",
+  roboto: "SpaceMonoBold",
+};
+
+export function createTypography(fontFamily: UiFontFamily): KeatingTypography {
+  const ui = UI_FONT_FACE[fontFamily];
+  const face: TextStyle = ui ? { fontFamily: ui } : {};
+  const boldUi = UI_FONT_BOLD_FACE[fontFamily];
+  const boldFace: TextStyle = boldUi ? { fontFamily: boldUi } : { fontWeight: "700" };
+  return {
+    title: { fontSize: 24, lineHeight: 30, ...boldFace },
+    heading: { fontSize: 18, lineHeight: 24, ...boldFace },
+    body: { fontSize: 16, lineHeight: 24, ...face },
+    label: { fontSize: 14, lineHeight: 20, ...boldFace },
+    caption: { fontSize: 12, lineHeight: 17, ...face },
+    mono: { fontFamily: MONO_FONT_FACE[fontFamily] },
+    monoBold: { fontFamily: MONO_FONT_BOLD_FACE[fontFamily] },
+  };
+}
+
+export interface KeatingTheme extends NativeTheme {
+  readonly type: KeatingTypography;
+}
+
+/**
+ * Static scale kept for the isolated repository smoke screen, which renders
+ * outside the providers.
+ */
+export const type = createTypography("jetbrains-mono");
+
+const ThemeContext = createContext<KeatingTheme | null>(null);
+
+export function KeatingThemeProvider({ children }: PropsWithChildren) {
+  const systemScheme = useColorScheme();
+  const { settings } = useUiSettings();
+  const theme = useMemo<KeatingTheme>(() => ({
+    ...projectNativeTheme(resolveThemeName(settings.theme, systemScheme)),
+    type: createTypography(settings.fontFamily),
+  }), [settings.theme, settings.fontFamily, systemScheme]);
+  return createElement(ThemeContext.Provider, { value: theme }, children);
+}
+
+export function useKeatingTheme(): KeatingTheme {
+  const theme = useContext(ThemeContext);
+  if (!theme) throw new Error("useKeatingTheme must be used within KeatingThemeProvider.");
+  return theme;
+}
+
+/** Dark fallback retained only for the isolated repository smoke screen. */
+export const colors = projectNativeTheme("dark").colors;
+export const hairline: ViewStyle = { borderColor: colors.border, borderWidth: 1 };

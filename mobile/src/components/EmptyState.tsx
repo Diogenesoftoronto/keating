@@ -1,11 +1,18 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
 import type { ReactNode } from "react";
-import { colors, radii, spacing, type } from "@/constants/theme";
+import { radii, spacing, useKeatingTheme } from "@/constants/theme";
 
 export function EmptyState({ title, body, action }: { title: string; body: string; action?: ReactNode }) {
+  const styles = createStyles(useKeatingTheme());
   return (
     <View style={styles.container}>
-      <Text style={styles.mark} accessibilityElementsHidden>✦</Text>
+      <Image
+        accessibilityIgnoresInvertColors
+        accessibilityLabel="Keating"
+        source={require("../../assets/brand/logo-lockup.png")}
+        style={styles.mark}
+        resizeMode="contain"
+      />
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.body}>{body}</Text>
       {action ? <View style={styles.action}>{action}</View> : null}
@@ -13,7 +20,9 @@ export function EmptyState({ title, body, action }: { title: string; body: strin
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(theme: ReturnType<typeof useKeatingTheme>) {
+  const { colors, type } = theme;
+  return StyleSheet.create({
   container: {
     alignItems: "center",
     justifyContent: "center",
@@ -24,8 +33,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  mark: { ...type.mono, color: colors.primary, fontSize: 32, marginBottom: spacing.md },
+  mark: { width: 132, height: 44, marginBottom: spacing.md },
   title: { ...type.heading, color: colors.text, textAlign: "center" },
   body: { ...type.body, color: colors.textMuted, textAlign: "center", marginTop: spacing.sm, maxWidth: 420 },
   action: { marginTop: spacing.xl, minWidth: 160 },
-});
+  });
+}

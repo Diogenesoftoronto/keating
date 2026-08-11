@@ -37,6 +37,28 @@ describe("web fine-tune export", () => {
 		expect(result.chatmlJsonl).toContain("[REDACTED]");
 		expect(result.chatmlJsonl).not.toContain("sk-testsecret");
 		expect(result.redactionCount).toBeGreaterThanOrEqual(1);
+
+		const canonicalRecords = result.canonicalJsonl
+			?.trim()
+			.split("\n")
+			.map((line) => JSON.parse(line)) ?? [];
+		const artifactRecord = canonicalRecords.find((record) => record.source.type === "artifact");
+		expect(artifactRecord?.quality).toMatchObject({
+			status: "unscored",
+			recommendedForSft: false,
+			scored: false,
+		});
+
+		const chatmlRecords = result.chatmlJsonl
+			?.trim()
+			.split("\n")
+			.map((line) => JSON.parse(line)) ?? [];
+		const artifactConversation = chatmlRecords.find((record) => record.keating?.training?.kind === "plan");
+		expect(artifactConversation?.keating.training.quality).toMatchObject({
+			status: "unscored",
+			recommendedForSft: false,
+			scored: false,
+		});
 	});
 
 	it("respects source and format filters", async () => {
