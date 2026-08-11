@@ -47,6 +47,18 @@ const targets: Target[] = [
     replacer: (v) => `"version": "${v}"`,
   },
   {
+    path: "desktop/package.json",
+    description: "Desktop package manifest",
+    matcher: /"version":\s*"[\d.]+"/,
+    replacer: (v) => `"version": "${v}"`,
+  },
+  {
+    path: "packages/design-contract/package.json",
+    description: "Design contract package manifest",
+    matcher: /"version":\s*"[\d.]+"/,
+    replacer: (v) => `"version": "${v}"`,
+  },
+  {
     path: "packages/browser-agent-runtime/package.json",
     description: "Browser agent runtime package manifest",
     matcher: /"version":\s*"[\d.]+"/,

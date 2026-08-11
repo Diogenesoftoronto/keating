@@ -1,6 +1,5 @@
 import { defineEventHandler, readBody, createError } from "h3";
 import { getOAuthServerConfigs, type OAuthServerProviderId } from "./config";
-import { exchangeOpenAiCodexApiKey } from "./openai-codex";
 import { OAuthUpstreamError, refreshGitHubCopilotToken } from "./github-copilot";
 
 interface RefreshRequestBody {
@@ -76,11 +75,7 @@ export default defineEventHandler(async (event) => {
 			});
 		}
 
-		const tokenData = await response.json();
-		if (body.provider === "openai-codex" && typeof tokenData.id_token === "string") {
-			tokenData.api_key = await exchangeOpenAiCodexApiKey(config.clientId, tokenData.id_token, config.clientSecret, "refresh");
-		}
-		return tokenData;
+		return await response.json();
 	} catch (error) {
 		if ((error as any).statusCode) throw error;
 		console.error(`[oauth/refresh] Error refreshing token for ${body.provider}:`, error);

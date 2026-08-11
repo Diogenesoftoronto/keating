@@ -1,6 +1,6 @@
 import type { PropsWithChildren } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, type ViewStyle } from "react-native";
-import { colors, radii, spacing, type } from "@/constants/theme";
+import { radii, spacing, useKeatingTheme } from "@/constants/theme";
 
 interface ButtonProps extends PropsWithChildren {
   onPress: () => void;
@@ -22,6 +22,9 @@ export function Button({
   accessibilityLabel,
   style,
 }: ButtonProps) {
+  const theme = useKeatingTheme();
+  const styles = createStyles(theme);
+  const { colors } = theme;
   const inactive = disabled || loading;
   return (
     <Pressable
@@ -50,7 +53,9 @@ export function Button({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(theme: ReturnType<typeof useKeatingTheme>) {
+  const { colors, type } = theme;
+  return StyleSheet.create({
   base: {
     minHeight: 44,
     flexDirection: "row",
@@ -59,7 +64,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
   },
   regular: { paddingHorizontal: spacing.lg, paddingVertical: 10 },
-  compact: { minHeight: 40, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  compact: { minHeight: 44, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   label: { ...type.label, textAlign: "center" },
   primaryLabel: { color: colors.primaryInk },
   defaultLabel: { color: colors.text },
@@ -69,7 +74,8 @@ const styles = StyleSheet.create({
   secondaryPressed: { backgroundColor: colors.surfacePressed },
   quiet: { backgroundColor: "transparent" },
   quietPressed: { backgroundColor: colors.surfacePressed },
-  danger: { backgroundColor: colors.errorSurface, borderWidth: 1, borderColor: "#63322e" },
-  dangerPressed: { backgroundColor: "#45211e" },
+  danger: { backgroundColor: colors.errorSurface, borderWidth: 1, borderColor: colors.error },
+  dangerPressed: { backgroundColor: colors.surfacePressed },
   disabled: { opacity: 0.48 },
-});
+  });
+}

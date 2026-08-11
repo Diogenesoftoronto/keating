@@ -337,18 +337,25 @@ Workflow:
 0c. Keep Keating's standard in view: "Boys, you must strive to find your own voice..."
 ```
 
-The point is not cosmetic prompt churn or benchmark gaming. The loop tries to produce prompts that improve human learning outcomes: sharper diagnosis, stronger reconstruction from memory, better transfer, and clearer learner articulation.
+The point is not cosmetic prompt churn or benchmark gaming. The loop searches for prompts aligned with sharper diagnosis, reconstruction from memory, transfer, and clearer learner articulation. Whether those changes improve human learning remains an empirical question.
 
 ## Benchmarking Cognitive Friction
 
 To ensure that Keating serves as a bridge to independent understanding rather than a shortcut to agreement, we maintain a **Synthetic Learner Suite**. 
 
-Recent results using small models (1–2B parameters) show that the system successfully identifies and redirects "Surface Agreement." Key findings include:
+Archived model-to-model traces using small learner models (1–2B parameters) show that the harness can identify and redirect some instances of "Surface Agreement." These are descriptive system observations, not human-learning efficacy results. Key findings include:
 - **Redirection Effectiveness:** Identifying meta-responses ("That's a great question!") and insisting on personal application before advancing.
-- **Intuition-First Efficacy:** Measurable self-correction in technical domains (e.g., correcting conflations between function values and derivatives).
+- **Intuition-First Signal:** Observed self-correction in technical traces (e.g., correcting conflations between function values and derivatives).
 - **Voice Persistence:** Penalizing rote echoing of the teacher and rewarding novel analogies or domain transfers.
 
 Detailed results are available in our latest study: `docs/study.typ`.
+
+The paper's traces, curated snapshot, evaluated policy, and generated analysis are versioned. Reproduce the quantitative analysis and published PDF with:
+
+```bash
+devenv tasks run keating:study-analysis
+devenv tasks run keating:paper
+```
 
 ## Project Layout
 

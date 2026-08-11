@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Button } from "@/components/Buttons";
-import { colors, radii, spacing, type } from "@/constants/theme";
+import { radii, spacing, useKeatingTheme } from "@/constants/theme";
 import type { GoalStep, GoalStepStatus, LearnerGoal } from "@/lib/interactive-tags";
 import { readCardState, writeCardState } from "@/state/card-state";
 
@@ -28,18 +28,37 @@ const STATUS_MARK: Record<GoalStepStatus, string> = {
 export function GoalCard({
   goal,
   cardKey,
+  initialStatuses,
+  onStepStatusChange,
   onReport,
 }: {
   goal: LearnerGoal;
   cardKey: string;
+  /** Durable statuses reconstructed from the portable repository after restart. */
+  initialStatuses?: Record<string, GoalStepStatus>;
+  /** Commits the learner-owned step state before reflecting it in the card. */
+  onStepStatusChange: (stepIndex: number, status: GoalStepStatus) => Promise<void>;
   /** Sends the learner's progress back to the teacher so it can re-plan. */
-  onReport: (report: string) => void;
+  onReport: (report: string) => Promise<void>;
 }) {
+  const theme = useKeatingTheme();
+  const styles = createStyles(theme);
   const [statuses, setStatuses] = useState<Record<string, GoalStepStatus>>(
     () =>
       readCardState<Record<string, GoalStepStatus>>(cardKey)
+      ?? initialStatuses
       ?? Object.fromEntries(goal.steps.map((step) => [step.id, step.status])),
   );
+  const [busyStepId, setBusyStepId] = useState<string | null>(null);
+  const [reporting, setReporting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const durableStatusSignature = initialStatuses ? JSON.stringify(initialStatuses) : null;
+
+  useEffect(() => {
+    if (!initialStatuses) return;
+    writeCardState(cardKey, initialStatuses);
+    setStatuses((current) => JSON.stringify(current) === durableStatusSignature ? current : initialStatuses);
+  }, [cardKey, durableStatusSignature]);
 
   const statusOf = (step: GoalStep) => statuses[step.id] ?? step.status;
   const done = goal.steps.filter((step) => statusOf(step) === "done").length;
@@ -47,13 +66,24 @@ export function GoalCard({
   const nextStep = goal.steps.find((step) => statusOf(step) !== "done");
   const changed = goal.steps.some((step) => statusOf(step) !== step.status);
 
-  const cycle = (step: GoalStep) => {
-    const next = { ...statuses, [step.id]: NEXT_STATUS[statusOf(step)] };
-    writeCardState(cardKey, next);
-    setStatuses(next);
+  const cycle = async (step: GoalStep, stepIndex: number) => {
+    if (busyStepId !== null) return;
+    const nextStatus = NEXT_STATUS[statusOf(step)];
+    setBusyStepId(step.id);
+    setError(null);
+    try {
+      await onStepStatusChange(stepIndex, nextStatus);
+      const next = { ...statuses, [step.id]: nextStatus };
+      writeCardState(cardKey, next);
+      setStatuses(next);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not save this goal step. Try again.");
+    } finally {
+      setBusyStepId(null);
+    }
   };
 
-  const report = () => {
+  const report = async () => {
     const lines = [
       `Progress on "${goal.title}": ${done}/${goal.steps.length} steps done.`,
       "",
@@ -61,7 +91,15 @@ export function GoalCard({
       "",
       nextStep ? `I'm working on: ${nextStep.title}. What should I do next?` : "That's the whole plan. What comes after this?",
     ];
-    onReport(lines.join("\n"));
+    setReporting(true);
+    setError(null);
+    try {
+      await onReport(lines.join("\n"));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Your progress is saved, but Keating could not respond. Try again.");
+    } finally {
+      setReporting(false);
+    }
   };
 
   return (
@@ -87,7 +125,8 @@ export function GoalCard({
               key={step.id}
               accessibilityRole="button"
               accessibilityLabel={`${step.title} — ${status.replace("_", " ")}. Tap to advance.`}
-              onPress={() => cycle(step)}
+              disabled={busyStepId !== null}
+              onPress={() => void cycle(step, index)}
               style={({ pressed }) => [
                 styles.step,
                 status === "done" && styles.stepDone,
@@ -113,14 +152,18 @@ export function GoalCard({
         })}
       </View>
 
-      <Button onPress={report} variant="secondary" compact disabled={!changed}>
-        {changed ? "Tell Keating my progress" : "Tap a step to mark progress"}
+      {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
+
+      <Button onPress={() => void report()} variant="secondary" compact disabled={!changed || busyStepId !== null || reporting}>
+        {reporting ? "Sending progress…" : changed ? "Tell Keating my progress" : "Tap a step to mark progress"}
       </Button>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(theme: ReturnType<typeof useKeatingTheme>) {
+  const { colors, type } = theme;
+  return StyleSheet.create({
   card: {
     marginVertical: spacing.md,
     gap: spacing.sm,
@@ -130,7 +173,7 @@ const styles = StyleSheet.create({
     borderColor: colors.borderStrong,
     backgroundColor: colors.surface,
   },
-  kicker: { ...type.caption, ...type.mono, color: colors.primary, fontWeight: "700", letterSpacing: 1 },
+  kicker: { ...type.caption, ...type.monoBold, color: colors.primaryText, letterSpacing: 1 },
   title: { ...type.heading, color: colors.text },
   description: { ...type.body, color: colors.textMuted },
   progressRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.xs },
@@ -150,10 +193,12 @@ const styles = StyleSheet.create({
   stepDone: { borderColor: colors.primaryStrong },
   stepNext: { backgroundColor: colors.surfaceRaised },
   mark: { ...type.body, color: colors.textMuted, width: 18 },
-  markDone: { color: colors.primary },
+  markDone: { color: colors.primaryText },
   stepBody: { flex: 1, gap: 2 },
   stepTitle: { ...type.label, color: colors.text },
   stepKind: { ...type.caption, color: colors.textFaint, textTransform: "uppercase", letterSpacing: 0.6 },
   stepDescription: { ...type.caption, color: colors.textMuted, lineHeight: 18 },
   criterion: { ...type.caption, color: colors.textFaint },
-});
+  error: { ...type.caption, color: colors.warning },
+  });
+}

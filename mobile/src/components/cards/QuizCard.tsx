@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Button } from "@/components/Buttons";
 import { MarkdownText } from "@/components/MarkdownText";
-import { colors, radii, spacing, type } from "@/constants/theme";
+import { radii, spacing, useKeatingTheme } from "@/constants/theme";
 import type { Quiz, QuizQuestion } from "@/lib/interactive-tags";
 import { buildQuizReport, isCorrect, isOpenEnded, scoreQuiz } from "@/lib/quiz-grading";
 import { readCardState, writeCardState } from "@/state/card-state";
@@ -15,16 +15,30 @@ interface QuizCardState {
 export function QuizCard({
   quiz,
   cardKey,
+  initialState,
   onSubmit,
 }: {
   quiz: Quiz;
   cardKey: string;
-  /** Reports the finished quiz back to the teacher as a new learner turn. */
-  onSubmit: (report: string) => void;
+  /** Durable answers reconstructed from the portable repository after restart. */
+  initialState?: QuizCardState;
+  /** Persists the quiz before reporting it as a new learner turn. */
+  onSubmit: (answers: Record<string, string>, report: string) => Promise<void>;
 }) {
+  const theme = useKeatingTheme();
+  const styles = createStyles(theme);
   const [state, setState] = useState<QuizCardState>(
-    () => readCardState<QuizCardState>(cardKey) ?? { answers: {}, submitted: false },
+    () => readCardState<QuizCardState>(cardKey) ?? initialState ?? { answers: {}, submitted: false },
   );
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const durableStateSignature = initialState ? JSON.stringify(initialState) : null;
+
+  useEffect(() => {
+    if (!initialState) return;
+    writeCardState(cardKey, initialState);
+    setState((current) => JSON.stringify(current) === durableStateSignature ? current : initialState);
+  }, [cardKey, durableStateSignature]);
 
   const persist = (next: QuizCardState) => {
     writeCardState(cardKey, next);
@@ -42,9 +56,18 @@ export function QuizCard({
   );
   const answered = quiz.questions.filter((question) => (state.answers[question.id] ?? "").trim()).length;
 
-  const submit = () => {
-    persist({ ...state, submitted: true });
-    onSubmit(buildQuizReport(quiz.topic, quiz.questions, state.answers));
+  const submit = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      await onSubmit(state.answers, buildQuizReport(quiz.topic, quiz.questions, state.answers));
+      persist({ ...state, submitted: true });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not save this quiz. Your answers are still here; try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -77,10 +100,11 @@ export function QuizCard({
           </Text>
         </View>
       ) : (
-        <Button onPress={submit} disabled={answered === 0}>
-          {answered === quiz.questions.length ? "Submit quiz" : `Submit (${answered}/${quiz.questions.length} answered)`}
+        <Button onPress={() => void submit()} disabled={answered === 0 || submitting}>
+          {submitting ? "Saving quiz…" : answered === quiz.questions.length ? "Submit quiz" : `Submit (${answered}/${quiz.questions.length} answered)`}
         </Button>
       )}
+      {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
     </View>
   );
 }
@@ -98,6 +122,9 @@ function QuizQuestionRow({
   submitted: boolean;
   onChange: (value: string) => void;
 }) {
+  const theme = useKeatingTheme();
+  const { colors } = theme;
+  const styles = createStyles(theme);
   const correct = submitted && isCorrect(question, answer);
   const options = question.type === "true_false" ? (question.options ?? ["True", "False"]) : question.options;
 
@@ -161,6 +188,7 @@ function QuizOption({
   disabled: boolean;
   onPress: () => void;
 }) {
+  const styles = createStyles(useKeatingTheme());
   return (
     <Pressable
       accessibilityRole="radio"
@@ -180,7 +208,9 @@ function QuizOption({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(theme: ReturnType<typeof useKeatingTheme>) {
+  const { colors, type } = theme;
+  return StyleSheet.create({
   card: {
     marginVertical: spacing.md,
     gap: spacing.lg,
@@ -191,11 +221,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   header: { gap: spacing.xs },
-  kicker: { ...type.caption, ...type.mono, color: colors.primary, fontWeight: "700", letterSpacing: 1 },
+  kicker: { ...type.caption, ...type.monoBold, color: colors.primaryText, letterSpacing: 1 },
   title: { ...type.heading, color: colors.text },
   question: { gap: spacing.sm },
   questionHead: { flexDirection: "row", gap: spacing.sm },
-  questionNumber: { ...type.label, ...type.mono, color: colors.primary, minWidth: 20 },
+  questionNumber: { ...type.label, ...type.mono, color: colors.primaryText, minWidth: 20 },
   questionText: { ...type.body, color: colors.text, flex: 1 },
   options: { gap: spacing.sm },
   option: {
@@ -243,4 +273,6 @@ const styles = StyleSheet.create({
   },
   scoreValue: { ...type.label, color: colors.text },
   scoreNote: { ...type.caption, color: colors.textMuted },
-});
+  error: { ...type.caption, color: colors.warning },
+  });
+}

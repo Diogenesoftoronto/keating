@@ -1,25 +1,25 @@
-import { defineConfig, Plugin } from 'vite';
-import { resolve } from 'path';
-import { VitePWA } from 'vite-plugin-pwa';
-import react from '@vitejs/plugin-react';
-import nodepod from '@scelar/nodepod/vite';
-import posthog from '@posthog/rollup-plugin';
-import { visualizer } from 'rollup-plugin-visualizer';
-import { randomBytes } from 'node:crypto';
-import * as https from 'https';
-import * as http from 'http';
-import { buildValidatedProxyUrl } from './server/utils/proxy-target';
+import { defineConfig, Plugin } from "vite";
+import { resolve } from "path";
+import { VitePWA } from "vite-plugin-pwa";
+import react from "@vitejs/plugin-react";
+import nodepod from "@scelar/nodepod/vite";
+import posthog from "@posthog/rollup-plugin";
+import { visualizer } from "rollup-plugin-visualizer";
+import { randomBytes } from "node:crypto";
+import * as https from "https";
+import * as http from "http";
+import { buildValidatedProxyUrl } from "./server/utils/proxy-target";
 import {
   buildAgentRuntimeConfig,
   type ServerAgentRuntimeMode,
-} from './src/keating/agent-runtime-config';
+} from "./src/keating/agent-runtime-config";
 import {
   compactShareIdFromBytes,
   isValidShareId,
   SHARE_ID_BYTES,
   SHARE_MAX_BYTES,
   validateSharedSessionPayload,
-} from './src/keating/share-contract';
+} from "./src/keating/share-contract";
 
 function env(name: string): string | null {
   const value = process.env[name]?.trim();
@@ -27,14 +27,16 @@ function env(name: string): string | null {
 }
 
 function agentRuntimeMode(): ServerAgentRuntimeMode {
-  const mode = env('KEATING_WEB_AGENT_MODE');
-  return mode === 'host' || mode === 'remote' || mode === 'cloud' ? mode : 'browser-only';
+  const mode = env("KEATING_WEB_AGENT_MODE");
+  return mode === "host" || mode === "remote" || mode === "cloud"
+    ? mode
+    : "browser-only";
 }
 
 function agentRuntimeTargetBase(mode: ServerAgentRuntimeMode): string | null {
-  if (mode === 'browser-only' || mode === 'host') return null;
-  if (mode === 'remote') return env('KEATING_WEB_REMOTE_ENDPOINT');
-  return env('KEATING_WEB_CLOUD_ENDPOINT') || 'https://keating.help';
+  if (mode === "browser-only" || mode === "host") return null;
+  if (mode === "remote") return env("KEATING_WEB_REMOTE_ENDPOINT");
+  return env("KEATING_WEB_CLOUD_ENDPOINT") || "https://keating.help";
 }
 
 const devShareStore = new Map<string, unknown>();
@@ -46,42 +48,67 @@ function compactDevShareId() {
 function readRequestBody(req: http.IncomingMessage): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
-    req.on('data', (chunk: Buffer) => chunks.push(chunk));
-    req.on('error', reject);
-    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on("data", (chunk: Buffer) => chunks.push(chunk));
+    req.on("error", reject);
+    req.on("end", () => resolve(Buffer.concat(chunks)));
   });
 }
 
 function sendJson(res: http.ServerResponse, statusCode: number, body: unknown) {
   res.statusCode = statusCode;
-  res.setHeader('content-type', 'application/json');
+  res.setHeader("content-type", "application/json");
   res.end(JSON.stringify(body));
 }
 
 function chatProxyPlugin(): Plugin {
   return {
-    name: 'chat-proxy',
+    name: "chat-proxy",
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
-        const pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
+        const pathname = new URL(req.url ?? "/", "http://localhost").pathname;
+
+        if (devCoursesApiOrigin && pathname.startsWith("/api/courses")) {
+          const targetUrl = new URL(req.url ?? pathname, devCoursesApiOrigin);
+          const proxyReq = http.request(
+            {
+              hostname: targetUrl.hostname,
+              port: targetUrl.port,
+              path: targetUrl.pathname + targetUrl.search,
+              method: req.method,
+              headers: { ...req.headers, host: targetUrl.host },
+            },
+            (proxyRes) => {
+              res.writeHead(proxyRes.statusCode ?? 502, proxyRes.headers);
+              proxyRes.pipe(res);
+            },
+          );
+          proxyReq.on("error", (error) => {
+            if (!res.headersSent)
+              sendJson(res, 502, {
+                error: `Courses API proxy failed: ${error.message}`,
+              });
+          });
+          req.pipe(proxyReq);
+          return;
+        }
 
         // Nitro serves /api/share in production. Vite dev needs the same
         // endpoint; otherwise the browser falls back to a massive compressed
         // hash URL, which is exactly what makes Discord sharing unreasonable.
-        if (pathname === '/api/share') {
-          if (req.method !== 'POST') {
-            sendJson(res, 405, { error: 'Method not allowed' });
+        if (pathname === "/api/share") {
+          if (req.method !== "POST") {
+            sendJson(res, 405, { error: "Method not allowed" });
             return;
           }
 
           try {
             const bodyBuffer = await readRequestBody(req);
             if (bodyBuffer.byteLength > SHARE_MAX_BYTES) {
-              sendJson(res, 413, { error: 'Shared session is too large' });
+              sendJson(res, 413, { error: "Shared session is too large" });
               return;
             }
 
-            const body = JSON.parse(bodyBuffer.toString('utf8'));
+            const body = JSON.parse(bodyBuffer.toString("utf8"));
             const validationError = validateSharedSessionPayload(body);
             if (validationError) {
               sendJson(res, 400, { error: validationError });
@@ -89,7 +116,11 @@ function chatProxyPlugin(): Plugin {
             }
 
             let id = compactDevShareId();
-            for (let attempt = 0; attempt < 4 && devShareStore.has(id); attempt++) {
+            for (
+              let attempt = 0;
+              attempt < 4 && devShareStore.has(id);
+              attempt++
+            ) {
               id = compactDevShareId();
             }
 
@@ -102,26 +133,33 @@ function chatProxyPlugin(): Plugin {
             devShareStore.set(id, shared);
             sendJson(res, 200, { id });
           } catch (error) {
-            sendJson(res, 400, { error: error instanceof Error ? error.message : 'Invalid shared session payload' });
+            sendJson(res, 400, {
+              error:
+                error instanceof Error
+                  ? error.message
+                  : "Invalid shared session payload",
+            });
           }
           return;
         }
 
-        if (pathname.startsWith('/api/share/')) {
-          if (req.method !== 'GET') {
-            sendJson(res, 405, { error: 'Method not allowed' });
+        if (pathname.startsWith("/api/share/")) {
+          if (req.method !== "GET") {
+            sendJson(res, 405, { error: "Method not allowed" });
             return;
           }
 
-          const id = decodeURIComponent(pathname.replace(/^\/api\/share\//, ''));
+          const id = decodeURIComponent(
+            pathname.replace(/^\/api\/share\//, ""),
+          );
           if (!isValidShareId(id)) {
-            sendJson(res, 400, { error: 'Invalid shared session id' });
+            sendJson(res, 400, { error: "Invalid shared session id" });
             return;
           }
 
           const shared = devShareStore.get(id);
           if (!shared) {
-            sendJson(res, 404, { error: 'Shared session not found' });
+            sendJson(res, 404, { error: "Shared session not found" });
             return;
           }
 
@@ -129,68 +167,83 @@ function chatProxyPlugin(): Plugin {
           return;
         }
 
-        if (req.url === '/api/agent-runtime/config') {
+        if (req.url === "/api/agent-runtime/config") {
           const mode = agentRuntimeMode();
-          const projectRoot = env('KEATING_WEB_PROJECT_ROOT');
+          const projectRoot = env("KEATING_WEB_PROJECT_ROOT");
           const localExecEnabled = Boolean(
             projectRoot &&
-            (process.env.KEATING_WEB_LOCAL_EXEC === '1' || process.env.KEATING_WEB_LOCAL_EXEC === 'true'),
+            (process.env.KEATING_WEB_LOCAL_EXEC === "1" ||
+              process.env.KEATING_WEB_LOCAL_EXEC === "true"),
           );
-          const body = JSON.stringify(buildAgentRuntimeConfig({
-            mode,
-            projectRoot,
-            // Vite serves UI assets only; host execution is available through
-            // the Nitro server started by `keating web`.
-            localExecEnabled: mode === 'host' ? false : localExecEnabled,
-            remote: mode === 'remote'
-              ? {
-                  provider: process.env.KEATING_WEB_REMOTE_PROVIDER || 'microsandbox',
-                  endpoint: process.env.KEATING_WEB_REMOTE_ENDPOINT || null,
-                  region: process.env.KEATING_WEB_REMOTE_REGION || null,
-                  snapshot: process.env.KEATING_WEB_REMOTE_SNAPSHOT || null,
-                  cpu: process.env.KEATING_WEB_REMOTE_CPU || null,
-                  memory: process.env.KEATING_WEB_REMOTE_MEMORY || null,
-                  disk: process.env.KEATING_WEB_REMOTE_DISK || null,
-                }
-              : null,
-            cloudEndpoint: env('KEATING_WEB_CLOUD_ENDPOINT'),
-          }));
-          res.setHeader('content-type', 'application/json');
+          const body = JSON.stringify(
+            buildAgentRuntimeConfig({
+              mode,
+              projectRoot,
+              // Vite serves UI assets only; host execution is available through
+              // the Nitro server started by `keating web`.
+              localExecEnabled: mode === "host" ? false : localExecEnabled,
+              remote:
+                mode === "remote"
+                  ? {
+                      provider:
+                        process.env.KEATING_WEB_REMOTE_PROVIDER ||
+                        "microsandbox",
+                      endpoint: process.env.KEATING_WEB_REMOTE_ENDPOINT || null,
+                      region: process.env.KEATING_WEB_REMOTE_REGION || null,
+                      snapshot: process.env.KEATING_WEB_REMOTE_SNAPSHOT || null,
+                      cpu: process.env.KEATING_WEB_REMOTE_CPU || null,
+                      memory: process.env.KEATING_WEB_REMOTE_MEMORY || null,
+                      disk: process.env.KEATING_WEB_REMOTE_DISK || null,
+                    }
+                  : null,
+              cloudEndpoint: env("KEATING_WEB_CLOUD_ENDPOINT"),
+            }),
+          );
+          res.setHeader("content-type", "application/json");
           res.end(body);
           return;
         }
 
-        if (req.url?.startsWith('/api/agent-runtime/remote')) {
+        if (req.url?.startsWith("/api/agent-runtime/remote")) {
           const mode = agentRuntimeMode();
           const targetBase = agentRuntimeTargetBase(mode);
           if (!targetBase) {
-            res.statusCode = mode === 'browser-only' || mode === 'host' ? 403 : 503;
-            res.setHeader('content-type', 'application/json');
-            res.end(JSON.stringify({
-              error: mode === 'browser-only' || mode === 'host'
-                ? `Remote agent runtime is disabled in ${mode} mode.`
-                : 'Remote agent runtime endpoint is not configured.',
-            }));
+            res.statusCode =
+              mode === "browser-only" || mode === "host" ? 403 : 503;
+            res.setHeader("content-type", "application/json");
+            res.end(
+              JSON.stringify({
+                error:
+                  mode === "browser-only" || mode === "host"
+                    ? `Remote agent runtime is disabled in ${mode} mode.`
+                    : "Remote agent runtime endpoint is not configured.",
+              }),
+            );
             return;
           }
 
-          const proxyPath = req.url.replace(/^\/api\/agent-runtime\/remote\/?/, '');
-          const targetUrl = new URL(`${targetBase.replace(/\/$/, '')}/api/agent-runtime/${proxyPath}`);
-          const forbiddenHeaders = ['origin', 'host', 'referer'];
+          const proxyPath = req.url.replace(
+            /^\/api\/agent-runtime\/remote\/?/,
+            "",
+          );
+          const targetUrl = new URL(
+            `${targetBase.replace(/\/$/, "")}/api/agent-runtime/${proxyPath}`,
+          );
+          const forbiddenHeaders = ["origin", "host", "referer"];
           const outHeaders: Record<string, string> = {};
           for (const [key, value] of Object.entries(req.headers)) {
             if (value && !forbiddenHeaders.includes(key.toLowerCase())) {
-              outHeaders[key] = Array.isArray(value) ? value.join(', ') : value;
+              outHeaders[key] = Array.isArray(value) ? value.join(", ") : value;
             }
           }
           outHeaders.host = targetUrl.host;
-          outHeaders['x-keating-agent-runtime-mode'] = mode;
+          outHeaders["x-keating-agent-runtime-mode"] = mode;
 
           const chunks: Buffer[] = [];
-          req.on('data', (chunk: Buffer) => chunks.push(chunk));
-          req.on('end', () => {
+          req.on("data", (chunk: Buffer) => chunks.push(chunk));
+          req.on("end", () => {
             const body = Buffer.concat(chunks);
-            const isHttps = targetUrl.protocol === 'https:';
+            const isHttps = targetUrl.protocol === "https:";
             const lib = isHttps ? https : http;
             const proxyReq = lib.request(
               {
@@ -201,17 +254,23 @@ function chatProxyPlugin(): Plugin {
                 headers: outHeaders,
               },
               (proxyRes) => {
-                const resHeaders = { ...proxyRes.headers } as Record<string, string>;
-                delete resHeaders['transfer-encoding'];
+                const resHeaders = { ...proxyRes.headers } as Record<
+                  string,
+                  string
+                >;
+                delete resHeaders["transfer-encoding"];
                 res.writeHead(proxyRes.statusCode!, resHeaders);
                 proxyRes.pipe(res);
               },
             );
-            proxyReq.on('error', (err) => {
-              console.error('[agent-runtime-proxy] request error:', err.message);
+            proxyReq.on("error", (err) => {
+              console.error(
+                "[agent-runtime-proxy] request error:",
+                err.message,
+              );
               if (!res.headersSent) {
                 res.statusCode = 502;
-                res.end('Agent runtime proxy error: ' + err.message);
+                res.end("Agent runtime proxy error: " + err.message);
               }
             });
             proxyReq.write(body);
@@ -220,7 +279,7 @@ function chatProxyPlugin(): Plugin {
           return;
         }
 
-        if (!req.url?.startsWith('/api/chat-proxy')) {
+        if (!req.url?.startsWith("/api/chat-proxy")) {
           // Any other /api/* request is not handled above by the Vite dev
           // server. In production these are Nitro handlers; in dev most do not
           // exist. The default next() would let Vite serve the SPA index.html,
@@ -229,61 +288,76 @@ function chatProxyPlugin(): Plugin {
           // JSON.parse). This is the same silent dev/prod parity gap that hid
           // the /api/share failure. Return an explicit 404 JSON so unhandled
           // dev endpoints fail legibly and match fetch() error handling.
-          if (pathname.startsWith('/api/')) {
+          if (pathname.startsWith("/api/")) {
             sendJson(res, 404, {
-              error: `No Vite dev handler for ${pathname}. This endpoint only exists in the production Nitro server (run \`keating web\` against the built app).`,
+              error: `No Vite dev handler for ${pathname}. Start the full app with \`devenv tasks run keating:web\` so Vite can reach the Nitro API.`,
             });
             return;
           }
           return next();
         }
 
-        const targetBaseUrl = req.headers['x-target-url'] as string;
+        const targetBaseUrl = req.headers["x-target-url"] as string;
         if (!targetBaseUrl) {
           res.statusCode = 400;
-          res.end('Missing x-target-url header');
+          res.end("Missing x-target-url header");
           return;
         }
 
         let targetUrl: URL;
         try {
-          const proxyPath = req.url.replace(/^\/api\/chat-proxy\/?/, '');
-          targetUrl = new URL(buildValidatedProxyUrl(targetBaseUrl, proxyPath, {
-            allowHttp: true,
-            allowLocal: true,
-          }));
+          const proxyPath = req.url.replace(/^\/api\/chat-proxy\/?/, "");
+          targetUrl = new URL(
+            buildValidatedProxyUrl(targetBaseUrl, proxyPath, {
+              allowHttp: true,
+              allowLocal: true,
+            }),
+          );
         } catch (error) {
           res.statusCode = 400;
-          res.end(error instanceof Error ? error.message : 'Invalid x-target-url header');
+          res.end(
+            error instanceof Error
+              ? error.message
+              : "Invalid x-target-url header",
+          );
           return;
         }
 
-        const proxyPath = req.url.replace(/^\/api\/chat-proxy\/?/, '');
+        const proxyPath = req.url.replace(/^\/api\/chat-proxy\/?/, "");
 
         const forbiddenHeaders = [
-          'x-stainless-os', 'x-stainless-lang', 'x-stainless-package-version',
-          'x-stainless-runtime', 'x-stainless-runtime-version',
-          'x-stainless-arch', 'x-stainless-os-version',
-          'origin', 'host', 'referer', 'x-target-url',
+          "x-stainless-os",
+          "x-stainless-lang",
+          "x-stainless-package-version",
+          "x-stainless-runtime",
+          "x-stainless-runtime-version",
+          "x-stainless-arch",
+          "x-stainless-os-version",
+          "origin",
+          "host",
+          "referer",
+          "x-target-url",
         ];
 
         const outHeaders: Record<string, string> = {};
         for (const [key, value] of Object.entries(req.headers)) {
           if (value && !forbiddenHeaders.includes(key.toLowerCase())) {
-            outHeaders[key] = Array.isArray(value) ? value.join(', ') : value;
+            outHeaders[key] = Array.isArray(value) ? value.join(", ") : value;
           }
         }
-        outHeaders['host'] = targetUrl.host;
+        outHeaders["host"] = targetUrl.host;
 
-        const hasAuth = 'authorization' in outHeaders;
-        const hasApiKey = 'x-api-key' in outHeaders;
-        console.log(`[chat-proxy] ${req.method} ${proxyPath} -> ${targetUrl.hostname} (auth=${hasAuth}, xApiKey=${hasApiKey})`);
+        const hasAuth = "authorization" in outHeaders;
+        const hasApiKey = "x-api-key" in outHeaders;
+        console.log(
+          `[chat-proxy] ${req.method} ${proxyPath} -> ${targetUrl.hostname} (auth=${hasAuth}, xApiKey=${hasApiKey})`,
+        );
 
         const chunks: Buffer[] = [];
-        req.on('data', (chunk: Buffer) => chunks.push(chunk));
-        req.on('end', () => {
+        req.on("data", (chunk: Buffer) => chunks.push(chunk));
+        req.on("end", () => {
           const body = Buffer.concat(chunks);
-          const isHttps = targetUrl.protocol === 'https:';
+          const isHttps = targetUrl.protocol === "https:";
           const lib = isHttps ? https : http;
           const proxyReq = lib.request(
             {
@@ -294,17 +368,20 @@ function chatProxyPlugin(): Plugin {
               headers: outHeaders,
             },
             (proxyRes) => {
-              const resHeaders = { ...proxyRes.headers } as Record<string, string>;
-              delete resHeaders['transfer-encoding'];
+              const resHeaders = { ...proxyRes.headers } as Record<
+                string,
+                string
+              >;
+              delete resHeaders["transfer-encoding"];
               res.writeHead(proxyRes.statusCode!, resHeaders);
               proxyRes.pipe(res);
             },
           );
-          proxyReq.on('error', (err) => {
-            console.error('[chat-proxy] request error:', err.message);
+          proxyReq.on("error", (err) => {
+            console.error("[chat-proxy] request error:", err.message);
             if (!res.headersSent) {
               res.statusCode = 502;
-              res.end('Proxy error: ' + err.message);
+              res.end("Proxy error: " + err.message);
             }
           });
           proxyReq.write(body);
@@ -315,20 +392,21 @@ function chatProxyPlugin(): Plugin {
   };
 }
 
-import pkg from './package.json';
+import pkg from "./package.json";
 
-const posthogPersonalApiKey = env('POSTHOG_API_KEY');
-const posthogProjectId = env('POSTHOG_PROJECT_ID');
+const posthogPersonalApiKey = env("POSTHOG_API_KEY");
+const posthogProjectId = env("POSTHOG_PROJECT_ID");
+const devCoursesApiOrigin = env("KEATING_WEB_DEV_API_ORIGIN");
 const posthogSourceMapPlugins: Plugin[] =
   posthogPersonalApiKey && posthogProjectId
     ? [
         posthog({
           personalApiKey: posthogPersonalApiKey,
           projectId: posthogProjectId,
-          host: env('POSTHOG_HOST') ?? undefined,
+          host: env("POSTHOG_HOST") ?? undefined,
           sourcemaps: {
             enabled: true,
-            releaseName: 'keating-web',
+            releaseName: "keating-web",
             releaseVersion: pkg.version,
             deleteAfterUpload: true,
           },
@@ -340,20 +418,20 @@ const posthogSourceMapPlugins: Plugin[] =
 const analyzePlugins: Plugin[] = process.env.ANALYZE
   ? [
       visualizer({
-        filename: 'dist/stats.html',
+        filename: "dist/stats.html",
         gzipSize: true,
         brotliSize: true,
-        template: 'treemap',
+        template: "treemap",
       }) as Plugin,
     ]
   : [];
 
 export default defineConfig({
   define: {
-    'import.meta.env.APP_VERSION': JSON.stringify(pkg.version),
+    "import.meta.env.APP_VERSION": JSON.stringify(pkg.version),
   },
-  root: '.',
-  publicDir: 'public',
+  root: ".",
+  publicDir: "public",
   plugins: [
     react(),
     nodepod(),
@@ -361,43 +439,43 @@ export default defineConfig({
     ...analyzePlugins,
     ...posthogSourceMapPlugins,
     VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'apple-touch-icon.svg'],
+      registerType: "autoUpdate",
+      includeAssets: ["favicon.svg", "apple-touch-icon.svg"],
       manifest: {
-        name: 'Keating - Hyperteacher',
-        short_name: 'Keating',
-        description: 'A Pi-powered hyperteacher for cognitive empowerment',
-        theme_color: '#f4f1ea',
-        background_color: '#f4f1ea',
-        display: 'standalone',
-        orientation: 'portrait',
-        scope: '/',
-        start_url: '/',
+        name: "Keating - Hyperteacher",
+        short_name: "Keating",
+        description: "A Pi-powered hyperteacher for cognitive empowerment",
+        theme_color: "#f4f1ea",
+        background_color: "#f4f1ea",
+        display: "standalone",
+        orientation: "portrait",
+        scope: "/",
+        start_url: "/",
         icons: [
           {
-            src: 'pwa-192x192.svg',
-            sizes: '192x192',
-            type: 'image/svg+xml',
+            src: "pwa-192x192.svg",
+            sizes: "192x192",
+            type: "image/svg+xml",
           },
           {
-            src: 'pwa-512x512.svg',
-            sizes: '512x512',
-            type: 'image/svg+xml',
+            src: "pwa-512x512.svg",
+            sizes: "512x512",
+            type: "image/svg+xml",
           },
           {
-            src: 'pwa-512x512.svg',
-            sizes: '512x512',
-            type: 'image/svg+xml',
-            purpose: 'any maskable',
+            src: "pwa-512x512.svg",
+            sizes: "512x512",
+            type: "image/svg+xml",
+            purpose: "any maskable",
           },
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,woff}'],
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2,woff}"],
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
-        importScripts: ['sw-update-reload.js'],
+        importScripts: ["sw-update-reload.js"],
         // Never substitute the precached SPA shell for share routes, API
         // routes, or hashed assets. A stale service worker serving the old
         // index.html for /s/:id caused "module script … MIME type text/html"
@@ -418,9 +496,9 @@ export default defineConfig({
             // CacheFirst is safe and gives offline support for chunks that were
             // too large to precache.
             urlPattern: /\/assets\/.*\.(?:js|css|woff2?|ttf)$/i,
-            handler: 'CacheFirst',
+            handler: "CacheFirst",
             options: {
-              cacheName: 'asset-cache',
+              cacheName: "asset-cache",
               expiration: {
                 maxEntries: 200,
                 maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
@@ -430,9 +508,9 @@ export default defineConfig({
           {
             // Web fonts (e.g. KaTeX fonts loaded at runtime from package paths).
             urlPattern: /\.(?:woff2?|ttf|otf|eot)$/i,
-            handler: 'CacheFirst',
+            handler: "CacheFirst",
             options: {
-              cacheName: 'font-cache',
+              cacheName: "font-cache",
               expiration: {
                 maxEntries: 60,
                 maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
@@ -441,9 +519,9 @@ export default defineConfig({
           },
           {
             urlPattern: /\.(?:wasm|onnx)$/i,
-            handler: 'CacheFirst',
+            handler: "CacheFirst",
             options: {
-              cacheName: 'wasm-cache',
+              cacheName: "wasm-cache",
               expiration: {
                 maxEntries: 50,
                 maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
@@ -452,9 +530,9 @@ export default defineConfig({
           },
           {
             urlPattern: /^https:\/\/huggingface\.co\/.*/i,
-            handler: 'CacheFirst',
+            handler: "CacheFirst",
             options: {
-              cacheName: 'model-cache',
+              cacheName: "model-cache",
               expiration: {
                 maxEntries: 100,
                 maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
@@ -466,72 +544,86 @@ export default defineConfig({
     }),
   ],
   build: {
-    outDir: 'dist',
+    outDir: "dist",
     emptyOutDir: true,
-    assetsDir: 'assets',
-    sourcemap: posthogSourceMapPlugins.length > 0 ? 'hidden' : false,
+    assetsDir: "assets",
+    sourcemap: posthogSourceMapPlugins.length > 0 ? "hidden" : false,
     chunkSizeWarningLimit: 5000,
     reportCompressedSize: false,
     ssr: false,
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (!id.includes('node_modules')) return;
-          if (id.includes('@scelar/nodepod')) return 'nodepod-wasm';
-          if (id.includes('react-syntax-highlighter') || id.includes('refractor') || id.includes('prismjs')) return 'syntax-highlighter';
-          if (id.includes('@remotion')) return 'remotion';
-          if (id.includes('cytoscape')) return 'cytoscape';
-          if (id.includes('@react-pdf') || id.includes('pdf-lib')) return 'pdf';
+          if (!id.includes("node_modules")) return;
+          if (id.includes("@scelar/nodepod")) return "nodepod-wasm";
+          if (
+            id.includes("react-syntax-highlighter") ||
+            id.includes("refractor") ||
+            id.includes("prismjs")
+          )
+            return "syntax-highlighter";
+          if (id.includes("@remotion")) return "remotion";
+          if (id.includes("cytoscape")) return "cytoscape";
+          if (id.includes("@react-pdf") || id.includes("pdf-lib")) return "pdf";
         },
       },
     },
   },
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src'),
+      "@": resolve(__dirname, "src"),
     },
   },
   optimizeDeps: {
-    exclude: ['@huggingface/transformers'],
+    exclude: ["@huggingface/transformers"],
   },
   server: {
     port: 3000,
     fs: {
       // Allow importing the shared, dependency-free fine-tune parser that
       // lives at the repo root (one level above this web package).
-      allow: ['..'],
+      allow: [".."],
     },
     proxy: {
-      '/ingest/static': {
-        target: 'https://us-assets.i.posthog.com',
+      ...(devCoursesApiOrigin
+        ? {
+            "/api/courses": {
+              target: devCoursesApiOrigin,
+              changeOrigin: true,
+              ws: true,
+            },
+          }
+        : {}),
+      "/ingest/static": {
+        target: "https://us-assets.i.posthog.com",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/ingest/, ''),
+        rewrite: (path) => path.replace(/^\/ingest/, ""),
       },
-      '/ingest/array': {
-        target: 'https://us-assets.i.posthog.com',
+      "/ingest/array": {
+        target: "https://us-assets.i.posthog.com",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/ingest/, ''),
+        rewrite: (path) => path.replace(/^\/ingest/, ""),
       },
-      '/ingest': {
-        target: 'https://us.i.posthog.com',
+      "/ingest": {
+        target: "https://us.i.posthog.com",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/ingest/, ''),
+        rewrite: (path) => path.replace(/^\/ingest/, ""),
       },
     },
     watch: {
       ignored: [
-        '**/.bun-install/**',
-        '**/.bun-tmp/**',
-        '**/dist/**',
-        '**/.output/**',
+        "**/.bun-install/**",
+        "**/.bun-tmp/**",
+        "**/dist/**",
+        "**/.output/**",
       ],
     },
     headers: {
-      'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'credentialless',
-      'Cross-Origin-Resource-Policy': 'cross-origin',
-      'Access-Control-Allow-Origin': '*',
+      "Cross-Origin-Opener-Policy": "same-origin",
+      "Cross-Origin-Embedder-Policy": "credentialless",
+      "Cross-Origin-Resource-Policy": "cross-origin",
+      "Access-Control-Allow-Origin": "*",
     },
   },
-  base: '/',
+  base: "/",
 });

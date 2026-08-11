@@ -3,7 +3,7 @@
  * process. Mirrors the request/response shape of
  * packages/browser-agent-runtime/src/rpc.ts. The desktop app implements the
  * main-side handlers (desktop/src/ipc.ts) and the preload bridge
- * (desktop/src/preload.ts) against these types — there is no `ipcRenderer`
+ * (desktop/src/preload.cts) against these types — there is no `ipcRenderer`
  * passthrough.
  */
 

@@ -220,5 +220,14 @@ export function reduceConversation(state: ConversationState, event: Conversation
 }
 
 export function replayConversation(events: readonly ConversationEvent[]): ConversationState {
-	return events.reduce(reduceConversation, initialConversationState());
+	return events.reduce((state, event) => {
+		// A persisted session can contain several runtime runs (for example after
+		// a reload). `reduceConversation` deliberately rejects a foreign run when
+		// consuming one live stream, but durable replay must cross that boundary
+		// while retaining the session's documents, actions, and transcript state.
+		const sessionState = state.runId && state.runId !== event.runId
+			? { ...state, runId: undefined }
+			: state;
+		return reduceConversation(sessionState, event);
+	}, initialConversationState());
 }

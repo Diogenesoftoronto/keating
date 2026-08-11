@@ -1,15 +1,16 @@
 {
   "name": "@keating/desktop",
-  "version": "2.0.0",
+  "version": "3.4.0",
   "type": "module",
   "private": true,
   "description": "Keating desktop (Electron) app — P2P, local-first teaching client.",
   "license": "MPL-2.0",
   "main": "dist/main.js",
   "scripts": {
-    "build:main": "bun run --cwd ../packages/p2p-core build && tsc -p tsconfig.json",
+    "build:main": "bun run --cwd ../packages/p2p-core build && tsc -p tsconfig.json && bun run --cwd ../web build && node scripts/stage-nitro.mjs",
     "dev": "KEATING_DEV_SERVER=http://localhost:5173 electron .",
     "start": "electron .",
+    "test": "bun test ./test/*.test.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "dist": "electron-builder"
   },
@@ -25,7 +26,22 @@
   "build": {
     "appId": "help.keating.desktop",
     "productName": "Keating",
-    "files": ["dist/**/*", "../web/dist/**/*"],
-    "directories": { "output": "release" }
+    "files": ["**/*"],
+    "extraResources": [
+      {
+        "from": "dist/nitro",
+        "to": "nitro",
+        "filter": ["**/*"]
+      }
+    ],
+    "asarUnpack": [
+      "node_modules/**/sodium-native/**/*",
+      "node_modules/**/udx-native/**/*",
+      "node_modules/**/rocksdb-native/**/*",
+      "node_modules/**/fs-native-extensions/**/*",
+      "node_modules/**/simdle-native/**/*",
+      "node_modules/**/quickbit-native/**/*"
+    ],
+    "directories": { "app": "dist/app", "output": "release" }
   }
 }

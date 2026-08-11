@@ -87,7 +87,10 @@ jobs:
           STAGE_DIR="${BUNDLE_NAME}"
           mkdir -p "${STAGE_DIR}"
           mkdir -p "${STAGE_DIR}/bin"
+          mkdir -p "${STAGE_DIR}/runtime"
           cp bin/keating.js "${STAGE_DIR}/bin/"
+          cp "$(command -v bun)" "${STAGE_DIR}/runtime/bun"
+          chmod +x "${STAGE_DIR}/runtime/bun"
           cp -r dist pi scripts/install "${STAGE_DIR}/"
           cp package.json "${STAGE_DIR}/"
           # Bundle node_modules so the tarball is truly standalone
@@ -104,6 +107,7 @@ jobs:
           grep -Fx "${BUNDLE_NAME}/bin/keating.js" bundle-files.txt
           grep -Fx "${BUNDLE_NAME}/dist/src/cli/main.js" bundle-files.txt
           grep -Fx "${BUNDLE_NAME}/dist/src/pi/hyper-teacher/index.js" bundle-files.txt
+          grep -Fx "${BUNDLE_NAME}/runtime/bun" bundle-files.txt
           ! grep -F "${BUNDLE_NAME}/bin/.keating/" bundle-files.txt
           ! grep -F "${BUNDLE_NAME}/bin/keating.config.json" bundle-files.txt
 

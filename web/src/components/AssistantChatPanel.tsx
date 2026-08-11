@@ -52,7 +52,7 @@ import {
   Copy,
   CopyPlus,
   KeyRound,
-	Keyboard,
+  Keyboard,
   LibraryBig,
   Lightbulb,
   Loader2,
@@ -80,7 +80,10 @@ import {
   subscribeKeatingUiSettings,
 } from "../keating/ui-settings";
 import { getProviderApiKey } from "../lib/provider-models";
-import { handleTutorialLinkClick, tutorialApiKeyHref } from "../lib/tutorial-links";
+import {
+  handleTutorialLinkClick,
+  tutorialApiKeyHref,
+} from "../lib/tutorial-links";
 import { isOpenEnded, QuizRenderer } from "./QuizRenderer";
 import type { QuizResult } from "./QuizRenderer";
 import { QuizSessionPanel } from "./QuizSessionPanel";
@@ -93,9 +96,16 @@ import { QuestionRenderer, normalizeQuestionForm } from "./QuestionRenderer";
 import type { AnsweredQuestion, QuestionFormData } from "./QuestionRenderer";
 import { GoalRenderer } from "./GoalRenderer";
 import { normalizeGoal } from "../keating/goals";
-import type { Quiz, QuizGradePayload, QuizQuestionGrade } from "../keating/core";
+import type {
+  Quiz,
+  QuizGradePayload,
+  QuizQuestionGrade,
+} from "../keating/core";
 import { KeatingStorage } from "../keating/storage";
-import { QuizGradesContext, type QuizGradesContextValue } from "./quiz-grades-context";
+import {
+  QuizGradesContext,
+  type QuizGradesContextValue,
+} from "./quiz-grades-context";
 import {
   isDuplexSpeechProvider,
   KEATING_VOICE_TOOL_NAME,
@@ -103,18 +113,36 @@ import {
   primeSpeechAudio,
   resolveSpeechCredential,
 } from "../keating/speech";
-import { startVideoCapture, type VideoCaptureHandle } from "../keating/video-capture";
+import {
+  startVideoCapture,
+  type VideoCaptureHandle,
+} from "../keating/video-capture";
 import { type LiveTranscriptTurn } from "../keating/live-transcript";
 import LiveConversation from "./live/LiveConversation";
-import { liveCredentialProvider, useLiveSession } from "./live/use-live-session";
-import { IMAGE_PROGRESS_EVENT, type ImageProgressDetail } from "../keating/image-stream";
-import { ANIMATION_PROGRESS_EVENT, type AnimationProgressDetail } from "../keating/tool-arg-stream";
-import { startMicRecording, transcribeAudio, type MicRecorder } from "../keating/speech-providers/stt";
+import {
+  liveCredentialProvider,
+  useLiveSession,
+} from "./live/use-live-session";
+import {
+  IMAGE_PROGRESS_EVENT,
+  type ImageProgressDetail,
+} from "../keating/image-stream";
+import {
+  ANIMATION_PROGRESS_EVENT,
+  type AnimationProgressDetail,
+} from "../keating/tool-arg-stream";
+import {
+  startMicRecording,
+  transcribeAudio,
+  type MicRecorder,
+} from "../keating/speech-providers/stt";
 import { JsonCrackBlock } from "./JsonCrackBlock";
+import { WebSearchPart, isWebSearchToolName } from "./WebSearchPart";
 import { FailedResponseRecovery } from "./FailedResponseRecovery";
 import { FlashcardRenderer } from "./FlashcardRenderer";
 import type { FlashcardDeck } from "../keating/srs";
 import { MermaidRenderer } from "./MermaidRenderer";
+import { MarkdownBlock } from "./MarkdownBlock";
 import {
   pickDiverseStarterPrompts,
   STARTER_PROMPTS,
@@ -129,7 +157,10 @@ import {
   KeatingOpenUIActionProvider,
   KeatingOpenUIRenderer,
 } from "../keating/openui/renderer";
-import type { KeatingOpenUIAction } from "../keating/openui/types";
+import type {
+  KeatingOpenUIAction,
+  OpenUIDocumentScope,
+} from "../keating/openui/types";
 import {
   createOpenUIActionLearnerResponse,
   createQuestionLearnerResponse,
@@ -137,10 +168,7 @@ import {
   serializeLearnerResponse,
 } from "../keating/learner-response";
 import { LearnerResponseReview } from "./LearnerResponseReview";
-import {
-  classifyLlmError,
-  type LlmErrorDetails,
-} from "../core/api-retry";
+import { classifyLlmError, type LlmErrorDetails } from "../core/api-retry";
 
 const AuthErrorContext = createContext<(provider: string) => Promise<boolean>>(
   () => Promise.resolve(false),
@@ -153,9 +181,12 @@ const MAX_CAPTURED_API_ERROR_KEYS = 256;
 const mutedTextClass = css({ color: "var(--muted-foreground)" });
 const foregroundTextClass = css({ color: "var(--foreground)" });
 const primaryTextClass = css({ color: "var(--primary)" });
-const pulseClass = css({ animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite" });
+const pulseClass = css({
+  animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+});
 const srInteractiveClass = css({
-  transitionProperty: "color, background-color, border-color, opacity, box-shadow, transform",
+  transitionProperty:
+    "color, background-color, border-color, opacity, box-shadow, transform",
   transitionDuration: "150ms",
 });
 const iconButtonClass = css({
@@ -439,7 +470,30 @@ interface AssistantChatPanelProps {
   className?: string;
   speechEnabled?: boolean;
   responseComparison?: ReactNode;
+  initialPrompts?: readonly StarterPrompt[];
+  emptyStateTitle?: string;
+  emptyStateDescription?: string;
+  /** Text dropped into the composer once, e.g. a request handed over from a course. */
+  pendingPrompt?: string;
 }
+
+/**
+ * Fills the composer with a request handed over from elsewhere in Keating.
+ * Never overwrites what the learner has already typed, and never sends.
+ */
+function ComposerPrefill({ text }: { text?: string }) {
+  const composer = useComposerRuntime();
+  const appliedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!text || appliedRef.current === text) return;
+    appliedRef.current = text;
+    if (composer.getState().text.trim()) return;
+    composer.setText(text);
+  }, [composer, text]);
+  return null;
+}
+
+const OpenUISessionScopeContext = createContext<string | undefined>(undefined);
 
 function StreamingTextPart({
   text,
@@ -452,6 +506,7 @@ function StreamingTextPart({
 }) {
   const posthog = usePostHog();
   const messageId = useMessage((message) => message.id);
+	const sessionId = useContext(OpenUISessionScopeContext);
   const isMarkedError = text.startsWith(ERROR_TEXT_PREFIX);
   const displayText = isMarkedError
     ? text.slice(ERROR_TEXT_PREFIX.length)
@@ -498,7 +553,11 @@ function StreamingTextPart({
   useEffect(() => {
     if (!isMarkedError || status?.type === "running") return;
     const capturedKey = displayText.slice(0, 2048);
-    if (capturedErrorRef.current === capturedKey || capturedApiErrorKeys.has(capturedKey)) return;
+    if (
+      capturedErrorRef.current === capturedKey ||
+      capturedApiErrorKeys.has(capturedKey)
+    )
+      return;
     capturedErrorRef.current = capturedKey;
     capturedApiErrorKeys.add(capturedKey);
     if (capturedApiErrorKeys.size > MAX_CAPTURED_API_ERROR_KEYS) {
@@ -506,7 +565,10 @@ function StreamingTextPart({
       if (oldest) capturedApiErrorKeys.delete(oldest);
     }
     const classified = classifyError(displayText);
-    posthog.capture('api_error', { error_type: classified.category, status_code: classified.statusCode });
+    posthog.capture("api_error", {
+      error_type: classified.category,
+      status_code: classified.statusCode,
+    });
   }, [displayText, isMarkedError, posthog, status?.type]);
 
   if (isMarkedError) {
@@ -528,7 +590,7 @@ function StreamingTextPart({
   return (
     <MarkdownText
       text={visibleText}
-      documentScope={messageId}
+		documentScope={sessionId ? { sessionId, messageId } : messageId}
       isRunning={status?.type === "running"}
     />
   );
@@ -553,30 +615,38 @@ function classifyError(errorText: string): ClassifiedError {
     const underlying = classifyLlmError(errorText);
     return {
       ...underlying,
-      title: underlying.category === "auth" ? "Voice sign-in failed" : "Voice model failed",
+      title:
+        underlying.category === "auth"
+          ? "Voice sign-in failed"
+          : "Voice model failed",
       description:
         "The optional speech layer failed. The main chat model may still be working.",
-      recovery: underlying.category === "auth"
-        ? "Update the speech provider credentials, or turn speech off and continue with text."
-        : "Turn speech off and continue with text, or retry the voice connection.",
+      recovery:
+        underlying.category === "auth"
+          ? "Update the speech provider credentials, or turn speech off and continue with text."
+          : "Turn speech off and continue with text, or retry the voice connection.",
       icon: underlying.category === "auth" ? KeyRound : Wifi,
     };
   }
 
   const details = classifyLlmError(errorText);
-  const icon = details.category === "auth"
-    ? KeyRound
-    : details.category === "billing"
-      ? CircleDollarSign
-      : details.category === "permission" || details.category === "safety"
-        ? ShieldAlert
-        : details.category === "server" || details.category === "model-unavailable"
-          ? Server
-          : details.category === "network" || details.category === "rate-limit" || details.category === "timeout"
-            ? Wifi
-            : details.category === "aborted"
-              ? Square
-              : CircleAlert;
+  const icon =
+    details.category === "auth"
+      ? KeyRound
+      : details.category === "billing"
+        ? CircleDollarSign
+        : details.category === "permission" || details.category === "safety"
+          ? ShieldAlert
+          : details.category === "server" ||
+              details.category === "model-unavailable"
+            ? Server
+            : details.category === "network" ||
+                details.category === "rate-limit" ||
+                details.category === "timeout"
+              ? Wifi
+              : details.category === "aborted"
+                ? Square
+                : CircleAlert;
   return { ...details, icon };
 }
 
@@ -592,14 +662,22 @@ function ErrorBadge({
   const ErrorIcon = classified.icon;
   return (
     <div className={css({ display: "grid", gap: "0.375rem" })}>
-      <div className={css({ display: "flex", alignItems: "center", gap: "0.375rem", fontWeight: 500 })}>
+      <div
+        className={css({
+          display: "flex",
+          alignItems: "center",
+          gap: "0.375rem",
+          fontWeight: 500,
+        })}
+      >
         <ErrorIcon size={13} />
         <span>{classified.title}</span>
         {classified.statusCode && (
           <span
             className={css({
               borderRadius: "0.25rem",
-              backgroundColor: "color-mix(in srgb, var(--background) 70%, transparent)",
+              backgroundColor:
+                "color-mix(in srgb, var(--background) 70%, transparent)",
               paddingInline: "0.375rem",
               paddingBlock: "0.125rem",
               fontFamily: "var(--mono-body)",
@@ -657,13 +735,18 @@ function ImagePart({ image, filename }: { image: string; filename?: string }) {
         overflow: "hidden",
         borderRadius: "0.375rem",
         border: "1px solid var(--border)",
-        backgroundColor: "color-mix(in srgb, var(--background) 60%, transparent)",
+        backgroundColor:
+          "color-mix(in srgb, var(--background) 60%, transparent)",
       })}
     >
       <img
         src={image}
         alt={filename ?? "Attached image"}
-        className={css({ maxHeight: "20rem", width: "100%", objectFit: "contain" })}
+        className={css({
+          maxHeight: "20rem",
+          width: "100%",
+          objectFit: "contain",
+        })}
       />
       {filename ? (
         <figcaption
@@ -686,38 +769,42 @@ function ImagePart({ image, filename }: { image: string; filename?: string }) {
 // open the realtime surface; other providers use press-and-hold dictation and
 // place the transcript back into the text composer for review.
 function SpeechComposerControl({
-	expanded,
-	onExpandedChange,
-	onConversationComplete,
-	onRequestCredential,
+  expanded,
+  onExpandedChange,
+  onConversationComplete,
+  onRequestCredential,
 }: {
-	expanded: boolean;
-	onExpandedChange: (expanded: boolean) => void;
-	onConversationComplete: (turns: LiveTranscriptTurn[]) => void | Promise<void>;
-	onRequestCredential?: (provider: string) => Promise<boolean>;
+  expanded: boolean;
+  onExpandedChange: (expanded: boolean) => void;
+  onConversationComplete: (turns: LiveTranscriptTurn[]) => void | Promise<void>;
+  onRequestCredential?: (provider: string) => Promise<boolean>;
 }) {
   const composer = useComposerRuntime();
   const [available, setAvailable] = useState<boolean | null>(null);
   const [recording, setRecording] = useState(false);
   const [busy, setBusy] = useState(false);
-	const [liveOpen, setLiveOpen] = useState(false);
-	const [forceStt, setForceStt] = useState(false);
+  const [liveOpen, setLiveOpen] = useState(false);
+  const [forceStt, setForceStt] = useState(false);
   const recorderRef = useRef<MicRecorder | null>(null);
-	const recordingPromiseRef = useRef<Promise<MicRecorder> | null>(null);
-	const pendingLiveVideoRef = useRef<Promise<VideoCaptureHandle | null> | null>(null);
+  const recordingPromiseRef = useRef<Promise<MicRecorder> | null>(null);
+  const pendingLiveVideoRef = useRef<Promise<VideoCaptureHandle | null> | null>(
+    null,
+  );
 
   useEffect(() => {
     let cancelled = false;
     const check = () => {
-			const settings = loadWebSpeechSettings();
-			const requiredProvider = liveCredentialProvider(settings.providerId);
-			const credential = requiredProvider
-				? getProviderApiKey(requiredProvider)
-				: resolveSpeechCredential(getProviderApiKey).then((value) => value?.apiKey);
-			credential
-				.then((apiKey) => {
-					if (!cancelled) setAvailable(Boolean(apiKey));
-				})
+      const settings = loadWebSpeechSettings();
+      const requiredProvider = liveCredentialProvider(settings.providerId);
+      const credential = requiredProvider
+        ? getProviderApiKey(requiredProvider)
+        : resolveSpeechCredential(getProviderApiKey).then(
+            (value) => value?.apiKey,
+          );
+      credential
+        .then((apiKey) => {
+          if (!cancelled) setAvailable(Boolean(apiKey));
+        })
         .catch(() => {
           if (!cancelled) setAvailable(false);
         });
@@ -731,27 +818,32 @@ function SpeechComposerControl({
     };
   }, []);
 
-	useEffect(() => {
-		if (!forceStt && isDuplexSpeechProvider(loadWebSpeechSettings().providerId) && expanded) {
-			onExpandedChange(false);
-		}
-	}, [expanded, forceStt, onExpandedChange]);
+  useEffect(() => {
+    if (
+      !forceStt &&
+      isDuplexSpeechProvider(loadWebSpeechSettings().providerId) &&
+      expanded
+    ) {
+      onExpandedChange(false);
+    }
+  }, [expanded, forceStt, onExpandedChange]);
 
-	// Let anything outside the composer start a live conversation — the /live
-	// route is just this event fired on arrival. Kept as an event rather than a
-	// prop so the trigger does not have to be a descendant of the chat panel.
-	useEffect(() => {
-		const onExternalStart = () => {
-			// No pre-flight screen capture here: without a click of its own this
-			// has no transient user activation to spend, and the learner can turn
-			// sharing on from inside the session.
-			pendingLiveVideoRef.current = null;
-			void primeSpeechAudio().catch(() => {});
-			setLiveOpen(true);
-		};
-		window.addEventListener("keating:start-live", onExternalStart);
-		return () => window.removeEventListener("keating:start-live", onExternalStart);
-	}, []);
+  // Let anything outside the composer start a live conversation — the /live
+  // route is just this event fired on arrival. Kept as an event rather than a
+  // prop so the trigger does not have to be a descendant of the chat panel.
+  useEffect(() => {
+    const onExternalStart = () => {
+      // No pre-flight screen capture here: without a click of its own this
+      // has no transient user activation to spend, and the learner can turn
+      // sharing on from inside the session.
+      pendingLiveVideoRef.current = null;
+      void primeSpeechAudio().catch(() => {});
+      setLiveOpen(true);
+    };
+    window.addEventListener("keating:start-live", onExternalStart);
+    return () =>
+      window.removeEventListener("keating:start-live", onExternalStart);
+  }, []);
 
   const appendToComposer = (text: string) => {
     const trimmed = text.trim();
@@ -761,210 +853,257 @@ function SpeechComposerControl({
   };
 
   const beginPushToTalk = () => {
-		if (busy || recordingPromiseRef.current) return;
-		setRecording(true);
-		const pending = startMicRecording();
-		recordingPromiseRef.current = pending;
-		void pending.then((recorder) => {
-			recorderRef.current = recorder;
-		}).catch((error) => {
-			recordingPromiseRef.current = null;
-			setRecording(false);
-			console.warn("[keating:stt] microphone unavailable", error);
-		});
-	};
+    if (busy || recordingPromiseRef.current) return;
+    setRecording(true);
+    const pending = startMicRecording();
+    recordingPromiseRef.current = pending;
+    void pending
+      .then((recorder) => {
+        recorderRef.current = recorder;
+      })
+      .catch((error) => {
+        recordingPromiseRef.current = null;
+        setRecording(false);
+        console.warn("[keating:stt] microphone unavailable", error);
+      });
+  };
 
-	const finishPushToTalk = async () => {
-		const pending = recordingPromiseRef.current;
-		if (!pending) return;
-		setRecording(false);
-		setBusy(true);
-		try {
-			const recorder = recorderRef.current ?? await pending;
-			const blob = await recorder.stop();
-			const cred = await resolveSpeechCredential(getProviderApiKey);
-			if (!cred) throw new Error("No speech credential available.");
-			const text = await transcribeAudio(blob, { provider: cred.provider, apiKey: cred.apiKey });
-			appendToComposer(text);
-			onExpandedChange(false);
-		} catch (error) {
-			console.warn("[keating:stt] transcription failed", error);
-		} finally {
-			recorderRef.current = null;
-			recordingPromiseRef.current = null;
-			setBusy(false);
-		}
-	};
+  const finishPushToTalk = async () => {
+    const pending = recordingPromiseRef.current;
+    if (!pending) return;
+    setRecording(false);
+    setBusy(true);
+    try {
+      const recorder = recorderRef.current ?? (await pending);
+      const blob = await recorder.stop();
+      const cred = await resolveSpeechCredential(getProviderApiKey);
+      if (!cred) throw new Error("No speech credential available.");
+      const text = await transcribeAudio(blob, {
+        provider: cred.provider,
+        apiKey: cred.apiKey,
+      });
+      appendToComposer(text);
+      onExpandedChange(false);
+    } catch (error) {
+      console.warn("[keating:stt] transcription failed", error);
+    } finally {
+      recorderRef.current = null;
+      recordingPromiseRef.current = null;
+      setBusy(false);
+    }
+  };
 
-	const openLiveVoice = (settings = loadWebSpeechSettings()) => {
-		void primeSpeechAudio().catch(() => {});
-		// getDisplayMedia requires transient user activation in browsers that
-		// enforce the screen-sharing permission contract. Start this request from
-		// the button click; the overlay will consume the resulting handle after
-		// the provider connection is ready.
-		if (settings.videoEnabled && settings.videoSource === "screen") {
-			pendingLiveVideoRef.current = startVideoCapture({
-				source: settings.videoSource,
-				intervalMs: settings.frameIntervalMs,
-			}).catch((error) => {
-				console.warn("[keating:live] screen capture unavailable", error);
-				return null;
-			});
-		} else {
-			pendingLiveVideoRef.current = null;
-		}
-		setLiveOpen(true);
-	};
+  const openLiveVoice = (settings = loadWebSpeechSettings()) => {
+    void primeSpeechAudio().catch(() => {});
+    // getDisplayMedia requires transient user activation in browsers that
+    // enforce the screen-sharing permission contract. Start this request from
+    // the button click; the overlay will consume the resulting handle after
+    // the provider connection is ready.
+    if (settings.videoEnabled && settings.videoSource === "screen") {
+      pendingLiveVideoRef.current = startVideoCapture({
+        source: settings.videoSource,
+        intervalMs: settings.frameIntervalMs,
+      }).catch((error) => {
+        console.warn("[keating:live] screen capture unavailable", error);
+        return null;
+      });
+    } else {
+      pendingLiveVideoRef.current = null;
+    }
+    setLiveOpen(true);
+  };
 
-	const settings = loadWebSpeechSettings();
-	const mode = forceStt || !isDuplexSpeechProvider(settings.providerId) ? "stt" : "duplex";
-	const activateVoice = () => {
-		if (mode === "stt") {
-			onExpandedChange(true);
-			return;
-		}
-		// Unlock playback from this direct learner gesture even when credential
-		// setup has to finish before the provider session can be opened.
-		void primeSpeechAudio().catch(() => {});
-		if (available === true) {
-			openLiveVoice(settings);
-			return;
-		}
-		const requiredProvider = liveCredentialProvider(settings.providerId);
-		if (!requiredProvider || !onRequestCredential) {
-			openLiveVoice(settings);
-			return;
-		}
-		void onRequestCredential(requiredProvider).then((allowed) => {
-			if (!allowed) return;
-			setAvailable(true);
-			openLiveVoice(loadWebSpeechSettings());
-		});
-	};
-	const liveOverlay = liveOpen && typeof document !== "undefined"
-		? createPortal(
-			<LiveVoiceOverlay
-				onClose={() => setLiveOpen(false)}
-				onConversationComplete={onConversationComplete}
-				initialVideoPromise={pendingLiveVideoRef.current}
-				onOpenSettings={(tab) => {
-					window.dispatchEvent(new CustomEvent("keating:open-settings", {
-						detail: { tab: tab === "speech" ? "learning" : "models" },
-					}));
-				}}
-				onFallback={() => {
-					setLiveOpen(false);
-					setForceStt(true);
-					onExpandedChange(true);
-				}}
-			/>,
-			document.body,
-		)
-		: null;
+  const settings = loadWebSpeechSettings();
+  const mode =
+    forceStt || !isDuplexSpeechProvider(settings.providerId) ? "stt" : "duplex";
+  const activateVoice = () => {
+    if (mode === "stt") {
+      onExpandedChange(true);
+      return;
+    }
+    // Unlock playback from this direct learner gesture even when credential
+    // setup has to finish before the provider session can be opened.
+    void primeSpeechAudio().catch(() => {});
+    if (available === true) {
+      openLiveVoice(settings);
+      return;
+    }
+    const requiredProvider = liveCredentialProvider(settings.providerId);
+    if (!requiredProvider || !onRequestCredential) {
+      openLiveVoice(settings);
+      return;
+    }
+    void onRequestCredential(requiredProvider).then((allowed) => {
+      if (!allowed) return;
+      setAvailable(true);
+      openLiveVoice(loadWebSpeechSettings());
+    });
+  };
+  const liveOverlay =
+    liveOpen && typeof document !== "undefined"
+      ? createPortal(
+          <LiveVoiceOverlay
+            onClose={() => setLiveOpen(false)}
+            onConversationComplete={onConversationComplete}
+            initialVideoPromise={pendingLiveVideoRef.current}
+            onOpenSettings={(tab) => {
+              window.dispatchEvent(
+                new CustomEvent("keating:open-settings", {
+                  detail: { tab: tab === "speech" ? "learning" : "models" },
+                }),
+              );
+            }}
+            onFallback={() => {
+              setLiveOpen(false);
+              setForceStt(true);
+              onExpandedChange(true);
+            }}
+          />,
+          document.body,
+        )
+      : null;
 
   if (!expanded) {
-		// Dictation and live conversation are different jobs, so they get
-		// different buttons rather than one button whose meaning depends on a
-		// setting the learner cannot see from here. Dictation puts words in the
-		// composer to edit before sending; live opens a conversation that Keating
-		// answers out loud.
-		return (
-			<>
-				<button
-					type="button"
-					onClick={() => {
-						setForceStt(true);
-						onExpandedChange(true);
-					}}
-					title="Dictate a message"
-					aria-label="Dictate a message"
-					className={cx(
-						composerIconButtonClass,
-						css({ _hover: { backgroundColor: "var(--muted)", color: "var(--foreground)" } }),
-					)}
-				>
-					<Mic size={16} />
-				</button>
-				<button
-					type="button"
-					onClick={activateVoice}
-					title="Start a live conversation"
-					aria-label="Start a live conversation"
-					aria-haspopup="dialog"
-					className={cx(
-						composerIconButtonClass,
-						css({
-							borderColor: "transparent",
-							backgroundColor: "var(--foreground)",
-							color: "var(--background)",
-							_hover: { backgroundColor: "color-mix(in srgb, var(--foreground) 85%, var(--background))", color: "var(--background)" },
-						}),
-					)}
-				>
-					<AudioLines size={16} />
-				</button>
-				{liveOverlay}
-			</>
-		);
-	}
+    // Dictation and live conversation are different jobs, so they get
+    // different buttons rather than one button whose meaning depends on a
+    // setting the learner cannot see from here. Dictation puts words in the
+    // composer to edit before sending; live opens a conversation that Keating
+    // answers out loud.
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => {
+            setForceStt(true);
+            onExpandedChange(true);
+          }}
+          title="Dictate a message"
+          aria-label="Dictate a message"
+          className={cx(
+            composerIconButtonClass,
+            css({
+              _hover: {
+                backgroundColor: "var(--muted)",
+                color: "var(--foreground)",
+              },
+            }),
+          )}
+        >
+          <Mic size={16} />
+        </button>
+        <button
+          type="button"
+          onClick={activateVoice}
+          title="Start a live conversation"
+          aria-label="Start a live conversation"
+          aria-haspopup="dialog"
+          className={cx(
+            composerIconButtonClass,
+            css({
+              borderColor: "transparent",
+              backgroundColor: "var(--foreground)",
+              color: "var(--background)",
+              _hover: {
+                backgroundColor:
+                  "color-mix(in srgb, var(--foreground) 85%, var(--background))",
+                color: "var(--background)",
+              },
+            }),
+          )}
+        >
+          <AudioLines size={16} />
+        </button>
+        {liveOverlay}
+      </>
+    );
+  }
 
   return (
     <>
-			<div className={css({ display: "flex", minWidth: 0, flex: 1, alignItems: "center", gap: "0.375rem" })}>
-				<button
-					type="button"
-					disabled={busy}
-					onPointerDown={(event) => {
-						event.currentTarget.setPointerCapture(event.pointerId);
-						beginPushToTalk();
-					}}
-					onPointerUp={() => void finishPushToTalk()}
-					onPointerCancel={() => void finishPushToTalk()}
-					onKeyDown={(event) => {
-						if ((event.key === " " || event.key === "Enter") && !event.repeat) {
-							event.preventDefault();
-							beginPushToTalk();
-						}
-					}}
-					onKeyUp={(event) => {
-						if (event.key === " " || event.key === "Enter") {
-							event.preventDefault();
-							void finishPushToTalk();
-						}
-					}}
-					aria-label="Hold to speak"
-					aria-pressed={recording}
-					className={cx(
-						css({
-							display: "inline-flex",
-							minWidth: 0,
-							minHeight: "2.25rem",
-							flex: 1,
-							alignItems: "center",
-							justifyContent: "center",
-							gap: "0.5rem",
-							borderRadius: "0.375rem",
-							backgroundColor: "var(--primary)",
-							paddingInline: "0.75rem",
-							fontSize: "0.8125rem",
-							fontWeight: 650,
-							color: "var(--primary-foreground)",
-							touchAction: "none",
-							userSelect: "none",
-							_hover: { backgroundColor: "color-mix(in srgb, var(--primary) 88%, black)" },
-							_disabled: { opacity: 0.65 },
-						}),
-						recording ? pulseClass : "",
-					)}
-				>
-					{busy ? <Spinner size={16} /> : recording ? <MicOff size={16} /> : <Mic size={16} />}
-					<span>{busy ? "Transcribing" : recording ? "Release to transcribe" : "Hold to speak"}</span>
-				</button>
-				<button type="button" onClick={() => onExpandedChange(false)} aria-label="Switch to keyboard" title="Switch to keyboard" className={composerIconButtonClass}>
-					<Keyboard size={16} />
-				</button>
-			</div>
-	  {liveOverlay}
+      <div
+        className={css({
+          display: "flex",
+          minWidth: 0,
+          flex: 1,
+          alignItems: "center",
+          gap: "0.375rem",
+        })}
+      >
+        <button
+          type="button"
+          disabled={busy}
+          onPointerDown={(event) => {
+            event.currentTarget.setPointerCapture(event.pointerId);
+            beginPushToTalk();
+          }}
+          onPointerUp={() => void finishPushToTalk()}
+          onPointerCancel={() => void finishPushToTalk()}
+          onKeyDown={(event) => {
+            if ((event.key === " " || event.key === "Enter") && !event.repeat) {
+              event.preventDefault();
+              beginPushToTalk();
+            }
+          }}
+          onKeyUp={(event) => {
+            if (event.key === " " || event.key === "Enter") {
+              event.preventDefault();
+              void finishPushToTalk();
+            }
+          }}
+          aria-label="Hold to speak"
+          aria-pressed={recording}
+          className={cx(
+            css({
+              display: "inline-flex",
+              minWidth: 0,
+              minHeight: "2.25rem",
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "0.5rem",
+              borderRadius: "0.375rem",
+              backgroundColor: "var(--primary)",
+              paddingInline: "0.75rem",
+              fontSize: "0.8125rem",
+              fontWeight: 650,
+              color: "var(--primary-foreground)",
+              touchAction: "none",
+              userSelect: "none",
+              _hover: {
+                backgroundColor:
+                  "color-mix(in srgb, var(--primary) 88%, black)",
+              },
+              _disabled: { opacity: 0.65 },
+            }),
+            recording ? pulseClass : "",
+          )}
+        >
+          {busy ? (
+            <Spinner size={16} />
+          ) : recording ? (
+            <MicOff size={16} />
+          ) : (
+            <Mic size={16} />
+          )}
+          <span>
+            {busy
+              ? "Transcribing"
+              : recording
+                ? "Release to transcribe"
+                : "Hold to speak"}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => onExpandedChange(false)}
+          aria-label="Switch to keyboard"
+          title="Switch to keyboard"
+          className={composerIconButtonClass}
+        >
+          <Keyboard size={16} />
+        </button>
+      </div>
+      {liveOverlay}
     </>
   );
 }
@@ -973,55 +1112,58 @@ function SpeechComposerControl({
 // and every pixel of it live in components/live so the /live route and this
 // overlay cannot drift apart again.
 function LiveVoiceOverlay({
-	onClose,
-	onConversationComplete,
-	onFallback,
-	initialVideoPromise,
-	onOpenSettings,
+  onClose,
+  onConversationComplete,
+  onFallback,
+  initialVideoPromise,
+  onOpenSettings,
 }: {
-	onClose: () => void;
-	onConversationComplete: (turns: LiveTranscriptTurn[]) => void | Promise<void>;
-	onFallback: () => void;
-	initialVideoPromise?: Promise<VideoCaptureHandle | null> | null;
-	onOpenSettings?: (tab: "providers" | "speech") => void;
+  onClose: () => void;
+  onConversationComplete: (turns: LiveTranscriptTurn[]) => void | Promise<void>;
+  onFallback: () => void;
+  initialVideoPromise?: Promise<VideoCaptureHandle | null> | null;
+  onOpenSettings?: (tab: "providers" | "speech") => void;
 }) {
-	const session = useLiveSession({ onConversationComplete, initialVideoPromise });
+  const session = useLiveSession({
+    onConversationComplete,
+    initialVideoPromise,
+  });
 
-	// Ending is the learner's decision, so the surface closes only once the
-	// session has flushed its transcript into the chat.
-	useEffect(() => {
-		if (session.phase === "ended") onClose();
-	}, [session.phase, onClose]);
+  // Ending is the learner's decision, so the surface closes only once the
+  // session has flushed its transcript into the chat.
+  useEffect(() => {
+    if (session.phase === "ended") onClose();
+  }, [session.phase, onClose]);
 
-	// Escape ends the call rather than abandoning an open microphone.
-	useEffect(() => {
-		const onKeyDown = (event: KeyboardEvent) => {
-			if (event.key === "Escape") session.end();
-		};
-		window.addEventListener("keydown", onKeyDown);
-		return () => window.removeEventListener("keydown", onKeyDown);
-	}, [session]);
+  // Escape ends the call rather than abandoning an open microphone.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") session.end();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [session]);
 
-	return (
-		<div
-			role="dialog"
-			aria-modal="true"
-			aria-label="Live voice conversation"
-			className={css({
-				position: "fixed",
-				inset: 0,
-				zIndex: 60,
-				backgroundColor: "var(--background)",
-			})}
-		>
-			<LiveConversation
-				session={session}
-				onClose={session.end}
-				onOpenSettings={onOpenSettings}
-				onUseDictation={onFallback}
-			/>
-		</div>
-	);
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Live voice conversation"
+      className={css({
+        position: "fixed",
+        inset: 0,
+        zIndex: 60,
+        backgroundColor: "var(--background)",
+      })}
+    >
+      <LiveConversation
+        session={session}
+        onClose={session.end}
+        onOpenSettings={onOpenSettings}
+        onUseDictation={onFallback}
+      />
+    </div>
+  );
 }
 
 function FilePart({
@@ -1041,16 +1183,32 @@ function FilePart({
         gap: "0.5rem",
         borderRadius: "0.375rem",
         border: "1px solid var(--border)",
-        backgroundColor: "color-mix(in srgb, var(--background) 60%, transparent)",
+        backgroundColor:
+          "color-mix(in srgb, var(--background) 60%, transparent)",
         paddingInline: "0.5rem",
         paddingBlock: "0.25rem",
         fontSize: "0.75rem",
       })}
     >
-      <Paperclip size={13} className={css({ flexShrink: 0, color: "var(--muted-foreground)" })} />
-      <span className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" })}>{filename ?? "attachment"}</span>
+      <Paperclip
+        size={13}
+        className={css({ flexShrink: 0, color: "var(--muted-foreground)" })}
+      />
+      <span
+        className={css({
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        })}
+      >
+        {filename ?? "attachment"}
+      </span>
       {mimeType ? (
-        <span className={css({ flexShrink: 0, color: "var(--muted-foreground)" })}>{mimeType}</span>
+        <span
+          className={css({ flexShrink: 0, color: "var(--muted-foreground)" })}
+        >
+          {mimeType}
+        </span>
       ) : null}
     </div>
   );
@@ -1078,10 +1236,25 @@ function ComposerAttachmentChip({
         color: "var(--foreground)",
       })}
     >
-      <Paperclip size={12} className={css({ flexShrink: 0, color: "var(--muted-foreground)" })} />
-      <span className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" })}>{attachment.name}</span>
+      <Paperclip
+        size={12}
+        className={css({ flexShrink: 0, color: "var(--muted-foreground)" })}
+      />
+      <span
+        className={css({
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        })}
+      >
+        {attachment.name}
+      </span>
       {isImage ? (
-        <span className={css({ flexShrink: 0, color: "var(--muted-foreground)" })}>image</span>
+        <span
+          className={css({ flexShrink: 0, color: "var(--muted-foreground)" })}
+        >
+          image
+        </span>
       ) : null}
       <AttachmentPrimitive.Remove
         className={cx(
@@ -1125,7 +1298,14 @@ function ArtifactChips({ text }: { text: string }) {
   const matches = Array.from(text.matchAll(artifactLinkPattern));
   if (matches.length === 0) return null;
   return (
-    <div className={css({ marginBottom: "0.75rem", display: "flex", flexWrap: "wrap", gap: "0.5rem" })}>
+    <div
+      className={css({
+        marginBottom: "0.75rem",
+        display: "flex",
+        flexWrap: "wrap",
+        gap: "0.5rem",
+      })}
+    >
       {matches.map((m, i) => {
         const type = m[1];
         const id = m[2];
@@ -1140,15 +1320,18 @@ function ArtifactChips({ text }: { text: string }) {
                 alignItems: "center",
                 gap: "0.25rem",
                 borderRadius: "0.375rem",
-                border: "1px solid color-mix(in srgb, var(--primary) 40%, transparent)",
-                backgroundColor: "color-mix(in srgb, var(--primary) 10%, transparent)",
+                border:
+                  "1px solid color-mix(in srgb, var(--primary) 40%, transparent)",
+                backgroundColor:
+                  "color-mix(in srgb, var(--primary) 10%, transparent)",
                 paddingInline: "0.5rem",
                 paddingBlock: "0.25rem",
                 fontSize: "0.75rem",
                 fontWeight: 500,
                 color: "var(--primary)",
                 _hover: {
-                  backgroundColor: "color-mix(in srgb, var(--primary) 20%, transparent)",
+                  backgroundColor:
+                    "color-mix(in srgb, var(--primary) 20%, transparent)",
                 },
               }),
             )}
@@ -1162,7 +1345,9 @@ function ArtifactChips({ text }: { text: string }) {
             title={`View ${label}`}
           >
             <LibraryBig size={12} />
-            <span className={css({ textTransform: "capitalize" })}>{label}</span>
+            <span className={css({ textTransform: "capitalize" })}>
+              {label}
+            </span>
           </button>
         );
       })}
@@ -1175,12 +1360,30 @@ function ArtifactChips({ text }: { text: string }) {
 // animation body — so match a complete quoted string first and only fall back
 // to the legacy "anything up to >" form for old unquoted payloads.
 const TAG_PAYLOAD = String.raw`("(?:[^"\\]|\\.)*"|[^>]+)`;
-const quizTagPattern = new RegExp(String.raw`<keating-quiz\s+json=${TAG_PAYLOAD}\s*\/>`, "g");
-const sceneTagPattern = new RegExp(String.raw`<keating-scene\s+markdown=${TAG_PAYLOAD}\s*\/>`, "g");
-const questionTagPattern = new RegExp(String.raw`<keating-question\s+json=${TAG_PAYLOAD}\s*\/>`, "g");
-const goalTagPattern = new RegExp(String.raw`<keating-goal\s+json=${TAG_PAYLOAD}\s*\/>`, "g");
-const generatedImageTagPattern = new RegExp(String.raw`<keating-image\s+json=${TAG_PAYLOAD}\s*\/>`, "g");
-const quizResultTagPattern = new RegExp(String.raw`<keating-quiz-result\s+json=${TAG_PAYLOAD}\s*\/>`, "g");
+const quizTagPattern = new RegExp(
+  String.raw`<keating-quiz\s+json=${TAG_PAYLOAD}\s*\/>`,
+  "g",
+);
+const sceneTagPattern = new RegExp(
+  String.raw`<keating-scene\s+markdown=${TAG_PAYLOAD}\s*\/>`,
+  "g",
+);
+const questionTagPattern = new RegExp(
+  String.raw`<keating-question\s+json=${TAG_PAYLOAD}\s*\/>`,
+  "g",
+);
+const goalTagPattern = new RegExp(
+  String.raw`<keating-goal\s+json=${TAG_PAYLOAD}\s*\/>`,
+  "g",
+);
+const generatedImageTagPattern = new RegExp(
+  String.raw`<keating-image\s+json=${TAG_PAYLOAD}\s*\/>`,
+  "g",
+);
+const quizResultTagPattern = new RegExp(
+  String.raw`<keating-quiz-result\s+json=${TAG_PAYLOAD}\s*\/>`,
+  "g",
+);
 const interactiveTagPattern = new RegExp(
   String.raw`<keating-(quiz|scene|question|goal|image|quiz-result|quiz-grade|animation|deck)\s+(json|markdown)=${TAG_PAYLOAD}\s*\/>`,
   "g",
@@ -1213,8 +1416,10 @@ function parseInteractiveSegments(
     const tag = match[1];
     const payload = match[3];
     if (tag === "quiz") segments.push({ type: "quiz", json: payload });
-    if (tag === "quiz-result") segments.push({ type: "quiz-result", json: payload });
-    if (tag === "quiz-grade") segments.push({ type: "quiz-grade", json: payload });
+    if (tag === "quiz-result")
+      segments.push({ type: "quiz-result", json: payload });
+    if (tag === "quiz-grade")
+      segments.push({ type: "quiz-grade", json: payload });
     if (tag === "scene") {
       let markdown = payload;
       try {
@@ -1227,7 +1432,8 @@ function parseInteractiveSegments(
     if (tag === "question") segments.push({ type: "question", json: payload });
     if (tag === "goal") segments.push({ type: "goal", json: payload });
     if (tag === "image") segments.push({ type: "image", json: payload });
-    if (tag === "animation") segments.push({ type: "animation", json: payload });
+    if (tag === "animation")
+      segments.push({ type: "animation", json: payload });
     if (tag === "deck") segments.push({ type: "deck", json: payload });
     lastIndex = index + match[0].length;
   }
@@ -1259,7 +1465,11 @@ function stripGeneratedImageTags(text: string): string {
   return text.replace(generatedImageTagPattern, "").trim();
 }
 
-function extractLatestTagPayload(text: string, pattern: RegExp, captureIndex = 1): string | null {
+function extractLatestTagPayload(
+  text: string,
+  pattern: RegExp,
+  captureIndex = 1,
+): string | null {
   pattern.lastIndex = 0;
   let latest: string | null = null;
   let match: RegExpExecArray | null;
@@ -1279,14 +1489,18 @@ function extractQuestionPayload(text: string): string | null {
 function parseQuestionPayload(payload: string): QuestionFormData | null {
   try {
     const parsed = JSON.parse(payload);
-    return normalizeQuestionForm(typeof parsed === "string" ? JSON.parse(parsed) : parsed);
+    return normalizeQuestionForm(
+      typeof parsed === "string" ? JSON.parse(parsed) : parsed,
+    );
   } catch {
     return null;
   }
 }
 
 /** Scan messages backward and return the most recent unanswered question form. */
-function extractActiveQuestion(messages: AgentMessage[]): QuestionFormData | null {
+function extractActiveQuestion(
+  messages: AgentMessage[],
+): QuestionFormData | null {
   for (let i = messages.length - 1; i >= 0; i--) {
     const msg = messages[i] as any;
     if (msg.role === "user") return null;
@@ -1306,7 +1520,9 @@ function extractActiveQuestion(messages: AgentMessage[]): QuestionFormData | nul
           toolText = part.__toolResult;
         } else if (Array.isArray(part.__toolResult)) {
           toolText = part.__toolResult
-            .map((p: any) => (p?.type === "text" && typeof p.text === "string" ? p.text : ""))
+            .map((p: any) =>
+              p?.type === "text" && typeof p.text === "string" ? p.text : "",
+            )
             .filter(Boolean)
             .join("\n");
         }
@@ -1348,7 +1564,9 @@ function extractActiveQuiz(messages: AgentMessage[]): Quiz | null {
           toolText = part.__toolResult;
         } else if (Array.isArray(part.__toolResult)) {
           toolText = part.__toolResult
-            .map((p: any) => (p?.type === "text" && typeof p.text === "string" ? p.text : ""))
+            .map((p: any) =>
+              p?.type === "text" && typeof p.text === "string" ? p.text : "",
+            )
             .filter(Boolean)
             .join("\n");
         }
@@ -1459,7 +1677,9 @@ function renderInteractiveSegment(
           data={form}
           onSubmit={(answers) => {
             window.dispatchEvent(
-              new CustomEvent("keating:question-answered", { detail: { answers, topic: form.topic } }),
+              new CustomEvent("keating:question-answered", {
+                detail: { answers, topic: form.topic },
+              }),
             );
           }}
         />
@@ -1495,8 +1715,12 @@ function renderInteractiveSegment(
       const payloadStr = JSON.parse(seg.json) as string;
       const parsed = JSON.parse(payloadStr) as FlashcardDeck;
       if (!parsed || !Array.isArray(parsed.cards)) return null;
-      const restrictToCardIds = Array.isArray((parsed as FlashcardDeck & { restrictToCardIds?: string[] }).restrictToCardIds)
-        ? ((parsed as FlashcardDeck & { restrictToCardIds?: string[] }).restrictToCardIds ?? [])
+      const restrictToCardIds = Array.isArray(
+        (parsed as FlashcardDeck & { restrictToCardIds?: string[] })
+          .restrictToCardIds,
+      )
+        ? ((parsed as FlashcardDeck & { restrictToCardIds?: string[] })
+            .restrictToCardIds ?? [])
         : undefined;
       return (
         <FlashcardRenderer
@@ -1506,7 +1730,11 @@ function renderInteractiveSegment(
           onReview={(result) => {
             window.dispatchEvent(
               new CustomEvent("keating:card-reviewed", {
-                detail: { deckId: parsed.id, cardId: result.cardId, rating: result.rating },
+                detail: {
+                  deckId: parsed.id,
+                  cardId: result.cardId,
+                  rating: result.rating,
+                },
               }),
             );
           }}
@@ -1561,7 +1789,8 @@ function CopyButton({
           height: "1.75rem",
           borderRadius: "0.375rem",
           border: "1px solid var(--border)",
-          backgroundColor: "color-mix(in srgb, var(--background) 85%, transparent)",
+          backgroundColor:
+            "color-mix(in srgb, var(--background) 85%, transparent)",
         });
 
   return (
@@ -1573,7 +1802,11 @@ function CopyButton({
       aria-label={copied ? "Copied" : label}
       title={copied ? "Copied" : label}
     >
-      {copied ? <Check size={13} className={css({ color: "rgb(34 197 94)" })} /> : <Copy size={13} />}
+      {copied ? (
+        <Check size={13} className={css({ color: "rgb(34 197 94)" })} />
+      ) : (
+        <Copy size={13} />
+      )}
     </button>
   );
 }
@@ -1582,13 +1815,23 @@ function copyTextFromReactNode(node: ReactNode): string {
   if (typeof node === "string" || typeof node === "number") return String(node);
   if (Array.isArray(node)) return node.map(copyTextFromReactNode).join("");
   if (node && typeof node === "object" && "props" in node) {
-    return copyTextFromReactNode((node as { props?: { children?: ReactNode } }).props?.children);
+    return copyTextFromReactNode(
+      (node as { props?: { children?: ReactNode } }).props?.children,
+    );
   }
   return "";
 }
 
 function GeneratedImageCard({ payload }: { payload: string }) {
-  let data: { title?: string; alt?: string; svg?: string; dataUrl?: string; mimeType?: string; model?: string; prompt?: string } | null = null;
+  let data: {
+    title?: string;
+    alt?: string;
+    svg?: string;
+    dataUrl?: string;
+    mimeType?: string;
+    model?: string;
+    prompt?: string;
+  } | null = null;
   try {
     const parsed = JSON.parse(payload);
     data = typeof parsed === "string" ? JSON.parse(parsed) : parsed;
@@ -1598,7 +1841,9 @@ function GeneratedImageCard({ payload }: { payload: string }) {
 
   if (!data?.svg && !data?.dataUrl) return null;
 
-  const src = data.dataUrl ?? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(data.svg ?? "")}`;
+  const src =
+    data.dataUrl ??
+    `data:image/svg+xml;charset=utf-8,${encodeURIComponent(data.svg ?? "")}`;
   const copyText = data.svg ?? data.dataUrl ?? "";
   const title = data.title ?? "Generated learning image";
 
@@ -1606,7 +1851,13 @@ function GeneratedImageCard({ payload }: { payload: string }) {
   // caption sits under the image as quiet metadata, and the copy control only
   // appears on hover/focus so it never competes with the visual.
   return (
-    <figure className={css({ marginBlock: "1.25rem", display: "grid", gap: "0.625rem" })}>
+    <figure
+      className={css({
+        marginBlock: "1.25rem",
+        display: "grid",
+        gap: "0.625rem",
+      })}
+    >
       <a
         href={src}
         target="_blank"
@@ -1640,16 +1891,39 @@ function GeneratedImageCard({ payload }: { payload: string }) {
           _hover: { "& [data-image-copy]": { opacity: 1 } },
         })}
       >
-        <figcaption className={css({ minWidth: 0, fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+        <figcaption
+          className={css({
+            minWidth: 0,
+            fontSize: "0.75rem",
+            color: "var(--muted-foreground)",
+          })}
+        >
           <span className={css({ color: "var(--foreground)" })}>{title}</span>
           {data.model && (
-            <span className={cx("font-terminal", css({ marginLeft: "0.5rem", fontSize: "0.6875rem" }))}>
+            <span
+              className={cx(
+                "font-terminal",
+                css({ marginLeft: "0.5rem", fontSize: "0.6875rem" }),
+              )}
+            >
               {data.model}
             </span>
           )}
         </figcaption>
-        <span data-image-copy className={css({ flexShrink: 0, opacity: 0, transition: "opacity 150ms", _focusWithin: { opacity: 1 } })}>
-          <CopyButton text={copyText} label={data.svg ? "Copy SVG" : "Copy image"} variant="ghost" />
+        <span
+          data-image-copy
+          className={css({
+            flexShrink: 0,
+            opacity: 0,
+            transition: "opacity 150ms",
+            _focusWithin: { opacity: 1 },
+          })}
+        >
+          <CopyButton
+            text={copyText}
+            label={data.svg ? "Copy SVG" : "Copy image"}
+            variant="ghost"
+          />
         </span>
       </div>
     </figure>
@@ -1663,7 +1937,9 @@ function GeneratedImageCard({ payload }: { payload: string }) {
  * render it fine, and it reads as the scene assembling itself.
  */
 function StreamingAnimationPreview() {
-  const [frame, setFrame] = useState<{ html: string; topic?: string } | null>(null);
+  const [frame, setFrame] = useState<{ html: string; topic?: string } | null>(
+    null,
+  );
 
   useEffect(() => {
     const onProgress = (event: Event) => {
@@ -1676,13 +1952,16 @@ function StreamingAnimationPreview() {
       setFrame({ html: detail.html, topic: detail.topic });
     };
     window.addEventListener(ANIMATION_PROGRESS_EVENT, onProgress);
-    return () => window.removeEventListener(ANIMATION_PROGRESS_EVENT, onProgress);
+    return () =>
+      window.removeEventListener(ANIMATION_PROGRESS_EVENT, onProgress);
   }, []);
 
   if (!frame) return null;
 
   return (
-    <div className={css({ marginTop: "0.75rem", display: "grid", gap: "0.5rem" })}>
+    <div
+      className={css({ marginTop: "0.75rem", display: "grid", gap: "0.5rem" })}
+    >
       <iframe
         title={`${frame.topic ?? "Animation"} — building`}
         srcDoc={frame.html}
@@ -1696,7 +1975,15 @@ function StreamingAnimationPreview() {
           background: "black",
         })}
       />
-      <div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+      <div
+        className={css({
+          display: "flex",
+          alignItems: "center",
+          gap: "0.5rem",
+          fontSize: "0.75rem",
+          color: "var(--muted-foreground)",
+        })}
+      >
         <Spinner size={12} />
         <span>Building animation{frame.topic ? ` · ${frame.topic}` : ""}</span>
       </div>
@@ -1710,7 +1997,11 @@ function StreamingAnimationPreview() {
  * taking props. Shows the newest partial, blurred until it sharpens.
  */
 function StreamingImagePreview() {
-  const [frame, setFrame] = useState<{ dataUrl?: string; title: string; index: number } | null>(null);
+  const [frame, setFrame] = useState<{
+    dataUrl?: string;
+    title: string;
+    index: number;
+  } | null>(null);
 
   useEffect(() => {
     const onProgress = (event: Event) => {
@@ -1720,7 +2011,11 @@ function StreamingImagePreview() {
         setFrame(null);
         return;
       }
-      setFrame({ dataUrl: detail.dataUrl, title: detail.title, index: detail.index ?? 0 });
+      setFrame({
+        dataUrl: detail.dataUrl,
+        title: detail.title,
+        index: detail.index ?? 0,
+      });
     };
     window.addEventListener(IMAGE_PROGRESS_EVENT, onProgress);
     return () => window.removeEventListener(IMAGE_PROGRESS_EVENT, onProgress);
@@ -1729,7 +2024,9 @@ function StreamingImagePreview() {
   if (!frame) return null;
 
   return (
-    <div className={css({ marginTop: "0.75rem", display: "grid", gap: "0.5rem" })}>
+    <div
+      className={css({ marginTop: "0.75rem", display: "grid", gap: "0.5rem" })}
+    >
       <div
         className={css({
           position: "relative",
@@ -1757,12 +2054,25 @@ function StreamingImagePreview() {
             style={{ filter: `blur(${Math.max(0, 6 - frame.index * 3)}px)` }}
           />
         ) : (
-          <div className={cx(pulseClass, css({ height: "100%", width: "100%" }))} />
+          <div
+            className={cx(pulseClass, css({ height: "100%", width: "100%" }))}
+          />
         )}
       </div>
-      <div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+      <div
+        className={css({
+          display: "flex",
+          alignItems: "center",
+          gap: "0.5rem",
+          fontSize: "0.75rem",
+          color: "var(--muted-foreground)",
+        })}
+      >
         <Spinner size={12} />
-        <span>{frame.dataUrl ? "Refining image" : "Generating image"} · {frame.title}</span>
+        <span>
+          {frame.dataUrl ? "Refining image" : "Generating image"} ·{" "}
+          {frame.title}
+        </span>
       </div>
     </div>
   );
@@ -1771,173 +2081,286 @@ function StreamingImagePreview() {
 // Static renderer map for chat markdown. Hoisted to module scope so it is
 // created once instead of rebuilt for every segment on every streaming token.
 const MARKDOWN_COMPONENTS: Components = {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              pre: ({ children }: any) => {
-                const code = Array.isArray(children) ? children[0] : children;
-                const props = code?.props as { className?: string; children?: string } | undefined;
-                const lang = /language-(\w+)/.exec(props?.className ?? "")?.[1]?.toLowerCase();
-                const raw = typeof props?.children === "string" ? props.children : copyTextFromReactNode(children);
-                if (lang === "mermaid") {
-                  return (
-                    <div
-                      className={css({
-                        marginBlock: "0.5rem",
-                        overflow: "auto",
-                        borderRadius: "0.5rem",
-                        border: "1px solid var(--border)",
-                        backgroundColor: "color-mix(in srgb, var(--muted) 30%, transparent)",
-                        padding: "1rem",
-                        _hover: {
-                          "& [data-copy-on-hover]": { opacity: 1 },
-                        },
-                      })}
-                    >
-                      <MermaidRenderer content={raw} />
-                      <div className={css({ marginTop: "0.25rem", display: "flex", justifyContent: "flex-end" })}>
-                        <CopyButton
-                          text={raw.replace(/\n$/, "")}
-                          label="Copy diagram"
-                          className={css({
-                            opacity: 0,
-                            _focus: { opacity: 1 },
-                          })}
-                        />
-                      </div>
-                    </div>
-                  );
-                }
-                return (
-                  <div
-                    className={css({
-                      marginBlock: "0.5rem",
-                      _hover: { "& [data-copy-on-hover]": { opacity: 1 } },
-                    })}
-                  >
-                    <pre
-                      className={css({
-                        overflowX: "auto",
-                        borderRadius: "0.375rem",
-                        backgroundColor: "var(--muted)",
-                        padding: "0.75rem",
-                        fontSize: "0.75rem",
-                      })}
-                    >
-                      {children}
-                    </pre>
-                    <div className={css({ marginTop: "0.25rem", display: "flex", justifyContent: "flex-end" })}>
-                      <CopyButton
-                        text={raw.replace(/\n$/, "")}
-                        label="Copy code"
-                        className={css({
-                          opacity: 0,
-                          _focus: { opacity: 1 },
-                        })}
-                      />
-                    </div>
-                  </div>
-                );
-              },
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              code: ({ className, children, ...props }: any) => {
-                const isInline = !className?.includes("language-");
-                if (isInline) {
-                  return (
-                    <code
-                      className={css({
-                        borderRadius: "0.25rem",
-                        backgroundColor: "var(--muted)",
-                        paddingInline: "0.375rem",
-                        paddingBlock: "0.125rem",
-                        fontFamily: "var(--mono-body)",
-                        fontSize: "0.875rem",
-                      })}
-                      {...props}
-                    >
-                      {children}
-                    </code>
-                  );
-                }
-                return (
-                  <code className={css({ fontFamily: "var(--mono-body)", fontSize: "0.875rem" })} {...props}>
-                    {children}
-                  </code>
-                );
-              },
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              p: ({ children }: any) => (
-                <p className={css({ marginBottom: "0.75rem", _last: { marginBottom: 0 } })}>{children}</p>
-              ),
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              ul: ({ children }: any) => (
-                <ul className={css({ marginBottom: "0.75rem", listStyleType: "disc", paddingLeft: "1.25rem" })}>{children}</ul>
-              ),
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              ol: ({ children }: any) => (
-                <ol className={css({ marginBottom: "0.75rem", listStyleType: "decimal", paddingLeft: "1.25rem" })}>{children}</ol>
-              ),
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              li: ({ children }: any) => <li className={css({ marginBottom: "0.25rem" })}>{children}</li>,
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              h1: ({ children }: any) => (
-                <h1 className={css({ marginTop: "1rem", marginBottom: "0.5rem", fontSize: "1.125rem", fontWeight: 600 })}>{children}</h1>
-              ),
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              h2: ({ children }: any) => (
-                <h2 className={css({ marginTop: "0.75rem", marginBottom: "0.5rem", fontSize: "1rem", fontWeight: 600 })}>
-                  {children}
-                </h2>
-              ),
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              h3: ({ children }: any) => (
-                <h3 className={css({ marginTop: "0.5rem", marginBottom: "0.25rem", fontSize: "0.875rem", fontWeight: 600 })}>{children}</h3>
-              ),
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              strong: ({ children }: any) => (
-                <strong className={css({ fontWeight: 600 })}>{children}</strong>
-              ),
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              em: ({ children }: any) => <em className={css({ fontStyle: "italic" })}>{children}</em>,
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              a: ({ children, href }: any) => (
-                <a
-                  href={href}
-                  className={css({ color: "var(--primary)", textDecoration: "underline" })}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {children}
-                </a>
-              ),
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              blockquote: ({ children }: any) => (
-                <blockquote className={css({ marginBlock: "0.5rem", borderLeft: "2px solid var(--border)", paddingLeft: "0.75rem", color: "var(--muted-foreground)" })}>
-                  {children}
-                </blockquote>
-              ),
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              table: ({ children }: any) => (
-                <div className={css({ marginBlock: "0.75rem", maxWidth: "100%", overflowX: "auto" })}>
-                  <table className={css({ width: "max-content", minWidth: "100%", borderCollapse: "collapse", fontSize: "0.875rem" })}>
-                    {children}
-                  </table>
-                </div>
-              ),
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              thead: ({ children }: any) => (
-                <thead className={css({ borderBottom: "1px solid var(--border)", backgroundColor: "color-mix(in srgb, var(--muted) 50%, transparent)" })}>
-                  {children}
-                </thead>
-              ),
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              th: ({ children }: any) => (
-                <th className={css({ paddingInline: "0.75rem", paddingBlock: "0.5rem", textAlign: "left", fontWeight: 600 })}>
-                  {children}
-                </th>
-              ),
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              td: ({ children }: any) => (
-                <td className={css({ borderBottom: "1px solid var(--border)", paddingInline: "0.75rem", paddingBlock: "0.5rem" })}>{children}</td>
-              ),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  pre: ({ children }: any) => {
+    const code = Array.isArray(children) ? children[0] : children;
+    const props = code?.props as
+      | { className?: string; children?: string }
+      | undefined;
+    const lang = /language-(\w+)/
+      .exec(props?.className ?? "")?.[1]
+      ?.toLowerCase();
+    const raw =
+      typeof props?.children === "string"
+        ? props.children
+        : copyTextFromReactNode(children);
+    if (lang === "mermaid") {
+      return (
+        <div
+          className={css({
+            marginBlock: "0.5rem",
+            overflow: "auto",
+            borderRadius: "0.5rem",
+            border: "1px solid var(--border)",
+            backgroundColor:
+              "color-mix(in srgb, var(--muted) 30%, transparent)",
+            padding: "1rem",
+            _hover: {
+              "& [data-copy-on-hover]": { opacity: 1 },
+            },
+          })}
+        >
+          <MermaidRenderer content={raw} />
+          <div
+            className={css({
+              marginTop: "0.25rem",
+              display: "flex",
+              justifyContent: "flex-end",
+            })}
+          >
+            <CopyButton
+              text={raw.replace(/\n$/, "")}
+              label="Copy diagram"
+              className={css({
+                opacity: 0,
+                _focus: { opacity: 1 },
+              })}
+            />
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div
+        className={css({
+          marginBlock: "0.5rem",
+          _hover: { "& [data-copy-on-hover]": { opacity: 1 } },
+        })}
+      >
+        <pre
+          className={css({
+            overflowX: "auto",
+            borderRadius: "0.375rem",
+            backgroundColor: "var(--muted)",
+            padding: "0.75rem",
+            fontSize: "0.75rem",
+          })}
+        >
+          {children}
+        </pre>
+        <div
+          className={css({
+            marginTop: "0.25rem",
+            display: "flex",
+            justifyContent: "flex-end",
+          })}
+        >
+          <CopyButton
+            text={raw.replace(/\n$/, "")}
+            label="Copy code"
+            className={css({
+              opacity: 0,
+              _focus: { opacity: 1 },
+            })}
+          />
+        </div>
+      </div>
+    );
+  },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  code: ({ className, children, ...props }: any) => {
+    const isInline = !className?.includes("language-");
+    if (isInline) {
+      return (
+        <code
+          className={css({
+            borderRadius: "0.25rem",
+            backgroundColor: "var(--muted)",
+            paddingInline: "0.375rem",
+            paddingBlock: "0.125rem",
+            fontFamily: "var(--mono-body)",
+            fontSize: "0.875rem",
+          })}
+          {...props}
+        >
+          {children}
+        </code>
+      );
+    }
+    return (
+      <code
+        className={css({
+          fontFamily: "var(--mono-body)",
+          fontSize: "0.875rem",
+        })}
+        {...props}
+      >
+        {children}
+      </code>
+    );
+  },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  p: ({ children }: any) => (
+    <p className={css({ marginBottom: "0.75rem", _last: { marginBottom: 0 } })}>
+      {children}
+    </p>
+  ),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ul: ({ children }: any) => (
+    <ul
+      className={css({
+        marginBottom: "0.75rem",
+        listStyleType: "disc",
+        paddingLeft: "1.25rem",
+      })}
+    >
+      {children}
+    </ul>
+  ),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ol: ({ children }: any) => (
+    <ol
+      className={css({
+        marginBottom: "0.75rem",
+        listStyleType: "decimal",
+        paddingLeft: "1.25rem",
+      })}
+    >
+      {children}
+    </ol>
+  ),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  li: ({ children }: any) => (
+    <li className={css({ marginBottom: "0.25rem" })}>{children}</li>
+  ),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  h1: ({ children }: any) => (
+    <h1
+      className={css({
+        marginTop: "1rem",
+        marginBottom: "0.5rem",
+        fontSize: "1.125rem",
+        fontWeight: 600,
+      })}
+    >
+      {children}
+    </h1>
+  ),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  h2: ({ children }: any) => (
+    <h2
+      className={css({
+        marginTop: "0.75rem",
+        marginBottom: "0.5rem",
+        fontSize: "1rem",
+        fontWeight: 600,
+      })}
+    >
+      {children}
+    </h2>
+  ),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  h3: ({ children }: any) => (
+    <h3
+      className={css({
+        marginTop: "0.5rem",
+        marginBottom: "0.25rem",
+        fontSize: "0.875rem",
+        fontWeight: 600,
+      })}
+    >
+      {children}
+    </h3>
+  ),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  strong: ({ children }: any) => (
+    <strong className={css({ fontWeight: 600 })}>{children}</strong>
+  ),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  em: ({ children }: any) => (
+    <em className={css({ fontStyle: "italic" })}>{children}</em>
+  ),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  a: ({ children, href }: any) => (
+    <a
+      href={href}
+      className={css({ color: "var(--primary)", textDecoration: "underline" })}
+      target="_blank"
+      rel="noreferrer"
+    >
+      {children}
+    </a>
+  ),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  blockquote: ({ children }: any) => (
+    <blockquote
+      className={css({
+        marginBlock: "0.5rem",
+        borderLeft: "2px solid var(--border)",
+        paddingLeft: "0.75rem",
+        color: "var(--muted-foreground)",
+      })}
+    >
+      {children}
+    </blockquote>
+  ),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  table: ({ children }: any) => (
+    <div
+      className={css({
+        marginBlock: "0.75rem",
+        maxWidth: "100%",
+        overflowX: "auto",
+      })}
+    >
+      <table
+        className={css({
+          width: "max-content",
+          minWidth: "100%",
+          borderCollapse: "collapse",
+          fontSize: "0.875rem",
+        })}
+      >
+        {children}
+      </table>
+    </div>
+  ),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  thead: ({ children }: any) => (
+    <thead
+      className={css({
+        borderBottom: "1px solid var(--border)",
+        backgroundColor: "color-mix(in srgb, var(--muted) 50%, transparent)",
+      })}
+    >
+      {children}
+    </thead>
+  ),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  th: ({ children }: any) => (
+    <th
+      className={css({
+        paddingInline: "0.75rem",
+        paddingBlock: "0.5rem",
+        textAlign: "left",
+        fontWeight: 600,
+      })}
+    >
+      {children}
+    </th>
+  ),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  td: ({ children }: any) => (
+    <td
+      className={css({
+        borderBottom: "1px solid var(--border)",
+        paddingInline: "0.75rem",
+        paddingBlock: "0.5rem",
+      })}
+    >
+      {children}
+    </td>
+  ),
 };
 
 const MarkdownText = memo(function MarkdownText({
@@ -1946,7 +2369,7 @@ const MarkdownText = memo(function MarkdownText({
   isRunning,
 }: {
   text: string;
-  documentScope: string;
+  documentScope: string | OpenUIDocumentScope;
   isRunning?: boolean;
 }) {
   const displayText = stripArtifactLinks(text);
@@ -1968,33 +2391,55 @@ const MarkdownText = memo(function MarkdownText({
       <ArtifactChips text={text} />
       {segments.map((seg, i) => {
         if (seg.type === "openui") {
+          if (seg.format === "document") {
+            if (seg.error) {
+              return <div key={`${seg.metadata.id}-${i}`} role="alert" className={css({ marginBlock: "0.75rem", borderRadius: "0.5rem", background: "color-mix(in srgb, var(--destructive) 10%, transparent)", padding: "0.75rem", color: "var(--destructive)" })}>
+                This interaction could not be rendered: {seg.error}
+              </div>;
+            }
+            return <KeatingOpenUIRenderer
+              key={`${seg.metadata.id}-${seg.metadata.revision}-${i}`}
+              document={seg.document}
+              metadata={seg.metadata}
+              isStreaming={!seg.complete}
+			  sourceComplete={seg.complete}
+            />;
+          }
           return (
             <KeatingOpenUIRenderer
               key={`${seg.metadata.id}-${seg.metadata.revision}-${i}`}
               program={seg.program}
+			  source={seg.rawProgram}
               metadata={seg.metadata}
-              isStreaming={Boolean(isRunning && seg.program !== seg.rawProgram.trimEnd())}
+			  sourceComplete={seg.complete}
+              isStreaming={Boolean(
+                isRunning && seg.program !== seg.rawProgram.trimEnd(),
+              )}
             />
           );
         }
         return parseInteractiveSegments(seg.content)
-          .filter((legacy) => legacy.type !== "question" && legacy.type !== "quiz")
+          .filter(
+            (legacy) => legacy.type !== "question" && legacy.type !== "quiz",
+          )
           .map((legacy, legacyIndex) => {
-            const card = renderInteractiveSegment(legacy, `${i}-${legacyIndex}`);
-            if (card !== null) return card;
-            return (
-              <ReactMarkdown
-                key={`${i}-${legacyIndex}`}
-                remarkPlugins={[remarkGfm, remarkMath]}
-                rehypePlugins={[rehypeKatex]}
-                components={MARKDOWN_COMPONENTS}
-              >
-                {legacy.type === "text" ? legacy.content : ""}
-              </ReactMarkdown>
+            const card = renderInteractiveSegment(
+              legacy,
+              `${i}-${legacyIndex}`,
             );
+            if (card !== null) return card;
+            return <MarkdownBlock
+              key={`${i}-${legacyIndex}`}
+              content={legacy.type === "text" ? legacy.content : ""}
+              streaming={isRunning}
+            />;
           });
       })}
-      {isRunning ? <span className={cx(pulseClass, css({ marginLeft: "0.125rem" }))}>|</span> : null}
+      {isRunning ? (
+        <span className={cx(pulseClass, css({ marginLeft: "0.125rem" }))}>
+          |
+        </span>
+      ) : null}
     </div>
   );
 });
@@ -2043,7 +2488,13 @@ export function ReasoningPart({
           fontWeight: 500,
         })}
       >
-        <span className={css({ display: "flex", alignItems: "center", gap: "0.375rem" })}>
+        <span
+          className={css({
+            display: "flex",
+            alignItems: "center",
+            gap: "0.375rem",
+          })}
+        >
           <ChevronRight
             size={13}
             aria-hidden="true"
@@ -2104,7 +2555,7 @@ function ToolPart({
   status,
   showDetails,
   showRawErrors,
-	onImageGenerationModelSelect,
+  onImageGenerationModelSelect,
 }: {
   toolName: string;
   args?: unknown;
@@ -2113,7 +2564,7 @@ function ToolPart({
   status?: { type: string };
   showDetails?: boolean;
   showRawErrors?: boolean;
-	onImageGenerationModelSelect?: () => void;
+  onImageGenerationModelSelect?: () => void;
 }) {
   const resultText = formatToolResult(result);
   const state =
@@ -2131,19 +2582,21 @@ function ToolPart({
   const stateClass =
     state === "error"
       ? css({
-					borderColor: "color-mix(in srgb, var(--destructive) 60%, transparent)",
-          backgroundColor: "color-mix(in srgb, var(--destructive) 10%, transparent)",
+          borderColor:
+            "color-mix(in srgb, var(--destructive) 60%, transparent)",
+          backgroundColor:
+            "color-mix(in srgb, var(--destructive) 10%, transparent)",
           color: "var(--destructive)",
         })
       : state === "running"
         ? css({
-							borderColor: "rgb(245 158 11 / 0.6)",
+            borderColor: "rgb(245 158 11 / 0.6)",
             backgroundColor: "rgb(34 197 94 / 0.1)",
             color: "rgb(217 119 6)",
             _dark: { color: "rgb(252 211 77)" },
           })
         : css({
-							borderColor: "rgb(16 185 129 / 0.6)",
+            borderColor: "rgb(16 185 129 / 0.6)",
             backgroundColor: "rgb(16 185 129 / 0.1)",
             color: "rgb(4 120 87)",
             _dark: { color: "rgb(110 231 183)" },
@@ -2163,14 +2616,22 @@ function ToolPart({
           marginBlock: "0.5rem",
           width: "100%",
           borderRadius: "0.375rem",
-						borderWidth: "1px",
+          borderWidth: "1px",
           paddingInline: "0.75rem",
           paddingBlock: "0.5rem",
           fontSize: "0.75rem",
         }),
       )}
     >
-      <div className={css({ display: "flex", minWidth: 0, flexWrap: "wrap", alignItems: "center", gap: "0.5rem" })}>
+      <div
+        className={css({
+          display: "flex",
+          minWidth: 0,
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: "0.5rem",
+        })}
+      >
         {state === "running" ? <Spinner size={14} /> : <StateIcon size={14} />}
         <Wrench size={13} />
         <span className={css({ fontWeight: 500 })}>Tool</span>
@@ -2181,7 +2642,8 @@ function ToolPart({
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
             borderRadius: "0.25rem",
-            backgroundColor: "color-mix(in srgb, var(--background) 70%, transparent)",
+            backgroundColor:
+              "color-mix(in srgb, var(--background) 70%, transparent)",
             paddingInline: "0.375rem",
             paddingBlock: "0.125rem",
             fontFamily: "var(--mono-body)",
@@ -2190,16 +2652,33 @@ function ToolPart({
         >
           {toolName}
         </span>
-        <span className={css({ marginLeft: "auto", flexShrink: 0, textTransform: "uppercase", letterSpacing: "0.025em" })}>
+        <span
+          className={css({
+            marginLeft: "auto",
+            flexShrink: 0,
+            textTransform: "uppercase",
+            letterSpacing: "0.025em",
+          })}
+        >
           {state}
         </span>
       </div>
-      {state === "running" && toolName === "generate_image" && <StreamingImagePreview />}
-      {state === "running" && toolName === "animate" && <StreamingAnimationPreview />}
+      {state === "running" && toolName === "generate_image" && (
+        <StreamingImagePreview />
+      )}
+      {state === "running" && toolName === "animate" && (
+        <StreamingAnimationPreview />
+      )}
       {showDetails &&
       args !== undefined &&
       Object.keys(args as Record<string, unknown>).length > 0 ? (
-				<details open className={css({ marginTop: "0.5rem", color: "color-mix(in srgb, var(--foreground) 80%, transparent)" })}>
+        <details
+          open
+          className={css({
+            marginTop: "0.5rem",
+            color: "color-mix(in srgb, var(--foreground) 80%, transparent)",
+          })}
+        >
           <summary
             className={css({
               display: "flex",
@@ -2210,7 +2689,13 @@ function ToolPart({
               gap: "0.5rem",
             })}
           >
-            <span className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem" })}>
+            <span
+              className={css({
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.25rem",
+              })}
+            >
               <ChevronRight size={13} />
               Arguments
             </span>
@@ -2221,24 +2706,34 @@ function ToolPart({
       ) : null}
       {state === "error" ? (
         <div className={css({ marginTop: "0.5rem" })}>
-					{classifiedError && (
-						<ErrorBadge
-							classified={classifiedError}
-							rawMessage={resultText}
-							showRaw={!!showRawErrors}
-						/>
-					)}
-					{toolName === "generate_image" && onImageGenerationModelSelect && (
-						<ImageGenerationRetryButton onRetry={onImageGenerationModelSelect} />
-					)}
+          {classifiedError && (
+            <ErrorBadge
+              classified={classifiedError}
+              rawMessage={resultText}
+              showRaw={!!showRawErrors}
+            />
+          )}
+          {toolName === "generate_image" && onImageGenerationModelSelect && (
+            <ImageGenerationRetryButton
+              onRetry={onImageGenerationModelSelect}
+            />
+          )}
         </div>
       ) : showDetails && resultText ? (
-        <div className={css({ marginTop: "0.5rem", color: "var(--foreground)" })}>
+        <div
+          className={css({ marginTop: "0.5rem", color: "var(--foreground)" })}
+        >
           {typeof result === "object" && result !== null ? (
             <JsonCrackBlock value={result} maxHeight="16rem" title="Result" />
           ) : (
             <>
-              <div className={css({ marginBottom: "0.25rem", display: "flex", justifyContent: "flex-end" })}>
+              <div
+                className={css({
+                  marginBottom: "0.25rem",
+                  display: "flex",
+                  justifyContent: "flex-end",
+                })}
+              >
                 <CopyButton text={resultText} label="Copy output" />
               </div>
               <pre
@@ -2265,7 +2760,7 @@ function messagePartComponents(
   showRawErrors: boolean,
   showReasoning: boolean,
   autoExpandReasoning: boolean,
-	onImageGenerationModelSelect?: () => void,
+  onImageGenerationModelSelect?: () => void,
 ) {
   return {
     Text: (props: any) => (
@@ -2281,14 +2776,17 @@ function messagePartComponents(
       />
     ),
     tools: {
-      Fallback: (props: Parameters<typeof ToolPart>[0]) => (
-        <ToolPart
-          {...props}
-          showDetails={showToolUi}
-          showRawErrors={showRawErrors}
-				onImageGenerationModelSelect={onImageGenerationModelSelect}
-        />
-      ),
+      Fallback: (props: Parameters<typeof ToolPart>[0]) =>
+        isWebSearchToolName(props.toolName) ? (
+          <WebSearchPart {...props} />
+        ) : (
+          <ToolPart
+            {...props}
+            showDetails={showToolUi}
+            showRawErrors={showRawErrors}
+            onImageGenerationModelSelect={onImageGenerationModelSelect}
+          />
+        ),
     },
   };
 }
@@ -2355,7 +2853,8 @@ function contentFromAppendMessage(message: AppendMessage): PromptContent[] {
 }
 
 function assistantContentFromAgentContent(content: unknown) {
-  if (typeof content === "string") return [{ type: "text" as const, text: content }];
+  if (typeof content === "string")
+    return [{ type: "text" as const, text: content }];
   if (!Array.isArray(content)) return [{ type: "text" as const, text: "" }];
   return content
     .map((part: any) => {
@@ -2455,58 +2954,76 @@ function filterSpeechMessages(
     .filter((message): message is AgentMessage => message !== null);
 }
 
-function mergeConsecutiveAssistantMessages(messages: AgentMessage[]): AgentMessage[] {
- const merged: AgentMessage[] = [];
- for (const message of messages) {
- const msg = message as any;
- if (msg.role === "assistant" && merged.length > 0) {
- const last = merged[merged.length - 1] as any;
- if (last.role === "assistant") {
- const left = Array.isArray(last.content)
- ? last.content.map((p: any) => ({ ...p }))
- : [{ type: "text", text: textFromContent(last.content) }];
- const right = Array.isArray(msg.content)
- ? msg.content.map((p: any) => ({ ...p }))
- : [{ type: "text", text: textFromContent(msg.content) }];
- last.content = [...left, ...right];
- if (msg.timestamp) last.timestamp = msg.timestamp;
- if (msg.stopReason !== undefined) last.stopReason = msg.stopReason;
- if (msg.errorMessage) {
- last.errorMessage = msg.errorMessage;
- last.stopReason = msg.stopReason ?? last.stopReason;
- }
- if (msg.__keatingStreaming) last.__keatingStreaming = msg.__keatingStreaming;
- continue;
- }
- }
- merged.push(message);
- }
- return merged;
+function mergeConsecutiveAssistantMessages(
+  messages: AgentMessage[],
+): AgentMessage[] {
+  const merged: AgentMessage[] = [];
+  for (const message of messages) {
+    const msg = message as any;
+    if (msg.role === "assistant" && merged.length > 0) {
+      const last = merged[merged.length - 1] as any;
+      if (last.role === "assistant") {
+        const left = Array.isArray(last.content)
+          ? last.content.map((p: any) => ({ ...p }))
+          : [{ type: "text", text: textFromContent(last.content) }];
+        const right = Array.isArray(msg.content)
+          ? msg.content.map((p: any) => ({ ...p }))
+          : [{ type: "text", text: textFromContent(msg.content) }];
+        last.content = [...left, ...right];
+        if (msg.timestamp) last.timestamp = msg.timestamp;
+        if (msg.stopReason !== undefined) last.stopReason = msg.stopReason;
+        if (msg.errorMessage) {
+          last.errorMessage = msg.errorMessage;
+          last.stopReason = msg.stopReason ?? last.stopReason;
+        }
+        if (msg.__keatingStreaming)
+          last.__keatingStreaming = msg.__keatingStreaming;
+        continue;
+      }
+    }
+    merged.push(message);
+  }
+  return merged;
 }
 
 function hasRenderableAssistantContent(content: unknown): boolean {
-  if (!Array.isArray(content)) return typeof content === "string" && content.trim().length > 0;
+  if (!Array.isArray(content))
+    return typeof content === "string" && content.trim().length > 0;
   return content.some((part: any) => {
-    if (part?.type === "text") return typeof part.text === "string" && part.text.trim().length > 0;
-    if (part?.type === "thinking") return typeof part.thinking === "string" && part.thinking.trim().length > 0;
-    if (part?.type === "reasoning") return typeof part.text === "string" && part.text.trim().length > 0;
+    if (part?.type === "text")
+      return typeof part.text === "string" && part.text.trim().length > 0;
+    if (part?.type === "thinking")
+      return (
+        typeof part.thinking === "string" && part.thinking.trim().length > 0
+      );
+    if (part?.type === "reasoning")
+      return typeof part.text === "string" && part.text.trim().length > 0;
     if (part?.type === "toolCall") return true;
     if (part?.type === "image") return true;
     return false;
   });
 }
 
-function isSameStreamingAssistantMessage(message: unknown, streamingMessage: unknown): boolean {
+function isSameStreamingAssistantMessage(
+  message: unknown,
+  streamingMessage: unknown,
+): boolean {
   const left = message as any;
   const right = streamingMessage as any;
   if (!left || !right) return false;
   if (left === right) return true;
   if (left.role !== "assistant" || right.role !== "assistant") return false;
   if (left.timestamp !== right.timestamp) return false;
-  return JSON.stringify(left.content ?? null) === JSON.stringify(right.content ?? null);
+  return (
+    JSON.stringify(left.content ?? null) ===
+    JSON.stringify(right.content ?? null)
+  );
 }
 
-function visibleAgentMessages(agent: Agent | null, speechEnabled: boolean): AgentMessage[] {
+function visibleAgentMessages(
+  agent: Agent | null,
+  speechEnabled: boolean,
+): AgentMessage[] {
   if (!agent) return [];
   const messages = [...agent.state.messages];
   const streamingMessage = agent.state.streamingMessage as any;
@@ -2528,8 +3045,8 @@ function visibleAgentMessages(agent: Agent | null, speechEnabled: boolean): Agen
     }
   }
   return mergeConsecutiveAssistantMessages(
- foldToolResults(filterSpeechMessages(messages, speechEnabled)),
- );
+    foldToolResults(filterSpeechMessages(messages, speechEnabled)),
+  );
 }
 
 type AssistantTextPart =
@@ -2572,7 +3089,11 @@ function normalizeAssistantContentParts(parts: any[]): any[] {
     const duplicateIndex = normalized.findIndex((candidate) => {
       if (candidate.type !== "reasoning") return false;
       const candidateKey = normalizeReasoningText(candidate.text ?? "");
-      return candidateKey === key || candidateKey.includes(key) || key.includes(candidateKey);
+      return (
+        candidateKey === key ||
+        candidateKey.includes(key) ||
+        key.includes(candidateKey)
+      );
     });
     if (duplicateIndex !== -1) {
       const duplicate = normalized[duplicateIndex];
@@ -2645,16 +3166,20 @@ function assistantTextParts(text: string): AssistantTextPart[] {
 
 function assistantHasPendingToolCalls(content: unknown): boolean {
   if (!Array.isArray(content)) return false;
-  return content.some((part: any) =>
-    part?.type === "toolCall" &&
-    part.__toolResult === undefined &&
-    part.__toolDetails === undefined &&
-    part.__toolError === undefined,
+  return content.some(
+    (part: any) =>
+      part?.type === "toolCall" &&
+      part.__toolResult === undefined &&
+      part.__toolDetails === undefined &&
+      part.__toolError === undefined,
   );
 }
 
 function assistantHasToolCalls(content: unknown): boolean {
-  return Array.isArray(content) && content.some((part: any) => part?.type === "toolCall");
+  return (
+    Array.isArray(content) &&
+    content.some((part: any) => part?.type === "toolCall")
+  );
 }
 
 function toAssistantMessage(
@@ -2677,7 +3202,10 @@ function toAssistantMessage(
     isRunning &&
     msg.role === "assistant" &&
     isLastMessage &&
-    !(assistantHasToolCalls(msg.content) && !assistantHasPendingToolCalls(msg.content)) &&
+    !(
+      assistantHasToolCalls(msg.content) &&
+      !assistantHasPendingToolCalls(msg.content)
+    ) &&
     (msg.__keatingStreaming === true || !hasStopReason);
   const status = isActivelyStreaming
     ? { type: "running" as const }
@@ -2692,24 +3220,30 @@ function toAssistantMessage(
         : { type: "complete" as const, reason: "stop" as const };
 
   if (msg.role === "assistant") {
-    const content = normalizeAssistantContentParts(Array.isArray(msg.content)
-      ? msg.content.flatMap((part: any) => {
-          if (part?.type === "thinking")
-            return [{ type: "reasoning" as const, text: part.thinking ?? "" }];
-          if (part?.type === "toolCall") {
-            return [{
-              type: "tool-call" as const,
-              toolCallId: part.id ?? `tool-${index}`,
-              toolName: part.name ?? "tool",
-              args: part.arguments ?? {},
-              argsText: JSON.stringify(part.arguments ?? {}),
-              result: part.__toolResult ?? part.__toolDetails,
-              isError: part.__toolError,
-            }];
-          }
-          return assistantTextParts(part?.text ?? "");
-        })
-      : assistantTextParts(textFromContent(msg.content)));
+    const content = normalizeAssistantContentParts(
+      Array.isArray(msg.content)
+        ? msg.content.flatMap((part: any) => {
+            if (part?.type === "thinking")
+              return [
+                { type: "reasoning" as const, text: part.thinking ?? "" },
+              ];
+            if (part?.type === "toolCall") {
+              return [
+                {
+                  type: "tool-call" as const,
+                  toolCallId: part.id ?? `tool-${index}`,
+                  toolName: part.name ?? "tool",
+                  args: part.arguments ?? {},
+                  argsText: JSON.stringify(part.arguments ?? {}),
+                  result: part.__toolResult ?? part.__toolDetails,
+                  isError: part.__toolError,
+                },
+              ];
+            }
+            return assistantTextParts(part?.text ?? "");
+          })
+        : assistantTextParts(textFromContent(msg.content)),
+    );
 
     const id = `assistant-${index}-${msg.timestamp ?? ""}`;
 
@@ -2723,7 +3257,11 @@ function toAssistantMessage(
       }
     }
 
-    if (status.type === "incomplete" && status.reason === "cancelled" && !content.some((c: any) => c.type === "text" && c.text)) {
+    if (
+      status.type === "incomplete" &&
+      status.reason === "cancelled" &&
+      !content.some((c: any) => c.type === "text" && c.text)
+    ) {
       content.unshift({
         type: "text" as const,
         text: msg.errorMessage ?? "Response interrupted before it finished.",
@@ -2731,37 +3269,49 @@ function toAssistantMessage(
     }
 
     const authError = authErrorFromAgentMessage(msg, fallbackProvider);
-    const llmFailure = status.type === "incomplete"
-      ? classifyLlmError(msg.errorMessage ?? (status.reason === "cancelled" ? "Request aborted" : "Assistant response failed"))
-      : null;
-    const retryAttempts = typeof msg.__keatingRetryAttempts === "number"
-      ? Math.max(1, Math.round(msg.__keatingRetryAttempts))
-      : 1;
-    const retryable = isLastMessage
-      && status.type === "incomplete"
-      && llmFailure?.category !== "auth"
-      && llmFailure?.category !== "billing"
-      && llmFailure?.category !== "context-length"
-      && llmFailure?.category !== "invalid-request"
-      && llmFailure?.category !== "safety";
+    const llmFailure =
+      status.type === "incomplete"
+        ? classifyLlmError(
+            msg.errorMessage ??
+              (status.reason === "cancelled"
+                ? "Request aborted"
+                : "Assistant response failed"),
+          )
+        : null;
+    const retryAttempts =
+      typeof msg.__keatingRetryAttempts === "number"
+        ? Math.max(1, Math.round(msg.__keatingRetryAttempts))
+        : 1;
+    const retryable =
+      isLastMessage &&
+      status.type === "incomplete" &&
+      llmFailure?.category !== "auth" &&
+      llmFailure?.category !== "billing" &&
+      llmFailure?.category !== "context-length" &&
+      llmFailure?.category !== "invalid-request" &&
+      llmFailure?.category !== "safety";
     return {
       id,
       role: "assistant",
       createdAt: timestamp,
       status,
       content,
-			metadata: authError || llmFailure || retryable || msg.__keatingPrefillStatus === true
-        ? {
-            custom: {
-              keatingAuthError: authError,
-              keatingLlmFailure: llmFailure,
-              keatingRetryAttempts: retryAttempts,
-              keatingRetryExhausted: msg.__keatingRetryExhausted === true,
-              keatingRetryable: retryable,
-								keatingPrefillStatus: msg.__keatingPrefillStatus === true,
-            },
-          }
-        : undefined,
+      metadata:
+        authError ||
+        llmFailure ||
+        retryable ||
+        msg.__keatingPrefillStatus === true
+          ? {
+              custom: {
+                keatingAuthError: authError,
+                keatingLlmFailure: llmFailure,
+                keatingRetryAttempts: retryAttempts,
+                keatingRetryExhausted: msg.__keatingRetryExhausted === true,
+                keatingRetryable: retryable,
+                keatingPrefillStatus: msg.__keatingPrefillStatus === true,
+              },
+            }
+          : undefined,
     };
   }
 
@@ -2795,7 +3345,9 @@ function toAssistantMessage(
   };
 }
 
-function makeUserMessageFromAppend(message: AppendMessage): AgentMessage | null {
+function makeUserMessageFromAppend(
+  message: AppendMessage,
+): AgentMessage | null {
   const content = contentFromAppendMessage(message);
   if (content.length === 0) return null;
   return {
@@ -2813,52 +3365,59 @@ function makeUserTextMessage(text: string): AgentMessage {
   } as AgentMessage;
 }
 
-function messagesFromLiveTranscript(agent: Agent, turns: LiveTranscriptTurn[]): AgentMessage[] {
-	const messages: AgentMessage[] = [];
-	let timestamp = Date.now();
-	for (const turn of turns) {
-		if (turn.user.trim()) {
-			messages.push({
-				role: "user",
-				content: [{ type: "text", text: turn.user.trim() }],
-				timestamp: timestamp++,
-			} as AgentMessage);
-		}
-		if (turn.assistant.trim()) {
-			messages.push({
-				role: "assistant",
-				content: [{ type: "text", text: turn.assistant.trim() }],
-				api: agent.state.model.api,
-				provider: agent.state.model.provider,
-				model: agent.state.model.id,
-				usage: {
-					input: 0,
-					output: 0,
-					cacheRead: 0,
-					cacheWrite: 0,
-					totalTokens: 0,
-					cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
-				},
-				stopReason: "stop",
-				timestamp: timestamp++,
-			} as AgentMessage);
-		}
-	}
-	return messages;
+function messagesFromLiveTranscript(
+  agent: Agent,
+  turns: LiveTranscriptTurn[],
+): AgentMessage[] {
+  const messages: AgentMessage[] = [];
+  let timestamp = Date.now();
+  for (const turn of turns) {
+    if (turn.user.trim()) {
+      messages.push({
+        role: "user",
+        content: [{ type: "text", text: turn.user.trim() }],
+        timestamp: timestamp++,
+      } as AgentMessage);
+    }
+    if (turn.assistant.trim()) {
+      messages.push({
+        role: "assistant",
+        content: [{ type: "text", text: turn.assistant.trim() }],
+        api: agent.state.model.api,
+        provider: agent.state.model.provider,
+        model: agent.state.model.id,
+        usage: {
+          input: 0,
+          output: 0,
+          cacheRead: 0,
+          cacheWrite: 0,
+          totalTokens: 0,
+          cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+        },
+        stopReason: "stop",
+        timestamp: timestamp++,
+      } as AgentMessage);
+    }
+  }
+  return messages;
 }
 
 function hasUserTextMessage(messages: AgentMessage[], text: string): boolean {
   const normalized = text.trim();
   return messages.some((message) => {
     const msg = message as any;
-    if (msg.role !== "user" && msg.role !== "user-with-attachments") return false;
+    if (msg.role !== "user" && msg.role !== "user-with-attachments")
+      return false;
     return textFromContent(msg.content).trim() === normalized;
   });
 }
 
-function makeAttachmentErrorMessage(agent: Agent, errorMessage: string): AgentMessage {
-	return {
-		role: "assistant",
+function makeAttachmentErrorMessage(
+  agent: Agent,
+  errorMessage: string,
+): AgentMessage {
+  return {
+    role: "assistant",
     content: [],
     api: agent.state.model.api,
     provider: agent.state.model.provider,
@@ -2880,7 +3439,7 @@ function makeAttachmentErrorMessage(agent: Agent, errorMessage: string): AgentMe
     stopReason: "error",
     errorMessage,
     timestamp: Date.now(),
-	} as AgentMessage;
+  } as AgentMessage;
 }
 
 function errorMessageText(error: unknown): string {
@@ -2897,9 +3456,28 @@ function makePromptErrorMessage(agent: Agent, error: unknown): AgentMessage {
   return makeAttachmentErrorMessage(agent, errorMessageText(error));
 }
 
+function recordCredentialBlockedSend(
+  agent: Agent,
+  userMessage: AgentMessage,
+  provider: string,
+): void {
+  const userText = textFromContent((userMessage as any).content);
+  if (!userText || !hasUserTextMessage(agent.state.messages, userText)) {
+    agent.state.messages.push(userMessage);
+  }
+  agent.state.messages.push(
+    makePromptErrorMessage(
+      agent,
+      new Error(
+        `Authentication error: no credentials are available for ${provider}. Open Settings → Providers & Models, connect the provider, then retry this message.`,
+      ),
+    ),
+  );
+}
+
 function makePrefillStatusMessage(agent: Agent, step: number): AgentMessage {
-	return {
-		role: "assistant",
+  return {
+    role: "assistant",
     content: [
       {
         type: "text",
@@ -2924,7 +3502,7 @@ function makePrefillStatusMessage(agent: Agent, step: number): AgentMessage {
       },
     },
     timestamp: Date.now(),
-		__keatingPrefillStatus: true,
+    __keatingPrefillStatus: true,
   } as unknown as AgentMessage;
 }
 
@@ -2932,15 +3510,24 @@ export function SuggestedPrompts({
   onSelect,
   initialPrompts,
   model,
+  heading,
+  description,
 }: {
-  onSelect: (text: string, context: Pick<StarterPrompt, "label" | "domain"> & { position: number }) => void;
+  onSelect: (
+    text: string,
+    context: Pick<StarterPrompt, "label" | "domain"> & { position: number },
+  ) => void;
   initialPrompts?: readonly StarterPrompt[];
   /** Currently selected chat model; enables the personalized opening. */
   model?: Model<Api> | null;
+  heading?: string;
+  description?: string;
 }) {
-  const [prompts, setPrompts] = useState(() => (
-    initialPrompts ? [...initialPrompts] : pickDiverseStarterPrompts(STARTER_PROMPTS, 3)
-  ));
+  const [prompts, setPrompts] = useState(() =>
+    initialPrompts
+      ? [...initialPrompts]
+      : pickDiverseStarterPrompts(STARTER_PROMPTS, 3),
+  );
   const [greeting, setGreeting] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const posthog = usePostHog();
@@ -2960,7 +3547,7 @@ export function SuggestedPrompts({
   // to the learner's history and surface model-suggested next steps. Without
   // one (or without history) the generic experience stays.
   useEffect(() => {
-    if (!model) return;
+    if (!model || initialPrompts?.length) return;
     let cancelled = false;
     getTailoredOpening(model)
       .then((opening) => {
@@ -2974,7 +3561,10 @@ export function SuggestedPrompts({
         if (opening.prompts.length > 0) {
           setPrompts((prev) => {
             const seen = new Set(prev.map((p) => p.text));
-            return [...opening.prompts.filter((p) => !seen.has(p.text)), ...prev];
+            return [
+              ...opening.prompts.filter((p) => !seen.has(p.text)),
+              ...prev,
+            ];
           });
         }
       })
@@ -2984,7 +3574,7 @@ export function SuggestedPrompts({
     return () => {
       cancelled = true;
     };
-  }, [model?.provider, model?.id, posthog]);
+  }, [initialPrompts, model?.provider, model?.id, posthog]);
 
   const remaining = STARTER_PROMPTS.filter(
     (p) => !prompts.some((existing) => existing.text === p.text),
@@ -2993,7 +3583,10 @@ export function SuggestedPrompts({
 
   const appendMore = (count = 3) => {
     if (remaining.length === 0) return false;
-    setPrompts((prev) => [...prev, ...pickDiverseStarterPrompts(remaining, count)]);
+    setPrompts((prev) => [
+      ...prev,
+      ...pickDiverseStarterPrompts(remaining, count),
+    ]);
     return true;
   };
 
@@ -3035,14 +3628,37 @@ export function SuggestedPrompts({
       })}
     >
       <div className={css({ maxWidth: "36rem", textAlign: "center" })}>
-        <h1 className={css({ fontSize: "1rem", fontWeight: 600, lineHeight: 1.35, color: "var(--foreground)" })}>
-          {greeting ?? "What do you want to understand?"}
+        <h1
+          className={css({
+            fontSize: "1rem",
+            fontWeight: 600,
+            lineHeight: 1.35,
+            color: "var(--foreground)",
+          })}
+        >
+          {heading ?? greeting ?? "What do you want to understand?"}
         </h1>
-        <p className={css({ marginTop: "0.25rem", fontSize: "0.8125rem", lineHeight: 1.5, color: "var(--muted-foreground)" })}>
-          Ask in your own words or choose a starting point. Keating will begin from what you already know.
+        <p
+          className={css({
+            marginTop: "0.25rem",
+            fontSize: "0.8125rem",
+            lineHeight: 1.5,
+            color: "var(--muted-foreground)",
+          })}
+        >
+          {description ??
+            "Ask in your own words or choose a starting point. Keating will begin from what you already know."}
         </p>
       </div>
-      <div className={css({ display: "flex", width: "100%", minWidth: 0, alignItems: "center", gap: "0.25rem" })}>
+      <div
+        className={css({
+          display: "flex",
+          width: "100%",
+          minWidth: 0,
+          alignItems: "center",
+          gap: "0.25rem",
+        })}
+      >
         <button
           type="button"
           onClick={() => scroll("left")}
@@ -3059,7 +3675,10 @@ export function SuggestedPrompts({
           )}
           aria-label="Scroll left"
         >
-          <ChevronRight size={14} className={css({ transform: "rotate(180deg)" })} />
+          <ChevronRight
+            size={14}
+            className={css({ transform: "rotate(180deg)" })}
+          />
         </button>
         <div
           ref={scrollRef}
@@ -3080,7 +3699,9 @@ export function SuggestedPrompts({
             <button
               key={p.text}
               type="button"
-              onClick={() => onSelect(p.text, { label: p.label, domain: p.domain, position })}
+              onClick={() =>
+                onSelect(p.text, { label: p.label, domain: p.domain, position })
+              }
               className={cx(
                 srInteractiveClass,
                 css({
@@ -3089,13 +3710,15 @@ export function SuggestedPrompts({
                   scrollSnapAlign: "start",
                   borderRadius: "0.5rem",
                   border: "1px solid var(--border)",
-                  backgroundColor: "color-mix(in srgb, var(--muted) 30%, transparent)",
+                  backgroundColor:
+                    "color-mix(in srgb, var(--muted) 30%, transparent)",
                   paddingInline: "0.75rem",
                   paddingBlock: "0.625rem",
                   textAlign: "left",
                   _hover: {
                     borderColor: "var(--primary)",
-                    backgroundColor: "color-mix(in srgb, var(--primary) 10%, transparent)",
+                    backgroundColor:
+                      "color-mix(in srgb, var(--primary) 10%, transparent)",
                     color: "var(--primary)",
                     boxShadow: "var(--shadow-card)",
                   },
@@ -3116,7 +3739,15 @@ export function SuggestedPrompts({
               >
                 {p.label}
               </span>
-              <span className={css({ display: "block", fontSize: "0.75rem", lineHeight: 1.375 })}>{p.text}</span>
+              <span
+                className={css({
+                  display: "block",
+                  fontSize: "0.75rem",
+                  lineHeight: 1.375,
+                })}
+              >
+                {p.text}
+              </span>
             </button>
           ))}
           {!exhausted && (
@@ -3137,7 +3768,8 @@ export function SuggestedPrompts({
                   color: "var(--muted-foreground)",
                   _hover: {
                     borderColor: "var(--primary)",
-                    backgroundColor: "color-mix(in srgb, var(--primary) 5%, transparent)",
+                    backgroundColor:
+                      "color-mix(in srgb, var(--primary) 5%, transparent)",
                     color: "var(--primary)",
                   },
                 }),
@@ -3193,178 +3825,222 @@ const REASONING_OPTIONS: {
  * action folds in here; only voice and send stay on the row.
  */
 function ComposerActionsMenu({
-	modelLabel,
-	onModelSelect,
-	thinkingLevel,
-	onThinkingLevelChange,
-	thinkingDisabled,
+  modelLabel,
+  onModelSelect,
+  thinkingLevel,
+  onThinkingLevelChange,
+  thinkingDisabled,
 }: {
-	modelLabel: string;
-	onModelSelect?: () => void;
-	thinkingLevel: ThinkingLevel;
-	onThinkingLevelChange: (level: ThinkingLevel) => void;
-	thinkingDisabled?: boolean;
+  modelLabel: string;
+  onModelSelect?: () => void;
+  thinkingLevel: ThinkingLevel;
+  onThinkingLevelChange: (level: ThinkingLevel) => void;
+  thinkingDisabled?: boolean;
 }) {
-	const [open, setOpen] = useState(false);
-	const [reasoningOpen, setReasoningOpen] = useState(false);
-	const ref = useRef<HTMLDivElement>(null);
-	const reasoning = REASONING_OPTIONS.find((option) => option.value === thinkingLevel) ?? REASONING_OPTIONS[3];
+  const [open, setOpen] = useState(false);
+  const [reasoningOpen, setReasoningOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const reasoning =
+    REASONING_OPTIONS.find((option) => option.value === thinkingLevel) ??
+    REASONING_OPTIONS[3];
 
-	useEffect(() => {
-		if (!open) return;
-		const handlePointer = (event: MouseEvent) => {
-			if (ref.current && !ref.current.contains(event.target as Node)) {
-				setOpen(false);
-				setReasoningOpen(false);
-			}
-		};
-		const handleKey = (event: KeyboardEvent) => {
-			if (event.key !== "Escape") return;
-			// Escape backs out one level at a time rather than closing everything,
-			// so a mis-tap on the submenu does not lose the menu too.
-			if (reasoningOpen) setReasoningOpen(false);
-			else setOpen(false);
-		};
-		document.addEventListener("mousedown", handlePointer);
-		document.addEventListener("keydown", handleKey);
-		return () => {
-			document.removeEventListener("mousedown", handlePointer);
-			document.removeEventListener("keydown", handleKey);
-		};
-	}, [open, reasoningOpen]);
+  useEffect(() => {
+    if (!open) return;
+    const handlePointer = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setOpen(false);
+        setReasoningOpen(false);
+      }
+    };
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      // Escape backs out one level at a time rather than closing everything,
+      // so a mis-tap on the submenu does not lose the menu too.
+      if (reasoningOpen) setReasoningOpen(false);
+      else setOpen(false);
+    };
+    document.addEventListener("mousedown", handlePointer);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handlePointer);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [open, reasoningOpen]);
 
-	const itemClass = css({
-		display: "flex",
-		width: "100%",
-		alignItems: "center",
-		gap: "0.625rem",
-		borderRadius: "0.375rem",
-		paddingInline: "0.625rem",
-		paddingBlock: "0.5rem",
-		textAlign: "left",
-		fontSize: "0.8125rem",
-		color: "var(--foreground)",
-		cursor: "pointer",
-		_hover: { backgroundColor: "var(--accent)", color: "var(--accent-foreground)" },
-		_disabled: { opacity: 0.5, cursor: "not-allowed" },
-	});
-	const trailingClass = css({
-		marginLeft: "auto",
-		fontSize: "0.75rem",
-		color: "var(--muted-foreground)",
-		maxWidth: "7rem",
-		overflow: "hidden",
-		textOverflow: "ellipsis",
-		whiteSpace: "nowrap",
-	});
+  const itemClass = css({
+    display: "flex",
+    width: "100%",
+    alignItems: "center",
+    gap: "0.625rem",
+    borderRadius: "0.375rem",
+    paddingInline: "0.625rem",
+    paddingBlock: "0.5rem",
+    textAlign: "left",
+    fontSize: "0.8125rem",
+    color: "var(--foreground)",
+    cursor: "pointer",
+    _hover: {
+      backgroundColor: "var(--accent)",
+      color: "var(--accent-foreground)",
+    },
+    _disabled: { opacity: 0.5, cursor: "not-allowed" },
+  });
+  const trailingClass = css({
+    marginLeft: "auto",
+    fontSize: "0.75rem",
+    color: "var(--muted-foreground)",
+    maxWidth: "7rem",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  });
 
-	return (
-		<div ref={ref} className={css({ position: "relative", flexShrink: 0 })}>
-			<button
-				type="button"
-				onClick={() => setOpen((value) => !value)}
-				aria-haspopup="menu"
-				aria-expanded={open}
-				title="More actions"
-				aria-label="More actions"
-				className={cx(
-					composerIconButtonClass,
-					open ? css({ backgroundColor: "var(--accent)", color: "var(--accent-foreground)" }) : undefined,
-				)}
-			>
-				<Plus size={17} />
-			</button>
+  return (
+    <div ref={ref} className={css({ position: "relative", flexShrink: 0 })}>
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        title="More actions"
+        aria-label="More actions"
+        className={cx(
+          composerIconButtonClass,
+          open
+            ? css({
+                backgroundColor: "var(--accent)",
+                color: "var(--accent-foreground)",
+              })
+            : undefined,
+        )}
+      >
+        <Plus size={17} />
+      </button>
 
-			{open ? (
-				<div
-					role="menu"
-					className={cx("font-terminal", css({
-						position: "absolute",
-						left: 0,
-						bottom: "100%",
-						zIndex: 50,
-						marginBottom: "0.375rem",
-						minWidth: "14rem",
-						borderRadius: "0.5rem",
-						border: "1px solid var(--border)",
-						backgroundColor: "var(--background)",
-						boxShadow: "var(--shadow-card, 0 8px 24px rgba(0,0,0,0.18))",
-						padding: "0.25rem",
-						display: "flex",
-						flexDirection: "column",
-						gap: "0.125rem",
-					}))}
-				>
-					{/*
-					 * The attachment trigger has to be the library's own element —
-					 * it owns the hidden file input — so it is styled to match the
-					 * neighbouring items rather than reimplemented.
-					 */}
-					<ComposerPrimitive.AddAttachment
-						className={itemClass}
-						onClick={() => setOpen(false)}
-					>
-						<Paperclip size={15} className={css({ flexShrink: 0, color: "var(--muted-foreground)" })} />
-						Attach files
-					</ComposerPrimitive.AddAttachment>
+      {open ? (
+        <div
+          role="menu"
+          className={cx(
+            "font-terminal",
+            css({
+              position: "absolute",
+              left: 0,
+              bottom: "100%",
+              zIndex: 50,
+              marginBottom: "0.375rem",
+              minWidth: "14rem",
+              borderRadius: "0.5rem",
+              border: "1px solid var(--border)",
+              backgroundColor: "var(--background)",
+              boxShadow: "var(--shadow-card, 0 8px 24px rgba(0,0,0,0.18))",
+              padding: "0.25rem",
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.125rem",
+            }),
+          )}
+        >
+          {/*
+           * The attachment trigger has to be the library's own element —
+           * it owns the hidden file input — so it is styled to match the
+           * neighbouring items rather than reimplemented.
+           */}
+          <ComposerPrimitive.AddAttachment
+            className={itemClass}
+            onClick={() => setOpen(false)}
+          >
+            <Paperclip
+              size={15}
+              className={css({
+                flexShrink: 0,
+                color: "var(--muted-foreground)",
+              })}
+            />
+            Attach files
+          </ComposerPrimitive.AddAttachment>
 
-					{onModelSelect ? (
-						<button
-							type="button"
-							role="menuitem"
-							className={itemClass}
-							onClick={() => {
-								setOpen(false);
-								onModelSelect();
-							}}
-						>
-							<Cpu size={15} className={css({ flexShrink: 0, color: "var(--muted-foreground)" })} />
-							Model
-							<span className={trailingClass}>{modelLabel}</span>
-						</button>
-					) : null}
+          {onModelSelect ? (
+            <button
+              type="button"
+              role="menuitem"
+              className={itemClass}
+              onClick={() => {
+                setOpen(false);
+                onModelSelect();
+              }}
+            >
+              <Cpu
+                size={15}
+                className={css({
+                  flexShrink: 0,
+                  color: "var(--muted-foreground)",
+                })}
+              />
+              Model
+              <span className={trailingClass}>{modelLabel}</span>
+            </button>
+          ) : null}
 
-					<button
-						type="button"
-						role="menuitem"
-						aria-haspopup="menu"
-						aria-expanded={reasoningOpen}
-						disabled={thinkingDisabled}
-						className={itemClass}
-						onClick={() => setReasoningOpen((value) => !value)}
-					>
-						<Lightbulb size={15} className={css({ flexShrink: 0, color: "var(--muted-foreground)" })} />
-						Reasoning
-						<span className={trailingClass}>{reasoning.short}</span>
-					</button>
+          <button
+            type="button"
+            role="menuitem"
+            aria-haspopup="menu"
+            aria-expanded={reasoningOpen}
+            disabled={thinkingDisabled}
+            className={itemClass}
+            onClick={() => setReasoningOpen((value) => !value)}
+          >
+            <Lightbulb
+              size={15}
+              className={css({
+                flexShrink: 0,
+                color: "var(--muted-foreground)",
+              })}
+            />
+            Reasoning
+            <span className={trailingClass}>{reasoning.short}</span>
+          </button>
 
-					{reasoningOpen ? (
-						<div className={css({ display: "flex", flexDirection: "column", gap: "0.125rem", paddingLeft: "1.5rem" })}>
-							{REASONING_OPTIONS.map((option) => (
-								<button
-									key={option.value}
-									type="button"
-									role="menuitemradio"
-									aria-checked={option.value === thinkingLevel}
-									className={itemClass}
-									onClick={() => {
-										onThinkingLevelChange(option.value);
-										setReasoningOpen(false);
-										setOpen(false);
-									}}
-								>
-									{option.label}
-									{option.value === thinkingLevel ? (
-										<Check size={14} className={css({ marginLeft: "auto", color: "var(--primary)" })} />
-									) : null}
-								</button>
-							))}
-						</div>
-					) : null}
-				</div>
-			) : null}
-		</div>
-	);
+          {reasoningOpen ? (
+            <div
+              className={css({
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.125rem",
+                paddingLeft: "1.5rem",
+              })}
+            >
+              {REASONING_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={option.value === thinkingLevel}
+                  className={itemClass}
+                  onClick={() => {
+                    onThinkingLevelChange(option.value);
+                    setReasoningOpen(false);
+                    setOpen(false);
+                  }}
+                >
+                  {option.label}
+                  {option.value === thinkingLevel ? (
+                    <Check
+                      size={14}
+                      className={css({
+                        marginLeft: "auto",
+                        color: "var(--primary)",
+                      })}
+                    />
+                  ) : null}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 function WebGroundingHint({
@@ -3398,12 +4074,16 @@ function WebGroundingHint({
         color: "var(--muted-foreground)",
       })}
     >
-      <span className={css({ fontWeight: 500, color: "var(--foreground)" })}>URL detected.</span>{" "}
-      To let Keating read current web pages, use a Google Gemini model with Google web grounding enabled
+      <span className={css({ fontWeight: 500, color: "var(--foreground)" })}>
+        URL detected.
+      </span>{" "}
+      To let Keating read current web pages, use a Google Gemini model with
+      Google web grounding enabled
       {needsKey ? " and add a Google API key" : ""}.
       {needsKey && (
         <>
-          {" "}Get one from{" "}
+          {" "}
+          Get one from{" "}
           <a
             className={css({
               color: "var(--primary)",
@@ -3419,8 +4099,10 @@ function WebGroundingHint({
           , then paste it in Settings → Providers & Models → Google Gemini.
         </>
       )}
-      {needsGrounding && " Turn on Settings → Interface → Google web grounding."}
-      {needsGoogleModel && " Select a Google Gemini model for grounded web results."}
+      {needsGrounding &&
+        " Turn on Settings → Interface → Google web grounding."}
+      {needsGoogleModel &&
+        " Select a Google Gemini model for grounded web results."}
     </div>
   );
 }
@@ -3431,39 +4113,48 @@ function AssistantThread({
   version,
   speechEnabled,
   responseComparison,
+  initialPrompts,
+  emptyStateTitle,
+  emptyStateDescription,
+  pendingPrompt,
 }: {
   agent: Agent | null;
   callbacks: ChatPanelSetupCallbacks;
   version: number;
   speechEnabled: boolean;
   responseComparison?: ReactNode;
+  initialPrompts?: readonly StarterPrompt[];
+  emptyStateTitle?: string;
+  emptyStateDescription?: string;
+  pendingPrompt?: string;
 }) {
   const posthog = usePostHog();
   const [uiSettings, setUiSettings] = useState(() => loadKeatingUiSettings());
   const [localVersion, setLocalVersion] = useState(0);
   const [loadingStep, setLoadingStep] = useState(0);
   const [composerHasUrl, setComposerHasUrl] = useState(false);
-	const [voiceComposerOpen, setVoiceComposerOpen] = useState(false);
+  const [voiceComposerOpen, setVoiceComposerOpen] = useState(false);
   const [dismissedQuizId, setDismissedQuizId] = useState<string | null>(null);
   const [hasGoogleKey, setHasGoogleKey] = useState<boolean | null>(null);
   const isRunning = agent?.state.isStreaming ?? false;
   const currentThinkingLevel =
-    agent?.state.thinkingLevel ??
-    callbacks.thinkingLevel ??
-    "medium";
+    agent?.state.thinkingLevel ?? callbacks.thinkingLevel ?? "medium";
   const [selectedThinkingLevel, setSelectedThinkingLevel] =
     useState<ThinkingLevel>(currentThinkingLevel);
   useEffect(() => {
     setSelectedThinkingLevel(currentThinkingLevel);
   }, [currentThinkingLevel]);
-	const preserveLiveConversation = useCallback(async (turns: LiveTranscriptTurn[]) => {
-		if (!agent || turns.length === 0) return;
-		const messages = messagesFromLiveTranscript(agent, turns);
-		if (messages.length === 0) return;
-		agent.state.messages.push(...messages);
-		setLocalVersion((current) => current + 1);
-		await callbacks.onLocalMessagesChanged?.();
-	}, [agent, callbacks]);
+  const preserveLiveConversation = useCallback(
+    async (turns: LiveTranscriptTurn[]) => {
+      if (!agent || turns.length === 0) return;
+      const messages = messagesFromLiveTranscript(agent, turns);
+      if (messages.length === 0) return;
+      agent.state.messages.push(...messages);
+      setLocalVersion((current) => current + 1);
+      await callbacks.onLocalMessagesChanged?.();
+    },
+    [agent, callbacks],
+  );
   const handleThinkingLevelChange = useCallback(
     (level: ThinkingLevel) => {
       setSelectedThinkingLevel(level);
@@ -3471,25 +4162,19 @@ function AssistantThread({
     },
     [callbacks],
   );
-  const messages = useMemo(
-    () => {
-      const visibleMessages = visibleAgentMessages(agent, speechEnabled);
-      const lastMessage = visibleMessages.at(-1) as any;
-      if (agent && isRunning && lastMessage?.role === "user") {
-        return [...visibleMessages, makePrefillStatusMessage(agent, loadingStep)];
-      }
-      return visibleMessages;
-    },
-    [agent, version, localVersion, speechEnabled, isRunning, loadingStep],
-  );
+  const messages = useMemo(() => {
+    const visibleMessages = visibleAgentMessages(agent, speechEnabled);
+    const lastMessage = visibleMessages.at(-1) as any;
+    if (agent && isRunning && lastMessage?.role === "user") {
+      return [...visibleMessages, makePrefillStatusMessage(agent, loadingStep)];
+    }
+    return visibleMessages;
+  }, [agent, version, localVersion, speechEnabled, isRunning, loadingStep]);
   const activeQuestion = useMemo(
     () => extractActiveQuestion(messages),
     [messages],
   );
-  const activeQuiz = useMemo(
-    () => extractActiveQuiz(messages),
-    [messages],
-  );
+  const activeQuiz = useMemo(() => extractActiveQuiz(messages), [messages]);
   const visibleActiveQuiz =
     activeQuiz && activeQuiz.slug !== dismissedQuizId ? activeQuiz : null;
   const components = useMemo(
@@ -3499,14 +4184,14 @@ function AssistantThread({
         uiSettings.showRawErrors,
         uiSettings.showReasoning,
         uiSettings.autoExpandReasoning,
-				callbacks.onImageGenerationModelSelect,
+        callbacks.onImageGenerationModelSelect,
       ),
     [
       uiSettings.showToolUi,
       uiSettings.showRawErrors,
       uiSettings.showReasoning,
       uiSettings.autoExpandReasoning,
-		callbacks.onImageGenerationModelSelect,
+      callbacks.onImageGenerationModelSelect,
     ],
   );
   const modelRef = useRef(agent?.state.model);
@@ -3533,15 +4218,22 @@ function AssistantThread({
       if (
         callbacks.onApiKeyRequired &&
         !(await callbacks.onApiKeyRequired(provider))
-      )
+      ) {
+        recordCredentialBlockedSend(agent, makeUserTextMessage(text), provider);
+        setLocalVersion((current) => current + 1);
+        await callbacks.onLocalMessagesChanged?.();
         return;
+      }
       await callbacks.onBeforeSend?.();
       setComposerHasUrl(false);
       try {
         await agent.prompt(text);
       } catch (error) {
-        console.error("Keating send failed before the model stream started:", error);
-        posthog.capture('message_send_failed', { error_type: 'prompt_error' });
+        console.error(
+          "Keating send failed before the model stream started:",
+          error,
+        );
+        posthog.capture("message_send_failed", { error_type: "prompt_error" });
         if (!hasUserTextMessage(agent.state.messages, text)) {
           agent.state.messages.push(makeUserTextMessage(text));
         }
@@ -3555,10 +4247,10 @@ function AssistantThread({
 
   const onNew = useCallback(
     async (message: AppendMessage) => {
-      if (!agent) return;
+      if (!agent) return false;
       const userMessage = makeUserMessageFromAppend(message);
-      if (!userMessage) return;
-      if (agent.state.isStreaming) return;
+      if (!userMessage) return false;
+      if (agent.state.isStreaming) return false;
 
       const content = (userMessage as any).content;
       const hasImage =
@@ -3574,22 +4266,31 @@ function AssistantThread({
         );
         setLocalVersion((current) => current + 1);
         await callbacks.onLocalMessagesChanged?.();
-        return;
+        return true;
       }
 
       const provider = agent.state.model.provider;
       if (
         callbacks.onApiKeyRequired &&
         !(await callbacks.onApiKeyRequired(provider))
-      )
-        return;
+      ) {
+        recordCredentialBlockedSend(agent, userMessage, provider);
+        setLocalVersion((current) => current + 1);
+        await callbacks.onLocalMessagesChanged?.();
+        return true;
+      }
       await callbacks.onBeforeSend?.();
       setComposerHasUrl(false);
       try {
         await agent.prompt(userMessage);
+		await callbacks.onLocalMessagesChanged?.();
+		return true;
       } catch (error) {
-        console.error("Keating send failed before the model stream started:", error);
-        posthog.capture('message_send_failed', { error_type: 'prompt_error' });
+        console.error(
+          "Keating send failed before the model stream started:",
+          error,
+        );
+        posthog.capture("message_send_failed", { error_type: "prompt_error" });
         const userText = textFromContent((userMessage as any).content);
         if (!userText || !hasUserTextMessage(agent.state.messages, userText)) {
           agent.state.messages.push(userMessage);
@@ -3597,20 +4298,23 @@ function AssistantThread({
         agent.state.messages.push(makePromptErrorMessage(agent, error));
         setLocalVersion((current) => current + 1);
         await callbacks.onLocalMessagesChanged?.();
+		return true;
       }
     },
     [agent, callbacks, posthog],
   );
 
   const onCancel = useCallback(async () => {
-    posthog.capture('message_cancelled', {});
+    posthog.capture("message_cancelled", {});
     agent?.abort();
   }, [agent, posthog]);
 
   // System-initiated sends (quiz remediation/reframe requests, etc.) can fire
   // while the agent is mid-stream, where onNew silently drops them. Queue those
   // and flush when the agent goes idle so the request is never lost.
-  const [quizGrades, setQuizGrades] = useState<Record<string, QuizQuestionGrade[]>>({});
+  const [quizGrades, setQuizGrades] = useState<
+    Record<string, QuizQuestionGrade[]>
+  >({});
   const quizGradesContextValue = useMemo<QuizGradesContextValue>(
     () => ({
       grades: quizGrades,
@@ -3620,36 +4324,86 @@ function AssistantThread({
     [quizGrades],
   );
 
-  const pendingSendsRef = useRef<AppendMessage[]>([]);
+	type PendingSend = {
+		message: AppendMessage;
+		deliveryKey?: string;
+		onDelivered?: () => void;
+	};
+	const pendingSendsRef = useRef<PendingSend[]>([]);
+	const activeDeliveryKeysRef = useRef(new Set<string>());
+	const deliverPendingSend = useCallback(async (pending: PendingSend) => {
+		const delivered = await onNew(pending.message);
+		if (pending.deliveryKey) activeDeliveryKeysRef.current.delete(pending.deliveryKey);
+		if (delivered) pending.onDelivered?.();
+	}, [onNew]);
   const queueOrSend = useCallback(
-    (message: AppendMessage) => {
+	(message: AppendMessage, options: Omit<PendingSend, "message"> = {}) => {
+		if (options.deliveryKey) {
+			if (activeDeliveryKeysRef.current.has(options.deliveryKey)) return;
+			activeDeliveryKeysRef.current.add(options.deliveryKey);
+		}
+		const pending = { message, ...options };
       if (agent && !agent.state.isStreaming) {
-        void onNew(message);
+		void deliverPendingSend(pending);
       } else {
-        pendingSendsRef.current.push(message);
+		pendingSendsRef.current.push(pending);
       }
     },
-    [agent, onNew],
+	[agent, deliverPendingSend],
   );
 
+	const queueLearnerResponse = useCallback((pending: import("../keating/event-store").PendingLearnerResponse) => {
+		queueOrSend({
+			role: "user",
+			content: [{ type: "text", text: pending.serialized }],
+		} as unknown as AppendMessage, {
+			deliveryKey: pending.receiptId,
+			onDelivered: () => callbacks.onLearnerResponseDelivered?.(pending),
+		});
+	}, [callbacks.onLearnerResponseDelivered, queueOrSend]);
+
   const handleOpenUIAction = useCallback(
-    (action: KeatingOpenUIAction) => {
-      window.dispatchEvent(new CustomEvent("keating:openui-action", { detail: action }));
+	async (action: KeatingOpenUIAction) => {
+	  const detail: {
+		kind: "keating-openui-dispatch";
+		action: KeatingOpenUIAction;
+		persisted?: Promise<void>;
+	  } = { kind: "keating-openui-dispatch", action };
+      window.dispatchEvent(
+		new CustomEvent("keating:openui-action", { detail }),
+      );
+	  await detail.persisted;
+	  if (action.kind === "canonical") {
+		const receiptId = `${action.action.documentId}-${action.action.idempotencyKey}`;
+		const pending = callbacks.getPendingLearnerResponses?.()
+			.find((candidate) => candidate.receiptId === receiptId);
+		if (!pending) return false;
+		queueLearnerResponse(pending);
+		return true;
+	  }
       const response = createOpenUIActionLearnerResponse(action);
       queueOrSend({
         role: "user",
         content: [{ type: "text", text: serializeLearnerResponse(response) }],
       } as unknown as AppendMessage);
+	  return true;
     },
-    [queueOrSend],
+	[callbacks.getPendingLearnerResponses, queueLearnerResponse, queueOrSend],
   );
+
+	useEffect(() => {
+		if (!agent) return;
+		for (const pending of callbacks.getPendingLearnerResponses?.() ?? []) {
+			queueLearnerResponse(pending);
+		}
+	}, [agent, callbacks.getPendingLearnerResponses, queueLearnerResponse]);
 
   useEffect(() => {
     if (isRunning || !agent) return;
     if (pendingSendsRef.current.length === 0) return;
-    const next = pendingSendsRef.current.shift();
-    if (next) void onNew(next);
-  }, [isRunning, agent, onNew]);
+	const next = pendingSendsRef.current.shift();
+	if (next) void deliverPendingSend(next);
+	}, [isRunning, agent, deliverPendingSend]);
 
   // When the learner submits an ask_user_question form, feed their answers back
   // into the conversation as a user turn so the agent actually receives them.
@@ -3671,7 +4425,8 @@ function AssistantThread({
       } as unknown as AppendMessage);
     };
     window.addEventListener("keating:question-answered", handler);
-    return () => window.removeEventListener("keating:question-answered", handler);
+    return () =>
+      window.removeEventListener("keating:question-answered", handler);
   }, [agent, onNew]);
 
   // When the learner finishes a quiz, report their score, timing, partial
@@ -3679,11 +4434,11 @@ function AssistantThread({
   useEffect(() => {
     const handler = (event: Event) => {
       const detail = (event as CustomEvent).detail as
-	        | {
-	            resultId?: string;
-	            quizId?: string;
-	            topic?: string;
-	            total?: number;
+        | {
+            resultId?: string;
+            quizId?: string;
+            topic?: string;
+            total?: number;
             score?: number;
             partialCreditPoints?: number;
             partialCredits?: Record<string, number>;
@@ -3701,22 +4456,29 @@ function AssistantThread({
         | undefined;
       if (!agent || !detail || typeof detail.score !== "number") return;
       const total = detail.total ?? 0;
-      const resultId = detail.resultId ?? `${detail.quizId ?? "quiz"}-${Date.now()}`;
+      const resultId =
+        detail.resultId ?? `${detail.quizId ?? "quiz"}-${Date.now()}`;
       // Open-ended answers (short answer / transfer / free-text fill-in) have no
       // single correct string, so they're not auto-scored — the model judges them
       // by meaning via grade_quiz. detail.score counts objective questions only.
       const isOpen = (question: { type?: string; openEnded?: boolean }) =>
         question.openEnded ??
-        (question.type === "short_answer" || question.type === "transfer" || question.type === "fill_in");
+        (question.type === "short_answer" ||
+          question.type === "transfer" ||
+          question.type === "fill_in");
       const openEndedTotal = (detail.questions ?? []).filter(isOpen).length;
       const objectiveTotal = total - openEndedTotal;
-      const seconds = detail.timing ? Math.round(detail.timing.totalMs / 1000) : null;
+      const seconds = detail.timing
+        ? Math.round(detail.timing.totalMs / 1000)
+        : null;
       const lines: string[] = [
         `I finished the quiz${detail.topic ? ` on "${detail.topic}"` : ""}.`,
         `Objective score: ${detail.score}/${objectiveTotal}${openEndedTotal > 0 ? ` (${openEndedTotal} open-ended pending your review)` : ""}${seconds !== null ? ` in ${seconds}s` : ""}.`,
       ];
       if (typeof detail.partialCreditPoints === "number") {
-        lines.push(`Partial-credit points: ${detail.partialCreditPoints.toFixed(2)}/${objectiveTotal}.`);
+        lines.push(
+          `Partial-credit points: ${detail.partialCreditPoints.toFixed(2)}/${objectiveTotal}.`,
+        );
       }
       if (detail.questions && detail.answers && detail.timing) {
         const perQ = detail.timing.perQuestionMs;
@@ -3730,9 +4492,12 @@ function AssistantThread({
               `- [open-ended id=${q.id}] ${q.question} → my answer: "${mine || "(blank)"}" (reference: "${q.correctAnswer}")`,
             );
           } else {
-            const correct = mine.toLowerCase() === q.correctAnswer.trim().toLowerCase();
+            const correct =
+              mine.toLowerCase() === q.correctAnswer.trim().toLowerCase();
             const pc = detail.partialCredits?.[q.id];
-            parts.push(`- ${q.question} → my answer: "${mine || "(blank)"}" ${correct ? "✓" : "✗"}`);
+            parts.push(
+              `- ${q.question} → my answer: "${mine || "(blank)"}" ${correct ? "✓" : "✗"}`,
+            );
             if (typeof pc === "number" && !correct) {
               parts.push(`(partial credit: ${Math.round(pc * 100)}%)`);
             }
@@ -3748,9 +4513,13 @@ function AssistantThread({
         }
       }
       if (detail.flagged && detail.flagged.length > 0) {
-        lines.push(`Bookmarked ${detail.flagged.length} question${detail.flagged.length > 1 ? "s" : ""} for review.`);
+        lines.push(
+          `Bookmarked ${detail.flagged.length} question${detail.flagged.length > 1 ? "s" : ""} for review.`,
+        );
       }
-      lines.push("Please review my answers and timing, then guide what to work on next.");
+      lines.push(
+        "Please review my answers and timing, then guide what to work on next.",
+      );
       const resultPayload = {
         id: resultId,
         timestamp: Date.now(),
@@ -3785,7 +4554,7 @@ function AssistantThread({
         | { level?: string; topic?: string; slug?: string }
         | undefined;
       if (!detail?.level) return;
-      posthog.capture('quiz_remediation_requested', { level: detail.level });
+      posthog.capture("quiz_remediation_requested", { level: detail.level });
       queueOrSend({
         role: "user",
         content: [
@@ -3797,7 +4566,8 @@ function AssistantThread({
       } as unknown as AppendMessage);
     };
     window.addEventListener("keating:quiz-remediation-requested", handler);
-    return () => window.removeEventListener("keating:quiz-remediation-requested", handler);
+    return () =>
+      window.removeEventListener("keating:quiz-remediation-requested", handler);
   }, [queueOrSend]);
 
   // Handle quiz reframe requests: learner selected a reframe mode with no pre-generated text.
@@ -3807,7 +4577,7 @@ function AssistantThread({
         | { questionId?: string; mode?: string; topic?: string }
         | undefined;
       if (!detail?.mode || !detail?.questionId) return;
-      posthog.capture('quiz_reframe_requested', { mode: detail.mode });
+      posthog.capture("quiz_reframe_requested", { mode: detail.mode });
       queueOrSend({
         role: "user",
         content: [
@@ -3819,7 +4589,8 @@ function AssistantThread({
       } as unknown as AppendMessage);
     };
     window.addEventListener("keating:quiz-reframe-requested", handler);
-    return () => window.removeEventListener("keating:quiz-reframe-requested", handler);
+    return () =>
+      window.removeEventListener("keating:quiz-reframe-requested", handler);
   }, [queueOrSend]);
 
   const storeAdapter = useMemo(
@@ -3827,7 +4598,9 @@ function AssistantThread({
       messages,
       isRunning,
       convertMessage,
-      onNew,
+	  onNew: async (message: AppendMessage) => {
+		await onNew(message);
+	  },
       onCancel,
       adapters: {
         attachments: keatingAttachmentAdapter,
@@ -3907,275 +4680,327 @@ function AssistantThread({
       value={callbacks.onAuthError ?? (() => Promise.resolve(false))}
     >
       <QuizGradesContext.Provider value={quizGradesContextValue}>
-      <KeatingOpenUIActionProvider onAction={handleOpenUIAction}>
-      <AssistantRuntimeProvider runtime={runtime}>
-        <ThreadPrimitive.Root
-          className={css({
-            display: "flex",
-            height: "100%",
-            minHeight: 0,
-            flexDirection: "column",
-            backgroundColor: "var(--background)",
-            color: "var(--foreground)",
-          })}
-        >
-          <ThreadPrimitive.Viewport
-            className={css({
-              display: "flex",
-              minHeight: 0,
-              flex: 1,
-              flexDirection: "column",
-              overflowY: "auto",
-              overflowX: "hidden",
-							paddingInline: "0.75rem",
-              paddingBlock: "1rem",
-              sm: { paddingInline: "1rem", paddingBlock: "1.5rem" },
-            })}
-          >
-            <div className={css({ display: "flex", flex: 1, flexDirection: "column" })}>
-              <AuiIf condition={(state) => state.thread.isEmpty}>
-                <SuggestedPrompts model={agent?.state.model ?? null} onSelect={(text, context) => {
-                  posthog.capture('suggested_prompt_clicked', {
-                    prompt_label: context.label,
-                    prompt_domain: context.domain,
-                    prompt_position: context.position,
-                    prompt_origin: context.domain === "tailored" ? "tailored" : "starter",
-                    model: agent ? `${agent.state.model.provider}/${agent.state.model.id}` : "unavailable",
-                    provider: agent?.state.model.provider ?? "unavailable",
-                  });
-                  sendText(text);
-                }} />
-              </AuiIf>
-              <ThreadPrimitive.Messages components={threadComponents} />
-            </div>
-            <ThreadPrimitive.ViewportFooter
+		<OpenUISessionScopeContext.Provider value={callbacks.sessionId}>
+			<KeatingOpenUIActionProvider onAction={handleOpenUIAction}>
+          <AssistantRuntimeProvider runtime={runtime}>
+            <ThreadPrimitive.Root
               className={css({
-                position: "sticky",
-                bottom: 0,
-                minWidth: 0,
-                backgroundColor: "color-mix(in srgb, var(--background) 95%, transparent)",
-                paddingTop: "0.75rem",
-                backdropFilter: "blur(8px)",
+                display: "flex",
+                height: "100%",
+                minHeight: 0,
+                flexDirection: "column",
+                backgroundColor: "var(--background)",
+                color: "var(--foreground)",
               })}
             >
-              {responseComparison}
-              {visibleActiveQuiz && (
+              <ThreadPrimitive.Viewport
+                className={css({
+                  display: "flex",
+                  minHeight: 0,
+                  flex: 1,
+                  flexDirection: "column",
+                  overflowY: "auto",
+                  overflowX: "hidden",
+                  paddingInline: "0.75rem",
+                  paddingBlock: "1rem",
+                  sm: { paddingInline: "1rem", paddingBlock: "1.5rem" },
+                })}
+              >
                 <div
                   className={css({
-                    marginInline: "auto",
-                    marginBottom: "0.375rem",
-                    width: "100%",
-                    maxWidth: "56rem",
-                    overflowX: "hidden",
-                    maxHeight: "min(55dvh, 30rem)",
-                    overflowY: "auto",
-                    overscrollBehavior: "contain",
-                    paddingInline: "0.375rem",
-                    sm: {
-                      marginBottom: "0.5rem",
-                      maxHeight: "none",
-                      overflowY: "visible",
-                      paddingInline: 0,
-                    },
-                  })}
-                >
-                  <QuizSessionPanel
-                    quiz={visibleActiveQuiz}
-                    onSubmit={(result) => {
-                      window.dispatchEvent(
-                        new CustomEvent("keating:quiz-submitted", {
-                          detail: {
-                            resultId: result.resultId,
-                            quizId: visibleActiveQuiz.slug,
-                            topic: visibleActiveQuiz.topic,
-                            total: visibleActiveQuiz.questions.length,
-                            questions: visibleActiveQuiz.questions.map((q) => ({
-                              id: q.id,
-                              question: q.question,
-                              correctAnswer: q.correctAnswer,
-                              type: q.type,
-                              openEnded: isOpenEnded(q),
-                            })),
-                            answers: result.answers,
-                            score: result.score,
-                            partialCreditPoints: result.partialCreditPoints,
-                            partialCredits: result.partialCredits,
-                            flagged: result.flagged,
-                            timing: result.timing,
-                          },
-                        }),
-                      );
-                    }}
-                    onDismiss={() => {
-                      setDismissedQuizId(visibleActiveQuiz.slug);
-                    }}
-                  />
-                </div>
-              )}
-              {activeQuestion && (
-                <div
-                  className={css({
-                    marginInline: "auto",
-                    marginBottom: "0.375rem",
-                    width: "100%",
-                    maxWidth: "56rem",
-                    overflowX: "hidden",
-                    paddingInline: "0.375rem",
-                    sm: { marginBottom: "0.5rem", paddingInline: 0 },
-                  })}
-                >
-                  <QuestionRenderer
-                    data={activeQuestion}
-                    onSubmit={(answers) => {
-                      window.dispatchEvent(
-                        new CustomEvent("keating:question-answered", {
-                          detail: { answers, topic: activeQuestion.topic },
-                        }),
-                      );
-                    }}
-                  />
-                </div>
-              )}
-              <ComposerPrimitive.Root
-                className={cx(
-                  "composer-root",
-                  css({
-                    marginInline: "auto",
                     display: "flex",
-									width: "100%",
-                    maxWidth: "56rem",
+                    flex: 1,
                     flexDirection: "column",
-                    gap: "0.375rem",
-                    borderRadius: "0.5rem",
-                    border: "1px solid var(--border)",
-                    backgroundColor: "var(--background)",
-                    padding: "0.375rem",
-                    boxShadow: "var(--shadow-card)",
-                    sm: { width: "100%", gap: "0.5rem", padding: "0.5rem" },
-                  }),
-                )}
-              >
-                <WebGroundingHint
-                  hasUrl={composerHasUrl}
-                  hasGoogleKey={hasGoogleKey}
-                  groundingEnabled={uiSettings.webSearch === "auto"}
-                  usingGoogleModel={usingGoogleModel}
-                />
-                <ComposerPrimitive.Attachments>
-                  {({ attachment }) => (
-                    <ComposerAttachmentChip attachment={attachment} />
-                  )}
-                </ComposerPrimitive.Attachments>
-                <div
-                  className={css({
-                    display: "flex",
-                    width: "100%",
-                    minWidth: 0,
-                    alignItems: "center",
-                    gap: "0.375rem",
-                    sm: { gap: "0.5rem" },
                   })}
                 >
-                  <ComposerActionsMenu
-                    modelLabel={modelLabel}
-                    onModelSelect={callbacks.onModelSelect}
-                    thinkingLevel={selectedThinkingLevel}
-                    onThinkingLevelChange={handleThinkingLevelChange}
-                    thinkingDisabled={isRunning}
-                  />
-									<SpeechComposerControl
-										expanded={voiceComposerOpen}
-										onExpandedChange={setVoiceComposerOpen}
-										onConversationComplete={preserveLiveConversation}
-										onRequestCredential={callbacks.onApiKeyRequired}
-									/>
-									{voiceComposerOpen ? null : (
-									<ComposerPrimitive.Input
-                    className={css({
-                      maxHeight: "10rem",
-                      minHeight: "2rem",
-                      minWidth: 0,
-                      flex: 1,
-                      resize: "none",
-                      alignSelf: "center",
-                      backgroundColor: "transparent",
-                      paddingInline: "0.25rem",
-                      paddingBlock: "0.375rem",
-                      fontSize: "0.875rem",
-                      lineHeight: "1.25rem",
-                      color: "var(--foreground)",
-                      outline: "none",
-                      _placeholder: { color: "var(--muted-foreground)" },
-                      sm: { minHeight: "2.25rem", paddingBlock: "0.5rem" },
-                    })}
-                    placeholder="Message Keating"
-                    rows={1}
-                    onChange={(event) => setComposerHasUrl(URL_IN_TEXT_PATTERN.test(event.currentTarget.value))}
-									/>
-									)}
-                  {/* Only show Send OR Cancel — never both */}
-                  {isRunning ? (
-                    <ComposerPrimitive.Cancel
-                      className={cx(
-                        composerIconButtonClass,
-                        pulseClass,
-                        css({
-                          borderWidth: "2px",
-                          borderColor: "var(--destructive)",
-                          color: "var(--destructive)",
-                          _hover: {
-                            backgroundColor: "var(--destructive)",
-                            color: "var(--destructive-foreground)",
-                          },
-                        }),
-                      )}
-                    >
-                      <Square size={15} className={css({ sm: { width: "1rem", height: "1rem" } })} />
-                    </ComposerPrimitive.Cancel>
-                  ) : voiceComposerOpen ? null : (
-                    <ComposerPrimitive.Send
-                      className={cx(
-                        composerIconButtonClass,
-                        css({
-                          borderColor: "transparent",
-                          backgroundColor: "var(--primary)",
-                          color: "var(--primary-foreground)",
-                        }),
-                      )}
-                    >
-                      <Send size={15} className={css({ sm: { width: "1rem", height: "1rem" } })} />
-                    </ComposerPrimitive.Send>
-                  )}
+                  <AuiIf condition={(state) => state.thread.isEmpty}>
+                    <SuggestedPrompts
+                      model={agent?.state.model ?? null}
+                      initialPrompts={initialPrompts}
+                      heading={emptyStateTitle}
+                      description={emptyStateDescription}
+                      onSelect={(text, context) => {
+                        posthog.capture("suggested_prompt_clicked", {
+                          prompt_label: context.label,
+                          prompt_domain: context.domain,
+                          prompt_position: context.position,
+                          prompt_origin:
+                            context.domain === "tailored"
+                              ? "tailored"
+                              : "starter",
+                          model: agent
+                            ? `${agent.state.model.provider}/${agent.state.model.id}`
+                            : "unavailable",
+                          provider:
+                            agent?.state.model.provider ?? "unavailable",
+                        });
+                        sendText(text);
+                      }}
+                    />
+                  </AuiIf>
+                  <ThreadPrimitive.Messages components={threadComponents} />
                 </div>
-              </ComposerPrimitive.Root>
-              <div
-                className={cx(
-                  "composer-hint",
-                  css({
-                    marginInline: "auto",
-                    display: "flex",
-                    width: "100%",
-                    maxWidth: "56rem",
-                    justifyContent: "space-between",
-                    gap: "0.75rem",
-                    paddingInline: "0.25rem",
-                    paddingTop: "0.375rem",
-                  }),
-                )}
-              >
-                <span>
-                  keating won&apos;t give you the answer —{" "}
-                  <span className="ok">that&apos;s the point</span>
-                </span>
-                <span className={css({ display: "none", sm: { display: "inline" } })}>
-                  enter to send // shift+enter for newline
-                </span>
-              </div>
-            </ThreadPrimitive.ViewportFooter>
-          </ThreadPrimitive.Viewport>
-        </ThreadPrimitive.Root>
-      </AssistantRuntimeProvider>
-      </KeatingOpenUIActionProvider>
+                <ThreadPrimitive.ViewportFooter
+                  className={css({
+                    position: "sticky",
+                    bottom: 0,
+                    minWidth: 0,
+                    backgroundColor:
+                      "color-mix(in srgb, var(--background) 95%, transparent)",
+                    paddingTop: "0.75rem",
+                    backdropFilter: "blur(8px)",
+                  })}
+                >
+                  {responseComparison}
+                  {visibleActiveQuiz && (
+                    <div
+                      className={css({
+                        marginInline: "auto",
+                        marginBottom: "0.375rem",
+                        width: "100%",
+                        maxWidth: "56rem",
+                        overflowX: "hidden",
+                        maxHeight: "min(55dvh, 30rem)",
+                        overflowY: "auto",
+                        overscrollBehavior: "contain",
+                        paddingInline: "0.375rem",
+                        sm: {
+                          marginBottom: "0.5rem",
+                          maxHeight: "none",
+                          overflowY: "visible",
+                          paddingInline: 0,
+                        },
+                      })}
+                    >
+                      <QuizSessionPanel
+                        quiz={visibleActiveQuiz}
+                        onSubmit={(result) => {
+                          window.dispatchEvent(
+                            new CustomEvent("keating:quiz-submitted", {
+                              detail: {
+                                resultId: result.resultId,
+                                quizId: visibleActiveQuiz.slug,
+                                topic: visibleActiveQuiz.topic,
+                                total: visibleActiveQuiz.questions.length,
+                                questions: visibleActiveQuiz.questions.map(
+                                  (q) => ({
+                                    id: q.id,
+                                    question: q.question,
+                                    correctAnswer: q.correctAnswer,
+                                    type: q.type,
+                                    openEnded: isOpenEnded(q),
+                                  }),
+                                ),
+                                answers: result.answers,
+                                score: result.score,
+                                partialCreditPoints: result.partialCreditPoints,
+                                partialCredits: result.partialCredits,
+                                flagged: result.flagged,
+                                timing: result.timing,
+                              },
+                            }),
+                          );
+                        }}
+                        onDismiss={() => {
+                          setDismissedQuizId(visibleActiveQuiz.slug);
+                        }}
+                      />
+                    </div>
+                  )}
+                  {activeQuestion && (
+                    <div
+                      className={css({
+                        marginInline: "auto",
+                        marginBottom: "0.375rem",
+                        width: "100%",
+                        maxWidth: "56rem",
+                        overflowX: "hidden",
+                        paddingInline: "0.375rem",
+                        sm: { marginBottom: "0.5rem", paddingInline: 0 },
+                      })}
+                    >
+                      <QuestionRenderer
+                        data={activeQuestion}
+                        onSubmit={(answers) => {
+                          window.dispatchEvent(
+                            new CustomEvent("keating:question-answered", {
+                              detail: { answers, topic: activeQuestion.topic },
+                            }),
+                          );
+                        }}
+                      />
+                    </div>
+                  )}
+                  <ComposerPrimitive.Root
+                    className={cx(
+                      "composer-root",
+                      css({
+                        marginInline: "auto",
+                        display: "flex",
+                        width: "100%",
+                        maxWidth: "56rem",
+                        flexDirection: "column",
+                        gap: "0.375rem",
+                        borderRadius: "0.5rem",
+                        border: "1px solid var(--border)",
+                        backgroundColor: "var(--background)",
+                        padding: "0.375rem",
+                        boxShadow: "var(--shadow-card)",
+                        sm: { width: "100%", gap: "0.5rem", padding: "0.5rem" },
+                      }),
+                    )}
+                  >
+                    <ComposerPrefill text={pendingPrompt} />
+                    <WebGroundingHint
+                      hasUrl={composerHasUrl}
+                      hasGoogleKey={hasGoogleKey}
+                      groundingEnabled={uiSettings.webSearch === "auto"}
+                      usingGoogleModel={usingGoogleModel}
+                    />
+                    <ComposerPrimitive.Attachments>
+                      {({ attachment }) => (
+                        <ComposerAttachmentChip attachment={attachment} />
+                      )}
+                    </ComposerPrimitive.Attachments>
+                    <div
+                      className={css({
+                        display: "flex",
+                        width: "100%",
+                        minWidth: 0,
+                        alignItems: "center",
+                        gap: "0.375rem",
+                        sm: { gap: "0.5rem" },
+                      })}
+                    >
+                      <ComposerActionsMenu
+                        modelLabel={modelLabel}
+                        onModelSelect={callbacks.onModelSelect}
+                        thinkingLevel={selectedThinkingLevel}
+                        onThinkingLevelChange={handleThinkingLevelChange}
+                        thinkingDisabled={isRunning}
+                      />
+                      <SpeechComposerControl
+                        expanded={voiceComposerOpen}
+                        onExpandedChange={setVoiceComposerOpen}
+                        onConversationComplete={preserveLiveConversation}
+                        onRequestCredential={callbacks.onApiKeyRequired}
+                      />
+                      {voiceComposerOpen ? null : (
+                        <ComposerPrimitive.Input
+                          className={css({
+                            maxHeight: "10rem",
+                            minHeight: "2rem",
+                            minWidth: 0,
+                            flex: 1,
+                            resize: "none",
+                            alignSelf: "center",
+                            backgroundColor: "transparent",
+                            paddingInline: "0.25rem",
+                            paddingBlock: "0.375rem",
+                            fontSize: "0.875rem",
+                            lineHeight: "1.25rem",
+                            color: "var(--foreground)",
+                            outline: "none",
+                            _placeholder: { color: "var(--muted-foreground)" },
+                            sm: {
+                              minHeight: "2.25rem",
+                              paddingBlock: "0.5rem",
+                            },
+                          })}
+                          placeholder="Message Keating"
+                          rows={1}
+                          onChange={(event) =>
+                            setComposerHasUrl(
+                              URL_IN_TEXT_PATTERN.test(
+                                event.currentTarget.value,
+                              ),
+                            )
+                          }
+                        />
+                      )}
+                      {/* Only show Send OR Cancel — never both */}
+                      {isRunning ? (
+                        <ComposerPrimitive.Cancel
+                          aria-label="Stop generating"
+                          title="Stop generating"
+                          className={cx(
+                            composerIconButtonClass,
+                            pulseClass,
+                            css({
+                              borderWidth: "2px",
+                              borderColor: "var(--destructive)",
+                              color: "var(--destructive)",
+                              _hover: {
+                                backgroundColor: "var(--destructive)",
+                                color: "var(--destructive-foreground)",
+                              },
+                            }),
+                          )}
+                        >
+                          <Square
+                            size={15}
+                            className={css({
+                              sm: { width: "1rem", height: "1rem" },
+                            })}
+                          />
+                        </ComposerPrimitive.Cancel>
+                      ) : voiceComposerOpen ? null : (
+                        <ComposerPrimitive.Send
+                          aria-label="Send message"
+                          title="Send message"
+                          className={cx(
+                            composerIconButtonClass,
+                            css({
+                              borderColor: "transparent",
+                              backgroundColor: "var(--primary)",
+                              color: "var(--primary-foreground)",
+                            }),
+                          )}
+                        >
+                          <Send
+                            size={15}
+                            className={css({
+                              sm: { width: "1rem", height: "1rem" },
+                            })}
+                          />
+                        </ComposerPrimitive.Send>
+                      )}
+                    </div>
+                  </ComposerPrimitive.Root>
+                  <div
+                    className={cx(
+                      "composer-hint",
+                      css({
+                        marginInline: "auto",
+                        display: "flex",
+                        width: "100%",
+                        maxWidth: "56rem",
+                        justifyContent: "space-between",
+                        gap: "0.75rem",
+                        paddingInline: "0.25rem",
+                        paddingTop: "0.375rem",
+                      }),
+                    )}
+                  >
+                    <span>
+                      keating won&apos;t give you the answer —{" "}
+                      <span className="ok">that&apos;s the point</span>
+                    </span>
+                    <span
+                      className={css({
+                        display: "none",
+                        sm: { display: "inline" },
+                      })}
+                    >
+                      enter to send // shift+enter for newline
+                    </span>
+                  </div>
+                </ThreadPrimitive.ViewportFooter>
+              </ThreadPrimitive.Viewport>
+            </ThreadPrimitive.Root>
+          </AssistantRuntimeProvider>
+			</KeatingOpenUIActionProvider>
+		</OpenUISessionScopeContext.Provider>
       </QuizGradesContext.Provider>
     </AuthErrorContext.Provider>
   );
@@ -4223,11 +5048,22 @@ function UserMessage({
           },
         })}
       >
-        <div className={cx("chat-avatar chat-avatar-you", css({ display: "none", marginTop: "0.125rem", sm: { display: "flex" } }))}>
+        <div
+          className={cx(
+            "chat-avatar chat-avatar-you",
+            css({
+              display: "none",
+              marginTop: "0.125rem",
+              sm: { display: "flex" },
+            }),
+          )}
+        >
           {profileImage ? (
             <img src={profileImage} alt="You" />
           ) : (
-            <User className={css({ width: "1rem", height: "1rem", flexShrink: 0 })} />
+            <User
+              className={css({ width: "1rem", height: "1rem", flexShrink: 0 })}
+            />
           )}
         </div>
         <div
@@ -4306,17 +5142,34 @@ function FeedbackModal({
           border: "1px solid var(--border)",
           backgroundColor: "var(--background)",
           padding: "1.25rem",
-          boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
+          boxShadow:
+            "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
         })}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className={css({ marginBottom: "0.75rem", display: "flex", alignItems: "center", justifyContent: "space-between" })}>
-          <h3 className={css({ fontSize: "0.875rem", fontWeight: 600, color: "var(--foreground)" })}>
+        <div
+          className={css({
+            marginBottom: "0.75rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          })}
+        >
+          <h3
+            className={css({
+              fontSize: "0.875rem",
+              fontWeight: 600,
+              color: "var(--foreground)",
+            })}
+          >
             {type === "up" ? "What was helpful?" : "What could be improved?"}
           </h3>
           <button
             type="button"
-            className={cx(iconButtonClass, css({ width: "1.75rem", height: "1.75rem" }))}
+            className={cx(
+              iconButtonClass,
+              css({ width: "1.75rem", height: "1.75rem" }),
+            )}
             onClick={onClose}
             aria-label="Close"
           >
@@ -4329,7 +5182,8 @@ function FeedbackModal({
             resize: "none",
             borderRadius: "0.375rem",
             border: "1px solid var(--border)",
-            backgroundColor: "color-mix(in srgb, var(--muted) 30%, transparent)",
+            backgroundColor:
+              "color-mix(in srgb, var(--muted) 30%, transparent)",
             paddingInline: "0.75rem",
             paddingBlock: "0.5rem",
             fontSize: "0.875rem",
@@ -4343,10 +5197,27 @@ function FeedbackModal({
           onChange={(e) => setComment(e.target.value)}
           autoFocus
         />
-        <div className={css({ marginTop: "0.75rem", display: "flex", justifyContent: "flex-end", gap: "0.5rem" })}>
+        <div
+          className={css({
+            marginTop: "0.75rem",
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: "0.5rem",
+          })}
+        >
           <button
             type="button"
-            className={cx(dialogButtonClass, css({ height: "2rem", color: "var(--muted-foreground)", _hover: { backgroundColor: "var(--accent)", color: "var(--accent-foreground)" } }))}
+            className={cx(
+              dialogButtonClass,
+              css({
+                height: "2rem",
+                color: "var(--muted-foreground)",
+                _hover: {
+                  backgroundColor: "var(--accent)",
+                  color: "var(--accent-foreground)",
+                },
+              }),
+            )}
             onClick={onClose}
           >
             Skip
@@ -4360,7 +5231,10 @@ function FeedbackModal({
                 borderColor: "transparent",
                 backgroundColor: "var(--primary)",
                 color: "var(--primary-foreground)",
-                _hover: { backgroundColor: "color-mix(in srgb, var(--primary) 90%, transparent)" },
+                _hover: {
+                  backgroundColor:
+                    "color-mix(in srgb, var(--primary) 90%, transparent)",
+                },
               }),
             )}
             onClick={() => onSubmit(type, comment)}
@@ -4396,17 +5270,19 @@ function AssistantMessage({
     (message) => message.metadata.custom?.keatingRetryable === true,
   );
   const llmFailure = useMessage(
-    (message) => message.metadata.custom?.keatingLlmFailure as LlmErrorDetails | undefined,
+    (message) =>
+      message.metadata.custom?.keatingLlmFailure as LlmErrorDetails | undefined,
   );
   const retryAttempts = useMessage(
-    (message) => message.metadata.custom?.keatingRetryAttempts as number | undefined,
+    (message) =>
+      message.metadata.custom?.keatingRetryAttempts as number | undefined,
   );
   const retryExhausted = useMessage(
     (message) => message.metadata.custom?.keatingRetryExhausted === true,
   );
-	const isPrefillStatus = useMessage(
-		(message) => message.metadata.custom?.keatingPrefillStatus === true,
-	);
+  const isPrefillStatus = useMessage(
+    (message) => message.metadata.custom?.keatingPrefillStatus === true,
+  );
   // The message id is `assistant-${index}-${timestamp}` (see toAssistantMessage).
   // The trailing timestamp is the stable handle we use to fork at this turn.
   const messageId = useMessage((message) => message.id);
@@ -4416,9 +5292,13 @@ function AssistantMessage({
       .map((part) => part.text ?? "")
       .join("\n\n"),
   );
-  const copyText = stripOpenUIPrograms(stripQuizTags(
-    stripGeneratedImageTags(stripQuestionTags(stripGoalTags(stripArtifactLinks(messageText)))),
-  )).trim();
+  const copyText = stripOpenUIPrograms(
+    stripQuizTags(
+      stripGeneratedImageTags(
+        stripQuestionTags(stripGoalTags(stripArtifactLinks(messageText))),
+      ),
+    ),
+  ).trim();
   const handleFork = () => {
     const ts = Number(messageId.slice(messageId.lastIndexOf("-") + 1));
     onFork?.(Number.isFinite(ts) ? ts : undefined);
@@ -4441,7 +5321,9 @@ function AssistantMessage({
             comment,
             messageId,
             messageText: copyText,
-            messageCreatedAt: Number(messageId.slice(messageId.lastIndexOf("-") + 1)) || undefined,
+            messageCreatedAt:
+              Number(messageId.slice(messageId.lastIndexOf("-") + 1)) ||
+              undefined,
           },
         }),
       );
@@ -4460,9 +5342,9 @@ function AssistantMessage({
     }
   };
 
-	if (isPrefillStatus) {
-		return <KeatingThinkingIndicator status={messageText} />;
-	}
+  if (isPrefillStatus) {
+    return <KeatingThinkingIndicator status={messageText} />;
+  }
 
   return (
     <>
@@ -4488,95 +5370,146 @@ function AssistantMessage({
             sm: { gap: "0.75rem", paddingInline: "0.25rem" },
           })}
         >
-          <div className={cx("chat-avatar", css({ display: "none", marginTop: "0.125rem", sm: { display: "flex" } }))}>
-            <img src="/brand/mascot-head.png" alt="Keating" />
+          <div
+            className={cx(
+              "chat-avatar",
+              css({
+                display: "none",
+                marginTop: "0.125rem",
+                sm: { display: "flex" },
+              }),
+            )}
+          >
+            <img
+              className="keating-mascot-image"
+              src="/brand/mascot-head-v2.png"
+              alt="Keating"
+            />
           </div>
           <div className={css({ minWidth: 0, flex: 1, lineHeight: "1.5rem" })}>
             <div className="msg-meta">
               <b>KEATING</b>
             </div>
             <div className={cx("keating-bubble", foregroundTextClass)}>
-            <MessagePrimitive.Content components={components} />
-            {authError && (
-              <div
-                className={css({
-                  marginBlock: "0.5rem",
-                  borderRadius: "0.5rem",
-                  border: "1px solid color-mix(in srgb, var(--destructive) 50%, transparent)",
-                  backgroundColor: "color-mix(in srgb, var(--destructive) 10%, transparent)",
-                  padding: "0.75rem",
-                  fontSize: "0.875rem",
-                })}
-              >
-                <div className={css({ display: "flex", alignItems: "flex-start", gap: "0.5rem" })}>
-                  <KeyRound
-                    size={16}
-                    className={css({ marginTop: "0.125rem", flexShrink: 0, color: "var(--destructive)" })}
-                  />
-                  <div className={css({ minWidth: 0, flex: 1 })}>
-                    <p className={css({ marginBottom: "0.25rem", fontWeight: 500, color: "var(--destructive)" })}>
-                      Authentication failed
-                    </p>
-                    <p className={css({ marginBottom: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-                      {llmFailure?.recovery ?? "Re-enter the provider credentials, then Keating can retry the same turn."}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={handleAuthRetry}
-                      disabled={retrying}
-                      className={cx(
-                        srInteractiveClass,
-                        css({
+              <MessagePrimitive.Content components={components} />
+              {authError && (
+                <div
+                  className={css({
+                    marginBlock: "0.5rem",
+                    borderRadius: "0.5rem",
+                    border:
+                      "1px solid color-mix(in srgb, var(--destructive) 50%, transparent)",
+                    backgroundColor:
+                      "color-mix(in srgb, var(--destructive) 10%, transparent)",
+                    padding: "0.75rem",
+                    fontSize: "0.875rem",
+                  })}
+                >
+                  <div
+                    className={css({
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: "0.5rem",
+                    })}
+                  >
+                    <KeyRound
+                      size={16}
+                      className={css({
+                        marginTop: "0.125rem",
+                        flexShrink: 0,
+                        color: "var(--destructive)",
+                      })}
+                    />
+                    <div className={css({ minWidth: 0, flex: 1 })}>
+                      <p
+                        className={css({
+                          marginBottom: "0.25rem",
+                          fontWeight: 500,
+                          color: "var(--destructive)",
+                        })}
+                      >
+                        Authentication failed
+                      </p>
+                      <p
+                        className={css({
+                          marginBottom: "0.5rem",
+                          fontSize: "0.75rem",
+                          color: "var(--muted-foreground)",
+                        })}
+                      >
+                        {llmFailure?.recovery ??
+                          "Re-enter the provider credentials, then Keating can retry the same turn."}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleAuthRetry}
+                        disabled={retrying}
+                        className={cx(
+                          srInteractiveClass,
+                          css({
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "0.375rem",
+                            borderRadius: "0.375rem",
+                            backgroundColor: "var(--primary)",
+                            paddingInline: "0.75rem",
+                            paddingBlock: "0.375rem",
+                            fontSize: "0.75rem",
+                            fontWeight: 500,
+                            color: "var(--primary-foreground)",
+                            _hover: {
+                              backgroundColor:
+                                "color-mix(in srgb, var(--primary) 90%, transparent)",
+                            },
+                            _disabled: { opacity: 0.5 },
+                          }),
+                        )}
+                      >
+                        {retrying ? (
+                          <Spinner size={12} />
+                        ) : (
+                          <KeyRound size={12} />
+                        )}
+                        Re-enter API key
+                      </button>
+                      <a
+                        href={tutorialApiKeyHref(authError.provider)}
+                        onClick={(event) =>
+                          handleTutorialLinkClick(
+                            event.nativeEvent,
+                            tutorialApiKeyHref(authError.provider),
+                          )
+                        }
+                        className={css({
+                          marginLeft: "0.5rem",
                           display: "inline-flex",
                           alignItems: "center",
-                          gap: "0.375rem",
-                          borderRadius: "0.375rem",
-                          backgroundColor: "var(--primary)",
-                          paddingInline: "0.75rem",
-                          paddingBlock: "0.375rem",
                           fontSize: "0.75rem",
-                          fontWeight: 500,
-                          color: "var(--primary-foreground)",
-                          _hover: {
-                            backgroundColor: "color-mix(in srgb, var(--primary) 90%, transparent)",
-                          },
-                          _disabled: { opacity: 0.5 },
-                        }),
-                      )}
-                    >
-                      {retrying ? (
-                        <Spinner size={12} />
-                      ) : (
-                        <KeyRound size={12} />
-                      )}
-                      Re-enter API key
-                    </button>
-                    <a
-                      href={tutorialApiKeyHref(authError.provider)}
-                      onClick={(event) => handleTutorialLinkClick(event.nativeEvent, tutorialApiKeyHref(authError.provider))}
-                      className={css({
-                        marginLeft: "0.5rem",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        fontSize: "0.75rem",
-                        color: "var(--primary)",
-                        textDecoration: "underline",
-                        textUnderlineOffset: "2px",
-                      })}
-                    >
-                      Need a key?
-                    </a>
+                          color: "var(--primary)",
+                          textDecoration: "underline",
+                          textUnderlineOffset: "2px",
+                        })}
+                      >
+                        Need a key?
+                      </a>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
             </div>
             {llmFailure && canRetry && onRetry && (
-              <FailedResponseRecovery recovery={llmFailure.recovery} onRetry={onRetry} />
+              <FailedResponseRecovery
+                recovery={llmFailure.recovery}
+                onRetry={onRetry}
+              />
             )}
             {llmFailure && retryAttempts && retryAttempts > 1 && (
               <p
-                className={css({ marginTop: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}
+                className={css({
+                  marginTop: "0.5rem",
+                  fontSize: "0.75rem",
+                  color: "var(--muted-foreground)",
+                })}
                 role="status"
               >
                 {retryExhausted
@@ -4584,26 +5517,49 @@ function AssistantMessage({
                   : `Keating made ${retryAttempts} recovery attempts before preserving this error.`}
               </p>
             )}
-            <div className={css({ marginTop: "0.5rem", display: "flex", alignItems: "center", gap: "0.25rem" })}>
-              {copyText && <CopyButton variant="ghost" text={copyText} label="Copy message" />}
-              {llmFailure && llmFailure.category !== "aborted" && onModelSelect && (
-                <button
-                  type="button"
-                  className={cx(messageActionButtonClass, css({ width: "auto", gap: "0.375rem", paddingInline: "0.5rem" }))}
-                  onClick={onModelSelect}
-                  title="Choose a different model"
-                >
-                  <Server size={13} />
-                  <span>Choose model</span>
-                </button>
+            <div
+              className={css({
+                marginTop: "0.5rem",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.25rem",
+              })}
+            >
+              {copyText && (
+                <CopyButton
+                  variant="ghost"
+                  text={copyText}
+                  label="Copy message"
+                />
               )}
+              {llmFailure &&
+                llmFailure.category !== "aborted" &&
+                onModelSelect && (
+                  <button
+                    type="button"
+                    className={cx(
+                      messageActionButtonClass,
+                      css({
+                        width: "auto",
+                        gap: "0.375rem",
+                        paddingInline: "0.5rem",
+                      }),
+                    )}
+                    onClick={onModelSelect}
+                    title="Choose a different model"
+                  >
+                    <Server size={13} />
+                    <span>Choose model</span>
+                  </button>
+                )}
               <button
                 type="button"
                 className={cx(
                   messageActionButtonClass,
                   feedback === "up"
                     ? css({
-                        backgroundColor: "color-mix(in srgb, var(--primary) 20%, transparent)",
+                        backgroundColor:
+                          "color-mix(in srgb, var(--primary) 20%, transparent)",
                         color: "var(--primary)",
                       })
                     : "",
@@ -4620,7 +5576,8 @@ function AssistantMessage({
                   messageActionButtonClass,
                   feedback === "down"
                     ? css({
-                        backgroundColor: "color-mix(in srgb, var(--destructive) 20%, transparent)",
+                        backgroundColor:
+                          "color-mix(in srgb, var(--destructive) 20%, transparent)",
                         color: "var(--destructive)",
                       })
                     : "",
@@ -4635,7 +5592,10 @@ function AssistantMessage({
                 <button
                   type="button"
                   data-fork-action
-                  className={cx(messageActionButtonClass, css({ opacity: 0, _focus: { opacity: 1 } }))}
+                  className={cx(
+                    messageActionButtonClass,
+                    css({ opacity: 0, _focus: { opacity: 1 } }),
+                  )}
                   title="Fork session from here"
                   onClick={handleFork}
                   aria-label="Fork session from here"
@@ -4658,89 +5618,136 @@ function AssistantMessage({
 }
 
 function KeatingThinkingIndicator({ status }: { status: string }) {
-	return (
-		<div
-			role="status"
-			aria-live="polite"
-			className={css({
-				marginInline: "auto",
-				marginBottom: "1rem",
-				display: "flex",
-				width: "100%",
-				maxWidth: "56rem",
-				alignItems: "center",
-				gap: "0.75rem",
-				color: "var(--muted-foreground)",
-			})}
-		>
-			<div
-				className={cx(
-					"keating-thinking-mascot",
-					css({
-						display: "flex",
-						height: "2.5rem",
-						width: "2.5rem",
-						flexShrink: 0,
-						alignItems: "center",
-						justifyContent: "center",
-						borderRadius: "0.5rem",
-						border: "1px solid var(--border)",
-						backgroundColor: "var(--card)",
-					}),
-				)}
-			>
-				<img src="/brand/mascot-head.png" alt="" className={css({ width: "1.875rem", height: "auto" })} />
-			</div>
-			<div className={css({ minWidth: 0 })}>
-				<div className={css({ display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", fontWeight: 600, color: "var(--foreground)" })}>
-					Keating is thinking
-					<span aria-hidden="true" className={css({ display: "inline-flex", gap: "0.1875rem" })}>
-						{[0, 1, 2].map((index) => (
-							<span key={index} className="keating-thinking-dot" style={{ animationDelay: `${index * 140}ms` }} />
-						))}
-					</span>
-				</div>
-				<p className={css({ marginTop: "0.125rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "11px" })}>{status}</p>
-			</div>
-		</div>
-	);
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className={css({
+        marginInline: "auto",
+        marginBottom: "1rem",
+        display: "flex",
+        width: "100%",
+        maxWidth: "56rem",
+        alignItems: "center",
+        gap: "0.75rem",
+        color: "var(--muted-foreground)",
+      })}
+    >
+      <div
+        className={cx(
+          "keating-thinking-mascot",
+          css({
+            display: "flex",
+            height: "2.5rem",
+            width: "2.5rem",
+            flexShrink: 0,
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: "0.5rem",
+            border: "1px solid var(--border)",
+            backgroundColor: "var(--card)",
+          }),
+        )}
+      >
+        <img
+          src="/brand/mascot-head-v2.png"
+          alt=""
+          className={`keating-mascot-image ${css({ width: "2.125rem", height: "auto" })}`}
+        />
+      </div>
+      <div className={css({ minWidth: 0 })}>
+        <div
+          className={css({
+            display: "flex",
+            alignItems: "center",
+            gap: "0.25rem",
+            fontSize: "0.75rem",
+            fontWeight: 600,
+            color: "var(--foreground)",
+          })}
+        >
+          Keating is thinking
+          <span
+            aria-hidden="true"
+            className={css({ display: "inline-flex", gap: "0.1875rem" })}
+          >
+            {[0, 1, 2].map((index) => (
+              <span
+                key={index}
+                className="keating-thinking-dot"
+                style={{ animationDelay: `${index * 140}ms` }}
+              />
+            ))}
+          </span>
+        </div>
+        <p
+          className={css({
+            marginTop: "0.125rem",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            fontSize: "11px",
+          })}
+        >
+          {status}
+        </p>
+      </div>
+    </div>
+  );
 }
 
 export const AssistantChatPanel = forwardRef<
   ChatPanelHandle,
   AssistantChatPanelProps
->(({ className, speechEnabled = false, responseComparison }, ref) => {
-  const [agent, setAgentState] = useState<Agent | null>(null);
-  const [callbacks, setCallbacks] = useState<ChatPanelSetupCallbacks>({});
-  const [version, setVersion] = useState(0);
-
-  const refresh = useCallback(() => setVersion((current) => current + 1), []);
-
-  useImperativeHandle(
+>(
+  (
+    {
+      className,
+      speechEnabled = false,
+      responseComparison,
+      initialPrompts,
+      emptyStateTitle,
+      emptyStateDescription,
+      pendingPrompt,
+    },
     ref,
-    () => ({
-      async setAgent(nextAgent, nextCallbacks = {}) {
-        setAgentState(nextAgent);
-        setCallbacks(nextCallbacks);
-        refresh();
-      },
-    }),
-    [refresh],
-  );
+  ) => {
+    const [agent, setAgentState] = useState<Agent | null>(null);
+    const [callbacks, setCallbacks] = useState<ChatPanelSetupCallbacks>({});
+    const [version, setVersion] = useState(0);
 
-  return (
-    <div className={className}>
-      <AgentSubscription agent={agent} onChange={refresh} />
-      <AssistantThread
-        agent={agent}
-        callbacks={callbacks}
-        version={version}
-        speechEnabled={speechEnabled}
-        responseComparison={responseComparison}
-      />
-    </div>
-  );
-});
+    const refresh = useCallback(() => setVersion((current) => current + 1), []);
+
+    useImperativeHandle(
+      ref,
+      () => ({
+        async setAgent(nextAgent, nextCallbacks = {}) {
+          setAgentState(nextAgent);
+          setCallbacks(nextCallbacks);
+          refresh();
+        },
+      }),
+      [refresh],
+    );
+
+    return (
+      <div className={className}>
+        <AgentSubscription agent={agent} onChange={refresh} />
+        <AssistantThread
+          agent={agent}
+          callbacks={callbacks}
+          version={version}
+          speechEnabled={speechEnabled}
+          responseComparison={responseComparison}
+          initialPrompts={initialPrompts}
+          emptyStateTitle={emptyStateTitle}
+          emptyStateDescription={emptyStateDescription}
+          pendingPrompt={pendingPrompt}
+        />
+      </div>
+    );
+  },
+);
 
 AssistantChatPanel.displayName = "AssistantChatPanel";
 
@@ -4749,6 +5756,7 @@ AssistantChatPanel.displayName = "AssistantChatPanel";
 export const __test_assistantTextParts = assistantTextParts;
 export const __test_parseInteractiveSegments = parseInteractiveSegments;
 export const __test_interactiveTagPattern = interactiveTagPattern;
+export const __test_recordCredentialBlockedSend = recordCredentialBlockedSend;
 
 function AgentSubscription({
   agent,

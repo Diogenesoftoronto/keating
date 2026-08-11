@@ -383,6 +383,7 @@ export async function getProviderApiKey(providerName: string): Promise<string | 
 
 const FALLBACK_CHAT_MODEL_IDS: Record<string, string[]> = {
 	[NOTORGANIC_PROVIDER_ID]: [NOTORGANIC_DEFAULT_MODEL.id],
+	"openai-codex": ["gpt-5.5", "gpt-5.4", "gpt-5.4-mini", "gpt-5.3-codex-spark"],
 	openai: ["gpt-5.5", "gpt-5.5-pro", "gpt-5.4", "gpt-5.3-chat-latest", "gpt-5.2", "gpt-5.1", "gpt-5"],
 	anthropic: ["claude-sonnet-4-6", "claude-opus-4-8", "claude-opus-4-7", "claude-sonnet-4-5", "claude-haiku-4-5"],
 	google: ["gemini-3.1-pro-preview", "gemini-3.5-flash", "gemini-3-pro-preview", "gemini-2.5-pro"],
@@ -408,7 +409,7 @@ export async function resolveAvailableChatModel(current: Model<Api>): Promise<Mo
 	}
 
 	const models = await getSelectableModels();
-	for (const provider of [NOTORGANIC_PROVIDER_ID, "openai", "anthropic", "google"]) {
+	for (const provider of [NOTORGANIC_PROVIDER_ID, "openai-codex", "anthropic", "openai", "google"]) {
 		if (!(await getProviderApiKey(provider))) continue;
 		const model = preferredModelForProvider(models, provider);
 		if (model) return model;

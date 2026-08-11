@@ -14,6 +14,16 @@ export interface PendingUIAction {
 	createdAt: string;
 }
 
+export interface PendingLearnerResponse {
+	version: 1;
+	sessionId: string;
+	receiptId: string;
+	uiActionId: string;
+	sessionMessageId: string;
+	serialized: string;
+	createdAt: string;
+}
+
 export interface EventStoreDiagnostic {
 	code: "corrupt-record" | "invalid-event" | "storage-error";
 	key: string;
@@ -45,6 +55,9 @@ export interface ConversationEventStore {
 	putPendingAction(action: PendingUIAction): void;
 	listPendingActions(sessionId: string): PendingUIAction[];
 	removePendingAction(sessionId: string, actionId: string): boolean;
+	putPendingLearnerResponse(response: PendingLearnerResponse): void;
+	listPendingLearnerResponses(sessionId: string): PendingLearnerResponse[];
+	removePendingLearnerResponse(sessionId: string, receiptId: string): boolean;
 	compact(sessionId: string, checkpoint: EventStoreCheckpoint): SessionReplay;
 	clearSession(sessionId: string): void;
 }

@@ -15,6 +15,10 @@ import {
 	saveOpenUIState,
 } from "../keating/openui/renderer";
 import { normalizeQuestionForm } from "../components/QuestionRenderer";
+import {
+	OPENUI_SOURCE_PARITY_FIXTURE,
+	WEB_OPENUI_COMPONENTS,
+} from "../../../packages/learner-contracts/src/index";
 
 class MemoryStorage {
 	private readonly values = new Map<string, string>();
@@ -118,6 +122,18 @@ describe("Keating OpenUI library", () => {
 		expect(keatingOpenUIStudyPlanExampleProgram).toContain('planId: "dns-resolution-core"');
 	});
 
+	it("parses the shared cross-surface fixture with every registered component", () => {
+		const parser = createParser(keatingOpenUILibrary.toJSONSchema());
+		const result = parser.parse(OPENUI_SOURCE_PARITY_FIXTURE);
+
+		expect(result.root?.typeName).toBe("LearningSurface");
+		expect(result.meta.errors).toEqual([]);
+		expect(result.meta.unresolved).toEqual([]);
+		for (const component of WEB_OPENUI_COMPONENTS) {
+			expect(OPENUI_SOURCE_PARITY_FIXTURE).toContain(`${component}(`);
+		}
+	});
+
 	it("persists resumable state and skips ephemeral state", () => {
 		const storage = new MemoryStorage();
 		const resumable = { id: "quiz-1", lifecycle: "resumable" as const, revision: 0 };
@@ -128,5 +144,22 @@ describe("Keating OpenUI library", () => {
 		expect(storage.getItem(openUIStateKey(resumable.id))).not.toBeNull();
 		expect(saveOpenUIState(storage, ephemeral, { answer: "temporary" })).toBe(false);
 		expect(loadOpenUIState(storage, ephemeral)).toEqual({});
+	});
+
+	it("migrates legacy state to a session-scoped document id", () => {
+		const storage = new MemoryStorage();
+		const legacy = { id: "message-1-document", lifecycle: "resumable" as const, revision: 0 };
+		const scoped = {
+			id: "session-1-message-1-document",
+			lifecycle: "resumable" as const,
+			revision: 0,
+			legacyIds: [legacy.id],
+		};
+		saveOpenUIState(storage, legacy, { notes: "keep this" });
+
+		expect(loadOpenUIState(storage, scoped)).toEqual({ notes: "keep this" });
+		expect(storage.getItem(openUIStateKey(scoped.id))).toBe(
+			storage.getItem(openUIStateKey(legacy.id)),
+		);
 	});
 });

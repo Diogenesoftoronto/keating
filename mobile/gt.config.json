@@ -1,6 +1,6 @@
 {
-  "defaultLocale": "en-CA",
-  "locales": ["fr-CA"],
+  "defaultLocale": "en",
+  "locales": ["fr"],
   "src": ["src/**/*.{ts,tsx}"],
   "files": {
     "gt": {

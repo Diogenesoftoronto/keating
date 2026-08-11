@@ -118,12 +118,38 @@ describe("StorageConversationEventStore", () => {
 		expect(reopened.listPendingActions("session-1")).toEqual([]);
 	});
 
-	test("compacts acknowledged events while retaining checkpoint metadata and pending actions", () => {
+	test("persists learner-response delivery exactly once until acknowledged", () => {
+		const storage = new MemoryStorage();
+		const store = new StorageConversationEventStore(storage);
+		const response = {
+			version: 1 as const,
+			sessionId: "session-1",
+			receiptId: "receipt-1",
+			uiActionId: "action-1",
+			sessionMessageId: "openui:receipt-1",
+			serialized: "<keating-learner-response>saved</keating-learner-response>",
+			createdAt: "2026-07-18T00:00:00.000Z",
+		};
+		store.putPendingLearnerResponse(response);
+		store.putPendingLearnerResponse(response);
+
+		const reopened = new StorageConversationEventStore(storage);
+		expect(reopened.listPendingLearnerResponses("session-1")).toEqual([response]);
+		expect(reopened.removePendingLearnerResponse("session-1", response.receiptId)).toBe(true);
+		expect(reopened.removePendingLearnerResponse("session-1", response.receiptId)).toBe(false);
+	});
+
+	test("compacts acknowledged events while retaining checkpoint metadata and pending deliveries", () => {
 		const store = new StorageConversationEventStore(new MemoryStorage());
 		store.appendMany([event("one", 1), event("two", 2), event("three", 3)]);
 		store.putPendingAction({
 			sessionId: "session-1", runId: "run-1", createdAt: "2026-07-18T00:00:00.000Z",
 			action: { id: "pending", documentId: "doc", documentRevision: 0, type: "answer", params: {} },
+		});
+		store.putPendingLearnerResponse({
+			version: 1, sessionId: "session-1", receiptId: "receipt", uiActionId: "pending",
+			sessionMessageId: "openui:receipt", serialized: "serialized",
+			createdAt: "2026-07-18T00:00:00.000Z",
 		});
 
 		const replay = store.compact("session-1", {
@@ -135,6 +161,7 @@ describe("StorageConversationEventStore", () => {
 		expect(replay.events.map(({ id }) => id)).toEqual(["three"]);
 		expect(replay.checkpoint?.throughSequence).toBe(2);
 		expect(store.listPendingActions("session-1")).toHaveLength(1);
+		expect(store.listPendingLearnerResponses("session-1")).toHaveLength(1);
 	});
 
 	test("returns diagnostics rather than throwing for corrupt storage", () => {

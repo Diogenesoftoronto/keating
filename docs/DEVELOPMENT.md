@@ -48,6 +48,9 @@ See the [devenv tasks documentation](https://devenv.sh/tasks/) for how tasks wor
 | `keating:build` | Build root TypeScript project (requires versions in sync) |
 | `keating:generate-nodepod-boot` | Generate NodePod boot files from source tree |
 | `keating:build-all` | Sync versions, build root, generate nodepod boot, build web |
+| `keating:study-analysis` | Regenerate the versioned paper analysis JSON and Markdown |
+| `keating:paper` | Regenerate analysis and compile the published paper PDF |
+| `keating:paper-check` | Compile the paper to `/tmp` without replacing the published PDF |
 
 ### Test
 

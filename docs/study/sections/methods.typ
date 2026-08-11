@@ -2,7 +2,11 @@
 
 == System overview
 
-Keating is implemented as a policy-controlled teaching scaffold around a Pi runtime. The live system can generate lesson plans, maps, verification artifacts, animations, benchmark reports, and prompt-evolution artifacts, but the present paper focuses on the teaching-policy layer and the synthetic harness. A teaching policy contains nine scalar controls:
+This revision targets Keating 3.3.0. The system has two related but distinct execution graphs. CLI, Pi, OpenTUI, and MCP surfaces converge on the Node project coordinator. The web app runs a browser-compatible Pi agent and a separately maintained browser port of the core, then routes workspace operations to browser-local, host, remote, or cloud adapters according to declared capabilities. The present paper evaluates neither interface graph directly; it focuses on the shared teaching-policy model, archived traces, and deterministic internal harness.
+
+Within the Node path, lesson plans, maps, learner-state transforms, and fallback benchmark scores are local and inspectable. Some core operations remain model-assisted: animation authoring, factual verification, optional LLM judging, prompt optimization, and Ax/GEPA paths can call a provider and must surface a fallback or pending state. The paper's synthetic results set `KEATING_LLM_BENCHMARK` off and use the algebraic fallback only.
+
+A teaching policy contains nine scalar controls:
 
 - analogy density
 - Socratic ratio
@@ -14,9 +18,9 @@ Keating is implemented as a policy-controlled teaching scaffold around a Pi runt
 - interdisciplinary bias
 - challenge rate
 
-These controls do not directly encode a single answer. They encode a region of instructional behavior. The metaharness evaluates those controls against topic structure and learner profiles, then uses the resulting signals to revise the policy.
+These controls do not encode a single answer. They define a region of instructional behavior. The metaharness evaluates that region against topic structure and learner evidence, then uses the result to compare or revise a policy.
 
-The live system also now persists session-level timing state. `LearnerState` records session starts, session ends, and the topics covered within each lesson, and the engagement module converts that history into an *engagement timeline* for spaced revisit. For each covered topic, Keating stores the last-seen timestamp, session count, and mastery estimate, then applies an exponential retention-decay model with a configurable half-life, due threshold, minimum review interval, and urgency tiers. Operationally, this lets the tutor detect when a learner has been away, estimate which topics are likely slipping, and suggest review before continuing. This timing-aware revisit mechanism is part of the present system architecture, but it was added after the benchmark results reported here and is not yet evaluated as a separate outcome variable in the study.
+`LearnerState` records sessions, topics, feedback, quiz results, goals, and review evidence. The engagement module converts last-seen time, session count, and mastery estimates into a revisit timeline using an exponential decay heuristic with configurable half-life, due threshold, minimum interval, and urgency tiers. This is motivated by evidence for distributed practice @cepeda2006, but its calibration is not estimated from the present archive. More importantly, the production benchmark treats learner evidence and synthetic simulation differently: when learner state is supplied it scores recorded outcomes only, and policy evolution refuses to run until at least five feedback, quiz, or inferred learner-turn signals exist. The synthetic branch used below is an explicit internal fallback, not a substitute silently blended into a learner's record.
 
 == Mathematical formulation of the harness
 
@@ -60,7 +64,7 @@ $ R = M (rho_0 + rho_r r) $
 
 $ E = mu_E + beta_i F_i + beta_d F_d + beta_g F_g + beta_b F_b + beta_o (1 - O) $
 
-$ T_r = R (tau_0 + tau_i i + tau_t t) $
+$ T_r = M (tau_0 + tau_i i + tau_t t) $
 
 $ C = mu_C + gamma_o O + gamma_f |f - u| + gamma_c |c - p| $
 
@@ -76,7 +80,7 @@ The harness is therefore defined by its structure plus its calibration:
 
 $ Theta = {omega_nu, omega_x, e_max, Theta_O, Theta_M, Theta_R, Theta_E, Theta_T, Theta_C, Theta_S} $
 
-where each `Theta_*` denotes a small family of scalar parameters. The present repository instantiates `Theta` with one concrete numeric setting in `src/core/benchmark.ts`, but the paper intentionally presents the more general parameterized metaharness. This formulation is deliberately interpretable. It is not intended as a psychologically complete model of learning. Its purpose is to make the metaharness legible enough that policy evolution is inspectable rather than opaque.
+where each `Theta_*` denotes a small family of scalar parameters. The concrete coefficients are implemented in `src/core/benchmark-real.ts`; `src/core/benchmark.ts` selects between real-outcome scoring, deterministic simulation, and an explicitly enabled LLM judge. The equations present the fallback as a parameterized metaharness even though the 3.3.0 implementation fixes several values, including three synthetic learners per topic, a topic-seed stride of 97, and a reporting scale of 100. The formulation is interpretable rather than psychologically complete: its purpose is to make the path from policy coordinates to a score inspectable.
 
 == Harness pseudocode
 
@@ -101,7 +105,7 @@ BUILD-LEARNER-POPULATION(seed, count)
 ```
 ]
 
-This procedure samples the synthetic learner population for one topic. In CLRS terms, it is the input-construction phase for the benchmark: before Keating can evaluate a teaching policy, it needs a distribution of learners with varying prior knowledge, abstraction comfort, persistence, and anxiety. The important point for the present paper is that the population size is an argument rather than a fixed constant of the algorithm. The repository currently supplies one concrete learner count, but the metaharness does not depend on that exact choice.
+This procedure samples the synthetic learner population for one topic. Before Keating can evaluate a teaching policy internally, it needs a distribution of pseudo-learners with varying prior knowledge, abstraction comfort, persistence, and anxiety. The study uses the implementation's fixed count of three per topic. That is an engineering choice, not a claim that three simulated profiles approximate a human population.
 
 #block(fill: luma(245), inset: 1em, radius: 4pt)[
 #set text(font: "DejaVu Sans Mono", size: 9pt)
@@ -145,7 +149,7 @@ SIMULATE-TEACHING(policy, topic, learner, theta)
 36                    + theta.engagementDiagram * diagramFit
 37                    + theta.engagementReflection * reflectionFit
 38                    + theta.engagementHeadroom * (1 - overload))
-39 transfer <- CLIP(retention
+39 transfer <- CLIP(masteryGain
 40                  * (theta.transferBase
 41                     + theta.transferInterdisciplinary
 42                       * policy.interdisciplinaryBias
@@ -188,70 +192,72 @@ SUMMARIZE-TOPIC(topic, simulations, traceLimit, reportScale)
 ```
 ]
 
-This procedure aggregates a set of learner-level simulations into a topic-level result. The benchmark therefore preserves both population averages and diagnostic tails. The mean score tells us how a policy performs on average; the strongest and weakest learners tell us *why*. That diagnostic tail is one place where the metaharness differs from chatbot evaluation, which often reports only a single aggregate success rate. The reporting scale is likewise explicit rather than hardwired into the procedure.
+This procedure aggregates a set of learner-level simulations into a topic-level result. The benchmark preserves both population averages and diagnostic tails. The mean score describes average behavior under the score model; the strongest and weakest pseudo-learners expose which fit terms dominate. The pseudocode leaves the reporting scale explicit, while the current implementation fixes it at 100.
 
 #block(fill: luma(245), inset: 1em, radius: 4pt)[
 #set text(font: "DejaVu Sans Mono", size: 9pt)
 ```python
-RUN-BENCHMARK-SUITE(policy, topics, seed, config)
-1  topicBenchmarks <- empty list
-2  topicTraces <- empty list
-3  for j <- 0 to length(topics) - 1
-4      topic <- topics[j]
-5      topicSeed <- seed + config.topicSeedStride * j
-6      learners <- BUILD-LEARNER-POPULATION(topicSeed, config.learnerCount)
-7      simulations <- empty list
-8      for each learner in learners
-9          simulation <- SIMULATE-TEACHING(policy, topic, learner, config.theta)
-10         append simulation to simulations
-11     summary <- SUMMARIZE-TOPIC(topic,
-12                                simulations,
-13                                config.traceLimit,
-14                                config.reportScale)
-15     append summary to topicBenchmarks
-16     append summary.trace to topicTraces
+RUN-BENCHMARK-SUITE(policy, topics, seed, weights, learnerState?, config)
+1  outcomes <- learnerState ? EXTRACT-REAL-OUTCOMES(learnerState) : empty
+2  if learnerState exists and outcomes is not empty and topics is not focused
+3      topics <- unique topics represented in outcomes
+4  topicBenchmarks <- empty list
+5  for j <- 0 to length(topics) - 1
+6      topic <- topics[j]
+7      if learnerState exists
+8          topicOutcomes <- outcomes matching topic
+9          simulations <- topicOutcomes is empty
+10                        ? empty
+11                        : [SCORE-REAL-OUTCOMES(topicOutcomes, policy, topic, weights)]
+12     else
+13         learners <- BUILD-LEARNER-POPULATION(seed + 97 * j, 3)
+14         simulations <- map learners through SIMULATE-TEACHING(policy, topic, learner, weights)
+15     summary <- SUMMARIZE-TOPIC(topic, simulations, config.traceLimit, 100)
+16     append summary to topicBenchmarks
 17 weakestTopic <- topic with minimum meanScore in topicBenchmarks
 18 overallScore <- MEAN(meanScore for each topic summary in topicBenchmarks)
-19 return (overallScore, weakestTopic, topicBenchmarks, topicTraces)
+19 dataSource <- learnerState exists ? real-evidence status : synthetic
+20 return (overallScore, weakestTopic, topicBenchmarks, dataSource)
 ```
 ]
 
-This is the full benchmark harness. It loops over topics, builds a learner population for each one, simulates the teaching interaction at the score-model level, and aggregates the results into a suite score. In algorithmic terms, it is a nested evaluation loop: topics on the outside, learners on the inside, summary at the end. The `config` argument makes clear that learner count, trace depth, reporting scale, seed stride, and harness coefficients are benchmark choices rather than theoretical necessities. This is the procedure that produces the benchmark reports cited in the results section.
+This is the current benchmark boundary. A caller that supplies learner state does not receive a synthetic blend: for an unfocused benchmark, only topics represented in real outcomes are scored; an explicitly focused topic without outcomes produces an empty summary. A caller that omits learner state enters the deterministic fallback used by tests and the present study. The returned trace labels the data source so a user-facing report can distinguish sufficient evidence, sparse evidence, no evidence, and synthetic execution.
+
+The user-facing product coordinator applies an additional gate before calling the search routine: if learner state is supplied, at least five real outcomes must be available. `mapElitesEvolve` itself is a lower-level primitive and does not enforce that threshold, so direct research and Ax callers remain responsible for their own evidence boundary.
 
 #block(fill: luma(245), inset: 1em, radius: 4pt)[
 #set text(font: "DejaVu Sans Mono", size: 9pt)
 ```python
-EVOLVE-POLICY(basePolicy, focusTopic, iterations, seed, config)
-1  baseline <- RUN-BENCHMARK-SUITE(basePolicy, [focusTopic], seed, config)
-2  best <- baseline
-3  acceptedCandidates <- empty list
-4  exploredCandidates <- empty list
-5  seenPolicies <- {basePolicy}
-6  initialize PRNG with seed + config.evolutionSeedOffset
-7  for iteration <- 1 to iterations
-8      candidatePolicy <- MUTATE(best.policy, PRNG, iteration)
-9      novelty <- NOVELTY-SCORE(seenPolicies, candidatePolicy)
-10     candidateBenchmark <- RUN-BENCHMARK-SUITE(candidatePolicy,
-11                                               [focusTopic],
-12                                               seed
-13                                               + config.evolutionSeedStride
-14                                                 * iteration,
-15                                               config)
-16     improves <- candidateBenchmark.overallScore > best.overallScore
-17     safe <- candidateBenchmark.weakestTopicScore
-18             >= best.weakestTopicScore - config.weakestTopicTolerance
-19     novelEnough <- novelty >= config.noveltyThreshold
-20     record candidate, benchmark, and gate decision
-21     if improves and safe and novelEnough
-22         best <- candidateBenchmark
-23         append candidate to acceptedCandidates
-24     append candidate to exploredCandidates
-25     insert candidatePolicy into seenPolicies
-26 return (baseline, best, acceptedCandidates, exploredCandidates)
+MAP-ELITES-EVOLVE(basePolicy, focusTopic, iterations, seed, grid, learnerState?)
+1  baseline <- RUN-BENCHMARK-SUITE(basePolicy, focusTopic, seed,
+2                                  DEFAULT_WEIGHTS, learnerState)
+3  place baseline in grid(formalism, socraticRatio)
+4  candidates <- [baseline]
+5  initialize PRNG with seed
+6  for iteration <- 1 to iterations
+7      if iteration is in the initial random quarter
+8          policy, weights <- RANDOM-POLICY-AND-WEIGHTS(PRNG)
+9      else
+10         parent <- uniformly sampled filled grid cell
+11         policy, weights <- MUTATE(parent.policy, parent.weights, PRNG)
+12     benchmark <- RUN-BENCHMARK-SUITE(policy,
+13                                      focusTopic,
+14                                      seed + 11 * iteration,
+15                                      weights,
+16                                      learnerState)
+17     if learnerState exists
+18         counterfactual <- BENCHMARK-PERTURBED-OUTCOMES(policy, weights, learnerState)
+19     replace the matching grid cell if empty or benchmark score is higher
+20     append (policy, benchmark, counterfactual) to candidates
+21 winner <- PROSPER-PAIRWISE-WINNER(candidates,
+22           objectives = [score, counterfactual robustness, mastery,
+23                         transfer, low confusion, evidence readiness])
+24 persist grid and decision ledger
+25 return (baseline, winner, grid, candidates)
 ```
 ]
 
-This is the metaharness improvement loop. It does not directly train a model. Instead, it mutates the *instructional controller*, evaluates the mutant in the harness, and accepts it only if three conditions hold: the score improves, the weakest topic does not collapse beyond the configured tolerance, and the candidate is sufficiently novel relative to previously explored policies. That combination of mutation, evaluation, and gating is the algorithmic heart of the paper's metaharness claim. Writing these gates as parameters rather than literals makes the point explicit: Keating's contribution is the control architecture, not one privileged set of thresholds.
+This is the current default improvement loop. It does not train model weights. It explores policy and objective-weight coordinates, retains the best score within each behavioral grid cell, and then applies a PROSPER-style pairwise preference across all candidates. Diversity and final selection are therefore separate: MAP-Elites maintains a repertoire, while PROSPER chooses one policy. Unlike the older hill-climbing implementation, the final preference does not impose a monotone scalar-score or weakest-topic gate. The standardized regressions reported in the results are evidence of that distinction, not noise to be hidden.
 
 == External archival evaluation
 
@@ -263,12 +269,14 @@ The external overall score was defined as the unweighted mean of mastery, engage
 
 == Synthetic benchmark and robustness analyses
 
-The internal benchmark uses `src/core/benchmark.ts`. Unless a focus topic is specified, the suite evaluates 14 topics. For each topic and random seed, the benchmark samples 18 synthetic learners and computes topic-level mean scores from mastery gain, retention, engagement, transfer, and confusion. The current study compared the repository default policy with the current evolved policy in `.keating/state/current-policy.json` over 200 seeds.
+The internal benchmark uses `src/core/benchmark.ts` with `KEATING_LLM_BENCHMARK` disabled, which routes simulation to the algebraic model in `src/core/benchmark-real.ts`. Unless a focus topic is specified, the suite evaluates 14 topics. For each topic and random seed, it samples three pseudo-learners and computes topic means for mastery gain, retention, engagement, transfer, confusion, and their weighted score.
 
-To probe overfitting, we separately summarized tuned-topic (`Derivative`) and non-tuned-topic mean deltas. To probe mechanism, we performed one-at-a-time ablations by swapping each current-policy parameter individually into the default policy and re-evaluating over the same 200 seeds. To probe optimization stability, we reran derivative-only evolution 30 times from the default policy using `src/core/evolution.ts`.
+The evaluated vector is the exact JSON snapshot at `docs/study/evaluated-policy.json`, frozen from the Keating 3.3.0 `me-candidate-33` state. The analysis compares it with `DEFAULT_POLICY` under `DEFAULT_WEIGHTS` over seeds 1-200. Because that candidate originated in full-suite work, per-topic comparisons are robustness checks, not held-out tests. To probe mechanism, we swapped each frozen-policy coordinate individually into the default and reevaluated the same 200 seeds.
+
+To probe search stability, we ran `mapElitesEvolve` 30 times from `DEFAULT_POLICY`, focused on *Derivative*, with 24 candidates and seeds 1-30. Every run received a distinct temporary grid path, preventing persisted elites from leaking between reruns. Candidate search scores use co-evolved objective weights and candidate-specific seeds, so we retain them only as provenance. For the reported delta, the selected policy and `DEFAULT_POLICY` are reevaluated on the same run seed with `DEFAULT_WEIGHTS`. Production normally uses 48 candidates and a persistent 10 x 10 grid; the smaller isolated study protocol is a bounded diagnostic, not a reconstruction of the frozen policy's original search history.
 
 We did *not* run a dedicated reward-hacking study in which the optimizer was challenged against hidden holdout metrics, adversarially perturbed harness coefficients, or external human judgments. That omission is important because any policy-search loop can in principle exploit regularities in the scoring function rather than improve the underlying pedagogical behavior the score was meant to represent.
 
 == Statistics and reporting
 
-All derived numbers in the manuscript come from `bun scripts/study-analysis.mjs`, which writes `docs/generated/study-analysis.json` and `docs/generated/study-analysis.md`. The marimo notebook at `analysis/study_analysis.py` provides an inspectable analysis surface for peer review and exploratory review. External descriptive intervals were estimated with non-parametric bootstrap resampling. Synthetic robustness summaries are reported as empirical means and percentile ranges across seeds or reruns.
+All derived numbers in the manuscript come from `bun scripts/study-analysis.mjs`, exposed as the `keating:study-analysis` devenv task. The script writes the versioned `docs/generated/study-analysis.json` and `docs/generated/study-analysis.md`; the JSON includes protocol metadata, every seed result, and every optimizer rerun. The marimo notebook at `analysis/study_analysis.py` provides an inspectable analysis surface. External descriptive intervals use 5,000 non-parametric bootstrap resamples with deterministic pseudo-random seeds. Synthetic robustness summaries are empirical means, percentiles, and observed counts across seeds or isolated reruns; they are not confidence intervals over human learners.

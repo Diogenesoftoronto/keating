@@ -114,6 +114,11 @@ test("/plan with string arg produces notification", async () => {
   assert.ok(ctx.editorText.length > 0);
 });
 
+test("registers the canonical terminal UI action receiver", async () => {
+  const { pi } = await setup();
+  assert.ok(pi.commands.has("keating-ui-action-v1"));
+});
+
 test("/plan with array arg joins words", async () => {
   const { pi, ctx } = await setup();
   await pi.commands.get("plan")!.handler(["bayes", "rule"], ctx);

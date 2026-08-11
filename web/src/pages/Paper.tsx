@@ -44,7 +44,7 @@ export function Paper() {
             <div className={styles.metaRow}>
               <div className={styles.meta}>
                 <span className={styles.accent}>AUTHOR:</span> Dio the Debugger <br />
-                <span className={styles.accentDate}>DATE:</span> April 3, 2026
+                <span className={styles.accentDate}>DATE:</span> August 8, 2026
               </div>
               <a
                 href="/keating-metaharness.pdf"
@@ -78,33 +78,32 @@ export function Paper() {
               </p>
 
               <p className={styles.paragraph}>
-                The live system now also records session cadence and topic revisit urgency through
-                an engagement timeline derived from lesson logs and retention decay estimates,
-                although that spaced-review mechanism is not separately evaluated in the present
-                paper.
+                Keating 3.3.0 coordinates live interaction, persistent learner evidence, inspectable
+                teaching artifacts, and evaluation-gated policy improvement across browser and
+                terminal surfaces. The paper separates those implementation claims from measured
+                learning outcomes.
               </p>
               
               <p className={styles.paragraph}>
-                We analyze two evidence layers: an archival trace set of 22 raw sessions curated
-                to 16 topic x learner pairs, and a synthetic benchmark implemented directly in the
+                We analyze two evidence layers: 22 model-generated teaching traces curated to 16
+                topic x learner pairs, and a deterministic synthetic benchmark implemented in the
                 repository. The archival set yields a normalized overall score of 0.61 (95%
-                bootstrap interval 0.515-0.705), with strong topic heterogeneity: Special
-                Relativity is highest at 0.75 and Stoicism lowest at 0.425.
+                bootstrap interval 0.515-0.705) and surfaces student-role contamination as a
+                concrete failure mode.
               </p>
 
               <p className={styles.paragraph}>
-                The synthetic layer shows that the current Keating policy, although evolved on
-                Derivative alone, improves the full 14-topic harness by 6.703 points over the
-                default policy across 200/200 seeds, with derivative-only evolution improving in
-                29/30 reruns.
+                The frozen 3.3.0 policy improves the default across all 200 sampled benchmark seeds
+                by 3.982 points on average. In 30 isolated derivative-focused MAP-Elites reruns,
+                selected policies reevaluated on the same seed and fixed objective weights improve
+                in 11, tie in four, and regress in 15, with a mean delta of -0.014.
               </p>
 
               <p className={styles.paragraph}>
-                The contribution of this paper is therefore twofold: a formal account of a
-                teaching metaharness and a reproducible benchmark-and-analysis stack for studying
-                agency-preserving instruction. The present evidence supports systems and
-                methodology claims; a human randomized trial remains the necessary next step for
-                causal pedagogical claims.
+                The contribution is a formal account of a teaching metaharness and a versioned,
+                reproducible benchmark-and-analysis stack. The present evidence supports systems
+                and methodology claims only; a human randomized trial remains necessary for causal
+                pedagogical claims.
               </p>
             </div>
 

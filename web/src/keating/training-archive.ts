@@ -61,7 +61,7 @@ This bundle separates captured evidence from trainer-specific compatibility file
 ## Quality labels
 
 - \`accepted\` (${quality.accepted ?? 0}): suitable for supervised fine-tuning.
-- \`unscored\` (${quality.unscored ?? 0}): retained with full context, but should be reviewed before high-stakes training.
+- \`unscored\` (${quality.unscored ?? 0}): retained with full context, including generated artifacts without learner-quality evidence; review before training.
 - \`review\` (${quality.review ?? 0}): has mixed or middling evidence and is excluded from SFT compatibility files.
 - \`rejected\` (${quality.rejected ?? 0}): negative training evidence. Use for KTO or preference learning, not as a positive SFT completion.
 - \`reference\` (${quality.reference ?? 0}): sandbox source or checkpoint context. It is preserved for analysis and is not recommended as direct SFT data.

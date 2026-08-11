@@ -94,6 +94,22 @@ describe("conversation protocol", () => {
 		expect(state.uiActions).toHaveLength(1);
 	});
 
+	test("replays durable UI state across successive runtime runs in one session", () => {
+		const firstRun = metadata(0);
+		const secondRun = { ...metadata(1), runId: "run-2" };
+		const document = { id: "resume-me", kind: "shared-openui", lifecycle: "resumable" as const, revision: 0, content: {} };
+		const state = replayConversation([
+			conversationEvent("ui.document.upserted", { document }, firstRun),
+			conversationEvent("ui.action", {
+				action: { id: "resume-action", documentId: document.id, documentRevision: 0, type: "complete", params: {} },
+			}, secondRun),
+		]);
+
+		expect(state.uiDocuments[document.id]).toEqual(document);
+		expect(state.uiActions.map((action) => action.id)).toEqual(["resume-action"]);
+		expect(state.runId).toBe("run-2");
+	});
+
 	test("models interruption, reconnect, errors, and completion", () => {
 		const state = replayConversation([
 			conversationEvent("run.started", { mode: "voice" }, metadata(0)),

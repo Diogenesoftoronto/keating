@@ -1,4 +1,8 @@
-#set page(paper: "us-letter", margin: (x: 1in, y: 1in))
+#set document(
+  title: "Keating: A Metaharness for Agency-Preserving AI Instruction",
+  author: "Dio the Debugger",
+)
+#set page(paper: "us-letter", margin: (x: 1in, y: 1in), numbering: "1")
 #set text(font: "New Computer Modern", size: 10.5pt)
 #set par(justify: true, leading: 0.62em)
 

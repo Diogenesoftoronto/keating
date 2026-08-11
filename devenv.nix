@@ -6,6 +6,10 @@
 
   packages = with pkgs; [
     bun
+    gcc
+    gnumake
+    (python3.withPackages (pythonPackages: [ pythonPackages.setuptools ]))
+    typst
   ];
 
   # Expo SDK 56 / React Native 0.85 native Android toolchain. Keep these
@@ -35,7 +39,9 @@
   tasks."keating:install" = {
     description = "Install dependencies (root + web workspaces)";
     exec = ''
-      bun install
+      # node-pty is compiled on Linux. Do not leak foreign toolchain include
+      # paths into node-gyp's reproducible devenv build.
+      env -u CPLUS_INCLUDE_PATH -u C_INCLUDE_PATH -u LIBRARY_PATH bun install
       cd web && bun install
     '';
   };
@@ -108,6 +114,28 @@
     '';
   };
 
+  tasks."keating:study-analysis" = {
+    description = "Regenerate the versioned paper analysis artifacts";
+    exec = ''
+      bun scripts/study-analysis.mjs
+    '';
+  };
+
+  tasks."keating:paper" = {
+    description = "Regenerate the study analysis and build the published paper PDF";
+    exec = ''
+      bun scripts/study-analysis.mjs
+      typst compile --diagnostic-format short docs/study.typ web/public/keating-metaharness.pdf
+    '';
+  };
+
+  tasks."keating:paper-check" = {
+    description = "Compile the paper to a temporary PDF without replacing the published asset";
+    exec = ''
+      typst compile --diagnostic-format short docs/study.typ /tmp/keating-study-check.pdf
+    '';
+  };
+
   # ── Test ────────────────────────────────────────────────────────
   tasks."keating:test" = {
     description = "Run the root test suite";
@@ -169,6 +197,7 @@
   tasks."keating:mobile-apk" = {
     description = "Build a locally installable Android debug APK";
     exec = ''
+      unset CPLUS_INCLUDE_PATH C_INCLUDE_PATH LIBRARY_PATH
       cd mobile && bun run android:apk
     '';
   };
@@ -177,7 +206,7 @@
     description = "Typecheck + test the React Native app";
     exec = ''
       cd mobile && bun run typecheck
-      cd mobile && bun run test
+      bun run test
     '';
   };
 
@@ -207,6 +236,36 @@
     description = "Build and preview the Keating web UI production build";
     exec = ''
       cd web && bun run build && bun run preview
+    '';
+  };
+
+  # ── Desktop ─────────────────────────────────────────────────────
+  tasks."keating:desktop-check" = {
+    description = "Typecheck + test the Electron desktop host";
+    exec = ''
+      cd desktop && bun run typecheck
+      bun run test
+    '';
+  };
+
+  tasks."keating:desktop-build" = {
+    description = "Build the Electron main process and stage the production web runtime";
+    exec = ''
+      cd desktop && bun run build:main
+    '';
+  };
+
+  tasks."keating:desktop-package" = {
+    description = "Build distributable desktop packages";
+    exec = ''
+      cd desktop && bun run dist
+    '';
+  };
+
+  tasks."keating:desktop-package-smoke" = {
+    description = "Assemble an unpacked desktop app for local smoke testing";
+    exec = ''
+      cd desktop && bun x electron-builder --dir
     '';
   };
 

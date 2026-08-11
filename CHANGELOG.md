@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.0] - 2026-08-11
+
+### Added
+- Added shared `@keating/learner-contracts` and `@keating/design-contract` packages so web, mobile, desktop, and terminal surfaces use the same portable learner records, OpenUI documents, capabilities, semantic colors, typography, spacing, and state roles.
+- Built out the native mobile learner product with durable repository migration and recovery, portable import/export, provider-native tool loops, model discovery, rich Markdown/Mermaid/OpenUI rendering, Courses, decks and review, study progress, usage insights, session lineage, and draft-preserving recovery.
+- Added a packaged Electron runtime that boots the real Nitro application on loopback, keeps credentials in an OS-backed vault, validates IPC/navigation/permission boundaries, supports OAuth callbacks, and carries its own Bun runtime in standalone release archives.
+- Expanded `keating tui` into a durable terminal learner surface with session browsing, library, review, settings, interactive documents, filesystem journaling, PTY/RPC transport, and explicit handoffs for graphical or browser-only work.
+- Versioned the benchmark trace archive, curated dataset, evaluated policy, deterministic study-analysis outputs, and regenerated paper so the reported model-to-model results can be reproduced from repository evidence.
+
+### Changed
+- Reworked Courses into a unified read, discuss, review, and build workspace with course assembly, Anki import, search, comments, reactions, artifact management, authenticated material storage, and clearer role and consent handling.
+- Unified browser conversation state, learner records, OpenUI source handling, storage, and tool capabilities around durable receipts and shared cross-surface contracts.
+- Updated web search rendering to preserve citations and provider failures as visible conversation content instead of collapsing them into success-looking fallbacks.
+- Updated the release workflow to verify and bundle the embedded Bun runtime used by standalone terminal archives.
+
+### Fixed
+- Preserved learner drafts, attachments, interactive answers, and retry paths across provider failures, cancellation, backgrounding, and settings recovery on mobile and web.
+- Tightened OAuth refresh/token handling and removed the obsolete duplicate OpenAI Codex callback route.
+- Hardened desktop lifecycle, credential, external-navigation, permission, and packaged-runtime behavior with focused acceptance tests.
+
+### Security
+- Kept desktop secrets behind a validated preload/IPC boundary and restricted external navigation, permissions, deep links, and OAuth callback handling.
+- Kept course credentials and protected material access scoped to authenticated server or native session boundaries while retaining explicit teacher-access consent.
+
 ## [3.3.0] - 2026-08-08
 
 ### Changed
@@ -679,7 +703,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v3.1.1...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v3.4.0...HEAD
+[3.4.0]: https://github.com/Diogenesoftoronto/keating/compare/v3.3.0...v3.4.0
+[3.3.0]: https://github.com/Diogenesoftoronto/keating/compare/v3.2.0...v3.3.0
+[3.2.0]: https://github.com/Diogenesoftoronto/keating/compare/v3.1.1...v3.2.0
 [3.1.1]: https://github.com/Diogenesoftoronto/keating/compare/v3.0.0...v3.1.1
 [3.0.0]: https://github.com/Diogenesoftoronto/keating/compare/v2.10.0...v3.0.0
 [2.10.0]: https://github.com/Diogenesoftoronto/keating/compare/v2.9.0...v2.10.0

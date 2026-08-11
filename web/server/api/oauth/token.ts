@@ -1,6 +1,5 @@
 import { defineEventHandler, readBody, createError } from "h3";
 import { getOAuthServerConfigs, type OAuthServerProviderId } from "./config";
-import { exchangeOpenAiCodexApiKey } from "./openai-codex";
 
 interface TokenRequestBody {
 	provider: string;
@@ -69,11 +68,11 @@ export default defineEventHandler(async (event) => {
 			});
 		}
 
-		const tokenData = await response.json();
-		if (body.provider === "openai-codex" && typeof tokenData.id_token === "string") {
-			tokenData.api_key = await exchangeOpenAiCodexApiKey(config.clientId, tokenData.id_token, config.clientSecret, "token");
-		}
-		return tokenData;
+		// Keep the provider's OAuth access token intact. The pi-ai Anthropic and
+		// Codex transports understand these subscription credentials directly;
+		// exchanging Codex's id_token for a regular OpenAI API key routes requests
+		// to the wrong provider and hides the subscription-backed model catalog.
+		return await response.json();
 	} catch (error) {
 		if ((error as any).statusCode) throw error;
 		console.error(`[oauth/token] Error exchanging token for ${body.provider}:`, error);

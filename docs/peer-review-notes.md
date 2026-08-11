@@ -1,105 +1,78 @@
 # Peer Review Notes for `docs/study.typ`
 
-This document is not part of the manuscript. It is a reviewer-facing support memo that answers the questions most likely to arise from the current evidence package.
+This support memo records the strongest likely reviewer questions for the August 8, 2026 revision. It is not part of the manuscript.
 
-## 1. Is this just a synthetic benchmark paper in disguise?
+## 1. Is this a human-learning study?
 
-Partly, and the revised manuscript now says so explicitly.
+No.
 
-- The paper separates two evidence layers instead of blending them:
-  - `test/traces/*.json` and `test/final_dataset.json` are an archival external evaluation set.
-  - `src/core/benchmark.ts` is an internal synthetic optimization harness.
-- The manuscript treats the synthetic layer as evidence about policy robustness *inside the harness*, not as proof of human learning.
-- The strongest human-facing claim left in the paper is only that the archived traces reveal interpretable failure modes.
+- The 22 archived sessions are model-to-model teaching traces, not human-participant data.
+- The 16 retained records support descriptive failure analysis only.
+- The synthetic benchmark measures behavior inside an explicit score model.
+- The manuscript makes no causal efficacy claim and calls for a preregistered human trial.
 
-## 2. How were the external sessions selected?
+## 2. How were archived sessions selected?
 
-The rule is deterministic and implemented in `scripts/study-analysis.mjs`.
+The versioned rule in `scripts/study-analysis.mjs` is deterministic:
 
-- Start with all 22 raw traces in `test/traces/`.
-- Group by `topic x learner`.
-- Keep the latest trace by timestamp for each pair.
-- This yields 16 retained sessions and excludes 6 earlier duplicates.
-- The retained set matches `test/final_dataset.json` exactly.
+1. Start with all 22 JSON files in `test/traces/`.
+2. Group by `topic x learner`.
+3. Keep the latest timestamp in each group.
+4. Compare the resulting 16 records with `test/final_dataset.json`.
 
-## 3. Did you modify the raw scores?
+The current snapshot matches exactly and excludes six earlier duplicates.
 
-Only once, and the correction is disclosed.
+## 3. Were raw scores modified?
 
-- One derivative trace for `Qwen-2.5-1.5B` used `8, 7, 8` while the rest of the archive used the `0-1` scale.
-- The analysis normalizes that single record to `0.8, 0.7, 0.8`.
-- The rule and corrected record are written to `docs/generated/study-analysis.json`.
+One encoding correction is disclosed. A derivative trace for `Qwen-2.5-1.5B` used `8, 7, 8` while the rest used a 0-1 scale. The analysis normalizes those values to `0.8, 0.7, 0.8` and records the before/after values and rule in `docs/generated/study-analysis.json`.
 
-## 4. Why should anyone trust the external labels?
+## 4. Why trust the archival labels?
 
-They should trust them only to the extent claimed.
+Only to the limited extent claimed.
 
-- The labels are archival values shipped with the repository.
-- The revised paper does *not* claim blinded human scoring, inter-rater reliability, or preregistered rubrics.
-- The labels are used for descriptive evaluation and failure analysis only.
-- This is why the manuscript repeatedly states that human efficacy remains unproven.
+- They are archived labels with no documented scorer provenance.
+- There is no blinded scoring or inter-rater reliability.
+- They are used for descriptive topic, learner-role, and contamination analysis.
+- They are not treated as measured human learning outcomes.
 
-## 5. What stops the synthetic gains from being overfitting?
+## 5. What exactly is the synthetic comparison?
 
-Nothing stops overfitting in principle, but the current data argue against trivial topic-specific overfitting inside the harness.
+The evaluated policy is frozen at `docs/study/evaluated-policy.json` rather than loaded from ignored `.keating` state. Against the Keating 3.3.0 default under the same default objective weights, it improves the 14-topic suite by a mean 3.982 points over 200 seeds (2.5th-97.5th percentiles 3.039-4.985) and is positive on all 200 aggregate comparisons.
 
-- The current policy was evolved on `Derivative` only.
-- It still improves the full 14-topic suite across `200/200` seeds.
-- The mean gain on non-derivative topics is essentially identical to the derivative gain.
-- Re-running derivative evolution from scratch improves the baseline in `29/30` runs.
+This is not a held-out generalization result. The candidate originated in full-suite work. The paper now describes the per-topic results as robustness inside the score model.
 
-This is still an internal result, but it is materially stronger than a single run on a single topic.
+## 6. Is MAP-Elites reliably improving?
 
-## 6. What does the benchmark appear to reward?
+Not always. The revised protocol gives each of 30 derivative-focused reruns a fresh grid. With 24 candidates per run:
 
-The ablations make that explicit.
+- 11 selected policies improve scalar score;
+- four tie the baseline;
+- 15 regress;
+- the mean delta is -0.014, median -0.164, observed range -8.805 to +7.142.
 
-- Retrieval pressure is the dominant driver of synthetic gains.
-- Lower challenge rate is the second strongest contributor.
-- Interdisciplinary prompting helps modestly.
-- Reflection bias and diagram bias hurt when swapped into the default policy in isolation.
+Candidate search scores use co-evolved weights and candidate-specific seeds, so the revised analysis does not compare those raw values with the baseline. It reevaluates the selected policy and default on the same seed with `DEFAULT_WEIGHTS`. The result shows no reliable scalar improvement and is reported as a design limitation.
 
-Interpretation:
+## 7. What does the benchmark reward?
 
-- The current synthetic harness is good at detecting under-retrieval and overload.
-- It is weaker as a sensor for reflective depth, which is an important limitation for a paper about learner agency.
+One-at-a-time swaps rank lower challenge rate first (+2.227), then maximal retrieval practice (+1.820) and interdisciplinary bias (+1.182). Maximum diagram bias is the strongest negative isolated change (-1.583), followed by reflection bias (-0.376).
 
-## 7. What is the most important failure mode in the archival traces?
+These values diagnose the algebraic surface. They do not show that lowering challenge or visual emphasis improves human learning.
 
-Student-role contamination.
+## 8. What is the most important archival failure mode?
 
-- Some student turns begin speaking like a teacher or assistant.
-- Those sessions have worse mean mastery and worse mean overall score than uncontaminated sessions.
-- The revised manuscript treats this as an exploratory but central failure mode.
+Student-role contamination. Five of 16 curated sessions contain at least one heuristic marker of the simulated student speaking like a teacher or assistant. Those sessions have lower descriptive mastery and overall scores. The heuristic is versioned but not externally validated.
 
-## 8. What would a decisive next experiment look like?
+## 9. Can a fresh checkout reproduce the paper?
 
-A real learner study, not more synthetic benchmarking.
+Yes, subject to the declared deterministic boundary.
 
-- Preregistered randomized comparison against at least one strong AI tutor baseline.
-- Human participants.
-- Blinded rubric scoring.
-- Delayed retention testing.
-- Explicit transfer tasks.
-- An authorship-style outcome measuring whether learners can reconstruct the idea without the tutor present.
+- Inputs: `test/traces/`, `test/final_dataset.json`, and `docs/study/evaluated-policy.json`.
+- Analysis: `devenv tasks run keating:study-analysis`.
+- Outputs: `docs/generated/study-analysis.{json,md}`.
+- PDF: `devenv tasks run keating:paper`.
 
-## 9. What is actually new here after the revision?
+The claim does not cover live provider calls, deployed browser behavior, audio/video, collaborative rooms, or human outcomes.
 
-Three things.
+## 10. What would a decisive next experiment look like?
 
-- A corrected, auditable evidence stack.
-- A reproducible analysis pipeline:
-  - `scripts/study-analysis.mjs`
-  - `analysis/study_analysis.py`
-  - `docs/generated/study-analysis.json`
-- A manuscript whose claims are now matched to the underlying evidence.
-
-## 10. Is this really Nature-ready?
-
-Not in the strong causal sense.
-
-- The manuscript is now much closer to a serious submission-quality systems paper.
-- It is no longer making claims the repository cannot support.
-- But a genuine Nature-level claim about learner agency still needs human experimental evidence.
-
-The right way to use the current package is as the benchmarked preclinical stage before that trial.
+A preregistered randomized comparison against a strong AI tutor baseline with human participants, blinded rubric scoring, delayed retention, explicit transfer tasks, and an authorship-style outcome requiring learners to reconstruct the idea without the tutor. Hidden benchmark variants and adversarial policy audits should run in parallel so internal optimization cannot simply overfit the visible score surface.

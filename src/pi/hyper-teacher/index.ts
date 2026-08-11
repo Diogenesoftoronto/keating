@@ -38,6 +38,7 @@ import { runPiPackagesCommand } from "./commands/packages.js";
 import { registerKeatingTools, setActiveCtx } from "./tools/index.js";
 import { registerSpeechTool } from "./tools/speech.js";
 import { feedbackOnlyTopics } from "./tools/shared.js";
+import { registerPiUiActionCommand } from "../../tui/ui/rpc-action-transport.js";
 
 function topicFromArgs(args: string | string[]): string {
   return (Array.isArray(args) ? args.join(" ") : String(args ?? "")).trim();
@@ -46,6 +47,8 @@ function topicFromArgs(args: string | string[]): string {
 let greetingShown = false;
 
 export default function hyperteacher(pi: any): void {
+  registerPiUiActionCommand(pi);
+
   pi.registerCommand("plan", {
     description: "Generate a deterministic lesson plan artifact for a topic.",
     handler: async (args: string[], ctx: any) => {

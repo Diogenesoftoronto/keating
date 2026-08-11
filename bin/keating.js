@@ -11,7 +11,7 @@ try {
   const pkg = JSON.parse(readFileSync(join(__dirname, "..", "package.json"), "utf8"));
   KEATING_VERSION = pkg.version;
 } catch {
-  KEATING_VERSION = "3.3.0";
+  KEATING_VERSION = "3.4.0";
 }
 
 function parseNodeVersion(version) {
@@ -45,6 +45,20 @@ const args = process.argv.slice(2);
 if (args.length === 1 && (args[0] === "--version" || args[0] === "-v" || args[0] === "version")) {
   console.log(`keating ${KEATING_VERSION}`);
   process.exit(0);
+}
+
+if (args[0] === "tui" && !process.versions.bun) {
+  const { handoffOpenTuiToBun } = await import(new URL("../dist/src/runtime/bun-handoff.js", import.meta.url).href);
+  const handoff = handoffOpenTuiToBun({
+    packageRoot: join(__dirname, ".."),
+    entryPath: fileURLToPath(import.meta.url),
+    args,
+  });
+  if (!handoff.launched) {
+    console.error("keating tui requires Bun because OpenTUI uses Bun native FFI.");
+    console.error("Install Bun from https://bun.sh or use the Keating standalone bundle, which includes a private Bun runtime.");
+  }
+  process.exit(handoff.exitCode);
 }
 
 await import(new URL("../dist/src/cli/main.js", import.meta.url).href);

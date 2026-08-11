@@ -1,4 +1,5 @@
 import { StorageConversationEventStore, type ConversationEventStore, type StorageLike } from "../event-store";
+import type { PendingLearnerResponse } from "../event-store/types";
 import { conversationEvent, isConversationEvent, replayConversation, type ConversationEvent, type ConversationState, type EventOfType, type JsonValue } from "../protocol";
 
 export interface ConversationRuntime {
@@ -7,6 +8,9 @@ export interface ConversationRuntime {
 	replay(): ConversationState;
 	pendingActions(): ReturnType<ConversationEventStore["listPendingActions"]>;
 	resolveAction(actionId: string): boolean;
+	putPendingLearnerResponse(response: Omit<PendingLearnerResponse, "sessionId">): void;
+	pendingLearnerResponses(): PendingLearnerResponse[];
+	resolveLearnerResponse(receiptId: string): boolean;
 	readonly sessionId: string;
 }
 
@@ -70,6 +74,9 @@ export function createConversationRuntime(options: ConversationRuntimeOptions): 
 		replay: () => replayConversation(options.store.replay(options.sessionId).events),
 		pendingActions: () => options.store.listPendingActions(options.sessionId),
 		resolveAction: (actionId) => options.store.removePendingAction(options.sessionId, actionId),
+		putPendingLearnerResponse: (response) => options.store.putPendingLearnerResponse({ ...response, sessionId: options.sessionId }),
+		pendingLearnerResponses: () => options.store.listPendingLearnerResponses(options.sessionId),
+		resolveLearnerResponse: (receiptId) => options.store.removePendingLearnerResponse(options.sessionId, receiptId),
 	};
 }
 

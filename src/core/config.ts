@@ -38,7 +38,9 @@ export const DEFAULT_PI_MODEL = "gpt-5.5";
 export const FALLBACK_PI_MODELS: Record<string, string> = {
   google: "gemini-3.5-flash",
   openai: DEFAULT_PI_MODEL,
-  anthropic: "claude-sonnet-5",
+  // Keep fallback ids within the installed Pi registry; an unknown model makes
+  // Pi RPC exit cleanly before the OpenTUI host can recover in-app.
+  anthropic: "claude-sonnet-4-6",
   openrouter: "poolside/laguna-m.1:free",
   zyphra: "zyphra/ZAYA1-8B",
 	minimax: "MiniMax-M2.7-highspeed"

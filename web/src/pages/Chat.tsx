@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { usePostHog } from "@posthog/react";
 import {
   BarChart3,
@@ -22,7 +22,7 @@ import {
   Wrench,
   X,
 } from "lucide-react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { css, cx } from "../../styled-system/css";
 import { useKeatingAgent } from "../hooks/useKeatingAgent";
 import { keatingStorage, sessions } from "../hooks/keating-storage";
@@ -54,8 +54,13 @@ import type {
   ImprovementAttemptRecord,
   FlashcardDeck,
 } from "../keating/storage";
+import {
+  courseChatContext,
+  courseCollaborationStarterPrompts,
+} from "../keating/course-collaboration";
 
-const GITHUB_ISSUE_URL = "https://github.com/Diogenesoftoronto/keating/issues/new";
+const GITHUB_ISSUE_URL =
+  "https://github.com/Diogenesoftoronto/keating/issues/new";
 
 const proseBlockClass = css({
   maxWidth: "none",
@@ -129,8 +134,18 @@ type InlineArtifact =
   | { id: string; type: "verification"; createdAt: number; data: Verification }
   | { id: string; type: "benchmark"; createdAt: number; data: BenchmarkResult }
   | { id: string; type: "evolution"; createdAt: number; data: EvolutionResult }
-  | { id: string; type: "prompt-evolution"; createdAt: number; data: PromptEvolutionResult }
-  | { id: string; type: "improvement"; createdAt: number; data: ImprovementAttemptRecord };
+  | {
+      id: string;
+      type: "prompt-evolution";
+      createdAt: number;
+      data: PromptEvolutionResult;
+    }
+  | {
+      id: string;
+      type: "improvement";
+      createdAt: number;
+      data: ImprovementAttemptRecord;
+    };
 
 const ARTIFACT_TYPE_META: Record<
   InlineArtifact["type"],
@@ -151,9 +166,9 @@ const ARTIFACT_TYPE_META: Record<
 // (` ```mermaid `, ` ```mermaid title=… `) — the (.*?) tolerates both.
 const MERMAID_FENCE_PATTERN = /```mermaid[^\n]*\n([\s\S]*?)```/gi;
 
-function splitMermaidBlocks(content: string): Array<
-  { type: "markdown" | "mermaid"; content: string }
-> {
+function splitMermaidBlocks(
+  content: string,
+): Array<{ type: "markdown" | "mermaid"; content: string }> {
   const parts: Array<{ type: "markdown" | "mermaid"; content: string }> = [];
   let lastIndex = 0;
   for (const match of content.matchAll(MERMAID_FENCE_PATTERN)) {
@@ -260,7 +275,7 @@ function InlineArtifactCard({
       case "deck":
         return `${artifact.data.cards.length} cards`;
       case "verification":
-        return `${(artifact.data.checklist.match(/- \[ \]/g)?.length ?? 0)} checks`;
+        return `${artifact.data.checklist.match(/- \[ \]/g)?.length ?? 0} checks`;
       default:
         return null;
     }
@@ -291,7 +306,12 @@ function InlineArtifactCard({
           onClick={() => setExpanded((v) => !v)}
           className={cx(
             iconButtonClass,
-            css({ marginTop: "0.125rem", width: "1.5rem", height: "1.5rem", flexShrink: 0 }),
+            css({
+              marginTop: "0.125rem",
+              width: "1.5rem",
+              height: "1.5rem",
+              flexShrink: 0,
+            }),
           )}
           aria-label={expanded ? "Collapse artifact" : "Expand artifact"}
           aria-expanded={expanded}
@@ -316,7 +336,8 @@ function InlineArtifactCard({
                 gap: "0.25rem",
                 borderRadius: "0.375rem",
                 border: "1px solid var(--border)",
-                backgroundColor: "color-mix(in srgb, var(--muted) 40%, transparent)",
+                backgroundColor:
+                  "color-mix(in srgb, var(--muted) 40%, transparent)",
                 paddingInline: "0.5rem",
                 paddingBlock: "0.125rem",
               })}
@@ -370,7 +391,10 @@ function InlineArtifactCard({
           <button
             type="button"
             onClick={onDismiss}
-            className={cx(iconButtonClass, css({ width: "1.75rem", height: "1.75rem" }))}
+            className={cx(
+              iconButtonClass,
+              css({ width: "1.75rem", height: "1.75rem" }),
+            )}
             aria-label="Dismiss artifact"
             title="Dismiss"
           >
@@ -379,7 +403,13 @@ function InlineArtifactCard({
         </div>
       </header>
       {expanded && (
-        <div className={css({ paddingInline: "1rem", paddingBlock: "0.75rem", fontSize: "0.875rem" })}>
+        <div
+          className={css({
+            paddingInline: "1rem",
+            paddingBlock: "0.75rem",
+            fontSize: "0.875rem",
+          })}
+        >
           {renderInlineArtifactBody(artifact)}
         </div>
       )}
@@ -400,7 +430,8 @@ function renderInlineArtifactBody(artifact: InlineArtifact) {
             className={css({
               borderRadius: "0.375rem",
               border: "1px solid var(--border)",
-              backgroundColor: "color-mix(in srgb, var(--muted) 20%, transparent)",
+              backgroundColor:
+                "color-mix(in srgb, var(--muted) 20%, transparent)",
               padding: "0.75rem",
               fontSize: "0.75rem",
               color: "var(--muted-foreground)",
@@ -415,11 +446,22 @@ function renderInlineArtifactBody(artifact: InlineArtifact) {
     case "deck":
       return (
         <div className={css({ display: "grid", gap: "0.5rem" })}>
-          <p className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+          <p
+            className={css({
+              fontSize: "0.75rem",
+              color: "var(--muted-foreground)",
+            })}
+          >
             {artifact.data.cards.length} cards · open in the browser for spaced
             repetition review.
           </p>
-          <ul className={css({ display: "grid", gap: "0.25rem", fontSize: "0.875rem" })}>
+          <ul
+            className={css({
+              display: "grid",
+              gap: "0.25rem",
+              fontSize: "0.875rem",
+            })}
+          >
             {artifact.data.cards.slice(0, 5).map((c) => (
               <li
                 key={c.id}
@@ -444,7 +486,12 @@ function renderInlineArtifactBody(artifact: InlineArtifact) {
               </li>
             ))}
             {artifact.data.cards.length > 5 && (
-              <li className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+              <li
+                className={css({
+                  fontSize: "0.75rem",
+                  color: "var(--muted-foreground)",
+                })}
+              >
                 +{artifact.data.cards.length - 5} more…
               </li>
             )}
@@ -452,9 +499,7 @@ function renderInlineArtifactBody(artifact: InlineArtifact) {
         </div>
       );
     case "verification":
-      return (
-        <InlineMarkdownWithDiagrams content={artifact.data.checklist} />
-      );
+      return <InlineMarkdownWithDiagrams content={artifact.data.checklist} />;
     case "benchmark":
       return <InlineMarkdownWithDiagrams content={artifact.data.report} />;
     case "evolution":
@@ -464,7 +509,9 @@ function renderInlineArtifactBody(artifact: InlineArtifact) {
     case "improvement":
       return (
         <div className={css({ display: "grid", gap: "0.5rem" })}>
-          <p className={css({ fontSize: "0.875rem" })}>{artifact.data.hypothesis}</p>
+          <p className={css({ fontSize: "0.875rem" })}>
+            {artifact.data.hypothesis}
+          </p>
           <div
             className={css({
               borderRadius: "0.375rem",
@@ -475,7 +522,12 @@ function renderInlineArtifactBody(artifact: InlineArtifact) {
             })}
           >
             <div className={css({ fontWeight: 500 })}>Targets</div>
-            <div className={css({ marginTop: "0.25rem", color: "var(--muted-foreground)" })}>
+            <div
+              className={css({
+                marginTop: "0.25rem",
+                color: "var(--muted-foreground)",
+              })}
+            >
               {artifact.data.targets || "(unspecified)"}
             </div>
           </div>
@@ -718,6 +770,23 @@ function ChatContent() {
   });
   const posthog = usePostHog();
   const navigate = useNavigate();
+  const search = useSearch({ strict: false }) as {
+    course?: string;
+    courseMode?: "create" | "edit";
+    ask?: string;
+  };
+  const pendingPrompt = search.ask?.trim() || undefined;
+  const courseContext = useMemo(
+    () => courseChatContext(search),
+    [search.course, search.courseMode],
+  );
+  const coursePrompts = useMemo(
+    () =>
+      courseContext
+        ? courseCollaborationStarterPrompts(courseContext)
+        : undefined,
+    [courseContext],
+  );
   const {
     isPending,
     openSettings,
@@ -742,7 +811,7 @@ function ChatContent() {
     activeSessionId,
     responseComparison,
     chooseResponse,
-  } = useKeatingAgent();
+  } = useKeatingAgent({ courseContext });
   const [artifactBrowserOpen, setArtifactBrowserOpen] = useState(false);
   const isWideViewport = useMediaQuery("(min-width: 1024px)");
   const [uiSettings, setUiSettings] = useState(() => loadKeatingUiSettings());
@@ -765,7 +834,8 @@ function ChatContent() {
 
     const handleMessageSent = (event: Event) => {
       const detail = (event as CustomEvent<{ sessionId?: string }>).detail;
-      if (!detail?.sessionId || detail.sessionId === sessionId) activated = true;
+      if (!detail?.sessionId || detail.sessionId === sessionId)
+        activated = true;
     };
     window.addEventListener("keating:message-sent", handleMessageSent);
     const timer = window.setTimeout(() => {
@@ -821,7 +891,10 @@ function ChatContent() {
     setArtifactBrowserOpen((open) => {
       const next = !open;
       if (!next) setArtifactTarget(undefined);
-      posthog.capture(next ? 'artifact_browser_opened' : 'artifact_browser_closed', { source });
+      posthog.capture(
+        next ? "artifact_browser_opened" : "artifact_browser_closed",
+        { source },
+      );
       return next;
     });
   };
@@ -842,7 +915,8 @@ function ChatContent() {
       const next = await resolveInlineArtifact(detail);
       if (!next) return;
       setInlineArtifacts((prev) => {
-        if (prev.some((a) => a.id === next.id && a.type === next.type)) return prev;
+        if (prev.some((a) => a.id === next.id && a.type === next.type))
+          return prev;
         if (uiSettings.limitInlineArtifactPreviews) return [next];
         return [...prev, next];
       });
@@ -853,7 +927,10 @@ function ChatContent() {
     window.addEventListener("keating:open-artifact", openArtifactTarget);
     return () => {
       window.removeEventListener("keating:artifact-created", openArtifacts);
-      window.removeEventListener("keating:artifact-created", captureInlineArtifact);
+      window.removeEventListener(
+        "keating:artifact-created",
+        captureInlineArtifact,
+      );
       window.removeEventListener("keating:open-artifact", openArtifactTarget);
     };
   }, [uiSettings.autoOpenArtifacts, uiSettings.limitInlineArtifactPreviews]);
@@ -865,16 +942,21 @@ function ChatContent() {
     try {
       const result = await shareSession();
       setShareUrl(result.url);
-      const linkType = result.mode === "portable-short"
-        ? "Portable share link"
-        : result.mode === "compressed-hash"
-          ? "Snapshot share link"
-          : "Local share link";
+      const linkType =
+        result.mode === "portable-short"
+          ? "Portable share link"
+          : result.mode === "compressed-hash"
+            ? "Snapshot share link"
+            : "Local share link";
       setShareMessage(
         `${linkType} ready${result.fallback ? " after portable storage was unavailable" : ""}. It was copied if your browser allowed clipboard access.`,
       );
       setShareState("copied");
-      posthog.capture('session_shared', { share_mode: result.mode, fallback: result.fallback, session_id: activeSessionId });
+      posthog.capture("session_shared", {
+        share_mode: result.mode,
+        fallback: result.fallback,
+        session_id: activeSessionId,
+      });
       window.setTimeout(() => setShareState("idle"), 1600);
     } catch (error) {
       console.warn("Failed to share session:", error);
@@ -894,7 +976,9 @@ function ChatContent() {
   // again. `local-short` stays on-device, so it shares immediately.
   const handleShare = async () => {
     const settings = loadKeatingUiSettings();
-    const exposesPublicly = shareModeExposesDataPublicly(settings.shareLinkMode);
+    const exposesPublicly = shareModeExposesDataPublicly(
+      settings.shareLinkMode,
+    );
     if (exposesPublicly && !settings.shareWarningAcknowledged) {
       setShareUrl(null);
       setShareMessage(
@@ -921,7 +1005,8 @@ function ChatContent() {
   // drive show/hide from Panda globalCss via `.chat-only-desktop` (header icons,
   // md+) and `.chat-only-compact` (overflow-menu duplicates, < md).
   const actionButtonClass = cx("chat-action-button", actionButtonPandaClass);
-  const showPersistenceBanner = persistentStorageStatus === "declined" && !persistentBannerDismissed;
+  const showPersistenceBanner =
+    persistentStorageStatus === "declined" && !persistentBannerDismissed;
 
   return (
     <div
@@ -959,13 +1044,24 @@ function ChatContent() {
       >
         <button
           type="button"
-          className={cx(actionButtonClass, css({ display: "inline-flex", lg: { display: "none" } }))}
-          title={mobileSidebarOpen ? "Close sessions panel" : "Open sessions panel"}
-          aria-label={mobileSidebarOpen ? "Close sessions panel" : "Open sessions panel"}
+          className={cx(
+            actionButtonClass,
+            css({ display: "inline-flex", lg: { display: "none" } }),
+          )}
+          title={
+            mobileSidebarOpen ? "Close sessions panel" : "Open sessions panel"
+          }
+          aria-label={
+            mobileSidebarOpen ? "Close sessions panel" : "Open sessions panel"
+          }
           aria-pressed={mobileSidebarOpen}
           onClick={toggleMobileSidebar}
         >
-          {mobileSidebarOpen ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
+          {mobileSidebarOpen ? (
+            <PanelLeftClose size={16} />
+          ) : (
+            <PanelLeftOpen size={16} />
+          )}
         </button>
         <Link
           to="/"
@@ -987,7 +1083,11 @@ function ChatContent() {
           <img
             src="/brand/logo-lockup.png"
             alt="Keating"
-            className={css({ height: "1.5rem", width: "auto", objectFit: "contain" })}
+            className={css({
+              height: "1.5rem",
+              width: "auto",
+              objectFit: "contain",
+            })}
           />
         </Link>
         {/*
@@ -1017,16 +1117,27 @@ function ChatContent() {
               fontWeight: 500,
               color: "var(--muted-foreground)",
               cursor: "pointer",
-              _hover: { backgroundColor: "var(--accent)", color: "var(--accent-foreground)" },
+              _hover: {
+                backgroundColor: "var(--accent)",
+                color: "var(--accent-foreground)",
+              },
             }),
           )}
         >
-          <span className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" })}>
+          <span
+            className={css({
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            })}
+          >
             {modelLabel}
           </span>
           <ChevronDown size={13} className={css({ flexShrink: 0 })} />
         </button>
-        <span className="chat-mode-badge chat-only-desktop">MODE: SOCRATIC</span>
+        <span className="chat-mode-badge chat-only-desktop">
+          MODE: SOCRATIC
+        </span>
 
         {/* Actions */}
         <div
@@ -1069,7 +1180,9 @@ function ChatContent() {
               actionButtonClass,
               "chat-only-desktop",
               shareState === "copied" ? css({ color: "var(--primary)" }) : "",
-              shareState === "error" ? css({ color: "var(--destructive)" }) : "",
+              shareState === "error"
+                ? css({ color: "var(--destructive)" })
+                : "",
             )}
             title={
               shareState === "copied"
@@ -1095,7 +1208,7 @@ function ChatContent() {
             title={speechEnabled ? "Disable speech" : "Enable speech"}
             aria-pressed={speechEnabled}
             onClick={() => {
-              posthog.capture('speech_toggled', { enabled: !speechEnabled });
+              posthog.capture("speech_toggled", { enabled: !speechEnabled });
               toggleSpeech();
             }}
           >
@@ -1108,12 +1221,22 @@ function ChatContent() {
               artifactBrowserOpen ? css({ color: "var(--primary)" }) : "",
             )}
             title={artifactBrowserOpen ? "Close artifacts" : "Open artifacts"}
-            aria-label={artifactBrowserOpen ? "Close artifacts" : "Open artifacts"}
+            aria-label={
+              artifactBrowserOpen ? "Close artifacts" : "Open artifacts"
+            }
             aria-pressed={artifactBrowserOpen}
             onClick={() => toggleArtifactBrowser("toolbar")}
           >
             <LibraryBig size={16} />
           </button>
+          <Link
+            to="/courses"
+            className={cx(actionButtonClass, "chat-only-desktop")}
+            title="Open courses"
+            aria-label="Open courses"
+          >
+            <BookOpen size={16} />
+          </Link>
           {import.meta.env.DEV && (
             <button
               className={cx(actionButtonClass, "chat-only-desktop")}
@@ -1171,12 +1294,19 @@ function ChatContent() {
                 borderRadius: "0.375rem",
                 border: "1px solid var(--border)",
                 backgroundColor: "var(--background)",
-                boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
+                boxShadow:
+                  "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
                 fontSize: "0.875rem",
               }),
             )}
           >
-            <div className={css({ display: "flex", flexDirection: "column", padding: "0.25rem" })}>
+            <div
+              className={css({
+                display: "flex",
+                flexDirection: "column",
+                padding: "0.25rem",
+              })}
+            >
               <button
                 className={cx(menuItemClass, "chat-only-compact")}
                 disabled={isPending}
@@ -1192,23 +1322,27 @@ function ChatContent() {
                 className={cx(
                   menuItemClass,
                   "chat-only-compact",
-                  shareState === "copied" ? css({ color: "var(--primary)" }) : "",
-                  shareState === "error" ? css({ color: "var(--destructive)" }) : "",
+                  shareState === "copied"
+                    ? css({ color: "var(--primary)" })
+                    : "",
+                  shareState === "error"
+                    ? css({ color: "var(--destructive)" })
+                    : "",
                 )}
-              onClick={() => {
-                setMobileMenuOpen(false);
-                if (shareState === "confirm") confirmShare();
-                else handleShare();
-              }}
-              disabled={isPending || shareState === "sharing"}
-            >
-              <Share2 size={14} />
-              {shareState === "copied"
-                ? "Link copied"
-                : shareState === "confirm"
-                  ? "Confirm public share"
-                  : "Share session"}
-            </button>
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  if (shareState === "confirm") confirmShare();
+                  else handleShare();
+                }}
+                disabled={isPending || shareState === "sharing"}
+              >
+                <Share2 size={14} />
+                {shareState === "copied"
+                  ? "Link copied"
+                  : shareState === "confirm"
+                    ? "Confirm public share"
+                    : "Share session"}
+              </button>
               <button
                 className={cx(
                   menuItemClass,
@@ -1217,7 +1351,9 @@ function ChatContent() {
                 )}
                 onClick={() => {
                   setMobileMenuOpen(false);
-                  posthog.capture('speech_toggled', { enabled: !speechEnabled });
+                  posthog.capture("speech_toggled", {
+                    enabled: !speechEnabled,
+                  });
                   toggleSpeech();
                 }}
               >
@@ -1239,6 +1375,14 @@ function ChatContent() {
                 <LibraryBig size={14} />
                 {artifactBrowserOpen ? "Close artifacts" : "Open artifacts"}
               </button>
+              <Link
+                to="/courses"
+                className={menuItemClass}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <BookOpen size={14} />
+                Courses
+              </Link>
               {import.meta.env.DEV && (
                 <button
                   className={cx(menuItemClass, "chat-only-compact")}
@@ -1264,7 +1408,10 @@ function ChatContent() {
               <div
                 className={cx(
                   "chat-only-compact",
-                  css({ marginBlock: "0.25rem", borderTop: "1px solid var(--border)" }),
+                  css({
+                    marginBlock: "0.25rem",
+                    borderTop: "1px solid var(--border)",
+                  }),
                 )}
               />
               <Link
@@ -1318,6 +1465,91 @@ function ChatContent() {
         )}
       </nav>
 
+      {courseContext && (
+        <section
+          aria-label="Course collaboration context"
+          className={css({
+            flexShrink: 0,
+            borderBottom: "1px solid var(--border)",
+            backgroundColor:
+              "color-mix(in srgb, var(--primary) 8%, var(--background))",
+            paddingInline: "0.75rem",
+            paddingBlock: "0.5rem",
+          })}
+        >
+          <div
+            className={css({
+              marginInline: "auto",
+              display: "flex",
+              maxWidth: "56rem",
+              flexWrap: "wrap",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "0.75rem",
+            })}
+          >
+            <div
+              className={css({
+                display: "flex",
+                minWidth: 0,
+                alignItems: "center",
+                gap: "0.55rem",
+              })}
+            >
+              <BookOpen size={16} aria-hidden="true" />
+              <div className={css({ minWidth: 0 })}>
+                <p className={css({ fontSize: "0.8rem", fontWeight: 650 })}>
+                  {courseContext.mode === "create"
+                    ? "Design a course with Keating"
+                    : "Keating is working in this course"}
+                </p>
+                <p
+                  className={css({
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    fontSize: "0.7rem",
+                    color: "var(--muted-foreground)",
+                  })}
+                >
+                  Agree on the shape first, then Keating can create and revise
+                  the durable workspace.
+                </p>
+              </div>
+            </div>
+            <div
+              className={css({
+                display: "flex",
+                flexShrink: 0,
+                alignItems: "center",
+                gap: "0.5rem",
+                fontSize: "0.75rem",
+              })}
+            >
+              {courseContext.activeCourseId && (
+                <Link
+                  to="/courses/$courseId"
+                  params={{ courseId: courseContext.activeCourseId }}
+                  className={css({
+                    fontWeight: 650,
+                    textDecoration: "underline",
+                    textUnderlineOffset: "3px",
+                  })}
+                >
+                  Open course
+                </Link>
+              )}
+              <Link
+                to="/chat"
+                className={css({ color: "var(--muted-foreground)" })}
+              >
+                Leave course mode
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
       {forkInfo && (
         <ForkBanner
           parentTitle={forkInfo.parentTitle}
@@ -1356,10 +1588,24 @@ function ChatContent() {
                 _dark: { color: "rgb(253 230 138)" },
               })}
             >
-              <span className={css({ display: "none", sm: { display: "inline" } })}>Browser storage persistence is not enabled. Sessions still save locally, but the browser may clear them under storage pressure.</span>
-              <span className={css({ sm: { display: "none" } })}>Storage persistence is not enabled.</span>
+              <span
+                className={css({ display: "none", sm: { display: "inline" } })}
+              >
+                Browser storage persistence is not enabled. Sessions still save
+                locally, but the browser may clear them under storage pressure.
+              </span>
+              <span className={css({ sm: { display: "none" } })}>
+                Storage persistence is not enabled.
+              </span>
             </div>
-            <div className={css({ display: "flex", flexShrink: 0, alignItems: "center", gap: "0.5rem" })}>
+            <div
+              className={css({
+                display: "flex",
+                flexShrink: 0,
+                alignItems: "center",
+                gap: "0.5rem",
+              })}
+            >
               <button
                 type="button"
                 className={css({
@@ -1372,7 +1618,10 @@ function ChatContent() {
                   fontSize: "10px",
                   fontWeight: 500,
                   color: "var(--primary-foreground)",
-                  _hover: { backgroundColor: "color-mix(in srgb, var(--primary) 90%, transparent)" },
+                  _hover: {
+                    backgroundColor:
+                      "color-mix(in srgb, var(--primary) 90%, transparent)",
+                  },
                 })}
                 onClick={retryPersistentStorage}
               >
@@ -1380,7 +1629,10 @@ function ChatContent() {
               </button>
               <button
                 type="button"
-                className={cx(iconButtonClass, css({ width: "1.5rem", height: "1.5rem" }))}
+                className={cx(
+                  iconButtonClass,
+                  css({ width: "1.5rem", height: "1.5rem" }),
+                )}
                 onClick={dismissPersistentBanner}
                 aria-label="Dismiss persistence warning"
               >
@@ -1391,18 +1643,41 @@ function ChatContent() {
         </div>
       )}
 
-      <div className={css({ display: "flex", minHeight: 0, flex: 1, overflow: "hidden" })}>
+      <div
+        className={css({
+          display: "flex",
+          minHeight: 0,
+          flex: 1,
+          overflow: "hidden",
+        })}
+      >
         {sessionSidebar}
         <AssistantChatPanel
           ref={chatPanelRef}
           className={cx("chat-page-panel", css({ minWidth: 0, flex: 1 }))}
           speechEnabled={speechEnabled}
-          responseComparison={responseComparison ? (
-            <ResponseComparisonPanel
-              comparison={responseComparison}
-              onChoose={chooseResponse}
-            />
-          ) : null}
+          initialPrompts={coursePrompts}
+          {...(pendingPrompt ? { pendingPrompt } : {})}
+          emptyStateTitle={
+            courseContext?.mode === "create"
+              ? "What course should we build together?"
+              : courseContext
+                ? "What should we change in this course?"
+                : undefined
+          }
+          emptyStateDescription={
+            courseContext
+              ? "Choose a starting point or describe the learners and the change you have in mind. Keating will inspect, propose, and wait for your direction before writing."
+              : undefined
+          }
+          responseComparison={
+            responseComparison ? (
+              <ResponseComparisonPanel
+                comparison={responseComparison}
+                onChoose={chooseResponse}
+              />
+            ) : null
+          }
         />
         {isWideViewport && artifactBrowserOpen && (
           <div
@@ -1498,7 +1773,10 @@ function ChatContent() {
                   paddingInline: "0.75rem",
                   fontSize: "0.75rem",
                   color: "var(--primary-foreground)",
-                  _hover: { backgroundColor: "color-mix(in srgb, var(--primary) 90%, transparent)" },
+                  _hover: {
+                    backgroundColor:
+                      "color-mix(in srgb, var(--primary) 90%, transparent)",
+                  },
                 })}
                 onClick={confirmShare}
               >

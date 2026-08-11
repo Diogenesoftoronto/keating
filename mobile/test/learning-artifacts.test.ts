@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { generateLearningArtifact } from "../src/lib/learning-artifacts";
+import { parseMermaidFlowchart } from "../src/lib/mermaid-native";
 
 describe("generateLearningArtifact", () => {
   it("reuses the portable Keating engine for domain-aware lesson plans", () => {
@@ -15,6 +16,9 @@ describe("generateLearningArtifact", () => {
 
     expect(artifact.content).toContain("```mermaid");
     expect(artifact.content).toContain("A[Entropy]");
+    const source = artifact.content.match(/```mermaid\n([\s\S]*?)\n```/)?.[1];
+    expect(source).toBeDefined();
+    expect(parseMermaidFlowchart(source!)).not.toBeNull();
   });
 
   it("produces a deterministic quiz and answer key", () => {
