@@ -1,6 +1,6 @@
 {
   "name": "@keating/desktop",
-  "version": "3.4.0",
+  "version": "3.4.1",
   "type": "module",
   "private": true,
   "description": "Keating desktop (Electron) app — P2P, local-first teaching client.",

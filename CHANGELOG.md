@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.1] - 2026-08-11
+
+### Fixed
+- Fixed Railway web image builds by copying the shared `@keating/learner-contracts` package into the build stage before Bun resolves the web app's local file dependency.
+
 ## [3.4.0] - 2026-08-11
 
 ### Added
@@ -704,6 +709,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Teaching policy system
 
 [Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v3.4.0...HEAD
+[3.4.1]: https://github.com/Diogenesoftoronto/keating/compare/v3.4.0...v3.4.1
 [3.4.0]: https://github.com/Diogenesoftoronto/keating/compare/v3.3.0...v3.4.0
 [3.3.0]: https://github.com/Diogenesoftoronto/keating/compare/v3.2.0...v3.3.0
 [3.2.0]: https://github.com/Diogenesoftoronto/keating/compare/v3.1.1...v3.2.0

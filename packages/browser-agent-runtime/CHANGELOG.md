@@ -3,6 +3,13 @@
 
 
 
+
+## 3.4.1
+<sub>2026-08-11</sub>
+
+- *(patch)*
+  Fixed production web image builds by making the shared learner-contracts package available before Bun installs the web workspace.
+
 ## 3.4.0
 <sub>2026-08-11</sub>
 
