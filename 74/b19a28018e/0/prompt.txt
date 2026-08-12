@@ -1,0 +1,1 @@
+something thata i am desparate to do is improve the output of the data format currently the resulting zip file when exporting for training stuff has some of t hese terrible results and i would like to just clean that up and make sure that the training a output makes sense and has as much information as possible  when doing training foro stuff
