@@ -1,0 +1,19 @@
+• Implemented.
+
+  Keating now supports:
+
+  - Built-in host execution outside the sandbox:
+
+    keating web 3000 --remote --remote-provider=host \
+      --allow-local-exec --root=/path/to/project
+
+  - Generic external sandbox/runtime endpoints.
+  - Keating Cloud and browser/NodePod modes.
+  - Reliable capability activation with refreshed tool schemas.
+  - Interactive web help explaining each runtime and its security boundary.
+  - Comprehensive command-line documentation through:
+
+    keating web --help
+
+  The help includes copy-paste examples, all runtime options, the external HTTP contract, authentication variables, and a prominent warning that host mode is not
+  sandboxed.
