@@ -1,0 +1,1 @@
+aso consider this, i think a some more things might make sense as hooks that just run on the first message in a session, the learner profile tbh should just run. it really doesn't make that much sense not to run.
