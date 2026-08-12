@@ -1,0 +1,1 @@
+make sure that iff there is no diff available there is an error page that renders please. and also make the otherr graphs as interactive as the categories one
