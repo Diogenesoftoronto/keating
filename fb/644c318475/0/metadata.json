@@ -1,0 +1,23 @@
+{
+  "cli_version": "0.9.0",
+  "checkpoint_id": "fb644c318475",
+  "session_id": "019fed82-5f00-7842-9cf6-77d554dab37a",
+  "strategy": "import",
+  "created_at": "2026-08-10T21:09:32.274Z",
+  "commit_sha": "0460b666c76e06617ce7d6b53e23897ab7e32220",
+  "checkpoints_count": 1,
+  "files_touched": null,
+  "agent": "Codex",
+  "model": "",
+  "checkpoint_transcript_start": 363,
+  "transcript_lines_at_start": 363,
+  "compact_transcript_start": 7,
+  "token_usage": {
+    "input_tokens": 18399,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 3695616,
+    "output_tokens": 3629,
+    "api_call_count": 22
+  },
+  "kind": "imported"
+}
