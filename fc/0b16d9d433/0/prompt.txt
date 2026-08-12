@@ -1,0 +1,1 @@
+the model should be told that it can inspect it's own code right now it seems to be struggling for some reason
