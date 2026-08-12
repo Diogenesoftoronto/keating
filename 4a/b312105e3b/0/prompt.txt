@@ -1,0 +1,1 @@
+Please wrap consolidation now. Prioritize the report and only safe high-confidence deduplication; do not expand scope.
