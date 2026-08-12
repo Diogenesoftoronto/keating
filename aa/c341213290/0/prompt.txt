@@ -1,0 +1,1 @@
+so the pseudocode references what to do as a goal taking the two documents, verify the tasks, it is a higher level of abstraction than the execution for the plan this is how we know that the build is complete when running /goal and understanding the progress
