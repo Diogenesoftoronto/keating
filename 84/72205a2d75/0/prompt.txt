@@ -1,0 +1,3 @@
+<subagent_notification>
+{"agent_path":"019f73e6-f83a-7b30-b145-4a2624415042","status":{"completed":"Final OpenUI revision fix complete.\n\n- Added validated revision metadata and fence parsing.\n- Actions now carry the renderer’s actual revision.\n- Stale/skipped revisions are rejected.\n- Current documents are not redundantly re-emitted.\n- Repeated current-revision actions work.\n- Fixed action ID collisions.\n\nValidation:\n\n- 25 focused tests passed.\n- Web typecheck passed.\n- Scoped diff check passed.\n- Vet skipped as requested."}}
+</subagent_notification>
