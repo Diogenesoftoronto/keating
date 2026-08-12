@@ -1,0 +1,1 @@
+okay you need to be using subagents, crush, and claude code for all these steps, claude for design of things, minimax for a lot of small brunt things, and your own luna or terra subagents for the rest of thata work.
