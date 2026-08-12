@@ -1,0 +1,1 @@
+hey i want to know how this woorks, the thinking level selector doesn't seem to work very well at all as the various thinking levels seem to not change when i pick them why do you think this bug occurs? gather evidence and make your case
