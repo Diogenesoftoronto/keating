@@ -1,0 +1,1 @@
+the other thing that i noticed is that therre is not an easy way to retry prompts after they fail, and there should be detailed lesson plans with several areas to cover, lesson plans should even be nestable as well. creating a dependency graph that can be expanded.
