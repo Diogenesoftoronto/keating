@@ -1,0 +1,1 @@
+what was the automatic response forking for? i was thinking that these would be options for dpo that the user would have ui to select maybe the issue wasn't the forking, the issue might have been how it was present t o the user. also would love for the text on mobile to be way more useful in term of it using more  of the screen as well.
