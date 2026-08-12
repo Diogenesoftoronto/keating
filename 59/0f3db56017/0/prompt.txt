@@ -1,0 +1,3 @@
+You are reviewing category incomplete_integration_with_existing_code. Check the delivered diff for architectural/integration gaps: trace new exports, routes, settings, providers, and callsites against the existing repo. Report only introduced issues with exact file/code evidence.
+
+Rubric definition for this category: incomplete_integration_with_existing_code. Follow the user's exact review rubric from the parent conversation. Repository: /home/diogenes/Projects/keating. Do not edit files. Return concise candidate findings with relative path, exact code snippet if possible, severity/confidence, or say none.
