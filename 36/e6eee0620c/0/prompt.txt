@@ -1,0 +1,1 @@
+composer should have the ability to insert documents and images.
