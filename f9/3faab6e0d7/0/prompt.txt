@@ -1,0 +1,1 @@
+okay so can you change the references to dio provider to the notorganic provider? I am removing the dio provider solution in favour of the notorganic one, check the repository above this one ../notorganic-provider to learn more about how that provider works.
