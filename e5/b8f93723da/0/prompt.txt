@@ -1,0 +1,1 @@
+actually what i want is to make sure that the blog post covers all uncommited changes and we create a new release for this as well.
