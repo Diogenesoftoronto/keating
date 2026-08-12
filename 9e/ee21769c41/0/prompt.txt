@@ -1,0 +1,1 @@
+instead of compact learner profile just load the whole thing on start up and determine if there is anything missing
