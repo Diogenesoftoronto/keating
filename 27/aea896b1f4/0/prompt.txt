@@ -1,0 +1,1 @@
+need to make sure that markdown and mermaid diagrams and all the stuff renders also the openui stuff should also all work
