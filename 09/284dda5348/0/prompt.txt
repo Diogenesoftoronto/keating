@@ -1,0 +1,1 @@
+the app runs claude and chrome doesn't work use playwriter instead
