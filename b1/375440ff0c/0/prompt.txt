@@ -1,0 +1,1 @@
+there were some issues w/ getting the models working in the browser specifically the wasm models. I want that fixed and figured out there was some work to do that you can check out entire session to see that
