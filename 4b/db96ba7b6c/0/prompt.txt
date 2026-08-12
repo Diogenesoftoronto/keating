@@ -1,0 +1,3 @@
+<command-name>/effort</command-name>
+            <command-message>effort</command-message>
+            <command-args></command-args>
