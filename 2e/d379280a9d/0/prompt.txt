@@ -1,0 +1,12 @@
+<user_action>
+  <context>User initiated a review task. Here's the full review output from reviewer model. User may select one or more comments to resolve.</context>
+  <action>review</action>
+  <results>
+  The change builds, typechecks, passes all 44 mobile tests, and exports the Android bundle cleanly, but the mobile i18n wiring pins the app to the default locale so the newly-declared fr-CA locale cannot activate on French-Canadian devices, making the introduced localization feature functionally incomplete on mobile.
+
+Review comment:
+
+- [P2] Mobile GT pins locale to default, making fr-CA unreachable — /home/diogenes/Projects/keating/mobile/src/i18n/general-translation.tsx:19-19
+  `KeatingGTProvider` hardcodes `locale={gtConfig.defaultLocale}` (`"en-CA"`), unlike the web counterpart in `web/src/i18n/general-translation.tsx`, which detects the user's language via `getBrowserLocale()`/`supportedLocale()`. `gt-react-native`'s `GTProvider` resolves the device locale (via `getLocale()` → `getNativeLocales()`) only when `locale` is left unset, so explicitly pinning it means a French-Canadian device always renders English and the declared `"fr-CA"` locale can never activate — defeating the purpose of the new i18n wiring and the `<T>`/`<Num>`/`useGT` usage across the mobile screens. Impact is currently latent because `mobile/src/_gt/fr-CA.json` is empty `{}`, but it becomes user-visible once translations are generated in CI. Fix by omitting the pinned `locale` (letting GT resolve the device locale) or reading it via `expo-localization` and normalizing to a supported locale as the web helper does.
+  </results>
+  </user_action>
