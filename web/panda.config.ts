@@ -697,10 +697,37 @@ export default defineConfig({
 			"58%": { transform: "translateX(1px) rotate(1.5deg)" },
 			"78%": { transform: "translateX(2px) rotate(3deg)" }
 		},
-		"keating-thinking-dot": {
+        "keating-thinking-dot": {
 			"0%, 60%, 100%": { opacity: 0.28, transform: "translateY(0)" },
 			"30%": { opacity: 1, transform: "translateY(-2px)" }
 		},
+        "landing-word-arrive": {
+          "0%": {
+            opacity: 1,
+            transform: "translateY(0.9em) rotate(2deg)",
+            filter: "blur(9px)"
+          },
+          "100%": {
+            opacity: 1,
+            transform: "translateY(0) rotate(0deg)",
+            filter: "blur(0)"
+          }
+        },
+        "landing-orbit-drift": {
+          "0%, 100%": { translate: "0 0", rotate: "-2deg" },
+          "50%": { translate: "0 -8px", rotate: "2deg" }
+        },
+        "landing-mascot-pop": {
+          "0%": { opacity: 0, transform: "translateY(18px) scale(0.88) rotate(-4deg)" },
+          "100%": { opacity: 1, transform: "translateY(0) scale(1) rotate(0deg)" }
+        },
+        "landing-orbit-spin": {
+          to: { transform: "rotate(360deg)" }
+        },
+        "landing-thought-float": {
+          "0%, 100%": { translate: "0 0" },
+          "50%": { translate: "0 -7px" }
+        },
         "flashcard-exit-left": {
           to: { transform: "translateX(-130%) rotate(-10deg)", opacity: 0 }
         },
@@ -757,6 +784,21 @@ export default defineConfig({
         "retro-blink": {
           "50%": {
             opacity: "0"
+          }
+        },
+        /* Channel change on the landing tape deck: one short burst of static
+           that settles, so switching tapes reads as tuning a signal in. */
+        "surface-tune": {
+          "0%": {
+            opacity: "0.5",
+            transform: "translateY(-2%) scaleY(1.04)"
+          },
+          "55%": {
+            opacity: "0.2"
+          },
+          "100%": {
+            opacity: "0",
+            transform: "translateY(0) scaleY(1)"
           }
         },
         "retro-typing": {
@@ -1499,6 +1541,17 @@ export default defineConfig({
       lineHeight: "1.65",
       WebkitFontSmoothing: "antialiased"
     },
+    ".retro-layout .landing-visually-hidden": {
+      position: "absolute",
+      width: "1px",
+      height: "1px",
+      padding: "0",
+      margin: "-1px",
+      overflow: "hidden",
+      clip: "rect(0, 0, 0, 0)",
+      whiteSpace: "nowrap",
+      border: "0"
+    },
     ".dark .retro-layout.retro-page::before": {
       opacity: "0.02"
     },
@@ -1768,16 +1821,14 @@ export default defineConfig({
       padding: "0 28px"
     },
     ".retro-layout .hero": {
-      padding: "64px 0 88px",
+      minHeight: "calc(100svh - var(--nav-height))",
+      padding: "clamp(64px, 8vw, 112px) 0",
       position: "relative",
-      overflow: "hidden"
-    },
-    ".retro-layout .hero-coords": {
-      marginBottom: "34px",
-      fontSize: "10px",
-      letterSpacing: "0.22em",
-      color: "var(--ink-soft)",
-      opacity: "0.75"
+      overflow: "hidden",
+      display: "grid",
+      alignItems: "center",
+      background:
+        "radial-gradient(circle at 82% 24%, color-mix(in srgb, var(--green-wash) 82%, transparent), transparent 28rem)"
     },
     ".retro-layout .hero-wrap": {
       display: "grid"
@@ -1802,11 +1853,11 @@ export default defineConfig({
     ".retro-layout .hero-brand": {
       fontFamily: "var(--mono-display)",
       fontWeight: "700",
-      fontSize: "clamp(52px, 7.2vw, 96px)",
+      fontSize: "clamp(58px, 7.6vw, 96px)",
       lineHeight: "0.95",
       letterSpacing: "-0.03em",
       color: "var(--accent-dim)",
-      margin: "16px 0 6px"
+      margin: "18px 0 18px"
     },
     ".dark .retro-layout .hero-brand": {
       color: "var(--phosphor)",
@@ -1821,10 +1872,22 @@ export default defineConfig({
     ".retro-layout .hero-headline": {
       fontFamily: "var(--mono-display)",
       fontWeight: "700",
-      fontSize: "clamp(20px, 2.4vw, 30px)",
-      lineHeight: "1.2",
-      letterSpacing: "-0.015em",
-      margin: "0 0 10px"
+      fontSize: "clamp(28px, 3.7vw, 48px)",
+      lineHeight: "1.04",
+      letterSpacing: "-0.03em",
+      maxWidth: "14ch",
+      margin: "0 0 24px",
+      position: "relative"
+    },
+    ".retro-layout .hero-headline-line": {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: "0 0.28em"
+    },
+    ".retro-layout .hero-headline-word": {
+      display: "inline-block",
+      opacity: "1",
+      animation: "landing-word-arrive 680ms cubic-bezier(0.16, 1, 0.3, 1) forwards"
     },
     ".retro-layout .hero-headline .cursor": {
       display: "inline-block",
@@ -1857,8 +1920,10 @@ export default defineConfig({
     },
     ".retro-layout .hero-copy": {
       color: "var(--ink-soft)",
-      maxWidth: "46ch",
-      marginBottom: "34px"
+      maxWidth: "52ch",
+      marginBottom: "32px",
+      fontSize: "15.5px",
+      lineHeight: "1.75"
     },
     ".retro-layout .hero-copy strong": {
       color: "var(--ink)",
@@ -1868,19 +1933,198 @@ export default defineConfig({
       display: "flex",
       gap: "16px",
       flexWrap: "wrap",
-      marginBottom: "30px"
+      marginBottom: "26px"
     },
     ".retro-layout .hero-ctas .keating-btn-retro": {
       fontSize: "13px",
-      padding: "0.5rem",
+      padding: "0.65rem 0.8rem",
       textDecoration: "none"
+    },
+    ".retro-layout .hero-proof": {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: "10px 22px",
+      margin: "0",
+      padding: "18px 0 0",
+      borderTop: "1px solid var(--line)",
+      listStyle: "none",
+      color: "var(--ink-soft)",
+      fontSize: "11px",
+      letterSpacing: "0.06em",
+      textTransform: "uppercase"
+    },
+    ".retro-layout .hero-proof li": {
+      position: "relative",
+      paddingLeft: "14px"
+    },
+    ".retro-layout .hero-proof li::before": {
+      content: "'+'",
+      position: "absolute",
+      left: "0",
+      color: "var(--accent-dim)",
+      fontWeight: "700"
     },
     ".retro-layout .hero-stage": {
       position: "relative",
       display: "grid",
       justifyItems: "center",
       alignContent: "start",
-      minHeight: "0"
+      minHeight: "0",
+      overflow: "visible"
+    },
+    ".retro-layout .hero-wonder-stage": {
+      "--hero-terminal-x": "0px",
+      "--hero-terminal-y": "0px",
+      "--hero-rotate-x": "0deg",
+      "--hero-rotate-y": "0deg",
+      "--hero-far-x": "0px",
+      "--hero-far-y": "0px",
+      "--hero-shadow-x": "0px",
+      "--hero-shadow-y": "0px",
+      "--hero-mascot-x": "0px",
+      "--hero-mascot-y": "0px",
+      position: "relative",
+      width: "min(100%, 690px)",
+      minHeight: "560px",
+      perspective: "1100px",
+      isolation: "isolate"
+    },
+    ".retro-layout .hero-wonder-stage::before": {
+      content: "''",
+      position: "absolute",
+      inset: "8% 2% 10% 9%",
+      border: "1px solid color-mix(in srgb, var(--accent-dim) 36%, transparent)",
+      borderRadius: "50%",
+      transform: "translate3d(var(--hero-far-x), var(--hero-far-y), -20px) rotate(-8deg)",
+      transition: "transform 180ms cubic-bezier(0.22, 1, 0.36, 1)",
+      pointerEvents: "none"
+    },
+    ".retro-layout .hero-wonder-stage::after": {
+      content: "''",
+      position: "absolute",
+      right: "2%",
+      bottom: "10%",
+      width: "68%",
+      height: "18%",
+      borderRadius: "50%",
+      background: "rgba(28, 33, 27, 0.2)",
+      filter: "blur(22px)",
+      transform: "translate3d(var(--hero-shadow-x), var(--hero-shadow-y), -40px) scaleX(0.94)",
+      opacity: "0.52",
+      transition: "transform 180ms cubic-bezier(0.22, 1, 0.36, 1)",
+      pointerEvents: "none"
+    },
+    ".retro-layout .hero-terminal-layer": {
+      position: "relative",
+      zIndex: "3",
+      width: "100%",
+      minHeight: "520px",
+      transform:
+        "translate3d(var(--hero-terminal-x), var(--hero-terminal-y), 28px) rotateX(var(--hero-rotate-x)) rotateY(var(--hero-rotate-y))",
+      transformStyle: "preserve-3d",
+      transition: "transform 160ms cubic-bezier(0.22, 1, 0.36, 1)"
+    },
+    ".retro-layout .hero-orbit-mark": {
+      position: "absolute",
+      zIndex: "1",
+      right: "-2%",
+      top: "4%",
+      width: "150px",
+      height: "auto",
+      opacity: "0.08",
+      filter: "grayscale(1)",
+      transform: "translate3d(var(--hero-far-x), var(--hero-far-y), -30px) rotate(-8deg)",
+      transition: "transform 180ms cubic-bezier(0.22, 1, 0.36, 1)",
+      pointerEvents: "none"
+    },
+    ".retro-layout .hero-orbit": {
+      position: "absolute",
+      zIndex: "4",
+      border: "1px solid var(--ink)",
+      background: "color-mix(in srgb, var(--paper) 88%, transparent)",
+      padding: "7px 10px",
+      color: "var(--ink)",
+      fontSize: "9px",
+      fontWeight: "700",
+      letterSpacing: "0.12em",
+      boxShadow: "3px 3px 0 var(--ink)",
+      pointerEvents: "none",
+      animation: "landing-orbit-drift 5.5s ease-in-out infinite"
+    },
+    ".retro-layout .hero-orbit-one": {
+      top: "12%",
+      left: "4%",
+      transform:
+        "translate3d(calc(var(--hero-depth-x) * -18px), calc(var(--hero-depth-y) * -12px), 55px) rotate(-4deg)"
+    },
+    ".retro-layout .hero-orbit-two": {
+      top: "31%",
+      right: "-1%",
+      animationDelay: "-2s",
+      transform:
+        "translate3d(calc(var(--hero-depth-x) * 20px), calc(var(--hero-depth-y) * 14px), 62px) rotate(3deg)"
+    },
+    ".retro-layout .hero-orbit-three": {
+      right: "18%",
+      bottom: "8%",
+      animationDelay: "-3.5s",
+      transform:
+        "translate3d(calc(var(--hero-depth-x) * 15px), calc(var(--hero-depth-y) * 10px), 75px) rotate(-2deg)"
+    },
+    ".retro-layout .hero-mascot-reaction": {
+      position: "absolute",
+      zIndex: "6",
+      left: "-2%",
+      bottom: "-4%",
+      display: "grid",
+      width: "132px",
+      border: "0",
+      background: "transparent",
+      padding: "0",
+      cursor: "pointer",
+      transform: "translate3d(var(--hero-mascot-x), var(--hero-mascot-y), 85px)",
+      transition: "transform 180ms cubic-bezier(0.22, 1, 0.36, 1)"
+    },
+    ".retro-layout .hero-mascot-reaction:hover": {
+      transform:
+        "translate3d(var(--hero-mascot-x), calc(var(--hero-mascot-y) - 6px), 95px) rotate(-2deg)"
+    },
+    ".retro-layout .hero-mascot-reaction:focus-visible": {
+      outline: "3px solid var(--accent)",
+      outlineOffset: "6px"
+    },
+    ".retro-layout .hero-mascot-reaction img": {
+      display: "block",
+      width: "100%",
+      height: "auto",
+      filter: "drop-shadow(0 12px 10px rgba(28, 33, 27, 0.18))",
+      animation: "landing-mascot-pop 420ms cubic-bezier(0.16, 1, 0.3, 1)"
+    },
+    ".retro-layout .hero-mascot-bubble": {
+      position: "absolute",
+      left: "86%",
+      bottom: "72%",
+      width: "176px",
+      border: "1.5px solid var(--ink)",
+      background: "var(--paper)",
+      padding: "9px 11px",
+      color: "var(--ink)",
+      fontSize: "10px",
+      lineHeight: "1.45",
+      textAlign: "left",
+      boxShadow: "4px 4px 0 var(--accent-dim)"
+    },
+    ".retro-layout .hero-mascot-bubble::after": {
+      content: "''",
+      position: "absolute",
+      left: "-7px",
+      bottom: "12px",
+      width: "12px",
+      height: "12px",
+      borderLeft: "1.5px solid var(--ink)",
+      borderBottom: "1.5px solid var(--ink)",
+      background: "var(--paper)",
+      transform: "rotate(45deg)"
     },
     ".retro-layout .term-3d": {
       position: "relative",
@@ -2098,47 +2342,618 @@ export default defineConfig({
       color: "var(--phosphor-dim)",
       animation: "retro-flicker 6s linear infinite"
     },
+    ".retro-layout .kinetic-teaching": {
+      "--kinetic-a": "0px",
+      "--kinetic-b": "0px",
+      "--kinetic-c": "0px",
+      position: "relative",
+      overflow: "hidden",
+      padding: "clamp(72px, 9vw, 132px) 0",
+      borderBottom: "2px solid var(--ink)",
+      background:
+        "linear-gradient(110deg, color-mix(in srgb, var(--accent) 11%, var(--paper)), var(--paper) 48%, color-mix(in srgb, var(--amber) 13%, var(--paper)))"
+    },
+    ".retro-layout .kinetic-label": {
+      width: "min(1180px, calc(100% - 3rem))",
+      margin: "0 auto clamp(30px, 4vw, 56px)",
+      color: "var(--accent-dim)",
+      fontSize: "10px",
+      fontWeight: "700",
+      letterSpacing: "0.16em"
+    },
+    ".retro-layout .kinetic-row": {
+      position: "relative",
+      zIndex: "2",
+      width: "max-content",
+      fontFamily: "var(--mono-display)",
+      fontSize: "clamp(34px, 6.6vw, 92px)",
+      fontWeight: "700",
+      lineHeight: "0.92",
+      letterSpacing: "-0.04em",
+      whiteSpace: "nowrap",
+      /* Focus pull: the band sharpens as it reaches the middle of the screen
+         and softens on the way out. `--kinetic-blur` is written by the
+         component's scroll handler alongside the row offsets. */
+      filter: "blur(var(--kinetic-blur, 0px))",
+      willChange: "transform, filter"
+    },
+    ".retro-layout .kinetic-row-a": {
+      marginLeft: "max(-6vw, -90px)",
+      color: "var(--ink)",
+      transform: "translateX(var(--kinetic-a))"
+    },
+    ".retro-layout .kinetic-row-b": {
+      marginTop: "12px",
+      marginLeft: "clamp(40px, 14vw, 220px)",
+      color: "var(--accent-dim)",
+      transform: "translateX(var(--kinetic-b))"
+    },
+    ".retro-layout .kinetic-row-c": {
+      marginTop: "12px",
+      marginLeft: "max(-3vw, -44px)",
+      color: "var(--ink)",
+      transform: "translateX(var(--kinetic-c))"
+    },
+    ".retro-layout .kinetic-mascot": {
+      position: "absolute",
+      zIndex: "3",
+      right: "clamp(18px, 7vw, 120px)",
+      bottom: "-22%",
+      width: "clamp(150px, 20vw, 300px)",
+      height: "auto",
+      filter: "drop-shadow(0 18px 16px rgba(28, 33, 27, 0.2))",
+      transform: "rotate(5deg)",
+      pointerEvents: "none"
+    },
+    ".retro-layout .learning-journey": {
+      position: "relative",
+      overflow: "hidden",
+      padding: "clamp(86px, 9vw, 132px) 0 clamp(72px, 8vw, 112px)",
+      background: "var(--paper)"
+    },
+    ".retro-layout .journey-heading": {
+      display: "grid",
+      gridTemplateColumns: "minmax(0, 1fr) minmax(18rem, 0.58fr)",
+      gap: "clamp(28px, 6vw, 76px)",
+      alignItems: "end"
+    },
+    ".retro-layout .journey-heading h2": {
+      maxWidth: "16ch",
+      margin: "16px 0 0",
+      fontFamily: "var(--mono-display)",
+      fontSize: "clamp(36px, 5.6vw, 72px)",
+      lineHeight: "0.98",
+      letterSpacing: "-0.035em"
+    },
+    ".retro-layout .journey-intro p": {
+      margin: "0",
+      color: "var(--ink-soft)",
+      fontSize: "14px",
+      lineHeight: "1.7"
+    },
+    ".retro-layout .journey-controls": {
+      display: "grid",
+      gridTemplateColumns: "44px minmax(72px, auto) 44px",
+      alignItems: "center",
+      width: "max-content",
+      marginTop: "24px",
+      border: "1.5px solid var(--ink)",
+      background: "var(--paper)"
+    },
+    ".retro-layout .journey-controls button": {
+      minWidth: "44px",
+      minHeight: "44px",
+      border: "0",
+      background: "transparent",
+      color: "var(--ink)",
+      cursor: "pointer",
+      fontSize: "20px",
+      transition: "background-color 140ms ease, color 140ms ease"
+    },
+    ".retro-layout .journey-controls button:hover:not(:disabled)": {
+      background: "var(--ink)",
+      color: "var(--paper)"
+    },
+    ".retro-layout .journey-controls button:disabled": {
+      cursor: "not-allowed",
+      opacity: "0.28"
+    },
+    ".retro-layout .journey-controls span": {
+      padding: "0 12px",
+      color: "var(--ink-soft)",
+      fontSize: "11px",
+      letterSpacing: "0.08em",
+      textAlign: "center"
+    },
+    ".retro-layout .journey-track": {
+      display: "flex",
+      gap: "clamp(18px, 3vw, 36px)",
+      width: "100%",
+      marginTop: "clamp(44px, 6vw, 72px)",
+      padding: "18px max(28px, calc((100vw - 1180px) / 2 + 28px)) 34px",
+      overflowX: "auto",
+      overscrollBehaviorInline: "contain",
+      scrollBehavior: "smooth",
+      scrollPaddingInline: "max(28px, calc((100vw - 1180px) / 2 + 28px))",
+      scrollSnapType: "x mandatory",
+      scrollbarColor: "var(--accent-dim) var(--paper-deep)",
+      scrollbarWidth: "thin"
+    },
+    ".retro-layout .journey-track:focus-visible": {
+      outline: "3px solid var(--accent)",
+      outlineOffset: "-4px"
+    },
+    ".retro-layout .journey-card": {
+      position: "relative",
+      display: "grid",
+      gridTemplateColumns: "minmax(0, 0.92fr) minmax(230px, 0.72fr)",
+      flex: "0 0 min(820px, calc(100vw - 112px))",
+      minHeight: "520px",
+      overflow: "hidden",
+      border: "2px solid var(--ink)",
+      background: "var(--card)",
+      boxShadow: "7px 7px 0 color-mix(in srgb, var(--ink) 34%, transparent)",
+      scrollSnapAlign: "center",
+      opacity: "0.48",
+      transform: "scale(0.92) translateY(18px)",
+      transformOrigin: "center",
+      /* Depth of field: the stages either side of the active one sit out of
+         focus, so the carousel reads as a lens rather than a list. */
+      filter: "blur(3px)",
+      transition:
+        "opacity 320ms ease, transform 380ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 320ms ease, filter 320ms ease"
+    },
+    ".retro-layout .journey-card.is-active": {
+      opacity: "1",
+      transform: "scale(1) translateY(0)",
+      filter: "blur(0)",
+      boxShadow: "10px 10px 0 var(--accent-dim)"
+    },
+    ".retro-layout .journey-card-copy": {
+      position: "relative",
+      zIndex: "2",
+      display: "flex",
+      flexDirection: "column",
+      padding: "clamp(28px, 5vw, 64px)"
+    },
+    ".retro-layout .journey-card-meta": {
+      display: "flex",
+      justifyContent: "space-between",
+      gap: "20px",
+      paddingBottom: "14px",
+      borderBottom: "1px solid var(--ink)",
+      color: "var(--accent-dim)",
+      fontSize: "11px",
+      fontWeight: "700",
+      letterSpacing: "0.12em",
+      textTransform: "uppercase"
+    },
+    ".retro-layout .journey-card h3": {
+      maxWidth: "12ch",
+      margin: "auto 0 20px",
+      fontFamily: "var(--mono-display)",
+      fontSize: "clamp(34px, 4.7vw, 62px)",
+      lineHeight: "0.98",
+      letterSpacing: "-0.035em",
+      /* The global break-word rule splits long words mid-stem in the narrow
+         peeking cards ("principle/s."); hyphenate instead. */
+      wordBreak: "normal",
+      overflowWrap: "normal",
+      hyphens: "auto"
+    },
+    ".retro-layout .journey-card p": {
+      maxWidth: "52ch",
+      margin: "0",
+      color: "var(--ink-soft)",
+      fontSize: "14px",
+      lineHeight: "1.7"
+    },
+    ".retro-layout .journey-card small": {
+      display: "block",
+      maxWidth: "50ch",
+      marginTop: "28px",
+      paddingTop: "18px",
+      borderTop: "1px solid var(--line)",
+      color: "var(--ink)",
+      fontSize: "11px",
+      lineHeight: "1.55"
+    },
+    ".retro-layout .journey-card-image": {
+      position: "relative",
+      display: "grid",
+      placeItems: "end center",
+      overflow: "hidden",
+      background:
+        "radial-gradient(circle at 50% 46%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 52%)"
+    },
+    ".retro-layout .journey-card-image img": {
+      position: "relative",
+      zIndex: "2",
+      display: "block",
+      width: "min(118%, 520px)",
+      height: "auto",
+      marginBottom: "-5%",
+      filter: "drop-shadow(0 20px 16px rgba(28, 33, 27, 0.18))",
+      transform: "translateY(16px) scale(0.94)",
+      transition: "transform 520ms cubic-bezier(0.16, 1, 0.3, 1)"
+    },
+    ".retro-layout .journey-card.is-active .journey-card-image img": {
+      transform: "translateY(0) scale(1)"
+    },
+    ".retro-layout .journey-return .journey-card-image img": {
+      width: "min(82%, 360px)",
+      marginBottom: "-2%"
+    },
+    ".retro-layout .journey-orbit": {
+      position: "absolute",
+      zIndex: "1",
+      width: "78%",
+      aspectRatio: "1",
+      border: "1px solid color-mix(in srgb, var(--accent-dim) 38%, transparent)",
+      borderRadius: "50%",
+      animation: "landing-orbit-spin 24s linear infinite"
+    },
+    ".retro-layout .journey-orbit::before,\n  .retro-layout .journey-orbit::after": {
+      content: "''",
+      position: "absolute",
+      width: "12px",
+      height: "12px",
+      borderRadius: "50%",
+      background: "var(--accent-dim)"
+    },
+    ".retro-layout .journey-orbit::before": {
+      top: "8%",
+      left: "18%"
+    },
+    ".retro-layout .journey-orbit::after": {
+      right: "4%",
+      bottom: "30%",
+      background: "var(--amber)"
+    },
+    ".retro-layout .crt-playthrough": {
+      position: "relative",
+      overflow: "hidden",
+      padding: "clamp(88px, 10vw, 148px) 0",
+      borderBlock: "2px solid var(--ink)",
+      background:
+        "radial-gradient(circle at 20% 45%, color-mix(in srgb, var(--accent) 15%, transparent), transparent 30rem), var(--paper-deep)"
+    },
+    ".retro-layout .crt-playthrough-heading": {
+      display: "grid",
+      gridTemplateColumns: "minmax(0, 1fr) minmax(18rem, 0.58fr)",
+      gap: "clamp(28px, 6vw, 76px)",
+      alignItems: "end",
+      marginBottom: "clamp(42px, 6vw, 72px)"
+    },
+    ".retro-layout .crt-playthrough-heading h2": {
+      maxWidth: "15ch",
+      margin: "16px 0 0",
+      fontFamily: "var(--mono-display)",
+      fontSize: "clamp(38px, 5.8vw, 76px)",
+      lineHeight: "0.98",
+      letterSpacing: "-0.035em"
+    },
+    ".retro-layout .crt-playthrough-heading > p": {
+      margin: "0",
+      color: "var(--ink-soft)",
+      fontSize: "14px",
+      lineHeight: "1.75"
+    },
+    ".retro-layout .crt-program-layout": {
+      display: "flex",
+      justifyContent: "center"
+    },
+    ".retro-layout .crt-program-layout:focus-visible": {
+      outline: "3px solid var(--accent)",
+      outlineOffset: "10px"
+    },
+    ".retro-layout .crt-program-stage": {
+      position: "relative",
+      width: "min(100%, 760px)",
+      minWidth: "0"
+    },
+    ".retro-layout .crt-program-stage::before": {
+      content: "''",
+      position: "absolute",
+      left: "9%",
+      right: "7%",
+      bottom: "-5%",
+      height: "15%",
+      borderRadius: "50%",
+      background: "rgba(28, 33, 27, 0.28)",
+      filter: "blur(20px)",
+      transform: "scaleX(0.9)"
+    },
+    ".retro-layout .crt-program-stage .crt-wrap": {
+      maxWidth: "760px"
+    },
+    ".retro-layout .crt-program-stage .crt-wrap:hover": {
+      transform: "none"
+    },
+    ".retro-layout .crt-program-screen": {
+      padding: "0",
+      background: "#061009",
+      borderRadius: "9% / 13%",
+      isolation: "isolate"
+    },
+    ".retro-layout .crt-program-screen::before": {
+      content: "''",
+      position: "absolute",
+      inset: "0",
+      zIndex: "4",
+      pointerEvents: "none",
+      background:
+        "radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, 0.48) 100%)",
+      mixBlendMode: "multiply"
+    },
+    ".retro-layout .crt-program-screen::after": {
+      zIndex: "5"
+    },
+    ".retro-layout .crt-program-frame": {
+      position: "absolute",
+      inset: "0",
+      zIndex: "1",
+      display: "grid",
+      placeItems: "center",
+      opacity: "0",
+      transform: "scale(1.035)",
+      filter: "blur(5px) saturate(0.72)",
+      transition:
+        "opacity 360ms ease, transform 520ms cubic-bezier(0.16, 1, 0.3, 1), filter 420ms ease",
+      pointerEvents: "none"
+    },
+    ".retro-layout .crt-program-frame.is-active": {
+      zIndex: "2",
+      opacity: "1",
+      transform: "scale(1)",
+      filter: "blur(0) saturate(0.86)"
+    },
+    ".retro-layout .crt-program-frame > img": {
+      display: "block",
+      width: "100%",
+      height: "100%",
+      objectFit: "cover"
+    },
+    ".retro-layout .crt-program-quote": {
+      position: "relative",
+      zIndex: "2",
+      display: "grid",
+      gap: "14px",
+      width: "100%",
+      minHeight: "100%",
+      margin: "0",
+      padding: "8% 9%",
+      placeContent: "center",
+      color: "var(--phosphor)",
+      textAlign: "center",
+      textShadow: "0 0 14px rgba(75, 227, 136, 0.58)"
+    },
+    ".retro-layout .crt-program-quote p": {
+      margin: "0",
+      fontFamily: "var(--mono-display)",
+      fontSize: "clamp(13px, 2.15vw, 23px)",
+      fontStyle: "italic",
+      fontWeight: "700",
+      lineHeight: "1.45"
+    },
+    ".retro-layout .crt-program-quote cite": {
+      color: "var(--phosphor-dim)",
+      fontSize: "clamp(7px, 0.9vw, 10px)",
+      fontStyle: "normal",
+      letterSpacing: "0.14em",
+      textTransform: "uppercase"
+    },
+    ".retro-layout .crt-program-fallback": {
+      display: "grid",
+      gap: "8px",
+      padding: "10%",
+      color: "var(--phosphor)",
+      fontSize: "10px",
+      letterSpacing: "0.08em",
+      textAlign: "center"
+    },
+    ".retro-layout .crt-program-fallback strong": {
+      color: "var(--amber)"
+    },
+    ".retro-layout .crt-program-console": {
+      position: "relative",
+      display: "flex",
+      minWidth: "0",
+      flexDirection: "column",
+      border: "2px solid var(--ink)",
+      background: "var(--card)",
+      boxShadow: "7px 7px 0 var(--accent-dim)",
+      padding: "clamp(24px, 3vw, 38px)"
+    },
+    ".retro-layout .crt-program-console-head": {
+      display: "flex",
+      justifyContent: "space-between",
+      gap: "20px",
+      paddingBottom: "14px",
+      borderBottom: "1px solid var(--ink)",
+      color: "var(--ink-soft)",
+      fontSize: "10px",
+      fontWeight: "700",
+      letterSpacing: "0.1em"
+    },
+    ".retro-layout .crt-program-console-head span:last-child": {
+      position: "relative",
+      paddingLeft: "13px"
+    },
+    ".retro-layout .crt-program-console-head span:last-child::before": {
+      content: "''",
+      position: "absolute",
+      left: "0",
+      top: "50%",
+      width: "7px",
+      height: "7px",
+      borderRadius: "50%",
+      background: "var(--ink-soft)",
+      transform: "translateY(-50%)"
+    },
+    ".retro-layout .crt-program-console-head span.is-live::before": {
+      background: "var(--accent)",
+      boxShadow: "0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent)"
+    },
+    ".retro-layout .crt-program-label": {
+      marginTop: "clamp(30px, 5vw, 64px)",
+      color: "var(--accent-dim)",
+      fontSize: "10px",
+      fontWeight: "700",
+      letterSpacing: "0.14em",
+      textTransform: "uppercase"
+    },
+    ".retro-layout .crt-program-console h3": {
+      maxWidth: "12ch",
+      margin: "10px 0 18px",
+      fontFamily: "var(--mono-display)",
+      fontSize: "clamp(28px, 3.8vw, 48px)",
+      lineHeight: "1",
+      letterSpacing: "-0.03em"
+    },
+    ".retro-layout .crt-program-console p": {
+      margin: "0",
+      color: "var(--ink-soft)",
+      fontSize: "13px",
+      lineHeight: "1.7"
+    },
+    ".retro-layout .crt-program-controls": {
+      display: "grid",
+      gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+      gap: "8px",
+      marginTop: "32px"
+    },
+    ".retro-layout .crt-program-controls button": {
+      minHeight: "44px",
+      border: "1.5px solid var(--ink)",
+      background: "transparent",
+      color: "var(--ink)",
+      padding: "8px 9px",
+      cursor: "pointer",
+      fontFamily: "var(--mono-body)",
+      fontSize: "9px",
+      fontWeight: "700",
+      transition: "background-color 140ms ease, color 140ms ease, transform 100ms ease"
+    },
+    ".retro-layout .crt-program-controls button:hover": {
+      background: "var(--ink)",
+      color: "var(--paper)"
+    },
+    ".retro-layout .crt-program-controls button:active": {
+      transform: "translateY(2px)"
+    },
+    ".retro-layout .crt-program-selector": {
+      display: "grid",
+      gap: "0",
+      marginTop: "24px",
+      borderTop: "1px solid var(--line)"
+    },
+    ".retro-layout .crt-program-selector button": {
+      display: "grid",
+      gridTemplateColumns: "32px minmax(0, 1fr)",
+      gap: "10px",
+      alignItems: "center",
+      minHeight: "40px",
+      border: "0",
+      borderBottom: "1px solid var(--line)",
+      background: "transparent",
+      color: "var(--ink-soft)",
+      padding: "8px 0",
+      cursor: "pointer",
+      fontFamily: "var(--mono-body)",
+      fontSize: "10px",
+      textAlign: "left",
+      transition: "color 140ms ease, padding 160ms ease"
+    },
+    ".retro-layout .crt-program-selector button:hover,\n  .retro-layout .crt-program-selector button[aria-pressed='true']": {
+      color: "var(--ink)",
+      paddingLeft: "8px"
+    },
+    ".retro-layout .crt-program-selector button[aria-pressed='true']": {
+      background: "color-mix(in srgb, var(--accent) 8%, transparent)"
+    },
+    ".retro-layout .crt-program-selector button span": {
+      color: "var(--accent-dim)",
+      fontWeight: "700"
+    },
     ".retro-layout .manifesto": {
-      padding: "90px 0",
-      position: "relative"
+      padding: "clamp(84px, 9vw, 132px) 0",
+      position: "relative",
+      borderBottom: "1.5px solid var(--ink)"
+    },
+    ".retro-layout .manifesto-grid": {
+      display: "grid",
+      gridTemplateColumns: "minmax(0, 0.72fr) minmax(0, 1fr)",
+      gap: "clamp(48px, 8vw, 104px)",
+      alignItems: "start"
+    },
+    ".retro-layout .manifesto-copy": {
+      position: "sticky",
+      top: "calc(var(--nav-height) + 40px)"
+    },
+    ".retro-layout .manifesto-quote": {
+      margin: "44px 0 0",
+      paddingTop: "26px",
+      borderTop: "1px solid var(--ink)"
+    },
+    ".retro-layout .manifesto-quote p": {
+      margin: "0 0 8px",
+      fontFamily: "var(--mono-display)",
+      fontSize: "clamp(22px, 3vw, 36px)",
+      fontWeight: "700",
+      lineHeight: "1.15",
+      color: "var(--accent-dim)"
+    },
+    ".retro-layout .manifesto-quote cite": {
+      color: "var(--ink-soft)",
+      fontSize: "11px",
+      fontStyle: "normal",
+      letterSpacing: "0.1em",
+      textTransform: "uppercase"
     },
     ".retro-layout .man-grid": {
       display: "grid",
-      gridTemplateColumns: "repeat(2, 1fr)",
-      gap: "22px",
-      position: "relative"
+      gap: "0",
+      margin: "0",
+      padding: "0",
+      borderTop: "1.5px solid var(--ink)",
+      listStyle: "none"
     },
     ".retro-layout .man-card": {
-      background: "var(--card)",
-      border: "1.5px solid var(--ink)",
-      padding: "26px 26px 28px",
-      boxShadow: "var(--shadow-card)",
-      transition: "transform 0.14s ease, box-shadow 0.14s ease"
+      display: "grid",
+      gridTemplateColumns: "56px minmax(0, 1fr)",
+      gap: "18px",
+      padding: "28px 0",
+      borderBottom: "1.5px solid var(--ink)",
+      background: "transparent",
+      transition: "background-color 160ms ease, padding 160ms ease"
     },
     ".retro-layout .man-card:hover": {
-      transform: "translateY(-3px)",
-      boxShadow: "5px 5px 0 var(--ink)"
+      paddingInline: "16px",
+      background: "color-mix(in srgb, var(--accent) 7%, transparent)"
     },
     ".retro-layout .man-num": {
       fontFamily: "var(--mono-display)",
       fontWeight: "700",
-      fontSize: "15px",
+      fontSize: "18px",
       color: "var(--accent-dim)",
       letterSpacing: "0.04em",
-      marginBottom: "8px"
+      margin: "1px 0 0"
     },
     ".dark .retro-layout .man-num": {
       color: "var(--phosphor)"
     },
     ".retro-layout .man-card h3": {
       fontFamily: "var(--mono-display)",
-      fontSize: "19px",
+      fontSize: "20px",
       marginBottom: "10px",
       letterSpacing: "0.02em"
     },
     ".retro-layout .man-card p": {
       color: "var(--ink-soft)",
-      fontSize: "14px"
+      fontSize: "14px",
+      lineHeight: "1.7",
+      maxWidth: "58ch"
     },
     ".retro-layout .man-card p strong": {
       color: "var(--ink)",
@@ -2160,8 +2975,8 @@ export default defineConfig({
       textTransform: "uppercase"
     },
     ".retro-layout .use": {
-      padding: "90px 0",
-      borderTop: "1.5px dashed var(--line)"
+      padding: "clamp(84px, 9vw, 128px) 0",
+      background: "var(--paper-deep)"
     },
     ".retro-layout .use-grid": {
       display: "grid",
@@ -2170,15 +2985,52 @@ export default defineConfig({
       marginBottom: "38px"
     },
     ".retro-layout .use-card": {
+      position: "relative",
+      overflow: "hidden",
       background: "var(--card)",
       border: "1.5px solid var(--ink)",
       padding: "24px 22px 26px",
-      boxShadow: "var(--shadow-card)",
+      boxShadow: "3px 3px 0 var(--ink)",
       transition: "transform 0.16s ease, box-shadow 0.16s ease"
     },
     ".retro-layout .use-card:hover": {
       transform: "translateY(-4px)",
       boxShadow: "5px 5px 0 var(--ink)"
+    },
+    ".retro-layout .use-card-media": {
+      position: "relative",
+      display: "grid",
+      placeItems: "end center",
+      height: "152px",
+      margin: "-24px -22px 20px",
+      overflow: "hidden",
+      borderBottom: "1.5px solid var(--ink)",
+      background:
+        "radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 58%), var(--paper)"
+    },
+    ".retro-layout .use-card-media span": {
+      position: "absolute",
+      zIndex: "1",
+      top: "10px",
+      left: "12px",
+      color: "var(--accent-dim)",
+      fontSize: "10px",
+      fontWeight: "700",
+      letterSpacing: "0.1em"
+    },
+    ".retro-layout .use-card-media img": {
+      display: "block",
+      width: "auto",
+      maxWidth: "86%",
+      height: "132px",
+      objectFit: "contain",
+      objectPosition: "center bottom",
+      filter: "drop-shadow(0 10px 8px rgba(28, 33, 27, 0.15))",
+      transform: "translateY(8px) scale(0.95)",
+      transition: "transform 320ms cubic-bezier(0.16, 1, 0.3, 1)"
+    },
+    ".retro-layout .use-card:hover .use-card-media img": {
+      transform: "translateY(0) scale(1.03) rotate(-1deg)"
     },
     ".retro-layout .use-card-title": {
       fontFamily: "var(--mono-display)",
@@ -2228,15 +3080,36 @@ export default defineConfig({
       flexWrap: "wrap"
     },
     ".retro-layout .install": {
-      padding: "90px 0",
-      borderTop: "1.5px dashed var(--line)"
+      padding: "clamp(84px, 9vw, 128px) 0",
+      borderTop: "1.5px solid var(--ink)"
+    },
+    ".retro-layout .install-layout": {
+      display: "grid",
+      gridTemplateColumns: "minmax(0, 0.72fr) minmax(0, 1fr)",
+      gap: "clamp(36px, 7vw, 84px)",
+      alignItems: "start"
+    },
+    ".retro-layout .install-copy-panel": {
+      paddingTop: "4px"
+    },
+    ".retro-layout .install-notes": {
+      display: "grid",
+      marginTop: "32px",
+      borderTop: "1px solid var(--line)"
+    },
+    ".retro-layout .install-notes span": {
+      padding: "12px 0",
+      borderBottom: "1px solid var(--line)",
+      color: "var(--ink-soft)",
+      fontSize: "12px"
     },
     ".retro-layout .install-term": {
       position: "relative",
       background: "var(--terminal)",
       border: "1.5px solid var(--ink)",
       boxShadow: "6px 6px 0 var(--ink)",
-      maxWidth: "720px"
+      maxWidth: "720px",
+      width: "100%"
     },
     ".retro-layout .install-term-bar": {
       display: "flex",
@@ -2319,7 +3192,7 @@ export default defineConfig({
       fontSize: "13.5px",
       lineHeight: "1.85",
       color: "var(--phosphor)",
-      minHeight: "120px"
+      minHeight: "160px"
     },
     ".retro-layout .install-term-body::after": {
       content: "''",
@@ -2353,22 +3226,54 @@ export default defineConfig({
       color: "rgba(220, 239, 224, 0.8)"
     },
     ".retro-layout .final": {
-      padding: "100px 0",
+      padding: "clamp(84px, 9vw, 128px) 0",
       textAlign: "center",
-      background: "radial-gradient(ellipse 70% 60% at 50% 110%, var(--green-wash), transparent 70%)"
+      background:
+        "radial-gradient(ellipse 48% 58% at 50% 68%, color-mix(in srgb, var(--green-wash) 88%, transparent), transparent 74%)"
     },
     ".retro-layout .final img": {
       width: "96px",
       margin: "0 auto 26px",
       display: "block"
     },
+    ".retro-layout .final-mascot-scene": {
+      position: "relative",
+      width: "min(100%, 620px)",
+      minHeight: "300px",
+      margin: "0 auto 14px"
+    },
     ".retro-layout .final .final-bot": {
-      width: "300px",
-      margin: "0 auto 22px",
-      transition: "transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)"
+      width: "240px",
+      margin: "0 auto",
+      transition: "transform 0.2s cubic-bezier(0.165, 0.84, 0.44, 1)",
+      filter: "drop-shadow(0 18px 14px rgba(28, 33, 27, 0.17))"
     },
     ".retro-layout .final-bot:hover": {
-      transform: "scale(1.06) rotate(3deg)"
+      transform: "translateY(-6px)"
+    },
+    ".retro-layout .final-thought": {
+      position: "absolute",
+      zIndex: "2",
+      maxWidth: "180px",
+      border: "1.5px solid var(--ink)",
+      background: "var(--paper)",
+      padding: "10px 12px",
+      color: "var(--ink)",
+      fontSize: "10px",
+      lineHeight: "1.45",
+      boxShadow: "4px 4px 0 var(--accent-dim)",
+      animation: "landing-thought-float 5s ease-in-out infinite"
+    },
+    ".retro-layout .final-thought-one": {
+      left: "3%",
+      top: "18%",
+      transform: "rotate(-3deg)"
+    },
+    ".retro-layout .final-thought-two": {
+      right: "2%",
+      top: "42%",
+      transform: "rotate(2deg)",
+      animationDelay: "-2.5s"
     },
     ".retro-layout .final h2": {
       fontFamily: "var(--mono-display)",
@@ -3065,7 +3970,8 @@ export default defineConfig({
         overflowX: "clip"
       },
       ".retro-layout .hero": {
-        padding: "40px 0 56px"
+        minHeight: "auto",
+        padding: "52px 0 64px"
       },
       ".retro-layout.retro-page": {
         width: "100%",
@@ -3121,18 +4027,11 @@ export default defineConfig({
         minWidth: "0",
         overflowX: "clip"
       },
-      ".retro-layout .hero-coords": {
-        width: "100%",
-        maxWidth: "100%",
-        marginBottom: "28px",
-        lineHeight: "1.65",
-        whiteSpace: "normal",
-        overflowWrap: "anywhere"
-      },
       ".retro-layout .hero-brand": {
-        fontSize: "clamp(36px, 13.5vw, 52px)",
+        fontSize: "clamp(42px, 14vw, 58px)",
         lineHeight: "1",
-        letterSpacing: "-0.02em",
+        letterSpacing: "-0.03em",
+        marginBottom: "18px",
         overflowWrap: "anywhere"
       },
       ".retro-layout .hero-brand-suffix": {
@@ -3140,20 +4039,15 @@ export default defineConfig({
       },
       ".retro-layout .hero-headline": {
         maxWidth: "100%",
-        fontSize: "clamp(18px, 6.2vw, 22px)",
-        lineHeight: "1.28",
-        letterSpacing: "0"
-      },
-      ".retro-layout .hero-sub": {
-        fontSize: "14px",
-        lineHeight: "1.35",
-        overflowWrap: "anywhere"
+        fontSize: "clamp(26px, 9vw, 36px)",
+        lineHeight: "1.05",
+        letterSpacing: "-0.03em"
       },
       ".retro-layout .hero-copy": {
         width: "100%",
         maxWidth: "100% !important",
-        fontSize: "15px",
-        lineHeight: "1.75",
+        fontSize: "15.5px",
+        lineHeight: "1.7",
         overflowWrap: "anywhere"
       },
       ".retro-layout .hero-ctas": {
@@ -3162,7 +4056,7 @@ export default defineConfig({
         gap: "12px",
         width: "100%",
         maxWidth: "100%",
-        marginBottom: "24px"
+        marginBottom: "20px"
       },
       ".retro-layout .hero-ctas .keating-btn-retro": {
         width: "100%",
@@ -3173,22 +4067,146 @@ export default defineConfig({
         justifyContent: "center",
         overflowWrap: "anywhere"
       },
-      ".retro-layout .caps-grid": {
-        gridTemplateColumns: "1fr !important"
+      ".retro-layout .hero-proof": {
+        display: "grid",
+        gridTemplateColumns: "1fr",
+        gap: "8px"
+      },
+      ".retro-layout .hero-wonder-stage": {
+        minHeight: "360px"
+      },
+      ".retro-layout .hero-terminal-layer": {
+        minHeight: "340px"
+      },
+      ".retro-layout .hero-orbit": {
+        fontSize: "8px",
+        padding: "5px 7px",
+        boxShadow: "2px 2px 0 var(--ink)"
+      },
+      ".retro-layout .hero-orbit-one": {
+        top: "2%",
+        left: "0"
+      },
+      ".retro-layout .hero-orbit-two": {
+        top: "22%",
+        right: "0"
+      },
+      ".retro-layout .hero-orbit-three": {
+        right: "2%",
+        bottom: "6%"
+      },
+      ".retro-layout .hero-mascot-reaction": {
+        left: "0",
+        bottom: "-8%",
+        width: "92px"
+      },
+      ".retro-layout .hero-mascot-bubble": {
+        left: "75%",
+        bottom: "78%",
+        width: "142px",
+        padding: "7px 9px",
+        fontSize: "9px"
       },
       ".retro-layout .term-3d": {
         height: "330px"
       },
+      ".retro-layout .kinetic-teaching": {
+        padding: "64px 0 86px"
+      },
+      ".retro-layout .kinetic-label": {
+        width: "calc(100% - 40px)",
+        marginBottom: "30px"
+      },
+      ".retro-layout .kinetic-row": {
+        width: "auto",
+        paddingInline: "20px",
+        whiteSpace: "normal",
+        fontSize: "clamp(28px, 11vw, 46px)",
+        lineHeight: "0.98"
+      },
+      ".retro-layout .kinetic-row-a,\n  .retro-layout .kinetic-row-b,\n  .retro-layout .kinetic-row-c": {
+        marginLeft: "0",
+        transform: "none"
+      },
+      ".retro-layout .kinetic-row-b,\n  .retro-layout .kinetic-row-c": {
+        marginTop: "18px"
+      },
+      ".retro-layout .kinetic-mascot": {
+        right: "-28px",
+        bottom: "-68px",
+        width: "150px",
+        opacity: "0.48"
+      },
+      ".retro-layout .journey-heading": {
+        gridTemplateColumns: "1fr",
+        gap: "28px"
+      },
+      ".retro-layout .journey-heading h2": {
+        fontSize: "clamp(34px, 12vw, 52px)"
+      },
+      ".retro-layout .journey-track": {
+        marginTop: "38px",
+        paddingInline: "20px",
+        scrollPaddingInline: "20px"
+      },
+      ".retro-layout .journey-card": {
+        gridTemplateColumns: "1fr",
+        flexBasis: "calc(100vw - 54px)",
+        minHeight: "610px"
+      },
+      ".retro-layout .journey-card-copy": {
+        minHeight: "350px",
+        padding: "26px 24px"
+      },
+      ".retro-layout .journey-card h3": {
+        marginTop: "auto",
+        fontSize: "clamp(32px, 11vw, 48px)"
+      },
+      ".retro-layout .journey-card-image": {
+        minHeight: "250px"
+      },
+      ".retro-layout .journey-card-image img": {
+        width: "min(90%, 360px)"
+      },
+      ".retro-layout .crt-playthrough": {
+        padding: "72px 0 82px"
+      },
+      ".retro-layout .crt-playthrough-heading": {
+        gridTemplateColumns: "1fr",
+        gap: "24px",
+        marginBottom: "38px"
+      },
+      ".retro-layout .crt-playthrough-heading h2": {
+        fontSize: "clamp(34px, 11vw, 52px)"
+      },
+      ".retro-layout .crt-program-layout": {
+        display: "flex"
+      },
+      ".retro-layout .crt-program-stage .crt-wrap": {
+        width: "100%"
+      },
+      ".retro-layout .manifesto-grid,\n  .retro-layout .install-layout": {
+        gridTemplateColumns: "1fr"
+      },
+      ".retro-layout .manifesto-copy": {
+        position: "static"
+      },
       ".retro-layout .man-grid": {
         gridTemplateColumns: "1fr !important"
+      },
+      ".retro-layout .man-card": {
+        gridTemplateColumns: "42px minmax(0, 1fr)",
+        gap: "12px",
+        padding: "22px 0"
       },
       ".retro-layout .use-grid": {
         gridTemplateColumns: "1fr !important"
       },
-      ".retro-layout .man-stamp": {
-        right: "4px",
-        top: "-40px",
-        fontSize: "11px"
+      ".retro-layout .use-card-media": {
+        height: "178px"
+      },
+      ".retro-layout .use-card-media img": {
+        height: "158px"
       },
       ".retro-layout .foot-grid": {
         gridTemplateColumns: "1fr !important"
@@ -3208,6 +4226,20 @@ export default defineConfig({
       },
       ".retro-layout .legal-doc": {
         padding: "24px"
+      },
+      ".retro-layout .final-mascot-scene": {
+        minHeight: "270px"
+      },
+      ".retro-layout .final-thought": {
+        maxWidth: "132px",
+        padding: "8px 9px",
+        fontSize: "9px"
+      },
+      ".retro-layout .final-thought-one": {
+        left: "0"
+      },
+      ".retro-layout .final-thought-two": {
+        right: "0"
       }
     },
     "@media (max-width: 480px)": {
@@ -3279,6 +4311,28 @@ export default defineConfig({
         transition: "none",
         animation: "none"
       },
+      ".retro-layout .hero-headline-word": {
+        opacity: "1",
+        animation: "none",
+        filter: "none",
+        transform: "none"
+      },
+      ".retro-layout .hero-terminal-layer,\n  .retro-layout .hero-orbit-mark,\n  .retro-layout .hero-mascot-reaction,\n  .retro-layout .hero-wonder-stage::before,\n  .retro-layout .hero-wonder-stage::after": {
+        transition: "none",
+        transform: "none"
+      },
+      ".retro-layout .hero-orbit,\n  .retro-layout .hero-mascot-reaction img,\n  .retro-layout .journey-orbit,\n  .retro-layout .final-thought": {
+        animation: "none"
+      },
+      ".retro-layout .kinetic-row-a,\n  .retro-layout .kinetic-row-b,\n  .retro-layout .kinetic-row-c": {
+        transform: "none"
+      },
+      ".retro-layout .journey-track": {
+        scrollBehavior: "auto"
+      },
+      ".retro-layout .journey-card,\n  .retro-layout .journey-card-image img,\n  .retro-layout .use-card-media img,\n  .retro-layout .crt-program-frame": {
+        transition: "none"
+      },
       ".flashcard-3d": {
         transition: "none"
       },
@@ -3304,10 +4358,8 @@ export default defineConfig({
     },
     "@media (min-width: 981px) and (max-width: 1179px)": {
       ".retro-layout .hero": {
-        padding: "52px 0 72px"
-      },
-      ".retro-layout .hero-coords": {
-        marginBottom: "26px"
+        minHeight: "auto",
+        padding: "72px 0 84px"
       },
       ".retro-layout .hero-grid": {
         gridTemplateColumns: "minmax(440px, 0.92fr) minmax(360px, 1fr)",
@@ -3348,7 +4400,8 @@ export default defineConfig({
     },
     "@media (max-width: 980px)": {
       ".retro-layout .hero": {
-        padding: "48px 0 70px"
+        minHeight: "auto",
+        padding: "64px 0 74px"
       },
       ".retro-layout .hero-grid": {
         gridTemplateColumns: "1fr",
@@ -3362,11 +4415,6 @@ export default defineConfig({
         width: "min(100%, 42rem)",
         margin: "0 auto"
       },
-      ".retro-layout .hero-coords": {
-        width: "min(100%, 42rem)",
-        marginLeft: "auto",
-        marginRight: "auto"
-      },
       ".retro-layout .hero-grid,\n  .retro-layout .caps-grid,\n  .retro-layout .man-grid,\n  .retro-layout .use-grid,\n  .retro-layout .foot-grid,\n  .retro-layout .download-hero-grid,\n  .retro-layout .mobile-soon-grid,\n  .retro-layout .download-source-box,\n  .retro-layout .desktop-download-grid": {
         width: "100%",
         maxWidth: "100%",
@@ -3377,7 +4425,7 @@ export default defineConfig({
       },
       ".retro-layout .hero-stage": {
         paddingLeft: "0",
-        paddingTop: "86px",
+        paddingTop: "44px",
         minHeight: "0",
         width: "100%",
         maxWidth: "620px",
@@ -3389,6 +4437,13 @@ export default defineConfig({
         width: "100%",
         maxWidth: "100%",
         overflow: "hidden"
+      },
+      ".retro-layout .manifesto-grid,\n  .retro-layout .install-layout": {
+        gridTemplateColumns: "1fr",
+        gap: "52px"
+      },
+      ".retro-layout .manifesto-copy": {
+        position: "static"
       },
       ".retro-layout .caps-grid": {
         gridTemplateColumns: "1fr 1fr"

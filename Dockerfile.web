@@ -44,11 +44,14 @@ ENV VITE_POSTHOG_PROJECT_TOKEN=$VITE_POSTHOG_PROJECT_TOKEN \
     VITE_POSTHOG_HOST=$VITE_POSTHOG_HOST \
     VITE_POSTHOG_DISABLED=$VITE_POSTHOG_DISABLED \
     VITE_POSTHOG_SESSION_REPLAY=$VITE_POSTHOG_SESSION_REPLAY \
-    VITE_NOTORGANIC_ENABLED=$VITE_NOTORGANIC_ENABLED
+    VITE_NOTORGANIC_ENABLED=$VITE_NOTORGANIC_ENABLED \
+    NITRO_PRESET=node-server
 RUN bun run build
 
-# Serve stage
-FROM oven/bun:1
+# Serve stage. Nitro's node-server preset wires the Node crossws adapter, which
+# intentionally refuses to run under Bun. Keep Bun in the builder, then run the
+# generated server on the Node version used by the release workflow.
+FROM node:24-bookworm-slim
 
 WORKDIR /app
 # Copy the entire Nitro output which includes static assets and the server
@@ -59,4 +62,4 @@ ENV HOST=0.0.0.0
 EXPOSE 3000
 
 # Run the Nitro server entry point
-CMD ["bun", ".output/server/index.mjs"]
+CMD ["node", ".output/server/index.mjs"]

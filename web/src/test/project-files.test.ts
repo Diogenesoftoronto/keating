@@ -49,6 +49,19 @@ describe("project files route", () => {
       route: "/api/local-exec/write",
       handler: "server/api/local-exec/write.ts",
     });
+    expect(nitroConfig.handlers).toContainEqual({
+      route: "/brand/**",
+      handler: "server/routes/assets/[...path].ts",
+    });
+    expect(nitroConfig.routeRules?.["/**"]?.headers).toMatchObject({
+      "Cache-Control": "no-store, no-transform",
+    });
+    expect(nitroConfig.routeRules?.["/assets/**"]?.headers).toMatchObject({
+      "Cache-Control": "public, max-age=31536000, immutable, no-transform",
+    });
+    expect(nitroConfig.routeRules?.["/brand/**"]?.headers).toMatchObject({
+      "Cache-Control": "public, max-age=86400, no-transform",
+    });
   });
 
   it("extracts file paths from the explicit Nitro wildcard route", () => {
