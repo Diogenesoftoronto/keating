@@ -1,0 +1,409 @@
+This session is being continued from a previous conversation that ran out of context. The summary below covers the earlier portion of the conversation.
+
+Summary:
+1. **Primary Request and Intent:**
+
+   The user's sole substantive request: **"can you replicate the web app in the react native app"**
+
+   Because the web app is ~30k+ lines across 17 pages and 80+ components while mobile was ~2.4k lines, I asked three scoping questions via AskUserQuestion. The user answered:
+   - **Scope (multi-select, chose ALL FOUR):** "Core chat parity" (streaming, stop/retry, model selector, persona-composed system prompt, auto-titling, session recovery), "Interactive learning cards" (quiz/question/goal/flashcard renderers with tag-parsing + result-feedback loop), "Settings + learner profile" (providers/models tab, teacher persona editor, UI settings, learner profile & insights), "Artifacts & sharing" (artifact viewer/browser, export/import, shared-session links, markdown+code rendering).
+   - **Code sharing:** **"Copy into mobile/src"** — the user explicitly rejected my recommended "Extract to shared/" option. Mobile duplicates web logic rather than importing from `shared/`.
+   - **Depth:** **"Build the highest-value slice now"** — implement the biggest single win end-to-end with tests, then iterate.
+
+   I selected **streaming chat + the editable teacher persona** as the highest-value slice, since mobile was blocking-request-only (the most visible gap) and the persona/protocol split is the web's core identity architecture.
+
+2. **Key Technical Concepts:**
+   - Expo SDK 56 / React Native 0.85.3 / expo-router / React 19.2.3 / Metro bundler / Hermes
+   - `expo/fetch` — Expo's winter-spec fetch that exposes a real `response.body` ReadableStream; React Native's built-in `fetch` (whatwg-fetch over XMLHttpRequest) does NOT expose a readable body, so streaming is impossible without it
+   - `@earendil-works/pi-ai` — the web app's streaming library; **cannot run under Metro**, hence mobile needs a hand-rolled SSE implementation
+   - Server-Sent Events (SSE) parsing with chunk-boundary buffering across three wire formats: OpenAI-compatible (`choices[0].delta.content`), Anthropic (`content_block_delta` → `delta.text`, requires `stream: true` + `anthropic-version: 2023-06-01`), Gemini (`:streamGenerateContent?alt=sse` → `candidates[0].content.parts[].text`)
+   - Persona/protocol split: editable WHO (voice/values) vs. fixed HOW (pedagogy), composed per request so persona edits can't remove the teaching loop
+   - Throttled React state flushes (60ms cadence) so token streams don't thrash FlatList re-renders
+   - AsyncStorage (sessions/artifacts/persona) vs. Expo SecureStore + Android Keystore (API keys) privacy boundary
+   - `bun test` for mobile tests (not vitest, not jest); bun's `Response` always exposes a body, unlike RN
+   - Modules feeding testable layers must stay RN-import-free (AsyncStorage cannot be imported under `bun test`)
+
+3. **Files and Code Sections:**
+
+   - **`mobile/src/lib/persona.ts`** (CREATED)
+     - Copies the web's `DEFAULT_TEACHER_PERSONA` (John Keating, Dead Poets Society) verbatim from `web/src/keating/persona.ts`. Deliberately RN-import-free so `system-prompt.ts` → `provider-client.ts` stays testable under `bun test`.
+     ```ts
+     /**
+      * Teacher persona — the editable identity/voice of the tutor.
+      * ...
+      * This module stays free of React Native imports so the prompt layer it feeds
+      * can be exercised under plain `bun test`; persistence lives in
+      * persona-storage.ts.
+      */
+     export const DEFAULT_TEACHER_PERSONA = `You are John Keating, the English teacher from Dead Poets Society — reborn here as a hyperteacher for any subject a learner brings you.
+     ... (Core principles 1-5: Diagnosis First, Reconstruction Over Regurgitation, Transfer Testing, Voice Preservation, Socratic Patience) ...
+     Your role is to ensure every learner is equipped to contribute their own verse. O Captain, my Captain — but the ship is theirs to steer.`;
+
+     export function normalizePersona(raw: unknown): string {
+       if (typeof raw !== "string") return DEFAULT_TEACHER_PERSONA;
+       return raw.trim().length > 0 ? raw : DEFAULT_TEACHER_PERSONA;
+     }
+
+     /** True when the stored persona is the untouched John Keating default. */
+     export function isDefaultPersona(text: string): boolean {
+       return text.trim() === DEFAULT_TEACHER_PERSONA.trim();
+     }
+     ```
+
+   - **`mobile/src/lib/persona-storage.ts`** (CREATED)
+     - Isolates AsyncStorage so `persona.ts` remains test-importable.
+     ```ts
+     import AsyncStorage from "@react-native-async-storage/async-storage";
+     import { DEFAULT_TEACHER_PERSONA, normalizePersona } from "./persona";
+
+     const PERSONA_STORAGE_KEY = "keating.mobile.teacher-persona";
+
+     export async function loadPersona(): Promise<string> {
+       try {
+         return normalizePersona(await AsyncStorage.getItem(PERSONA_STORAGE_KEY));
+       } catch (error) {
+         console.warn("Failed to load teacher persona:", error);
+         return DEFAULT_TEACHER_PERSONA;
+       }
+     }
+     export async function savePersona(text: string): Promise<void> {
+       await AsyncStorage.setItem(PERSONA_STORAGE_KEY, normalizePersona(text));
+     }
+     export async function resetPersona(): Promise<void> {
+       await AsyncStorage.removeItem(PERSONA_STORAGE_KEY);
+     }
+     ```
+
+   - **`mobile/src/lib/system-prompt.ts`** (REWRITTEN — was a single hardcoded `KEATING_MOBILE_SYSTEM_PROMPT` string)
+     - Now mirrors web's persona/protocol split. Paragraph 1 of the old prompt (identity) became the persona; paragraphs 2-4 (operational) became the fixed protocol.
+     ```ts
+     import { DEFAULT_TEACHER_PERSONA, normalizePersona } from "./persona";
+
+     export const KEATING_TEACHING_PROTOCOL = `Teach for mastery rather than surface agreement. Keep the learner active through a loop of diagnosis, intuition, formal core, misconception repair, worked example, retrieval, and reflection. ...
+
+     Adapt to the domain. For mathematics, reach the formalism. ...
+
+     Use clear Markdown that reads well on a phone. ...`;
+
+     /** Composes the editable persona with the fixed protocol. */
+     export function composeSystemPrompt(persona: string = DEFAULT_TEACHER_PERSONA): string {
+       return `${normalizePersona(persona).trim()}\n\n${KEATING_TEACHING_PROTOCOL}`;
+     }
+
+     /** Default composition, used before a stored persona has loaded. */
+     export const KEATING_MOBILE_SYSTEM_PROMPT = composeSystemPrompt();
+     ```
+
+   - **`mobile/src/lib/provider-client.ts`** (HEAVILY EXTENDED — the core of this slice)
+     - `buildProviderRequest` signature changed from `(settings, apiKey, messages, signal?)` to `(settings, apiKey, messages, options: ProviderRequestOptions = {})` where options is `{ signal?, stream?, systemPrompt? }`. Existing tests called it with 3 args so they still pass.
+     ```ts
+     export interface ProviderRequestOptions {
+       signal?: AbortSignal;
+       /** Ask the provider for a Server-Sent Events token stream. */
+       stream?: boolean;
+       /** Composed persona + teaching protocol. Defaults to the built-in prompt. */
+       systemPrompt?: string;
+     }
+     ```
+     - Per-provider stream handling inside `buildProviderRequest`: `if (stream) commonHeaders.Accept = "text/event-stream";`; Anthropic/OpenAI bodies get `...(stream ? { stream: true } : {})`; Google switches method and builds query via URLSearchParams:
+     ```ts
+     const method = stream ? "streamGenerateContent" : "generateContent";
+     const params = new URLSearchParams();
+     if (stream) params.set("alt", "sse");
+     if (apiKey) params.set("key", apiKey);
+     const query = params.toString();
+     url: `${withoutTrailingSlash(settings.baseUrl)}/models/${encodedModel}:${method}${query ? `?${query}` : ""}`
+     ```
+     - New chunk-boundary-safe SSE parser:
+     ```ts
+     const EVENT_SEPARATOR = /\r?\n\r?\n/;
+
+     export function createSseParser(): (chunk: string) => string[] {
+       let buffer = "";
+       return (chunk: string) => {
+         buffer += chunk;
+         const events: string[] = [];
+         for (let match = EVENT_SEPARATOR.exec(buffer); match; match = EVENT_SEPARATOR.exec(buffer)) {
+           const rawEvent = buffer.slice(0, match.index);
+           buffer = buffer.slice(match.index + match[0].length);
+           const data = rawEvent
+             .split(/\r?\n/)
+             .filter((line) => line.startsWith("data:"))
+             .map((line) => line.slice(5).trim())
+             .join("\n");
+           if (data) events.push(data);
+         }
+         return events;
+       };
+     }
+     ```
+     - Per-provider delta extraction, throwing on mid-stream provider errors:
+     ```ts
+     export function extractStreamDelta(settings: ProviderSettings, data: string): string {
+       if (!data || data === "[DONE]") return "";
+       let payload: any;
+       try { payload = JSON.parse(data); } catch { return ""; }
+       if (payload?.error) {
+         throw new Error(providerErrorMessage(payload, "The provider reported a streaming error."));
+       }
+       if (settings.provider === "anthropic") {
+         if (payload.type === "content_block_delta" && payload.delta?.type === "text_delta") {
+           return typeof payload.delta.text === "string" ? payload.delta.text : "";
+         }
+         return "";
+       }
+       if (settings.provider === "google") {
+         return textFromParts(payload?.candidates?.[0]?.content?.parts);
+       }
+       const delta = payload?.choices?.[0]?.delta;
+       if (typeof delta?.content === "string") return delta.content;
+       return textFromParts(delta?.content);
+     }
+     ```
+     - `streamCompletion` with the content-based (not body-null-based) fallback:
+     ```ts
+     export interface StreamCompletionOptions extends ProviderRequestOptions {
+       onDelta?: (delta: string, accumulated: string) => void;
+       fetchImpl?: FetchLike;
+     }
+
+     export async function streamCompletion(settings, apiKey, messages, options: StreamCompletionOptions = {}): Promise<string> {
+       const { onDelta, fetchImpl = fetch, ...requestOptions } = options;
+       const request = buildProviderRequest(settings, apiKey, messages, { ...requestOptions, stream: true });
+       const response = await fetchImpl(request.url, request.init);
+       if (!response.ok) await throwProviderError(response);
+
+       const body = response.body;
+       if (!body) {
+         // No readable stream on this platform — take the whole payload at once.
+         return wholePayloadFallback(settings, await response.text(), onDelta);
+       }
+
+       const decoder = new TextDecoder();
+       const parse = createSseParser();
+       const reader = body.getReader();
+       let accumulated = "";
+       let raw = "";
+       try {
+         while (true) {
+           const { done, value } = await reader.read();
+           if (done) break;
+           const chunk = decoder.decode(value, { stream: true });
+           raw += chunk;
+           for (const data of parse(chunk)) {
+             const delta = extractStreamDelta(settings, data);
+             if (!delta) continue;
+             accumulated += delta;
+             onDelta?.(delta, accumulated);
+           }
+         }
+       } finally {
+         reader.releaseLock();
+       }
+
+       const trimmed = accumulated.trim();
+       if (trimmed) return trimmed;
+       // Some OpenAI-compatible servers (local runtimes especially) ignore
+       // `stream: true` and answer with one plain JSON body instead of SSE.
+       return wholePayloadFallback(settings, raw, onDelta);
+     }
+
+     function wholePayloadFallback(settings, text, onDelta?): string {
+       let payload: unknown;
+       try { payload = text.trim() ? JSON.parse(text) : {}; }
+       catch { throw new Error("The provider returned a response without readable text."); }
+       const content = extractProviderText(settings, payload);
+       onDelta?.(content, content);
+       return content;
+     }
+     ```
+     - `requestCompletion` kept, gained optional 6th `systemPrompt` param, now delegates to the options-object form of `buildProviderRequest`.
+
+   - **`mobile/src/state/KeatingProvider.tsx`** (HEAVILY EDITED)
+     - New imports: `import { fetch as streamingFetch } from "expo/fetch";`, `streamCompletion` (replacing `requestCompletion`), `DEFAULT_TEACHER_PERSONA` from `@/lib/persona`, `loadPersona/resetPersona/savePersona` from `@/lib/persona-storage`, `composeSystemPrompt`.
+     - Context interface additions: `streamingMessageId: string | null;` (with comment "Id of the assistant message currently receiving streamed tokens."), `persona: string;`, `setPersona: (text: string) => Promise<void>;`, `restoreDefaultPersona: () => Promise<void>;`
+     - New constant: `/** How often buffered stream deltas are committed to React state. */ const STREAM_FLUSH_INTERVAL_MS = 60;`
+     - New state/refs: `const [persona, setPersonaState] = useState<string>(DEFAULT_TEACHER_PERSONA);`, `const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);`, `const personaRef = useRef(persona);` with `personaRef.current = persona;`
+     - Hydration now `Promise.all([loadPersistedState(), Promise.all(PROVIDERS.map(...)), loadPersona()])` → destructures `[persisted, keys, storedPersona]`, sets `personaRef.current = storedPersona; setPersonaState(storedPersona);`
+     - `runCompletion` fully rewritten (the heart of the change):
+     ```tsx
+     // The placeholder is appended immediately so streamed tokens land in a
+     // message the chat list is already rendering.
+     const assistantId = createId("message");
+     const startedAt = Date.now();
+     updateSession(sessionId, (session) => ({
+       ...session,
+       messages: [...messages, { id: assistantId, role: "assistant", content: "", createdAt: startedAt }],
+       updatedAt: startedAt,
+     }));
+     setStreamingMessageId(assistantId);
+
+     const writeContent = (content: string) => { updateSession(sessionId, (session) => ({ ...session, messages: session.messages.map((message) => message.id === assistantId ? { ...message, content } : message), updatedAt: Date.now() })); };
+     const dropPlaceholder = () => { updateSession(sessionId, (session) => ({ ...session, messages: session.messages.filter((message) => message.id !== assistantId) })); };
+
+     // Tokens arrive faster than the list can usefully re-render, so deltas are
+     // buffered and flushed on a fixed cadence instead of per chunk.
+     let pending = "";
+     let rendered = "";
+     const flush = () => { if (pending === rendered) return; rendered = pending; writeContent(rendered); };
+     const flushTimer = setInterval(flush, STREAM_FLUSH_INTERVAL_MS);
+
+     try {
+       const content = await streamCompletion(settings, apiKey, messages, {
+         signal: controller.signal,
+         systemPrompt: composeSystemPrompt(personaRef.current),
+         fetchImpl: streamingFetch as unknown as typeof fetch,
+         onDelta: (_delta, accumulated) => { pending = accumulated; },
+       });
+       clearInterval(flushTimer);
+       writeContent(content);
+       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+     } catch (error) {
+       clearInterval(flushTimer);
+       const aborted = error instanceof Error && (error.name === "AbortError" || controller.signal.aborted);
+       // A stopped response keeps whatever was already streamed; a failed one
+       // leaves no half-message behind.
+       if (aborted) {
+         if (pending.trim()) writeContent(pending.trim());
+         else dropPlaceholder();
+         return;
+       }
+       dropPlaceholder();
+       setGenerationError(error instanceof Error ? error.message : "The model request failed.");
+       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => undefined);
+     } finally {
+       clearInterval(flushTimer);
+       setStreamingMessageId((current) => current === assistantId ? null : current);
+       if (abortControllerRef.current === controller) { abortControllerRef.current = null; setIsGenerating(false); }
+     }
+     ```
+     - New persona actions placed before `clearLearningData`:
+     ```tsx
+     const setPersona = useCallback(async (text: string) => {
+       const next = text.trim().length > 0 ? text : DEFAULT_TEACHER_PERSONA;
+       personaRef.current = next;
+       setPersonaState(next);
+       await savePersona(next);
+     }, []);
+     const restoreDefaultPersona = useCallback(async () => {
+       personaRef.current = DEFAULT_TEACHER_PERSONA;
+       setPersonaState(DEFAULT_TEACHER_PERSONA);
+       await resetPersona();
+     }, []);
+     ```
+     - Context value object + deps array updated to include all new members.
+
+   - **`mobile/src/components/MessageBubble.tsx`** (EDITED)
+     - Imports changed to `import { useEffect, useRef } from "react"; import { Animated, Pressable, StyleSheet, Text, View } from "react-native";`
+     - New optional prop `streaming = false` with doc comment "True while this message is still receiving streamed tokens."
+     - Assistant block renders `{streaming ? <StreamingCaret /> : null}` after `<MarkdownText />`, and actions become `<View style={[styles.actions, streaming && styles.actionsHidden]} pointerEvents={streaming ? "none" : "auto"}>`
+     ```tsx
+     /** A soft pulsing block that marks where the next token will land. */
+     function StreamingCaret() {
+       const opacity = useRef(new Animated.Value(0.25)).current;
+       useEffect(() => {
+         const loop = Animated.loop(Animated.sequence([
+           Animated.timing(opacity, { toValue: 1, duration: 520, useNativeDriver: true }),
+           Animated.timing(opacity, { toValue: 0.25, duration: 520, useNativeDriver: true }),
+         ]));
+         loop.start();
+         return () => loop.stop();
+       }, [opacity]);
+       return <Animated.View accessibilityLabel="Keating is responding" style={[styles.caret, { opacity }]} />;
+     }
+     ```
+     - New styles: `caret: { width: 9, height: 18, marginTop: spacing.xs, borderRadius: 2, backgroundColor: colors.primary }`, `actionsHidden: { display: "none" }`
+
+   - **`mobile/src/app/(tabs)/index.tsx`** (EDITED — chat screen)
+     - Destructures `streamingMessageId` from `useKeating()`
+     ```tsx
+     // The streaming placeholder is empty until the first token lands; hide it so
+     // the waiting state reads as one indicator rather than a blank bubble.
+     const visibleMessages = useMemo(
+       () => activeSession.messages.filter((message) => message.content.length > 0),
+       [activeSession.messages],
+     );
+     const awaitingFirstToken = isGenerating
+       && activeSession.messages.some((message) => message.id === streamingMessageId && message.content.length === 0);
+     ```
+     - FlatList: `data={visibleMessages}`, contentContainerStyle uses `visibleMessages.length === 0`, `streaming={item.id === streamingMessageId}` passed to MessageBubble, `ListFooterComponent={awaitingFirstToken ? <ThinkingIndicator /> : null}`
+     - Scroll behavior: `// Streaming resizes the list every flush, so follow it without` / `// animation to avoid queued, stuttering scrolls.` / `onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: !streamingMessageId })}`
+
+   - **`mobile/src/app/(tabs)/settings.tsx`** (EDITED)
+     - Added `import { isDefaultPersona } from "@/lib/persona";`
+     - Destructures `persona, setPersona, restoreDefaultPersona`; new state `personaDraft`, `personaSaved`
+     - Sync effect: `// Follow the stored persona when it changes outside this screen (hydration, reset) without clobbering an in-progress edit.` → `useEffect(() => { setPersonaDraft(persona); setPersonaSaved(false); }, [persona]);`
+     - New "Teacher persona" `<Section>` inserted before "Teaching style", with body copy "The tutor's voice and values. The teaching protocol — diagnosis, reconstruction, retrieval — is fixed and always applied on top of this.", a multiline TextInput, a Save button (`disabled={personaDraft === persona}`, label flips to "Saved"), and a conditional "Restore John Keating" quiet button shown when `!isDefaultPersona(personaDraft)`
+     - New style: `personaInput: { minHeight: 220, maxHeight: 360, paddingVertical: spacing.md, lineHeight: 21 }`
+
+   - **`mobile/test/streaming.test.ts`** (CREATED — 13 tests across 5 describes)
+     - Helper serving SSE frames as a streaming body:
+     ```ts
+     function sseResponse(frames: string[], init?: ResponseInit): Response {
+       const body = new ReadableStream<Uint8Array>({
+         start(controller) {
+           const encoder = new TextEncoder();
+           for (const frame of frames) controller.enqueue(encoder.encode(frame));
+           controller.close();
+         },
+       });
+       return new Response(body, { headers: { "Content-Type": "text/event-stream" }, ...init });
+     }
+     ```
+     - Describes: `buildProviderRequest streaming` (5 tests: OpenAI stream flag + Accept header, Gemini `:streamGenerateContent`/`alt=sse`/`key=`, Anthropic stream flag, no stream flag by default, caller-supplied systemPrompt), `createSseParser` (2: chunk-boundary reassembly, CRLF + comment keep-alives), `extractStreamDelta` (3: three provider shapes, ignores `[DONE]`/non-JSON/`message_start`, throws on error payload), `streamCompletion` (4: incremental deltas + joined text, whole-payload fallback, provider error surfacing, rejects on no readable text), `persona composition` (3: protocol retained with custom persona, blank persona falls back to John Keating, `isDefaultPersona` detection)
+
+   - **`mobile/README.md`** (EDITED) — added a paragraph on the persona/protocol split and a new "## Streaming responses" section documenting the `expo/fetch` requirement, the pi-ai/Metro incompatibility, the buffered flush cadence, the whole-payload fallback, and stop-keeps-partial-text behavior.
+
+   - **`~/.claude/projects/-home-diogenes-Projects-keating/memory/project_mobile_duplicates_web_logic.md`** (CREATED) + one line added to `MEMORY.md` — records the user's copy-into-mobile/src decision and the RN-import-free rule.
+
+4. **Errors and fixes:**
+
+   - **"File has not been read yet. Read it first before writing to it." (×2)** — hit on `mobile/src/lib/system-prompt.ts` and `mobile/src/lib/provider-client.ts`. Cause: I had inspected them with Bash `cat`, which does not register the file as read with the harness. Fix: call the Read tool on each file (partial reads sufficed — 5 lines for provider-client.ts) before Write.
+
+   - **Buggy first draft of `createSseParser`** — caught before writing to disk. My initial buffer-slicing used `buffer.slice(boundary + (/\r\n\r\n/.test(buffer.slice(boundary, boundary + 4)) ? 4 : 2))`, which was convoluted and fragile. Rewrote using a regex `exec` loop and `match.index + match[0].length` so the separator length is always correct.
+
+   - **Test failure: `streamCompletion > falls back to a whole-payload read when there is no stream body`** — `error: The provider returned a response without readable text.` at `provider-client.ts:284`. Cause: bun's `new Response(jsonString)` ALWAYS exposes a `body` ReadableStream (unlike React Native), so the `if (!body)` branch was unreachable in tests. This exposed a genuine production gap: a provider that ignores `stream: true` and returns plain JSON *with* a body would yield zero SSE deltas and throw a false error. Fix: made the fallback **content-based instead of body-null-based** — accumulate a `raw` string of all decoded chunks and, if no deltas were extracted, run `wholePayloadFallback(settings, raw, onDelta)`. Result: 26 pass, 0 fail.
+
+   - **Anticipated `bun test` breakage from AsyncStorage** — `persona.ts` initially imported `@react-native-async-storage/async-storage`, which would have broken the existing `test/provider-client.test.ts` via the import chain `provider-client → system-prompt → persona`. Fix before running tests: split into pure `persona.ts` (constants, `normalizePersona`, `isDefaultPersona`) and `persona-storage.ts` (AsyncStorage load/save/reset); updated `KeatingProvider.tsx` imports to pull from both.
+
+   - **No user feedback correcting my work.** The only user direction that changed my default approach was the scoping answer choosing "Copy into mobile/src" over my recommended "Extract to shared/".
+
+5. **Problem Solving:**
+
+   - Determined that full web→RN parity is not a single task and scoped it with the user rather than guessing.
+   - Identified that `@earendil-works/pi-ai` (the web's streaming layer) cannot run under Metro, and that RN's built-in `fetch` exposes no readable body — resolved by verifying `expo/fetch` exists in the installed Expo 56 (`node_modules/expo/fetch.d.ts`, `FetchResponse` declares `get body(): ReadableStream<Uint8Array<ArrayBuffer>> | null`) and hand-rolling SSE for three wire formats.
+   - Solved the token-storm re-render problem with a 60ms `setInterval` flush of a buffered accumulator rather than `setState` per delta.
+   - Solved the "blank bubble while waiting" problem by filtering zero-length messages out of the FlatList and gating the ThinkingIndicator on `awaitingFirstToken`.
+   - Solved queued/stuttering scrolls by disabling scroll animation while `streamingMessageId` is set.
+   - Verified end-to-end: `bun test` 26 pass / 0 fail / 53 expect() calls, `tsc --noEmit` clean, and `bun run export:android` produced `entry-…hbc (4.1MB)` proving `expo/fetch` resolves under Metro.
+   - **Explicitly NOT verified:** on-device behavior. I stated plainly that I did not run it on a device, so the on-screen streaming feel is unconfirmed. Also flagged that bun's always-present `Response.body` means the `if (!body)` branch cannot be covered by these tests (only covered indirectly via the content-based fallback test).
+
+6. **All user messages:**
+   - "can you replicate the web app in the react native app"
+   - (AskUserQuestion answers) "Which web features should the RN app replicate?"="Core chat parity, Interactive learning cards, Settings + learner profile, Artifacts & sharing"; "How should shared logic be handled?"="Copy into mobile/src"; "How much should I do in this pass?"="Build the highest-value slice now"
+   - "/compact" (local command)
+
+   No security-relevant constraints, credential-handling rules, or forbidden-operation instructions were stated by the user in this conversation. (The pre-existing repo privacy boundary, documented in `mobile/README.md` and left intact: API keys live only in Expo SecureStore/Android Keystore and are never written to AsyncStorage; sessions/feedback/notes live in AsyncStorage; requests go directly to the configured provider.)
+
+7. **Pending Tasks:**
+
+   From the user's selected scope, still unbuilt (I listed these in value order at the end of my last response):
+   - **Interactive learning cards** — quiz/question/goal/flashcard renderers with the tag-parsing + result-feedback loop, ported to RN views (I offered: "Say the word and I'll take the cards next.")
+   - **Learner profile & insights**
+   - **Artifact viewer / export / import / sharing**
+   - Remaining core-chat-parity items not covered by this slice: model selector UI, auto-titling improvements, session recovery
+
+8. **Current Work:**
+
+   The streaming + persona slice was **complete and verified** immediately before the compact request. Final state: `mobile/src/lib/provider-client.ts` has SSE streaming for all three wire formats plus a content-based whole-payload fallback; `persona.ts`/`persona-storage.ts`/`system-prompt.ts` implement the persona/protocol split; `KeatingProvider.tsx` streams via `expo/fetch` with 60ms buffered flushes, keeps partial text on stop and drops the placeholder on error; `MessageBubble.tsx` shows a pulsing `StreamingCaret` and hides actions mid-stream; `(tabs)/index.tsx` filters empty messages and gates the thinking indicator; `(tabs)/settings.tsx` has the Teacher persona editor with Save / "Restore John Keating". `mobile/test/streaming.test.ts` adds 13 tests. `mobile/README.md` documents the streaming architecture. A memory file recording the copy-not-share decision was written and indexed in `MEMORY.md`.
+
+   Verification results: `bun test ./test/*.test.ts` → **26 pass, 0 fail, 53 expect() calls, 3 files**; `bun run typecheck` → clean; `bun run export:android` → succeeded (4.1MB Hermes bundle). Not run on a device.
+
+9. **Optional Next Step:**
+
+   No next step should begin without user confirmation — the slice concluded and I ended by offering, not committing. My closing words were: *"Remaining from the scope you selected, roughly in value order: interactive quiz/question/goal cards (the tag-parsing + result feedback loop), learner profile & insights, then artifact viewer/export/sharing. Say the word and I'll take the cards next."*
+
+   If the user confirms, the next step is porting the **interactive learning cards** to React Native — reading `web/src/components/QuizRenderer.tsx`, `QuestionRenderer.tsx`, `GoalRenderer.tsx`, `FlashcardRenderer.tsx`, `quiz-grades-context.ts`, and `web/src/keating/browser-tools.ts` (tag parsing), then copying the pure parsing/grading logic into `mobile/src/lib/` (RN-import-free, per the established pattern) with RN view components, following the user's "Copy into mobile/src" decision.
+
+If you need specific details from before compaction (like exact code snippets, error messages, or content you generated), read the full transcript at: /home/diogenes/.claude/projects/-home-diogenes-Projects-keating/35e72962-1039-45c7-8109-16867b6a7ea9.jsonl
+Continue the conversation from where it left off without asking the user any further questions. Resume directly — do not acknowledge the summary, do not recap what was happening, do not preface with "I'll continue" or similar. Pick up the last task as if the break never happened.
