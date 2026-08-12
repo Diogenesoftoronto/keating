@@ -1,0 +1,3 @@
+<command-name>/model</command-name>
+            <command-message>model</command-message>
+            <command-args></command-args>
