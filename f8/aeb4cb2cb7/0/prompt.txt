@@ -1,0 +1,1 @@
+so the confidence slider thing, I am not sure i think it make too much sense to include in the quizzes as i don't know how that is used at all the model doesn't seem to take it into account
