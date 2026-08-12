@@ -1,0 +1,9 @@
+<image name=[Image #1] path="/tmp/codex-clipboard-u8UeGb.png">
+
+</image>
+
+<image name=[Image #2] path="/tmp/codex-clipboard-ZsOoZ4.png">
+
+</image>
+
+[Image #1] this is what mobile looks like for the deepseek ui with the deepseek app having a special ui for push to talk. I would love this too! but i also would love to make the realtime really good. [Image #2] the second image is what it looks like with text and keyboard on android
