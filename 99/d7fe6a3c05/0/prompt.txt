@@ -1,0 +1,1 @@
+with the rest of the apps theme, and i would like the navigation at the top to be  the same as the rest of the application
