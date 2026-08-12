@@ -1,0 +1,1 @@
+I think the other major issue is that there are not ways to see tools calls as well. and a few other things like the way reasoning shows up the way that the prompt box is missing push to talk, its still missing the live button.
