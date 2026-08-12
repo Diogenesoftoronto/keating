@@ -1,0 +1,1 @@
+btw the ask user tool should give a structured response with the noise being left out and a proper response rendered for their learner to go back and review.
