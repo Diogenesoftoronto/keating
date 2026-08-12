@@ -1,0 +1,43 @@
+hey i would love for there to be improved integration of posthog into the product at different surfaces from funnels to the ai at different turns durations and posthogs various libraries. I want you to go all in, think of surveys you could add, think of all this stuff. here is some things post hog said could be improved as well: Here's the full picture from the first 36 hours of 3.0.0.
+
+---
+
+The quick summary
+
+7 users started a session since launch. Remember: tracking may be undercounting, and some users block tracking entirely.
+
+The funnel story
+
+The biggest problem isn't the product — it's getting people into it. Of 16 visitors:
+
+- 69% bounced without clicking "Start session" — this is your sharpest drop and the one worth fixing first
+- 67% of people who started a session never sent a message — once users get in, something is blocking them from engaging
+
+Everyone who sent a message got a response, so the core AI pipeline is healthy.
+
+Feature adoption
+
+Model switching is the standout feature — the majority of post-launch users changed models. Everything else (quiz, speech, session sharing, forking) has zero or near-zero usage. Those either need better discovery or more time.
+
+Errors
+
+Launch day had 4 error types: auth, invalid-request, model-unavailable, and unknown. The auth one is concerning — it could mean real users hit a wall when trying to authenticate.
+
+---
+
+Agent turn gaps to close (your specific ask)
+
+Your agent_turn_completed event fires, but you're missing the full lifecycle:
+
+Gap | Fix
+No agent_turn_started | Add this — without it you can't measure latency or detect stuck turns
+No model property | Add to agent_turn_completed and message_sent
+No duration_ms | Measure from turn start to completion
+No success/error flag | Can't distinguish clean turns from failed ones
+No from_model/to_model on model_changed | Your most-used feature is completely opaque
+
+The single highest-leverage fix: add agent_turn_started + duration_ms + model + success. That alone would make your most critical event actually useful for debugging and performance monitoring.
+
+Also worth doing: add an app_version property to all events — without it you can't cleanly compare 3.0.0 vs future releases.
+
+If you want to save this report as a permanent notebook, hit "Create notebook" in the UI above.
