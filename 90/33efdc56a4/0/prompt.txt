@@ -1,0 +1,3 @@
+<command-name>/usage-credits</command-name>
+            <command-message>usage-credits</command-message>
+            <command-args></command-args>
