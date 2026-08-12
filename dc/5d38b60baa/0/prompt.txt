@@ -1,0 +1,1 @@
+use the storybook command instead of static i think that makes more sense
