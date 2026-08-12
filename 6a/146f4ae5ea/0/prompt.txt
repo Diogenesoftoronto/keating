@@ -1,0 +1,1 @@
+Please wrap the confirmation workflow now with focused tests/typecheck; avoid expanding scope. Report any residual limitation.
