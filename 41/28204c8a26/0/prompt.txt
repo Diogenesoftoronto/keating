@@ -1,0 +1,1 @@
+i think adding some way for the user to tell the model about them so that they gain some understanding would be helpful. and more diversity as for the starting topics would be nice
