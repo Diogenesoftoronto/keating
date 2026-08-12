@@ -1,0 +1,3 @@
+<subagent_notification>
+{"agent_path":"019f73cf-c984-79c1-8f58-4a2291f9b40a","status":{"completed":"Implemented Wave 3 observability within scope.\n\nAdded:\n\n- Privacy-safe realtime telemetry contracts and filtering.\n- Metrics/spans for setup, first audio, turns, barge-in, tools, reconnects, errors, and completion.\n- Optional `createOpenAIRealtimeProvider(observer)` factory; existing provider API remains intact.\n- Pure direct-WebRTC versus LiveKit recommendation logic.\n- Focused observability tests.\n\nValidation:\n\n- 4 tests passed, 0 failed.\n- Scoped `git diff --check` passed.\n- Full typecheck is blocked by an unrelated concurrent error in `web/src/keating/integration/conversation-runtime.ts:49`.\n- Vet was not run."}}
+</subagent_notification>
