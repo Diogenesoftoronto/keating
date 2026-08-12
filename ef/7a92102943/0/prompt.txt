@@ -1,0 +1,1 @@
+can you replicate the web app in the react native app
