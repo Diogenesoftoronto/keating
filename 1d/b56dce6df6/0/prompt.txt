@@ -1,0 +1,1 @@
+create a plan for the create a react native application for this. Should be p2p ideally like the desktop (not sure if the desktop lives up to its promises though it should. )
