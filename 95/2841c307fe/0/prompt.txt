@@ -1,0 +1,1 @@
+generating images should use the image streaming and the preview should be improved the animation care as well and again continue to remove boxes in boxes and take advantage of negative space
