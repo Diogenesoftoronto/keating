@@ -1,0 +1,3250 @@
+You are analyzing a code repository for potential issues. The repository files are available in /home/diogenes/Projects/keating.
+
+Assume that a user requested work to be done and a programmer delivered the diff below.
+The changes from the diff are present in the codebase but are not yet committed.
+
+### User request ###
+
+  Review the IndexedDB migration/versioning changes and learner profile belief persistence/tooling for data loss, upgrade safety, privacy, prompt behavior, and regressions.
+
+
+### Diff (lines starting with `-` indicate removed code, and lines starting with `+` indicate added code) ###
+
+  diff --git a/web/panda.config.ts b/web/panda.config.ts
+  index 74703de8215bf421573c4484512015ec3fa97d0c..a89276003df10ddf935dfd056faffa544a33a251 100644
+  --- a/web/panda.config.ts
+  +++ b/web/panda.config.ts
+  @@ -669,6 +669,14 @@ export default defineConfig({
+               boxShadow: "0 0 0 6px rgba(30, 155, 80, 0)"
+             }
+           },
+  +		"keating-mascot-think": {
+  +			"0%, 100%": { transform: "translateY(0) rotate(-2deg)" },
+  +			"50%": { transform: "translateY(-3px) rotate(3deg)" }
+  +		},
+  +		"keating-thinking-dot": {
+  +			"0%, 60%, 100%": { opacity: 0.28, transform: "translateY(0)" },
+  +			"30%": { opacity: 1, transform: "translateY(-2px)" }
+  +		},
+           "flashcard-exit-left": {
+             to: { transform: "translateX(-130%) rotate(-10deg)", opacity: 0 }
+           },
+  @@ -1180,6 +1188,18 @@ export default defineConfig({
+         width: "30px",
+         height: "auto"
+       },
+  +		".keating-thinking-mascot img": {
+  +			animation: "keating-mascot-think 1.8s ease-in-out infinite",
+  +			transformOrigin: "50% 80%"
+  +		},
+  +		".keating-thinking-dot": {
+  +			display: "inline-block",
+  +			width: "4px",
+  +			height: "4px",
+  +			borderRadius: "9999px",
+  +			background: "var(--primary)",
+  +			animation: "keating-thinking-dot 1.1s ease-in-out infinite"
+  +		},
+       ".chat-page-shell .chat-avatar-you": {
+         background: "var(--green-wash)",
+         color: "var(--green-deep)"
+  @@ -3205,7 +3225,7 @@ export default defineConfig({
+         }
+       },
+       "@media (prefers-reduced-motion: reduce)": {
+  -      ".chat-brand,\n  .chat-brand img,\n  .chat-page-shell .sb-dot": {
+  +		".chat-brand,\n  .chat-brand img,\n  .chat-page-shell .sb-dot,\n  .keating-thinking-mascot img,\n  .keating-thinking-dot": {
+           transition: "none",
+           animation: "none"
+         },
+  diff --git a/web/src/components/AssistantChatPanel.tsx b/web/src/components/AssistantChatPanel.tsx
+  index bd07de7c3478896eeabed697cc8d091825508d58..6aef40765db9cdc5e284dd44905378d2e429b790 100644
+  --- a/web/src/components/AssistantChatPanel.tsx
+  +++ b/web/src/components/AssistantChatPanel.tsx
+  @@ -47,6 +47,7 @@ import {
+     Copy,
+     CopyPlus,
+     KeyRound,
+  +	Keyboard,
+     LibraryBig,
+     Lightbulb,
+     Loader2,
+  @@ -670,17 +671,24 @@ function ImagePart({ image, filename }: { image: string; filename?: string }) {
+     );
+   }
+   
+  -// Adaptive speech input for the composer. Shown only when a usable speech
+  -// credential (genuine OpenAI key, or Google/Gemini key) is configured. Push to
+  -// talk: records the mic, transcribes via the resolved provider, and inserts the
+  -// text into the composer for review before sending.
+  -function SpeechMicButton() {
+  +// Voice is a real composer mode, not a small attachment action. Duplex models
+  +// open the realtime surface; other providers use press-and-hold dictation and
+  +// place the transcript back into the text composer for review.
+  +function SpeechComposerControl({
+  +	expanded,
+  +	onExpandedChange,
+  +}: {
+  +	expanded: boolean;
+  +	onExpandedChange: (expanded: boolean) => void;
+  +}) {
+     const composer = useComposerRuntime();
+  -  const [available, setAvailable] = useState(false);
+  +  const [available, setAvailable] = useState<boolean | null>(null);
+     const [recording, setRecording] = useState(false);
+     const [busy, setBusy] = useState(false);
+     const [liveOpen, setLiveOpen] = useState(false);
+  +	const [forceStt, setForceStt] = useState(false);
+     const recorderRef = useRef<MicRecorder | null>(null);
+  +	const recordingPromiseRef = useRef<Promise<MicRecorder> | null>(null);
+   
+     useEffect(() => {
+       let cancelled = false;
+  @@ -702,6 +710,10 @@ function SpeechMicButton() {
+       };
+     }, []);
+   
+  +	useEffect(() => {
+  +		if (available === false && expanded) onExpandedChange(false);
+  +	}, [available, expanded, onExpandedChange]);
+  +
+     const appendToComposer = (text: string) => {
+       const trimmed = text.trim();
+       if (!trimmed) return;
+  @@ -709,92 +721,123 @@ function SpeechMicButton() {
+       composer.setText(existing ? `${existing.trimEnd()} ${trimmed}` : trimmed);
+     };
+   
+  -  // Push-to-talk one-shot dictation (used when no duplex provider is active,
+  -  // and as the fallback when a live session cannot start).
+  -  const runPushToTalk = async () => {
+  -    if (busy) return;
+  -    if (recording) {
+  -      const recorder = recorderRef.current;
+  -      recorderRef.current = null;
+  -      setRecording(false);
+  -      if (!recorder) return;
+  -      setBusy(true);
+  -      try {
+  -        const blob = await recorder.stop();
+  -        const cred = await resolveSpeechCredential(getProviderApiKey);
+  -        if (!cred) throw new Error("No speech credential available.");
+  -        const text = await transcribeAudio(blob, { provider: cred.provider, apiKey: cred.apiKey });
+  -        appendToComposer(text);
+  -      } catch (error) {
+  -        console.warn("[keating:stt] transcription failed", error);
+  -      } finally {
+  -        setBusy(false);
+  -      }
+  -      return;
+  -    }
+  -    try {
+  -      recorderRef.current = await startMicRecording();
+  -      setRecording(true);
+  -    } catch (error) {
+  -      console.warn("[keating:stt] microphone unavailable", error);
+  -    }
+  -  };
+  +  const beginPushToTalk = () => {
+  +		if (busy || recordingPromiseRef.current) return;
+  +		setRecording(true);
+  +		const pending = startMicRecording();
+  +		recordingPromiseRef.current = pending;
+  +		void pending.then((recorder) => {
+  +			recorderRef.current = recorder;
+  +		}).catch((error) => {
+  +			recordingPromiseRef.current = null;
+  +			setRecording(false);
+  +			console.warn("[keating:stt] microphone unavailable", error);
+  +		});
+  +	};
+  +
+  +	const finishPushToTalk = async () => {
+  +		const pending = recordingPromiseRef.current;
+  +		if (!pending) return;
+  +		setRecording(false);
+  +		setBusy(true);
+  +		try {
+  +			const recorder = recorderRef.current ?? await pending;
+  +			const blob = await recorder.stop();
+  +			const cred = await resolveSpeechCredential(getProviderApiKey);
+  +			if (!cred) throw new Error("No speech credential available.");
+  +			const text = await transcribeAudio(blob, { provider: cred.provider, apiKey: cred.apiKey });
+  +			appendToComposer(text);
+  +			onExpandedChange(false);
+  +		} catch (error) {
+  +			console.warn("[keating:stt] transcription failed", error);
+  +		} finally {
+  +			recorderRef.current = null;
+  +			recordingPromiseRef.current = null;
+  +			setBusy(false);
+  +		}
+  +	};
+   
+     if (!available) return null;
+   
+  -  const mode = speechInputMode(loadWebSpeechSettings());
+  -  const title =
+  -    mode === "duplex"
+  -      ? "Start a live voice conversation with Keating"
+  -      : "Dictate your message (push to talk)";
+  -
+  -  const handleClick = () => {
+  -    if (busy) return;
+  -    if (mode === "duplex" && !recording) {
+  -      setLiveOpen(true);
+  -      return;
+  -    }
+  -    void runPushToTalk();
+  -  };
+  +	const mode = forceStt ? "stt" : speechInputMode(loadWebSpeechSettings());
+  +  if (!expanded) {
+  +		return (
+  +			<button
+  +				type="button"
+  +				onClick={() => onExpandedChange(true)}
+  +				title="Switch to voice"
+  +				aria-label="Switch to voice"
+  +				className={cx(composerIconButtonClass, css({ _hover: { backgroundColor: "var(--muted)", color: "var(--foreground)" } }))}
+  +			>
+  +				<Mic size={16} />
+  +			</button>
+  +		);
+  +	}
+   
+     return (
+       <>
+  -      <button
+  -        type="button"
+  -        onClick={handleClick}
+  -        disabled={busy}
+  -        title={title}
+  -        aria-label={title}
+  -        aria-pressed={recording}
+  -        className={cx(
+  -          composerIconButtonClass,
+  -          css({
+  -            _hover: { backgroundColor: "var(--muted)", color: "var(--foreground)" },
+  -          }),
+  -          recording
+  -            ? css({
+  -                animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+  -                borderColor: "var(--destructive)",
+  -                color: "var(--destructive)",
+  -              })
+  -            : "",
+  -        )}
+  -      >
+  -        {busy ? (
+  -          <Spinner size={16} />
+  -        ) : recording ? (
+  -          <MicOff size={16} />
+  -        ) : (
+  -          <Mic size={16} />
+  -        )}
+  -      </button>
+  +			<div className={css({ display: "flex", minWidth: 0, flex: 1, alignItems: "center", gap: "0.375rem" })}>
+  +				<button
+  +					type="button"
+  +					disabled={busy}
+  +					onClick={mode === "duplex" ? () => setLiveOpen(true) : undefined}
+  +					onPointerDown={mode === "stt" ? (event) => {
+  +						event.currentTarget.setPointerCapture(event.pointerId);
+  +						beginPushToTalk();
+  +					} : undefined}
+  +					onPointerUp={mode === "stt" ? () => void finishPushToTalk() : undefined}
+  +					onPointerCancel={mode === "stt" ? () => void finishPushToTalk() : undefined}
+  +					onKeyDown={mode === "stt" ? (event) => {
+  +						if ((event.key === " " || event.key === "Enter") && !event.repeat) {
+  +							event.preventDefault();
+  +							beginPushToTalk();
+  +						}
+  +					} : undefined}
+  +					onKeyUp={mode === "stt" ? (event) => {
+  +						if (event.key === " " || event.key === "Enter") {
+  +							event.preventDefault();
+  +							void finishPushToTalk();
+  +						}
+  +					} : undefined}
+  +					aria-label={mode === "duplex" ? "Start live voice conversation" : "Hold to speak"}
+  +					aria-pressed={recording}
+  +					className={cx(
+  +						css({
+  +							display: "inline-flex",
+  +							minWidth: 0,
+  +							minHeight: "2.25rem",
+  +							flex: 1,
+  +							alignItems: "center",
+  +							justifyContent: "center",
+  +							gap: "0.5rem",
+  +							borderRadius: "0.375rem",
+  +							backgroundColor: "var(--primary)",
+  +							paddingInline: "0.75rem",
+  +							fontSize: "0.8125rem",
+  +							fontWeight: 650,
+  +							color: "var(--primary-foreground)",
+  +							touchAction: "none",
+  +							userSelect: "none",
+  +							_hover: { backgroundColor: "color-mix(in srgb, var(--primary) 88%, black)" },
+  +							_disabled: { opacity: 0.65 },
+  +						}),
+  +						recording ? pulseClass : "",
+  +					)}
+  +				>
+  +					{busy ? <Spinner size={16} /> : recording ? <MicOff size={16} /> : <Mic size={16} />}
+  +					<span>{busy ? "Transcribing" : recording ? "Release to transcribe" : mode === "duplex" ? "Talk with Keating" : "Hold to speak"}</span>
+  +				</button>
+  +				<button type="button" onClick={() => onExpandedChange(false)} aria-label="Switch to keyboard" title="Switch to keyboard" className={composerIconButtonClass}>
+  +					<Keyboard size={16} />
+  +				</button>
+  +			</div>
+         {liveOpen ? (
+           <LiveVoiceOverlay
+             onClose={() => setLiveOpen(false)}
+             onTranscript={appendToComposer}
+             onFallback={() => {
+               setLiveOpen(false);
+  -            void runPushToTalk();
+  +							setForceStt(true);
+             }}
+           />
+         ) : null}
+  @@ -889,11 +932,12 @@ function LiveVoiceOverlay({
+           inset: 0,
+           zIndex: 50,
+           display: "flex",
+  -        alignItems: "center",
+  +				alignItems: "stretch",
+           justifyContent: "center",
+           backgroundColor: "color-mix(in srgb, var(--background) 80%, transparent)",
+  -        padding: "1rem",
+  +				padding: 0,
+           backdropFilter: "blur(4px)",
+  +				sm: { alignItems: "center", padding: "1rem" },
+         })}
+         role="dialog"
+         aria-modal="true"
+  @@ -902,25 +946,28 @@ function LiveVoiceOverlay({
+         <div
+           className={css({
+             width: "100%",
+  +					height: "100dvh",
+             maxWidth: "28rem",
+  -          borderRadius: "0.75rem",
+  -          border: "1px solid var(--border)",
+  +					display: "flex",
+  +					flexDirection: "column",
+             backgroundColor: "var(--card)",
+  -          padding: "1.25rem",
+  -          boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)",
+  +					padding: "1rem",
+  +					sm: { height: "auto", maxHeight: "min(80dvh, 42rem)", borderRadius: "0.75rem", border: "1px solid var(--border)", padding: "1.25rem" },
+           })}
+         >
+           <div className={css({ display: "flex", alignItems: "center", gap: "0.75rem" })}>
+  -          <span
+  +						<span
+               className={cx(
+                 css({
+  +								position: "relative",
+                   display: "inline-flex",
+  -                width: "2.5rem",
+  -                height: "2.5rem",
+  +								width: "3.5rem",
+  +								height: "3.5rem",
+                   alignItems: "center",
+                   justifyContent: "center",
+  -                borderRadius: "9999px",
+  +								borderRadius: "0.75rem",
+                   border: "1px solid",
+  +								backgroundColor: "var(--background)",
+                 }),
+                 error
+                   ? css({ borderColor: "var(--destructive)", color: "var(--destructive)" })
+  @@ -930,7 +977,10 @@ function LiveVoiceOverlay({
+                 state === "listening" && !error ? pulseClass : "",
+               )}
+             >
+  -            {error ? <MicOff size={18} /> : state === "connecting" ? <Spinner size={18} /> : <Mic size={18} />}
+  +							<img src="/brand/mascot-head.png" alt="" className={css({ width: "2.5rem", height: "auto" })} />
+  +							<span className={css({ position: "absolute", right: "-0.25rem", bottom: "-0.25rem", display: "inline-flex", height: "1.5rem", width: "1.5rem", alignItems: "center", justifyContent: "center", borderRadius: "9999px", border: "1px solid var(--border)", backgroundColor: "var(--background)" })}>
+  +								{error ? <MicOff size={13} /> : state === "connecting" ? <Spinner size={13} /> : <Mic size={13} />}
+  +							</span>
+             </span>
+             <div className={css({ minWidth: 0, flex: 1 })}>
+               <div className={css({ fontSize: "0.875rem", fontWeight: 500 })}>{error ? "Voice session error" : LIVE_STATE_LABEL[state]}</div>
+  @@ -964,7 +1014,7 @@ function LiveVoiceOverlay({
+           </div>
+   
+           {error ? (
+  -          <div className={css({ marginTop: "1rem", display: "grid", gap: "0.75rem" })}>
+  +						<div className={css({ marginTop: "1rem", display: "flex", minHeight: 0, flex: 1, flexDirection: "column", gap: "0.75rem" })}>
+               <p className={css({ fontSize: "0.75rem", color: "var(--destructive)" })}>{error}</p>
+               <div className={css({ display: "flex", gap: "0.5rem" })}>
+                 <button
+  @@ -984,14 +1034,18 @@ function LiveVoiceOverlay({
+               </div>
+             </div>
+           ) : (
+  -          <div className={css({ marginTop: "1rem", display: "grid", gap: "0.75rem" })}>
+  -            <div
+  +						<div className={css({ marginTop: "1rem", display: "flex", minHeight: 0, flex: 1, flexDirection: "column", gap: "0.75rem" })}>
+  +							<div
+                 className={css({
+                   display: "grid",
+  -                maxHeight: "10rem",
+  +								minHeight: "12rem",
+  +								maxHeight: "none",
+  +								flex: 1,
+                   gap: "0.5rem",
+                   overflowY: "auto",
+                   fontSize: "0.875rem",
+  +								alignContent: "start",
+  +								sm: { minHeight: "8rem", maxHeight: "18rem" },
+                 })}
+               >
+                 {assistantText ? (
+  @@ -1011,7 +1065,7 @@ function LiveVoiceOverlay({
+                   <p className={css({ textAlign: "right", color: "var(--muted-foreground)" })}>{userText}</p>
+                 ) : null}
+                 {!assistantText && !userText ? (
+  -                <p className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>Start speaking — Keating is listening.</p>
+  +								<p className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>Start speaking. Keating is listening.</p>
+                 ) : null}
+               </div>
+               <button
+  @@ -2015,19 +2069,19 @@ function ToolPart({
+     const stateClass =
+       state === "error"
+         ? css({
+  -          borderLeftColor: "color-mix(in srgb, var(--destructive) 60%, transparent)",
+  +					borderColor: "color-mix(in srgb, var(--destructive) 60%, transparent)",
+             backgroundColor: "color-mix(in srgb, var(--destructive) 10%, transparent)",
+             color: "var(--destructive)",
+           })
+         : state === "running"
+           ? css({
+  -            borderLeftColor: "rgb(245 158 11 / 0.6)",
+  +							borderColor: "rgb(245 158 11 / 0.6)",
+               backgroundColor: "rgb(34 197 94 / 0.1)",
+               color: "rgb(217 119 6)",
+               _dark: { color: "rgb(252 211 77)" },
+             })
+           : css({
+  -            borderLeftColor: "rgb(16 185 129 / 0.6)",
+  +							borderColor: "rgb(16 185 129 / 0.6)",
+               backgroundColor: "rgb(16 185 129 / 0.1)",
+               color: "rgb(4 120 87)",
+               _dark: { color: "rgb(110 231 183)" },
+  @@ -2047,7 +2101,7 @@ function ToolPart({
+             marginBlock: "0.5rem",
+             width: "100%",
+             borderRadius: "0.375rem",
+  -          borderLeftWidth: "4px",
+  +						borderWidth: "1px",
+             paddingInline: "0.75rem",
+             paddingBlock: "0.5rem",
+             fontSize: "0.75rem",
+  @@ -2081,7 +2135,7 @@ function ToolPart({
+         {showDetails &&
+         args !== undefined &&
+         Object.keys(args as Record<string, unknown>).length > 0 ? (
+  -        <details className={css({ marginTop: "0.5rem", color: "color-mix(in srgb, var(--foreground) 80%, transparent)" })}>
+  +				<details open className={css({ marginTop: "0.5rem", color: "color-mix(in srgb, var(--foreground) 80%, transparent)" })}>
+             <summary
+               className={css({
+                 display: "flex",
+  @@ -2616,7 +2670,7 @@ function toAssistantMessage(
+         createdAt: timestamp,
+         status,
+         content,
+  -      metadata: authError || llmFailure || retryable
+  +			metadata: authError || llmFailure || retryable || msg.__keatingPrefillStatus === true
+           ? {
+               custom: {
+                 keatingAuthError: authError,
+  @@ -2624,6 +2678,7 @@ function toAssistantMessage(
+                 keatingRetryAttempts: retryAttempts,
+                 keatingRetryExhausted: msg.__keatingRetryExhausted === true,
+                 keatingRetryable: retryable,
+  +								keatingPrefillStatus: msg.__keatingPrefillStatus === true,
+               },
+             }
+           : undefined,
+  @@ -2755,7 +2810,8 @@ function makePrefillStatusMessage(agent: Agent, step: number): AgentMessage {
+         },
+       },
+       timestamp: Date.now(),
+  -  } as AgentMessage;
+  +		__keatingPrefillStatus: true,
+  +  } as unknown as AgentMessage;
+   }
+   
+   export function SuggestedPrompts({
+  @@ -3197,6 +3253,7 @@ function AssistantThread({
+     const [localVersion, setLocalVersion] = useState(0);
+     const [loadingStep, setLoadingStep] = useState(0);
+     const [composerHasUrl, setComposerHasUrl] = useState(false);
+  +	const [voiceComposerOpen, setVoiceComposerOpen] = useState(false);
+     const [hasGoogleKey, setHasGoogleKey] = useState<boolean | null>(null);
+     const isRunning = agent?.state.isStreaming ?? false;
+     const currentThinkingLevel =
+  @@ -3661,7 +3718,7 @@ function AssistantThread({
+                 flexDirection: "column",
+                 overflowY: "auto",
+                 overflowX: "hidden",
+  -              paddingInline: "0.375rem",
+  +							paddingInline: "0.75rem",
+                 paddingBlock: "1rem",
+                 sm: { paddingInline: "1rem", paddingBlock: "1.5rem" },
+               })}
+  @@ -3761,7 +3818,7 @@ function AssistantThread({
+                     css({
+                       marginInline: "auto",
+                       display: "flex",
+  -                    width: "calc(100% - 6px)",
+  +									width: "100%",
+                       maxWidth: "56rem",
+                       flexDirection: "column",
+                       gap: "0.375rem",
+  @@ -3846,8 +3903,11 @@ function AssistantThread({
+                     >
+                       <Paperclip size={15} className={css({ sm: { width: "1rem", height: "1rem" } })} />
+                     </ComposerPrimitive.AddAttachment>
+  -                  <SpeechMicButton />
+  -                  <ComposerPrimitive.Input
+  +									{!voiceComposerOpen ? <SpeechComposerControl expanded={false} onExpandedChange={setVoiceComposerOpen} /> : null}
+  +									{voiceComposerOpen ? (
+  +										<SpeechComposerControl expanded onExpandedChange={setVoiceComposerOpen} />
+  +									) : voiceComposerOpen ? null : (
+  +									<ComposerPrimitive.Input
+                       className={css({
+                         maxHeight: "10rem",
+                         minHeight: "2rem",
+  @@ -3868,7 +3928,8 @@ function AssistantThread({
+                       placeholder="Message Keating"
+                       rows={1}
+                       onChange={(event) => setComposerHasUrl(URL_IN_TEXT_PATTERN.test(event.currentTarget.value))}
+  -                  />
+  +									/>
+  +									)}
+                     {/* Only show Send OR Cancel — never both */}
+                     {isRunning ? (
+                       <ComposerPrimitive.Cancel
+  @@ -3888,7 +3949,7 @@ function AssistantThread({
+                       >
+                         <Square size={15} className={css({ sm: { width: "1rem", height: "1rem" } })} />
+                       </ComposerPrimitive.Cancel>
+  -                  ) : (
+  +                  ) : voiceComposerOpen ? null : (
+                       <ComposerPrimitive.Send
+                         className={cx(
+                           composerIconButtonClass,
+  @@ -4144,6 +4205,9 @@ function AssistantMessage({
+     const retryExhausted = useMessage(
+       (message) => message.metadata.custom?.keatingRetryExhausted === true,
+     );
+  +	const isPrefillStatus = useMessage(
+  +		(message) => message.metadata.custom?.keatingPrefillStatus === true,
+  +	);
+     // The message id is `assistant-${index}-${timestamp}` (see toAssistantMessage).
+     // The trailing timestamp is the stable handle we use to fork at this turn.
+     const messageId = useMessage((message) => message.id);
+  @@ -4194,6 +4258,10 @@ function AssistantMessage({
+       setRetrying(false);
+     };
+   
+  +	if (isPrefillStatus) {
+  +		return <KeatingThinkingIndicator status={messageText} />;
+  +	}
+  +
+     return (
+       <>
+         <MessagePrimitive.Root
+  @@ -4390,6 +4458,55 @@ function AssistantMessage({
+     );
+   }
+   
+  +function KeatingThinkingIndicator({ status }: { status: string }) {
+  +	return (
+  +		<div
+  +			role="status"
+  +			aria-live="polite"
+  +			className={css({
+  +				marginInline: "auto",
+  +				marginBottom: "1rem",
+  +				display: "flex",
+  +				width: "100%",
+  +				maxWidth: "56rem",
+  +				alignItems: "center",
+  +				gap: "0.75rem",
+  +				color: "var(--muted-foreground)",
+  +			})}
+  +		>
+  +			<div
+  +				className={cx(
+  +					"keating-thinking-mascot",
+  +					css({
+  +						display: "flex",
+  +						height: "2.5rem",
+  +						width: "2.5rem",
+  +						flexShrink: 0,
+  +						alignItems: "center",
+  +						justifyContent: "center",
+  +						borderRadius: "0.5rem",
+  +						border: "1px solid var(--border)",
+  +						backgroundColor: "var(--card)",
+  +					}),
+  +				)}
+  +			>
+  +				<img src="/brand/mascot-head.png" alt="" className={css({ width: "1.875rem", height: "auto" })} />
+  +			</div>
+  +			<div className={css({ minWidth: 0 })}>
+  +				<div className={css({ display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", fontWeight: 600, color: "var(--foreground)" })}>
+  +					Keating is thinking
+  +					<span aria-hidden="true" className={css({ display: "inline-flex", gap: "0.1875rem" })}>
+  +						{[0, 1, 2].map((index) => (
+  +							<span key={index} className="keating-thinking-dot" style={{ animationDelay: `${index * 140}ms` }} />
+  +						))}
+  +					</span>
+  +				</div>
+  +				<p className={css({ marginTop: "0.125rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "11px" })}>{status}</p>
+  +			</div>
+  +		</div>
+  +	);
+  +}
+  +
+   export const AssistantChatPanel = forwardRef<
+     ChatPanelHandle,
+     AssistantChatPanelProps
+  diff --git a/web/src/components/JsonCrackBlock.stories.tsx b/web/src/components/JsonCrackBlock.stories.tsx
+  index a9fd9c424c3edcd30082381f892e044d5c394e6c..744c1059a1bcdc9030bbcbe19aacf62e5c10a636 100644
+  --- a/web/src/components/JsonCrackBlock.stories.tsx
+  +++ b/web/src/components/JsonCrackBlock.stories.tsx
+  @@ -16,7 +16,7 @@ const meta = {
+   			},
+   		},
+   		title: "config.json",
+  -		defaultMode: "raw",
+  +		defaultMode: "graph",
+   	},
+   } satisfies Meta<typeof JsonCrackBlock>;
+   
+  @@ -26,6 +26,10 @@ type Story = StoryObj<typeof meta>;
+   
+   export const Raw: Story = {};
+   
+  +export const RawText: Story = {
+  +	args: { defaultMode: "raw" },
+  +};
+  +
+   export const TreeView: Story = {
+   	args: { defaultMode: "graph" },
+   };
+  diff --git a/web/src/components/JsonCrackBlock.tsx b/web/src/components/JsonCrackBlock.tsx
+  index 3ac35b42269d03a148bcebd8c7dd78b8e2954f68..a3adb4ffea6468064707afacf2cbaf6b70b1aa5f 100644
+  --- a/web/src/components/JsonCrackBlock.tsx
+  +++ b/web/src/components/JsonCrackBlock.tsx
+  @@ -17,7 +17,7 @@ export function JsonCrackBlock({
+     maxHeight = "24rem",
+     className = "",
+     title,
+  -  defaultMode = "raw",
+  +  defaultMode = "graph",
+   }: JsonCrackBlockProps) {
+     const [mode, setMode] = useState<"raw" | "graph">(defaultMode);
+     const jsonText = typeof value === "string" ? value : safeStringify(value);
+  @@ -81,7 +81,7 @@ export function JsonCrackBlock({
+             {jsonText.length > 10000 ? `${jsonText.slice(0, 10000)}\n\n... (truncated)` : jsonText}
+           </pre>
+         ) : (
+  -        <div className={css({ overflow: "auto", padding: "0.75rem", fontSize: "11px", fontFamily: "var(--mono-display)", lineHeight: "1.625" })} style={{ maxHeight }}>
+  +        <div className={css({ overflowY: "auto", overflowX: "hidden", padding: "0.75rem", fontSize: "11px", fontFamily: "var(--mono-display)", lineHeight: "1.625" })} style={{ maxHeight }}>
+             <JsonTree value={parsed.value} name="root" depth={0} initiallyOpen />
+           </div>
+         )}
+  @@ -106,8 +106,8 @@ function JsonTree({
+   
+     if (!isArray && !isObject) {
+       return (
+  -      <div className={css({ display: "flex", minWidth: "max-content", alignItems: "baseline", gap: "0.25rem" })} style={{ paddingLeft: depth * 14 }}>
+  -        <span className={css({ color: "var(--muted-foreground)" })}>{name}:</span>
+  +      <div className={css({ display: "flex", minWidth: 0, width: "100%", alignItems: "baseline", gap: "0.25rem" })} style={{ paddingLeft: Math.min(depth, 6) * 12 }}>
+  +        <span className={css({ flexShrink: 0, color: "var(--muted-foreground)" })}>{name}:</span>
+           <JsonPrimitive value={value} />
+         </div>
+       );
+  @@ -117,12 +117,12 @@ function JsonTree({
+     const summary = isArray ? `Array(${entries.length})` : `Object(${entries.length})`;
+   
+     return (
+  -    <div className={css({ minWidth: "max-content" })}>
+  +    <div className={css({ minWidth: 0, width: "100%" })}>
+         <button
+           type="button"
+           onClick={() => setOpen((next) => !next)}
+           className={css({ display: "flex", alignItems: "center", gap: "0.25rem", borderRadius: "0.125rem", paddingBlock: "0.125rem", paddingRight: "0.25rem", textAlign: "left", transitionProperty: "color, background-color, border-color", transitionDuration: "150ms", _hover: { background: "var(--accent)" } })}
+  -        style={{ paddingLeft: depth * 14 }}
+  +        style={{ paddingLeft: Math.min(depth, 6) * 12 }}
+         >
+           <ChevronRight
+             size={12}
+  @@ -144,7 +144,7 @@ function JsonTree({
+   
+   function JsonPrimitive({ value }: { value: Exclude<JsonNode, JsonNode[] | { [key: string]: JsonNode }> }) {
+     if (value === null) return <span className={css({ color: "var(--muted-foreground)" })}>null</span>;
+  -  if (typeof value === "string") return <span className={css({ color: "#047857" })}>"{value}"</span>;
+  +  if (typeof value === "string") return <span className={css({ minWidth: 0, whiteSpace: "pre-wrap", overflowWrap: "anywhere", color: "#047857" })}>"{value}"</span>;
+     if (typeof value === "number") return <span className={css({ color: "#0369a1" })}>{value}</span>;
+     return <span className={css({ color: "#6d28d9" })}>{String(value)}</span>;
+   }
+  diff --git a/web/src/components/KeatingUiSettingsTab.tsx b/web/src/components/KeatingUiSettingsTab.tsx
+  index 0ad408cee5053fca9573cc462fba1b9699ed4c6a..bc7fb6517d980dc19156840317d183e98c1571f0 100644
+  --- a/web/src/components/KeatingUiSettingsTab.tsx
+  +++ b/web/src/components/KeatingUiSettingsTab.tsx
+  @@ -264,18 +264,9 @@ export function KeatingUiSettingsTab() {
+   
+   			<SettingRow
+   				title="Response comparison chance"
+  -				description="Generate a second answer in the background and ask which response helped more. Each comparison uses another model request, so it is off by default."
+  +				description="Occasionally generate a second answer and ask which response helped more. The 1% default keeps comparisons useful without interrupting ordinary chats."
+   			>
+  -				<div className={css({ display: "flex", minWidth: "12rem", alignItems: "center", gap: "0.75rem" })}>
+  -					<input
+  -						type="range"
+  -						min={0}
+  -						max={100}
+  -						step={1}
+  -						className={css({ width: "9rem" })}
+  -						value={Math.round(settings.alternativeResponseChance * 100)}
+  -						onChange={(event) => update({ alternativeResponseChance: Math.max(0, Math.min(1, Number(event.target.value) / 100)) })}
+  -					/>
+  +				<label className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
+   					<input
+   						type="number"
+   						min={0}
+  @@ -287,7 +278,7 @@ export function KeatingUiSettingsTab() {
+   						aria-label="Response comparison chance percent"
+   					/>
+   					<span className={mutedSmallClass}>%</span>
+  -				</div>
+  +				</label>
+   			</SettingRow>
+   
+   			<div id="settings-section-ui-animation" className={sectionAnchorClass}>
+  diff --git a/web/src/components/ProvidersModelsTab.tsx b/web/src/components/ProvidersModelsTab.tsx
+  index 0fbe17e1a1cc7483c93bc831b65c6cca7f07d92c..84b9991df924aef255d299c0d334e702344e4cd9 100644
+  --- a/web/src/components/ProvidersModelsTab.tsx
+  +++ b/web/src/components/ProvidersModelsTab.tsx
+  @@ -1,4 +1,4 @@
+  -import { useEffect, useState } from "react";
+  +import { useEffect, useReducer, useState } from "react";
+   import { getProviders } from "@earendil-works/pi-ai/compat";
+   import { getAppStorage } from "@earendil-works/pi-web-ui";
+   import { css } from "../../styled-system/css";
+  @@ -52,50 +52,85 @@ function sortProvidersByPriority(list: string[]): string[] {
+   const stackClass = css({ display: "flex", flexDirection: "column", gap: "2rem" });
+   const dividerClass = css({ borderTop: "1px solid var(--border)" });
+   
+  +type ProviderEditorState = {
+  +	dialog: ProviderDialogState;
+  +	form: ProviderFormState;
+  +	error: string;
+  +	notice: string;
+  +	saving: boolean;
+  +};
+  +
+  +type ProviderEditorAction =
+  +	| { type: "open-add"; providerType: import("../lib/provider-models").KeatingCustomProviderType }
+  +	| { type: "open-edit"; provider: KeatingCustomProvider; apiKey: string }
+  +	| { type: "change"; form: ProviderFormState }
+  +	| { type: "save-start" }
+  +	| { type: "save-failed"; message: string }
+  +	| { type: "save-finished"; notice: string }
+  +	| { type: "close" };
+  +
+  +const INITIAL_PROVIDER_EDITOR: ProviderEditorState = {
+  +	dialog: { open: false },
+  +	form: INITIAL_PROVIDER_FORM,
+  +	error: "",
+  +	notice: "",
+  +	saving: false,
+  +};
+  +
+  +function providerEditorReducer(
+  +	state: ProviderEditorState,
+  +	action: ProviderEditorAction,
+  +): ProviderEditorState {
+  +	switch (action.type) {
+  +		case "open-add":
+  +			return {
+  +				...INITIAL_PROVIDER_EDITOR,
+  +				dialog: { open: true, type: action.providerType },
+  +				form: {
+  +					...INITIAL_PROVIDER_FORM,
+  +					type: action.providerType,
+  +					baseUrl: PROVIDER_TYPE_DEFAULTS[action.providerType] || "",
+  +				},
+  +				notice: state.notice,
+  +			};
+  +		case "open-edit":
+  +			return {
+  +				...INITIAL_PROVIDER_EDITOR,
+  +				dialog: { open: true, provider: action.provider },
+  +				form: {
+  +					name: action.provider.name,
+  +					type: action.provider.type,
+  +					gatewayKind: action.provider.gatewayKind ?? "bifrost",
+  +					baseUrl: action.provider.baseUrl,
+  +					apiKey: action.apiKey || action.provider.apiKey || "",
+  +				},
+  +				notice: state.notice,
+  +			};
+  +		case "change":
+  +			return { ...state, form: action.form, error: "" };
+  +		case "save-start":
+  +			return { ...state, saving: true, error: "" };
+  +		case "save-failed":
+  +			return { ...state, saving: false, error: action.message };
+  +		case "save-finished":
+  +			return { ...INITIAL_PROVIDER_EDITOR, notice: action.notice };
+  +		case "close":
+  +			return { ...INITIAL_PROVIDER_EDITOR, notice: state.notice };
+  +	}
+  +}
+  +
+   export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: SettingsSection[] } = {}) {
+   	const [customProviders, setCustomProviders] = useState<KeatingCustomProvider[]>([]);
+   	const [settings, patch] = useKeatingUiSettings();
+   	const [modelPrefs] = useModelPrefs();
+  -	const [providerDialog, setProviderDialog] = useState<ProviderDialogState>({ open: false });
+  -	const [providerError, setProviderError] = useState("");
+  -	const [providerForm, setProviderForm] = useState<ProviderFormState>(INITIAL_PROVIDER_FORM);
+  +	const [providerEditor, dispatchProviderEditor] = useReducer(
+  +		providerEditorReducer,
+  +		INITIAL_PROVIDER_EDITOR,
+  +	);
+   
+   	useEffect(() => {
+   		loadCustomProviders().then(setCustomProviders);
+  -	}, [providerDialog.open]);
+  -
+  -	useEffect(() => {
+  -		setProviderError("");
+  -		if (!providerDialog.open) {
+  -			setProviderForm(INITIAL_PROVIDER_FORM);
+  -			return;
+  -		}
+  -		if (providerDialog.provider) {
+  -			// Also fetch apiKey from providerKeys storage in case it was stored separately
+  -			const storage = getAppStorage();
+  -			const apiKey = providerDialog.provider.apiKey ?? "";
+  -			storage.providerKeys.get(providerDialog.provider.name).then((key) => {
+  -				if (key) {
+  -					setProviderForm((prev) => ({ ...prev, apiKey: key }));
+  -				}
+  -			}).catch(() => {});
+  -			setProviderForm({
+  -				name: providerDialog.provider.name,
+  -				type: providerDialog.provider.type,
+  -				gatewayKind: providerDialog.provider.gatewayKind ?? "bifrost",
+  -				baseUrl: providerDialog.provider.baseUrl,
+  -				apiKey,
+  -			});
+  -		} else if (providerDialog.type) {
+  -			setProviderForm({
+  -				name: "",
+  -				type: providerDialog.type,
+  -				gatewayKind: "bifrost",
+  -				baseUrl: PROVIDER_TYPE_DEFAULTS[providerDialog.type] || "",
+  -				apiKey: "",
+  -			});
+  -		}
+  -	}, [providerDialog.provider, providerDialog.type]);
+  +	}, []);
+   
+   	const providers = sortProvidersByPriority(Array.from(new Set([DIO_PROVIDER_ID, ...getProviders()])));
+   
+  @@ -103,7 +138,7 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
+   		toggleProviderVisibility(provider, hidden);
+   	};
+   
+  -	const handleAddModel = (model: { name: string; id: string; provider: string; api: string; baseUrl: string; reasoning: boolean; vision: boolean }) => {
+  +	const handleAddModel = async (model: { name: string; id: string; provider: string; api: string; baseUrl: string; apiKey: string; reasoning: boolean; vision: boolean }) => {
+   		const key = `${model.provider}::${model.api}::${model.id}`;
+   		addCustomModel({
+   			key,
+  @@ -115,46 +150,66 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
+   			reasoning: model.reasoning,
+   			vision: model.vision,
+   		});
+  +		if (model.apiKey.trim()) {
+  +			await getAppStorage().providerKeys.set(model.provider, model.apiKey.trim());
+  +		}
+   	};
+   
+   	const handleSaveProvider = async () => {
+  -		setProviderError("");
+  -		if (!providerForm.name.trim() || !providerForm.baseUrl.trim()) {
+  -			setProviderError("Name and Base URL are required");
+  +		const { dialog, form } = providerEditor;
+  +		if (!form.name.trim() || !form.baseUrl.trim()) {
+  +			dispatchProviderEditor({ type: "save-failed", message: "Name and Base URL are required" });
+   			return;
+   		}
+  -		const isEdit = !!providerDialog.provider;
+  +		const isEdit = !!dialog.provider;
+  +		dispatchProviderEditor({ type: "save-start" });
+   		try {
+   			const storage = getAppStorage();
+  -			const providerId = providerDialog.provider?.id ?? crypto.randomUUID();
+  +			const providerId = dialog.provider?.id ?? crypto.randomUUID();
+   			let provider: KeatingCustomProvider = {
+   				id: providerId,
+  -				name: providerForm.name.trim(),
+  -				type: providerForm.type,
+  -				gatewayKind: providerForm.type === "gateway" ? providerForm.gatewayKind : undefined,
+  -				baseUrl: providerForm.baseUrl.trim(),
+  -				apiKey: providerForm.apiKey.trim() || undefined,
+  -				models: providerDialog.provider?.models ?? [],
+  +				name: form.name.trim(),
+  +				type: form.type,
+  +				gatewayKind: form.type === "gateway" ? form.gatewayKind : undefined,
+  +				baseUrl: form.baseUrl.trim(),
+  +				apiKey: form.apiKey.trim() || undefined,
+  +				models: dialog.provider?.models ?? [],
+   			};
+  +			let discoveryWarning = "";
+   			if (AUTO_DISCOVERY_TYPES.has(provider.type)) {
+  -				const models = await discoverCustomProviderModels(provider);
+  -				if (models.length === 0) {
+  -					setProviderError("Connected successfully, but the provider returned no models. Check the base URL and key.");
+  -					return;
+  +				try {
+  +					const models = await discoverCustomProviderModels(provider);
+  +					provider = { ...provider, models };
+  +					if (models.length === 0) {
+  +						discoveryWarning = " Saved, but no models were listed. Add the model manually below.";
+  +					}
+  +				} catch (error) {
+  +					const message = error instanceof Error ? error.message : "model listing failed";
+  +					discoveryWarning = ` Saved, but automatic model discovery failed (${message}). Add the model manually below.`;
+   				}
+  -				provider = { ...provider, models };
+   			}
+   			await storage.customProviders.set(provider as any);
+  -			if (providerForm.apiKey.trim()) {
+  -				await storage.providerKeys.set(provider.name, providerForm.apiKey.trim());
+  +			const oldName = dialog.provider?.name;
+  +			if (oldName && oldName !== provider.name) {
+  +				await storage.providerKeys.delete(oldName);
+  +			}
+  +			if (form.apiKey.trim()) {
+  +				await storage.providerKeys.set(provider.name, form.apiKey.trim());
+  +			} else {
+  +				await storage.providerKeys.delete(provider.name);
+   			}
+   			await loadCustomProviders().then(setCustomProviders);
+  -			setProviderDialog({ open: false });
+  -			setProviderForm(INITIAL_PROVIDER_FORM);
+  +			dispatchProviderEditor({
+  +				type: "save-finished",
+  +				notice: `${provider.name} ${isEdit ? "updated" : "saved"}.${discoveryWarning}`,
+  +			});
+   		} catch (error) {
+   			console.error("Failed to save provider:", error);
+   			const message = error instanceof Error ? error.message : "Unknown connection error";
+  -			setProviderError(`${isEdit ? "Failed to update" : "Failed to save"} provider: ${message}`);
+  +			dispatchProviderEditor({
+  +				type: "save-failed",
+  +				message: `${isEdit ? "Failed to update" : "Failed to save"} provider: ${message}`,
+  +			});
+   		}
+   	};
+   
+  @@ -171,11 +226,12 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
+   	};
+   
+   	const openAddType = (type: import("../lib/provider-models").KeatingCustomProviderType) => {
+  -		setProviderDialog({ open: true, type });
+  +		dispatchProviderEditor({ type: "open-add", providerType: type });
+   	};
+   
+  -	const openEdit = (provider: KeatingCustomProvider) => {
+  -		setProviderDialog({ open: true, provider });
+  +	const openEdit = async (provider: KeatingCustomProvider) => {
+  +		const apiKey = await getAppStorage().providerKeys.get(provider.name).catch(() => undefined);
+  +		dispatchProviderEditor({ type: "open-edit", provider, apiKey: apiKey ?? "" });
+   	};
+   
+   	return (
+  @@ -207,23 +263,29 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
+   
+   			<div className={dividerClass} />
+   
+  -			<MyModelsSection modelPrefs={modelPrefs} onAddModel={handleAddModel} />
+  +			<MyModelsSection
+  +				modelPrefs={modelPrefs}
+  +				customProviders={customProviders}
+  +				onAddModel={handleAddModel}
+  +			/>
+   
+   			<div className={dividerClass} />
+   
+   			<CustomProvidersSection
+   				customProviders={customProviders}
+  +				notice={providerEditor.notice}
+   				onEdit={openEdit}
+   				onDelete={handleDeleteProvider}
+   				onAddType={openAddType}
+   			/>
+   
+   			<ProviderDialog
+  -				dialog={providerDialog}
+  -				form={providerForm}
+  -				error={providerError}
+  -				onChange={setProviderForm}
+  -				onClose={() => setProviderDialog({ open: false })}
+  +				dialog={providerEditor.dialog}
+  +				form={providerEditor.form}
+  +				error={providerEditor.error}
+  +				saving={providerEditor.saving}
+  +				onChange={(form) => dispatchProviderEditor({ type: "change", form })}
+  +				onClose={() => dispatchProviderEditor({ type: "close" })}
+   				onSave={handleSaveProvider}
+   			/>
+   		</div>
+  diff --git a/web/src/components/ProxyTab.tsx b/web/src/components/ProxyTab.tsx
+  index cb5a96edaca2ad6d157dfcaa78cb5c37f891a26c..e143b61d0678446ba2e239868de99c9c276013c5 100644
+  --- a/web/src/components/ProxyTab.tsx
+  +++ b/web/src/components/ProxyTab.tsx
+  @@ -1,67 +1,71 @@
+  -import { useCallback, useEffect, useState } from "react";
+  -import { getAppStorage } from "@earendil-works/pi-web-ui";
+  +import { ArrowRight, CheckCircle2, ShieldCheck } from "lucide-react";
+   import { css } from "../../styled-system/css";
+  -import { fieldInput, settingsCard } from "../../styled-system/recipes";
+  -import { Toggle } from "./Toggle";
+   
+  -const stackClass = css({ display: "flex", flexDirection: "column", gap: "1rem" });
+  -const descriptionClass = css({ fontSize: "0.875rem", color: "var(--muted-foreground)" });
+  -const labelClass = css({ fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)" });
+  -const fieldStackClass = css({ display: "flex", flexDirection: "column", gap: "0.25rem" });
+  -const helpClass = css({ fontSize: "0.75rem", color: "var(--muted-foreground)" });
+  +const stackClass = css({ display: "flex", flexDirection: "column", gap: "1.25rem" });
+  +const titleClass = css({ fontSize: "0.875rem", fontWeight: 600, color: "var(--foreground)" });
+  +const descriptionClass = css({ fontSize: "0.875rem", lineHeight: 1.55, color: "var(--muted-foreground)" });
+  +const codeClass = css({
+  +	borderRadius: "0.25rem",
+  +	backgroundColor: "var(--muted)",
+  +	paddingInline: "0.3rem",
+  +	paddingBlock: "0.1rem",
+  +	fontFamily: "var(--font-mono)",
+  +	fontSize: "0.72rem",
+  +	color: "var(--foreground)",
+  +});
+   
+   export function ProxyTab() {
+  -	const [enabled, setEnabled] = useState(false);
+  -	const [url, setUrl] = useState("http://localhost:3001");
+  -
+  -	useEffect(() => {
+  -		const storage = getAppStorage();
+  -		storage.settings.get("proxy.enabled").then((v) => {
+  -			if (typeof v === "boolean") setEnabled(v);
+  -		});
+  -		storage.settings.get("proxy.url").then((v) => {
+  -			if (typeof v === "string") setUrl(v);
+  -		});
+  -	}, []);
+  -
+  -	const save = useCallback((nextEnabled: boolean, nextUrl: string) => {
+  -		const storage = getAppStorage();
+  -		storage.settings.set("proxy.enabled", nextEnabled);
+  -		storage.settings.set("proxy.url", nextUrl);
+  -	}, []);
+  -
+   	return (
+   		<div className={stackClass}>
+  -			<p className={descriptionClass}>
+  -				Allows browser-based apps to bypass CORS restrictions when calling LLM providers. Required for Z-AI and Anthropic with OAuth token.
+  -			</p>
+  +			<div className={css({ display: "flex", alignItems: "flex-start", gap: "0.75rem" })}>
+  +				<ShieldCheck size={19} className={css({ marginTop: "0.1rem", flexShrink: 0, color: "var(--primary)" })} />
+  +				<div>
+  +					<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem" })}>
+  +						<h3 className={titleClass}>Automatic browser bridge</h3>
+  +						<span className={css({ borderRadius: "9999px", backgroundColor: "color-mix(in srgb, var(--primary) 10%, transparent)", paddingInline: "0.5rem", paddingBlock: "0.125rem", fontSize: "0.625rem", fontWeight: 600, color: "var(--primary)" })}>
+  +							Always available
+  +						</span>
+  +					</div>
+  +					<p className={descriptionClass}>
+  +						Keating automatically routes browser requests through its same-origin server when a provider would otherwise reject the browser for CORS. There is no separate proxy URL to configure.
+  +					</p>
+  +				</div>
+  +			</div>
+  +
+  +			<div className={css({ display: "grid", gap: "0.5rem", borderBlock: "1px solid var(--border)", paddingBlock: "0.875rem", sm: { gridTemplateColumns: "1fr auto 1fr auto 1fr", alignItems: "center" } })}>
+  +				<div>
+  +					<div className={titleClass}>1. Browser</div>
+  +					<p className={descriptionClass}>Builds the provider request.</p>
+  +				</div>
+  +				<ArrowRight size={14} className={css({ display: "none", color: "var(--muted-foreground)", sm: { display: "block" } })} />
+  +				<div>
+  +					<div className={titleClass}>2. Keating server</div>
+  +					<p className={descriptionClass}><code className={codeClass}>/api/chat-proxy</code> validates and forwards it.</p>
+  +				</div>
+  +				<ArrowRight size={14} className={css({ display: "none", color: "var(--muted-foreground)", sm: { display: "block" } })} />
+  +				<div>
+  +					<div className={titleClass}>3. Provider</div>
+  +					<p className={descriptionClass}>Returns its normal streaming response.</p>
+  +				</div>
+  +			</div>
+   
+  -			<div className={settingsCard({ tone: "subtle" })}>
+  -				<span className={labelClass}>Use CORS Proxy</span>
+  -				<Toggle
+  -					checked={enabled}
+  -					onChange={(checked) => {
+  -						setEnabled(checked);
+  -						save(checked, url);
+  -					}}
+  -				/>
+  +			<div className={css({ display: "grid", gap: "0.75rem" })}>
+  +				<h3 className={titleClass}>When it is used</h3>
+  +				<ul className={css({ display: "grid", gap: "0.5rem", fontSize: "0.8rem", lineHeight: 1.5, color: "var(--muted-foreground)" })}>
+  +					<li className={css({ display: "flex", gap: "0.5rem" })}>
+  +						<CheckCircle2 size={14} className={css({ marginTop: "0.2rem", flexShrink: 0, color: "var(--primary)" })} />
+  +						Anthropic-compatible APIs, custom hosts, and local model servers that do not permit direct browser calls.
+  +					</li>
+  +					<li className={css({ display: "flex", gap: "0.5rem" })}>
+  +						<CheckCircle2 size={14} className={css({ marginTop: "0.2rem", flexShrink: 0, color: "var(--primary)" })} />
+  +						Model discovery, chat streaming, speech transcription, and browser media tools use the same route.
+  +					</li>
+  +				</ul>
+   			</div>
+   
+  -			<div className={fieldStackClass}>
+  -				<label className={labelClass}>Proxy URL</label>
+  -				<input
+  -					type="text"
+  -					className={fieldInput({ size: "wide" })}
+  -					value={url}
+  -					onChange={(e) => {
+  -						setUrl(e.target.value);
+  -						save(enabled, e.target.value);
+  -					}}
+  -					placeholder="http://localhost:3001"
+  -				/>
+  -				<p className={helpClass}>
+  -					The proxy must forward requests to the upstream provider.
+  -				</p>
+  +			<div className={css({ borderLeft: "3px solid var(--primary)", backgroundColor: "color-mix(in srgb, var(--primary) 6%, transparent)", padding: "0.75rem", fontSize: "0.75rem", lineHeight: 1.55, color: "var(--muted-foreground)" })}>
+  +				<strong className={css({ color: "var(--foreground)" })}>Development and production differ.</strong>{" "}
+  +				Local HTTP targets such as Ollama are allowed during development. Production accepts secure public HTTPS targets and rejects local or private destinations. API keys remain attached to the provider request and are never placed in the URL.
+   			</div>
+   		</div>
+   	);
+  diff --git a/web/src/components/QuestionRenderer.tsx b/web/src/components/QuestionRenderer.tsx
+  index 9e956d46624275114bc065b7867a5a89bf214cbc..bbd9accdab86b6462d0c8425a313e33bcac46e56 100644
+  --- a/web/src/components/QuestionRenderer.tsx
+  +++ b/web/src/components/QuestionRenderer.tsx
+  @@ -1,4 +1,4 @@
+  -import { useCallback, useMemo, useState, useRef } from "react";
+  +import { useCallback, useMemo, useReducer, useRef } from "react";
+   import {
+   	ArrowRight,
+   	Check,
+  @@ -85,38 +85,32 @@ const sm = "@media (min-width: 640px)";
+   
+   const questionStyles = {
+   	shell: css({
+  -		marginBlock: "0.5rem",
+  +		marginBlock: "0.375rem",
+   		width: "100%",
+   		maxWidth: "100%",
+   		overflowX: "hidden",
+  -		borderRadius: "0.5rem",
+  -		border: "1px solid color-mix(in srgb, var(--primary) 30%, transparent)",
+  -		background: "color-mix(in srgb, var(--primary) 5%, transparent)",
+  -		padding: "0.5rem",
+  -		boxShadow: "var(--shadow-sm)",
+  -		[sm]: { marginBlock: "0.75rem", borderRadius: "0.75rem", padding: "1rem" },
+  +		borderLeft: "2px solid color-mix(in srgb, var(--primary) 55%, transparent)",
+  +		background: "transparent",
+  +		padding: "0.375rem 0 0.375rem 0.625rem",
+  +		[sm]: { marginBlock: "0.5rem", padding: "0.5rem 0 0.5rem 0.75rem" },
+   	}),
+   	submittedShell: css({
+  -		marginBlock: "0.5rem",
+  +		marginBlock: "0.375rem",
+   		width: "100%",
+   		maxWidth: "100%",
+   		overflowX: "hidden",
+  -		borderRadius: "0.5rem",
+  -		border: "1px solid color-mix(in srgb, var(--primary) 30%, transparent)",
+  -		background: "color-mix(in srgb, var(--primary) 5%, transparent)",
+  -		padding: "0.625rem",
+  -		boxShadow: "var(--shadow-sm)",
+  -		[sm]: { marginBlock: "0.75rem", borderRadius: "0.75rem", padding: "1rem" },
+  +		borderLeft: "2px solid color-mix(in srgb, var(--primary) 55%, transparent)",
+  +		background: "transparent",
+  +		padding: "0.375rem 0 0.375rem 0.625rem",
+  +		[sm]: { marginBlock: "0.5rem", padding: "0.5rem 0 0.5rem 0.75rem" },
+   	}),
+   	iconBox: css({
+   		display: "flex",
+  -		height: "2rem",
+  -		width: "2rem",
+  +		height: "1.25rem",
+  +		width: "1.25rem",
+   		flexShrink: 0,
+   		alignItems: "center",
+   		justifyContent: "center",
+  -		borderRadius: "0.5rem",
+  -		background: "color-mix(in srgb, var(--primary) 10%, transparent)",
+   	}),
+   	rowStart: css({ display: "flex", alignItems: "flex-start", gap: "0.5rem", [sm]: { gap: "0.75rem" } }),
+   	rowCenter: css({ display: "flex", alignItems: "center", gap: "0.5rem" }),
+  @@ -286,6 +280,67 @@ interface ClassificationAnswer {
+   	reason: string;
+   }
+   
+  +type QuestionInteractionState = {
+  +	answers: BlankState[];
+  +	submitted: boolean;
+  +	current: number;
+  +	collapsed: boolean;
+  +	draggingMatch: string | null;
+  +	dragOverRow: number | null;
+  +};
+  +
+  +type QuestionInteractionAction =
+  +	| { type: "update-answers"; update: (answers: BlankState[]) => BlankState[] }
+  +	| { type: "submit" }
+  +	| { type: "navigate"; current: number }
+  +	| { type: "toggle-collapsed" }
+  +	| { type: "drag-start"; value: string }
+  +	| { type: "drag-over"; row: number | null }
+  +	| { type: "drag-end" };
+  +
+  +function blankCount(template: string): number {
+  +	const matches = template.match(/_{3,}|\{\{blank\}\}/g);
+  +	return matches ? matches.length : 0;
+  +}
+  +
+  +function createQuestionInteractionState(questions: QuestionField[]): QuestionInteractionState {
+  +	return {
+  +		answers: questions.map((question) => ({
+  +			values: Array(question.blanks?.length ?? blankCount(question.question)).fill(""),
+  +			selected: [],
+  +			text: "",
+  +			classifications: (question.items ?? []).map((item) => ({ item, choice: "", reason: "" })),
+  +		})),
+  +		submitted: false,
+  +		current: 0,
+  +		collapsed: false,
+  +		draggingMatch: null,
+  +		dragOverRow: null,
+  +	};
+  +}
+  +
+  +function questionInteractionReducer(
+  +	state: QuestionInteractionState,
+  +	action: QuestionInteractionAction,
+  +): QuestionInteractionState {
+  +	switch (action.type) {
+  +		case "update-answers":
+  +			return { ...state, answers: action.update(state.answers) };
+  +		case "submit":
+  +			return { ...state, submitted: true };
+  +		case "navigate":
+  +			return { ...state, current: action.current };
+  +		case "toggle-collapsed":
+  +			return { ...state, collapsed: !state.collapsed };
+  +		case "drag-start":
+  +			return { ...state, draggingMatch: action.value };
+  +		case "drag-over":
+  +			return { ...state, dragOverRow: action.row };
+  +		case "drag-end":
+  +			return { ...state, draggingMatch: null, dragOverRow: null };
+  +	}
+  +}
+  +
+   function isClassificationQuestion(question: QuestionField): boolean {
+   	return question.type === "classification" && !!question.items?.length && !!question.choices?.length;
+   }
+  @@ -305,27 +360,19 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
+   	const total = questions.length;
+   	const blankRefs = useRef<(HTMLInputElement | null)[]>([]);
+   
+  -	const countBlanks = (template: string): number => {
+  -		const matches = template.match(/_{3,}|\{\{blank\}\}/g);
+  -		return matches ? matches.length : 0;
+  -	};
+  -
+  -	const [states, setStates] = useState<BlankState[]>(() =>
+  -		questions.map((q) => {
+  -			const blankCount = q.blanks?.length ?? countBlanks(q.question);
+  -			return {
+  -				values: Array(blankCount).fill(""),
+  -				selected: [],
+  -				text: "",
+  -				classifications: (q.items ?? []).map((item) => ({ item, choice: "", reason: "" })),
+  -			};
+  -		}),
+  +	const [interaction, dispatch] = useReducer(
+  +		questionInteractionReducer,
+  +		questions,
+  +		createQuestionInteractionState,
+   	);
+  -	const [submitted, setSubmitted] = useState(false);
+  -	const [current, setCurrent] = useState(0);
+  -	const [collapsed, setCollapsed] = useState(false);
+  -	const [draggingMatch, setDraggingMatch] = useState<string | null>(null);
+  -	const [dragOverRow, setDragOverRow] = useState<number | null>(null);
+  +	const {
+  +		answers: states,
+  +		submitted,
+  +		current,
+  +		collapsed,
+  +		draggingMatch,
+  +		dragOverRow,
+  +	} = interaction;
+   
+   	const answerFor = useCallback(
+   		(index: number): string => {
+  @@ -406,7 +453,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
+   
+   	const toggleChoice = (index: number, choice: string, multiSelect: boolean) => {
+   		if (submitted) return;
+  -		setStates((current) =>
+  +		dispatch({ type: "update-answers", update: (current) =>
+   			current.map((state, i) => {
+   				if (i !== index) return state;
+   				if (multiSelect) {
+  @@ -417,14 +464,14 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
+   				}
+   				return { ...state, selected: state.selected[0] === choice ? [] : [choice] };
+   			}),
+  -		);
+  +		});
+   	};
+   
+   	const setText = (index: number, value: string) => {
+   		if (submitted) return;
+  -		setStates((current) =>
+  +		dispatch({ type: "update-answers", update: (current) =>
+   			current.map((state, i) => (i === index ? { ...state, text: value } : state)),
+  -		);
+  +		});
+   	};
+   
+   	const setClassificationValue = (
+  @@ -434,7 +481,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
+   		value: string,
+   	) => {
+   		if (submitted) return;
+  -		setStates((current) =>
+  +		dispatch({ type: "update-answers", update: (current) =>
+   			current.map((state, i) => {
+   				if (i !== index) return state;
+   				return {
+  @@ -444,12 +491,12 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
+   					),
+   				};
+   			}),
+  -		);
+  +		});
+   	};
+   
+   	const setMatchingChoice = (index: number, rowIndex: number, value: string, unique: boolean) => {
+   		if (submitted) return;
+  -		setStates((current) =>
+  +		dispatch({ type: "update-answers", update: (current) =>
+   			current.map((state, i) => {
+   				if (i !== index) return state;
+   				return {
+  @@ -461,25 +508,24 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
+   					}),
+   				};
+   			}),
+  -		);
+  +		});
+   	};
+   
+   	const handleMatchingDrop = (rowIndex: number, value: string) => {
+   		setMatchingChoice(current, rowIndex, value, q.uniqueMatches !== false);
+  -		setDraggingMatch(null);
+  -		setDragOverRow(null);
+  +		dispatch({ type: "drag-end" });
+   	};
+   
+   	const setBlankValue = (index: number, blankIdx: number, value: string) => {
+   		if (submitted) return;
+  -		setStates((current) =>
+  +		dispatch({ type: "update-answers", update: (current) =>
+   			current.map((state, i) => {
+   				if (i !== index) return state;
+   				const values = [...state.values];
+   				values[blankIdx] = value;
+   				return { ...state, values };
+   			}),
+  -		);
+  +		});
+   	};
+   
+   	/** Split a template into text parts and blank positions */
+  @@ -520,16 +566,16 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
+   				grading: score === undefined ? "pending" : "auto",
+   			};
+   		});
+  -		setSubmitted(true);
+  +		dispatch({ type: "submit" });
+   		onSubmit?.(answers);
+   	}, [submitted, allAnswered, questions, answerFor, onSubmit, states]);
+   
+   	const goNext = useCallback(() => {
+  -		if (current < total - 1) setCurrent((c) => c + 1);
+  +		if (current < total - 1) dispatch({ type: "navigate", current: current + 1 });
+   	}, [current, total]);
+   
+   	const goPrev = useCallback(() => {
+  -		if (current > 0) setCurrent((c) => c - 1);
+  +		if (current > 0) dispatch({ type: "navigate", current: current - 1 });
+   	}, [current]);
+   
+   	if (submitted) {
+  @@ -622,10 +668,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
+   
+   	return (
+   			<div className={questionStyles.shell}>
+  -				<div className={css({ display: "flex", alignItems: "flex-start", gap: "0.375rem", [sm]: { gap: "0.75rem" } })}>
+  -					<div className={css({ display: "none", height: "2rem", width: "2rem", flexShrink: 0, alignItems: "center", justifyContent: "center", borderRadius: "0.5rem", background: "color-mix(in srgb, var(--primary) 10%, transparent)", [sm]: { display: "flex" } })}>
+  -						<CheckCircle2 size={18} className={questionStyles.primaryText} />
+  -					</div>
+  +				<div className={css({ display: "flex", alignItems: "flex-start" })}>
+   				<div className={css({ minWidth: 0, flex: 1, display: "grid", gap: "0.5rem", [sm]: { gap: "1rem" } })}>
+   					<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", [sm]: { gap: "0.75rem" } })}>
+   						<div className={css({ minWidth: 0 })}>
+  @@ -638,7 +681,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
+   						</div>
+   						<button
+   							type="button"
+  -							onClick={() => setCollapsed((value) => !value)}
+  +							onClick={() => dispatch({ type: "toggle-collapsed" })}
+   							aria-expanded={!collapsed}
+   							aria-label={collapsed ? "Show" : "Hide"}
+   							title={collapsed ? "Show" : "Hide"}
+  @@ -669,7 +712,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
+   						</button>
+   					</div>
+   					{collapsed ? (
+  -						<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", borderRadius: "0.5rem", border: "1px solid color-mix(in srgb, var(--border) 60%, transparent)", background: "color-mix(in srgb, var(--background) 40%, transparent)", padding: "0.75rem" })}>
+  +						<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", paddingBlock: "0.25rem" })}>
+   							<div className={css({ height: "0.375rem", flex: 1, overflow: "hidden", borderRadius: "9999px", background: "var(--muted)" })}>
+   								<div
+   									className={css({ height: "100%", borderRadius: "9999px", background: "var(--primary)", transition: "all 150ms" })}
+  @@ -700,7 +743,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
+   					</div>
+   
+   					{/* Current question card */}
+  -					<div className={css({ display: "grid", gap: "0.5rem", maxWidth: "100%", borderRadius: 0, border: "0 solid transparent", background: "transparent", padding: 0, [sm]: { gap: "0.75rem", borderRadius: "0.5rem", border: "1px solid color-mix(in srgb, var(--border) 60%, transparent)", background: "color-mix(in srgb, var(--background) 40%, transparent)", padding: "0.75rem" } })}>
+  +					<div className={css({ display: "grid", gap: "0.5rem", maxWidth: "100%", [sm]: { gap: "0.625rem" } })}>
+   						{q.header && (
+   							<span className={css({ display: "inline-flex", borderRadius: "0.25rem", background: "color-mix(in srgb, var(--primary) 10%, transparent)", padding: "0.125rem 0.5rem", fontSize: "0.6875rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.025em", color: "var(--primary)" })}>
+   								{q.header}
+  @@ -726,11 +769,10 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
+   														onDragStart={(event) => {
+   															event.dataTransfer.setData("text/plain", choice);
+   															event.dataTransfer.effectAllowed = "move";
+  -															setDraggingMatch(choice);
+  +													dispatch({ type: "drag-start", value: choice });
+   														}}
+   														onDragEnd={() => {
+  -															setDraggingMatch(null);
+  -															setDragOverRow(null);
+  +													dispatch({ type: "drag-end" });
+   														}}
+   														className={cx(
+   															css({
+  @@ -770,9 +812,11 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
+   											key={`${row.item}-${rowIndex}`}
+   											onDragOver={(event) => {
+   												event.preventDefault();
+  -												setDragOverRow(rowIndex);
+  +											dispatch({ type: "drag-over", row: rowIndex });
+   											}}
+  -											onDragLeave={() => setDragOverRow((current) => current === rowIndex ? null : current)}
+  +										onDragLeave={() => {
+  +											if (dragOverRow === rowIndex) dispatch({ type: "drag-over", row: null });
+  +										}}
+   											onDrop={(event) => {
+   												event.preventDefault();
+   												const value = event.dataTransfer.getData("text/plain") || draggingMatch;
+  diff --git a/web/src/components/ResponseComparisonPanel.tsx b/web/src/components/ResponseComparisonPanel.tsx
+  index 33333f7689e77054efb18ec09de8c1a743ce078c..52161529109779f05a06e7768c0b2d6749798f80 100644
+  --- a/web/src/components/ResponseComparisonPanel.tsx
+  +++ b/web/src/components/ResponseComparisonPanel.tsx
+  @@ -1,6 +1,6 @@
+  -import { useState } from "react";
+  -import { Check, GitCompareArrows, SkipForward } from "lucide-react";
+  -import { css } from "../../styled-system/css";
+  +import { useEffect, useState } from "react";
+  +import { Check, GitCompareArrows, SkipForward, X } from "lucide-react";
+  +import { css, cx } from "../../styled-system/css";
+   import type {
+   	PendingResponseComparison,
+   	ResponseComparisonDecision,
+  @@ -13,9 +13,35 @@ interface ResponseComparisonPanelProps {
+   	onChoose: (decision: ResponseComparisonDecision) => Promise<void>;
+   }
+   
+  +type ResponseChoice = "original" | "alternative";
+  +
+  +const optionButtonClass = css({
+  +	display: "inline-flex",
+  +	minHeight: "2.5rem",
+  +	alignItems: "center",
+  +	justifyContent: "center",
+  +	gap: "0.375rem",
+  +	borderRadius: "0.375rem",
+  +	paddingInline: "0.875rem",
+  +	fontSize: "0.75rem",
+  +	fontWeight: 600,
+  +	_disabled: { opacity: 0.6 },
+  +});
+  +
+   export function ResponseComparisonPanel({ comparison, onChoose }: ResponseComparisonPanelProps) {
+  +	const [open, setOpen] = useState(false);
+  +	const [active, setActive] = useState<ResponseChoice>("original");
+   	const [decision, setDecision] = useState<ResponseComparisonDecision | null>(null);
+   
+  +	useEffect(() => {
+  +		if (!open) return;
+  +		const onKeyDown = (event: KeyboardEvent) => {
+  +			if (event.key === "Escape") setOpen(false);
+  +		};
+  +		window.addEventListener("keydown", onKeyDown);
+  +		return () => window.removeEventListener("keydown", onKeyDown);
+  +	}, [open]);
+  +
+   	const choose = async (next: ResponseComparisonDecision) => {
+   		if (decision) return;
+   		setDecision(next);
+  @@ -27,118 +53,174 @@ export function ResponseComparisonPanel({ comparison, onChoose }: ResponseCompar
+   	};
+   
+   	return (
+  -		<section
+  -			aria-label="Compare responses"
+  -			className={css({
+  -				marginInline: "auto",
+  -				marginBottom: "0.625rem",
+  -				width: "100%",
+  -				maxWidth: "56rem",
+  -				borderRadius: "0.625rem",
+  -				border: "1px solid var(--border)",
+  -				backgroundColor: "var(--background)",
+  -				padding: "0.625rem",
+  -				sm: { padding: "0.875rem" },
+  -			})}
+  -		>
+  -			<div className={css({ display: "flex", alignItems: "flex-start", gap: "0.625rem" })}>
+  -				<GitCompareArrows size={17} className={css({ marginTop: "0.125rem", flexShrink: 0, color: "var(--primary)" })} />
+  -				<div className={css({ minWidth: 0, flex: 1 })}>
+  -					<h3 className={css({ fontSize: "0.8125rem", fontWeight: 650, color: "var(--foreground)" })}>
+  -						Alternative response ready
+  -					</h3>
+  -					<p className={css({ marginTop: "0.125rem", fontSize: "0.6875rem", lineHeight: "1rem", color: "var(--muted-foreground)" })}>
+  -						The current answer is above. Review this alternative, then choose which one helped more. Your choice creates one preference example.
+  -					</p>
+  -				</div>
+  -			</div>
+  -
+  -			<div
+  +		<>
+  +			<section
+  +				aria-label="Alternative response available"
+   				className={css({
+  -					marginTop: "0.625rem",
+  -					maxHeight: "min(30dvh, 14rem)",
+  -					overflowY: "auto",
+  -					overflowX: "hidden",
+  -					borderRadius: "0.375rem",
+  -					backgroundColor: "color-mix(in srgb, var(--muted) 42%, transparent)",
+  -					padding: "0.625rem",
+  -					fontSize: "0.8125rem",
+  -					lineHeight: "1.35rem",
+  -					sm: { padding: "0.75rem", fontSize: "0.875rem", lineHeight: "1.5rem" },
+  +					marginInline: "auto",
+  +					marginBottom: "0.625rem",
+  +					width: "100%",
+  +					maxWidth: "56rem",
+   				})}
+   			>
+  -				<MarkdownBlock content={comparison.alternativeResponse} />
+  -			</div>
+  -
+  -			<div className={css({ marginTop: "0.625rem", display: "flex", flexWrap: "wrap", gap: "0.5rem" })}>
+   				<button
+   					type="button"
+  -					disabled={Boolean(decision)}
+  -					onClick={() => void choose("original")}
+  +					onClick={() => setOpen(true)}
+   					className={css({
+  -						display: "inline-flex",
+  -						minHeight: "2.25rem",
+  -						flex: "1 1 9rem",
+  +						display: "flex",
+  +						width: "100%",
+   						alignItems: "center",
+  -						justifyContent: "center",
+  -						gap: "0.375rem",
+  -						borderRadius: "0.375rem",
+  +						gap: "0.625rem",
+  +						borderRadius: "0.5rem",
+   						border: "1px solid var(--border)",
+  +						backgroundColor: "var(--card)",
+   						paddingInline: "0.75rem",
+  -						fontSize: "0.75rem",
+  -						fontWeight: 600,
+  -						_hover: { backgroundColor: "var(--accent)" },
+  -						_disabled: { opacity: 0.6 },
+  -					})}
+  -				>
+  -					{decision === "original" ? <Spinner size={14} /> : <Check size={14} />}
+  -					Keep current response
+  -				</button>
+  -				<button
+  -					type="button"
+  -					disabled={Boolean(decision)}
+  -					onClick={() => void choose("alternative")}
+  -					className={css({
+  -						display: "inline-flex",
+  -						minHeight: "2.25rem",
+  -						flex: "1 1 9rem",
+  -						alignItems: "center",
+  -						justifyContent: "center",
+  -						gap: "0.375rem",
+  -						borderRadius: "0.375rem",
+  -						backgroundColor: "var(--primary)",
+  -						paddingInline: "0.75rem",
+  -						fontSize: "0.75rem",
+  -						fontWeight: 600,
+  -						color: "var(--primary-foreground)",
+  -						_hover: { backgroundColor: "color-mix(in srgb, var(--primary) 88%, black)" },
+  -						_disabled: { opacity: 0.6 },
+  +						paddingBlock: "0.625rem",
+  +						textAlign: "left",
+  +						transition: "background-color 180ms ease-out, border-color 180ms ease-out",
+  +						_hover: { backgroundColor: "var(--accent)", borderColor: "var(--primary)" },
+   					})}
+   				>
+  -					{decision === "alternative" ? <Spinner size={14} /> : <GitCompareArrows size={14} />}
+  -					Use alternative response
+  +					<GitCompareArrows size={16} className={css({ flexShrink: 0, color: "var(--primary)" })} />
+  +					<span className={css({ minWidth: 0, flex: 1 })}>
+  +						<span className={css({ display: "block", fontSize: "0.75rem", fontWeight: 650, color: "var(--foreground)" })}>
+  +							Another explanation is ready
+  +						</span>
+  +						<span className={css({ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "11px", color: "var(--muted-foreground)" })}>
+  +							Compare it when you have a moment
+  +						</span>
+  +					</span>
+  +					<span className={css({ flexShrink: 0, fontSize: "0.75rem", fontWeight: 600, color: "var(--primary)" })}>
+  +						Compare
+  +					</span>
+   				</button>
+  -				<button
+  -					type="button"
+  -					disabled={Boolean(decision)}
+  -					onClick={() => void choose("skipped")}
+  +			</section>
+  +
+  +			{open ? (
+  +				<div
+   					className={css({
+  -						display: "inline-flex",
+  -						minHeight: "2.25rem",
+  -						alignItems: "center",
+  +						position: "fixed",
+  +						inset: 0,
+  +						zIndex: 60,
+  +						display: "flex",
+  +						alignItems: "stretch",
+   						justifyContent: "center",
+  -						gap: "0.375rem",
+  -						paddingInline: "0.5rem",
+  -						fontSize: "0.6875rem",
+  -						color: "var(--muted-foreground)",
+  -						_hover: { color: "var(--foreground)" },
+  -						_disabled: { opacity: 0.6 },
+  +						backgroundColor: "rgb(0 0 0 / 0.58)",
+  +						sm: { alignItems: "center", padding: "1.5rem" },
+   					})}
+  +					role="dialog"
+  +					aria-modal="true"
+  +					aria-labelledby="response-comparison-title"
+  +					onClick={() => setOpen(false)}
+   				>
+  -					{decision === "skipped" ? <Spinner size={13} /> : <SkipForward size={13} />}
+  -					Skip comparison
+  -				</button>
+  +					<div
+  +						className={css({
+  +							display: "flex",
+  +							height: "100dvh",
+  +							width: "100%",
+  +							flexDirection: "column",
+  +							backgroundColor: "var(--background)",
+  +							color: "var(--foreground)",
+  +							sm: {
+  +								height: "min(88dvh, 52rem)",
+  +								maxWidth: "68rem",
+  +								borderRadius: "0.75rem",
+  +								border: "1px solid var(--border)",
+  +							},
+  +						})}
+  +						onClick={(event) => event.stopPropagation()}
+  +					>
+  +						<header className={css({ display: "flex", alignItems: "flex-start", gap: "0.75rem", borderBottom: "1px solid var(--border)", padding: "1rem" })}>
+  +							<GitCompareArrows size={18} className={css({ marginTop: "0.125rem", flexShrink: 0, color: "var(--primary)" })} />
+  +							<div className={css({ minWidth: 0, flex: 1 })}>
+  +								<h2 id="response-comparison-title" className={css({ fontSize: "0.9375rem", fontWeight: 700 })}>
+  +									Which explanation helped more?
+  +								</h2>
+  +								<p className={css({ marginTop: "0.125rem", fontSize: "0.75rem", lineHeight: "1.125rem", color: "var(--muted-foreground)" })}>
+  +									Your choice helps Keating learn how to teach you. It does not change the underlying facts.
+  +								</p>
+  +							</div>
+  +							<button type="button" onClick={() => setOpen(false)} aria-label="Close comparison" className={css({ display: "inline-flex", height: "2rem", width: "2rem", flexShrink: 0, alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", _hover: { backgroundColor: "var(--accent)" } })}>
+  +								<X size={16} />
+  +							</button>
+  +						</header>
+  +
+  +						<div className={css({ display: "flex", borderBottom: "1px solid var(--border)", padding: "0.5rem", md: { display: "none" } })}>
+  +							{(["original", "alternative"] as const).map((choice) => (
+  +								<button
+  +									key={choice}
+  +									type="button"
+  +									onClick={() => setActive(choice)}
+  +									className={css({ flex: 1, borderRadius: "0.375rem", paddingBlock: "0.5rem", fontSize: "0.75rem", fontWeight: 600 })}
+  +									style={{ background: active === choice ? "var(--accent)" : "transparent" }}
+  +								>
+  +									{choice === "original" ? "Original" : "Alternative"}
+  +								</button>
+  +							))}
+  +						</div>
+  +
+  +						<div className={css({ minHeight: 0, flex: 1, overflowY: "auto", padding: "0.75rem", sm: { padding: "1rem" }, md: { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "1rem" } })}>
+  +							<ResponseOption label="Original response" content={comparison.originalResponse} choice="original" active={active} decision={decision} onChoose={choose} />
+  +							<ResponseOption label="Alternative response" content={comparison.alternativeResponse} choice="alternative" active={active} decision={decision} onChoose={choose} />
+  +						</div>
+  +
+  +						<footer className={css({ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.75rem", borderTop: "1px solid var(--border)", padding: "0.75rem 1rem" })}>
+  +							<button type="button" disabled={Boolean(decision)} onClick={() => void choose("skipped")} className={css({ display: "inline-flex", minHeight: "2.25rem", alignItems: "center", gap: "0.375rem", fontSize: "0.75rem", color: "var(--muted-foreground)", _hover: { color: "var(--foreground)" }, _disabled: { opacity: 0.6 } })}>
+  +								{decision === "skipped" ? <Spinner size={13} /> : <SkipForward size={13} />}
+  +								Skip
+  +							</button>
+  +							<span className={css({ fontSize: "11px", color: "var(--muted-foreground)" })}>Comparisons appear in about 1% of replies</span>
+  +						</footer>
+  +					</div>
+  +				</div>
+  +			) : null}
+  +		</>
+  +	);
+  +}
+  +
+  +function ResponseOption({
+  +	label,
+  +	content,
+  +	choice,
+  +	active,
+  +	decision,
+  +	onChoose,
+  +}: {
+  +	label: string;
+  +	content: string;
+  +	choice: ResponseChoice;
+  +	active: ResponseChoice;
+  +	decision: ResponseComparisonDecision | null;
+  +	onChoose: (choice: ResponseChoice) => Promise<void>;
+  +}) {
+  +	return (
+  +		<article
+  +			className={css({
+  +				display: active === choice ? "flex" : "none",
+  +				minHeight: 0,
+  +				flexDirection: "column",
+  +				gap: "0.75rem",
+  +				md: { display: "flex" },
+  +			})}
+  +		>
+  +			<h3 className={css({ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted-foreground)" })}>{label}</h3>
+  +			<div className={css({ minHeight: 0, flex: 1, overflowWrap: "anywhere", borderRadius: "0.5rem", backgroundColor: "color-mix(in srgb, var(--muted) 42%, transparent)", padding: "0.875rem", fontSize: "0.875rem", lineHeight: "1.5rem" })}>
+  +				<MarkdownBlock content={content} />
+   			</div>
+  -		</section>
+  +			<button
+  +				type="button"
+  +				disabled={Boolean(decision)}
+  +				onClick={() => void onChoose(choice)}
+  +				className={cx(
+  +					optionButtonClass,
+  +					choice === "alternative"
+  +						? css({ backgroundColor: "var(--primary)", color: "var(--primary-foreground)", _hover: { backgroundColor: "color-mix(in srgb, var(--primary) 88%, black)" } })
+  +						: css({ border: "1px solid var(--border)", _hover: { backgroundColor: "var(--accent)" } }),
+  +				)}
+  +			>
+  +				{decision === choice ? <Spinner size={14} /> : <Check size={14} />}
+  +				Choose {choice}
+  +			</button>
+  +		</article>
+   	);
+   }
+  diff --git a/web/src/components/settings/CustomProvidersSection.tsx b/web/src/components/settings/CustomProvidersSection.tsx
+  index 250a099d4beb6d1887a5439f137ad1b78f34831b..a7aeee10d45c2a59b662d90eb3b03de9a16ef43d 100644
+  --- a/web/src/components/settings/CustomProvidersSection.tsx
+  +++ b/web/src/components/settings/CustomProvidersSection.tsx
+  @@ -22,7 +22,7 @@ export const PROVIDER_TYPE_OPTIONS = [
+   	{ value: "gateway", label: "AI Gateway" },
+   	{ value: "openai-completions", label: "OpenAI Completions Compatible" },
+   	{ value: "openai-responses", label: "OpenAI Responses Compatible" },
+  -	{ value: "anthropic-messages", label: "Anthropic Messages Compatible" },
+  +	{ value: "anthropic-messages", label: "Anthropic Messages Compatible (including Inkling)" },
+   	{ value: "synthetic", label: "Synthetic (OpenAI Compatible)" },
+   ];
+   
+  @@ -74,6 +74,11 @@ export const INITIAL_PROVIDER_FORM: ProviderFormState = {
+   	apiKey: "",
+   };
+   
+  +const INKLING_PROVIDER_DEFAULTS = {
+  +	name: "Thinking Machines",
+  +	baseUrl: "https://tinker.thinkingmachines.dev/services/tinker-prod/anthropic/api",
+  +} as const;
+  +
+   const sectionClass = css({ display: "flex", flexDirection: "column", gap: "1rem", scrollMarginTop: "5rem" });
+   const headerRowClass = css({
+   	display: "flex",
+  @@ -130,11 +135,13 @@ export async function loadCustomProviders(): Promise<KeatingCustomProvider[]> {
+   
+   export function CustomProvidersSection({
+   	customProviders,
+  +	notice,
+   	onEdit,
+   	onDelete,
+   	onAddType,
+   }: {
+   	customProviders: KeatingCustomProvider[];
+  +	notice?: string;
+   	onEdit: (provider: KeatingCustomProvider) => void;
+   	onDelete: (provider: KeatingCustomProvider) => void;
+   	onAddType: (type: KeatingCustomProviderType) => void;
+  @@ -200,6 +207,22 @@ export function CustomProvidersSection({
+   				</div>
+   			</div>
+   
+  +			{notice ? (
+  +				<div
+  +					role="status"
+  +					className={css({
+  +						borderLeft: "3px solid var(--primary)",
+  +						backgroundColor: "color-mix(in srgb, var(--primary) 7%, transparent)",
+  +						padding: "0.625rem 0.75rem",
+  +						fontSize: "0.75rem",
+  +						lineHeight: 1.45,
+  +						color: "var(--foreground)",
+  +					})}
+  +				>
+  +					{notice}
+  +				</div>
+  +			) : null}
+  +
+   			{customProviders.length === 0 ? (
+   				<div className={css({ paddingBlock: "2rem", textAlign: "center", fontSize: "0.875rem", color: "var(--muted-foreground)" })}>
+   					No custom providers configured. Click &quot;Add Provider&quot; to get started.
+  @@ -225,6 +248,7 @@ export function ProviderDialog({
+   	dialog,
+   	form,
+   	error,
+  +	saving,
+   	onChange,
+   	onClose,
+   	onSave,
+  @@ -232,6 +256,7 @@ export function ProviderDialog({
+   	dialog: ProviderDialogState;
+   	form: ProviderFormState;
+   	error: string;
+  +	saving: boolean;
+   	onChange: (next: ProviderFormState) => void;
+   	onClose: () => void;
+   	onSave: () => void;
+  @@ -265,6 +290,20 @@ export function ProviderDialog({
+   							onChange={(e) => onChange({ ...form, name: e.target.value })}
+   						/>
+   					</div>
+  +					{form.type === "anthropic-messages" ? (
+  +						<div className={css({ borderLeft: "2px solid var(--primary)", paddingLeft: "0.75rem", fontSize: "0.75rem", lineHeight: 1.5, color: "var(--muted-foreground)" })}>
+  +							<p>
+  +								Thinking Machines Inkling uses this protocol. Its model ID is <code>thinkingmachines/Inkling</code>; add it under My Models after saving the provider.
+  +							</p>
+  +							<button
+  +								type="button"
+  +								className={cx(compactButtonClass, css({ marginTop: "0.5rem", color: "var(--primary)" }))}
+  +								onClick={() => onChange({ ...form, ...INKLING_PROVIDER_DEFAULTS })}
+  +							>
+  +								Use Inkling defaults
+  +							</button>
+  +						</div>
+  +					) : null}
+   					<div className={css({ display: "flex", flexDirection: "column", gap: "0.25rem" })}>
+   						<label className={labelClass}>Provider Type</label>
+   						<select
+  @@ -319,7 +358,11 @@ export function ProviderDialog({
+   							placeholder="Leave empty if not required"
+   							value={form.apiKey}
+   							onChange={(e) => onChange({ ...form, apiKey: e.target.value })}
+  +							disabled={saving}
+   						/>
+  +						<p className={css({ fontSize: "0.6875rem", color: "var(--muted-foreground)" })}>
+  +							Stored for this provider and reused by every model assigned to it.
+  +						</p>
+   					</div>
+   					{error && (
+   						<div className={css({ borderRadius: "0.375rem", border: "1px solid color-mix(in srgb, var(--destructive) 30%, transparent)", backgroundColor: "color-mix(in srgb, var(--destructive) 5%, transparent)", paddingInline: "0.75rem", paddingBlock: "0.5rem", fontSize: "0.875rem", color: "var(--destructive)" })}>
+  @@ -335,10 +378,10 @@ export function ProviderDialog({
+   						</button>
+   						<button
+   							className={css({ borderRadius: "0.375rem", backgroundColor: "var(--primary)", paddingInline: "0.75rem", paddingBlock: "0.375rem", fontSize: "0.75rem", fontWeight: 500, color: "var(--primary-foreground)", transitionProperty: "background-color", transitionDuration: "150ms", _hover: { backgroundColor: "color-mix(in srgb, var(--primary) 90%, transparent)" }, _disabled: { opacity: 0.5 } })}
+  -							disabled={!form.name.trim() || !form.baseUrl.trim()}
+  +							disabled={saving || !form.name.trim() || !form.baseUrl.trim()}
+   							onClick={onSave}
+   						>
+  -							Save
+  +							{saving ? "Saving…" : "Save provider"}
+   						</button>
+   					</div>
+   				</div>
+  @@ -370,6 +413,11 @@ function CustomProviderCard({
+   						<span className={css({ display: "inline-flex", alignItems: "center", borderRadius: "9999px", backgroundColor: "var(--muted)", paddingInline: "0.5rem", paddingBlock: "0.125rem", fontSize: "10px", fontWeight: 500, color: "var(--muted-foreground)" })}>
+   							{isAutoDiscovery ? "Auto-discovery" : "Manual"}
+   						</span>
+  +						{provider.apiKey ? (
+  +							<span className={css({ display: "inline-flex", alignItems: "center", borderRadius: "9999px", backgroundColor: "var(--muted)", paddingInline: "0.5rem", paddingBlock: "0.125rem", fontSize: "10px", fontWeight: 500, color: "var(--muted-foreground)" })}>
+  +								Key saved
+  +							</span>
+  +						) : null}
+   						<span className={css({ display: "inline-flex", alignItems: "center", borderRadius: "9999px", backgroundColor: "var(--muted)", paddingInline: "0.5rem", paddingBlock: "0.125rem", fontSize: "10px", fontWeight: 500, color: "var(--muted-foreground)" })}>
+   							{isAutoDiscovery
+   								? `${provider.models?.length ?? 0} discovered models`
+  diff --git a/web/src/components/settings/MyModelsSection.tsx b/web/src/components/settings/MyModelsSection.tsx
+  index b565190e6966ca602fe8afcdf5b30ee48fe6e0e1..4420cdcdbfa47b5b4d41bb9022232f8ff01cae28 100644
+  --- a/web/src/components/settings/MyModelsSection.tsx
+  +++ b/web/src/components/settings/MyModelsSection.tsx
+  @@ -1,7 +1,8 @@
+  -import { useState } from "react";
+  +import { useReducer } from "react";
+   import { getProviders } from "@earendil-works/pi-ai/compat";
+   import { removeCustomModel } from "../../keating/ui-settings";
+   import type { ModelPrefs } from "../../keating/model-prefs";
+  +import type { KeatingCustomProvider } from "../../lib/provider-models";
+   import { css, cx } from "../../../styled-system/css";
+   
+   const ADD_MODEL_APIS = [
+  @@ -61,53 +62,122 @@ const primaryButtonClass = css({
+   	_disabled: { opacity: 0.5 },
+   });
+   
+  +type ModelForm = {
+  +	name: string;
+  +	id: string;
+  +	provider: string;
+  +	api: string;
+  +	baseUrl: string;
+  +	apiKey: string;
+  +	reasoning: boolean;
+  +	vision: boolean;
+  +};
+  +
+  +type ModelEditorState = {
+  +	open: boolean;
+  +	form: ModelForm;
+  +	error: string;
+  +	saving: boolean;
+  +};
+  +
+  +type ModelEditorAction =
+  +	| { type: "toggle" }
+  +	| { type: "change"; form: ModelForm }
+  +	| { type: "saving" }
+  +	| { type: "failed"; message: string }
+  +	| { type: "saved" };
+  +
+  +const INITIAL_MODEL_FORM: ModelForm = {
+  +	name: "",
+  +	id: "",
+  +	provider: "openai",
+  +	api: "openai-completions",
+  +	baseUrl: "",
+  +	apiKey: "",
+  +	reasoning: false,
+  +	vision: false,
+  +};
+  +
+  +const INITIAL_MODEL_EDITOR: ModelEditorState = {
+  +	open: false,
+  +	form: INITIAL_MODEL_FORM,
+  +	error: "",
+  +	saving: false,
+  +};
+  +
+  +function modelEditorReducer(state: ModelEditorState, action: ModelEditorAction): ModelEditorState {
+  +	switch (action.type) {
+  +		case "toggle":
+  +			return state.open ? INITIAL_MODEL_EDITOR : { ...INITIAL_MODEL_EDITOR, open: true };
+  +		case "change":
+  +			return { ...state, form: action.form, error: "" };
+  +		case "saving":
+  +			return { ...state, saving: true, error: "" };
+  +		case "failed":
+  +			return { ...state, saving: false, error: action.message };
+  +		case "saved":
+  +			return INITIAL_MODEL_EDITOR;
+  +	}
+  +}
+  +
+  +function providerApi(provider: KeatingCustomProvider): string {
+  +	if (provider.type === "anthropic-messages") return "anthropic-messages";
+  +	if (provider.type === "openai-responses") return "openai-responses";
+  +	return "openai-completions";
+  +}
+  +
+   export function MyModelsSection({
+   	modelPrefs,
+  +	customProviders,
+   	onAddModel,
+   }: {
+   	modelPrefs: ModelPrefs;
+  +	customProviders: KeatingCustomProvider[];
+   	onAddModel: (model: {
+   		name: string;
+   		id: string;
+   		provider: string;
+   		api: string;
+   		baseUrl: string;
+  +		apiKey: string;
+   		reasoning: boolean;
+   		vision: boolean;
+  -	}) => void;
+  +	}) => void | Promise<void>;
+   }) {
+  -	const [showAddModel, setShowAddModel] = useState(false);
+  -	const [modelError, setModelError] = useState("");
+  -	const [modelForm, setModelForm] = useState({
+  -		name: "",
+  -		id: "",
+  -		provider: "openai",
+  -		api: "openai-completions",
+  -		baseUrl: "",
+  -		reasoning: false,
+  -		vision: false,
+  -	});
+  +	const [editor, dispatch] = useReducer(modelEditorReducer, INITIAL_MODEL_EDITOR);
+  +	const modelForm = editor.form;
+  +	const providerOptions = Array.from(new Set([
+  +		...getProviders(),
+  +		...customProviders.map((provider) => provider.name),
+  +	]));
+   
+  -	const handleSaveModel = () => {
+  -		setModelError("");
+  +	const handleSaveModel = async () => {
+   		const name = modelForm.name.trim();
+   		const id = modelForm.id.trim();
+   		const provider = modelForm.provider.trim();
+   		if (!name || !id || !provider) {
+  -			setModelError("Name, ID, and Provider are required");
+  +			dispatch({ type: "failed", message: "Name, ID, and Provider are required" });
+   			return;
+   		}
+  -		onAddModel({
+  -			name,
+  -			id,
+  -			provider,
+  -			api: modelForm.api,
+  -			baseUrl: modelForm.baseUrl,
+  -			reasoning: modelForm.reasoning,
+  -			vision: modelForm.vision,
+  -		});
+  -		setShowAddModel(false);
+  -		setModelForm({ name: "", id: "", provider: "openai", api: "openai-completions", baseUrl: "", reasoning: false, vision: false });
+  +		dispatch({ type: "saving" });
+  +		try {
+  +			await onAddModel({
+  +				name,
+  +				id,
+  +				provider,
+  +				api: modelForm.api,
+  +				baseUrl: modelForm.baseUrl,
+  +				apiKey: modelForm.apiKey,
+  +				reasoning: modelForm.reasoning,
+  +				vision: modelForm.vision,
+  +			});
+  +			dispatch({ type: "saved" });
+  +		} catch (error) {
+  +			dispatch({
+  +				type: "failed",
+  +				message: error instanceof Error ? error.message : "Could not save the model",
+  +			});
+  +		}
+   	};
+   
+   	return (
+  @@ -121,17 +191,17 @@ export function MyModelsSection({
+   				</div>
+   				<button
+   					className={cx("dialog-compact-button", secondaryButtonClass, css({ flexShrink: 0 }))}
+  -					onClick={() => setShowAddModel((s) => !s)}
+  +					onClick={() => dispatch({ type: "toggle" })}
+   				>
+  -					{showAddModel ? "Cancel" : "Add Model"}
+  +					{editor.open ? "Cancel" : "Add Model"}
+   				</button>
+   			</div>
+   
+  -			{showAddModel && (
+  +			{editor.open && (
+   				<div className={css({ display: "flex", flexDirection: "column", gap: "0.75rem", borderRadius: "0.5rem", border: "1px solid var(--border)", backgroundColor: "color-mix(in srgb, var(--muted) 30%, transparent)", padding: "1rem" })}>
+  -					{modelError && (
+  +					{editor.error && (
+   						<div className={css({ borderRadius: "0.375rem", border: "1px solid color-mix(in srgb, var(--destructive) 30%, transparent)", backgroundColor: "color-mix(in srgb, var(--destructive) 5%, transparent)", paddingInline: "0.75rem", paddingBlock: "0.5rem", fontSize: "0.875rem", color: "var(--destructive)" })}>
+  -							{modelError}
+  +							{editor.error}
+   						</div>
+   					)}
+   					<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
+  @@ -141,7 +211,7 @@ export function MyModelsSection({
+   							className={inputClass}
+   							placeholder="e.g., GPT-5"
+   							value={modelForm.name}
+  -							onChange={(e) => setModelForm((f) => ({ ...f, name: e.target.value }))}
+  +							onChange={(e) => dispatch({ type: "change", form: { ...modelForm, name: e.target.value } })}
+   						/>
+   					</div>
+   					<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
+  @@ -151,7 +221,7 @@ export function MyModelsSection({
+   							className={inputClass}
+   							placeholder="e.g., gpt-5"
+   							value={modelForm.id}
+  -							onChange={(e) => setModelForm((f) => ({ ...f, id: e.target.value }))}
+  +							onChange={(e) => dispatch({ type: "change", form: { ...modelForm, id: e.target.value } })}
+   						/>
+   					</div>
+   					<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
+  @@ -159,20 +229,34 @@ export function MyModelsSection({
+   						<select
+   							className={inputClass}
+   							value={modelForm.provider}
+  -							onChange={(e) => setModelForm((f) => ({ ...f, provider: e.target.value }))}
+  +							onChange={(e) => {
+  +								const providerName = e.target.value;
+  +								const customProvider = customProviders.find((provider) => provider.name === providerName);
+  +								dispatch({
+  +									type: "change",
+  +									form: {
+  +										...modelForm,
+  +										provider: providerName,
+  +										api: customProvider ? providerApi(customProvider) : modelForm.api,
+  +										baseUrl: customProvider?.baseUrl ?? modelForm.baseUrl,
+  +									},
+  +								});
+  +							}}
+   						>
+  -							{getProviders().map((p) => (
+  +							{providerOptions.map((p) => (
+   								<option key={p} value={p}>{p}</option>
+   							))}
+  -							<option value="custom">Custom</option>
+   						</select>
+  +						<p className={css({ fontSize: "0.6875rem", color: "var(--muted-foreground)" })}>
+  +							Create a custom provider first so the model and its credentials share one provider identity.
+  +						</p>
+   					</div>
+   					<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
+   						<label className={labelClass}>API Type</label>
+   						<select
+   							className={inputClass}
+   							value={modelForm.api}
+  -							onChange={(e) => setModelForm((f) => ({ ...f, api: e.target.value }))}
+  +							onChange={(e) => dispatch({ type: "change", form: { ...modelForm, api: e.target.value } })}
+   						>
+   							{ADD_MODEL_APIS.map((a) => (
+   								<option key={a.value} value={a.value}>{a.label}</option>
+  @@ -186,15 +270,28 @@ export function MyModelsSection({
+   							className={inputClass}
+   							placeholder="e.g., https://api.openai.com/v1"
+   							value={modelForm.baseUrl}
+  -							onChange={(e) => setModelForm((f) => ({ ...f, baseUrl: e.target.value }))}
+  +							onChange={(e) => dispatch({ type: "change", form: { ...modelForm, baseUrl: e.target.value } })}
+  +						/>
+  +					</div>
+  +					<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
+  +						<label className={labelClass}>API Key (Optional)</label>
+  +						<input
+  +							type="password"
+  +							className={inputClass}
+  +							placeholder="Stored for the selected provider"
+  +							value={modelForm.apiKey}
+  +							onChange={(e) => dispatch({ type: "change", form: { ...modelForm, apiKey: e.target.value } })}
+   						/>
+  +						<p className={css({ fontSize: "0.6875rem", color: "var(--muted-foreground)" })}>
+  +							This updates the provider key; it is not duplicated per model.
+  +						</p>
+   					</div>
+   					<div className={css({ display: "flex", gap: "1rem" })}>
+   						<label className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem" })}>
+   							<input
+   								type="checkbox"
+   								checked={modelForm.reasoning}
+  -								onChange={(e) => setModelForm((f) => ({ ...f, reasoning: e.target.checked }))}
+  +								onChange={(e) => dispatch({ type: "change", form: { ...modelForm, reasoning: e.target.checked } })}
+   							/>
+   							Reasoning
+   						</label>
+  @@ -202,7 +299,7 @@ export function MyModelsSection({
+   							<input
+   								type="checkbox"
+   								checked={modelForm.vision}
+  -								onChange={(e) => setModelForm((f) => ({ ...f, vision: e.target.checked }))}
+  +								onChange={(e) => dispatch({ type: "change", form: { ...modelForm, vision: e.target.checked } })}
+   							/>
+   							Vision
+   						</label>
+  @@ -210,10 +307,10 @@ export function MyModelsSection({
+   					<div className={css({ display: "flex", justifyContent: "flex-end" })}>
+   						<button
+   							className={primaryButtonClass}
+  -							disabled={!modelForm.name.trim() || !modelForm.id.trim() || !modelForm.provider.trim()}
+  +							disabled={editor.saving || !modelForm.name.trim() || !modelForm.id.trim() || !modelForm.provider.trim()}
+   							onClick={handleSaveModel}
+   						>
+  -							Save Model
+  +							{editor.saving ? "Saving…" : "Save Model"}
+   						</button>
+   					</div>
+   				</div>
+  diff --git a/web/src/hooks/keating-storage.ts b/web/src/hooks/keating-storage.ts
+  index 7ccc6a034b536292f4d3a9049147e59be7245b18..778e5f4056e5948eb264b635917ba86942a36e56 100644
+  --- a/web/src/hooks/keating-storage.ts
+  +++ b/web/src/hooks/keating-storage.ts
+  @@ -25,7 +25,7 @@ const backend = hasP2PBackend() && window.keatingP2P
+   	? new P2PStorageBackend(window.keatingP2P)
+   	: new IndexedDBStorageBackend({
+   	dbName: "keating",
+  -	version: 1,
+  +	version: 2,
+   	stores: [
+   		settingsStore.getConfig(),
+   		providerKeys.getConfig(),
+  diff --git a/web/src/keating/browser-tools.ts b/web/src/keating/browser-tools.ts
+  index 401b242231790afdbfe27eb82fa65dbb77abdde4..7f6f23a67b8d44514677ecbcac680ff04effe02e 100644
+  --- a/web/src/keating/browser-tools.ts
+  +++ b/web/src/keating/browser-tools.ts
+  @@ -52,6 +52,7 @@ const TOOL_REGISTRATION_ORDER = [
+   	"due",
+   	"ask_user_question",
+   	"grade_question_checks",
+  +	"remember_learner_profile",
+   	"set_learner_goal",
+   	"list_learner_goals",
+   	"update_goal_step",
+  diff --git a/web/src/keating/browser-tools/teaching.ts b/web/src/keating/browser-tools/teaching.ts
+  index 6dec20e0c4a76b7023c9bff609187faa03af5c90..cf9fa713da77c7e45f3d7d1440a90edfeac8ba3e 100644
+  --- a/web/src/keating/browser-tools/teaching.ts
+  +++ b/web/src/keating/browser-tools/teaching.ts
+  @@ -112,12 +112,17 @@ export function createTeachingTools(storage: KeatingStorage): AgentTool[] {
+   				const confusedCount = state.feedbackHistory.filter((f) => f.signal === "confused").length;
+   
+   				const topicList = state.topicsExplored.slice(-10).map((t) => `- ${t}`).join("\n") || "None yet";
+  +				const profileBeliefs = state.profileBeliefs.slice(-10).map((belief) =>
+  +					`- ${belief.category}: ${belief.value} (${belief.source}, ${Math.round(belief.confidence * 100)}%)`
+  +				).join("\n") || "- None recorded yet";
+   
+   				return `Learner Profile:
+   - Sessions: ${state.sessionsCount || 0}
+   - Topics explored: ${state.topicsExplored.length}
+   ${topicList}
+   - Feedback: 👍${upCount} 👎${downCount} 🤔${confusedCount}
+  +- Motivations and preferences:
+  +${profileBeliefs}
+   - Last session: ${state.lastSessionAt ? new Date(state.lastSessionAt).toLocaleString() : "First session"}`;
+   			}
+   		),
+  @@ -189,6 +194,37 @@ ${topicList}
+   		),
+   
+   		// ask_user_question - Ask the learner one or more questions as an interactive form
+  +		createTool(
+  +			"remember_learner_profile",
+  +			"Preserve a useful, non-sensitive fact about how this learner wants to learn or communicate. Use this proactively when the learner states a preference, motivation, or interest, or when repeated behavior provides concrete evidence. Explicit statements are certain; observations must remain tentative. Never infer protected, medical, psychological, or identity traits.",
+  +			{
+  +				category: {
+  +					type: "string",
+  +					enum: ["motivation", "communication-preference", "learning-preference", "interest"],
+  +					description: "The kind of learner-specific fact being remembered.",
+  +				},
+  +				value: { type: "string", description: "A short, actionable description, such as 'prefers concise answers followed by examples'." },
+  +				source: { type: "string", enum: ["explicit", "observed"], description: "Use explicit only when the learner actually said it; otherwise observed." },
+  +				evidence: { type: "string", description: "The learner statement or repeated interaction pattern supporting this belief." },
+  +				confidence: { type: "number", minimum: 0, maximum: 1, description: "Optional confidence for observed evidence. Observations are capped at 0.65." },
+  +			},
+  +			async (params) => {
+  +				const category = String(params.category ?? "") as import("../storage").LearnerProfileCategory;
+  +				const allowed = new Set(["motivation", "communication-preference", "learning-preference", "interest"]);
+  +				if (!allowed.has(category)) return "Choose a valid learner profile category.";
+  +				const source = params.source === "explicit" ? "explicit" : "observed";
+  +				const belief = await storage.rememberLearnerProfileBelief({
+  +					category,
+  +					value: String(params.value ?? ""),
+  +					source,
+  +					evidence: String(params.evidence ?? ""),
+  +					confidence: typeof params.confidence === "number" ? params.confidence : undefined,
+  +				});
+  +				return `Remembered ${belief.category}: ${belief.value} (${belief.source}, ${Math.round(belief.confidence * 100)}% confidence).`;
+  +			},
+  +			["category", "value", "source", "evidence"],
+  +		),
+  +
+   		createTool(
+   			"set_learner_goal",
+   			"Capture what the learner wants to ACCOMPLISH (a task or project) and build a long-horizon, multi-step curriculum that scaffolds toward it. The goal is persisted and its progress is tracked across sessions. Design the `steps` yourself as an ordered path (concept → practice → project → reflection); if you omit steps, a scaffold is generated from the anchor topic. Use update_goal_step to advance it later.",
+  diff --git a/web/src/keating/capabilities.ts b/web/src/keating/capabilities.ts
+  index 12e7386009551a7c5b4ef12ebfc69eecc63a534b..60767505c64f7c76b3a882a7efaa46dd419c30f7 100644
+  --- a/web/src/keating/capabilities.ts
+  +++ b/web/src/keating/capabilities.ts
+  @@ -41,6 +41,7 @@ export const BASELINE_TEACHING_TOOLS = new Set([
+   	"feedback",
+   	"grade_quiz",
+   	"grade_question_checks",
+  +	"remember_learner_profile",
+   	"set_learner_goal",
+   	"update_goal_step",
+   ]);
+  diff --git a/web/src/keating/prompts/operational-protocol.md b/web/src/keating/prompts/operational-protocol.md
+  index 6fbce5f62cc84bb14410b45a78de59c38cc3d6d4..748bfb12e9d53cfec3fcfba510ab4166f29c4303 100644
+  --- a/web/src/keating/prompts/operational-protocol.md
+  +++ b/web/src/keating/prompts/operational-protocol.md
+  @@ -19,6 +19,9 @@ When a learner asks about a topic:
+   3. Let interaction hooks record demonstrated outcomes; use `feedback` only for an explicit learner signal such as confusion
+   4. Once the learner has actually worked through the material, offer `quiz` and `deck` as spaced-repetition follow-ups — never bundle them with the plan
+   
+  +### Learner personalization
+  +Build the learner profile quietly from useful evidence instead of repeatedly interviewing them. When the learner explicitly states a motivation, interest, communication preference, or learning preference, call `remember_learner_profile` after handling the immediate teaching turn. You may also preserve a repeated behavioral pattern as `observed`, but keep it tentative and cite the concrete interaction evidence. Never infer protected identity, health, diagnosis, intelligence, personality type, or other sensitive traits. Treat observations as revisable, and let explicit learner statements override them.
+  +
+   **A quiz is not part of this loop.** Do NOT generate a quiz alongside the plan. A quiz is a separate artifact that only makes sense *after* the learner has actually worked through the lesson. Offer the `quiz` tool when the learner signals they're ready to test themselves (or asks for one), and author its questions from what they actually covered — never bundle plan and quiz as a reflexive pair.
+   
+   **Author every artifact yourself.** Streaming OpenUI components ARE the authoring path — there are no `plan`/`map`/`verify` tool calls to remember. Compose the `StudyPlan.items`, `ConceptMap.code`, and `Explanation.markdown` yourself, grounded in the specific material, examples, and edge cases at hand. Never emit a placeholder component.
+  @@ -57,6 +60,7 @@ Lesson plans, concept maps, and verification checklists are NOT tools — they a
+   - `grade_quiz` — After the learner submits a quiz, grade their open-ended answers (short_answer, transfer, free-text fill_in). These are NOT auto-scored — you judge them by meaning, treating the reference answer as one acceptable answer rather than the only one. Pass the `result_id` from the `<keating-quiz-result>` payload in the submission message plus a `correct`/`partial`/`incorrect` verdict per open-ended question id. Your verdicts update the learner's result card. Objective questions (multiple choice, true/false, etc.) are already scored — do not include them.
+   - `deck` — Build a spaced-repetition flashcard deck AFTER the learner has gone through the lesson. Author every card yourself as concrete `{front, back}` retrieval prompts from what they actually covered (required, no template).
+   - `feedback` — Record learner feedback (up/down/confused) for a topic. Run this yourself after sessions.
+  +- `remember_learner_profile` — Persist a useful motivation, interest, communication preference, or learning preference when the learner states it or repeated behavior supports a cautious observation.
+   
+   ### Goals & long-horizon curriculum (use to build toward what the learner wants to accomplish)
+   - `set_learner_goal` — When a learner wants to accomplish a task or project (not just "learn topic X"), capture it as a goal and design an ordered, multi-step curriculum that scaffolds toward it. Steps persist and are tracked across sessions.
+  diff --git a/web/src/keating/session-start-hooks.ts b/web/src/keating/session-start-hooks.ts
+  index c79a739ae2832e97cff1aabe7f9bc3110dda3cf0..5cc2d92a9bf62a3c3e80a2b072e96c1f95375828 100644
+  --- a/web/src/keating/session-start-hooks.ts
+  +++ b/web/src/keating/session-start-hooks.ts
+  @@ -21,11 +21,18 @@ function formatLearnerProfile(state: LearnerState): string {
+   		const challenge = topic.reportedChallenges.at(-1);
+   		return `- ${topic.topic}: ${topic.status}, mastery ${Math.round(topic.mastery * 100)}%, retention ${retention}${challenge ? `; reported challenge: ${challenge}` : ""}`;
+   	});
+  +	const personal = state.profileBeliefs.slice(-10).map((belief) => {
+  +		const certainty = belief.source === "explicit" ? "learner stated" : `tentative observation, ${Math.round(belief.confidence * 100)}%`;
+  +		return `- ${belief.category}: ${belief.value} (${certainty})`;
+  +	});
+   	return [
+   		`Sessions recorded: ${state.sessionsCount}`,
+   		`Strengths: ${state.strengths.join(", ") || "none established yet"}`,
+   		`Needs review: ${state.weaknesses.join(", ") || "none established yet"}`,
+   		topicProfiles.length > 0 ? `Recent topic evidence:\n${topicProfiles.join("\n")}` : "No demonstrated topic evidence yet.",
+  +		personal.length > 0
+  +			? `Personalization cues:\n${personal.join("\n")}`
+  +			: "No durable motivations or communication preferences recorded yet.",
+   	].join("\n");
+   }
+   
+  diff --git a/web/src/keating/speech.ts b/web/src/keating/speech.ts
+  index f8a77e646e4fb179915f7bc22dac1a5383161f47..ea1661e91d6effb9bf24a9b0a27e48e036a4a62a 100644
+  --- a/web/src/keating/speech.ts
+  +++ b/web/src/keating/speech.ts
+  @@ -171,7 +171,7 @@ export function isDuplexSpeechProvider(id: SpeechProviderId): boolean {
+    * active provider is a duplex provider (OpenAI Realtime / Gemini Live).
+    */
+   export function speechInputMode(settings: WebSpeechSettings): "duplex" | "stt" {
+  -	return settings.enabled && isDuplexSpeechProvider(settings.providerId) ? "duplex" : "stt";
+  +	return settings.enabled && settings.microphoneEnabled && isDuplexSpeechProvider(settings.providerId) ? "duplex" : "stt";
+   }
+   
+   let audioContext: AudioContext | null = null;
+  diff --git a/web/src/keating/storage.ts b/web/src/keating/storage.ts
+  index f074bcf76a247a9ef7b465d3dd90aa01e4341a35..bd4e2e510f85974edad164e3784fb5530eb86eee 100644
+  --- a/web/src/keating/storage.ts
+  +++ b/web/src/keating/storage.ts
+  @@ -8,7 +8,9 @@ import { inferBrowserLearnerTurnSignal } from "./core";
+   import { deriveLearnerProfile, type LearnerTopicProfile } from "./learner-profile";
+   
+   const DB_NAME = "keating-db";
+  -const DB_VERSION = 6;
+  +const DB_VERSION = 7;
+  +const LEARNER_STATE_SCHEMA_VERSION = 2;
+  +const META_STORE = "_meta";
+   
+   // Store names
+   const STORES = {
+  @@ -156,6 +158,7 @@ export interface FeedbackEntry {
+   }
+   
+   export interface LearnerState {
+  +	schemaVersion: typeof LEARNER_STATE_SCHEMA_VERSION;
+   	topicsExplored: string[];
+   	feedbackHistory: FeedbackEntry[];
+   	strengths: string[];
+  @@ -169,6 +172,24 @@ export interface LearnerState {
+   		endedAt?: number;
+   		topicsCovered: string[];
+   	}>;
+  +	profileBeliefs: LearnerProfileBelief[];
+  +}
+  +
+  +export type LearnerProfileCategory =
+  +	| "motivation"
+  +	| "communication-preference"
+  +	| "learning-preference"
+  +	| "interest";
+  +
+  +export interface LearnerProfileBelief {
+  +	id: string;
+  +	category: LearnerProfileCategory;
+  +	value: string;
+  +	source: "explicit" | "observed";
+  +	confidence: number;
+  +	evidence: string;
+  +	createdAt: number;
+  +	updatedAt: number;
+   }
+   
+   export interface QuizResultRecord {
+  @@ -300,10 +321,21 @@ export class KeatingStorage {
+   		this.dbPromise = new Promise((resolve, reject) => {
+   			const request = indexedDB.open(DB_NAME, DB_VERSION);
+   
+  -			request.onerror = () => reject(request.error);
+  +			request.onerror = () => {
+  +				this.dbPromise = null;
+  +				reject(request.error);
+  +			};
+  +			request.onblocked = () => {
+  +				console.warn("Keating storage upgrade is waiting for another tab to close its old database connection.");
+  +			};
+   
+   			request.onsuccess = () => {
+   				this.db = request.result;
+  +				this.db.onversionchange = () => {
+  +					this.db?.close();
+  +					this.db = null;
+  +					this.dbPromise = null;
+  +				};
+   				resolve(this.db);
+   			};
+   
+  @@ -319,6 +351,15 @@ export class KeatingStorage {
+   						store.createIndex("promptName", "promptName", { unique: false });
+   					}
+   				});
+  +				const metaStore = db.objectStoreNames.contains(META_STORE)
+  +					? request.transaction!.objectStore(META_STORE)
+  +					: db.createObjectStore(META_STORE, { keyPath: "key" });
+  +				metaStore.put({
+  +					key: "schema",
+  +					version: DB_VERSION,
+  +					upgradedFrom: event.oldVersion,
+  +					upgradedAt: Date.now(),
+  +				});
+   			};
+   		});
+   
+  @@ -393,6 +434,7 @@ export class KeatingStorage {
+   
+   	private defaultLearnerState(): LearnerState {
+   		return {
+  +			schemaVersion: LEARNER_STATE_SCHEMA_VERSION,
+   			topicsExplored: [],
+   			feedbackHistory: [],
+   			strengths: [],
+  @@ -400,12 +442,14 @@ export class KeatingStorage {
+   			topicProfiles: [],
+   			sessionsCount: 0,
+   			sessions: [],
+  +			profileBeliefs: [],
+   		};
+   	}
+   
+   	private normalizeLearnerState(value: unknown): LearnerState {
+   		const raw = value && typeof value === "object" ? value as Partial<LearnerState> : {};
+   		return {
+  +			schemaVersion: LEARNER_STATE_SCHEMA_VERSION,
+   			topicsExplored: Array.isArray(raw.topicsExplored) ? raw.topicsExplored.filter((topic): topic is string => typeof topic === "string") : [],
+   			feedbackHistory: Array.isArray(raw.feedbackHistory) ? raw.feedbackHistory.filter((entry): entry is FeedbackEntry => !!entry && typeof entry === "object") : [],
+   			strengths: Array.isArray(raw.strengths) ? raw.strengths.filter((item): item is string => typeof item === "string") : [],
+  @@ -416,6 +460,16 @@ export class KeatingStorage {
+   			lastSessionAt: typeof raw.lastSessionAt === "number" ? raw.lastSessionAt : undefined,
+   			sessionsCount: typeof raw.sessionsCount === "number" ? raw.sessionsCount : 0,
+   			sessions: Array.isArray(raw.sessions) ? raw.sessions.filter((session): session is LearnerState["sessions"][number] => !!session && typeof session === "object") : [],
+  +			profileBeliefs: Array.isArray(raw.profileBeliefs)
+  +				? raw.profileBeliefs.filter((belief): belief is LearnerProfileBelief => {
+  +					if (!belief || typeof belief !== "object") return false;
+  +					const candidate = belief as Partial<LearnerProfileBelief>;
+  +					return typeof candidate.id === "string"
+  +						&& typeof candidate.value === "string"
+  +						&& typeof candidate.evidence === "string"
+  +						&& ["motivation", "communication-preference", "learning-preference", "interest"].includes(String(candidate.category));
+  +				})
+  +				: [],
+   		};
+   	}
+   
+  @@ -964,12 +1018,66 @@ export class KeatingStorage {
+   	async saveLearnerState(state: LearnerState): Promise<void> {
+   		const store = await this.getStore(STORES.LEARNER_STATE, "readwrite");
+   		return new Promise((resolve, reject) => {
+  -			const request = store.put({ ...state, id: "learner-state" });
+  +			const request = store.put({
+  +				...state,
+  +				schemaVersion: LEARNER_STATE_SCHEMA_VERSION,
+  +				id: "learner-state",
+  +			});
+   			request.onsuccess = () => resolve();
+   			request.onerror = () => reject(request.error);
+   		});
+   	}
+   
+  +	async rememberLearnerProfileBelief(input: {
+  +		category: LearnerProfileCategory;
+  +		value: string;
+  +		source: "explicit" | "observed";
+  +		evidence: string;
+  +		confidence?: number;
+  +	}): Promise<LearnerProfileBelief> {
+  +		const value = input.value.trim().slice(0, 240);
+  +		const evidence = input.evidence.trim().slice(0, 500);
+  +		if (!value || !evidence) throw new Error("A profile belief needs both a value and supporting evidence.");
+  +		const now = Date.now();
+  +		let saved: LearnerProfileBelief | null = null;
+  +		await this.updateLearnerState((state) => {
+  +			const normalized = value.toLocaleLowerCase();
+  +			const existing = state.profileBeliefs.find((belief) =>
+  +				belief.category === input.category && belief.value.toLocaleLowerCase() === normalized
+  +			);
+  +			const requestedConfidence = Number.isFinite(input.confidence)
+  +				? Math.max(0, Math.min(1, input.confidence!))
+  +				: input.source === "explicit" ? 1 : 0.45;
+  +			const confidence = input.source === "explicit"
+  +				? 1
+  +				: Math.min(0.65, requestedConfidence);
+  +			if (existing) {
+  +				existing.source = existing.source === "explicit" ? "explicit" : input.source;
+  +				existing.confidence = existing.source === "explicit"
+  +					? 1
+  +					: Math.max(existing.confidence, confidence);
+  +				existing.evidence = evidence;
+  +				existing.updatedAt = now;
+  +				saved = { ...existing };
+  +				return;
+  +			}
+  +			const belief: LearnerProfileBelief = {
+  +				id: this.generateId(),
+  +				category: input.category,
+  +				value,
+  +				source: input.source,
+  +				confidence,
+  +				evidence,
+  +				createdAt: now,
+  +				updatedAt: now,
+  +			};
+  +			state.profileBeliefs.push(belief);
+  +			saved = belief;
+  +		});
+  +		if (!saved) throw new Error("Learner profile belief was not saved.");
+  +		return saved;
+  +	}
+  +
+   	async recordSessionStart(): Promise<void> {
+   		await this.updateLearnerState((state) => {
+   			if (!state.sessions) state.sessions = [];
+  diff --git a/web/src/keating/ui-settings.ts b/web/src/keating/ui-settings.ts
+  index 38506a3339e4fd58d31f40a870336069b67fb9c3..0cc264a20e11e3328da666f6f464434b7d76e465 100644
+  --- a/web/src/keating/ui-settings.ts
+  +++ b/web/src/keating/ui-settings.ts
+  @@ -36,7 +36,7 @@ export interface KeatingUiSettings {
+   }
+   
+   export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
+  -	showToolUi: false,
+  +	showToolUi: true,
+   	autoOpenArtifacts: true,
+   	showRawErrors: false,
+   	reasoningLevel: "medium",
+  @@ -44,7 +44,7 @@ export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
+   	fontFamily: "jetbrains-mono",
+   	shareLinkMode: "portable-short",
+   	shareWarningAcknowledged: false,
+  -	alternativeResponseChance: 0,
+  +	alternativeResponseChance: 0.01,
+   	userProfileImage: null,
+   	imageGenerator: DEFAULT_IMAGE_GENERATOR_ID,
+   	imageModel: "",
+  @@ -80,7 +80,7 @@ const FONT_STACKS: Record<UiFontFamily, FontStack> = {
+   };
+   
+   const STORAGE_KEY = "keating_ui_settings";
+  -const UI_SETTINGS_SCHEMA_VERSION = 2;
+  +const UI_SETTINGS_SCHEMA_VERSION = 3;
+   const SETTINGS_CHANGED_EVENT = "keating:ui-settings-changed";
+   type LegacyGroundingKey = `${"google"}${"Grounding"}`;
+   const LEGACY_GOOGLE_GROUNDING_KEY = ("google" + "Grounding") as LegacyGroundingKey;
+  @@ -176,13 +176,13 @@ function normalizeSettings(value: LegacyUiSettingsInput | null): KeatingUiSettin
+   				: DEFAULT_UI_SETTINGS.fontFamily,
+   		shareLinkMode: normalizeShareLinkMode(value?.shareLinkMode),
+   		shareWarningAcknowledged: value?.shareWarningAcknowledged === true,
+  -		// Version 1 shipped a 5% background response rate by default. Those
+  -		// responses were stored as child sessions, which made ordinary chats look
+  -		// as if they had forked themselves. Reset only that legacy default; any
+  -		// other saved value was an explicit user choice.
+  +		// Older builds shipped either 5% or 0% as automatic defaults. Version 3
+  +		// makes comparisons deliberately rare at 1%, while preserving every other
+  +		// explicitly chosen probability.
+   		alternativeResponseChance:
+  -			value?.schemaVersion !== UI_SETTINGS_SCHEMA_VERSION && value?.alternativeResponseChance === 0.05
+  -				? 0
+  +			value?.schemaVersion !== UI_SETTINGS_SCHEMA_VERSION
+  +				&& (value?.alternativeResponseChance === 0.05 || value?.alternativeResponseChance === 0)
+  +				? DEFAULT_UI_SETTINGS.alternativeResponseChance
+   				: normalizeAlternativeResponseChance(value?.alternativeResponseChance),
+   		userProfileImage: typeof value?.userProfileImage === "string" && value.userProfileImage.startsWith("data:image/") ? value.userProfileImage : DEFAULT_UI_SETTINGS.userProfileImage,
+   		imageGenerator: isImageGeneratorId(value?.imageGenerator) ? value.imageGenerator : DEFAULT_UI_SETTINGS.imageGenerator,
+  diff --git a/web/src/lib/cloud-storage-backend.ts b/web/src/lib/cloud-storage-backend.ts
+  index 7474d80458054ecbbdb0b669be4f14d14214ddb8..a79d17964f902ed8728f2c7511e30896a5cc0cfd 100644
+  --- a/web/src/lib/cloud-storage-backend.ts
+  +++ b/web/src/lib/cloud-storage-backend.ts
+  @@ -15,28 +15,43 @@ export class IndexedDBStorageBackend implements StorageBackend {
+   			this.dbPromise = new Promise((resolve, reject) => {
+   				const request = indexedDB.open(this.config.dbName, this.config.version);
+   
+  -				request.onerror = () => reject(request.error);
+  -				request.onsuccess = () => resolve(request.result);
+  +				request.onerror = () => {
+  +					this.dbPromise = null;
+  +					reject(request.error);
+  +				};
+  +				request.onblocked = () => {
+  +					console.warn(`${this.config.dbName} storage upgrade is blocked by an older open tab.`);
+  +				};
+  +				request.onsuccess = () => {
+  +					const db = request.result;
+  +					db.onversionchange = () => {
+  +						db.close();
+  +						this.dbPromise = null;
+  +					};
+  +					resolve(db);
+  +				};
+   
+   				request.onupgradeneeded = (_event) => {
+   					const db = request.result;
+   
+  -					// Create object stores from config
+  +					// Declaratively reconcile stores and indices on every version bump.
+  +					// Earlier versions only configured indices when creating a store,
+  +					// which made later schema versions unable to add an index safely.
+   					for (const storeConfig of this.config.stores) {
+  -						if (!db.objectStoreNames.contains(storeConfig.name)) {
+  -							const store = db.createObjectStore(storeConfig.name, {
+  +						const store = db.objectStoreNames.contains(storeConfig.name)
+  +							? request.transaction!.objectStore(storeConfig.name)
+  +							: db.createObjectStore(storeConfig.name, {
+   								keyPath: storeConfig.keyPath,
+   								autoIncrement: storeConfig.autoIncrement,
+   							});
+   
+  -							// Create indices
+  -							if (storeConfig.indices) {
+  -								for (const indexConfig of storeConfig.indices) {
+  +						if (storeConfig.indices) {
+  +							for (const indexConfig of storeConfig.indices) {
+  +								if (!store.indexNames.contains(indexConfig.name)) {
+   									store.createIndex(indexConfig.name, indexConfig.keyPath, {
+   										unique: indexConfig.unique,
+   									});
+   								}
+  -							}
+   						}
+   					}
+   				};
+  diff --git a/web/src/test/ui-settings.test.ts b/web/src/test/ui-settings.test.ts
+  index 257dd9dce523a82dc4c22a234b5e990edaefa7ed..41f9244313709d3afe9436c03cdbe28cff2826be 100644
+  --- a/web/src/test/ui-settings.test.ts
+  +++ b/web/src/test/ui-settings.test.ts
+  @@ -57,7 +57,7 @@ describe("Keating UI Settings", () => {
+   			expect(settings.fontFamily).toBe(DEFAULT_UI_SETTINGS.fontFamily);
+   			expect(settings.shareLinkMode).toBe("portable-short");
+   			expect(settings.animationRenderer).toBe("hyperframes");
+  -			expect(settings.alternativeResponseChance).toBe(0);
+  +			expect(settings.alternativeResponseChance).toBe(0.01);
+   			expect(settings.webSearch).toBe("auto");
+   		});
+   
+  @@ -103,13 +103,13 @@ describe("Keating UI Settings", () => {
+   			expect(loadKeatingUiSettings().alternativeResponseChance).toBe(0);
+   		});
+   
+  -		it("migrates the old automatic alternative-response default to off", () => {
+  +		it("migrates the old automatic alternative-response default to one percent", () => {
+   			localStorage.setItem("keating_ui_settings", JSON.stringify({ alternativeResponseChance: 0.05 }));
+  -			expect(loadKeatingUiSettings().alternativeResponseChance).toBe(0);
+  +			expect(loadKeatingUiSettings().alternativeResponseChance).toBe(0.01);
+   		});
+   
+   		it("preserves an explicitly enabled alternative-response chance", () => {
+  -			localStorage.setItem("keating_ui_settings", JSON.stringify({ schemaVersion: 2, alternativeResponseChance: 0.05 }));
+  +			localStorage.setItem("keating_ui_settings", JSON.stringify({ schemaVersion: 3, alternativeResponseChance: 0.05 }));
+   			expect(loadKeatingUiSettings().alternativeResponseChance).toBe(0.05);
+   		});
+   
+  @@ -156,7 +156,7 @@ describe("Keating UI Settings", () => {
+   			expect(stored.showToolUi).toBe(true);
+   			expect(stored.fontFamily).toBe("space-mono");
+   			expect(stored.shareLinkMode).toBe("local-short");
+  -			expect(stored.schemaVersion).toBe(2);
+  +			expect(stored.schemaVersion).toBe(3);
+   			expect(LEGACY_GOOGLE_GROUNDING_KEY in stored).toBe(false);
+   		});
+   
+
+  diff --git a/web/src/test/speech-input-mode.test.ts b/web/src/test/speech-input-mode.test.ts
+  new file mode 100644
+  index 0000000..1610d0e
+  --- /dev/null
+  +++ b/web/src/test/speech-input-mode.test.ts
+  @@ -0,0 +1,25 @@
+  +import { describe, expect, it } from "bun:test";
+  +import {
+  +	DEFAULT_WEB_SPEECH_SETTINGS,
+  +	speechInputMode,
+  +} from "../keating/speech";
+  +
+  +describe("speech input mode", () => {
+  +	it("uses hold-to-speak dictation until microphone access is enabled", () => {
+  +		expect(speechInputMode({
+  +			...DEFAULT_WEB_SPEECH_SETTINGS,
+  +			enabled: true,
+  +			providerId: "openai-realtime",
+  +			microphoneEnabled: false,
+  +		})).toBe("stt");
+  +	});
+  +
+  +	it("opens realtime voice only for enabled duplex providers with microphone access", () => {
+  +		expect(speechInputMode({
+  +			...DEFAULT_WEB_SPEECH_SETTINGS,
+  +			enabled: true,
+  +			providerId: "openai-realtime",
+  +			microphoneEnabled: true,
+  +		})).toBe("duplex");
+  +	});
+  +});
+
+
+###
+
+Your task is to help verify the quality of the diff.
+We care only about specific categories of important issues.
+The rubric below outlines these categories of important issues, and contains guidelines and examples to correctly identify them:
+
+---
+**refactoring_needed**:
+Guidelines:
+    - Functions that have gotten long (> 50 lines) and are mixing multiple concerns and/or combining several different steps should be broken up. (Typically by using helper functions and/or separate classes to encapsulate individual concerns.)
+    - Classes or files that are combining different concerns should be broken up, such that each class / file only deals with one primary concern.
+        - Note: we don't impose any minimal or maximal length on a class or file. Classes and files are ok to be long, as long as they only deal with a single concern.
+Examples:
+    - New functionality that is orthogonal to the existing functionality in a function is inserted into the existing function's body instead of being separated out into its own function.
+    - A class mixes two different use cases that could be separated into two classes.
+
+---
+**correctness_syntax_issues**:
+Guidelines:
+    - The diff should not contain any syntax errors that would prevent the code from running.
+    - CAREFULLY CHECK INDENTATION: In Python and other indentation-sensitive languages, verify that all function definitions, class definitions, and code blocks maintain proper indentation levels. Dedenting a function body to the module level or similar indentation errors are critical syntax issues.
+    - Look for: broken indentation that would cause syntax errors, missing or mismatched brackets/braces/parentheses, references to files/classes/functions that don't exist, removal of code that is still being referenced elsewhere.
+    - Check function signatures match their usage: if a function is modified to return different values (e.g., a single value vs. a tuple), all call sites must be updated accordingly.
+Examples:
+    - The diff breaks the indentation of a Python function or class, dedenting it incorrectly.
+    - Code references a file, class or function that does not exist, or removes a file, class or function that is definitely still being referenced.
+    - A function is changed to return a tuple of two values, but existing callers still expect only a single return value.
+    - A function's return statement is removed but callers still expect a return value.
+
+---
+**abstraction_violation**:
+Guidelines:
+    - Code that breaks established abstraction boundaries within the codebase.
+    - Look for:
+        - Direct access to internal data structures of classes/modules that should be encapsulated
+        - Bypassing public APIs to manipulate state or access internal functionality
+        - Mixing of concerns that should be separated by layers or modules
+        - Violating private vs. public interfaces (e.g., accessing private attributes or methods from outside their defining class/module)
+Examples:
+    - A Python function directly accesses a private attribute, variable or function (prefixed with an underscore) from a different class or file.
+    - A module modifies the internal state of another module directly instead of using and/or adding public API functions.
+Exceptions:
+    - Unit tests that need to access internal state for verification purposes.
+
+---
+**async_correctness**:
+Guidelines:
+    - Issues specific to asynchronous or concurrent code correctness.
+    - Look for: missing await keywords on functions that are clearly async (defined with 'async def' or returning coroutines/Promises), improper async context manager usage, race conditions in async code, deadlock potential, shared state access without proper synchronization.
+    - For threading issues: threads or background tasks that are created but never started, joins without corresponding starts.
+    - Be careful not to flag decorators or wrappers as requiring await unless you can verify they actually make the function async. Only flag clear cases where an async function is called without await or a thread/task is created but never started.
+
+---
+**repetitive_or_duplicate_code**:
+Guidelines:
+    Repetitive or duplicate code.
+Examples:
+    - A non-trivial calculation or piece of logic is repeated in multiple places within a file.
+    - New code is introduced by the diff to accomplish a certain functionality, but there is an existing function in the code base that already implements the same functionality, or could be easily generalized to accomplish the desired functionality.
+    - A file is duplicated (make exceptions for cases where duplication may be necessary such as test files).
+    - A significant amount of code is introduced which duplicates functionality from standard or well-known libraries.
+    - Multiple functions format or build the same string or data structure in the same way without using a shared helper function or test fixture.
+Exceptions:
+    - Do not flag duplication between legacy and new implementations when the codebase is clearly undergoing a migration or maintaining multiple versions for compatibility.
+    - Do not flag duplication across different architectural layers or modules when the duplication serves to maintain proper separation of concerns.
+
+---
+**incomplete_integration_with_existing_code**:
+Guidelines:
+    - The diff should follow existing architectural and organizational patterns in the codebase:
+        - If the codebase uses a modular structure with separate files for classes/components, new classes should follow the same pattern
+        - If the codebase organizes code in specific directories (e.g., src/, components/, utils/), new code should be placed accordingly
+        - If the codebase uses specific import/export patterns (e.g., relative vs. absolute imports), new code should use the same patterns
+    - The diff should integrate functionally with existing code by adding invocations, updating invocations, replacing code with newly defined functions or variables, removing duplicate code when a new piece replaces it, etc.
+    - Prefer using existing library/dependency APIs over custom implementations when the library provides (or will provide) the needed functionality.
+Examples:
+    - The codebase uses absolute Python imports from the project root, but a new file uses relative imports.
+    - The codebase places classes into separate files under a source directory, but new classes are all added to an existing file.
+    - The diff implements a new function, but doesn't add any callsites for it
+    - A new optional parameter is added to a function to implement a requested feature, but existing callsites are not updated to make use of this parameter
+    - A named constant is introduced to replace a hard-coded inline literal, but existing code is not updated to make use of the new constant everywhere
+    - Custom code is added to implement functionality that an existing external library already provides or will provide in newer versions.
+
+---
+**user_request_artifacts_left_in_code**:
+Guidelines:
+    - Comments should describe what the code does, not how it was changed.
+    - Flag comments that reference the change process: '# Changed from X to Y', '# Updated to print less'
+    - Flag comments that mention fixing or addressing issues: '# Fixed bug where...', '# This addresses...'
+    - Flag documentation written in past tense about modifications
+    - Acceptable comments explain current behavior without referencing changes:
+        - Acceptable: '# Multiply by 3x' instead of '# Reduced factor from 5x to 3x'
+        - Acceptable: '# Handle edge case' instead of '# Fixed edge case bug'
+
+---
+**test_coverage**:
+Guidelines:
+    - If the diff introduces significant new functionality, and the code base has existing unit and/or integration tests, new tests should be added to cover the new functionality.
+    - If the diff changes the behavior of existing functionality that is covered by automated tests, those tests should be updated to reflect the new behavior.
+    - If the diff contains a bug fix, and the code base has existing unit and/or integration tests, a regression test should be added for the bug.
+Exceptions:
+    - Syntactical or logical issues in tests will be raised in other issue types and do not belong in this category.
+
+---
+**error_handling_missing**:
+Guidelines:
+    - Missing error handling for operations that could reasonably fail.
+    - Look for: file I/O without exception handling, network requests without timeout/retry logic, user input processing without validation, external API calls without error checking, database operations without transaction handling.
+    - Only flag issues that are clearly incorrect, and avoid flagging issues where it is not a big problem (e.g. file I/O in a script may not need flagging while missing error handling for file I/O in a long running or production systems should have error handling).
+
+---
+**fails_silently**:
+Guidelines:
+    Code that fails silently is code that ignores errors without reporting them.
+Examples:
+    - Overly broad exception handlers (e.g. bare 'except' or 'except Exception') that catch errors and continue execution without handling, logging, or re-raising them.
+    - The return value of a function that returns an error value in case of a failure is not checked by the caller.
+Exceptions:
+    - There are certain cases where broad exception handlers are acceptable, such as in an executor class or in a main loop that iterates over several tasks. Such cases should still properly log and report the errors.
+    - Do not raise issues related to potential program crashes.
+
+---
+**commit_message_mismatch**:
+Guidelines:
+    - The diff must completely fulfill the user's request.
+    - Look for incomplete implementations:
+       - When the user asks for changes 'throughout', 'everywhere', or 'all', verify ALL instances are modified
+       - If multiple changes are requested, ensure each one is fully implemented
+       - Check that fixes are applied to all occurrences of a pattern, not just some
+    - Look for scope mismatches:
+       - Changes only in initialization when they should apply during execution
+       - Modifications to only one file when multiple files need updates
+       - Partial refactoring that leaves related code unchanged
+    - Look for unauthorized changes:
+       - Configuration changes (linting, build, test settings) not requested
+       - New features or options beyond the request
+       - Changes to unrelated code
+       - Binaries, compiled files, dependencies, or build artifacts that should not be in version control
+    - Look for unintended removals:
+       - Removal of project-specific configuration or settings that should be preserved
+       - Deletion of functionality that is still needed
+       - Loss of necessary entries when replacing configuration files
+    - Look for unintended side effects:
+       - Changes that affect code paths or functionality beyond what was requested
+       - Modifications that impact how existing features work in ways not mentioned in the request
+Exceptions:
+    - Minor refactors directly related to requested changes are acceptable.
+
+---
+**logic_error**:
+Guidelines:
+    - Logic errors are flaws in the reasoning or flow of the code that would cause incorrect behavior.
+    - Look for: off-by-one errors in loops or array indexing, incorrect conditional logic (wrong operators, inverted conditions), variable assignments that overwrite needed values, incorrect order of operations, missing or incorrect loop termination conditions, algorithms that don't match their intended purpose.
+    - Look for missing, incorrect, or incomplete parameters to function/API calls that will cause the function to behave differently than intended (e.g., missing event masks, wrong flags, omitted required options).
+    - Pay special attention to control flow issues: early returns or breaks that prevent intended functionality from executing, functions that exit before completing their stated purpose, conditions that prevent code paths from being reached when they should be.
+    - Do not flag issues that are not clearly incorrect, for example it's possible code is implemented in a suboptimal way, this is not an issue unless it is explicitly stated that the code should be optimal or implemented in a certain way.
+
+---
+**instruction_file_disobeyed**:
+Guidelines:
+    Explicit instructions in files such as .claude.md, CLAUDE.md, and AGENTS.md MUST be obeyed.
+Examples:
+    - CLAUDE.md requests the use of single quotes only, but double quotes are used.
+    - AGENTS.md requests that new versions be created on every database update, but a database entry is modified directly.
+    - .claude.md says to always run the tests after making changes, but the agent did not run the tests.
+Exceptions:
+    - Instructions in the closest file _above_ a location take precedence. For example, when considering a file foo/bar.py, foo/CLAUDE.md takes precedence over CLAUDE.md.
+    - Instructions only apply to the subtree below the file. For example, when considering a file foo/bar.py, foo/baz/CLAUDE.md does not apply.
+    - Applicable instructions should ONLY be contravened in the case of explicit user request--but if the user does explicitly request something counter to the instruction files, this should not be reported as a disobeyed instruction file.
+
+---
+**insecure_code**:
+Guidelines:
+    - Look for hard-coded secrets such as API keys, passwords, tokens, or credentials in the diff.
+    - Check for variable names containing: 'token', 'key', 'secret', 'password', 'credential', 'auth'
+    - Look for string literals that appear to be:
+        - API keys or tokens (long alphanumeric strings, often 20+ characters)
+        - Hexadecimal strings that could be tokens or keys
+        - URLs with embedded credentials (e.g., 'REDACTED')
+        - Connection strings with passwords
+    - Flag any credentials or secrets that should be loaded from environment variables or configuration files instead.
+Examples:
+    - A variable named `api_key` or `auth_token` is assigned a hard-coded string value.
+    - A connection string contains a hard-coded password.
+    - A long hexadecimal string is assigned to a variable with 'token' in its name.
+    - An API request includes a hard-coded authentication header value.
+
+---
+**incorrect_algorithm**:
+Guidelines:
+    - Code that implements an algorithm incorrectly for its stated purpose.
+    - Look for: sorting algorithms with wrong comparison logic, search algorithms with incorrect termination, mathematical calculations with wrong formulas, data structure operations that don't maintain invariants, algorithms that don't handle edge cases (empty inputs, single elements).
+    - Only flag issues that are clearly incorrect for the stated purpose of the algorithm, and describe the problem and correction in detail.
+
+---
+**resource_leakage**:
+Guidelines:
+    - Focus on system resources that require explicit cleanup: file handles, network connections, database connections, memory allocations, and similar OS-level resources.
+    - These resources must be reliably freed even if exceptions occur.
+    - For these system resources, cleanup should use try/finally blocks, context managers (with statements), or RAII patterns.
+    - Also look for reference management issues: objects being cleaned up while still holding references elsewhere, or cleanup operations (like garbage collection) called before removing all references to the object.
+Examples:
+    - A file or socket connection is opened but not reliably closed.
+    - A database transaction is started but not committed or rolled back in all code paths.
+    - Memory is allocated but not freed (in languages with manual memory management).
+    - An object's cleanup method triggers garbage collection while the object is still referenced in a global data structure, preventing proper cleanup.
+Exceptions:
+    - Animation loops, timers, and intervals that are controlled by boolean flags or cleared by ID are not resource leaks if they have proper stop mechanisms.
+    - Event listeners that are meant to persist for the lifetime of the application.
+    - Resources that are automatically cleaned up by garbage collection (unless they hold system resources).
+
+---
+**documentation_implementation_mismatch**:
+Guidelines:
+    - The implementation should follow, in this priority order: 1. the user's request, 2. documentation existing in the code base, 3. existing code around it, 4. general best practices and common sense
+    - If the user's request conflicts with the state of documentation in the code base, the documentation in the code base should be updated to reflect the new user request.
+Examples:
+    - The docstring of a class or function does not match what the class or function implements.
+    - The repository contains a README.md file with instructions that are not adhered to by the code.
+    - The diff implements significant new functionality, but existing documentation within the repository is not updated.
+    - Inline comments are not updated even though functionality was changed by the diff.
+    - Documentation contains outdated code snippets or commands that need to be updated because of the changes made by the diff.
+Exceptions:
+    - TODOs/FIXMEs that are not implemented yet are not considered a documentation mismatch.
+
+---
+**runtime_error_risk**:
+Guidelines:
+    - Code patterns that are very likely to cause runtime errors during execution.
+    - Check for version compatibility issues: usage of function parameters, APIs, or language features that are only available in specific versions of the language, standard library, or external dependencies (e.g., a keyword argument added in Python 3.10 will cause TypeError on Python 3.8/3.9).
+    - Look for: potential null/None pointer dereferences, array/list access with potentially invalid indices, division by zero possibilities, file operations without existence checks, network/IO operations without timeout or error handling, infinite loop conditions, memory allocation issues.
+    - Check string encoding/decoding operations: calls to .encode() or .decode() without error handling (try/except or 'errors' parameter) that could raise UnicodeEncodeError or UnicodeDecodeError, especially when processing untrusted or streamed data.
+    - Look for operations with global side effects that could cause problems: os.chdir() without proper restoration, modifying global state in ways that affect other code, operations that are not thread-safe when concurrency is present.
+    - Only flag issues where there is clear evidence the code will fail or cause serious problems. Avoid speculating about potential issues in well-established language patterns or standard library usage.
+
+---
+**poor_naming**:
+Guidelines:
+    - File, class, function, function parameter, and constant names should follow the format and naming standards that are currently dominant in the code base (especially within the same file or folder), or the style guide if one exists.
+    - In the absence of existing code, common naming standards for the given programming language should be used.
+    - Function names should be descriptive of what the function does. A person reading the function name without seeing its implementation should be able to get a sense of its purpose.
+    - If any function parameter is being mutated by the function, that fact should be made clear in the name of the parameter (e.g. by appending `_out` / `Out` to the name), unless it is clear that such name-based annotations would be against the existing naming style in the code base.
+    - Note that we don't impose any specific criteria on the length of names. If the existing code base uses many abbreviated names, new code should follow that. Or if it uses a lot of long, verbose names, this similarly should be followed.
+    - If a component's functionality is significantly changed, the name of the component should be updated to reflect the new functionality, if it is not already clear from the context.
+Exceptions:
+    - Short names for local variables are usually okay.
+
+---
+**type_safety_violation**:
+Guidelines:
+    - Code that violates type safety expectations or could cause type-related runtime errors.
+    - Look for: incorrect type assumptions, missing type checks before operations, unsafe type casting, attribute access on potentially None values.
+    - Check for return type violations: functions that return values inconsistent with their declared return type annotations (e.g., returning None when the type annotation specifies a non-optional type, returning wrong tuple element types).
+
+---
+**dependency_management**:
+Guidelines:
+    - Check all import statements in new or modified files. If new code imports a library or package that is not part of the language's standard library, verify that the dependency is listed in the repository's dependency/requirement files (e.g., requirements.txt, pyproject.toml, package.json, Gemfile, etc.).
+    - If the diff removes the last remaining use of an external library or package, the dependency and/or requirement files in the repository should be updated to no longer include the library.
+    - If the codebase uses a dependency for some functionality, the diff should avoid introducing other packages that provide the same functionality, unless there is a good reason to do so (e.g. the new package is significantly better maintained, has better performance, or is more secure).
+Exceptions:
+    - Do not raise issues related to package versions or pinning unless it is a critical issue.
+
+---
+
+Use your standard tools to explore the repository and analyze the code thoroughly.
+Look at the additional guidance section below for more details on how to find issues.
+
+After your analysis, provide your response in JSON format matching this schema:
+
+{
+  "$defs": {
+    "GeneratedIssueSchema": {
+      "additionalProperties": true,
+      "description": "Individual issue from LLM response.",
+      "properties": {
+        "codePart": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Specific code snippet that has the issue",
+          "title": "Codepart"
+        },
+        "confidence": {
+          "description": "Confidence in this assessment",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "description": {
+          "description": "Specific explanation of what\u0027s wrong and why it\u0027s incorrect",
+          "title": "Description",
+          "type": "string"
+        },
+        "issueCode": {
+          "description": "Category of the issue",
+          "title": "Issuecode",
+          "type": "string"
+        },
+        "location": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "File path where the issue occurs",
+          "title": "Location"
+        },
+        "severity": {
+          "description": "Integer 1-5 (1=minor issue, 5=critical bug)",
+          "maximum": 5,
+          "minimum": 1,
+          "title": "Severity",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "issueCode",
+        "description",
+        "severity",
+        "confidence"
+      ],
+      "title": "GeneratedIssueSchema",
+      "type": "object"
+    }
+  },
+  "additionalProperties": true,
+  "description": "Complete response structure for issue identification.",
+  "properties": {
+    "issues": {
+      "description": "List of identified issues",
+      "items": {
+        "$ref": "#/$defs/GeneratedIssueSchema"
+      },
+      "title": "Issues",
+      "type": "array"
+    }
+  },
+  "title": "GeneratedResponseSchema",
+  "type": "object"
+}
+
+For each issue found, provide:
+- issue_code: Category from the rubric above
+- description: Specific explanation of the issue
+- (if applicable) location: File path where the issue occurs (relative to /home/diogenes/Projects/keating)
+- (if applicable) code_part: Specific code snippet that has the issue. Your code snippet should be the exact same as the original code including whitespace.
+- severity: Integer 1-5 (1=minor, 5=critical)
+- confidence: Float 0.0-1.0 indicating your confidence
+
+Your response should look like:
+```json
+{
+    "issues": [
+        <list of issues>
+    ]
+}
+```
+
+If no issues are found, return: ```json{"issues": []}```
+
+Focus on real issues that impact code quality, correctness, or maintainability.
+You must not return issues that were already present in the code or issues that are fixed by the diff.
+You must only return issues that were introduced by the diff.
+Do not report duplicate issues with the same or equivalent descriptions.
+
+### Additional Guidance for Finding Issues ###
+You should use a Task tool to create a parallel task for each issue type in the rubric.
+You should pass along the exact issue type definition with all details to the task.
+Once all the Tasks have completed you can collate their results.
+You should pass along any relevant information from the guidance below to the task.
+Here is a non-exhaustive list of things that you can do using your tools within the task to find issues:
+
+---
+**refactoring_needed**:
+- Look at the scope and length of components of the diff or code affected by the diff.
+- Look at incomplete usage of new code.
+- Understand existing codebase patterns.
+
+---
+**correctness_syntax_issues**:
+None
+
+---
+**abstraction_violation**:
+None
+
+---
+**async_correctness**:
+None
+
+---
+**repetitive_or_duplicate_code**:
+- Look at repetition in the diff or duplication between the diff and existing code in the codebase.
+- Look at incomplete usage of new code
+- Understand existing codebase patterns.
+
+---
+**incomplete_integration_with_existing_code**:
+- Look at the existing code organization and architectural patterns
+- Check if new code follows the same structural patterns as existing code
+- Trace the links or identify the lack of them between the diff and existing code
+- Look at incomplete usage of new code
+
+---
+**user_request_artifacts_left_in_code**:
+Look at code comments and added documentation in the diff.
+
+---
+**test_coverage**:
+- Look at the diff and tests for it or tests affected by it or missing tests.
+- Understand existing codebase patterns.
+- Run code but this may not always be a viable option or may surface irrelevant issues.
+
+---
+**error_handling_missing**:
+None
+
+---
+**fails_silently**:
+Carefully examine the diff.
+
+---
+**commit_message_mismatch**:
+Compare the uncommitted diff and the request to ensure they match.
+
+---
+**logic_error**:
+None
+
+---
+**instruction_file_disobeyed**:
+Cross-check ALL instructions in ALL instruction files against the diff contents.
+
+---
+**insecure_code**:
+Carefully examine the diff for any string literals that might be secrets, especially those assigned to variables with security-related names.
+
+---
+**incorrect_algorithm**:
+None
+
+---
+**resource_leakage**:
+Carefully examine the diff or code affected by newly added code.
+
+---
+**documentation_implementation_mismatch**:
+Look at code comments and READMEs in the diff or in existing code related to the diff.
+
+---
+**runtime_error_risk**:
+None
+
+---
+**poor_naming**:
+- Look at names that were added or names corresponding to updated code.
+- Understand existing codebase patterns.
+
+---
+**type_safety_violation**:
+None
+
+---
+**dependency_management**:
+- Look at the diff and dependency management files for issues.
+- Understand existing codebase patterns.
+- Carefully check import statements at the top of new or modified files.
+
+---
+Note that this is just guidance on how to find issues, please refer to the rubric for the types of issues to find.
