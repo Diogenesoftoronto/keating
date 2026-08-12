@@ -1,0 +1,1 @@
+figure out the actual load size of maple ternary should be lower tbh and the other issue is that gguf that binary and ternary needs to get converted to work with onnx look for people doing that
