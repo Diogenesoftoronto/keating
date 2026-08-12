@@ -1,0 +1,3 @@
+<subagent_notification>
+{"agent_path":"019f73c8-b4e2-78e2-9637-9a73ac75a5f5","status":{"completed":"Implemented the Wave 2 Generative UI protocol in the assigned scope.\n\nAdded:\n\n- Versioned, JSON-safe document types for quiz, question, goal, deck, image, scene, artifact, and generic fallback.\n- Serializable action definitions, requests, and correlated results.\n- Revision-aware stale-action checks.\n- Runtime validators and type guards.\n- Legacy adapters for double-encoded browser tags and direct TUI/domain payloads.\n- Unknown legacy widgets safely degrade to generic documents.\n\nValidation:\n\n- 6 focused tests passed.\n- 0 failures.\n- Scoped `git diff --check` passed.\n- Vet was skipped as requested."}}
+</subagent_notification>
