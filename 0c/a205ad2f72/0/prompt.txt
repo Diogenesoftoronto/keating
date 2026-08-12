@@ -1,0 +1,15 @@
+<user_action>
+  <context>User initiated a review task. Here's the full review output from reviewer model. User may select one or more comments to resolve.</context>
+  <action>review</action>
+  <results>
+  The new parser changes can suppress valid search results and also hide real failure details in `web_search` tool output, so the UI can present misleadingly empty or generic states in real provider responses. These regressions should be fixed before release.
+
+Full review comments:
+
+- [P2] Restrict web-search parser to citation-shaped arrays — /home/diogenes/Projects/keating/web/src/components/WebSearchPart.tsx:64-72
+  `findSiteArray()` currently returns the first array it encounters anywhere in the result object, even if that array is not a citation collection. If a response includes any other array (for example `content`, `steps`, or `warnings`) before `details.citations`/`results`, `parseWebSearchResult()` will stop there and return no sites even when valid URLs exist in a later array, so the web-search pill can incorrectly show an empty result list. Prefer key-aware/validation logic (e.g. keys like `citations`, `results`, `sources`) before accepting an array.
+
+- [P2] Preserve actual tool error text for web-search failures — /home/diogenes/Projects/keating/web/src/components/WebSearchPart.tsx:53-60
+  On failure, `WebSearchPart` uses `textFromResult` and only extracts `text/answer/output` (or those keys under `details`), so common failure shapes like `{ content: [{ type: 'text', text: '...'}] }` or `{ message: '...' }` are reduced to the generic `Tool call failed.` message. This drops actionable diagnostics and regresses the prior fallback behavior where tool payload text/JSON was surfaced, making search failures harder to debug.
+  </results>
+  </user_action>
