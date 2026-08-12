@@ -1,0 +1,6 @@
+<task-notification>
+<task-id>bnjg8va96</task-id>
+<summary>Monitor event: "v3.1.0 release + CI workflow status"</summary>
+<event>CI: completed/success
+Release: in_progress/</event>
+</task-notification>
