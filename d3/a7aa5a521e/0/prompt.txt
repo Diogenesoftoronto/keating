@@ -1,0 +1,4288 @@
+You are analyzing a code repository for potential issues. The repository files are available in /home/diogenes/Projects/keating.
+
+Assume that a user requested work to be done and a programmer delivered the diff below.
+The changes from the diff are present in the codebase but are not yet committed.
+
+### User request ###
+
+  Update the Keating landing hero by removing the three hero feature tags and replacing the intro copy with a less cliched, Socratic teacher voice.
+
+
+### Diff (lines starting with `-` indicate removed code, and lines starting with `+` indicate added code) ###
+
+  diff --git a/web/panda.config.ts b/web/panda.config.ts
+  index a89276003df10ddf935dfd056faffa544a33a251..53ba8e3a704ff1028824b79b3efdbd8c4fb472e3 100644
+  --- a/web/panda.config.ts
+  +++ b/web/panda.config.ts
+  @@ -1803,22 +1803,6 @@ export default defineConfig({
+         padding: "0.5rem",
+         textDecoration: "none"
+       },
+  -    ".retro-layout .hero-tags": {
+  -      display: "flex",
+  -      gap: "22px",
+  -      flexWrap: "wrap",
+  -      fontSize: "12px",
+  -      color: "var(--ink-soft)"
+  -    },
+  -    ".retro-layout .hero-tags span": {
+  -      display: "flex",
+  -      alignItems: "center",
+  -      gap: "7px"
+  -    },
+  -    ".retro-layout .hero-tags i": {
+  -      fontStyle: "normal",
+  -      color: "var(--accent)"
+  -    },
+       ".retro-layout .hero-stage": {
+         position: "relative",
+         display: "grid",
+  @@ -3117,12 +3101,6 @@ export default defineConfig({
+           justifyContent: "center",
+           overflowWrap: "anywhere"
+         },
+  -      ".retro-layout .hero-tags": {
+  -        display: "grid",
+  -        gap: "12px 18px",
+  -        maxWidth: "100%",
+  -        lineHeight: "1.4"
+  -      },
+         ".retro-layout .caps-grid": {
+           gridTemplateColumns: "1fr !important"
+         },
+  diff --git a/web/src/App.tsx b/web/src/App.tsx
+  index 66f0ef6f6fdb68087913ae0721d3f0ba94ffe309..8a1aeb4c3ad6c0a7ba40e892b2e1d13e726f1071 100644
+  --- a/web/src/App.tsx
+  +++ b/web/src/App.tsx
+  @@ -18,6 +18,7 @@ const Tutorial = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/T
+   const Blog = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/Blog")), "Blog");
+   const Chat = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/Chat")), "Chat");
+   const Paper = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/Paper")), "Paper");
+  +const Live = lazyRouteComponent(() => loadRouteChunk(() => import("./pages/Live")), "Live");
+   const SharedSession = lazyRouteComponent(
+     () => loadRouteChunk(() => import("./pages/SharedSession")),
+     "SharedSession",
+  @@ -81,6 +82,12 @@ const chatRoute = createRoute({
+     component: Chat,
+   });
+   
+  +const liveRoute = createRoute({
+  +	getParentRoute: () => rootRoute,
+  +	path: "/live",
+  +	component: Live,
+  +});
+  +
+   const usageRoute = createRoute({
+   	getParentRoute: () => rootRoute,
+   	path: "/usage",
+  @@ -162,6 +169,7 @@ const latestCommitReviewRoute = createRoute({
+   const routeTree = rootRoute.addChildren([
+   	indexRoute,
+   	chatRoute,
+  +	liveRoute,
+   	usageRoute,
+   	evolutionDetailRoute,
+   	benchRoute,
+  diff --git a/web/src/components/AssistantChatPanel.tsx b/web/src/components/AssistantChatPanel.tsx
+  index 0efb3b70e670f65c53a9fdf4ecfc63953d0bd61a..d90d04b0886d99ab9758b4a04aa2919beb1453a9 100644
+  --- a/web/src/components/AssistantChatPanel.tsx
+  +++ b/web/src/components/AssistantChatPanel.tsx
+  @@ -101,6 +101,7 @@ import {
+     type LiveSpeechSession,
+     type LiveSpeechState,
+   } from "../keating/speech";
+  +import { startVideoCapture, type VideoCaptureHandle } from "../keating/video-capture";
+   import { startMicRecording, transcribeAudio, type MicRecorder } from "../keating/speech-providers/stt";
+   import { JsonCrackBlock } from "./JsonCrackBlock";
+   import { FailedResponseRecovery } from "./FailedResponseRecovery";
+  @@ -874,6 +875,7 @@ function LiveVoiceOverlay({
+     const [error, setError] = useState<string | null>(null);
+     const sessionRef = useRef<LiveSpeechSession | null>(null);
+     const abortRef = useRef<AbortController | null>(null);
+  +  const videoRef = useRef<VideoCaptureHandle | null>(null);
+     const userTextRef = useRef("");
+   
+     useEffect(() => {
+  @@ -893,11 +895,29 @@ function LiveVoiceOverlay({
+   		const bridge = getLiveSpeechBridge();
+   		const conversationDetail: { ids?: { sessionId: string } } = {};
+   		window.dispatchEvent(new CustomEvent("keating:conversation-ids", { detail: conversationDetail }));
+  +
+  +		// Vision is opt-in and best-effort: a learner who declines the camera
+  +		// prompt should still get a working voice session.
+  +		let video: VideoCaptureHandle | null = null;
+  +		if (settings.videoEnabled) {
+  +			try {
+  +				video = await startVideoCapture({
+  +					source: settings.videoSource,
+  +					intervalMs: settings.frameIntervalMs,
+  +				});
+  +				videoRef.current = video;
+  +			} catch (err) {
+  +				console.warn("[keating:live] video capture unavailable", err);
+  +			}
+  +		}
+  +
+           const session = await provider.startLiveSession({
+             settings,
+             getApiKey: getProviderApiKey,
+             signal: abort.signal,
+  -		  instructions: "You are Keating, a warm collaborative teacher. Use tools whenever they improve the lesson, especially for current facts, quizzes, goals, and visual learning artifacts. Keep spoken turns concise and invite interruption.",
+  +		  instructions: bridge?.instructions,
+  +		  history: bridge?.history,
+  +		  video,
+   		  tools: bridge?.tools,
+   		  onToolCall: bridge ? (call) => bridge.execute(call, abort.signal) : undefined,
+   		  onConversationEvent: (event) => window.dispatchEvent(new CustomEvent("keating:conversation-event", { detail: event })),
+  @@ -927,6 +947,8 @@ function LiveVoiceOverlay({
+         active = false;
+         abort.abort();
+         void sessionRef.current?.stop().catch(() => {});
+  +      videoRef.current?.stop();
+  +      videoRef.current = null;
+       };
+     }, []);
+   
+  diff --git a/web/src/components/SpeechSettingsTab.tsx b/web/src/components/SpeechSettingsTab.tsx
+  index a1c0f1c8b02032379b3406bdf44e2d719d8edbc8..b0339f1f1392a8d30018bac23bfd8bffc418dddc 100644
+  --- a/web/src/components/SpeechSettingsTab.tsx
+  +++ b/web/src/components/SpeechSettingsTab.tsx
+  @@ -5,6 +5,7 @@ import { Toggle } from "./Toggle";
+   import { SettingRow } from "./SettingRow";
+   import {
+   	listSpeechProviders,
+  +	resolveSpeechRealtimeTier,
+   	type CustomSpeechModel,
+   	type SpeechProviderDescriptor,
+   	type SpeechProviderId,
+  @@ -111,6 +112,9 @@ export function SpeechSettingsTab({ onSettingsChange, hideNav = false }: SpeechS
+   		providerKey: "openai",
+   	});
+   	const [customError, setCustomError] = useState<string>("");
+  +	// Vision availability is a property of the chosen model, so the control
+  +	// explains itself rather than failing when the session starts.
+  +	const videoTier = resolveSpeechRealtimeTier(settings);
+   
+   	useEffect(() => {
+   		let cancelled = false;
+  @@ -361,6 +365,52 @@ export function SpeechSettingsTab({ onSettingsChange, hideNav = false }: SpeechS
+   				<Toggle checked={settings.microphoneEnabled} onChange={(checked) => persist({ microphoneEnabled: checked })} />
+   			</SettingRow>
+   
+  +			<SettingRow
+  +				id="settings-section-speech-video"
+  +				title="Camera or screen (live sessions)"
+  +				description={videoTier.video
+  +					? `${videoTier.label}. ${videoTier.videoRoute === "native"
+  +						? "This model has a live video lane, so Keating streams frames straight to it."
+  +						: "This model has no video lane, so Keating samples still frames instead."}`
+  +					: `Not available on this model. ${videoTier.capReason ?? ""}`}
+  +				className={css({ scrollMarginTop: "5rem" })}
+  +			>
+  +				<Toggle
+  +					checked={settings.videoEnabled && videoTier.video}
+  +					disabled={!videoTier.video}
+  +					onChange={(checked) => persist({ videoEnabled: checked })}
+  +				/>
+  +			</SettingRow>
+  +
+  +			{settings.videoEnabled && videoTier.video && (
+  +				<div className={css({ display: "grid", gap: "0.75rem", sm: { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" } })}>
+  +					<div className={fieldStackClass}>
+  +						<label className={fieldLabelClass}>Source</label>
+  +						<select
+  +							className={inputClass}
+  +							value={settings.videoSource}
+  +							onChange={(e) => persist({ videoSource: e.target.value as WebSpeechSettings["videoSource"] })}
+  +						>
+  +							<option value="camera">Camera</option>
+  +							<option value="screen">Screen share</option>
+  +						</select>
+  +					</div>
+  +					<div className={fieldStackClass}>
+  +						<label className={fieldLabelClass}>Frame rate</label>
+  +						<select
+  +							className={inputClass}
+  +							value={String(settings.frameIntervalMs)}
+  +							onChange={(e) => persist({ frameIntervalMs: Number(e.target.value) })}
+  +						>
+  +							{/* Both providers cap video at one frame per second. */}
+  +							<option value="1000">1 frame per second — most responsive</option>
+  +							<option value="2000">1 frame every 2 seconds</option>
+  +							<option value="5000">1 frame every 5 seconds — cheapest</option>
+  +						</select>
+  +					</div>
+  +				</div>
+  +			)}
+  +
+   			<div id="settings-section-speech-custom" className={sectionClass}>
+   				<div>
+   					<h3 className={sectionTitleClass}>Add custom TTS endpoint</h3>
+  diff --git a/web/src/hooks/useKeatingAgent.tsx b/web/src/hooks/useKeatingAgent.tsx
+  index a5fa9ef9b4413b6902d018e694cb473645c2bffb..94dac3f6233dc88984370d80084dd0f0381ad48f 100644
+  --- a/web/src/hooks/useKeatingAgent.tsx
+  +++ b/web/src/hooks/useKeatingAgent.tsx
+  @@ -45,6 +45,7 @@ import {
+   import { bootNodePod } from "../keating/nodepod-runtime";
+   import { registerKeatingWebMcp } from "../keating/webmcp";
+   import { type LiveSpeechBridge, type WebSpeechSettings } from "../keating/speech";
+  +import { buildLiveHistory } from "../keating/live-history";
+   import {
+     savePersistentStorageStatus,
+     useKeatingAgentStore,
+  @@ -1009,6 +1010,10 @@ export function useKeatingAgent(): UseKeatingAgentReturn {
+   			if (!detail || !agent) return;
+   			const tools = (agent.state.tools ?? []) as any[];
+   			detail.bridge = {
+  +				// The real Keating system prompt, so a voice session is the same
+  +				// teacher as the text session rather than a generic assistant.
+  +				instructions: agent.state.systemPrompt,
+  +				history: buildLiveHistory(agent.state.messages ?? []),
+   				tools: tools.map((tool) => ({
+   					name: tool.name,
+   					description: tool.description ?? tool.label ?? tool.name,
+  diff --git a/web/src/keating/providers/capabilities.ts b/web/src/keating/providers/capabilities.ts
+  index 9c3f6e730dc9e41301933b8c91308652c186db0a..8bf368a38f0eef7c4e82919be744290b24556d2c 100644
+  --- a/web/src/keating/providers/capabilities.ts
+  +++ b/web/src/keating/providers/capabilities.ts
+  @@ -20,6 +20,16 @@ export interface ProviderModelDescriptor {
+   export interface ProviderCapabilities {
+   	realtimeAudio: CapabilitySupport;
+   	realtimeTransports: readonly RealtimeTransport[];
+  +	/**
+  +	 * Continuous vision during a live session.
+  +	 * "native"  — the provider has a dedicated realtime video lane (Gemini Live).
+  +	 * "adapter" — no video lane, but still images can be injected as conversation
+  +	 *             items, so Keating's frame sampler can stand in (GPT Realtime).
+  +	 * "none"    — the session cannot see anything.
+  +	 */
+  +	realtimeVideo: CapabilitySupport;
+  +	/** Still-image input during a live session. */
+  +	realtimeImage: CapabilitySupport;
+   	webSearch: CapabilitySupport;
+   	searchTool?: SearchToolKind;
+   	toolCalls: CapabilitySupport;
+  @@ -37,6 +47,8 @@ export interface CapabilityRule {
+   
+   export interface CapabilityRequest {
+   	realtimeAudio?: boolean;
+  +	realtimeVideo?: boolean;
+  +	realtimeImage?: boolean;
+   	webSearch?: boolean;
+   	toolCalls?: boolean;
+   	citations?: boolean;
+  @@ -52,18 +64,30 @@ export interface CapabilityNegotiation {
+   	model: ProviderModelDescriptor;
+   	capabilities: ProviderCapabilities;
+   	realtimeAudio: NegotiatedRoute;
+  +	realtimeVideo: NegotiatedRoute;
+  +	realtimeImage: NegotiatedRoute;
+   	transport?: RealtimeTransport;
+   	webSearch: NegotiatedRoute;
+   	searchTool?: SearchToolKind;
+   	toolCalls: NegotiatedRoute;
+   	citations: NegotiatedRoute;
+  -	missing: Array<"realtimeAudio" | "webSearch" | "toolCalls" | "citations" | "transport">;
+  +	missing: Array<
+  +		| "realtimeAudio"
+  +		| "realtimeVideo"
+  +		| "realtimeImage"
+  +		| "webSearch"
+  +		| "toolCalls"
+  +		| "citations"
+  +		| "transport"
+  +	>;
+   	usesFallback: boolean;
+   }
+   
+   const GENERIC_CAPABILITIES: ProviderCapabilities = {
+   	realtimeAudio: "none",
+   	realtimeTransports: [],
+  +	realtimeVideo: "none",
+  +	realtimeImage: "none",
+   	webSearch: "adapter",
+   	searchTool: "client-web-search",
+   	toolCalls: "adapter",
+  @@ -74,6 +98,8 @@ const GENERIC_CAPABILITIES: ProviderCapabilities = {
+   const OPENAI_TEXT: ProviderCapabilities = {
+   	realtimeAudio: "none",
+   	realtimeTransports: [],
+  +	realtimeVideo: "none",
+  +	realtimeImage: "none",
+   	webSearch: "native",
+   	searchTool: "openai-web-search",
+   	toolCalls: "native",
+  @@ -87,9 +113,25 @@ const OPENAI_TEXT: ProviderCapabilities = {
+    */
+   export const PROVIDER_CAPABILITY_RULES: readonly CapabilityRule[] = [
+   	{
+  -		id: "openai-realtime",
+  +		// gpt-realtime / gpt-realtime-2* accept still images as conversation
+  +		// items, so Keating's frame sampler can supply continuous vision.
+  +		id: "openai-realtime-vision",
+   		provider: "openai",
+  -		model: /(?:^|[-_.])realtime(?:$|[-_.])|^gpt-realtime/i,
+  +		model: /^gpt-realtime/i,
+  +		capabilities: {
+  +			...GENERIC_CAPABILITIES,
+  +			realtimeAudio: "native",
+  +			realtimeTransports: ["webrtc", "websocket"],
+  +			realtimeVideo: "adapter",
+  +			realtimeImage: "native",
+  +			toolCalls: "native",
+  +		},
+  +	},
+  +	{
+  +		// gpt-4o-*realtime-preview: duplex audio and tools, but no image input.
+  +		id: "openai-realtime-legacy",
+  +		provider: "openai",
+  +		model: /(?:^|[-_.])realtime(?:$|[-_.])/i,
+   		capabilities: {
+   			...GENERIC_CAPABILITIES,
+   			realtimeAudio: "native",
+  @@ -118,6 +160,9 @@ export const PROVIDER_CAPABILITY_RULES: readonly CapabilityRule[] = [
+   		capabilities: {
+   			realtimeAudio: "native",
+   			realtimeTransports: ["websocket"],
+  +			// Gemini Live has a dedicated realtime video lane (1 fps JPEG frames).
+  +			realtimeVideo: "native",
+  +			realtimeImage: "native",
+   			webSearch: "native",
+   			searchTool: "google-search-grounding",
+   			toolCalls: "native",
+  @@ -200,6 +245,8 @@ export function negotiateProviderCapabilities(
+   	const capabilities = resolved.capabilities;
+   	const allowAdapters = request.allowAdapters !== false;
+   	const realtimeAudio = route(request.realtimeAudio, capabilities.realtimeAudio, allowAdapters);
+  +	const realtimeVideo = route(request.realtimeVideo, capabilities.realtimeVideo, allowAdapters);
+  +	const realtimeImage = route(request.realtimeImage, capabilities.realtimeImage, allowAdapters);
+   	const webSearch = route(request.webSearch, capabilities.webSearch, allowAdapters);
+   	const toolCalls = route(request.toolCalls, capabilities.toolCalls, allowAdapters);
+   	const citations = route(request.citations, capabilities.citations, allowAdapters);
+  @@ -213,6 +260,8 @@ export function negotiateProviderCapabilities(
+   	const missing: CapabilityNegotiation["missing"] = [];
+   	if (realtimeAudio === "unavailable") missing.push("realtimeAudio");
+   	if (request.realtimeAudio && realtimeAudio !== "unavailable" && !transport) missing.push("transport");
+  +	if (realtimeVideo === "unavailable") missing.push("realtimeVideo");
+  +	if (realtimeImage === "unavailable") missing.push("realtimeImage");
+   	if (webSearch === "unavailable") missing.push("webSearch");
+   	if (toolCalls === "unavailable") missing.push("toolCalls");
+   	if (citations === "unavailable") missing.push("citations");
+  @@ -222,12 +271,99 @@ export function negotiateProviderCapabilities(
+   		model,
+   		capabilities,
+   		realtimeAudio,
+  +		realtimeVideo,
+  +		realtimeImage,
+   		transport,
+   		webSearch,
+   		searchTool: webSearch === "not-requested" || webSearch === "unavailable" ? undefined : capabilities.searchTool,
+   		toolCalls,
+   		citations,
+   		missing,
+  -		usesFallback: [realtimeAudio, webSearch, toolCalls, citations].includes("adapter"),
+  +		usesFallback: [realtimeAudio, realtimeVideo, realtimeImage, webSearch, toolCalls, citations].includes("adapter"),
+  +	};
+  +}
+  +
+  +/**
+  + * Realtime capability tiers. Keating drives every provider at the highest tier
+  + * it actually supports and degrades explicitly rather than failing:
+  + *
+  + *   3 — audio duplex + a native provider video lane + tools
+  + *   2 — audio duplex + tools, vision supplied by Keating's frame sampler
+  + *   1 — audio duplex + tools, no vision at all
+  + *   0 — no duplex session; push-to-talk STT plus one-shot TTS
+  + */
+  +export type RealtimeTier = 0 | 1 | 2 | 3;
+  +
+  +export interface RealtimeTierDescriptor {
+  +	tier: RealtimeTier;
+  +	label: string;
+  +	/** True when the session can show the model what the learner sees. */
+  +	video: boolean;
+  +	/** How frames reach the model, when they can at all. */
+  +	videoRoute: "native" | "sampled" | "none";
+  +	/**
+  +	 * Why the tier is not higher, for surfacing in the UI. Undefined at tier 3.
+  +	 */
+  +	capReason?: string;
+  +}
+  +
+  +const TIER_LABELS: Record<RealtimeTier, string> = {
+  +	3: "Audio + video duplex",
+  +	2: "Audio duplex + sampled vision",
+  +	1: "Audio duplex",
+  +	0: "Half duplex (push to talk)",
+  +};
+  +
+  +/**
+  + * Collapse a model's capabilities into the tier Keating can actually drive.
+  + * Tool calling is required above tier 0: a live session that cannot reach the
+  + * Keating tool catalog is not a teaching session, so it is treated as
+  + * half-duplex regardless of how good its audio is.
+  + */
+  +export function resolveRealtimeTier(
+  +	model: ProviderModelDescriptor,
+  +	rules: readonly CapabilityRule[] = PROVIDER_CAPABILITY_RULES,
+  +): RealtimeTierDescriptor {
+  +	const { capabilities } = resolveProviderCapabilities(model, rules);
+  +	const hasTransport = capabilities.realtimeTransports.length > 0;
+  +
+  +	if (capabilities.realtimeAudio !== "native" || !hasTransport) {
+  +		return {
+  +			tier: 0,
+  +			label: TIER_LABELS[0],
+  +			video: false,
+  +			videoRoute: "none",
+  +			capReason: hasTransport
+  +				? "This model has no native realtime audio."
+  +				: "This model has no realtime transport.",
+  +		};
+  +	}
+  +	if (capabilities.toolCalls !== "native") {
+  +		return {
+  +			tier: 0,
+  +			label: TIER_LABELS[0],
+  +			video: false,
+  +			videoRoute: "none",
+  +			capReason: "This model cannot call tools in a live session.",
+  +		};
+  +	}
+  +	if (capabilities.realtimeVideo === "native") {
+  +		return { tier: 3, label: TIER_LABELS[3], video: true, videoRoute: "native" };
+  +	}
+  +	if (capabilities.realtimeVideo === "adapter" || capabilities.realtimeImage === "native") {
+  +		return {
+  +			tier: 2,
+  +			label: TIER_LABELS[2],
+  +			video: true,
+  +			videoRoute: "sampled",
+  +			capReason: "This model has no live video lane, so Keating samples frames as still images.",
+  +		};
+  +	}
+  +	return {
+  +		tier: 1,
+  +		label: TIER_LABELS[1],
+  +		video: false,
+  +		videoRoute: "none",
+  +		capReason: "This model cannot accept image or video input.",
+   	};
+   }
+  diff --git a/web/src/keating/speech-providers/gemini-live.ts b/web/src/keating/speech-providers/gemini-live.ts
+  index 745d5a18643ea1e6fcfbe1c11371aa401a3b8685..7b964fb28716cc78cd7ae85b885d83a5b03de4ed 100644
+  --- a/web/src/keating/speech-providers/gemini-live.ts
+  +++ b/web/src/keating/speech-providers/gemini-live.ts
+  @@ -1,18 +1,113 @@
+   import {
+   	GEMINI_LIVE_SPEECH_MODEL,
+   	schedulePcmAudio,
+  +	stopScheduledAudio,
+   	voiceTagLine,
+  +	type LiveHistoryTurn,
+   	type LiveSpeechRequest,
+   	type LiveSpeechSession,
+   	type LiveSpeechState,
+  +	type LiveSpeechTool,
+   	type SpeechProvider,
+   	type SpeechSynthesisRequest,
+   	type SpeechSynthesisResult,
+   } from "../speech";
+   import { withApiRetry } from "../api-retry";
+  +import { negotiateProviderCapabilities } from "../providers";
+  +import {
+  +	createRealtimeTelemetry,
+  +	type RealtimeTelemetryObserver,
+  +} from "../observability";
+  +import { startPcmCapture } from "../pcm-capture-worklet";
+  +import type { CapturedFrame } from "../video-capture";
+  +import {
+  +	createRealtimeCanonicalBridge,
+  +	parseToolArguments,
+  +	protocolError as sharedProtocolError,
+  +	runLiveToolCall,
+  +} from "./live-session-shared";
+   
+   const GEMINI_VOICES = ["Kore", "Puck", "Charon", "Fenrir", "Leda", "Orus", "Aoede"];
+   
+  +/** Gemini Live expects 16 kHz mono PCM on the input stream. */
+  +const GEMINI_INPUT_SAMPLE_RATE = 16_000;
+  +
+  +function protocolError(error: unknown, code: string) {
+  +	return sharedProtocolError(error, code, "google");
+  +}
+  +
+  +export function negotiateGeminiLiveSession(model: string) {
+  +	return negotiateProviderCapabilities(
+  +		{ provider: "google", id: model, api: "google-live" },
+  +		{
+  +			realtimeAudio: true,
+  +			realtimeVideo: true,
+  +			toolCalls: true,
+  +			preferredTransports: ["websocket"],
+  +			allowAdapters: false,
+  +		},
+  +	);
+  +}
+  +
+  +/**
+  + * Non-blocking function calls let Keating keep talking while a tool renders,
+  + * instead of going silent mid-lesson. Only the 2.5 Live models support it —
+  + * 3.1 Live is synchronous-only, and sending the flag there is an error.
+  + */
+  +export function supportsNonBlockingTools(model: string): boolean {
+  +	return /gemini-2\.5-flash-live/i.test(model);
+  +}
+  +
+  +/** Map Keating's provider-neutral tool descriptors onto Gemini declarations. */
+  +export function buildGeminiToolConfig(
+  +	tools: LiveSpeechTool[],
+  +	model: string,
+  +): Record<string, unknown>[] | undefined {
+  +	if (tools.length === 0) return undefined;
+  +	const nonBlocking = supportsNonBlockingTools(model);
+  +	return [{
+  +		functionDeclarations: tools.map((tool) => ({
+  +			name: tool.name,
+  +			description: tool.description,
+  +			parameters: tool.parameters,
+  +			...(nonBlocking ? { behavior: "NON_BLOCKING" } : {}),
+  +		})),
+  +	}];
+  +}
+  +
+  +/**
+  + * Gemini's tool result envelope. `id` must echo the call it answers.
+  + *
+  + * `scheduling` is a sibling of `response`, not a member of it, and the response
+  + * body uses the reserved `output` / `error` keys so failures are recognised as
+  + * failures rather than folded in as ordinary tool output.
+  + */
+  +export function geminiFunctionResponse(
+  +	id: string,
+  +	name: string,
+  +	response: unknown,
+  +	model: string,
+  +	options: { failed?: boolean } = {},
+  +): Record<string, unknown> {
+  +	return {
+  +		id,
+  +		name,
+  +		response: options.failed ? { error: response } : { output: response },
+  +		// WHEN_IDLE lets the model finish its current sentence before folding the
+  +		// result in, which reads far better than cutting itself off. Ignored by
+  +		// the server unless the declaration was NON_BLOCKING.
+  +		...(supportsNonBlockingTools(model) ? { scheduling: "WHEN_IDLE" } : {}),
+  +	};
+  +}
+  +
+  +/** Replay a prior chat turn so a voice session continues the same conversation. */
+  +export function geminiHistoryTurn(turn: LiveHistoryTurn): Record<string, unknown> {
+  +	return {
+  +		role: turn.role === "assistant" ? "model" : "user",
+  +		parts: [{ text: turn.text }],
+  +	};
+  +}
+  +
+   function contentParts(message: any): any[] {
+   	return Array.isArray(message?.serverContent?.modelTurn?.parts)
+   		? message.serverContent.modelTurn.parts
+  @@ -134,32 +229,58 @@ async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthe
+   	});
+   }
+   
+  -function encodePcmBase64(input: Float32Array): string {
+  -	const pcm = new Int16Array(input.length);
+  -	for (let i = 0; i < input.length; i += 1) {
+  -		const sample = Math.max(-1, Math.min(1, input[i]));
+  -		pcm[i] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+  +async function startLiveSession(
+  +	request: LiveSpeechRequest,
+  +	observer?: RealtimeTelemetryObserver,
+  +): Promise<LiveSpeechSession> {
+  +	const {
+  +		settings, getApiKey, signal, instructions, tools, history, video,
+  +		onToolCall, onState, onUserTranscript, onAssistantTranscript, onError,
+  +	} = request;
+  +
+  +	const model = settings.model || GEMINI_LIVE_SPEECH_MODEL;
+  +	const telemetry = createRealtimeTelemetry(observer);
+  +	const canonical = createRealtimeCanonicalBridge(request.onConversationEvent, request.conversationIds);
+  +	const setupStartedAt = telemetry.start();
+  +	telemetry.emit("connection.setup.started", { provider: "google", model, transport: "websocket" });
+  +
+  +	const capability = negotiateGeminiLiveSession(model);
+  +	if (capability.realtimeAudio !== "native" || capability.transport !== "websocket" || capability.toolCalls !== "native") {
+  +		telemetry.emit("session.error", { provider: "google", errorCode: "capability_mismatch" });
+  +		telemetry.emit("session.completed", { provider: "google", outcome: "error" });
+  +		throw new Error(`Gemini Live model ${model} cannot satisfy duplex audio and native tool-call requirements.`);
+   	}
+  -	const bytes = new Uint8Array(pcm.buffer);
+  -	let binary = "";
+  -	for (let i = 0; i < bytes.length; i += 1) binary += String.fromCharCode(bytes[i]);
+  -	return window.btoa(binary);
+  -}
+   
+  -async function startLiveSession(request: LiveSpeechRequest): Promise<LiveSpeechSession> {
+  -	const { settings, getApiKey, signal, instructions, onState, onUserTranscript, onAssistantTranscript, onError } = request;
+  +	// Gemini has a real video lane, so frames go straight in at full tier.
+  +	const visionEnabled = Boolean(video) && capability.realtimeVideo === "native";
+  +	canonical.emit("run.started", { mode: visionEnabled ? "multimodal" : "voice" });
+  +
+   	const apiKey = await getApiKey("google");
+   	if (!apiKey) {
+  -		throw new Error("No Google API key configured. Sign in to Google in Settings → Providers & Models.");
+  -	}
+  -	if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+  -		throw new Error("Microphone unavailable for live voice.");
+  +		const error = new Error("No Google API key configured. Sign in to Google in Settings → Providers & Models.");
+  +		telemetry.emit("session.error", { provider: "google", errorCode: "missing_api_key" });
+  +		telemetry.emit("session.completed", { provider: "google", outcome: "error" });
+  +		canonical.emit("error", { error: protocolError(error, "missing_api_key"), fatal: true });
+  +		canonical.emit("run.completed", { reason: "error" });
+  +		throw error;
+   	}
+   
+  -	const { GoogleGenAI, Modality } = await import("@google/genai");
+  +	const { GoogleGenAI, Modality, MediaResolution } = await import("@google/genai");
+   	const ai = new GoogleGenAI({ apiKey });
+   
+   	let state: LiveSpeechState = "connecting";
+  +	let completionReason: "completed" | "cancelled" | "interrupted" | "error" | null = null;
+  +	let firstAudioObserved = false;
+  +	let turn = 0;
+  +	let activeTurnStartedAt: number | null = null;
+  +	let framesSent = 0;
+  +
+  +	const complete = (reason: NonNullable<typeof completionReason>) => {
+  +		if (completionReason) return;
+  +		completionReason = reason;
+  +		canonical.emit("run.completed", { reason });
+  +		telemetry.emit("session.completed", { provider: "google", outcome: reason });
+  +	};
+   	const setState = (next: LiveSpeechState) => {
+   		if (state === "closed") return;
+   		state = next;
+  @@ -167,97 +288,264 @@ async function startLiveSession(request: LiveSpeechRequest): Promise<LiveSpeechS
+   	};
+   	setState("connecting");
+   
+  -	const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  -	// 16 kHz mono PCM is what Gemini Live expects on the input stream.
+  -	const captureContext = new AudioContext({ sampleRate: 16_000 });
+  -	const sourceNode = captureContext.createMediaStreamSource(micStream);
+  -	const processor = captureContext.createScriptProcessor(4096, 1, 1);
+  -
+  -	let session: { sendRealtimeInput: (params: any) => void; close: () => void } | null = null;
+  +	let session: {
+  +		sendRealtimeInput: (params: any) => void;
+  +		sendClientContent: (params: any) => void;
+  +		sendToolResponse: (params: any) => void;
+  +		close: () => void;
+  +	} | null = null;
+  +	let capture: Awaited<ReturnType<typeof startPcmCapture>> | null = null;
+  +	let unsubscribeFrames: (() => void) | null = null;
+   	let cleanedUp = false;
+  +
+   	const cleanup = () => {
+   		if (cleanedUp) return;
+   		cleanedUp = true;
+  -		try { processor.disconnect(); } catch {}
+  -		try { sourceNode.disconnect(); } catch {}
+  -		try { captureContext.close(); } catch {}
+  -		micStream.getTracks().forEach((track) => track.stop());
+  +		unsubscribeFrames?.();
+  +		unsubscribeFrames = null;
+  +		capture?.stop();
+  +		capture = null;
+   		try { session?.close(); } catch {}
+   		setState("closed");
+  +		complete("cancelled");
+   	};
+   
+   	if (signal?.aborted) {
+  +		canonical.emit("conversation.interrupted", { by: "host", reason: "abort signal before start" });
+  +		telemetry.emit("speech.interrupted", { provider: "google", reason: "abort", turn });
+  +		complete("interrupted");
+   		cleanup();
+   		throw new Error("Gemini Live aborted before start.");
+   	}
+  -	signal?.addEventListener("abort", cleanup, { once: true });
+  +	signal?.addEventListener("abort", () => {
+  +		canonical.emit("conversation.interrupted", { by: "host", reason: "abort signal" });
+  +		telemetry.emit("speech.interrupted", { provider: "google", reason: "abort", turn });
+  +		complete("interrupted");
+  +		cleanup();
+  +	}, { once: true });
+   
+  -	processor.onaudioprocess = (event) => {
+  -		if (!session || state === "closed") return;
+  -		const base64 = encodePcmBase64(event.inputBuffer.getChannelData(0));
+  -		try {
+  -			session.sendRealtimeInput({ audio: { data: base64, mimeType: "audio/pcm;rate=16000" } });
+  -		} catch {}
+  +	const handleToolCall = (functionCalls: any[]) => {
+  +		for (const functionCall of functionCalls) {
+  +			if (typeof functionCall?.name !== "string") continue;
+  +			const callId = typeof functionCall.id === "string" ? functionCall.id : functionCall.name;
+  +			void runLiveToolCall({
+  +				call: { callId, name: functionCall.name, arguments: parseToolArguments(functionCall.args) },
+  +				provider: "google",
+  +				canonical,
+  +				telemetry,
+  +				execute: async (pending) => {
+  +					if (!onToolCall) throw new Error(`No handler is available for tool ${pending.name}.`);
+  +					return await onToolCall(pending);
+  +				},
+  +				respond: (id, output) => {
+  +					session?.sendToolResponse({
+  +						functionResponses: [geminiFunctionResponse(id, functionCall.name, output, model)],
+  +					});
+  +				},
+  +				respondError: (id, message) => {
+  +					session?.sendToolResponse({
+  +						functionResponses: [geminiFunctionResponse(id, functionCall.name, message, model, { failed: true })],
+  +					});
+  +				},
+  +			});
+  +		}
+   	};
+   
+   	try {
+   		session = await withApiRetry(() => ai.live.connect({
+  -			model: settings.model || GEMINI_LIVE_SPEECH_MODEL,
+  +			model,
+   			callbacks: {
+   				onmessage: (message: any) => {
+  +					// Barge-in: the server cancels generation when the learner
+  +					// speaks over the model. Queued PCM must be dropped too, or
+  +					// the learner keeps hearing the sentence they interrupted.
+  +					if (message?.serverContent?.interrupted) {
+  +						stopScheduledAudio();
+  +						canonical.emit("conversation.interrupted", { by: "user", reason: "barge-in" });
+  +						telemetry.emit("speech.interrupted", { provider: "google", reason: "barge-in", turn });
+  +						setState("listening");
+  +					}
+  +
+  +					if (Array.isArray(message?.toolCall?.functionCalls)) {
+  +						handleToolCall(message.toolCall.functionCalls);
+  +					}
+  +
+   					for (const part of contentParts(message)) {
+   						const data = part.inlineData?.data;
+   						if (typeof data === "string" && data.length > 0) {
+  +							if (!firstAudioObserved) {
+  +								firstAudioObserved = true;
+  +								telemetry.emit("audio.first", { provider: "google", transport: "websocket" },
+  +									telemetry.durationSince(setupStartedAt));
+  +							}
+   							setState("speaking");
+   							schedulePcmAudio(data);
+  +							canonical.emit("audio.delta", {
+  +								streamId: "assistant-audio",
+  +								role: "assistant",
+  +								encoding: "pcm16",
+  +								sampleRate: 24_000,
+  +								data,
+  +							});
+  +						}
+  +						if (typeof part.text === "string") {
+  +							onAssistantTranscript?.(part.text, false);
+  +							canonical.emit("transcript.delta", {
+  +								transcriptId: "assistant-transcript",
+  +								role: "assistant",
+  +								delta: part.text,
+  +								final: false,
+  +							});
+   						}
+  -						if (typeof part.text === "string") onAssistantTranscript?.(part.text, false);
+   					}
+  +
+   					const outputText = message?.serverContent?.outputTranscription?.text;
+  -					if (typeof outputText === "string") onAssistantTranscript?.(outputText, false);
+  +					if (typeof outputText === "string") {
+  +						onAssistantTranscript?.(outputText, false);
+  +						canonical.emit("transcript.delta", {
+  +							transcriptId: "assistant-transcript",
+  +							role: "assistant",
+  +							delta: outputText,
+  +							final: false,
+  +						});
+  +					}
+  +
+   					const inputText = message?.serverContent?.inputTranscription?.text;
+  -					if (typeof inputText === "string") onUserTranscript?.(inputText, false);
+  -					if (message?.serverContent?.turnComplete) setState("listening");
+  +					if (typeof inputText === "string") {
+  +						if (activeTurnStartedAt === null) {
+  +							turn += 1;
+  +							activeTurnStartedAt = telemetry.start();
+  +							telemetry.emit("speech.turn.started", { provider: "google", turn });
+  +						}
+  +						onUserTranscript?.(inputText, false);
+  +						canonical.emit("transcript.delta", {
+  +							transcriptId: "user-transcript",
+  +							role: "user",
+  +							delta: inputText,
+  +							final: false,
+  +						});
+  +					}
+  +
+  +					if (message?.serverContent?.turnComplete) {
+  +						onAssistantTranscript?.("", true);
+  +						canonical.emit("transcript.delta", {
+  +							transcriptId: "assistant-transcript",
+  +							role: "assistant",
+  +							delta: "",
+  +							final: true,
+  +						});
+  +						telemetry.emit("speech.turn.completed", { provider: "google", turn, outcome: "completed" },
+  +							activeTurnStartedAt === null ? undefined : telemetry.durationSince(activeTurnStartedAt));
+  +						activeTurnStartedAt = null;
+  +						setState("listening");
+  +					}
+  +				},
+  +				onerror: (event: ErrorEvent) => {
+  +					const error = new Error(event.message || "Gemini Live failed.");
+  +					onError?.(error);
+  +					canonical.emit("error", { error: protocolError(error, "provider_error"), fatal: false });
+  +					telemetry.emit("session.error", { provider: "google", errorCode: "provider_error" });
+   				},
+  -				onerror: (event: ErrorEvent) => onError?.(new Error(event.message || "Gemini Live failed.")),
+   				onclose: () => cleanup(),
+   			},
+   			config: {
+   				responseModalities: [Modality.AUDIO],
+   				outputAudioTranscription: {},
+   				inputAudioTranscription: {},
+  +				speechConfig: {
+  +					voiceConfig: { prebuiltVoiceConfig: { voiceName: settings.voiceName || "Kore" } },
+  +				},
+  +				// Frames are already downscaled client-side; low resolution keeps
+  +				// the token cost of continuous vision manageable.
+  +				...(visionEnabled ? { mediaResolution: MediaResolution.MEDIA_RESOLUTION_LOW } : {}),
+  +				...(buildGeminiToolConfig(tools ?? [], model) ? { tools: buildGeminiToolConfig(tools ?? [], model) } : {}),
+   				systemInstruction:
+   					instructions ||
+   					"You are Keating, a warm Socratic tutor on a live voice call with a learner. Keep replies natural, concise, and conversational.",
+   			},
+   		}), { signal });
+   	} catch (error) {
+  +		telemetry.emit("connection.setup.completed", {
+  +			provider: "google", model, transport: "websocket", outcome: "failed",
+  +		}, telemetry.durationSince(setupStartedAt));
+  +		telemetry.emit("session.error", { provider: "google", errorCode: "session_setup_failed" });
+  +		canonical.emit("error", { error: protocolError(error, "session_setup_failed"), fatal: true });
+  +		complete("error");
+  +		cleanup();
+  +		throw error;
+  +	}
+  +
+  +	// Replay prior chat turns so the voice session continues the conversation
+  +	// rather than reintroducing itself.
+  +	const seedTurns = (history ?? []).filter((entry) => entry.text.trim());
+  +	if (seedTurns.length > 0) {
+  +		try {
+  +			session.sendClientContent({ turns: seedTurns.map(geminiHistoryTurn), turnComplete: false });
+  +		} catch (error) {
+  +			console.warn("[keating:gemini-live] history seed failed", error);
+  +		}
+  +	}
+  +
+  +	try {
+  +		capture = await startPcmCapture({
+  +			sampleRate: GEMINI_INPUT_SAMPLE_RATE,
+  +			onChunk: (base64) => {
+  +				if (!session || state === "closed") return;
+  +				try {
+  +					session.sendRealtimeInput({
+  +						audio: { data: base64, mimeType: `audio/pcm;rate=${GEMINI_INPUT_SAMPLE_RATE}` },
+  +					});
+  +				} catch {
+  +					// A closed socket surfaces on the next message callback.
+  +				}
+  +			},
+  +		});
+  +	} catch (error) {
+  +		telemetry.emit("session.error", { provider: "google", errorCode: "microphone_unavailable" });
+  +		canonical.emit("error", { error: protocolError(error, "microphone_unavailable"), fatal: true });
+  +		complete("error");
+   		cleanup();
+   		throw error;
+   	}
+   
+  -	// Connecting the processor to the destination pumps onaudioprocess; the
+  -	// output buffer is left silent so the mic is not echoed back.
+  -	sourceNode.connect(processor);
+  -	processor.connect(captureContext.destination);
+  +	if (visionEnabled && video) {
+  +		unsubscribeFrames = video.onFrame((frame: CapturedFrame) => {
+  +			if (!session || state === "closed") return;
+  +			try {
+  +				session.sendRealtimeInput({ video: { data: frame.data, mimeType: frame.mimeType } });
+  +				framesSent += 1;
+  +			} catch {
+  +				// Same as audio: a dead socket reports through the callbacks.
+  +			}
+  +		});
+  +	}
+  +
+   	setState("listening");
+  +	telemetry.emit("connection.setup.completed", {
+  +		provider: "google", model, transport: "websocket", outcome: "success",
+  +	}, telemetry.durationSince(setupStartedAt));
+   
+   	return {
+   		get state() {
+   			return state;
+   		},
+  +		get framesSent() {
+  +			return framesSent;
+  +		},
+  +		videoRoute: visionEnabled ? "native" : "none",
+   		async stop() {
+  +			complete("cancelled");
+   			cleanup();
+   		},
+   	};
+   }
+   
+  -export const geminiLiveProvider: SpeechProvider = {
+  +const geminiLiveProviderDefinition: Omit<SpeechProvider, "startLiveSession"> = {
+   	id: "gemini-live",
+   	label: "Gemini Live",
+   	kind: "duplex",
+   	status: "stable",
+  -	description: "Google Gemini Live bidirectional voice. Live mic-in/audio-out sessions plus expressive prebuilt voices.",
+  +	description: "Google Gemini Live bidirectional voice and video. Native live video, tool calls, and expressive prebuilt voices.",
+   	models: [
+   		{ value: "gemini-2.0-flash-live-001", label: "Gemini 2.0 Flash Live" },
+   		{ value: "gemini-2.5-flash-live-preview", label: "Gemini 2.5 Flash Live (Preview)" },
+  @@ -267,5 +555,13 @@ export const geminiLiveProvider: SpeechProvider = {
+   	voices: GEMINI_VOICES,
+   	needsApiKey: "google",
+   	synthesize,
+  -	startLiveSession,
+   };
+  +
+  +export function createGeminiLiveProvider(observer?: RealtimeTelemetryObserver): SpeechProvider {
+  +	return {
+  +		...geminiLiveProviderDefinition,
+  +		startLiveSession: (request) => startLiveSession(request, observer),
+  +	};
+  +}
+  +
+  +export const geminiLiveProvider: SpeechProvider = createGeminiLiveProvider();
+  diff --git a/web/src/keating/speech-providers/openai-realtime.ts b/web/src/keating/speech-providers/openai-realtime.ts
+  index d9ccf323ee83e999c0cd2d7878a3686bfea39afa..ff506e68acbbef709cb9f3e649795f3c98c943c1 100644
+  --- a/web/src/keating/speech-providers/openai-realtime.ts
+  +++ b/web/src/keating/speech-providers/openai-realtime.ts
+  @@ -1,5 +1,6 @@
+   import {
+   	getAudioContext,
+  +	type LiveHistoryTurn,
+   	type LiveSpeechRequest,
+   	type LiveSpeechSession,
+   	type LiveSpeechState,
+  @@ -14,12 +15,35 @@ import {
+   	createRealtimeTelemetry,
+   	type RealtimeTelemetryObserver,
+   } from "../observability";
+  +import type { CapturedFrame } from "../video-capture";
+   import {
+  -	conversationEvent,
+  -	type ConversationEvent,
+  -	type JsonValue,
+  -	type ProtocolError,
+  -} from "../protocol";
+  +	createRealtimeCanonicalBridge,
+  +	jsonRecord,
+  +	parseToolArguments,
+  +	protocolError as sharedProtocolError,
+  +	runLiveToolCall,
+  +} from "./live-session-shared";
+  +
+  +export {
+  +	createRealtimeCanonicalBridge,
+  +	type RealtimeCanonicalBridge,
+  +} from "./live-session-shared";
+  +
+  +/** Tool the model can call to look at what the learner is showing right now. */
+  +export const LOOK_AT_SCREEN_TOOL_NAME = "look_at_screen";
+  +
+  +const LOOK_AT_SCREEN_TOOL: LiveSpeechTool = {
+  +	name: LOOK_AT_SCREEN_TOOL_NAME,
+  +	description:
+  +		"Look at what the learner is currently showing on their camera or shared screen. "
+  +		+ "Call this when the learner refers to something visual ('this', 'here', 'what I'm holding') "
+  +		+ "or when you need to check their work before answering.",
+  +	parameters: { type: "object", properties: {}, additionalProperties: false },
+  +};
+  +
+  +function protocolError(error: unknown, code: string) {
+  +	return sharedProtocolError(error, code, "openai");
+  +}
+   
+   export function negotiateOpenAIRealtimeSession(model: string) {
+   	return negotiateProviderCapabilities(
+  @@ -28,66 +52,46 @@ export function negotiateOpenAIRealtimeSession(model: string) {
+   	);
+   }
+   
+  -function randomId(prefix: string): string {
+  -	const id = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+  -		? crypto.randomUUID()
+  -		: `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  -	return `${prefix}-${id}`;
+  -}
+  -
+  -function jsonValue(value: unknown): JsonValue {
+  -	if (value === undefined) return null;
+  -	try {
+  -		return JSON.parse(JSON.stringify(value)) as JsonValue;
+  -	} catch {
+  -		return String(value);
+  -	}
+  +/** Only the reasoning-capable realtime models accept a reasoning budget. */
+  +function supportsReasoningEffort(model: string): boolean {
+  +	return /^gpt-realtime-2/i.test(model);
+   }
+   
+  -function jsonRecord(value: unknown): Record<string, JsonValue> {
+  -	const converted = jsonValue(value);
+  -	return converted && typeof converted === "object" && !Array.isArray(converted)
+  -		? converted as Record<string, JsonValue>
+  -		: {};
+  -}
+  -
+  -function protocolError(error: unknown, code: string): ProtocolError {
+  -	return {
+  -		code,
+  -		message: error instanceof Error ? error.message : String(error),
+  -		provider: "openai",
+  -	};
+  -}
+  -
+  -export interface RealtimeCanonicalBridge {
+  -	readonly sessionId: string;
+  -	readonly runId: string;
+  -	emit<T extends ConversationEvent["type"]>(
+  -		type: T,
+  -		payload: Extract<ConversationEvent, { type: T }>["payload"],
+  -	): void;
+  -}
+  -
+  -export function createRealtimeCanonicalBridge(
+  -	onEvent?: (event: ConversationEvent) => void,
+  -	ids: { sessionId?: string; runId?: string } = {},
+  -): RealtimeCanonicalBridge {
+  -	const sessionId = ids.sessionId ?? randomId("voice-session");
+  -	const runId = ids.runId ?? randomId("voice-run");
+  -	let sequence = 0;
+  +/**
+  + * Session configuration in the current nested shape.
+  + *
+  + * Turn detection, transcription, and voice all live under `audio.input` /
+  + * `audio.output`. The older flat layout (`turn_detection` and
+  + * `input_audio_transcription` at the session root) is silently ignored by the
+  + * GA endpoint, which means those settings never took effect.
+  + */
+  +export function buildRealtimeSessionConfig(
+  +	settings: LiveSpeechRequest["settings"],
+  +	instructions?: string,
+  +	tools: LiveSpeechTool[] = [],
+  +): Record<string, unknown> {
+   	return {
+  -		sessionId,
+  -		runId,
+  -		emit(type, payload) {
+  -			if (!onEvent) return;
+  -			onEvent(conversationEvent(type, payload as never, {
+  -				id: randomId("voice-event"),
+  -				sequence: sequence++,
+  -				timestamp: new Date().toISOString(),
+  -				sessionId,
+  -				runId,
+  -			}));
+  +		type: "realtime",
+  +		output_modalities: ["audio"],
+  +		audio: {
+  +			input: {
+  +				format: { type: "audio/pcm", rate: 24_000 },
+  +				// Semantic VAD waits on meaning rather than a fixed silence
+  +				// window, so a learner thinking mid-sentence is not cut off.
+  +				turn_detection: { type: "semantic_vad", create_response: true, interrupt_response: true },
+  +				transcription: { model: "gpt-4o-transcribe" },
+  +			},
+  +			output: {
+  +				format: { type: "audio/pcm" },
+  +				voice: cleanRealtimeVoice(settings.voiceName),
+  +			},
+   		},
+  +		...(supportsReasoningEffort(settings.model) ? { reasoning: { effort: settings.reasoningEffort } } : {}),
+  +		...(instructions ? { instructions } : {}),
+  +		...(tools.length > 0 ? {
+  +			tools: tools.map((tool) => ({ type: "function", ...tool })),
+  +			tool_choice: "auto",
+  +		} : {}),
+   	};
+   }
+   
+  @@ -98,17 +102,7 @@ export function buildRealtimeSessionUpdate(
+   ): Record<string, unknown> {
+   	return {
+   		type: "session.update",
+  -		session: {
+  -			type: "realtime",
+  -			turn_detection: { type: "server_vad", create_response: true, interrupt_response: true },
+  -			input_audio_transcription: { model: "gpt-4o-mini-transcribe" },
+  -			...(settings.model.startsWith("gpt-realtime-2") ? { reasoning: { effort: settings.reasoningEffort } } : {}),
+  -			...(instructions ? { instructions } : {}),
+  -			...(tools.length > 0 ? {
+  -				tools: tools.map((tool) => ({ type: "function", ...tool })),
+  -				tool_choice: "auto",
+  -			} : {}),
+  -		},
+  +		session: buildRealtimeSessionConfig(settings, instructions, tools),
+   	};
+   }
+   
+  @@ -123,6 +117,40 @@ export function realtimeFunctionOutput(callId: string, output: unknown): Record<
+   	};
+   }
+   
+  +/**
+  + * A sampled frame, as a conversation item.
+  + *
+  + * Realtime has no video lane, so vision arrives as still images attached to the
+  + * conversation. Deliberately not followed by `response.create`: a frame is
+  + * context for the next turn, not a turn of its own, and forcing a response on
+  + * every frame would make the model narrate the camera feed.
+  + */
+  +export function realtimeImageItem(dataUrl: string): Record<string, unknown> {
+  +	return {
+  +		type: "conversation.item.create",
+  +		item: {
+  +			type: "message",
+  +			role: "user",
+  +			content: [{ type: "input_image", image_url: dataUrl }],
+  +		},
+  +	};
+  +}
+  +
+  +/** Seed a prior chat turn so a voice session continues the same conversation. */
+  +export function realtimeHistoryItem(turn: LiveHistoryTurn): Record<string, unknown> {
+  +	return {
+  +		type: "conversation.item.create",
+  +		item: {
+  +			type: "message",
+  +			role: turn.role,
+  +			content: [{
+  +				type: turn.role === "assistant" ? "output_text" : "input_text",
+  +				text: turn.text,
+  +			}],
+  +		},
+  +	};
+  +}
+  +
+   const REALTIME_MODELS = [
+   	{ value: "gpt-realtime-2.1", label: "gpt-realtime-2.1 (latest)" },
+   	{ value: "gpt-realtime-2.1-mini", label: "gpt-realtime-2.1-mini" },
+  @@ -183,6 +211,51 @@ async function mintEphemeralKey(apiKey: string, model: string, voice: string, si
+   	return value;
+   }
+   
+  +/**
+  + * Exchange the local SDP offer for the provider's answer.
+  + *
+  + * Session config rides along in the same multipart request so turn detection,
+  + * voice, and tools are correct from the very first utterance. Waiting for the
+  + * data channel to open before sending `session.update` leaves a window where
+  + * the model is listening under default settings.
+  + */
+  +async function exchangeSdp(
+  +	offerSdp: string,
+  +	ephemeralKey: string,
+  +	session: Record<string, unknown> | null,
+  +	signal?: AbortSignal,
+  +): Promise<string> {
+  +	const response = await withApiRetry(async () => {
+  +		const body = session === null ? offerSdp : (() => {
+  +			const form = new FormData();
+  +			form.set("sdp", offerSdp);
+  +			form.set("session", JSON.stringify(session));
+  +			return form;
+  +		})();
+  +		const result = await fetch("https://api.openai.com/v1/realtime/calls", {
+  +			method: "POST",
+  +			headers: {
+  +				Authorization: `Bearer ${ephemeralKey}`,
+  +				// FormData sets its own multipart boundary; setting it by hand breaks the parse.
+  +				...(session === null ? { "Content-Type": "application/sdp" } : {}),
+  +			},
+  +			body,
+  +			signal,
+  +		});
+  +		if (!result.ok) {
+  +			const errText = await result.text().catch(() => "");
+  +			const retryAfter = result.headers.get("retry-after");
+  +			throw new Error(
+  +				`Realtime SDP exchange failed (${result.status})`
+  +				+ `${errText ? `: ${errText.slice(0, 200)}` : ""}`
+  +				+ `${retryAfter ? ` retry-after: ${retryAfter}` : ""}`,
+  +			);
+  +		}
+  +		return result;
+  +	}, { signal });
+  +	return await response.text();
+  +}
+  +
+   async function attachMicrophone(pc: RTCPeerConnection): Promise<MediaStream | null> {
+   	if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) return null;
+   	try {
+  @@ -262,7 +335,7 @@ async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthe
+   			dataChannel.send(JSON.stringify({
+   				type: "response.create",
+   				response: {
+  -					modalities: ["audio", "text"],
+  +					output_modalities: ["audio"],
+   					instructions: `Speak this learner-facing line exactly. Affect: ${utterance.affect}. Pace: ${utterance.pace}.\n\n${utterance.text}`,
+   				},
+   			}));
+  @@ -294,27 +367,9 @@ async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthe
+   			const offer = await pc.createOffer();
+   			await pc.setLocalDescription(offer);
+   
+  -			const sdpResponse = await withApiRetry(async () => {
+  -				const result = await fetch("https://api.openai.com/v1/realtime/calls", {
+  -					method: "POST",
+  -					headers: {
+  -						Authorization: `Bearer ${ephemeralKey}`,
+  -						"Content-Type": "application/sdp",
+  -					},
+  -					body: offer.sdp,
+  -					signal,
+  -				});
+  -				if (!result.ok) {
+  -					const retryAfter = result.headers.get("retry-after");
+  -					throw new Error(`Realtime SDP exchange failed (${result.status})${retryAfter ? ` retry-after: ${retryAfter}` : ""}`);
+  -				}
+  -				return result;
+  -			}, { signal });
+  -			const answer: RTCSessionDescriptionInit = {
+  -				type: "answer",
+  -				sdp: await sdpResponse.text(),
+  -			};
+  -			await pc.setRemoteDescription(answer);
+  +			// One-shot synthesis needs no session config beyond the minted voice.
+  +			const answerSdp = await exchangeSdp(offer.sdp ?? "", ephemeralKey, null, signal);
+  +			await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
+   		} catch (error) {
+   			clearTimeout(timer);
+   			cleanup();
+  @@ -327,7 +382,7 @@ async function startLiveSession(
+   	request: LiveSpeechRequest,
+   	observer?: RealtimeTelemetryObserver,
+   ): Promise<LiveSpeechSession> {
+  -	const { settings, getApiKey, signal, instructions, tools, onToolCall, onState, onUserTranscript, onAssistantTranscript, onError } = request;
+  +	const { settings, getApiKey, signal, instructions, tools, history, video, onToolCall, onState, onUserTranscript, onAssistantTranscript, onError } = request;
+   	const telemetry = createRealtimeTelemetry(observer);
+   	const canonical = createRealtimeCanonicalBridge(request.onConversationEvent, request.conversationIds);
+   	const setupStartedAt = telemetry.start();
+  @@ -342,7 +397,10 @@ async function startLiveSession(
+   		telemetry.emit("session.completed", { provider: "openai", outcome: "error" });
+   		throw new Error(`OpenAI Realtime model ${settings.model} cannot satisfy duplex WebRTC and native tool-call requirements.`);
+   	}
+  -	canonical.emit("run.started", { mode: "voice" });
+  +	// Vision is only offered when the model can actually accept still images;
+  +	// on a legacy preview model the frame sink stays dark rather than erroring.
+  +	const visionEnabled = Boolean(video) && capability.capabilities.realtimeImage === "native";
+  +	canonical.emit("run.started", { mode: visionEnabled ? "multimodal" : "voice" });
+   	const apiKey = await getApiKey("openai");
+   	if (!apiKey) {
+   		const error = new Error("No OpenAI API key configured. Add one in Settings → Providers & Models.");
+  @@ -400,9 +458,16 @@ async function startLiveSession(
+   
+   	let micStream: MediaStream | null = null;
+   	let cleanedUp = false;
+  +	// Declared before cleanup(), which runs on the abort-before-start path.
+  +	let unsubscribeFrames: (() => void) | null = null;
+  +	let framesSent = 0;
+   	const cleanup = () => {
+   		if (cleanedUp) return;
+   		cleanedUp = true;
+  +		// Only detach from the frame feed; the caller owns the capture handle
+  +		// and may still be rendering a preview from it.
+  +		unsubscribeFrames?.();
+  +		unsubscribeFrames = null;
+   		try { pc.close(); } catch {}
+   		micStream?.getTracks().forEach((track) => track.stop());
+   		if (audioEl) {
+  @@ -457,6 +522,10 @@ async function startLiveSession(
+   	const dataChannel = pc.createDataChannel("oai-events");
+   	let responseActive = false;
+   
+  +	// The frame drip gives the model ambient context; look_at_screen lets it
+  +	// deliberately check the learner's work at the moment it matters.
+  +	const sessionTools = visionEnabled ? [...(tools ?? []), LOOK_AT_SCREEN_TOOL] : (tools ?? []);
+  +
+   	micStream = await attachMicrophone(pc);
+   	if (!micStream) {
+   		const error = new Error("Microphone unavailable for live voice.");
+  @@ -470,10 +539,34 @@ async function startLiveSession(
+   		throw error;
+   	}
+   
+  +	const send = (payload: Record<string, unknown>) => {
+  +		if (dataChannel.readyState !== "open") return;
+  +		try {
+  +			dataChannel.send(JSON.stringify(payload));
+  +		} catch (error) {
+  +			console.warn("[keating:realtime] send failed", error);
+  +		}
+  +	};
+  +
+  +	const sendFrame = (frame: CapturedFrame) => {
+  +		send(realtimeImageItem(frame.dataUrl));
+  +		framesSent += 1;
+  +	};
+  +
+   	dataChannel.addEventListener("open", () => {
+  -		// Enable continuous server-side voice-activity turn detection so the
+  -		// model keeps listening and replies without an explicit response.create.
+  -		dataChannel.send(JSON.stringify(buildRealtimeSessionUpdate(settings, instructions, tools)));
+  +		// Re-sent even though the same config rode along with the SDP offer: the
+  +		// update is idempotent and guarantees tools are registered before the
+  +		// learner's first utterance.
+  +		send(buildRealtimeSessionUpdate(settings, instructions, sessionTools));
+  +
+  +		// Replay prior chat turns so the voice session continues the same
+  +		// conversation instead of reintroducing itself.
+  +		for (const turnItem of history ?? []) {
+  +			if (turnItem.text.trim()) send(realtimeHistoryItem(turnItem));
+  +		}
+  +
+  +		if (visionEnabled && video) unsubscribeFrames = video.onFrame(sendFrame);
+  +
+   		setState("listening");
+   		telemetry.emit("connection.setup.completed", {
+   			provider: "openai", model, transport: "webrtc", outcome: "success",
+  @@ -562,35 +655,37 @@ async function startLiveSession(
+   				activeTurnStartedAt = null;
+   				break;
+   			case "response.function_call_arguments.done": {
+  -				if (!onToolCall || typeof msg.name !== "string" || typeof msg.call_id !== "string") break;
+  -				let parsed: Record<string, unknown> = {};
+  -				try { parsed = typeof msg.arguments === "string" && msg.arguments ? JSON.parse(msg.arguments) : {}; } catch {}
+  -				canonical.emit("tool.requested", { callId: msg.call_id, name: msg.name, arguments: jsonRecord(parsed) });
+  -				canonical.emit("tool.started", { callId: msg.call_id });
+  -				toolStartedAt.set(msg.call_id, telemetry.start());
+  -				telemetry.emit("tool.started", { provider: "openai", toolName: msg.name });
+  -				void (async () => {
+  -					try {
+  -						const output = await onToolCall({ callId: msg.call_id, name: msg.name, arguments: parsed });
+  -						canonical.emit("tool.completed", { callId: msg.call_id, result: jsonValue(output) });
+  -						const startedAt = toolStartedAt.get(msg.call_id);
+  -						telemetry.emit("tool.completed", { provider: "openai", toolName: msg.name, outcome: "success" },
+  -							startedAt === undefined ? undefined : telemetry.durationSince(startedAt));
+  -						toolStartedAt.delete(msg.call_id);
+  -						dataChannel.send(JSON.stringify(realtimeFunctionOutput(msg.call_id, output)));
+  -						dataChannel.send(JSON.stringify({ type: "response.create" }));
+  -					} catch (error) {
+  -						canonical.emit("tool.failed", { callId: msg.call_id, error: protocolError(error, "tool_execution_failed") });
+  -						const startedAt = toolStartedAt.get(msg.call_id);
+  -						telemetry.emit("tool.completed", { provider: "openai", toolName: msg.name, outcome: "failed" },
+  -							startedAt === undefined ? undefined : telemetry.durationSince(startedAt));
+  -						toolStartedAt.delete(msg.call_id);
+  -						dataChannel.send(JSON.stringify(realtimeFunctionOutput(msg.call_id, {
+  -							error: error instanceof Error ? error.message : String(error),
+  -						})));
+  -						dataChannel.send(JSON.stringify({ type: "response.create" }));
+  -					}
+  -				})();
+  +				if (typeof msg.name !== "string" || typeof msg.call_id !== "string") break;
+  +				const call = {
+  +					callId: msg.call_id,
+  +					name: msg.name,
+  +					arguments: parseToolArguments(msg.arguments),
+  +				};
+  +				void runLiveToolCall({
+  +					call,
+  +					provider: "openai",
+  +					canonical,
+  +					telemetry,
+  +					execute: async (pending) => {
+  +						// look_at_screen is served locally from the capture handle
+  +						// rather than round-tripping through the agent tool catalog.
+  +						if (pending.name === LOOK_AT_SCREEN_TOOL_NAME) {
+  +							const frame = await video?.captureFrameNow();
+  +							if (!frame) return { ok: false, error: "No video frame is available right now." };
+  +							return { ok: true, note: "A current frame has been added to the conversation." };
+  +						}
+  +						if (!onToolCall) throw new Error(`No handler is available for tool ${pending.name}.`);
+  +						return await onToolCall(pending);
+  +					},
+  +					respond: (callId, output) => {
+  +						send(realtimeFunctionOutput(callId, output));
+  +						send({ type: "response.create" });
+  +					},
+  +					respondError: (callId, message) => {
+  +						send(realtimeFunctionOutput(callId, { error: message }));
+  +						send({ type: "response.create" });
+  +					},
+  +				});
+   				break;
+   			}
+   				case "error":
+  @@ -613,23 +708,15 @@ async function startLiveSession(
+   		const offer = await pc.createOffer();
+   		await pc.setLocalDescription(offer);
+   
+  -		const sdpResponse = await withApiRetry(async () => {
+  -			const result = await fetch("https://api.openai.com/v1/realtime/calls", {
+  -				method: "POST",
+  -				headers: {
+  -					Authorization: `Bearer ${ephemeralKey}`,
+  -					"Content-Type": "application/sdp",
+  -				},
+  -				body: offer.sdp,
+  -				signal,
+  -			});
+  -			if (!result.ok) {
+  -				const retryAfter = result.headers.get("retry-after");
+  -				throw new Error(`Realtime SDP exchange failed (${result.status})${retryAfter ? ` retry-after: ${retryAfter}` : ""}`);
+  -			}
+  -			return result;
+  -		}, { signal });
+  -		await pc.setRemoteDescription({ type: "answer", sdp: await sdpResponse.text() });
+  +		// Session config travels with the offer so turn detection, voice, and
+  +		// tools are in force before the learner's first word.
+  +		const answerSdp = await exchangeSdp(
+  +			offer.sdp ?? "",
+  +			ephemeralKey,
+  +			buildRealtimeSessionConfig(settings, instructions, sessionTools),
+  +			signal,
+  +		);
+  +		await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
+   	} catch (error) {
+   		telemetry.emit("connection.setup.completed", { provider: "openai", model, transport: "webrtc", outcome: "failed" }, telemetry.durationSince(setupStartedAt));
+   		telemetry.emit("session.error", { provider: "openai", errorCode: "session_setup_failed" });
+  @@ -643,6 +730,10 @@ async function startLiveSession(
+   		get state() {
+   			return state;
+   		},
+  +		get framesSent() {
+  +			return framesSent;
+  +		},
+  +		videoRoute: visionEnabled ? "sampled" : "none",
+   		async stop() {
+   			complete("cancelled");
+   			cleanup();
+  diff --git a/web/src/keating/speech.ts b/web/src/keating/speech.ts
+  index 93d1eb2d4d821b8aed45b033d3664d8be6592865..f9c9f091c71b5b4fbd1390ce3d728a3286b37d19 100644
+  --- a/web/src/keating/speech.ts
+  +++ b/web/src/keating/speech.ts
+  @@ -1,6 +1,12 @@
+   import type { AgentTool } from "@earendil-works/pi-agent-core";
+   import { createLocalSetting } from "./local-setting";
+   import type { ConversationEvent } from "./protocol";
+  +import type { VideoCaptureHandle, VideoSource } from "./video-capture";
+  +import {
+  +	resolveRealtimeTier,
+  +	type ProviderModelDescriptor,
+  +	type RealtimeTierDescriptor,
+  +} from "./providers";
+   
+   export const KEATING_VOICE_TOOL_NAME = "keating_voice";
+   export const GEMINI_LIVE_SPEECH_MODEL = "gemini-3.1-flash-live-preview";
+  @@ -47,6 +53,12 @@ export interface WebSpeechSettings {
+   	customModels: CustomSpeechModel[];
+   	/** When true, Realtime providers may capture mic input. */
+   	microphoneEnabled: boolean;
+  +	/** When true, live sessions may capture camera or screen frames. */
+  +	videoEnabled: boolean;
+  +	/** Where live-session frames come from. */
+  +	videoSource: VideoSource;
+  +	/** Milliseconds between sampled frames; floored to 1 fps by the capture layer. */
+  +	frameIntervalMs: number;
+   	/** Reasoning budget for Realtime reasoning models. */
+   	reasoningEffort: "minimal" | "low" | "medium" | "high" | "xhigh";
+   }
+  @@ -66,6 +78,9 @@ export const DEFAULT_WEB_SPEECH_SETTINGS: WebSpeechSettings = {
+   	voiceName: DEFAULT_SPEECH_VOICE,
+   	customModels: [],
+   	microphoneEnabled: false,
+  +	videoEnabled: false,
+  +	videoSource: "camera",
+  +	frameIntervalMs: 1000,
+   	reasoningEffort: "medium",
+   };
+   
+  @@ -89,6 +104,11 @@ const speechSetting = createLocalSetting<WebSpeechSettings>({
+   				voiceName: cleanString(parsed.voiceName) || DEFAULT_WEB_SPEECH_SETTINGS.voiceName,
+   				customModels,
+   				microphoneEnabled: parsed.microphoneEnabled === true,
+  +				videoEnabled: parsed.videoEnabled === true,
+  +				videoSource: parsed.videoSource === "screen" ? "screen" : "camera",
+  +				frameIntervalMs: Number.isFinite(parsed.frameIntervalMs) && (parsed.frameIntervalMs ?? 0) > 0
+  +					? Math.floor(parsed.frameIntervalMs as number)
+  +					: DEFAULT_WEB_SPEECH_SETTINGS.frameIntervalMs,
+   				reasoningEffort: ["minimal", "low", "medium", "high", "xhigh"].includes(parsed.reasoningEffort ?? "")
+   					? parsed.reasoningEffort as WebSpeechSettings["reasoningEffort"]
+   					: DEFAULT_WEB_SPEECH_SETTINGS.reasoningEffort,
+  @@ -181,8 +201,35 @@ export function speechInputMode(settings: WebSpeechSettings): "duplex" | "stt" {
+   	return settings.enabled && settings.microphoneEnabled && isDuplexSpeechProvider(settings.providerId) ? "duplex" : "stt";
+   }
+   
+  +/** Which LLM provider backs a speech provider, for capability lookup. */
+  +export function speechProviderModel(settings: WebSpeechSettings): ProviderModelDescriptor | null {
+  +	if (settings.providerId === "openai-realtime") return { provider: "openai", id: settings.model, api: "openai-realtime" };
+  +	if (settings.providerId === "gemini-live") return { provider: "google", id: settings.model, api: "google-live" };
+  +	return null;
+  +}
+  +
+  +/**
+  + * The realtime tier the current speech settings can actually be driven at.
+  + * Non-duplex providers (plain TTS, custom endpoints) are tier 0 by definition.
+  + */
+  +export function resolveSpeechRealtimeTier(settings: WebSpeechSettings): RealtimeTierDescriptor {
+  +	const model = speechProviderModel(settings);
+  +	if (!model) {
+  +		return {
+  +			tier: 0,
+  +			label: "Half duplex (push to talk)",
+  +			video: false,
+  +			videoRoute: "none",
+  +			capReason: "This provider only synthesizes speech; it cannot hold a live session.",
+  +		};
+  +	}
+  +	return resolveRealtimeTier(model);
+  +}
+  +
+   let audioContext: AudioContext | null = null;
+   let scheduledUntil = 0;
+  +/** Sources queued but not yet finished, so barge-in can cut them off. */
+  +const scheduledSources = new Set<AudioBufferSourceNode>();
+   
+   export function getAudioContext(): AudioContext | null {
+   	if (typeof window === "undefined") return null;
+  @@ -221,9 +268,35 @@ export function schedulePcmAudio(base64: string, sampleRate = RECEIVE_SAMPLE_RAT
+   	const startAt = Math.max(context.currentTime + 0.03, scheduledUntil);
+   	source.start(startAt);
+   	scheduledUntil = startAt + buffer.duration;
+  +	trackScheduledSource(source);
+   	return true;
+   }
+   
+  +function trackScheduledSource(source: AudioBufferSourceNode): void {
+  +	scheduledSources.add(source);
+  +	source.addEventListener("ended", () => scheduledSources.delete(source), { once: true });
+  +}
+  +
+  +/**
+  + * Cut off audio that has been queued but not yet played.
+  + *
+  + * Providers that stream PCM (rather than delivering a WebRTC track) can have
+  + * seconds of assistant speech buffered ahead of the speaker. Without this, a
+  + * learner interrupting would keep hearing the sentence they just cut off.
+  + */
+  +export function stopScheduledAudio(): void {
+  +	for (const source of scheduledSources) {
+  +		try {
+  +			source.stop();
+  +		} catch {
+  +			// Already stopped or never started; either way it is not audible.
+  +		}
+  +	}
+  +	scheduledSources.clear();
+  +	const context = getAudioContext();
+  +	scheduledUntil = context ? context.currentTime : 0;
+  +}
+  +
+   export async function scheduleAudioBlob(blob: Blob): Promise<boolean> {
+   	const context = getAudioContext();
+   	if (!context) return false;
+  @@ -235,6 +308,7 @@ export async function scheduleAudioBlob(blob: Blob): Promise<boolean> {
+   	const startAt = Math.max(context.currentTime + 0.03, scheduledUntil);
+   	source.start(startAt);
+   	scheduledUntil = startAt + audioBuffer.duration;
+  +	trackScheduledSource(source);
+   	return true;
+   }
+   
+  @@ -284,9 +358,22 @@ export interface LiveSpeechToolCall {
+   	arguments: Record<string, unknown>;
+   }
+   
+  +/** A prior chat turn, replayed into a live session so voice continues the conversation. */
+  +export interface LiveHistoryTurn {
+  +	role: "user" | "assistant";
+  +	text: string;
+  +}
+  +
+   export interface LiveSpeechBridge {
+   	tools: LiveSpeechTool[];
+   	execute(call: LiveSpeechToolCall, signal?: AbortSignal): Promise<unknown>;
+  +	/**
+  +	 * The real Keating system prompt, so the voice session is the same teacher
+  +	 * as the text session rather than a generic assistant.
+  +	 */
+  +	instructions?: string;
+  +	/** Recent conversation turns, oldest first. */
+  +	history?: LiveHistoryTurn[];
+   }
+   
+   export function getLiveSpeechBridge(): LiveSpeechBridge | undefined {
+  @@ -303,6 +390,14 @@ export interface LiveSpeechRequest {
+   	signal?: AbortSignal;
+   	/** Optional persona / system instructions for the live voice agent. */
+   	instructions?: string;
+  +	/** Prior conversation turns to seed the session with, oldest first. */
+  +	history?: LiveHistoryTurn[];
+  +	/**
+  +	 * An already-running frame source. The caller owns capture so the same
+  +	 * MediaStream can be previewed in the UI; the provider only consumes frames
+  +	 * and routes them however its tier allows.
+  +	 */
+  +	video?: VideoCaptureHandle | null;
+   	onState?: (state: LiveSpeechState) => void;
+   	onUserTranscript?: (text: string, final: boolean) => void;
+   	onAssistantTranscript?: (text: string, final: boolean) => void;
+  @@ -317,6 +412,10 @@ export interface LiveSpeechRequest {
+   
+   export interface LiveSpeechSession {
+   	readonly state: LiveSpeechState;
+  +	/** Frames delivered to the model so far, for the live HUD. */
+  +	readonly framesSent?: number;
+  +	/** How vision reached the model in this session, if at all. */
+  +	readonly videoRoute?: "native" | "sampled" | "none";
+   	stop(): Promise<void>;
+   }
+   
+  diff --git a/web/src/pages/Landing.tsx b/web/src/pages/Landing.tsx
+  index e1e1c64f3fca357083e3b587d836cdd49ef58608..177cdbdb93792e4f5f6e77ffdd4b3a8301dd2219 100644
+  --- a/web/src/pages/Landing.tsx
+  +++ b/web/src/pages/Landing.tsx
+  @@ -319,15 +319,15 @@ export function Landing() {
+                     KEATING<span className="hero-brand-suffix">.help</span>
+                   </h1>
+                   <div className="hero-headline">
+  -                  Teaching that makes you do the work.
+  +                  Bring the question. Keep the thinking.
+                     <span className="cursor" />
+                   </div>
+  -                <div className="hero-sub">THINK_FOR_YOURSELF</div>
+  +                <div className="hero-sub">LEARN BY RECONSTRUCTING</div>
+                   <p className="hero-copy">
+  -                  Keating is an <strong>open-source AI teacher</strong> for your terminal and
+  -                  browser. It won&apos;t give you answers — it diagnoses what you don&apos;t know,
+  -                  plans the lesson, quizzes you, and verifies what stuck. The Socratic method,
+  -                  powered by silicon.
+  +                  Keating is a Socratic teacher for your terminal and browser. It listens to your
+  +                  explanation, finds where it thins out, and asks the next useful question. You do
+  +                  not advance by recognizing the right answer. You advance when you can build one
+  +                  and teach it back in your own words.
+                   </p>
+                   <div className="hero-ctas">
+                     <button
+  @@ -343,17 +343,6 @@ export function Landing() {
+                       Build_From_Source
+                     </a>
+                   </div>
+  -                <div className="hero-tags">
+  -                  <span>
+  -                    <i>◈</i> Diagnoses gaps
+  -                  </span>
+  -                  <span>
+  -                    <i>↻</i> Adapts to you
+  -                  </span>
+  -                  <span>
+  -                    <i>▣</i> Open source
+  -                  </span>
+  -                </div>
+                 </div>
+   
+                 <div className="hero-stage">
+  diff --git a/web/src/test/browser-tools-assembly.test.ts b/web/src/test/browser-tools-assembly.test.ts
+  index ec426b2ade99ea9bcb5825909f2e90c400119abb..9432f3eae3306e1c27efdf96e5273b336894a73e 100644
+  --- a/web/src/test/browser-tools-assembly.test.ts
+  +++ b/web/src/test/browser-tools-assembly.test.ts
+  @@ -155,6 +155,9 @@ describe("browser tool assembly contract", () => {
+   					voiceName: "Kore",
+   					customModels: [],
+   					microphoneEnabled: false,
+  +					videoEnabled: false,
+  +					videoSource: "camera",
+  +					frameIntervalMs: 1000,
+   					reasoningEffort: "medium",
+   				},
+   				getApiKey: async () => {
+  @@ -193,7 +196,7 @@ describe("browser tool assembly contract", () => {
+   		const tools = await createKeatingTools({} as any, {
+   			agentRuntime: remoteRuntime,
+   			speech: {
+  -				settings: { enabled: true, providerId: "gemini-live", model: "test", voiceName: "Kore", customModels: [], microphoneEnabled: false, reasoningEffort: "medium" },
+  +				settings: { enabled: true, providerId: "gemini-live", model: "test", voiceName: "Kore", customModels: [], microphoneEnabled: false, videoEnabled: false, videoSource: "camera", frameIntervalMs: 1000, reasoningEffort: "medium" },
+   				getApiKey: async () => undefined,
+   			},
+   		});
+  diff --git a/web/src/test/openai-realtime.test.ts b/web/src/test/openai-realtime.test.ts
+  index 221c106643df0095e7af5f464c000693dc322ff9..eabe2fc9377f85b76b933a13dc44983e295fed2d 100644
+  --- a/web/src/test/openai-realtime.test.ts
+  +++ b/web/src/test/openai-realtime.test.ts
+  @@ -3,10 +3,13 @@ import { describe, expect, it } from "bun:test";
+   import { DEFAULT_WEB_SPEECH_SETTINGS } from "../keating/speech";
+   import type { ConversationEvent } from "../keating/protocol";
+   import {
+  +	buildRealtimeSessionConfig,
+   	buildRealtimeSessionUpdate,
+   	createRealtimeCanonicalBridge,
+   	negotiateOpenAIRealtimeSession,
+   	realtimeFunctionOutput,
+  +	realtimeHistoryItem,
+  +	realtimeImageItem,
+   } from "../keating/speech-providers/openai-realtime";
+   
+   describe("OpenAI Realtime 2.1 payloads", () => {
+  @@ -18,7 +21,11 @@ describe("OpenAI Realtime 2.1 payloads", () => {
+   		) as any;
+   
+   		expect(payload.session.reasoning).toEqual({ effort: "high" });
+  -		expect(payload.session.turn_detection).toEqual({ type: "server_vad", create_response: true, interrupt_response: true });
+  +		expect(payload.session.audio.input.turn_detection).toEqual({
+  +			type: "semantic_vad",
+  +			create_response: true,
+  +			interrupt_response: true,
+  +		});
+   		expect(payload.session.tools[0]).toEqual({
+   			type: "function",
+   			name: "quiz",
+  @@ -27,6 +34,74 @@ describe("OpenAI Realtime 2.1 payloads", () => {
+   		});
+   	});
+   
+  +	it("nests audio config where the GA endpoint actually reads it", () => {
+  +		// The older flat layout (turn_detection / input_audio_transcription at the
+  +		// session root) is silently ignored, so those settings never took effect.
+  +		const session = buildRealtimeSessionConfig(
+  +			{ ...DEFAULT_WEB_SPEECH_SETTINGS, model: "gpt-realtime-2.1", voiceName: "cedar" },
+  +		) as any;
+  +
+  +		expect(session.turn_detection).toBeUndefined();
+  +		expect(session.input_audio_transcription).toBeUndefined();
+  +		expect(session.modalities).toBeUndefined();
+  +
+  +		expect(session.output_modalities).toEqual(["audio"]);
+  +		expect(session.audio.input.format).toEqual({ type: "audio/pcm", rate: 24000 });
+  +		expect(session.audio.input.transcription).toEqual({ model: "gpt-4o-transcribe" });
+  +		expect(session.audio.output.voice).toBe("cedar");
+  +	});
+  +
+  +	it("falls back to a supported voice rather than sending an unknown one", () => {
+  +		const session = buildRealtimeSessionConfig(
+  +			{ ...DEFAULT_WEB_SPEECH_SETTINGS, model: "gpt-realtime-2.1", voiceName: "Kore" },
+  +		) as any;
+  +		// "Kore" is a Gemini voice; switching providers must not break the session.
+  +		expect(session.audio.output.voice).toBe("marin");
+  +	});
+  +
+  +	it("only sends a reasoning budget to models that accept one", () => {
+  +		const reasoning = buildRealtimeSessionConfig(
+  +			{ ...DEFAULT_WEB_SPEECH_SETTINGS, model: "gpt-realtime-2", reasoningEffort: "low" },
+  +		) as any;
+  +		expect(reasoning.reasoning).toEqual({ effort: "low" });
+  +
+  +		for (const model of ["gpt-realtime", "gpt-4o-realtime-preview-2024-12-17"]) {
+  +			const session = buildRealtimeSessionConfig({ ...DEFAULT_WEB_SPEECH_SETTINGS, model }) as any;
+  +			expect(session.reasoning).toBeUndefined();
+  +		}
+  +	});
+  +
+  +	it("omits tools entirely when there are none, rather than sending an empty list", () => {
+  +		const session = buildRealtimeSessionConfig({ ...DEFAULT_WEB_SPEECH_SETTINGS, model: "gpt-realtime-2.1" }) as any;
+  +		expect(session.tools).toBeUndefined();
+  +		expect(session.tool_choice).toBeUndefined();
+  +	});
+  +
+  +	it("sends a sampled frame as context, never as a turn", () => {
+  +		// Realtime has no video lane, so vision arrives as a still image on the
+  +		// conversation. Following it with response.create would make the model
+  +		// narrate the camera feed instead of waiting for the learner.
+  +		const item = realtimeImageItem("data:image/jpeg;base64,AAAA") as any;
+  +		expect(item.type).toBe("conversation.item.create");
+  +		expect(item.item.role).toBe("user");
+  +		expect(item.item.content).toEqual([
+  +			{ type: "input_image", image_url: "data:image/jpeg;base64,AAAA" },
+  +		]);
+  +	});
+  +
+  +	it("replays prior chat turns with the role-correct content type", () => {
+  +		expect(realtimeHistoryItem({ role: "user", text: "why does this compile?" }) as any).toEqual({
+  +			type: "conversation.item.create",
+  +			item: {
+  +				type: "message",
+  +				role: "user",
+  +				content: [{ type: "input_text", text: "why does this compile?" }],
+  +			},
+  +		});
+  +		expect((realtimeHistoryItem({ role: "assistant", text: "look at the lifetime" }) as any).item.content[0].type)
+  +			.toBe("output_text");
+  +	});
+  +
+   	it("encodes function outputs for the model to continue speaking", () => {
+   		expect(realtimeFunctionOutput("call-1", { ok: true })).toEqual({
+   			type: "conversation.item.create",
+  @@ -36,7 +111,7 @@ describe("OpenAI Realtime 2.1 payloads", () => {
+   
+   	it("negotiates native full-duplex WebRTC and native tool calls", () => {
+   		const negotiated = negotiateOpenAIRealtimeSession("gpt-realtime-2.1");
+  -		expect(negotiated.ruleId).toBe("openai-realtime");
+  +		expect(negotiated.ruleId).toBe("openai-realtime-vision");
+   		expect(negotiated.realtimeAudio).toBe("native");
+   		expect(negotiated.transport).toBe("webrtc");
+   		expect(negotiated.toolCalls).toBe("native");
+  diff --git a/web/src/test/openai-speech.test.ts b/web/src/test/openai-speech.test.ts
+  index 64610c8b6e5a81a4e3c46c9bf19c55a22d65bd7b..ca65417cdcf78f73f4d2640215a4b712533ddba5 100644
+  --- a/web/src/test/openai-speech.test.ts
+  +++ b/web/src/test/openai-speech.test.ts
+  @@ -30,6 +30,9 @@ describe("OpenAI speech providers", () => {
+   				voiceName: "Kore",
+   				customModels: [],
+   				microphoneEnabled: false,
+  +				videoEnabled: false,
+  +				videoSource: "camera",
+  +				frameIntervalMs: 1000,
+   				reasoningEffort: "medium",
+   			},
+   			getApiKey: async () => "openai-test-key",
+  @@ -62,6 +65,9 @@ describe("OpenAI speech providers", () => {
+   				voiceName: "marin",
+   				customModels: [],
+   				microphoneEnabled: false,
+  +				videoEnabled: false,
+  +				videoSource: "camera",
+  +				frameIntervalMs: 1000,
+   				reasoningEffort: "medium",
+   			},
+   			getApiKey: async () => "openai-test-key",
+  diff --git a/web/src/test/providers/capabilities.test.ts b/web/src/test/providers/capabilities.test.ts
+  index 5ab3c4920968f8536ec05791ce453e891bdd93ce..6aba87814ecd546abbe79f859ac3e48c44ea1895 100644
+  --- a/web/src/test/providers/capabilities.test.ts
+  +++ b/web/src/test/providers/capabilities.test.ts
+  @@ -2,7 +2,9 @@ import { describe, expect, test } from "bun:test";
+   import {
+   	negotiateProviderCapabilities,
+   	resolveProviderCapabilities,
+  +	resolveRealtimeTier,
+   	type CapabilityRule,
+  +	type RealtimeTier,
+   } from "../../keating/providers";
+   
+   describe("provider capability registry", () => {
+  @@ -13,7 +15,7 @@ describe("provider capability registry", () => {
+   			api: "openai-responses",
+   		});
+   
+  -		expect(result.ruleId).toBe("openai-realtime");
+  +		expect(result.ruleId).toBe("openai-realtime-vision");
+   		expect(result.capabilities.realtimeAudio).toBe("native");
+   		expect(result.capabilities.realtimeTransports).toEqual(["webrtc", "websocket"]);
+   	});
+  @@ -105,6 +107,8 @@ describe("provider capability registry", () => {
+   			capabilities: {
+   				realtimeAudio: "native",
+   				realtimeTransports: ["livekit"],
+  +				realtimeVideo: "none",
+  +				realtimeImage: "none",
+   				webSearch: "none",
+   				toolCalls: "native",
+   				citations: "none",
+  @@ -120,3 +124,105 @@ describe("provider capability registry", () => {
+   		expect(result.transport).toBe("livekit");
+   	});
+   });
+  +
+  +describe("realtime capability cascade", () => {
+  +	// This table is the spec for the tier system. Each row states the highest
+  +	// tier Keating may drive a model at, and how vision reaches it.
+  +	const CASCADE: ReadonlyArray<readonly [string, string, RealtimeTier, "native" | "sampled" | "none"]> = [
+  +		// tier 3 — provider has a dedicated realtime video lane
+  +		["google", "gemini-3.1-flash-live-preview", 3, "native"],
+  +		["google", "gemini-2.5-flash-live-preview", 3, "native"],
+  +		["google", "gemini-2.0-flash-live-001", 3, "native"],
+  +		["google", "gemini-live-2.5-flash-native-audio", 3, "native"],
+  +		// tier 2 — audio duplex, vision sampled as still images
+  +		["openai", "gpt-realtime-2.1", 2, "sampled"],
+  +		["openai", "gpt-realtime-2.1-mini", 2, "sampled"],
+  +		["openai", "gpt-realtime-2", 2, "sampled"],
+  +		["openai", "gpt-realtime", 2, "sampled"],
+  +		["openai", "gpt-realtime-mini", 2, "sampled"],
+  +		// tier 1 — audio duplex only, cannot see anything
+  +		["openai", "gpt-4o-realtime-preview-2024-12-17", 1, "none"],
+  +		["openai", "gpt-4o-mini-realtime-preview-2024-12-17", 1, "none"],
+  +		// tier 0 — no duplex session at all
+  +		["openai", "gpt-5.4", 0, "none"],
+  +		["anthropic", "claude-sonnet-4-6", 0, "none"],
+  +		["google", "gemini-3.1-pro-preview", 0, "none"],
+  +		["my-gateway", "unknown-model", 0, "none"],
+  +	];
+  +
+  +	test.each(CASCADE)("%s/%s resolves to tier %i (%s video)", (provider, id, tier, videoRoute) => {
+  +		const descriptor = resolveRealtimeTier({ provider, id });
+  +		expect(descriptor.tier).toBe(tier);
+  +		expect(descriptor.videoRoute).toBe(videoRoute);
+  +		expect(descriptor.video).toBe(videoRoute !== "none");
+  +	});
+  +
+  +	test("every tier below the top explains why it is capped", () => {
+  +		for (const [provider, id, tier] of CASCADE) {
+  +			const descriptor = resolveRealtimeTier({ provider, id });
+  +			if (tier === 3) expect(descriptor.capReason).toBeUndefined();
+  +			else expect(descriptor.capReason).toBeTruthy();
+  +		}
+  +	});
+  +
+  +	test("sampled vision negotiates through the adapter route, native does not", () => {
+  +		const sampled = negotiateProviderCapabilities(
+  +			{ provider: "openai", id: "gpt-realtime-2.1" },
+  +			{ realtimeAudio: true, realtimeVideo: true, toolCalls: true },
+  +		);
+  +		expect(sampled.realtimeVideo).toBe("adapter");
+  +		expect(sampled.realtimeImage).toBe("not-requested");
+  +
+  +		const native = negotiateProviderCapabilities(
+  +			{ provider: "google", id: "gemini-3.1-flash-live-preview" },
+  +			{ realtimeAudio: true, realtimeVideo: true, toolCalls: true },
+  +		);
+  +		expect(native.realtimeVideo).toBe("native");
+  +	});
+  +
+  +	test("disabling adapters strips sampled vision but keeps native vision", () => {
+  +		const sampled = negotiateProviderCapabilities(
+  +			{ provider: "openai", id: "gpt-realtime-2.1" },
+  +			{ realtimeAudio: true, realtimeVideo: true, allowAdapters: false },
+  +		);
+  +		expect(sampled.realtimeVideo).toBe("unavailable");
+  +		expect(sampled.missing).toContain("realtimeVideo");
+  +
+  +		const native = negotiateProviderCapabilities(
+  +			{ provider: "google", id: "gemini-3.1-flash-live-preview" },
+  +			{ realtimeAudio: true, realtimeVideo: true, allowAdapters: false },
+  +		);
+  +		expect(native.realtimeVideo).toBe("native");
+  +		expect(native.missing).toEqual([]);
+  +	});
+  +
+  +	test("legacy realtime previews keep duplex audio but lose image input", () => {
+  +		const legacy = resolveProviderCapabilities({
+  +			provider: "openai",
+  +			id: "gpt-4o-realtime-preview-2024-12-17",
+  +		});
+  +		expect(legacy.ruleId).toBe("openai-realtime-legacy");
+  +		expect(legacy.capabilities.realtimeAudio).toBe("native");
+  +		expect(legacy.capabilities.realtimeImage).toBe("none");
+  +		expect(legacy.capabilities.realtimeVideo).toBe("none");
+  +	});
+  +
+  +	test("a duplex model that cannot call tools is not a teaching session", () => {
+  +		const rules: CapabilityRule[] = [{
+  +			id: "toolless-voice",
+  +			provider: "voice-only",
+  +			capabilities: {
+  +				realtimeAudio: "native",
+  +				realtimeTransports: ["websocket"],
+  +				realtimeVideo: "native",
+  +				realtimeImage: "native",
+  +				webSearch: "none",
+  +				toolCalls: "none",
+  +				citations: "none",
+  +			},
+  +		}];
+  +		const descriptor = resolveRealtimeTier({ provider: "voice-only", id: "chatty" }, rules);
+  +		expect(descriptor.tier).toBe(0);
+  +		expect(descriptor.capReason).toContain("tools");
+  +	});
+  +});
+  diff --git a/web/src/test/speech-input-mode.test.ts b/web/src/test/speech-input-mode.test.ts
+  index 1610d0e9ea3c97eb6912a4432aa180259c8c2052..aabd701ecce491d214be06a367b5236a736524c3 100644
+  --- a/web/src/test/speech-input-mode.test.ts
+  +++ b/web/src/test/speech-input-mode.test.ts
+  @@ -1,7 +1,9 @@
+   import { describe, expect, it } from "bun:test";
+   import {
+   	DEFAULT_WEB_SPEECH_SETTINGS,
+  +	resolveSpeechRealtimeTier,
+   	speechInputMode,
+  +	speechProviderModel,
+   } from "../keating/speech";
+   
+   describe("speech input mode", () => {
+  @@ -23,3 +25,42 @@ describe("speech input mode", () => {
+   		})).toBe("duplex");
+   	});
+   });
+  +
+  +describe("realtime tier from speech settings", () => {
+  +	it("maps each duplex speech provider onto its LLM provider", () => {
+  +		expect(speechProviderModel({
+  +			...DEFAULT_WEB_SPEECH_SETTINGS,
+  +			providerId: "openai-realtime",
+  +			model: "gpt-realtime-2.1",
+  +		})).toEqual({ provider: "openai", id: "gpt-realtime-2.1", api: "openai-realtime" });
+  +
+  +		expect(speechProviderModel({
+  +			...DEFAULT_WEB_SPEECH_SETTINGS,
+  +			providerId: "gemini-live",
+  +			model: "gemini-3.1-flash-live-preview",
+  +		})).toEqual({ provider: "google", id: "gemini-3.1-flash-live-preview", api: "google-live" });
+  +	});
+  +
+  +	it("treats synthesis-only providers as having no live session", () => {
+  +		for (const providerId of ["openai-tts", "supertonic-3", "custom:my-endpoint"]) {
+  +			expect(speechProviderModel({ ...DEFAULT_WEB_SPEECH_SETTINGS, providerId })).toBeNull();
+  +			const tier = resolveSpeechRealtimeTier({ ...DEFAULT_WEB_SPEECH_SETTINGS, providerId });
+  +			expect(tier.tier).toBe(0);
+  +			expect(tier.video).toBe(false);
+  +		}
+  +	});
+  +
+  +	it("resolves the full cascade from settings the user can actually pick", () => {
+  +		const cases = [
+  +			["gemini-live", "gemini-3.1-flash-live-preview", 3, "native"],
+  +			["openai-realtime", "gpt-realtime-2.1", 2, "sampled"],
+  +			["openai-realtime", "gpt-4o-realtime-preview-2024-12-17", 1, "none"],
+  +		] as const;
+  +
+  +		for (const [providerId, model, tier, videoRoute] of cases) {
+  +			const resolved = resolveSpeechRealtimeTier({ ...DEFAULT_WEB_SPEECH_SETTINGS, providerId, model });
+  +			expect(resolved.tier).toBe(tier);
+  +			expect(resolved.videoRoute).toBe(videoRoute);
+  +		}
+  +	});
+  +});
+
+  diff --git a/web/src/keating/live-history.ts b/web/src/keating/live-history.ts
+  new file mode 100644
+  index 0000000..faafcc4
+  --- /dev/null
+  +++ b/web/src/keating/live-history.ts
+  @@ -0,0 +1,66 @@
+  +import type { LiveHistoryTurn } from "./speech";
+  +
+  +/**
+  + * Build the conversation seed for a live voice session.
+  + *
+  + * A voice session opens a separate model connection, so without a seed the
+  + * model has no idea what was just discussed in text and reintroduces itself
+  + * mid-lesson. Only plain user/assistant text is replayed: tool traffic and
+  + * generative-UI payloads mean nothing to a speech model and would waste the
+  + * audio context window, which is far smaller than the text one.
+  + */
+  +export const DEFAULT_LIVE_HISTORY_TURNS = 12;
+  +export const DEFAULT_LIVE_HISTORY_CHARS = 6000;
+  +
+  +function turnText(message: unknown): string {
+  +	const content = (message as { content?: unknown }).content;
+  +	if (typeof content === "string") return content.trim();
+  +	if (Array.isArray(content)) {
+  +		return content
+  +			.filter((part) => part?.type === "text" && typeof part.text === "string")
+  +			.map((part) => (part.text as string).trim())
+  +			.filter(Boolean)
+  +			.join(" ")
+  +			.trim();
+  +	}
+  +	return "";
+  +}
+  +
+  +function turnRole(message: unknown): LiveHistoryTurn["role"] | null {
+  +	const role = (message as { role?: unknown }).role;
+  +	if (role === "assistant") return "assistant";
+  +	// "user-with-attachments" carries the same learner intent as a plain turn;
+  +	// the attachments themselves are dropped along with the other non-text parts.
+  +	if (role === "user" || role === "user-with-attachments") return "user";
+  +	return null;
+  +}
+  +
+  +export function buildLiveHistory(
+  +	messages: readonly unknown[],
+  +	options: { maxTurns?: number; maxChars?: number } = {},
+  +): LiveHistoryTurn[] {
+  +	const maxTurns = Math.max(0, options.maxTurns ?? DEFAULT_LIVE_HISTORY_TURNS);
+  +	const maxChars = Math.max(0, options.maxChars ?? DEFAULT_LIVE_HISTORY_CHARS);
+  +	if (maxTurns === 0 || maxChars === 0) return [];
+  +
+  +	const turns: LiveHistoryTurn[] = [];
+  +	// Walk backwards so that when the budget runs out it is the oldest turns
+  +	// that are dropped, not the ones the learner just spoke about.
+  +	for (let i = messages.length - 1; i >= 0 && turns.length < maxTurns; i -= 1) {
+  +		const role = turnRole(messages[i]);
+  +		if (!role) continue;
+  +		const text = turnText(messages[i]);
+  +		if (!text) continue;
+  +		turns.push({ role, text });
+  +	}
+  +	turns.reverse();
+  +
+  +	let total = 0;
+  +	const budgeted: LiveHistoryTurn[] = [];
+  +	for (let i = turns.length - 1; i >= 0; i -= 1) {
+  +		total += turns[i].text.length;
+  +		if (total > maxChars) break;
+  +		budgeted.push(turns[i]);
+  +	}
+  +	return budgeted.reverse();
+  +}
+
+  diff --git a/web/src/keating/pcm-capture-worklet.ts b/web/src/keating/pcm-capture-worklet.ts
+  new file mode 100644
+  index 0000000..5ffd434
+  --- /dev/null
+  +++ b/web/src/keating/pcm-capture-worklet.ts
+  @@ -0,0 +1,148 @@
+  +/**
+  + * Microphone capture on the audio rendering thread.
+  + *
+  + * The deprecated ScriptProcessorNode runs its callback on the main thread, so
+  + * any React render or tool execution during a live session shows up as dropped
+  + * or glitched microphone audio. An AudioWorklet runs on the audio thread and is
+  + * unaffected by main-thread work.
+  + *
+  + * The worklet is shipped as a source string and loaded from a blob URL rather
+  + * than a separate bundled entry point — worklet modules cannot share the app's
+  + * module graph anyway, and this keeps it working under any bundler config.
+  + */
+  +
+  +/** Frames per posted chunk. ~85ms at 16kHz: small enough to stay responsive. */
+  +const CHUNK_FRAMES = 1365;
+  +
+  +const WORKLET_SOURCE = `
+  +class PcmCaptureProcessor extends AudioWorkletProcessor {
+  +  constructor(options) {
+  +    super();
+  +    this.chunkFrames = (options && options.processorOptions && options.processorOptions.chunkFrames) || ${CHUNK_FRAMES};
+  +    this.buffer = new Float32Array(this.chunkFrames);
+  +    this.offset = 0;
+  +  }
+  +
+  +  process(inputs) {
+  +    const channel = inputs[0] && inputs[0][0];
+  +    // No input yet (or the track ended): keep the processor alive regardless.
+  +    if (!channel) return true;
+  +
+  +    for (let i = 0; i < channel.length; i += 1) {
+  +      this.buffer[this.offset] = channel[i];
+  +      this.offset += 1;
+  +      if (this.offset === this.chunkFrames) {
+  +        // Convert on the audio thread so the main thread only sees bytes.
+  +        const pcm = new Int16Array(this.chunkFrames);
+  +        for (let j = 0; j < this.chunkFrames; j += 1) {
+  +          const sample = Math.max(-1, Math.min(1, this.buffer[j]));
+  +          pcm[j] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+  +        }
+  +        this.port.postMessage(pcm.buffer, [pcm.buffer]);
+  +        this.offset = 0;
+  +      }
+  +    }
+  +    return true;
+  +  }
+  +}
+  +
+  +registerProcessor("keating-pcm-capture", PcmCaptureProcessor);
+  +`;
+  +
+  +export const PCM_CAPTURE_PROCESSOR = "keating-pcm-capture";
+  +
+  +let moduleUrl: string | null = null;
+  +
+  +function workletModuleUrl(): string {
+  +	if (moduleUrl === null) {
+  +		moduleUrl = URL.createObjectURL(new Blob([WORKLET_SOURCE], { type: "application/javascript" }));
+  +	}
+  +	return moduleUrl;
+  +}
+  +
+  +export interface PcmCaptureHandle {
+  +	readonly context: AudioContext;
+  +	readonly stream: MediaStream;
+  +	stop(): void;
+  +}
+  +
+  +/** Base64-encode raw PCM bytes for transports that carry audio inside JSON. */
+  +export function encodePcmChunk(buffer: ArrayBuffer): string {
+  +	const bytes = new Uint8Array(buffer);
+  +	let binary = "";
+  +	// Chunked to avoid blowing the argument limit on long buffers.
+  +	const stride = 0x8000;
+  +	for (let i = 0; i < bytes.length; i += stride) {
+  +		binary += String.fromCharCode(...bytes.subarray(i, i + stride));
+  +	}
+  +	return btoa(binary);
+  +}
+  +
+  +/**
+  + * Capture microphone audio as base64 PCM chunks at the requested sample rate.
+  + * Falls back to a ScriptProcessorNode where AudioWorklet is unavailable.
+  + */
+  +export async function startPcmCapture(options: {
+  +	sampleRate: number;
+  +	onChunk: (base64: string) => void;
+  +}): Promise<PcmCaptureHandle> {
+  +	if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+  +		throw new Error("Microphone unavailable for live voice.");
+  +	}
+  +	const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  +	const context = new AudioContext({ sampleRate: options.sampleRate });
+  +	const source = context.createMediaStreamSource(stream);
+  +
+  +	let disposed = false;
+  +	let teardown = () => {};
+  +
+  +	if (context.audioWorklet) {
+  +		await context.audioWorklet.addModule(workletModuleUrl());
+  +		const node = new AudioWorkletNode(context, PCM_CAPTURE_PROCESSOR, {
+  +			numberOfInputs: 1,
+  +			numberOfOutputs: 0,
+  +			processorOptions: { chunkFrames: CHUNK_FRAMES },
+  +		});
+  +		node.port.onmessage = (event: MessageEvent<ArrayBuffer>) => {
+  +			if (!disposed) options.onChunk(encodePcmChunk(event.data));
+  +		};
+  +		source.connect(node);
+  +		teardown = () => {
+  +			node.port.onmessage = null;
+  +			try { node.disconnect(); } catch {}
+  +		};
+  +	} else {
+  +		const processor = context.createScriptProcessor(4096, 1, 1);
+  +		processor.onaudioprocess = (event) => {
+  +			if (disposed) return;
+  +			const input = event.inputBuffer.getChannelData(0);
+  +			const pcm = new Int16Array(input.length);
+  +			for (let i = 0; i < input.length; i += 1) {
+  +				const sample = Math.max(-1, Math.min(1, input[i]));
+  +				pcm[i] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+  +			}
+  +			options.onChunk(encodePcmChunk(pcm.buffer));
+  +		};
+  +		source.connect(processor);
+  +		// A ScriptProcessorNode only runs while connected to a destination; the
+  +		// output buffer is left silent so the mic is not echoed back.
+  +		processor.connect(context.destination);
+  +		teardown = () => {
+  +			processor.onaudioprocess = null;
+  +			try { processor.disconnect(); } catch {}
+  +		};
+  +	}
+  +
+  +	return {
+  +		context,
+  +		stream,
+  +		stop() {
+  +			if (disposed) return;
+  +			disposed = true;
+  +			teardown();
+  +			try { source.disconnect(); } catch {}
+  +			try { void context.close(); } catch {}
+  +			stream.getTracks().forEach((track) => track.stop());
+  +		},
+  +	};
+  +}
+
+  diff --git a/web/src/keating/speech-providers/live-session-shared.ts b/web/src/keating/speech-providers/live-session-shared.ts
+  new file mode 100644
+  index 0000000..2e35415
+  --- /dev/null
+  +++ b/web/src/keating/speech-providers/live-session-shared.ts
+  @@ -0,0 +1,155 @@
+  +/**
+  + * Plumbing shared by every duplex speech provider.
+  + *
+  + * Keating drives providers at different capability tiers, but a live session
+  + * must look the same to the rest of the app regardless of which provider is
+  + * behind it — persistence, replay, and the /live surface all consume the
+  + * canonical event stream. Keeping the bridge and the tool-call lifecycle here
+  + * (rather than duplicated per provider) is what makes the tier-parity test
+  + * meaningful.
+  + */
+  +import type { RealtimeTelemetry } from "../observability";
+  +import {
+  +	conversationEvent,
+  +	type ConversationEvent,
+  +	type JsonValue,
+  +	type ProtocolError,
+  +} from "../protocol";
+  +import type { LiveSpeechToolCall } from "../speech";
+  +
+  +export type LiveProviderId = "openai" | "google";
+  +
+  +export function randomId(prefix: string): string {
+  +	const id = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+  +		? crypto.randomUUID()
+  +		: `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  +	return `${prefix}-${id}`;
+  +}
+  +
+  +export function jsonValue(value: unknown): JsonValue {
+  +	if (value === undefined) return null;
+  +	try {
+  +		return JSON.parse(JSON.stringify(value)) as JsonValue;
+  +	} catch {
+  +		return String(value);
+  +	}
+  +}
+  +
+  +export function jsonRecord(value: unknown): Record<string, JsonValue> {
+  +	const converted = jsonValue(value);
+  +	return converted && typeof converted === "object" && !Array.isArray(converted)
+  +		? converted as Record<string, JsonValue>
+  +		: {};
+  +}
+  +
+  +export function protocolError(error: unknown, code: string, provider: LiveProviderId): ProtocolError {
+  +	return {
+  +		code,
+  +		message: error instanceof Error ? error.message : String(error),
+  +		provider,
+  +	};
+  +}
+  +
+  +export interface RealtimeCanonicalBridge {
+  +	readonly sessionId: string;
+  +	readonly runId: string;
+  +	emit<T extends ConversationEvent["type"]>(
+  +		type: T,
+  +		payload: Extract<ConversationEvent, { type: T }>["payload"],
+  +	): void;
+  +}
+  +
+  +export function createRealtimeCanonicalBridge(
+  +	onEvent?: (event: ConversationEvent) => void,
+  +	ids: { sessionId?: string; runId?: string } = {},
+  +): RealtimeCanonicalBridge {
+  +	const sessionId = ids.sessionId ?? randomId("voice-session");
+  +	const runId = ids.runId ?? randomId("voice-run");
+  +	let sequence = 0;
+  +	return {
+  +		sessionId,
+  +		runId,
+  +		emit(type, payload) {
+  +			if (!onEvent) return;
+  +			onEvent(conversationEvent(type, payload as never, {
+  +				id: randomId("voice-event"),
+  +				sequence: sequence++,
+  +				timestamp: new Date().toISOString(),
+  +				sessionId,
+  +				runId,
+  +			}));
+  +		},
+  +	};
+  +}
+  +
+  +export interface LiveToolCallOptions {
+  +	call: LiveSpeechToolCall;
+  +	provider: LiveProviderId;
+  +	canonical: RealtimeCanonicalBridge;
+  +	telemetry: RealtimeTelemetry;
+  +	execute: (call: LiveSpeechToolCall) => Promise<unknown>;
+  +	/** Send a successful result back over the provider's transport. */
+  +	respond: (callId: string, output: unknown) => void;
+  +	/**
+  +	 * Send a failure back over the provider's transport. Providers differ in
+  +	 * whether they have a dedicated error shape, so each supplies its own.
+  +	 */
+  +	respondError: (callId: string, message: string) => void;
+  +}
+  +
+  +/**
+  + * Run one tool call through the canonical lifecycle.
+  + *
+  + * The requested/started events are emitted before execution begins so a slow
+  + * tool still shows up immediately in the UI, and the transport response is sent
+  + * on both the success and failure paths — a live session that never answers a
+  + * function call will stall until the provider times it out.
+  + */
+  +export async function runLiveToolCall(options: LiveToolCallOptions): Promise<void> {
+  +	const { call, provider, canonical, telemetry, execute, respond, respondError } = options;
+  +
+  +	canonical.emit("tool.requested", {
+  +		callId: call.callId,
+  +		name: call.name,
+  +		arguments: jsonRecord(call.arguments),
+  +	});
+  +	canonical.emit("tool.started", { callId: call.callId });
+  +	telemetry.emit("tool.started", { provider, toolName: call.name });
+  +	const startedAt = telemetry.start();
+  +
+  +	try {
+  +		const output = await execute(call);
+  +		canonical.emit("tool.completed", { callId: call.callId, result: jsonValue(output) });
+  +		telemetry.emit(
+  +			"tool.completed",
+  +			{ provider, toolName: call.name, outcome: "success" },
+  +			telemetry.durationSince(startedAt),
+  +		);
+  +		respond(call.callId, output);
+  +	} catch (error) {
+  +		canonical.emit("tool.failed", {
+  +			callId: call.callId,
+  +			error: protocolError(error, "tool_execution_failed", provider),
+  +		});
+  +		telemetry.emit(
+  +			"tool.completed",
+  +			{ provider, toolName: call.name, outcome: "failed" },
+  +			telemetry.durationSince(startedAt),
+  +		);
+  +		respondError(call.callId, error instanceof Error ? error.message : String(error));
+  +	}
+  +}
+  +
+  +/** Parse a provider's JSON-encoded tool arguments without throwing. */
+  +export function parseToolArguments(raw: unknown): Record<string, unknown> {
+  +	if (raw && typeof raw === "object" && !Array.isArray(raw)) return raw as Record<string, unknown>;
+  +	if (typeof raw !== "string" || raw.length === 0) return {};
+  +	try {
+  +		const parsed = JSON.parse(raw);
+  +		return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+  +			? parsed as Record<string, unknown>
+  +			: {};
+  +	} catch {
+  +		return {};
+  +	}
+  +}
+
+  diff --git a/web/src/keating/video-capture.ts b/web/src/keating/video-capture.ts
+  new file mode 100644
+  index 0000000..0704370
+  --- /dev/null
+  +++ b/web/src/keating/video-capture.ts
+  @@ -0,0 +1,287 @@
+  +/**
+  + * Provider-agnostic frame capture for live sessions.
+  + *
+  + * Both realtime providers Keating targets consume sampled JPEG frames rather
+  + * than a continuous video track — Gemini Live has a dedicated video lane capped
+  + * at 1 fps, and GPT Realtime accepts still images as conversation items. So
+  + * there is one capture pipeline here and the providers supply their own sink.
+  + *
+  + * Nothing in this module may import provider types.
+  + */
+  +
+  +/** Both providers cap video at one frame per second. */
+  +export const MIN_FRAME_INTERVAL_MS = 1000;
+  +export const DEFAULT_MAX_EDGE = 768;
+  +export const DEFAULT_JPEG_QUALITY = 0.6;
+  +/**
+  + * Histogram distance below which a frame is considered a repeat of the previous
+  + * one and skipped. Tuned to drop a static desk/screen while still catching a
+  + * page scroll or a hand entering frame.
+  + */
+  +export const DEFAULT_SIMILARITY_THRESHOLD = 0.02;
+  +
+  +const HISTOGRAM_BINS = 32;
+  +
+  +export type VideoSource = "camera" | "screen";
+  +
+  +export interface VideoCaptureOptions {
+  +	source?: VideoSource;
+  +	/** Milliseconds between sampled frames. Floored to MIN_FRAME_INTERVAL_MS. */
+  +	intervalMs?: number;
+  +	/** Longest edge of the encoded frame, in pixels. */
+  +	maxEdge?: number;
+  +	jpegQuality?: number;
+  +	/** Set to 0 to emit every frame regardless of similarity. */
+  +	similarityThreshold?: number;
+  +}
+  +
+  +export interface NormalizedCaptureOptions {
+  +	source: VideoSource;
+  +	intervalMs: number;
+  +	maxEdge: number;
+  +	jpegQuality: number;
+  +	similarityThreshold: number;
+  +}
+  +
+  +export interface CapturedFrame {
+  +	/** Base64 JPEG payload, no data-URL prefix. */
+  +	data: string;
+  +	/** Full data URL, which is what the OpenAI image content part wants. */
+  +	dataUrl: string;
+  +	mimeType: "image/jpeg";
+  +	width: number;
+  +	height: number;
+  +	capturedAt: number;
+  +}
+  +
+  +export type FrameListener = (frame: CapturedFrame) => void;
+  +
+  +export interface VideoCaptureHandle {
+  +	/** Live stream, for rendering a local preview. */
+  +	readonly stream: MediaStream;
+  +	readonly source: VideoSource;
+  +	/** Frames emitted so far, including on-demand captures. */
+  +	readonly frameCount: number;
+  +	/** Subscribe to the sampled frame feed. Returns an unsubscribe function. */
+  +	onFrame(listener: FrameListener): () => void;
+  +	/** Grab a frame immediately, bypassing the interval and similarity skip. */
+  +	captureFrameNow(): Promise<CapturedFrame | null>;
+  +	stop(): void;
+  +}
+  +
+  +export function normalizeCaptureOptions(options: VideoCaptureOptions = {}): NormalizedCaptureOptions {
+  +	return {
+  +		source: options.source === "screen" ? "screen" : "camera",
+  +		intervalMs: Math.max(MIN_FRAME_INTERVAL_MS, Math.floor(options.intervalMs ?? MIN_FRAME_INTERVAL_MS)),
+  +		maxEdge: Math.max(64, Math.floor(options.maxEdge ?? DEFAULT_MAX_EDGE)),
+  +		jpegQuality: Math.min(1, Math.max(0.1, options.jpegQuality ?? DEFAULT_JPEG_QUALITY)),
+  +		similarityThreshold: Math.max(0, options.similarityThreshold ?? DEFAULT_SIMILARITY_THRESHOLD),
+  +	};
+  +}
+  +
+  +/**
+  + * Scale a frame so its longest edge is at most maxEdge, preserving aspect
+  + * ratio. Frames already within budget are left alone — upscaling would only
+  + * cost tokens without adding detail.
+  + */
+  +export function computeCaptureSize(
+  +	width: number,
+  +	height: number,
+  +	maxEdge: number,
+  +): { width: number; height: number } {
+  +	if (width <= 0 || height <= 0) return { width: 0, height: 0 };
+  +	const longest = Math.max(width, height);
+  +	if (longest <= maxEdge) return { width: Math.round(width), height: Math.round(height) };
+  +	const scale = maxEdge / longest;
+  +	return {
+  +		width: Math.max(1, Math.round(width * scale)),
+  +		height: Math.max(1, Math.round(height * scale)),
+  +	};
+  +}
+  +
+  +/**
+  + * Normalized luma histogram over RGBA pixel data. Cheap enough to run on every
+  + * candidate frame and stable against sensor noise, which a per-pixel diff is
+  + * not.
+  + */
+  +export function lumaHistogram(pixels: ArrayLike<number>, bins = HISTOGRAM_BINS): Float64Array {
+  +	const histogram = new Float64Array(bins);
+  +	const pixelCount = Math.floor(pixels.length / 4);
+  +	if (pixelCount === 0) return histogram;
+  +	for (let i = 0; i < pixelCount; i += 1) {
+  +		const offset = i * 4;
+  +		// Rec. 601 luma; the exact weights matter less than being consistent.
+  +		const luma = 0.299 * pixels[offset] + 0.587 * pixels[offset + 1] + 0.114 * pixels[offset + 2];
+  +		const bin = Math.min(bins - 1, Math.floor((luma / 256) * bins));
+  +		histogram[bin] += 1;
+  +	}
+  +	for (let i = 0; i < bins; i += 1) histogram[i] /= pixelCount;
+  +	return histogram;
+  +}
+  +
+  +/** Total variation distance between two normalized histograms, in [0, 1]. */
+  +export function histogramDistance(a: ArrayLike<number>, b: ArrayLike<number>): number {
+  +	if (a.length !== b.length) return 1;
+  +	let sum = 0;
+  +	for (let i = 0; i < a.length; i += 1) sum += Math.abs(a[i] - b[i]);
+  +	return sum / 2;
+  +}
+  +
+  +export function framesAreSimilar(
+  +	previous: ArrayLike<number> | null,
+  +	next: ArrayLike<number>,
+  +	threshold: number,
+  +): boolean {
+  +	if (previous === null || threshold <= 0) return false;
+  +	return histogramDistance(previous, next) < threshold;
+  +}
+  +
+  +/**
+  + * True when a frame should not be sent: the document is hidden, or the frame is
+  + * indistinguishable from the last one we sent. Extracted so the policy is
+  + * testable without a camera.
+  + */
+  +export function shouldSkipFrame(input: {
+  +	documentHidden: boolean;
+  +	previousHistogram: ArrayLike<number> | null;
+  +	nextHistogram: ArrayLike<number>;
+  +	similarityThreshold: number;
+  +}): boolean {
+  +	if (input.documentHidden) return true;
+  +	return framesAreSimilar(input.previousHistogram, input.nextHistogram, input.similarityThreshold);
+  +}
+  +
+  +async function requestStream(source: VideoSource): Promise<MediaStream> {
+  +	if (typeof navigator === "undefined" || !navigator.mediaDevices) {
+  +		throw new Error("Video capture is unavailable in this environment.");
+  +	}
+  +	if (source === "screen") {
+  +		if (!navigator.mediaDevices.getDisplayMedia) {
+  +			throw new Error("Screen sharing is not supported by this browser.");
+  +		}
+  +		return await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+  +	}
+  +	if (!navigator.mediaDevices.getUserMedia) {
+  +		throw new Error("Camera capture is not supported by this browser.");
+  +	}
+  +	return await navigator.mediaDevices.getUserMedia({
+  +		video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+  +		audio: false,
+  +	});
+  +}
+  +
+  +/**
+  + * Begin sampling frames from the camera or screen. The returned handle is inert
+  + * until something subscribes via onFrame; the timer runs regardless so that
+  + * captureFrameNow always has a warm video element.
+  + */
+  +export async function startVideoCapture(options: VideoCaptureOptions = {}): Promise<VideoCaptureHandle> {
+  +	const config = normalizeCaptureOptions(options);
+  +	const stream = await requestStream(config.source);
+  +
+  +	const video = document.createElement("video");
+  +	video.autoplay = true;
+  +	video.muted = true;
+  +	video.playsInline = true;
+  +	video.srcObject = stream;
+  +
+  +	const canvas = document.createElement("canvas");
+  +	const context = canvas.getContext("2d", { willReadFrequently: true });
+  +
+  +	const listeners = new Set<FrameListener>();
+  +	let previousHistogram: Float64Array | null = null;
+  +	let frameCount = 0;
+  +	let stopped = false;
+  +	let timer: ReturnType<typeof setInterval> | null = null;
+  +
+  +	await video.play().catch(() => {
+  +		// Autoplay of a muted local stream is permitted; a rejection here means
+  +		// the track ended before playback started, which stop() will clean up.
+  +	});
+  +
+  +	const grab = (options: { force: boolean }): CapturedFrame | null => {
+  +		if (stopped || !context) return null;
+  +		const width = video.videoWidth;
+  +		const height = video.videoHeight;
+  +		if (width === 0 || height === 0) return null;
+  +
+  +		const size = computeCaptureSize(width, height, config.maxEdge);
+  +		canvas.width = size.width;
+  +		canvas.height = size.height;
+  +		context.drawImage(video, 0, 0, size.width, size.height);
+  +
+  +		const histogram = lumaHistogram(context.getImageData(0, 0, size.width, size.height).data);
+  +		if (!options.force) {
+  +			const skip = shouldSkipFrame({
+  +				documentHidden: typeof document !== "undefined" && document.hidden,
+  +				previousHistogram,
+  +				nextHistogram: histogram,
+  +				similarityThreshold: config.similarityThreshold,
+  +			});
+  +			if (skip) return null;
+  +		}
+  +		previousHistogram = histogram;
+  +
+  +		const dataUrl = canvas.toDataURL("image/jpeg", config.jpegQuality);
+  +		frameCount += 1;
+  +		return {
+  +			data: dataUrl.slice(dataUrl.indexOf(",") + 1),
+  +			dataUrl,
+  +			mimeType: "image/jpeg",
+  +			width: size.width,
+  +			height: size.height,
+  +			capturedAt: Date.now(),
+  +		};
+  +	};
+  +
+  +	const emit = (frame: CapturedFrame | null) => {
+  +		if (!frame) return;
+  +		for (const listener of listeners) {
+  +			try {
+  +				listener(frame);
+  +			} catch (error) {
+  +				console.warn("[keating:video] frame listener failed", error);
+  +			}
+  +		}
+  +	};
+  +
+  +	timer = setInterval(() => {
+  +		if (listeners.size === 0) return;
+  +		emit(grab({ force: false }));
+  +	}, config.intervalMs);
+  +
+  +	const stop = () => {
+  +		if (stopped) return;
+  +		stopped = true;
+  +		if (timer !== null) clearInterval(timer);
+  +		timer = null;
+  +		listeners.clear();
+  +		stream.getTracks().forEach((track) => track.stop());
+  +		video.srcObject = null;
+  +		try {
+  +			video.remove();
+  +		} catch {}
+  +	};
+  +
+  +	// A screen share ends when the user clicks the browser's "stop sharing"
+  +	// chrome, which surfaces only as a track ending.
+  +	stream.getVideoTracks().forEach((track) => track.addEventListener("ended", stop, { once: true }));
+  +
+  +	return {
+  +		stream,
+  +		source: config.source,
+  +		get frameCount() {
+  +			return frameCount;
+  +		},
+  +		onFrame(listener) {
+  +			listeners.add(listener);
+  +			return () => listeners.delete(listener);
+  +		},
+  +		async captureFrameNow() {
+  +			const frame = grab({ force: true });
+  +			emit(frame);
+  +			return frame;
+  +		},
+  +		stop,
+  +	};
+  +}
+
+  diff --git a/web/src/pages/Live.tsx b/web/src/pages/Live.tsx
+  new file mode 100644
+  index 0000000..75c38ec
+  --- /dev/null
+  +++ b/web/src/pages/Live.tsx
+  @@ -0,0 +1,526 @@
+  +import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+  +import { Camera, MonitorUp, Power } from "lucide-react";
+  +
+  +import { Nav } from "../components/Nav";
+  +import { css, cx } from "../../styled-system/css";
+  +import {
+  +	getLiveSpeechBridge,
+  +	getSpeechProvider,
+  +	loadWebSpeechSettings,
+  +	primeSpeechAudio,
+  +	resolveSpeechRealtimeTier,
+  +	speechErrorMessage,
+  +	type LiveSpeechSession,
+  +	type LiveSpeechState,
+  +} from "../keating/speech";
+  +import { startVideoCapture, type VideoCaptureHandle } from "../keating/video-capture";
+  +import type { ConversationEvent } from "../keating/protocol";
+  +import { getProviderApiKey } from "../lib/provider-models";
+  +
+  +/**
+  + * The live session surface.
+  + *
+  + * Keating's mascot is a CRT monitor with a face, so a live A/V session gets
+  + * rendered as exactly that: the learner's camera feed becomes the phosphor
+  + * screen behind the bezel, and Keating's own face takes over whenever he has
+  + * nothing to look at. Status, tools, and transcript are all terminal readouts,
+  + * matching the boot sequence and the landing hero.
+  + */
+  +
+  +const STATE_LABEL: Record<LiveSpeechState, string> = {
+  +	connecting: "connecting",
+  +	listening: "listening",
+  +	speaking: "speaking",
+  +	closed: "standby",
+  +};
+  +
+  +interface ToolEntry {
+  +	callId: string;
+  +	name: string;
+  +	status: "running" | "completed" | "failed";
+  +}
+  +
+  +interface TranscriptEntry {
+  +	role: "user" | "assistant";
+  +	text: string;
+  +}
+  +
+  +/**
+  + * Dotted leader between a label and its status, as in the boot sequence.
+  + *
+  + * The dots are a border rather than repeated glyphs: a run of non-breaking
+  + * characters contributes its full width to max-content sizing and will drag the
+  + * whole grid column wider than its cell.
+  + */
+  +function Leader({ label, value, tone }: { label: string; value: string; tone?: "ok" | "fail" | "pending" }) {
+  +	return (
+  +		<div className={css({ display: "flex", alignItems: "baseline", gap: "0.5rem", fontSize: "0.8125rem", minWidth: 0 })}>
+  +			<span className={css({ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" })}>
+  +				{label}
+  +			</span>
+  +			<span
+  +				aria-hidden="true"
+  +				className={css({
+  +					flex: "1 1 auto",
+  +					minWidth: "0.75rem",
+  +					alignSelf: "center",
+  +					borderBottom: "1px dotted currentColor",
+  +					opacity: 0.35,
+  +				})}
+  +			/>
+  +			<span
+  +				className={css({
+  +					whiteSpace: "nowrap",
+  +					flexShrink: 0,
+  +					color: tone === "fail"
+  +						? "var(--red)"
+  +						: tone === "pending"
+  +							? "var(--amber)"
+  +							: "var(--phosphor)",
+  +				})}
+  +			>
+  +				{value}
+  +			</span>
+  +		</div>
+  +	);
+  +}
+  +
+  +export function Live() {
+  +	const settings = useMemo(() => loadWebSpeechSettings(), []);
+  +	const tier = useMemo(() => resolveSpeechRealtimeTier(settings), [settings]);
+  +
+  +	const [state, setState] = useState<LiveSpeechState>("closed");
+  +	const [active, setActive] = useState(false);
+  +	const [error, setError] = useState<string | null>(null);
+  +	const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
+  +	const [tools, setTools] = useState<ToolEntry[]>([]);
+  +	const [framesSent, setFramesSent] = useState(0);
+  +	const [firstAudioMs, setFirstAudioMs] = useState<number | null>(null);
+  +	const [videoLive, setVideoLive] = useState(false);
+  +
+  +	const sessionRef = useRef<LiveSpeechSession | null>(null);
+  +	const videoRef = useRef<VideoCaptureHandle | null>(null);
+  +	const abortRef = useRef<AbortController | null>(null);
+  +	const previewRef = useRef<HTMLVideoElement | null>(null);
+  +	const transcriptRef = useRef<HTMLDivElement | null>(null);
+  +	const startedAtRef = useRef<number>(0);
+  +
+  +	const appendTranscript = useCallback((role: "user" | "assistant", text: string) => {
+  +		if (!text) return;
+  +		setTranscript((prev) => {
+  +			const last = prev[prev.length - 1];
+  +			// Deltas from the same speaker coalesce; a change of speaker starts a
+  +			// new line.
+  +			if (last && last.role === role) {
+  +				return [...prev.slice(0, -1), { role, text: last.text + text }];
+  +			}
+  +			return [...prev, { role, text }];
+  +		});
+  +	}, []);
+  +
+  +	// Keep the newest line in view without yanking the page around.
+  +	useEffect(() => {
+  +		const node = transcriptRef.current;
+  +		if (node) node.scrollTop = node.scrollHeight;
+  +	}, [transcript]);
+  +
+  +	const stop = useCallback(() => {
+  +		abortRef.current?.abort();
+  +		abortRef.current = null;
+  +		void sessionRef.current?.stop().catch(() => {});
+  +		sessionRef.current = null;
+  +		videoRef.current?.stop();
+  +		videoRef.current = null;
+  +		if (previewRef.current) previewRef.current.srcObject = null;
+  +		setVideoLive(false);
+  +		setActive(false);
+  +		setState("closed");
+  +	}, []);
+  +
+  +	// A live session holds the microphone, the camera, and a paid socket; it
+  +	// must not survive the user navigating away.
+  +	useEffect(() => stop, [stop]);
+  +
+  +	const onConversationEvent = useCallback((event: ConversationEvent) => {
+  +		switch (event.type) {
+  +			case "tool.requested":
+  +				setTools((prev) => [
+  +					...prev,
+  +					{ callId: event.payload.callId, name: event.payload.name, status: "running" },
+  +				]);
+  +				break;
+  +			case "tool.completed":
+  +			case "tool.failed":
+  +				setTools((prev) => prev.map((entry) =>
+  +					entry.callId === event.payload.callId
+  +						? { ...entry, status: event.type === "tool.completed" ? "completed" : "failed" }
+  +						: entry));
+  +				break;
+  +			default:
+  +				break;
+  +		}
+  +	}, []);
+  +
+  +	const start = useCallback(async () => {
+  +		setError(null);
+  +		setTranscript([]);
+  +		setTools([]);
+  +		setFramesSent(0);
+  +		setFirstAudioMs(null);
+  +		setState("connecting");
+  +		setActive(true);
+  +		startedAtRef.current = Date.now();
+  +
+  +		const abort = new AbortController();
+  +		abortRef.current = abort;
+  +
+  +		try {
+  +			// Browsers only unlock audio playback inside a user gesture, and this
+  +			// runs from the power button's handler.
+  +			await primeSpeechAudio();
+  +
+  +			const provider = await getSpeechProvider(settings.providerId);
+  +			if (!provider?.startLiveSession) {
+  +				throw new Error("This speech provider cannot hold a live session. Pick OpenAI Realtime or Gemini Live in Settings → Speech.");
+  +			}
+  +
+  +			let video: VideoCaptureHandle | null = null;
+  +			if (settings.videoEnabled && tier.video) {
+  +				try {
+  +					video = await startVideoCapture({
+  +						source: settings.videoSource,
+  +						intervalMs: settings.frameIntervalMs,
+  +					});
+  +					videoRef.current = video;
+  +					if (previewRef.current) {
+  +						previewRef.current.srcObject = video.stream;
+  +						void previewRef.current.play().catch(() => {});
+  +					}
+  +					video.onFrame(() => setFramesSent((count) => count + 1));
+  +					setVideoLive(true);
+  +				} catch (err) {
+  +					// Vision is optional; a declined camera prompt must not cost the
+  +					// learner their voice session.
+  +					console.warn("[keating:live] video capture unavailable", err);
+  +					setError(speechErrorMessage(err, "Camera or screen capture was unavailable. Continuing with audio only."));
+  +				}
+  +			}
+  +
+  +			const bridge = getLiveSpeechBridge();
+  +			const session = await provider.startLiveSession({
+  +				settings,
+  +				getApiKey: getProviderApiKey,
+  +				signal: abort.signal,
+  +				instructions: bridge?.instructions,
+  +				history: bridge?.history,
+  +				tools: bridge?.tools,
+  +				video,
+  +				onToolCall: bridge ? (call) => bridge.execute(call, abort.signal) : undefined,
+  +				onConversationEvent,
+  +				onState: (next) => {
+  +					setState(next);
+  +					if (next === "speaking") {
+  +						setFirstAudioMs((current) => current ?? Date.now() - startedAtRef.current);
+  +					}
+  +				},
+  +				onUserTranscript: (text) => appendTranscript("user", text),
+  +				onAssistantTranscript: (text) => appendTranscript("assistant", text),
+  +				onError: (err) => setError(err.message),
+  +			});
+  +			sessionRef.current = session;
+  +		} catch (err) {
+  +			setError(speechErrorMessage(err, "The live session could not be started."));
+  +			stop();
+  +		}
+  +	}, [appendTranscript, onConversationEvent, settings, stop, tier.video]);
+  +
+  +	const speaking = state === "speaking";
+  +
+  +	return (
+  +		<div className={cx("retro-layout", "retro-page")}>
+  +			<Nav />
+  +			<main className={css({ maxWidth: "68rem", marginInline: "auto", padding: "1.5rem", display: "grid", gap: "1.5rem" })}>
+  +				<header className={css({ display: "grid", gap: "0.5rem" })}>
+  +					<div className={cx("prompt", css({ fontSize: "0.8125rem", opacity: 0.75 }))}>
+  +						keating --live --tier={tier.tier}
+  +					</div>
+  +					<h1 className={css({ fontFamily: "var(--mono-display)", fontSize: "1.75rem", fontWeight: 700, lineHeight: 1.2 })}>
+  +						{tier.label}
+  +					</h1>
+  +					{tier.capReason && (
+  +						<p className={css({ fontSize: "0.875rem", opacity: 0.75, maxWidth: "48rem" })}>
+  +							{tier.capReason}
+  +						</p>
+  +					)}
+  +				</header>
+  +
+  +				{error && (
+  +					<div
+  +						role="alert"
+  +						className={css({
+  +							border: "1px solid var(--red)",
+  +							borderRadius: "0.375rem",
+  +							padding: "0.75rem 1rem",
+  +							fontSize: "0.875rem",
+  +							color: "var(--red)",
+  +							background: "color-mix(in srgb, var(--red) 8%, transparent)",
+  +						})}
+  +					>
+  +						{error}
+  +					</div>
+  +				)}
+  +
+  +				<div className={css({ display: "grid", gap: "1.5rem", gridTemplateColumns: "minmax(0, 1fr)", lg: { gridTemplateColumns: "minmax(0, 1.15fr) minmax(0, 1fr)" } })}>
+  +					{/* The viewport — Keating's CRT face, showing whatever he can see. */}
+  +					{/* minmax(0, 1fr) so a wide child can never stretch the column. */}
+  +					<section className={css({ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: "1rem", alignContent: "start", minWidth: 0 })}>
+  +						<div
+  +							className={cx(
+  +								"crt",
+  +								"terminal-glow",
+  +								css({
+  +									position: "relative",
+  +									overflow: "hidden",
+  +									aspectRatio: "4 / 3",
+  +									// Never let the viewport eat a whole phone screen.
+  +									maxHeight: "min(56dvh, 30rem)",
+  +									minWidth: 0,
+  +									borderRadius: "0.75rem",
+  +									border: "3px solid var(--terminal-edge)",
+  +									background: "var(--terminal)",
+  +									// Column flow: content region above, status row below, so
+  +									// nothing can overlap at any viewport size.
+  +									display: "flex",
+  +									flexDirection: "column",
+  +									transitionProperty: "box-shadow, border-color",
+  +									transitionDuration: "300ms",
+  +								}),
+  +								// The bezel brightens while Keating is talking, so the
+  +								// speaking state is legible from across a room.
+  +								speaking ? css({ borderColor: "var(--phosphor)" }) : "",
+  +							)}
+  +						>
+  +						{/* Content region: the feed, or Keating's own face when blind. */}
+  +							<div className={css({ position: "relative", flex: 1, minHeight: 0, display: "grid", placeItems: "center", overflow: "hidden" })}>
+  +								<video
+  +									ref={previewRef}
+  +									muted
+  +									playsInline
+  +									className={css({
+  +										position: "absolute",
+  +										inset: 0,
+  +										width: "100%",
+  +										height: "100%",
+  +										objectFit: "cover",
+  +										// Tint the feed toward phosphor so it reads as part of
+  +										// the monitor rather than a webcam pasted on top.
+  +										filter: "saturate(0.75) contrast(1.05)",
+  +										display: videoLive ? "block" : "none",
+  +									})}
+  +								/>
+  +
+  +								{!videoLive && (
+  +									<div className={css({ display: "grid", gap: "0.5rem", justifyItems: "center", padding: "0.75rem", textAlign: "center" })}>
+  +										<img
+  +											src="/brand/mascot-head.png"
+  +											alt=""
+  +											className={cx(
+  +												css({ width: "4rem", md: { width: "5.5rem" }, height: "auto", imageRendering: "pixelated" }),
+  +												speaking ? css({ animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite" }) : "",
+  +											)}
+  +										/>
+  +										<p className={cx("font-terminal", css({ color: "var(--phosphor-dim)", fontSize: "0.9375rem", letterSpacing: "0.04em" }))}>
+  +											{tier.video ? "NO VIDEO INPUT" : "THIS MODEL HAS NO VISION"}
+  +										</p>
+  +										{tier.video && (
+  +											// Supplementary guidance; the phone viewport is too
+  +											// short to carry it alongside the mascot.
+  +											<p className={css({ display: "none", md: { display: "block" }, color: "var(--phosphor-dim)", fontSize: "0.75rem", opacity: 0.7, maxWidth: "16rem" })}>
+  +												Enable the camera in Settings → Speech.
+  +											</p>
+  +										)}
+  +									</div>
+  +								)}
+  +							</div>
+  +
+  +						{/* Status bar, in flow along the bottom edge of the bezel. */}
+  +							<div
+  +								className={cx(
+  +									"font-terminal",
+  +									css({
+  +										flexShrink: 0,
+  +										display: "flex",
+  +										alignItems: "center",
+  +										justifyContent: "space-between",
+  +										gap: "0.5rem",
+  +										paddingInline: "0.75rem",
+  +										paddingBlock: "0.375rem",
+  +										borderTop: "1px solid color-mix(in srgb, var(--phosphor) 18%, transparent)",
+  +										background: "color-mix(in srgb, var(--terminal) 88%, black)",
+  +										fontSize: "0.875rem",
+  +										letterSpacing: "0.06em",
+  +									}),
+  +								)}
+  +							>
+  +								<span
+  +									className={cx(
+  +										active && state !== "closed" ? "cursor-blink" : "",
+  +										css({
+  +											color: speaking ? "var(--phosphor)" : "var(--phosphor-dim)",
+  +											textShadow: speaking ? "0 0 8px color-mix(in srgb, var(--phosphor) 60%, transparent)" : "none",
+  +											whiteSpace: "nowrap",
+  +											overflow: "hidden",
+  +											textOverflow: "ellipsis",
+  +										}),
+  +									)}
+  +								>
+  +									{`> ${STATE_LABEL[state]}`}
+  +								</span>
+  +
+  +								{videoLive && (
+  +									<span
+  +										className={css({
+  +											display: "inline-flex",
+  +											alignItems: "center",
+  +											gap: "0.375rem",
+  +											flexShrink: 0,
+  +											color: "var(--phosphor)",
+  +										})}
+  +									>
+  +										{settings.videoSource === "screen" ? <MonitorUp size={12} /> : <Camera size={12} />}
+  +										{settings.videoSource === "screen" ? "SCREEN" : "CAM"}
+  +										{tier.videoRoute === "sampled" ? " · SAMPLED" : " · LIVE"}
+  +									</span>
+  +								)}
+  +							</div>
+  +						</div>
+  +
+  +						<button
+  +							type="button"
+  +							onClick={active ? stop : () => void start()}
+  +							className={cx(
+  +								"font-terminal",
+  +								css({
+  +									display: "inline-flex",
+  +									alignItems: "center",
+  +									justifyContent: "center",
+  +									gap: "0.5rem",
+  +									width: "100%",
+  +									minHeight: "3rem",
+  +									borderRadius: "0.375rem",
+  +									border: "2px solid",
+  +									fontSize: "1.25rem",
+  +									letterSpacing: "0.08em",
+  +									cursor: "pointer",
+  +									transitionProperty: "background-color, color, border-color, box-shadow, transform",
+  +									transitionDuration: "150ms",
+  +									_active: { transform: "translate(1px, 1px)" },
+  +								}),
+  +								active
+  +									? css({
+  +										borderColor: "var(--red)",
+  +										color: "var(--red)",
+  +										background: "color-mix(in srgb, var(--red) 10%, transparent)",
+  +										boxShadow: "2px 2px 0 color-mix(in srgb, var(--red) 45%, transparent)",
+  +									})
+  +									: css({
+  +										borderColor: "var(--accent-green)",
+  +										color: "var(--accent-green)",
+  +										background: "color-mix(in srgb, var(--accent-green) 10%, transparent)",
+  +										boxShadow: "2px 2px 0 color-mix(in srgb, var(--accent-green) 45%, transparent)",
+  +										_hover: { background: "color-mix(in srgb, var(--accent-green) 18%, transparent)" },
+  +									}),
+  +							)}
+  +						>
+  +							<Power size={18} />
+  +							{active ? "END SESSION" : "START SESSION"}
+  +						</button>
+  +
+  +						{/* Boot-style capability readout. */}
+  +						<div className={cx("font-terminal", css({ display: "grid", gap: "0.25rem", padding: "0.875rem 1rem", border: "1px solid var(--line)", borderRadius: "0.375rem" }))}>
+  +							<Leader label="audio duplex" value="[OK]" />
+  +							<Leader
+  +								label="vision"
+  +								value={tier.videoRoute === "native" ? "[LIVE LANE]" : tier.videoRoute === "sampled" ? "[SAMPLED]" : "[NONE]"}
+  +								tone={tier.videoRoute === "none" ? "fail" : "ok"}
+  +							/>
+  +							<Leader label="tool calls" value={tier.tier > 0 ? "[OK]" : "[NONE]"} tone={tier.tier > 0 ? "ok" : "fail"} />
+  +							<Leader label="frames sent" value={String(framesSent)} tone="pending" />
+  +							<Leader
+  +								label="first audio"
+  +								value={firstAudioMs === null ? "--" : `${(firstAudioMs / 1000).toFixed(1)}s`}
+  +								tone="pending"
+  +							/>
+  +						</div>
+  +					</section>
+  +
+  +					{/* Transcript and tool feed, as terminal output. */}
+  +					{/* Flex column so the transcript reliably absorbs the leftover
+  +					    height and the tool feed stays pinned below it. */}
+  +					<section className={css({ display: "flex", flexDirection: "column", gap: "1rem", minWidth: 0 })}>
+  +						<div
+  +							ref={transcriptRef}
+  +							// `terminal-window` carries its own scanline ::before; adding
+  +							// `crt` here would collide on the same pseudo-element.
+  +							className={cx(
+  +								"terminal-window",
+  +								css({
+  +									position: "relative",
+  +									borderRadius: "0.5rem",
+  +									border: "1px solid var(--terminal-edge)",
+  +									padding: "1rem",
+  +									// Fixed on phones so the transcript and the viewport both
+  +									// stay reachable; on wide screens it fills the column.
+  +									height: "14rem",
+  +									md: { height: "18rem" },
+  +									lg: { height: "auto", flex: 1, minHeight: "18rem" },
+  +									overflowY: "auto",
+  +									overflowWrap: "anywhere",
+  +									fontSize: "0.9375rem",
+  +									lineHeight: 1.55,
+  +								}),
+  +							)}
+  +						>
+  +							{transcript.length === 0 ? (
+  +								<p className={css({ color: "var(--phosphor-dim)" })}>
+  +									{active ? "> awaiting speech_" : "> press start to begin_"}
+  +								</p>
+  +							) : (
+  +								transcript.map((entry, index) => (
+  +									<p key={index} className={css({ marginBottom: "0.5rem" })}>
+  +										<span className={css({ color: entry.role === "user" ? "var(--amber)" : "var(--phosphor)", opacity: 0.9 })}>
+  +											{entry.role === "user" ? "YOU> " : "KEATING> "}
+  +										</span>
+  +										<span className={css({ color: entry.role === "user" ? "var(--phosphor-dim)" : "var(--phosphor)" })}>
+  +											{entry.text}
+  +										</span>
+  +									</p>
+  +								))
+  +							)}
+  +						</div>
+  +
+  +						<div className={cx("font-terminal", css({ display: "grid", gap: "0.25rem", padding: "0.875rem 1rem", border: "1px solid var(--line)", borderRadius: "0.375rem", minHeight: "6rem", alignContent: "start" }))}>
+  +							<div className={css({ fontSize: "0.9375rem", opacity: 0.6, letterSpacing: "0.06em", marginBottom: "0.25rem" })}>
+  +								TOOL CALLS
+  +							</div>
+  +							{tools.length === 0 ? (
+  +								<p className={css({ fontSize: "0.9375rem", opacity: 0.55 })}>none yet</p>
+  +							) : (
+  +								tools.map((tool) => (
+  +									<Leader
+  +										key={`${tool.callId}-${tool.name}`}
+  +										label={tool.name}
+  +										value={tool.status === "running" ? "[····]" : tool.status === "completed" ? "[OK]" : "[FAIL]"}
+  +										tone={tool.status === "running" ? "pending" : tool.status === "completed" ? "ok" : "fail"}
+  +									/>
+  +								))
+  +							)}
+  +						</div>
+  +					</section>
+  +				</div>
+  +			</main>
+  +		</div>
+  +	);
+  +}
+  +
+  +export default Live;
+
+  diff --git a/web/src/test/gemini-live.test.ts b/web/src/test/gemini-live.test.ts
+  new file mode 100644
+  index 0000000..9ecfce2
+  --- /dev/null
+  +++ b/web/src/test/gemini-live.test.ts
+  @@ -0,0 +1,95 @@
+  +import { describe, expect, it } from "bun:test";
+  +
+  +import {
+  +	buildGeminiToolConfig,
+  +	geminiFunctionResponse,
+  +	geminiHistoryTurn,
+  +	negotiateGeminiLiveSession,
+  +	supportsNonBlockingTools,
+  +} from "../keating/speech-providers/gemini-live";
+  +import type { LiveSpeechTool } from "../keating/speech";
+  +
+  +const QUIZ_TOOL: LiveSpeechTool = {
+  +	name: "quiz",
+  +	description: "Create a quiz",
+  +	parameters: { type: "object", properties: {} },
+  +};
+  +
+  +describe("Gemini Live tool declarations", () => {
+  +	it("maps Keating tools onto the SDK's camelCase declaration shape", () => {
+  +		// The SDK marshals `functionDeclarations`; the snake_case spelling from
+  +		// the REST docs is silently dropped, leaving the session tool-blind.
+  +		const config = buildGeminiToolConfig([QUIZ_TOOL], "gemini-3.1-flash-live-preview");
+  +		expect(config).toBeDefined();
+  +		expect(config![0].functionDeclarations).toEqual([
+  +			{ name: "quiz", description: "Create a quiz", parameters: { type: "object", properties: {} } },
+  +		]);
+  +	});
+  +
+  +	it("omits the tool block entirely when there are no tools", () => {
+  +		expect(buildGeminiToolConfig([], "gemini-3.1-flash-live-preview")).toBeUndefined();
+  +	});
+  +
+  +	it("marks declarations non-blocking only on models that support it", () => {
+  +		// 3.1 Live is synchronous-only; sending the flag there is an error.
+  +		expect(supportsNonBlockingTools("gemini-2.5-flash-live-preview")).toBe(true);
+  +		expect(supportsNonBlockingTools("gemini-3.1-flash-live-preview")).toBe(false);
+  +		expect(supportsNonBlockingTools("gemini-2.0-flash-live-001")).toBe(false);
+  +
+  +		const async = buildGeminiToolConfig([QUIZ_TOOL], "gemini-2.5-flash-live-preview");
+  +		expect((async![0].functionDeclarations as any[])[0].behavior).toBe("NON_BLOCKING");
+  +
+  +		const sync = buildGeminiToolConfig([QUIZ_TOOL], "gemini-3.1-flash-live-preview");
+  +		expect((sync![0].functionDeclarations as any[])[0].behavior).toBeUndefined();
+  +	});
+  +});
+  +
+  +describe("Gemini Live tool responses", () => {
+  +	it("echoes the call id and puts the result under the reserved output key", () => {
+  +		expect(geminiFunctionResponse("call-1", "quiz", { ok: true }, "gemini-3.1-flash-live-preview")).toEqual({
+  +			id: "call-1",
+  +			name: "quiz",
+  +			response: { output: { ok: true } },
+  +		});
+  +	});
+  +
+  +	it("reports failures under the error key so they are not read as output", () => {
+  +		const failed = geminiFunctionResponse("call-1", "quiz", "boom", "gemini-3.1-flash-live-preview", { failed: true });
+  +		expect(failed.response).toEqual({ error: "boom" });
+  +	});
+  +
+  +	it("keeps scheduling a sibling of response, never nested inside it", () => {
+  +		// Nested inside `response` it would be treated as tool output and the
+  +		// model would keep blocking on every call.
+  +		const scheduled = geminiFunctionResponse("call-1", "quiz", { ok: true }, "gemini-2.5-flash-live-preview");
+  +		expect(scheduled.scheduling).toBe("WHEN_IDLE");
+  +		expect(scheduled.response).toEqual({ output: { ok: true } });
+  +	});
+  +
+  +	it("omits scheduling on models without non-blocking support", () => {
+  +		const plain = geminiFunctionResponse("call-1", "quiz", { ok: true }, "gemini-3.1-flash-live-preview");
+  +		expect(plain.scheduling).toBeUndefined();
+  +	});
+  +});
+  +
+  +describe("Gemini Live session setup", () => {
+  +	it("negotiates native duplex audio, native video, and native tools", () => {
+  +		const negotiated = negotiateGeminiLiveSession("gemini-3.1-flash-live-preview");
+  +		expect(negotiated.realtimeAudio).toBe("native");
+  +		expect(negotiated.realtimeVideo).toBe("native");
+  +		expect(negotiated.toolCalls).toBe("native");
+  +		expect(negotiated.transport).toBe("websocket");
+  +		expect(negotiated.missing).toEqual([]);
+  +	});
+  +
+  +	it("maps assistant turns onto Gemini's model role when replaying history", () => {
+  +		expect(geminiHistoryTurn({ role: "assistant", text: "try the base case" })).toEqual({
+  +			role: "model",
+  +			parts: [{ text: "try the base case" }],
+  +		});
+  +		expect(geminiHistoryTurn({ role: "user", text: "why?" })).toEqual({
+  +			role: "user",
+  +			parts: [{ text: "why?" }],
+  +		});
+  +	});
+  +});
+
+  diff --git a/web/src/test/live-history.test.ts b/web/src/test/live-history.test.ts
+  new file mode 100644
+  index 0000000..3b998b1
+  --- /dev/null
+  +++ b/web/src/test/live-history.test.ts
+  @@ -0,0 +1,80 @@
+  +import { describe, expect, it } from "bun:test";
+  +
+  +import { buildLiveHistory } from "../keating/live-history";
+  +
+  +const message = (role: string, content: unknown) => ({ role, content });
+  +
+  +describe("live voice history seed", () => {
+  +	it("replays plain user and assistant turns in order", () => {
+  +		expect(buildLiveHistory([
+  +			message("user", "what is a monoid?"),
+  +			message("assistant", "a set with an associative operation"),
+  +		])).toEqual([
+  +			{ role: "user", text: "what is a monoid?" },
+  +			{ role: "assistant", text: "a set with an associative operation" },
+  +		]);
+  +	});
+  +
+  +	it("flattens structured text parts", () => {
+  +		expect(buildLiveHistory([
+  +			message("assistant", [
+  +				{ type: "text", text: "first" },
+  +				{ type: "text", text: "second" },
+  +			]),
+  +		])).toEqual([{ role: "assistant", text: "first second" }]);
+  +	});
+  +
+  +	it("drops tool traffic and non-text parts", () => {
+  +		// A speech model cannot use these, and they would burn the audio context
+  +		// window, which is far smaller than the text one.
+  +		expect(buildLiveHistory([
+  +			message("tool", "tool output"),
+  +			message("system", "system prompt"),
+  +			message("assistant", [{ type: "tool-call", id: "call-1" }]),
+  +			message("user", "still here"),
+  +		])).toEqual([{ role: "user", text: "still here" }]);
+  +	});
+  +
+  +	it("treats an attachment turn as an ordinary learner turn", () => {
+  +		expect(buildLiveHistory([
+  +			message("user-with-attachments", [{ type: "text", text: "look at this diagram" }]),
+  +		])).toEqual([{ role: "user", text: "look at this diagram" }]);
+  +	});
+  +
+  +	it("skips empty turns rather than seeding blank messages", () => {
+  +		expect(buildLiveHistory([
+  +			message("user", "   "),
+  +			message("assistant", []),
+  +			message("user", "real"),
+  +		])).toEqual([{ role: "user", text: "real" }]);
+  +	});
+  +
+  +	it("keeps the most recent turns when over the turn budget", () => {
+  +		const messages = Array.from({ length: 10 }, (_, i) => message("user", `turn ${i}`));
+  +		const history = buildLiveHistory(messages, { maxTurns: 3 });
+  +		expect(history).toEqual([
+  +			{ role: "user", text: "turn 7" },
+  +			{ role: "user", text: "turn 8" },
+  +			{ role: "user", text: "turn 9" },
+  +		]);
+  +	});
+  +
+  +	it("keeps the most recent turns when over the character budget", () => {
+  +		const history = buildLiveHistory([
+  +			message("user", "a".repeat(100)),
+  +			message("user", "b".repeat(100)),
+  +			message("user", "c".repeat(100)),
+  +		], { maxChars: 250 });
+  +		expect(history.map((turn) => turn.text[0])).toEqual(["b", "c"]);
+  +	});
+  +
+  +	it("returns nothing when the budget is zero", () => {
+  +		const messages = [message("user", "hello")];
+  +		expect(buildLiveHistory(messages, { maxTurns: 0 })).toEqual([]);
+  +		expect(buildLiveHistory(messages, { maxChars: 0 })).toEqual([]);
+  +	});
+  +
+  +	it("handles an empty conversation", () => {
+  +		expect(buildLiveHistory([])).toEqual([]);
+  +	});
+  +});
+
+  diff --git a/web/src/test/live-session-parity.test.ts b/web/src/test/live-session-parity.test.ts
+  new file mode 100644
+  index 0000000..4261f21
+  --- /dev/null
+  +++ b/web/src/test/live-session-parity.test.ts
+  @@ -0,0 +1,178 @@
+  +import { describe, expect, it } from "bun:test";
+  +
+  +import { createRealtimeTelemetry } from "../keating/observability";
+  +import type { RealtimeTelemetryEvent } from "../keating/observability/types";
+  +import type { ConversationEvent } from "../keating/protocol";
+  +import {
+  +	createRealtimeCanonicalBridge,
+  +	parseToolArguments,
+  +	runLiveToolCall,
+  +	type LiveProviderId,
+  +} from "../keating/speech-providers/live-session-shared";
+  +
+  +interface Transcript {
+  +	events: ConversationEvent[];
+  +	telemetry: RealtimeTelemetryEvent[];
+  +	responses: Array<{ callId: string; output: unknown; failed: boolean }>;
+  +}
+  +
+  +/**
+  + * Drive one provider through a scripted session and record everything it emits.
+  + *
+  + * Keating runs different providers at different capability tiers, but the rest
+  + * of the app — persistence, replay, the live HUD — only ever sees the canonical
+  + * event stream. If two providers disagree about that stream, a session's
+  + * meaning depends on which provider produced it.
+  + */
+  +async function runScriptedSession(
+  +	provider: LiveProviderId,
+  +	options: { toolFails?: boolean } = {},
+  +): Promise<Transcript> {
+  +	const events: ConversationEvent[] = [];
+  +	const telemetryEvents: RealtimeTelemetryEvent[] = [];
+  +	const responses: Transcript["responses"] = [];
+  +
+  +	const canonical = createRealtimeCanonicalBridge((event) => events.push(event), {
+  +		sessionId: "session-fixed",
+  +		runId: "run-fixed",
+  +	});
+  +	let tick = 0;
+  +	const telemetry = createRealtimeTelemetry(
+  +		{ onEvent: (event) => telemetryEvents.push(event) },
+  +		{ now: () => (tick += 1000) },
+  +	);
+  +
+  +	// connect
+  +	canonical.emit("run.started", { mode: "multimodal" });
+  +
+  +	// learner speaks, model transcribes
+  +	canonical.emit("transcript.delta", {
+  +		transcriptId: "user-transcript",
+  +		role: "user",
+  +		delta: "quiz me on recursion",
+  +		final: false,
+  +	});
+  +
+  +	// model calls a tool
+  +	await runLiveToolCall({
+  +		call: { callId: "call-1", name: "quiz", arguments: { topic: "recursion" } },
+  +		provider,
+  +		canonical,
+  +		telemetry,
+  +		execute: async () => {
+  +			if (options.toolFails) throw new Error("quiz backend unavailable");
+  +			return { ok: true };
+  +		},
+  +		respond: (callId, output) => responses.push({ callId, output, failed: false }),
+  +		respondError: (callId, message) => responses.push({ callId, output: message, failed: true }),
+  +	});
+  +
+  +	// learner barges in over the answer
+  +	canonical.emit("conversation.interrupted", { by: "user", reason: "barge-in" });
+  +
+  +	// session ends
+  +	canonical.emit("run.completed", { reason: "cancelled" });
+  +
+  +	return { events, telemetry: telemetryEvents, responses };
+  +}
+  +
+  +describe("live session parity across capability tiers", () => {
+  +	it("emits an identical canonical event sequence for both providers", async () => {
+  +		const openai = await runScriptedSession("openai");
+  +		const google = await runScriptedSession("google");
+  +
+  +		const shape = (transcript: Transcript) =>
+  +			transcript.events.map((event) => ({
+  +				type: event.type,
+  +				sequence: event.sequence,
+  +				payload: event.payload,
+  +			}));
+  +
+  +		expect(shape(openai)).toEqual(shape(google));
+  +		expect(openai.events.map((event) => event.type)).toEqual([
+  +			"run.started",
+  +			"transcript.delta",
+  +			"tool.requested",
+  +			"tool.started",
+  +			"tool.completed",
+  +			"conversation.interrupted",
+  +			"run.completed",
+  +		]);
+  +	});
+  +
+  +	it("emits an identical failure sequence for both providers", async () => {
+  +		const openai = await runScriptedSession("openai", { toolFails: true });
+  +		const google = await runScriptedSession("google", { toolFails: true });
+  +
+  +		expect(openai.events.map((event) => event.type)).toEqual([
+  +			"run.started",
+  +			"transcript.delta",
+  +			"tool.requested",
+  +			"tool.started",
+  +			"tool.failed",
+  +			"conversation.interrupted",
+  +			"run.completed",
+  +		]);
+  +		expect(openai.events.map((event) => event.type)).toEqual(google.events.map((event) => event.type));
+  +
+  +		// The provider name is the one thing that legitimately differs.
+  +		const failure = (transcript: Transcript) =>
+  +			transcript.events.find((event) => event.type === "tool.failed") as
+  +				| Extract<ConversationEvent, { type: "tool.failed" }>
+  +				| undefined;
+  +		expect(failure(openai)?.payload.error.provider).toBe("openai");
+  +		expect(failure(google)?.payload.error.provider).toBe("google");
+  +		expect(failure(openai)?.payload.error.code).toBe(failure(google)?.payload.error.code);
+  +	});
+  +
+  +	it("answers the transport on both the success and failure paths", async () => {
+  +		// A live session that never answers a function call stalls until the
+  +		// provider times it out, which the learner experiences as dead air.
+  +		const ok = await runScriptedSession("openai");
+  +		expect(ok.responses).toEqual([{ callId: "call-1", output: { ok: true }, failed: false }]);
+  +
+  +		const failed = await runScriptedSession("openai", { toolFails: true });
+  +		expect(failed.responses).toEqual([
+  +			{ callId: "call-1", output: "quiz backend unavailable", failed: true },
+  +		]);
+  +	});
+  +
+  +	it("emits matching tool telemetry for both providers", async () => {
+  +		const openai = await runScriptedSession("openai");
+  +		const google = await runScriptedSession("google");
+  +
+  +		const toolEvents = (transcript: Transcript) =>
+  +			transcript.telemetry
+  +				.filter((event) => event.name.startsWith("tool."))
+  +				.map((event) => ({ name: event.name, outcome: event.attributes?.outcome }));
+  +
+  +		expect(toolEvents(openai)).toEqual([
+  +			{ name: "tool.started", outcome: undefined },
+  +			{ name: "tool.completed", outcome: "success" },
+  +		]);
+  +		expect(toolEvents(openai)).toEqual(toolEvents(google));
+  +	});
+  +
+  +	it("keeps event ids unique and sequence numbers gapless", async () => {
+  +		const { events } = await runScriptedSession("openai");
+  +		expect(events.map((event) => event.sequence)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+  +		expect(new Set(events.map((event) => event.id)).size).toBe(events.length);
+  +		expect(events.every((event) => event.sessionId === "session-fixed")).toBe(true);
+  +	});
+  +});
+  +
+  +describe("tool argument parsing", () => {
+  +	it("accepts the JSON string OpenAI sends and the object Gemini sends", () => {
+  +		expect(parseToolArguments('{"topic":"recursion"}')).toEqual({ topic: "recursion" });
+  +		expect(parseToolArguments({ topic: "recursion" })).toEqual({ topic: "recursion" });
+  +	});
+  +
+  +	it("degrades to empty arguments rather than throwing mid-session", () => {
+  +		// A malformed argument blob must not take down a live call.
+  +		expect(parseToolArguments("not json")).toEqual({});
+  +		expect(parseToolArguments("")).toEqual({});
+  +		expect(parseToolArguments(undefined)).toEqual({});
+  +		expect(parseToolArguments(null)).toEqual({});
+  +		expect(parseToolArguments("[1,2,3]")).toEqual({});
+  +	});
+  +});
+
+  diff --git a/web/src/test/video-capture.test.ts b/web/src/test/video-capture.test.ts
+  new file mode 100644
+  index 0000000..ac366b0
+  --- /dev/null
+  +++ b/web/src/test/video-capture.test.ts
+  @@ -0,0 +1,144 @@
+  +import { describe, expect, test } from "bun:test";
+  +import {
+  +	computeCaptureSize,
+  +	framesAreSimilar,
+  +	histogramDistance,
+  +	lumaHistogram,
+  +	normalizeCaptureOptions,
+  +	shouldSkipFrame,
+  +	DEFAULT_MAX_EDGE,
+  +	MIN_FRAME_INTERVAL_MS,
+  +} from "../keating/video-capture";
+  +
+  +/** Build RGBA pixel data of a single flat colour. */
+  +function solid(pixels: number, value: number): Uint8ClampedArray {
+  +	const data = new Uint8ClampedArray(pixels * 4);
+  +	for (let i = 0; i < pixels; i += 1) {
+  +		data[i * 4] = value;
+  +		data[i * 4 + 1] = value;
+  +		data[i * 4 + 2] = value;
+  +		data[i * 4 + 3] = 255;
+  +	}
+  +	return data;
+  +}
+  +
+  +describe("capture options", () => {
+  +	test("floors the interval to one frame per second", () => {
+  +		// Both providers cap video at 1 fps; asking for more must not be honoured.
+  +		expect(normalizeCaptureOptions({ intervalMs: 100 }).intervalMs).toBe(MIN_FRAME_INTERVAL_MS);
+  +		expect(normalizeCaptureOptions({ intervalMs: 0 }).intervalMs).toBe(MIN_FRAME_INTERVAL_MS);
+  +		expect(normalizeCaptureOptions({ intervalMs: -5000 }).intervalMs).toBe(MIN_FRAME_INTERVAL_MS);
+  +	});
+  +
+  +	test("keeps intervals slower than the floor", () => {
+  +		expect(normalizeCaptureOptions({ intervalMs: 5000 }).intervalMs).toBe(5000);
+  +	});
+  +
+  +	test("defaults to a downscaled camera capture", () => {
+  +		const config = normalizeCaptureOptions();
+  +		expect(config.source).toBe("camera");
+  +		expect(config.maxEdge).toBe(DEFAULT_MAX_EDGE);
+  +		expect(config.intervalMs).toBe(MIN_FRAME_INTERVAL_MS);
+  +	});
+  +
+  +	test("clamps jpeg quality into a sane range", () => {
+  +		expect(normalizeCaptureOptions({ jpegQuality: 9 }).jpegQuality).toBe(1);
+  +		expect(normalizeCaptureOptions({ jpegQuality: 0 }).jpegQuality).toBe(0.1);
+  +	});
+  +
+  +	test("rejects unknown sources rather than passing them through", () => {
+  +		expect(normalizeCaptureOptions({ source: "hologram" as never }).source).toBe("camera");
+  +	});
+  +});
+  +
+  +describe("downscale math", () => {
+  +	test("scales the longest edge down to the budget, preserving aspect ratio", () => {
+  +		expect(computeCaptureSize(1920, 1080, 768)).toEqual({ width: 768, height: 432 });
+  +		expect(computeCaptureSize(1080, 1920, 768)).toEqual({ width: 432, height: 768 });
+  +	});
+  +
+  +	test("leaves frames already within budget alone", () => {
+  +		// Upscaling would cost tokens without adding any detail.
+  +		expect(computeCaptureSize(640, 480, 768)).toEqual({ width: 640, height: 480 });
+  +	});
+  +
+  +	test("never collapses a dimension to zero", () => {
+  +		const size = computeCaptureSize(4000, 3, 768);
+  +		expect(size.width).toBe(768);
+  +		expect(size.height).toBeGreaterThanOrEqual(1);
+  +	});
+  +
+  +	test("handles a video element that has not reported dimensions yet", () => {
+  +		expect(computeCaptureSize(0, 0, 768)).toEqual({ width: 0, height: 0 });
+  +	});
+  +});
+  +
+  +describe("frame similarity", () => {
+  +	test("a normalized histogram sums to one", () => {
+  +		const histogram = lumaHistogram(solid(100, 128));
+  +		const total = Array.from(histogram).reduce((sum, value) => sum + value, 0);
+  +		expect(total).toBeCloseTo(1, 10);
+  +	});
+  +
+  +	test("identical frames are maximally similar", () => {
+  +		expect(histogramDistance(lumaHistogram(solid(64, 100)), lumaHistogram(solid(64, 100)))).toBe(0);
+  +	});
+  +
+  +	test("a black frame and a white frame are maximally different", () => {
+  +		expect(histogramDistance(lumaHistogram(solid(64, 0)), lumaHistogram(solid(64, 255)))).toBeCloseTo(1, 10);
+  +	});
+  +
+  +	test("skips a frame indistinguishable from the last one sent", () => {
+  +		const previous = lumaHistogram(solid(64, 120));
+  +		const next = lumaHistogram(solid(64, 120));
+  +		expect(framesAreSimilar(previous, next, 0.02)).toBe(true);
+  +	});
+  +
+  +	test("emits a frame once the scene actually changes", () => {
+  +		const previous = lumaHistogram(solid(64, 20));
+  +		const next = lumaHistogram(solid(64, 200));
+  +		expect(framesAreSimilar(previous, next, 0.02)).toBe(false);
+  +	});
+  +
+  +	test("always emits the first frame of a session", () => {
+  +		expect(framesAreSimilar(null, lumaHistogram(solid(64, 120)), 0.02)).toBe(false);
+  +	});
+  +
+  +	test("a zero threshold disables skipping entirely", () => {
+  +		const histogram = lumaHistogram(solid(64, 120));
+  +		expect(framesAreSimilar(histogram, histogram, 0)).toBe(false);
+  +	});
+  +});
+  +
+  +describe("frame skip policy", () => {
+  +	const changed = lumaHistogram(solid(64, 200));
+  +	const unchanged = lumaHistogram(solid(64, 20));
+  +
+  +	test("suppresses frames while the tab is hidden", () => {
+  +		// A backgrounded tab must not keep billing the user for frames.
+  +		expect(shouldSkipFrame({
+  +			documentHidden: true,
+  +			previousHistogram: unchanged,
+  +			nextHistogram: changed,
+  +			similarityThreshold: 0.02,
+  +		})).toBe(true);
+  +	});
+  +
+  +	test("sends a changed frame while the tab is visible", () => {
+  +		expect(shouldSkipFrame({
+  +			documentHidden: false,
+  +			previousHistogram: unchanged,
+  +			nextHistogram: changed,
+  +			similarityThreshold: 0.02,
+  +		})).toBe(false);
+  +	});
+  +
+  +	test("suppresses a static scene while the tab is visible", () => {
+  +		expect(shouldSkipFrame({
+  +			documentHidden: false,
+  +			previousHistogram: unchanged,
+  +			nextHistogram: unchanged,
+  +			similarityThreshold: 0.02,
+  +		})).toBe(true);
+  +	});
+  +});
+
+
+###
+
+Your task is to help verify the quality of the diff.
+We care only about specific categories of important issues.
+The rubric below outlines these categories of important issues, and contains guidelines and examples to correctly identify them:
+
+---
+**incomplete_integration_with_existing_code**:
+Guidelines:
+    - The diff should follow existing architectural and organizational patterns in the codebase:
+        - If the codebase uses a modular structure with separate files for classes/components, new classes should follow the same pattern
+        - If the codebase organizes code in specific directories (e.g., src/, components/, utils/), new code should be placed accordingly
+        - If the codebase uses specific import/export patterns (e.g., relative vs. absolute imports), new code should use the same patterns
+    - The diff should integrate functionally with existing code by adding invocations, updating invocations, replacing code with newly defined functions or variables, removing duplicate code when a new piece replaces it, etc.
+    - Prefer using existing library/dependency APIs over custom implementations when the library provides (or will provide) the needed functionality.
+Examples:
+    - The codebase uses absolute Python imports from the project root, but a new file uses relative imports.
+    - The codebase places classes into separate files under a source directory, but new classes are all added to an existing file.
+    - The diff implements a new function, but doesn't add any callsites for it
+    - A new optional parameter is added to a function to implement a requested feature, but existing callsites are not updated to make use of this parameter
+    - A named constant is introduced to replace a hard-coded inline literal, but existing code is not updated to make use of the new constant everywhere
+    - Custom code is added to implement functionality that an existing external library already provides or will provide in newer versions.
+
+---
+**user_request_artifacts_left_in_code**:
+Guidelines:
+    - Comments should describe what the code does, not how it was changed.
+    - Flag comments that reference the change process: '# Changed from X to Y', '# Updated to print less'
+    - Flag comments that mention fixing or addressing issues: '# Fixed bug where...', '# This addresses...'
+    - Flag documentation written in past tense about modifications
+    - Acceptable comments explain current behavior without referencing changes:
+        - Acceptable: '# Multiply by 3x' instead of '# Reduced factor from 5x to 3x'
+        - Acceptable: '# Handle edge case' instead of '# Fixed edge case bug'
+
+---
+**refactoring_needed**:
+Guidelines:
+    - Functions that have gotten long (> 50 lines) and are mixing multiple concerns and/or combining several different steps should be broken up. (Typically by using helper functions and/or separate classes to encapsulate individual concerns.)
+    - Classes or files that are combining different concerns should be broken up, such that each class / file only deals with one primary concern.
+        - Note: we don't impose any minimal or maximal length on a class or file. Classes and files are ok to be long, as long as they only deal with a single concern.
+Examples:
+    - New functionality that is orthogonal to the existing functionality in a function is inserted into the existing function's body instead of being separated out into its own function.
+    - A class mixes two different use cases that could be separated into two classes.
+
+---
+**documentation_implementation_mismatch**:
+Guidelines:
+    - The implementation should follow, in this priority order: 1. the user's request, 2. documentation existing in the code base, 3. existing code around it, 4. general best practices and common sense
+    - If the user's request conflicts with the state of documentation in the code base, the documentation in the code base should be updated to reflect the new user request.
+Examples:
+    - The docstring of a class or function does not match what the class or function implements.
+    - The repository contains a README.md file with instructions that are not adhered to by the code.
+    - The diff implements significant new functionality, but existing documentation within the repository is not updated.
+    - Inline comments are not updated even though functionality was changed by the diff.
+    - Documentation contains outdated code snippets or commands that need to be updated because of the changes made by the diff.
+Exceptions:
+    - TODOs/FIXMEs that are not implemented yet are not considered a documentation mismatch.
+
+---
+**test_coverage**:
+Guidelines:
+    - If the diff introduces significant new functionality, and the code base has existing unit and/or integration tests, new tests should be added to cover the new functionality.
+    - If the diff changes the behavior of existing functionality that is covered by automated tests, those tests should be updated to reflect the new behavior.
+    - If the diff contains a bug fix, and the code base has existing unit and/or integration tests, a regression test should be added for the bug.
+Exceptions:
+    - Syntactical or logical issues in tests will be raised in other issue types and do not belong in this category.
+
+---
+**incorrect_algorithm**:
+Guidelines:
+    - Code that implements an algorithm incorrectly for its stated purpose.
+    - Look for: sorting algorithms with wrong comparison logic, search algorithms with incorrect termination, mathematical calculations with wrong formulas, data structure operations that don't maintain invariants, algorithms that don't handle edge cases (empty inputs, single elements).
+    - Only flag issues that are clearly incorrect for the stated purpose of the algorithm, and describe the problem and correction in detail.
+
+---
+**dependency_management**:
+Guidelines:
+    - Check all import statements in new or modified files. If new code imports a library or package that is not part of the language's standard library, verify that the dependency is listed in the repository's dependency/requirement files (e.g., requirements.txt, pyproject.toml, package.json, Gemfile, etc.).
+    - If the diff removes the last remaining use of an external library or package, the dependency and/or requirement files in the repository should be updated to no longer include the library.
+    - If the codebase uses a dependency for some functionality, the diff should avoid introducing other packages that provide the same functionality, unless there is a good reason to do so (e.g. the new package is significantly better maintained, has better performance, or is more secure).
+Exceptions:
+    - Do not raise issues related to package versions or pinning unless it is a critical issue.
+
+---
+**async_correctness**:
+Guidelines:
+    - Issues specific to asynchronous or concurrent code correctness.
+    - Look for: missing await keywords on functions that are clearly async (defined with 'async def' or returning coroutines/Promises), improper async context manager usage, race conditions in async code, deadlock potential, shared state access without proper synchronization.
+    - For threading issues: threads or background tasks that are created but never started, joins without corresponding starts.
+    - Be careful not to flag decorators or wrappers as requiring await unless you can verify they actually make the function async. Only flag clear cases where an async function is called without await or a thread/task is created but never started.
+
+---
+**logic_error**:
+Guidelines:
+    - Logic errors are flaws in the reasoning or flow of the code that would cause incorrect behavior.
+    - Look for: off-by-one errors in loops or array indexing, incorrect conditional logic (wrong operators, inverted conditions), variable assignments that overwrite needed values, incorrect order of operations, missing or incorrect loop termination conditions, algorithms that don't match their intended purpose.
+    - Look for missing, incorrect, or incomplete parameters to function/API calls that will cause the function to behave differently than intended (e.g., missing event masks, wrong flags, omitted required options).
+    - Pay special attention to control flow issues: early returns or breaks that prevent intended functionality from executing, functions that exit before completing their stated purpose, conditions that prevent code paths from being reached when they should be.
+    - Do not flag issues that are not clearly incorrect, for example it's possible code is implemented in a suboptimal way, this is not an issue unless it is explicitly stated that the code should be optimal or implemented in a certain way.
+
+---
+**abstraction_violation**:
+Guidelines:
+    - Code that breaks established abstraction boundaries within the codebase.
+    - Look for:
+        - Direct access to internal data structures of classes/modules that should be encapsulated
+        - Bypassing public APIs to manipulate state or access internal functionality
+        - Mixing of concerns that should be separated by layers or modules
+        - Violating private vs. public interfaces (e.g., accessing private attributes or methods from outside their defining class/module)
+Examples:
+    - A Python function directly accesses a private attribute, variable or function (prefixed with an underscore) from a different class or file.
+    - A module modifies the internal state of another module directly instead of using and/or adding public API functions.
+Exceptions:
+    - Unit tests that need to access internal state for verification purposes.
+
+---
+**poor_naming**:
+Guidelines:
+    - File, class, function, function parameter, and constant names should follow the format and naming standards that are currently dominant in the code base (especially within the same file or folder), or the style guide if one exists.
+    - In the absence of existing code, common naming standards for the given programming language should be used.
+    - Function names should be descriptive of what the function does. A person reading the function name without seeing its implementation should be able to get a sense of its purpose.
+    - If any function parameter is being mutated by the function, that fact should be made clear in the name of the parameter (e.g. by appending `_out` / `Out` to the name), unless it is clear that such name-based annotations would be against the existing naming style in the code base.
+    - Note that we don't impose any specific criteria on the length of names. If the existing code base uses many abbreviated names, new code should follow that. Or if it uses a lot of long, verbose names, this similarly should be followed.
+    - If a component's functionality is significantly changed, the name of the component should be updated to reflect the new functionality, if it is not already clear from the context.
+Exceptions:
+    - Short names for local variables are usually okay.
+
+---
+**type_safety_violation**:
+Guidelines:
+    - Code that violates type safety expectations or could cause type-related runtime errors.
+    - Look for: incorrect type assumptions, missing type checks before operations, unsafe type casting, attribute access on potentially None values.
+    - Check for return type violations: functions that return values inconsistent with their declared return type annotations (e.g., returning None when the type annotation specifies a non-optional type, returning wrong tuple element types).
+
+---
+**correctness_syntax_issues**:
+Guidelines:
+    - The diff should not contain any syntax errors that would prevent the code from running.
+    - CAREFULLY CHECK INDENTATION: In Python and other indentation-sensitive languages, verify that all function definitions, class definitions, and code blocks maintain proper indentation levels. Dedenting a function body to the module level or similar indentation errors are critical syntax issues.
+    - Look for: broken indentation that would cause syntax errors, missing or mismatched brackets/braces/parentheses, references to files/classes/functions that don't exist, removal of code that is still being referenced elsewhere.
+    - Check function signatures match their usage: if a function is modified to return different values (e.g., a single value vs. a tuple), all call sites must be updated accordingly.
+Examples:
+    - The diff breaks the indentation of a Python function or class, dedenting it incorrectly.
+    - Code references a file, class or function that does not exist, or removes a file, class or function that is definitely still being referenced.
+    - A function is changed to return a tuple of two values, but existing callers still expect only a single return value.
+    - A function's return statement is removed but callers still expect a return value.
+
+---
+**insecure_code**:
+Guidelines:
+    - Look for hard-coded secrets such as API keys, passwords, tokens, or credentials in the diff.
+    - Check for variable names containing: 'token', 'key', 'secret', 'password', 'credential', 'auth'
+    - Look for string literals that appear to be:
+        - API keys or tokens (long alphanumeric strings, often 20+ characters)
+        - Hexadecimal strings that could be tokens or keys
+        - URLs with embedded credentials (e.g., 'REDACTED')
+        - Connection strings with passwords
+    - Flag any credentials or secrets that should be loaded from environment variables or configuration files instead.
+Examples:
+    - A variable named `api_key` or `auth_token` is assigned a hard-coded string value.
+    - A connection string contains a hard-coded password.
+    - A long hexadecimal string is assigned to a variable with 'token' in its name.
+    - An API request includes a hard-coded authentication header value.
+
+---
+**instruction_file_disobeyed**:
+Guidelines:
+    Explicit instructions in files such as .claude.md, CLAUDE.md, and AGENTS.md MUST be obeyed.
+Examples:
+    - CLAUDE.md requests the use of single quotes only, but double quotes are used.
+    - AGENTS.md requests that new versions be created on every database update, but a database entry is modified directly.
+    - .claude.md says to always run the tests after making changes, but the agent did not run the tests.
+Exceptions:
+    - Instructions in the closest file _above_ a location take precedence. For example, when considering a file foo/bar.py, foo/CLAUDE.md takes precedence over CLAUDE.md.
+    - Instructions only apply to the subtree below the file. For example, when considering a file foo/bar.py, foo/baz/CLAUDE.md does not apply.
+    - Applicable instructions should ONLY be contravened in the case of explicit user request--but if the user does explicitly request something counter to the instruction files, this should not be reported as a disobeyed instruction file.
+
+---
+**error_handling_missing**:
+Guidelines:
+    - Missing error handling for operations that could reasonably fail.
+    - Look for: file I/O without exception handling, network requests without timeout/retry logic, user input processing without validation, external API calls without error checking, database operations without transaction handling.
+    - Only flag issues that are clearly incorrect, and avoid flagging issues where it is not a big problem (e.g. file I/O in a script may not need flagging while missing error handling for file I/O in a long running or production systems should have error handling).
+
+---
+**fails_silently**:
+Guidelines:
+    Code that fails silently is code that ignores errors without reporting them.
+Examples:
+    - Overly broad exception handlers (e.g. bare 'except' or 'except Exception') that catch errors and continue execution without handling, logging, or re-raising them.
+    - The return value of a function that returns an error value in case of a failure is not checked by the caller.
+Exceptions:
+    - There are certain cases where broad exception handlers are acceptable, such as in an executor class or in a main loop that iterates over several tasks. Such cases should still properly log and report the errors.
+    - Do not raise issues related to potential program crashes.
+
+---
+**runtime_error_risk**:
+Guidelines:
+    - Code patterns that are very likely to cause runtime errors during execution.
+    - Check for version compatibility issues: usage of function parameters, APIs, or language features that are only available in specific versions of the language, standard library, or external dependencies (e.g., a keyword argument added in Python 3.10 will cause TypeError on Python 3.8/3.9).
+    - Look for: potential null/None pointer dereferences, array/list access with potentially invalid indices, division by zero possibilities, file operations without existence checks, network/IO operations without timeout or error handling, infinite loop conditions, memory allocation issues.
+    - Check string encoding/decoding operations: calls to .encode() or .decode() without error handling (try/except or 'errors' parameter) that could raise UnicodeEncodeError or UnicodeDecodeError, especially when processing untrusted or streamed data.
+    - Look for operations with global side effects that could cause problems: os.chdir() without proper restoration, modifying global state in ways that affect other code, operations that are not thread-safe when concurrency is present.
+    - Only flag issues where there is clear evidence the code will fail or cause serious problems. Avoid speculating about potential issues in well-established language patterns or standard library usage.
+
+---
+**repetitive_or_duplicate_code**:
+Guidelines:
+    Repetitive or duplicate code.
+Examples:
+    - A non-trivial calculation or piece of logic is repeated in multiple places within a file.
+    - New code is introduced by the diff to accomplish a certain functionality, but there is an existing function in the code base that already implements the same functionality, or could be easily generalized to accomplish the desired functionality.
+    - A file is duplicated (make exceptions for cases where duplication may be necessary such as test files).
+    - A significant amount of code is introduced which duplicates functionality from standard or well-known libraries.
+    - Multiple functions format or build the same string or data structure in the same way without using a shared helper function or test fixture.
+Exceptions:
+    - Do not flag duplication between legacy and new implementations when the codebase is clearly undergoing a migration or maintaining multiple versions for compatibility.
+    - Do not flag duplication across different architectural layers or modules when the duplication serves to maintain proper separation of concerns.
+
+---
+**commit_message_mismatch**:
+Guidelines:
+    - The diff must completely fulfill the user's request.
+    - Look for incomplete implementations:
+       - When the user asks for changes 'throughout', 'everywhere', or 'all', verify ALL instances are modified
+       - If multiple changes are requested, ensure each one is fully implemented
+       - Check that fixes are applied to all occurrences of a pattern, not just some
+    - Look for scope mismatches:
+       - Changes only in initialization when they should apply during execution
+       - Modifications to only one file when multiple files need updates
+       - Partial refactoring that leaves related code unchanged
+    - Look for unauthorized changes:
+       - Configuration changes (linting, build, test settings) not requested
+       - New features or options beyond the request
+       - Changes to unrelated code
+       - Binaries, compiled files, dependencies, or build artifacts that should not be in version control
+    - Look for unintended removals:
+       - Removal of project-specific configuration or settings that should be preserved
+       - Deletion of functionality that is still needed
+       - Loss of necessary entries when replacing configuration files
+    - Look for unintended side effects:
+       - Changes that affect code paths or functionality beyond what was requested
+       - Modifications that impact how existing features work in ways not mentioned in the request
+Exceptions:
+    - Minor refactors directly related to requested changes are acceptable.
+
+---
+**resource_leakage**:
+Guidelines:
+    - Focus on system resources that require explicit cleanup: file handles, network connections, database connections, memory allocations, and similar OS-level resources.
+    - These resources must be reliably freed even if exceptions occur.
+    - For these system resources, cleanup should use try/finally blocks, context managers (with statements), or RAII patterns.
+    - Also look for reference management issues: objects being cleaned up while still holding references elsewhere, or cleanup operations (like garbage collection) called before removing all references to the object.
+Examples:
+    - A file or socket connection is opened but not reliably closed.
+    - A database transaction is started but not committed or rolled back in all code paths.
+    - Memory is allocated but not freed (in languages with manual memory management).
+    - An object's cleanup method triggers garbage collection while the object is still referenced in a global data structure, preventing proper cleanup.
+Exceptions:
+    - Animation loops, timers, and intervals that are controlled by boolean flags or cleared by ID are not resource leaks if they have proper stop mechanisms.
+    - Event listeners that are meant to persist for the lifetime of the application.
+    - Resources that are automatically cleaned up by garbage collection (unless they hold system resources).
+
+---
+
+Use your standard tools to explore the repository and analyze the code thoroughly.
+Look at the additional guidance section below for more details on how to find issues.
+
+After your analysis, provide your response in JSON format matching this schema:
+
+{
+  "$defs": {
+    "GeneratedIssueSchema": {
+      "additionalProperties": true,
+      "description": "Individual issue from LLM response.",
+      "properties": {
+        "codePart": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Specific code snippet that has the issue",
+          "title": "Codepart"
+        },
+        "confidence": {
+          "description": "Confidence in this assessment",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "description": {
+          "description": "Specific explanation of what\u0027s wrong and why it\u0027s incorrect",
+          "title": "Description",
+          "type": "string"
+        },
+        "issueCode": {
+          "description": "Category of the issue",
+          "title": "Issuecode",
+          "type": "string"
+        },
+        "location": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "File path where the issue occurs",
+          "title": "Location"
+        },
+        "severity": {
+          "description": "Integer 1-5 (1=minor issue, 5=critical bug)",
+          "maximum": 5,
+          "minimum": 1,
+          "title": "Severity",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "issueCode",
+        "description",
+        "severity",
+        "confidence"
+      ],
+      "title": "GeneratedIssueSchema",
+      "type": "object"
+    }
+  },
+  "additionalProperties": true,
+  "description": "Complete response structure for issue identification.",
+  "properties": {
+    "issues": {
+      "description": "List of identified issues",
+      "items": {
+        "$ref": "#/$defs/GeneratedIssueSchema"
+      },
+      "title": "Issues",
+      "type": "array"
+    }
+  },
+  "title": "GeneratedResponseSchema",
+  "type": "object"
+}
+
+For each issue found, provide:
+- issue_code: Category from the rubric above
+- description: Specific explanation of the issue
+- (if applicable) location: File path where the issue occurs (relative to /home/diogenes/Projects/keating)
+- (if applicable) code_part: Specific code snippet that has the issue. Your code snippet should be the exact same as the original code including whitespace.
+- severity: Integer 1-5 (1=minor, 5=critical)
+- confidence: Float 0.0-1.0 indicating your confidence
+
+Your response should look like:
+```json
+{
+    "issues": [
+        <list of issues>
+    ]
+}
+```
+
+If no issues are found, return: ```json{"issues": []}```
+
+Focus on real issues that impact code quality, correctness, or maintainability.
+You must not return issues that were already present in the code or issues that are fixed by the diff.
+You must only return issues that were introduced by the diff.
+Do not report duplicate issues with the same or equivalent descriptions.
+
+### Additional Guidance for Finding Issues ###
+You should use a Task tool to create a parallel task for each issue type in the rubric.
+You should pass along the exact issue type definition with all details to the task.
+Once all the Tasks have completed you can collate their results.
+You should pass along any relevant information from the guidance below to the task.
+Here is a non-exhaustive list of things that you can do using your tools within the task to find issues:
+
+---
+**incomplete_integration_with_existing_code**:
+- Look at the existing code organization and architectural patterns
+- Check if new code follows the same structural patterns as existing code
+- Trace the links or identify the lack of them between the diff and existing code
+- Look at incomplete usage of new code
+
+---
+**user_request_artifacts_left_in_code**:
+Look at code comments and added documentation in the diff.
+
+---
+**refactoring_needed**:
+- Look at the scope and length of components of the diff or code affected by the diff.
+- Look at incomplete usage of new code.
+- Understand existing codebase patterns.
+
+---
+**documentation_implementation_mismatch**:
+Look at code comments and READMEs in the diff or in existing code related to the diff.
+
+---
+**test_coverage**:
+- Look at the diff and tests for it or tests affected by it or missing tests.
+- Understand existing codebase patterns.
+- Run code but this may not always be a viable option or may surface irrelevant issues.
+
+---
+**incorrect_algorithm**:
+None
+
+---
+**dependency_management**:
+- Look at the diff and dependency management files for issues.
+- Understand existing codebase patterns.
+- Carefully check import statements at the top of new or modified files.
+
+---
+**async_correctness**:
+None
+
+---
+**logic_error**:
+None
+
+---
+**abstraction_violation**:
+None
+
+---
+**poor_naming**:
+- Look at names that were added or names corresponding to updated code.
+- Understand existing codebase patterns.
+
+---
+**type_safety_violation**:
+None
+
+---
+**correctness_syntax_issues**:
+None
+
+---
+**insecure_code**:
+Carefully examine the diff for any string literals that might be secrets, especially those assigned to variables with security-related names.
+
+---
+**instruction_file_disobeyed**:
+Cross-check ALL instructions in ALL instruction files against the diff contents.
+
+---
+**error_handling_missing**:
+None
+
+---
+**fails_silently**:
+Carefully examine the diff.
+
+---
+**runtime_error_risk**:
+None
+
+---
+**repetitive_or_duplicate_code**:
+- Look at repetition in the diff or duplication between the diff and existing code in the codebase.
+- Look at incomplete usage of new code
+- Understand existing codebase patterns.
+
+---
+**commit_message_mismatch**:
+Compare the uncommitted diff and the request to ensure they match.
+
+---
+**resource_leakage**:
+Carefully examine the diff or code affected by newly added code.
+
+---
+Note that this is just guidance on how to find issues, please refer to the rubric for the types of issues to find.
