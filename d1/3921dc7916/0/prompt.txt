@@ -1,0 +1,1 @@
+I want you to get oauth working in prod for the various subscription and make sure they are testable end to end.
