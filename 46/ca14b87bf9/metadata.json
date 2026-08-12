@@ -1,0 +1,18 @@
+{
+  "cli_version": "0.9.0",
+  "checkpoint_id": "46ca14b87bf9",
+  "strategy": "import",
+  "commit_sha": "0460b666c76e06617ce7d6b53e23897ab7e32220",
+  "checkpoints_count": 1,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/46/ca14b87bf9/0/metadata.json",
+      "transcript": "/46/ca14b87bf9/0/full.jsonl",
+      "compact_transcript": "/46/ca14b87bf9/0/transcript.jsonl",
+      "content_hash": "/46/ca14b87bf9/0/content_hash.txt",
+      "prompt": "/46/ca14b87bf9/0/prompt.txt"
+    }
+  ],
+  "imported": true
+}
