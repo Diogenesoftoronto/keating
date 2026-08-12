@@ -1,0 +1,1 @@
+make sure the model know the variety of questions it can create. right now i don't think type of questions is there or available for the model to figure out
