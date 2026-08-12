@@ -1,0 +1,3205 @@
+You are analyzing a code repository for potential issues. The repository files are available in /home/diogenes/Projects/keating.
+
+Assume that a user requested work to be done and a programmer delivered the diff below.
+The changes from the diff are present in the codebase but are not yet committed.
+
+### User request ###
+
+  Replace Keating's Dio provider implementation with the Not Organic provider contract while preserving local and BYO providers
+
+
+### Diff (lines starting with `-` indicate removed code, and lines starting with `+` indicate added code) ###
+
+  diff --git a/Dockerfile.web b/Dockerfile.web
+  index b7ce2c596affc8658874393fddd6488314af2aa1..b8d13b360068538bd452e6f4d5871367c27ddc6e 100644
+  --- a/Dockerfile.web
+  +++ b/Dockerfile.web
+  @@ -16,15 +16,13 @@ WORKDIR /app/web
+   ARG VITE_POSTHOG_PROJECT_TOKEN
+   ARG VITE_POSTHOG_HOST="https://us.i.posthog.com"
+   ARG VITE_POSTHOG_DISABLED="false"
+  -# VITE_DIO_ENABLED is inlined at build time. Without it, isDioFeatureEnabled()
+  -# compiles to false in production, so the Dio access/purchase dialog never opens
+  -# and selecting the Dio model silently no-ops (no API key can ever be obtained).
+  -# Set VITE_DIO_ENABLED=true as a Railway service variable so it is forwarded here.
+  -ARG VITE_DIO_ENABLED
+  +# This public flag only controls whether the Not Organic model and account
+  +# surfaces are offered. Provider capabilities and signing keys remain server-side.
+  +ARG VITE_NOTORGANIC_ENABLED
+   ENV VITE_POSTHOG_PROJECT_TOKEN=$VITE_POSTHOG_PROJECT_TOKEN \
+       VITE_POSTHOG_HOST=$VITE_POSTHOG_HOST \
+       VITE_POSTHOG_DISABLED=$VITE_POSTHOG_DISABLED \
+  -    VITE_DIO_ENABLED=$VITE_DIO_ENABLED
+  +    VITE_NOTORGANIC_ENABLED=$VITE_NOTORGANIC_ENABLED
+   RUN bun run build
+   
+   # Serve stage
+  diff --git a/web/nitro.config.ts b/web/nitro.config.ts
+  index f70b1b02b00bca783fa4510e6a63ab18ecc2a316..62e73185eb6d261b04ede070e0d96552a1ac9296 100644
+  --- a/web/nitro.config.ts
+  +++ b/web/nitro.config.ts
+  @@ -116,24 +116,12 @@ export default defineNitroConfig({
+         handler: "server/api/oauth/refresh.ts",
+       },
+       {
+  -      route: "/api/dio/checkout",
+  -      handler: "server/api/dio/checkout.ts",
+  +      route: "/api/notorganic/openai/**",
+  +      handler: "server/api/notorganic/openai/[...path].ts",
+       },
+       {
+  -      route: "/api/dio/webhook",
+  -      handler: "server/api/dio/webhook.ts",
+  -    },
+  -    {
+  -      route: "/api/dio/claim",
+  -      handler: "server/api/dio/claim.ts",
+  -    },
+  -    {
+  -      route: "/api/dio/recover",
+  -      handler: "server/api/dio/recover.ts",
+  -    },
+  -    {
+  -      route: "/api/dio/openai/**",
+  -      handler: "server/api/dio/openai/[...path].ts",
+  +      route: "/api/notorganic/provider/**",
+  +      handler: "server/api/notorganic/provider/[resource].ts",
+       },
+       {
+         // Static middleware serves valid built files first. If an old service
+  diff --git a/web/server/api/dio/checkout.ts b/web/server/api/dio/checkout.ts
+  deleted file mode 100644
+  index 43390864598b10f5636b25f171ae0869e4257967..0000000000000000000000000000000000000000
+  --- a/web/server/api/dio/checkout.ts
+  +++ /dev/null
+  @@ -1,42 +0,0 @@
+  -import { createError, defineEventHandler, readBody } from "h3";
+  -import { useStorage } from "nitro/storage";
+  -import { createCreemCheckout, getDioEnvConfig, getPurchasableDioPack, isDioEnabled, normalizeEmail } from "../../../src/dio-provider/server";
+  -import { DEFAULT_DIO_PACK_ID } from "../../../src/dio-provider/packs";
+  -
+  -interface CheckoutBody {
+  -	email?: string;
+  -	packId?: string;
+  -}
+  -
+  -export default defineEventHandler(async (event) => {
+  -	if (event.method !== "POST") {
+  -		throw createError({ statusCode: 405, statusMessage: "Method not allowed" });
+  -	}
+  -
+  -	if (!isDioEnabled()) {
+  -		throw createError({ statusCode: 404, statusMessage: "Not found" });
+  -	}
+  -
+  -	const body = await readBody<CheckoutBody>(event);
+  -	const email = normalizeEmail(body?.email ?? "");
+  -	if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  -		throw createError({ statusCode: 400, statusMessage: "Valid email is required" });
+  -	}
+  -
+  -	const config = getDioEnvConfig();
+  -	const packId = body?.packId?.trim() || DEFAULT_DIO_PACK_ID;
+  -	if (!getPurchasableDioPack(config, packId)) {
+  -		throw createError({ statusCode: 400, statusMessage: `Unknown or unavailable pack: ${packId}` });
+  -	}
+  -	const result = await createCreemCheckout(config, email, packId);
+  -
+  -	const storage = useStorage("keating:dio");
+  -	await storage.setItem(`pending:${normalizeEmail(email)}`, {
+  -		purchaseReference: result.purchaseReference,
+  -		email: normalizeEmail(email),
+  -		packId,
+  -		createdAt: new Date().toISOString(),
+  -	});
+  -
+  -	return result;
+  -});
+  diff --git a/web/server/api/dio/claim.ts b/web/server/api/dio/claim.ts
+  deleted file mode 100644
+  index 863517529346f424b6babf8f6a39e17609ce9107..0000000000000000000000000000000000000000
+  --- a/web/server/api/dio/claim.ts
+  +++ /dev/null
+  @@ -1,46 +0,0 @@
+  -import { createError, defineEventHandler, readBody } from "h3";
+  -import { useStorage } from "nitro/storage";
+  -import { isDioEnabled, loadDioEntitlement, normalizeEmail } from "../../../src/dio-provider/server";
+  -
+  -interface ClaimBody {
+  -	email?: string;
+  -	purchaseReference?: string;
+  -}
+  -
+  -export default defineEventHandler(async (event) => {
+  -	if (event.method !== "POST") {
+  -		throw createError({ statusCode: 405, statusMessage: "Method not allowed" });
+  -	}
+  -
+  -	if (!isDioEnabled()) {
+  -		throw createError({ statusCode: 404, statusMessage: "Not found" });
+  -	}
+  -
+  -	const body = await readBody<ClaimBody>(event);
+  -	const email = normalizeEmail(body?.email ?? "");
+  -	if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  -		throw createError({ statusCode: 400, statusMessage: "Valid email is required" });
+  -	}
+  -
+  -	const storage = useStorage("keating:dio");
+  -	const entitlement = await loadDioEntitlement(storage, email);
+  -	if (!entitlement) {
+  -		// Check for a pending purchase record as a hint.
+  -		const pending = await storage.getItem(`pending:${email}`);
+  -		if (pending) {
+  -			return { success: false, pending: true };
+  -		}
+  -		return { success: false, pending: false };
+  -	}
+  -
+  -	// A completed entitlement always requires the checkout-bound purchase
+  -	// reference to prove ownership before returning the virtual key.
+  -	if (!body?.purchaseReference || entitlement.purchaseReference !== body.purchaseReference) {
+  -		return { success: false, pending: false, error: "Purchase reference required" };
+  -	}
+  -
+  -	return {
+  -		success: true,
+  -		apiKey: entitlement.virtualKeyValue,
+  -	};
+  -});
+  diff --git a/web/server/api/dio/openai/[...path].ts b/web/server/api/dio/openai/[...path].ts
+  deleted file mode 100644
+  index 3619106744557a6041df0c91e48009faef892b20..0000000000000000000000000000000000000000
+  --- a/web/server/api/dio/openai/[...path].ts
+  +++ /dev/null
+  @@ -1,36 +0,0 @@
+  -import { createError, defineEventHandler, getHeaders, getRequestURL, proxyRequest } from "h3";
+  -import { getDioGatewayBaseUrl, isAllowedDioOpenAiProxyRequest, isDioEnabled } from "../../../../src/dio-provider/server";
+  -
+  -export default defineEventHandler(async (event) => {
+  -	if (!isDioEnabled()) {
+  -		throw createError({ statusCode: 404, statusMessage: "Not found" });
+  -	}
+  -
+  -	const reqUrl = getRequestURL(event);
+  -	const proxyPath = reqUrl.pathname.replace(/^\/api\/dio\/openai\/?/, "") + reqUrl.search;
+  -	if (!isAllowedDioOpenAiProxyRequest(event.method, proxyPath)) {
+  -		throw createError({ statusCode: 404, statusMessage: "Not found" });
+  -	}
+  -	const targetUrl = `${getDioGatewayBaseUrl()}/${proxyPath}`;
+  -
+  -	const forbiddenHeaders = [
+  -		"x-stainless-os",
+  -		"x-stainless-lang",
+  -		"x-stainless-package-version",
+  -		"x-stainless-runtime",
+  -		"x-stainless-runtime-version",
+  -		"x-stainless-arch",
+  -		"x-stainless-os-version",
+  -		"origin",
+  -		"host",
+  -		"referer",
+  -		"x-target-url",
+  -	];
+  -
+  -	const headers: Record<string, string> = { ...getHeaders(event) };
+  -	for (const forbidden of forbiddenHeaders) {
+  -		delete headers[forbidden];
+  -	}
+  -
+  -	return proxyRequest(event, targetUrl, { headers });
+  -});
+  diff --git a/web/server/api/dio/recover.ts b/web/server/api/dio/recover.ts
+  deleted file mode 100644
+  index dc91d1a9807cffb13e22e6e9ac7cbcd2d701ad52..0000000000000000000000000000000000000000
+  --- a/web/server/api/dio/recover.ts
+  +++ /dev/null
+  @@ -1,63 +0,0 @@
+  -import { createError, defineEventHandler, readBody } from "h3";
+  -import { useStorage } from "nitro/storage";
+  -import {
+  -	createRecoveryChallenge,
+  -	getDioEnvConfig,
+  -	isDioEnabled,
+  -	loadDioEntitlement,
+  -	normalizeEmail,
+  -	sendRecoveryEmail,
+  -	verifyRecoveryChallenge,
+  -} from "../../../src/dio-provider/server";
+  -
+  -interface RecoverBody {
+  -	email?: string;
+  -	otp?: string;
+  -}
+  -
+  -export default defineEventHandler(async (event) => {
+  -	if (event.method !== "POST") {
+  -		throw createError({ statusCode: 405, statusMessage: "Method not allowed" });
+  -	}
+  -
+  -	if (!isDioEnabled()) {
+  -		throw createError({ statusCode: 404, statusMessage: "Not found" });
+  -	}
+  -
+  -	const body = await readBody<RecoverBody>(event);
+  -	const email = normalizeEmail(body?.email ?? "");
+  -	if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  -		throw createError({ statusCode: 400, statusMessage: "Valid email is required" });
+  -	}
+  -
+  -	const storage = useStorage("keating:dio");
+  -	const entitlement = await loadDioEntitlement(storage, email);
+  -	if (!entitlement) {
+  -		return { success: false, pending: false };
+  -	}
+  -
+  -	// Recovery requires a one-time code to prove email ownership. The code is
+  -	// generated on the first request and sent to the email address.
+  -	if (!body?.otp) {
+  -		const otp = await createRecoveryChallenge(storage, email);
+  -		const emailResult = await sendRecoveryEmail(getDioEnvConfig(), email, otp);
+  -		if (emailResult.error) {
+  -			throw createError({ statusCode: 503, statusMessage: emailResult.error });
+  -		}
+  -		return {
+  -			success: false,
+  -			requiresOtp: true,
+  -			devCode: emailResult.devCode,
+  -		};
+  -	}
+  -
+  -	const valid = await verifyRecoveryChallenge(storage, email, body.otp);
+  -	if (!valid) {
+  -		return { success: false, requiresOtp: true, error: "Invalid or expired verification code" };
+  -	}
+  -
+  -	return {
+  -		success: true,
+  -		apiKey: entitlement.virtualKeyValue,
+  -	};
+  -});
+  diff --git a/web/server/api/dio/webhook.ts b/web/server/api/dio/webhook.ts
+  deleted file mode 100644
+  index bab6816b2b186f953d43c56a7aa9b7af4871a675..0000000000000000000000000000000000000000
+  --- a/web/server/api/dio/webhook.ts
+  +++ /dev/null
+  @@ -1,256 +0,0 @@
+  -import { createError, defineEventHandler, getHeader, readRawBody } from "h3";
+  -import { useStorage } from "nitro/storage";
+  -import {
+  -	acquireEventLock,
+  -	completeEvent,
+  -	createBifrostVirtualKey,
+  -	findDioPackByProductId,
+  -	getDioEnvConfig,
+  -	isDioEnabled,
+  -	loadDioEntitlement,
+  -	loadProvisioningRecord,
+  -	parseCreemWebhookBody,
+  -	saveDioEntitlement,
+  -	saveProvisioningRecord,
+  -	updateBifrostVirtualKeyBudget,
+  -	verifyCreemWebhookSignature,
+  -	type DioEntitlement,
+  -} from "../../../src/dio-provider/server";
+  -
+  -export default defineEventHandler(async (event) => {
+  -	if (event.method !== "POST") {
+  -		throw createError({ statusCode: 405, statusMessage: "Method not allowed" });
+  -	}
+  -
+  -	if (!isDioEnabled()) {
+  -		throw createError({ statusCode: 404, statusMessage: "Not found" });
+  -	}
+  -
+  -	const config = getDioEnvConfig();
+  -	const bodyString = (await readRawBody(event)) ?? "";
+  -	const signature = getHeader(event, "creem-signature") ?? "";
+  -
+  -	if (!verifyCreemWebhookSignature(bodyString, signature, config.creemWebhookSecret)) {
+  -		throw createError({ statusCode: 401, statusMessage: "Invalid webhook signature" });
+  -	}
+  -
+  -	let payload: ReturnType<typeof parseCreemWebhookBody>;
+  -	try {
+  -		payload = parseCreemWebhookBody(JSON.parse(bodyString));
+  -	} catch (err) {
+  -		throw createError({
+  -			statusCode: 400,
+  -			statusMessage: err instanceof Error ? err.message : "Invalid webhook payload",
+  -		});
+  -	}
+  -
+  -	if (payload.eventType !== "checkout.completed") {
+  -		return { received: true, handled: false };
+  -	}
+  -
+  -	const storage = useStorage("keating:dio");
+  -	const object = payload.object;
+  -	const productId = object?.order?.product || object?.product?.id;
+  -	const pack = productId ? findDioPackByProductId(config, productId) : null;
+  -	if (!pack) {
+  -		throw createError({ statusCode: 400, statusMessage: "Product ID mismatch" });
+  -	}
+  -
+  -	const customerEmail = object?.customer?.email;
+  -	if (!customerEmail) {
+  -		throw createError({ statusCode: 400, statusMessage: "Missing customer email" });
+  -	}
+  -	const email = customerEmail.toLowerCase();
+  -
+  -	// Acquire a per-event lock before any side effects. This prevents duplicate
+  -	// Creem webhooks from racing to create multiple Bifrost virtual keys.
+  -	const locked = await acquireEventLock(storage, payload.id);
+  -	if (!locked) {
+  -		const existing = await loadDioEntitlement(storage, email);
+  -		return {
+  -			received: true,
+  -			handled: false,
+  -			reason: "duplicate event",
+  -			entitlement: existing ? { email, virtualKeyId: existing.virtualKeyId } : undefined,
+  -		};
+  -	}
+  -
+  -	try {
+  -		const purchaseReference =
+  -			(object?.request_id as string | undefined) ||
+  -			(typeof object?.metadata?.dio_purchase_reference === "string"
+  -				? object.metadata.dio_purchase_reference
+  -				: undefined) ||
+  -			payload.id;
+  -
+  -		// Top-up: this email already has a virtual key, so raise its budget by the
+  -		// purchased pack instead of creating a second key.
+  -		const existing = await loadDioEntitlement(storage, email);
+  -		if (existing) {
+  -			const provision = await loadProvisioningRecord(storage, purchaseReference);
+  -			if (provision?.status === "completed") {
+  -				await completeEvent(storage, payload.id, true);
+  -				return { received: true, handled: true, entitlement: { email, virtualKeyId: existing.virtualKeyId } };
+  -			}
+  -
+  -			// Entitlements created before per-pack budgets lack budgetMax; infer the
+  -			// base from their original product where possible.
+  -			const legacyPackBudget = existing.productId
+  -				? findDioPackByProductId(config, existing.productId)?.budget
+  -				: undefined;
+  -			const previousBudget = existing.budgetMax ?? legacyPackBudget ?? config.packs.starter.budget;
+  -			const newBudget = previousBudget + pack.budget;
+  -
+  -			const topUpStartedAt = new Date().toISOString();
+  -			await saveProvisioningRecord(storage, {
+  -				purchaseReference,
+  -				email,
+  -				status: "provisioning",
+  -				createdAt: topUpStartedAt,
+  -				updatedAt: topUpStartedAt,
+  -			});
+  -
+  -			await updateBifrostVirtualKeyBudget(config, existing.virtualKeyId, newBudget);
+  -
+  -			// Point the entitlement at the latest purchase so /dio/success can claim
+  -			// it, and record the raised cap for future top-ups.
+  -			await saveDioEntitlement(storage, {
+  -				...existing,
+  -				purchaseReference,
+  -				productId,
+  -				packId: pack.id,
+  -				budgetMax: newBudget,
+  -			});
+  -
+  -			await saveProvisioningRecord(storage, {
+  -				purchaseReference,
+  -				email,
+  -				status: "completed",
+  -				virtualKeyId: existing.virtualKeyId,
+  -				virtualKeyValue: existing.virtualKeyValue,
+  -				createdAt: topUpStartedAt,
+  -				updatedAt: new Date().toISOString(),
+  -			});
+  -
+  -			await completeEvent(storage, payload.id, true);
+  -			return {
+  -				received: true,
+  -				handled: true,
+  -				toppedUp: true,
+  -				entitlement: { email, virtualKeyId: existing.virtualKeyId },
+  -			};
+  -		}
+  -
+  -		// Idempotency by purchase reference. If we already provisioned a key for
+  -		// this purchase, reuse it instead of creating another Bifrost key.
+  -		const provision = await loadProvisioningRecord(storage, purchaseReference);
+  -		if (provision?.status === "completed") {
+  -			await completeEvent(storage, payload.id, true);
+  -			return { received: true, handled: true, entitlement: { email, virtualKeyId: provision.virtualKeyId } };
+  -		}
+  -
+  -		if (provision?.status === "provisioning" && provision.virtualKeyId && provision.virtualKeyValue) {
+  -			// Recover from a previous partial failure: Bifrost created the key but
+  -			// entitlement persistence failed. Complete the entitlement now.
+  -			const entitlement: DioEntitlement = {
+  -				email,
+  -				virtualKeyId: provision.virtualKeyId,
+  -				virtualKeyValue: provision.virtualKeyValue,
+  -				purchaseReference,
+  -				orderId: object?.order?.id,
+  -				checkoutId: object?.id,
+  -				productId,
+  -				customerId: object?.customer?.id,
+  -				createdAt: new Date().toISOString(),
+  -			};
+  -			await saveDioEntitlement(storage, entitlement);
+  -			await saveProvisioningRecord(storage, { ...provision, status: "completed" });
+  -			await completeEvent(storage, payload.id, true);
+  -			return { received: true, handled: true, entitlement: { email, virtualKeyId: provision.virtualKeyId } };
+  -		}
+  -
+  -		if (provision?.status === "provisioning") {
+  -			const message = "Provisioning already in progress for this purchase";
+  -			await completeEvent(storage, payload.id, false, message);
+  -			throw createError({ statusCode: 409, statusMessage: message });
+  -		}
+  -
+  -		// Persist a provisioning record before calling Bifrost so retries can
+  -		// detect that key creation was already attempted.
+  -		const now = new Date().toISOString();
+  -		await saveProvisioningRecord(storage, {
+  -			purchaseReference,
+  -			email,
+  -			status: "provisioning",
+  -			createdAt: now,
+  -			updatedAt: now,
+  -		});
+  -
+  -		const virtualKey = await createBifrostVirtualKey(config, {
+  -			name: `keating:${email}:${purchaseReference}`,
+  -			description: `Keating Dio credits for ${email}. Creem checkout ${object?.id ?? "unknown"}, order ${object?.order?.id ?? "unknown"}`,
+  -			allowedModels: [config.bifrostModelAlias],
+  -			budget: { max: pack.budget },
+  -			metadata: {
+  -				email,
+  -				purchaseReference,
+  -				creemEventId: payload.id,
+  -				creemCheckoutId: object?.id,
+  -				creemOrderId: object?.order?.id,
+  -				creemProductId: productId,
+  -				dioPackId: pack.id,
+  -				creemCustomerId: object?.customer?.id,
+  -				source: "creem-webhook",
+  -			},
+  -			idempotencyKey: purchaseReference,
+  -		});
+  -
+  -		// Capture the key details immediately so a crash before entitlement
+  -		// persistence can be recovered without creating another Bifrost key.
+  -		await saveProvisioningRecord(storage, {
+  -			purchaseReference,
+  -			email,
+  -			status: "provisioning",
+  -			virtualKeyId: virtualKey.id,
+  -			virtualKeyValue: virtualKey.value,
+  -			createdAt: now,
+  -			updatedAt: new Date().toISOString(),
+  -		});
+  -
+  -		const entitlement: DioEntitlement = {
+  -			email,
+  -			virtualKeyId: virtualKey.id,
+  -			virtualKeyValue: virtualKey.value,
+  -			purchaseReference,
+  -			orderId: object?.order?.id,
+  -			checkoutId: object?.id,
+  -			productId,
+  -			customerId: object?.customer?.id,
+  -			createdAt: new Date().toISOString(),
+  -			packId: pack.id,
+  -			budgetMax: pack.budget,
+  -		};
+  -
+  -		// Only mark the event as succeeded after the entitlement is persisted.
+  -		// If persistence fails, the provision record lets retries complete it.
+  -		await saveDioEntitlement(storage, entitlement);
+  -
+  -		await saveProvisioningRecord(storage, {
+  -			purchaseReference,
+  -			email,
+  -			status: "completed",
+  -			virtualKeyId: virtualKey.id,
+  -			virtualKeyValue: virtualKey.value,
+  -			createdAt: now,
+  -			updatedAt: new Date().toISOString(),
+  -		});
+  -
+  -		await completeEvent(storage, payload.id, true);
+  -
+  -		return { received: true, handled: true, entitlement: { email, virtualKeyId: virtualKey.id } };
+  -	} catch (err) {
+  -		const message = err instanceof Error ? err.message : String(err);
+  -		await completeEvent(storage, payload.id, false, message);
+  -		throw createError({ statusCode: 500, statusMessage: message });
+  -	}
+  -});
+  diff --git a/web/src/components/ProvidersModelsTab.tsx b/web/src/components/ProvidersModelsTab.tsx
+  index 84b9991df924aef255d299c0d334e702344e4cd9..02a363b0d51990da6036ce23260931c77a9c63dc 100644
+  --- a/web/src/components/ProvidersModelsTab.tsx
+  +++ b/web/src/components/ProvidersModelsTab.tsx
+  @@ -15,6 +15,10 @@ import {
+   	MODELS_TAB_SECTION_LABELS,
+   } from "./settings/section-ids";
+   import { DIO_PROVIDER_ID } from "../dio-provider";
+  +import {
+  +	isNotOrganicFeatureEnabled,
+  +	NOTORGANIC_PROVIDER_ID,
+  +} from "../notorganic-provider";
+   import { CloudProviderKeysSection } from "./settings/CloudProviderKeysSection";
+   import { WebSearchSection } from "./settings/WebSearchSection";
+   import { ProviderVisibilitySection } from "./settings/ProviderVisibilitySection";
+  @@ -34,7 +38,7 @@ import {
+   	type ProviderFormState,
+   } from "./settings/CustomProvidersSection";
+   
+  -const PROVIDER_PRIORITY = ["dio", "openai", "anthropic", "google"];
+  +const PROVIDER_PRIORITY = ["notorganic", "dio", "openai", "anthropic", "google"];
+   
+   function sortProvidersByPriority(list: string[]): string[] {
+   	const rank = (name: string) => {
+  @@ -132,7 +136,11 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
+   		loadCustomProviders().then(setCustomProviders);
+   	}, []);
+   
+  -	const providers = sortProvidersByPriority(Array.from(new Set([DIO_PROVIDER_ID, ...getProviders()])));
+  +	const providers = sortProvidersByPriority(Array.from(new Set([
+  +		...(isNotOrganicFeatureEnabled() ? [NOTORGANIC_PROVIDER_ID] : []),
+  +		DIO_PROVIDER_ID,
+  +		...getProviders(),
+  +	])));
+   
+   	const handleToggleProvider = (provider: string, hidden: boolean) => {
+   		toggleProviderVisibility(provider, hidden);
+  diff --git a/web/src/components/settings/CloudProviderKeysSection.tsx b/web/src/components/settings/CloudProviderKeysSection.tsx
+  index 9b14d268d732815b49d89ce823022b1c13f81747..c8d2ea8651a88e3404c9b73f685262b07d1e5c14 100644
+  --- a/web/src/components/settings/CloudProviderKeysSection.tsx
+  +++ b/web/src/components/settings/CloudProviderKeysSection.tsx
+  @@ -11,6 +11,11 @@ import {
+   	type OAuthProviderId,
+   } from "../../keating/oauth";
+   import { DIO_PROVIDER_ID } from "../../dio-provider";
+  +import {
+  +	getNotOrganicAccount,
+  +	getNotOrganicWallet,
+  +	NOTORGANIC_PROVIDER_ID,
+  +} from "../../notorganic-provider";
+   import { css } from "../../../styled-system/css";
+   
+   const sectionClass = css({ display: "flex", flexDirection: "column", gap: "1rem", scrollMarginTop: "5rem" });
+  @@ -80,6 +85,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
+   	const [oauthLoading, setOauthLoading] = useState<Record<string, boolean>>({});
+   	const [oauthInputs, setOAuthInputs] = useState<Record<string, string>>({});
+   	const [oauthErrors, setOAuthErrors] = useState<Record<string, string>>({});
+  +	const [hostedSummary, setHostedSummary] = useState<string>("");
+   
+   	useEffect(() => {
+   		const storage = getAppStorage();
+  @@ -98,6 +104,22 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
+   			const storage = getAppStorage();
+   			const status: Record<string, boolean> = {};
+   			for (const provider of providers) {
+  +				if (provider === NOTORGANIC_PROVIDER_ID) {
+  +					try {
+  +						const [account, wallet] = await Promise.all([
+  +							getNotOrganicAccount(),
+  +							getNotOrganicWallet(),
+  +						]);
+  +						status[provider] = true;
+  +						const balance = typeof wallet.balance_microusd === "number"
+  +							? `$${(wallet.balance_microusd / 1_000_000).toFixed(2)} available`
+  +							: "Wallet connected";
+  +						setHostedSummary(`${account.did ?? account.id} · ${balance}`);
+  +					} catch {
+  +						status[provider] = false;
+  +					}
+  +					continue;
+  +				}
+   				if (provider === DIO_PROVIDER_ID) {
+   					status[provider] = !!(await storage.providerKeys.get(DIO_PROVIDER_ID));
+   					continue;
+  @@ -145,6 +167,31 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
+   	};
+   
+   	const handleSignIn = (provider: string) => {
+  +		if (provider === NOTORGANIC_PROVIDER_ID) {
+  +			setOAuthErrors((prev) => ({ ...prev, [provider]: "" }));
+  +			setOauthLoading((prev) => ({ ...prev, [provider]: true }));
+  +			void Promise.all([getNotOrganicAccount(), getNotOrganicWallet()])
+  +				.then(([account, wallet]) => {
+  +					setOAuthStatus((prev) => ({ ...prev, [provider]: true }));
+  +					const balance = typeof wallet.balance_microusd === "number"
+  +						? `$${(wallet.balance_microusd / 1_000_000).toFixed(2)} available`
+  +						: "Wallet connected";
+  +					setHostedSummary(`${account.did ?? account.id} · ${balance}`);
+  +				})
+  +				.catch((error) => {
+  +					setOAuthStatus((prev) => ({ ...prev, [provider]: false }));
+  +					setOAuthErrors((prev) => ({
+  +						...prev,
+  +						[provider]: error instanceof Error
+  +							? error.message
+  +							: "The deployment-owned product session is unavailable.",
+  +					}));
+  +				})
+  +				.finally(() => {
+  +					setOauthLoading((prev) => ({ ...prev, [provider]: false }));
+  +				});
+  +			return;
+  +		}
+   		if (provider === DIO_PROVIDER_ID) {
+   			setOAuthErrors((prev) => ({ ...prev, [provider]: "" }));
+   			setOauthLoading((prev) => ({ ...prev, [provider]: true }));
+  @@ -203,6 +250,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
+   	};
+   
+   	const OAUTH_PROVIDER_LABELS: Record<string, string> = {
+  +		notorganic: "Not Organic Hosted",
+   		dio: "Dio (Kimi K2.6)",
+   		openai: "OpenAI Codex",
+   		anthropic: "Anthropic",
+  @@ -214,6 +262,42 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
+   		<>
+   			{providers.map((provider) => {
+   				const oauthId = providerToOAuthId(provider);
+  +				if (provider === NOTORGANIC_PROVIDER_ID) {
+  +					const hasSession = oauthStatus[provider] === true;
+  +					const loading = oauthLoading[provider] === true;
+  +					return (
+  +						<div key={provider} className={providerStackClass}>
+  +							<div className={labelRowClass}>
+  +								<label className={labelClass}>Not Organic Hosted</label>
+  +								<span className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+  +									Balanced routing
+  +								</span>
+  +							</div>
+  +							<div className={css({ borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "color-mix(in srgb, var(--muted) 20%, transparent)", padding: "0.75rem" })}>
+  +								<p className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+  +									Hosted sign-in is owned by Keating&apos;s server session. Browser DID and email values are never treated as authentication.
+  +								</p>
+  +								{hasSession && hostedSummary && (
+  +									<p className={css({ marginTop: "0.5rem", fontSize: "0.75rem", color: "var(--foreground)" })}>
+  +										{hostedSummary}
+  +									</p>
+  +								)}
+  +								<button
+  +									className={smallButtonClass}
+  +									disabled={loading}
+  +									onClick={() => handleSignIn(provider)}
+  +								>
+  +									{loading ? "Checking session…" : hasSession ? "Refresh account" : "Check product session"}
+  +								</button>
+  +								{oauthErrors[provider] && (
+  +									<p className={css({ marginTop: "0.5rem", fontSize: "0.75rem", color: "var(--destructive)" })}>
+  +										{oauthErrors[provider]}
+  +									</p>
+  +								)}
+  +							</div>
+  +						</div>
+  +					);
+  +				}
+   				const isOAuth = !!oauthId || provider === DIO_PROVIDER_ID;
+   				const hasOAuth = oauthStatus[provider] === true;
+   				const loading = oauthLoading[provider] === true;
+  diff --git a/web/src/dio-provider/index.ts b/web/src/dio-provider/index.ts
+  deleted file mode 100644
+  index f03cd858ccfbbf36e164827f47ebcd4d42455388..0000000000000000000000000000000000000000
+  --- a/web/src/dio-provider/index.ts
+  +++ /dev/null
+  @@ -1,172 +0,0 @@
+  -import type { Api, Model } from "@earendil-works/pi-ai";
+  -import { DIO_TOKEN_RATES } from "./packs";
+  -
+  -export const DIO_PROVIDER_ID = "dio";
+  -export const DIO_BASE_PATH = "/api/dio/openai/v1";
+  -export const DIO_BASE_URL = dioOpenAiBaseUrl();
+  -export const DIO_DEFAULT_MODEL_ID = "kimi-k2.6";
+  -export const DIO_MODEL_ALIAS_OVERRIDE = "kimi-k2.6";
+  -export const DIO_IDENTITY_EMAIL_SETTING = "dio.identity.email";
+  -
+  -export interface DioProviderDefinition {
+  -	id: string;
+  -	label: string;
+  -	baseUrl: string;
+  -	api: "openai-completions";
+  -}
+  -
+  -export const dioProviderDefinition: DioProviderDefinition = {
+  -	id: DIO_PROVIDER_ID,
+  -	label: "Dio",
+  -	baseUrl: DIO_BASE_URL,
+  -	api: "openai-completions",
+  -};
+  -
+  -export const DIO_DEFAULT_MODEL: Model<"openai-completions"> = {
+  -	id: DIO_MODEL_ALIAS_OVERRIDE,
+  -	name: "Kimi K2.6",
+  -	api: "openai-completions",
+  -	provider: DIO_PROVIDER_ID,
+  -	baseUrl: DIO_BASE_URL,
+  -	reasoning: true,
+  -	input: ["text"],
+  -	// USD per million tokens (pi-ai cost convention) — the advertised Dio rates.
+  -	cost: {
+  -		input: DIO_TOKEN_RATES.inputPerMTok,
+  -		output: DIO_TOKEN_RATES.outputPerMTok,
+  -		cacheRead: 0,
+  -		cacheWrite: 0,
+  -	},
+  -	contextWindow: 256_000,
+  -	maxTokens: 8192,
+  -};
+  -
+  -export interface DioAccessStatus {
+  -	hasKey: boolean;
+  -}
+  -
+  -export interface DioCheckoutResult {
+  -	checkoutUrl: string;
+  -	purchaseReference: string;
+  -}
+  -
+  -export interface DioClaimResult {
+  -	success: boolean;
+  -	apiKey?: string;
+  -	pending?: boolean;
+  -	requiresOtp?: boolean;
+  -	devCode?: string;
+  -	error?: string;
+  -}
+  -
+  -export async function getDioAccessStatus(): Promise<DioAccessStatus> {
+  -	const { getAppStorage } = await import("@earendil-works/pi-web-ui");
+  -	const key = await getAppStorage().providerKeys.get(DIO_PROVIDER_ID);
+  -	return { hasKey: typeof key === "string" && key.length > 0 };
+  -}
+  -
+  -export interface DioStoredIdentity {
+  -	email: string;
+  -}
+  -
+  -export async function rememberDioIdentity(email: string): Promise<DioStoredIdentity | null> {
+  -	const normalized = normalizeEmail(email);
+  -	if (!isValidDioIdentityEmail(normalized)) return null;
+  -	const { getAppStorage } = await import("@earendil-works/pi-web-ui");
+  -	await getAppStorage().settings.set(DIO_IDENTITY_EMAIL_SETTING, normalized);
+  -	return { email: normalized };
+  -}
+  -
+  -export async function getStoredDioIdentity(): Promise<DioStoredIdentity | null> {
+  -	const { getAppStorage } = await import("@earendil-works/pi-web-ui");
+  -	const storage = getAppStorage();
+  -	const [email, key] = await Promise.all([
+  -		storage.settings.get<string>(DIO_IDENTITY_EMAIL_SETTING),
+  -		storage.providerKeys.get(DIO_PROVIDER_ID),
+  -	]);
+  -	if (typeof email !== "string" || typeof key !== "string" || key.length === 0) return null;
+  -	const normalized = normalizeEmail(email);
+  -	return isValidDioIdentityEmail(normalized) ? { email: normalized } : null;
+  -}
+  -
+  -export async function startDioCheckout(email: string, packId?: string): Promise<DioCheckoutResult> {
+  -	const response = await fetch("/api/dio/checkout", {
+  -		method: "POST",
+  -		headers: { "Content-Type": "application/json" },
+  -		body: JSON.stringify({ email: normalizeEmail(email), ...(packId ? { packId } : {}) }),
+  -	});
+  -	const body = await response.json().catch(() => ({}));
+  -	if (!response.ok) {
+  -		throw new Error(typeof body.error === "string" ? body.error : `Checkout failed (${response.status})`);
+  -	}
+  -	return body as DioCheckoutResult;
+  -}
+  -
+  -export async function claimDioAccess(email: string, purchaseReference?: string): Promise<DioClaimResult> {
+  -	const response = await fetch("/api/dio/claim", {
+  -		method: "POST",
+  -		headers: { "Content-Type": "application/json" },
+  -		body: JSON.stringify({ email: normalizeEmail(email), purchaseReference }),
+  -	});
+  -	const body = await response.json().catch(() => ({}));
+  -	if (!response.ok) {
+  -		throw new Error(typeof body.error === "string" ? body.error : `Claim failed (${response.status})`);
+  -	}
+  -	return body as DioClaimResult;
+  -}
+  -
+  -export async function recoverDioAccess(email: string, otp?: string): Promise<DioClaimResult> {
+  -	const response = await fetch("/api/dio/recover", {
+  -		method: "POST",
+  -		headers: { "Content-Type": "application/json" },
+  -		body: JSON.stringify({ email: normalizeEmail(email), otp }),
+  -	});
+  -	const body = await response.json().catch(() => ({}));
+  -	if (!response.ok) {
+  -		throw new Error(typeof body.error === "string" ? body.error : `Recovery failed (${response.status})`);
+  -	}
+  -	return body as DioClaimResult;
+  -}
+  -
+  -export function normalizeEmail(email: string): string {
+  -	return email.trim().toLowerCase();
+  -}
+  -
+  -export function dioOpenAiBaseUrl(origin = currentOrigin()): string {
+  -	return `${origin.replace(/\/+$/, "")}${DIO_BASE_PATH}`;
+  -}
+  -
+  -function isValidDioIdentityEmail(email: string): boolean {
+  -	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  -}
+  -
+  -function currentOrigin(): string {
+  -	if (typeof globalThis.location?.origin === "string" && globalThis.location.origin) {
+  -		return globalThis.location.origin;
+  -	}
+  -	return "http://localhost";
+  -}
+  -
+  -export function isDioProvider(provider: string): boolean {
+  -	return provider === DIO_PROVIDER_ID;
+  -}
+  -
+  -/**
+  - * Check whether the Dio credit-purchase flow is enabled. In a Vite build this
+  - * reads VITE_DIO_ENABLED and defaults to true in dev mode. Outside Vite (e.g.
+  - * unit tests or the Nitro server) it falls back to process.env.VITE_DIO_ENABLED.
+  - */
+  -export function isDioFeatureEnabled(): boolean {
+  -	let envValue: string | undefined;
+  -	let isDev = false;
+  -	if (typeof import.meta.env !== "undefined") {
+  -		envValue = import.meta.env.VITE_DIO_ENABLED;
+  -		isDev = import.meta.env.DEV === true;
+  -	} else if (typeof process !== "undefined" && process.env) {
+  -		envValue = process.env.VITE_DIO_ENABLED;
+  -		isDev = process.env.NODE_ENV === "development";
+  -	}
+  -	if (envValue === "false") return false;
+  -	if (envValue === "true") return true;
+  -	return isDev;
+  -}
+  diff --git a/web/src/dio-provider/packs.ts b/web/src/dio-provider/packs.ts
+  deleted file mode 100644
+  index ebb08b99ac1be07cae8734666e04e87cf0f4db7e..0000000000000000000000000000000000000000
+  --- a/web/src/dio-provider/packs.ts
+  +++ /dev/null
+  @@ -1,85 +0,0 @@
+  -/**
+  - * Dio credit-pack catalog and advertised token pricing.
+  - *
+  - * Dependency-free so both the Vite client (pricing page, purchase dialog) and
+  - * the Nitro server (checkout, webhook) share one source of truth. Amounts are
+  - * USD; token rates are USD per million tokens and must match the model pricing
+  - * configured on the Bifrost gateway so credits draw down at the advertised
+  - * rate.
+  - */
+  -
+  -export interface DioTokenRates {
+  -	/** USD per 1M input tokens. */
+  -	inputPerMTok: number;
+  -	/** USD per 1M output tokens. */
+  -	outputPerMTok: number;
+  -}
+  -
+  -export const DIO_TOKEN_RATES: DioTokenRates = {
+  -	inputPerMTok: 1,
+  -	outputPerMTok: 4,
+  -};
+  -
+  -export type DioPackId = "starter" | "plus" | "pro";
+  -
+  -export interface DioPack {
+  -	id: DioPackId;
+  -	label: string;
+  -	priceUsd: number;
+  -	blurb: string;
+  -	popular?: boolean;
+  -}
+  -
+  -export const DIO_PACKS: DioPack[] = [
+  -	{
+  -		id: "starter",
+  -		label: "Starter",
+  -		priceUsd: 10,
+  -		blurb: "Try Keating's hosted model with room to learn a few topics deeply.",
+  -	},
+  -	{
+  -		id: "plus",
+  -		label: "Plus",
+  -		priceUsd: 25,
+  -		blurb: "Enough for regular study sessions, quizzes, and animations.",
+  -		popular: true,
+  -	},
+  -	{
+  -		id: "pro",
+  -		label: "Pro",
+  -		priceUsd: 50,
+  -		blurb: "For daily learners and long-running projects.",
+  -	},
+  -];
+  -
+  -export const DEFAULT_DIO_PACK_ID: DioPackId = "starter";
+  -
+  -export function getDioPack(id: string): DioPack | undefined {
+  -	return DIO_PACKS.find((pack) => pack.id === id);
+  -}
+  -
+  -export function isDioPackId(id: string): id is DioPackId {
+  -	return DIO_PACKS.some((pack) => pack.id === id);
+  -}
+  -
+  -/** Millions of input tokens a dollar amount buys at the advertised rate. */
+  -export function inputMTokForUsd(usd: number, rates: DioTokenRates = DIO_TOKEN_RATES): number {
+  -	return usd / rates.inputPerMTok;
+  -}
+  -
+  -/** Millions of output tokens a dollar amount buys at the advertised rate. */
+  -export function outputMTokForUsd(usd: number, rates: DioTokenRates = DIO_TOKEN_RATES): number {
+  -	return usd / rates.outputPerMTok;
+  -}
+  -
+  -/** Human-readable token volume for a pack, e.g. "up to 10M in / 2.5M out". */
+  -export function formatPackTokenVolume(pack: DioPack, rates: DioTokenRates = DIO_TOKEN_RATES): string {
+  -	const input = formatMTok(inputMTokForUsd(pack.priceUsd, rates));
+  -	const output = formatMTok(outputMTokForUsd(pack.priceUsd, rates));
+  -	return `up to ${input} input / ${output} output tokens`;
+  -}
+  -
+  -function formatMTok(millions: number): string {
+  -	const rounded = Number.isInteger(millions) ? millions.toString() : millions.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+  -	return `${rounded}M`;
+  -}
+  diff --git a/web/src/dio-provider/server.ts b/web/src/dio-provider/server.ts
+  deleted file mode 100644
+  index bf6c3707e0f7da561a07f483213f677a589a8f36..0000000000000000000000000000000000000000
+  --- a/web/src/dio-provider/server.ts
+  +++ /dev/null
+  @@ -1,677 +0,0 @@
+  -import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+  -import { normalizeEmail } from "./index";
+  -import { DIO_PACKS, type DioPack, type DioPackId } from "./packs";
+  -export { normalizeEmail };
+  -
+  -/** Minimal storage interface used by the Dio provider helpers. */
+  -export interface DioStorage {
+  -	getItem: (key: string) => Promise<unknown>;
+  -	setItem: (key: string, value: any, opts?: any) => Promise<void>;
+  -}
+  -
+  -export interface DioServerPack extends DioPack {
+  -	/** Creem product id for this pack; packs without one cannot be purchased. */
+  -	productId?: string;
+  -	/** Bifrost virtual-key budget (USD) granted per purchase of this pack. */
+  -	budget: number;
+  -}
+  -
+  -export interface DioEnvConfig {
+  -	enabled: boolean;
+  -	creemApiKey: string;
+  -	creemWebhookSecret: string;
+  -	creemBaseUrl: string;
+  -	packs: Record<DioPackId, DioServerPack>;
+  -	bifrostApiKey: string;
+  -	bifrostBaseUrl: string;
+  -	bifrostModelAlias: string;
+  -	resendApiKey?: string;
+  -	recoveryFromEmail?: string;
+  -	recoveryDevCode: boolean;
+  -}
+  -
+  -/**
+  - * Check whether the Dio provider is enabled without validating the rest of the
+  - * configuration. Routes use this to return early when the feature is off.
+  - */
+  -export function isDioEnabled(): boolean {
+  -	if (process.env.DIO_ENABLED === "false") return false;
+  -	if (process.env.DIO_ENABLED === "true") return true;
+  -	return process.env.NODE_ENV === "development";
+  -}
+  -
+  -export function getDioEnvConfig(): DioEnvConfig {
+  -	const creemApiKey = getRequiredEnv("CREEM_API_KEY");
+  -	const creemWebhookSecret = getRequiredEnv("CREEM_WEBHOOK_SECRET");
+  -	const packs = getDioPacksFromEnv(process.env);
+  -	const bifrostApiKey = getRequiredEnv("BIFROST_API_KEY");
+  -	const bifrostBaseUrl = getDioGatewayBaseUrl();
+  -
+  -	return {
+  -		enabled: isDioEnabled(),
+  -		creemApiKey,
+  -		creemWebhookSecret,
+  -		creemBaseUrl: resolveCreemBaseUrl(creemApiKey, process.env.CREEM_BASE_URL),
+  -		packs,
+  -		bifrostApiKey,
+  -		bifrostBaseUrl,
+  -		bifrostModelAlias: process.env.BIFROST_MODEL_ALIAS || "kimi-k2.6",
+  -		resendApiKey: process.env.RESEND_API_KEY?.trim(),
+  -		recoveryFromEmail: process.env.DIO_RECOVERY_FROM_EMAIL?.trim() || "support@keating.help",
+  -		recoveryDevCode: process.env.DIO_RECOVERY_DEV_CODE === "true" || process.env.NODE_ENV === "development",
+  -	};
+  -}
+  -
+  -/**
+  - * Build the purchasable pack config from the environment.
+  - *
+  - * Per pack: `CREEM_PRODUCT_ID_DIO_PACK_<ID>` (Creem product) and optional
+  - * `DIO_PACK_BUDGET_<ID>` (Bifrost budget, defaults to the pack price). The
+  - * legacy single-product vars `CREEM_PRODUCT_ID_DIO_CREDITS` and
+  - * `DIO_CREDIT_BUDGET` map to the starter pack so existing deployments keep
+  - * working. At least one pack must have a product id.
+  - */
+  -export function getDioPacksFromEnv(env: Record<string, string | undefined>): Record<DioPackId, DioServerPack> {
+  -	const packs = {} as Record<DioPackId, DioServerPack>;
+  -	for (const pack of DIO_PACKS) {
+  -		const suffix = pack.id.toUpperCase();
+  -		let productId = env[`CREEM_PRODUCT_ID_DIO_PACK_${suffix}`]?.trim() || undefined;
+  -		let budgetRaw = env[`DIO_PACK_BUDGET_${suffix}`]?.trim();
+  -		if (pack.id === "starter") {
+  -			productId = productId || env.CREEM_PRODUCT_ID_DIO_CREDITS?.trim() || undefined;
+  -			budgetRaw = budgetRaw || env.DIO_CREDIT_BUDGET?.trim();
+  -		}
+  -		const budget = budgetRaw ? Number.parseFloat(budgetRaw) : pack.priceUsd;
+  -		if (!Number.isFinite(budget) || budget <= 0) {
+  -			throw new Error(`DIO_PACK_BUDGET_${suffix} must be a positive number`);
+  -		}
+  -		packs[pack.id] = { ...pack, productId, budget };
+  -	}
+  -	if (!Object.values(packs).some((pack) => pack.productId)) {
+  -		throw new Error("Missing required environment variable: CREEM_PRODUCT_ID_DIO_PACK_* (or legacy CREEM_PRODUCT_ID_DIO_CREDITS)");
+  -	}
+  -	return packs;
+  -}
+  -
+  -/** A pack that can actually be purchased (has a Creem product configured). */
+  -export function getPurchasableDioPack(config: DioEnvConfig, packId: string): DioServerPack | null {
+  -	const pack = config.packs[packId as DioPackId];
+  -	return pack?.productId ? pack : null;
+  -}
+  -
+  -export function findDioPackByProductId(config: DioEnvConfig, productId: string): DioServerPack | null {
+  -	for (const pack of Object.values(config.packs)) {
+  -		if (pack.productId && pack.productId === productId) return pack;
+  -	}
+  -	return null;
+  -}
+  -
+  -export function getDioGatewayBaseUrl(): string {
+  -	return getRequiredEnv("BIFROST_BASE_URL").replace(/\/+$/, "");
+  -}
+  -
+  -function normalizeDioOpenAiProxyPath(path: string): string {
+  -	return path.split("?")[0].replace(/^\/+/, "").replace(/\/+$/, "");
+  -}
+  -
+  -export function isAllowedDioOpenAiProxyRequest(method: string | undefined, path: string): boolean {
+  -	const normalizedMethod = (method || "GET").toUpperCase();
+  -	const normalizedPath = normalizeDioOpenAiProxyPath(path);
+  -	if (normalizedMethod === "POST") {
+  -		return normalizedPath === "v1/chat/completions";
+  -	}
+  -	if (normalizedMethod === "GET" || normalizedMethod === "HEAD") {
+  -		return normalizedPath === "v1/models";
+  -	}
+  -	return false;
+  -}
+  -
+  -export function resolveCreemBaseUrl(apiKey: string, override?: string): string {
+  -	const configured = override?.trim();
+  -	if (configured) return configured;
+  -	return apiKey.startsWith("creem_test_")
+  -		? "https://test-api.creem.io/v1"
+  -		: "https://api.creem.io/v1";
+  -}
+  -
+  -function getRequiredEnv(name: string): string {
+  -	const value = process.env[name]?.trim();
+  -	if (!value) {
+  -		throw new Error(`Missing required environment variable: ${name}`);
+  -	}
+  -	return value;
+  -}
+  -
+  -export interface CreemCheckoutPayload {
+  -	email: string;
+  -}
+  -
+  -export interface CreemCheckoutResponse {
+  -	checkoutUrl: string;
+  -	purchaseReference: string;
+  -}
+  -
+  -export async function createCreemCheckout(
+  -	config: DioEnvConfig,
+  -	email: string,
+  -	packId: string,
+  -): Promise<CreemCheckoutResponse> {
+  -	const normalized = normalizeEmail(email);
+  -	if (!isValidEmail(normalized)) {
+  -		throw new Error("Invalid email address");
+  -	}
+  -
+  -	const pack = getPurchasableDioPack(config, packId);
+  -	if (!pack) {
+  -		throw new Error(`Unknown or unavailable Dio pack: ${packId}`);
+  -	}
+  -
+  -	const purchaseReference = `dio_${cryptoUUID()}`;
+  -
+  -	const response = await fetch(`${config.creemBaseUrl.replace(/\/+$/, "")}/checkouts`, {
+  -		method: "POST",
+  -		headers: {
+  -			"Content-Type": "application/json",
+  -			"x-api-key": config.creemApiKey,
+  -		},
+  -		body: JSON.stringify({
+  -			product_id: pack.productId,
+  -			success_url: `${process.env.KEATING_WEB_ORIGIN || ""}/dio/success?dio_ref=${encodeURIComponent(purchaseReference)}&dio_email=${encodeURIComponent(normalized)}`,
+  -			request_id: purchaseReference,
+  -			metadata: {
+  -				dio_purchase_reference: purchaseReference,
+  -				dio_pack_id: pack.id,
+  -				customer_email: normalized,
+  -			},
+  -		}),
+  -	});
+  -
+  -	const body = await response.json().catch(() => ({}));
+  -	if (!response.ok) {
+  -		const message = body?.message || body?.error || `Creem checkout failed (${response.status})`;
+  -		throw new Error(message);
+  -	}
+  -
+  -	const checkoutUrl = body?.checkout_url || body?.checkoutUrl;
+  -	if (typeof checkoutUrl !== "string") {
+  -		throw new Error("Creem checkout response missing checkout URL");
+  -	}
+  -
+  -	return {
+  -		checkoutUrl,
+  -		purchaseReference,
+  -	};
+  -}
+  -
+  -export interface CreemWebhookEvent {
+  -	id: string;
+  -	eventType: string;
+  -	created_at?: number;
+  -	object?: {
+  -		id?: string;
+  -		object?: string;
+  -		request_id?: string;
+  -		order?: { id?: string; product?: string; status?: string };
+  -		product?: { id?: string };
+  -		customer?: { id?: string; email?: string };
+  -		metadata?: Record<string, unknown>;
+  -	};
+  -}
+  -
+  -export function parseCreemWebhookBody(body: unknown): CreemWebhookEvent {
+  -	if (!body || typeof body !== "object") {
+  -		throw new Error("Invalid webhook payload");
+  -	}
+  -	const payload = body as Record<string, unknown>;
+  -	if (typeof payload.id !== "string" || !payload.id) {
+  -		throw new Error("Invalid webhook event id");
+  -	}
+  -	if (typeof payload.eventType !== "string" || !payload.eventType) {
+  -		throw new Error("Invalid webhook event type");
+  -	}
+  -	if (!payload.object || typeof payload.object !== "object") {
+  -		throw new Error("Invalid webhook object");
+  -	}
+  -	return payload as unknown as CreemWebhookEvent;
+  -}
+  -
+  -export function verifyCreemWebhookSignature(body: string, signature: string, secret: string): boolean {
+  -	if (!signature) return false;
+  -	const computed = createHmac("sha256", secret).update(body).digest("hex");
+  -	if (computed.length !== signature.length) return false;
+  -	try {
+  -		const computedBuf = Buffer.from(computed, "hex");
+  -		const signatureBuf = Buffer.from(signature, "hex");
+  -		return timingSafeEqual(computedBuf, signatureBuf);
+  -	} catch {
+  -		return false;
+  -	}
+  -}
+  -
+  -export interface BifrostVirtualKeyRequest {
+  -	name: string;
+  -	description: string;
+  -	allowedModels: string[];
+  -	budget: { max: number };
+  -	metadata: Record<string, unknown>;
+  -	/** Unique key used to make Bifrost key creation idempotent for retries. */
+  -	idempotencyKey?: string;
+  -}
+  -
+  -export interface BifrostVirtualKey {
+  -	id: string;
+  -	value: string;
+  -}
+  -
+  -export async function createBifrostVirtualKey(
+  -	config: DioEnvConfig,
+  -	request: BifrostVirtualKeyRequest,
+  -): Promise<BifrostVirtualKey> {
+  -	const url = `${config.bifrostBaseUrl.replace(/\/+$/, "")}/api/governance/virtual-keys`;
+  -	const headers: Record<string, string> = {
+  -		"Content-Type": "application/json",
+  -		Authorization: `Bearer ${config.bifrostApiKey}`,
+  -	};
+  -	if (request.idempotencyKey) {
+  -		headers["Idempotency-Key"] = request.idempotencyKey;
+  -	}
+  -	const response = await fetch(url, {
+  -		method: "POST",
+  -		headers,
+  -		body: JSON.stringify({
+  -			name: request.name,
+  -			description: request.description,
+  -			allowed_models: request.allowedModels,
+  -			budget: request.budget,
+  -			metadata: request.metadata,
+  -		}),
+  -	});
+  -
+  -	const body = await response.json().catch(() => ({}));
+  -	if (!response.ok) {
+  -		const message = body?.message || body?.error || `Bifrost virtual key creation failed (${response.status})`;
+  -		throw new Error(message);
+  -	}
+  -
+  -	const virtualKey = body?.virtual_key || body;
+  -	if (typeof virtualKey?.id !== "string" || typeof virtualKey?.value !== "string") {
+  -		throw new Error("Bifrost virtual key response missing id or value");
+  -	}
+  -
+  -	return { id: virtualKey.id, value: virtualKey.value };
+  -}
+  -
+  -/**
+  - * Raise the spending cap of an existing Bifrost virtual key. Used to top up
+  - * credits when an email that already has an entitlement buys another pack.
+  - */
+  -export async function updateBifrostVirtualKeyBudget(
+  -	config: DioEnvConfig,
+  -	virtualKeyId: string,
+  -	newMaxBudget: number,
+  -): Promise<void> {
+  -	const url = `${config.bifrostBaseUrl.replace(/\/+$/, "")}/api/governance/virtual-keys/${encodeURIComponent(virtualKeyId)}`;
+  -	const response = await fetch(url, {
+  -		method: "PUT",
+  -		headers: {
+  -			"Content-Type": "application/json",
+  -			Authorization: `Bearer ${config.bifrostApiKey}`,
+  -		},
+  -		body: JSON.stringify({ budget: { max: newMaxBudget } }),
+  -	});
+  -
+  -	if (!response.ok) {
+  -		const body = await response.json().catch(() => ({}));
+  -		const message = body?.message || body?.error || `Bifrost virtual key budget update failed (${response.status})`;
+  -		throw new Error(message);
+  -	}
+  -}
+  -
+  -export interface DioEntitlement {
+  -	email: string;
+  -	virtualKeyId: string;
+  -	virtualKeyValue: string;
+  -	purchaseReference?: string;
+  -	orderId?: string;
+  -	checkoutId?: string;
+  -	productId?: string;
+  -	customerId?: string;
+  -	createdAt: string;
+  -	/** Running Bifrost budget cap across all purchases (USD). */
+  -	budgetMax?: number;
+  -	/** Last purchased pack id. */
+  -	packId?: string;
+  -}
+  -
+  -const ENTITLEMENT_KEY_PREFIX = "entitlement:";
+  -const EVENT_KEY_PREFIX = "event:";
+  -const RECOVERY_KEY_PREFIX = "recovery:";
+  -const PROVISIONING_KEY_PREFIX = "provisioning:";
+  -
+  -/** How long a "processing" event lock remains valid before it is considered stale. */
+  -export const EVENT_LOCK_TTL_MS = 5 * 60 * 1000;
+  -
+  -export interface DioEventRecord {
+  -	status: "processing" | "succeeded" | "failed";
+  -	createdAt: string;
+  -	lockId?: string;
+  -	error?: string;
+  -}
+  -
+  -export interface RecoveryChallenge {
+  -	email: string;
+  -	otpHash: string;
+  -	expiresAt: string;
+  -	attempts: number;
+  -}
+  -
+  -export interface DioProvisioningRecord {
+  -	purchaseReference: string;
+  -	email: string;
+  -	status: "provisioning" | "completed";
+  -	virtualKeyId?: string;
+  -	virtualKeyValue?: string;
+  -	createdAt: string;
+  -	updatedAt: string;
+  -}
+  -
+  -export function entitlementStorageKey(email: string): string {
+  -	return `${ENTITLEMENT_KEY_PREFIX}${normalizeEmail(email)}`;
+  -}
+  -
+  -function eventStorageKey(eventId: string): string {
+  -	return `${EVENT_KEY_PREFIX}${eventId}`;
+  -}
+  -
+  -function recoveryStorageKey(email: string): string {
+  -	return `${RECOVERY_KEY_PREFIX}${normalizeEmail(email)}`;
+  -}
+  -
+  -export function provisioningStorageKey(purchaseReference: string): string {
+  -	return `${PROVISIONING_KEY_PREFIX}${purchaseReference}`;
+  -}
+  -
+  -function hashOtp(otp: string): string {
+  -	return createHash("sha256").update(otp).digest("hex");
+  -}
+  -
+  -function generateOtp(): string {
+  -	return Array.from({ length: 6 }, () => Math.floor(Math.random() * 10)).join("");
+  -}
+  -
+  -export async function createRecoveryChallenge(
+  -	storage: DioStorage,
+  -	email: string,
+  -): Promise<string> {
+  -	const otp = generateOtp();
+  -	const challenge: RecoveryChallenge = {
+  -		email,
+  -		otpHash: hashOtp(otp),
+  -		expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+  -		attempts: 0,
+  -	};
+  -	await storage.setItem(recoveryStorageKey(email), challenge);
+  -	return otp;
+  -}
+  -
+  -export interface RecoveryEmailResult {
+  -	sent: boolean;
+  -	devCode?: string;
+  -	error?: string;
+  -}
+  -
+  -/**
+  - * Send a recovery OTP email. When a real provider is configured, the code is
+  - * emailed. In development (or when DIO_RECOVERY_DEV_CODE=true) the code is
+  - * logged and returned so flows can be tested without a mail provider.
+  - */
+  -export async function sendRecoveryEmail(
+  -	config: Pick<DioEnvConfig, "resendApiKey" | "recoveryFromEmail" | "recoveryDevCode">,
+  -	email: string,
+  -	otp: string,
+  -): Promise<RecoveryEmailResult> {
+  -	if (config.resendApiKey && config.recoveryFromEmail) {
+  -		try {
+  -			const response = await fetch("https://api.resend.com/emails", {
+  -				method: "POST",
+  -				headers: {
+  -					"Content-Type": "application/json",
+  -					Authorization: `Bearer ${config.resendApiKey}`,
+  -				},
+  -				body: JSON.stringify({
+  -					from: config.recoveryFromEmail,
+  -					to: email,
+  -					subject: "Your Keating recovery code",
+  -					html: `<p>Your Keating recovery code is: <strong>${otp}</strong></p><p>This code expires in 15 minutes.</p>`,
+  -				}),
+  -			});
+  -			if (!response.ok) {
+  -				const body = await response.json().catch(() => ({}));
+  -				throw new Error(body?.message || `Resend returned ${response.status}`);
+  -			}
+  -			return { sent: true };
+  -		} catch (err) {
+  -			const message = err instanceof Error ? err.message : String(err);
+  -			console.error(`Failed to send recovery email to ${email}: ${message}`);
+  -			// In production (dev codes disabled), a provider failure must surface
+  -			// as an error so the client knows the code was not delivered.
+  -			if (!config.recoveryDevCode) {
+  -				return { sent: false, error: message };
+  -			}
+  -		}
+  -	}
+  -
+  -	if (config.recoveryDevCode) {
+  -		console.log(`[Dio recovery dev code] ${email}: ${otp}`);
+  -		return { sent: false, devCode: otp };
+  -	}
+  -
+  -	const message = "No recovery email provider configured";
+  -	console.warn(`${message}; OTP for ${email} was not sent.`);
+  -	return { sent: false, error: message };
+  -}
+  -
+  -export async function verifyRecoveryChallenge(
+  -	storage: DioStorage,
+  -	email: string,
+  -	otp: string,
+  -): Promise<boolean> {
+  -	const key = recoveryStorageKey(email);
+  -	const value = await storage.getItem(key);
+  -	if (!value || typeof value !== "object") {
+  -		return false;
+  -	}
+  -	const challenge = value as RecoveryChallenge;
+  -	if (challenge.attempts >= 5) {
+  -		return false;
+  -	}
+  -	if (new Date(challenge.expiresAt) < new Date()) {
+  -		await storage.setItem(key, { ...challenge, attempts: challenge.attempts + 1 });
+  -		return false;
+  -	}
+  -	const expectedHash = Buffer.from(challenge.otpHash, "hex");
+  -	const actualHash = Buffer.from(hashOtp(otp), "hex");
+  -	if (expectedHash.length !== actualHash.length) {
+  -		await storage.setItem(key, { ...challenge, attempts: challenge.attempts + 1 });
+  -		return false;
+  -	}
+  -	const ok = timingSafeEqual(expectedHash, actualHash);
+  -	if (!ok) {
+  -		await storage.setItem(key, { ...challenge, attempts: challenge.attempts + 1 });
+  -		return false;
+  -	}
+  -	await storage.setItem(key, { ...challenge, attempts: challenge.attempts + 1 });
+  -	return true;
+  -}
+  -
+  -function isEventLockStale(record: DioEventRecord): boolean {
+  -	if (record.status !== "processing") return false;
+  -	const createdAt = record.createdAt ? new Date(record.createdAt).getTime() : 0;
+  -	return Number.isFinite(createdAt) && Date.now() - createdAt > EVENT_LOCK_TTL_MS;
+  -}
+  -
+  -/** In-process serialization of lock attempts for the same event id. */
+  -const eventLockPromises = new Map<string, Promise<boolean>>();
+  -
+  -async function acquireEventLockUncontended(storage: DioStorage, eventId: string): Promise<boolean> {
+  -	const key = eventStorageKey(eventId);
+  -	const existing = await storage.getItem(key);
+  -	if (existing && typeof existing === "object") {
+  -		const record = existing as DioEventRecord;
+  -		if (record.status === "succeeded") return false;
+  -		if (record.status === "processing" && !isEventLockStale(record)) return false;
+  -		// Stale "processing" lock or "failed" record: fall through and attempt
+  -		// to overwrite with a new lock.
+  -	}
+  -
+  -	const lockId = cryptoUUID();
+  -	const record: DioEventRecord = {
+  -		status: "processing",
+  -		createdAt: new Date().toISOString(),
+  -		lockId,
+  -	};
+  -
+  -	// Attempt an atomic write. Drivers that support {@code nx} will reject if the
+  -	// key already exists; drivers that do not support it will perform a plain set.
+  -	// The re-read below verifies that this process won the race.
+  -	try {
+  -		await storage.setItem(key, record, { nx: true });
+  -	} catch {
+  -		// nx may have been honored and failed, or the driver may have rejected the
+  -		// unknown option. Either way, verify ownership with the re-read.
+  -	}
+  -
+  -	const reRead = await storage.getItem(key);
+  -	if (!reRead || typeof reRead !== "object") {
+  -		return false;
+  -	}
+  -	const reReadRecord = reRead as DioEventRecord;
+  -	return reReadRecord.status === "processing" && reReadRecord.lockId === lockId;
+  -}
+  -
+  -/**
+  - * Acquire a per-event processing lock using a dedicated storage key.
+  - *
+  - * Returns false if the event has already succeeded or is currently being
+  - * processed by another worker. A previously "failed" event can be retried, and
+  - * "processing" locks older than {@link EVENT_LOCK_TTL_MS} are treated as stale
+  - * and may be re-acquired.
+  - *
+  - * The public entry point serializes callers for the same event within this
+  - * process, so multiple concurrent webhooks for one event cannot race here. The
+  - * underlying storage write attempts an atomic set-if-not-exists ({@code nx:
+  - * true}) when the driver supports it, then verifies ownership by reading the
+  - * stored lock id. For cross-process or multi-instance deployments, this relies
+  - * on the storage backend honoring {@code nx} (Redis, KV, etc.) or otherwise
+  - * providing linearizable writes; filesystem-backed storage without an atomic
+  - * CAS primitive cannot give a hard distributed-lock guarantee.
+  - */
+  -export async function acquireEventLock(storage: DioStorage, eventId: string): Promise<boolean> {
+  -	const previous = eventLockPromises.get(eventId);
+  -	const current = (async () => {
+  -		await previous;
+  -		return acquireEventLockUncontended(storage, eventId);
+  -	})();
+  -	eventLockPromises.set(eventId, current);
+  -	try {
+  -		return await current;
+  -	} finally {
+  -		if (eventLockPromises.get(eventId) === current) {
+  -			eventLockPromises.delete(eventId);
+  -		}
+  -	}
+  -}
+  -
+  -export async function completeEvent(
+  -	storage: DioStorage,
+  -	eventId: string,
+  -	succeeded: boolean,
+  -	error?: string,
+  -): Promise<void> {
+  -	const key = eventStorageKey(eventId);
+  -	const record: DioEventRecord = {
+  -		status: succeeded ? "succeeded" : "failed",
+  -		createdAt: new Date().toISOString(),
+  -		error,
+  -	};
+  -	await storage.setItem(key, record);
+  -}
+  -
+  -/** @deprecated Prefer {@link acquireEventLock} and {@link completeEvent}. */
+  -export async function markEventProcessed(
+  -	storage: DioStorage,
+  -	eventId: string,
+  -): Promise<boolean> {
+  -	const locked = await acquireEventLock(storage, eventId);
+  -	if (!locked) return false;
+  -	await completeEvent(storage, eventId, true);
+  -	return true;
+  -}
+  -
+  -export async function loadDioEntitlement(
+  -	storage: DioStorage,
+  -	email: string,
+  -): Promise<DioEntitlement | null> {
+  -	const value = await storage.getItem(entitlementStorageKey(email));
+  -	if (value && typeof value === "object") {
+  -		const entitlement = value as DioEntitlement;
+  -		if (
+  -			typeof entitlement.email === "string" &&
+  -			typeof entitlement.virtualKeyId === "string" &&
+  -			typeof entitlement.virtualKeyValue === "string"
+  -		) {
+  -			return entitlement;
+  -		}
+  -	}
+  -	return null;
+  -}
+  -
+  -export async function saveDioEntitlement(
+  -	storage: DioStorage,
+  -	entitlement: DioEntitlement,
+  -): Promise<void> {
+  -	await storage.setItem(entitlementStorageKey(entitlement.email), entitlement);
+  -}
+  -
+  -export async function loadProvisioningRecord(
+  -	storage: DioStorage,
+  -	purchaseReference: string,
+  -): Promise<DioProvisioningRecord | null> {
+  -	const value = await storage.getItem(provisioningStorageKey(purchaseReference));
+  -	if (value && typeof value === "object") {
+  -		const record = value as DioProvisioningRecord;
+  -		if (typeof record.purchaseReference === "string" && typeof record.email === "string") {
+  -			return record;
+  -		}
+  -	}
+  -	return null;
+  -}
+  -
+  -export async function saveProvisioningRecord(
+  -	storage: DioStorage,
+  -	record: DioProvisioningRecord,
+  -): Promise<void> {
+  -	await storage.setItem(provisioningStorageKey(record.purchaseReference), record);
+  -}
+  -
+  -function isValidEmail(email: string): boolean {
+  -	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  -}
+  -
+  -function cryptoUUID(): string {
+  -	if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+  -		return crypto.randomUUID();
+  -	}
+  -	const bytes = new Uint8Array(16);
+  -	if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+  -		crypto.getRandomValues(bytes);
+  -	} else {
+  -		for (let i = 0; i < bytes.length; i++) {
+  -			bytes[i] = Math.floor(Math.random() * 256);
+  -		}
+  -	}
+  -	bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  -	bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  -	const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+  -	return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+  -}
+  diff --git a/web/src/hooks/keating-stream.ts b/web/src/hooks/keating-stream.ts
+  index 049f440ff71dcb450a6374369dd4e747a41ed7a6..e9ce463270932acf852e737ae310c4fc161ddc33 100644
+  --- a/web/src/hooks/keating-stream.ts
+  +++ b/web/src/hooks/keating-stream.ts
+  @@ -11,6 +11,13 @@ import { normalizeToolCallStream } from "../keating/tool-call-normalizer";
+   import { streamWithApiRetry } from "../keating/api-retry";
+   import { chatProxyBaseUrl, proxyTargetHeader, shouldProxyModel } from "../lib/provider-proxy";
+   import { DIO_DEFAULT_MODEL } from "../dio-provider";
+  +import {
+  +	isNotOrganicFeatureEnabled,
+  +	isNotOrganicProvider,
+  +	NOTORGANIC_DEFAULT_MODEL,
+  +	NOTORGANIC_FEATURE,
+  +	NOTORGANIC_PROVIDER_ID,
+  +} from "../notorganic-provider";
+   import {
+   	applyGoogleSearchGrounding,
+   	applyProviderWebSearch,
+  @@ -24,7 +31,9 @@ export { applyGoogleSearchGrounding, applyProviderWebSearch };
+   import { getProviderApiKey } from "../lib/provider-models";
+   import { localModel, getModelName, getModelId } from "../stores/local-model";
+   
+  -export const DEFAULT_MODEL = DIO_DEFAULT_MODEL;
+  +export const DEFAULT_MODEL = isNotOrganicFeatureEnabled()
+  +	? NOTORGANIC_DEFAULT_MODEL
+  +	: DIO_DEFAULT_MODEL;
+   
+   export function withProviderWebSearch(
+   	options: SimpleStreamOptions | undefined,
+  @@ -169,7 +178,18 @@ export async function hybridStreamFn(model: Model<Api>, context: Context, option
+   	}
+   
+   	const apiKey = options?.apiKey ?? await getProviderApiKey(model.provider);
+  -	const streamOptions: SimpleStreamOptions | undefined = apiKey ? { ...options, apiKey } : options;
+  +	let streamOptions: SimpleStreamOptions | undefined = apiKey ? { ...options, apiKey } : options;
+  +	if (isNotOrganicProvider(model.provider)) {
+  +		streamOptions = {
+  +			...streamOptions,
+  +			headers: {
+  +				...streamOptions?.headers,
+  +				"x-keating-provider": NOTORGANIC_PROVIDER_ID,
+  +				"x-keating-feature": NOTORGANIC_FEATURE,
+  +				"idempotency-key": `keating_${crypto.randomUUID()}`,
+  +			},
+  +		};
+  +	}
+   
+   	if (shouldProxyModel(model)) {
+   		const proxiedModel = {
+  diff --git a/web/src/keating/prompts/operational-protocol.md b/web/src/keating/prompts/operational-protocol.md
+  index 748bfb12e9d53cfec3fcfba510ab4166f29c4303..a169c939cbe82549b14cbecc3852b7a6561298b2 100644
+  --- a/web/src/keating/prompts/operational-protocol.md
+  +++ b/web/src/keating/prompts/operational-protocol.md
+  @@ -3,9 +3,9 @@
+   You are an autonomous agent with direct access to tools. You MUST follow these protocols:
+   
+   ### Session Bootstrap
+  -Keating automatically loads a compact learner profile, due reviews, active goals, and the live capability catalog before the first turn. Use that context directly; do not spend tool calls reloading it. Call `learner_state`, `timeline`, `due`, or `list_learner_goals` only when the current task genuinely needs details omitted from the compact context.
+  +Keating automatically loads a compact learner profile, due reviews, active goals, and the live capability catalog before the first turn. Use that context directly; do not spend tool calls reloading it. When a task genuinely needs learner history beyond that summary, activate the `learner-details` capability and use `inspect_learning_context` — there are no standalone profile, timeline, due-review, or goal-listing tools to call.
+   
+  -Optional tool schemas are grouped into capability bundles. When deeper learner details, media, workspace access, teaching improvement, or voice is needed, call `activate_capabilities` once with every bundle needed for the task. Unavailable bundles are still described in the session context but their tool schemas are not exposed.
+  +Optional tool schemas are grouped into capability bundles (`learner-details`, `media`, `workspace`, `improvement`, `voice`). Only the baseline teaching tools are exposed until you activate a bundle. When deeper learner details, media, workspace access, teaching improvement, or voice is needed, call `activate_capabilities` once with every bundle the task needs; the newly loaded tool schemas become callable on the automatic continuation. Unavailable bundles are still described in the session context but their tool schemas are not exposed.
+   
+   ### Streamable interactions
+   Use the OpenUI component grammar for learner-facing explanations, checks, forms, and other interactions that can be represented directly in the response stream. Prefer an OpenUI `Question` over a tool call for conversational checks and preference gathering. The learner must see a clean, reviewable summary of what they submitted; never expose transport JSON, internal action envelopes, or tool plumbing in conversational text.
+  diff --git a/web/src/lib/provider-models.ts b/web/src/lib/provider-models.ts
+  index 9618f4e7446fd33c336b12e08c45773fbc12f502..9da754da4d04708aa17901d6dc1962524ec17150 100644
+  --- a/web/src/lib/provider-models.ts
+  +++ b/web/src/lib/provider-models.ts
+  @@ -2,6 +2,11 @@ import { getModels, getProviders, type Api, type Model } from "@earendil-works/p
+   import { getAppStorage, type CustomProvider } from "@earendil-works/pi-web-ui";
+   import { proxiedProviderRequestUrl } from "./provider-proxy";
+   import { DIO_DEFAULT_MODEL, DIO_PROVIDER_ID } from "../dio-provider";
+  +import {
+  +	isNotOrganicFeatureEnabled,
+  +	NOTORGANIC_DEFAULT_MODEL,
+  +	NOTORGANIC_PROVIDER_ID,
+  +} from "../notorganic-provider";
+   import { getOAuthAccessToken, providerToOAuthId } from "../keating/oauth";
+   import { withApiRetry } from "../keating/api-retry";
+   
+  @@ -351,6 +356,12 @@ export async function syncCustomProviderKeys(): Promise<void> {
+   }
+   
+   export async function getProviderApiKey(providerName: string): Promise<string | undefined> {
+  +	if (providerName === NOTORGANIC_PROVIDER_ID && isNotOrganicFeatureEnabled()) {
+  +		// Pi's OpenAI-compatible transport expects a non-empty key. This value is
+  +		// only a same-origin transport marker; the Nitro route strips it and uses
+  +		// the deployment-owned product session capability instead.
+  +		return "notorganic-product-session";
+  +	}
+   	const oauthId = providerToOAuthId(providerName);
+   	if (oauthId) {
+   		const token = await getOAuthAccessToken(oauthId);
+  @@ -366,6 +377,7 @@ export async function getProviderApiKey(providerName: string): Promise<string |
+   }
+   
+   const FALLBACK_CHAT_MODEL_IDS: Record<string, string[]> = {
+  +	[NOTORGANIC_PROVIDER_ID]: [NOTORGANIC_DEFAULT_MODEL.id],
+   	[DIO_PROVIDER_ID]: [DIO_DEFAULT_MODEL.id],
+   	openai: ["gpt-5.5", "gpt-5.5-pro", "gpt-5.4", "gpt-5.3-chat-latest", "gpt-5.2", "gpt-5.1", "gpt-5"],
+   	anthropic: ["claude-sonnet-4-6", "claude-opus-4-8", "claude-opus-4-7", "claude-sonnet-4-5", "claude-haiku-4-5"],
+  @@ -392,7 +404,7 @@ export async function resolveAvailableChatModel(current: Model<Api>): Promise<Mo
+   	}
+   
+   	const models = await getSelectableModels();
+  -	for (const provider of [DIO_PROVIDER_ID, "openai", "anthropic", "google"]) {
+  +	for (const provider of [NOTORGANIC_PROVIDER_ID, DIO_PROVIDER_ID, "openai", "anthropic", "google"]) {
+   		if (!(await getProviderApiKey(provider))) continue;
+   		const model = preferredModelForProvider(models, provider);
+   		if (model) return model;
+  @@ -444,6 +456,9 @@ export async function getSelectableModels(
+   ): Promise<Array<Model<Api>>> {
+   	const models: Array<Model<Api>> = [];
+   
+  +	if (isNotOrganicFeatureEnabled() && (!filter || filter(NOTORGANIC_PROVIDER_ID))) {
+  +		models.push(NOTORGANIC_DEFAULT_MODEL);
+  +	}
+   	if (!filter || filter(DIO_PROVIDER_ID)) {
+   		models.push(DIO_DEFAULT_MODEL);
+   	}
+  diff --git a/web/src/lib/provider-proxy.ts b/web/src/lib/provider-proxy.ts
+  index 0c14c23c0a267de330c94d0aa7628a8e782c9de3..a1e4a8e2b918bb8c77d39de96be8e717c9f33013 100644
+  --- a/web/src/lib/provider-proxy.ts
+  +++ b/web/src/lib/provider-proxy.ts
+  @@ -47,7 +47,7 @@ export function proxyTargetHeader(baseUrl: string): string {
+   
+   export function shouldProxyModel(model: Model<Api>): boolean {
+   	if (!model.baseUrl || model.provider === "browser") return false;
+  -	if (model.provider === "dio") return false;
+  +	if (model.provider === "dio" || model.provider === "notorganic") return false;
+   	if (model.provider === "anthropic" || model.api === "anthropic-messages") return true;
+   
+   	const url = parseUrl(model.baseUrl);
+  diff --git a/web/vite.config.ts b/web/vite.config.ts
+  index a38357c0e5f3171da22cd1b5c00227c05796b5be..c1363f61a8538b1f234c136168ab73b898b1b06b 100644
+  --- a/web/vite.config.ts
+  +++ b/web/vite.config.ts
+  @@ -8,7 +8,6 @@ import { randomBytes } from 'node:crypto';
+   import * as https from 'https';
+   import * as http from 'http';
+   import { buildValidatedProxyUrl } from './server/utils/proxy-target';
+  -import { isAllowedDioOpenAiProxyRequest } from './src/dio-provider/server';
+   import {
+     buildAgentRuntimeConfig,
+     type ServerAgentRuntimeMode,
+  @@ -220,91 +219,6 @@ function chatProxyPlugin(): Plugin {
+             return;
+           }
+   
+  -        if (req.url?.startsWith('/api/dio/openai')) {
+  -          if (process.env.DIO_ENABLED === 'false') {
+  -            res.statusCode = 404;
+  -            res.end('Not found');
+  -            return;
+  -          }
+  -
+  -          const targetBase = env('BIFROST_BASE_URL');
+  -          if (!targetBase) {
+  -            res.statusCode = 503;
+  -            res.end('Dio gateway endpoint is not configured.');
+  -            return;
+  -          }
+  -
+  -          const proxyPath = req.url.replace(/^\/api\/dio\/openai\/?/, '');
+  -          if (!isAllowedDioOpenAiProxyRequest(req.method, proxyPath)) {
+  -            res.statusCode = 404;
+  -            res.end('Not found');
+  -            return;
+  -          }
+  -
+  -          let targetUrl: URL;
+  -          try {
+  -            targetUrl = new URL(buildValidatedProxyUrl(targetBase, proxyPath, {
+  -              allowHttp: process.env.NODE_ENV !== 'production',
+  -              allowLocal: process.env.NODE_ENV !== 'production',
+  -            }));
+  -          } catch (error) {
+  -            res.statusCode = 503;
+  -            res.end(error instanceof Error ? error.message : 'Dio gateway endpoint is not configured.');
+  -            return;
+  -          }
+  -          const forbiddenHeaders = [
+  -            'x-stainless-os', 'x-stainless-lang', 'x-stainless-package-version',
+  -            'x-stainless-runtime', 'x-stainless-runtime-version',
+  -            'x-stainless-arch', 'x-stainless-os-version',
+  -            'origin', 'host', 'referer', 'x-target-url',
+  -          ];
+  -
+  -          const outHeaders: Record<string, string> = {};
+  -          for (const [key, value] of Object.entries(req.headers)) {
+  -            if (value && !forbiddenHeaders.includes(key.toLowerCase())) {
+  -              outHeaders[key] = Array.isArray(value) ? value.join(', ') : value;
+  -            }
+  -          }
+  -          outHeaders['host'] = targetUrl.host;
+  -
+  -          const hasAuth = 'authorization' in outHeaders;
+  -          const hasApiKey = 'x-api-key' in outHeaders;
+  -          console.log(`[dio-proxy] ${req.method} ${proxyPath} -> configured gateway (auth=${hasAuth}, xApiKey=${hasApiKey})`);
+  -
+  -          const chunks: Buffer[] = [];
+  -          req.on('data', (chunk: Buffer) => chunks.push(chunk));
+  -          req.on('end', () => {
+  -            const body = Buffer.concat(chunks);
+  -            const isHttps = targetUrl.protocol === 'https:';
+  -            const lib = isHttps ? https : http;
+  -            const proxyReq = lib.request(
+  -              {
+  -                hostname: targetUrl.hostname,
+  -                port: targetUrl.port || (isHttps ? 443 : 80),
+  -                path: targetUrl.pathname + targetUrl.search,
+  -                method: req.method,
+  -                headers: outHeaders,
+  -              },
+  -              (proxyRes) => {
+  -                const resHeaders = { ...proxyRes.headers } as Record<string, string>;
+  -                delete resHeaders['transfer-encoding'];
+  -                res.writeHead(proxyRes.statusCode!, resHeaders);
+  -                proxyRes.pipe(res);
+  -              },
+  -            );
+  -            proxyReq.on('error', (err) => {
+  -              console.error('[dio-proxy] request error:', err.message);
+  -              if (!res.headersSent) {
+  -                res.statusCode = 502;
+  -                res.end('Dio proxy error: ' + err.message);
+  -              }
+  -            });
+  -            proxyReq.write(body);
+  -            proxyReq.end();
+  -          });
+  -          return;
+  -        }
+  -
+           if (!req.url?.startsWith('/api/chat-proxy')) {
+             // Any other /api/* request is not handled above by the Vite dev
+             // server. In production these are Nitro handlers; in dev most do not
+
+  diff --git a/web/server/api/notorganic/openai/[...path].ts b/web/server/api/notorganic/openai/[...path].ts
+  new file mode 100644
+  index 0000000..56764e9
+  --- /dev/null
+  +++ b/web/server/api/notorganic/openai/[...path].ts
+  @@ -0,0 +1,58 @@
+  +import { createError, defineEventHandler, getHeader, getRequestURL } from "h3";
+  +import { NOTORGANIC_FEATURE } from "../../../../src/notorganic-provider";
+  +import {
+  +	createNotOrganicServerClient,
+  +	getNotOrganicServerConfig,
+  +	NotOrganicOperationalError,
+  +} from "../../../../src/notorganic-provider/server";
+  +
+  +const ALLOWED_ROUTES = new Set([
+  +	"v1/chat/completions",
+  +	"v1/responses",
+  +	"v1/embeddings",
+  +	"v1/images/generations",
+  +	"v1/audio/speech",
+  +	"v1/audio/transcriptions",
+  +	"v1/audio/translations",
+  +	"v1/models",
+  +]);
+  +
+  +export default defineEventHandler(async (event) => {
+  +	const reqUrl = getRequestURL(event);
+  +	const route = reqUrl.pathname
+  +		.replace(/^\/api\/notorganic\/openai\/?/, "")
+  +		.replace(/\/+$/, "");
+  +	const allowedMethod =
+  +		(event.method === "POST" && ALLOWED_ROUTES.has(route)) ||
+  +		(event.method === "GET" && route === "v1/models");
+  +	if (!allowedMethod) {
+  +		throw createError({ statusCode: 404, statusMessage: "Not found" });
+  +	}
+  +
+  +	try {
+  +		const config = getNotOrganicServerConfig();
+  +		if (!config.enabled) {
+  +			throw createError({ statusCode: 404, statusMessage: "Not found" });
+  +		}
+  +		const client = await createNotOrganicServerClient(event, NOTORGANIC_FEATURE, config);
+  +		return await client.request(`/${route}${reqUrl.search}`, {
+  +			method: event.method,
+  +			body: event.method === "GET" || event.method === "HEAD" ? undefined : event.req.body,
+  +			headers: {
+  +				...(getHeader(event, "content-type") ? { "content-type": getHeader(event, "content-type")! } : {}),
+  +				...(getHeader(event, "accept") ? { accept: getHeader(event, "accept")! } : {}),
+  +			},
+  +			idempotencyKey: getHeader(event, "idempotency-key") ?? undefined,
+  +			maxCostMicrousd: event.method === "POST" ? config.maxCostMicrousd : undefined,
+  +		});
+  +	} catch (error) {
+  +		if (error instanceof NotOrganicOperationalError) {
+  +			throw createError({
+  +				statusCode: error.statusCode,
+  +				statusMessage: error.message,
+  +				data: { code: error.code },
+  +			});
+  +		}
+  +		throw error;
+  +	}
+  +});
+
+  diff --git a/web/server/api/notorganic/provider/[resource].ts b/web/server/api/notorganic/provider/[resource].ts
+  new file mode 100644
+  index 0000000..ec2cac0
+  --- /dev/null
+  +++ b/web/server/api/notorganic/provider/[resource].ts
+  @@ -0,0 +1,86 @@
+  +import {
+  +	createError,
+  +	defineEventHandler,
+  +	getQuery,
+  +	getRouterParam,
+  +	readBody,
+  +	type H3Event,
+  +} from "h3";
+  +import {
+  +	createNotOrganicServerClient,
+  +	getNotOrganicServerConfig,
+  +	NotOrganicOperationalError,
+  +} from "../../../../src/notorganic-provider/server";
+  +import { isNotOrganicPackId } from "../../../../src/notorganic-provider/packs";
+  +
+  +const RESOURCE_ROUTES = {
+  +	account: { method: "GET", path: "/v1/account", feature: "keating:account" },
+  +	wallet: { method: "GET", path: "/v1/wallet", feature: "keating:wallet" },
+  +	usage: { method: "GET", path: "/v1/usage", feature: "keating:usage" },
+  +	checkout: { method: "POST", path: "/v1/billing/checkout", feature: "keating:billing" },
+  +} as const;
+  +
+  +type ResourceName = keyof typeof RESOURCE_ROUTES;
+  +
+  +function resourceName(event: H3Event): ResourceName | null {
+  +	const value = getRouterParam(event, "resource");
+  +	return typeof value === "string" && value in RESOURCE_ROUTES
+  +		? value as ResourceName
+  +		: null;
+  +}
+  +
+  +export default defineEventHandler(async (event) => {
+  +	const resource = resourceName(event);
+  +	if (!resource) throw createError({ statusCode: 404, statusMessage: "Not found" });
+  +	const route = RESOURCE_ROUTES[resource];
+  +	if (event.method !== route.method) {
+  +		throw createError({ statusCode: 405, statusMessage: "Method not allowed" });
+  +	}
+  +
+  +	try {
+  +		const client = await createNotOrganicServerClient(
+  +			event,
+  +			route.feature,
+  +			getNotOrganicServerConfig(),
+  +		);
+  +		let path = route.path;
+  +		let body: string | undefined;
+  +		if (resource === "usage") {
+  +			const query = getQuery(event);
+  +			const parameters = new URLSearchParams();
+  +			if (typeof query.after === "string") parameters.set("after", query.after);
+  +			if (typeof query.limit === "string") parameters.set("limit", query.limit);
+  +			if (parameters.size) path += `?${parameters}`;
+  +		} else if (resource === "checkout") {
+  +			const input = await readBody<{ product_id?: unknown; return_url?: unknown }>(event);
+  +			if (typeof input?.return_url !== "string") {
+  +				throw createError({ statusCode: 400, statusMessage: "return_url is required" });
+  +			}
+  +			if (typeof input?.product_id !== "string" || !isNotOrganicPackId(input.product_id)) {
+  +				throw createError({ statusCode: 400, statusMessage: "A valid Keating product_id is required" });
+  +			}
+  +			const returnUrl = new URL(input.return_url);
+  +			if (returnUrl.protocol !== "https:") {
+  +				throw createError({ statusCode: 400, statusMessage: "return_url must use HTTPS" });
+  +			}
+  +			body = JSON.stringify({
+  +				product_id: input.product_id,
+  +				return_url: returnUrl.toString(),
+  +			});
+  +		}
+  +		return await client.request(path, {
+  +			method: route.method,
+  +			body,
+  +			headers: body ? { "content-type": "application/json" } : undefined,
+  +		});
+  +	} catch (error) {
+  +		if (error instanceof NotOrganicOperationalError) {
+  +			throw createError({
+  +				statusCode: error.statusCode,
+  +				statusMessage: error.message,
+  +				data: { code: error.code },
+  +			});
+  +		}
+  +		throw error;
+  +	}
+  +});
+
+  diff --git a/web/src/notorganic-provider/OPERATIONS.md b/web/src/notorganic-provider/OPERATIONS.md
+  new file mode 100644
+  index 0000000..2ffc9be
+  --- /dev/null
+  +++ b/web/src/notorganic-provider/OPERATIONS.md
+  @@ -0,0 +1,25 @@
+  +# Not Organic hosted provider deployment
+  +
+  +The browser integration is feature-gated with:
+  +
+  +- `VITE_NOTORGANIC_ENABLED=true`
+  +- `NOTORGANIC_ENABLED=true`
+  +
+  +The Nitro server additionally requires:
+  +
+  +- `NOTORGANIC_ISSUER` — HTTPS gateway origin, without `/v1` (normally `https://api.notorganic.info`)
+  +- `NOTORGANIC_MAX_COST_MICROUSD` — positive per-request reservation ceiling
+  +
+  +Enabling those variables is not sufficient to authenticate a user. A Nitro
+  +middleware/plugin must put a `NotOrganicSessionAdapter` on each authenticated
+  +request at `event.context.notOrganicSessionAdapter`. That adapter must:
+  +
+  +1. Resolve a durable, server-validated Better Auth session.
+  +2. Resolve its linked ATProto DID without accepting a browser-provided DID or
+  +   email as proof.
+  +3. Sign and exchange the 60-second Keating product assertion.
+  +4. Retain the five-minute capability token and DPoP private key server-side.
+  +5. Implement refresh, revocation, and session-version checks.
+  +
+  +Until Keating has that durable auth/storage deployment, hosted calls return
+  +`503 notorganic_auth_adapter_unavailable`. This is intentional.
+
+  diff --git a/web/src/notorganic-provider/fetch-adapter.ts b/web/src/notorganic-provider/fetch-adapter.ts
+  new file mode 100644
+  index 0000000..df29282
+  --- /dev/null
+  +++ b/web/src/notorganic-provider/fetch-adapter.ts
+  @@ -0,0 +1,79 @@
+  +export const NOTORGANIC_IDEMPOTENCY_HEADER = "idempotency-key";
+  +export const NOTORGANIC_MAX_COST_HEADER = "x-notorganic-max-cost-microusd";
+  +
+  +export interface NotOrganicDpopInput {
+  +	method: string;
+  +	url: string;
+  +	accessToken: string;
+  +}
+  +
+  +export interface NotOrganicProductSession {
+  +	/** Server-validated stable account id. Never populate this from browser input. */
+  +	accountId: string;
+  +	accessToken: string;
+  +	createDpopProof(input: NotOrganicDpopInput): Promise<string>;
+  +}
+  +
+  +export interface NotOrganicFetchAdapterOptions {
+  +	baseUrl: string;
+  +	session: NotOrganicProductSession;
+  +	fetch?: typeof globalThis.fetch;
+  +}
+  +
+  +export interface NotOrganicRequestOptions {
+  +	method?: string;
+  +	body?: BodyInit | null;
+  +	headers?: HeadersInit;
+  +	signal?: AbortSignal;
+  +	idempotencyKey?: string;
+  +	maxCostMicrousd?: number;
+  +}
+  +
+  +function requestId(): string {
+  +	return `keating_${crypto.randomUUID()}`;
+  +}
+  +
+  +/**
+  + * Small internal adapter matching the hosted SDK's HTTP contract. Keating keeps
+  + * this local until @notorganic/sdk is published; callers still send DPoP,
+  + * idempotency, and microusd cost headers exactly as the hosted gateway expects.
+  + */
+  +export class NotOrganicFetchAdapter {
+  +	private readonly baseUrl: string;
+  +	private readonly fetcher: typeof globalThis.fetch;
+  +
+  +	constructor(private readonly options: NotOrganicFetchAdapterOptions) {
+  +		this.baseUrl = options.baseUrl.replace(/\/+$/, "");
+  +		this.fetcher = options.fetch ?? globalThis.fetch;
+  +	}
+  +
+  +	async request(path: string, options: NotOrganicRequestOptions = {}): Promise<Response> {
+  +		const method = (options.method ?? "GET").toUpperCase();
+  +		const url = `${this.baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
+  +		const headers = new Headers(options.headers);
+  +		headers.set("authorization", `DPoP ${this.options.session.accessToken}`);
+  +		headers.set("dpop", await this.options.session.createDpopProof({
+  +			method,
+  +			url,
+  +			accessToken: this.options.session.accessToken,
+  +		}));
+  +
+  +		if (options.maxCostMicrousd !== undefined) {
+  +			if (!Number.isSafeInteger(options.maxCostMicrousd) || options.maxCostMicrousd <= 0) {
+  +				throw new TypeError("maxCostMicrousd must be a positive safe integer");
+  +			}
+  +			headers.set(NOTORGANIC_MAX_COST_HEADER, String(options.maxCostMicrousd));
+  +			headers.set(NOTORGANIC_IDEMPOTENCY_HEADER, options.idempotencyKey?.trim() || requestId());
+  +		}
+  +
+  +		return this.fetcher(url, {
+  +			method,
+  +			headers,
+  +			body: options.body,
+  +			signal: options.signal,
+  +			redirect: "error",
+  +			...(options.body ? { duplex: "half" } : {}),
+  +		} as RequestInit);
+  +	}
+  +}
+  +
+
+  diff --git a/web/src/notorganic-provider/index.ts b/web/src/notorganic-provider/index.ts
+  new file mode 100644
+  index 0000000..3ece9f0
+  --- /dev/null
+  +++ b/web/src/notorganic-provider/index.ts
+  @@ -0,0 +1,126 @@
+  +import type { Model } from "@earendil-works/pi-ai";
+  +
+  +export const NOTORGANIC_PROVIDER_ID = "notorganic";
+  +export const NOTORGANIC_MODEL_ALIAS = "balanced";
+  +export const NOTORGANIC_FEATURE = "keating:web-chat";
+  +export const NOTORGANIC_PROXY_BASE_PATH = "/api/notorganic/openai/v1";
+  +
+  +export function notOrganicOpenAiBaseUrl(origin = currentOrigin()): string {
+  +	return `${origin.replace(/\/+$/, "")}${NOTORGANIC_PROXY_BASE_PATH}`;
+  +}
+  +
+  +export const NOTORGANIC_DEFAULT_MODEL: Model<"openai-completions"> = {
+  +	id: NOTORGANIC_MODEL_ALIAS,
+  +	name: "Not Organic Balanced",
+  +	api: "openai-completions",
+  +	provider: NOTORGANIC_PROVIDER_ID,
+  +	baseUrl: notOrganicOpenAiBaseUrl(),
+  +	reasoning: true,
+  +	input: ["text", "image"],
+  +	cost: {
+  +		input: 0,
+  +		output: 0,
+  +		cacheRead: 0,
+  +		cacheWrite: 0,
+  +	},
+  +	contextWindow: 256_000,
+  +	maxTokens: 16_384,
+  +};
+  +
+  +export interface NotOrganicAccount {
+  +	id: string;
+  +	did?: string;
+  +	[key: string]: unknown;
+  +}
+  +
+  +export interface NotOrganicWallet {
+  +	balance_microusd?: number;
+  +	[key: string]: unknown;
+  +}
+  +
+  +export interface NotOrganicUsage {
+  +	object: string;
+  +	data: unknown[];
+  +	[key: string]: unknown;
+  +}
+  +
+  +export interface NotOrganicCheckout {
+  +	url?: string;
+  +	checkout_url?: string;
+  +	[key: string]: unknown;
+  +}
+  +
+  +async function providerJson<T>(
+  +	path: string,
+  +	init?: RequestInit,
+  +	fetcher: typeof fetch = fetch,
+  +): Promise<T> {
+  +	const response = await fetcher(`/api/notorganic/provider/${path}`, init);
+  +	const body = await response.json().catch(() => ({}));
+  +	if (!response.ok) {
+  +		const message =
+  +			typeof body?.error?.message === "string"
+  +				? body.error.message
+  +				: typeof body?.message === "string"
+  +					? body.message
+  +					: `Not Organic request failed (${response.status})`;
+  +		throw new Error(message);
+  +	}
+  +	return body as T;
+  +}
+  +
+  +export function getNotOrganicAccount(fetcher?: typeof fetch): Promise<NotOrganicAccount> {
+  +	return providerJson("account", undefined, fetcher);
+  +}
+  +
+  +export function getNotOrganicWallet(fetcher?: typeof fetch): Promise<NotOrganicWallet> {
+  +	return providerJson("wallet", undefined, fetcher);
+  +}
+  +
+  +export function getNotOrganicUsage(
+  +	options: { after?: string; limit?: number } = {},
+  +	fetcher?: typeof fetch,
+  +): Promise<NotOrganicUsage> {
+  +	const query = new URLSearchParams();
+  +	if (options.after) query.set("after", options.after);
+  +	if (options.limit !== undefined) query.set("limit", String(options.limit));
+  +	return providerJson(`usage${query.size ? `?${query}` : ""}`, undefined, fetcher);
+  +}
+  +
+  +export function createNotOrganicCheckout(
+  +	productId: string,
+  +	returnUrl: string,
+  +	fetcher?: typeof fetch,
+  +): Promise<NotOrganicCheckout> {
+  +	return providerJson(
+  +		"checkout",
+  +		{
+  +			method: "POST",
+  +			headers: { "content-type": "application/json" },
+  +			body: JSON.stringify({ product_id: productId, return_url: returnUrl }),
+  +		},
+  +		fetcher,
+  +	);
+  +}
+  +
+  +export function isNotOrganicProvider(provider: string): boolean {
+  +	return provider === NOTORGANIC_PROVIDER_ID;
+  +}
+  +
+  +export function isNotOrganicFeatureEnabled(): boolean {
+  +	let configured: string | undefined;
+  +	if (typeof import.meta.env !== "undefined") {
+  +		configured = import.meta.env.VITE_NOTORGANIC_ENABLED;
+  +	} else if (typeof process !== "undefined") {
+  +		configured = process.env.VITE_NOTORGANIC_ENABLED;
+  +	}
+  +	if (configured === "true") return true;
+  +	if (configured === "false") return false;
+  +	return false;
+  +}
+  +
+  +function currentOrigin(): string {
+  +	return typeof globalThis.location?.origin === "string" && globalThis.location.origin
+  +		? globalThis.location.origin
+  +		: "http://localhost";
+  +}
+
+  diff --git a/web/src/notorganic-provider/packs.ts b/web/src/notorganic-provider/packs.ts
+  new file mode 100644
+  index 0000000..49fe38b
+  --- /dev/null
+  +++ b/web/src/notorganic-provider/packs.ts
+  @@ -0,0 +1,85 @@
+  +/**
+  + * Not Organic credit-pack catalog shown by Keating.
+  + *
+  + * Dependency-free so both the Vite client (pricing page, purchase dialog) and
+  + * the Nitro server (checkout, webhook) share one source of truth. Amounts are
+  + * USD; token rates are USD per million tokens and must match the model pricing
+  + * configured on the Bifrost gateway so credits draw down at the advertised
+  + * rate.
+  + */
+  +
+  +export interface NotOrganicTokenRates {
+  +	/** USD per 1M input tokens. */
+  +	inputPerMTok: number;
+  +	/** USD per 1M output tokens. */
+  +	outputPerMTok: number;
+  +}
+  +
+  +export const NOTORGANIC_TOKEN_RATES: NotOrganicTokenRates = {
+  +	inputPerMTok: 1,
+  +	outputPerMTok: 4,
+  +};
+  +
+  +export type NotOrganicPackId = "keating_pack_10" | "keating_pack_25" | "keating_pack_50";
+  +
+  +export interface NotOrganicPack {
+  +	id: NotOrganicPackId;
+  +	label: string;
+  +	priceUsd: number;
+  +	blurb: string;
+  +	popular?: boolean;
+  +}
+  +
+  +export const NOTORGANIC_PACKS: NotOrganicPack[] = [
+  +	{
+  +		id: "keating_pack_10",
+  +		label: "Starter",
+  +		priceUsd: 10,
+  +		blurb: "Try Keating's hosted model with room to learn a few topics deeply.",
+  +	},
+  +	{
+  +		id: "keating_pack_25",
+  +		label: "Plus",
+  +		priceUsd: 25,
+  +		blurb: "Enough for regular study sessions, quizzes, and animations.",
+  +		popular: true,
+  +	},
+  +	{
+  +		id: "keating_pack_50",
+  +		label: "Pro",
+  +		priceUsd: 50,
+  +		blurb: "For daily learners and long-running projects.",
+  +	},
+  +];
+  +
+  +export const DEFAULT_NOTORGANIC_PACK_ID: NotOrganicPackId = "keating_pack_10";
+  +
+  +export function getNotOrganicPack(id: string): NotOrganicPack | undefined {
+  +	return NOTORGANIC_PACKS.find((pack) => pack.id === id);
+  +}
+  +
+  +export function isNotOrganicPackId(id: string): id is NotOrganicPackId {
+  +	return NOTORGANIC_PACKS.some((pack) => pack.id === id);
+  +}
+  +
+  +/** Millions of input tokens a dollar amount buys at the advertised rate. */
+  +export function inputMTokForUsd(usd: number, rates: NotOrganicTokenRates = NOTORGANIC_TOKEN_RATES): number {
+  +	return usd / rates.inputPerMTok;
+  +}
+  +
+  +/** Millions of output tokens a dollar amount buys at the advertised rate. */
+  +export function outputMTokForUsd(usd: number, rates: NotOrganicTokenRates = NOTORGANIC_TOKEN_RATES): number {
+  +	return usd / rates.outputPerMTok;
+  +}
+  +
+  +/** Human-readable token volume for a pack, e.g. "up to 10M in / 2.5M out". */
+  +export function formatPackTokenVolume(pack: NotOrganicPack, rates: NotOrganicTokenRates = NOTORGANIC_TOKEN_RATES): string {
+  +	const input = formatMTok(inputMTokForUsd(pack.priceUsd, rates));
+  +	const output = formatMTok(outputMTokForUsd(pack.priceUsd, rates));
+  +	return `up to ${input} input / ${output} output tokens`;
+  +}
+  +
+  +function formatMTok(millions: number): string {
+  +	const rounded = Number.isInteger(millions) ? millions.toString() : millions.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+  +	return `${rounded}M`;
+  +}
+
+  diff --git a/web/src/notorganic-provider/server.ts b/web/src/notorganic-provider/server.ts
+  new file mode 100644
+  index 0000000..5475e20
+  --- /dev/null
+  +++ b/web/src/notorganic-provider/server.ts
+  @@ -0,0 +1,123 @@
+  +import type { H3Event } from "h3";
+  +import {
+  +	NotOrganicFetchAdapter,
+  +	type NotOrganicProductSession,
+  +} from "./fetch-adapter";
+  +
+  +export const NOTORGANIC_SESSION_ADAPTER_CONTEXT_KEY = "notOrganicSessionAdapter";
+  +export const NOTORGANIC_AUTH_OPERATIONAL_BLOCKER =
+  +	"Not Organic hosted access requires a deployment-owned ATProto/Better Auth product-session adapter. Keating does not yet have durable server auth, so browser DID or email claims are intentionally rejected.";
+  +
+  +export class NotOrganicOperationalError extends Error {
+  +	readonly statusCode = 503;
+  +	readonly code = "notorganic_auth_adapter_unavailable";
+  +
+  +	constructor(message = NOTORGANIC_AUTH_OPERATIONAL_BLOCKER) {
+  +		super(message);
+  +	}
+  +}
+  +
+  +export interface NotOrganicSessionRequest {
+  +	feature: string;
+  +}
+  +
+  +export interface NotOrganicSessionAdapter {
+  +	/**
+  +	 * Resolve a product capability from a server-validated session. Implementors
+  +	 * own assertion signing/exchange, refresh, revocation, and DPoP key custody.
+  +	 */
+  +	getProductSession(
+  +		event: H3Event,
+  +		request: NotOrganicSessionRequest,
+  +	): Promise<NotOrganicProductSession | null>;
+  +}
+  +
+  +type NotOrganicEventContext = H3Event["context"] & {
+  +	[NOTORGANIC_SESSION_ADAPTER_CONTEXT_KEY]?: NotOrganicSessionAdapter;
+  +};
+  +
+  +export function getNotOrganicSessionAdapter(event: H3Event): NotOrganicSessionAdapter {
+  +	const adapter = (event.context as NotOrganicEventContext)[NOTORGANIC_SESSION_ADAPTER_CONTEXT_KEY];
+  +	if (!adapter) throw new NotOrganicOperationalError();
+  +	return adapter;
+  +}
+  +
+  +export async function requireNotOrganicProductSession(
+  +	event: H3Event,
+  +	feature: string,
+  +): Promise<NotOrganicProductSession> {
+  +	const session = await getNotOrganicSessionAdapter(event).getProductSession(event, { feature });
+  +	if (!session) {
+  +		throw new NotOrganicOperationalError(
+  +			"Sign in through the deployment-owned Keating product session before using Not Organic hosted access.",
+  +		);
+  +	}
+  +	return session;
+  +}
+  +
+  +export interface NotOrganicServerConfig {
+  +	enabled: boolean;
+  +	gatewayBaseUrl: string;
+  +	maxCostMicrousd: number;
+  +}
+  +
+  +function positiveIntegerEnv(name: string, env: NodeJS.ProcessEnv): number {
+  +	const value = Number(env[name]);
+  +	if (!Number.isSafeInteger(value) || value <= 0) {
+  +		throw new NotOrganicOperationalError(`${name} must be configured as a positive integer.`);
+  +	}
+  +	return value;
+  +}
+  +
+  +export function isNotOrganicHostedEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
+  +	const value = env.NOTORGANIC_ENABLED?.trim().toLowerCase();
+  +	return value === "1" || value === "true";
+  +}
+  +
+  +export function getNotOrganicServerConfig(env: NodeJS.ProcessEnv = process.env): NotOrganicServerConfig {
+  +	if (!isNotOrganicHostedEnabled(env)) {
+  +		return {
+  +			enabled: false,
+  +			gatewayBaseUrl: "",
+  +			maxCostMicrousd: 0,
+  +		};
+  +	}
+  +	const gatewayBaseUrl = env.NOTORGANIC_ISSUER?.trim().replace(/\/+$/, "");
+  +	if (!gatewayBaseUrl || !gatewayBaseUrl.startsWith("https://")) {
+  +		throw new NotOrganicOperationalError(
+  +			"NOTORGANIC_ISSUER must be configured as an HTTPS server-only URL.",
+  +		);
+  +	}
+  +	let gatewayUrl: URL;
+  +	try {
+  +		gatewayUrl = new URL(gatewayBaseUrl);
+  +	} catch {
+  +		throw new NotOrganicOperationalError(
+  +			"NOTORGANIC_ISSUER must be a valid HTTPS gateway origin.",
+  +		);
+  +	}
+  +	if (gatewayUrl.pathname !== "/" || gatewayUrl.search || gatewayUrl.hash) {
+  +		throw new NotOrganicOperationalError(
+  +			"NOTORGANIC_ISSUER must be the gateway origin without a /v1 path, query, or fragment.",
+  +		);
+  +	}
+  +	return {
+  +		enabled: true,
+  +		gatewayBaseUrl: gatewayUrl.origin,
+  +		maxCostMicrousd: positiveIntegerEnv("NOTORGANIC_MAX_COST_MICROUSD", env),
+  +	};
+  +}
+  +
+  +export async function createNotOrganicServerClient(
+  +	event: H3Event,
+  +	feature: string,
+  +	config = getNotOrganicServerConfig(),
+  +): Promise<NotOrganicFetchAdapter> {
+  +	if (!config.enabled) {
+  +		throw new NotOrganicOperationalError("Not Organic hosted access is disabled.");
+  +	}
+  +	return new NotOrganicFetchAdapter({
+  +		baseUrl: config.gatewayBaseUrl,
+  +		session: await requireNotOrganicProductSession(event, feature),
+  +	});
+  +}
+
+  diff --git a/web/src/test/notorganic-provider.test.ts b/web/src/test/notorganic-provider.test.ts
+  new file mode 100644
+  index 0000000..fddafaf
+  --- /dev/null
+  +++ b/web/src/test/notorganic-provider.test.ts
+  @@ -0,0 +1,184 @@
+  +import { describe, expect, it } from "bun:test";
+  +import { mockEvent } from "h3";
+  +import {
+  +	NOTORGANIC_DEFAULT_MODEL,
+  +	NOTORGANIC_MODEL_ALIAS,
+  +	NOTORGANIC_PROVIDER_ID,
+  +	createNotOrganicCheckout,
+  +	getNotOrganicUsage,
+  +	isNotOrganicProvider,
+  +	migrateLegacyDioValue,
+  +	notOrganicOpenAiBaseUrl,
+  +} from "../notorganic-provider";
+  +import {
+  +	NOTORGANIC_IDEMPOTENCY_HEADER,
+  +	NOTORGANIC_MAX_COST_HEADER,
+  +	NotOrganicFetchAdapter,
+  +} from "../notorganic-provider/fetch-adapter";
+  +import {
+  +	NOTORGANIC_AUTH_OPERATIONAL_BLOCKER,
+  +	NotOrganicOperationalError,
+  +	getNotOrganicServerConfig,
+  +} from "../notorganic-provider/server";
+  +
+  +describe("Not Organic provider definition", () => {
+  +	it("uses the stable balanced alias and same-origin Dio compatibility path", () => {
+  +		expect(NOTORGANIC_DEFAULT_MODEL.id).toBe(NOTORGANIC_MODEL_ALIAS);
+  +		expect(NOTORGANIC_DEFAULT_MODEL.provider).toBe(NOTORGANIC_PROVIDER_ID);
+  +		expect(notOrganicOpenAiBaseUrl("https://keating.test/")).toBe(
+  +			"https://keating.test/api/dio/openai/v1",
+  +		);
+  +		expect(isNotOrganicProvider("notorganic")).toBe(true);
+  +		expect(isNotOrganicProvider("dio")).toBe(false);
+  +	});
+  +});
+  +
+  +describe("Not Organic SDK-compatible fetch adapter", () => {
+  +	it("keeps the capability server-side and supplies DPoP, cost, and idempotency headers", async () => {
+  +		let observed: { url?: string; init?: RequestInit } = {};
+  +		const adapter = new NotOrganicFetchAdapter({
+  +			baseUrl: "https://provider.test",
+  +			session: {
+  +				accountId: "did:plc:alice",
+  +				accessToken: "server-capability",
+  +				createDpopProof: async ({ method, url, accessToken }) =>
+  +					`${method}:${url}:${accessToken}`,
+  +			},
+  +			fetch: (async (url, init) => {
+  +				observed = { url: String(url), init };
+  +				return Response.json({ ok: true });
+  +			}) as typeof fetch,
+  +		});
+  +
+  +		await adapter.request("/v1/chat/completions", {
+  +			method: "POST",
+  +			body: JSON.stringify({ model: "balanced" }),
+  +			headers: { "content-type": "application/json" },
+  +			maxCostMicrousd: 50_000,
+  +			idempotencyKey: "idem-keating",
+  +		});
+  +
+  +		const headers = new Headers(observed.init?.headers);
+  +		expect(observed.url).toBe("https://provider.test/v1/chat/completions");
+  +		expect(headers.get("authorization")).toBe("DPoP server-capability");
+  +		expect(headers.get("dpop")).toContain("server-capability");
+  +		expect(headers.get(NOTORGANIC_MAX_COST_HEADER)).toBe("50000");
+  +		expect(headers.get(NOTORGANIC_IDEMPOTENCY_HEADER)).toBe("idem-keating");
+  +	});
+  +});
+  +
+  +describe("Not Organic browser resource client", () => {
+  +	it("calls usage and checkout through same-origin product routes", async () => {
+  +		const calls: string[] = [];
+  +		const fetcher = (async (input, init) => {
+  +			calls.push(`${init?.method ?? "GET"} ${String(input)}`);
+  +			return Response.json({ object: "list", data: [] });
+  +		}) as typeof fetch;
+  +
+  +		await getNotOrganicUsage({ after: "cursor", limit: 10 }, fetcher);
+  +		await createNotOrganicCheckout("https://keating.test/settings", fetcher);
+  +		await migrateLegacyDioValue("legacy-credential-proof", fetcher);
+  +
+  +		expect(calls).toEqual([
+  +			"GET /api/dio/provider/usage?after=cursor&limit=10",
+  +			"POST /api/dio/provider/checkout",
+  +			"POST /api/dio/provider/migrate",
+  +		]);
+  +	});
+  +});
+  +
+  +describe("Not Organic operational config", () => {
+  +	it("does not invent a product session when auth deployment is absent", () => {
+  +		expect(NOTORGANIC_AUTH_OPERATIONAL_BLOCKER).toContain("Better Auth");
+  +		expect(() =>
+  +			getNotOrganicServerConfig({
+  +				NOTORGANIC_PROVIDER_ENABLED: "true",
+  +				NOTORGANIC_GATEWAY_URL: "https://provider.test",
+  +			} as NodeJS.ProcessEnv),
+  +		).toThrow(NotOrganicOperationalError);
+  +	});
+  +
+  +	it("requires the server-only gateway and a positive request cap", () => {
+  +		expect(
+  +			getNotOrganicServerConfig({
+  +				NOTORGANIC_PROVIDER_ENABLED: "true",
+  +				NOTORGANIC_GATEWAY_URL: "https://provider.test",
+  +				NOTORGANIC_MAX_COST_MICROUSD: "50000",
+  +			} as NodeJS.ProcessEnv),
+  +		).toEqual({
+  +			enabled: true,
+  +			gatewayBaseUrl: "https://provider.test",
+  +			maxCostMicrousd: 50000,
+  +			legacyDioCompatibility: true,
+  +		});
+  +	});
+  +});
+  +
+  +describe("Not Organic Nitro routing", () => {
+  +	it("replaces the browser marker with the server session capability", async () => {
+  +		const previous = {
+  +			enabled: process.env.NOTORGANIC_PROVIDER_ENABLED,
+  +			url: process.env.NOTORGANIC_GATEWAY_URL,
+  +			cost: process.env.NOTORGANIC_MAX_COST_MICROUSD,
+  +		};
+  +		const originalFetch = globalThis.fetch;
+  +		let observed: { url?: string; headers?: Headers } = {};
+  +		let feature = "";
+  +		process.env.NOTORGANIC_PROVIDER_ENABLED = "true";
+  +		process.env.NOTORGANIC_GATEWAY_URL = "https://provider.test";
+  +		process.env.NOTORGANIC_MAX_COST_MICROUSD = "75000";
+  +		globalThis.fetch = (async (input, init) => {
+  +			observed = { url: String(input), headers: new Headers(init?.headers) };
+  +			return new Response("data: [DONE]\n\n", {
+  +				headers: { "content-type": "text/event-stream" },
+  +			});
+  +		}) as typeof fetch;
+  +
+  +		try {
+  +			const handler = (await import("../../server/api/dio/openai/[...path]")).default;
+  +			const event = mockEvent(
+  +				new Request("https://keating.test/api/dio/openai/v1/chat/completions", {
+  +					method: "POST",
+  +					headers: {
+  +						"content-type": "application/json",
+  +						"x-keating-provider": "notorganic",
+  +						authorization: "Bearer browser-placeholder",
+  +					},
+  +					body: JSON.stringify({ model: "balanced", messages: [] }),
+  +				}),
+  +			);
+  +			event.context.notOrganicSessionAdapter = {
+  +				getProductSession: async (_event: unknown, request: { feature: string }) => {
+  +					feature = request.feature;
+  +					return {
+  +						accountId: "did:plc:alice",
+  +						accessToken: "server-capability",
+  +						createDpopProof: async () => "server-proof",
+  +					};
+  +				},
+  +			};
+  +
+  +			const response = await handler(event) as Response;
+  +			expect(response.status).toBe(200);
+  +			expect(observed.url).toBe("https://provider.test/v1/chat/completions");
+  +			expect(observed.headers?.get("authorization")).toBe("DPoP server-capability");
+  +			expect(observed.headers?.get("authorization")).not.toContain("browser-placeholder");
+  +			expect(observed.headers?.get(NOTORGANIC_MAX_COST_HEADER)).toBe("75000");
+  +			expect(observed.headers?.get(NOTORGANIC_IDEMPOTENCY_HEADER)).toMatch(/^keating_/);
+  +			expect(feature).toBe("keating:web-chat");
+  +		} finally {
+  +			globalThis.fetch = originalFetch;
+  +			restoreEnv("NOTORGANIC_PROVIDER_ENABLED", previous.enabled);
+  +			restoreEnv("NOTORGANIC_GATEWAY_URL", previous.url);
+  +			restoreEnv("NOTORGANIC_MAX_COST_MICROUSD", previous.cost);
+  +		}
+  +	});
+  +});
+  +
+  +function restoreEnv(name: string, value: string | undefined): void {
+  +	if (value === undefined) {
+  +		delete process.env[name];
+  +	} else {
+  +		process.env[name] = value;
+  +	}
+  +}
+
+
+###
+
+Your task is to help verify the quality of the diff.
+We care only about specific categories of important issues.
+The rubric below outlines these categories of important issues, and contains guidelines and examples to correctly identify them:
+
+---
+**incomplete_integration_with_existing_code**:
+Guidelines:
+    - The diff should follow existing architectural and organizational patterns in the codebase:
+        - If the codebase uses a modular structure with separate files for classes/components, new classes should follow the same pattern
+        - If the codebase organizes code in specific directories (e.g., src/, components/, utils/), new code should be placed accordingly
+        - If the codebase uses specific import/export patterns (e.g., relative vs. absolute imports), new code should use the same patterns
+    - The diff should integrate functionally with existing code by adding invocations, updating invocations, replacing code with newly defined functions or variables, removing duplicate code when a new piece replaces it, etc.
+    - Prefer using existing library/dependency APIs over custom implementations when the library provides (or will provide) the needed functionality.
+Examples:
+    - The codebase uses absolute Python imports from the project root, but a new file uses relative imports.
+    - The codebase places classes into separate files under a source directory, but new classes are all added to an existing file.
+    - The diff implements a new function, but doesn't add any callsites for it
+    - A new optional parameter is added to a function to implement a requested feature, but existing callsites are not updated to make use of this parameter
+    - A named constant is introduced to replace a hard-coded inline literal, but existing code is not updated to make use of the new constant everywhere
+    - Custom code is added to implement functionality that an existing external library already provides or will provide in newer versions.
+
+---
+**fails_silently**:
+Guidelines:
+    Code that fails silently is code that ignores errors without reporting them.
+Examples:
+    - Overly broad exception handlers (e.g. bare 'except' or 'except Exception') that catch errors and continue execution without handling, logging, or re-raising them.
+    - The return value of a function that returns an error value in case of a failure is not checked by the caller.
+Exceptions:
+    - There are certain cases where broad exception handlers are acceptable, such as in an executor class or in a main loop that iterates over several tasks. Such cases should still properly log and report the errors.
+    - Do not raise issues related to potential program crashes.
+
+---
+**abstraction_violation**:
+Guidelines:
+    - Code that breaks established abstraction boundaries within the codebase.
+    - Look for:
+        - Direct access to internal data structures of classes/modules that should be encapsulated
+        - Bypassing public APIs to manipulate state or access internal functionality
+        - Mixing of concerns that should be separated by layers or modules
+        - Violating private vs. public interfaces (e.g., accessing private attributes or methods from outside their defining class/module)
+Examples:
+    - A Python function directly accesses a private attribute, variable or function (prefixed with an underscore) from a different class or file.
+    - A module modifies the internal state of another module directly instead of using and/or adding public API functions.
+Exceptions:
+    - Unit tests that need to access internal state for verification purposes.
+
+---
+**test_coverage**:
+Guidelines:
+    - If the diff introduces significant new functionality, and the code base has existing unit and/or integration tests, new tests should be added to cover the new functionality.
+    - If the diff changes the behavior of existing functionality that is covered by automated tests, those tests should be updated to reflect the new behavior.
+    - If the diff contains a bug fix, and the code base has existing unit and/or integration tests, a regression test should be added for the bug.
+Exceptions:
+    - Syntactical or logical issues in tests will be raised in other issue types and do not belong in this category.
+
+---
+**logic_error**:
+Guidelines:
+    - Logic errors are flaws in the reasoning or flow of the code that would cause incorrect behavior.
+    - Look for: off-by-one errors in loops or array indexing, incorrect conditional logic (wrong operators, inverted conditions), variable assignments that overwrite needed values, incorrect order of operations, missing or incorrect loop termination conditions, algorithms that don't match their intended purpose.
+    - Look for missing, incorrect, or incomplete parameters to function/API calls that will cause the function to behave differently than intended (e.g., missing event masks, wrong flags, omitted required options).
+    - Pay special attention to control flow issues: early returns or breaks that prevent intended functionality from executing, functions that exit before completing their stated purpose, conditions that prevent code paths from being reached when they should be.
+    - Do not flag issues that are not clearly incorrect, for example it's possible code is implemented in a suboptimal way, this is not an issue unless it is explicitly stated that the code should be optimal or implemented in a certain way.
+
+---
+**instruction_file_disobeyed**:
+Guidelines:
+    Explicit instructions in files such as .claude.md, CLAUDE.md, and AGENTS.md MUST be obeyed.
+Examples:
+    - CLAUDE.md requests the use of single quotes only, but double quotes are used.
+    - AGENTS.md requests that new versions be created on every database update, but a database entry is modified directly.
+    - .claude.md says to always run the tests after making changes, but the agent did not run the tests.
+Exceptions:
+    - Instructions in the closest file _above_ a location take precedence. For example, when considering a file foo/bar.py, foo/CLAUDE.md takes precedence over CLAUDE.md.
+    - Instructions only apply to the subtree below the file. For example, when considering a file foo/bar.py, foo/baz/CLAUDE.md does not apply.
+    - Applicable instructions should ONLY be contravened in the case of explicit user request--but if the user does explicitly request something counter to the instruction files, this should not be reported as a disobeyed instruction file.
+
+---
+**incorrect_algorithm**:
+Guidelines:
+    - Code that implements an algorithm incorrectly for its stated purpose.
+    - Look for: sorting algorithms with wrong comparison logic, search algorithms with incorrect termination, mathematical calculations with wrong formulas, data structure operations that don't maintain invariants, algorithms that don't handle edge cases (empty inputs, single elements).
+    - Only flag issues that are clearly incorrect for the stated purpose of the algorithm, and describe the problem and correction in detail.
+
+---
+**poor_naming**:
+Guidelines:
+    - File, class, function, function parameter, and constant names should follow the format and naming standards that are currently dominant in the code base (especially within the same file or folder), or the style guide if one exists.
+    - In the absence of existing code, common naming standards for the given programming language should be used.
+    - Function names should be descriptive of what the function does. A person reading the function name without seeing its implementation should be able to get a sense of its purpose.
+    - If any function parameter is being mutated by the function, that fact should be made clear in the name of the parameter (e.g. by appending `_out` / `Out` to the name), unless it is clear that such name-based annotations would be against the existing naming style in the code base.
+    - Note that we don't impose any specific criteria on the length of names. If the existing code base uses many abbreviated names, new code should follow that. Or if it uses a lot of long, verbose names, this similarly should be followed.
+    - If a component's functionality is significantly changed, the name of the component should be updated to reflect the new functionality, if it is not already clear from the context.
+Exceptions:
+    - Short names for local variables are usually okay.
+
+---
+**user_request_artifacts_left_in_code**:
+Guidelines:
+    - Comments should describe what the code does, not how it was changed.
+    - Flag comments that reference the change process: '# Changed from X to Y', '# Updated to print less'
+    - Flag comments that mention fixing or addressing issues: '# Fixed bug where...', '# This addresses...'
+    - Flag documentation written in past tense about modifications
+    - Acceptable comments explain current behavior without referencing changes:
+        - Acceptable: '# Multiply by 3x' instead of '# Reduced factor from 5x to 3x'
+        - Acceptable: '# Handle edge case' instead of '# Fixed edge case bug'
+
+---
+**type_safety_violation**:
+Guidelines:
+    - Code that violates type safety expectations or could cause type-related runtime errors.
+    - Look for: incorrect type assumptions, missing type checks before operations, unsafe type casting, attribute access on potentially None values.
+    - Check for return type violations: functions that return values inconsistent with their declared return type annotations (e.g., returning None when the type annotation specifies a non-optional type, returning wrong tuple element types).
+
+---
+**dependency_management**:
+Guidelines:
+    - Check all import statements in new or modified files. If new code imports a library or package that is not part of the language's standard library, verify that the dependency is listed in the repository's dependency/requirement files (e.g., requirements.txt, pyproject.toml, package.json, Gemfile, etc.).
+    - If the diff removes the last remaining use of an external library or package, the dependency and/or requirement files in the repository should be updated to no longer include the library.
+    - If the codebase uses a dependency for some functionality, the diff should avoid introducing other packages that provide the same functionality, unless there is a good reason to do so (e.g. the new package is significantly better maintained, has better performance, or is more secure).
+Exceptions:
+    - Do not raise issues related to package versions or pinning unless it is a critical issue.
+
+---
+**async_correctness**:
+Guidelines:
+    - Issues specific to asynchronous or concurrent code correctness.
+    - Look for: missing await keywords on functions that are clearly async (defined with 'async def' or returning coroutines/Promises), improper async context manager usage, race conditions in async code, deadlock potential, shared state access without proper synchronization.
+    - For threading issues: threads or background tasks that are created but never started, joins without corresponding starts.
+    - Be careful not to flag decorators or wrappers as requiring await unless you can verify they actually make the function async. Only flag clear cases where an async function is called without await or a thread/task is created but never started.
+
+---
+**documentation_implementation_mismatch**:
+Guidelines:
+    - The implementation should follow, in this priority order: 1. the user's request, 2. documentation existing in the code base, 3. existing code around it, 4. general best practices and common sense
+    - If the user's request conflicts with the state of documentation in the code base, the documentation in the code base should be updated to reflect the new user request.
+Examples:
+    - The docstring of a class or function does not match what the class or function implements.
+    - The repository contains a README.md file with instructions that are not adhered to by the code.
+    - The diff implements significant new functionality, but existing documentation within the repository is not updated.
+    - Inline comments are not updated even though functionality was changed by the diff.
+    - Documentation contains outdated code snippets or commands that need to be updated because of the changes made by the diff.
+Exceptions:
+    - TODOs/FIXMEs that are not implemented yet are not considered a documentation mismatch.
+
+---
+**resource_leakage**:
+Guidelines:
+    - Focus on system resources that require explicit cleanup: file handles, network connections, database connections, memory allocations, and similar OS-level resources.
+    - These resources must be reliably freed even if exceptions occur.
+    - For these system resources, cleanup should use try/finally blocks, context managers (with statements), or RAII patterns.
+    - Also look for reference management issues: objects being cleaned up while still holding references elsewhere, or cleanup operations (like garbage collection) called before removing all references to the object.
+Examples:
+    - A file or socket connection is opened but not reliably closed.
+    - A database transaction is started but not committed or rolled back in all code paths.
+    - Memory is allocated but not freed (in languages with manual memory management).
+    - An object's cleanup method triggers garbage collection while the object is still referenced in a global data structure, preventing proper cleanup.
+Exceptions:
+    - Animation loops, timers, and intervals that are controlled by boolean flags or cleared by ID are not resource leaks if they have proper stop mechanisms.
+    - Event listeners that are meant to persist for the lifetime of the application.
+    - Resources that are automatically cleaned up by garbage collection (unless they hold system resources).
+
+---
+**refactoring_needed**:
+Guidelines:
+    - Functions that have gotten long (> 50 lines) and are mixing multiple concerns and/or combining several different steps should be broken up. (Typically by using helper functions and/or separate classes to encapsulate individual concerns.)
+    - Classes or files that are combining different concerns should be broken up, such that each class / file only deals with one primary concern.
+        - Note: we don't impose any minimal or maximal length on a class or file. Classes and files are ok to be long, as long as they only deal with a single concern.
+Examples:
+    - New functionality that is orthogonal to the existing functionality in a function is inserted into the existing function's body instead of being separated out into its own function.
+    - A class mixes two different use cases that could be separated into two classes.
+
+---
+**error_handling_missing**:
+Guidelines:
+    - Missing error handling for operations that could reasonably fail.
+    - Look for: file I/O without exception handling, network requests without timeout/retry logic, user input processing without validation, external API calls without error checking, database operations without transaction handling.
+    - Only flag issues that are clearly incorrect, and avoid flagging issues where it is not a big problem (e.g. file I/O in a script may not need flagging while missing error handling for file I/O in a long running or production systems should have error handling).
+
+---
+**correctness_syntax_issues**:
+Guidelines:
+    - The diff should not contain any syntax errors that would prevent the code from running.
+    - CAREFULLY CHECK INDENTATION: In Python and other indentation-sensitive languages, verify that all function definitions, class definitions, and code blocks maintain proper indentation levels. Dedenting a function body to the module level or similar indentation errors are critical syntax issues.
+    - Look for: broken indentation that would cause syntax errors, missing or mismatched brackets/braces/parentheses, references to files/classes/functions that don't exist, removal of code that is still being referenced elsewhere.
+    - Check function signatures match their usage: if a function is modified to return different values (e.g., a single value vs. a tuple), all call sites must be updated accordingly.
+Examples:
+    - The diff breaks the indentation of a Python function or class, dedenting it incorrectly.
+    - Code references a file, class or function that does not exist, or removes a file, class or function that is definitely still being referenced.
+    - A function is changed to return a tuple of two values, but existing callers still expect only a single return value.
+    - A function's return statement is removed but callers still expect a return value.
+
+---
+**runtime_error_risk**:
+Guidelines:
+    - Code patterns that are very likely to cause runtime errors during execution.
+    - Check for version compatibility issues: usage of function parameters, APIs, or language features that are only available in specific versions of the language, standard library, or external dependencies (e.g., a keyword argument added in Python 3.10 will cause TypeError on Python 3.8/3.9).
+    - Look for: potential null/None pointer dereferences, array/list access with potentially invalid indices, division by zero possibilities, file operations without existence checks, network/IO operations without timeout or error handling, infinite loop conditions, memory allocation issues.
+    - Check string encoding/decoding operations: calls to .encode() or .decode() without error handling (try/except or 'errors' parameter) that could raise UnicodeEncodeError or UnicodeDecodeError, especially when processing untrusted or streamed data.
+    - Look for operations with global side effects that could cause problems: os.chdir() without proper restoration, modifying global state in ways that affect other code, operations that are not thread-safe when concurrency is present.
+    - Only flag issues where there is clear evidence the code will fail or cause serious problems. Avoid speculating about potential issues in well-established language patterns or standard library usage.
+
+---
+**insecure_code**:
+Guidelines:
+    - Look for hard-coded secrets such as API keys, passwords, tokens, or credentials in the diff.
+    - Check for variable names containing: 'token', 'key', 'secret', 'password', 'credential', 'auth'
+    - Look for string literals that appear to be:
+        - API keys or tokens (long alphanumeric strings, often 20+ characters)
+        - Hexadecimal strings that could be tokens or keys
+        - URLs with embedded credentials (e.g., 'REDACTED')
+        - Connection strings with passwords
+    - Flag any credentials or secrets that should be loaded from environment variables or configuration files instead.
+Examples:
+    - A variable named `api_key` or `auth_token` is assigned a hard-coded string value.
+    - A connection string contains a hard-coded password.
+    - A long hexadecimal string is assigned to a variable with 'token' in its name.
+    - An API request includes a hard-coded authentication header value.
+
+---
+**commit_message_mismatch**:
+Guidelines:
+    - The diff must completely fulfill the user's request.
+    - Look for incomplete implementations:
+       - When the user asks for changes 'throughout', 'everywhere', or 'all', verify ALL instances are modified
+       - If multiple changes are requested, ensure each one is fully implemented
+       - Check that fixes are applied to all occurrences of a pattern, not just some
+    - Look for scope mismatches:
+       - Changes only in initialization when they should apply during execution
+       - Modifications to only one file when multiple files need updates
+       - Partial refactoring that leaves related code unchanged
+    - Look for unauthorized changes:
+       - Configuration changes (linting, build, test settings) not requested
+       - New features or options beyond the request
+       - Changes to unrelated code
+       - Binaries, compiled files, dependencies, or build artifacts that should not be in version control
+    - Look for unintended removals:
+       - Removal of project-specific configuration or settings that should be preserved
+       - Deletion of functionality that is still needed
+       - Loss of necessary entries when replacing configuration files
+    - Look for unintended side effects:
+       - Changes that affect code paths or functionality beyond what was requested
+       - Modifications that impact how existing features work in ways not mentioned in the request
+Exceptions:
+    - Minor refactors directly related to requested changes are acceptable.
+
+---
+**repetitive_or_duplicate_code**:
+Guidelines:
+    Repetitive or duplicate code.
+Examples:
+    - A non-trivial calculation or piece of logic is repeated in multiple places within a file.
+    - New code is introduced by the diff to accomplish a certain functionality, but there is an existing function in the code base that already implements the same functionality, or could be easily generalized to accomplish the desired functionality.
+    - A file is duplicated (make exceptions for cases where duplication may be necessary such as test files).
+    - A significant amount of code is introduced which duplicates functionality from standard or well-known libraries.
+    - Multiple functions format or build the same string or data structure in the same way without using a shared helper function or test fixture.
+Exceptions:
+    - Do not flag duplication between legacy and new implementations when the codebase is clearly undergoing a migration or maintaining multiple versions for compatibility.
+    - Do not flag duplication across different architectural layers or modules when the duplication serves to maintain proper separation of concerns.
+
+---
+
+Use your standard tools to explore the repository and analyze the code thoroughly.
+Look at the additional guidance section below for more details on how to find issues.
+
+After your analysis, provide your response in JSON format matching this schema:
+
+{
+  "$defs": {
+    "GeneratedIssueSchema": {
+      "additionalProperties": true,
+      "description": "Individual issue from LLM response.",
+      "properties": {
+        "codePart": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Specific code snippet that has the issue",
+          "title": "Codepart"
+        },
+        "confidence": {
+          "description": "Confidence in this assessment",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "description": {
+          "description": "Specific explanation of what\u0027s wrong and why it\u0027s incorrect",
+          "title": "Description",
+          "type": "string"
+        },
+        "issueCode": {
+          "description": "Category of the issue",
+          "title": "Issuecode",
+          "type": "string"
+        },
+        "location": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "File path where the issue occurs",
+          "title": "Location"
+        },
+        "severity": {
+          "description": "Integer 1-5 (1=minor issue, 5=critical bug)",
+          "maximum": 5,
+          "minimum": 1,
+          "title": "Severity",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "issueCode",
+        "description",
+        "severity",
+        "confidence"
+      ],
+      "title": "GeneratedIssueSchema",
+      "type": "object"
+    }
+  },
+  "additionalProperties": true,
+  "description": "Complete response structure for issue identification.",
+  "properties": {
+    "issues": {
+      "description": "List of identified issues",
+      "items": {
+        "$ref": "#/$defs/GeneratedIssueSchema"
+      },
+      "title": "Issues",
+      "type": "array"
+    }
+  },
+  "title": "GeneratedResponseSchema",
+  "type": "object"
+}
+
+For each issue found, provide:
+- issue_code: Category from the rubric above
+- description: Specific explanation of the issue
+- (if applicable) location: File path where the issue occurs (relative to /home/diogenes/Projects/keating)
+- (if applicable) code_part: Specific code snippet that has the issue. Your code snippet should be the exact same as the original code including whitespace.
+- severity: Integer 1-5 (1=minor, 5=critical)
+- confidence: Float 0.0-1.0 indicating your confidence
+
+Your response should look like:
+```json
+{
+    "issues": [
+        <list of issues>
+    ]
+}
+```
+
+If no issues are found, return: ```json{"issues": []}```
+
+Focus on real issues that impact code quality, correctness, or maintainability.
+You must not return issues that were already present in the code or issues that are fixed by the diff.
+You must only return issues that were introduced by the diff.
+Do not report duplicate issues with the same or equivalent descriptions.
+
+### Additional Guidance for Finding Issues ###
+You should use a Task tool to create a parallel task for each issue type in the rubric.
+You should pass along the exact issue type definition with all details to the task.
+Once all the Tasks have completed you can collate their results.
+You should pass along any relevant information from the guidance below to the task.
+Here is a non-exhaustive list of things that you can do using your tools within the task to find issues:
+
+---
+**incomplete_integration_with_existing_code**:
+- Look at the existing code organization and architectural patterns
+- Check if new code follows the same structural patterns as existing code
+- Trace the links or identify the lack of them between the diff and existing code
+- Look at incomplete usage of new code
+
+---
+**fails_silently**:
+Carefully examine the diff.
+
+---
+**abstraction_violation**:
+None
+
+---
+**test_coverage**:
+- Look at the diff and tests for it or tests affected by it or missing tests.
+- Understand existing codebase patterns.
+- Run code but this may not always be a viable option or may surface irrelevant issues.
+
+---
+**logic_error**:
+None
+
+---
+**instruction_file_disobeyed**:
+Cross-check ALL instructions in ALL instruction files against the diff contents.
+
+---
+**incorrect_algorithm**:
+None
+
+---
+**poor_naming**:
+- Look at names that were added or names corresponding to updated code.
+- Understand existing codebase patterns.
+
+---
+**user_request_artifacts_left_in_code**:
+Look at code comments and added documentation in the diff.
+
+---
+**type_safety_violation**:
+None
+
+---
+**dependency_management**:
+- Look at the diff and dependency management files for issues.
+- Understand existing codebase patterns.
+- Carefully check import statements at the top of new or modified files.
+
+---
+**async_correctness**:
+None
+
+---
+**documentation_implementation_mismatch**:
+Look at code comments and READMEs in the diff or in existing code related to the diff.
+
+---
+**resource_leakage**:
+Carefully examine the diff or code affected by newly added code.
+
+---
+**refactoring_needed**:
+- Look at the scope and length of components of the diff or code affected by the diff.
+- Look at incomplete usage of new code.
+- Understand existing codebase patterns.
+
+---
+**error_handling_missing**:
+None
+
+---
+**correctness_syntax_issues**:
+None
+
+---
+**runtime_error_risk**:
+None
+
+---
+**insecure_code**:
+Carefully examine the diff for any string literals that might be secrets, especially those assigned to variables with security-related names.
+
+---
+**commit_message_mismatch**:
+Compare the uncommitted diff and the request to ensure they match.
+
+---
+**repetitive_or_duplicate_code**:
+- Look at repetition in the diff or duplication between the diff and existing code in the codebase.
+- Look at incomplete usage of new code
+- Understand existing codebase patterns.
+
+---
+Note that this is just guidance on how to find issues, please refer to the rubric for the types of issues to find.
