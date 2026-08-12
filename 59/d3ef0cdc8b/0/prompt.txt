@@ -1,0 +1,8 @@
+react-dom_client.js?v=8a2d806a:5027 TypeError: Cannot read properties of undefined (reading 'filter')
+    at CourseWorkspace (CourseWorkspace.tsx:352:13)
+
+
+The above error occurred in the <CourseWorkspace> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, CatchBoundaryImpl.
+defaultOnCaughtError	@	react-dom_client.js?v=8a2d806a:5027
