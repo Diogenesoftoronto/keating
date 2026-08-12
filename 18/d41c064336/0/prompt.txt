@@ -1,0 +1,1 @@
+I want you to filter out the model selector via capability, and i want you to be able to search through sessions with full text search in the sessions search bar.
