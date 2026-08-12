@@ -1,0 +1,1 @@
+so in the web ui do we stream stuff  yet or is therre still some implementation that ineeds to occur? we still ahave  those laggacy tools and i notice that the model probpt by default still has the learaner state and all thata a tool t he model is expliciitly calling too..
