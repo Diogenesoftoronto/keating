@@ -1,0 +1,1 @@
+<local-command-stdout>Enabled plan mode</local-command-stdout>
