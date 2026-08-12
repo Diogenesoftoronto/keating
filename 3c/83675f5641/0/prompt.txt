@@ -1,0 +1,1 @@
+<local-command-stdout>Set model to [1mFable 5[22m and saved as your default for new sessions</local-command-stdout>
