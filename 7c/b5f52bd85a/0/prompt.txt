@@ -1,0 +1,1 @@
+the buttons on the open and delete for new lessons need fixing the redundant text for new lesson in the tutor page needs to be removed, you need to add the ability and view of session forking as well
