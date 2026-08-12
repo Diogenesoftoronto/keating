@@ -1,0 +1,1 @@
+<local-command-stdout>[2mCompacted (ctrl+o to see full summary)[22m</local-command-stdout>
