@@ -1,0 +1,1 @@
+don't choose the model just use whatever the default with the prompt only
