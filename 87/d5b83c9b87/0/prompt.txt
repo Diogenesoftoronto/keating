@@ -1,0 +1,1 @@
+resolve the defects for gemma on that path offer other models in the gemma family for local download like e2b
