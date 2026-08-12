@@ -1,0 +1,1 @@
+make sure that the dtypes are right and also the size for maple previiew shoud be the ternary variant, and same for bonsia should have the binary and ternary option
