@@ -1,0 +1,1 @@
+hey there was previous work on creating a mobile react native application on android. I would like for that to be finished and I want to reuse as much code and logic as possilbe.
