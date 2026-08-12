@@ -1,0 +1,109 @@
+<image name=[Image #1] path="/tmp/codex-clipboard-ZdMVIm.png">
+
+</image>
+
+[Image #1] i got this Layout was forced before the page was fully loaded. If stylesheets are not yet loaded this may cause a flash of unstyled content. contentscript.js:14083:433593
+Window.fullScreen attribute is deprecated and will be removed in the future. contentscript.js:14083:433593
+InstallTrigger is deprecated and will be removed in the future. contentscript.js:14083:433593
+onmozfullscreenchange is deprecated. contentscript.js:14083:433593
+onmozfullscreenerror is deprecated. contentscript.js:14083:433593
+MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 close listeners added. Use emitter.setMaxListeners() to increase limit
+    u moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/contentscript.js:14083
+    addListener moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/contentscript.js:14083
+    on moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/contentscript.js:14082
+    once moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/contentscript.js:14083
+    pipe moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/contentscript.js:14063
+    B moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/contentscript.js:14063
+    D moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/contentscript.js:14063
+    P moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/contentscript.js:14063
+    M moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/contentscript.js:14063
+    I moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/contentscript.js:14063
+    <anonymous> moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/contentscript.js:14083
+    <anonymous> moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/contentscript.js:14083
+    <anonymous> moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/contentscript.js:14083
+    <anonymous> moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/contentscript.js:14083
+contentscript.js:14083:34218
+MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 end listeners added. Use emitter.setMaxListeners() to increase limit
+    u moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/contentscript.js:14083
+    addListener moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/contentscript.js:14083
+    on moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/contentscript.js:14082
+    O moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/contentscript.js:14083
+    B moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/contentscript.js:14063
+    D moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/contentscript.js:14063
+    P moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/contentscript.js:14063
+    M moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/contentscript.js:14063
+    I moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/contentscript.js:14063
+    <anonymous> moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/contentscript.js:14083
+    <anonymous> moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/contentscript.js:14083
+    <anonymous> moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/contentscript.js:14083
+    <anonymous> moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/contentscript.js:14083
+contentscript.js:14083:34218
+ObjectMultiplex - orphaned data for stream "background-liveness" contentscript.js:14083:435069
+ObjectMultiplex - orphaned data for stream "background-liveness" contentscript.js:14083:435069
+[vite] connecting... client:851:9
+[vite] connected. client:955:12
+Lit is in dev mode. Not recommended for production! See https://lit.dev/msg/dev-mode for more information. @earendil-works_pi-web-ui.js:113:11
+[React Grab] v0.1.47 is outdated (latest: v0.1.48). Run `npx grab@latest upgrade` to upgrade. react-grab.js:2367:28
+Error restoring session o: Transport request timed out
+    i moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:4
+    o moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:4
+    request moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:1
+    s moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:7
+    setTimeout handler*675768/u/< moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:7
+    u moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:7
+    request moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:1
+    s moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:1
+    l moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:7
+    r moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:1
+    s moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:1
+    getSession moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:1
+    W moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:4
+    W moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:4
+    o moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:17
+    <anonymous> moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:20
+    <anonymous> moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:20
+    <anonymous> moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:20
+Caused by: undefined
+inpage.js;:4:10741
+Error restoring session o: Transport request timed out
+    i moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:4
+    o moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:4
+    request moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:1
+    s moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:7
+    setTimeout handler*675768/u/< moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:7
+    u moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:7
+    request moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:1
+    s moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:1
+    l moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:7
+    r moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:1
+    s moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:1
+    getSession moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:1
+    q moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:17
+    q moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:17
+    o moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:1
+    <anonymous> moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:20
+    <anonymous> moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:20
+    <anonymous> moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:20
+Caused by: undefined
+inpage.js;:17:4697
+XHRPOST
+http://localhost:3000/api/share
+[HTTP/1.1 400 Bad Request 2ms]
+
+Portable share storage failed: Error: Share storage returned 400
+    publishSharedSession shared-sessions.ts:190
+    sharedSessionUrl shared-sessions.ts:213
+    shareSession useKeatingAgent.tsx:1057
+    performShare Chat.tsx:856
+    handleShare Chat.tsx:896
+    React 13
+    <anonymous> main-react.tsx:23
+shared-sessions.ts:165:11
+Failed to share session: Error: Could not save the session to the share server. Try again, or switch Settings → Share Links to Compressed snapshot if you explicitly want a long self-contained link.
+    sharedSessionUrl shared-sessions.ts:218
+    shareSession useKeatingAgent.tsx:1057
+    performShare Chat.tsx:856
+    handleShare Chat.tsx:896
+    React 13
+    <anonymous> main-react.tsx:23
+Chat.tsx:966:12
