@@ -1,0 +1,11 @@
+<user_shell_command>
+<command>
+skate get hf-key@secrets
+</command>
+<result>
+Exit code: 0
+Duration: 0.2004 seconds
+Output:
+REDACTED
+</result>
+</user_shell_command>
