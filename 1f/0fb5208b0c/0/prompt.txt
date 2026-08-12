@@ -1,0 +1,1 @@
+OH yeah the  hyperframes have issues with actual animations pausing and playing at all and getting this to work.
