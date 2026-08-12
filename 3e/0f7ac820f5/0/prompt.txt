@@ -1,0 +1,1 @@
+Please finish the core remediation and focused tests now; avoid expanding scope. Report any residual gap explicitly.
