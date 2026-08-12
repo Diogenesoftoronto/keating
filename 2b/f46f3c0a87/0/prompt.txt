@@ -1,0 +1,1 @@
+I am going to be integrating arize into this project after getting posthog working for evals. please generate a plan for doing this to the best of your ability. feel free to use the other agents if you need to. and the create a build execution document as well. then have terra execute it
