@@ -1,0 +1,1 @@
+should be ablle to swipe to the side to get session in the mobile app and i should be able to get to the whole courses and stuff at the bottom as well. there should also be a place for purchasing tokens, the tutorial and manual should also be there
