@@ -1,0 +1,1 @@
+what is the current state of the keating expo react native app? same with desktop? and tui? I want feature parity and look parity with web.
