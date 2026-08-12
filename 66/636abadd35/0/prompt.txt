@@ -1,0 +1,1 @@
+I want to provide users with much better errors when llm calls fail, they should have a lot of human readable errors and also want greata ways  for them to recover or auto recover. for example rate limiting means exponential backoff on requests and so on.
