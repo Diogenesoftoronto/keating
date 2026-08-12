@@ -1,0 +1,1 @@
+Please wrap up promptly. Do not chase unrelated full typecheck errors; finish scoped tests/diff-check and report.
