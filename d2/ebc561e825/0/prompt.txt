@@ -1,0 +1,1 @@
+https://github.com/cactus-compute/needle would this be useful in hooks at all? i was thinking, something like a categorization/classification usecase for this model somewhere maybe  for the topics of the stuff we are asking questions on? maybe  when running some hooks. you don't have to use it but i wonder if there are some good ideas here
