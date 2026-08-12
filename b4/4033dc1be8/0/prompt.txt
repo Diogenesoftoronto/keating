@@ -1,0 +1,1 @@
+and also the provider list is way to small it only includes the  big providers and open router and not all the providers that are in models.dev and there is not any select for voice and video and image models used
