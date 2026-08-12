@@ -1,0 +1,1 @@
+i would like there to be an option to turn off reasoning showing up at all as an option in the chat and I would also like the reasoning element to have an indicating arrow that shows that the reasoning can be expanded or not and i would like reasoning to also have the markdown rendering working.
