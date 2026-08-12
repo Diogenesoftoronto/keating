@@ -1,0 +1,1 @@
+create a release on github. and make sure the blog is updated
