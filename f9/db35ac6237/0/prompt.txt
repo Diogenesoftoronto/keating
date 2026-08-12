@@ -1,0 +1,12 @@
+Keating
+KEATING
+Request failed
+
+Keating received an error it could not safely classify.
+
+Recovery: Retry once. If it fails again, show raw errors in settings and use the details to check the provider, model, tool, or endpoint.
+Reasoning
+
+This response did not finish
+
+Retry once. If it fails again, show raw errors in settings and use the details to check the provider, model, tool, or endpoint.
