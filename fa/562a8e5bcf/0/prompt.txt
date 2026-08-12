@@ -1,0 +1,3 @@
+<subagent_notification>
+{"agent_path":"019f73e6-f92f-7e41-bf21-78bdef0fb788","status":{"completed":"Completed the production-path search provenance fix.\n\n- OpenAI, Google, and Anthropic signal untrusted provenance only when hosted search is actually injected into the streaming request.\n- Signals are emitted once per stream.\n- MiniMax/client adapters signal when normalized search results arrive.\n- Added production stream-to-signal integration coverage.\n- 13 focused tests passed.\n- Web typecheck passed.\n- `git diff --check` passed.\n- Vet was not run."}}
+</subagent_notification>
