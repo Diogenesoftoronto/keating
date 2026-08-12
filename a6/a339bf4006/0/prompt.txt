@@ -1,0 +1,1 @@
+i am still getting not founds for the api/courses/session route that is causing the workspace is unavailable errors
