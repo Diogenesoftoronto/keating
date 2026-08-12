@@ -1,0 +1,5 @@
+tried this m error code ERR_SSL_SSL/TLS_ALERT_BAD_RECORD_MAC
+npm error errno ERR_SSL_SSL/TLS_ALERT_BAD_RECORD_MAC
+npm error request to https://registry.npmjs.org/keating failed, reason: 40AD28933B7F0000:error:0A0003FC:SSL routines:ssl3_read_bytes:ssl/tls alert bad record mac:ssl/record/rec_layer_s3.c:918:SSL alert number 20
+npm error
+npm error A complete log of this run can be found in: /home/diogenes/.npm/_logs/2026-07-22T06_26_42_683Z-debug-0.log
