@@ -1,0 +1,3 @@
+<command-name>/login</command-name>
+            <command-message>login</command-message>
+            <command-args></command-args>
