@@ -1,0 +1,1 @@
+once you are done with these checks i want you to update the blog and then create a new release and push
