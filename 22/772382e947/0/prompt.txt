@@ -1,0 +1,2 @@
+<command-message>review</command-message>
+<command-name>/review</command-name>
