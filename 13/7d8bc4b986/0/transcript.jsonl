@@ -1,0 +1,2 @@
+{"v":1,"agent":"codex","cli_version":"0.9.0","type":"user","ts":"2026-07-18T05:03:50.397Z","content":[{"text":"hi"}]}
+{"v":1,"agent":"codex","cli_version":"0.9.0","type":"assistant","ts":"2026-07-18T05:03:50.397Z","content":[{"text":"There's an issue with the selected model (claude-sonnet-5). It may not exist or you may not have access to it. Run /model to pick a different model.","type":"text"}]}
