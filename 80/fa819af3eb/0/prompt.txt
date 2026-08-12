@@ -1,0 +1,1 @@
+id like to be able to test the application on my device once it builds
