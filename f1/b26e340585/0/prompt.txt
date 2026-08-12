@@ -1,0 +1,1 @@
+i noticed that the browser tools file was rather lalrge have we also ran similarity-ts on this
