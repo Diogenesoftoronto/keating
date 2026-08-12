@@ -1,0 +1,5 @@
+<environment_context>
+  <current_date>2026-08-11</current_date>
+  <timezone>America/Toronto</timezone>
+  <filesystem><workspace_roots><root>/home/diogenes/Projects/keating</root></workspace_roots><permission_profile type="managed"><file_system type="restricted"><entry access="read"><special>:root</special></entry></file_system></permission_profile></filesystem>
+</environment_context>
