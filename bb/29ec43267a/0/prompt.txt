@@ -1,0 +1,1 @@
+Please wrap now with the payload narrowing/typecheck fixed and focused tests. Report residual gaps.
