@@ -5,7 +5,15 @@ const crossOriginIsolationHeaders: Record<string, string> = {
   "Cross-Origin-Embedder-Policy": "credentialless",
 };
 
-const noFallthroughStaticAsset = (headers = crossOriginIsolationHeaders) =>
+const staticAssetHeaders: Record<string, string> = {
+  ...crossOriginIsolationHeaders,
+  // Railway's Hikari edge otherwise transforms compressible responses. Keeping
+  // the origin bytes intact avoids Firefox rejecting an intermittently
+  // truncated or mismatched encoded response as corrupted content.
+  "Cache-Control": "public, max-age=86400, no-transform",
+};
+
+const noFallthroughStaticAsset = (headers = staticAssetHeaders) =>
   ({ fallthrough: false, headers }) as unknown as { static: false; headers: Record<string, string> };
 
 export default defineNitroConfig({
@@ -49,9 +57,10 @@ export default defineNitroConfig({
     "/assets/**": {
       ...noFallthroughStaticAsset({
         ...crossOriginIsolationHeaders,
-        "Cache-Control": "public, max-age=31536000, immutable",
+        "Cache-Control": "public, max-age=31536000, immutable, no-transform",
       }),
     },
+    "/brand/**": noFallthroughStaticAsset(),
     "/**/*.js": noFallthroughStaticAsset(),
     "/**/*.css": noFallthroughStaticAsset(),
     "/**/*.svg": noFallthroughStaticAsset(),
@@ -63,7 +72,13 @@ export default defineNitroConfig({
     "/**/*.mp4": noFallthroughStaticAsset(),
     "/**/*.webp": noFallthroughStaticAsset(),
     "/**/*.gif": noFallthroughStaticAsset(),
-    "/**": { static: true, headers: crossOriginIsolationHeaders },
+    "/**": {
+      static: true,
+      headers: {
+        ...crossOriginIsolationHeaders,
+        "Cache-Control": "no-store, no-transform",
+      },
+    },
   },
   publicAssets: [
     {
@@ -183,6 +198,12 @@ export default defineNitroConfig({
       // worker or cached shell asks for a stale content-hash, this handler
       // catches the miss and returns a real 404 instead of the SPA shell.
       route: "/assets/**",
+      handler: "server/routes/assets/[...path].ts",
+    },
+    {
+      // Brand images must fail as images, never fall through to the SPA shell
+      // with a misleading text/html 200 response.
+      route: "/brand/**",
       handler: "server/routes/assets/[...path].ts",
     },
     {

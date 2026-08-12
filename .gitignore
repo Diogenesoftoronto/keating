@@ -23,6 +23,12 @@ desktop/release/
 !web/public/*.png
 !web/public/*.svg
 !web/public/*.pdf
+!web/public/brand/logo-badge.png
+!web/public/brand/mascot-head-v2.png
+!web/public/brand/mascot-live-idle.png
+!web/public/brand/mascot-live-listening.png
+!web/public/brand/mascot-live-speaking.png
+!web/public/brand/mascot-live-working.png
 !mobile/assets/*.png
 !mobile/assets/brand/*.png
 

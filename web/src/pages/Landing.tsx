@@ -3,16 +3,20 @@ import { useNavigate } from "@tanstack/react-router";
 import { usePostHog } from "@posthog/react";
 import { Nav } from "../components/Nav";
 import { Footer } from "../components/Footer";
-import { BootSequence } from "../components/BootSequence";
+import {
+  AnimatedHeroHeadline,
+  CrtPlaythrough,
+  HeroWonderStage,
+  KineticTeachingText,
+  LearningJourney,
+} from "../components/LandingWonder";
 import { SurfaceScreencasts } from "../components/SurfaceScreencasts";
+import { ScrambleText } from "../components/ScrambleText";
 import { useSeo } from "../hooks/useSeo";
-import { cx } from "../../styled-system/css";
+import { css } from "../../styled-system/css";
 import {
   btnRetro,
-  capCard,
-  capIcon,
   eyebrow,
-  sectionHead,
   sectionLede,
   sectionTitle
 } from "../../styled-system/recipes";
@@ -47,11 +51,11 @@ const TAB_FILENAMES: Record<InstallTab, string> = {
 };
 
 const TAB_COPY_TEXT: Record<InstallTab, string> = {
-  npm: "$ npm install -g keating\n# Requires Node.js 18+ and API key in ~/.keating/.env",
-  bun: "$ bun add -g keating\n# Fastest option. Requires Bun 1.0+ and API key",
-  pnpm: "$ pnpm add -g keating\n# Disk-efficient. Requires pnpm and API key",
+  npm: "$ npm install -g keating\n# Requires Node.js 20.19+ and a configured provider",
+  bun: "$ bun add -g keating\n# Configure Gemini, OpenAI, or Anthropic after install",
+  pnpm: "$ pnpm add -g keating\n# Requires Node.js 20.19+ and a configured provider",
   curl: "$ curl -fsSL https://raw.githubusercontent.com/Diogenesoftoronto/keating/main/scripts/install/install.sh | bash\n# Standalone install. No package manager needed.",
-  agent: `Install Keating hyperteacher CLI with one of these methods. All require setting a Google API key for the AI backend.
+  agent: `Install the Keating hyperteacher CLI, then configure one supported provider.
 
 Option 1: NPM (most common)
 npm install -g keating
@@ -65,10 +69,9 @@ pnpm add -g keating
 Option 4: Curl (standalone)
 curl -fsSL https://raw.githubusercontent.com/Diogenesoftoronto/keating/main/scripts/install/install.sh | bash
 
-Required: API Key Setup
-1. Get a Gemini API key from Google AI Studio
-2. Create ~/.keating/.env with: GEMINI_API_KEY=your_key
-3. Or set GEMINI_API_KEY as environment variable`,
+Provider setup
+Run: keating setup
+Or set one of GEMINI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY.`,
 };
 
 const TERM_LINES: { cls: string; text: string }[] = [
@@ -191,59 +194,17 @@ function HeroTerminal() {
 
 
 
-const MANIFESTO_CARDS = [
-  {
-    n: "[01]",
-    title: "DIAGNOSE",
-    body: (
-      <>
-        Before teaching, Keating maps what you actually know. No wasted cycles on mastered
-        concepts — <strong>like a debugger for your knowledge graph.</strong>
-      </>
-    ),
-  },
-  {
-    n: "[02]",
-    title: "RECONSTRUCT",
-    body: (
-      <>
-        You don&apos;t memorize — you rebuild. From memory, from first principles.{" "}
-        <strong>Struggle is the feature, not the bug.</strong> That&apos;s how neural pathways
-        form.
-      </>
-    ),
-  },
-  {
-    n: "[03]",
-    title: "PROBE",
-    body: (
-      <>
-        Every claim you make gets a counter-question. Keating pushes until your explanation
-        survives contact — <strong>or until you find the crack yourself.</strong>
-      </>
-    ),
-  },
-  {
-    n: "[04]",
-    title: "VERIFY",
-    body: (
-      <>
-        A gap isn&apos;t closed because you nodded. You teach the concept back, cold, days later.{" "}
-        <strong>If it holds, it&apos;s yours.</strong> If not, the loop runs again.
-      </>
-    ),
-  },
-];
-
 // Real CLI surface — the landing shows everything Keating can do.
 const USE_GROUPS: Array<{
   title: string;
   blurb: string;
+  image: string;
   commands: Array<{ cmd: string; desc: string }>;
 }> = [
   {
     title: "TEACH",
     blurb: "Socratic sessions that adapt to what you already know.",
+    image: "/brand/cap-agent.png",
     commands: [
       { cmd: "learn <topic>", desc: "Start a Socratic teaching session" },
       { cmd: "diagnose <topic>", desc: "Map prerequisites and knowledge gaps" },
@@ -255,6 +216,7 @@ const USE_GROUPS: Array<{
   {
     title: "ASSESS",
     blurb: "Retrieval practice — because recall is how memory forms.",
+    image: "/brand/cap-teaching.png",
     commands: [
       { cmd: "quiz <topic>", desc: "Retrieval practice questions" },
       { cmd: "verify <topic>", desc: "Fact-check claims before trusting them" },
@@ -264,6 +226,7 @@ const USE_GROUPS: Array<{
   {
     title: "SELF-IMPROVE",
     blurb: "Keating benchmarks and evolves its own teaching policy.",
+    image: "/brand/cap-evolutionary.png",
     commands: [
       { cmd: "bench [topic]", desc: "Benchmark the current teaching policy" },
       { cmd: "evolve [topic]", desc: "Evolve policies via MAP-Elites" },
@@ -273,6 +236,7 @@ const USE_GROUPS: Array<{
   {
     title: "REVIEW",
     blurb: "Your learning history is data — inspect it, export it, own it.",
+    image: "/brand/mascot-live-listening.png",
     commands: [
       { cmd: "timeline", desc: "Engagement timeline across topics" },
       { cmd: "due", desc: "Topics due for spaced review" },
@@ -302,32 +266,23 @@ export function Landing() {
 
   return (
     <div className="retro-layout retro-page">
-      <BootSequence />
       <Nav />
 
       <main>
         {/* Hero */}
         <section className="hero">
           <div className="wrap hero-wrap">
-            <div className="hero-coords">
-              42.2961° N, 71.2925° W // HYPERTEACHER PROTOCOL // UPTIME: OPTIMAL
-            </div>
             <div className="hero-grid">
               <div className="hero-content">
                 <div className={eyebrow()}>The Hyperteacher</div>
                 <h1 className="hero-brand">
                   KEATING<span className="hero-brand-suffix">.help</span>
                 </h1>
-                <div className="hero-headline">
-                  Bring the question. Keep the thinking.
-                  <span className="cursor" />
-                </div>
-                <div className="hero-sub">LEARN BY RECONSTRUCTING</div>
+                <AnimatedHeroHeadline />
                 <p className="hero-copy">
-                  Keating is a Socratic teacher for your terminal and browser. It listens to your
-                  explanation, finds where it thins out, and asks the next useful question. You do
-                  not advance by recognizing the right answer. You advance when you can build one
-                  and teach it back in your own words.
+                  Keating listens to your explanation, finds where it thins out, and asks the next
+                  useful question. Progress means rebuilding the idea and teaching it back in your
+                  own words.
                 </p>
                 <div className="hero-ctas">
                   <button
@@ -337,115 +292,52 @@ export function Landing() {
                       navigate({ to: "/chat" });
                     }}
                   >
-                    Initialize_Session →
+                    Start a session →
                   </button>
-                  <a className={btnRetro()} href="#install">
-                    Build_From_Source
+                  <a className={btnRetro()} href="#watch">
+                    Watch real sessions
                   </a>
                 </div>
+                <ul className="hero-proof" aria-label="Keating product qualities">
+                  <li>Browser and terminal</li>
+                  <li>Local-first CLI</li>
+                  <li>Inspectable artifacts</li>
+                </ul>
               </div>
 
               <div className="hero-stage">
-                <HeroTerminal />
+                <HeroWonderStage>
+                  <HeroTerminal />
+                </HeroWonderStage>
               </div>
             </div>
           </div>
         </section>
 
-        <SurfaceScreencasts />
-
-        {/* What Keating Does */}
-        <section className="caps" aria-label="What Keating does">
-          <div className="wrap">
-            <div className="caps-head">
-              <span className="eyebrow prompt">cat CAPABILITIES.txt</span>
-              <h2 className={sectionTitle()}>What Keating does.</h2>
-              <p className={sectionLede()}>
-                Not a chatbot that answers. A harness that forces you to reconstruct understanding
-                from memory — and adapts while you struggle.
-              </p>
-            </div>
-          <div className="caps-grid">
-            <div className={capCard()}>
-              <img className={capIcon()} src="/brand/cap-adaptive.png" alt="" aria-hidden="true" />
-              <h3>Adaptive Tutoring</h3>
-              <p>Keating adapts to your thinking, pace, and goals. You argue, it adjusts.</p>
-            </div>
-            <div className={capCard()}>
-              <img className={capIcon()} src="/brand/cap-evolutionary.png" alt="" aria-hidden="true" />
-              <h3>Evolutionary Feedback</h3>
-              <p>Continuous evaluation refines the harness — and your understanding — every session.</p>
-            </div>
-            <div className={capCard()}>
-              <img className={capIcon()} src="/brand/cap-agent.png" alt="" aria-hidden="true" />
-              <h3>Agent Harness</h3>
-              <p>Specialized agents plan, probe, evaluate, and improve in concert.</p>
-            </div>
-            <div className={capCard()}>
-              <img className={capIcon()} src="/brand/cap-teaching.png" alt="" aria-hidden="true" />
-              <h3>Learn by Teaching</h3>
-              <p>Turn explanations into mastery. If you can&apos;t teach it back, you don&apos;t own it yet.</p>
-            </div>
-          </div>
-          </div>
-        </section>
-
-        {/* CRT Verse */}
-        <section className="verse" aria-label="Verse">
-          <div className="wrap">
-            <div className="verse-prompt prompt">cat VERSE.txt</div>
-            <div className="crt-wrap">
-              <img src="/brand/crt-monitor.png" alt="Retro CRT monitor" />
-              <div className="crt-screen">
-                <div className="crt-text">
-                  &quot;That the powerful play goes on, and you may contribute a verse.&quot;
-                </div>
-                <div className="crt-attr">— WALT WHITMAN // O ME! O LIFE!</div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Manifesto */}
-        <section className="manifesto" id="manifesto">
-          <div className="wrap">
-            <div className={sectionHead()}>
-              <span className="eyebrow prompt">cat MANIFESTO.txt</span>
-            </div>
-            <h2 className={sectionTitle()}>Real teaching is reconstruction, not explanation.</h2>
-            <p className={sectionLede()}>
-              An answer you were handed evaporates by Friday. An answer you rebuilt from first
-              principles is yours for good. Keating runs every session on that thesis.
-            </p>
-            <div className="man-grid">
-              <div className="man-stamp" aria-hidden="true">
-                Cognitive Empowerment
-              </div>
-              {MANIFESTO_CARDS.map(({ n, title, body }) => (
-                <div key={n} className="man-card">
-                  <div className="man-num">{n}</div>
-                  <h3>{title}</h3>
-                  <p>{body}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+        <div id="watch">
+          <SurfaceScreencasts />
+        </div>
+        <KineticTeachingText />
+        <LearningJourney />
+        <CrtPlaythrough />
 
         {/* CLI surface */}
         <section className="use" id="use">
           <div className="wrap">
-            <div className={sectionHead()}>
-              <span className="eyebrow prompt">keating help</span>
-            </div>
-            <h2 className={sectionTitle()}>Everything you can run.</h2>
+            <h2 className={sectionTitle()}>
+              <ScrambleText text="Everything you can run." />
+            </h2>
             <p className={sectionLede()}>
-              One CLI, one web shell, the same brain. Every command below works in your terminal
-              after <code>npm install -g keating</code> — or right now in the browser shell.
+              The browser and CLI share the same teaching core. Start a conversation, generate an
+              artifact, inspect the trace, or evolve the teaching policy.
             </p>
             <div className="use-grid">
-              {USE_GROUPS.map((group) => (
+              {USE_GROUPS.map((group, index) => (
                 <div className="use-card" key={group.title}>
+                  <div className="use-card-media" aria-hidden="true">
+                    <span>{String(index + 1).padStart(2, "0")}</span>
+                    <img src={group.image} alt="" width={341} height={403} loading="lazy" />
+                  </div>
                   <div className="use-card-title">{group.title}</div>
                   <p className="use-card-blurb">{group.blurb}</p>
                   <div className="use-cmds">
@@ -469,13 +361,10 @@ export function Landing() {
                   navigate({ to: "/chat" });
                 }}
               >
-                Open_Web_Shell →
+                Open the classroom →
               </button>
               <button className={btnRetro()} onClick={() => navigate({ to: "/tutorial" })}>
-                Read_Tutorial
-              </button>
-              <button className={btnRetro()} onClick={() => navigate({ to: "/usage" })}>
-                Usage_Dashboard
+                Read the tutorial
               </button>
             </div>
           </div>
@@ -484,98 +373,59 @@ export function Landing() {
         {/* Install — CRT terminal style */}
         <section id="install" className="install">
           <div className="wrap">
-            <div className={sectionHead()}>
-              <span className="eyebrow prompt">./install.sh</span>
-            </div>
-            <h2 className={sectionTitle()}>Get Keating.</h2>
-            <p className={sectionLede()}>
-              Terminal-first. Your API keys stay local. No cloud dependency.
-            </p>
-
-            <div className="install-term">
-              <div className="install-term-bar">
-                <span className="d r" />
-                <span className="d y" />
-                <span className="d g" />
-                <span className="install-term-title">{TAB_FILENAMES[activeTab]}</span>
-                <button
-                  className={`install-copy ${copied ? "copied" : ""}`}
-                  onClick={handleCopy}
-                  aria-label={copied ? "Copied" : "Copy install command"}
-                >
-                  {copied ? "[COPIED!]" : "[COPY]"}
-                </button>
+            <div className="install-layout">
+              <div className="install-copy-panel">
+                <h2 className={sectionTitle()}>
+                  <ScrambleText text="Run it where you work." />
+                </h2>
+                <p className={sectionLede()}>
+                  Use the web classroom immediately, or install the open-source CLI. Provider
+                  credentials stay on your machine.
+                </p>
+                <div className="install-notes" aria-label="Install requirements">
+                  <span>Node.js 20.19+</span>
+                  <span>Bun supported</span>
+                  <span>Gemini, OpenAI, or Anthropic</span>
+                </div>
               </div>
 
-              <div className="install-term-tabs">
-                {INSTALL_TABS.map((tab) => {
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      className={isActive ? "active" : ""}
-                      onClick={() => setActiveTab(tab.id)}
-                    >
-                      {tab.label}
-                    </button>
-                  );
-                })}
-              </div>
+              <div className="install-term">
+                <div className="install-term-bar">
+                  <span className="d r" />
+                  <span className="d y" />
+                  <span className="d g" />
+                  <span className="install-term-title">{TAB_FILENAMES[activeTab]}</span>
+                  <button
+                    className={`install-copy ${copied ? "copied" : ""}`}
+                    onClick={handleCopy}
+                    aria-label={copied ? "Copied" : "Copy install command"}
+                  >
+                    {copied ? "[COPIED!]" : "[COPY]"}
+                  </button>
+                </div>
 
-              <div className="install-term-body">
-                {/* npm */}
-                {activeTab === "npm" && (
-                  <>
-                    <div className="t-line t-cmd">npm install -g keating</div>
-                    <div className="t-line t-sys"># Requires Node.js 18+ and API key in ~/.keating/.env</div>
-                  </>
-                )}
+                <div className="install-term-tabs" aria-label="Install method">
+                  {INSTALL_TABS.map((tab) => {
+                    const isActive = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        aria-pressed={isActive}
+                        className={isActive ? "active" : ""}
+                        onClick={() => setActiveTab(tab.id)}
+                      >
+                        {tab.label}
+                      </button>
+                    );
+                  })}
+                </div>
 
-                {/* bun */}
-                {activeTab === "bun" && (
-                  <>
-                    <div className="t-line t-cmd">bun add -g keating</div>
-                    <div className="t-line t-sys"># Fastest option. Requires Bun 1.0+ and API key</div>
-                  </>
-                )}
-
-                {/* pnpm */}
-                {activeTab === "pnpm" && (
-                  <>
-                    <div className="t-line t-cmd">pnpm add -g keating</div>
-                    <div className="t-line t-sys"># Disk-efficient. Requires pnpm and API key</div>
-                  </>
-                )}
-
-                {/* curl */}
-                {activeTab === "curl" && (
-                  <>
-                    <div className="t-line t-cmd">
-                      curl -fsSL https://raw.githubusercontent.com/Diogenesoftoronto/keating/main/scripts/install/install.sh | bash
-                    </div>
-                    <div className="t-line t-sys"># Standalone install. No package manager needed.</div>
-                  </>
-                )}
-
-                {/* agent */}
-                {activeTab === "agent" && (
-                  <>
-                    <div className="t-line t-cmd">cat AGENT_INSTRUCTIONS.txt</div>
-                    <div className="t-line">Install Keating hyperteacher CLI with one of these methods. All require setting a Google API key for the AI backend.</div>
-                    <div className="t-line t-ok">Option 1: NPM (most common)</div>
-                    <div className="t-line t-indent">npm install -g keating</div>
-                    <div className="t-line t-ok">Option 2: Bun (fastest)</div>
-                    <div className="t-line t-indent">bun add -g keating</div>
-                    <div className="t-line t-ok">Option 3: PNPM (disk efficient)</div>
-                    <div className="t-line t-indent">pnpm add -g keating</div>
-                    <div className="t-line t-ok">Option 4: Curl (standalone)</div>
-                    <div className="t-line t-indent">curl -fsSL .../install.sh | bash</div>
-                    <div className="t-line t-cmd">Required: API Key Setup</div>
-                    <div className="t-line t-indent">1. Get a Gemini API key from Google AI Studio</div>
-                    <div className="t-line t-indent">2. Create ~/.keating/.env with: GEMINI_API_KEY=your_key</div>
-                    <div className="t-line t-indent">3. Or set GEMINI_API_KEY as environment variable</div>
-                  </>
-                )}
+                <div className="install-term-body" aria-live="polite">
+                  <pre className={css({ margin: 0, whiteSpace: "pre-wrap" })}>
+                    {TAB_COPY_TEXT[activeTab]}
+                  </pre>
+                </div>
               </div>
             </div>
           </div>
@@ -584,17 +434,28 @@ export function Landing() {
         {/* Final CTA */}
         <section className="final">
           <div className="wrap">
-            <img
-              className="final-bot"
-              src="/brand/mascot-lotus.png"
-              alt="Keating robot mascot"
-              aria-hidden="true"
-              width={300}
-              height={426}
-            />
-            <h2>Ready to think for yourself?</h2>
+            <div className="final-mascot-scene">
+              <span className="final-thought final-thought-one" aria-hidden="true">
+                What makes you think that?
+              </span>
+              <span className="final-thought final-thought-two" aria-hidden="true">
+                Show me the mechanism.
+              </span>
+              <img
+                className="final-bot"
+                src="/brand/mascot-lotus.png"
+                alt="Keating robot mascot"
+                aria-hidden="true"
+                width={300}
+                height={426}
+              />
+            </div>
+            <h2>
+              <ScrambleText text="Ready to think for yourself?" />
+            </h2>
             <p>
-              Free and open source. Bring a topic you half-understand and leave with one you own.
+              Bring a topic you half-understand. Keating will help you find the part that is not
+              yours yet.
             </p>
             <div className="hero-ctas">
               <button
@@ -604,10 +465,10 @@ export function Landing() {
                   navigate({ to: "/chat" });
                 }}
               >
-                Initialize_Session →
+                Start a session →
               </button>
               <button className={btnRetro()} onClick={() => navigate({ to: "/paper" })}>
-                Read_The_Paper
+                Read the paper
               </button>
             </div>
           </div>

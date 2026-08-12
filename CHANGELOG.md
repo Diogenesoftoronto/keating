@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.5.0] - 2026-08-12
+
+### Added
+- Redesigned the public landing experience around an expressive learning journey, product screencasts, and an automatic CRT product slideshow.
+
+### Changed
+- Simplified the CRT showcase to a presentation-only image sequence while preserving pause-on-hover, focus handling, and keyboard navigation.
+- Runs the production Nitro server on Node 24, matching Nitro's generated Node WebSocket adapter and the release workflow runtime.
+
+### Fixed
+- Prevented scrambled heading text from changing line geometry and rapidly shifting the page during animation.
+- Restored the Keating mascot and related landing imagery in production by tracking the brand assets referenced by chat, Live, and the landing page.
+- Made missing brand assets return a real 404 instead of a gzip-compressed HTML 200 response.
+- Added `Cache-Control: no-transform` to production responses so Railway's edge does not rewrite encoded response bodies that Firefox may reject as corrupted content.
+
 ## [3.4.1] - 2026-08-11
 
 ### Fixed
@@ -708,7 +723,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v3.4.0...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v3.5.0...HEAD
+[3.5.0]: https://github.com/Diogenesoftoronto/keating/compare/v3.4.1...v3.5.0
 [3.4.1]: https://github.com/Diogenesoftoronto/keating/compare/v3.4.0...v3.4.1
 [3.4.0]: https://github.com/Diogenesoftoronto/keating/compare/v3.3.0...v3.4.0
 [3.3.0]: https://github.com/Diogenesoftoronto/keating/compare/v3.2.0...v3.3.0

@@ -1,60 +1,67 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Link } from "@tanstack/react-router";
 import { css, cx } from "../../styled-system/css";
-import { sectionHead, sectionLede, sectionTitle } from "../../styled-system/recipes";
 import { useReducedMotion } from "../hooks/use-media-query";
+import { ShaderField } from "./ShaderField";
+import { ScrambleText } from "./ScrambleText";
 
-type SurfaceId = "web" | "tui" | "cli";
+type ChannelId = "web" | "tui" | "cli" | "tour";
 
-interface SurfaceClip {
-  id: SurfaceId;
+interface Channel {
+  id: ChannelId;
   label: string;
-  eyebrow: string;
+  slate: string;
   title: string;
-  description: string;
-  handoff: string;
+  blurb: string;
   src: string;
   poster: string;
 }
 
-const SURFACES: SurfaceClip[] = [
+/** Four tapes in one deck — the three surfaces, then the whole product in 32 seconds. */
+const CHANNELS: Channel[] = [
   {
     id: "web",
     label: "Web",
-    eyebrow: "01 // LEARN",
+    slate: "CH 01 · CLASSROOM",
     title: "Ask in the classroom.",
-    description:
-      "A live Gemini session: the learner asks why cities form where they do. Keating reasons in the open, then hands back the one question worth answering next.",
-    handoff: "Move to the TUI when reading turns into working.",
+    blurb:
+      "A live session: why cities form where they do. Keating reasons in the open, then hands back the one question worth answering next.",
     src: "/tapes/web-classroom.mp4",
     poster: "/tapes/posters/web-classroom.jpg",
   },
   {
     id: "tui",
     label: "TUI",
-    eyebrow: "02 // COLLABORATE",
+    slate: "CH 02 · TERMINAL",
     title: "Keep the dialogue in your terminal.",
-    description:
-      "The collaborative OpenTUI host runs the same conversation through Pi — plans, concept maps, and everything Keating knows about you stay one keystroke away.",
-    handoff: "Drop to the CLI when the conversation should leave something behind.",
+    blurb:
+      "The same conversation, running through Pi. Plans, concept maps, and everything Keating knows about you stay one keystroke away.",
     src: "/tapes/tui-collaborative.mp4",
     poster: "/tapes/posters/tui-collaborative.jpg",
   },
   {
     id: "cli",
     label: "CLI",
-    eyebrow: "03 // INSPECT",
+    slate: "CH 03 · ARTIFACTS",
     title: "Turn the lesson into files.",
-    description:
-      "One Special Relativity session becomes a plan, a concept map, a verification checklist, and a full trace — generated live by the Bun CLI, not staged for the camera.",
-    handoff: "Head back to the web shell when it is time to teach it back.",
+    blurb:
+      "One Special Relativity session becomes a plan, a concept map, a verification checklist, and a full trace — generated live, not staged for the camera.",
     src: "/tapes/cli-artifacts.mp4",
     poster: "/tapes/posters/cli-artifacts.jpg",
+  },
+  {
+    id: "tour",
+    label: "Tour",
+    slate: "CH 04 · FULL TOUR",
+    title: "The whole room in 32 seconds.",
+    blurb:
+      "Every route shipping today, in order: model routing, live media, the review runway, courses, and publishing. Loading states and access gates included.",
+    src: "/tapes/keating-surface-tour.mp4",
+    poster: "/tapes/posters/keating-surface-tour.jpg",
   },
 ];
 
 interface ProductFeature {
-  number: string;
   label: string;
   title: string;
   description: string;
@@ -65,255 +72,257 @@ interface ProductFeature {
 
 const PRODUCT_FEATURES: ProductFeature[] = [
   {
-    number: "04",
-    label: "MODEL ROUTING",
+    label: "Model routing",
     title: "Choose by capability, not logo.",
     description:
-      "Search every cloud and local model Keating can reach, then filter by vision, thinking, or context length — whatever the lesson actually demands.",
+      "Search every cloud and local model Keating can reach, then filter by vision, thinking, or context length.",
     poster: "/tapes/posters/feature-models.jpg",
     to: "/chat",
     action: "Open the classroom",
   },
   {
-    number: "05",
-    label: "LIVE MEDIA",
-    title: "Keep voice, vision, and tools in one session.",
+    label: "Live media",
+    title: "Voice, vision, and tools in one session.",
     description:
-      "Live shows you the machinery: camera state, audio state, time to first response, frames sent, tools fired. When something stalls, you can see exactly where.",
+      "Camera state, audio state, time to first response, frames sent, tools fired. When something stalls, you can see where.",
     poster: "/tapes/posters/feature-live.jpg",
     to: "/live",
     action: "Open Live",
   },
   {
-    number: "06",
-    label: "REVIEW RUNWAY",
+    label: "Review runway",
     title: "Turn sessions into a return path.",
     description:
-      "What is due, what you flagged as important, and what still needs verifying — collected in one place, with two-way Anki transfer. A runway, not another inbox.",
+      "What is due, what you flagged, and what still needs verifying — in one place, with two-way Anki transfer.",
     poster: "/tapes/posters/feature-coming-up.jpg",
     to: "/coming-up",
     action: "See Coming Up",
   },
   {
-    number: "07",
-    label: "COURSES",
-    title: "Make learning a room you can return to.",
+    label: "Courses",
+    title: "Make learning a room you return to.",
     description:
-      "Lessons, sources, shared notes, decks, peer work, and the teacher review you consented to — kept together behind the Not Organic gateway.",
+      "Lessons, sources, shared notes, decks, and peer work kept together behind the Not Organic gateway.",
     poster: "/tapes/posters/feature-courses.jpg",
     to: "/courses",
     action: "Explore Courses",
   },
   {
-    number: "08",
-    label: "STANDARD.SITE",
+    label: "Standard.site",
     title: "Publish the record. Keep failure visible.",
     description:
-      "Release notes and field work publish to Standard.site over the AT Protocol. When upstream is down, the page says so — and says how to recover.",
+      "Release notes and field work publish over the AT Protocol. When upstream is down, the page says so.",
     poster: "/tapes/posters/feature-publish.jpg",
     to: "/blog",
     action: "Open the publication",
   },
 ];
 
+const GRAIN_URL =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E\")";
+
+function formatTime(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds < 0) return "--:--";
+  const total = Math.floor(seconds);
+  const mm = String(Math.floor(total / 60)).padStart(2, "0");
+  const ss = String(total % 60).padStart(2, "0");
+  return `${mm}:${ss}`;
+}
+
 export function SurfaceScreencasts() {
   const reducedMotion = useReducedMotion();
-  const [activeId, setActiveId] = useState<SurfaceId>("web");
+  const [activeId, setActiveId] = useState<ChannelId>("web");
   const [autoplayBlocked, setAutoplayBlocked] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const timecodeRef = useRef<HTMLSpanElement>(null);
+  const progressRef = useRef<HTMLSpanElement>(null);
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
-  const activeIndex = SURFACES.findIndex((surface) => surface.id === activeId);
-  const active = SURFACES[activeIndex];
+  const activeIndex = CHANNELS.findIndex((channel) => channel.id === activeId);
+  const active = CHANNELS[activeIndex];
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
     let cancelled = false;
-    const stopPlayback = () => {
-      cancelled = true;
-      video.pause();
-    };
+
+    // The deck's readout is written straight to the DOM: `timeupdate` fires
+    // several times a second and none of the rest of the section depends on it.
+    function paint() {
+      const el = videoRef.current;
+      if (!el) return;
+      if (timecodeRef.current) {
+        timecodeRef.current.textContent = `${formatTime(el.currentTime)} / ${formatTime(el.duration)}`;
+      }
+      if (progressRef.current) {
+        const ratio = el.duration > 0 ? el.currentTime / el.duration : 0;
+        progressRef.current.style.transform = `scaleX(${ratio.toFixed(4)})`;
+      }
+    }
+
+    video.addEventListener("timeupdate", paint);
+    video.addEventListener("loadedmetadata", paint);
+    paint();
+
     setAutoplayBlocked(false);
     video.currentTime = 0;
-    if (reducedMotion) {
+    if (!reducedMotion) {
+      void video.play().catch(() => {
+        if (!cancelled) setAutoplayBlocked(true);
+      });
+    } else {
       video.pause();
-      return stopPlayback;
     }
-    void video.play().catch(() => {
-      if (!cancelled) setAutoplayBlocked(true);
-    });
-    return stopPlayback;
+
+    return () => {
+      cancelled = true;
+      video.removeEventListener("timeupdate", paint);
+      video.removeEventListener("loadedmetadata", paint);
+      video.pause();
+    };
   }, [activeId, reducedMotion]);
 
   function handleTabKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
     let nextIndex = activeIndex;
     if (event.key === "ArrowRight" || event.key === "ArrowDown") {
-      nextIndex = (activeIndex + 1) % SURFACES.length;
+      nextIndex = (activeIndex + 1) % CHANNELS.length;
     } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
-      nextIndex = (activeIndex - 1 + SURFACES.length) % SURFACES.length;
+      nextIndex = (activeIndex - 1 + CHANNELS.length) % CHANNELS.length;
     } else if (event.key === "Home") {
       nextIndex = 0;
     } else if (event.key === "End") {
-      nextIndex = SURFACES.length - 1;
+      nextIndex = CHANNELS.length - 1;
     } else {
       return;
     }
 
     event.preventDefault();
-    setActiveId(SURFACES[nextIndex].id);
+    setActiveId(CHANNELS[nextIndex].id);
     tabRefs.current[nextIndex]?.focus();
   }
 
   return (
     <section
       className={css({
-        borderBlock: "3px solid var(--ink)",
-        background:
-          "linear-gradient(135deg, color-mix(in srgb, var(--accent) 7%, var(--paper)), var(--paper) 48%, color-mix(in srgb, var(--phosphor) 6%, var(--paper)))",
+        position: "relative",
+        isolation: "isolate",
+        overflow: "hidden",
+        borderBottom: "2px solid var(--ink)",
+        background: "var(--paper)",
         paddingBlock: { base: "4rem", md: "6.5rem" },
       })}
       aria-labelledby="surface-screencasts-title"
     >
-      <div
-        className={css({
-          width: "min(1180px, calc(100% - 2rem))",
-          marginInline: "auto",
-        })}
-      >
-        <div className={sectionHead()}>
-          <span className="eyebrow prompt">open SURFACES.mp4</span>
-        </div>
-        <h2 id="surface-screencasts-title" className={sectionTitle()}>
-          Watch Keating work.
-        </h2>
-        <p className={cx(sectionLede(), css({ maxWidth: "48rem" }))}>
-          Every clip is a real session, recorded against the shipping build. Follow one question
-          from the browser, into the terminal, out to the files it leaves behind.
-        </p>
+      <ShaderField colorVar="--accent-green" density={150} intensity={0.4} opacity={0.22} />
 
+      <div className={cx("wrap", css({ position: "relative", zIndex: 1 }))}>
         <div
           className={css({
             display: "grid",
-            gap: { base: "1.5rem", lg: "2.5rem" },
-            alignItems: "start",
-            marginTop: { base: "2rem", md: "3rem" },
-            gridTemplateColumns: { base: "minmax(0, 1fr)", lg: "15rem minmax(0, 1fr)" },
+            gap: { base: "0.75rem", md: "2.5rem" },
+            alignItems: "end",
+            marginBottom: { base: "2rem", md: "2.75rem" },
+            gridTemplateColumns: { base: "1fr", md: "minmax(0, 1.1fr) minmax(0, 0.9fr)" },
           })}
         >
-          <div>
-            <div
-              role="tablist"
-              aria-label="Choose a Keating surface"
-              className={css({
-                display: "flex",
-                overflowX: "auto",
-                borderBottom: { base: "2px solid var(--ink)", lg: "0" },
-                flexDirection: { base: "row", lg: "column" },
-              })}
-            >
-              {SURFACES.map((surface, index) => {
-                const selected = surface.id === activeId;
-                return (
-                  <button
-                    key={surface.id}
-                    ref={(node) => {
-                      tabRefs.current[index] = node;
-                    }}
-                    type="button"
-                    id={`surface-tab-${surface.id}`}
-                    role="tab"
-                    aria-selected={selected}
-                    aria-controls={`surface-panel-${surface.id}`}
-                    tabIndex={selected ? 0 : -1}
-                    onClick={() => setActiveId(surface.id)}
-                    onKeyDown={handleTabKeyDown}
-                    className={css({
-                      position: "relative",
-                      flex: { base: "0 0 auto", lg: "initial" },
-                      minWidth: { base: "7rem", lg: "100%" },
-                      border: "0",
-                      borderLeft: { base: "0", lg: "3px solid transparent" },
-                      borderBottom: { base: "3px solid transparent", lg: "0" },
-                      background: selected ? "var(--ink)" : "transparent",
-                      color: selected ? "var(--paper)" : "var(--ink)",
-                      padding: { base: "0.85rem 1rem", lg: "1rem 1.25rem" },
-                      textAlign: "left",
-                      fontFamily: "var(--font-mono)",
-                      fontSize: "0.8rem",
-                      fontWeight: 800,
-                      letterSpacing: "0.08em",
-                      textTransform: "uppercase",
-                      cursor: "pointer",
-                      transition: "background-color 140ms ease, color 140ms ease",
-                      _hover: { background: selected ? "var(--ink)" : "var(--accent-dim)" },
-                      _focusVisible: {
-                        outline: "3px solid var(--accent)",
-                        outlineOffset: "3px",
-                        zIndex: 1,
-                      },
-                    })}
-                  >
-                    <span
-                      className={css({
-                        display: { base: "none", lg: "inline" },
-                        marginRight: "0.65rem",
-                        color: selected ? "var(--accent)" : "var(--muted-foreground)",
-                      })}
-                    >
-                      0{index + 1}
-                    </span>
-                    {surface.label}
-                  </button>
-                );
-              })}
-            </div>
+          <h2
+            id="surface-screencasts-title"
+            className={css({
+              margin: 0,
+              fontFamily: "var(--mono-display)",
+              fontWeight: 700,
+              fontSize: { base: "2rem", md: "3.2rem" },
+              lineHeight: 1,
+              letterSpacing: "-0.035em",
+            })}
+          >
+            <ScrambleText text="Watch it work." />
+          </h2>
+          <p
+            className={css({
+              margin: 0,
+              maxWidth: "44ch",
+              color: "var(--ink-soft)",
+              lineHeight: 1.7,
+            })}
+          >
+            Four tapes, recorded against the shipping build. Follow one question from the browser,
+            into the terminal, out to the files it leaves behind.
+          </p>
+        </div>
 
-            <p
+        {/* ---- the deck ------------------------------------------------ */}
+        <div
+          className={css({
+            border: "3px solid var(--ink)",
+            background: "var(--card)",
+            boxShadow: { base: "6px 6px 0 var(--accent-dim)", md: "12px 12px 0 var(--accent-dim)" },
+          })}
+        >
+          <div
+            className={css({
+              display: "flex",
+              alignItems: "center",
+              gap: "0.75rem",
+              flexWrap: "wrap",
+              borderBottom: "3px solid var(--ink)",
+              background: "var(--terminal)",
+              color: "var(--phosphor)",
+              padding: { base: "0.5rem 0.7rem", md: "0.6rem 1rem" },
+              fontFamily: "var(--mono-body)",
+              fontSize: { base: "0.6rem", md: "0.68rem" },
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+            })}
+          >
+            <span
+              aria-hidden="true"
               className={css({
-                display: { base: "none", lg: "block" },
-                marginTop: "1.5rem",
-                borderTop: "1px solid var(--ink)",
-                paddingTop: "1rem",
-                color: "var(--muted-foreground)",
-                fontFamily: "var(--font-mono)",
-                fontSize: "0.72rem",
-                lineHeight: 1.65,
+                width: "0.6rem",
+                height: "0.6rem",
+                borderRadius: "50%",
+                background: "var(--red)",
+                boxShadow: "0 0 10px var(--red)",
+                animation: reducedMotion ? "none" : "retro-blink 1.6s step-end infinite",
               })}
+            />
+            <span className={css({ fontWeight: 700 })}>
+              <ScrambleText text={active.slate} trigger="change" stagger={1.1} blur={false} />
+            </span>
+            <span
+              ref={timecodeRef}
+              className={css({ marginLeft: "auto", color: "var(--phosphor-dim)", fontVariantNumeric: "tabular-nums" })}
             >
-              WEB → TUI → CLI → WEB
-              <br />
-              One project. Three entry points.
-            </p>
+              --:-- / --:--
+            </span>
           </div>
 
-          <div className={css({ minWidth: 0 })}>
-            {SURFACES.filter((surface) => surface.id !== active.id).map((surface) => (
+          <div
+            className={css({
+              position: "relative",
+              overflow: "hidden",
+              background: "#070b09",
+              aspectRatio: "16 / 9",
+            })}
+          >
+            {CHANNELS.filter((channel) => channel.id !== active.id).map((channel) => (
               <div
-                key={surface.id}
-                id={`surface-panel-${surface.id}`}
+                key={channel.id}
+                id={`surface-panel-${channel.id}`}
                 role="tabpanel"
-                aria-labelledby={`surface-tab-${surface.id}`}
+                aria-labelledby={`surface-tab-${channel.id}`}
                 hidden
               />
             ))}
-          <div
-            id={`surface-panel-${active.id}`}
-            role="tabpanel"
-            aria-labelledby={`surface-tab-${active.id}`}
-            tabIndex={0}
-            className={css({
-              minWidth: 0,
-              _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "5px" },
-            })}
-          >
+
             <div
+              id={`surface-panel-${active.id}`}
+              role="tabpanel"
+              aria-labelledby={`surface-tab-${active.id}`}
+              tabIndex={0}
               className={css({
-                position: "relative",
-                overflow: "hidden",
-                border: "3px solid var(--ink)",
-                background: "#090d0b",
-                boxShadow: { base: "5px 5px 0 var(--accent-dim)", md: "9px 9px 0 var(--accent-dim)" },
-                aspectRatio: "16 / 9",
+                position: "absolute",
+                inset: 0,
+                _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "-6px" },
               })}
             >
               <video
@@ -332,212 +341,228 @@ export function SurfaceScreencasts() {
               >
                 Your browser does not support embedded video.
               </video>
-              <div
+
+              {/* Screen texture: scanlines, grain, and a corner vignette. */}
+              <span
+                aria-hidden="true"
                 className={css({
                   position: "absolute",
-                  top: "0.8rem",
-                  left: "0.8rem",
-                  border: "2px solid var(--ink)",
-                  background: "var(--paper)",
-                  color: "var(--ink)",
-                  padding: "0.35rem 0.55rem",
-                  fontFamily: "var(--font-mono)",
-                  fontSize: { base: "0.58rem", md: "0.68rem" },
-                  fontWeight: 800,
-                  letterSpacing: "0.08em",
+                  inset: 0,
+                  zIndex: 2,
                   pointerEvents: "none",
+                  opacity: 0.5,
+                  background:
+                    "repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.3) 0 1px, transparent 1px 3px)",
                 })}
+              />
+              <span
                 aria-hidden="true"
-              >
-                {active.eyebrow}
-              </div>
-            </div>
-
-            {autoplayBlocked && (
-              <p
-                role="status"
                 className={css({
-                  margin: "0.85rem 0 0",
-                  color: "var(--muted-foreground)",
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "0.72rem",
+                  position: "absolute",
+                  inset: 0,
+                  zIndex: 2,
+                  pointerEvents: "none",
+                  opacity: 0.09,
+                  mixBlendMode: "overlay",
+                  backgroundImage: GRAIN_URL,
                 })}
-              >
-                Playback is paused. Use the video controls to start this screencast.
-              </p>
-            )}
-
-            <div
-              className={css({
-                display: "grid",
-                gap: { base: "0.75rem", md: "1.5rem" },
-                marginTop: { base: "1.5rem", md: "1.75rem" },
-                gridTemplateColumns: { base: "1fr", md: "minmax(0, 1fr) minmax(14rem, 0.7fr)" },
-              })}
-            >
-              <div>
-                <h3
+              />
+              <span
+                aria-hidden="true"
+                className={css({
+                  position: "absolute",
+                  inset: 0,
+                  zIndex: 2,
+                  pointerEvents: "none",
+                  background:
+                    "radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.45) 100%)",
+                })}
+              />
+              {/* Channel change flash — one short burst of static, keyed on the tape. */}
+              {!reducedMotion && (
+                <span
+                  key={`static-${active.id}`}
+                  aria-hidden="true"
                   className={css({
-                    margin: 0,
-                    fontFamily: "var(--font-display)",
-                    fontSize: { base: "1.5rem", md: "2rem" },
-                    lineHeight: 1.05,
-                    color: "var(--ink)",
+                    position: "absolute",
+                    inset: 0,
+                    zIndex: 3,
+                    pointerEvents: "none",
+                    backgroundImage: GRAIN_URL,
+                    // Base 0 so a missing keyframe leaves no artifact behind.
+                    opacity: 0,
+                    animation: "surface-tune 340ms ease-out forwards",
                   })}
-                >
-                  {active.title}
-                </h3>
-                <p className={css({ marginTop: "0.7rem", maxWidth: "46rem", lineHeight: 1.65 })}>
-                  {active.description}
-                </p>
-              </div>
-              <p
-                className={css({
-                  margin: 0,
-                  borderLeft: "3px solid var(--accent)",
-                  paddingLeft: "1rem",
-                  color: "var(--muted-foreground)",
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "0.76rem",
-                  lineHeight: 1.65,
-                })}
-              >
-                NEXT HANDOFF
-                <br />
-                <span className={css({ color: "var(--ink)" })}>{active.handoff}</span>
-              </p>
+                />
+              )}
             </div>
           </div>
+
+          <span
+            aria-hidden="true"
+            className={css({
+              display: "block",
+              height: "3px",
+              background: "var(--accent)",
+              transformOrigin: "left center",
+              transform: "scaleX(0)",
+            })}
+            ref={progressRef}
+          />
+
+          {/* ---- channel selector -------------------------------------- */}
+          <div
+            role="tablist"
+            aria-label="Choose a Keating tape"
+            className={css({
+              display: "grid",
+              borderTop: "3px solid var(--ink)",
+              gridTemplateColumns: { base: "repeat(2, minmax(0, 1fr))", md: "repeat(4, minmax(0, 1fr))" },
+            })}
+          >
+            {CHANNELS.map((channel, index) => {
+              const selected = channel.id === activeId;
+              return (
+                <button
+                  key={channel.id}
+                  ref={(node) => {
+                    tabRefs.current[index] = node;
+                  }}
+                  type="button"
+                  id={`surface-tab-${channel.id}`}
+                  role="tab"
+                  aria-selected={selected}
+                  aria-controls={`surface-panel-${channel.id}`}
+                  tabIndex={selected ? 0 : -1}
+                  onClick={() => setActiveId(channel.id)}
+                  onKeyDown={handleTabKeyDown}
+                  className={css({
+                    position: "relative",
+                    display: "flex",
+                    alignItems: "baseline",
+                    gap: "0.5rem",
+                    border: 0,
+                    borderRight: "2px solid var(--ink)",
+                    borderBottom: { base: "2px solid var(--ink)", md: "0" },
+                    background: selected ? "var(--ink)" : "transparent",
+                    color: selected ? "var(--paper)" : "var(--ink)",
+                    padding: { base: "0.8rem 0.9rem", md: "0.95rem 1.2rem" },
+                    cursor: "pointer",
+                    fontFamily: "var(--mono-body)",
+                    fontSize: { base: "0.72rem", md: "0.8rem" },
+                    fontWeight: 800,
+                    letterSpacing: "0.1em",
+                    textAlign: "left",
+                    textTransform: "uppercase",
+                    transition: "background-color 140ms ease, color 140ms ease",
+                    _last: { borderRight: 0 },
+                    _hover: {
+                      background: selected ? "var(--ink)" : "color-mix(in srgb, var(--accent) 22%, transparent)",
+                    },
+                    _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "-4px", zIndex: 1 },
+                  })}
+                >
+                  <span
+                    className={css({
+                      fontSize: "0.62rem",
+                      opacity: 0.7,
+                      fontVariantNumeric: "tabular-nums",
+                    })}
+                  >
+                    0{index + 1}
+                  </span>
+                  {channel.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
         <div
           className={css({
-            marginTop: { base: "4rem", md: "6rem" },
-            borderTop: "2px solid var(--ink)",
-            paddingTop: { base: "2.25rem", md: "3rem" },
+            display: "grid",
+            gap: { base: "0.5rem", md: "2.5rem" },
+            alignItems: "start",
+            marginTop: { base: "1.5rem", md: "1.75rem" },
+            gridTemplateColumns: { base: "1fr", md: "minmax(0, 0.9fr) minmax(0, 1.1fr)" },
           })}
         >
-          <div
+          <h3
             className={css({
-              display: "grid",
-              gap: { base: "1rem", md: "2rem" },
-              alignItems: "end",
-              gridTemplateColumns: { base: "1fr", md: "minmax(0, 1fr) minmax(18rem, 0.7fr)" },
+              margin: 0,
+              fontFamily: "var(--mono-display)",
+              fontSize: { base: "1.35rem", md: "1.7rem" },
+              lineHeight: 1.1,
+              letterSpacing: "-0.015em",
             })}
           >
-            <div>
-              <span className="eyebrow prompt">open FEATURE_TOUR.hf</span>
-              <h3
-                className={css({
-                  margin: "1rem 0 0",
-                  maxWidth: "42rem",
-                  fontFamily: "var(--font-display)",
-                  fontSize: { base: "2rem", md: "3rem" },
-                  lineHeight: 1,
-                })}
-              >
-                Eight surfaces. One thread.
-              </h3>
-            </div>
-            <p className={css({ margin: 0, color: "var(--muted-foreground)", lineHeight: 1.7 })}>
-              The tour picks the thread up and carries it through the rest of Keating. Every frame
-              comes from the routes shipping today — loading states, access gates, and recovery
-              paths included.
-            </p>
-          </div>
+            <ScrambleText text={active.title} trigger="change" stagger={1.2} />
+          </h3>
+          <p className={css({ margin: 0, maxWidth: "52ch", color: "var(--ink-soft)", lineHeight: 1.7 })}>
+            {active.blurb}
+          </p>
+        </div>
 
-          <figure
+        {autoplayBlocked && (
+          <p
+            role="status"
             className={css({
-              margin: { base: "2rem 0 0", md: "2.75rem 0 0" },
+              margin: "0.85rem 0 0",
+              color: "var(--ink-soft)",
+              fontFamily: "var(--mono-body)",
+              fontSize: "0.72rem",
             })}
           >
-            <div
-              className={css({
-                position: "relative",
-                overflow: "hidden",
-                aspectRatio: "16 / 9",
-                border: "3px solid var(--ink)",
-                background: "#090d0b",
-                boxShadow: { base: "5px 5px 0 var(--accent-dim)", md: "9px 9px 0 var(--accent-dim)" },
-              })}
-            >
-              <video
-                className={css({ display: "block", width: "100%", height: "100%", objectFit: "cover" })}
-                src="/tapes/keating-surface-tour.mp4"
-                poster="/tapes/posters/keating-surface-tour.jpg"
-                controls
-                muted
-                playsInline
-                preload="metadata"
-                aria-label="Keating eight-feature product tour"
-              >
-                Your browser does not support embedded video.
-              </video>
-              <span
-                className={css({
-                  position: "absolute",
-                  top: "0.8rem",
-                  left: "0.8rem",
-                  border: "2px solid var(--ink)",
-                  background: "var(--paper)",
-                  color: "var(--ink)",
-                  padding: "0.35rem 0.55rem",
-                  fontFamily: "var(--font-mono)",
-                  fontSize: { base: "0.58rem", md: "0.68rem" },
-                  fontWeight: 800,
-                  letterSpacing: "0.08em",
-                  pointerEvents: "none",
-                })}
-                aria-hidden="true"
-              >
-                32 SEC // FULL PRODUCT TOUR
-              </span>
-            </div>
-            <figcaption
-              className={css({
-                display: "flex",
-                gap: "0.75rem 1.5rem",
-                justifyContent: "space-between",
-                flexWrap: "wrap",
-                marginTop: "1rem",
-                color: "var(--muted-foreground)",
-                fontFamily: "var(--font-mono)",
-                fontSize: "0.72rem",
-                lineHeight: 1.6,
-              })}
-            >
-              <span>One question, carried across every surface Keating ships.</span>
-              <span>WEB → MODEL → LIVE → REVIEW → COURSE → BLOG → TUI → CLI</span>
-            </figcaption>
-          </figure>
+            Playback is paused. Use the video controls to start this tape.
+          </p>
+        )}
+
+        {/* ---- everything else ---------------------------------------- */}
+        <div
+          className={css({
+            marginTop: { base: "3rem", md: "4.5rem" },
+            borderTop: "2px solid var(--ink)",
+            paddingTop: { base: "2rem", md: "2.75rem" },
+          })}
+        >
+          <h3
+            className={css({
+              maxWidth: "24ch",
+              margin: "0 0 2rem",
+              fontFamily: "var(--mono-display)",
+              fontWeight: 700,
+              fontSize: { base: "1.6rem", md: "2.2rem" },
+              lineHeight: 1.05,
+              letterSpacing: "-0.025em",
+            })}
+          >
+            <ScrambleText text="The rest of the room." />
+          </h3>
 
           <div
             className={css({
               display: "grid",
               gap: "1.25rem",
-              marginTop: { base: "2rem", md: "2.75rem" },
               gridTemplateColumns: {
                 base: "minmax(0, 1fr)",
-                md: "repeat(2, minmax(0, 1fr))",
-                xl: "repeat(6, minmax(0, 1fr))",
+                sm: "repeat(2, minmax(0, 1fr))",
+                lg: "repeat(6, minmax(0, 1fr))",
               },
             })}
           >
             {PRODUCT_FEATURES.map((feature, index) => (
               <article
-                key={feature.number}
+                key={feature.label}
                 className={css({
                   display: "flex",
                   minWidth: 0,
                   flexDirection: "column",
                   border: "2px solid var(--ink)",
-                  background: "var(--paper)",
-                  boxShadow: "5px 5px 0 var(--accent-dim)",
-                  gridColumn: {
-                    base: "auto",
-                    xl: index < 2 ? "span 3" : "span 2",
-                  },
+                  background: "var(--card)",
+                  boxShadow: "4px 4px 0 var(--ink)",
+                  transition: "transform 160ms ease, box-shadow 160ms ease",
+                  gridColumn: { base: "auto", lg: index < 2 ? "span 3" : "span 2" },
+                  _hover: { transform: "translate(-2px, -2px)", boxShadow: "7px 7px 0 var(--accent-dim)" },
                 })}
               >
                 <div
@@ -560,25 +585,35 @@ export function SurfaceScreencasts() {
                       height: "100%",
                       objectFit: "cover",
                       objectPosition: "top center",
-                      transition: "transform 220ms ease",
+                    })}
+                  />
+                  <span
+                    aria-hidden="true"
+                    className={css({
+                      position: "absolute",
+                      inset: 0,
+                      opacity: 0.35,
+                      background:
+                        "repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.3) 0 1px, transparent 1px 3px)",
                     })}
                   />
                   <span
                     className={css({
                       position: "absolute",
-                      top: "0.75rem",
-                      left: "0.75rem",
+                      bottom: "0.6rem",
+                      left: "0.6rem",
                       border: "2px solid var(--ink)",
                       background: "var(--paper)",
-                      padding: "0.3rem 0.5rem",
+                      padding: "0.25rem 0.45rem",
                       color: "var(--ink)",
-                      fontFamily: "var(--font-mono)",
-                      fontSize: "0.65rem",
+                      fontFamily: "var(--mono-body)",
+                      fontSize: "0.6rem",
                       fontWeight: 800,
                       letterSpacing: "0.08em",
+                      textTransform: "uppercase",
                     })}
                   >
-                    {feature.number} // {feature.label}
+                    {feature.label}
                   </span>
                 </div>
                 <div
@@ -586,24 +621,24 @@ export function SurfaceScreencasts() {
                     display: "flex",
                     flex: 1,
                     flexDirection: "column",
-                    padding: { base: "1.15rem", md: "1.4rem" },
+                    padding: { base: "1.1rem", md: "1.3rem" },
                   })}
                 >
                   <h4
                     className={css({
                       margin: 0,
-                      fontFamily: "var(--font-display)",
-                      fontSize: { base: "1.25rem", md: "1.45rem" },
-                      lineHeight: 1.1,
+                      fontFamily: "var(--mono-display)",
+                      fontSize: { base: "1.15rem", md: "1.3rem" },
+                      lineHeight: 1.15,
                     })}
                   >
                     {feature.title}
                   </h4>
                   <p
                     className={css({
-                      margin: "0.8rem 0 1.25rem",
-                      color: "var(--muted-foreground)",
-                      fontSize: "0.9rem",
+                      margin: "0.7rem 0 1.2rem",
+                      color: "var(--ink-soft)",
+                      fontSize: "0.88rem",
                       lineHeight: 1.65,
                     })}
                   >
@@ -614,13 +649,14 @@ export function SurfaceScreencasts() {
                     className={css({
                       alignSelf: "flex-start",
                       marginTop: "auto",
-                      color: "var(--accent)",
-                      fontFamily: "var(--font-mono)",
+                      color: "var(--accent-dim)",
+                      fontFamily: "var(--mono-body)",
                       fontSize: "0.72rem",
                       fontWeight: 800,
                       letterSpacing: "0.06em",
                       textDecoration: "none",
                       textTransform: "uppercase",
+                      _dark: { color: "var(--phosphor)" },
                       _hover: { textDecoration: "underline", textUnderlineOffset: "0.25rem" },
                       _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "4px" },
                     })}
