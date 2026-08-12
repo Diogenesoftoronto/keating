@@ -1,0 +1,1 @@
+Find all Maple and Bonsia model size options in browser-facing model catalog/config. Check existing preview/binary/ternary variants and what should be corrected (Maple preview should be ternary; Bonsia should have binary+ternary). Report exact file/lines.
