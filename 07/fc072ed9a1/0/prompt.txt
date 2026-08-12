@@ -1,0 +1,1 @@
+default model should point to lfm2.5 2.6b actually
