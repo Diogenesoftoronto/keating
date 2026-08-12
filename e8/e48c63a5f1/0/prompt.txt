@@ -1,0 +1,3 @@
+<subagent_notification>
+{"agent_path":"019f73e3-5ae3-75b2-9b94-460de1219604","status":{"completed":"Final regression gate passed.\n\n- Root TypeScript: passed\n- Web typecheck: passed\n- OpenTUI tests: 5 passed, 1 skipped\n- Focused web tests: 67 passed\n- Total: 72 passed, 0 failed, 1 skipped\n- `git diff --check`: passed\n- Live MiniMax: not rerun; no provider/runtime regression detected\n- Vet: not run\n- Files edited by verifier: none\n- Blockers: none\n\nNon-blocking note: Panda CSS could not perform its update check due to permissions, but code generation and typechecking completed successfully."}}
+</subagent_notification>
