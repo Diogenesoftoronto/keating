@@ -1,0 +1,13 @@
+Reviewed all uncommitted changes (60 modified tracked files + ~45 new untracked files, largely a big OpenUI/learner-response/host-execution feature batch) at medium effort: 7 finder angles in parallel, then independent verification on the strongest candidates.
+
+7 findings, most severe first:
+
+1. web/src/components/V240OpenInterfacesArticle.tsx:146 (CONFIRMED) — references an undefined <CodeBlock> component; fails tsc --noEmit and will throw at render when the blog post is visited.
+2. web/src/keating/openui/segments.ts:33 (CONFIRMED) — fallback OpenUI doc IDs hash only header+position, not content; two unrelated same-position documents collide and silently share persisted UI state.
+3. web/src/keating/openui/segments.ts:61 (CONFIRMED) — the closing-fence regex isn't string-literal-aware (unlike upstream @openuidev/lang-core), so a prop value embedding a markdown code sample truncates the program early.
+4. web/src/components/SandboxView.tsx:777 (CONFIRMED) — Stop button now also requires runtime.mode === "browser-nodepod"; if the mode changes while a NodePod is still running (e.g. via runProbe), neither Stop nor Boot renders, leaving the pod un-killable from the UI.
+5. web/src/hooks/useKeatingAgent.tsx:448 (PLAUSIBLE) — the new retry-gating logic can silently no-op after an auth error if the message preceding an errored turn isn't user/user-with-attachments/toolResult, versus the old unconditional retry.
+6. web/src/lib/sanitize-svg.ts:7 (PLAUSIBLE) — foreignobject removed from the hard element block list; currently latent since no live caller passes untrusted content through it, but it's a real defense-in-depth loss if that changes.
+7. web/server/api/agent-runtime/config.ts:58 (CONFIRMED, altitude) — host execution is modeled as a hostProvider flag bolted onto "remote" mode, with the same derivation hand-duplicated in web/src/keating/agent-runtime.ts; the two have already drifted slightly.
+
+Note: one finder agent (simplification angle) hit an API connection error mid-run and its output was unusable — not represented in the results above. A response-comparison.ts candidate ("picks wrong assistant message") was investigated and REFUTED — the alternative session is hidden/read-only until a choice is made, so the scenario isn't reachable.
