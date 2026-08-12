@@ -1,0 +1,1 @@
+btw when loading the qat model on prod i got the error bits must be 4 or 8
