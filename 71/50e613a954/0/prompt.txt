@@ -1,0 +1,11 @@
+npm notice
+npm notice Publishing to https://registry.npmjs.org/ with tag latest and public access
+npm error code E404
+npm error 404 Not Found - PUT https://registry.npmjs.org/keating - Not found
+npm error 404
+npm error 404  'keating@2.5.0' is not in this registry.
+npm error 404
+npm error 404 Note that you can also install from a
+npm error 404 tarball, folder, http url, or git url.
+npm error A complete log of this run can be found in: /home/diogenes/.npm/_logs/2026-07-22T08_08_41_248Z-debug-0.log
+diogenes@mist:~/Projects/keating$
