@@ -1,0 +1,1 @@
+I also think you overuse useState, in forms when useReducer makes more sense.
