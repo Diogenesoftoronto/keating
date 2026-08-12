@@ -1,0 +1,1 @@
+the other thing i want is for models to actually do the categorization of different topics instead of this done deterministically and this should happen as a hook to see if a topic category shift has occurred as well. would be nice also if instead of start a conversation we had something more tailored to the user. if there is not model selected then we can be generic
