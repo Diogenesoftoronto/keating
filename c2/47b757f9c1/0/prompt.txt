@@ -1,0 +1,1 @@
+create a execution graph for the various subagents, remember their capabilities.
