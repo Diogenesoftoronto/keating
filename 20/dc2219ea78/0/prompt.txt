@@ -1,0 +1,1 @@
+a full dev build makes sense instead of going for some half expo go thing imo make sure the devenv also has all the dependencies we are using
