@@ -1,0 +1,3 @@
+<command-name>/plan</command-name>
+            <command-message>plan</command-message>
+            <command-args>open</command-args>
