@@ -1,0 +1,13 @@
+<image name=[Image #1] path="/tmp/codex-clipboard-a0jr3i.png">
+
+</image>
+
+<image name=[Image #2] path="/tmp/codex-clipboard-oHDdNp.png">
+
+</image>
+
+<image name=[Image #3] path="/tmp/codex-clipboard-0JeSHN.png">
+
+</image>
+
+so i have a few bugs that are really important to fix, first of all there are some UI bugs, on mobile the should be small gap between the left and right for the text in the web/src/pages/Chat.tsx page. The settings page, response comparison has an issue with duplicate use of a range and a number input, there need only be one. [Image #1] . Next some weird architectural things we need to work with on local storage, indexeddb and storage when it happens to be backed by the server. I want to find a better way to  use these entirely. I am thinking that some things  might be a bad idea to be kept in localstorage and that there are also better ways to store things with indexeddb as it seems like our storage system is kind of fragmented and might have problems with the versioning it has. The next thing I would like is a better way to present alternatives in the user interface and to decrease the chance of alternatives to 1% chance out of all responses. Right now on mobile seeing two responses is kind of impossible to view. I want you to also study the Kimi.com site and to take some inspiration there. [Image #2], I want keating bot mascot to be used for animation to make things loading more fun. [Image #3] that said i don't want the application to lose its identity so i think it is support important to think through the design carefully. The other thing that i noticed that should be a simple fix is that the text when visualized in tool calls doesn't really work well when nested, and also that the visualizer should be  the default view. again for the tool calls. Next, I want the model to try to proactively fill things about who the learner is, motivations and style, things unique to the way they learn and they enjoy being communicated to. Lastly we need to think through voice as a modality.
