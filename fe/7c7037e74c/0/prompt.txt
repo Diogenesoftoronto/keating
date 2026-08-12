@@ -1,0 +1,5 @@
+<environment_context>
+  <current_date>2026-08-09</current_date>
+  <timezone>America/Toronto</timezone>
+  <filesystem><workspace_roots><root>/home/diogenes/Projects/keating</root></workspace_roots><permission_profile type="managed"><file_system type="restricted"><entry access="read"><special>:root</special></entry><entry access="write"><path>/home/diogenes/Projects/keating</path></entry><entry access="write"><special>:slash_tmp</special></entry><entry access="write"><special>:tmpdir</special></entry><entry access="read"><path>/home/diogenes/Projects/keating/.git</path></entry><entry access="read"><path>/home/diogenes/Projects/keating/.agents</path></entry><entry access="read"><path>/home/diogenes/Projects/keating/.codex</path></entry></file_system></permission_profile></filesystem>
+</environment_context>
