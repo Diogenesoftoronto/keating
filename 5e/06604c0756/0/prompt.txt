@@ -1,0 +1,1 @@
+for the reasoning being hidden I prefer that the reasoning is not automatically expanded as an option as another option, by default I want to have the option there.
