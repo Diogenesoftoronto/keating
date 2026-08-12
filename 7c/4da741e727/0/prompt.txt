@@ -1,0 +1,1 @@
+should also be able to add quizes and stuff as well to the course and also be able to take other artifacts and gen ui components and stuff that were made for it. you should be able to take all sorts of artifacts and add them to the course
