@@ -1,0 +1,49 @@
+installHook.js:1 Lit is in dev mode. Not recommended for production! See https://lit.dev/msg/dev-mode for more information.
+overrideMethod @ installHook.js:1
+installHook.js:1 [React Grab] v0.1.47 is outdated (latest: v0.1.50). Run `npx grab@latest upgrade` to upgrade.
+overrideMethod @ installHook.js:1
+installHook.js:1 THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+overrideMethod @ installHook.js:1
+installHook.js:1 TypeError: Cannot read properties of null (reading 'remove')
+    at useSeo.ts:71:93
+    at Object.react_stack_bottom_frame (react-dom_client.js?v=3dc0f761:12659:5)
+    at runWithFiberInDEV (react-dom_client.js?v=3dc0f761:604:66)
+    at commitHookEffectListUnmount (react-dom_client.js?v=3dc0f761:6395:149)
+    at commitHookPassiveUnmountEffects (react-dom_client.js?v=3dc0f761:6408:55)
+    at commitPassiveUnmountEffectsInsideOfDeletedTree_begin (react-dom_client.js?v=3dc0f761:7617:7)
+    at recursivelyTraversePassiveUnmountEffects (react-dom_client.js?v=3dc0f761:7536:6)
+    at commitPassiveUnmountOnFiber (react-dom_client.js?v=3dc0f761:7550:6)
+    at recursivelyTraversePassiveUnmountEffects (react-dom_client.js?v=3dc0f761:7542:103)
+    at commitPassiveUnmountOnFiber (react-dom_client.js?v=3dc0f761:7550:6)
+
+The above error occurred in the <Landing> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, CatchBoundaryImpl.
+
+overrideMethod @ installHook.js:1
+installHook.js:1 Warning: The following error wasn't caught by any route! At the very least, consider setting an 'errorComponent' in your RootRoute!
+overrideMethod @ installHook.js:1
+installHook.js:1 Warning: Cannot read properties of null (reading 'remove')
+overrideMethod @ installHook.js:1
+installHook.js:1 TypeError: Cannot read properties of null (reading 'remove')
+    at useSeo.ts:71:93
+    at Object.react_stack_bottom_frame (react-dom_client.js?v=3dc0f761:12659:5)
+    at runWithFiberInDEV (react-dom_client.js?v=3dc0f761:604:66)
+    at commitHookEffectListUnmount (react-dom_client.js?v=3dc0f761:6395:149)
+    at commitHookPassiveUnmountEffects (react-dom_client.js?v=3dc0f761:6408:55)
+    at commitPassiveUnmountEffectsInsideOfDeletedTree_begin (react-dom_client.js?v=3dc0f761:7617:7)
+    at recursivelyTraversePassiveUnmountEffects (react-dom_client.js?v=3dc0f761:7536:6)
+    at commitPassiveUnmountOnFiber (react-dom_client.js?v=3dc0f761:7567:14)
+    at recursivelyTraversePassiveUnmountEffects (react-dom_client.js?v=3dc0f761:7542:103)
+    at commitPassiveUnmountOnFiber (react-dom_client.js?v=3dc0f761:7550:6)
+
+The above error occurred in the <Courses> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, CatchBoundaryImpl.
+
+overrideMethod @ installHook.js:1
+installHook.js:1 Warning: The following error wasn't caught by any route! At the very least, consider setting an 'errorComponent' in your RootRoute!
+overrideMethod @ installHook.js:1
+installHook.js:1 Warning: Cannot read properties of null (reading 'remove')
+overrideMethod @ installHook.js:1
+ get these error
