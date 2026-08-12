@@ -1,0 +1,1 @@
+add more capability filters here but make sure it makes sensee in context, for example when choosing models for generating images on image generation models should appear in the picker.
