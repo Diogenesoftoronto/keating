@@ -1,0 +1,3 @@
+You are reviewing category dependency_management. Inspect all new imports and package manifests/lockfiles for missing or redundant dependencies. Report only introduced dependency issues.
+
+Rubric definition for this category: dependency_management. Follow the user's exact review rubric from the parent conversation. Repository: /home/diogenes/Projects/keating. Do not edit files. Return concise candidate findings with relative path, exact code snippet if possible, severity/confidence, or say none.
