@@ -1,0 +1,12 @@
+<user_action>
+  <context>User initiated a review task. Here's the full review output from reviewer model. User may select one or more comments to resolve.</context>
+  <action>review</action>
+  <results>
+  The mobile app typechecks, all 43 tests pass, and gitignore/version-sync/dependency wiring is sound, but the provider history truncation introduces a real long-session failure mode for Anthropic (and likely Gemini) users whose conversations exceed 40 non-empty messages, so the patch is not fully free of bugs.
+
+Review comment:
+
+- [P2] Truncated provider history can start on an assistant turn, breaking Anthropic/Gemini — /home/diogenes/Projects/keating/mobile/src/lib/provider-client.ts:32-35
+  In `mobile/src/lib/provider-client.ts`, `recentMessages()` returns a raw `.slice(-MAX_HISTORY_MESSAGES)` (40) of the non-empty transcript. `runCompletion` in `KeatingProvider.tsx` always passes a message list ending on a `user` turn, so once a conversation exceeds 40 non-empty messages the sliced window begins with an `assistant` message (e.g. 20 completed exchanges plus the next user prompt). That window is sent verbatim to Anthropic's `/messages`, which rejects requests whose first message is not a `user` turn, and Gemini's `contents` has the same alternation expectation; the OpenAI-compatible path is unaffected because it prepends a `system` message. The result is that long Anthropic/Google sessions (>40 turns) start failing until enough history is trimmed. Consider dropping a leading assistant message after slicing so the window always begins on a user turn.
+  </results>
+  </user_action>
