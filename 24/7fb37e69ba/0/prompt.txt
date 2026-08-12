@@ -1,0 +1,42 @@
+Error restoring session o: Transport request timed out
+    i moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:4
+    o moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:4
+    request moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:1
+    s moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:7
+    setTimeout handler*675768/u/< moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:7
+    u moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:7
+    request moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:1
+    s moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:1
+    l moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:7
+    r moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:1
+    s moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:1
+    getSession moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:1
+    W moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:4
+    W moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:4
+    o moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:17
+    <anonymous> moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:20
+    <anonymous> moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:20
+    <anonymous> moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:20
+Caused by: undefined
+inpage.js;:4:10741
+Error restoring session o: Transport request timed out
+    i moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:4
+    o moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:4
+    request moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:1
+    s moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:7
+    setTimeout handler*675768/u/< moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:7
+    u moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:7
+    request moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:1
+    s moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:1
+    l moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:7
+    r moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:1
+    s moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:1
+    getSession moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:1
+    q moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:17
+    q moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:17
+    o moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:1
+    <anonymous> moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:20
+    <anonymous> moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:20
+    <anonymous> moz-extension://cb669de0-a5f0-4de1-9e63-5ff8480a89a7/scripts/inpage.js;:20
+Caused by: undefined
+inpage.js;:17:4697
