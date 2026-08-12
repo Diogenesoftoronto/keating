@@ -1,0 +1,1 @@
+the model picker should pick up models from models.dev and have all the search box functionality and stuff as the the normal web one
