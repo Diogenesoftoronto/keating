@@ -1,0 +1,1 @@
+coming up should be a dedicated and dynamic kanban like interface with dragable items.  figure the rest. 2. your choice 3. your choice ideally easy for people to move anki stuff in and out native ideally.
