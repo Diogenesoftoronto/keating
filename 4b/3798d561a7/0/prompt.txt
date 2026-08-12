@@ -1,0 +1,18 @@
+<user_action>
+  <context>User initiated a review task. Here's the full review output from reviewer model. User may select one or more comments to resolve.</context>
+  <action>review</action>
+  <results>
+  The web build and tests pass, but the runtime live-session path has a broken Gemini microphone graph, standalone sessions lack the Keating agent bridge, and screen sharing is requested outside a user gesture.
+
+Full review comments:
+
+- [P1] Connect the capture worklet to an active audio graph — /home/diogenes/Projects/keating/web/src/keating/pcm-capture-worklet.ts:101-109
+  In browsers with AudioWorklet support, this node has zero outputs and is never connected downstream, so its `process()` callback is not pulled and Gemini receives no microphone chunks. Connect it through a silent output or otherwise keep the worklet graph active.
+
+- [P1] Mount the Keating bridge for standalone live sessions — /home/diogenes/Projects/keating/web/src/pages/Live.tsx:209-218
+  When `/live` is opened directly, Chat is unmounted and no `useKeatingAgent` listener exists for `getLiveSpeechBridge()`, so this returns undefined. The session therefore receives no Keating system prompt, history, tools, or tool executor, and its canonical events are not persisted; it behaves as a generic voice assistant instead of Keating.
+
+- [P2] Request screen sharing from a user gesture — /home/diogenes/Projects/keating/web/src/components/AssistantChatPanel.tsx:901-907
+  When screen sharing is selected, this request runs from the overlay's `useEffect` after asynchronous provider loading rather than from the button click that opened it. Browsers requiring transient user activation for `getDisplayMedia()` will reject the request, and the catch path silently continues with audio-only mode.
+  </results>
+  </user_action>
