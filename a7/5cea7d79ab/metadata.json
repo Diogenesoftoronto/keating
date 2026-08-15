@@ -3,13 +3,22 @@
   "checkpoint_id": "a75cea7d79ab",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 8,
+  "checkpoints_count": 9,
   "files_touched": [
     ".gitignore",
     "CHANGELOG.md",
+    "devenv.nix",
     "package.json",
     "web/panda.config.ts",
-    "web/src/pages/Landing.tsx"
+    "web/src/components/AssistantChatPanel.tsx",
+    "web/src/hooks/useKeatingAgent.tsx",
+    "web/src/keating/browser-tools/shared.ts",
+    "web/src/keating/nodepod-boot-files.ts",
+    "web/src/lib/provider-models.ts",
+    "web/src/pages/Chat.tsx",
+    "web/src/pages/Landing.tsx",
+    "web/src/test/provider-models.test.ts",
+    "web/vite.config.ts"
   ],
   "sessions": [
     {
@@ -60,13 +69,20 @@
       "compact_transcript": "/a7/5cea7d79ab/6/transcript.jsonl",
       "content_hash": "/a7/5cea7d79ab/6/content_hash.txt",
       "prompt": "/a7/5cea7d79ab/6/prompt.txt"
+    },
+    {
+      "metadata": "/a7/5cea7d79ab/7/metadata.json",
+      "transcript": "/a7/5cea7d79ab/7/full.jsonl",
+      "compact_transcript": "/a7/5cea7d79ab/7/transcript.jsonl",
+      "content_hash": "/a7/5cea7d79ab/7/content_hash.txt",
+      "prompt": "/a7/5cea7d79ab/7/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 2151328,
-    "cache_creation_tokens": 4852734,
-    "cache_read_tokens": 103146866,
-    "output_tokens": 363417,
-    "api_call_count": 567
+    "input_tokens": 2155804,
+    "cache_creation_tokens": 7552469,
+    "cache_read_tokens": 143041712,
+    "output_tokens": 547666,
+    "api_call_count": 710
   }
 }

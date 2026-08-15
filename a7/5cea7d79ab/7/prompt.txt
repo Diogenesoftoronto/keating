@@ -1,0 +1,9 @@
+I would really like for you to vastly improve the design for editing different aspects of a course, right now there are two redundant views for course editing in the page, there needs to be buttons for adding documents that would be relevant, doing searches, improved handling of comments, adding reaction to posts, engaging with different course workspaces and collaborating with keating. use your best judgement when doing these improvements.
+
+---
+
+.
+
+---
+
+in the cards section i should be able to import anki cards, and it would be awesome if you could use those for course creation as well
