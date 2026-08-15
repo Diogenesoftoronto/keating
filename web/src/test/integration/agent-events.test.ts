@@ -30,6 +30,30 @@ function completionState(messages: AgentMessage[]) {
 }
 
 describe("agent event integration", () => {
+	test("records a terminal event without a result as a tool failure", () => {
+		const runtime = createConversationRuntime({
+			sessionId: "session-1",
+			runId: "run-1",
+			store: new StorageConversationEventStore(new MemoryStorage()),
+		});
+		recordAgentEvent(runtime, {
+			type: "tool_execution_start",
+			toolCallId: "call-1",
+			toolName: "web_search",
+			args: {},
+		} as AgentEvent);
+		recordAgentEvent(runtime, {
+			type: "tool_execution_end",
+			toolCallId: "call-1",
+			toolName: "web_search",
+			result: undefined,
+			isError: false,
+		} as AgentEvent);
+
+		const state = runtime.replay();
+		expect(state.toolCalls["call-1"]?.status).toBe("failed");
+	});
+
 	test("classifies an ordinary assistant stop as completed", () => {
 		const state = completionState([assistant("stop")]);
 

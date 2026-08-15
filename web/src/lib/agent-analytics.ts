@@ -6,6 +6,7 @@ import type {
 } from "@earendil-works/pi-agent-core";
 import type { AssistantMessage, Model, Usage } from "@earendil-works/pi-ai";
 import { classifyLlmError, type LlmErrorCategory } from "../core/api-retry";
+import { toolExecutionSucceeded } from "../keating/tool-result";
 
 export type AgentAnalyticsProperties = Record<
 	string,
@@ -483,6 +484,7 @@ export function subscribeAgentAnalytics(
 
 			case "tool_execution_end":
 				if (activeRun) {
+					const succeeded = toolExecutionSucceeded(event);
 					const tool = activeRun.tools.get(event.toolCallId);
 					activeRun.tools.delete(event.toolCallId);
 					activeRun.toolCount += 1;
@@ -491,7 +493,7 @@ export function subscribeAgentAnalytics(
 						name: tool?.toolName ?? event.toolName,
 						start_offset_ms: tool ? elapsed(activeRun.startedAt, tool.startedAt) : elapsed(activeRun.startedAt, at),
 						duration_ms: tool ? elapsed(tool.startedAt, at) : 0,
-						status: event.isError ? "error" : "success",
+						status: succeeded ? "success" : "error",
 						is_artifact: options.isArtifactTool?.(event.toolName) ?? false,
 					});
 					capture("tool_invoked", {
@@ -502,8 +504,8 @@ export function subscribeAgentAnalytics(
 						tool_call_id: event.toolCallId,
 						tool_name: tool?.toolName ?? event.toolName,
 						duration_ms: tool ? elapsed(tool.startedAt, at) : 0,
-						success: !event.isError,
-						status: event.isError ? "error" : "success",
+						success: succeeded,
+						status: succeeded ? "success" : "error",
 						is_artifact: options.isArtifactTool?.(event.toolName) ?? false,
 					});
 				}

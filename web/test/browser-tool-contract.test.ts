@@ -3,6 +3,7 @@ import {
 	createTool,
 	createToolRegistry,
 	KeatingToolError,
+	settleMutationFollowUp,
 	toolFailureMessage,
 } from "../src/keating/browser-tools/shared";
 
@@ -136,5 +137,37 @@ describe("browser tool contract", () => {
 			name: "KeatingToolError",
 			code: "unavailable",
 		});
+	});
+
+	test("passes cancellation through direct and composed tool execution", async () => {
+		const controller = new AbortController();
+		const seen: AbortSignal[] = [];
+		const tool = createTool("signal", "Observes cancellation.", {}, async (_params, signal) => {
+			if (signal) seen.push(signal);
+			return "ok";
+		});
+
+		await tool.execute("direct", {} as any, controller.signal);
+		await createToolRegistry([tool]).invoke("signal", {}, controller.signal);
+		expect(seen).toEqual([controller.signal, controller.signal]);
+	});
+
+	test("settles optional post-mutation work without hiding the committed result", async () => {
+		expect(await settleMutationFollowUp(Promise.resolve("ready"))).toEqual({
+			status: "completed",
+			value: "ready",
+		});
+		expect(
+			await settleMutationFollowUp(Promise.reject(new Error("transpile failed"))),
+		).toMatchObject({ status: "failed" });
+		expect(
+			await settleMutationFollowUp(new Promise(() => {}), undefined, 1),
+		).toEqual({ status: "timed-out" });
+
+		const controller = new AbortController();
+		controller.abort();
+		expect(
+			await settleMutationFollowUp(new Promise(() => {}), controller.signal),
+		).toEqual({ status: "cancelled" });
 	});
 });

@@ -85,6 +85,14 @@ import {
   tutorialApiKeyHref,
 } from "../lib/tutorial-links";
 import { isOpenEnded, QuizRenderer } from "./QuizRenderer";
+import {
+  foldedToolResult,
+  hasMeaningfulToolResult,
+  MISSING_TOOL_RESULT_MESSAGE,
+  resolveToolVisualState,
+  toolCallEndedWithoutResult,
+  toolCallIsPending,
+} from "./tool-lifecycle";
 import type { QuizResult } from "./QuizRenderer";
 import { QuizSessionPanel } from "./QuizSessionPanel";
 import { QuizResultCard } from "./QuizResultCard";
@@ -199,7 +207,10 @@ const iconButtonClass = css({
     backgroundColor: "var(--accent)",
     color: "var(--accent-foreground)",
   },
-  _disabled: { opacity: 0.5 },
+  _disabled: {
+    color: "var(--muted-foreground)",
+    opacity: 0.72,
+  },
 });
 const composerIconButtonClass = cx(
   srInteractiveClass,
@@ -217,7 +228,10 @@ const composerIconButtonClass = cx(
       backgroundColor: "var(--accent)",
       color: "var(--accent-foreground)",
     },
-    _disabled: { opacity: 0.5 },
+    _disabled: {
+      color: "var(--muted-foreground)",
+      opacity: 0.72,
+    },
     sm: { width: "2.25rem", height: "2.25rem" },
   }),
 );
@@ -2567,8 +2581,7 @@ function ToolPart({
   onImageGenerationModelSelect?: () => void;
 }) {
   const resultText = formatToolResult(result);
-  const state =
-    result === undefined ? "running" : isError ? "error" : "success";
+  const state = resolveToolVisualState({ result, isError, status });
 
   // Tools emit interactive cards (ask_user_question, quiz, goal, animation) as
   // tags in their result text. Render those as live components — always visible,
@@ -2921,6 +2934,7 @@ function foldToolResults(messages: AgentMessage[]): AgentMessage[] {
         toolCall.__toolResult = msg.content;
         toolCall.__toolDetails = msg.details;
         toolCall.__toolError = msg.isError;
+        toolCall.__toolResultReceived = true;
         continue;
       }
     }
@@ -3166,13 +3180,7 @@ function assistantTextParts(text: string): AssistantTextPart[] {
 
 function assistantHasPendingToolCalls(content: unknown): boolean {
   if (!Array.isArray(content)) return false;
-  return content.some(
-    (part: any) =>
-      part?.type === "toolCall" &&
-      part.__toolResult === undefined &&
-      part.__toolDetails === undefined &&
-      part.__toolError === undefined,
-  );
+  return content.some(toolCallIsPending);
 }
 
 function assistantHasToolCalls(content: unknown): boolean {
@@ -3228,6 +3236,10 @@ function toAssistantMessage(
                 { type: "reasoning" as const, text: part.thinking ?? "" },
               ];
             if (part?.type === "toolCall") {
+              const missingResult = toolCallEndedWithoutResult(
+                part,
+                isRunning && isLastMessage,
+              );
               return [
                 {
                   type: "tool-call" as const,
@@ -3235,8 +3247,10 @@ function toAssistantMessage(
                   toolName: part.name ?? "tool",
                   args: part.arguments ?? {},
                   argsText: JSON.stringify(part.arguments ?? {}),
-                  result: part.__toolResult ?? part.__toolDetails,
-                  isError: part.__toolError,
+                  result: missingResult
+                    ? MISSING_TOOL_RESULT_MESSAGE
+                    : foldedToolResult(part),
+                  isError: part.__toolError === true || missingResult,
                 },
               ];
             }
@@ -3316,16 +3330,20 @@ function toAssistantMessage(
   }
 
   if (msg.role === "toolResult") {
-    const summary =
-      textFromContent(msg.content) ||
-      JSON.stringify(msg.details ?? {}, null, 2);
+    const missingResult =
+      !hasMeaningfulToolResult(msg.content) &&
+      !hasMeaningfulToolResult(msg.details);
+    const failed = msg.isError === true || missingResult;
+    const summary = missingResult
+      ? MISSING_TOOL_RESULT_MESSAGE
+      : textFromContent(msg.content) || JSON.stringify(msg.details, null, 2);
     const id = `tool-${index}-${msg.toolCallId ?? ""}`;
-    const errorPrefix = msg.isError ? ERROR_TEXT_PREFIX : "";
+    const errorPrefix = failed ? ERROR_TEXT_PREFIX : "";
     return {
       id,
       role: "assistant",
       createdAt: timestamp,
-      status: msg.isError
+      status: failed
         ? { type: "incomplete", reason: "error", error: summary }
         : { type: "complete", reason: "stop" },
       content: [
@@ -3813,7 +3831,8 @@ const REASONING_OPTIONS: {
   { value: "low", label: "Low", short: "Low" },
   { value: "medium", label: "Medium", short: "Med" },
   { value: "high", label: "High", short: "High" },
-  { value: "xhigh", label: "Max", short: "Max" },
+  { value: "xhigh", label: "Extra high", short: "XHigh" },
+  { value: "max", label: "Maximum", short: "Max" },
 ];
 
 /**
@@ -4745,10 +4764,11 @@ function AssistantThread({
                     position: "sticky",
                     bottom: 0,
                     minWidth: 0,
-                    backgroundColor:
-                      "color-mix(in srgb, var(--background) 95%, transparent)",
+                    // Keep text and controls on one stable semantic surface.
+                    // A translucent footer let the decorative glow and scrolled
+                    // content change contrast underneath the helper row.
+                    backgroundColor: "var(--background)",
                     paddingTop: "0.75rem",
-                    backdropFilter: "blur(8px)",
                   })}
                 >
                   {responseComparison}

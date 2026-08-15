@@ -9,6 +9,7 @@ import {
 	X,
 } from "lucide-react";
 import { css } from "../../styled-system/css";
+import { formatRelativeSessionDate } from "../lib/session-date";
 import type { SessionMetadata } from "../types/session";
 import type { SessionTreeNode } from "./session-tree";
 import { countDescendants, flattenWithGuides } from "./fork-map-layout";
@@ -26,16 +27,6 @@ export interface ForkMapCardProps {
 
 import { OverflowMenu, type OverflowMenuItem } from "./OverflowMenu";
 import { Spinner } from "./Spinner";
-
-function formatTime(isoString: string) {
-	const date = new Date(isoString);
-	const now = new Date();
-	const days = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-	if (days === 0) return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-	if (days === 1) return "Yesterday";
-	if (days < 7) return `${days}d ago`;
-	return date.toLocaleDateString();
-}
 
 export function ForkMapCard({
 	root,
@@ -228,7 +219,7 @@ function ForkNode({
 					<span className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.75rem", fontWeight: 500, color: "var(--foreground)" })}>{session.title}</span>
 				</span>
 				<span className={css({ marginLeft: "0.75rem", fontSize: "0.625rem", color: "var(--muted-foreground)" })}>
-					{isRoot ? "Original" : "Fork"} · {formatTime(session.lastModified)} · {session.messageCount} msg
+					{isRoot ? "Original" : "Fork"} · {formatRelativeSessionDate(session.lastModified, { today: "time" })} · {session.messageCount} msg
 				</span>
 			</button>
 			<OverflowMenu

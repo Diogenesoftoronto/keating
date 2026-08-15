@@ -74,6 +74,7 @@ export async function updateSessionTitle(
 		title,
 		parentSessionId: data.parentSessionId,
 		forkedAt: data.forkedAt,
+		forkedFromMessageTimestamp: data.forkedFromMessageTimestamp,
 		createdAt: data.createdAt,
 		lastModified: now,
 		messageCount: data.messages.length,

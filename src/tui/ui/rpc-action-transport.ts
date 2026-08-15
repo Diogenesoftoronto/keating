@@ -1,4 +1,8 @@
+import { mkdir, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 import {
+  applyReview,
+  initialSrsState,
   UI_CONTRACT_VERSION,
   validateUiAction,
   validateUiActionCorrelation,
@@ -166,7 +170,29 @@ function updatePlanItems(items: UiStudyPlanItem[] | undefined, itemId: string, c
   return false;
 }
 
-function materializeUiAction(action: UiAction, sourceDocument: UiDocument): UiActionResult {
+function normalizedAnswer(value: string): string {
+  return value.trim().toLocaleLowerCase().replace(/\s+/g, " ");
+}
+
+function appendResultCallout(document: UiDocument, nodeId: string, title: string, markdown: string): void {
+  const index = document.nodes.findIndex((node) => node.id === nodeId);
+  const callout = { type: "callout" as const, id: `${nodeId}-result-${document.revision + 1}`, tone: "check" as const, title, markdown };
+  if (index >= 0) document.nodes.splice(index, 1, callout);
+  else document.nodes.push(callout);
+}
+
+async function saveArtifactNode(cwd: string, node: Extract<UiDocument["nodes"][number], { type: "artifact" | "image" | "media" }> | undefined): Promise<string | undefined> {
+  if (!node) return undefined;
+  const directory = join(cwd, ".keating", "outputs", "tui-artifacts");
+  await mkdir(directory, { recursive: true });
+  const extension = node.resource.format === "json" ? "json" : node.resource.format === "uri" ? "url" : "md";
+  const filename = `${node.resource.id.replace(/[^A-Za-z0-9._-]/g, "-")}.${extension}`;
+  const path = join(directory, filename);
+  await writeFile(path, node.resource.content ?? node.resource.uri ?? "", { encoding: "utf8", mode: 0o600 });
+  return path;
+}
+
+async function materializeUiAction(action: UiAction, sourceDocument: UiDocument, cwd: string): Promise<UiActionResult> {
   const resultingDocument = structuredClone(sourceDocument);
   let changed = false;
   const node = "nodeId" in action ? resultingDocument.nodes.find((candidate) => candidate.id === action.nodeId) : undefined;
@@ -182,6 +208,66 @@ function materializeUiAction(action: UiAction, sourceDocument: UiDocument): UiAc
     }
   } else if (action.type === "complete-plan-item" && node?.type === "study-plan") {
     changed = updatePlanItems(node.items, action.itemId, action.completed);
+  } else if ((action.type === "submit-answer" || action.type === "choose-option") && node?.type === "question") {
+    const answer = action.type === "choose-option" ? action.optionIds.join(", ") : Array.isArray(action.answer) ? action.answer.join("\n") : String(action.answer);
+    const expected = node.correctAnswers ?? (node.correctAnswer ? [node.correctAnswer] : []);
+    const correct = expected.length > 0 && expected.some((value) => normalizedAnswer(value) === normalizedAnswer(answer));
+    appendResultCallout(resultingDocument, node.id, expected.length ? (correct ? "Answer recorded: correct" : "Answer recorded: check this") : "Answer recorded", [
+      `Your answer: ${answer}`,
+      expected.length ? `Expected: ${expected.join(", ")}` : "This response requires tutor review.",
+      node.explanation ?? "",
+    ].filter(Boolean).join("\n\n"));
+    changed = true;
+  } else if (action.type === "submit-question-group" && node?.type === "question-group") {
+    appendResultCallout(resultingDocument, node.id, "Question group submitted", `${action.responses.length} response${action.responses.length === 1 ? "" : "s"} recorded for tutor review.`);
+    changed = true;
+  } else if (action.type === "complete-quiz" && node?.type === "quiz") {
+    let graded = 0;
+    let correct = 0;
+    const pending: string[] = [];
+    for (const response of action.answers) {
+      const question = node.questions.find((candidate) => candidate.id === response.questionId);
+      const expected = question?.correctAnswers ?? (question?.correctAnswer ? [question.correctAnswer] : []);
+      if (expected.length === 0) pending.push(response.questionId);
+      else {
+        graded += 1;
+        if (expected.some((value) => normalizedAnswer(value) === normalizedAnswer(response.answer))) correct += 1;
+      }
+    }
+    appendResultCallout(resultingDocument, node.id, "Quiz submitted", [
+      graded ? `Objective score: ${correct}/${graded}` : "No objective answers were available for local grading.",
+      pending.length ? `${pending.length} response${pending.length === 1 ? "" : "s"} pending tutor review.` : "All answers graded locally.",
+    ].join("\n\n"));
+    resultingDocument.lifecycle = pending.length ? "submitted" : "completed";
+    changed = true;
+  } else if (action.type === "rate-card" && node?.type === "deck") {
+    const card = node.cards.find((candidate) => candidate.id === action.cardId);
+    if (card) {
+      const reviewedAt = new Date().toISOString();
+      const outcome = applyReview(initialSrsState(reviewedAt), action.rating, reviewedAt);
+      node.cards = node.cards.filter((candidate) => candidate.id !== action.cardId);
+      resultingDocument.nodes.push({
+        type: "callout",
+        id: `${action.cardId}-rating-${resultingDocument.revision + 1}`,
+        tone: "check",
+        title: `Card rated ${action.rating}`,
+        markdown: `${card.front}\n\nNext review: ${outcome.next.dueAt} · ease ${outcome.next.ease.toFixed(2)}`,
+      });
+      changed = true;
+    }
+  } else if (action.type === "complete-deck" && node?.type === "deck") {
+    appendResultCallout(resultingDocument, node.id, "Deck completed", `${action.summary.reviewed} reviewed · ${action.summary.lapses} lapse${action.summary.lapses === 1 ? "" : "s"}`);
+    changed = true;
+  } else if (action.type === "save-artifact") {
+    const artifactNode = node && (node.type === "artifact" || node.type === "image" || node.type === "media") ? node : undefined;
+    const path = await saveArtifactNode(cwd, artifactNode);
+    if (artifactNode && path) {
+      appendResultCallout(resultingDocument, artifactNode.id, "Artifact saved", path);
+      changed = true;
+    }
+  } else if (action.type === "open-handoff" && node?.type === "handoff") {
+    appendResultCallout(resultingDocument, node.id, `Handoff prepared for ${node.target}`, `${node.reason}\n\n${node.context}`);
+    changed = true;
   }
 
   if (changed) {
@@ -203,9 +289,9 @@ function materializeUiAction(action: UiAction, sourceDocument: UiDocument): UiAc
     documentId: action.documentId,
     sourceRevision: action.documentRevision,
     actionIdempotencyKey: action.idempotencyKey,
-    status: "accepted",
+    status: "rejected",
     documentLifecycle: sourceDocument.lifecycle,
-    message: "The terminal action was durably accepted.",
+    message: "This action is not implemented by the terminal receiver. No state was changed.",
   };
 }
 
@@ -224,7 +310,7 @@ export function registerPiUiActionCommand(pi: { registerCommand(name: string, co
       }
       const store = new UiActionJournalStore({
         storage: new FileUiActionJournalStorage(ctx.cwd, "receiver"),
-        dispatcher: { async dispatch(action, sourceDocument) { return materializeUiAction(action, sourceDocument); } },
+        dispatcher: { async dispatch(action, sourceDocument) { return await materializeUiAction(action, sourceDocument, ctx.cwd); } },
       });
       const outcome = await store.dispatch(envelope.action, envelope.sourceDocument);
       const result = outcome.ok

@@ -3226,10 +3226,22 @@ export default defineConfig({
       color: "rgba(220, 239, 224, 0.8)"
     },
     ".retro-layout .final": {
+	  position: "relative",
+	  isolation: "isolate",
+	  overflow: "hidden",
       padding: "clamp(84px, 9vw, 128px) 0",
       textAlign: "center",
-      background:
-        "radial-gradient(ellipse 48% 58% at 50% 68%, color-mix(in srgb, var(--green-wash) 88%, transparent), transparent 74%)"
+	  background: "var(--paper)"
+	},
+	".retro-layout .final .final-shader": {
+	  zIndex: "0",
+	  inset: "8% 0 0",
+	  height: "92%",
+	  mixBlendMode: "normal"
+	},
+	".retro-layout .final > .wrap": {
+	  position: "relative",
+	  zIndex: "1"
     },
     ".retro-layout .final img": {
       width: "96px",
@@ -3280,10 +3292,20 @@ export default defineConfig({
       fontWeight: "700",
       fontSize: "clamp(28px, 4vw, 46px)",
       letterSpacing: "-0.01em",
-      marginBottom: "14px"
+	  marginBottom: "14px",
+	  color: "var(--ink)"
     },
+	".retro-layout .final-copy": {
+	  position: "relative",
+	  width: "fit-content",
+	  maxWidth: "min(100%, 760px)",
+	  margin: "0 auto",
+	  padding: "4px clamp(12px, 3vw, 34px) 1px",
+	  background: "color-mix(in srgb, var(--paper) 92%, transparent)",
+	  boxShadow: "0 0 42px 28px var(--paper)"
+	},
     ".retro-layout .final p": {
-      color: "var(--ink-soft)",
+	  color: "var(--ink)",
       maxWidth: "52ch",
       margin: "0 auto 36px"
     },

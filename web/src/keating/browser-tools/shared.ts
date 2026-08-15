@@ -20,6 +20,49 @@ export interface KeatingToolsOptions {
 
 export type OutcomeCollector = () => Promise<BrowserLearnerOutcome[]>;
 
+export type FollowUpSettlement<T> =
+  | { status: "completed"; value: T }
+  | { status: "failed"; error: unknown }
+  | { status: "timed-out" }
+  | { status: "cancelled" };
+
+/**
+ * Bound optional follow-up work after a mutation has already committed.
+ * A slow transpile/index refresh must never keep the mutation tool pending.
+ */
+export function settleMutationFollowUp<T>(
+  task: Promise<T>,
+  signal?: AbortSignal,
+  timeoutMs = 4_000,
+): Promise<FollowUpSettlement<T>> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (outcome: FollowUpSettlement<T>) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      signal?.removeEventListener("abort", onAbort);
+      resolve(outcome);
+    };
+    const onAbort = () => finish({ status: "cancelled" });
+    const timeout = setTimeout(
+      () => finish({ status: "timed-out" }),
+      Math.max(0, timeoutMs),
+    );
+
+    if (signal?.aborted) {
+      finish({ status: "cancelled" });
+    } else {
+      signal?.addEventListener("abort", onAbort, { once: true });
+    }
+
+    task.then(
+      (value) => finish({ status: "completed", value }),
+      (error) => finish({ status: "failed", error }),
+    );
+  });
+}
+
 export class KeatingToolError extends Error {
   constructor(
     public readonly toolName: string,
@@ -36,7 +79,7 @@ export class KeatingToolError extends Error {
 
 export interface ToolRegistry {
   has(name: string): boolean;
-  invoke(name: string, params: Record<string, unknown>): Promise<string>;
+  invoke(name: string, params: Record<string, unknown>, signal?: AbortSignal): Promise<string>;
 }
 
 type JsonSchema = Record<string, any>;
@@ -217,7 +260,7 @@ export function createTool(
   name: string,
   description: string,
   parameters: Record<string, unknown>,
-  execute: (params: Record<string, unknown>) => Promise<string>,
+  execute: (params: Record<string, unknown>, signal?: AbortSignal) => Promise<string>,
   required?: string[],
 ): AgentTool {
   const requiredParameters = required ?? [];
@@ -232,10 +275,10 @@ export function createTool(
       ...(requiredParameters.length ? { required: requiredParameters } : {}),
       additionalProperties: false,
     },
-    execute: async (_toolCallId: string, params: Record<string, unknown>) => {
+    execute: async (_toolCallId: string, params: Record<string, unknown>, signal?: AbortSignal) => {
       validateToolArguments(name, params, parameters, requiredParameters);
       try {
-        const result = await execute(params as Record<string, unknown>);
+        const result = await execute(params as Record<string, unknown>, signal);
         const failure = toolFailureMessage(result);
         if (failure)
           throw new KeatingToolError(name, failure, "execution-failed");
@@ -258,7 +301,7 @@ export function createTool(
 export function createToolRegistry(tools: AgentTool[]): ToolRegistry {
   return {
     has: (name) => tools.some((candidate) => candidate.name === name),
-    invoke: async (name, params) => {
+    invoke: async (name, params, signal) => {
       const tool = tools.find((candidate) => candidate.name === name);
       if (!tool)
         throw new KeatingToolError(
@@ -269,7 +312,7 @@ export function createToolRegistry(tools: AgentTool[]): ToolRegistry {
       const result = await (tool.execute as any)(
         `keating-composed-${name}`,
         params,
-        undefined,
+        signal,
         () => {},
       );
       const content = (

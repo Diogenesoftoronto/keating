@@ -1,6 +1,6 @@
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import type { Model } from "@earendil-works/pi-ai";
-import type { SessionMetadata } from "../types/session";
+import type { SessionData, SessionMetadata } from "../types/session";
 import { learnerResponseReviewText } from "../keating/learner-response";
 
 export function createSessionId(): string {
@@ -15,7 +15,8 @@ export function cloneMessages(messages: AgentMessage[]): AgentMessage[] {
 // is the timestamp of the clicked assistant message (encoded in its rendered id).
 // We keep everything up to and including that assistant message plus the tool
 // results that belong to its turn, and drop the next user message onward — giving
-// a clean, continuable branch point. If nothing matches, the full list is kept.
+// a clean, continuable branch point. An explicit stale point is rejected rather
+// than silently branching from a different transcript position.
 export function truncateAtForkPoint(
 	messages: AgentMessage[],
 	forkPoint: number | undefined,
@@ -26,7 +27,9 @@ export function truncateAtForkPoint(
 		const msg = messages[i] as { role?: string; timestamp?: number };
 		if (msg.role === "assistant" && msg.timestamp === forkPoint) assistantIdx = i;
 	}
-	if (assistantIdx === -1) return messages;
+	if (assistantIdx === -1) {
+		throw new Error("The selected fork point is no longer present in this session. Reload the session and choose the message again.");
+	}
 	let boundary = messages.length;
 	for (let i = assistantIdx + 1; i < messages.length; i++) {
 		if ((messages[i] as { role?: string }).role === "user") {
@@ -35,6 +38,50 @@ export function truncateAtForkPoint(
 		}
 	}
 	return messages.slice(0, boundary);
+}
+
+export function buildForkSession(
+	source: SessionData,
+	allMetadata: SessionMetadata[],
+	forkPoint: number | undefined,
+	now: string,
+	id: string,
+): { data: SessionData; metadata: SessionMetadata } {
+	const messages = truncateAtForkPoint(cloneMessages(source.messages), forkPoint);
+	const siblingNumber = allMetadata.filter(
+		(entry) => entry.parentSessionId === source.id && !entry.generatedAlternative,
+	).length + 1;
+	const title = `${source.title || sessionTitle(messages)} (fork ${siblingNumber})`;
+	const data: SessionData = {
+		id,
+		title,
+		parentSessionId: source.id,
+		forkedAt: now,
+		forkedFromMessageTimestamp: forkPoint,
+		model: source.model,
+		thinkingLevel: source.thinkingLevel,
+		messages,
+		createdAt: now,
+		lastModified: now,
+		aiGeneratedTitle: false,
+	};
+	const metadata: SessionMetadata = {
+		id,
+		title,
+		parentSessionId: source.id,
+		forkedAt: now,
+		forkedFromMessageTimestamp: forkPoint,
+		createdAt: now,
+		lastModified: now,
+		messageCount: messages.length,
+		usage: sessionUsage(messages),
+		thinkingLevel: source.thinkingLevel,
+		...sessionModelMetadata(source.model),
+		preview: sessionPreview(messages),
+		searchText: sessionSearchText(messages),
+		aiGeneratedTitle: false,
+	};
+	return { data, metadata };
 }
 
 const emptyUsage: SessionMetadata["usage"] = {

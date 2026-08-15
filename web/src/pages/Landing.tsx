@@ -12,6 +12,7 @@ import {
 } from "../components/LandingWonder";
 import { SurfaceScreencasts } from "../components/SurfaceScreencasts";
 import { ScrambleText } from "../components/ScrambleText";
+import { ShaderField } from "../components/ShaderField";
 import { useSeo } from "../hooks/useSeo";
 import { css } from "../../styled-system/css";
 import {
@@ -433,6 +434,13 @@ export function Landing() {
 
         {/* Final CTA */}
         <section className="final">
+          <ShaderField
+            className="final-shader"
+            colorVar="--accent-green"
+            density={112}
+            intensity={0.56}
+            opacity={0.24}
+          />
           <div className="wrap">
             <div className="final-mascot-scene">
               <span className="final-thought final-thought-one" aria-hidden="true">
@@ -450,13 +458,15 @@ export function Landing() {
                 height={426}
               />
             </div>
-            <h2>
-              <ScrambleText text="Ready to think for yourself?" />
-            </h2>
-            <p>
-              Bring a topic you half-understand. Keating will help you find the part that is not
-              yours yet.
-            </p>
+            <div className="final-copy">
+              <h2>
+                <ScrambleText text="Ready to think for yourself?" />
+              </h2>
+              <p>
+                Bring a topic you half-understand. Keating will help you find the part that is not
+                yours yet.
+              </p>
+            </div>
             <div className="hero-ctas">
               <button
                 className={btnRetro({ tone: "primary" })}

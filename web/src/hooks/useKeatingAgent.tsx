@@ -54,6 +54,7 @@ import {
   getActiveKeatingPrompt,
   type KeatingToolsOptions,
 } from "../keating/browser-tools";
+import { toolExecutionSucceeded } from "../keating/tool-result";
 import {
   loadAgentRuntimeConfig,
   shouldAutoBootNodePod,
@@ -124,7 +125,7 @@ import {
   sessionSearchText,
   sessionTitle,
   sessionUsage,
-  truncateAtForkPoint,
+  buildForkSession,
 } from "./session-metadata";
 import {
   messagesForSessionSnapshot,
@@ -933,6 +934,7 @@ export function useKeatingAgent(
         title,
         parentSessionId: sessionParentIdRef.current,
         forkedAt: sessionForkedAtRef.current,
+		forkedFromMessageTimestamp: existing?.forkedFromMessageTimestamp,
         createdAt,
         lastModified: now,
         messageCount: messages.length,
@@ -953,6 +955,7 @@ export function useKeatingAgent(
         title,
         parentSessionId: sessionParentIdRef.current,
         forkedAt: sessionForkedAtRef.current,
+		forkedFromMessageTimestamp: existing?.forkedFromMessageTimestamp,
         model: agent.state.model,
         thinkingLevel: agent.state.thinkingLevel,
         messages,
@@ -1112,6 +1115,7 @@ export function useKeatingAgent(
           title,
           parentSessionId: sourceSessionId,
           forkedAt: now,
+		  forkedFromMessageTimestamp: assistantTimestamp,
           createdAt: now,
           lastModified: now,
           messageCount: messages.length,
@@ -1130,6 +1134,7 @@ export function useKeatingAgent(
           title,
           parentSessionId: sourceSessionId,
           forkedAt: now,
+		  forkedFromMessageTimestamp: assistantTimestamp,
           model: agent.state.model,
           thinkingLevel: agent.state.thinkingLevel,
           messages,
@@ -1204,12 +1209,13 @@ export function useKeatingAgent(
       );
       selectModel(resolvedModel);
       const nextState: Partial<AgentState> = {
+		...initialState,
         model: resolvedModel,
         thinkingLevel:
           initialState?.thinkingLevel ?? loadKeatingUiSettings().reasoningLevel,
         messages: [],
         tools,
-        ...initialState,
+		...(initialState?.messages ? { messages: initialState.messages } : {}),
         systemPrompt: buildAgentSystemPrompt(
           speechSettings.enabled,
           promptBase,
@@ -1362,7 +1368,7 @@ export function useKeatingAgent(
           void persistSnapshot();
         }
         if (ev.type === "tool_execution_end") {
-          const succeeded = !ev.isError;
+          const succeeded = toolExecutionSucceeded(ev);
           if (succeeded && ARTIFACT_TOOL_NAMES.has(ev.toolName)) {
             posthog.capture("artifact_created", {
               tool_name: ev.toolName,
@@ -1958,38 +1964,15 @@ export function useKeatingAgent(
 
       const panel = panelRef.current;
       const now = new Date().toISOString();
-      const messages = truncateAtForkPoint(
-        cloneMessages(source.messages),
-        forkPoint,
-      );
       const id = createSessionId();
-      const title = `${source.title || sessionTitle(messages)} (fork)`;
-      const metadata: SessionMetadata = {
-        id,
-        title,
-        parentSessionId: source.id,
-        forkedAt: now,
-        createdAt: now,
-        lastModified: now,
-        messageCount: messages.length,
-        usage: sessionUsage(messages),
-        thinkingLevel: source.thinkingLevel,
-        ...sessionModelMetadata(source.model),
-        preview: sessionPreview(messages),
-        searchText: sessionSearchText(messages),
-        aiGeneratedTitle: false,
-      };
-      const data: SessionData = {
-        ...source,
-        id,
-        title,
-        parentSessionId: source.id,
-        forkedAt: now,
-        messages,
-        createdAt: now,
-        lastModified: now,
-        aiGeneratedTitle: false,
-      };
+	  const allMetadata = (await sessions.getAllMetadata()) as SessionMetadata[];
+	  const { data, metadata } = buildForkSession(
+		source,
+		allMetadata,
+		forkPoint,
+		now,
+		id,
+	  );
 
       setForkingSessionId(sessionId);
       setForkedSessionId(null);
@@ -2008,6 +1991,7 @@ export function useKeatingAgent(
         posthog.capture("session_forked", {
           parent_session_id: source.id,
           new_session_id: id,
+		  forked_from_message_timestamp: forkPoint,
         });
         if (panel) await loadSession(data);
         setForkedSessionId(id);

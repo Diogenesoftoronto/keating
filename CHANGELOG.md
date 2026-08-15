@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.6.0] - 2026-08-14
+
+### Added
+- Rebuilt the OpenTUI learner experience with searchable model selection, onboarding, Courses, sharing, activity feedback, editor modes, and branded Unicode/ASCII presentation.
+- Added reproducible `similarity.ts` analysis and Stryker mutation-testing tasks to the canonical devenv workflow.
+- Added installable PWA icons and stronger web feature, tool-lifecycle, and browser-tool contract coverage.
+
+### Changed
+- Consolidated shared pedagogy, goal, benchmark, card, telemetry, and live-speech lifecycle logic across runtime surfaces.
+- Refreshed the web Pi model catalog and replaced order-dependent model lookup with Fuse.js fuzzy full-text search across names, IDs, providers, and APIs.
+- Expanded reasoning controls for the latest Pi `max` thinking level.
+
+### Fixed
+- Made missing or terminated tool results fail visibly instead of appearing successful, while preserving retry and recovery paths.
+- Tightened TUI RPC actions, session metadata and forks, web-search rendering, speech cleanup, and analytics event handling.
+
 ## [3.5.0] - 2026-08-12
 
 ### Added

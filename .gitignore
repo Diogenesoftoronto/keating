@@ -29,6 +29,8 @@ desktop/release/
 !web/public/brand/mascot-live-listening.png
 !web/public/brand/mascot-live-speaking.png
 !web/public/brand/mascot-live-working.png
+!web/public/brand/masters/
+!web/public/brand/masters/*.png
 !mobile/assets/*.png
 !mobile/assets/brand/*.png
 

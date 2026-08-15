@@ -4,6 +4,13 @@
 
 
 
+
+## 3.6.0
+<sub>2026-08-14</sub>
+
+- *(minor)*
+  Add the rebuilt terminal experience, shared pedagogy and live-speech lifecycles, stronger tool-result handling, refreshed web model catalog with fuzzy full-text search, and reproducible similarity and mutation-testing tasks.
+
 ## 3.4.1
 <sub>2026-08-11</sub>
 

@@ -1,4 +1,5 @@
-import { validateUiDocument, type UiArtifactResource, type UiDocumentNode } from "../learner-contracts.js";
+import { createHash } from "node:crypto";
+import { tryCompileOpenUISourceToSharedDocument, validateUiDocument, type UiArtifactResource, type UiDocumentNode, type UiQuestion } from "../learner-contracts.js";
 
 import {
   KEATING_UI_PROTOCOL,
@@ -63,6 +64,15 @@ function markdownNode(id: string, markdown: string): UiDocumentNode {
 
 function legacyResource(payload: Record<string, unknown>, fallbackId: string): UiArtifactResource | undefined {
   const uri = string(payload.uri || payload.url);
+  const localPath = string(payload.filePath || payload.planPath || payload.mmdPath || payload.storyboardPath);
+  if (!uri && localPath) {
+    return {
+      id: safeId(payload.artifactId || payload.id, fallbackId),
+      title: string(payload.label || payload.title || payload.topic, "Generated artifact"),
+      format: "text",
+      content: `Local artifact: ${localPath}`,
+    };
+  }
   if (!uri) return undefined;
   try {
     const parsed = new URL(uri);
@@ -78,6 +88,26 @@ function legacyResource(payload: Record<string, unknown>, fallbackId: string): U
   };
 }
 
+function legacyQuestion(question: Record<string, unknown>, fallbackId: string): UiQuestion {
+  const rawChoices = Array.isArray(question.choices) ? question.choices : Array.isArray(question.options) ? question.options : [];
+  const choices = rawChoices.flatMap((choice, index) => {
+    if (typeof choice === "string") return [{ id: `option-${index + 1}`, label: choice }];
+    const record = asRecord(choice);
+    return record ? [{ id: safeId(record.id || record.value, `option-${index + 1}`), label: string(record.label || record.text || record.value, `Option ${index + 1}`) }] : [];
+  });
+  const rawKind = string(question.kind || question.type);
+  const kind = rawKind === "multiple-choice" ? "multiple_choice" : rawKind === "fill-in" ? "fill_in" : rawKind;
+  return {
+    id: safeId(question.id, fallbackId),
+    prompt: string(question.prompt || question.question, "Question"),
+    ...(choices.length ? { choices } : {}),
+    ...(kind ? { kind: kind as UiQuestion["kind"] } : {}),
+    ...(typeof question.hint === "string" ? { hint: question.hint } : {}),
+    ...(question.multiSelect === true ? { multiSelect: true } : {}),
+    ...(typeof question.explanation === "string" ? { explanation: question.explanation } : {}),
+  };
+}
+
 function convertLegacyDocument(legacy: LegacyUiDocument): UiDocumentAdaptation {
   const payload = legacy.payload as Record<string, unknown>;
   const baseId = safeId(legacy.id, "legacy-document");
@@ -86,10 +116,7 @@ function convertLegacyDocument(legacy: LegacyUiDocument): UiDocumentAdaptation {
 
   switch (legacy.kind) {
     case "quiz": {
-      const questions = list(payload.questions).map((question, index) => ({
-        id: safeId(question.id, `${baseId}-quiz-${index + 1}`),
-        prompt: string(question.prompt || question.question, "Question"),
-      }));
+      const questions = list(payload.questions).map((question, index) => legacyQuestion(question, `${baseId}-quiz-${index + 1}`));
       nodes = [{ type: "quiz", id: `${baseId}-quiz`, title: title || string(payload.topic, "Quiz"), questions }];
       break;
     }
@@ -97,8 +124,7 @@ function convertLegacyDocument(legacy: LegacyUiDocument): UiDocumentAdaptation {
       const fields = list(payload.fields || payload.questions);
       nodes = (fields.length ? fields : [payload]).map((question, index) => ({
         type: "question",
-        id: safeId(question.id, `${baseId}-question-${index + 1}`),
-        prompt: string(question.prompt || question.question, "Question"),
+        ...legacyQuestion(question, `${baseId}-question-${index + 1}`),
       }));
       break;
     }
@@ -127,11 +153,11 @@ function convertLegacyDocument(legacy: LegacyUiDocument): UiDocumentAdaptation {
       const resource = legacyResource(payload, `${baseId}-artifact-resource`);
       nodes = resource
         ? [{ type: "artifact", id: `${baseId}-artifact`, resource }]
-        : [markdownNode(`${baseId}-artifact-info`, `Artifact: ${string(payload.label || payload.title, "Imported artifact")}\n${string(payload.content || payload.filePath || payload.uri, "No portable resource was supplied.")}`)];
+        : [markdownNode(`${baseId}-artifact-info`, `Artifact: ${string(payload.label || payload.title, "Imported artifact")}\n${string(payload.content || payload.filePath || payload.planPath || payload.mmdPath || payload.storyboardPath || payload.uri, "No portable resource was supplied.")}`)];
       break;
     }
     case "scene":
-      nodes = [markdownNode(`${baseId}-scene`, [string(payload.summary), string(payload.storyboard), string(payload.body || payload.markdown)].filter(Boolean).join("\n\n") || "Scene details are unavailable.")];
+      nodes = [markdownNode(`${baseId}-scene`, [string(payload.summary), string(payload.storyboard), string(payload.body || payload.markdown), string(payload.storyboardPath)].filter(Boolean).join("\n\n") || "Scene details are unavailable.")];
       break;
     case "generic":
       nodes = [markdownNode(`${baseId}-content`, string(payload.content, JSON.stringify(json(payload.data ?? payload), null, 2)))];
@@ -151,16 +177,22 @@ function legacyDocument(value: unknown): LegacyUiDocument | undefined {
   return item as unknown as LegacyUiDocument;
 }
 
-/** Parse JSON only. Browser/OpenUI programs are intentionally never evaluated in terminal code. */
+/** Parse JSON or compile the shared inert OpenUI data syntax without evaluation. */
 export function adaptUiDocument(value: unknown): UiDocumentAdaptation {
   let candidate = value;
   if (typeof candidate === "string") {
     const source = candidate;
     try { candidate = JSON.parse(source); }
     catch {
-      return source.includes("=") || source.includes("(")
-        ? recovery("unsupported_browser_program", "Terminal UI accepts canonical JSON documents, not executable browser UI programs. Open this on a capable surface.", false, "open-capable-surface")
-        : recovery("invalid_json", "The UI document was not valid JSON. Keep your entered work and correct the document before retrying.", true, "correct-input");
+      if (source.includes("=") || source.includes("(")) {
+        const compiled = tryCompileOpenUISourceToSharedDocument(source, {
+          documentId: `openui-${createHash("sha256").update(source).digest("hex").slice(0, 16)}`,
+        });
+        return compiled.ok
+          ? { ok: true, document: compiled.document, source: "canonical" }
+          : recovery(compiled.kind === "unsafe" ? "unsupported_browser_program" : "invalid_document", compiled.message, compiled.kind !== "unsafe", compiled.kind === "unsafe" ? "open-capable-surface" : "correct-input");
+      }
+      return recovery("invalid_json", "The UI document was not valid JSON. Keep your entered work and correct the document before retrying.", true, "correct-input");
     }
   }
   if (validateUiDocument(candidate)) return { ok: true, document: candidate, source: "canonical" };

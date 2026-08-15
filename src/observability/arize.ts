@@ -46,10 +46,16 @@ function attributesFor(observation: EvaluationObservationV1): Record<string, str
   return attributes;
 }
 
-async function exportToOtlp(observation: EvaluationObservationV1): Promise<void> {
+interface OtlpSpanSpec {
+  name: string;
+  durationMs: number;
+  attributes: Record<string, string | number | boolean>;
+  errorMessage?: string;
+}
+
+async function exportSpanToOtlp(spec: OtlpSpanSpec): Promise<void> {
   const config = readArizeConfig();
   if (!config.enabled || !config.apiKey || !config.spaceId || !config.endpoint || !config.projectName) return;
-
   const exporter = new OTLPTraceExporter({
     url: config.endpoint,
     headers: { "arize-space-id": config.spaceId, "arize-api-key": config.apiKey },
@@ -59,10 +65,10 @@ async function exportToOtlp(observation: EvaluationObservationV1): Promise<void>
     spanProcessors: [new SimpleSpanProcessor(exporter)],
   });
   const endedAt = Date.now();
-  const startedAt = endedAt - observation.duration_ms;
-  const span = provider.getTracer("keating.arize").startSpan(`keating.evaluation.${observation.operation}`, { startTime: startedAt });
-  span.setAttributes(attributesFor(observation));
-  if (observation.status !== "success") span.setStatus({ code: SpanStatusCode.ERROR, message: observation.error_category ?? observation.status });
+  const startedAt = endedAt - spec.durationMs;
+  const span = provider.getTracer("keating.arize").startSpan(spec.name, { startTime: startedAt });
+  span.setAttributes(spec.attributes);
+  if (spec.errorMessage) span.setStatus({ code: SpanStatusCode.ERROR, message: spec.errorMessage });
   span.end(endedAt);
   try {
     await provider.forceFlush();
@@ -71,37 +77,35 @@ async function exportToOtlp(observation: EvaluationObservationV1): Promise<void>
   }
 }
 
+async function exportToOtlp(observation: EvaluationObservationV1): Promise<void> {
+  return exportSpanToOtlp({
+    name: `keating.evaluation.${observation.operation}`,
+    durationMs: observation.duration_ms,
+    attributes: attributesFor(observation),
+    ...(observation.status !== "success"
+      ? { errorMessage: observation.error_category ?? observation.status }
+      : {}),
+  });
+}
+
 async function exportProviderToOtlp(observation: ProviderCompletionObservation): Promise<void> {
-  const config = readArizeConfig();
-  if (!config.enabled || !config.apiKey || !config.spaceId || !config.endpoint || !config.projectName) return;
-  const exporter = new OTLPTraceExporter({
-    url: config.endpoint,
-    headers: { "arize-space-id": config.spaceId, "arize-api-key": config.apiKey },
+  return exportSpanToOtlp({
+    name: "keating.llm.completion",
+    durationMs: observation.duration_ms,
+    attributes: {
+      "openinference.span.kind": "LLM",
+      "llm.provider": observation.provider,
+      "llm.model_name": observation.model,
+      "keating.duration_ms": observation.duration_ms,
+      "keating.parse.outcome": observation.parse_outcome,
+      "keating.app.version": observation.app_version,
+      "keating.surface": observation.surface,
+      ...(observation.error_category ? { "keating.error.category": observation.error_category } : {}),
+    },
+    ...(observation.status === "error"
+      ? { errorMessage: observation.error_category ?? "error" }
+      : {}),
   });
-  const provider = new NodeTracerProvider({
-    resource: resourceFromAttributes({ "openinference.project.name": config.projectName }),
-    spanProcessors: [new SimpleSpanProcessor(exporter)],
-  });
-  const endedAt = Date.now();
-  const startedAt = endedAt - observation.duration_ms;
-  const span = provider.getTracer("keating.arize").startSpan("keating.llm.completion", { startTime: startedAt });
-  span.setAttributes({
-    "openinference.span.kind": "LLM",
-    "llm.provider": observation.provider,
-    "llm.model_name": observation.model,
-    "keating.duration_ms": observation.duration_ms,
-    "keating.parse.outcome": observation.parse_outcome,
-    "keating.app.version": observation.app_version,
-    "keating.surface": observation.surface,
-    ...(observation.error_category ? { "keating.error.category": observation.error_category } : {}),
-  });
-  if (observation.status === "error") span.setStatus({ code: SpanStatusCode.ERROR, message: observation.error_category ?? "error" });
-  span.end(endedAt);
-  try {
-    await provider.forceFlush();
-  } finally {
-    await provider.shutdown();
-  }
 }
 
 /** Best effort by contract: a telemetry outage must never alter the caller. */

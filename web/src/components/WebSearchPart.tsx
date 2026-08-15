@@ -1,5 +1,6 @@
 import { css } from "../../styled-system/css";
 import { CircleAlert, CircleCheck, ExternalLink, Globe, Search } from "lucide-react";
+import { resolveToolVisualState } from "./tool-lifecycle";
 
 /**
  * Dedicated "web search" pill, replacing the generic ToolPart chip for search
@@ -528,13 +529,15 @@ export function WebSearchPart({
 	args,
 	result,
 	isError,
+	status,
 }: WebSearchPartProps) {
 	const query = queryFromArgs(args) ?? queryFromArgs(result);
+	const state = resolveToolVisualState({ result, isError, status });
 
-	if (result === undefined) {
+	if (state === "running") {
 		return <SearchRunningPill toolName={toolName} query={query} />;
 	}
-	if (isError) {
+	if (state === "error") {
 		return <SearchErrorPill query={query} message={textFromResult(result) || "Tool call failed."} />;
 	}
 	const { sites, text } = parseWebSearchResult(result, args);

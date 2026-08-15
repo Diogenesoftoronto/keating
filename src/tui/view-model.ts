@@ -4,8 +4,22 @@ import {
   terminalLayoutProfile,
   type TuiPresentationProfile,
 } from "./terminal-profile.js";
+import {
+  hasMeaningfulToolResult,
+  MISSING_TOOL_RESULT_MESSAGE,
+} from "./tool-result.js";
 
 export type TranscriptEntryKind = "user" | "assistant" | "tool" | "artifact" | "notice" | "error";
+
+/** Heading levels are styled as semantic response colors by the OpenTUI host. */
+const TRANSCRIPT_HEADING_LEVEL: Readonly<Record<TranscriptEntryKind, number>> = {
+  assistant: 1,
+  user: 2,
+  tool: 3,
+  artifact: 4,
+  notice: 5,
+  error: 6,
+};
 
 export interface TranscriptEntry {
   id: string;
@@ -30,18 +44,21 @@ export const EMPTY_HEADER_STATE: TuiHeaderState = {
 };
 
 export interface TuiCommand {
-  id: "sessions" | "library" | "review" | "settings" | "model" | "thinking" | "new-session" | "abort" | "retry" | "shell";
+  id: "setup" | "sessions" | "library" | "review" | "courses" | "share" | "settings" | "model" | "thinking" | "new-session" | "abort" | "retry" | "shell";
   label: string;
   shortcut?: string;
   description: string;
 }
 
 export const TUI_COMMANDS: readonly TuiCommand[] = [
+  { id: "setup", label: "Setup Keating", description: "Configure providers, model, thinking, and runtime defaults" },
   { id: "sessions", label: "Sessions", shortcut: "Ctrl+S", description: "Resume, rename, or fork a saved learning session" },
   { id: "library", label: "Library", shortcut: "Ctrl+L", description: "Preview, export, or recoverably remove a saved artifact" },
   { id: "review", label: "Review", description: "Review due cards and inspect estimated topic urgency" },
+  { id: "courses", label: "Courses", shortcut: "Ctrl+O", description: "Browse local or hosted courses and continue a lesson" },
+  { id: "share", label: "Share session", description: "Publish a read-only web rendering of this session" },
   { id: "settings", label: "Settings", description: "Inspect capabilities and change real Pi runtime behavior" },
-  { id: "model", label: "Change model", shortcut: "Ctrl+M", description: "Cycle to the next configured model" },
+  { id: "model", label: "Select model", shortcut: ":m", description: "Search and select an authenticated Pi model" },
   { id: "thinking", label: "Change thinking", shortcut: "Ctrl+T", description: "Cycle the reasoning level" },
   { id: "new-session", label: "New session", shortcut: "Ctrl+N", description: "Start a fresh learning session" },
   { id: "abort", label: "Stop response", shortcut: "Ctrl+X", description: "Abort the active response" },
@@ -117,12 +134,19 @@ export function transcriptEntriesFromMessages(messages: readonly unknown[]): Tra
     }
     if (role === "toolResult") {
       const toolName = typeof message.toolName === "string" ? message.toolName : "tool";
-      if (message.isError) {
+      const missingResult =
+        !hasMeaningfulToolResult(message.content) &&
+        !hasMeaningfulToolResult(message.details);
+      if (message.isError || missingResult) {
         return [{
           id: stableId("tool-error", message, index),
           kind: "error",
           title: `${toolName} failed`,
-          body: sanitizeDiagnostic(body || message.details || "The tool did not return a diagnostic."),
+          body: sanitizeDiagnostic(
+            missingResult
+              ? MISSING_TOOL_RESULT_MESSAGE
+              : body || message.details || "The tool did not return a diagnostic.",
+          ),
         }];
       }
       const card = toolResultCardLines(toolName, { content: message.content, details: message.details });
@@ -139,6 +163,33 @@ export function transcriptEntriesFromMessages(messages: readonly unknown[]): Tra
 
 function entryMark(kind: TranscriptEntryKind, profile: TuiPresentationProfile): string {
   return profile.marks[kind];
+}
+
+/** Caret appended to the in-progress assistant entry so streaming reads as live. */
+export const STREAM_CARET = "▌";
+
+export function streamCaret(profile: TuiPresentationProfile): string {
+  return profile.design.glyphMode === "ascii" ? "_" : STREAM_CARET;
+}
+
+/** Entries whose whole payload fits one line collapse to a single labelled row. */
+const INLINE_BODY_LIMIT = 72;
+
+function isInlineBody(body: string): boolean {
+  const trimmed = body.trim();
+  return trimmed.length > 0 && !trimmed.includes("\n") && trimmed.length <= INLINE_BODY_LIMIT;
+}
+
+function blockquote(text: string): string {
+  return text.split("\n").map((line) => (line ? `> ${line}` : ">")).join("\n");
+}
+
+/** Pad `left` so `right` ends at `width`; falls back to a separator when tight. */
+export function justifyLine(left: string, right: string, width: number): string {
+  if (!right) return left;
+  if (!left) return right;
+  const gap = Math.floor(width) - [...left].length - [...right].length;
+  return gap >= 2 ? `${left}${" ".repeat(gap)}${right}` : `${left}  ·  ${right}`;
 }
 
 function explicitMarkdownTargets(source: string): string[] {
@@ -225,8 +276,19 @@ export function transcriptEntryText(
   entry: TranscriptEntry,
   profile = createTuiPresentationProfile(),
 ): string {
-  return `${entryMark(entry.kind, profile)} ${entry.title}\n${entry.body}${entry.detail ? `\n  ${entry.detail}` : ""}`;
+  const mark = entryMark(entry.kind, profile);
+  const detail = entry.detail ? `\n  ${entry.detail}` : "";
+  if (entry.kind === "user") {
+    return `${entry.body.split("\n").map((line) => `${mark} ${line}`.trimEnd()).join("\n")}${detail}`;
+  }
+  if (entry.kind !== "assistant" && isInlineBody(entry.body)) {
+    return `${mark} ${entry.title}  ·  ${entry.body.trim()}${detail}`;
+  }
+  return `${mark} ${entry.title}\n${entry.body}${detail}`;
 }
+
+export const TRANSCRIPT_EMPTY_TEXT =
+  "Ask a question, continue a learning goal, or press Ctrl+P to explore commands.";
 
 export function transcriptText(
   entries: readonly TranscriptEntry[],
@@ -234,59 +296,96 @@ export function transcriptText(
   profile = createTuiPresentationProfile(),
 ): string {
   const all = streaming ? [...entries, streaming] : entries;
-  if (all.length === 0) {
-    return "Ask a question, continue a learning goal, or press Ctrl+P to explore commands.";
-  }
+  if (all.length === 0) return TRANSCRIPT_EMPTY_TEXT;
   return all.map((entry) => transcriptEntryText(entry, profile)).join("\n\n");
 }
 
-/** Markdown fed to OpenTUI's real MarkdownRenderable, not raw terminal text. */
+/**
+ * Markdown fed to OpenTUI's real MarkdownRenderable. Deliberately flat: the
+ * user's own words carry a quote gutter, every other entry gets one bold marker
+ * row, and entries are separated by whitespace rather than horizontal rules.
+ */
+function entryMarkdown(
+  entry: TranscriptEntry,
+  profile: TuiPresentationProfile,
+  caret: string,
+  width: number,
+): string {
+  const mark = entryMark(entry.kind, profile);
+  const rawTitle = entry.title.replace(/[\r\n#*_`]+/g, " ").replace(/\s+/g, " ").trim();
+  const titleWidth = Math.max(12, Math.floor(width) - [...mark].length - 4);
+  const titleGlyphs = [...rawTitle];
+  const title = titleGlyphs.length <= titleWidth
+    ? rawTitle
+    : `${titleGlyphs.slice(0, titleWidth - 1).join("")}…`;
+  const heading = `${"#".repeat(TRANSCRIPT_HEADING_LEVEL[entry.kind])} ${mark} ${title}`;
+  const detail = entry.detail ? `\n\n${blockquote(entry.detail)}` : "";
+  const body = `${prepareTerminalMarkdown(entry.body)}${caret}`;
+
+  if (entry.kind === "user") return `${heading}\n\n${blockquote(entry.body.trim() + caret)}${detail}`;
+  if (entry.kind === "error") return `${heading}\n\n${blockquote(entry.body.trim())}${detail}`;
+  if (entry.kind !== "assistant" && isInlineBody(entry.body)) {
+    return `${heading}\n\n${entry.body.trim()}${detail}`;
+  }
+  return `${heading}\n\n${body}${detail}`;
+}
+
 export function transcriptMarkdown(
   entries: readonly TranscriptEntry[],
   streaming?: TranscriptEntry | null,
   profile = createTuiPresentationProfile(),
+  width = 80,
 ): string {
   const all = streaming ? [...entries, streaming] : entries;
   if (all.length === 0) {
     return "Ask a question, continue a learning goal, or press **Ctrl+P** to explore commands.";
   }
-  return all.map((entry) => {
-    const title = entry.title.replace(/[\r\n#]+/g, " ").trim();
-    const detail = entry.detail ? `\n\n> ${entry.detail.replace(/\n/g, "\n> ")}` : "";
-    return `## ${entryMark(entry.kind, profile)} ${title}\n\n${prepareTerminalMarkdown(entry.body)}${detail}`;
-  }).join("\n\n---\n\n");
+  const caret = streamCaret(profile);
+  return all
+    .map((entry) => entryMarkdown(entry, profile, entry === streaming ? caret : "", width))
+    .join("\n\n");
+}
+
+export interface HeaderTextOptions {
+  /** Terminal width; when given, the runtime facts are flushed right. */
+  width?: number;
+  label?: string;
 }
 
 export function headerText(
   state: TuiHeaderState,
   profile = createTuiPresentationProfile(),
+  options: HeaderTextOptions = {},
 ): string {
   const semantic = state.busy ? profile.design.states.active : profile.design.states.ready;
-  return [
-    "KEATING",
-    `${semantic.glyph} ${state.busy ? "THINKING" : semantic.label.toUpperCase()}`,
-    state.model,
-    `thinking ${state.thinking}`,
-    state.session,
-  ].join("  ·  ");
+  const label = options.label ?? "keating";
+  const left = `${profile.marks.assistant} ${label}  ${state.session}`;
+  const right = `${state.model}  ·  ${state.thinking}  ·  ${semantic.glyph} ${state.busy ? "working" : semantic.label.toLowerCase()}`;
+  return options.width ? justifyLine(left, right, options.width) : `${left}  ·  ${right}`;
+}
+
+function truncate(text: string, width: number): string {
+  const glyphs = [...text.replace(/\s+/g, " ").trim()];
+  return glyphs.length <= width ? glyphs.join("") : `${glyphs.slice(0, Math.max(1, width - 1)).join("")}…`;
 }
 
 export function activityText(
   entries: readonly TranscriptEntry[],
   state: TuiHeaderState,
   profile = createTuiPresentationProfile(),
+  width = 30,
 ): string {
-  const recent = entries.filter((entry) => entry.kind !== "user" && entry.kind !== "assistant").slice(-7);
-  const lines = [
+  const inner = Math.max(8, Math.floor(width) - 2);
+  const recent = entries.filter((entry) => entry.kind !== "user" && entry.kind !== "assistant").slice(-8);
+  return [
     "SESSION",
-    state.session,
+    truncate(state.session, inner),
     "",
     "ACTIVITY",
     ...(recent.length
-      ? recent.flatMap((entry) => [`${entryMark(entry.kind, profile)} ${entry.title}`, `  ${entry.body.split("\n")[0]?.slice(0, 24) ?? ""}`])
+      ? recent.map((entry) => truncate(`${entryMark(entry.kind, profile)} ${entry.title}`, inner))
       : [`${profile.marks.notice} No tool activity yet`]),
-  ];
-  return lines.join("\n");
+  ].join("\n");
 }
 
 export function showActivityRail(terminalWidth: number): boolean {

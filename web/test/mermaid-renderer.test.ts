@@ -45,9 +45,9 @@ describe("Mermaid renderer policy and cache identity", () => {
 	});
 
 	test("uses the root dark class as a rerenderable Mermaid theme input", () => {
-		const root = { classList: { contains: (name: string) => name === "dark" } } as unknown as Element;
+		const root = { classList: { contains: (name: string) => name === "dark" } } as unknown as HTMLElement;
 		expect(currentMermaidTheme(root)).toBe("dark");
-		const lightRoot = { classList: { contains: () => false } } as unknown as Element;
+		const lightRoot = { classList: { contains: () => false } } as unknown as HTMLElement;
 		expect(currentMermaidTheme(lightRoot)).toBe("default");
 	});
 });

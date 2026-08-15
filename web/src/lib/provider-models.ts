@@ -9,6 +9,11 @@ import {
 } from "../notorganic-provider";
 import { getOAuthAccessToken, providerToOAuthId } from "../keating/oauth";
 import { withApiRetry } from "../keating/api-retry";
+import {
+	checkWebGpuAvailable,
+	DEFAULT_BROWSER_MODEL_ID,
+	getBrowserModel,
+} from "../stores/local-model";
 
 export type KeatingCustomProviderType =
 	| "ollama"
@@ -413,6 +418,25 @@ export async function resolveAvailableChatModel(current: Model<Api>): Promise<Mo
 		if (!(await getProviderApiKey(provider))) continue;
 		const model = preferredModelForProvider(models, provider);
 		if (model) return model;
+	}
+
+	const browserSpec = getBrowserModel(DEFAULT_BROWSER_MODEL_ID);
+	if (browserSpec) {
+		const browser = await checkWebGpuAvailable(browserSpec);
+		if (browser.available) {
+			return {
+				id: browserSpec.id,
+				name: browserSpec.name,
+				api: "browser" as Api,
+				provider: "browser",
+				baseUrl: "",
+				reasoning: false,
+				input: ["text"],
+				cost: modelCost(),
+				contextWindow: 0,
+				maxTokens: 0,
+			};
+		}
 	}
 
 	return current;

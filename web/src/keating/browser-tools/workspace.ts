@@ -14,7 +14,12 @@ import {
 	writeJsCounterpart,
 	NODEPOD_LOCAL_ENDPOINT,
 } from "../nodepod-runtime";
-import { createTool, type KeatingToolsOptions, type ToolRegistry } from "./shared";
+import {
+	createTool,
+	settleMutationFollowUp,
+	type KeatingToolsOptions,
+	type ToolRegistry,
+} from "./shared";
 
 function unavailableRemoteRuntimeMessage(runtime: KeatingAgentRuntimeConfig | undefined): string {
 	if (!runtime || runtime.mode === "browser-only" || !runtime.executionEndpoint) {
@@ -112,7 +117,7 @@ export function createWorkspaceTools(options: KeatingToolsOptions): AgentTool[] 
 					additionalProperties: true,
 				},
 			},
-			async (params) => {
+			async (params, signal) => {
 				const runtime = options.agentRuntime;
 				const operation = typeof params.operation === "string" ? params.operation.trim() : "";
 				if (!operation) return "Operation required. Pass an operation parameter.";
@@ -147,6 +152,7 @@ export function createWorkspaceTools(options: KeatingToolsOptions): AgentTool[] 
 
 				const response = await fetch(`${runtime.executionEndpoint}/execute`, {
 					method: "POST",
+					signal,
 					headers: {
 						accept: "application/json",
 						"content-type": "application/json",
@@ -196,7 +202,7 @@ export function createWorkspaceTools(options: KeatingToolsOptions): AgentTool[] 
 				replace: { type: "string", description: "Replacement code block." },
 				reason: { type: "string", description: "Short explanation of why this change is being made." },
 			},
-			async (params) => {
+			async (params, signal) => {
 				if (!isNodePodActive()) {
 					return "NodePod sandbox is not active. Boot it first via the NodePod Visualizer or wait for it to initialize.";
 				}
@@ -209,6 +215,7 @@ export function createWorkspaceTools(options: KeatingToolsOptions): AgentTool[] 
 					return "Error: file and search are required.";
 				}
 
+				signal?.throwIfAborted();
 				const result = await nodePodApplyEdit({ file, search, replace, reason });
 				if (!result.success) {
 					return `# Edit Failed: ${file}\n\n${result.message}`;
@@ -216,11 +223,20 @@ export function createWorkspaceTools(options: KeatingToolsOptions): AgentTool[] 
 
 				// Auto-transpile .ts → .js so require() works in NodePod
 				let jsCounterpart = "";
+				let followUpWarning = "";
 				if (file.endsWith(".ts")) {
-					try {
-						jsCounterpart = await writeJsCounterpart(file);
-					} catch {
-						// transpilation failed — agent can try manually
+					const settlement = await settleMutationFollowUp(
+						writeJsCounterpart(file),
+						signal,
+					);
+					if (settlement.status === "completed") {
+						jsCounterpart = settlement.value;
+					} else if (settlement.status === "timed-out") {
+						followUpWarning = "Automatic TypeScript transpilation is still running; the source edit itself is safely applied.";
+					} else if (settlement.status === "cancelled") {
+						followUpWarning = "Automatic TypeScript transpilation was cancelled after the source edit completed.";
+					} else {
+						followUpWarning = `Automatic TypeScript transpilation failed after the source edit completed: ${settlement.error instanceof Error ? settlement.error.message : String(settlement.error)}`;
 					}
 				}
 
@@ -230,6 +246,7 @@ export function createWorkspaceTools(options: KeatingToolsOptions): AgentTool[] 
 					result.message,
 					result.diff ? `\n**Diff:** ${result.diff.linesRemoved} removed, ${result.diff.linesAdded} added, Δ${result.diff.charDelta >= 0 ? "+" : ""}${result.diff.charDelta} chars` : "",
 					jsCounterpart ? `\n**Transpiled:** ${jsCounterpart} (auto-generated for require())` : "",
+					followUpWarning ? `\n**Follow-up warning:** ${followUpWarning}` : "",
 					"",
 					"Next steps:",
 					"- Call `validate_source_edit` with a test script to confirm the change works.",
@@ -575,14 +592,17 @@ export function createWorkspaceTools(options: KeatingToolsOptions): AgentTool[] 
 						search: { type: "string", description: "Exact text to find. Must be unique in the file." },
 						replace: { type: "string", description: "Replacement text." },
 					},
-					async (params) => {
+					async (params, signal) => {
 						const relPath = typeof params.path === "string" ? params.path.replace(/^\/+/, "") : "";
 						if (!relPath) return "Error: path is required.";
 						const search = typeof params.search === "string" ? params.search : "";
 						const replace = typeof params.replace === "string" ? params.replace : "";
 						if (!search) return "Error: search is required.";
 						try {
-							const readRes = await fetch(`${projectFilesEndpoint}/${relPath}`, { headers: { accept: "application/json" } });
+							const readRes = await fetch(`${projectFilesEndpoint}/${relPath}`, {
+								headers: { accept: "application/json" },
+								signal,
+							});
 							if (!readRes.ok) {
 								const text = await readRes.text().catch(() => "");
 								return `# Edit Failed\n\n- status: ${readRes.status}\n- error: ${text || readRes.statusText}`;
@@ -594,6 +614,7 @@ export function createWorkspaceTools(options: KeatingToolsOptions): AgentTool[] 
 							const updated = file.content.replace(search, replace);
 							const writeRes = await fetch(`${localExecEndpoint}/write`, {
 								method: "POST",
+								signal,
 								headers: { accept: "application/json", "content-type": "application/json" },
 								body: JSON.stringify({ path: relPath, content: updated }),
 							});
@@ -604,6 +625,9 @@ export function createWorkspaceTools(options: KeatingToolsOptions): AgentTool[] 
 							const data = (await writeRes.json()) as { path: string; bytes: number };
 							return `# Edited ${data.path}\n\n(${data.bytes} bytes)`;
 						} catch (e) {
+							if (e instanceof DOMException && e.name === "AbortError") {
+								return "# Edit Failed\n\nThe request was cancelled before Keating received persistence acknowledgement. The file may already contain the replacement; inspect it before retrying.";
+							}
 							return `# Edit Failed\n\n${e instanceof Error ? e.message : String(e)}`;
 						}
 					},
@@ -635,7 +659,7 @@ export function createWorkspaceCapabilityTools(registry: ToolRegistry, options: 
 					},
 				},
 			},
-			async (params) => {
+			async (params, signal) => {
 				const requests = Array.isArray(params.requests) ? params.requests : [];
 				const sections: string[] = [];
 				const runtime = options.agentRuntime;
@@ -734,7 +758,7 @@ export function createWorkspaceCapabilityTools(registry: ToolRegistry, options: 
 					},
 				},
 			},
-			async (params) => {
+			async (params, signal) => {
 				const edits = Array.isArray(params.edits) ? params.edits : [];
 				const sections: string[] = [];
 				const runtime = options.agentRuntime;
@@ -748,10 +772,10 @@ export function createWorkspaceCapabilityTools(registry: ToolRegistry, options: 
 						? await registry.invoke("remote_execute", {
 							operation: "fs.edit",
 							payload: { path, search: item.search, replace: item.replace, reason: item.reason },
-						})
+						}, signal)
 						: await registry.invoke(nodePod ? "source_edit" : "edit_project_file", nodePod
 							? { file: path, search: item.search, replace: item.replace, reason: item.reason }
-							: { path, search: item.search, replace: item.replace });
+							: { path, search: item.search, replace: item.replace }, signal);
 					sections.push(output);
 					if (/edit failed|capability unavailable/i.test(output)) break;
 					if ((nodePod || remote) && typeof item.test_script === "string" && item.test_script.trim()) {
@@ -759,12 +783,12 @@ export function createWorkspaceCapabilityTools(registry: ToolRegistry, options: 
 							? await registry.invoke("remote_execute", {
 								operation: "shell.exec",
 								payload: { command: "sh", args: ["-lc", item.test_script], cwd: "/workspace" },
-							})
+							}, signal)
 							: await registry.invoke("validate_source_edit", {
 							file: path,
 							testScript: item.test_script,
 							autoRollback: true,
-						});
+						}, signal);
 						sections.push(validation);
 						if (/FAILED/.test(validation)) break;
 					}

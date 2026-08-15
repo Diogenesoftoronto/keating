@@ -15,7 +15,7 @@ import { readFile, readdir, writeFile, mkdir } from "node:fs/promises";
 import { join, relative } from "node:path";
 import type * as TypeScript from "typescript";
 
-const SOURCE_DIRS = ["src/core", "pi/prompts", "web/src/keating"];
+const SOURCE_DIRS = ["src/core", "shared", "pi/prompts", "web/src/keating"];
 const OUTPUT_FILE = "web/src/keating/nodepod-boot-files.ts";
 const INCLUDE_PATTERNS = [/\.ts$/, /\.md$/, /\.py$/, /\.sh$/, /\.txt$/];
 const EXCLUDE_PATTERNS = [

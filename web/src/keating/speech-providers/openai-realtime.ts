@@ -3,7 +3,6 @@ import {
 	type LiveHistoryTurn,
 	type LiveSpeechRequest,
 	type LiveSpeechSession,
-	type LiveSpeechState,
 	type LiveSpeechTool,
 	type SpeechProvider,
 	type SpeechSynthesisRequest,
@@ -24,6 +23,12 @@ import {
 	protocolError as sharedProtocolError,
 	runLiveToolCall,
 } from "./live-session-shared";
+import {
+	addAbortListener,
+	createLiveSessionLifecycle,
+	createLiveTurnTelemetry,
+	createLiveVideoSubscription,
+} from "./live-session-lifecycle";
 
 export {
 	createRealtimeCanonicalBridge,
@@ -285,10 +290,12 @@ async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthe
 	let playedChunks = 0;
 	let micStream: MediaStream | null = null;
 	let cleanedUp = false;
+	let detachAbort = () => {};
 
 	const cleanup = () => {
 		if (cleanedUp) return;
 		cleanedUp = true;
+		detachAbort();
 		try { pc.close(); } catch {}
 		micStream?.getTracks().forEach((t) => t.stop());
 		if (audioEl) {
@@ -302,7 +309,7 @@ async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthe
 		cleanup();
 		throw new Error("OpenAI Realtime aborted before start.");
 	}
-	signal?.addEventListener("abort", cleanup, { once: true });
+	detachAbort = addAbortListener(signal, cleanup);
 
 	pc.ontrack = (event) => {
 		audioChunks += 1;
@@ -395,8 +402,8 @@ async function startLiveSession(
 	// Capability is fixed for the session, but whether frames are flowing is not:
 	// the learner can turn the camera on and off mid-conversation.
 	const visionCapable = capability.capabilities.realtimeImage === "native";
-	let activeVideo: typeof video = visionCapable ? video ?? null : null;
-	canonical.emit("run.started", { mode: activeVideo ? "multimodal" : "voice" });
+	const initialVideo = visionCapable ? video ?? null : null;
+	canonical.emit("run.started", { mode: initialVideo ? "multimodal" : "voice" });
 	const apiKey = await getApiKey("openai");
 	if (!apiKey) {
 		const error = new Error("No OpenAI API key configured. Add one in Settings → Providers & Models.");
@@ -410,26 +417,13 @@ async function startLiveSession(
 	const model = settings.model || "gpt-realtime-2.1";
 	const voice = cleanRealtimeVoice(settings.voiceName);
 
-	let state: LiveSpeechState = "connecting";
-	let completionReason: "completed" | "cancelled" | "interrupted" | "error" | null = null;
 	let reconnectAttempt = 0;
-	let runStarted = true;
-	let firstAudioObserved = false;
-	let turn = 0;
-	let activeTurnStartedAt: number | null = null;
-	const toolStartedAt = new Map<string, number>();
-	const complete = (reason: NonNullable<typeof completionReason>) => {
-		if (completionReason) return;
-		completionReason = reason;
-		canonical.emit("run.completed", { reason });
-		telemetry.emit("session.completed", { provider: "openai", outcome: reason });
-	};
-	const setState = (next: LiveSpeechState) => {
-		if (state === "closed") return;
-		state = next;
-		onState?.(next);
-	};
-	setState("connecting");
+	const turnTelemetry = createLiveTurnTelemetry({
+		provider: "openai",
+		transport: "webrtc",
+		telemetry,
+		setupStartedAt,
+	});
 
 	let ephemeralKey: string;
 	try {
@@ -440,7 +434,8 @@ async function startLiveSession(
 		}, telemetry.durationSince(setupStartedAt));
 		telemetry.emit("session.error", { provider: "openai", errorCode: "ephemeral_key_failed" });
 		canonical.emit("error", { error: protocolError(error, "ephemeral_key_failed"), fatal: true });
-		complete("error");
+		canonical.emit("run.completed", { reason: "error" });
+		telemetry.emit("session.completed", { provider: "openai", outcome: "error" });
 		throw error;
 	}
 
@@ -453,17 +448,25 @@ async function startLiveSession(
 	}
 
 	let micStream: MediaStream | null = null;
-	let cleanedUp = false;
-	// Declared before cleanup(), which runs on the abort-before-start path.
-	let unsubscribeFrames: (() => void) | null = null;
+	let videoSubscription: ReturnType<typeof createLiveVideoSubscription> | null = null;
 	let framesSent = 0;
-	const cleanup = () => {
-		if (cleanedUp) return;
-		cleanedUp = true;
-		// Only detach from the frame feed; the caller owns the capture handle
-		// and may still be rendering a preview from it.
-		unsubscribeFrames?.();
-		unsubscribeFrames = null;
+	const lifecycle = createLiveSessionLifecycle({
+		signal,
+		onState,
+		onAbort: (beforeStart) => {
+			canonical.emit("conversation.interrupted", {
+				by: "host",
+				reason: beforeStart ? "abort signal before start" : "abort signal",
+			});
+			telemetry.emit("speech.interrupted", { provider: "openai", reason: "abort", turn: turnTelemetry.turn });
+		},
+		onComplete: (reason) => {
+			canonical.emit("run.completed", { reason });
+			telemetry.emit("session.completed", { provider: "openai", outcome: reason });
+		},
+	});
+	lifecycle.addCleanup(() => {
+		videoSubscription?.stop();
 		try { pc.close(); } catch {}
 		micStream?.getTracks().forEach((track) => track.stop());
 		if (audioEl) {
@@ -471,23 +474,11 @@ async function startLiveSession(
 			audioEl.srcObject = null;
 			audioEl.remove();
 		}
-		setState("closed");
-		complete("cancelled");
-	};
+	});
 
-	if (signal?.aborted) {
-		canonical.emit("conversation.interrupted", { by: "host", reason: "abort signal before start" });
-		telemetry.emit("speech.interrupted", { provider: "openai", reason: "abort", turn });
-		complete("interrupted");
-		cleanup();
+	if (!lifecycle.start()) {
 		throw new Error("OpenAI Realtime aborted before start.");
 	}
-	signal?.addEventListener("abort", () => {
-		canonical.emit("conversation.interrupted", { by: "host", reason: "abort signal" });
-		telemetry.emit("speech.interrupted", { provider: "openai", reason: "abort", turn });
-		complete("interrupted");
-		cleanup();
-	}, { once: true });
 
 	pc.ontrack = (event) => {
 		if (audioEl && event.streams[0]) {
@@ -496,7 +487,6 @@ async function startLiveSession(
 		}
 	};
 	pc.addEventListener("connectionstatechange", () => {
-		if (!runStarted) return;
 		if (pc.connectionState === "disconnected") {
 			reconnectAttempt += 1;
 			telemetry.emit("reconnect.started", { provider: "openai", attempt: reconnectAttempt });
@@ -511,7 +501,7 @@ async function startLiveSession(
 			const error = protocolError(new Error("WebRTC transport failed"), "webrtc_connection_failed");
 			canonical.emit("reconnect.failed", { attempt: Math.max(1, reconnectAttempt), error, retryable: false });
 			canonical.emit("error", { error, fatal: true });
-			complete("error");
+			lifecycle.complete("error");
 		}
 	});
 
@@ -532,8 +522,7 @@ async function startLiveSession(
 		}, telemetry.durationSince(setupStartedAt));
 		telemetry.emit("session.error", { provider: "openai", errorCode: "microphone_unavailable" });
 		canonical.emit("error", { error: protocolError(error, "microphone_unavailable"), fatal: true });
-		complete("error");
-		cleanup();
+		lifecycle.close("error");
 		throw error;
 	}
 
@@ -551,20 +540,11 @@ async function startLiveSession(
 		framesSent += 1;
 	};
 
-	/**
-	 * Point the frame drip at a different capture handle (or none).
-	 *
-	 * Only the subscription moves — the handle belongs to the caller, which is
-	 * still rendering a preview from it.
-	 */
-	const attachVideo = (next: typeof video) => {
-		unsubscribeFrames?.();
-		unsubscribeFrames = null;
-		activeVideo = visionCapable ? next ?? null : null;
-		if (activeVideo && dataChannel.readyState === "open") {
-			unsubscribeFrames = activeVideo.onFrame(sendFrame);
-		}
-	};
+	videoSubscription = createLiveVideoSubscription({
+		capable: visionCapable,
+		initial: initialVideo,
+		onFrame: sendFrame,
+	});
 
 	dataChannel.addEventListener("open", () => {
 		// Re-sent even though the same config rode along with the SDP offer: the
@@ -578,9 +558,9 @@ async function startLiveSession(
 			if (turnItem.text.trim()) send(realtimeHistoryItem(turnItem));
 		}
 
-		if (activeVideo) unsubscribeFrames = activeVideo.onFrame(sendFrame);
+		videoSubscription?.setReady();
 
-		setState("listening");
+		lifecycle.setState("listening");
 		telemetry.emit("connection.setup.completed", {
 			provider: "openai", model, transport: "webrtc", outcome: "success",
 		}, telemetry.durationSince(setupStartedAt));
@@ -591,28 +571,23 @@ async function startLiveSession(
 			const msg = JSON.parse(event.data);
 			switch (msg.type) {
 			case "input_audio_buffer.speech_started":
-				turn += 1;
-				activeTurnStartedAt = telemetry.start();
-				telemetry.emit("speech.turn.started", { provider: "openai", turn });
+				turnTelemetry.startTurn();
 				if (responseActive) {
 					dataChannel.send(JSON.stringify({ type: "response.cancel" }));
 					dataChannel.send(JSON.stringify({ type: "output_audio_buffer.clear" }));
 					responseActive = false;
 					canonical.emit("conversation.interrupted", { by: "user", reason: "barge-in" });
-					telemetry.emit("speech.interrupted", { provider: "openai", reason: "barge-in", turn });
+					telemetry.emit("speech.interrupted", { provider: "openai", reason: "barge-in", turn: turnTelemetry.turn });
 				}
-				setState("listening");
+				lifecycle.setState("listening");
 				break;
 			case "response.created":
 				responseActive = true;
 				break;
 			case "response.output_audio.delta":
-				case "response.audio.delta":
-					if (!firstAudioObserved) {
-						firstAudioObserved = true;
-						telemetry.emit("audio.first", { provider: "openai", transport: "webrtc" }, telemetry.durationSince(setupStartedAt));
-					}
-					setState("speaking");
+			case "response.audio.delta":
+					turnTelemetry.observeFirstAudio();
+					lifecycle.setState("speaking");
 					if (typeof msg.delta === "string") canonical.emit("audio.delta", {
 						streamId: typeof msg.item_id === "string" ? `assistant-audio-${msg.item_id}` : "assistant-audio",
 						messageId: typeof msg.item_id === "string" ? msg.item_id : undefined,
@@ -662,10 +637,8 @@ async function startLiveSession(
 					break;
 			case "response.done":
 				responseActive = false;
-				setState("listening");
-				telemetry.emit("speech.turn.completed", { provider: "openai", turn, outcome: "completed" },
-					activeTurnStartedAt === null ? undefined : telemetry.durationSince(activeTurnStartedAt));
-				activeTurnStartedAt = null;
+				lifecycle.setState("listening");
+				turnTelemetry.completeTurn();
 				break;
 			case "response.function_call_arguments.done": {
 				if (typeof msg.name !== "string" || typeof msg.call_id !== "string") break;
@@ -683,6 +656,7 @@ async function startLiveSession(
 						// look_at_screen is served locally from the capture handle
 						// rather than round-tripping through the agent tool catalog.
 						if (pending.name === LOOK_AT_SCREEN_TOOL_NAME) {
+							const activeVideo = videoSubscription?.active;
 							const frame = await activeVideo?.captureFrameNow();
 							if (!frame) {
 								return {
@@ -741,20 +715,19 @@ async function startLiveSession(
 		telemetry.emit("connection.setup.completed", { provider: "openai", model, transport: "webrtc", outcome: "failed" }, telemetry.durationSince(setupStartedAt));
 		telemetry.emit("session.error", { provider: "openai", errorCode: "session_setup_failed" });
 		canonical.emit("error", { error: protocolError(error, "session_setup_failed"), fatal: true });
-		complete("error");
-		cleanup();
+		lifecycle.close("error");
 		throw error;
 	}
 
 	return {
 		get state() {
-			return state;
+			return lifecycle.state;
 		},
 		get framesSent() {
 			return framesSent;
 		},
 		get videoRoute() {
-			return activeVideo ? "sampled" as const : "none" as const;
+			return videoSubscription?.active ? "sampled" as const : "none" as const;
 		},
 		visionCapable,
 		get inputStream() {
@@ -767,11 +740,10 @@ async function startLiveSession(
 			micStream?.getAudioTracks().forEach((track) => { track.enabled = !muted; });
 		},
 		setVideo(next) {
-			attachVideo(next);
+			videoSubscription?.attach(next);
 		},
 		async stop() {
-			complete("cancelled");
-			cleanup();
+			lifecycle.close("cancelled");
 		},
 	};
 }

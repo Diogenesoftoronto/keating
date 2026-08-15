@@ -49,6 +49,26 @@ interface Disposable {
   dispose(): void;
 }
 
+/** The model metadata exposed by Pi's get_available_models RPC command. */
+export interface KeatingPiModel {
+  provider: string;
+  id: string;
+  name?: string;
+  api?: string;
+  baseUrl?: string;
+  contextWindow?: number;
+  maxTokens?: number;
+  reasoning?: boolean;
+  input?: string[];
+  cost?: {
+    input?: number;
+    output?: number;
+    cacheRead?: number;
+    cacheWrite?: number;
+  };
+  thinkingLevelMap?: Record<string, string | null>;
+}
+
 /**
  * Pi 0.80.2 does not reliably remain interactive over an ordinary child-process
  * pipe in every supported runtime. This client keeps Pi's public JSONL protocol
@@ -181,8 +201,8 @@ export class KeatingPtyRpcClient {
   async getState(): Promise<Record<string, unknown>> { return this.data(await this.send({ type: "get_state" })); }
   async setModel(provider: string, modelId: string): Promise<{ provider: string; id: string }> { return this.data(await this.send({ type: "set_model", provider, modelId })); }
   async cycleModel(): Promise<{ model: { provider: string; id: string }; thinkingLevel?: string } | null> { return this.data(await this.send({ type: "cycle_model" })); }
-  async getAvailableModels(): Promise<Array<{ provider: string; id: string; contextWindow: number; reasoning: boolean }>> {
-    return this.data<{ models: Array<{ provider: string; id: string; contextWindow: number; reasoning: boolean }> }>(await this.send({ type: "get_available_models" })).models;
+  async getAvailableModels(): Promise<KeatingPiModel[]> {
+    return this.data<{ models: KeatingPiModel[] }>(await this.send({ type: "get_available_models" })).models;
   }
   async setThinkingLevel(level: string): Promise<void> { await this.send({ type: "set_thinking_level", level }); }
   async cycleThinkingLevel(): Promise<{ level: string } | null> { return this.data(await this.send({ type: "cycle_thinking_level" })); }
