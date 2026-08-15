@@ -68,7 +68,7 @@ export function tuiSettingsMarkdown(settings: TuiRuntimeSettings): string {
 }
 
 export const TUI_SETTINGS_ACTIONS = [
-  "Cycle model",
+  "Select model",
   "Cycle thinking",
   "Toggle automatic retry",
   "Toggle automatic compaction",

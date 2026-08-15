@@ -159,6 +159,14 @@ const GOAL_STEP_GLYPH: Record<string, string> = {
 };
 
 export function goalCardLines(goal: Goalish): string[] {
+  return cardLines(`Goal: ${goal.title}`, goalCardBodyLines(goal));
+}
+
+/** Shared goal-card content; callers choose plain or themed progress rendering. */
+export function goalCardBodyLines(
+  goal: Goalish,
+  formatProgress: (percent: number) => string = (percent) => `${percent}%`,
+): string[] {
   const total = goal.steps?.length ?? 0;
   const done = (goal.steps ?? []).filter((s) => s.status === "done").length;
   const percent = total === 0 ? 0 : Math.round((done / total) * 100);
@@ -166,13 +174,13 @@ export function goalCardLines(goal: Goalish): string[] {
 
   const body: string[] = [];
   if (goal.description) body.push(goal.description, "");
-  body.push(`Progress: ${percent}% (${done}/${total})`, `Status: ${goal.status}`);
+  body.push(`Progress: ${formatProgress(percent)} (${done}/${total})`, `Status: ${goal.status}`);
   if (nextStep) body.push(`Next: ${nextStep.title}`);
   body.push("");
   for (const step of goal.steps ?? []) {
     body.push(`${GOAL_STEP_GLYPH[step.status] ?? "[ ]"} ${step.order + 1}. ${step.title}${step.kind ? ` (${step.kind})` : ""}`);
   }
-  return cardLines(`Goal: ${goal.title}`, body);
+  return body;
 }
 
 export function goalListCardLines(goals: Goalish[]): string[] {

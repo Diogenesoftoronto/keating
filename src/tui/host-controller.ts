@@ -1,4 +1,5 @@
 import { toolResultCardLines } from "../core/cards.js";
+import type { KeatingPiModel } from "../runtime/pty-rpc-client.js";
 import {
   messageText,
   sanitizeDiagnostic,
@@ -21,6 +22,10 @@ import {
 } from "./learner-contracts.js";
 import { adaptToolResultToUiDocument, adaptUiDocument } from "./ui/adapter.js";
 import { uiDocumentPresentation } from "./ui/render.js";
+import {
+  hasMeaningfulToolResult,
+  MISSING_TOOL_RESULT_MESSAGE,
+} from "./tool-result.js";
 
 /**
  * Renderer-free controller for RPC hosts. Translates pi RPC events into
@@ -75,7 +80,11 @@ export interface HostClientLike {
   respondToExtensionUI?(response: { type: "extension_ui_response"; id: string; value?: string; confirmed?: boolean; cancelled?: true; reason?: string }): Promise<void>;
   getState?(): Promise<unknown>;
   cycleModel?(): Promise<{ model: { provider?: string; id?: string }; thinkingLevel?: string } | null>;
+  getAvailableModels?(): Promise<KeatingPiModel[]>;
+  setModel?(provider: string, modelId: string): Promise<{ provider?: string; id?: string }>;
   cycleThinkingLevel?(): Promise<{ level: string } | null>;
+  /** Execute an explicit user-entered ! command through Pi's shell runner. */
+  bash?(command: string): Promise<unknown>;
   newSession?(): Promise<{ cancelled: boolean }>;
   switchSession?(sessionPath: string): Promise<{ cancelled: boolean }>;
   setSessionName?(name: string): Promise<void>;
@@ -236,6 +245,18 @@ export class HostController {
       this.append("notice", "Model changed", model);
     } catch (error) {
       this.appendError("Could not change model", error);
+    }
+  }
+
+  async setModel(provider: string, modelId: string): Promise<void> {
+    if (!this.client.setModel) return this.appendError("Model selection unavailable", "This Pi runtime does not support selecting a model.");
+    try {
+      const result = await this.client.setModel(provider, modelId);
+      const model = [result.provider || provider, result.id || modelId].filter(Boolean).join("/");
+      this.surface.setHeaderState({ model });
+      this.append("notice", "Model changed", model);
+    } catch (error) {
+      this.appendError("Could not select model", error);
     }
   }
 
@@ -423,6 +444,10 @@ export class HostController {
         if (!toolName) return;
         if (isError) {
           this.appendError(`${toolName} failed`, result);
+          return;
+        }
+        if (!hasMeaningfulToolResult(result)) {
+          this.append("error", `${toolName} failed`, MISSING_TOOL_RESULT_MESSAGE);
           return;
         }
         if (carriesUiDocument(toolName, result)) {

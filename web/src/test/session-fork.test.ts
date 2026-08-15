@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
-import { truncateAtForkPoint } from "../hooks/session-metadata";
+import { buildForkSession, truncateAtForkPoint } from "../hooks/session-metadata";
+import type { SessionData, SessionMetadata } from "../types/session";
 
 // Minimal message factories — truncateAtForkPoint only reads `role` and `timestamp`.
 const user = (timestamp: number): AgentMessage =>
@@ -66,9 +67,9 @@ describe("truncateAtForkPoint", () => {
 		expect(truncateAtForkPoint(messages, 4)).toEqual(messages);
 	});
 
-	it("falls back to the full list when the timestamp matches nothing", () => {
+	it("rejects a stale timestamp instead of forking the full transcript", () => {
 		const messages = [user(1), assistant(2), user(3)];
-		expect(truncateAtForkPoint(messages, 999)).toBe(messages);
+		expect(() => truncateAtForkPoint(messages, 999)).toThrow("no longer present");
 	});
 
 	it("does not mutate the input array", () => {
@@ -76,5 +77,43 @@ describe("truncateAtForkPoint", () => {
 		const snapshot = [...messages];
 		truncateAtForkPoint(messages, 2);
 		expect(messages).toEqual(snapshot);
+	});
+});
+
+describe("buildForkSession", () => {
+	it("persists exact provenance, numbers siblings, and excludes comparison state", () => {
+		const source = {
+			id: "source",
+			title: "Photosynthesis",
+			model: { provider: "browser", id: "model" },
+			thinkingLevel: "off",
+			messages: [user(1), assistant(2), user(3), assistant(4)],
+			createdAt: "2026-01-01T00:00:00.000Z",
+			lastModified: "2026-01-01T00:00:00.000Z",
+			generatedAlternative: true,
+			hiddenAlternative: true,
+			responsePreference: "alternative",
+		} as unknown as SessionData;
+		const siblings = [
+			{ id: "fork-one", parentSessionId: "source" },
+			{ id: "comparison", parentSessionId: "source", generatedAlternative: true },
+		] as SessionMetadata[];
+
+		const { data, metadata } = buildForkSession(
+			source,
+			siblings,
+			2,
+			"2026-02-02T00:00:00.000Z",
+			"fork-two",
+		);
+
+		expect(data.title).toBe("Photosynthesis (fork 2)");
+		expect(data.parentSessionId).toBe("source");
+		expect(data.forkedFromMessageTimestamp).toBe(2);
+		expect(roles(data.messages)).toEqual(["user", "assistant"]);
+		expect(data.generatedAlternative).toBeUndefined();
+		expect(data.hiddenAlternative).toBeUndefined();
+		expect(data.responsePreference).toBeUndefined();
+		expect(metadata.forkedFromMessageTimestamp).toBe(2);
 	});
 });

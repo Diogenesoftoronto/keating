@@ -6,7 +6,6 @@ import {
 	type LiveHistoryTurn,
 	type LiveSpeechRequest,
 	type LiveSpeechSession,
-	type LiveSpeechState,
 	type LiveSpeechTool,
 	type SpeechProvider,
 	type SpeechSynthesisRequest,
@@ -26,6 +25,12 @@ import {
 	protocolError as sharedProtocolError,
 	runLiveToolCall,
 } from "./live-session-shared";
+import {
+	addAbortListener,
+	createLiveSessionLifecycle,
+	createLiveTurnTelemetry,
+	createLiveVideoSubscription,
+} from "./live-session-lifecycle";
 
 const GEMINI_VOICES = ["Kore", "Puck", "Charon", "Fenrir", "Leda", "Orus", "Aoede"];
 
@@ -129,10 +134,12 @@ async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthe
 	let audioChunks = 0;
 	let playedChunks = 0;
 	let transcript = "";
+	let detachAbort = () => {};
 
 	const finish = (resolve: (value: SpeechSynthesisResult) => void) => {
 		if (done) return;
 		done = true;
+		detachAbort();
 		session?.close();
 		resolve({ audioChunks, playedChunks, transcript: transcript.trim() });
 	};
@@ -141,6 +148,7 @@ async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthe
 		const timeout: ReturnType<typeof setTimeout> = setTimeout(() => {
 			if (done) return;
 			done = true;
+			detachAbort();
 			session?.close();
 			reject(new Error("Gemini Live speech timed out."));
 		}, 30_000);
@@ -157,7 +165,7 @@ async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthe
 			abort();
 			return;
 		}
-		signal?.addEventListener("abort", abort, { once: true });
+		detachAbort = addAbortListener(signal, abort);
 
 		withApiRetry(() => ai.live
 			.connect({
@@ -178,7 +186,6 @@ async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthe
 
 						if (message?.serverContent?.turnComplete || message?.serverContent?.generationComplete) {
 							clearTimeout(timeout);
-							signal?.removeEventListener("abort", abort);
 							finish(resolve);
 						}
 					},
@@ -186,13 +193,12 @@ async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthe
 						if (done) return;
 						done = true;
 						clearTimeout(timeout);
-						signal?.removeEventListener("abort", abort);
+						detachAbort();
 						reject(new Error(event.message || "Gemini Live speech failed."));
 					},
 					onclose: () => {
 						if (done) return;
 						clearTimeout(timeout);
-						signal?.removeEventListener("abort", abort);
 						finish(resolve);
 					},
 				},
@@ -223,7 +229,7 @@ async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthe
 				if (done) return;
 				done = true;
 				clearTimeout(timeout);
-				signal?.removeEventListener("abort", abort);
+				detachAbort();
 				reject(error);
 			});
 	});
@@ -255,8 +261,8 @@ async function startLiveSession(
 	// Capability is decided once; whether frames are actually flowing follows the
 	// learner's camera button and can change at any point in the conversation.
 	const visionCapable = capability.realtimeVideo === "native";
-	let activeVideo = visionCapable ? video ?? null : null;
-	canonical.emit("run.started", { mode: activeVideo ? "multimodal" : "voice" });
+	const initialVideo = visionCapable ? video ?? null : null;
+	canonical.emit("run.started", { mode: initialVideo ? "multimodal" : "voice" });
 
 	const apiKey = await getApiKey("google");
 	if (!apiKey) {
@@ -271,25 +277,13 @@ async function startLiveSession(
 	const { GoogleGenAI, Modality, MediaResolution } = await import("@google/genai");
 	const ai = new GoogleGenAI({ apiKey });
 
-	let state: LiveSpeechState = "connecting";
-	let completionReason: "completed" | "cancelled" | "interrupted" | "error" | null = null;
-	let firstAudioObserved = false;
-	let turn = 0;
-	let activeTurnStartedAt: number | null = null;
+	const turnTelemetry = createLiveTurnTelemetry({
+		provider: "google",
+		transport: "websocket",
+		telemetry,
+		setupStartedAt,
+	});
 	let framesSent = 0;
-
-	const complete = (reason: NonNullable<typeof completionReason>) => {
-		if (completionReason) return;
-		completionReason = reason;
-		canonical.emit("run.completed", { reason });
-		telemetry.emit("session.completed", { provider: "google", outcome: reason });
-	};
-	const setState = (next: LiveSpeechState) => {
-		if (state === "closed") return;
-		state = next;
-		onState?.(next);
-	};
-	setState("connecting");
 
 	let session: {
 		sendRealtimeInput: (params: any) => void;
@@ -298,35 +292,34 @@ async function startLiveSession(
 		close: () => void;
 	} | null = null;
 	let capture: Awaited<ReturnType<typeof startPcmCapture>> | null = null;
-	let unsubscribeFrames: (() => void) | null = null;
-	let cleanedUp = false;
+	let videoSubscription: ReturnType<typeof createLiveVideoSubscription> | null = null;
 	let muted = false;
 
-	const cleanup = () => {
-		if (cleanedUp) return;
-		cleanedUp = true;
-		unsubscribeFrames?.();
-		unsubscribeFrames = null;
+	const lifecycle = createLiveSessionLifecycle({
+		signal,
+		onState,
+		onAbort: (beforeStart) => {
+			canonical.emit("conversation.interrupted", {
+				by: "host",
+				reason: beforeStart ? "abort signal before start" : "abort signal",
+			});
+			telemetry.emit("speech.interrupted", { provider: "google", reason: "abort", turn: turnTelemetry.turn });
+		},
+		onComplete: (reason) => {
+			canonical.emit("run.completed", { reason });
+			telemetry.emit("session.completed", { provider: "google", outcome: reason });
+		},
+	});
+	lifecycle.addCleanup(() => {
+		videoSubscription?.stop();
 		capture?.stop();
 		capture = null;
 		try { session?.close(); } catch {}
-		setState("closed");
-		complete("cancelled");
-	};
+	});
 
-	if (signal?.aborted) {
-		canonical.emit("conversation.interrupted", { by: "host", reason: "abort signal before start" });
-		telemetry.emit("speech.interrupted", { provider: "google", reason: "abort", turn });
-		complete("interrupted");
-		cleanup();
+	if (!lifecycle.start()) {
 		throw new Error("Gemini Live aborted before start.");
 	}
-	signal?.addEventListener("abort", () => {
-		canonical.emit("conversation.interrupted", { by: "host", reason: "abort signal" });
-		telemetry.emit("speech.interrupted", { provider: "google", reason: "abort", turn });
-		complete("interrupted");
-		cleanup();
-	}, { once: true });
 
 	const handleToolCall = (functionCalls: any[]) => {
 		for (const functionCall of functionCalls) {
@@ -366,8 +359,8 @@ async function startLiveSession(
 					if (message?.serverContent?.interrupted) {
 						stopScheduledAudio();
 						canonical.emit("conversation.interrupted", { by: "user", reason: "barge-in" });
-						telemetry.emit("speech.interrupted", { provider: "google", reason: "barge-in", turn });
-						setState("listening");
+						telemetry.emit("speech.interrupted", { provider: "google", reason: "barge-in", turn: turnTelemetry.turn });
+						lifecycle.setState("listening");
 					}
 
 					if (Array.isArray(message?.toolCall?.functionCalls)) {
@@ -377,12 +370,8 @@ async function startLiveSession(
 					for (const part of contentParts(message)) {
 						const data = part.inlineData?.data;
 						if (typeof data === "string" && data.length > 0) {
-							if (!firstAudioObserved) {
-								firstAudioObserved = true;
-								telemetry.emit("audio.first", { provider: "google", transport: "websocket" },
-									telemetry.durationSince(setupStartedAt));
-							}
-							setState("speaking");
+							turnTelemetry.observeFirstAudio();
+							lifecycle.setState("speaking");
 							schedulePcmAudio(data);
 							canonical.emit("audio.delta", {
 								streamId: "assistant-audio",
@@ -416,11 +405,7 @@ async function startLiveSession(
 
 					const inputText = message?.serverContent?.inputTranscription?.text;
 					if (typeof inputText === "string") {
-						if (activeTurnStartedAt === null) {
-							turn += 1;
-							activeTurnStartedAt = telemetry.start();
-							telemetry.emit("speech.turn.started", { provider: "google", turn });
-						}
+						turnTelemetry.startTurn();
 						onUserTranscript?.(inputText, false);
 						canonical.emit("transcript.delta", {
 							transcriptId: "user-transcript",
@@ -438,10 +423,8 @@ async function startLiveSession(
 							delta: "",
 							final: true,
 						});
-						telemetry.emit("speech.turn.completed", { provider: "google", turn, outcome: "completed" },
-							activeTurnStartedAt === null ? undefined : telemetry.durationSince(activeTurnStartedAt));
-						activeTurnStartedAt = null;
-						setState("listening");
+						turnTelemetry.completeTurn();
+						lifecycle.setState("listening");
 					}
 				},
 				onerror: (event: ErrorEvent) => {
@@ -450,7 +433,7 @@ async function startLiveSession(
 					canonical.emit("error", { error: protocolError(error, "provider_error"), fatal: false });
 					telemetry.emit("session.error", { provider: "google", errorCode: "provider_error" });
 				},
-				onclose: () => cleanup(),
+				onclose: () => lifecycle.close(),
 			},
 			config: {
 				responseModalities: [Modality.AUDIO],
@@ -474,8 +457,7 @@ async function startLiveSession(
 		}, telemetry.durationSince(setupStartedAt));
 		telemetry.emit("session.error", { provider: "google", errorCode: "session_setup_failed" });
 		canonical.emit("error", { error: protocolError(error, "session_setup_failed"), fatal: true });
-		complete("error");
-		cleanup();
+		lifecycle.close("error");
 		throw error;
 	}
 
@@ -494,7 +476,7 @@ async function startLiveSession(
 		capture = await startPcmCapture({
 			sampleRate: GEMINI_INPUT_SAMPLE_RATE,
 			onChunk: (base64) => {
-				if (!session || state === "closed" || muted) return;
+				if (!session || lifecycle.state === "closed" || muted) return;
 				try {
 					session.sendRealtimeInput({
 						audio: { data: base64, mimeType: `audio/pcm;rate=${GEMINI_INPUT_SAMPLE_RATE}` },
@@ -507,13 +489,12 @@ async function startLiveSession(
 	} catch (error) {
 		telemetry.emit("session.error", { provider: "google", errorCode: "microphone_unavailable" });
 		canonical.emit("error", { error: protocolError(error, "microphone_unavailable"), fatal: true });
-		complete("error");
-		cleanup();
+		lifecycle.close("error");
 		throw error;
 	}
 
 	const sendFrame = (frame: CapturedFrame) => {
-		if (!session || state === "closed") return;
+		if (!session || lifecycle.state === "closed") return;
 		try {
 			session.sendRealtimeInput({ video: { data: frame.data, mimeType: frame.mimeType } });
 			framesSent += 1;
@@ -522,33 +503,27 @@ async function startLiveSession(
 		}
 	};
 
-	/**
-	 * Move the frame feed onto a different capture handle, or off entirely.
-	 * The handle stays the caller's to stop; only the subscription moves.
-	 */
-	const attachVideo = (next: typeof video) => {
-		unsubscribeFrames?.();
-		unsubscribeFrames = null;
-		activeVideo = visionCapable ? next ?? null : null;
-		if (activeVideo) unsubscribeFrames = activeVideo.onFrame(sendFrame);
-	};
+	videoSubscription = createLiveVideoSubscription({
+		capable: visionCapable,
+		initial: initialVideo,
+		onFrame: sendFrame,
+	});
+	videoSubscription.setReady();
 
-	if (activeVideo) unsubscribeFrames = activeVideo.onFrame(sendFrame);
-
-	setState("listening");
+	lifecycle.setState("listening");
 	telemetry.emit("connection.setup.completed", {
 		provider: "google", model, transport: "websocket", outcome: "success",
 	}, telemetry.durationSince(setupStartedAt));
 
 	return {
 		get state() {
-			return state;
+			return lifecycle.state;
 		},
 		get framesSent() {
 			return framesSent;
 		},
 		get videoRoute() {
-			return activeVideo ? "native" as const : "none" as const;
+			return videoSubscription?.active ? "native" as const : "none" as const;
 		},
 		visionCapable,
 		get inputStream() {
@@ -561,11 +536,10 @@ async function startLiveSession(
 			capture?.stream.getAudioTracks().forEach((track) => { track.enabled = !next; });
 		},
 		setVideo(next) {
-			attachVideo(next);
+			videoSubscription?.attach(next);
 		},
 		async stop() {
-			complete("cancelled");
-			cleanup();
+			lifecycle.close("cancelled");
 		},
 	};
 }

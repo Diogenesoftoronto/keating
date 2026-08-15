@@ -151,7 +151,7 @@ export function classifyLocalModelError(message: string, spec: BrowserModelSpec)
 	return message;
 }
 
-async function checkWebGpuAvailable(
+export async function checkWebGpuAvailable(
 	spec: BrowserModelSpec,
 ): Promise<{ available: boolean; reason?: string }> {
 	if (!navigator.gpu) {

@@ -1,6 +1,7 @@
 import type { AgentEvent, AgentMessage } from "@earendil-works/pi-agent-core";
 import type { ConversationRuntime } from "./conversation-runtime";
 import { jsonSafe } from "./conversation-runtime";
+import { toolExecutionSucceeded } from "../tool-result";
 
 const messageIds = new WeakMap<object, string>();
 let messageCounter = 0;
@@ -66,7 +67,7 @@ export function recordAgentEvent(runtime: ConversationRuntime, event: AgentEvent
 			runtime.emit("tool.progress", { callId: event.toolCallId, update: jsonSafe(event.partialResult) });
 			break;
 		case "tool_execution_end":
-			if (event.isError) runtime.emit("tool.failed", { callId: event.toolCallId, error: { code: "tool-error", message: toolFailureMessage(event.result) } });
+			if (!toolExecutionSucceeded(event)) runtime.emit("tool.failed", { callId: event.toolCallId, error: { code: "tool-error", message: toolFailureMessage(event.result) } });
 			else runtime.emit("tool.completed", { callId: event.toolCallId, result: jsonSafe(event.result) });
 			break;
 		case "agent_end":

@@ -85,9 +85,18 @@ describe("shared terminal UI document adapter and presentation", () => {
       payload: { topic: "Bayes", questions: [{ prompt: "What is a prior?" }] },
     });
     expect(legacy).toMatchObject({ ok: true, source: "legacy" });
-    expect(adaptUiDocument("root = Question([])")).toMatchObject({ ok: false, recovery: { code: "unsupported_browser_program", preserveEnteredWork: true } });
+    const openUi = adaptUiDocument('root = LearningSurface([explanation], "Terminal")\nexplanation = Explanation("Safe source")');
+    expect(openUi).toMatchObject({ ok: true, document: { title: "Terminal", supportedSurfaces: expect.arrayContaining(["terminal"]) } });
+    expect(adaptUiDocument("root = Question([])")).toMatchObject({ ok: false, recovery: { preserveEnteredWork: true } });
     expect(adaptUiDocument("{")).toMatchObject({ ok: false, recovery: { code: "invalid_json", retryable: true } });
     expect(adaptUiDocument({ schemaVersion: 1, nodes: [] })).toMatchObject({ ok: false, recovery: { code: "invalid_document" } });
+  });
+
+  test("preserves real tool artifact paths and legacy multiple-choice semantics", () => {
+    const plan = adaptToolResultToUiDocument("plan", { details: { topic: "Bayes", planPath: "/tmp/bayes.md" } });
+    expect(plan).toMatchObject({ ok: true, document: { nodes: [{ type: "artifact", resource: { content: "Local artifact: /tmp/bayes.md" } }] } });
+    const quiz = adaptToolResultToUiDocument("quiz", { details: { topic: "Bayes", questions: [{ prompt: "Prior?", options: ["Before", "After"] }] } });
+    expect(quiz).toMatchObject({ ok: true, document: { nodes: [{ type: "quiz", questions: [{ choices: [{ label: "Before" }, { label: "After" }] }] }] } });
   });
 });
 

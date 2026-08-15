@@ -9,6 +9,7 @@ import {
 	type LocalModel,
 } from "../stores/local-model";
 import { getSelectableModels, buildSavedModel } from "../lib/provider-models";
+import { searchFullText } from "../lib/full-text-search";
 import type { ImageGeneratorOption } from "../lib/image-generators";
 import type { SpeechProviderDescriptor } from "../keating/speech";
 import { addRecentModel, getRecentModels } from "../keating/ui-settings";
@@ -197,14 +198,18 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 	}, [open, currentModel, refreshModels]);
 
 	const filtered = useMemo(() => {
-		const q = search.trim().toLowerCase();
-		return models.filter(({ model }) => {
+		const eligible = models.filter(({ model }) => {
 			if (providerFilters.length > 0 && !providerFilters.includes(model.provider)) return false;
 			if (!modelHasCapabilities(model, capabilityFilters)) return false;
-			if (!q) return true;
-			const haystack = `${model.name} ${model.id} ${model.provider}`.toLowerCase();
-			return haystack.includes(q);
+			return true;
 		});
+		return searchFullText(eligible, search, ({ model, group }) => [
+			model.name,
+			model.id,
+			model.provider,
+			model.api,
+			group,
+		]);
 	}, [search, providerFilters, capabilityFilters, models]);
 
 	const providerOptions = useMemo(
@@ -647,8 +652,7 @@ function ContextModelSelectorDialog({
 
 	if (!open) return null;
 
-	const query = search.trim().toLowerCase();
-	const models = options.filter((model) => !query || `${model.label} ${model.value}`.toLowerCase().includes(query));
+	const models = searchFullText(options, search, (model) => [model.label, model.value, badge]);
 
 	return (
 		<div

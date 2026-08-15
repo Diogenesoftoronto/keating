@@ -440,7 +440,7 @@ export default defineConfig({
     ...posthogSourceMapPlugins,
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.svg", "apple-touch-icon.svg"],
+      includeAssets: ["favicon.svg", "apple-touch-icon.png"],
       manifest: {
         name: "Keating - Hyperteacher",
         short_name: "Keating",
@@ -453,20 +453,20 @@ export default defineConfig({
         start_url: "/",
         icons: [
           {
-            src: "pwa-192x192.svg",
+            src: "pwa-192x192.png",
             sizes: "192x192",
-            type: "image/svg+xml",
+            type: "image/png",
           },
           {
-            src: "pwa-512x512.svg",
+            src: "pwa-512x512.png",
             sizes: "512x512",
-            type: "image/svg+xml",
+            type: "image/png",
           },
           {
-            src: "pwa-512x512.svg",
+            src: "pwa-maskable-512x512.png",
             sizes: "512x512",
-            type: "image/svg+xml",
-            purpose: "any maskable",
+            type: "image/png",
+            purpose: "maskable",
           },
         ],
       },

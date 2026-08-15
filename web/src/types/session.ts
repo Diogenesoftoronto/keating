@@ -21,6 +21,7 @@ export interface SessionMetadata {
 	title: string;
 	parentSessionId?: string | null;
 	forkedAt?: string;
+	forkedFromMessageTimestamp?: number;
 	createdAt: string;
 	lastModified: string;
 	messageCount: number;
@@ -49,6 +50,7 @@ export interface SessionData {
 	title: string;
 	parentSessionId?: string | null;
 	forkedAt?: string;
+	forkedFromMessageTimestamp?: number;
 	model: Model<any>;
 	thinkingLevel: ThinkingLevel;
 	messages: AgentMessage[];

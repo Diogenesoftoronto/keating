@@ -51,6 +51,7 @@ function harness(dispatcher?: UiActionDispatcher, clientOverrides: Partial<HostC
       return { model: { provider: "google", id: "gemini" }, thinkingLevel: "high", sessionName: "Limits", sessionId: "s1", isStreaming: false };
     },
     async cycleModel() { return { model: { provider: "openai", id: "gpt" }, thinkingLevel: "medium" }; },
+    async setModel(provider: string, modelId: string) { return { provider, id: modelId }; },
     async cycleThinkingLevel() { return { level: "low" }; },
     async newSession() { return { cancelled: false }; },
     async abort() {},
@@ -105,6 +106,22 @@ describe("OpenTUI host controller", () => {
     expect(h.documents.at(-1)?.controls.map((control) => control.label)).toContain("Complete goal step: Limits");
   });
 
+  test("reports a terminal tool event without a result as an error", () => {
+    const h = harness();
+    h.emit({
+      type: "tool_execution_end",
+      toolName: "web_search",
+      result: undefined,
+      isError: false,
+    });
+
+    expect(h.entries.at(-1)).toMatchObject({
+      kind: "error",
+      title: "web_search failed",
+      body: "Tool execution ended without returning a result.",
+    });
+  });
+
   test("activates a canonical OpenUI document carried by a real tool result", () => {
     const h = harness();
     const document = documentFixture();
@@ -133,6 +150,22 @@ describe("OpenTUI host controller", () => {
     expect(h.headers).toContainEqual({ thinking: "low" });
     expect(h.hydrated.at(-1)).toEqual([]);
     expect(h.entries.map((entry) => entry.title)).toContain("Response stopped");
+  });
+
+  test("selects an exact provider/model pair and reports the applied model", async () => {
+    const calls: Array<[string, string]> = [];
+    const h = harness(undefined, {
+      async setModel(provider, modelId) {
+        calls.push([provider, modelId]);
+        return { provider, id: modelId };
+      },
+    });
+
+    await h.controller.setModel("anthropic", "claude-sonnet-4-6");
+
+    expect(calls).toEqual([["anthropic", "claude-sonnet-4-6"]]);
+    expect(h.headers).toContainEqual({ model: "anthropic/claude-sonnet-4-6" });
+    expect(h.entries.at(-1)).toMatchObject({ title: "Model changed", body: "anthropic/claude-sonnet-4-6" });
   });
 
   test("resumes, renames, clones, and forks through the real Pi RPC session operations", async () => {

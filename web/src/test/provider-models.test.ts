@@ -71,6 +71,43 @@ describe("gateway model discovery", () => {
 });
 
 describe("chat model fallback selection", () => {
+	it("uses the local browser model when no account or provider key is available", async () => {
+		const originalNavigator = globalThis.navigator;
+		Object.defineProperty(globalThis, "navigator", {
+			configurable: true,
+			value: {
+				gpu: {
+					requestAdapter: async () => ({
+						features: { has: (name: string) => name === "shader-f16" },
+					}),
+				},
+			},
+		});
+		try {
+			const { resolveAvailableChatModel } = await import("../lib/provider-models");
+			const selected = await resolveAvailableChatModel({
+				id: "balanced",
+				name: "Not Organic Balanced",
+				api: "openai-completions" as any,
+				provider: "notorganic",
+				baseUrl: "/api/notorganic/openai/v1",
+				reasoning: true,
+				input: ["text"],
+				cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+				contextWindow: 256_000,
+				maxTokens: 8192,
+			});
+
+			expect(selected.provider).toBe("browser");
+			expect(selected.id).toBe("LiquidAI/LFM2.5-2.6B-ONNX");
+		} finally {
+			Object.defineProperty(globalThis, "navigator", {
+				configurable: true,
+				value: originalNavigator,
+			});
+		}
+	});
+
 	it("uses the Codex subscription catalog without treating it as an OpenAI API key", async () => {
 		providerKeys = {
 			"oauth:openai-codex": JSON.stringify({

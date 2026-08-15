@@ -79,6 +79,11 @@ describe("Keating UI Settings", () => {
 			expect(settings.showToolUi).toBe(DEFAULT_UI_SETTINGS.showToolUi);
 		});
 
+		it("preserves the upstream maximum reasoning level", () => {
+			localStorage.setItem("keating_ui_settings", JSON.stringify({ reasoningLevel: "max" }));
+			expect(loadKeatingUiSettings().reasoningLevel).toBe("max");
+		});
+
 		it("disables provider web search only when explicitly off", () => {
 			localStorage.setItem("keating_ui_settings", JSON.stringify({ webSearch: "off" }));
 			expect(loadKeatingUiSettings().webSearch).toBe("off");

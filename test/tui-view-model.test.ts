@@ -8,6 +8,7 @@ import {
   sanitizeDiagnostic,
   showActivityRail,
   transcriptEntriesFromMessages,
+  transcriptMarkdown,
   transcriptText,
 } from "../src/tui/view-model.js";
 import { createTuiPresentationProfile } from "../src/tui/terminal-profile.js";
@@ -43,12 +44,48 @@ describe("TUI view model", () => {
     expect(transcriptText(entries)).not.toContain("supersecretvalue");
   });
 
+  test("hydrates an empty tool result as a failure instead of completion", () => {
+    const entries = transcriptEntriesFromMessages([
+      {
+        role: "toolResult",
+        toolCallId: "search-1",
+        toolName: "web_search",
+        content: undefined,
+        details: undefined,
+        isError: false,
+        timestamp: 1,
+      },
+    ]);
+
+    expect(entries).toEqual([
+      expect.objectContaining({
+        kind: "error",
+        title: "web_search failed",
+        body: "Tool execution ended without returning a result.",
+      }),
+    ]);
+  });
+
   test("sanitizes and bounds runtime diagnostics", () => {
     const result = sanitizeDiagnostic(`{"ANTHROPIC_API_KEY":"secret-json-value","authorization":"Bearer abc.def.ghi"} ${"x".repeat(900)}`);
     expect(result).toContain('"ANTHROPIC_API_KEY":"[redacted]"');
     expect(result).not.toContain("secret-json-value");
     expect(result).toContain("Bearer [redacted]");
     expect(result.length).toBeLessThanOrEqual(700);
+  });
+
+  test("truncates transcript chrome while preserving the full response body", () => {
+    const title = "A tool response title that is much wider than the available terminal transcript";
+    const body = "This complete response must remain available even when its label is shortened.";
+    const markdown = transcriptMarkdown(
+      [{ id: "wide", kind: "tool", title, body }],
+      null,
+      createTuiPresentationProfile({ TERM: "xterm", KEATING_ASCII: "1" }),
+      36,
+    );
+    expect(markdown).toContain("…");
+    expect(markdown).not.toContain(title);
+    expect(markdown).toContain(body);
   });
 
   test("summarizes header state and only shows the activity rail when there is room", () => {
@@ -65,6 +102,7 @@ describe("TUI view model", () => {
       "sessions",
       "library",
       "review",
+      "courses",
       "settings",
       "model",
       "thinking",

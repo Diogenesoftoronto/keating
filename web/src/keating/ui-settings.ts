@@ -1,4 +1,5 @@
 import { DEFAULT_IMAGE_GENERATOR_ID, isImageGeneratorId, type ImageGeneratorId } from "../lib/image-generators";
+import type { ThinkingLevel } from "@earendil-works/pi-agent-core";
 import { subscribeLocalSetting } from "./local-setting";
 export {
 	addCustomModel,
@@ -11,7 +12,7 @@ export {
 	toggleProviderVisibility,
 } from "./model-prefs";
 
-export type ReasoningLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
+export type ReasoningLevel = ThinkingLevel;
 export type AnimationRenderer = "hyperframes";
 export type UiFontFamily = "roboto" | "space-mono" | "jetbrains-mono";
 export type ShareLinkMode = "portable-short" | "compressed-hash" | "local-short";

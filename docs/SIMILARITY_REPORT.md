@@ -14,12 +14,43 @@ similarity-ts src web/src --types --threshold 0.87 --min-lines 6 \
 
 The review focused on voice, provider search, authorization, serializable UI, OpenUI, persistence, and the Pi/OpenTUI bridge. It did not treat a high AST score alone as evidence that two implementations share semantics.
 
-The first 3.0 pass reported 19 direct function pairs and 53 type pairs. After
-the safe consolidations below, the same command reported 17 direct function
-pairs and 49 type pairs. The large function clusters remain review queues rather
-than duplicate counts: their members often share only control-flow shape.
+The first 3.0 pass reported 19 direct function pairs and 53 type pairs. A later
+working-tree scan reported 20 direct function pairs and 48 named-type pairs.
+After the safe consolidations below, the same command now reports 10 direct
+function pairs and 30 named-type pairs (plus one type-literal/type-definition
+pair and six type-literal pairs). The large function clusters remain review
+queues rather than duplicate counts: their members often share only
+control-flow shape.
 
 ## Consolidation performed
+
+### Runtime-neutral pedagogy contracts and engines
+
+The exact benchmark contracts, real-outcome scoring, and deterministic teaching
+simulation formerly duplicated by `src/core` and `web/src/keating/core.ts` now
+live under `shared/pedagogy/`. Root and browser modules preserve their public
+exports while consuming one runtime-neutral implementation.
+
+Learner goal types and operations moved to the same boundary. Only topic
+resolution remains surface-specific and is injected by the small root and web
+facades. NodePod boot generation now includes `shared/`, so the browser sandbox
+receives the same canonical modules as the host build.
+
+### Live speech session lifecycle
+
+Gemini Live and OpenAI Realtime retain provider-specific transports, payloads,
+and readiness timing, but now share lifecycle, abort cleanup, completion,
+first-audio/turn telemetry, and caller-owned video subscription routing through
+`live-session-lifecycle.ts`. Their `startLiveSession` functions no longer form a
+direct similarity pair at the report threshold.
+
+### Focused same-runtime helpers
+
+- Fork-map timestamps reuse the canonical relative-session date formatter.
+- Evaluation and provider-completion telemetry share one OTLP span exporter.
+- Root and themed TUI goal cards share goal body construction while retaining
+  their distinct progress rendering.
+- Fine-tune artifact/session builders share one initialized result structure.
 
 ### Course workspace state machine
 
@@ -82,9 +113,16 @@ Compatibility is protected by focused protocol and OpenTUI tests. A future works
 
 `web/src/keating/integration/voice-permissions.ts` contains a small compatibility preflight for callers that need a synchronous answer. `web/src/keating/security/authorized-execution.ts` is the authoritative execution and confirmation boundary used by text and voice. The preflight does not execute tools or replace policy evaluation, so merging it into the executor would blur the distinction between UI capability hints and authorization.
 
-### Existing root/browser pedagogy ports
+### Remaining root/browser pedagogy ports
 
-The scan continues to report exact or near-exact families in `src/core` and `web/src/keating/core.ts`, including benchmark scoring, deterministic simulation, goals, quiz construction, engagement, MAP-Elites, and export helpers. These predate this execution and are known browser ports: root code can use Node APIs while the web copy must remain browser-bundle safe. They were not changed in this consolidation wave.
+The scan continues to report near-exact families in `src/core` and
+`web/src/keating/core.ts`, including quiz construction, engagement, MAP-Elites,
+prompt evaluation, and export helpers. These are not all interchangeable:
+engagement uses different timestamp/state models, MAP-Elites has persistent
+asynchronous root behavior versus an in-memory browser runner, and the browser
+quiz implementation is a feature superset. Move only independently proven pure
+kernels into `shared/`; importing the Node core into the browser remains an
+invalid dependency direction.
 
 ## False positives
 
@@ -104,14 +142,17 @@ Until then, wire-level tests are safer than forcing root and browser code into t
 
 ## Remaining architectural signals
 
-- The exact root/browser benchmark, goal, engagement, MAP-Elites, quiz, retry,
-  and policy types confirm that the hand-maintained browser port remains the
-  largest duplication boundary. Move it only into a runtime-neutral workspace
-  package; importing the Node core into the browser would violate the build
-  contract.
-- `src/core/export.ts` still contains a high-scoring artifact/session example
-  pair. It is a worthwhile local extraction after the release, once both
-  redaction and counter semantics can be covered by focused fixtures.
+- The remaining engagement, MAP-Elites, quiz, retry, and policy shapes confirm
+  that the hand-maintained browser port remains the largest duplication
+  boundary. Continue moving only genuinely identical, runtime-neutral kernels;
+  importing the Node core into the browser would violate the build contract.
+- `src/core/export.ts` and `web/src/keating/export.ts` still contain a
+  high-scoring session-conversation pair. Their source records and output
+  contracts differ, so any shared extraction needs explicit cross-runtime
+  fixtures rather than a shape-only merge.
+- `src/tui/composer.ts` and `src/tui/search.ts` still report similar scoring
+  functions. They belong to active TUI work and normalize inputs differently;
+  consolidate them with ranking fixtures when that subsystem is integrated.
 - The root and browser `ApiRetryPolicy` definitions are exact. They should join
   a future shared contracts package if retry behavior gains a third consumer.
 - Small formatting and markdown pairs remain below the threshold for a new

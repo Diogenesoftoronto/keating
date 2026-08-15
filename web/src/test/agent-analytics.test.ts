@@ -373,6 +373,30 @@ describe("agent analytics", () => {
 		assertNoPrivatePayload(h.captures, "secret-key-value", "invalid API key");
 	});
 
+	test("does not report a terminal tool event without a result as success", () => {
+		const h = harness();
+		h.agent.emit({ type: "agent_start" });
+		h.agent.emit({
+			type: "tool_execution_start",
+			toolCallId: "call-empty",
+			toolName: "web_search",
+			args: {},
+		});
+		h.agent.emit({
+			type: "tool_execution_end",
+			toolCallId: "call-empty",
+			toolName: "web_search",
+			result: undefined,
+			isError: false,
+		});
+
+		expect(event(h.captures, "tool_invoked").properties).toMatchObject({
+			tool_call_id: "call-empty",
+			success: false,
+			status: "error",
+		});
+	});
+
 	test("marks an aborted run even when no assistant error message completes", () => {
 		const h = harness();
 		h.agent.emit({ type: "agent_start" });

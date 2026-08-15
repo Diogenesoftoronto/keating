@@ -28,6 +28,7 @@ import { useKeatingAgent } from "../hooks/useKeatingAgent";
 import { keatingStorage, sessions } from "../hooks/keating-storage";
 import { useSeo } from "../hooks/useSeo";
 import { useMediaQuery } from "../hooks/use-media-query";
+import { isCanvasFeatureEnabled } from "../lib/feature-flags";
 import { ArtifactBrowserOverlay } from "../components/ArtifactBrowserOverlay";
 import { ArtifactSidePanel } from "../components/ArtifactSidePanel";
 import { AssistantChatPanel } from "../components/AssistantChatPanel";
@@ -762,6 +763,7 @@ async function resolveInlineArtifact(
 }
 
 function ChatContent() {
+  const canvasEnabled = isCanvasFeatureEnabled();
   useSeo({
     title: "Keating Chat — Socratic AI Tutor Session",
     description:
@@ -887,19 +889,35 @@ function ChatContent() {
     undefined,
   );
   const [inlineArtifacts, setInlineArtifacts] = useState<InlineArtifact[]>([]);
+
+  useEffect(() => {
+    // Artifact previews are transient branch state. Never carry a parent's
+    // canvas selection into a fork or a sibling session.
+    setArtifactBrowserOpen(false);
+    setArtifactTarget(undefined);
+    setInlineArtifacts([]);
+  }, [activeSessionId]);
+
   const toggleArtifactBrowser = (source: "toolbar" | "mobile_menu") => {
+    if (!canvasEnabled) return;
     setArtifactBrowserOpen((open) => {
       const next = !open;
       if (!next) setArtifactTarget(undefined);
       posthog.capture(
         next ? "artifact_browser_opened" : "artifact_browser_closed",
-        { source },
+        { source, canvas_enabled: true },
       );
       return next;
     });
   };
 
   useEffect(() => {
+    if (!canvasEnabled) {
+      setArtifactBrowserOpen(false);
+      setArtifactTarget(undefined);
+      setInlineArtifacts([]);
+      return;
+    }
     const openArtifacts = () => {
       if (uiSettings.autoOpenArtifacts) setArtifactBrowserOpen(true);
     };
@@ -933,7 +951,7 @@ function ChatContent() {
       );
       window.removeEventListener("keating:open-artifact", openArtifactTarget);
     };
-  }, [uiSettings.autoOpenArtifacts, uiSettings.limitInlineArtifactPreviews]);
+  }, [canvasEnabled, uiSettings.autoOpenArtifacts, uiSettings.limitInlineArtifactPreviews]);
 
   const performShare = async () => {
     setShareState("sharing");
@@ -1214,21 +1232,23 @@ function ChatContent() {
           >
             {speechEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
           </button>
-          <button
-            className={cx(
-              actionButtonClass,
-              "chat-only-desktop",
-              artifactBrowserOpen ? css({ color: "var(--primary)" }) : "",
-            )}
-            title={artifactBrowserOpen ? "Close artifacts" : "Open artifacts"}
-            aria-label={
-              artifactBrowserOpen ? "Close artifacts" : "Open artifacts"
-            }
-            aria-pressed={artifactBrowserOpen}
-            onClick={() => toggleArtifactBrowser("toolbar")}
-          >
-            <LibraryBig size={16} />
-          </button>
+          {canvasEnabled && (
+            <button
+              className={cx(
+                actionButtonClass,
+                "chat-only-desktop",
+                artifactBrowserOpen ? css({ color: "var(--primary)" }) : "",
+              )}
+              title={artifactBrowserOpen ? "Close artifacts" : "Open artifacts"}
+              aria-label={
+                artifactBrowserOpen ? "Close artifacts" : "Open artifacts"
+              }
+              aria-pressed={artifactBrowserOpen}
+              onClick={() => toggleArtifactBrowser("toolbar")}
+            >
+              <LibraryBig size={16} />
+            </button>
+          )}
           <Link
             to="/courses"
             className={cx(actionButtonClass, "chat-only-desktop")}
@@ -1365,16 +1385,18 @@ function ChatContent() {
                 variant="menu"
                 onToggled={() => setMobileMenuOpen(false)}
               />
-              <button
-                className={cx(menuItemClass, "chat-only-compact")}
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  toggleArtifactBrowser("mobile_menu");
-                }}
-              >
-                <LibraryBig size={14} />
-                {artifactBrowserOpen ? "Close artifacts" : "Open artifacts"}
-              </button>
+              {canvasEnabled && (
+                <button
+                  className={cx(menuItemClass, "chat-only-compact")}
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    toggleArtifactBrowser("mobile_menu");
+                  }}
+                >
+                  <LibraryBig size={14} />
+                  {artifactBrowserOpen ? "Close artifacts" : "Open artifacts"}
+                </button>
+              )}
               <Link
                 to="/courses"
                 className={menuItemClass}
@@ -1679,7 +1701,7 @@ function ChatContent() {
             ) : null
           }
         />
-        {isWideViewport && artifactBrowserOpen && (
+        {canvasEnabled && isWideViewport && artifactBrowserOpen && (
           <div
             className={css({
               height: "100%",
@@ -1699,7 +1721,7 @@ function ChatContent() {
         )}
       </div>
 
-      {inlineArtifacts.length > 0 && (
+      {canvasEnabled && inlineArtifacts.length > 0 && (
         <InlineArtifacts
           artifacts={inlineArtifacts}
           onDismiss={(id) =>
@@ -1808,7 +1830,7 @@ function ChatContent() {
       )}
 
       <ArtifactBrowserOverlay
-        open={artifactBrowserOpen && !isWideViewport}
+        open={canvasEnabled && artifactBrowserOpen && !isWideViewport}
         artifactId={artifactTarget}
         onClose={() => {
           setArtifactBrowserOpen(false);

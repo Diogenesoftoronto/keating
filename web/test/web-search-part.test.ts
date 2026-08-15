@@ -1,12 +1,28 @@
 import { describe, expect, test } from "bun:test";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import {
 	formatSites,
 	isWebSearchToolName,
 	parseWebSearchResult,
+	WebSearchPart,
 	type ParsedWebSearch,
 } from "../src/components/WebSearchPart";
 
 describe("web search part — tool name detection", () => {
+	test("renders an incomplete result as a failure instead of a spinner", () => {
+		const html = renderToStaticMarkup(
+			createElement(WebSearchPart, {
+				toolName: "web_search",
+				result: undefined,
+				status: { type: "incomplete" },
+			}),
+		);
+
+		expect(html).toContain("failed");
+		expect(html).not.toContain("searching");
+	});
+
 	test("recognizes hosted and client search tool names", () => {
 		for (const name of [
 			"web_search",

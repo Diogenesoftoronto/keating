@@ -19,4 +19,9 @@ describe("formatRelativeSessionDate", () => {
 		expect(value).not.toBe("Today");
 		expect(value).toMatch(/\d/);
 	});
+
+	it("falls back to the locale date for older sessions", () => {
+		const oldDate = new Date(Date.now() - 10 * 86_400_000);
+		expect(formatRelativeSessionDate(oldDate.toISOString())).toBe(oldDate.toLocaleDateString());
+	});
 });

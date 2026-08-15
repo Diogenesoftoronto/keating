@@ -18,6 +18,7 @@ import {
 	updateAnalyticsPreferences,
 } from "../lib/posthog";
 import { readAnalyticsPreferences, writeAnalyticsPreferences } from "../lib/analytics-preferences";
+import { isCanvasFeatureEnabled } from "../lib/feature-flags";
 import { getArizePublicConfig, subscribeArizeTraceStatus, type ArizePublicConfig, type ArizeTraceStatus } from "../lib/arize-observability";
 import { css, cx } from "../../styled-system/css";
 
@@ -27,7 +28,8 @@ const REASONING_LEVELS: { value: ReasoningLevel; label: string; description: str
 	{ value: "low", label: "Low", description: "Light reasoning for simple tasks" },
 	{ value: "medium", label: "Medium", description: "Balanced depth and speed" },
 	{ value: "high", label: "High", description: "Deeper analysis for complex questions" },
-	{ value: "xhigh", label: "Maximum", description: "Most thorough reasoning (select models only)" },
+	{ value: "xhigh", label: "Extra high", description: "Extended reasoning for difficult questions" },
+	{ value: "max", label: "Maximum", description: "Most thorough reasoning (select models only)" },
 ];
 
 const stackClass = css({ display: "flex", flexDirection: "column", gap: "1.5rem" });
@@ -117,6 +119,7 @@ function readImageAsDataUrl(file: File): Promise<string> {
 }
 
 export function KeatingUiSettingsTab() {
+	const canvasEnabled = isCanvasFeatureEnabled();
 	const [settings, update] = useKeatingUiSettings();
 	const [imageModelPickerOpen, setImageModelPickerOpen] = useState(false);
 	const replayAvailable = isSessionReplayAvailable();
@@ -322,19 +325,19 @@ export function KeatingUiSettingsTab() {
 				<Toggle checked={settings.showRawErrors} onChange={(checked) => update({ showRawErrors: checked })} />
 			</SettingRow>
 
-			<SettingRow
+			{canvasEnabled && <SettingRow
 				title="Open artifacts automatically"
 				description="Open the artifact side panel when Keating creates a plan, map, animation, benchmark, or evolution."
 			>
 				<Toggle checked={settings.autoOpenArtifacts} onChange={(checked) => update({ autoOpenArtifacts: checked })} />
-			</SettingRow>
+			</SettingRow>}
 
-			<SettingRow
+			{canvasEnabled && <SettingRow
 				title="Keep one inline artifact preview"
 				description="When a lesson plan, map, animation, or other artifact appears below chat, replace the previous inline preview instead of stacking several open cards."
 			>
 				<Toggle checked={settings.limitInlineArtifactPreviews} onChange={(checked) => update({ limitInlineArtifactPreviews: checked })} />
-			</SettingRow>
+			</SettingRow>}
 
 			<SettingRow
 				title="Flashcard sounds"

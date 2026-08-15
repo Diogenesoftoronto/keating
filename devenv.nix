@@ -1,4 +1,36 @@
 { pkgs, lib, config, ... }:
+let
+  similarityTsVersion = "0.5.0";
+  similarityTsTarget =
+    if pkgs.stdenv.hostPlatform.isLinux && pkgs.stdenv.hostPlatform.isx86_64 then
+      "x86_64-unknown-linux-gnu"
+    else if pkgs.stdenv.hostPlatform.isDarwin && pkgs.stdenv.hostPlatform.isAarch64 then
+      "aarch64-apple-darwin"
+    else
+      throw "similarity-ts ${similarityTsVersion} has no upstream binary for ${pkgs.stdenv.hostPlatform.system}";
+  similarityTsHash =
+    if similarityTsTarget == "x86_64-unknown-linux-gnu" then
+      "sha256-Kv2mIBtq+x7jbBzlG5WlOOyZMQx59mGQVTbZF0cKQGo="
+    else
+      "sha256-1aarz5FbhwYYV8I6GTSIOpm5OXCmbGJ8yLfzKGwLqRY=";
+  similarityTs = pkgs.stdenvNoCC.mkDerivation {
+    pname = "similarity-ts";
+    version = similarityTsVersion;
+
+    src = pkgs.fetchurl {
+      url = "https://github.com/mizchi/similarity/releases/download/v${similarityTsVersion}/similarity-v${similarityTsVersion}-${similarityTsTarget}.tar.gz";
+      hash = similarityTsHash;
+    };
+
+    sourceRoot = "similarity-v${similarityTsVersion}-${similarityTsTarget}";
+
+    installPhase = ''
+      runHook preInstall
+      install -Dm755 similarity-ts "$out/bin/similarity-ts"
+      runHook postInstall
+    '';
+  };
+in
 {
   # Per-project devenv config. See https://devenv.sh
   # Provides Bun + all build/test/release tasks. Git hooks call
@@ -9,8 +41,20 @@
     gcc
     gnumake
     (python3.withPackages (pythonPackages: [ pythonPackages.setuptools ]))
+    similarityTs
     typst
   ];
+
+  # Stryker is a project dependency so its version stays pinned in bun.lock.
+  # Expose that local executable in the devenv shell like a system package.
+  scripts.stryker.exec = ''
+    stryker_bin="$DEVENV_ROOT/node_modules/.bin/stryker"
+    if [ ! -x "$stryker_bin" ]; then
+      echo "Stryker is not installed. Run: devenv tasks run keating:install" >&2
+      exit 1
+    fi
+    exec "$stryker_bin" "$@"
+  '';
 
   # Expo SDK 56 / React Native 0.85 native Android toolchain. Keep these
   # versions aligned with react-native/gradle/libs.versions.toml.

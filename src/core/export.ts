@@ -86,6 +86,19 @@ interface BuildResult {
   warnings: string[];
 }
 
+function createBuildResult(): BuildResult {
+  return {
+    examples: [],
+    conversations: [],
+    corpusSections: [],
+    artifactsRead: 0,
+    sessionsRead: 0,
+    skipped: 0,
+    redactions: 0,
+    warnings: [],
+  };
+}
+
 const DEFAULT_OPTIONS: KeatingExportOptions = {
   mode: "finetune",
   source: "all",
@@ -243,13 +256,7 @@ function sessionExamplesFromMessages(
 }
 
 async function buildArtifactExamples(cwd: string, options: KeatingExportOptions): Promise<BuildResult> {
-  const examples: FineTuneExample[] = [];
-  const conversations: FineTuneConversation[] = [];
-  const corpusSections: string[] = [];
-  const warnings: string[] = [];
-  let artifactsRead = 0;
-  let skipped = 0;
-  let redactions = 0;
+  const result = createBuildResult();
 
   const artifactRoots = [
     { kind: "plan", root: plansDir(cwd), include: (path: string) => path.endsWith(".md") },
@@ -261,15 +268,15 @@ async function buildArtifactExamples(cwd: string, options: KeatingExportOptions)
   for (const { kind, root, include } of artifactRoots) {
     for (const file of (await collectFiles(root)).filter(include)) {
       const raw = await readFile(file, "utf8").catch(() => "");
-      artifactsRead += 1;
+      result.artifactsRead += 1;
       if (!raw.trim()) {
-        skipped += 1;
+        result.skipped += 1;
         continue;
       }
       const topic = titleFromPath(file).replace(/\s+answers$/i, "");
       const redacted = redactText(raw.trim(), options.redact);
-      redactions += redacted.count;
-      examples.push({
+      result.redactions += redacted.count;
+      result.examples.push({
         id: `${kind}-${slugify(relative(cwd, file))}`,
         source: "artifact",
         kind,
@@ -280,14 +287,14 @@ async function buildArtifactExamples(cwd: string, options: KeatingExportOptions)
           { role: "assistant", content: redacted.text },
         ],
       });
-      conversations.push({
+      result.conversations.push({
         source: "artifact",
         messages: [
           { role: "user", content: artifactInstruction(kind, topic) },
           { role: "assistant", content: redacted.text },
         ],
       });
-      corpusSections.push(`## ${kind}: ${relative(cwd, file)}\n\n${redacted.text}`);
+      result.corpusSections.push(`## ${kind}: ${relative(cwd, file)}\n\n${redacted.text}`);
     }
   }
 
@@ -298,13 +305,13 @@ async function buildArtifactExamples(cwd: string, options: KeatingExportOptions)
       const raw = await readFile(file, "utf8").catch(() => "");
       if (raw.trim()) {
         const redacted = redactText(raw.trim(), options.redact);
-        redactions += redacted.count;
-        corpusSections.push(`## Reference: ${relative(cwd, file)}\n\n${redacted.text}`);
+        result.redactions += redacted.count;
+        result.corpusSections.push(`## Reference: ${relative(cwd, file)}\n\n${redacted.text}`);
       }
     }
   }
 
-  return { examples, conversations, corpusSections, artifactsRead, sessionsRead: 0, skipped, redactions, warnings };
+  return result;
 }
 
 /** Builds one full, resumable conversation from a session's raw messages. */
@@ -359,13 +366,7 @@ function conversationFromSession(
 }
 
 async function buildSessionExamples(cwd: string, options: KeatingExportOptions): Promise<BuildResult> {
-  const examples: FineTuneExample[] = [];
-  const conversations: FineTuneConversation[] = [];
-  const corpusSections: string[] = [];
-  const warnings: string[] = [];
-  let sessionsRead = 0;
-  let skipped = 0;
-  let redactions = 0;
+  const result = createBuildResult();
 
   for (const file of (await collectFiles(sessionsDir(cwd))).filter((path) => path.endsWith(".json"))) {
     const raw = await readFile(file, "utf8").catch(() => "");
@@ -374,27 +375,27 @@ async function buildSessionExamples(cwd: string, options: KeatingExportOptions):
       const parsed = JSON.parse(raw);
       const messages = Array.isArray(parsed?.messages) ? parsed.messages : Array.isArray(parsed) ? parsed : [];
       if (!messages.length) {
-        skipped += 1;
+        result.skipped += 1;
         continue;
       }
-      sessionsRead += 1;
+      result.sessionsRead += 1;
       const sessionId = typeof parsed?.id === "string" ? parsed.id : basename(file, ".json");
       const converted = sessionExamplesFromMessages(sessionId, messages, options);
-      examples.push(...converted.examples);
-      skipped += converted.skipped;
-      redactions += converted.redactions;
-      if (converted.corpus) corpusSections.push(converted.corpus);
+      result.examples.push(...converted.examples);
+      result.skipped += converted.skipped;
+      result.redactions += converted.redactions;
+      if (converted.corpus) result.corpusSections.push(converted.corpus);
       // One full, resumable conversation per session for the ChatML output.
       // (Redaction counts come from the example path above to avoid double counting.)
       const conv = conversationFromSession(parsed, sessionId, messages, options);
-      if (conv.conversation) conversations.push(conv.conversation);
+      if (conv.conversation) result.conversations.push(conv.conversation);
     } catch {
-      warnings.push(`Skipped invalid session JSON: ${relative(cwd, file)}`);
-      skipped += 1;
+      result.warnings.push(`Skipped invalid session JSON: ${relative(cwd, file)}`);
+      result.skipped += 1;
     }
   }
 
-  return { examples, conversations, corpusSections, artifactsRead: 0, sessionsRead, skipped, redactions, warnings };
+  return result;
 }
 
 function toChatMlJsonl(conversations: FineTuneConversation[]): string {

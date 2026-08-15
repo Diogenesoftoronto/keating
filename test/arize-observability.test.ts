@@ -1,6 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { publicArizeAvailability, readArizeConfig } from "../src/observability/config.js";
-import { exportEvaluationObservation, setEvaluationObservationExporterForTests } from "../src/observability/arize.js";
+import {
+  exportEvaluationObservation,
+  exportProviderCompletion,
+  setEvaluationObservationExporterForTests,
+} from "../src/observability/arize.js";
 
 describe("Arize observability configuration", () => {
   test("is inert without explicit operator configuration and exposes no secrets", () => {
@@ -20,6 +24,26 @@ describe("Arize observability configuration", () => {
     setEvaluationObservationExporterForTests(async () => { throw new Error("private transport detail"); });
     await exportEvaluationObservation({ schemaVersion: 1, operation: "benchmark", engine: "deterministic", status: "success", suite: "core", duration_ms: 1, app_version: "3.0.0", surface: "cli" });
     setEvaluationObservationExporterForTests();
+    expect(true).toBe(true);
+  });
+
+  test("provider completion export is inert when observability is disabled", async () => {
+    const previousEnabled = process.env.ARIZE_ENABLED;
+    process.env.ARIZE_ENABLED = "false";
+    try {
+      await exportProviderCompletion({
+        provider: "test",
+        model: "test-model",
+        duration_ms: 5,
+        status: "success",
+        parse_outcome: "not_requested",
+        app_version: "3.0.0",
+        surface: "cli",
+      });
+    } finally {
+      if (previousEnabled === undefined) delete process.env.ARIZE_ENABLED;
+      else process.env.ARIZE_ENABLED = previousEnabled;
+    }
     expect(true).toBe(true);
   });
 });

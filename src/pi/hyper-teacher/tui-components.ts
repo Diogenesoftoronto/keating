@@ -8,6 +8,7 @@ import {
   wrapTextWithAnsi,
 } from "@earendil-works/pi-tui";
 import { getSelectListTheme } from "@earendil-works/pi-coding-agent";
+import { goalCardBodyLines } from "../../core/cards.js";
 import type { Quiz, QuizQuestion } from "../../core/quiz.js";
 import type { LearnerGoal } from "../../core/goals.js";
 
@@ -117,27 +118,8 @@ function progressBar(percent: number, width = 20): string {
   return `[${"#".repeat(filled)}${"-".repeat(width - filled)}] ${percent}%`;
 }
 
-const GOAL_STEP_GLYPH: Record<string, string> = {
-  not_started: "[ ]",
-  in_progress: "[~]",
-  done: "[x]",
-};
-
 export function renderGoalCard(theme: Theme, goal: LearnerGoal): Component {
-  const total = goal.steps.length;
-  const done = goal.steps.filter((s) => s.status === "done").length;
-  const percent = total === 0 ? 0 : Math.round((done / total) * 100);
-  const nextStep = goal.steps.find((s) => s.status !== "done");
-
-  const lines: string[] = [];
-  if (goal.description) lines.push(goal.description, "");
-  lines.push(`Progress: ${progressBar(percent)} (${done}/${total})`, `Status: ${goal.status}`);
-  if (nextStep) lines.push(`Next: ${nextStep.title}`);
-  lines.push("");
-  for (const step of goal.steps) {
-    lines.push(`${GOAL_STEP_GLYPH[step.status] ?? "[ ]"} ${step.order + 1}. ${step.title} (${step.kind})`);
-  }
-  return renderCard(theme, `Goal: ${goal.title}`, lines);
+  return renderCard(theme, `Goal: ${goal.title}`, goalCardBodyLines(goal, progressBar));
 }
 
 export function renderGoalListCard(theme: Theme, goals: LearnerGoal[]): Component {
