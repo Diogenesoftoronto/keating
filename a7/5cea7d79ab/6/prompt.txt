@@ -1,0 +1,492 @@
+check the last entire session the landing had this done:       1 -import { Suspense, lazy, useEffect, useRef, useState } from "react";
+      2 -import { useNavigate } from "@tanstack/react-router";
+      3 -import { usePostHog } from "@posthog/react";
+      4 -import { Nav } from "../components/Nav";
+      5 -import { Footer } from "../components/Footer";
+      6 -import {
+      7 -  AnimatedHeroHeadline,
+      8 -  CrtPlaythrough,
+      9 -  HeroWonderStage,
+     10 -  KineticTeachingText,
+     11 -  LearningJourney,
+     12 -} from "../components/LandingWonder";
+     13 -import { SurfaceScreencasts } from "../components/SurfaceScreencasts";
+     14 -import { useSeo } from "../hooks/useSeo";
+     15 -import { css } from "../../styled-system/css";
+     16 -import {
+     17 -  btnRetro,
+     18 -  eyebrow,
+     19 -  sectionHead,
+     20 -  sectionLede,
+     21 -  sectionTitle
+     22 -} from "../../styled-system/recipes";
+     23 -
+     24 -const KeatingHero3D = lazy(() => import("../components/three/KeatingHero3D"));
+     25 -
+     26 -function supportsWebGL(): boolean {
+     27 -  try {
+     28 -    const canvas = document.createElement("canvas");
+     29 -    return Boolean(canvas.getContext("webgl2") || canvas.getContext("webgl"));
+     30 -  } catch {
+     31 -    return false;
+     32 -  }
+     33 -}
+     34 -
+     35 -type InstallTab = "npm" | "bun" | "pnpm" | "curl" | "agent";
+     36 -
+     37 -const INSTALL_TABS: { id: InstallTab; label: string; isAgent?: boolean }[] = [
+     38 -  { id: "npm", label: "[NPM]" },
+     39 -  { id: "bun", label: "[BUN]" },
+     40 -  { id: "pnpm", label: "[PNPM]" },
+     41 -  { id: "curl", label: "[CURL]" },
+     42 -  { id: "agent", label: "[AGENT]", isAgent: true },
+     43 -];
+     44 -
+     45 -const TAB_FILENAMES: Record<InstallTab, string> = {
+     46 -  npm: "install.npm",
+     47 -  bun: "install.bun",
+     48 -  pnpm: "install.pnpm",
+     49 -  curl: "install.curl",
+     50 -  agent: "AGENT_INSTRUCTIONS.txt",
+     51 -};
+     52 -
+     53 -const TAB_COPY_TEXT: Record<InstallTab, string> = {
+     54 -  npm: "$ npm install -g keating\n# Requires Node.js 20.19+ and a configured provider",
+     55 -  bun: "$ bun add -g keating\n# Configure Gemini, OpenAI, or Anthropic after install",
+     56 -  pnpm: "$ pnpm add -g keating\n# Requires Node.js 20.19+ and a configured provider",
+     57 -  curl: "$ curl -fsSL https://raw.githubusercontent.com/Diogenesoftoronto/keating/main/scripts/install/install.sh | bash\n# Standalone install. No package manager needed.",
+     58 -  agent: `Install the Keating hyperteacher CLI, then configure one supported provider.
+     59 -
+     60 -Option 1: NPM (most common)
+     61 -npm install -g keating
+     62 -
+     63 -Option 2: Bun (fastest)
+     64 -bun add -g keating
+     65 -
+     66 -Option 3: PNPM (disk efficient)
+     67 -pnpm add -g keating
+     68 -
+     69 -Option 4: Curl (standalone)
+     70 -curl -fsSL https://raw.githubusercontent.com/Diogenesoftoronto/keating/main/scripts/install/install.sh | bash
+     71 -
+     72 -Provider setup
+     73 -Run: keating setup
+     74 -Or set one of GEMINI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY.`,
+     75 -};
+     76 -
+     77 -const TERM_LINES: { cls: string; text: string }[] = [
+     78 -  { cls: "t-cmd", text: 'keating session --topic "recursion"' },
+     79 -  { cls: "t-sys", text: "▸ diagnosing knowledge graph… 3 gaps mapped" },
+     80 -  { cls: "t-you", text: "can you just explain it to me?" },
+     81 -  { cls: "t-k", text: "no. you explain it to me. what happens when a function calls itself with no base case?" },
+     82 -  { cls: "t-you", text: "…it never stops?" },
+     83 -  { cls: "t-k", text: "closer. nothing runs forever. what runs out first — time, or memory?" },
+     84 -  { cls: "t-you", text: "memory. each call stacks a new frame until it overflows." },
+     85 -  { cls: "t-ok", text: "gap closed: call_stack. 2 remaining." },
+     86 -];
+     87 -
+     88 -function lineSpeed(cls: string): { perChar: number; pause: number } {
+     89 -  if (cls === "t-cmd") return { perChar: 34, pause: 650 };
+     90 -  if (cls === "t-sys" || cls === "t-ok") return { perChar: 6, pause: 420 };
+     91 -  return { perChar: 16, pause: 650 };
+     92 -}
+     93 -
+     94 -/** Hero terminal that types out a sample session when scrolled into view. */
+     95 -function TerminalDemo() {
+     96 -  const bodyRef = useRef<HTMLDivElement>(null);
+     97 -  // null → reduced motion / no IO support: render the full transcript statically
+     98 -  const [progress, setProgress] = useState<{ line: number; chars: number } | null>(() => {
+     99 -    if (typeof window === "undefined") return null;
+    100 -    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return null;
+    101 -    if (!("IntersectionObserver" in window)) return null;
+    102 -    return { line: -1, chars: 0 };
+    103 -  });
+    104 -
+    105 -  useEffect(() => {
+    106 -    if (progress === null || progress.line >= 0) return;
+    107 -    const el = bodyRef.current;
+    108 -    if (!el) return;
+    109 -    const io = new IntersectionObserver(
+    110 -      (entries) => {
+    111 -        if (entries.some((e) => e.isIntersecting)) {
+    112 -          io.disconnect();
+    113 -          setTimeout(() => setProgress({ line: 0, chars: 0 }), 500);
+    114 -        }
+    115 -      },
+    116 -      { threshold: 0.35 },
+    117 -    );
+    118 -    io.observe(el);
+    119 -    return () => io.disconnect();
+    120 -  }, [progress]);
+    121 -
+    122 -  useEffect(() => {
+    123 -    if (progress === null || progress.line < 0 || progress.line >= TERM_LINES.length) return;
+    124 -    const { cls, text } = TERM_LINES[progress.line];
+    125 -    const { perChar, pause } = lineSpeed(cls);
+    126 -    const timer = setTimeout(
+    127 -      () => {
+    128 -        setProgress(
+    129 -          progress.chars < text.length
+    130 -            ? { line: progress.line, chars: progress.chars + 1 }
+    131 -            : { line: progress.line + 1, chars: 0 },
+    132 -        );
+    133 -      },
+    134 -      progress.chars < text.length ? perChar : pause,
+    135 -    );
+    136 -    return () => clearTimeout(timer);
+    137 -  }, [progress]);
+    138 -
+    139 -  const done = progress === null || progress.line >= TERM_LINES.length;
+    140 -
+    141 -  return (
+    142 -    <div className="term" aria-label="Example Keating session">
+    143 -      <div className="term-bar">
+    144 -        <span className="d r" />
+    145 -        <span className="d y" />
+    146 -        <span className="d g" />
+    147 -        <span className="term-title">KEATING_TERMINAL — session 0x2F</span>
+    148 -      </div>
+    149 -      <div className="term-body" ref={bodyRef}>
+    150 -        {TERM_LINES.map(({ cls, text }, i) => {
+    151 -          const hidden = progress !== null && i > progress.line;
+    152 -          const partial = progress !== null && i === progress.line;
+    153 -          return (
+    154 -            <div
+    155 -              key={i}
+    156 -              className={`t-line ${cls}`}
+    157 -              style={hidden ? { visibility: "hidden" } : undefined}
+    158 -            >
+    159 -              {partial ? text.slice(0, progress.chars) : text}
+    160 -            </div>
+    161 -          );
+    162 -        })}
+    163 -        <div className="t-line">{done && <span className="t-caret" />}</div>
+    164 -      </div>
+    165 -      <div className="term-foot">
+    166 -        <div>
+    167 -          <span className="dot" />
+    168 -          HARNESS ACTIVE
+    169 -        </div>
+    170 -        <div>GAPS: 2</div>
+    171 -        <div>MODE: SOCRATIC</div>
+    172 -      </div>
+    173 -    </div>
+    174 -  );
+    175 -}
+    176 -
+    177 -function HeroTerminal() {
+    178 -  const navigate = useNavigate();
+    179 -  const [use3d, setUse3d] = useState(false);
+    180 -  useEffect(() => {
+    181 -    // Client-only gate: skip the 3D monitor during SSR and on devices without WebGL.
+    182 -    if (supportsWebGL()) setUse3d(true);
+    183 -  }, []);
+    184 -
+    185 -  if (!use3d) return <TerminalDemo />;
+    186 -  return (
+    187 -    <Suspense fallback={<TerminalDemo />}>
+    188 -      <div className="term-3d" aria-label="Interactive Keating terminal on a retro CRT monitor">
+    189 -        <KeatingHero3D onNavigate={() => navigate({ to: "/chat" })} />
+    190 -      </div>
+    191 -    </Suspense>
+    192 -  );
+    193 -}
+    194 -
+    195 -
+    196 -
+    197 -// Real CLI surface — the landing shows everything Keating can do.
+    198 -const USE_GROUPS: Array<{
+    199 -  title: string;
+    200 -  blurb: string;
+    201 -  image: string;
+    202 -  commands: Array<{ cmd: string; desc: string }>;
+    203 -}> = [
+    204 -  {
+    205 -    title: "TEACH",
+    206 -    blurb: "Socratic sessions that adapt to what you already know.",
+    207 -    image: "/brand/cap-agent.png",
+    208 -    commands: [
+    209 -      { cmd: "learn <topic>", desc: "Start a Socratic teaching session" },
+    210 -      { cmd: "diagnose <topic>", desc: "Map prerequisites and knowledge gaps" },
+    211 -      { cmd: "plan <topic>", desc: "Generate a lesson plan artifact" },
+    212 -      { cmd: "map <topic>", desc: "Draw a concept map of the territory" },
+    213 -      { cmd: "animate <topic>", desc: "Render a Hyperframes animation" },
+    214 -    ],
+    215 -  },
+    216 -  {
+    217 -    title: "ASSESS",
+    218 -    blurb: "Retrieval practice — because recall is how memory forms.",
+    219 -    image: "/brand/cap-teaching.png",
+    220 -    commands: [
+    221 -      { cmd: "quiz <topic>", desc: "Retrieval practice questions" },
+    222 -      { cmd: "verify <topic>", desc: "Fact-check claims before trusting them" },
+    223 -      { cmd: "feedback <up|down>", desc: "Tell Keating how the session landed" },
+    224 -    ],
+    225 -  },
+    226 -  {
+    227 -    title: "SELF-IMPROVE",
+    228 -    blurb: "Keating benchmarks and evolves its own teaching policy.",
+    229 -    image: "/brand/cap-evolutionary.png",
+    230 -    commands: [
+    231 -      { cmd: "bench [topic]", desc: "Benchmark the current teaching policy" },
+    232 -      { cmd: "evolve [topic]", desc: "Evolve policies via MAP-Elites" },
+    233 -      { cmd: "auto-improve", desc: "Full loop: bench → evolve → bench" },
+    234 -    ],
+    235 -  },
+    236 -  {
+    237 -    title: "REVIEW",
+    238 -    blurb: "Your learning history is data — inspect it, export it, own it.",
+    239 -    image: "/brand/mascot-live-listening.png",
+    240 -    commands: [
+    241 -      { cmd: "timeline", desc: "Engagement timeline across topics" },
+    242 -      { cmd: "due", desc: "Topics due for spaced review" },
+    243 -      { cmd: "export --finetune", desc: "Export your data for fine-tuning" },
+    244 -    ],
+    245 -  },
+    246 -];
+    247 -
+    248 -export function Landing() {
+    249 -  useSeo({
+    250 -    title: "Keating — The Hyperteacher | Socratic AI Tutor",
+    251 -    description: "Keating is a Pi-powered hyperteacher that ensures humans remain the authors of their own understanding. Socratic AI tutoring with lesson plans, concept maps, animations, and self-improving pedagogy
+         .",
+    252 -    canonical: "https://keating.help/",
+    253 -  });
+    254 -  const navigate = useNavigate();
+    255 -  const posthog = usePostHog();
+    256 -  const [activeTab, setActiveTab] = useState<InstallTab>("npm");
+    257 -  const [copied, setCopied] = useState(false);
+    258 -
+    259 -  function handleCopy() {
+    260 -    navigator.clipboard.writeText(TAB_COPY_TEXT[activeTab]).then(() => {
+    261 -      setCopied(true);
+    262 -      setTimeout(() => setCopied(false), 1500);
+    263 -      posthog.capture('install_intent', { method: activeTab });
+    264 -    });
+    265 -  }
+    266 -
+    267 -  return (
+    268 -    <div className="retro-layout retro-page">
+    269 -      <Nav />
+    270 -
+    271 -      <main>
+    272 -        {/* Hero */}
+    273 -        <section className="hero">
+    274 -          <div className="wrap hero-wrap">
+    275 -            <div className="hero-grid">
+    276 -              <div className="hero-content">
+    277 -                <div className={eyebrow()}>The Hyperteacher</div>
+    278 -                <h1 className="hero-brand">
+    279 -                  KEATING<span className="hero-brand-suffix">.help</span>
+    280 -                </h1>
+    281 -                <AnimatedHeroHeadline />
+    282 -                <p className="hero-copy">
+    283 -                  Keating listens to your explanation, finds where it thins out, and asks the next
+    284 -                  useful question. Progress means rebuilding the idea and teaching it back in your
+    285 -                  own words.
+    286 -                </p>
+    287 -                <div className="hero-ctas">
+    288 -                  <button
+    289 -                    className={btnRetro({ tone: "primary" })}
+    290 -                    onClick={() => {
+    291 -                      posthog.capture('start_session_clicked', { source: 'landing_hero' });
+    292 -                      navigate({ to: "/chat" });
+    293 -                    }}
+    294 -                  >
+    295 -                    Start a session →
+    296 -                  </button>
+    297 -                  <a className={btnRetro()} href="#watch">
+    298 -                    Watch real sessions
+    299 -                  </a>
+    300 -                </div>
+    301 -                <ul className="hero-proof" aria-label="Keating product qualities">
+    302 -                  <li>Browser and terminal</li>
+    303 -                  <li>Local-first CLI</li>
+    304 -                  <li>Inspectable artifacts</li>
+    305 -                </ul>
+    306 -              </div>
+    307 -
+    308 -              <div className="hero-stage">
+    309 -                <HeroWonderStage>
+    310 -                  <HeroTerminal />
+    311 -                </HeroWonderStage>
+    312 -              </div>
+    313 -            </div>
+    314 -          </div>
+    315 -        </section>
+    316 -
+    317 -        <SurfaceScreencasts />
+    318 -        <KineticTeachingText />
+    319 -        <LearningJourney />
+    320 -        <CrtPlaythrough />
+    321 -
+    322 -        {/* CLI surface */}
+    323 -        <section className="use" id="use">
+    324 -          <div className="wrap">
+    325 -            <div className={sectionHead()}>
+    326 -              <span className="eyebrow prompt">keating help</span>
+    327 -            </div>
+    328 -            <h2 className={sectionTitle()}>Everything you can run.</h2>
+    329 -            <p className={sectionLede()}>
+    330 -              The browser and CLI share the same teaching core. Start a conversation, generate an
+    331 -              artifact, inspect the trace, or evolve the teaching policy.
+    332 -            </p>
+    333 -            <div className="use-grid">
+    334 -              {USE_GROUPS.map((group, index) => (
+    335 -                <div className="use-card" key={group.title}>
+    336 -                  <div className="use-card-media" aria-hidden="true">
+    337 -                    <span>{String(index + 1).padStart(2, "0")}</span>
+    338 -                    <img src={group.image} alt="" width={341} height={403} loading="lazy" />
+    339 -                  </div>
+    340 -                  <div className="use-card-title">{group.title}</div>
+    341 -                  <p className="use-card-blurb">{group.blurb}</p>
+    342 -                  <div className="use-cmds">
+    343 -                    {group.commands.map((c) => (
+    344 -                      <div className="use-cmd" key={c.cmd}>
+    345 -                        <code>
+    346 -                          <span>$ keating</span> {c.cmd}
+    347 -                        </code>
+    348 -                        <small>{c.desc}</small>
+    349 -                      </div>
+    350 -                    ))}
+    351 -                  </div>
+    352 -                </div>
+    353 -              ))}
+    354 -            </div>
+    355 -            <div className="use-links">
+    356 -              <button
+    357 -                className={btnRetro({ tone: "primary" })}
+    358 -                onClick={() => {
+    359 -                  posthog.capture('start_session_clicked', { source: 'landing_use_section' });
+    360 -                  navigate({ to: "/chat" });
+    361 -                }}
+    362 -              >
+    363 -                Open the classroom →
+    364 -              </button>
+    365 -              <button className={btnRetro()} onClick={() => navigate({ to: "/tutorial" })}>
+    366 -                Read the tutorial
+    367 -              </button>
+    368 -            </div>
+    369 -          </div>
+    370 -        </section>
+    371 -
+    372 -        {/* Install — CRT terminal style */}
+    373 -        <section id="install" className="install">
+    374 -          <div className="wrap">
+    375 -            <div className="install-layout">
+    376 -              <div className="install-copy-panel">
+    377 -                <div className={sectionHead()}>
+    378 -                  <span className="eyebrow prompt">./install.sh</span>
+    379 -                </div>
+    380 -                <h2 className={sectionTitle()}>Run it where you work.</h2>
+    381 -                <p className={sectionLede()}>
+    382 -                  Use the web classroom immediately, or install the open-source CLI. Provider
+    383 -                  credentials stay on your machine.
+    384 -                </p>
+    385 -                <div className="install-notes" aria-label="Install requirements">
+    386 -                  <span>Node.js 20.19+</span>
+    387 -                  <span>Bun supported</span>
+    388 -                  <span>Gemini, OpenAI, or Anthropic</span>
+    389 -                </div>
+    390 -              </div>
+    391 -
+    392 -              <div className="install-term">
+    393 -                <div className="install-term-bar">
+    394 -                  <span className="d r" />
+    395 -                  <span className="d y" />
+    396 -                  <span className="d g" />
+    397 -                  <span className="install-term-title">{TAB_FILENAMES[activeTab]}</span>
+    398 -                  <button
+    399 -                    className={`install-copy ${copied ? "copied" : ""}`}
+    400 -                    onClick={handleCopy}
+    401 -                    aria-label={copied ? "Copied" : "Copy install command"}
+    402 -                  >
+    403 -                    {copied ? "[COPIED!]" : "[COPY]"}
+    404 -                  </button>
+    405 -                </div>
+    406 -
+    407 -                <div className="install-term-tabs" aria-label="Install method">
+    408 -                  {INSTALL_TABS.map((tab) => {
+    409 -                    const isActive = activeTab === tab.id;
+    410 -                    return (
+    411 -                      <button
+    412 -                        key={tab.id}
+    413 -                        type="button"
+    414 -                        aria-pressed={isActive}
+    415 -                        className={isActive ? "active" : ""}
+    416 -                        onClick={() => setActiveTab(tab.id)}
+    417 -                      >
+    418 -                        {tab.label}
+    419 -                      </button>
+    420 -                    );
+    421 -                  })}
+    422 -                </div>
+    423 -
+    424 -                <div className="install-term-body" aria-live="polite">
+    425 -                  <pre className={css({ margin: 0, whiteSpace: "pre-wrap" })}>
+    426 -                    {TAB_COPY_TEXT[activeTab]}
+    427 -                  </pre>
+    428 -                </div>
+    429 -              </div>
+    430 -            </div>
+    431 -          </div>
+    432 -        </section>
+    433 -
+    434 -        {/* Final CTA */}
+    435 -        <section className="final">
+    436 -          <div className="wrap">
+    437 -            <div className="final-mascot-scene">
+    438 -              <span className="final-thought final-thought-one" aria-hidden="true">
+    439 -                What makes you think that?
+    440 -              </span>
+    441 -              <span className="final-thought final-thought-two" aria-hidden="true">
+    442 -                Show me the mechanism.
+    443 -              </span>
+    444 -              <img
+    445 -                className="final-bot"
+    446 -                src="/brand/mascot-lotus.png"
+    447 -                alt="Keating robot mascot"
+    448 -                aria-hidden="true"
+    449 -                width={300}
+    450 -                height={426}
+    451 -              />
+    452 -            </div>
+    453 -            <h2>Ready to think for yourself?</h2>
+    454 -            <p>
+    455 -              Bring a topic you half-understand. Keating will help you find the part that is not
+    456 -              yours yet.
+    457 -            </p>
+    458 -            <div className="hero-ctas">
+    459 -              <button
+    460 -                className={btnRetro({ tone: "primary" })}
+    461 -                onClick={() => {
+    462 -                  posthog.capture('start_session_clicked', { source: 'landing_final_cta' });
+    463 -                  navigate({ to: "/chat" });
+    464 -                }}
+    465 -              >
+    466 -                Start a session →
+    467 -              </button>
+    468 -              <button className={btnRetro()} onClick={() => navigate({ to: "/paper" })}>
+    469 -                Read the paper
+    470 -              </button>
+    471 -            </div>
+    472 -          </div>
+    473 -        </section>
+    474 -      </main>
+    475 -
+    476 -      <Footer />
+    477 -    </div>
+    478 -  );
+    479 -}, there was an attempt at making things more minimal but it went way overboard, i just wanted a better design for the section with the mp4 and the section with the crt had a bunch of unnecessary text, also the heading pills above are often visual clutter, sometime it makes sense to hide those from view. I also like texting animations and texture, texture is a bit of effects on the page. can be playful, something that would fit in at UX/UI showcase interactive, great use of shaders that stuff.
+
+---
+
+continue
+
+---
+
+.
+
+---
+
+.
