@@ -1,0 +1,62 @@
+{
+  "cli_version": "0.9.0",
+  "checkpoint_id": "a75cea7d79ab",
+  "session_id": "019ff80d-b798-7893-8209-585bd3d3dc8f",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-15T02:14:59.74669406Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "web/panda.config.ts",
+    "web/src/pages/Landing.tsx"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.6-sol",
+  "turn_id": "4c1bc5a92f6f",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 73618,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 6912,
+    "output_tokens": 802,
+    "api_call_count": 1
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-08-15T02:14:59.533706586Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 5046,
+    "human_modified": 365,
+    "human_removed": 0,
+    "total_committed": 5046,
+    "total_lines_changed": 7231,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 2781,
+      "user_lines_removed": 713,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "web/panda.config.ts": 1144,
+        "web/src/components/LandingWonder.tsx": 592,
+        "web/src/components/ScrambleText.tsx": 183,
+        "web/src/components/ShaderField.tsx": 341,
+        "web/src/components/SurfaceScreencasts.tsx": 395,
+        "web/src/pages/Landing.tsx": 126
+      },
+      "user_removed_per_file": {
+        "web/panda.config.ts": 89,
+        "web/src/components/SurfaceScreencasts.tsx": 359,
+        "web/src/pages/Landing.tsx": 265
+      }
+    }
+  ]
+}

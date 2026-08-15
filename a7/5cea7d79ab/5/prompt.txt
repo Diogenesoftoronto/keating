@@ -1,0 +1,4706 @@
+You are reviewing the results from parallel code analysis for potential issues.
+Multiple specialized agents analyzed the following code diff, each focusing on a specific type of issue.
+The repository files are available in /home/diogenes/Projects/keating.
+
+### User request ###
+
+  Prevent ScrambleText animation from changing layout geometry and causing vertical page jitter.
+
+
+### Diff (lines starting with `-` indicate removed code, and lines starting with `+` indicate added code) ###
+
+  diff --git a/.codex b/.codex
+  deleted file mode 100644
+  index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..0000000000000000000000000000000000000000
+  diff --git a/web/panda.config.ts b/web/panda.config.ts
+  index 7b97e9c07ff227e9071030022c1cd501486d9ffa..2fb881ed1a7ab41dea23ea7bd2cab4cd22b51e51 100644
+  --- a/web/panda.config.ts
+  +++ b/web/panda.config.ts
+  @@ -697,10 +697,37 @@ export default defineConfig({
+   			"58%": { transform: "translateX(1px) rotate(1.5deg)" },
+   			"78%": { transform: "translateX(2px) rotate(3deg)" }
+   		},
+  -		"keating-thinking-dot": {
+  +        "keating-thinking-dot": {
+   			"0%, 60%, 100%": { opacity: 0.28, transform: "translateY(0)" },
+   			"30%": { opacity: 1, transform: "translateY(-2px)" }
+   		},
+  +        "landing-word-arrive": {
+  +          "0%": {
+  +            opacity: 1,
+  +            transform: "translateY(0.9em) rotate(2deg)",
+  +            filter: "blur(9px)"
+  +          },
+  +          "100%": {
+  +            opacity: 1,
+  +            transform: "translateY(0) rotate(0deg)",
+  +            filter: "blur(0)"
+  +          }
+  +        },
+  +        "landing-orbit-drift": {
+  +          "0%, 100%": { translate: "0 0", rotate: "-2deg" },
+  +          "50%": { translate: "0 -8px", rotate: "2deg" }
+  +        },
+  +        "landing-mascot-pop": {
+  +          "0%": { opacity: 0, transform: "translateY(18px) scale(0.88) rotate(-4deg)" },
+  +          "100%": { opacity: 1, transform: "translateY(0) scale(1) rotate(0deg)" }
+  +        },
+  +        "landing-orbit-spin": {
+  +          to: { transform: "rotate(360deg)" }
+  +        },
+  +        "landing-thought-float": {
+  +          "0%, 100%": { translate: "0 0" },
+  +          "50%": { translate: "0 -7px" }
+  +        },
+           "flashcard-exit-left": {
+             to: { transform: "translateX(-130%) rotate(-10deg)", opacity: 0 }
+           },
+  @@ -759,6 +786,21 @@ export default defineConfig({
+               opacity: "0"
+             }
+           },
+  +        /* Channel change on the landing tape deck: one short burst of static
+  +           that settles, so switching tapes reads as tuning a signal in. */
+  +        "surface-tune": {
+  +          "0%": {
+  +            opacity: "0.5",
+  +            transform: "translateY(-2%) scaleY(1.04)"
+  +          },
+  +          "55%": {
+  +            opacity: "0.2"
+  +          },
+  +          "100%": {
+  +            opacity: "0",
+  +            transform: "translateY(0) scaleY(1)"
+  +          }
+  +        },
+           "retro-typing": {
+             from: {
+               width: "0"
+  @@ -1499,6 +1541,17 @@ export default defineConfig({
+         lineHeight: "1.65",
+         WebkitFontSmoothing: "antialiased"
+       },
+  +    ".retro-layout .landing-visually-hidden": {
+  +      position: "absolute",
+  +      width: "1px",
+  +      height: "1px",
+  +      padding: "0",
+  +      margin: "-1px",
+  +      overflow: "hidden",
+  +      clip: "rect(0, 0, 0, 0)",
+  +      whiteSpace: "nowrap",
+  +      border: "0"
+  +    },
+       ".dark .retro-layout.retro-page::before": {
+         opacity: "0.02"
+       },
+  @@ -1768,16 +1821,14 @@ export default defineConfig({
+         padding: "0 28px"
+       },
+       ".retro-layout .hero": {
+  -      padding: "64px 0 88px",
+  +      minHeight: "calc(100svh - var(--nav-height))",
+  +      padding: "clamp(64px, 8vw, 112px) 0",
+         position: "relative",
+  -      overflow: "hidden"
+  -    },
+  -    ".retro-layout .hero-coords": {
+  -      marginBottom: "34px",
+  -      fontSize: "10px",
+  -      letterSpacing: "0.22em",
+  -      color: "var(--ink-soft)",
+  -      opacity: "0.75"
+  +      overflow: "hidden",
+  +      display: "grid",
+  +      alignItems: "center",
+  +      background:
+  +        "radial-gradient(circle at 82% 24%, color-mix(in srgb, var(--green-wash) 82%, transparent), transparent 28rem)"
+       },
+       ".retro-layout .hero-wrap": {
+         display: "grid"
+  @@ -1802,11 +1853,11 @@ export default defineConfig({
+       ".retro-layout .hero-brand": {
+         fontFamily: "var(--mono-display)",
+         fontWeight: "700",
+  -      fontSize: "clamp(52px, 7.2vw, 96px)",
+  +      fontSize: "clamp(58px, 7.6vw, 96px)",
+         lineHeight: "0.95",
+         letterSpacing: "-0.03em",
+         color: "var(--accent-dim)",
+  -      margin: "16px 0 6px"
+  +      margin: "18px 0 18px"
+       },
+       ".dark .retro-layout .hero-brand": {
+         color: "var(--phosphor)",
+  @@ -1821,10 +1872,22 @@ export default defineConfig({
+       ".retro-layout .hero-headline": {
+         fontFamily: "var(--mono-display)",
+         fontWeight: "700",
+  -      fontSize: "clamp(20px, 2.4vw, 30px)",
+  -      lineHeight: "1.2",
+  -      letterSpacing: "-0.015em",
+  -      margin: "0 0 10px"
+  +      fontSize: "clamp(28px, 3.7vw, 48px)",
+  +      lineHeight: "1.04",
+  +      letterSpacing: "-0.03em",
+  +      maxWidth: "14ch",
+  +      margin: "0 0 24px",
+  +      position: "relative"
+  +    },
+  +    ".retro-layout .hero-headline-line": {
+  +      display: "flex",
+  +      flexWrap: "wrap",
+  +      gap: "0 0.28em"
+  +    },
+  +    ".retro-layout .hero-headline-word": {
+  +      display: "inline-block",
+  +      opacity: "1",
+  +      animation: "landing-word-arrive 680ms cubic-bezier(0.16, 1, 0.3, 1) forwards"
+       },
+       ".retro-layout .hero-headline .cursor": {
+         display: "inline-block",
+  @@ -1857,8 +1920,10 @@ export default defineConfig({
+       },
+       ".retro-layout .hero-copy": {
+         color: "var(--ink-soft)",
+  -      maxWidth: "46ch",
+  -      marginBottom: "34px"
+  +      maxWidth: "52ch",
+  +      marginBottom: "32px",
+  +      fontSize: "15.5px",
+  +      lineHeight: "1.75"
+       },
+       ".retro-layout .hero-copy strong": {
+         color: "var(--ink)",
+  @@ -1868,19 +1933,198 @@ export default defineConfig({
+         display: "flex",
+         gap: "16px",
+         flexWrap: "wrap",
+  -      marginBottom: "30px"
+  +      marginBottom: "26px"
+       },
+       ".retro-layout .hero-ctas .keating-btn-retro": {
+         fontSize: "13px",
+  -      padding: "0.5rem",
+  +      padding: "0.65rem 0.8rem",
+         textDecoration: "none"
+       },
+  +    ".retro-layout .hero-proof": {
+  +      display: "flex",
+  +      flexWrap: "wrap",
+  +      gap: "10px 22px",
+  +      margin: "0",
+  +      padding: "18px 0 0",
+  +      borderTop: "1px solid var(--line)",
+  +      listStyle: "none",
+  +      color: "var(--ink-soft)",
+  +      fontSize: "11px",
+  +      letterSpacing: "0.06em",
+  +      textTransform: "uppercase"
+  +    },
+  +    ".retro-layout .hero-proof li": {
+  +      position: "relative",
+  +      paddingLeft: "14px"
+  +    },
+  +    ".retro-layout .hero-proof li::before": {
+  +      content: "'+'",
+  +      position: "absolute",
+  +      left: "0",
+  +      color: "var(--accent-dim)",
+  +      fontWeight: "700"
+  +    },
+       ".retro-layout .hero-stage": {
+         position: "relative",
+         display: "grid",
+         justifyItems: "center",
+         alignContent: "start",
+  -      minHeight: "0"
+  +      minHeight: "0",
+  +      overflow: "visible"
+  +    },
+  +    ".retro-layout .hero-wonder-stage": {
+  +      "--hero-terminal-x": "0px",
+  +      "--hero-terminal-y": "0px",
+  +      "--hero-rotate-x": "0deg",
+  +      "--hero-rotate-y": "0deg",
+  +      "--hero-far-x": "0px",
+  +      "--hero-far-y": "0px",
+  +      "--hero-shadow-x": "0px",
+  +      "--hero-shadow-y": "0px",
+  +      "--hero-mascot-x": "0px",
+  +      "--hero-mascot-y": "0px",
+  +      position: "relative",
+  +      width: "min(100%, 690px)",
+  +      minHeight: "560px",
+  +      perspective: "1100px",
+  +      isolation: "isolate"
+  +    },
+  +    ".retro-layout .hero-wonder-stage::before": {
+  +      content: "''",
+  +      position: "absolute",
+  +      inset: "8% 2% 10% 9%",
+  +      border: "1px solid color-mix(in srgb, var(--accent-dim) 36%, transparent)",
+  +      borderRadius: "50%",
+  +      transform: "translate3d(var(--hero-far-x), var(--hero-far-y), -20px) rotate(-8deg)",
+  +      transition: "transform 180ms cubic-bezier(0.22, 1, 0.36, 1)",
+  +      pointerEvents: "none"
+  +    },
+  +    ".retro-layout .hero-wonder-stage::after": {
+  +      content: "''",
+  +      position: "absolute",
+  +      right: "2%",
+  +      bottom: "10%",
+  +      width: "68%",
+  +      height: "18%",
+  +      borderRadius: "50%",
+  +      background: "rgba(28, 33, 27, 0.2)",
+  +      filter: "blur(22px)",
+  +      transform: "translate3d(var(--hero-shadow-x), var(--hero-shadow-y), -40px) scaleX(0.94)",
+  +      opacity: "0.52",
+  +      transition: "transform 180ms cubic-bezier(0.22, 1, 0.36, 1)",
+  +      pointerEvents: "none"
+  +    },
+  +    ".retro-layout .hero-terminal-layer": {
+  +      position: "relative",
+  +      zIndex: "3",
+  +      width: "100%",
+  +      minHeight: "520px",
+  +      transform:
+  +        "translate3d(var(--hero-terminal-x), var(--hero-terminal-y), 28px) rotateX(var(--hero-rotate-x)) rotateY(var(--hero-rotate-y))",
+  +      transformStyle: "preserve-3d",
+  +      transition: "transform 160ms cubic-bezier(0.22, 1, 0.36, 1)"
+  +    },
+  +    ".retro-layout .hero-orbit-mark": {
+  +      position: "absolute",
+  +      zIndex: "1",
+  +      right: "-2%",
+  +      top: "4%",
+  +      width: "150px",
+  +      height: "auto",
+  +      opacity: "0.08",
+  +      filter: "grayscale(1)",
+  +      transform: "translate3d(var(--hero-far-x), var(--hero-far-y), -30px) rotate(-8deg)",
+  +      transition: "transform 180ms cubic-bezier(0.22, 1, 0.36, 1)",
+  +      pointerEvents: "none"
+  +    },
+  +    ".retro-layout .hero-orbit": {
+  +      position: "absolute",
+  +      zIndex: "4",
+  +      border: "1px solid var(--ink)",
+  +      background: "color-mix(in srgb, var(--paper) 88%, transparent)",
+  +      padding: "7px 10px",
+  +      color: "var(--ink)",
+  +      fontSize: "9px",
+  +      fontWeight: "700",
+  +      letterSpacing: "0.12em",
+  +      boxShadow: "3px 3px 0 var(--ink)",
+  +      pointerEvents: "none",
+  +      animation: "landing-orbit-drift 5.5s ease-in-out infinite"
+  +    },
+  +    ".retro-layout .hero-orbit-one": {
+  +      top: "12%",
+  +      left: "4%",
+  +      transform:
+  +        "translate3d(calc(var(--hero-depth-x) * -18px), calc(var(--hero-depth-y) * -12px), 55px) rotate(-4deg)"
+  +    },
+  +    ".retro-layout .hero-orbit-two": {
+  +      top: "31%",
+  +      right: "-1%",
+  +      animationDelay: "-2s",
+  +      transform:
+  +        "translate3d(calc(var(--hero-depth-x) * 20px), calc(var(--hero-depth-y) * 14px), 62px) rotate(3deg)"
+  +    },
+  +    ".retro-layout .hero-orbit-three": {
+  +      right: "18%",
+  +      bottom: "8%",
+  +      animationDelay: "-3.5s",
+  +      transform:
+  +        "translate3d(calc(var(--hero-depth-x) * 15px), calc(var(--hero-depth-y) * 10px), 75px) rotate(-2deg)"
+  +    },
+  +    ".retro-layout .hero-mascot-reaction": {
+  +      position: "absolute",
+  +      zIndex: "6",
+  +      left: "-2%",
+  +      bottom: "-4%",
+  +      display: "grid",
+  +      width: "132px",
+  +      border: "0",
+  +      background: "transparent",
+  +      padding: "0",
+  +      cursor: "pointer",
+  +      transform: "translate3d(var(--hero-mascot-x), var(--hero-mascot-y), 85px)",
+  +      transition: "transform 180ms cubic-bezier(0.22, 1, 0.36, 1)"
+  +    },
+  +    ".retro-layout .hero-mascot-reaction:hover": {
+  +      transform:
+  +        "translate3d(var(--hero-mascot-x), calc(var(--hero-mascot-y) - 6px), 95px) rotate(-2deg)"
+  +    },
+  +    ".retro-layout .hero-mascot-reaction:focus-visible": {
+  +      outline: "3px solid var(--accent)",
+  +      outlineOffset: "6px"
+  +    },
+  +    ".retro-layout .hero-mascot-reaction img": {
+  +      display: "block",
+  +      width: "100%",
+  +      height: "auto",
+  +      filter: "drop-shadow(0 12px 10px rgba(28, 33, 27, 0.18))",
+  +      animation: "landing-mascot-pop 420ms cubic-bezier(0.16, 1, 0.3, 1)"
+  +    },
+  +    ".retro-layout .hero-mascot-bubble": {
+  +      position: "absolute",
+  +      left: "86%",
+  +      bottom: "72%",
+  +      width: "176px",
+  +      border: "1.5px solid var(--ink)",
+  +      background: "var(--paper)",
+  +      padding: "9px 11px",
+  +      color: "var(--ink)",
+  +      fontSize: "10px",
+  +      lineHeight: "1.45",
+  +      textAlign: "left",
+  +      boxShadow: "4px 4px 0 var(--accent-dim)"
+  +    },
+  +    ".retro-layout .hero-mascot-bubble::after": {
+  +      content: "''",
+  +      position: "absolute",
+  +      left: "-7px",
+  +      bottom: "12px",
+  +      width: "12px",
+  +      height: "12px",
+  +      borderLeft: "1.5px solid var(--ink)",
+  +      borderBottom: "1.5px solid var(--ink)",
+  +      background: "var(--paper)",
+  +      transform: "rotate(45deg)"
+       },
+       ".retro-layout .term-3d": {
+         position: "relative",
+  @@ -2098,47 +2342,619 @@ export default defineConfig({
+         color: "var(--phosphor-dim)",
+         animation: "retro-flicker 6s linear infinite"
+       },
+  +    ".retro-layout .kinetic-teaching": {
+  +      "--kinetic-a": "0px",
+  +      "--kinetic-b": "0px",
+  +      "--kinetic-c": "0px",
+  +      position: "relative",
+  +      overflow: "hidden",
+  +      padding: "clamp(72px, 9vw, 132px) 0",
+  +      borderBottom: "2px solid var(--ink)",
+  +      background:
+  +        "linear-gradient(110deg, color-mix(in srgb, var(--accent) 11%, var(--paper)), var(--paper) 48%, color-mix(in srgb, var(--amber) 13%, var(--paper)))"
+  +    },
+  +    ".retro-layout .kinetic-label": {
+  +      width: "min(1180px, calc(100% - 3rem))",
+  +      margin: "0 auto clamp(30px, 4vw, 56px)",
+  +      color: "var(--accent-dim)",
+  +      fontSize: "10px",
+  +      fontWeight: "700",
+  +      letterSpacing: "0.16em"
+  +    },
+  +    ".retro-layout .kinetic-row": {
+  +      position: "relative",
+  +      zIndex: "2",
+  +      width: "max-content",
+  +      fontFamily: "var(--mono-display)",
+  +      fontSize: "clamp(34px, 6.6vw, 92px)",
+  +      fontWeight: "700",
+  +      lineHeight: "0.92",
+  +      letterSpacing: "-0.04em",
+  +      whiteSpace: "nowrap",
+  +      /* Focus pull: the band sharpens as it reaches the middle of the screen
+  +         and softens on the way out. `--kinetic-blur` is written by the
+  +         component's scroll handler alongside the row offsets. */
+  +      filter: "blur(var(--kinetic-blur, 0px))",
+  +      willChange: "transform, filter"
+  +    },
+  +    ".retro-layout .kinetic-row-a": {
+  +      marginLeft: "max(-6vw, -90px)",
+  +      color: "var(--ink)",
+  +      transform: "translateX(var(--kinetic-a))"
+  +    },
+  +    ".retro-layout .kinetic-row-b": {
+  +      marginTop: "12px",
+  +      marginLeft: "clamp(40px, 14vw, 220px)",
+  +      color: "var(--accent-dim)",
+  +      transform: "translateX(var(--kinetic-b))"
+  +    },
+  +    ".retro-layout .kinetic-row-c": {
+  +      marginTop: "12px",
+  +      marginLeft: "max(-3vw, -44px)",
+  +      color: "var(--ink)",
+  +      transform: "translateX(var(--kinetic-c))"
+  +    },
+  +    ".retro-layout .kinetic-mascot": {
+  +      position: "absolute",
+  +      zIndex: "3",
+  +      right: "clamp(18px, 7vw, 120px)",
+  +      bottom: "-22%",
+  +      width: "clamp(150px, 20vw, 300px)",
+  +      height: "auto",
+  +      filter: "drop-shadow(0 18px 16px rgba(28, 33, 27, 0.2))",
+  +      transform: "rotate(5deg)",
+  +      pointerEvents: "none"
+  +    },
+  +    ".retro-layout .learning-journey": {
+  +      position: "relative",
+  +      overflow: "hidden",
+  +      padding: "clamp(86px, 9vw, 132px) 0 clamp(72px, 8vw, 112px)",
+  +      background: "var(--paper)"
+  +    },
+  +    ".retro-layout .journey-heading": {
+  +      display: "grid",
+  +      gridTemplateColumns: "minmax(0, 1fr) minmax(18rem, 0.58fr)",
+  +      gap: "clamp(28px, 6vw, 76px)",
+  +      alignItems: "end"
+  +    },
+  +    ".retro-layout .journey-heading h2": {
+  +      maxWidth: "16ch",
+  +      margin: "16px 0 0",
+  +      fontFamily: "var(--mono-display)",
+  +      fontSize: "clamp(36px, 5.6vw, 72px)",
+  +      lineHeight: "0.98",
+  +      letterSpacing: "-0.035em"
+  +    },
+  +    ".retro-layout .journey-intro p": {
+  +      margin: "0",
+  +      color: "var(--ink-soft)",
+  +      fontSize: "14px",
+  +      lineHeight: "1.7"
+  +    },
+  +    ".retro-layout .journey-controls": {
+  +      display: "grid",
+  +      gridTemplateColumns: "44px minmax(72px, auto) 44px",
+  +      alignItems: "center",
+  +      width: "max-content",
+  +      marginTop: "24px",
+  +      border: "1.5px solid var(--ink)",
+  +      background: "var(--paper)"
+  +    },
+  +    ".retro-layout .journey-controls button": {
+  +      minWidth: "44px",
+  +      minHeight: "44px",
+  +      border: "0",
+  +      background: "transparent",
+  +      color: "var(--ink)",
+  +      cursor: "pointer",
+  +      fontSize: "20px",
+  +      transition: "background-color 140ms ease, color 140ms ease"
+  +    },
+  +    ".retro-layout .journey-controls button:hover:not(:disabled)": {
+  +      background: "var(--ink)",
+  +      color: "var(--paper)"
+  +    },
+  +    ".retro-layout .journey-controls button:disabled": {
+  +      cursor: "not-allowed",
+  +      opacity: "0.28"
+  +    },
+  +    ".retro-layout .journey-controls span": {
+  +      padding: "0 12px",
+  +      color: "var(--ink-soft)",
+  +      fontSize: "11px",
+  +      letterSpacing: "0.08em",
+  +      textAlign: "center"
+  +    },
+  +    ".retro-layout .journey-track": {
+  +      display: "flex",
+  +      gap: "clamp(18px, 3vw, 36px)",
+  +      width: "100%",
+  +      marginTop: "clamp(44px, 6vw, 72px)",
+  +      padding: "18px max(28px, calc((100vw - 1180px) / 2 + 28px)) 34px",
+  +      overflowX: "auto",
+  +      overscrollBehaviorInline: "contain",
+  +      scrollBehavior: "smooth",
+  +      scrollPaddingInline: "max(28px, calc((100vw - 1180px) / 2 + 28px))",
+  +      scrollSnapType: "x mandatory",
+  +      scrollbarColor: "var(--accent-dim) var(--paper-deep)",
+  +      scrollbarWidth: "thin"
+  +    },
+  +    ".retro-layout .journey-track:focus-visible": {
+  +      outline: "3px solid var(--accent)",
+  +      outlineOffset: "-4px"
+  +    },
+  +    ".retro-layout .journey-card": {
+  +      position: "relative",
+  +      display: "grid",
+  +      gridTemplateColumns: "minmax(0, 0.92fr) minmax(230px, 0.72fr)",
+  +      flex: "0 0 min(820px, calc(100vw - 112px))",
+  +      minHeight: "520px",
+  +      overflow: "hidden",
+  +      border: "2px solid var(--ink)",
+  +      background: "var(--card)",
+  +      boxShadow: "7px 7px 0 color-mix(in srgb, var(--ink) 34%, transparent)",
+  +      scrollSnapAlign: "center",
+  +      opacity: "0.48",
+  +      transform: "scale(0.92) translateY(18px)",
+  +      transformOrigin: "center",
+  +      /* Depth of field: the stages either side of the active one sit out of
+  +         focus, so the carousel reads as a lens rather than a list. */
+  +      filter: "blur(3px)",
+  +      transition:
+  +        "opacity 320ms ease, transform 380ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 320ms ease, filter 320ms ease"
+  +    },
+  +    ".retro-layout .journey-card.is-active": {
+  +      opacity: "1",
+  +      transform: "scale(1) translateY(0)",
+  +      filter: "blur(0)",
+  +      boxShadow: "10px 10px 0 var(--accent-dim)"
+  +    },
+  +    ".retro-layout .journey-card-copy": {
+  +      position: "relative",
+  +      zIndex: "2",
+  +      display: "flex",
+  +      flexDirection: "column",
+  +      padding: "clamp(28px, 5vw, 64px)"
+  +    },
+  +    ".retro-layout .journey-card-meta": {
+  +      display: "flex",
+  +      justifyContent: "space-between",
+  +      gap: "20px",
+  +      paddingBottom: "14px",
+  +      borderBottom: "1px solid var(--ink)",
+  +      color: "var(--accent-dim)",
+  +      fontSize: "11px",
+  +      fontWeight: "700",
+  +      letterSpacing: "0.12em",
+  +      textTransform: "uppercase"
+  +    },
+  +    ".retro-layout .journey-card h3": {
+  +      maxWidth: "12ch",
+  +      margin: "auto 0 20px",
+  +      fontFamily: "var(--mono-display)",
+  +      fontSize: "clamp(34px, 4.7vw, 62px)",
+  +      lineHeight: "0.98",
+  +      letterSpacing: "-0.035em",
+  +      /* The global break-word rule splits long words mid-stem in the narrow
+  +         peeking cards ("principle/s."); hyphenate instead. */
+  +      wordBreak: "normal",
+  +      overflowWrap: "normal",
+  +      hyphens: "auto"
+  +    },
+  +    ".retro-layout .journey-card p": {
+  +      maxWidth: "52ch",
+  +      margin: "0",
+  +      color: "var(--ink-soft)",
+  +      fontSize: "14px",
+  +      lineHeight: "1.7"
+  +    },
+  +    ".retro-layout .journey-card small": {
+  +      display: "block",
+  +      maxWidth: "50ch",
+  +      marginTop: "28px",
+  +      paddingTop: "18px",
+  +      borderTop: "1px solid var(--line)",
+  +      color: "var(--ink)",
+  +      fontSize: "11px",
+  +      lineHeight: "1.55"
+  +    },
+  +    ".retro-layout .journey-card-image": {
+  +      position: "relative",
+  +      display: "grid",
+  +      placeItems: "end center",
+  +      overflow: "hidden",
+  +      background:
+  +        "radial-gradient(circle at 50% 46%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 52%)"
+  +    },
+  +    ".retro-layout .journey-card-image img": {
+  +      position: "relative",
+  +      zIndex: "2",
+  +      display: "block",
+  +      width: "min(118%, 520px)",
+  +      height: "auto",
+  +      marginBottom: "-5%",
+  +      filter: "drop-shadow(0 20px 16px rgba(28, 33, 27, 0.18))",
+  +      transform: "translateY(16px) scale(0.94)",
+  +      transition: "transform 520ms cubic-bezier(0.16, 1, 0.3, 1)"
+  +    },
+  +    ".retro-layout .journey-card.is-active .journey-card-image img": {
+  +      transform: "translateY(0) scale(1)"
+  +    },
+  +    ".retro-layout .journey-return .journey-card-image img": {
+  +      width: "min(82%, 360px)",
+  +      marginBottom: "-2%"
+  +    },
+  +    ".retro-layout .journey-orbit": {
+  +      position: "absolute",
+  +      zIndex: "1",
+  +      width: "78%",
+  +      aspectRatio: "1",
+  +      border: "1px solid color-mix(in srgb, var(--accent-dim) 38%, transparent)",
+  +      borderRadius: "50%",
+  +      animation: "landing-orbit-spin 24s linear infinite"
+  +    },
+  +    ".retro-layout .journey-orbit::before,\n  .retro-layout .journey-orbit::after": {
+  +      content: "''",
+  +      position: "absolute",
+  +      width: "12px",
+  +      height: "12px",
+  +      borderRadius: "50%",
+  +      background: "var(--accent-dim)"
+  +    },
+  +    ".retro-layout .journey-orbit::before": {
+  +      top: "8%",
+  +      left: "18%"
+  +    },
+  +    ".retro-layout .journey-orbit::after": {
+  +      right: "4%",
+  +      bottom: "30%",
+  +      background: "var(--amber)"
+  +    },
+  +    ".retro-layout .crt-playthrough": {
+  +      position: "relative",
+  +      overflow: "hidden",
+  +      padding: "clamp(88px, 10vw, 148px) 0",
+  +      borderBlock: "2px solid var(--ink)",
+  +      background:
+  +        "radial-gradient(circle at 20% 45%, color-mix(in srgb, var(--accent) 15%, transparent), transparent 30rem), var(--paper-deep)"
+  +    },
+  +    ".retro-layout .crt-playthrough-heading": {
+  +      display: "grid",
+  +      gridTemplateColumns: "minmax(0, 1fr) minmax(18rem, 0.58fr)",
+  +      gap: "clamp(28px, 6vw, 76px)",
+  +      alignItems: "end",
+  +      marginBottom: "clamp(42px, 6vw, 72px)"
+  +    },
+  +    ".retro-layout .crt-playthrough-heading h2": {
+  +      maxWidth: "15ch",
+  +      margin: "16px 0 0",
+  +      fontFamily: "var(--mono-display)",
+  +      fontSize: "clamp(38px, 5.8vw, 76px)",
+  +      lineHeight: "0.98",
+  +      letterSpacing: "-0.035em"
+  +    },
+  +    ".retro-layout .crt-playthrough-heading > p": {
+  +      margin: "0",
+  +      color: "var(--ink-soft)",
+  +      fontSize: "14px",
+  +      lineHeight: "1.75"
+  +    },
+  +    ".retro-layout .crt-program-layout": {
+  +      display: "grid",
+  +      gridTemplateColumns: "minmax(0, 1.12fr) minmax(290px, 0.64fr)",
+  +      gap: "clamp(32px, 6vw, 78px)",
+  +      alignItems: "center"
+  +    },
+  +    ".retro-layout .crt-program-layout:focus-visible": {
+  +      outline: "3px solid var(--accent)",
+  +      outlineOffset: "10px"
+  +    },
+  +    ".retro-layout .crt-program-stage": {
+  +      position: "relative",
+  +      minWidth: "0"
+  +    },
+  +    ".retro-layout .crt-program-stage::before": {
+  +      content: "''",
+  +      position: "absolute",
+  +      left: "9%",
+  +      right: "7%",
+  +      bottom: "-5%",
+  +      height: "15%",
+  +      borderRadius: "50%",
+  +      background: "rgba(28, 33, 27, 0.28)",
+  +      filter: "blur(20px)",
+  +      transform: "scaleX(0.9)"
+  +    },
+  +    ".retro-layout .crt-program-stage .crt-wrap": {
+  +      maxWidth: "760px"
+  +    },
+  +    ".retro-layout .crt-program-stage .crt-wrap:hover": {
+  +      transform: "none"
+  +    },
+  +    ".retro-layout .crt-program-screen": {
+  +      padding: "0",
+  +      background: "#061009",
+  +      borderRadius: "9% / 13%",
+  +      isolation: "isolate"
+  +    },
+  +    ".retro-layout .crt-program-screen::before": {
+  +      content: "''",
+  +      position: "absolute",
+  +      inset: "0",
+  +      zIndex: "4",
+  +      pointerEvents: "none",
+  +      background:
+  +        "radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, 0.48) 100%)",
+  +      mixBlendMode: "multiply"
+  +    },
+  +    ".retro-layout .crt-program-screen::after": {
+  +      zIndex: "5"
+  +    },
+  +    ".retro-layout .crt-program-frame": {
+  +      position: "absolute",
+  +      inset: "0",
+  +      zIndex: "1",
+  +      display: "grid",
+  +      placeItems: "center",
+  +      opacity: "0",
+  +      transform: "scale(1.035)",
+  +      filter: "blur(5px) saturate(0.72)",
+  +      transition:
+  +        "opacity 360ms ease, transform 520ms cubic-bezier(0.16, 1, 0.3, 1), filter 420ms ease",
+  +      pointerEvents: "none"
+  +    },
+  +    ".retro-layout .crt-program-frame.is-active": {
+  +      zIndex: "2",
+  +      opacity: "1",
+  +      transform: "scale(1)",
+  +      filter: "blur(0) saturate(0.86)"
+  +    },
+  +    ".retro-layout .crt-program-frame > img": {
+  +      display: "block",
+  +      width: "100%",
+  +      height: "100%",
+  +      objectFit: "cover"
+  +    },
+  +    ".retro-layout .crt-program-quote": {
+  +      position: "relative",
+  +      zIndex: "2",
+  +      display: "grid",
+  +      gap: "14px",
+  +      width: "100%",
+  +      minHeight: "100%",
+  +      margin: "0",
+  +      padding: "8% 9%",
+  +      placeContent: "center",
+  +      color: "var(--phosphor)",
+  +      textAlign: "center",
+  +      textShadow: "0 0 14px rgba(75, 227, 136, 0.58)"
+  +    },
+  +    ".retro-layout .crt-program-quote p": {
+  +      margin: "0",
+  +      fontFamily: "var(--mono-display)",
+  +      fontSize: "clamp(13px, 2.15vw, 23px)",
+  +      fontStyle: "italic",
+  +      fontWeight: "700",
+  +      lineHeight: "1.45"
+  +    },
+  +    ".retro-layout .crt-program-quote cite": {
+  +      color: "var(--phosphor-dim)",
+  +      fontSize: "clamp(7px, 0.9vw, 10px)",
+  +      fontStyle: "normal",
+  +      letterSpacing: "0.14em",
+  +      textTransform: "uppercase"
+  +    },
+  +    ".retro-layout .crt-program-fallback": {
+  +      display: "grid",
+  +      gap: "8px",
+  +      padding: "10%",
+  +      color: "var(--phosphor)",
+  +      fontSize: "10px",
+  +      letterSpacing: "0.08em",
+  +      textAlign: "center"
+  +    },
+  +    ".retro-layout .crt-program-fallback strong": {
+  +      color: "var(--amber)"
+  +    },
+  +    ".retro-layout .crt-program-console": {
+  +      position: "relative",
+  +      display: "flex",
+  +      minWidth: "0",
+  +      flexDirection: "column",
+  +      border: "2px solid var(--ink)",
+  +      background: "var(--card)",
+  +      boxShadow: "7px 7px 0 var(--accent-dim)",
+  +      padding: "clamp(24px, 3vw, 38px)"
+  +    },
+  +    ".retro-layout .crt-program-console-head": {
+  +      display: "flex",
+  +      justifyContent: "space-between",
+  +      gap: "20px",
+  +      paddingBottom: "14px",
+  +      borderBottom: "1px solid var(--ink)",
+  +      color: "var(--ink-soft)",
+  +      fontSize: "10px",
+  +      fontWeight: "700",
+  +      letterSpacing: "0.1em"
+  +    },
+  +    ".retro-layout .crt-program-console-head span:last-child": {
+  +      position: "relative",
+  +      paddingLeft: "13px"
+  +    },
+  +    ".retro-layout .crt-program-console-head span:last-child::before": {
+  +      content: "''",
+  +      position: "absolute",
+  +      left: "0",
+  +      top: "50%",
+  +      width: "7px",
+  +      height: "7px",
+  +      borderRadius: "50%",
+  +      background: "var(--ink-soft)",
+  +      transform: "translateY(-50%)"
+  +    },
+  +    ".retro-layout .crt-program-console-head span.is-live::before": {
+  +      background: "var(--accent)",
+  +      boxShadow: "0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent)"
+  +    },
+  +    ".retro-layout .crt-program-label": {
+  +      marginTop: "clamp(30px, 5vw, 64px)",
+  +      color: "var(--accent-dim)",
+  +      fontSize: "10px",
+  +      fontWeight: "700",
+  +      letterSpacing: "0.14em",
+  +      textTransform: "uppercase"
+  +    },
+  +    ".retro-layout .crt-program-console h3": {
+  +      maxWidth: "12ch",
+  +      margin: "10px 0 18px",
+  +      fontFamily: "var(--mono-display)",
+  +      fontSize: "clamp(28px, 3.8vw, 48px)",
+  +      lineHeight: "1",
+  +      letterSpacing: "-0.03em"
+  +    },
+  +    ".retro-layout .crt-program-console p": {
+  +      margin: "0",
+  +      color: "var(--ink-soft)",
+  +      fontSize: "13px",
+  +      lineHeight: "1.7"
+  +    },
+  +    ".retro-layout .crt-program-controls": {
+  +      display: "grid",
+  +      gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  +      gap: "8px",
+  +      marginTop: "32px"
+  +    },
+  +    ".retro-layout .crt-program-controls button": {
+  +      minHeight: "44px",
+  +      border: "1.5px solid var(--ink)",
+  +      background: "transparent",
+  +      color: "var(--ink)",
+  +      padding: "8px 9px",
+  +      cursor: "pointer",
+  +      fontFamily: "var(--mono-body)",
+  +      fontSize: "9px",
+  +      fontWeight: "700",
+  +      transition: "background-color 140ms ease, color 140ms ease, transform 100ms ease"
+  +    },
+  +    ".retro-layout .crt-program-controls button:hover": {
+  +      background: "var(--ink)",
+  +      color: "var(--paper)"
+  +    },
+  +    ".retro-layout .crt-program-controls button:active": {
+  +      transform: "translateY(2px)"
+  +    },
+  +    ".retro-layout .crt-program-selector": {
+  +      display: "grid",
+  +      gap: "0",
+  +      marginTop: "24px",
+  +      borderTop: "1px solid var(--line)"
+  +    },
+  +    ".retro-layout .crt-program-selector button": {
+  +      display: "grid",
+  +      gridTemplateColumns: "32px minmax(0, 1fr)",
+  +      gap: "10px",
+  +      alignItems: "center",
+  +      minHeight: "40px",
+  +      border: "0",
+  +      borderBottom: "1px solid var(--line)",
+  +      background: "transparent",
+  +      color: "var(--ink-soft)",
+  +      padding: "8px 0",
+  +      cursor: "pointer",
+  +      fontFamily: "var(--mono-body)",
+  +      fontSize: "10px",
+  +      textAlign: "left",
+  +      transition: "color 140ms ease, padding 160ms ease"
+  +    },
+  +    ".retro-layout .crt-program-selector button:hover,\n  .retro-layout .crt-program-selector button[aria-pressed='true']": {
+  +      color: "var(--ink)",
+  +      paddingLeft: "8px"
+  +    },
+  +    ".retro-layout .crt-program-selector button[aria-pressed='true']": {
+  +      background: "color-mix(in srgb, var(--accent) 8%, transparent)"
+  +    },
+  +    ".retro-layout .crt-program-selector button span": {
+  +      color: "var(--accent-dim)",
+  +      fontWeight: "700"
+  +    },
+       ".retro-layout .manifesto": {
+  -      padding: "90px 0",
+  -      position: "relative"
+  +      padding: "clamp(84px, 9vw, 132px) 0",
+  +      position: "relative",
+  +      borderBottom: "1.5px solid var(--ink)"
+  +    },
+  +    ".retro-layout .manifesto-grid": {
+  +      display: "grid",
+  +      gridTemplateColumns: "minmax(0, 0.72fr) minmax(0, 1fr)",
+  +      gap: "clamp(48px, 8vw, 104px)",
+  +      alignItems: "start"
+  +    },
+  +    ".retro-layout .manifesto-copy": {
+  +      position: "sticky",
+  +      top: "calc(var(--nav-height) + 40px)"
+  +    },
+  +    ".retro-layout .manifesto-quote": {
+  +      margin: "44px 0 0",
+  +      paddingTop: "26px",
+  +      borderTop: "1px solid var(--ink)"
+  +    },
+  +    ".retro-layout .manifesto-quote p": {
+  +      margin: "0 0 8px",
+  +      fontFamily: "var(--mono-display)",
+  +      fontSize: "clamp(22px, 3vw, 36px)",
+  +      fontWeight: "700",
+  +      lineHeight: "1.15",
+  +      color: "var(--accent-dim)"
+  +    },
+  +    ".retro-layout .manifesto-quote cite": {
+  +      color: "var(--ink-soft)",
+  +      fontSize: "11px",
+  +      fontStyle: "normal",
+  +      letterSpacing: "0.1em",
+  +      textTransform: "uppercase"
+       },
+       ".retro-layout .man-grid": {
+         display: "grid",
+  -      gridTemplateColumns: "repeat(2, 1fr)",
+  -      gap: "22px",
+  -      position: "relative"
+  +      gap: "0",
+  +      margin: "0",
+  +      padding: "0",
+  +      borderTop: "1.5px solid var(--ink)",
+  +      listStyle: "none"
+       },
+       ".retro-layout .man-card": {
+  -      background: "var(--card)",
+  -      border: "1.5px solid var(--ink)",
+  -      padding: "26px 26px 28px",
+  -      boxShadow: "var(--shadow-card)",
+  -      transition: "transform 0.14s ease, box-shadow 0.14s ease"
+  +      display: "grid",
+  +      gridTemplateColumns: "56px minmax(0, 1fr)",
+  +      gap: "18px",
+  +      padding: "28px 0",
+  +      borderBottom: "1.5px solid var(--ink)",
+  +      background: "transparent",
+  +      transition: "background-color 160ms ease, padding 160ms ease"
+       },
+       ".retro-layout .man-card:hover": {
+  -      transform: "translateY(-3px)",
+  -      boxShadow: "5px 5px 0 var(--ink)"
+  +      paddingInline: "16px",
+  +      background: "color-mix(in srgb, var(--accent) 7%, transparent)"
+       },
+       ".retro-layout .man-num": {
+         fontFamily: "var(--mono-display)",
+         fontWeight: "700",
+  -      fontSize: "15px",
+  +      fontSize: "18px",
+         color: "var(--accent-dim)",
+         letterSpacing: "0.04em",
+  -      marginBottom: "8px"
+  +      margin: "1px 0 0"
+       },
+       ".dark .retro-layout .man-num": {
+         color: "var(--phosphor)"
+       },
+       ".retro-layout .man-card h3": {
+         fontFamily: "var(--mono-display)",
+  -      fontSize: "19px",
+  +      fontSize: "20px",
+         marginBottom: "10px",
+         letterSpacing: "0.02em"
+       },
+       ".retro-layout .man-card p": {
+         color: "var(--ink-soft)",
+  -      fontSize: "14px"
+  +      fontSize: "14px",
+  +      lineHeight: "1.7",
+  +      maxWidth: "58ch"
+       },
+       ".retro-layout .man-card p strong": {
+         color: "var(--ink)",
+  @@ -2160,8 +2976,8 @@ export default defineConfig({
+         textTransform: "uppercase"
+       },
+       ".retro-layout .use": {
+  -      padding: "90px 0",
+  -      borderTop: "1.5px dashed var(--line)"
+  +      padding: "clamp(84px, 9vw, 128px) 0",
+  +      background: "var(--paper-deep)"
+       },
+       ".retro-layout .use-grid": {
+         display: "grid",
+  @@ -2170,16 +2986,53 @@ export default defineConfig({
+         marginBottom: "38px"
+       },
+       ".retro-layout .use-card": {
+  +      position: "relative",
+  +      overflow: "hidden",
+         background: "var(--card)",
+         border: "1.5px solid var(--ink)",
+         padding: "24px 22px 26px",
+  -      boxShadow: "var(--shadow-card)",
+  +      boxShadow: "3px 3px 0 var(--ink)",
+         transition: "transform 0.16s ease, box-shadow 0.16s ease"
+       },
+       ".retro-layout .use-card:hover": {
+         transform: "translateY(-4px)",
+         boxShadow: "5px 5px 0 var(--ink)"
+       },
+  +    ".retro-layout .use-card-media": {
+  +      position: "relative",
+  +      display: "grid",
+  +      placeItems: "end center",
+  +      height: "152px",
+  +      margin: "-24px -22px 20px",
+  +      overflow: "hidden",
+  +      borderBottom: "1.5px solid var(--ink)",
+  +      background:
+  +        "radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 58%), var(--paper)"
+  +    },
+  +    ".retro-layout .use-card-media span": {
+  +      position: "absolute",
+  +      zIndex: "1",
+  +      top: "10px",
+  +      left: "12px",
+  +      color: "var(--accent-dim)",
+  +      fontSize: "10px",
+  +      fontWeight: "700",
+  +      letterSpacing: "0.1em"
+  +    },
+  +    ".retro-layout .use-card-media img": {
+  +      display: "block",
+  +      width: "auto",
+  +      maxWidth: "86%",
+  +      height: "132px",
+  +      objectFit: "contain",
+  +      objectPosition: "center bottom",
+  +      filter: "drop-shadow(0 10px 8px rgba(28, 33, 27, 0.15))",
+  +      transform: "translateY(8px) scale(0.95)",
+  +      transition: "transform 320ms cubic-bezier(0.16, 1, 0.3, 1)"
+  +    },
+  +    ".retro-layout .use-card:hover .use-card-media img": {
+  +      transform: "translateY(0) scale(1.03) rotate(-1deg)"
+  +    },
+       ".retro-layout .use-card-title": {
+         fontFamily: "var(--mono-display)",
+         fontWeight: "700",
+  @@ -2228,15 +3081,36 @@ export default defineConfig({
+         flexWrap: "wrap"
+       },
+       ".retro-layout .install": {
+  -      padding: "90px 0",
+  -      borderTop: "1.5px dashed var(--line)"
+  +      padding: "clamp(84px, 9vw, 128px) 0",
+  +      borderTop: "1.5px solid var(--ink)"
+  +    },
+  +    ".retro-layout .install-layout": {
+  +      display: "grid",
+  +      gridTemplateColumns: "minmax(0, 0.72fr) minmax(0, 1fr)",
+  +      gap: "clamp(36px, 7vw, 84px)",
+  +      alignItems: "start"
+  +    },
+  +    ".retro-layout .install-copy-panel": {
+  +      paddingTop: "4px"
+  +    },
+  +    ".retro-layout .install-notes": {
+  +      display: "grid",
+  +      marginTop: "32px",
+  +      borderTop: "1px solid var(--line)"
+  +    },
+  +    ".retro-layout .install-notes span": {
+  +      padding: "12px 0",
+  +      borderBottom: "1px solid var(--line)",
+  +      color: "var(--ink-soft)",
+  +      fontSize: "12px"
+       },
+       ".retro-layout .install-term": {
+         position: "relative",
+         background: "var(--terminal)",
+         border: "1.5px solid var(--ink)",
+         boxShadow: "6px 6px 0 var(--ink)",
+  -      maxWidth: "720px"
+  +      maxWidth: "720px",
+  +      width: "100%"
+       },
+       ".retro-layout .install-term-bar": {
+         display: "flex",
+  @@ -2319,7 +3193,7 @@ export default defineConfig({
+         fontSize: "13.5px",
+         lineHeight: "1.85",
+         color: "var(--phosphor)",
+  -      minHeight: "120px"
+  +      minHeight: "160px"
+       },
+       ".retro-layout .install-term-body::after": {
+         content: "''",
+  @@ -2353,22 +3227,54 @@ export default defineConfig({
+         color: "rgba(220, 239, 224, 0.8)"
+       },
+       ".retro-layout .final": {
+  -      padding: "100px 0",
+  +      padding: "clamp(84px, 9vw, 128px) 0",
+         textAlign: "center",
+  -      background: "radial-gradient(ellipse 70% 60% at 50% 110%, var(--green-wash), transparent 70%)"
+  +      background:
+  +        "radial-gradient(ellipse 48% 58% at 50% 68%, color-mix(in srgb, var(--green-wash) 88%, transparent), transparent 74%)"
+       },
+       ".retro-layout .final img": {
+         width: "96px",
+         margin: "0 auto 26px",
+         display: "block"
+       },
+  +    ".retro-layout .final-mascot-scene": {
+  +      position: "relative",
+  +      width: "min(100%, 620px)",
+  +      minHeight: "300px",
+  +      margin: "0 auto 14px"
+  +    },
+       ".retro-layout .final .final-bot": {
+  -      width: "300px",
+  -      margin: "0 auto 22px",
+  -      transition: "transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)"
+  +      width: "240px",
+  +      margin: "0 auto",
+  +      transition: "transform 0.2s cubic-bezier(0.165, 0.84, 0.44, 1)",
+  +      filter: "drop-shadow(0 18px 14px rgba(28, 33, 27, 0.17))"
+       },
+       ".retro-layout .final-bot:hover": {
+  -      transform: "scale(1.06) rotate(3deg)"
+  +      transform: "translateY(-6px)"
+  +    },
+  +    ".retro-layout .final-thought": {
+  +      position: "absolute",
+  +      zIndex: "2",
+  +      maxWidth: "180px",
+  +      border: "1.5px solid var(--ink)",
+  +      background: "var(--paper)",
+  +      padding: "10px 12px",
+  +      color: "var(--ink)",
+  +      fontSize: "10px",
+  +      lineHeight: "1.45",
+  +      boxShadow: "4px 4px 0 var(--accent-dim)",
+  +      animation: "landing-thought-float 5s ease-in-out infinite"
+  +    },
+  +    ".retro-layout .final-thought-one": {
+  +      left: "3%",
+  +      top: "18%",
+  +      transform: "rotate(-3deg)"
+  +    },
+  +    ".retro-layout .final-thought-two": {
+  +      right: "2%",
+  +      top: "42%",
+  +      transform: "rotate(2deg)",
+  +      animationDelay: "-2.5s"
+       },
+       ".retro-layout .final h2": {
+         fontFamily: "var(--mono-display)",
+  @@ -3065,7 +3971,8 @@ export default defineConfig({
+           overflowX: "clip"
+         },
+         ".retro-layout .hero": {
+  -        padding: "40px 0 56px"
+  +        minHeight: "auto",
+  +        padding: "52px 0 64px"
+         },
+         ".retro-layout.retro-page": {
+           width: "100%",
+  @@ -3121,18 +4028,11 @@ export default defineConfig({
+           minWidth: "0",
+           overflowX: "clip"
+         },
+  -      ".retro-layout .hero-coords": {
+  -        width: "100%",
+  -        maxWidth: "100%",
+  -        marginBottom: "28px",
+  -        lineHeight: "1.65",
+  -        whiteSpace: "normal",
+  -        overflowWrap: "anywhere"
+  -      },
+         ".retro-layout .hero-brand": {
+  -        fontSize: "clamp(36px, 13.5vw, 52px)",
+  +        fontSize: "clamp(42px, 14vw, 58px)",
+           lineHeight: "1",
+  -        letterSpacing: "-0.02em",
+  +        letterSpacing: "-0.03em",
+  +        marginBottom: "18px",
+           overflowWrap: "anywhere"
+         },
+         ".retro-layout .hero-brand-suffix": {
+  @@ -3140,20 +4040,15 @@ export default defineConfig({
+         },
+         ".retro-layout .hero-headline": {
+           maxWidth: "100%",
+  -        fontSize: "clamp(18px, 6.2vw, 22px)",
+  -        lineHeight: "1.28",
+  -        letterSpacing: "0"
+  -      },
+  -      ".retro-layout .hero-sub": {
+  -        fontSize: "14px",
+  -        lineHeight: "1.35",
+  -        overflowWrap: "anywhere"
+  +        fontSize: "clamp(26px, 9vw, 36px)",
+  +        lineHeight: "1.05",
+  +        letterSpacing: "-0.03em"
+         },
+         ".retro-layout .hero-copy": {
+           width: "100%",
+           maxWidth: "100% !important",
+  -        fontSize: "15px",
+  -        lineHeight: "1.75",
+  +        fontSize: "15.5px",
+  +        lineHeight: "1.7",
+           overflowWrap: "anywhere"
+         },
+         ".retro-layout .hero-ctas": {
+  @@ -3162,7 +4057,7 @@ export default defineConfig({
+           gap: "12px",
+           width: "100%",
+           maxWidth: "100%",
+  -        marginBottom: "24px"
+  +        marginBottom: "20px"
+         },
+         ".retro-layout .hero-ctas .keating-btn-retro": {
+           width: "100%",
+  @@ -3173,22 +4068,174 @@ export default defineConfig({
+           justifyContent: "center",
+           overflowWrap: "anywhere"
+         },
+  -      ".retro-layout .caps-grid": {
+  -        gridTemplateColumns: "1fr !important"
+  +      ".retro-layout .hero-proof": {
+  +        display: "grid",
+  +        gridTemplateColumns: "1fr",
+  +        gap: "8px"
+  +      },
+  +      ".retro-layout .hero-wonder-stage": {
+  +        minHeight: "360px"
+  +      },
+  +      ".retro-layout .hero-terminal-layer": {
+  +        minHeight: "340px"
+  +      },
+  +      ".retro-layout .hero-orbit": {
+  +        fontSize: "8px",
+  +        padding: "5px 7px",
+  +        boxShadow: "2px 2px 0 var(--ink)"
+  +      },
+  +      ".retro-layout .hero-orbit-one": {
+  +        top: "2%",
+  +        left: "0"
+  +      },
+  +      ".retro-layout .hero-orbit-two": {
+  +        top: "22%",
+  +        right: "0"
+  +      },
+  +      ".retro-layout .hero-orbit-three": {
+  +        right: "2%",
+  +        bottom: "6%"
+  +      },
+  +      ".retro-layout .hero-mascot-reaction": {
+  +        left: "0",
+  +        bottom: "-8%",
+  +        width: "92px"
+  +      },
+  +      ".retro-layout .hero-mascot-bubble": {
+  +        left: "75%",
+  +        bottom: "78%",
+  +        width: "142px",
+  +        padding: "7px 9px",
+  +        fontSize: "9px"
+         },
+         ".retro-layout .term-3d": {
+           height: "330px"
+         },
+  +      ".retro-layout .kinetic-teaching": {
+  +        padding: "64px 0 86px"
+  +      },
+  +      ".retro-layout .kinetic-label": {
+  +        width: "calc(100% - 40px)",
+  +        marginBottom: "30px"
+  +      },
+  +      ".retro-layout .kinetic-row": {
+  +        width: "auto",
+  +        paddingInline: "20px",
+  +        whiteSpace: "normal",
+  +        fontSize: "clamp(28px, 11vw, 46px)",
+  +        lineHeight: "0.98"
+  +      },
+  +      ".retro-layout .kinetic-row-a,\n  .retro-layout .kinetic-row-b,\n  .retro-layout .kinetic-row-c": {
+  +        marginLeft: "0",
+  +        transform: "none"
+  +      },
+  +      ".retro-layout .kinetic-row-b,\n  .retro-layout .kinetic-row-c": {
+  +        marginTop: "18px"
+  +      },
+  +      ".retro-layout .kinetic-mascot": {
+  +        right: "-28px",
+  +        bottom: "-68px",
+  +        width: "150px",
+  +        opacity: "0.48"
+  +      },
+  +      ".retro-layout .journey-heading": {
+  +        gridTemplateColumns: "1fr",
+  +        gap: "28px"
+  +      },
+  +      ".retro-layout .journey-heading h2": {
+  +        fontSize: "clamp(34px, 12vw, 52px)"
+  +      },
+  +      ".retro-layout .journey-track": {
+  +        marginTop: "38px",
+  +        paddingInline: "20px",
+  +        scrollPaddingInline: "20px"
+  +      },
+  +      ".retro-layout .journey-card": {
+  +        gridTemplateColumns: "1fr",
+  +        flexBasis: "calc(100vw - 54px)",
+  +        minHeight: "610px"
+  +      },
+  +      ".retro-layout .journey-card-copy": {
+  +        minHeight: "350px",
+  +        padding: "26px 24px"
+  +      },
+  +      ".retro-layout .journey-card h3": {
+  +        marginTop: "auto",
+  +        fontSize: "clamp(32px, 11vw, 48px)"
+  +      },
+  +      ".retro-layout .journey-card-image": {
+  +        minHeight: "250px"
+  +      },
+  +      ".retro-layout .journey-card-image img": {
+  +        width: "min(90%, 360px)"
+  +      },
+  +      ".retro-layout .crt-playthrough": {
+  +        padding: "72px 0 82px"
+  +      },
+  +      ".retro-layout .crt-playthrough-heading": {
+  +        gridTemplateColumns: "1fr",
+  +        gap: "24px",
+  +        marginBottom: "38px"
+  +      },
+  +      ".retro-layout .crt-playthrough-heading h2": {
+  +        fontSize: "clamp(34px, 11vw, 52px)"
+  +      },
+  +      ".retro-layout .crt-program-layout": {
+  +        gridTemplateColumns: "1fr",
+  +        gap: "32px"
+  +      },
+  +      ".retro-layout .crt-program-stage .crt-wrap": {
+  +        width: "100%"
+  +      },
+  +      ".retro-layout .crt-program-console": {
+  +        padding: "24px 20px",
+  +        boxShadow: "5px 5px 0 var(--accent-dim)"
+  +      },
+  +      ".retro-layout .crt-program-label": {
+  +        marginTop: "28px"
+  +      },
+  +      ".retro-layout .crt-program-console h3": {
+  +        fontSize: "clamp(28px, 9.5vw, 42px)"
+  +      },
+  +      ".retro-layout .crt-program-controls": {
+  +        gap: "6px"
+  +      },
+  +      ".retro-layout .crt-program-controls button": {
+  +        minWidth: "0",
+  +        padding: "8px 4px",
+  +        fontSize: "8px"
+  +      },
+  +      ".retro-layout .crt-program-selector": {
+  +        gridTemplateColumns: "repeat(2, minmax(0, 1fr))"
+  +      },
+  +      ".retro-layout .crt-program-selector button": {
+  +        minWidth: "0",
+  +        borderRight: "1px solid var(--line)",
+  +        padding: "8px 6px",
+  +        fontSize: "9px"
+  +      },
+  +      ".retro-layout .manifesto-grid,\n  .retro-layout .install-layout": {
+  +        gridTemplateColumns: "1fr"
+  +      },
+  +      ".retro-layout .manifesto-copy": {
+  +        position: "static"
+  +      },
+         ".retro-layout .man-grid": {
+           gridTemplateColumns: "1fr !important"
+         },
+  +      ".retro-layout .man-card": {
+  +        gridTemplateColumns: "42px minmax(0, 1fr)",
+  +        gap: "12px",
+  +        padding: "22px 0"
+  +      },
+         ".retro-layout .use-grid": {
+           gridTemplateColumns: "1fr !important"
+         },
+  -      ".retro-layout .man-stamp": {
+  -        right: "4px",
+  -        top: "-40px",
+  -        fontSize: "11px"
+  +      ".retro-layout .use-card-media": {
+  +        height: "178px"
+  +      },
+  +      ".retro-layout .use-card-media img": {
+  +        height: "158px"
+         },
+         ".retro-layout .foot-grid": {
+           gridTemplateColumns: "1fr !important"
+  @@ -3208,6 +4255,20 @@ export default defineConfig({
+         },
+         ".retro-layout .legal-doc": {
+           padding: "24px"
+  +      },
+  +      ".retro-layout .final-mascot-scene": {
+  +        minHeight: "270px"
+  +      },
+  +      ".retro-layout .final-thought": {
+  +        maxWidth: "132px",
+  +        padding: "8px 9px",
+  +        fontSize: "9px"
+  +      },
+  +      ".retro-layout .final-thought-one": {
+  +        left: "0"
+  +      },
+  +      ".retro-layout .final-thought-two": {
+  +        right: "0"
+         }
+       },
+       "@media (max-width: 480px)": {
+  @@ -3279,6 +4340,28 @@ export default defineConfig({
+           transition: "none",
+           animation: "none"
+         },
+  +      ".retro-layout .hero-headline-word": {
+  +        opacity: "1",
+  +        animation: "none",
+  +        filter: "none",
+  +        transform: "none"
+  +      },
+  +      ".retro-layout .hero-terminal-layer,\n  .retro-layout .hero-orbit-mark,\n  .retro-layout .hero-mascot-reaction,\n  .retro-layout .hero-wonder-stage::before,\n  .retro-layout .hero-wonder-stage::after": {
+  +        transition: "none",
+  +        transform: "none"
+  +      },
+  +      ".retro-layout .hero-orbit,\n  .retro-layout .hero-mascot-reaction img,\n  .retro-layout .journey-orbit,\n  .retro-layout .final-thought": {
+  +        animation: "none"
+  +      },
+  +      ".retro-layout .kinetic-row-a,\n  .retro-layout .kinetic-row-b,\n  .retro-layout .kinetic-row-c": {
+  +        transform: "none"
+  +      },
+  +      ".retro-layout .journey-track": {
+  +        scrollBehavior: "auto"
+  +      },
+  +      ".retro-layout .journey-card,\n  .retro-layout .journey-card-image img,\n  .retro-layout .use-card-media img,\n  .retro-layout .crt-program-frame": {
+  +        transition: "none"
+  +      },
+         ".flashcard-3d": {
+           transition: "none"
+         },
+  @@ -3304,10 +4387,8 @@ export default defineConfig({
+       },
+       "@media (min-width: 981px) and (max-width: 1179px)": {
+         ".retro-layout .hero": {
+  -        padding: "52px 0 72px"
+  -      },
+  -      ".retro-layout .hero-coords": {
+  -        marginBottom: "26px"
+  +        minHeight: "auto",
+  +        padding: "72px 0 84px"
+         },
+         ".retro-layout .hero-grid": {
+           gridTemplateColumns: "minmax(440px, 0.92fr) minmax(360px, 1fr)",
+  @@ -3348,7 +4429,8 @@ export default defineConfig({
+       },
+       "@media (max-width: 980px)": {
+         ".retro-layout .hero": {
+  -        padding: "48px 0 70px"
+  +        minHeight: "auto",
+  +        padding: "64px 0 74px"
+         },
+         ".retro-layout .hero-grid": {
+           gridTemplateColumns: "1fr",
+  @@ -3362,11 +4444,6 @@ export default defineConfig({
+           width: "min(100%, 42rem)",
+           margin: "0 auto"
+         },
+  -      ".retro-layout .hero-coords": {
+  -        width: "min(100%, 42rem)",
+  -        marginLeft: "auto",
+  -        marginRight: "auto"
+  -      },
+         ".retro-layout .hero-grid,\n  .retro-layout .caps-grid,\n  .retro-layout .man-grid,\n  .retro-layout .use-grid,\n  .retro-layout .foot-grid,\n  .retro-layout .download-hero-grid,\n  .retro-layout .mobile-soon-grid,\n  .retro-layout .download-source-box,\n  .retro-layout .desktop-download-grid": {
+           width: "100%",
+           maxWidth: "100%",
+  @@ -3377,7 +4454,7 @@ export default defineConfig({
+         },
+         ".retro-layout .hero-stage": {
+           paddingLeft: "0",
+  -        paddingTop: "86px",
+  +        paddingTop: "44px",
+           minHeight: "0",
+           width: "100%",
+           maxWidth: "620px",
+  @@ -3390,6 +4467,13 @@ export default defineConfig({
+           maxWidth: "100%",
+           overflow: "hidden"
+         },
+  +      ".retro-layout .manifesto-grid,\n  .retro-layout .install-layout": {
+  +        gridTemplateColumns: "1fr",
+  +        gap: "52px"
+  +      },
+  +      ".retro-layout .manifesto-copy": {
+  +        position: "static"
+  +      },
+         ".retro-layout .caps-grid": {
+           gridTemplateColumns: "1fr 1fr"
+         },
+  diff --git a/web/src/components/SurfaceScreencasts.tsx b/web/src/components/SurfaceScreencasts.tsx
+  index 05905f4fd5804edb3bb6a92a4450f6a89abda8c6..4105570168a6e804be0f64c5902264ff64a5c8f6 100644
+  --- a/web/src/components/SurfaceScreencasts.tsx
+  +++ b/web/src/components/SurfaceScreencasts.tsx
+  @@ -1,60 +1,67 @@
+   import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+   import { Link } from "@tanstack/react-router";
+   import { css, cx } from "../../styled-system/css";
+  -import { sectionHead, sectionLede, sectionTitle } from "../../styled-system/recipes";
+   import { useReducedMotion } from "../hooks/use-media-query";
+  +import { ShaderField } from "./ShaderField";
+  +import { ScrambleText } from "./ScrambleText";
+   
+  -type SurfaceId = "web" | "tui" | "cli";
+  +type ChannelId = "web" | "tui" | "cli" | "tour";
+   
+  -interface SurfaceClip {
+  -  id: SurfaceId;
+  +interface Channel {
+  +  id: ChannelId;
+     label: string;
+  -  eyebrow: string;
+  +  slate: string;
+     title: string;
+  -  description: string;
+  -  handoff: string;
+  +  blurb: string;
+     src: string;
+     poster: string;
+   }
+   
+  -const SURFACES: SurfaceClip[] = [
+  +/** Four tapes in one deck — the three surfaces, then the whole product in 32 seconds. */
+  +const CHANNELS: Channel[] = [
+     {
+       id: "web",
+       label: "Web",
+  -    eyebrow: "01 // LEARN",
+  +    slate: "CH 01 · CLASSROOM",
+       title: "Ask in the classroom.",
+  -    description:
+  -      "A live Gemini session: the learner asks why cities form where they do. Keating reasons in the open, then hands back the one question worth answering next.",
+  -    handoff: "Move to the TUI when reading turns into working.",
+  +    blurb:
+  +      "A live session: why cities form where they do. Keating reasons in the open, then hands back the one question worth answering next.",
+       src: "/tapes/web-classroom.mp4",
+       poster: "/tapes/posters/web-classroom.jpg",
+     },
+     {
+       id: "tui",
+       label: "TUI",
+  -    eyebrow: "02 // COLLABORATE",
+  +    slate: "CH 02 · TERMINAL",
+       title: "Keep the dialogue in your terminal.",
+  -    description:
+  -      "The collaborative OpenTUI host runs the same conversation through Pi — plans, concept maps, and everything Keating knows about you stay one keystroke away.",
+  -    handoff: "Drop to the CLI when the conversation should leave something behind.",
+  +    blurb:
+  +      "The same conversation, running through Pi. Plans, concept maps, and everything Keating knows about you stay one keystroke away.",
+       src: "/tapes/tui-collaborative.mp4",
+       poster: "/tapes/posters/tui-collaborative.jpg",
+     },
+     {
+       id: "cli",
+       label: "CLI",
+  -    eyebrow: "03 // INSPECT",
+  +    slate: "CH 03 · ARTIFACTS",
+       title: "Turn the lesson into files.",
+  -    description:
+  -      "One Special Relativity session becomes a plan, a concept map, a verification checklist, and a full trace — generated live by the Bun CLI, not staged for the camera.",
+  -    handoff: "Head back to the web shell when it is time to teach it back.",
+  +    blurb:
+  +      "One Special Relativity session becomes a plan, a concept map, a verification checklist, and a full trace — generated live, not staged for the camera.",
+       src: "/tapes/cli-artifacts.mp4",
+       poster: "/tapes/posters/cli-artifacts.jpg",
+     },
+  +  {
+  +    id: "tour",
+  +    label: "Tour",
+  +    slate: "CH 04 · FULL TOUR",
+  +    title: "The whole room in 32 seconds.",
+  +    blurb:
+  +      "Every route shipping today, in order: model routing, live media, the review runway, courses, and publishing. Loading states and access gates included.",
+  +    src: "/tapes/keating-surface-tour.mp4",
+  +    poster: "/tapes/posters/keating-surface-tour.jpg",
+  +  },
+   ];
+   
+   interface ProductFeature {
+  -  number: string;
+     label: string;
+     title: string;
+     description: string;
+  @@ -65,255 +72,257 @@ interface ProductFeature {
+   
+   const PRODUCT_FEATURES: ProductFeature[] = [
+     {
+  -    number: "04",
+  -    label: "MODEL ROUTING",
+  +    label: "Model routing",
+       title: "Choose by capability, not logo.",
+       description:
+  -      "Search every cloud and local model Keating can reach, then filter by vision, thinking, or context length — whatever the lesson actually demands.",
+  +      "Search every cloud and local model Keating can reach, then filter by vision, thinking, or context length.",
+       poster: "/tapes/posters/feature-models.jpg",
+       to: "/chat",
+       action: "Open the classroom",
+     },
+     {
+  -    number: "05",
+  -    label: "LIVE MEDIA",
+  -    title: "Keep voice, vision, and tools in one session.",
+  +    label: "Live media",
+  +    title: "Voice, vision, and tools in one session.",
+       description:
+  -      "Live shows you the machinery: camera state, audio state, time to first response, frames sent, tools fired. When something stalls, you can see exactly where.",
+  +      "Camera state, audio state, time to first response, frames sent, tools fired. When something stalls, you can see where.",
+       poster: "/tapes/posters/feature-live.jpg",
+       to: "/live",
+       action: "Open Live",
+     },
+     {
+  -    number: "06",
+  -    label: "REVIEW RUNWAY",
+  +    label: "Review runway",
+       title: "Turn sessions into a return path.",
+       description:
+  -      "What is due, what you flagged as important, and what still needs verifying — collected in one place, with two-way Anki transfer. A runway, not another inbox.",
+  +      "What is due, what you flagged, and what still needs verifying — in one place, with two-way Anki transfer.",
+       poster: "/tapes/posters/feature-coming-up.jpg",
+       to: "/coming-up",
+       action: "See Coming Up",
+     },
+     {
+  -    number: "07",
+  -    label: "COURSES",
+  -    title: "Make learning a room you can return to.",
+  +    label: "Courses",
+  +    title: "Make learning a room you return to.",
+       description:
+  -      "Lessons, sources, shared notes, decks, peer work, and the teacher review you consented to — kept together behind the Not Organic gateway.",
+  +      "Lessons, sources, shared notes, decks, and peer work kept together behind the Not Organic gateway.",
+       poster: "/tapes/posters/feature-courses.jpg",
+       to: "/courses",
+       action: "Explore Courses",
+     },
+     {
+  -    number: "08",
+  -    label: "STANDARD.SITE",
+  +    label: "Standard.site",
+       title: "Publish the record. Keep failure visible.",
+       description:
+  -      "Release notes and field work publish to Standard.site over the AT Protocol. When upstream is down, the page says so — and says how to recover.",
+  +      "Release notes and field work publish over the AT Protocol. When upstream is down, the page says so.",
+       poster: "/tapes/posters/feature-publish.jpg",
+       to: "/blog",
+       action: "Open the publication",
+     },
+   ];
+   
+  +const GRAIN_URL =
+  +  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E\")";
+  +
+  +function formatTime(seconds: number): string {
+  +  if (!Number.isFinite(seconds) || seconds < 0) return "--:--";
+  +  const total = Math.floor(seconds);
+  +  const mm = String(Math.floor(total / 60)).padStart(2, "0");
+  +  const ss = String(total % 60).padStart(2, "0");
+  +  return `${mm}:${ss}`;
+  +}
+  +
+   export function SurfaceScreencasts() {
+     const reducedMotion = useReducedMotion();
+  -  const [activeId, setActiveId] = useState<SurfaceId>("web");
+  +  const [activeId, setActiveId] = useState<ChannelId>("web");
+     const [autoplayBlocked, setAutoplayBlocked] = useState(false);
+     const videoRef = useRef<HTMLVideoElement>(null);
+  +  const timecodeRef = useRef<HTMLSpanElement>(null);
+  +  const progressRef = useRef<HTMLSpanElement>(null);
+     const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  -  const activeIndex = SURFACES.findIndex((surface) => surface.id === activeId);
+  -  const active = SURFACES[activeIndex];
+  +  const activeIndex = CHANNELS.findIndex((channel) => channel.id === activeId);
+  +  const active = CHANNELS[activeIndex];
+   
+     useEffect(() => {
+       const video = videoRef.current;
+       if (!video) return;
+       let cancelled = false;
+  -    const stopPlayback = () => {
+  -      cancelled = true;
+  -      video.pause();
+  -    };
+  +
+  +    // The deck's readout is written straight to the DOM: `timeupdate` fires
+  +    // several times a second and none of the rest of the section depends on it.
+  +    function paint() {
+  +      const el = videoRef.current;
+  +      if (!el) return;
+  +      if (timecodeRef.current) {
+  +        timecodeRef.current.textContent = `${formatTime(el.currentTime)} / ${formatTime(el.duration)}`;
+  +      }
+  +      if (progressRef.current) {
+  +        const ratio = el.duration > 0 ? el.currentTime / el.duration : 0;
+  +        progressRef.current.style.transform = `scaleX(${ratio.toFixed(4)})`;
+  +      }
+  +    }
+  +
+  +    video.addEventListener("timeupdate", paint);
+  +    video.addEventListener("loadedmetadata", paint);
+  +    paint();
+  +
+       setAutoplayBlocked(false);
+       video.currentTime = 0;
+  -    if (reducedMotion) {
+  +    if (!reducedMotion) {
+  +      void video.play().catch(() => {
+  +        if (!cancelled) setAutoplayBlocked(true);
+  +      });
+  +    } else {
+         video.pause();
+  -      return stopPlayback;
+       }
+  -    void video.play().catch(() => {
+  -      if (!cancelled) setAutoplayBlocked(true);
+  -    });
+  -    return stopPlayback;
+  +
+  +    return () => {
+  +      cancelled = true;
+  +      video.removeEventListener("timeupdate", paint);
+  +      video.removeEventListener("loadedmetadata", paint);
+  +      video.pause();
+  +    };
+     }, [activeId, reducedMotion]);
+   
+     function handleTabKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
+       let nextIndex = activeIndex;
+       if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+  -      nextIndex = (activeIndex + 1) % SURFACES.length;
+  +      nextIndex = (activeIndex + 1) % CHANNELS.length;
+       } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+  -      nextIndex = (activeIndex - 1 + SURFACES.length) % SURFACES.length;
+  +      nextIndex = (activeIndex - 1 + CHANNELS.length) % CHANNELS.length;
+       } else if (event.key === "Home") {
+         nextIndex = 0;
+       } else if (event.key === "End") {
+  -      nextIndex = SURFACES.length - 1;
+  +      nextIndex = CHANNELS.length - 1;
+       } else {
+         return;
+       }
+   
+       event.preventDefault();
+  -    setActiveId(SURFACES[nextIndex].id);
+  +    setActiveId(CHANNELS[nextIndex].id);
+       tabRefs.current[nextIndex]?.focus();
+     }
+   
+     return (
+       <section
+         className={css({
+  -        borderBlock: "3px solid var(--ink)",
+  -        background:
+  -          "linear-gradient(135deg, color-mix(in srgb, var(--accent) 7%, var(--paper)), var(--paper) 48%, color-mix(in srgb, var(--phosphor) 6%, var(--paper)))",
+  +        position: "relative",
+  +        isolation: "isolate",
+  +        overflow: "hidden",
+  +        borderBottom: "2px solid var(--ink)",
+  +        background: "var(--paper)",
+           paddingBlock: { base: "4rem", md: "6.5rem" },
+         })}
+         aria-labelledby="surface-screencasts-title"
+       >
+  -      <div
+  -        className={css({
+  -          width: "min(1180px, calc(100% - 2rem))",
+  -          marginInline: "auto",
+  -        })}
+  -      >
+  -        <div className={sectionHead()}>
+  -          <span className="eyebrow prompt">open SURFACES.mp4</span>
+  -        </div>
+  -        <h2 id="surface-screencasts-title" className={sectionTitle()}>
+  -          Watch Keating work.
+  -        </h2>
+  -        <p className={cx(sectionLede(), css({ maxWidth: "48rem" }))}>
+  -          Every clip is a real session, recorded against the shipping build. Follow one question
+  -          from the browser, into the terminal, out to the files it leaves behind.
+  -        </p>
+  +      <ShaderField colorVar="--accent-green" density={150} intensity={0.4} opacity={0.22} />
+   
+  +      <div className={cx("wrap", css({ position: "relative", zIndex: 1 }))}>
+           <div
+             className={css({
+               display: "grid",
+  -            gap: { base: "1.5rem", lg: "2.5rem" },
+  -            alignItems: "start",
+  -            marginTop: { base: "2rem", md: "3rem" },
+  -            gridTemplateColumns: { base: "minmax(0, 1fr)", lg: "15rem minmax(0, 1fr)" },
+  +            gap: { base: "0.75rem", md: "2.5rem" },
+  +            alignItems: "end",
+  +            marginBottom: { base: "2rem", md: "2.75rem" },
+  +            gridTemplateColumns: { base: "1fr", md: "minmax(0, 1.1fr) minmax(0, 0.9fr)" },
+             })}
+           >
+  -          <div>
+  -            <div
+  -              role="tablist"
+  -              aria-label="Choose a Keating surface"
+  -              className={css({
+  -                display: "flex",
+  -                overflowX: "auto",
+  -                borderBottom: { base: "2px solid var(--ink)", lg: "0" },
+  -                flexDirection: { base: "row", lg: "column" },
+  -              })}
+  -            >
+  -              {SURFACES.map((surface, index) => {
+  -                const selected = surface.id === activeId;
+  -                return (
+  -                  <button
+  -                    key={surface.id}
+  -                    ref={(node) => {
+  -                      tabRefs.current[index] = node;
+  -                    }}
+  -                    type="button"
+  -                    id={`surface-tab-${surface.id}`}
+  -                    role="tab"
+  -                    aria-selected={selected}
+  -                    aria-controls={`surface-panel-${surface.id}`}
+  -                    tabIndex={selected ? 0 : -1}
+  -                    onClick={() => setActiveId(surface.id)}
+  -                    onKeyDown={handleTabKeyDown}
+  -                    className={css({
+  -                      position: "relative",
+  -                      flex: { base: "0 0 auto", lg: "initial" },
+  -                      minWidth: { base: "7rem", lg: "100%" },
+  -                      border: "0",
+  -                      borderLeft: { base: "0", lg: "3px solid transparent" },
+  -                      borderBottom: { base: "3px solid transparent", lg: "0" },
+  -                      background: selected ? "var(--ink)" : "transparent",
+  -                      color: selected ? "var(--paper)" : "var(--ink)",
+  -                      padding: { base: "0.85rem 1rem", lg: "1rem 1.25rem" },
+  -                      textAlign: "left",
+  -                      fontFamily: "var(--font-mono)",
+  -                      fontSize: "0.8rem",
+  -                      fontWeight: 800,
+  -                      letterSpacing: "0.08em",
+  -                      textTransform: "uppercase",
+  -                      cursor: "pointer",
+  -                      transition: "background-color 140ms ease, color 140ms ease",
+  -                      _hover: { background: selected ? "var(--ink)" : "var(--accent-dim)" },
+  -                      _focusVisible: {
+  -                        outline: "3px solid var(--accent)",
+  -                        outlineOffset: "3px",
+  -                        zIndex: 1,
+  -                      },
+  -                    })}
+  -                  >
+  -                    <span
+  -                      className={css({
+  -                        display: { base: "none", lg: "inline" },
+  -                        marginRight: "0.65rem",
+  -                        color: selected ? "var(--accent)" : "var(--muted-foreground)",
+  -                      })}
+  -                    >
+  -                      0{index + 1}
+  -                    </span>
+  -                    {surface.label}
+  -                  </button>
+  -                );
+  -              })}
+  -            </div>
+  +          <h2
+  +            id="surface-screencasts-title"
+  +            className={css({
+  +              margin: 0,
+  +              fontFamily: "var(--mono-display)",
+  +              fontWeight: 700,
+  +              fontSize: { base: "2rem", md: "3.2rem" },
+  +              lineHeight: 1,
+  +              letterSpacing: "-0.035em",
+  +            })}
+  +          >
+  +            <ScrambleText text="Watch it work." />
+  +          </h2>
+  +          <p
+  +            className={css({
+  +              margin: 0,
+  +              maxWidth: "44ch",
+  +              color: "var(--ink-soft)",
+  +              lineHeight: 1.7,
+  +            })}
+  +          >
+  +            Four tapes, recorded against the shipping build. Follow one question from the browser,
+  +            into the terminal, out to the files it leaves behind.
+  +          </p>
+  +        </div>
+   
+  -            <p
+  +        {/* ---- the deck ------------------------------------------------ */}
+  +        <div
+  +          className={css({
+  +            border: "3px solid var(--ink)",
+  +            background: "var(--card)",
+  +            boxShadow: { base: "6px 6px 0 var(--accent-dim)", md: "12px 12px 0 var(--accent-dim)" },
+  +          })}
+  +        >
+  +          <div
+  +            className={css({
+  +              display: "flex",
+  +              alignItems: "center",
+  +              gap: "0.75rem",
+  +              flexWrap: "wrap",
+  +              borderBottom: "3px solid var(--ink)",
+  +              background: "var(--terminal)",
+  +              color: "var(--phosphor)",
+  +              padding: { base: "0.5rem 0.7rem", md: "0.6rem 1rem" },
+  +              fontFamily: "var(--mono-body)",
+  +              fontSize: { base: "0.6rem", md: "0.68rem" },
+  +              letterSpacing: "0.14em",
+  +              textTransform: "uppercase",
+  +            })}
+  +          >
+  +            <span
+  +              aria-hidden="true"
+                 className={css({
+  -                display: { base: "none", lg: "block" },
+  -                marginTop: "1.5rem",
+  -                borderTop: "1px solid var(--ink)",
+  -                paddingTop: "1rem",
+  -                color: "var(--muted-foreground)",
+  -                fontFamily: "var(--font-mono)",
+  -                fontSize: "0.72rem",
+  -                lineHeight: 1.65,
+  +                width: "0.6rem",
+  +                height: "0.6rem",
+  +                borderRadius: "50%",
+  +                background: "var(--red)",
+  +                boxShadow: "0 0 10px var(--red)",
+  +                animation: reducedMotion ? "none" : "retro-blink 1.6s step-end infinite",
+                 })}
+  +            />
+  +            <span className={css({ fontWeight: 700 })}>
+  +              <ScrambleText text={active.slate} trigger="change" stagger={1.1} blur={false} />
+  +            </span>
+  +            <span
+  +              ref={timecodeRef}
+  +              className={css({ marginLeft: "auto", color: "var(--phosphor-dim)", fontVariantNumeric: "tabular-nums" })}
+               >
+  -              WEB → TUI → CLI → WEB
+  -              <br />
+  -              One project. Three entry points.
+  -            </p>
+  +              --:-- / --:--
+  +            </span>
+             </div>
+   
+  -          <div className={css({ minWidth: 0 })}>
+  -            {SURFACES.filter((surface) => surface.id !== active.id).map((surface) => (
+  +          <div
+  +            className={css({
+  +              position: "relative",
+  +              overflow: "hidden",
+  +              background: "#070b09",
+  +              aspectRatio: "16 / 9",
+  +            })}
+  +          >
+  +            {CHANNELS.filter((channel) => channel.id !== active.id).map((channel) => (
+                 <div
+  -                key={surface.id}
+  -                id={`surface-panel-${surface.id}`}
+  +                key={channel.id}
+  +                id={`surface-panel-${channel.id}`}
+                   role="tabpanel"
+  -                aria-labelledby={`surface-tab-${surface.id}`}
+  +                aria-labelledby={`surface-tab-${channel.id}`}
+                   hidden
+                 />
+               ))}
+  -          <div
+  -            id={`surface-panel-${active.id}`}
+  -            role="tabpanel"
+  -            aria-labelledby={`surface-tab-${active.id}`}
+  -            tabIndex={0}
+  -            className={css({
+  -              minWidth: 0,
+  -              _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "5px" },
+  -            })}
+  -          >
+  +
+               <div
+  +              id={`surface-panel-${active.id}`}
+  +              role="tabpanel"
+  +              aria-labelledby={`surface-tab-${active.id}`}
+  +              tabIndex={0}
+                 className={css({
+  -                position: "relative",
+  -                overflow: "hidden",
+  -                border: "3px solid var(--ink)",
+  -                background: "#090d0b",
+  -                boxShadow: { base: "5px 5px 0 var(--accent-dim)", md: "9px 9px 0 var(--accent-dim)" },
+  -                aspectRatio: "16 / 9",
+  +                position: "absolute",
+  +                inset: 0,
+  +                _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "-6px" },
+                 })}
+               >
+                 <video
+  @@ -332,212 +341,228 @@ export function SurfaceScreencasts() {
+                 >
+                   Your browser does not support embedded video.
+                 </video>
+  -              <div
+  +
+  +              {/* Screen texture: scanlines, grain, and a corner vignette. */}
+  +              <span
+  +                aria-hidden="true"
+                   className={css({
+                     position: "absolute",
+  -                  top: "0.8rem",
+  -                  left: "0.8rem",
+  -                  border: "2px solid var(--ink)",
+  -                  background: "var(--paper)",
+  -                  color: "var(--ink)",
+  -                  padding: "0.35rem 0.55rem",
+  -                  fontFamily: "var(--font-mono)",
+  -                  fontSize: { base: "0.58rem", md: "0.68rem" },
+  -                  fontWeight: 800,
+  -                  letterSpacing: "0.08em",
+  +                  inset: 0,
+  +                  zIndex: 2,
+                     pointerEvents: "none",
+  +                  opacity: 0.5,
+  +                  background:
+  +                    "repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.3) 0 1px, transparent 1px 3px)",
+                   })}
+  +              />
+  +              <span
+                   aria-hidden="true"
+  -              >
+  -                {active.eyebrow}
+  -              </div>
+  -            </div>
+  -
+  -            {autoplayBlocked && (
+  -              <p
+  -                role="status"
+                   className={css({
+  -                  margin: "0.85rem 0 0",
+  -                  color: "var(--muted-foreground)",
+  -                  fontFamily: "var(--font-mono)",
+  -                  fontSize: "0.72rem",
+  +                  position: "absolute",
+  +                  inset: 0,
+  +                  zIndex: 2,
+  +                  pointerEvents: "none",
+  +                  opacity: 0.09,
+  +                  mixBlendMode: "overlay",
+  +                  backgroundImage: GRAIN_URL,
+                   })}
+  -              >
+  -                Playback is paused. Use the video controls to start this screencast.
+  -              </p>
+  -            )}
+  -
+  -            <div
+  -              className={css({
+  -                display: "grid",
+  -                gap: { base: "0.75rem", md: "1.5rem" },
+  -                marginTop: { base: "1.5rem", md: "1.75rem" },
+  -                gridTemplateColumns: { base: "1fr", md: "minmax(0, 1fr) minmax(14rem, 0.7fr)" },
+  -              })}
+  -            >
+  -              <div>
+  -                <h3
+  +              />
+  +              <span
+  +                aria-hidden="true"
+  +                className={css({
+  +                  position: "absolute",
+  +                  inset: 0,
+  +                  zIndex: 2,
+  +                  pointerEvents: "none",
+  +                  background:
+  +                    "radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.45) 100%)",
+  +                })}
+  +              />
+  +              {/* Channel change flash — one short burst of static, keyed on the tape. */}
+  +              {!reducedMotion && (
+  +                <span
+  +                  key={`static-${active.id}`}
+  +                  aria-hidden="true"
+                     className={css({
+  -                    margin: 0,
+  -                    fontFamily: "var(--font-display)",
+  -                    fontSize: { base: "1.5rem", md: "2rem" },
+  -                    lineHeight: 1.05,
+  -                    color: "var(--ink)",
+  +                    position: "absolute",
+  +                    inset: 0,
+  +                    zIndex: 3,
+  +                    pointerEvents: "none",
+  +                    backgroundImage: GRAIN_URL,
+  +                    // Base 0 so a missing keyframe leaves no artifact behind.
+  +                    opacity: 0,
+  +                    animation: "surface-tune 340ms ease-out forwards",
+                     })}
+  -                >
+  -                  {active.title}
+  -                </h3>
+  -                <p className={css({ marginTop: "0.7rem", maxWidth: "46rem", lineHeight: 1.65 })}>
+  -                  {active.description}
+  -                </p>
+  -              </div>
+  -              <p
+  -                className={css({
+  -                  margin: 0,
+  -                  borderLeft: "3px solid var(--accent)",
+  -                  paddingLeft: "1rem",
+  -                  color: "var(--muted-foreground)",
+  -                  fontFamily: "var(--font-mono)",
+  -                  fontSize: "0.76rem",
+  -                  lineHeight: 1.65,
+  -                })}
+  -              >
+  -                NEXT HANDOFF
+  -                <br />
+  -                <span className={css({ color: "var(--ink)" })}>{active.handoff}</span>
+  -              </p>
+  +                />
+  +              )}
+               </div>
+             </div>
+  +
+  +          <span
+  +            aria-hidden="true"
+  +            className={css({
+  +              display: "block",
+  +              height: "3px",
+  +              background: "var(--accent)",
+  +              transformOrigin: "left center",
+  +              transform: "scaleX(0)",
+  +            })}
+  +            ref={progressRef}
+  +          />
+  +
+  +          {/* ---- channel selector -------------------------------------- */}
+  +          <div
+  +            role="tablist"
+  +            aria-label="Choose a Keating tape"
+  +            className={css({
+  +              display: "grid",
+  +              borderTop: "3px solid var(--ink)",
+  +              gridTemplateColumns: { base: "repeat(2, minmax(0, 1fr))", md: "repeat(4, minmax(0, 1fr))" },
+  +            })}
+  +          >
+  +            {CHANNELS.map((channel, index) => {
+  +              const selected = channel.id === activeId;
+  +              return (
+  +                <button
+  +                  key={channel.id}
+  +                  ref={(node) => {
+  +                    tabRefs.current[index] = node;
+  +                  }}
+  +                  type="button"
+  +                  id={`surface-tab-${channel.id}`}
+  +                  role="tab"
+  +                  aria-selected={selected}
+  +                  aria-controls={`surface-panel-${channel.id}`}
+  +                  tabIndex={selected ? 0 : -1}
+  +                  onClick={() => setActiveId(channel.id)}
+  +                  onKeyDown={handleTabKeyDown}
+  +                  className={css({
+  +                    position: "relative",
+  +                    display: "flex",
+  +                    alignItems: "baseline",
+  +                    gap: "0.5rem",
+  +                    border: 0,
+  +                    borderRight: "2px solid var(--ink)",
+  +                    borderBottom: { base: "2px solid var(--ink)", md: "0" },
+  +                    background: selected ? "var(--ink)" : "transparent",
+  +                    color: selected ? "var(--paper)" : "var(--ink)",
+  +                    padding: { base: "0.8rem 0.9rem", md: "0.95rem 1.2rem" },
+  +                    cursor: "pointer",
+  +                    fontFamily: "var(--mono-body)",
+  +                    fontSize: { base: "0.72rem", md: "0.8rem" },
+  +                    fontWeight: 800,
+  +                    letterSpacing: "0.1em",
+  +                    textAlign: "left",
+  +                    textTransform: "uppercase",
+  +                    transition: "background-color 140ms ease, color 140ms ease",
+  +                    _last: { borderRight: 0 },
+  +                    _hover: {
+  +                      background: selected ? "var(--ink)" : "color-mix(in srgb, var(--accent) 22%, transparent)",
+  +                    },
+  +                    _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "-4px", zIndex: 1 },
+  +                  })}
+  +                >
+  +                  <span
+  +                    className={css({
+  +                      fontSize: "0.62rem",
+  +                      opacity: 0.7,
+  +                      fontVariantNumeric: "tabular-nums",
+  +                    })}
+  +                  >
+  +                    0{index + 1}
+  +                  </span>
+  +                  {channel.label}
+  +                </button>
+  +              );
+  +            })}
+             </div>
+           </div>
+   
+           <div
+             className={css({
+  -            marginTop: { base: "4rem", md: "6rem" },
+  -            borderTop: "2px solid var(--ink)",
+  -            paddingTop: { base: "2.25rem", md: "3rem" },
+  +            display: "grid",
+  +            gap: { base: "0.5rem", md: "2.5rem" },
+  +            alignItems: "start",
+  +            marginTop: { base: "1.5rem", md: "1.75rem" },
+  +            gridTemplateColumns: { base: "1fr", md: "minmax(0, 0.9fr) minmax(0, 1.1fr)" },
+             })}
+           >
+  -          <div
+  +          <h3
+               className={css({
+  -              display: "grid",
+  -              gap: { base: "1rem", md: "2rem" },
+  -              alignItems: "end",
+  -              gridTemplateColumns: { base: "1fr", md: "minmax(0, 1fr) minmax(18rem, 0.7fr)" },
+  +              margin: 0,
+  +              fontFamily: "var(--mono-display)",
+  +              fontSize: { base: "1.35rem", md: "1.7rem" },
+  +              lineHeight: 1.1,
+  +              letterSpacing: "-0.015em",
+               })}
+             >
+  -            <div>
+  -              <span className="eyebrow prompt">open FEATURE_TOUR.hf</span>
+  -              <h3
+  -                className={css({
+  -                  margin: "1rem 0 0",
+  -                  maxWidth: "42rem",
+  -                  fontFamily: "var(--font-display)",
+  -                  fontSize: { base: "2rem", md: "3rem" },
+  -                  lineHeight: 1,
+  -                })}
+  -              >
+  -                Eight surfaces. One thread.
+  -              </h3>
+  -            </div>
+  -            <p className={css({ margin: 0, color: "var(--muted-foreground)", lineHeight: 1.7 })}>
+  -              The tour picks the thread up and carries it through the rest of Keating. Every frame
+  -              comes from the routes shipping today — loading states, access gates, and recovery
+  -              paths included.
+  -            </p>
+  -          </div>
+  +            <ScrambleText text={active.title} trigger="change" stagger={1.2} />
+  +          </h3>
+  +          <p className={css({ margin: 0, maxWidth: "52ch", color: "var(--ink-soft)", lineHeight: 1.7 })}>
+  +            {active.blurb}
+  +          </p>
+  +        </div>
+   
+  -          <figure
+  +        {autoplayBlocked && (
+  +          <p
+  +            role="status"
+               className={css({
+  -              margin: { base: "2rem 0 0", md: "2.75rem 0 0" },
+  +              margin: "0.85rem 0 0",
+  +              color: "var(--ink-soft)",
+  +              fontFamily: "var(--mono-body)",
+  +              fontSize: "0.72rem",
+               })}
+             >
+  -            <div
+  -              className={css({
+  -                position: "relative",
+  -                overflow: "hidden",
+  -                aspectRatio: "16 / 9",
+  -                border: "3px solid var(--ink)",
+  -                background: "#090d0b",
+  -                boxShadow: { base: "5px 5px 0 var(--accent-dim)", md: "9px 9px 0 var(--accent-dim)" },
+  -              })}
+  -            >
+  -              <video
+  -                className={css({ display: "block", width: "100%", height: "100%", objectFit: "cover" })}
+  -                src="/tapes/keating-surface-tour.mp4"
+  -                poster="/tapes/posters/keating-surface-tour.jpg"
+  -                controls
+  -                muted
+  -                playsInline
+  -                preload="metadata"
+  -                aria-label="Keating eight-feature product tour"
+  -              >
+  -                Your browser does not support embedded video.
+  -              </video>
+  -              <span
+  -                className={css({
+  -                  position: "absolute",
+  -                  top: "0.8rem",
+  -                  left: "0.8rem",
+  -                  border: "2px solid var(--ink)",
+  -                  background: "var(--paper)",
+  -                  color: "var(--ink)",
+  -                  padding: "0.35rem 0.55rem",
+  -                  fontFamily: "var(--font-mono)",
+  -                  fontSize: { base: "0.58rem", md: "0.68rem" },
+  -                  fontWeight: 800,
+  -                  letterSpacing: "0.08em",
+  -                  pointerEvents: "none",
+  -                })}
+  -                aria-hidden="true"
+  -              >
+  -                32 SEC // FULL PRODUCT TOUR
+  -              </span>
+  -            </div>
+  -            <figcaption
+  -              className={css({
+  -                display: "flex",
+  -                gap: "0.75rem 1.5rem",
+  -                justifyContent: "space-between",
+  -                flexWrap: "wrap",
+  -                marginTop: "1rem",
+  -                color: "var(--muted-foreground)",
+  -                fontFamily: "var(--font-mono)",
+  -                fontSize: "0.72rem",
+  -                lineHeight: 1.6,
+  -              })}
+  -            >
+  -              <span>One question, carried across every surface Keating ships.</span>
+  -              <span>WEB → MODEL → LIVE → REVIEW → COURSE → BLOG → TUI → CLI</span>
+  -            </figcaption>
+  -          </figure>
+  +            Playback is paused. Use the video controls to start this tape.
+  +          </p>
+  +        )}
+  +
+  +        {/* ---- everything else ---------------------------------------- */}
+  +        <div
+  +          className={css({
+  +            marginTop: { base: "3rem", md: "4.5rem" },
+  +            borderTop: "2px solid var(--ink)",
+  +            paddingTop: { base: "2rem", md: "2.75rem" },
+  +          })}
+  +        >
+  +          <h3
+  +            className={css({
+  +              maxWidth: "24ch",
+  +              margin: "0 0 2rem",
+  +              fontFamily: "var(--mono-display)",
+  +              fontWeight: 700,
+  +              fontSize: { base: "1.6rem", md: "2.2rem" },
+  +              lineHeight: 1.05,
+  +              letterSpacing: "-0.025em",
+  +            })}
+  +          >
+  +            <ScrambleText text="The rest of the room." />
+  +          </h3>
+   
+             <div
+               className={css({
+                 display: "grid",
+                 gap: "1.25rem",
+  -              marginTop: { base: "2rem", md: "2.75rem" },
+                 gridTemplateColumns: {
+                   base: "minmax(0, 1fr)",
+  -                md: "repeat(2, minmax(0, 1fr))",
+  -                xl: "repeat(6, minmax(0, 1fr))",
+  +                sm: "repeat(2, minmax(0, 1fr))",
+  +                lg: "repeat(6, minmax(0, 1fr))",
+                 },
+               })}
+             >
+               {PRODUCT_FEATURES.map((feature, index) => (
+                 <article
+  -                key={feature.number}
+  +                key={feature.label}
+                   className={css({
+                     display: "flex",
+                     minWidth: 0,
+                     flexDirection: "column",
+                     border: "2px solid var(--ink)",
+  -                  background: "var(--paper)",
+  -                  boxShadow: "5px 5px 0 var(--accent-dim)",
+  -                  gridColumn: {
+  -                    base: "auto",
+  -                    xl: index < 2 ? "span 3" : "span 2",
+  -                  },
+  +                  background: "var(--card)",
+  +                  boxShadow: "4px 4px 0 var(--ink)",
+  +                  transition: "transform 160ms ease, box-shadow 160ms ease",
+  +                  gridColumn: { base: "auto", lg: index < 2 ? "span 3" : "span 2" },
+  +                  _hover: { transform: "translate(-2px, -2px)", boxShadow: "7px 7px 0 var(--accent-dim)" },
+                   })}
+                 >
+                   <div
+  @@ -560,25 +585,35 @@ export function SurfaceScreencasts() {
+                         height: "100%",
+                         objectFit: "cover",
+                         objectPosition: "top center",
+  -                      transition: "transform 220ms ease",
+  +                    })}
+  +                  />
+  +                  <span
+  +                    aria-hidden="true"
+  +                    className={css({
+  +                      position: "absolute",
+  +                      inset: 0,
+  +                      opacity: 0.35,
+  +                      background:
+  +                        "repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.3) 0 1px, transparent 1px 3px)",
+                       })}
+                     />
+                     <span
+                       className={css({
+                         position: "absolute",
+  -                      top: "0.75rem",
+  -                      left: "0.75rem",
+  +                      bottom: "0.6rem",
+  +                      left: "0.6rem",
+                         border: "2px solid var(--ink)",
+                         background: "var(--paper)",
+  -                      padding: "0.3rem 0.5rem",
+  +                      padding: "0.25rem 0.45rem",
+                         color: "var(--ink)",
+  -                      fontFamily: "var(--font-mono)",
+  -                      fontSize: "0.65rem",
+  +                      fontFamily: "var(--mono-body)",
+  +                      fontSize: "0.6rem",
+                         fontWeight: 800,
+                         letterSpacing: "0.08em",
+  +                      textTransform: "uppercase",
+                       })}
+                     >
+  -                    {feature.number} // {feature.label}
+  +                    {feature.label}
+                     </span>
+                   </div>
+                   <div
+  @@ -586,24 +621,24 @@ export function SurfaceScreencasts() {
+                       display: "flex",
+                       flex: 1,
+                       flexDirection: "column",
+  -                    padding: { base: "1.15rem", md: "1.4rem" },
+  +                    padding: { base: "1.1rem", md: "1.3rem" },
+                     })}
+                   >
+                     <h4
+                       className={css({
+                         margin: 0,
+  -                      fontFamily: "var(--font-display)",
+  -                      fontSize: { base: "1.25rem", md: "1.45rem" },
+  -                      lineHeight: 1.1,
+  +                      fontFamily: "var(--mono-display)",
+  +                      fontSize: { base: "1.15rem", md: "1.3rem" },
+  +                      lineHeight: 1.15,
+                       })}
+                     >
+                       {feature.title}
+                     </h4>
+                     <p
+                       className={css({
+  -                      margin: "0.8rem 0 1.25rem",
+  -                      color: "var(--muted-foreground)",
+  -                      fontSize: "0.9rem",
+  +                      margin: "0.7rem 0 1.2rem",
+  +                      color: "var(--ink-soft)",
+  +                      fontSize: "0.88rem",
+                         lineHeight: 1.65,
+                       })}
+                     >
+  @@ -614,13 +649,14 @@ export function SurfaceScreencasts() {
+                       className={css({
+                         alignSelf: "flex-start",
+                         marginTop: "auto",
+  -                      color: "var(--accent)",
+  -                      fontFamily: "var(--font-mono)",
+  +                      color: "var(--accent-dim)",
+  +                      fontFamily: "var(--mono-body)",
+                         fontSize: "0.72rem",
+                         fontWeight: 800,
+                         letterSpacing: "0.06em",
+                         textDecoration: "none",
+                         textTransform: "uppercase",
+  +                      _dark: { color: "var(--phosphor)" },
+                         _hover: { textDecoration: "underline", textUnderlineOffset: "0.25rem" },
+                         _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "4px" },
+                       })}
+  diff --git a/web/src/pages/Landing.tsx b/web/src/pages/Landing.tsx
+  index 8b6b5686e72561383b7f8aeba95de2e9f5d00ac3..9b8ba248bf0847544e63bc02cd1ce11dbcacd3b8 100644
+  --- a/web/src/pages/Landing.tsx
+  +++ b/web/src/pages/Landing.tsx
+  @@ -3,16 +3,20 @@ import { useNavigate } from "@tanstack/react-router";
+   import { usePostHog } from "@posthog/react";
+   import { Nav } from "../components/Nav";
+   import { Footer } from "../components/Footer";
+  -import { BootSequence } from "../components/BootSequence";
+  +import {
+  +  AnimatedHeroHeadline,
+  +  CrtPlaythrough,
+  +  HeroWonderStage,
+  +  KineticTeachingText,
+  +  LearningJourney,
+  +} from "../components/LandingWonder";
+   import { SurfaceScreencasts } from "../components/SurfaceScreencasts";
+  +import { ScrambleText } from "../components/ScrambleText";
+   import { useSeo } from "../hooks/useSeo";
+  -import { cx } from "../../styled-system/css";
+  +import { css } from "../../styled-system/css";
+   import {
+     btnRetro,
+  -  capCard,
+  -  capIcon,
+     eyebrow,
+  -  sectionHead,
+     sectionLede,
+     sectionTitle
+   } from "../../styled-system/recipes";
+  @@ -47,11 +51,11 @@ const TAB_FILENAMES: Record<InstallTab, string> = {
+   };
+   
+   const TAB_COPY_TEXT: Record<InstallTab, string> = {
+  -  npm: "$ npm install -g keating\n# Requires Node.js 18+ and API key in ~/.keating/.env",
+  -  bun: "$ bun add -g keating\n# Fastest option. Requires Bun 1.0+ and API key",
+  -  pnpm: "$ pnpm add -g keating\n# Disk-efficient. Requires pnpm and API key",
+  +  npm: "$ npm install -g keating\n# Requires Node.js 20.19+ and a configured provider",
+  +  bun: "$ bun add -g keating\n# Configure Gemini, OpenAI, or Anthropic after install",
+  +  pnpm: "$ pnpm add -g keating\n# Requires Node.js 20.19+ and a configured provider",
+     curl: "$ curl -fsSL https://raw.githubusercontent.com/Diogenesoftoronto/keating/main/scripts/install/install.sh | bash\n# Standalone install. No package manager needed.",
+  -  agent: `Install Keating hyperteacher CLI with one of these methods. All require setting a Google API key for the AI backend.
+  +  agent: `Install the Keating hyperteacher CLI, then configure one supported provider.
+   
+   Option 1: NPM (most common)
+   npm install -g keating
+  @@ -65,10 +69,9 @@ pnpm add -g keating
+   Option 4: Curl (standalone)
+   curl -fsSL https://raw.githubusercontent.com/Diogenesoftoronto/keating/main/scripts/install/install.sh | bash
+   
+  -Required: API Key Setup
+  -1. Get a Gemini API key from Google AI Studio
+  -2. Create ~/.keating/.env with: GEMINI_API_KEY=your_key
+  -3. Or set GEMINI_API_KEY as environment variable`,
+  +Provider setup
+  +Run: keating setup
+  +Or set one of GEMINI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY.`,
+   };
+   
+   const TERM_LINES: { cls: string; text: string }[] = [
+  @@ -191,59 +194,17 @@ function HeroTerminal() {
+   
+   
+   
+  -const MANIFESTO_CARDS = [
+  -  {
+  -    n: "[01]",
+  -    title: "DIAGNOSE",
+  -    body: (
+  -      <>
+  -        Before teaching, Keating maps what you actually know. No wasted cycles on mastered
+  -        concepts — <strong>like a debugger for your knowledge graph.</strong>
+  -      </>
+  -    ),
+  -  },
+  -  {
+  -    n: "[02]",
+  -    title: "RECONSTRUCT",
+  -    body: (
+  -      <>
+  -        You don&apos;t memorize — you rebuild. From memory, from first principles.{" "}
+  -        <strong>Struggle is the feature, not the bug.</strong> That&apos;s how neural pathways
+  -        form.
+  -      </>
+  -    ),
+  -  },
+  -  {
+  -    n: "[03]",
+  -    title: "PROBE",
+  -    body: (
+  -      <>
+  -        Every claim you make gets a counter-question. Keating pushes until your explanation
+  -        survives contact — <strong>or until you find the crack yourself.</strong>
+  -      </>
+  -    ),
+  -  },
+  -  {
+  -    n: "[04]",
+  -    title: "VERIFY",
+  -    body: (
+  -      <>
+  -        A gap isn&apos;t closed because you nodded. You teach the concept back, cold, days later.{" "}
+  -        <strong>If it holds, it&apos;s yours.</strong> If not, the loop runs again.
+  -      </>
+  -    ),
+  -  },
+  -];
+  -
+   // Real CLI surface — the landing shows everything Keating can do.
+   const USE_GROUPS: Array<{
+     title: string;
+     blurb: string;
+  +  image: string;
+     commands: Array<{ cmd: string; desc: string }>;
+   }> = [
+     {
+       title: "TEACH",
+       blurb: "Socratic sessions that adapt to what you already know.",
+  +    image: "/brand/cap-agent.png",
+       commands: [
+         { cmd: "learn <topic>", desc: "Start a Socratic teaching session" },
+         { cmd: "diagnose <topic>", desc: "Map prerequisites and knowledge gaps" },
+  @@ -255,6 +216,7 @@ const USE_GROUPS: Array<{
+     {
+       title: "ASSESS",
+       blurb: "Retrieval practice — because recall is how memory forms.",
+  +    image: "/brand/cap-teaching.png",
+       commands: [
+         { cmd: "quiz <topic>", desc: "Retrieval practice questions" },
+         { cmd: "verify <topic>", desc: "Fact-check claims before trusting them" },
+  @@ -264,6 +226,7 @@ const USE_GROUPS: Array<{
+     {
+       title: "SELF-IMPROVE",
+       blurb: "Keating benchmarks and evolves its own teaching policy.",
+  +    image: "/brand/cap-evolutionary.png",
+       commands: [
+         { cmd: "bench [topic]", desc: "Benchmark the current teaching policy" },
+         { cmd: "evolve [topic]", desc: "Evolve policies via MAP-Elites" },
+  @@ -273,6 +236,7 @@ const USE_GROUPS: Array<{
+     {
+       title: "REVIEW",
+       blurb: "Your learning history is data — inspect it, export it, own it.",
+  +    image: "/brand/mascot-live-listening.png",
+       commands: [
+         { cmd: "timeline", desc: "Engagement timeline across topics" },
+         { cmd: "due", desc: "Topics due for spaced review" },
+  @@ -302,32 +266,23 @@ export function Landing() {
+   
+     return (
+       <div className="retro-layout retro-page">
+  -      <BootSequence />
+         <Nav />
+   
+         <main>
+           {/* Hero */}
+           <section className="hero">
+             <div className="wrap hero-wrap">
+  -            <div className="hero-coords">
+  -              42.2961° N, 71.2925° W // HYPERTEACHER PROTOCOL // UPTIME: OPTIMAL
+  -            </div>
+               <div className="hero-grid">
+                 <div className="hero-content">
+                   <div className={eyebrow()}>The Hyperteacher</div>
+                   <h1 className="hero-brand">
+                     KEATING<span className="hero-brand-suffix">.help</span>
+                   </h1>
+  -                <div className="hero-headline">
+  -                  Bring the question. Keep the thinking.
+  -                  <span className="cursor" />
+  -                </div>
+  -                <div className="hero-sub">LEARN BY RECONSTRUCTING</div>
+  +                <AnimatedHeroHeadline />
+                   <p className="hero-copy">
+  -                  Keating is a Socratic teacher for your terminal and browser. It listens to your
+  -                  explanation, finds where it thins out, and asks the next useful question. You do
+  -                  not advance by recognizing the right answer. You advance when you can build one
+  -                  and teach it back in your own words.
+  +                  Keating listens to your explanation, finds where it thins out, and asks the next
+  +                  useful question. Progress means rebuilding the idea and teaching it back in your
+  +                  own words.
+                   </p>
+                   <div className="hero-ctas">
+                     <button
+  @@ -337,115 +292,52 @@ export function Landing() {
+                         navigate({ to: "/chat" });
+                       }}
+                     >
+  -                    Initialize_Session →
+  +                    Start a session →
+                     </button>
+  -                  <a className={btnRetro()} href="#install">
+  -                    Build_From_Source
+  +                  <a className={btnRetro()} href="#watch">
+  +                    Watch real sessions
+                     </a>
+                   </div>
+  +                <ul className="hero-proof" aria-label="Keating product qualities">
+  +                  <li>Browser and terminal</li>
+  +                  <li>Local-first CLI</li>
+  +                  <li>Inspectable artifacts</li>
+  +                </ul>
+                 </div>
+   
+                 <div className="hero-stage">
+  -                <HeroTerminal />
+  +                <HeroWonderStage>
+  +                  <HeroTerminal />
+  +                </HeroWonderStage>
+                 </div>
+               </div>
+             </div>
+           </section>
+   
+  -        <SurfaceScreencasts />
+  -
+  -        {/* What Keating Does */}
+  -        <section className="caps" aria-label="What Keating does">
+  -          <div className="wrap">
+  -            <div className="caps-head">
+  -              <span className="eyebrow prompt">cat CAPABILITIES.txt</span>
+  -              <h2 className={sectionTitle()}>What Keating does.</h2>
+  -              <p className={sectionLede()}>
+  -                Not a chatbot that answers. A harness that forces you to reconstruct understanding
+  -                from memory — and adapts while you struggle.
+  -              </p>
+  -            </div>
+  -          <div className="caps-grid">
+  -            <div className={capCard()}>
+  -              <img className={capIcon()} src="/brand/cap-adaptive.png" alt="" aria-hidden="true" />
+  -              <h3>Adaptive Tutoring</h3>
+  -              <p>Keating adapts to your thinking, pace, and goals. You argue, it adjusts.</p>
+  -            </div>
+  -            <div className={capCard()}>
+  -              <img className={capIcon()} src="/brand/cap-evolutionary.png" alt="" aria-hidden="true" />
+  -              <h3>Evolutionary Feedback</h3>
+  -              <p>Continuous evaluation refines the harness — and your understanding — every session.</p>
+  -            </div>
+  -            <div className={capCard()}>
+  -              <img className={capIcon()} src="/brand/cap-agent.png" alt="" aria-hidden="true" />
+  -              <h3>Agent Harness</h3>
+  -              <p>Specialized agents plan, probe, evaluate, and improve in concert.</p>
+  -            </div>
+  -            <div className={capCard()}>
+  -              <img className={capIcon()} src="/brand/cap-teaching.png" alt="" aria-hidden="true" />
+  -              <h3>Learn by Teaching</h3>
+  -              <p>Turn explanations into mastery. If you can&apos;t teach it back, you don&apos;t own it yet.</p>
+  -            </div>
+  -          </div>
+  -          </div>
+  -        </section>
+  -
+  -        {/* CRT Verse */}
+  -        <section className="verse" aria-label="Verse">
+  -          <div className="wrap">
+  -            <div className="verse-prompt prompt">cat VERSE.txt</div>
+  -            <div className="crt-wrap">
+  -              <img src="/brand/crt-monitor.png" alt="Retro CRT monitor" />
+  -              <div className="crt-screen">
+  -                <div className="crt-text">
+  -                  &quot;That the powerful play goes on, and you may contribute a verse.&quot;
+  -                </div>
+  -                <div className="crt-attr">— WALT WHITMAN // O ME! O LIFE!</div>
+  -              </div>
+  -            </div>
+  -          </div>
+  -        </section>
+  -
+  -        {/* Manifesto */}
+  -        <section className="manifesto" id="manifesto">
+  -          <div className="wrap">
+  -            <div className={sectionHead()}>
+  -              <span className="eyebrow prompt">cat MANIFESTO.txt</span>
+  -            </div>
+  -            <h2 className={sectionTitle()}>Real teaching is reconstruction, not explanation.</h2>
+  -            <p className={sectionLede()}>
+  -              An answer you were handed evaporates by Friday. An answer you rebuilt from first
+  -              principles is yours for good. Keating runs every session on that thesis.
+  -            </p>
+  -            <div className="man-grid">
+  -              <div className="man-stamp" aria-hidden="true">
+  -                Cognitive Empowerment
+  -              </div>
+  -              {MANIFESTO_CARDS.map(({ n, title, body }) => (
+  -                <div key={n} className="man-card">
+  -                  <div className="man-num">{n}</div>
+  -                  <h3>{title}</h3>
+  -                  <p>{body}</p>
+  -                </div>
+  -              ))}
+  -            </div>
+  -          </div>
+  -        </section>
+  +        <div id="watch">
+  +          <SurfaceScreencasts />
+  +        </div>
+  +        <KineticTeachingText />
+  +        <LearningJourney />
+  +        <CrtPlaythrough />
+   
+           {/* CLI surface */}
+           <section className="use" id="use">
+             <div className="wrap">
+  -            <div className={sectionHead()}>
+  -              <span className="eyebrow prompt">keating help</span>
+  -            </div>
+  -            <h2 className={sectionTitle()}>Everything you can run.</h2>
+  +            <h2 className={sectionTitle()}>
+  +              <ScrambleText text="Everything you can run." />
+  +            </h2>
+               <p className={sectionLede()}>
+  -              One CLI, one web shell, the same brain. Every command below works in your terminal
+  -              after <code>npm install -g keating</code> — or right now in the browser shell.
+  +              The browser and CLI share the same teaching core. Start a conversation, generate an
+  +              artifact, inspect the trace, or evolve the teaching policy.
+               </p>
+               <div className="use-grid">
+  -              {USE_GROUPS.map((group) => (
+  +              {USE_GROUPS.map((group, index) => (
+                   <div className="use-card" key={group.title}>
+  +                  <div className="use-card-media" aria-hidden="true">
+  +                    <span>{String(index + 1).padStart(2, "0")}</span>
+  +                    <img src={group.image} alt="" width={341} height={403} loading="lazy" />
+  +                  </div>
+                     <div className="use-card-title">{group.title}</div>
+                     <p className="use-card-blurb">{group.blurb}</p>
+                     <div className="use-cmds">
+  @@ -469,13 +361,10 @@ export function Landing() {
+                     navigate({ to: "/chat" });
+                   }}
+                 >
+  -                Open_Web_Shell →
+  +                Open the classroom →
+                 </button>
+                 <button className={btnRetro()} onClick={() => navigate({ to: "/tutorial" })}>
+  -                Read_Tutorial
+  -              </button>
+  -              <button className={btnRetro()} onClick={() => navigate({ to: "/usage" })}>
+  -                Usage_Dashboard
+  +                Read the tutorial
+                 </button>
+               </div>
+             </div>
+  @@ -484,98 +373,59 @@ export function Landing() {
+           {/* Install — CRT terminal style */}
+           <section id="install" className="install">
+             <div className="wrap">
+  -            <div className={sectionHead()}>
+  -              <span className="eyebrow prompt">./install.sh</span>
+  -            </div>
+  -            <h2 className={sectionTitle()}>Get Keating.</h2>
+  -            <p className={sectionLede()}>
+  -              Terminal-first. Your API keys stay local. No cloud dependency.
+  -            </p>
+  -
+  -            <div className="install-term">
+  -              <div className="install-term-bar">
+  -                <span className="d r" />
+  -                <span className="d y" />
+  -                <span className="d g" />
+  -                <span className="install-term-title">{TAB_FILENAMES[activeTab]}</span>
+  -                <button
+  -                  className={`install-copy ${copied ? "copied" : ""}`}
+  -                  onClick={handleCopy}
+  -                  aria-label={copied ? "Copied" : "Copy install command"}
+  -                >
+  -                  {copied ? "[COPIED!]" : "[COPY]"}
+  -                </button>
+  +            <div className="install-layout">
+  +              <div className="install-copy-panel">
+  +                <h2 className={sectionTitle()}>
+  +                  <ScrambleText text="Run it where you work." />
+  +                </h2>
+  +                <p className={sectionLede()}>
+  +                  Use the web classroom immediately, or install the open-source CLI. Provider
+  +                  credentials stay on your machine.
+  +                </p>
+  +                <div className="install-notes" aria-label="Install requirements">
+  +                  <span>Node.js 20.19+</span>
+  +                  <span>Bun supported</span>
+  +                  <span>Gemini, OpenAI, or Anthropic</span>
+  +                </div>
+                 </div>
+   
+  -              <div className="install-term-tabs">
+  -                {INSTALL_TABS.map((tab) => {
+  -                  const isActive = activeTab === tab.id;
+  -                  return (
+  -                    <button
+  -                      key={tab.id}
+  -                      className={isActive ? "active" : ""}
+  -                      onClick={() => setActiveTab(tab.id)}
+  -                    >
+  -                      {tab.label}
+  -                    </button>
+  -                  );
+  -                })}
+  -              </div>
+  +              <div className="install-term">
+  +                <div className="install-term-bar">
+  +                  <span className="d r" />
+  +                  <span className="d y" />
+  +                  <span className="d g" />
+  +                  <span className="install-term-title">{TAB_FILENAMES[activeTab]}</span>
+  +                  <button
+  +                    className={`install-copy ${copied ? "copied" : ""}`}
+  +                    onClick={handleCopy}
+  +                    aria-label={copied ? "Copied" : "Copy install command"}
+  +                  >
+  +                    {copied ? "[COPIED!]" : "[COPY]"}
+  +                  </button>
+  +                </div>
+   
+  -              <div className="install-term-body">
+  -                {/* npm */}
+  -                {activeTab === "npm" && (
+  -                  <>
+  -                    <div className="t-line t-cmd">npm install -g keating</div>
+  -                    <div className="t-line t-sys"># Requires Node.js 18+ and API key in ~/.keating/.env</div>
+  -                  </>
+  -                )}
+  +                <div className="install-term-tabs" aria-label="Install method">
+  +                  {INSTALL_TABS.map((tab) => {
+  +                    const isActive = activeTab === tab.id;
+  +                    return (
+  +                      <button
+  +                        key={tab.id}
+  +                        type="button"
+  +                        aria-pressed={isActive}
+  +                        className={isActive ? "active" : ""}
+  +                        onClick={() => setActiveTab(tab.id)}
+  +                      >
+  +                        {tab.label}
+  +                      </button>
+  +                    );
+  +                  })}
+  +                </div>
+   
+  -                {/* bun */}
+  -                {activeTab === "bun" && (
+  -                  <>
+  -                    <div className="t-line t-cmd">bun add -g keating</div>
+  -                    <div className="t-line t-sys"># Fastest option. Requires Bun 1.0+ and API key</div>
+  -                  </>
+  -                )}
+  -
+  -                {/* pnpm */}
+  -                {activeTab === "pnpm" && (
+  -                  <>
+  -                    <div className="t-line t-cmd">pnpm add -g keating</div>
+  -                    <div className="t-line t-sys"># Disk-efficient. Requires pnpm and API key</div>
+  -                  </>
+  -                )}
+  -
+  -                {/* curl */}
+  -                {activeTab === "curl" && (
+  -                  <>
+  -                    <div className="t-line t-cmd">
+  -                      curl -fsSL https://raw.githubusercontent.com/Diogenesoftoronto/keating/main/scripts/install/install.sh | bash
+  -                    </div>
+  -                    <div className="t-line t-sys"># Standalone install. No package manager needed.</div>
+  -                  </>
+  -                )}
+  -
+  -                {/* agent */}
+  -                {activeTab === "agent" && (
+  -                  <>
+  -                    <div className="t-line t-cmd">cat AGENT_INSTRUCTIONS.txt</div>
+  -                    <div className="t-line">Install Keating hyperteacher CLI with one of these methods. All require setting a Google API key for the AI backend.</div>
+  -                    <div className="t-line t-ok">Option 1: NPM (most common)</div>
+  -                    <div className="t-line t-indent">npm install -g keating</div>
+  -                    <div className="t-line t-ok">Option 2: Bun (fastest)</div>
+  -                    <div className="t-line t-indent">bun add -g keating</div>
+  -                    <div className="t-line t-ok">Option 3: PNPM (disk efficient)</div>
+  -                    <div className="t-line t-indent">pnpm add -g keating</div>
+  -                    <div className="t-line t-ok">Option 4: Curl (standalone)</div>
+  -                    <div className="t-line t-indent">curl -fsSL .../install.sh | bash</div>
+  -                    <div className="t-line t-cmd">Required: API Key Setup</div>
+  -                    <div className="t-line t-indent">1. Get a Gemini API key from Google AI Studio</div>
+  -                    <div className="t-line t-indent">2. Create ~/.keating/.env with: GEMINI_API_KEY=your_key</div>
+  -                    <div className="t-line t-indent">3. Or set GEMINI_API_KEY as environment variable</div>
+  -                  </>
+  -                )}
+  +                <div className="install-term-body" aria-live="polite">
+  +                  <pre className={css({ margin: 0, whiteSpace: "pre-wrap" })}>
+  +                    {TAB_COPY_TEXT[activeTab]}
+  +                  </pre>
+  +                </div>
+                 </div>
+               </div>
+             </div>
+  @@ -584,17 +434,28 @@ export function Landing() {
+           {/* Final CTA */}
+           <section className="final">
+             <div className="wrap">
+  -            <img
+  -              className="final-bot"
+  -              src="/brand/mascot-lotus.png"
+  -              alt="Keating robot mascot"
+  -              aria-hidden="true"
+  -              width={300}
+  -              height={426}
+  -            />
+  -            <h2>Ready to think for yourself?</h2>
+  +            <div className="final-mascot-scene">
+  +              <span className="final-thought final-thought-one" aria-hidden="true">
+  +                What makes you think that?
+  +              </span>
+  +              <span className="final-thought final-thought-two" aria-hidden="true">
+  +                Show me the mechanism.
+  +              </span>
+  +              <img
+  +                className="final-bot"
+  +                src="/brand/mascot-lotus.png"
+  +                alt="Keating robot mascot"
+  +                aria-hidden="true"
+  +                width={300}
+  +                height={426}
+  +              />
+  +            </div>
+  +            <h2>
+  +              <ScrambleText text="Ready to think for yourself?" />
+  +            </h2>
+               <p>
+  -              Free and open source. Bring a topic you half-understand and leave with one you own.
+  +              Bring a topic you half-understand. Keating will help you find the part that is not
+  +              yours yet.
+               </p>
+               <div className="hero-ctas">
+                 <button
+  @@ -604,10 +465,10 @@ export function Landing() {
+                     navigate({ to: "/chat" });
+                   }}
+                 >
+  -                Initialize_Session →
+  +                Start a session →
+                 </button>
+                 <button className={btnRetro()} onClick={() => navigate({ to: "/paper" })}>
+  -                Read_The_Paper
+  +                Read the paper
+                 </button>
+               </div>
+             </div>
+
+  diff --git a/web/src/components/LandingWonder.tsx b/web/src/components/LandingWonder.tsx
+  new file mode 100644
+  index 0000000..d9c0c22
+  --- /dev/null
+  +++ b/web/src/components/LandingWonder.tsx
+  @@ -0,0 +1,716 @@
+  +import {
+  +  useEffect,
+  +  useRef,
+  +  useState,
+  +  type KeyboardEvent,
+  +  type PointerEvent,
+  +  type ReactNode,
+  +} from "react";
+  +import { useReducedMotion } from "../hooks/use-media-query";
+  +import { ShaderField } from "./ShaderField";
+  +import { ScrambleText } from "./ScrambleText";
+  +
+  +const HERO_HEADLINE_LINES = [
+  +  ["Bring", "the", "question."],
+  +  ["Keep", "the", "thinking."],
+  +] as const;
+  +
+  +const MASCOT_REACTIONS = [
+  +  {
+  +    src: "/brand/mascot-live-idle.png",
+  +    phrase: "Bring me the part that almost makes sense.",
+  +  },
+  +  {
+  +    src: "/brand/mascot-live-listening.png",
+  +    phrase: "I am listening for the thin part.",
+  +  },
+  +  {
+  +    src: "/brand/mascot-live-working.png",
+  +    phrase: "Good. Now let us test the structure.",
+  +  },
+  +  {
+  +    src: "/brand/mascot-live-speaking.png",
+  +    phrase: "Your turn. Teach it back to me.",
+  +  },
+  +] as const;
+  +
+  +const LEARNING_STAGES = [
+  +  {
+  +    number: "01",
+  +    verb: "Listen",
+  +    title: "Find the thin part.",
+  +    body: "Keating listens to the way you explain an idea, then separates what you can reconstruct from what you only recognize.",
+  +    image: "/brand/mascot-live-listening.png",
+  +    imageAlt: "Keating listening closely",
+  +    note: "The next question begins where your explanation loses its shape.",
+  +    accent: "listen",
+  +  },
+  +  {
+  +    number: "02",
+  +    verb: "Rebuild",
+  +    title: "Work from first principles.",
+  +    body: "The easy answer stays out of reach long enough for you to rebuild the mechanism, connect the prerequisites, and make the idea your own.",
+  +    image: "/brand/mascot-live-working.png",
+  +    imageAlt: "Keating working through a problem",
+  +    note: "Plans, maps, traces, and animations make the structure inspectable.",
+  +    accent: "work",
+  +  },
+  +  {
+  +    number: "03",
+  +    verb: "Probe",
+  +    title: "Let the explanation meet resistance.",
+  +    body: "A counterexample, transfer question, or request for evidence reveals whether the new understanding survives outside the original prompt.",
+  +    image: "/brand/mascot-live-speaking.png",
+  +    imageAlt: "Keating asking the next question",
+  +    note: "The teacher adjusts, but the learner keeps authorship of the reasoning.",
+  +    accent: "probe",
+  +  },
+  +  {
+  +    number: "04",
+  +    verb: "Return",
+  +    title: "Teach it back later.",
+  +    body: "Keating turns the session into a return path. What is due, uncertain, or worth verifying remains visible across the browser and CLI.",
+  +    image: "/brand/mascot-lotus.png",
+  +    imageAlt: "Keating sitting calmly in a review pose",
+  +    note: "If the explanation still holds later, the knowledge is finally yours.",
+  +    accent: "return",
+  +  },
+  +] as const;
+  +
+  +const CRT_FRAMES = [
+  +  {
+  +    id: "verse",
+  +    label: "Verse",
+  +    title: "Contribute a verse.",
+  +    description:
+  +      "The line that anchors Keating returns to the screen where it belongs: a reminder that the learner still authors the understanding.",
+  +    kind: "quote" as const,
+  +  },
+  +  {
+  +    id: "classroom",
+  +    label: "Classroom",
+  +    title: "Begin with the learner's explanation.",
+  +    description:
+  +      "The browser classroom keeps the question, the learner's answer, and the next useful probe in one readable surface.",
+  +    kind: "image" as const,
+  +    src: "/tapes/posters/web-classroom.jpg",
+  +    alt: "Keating web classroom with a learner response and guided question",
+  +    objectPosition: "top center",
+  +  },
+  +  {
+  +    id: "live",
+  +    label: "Live",
+  +    title: "Keep voice, vision, and tools visible.",
+  +    description:
+  +      "The live surface exposes media state and teaching tools instead of hiding the machinery behind a generic call screen.",
+  +    kind: "image" as const,
+  +    src: "/tapes/posters/feature-live.jpg",
+  +    alt: "Keating Live interface with audio, video, and session panels",
+  +    objectPosition: "top center",
+  +  },
+  +  {
+  +    id: "return",
+  +    label: "Coming Up",
+  +    title: "Turn the session into a return path.",
+  +    description:
+  +      "Coming Up collects due reviews, important cards, and unresolved verification work so the lesson can continue later.",
+  +    kind: "image" as const,
+  +    src: "/tapes/posters/feature-coming-up.jpg",
+  +    alt: "Keating Coming Up page with review priorities and learning items",
+  +    objectPosition: "top center",
+  +  },
+  +  {
+  +    id: "courses",
+  +    label: "Courses",
+  +    title: "Keep the learning room intact.",
+  +    description:
+  +      "Lessons, sources, notes, and review decks stay together in a course workspace that can be revisited and shared.",
+  +    kind: "image" as const,
+  +    src: "/tapes/posters/feature-courses.jpg",
+  +    alt: "Keating course page with lesson content and a terminal-style course panel",
+  +    objectPosition: "top center",
+  +  },
+  +  {
+  +    id: "publish",
+  +    label: "Publish",
+  +    title: "Leave an inspectable record.",
+  +    description:
+  +      "Release notes and field work can move outward to the public record without pretending upstream failures did not happen.",
+  +    kind: "image" as const,
+  +    src: "/tapes/posters/feature-publish.jpg",
+  +    alt: "Keating publication page showing a Standard.site article",
+  +    objectPosition: "top center",
+  +  },
+  +] as const;
+  +
+  +export function AnimatedHeroHeadline() {
+  +  let wordIndex = 0;
+  +
+  +  return (
+  +    <p className="hero-headline" aria-label="Bring the question. Keep the thinking.">
+  +      {HERO_HEADLINE_LINES.map((line, lineIndex) => (
+  +        <span key={line.join("-")} className="hero-headline-line" aria-hidden="true">
+  +          {line.map((word) => {
+  +            const delay = 100 + wordIndex * 78;
+  +            wordIndex += 1;
+  +            return (
+  +              <span
+  +                key={`${word}-${lineIndex}`}
+  +                className="hero-headline-word"
+  +                style={{ animationDelay: `${delay}ms` }}
+  +              >
+  +                {word}
+  +              </span>
+  +            );
+  +          })}
+  +        </span>
+  +      ))}
+  +      <span className="cursor" aria-hidden="true" />
+  +    </p>
+  +  );
+  +}
+  +
+  +export function HeroWonderStage({ children }: { children: ReactNode }) {
+  +  const reducedMotion = useReducedMotion();
+  +  const stageRef = useRef<HTMLDivElement>(null);
+  +  const frameRef = useRef<number | null>(null);
+  +  const [reactionIndex, setReactionIndex] = useState(0);
+  +  const reaction = MASCOT_REACTIONS[reactionIndex];
+  +
+  +  useEffect(
+  +    () => () => {
+  +      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+  +    },
+  +    [],
+  +  );
+  +
+  +  function updateDepth(event: PointerEvent<HTMLDivElement>) {
+  +    if (reducedMotion || event.pointerType !== "mouse") return;
+  +    const stage = stageRef.current;
+  +    if (!stage) return;
+  +    const rect = stage.getBoundingClientRect();
+  +    const x = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
+  +    const y = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
+  +    if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+  +    frameRef.current = requestAnimationFrame(() => {
+  +      stage.style.setProperty("--hero-terminal-x", `${(x * 13).toFixed(2)}px`);
+  +      stage.style.setProperty("--hero-terminal-y", `${(y * 9).toFixed(2)}px`);
+  +      stage.style.setProperty("--hero-rotate-x", `${(y * -1.3).toFixed(2)}deg`);
+  +      stage.style.setProperty("--hero-rotate-y", `${(x * 1.9).toFixed(2)}deg`);
+  +      stage.style.setProperty("--hero-far-x", `${(x * -14).toFixed(2)}px`);
+  +      stage.style.setProperty("--hero-far-y", `${(y * -9).toFixed(2)}px`);
+  +      stage.style.setProperty("--hero-shadow-x", `${(x * 7).toFixed(2)}px`);
+  +      stage.style.setProperty("--hero-shadow-y", `${(y * 5).toFixed(2)}px`);
+  +      stage.style.setProperty("--hero-mascot-x", `${(x * -24).toFixed(2)}px`);
+  +      stage.style.setProperty("--hero-mascot-y", `${(y * -15).toFixed(2)}px`);
+  +    });
+  +  }
+  +
+  +  function resetDepth() {
+  +    const stage = stageRef.current;
+  +    if (!stage) return;
+  +    stage.style.setProperty("--hero-terminal-x", "0px");
+  +    stage.style.setProperty("--hero-terminal-y", "0px");
+  +    stage.style.setProperty("--hero-rotate-x", "0deg");
+  +    stage.style.setProperty("--hero-rotate-y", "0deg");
+  +    stage.style.setProperty("--hero-far-x", "0px");
+  +    stage.style.setProperty("--hero-far-y", "0px");
+  +    stage.style.setProperty("--hero-shadow-x", "0px");
+  +    stage.style.setProperty("--hero-shadow-y", "0px");
+  +    stage.style.setProperty("--hero-mascot-x", "0px");
+  +    stage.style.setProperty("--hero-mascot-y", "0px");
+  +  }
+  +
+  +  return (
+  +    <div
+  +      ref={stageRef}
+  +      className="hero-wonder-stage"
+  +      onPointerMove={updateDepth}
+  +      onPointerLeave={resetDepth}
+  +    >
+  +      {/* Phosphor halftone field, painted behind the badge and the terminal. */}
+  +      <ShaderField colorVar="--phosphor" density={58} intensity={0.92} opacity={0.4} />
+  +      <img
+  +        className="hero-orbit-mark"
+  +        src="/brand/logo-badge.png"
+  +        alt=""
+  +        aria-hidden="true"
+  +        width={470}
+  +        height={403}
+  +      />
+  +      <span className="hero-orbit hero-orbit-one" aria-hidden="true">
+  +        WHY?
+  +      </span>
+  +      <span className="hero-orbit hero-orbit-two" aria-hidden="true">
+  +        SHOW YOUR WORK
+  +      </span>
+  +      <span className="hero-orbit hero-orbit-three" aria-hidden="true">
+  +        TRY AGAIN
+  +      </span>
+  +
+  +      <div className="hero-terminal-layer">{children}</div>
+  +
+  +      <button
+  +        className="hero-mascot-reaction"
+  +        type="button"
+  +        onClick={() => setReactionIndex((current) => (current + 1) % MASCOT_REACTIONS.length)}
+  +        aria-label="Ask Keating for another prompt"
+  +      >
+  +        <span className="hero-mascot-bubble" aria-hidden="true">
+  +          {reaction.phrase}
+  +        </span>
+  +        <span className="landing-visually-hidden" aria-live="polite">
+  +          {reaction.phrase}
+  +        </span>
+  +        <img
+  +          key={reaction.src}
+  +          src={reaction.src}
+  +          alt=""
+  +          aria-hidden="true"
+  +          width={640}
+  +          height={640}
+  +        />
+  +      </button>
+  +    </div>
+  +  );
+  +}
+  +
+  +export function KineticTeachingText() {
+  +  const reducedMotion = useReducedMotion();
+  +  const sectionRef = useRef<HTMLElement>(null);
+  +  const frameRef = useRef<number | null>(null);
+  +  const visibleRef = useRef(false);
+  +
+  +  useEffect(() => {
+  +    const section = sectionRef.current;
+  +    if (!section || reducedMotion) return;
+  +
+  +    const update = () => {
+  +      frameRef.current = null;
+  +      const rect = section.getBoundingClientRect();
+  +      const viewport = window.innerHeight;
+  +      const progress = Math.max(0, Math.min(1, (viewport - rect.top) / (viewport + rect.height)));
+  +      const travel = (progress - 0.5) * Math.min(window.innerWidth * 0.16, 220);
+  +      section.style.setProperty("--kinetic-a", `${travel}px`);
+  +      section.style.setProperty("--kinetic-b", `${-travel * 0.72}px`);
+  +      section.style.setProperty("--kinetic-c", `${travel * 0.42}px`);
+  +    };
+  +
+  +    const schedule = () => {
+  +      if (!visibleRef.current) return;
+  +      if (frameRef.current === null) frameRef.current = requestAnimationFrame(update);
+  +    };
+  +
+  +    const observer =
+  +      "IntersectionObserver" in window
+  +        ? new IntersectionObserver(
+  +            ([entry]) => {
+  +              visibleRef.current = entry.isIntersecting;
+  +              if (entry.isIntersecting) schedule();
+  +            },
+  +            { rootMargin: "35% 0px" },
+  +          )
+  +        : null;
+  +    if (observer) {
+  +      observer.observe(section);
+  +    } else {
+  +      visibleRef.current = true;
+  +      update();
+  +    }
+  +    window.addEventListener("scroll", schedule, { passive: true });
+  +    window.addEventListener("resize", schedule);
+  +    return () => {
+  +      observer?.disconnect();
+  +      window.removeEventListener("scroll", schedule);
+  +      window.removeEventListener("resize", schedule);
+  +      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+  +    };
+  +  }, [reducedMotion]);
+  +
+  +  return (
+  +    <section ref={sectionRef} className="kinetic-teaching" aria-labelledby="kinetic-title">
+  +      <ShaderField colorVar="--accent-green" density={130} intensity={0.5} opacity={0.28} />
+  +      <div className="kinetic-label">THE SOCRATIC LOOP</div>
+  +      <h2 id="kinetic-title" className="landing-visually-hidden">
+  +        Listen, ask, and teach it back
+  +      </h2>
+  +      <div className="kinetic-row kinetic-row-a" aria-hidden="true">
+  +        LISTEN FOR THE THIN PART.
+  +      </div>
+  +      <div className="kinetic-row kinetic-row-b" aria-hidden="true">
+  +        ASK WHAT CHANGES THE SHAPE.
+  +      </div>
+  +      <div className="kinetic-row kinetic-row-c" aria-hidden="true">
+  +        TEACH IT BACK UNTIL IT HOLDS.
+  +      </div>
+  +      <img
+  +        className="kinetic-mascot"
+  +        src="/brand/mascot-head-v2.png"
+  +        alt=""
+  +        aria-hidden="true"
+  +        width={1254}
+  +        height={1254}
+  +        loading="lazy"
+  +      />
+  +    </section>
+  +  );
+  +}
+  +
+  +export function LearningJourney() {
+  +  const reducedMotion = useReducedMotion();
+  +  const trackRef = useRef<HTMLDivElement>(null);
+  +  const cardRefs = useRef<Array<HTMLElement | null>>([]);
+  +  const frameRef = useRef<number | null>(null);
+  +  const [activeIndex, setActiveIndex] = useState(0);
+  +
+  +  useEffect(
+  +    () => () => {
+  +      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+  +    },
+  +    [],
+  +  );
+  +
+  +  function findClosestCard() {
+  +    frameRef.current = null;
+  +    const track = trackRef.current;
+  +    if (!track) return;
+  +    const target = track.getBoundingClientRect().left + track.clientWidth / 2;
+  +    let closestIndex = 0;
+  +    let closestDistance = Number.POSITIVE_INFINITY;
+  +    cardRefs.current.forEach((card, index) => {
+  +      if (!card) return;
+  +      const rect = card.getBoundingClientRect();
+  +      const distance = Math.abs(rect.left + rect.width / 2 - target);
+  +      if (distance < closestDistance) {
+  +        closestDistance = distance;
+  +        closestIndex = index;
+  +      }
+  +    });
+  +    setActiveIndex(closestIndex);
+  +  }
+  +
+  +  function handleScroll() {
+  +    if (frameRef.current === null) frameRef.current = requestAnimationFrame(findClosestCard);
+  +  }
+  +
+  +  function goTo(index: number) {
+  +    const nextIndex = Math.max(0, Math.min(LEARNING_STAGES.length - 1, index));
+  +    const card = cardRefs.current[nextIndex];
+  +    const track = trackRef.current;
+  +    if (!card || !track) return;
+  +    track.scrollTo({
+  +      left: card.offsetLeft - (track.clientWidth - card.clientWidth) / 2,
+  +      behavior: reducedMotion ? "auto" : "smooth",
+  +    });
+  +    setActiveIndex(nextIndex);
+  +  }
+  +
+  +  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+  +    if (event.key === "ArrowRight") {
+  +      event.preventDefault();
+  +      goTo(activeIndex + 1);
+  +    } else if (event.key === "ArrowLeft") {
+  +      event.preventDefault();
+  +      goTo(activeIndex - 1);
+  +    } else if (event.key === "Home") {
+  +      event.preventDefault();
+  +      goTo(0);
+  +    } else if (event.key === "End") {
+  +      event.preventDefault();
+  +      goTo(LEARNING_STAGES.length - 1);
+  +    }
+  +  }
+  +
+  +  return (
+  +    <section className="learning-journey" id="manifesto" aria-labelledby="journey-title">
+  +      <div className="wrap journey-heading">
+  +        <div>
+  +          <h2 id="journey-title">
+  +            <ScrambleText text="Understanding changes focus as you move." />
+  +          </h2>
+  +        </div>
+  +        <div className="journey-intro">
+  +          <p>Each stage moves to the foreground while the rest of the lesson stays in view.</p>
+  +          <div className="journey-controls" aria-label="Learning path controls">
+  +            <button
+  +              type="button"
+  +              onClick={() => goTo(activeIndex - 1)}
+  +              disabled={activeIndex === 0}
+  +              aria-label="Previous learning stage"
+  +            >
+  +              ←
+  +            </button>
+  +            <span aria-live="polite">
+  +              {String(activeIndex + 1).padStart(2, "0")} / {String(LEARNING_STAGES.length).padStart(2, "0")}
+  +            </span>
+  +            <button
+  +              type="button"
+  +              onClick={() => goTo(activeIndex + 1)}
+  +              disabled={activeIndex === LEARNING_STAGES.length - 1}
+  +              aria-label="Next learning stage"
+  +            >
+  +              →
+  +            </button>
+  +          </div>
+  +        </div>
+  +      </div>
+  +
+  +      <div
+  +        ref={trackRef}
+  +        className="journey-track"
+  +        role="region"
+  +        aria-label="Keating learning stages"
+  +        tabIndex={0}
+  +        onScroll={handleScroll}
+  +        onKeyDown={handleKeyDown}
+  +      >
+  +        {LEARNING_STAGES.map((stage, index) => (
+  +          <article
+  +            key={stage.number}
+  +            ref={(node) => {
+  +              cardRefs.current[index] = node;
+  +            }}
+  +            className={`journey-card journey-${stage.accent}${activeIndex === index ? " is-active" : ""}`}
+  +            aria-current={activeIndex === index ? "step" : undefined}
+  +          >
+  +            <div className="journey-card-copy">
+  +              <div className="journey-card-meta">
+  +                <span>{stage.number}</span>
+  +                <span>{stage.verb}</span>
+  +              </div>
+  +              <h3>{stage.title}</h3>
+  +              <p>{stage.body}</p>
+  +              <small>{stage.note}</small>
+  +            </div>
+  +            <div className="journey-card-image">
+  +              <span className="journey-orbit" aria-hidden="true" />
+  +              <img
+  +                src={stage.image}
+  +                alt={stage.imageAlt}
+  +                width={640}
+  +                height={640}
+  +                loading="lazy"
+  +                decoding="async"
+  +              />
+  +            </div>
+  +          </article>
+  +        ))}
+  +      </div>
+  +    </section>
+  +  );
+  +}
+  +
+  +export function CrtPlaythrough() {
+  +  const reducedMotion = useReducedMotion();
+  +  const sectionRef = useRef<HTMLElement>(null);
+  +  const [activeIndex, setActiveIndex] = useState(0);
+  +  const [isPlaying, setIsPlaying] = useState(false);
+  +  const [hoverPaused, setHoverPaused] = useState(false);
+  +  const [focusPaused, setFocusPaused] = useState(false);
+  +  const [pageVisible, setPageVisible] = useState(true);
+  +  const [sectionVisible, setSectionVisible] = useState(false);
+  +  const [failedImages, setFailedImages] = useState<Set<string>>(() => new Set());
+  +  const activeFrame = CRT_FRAMES[activeIndex];
+  +  const effectivelyPlaying =
+  +    isPlaying && !hoverPaused && !focusPaused && pageVisible && sectionVisible;
+  +
+  +  useEffect(() => {
+  +    setIsPlaying(!reducedMotion);
+  +  }, [reducedMotion]);
+  +
+  +  useEffect(() => {
+  +    const updateVisibility = () => setPageVisible(!document.hidden);
+  +    updateVisibility();
+  +    document.addEventListener("visibilitychange", updateVisibility);
+  +    return () => document.removeEventListener("visibilitychange", updateVisibility);
+  +  }, []);
+  +
+  +  useEffect(() => {
+  +    const section = sectionRef.current;
+  +    if (!section) return;
+  +    if (!("IntersectionObserver" in window)) {
+  +      setSectionVisible(true);
+  +      return;
+  +    }
+  +    const observer = new IntersectionObserver(
+  +      ([entry]) => setSectionVisible(entry.isIntersecting),
+  +      { rootMargin: "-10% 0px", threshold: 0.12 },
+  +    );
+  +    observer.observe(section);
+  +    return () => observer.disconnect();
+  +  }, []);
+  +
+  +  useEffect(() => {
+  +    if (reducedMotion || !effectivelyPlaying) return;
+  +    const timer = window.setInterval(() => {
+  +      setActiveIndex((current) => (current + 1) % CRT_FRAMES.length);
+  +    }, 5600);
+  +    return () => window.clearInterval(timer);
+  +  }, [effectivelyPlaying, reducedMotion]);
+  +
+  +  function selectFrame(index: number, manual = true) {
+  +    const normalized = (index + CRT_FRAMES.length) % CRT_FRAMES.length;
+  +    setActiveIndex(normalized);
+  +    if (manual) setIsPlaying(false);
+  +  }
+  +
+  +  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+  +    if (event.key === "ArrowRight") {
+  +      event.preventDefault();
+  +      selectFrame(activeIndex + 1);
+  +    } else if (event.key === "ArrowLeft") {
+  +      event.preventDefault();
+  +      selectFrame(activeIndex - 1);
+  +    } else if (event.key === "Home") {
+  +      event.preventDefault();
+  +      selectFrame(0);
+  +    } else if (event.key === "End") {
+  +      event.preventDefault();
+  +      selectFrame(CRT_FRAMES.length - 1);
+  +    }
+  +  }
+  +
+  +  return (
+  +    <section
+  +      ref={sectionRef}
+  +      className="crt-playthrough"
+  +      aria-labelledby="crt-playthrough-title"
+  +    >
+  +      <div className="wrap crt-playthrough-heading">
+  +        <div>
+  +          <h2 id="crt-playthrough-title">
+  +            <ScrambleText text="The powerful play, frame by frame." />
+  +          </h2>
+  +        </div>
+  +      </div>
+  +
+  +      <div
+  +        className="wrap crt-program-layout"
+  +        role="region"
+  +        aria-label="Keating CRT image playthrough"
+  +        tabIndex={0}
+  +        onKeyDown={handleKeyDown}
+  +        onPointerEnter={() => setHoverPaused(true)}
+  +        onPointerLeave={() => setHoverPaused(false)}
+  +        onFocusCapture={() => setFocusPaused(true)}
+  +        onBlurCapture={(event) => {
+  +          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+  +            setFocusPaused(false);
+  +          }
+  +        }}
+  +      >
+  +        <div className="crt-program-stage">
+  +          <div className="crt-wrap">
+  +            <img src="/brand/crt-monitor.png" alt="" aria-hidden="true" width={573} height={436} />
+  +            <div className="crt-screen crt-program-screen">
+  +              {CRT_FRAMES.map((frame, index) => {
+  +                const active = index === activeIndex;
+  +                const failed = frame.kind === "image" && failedImages.has(frame.id);
+  +                return (
+  +                  <div
+  +                    key={frame.id}
+  +                    className={`crt-program-frame${active ? " is-active" : ""}`}
+  +                    aria-hidden={!active}
+  +                  >
+  +                    {frame.kind === "quote" ? (
+  +                      <blockquote className="crt-program-quote">
+  +                        <p>
+  +                          &quot;That the powerful play goes on, and you may contribute a verse.&quot;
+  +                        </p>
+  +                        <cite>Walt Whitman // O Me! O Life!</cite>
+  +                      </blockquote>
+  +                    ) : failed ? (
+  +                      <div className="crt-program-fallback">
+  +                        <strong>SCREEN SIGNAL LOST</strong>
+  +                        <span>{frame.title}</span>
+  +                      </div>
+  +                    ) : (
+  +                      <img
+  +                        src={frame.src}
+  +                        alt={active ? frame.alt : ""}
+  +                        loading="lazy"
+  +                        decoding="async"
+  +                        style={{ objectPosition: frame.objectPosition }}
+  +                        onError={() =>
+  +                          setFailedImages((current) => {
+  +                            const next = new Set(current);
+  +                            next.add(frame.id);
+  +                            return next;
+  +                          })
+  +                        }
+  +                      />
+  +                    )}
+  +                  </div>
+  +                );
+  +              })}
+  +            </div>
+  +          </div>
+  +        </div>
+  +
+  +        <div className="crt-program-console">
+  +          <div className="crt-program-console-head">
+  +            <span>
+  +              PROGRAM {String(activeIndex + 1).padStart(2, "0")} /{" "}
+  +              {String(CRT_FRAMES.length).padStart(2, "0")}
+  +            </span>
+  +            <span className={effectivelyPlaying ? "is-live" : ""}>
+  +              {reducedMotion ? "MANUAL" : effectivelyPlaying ? "PLAY" : "PAUSE"}
+  +            </span>
+  +          </div>
+  +          <div aria-live={isPlaying ? "off" : "polite"}>
+  +            <div className="crt-program-label">
+  +              <ScrambleText text={activeFrame.label} trigger="change" stagger={1} blur={false} />
+  +            </div>
+  +            <h3>
+  +              <ScrambleText text={activeFrame.title} trigger="change" stagger={1.2} />
+  +            </h3>
+  +          </div>
+  +
+  +          <div className="crt-program-controls">
+  +            <button
+  +              type="button"
+  +              onClick={() => selectFrame(activeIndex - 1)}
+  +              aria-label="Previous frame"
+  +            >
+  +              ←
+  +            </button>
+  +            {!reducedMotion && (
+  +              <button
+  +                type="button"
+  +                onClick={() => {
+  +                  setFocusPaused(false);
+  +                  setIsPlaying((playing) => !playing);
+  +                }}
+  +                aria-pressed={isPlaying}
+  +                aria-label={isPlaying ? "Pause sequence" : "Play sequence"}
+  +              >
+  +                {isPlaying ? "Ⅱ" : "▶"}
+  +              </button>
+  +            )}
+  +            <button
+  +              type="button"
+  +              onClick={() => selectFrame(activeIndex + 1)}
+  +              aria-label="Next frame"
+  +            >
+  +              →
+  +            </button>
+  +          </div>
+  +
+  +          <div className="crt-program-selector" aria-label="Choose a CRT program frame">
+  +            {CRT_FRAMES.map((frame, index) => (
+  +              <button
+  +                key={frame.id}
+  +                type="button"
+  +                aria-pressed={index === activeIndex}
+  +                onClick={() => selectFrame(index)}
+  +              >
+  +                <span>{String(index + 1).padStart(2, "0")}</span>
+  +                {frame.label}
+  +              </button>
+  +            ))}
+  +          </div>
+  +        </div>
+  +      </div>
+  +    </section>
+  +  );
+  +}
+
+  diff --git a/web/src/components/ScrambleText.tsx b/web/src/components/ScrambleText.tsx
+  new file mode 100644
+  index 0000000..3b6a259
+  --- /dev/null
+  +++ b/web/src/components/ScrambleText.tsx
+  @@ -0,0 +1,183 @@
+  +import { useEffect, useRef, useState, type RefObject } from "react";
+  +import { css, cx } from "../../styled-system/css";
+  +import { useReducedMotion } from "../hooks/use-media-query";
+  +
+  +/**
+  + * Text that resolves out of noise, character by character, left to right.
+  + *
+  + * The visible span is aria-hidden and a settled copy sits beside it in a
+  + * screen-reader-only span, so assistive tech reads the real sentence once
+  + * rather than following the churn. Under reduced motion the plain text renders
+  + * with no duplicate and no timers.
+  + *
+  + * Frames are written straight to the DOM node — a React render per frame per
+  + * heading would re-render half the landing page sixty times a second.
+  + */
+  +
+  +const GLYPHS = "▚▞▖▘▝░▒▓█#$%&*+=~^|<>/\\{}[]()01";
+  +
+  +const srOnly = css({
+  +  position: "absolute",
+  +  width: "1px",
+  +  height: "1px",
+  +  margin: "-1px",
+  +  padding: 0,
+  +  border: 0,
+  +  overflow: "hidden",
+  +  whiteSpace: "nowrap",
+  +  clipPath: "inset(50%)",
+  +});
+  +
+  +function randomGlyph(): string {
+  +  return GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
+  +}
+  +
+  +/** True once the referenced element has been at least partly on screen. Fires once. */
+  +export function useInView(ref: RefObject<HTMLElement | null>, enabled = true): boolean {
+  +  const [inView, setInView] = useState(!enabled);
+  +
+  +  useEffect(() => {
+  +    if (!enabled) {
+  +      setInView(true);
+  +      return;
+  +    }
+  +    const el = ref.current;
+  +    if (!el || !("IntersectionObserver" in window)) {
+  +      setInView(true);
+  +      return;
+  +    }
+  +    const observer = new IntersectionObserver(
+  +      ([entry]) => {
+  +        if (entry.isIntersecting) {
+  +          setInView(true);
+  +          observer.disconnect();
+  +        }
+  +      },
+  +      { threshold: 0.25, rootMargin: "0px 0px -8% 0px" },
+  +    );
+  +    observer.observe(el);
+  +    return () => observer.disconnect();
+  +  }, [ref, enabled]);
+  +
+  +  return inView;
+  +}
+  +
+  +export interface ScrambleTextProps {
+  +  text: string;
+  +  /**
+  +   * `view` decodes when the text scrolls into frame (default), `mount` starts
+  +   * immediately, `change` re-runs every time `text` changes.
+  +   */
+  +  trigger?: "view" | "mount" | "change";
+  +  /** Frames between each character starting to resolve. Lower is faster. */
+  +  stagger?: number;
+  +  /** Blur the line while it resolves. */
+  +  blur?: boolean;
+  +  /** Delay before the decode starts, in ms. */
+  +  delay?: number;
+  +  className?: string;
+  +}
+  +
+  +export function ScrambleText({
+  +  text,
+  +  trigger = "view",
+  +  stagger = 1.7,
+  +  blur = true,
+  +  delay = 0,
+  +  className,
+  +}: ScrambleTextProps) {
+  +  const reducedMotion = useReducedMotion();
+  +  const wrapperRef = useRef<HTMLSpanElement>(null);
+  +  const spanRef = useRef<HTMLSpanElement>(null);
+  +  const inView = useInView(wrapperRef, trigger === "view" && !reducedMotion);
+  +  const armed = !reducedMotion && (trigger === "view" ? inView : true);
+  +
+  +  useEffect(() => {
+  +    const node = spanRef.current;
+  +    if (!node) return;
+  +
+  +    const settle = () => {
+  +      node.textContent = text;
+  +      node.style.filter = "";
+  +    };
+  +
+  +    if (!armed) {
+  +      settle();
+  +      return;
+  +    }
+  +
+  +    const chars = [...text];
+  +    // Whitespace never scrambles — it holds the word shapes in place.
+  +    const schedule = chars.map((char, i) =>
+  +      char.trim() === ""
+  +        ? { start: 0, end: 0 }
+  +        : { start: i * stagger, end: i * stagger + 8 + Math.random() * 14 },
+  +    );
+  +    const total = Math.max(1, ...schedule.map((s) => s.end));
+  +
+  +    let frame = 0;
+  +    let tick = 0;
+  +    let raf = 0;
+  +
+  +    function step() {
+  +      tick += 1;
+  +      let out = "";
+  +      for (let i = 0; i < chars.length; i++) {
+  +        const { start, end } = schedule[i];
+  +        if (frame >= end) out += chars[i];
+  +        else if (frame < start) out += tick % 2 ? randomGlyph() : " ";
+  +        else out += randomGlyph();
+  +      }
+  +      node!.textContent = out;
+  +      if (blur) {
+  +        node!.style.filter = `blur(${((1 - frame / total) * 5).toFixed(2)}px)`;
+  +      }
+  +
+  +      if (frame >= total) {
+  +        settle();
+  +        return;
+  +      }
+  +      frame += 1;
+  +      raf = requestAnimationFrame(step);
+  +    }
+  +
+  +    const timer = window.setTimeout(() => {
+  +      raf = requestAnimationFrame(step);
+  +    }, delay);
+  +
+  +    return () => {
+  +      window.clearTimeout(timer);
+  +      if (raf) cancelAnimationFrame(raf);
+  +      settle();
+  +    };
+  +  }, [armed, text, stagger, delay, blur]);
+  +
+  +  if (reducedMotion) return <>{text}</>;
+  +
+  +  return (
+  +    <>
+  +      <span
+  +        ref={wrapperRef}
+  +        aria-hidden="true"
+  +        className={cx(
+  +          css({
+  +            position: "relative",
+  +            display: "inline-block",
+  +            maxWidth: "100%",
+  +            verticalAlign: "bottom",
+  +          }),
+  +          className,
+  +        )}
+  +      >
+  +        <span className={css({ visibility: "hidden" })}>{text}</span>
+  +        <span
+  +          ref={spanRef}
+  +          className={css({ position: "absolute", inset: 0, willChange: "filter" })}
+  +        >
+  +          {text}
+  +        </span>
+  +      </span>
+  +      <span className={srOnly}>{text}</span>
+  +    </>
+  +  );
+  +}
+
+  diff --git a/web/src/components/ShaderField.tsx b/web/src/components/ShaderField.tsx
+  new file mode 100644
+  index 0000000..5aaba61
+  --- /dev/null
+  +++ b/web/src/components/ShaderField.tsx
+  @@ -0,0 +1,341 @@
+  +import { useEffect, useRef } from "react";
+  +import { css, cx } from "../../styled-system/css";
+  +import { useReducedMotion } from "../hooks/use-media-query";
+  +
+  +/**
+  + * Animated halftone texture rendered with a single WebGL fragment shader.
+  + *
+  + * The field is a domain-warped fBm sampled through a rotated dot screen, so it
+  + * reads as CRT phosphor on dark surfaces and as printed screen tone on paper —
+  + * the two halves of the Keating look, drawn by the same maths. A slow bright
+  + * band sweeps down the field like a refresh scan.
+  + *
+  + * It is deliberately cheap: the canvas renders at a fraction of layout size and
+  + * is capped in absolute pixels, the loop only runs while the element is on
+  + * screen and the tab is visible, and reduced-motion draws one static frame.
+  + */
+  +
+  +const VERT_SOURCE = `
+  +attribute vec2 aPos;
+  +void main() {
+  +  gl_Position = vec4(aPos, 0.0, 1.0);
+  +}
+  +`;
+  +
+  +const FRAG_SOURCE = `
+  +#ifdef GL_FRAGMENT_PRECISION_HIGH
+  +precision highp float;
+  +#else
+  +precision mediump float;
+  +#endif
+  +
+  +uniform vec2 uRes;
+  +uniform float uTime;
+  +uniform vec3 uColor;
+  +uniform float uIntensity;
+  +uniform float uCell;
+  +uniform float uRadial;
+  +
+  +float hash(vec2 p) {
+  +  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+  +}
+  +
+  +float valueNoise(vec2 p) {
+  +  vec2 i = floor(p);
+  +  vec2 f = fract(p);
+  +  vec2 u = f * f * (3.0 - 2.0 * f);
+  +  float a = hash(i);
+  +  float b = hash(i + vec2(1.0, 0.0));
+  +  float c = hash(i + vec2(0.0, 1.0));
+  +  float d = hash(i + vec2(1.0, 1.0));
+  +  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+  +}
+  +
+  +float fbm(vec2 p) {
+  +  float total = 0.0;
+  +  float amp = 0.55;
+  +  for (int i = 0; i < 3; i++) {
+  +    total += amp * valueNoise(p);
+  +    p *= 2.03;
+  +    amp *= 0.5;
+  +  }
+  +  return total;
+  +}
+  +
+  +void main() {
+  +  vec2 uv = gl_FragCoord.xy / uRes;
+  +  float aspect = uRes.x / max(uRes.y, 1.0);
+  +  vec2 skewed = vec2(uv.x * aspect, uv.y);
+  +
+  +  // Domain warp: sample the field through an offset copy of itself so the
+  +  // density drifts and curls instead of sliding as a flat plane.
+  +  vec2 drift = vec2(uTime * 0.014, uTime * -0.009);
+  +  vec2 warp = vec2(
+  +    fbm(skewed * 1.7 + drift),
+  +    fbm(skewed * 1.7 + drift + vec2(4.7, 2.3))
+  +  );
+  +  float field = fbm(skewed * 2.3 + warp * 1.35 + drift * 2.0);
+  +
+  +  // Refresh sweep: a soft band travelling down the field.
+  +  float sweep = fract(uv.y * 0.75 - uTime * 0.05);
+  +  field += 0.2 * smoothstep(0.0, 0.12, sweep) * (1.0 - smoothstep(0.12, 0.3, sweep));
+  +
+  +  // Fade toward the edges so the texture never collides with the frame.
+  +  float edge = 1.0 - smoothstep(0.62, 1.02, length((uv - 0.5) * vec2(aspect, 1.0)) * 1.45);
+  +  float falloff = mix(1.0, edge, uRadial);
+  +
+  +  // Rotated dot screen. The grid is stepped in pixels, not in uv, so the dots
+  +  // stay round whatever shape the element is, and the classic halftone angle
+  +  // keeps them off the page's own horizontals and verticals.
+  +  float ca = cos(0.4);
+  +  float sa = sin(0.4);
+  +  float cellPx = max(uRes.x / uCell, 2.0);
+  +  vec2 px = gl_FragCoord.xy / cellPx;
+  +  vec2 screenUv = vec2(px.x * ca - px.y * sa, px.x * sa + px.y * ca);
+  +  float dist = length(fract(screenUv) - 0.5);
+  +
+  +  float radius = 0.52 * smoothstep(0.18, 0.92, field) * uIntensity * falloff;
+  +  float alpha = 1.0 - smoothstep(radius - 0.14, radius, dist);
+  +
+  +  gl_FragColor = vec4(uColor * alpha, alpha);
+  +}
+  +`;
+  +
+  +function compile(gl: WebGLRenderingContext, type: number, source: string): WebGLShader | null {
+  +  const shader = gl.createShader(type);
+  +  if (!shader) return null;
+  +  gl.shaderSource(shader, source);
+  +  gl.compileShader(shader);
+  +  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+  +    gl.deleteShader(shader);
+  +    return null;
+  +  }
+  +  return shader;
+  +}
+  +
+  +/** `#rrggbb` (or `#rgb`) → normalised rgb triple. Falls back to phosphor green. */
+  +function parseHex(value: string): [number, number, number] {
+  +  const hex = value.trim().replace("#", "");
+  +  const full =
+  +    hex.length === 3
+  +      ? hex
+  +          .split("")
+  +          .map((c) => c + c)
+  +          .join("")
+  +      : hex;
+  +  if (full.length < 6) return [0.29, 0.89, 0.53];
+  +  const int = Number.parseInt(full.slice(0, 6), 16);
+  +  if (Number.isNaN(int)) return [0.29, 0.89, 0.53];
+  +  return [((int >> 16) & 255) / 255, ((int >> 8) & 255) / 255, (int & 255) / 255];
+  +}
+  +
+  +export interface ShaderFieldProps {
+  +  /** CSS custom property the dot colour is read from, so themes carry through. */
+  +  colorVar?: string;
+  +  /** Dots across the element's width — higher means a finer screen. */
+  +  density?: number;
+  +  /** Peak dot coverage, 0–1. */
+  +  intensity?: number;
+  +  /** Fade the field toward the edges (on by default). */
+  +  radial?: boolean;
+  +  /** Overall strength of the layer. */
+  +  opacity?: number;
+  +  className?: string;
+  +}
+  +
+  +export function ShaderField({
+  +  colorVar = "--accent-green",
+  +  density = 74,
+  +  intensity = 1,
+  +  radial = true,
+  +  opacity = 0.45,
+  +  className,
+  +}: ShaderFieldProps) {
+  +  const canvasRef = useRef<HTMLCanvasElement>(null);
+  +  const reducedMotion = useReducedMotion();
+  +
+  +  useEffect(() => {
+  +    const canvas = canvasRef.current;
+  +    if (!canvas) return;
+  +
+  +    const context = canvas.getContext("webgl", {
+  +      alpha: true,
+  +      antialias: false,
+  +      depth: false,
+  +      premultipliedAlpha: true,
+  +      powerPreference: "low-power",
+  +    }) as WebGLRenderingContext | null;
+  +    // No WebGL (or a blocked context): leave the canvas transparent.
+  +    if (!context) return;
+  +    // Rebound as a non-nullable const so the hoisted helpers below keep the narrowing.
+  +    const gl: WebGLRenderingContext = context;
+  +
+  +    const vert = compile(gl, gl.VERTEX_SHADER, VERT_SOURCE);
+  +    const frag = compile(gl, gl.FRAGMENT_SHADER, FRAG_SOURCE);
+  +    const program = vert && frag ? gl.createProgram() : null;
+  +    if (!vert || !frag || !program) return;
+  +
+  +    gl.attachShader(program, vert);
+  +    gl.attachShader(program, frag);
+  +    gl.linkProgram(program);
+  +    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+  +      gl.deleteProgram(program);
+  +      return;
+  +    }
+  +    gl.useProgram(program);
+  +
+  +    const buffer = gl.createBuffer();
+  +    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+  +    // One oversized triangle covers the viewport with no index buffer.
+  +    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+  +    const aPos = gl.getAttribLocation(program, "aPos");
+  +    gl.enableVertexAttribArray(aPos);
+  +    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+  +
+  +    const uRes = gl.getUniformLocation(program, "uRes");
+  +    const uTime = gl.getUniformLocation(program, "uTime");
+  +    const uColor = gl.getUniformLocation(program, "uColor");
+  +    const uIntensity = gl.getUniformLocation(program, "uIntensity");
+  +    const uCell = gl.getUniformLocation(program, "uCell");
+  +    const uRadial = gl.getUniformLocation(program, "uRadial");
+  +
+  +    gl.enable(gl.BLEND);
+  +    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+  +    gl.uniform1f(uIntensity, intensity);
+  +    gl.uniform1f(uCell, density);
+  +    gl.uniform1f(uRadial, radial ? 1 : 0);
+  +
+  +    function applyColor() {
+  +      const raw = getComputedStyle(canvas as HTMLCanvasElement).getPropertyValue(colorVar);
+  +      const [r, g, b] = parseHex(raw || "#4be388");
+  +      gl.uniform3f(uColor, r, g, b);
+  +    }
+  +    applyColor();
+  +
+  +    let width = 0;
+  +    let height = 0;
+  +    function resize() {
+  +      const el = canvasRef.current;
+  +      if (!el) return;
+  +      const rect = el.getBoundingClientRect();
+  +      if (rect.width === 0 || rect.height === 0) return;
+  +      // Render small: this is soft texture, and the dot screen survives upscaling.
+  +      const scale = Math.min(0.5, 900 / Math.max(rect.width, 1));
+  +      const next = { w: Math.max(1, Math.round(rect.width * scale)), h: Math.max(1, Math.round(rect.height * scale)) };
+  +      if (next.w === width && next.h === height) return;
+  +      width = next.w;
+  +      height = next.h;
+  +      el.width = width;
+  +      el.height = height;
+  +      gl.viewport(0, 0, width, height);
+  +      gl.uniform2f(uRes, width, height);
+  +    }
+  +
+  +    let frame = 0;
+  +    let start = 0;
+  +    let onScreen = true;
+  +    let running = false;
+  +
+  +    function draw(time: number) {
+  +      gl.clearColor(0, 0, 0, 0);
+  +      gl.clear(gl.COLOR_BUFFER_BIT);
+  +      gl.uniform1f(uTime, time);
+  +      gl.drawArrays(gl.TRIANGLES, 0, 3);
+  +    }
+  +
+  +    function tick(now: number) {
+  +      if (!running) return;
+  +      if (!start) start = now;
+  +      resize();
+  +      draw((now - start) / 1000);
+  +      frame = requestAnimationFrame(tick);
+  +    }
+  +
+  +    function stop() {
+  +      running = false;
+  +      if (frame) cancelAnimationFrame(frame);
+  +      frame = 0;
+  +    }
+  +
+  +    function sync() {
+  +      const shouldRun = onScreen && !document.hidden && !reducedMotion;
+  +      if (shouldRun === running) return;
+  +      if (shouldRun) {
+  +        running = true;
+  +        frame = requestAnimationFrame(tick);
+  +      } else {
+  +        stop();
+  +      }
+  +    }
+  +
+  +    // Reduced motion still gets the texture — just frozen.
+  +    resize();
+  +    draw(0);
+  +
+  +    const observer =
+  +      "IntersectionObserver" in window
+  +        ? new IntersectionObserver(
+  +            ([entry]) => {
+  +              onScreen = entry.isIntersecting;
+  +              sync();
+  +            },
+  +            { rootMargin: "120px" },
+  +          )
+  +        : null;
+  +    observer?.observe(canvas);
+  +    if (!observer) sync();
+  +
+  +    const onVisibility = () => sync();
+  +    document.addEventListener("visibilitychange", onVisibility);
+  +
+  +    const resizeObserver =
+  +      "ResizeObserver" in window
+  +        ? new ResizeObserver(() => {
+  +            resize();
+  +            if (!running) draw(0);
+  +          })
+  +        : null;
+  +    resizeObserver?.observe(canvas);
+  +
+  +    // Repaint with the new ink when the theme flips.
+  +    const themeObserver = new MutationObserver(() => {
+  +      applyColor();
+  +      if (!running) draw(0);
+  +    });
+  +    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+  +    if (document.body) {
+  +      themeObserver.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+  +    }
+  +
+  +    return () => {
+  +      stop();
+  +      observer?.disconnect();
+  +      resizeObserver?.disconnect();
+  +      themeObserver.disconnect();
+  +      document.removeEventListener("visibilitychange", onVisibility);
+  +      gl.deleteBuffer(buffer);
+  +      gl.deleteProgram(program);
+  +      gl.deleteShader(vert);
+  +      gl.deleteShader(frag);
+  +    };
+  +  }, [colorVar, density, intensity, radial, reducedMotion]);
+  +
+  +  return (
+  +    <canvas
+  +      ref={canvasRef}
+  +      aria-hidden="true"
+  +      style={{ opacity }}
+  +      className={cx(
+  +        css({
+  +          position: "absolute",
+  +          inset: 0,
+  +          width: "100%",
+  +          height: "100%",
+  +          display: "block",
+  +          pointerEvents: "none",
+  +        }),
+  +        className,
+  +      )}
+  +    />
+  +  );
+  +}
+
+
+###
+
+The rubric below outlines the categories of issues we care about:
+
+---
+**abstraction_violation**:
+Guidelines:
+    - Code that breaks established abstraction boundaries within the codebase.
+    - Look for:
+        - Direct access to internal data structures of classes/modules that should be encapsulated
+        - Bypassing public APIs to manipulate state or access internal functionality
+        - Mixing of concerns that should be separated by layers or modules
+        - Violating private vs. public interfaces (e.g., accessing private attributes or methods from outside their defining class/module)
+Examples:
+    - A Python function directly accesses a private attribute, variable or function (prefixed with an underscore) from a different class or file.
+    - A module modifies the internal state of another module directly instead of using and/or adding public API functions.
+Exceptions:
+    - Unit tests that need to access internal state for verification purposes.
+
+---
+**async_correctness**:
+Guidelines:
+    - Issues specific to asynchronous or concurrent code correctness.
+    - Look for: missing await keywords on functions that are clearly async (defined with 'async def' or returning coroutines/Promises), improper async context manager usage, race conditions in async code, deadlock potential, shared state access without proper synchronization.
+    - For threading issues: threads or background tasks that are created but never started, joins without corresponding starts.
+    - Be careful not to flag decorators or wrappers as requiring await unless you can verify they actually make the function async. Only flag clear cases where an async function is called without await or a thread/task is created but never started.
+
+---
+**commit_message_mismatch**:
+Guidelines:
+    - The diff must completely fulfill the user's request.
+    - Look for incomplete implementations:
+       - When the user asks for changes 'throughout', 'everywhere', or 'all', verify ALL instances are modified
+       - If multiple changes are requested, ensure each one is fully implemented
+       - Check that fixes are applied to all occurrences of a pattern, not just some
+    - Look for scope mismatches:
+       - Changes only in initialization when they should apply during execution
+       - Modifications to only one file when multiple files need updates
+       - Partial refactoring that leaves related code unchanged
+    - Look for unauthorized changes:
+       - Configuration changes (linting, build, test settings) not requested
+       - New features or options beyond the request
+       - Changes to unrelated code
+       - Binaries, compiled files, dependencies, or build artifacts that should not be in version control
+    - Look for unintended removals:
+       - Removal of project-specific configuration or settings that should be preserved
+       - Deletion of functionality that is still needed
+       - Loss of necessary entries when replacing configuration files
+    - Look for unintended side effects:
+       - Changes that affect code paths or functionality beyond what was requested
+       - Modifications that impact how existing features work in ways not mentioned in the request
+Exceptions:
+    - Minor refactors directly related to requested changes are acceptable.
+
+---
+**correctness_syntax_issues**:
+Guidelines:
+    - The diff should not contain any syntax errors that would prevent the code from running.
+    - CAREFULLY CHECK INDENTATION: In Python and other indentation-sensitive languages, verify that all function definitions, class definitions, and code blocks maintain proper indentation levels. Dedenting a function body to the module level or similar indentation errors are critical syntax issues.
+    - Look for: broken indentation that would cause syntax errors, missing or mismatched brackets/braces/parentheses, references to files/classes/functions that don't exist, removal of code that is still being referenced elsewhere.
+    - Check function signatures match their usage: if a function is modified to return different values (e.g., a single value vs. a tuple), all call sites must be updated accordingly.
+Examples:
+    - The diff breaks the indentation of a Python function or class, dedenting it incorrectly.
+    - Code references a file, class or function that does not exist, or removes a file, class or function that is definitely still being referenced.
+    - A function is changed to return a tuple of two values, but existing callers still expect only a single return value.
+    - A function's return statement is removed but callers still expect a return value.
+
+---
+**dependency_management**:
+Guidelines:
+    - Check all import statements in new or modified files. If new code imports a library or package that is not part of the language's standard library, verify that the dependency is listed in the repository's dependency/requirement files (e.g., requirements.txt, pyproject.toml, package.json, Gemfile, etc.).
+    - If the diff removes the last remaining use of an external library or package, the dependency and/or requirement files in the repository should be updated to no longer include the library.
+    - If the codebase uses a dependency for some functionality, the diff should avoid introducing other packages that provide the same functionality, unless there is a good reason to do so (e.g. the new package is significantly better maintained, has better performance, or is more secure).
+Exceptions:
+    - Do not raise issues related to package versions or pinning unless it is a critical issue.
+
+---
+**documentation_implementation_mismatch**:
+Guidelines:
+    - The implementation should follow, in this priority order: 1. the user's request, 2. documentation existing in the code base, 3. existing code around it, 4. general best practices and common sense
+    - If the user's request conflicts with the state of documentation in the code base, the documentation in the code base should be updated to reflect the new user request.
+Examples:
+    - The docstring of a class or function does not match what the class or function implements.
+    - The repository contains a README.md file with instructions that are not adhered to by the code.
+    - The diff implements significant new functionality, but existing documentation within the repository is not updated.
+    - Inline comments are not updated even though functionality was changed by the diff.
+    - Documentation contains outdated code snippets or commands that need to be updated because of the changes made by the diff.
+Exceptions:
+    - TODOs/FIXMEs that are not implemented yet are not considered a documentation mismatch.
+
+---
+**error_handling_missing**:
+Guidelines:
+    - Missing error handling for operations that could reasonably fail.
+    - Look for: file I/O without exception handling, network requests without timeout/retry logic, user input processing without validation, external API calls without error checking, database operations without transaction handling.
+    - Only flag issues that are clearly incorrect, and avoid flagging issues where it is not a big problem (e.g. file I/O in a script may not need flagging while missing error handling for file I/O in a long running or production systems should have error handling).
+
+---
+**fails_silently**:
+Guidelines:
+    Code that fails silently is code that ignores errors without reporting them.
+Examples:
+    - Overly broad exception handlers (e.g. bare 'except' or 'except Exception') that catch errors and continue execution without handling, logging, or re-raising them.
+    - The return value of a function that returns an error value in case of a failure is not checked by the caller.
+Exceptions:
+    - There are certain cases where broad exception handlers are acceptable, such as in an executor class or in a main loop that iterates over several tasks. Such cases should still properly log and report the errors.
+    - Do not raise issues related to potential program crashes.
+
+---
+**incomplete_integration_with_existing_code**:
+Guidelines:
+    - The diff should follow existing architectural and organizational patterns in the codebase:
+        - If the codebase uses a modular structure with separate files for classes/components, new classes should follow the same pattern
+        - If the codebase organizes code in specific directories (e.g., src/, components/, utils/), new code should be placed accordingly
+        - If the codebase uses specific import/export patterns (e.g., relative vs. absolute imports), new code should use the same patterns
+    - The diff should integrate functionally with existing code by adding invocations, updating invocations, replacing code with newly defined functions or variables, removing duplicate code when a new piece replaces it, etc.
+    - Prefer using existing library/dependency APIs over custom implementations when the library provides (or will provide) the needed functionality.
+Examples:
+    - The codebase uses absolute Python imports from the project root, but a new file uses relative imports.
+    - The codebase places classes into separate files under a source directory, but new classes are all added to an existing file.
+    - The diff implements a new function, but doesn't add any callsites for it
+    - A new optional parameter is added to a function to implement a requested feature, but existing callsites are not updated to make use of this parameter
+    - A named constant is introduced to replace a hard-coded inline literal, but existing code is not updated to make use of the new constant everywhere
+    - Custom code is added to implement functionality that an existing external library already provides or will provide in newer versions.
+
+---
+**incorrect_algorithm**:
+Guidelines:
+    - Code that implements an algorithm incorrectly for its stated purpose.
+    - Look for: sorting algorithms with wrong comparison logic, search algorithms with incorrect termination, mathematical calculations with wrong formulas, data structure operations that don't maintain invariants, algorithms that don't handle edge cases (empty inputs, single elements).
+    - Only flag issues that are clearly incorrect for the stated purpose of the algorithm, and describe the problem and correction in detail.
+
+---
+**insecure_code**:
+Guidelines:
+    - Look for hard-coded secrets such as API keys, passwords, tokens, or credentials in the diff.
+    - Check for variable names containing: 'token', 'key', 'secret', 'password', 'credential', 'auth'
+    - Look for string literals that appear to be:
+        - API keys or tokens (long alphanumeric strings, often 20+ characters)
+        - Hexadecimal strings that could be tokens or keys
+        - URLs with embedded credentials (e.g., 'REDACTED')
+        - Connection strings with passwords
+    - Flag any credentials or secrets that should be loaded from environment variables or configuration files instead.
+Examples:
+    - A variable named `api_key` or `auth_token` is assigned a hard-coded string value.
+    - A connection string contains a hard-coded password.
+    - A long hexadecimal string is assigned to a variable with 'token' in its name.
+    - An API request includes a hard-coded authentication header value.
+
+---
+**instruction_file_disobeyed**:
+Guidelines:
+    Explicit instructions in files such as .claude.md, CLAUDE.md, and AGENTS.md MUST be obeyed.
+Examples:
+    - CLAUDE.md requests the use of single quotes only, but double quotes are used.
+    - AGENTS.md requests that new versions be created on every database update, but a database entry is modified directly.
+    - .claude.md says to always run the tests after making changes, but the agent did not run the tests.
+Exceptions:
+    - Instructions in the closest file _above_ a location take precedence. For example, when considering a file foo/bar.py, foo/CLAUDE.md takes precedence over CLAUDE.md.
+    - Instructions only apply to the subtree below the file. For example, when considering a file foo/bar.py, foo/baz/CLAUDE.md does not apply.
+    - Applicable instructions should ONLY be contravened in the case of explicit user request--but if the user does explicitly request something counter to the instruction files, this should not be reported as a disobeyed instruction file.
+
+---
+**logic_error**:
+Guidelines:
+    - Logic errors are flaws in the reasoning or flow of the code that would cause incorrect behavior.
+    - Look for: off-by-one errors in loops or array indexing, incorrect conditional logic (wrong operators, inverted conditions), variable assignments that overwrite needed values, incorrect order of operations, missing or incorrect loop termination conditions, algorithms that don't match their intended purpose.
+    - Look for missing, incorrect, or incomplete parameters to function/API calls that will cause the function to behave differently than intended (e.g., missing event masks, wrong flags, omitted required options).
+    - Pay special attention to control flow issues: early returns or breaks that prevent intended functionality from executing, functions that exit before completing their stated purpose, conditions that prevent code paths from being reached when they should be.
+    - Do not flag issues that are not clearly incorrect, for example it's possible code is implemented in a suboptimal way, this is not an issue unless it is explicitly stated that the code should be optimal or implemented in a certain way.
+
+---
+**poor_naming**:
+Guidelines:
+    - File, class, function, function parameter, and constant names should follow the format and naming standards that are currently dominant in the code base (especially within the same file or folder), or the style guide if one exists.
+    - In the absence of existing code, common naming standards for the given programming language should be used.
+    - Function names should be descriptive of what the function does. A person reading the function name without seeing its implementation should be able to get a sense of its purpose.
+    - If any function parameter is being mutated by the function, that fact should be made clear in the name of the parameter (e.g. by appending `_out` / `Out` to the name), unless it is clear that such name-based annotations would be against the existing naming style in the code base.
+    - Note that we don't impose any specific criteria on the length of names. If the existing code base uses many abbreviated names, new code should follow that. Or if it uses a lot of long, verbose names, this similarly should be followed.
+    - If a component's functionality is significantly changed, the name of the component should be updated to reflect the new functionality, if it is not already clear from the context.
+Exceptions:
+    - Short names for local variables are usually okay.
+
+---
+**refactoring_needed**:
+Guidelines:
+    - Functions that have gotten long (> 50 lines) and are mixing multiple concerns and/or combining several different steps should be broken up. (Typically by using helper functions and/or separate classes to encapsulate individual concerns.)
+    - Classes or files that are combining different concerns should be broken up, such that each class / file only deals with one primary concern.
+        - Note: we don't impose any minimal or maximal length on a class or file. Classes and files are ok to be long, as long as they only deal with a single concern.
+Examples:
+    - New functionality that is orthogonal to the existing functionality in a function is inserted into the existing function's body instead of being separated out into its own function.
+    - A class mixes two different use cases that could be separated into two classes.
+
+---
+**repetitive_or_duplicate_code**:
+Guidelines:
+    Repetitive or duplicate code.
+Examples:
+    - A non-trivial calculation or piece of logic is repeated in multiple places within a file.
+    - New code is introduced by the diff to accomplish a certain functionality, but there is an existing function in the code base that already implements the same functionality, or could be easily generalized to accomplish the desired functionality.
+    - A file is duplicated (make exceptions for cases where duplication may be necessary such as test files).
+    - A significant amount of code is introduced which duplicates functionality from standard or well-known libraries.
+    - Multiple functions format or build the same string or data structure in the same way without using a shared helper function or test fixture.
+Exceptions:
+    - Do not flag duplication between legacy and new implementations when the codebase is clearly undergoing a migration or maintaining multiple versions for compatibility.
+    - Do not flag duplication across different architectural layers or modules when the duplication serves to maintain proper separation of concerns.
+
+---
+**resource_leakage**:
+Guidelines:
+    - Focus on system resources that require explicit cleanup: file handles, network connections, database connections, memory allocations, and similar OS-level resources.
+    - These resources must be reliably freed even if exceptions occur.
+    - For these system resources, cleanup should use try/finally blocks, context managers (with statements), or RAII patterns.
+    - Also look for reference management issues: objects being cleaned up while still holding references elsewhere, or cleanup operations (like garbage collection) called before removing all references to the object.
+Examples:
+    - A file or socket connection is opened but not reliably closed.
+    - A database transaction is started but not committed or rolled back in all code paths.
+    - Memory is allocated but not freed (in languages with manual memory management).
+    - An object's cleanup method triggers garbage collection while the object is still referenced in a global data structure, preventing proper cleanup.
+Exceptions:
+    - Animation loops, timers, and intervals that are controlled by boolean flags or cleared by ID are not resource leaks if they have proper stop mechanisms.
+    - Event listeners that are meant to persist for the lifetime of the application.
+    - Resources that are automatically cleaned up by garbage collection (unless they hold system resources).
+
+---
+**runtime_error_risk**:
+Guidelines:
+    - Code patterns that are very likely to cause runtime errors during execution.
+    - Check for version compatibility issues: usage of function parameters, APIs, or language features that are only available in specific versions of the language, standard library, or external dependencies (e.g., a keyword argument added in Python 3.10 will cause TypeError on Python 3.8/3.9).
+    - Look for: potential null/None pointer dereferences, array/list access with potentially invalid indices, division by zero possibilities, file operations without existence checks, network/IO operations without timeout or error handling, infinite loop conditions, memory allocation issues.
+    - Check string encoding/decoding operations: calls to .encode() or .decode() without error handling (try/except or 'errors' parameter) that could raise UnicodeEncodeError or UnicodeDecodeError, especially when processing untrusted or streamed data.
+    - Look for operations with global side effects that could cause problems: os.chdir() without proper restoration, modifying global state in ways that affect other code, operations that are not thread-safe when concurrency is present.
+    - Only flag issues where there is clear evidence the code will fail or cause serious problems. Avoid speculating about potential issues in well-established language patterns or standard library usage.
+
+---
+**test_coverage**:
+Guidelines:
+    - If the diff introduces significant new functionality, and the code base has existing unit and/or integration tests, new tests should be added to cover the new functionality.
+    - If the diff changes the behavior of existing functionality that is covered by automated tests, those tests should be updated to reflect the new behavior.
+    - If the diff contains a bug fix, and the code base has existing unit and/or integration tests, a regression test should be added for the bug.
+Exceptions:
+    - Syntactical or logical issues in tests will be raised in other issue types and do not belong in this category.
+
+---
+**type_safety_violation**:
+Guidelines:
+    - Code that violates type safety expectations or could cause type-related runtime errors.
+    - Look for: incorrect type assumptions, missing type checks before operations, unsafe type casting, attribute access on potentially None values.
+    - Check for return type violations: functions that return values inconsistent with their declared return type annotations (e.g., returning None when the type annotation specifies a non-optional type, returning wrong tuple element types).
+
+---
+**user_request_artifacts_left_in_code**:
+Guidelines:
+    - Comments should describe what the code does, not how it was changed.
+    - Flag comments that reference the change process: '# Changed from X to Y', '# Updated to print less'
+    - Flag comments that mention fixing or addressing issues: '# Fixed bug where...', '# This addresses...'
+    - Flag documentation written in past tense about modifications
+    - Acceptable comments explain current behavior without referencing changes:
+        - Acceptable: '# Multiply by 3x' instead of '# Reduced factor from 5x to 3x'
+        - Acceptable: '# Handle edge case' instead of '# Fixed edge case bug'
+
+---
+
+### Parallel Analysis Results ###
+{
+  "issues": []
+}
+
+Your task is to:
+1. Review all the findings for accuracy and relevance using the category definitions above
+2. Consolidate any duplicate or overlapping issues
+3. Ensure each issue is correctly categorized according to the category definitions and re-categorize any issues if necessary
+4. Return a consolidated set of issues
+
+Guidelines:
+- Merge similar issues that refer to the same underlying problem
+- Do not remove any issues, you may only re-categorize or merge issues
+
+After your analysis, provide your response in JSON format matching this schema:
+
+{
+  "$defs": {
+    "GeneratedIssueSchema": {
+      "additionalProperties": true,
+      "description": "Individual issue from LLM response.",
+      "properties": {
+        "codePart": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Specific code snippet that has the issue",
+          "title": "Codepart"
+        },
+        "confidence": {
+          "description": "Confidence in this assessment",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "description": {
+          "description": "Specific explanation of what\u0027s wrong and why it\u0027s incorrect",
+          "title": "Description",
+          "type": "string"
+        },
+        "issueCode": {
+          "description": "Category of the issue",
+          "title": "Issuecode",
+          "type": "string"
+        },
+        "location": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "File path where the issue occurs",
+          "title": "Location"
+        },
+        "severity": {
+          "description": "Integer 1-5 (1=minor issue, 5=critical bug)",
+          "maximum": 5,
+          "minimum": 1,
+          "title": "Severity",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "issueCode",
+        "description",
+        "severity",
+        "confidence"
+      ],
+      "title": "GeneratedIssueSchema",
+      "type": "object"
+    }
+  },
+  "additionalProperties": true,
+  "description": "Complete response structure for issue identification.",
+  "properties": {
+    "issues": {
+      "description": "List of identified issues",
+      "items": {
+        "$ref": "#/$defs/GeneratedIssueSchema"
+      },
+      "title": "Issues",
+      "type": "array"
+    }
+  },
+  "title": "GeneratedResponseSchema",
+  "type": "object"
+}
