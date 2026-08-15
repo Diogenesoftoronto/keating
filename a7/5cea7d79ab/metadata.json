@@ -3,10 +3,11 @@
   "checkpoint_id": "a75cea7d79ab",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 9,
+  "checkpoints_count": 10,
   "files_touched": [
     ".gitignore",
     "CHANGELOG.md",
+    "bun.lock",
     "devenv.nix",
     "package.json",
     "web/panda.config.ts",
@@ -76,6 +77,13 @@
       "compact_transcript": "/a7/5cea7d79ab/7/transcript.jsonl",
       "content_hash": "/a7/5cea7d79ab/7/content_hash.txt",
       "prompt": "/a7/5cea7d79ab/7/prompt.txt"
+    },
+    {
+      "metadata": "/a7/5cea7d79ab/8/metadata.json",
+      "transcript": "/a7/5cea7d79ab/8/full.jsonl",
+      "compact_transcript": "/a7/5cea7d79ab/8/transcript.jsonl",
+      "content_hash": "/a7/5cea7d79ab/8/content_hash.txt",
+      "prompt": "/a7/5cea7d79ab/8/prompt.txt"
     }
   ],
   "token_usage": {
