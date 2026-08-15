@@ -1,0 +1,75 @@
+{
+  "cli_version": "0.9.0",
+  "checkpoint_id": "a75cea7d79ab",
+  "session_id": "019ff805-bf91-7b82-b180-197ae767d694",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-15T02:14:58.091907034Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    ".gitignore",
+    "CHANGELOG.md",
+    "package.json",
+    "web/panda.config.ts",
+    "web/src/pages/Landing.tsx"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.6-sol",
+  "turn_id": "fe17e86f4d5d",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 502438,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 19019520,
+    "output_tokens": 30917,
+    "api_call_count": 169
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-08-15T02:14:58.008746752Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 5069,
+    "human_modified": 367,
+    "human_removed": 0,
+    "total_committed": 5073,
+    "total_lines_changed": 7255,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 2745,
+      "user_lines_removed": 713,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "web/panda.config.ts": 1140,
+        "web/src/components/LandingWonder.tsx": 560,
+        "web/src/components/ScrambleText.tsx": 183,
+        "web/src/components/ShaderField.tsx": 341,
+        "web/src/components/SurfaceScreencasts.tsx": 395,
+        "web/src/pages/Landing.tsx": 126
+      },
+      "user_removed_per_file": {
+        "web/panda.config.ts": 89,
+        "web/src/components/SurfaceScreencasts.tsx": 359,
+        "web/src/pages/Landing.tsx": 265
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 5,
+      "user_lines_removed": 0,
+      "agent_lines_added": 2781,
+      "agent_lines_removed": 713,
+      "user_added_per_file": {
+        ".bumpy/landing-experience.md": 5
+      }
+    }
+  ]
+}

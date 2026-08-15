@@ -1,0 +1,9 @@
+so there is a bit of a bug with text scattering effect and it causes the page to rapidly move up and down as the text sizes change. the other thing i want is in the powerful play frame by frame section I want the card on the right side removed, i also want the text removed. I only want to see the crt with the different images that switch with a timer on their own. no controls from the user.
+
+---
+
+skip vet
+
+---
+
+pause on hover is fine, focus behaviour is good keyboard nav is great just no buttons labels or adjacent copy
