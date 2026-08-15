@@ -1,0 +1,33 @@
+you can use codex to generate images, you can give it some texture as well.
+
+---
+
+.
+
+---
+
+go and improve the landing page
+
+---
+
+dev server already on localhost 3000
+
+---
+
+skip vet
+
+---
+
+i think it is missing some wonderfull text animations, it doesn't take advantage of all the images that we have as well which is disappointing, i also would like it to have a really cute fun bits too it. some really awesome programmatic animations increase the depth of the design as well. it gives it that layered approach, even using horizontal scroll to transition the focus as well i think makes a ton of sense
+
+---
+
+the section with a ll the images horizontal is a bit gimmicky, i really like the crt image and i really wish it was utilized more especially for that quote like it was in the og, it could even be used for the image playthrough program.
+
+---
+
+i feel like there is too much going on in that page just have the crt with the quote and the image screen shots
+
+---
+
+.

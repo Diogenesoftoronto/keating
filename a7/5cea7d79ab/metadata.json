@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.9.0",
+  "checkpoint_id": "a75cea7d79ab",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "web/panda.config.ts",
+    "web/src/pages/Landing.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/a7/5cea7d79ab/0/metadata.json",
+      "transcript": "/a7/5cea7d79ab/0/full.jsonl",
+      "compact_transcript": "/a7/5cea7d79ab/0/transcript.jsonl",
+      "content_hash": "/a7/5cea7d79ab/0/content_hash.txt",
+      "prompt": "/a7/5cea7d79ab/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1350639,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 47349926,
+    "output_tokens": 175384,
+    "api_call_count": 174
+  }
+}
