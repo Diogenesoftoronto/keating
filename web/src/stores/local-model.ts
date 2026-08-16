@@ -154,7 +154,7 @@ export function classifyLocalModelError(message: string, spec: BrowserModelSpec)
 export async function checkWebGpuAvailable(
 	spec: BrowserModelSpec,
 ): Promise<{ available: boolean; reason?: string }> {
-	if (!navigator.gpu) {
+	if (typeof navigator === "undefined" || !navigator.gpu) {
 		return {
 			available: false,
 			reason: "WebGPU is not supported in this browser. The browser model requires Chrome 113+ or Edge 113+ with hardware acceleration enabled.",
@@ -170,12 +170,12 @@ export async function checkWebGpuAvailable(
 		}
 		// Every f16 export fails at session creation without this feature, with an
 		// error that is far less legible than saying so up front.
-	if (needsShaderF16(spec) && !adapterHasFeature(adapter, "shader-f16")) {
-		return {
-			available: false,
-			reason: `Your GPU reports no shader-f16 support, which ${spec.name} requires. Try a smaller browser model instead.`,
-		};
-	}
+		if (needsShaderF16(spec) && !adapterHasFeature(adapter, "shader-f16")) {
+			return {
+				available: false,
+				reason: `Your GPU reports no shader-f16 support, which ${spec.name} requires. Try a smaller browser model instead.`,
+			};
+		}
 		return { available: true };
 	} catch {
 		return {

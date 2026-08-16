@@ -71,6 +71,24 @@ describe("gateway model discovery", () => {
 });
 
 describe("chat model fallback selection", () => {
+	it("keeps an explicitly selected model instead of silently replacing it", async () => {
+		const { resolveAvailableChatModel } = await import("../lib/provider-models");
+		const selected = {
+			id: "gpt-5.5",
+			name: "GPT-5.5",
+			api: "openai-completions" as any,
+			provider: "openai",
+			baseUrl: "https://api.openai.com/v1",
+			reasoning: true,
+			input: ["text"] as Array<"text" | "image">,
+			cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+			contextWindow: 128_000,
+			maxTokens: 8192,
+		};
+
+		expect(await resolveAvailableChatModel(selected, { allowFallback: false })).toBe(selected);
+	});
+
 	it("uses the local browser model when no account or provider key is available", async () => {
 		const originalNavigator = globalThis.navigator;
 		Object.defineProperty(globalThis, "navigator", {
@@ -100,6 +118,42 @@ describe("chat model fallback selection", () => {
 
 			expect(selected.provider).toBe("browser");
 			expect(selected.id).toBe("LiquidAI/LFM2.5-2.6B-ONNX");
+		} finally {
+			Object.defineProperty(globalThis, "navigator", {
+				configurable: true,
+				value: originalNavigator,
+			});
+		}
+	});
+
+	it("does not select a browser model when the GPU lacks its required WebGPU feature", async () => {
+		const originalNavigator = globalThis.navigator;
+		Object.defineProperty(globalThis, "navigator", {
+			configurable: true,
+			value: {
+				gpu: {
+					requestAdapter: async () => ({
+						features: { has: () => false },
+					}),
+				},
+			},
+		});
+		try {
+			const { resolveAvailableChatModel } = await import("../lib/provider-models");
+			const current = {
+				id: "balanced",
+				name: "Not Organic Balanced",
+				api: "openai-completions" as any,
+				provider: "notorganic",
+				baseUrl: "/api/notorganic/openai/v1",
+				reasoning: true,
+				input: ["text"] as Array<"text" | "image">,
+				cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+				contextWindow: 256_000,
+				maxTokens: 8192,
+			};
+
+			expect(await resolveAvailableChatModel(current)).toBe(current);
 		} finally {
 			Object.defineProperty(globalThis, "navigator", {
 				configurable: true,
