@@ -1173,7 +1173,11 @@ export function useKeatingAgent(
   );
 
   const createAgent = useCallback(
-    async (panel: ChatPanelHandle, initialState?: Partial<AgentState>) => {
+    async (
+      panel: ChatPanelHandle,
+      initialState?: Partial<AgentState>,
+      options?: { preserveSelectedModel?: boolean },
+    ) => {
       const agentSessionId = sessionIdRef.current;
       const agentCreatedAt = sessionCreatedAtRef.current;
       // Custom personas take precedence; the untouched default still honors any
@@ -1206,6 +1210,7 @@ export function useKeatingAgent(
       registerKeatingWebMcp(keatingStorage, tools).catch(console.warn);
       const resolvedModel = await resolveAvailableChatModel(
         initialState?.model ?? selectedModelRef.current,
+        { allowFallback: !options?.preserveSelectedModel },
       );
       selectModel(resolvedModel);
       const nextState: Partial<AgentState> = {
@@ -2161,7 +2166,7 @@ export function useKeatingAgent(
               ...current,
               model,
               messages: [...current.messages],
-            });
+            }, { preserveSelectedModel: true });
           }
         });
       }}

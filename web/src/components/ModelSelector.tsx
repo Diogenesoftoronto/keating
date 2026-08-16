@@ -4,7 +4,7 @@ import { getProviders, type Api, type Model } from "@earendil-works/pi-ai/compat
 import {
 	localModel,
 	BROWSER_MODELS,
-	DEFAULT_BROWSER_MODEL_ID,
+	checkWebGpuAvailable,
 	getBrowserModel,
 	type LocalModel,
 } from "../stores/local-model";
@@ -25,8 +25,10 @@ import { ModelCacheControls, ModelDownloadBar } from "./ModelDownloadBar";
 import { refreshCachedModelSizes, useCachedModelSize } from "../hooks/useCachedModelSize";
 import { css } from "../../styled-system/css";
 
-function makeBrowserModels(): Model<Api>[] {
-	return BROWSER_MODELS.map((spec) => ({
+type BrowserModelAvailability = Record<string, { available: boolean; reason?: string }>;
+
+function makeBrowserModels(availableIds?: ReadonlySet<string>): Model<Api>[] {
+	return BROWSER_MODELS.filter((spec) => !availableIds || availableIds.has(spec.id)).map((spec) => ({
 		id: spec.id,
 		name: spec.name,
 		api: "browser" as Api,
@@ -40,11 +42,6 @@ function makeBrowserModels(): Model<Api>[] {
 	}));
 }
 
-function defaultBrowserModel(): Model<Api> {
-	const models = makeBrowserModels();
-	return models.find((model) => model.id === DEFAULT_BROWSER_MODEL_ID) ?? models[0];
-}
-
 type SelectableModel = {
 	key: string;
 	model: Model<Api>;
@@ -55,19 +52,19 @@ interface ModelCatalogState {
 	models: SelectableModel[];
 	status: "loading" | "ready" | "error";
 	error: string;
-	webGpuAvailable: boolean;
+	browserAvailability: BrowserModelAvailability;
 }
 
 type ModelCatalogAction =
 	| { type: "loading" }
-	| { type: "ready"; models: SelectableModel[]; webGpuAvailable: boolean }
-	| { type: "error"; message: string; fallbackModels: SelectableModel[]; webGpuAvailable: boolean };
+	| { type: "ready"; models: SelectableModel[]; browserAvailability: BrowserModelAvailability }
+	| { type: "error"; message: string; fallbackModels: SelectableModel[]; browserAvailability: BrowserModelAvailability };
 
 const INITIAL_CATALOG: ModelCatalogState = {
 	models: [],
 	status: "loading",
 	error: "",
-	webGpuAvailable: false,
+	browserAvailability: {},
 };
 
 function modelCatalogReducer(state: ModelCatalogState, action: ModelCatalogAction): ModelCatalogState {
@@ -75,13 +72,13 @@ function modelCatalogReducer(state: ModelCatalogState, action: ModelCatalogActio
 		case "loading":
 			return { ...state, status: "loading", error: "" };
 		case "ready":
-			return { models: action.models, status: "ready", error: "", webGpuAvailable: action.webGpuAvailable };
+			return { models: action.models, status: "ready", error: "", browserAvailability: action.browserAvailability };
 		case "error":
 			return {
 				models: action.fallbackModels,
 				status: "error",
 				error: action.message,
-				webGpuAvailable: action.webGpuAvailable,
+				browserAvailability: action.browserAvailability,
 			};
 	}
 }
@@ -90,16 +87,14 @@ function modelKey(model: Model<any>): string {
 	return `${model.provider}::${model.api}::${model.id}`;
 }
 
-async function checkWebGpu(): Promise<boolean> {
-	if (!navigator.gpu) return false;
-	try {
-		return (await navigator.gpu.requestAdapter()) !== null;
-	} catch {
-		return false;
-	}
+async function checkBrowserModelAvailability(): Promise<BrowserModelAvailability> {
+	const entries = await Promise.all(
+		BROWSER_MODELS.map(async (spec) => [spec.id, await checkWebGpuAvailable(spec)] as const),
+	);
+	return Object.fromEntries(entries);
 }
 
-async function discoverModels(webGpuAvailable: boolean): Promise<SelectableModel[]> {
+async function discoverModels(browserAvailability: BrowserModelAvailability): Promise<SelectableModel[]> {
 	const modelPrefs = loadModelPrefs();
 	const hidden = new Set(modelPrefs.hiddenProviders);
 	const all = await getSelectableModels((provider) => !hidden.has(provider));
@@ -120,9 +115,14 @@ async function discoverModels(webGpuAvailable: boolean): Promise<SelectableModel
 					: "custom",
 	}));
 
-	if (webGpuAvailable) {
+	const compatibleBrowserModelIds = new Set(
+		Object.entries(browserAvailability)
+			.filter(([, result]) => result.available)
+			.map(([id]) => id),
+	);
+	if (compatibleBrowserModelIds.size > 0) {
 		selectable.unshift(
-			...makeBrowserModels().map((model) => ({
+			...makeBrowserModels(compatibleBrowserModelIds).map((model) => ({
 				key: modelKey(model),
 				model,
 				group: "browser" as const,
@@ -145,35 +145,28 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 	const [search, setSearch] = useState("");
 	const [providerFilters, setProviderFilters] = useState<string[]>([]);
 	const [capabilityFilters, setCapabilityFilters] = useState<ChatCapabilityFilter[]>([]);
-	const [selectedKey, setSelectedKey] = useState(currentModel ? modelKey(currentModel) : modelKey(defaultBrowserModel()));
+	const [selectedKey, setSelectedKey] = useState(currentModel ? modelKey(currentModel) : "");
 	const [localState, setLocalState] = useState<LocalModel | null>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const loadRequestRef = useRef(0);
-	const { models, status, error, webGpuAvailable } = catalog;
+	const { models, status, error, browserAvailability } = catalog;
 	const loading = status === "loading";
 
 	const refreshModels = useCallback(async () => {
 		const requestId = ++loadRequestRef.current;
 		dispatchCatalog({ type: "loading" });
-		const browserAvailable = await checkWebGpu();
+		const nextBrowserAvailability = await checkBrowserModelAvailability();
 		try {
-			const nextModels = await discoverModels(browserAvailable);
+			const nextModels = await discoverModels(nextBrowserAvailability);
 			if (requestId !== loadRequestRef.current) return;
-			dispatchCatalog({ type: "ready", models: nextModels, webGpuAvailable: browserAvailable });
+			dispatchCatalog({ type: "ready", models: nextModels, browserAvailability: nextBrowserAvailability });
 		} catch (err) {
 			if (requestId !== loadRequestRef.current) return;
-			const fallbackModels = browserAvailable
-				? makeBrowserModels().map((model) => ({
-						key: modelKey(model),
-						model,
-						group: "browser" as const,
-					}))
-				: [];
 			dispatchCatalog({
 				type: "error",
 				message: err instanceof Error ? err.message : String(err),
-				fallbackModels,
-				webGpuAvailable: browserAvailable,
+				fallbackModels: [],
+				browserAvailability: nextBrowserAvailability,
 			});
 		}
 	}, []);
@@ -186,7 +179,7 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 		setSearch("");
 		setProviderFilters([]);
 		setCapabilityFilters([]);
-		setSelectedKey(currentModel ? modelKey(currentModel) : modelKey(defaultBrowserModel()));
+		setSelectedKey(currentModel ? modelKey(currentModel) : "");
 		const unsub = localModel.subscribe(setLocalState);
 		void refreshModels();
 		const focusTimer = window.setTimeout(() => inputRef.current?.focus(), 50);
@@ -229,6 +222,14 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 	const browserModels = filtered.filter((e) => e.group === "browser" && !recentKeys.has(e.key));
 	const cloudModels = filtered.filter((e) => e.group === "cloud" && !recentKeys.has(e.key));
 	const customModels = filtered.filter((e) => e.group === "custom" && !recentKeys.has(e.key));
+	const browserUnavailableReason = useMemo(
+		() => BROWSER_MODELS.map((spec) => browserAvailability[spec.id]?.reason).find(Boolean),
+		[browserAvailability],
+	);
+	const hasCompatibleBrowserModel = useMemo(
+		() => BROWSER_MODELS.some((spec) => browserAvailability[spec.id]?.available),
+		[browserAvailability],
+	);
 
 	const handleSelect = async () => {
 		const selected = models.find((e) => e.key === selectedKey)?.model;
@@ -280,6 +281,11 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 					<div>
 						<h2 className={css({ fontSize: { base: "0.875rem", sm: "1rem" }, fontWeight: 600, color: "var(--foreground)" })}>Select Model</h2>
 						<p className={css({ marginTop: "0.125rem", fontSize: { base: "0.6875rem", sm: "0.75rem" }, color: "var(--muted-foreground)" })}>Built-in providers and discovered custom-provider models.</p>
+						{status === "ready" && browserUnavailableReason && !hasCompatibleBrowserModel && (
+							<p role="status" className={css({ marginTop: "0.375rem", fontSize: { base: "0.6875rem", sm: "0.75rem" }, color: "var(--muted-foreground)" })}>
+								Browser models are unavailable: {browserUnavailableReason}
+							</p>
+						)}
 					</div>
 					<div
 						className={css({
@@ -395,10 +401,10 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 						<div className={css({ padding: { base: "0.75rem", sm: "1rem" }, textAlign: "center", fontSize: "0.875rem", color: "var(--muted-foreground)" })}>No models matched the current search.</div>
 					) : (
 						<>
-							{renderGroup("Recent", recentModels, selectedKey, setSelectedKey, localState, webGpuAvailable)}
-							{renderGroup("Browser", browserModels, selectedKey, setSelectedKey, localState, webGpuAvailable)}
-							{renderGroup("Cloud", cloudModels, selectedKey, setSelectedKey, localState, webGpuAvailable)}
-							{renderGroup("Custom Providers", customModels, selectedKey, setSelectedKey, localState, webGpuAvailable)}
+							{renderGroup("Recent", recentModels, selectedKey, setSelectedKey, localState)}
+							{renderGroup("Browser", browserModels, selectedKey, setSelectedKey, localState)}
+							{renderGroup("Cloud", cloudModels, selectedKey, setSelectedKey, localState)}
+							{renderGroup("Custom Providers", customModels, selectedKey, setSelectedKey, localState)}
 						</>
 					)}
 				</div>
@@ -420,6 +426,7 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 					</button>
 					<button
 						onClick={handleSelect}
+						disabled={!selectedKey}
 						className={css({
 							borderRadius: "0.375rem",
 							border: "2px solid var(--primary)",
@@ -430,6 +437,7 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 							color: "var(--primary-foreground)",
 							transition: "color 150ms, background-color 150ms",
 							_hover: { background: "color-mix(in srgb, var(--primary) 90%, black)" },
+							_disabled: { cursor: "not-allowed", opacity: 0.55 },
 						})}
 					>
 						Use Selected Model
@@ -446,7 +454,6 @@ function renderGroup(
 	selectedKey: string,
 	onSelect: (key: string) => void,
 	localState: LocalModel | null,
-	webGpuAvailable: boolean,
 ) {
 	if (models.length === 0) return null;
 	return (
@@ -475,7 +482,6 @@ function renderGroup(
 					isSelected={selectedKey === entry.key}
 					onClick={() => onSelect(entry.key)}
 					localState={localState}
-					webGpuAvailable={webGpuAvailable}
 				/>
 			))}
 		</div>
@@ -487,17 +493,14 @@ function ModelOption({
 	isSelected,
 	onClick,
 	localState,
-	webGpuAvailable,
 }: {
 	entry: SelectableModel;
 	isSelected: boolean;
 	onClick: () => void;
 	localState: LocalModel | null;
-	webGpuAvailable: boolean;
 }) {
 	const { model, key } = entry;
 	const isBrowser = model.provider === "browser";
-	const disabled = isBrowser && !webGpuAvailable;
 
 	const badges = [
 		isBrowser ? "WebGPU" : "",
@@ -521,7 +524,6 @@ function ModelOption({
 
 	const status = (): string => {
 		if (!isBrowser) return "";
-		if (!webGpuAvailable) return "WebGPU not available";
 		// The loading case renders ModelDownloadBar instead of a status line.
 		if (isActive && localState?.loaded) return "Model ready";
 		if (isActive && localState?.error) return localState.error;
@@ -538,21 +540,17 @@ function ModelOption({
 				background: isSelected ? "color-mix(in srgb, var(--primary) 5%, transparent)" : undefined,
 				paddingInline: { base: "0.75rem", sm: "1rem" },
 				paddingBlock: { base: "0.5rem", sm: "0.75rem" },
-				cursor: disabled ? "not-allowed" : "pointer",
-				opacity: disabled ? 0.45 : undefined,
+				cursor: "pointer",
 				transition: "color 150ms, background-color 150ms",
-				_hover: disabled ? undefined : { background: "color-mix(in srgb, var(--accent) 30%, transparent)" },
+				_hover: { background: "color-mix(in srgb, var(--accent) 30%, transparent)" },
 			})}
-			onClick={() => {
-				if (!disabled) onClick();
-			}}
+			onClick={onClick}
 		>
 			<input
 				type="radio"
 				name="model"
 				checked={isSelected}
 				readOnly
-				disabled={disabled}
 				className={css({ marginTop: { base: "0.125rem", sm: "0.25rem" }, flexShrink: 0 })}
 			/>
 			<div className={css({ minWidth: 0, flex: 1 })}>
@@ -586,7 +584,7 @@ function ModelOption({
 							<div className={css({
 								marginTop: "0.25rem",
 								fontSize: "0.75rem",
-								color: (isActive && localState?.error) || !webGpuAvailable
+								color: isActive && localState?.error
 									? "var(--destructive)"
 									: isActive && localState?.loaded
 										? "var(--primary)"

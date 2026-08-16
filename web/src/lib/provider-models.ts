@@ -408,7 +408,16 @@ function preferredModelForProvider(models: Array<Model<Api>>, provider: string):
 	return providerModels[0];
 }
 
-export async function resolveAvailableChatModel(current: Model<Api>): Promise<Model<Api>> {
+/**
+ * Find a usable first-run fallback. Explicit selections pass
+ * `allowFallback: false`: a missing provider credential should be surfaced to
+ * the user, never silently replaced with the browser default.
+ */
+export async function resolveAvailableChatModel(
+	current: Model<Api>,
+	options: { allowFallback?: boolean } = {},
+): Promise<Model<Api>> {
+	if (options.allowFallback === false) return current;
 	if (!providerNeedsKey(current.provider) || await getProviderApiKey(current.provider)) {
 		return current;
 	}
