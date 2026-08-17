@@ -3,6 +3,7 @@ export * from "./envelope.js";
 export * from "./evaluation.js";
 export * from "./feedback.js";
 export * from "./learning.js";
+export * from "./mobile-workspace.js";
 export * from "./openui-source.js";
 export * from "./portable.js";
 export * from "./rendering.js";

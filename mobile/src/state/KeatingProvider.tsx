@@ -91,6 +91,7 @@ import {
   type UnprojectedNativeRecords,
 } from "@/lib/learner-repository/portable-native-state";
 import type { LearnerRepository } from "@/lib/learner-repository";
+import { useMobileWorkspace } from "@/state/MobileWorkspaceProvider";
 import { clearCardState } from "@/state/card-state";
 import {
   type ArtifactKind,
@@ -242,6 +243,7 @@ function artifactTitle(message: ChatMessage, kind: ArtifactKind): string {
 const KeatingContext = createContext<KeatingContextValue | null>(null);
 
 export function KeatingProvider({ children }: PropsWithChildren) {
+  const mobileWorkspace = useMobileWorkspace();
   const { settings: uiSettings } = useUiSettings();
   const [state, setState] = useState<PersistedAppState>(initialState);
   const [hydrated, setHydrated] = useState(false);
@@ -673,11 +675,13 @@ export function KeatingProvider({ children }: PropsWithChildren) {
         },
         onUsage: (usage) => { providerUsage = usage; },
         onToolCall: appendToolCall,
+        executeTool: mobileWorkspace.executeAgentTool,
         lookupToolReceipt: (idempotencyKey, call) => restoreMobileToolReceipt(
           replayEvents,
           stateRef.current.artifacts,
           contractId(idempotencyKey, "tool-key"),
           call.name,
+          mobileWorkspace.hasOverlay,
         ),
         commitToolCall: async (committed) => {
           const eventsBeforeResult = agentEvents;
@@ -750,7 +754,7 @@ export function KeatingProvider({ children }: PropsWithChildren) {
       generationBusyRef.current = false;
       setIsGenerating(false);
     }
-  }, [persistLearnerState, updateSession]);
+  }, [mobileWorkspace.executeAgentTool, mobileWorkspace.hasOverlay, persistLearnerState, updateSession]);
 
   const trackCompletion = useCallback(async (completion: Promise<void>) => {
     generationPromiseRef.current = completion;

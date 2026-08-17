@@ -59,4 +59,14 @@ describe("restoreMobileToolReceipt", () => {
   it("rejects a receipt whose semantic key belongs to another tool", () => {
     expect(restoreMobileToolReceipt(receipt("error", "No"), [], "tool-key-1", "generate_concept_map")).toBeNull();
   });
+
+  it("reuses a workspace proposal only while its durable overlay still exists", () => {
+    const events: AgentStreamEvent[] = [
+      { id: "event-workspace-call", occurredAt: "2026-08-10T00:00:00.000Z", type: "tool-call", turnId: "turn-1", sequence: 0, call: { id: "call-workspace", name: "propose_mobile_workspace_change", arguments: {}, idempotencyKey: "tool-key-workspace" } },
+      { id: "event-workspace-result", occurredAt: "2026-08-10T00:00:01.000Z", type: "tool-result", turnId: "turn-1", sequence: 1, result: { toolCallId: "call-workspace", idempotencyKey: "tool-key-workspace", status: "success", text: JSON.stringify({ overlayId: "overlay-1", status: "pending-user-activation" }) } },
+    ];
+    expect(restoreMobileToolReceipt(events, [], "tool-key-workspace", "propose_mobile_workspace_change", (id) => id === "overlay-1"))
+      .toMatchObject({ ok: true, effects: [] });
+    expect(restoreMobileToolReceipt(events, [], "tool-key-workspace", "propose_mobile_workspace_change", () => false)).toBeNull();
+  });
 });
