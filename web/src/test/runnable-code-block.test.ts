@@ -5,6 +5,7 @@ import {
 	isRunnableCodeLanguage,
 	prepareRunnableCode,
 } from "../components/RunnableCodeBlock";
+import { chooseCodeExecutor } from "../keating/execution-policy";
 
 describe("RunnableCodeBlock helpers", () => {
 	test("marks JavaScript and TypeScript fences as runnable", () => {
@@ -12,8 +13,31 @@ describe("RunnableCodeBlock helpers", () => {
 		expect(isRunnableCodeLanguage("javascript")).toBe(true);
 		expect(isRunnableCodeLanguage("ts")).toBe(true);
 		expect(isRunnableCodeLanguage("typescript")).toBe(true);
-		expect(isRunnableCodeLanguage("python")).toBe(false);
+		expect(isRunnableCodeLanguage("python")).toBe(true);
 		expect(isRunnableCodeLanguage("mermaid")).toBe(false);
+	});
+
+	test("keeps small or slow-network desktop TypeScript local, but promotes mobile work", () => {
+		expect(chooseCodeExecutor("typescript", "const x = 1", {
+			online: true,
+			deviceClass: "desktop",
+			networkClass: "normal",
+		})).toBe("local");
+		expect(chooseCodeExecutor("typescript", "x".repeat(9_000), {
+			online: true,
+			deviceClass: "desktop",
+			networkClass: "normal",
+		})).toBe("cloud");
+		expect(chooseCodeExecutor("typescript", "const x = 1", {
+			online: true,
+			deviceClass: "mobile",
+			networkClass: "slow",
+		})).toBe("cloud");
+		expect(chooseCodeExecutor("typescript", "const x = 1", {
+			online: false,
+			deviceClass: "desktop",
+			networkClass: "normal",
+		})).toBe("unavailable");
 	});
 
 	test("transpiles TypeScript snippets before NodePod execution", async () => {

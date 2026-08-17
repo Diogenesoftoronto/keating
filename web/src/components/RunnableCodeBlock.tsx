@@ -10,22 +10,27 @@ import {
 	transpileTsToJs,
 	type ShellSession,
 } from "../keating/nodepod-runtime";
+import {
+	createHostedCodeRun,
+	getHostedNotebookRun,
+	type HostedNotebookRun,
+} from "../notorganic-provider/notebook";
+import { browserExecutionSignals, chooseCodeExecutor } from "../keating/execution-policy";
 
 const RUNNABLE_LANGUAGES = new Set([
 	"js",
 	"javascript",
 	"mjs",
 	"cjs",
-	"ts",
-	"typescript",
 ]);
+const SUPPORTED_LANGUAGES = new Set([...RUNNABLE_LANGUAGES, "ts", "typescript", "py", "python"]);
 
 function normalizeLanguage(language: string): string {
 	return language.trim().toLowerCase();
 }
 
 export function isRunnableCodeLanguage(language: string): boolean {
-	return RUNNABLE_LANGUAGES.has(normalizeLanguage(language));
+	return SUPPORTED_LANGUAGES.has(normalizeLanguage(language));
 }
 
 export async function prepareRunnableCode(code: string, language: string): Promise<{ code: string; filename: string }> {
@@ -71,6 +76,19 @@ function sessionOutput(session: ShellSession): string {
 	return chunks.join("\n\n") || "(no output)";
 }
 
+function hostedOutput(run: HostedNotebookRun): string {
+	const chunks = [
+		run.stdout ? `stdout\n${run.stdout.trimEnd()}` : "",
+		run.stderr ? `stderr\n${run.stderr.trimEnd()}` : "",
+		run.error_code ? `error\n${run.error_code}` : "",
+	].filter(Boolean);
+	return chunks.join("\n\n") || "(no output)";
+}
+
+function hostedTerminal(run: HostedNotebookRun): boolean {
+	return run.status === "succeeded" || run.status === "failed" || run.status === "cancelled";
+}
+
 export function RunnableCodeBlock({
 	children,
 	code,
@@ -85,9 +103,28 @@ export function RunnableCodeBlock({
 	const [editing, setEditing] = useState(false);
 	const [running, setRunning] = useState(false);
 	const [result, setResult] = useState<ShellSession | null>(null);
+	const [hostedResult, setHostedResult] = useState<HostedNotebookRun | null>(null);
 	const [error, setError] = useState("");
-	const runnable = isRunnableCodeLanguage(language);
+	const [connectionVersion, setConnectionVersion] = useState(0);
+	const executor = useMemo(() =>
+		typeof navigator === "undefined"
+			? "unavailable"
+			: chooseCodeExecutor(language, editableCode, browserExecutionSignals()),
+		[connectionVersion, editableCode, language],
+	);
+	const runnable = isRunnableCodeLanguage(language) && executor !== "unavailable";
+	const hosted = executor === "cloud";
 	const dirty = editableCode !== code;
+
+	useEffect(() => {
+		const refresh = () => setConnectionVersion((version) => version + 1);
+		window.addEventListener("online", refresh);
+		window.addEventListener("offline", refresh);
+		return () => {
+			window.removeEventListener("online", refresh);
+			window.removeEventListener("offline", refresh);
+		};
+	}, []);
 
 	// This block is still being written when its code matches the open fence.
 	const streamingCode = useContext(StreamingCodeContext);
@@ -103,18 +140,45 @@ export function RunnableCodeBlock({
 
 	const status = useMemo(() => {
 		if (streaming) return "writing…";
-		if (running) return "Running in NodePod";
+		if (running) return hosted ? "Running in Cloudflare" : "Running on this device";
 		if (error) return "Run failed";
+		if (hostedResult) return hostedResult.status === "succeeded" ? "Finished" : hostedResult.status;
 		if (result) return result.ok ? "Finished" : `Exit ${result.exitCode ?? "unknown"}`;
-		return runnable ? "Runs in NodePod" : "Not runnable";
-	}, [error, result, runnable, running, streaming]);
+		if (executor === "unavailable" && isRunnableCodeLanguage(language)) return "Unavailable offline";
+		return runnable ? (hosted ? "Runs in Cloudflare" : "Runs on this device") : "Not runnable";
+	}, [error, executor, hosted, hostedResult, language, result, runnable, running, streaming]);
 
 	const run = useCallback(async () => {
 		if (!runnable || running) return;
 		setRunning(true);
 		setError("");
 		setResult(null);
+		setHostedResult(null);
 		try {
+			if (hosted) {
+				const normalized = normalizeLanguage(language);
+				const hostedLanguage = normalized === "py" || normalized === "python" ? "python" : "typescript";
+				const signals = browserExecutionSignals();
+				let cloudRun = await createHostedCodeRun({
+					code: editableCode,
+					language: hostedLanguage,
+					filename: hostedLanguage === "python" ? "notebook.py" : "notebook.ts",
+					execution: {
+						executor: "cloud",
+						device_class: signals.deviceClass,
+						network_class: signals.networkClass,
+						code_bytes: new TextEncoder().encode(editableCode).byteLength,
+					},
+				});
+				setHostedResult(cloudRun);
+				for (let attempt = 0; !hostedTerminal(cloudRun) && attempt < 18; attempt += 1) {
+					await new Promise((resolve) => window.setTimeout(resolve, 1_000));
+					cloudRun = await getHostedNotebookRun(cloudRun.id, cloudRun.pds_snapshot_id);
+					setHostedResult(cloudRun);
+				}
+				if (!hostedTerminal(cloudRun)) throw new Error("Cloud run is still running. Try Run again to refresh its output.");
+				return;
+			}
 			if (!isNodePodActive()) {
 				const pod = await bootNodePod();
 				if (!pod) throw new Error("NodePod could not boot in this browser session.");
@@ -127,7 +191,7 @@ export function RunnableCodeBlock({
 		} finally {
 			setRunning(false);
 		}
-	}, [editableCode, language, runnable, running]);
+	}, [editableCode, hosted, language, runnable, running]);
 
 	const copyCode = useCallback(async () => {
 		try {
@@ -179,7 +243,7 @@ export function RunnableCodeBlock({
 						type="button"
 						onClick={run}
 						disabled={!runnable || running || streaming}
-						title={runnable ? "Run code in the browser NodePod sandbox" : "Only JavaScript and TypeScript blocks can run here"}
+						title={runnable ? (hosted ? "Run in the Cloudflare CPU sandbox" : "Run code on this device") : isRunnableCodeLanguage(language) ? "This language needs a network connection" : "Only JavaScript, TypeScript, and Python blocks can run here"}
 						className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", border: "1px solid var(--primary)", backgroundColor: "var(--primary)", paddingInline: "0.5rem", paddingBlock: "0.25rem", fontSize: "11px", fontWeight: 500, color: "var(--primary-foreground)", transitionProperty: "color, background-color, border-color", transitionDuration: "150ms", _hover: { backgroundColor: "color-mix(in srgb, var(--primary) 90%, black)" }, _disabled: { cursor: "not-allowed", borderColor: "var(--border)", backgroundColor: "var(--muted)", color: "var(--muted-foreground)" } })}
 					>
 						{running ? <Spinner size={11} /> : <Play size={11} />}
@@ -202,8 +266,9 @@ export function RunnableCodeBlock({
 							<button
 								type="button"
 								onClick={() => {
-									setEditableCode(code);
-									setResult(null);
+								setEditableCode(code);
+								setResult(null);
+								setHostedResult(null);
 									setError("");
 								}}
 								className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", border: "1px solid color-mix(in srgb, white 15%, transparent)", paddingInline: "0.5rem", paddingBlock: "0.25rem", fontSize: "11px", fontWeight: 500, color: "#c9d1d9", transitionProperty: "color, background-color, border-color", transitionDuration: "150ms", _hover: { backgroundColor: "color-mix(in srgb, white 10%, transparent)" } })}
@@ -226,14 +291,14 @@ export function RunnableCodeBlock({
 				</div>
 			)}
 
-			{(result || error) && (
+			{(result || hostedResult || error) && (
 				<div className={css({ display: "grid", gap: "0.375rem", borderTop: "1px solid var(--border)", paddingTop: "0.5rem" })}>
 					<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted-foreground)" })}>
-						{error || result?.ok === false ? <AlertCircle size={12} className={css({ color: "var(--destructive)" })} /> : <Check size={12} />}
+						{error || result?.ok === false || (hostedResult && hostedResult.status !== "succeeded") ? <AlertCircle size={12} className={css({ color: "var(--destructive)" })} /> : <Check size={12} />}
 						Output
 					</div>
 					<pre className={css({ maxHeight: "16rem", overflow: "auto", whiteSpace: "pre-wrap", fontFamily: "var(--mono-display)", fontSize: "0.75rem", lineHeight: "1.625" })}>
-						{error || (result ? sessionOutput(result) : "")}
+						{error || (hostedResult ? hostedOutput(hostedResult) : result ? sessionOutput(result) : "")}
 					</pre>
 				</div>
 			)}

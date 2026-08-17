@@ -33,6 +33,7 @@ export function restoreMobileToolReceipt(
   artifacts: readonly StudyArtifact[],
   idempotencyKey: string,
   toolName: string,
+  hasWorkspaceOverlay: (overlayId: string) => boolean = () => false,
 ): MobileToolExecutionResult | null {
   const call = events?.find((event): event is Extract<AgentStreamEvent, { type: "tool-call" }> => (
     event.type === "tool-call" && event.call.idempotencyKey === idempotencyKey
@@ -47,9 +48,13 @@ export function restoreMobileToolReceipt(
 
   const payload = parsedRecord(result.result.text);
   if (result.result.status === "success") {
-    const artifactId = typeof payload?.artifactId === "string" ? payload.artifactId : null;
-    const artifact = artifactId ? artifacts.find((candidate) => candidate.id === artifactId) : undefined;
-    if (!payload || !artifact) return null;
+    if (!payload) return null;
+    const artifactId = typeof payload.artifactId === "string" ? payload.artifactId : null;
+    const overlayId = typeof payload.overlayId === "string" ? payload.overlayId : null;
+    const durableEffectExists = artifactId
+      ? artifacts.some((candidate) => candidate.id === artifactId)
+      : overlayId ? hasWorkspaceOverlay(overlayId) : toolName === "inspect_mobile_workspace";
+    if (!durableEffectExists) return null;
     return {
       ok: true,
       toolName,

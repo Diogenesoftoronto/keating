@@ -56,6 +56,11 @@ export interface RunMobileToolLoopOptions extends Omit<ProviderRequestOptions, "
     call: ProviderToolCall,
   ) => MobileToolExecutionResult | null | Promise<MobileToolExecutionResult | null>;
   commitToolCall: (committed: CommittedMobileToolCall) => Promise<void>;
+  executeTool?: (
+    toolName: string,
+    rawArguments: string | Readonly<Record<string, unknown>>,
+    context: Parameters<typeof executeMobileTool>[2],
+  ) => MobileToolExecutionResult | Promise<MobileToolExecutionResult>;
   requestRound?: typeof requestProviderRound;
 }
 
@@ -124,6 +129,7 @@ export async function runMobileToolLoop(
     onToolCall,
     lookupToolReceipt,
     commitToolCall,
+    executeTool = executeMobileTool,
     requestRound = requestProviderRound,
     ...providerOptions
   } = options;
@@ -193,7 +199,7 @@ export async function runMobileToolLoop(
       }
       onToolCall?.(call, idempotencyKey);
       const receipt = await lookupToolReceipt?.(idempotencyKey, call) ?? null;
-      const execution = receipt ?? executeMobileTool(call.name, call.arguments, {
+      const execution = receipt ?? await executeTool(call.name, call.arguments, {
           idempotencyKey,
           createdAt,
           sessionId,

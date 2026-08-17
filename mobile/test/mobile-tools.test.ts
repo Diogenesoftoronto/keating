@@ -19,8 +19,10 @@ describe("mobile trusted tool registry", () => {
       "generate_study_plan",
       "generate_concept_map",
       "generate_practice_quiz",
+      "inspect_mobile_workspace",
+      "propose_mobile_workspace_change",
     ]);
-    for (const tool of MOBILE_TOOL_DEFINITIONS) {
+    for (const tool of MOBILE_TOOL_DEFINITIONS.slice(0, 3)) {
       expect(tool.inputSchema).toEqual({
         type: "object",
         properties: { topic: { type: "string", minLength: 1, maxLength: 240 } },
@@ -28,7 +30,12 @@ describe("mobile trusted tool registry", () => {
         additionalProperties: false,
       });
     }
-    expect(MOBILE_TOOL_DEFINITIONS.some((tool) => tool.name.includes("workspace"))).toBe(false);
+    expect(MOBILE_TOOL_DEFINITIONS.find((tool) => tool.name === "inspect_mobile_workspace")?.inputSchema).toEqual({
+      type: "object", properties: {}, additionalProperties: false,
+    });
+    expect(MOBILE_TOOL_DEFINITIONS.find((tool) => tool.name === "propose_mobile_workspace_change")?.inputSchema).toMatchObject({
+      type: "object", required: ["intent", "path", "source"], additionalProperties: false,
+    });
   });
 
   it.each([
@@ -95,7 +102,7 @@ describe("mobile trusted tool registry", () => {
 
   it("keeps unavailable capabilities out of provider advertisements and gives recovery", () => {
     expect(UNAVAILABLE_MOBILE_CAPABILITIES.map((entry) => entry.category)).toEqual([
-      "animation", "image", "voice", "course", "workspace", "improvement",
+      "animation", "image", "voice", "course", "improvement",
     ]);
     expect(UNAVAILABLE_MOBILE_CAPABILITIES.every((entry) => entry.reason.length > 0 && entry.recovery.length > 0)).toBe(true);
   });

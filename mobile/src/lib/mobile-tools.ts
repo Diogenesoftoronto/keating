@@ -66,6 +66,19 @@ const TOOL_KINDS = Object.freeze({
 
 export type MobileToolName = keyof typeof TOOL_KINDS;
 
+const WORKSPACE_INSPECT_SCHEMA: JsonSchema = Object.freeze({
+  type: "object", properties: Object.freeze({}), additionalProperties: false,
+});
+const WORKSPACE_PROPOSE_SCHEMA: JsonSchema = Object.freeze({
+  type: "object",
+  properties: Object.freeze({
+    intent: Object.freeze({ type: "string", minLength: 1, maxLength: 4096 }),
+    path: Object.freeze({ type: "string", enum: Object.freeze(["screens/home.json"]) }),
+    source: Object.freeze({ type: "string", maxLength: 65536 }),
+  }),
+  required: Object.freeze(["intent", "path", "source"]), additionalProperties: false,
+});
+
 export const MOBILE_TOOL_DEFINITIONS: readonly MobileToolDefinition[] = Object.freeze([
   Object.freeze({
     name: "generate_study_plan",
@@ -82,6 +95,16 @@ export const MOBILE_TOOL_DEFINITIONS: readonly MobileToolDefinition[] = Object.f
     description: "Generate a deterministic Keating practice quiz and answer key for a topic on this device.",
     inputSchema: TOPIC_SCHEMA,
   }),
+  Object.freeze({
+    name: "inspect_mobile_workspace",
+    description: "Inspect the complete, user-visible source and active version of the bounded mobile workspace.",
+    inputSchema: WORKSPACE_INSPECT_SCHEMA,
+  }),
+  Object.freeze({
+    name: "propose_mobile_workspace_change",
+    description: "Save a reviewable mobile workspace source proposal. This never activates the change; the learner must activate it explicitly.",
+    inputSchema: WORKSPACE_PROPOSE_SCHEMA,
+  }),
 ]);
 
 /** These are recovery notices, never provider-advertised tool definitions. */
@@ -90,7 +113,6 @@ export const UNAVAILABLE_MOBILE_CAPABILITIES: readonly UnavailableMobileCapabili
   Object.freeze({ category: "image", reason: "No native image-generation transport is connected.", recovery: "Choose an image model on Keating web." }),
   Object.freeze({ category: "voice", reason: "The local tool loop does not expose a voice synthesis tool.", recovery: "Use the mobile Live or speech controls when available." }),
   Object.freeze({ category: "course", reason: "Course authoring tools are not available to the native agent.", recovery: "Open the course workspace on Keating web." }),
-  Object.freeze({ category: "workspace", reason: "No authenticated remote workspace adapter is connected.", recovery: "Connect a confirmed workspace adapter or use the TUI." }),
   Object.freeze({ category: "improvement", reason: "Benchmark and policy mutation tools are not available to the native agent.", recovery: "Run improvement workflows on Keating web or TUI." }),
 ]);
 

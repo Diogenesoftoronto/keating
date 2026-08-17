@@ -11,6 +11,11 @@ export interface NotOrganicProductSession {
 	accountId: string;
 	accessToken: string;
 	createDpopProof(input: NotOrganicDpopInput): Promise<string>;
+	/** Server-held ATProto OAuth/session token for this account's own PDS. */
+	pds?: {
+		url: string;
+		accessToken: string;
+	};
 }
 
 export interface NotOrganicFetchAdapterOptions {

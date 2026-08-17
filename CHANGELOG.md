@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.7.0] - 2026-08-16
+
+### Added
+- Added a bounded Mobile Workspace for editing a small source tree layered over the trusted app. Changes are staged as visible proposals with declared capabilities, validated before activation, recorded with activation receipts, and reversible through rollback.
+- Added shared mobile-workspace contracts and persistence for base trees, overlays, file hashes, activation status, and recovery state.
+- Added browser learner sync with IndexedDB-backed device identity and account-key storage, chunked encrypted learner snapshots, source revisions, a GUN transport/relay, and a coordinator for portable cross-device state.
+- Added hosted notebook execution for Python and TypeScript through the authenticated Not Organic gateway, including execution-policy selection, source/run PDS snapshots, bounded request validation, and run polling.
+- Added a guide for publishing Keating blog posts as Standard.site records in an AT Protocol repository.
+
+### Changed
+- Made streamed JavaScript, TypeScript, and Python code blocks editable and runnable. Small TypeScript and JavaScript snippets run locally when possible; Python and larger or unsuitable runs use the hosted notebook path when online, with visible output and failure states.
+- Aligned the 3.6.1 version across the CLI, desktop, mobile, web, browser-agent, and design package surfaces, including application metadata and release links.
+
 ## [3.6.0] - 2026-08-14
 
 ### Added
@@ -739,7 +752,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v3.5.0...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v3.7.0...HEAD
+[3.7.0]: https://github.com/Diogenesoftoronto/keating/compare/v3.6.1...v3.7.0
 [3.5.0]: https://github.com/Diogenesoftoronto/keating/compare/v3.4.1...v3.5.0
 [3.4.1]: https://github.com/Diogenesoftoronto/keating/compare/v3.4.0...v3.4.1
 [3.4.0]: https://github.com/Diogenesoftoronto/keating/compare/v3.3.0...v3.4.0

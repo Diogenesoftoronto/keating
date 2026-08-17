@@ -32,6 +32,7 @@ export default function MoreScreen() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>App</Text>
+        <MenuRow icon="code-slash-outline" label="Workspace" detail="Inspect, edit, activate, and roll back your mobile experience" color={colors.primaryText} onPress={() => router.push("/workspace" as never)} styles={styles} />
         <MenuRow icon="settings-outline" label="Settings" detail="Models, keys, teaching style, and local data" color={colors.textMuted} onPress={() => router.push("/settings")} styles={styles} />
       </View>
     </Screen>

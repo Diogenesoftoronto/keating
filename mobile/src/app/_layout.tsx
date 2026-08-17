@@ -17,6 +17,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { KeatingThemeProvider, spacing, useKeatingTheme } from "@/constants/theme";
 import { KeatingProvider, useKeating } from "@/state/KeatingProvider";
 import { UiSettingsProvider, useUiSettings } from "@/state/UiSettingsProvider";
+import { MobileWorkspaceProvider } from "@/state/MobileWorkspaceProvider";
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -61,9 +62,11 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <UiSettingsProvider>
           <KeatingThemeProvider>
-            <KeatingProvider>
-              <AppNavigator />
-            </KeatingProvider>
+            <MobileWorkspaceProvider>
+              <KeatingProvider>
+                <AppNavigator />
+              </KeatingProvider>
+            </MobileWorkspaceProvider>
           </KeatingThemeProvider>
         </UiSettingsProvider>
       </SafeAreaProvider>
