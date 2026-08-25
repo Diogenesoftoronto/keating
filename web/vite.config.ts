@@ -460,7 +460,7 @@ export default defineConfig({
     ...posthogSourceMapPlugins,
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon-lockup.png", "apple-touch-icon-lockup.png"],
+      includeAssets: ["favicon-bot.png", "apple-touch-icon-lockup.png"],
       manifest: {
         name: "Keating - Hyperteacher",
         short_name: "Keating",

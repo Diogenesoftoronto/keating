@@ -14,3 +14,7 @@ When deriving a production asset:
 
 `cap-evolutionary.png` is the card-sized derivative of
 `masters/cap-evolutionary-master.png`.
+
+`../favicon-bot.png` is the 64 px browser-tab derivative of
+`mascot-head-v2.png`. It uses the mascot head on a dark green tile so the face
+remains recognizable against both light and dark browser chrome.

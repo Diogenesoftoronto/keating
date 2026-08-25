@@ -40,11 +40,11 @@ describe("PWA identity assets", () => {
 		]);
 	});
 
-	test("favicon uses the canonical lockup derivative", async () => {
+	test("favicon uses the recognizable mascot-head derivative", async () => {
 		const html = await readFile(resolve(WEB_ROOT, "index.html"), "utf8");
 		expect(html).toContain(
-			'<link rel="icon" href="/favicon-lockup.png" type="image/png" sizes="64x64">',
+			'<link rel="icon" href="/favicon-bot.png" type="image/png" sizes="64x64">',
 		);
-		expect(await pngDimensions("public/favicon-lockup.png")).toEqual([64, 64]);
+		expect(await pngDimensions("public/favicon-bot.png")).toEqual([64, 64]);
 	});
 });
