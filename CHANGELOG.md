@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.8.1] - 2026-08-25
+
+### Fixed
+- Replaced the horizontal lockup browser favicon with a mascot-head derivative that remains recognizable at browser-tab sizes against both light and dark browser chrome.
+
 ## [3.8.0] - 2026-08-25
 
 ### Added
@@ -775,7 +780,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v3.7.0...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v3.8.1...HEAD
+[3.8.1]: https://github.com/Diogenesoftoronto/keating/compare/v3.8.0...v3.8.1
+[3.8.0]: https://github.com/Diogenesoftoronto/keating/compare/v3.7.0...v3.8.0
 [3.7.0]: https://github.com/Diogenesoftoronto/keating/compare/v3.6.1...v3.7.0
 [3.5.0]: https://github.com/Diogenesoftoronto/keating/compare/v3.4.1...v3.5.0
 [3.4.1]: https://github.com/Diogenesoftoronto/keating/compare/v3.4.0...v3.4.1
