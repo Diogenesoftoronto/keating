@@ -241,17 +241,24 @@ Keating tries the configured provider first, then falls back to OpenAI/Anthropic
 ### Web / Not Organic provider
 
 The web app uses Not Organic for hosted inference, account-scoped wallets, and
-credit checkout. Provider capabilities and DPoP private keys stay server-side;
-the browser only talks to same-origin `/api/notorganic/**` routes.
+credit checkout. The production web flow is a public PKCE client: its five-minute
+capability is DPoP-bound to a non-extractable browser key, while product assertion,
+Creem, Portkey, and wallet authority stay in the Not Organic deployment.
 
 - `VITE_NOTORGANIC_ENABLED` — Public build flag controlling whether the hosted model and account surfaces are visible.
+- `VITE_NOTORGANIC_PUBLIC_ISSUER` — Provider gateway origin.
+- `VITE_NOTORGANIC_AUTHORIZATION_URL` — Provider portal `/authorize` endpoint.
+- `VITE_NOTORGANIC_CLIENT_ID` — Exact Keating HTTPS origin.
+- `VITE_NOTORGANIC_REDIRECT_URI` — Exact same-origin callback URL.
+- `VITE_NOTORGANIC_SCOPE` — Narrow public scopes, including `infer:balanced` for hosted chat.
+- `VITE_NOTORGANIC_MAX_COST_MICROUSD` — Per-request browser inference ceiling.
 - `NOTORGANIC_ENABLED` — Server switch for the Not Organic integration.
 - `NOTORGANIC_ISSUER` — Server-only provider gateway origin, normally `https://api.notorganic.info`, without `/v1`.
 - `NOTORGANIC_MAX_COST_MICROUSD` — Positive per-request reservation ceiling sent to the provider.
 - `NOTORGANIC_ASSERTION_PRIVATE_KEY` — Adapter-owned Ed25519 product assertion key. Never expose it through a `VITE_*` variable.
 - `NOTORGANIC_ASSERTION_KEY_ID` — Optional product assertion key id used by the deployment adapter.
 
-An authenticated Nitro middleware/plugin must provide
+The legacy same-origin Nitro transport still requires an authenticated middleware/plugin to provide
 `event.context.notOrganicSessionAdapter`. It resolves the durable product
 session, signs and exchanges the short-lived Keating assertion, and retains the
 five-minute access token plus DPoP key server-side. Creem, Portkey, wallet

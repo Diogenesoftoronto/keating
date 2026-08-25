@@ -110,7 +110,7 @@ export function Nav() {
           }}
         >
           <img
-            src="/brand/logo-lockup.png"
+					src="/brand/logo-lockup-hd.png"
             alt="Keating"
             style={{ height: "1.875rem", width: "auto" }}
           />

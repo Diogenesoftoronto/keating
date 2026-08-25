@@ -211,7 +211,7 @@ export default function TutorScreen() {
         <View {...swipeToSessions.panHandlers} style={styles.header}>
           <View style={styles.headerCopy}>
             <View style={styles.headerIdentityRow}>
-              <Image accessibilityLabel="Keating" source={require("../../../assets/brand/logo-lockup.png")} style={styles.headerLockup} resizeMode="contain" />
+          <Image accessibilityLabel="Keating" source={require("../../../assets/brand/logo-lockup-hd.png")} style={styles.headerLockup} resizeMode="contain" />
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`Change model. Current model: ${provider.label} ${state.providerSettings.model}`}
@@ -289,7 +289,7 @@ export default function TutorScreen() {
           )}
           ListEmptyComponent={(
             <View style={styles.intro}>
-              <Image accessibilityLabel="Keating" source={require("../../../assets/brand/logo-lockup.png")} style={styles.introLockup} resizeMode="contain" />
+          <Image accessibilityLabel="Keating" source={require("../../../assets/brand/logo-lockup-hd.png")} style={styles.introLockup} resizeMode="contain" />
               <Text style={styles.introTitle}>What are you trying to understand?</Text>
               <Text style={styles.introBody}>
                 Keating will ask what you know, find the missing bridge, and keep you doing the thinking.

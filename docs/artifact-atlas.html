@@ -1,0 +1,2756 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="color-scheme" content="dark" />
+    <title>Keating Artifact Atlas</title>
+    <style>
+      :root {
+        --graphite-0: oklch(10% 0.012 145);
+        --graphite-1: oklch(14% 0.014 145);
+        --graphite-2: oklch(19% 0.014 145);
+        --graphite-3: oklch(25% 0.014 145);
+        --ivory: oklch(95% 0.018 95);
+        --ivory-muted: oklch(80% 0.015 95);
+        --phosphor: oklch(88% 0.22 140);
+        --phosphor-deep: oklch(66% 0.17 140);
+        --amber: oklch(79% 0.18 75);
+        --magenta: oklch(68% 0.25 340);
+        --danger: oklch(68% 0.18 28);
+        --line: oklch(43% 0.025 120);
+        --line-soft: oklch(28% 0.018 135);
+        --focus: var(--phosphor);
+        --font-ui: "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif;
+        --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+        --density: 1;
+        --space-1: calc(0.25rem * var(--density));
+        --space-2: calc(0.5rem * var(--density));
+        --space-3: calc(0.75rem * var(--density));
+        --space-4: calc(1rem * var(--density));
+        --space-6: calc(1.5rem * var(--density));
+        --space-8: calc(2rem * var(--density));
+        --ease: cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+        background: var(--graphite-0);
+      }
+      body {
+        margin: 0;
+        min-width: 20rem;
+        background: var(--graphite-0);
+        color: var(--ivory);
+        font-family: var(--font-ui);
+        font-size: 1rem;
+        line-height: 1.55;
+        font-kerning: normal;
+      }
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+      button,
+      [role="button"] {
+        touch-action: manipulation;
+      }
+      code,
+      pre,
+      .mono {
+        font-family: var(--font-mono);
+        font-variant-ligatures: none;
+      }
+      a {
+        color: var(--phosphor);
+      }
+      :focus-visible {
+        outline: 0.1875rem solid var(--focus);
+        outline-offset: 0.1875rem;
+      }
+      .skip-link {
+        position: fixed;
+        z-index: 20;
+        top: var(--space-2);
+        left: var(--space-2);
+        transform: translateY(-150%);
+        background: var(--ivory);
+        color: var(--graphite-0);
+        padding: var(--space-2) var(--space-3);
+        font-weight: 700;
+      }
+      .skip-link:focus {
+        transform: translateY(0);
+      }
+
+      .app {
+        min-height: 100vh;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        background-image:
+          linear-gradient(var(--line-soft) 1px, transparent 1px),
+          linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
+        background-size: 2rem 2rem;
+      }
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        display: grid;
+        grid-template-columns: minmax(16rem, 1fr) auto auto;
+        align-items: center;
+        gap: var(--space-4);
+        min-height: 4.5rem;
+        padding: var(--space-2) var(--space-4);
+        border-bottom: 1px solid var(--line);
+        background: var(--graphite-0);
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        min-width: 0;
+      }
+      .prompt-mark {
+        display: grid;
+        place-items: center;
+        width: 2.75rem;
+        height: 2.75rem;
+        border: 1px solid var(--phosphor);
+        color: var(--phosphor);
+        font-family: var(--font-mono);
+        font-weight: 800;
+        line-height: 1;
+      }
+      .brand-copy {
+        min-width: 0;
+      }
+      .brand h1 {
+        margin: 0;
+        color: var(--phosphor);
+        font: 700 1.15rem/1.15 var(--font-mono);
+        letter-spacing: 0.04em;
+      }
+      .brand p {
+        margin: 0.2rem 0 0;
+        color: var(--ivory-muted);
+        font: 0.75rem/1.2 var(--font-mono);
+      }
+      .segmented {
+        display: flex;
+        gap: var(--space-1);
+      }
+      .mode-button,
+      .control-button,
+      .nav-button,
+      .mini-button,
+      .choice-button,
+      .step,
+      .node-button {
+        min-height: 2.75rem;
+        border: 1px solid var(--line);
+        border-radius: 0.25rem;
+        background: var(--graphite-1);
+        color: var(--ivory);
+        cursor: pointer;
+        transition:
+          border-color 180ms var(--ease),
+          background 180ms var(--ease),
+          color 180ms var(--ease),
+          transform 100ms var(--ease);
+      }
+      .mode-button {
+        padding: 0.5rem 0.85rem;
+        font: 650 0.78rem/1 var(--font-mono);
+      }
+      .mode-button[aria-pressed="true"] {
+        border-color: var(--phosphor);
+        color: var(--phosphor);
+        background: var(--graphite-2);
+      }
+      .mode-button[data-mode="workshop"][aria-pressed="true"] {
+        border-color: var(--amber);
+        color: var(--amber);
+      }
+      button:hover {
+        border-color: var(--phosphor-deep);
+      }
+      button:active {
+        transform: scale(0.98);
+      }
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
+        transform: none;
+      }
+      .density-control {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        color: var(--ivory-muted);
+        font: 0.72rem/1 var(--font-mono);
+      }
+      input[type="range"] {
+        accent-color: var(--phosphor);
+        min-height: 2.75rem;
+      }
+
+      .shell {
+        display: grid;
+        grid-template-columns: 17rem minmax(0, 1fr);
+        min-height: 0;
+      }
+      .catalogue {
+        position: sticky;
+        top: 4.5rem;
+        align-self: start;
+        height: calc(100vh - 4.5rem);
+        overflow: auto;
+        border-right: 1px solid var(--line);
+        background: var(--graphite-1);
+        padding: var(--space-4);
+      }
+      .catalogue-heading {
+        margin: 0 0 var(--space-4);
+        font: 700 0.75rem/1 var(--font-mono);
+        color: var(--phosphor);
+        letter-spacing: 0.08em;
+      }
+      .terminal-status {
+        padding: var(--space-3);
+        margin-bottom: var(--space-4);
+        border: 1px dashed var(--line);
+        color: var(--ivory-muted);
+        font: 0.72rem/1.6 var(--font-mono);
+      }
+      .terminal-status strong {
+        color: var(--phosphor);
+        font-weight: 600;
+      }
+      .group {
+        margin-bottom: var(--space-6);
+      }
+      .group-title {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        margin: 0 0 var(--space-2);
+        color: var(--amber);
+        font: 650 0.68rem/1.2 var(--font-mono);
+        letter-spacing: 0.08em;
+      }
+      .group-title::after {
+        content: "";
+        height: 1px;
+        flex: 1;
+        background: var(--line-soft);
+      }
+      .nav-button {
+        display: grid;
+        grid-template-columns: 2.25rem 1fr;
+        align-items: center;
+        width: 100%;
+        min-height: 2.75rem;
+        padding: 0.4rem 0.5rem;
+        border-color: transparent;
+        text-align: left;
+        font-size: 0.86rem;
+      }
+      .nav-button .index {
+        color: var(--phosphor-deep);
+        font: 0.68rem/1 var(--font-mono);
+      }
+      .nav-button[aria-current="true"] {
+        border-color: var(--phosphor);
+        background: var(--graphite-2);
+        color: var(--phosphor);
+      }
+
+      main {
+        min-width: 0;
+        background: var(--graphite-0);
+      }
+      .main-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        gap: var(--space-6);
+        padding: var(--space-8);
+        border-bottom: 1px solid var(--line);
+      }
+      .main-header h2 {
+        max-width: 24ch;
+        margin: 0;
+        font-size: 1.75rem;
+        line-height: 1.15;
+      }
+      .main-header p {
+        max-width: 65ch;
+        margin: var(--space-2) 0 0;
+        color: var(--ivory-muted);
+      }
+      .count {
+        flex: 0 0 auto;
+        color: var(--phosphor);
+        font: 0.75rem/1.4 var(--font-mono);
+        text-align: right;
+      }
+
+      .workspace {
+        padding: var(--space-4);
+      }
+      .workshop-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 23rem), 1fr));
+        gap: var(--space-4);
+      }
+      .artifact-card,
+      .focused-specimen,
+      .inspector {
+        border: 1px solid var(--line);
+        background: var(--graphite-1);
+        container-type: inline-size;
+      }
+      .artifact-card {
+        display: grid;
+        grid-template-rows: auto auto 1fr auto;
+        min-height: 27rem;
+      }
+      .artifact-card[data-active="true"] {
+        border-color: var(--phosphor);
+      }
+      .artifact-head {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-3) var(--space-4);
+        border-bottom: 1px solid var(--line);
+        background: var(--ivory);
+        color: var(--graphite-0);
+      }
+      .artifact-number {
+        color: var(--phosphor-deep);
+        font: 700 0.72rem/1 var(--font-mono);
+      }
+      .artifact-head h3 {
+        margin: 0;
+        font-size: 1rem;
+        line-height: 1.2;
+      }
+      .difficulty {
+        color: var(--graphite-3);
+        font: 650 0.62rem/1 var(--font-mono);
+        letter-spacing: 0.05em;
+      }
+      .artifact-summary {
+        padding: var(--space-3) var(--space-4);
+        border-bottom: 1px solid var(--line-soft);
+      }
+      .artifact-summary p {
+        margin: 0;
+        color: var(--ivory-muted);
+        font-size: 0.9rem;
+      }
+      .demo {
+        min-height: 12rem;
+        padding: var(--space-4);
+        overflow: hidden;
+      }
+      .card-footer {
+        display: flex;
+        gap: var(--space-2);
+        align-items: center;
+        padding: var(--space-3) var(--space-4);
+        border-top: 1px solid var(--line-soft);
+      }
+      .open-artifact {
+        margin-left: auto;
+        color: var(--phosphor);
+        background: transparent;
+        border: 0;
+        min-height: 2.75rem;
+        padding: 0 0.25rem;
+        cursor: pointer;
+        font: 650 0.75rem/1 var(--font-mono);
+      }
+      .variant-button {
+        min-height: 2.25rem;
+        padding: 0.35rem 0.55rem;
+        font: 600 0.65rem/1 var(--font-mono);
+      }
+      .variant-button[aria-pressed="true"] {
+        color: var(--amber);
+        border-color: var(--amber);
+      }
+
+      .focused-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
+        gap: var(--space-4);
+      }
+      .focused-specimen .artifact-head {
+        padding: var(--space-4) var(--space-6);
+      }
+      .focused-specimen .artifact-head h3 {
+        font-size: 1.3rem;
+      }
+      .focused-specimen .artifact-summary {
+        padding: var(--space-4) var(--space-6);
+      }
+      .focused-specimen .demo {
+        min-height: 25rem;
+        padding: var(--space-6);
+      }
+      .inspector {
+        align-self: start;
+      }
+      .inspector section {
+        padding: var(--space-4);
+        border-bottom: 1px solid var(--line-soft);
+      }
+      .inspector section:last-child {
+        border-bottom: 0;
+      }
+      .inspector h3 {
+        margin: 0 0 var(--space-2);
+        color: var(--phosphor);
+        font: 700 0.72rem/1.2 var(--font-mono);
+        letter-spacing: 0.07em;
+      }
+      .inspector p,
+      .inspector li {
+        color: var(--ivory-muted);
+        font-size: 0.9rem;
+      }
+      .inspector p {
+        margin: 0;
+      }
+      .inspector ol {
+        margin: 0;
+        padding-left: 1.25rem;
+      }
+      .inspector li + li {
+        margin-top: var(--space-2);
+      }
+      .bracket {
+        position: relative;
+        padding: var(--space-4);
+      }
+      .bracket::before,
+      .bracket::after {
+        content: "";
+        position: absolute;
+        width: 1.25rem;
+        height: 1.25rem;
+        pointer-events: none;
+      }
+      .bracket::before {
+        inset: 0 auto auto 0;
+        border-top: 0.125rem solid var(--phosphor);
+        border-left: 0.125rem solid var(--phosphor);
+      }
+      .bracket::after {
+        inset: auto 0 0 auto;
+        border-right: 0.125rem solid var(--phosphor);
+        border-bottom: 0.125rem solid var(--phosphor);
+      }
+
+      .demo-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-2);
+        margin-bottom: var(--space-3);
+      }
+      .mini-button,
+      .choice-button {
+        padding: 0.45rem 0.65rem;
+        font: 650 0.72rem/1 var(--font-mono);
+      }
+      .mini-button[aria-pressed="true"],
+      .choice-button[aria-pressed="true"] {
+        border-color: var(--amber);
+        color: var(--amber);
+      }
+      .status-line {
+        min-height: 1.5rem;
+        color: var(--ivory-muted);
+        font: 0.72rem/1.4 var(--font-mono);
+      }
+      .status-line[data-tone="success"] {
+        color: var(--phosphor);
+      }
+      .status-line[data-tone="warning"] {
+        color: var(--amber);
+      }
+      .status-line[data-tone="error"] {
+        color: var(--danger);
+      }
+      .code-surface,
+      .paper-surface {
+        border: 1px solid var(--line);
+        padding: var(--space-3);
+        background: var(--graphite-0);
+        overflow: auto;
+        color: var(--ivory);
+        font: 0.8rem/1.65 var(--font-mono);
+      }
+      .paper-surface {
+        background: var(--ivory);
+        color: var(--graphite-0);
+      }
+      .field {
+        display: grid;
+        gap: var(--space-1);
+        color: var(--ivory-muted);
+        font-size: 0.8rem;
+      }
+      .field input,
+      .field textarea,
+      .field select {
+        width: 100%;
+        min-height: 2.75rem;
+        padding: 0.55rem 0.65rem;
+        border: 1px solid var(--line);
+        border-radius: 0.25rem;
+        background: var(--graphite-0);
+        color: var(--ivory);
+      }
+      .field textarea {
+        min-height: 6rem;
+        resize: vertical;
+      }
+      .field input::placeholder,
+      .field textarea::placeholder {
+        color: var(--ivory-muted);
+        opacity: 1;
+      }
+
+      .step-grid {
+        display: grid;
+        grid-template-columns: repeat(8, minmax(2rem, 1fr));
+        gap: var(--space-1);
+      }
+      .step {
+        min-width: 0;
+        min-height: 2.5rem;
+        padding: 0;
+        font: 0.66rem/1 var(--font-mono);
+      }
+      .step[aria-pressed="true"] {
+        border-color: var(--phosphor);
+        background: var(--phosphor-deep);
+        color: var(--graphite-0);
+      }
+      .step.is-playhead {
+        outline: 0.125rem solid var(--amber);
+        outline-offset: -0.25rem;
+      }
+      .tracks {
+        display: grid;
+        gap: var(--space-2);
+      }
+      .track {
+        display: grid;
+        grid-template-columns: 4.5rem 1fr auto;
+        gap: var(--space-2);
+        align-items: center;
+      }
+      .track-label {
+        font: 0.68rem/1 var(--font-mono);
+        color: var(--ivory-muted);
+      }
+      .track-slots {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 0.2rem;
+      }
+      .track-slot {
+        min-height: 2rem;
+        padding: 0;
+        border-radius: 0.15rem;
+      }
+      .track-slot[aria-pressed="true"] {
+        background: var(--magenta);
+        border-color: var(--magenta);
+      }
+      canvas,
+      .chart {
+        display: block;
+        width: 100%;
+        height: 10rem;
+        border: 1px solid var(--line);
+        background: var(--graphite-0);
+      }
+      .meters {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-2);
+      }
+      .meter {
+        border: 1px solid var(--line);
+        padding: var(--space-2);
+      }
+      .meter b {
+        display: block;
+        color: var(--phosphor);
+        font: 700 1rem/1.2 var(--font-mono);
+      }
+      .meter span {
+        color: var(--ivory-muted);
+        font-size: 0.68rem;
+      }
+      .annotation-text {
+        font: 1rem/2 var(--font-mono);
+      }
+      .annotation {
+        border: 0;
+        border-bottom: 0.1875rem solid var(--amber);
+        border-radius: 0;
+        background: oklch(88% 0.12 85);
+        color: var(--graphite-0);
+        cursor: pointer;
+        padding: 0.05rem 0.12rem;
+      }
+      .annotation[aria-pressed="true"] {
+        border-color: var(--magenta);
+        background: oklch(89% 0.11 340);
+      }
+      .proof-list,
+      .timeline-list,
+      .notes-list {
+        display: grid;
+        gap: var(--space-2);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .proof-step,
+      .timeline-event,
+      .note-entry {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: var(--space-2);
+        align-items: center;
+        border: 1px solid var(--line);
+        padding: var(--space-2);
+      }
+      .argument-map,
+      .concept-map {
+        position: relative;
+        min-height: 12rem;
+        border: 1px solid var(--line);
+        background: var(--graphite-0);
+      }
+      .node-button {
+        position: absolute;
+        width: 7rem;
+        min-height: 3rem;
+        padding: 0.4rem;
+        font-size: 0.72rem;
+      }
+      .node-button[data-kind="support"] {
+        border-color: var(--phosphor);
+      }
+      .node-button[data-kind="object"] {
+        border-color: var(--magenta);
+      }
+      .node-button[data-selected="true"] {
+        background: var(--ivory);
+        color: var(--graphite-0);
+      }
+      .connector {
+        position: absolute;
+        height: 1px;
+        transform-origin: left center;
+        background: var(--line);
+      }
+      .case-evidence {
+        display: grid;
+        gap: var(--space-2);
+        margin-bottom: var(--space-3);
+      }
+      .evidence-item {
+        padding: var(--space-2);
+        border: 1px dashed var(--line);
+        color: var(--ivory-muted);
+        font-size: 0.8rem;
+      }
+      .sort-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+      }
+      .sort-item {
+        min-height: 2.75rem;
+        padding: 0.45rem 0.7rem;
+        border: 1px solid var(--line);
+        background: var(--graphite-2);
+        color: var(--ivory);
+        cursor: pointer;
+      }
+      .sort-item[data-selected="true"] {
+        border-color: var(--amber);
+        color: var(--amber);
+      }
+      .option-panel {
+        display: grid;
+        gap: var(--space-3);
+        min-height: 11rem;
+        padding: var(--space-3);
+        border: 1px solid var(--line);
+        background: var(--graphite-0);
+      }
+      .bank-grid,
+      .scenario-row,
+      .assumption-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+      }
+      .bank-button[aria-pressed="true"],
+      .assumption-button[aria-pressed="true"] {
+        border-color: var(--magenta);
+        color: var(--magenta);
+      }
+      .lane-grid {
+        display: grid;
+        grid-template-columns: 5rem repeat(16, minmax(1.75rem, 1fr));
+        gap: var(--space-1);
+        align-items: center;
+        overflow-x: auto;
+      }
+      .lane-grid .lane-label {
+        color: var(--ivory-muted);
+        font: 0.68rem/1 var(--font-mono);
+      }
+      .evidence-board,
+      .category-bins {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+        gap: var(--space-3);
+      }
+      .evidence-column,
+      .category-bin {
+        min-height: 8rem;
+        padding: var(--space-3);
+        border: 1px solid var(--line);
+      }
+      .evidence-column h4,
+      .category-bin h4 {
+        margin: 0 0 var(--space-2);
+        color: var(--phosphor);
+        font: 650 0.7rem/1.2 var(--font-mono);
+      }
+      .warrant-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: var(--space-2);
+        align-items: center;
+        padding: var(--space-2);
+        border-bottom: 1px solid var(--line-soft);
+      }
+      .warrant-row:last-child {
+        border-bottom: 0;
+      }
+      .footer {
+        display: flex;
+        justify-content: space-between;
+        gap: var(--space-4);
+        padding: var(--space-3) var(--space-4);
+        border-top: 1px solid var(--line);
+        background: var(--graphite-1);
+        color: var(--ivory-muted);
+        font: 0.68rem/1.4 var(--font-mono);
+      }
+
+      @container (min-width: 34rem) {
+        .step-grid {
+          grid-template-columns: repeat(16, minmax(1.5rem, 1fr));
+        }
+        .demo-split {
+          display: grid;
+          grid-template-columns: minmax(0, 1.2fr) minmax(12rem, 0.8fr);
+          gap: var(--space-3);
+        }
+      }
+      @media (max-width: 68rem) {
+        .topbar {
+          grid-template-columns: 1fr auto;
+        }
+        .density-control {
+          display: none;
+        }
+        .shell {
+          grid-template-columns: 13rem minmax(0, 1fr);
+        }
+        .focused-layout {
+          grid-template-columns: 1fr;
+        }
+        .inspector {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      @media (max-width: 46rem) {
+        .topbar {
+          position: static;
+          grid-template-columns: 1fr;
+          align-items: stretch;
+        }
+        .segmented {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+        }
+        .shell {
+          display: block;
+        }
+        .catalogue {
+          position: static;
+          height: auto;
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+          overflow: visible;
+        }
+        .terminal-status {
+          display: none;
+        }
+        .group {
+          margin: 0 0 var(--space-3);
+        }
+        .group nav {
+          display: flex;
+          gap: var(--space-2);
+          overflow-x: auto;
+          padding-bottom: var(--space-2);
+          scroll-snap-type: x mandatory;
+        }
+        .nav-button {
+          flex: 0 0 12rem;
+          scroll-snap-align: start;
+        }
+        .main-header {
+          align-items: start;
+          padding: var(--space-6) var(--space-4);
+        }
+        .main-header h2 {
+          font-size: 1.35rem;
+        }
+        .count {
+          display: none;
+        }
+        .workspace {
+          padding: var(--space-2);
+        }
+        .workshop-grid {
+          grid-template-columns: 1fr;
+        }
+        .inspector {
+          grid-template-columns: 1fr;
+        }
+        .track {
+          grid-template-columns: 1fr;
+        }
+        .footer {
+          flex-direction: column;
+        }
+      }
+      @media (pointer: coarse) {
+        .step,
+        .track-slot {
+          min-height: 2.75rem;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          transition-duration: 0.01ms !important;
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+        }
+      }
+      @media print {
+        .topbar,
+        .catalogue,
+        .demo-toolbar,
+        .card-footer,
+        .footer {
+          display: none !important;
+        }
+        .shell {
+          display: block;
+        }
+        .workspace {
+          padding: 0;
+        }
+        .workshop-grid {
+          display: block;
+        }
+        .artifact-card {
+          break-inside: avoid;
+          margin-bottom: 1rem;
+          color: #111;
+          background: #fff;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to artifact workspace</a>
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">
+          <span class="prompt-mark" aria-hidden="true">K&gt;</span>
+          <div class="brand-copy">
+            <h1>KEATING ARTIFACT ATLAS</h1>
+            <p>Observe. Change. Explain.</p>
+          </div>
+        </div>
+        <div class="segmented" aria-label="Atlas view mode">
+          <button class="mode-button" data-mode="focused" aria-pressed="false">
+            Focused lesson
+          </button>
+          <button class="mode-button" data-mode="workshop" aria-pressed="true">
+            Open workshop
+          </button>
+        </div>
+        <label class="density-control"
+          >Density
+          <input
+            id="density"
+            type="range"
+            min="0.85"
+            max="1.15"
+            value="1"
+            step="0.05"
+          />
+        </label>
+      </header>
+
+      <div class="shell">
+        <aside class="catalogue" aria-label="Artifact catalogue">
+          <h2 class="catalogue-heading">CATALOGUE // 17 SPECIMENS</h2>
+          <div class="terminal-status">
+            KAA&gt; <strong>LOAD ATLAS</strong><br />
+            :: STATUS&nbsp; READY<br />
+            :: MODE&nbsp;&nbsp;&nbsp; <span id="status-mode">WORKSHOP</span
+            ><br />
+            :: INPUT&nbsp;&nbsp; POINTER + KEYS
+          </div>
+          <div id="catalogue-groups"></div>
+        </aside>
+
+        <main id="main-content" tabindex="-1">
+          <header class="main-header">
+            <div>
+              <h2 id="view-heading">
+                A working catalogue of things a learner can manipulate
+              </h2>
+              <p id="view-description">
+                Every specimen explains its teaching purpose and provides a
+                small interaction. Use Focused lesson to open one component with
+                its full learning loop.
+              </p>
+            </div>
+            <div class="count">
+              <span id="visible-count">17</span> ACTIVE<br />4 FAMILIES
+            </div>
+          </header>
+          <section
+            class="workspace"
+            id="workspace"
+            aria-live="polite"
+          ></section>
+        </main>
+      </div>
+
+      <footer class="footer">
+        <span>KAA&gt; PROTOTYPE // Local interactions only</span>
+        <span
+          >Audio begins only after a learner action. No data leaves this
+          document.</span
+        >
+      </footer>
+    </div>
+
+    <script>
+      const GROUPS = [
+        "Make + Hear",
+        "Inspect + Explain",
+        "Model + Reason",
+        "Practice + Decide",
+      ];
+      const artifacts = [
+        {
+          id: "music",
+          group: "Make + Hear",
+          title: "Music Lab",
+          difficulty: "MEDIUM",
+          summary:
+            "Compose a pattern, hear it immediately, and change one musical idea at a time.",
+          teaches:
+            "Makes rhythm, repetition, density, and transformation audible instead of merely descriptive.",
+          loop: [
+            "Hear a reference pattern.",
+            "Predict what one edit will change.",
+            "Edit, replay, and explain the difference.",
+          ],
+          variants: ["Pattern editor", "Step sequencer"],
+          limit:
+            "This miniature uses a small Web Audio pulse engine. A production artifact would embed a license-compatible Strudel runtime.",
+        },
+        {
+          id: "sonic",
+          group: "Make + Hear",
+          title: "Sonic Microscope",
+          difficulty: "MEDIUM",
+          summary:
+            "Inspect a sound as a waveform and a combination of harmonics.",
+          teaches:
+            "Connects what a learner hears with frequency, amplitude, timbre, and spectral shape.",
+          loop: [
+            "Hear a tone.",
+            "Change a harmonic or frequency.",
+            "Describe the visual and audible change.",
+          ],
+          variants: ["Waveform lens", "Harmonic mixer"],
+          limit:
+            "The prototype synthesizes tones locally. Recorded-audio analysis would require an FFT pipeline.",
+        },
+        {
+          id: "ear",
+          group: "Make + Hear",
+          title: "Ear-training Lab",
+          difficulty: "EASY",
+          summary:
+            "Hear a musical relationship, identify it, and receive another calibrated attempt.",
+          teaches:
+            "Builds perceptual categories for intervals through retrieval practice rather than definitions.",
+          loop: [
+            "Hear two notes.",
+            "Choose the interval.",
+            "Compare the answer and replay.",
+          ],
+          variants: ["Interval quiz", "Adaptive drill"],
+          limit:
+            "The miniature covers three intervals. A full version would adapt difficulty from response history.",
+        },
+        {
+          id: "rhythm",
+          group: "Make + Hear",
+          title: "Rhythm Loom",
+          difficulty: "MEDIUM",
+          summary:
+            "Weave pulses across a shared cycle and see where patterns align or pull apart.",
+          teaches:
+            "Makes subdivision, syncopation, polyrhythm, and phase relationships directly manipulable.",
+          loop: [
+            "Choose pulse counts.",
+            "Inspect their distribution.",
+            "Play the combined cycle and revise.",
+          ],
+          variants: ["Euclidean loom", "Free grid"],
+          limit:
+            "The prototype uses a fixed sixteen-step cycle rather than a general rhythm engine.",
+        },
+        {
+          id: "counterpoint",
+          group: "Make + Hear",
+          title: "Counterpoint Workbench",
+          difficulty: "HARD",
+          summary:
+            "Edit two melodic voices while the artifact names collisions and useful motion.",
+          teaches:
+            "Turns abstract voice-leading rules into local, audible consequences without pretending rules equal taste.",
+          loop: [
+            "Change one note in either voice.",
+            "Inspect interval and motion warnings.",
+            "Play both lines and defend the revision.",
+          ],
+          variants: ["Rule lens", "Listening lens"],
+          limit:
+            "The miniature checks a small set of interval rules. Real counterpoint analysis needs key, meter, species, and phrase context.",
+        },
+        {
+          id: "arrangement",
+          group: "Make + Hear",
+          title: "Arrangement Timeline",
+          difficulty: "MEDIUM",
+          summary:
+            "Lay musical parts across sections, mute layers, and inspect how density shapes form.",
+          teaches:
+            "Connects local musical material to larger structure, contrast, pacing, and orchestration.",
+          loop: [
+            "Build an eight-section arrangement.",
+            "Mute or restore a layer.",
+            "Explain where attention and energy move.",
+          ],
+          variants: ["Stem lanes", "Section blocks"],
+          limit:
+            "The miniature models structure visually; production playback would synchronize real stems.",
+        },
+        {
+          id: "annotated",
+          group: "Inspect + Explain",
+          title: "Annotated Source",
+          difficulty: "EASY",
+          summary:
+            "Teach directly on a text, program, score, proof, or primary source by anchoring explanations to exact spans.",
+          teaches:
+            "Keeps evidence and explanation together, then asks learners to annotate before revealing Keating's reading.",
+          loop: [
+            "Read the bounded source.",
+            "Select or explain an exact span.",
+            "Compare interpretations and revise the annotation.",
+          ],
+          variants: ["Guided reading", "Learner markup"],
+          limit:
+            "The prototype anchors text spans. PDF regions, audio ranges, and image coordinates would extend the same model.",
+        },
+        {
+          id: "argument",
+          group: "Inspect + Explain",
+          title: "Argument Map",
+          difficulty: "HARD",
+          summary:
+            "Separate claims, evidence, assumptions, and objections while preserving their relationships.",
+          teaches:
+            "Makes reasoning structure inspectable and exposes when evidence supports a premise rather than the conclusion claimed.",
+          loop: [
+            "Select a claim.",
+            "Trace its support and strongest objection.",
+            "Add or revise one connection.",
+          ],
+          variants: ["Claim tree", "Evidence board"],
+          limit:
+            "The miniature uses a bounded map. General graph editing and automatic layout are separate engineering work.",
+        },
+        {
+          id: "simulation",
+          group: "Model + Reason",
+          title: "Simulation Lab",
+          difficulty: "HARD",
+          summary:
+            "Change a small model, predict its response, and compare the prediction with the generated behavior.",
+          teaches:
+            "Builds causal and quantitative intuition by making assumptions and sensitivity visible.",
+          loop: [
+            "Predict a curve or outcome.",
+            "Change one parameter.",
+            "Compare and explain the response.",
+          ],
+          variants: ["Parameter bench", "Scenario compare"],
+          limit:
+            "The prototype demonstrates a transparent toy model. Each serious domain requires validated equations and units.",
+        },
+        {
+          id: "proof",
+          group: "Model + Reason",
+          title: "Proof Workbench",
+          difficulty: "MEDIUM",
+          summary:
+            "Arrange statements into a valid proof and inspect why each transition follows.",
+          teaches:
+            "Separates knowing a theorem from constructing a warranted sequence of claims.",
+          loop: [
+            "Order the candidate steps.",
+            "Validate the chain.",
+            "Repair the first unsupported transition.",
+          ],
+          variants: ["Reorder steps", "Fill the warrant"],
+          limit:
+            "The miniature validates one known proof path. Symbolic verification would require a formal proof system.",
+        },
+        {
+          id: "counterfactual",
+          group: "Model + Reason",
+          title: "Counterfactual Timeline",
+          difficulty: "HARD",
+          summary:
+            "Change one historical condition and inspect downstream claims with explicit uncertainty.",
+          teaches:
+            "Distinguishes causal reasoning from imaginative storytelling by exposing evidence and confidence at every branch.",
+          loop: [
+            "Choose the intervention point.",
+            "Inspect changed consequences.",
+            "Challenge one causal link with evidence.",
+          ],
+          variants: ["Branch timeline", "Assumption ledger"],
+          limit:
+            "The prototype uses authored branches. Credible counterfactuals need sources and careful uncertainty, not free generation.",
+        },
+        {
+          id: "case",
+          group: "Practice + Decide",
+          title: "Case Simulator",
+          difficulty: "HARD",
+          summary:
+            "Make a decision with incomplete evidence, then receive new evidence and reconsider.",
+          teaches:
+            "Practices judgment, information gathering, and revision under uncertainty instead of recall alone.",
+          loop: [
+            "Review the current evidence.",
+            "Choose an action and state why.",
+            "Receive a consequence or new fact, then revise.",
+          ],
+          variants: ["Branching case", "Evidence rounds"],
+          limit:
+            "The prototype is an authored state machine. High-stakes clinical or legal cases require expert validation.",
+        },
+        {
+          id: "field",
+          group: "Practice + Decide",
+          title: "Virtual Field Notebook",
+          difficulty: "EASY",
+          summary:
+            "Record observations separately from interpretations, then turn patterns into testable hypotheses.",
+          teaches:
+            "Builds disciplined observation and preserves how a learner's explanation changes with evidence.",
+          loop: [
+            "Record one concrete observation.",
+            "Classify it as observation or hypothesis.",
+            "Connect it to a next test.",
+          ],
+          variants: ["Observation log", "Hypothesis table"],
+          limit:
+            "This prototype stores entries only in memory and clears when the page reloads.",
+        },
+        {
+          id: "debugger",
+          group: "Practice + Decide",
+          title: "System Debugger",
+          difficulty: "MEDIUM",
+          summary:
+            "Step through a process one state transition at a time and inspect what changed.",
+          teaches:
+            "Supports causal debugging across code, networks, cells, institutions, and machines.",
+          loop: [
+            "Predict the next state.",
+            "Advance one transition.",
+            "Compare the changed variables and locate the cause.",
+          ],
+          variants: ["State trace", "Fault injection"],
+          limit:
+            "The miniature uses an authored request lifecycle. Domain adapters would supply real state models.",
+        },
+        {
+          id: "concept",
+          group: "Practice + Decide",
+          title: "Concept Constructor",
+          difficulty: "MEDIUM",
+          summary:
+            "Build a concept map from loose ideas, then defend why each relationship belongs.",
+          teaches:
+            "Reveals a learner's mental model rather than giving them a finished diagram to recognize.",
+          loop: [
+            "Choose two concepts.",
+            "Name their relationship.",
+            "Explain or revise the connection.",
+          ],
+          variants: ["Connection builder", "Map repair"],
+          limit:
+            "The miniature creates textual links. Free spatial dragging and graph layout would be a later layer.",
+        },
+        {
+          id: "sort",
+          group: "Practice + Decide",
+          title: "Sort-and-Connect Board",
+          difficulty: "EASY",
+          summary:
+            "Order steps, group examples, or pair related ideas through one reusable interaction.",
+          teaches:
+            "Makes sequence and classification misconceptions visible with little interface overhead.",
+          loop: [
+            "Select two items to swap.",
+            "Check the resulting order.",
+            "Explain the rule used to arrange them.",
+          ],
+          variants: ["Sequence board", "Category bins"],
+          limit:
+            "The prototype uses click-to-swap so it remains keyboard and touch accessible without a drag library.",
+        },
+        {
+          id: "teachback",
+          group: "Practice + Decide",
+          title: "Teach-back Recorder",
+          difficulty: "MEDIUM",
+          summary:
+            "Explain an idea aloud or in writing, then inspect coverage, structure, and uncertain language.",
+          teaches:
+            "Turns fluency into observable evidence and helps distinguish familiarity from an organized explanation.",
+          loop: [
+            "Explain without notes.",
+            "Inspect the coverage signals.",
+            "Record a shorter, clearer second explanation.",
+          ],
+          variants: ["Written rehearsal", "Voice capture"],
+          limit:
+            "The local rubric checks structure and key phrases. Semantic feedback would require a model or teacher review.",
+        },
+      ];
+
+      const state = {
+        mode: "workshop",
+        selected: "annotated",
+        variants: {},
+        musicSteps: new Set([0, 4, 8, 12]),
+        musicPatterns: {
+          drums: new Set([0, 4, 8, 12]),
+          bass: new Set([0, 6, 10, 14]),
+          keys: new Set([0, 3, 7, 11]),
+          texture: new Set([2, 10]),
+        },
+        rhythmSteps: new Set([0, 3, 6, 10, 13]),
+        arrangement: new Set([
+          "drums-0",
+          "drums-1",
+          "drums-2",
+          "drums-3",
+          "bass-0",
+          "bass-1",
+          "keys-2",
+          "keys-3",
+        ]),
+        arrangementSnapshots: {},
+        proof: [
+          "Assume n is even",
+          "Then n = 2k",
+          "So n² = 4k²",
+          "Therefore n² is even",
+        ],
+        caseStage: 0,
+        casePath: null,
+        debugStep: 0,
+        notes: [],
+        selectedSort: null,
+        sortItems: ["Evaluate", "Observe", "Predict", "Change", "Explain"],
+        musicBank: "drums",
+        simScenario: "baseline",
+        fault: null,
+        counterAssumptions: [true, true, false, false],
+        categoryAssignments: {},
+        earStreak: 0,
+        conceptSelection: [],
+        conceptLinks: [],
+        counterpoint: [
+          [60, 62, 64, 65],
+          [67, 69, 67, 72],
+        ],
+        earAnswer: null,
+        earTarget: null,
+        earRoundReady: false,
+        voiceBalance: 50,
+        markedSpan: null,
+        annotationDraft: "",
+        learnerAnnotations: [],
+        audioRun: 0,
+        recordedUrl: null,
+      };
+
+      const byId = (id) => artifacts.find((item) => item.id === id);
+      const escapeHtml = (value) =>
+        String(value).replace(
+          /[&<>'"]/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              "'": "&#39;",
+              '"': "&quot;",
+            })[c],
+        );
+
+      function renderCatalogue() {
+        document.getElementById("catalogue-groups").innerHTML = GROUPS.map(
+          (group) => `
+        <section class="group">
+          <h3 class="group-title">${group.toUpperCase()}</h3>
+          <nav aria-label="${group}">
+            ${artifacts
+              .filter((a) => a.group === group)
+              .map(
+                (a, index) => `
+              <button class="nav-button" data-select="${a.id}" aria-current="${state.selected === a.id}">
+                <span class="index">${String(artifacts.indexOf(a) + 1).padStart(2, "0")}</span><span>${a.title}</span>
+              </button>`,
+              )
+              .join("")}
+          </nav>
+        </section>`,
+        ).join("");
+      }
+
+      function variantButtons(artifact) {
+        const active = state.variants[artifact.id] || 0;
+        return artifact.variants
+          .map(
+            (label, index) =>
+              `<button class="mini-button variant-button" data-variant="${artifact.id}:${index}" aria-pressed="${active === index}">${label}</button>`,
+          )
+          .join("");
+      }
+
+      function renderCard(artifact) {
+        return `<article class="artifact-card" id="artifact-${artifact.id}" data-active="${state.selected === artifact.id}">
+        <header class="artifact-head"><span class="artifact-number">${String(artifacts.indexOf(artifact) + 1).padStart(2, "0")}</span><h3>${artifact.title}</h3><span class="difficulty">${artifact.difficulty}</span></header>
+        <div class="artifact-summary"><p>${artifact.summary}</p></div>
+        <div class="demo" data-demo="${artifact.id}">${demoMarkup(artifact.id, true)}</div>
+        <footer class="card-footer">${variantButtons(artifact)}<button class="open-artifact" data-open="${artifact.id}">Open lesson →</button></footer>
+      </article>`;
+      }
+
+      function renderFocused(artifact) {
+        return `<div class="focused-layout">
+        <article class="focused-specimen">
+          <header class="artifact-head"><span class="artifact-number">${String(artifacts.indexOf(artifact) + 1).padStart(2, "0")}</span><h3>${artifact.title}</h3><span class="difficulty">${artifact.difficulty}</span></header>
+          <div class="artifact-summary"><p>${artifact.summary}</p></div>
+          <div class="demo" data-demo="${artifact.id}">${demoMarkup(artifact.id, false)}</div>
+          <footer class="card-footer">${variantButtons(artifact)}</footer>
+        </article>
+        <aside class="inspector" aria-label="${artifact.title} explanation">
+          <section><div class="bracket"><h3>WHAT IT TEACHES</h3><p>${artifact.teaches}</p></div></section>
+          <section><h3>LEARNER LOOP</h3><ol>${artifact.loop.map((step) => `<li>${step}</li>`).join("")}</ol></section>
+          <section><h3>DESIGN OPTIONS</h3><p><strong>${artifact.variants[0]}</strong> emphasizes guided comprehension. <strong>${artifact.variants[1]}</strong> exposes more controls for exploration.</p></section>
+          <section><h3>HONEST LIMIT</h3><p>${artifact.limit}</p></section>
+        </aside>
+      </div>`;
+      }
+
+      function renderWorkspace() {
+        renderCatalogue();
+        const workspace = document.getElementById("workspace");
+        if (state.mode === "workshop") {
+          workspace.innerHTML = `<div class="workshop-grid">${artifacts.map(renderCard).join("")}</div>`;
+          document.getElementById("view-heading").textContent =
+            "A working catalogue of things a learner can manipulate";
+          document.getElementById("view-description").textContent =
+            "Every specimen explains its teaching purpose and provides a small interaction. Use Focused lesson to open one component with its full learning loop.";
+        } else {
+          const artifact = byId(state.selected);
+          workspace.innerHTML = renderFocused(artifact);
+          document.getElementById("view-heading").textContent = artifact.title;
+          document.getElementById("view-description").textContent =
+            artifact.teaches;
+        }
+        document
+          .querySelectorAll(".mode-button")
+          .forEach((button) =>
+            button.setAttribute(
+              "aria-pressed",
+              String(button.dataset.mode === state.mode),
+            ),
+          );
+        document.getElementById("status-mode").textContent =
+          state.mode.toUpperCase();
+        document.getElementById("visible-count").textContent =
+          state.mode === "workshop" ? artifacts.length : "01";
+        requestAnimationFrame(drawDynamicDemos);
+      }
+
+      function demoMarkup(id, compact) {
+        const variant = state.variants[id] || 0;
+        const details = compact
+          ? ""
+          : `<p class="status-line">Iteration ${variant + 1}: ${byId(id).variants[variant]}</p>`;
+        if (variant === 1) return alternateDemoMarkup(id, details);
+        if (id === "music")
+          return `${details}<div class="demo-toolbar"><button class="mini-button" data-action="play-music">Play pattern</button><label class="field">Tempo <input data-control="tempo" type="range" min="60" max="150" value="96"></label></div><div class="code-surface">sound("bd*2, [hh oh]*4")</div><div class="step-grid" aria-label="Music steps">${Array.from({ length: 16 }, (_, i) => `<button class="step" data-action="music-step" data-index="${i}" aria-pressed="${state.musicSteps.has(i)}">${i + 1}</button>`).join("")}</div><p class="status-line" data-status="music">Choose steps, then play the pattern.</p>`;
+        if (id === "sonic")
+          return `${details}<div class="demo-toolbar"><button class="mini-button" data-action="play-tone">Play tone</button><label class="field">Frequency <input data-control="frequency" type="range" min="110" max="880" value="220"></label><label class="field">Harmonics <input data-control="harmonics" type="range" min="1" max="8" value="3"></label></div><canvas data-canvas="sonic" width="800" height="240" aria-label="Synthesized waveform"></canvas><p class="status-line" data-status="sonic">220 Hz with three harmonics.</p>`;
+        if (id === "ear")
+          return `${details}<div class="demo-toolbar"><button class="mini-button" data-action="play-interval">Play two notes</button>${[
+            ["third", "Minor third"],
+            ["fifth", "Perfect fifth"],
+            ["octave", "Octave"],
+          ]
+            .map(
+              ([v, l]) =>
+                `<button class="choice-button" data-action="ear-answer" data-value="${v}" ${state.earRoundReady ? "" : "disabled"}>${l}</button>`,
+            )
+            .join(
+              "",
+            )}</div><div class="meters"><div class="meter"><b>1</b><span>Listen</span></div><div class="meter"><b>2</b><span>Identify</span></div><div class="meter"><b>3</b><span>Replay</span></div></div><p class="status-line" data-status="ear">Play the interval before answering.</p>`;
+        if (id === "rhythm")
+          return `${details}<div class="demo-toolbar"><button class="mini-button" data-action="weave-rhythm">Distribute 5 pulses</button><button class="mini-button" data-action="play-rhythm">Play cycle</button></div><div class="step-grid">${Array.from({ length: 16 }, (_, i) => `<button class="step" data-action="rhythm-step" data-index="${i}" aria-pressed="${state.rhythmSteps.has(i)}">${i + 1}</button>`).join("")}</div><p class="status-line" data-status="rhythm">Five pulses across sixteen steps.</p>`;
+        if (id === "counterpoint")
+          return `${details}<div class="tracks">${state.counterpoint.map((voice, v) => `<div class="track"><span class="track-label">Voice ${v + 1}</span><div class="track-slots">${voice.map((note, i) => `<button class="track-slot mini-button" data-action="cycle-note" data-voice="${v}" data-index="${i}">${noteName(note)}</button>`).join("")}</div><span class="mono">${v ? "upper" : "lower"}</span></div>`).join("")}</div><div class="demo-toolbar"><button class="mini-button" data-action="check-counterpoint">Check motion</button><button class="mini-button" data-action="play-counterpoint">Play voices</button></div><p class="status-line" data-status="counterpoint">Change a note, then inspect the intervals.</p>`;
+        if (id === "arrangement")
+          return `${details}<div class="tracks">${["drums", "bass", "keys", "voice"].map((track) => `<div class="track"><span class="track-label">${track}</span><div class="track-slots">${Array.from({ length: 8 }, (_, i) => `<button class="track-slot" data-action="arrange-slot" data-key="${track}-${i}" aria-pressed="${state.arrangement.has(`${track}-${i}`)}" aria-label="${track}, section ${i + 1}"></button>`).join("")}</div><button class="mini-button" data-action="mute-track" data-track="${track}">${arrangementTrackIsMuted(track) ? "Restore" : "Mute"}</button></div>`).join("")}</div><p class="status-line" data-status="arrangement">Toggle sections to reshape density.</p>`;
+        if (id === "annotated")
+          return `${details}<div class="paper-surface"><p class="annotation-text"><span>const </span><button class="annotation" data-action="annotation" data-note="result names the array of pending values">result</button><span> = </span><button class="annotation" data-action="annotation" data-note="map returns immediately; it does not await an async callback">items.map</button><span>(</span><button class="annotation" data-action="annotation" data-note="if loadItem is async, every returned value is a Promise">loadItem</button><span>);</span></p><div class="bracket"><strong data-status="annotation">Select an exact span to inspect its explanation.</strong></div></div><label class="field">Your annotation<textarea data-control="learner-annotation" placeholder="What do you think result contains?">${escapeHtml(state.annotationDraft)}</textarea></label>${savedAnnotationsMarkup()}<div class="demo-toolbar"><button class="mini-button" data-action="reveal-annotation">Reveal synthesis</button></div>`;
+        if (id === "argument")
+          return `${details}<div class="argument-map"><span class="connector" style="width:28%;left:30%;top:38%;transform:rotate(-18deg)"></span><span class="connector" style="width:28%;left:30%;top:52%;transform:rotate(18deg)"></span><button class="node-button" data-action="argument-node" data-kind="claim" data-note="The conclusion being evaluated" style="left:38%;top:38%">Later start times improve learning</button><button class="node-button" data-action="argument-node" data-kind="support" data-note="Supports sleep duration, a premise in the argument" style="left:4%;top:10%">Students sleep longer</button><button class="node-button" data-action="argument-node" data-kind="object" data-note="Challenges whether schedule change alone causes the result" style="left:4%;bottom:8%">Transport confound</button></div><p class="status-line" data-status="argument">Select a node to inspect its role.</p>`;
+        if (id === "simulation")
+          return `${details}<div class="demo-split"><div><label class="field">Input rate <input data-control="sim-rate" type="range" min="10" max="90" value="55"></label><label class="field">Decay <input data-control="sim-decay" type="range" min="20" max="90" value="48"></label><p class="status-line" data-status="simulation">Predict the peak before moving a parameter.</p></div><canvas data-canvas="simulation" width="800" height="280" aria-label="Simulation response curve"></canvas></div>`;
+        if (id === "proof")
+          return `${details}<ol class="proof-list">${state.proof.map((step, i) => `<li class="proof-step"><span class="mono">${i + 1}</span><span>${step}</span><span><button class="mini-button" data-action="proof-move" data-index="${i}" data-direction="-1" aria-label="Move step up">↑</button><button class="mini-button" data-action="proof-move" data-index="${i}" data-direction="1" aria-label="Move step down">↓</button></span></li>`).join("")}</ol><div class="demo-toolbar"><button class="mini-button" data-action="proof-shuffle">Shuffle steps</button><button class="mini-button" data-action="proof-check">Validate proof</button></div><p class="status-line" data-status="proof">Arrange the proof from assumption to conclusion.</p>`;
+        if (id === "counterfactual")
+          return `${details}<label class="field">Coal availability in 1780 <input data-control="counterfactual" type="range" min="0" max="2" step="1" value="1"></label><ol class="timeline-list" data-timeline><li class="timeline-event"><span>1780</span><span>Steam investment</span><strong>baseline</strong></li><li class="timeline-event"><span>1810</span><span>Factory concentration</span><strong>medium</strong></li><li class="timeline-event"><span>1840</span><span>Rail expansion</span><strong>high</strong></li></ol><p class="status-line" data-status="counterfactual">Authored scenario. Confidence should fall downstream.</p>`;
+        if (id === "case")
+          return `${details}<div class="case-evidence" data-case-evidence>${caseEvidence()}</div><div class="demo-toolbar" data-case-choices>${caseChoices()}</div><p class="status-line" data-status="case">Choose an action and inspect the next evidence round.</p>`;
+        if (id === "field")
+          return `${details}<div class="demo-split"><div><label class="field">New entry<textarea data-control="field-entry" placeholder="Record something observable and specific."></textarea></label><div class="demo-toolbar"><button class="mini-button" data-action="field-add" data-kind="observation">Add observation</button><button class="mini-button" data-action="field-add" data-kind="hypothesis">Add hypothesis</button></div></div><ol class="notes-list" data-notes>${notesMarkup()}</ol></div><p class="status-line" data-status="field">Keep observations separate from explanations.</p>`;
+        if (id === "debugger")
+          return `${details}<div class="code-surface" data-debug>${debugMarkup()}</div><div class="demo-toolbar"><button class="mini-button" data-action="debug-reset">Reset trace</button><button class="mini-button" data-action="debug-next">Advance one state</button></div><p class="status-line" data-status="debugger">Predict the next changed value.</p>`;
+        if (id === "concept")
+          return `${details}<div class="concept-map">${["Feedback", "Practice", "Memory", "Retrieval"].map((n, i) => `<button class="node-button" data-action="concept-node" data-value="${n}" data-selected="${state.conceptSelection.includes(n)}" style="left:${i % 2 ? 58 : 8}%;top:${i > 1 ? 58 : 12}%">${n}</button>`).join("")}</div><div class="demo-toolbar"><label class="field">Relationship <select data-control="relationship"><option>supports</option><option>depends on</option><option>contrasts with</option></select></label><button class="mini-button" data-action="concept-connect" ${state.conceptSelection.length === 2 ? "" : "disabled"}>Connect concepts</button></div><p class="status-line" data-status="concept">${state.conceptLinks.at(-1) || "Select two concepts."}</p>`;
+        if (id === "sort")
+          return `${details}<div class="sort-list">${state.sortItems.map((item, i) => `<button class="sort-item" data-action="sort-item" data-index="${i}" data-selected="${state.selectedSort === i}">${item}</button>`).join("")}</div><div class="demo-toolbar"><button class="mini-button" data-action="sort-check">Check learning cycle</button></div><p class="status-line" data-status="sort">Select two items to swap their positions.</p>`;
+        if (id === "teachback")
+          return `${details}<label class="field">Explain how vaccination creates immune memory<textarea data-control="teachback" placeholder="Give your explanation without consulting notes."></textarea></label><div class="demo-toolbar"><button class="mini-button" data-action="teach-analyze">Analyze explanation</button><button class="mini-button" data-action="teach-record">Record voice</button></div><div class="meters"><div class="meter"><b data-meter="coverage">0%</b><span>Key ideas</span></div><div class="meter"><b data-meter="structure">0%</b><span>Structure</span></div><div class="meter"><b data-meter="clarity">0%</b><span>Clarity</span></div></div><div data-recording></div><p class="status-line" data-status="teachback">Write or record a first explanation.</p>`;
+        return `<p>Prototype unavailable.</p>`;
+      }
+
+      function alternateDemoMarkup(id, details) {
+        if (id === "music")
+          return `${details}<div class="option-panel"><div class="demo-toolbar"><button class="mini-button" data-action="play-music">Play arrangement</button><label class="field">Tempo <input data-control="tempo" type="range" min="60" max="150" value="108"></label></div><div class="bank-grid" aria-label="Sound bank">${["drums", "bass", "keys", "texture"].map((bank) => `<button class="mini-button bank-button" data-action="music-bank" data-value="${bank}" aria-pressed="${state.musicBank === bank}">${bank}</button>`).join("")}</div><div class="lane-grid"><span class="lane-label">${state.musicBank}</span>${Array.from({ length: 16 }, (_, i) => `<button class="step" data-action="music-step" data-bank="${state.musicBank}" data-index="${i}" aria-pressed="${state.musicPatterns[state.musicBank].has(i)}">${i + 1}</button>`).join("")}</div><p class="status-line" data-status="music">Choose a bank, shape its lane, then compare the arrangement.</p></div>`;
+        if (id === "sonic")
+          return `${details}<div class="option-panel"><div class="demo-toolbar"><button class="mini-button" data-action="play-tone">Play mixture</button><label class="field">Fundamental <input data-control="frequency" type="range" min="110" max="440" value="165"></label><label class="field">Partials <input data-control="harmonics" type="range" min="1" max="8" value="6"></label></div><canvas data-canvas="sonic" width="800" height="240" aria-label="Harmonic mixture waveform"></canvas><div class="meters"><div class="meter"><b>1×</b><span>fundamental</span></div><div class="meter"><b>3×</b><span>colour</span></div><div class="meter"><b>6×</b><span>edge</span></div></div><p class="status-line" data-status="sonic">A denser harmonic mixture emphasizes timbre over pitch.</p></div>`;
+        if (id === "ear")
+          return `${details}<div class="option-panel"><div class="demo-toolbar"><button class="mini-button" data-action="play-interval">Begin adaptive round</button><span class="mono">STREAK ${state.earStreak}</span></div><div class="scenario-row">${[
+            ["third", "Minor third"],
+            ["fifth", "Perfect fifth"],
+            ["octave", "Octave"],
+          ]
+            .map(
+              ([v, l]) =>
+                `<button class="choice-button" data-action="ear-answer" data-value="${v}" ${state.earRoundReady ? "" : "disabled"}>${l}</button>`,
+            )
+            .join(
+              "",
+            )}</div><div class="meters"><div class="meter"><b>${Math.min(5, state.earStreak + 1)}/5</b><span>round</span></div><div class="meter"><b>${state.earStreak}</b><span>streak</span></div><div class="meter"><b>${state.earStreak > 2 ? "↑" : "→"}</b><span>difficulty</span></div></div><p class="status-line" data-status="ear">Correct answers build a streak and raise the next round.</p></div>`;
+        if (id === "rhythm")
+          return `${details}<div class="option-panel"><div class="demo-toolbar"><button class="mini-button" data-action="rotate-rhythm" data-value="-1">Rotate left</button><button class="mini-button" data-action="play-rhythm">Play phase</button><button class="mini-button" data-action="rotate-rhythm" data-value="1">Rotate right</button></div><div class="lane-grid"><span class="lane-label">pulse 5</span>${Array.from({ length: 16 }, (_, i) => `<button class="step" data-action="rhythm-step" data-index="${i}" aria-pressed="${state.rhythmSteps.has(i)}">${i + 1}</button>`).join("")}<span class="lane-label">anchor</span>${Array.from({ length: 16 }, (_, i) => `<button class="step" disabled aria-pressed="${i % 4 === 0}">${i + 1}</button>`).join("")}</div><p class="status-line" data-status="rhythm">Rotate the pulse against the fixed anchor and listen for the phase shift.</p></div>`;
+        if (id === "counterpoint")
+          return `${details}<div class="option-panel"><div class="demo-toolbar"><button class="mini-button" data-action="play-counterpoint">Play both voices</button><button class="mini-button" data-action="play-counterpoint-voice" data-value="0">Hear lower voice</button><button class="mini-button" data-action="play-counterpoint-voice" data-value="1">Hear upper voice</button></div><div class="code-surface">Lower: ${state.counterpoint[0].map(noteName).join(" · ")}<br>Upper: ${state.counterpoint[1].map(noteName).join(" · ")}</div><label class="field">Listening focus <input data-control="voice-balance" type="range" min="0" max="100" value="${state.voiceBalance}"><span class="mono" data-balance-label>${100 - state.voiceBalance}% lower · ${state.voiceBalance}% upper</span></label><p class="status-line" data-status="counterpoint">Listen to each line alone before judging their independence together.</p></div>`;
+        if (id === "arrangement")
+          return `${details}<div class="option-panel"><div class="scenario-row">${["Intro", "Verse", "Lift", "Chorus", "Break", "Verse 2", "Bridge", "Outro"].map((section, i) => `<button class="choice-button" data-action="arrangement-section" data-index="${i}">${section}<br><span class="mono">${[...state.arrangement].filter((key) => key.endsWith(`-${i}`)).length} stems</span></button>`).join("")}</div><p class="status-line" data-status="arrangement">Section blocks expose form first; choose one to inspect its active stems.</p></div>`;
+        if (id === "annotated")
+          return `${details}<div class="option-panel"><div class="paper-surface"><p class="annotation-text"><button class="annotation" data-action="learner-mark" data-note="const" aria-pressed="${state.markedSpan === "const"}">const</button> <button class="annotation" data-action="learner-mark" data-note="result" aria-pressed="${state.markedSpan === "result"}">result</button> = <button class="annotation" data-action="learner-mark" data-note="items.map" aria-pressed="${state.markedSpan === "items.map"}">items.map</button>(<button class="annotation" data-action="learner-mark" data-note="loadItem" aria-pressed="${state.markedSpan === "loadItem"}">loadItem</button>);</p></div><label class="field">Why does your marked span matter?<textarea data-control="learner-annotation" placeholder="Write your interpretation before revealing Keating's note.">${escapeHtml(state.annotationDraft)}</textarea></label>${savedAnnotationsMarkup()}<div class="demo-toolbar"><button class="mini-button" data-action="save-learner-mark">Save my annotation</button><button class="mini-button" data-action="reveal-annotation">Compare with Keating</button></div><p class="status-line" data-status="annotation">Mark a span and author the explanation yourself.</p></div>`;
+        if (id === "argument")
+          return `${details}<div class="option-panel"><div class="evidence-board"><section class="evidence-column"><h4>CLAIM</h4><button class="choice-button" data-action="argument-node" data-note="The conclusion needs a causal warrant, not only correlation.">Later starts improve learning</button></section><section class="evidence-column"><h4>SUPPORT</h4><button class="choice-button" data-action="argument-node" data-note="Longer sleep supports a plausible mechanism.">Sleep duration rises</button></section><section class="evidence-column"><h4>OBJECTION</h4><button class="choice-button" data-action="argument-node" data-note="Transport changes may select which students arrive on time.">Attendance confound</button></section></div><p class="status-line" data-status="argument">Inspect how each evidence item bears on the claim.</p></div>`;
+        if (id === "simulation")
+          return `${details}<div class="option-panel"><div class="scenario-row">${[
+            ["baseline", "Baseline"],
+            ["surge", "Demand surge"],
+            ["recovery", "Fast recovery"],
+          ]
+            .map(
+              ([value, label]) =>
+                `<button class="choice-button" data-action="sim-scenario" data-value="${value}" aria-pressed="${state.simScenario === value}">${label}</button>`,
+            )
+            .join(
+              "",
+            )}</div><canvas data-canvas="simulation" width="800" height="280" aria-label="Scenario response curve"></canvas><div hidden><input data-control="sim-rate" value="${state.simScenario === "surge" ? "85" : "55"}"><input data-control="sim-decay" value="${state.simScenario === "recovery" ? "85" : "48"}"></div><p class="status-line" data-status="simulation">Compare authored scenarios before tuning individual parameters.</p></div>`;
+        if (id === "proof")
+          return `${details}<div class="option-panel"><div class="warrant-row"><span>If n is even, then n = 2k.</span><button class="choice-button" data-action="proof-warrant" data-value="definition">Definition of even</button></div><div class="warrant-row"><span>n² = (2k)² = 4k².</span><button class="choice-button" data-action="proof-warrant" data-value="algebra">Algebra</button></div><div class="warrant-row"><span>4k² = 2(2k²), so n² is even.</span><button class="choice-button" data-action="proof-warrant" data-value="converse">Converse</button></div><p class="status-line" data-status="proof">One warrant is wrong. Select the statement that needs repair.</p></div>`;
+        if (id === "counterfactual")
+          return `${details}<div class="option-panel"><div class="assumption-list">${assumptionLabels.map((label, i) => `<button class="mini-button assumption-button" data-action="counter-assumption" data-index="${i}" aria-pressed="${state.counterAssumptions[i]}">${label}</button>`).join("")}</div>${assumptionEffectsMarkup()}<p class="status-line" data-status="counterfactual">Toggle assumptions to see which claims the branch depends on.</p></div>`;
+        if (id === "case")
+          return `${details}<div class="option-panel"><div class="evidence-board"><section class="evidence-column"><h4>KNOWN</h4>${caseEvidence()}</section><section class="evidence-column"><h4>REQUEST NEXT</h4>${caseChoices()}</section></div><p class="status-line" data-status="case">Evidence rounds reward information gathering before intervention.</p></div>`;
+        if (id === "field")
+          return `${details}<div class="option-panel"><div class="evidence-board"><section class="evidence-column"><h4>OBSERVATIONS</h4>${
+            state.notes
+              .filter((n) => n.kind === "observation")
+              .map((n) => `<p>${escapeHtml(n.text)}</p>`)
+              .join("") || "<p>None recorded.</p>"
+          }</section><section class="evidence-column"><h4>HYPOTHESES</h4>${
+            state.notes
+              .filter((n) => n.kind === "hypothesis")
+              .map((n) => `<p>${escapeHtml(n.text)}</p>`)
+              .join("") || "<p>None proposed.</p>"
+          }</section></div><label class="field">New note<textarea data-control="field-entry" placeholder="Separate what happened from why you think it happened."></textarea></label><div class="demo-toolbar"><button class="mini-button" data-action="field-add" data-kind="observation">Add observation</button><button class="mini-button" data-action="field-add" data-kind="hypothesis">Add hypothesis</button></div><p class="status-line" data-status="field">The table makes category mistakes visible.</p></div>`;
+        if (id === "debugger")
+          return `${details}<div class="option-panel"><div class="scenario-row"><button class="choice-button" data-action="debug-fault" data-value="dns">Inject DNS expiry</button><button class="choice-button" data-action="debug-fault" data-value="timeout">Inject timeout</button><button class="choice-button" data-action="debug-fault" data-value="cache">Inject stale cache</button></div><div class="code-surface" data-debug>${debugMarkup()}</div><div class="demo-toolbar"><button class="mini-button" data-action="debug-reset">Clear fault</button><button class="mini-button" data-action="debug-next">Advance one state</button></div><p class="status-line" data-status="debugger">${state.fault ? `Injected fault: ${state.fault}. Predict where it appears.` : "Choose one fault, then follow its effect through the trace."}</p></div>`;
+        if (id === "concept")
+          return `${details}<div class="option-panel"><p class="status-line">Repair the weakest relationship:</p><div class="evidence-board"><section class="evidence-column"><h4>MAP CLAIM</h4><p>Practice guarantees memory.</p></section><section class="evidence-column"><h4>REPAIR</h4><button class="choice-button" data-action="concept-repair" data-value="spacing">Practice supports memory when retrieval is spaced.</button><button class="choice-button" data-action="concept-repair" data-value="guarantee">Keep “guarantees.”</button></section></div><p class="status-line" data-status="concept">Choose the repair that adds the missing condition.</p></div>`;
+        if (id === "sort") {
+          const categoryItems = [
+            "The leaf edge is brown",
+            "The plant lacks nitrogen",
+            "Three stems lean east",
+            "Light caused the leaning",
+          ];
+          const assigned = (category) =>
+            categoryItems
+              .map((item, index) => ({ item, index }))
+              .filter(
+                (entry) => state.categoryAssignments[entry.index] === category,
+              );
+          const unassigned = categoryItems
+            .map((item, index) => ({ item, index }))
+            .filter((entry) => !state.categoryAssignments[entry.index]);
+          const itemButton = (entry) =>
+            `<button class="sort-item" data-action="categorize-item" data-index="${entry.index}" data-value="${entry.item}">${entry.item}</button>`;
+          return `${details}<div class="option-panel"><div class="category-bins"><section class="category-bin"><h4>OBSERVE</h4>${assigned("observe").map(itemButton).join("") || "<p>Choose a concrete observation.</p>"}</section><section class="category-bin"><h4>INTERPRET</h4>${assigned("interpret").map(itemButton).join("") || "<p>Choose an explanatory claim.</p>"}</section></div><div class="sort-list">${unassigned.map(itemButton).join("")}</div><p class="status-line" data-status="sort">Click once to classify as observation. Click again to move it to interpretation.</p></div>`;
+        }
+        if (id === "teachback")
+          return `${details}<div class="option-panel"><div class="bracket"><h3 class="mono">VOICE REHEARSAL</h3><p>Record a short explanation without notes. Replay it once, then make a tighter second take.</p></div><div class="demo-toolbar"><button class="mini-button" data-action="teach-record">Record voice</button></div><div data-recording>${state.recordedUrl ? `<audio controls src="${state.recordedUrl}"></audio>` : ""}</div><div class="meters"><div class="meter"><b>1</b><span>first take</span></div><div class="meter"><b>↻</b><span>self-review</span></div><div class="meter"><b>2</b><span>revised take</span></div></div><p class="status-line" data-status="teachback">Audio stays in this browser session.</p></div>`;
+        return `${details}<p>Second iteration unavailable.</p>`;
+      }
+
+      function noteName(midi) {
+        return (
+          ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"][
+            midi % 12
+          ] +
+          (Math.floor(midi / 12) - 1)
+        );
+      }
+      function notesMarkup() {
+        return state.notes.length
+          ? state.notes
+              .map(
+                (n, i) =>
+                  `<li class="note-entry"><span class="mono">${String(i + 1).padStart(2, "0")}</span><span>${escapeHtml(n.text)}</span><strong>${n.kind}</strong></li>`,
+              )
+              .join("")
+          : `<li class="note-entry"><span class="mono">00</span><span>No entries yet</span><strong>empty</strong></li>`;
+      }
+
+      function savedAnnotationsMarkup() {
+        if (!state.learnerAnnotations.length)
+          return `<ol class="notes-list"><li class="note-entry"><span class="mono">00</span><span>No learner annotations saved yet.</span><strong>draft</strong></li></ol>`;
+        return `<ol class="notes-list">${state.learnerAnnotations
+          .map(
+            (entry, index) =>
+              `<li class="note-entry"><span class="mono">${String(index + 1).padStart(2, "0")}</span><span><strong>“${escapeHtml(entry.span)}”</strong> — ${escapeHtml(entry.text)}</span><strong>saved</strong></li>`,
+          )
+          .join("")}</ol>`;
+      }
+
+      function arrangementTrackKeys(track) {
+        return Array.from({ length: 8 }, (_, index) => `${track}-${index}`);
+      }
+
+      function arrangementTrackIsMuted(track) {
+        return (
+          arrangementTrackKeys(track).every(
+            (key) => !state.arrangement.has(key),
+          ) && Boolean(state.arrangementSnapshots[track]?.length)
+        );
+      }
+
+      function toggleArrangementTrack(track) {
+        const keys = arrangementTrackKeys(track),
+          active = keys.filter((key) => state.arrangement.has(key));
+        if (active.length) {
+          state.arrangementSnapshots[track] = active;
+          active.forEach((key) => state.arrangement.delete(key));
+          return "muted";
+        }
+        const snapshot = state.arrangementSnapshots[track] || [];
+        snapshot.forEach((key) => state.arrangement.add(key));
+        delete state.arrangementSnapshots[track];
+        return snapshot.length ? "restored" : "empty";
+      }
+
+      const assumptionLabels = [
+        "Coal remains costly",
+        "Patent enforcement weakens",
+        "Urban labour stays available",
+        "Canals expand on schedule",
+      ];
+      const assumptionClaims = [
+        "Steam investment slows",
+        "Engine designs spread",
+        "Factories can concentrate",
+        "Heavy freight reaches cities",
+      ];
+
+      function assumptionEffects() {
+        const contested = state.counterAssumptions.filter(
+          (included) => !included,
+        ).length;
+        return {
+          contested,
+          confidence:
+            contested === 0
+              ? "HIGH"
+              : contested === 1
+                ? "MEDIUM"
+                : contested === 2
+                  ? "LOW"
+                  : "FRAGILE",
+          weakenedClaims: assumptionClaims.filter(
+            (_, index) => !state.counterAssumptions[index],
+          ),
+        };
+      }
+
+      function assumptionEffectsMarkup() {
+        const effects = assumptionEffects();
+        return `<div class="meters"><div class="meter"><b>${assumptionLabels.length}</b><span>assumptions</span></div><div class="meter"><b>${effects.contested}</b><span>contested</span></div><div class="meter"><b>${effects.confidence}</b><span>confidence</span></div></div><div class="code-surface">${
+          effects.weakenedClaims.length
+            ? effects.weakenedClaims
+                .map((claim) => `WEAKENED // ${escapeHtml(claim)}`)
+                .join("<br>")
+            : "SUPPORTED // all downstream claims retain their authored premises"
+        }</div>`;
+      }
+
+      const caseBranches = {
+        inspect: [
+          ["Timeouts cluster in one region.", "A retry hides 70% of failures."],
+          [
+            "DNS cache expiry aligns with the incidents.",
+            "Other regions use a different resolver.",
+          ],
+        ],
+        act: [
+          [
+            "A configuration rollout increases failures in every region.",
+            "Support volume doubles while the original cause remains unknown.",
+          ],
+          [
+            "Rollback restores the prior error rate.",
+            "The intermittent regional timeout still occurs.",
+          ],
+        ],
+      };
+
+      function caseEvidence() {
+        const rounds = [
+          [
+            "Customer reports intermittent timeout.",
+            "Dashboard shows normal average latency.",
+          ],
+        ];
+        if (state.casePath)
+          rounds.push(
+            ...caseBranches[state.casePath].slice(0, state.caseStage),
+          );
+        return rounds
+          .flat()
+          .map(
+            (e, i) =>
+              `<div class="evidence-item"><span class="mono">E${i + 1}</span> ${e}</div>`,
+          )
+          .join("");
+      }
+      function caseChoices() {
+        if (state.caseStage === 0)
+          return `<button class="choice-button" data-action="case-choice" data-value="inspect">Inspect another signal</button><button class="choice-button" data-action="case-choice" data-value="act">Change the service now</button>`;
+        if (state.caseStage >= 2)
+          return `<button class="choice-button" data-action="case-reset">Restart case</button>`;
+        return `<button class="choice-button" data-action="case-advance">${state.casePath === "inspect" ? "Inspect resolver evidence" : "Review intervention impact"}</button>`;
+      }
+
+      function debugTrace(fault = state.fault) {
+        const traces = {
+          normal: [
+            ["REQUEST", "queued", "retries = 0"],
+            ["DNS", "resolved", "ip = 203.0.113.8"],
+            ["CONNECT", "connected", "socket = open"],
+            ["RESPONSE", "complete", "status = 200"],
+          ],
+          dns: [
+            ["REQUEST", "queued", "retries = 0"],
+            ["DNS", "expired", "answer = NXDOMAIN"],
+            ["RESOLVER", "retrying", "cache = bypassed"],
+            ["DNS", "resolved", "ip = 203.0.113.8"],
+          ],
+          timeout: [
+            ["REQUEST", "queued", "retries = 0"],
+            ["DNS", "resolved", "ip = 203.0.113.8"],
+            ["CONNECT", "timeout", "retries = 1"],
+            ["RETRY", "connected", "status = 200"],
+          ],
+          cache: [
+            ["REQUEST", "queued", "retries = 0"],
+            ["DNS", "cached", "ip = 198.51.100.3"],
+            ["CONNECT", "refused", "cache = stale"],
+            ["CACHE_BUST", "resolved", "ip = 203.0.113.8"],
+          ],
+        };
+        return traces[fault || "normal"];
+      }
+
+      function debugMarkup() {
+        const steps = debugTrace();
+        return steps
+          .map(
+            (s, i) =>
+              `<div style="color:${i === state.debugStep ? "var(--amber)" : i < state.debugStep ? "var(--phosphor)" : "var(--ivory-muted)"}">${i === state.debugStep ? "&gt;" : "·"} ${s.join("  //  ")}</div>`,
+          )
+          .join("");
+      }
+
+      function counterpointFifthWarnings(voices = state.counterpoint) {
+        const warnings = [];
+        for (let i = 1; i < voices[0].length; i++) {
+          const previous = Math.abs(voices[1][i - 1] - voices[0][i - 1]) % 12,
+            current = Math.abs(voices[1][i] - voices[0][i]) % 12,
+            lowerMotion = voices[0][i] - voices[0][i - 1],
+            upperMotion = voices[1][i] - voices[1][i - 1],
+            sameDirection =
+              lowerMotion !== 0 &&
+              upperMotion !== 0 &&
+              Math.sign(lowerMotion) === Math.sign(upperMotion);
+          if (previous === 7 && current === 7 && sameDirection)
+            warnings.push(`beats ${i}–${i + 1}: parallel fifth`);
+          else if (
+            previous !== 7 &&
+            current === 7 &&
+            sameDirection &&
+            Math.abs(upperMotion) > 2
+          )
+            warnings.push(`beat ${i + 1}: direct fifth by similar motion`);
+        }
+        return warnings;
+      }
+
+      function setStatus(id, text, tone = "") {
+        document.querySelectorAll(`[data-status="${id}"]`).forEach((el) => {
+          el.textContent = text;
+          el.dataset.tone = tone;
+        });
+      }
+      function refreshDemo(id) {
+        document
+          .querySelectorAll(`[data-demo="${id}"]`)
+          .forEach(
+            (el) => (el.innerHTML = demoMarkup(id, state.mode === "workshop")),
+          );
+        requestAnimationFrame(drawDynamicDemos);
+      }
+
+      function audioContext() {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        window.__kaaAudio ||= new AC();
+        window.__kaaAudio.resume();
+        return window.__kaaAudio;
+      }
+      function tone(
+        frequency,
+        start = 0,
+        duration = 0.12,
+        gain = 0.08,
+        type = "sine",
+      ) {
+        const ctx = audioContext();
+        if (!ctx) return;
+        const osc = ctx.createOscillator(),
+          amp = ctx.createGain();
+        osc.type = type;
+        osc.frequency.value = frequency;
+        amp.gain.setValueAtTime(gain, ctx.currentTime + start);
+        amp.gain.exponentialRampToValueAtTime(
+          0.0001,
+          ctx.currentTime + start + duration,
+        );
+        osc.connect(amp).connect(ctx.destination);
+        osc.start(ctx.currentTime + start);
+        osc.stop(ctx.currentTime + start + duration);
+      }
+      function playSteps(
+        stepSet,
+        bpm = 96,
+        statusId = "music",
+        demoRoot = document,
+        stepAction = `${statusId}-step`,
+      ) {
+        const run = ++state.audioRun,
+          interval = 60 / bpm / 4;
+        demoRoot
+          .querySelectorAll(`[data-action="${stepAction}"]`)
+          .forEach((el) => el.classList.remove("is-playhead"));
+        for (let i = 0; i < 16; i++) {
+          setTimeout(
+            () => {
+              if (run !== state.audioRun) return;
+              demoRoot
+                .querySelectorAll(
+                  `[data-action="${stepAction}"][data-index="${i}"]`,
+                )
+                .forEach((el) => el.classList.add("is-playhead"));
+              if (stepSet.has(i))
+                tone(
+                  i % 4 === 0 ? 92 : 180,
+                  0,
+                  0.07,
+                  0.1,
+                  i % 4 === 0 ? "sine" : "square",
+                );
+              if (i > 0)
+                demoRoot
+                  .querySelectorAll(
+                    `[data-action="${stepAction}"][data-index="${i - 1}"]`,
+                  )
+                  .forEach((el) => el.classList.remove("is-playhead"));
+              if (i === 15) {
+                demoRoot
+                  .querySelectorAll(`[data-action="${stepAction}"]`)
+                  .forEach((el) => el.classList.remove("is-playhead"));
+                setStatus(
+                  statusId,
+                  "Cycle complete. Change one step and compare.",
+                  "success",
+                );
+              }
+            },
+            i * interval * 1000,
+          );
+        }
+      }
+
+      function playBankArrangement(bpm, demoRoot) {
+        const run = ++state.audioRun,
+          interval = 60 / bpm / 4,
+          voices = {
+            drums: { frequency: 86, gain: 0.09, type: "sine" },
+            bass: { frequency: 110, gain: 0.055, type: "triangle" },
+            keys: { frequency: 330, gain: 0.035, type: "sine" },
+            texture: { frequency: 520, gain: 0.018, type: "sawtooth" },
+          };
+        demoRoot
+          .querySelectorAll('[data-action="music-step"]')
+          .forEach((el) => el.classList.remove("is-playhead"));
+        for (let i = 0; i < 16; i++) {
+          setTimeout(
+            () => {
+              if (run !== state.audioRun) return;
+              demoRoot
+                .querySelectorAll('[data-action="music-step"]')
+                .forEach((el) =>
+                  el.classList.toggle(
+                    "is-playhead",
+                    Number(el.dataset.index) === i,
+                  ),
+                );
+              Object.entries(state.musicPatterns).forEach(([bank, pattern]) => {
+                if (!pattern.has(i)) return;
+                const voice = voices[bank];
+                tone(
+                  voice.frequency * (bank === "keys" ? 1 + (i % 4) * 0.12 : 1),
+                  0,
+                  bank === "texture" ? 0.18 : 0.08,
+                  voice.gain,
+                  voice.type,
+                );
+              });
+              if (i === 15) {
+                demoRoot
+                  .querySelectorAll('[data-action="music-step"]')
+                  .forEach((el) => el.classList.remove("is-playhead"));
+                setStatus(
+                  "music",
+                  "Arrangement complete. Switch banks to inspect each independent pattern.",
+                  "success",
+                );
+              }
+            },
+            i * interval * 1000,
+          );
+        }
+      }
+
+      function drawDynamicDemos() {
+        document.querySelectorAll('[data-canvas="sonic"]').forEach(drawSonic);
+        document
+          .querySelectorAll('[data-canvas="simulation"]')
+          .forEach(drawSimulation);
+      }
+      function canvasSetup(canvas) {
+        const rect = canvas.getBoundingClientRect(),
+          dpr = Math.min(devicePixelRatio || 1, 2);
+        canvas.width = Math.max(320, rect.width * dpr);
+        canvas.height = Math.max(160, rect.height * dpr);
+        const ctx = canvas.getContext("2d");
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        return { ctx, w: rect.width, h: rect.height };
+      }
+      function drawGrid(ctx, w, h) {
+        ctx.strokeStyle = "#304038";
+        ctx.lineWidth = 1;
+        for (let x = 0; x < w; x += 40) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, h);
+          ctx.stroke();
+        }
+        for (let y = 0; y < h; y += 32) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(w, y);
+          ctx.stroke();
+        }
+      }
+      function drawSonic(canvas) {
+        const root = canvas.closest(".demo"),
+          freq = Number(
+            root.querySelector('[data-control="frequency"]')?.value || 220,
+          ),
+          harmonics = Number(
+            root.querySelector('[data-control="harmonics"]')?.value || 3,
+          ),
+          { ctx, w, h } = canvasSetup(canvas);
+        ctx.fillStyle = "#0d100f";
+        ctx.fillRect(0, 0, w, h);
+        drawGrid(ctx, w, h);
+        ctx.strokeStyle = "#ff4db8";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let x = 0; x < w; x++) {
+          let y = 0;
+          for (let n = 1; n <= harmonics; n++)
+            y += Math.sin((x / w) * Math.PI * 2 * (freq / 55) * n) / n;
+          const py = h / 2 - y * 24;
+          if (x === 0) ctx.moveTo(x, py);
+          else ctx.lineTo(x, py);
+        }
+        ctx.stroke();
+      }
+      function drawSimulation(canvas) {
+        const root = canvas.closest(".demo"),
+          rate =
+            Number(
+              root.querySelector('[data-control="sim-rate"]')?.value || 55,
+            ) / 50,
+          decay =
+            Number(
+              root.querySelector('[data-control="sim-decay"]')?.value || 48,
+            ) / 40,
+          { ctx, w, h } = canvasSetup(canvas);
+        ctx.fillStyle = "#0d100f";
+        ctx.fillRect(0, 0, w, h);
+        drawGrid(ctx, w, h);
+        ctx.strokeStyle = "#7cff7a";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let x = 0; x < w; x++) {
+          const t = (x / w) * 5,
+            y = rate * t * Math.exp((-decay * t) / 2);
+          const py = h - 18 - y * h * 0.62;
+          if (x === 0) ctx.moveTo(x, py);
+          else ctx.lineTo(x, py);
+        }
+        ctx.stroke();
+      }
+
+      document.addEventListener("click", async (event) => {
+        const button = event.target.closest("button");
+        if (!button) return;
+        if (button.dataset.mode) {
+          state.mode = button.dataset.mode;
+          renderWorkspace();
+          return;
+        }
+        if (button.dataset.select) {
+          state.selected = button.dataset.select;
+          if (state.mode === "focused") renderWorkspace();
+          else {
+            renderCatalogue();
+            document.querySelectorAll(".artifact-card").forEach((card) => {
+              card.dataset.active = String(
+                card.id === `artifact-${state.selected}`,
+              );
+            });
+            document
+              .getElementById(`artifact-${state.selected}`)
+              ?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+          return;
+        }
+        if (button.dataset.open) {
+          state.selected = button.dataset.open;
+          state.mode = "focused";
+          renderWorkspace();
+          document.getElementById("main-content").focus();
+          return;
+        }
+        if (button.dataset.variant) {
+          const [id, index] = button.dataset.variant.split(":");
+          state.variants[id] = Number(index);
+          refreshDemo(id);
+          document
+            .querySelectorAll(`[data-variant^="${id}:"]`)
+            .forEach((b) =>
+              b.setAttribute("aria-pressed", String(b === button)),
+            );
+          return;
+        }
+        const action = button.dataset.action;
+        if (action === "music-step" || action === "rhythm-step") {
+          const set =
+              action === "music-step"
+                ? button.dataset.bank
+                  ? state.musicPatterns[button.dataset.bank]
+                  : state.musicSteps
+                : state.rhythmSteps,
+            i = Number(button.dataset.index);
+          set.has(i) ? set.delete(i) : set.add(i);
+          button.setAttribute("aria-pressed", String(set.has(i)));
+          return;
+        }
+        if (action === "play-music") {
+          const demo = button.closest(".demo"),
+            bpm = Number(demo.querySelector('[data-control="tempo"]').value);
+          if ((state.variants.music || 0) === 1) playBankArrangement(bpm, demo);
+          else playSteps(state.musicSteps, bpm, "music", demo, "music-step");
+          setStatus("music", `Playing at ${bpm} BPM…`, `warning`);
+          return;
+        }
+        if (action === "play-tone") {
+          const demo = button.closest(".demo"),
+            freq = Number(
+              demo.querySelector('[data-control="frequency"]').value,
+            ),
+            harm = Number(
+              demo.querySelector('[data-control="harmonics"]').value,
+            );
+          for (let n = 1; n <= harm; n++) tone(freq * n, 0, 1, 0.08 / n);
+          setStatus(
+            "sonic",
+            `${freq} Hz with ${harm} harmonics. Listen for brightness.`,
+            `success`,
+          );
+          return;
+        }
+        if (action === "play-interval") {
+          const targets = { third: 3, fifth: 7, octave: 12 },
+            keys = Object.keys(targets);
+          state.earTarget = keys[Math.floor(Math.random() * keys.length)];
+          state.earRoundReady = true;
+          button
+            .closest(".demo")
+            .querySelectorAll('[data-action="ear-answer"]')
+            .forEach((answer) => (answer.disabled = false));
+          tone(220, 0, 0.45);
+          tone(220 * Math.pow(2, targets[state.earTarget] / 12), 0.55, 0.45);
+          setStatus(
+            "ear",
+            "Two notes played. Identify their distance.",
+            "warning",
+          );
+          return;
+        }
+        if (action === "ear-answer") {
+          if (!state.earRoundReady || !state.earTarget) {
+            setStatus("ear", "Play the interval before answering.", "error");
+            return;
+          }
+          const ok = button.dataset.value === state.earTarget;
+          state.earStreak = ok ? state.earStreak + 1 : 0;
+          state.earRoundReady = false;
+          state.earTarget = null;
+          button
+            .closest(".demo")
+            ?.querySelectorAll('[data-action="ear-answer"]')
+            .forEach((answer) => (answer.disabled = true));
+          button
+            .closest(".demo")
+            ?.querySelectorAll(".meter b")
+            .forEach((meter, index) => {
+              if (index === 0)
+                meter.textContent = `${Math.min(5, state.earStreak + 1)}/5`;
+              if (index === 1) meter.textContent = String(state.earStreak);
+              if (index === 2)
+                meter.textContent = state.earStreak > 2 ? "↑" : "→";
+            });
+          setStatus(
+            "ear",
+            ok
+              ? "Correct. Replay it, then name what made it recognizable."
+              : "Not this time. Replay and compare the size of the leap.",
+            ok ? "success" : "error",
+          );
+          return;
+        }
+        if (action === "music-bank") {
+          state.musicBank = button.dataset.value;
+          refreshDemo("music");
+          setStatus(
+            "music",
+            `${state.musicBank} bank selected. Shape its lane before playback.`,
+            "success",
+          );
+          return;
+        }
+        if (action === "weave-rhythm") {
+          state.rhythmSteps = new Set([0, 3, 6, 10, 13]);
+          refreshDemo("rhythm");
+          return;
+        }
+        if (action === "play-rhythm") {
+          const demo = button.closest(".demo");
+          playSteps(state.rhythmSteps, 112, "rhythm", demo, "rhythm-step");
+          setStatus("rhythm", "Playing five distributed pulses…", "warning");
+          return;
+        }
+        if (action === "rotate-rhythm") {
+          const direction = Number(button.dataset.value),
+            next = new Set();
+          state.rhythmSteps.forEach((step) =>
+            next.add((step + direction + 16) % 16),
+          );
+          state.rhythmSteps = next;
+          refreshDemo("rhythm");
+          setStatus(
+            "rhythm",
+            direction > 0
+              ? "Pattern rotated right against the anchor."
+              : "Pattern rotated left against the anchor.",
+            "success",
+          );
+          return;
+        }
+        if (action === "cycle-note") {
+          const v = Number(button.dataset.voice),
+            i = Number(button.dataset.index);
+          state.counterpoint[v][i] =
+            state.counterpoint[v][i] >= 72 ? 60 : state.counterpoint[v][i] + 1;
+          refreshDemo("counterpoint");
+          return;
+        }
+        if (action === "check-counterpoint") {
+          const bad = counterpointFifthWarnings();
+          setStatus(
+            "counterpoint",
+            bad.length
+              ? bad.join("; ")
+              : "No parallel or direct fifth motion in this four-note lens. Isolated consonant fifths are allowed here.",
+            bad.length ? "warning" : "success",
+          );
+          return;
+        }
+        if (action === "play-counterpoint") {
+          const lowerGain = Math.max(
+              0.005,
+              ((100 - state.voiceBalance) / 100) * 0.09,
+            ),
+            upperGain = Math.max(0.005, (state.voiceBalance / 100) * 0.09);
+          state.counterpoint.forEach((voice, v) =>
+            voice.forEach((note, i) =>
+              tone(
+                440 * Math.pow(2, (note - 69) / 12),
+                i * 0.3,
+                0.26,
+                v ? upperGain : lowerGain,
+                v ? "sine" : "triangle",
+              ),
+            ),
+          );
+          return;
+        }
+        if (action === "play-counterpoint-voice") {
+          const voice = Number(button.dataset.value);
+          state.counterpoint[voice].forEach((note, i) =>
+            tone(
+              440 * Math.pow(2, (note - 69) / 12),
+              i * 0.3,
+              0.26,
+              0.065,
+              voice ? "sine" : "triangle",
+            ),
+          );
+          setStatus(
+            "counterpoint",
+            `Playing voice ${voice + 1} alone. Trace its contour before combining the lines.`,
+            "success",
+          );
+          return;
+        }
+        if (action === "arrange-slot") {
+          const key = button.dataset.key;
+          state.arrangement.has(key)
+            ? state.arrangement.delete(key)
+            : state.arrangement.add(key);
+          button.setAttribute(
+            "aria-pressed",
+            String(state.arrangement.has(key)),
+          );
+          return;
+        }
+        if (action === "mute-track") {
+          const track = button.dataset.track;
+          const result = toggleArrangementTrack(track);
+          refreshDemo("arrangement");
+          setStatus(
+            "arrangement",
+            result === "restored"
+              ? `${track} restored from its saved layer. Compare the change in density.`
+              : result === "muted"
+                ? `${track} muted. Where did the arrangement lose momentum?`
+                : `${track} has no layer to restore. Add a section first.`,
+            result === "restored" ? "success" : "warning",
+          );
+          return;
+        }
+        if (action === "arrangement-section") {
+          const index = Number(button.dataset.index),
+            active = [...state.arrangement]
+              .filter((key) => key.endsWith(`-${index}`))
+              .map((key) => key.split("-")[0]);
+          setStatus(
+            "arrangement",
+            active.length
+              ? `Section ${index + 1}: ${active.join(", ")}.`
+              : `Section ${index + 1} is empty. Use Stem lanes to add material.`,
+            active.length ? "success" : "warning",
+          );
+          return;
+        }
+        if (action === "annotation") {
+          button
+            .closest(".demo")
+            .querySelectorAll(".annotation")
+            .forEach((b) => b.setAttribute("aria-pressed", "false"));
+          button.setAttribute("aria-pressed", "true");
+          setStatus("annotation", button.dataset.note, "success");
+          return;
+        }
+        if (action === "reveal-annotation") {
+          setStatus(
+            "annotation",
+            "Because loadItem is asynchronous, result is an array of promises. Compare your note with that claim.",
+            "success",
+          );
+          return;
+        }
+        if (action === "learner-mark") {
+          button
+            .closest(".paper-surface")
+            .querySelectorAll(".annotation")
+            .forEach((mark) => mark.setAttribute("aria-pressed", "false"));
+          button.setAttribute("aria-pressed", "true");
+          state.markedSpan = button.dataset.note;
+          setStatus(
+            "annotation",
+            `Marked “${button.dataset.note}”. Explain why this exact span matters.`,
+            "warning",
+          );
+          return;
+        }
+        if (action === "save-learner-mark") {
+          const span = state.markedSpan,
+            text = state.annotationDraft.trim();
+          if (!span || !text) {
+            setStatus(
+              "annotation",
+              "Mark a span and write its explanation before saving.",
+              "error",
+            );
+            return;
+          }
+          state.learnerAnnotations.push({ span, text });
+          state.annotationDraft = "";
+          state.markedSpan = null;
+          refreshDemo("annotated");
+          setStatus(
+            "annotation",
+            `Saved your annotation on “${span}”. Now compare it with Keating's reading.`,
+            "success",
+          );
+          return;
+        }
+        if (action === "argument-node") {
+          button
+            .closest(".argument-map, .evidence-board")
+            ?.querySelectorAll(".node-button, .choice-button")
+            .forEach((b) => (b.dataset.selected = "false"));
+          button.dataset.selected = "true";
+          setStatus("argument", button.dataset.note, "success");
+          return;
+        }
+        if (action === "proof-move") {
+          const i = Number(button.dataset.index),
+            j = i + Number(button.dataset.direction);
+          if (j >= 0 && j < state.proof.length)
+            [state.proof[i], state.proof[j]] = [state.proof[j], state.proof[i]];
+          refreshDemo("proof");
+          return;
+        }
+        if (action === "proof-shuffle") {
+          state.proof.sort(() => Math.random() - 0.5);
+          refreshDemo("proof");
+          return;
+        }
+        if (action === "proof-check") {
+          const ok =
+            state.proof[0].startsWith("Assume") &&
+            state.proof[1].startsWith("Then") &&
+            state.proof[3].startsWith("Therefore");
+          setStatus(
+            "proof",
+            ok
+              ? "Valid chain: every statement has a warrant from the previous step."
+              : "The chain breaks. Begin with the assumption and finish with the conclusion.",
+            ok ? "success" : "error",
+          );
+          return;
+        }
+        if (action === "proof-warrant") {
+          const repair = button.dataset.value === "converse";
+          setStatus(
+            "proof",
+            repair
+              ? "Correct target. This step uses the definition of even, not the converse."
+              : "That warrant is valid. Inspect the final transition instead.",
+            repair ? "success" : "warning",
+          );
+          return;
+        }
+        if (action === "sim-scenario") {
+          state.simScenario = button.dataset.value;
+          refreshDemo("simulation");
+          setStatus(
+            "simulation",
+            `${button.textContent.trim()} loaded. Compare its peak and decay with baseline.`,
+            "success",
+          );
+          return;
+        }
+        if (action === "counter-assumption") {
+          const index = Number(button.dataset.index),
+            next = !state.counterAssumptions[index];
+          state.counterAssumptions[index] = next;
+          const effects = assumptionEffects();
+          refreshDemo("counterfactual");
+          setStatus(
+            "counterfactual",
+            `${button.textContent.trim()} is now ${next ? "included" : "contested"}. Downstream confidence: ${effects.confidence}.`,
+            "warning",
+          );
+          return;
+        }
+        if (action === "case-choice") {
+          state.casePath = button.dataset.value;
+          state.caseStage = 1;
+          refreshDemo("case");
+          setStatus(
+            "case",
+            button.dataset.value === "inspect"
+              ? "New evidence narrowed the fault. Reconsider the next action."
+              : "The intervention was premature. Inspect the new consequence.",
+            "warning",
+          );
+          return;
+        }
+        if (action === "case-advance") {
+          state.caseStage = Math.min(2, state.caseStage + 1);
+          refreshDemo("case");
+          setStatus(
+            "case",
+            state.casePath === "inspect"
+              ? "The resolver evidence identifies a narrow, testable cause."
+              : "Rollback contains the added damage, but the original fault remains unresolved.",
+            state.casePath === "inspect" ? "success" : "warning",
+          );
+          return;
+        }
+        if (action === "case-reset") {
+          state.caseStage = 0;
+          state.casePath = null;
+          refreshDemo("case");
+          return;
+        }
+        if (action === "field-add") {
+          const demo = button.closest(".demo"),
+            input = demo.querySelector('[data-control="field-entry"]'),
+            text = input.value.trim();
+          if (!text) {
+            setStatus(
+              "field",
+              "Enter a concrete note before adding it.",
+              "error",
+            );
+            return;
+          }
+          state.notes.push({ text, kind: button.dataset.kind });
+          refreshDemo("field");
+          setStatus(
+            "field",
+            `${button.dataset.kind} saved for this session.`,
+            `success`,
+          );
+          return;
+        }
+        if (action === "debug-next") {
+          state.debugStep = Math.min(3, state.debugStep + 1);
+          refreshDemo("debugger");
+          return;
+        }
+        if (action === "debug-reset") {
+          state.debugStep = 0;
+          state.fault = null;
+          refreshDemo("debugger");
+          return;
+        }
+        if (action === "debug-fault") {
+          state.fault = button.dataset.value;
+          state.debugStep = 0;
+          refreshDemo("debugger");
+          setStatus(
+            "debugger",
+            `Injected ${state.fault}. Advance until the trace diverges.`,
+            "warning",
+          );
+          return;
+        }
+        if (action === "concept-node") {
+          const value = button.dataset.value,
+            index = state.conceptSelection.indexOf(value);
+          if (index >= 0) state.conceptSelection.splice(index, 1);
+          else if (state.conceptSelection.length < 2)
+            state.conceptSelection.push(value);
+          refreshDemo("concept");
+          return;
+        }
+        if (action === "concept-connect") {
+          const demo = button.closest(".demo"),
+            relation = demo.querySelector(
+              '[data-control="relationship"]',
+            ).value;
+          state.conceptLinks.push(
+            `${state.conceptSelection[0]} ${relation} ${state.conceptSelection[1]}`,
+          );
+          state.conceptSelection = [];
+          refreshDemo("concept");
+          return;
+        }
+        if (action === "concept-repair") {
+          const good = button.dataset.value === "spacing";
+          setStatus(
+            "concept",
+            good
+              ? "Strong repair: it replaces a guarantee with a conditional relationship."
+              : "“Guarantees” still overstates the relationship. Look for a condition on effective practice.",
+            good ? "success" : "error",
+          );
+          return;
+        }
+        if (action === "sort-item") {
+          const i = Number(button.dataset.index);
+          if (state.selectedSort === null) {
+            state.selectedSort = i;
+            refreshDemo("sort");
+          } else {
+            [state.sortItems[state.selectedSort], state.sortItems[i]] = [
+              state.sortItems[i],
+              state.sortItems[state.selectedSort],
+            ];
+            state.selectedSort = null;
+            refreshDemo("sort");
+          }
+          return;
+        }
+        if (action === "sort-check") {
+          const target = "Observe,Predict,Change,Evaluate,Explain",
+            ok = state.sortItems.join(",") === target;
+          setStatus(
+            "sort",
+            ok
+              ? "Coherent inquiry cycle. Explain why evaluation comes before explanation."
+              : "Try: Observe, Predict, Change, Evaluate, Explain.",
+            ok ? "success" : "warning",
+          );
+          return;
+        }
+        if (action === "categorize-item") {
+          const index = Number(button.dataset.index),
+            current = state.categoryAssignments[index];
+          state.categoryAssignments[index] =
+            current === "observe" ? "interpret" : "observe";
+          refreshDemo("sort");
+          setStatus(
+            "sort",
+            `“${button.dataset.value}” moved to ${state.categoryAssignments[index]}. Click it again to change the classification.`,
+            "success",
+          );
+          return;
+        }
+        if (action === "teach-analyze") {
+          const demo = button.closest(".demo"),
+            text = demo
+              .querySelector('[data-control="teachback"]')
+              .value.trim(),
+            words = text.split(/\s+/).filter(Boolean),
+            terms = ["immune", "memory", "antibody", "cell", "response"],
+            hits = terms.filter((t) => text.toLowerCase().includes(t)).length;
+          const values = [
+            Math.round((hits / terms.length) * 100),
+            Math.min(100, words.length * 2),
+            Math.min(
+              100,
+              Math.round(
+                (new Set(words.map((w) => w.toLowerCase())).size /
+                  Math.max(1, words.length)) *
+                  120,
+              ),
+            ),
+          ];
+          ["coverage", "structure", "clarity"].forEach(
+            (key, i) =>
+              (demo.querySelector(`[data-meter="${key}"]`).textContent =
+                `${values[i]}%`),
+          );
+          setStatus(
+            "teachback",
+            words.length < 20
+              ? "Add a causal sequence: what happens first, next, and later?"
+              : "Now make the explanation shorter without losing the causal chain.",
+            words.length < 20 ? "warning" : "success",
+          );
+          return;
+        }
+        if (action === "teach-record") {
+          await toggleRecording(button);
+          return;
+        }
+      });
+
+      document.addEventListener("input", (event) => {
+        const input = event.target;
+        if (input.id === "density") {
+          document.documentElement.style.setProperty("--density", input.value);
+          return;
+        }
+        if (
+          input.dataset.control === "frequency" ||
+          input.dataset.control === "harmonics"
+        ) {
+          drawSonic(input.closest(".demo").querySelector("canvas"));
+          setStatus(
+            "sonic",
+            `${input.closest(".demo").querySelector('[data-control="frequency"]').value} Hz with ${input.closest(".demo").querySelector('[data-control="harmonics"]').value} harmonics.`,
+          );
+        }
+        if (
+          input.dataset.control === "sim-rate" ||
+          input.dataset.control === "sim-decay"
+        ) {
+          drawSimulation(input.closest(".demo").querySelector("canvas"));
+          setStatus(
+            "simulation",
+            "The response changed. Which parameter moved the peak more?",
+            "warning",
+          );
+        }
+        if (input.dataset.control === "voice-balance") {
+          state.voiceBalance = Number(input.value);
+          const label = input
+            .closest(".field")
+            ?.querySelector("[data-balance-label]");
+          if (label)
+            label.textContent = `${100 - state.voiceBalance}% lower · ${state.voiceBalance}% upper`;
+          setStatus(
+            "counterpoint",
+            `Listening focus set to ${100 - state.voiceBalance}% lower and ${state.voiceBalance}% upper. Play both voices to compare.`,
+            "warning",
+          );
+        }
+        if (input.dataset.control === "learner-annotation") {
+          state.annotationDraft = input.value;
+        }
+        if (input.dataset.control === "counterfactual") {
+          const level = Number(input.value),
+            events = input.closest(".demo").querySelectorAll(".timeline-event");
+          const labels =
+            level === 0
+              ? [
+                  ["Steam investment", "low"],
+                  ["Factory concentration", "delayed"],
+                  ["Rail expansion", "uncertain"],
+                ]
+              : level === 2
+                ? [
+                    ["Steam investment", "accelerated"],
+                    ["Factory concentration", "high"],
+                    ["Rail expansion", "earlier"],
+                  ]
+                : [
+                    ["Steam investment", "baseline"],
+                    ["Factory concentration", "medium"],
+                    ["Rail expansion", "high"],
+                  ];
+          events.forEach((e, i) => {
+            e.children[1].textContent = labels[i][0];
+            e.children[2].textContent = labels[i][1];
+          });
+          setStatus(
+            "counterfactual",
+            level === 1
+              ? "Baseline restored."
+              : "Authored branch applied. Confidence falls at each downstream step.",
+            "warning",
+          );
+        }
+      });
+
+      let recorder = null,
+        recordedChunks = [];
+      async function toggleRecording(button) {
+        const demo = button.closest(".demo"),
+          mount = demo.querySelector("[data-recording]");
+        if (recorder && recorder.state === "recording") {
+          recorder.stop();
+          button.textContent = "Record voice";
+          return;
+        }
+        if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+          setStatus(
+            "teachback",
+            "Voice recording is unavailable here. Use the written rehearsal instead.",
+            "error",
+          );
+          return;
+        }
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+          });
+          recordedChunks = [];
+          recorder = new MediaRecorder(stream);
+          recorder.ondataavailable = (e) => {
+            if (e.data.size) recordedChunks.push(e.data);
+          };
+          recorder.onstop = () => {
+            stream.getTracks().forEach((t) => t.stop());
+            if (state.recordedUrl) URL.revokeObjectURL(state.recordedUrl);
+            state.recordedUrl = URL.createObjectURL(
+              new Blob(recordedChunks, { type: recorder.mimeType }),
+            );
+            mount.innerHTML = `<audio controls src="${state.recordedUrl}"></audio>`;
+            setStatus(
+              "teachback",
+              "Recording ready. Replay it once, then make a more concise second take.",
+              "success",
+            );
+          };
+          recorder.start();
+          button.textContent = "Stop recording";
+          setStatus(
+            "teachback",
+            "Recording locally. Speak for twenty to sixty seconds.",
+            "warning",
+          );
+        } catch {
+          setStatus(
+            "teachback",
+            "Microphone access was not available. Continue with the written rehearsal.",
+            "error",
+          );
+        }
+      }
+
+      window.addEventListener("resize", () =>
+        requestAnimationFrame(drawDynamicDemos),
+      );
+      renderWorkspace();
+    </script>
+  </body>
+</html>

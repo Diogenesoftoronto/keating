@@ -1,19 +1,23 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { RefreshCw, Search, X } from "lucide-react";
-import { getProviders, type Api, type Model } from "@earendil-works/pi-ai/compat";
+import type { Api, Model } from "@earendil-works/pi-ai/compat";
 import {
 	localModel,
 	BROWSER_MODELS,
-	checkWebGpuAvailable,
 	getBrowserModel,
 	type LocalModel,
 } from "../stores/local-model";
-import { getSelectableModels, buildSavedModel } from "../lib/provider-models";
+import {
+	checkBrowserModelAvailability,
+	discoverModels,
+	modelKey,
+	type BrowserModelAvailability,
+	type SelectableModel,
+} from "../lib/model-catalog";
 import { searchFullText } from "../lib/full-text-search";
 import type { ImageGeneratorOption } from "../lib/image-generators";
 import type { SpeechProviderDescriptor } from "../keating/speech";
 import { addRecentModel, getRecentModels } from "../keating/ui-settings";
-import { loadModelPrefs } from "../keating/model-prefs";
 import {
 	CHAT_CAPABILITY_FILTERS,
 	modelCapabilityBadges,
@@ -24,29 +28,6 @@ import { MultiSelectDropdown } from "./MultiSelectDropdown";
 import { ModelCacheControls, ModelDownloadBar } from "./ModelDownloadBar";
 import { refreshCachedModelSizes, useCachedModelSize } from "../hooks/useCachedModelSize";
 import { css } from "../../styled-system/css";
-
-type BrowserModelAvailability = Record<string, { available: boolean; reason?: string }>;
-
-function makeBrowserModels(availableIds?: ReadonlySet<string>): Model<Api>[] {
-	return BROWSER_MODELS.filter((spec) => !availableIds || availableIds.has(spec.id)).map((spec) => ({
-		id: spec.id,
-		name: spec.name,
-		api: "browser" as Api,
-		provider: "browser",
-		baseUrl: "",
-		reasoning: false,
-		input: ["text"],
-		cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-		contextWindow: 0,
-		maxTokens: 0,
-	}));
-}
-
-type SelectableModel = {
-	key: string;
-	model: Model<Api>;
-	group: "recent" | "browser" | "cloud" | "custom";
-};
 
 interface ModelCatalogState {
 	models: SelectableModel[];
@@ -83,64 +64,36 @@ function modelCatalogReducer(state: ModelCatalogState, action: ModelCatalogActio
 	}
 }
 
-function modelKey(model: Model<any>): string {
-	return `${model.provider}::${model.api}::${model.id}`;
-}
-
-async function checkBrowserModelAvailability(): Promise<BrowserModelAvailability> {
-	const entries = await Promise.all(
-		BROWSER_MODELS.map(async (spec) => [spec.id, await checkWebGpuAvailable(spec)] as const),
-	);
-	return Object.fromEntries(entries);
-}
-
-async function discoverModels(browserAvailability: BrowserModelAvailability): Promise<SelectableModel[]> {
-	const modelPrefs = loadModelPrefs();
-	const hidden = new Set(modelPrefs.hiddenProviders);
-	const all = await getSelectableModels((provider) => !hidden.has(provider));
-
-	for (const saved of modelPrefs.customModels) {
-		all.push(buildSavedModel(saved));
-	}
-
-	const knownProviders = new Set<string>(getProviders());
-	const selectable: SelectableModel[] = all.map((model) => ({
-		key: modelKey(model),
-		model,
-		group:
-			model.provider === "browser"
-				? "browser"
-				: knownProviders.has(model.provider)
-					? "cloud"
-					: "custom",
-	}));
-
-	const compatibleBrowserModelIds = new Set(
-		Object.entries(browserAvailability)
-			.filter(([, result]) => result.available)
-			.map(([id]) => id),
-	);
-	if (compatibleBrowserModelIds.size > 0) {
-		selectable.unshift(
-			...makeBrowserModels(compatibleBrowserModelIds).map((model) => ({
-				key: modelKey(model),
-				model,
-				group: "browser" as const,
-			})),
-		);
-	}
-
-	return Array.from(new Map(selectable.map((entry) => [entry.key, entry])).values());
-}
-
 export interface ModelSelectorDialogProps {
 	open: boolean;
 	currentModel: Model<Api> | null;
 	onClose: () => void;
 	onSelect: (model: Model<Api>) => void;
+	/** Copy overrides for callers picking a model for something other than chat. */
+	title?: string;
+	description?: string;
+	actionLabel?: string;
+	/** Catalog keys to hide — e.g. models a review pool already holds. */
+	excludeKeys?: readonly string[];
+	/**
+	 * Chat downloads a browser model the moment it is chosen, because chat runs
+	 * it next. Callers that merely record the choice pass false and let the run
+	 * itself pay the download.
+	 */
+	preloadBrowserModel?: boolean;
 }
 
-export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: ModelSelectorDialogProps) {
+export function ModelSelectorDialog({
+	open,
+	currentModel,
+	onClose,
+	onSelect,
+	title = "Select Model",
+	description = "Built-in providers and discovered custom-provider models.",
+	actionLabel = "Use Selected Model",
+	excludeKeys,
+	preloadBrowserModel = true,
+}: ModelSelectorDialogProps) {
 	const [catalog, dispatchCatalog] = useReducer(modelCatalogReducer, INITIAL_CATALOG);
 	const [search, setSearch] = useState("");
 	const [providerFilters, setProviderFilters] = useState<string[]>([]);
@@ -191,7 +144,9 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 	}, [open, currentModel, refreshModels]);
 
 	const filtered = useMemo(() => {
-		const eligible = models.filter(({ model }) => {
+		const excluded = new Set(excludeKeys ?? []);
+		const eligible = models.filter(({ model, key }) => {
+			if (excluded.has(key)) return false;
 			if (providerFilters.length > 0 && !providerFilters.includes(model.provider)) return false;
 			if (!modelHasCapabilities(model, capabilityFilters)) return false;
 			return true;
@@ -203,7 +158,7 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 			model.api,
 			group,
 		]);
-	}, [search, providerFilters, capabilityFilters, models]);
+	}, [search, providerFilters, capabilityFilters, models, excludeKeys]);
 
 	const providerOptions = useMemo(
 		() =>
@@ -234,7 +189,7 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 	const handleSelect = async () => {
 		const selected = models.find((e) => e.key === selectedKey)?.model;
 		if (!selected) return;
-		if (selected.provider === "browser" && localModel.getState().modelId !== selected.id) {
+		if (preloadBrowserModel && selected.provider === "browser" && localModel.getState().modelId !== selected.id) {
 			await localModel.load(selected.id);
 			if (!localModel.getState().loaded) return;
 		}
@@ -279,8 +234,8 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 			>
 				<div className={css({ flexShrink: 0, borderBottom: "1px solid var(--border)", padding: { base: "0.75rem", sm: "1rem" } })}>
 					<div>
-						<h2 className={css({ fontSize: { base: "0.875rem", sm: "1rem" }, fontWeight: 600, color: "var(--foreground)" })}>Select Model</h2>
-						<p className={css({ marginTop: "0.125rem", fontSize: { base: "0.6875rem", sm: "0.75rem" }, color: "var(--muted-foreground)" })}>Built-in providers and discovered custom-provider models.</p>
+						<h2 className={css({ fontSize: { base: "0.875rem", sm: "1rem" }, fontWeight: 600, color: "var(--foreground)" })}>{title}</h2>
+						<p className={css({ marginTop: "0.125rem", fontSize: { base: "0.6875rem", sm: "0.75rem" }, color: "var(--muted-foreground)" })}>{description}</p>
 						{status === "ready" && browserUnavailableReason && !hasCompatibleBrowserModel && (
 							<p role="status" className={css({ marginTop: "0.375rem", fontSize: { base: "0.6875rem", sm: "0.75rem" }, color: "var(--muted-foreground)" })}>
 								Browser models are unavailable: {browserUnavailableReason}
@@ -440,7 +395,7 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect }: M
 							_disabled: { cursor: "not-allowed", opacity: 0.55 },
 						})}
 					>
-						Use Selected Model
+						{actionLabel}
 					</button>
 				</div>
 			</div>

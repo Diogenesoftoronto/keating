@@ -84,8 +84,9 @@ export function Privacy() {
           <section>
             <h2>5. Shared sessions and public links</h2>
             <p>
-              Creating a share link publishes the selected conversation or artifact. Depending on
-              the share mode in your settings, content is encoded into the link itself and/or
+              Creating a session share publishes the visible conversation, selected safe artifacts,
+              and any finalized review feedback. Draft annotations, hidden tool traffic, and internal
+              model-pool data are excluded. Depending on the share mode in your settings, content is encoded into the link itself and/or
               stored by the sharing backend so the link can resolve. Treat share links as public:
               anyone with the link can read the content, links can be forwarded, and copies may
               persist in caches even after deletion. Do not share content containing personal data

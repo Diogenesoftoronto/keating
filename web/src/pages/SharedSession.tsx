@@ -1,10 +1,13 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
+import { usePostHog } from "@posthog/react";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Bot, Copy, GitFork, MessageSquareText, User } from "lucide-react";
+import { SharedTrajectoryWorkspace } from "../components/trajectory";
 import { useSeo } from "../hooks/useSeo";
 import { forkSharedSession, loadSharedSessionResultFromUrl, type SharedSession as SharedSessionData } from "../keating/shared-sessions";
 import { MarkdownBlock } from "../components/MarkdownBlock";
 import { css, cx } from "../../styled-system/css";
+import { sharedSessionOmissionNotice, sharedSessionWorkspaceData } from "./shared-session-view-model";
 
 const styles = {
 	page: css({ minH: "100vh", bg: "var(--background)", color: "var(--foreground)" }),
@@ -17,6 +20,7 @@ const styles = {
 	backButton: css({ mt: "1.5rem", display: "inline-flex", h: "2.25rem", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", border: "1px solid var(--border)", px: "0.75rem", fontSize: "0.875rem", _hover: { bg: "var(--accent)" } }),
 	header: css({ borderBottom: "1px solid var(--border)" }),
 	headerInner: css({ mx: "auto", display: "flex", maxW: "56rem", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", px: "1rem", py: "1rem" }),
+	headerInnerRich: css({ maxW: "88rem" }),
 	minW0: css({ minW: 0 }),
 	eyebrow: css({ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.025em", color: "var(--muted-foreground)" }),
 	title: css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "1.25rem", fontWeight: "600" }),
@@ -28,7 +32,10 @@ const styles = {
 	headerActions: css({ display: "flex", alignItems: "center", gap: "0.5rem" }),
 	primaryButton: css({ display: "inline-flex", h: "2.25rem", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", bg: "var(--primary)", px: "0.75rem", fontSize: "0.875rem", color: "var(--primary-foreground)", _hover: { bg: "color-mix(in srgb, var(--primary) 90%, transparent)" }, _disabled: { opacity: 0.6 } }),
 	main: css({ mx: "auto", maxW: "56rem", px: "1rem", py: "1.5rem" }),
+	richMain: css({ mx: "auto", maxW: "88rem", px: { base: 0, md: "1rem" }, py: { base: "0.75rem", md: "1.25rem" } }),
 	error: css({ mb: "1rem", borderRadius: "0.375rem", border: "1px solid color-mix(in srgb, var(--destructive) 30%, transparent)", bg: "color-mix(in srgb, var(--destructive) 5%, transparent)", px: "0.75rem", py: "0.5rem", fontSize: "0.875rem", color: "var(--destructive)" }),
+	omissionNotice: css({ mx: { base: "0.75rem", md: 0 }, mb: "0.75rem", borderRadius: "0.375rem", border: "1px solid var(--border)", bg: "var(--muted)", px: "0.75rem", py: "0.625rem", fontSize: "0.75rem", lineHeight: 1.5, color: "var(--foreground)" }),
+	omissionMeta: css({ mt: "0.125rem", color: "var(--muted-foreground)" }),
 	messageStack: css({ "& > * + *": { mt: "1rem" } }),
 	messageArticle: css({ borderRadius: "0.5rem", border: "1px solid", bg: "var(--background)", p: "1rem" }),
 	assistantArticle: css({ borderColor: "color-mix(in srgb, var(--primary) 30%, transparent)", borderLeftWidth: "4px", borderLeftColor: "var(--primary)" }),
@@ -82,8 +89,9 @@ function modelDetails(session: SharedSessionData) {
 function SharedSessionContent() {
 	useSeo({
 		title: "Keating Shared Session",
-		description: "View a shared Keating tutoring session. Socratic AI conversation with lesson artifacts and learning traces.",
+		description: "View a shared Keating tutoring session with conversation, teaching artifacts, and published review feedback.",
 	});
+	const posthog = usePostHog();
 	const navigate = useNavigate();
 	const shareId = useMemo(() => decodeURIComponent(window.location.pathname.split("/").pop() ?? ""), []);
 	const [session, setSession] = useState<SharedSessionData | null>(null);
@@ -91,6 +99,8 @@ function SharedSessionContent() {
 	const [copied, setCopied] = useState(false);
 	const [forking, setForking] = useState(false);
 	const [error, setError] = useState("");
+	const workspaceData = useMemo(() => session ? sharedSessionWorkspaceData(session) : null, [session]);
+	const omissionNotice = useMemo(() => session ? sharedSessionOmissionNotice(session) : null, [session]);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -100,13 +110,32 @@ function SharedSessionContent() {
 		loadSharedSessionResultFromUrl(shareId, window.location.hash)
 			.then((result) => {
 				if (cancelled) return;
-				if (result.ok) setSession(result.session);
-				else setError(result.message);
+				if (result.ok) {
+					setSession(result.session);
+					posthog?.capture("shared_session_opened", {
+						success: true,
+						source: result.source,
+						message_count: result.session.messageCount,
+						artifact_count: result.session.trajectory?.artifactCount ?? 0,
+						review_included: Boolean(result.session.trajectory?.review),
+						provider: result.session.model?.provider ?? "unknown",
+					});
+				} else {
+					setError(result.message);
+					posthog?.capture("shared_session_opened", {
+						success: false,
+						failure_type: result.reason,
+					});
+				}
 			})
 			.catch((error) => {
 				if (!cancelled) {
 					setError(error instanceof Error ? error.message : "Could not load the shared session.");
 					setSession(null);
+					posthog?.capture("shared_session_opened", {
+						success: false,
+						failure_type: "unexpected",
+					});
 				}
 			})
 			.finally(() => {
@@ -115,10 +144,13 @@ function SharedSessionContent() {
 		return () => {
 			cancelled = true;
 		};
-	}, [shareId]);
+	}, [posthog, shareId]);
 
 	const copyLink = async () => {
 		await navigator.clipboard?.writeText(window.location.href);
+		posthog?.capture("shared_session_link_copied", {
+			clipboard_available: Boolean(navigator.clipboard),
+		});
 		setCopied(true);
 		window.setTimeout(() => setCopied(false), 1500);
 	};
@@ -129,8 +161,18 @@ function SharedSessionContent() {
 		setError("");
 		try {
 			await forkSharedSession(session);
+			posthog?.capture("shared_session_forked", {
+				success: true,
+				message_count: session.messageCount,
+				artifact_count: session.trajectory?.artifactCount ?? 0,
+				provider: session.model?.provider ?? "unknown",
+			});
 			await navigate({ to: "/chat" });
 		} catch (error) {
+			posthog?.capture("shared_session_forked", {
+				success: false,
+				failure_type: error instanceof Error ? error.name : "unknown",
+			});
 			setError(error instanceof Error ? error.message : "Failed to fork session");
 		} finally {
 			setForking(false);
@@ -171,12 +213,14 @@ function SharedSessionContent() {
 	return (
 		<div className={styles.page}>
 			<header className={styles.header}>
-				<div className={styles.headerInner}>
+				<div className={cx(styles.headerInner, workspaceData ? styles.headerInnerRich : undefined)}>
 					<div className={styles.minW0}>
 						<p className={styles.eyebrow}>Shared Keating session</p>
-						<h1 className={styles.title}>{session.title}</h1>
+						{workspaceData ? null : <h1 className={styles.title}>{session.title}</h1>}
 						<p className={styles.meta}>
-							{session.messageCount} messages | Shared {formatDate(session.sharedAt)}
+							{workspaceData
+								? `${workspaceData.messages.length} turns | ${workspaceData.artifacts.length} artifacts | Shared ${formatDate(session.sharedAt)}`
+								: `${session.messageCount} messages | Shared ${formatDate(session.sharedAt)}`}
 						</p>
 						<div className={styles.modelBadge}>
 							<Bot size={13} className={styles.shrink0} />
@@ -195,6 +239,7 @@ function SharedSessionContent() {
 						<button
 							className={styles.primaryButton}
 							disabled={forking}
+							title="Starts a new chat from the shared conversation"
 							onClick={forkSession}
 						>
 							<GitFork size={16} />
@@ -204,34 +249,43 @@ function SharedSessionContent() {
 				</div>
 			</header>
 
-			<main className={styles.main}>
-				{error ? (
-					<div className={styles.error}>
-						{error}
-					</div>
-				) : null}
-
-				<div className={styles.messageStack}>
-					{session.messages.map((message, index) => {
-						const isAssistant = (message as any).role === "assistant";
-						const RoleIcon = isAssistant ? Bot : User;
-						return (
-							<article
-								key={index}
-								className={cx(styles.messageArticle, isAssistant ? styles.assistantArticle : styles.learnerArticle)}
-							>
-								<div className={cx(styles.messageHeader, isAssistant ? styles.assistantText : styles.learnerText)}>
-									<RoleIcon size={13} />
-									<span>{messageLabel(message)}</span>
-								</div>
-								<div className={styles.markdown}>
-									<MarkdownBlock content={messageText(message)} />
-								</div>
-							</article>
-						);
-					})}
+			{workspaceData ? (
+				<div className={styles.richMain}>
+					{error ? <div className={styles.error}>{error}</div> : null}
+					{omissionNotice?.hasOmissions ? (
+						<div role="note" className={styles.omissionNotice}>
+							<div>Some details were left out because they were private, unsupported, or too large for this link.</div>
+							<div className={styles.omissionMeta}>{omissionNotice.items.join(" · ")}</div>
+						</div>
+					) : null}
+					<SharedTrajectoryWorkspace data={workspaceData} />
 				</div>
-			</main>
+			) : (
+				<main className={styles.main}>
+					{error ? <div className={styles.error}>{error}</div> : null}
+
+					<div className={styles.messageStack}>
+						{session.messages.map((message, index) => {
+							const isAssistant = (message as any).role === "assistant";
+							const RoleIcon = isAssistant ? Bot : User;
+							return (
+								<article
+									key={index}
+									className={cx(styles.messageArticle, isAssistant ? styles.assistantArticle : styles.learnerArticle)}
+								>
+									<div className={cx(styles.messageHeader, isAssistant ? styles.assistantText : styles.learnerText)}>
+										<RoleIcon size={13} />
+										<span>{messageLabel(message)}</span>
+									</div>
+									<div className={styles.markdown}>
+										<MarkdownBlock content={messageText(message)} />
+									</div>
+								</article>
+							);
+						})}
+					</div>
+				</main>
+			)}
 		</div>
 	);
 }

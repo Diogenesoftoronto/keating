@@ -2,10 +2,10 @@ import { getModels, getProviders, type Api, type Model } from "@earendil-works/p
 import { getAppStorage, type CustomProvider } from "@earendil-works/pi-web-ui";
 import { proxiedProviderRequestUrl } from "./provider-proxy";
 import {
-	getNotOrganicAccount,
 	isNotOrganicFeatureEnabled,
 	NOTORGANIC_DEFAULT_MODEL,
 	NOTORGANIC_PROVIDER_ID,
+	notOrganicPublicClient,
 } from "../notorganic-provider";
 import { getOAuthAccessToken, providerToOAuthId } from "../keating/oauth";
 import { withApiRetry } from "../keating/api-retry";
@@ -362,15 +362,10 @@ export async function syncCustomProviderKeys(): Promise<void> {
 
 export async function getProviderApiKey(providerName: string): Promise<string | undefined> {
 	if (providerName === NOTORGANIC_PROVIDER_ID && isNotOrganicFeatureEnabled()) {
-		try {
-			await getNotOrganicAccount();
-			// Pi's OpenAI-compatible transport expects a non-empty key. This
-			// marker never leaves the same-origin route; Nitro replaces it with
-			// the server-owned DPoP capability.
-			return "notorganic-product-session";
-		} catch {
-			return undefined;
-		}
+		// Pi requires a non-empty key before constructing its OpenAI-compatible
+		// client. The real Authorization header is replaced with the browser's
+		// short-lived DPoP capability immediately before the request.
+		return notOrganicPublicClient()?.getSession() ? "notorganic-dpop-session" : undefined;
 	}
 	const oauthId = providerToOAuthId(providerName);
 	if (oauthId) {

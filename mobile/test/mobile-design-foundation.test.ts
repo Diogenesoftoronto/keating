@@ -44,17 +44,24 @@ test("native shell references canonical Keating identity rather than legacy owl 
   const tabs = await Bun.file("src/app/(tabs)/_layout.tsx").text();
   const tutor = await Bun.file("src/app/(tabs)/index.tsx").text();
   const app = await Bun.file("app.json").json() as {
-    expo: { icon: string; userInterfaceStyle: string; android: { adaptiveIcon: { foregroundImage: string } } };
+    expo: {
+      icon: string;
+      userInterfaceStyle: string;
+      android: { adaptiveIcon: { foregroundImage: string } };
+      plugins: Array<string | [string, { image?: string }]>;
+    };
   };
-  expect(root).toContain("assets/brand/logo-lockup.png");
-  expect(tutor).toContain("assets/brand/logo-lockup.png");
+  expect(root).toContain("assets/brand/logo-lockup-hd.png");
+  expect(tutor).toContain("assets/brand/logo-lockup-hd.png");
   expect(tutor).toContain("assets/brand/mascot-head-v2.png");
   expect(tabs).toContain("assets/brand/mascot-head-v2.png");
   expect(tabs).not.toContain("sparkles-outline");
   expect(root).not.toContain("keating-mark");
   expect(tutor).not.toContain("introMark");
-  expect(app.expo.icon).toBe("./assets/brand/app-icon.png");
-  expect(app.expo.android.adaptiveIcon.foregroundImage).toBe("./assets/brand/adaptive-icon.png");
+  expect(app.expo.icon).toBe("./assets/brand/app-icon-lockup.png");
+  expect(app.expo.android.adaptiveIcon.foregroundImage).toBe("./assets/brand/adaptive-icon-lockup.png");
+  const splash = app.expo.plugins.find((plugin): plugin is [string, { image?: string }] => Array.isArray(plugin) && plugin[0] === "expo-splash-screen");
+  expect(splash?.[1].image).toBe("./assets/brand/logo-lockup-hd.png");
   expect(app.expo.userInterfaceStyle).toBe("automatic");
 });
 
@@ -282,7 +289,7 @@ test("empty, thinking, and assessment states use the shared product vocabulary",
   const empty = await Bun.file("src/components/EmptyState.tsx").text();
   const messages = await Bun.file("src/components/MessageBubble.tsx").text();
   const questions = await Bun.file("src/components/cards/QuestionCard.tsx").text();
-  expect(empty).toContain("assets/brand/logo-lockup.png");
+  expect(empty).toContain("assets/brand/logo-lockup-hd.png");
   expect(empty).not.toContain(">K</Text>");
   expect(messages).toContain("isReduceMotionEnabled");
   expect(questions).not.toContain("borderLeftWidth");

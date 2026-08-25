@@ -1,6 +1,7 @@
 import {
 	createError,
 	defineEventHandler,
+	getHeader,
 	getQuery,
 	getRouterParam,
 	readBody,
@@ -72,6 +73,9 @@ export default defineEventHandler(async (event) => {
 			method: route.method,
 			body,
 			headers: body ? { "content-type": "application/json" } : undefined,
+			// Honour a caller-supplied key so a user retrying checkout resolves to
+			// the same billing session; the adapter generates one otherwise.
+			idempotencyKey: getHeader(event, "idempotency-key") ?? undefined,
 		});
 	} catch (error) {
 		if (error instanceof NotOrganicOperationalError) {

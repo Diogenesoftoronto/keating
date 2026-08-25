@@ -9,6 +9,7 @@ import {
 	minifySharedSession,
 } from "../src/keating/share-codec";
 import type { SharedSession } from "../src/keating/shared-sessions";
+import { contentFingerprint } from "../src/keating/trajectory-review";
 
 function makeSession(overrides: Partial<SharedSession> = {}): SharedSession {
 	const text = "Recursion is when a function calls itself to solve a smaller version of the same problem. ".repeat(8);
@@ -42,6 +43,45 @@ function makeSession(overrides: Partial<SharedSession> = {}): SharedSession {
 	};
 }
 
+function trajectory() {
+	return {
+		schemaVersion: 1 as const,
+		turnCount: 1,
+		turns: [{ id: "turn-1", ordinal: 0, role: "user" as const, text: "Explain recursion", contentFingerprint: contentFingerprint("Explain recursion") }],
+		artifactCount: 1,
+		artifacts: [{
+			id: "artifact-1",
+			artifactType: "plan" as const,
+			format: "markdown",
+			label: "Recursion plan",
+			content: "Start with a base case.",
+			createdAt: 1,
+			capturedAt: 2,
+		}],
+		review: {
+			status: "final" as const,
+			verdict: "accepted" as const,
+			ratings: { scaffolding: 5 as const },
+			summary: "Clear progression",
+			createdAt: 1,
+			updatedAt: 2,
+		},
+		annotationCount: 0,
+		annotations: [],
+		omitted: {
+			turns: 0,
+			artifacts: 0,
+			invalidArtifacts: 0,
+			internalArtifacts: 0,
+			privateArtifacts: 0,
+			uninspectedArtifacts: 0,
+			annotations: 0,
+			artifactContents: 0,
+			artifactPreviews: 0,
+		},
+	};
+}
+
 describe("share-codec", () => {
 	test("compresses a realistic session with the gz. prefix", () => {
 		const encoded = encodeSharedSession(makeSession());
@@ -71,6 +111,33 @@ describe("share-codec", () => {
 		expect(assistant.responseId).toBeUndefined();
 		expect(assistant.provider).toBeUndefined();
 		expect(assistant.timestamp).toBeUndefined();
+	});
+
+	test("retains the curated v3 trajectory while stripping every non-wire field", () => {
+		const session = makeSession({
+			schemaVersion: 3,
+			trajectory: trajectory(),
+			model: {
+				provider: "openai",
+				id: "gpt-5.5",
+				name: "GPT-5.5",
+				api: "openai-responses",
+				baseUrl: "https://private-provider.example/v1",
+			},
+		}) as SharedSession & { internalSecret?: string };
+		session.internalSecret = "do-not-publish";
+
+		const minified = minifySharedSession(session) as any;
+		expect(minified.schemaVersion).toBe(3);
+		expect(minified.trajectory).toEqual(trajectory());
+		expect(minified.internalSecret).toBeUndefined();
+		expect(minified.model.api).toBeUndefined();
+		expect(minified.model.baseUrl).toBeUndefined();
+		expect(minified.messages[1].usage).toBeUndefined();
+
+		const decoded = decodeSharedSessionPayload(encodeSharedSession(session));
+		expect(decoded?.schemaVersion).toBe(3);
+		expect(decoded?.trajectory?.artifacts[0]?.content).toBe("Start with a base case.");
 	});
 
 	test("decodes legacy gzip links produced by CompressionStream-style gzip", () => {
@@ -106,6 +173,12 @@ describe("share-codec", () => {
 	test("returns null for malformed payloads", () => {
 		expect(decodeSharedSessionPayload("gz.not-valid-gzip!!!")).toBeNull();
 		expect(decodeSharedSessionPayload("json.@@@notbase64@@@")).toBeNull();
+	});
+
+	test("rejects compressed payloads whose advertised output exceeds the public cap", () => {
+		const oversized = gzipSync(strToU8("x".repeat(512 * 1024 + 1)));
+		const encoded = `${COMPRESSED_PREFIX}${bytesToBase64Url(oversized)}`;
+		expect(decodeSharedSessionPayload(encoded)).toBeNull();
 	});
 
 	test("round-trips unicode content", () => {

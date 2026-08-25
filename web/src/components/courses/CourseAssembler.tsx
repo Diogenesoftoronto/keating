@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { usePostHog } from "@posthog/react";
 import {
   BookOpen,
   Check,
@@ -65,6 +66,7 @@ export function CourseAssembler({
   onCreated(courseId: string): void;
   onClose(): void;
 }) {
+  const posthog = usePostHog();
   const [sources, setSources] = useState<CourseAssemblySources | null>(null);
   const [sourceError, setSourceError] = useState("");
   const [title, setTitle] = useState("Untitled course");
@@ -202,6 +204,14 @@ export function CourseAssembler({
   };
 
   const create = async () => {
+    const analyticsProperties = {
+      workspace_mode: account.mode,
+      module_count: moduleCount,
+      card_count: cardCount,
+      artifact_count: artifactCount,
+      has_anki_import: ankiDecks.length > 0,
+    };
+    posthog?.capture("course_creation_started", analyticsProperties);
     setCreating(true);
     setError("");
     setAnkiNotice("");
@@ -222,8 +232,13 @@ export function CourseAssembler({
         ...input,
         displayName: account.displayName,
       });
+      posthog?.capture("course_creation_completed", analyticsProperties);
       onCreated(snapshot.course.id);
     } catch (cause) {
+      posthog?.capture("course_creation_failed", {
+        ...analyticsProperties,
+        failure_type: cause instanceof Error ? cause.name : "unknown",
+      });
       setError(
         cause instanceof Error
           ? cause.message

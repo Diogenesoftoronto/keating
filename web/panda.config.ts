@@ -504,6 +504,221 @@ const recipes = {
         pointerEvents: "none"
       }
     }
+  },
+
+  /**
+   * ---------------------------------------------------------------
+   * Trajectory review surface ("the margin").
+   *
+   * The review route is styled as a teacher marking up a book: the turn
+   * rail is the contents, the canvas is the page, and the desk is the
+   * margin where marginalia get written. These recipes give that surface
+   * the same letterpress language as `capCard`/`btnRetro` (paper + ink,
+   * hard offset shadows, mono display type) instead of the neutral
+   * `var(--border)` styling the components originally hand-rolled.
+   * ---------------------------------------------------------------
+   */
+
+  /** Panel shell for each of the three review columns. */
+  reviewPanel: {
+    className: "keating-review-panel",
+    base: {
+      display: "flex",
+      minHeight: 0,
+      flexDirection: "column",
+      background: "var(--paper)",
+      color: "var(--ink)"
+    },
+    variants: {
+      tone: {
+        page: { background: "var(--card)" },
+        margin: { background: "var(--paper)" },
+        contents: { background: "var(--paper-deep)" }
+      }
+    },
+    defaultVariants: { tone: "margin" }
+  },
+
+  /**
+   * Dense interactive card. Same hover grammar as `capCard` (lift + the
+   * shadow deepening) but tuned down for a sidebar: 2px of travel rather
+   * than 4, so a column of them does not feel like a trampoline. The
+   * nested `.keating-duo-icon` rule is the cross-hover hook that tilts a
+   * contained icon, matching how `capCard` drives `.keating-cap-icon`.
+   */
+  reviewCard: {
+    className: "keating-review-card",
+    base: {
+      position: "relative",
+      display: "block",
+      width: "100%",
+      textAlign: "left",
+      border: "1.5px solid var(--ink)",
+      borderRadius: "{radii.keating}",
+      background: "var(--card)",
+      padding: "0.7rem 0.75rem",
+      boxShadow: "2px 2px 0 var(--ink)",
+      transitionProperty: "transform, box-shadow, background-color",
+      transitionDuration: "{durations.base}",
+      transitionTimingFunction: "{easings.standard}",
+      "&:not(:disabled)": { cursor: "pointer" },
+      _hover: {
+        transform: "translate(-2px, -2px)",
+        boxShadow: "4px 4px 0 var(--ink)",
+        "& .keating-duo-icon": { transform: "rotate(-6deg) scale(1.12)" }
+      },
+      _focusVisible: {
+        outline: "3px solid var(--accent)",
+        outlineOffset: "2px"
+      },
+      _active: { transform: "translate(0, 0)", boxShadow: "1px 1px 0 var(--ink)" },
+      _disabled: { cursor: "not-allowed", opacity: 0.45, boxShadow: "2px 2px 0 var(--ink)" }
+    },
+    variants: {
+      selected: {
+        true: {
+          background: "color-mix(in srgb, var(--accent) 14%, var(--card))",
+          boxShadow: "4px 4px 0 var(--ink)",
+          transform: "translate(-2px, -2px)"
+        },
+        false: {}
+      },
+      flat: {
+        /** Non-interactive read-out card: keeps the border, drops the lift. */
+        true: {
+          boxShadow: "none",
+          _hover: { transform: "none", boxShadow: "none" }
+        },
+        false: {}
+      }
+    },
+    defaultVariants: { selected: false, flat: false }
+  },
+
+  /**
+   * A single note in the margin. `state=proposed` is how every AI pass
+   * result is rendered before a human accepts it — dashed rule, lighter
+   * ink, and it arrives with `margin-note-arrive`. Nothing an AI pass
+   * produces is ever drawn as a saved note.
+   */
+  marginNote: {
+    className: "keating-margin-note",
+    base: {
+      position: "relative",
+      borderRadius: "{radii.keating}",
+      paddingBlock: "0.55rem",
+      paddingInlineStart: "0.7rem",
+      paddingInlineEnd: "0.6rem",
+      fontSize: "0.78rem",
+      lineHeight: 1.5,
+      background: "var(--card)",
+      borderInlineStart: "3px solid var(--ink-soft)"
+    },
+    variants: {
+      kind: {
+        problem: { borderInlineStartColor: "var(--destructive)" },
+        strength: { borderInlineStartColor: "var(--accent-dim)" },
+        suggestion: { borderInlineStartColor: "{colors.amber}" },
+        neutral: {}
+      },
+      state: {
+        saved: {
+          border: "1.5px solid var(--line)",
+          borderInlineStartWidth: "3px"
+        },
+        proposed: {
+          border: "1.5px dashed color-mix(in srgb, var(--ink) 45%, transparent)",
+          borderInlineStartWidth: "3px",
+          background: "color-mix(in srgb, var(--accent) 7%, var(--card))",
+          animation: "margin-note-arrive 260ms {easings.standard} both"
+        }
+      }
+    },
+    defaultVariants: { kind: "neutral", state: "saved" }
+  },
+
+  /**
+   * Wrapper for a two-weight Reicon icon. Both weights render stacked and
+   * cross-fade purely in CSS, so the swap also fires on `:focus-visible`
+   * and `[aria-selected]` without a re-render — see `KeatingIcon`.
+   */
+  duoIcon: {
+    className: "keating-duo-icon",
+    base: {
+      position: "relative",
+      display: "inline-grid",
+      flexShrink: 0,
+      placeItems: "center",
+      transitionProperty: "transform, color",
+      transitionDuration: "{durations.slow}",
+      transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+      "& > svg": {
+        gridArea: "1 / 1",
+        transitionProperty: "opacity",
+        transitionDuration: "{durations.base}",
+        transitionTimingFunction: "{easings.standard}"
+      },
+      "& > svg[data-weight='Filled']": { opacity: 0 },
+      "& > svg[data-weight='Outline']": { opacity: 1 },
+      /**
+       * Ancestor-driven weight swap. Written here rather than in each
+       * parent recipe so every interactive container gets the Outline →
+       * Filled transition for free, including on keyboard focus and on
+       * the selected tab — none of which a React hover state would cover
+       * without extra re-renders.
+       */
+      ":is(button, a, label, [role='tab'], [role='button']):is(:hover, :focus-visible) &, [aria-selected='true'] &, [data-active='true'] &": {
+        "& > svg[data-weight='Filled']": { opacity: 1 },
+        "& > svg[data-weight='Outline']": { opacity: 0 }
+      }
+    },
+    variants: {
+      /** When the icon should show its Filled weight. */
+      active: {
+        true: {
+          "& > svg[data-weight='Filled']": { opacity: 1 },
+          "& > svg[data-weight='Outline']": { opacity: 0 }
+        },
+        false: {}
+      }
+    },
+    defaultVariants: { active: false }
+  },
+
+  /** Letterpress tab for the desk's section switcher. */
+  deskTab: {
+    className: "keating-desk-tab",
+    base: {
+      position: "relative",
+      display: "flex",
+      minWidth: 0,
+      minHeight: "2.9rem",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: "0.35rem",
+      fontFamily: "var(--mono-body)",
+      fontSize: "0.625rem",
+      fontWeight: 600,
+      letterSpacing: "0.1em",
+      textTransform: "uppercase",
+      color: "var(--ink-soft)",
+      borderBottom: "2px solid transparent",
+      cursor: "pointer",
+      transitionProperty: "color, background-color, border-color",
+      transitionDuration: "{durations.base}",
+      transitionTimingFunction: "{easings.standard}",
+      _hover: {
+        color: "var(--ink)",
+        background: "color-mix(in srgb, var(--ink) 5%, transparent)",
+        "& .keating-duo-icon": { transform: "translateY(-2px)" }
+      },
+      _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "-3px" },
+      "&[aria-selected='true']": {
+        color: "var(--ink)",
+        borderBottomColor: "var(--accent-dim)",
+        background: "color-mix(in srgb, var(--accent) 10%, transparent)"
+      }
+    }
   }
 } as const;
 
@@ -896,6 +1111,23 @@ export default defineConfig({
         "model-download-stripes": {
           "0%": { backgroundPosition: "0 0" },
           "100%": { backgroundPosition: "24px 0" }
+        },
+        /** A proposal (AI pass result) settling into the margin. */
+        "margin-note-arrive": {
+          "0%": { opacity: "0", transform: "translateY(-4px) scaleY(0.96)" },
+          "100%": { opacity: "1", transform: "translateY(0) scaleY(1)" }
+        },
+        /** Scan line that travels down the desk while a pass is running. */
+        "socratic-sweep": {
+          "0%": { transform: "translateY(-100%)", opacity: "0" },
+          "20%": { opacity: "1" },
+          "80%": { opacity: "1" },
+          "100%": { transform: "translateY(1000%)", opacity: "0" }
+        },
+        /** Nib bobs while the pass is drafting. */
+        "socratic-nib": {
+          "0%, 100%": { transform: "rotate(-6deg) translateY(0)" },
+          "50%": { transform: "rotate(4deg) translateY(-2px)" }
         }
 }
     }
@@ -4367,6 +4599,18 @@ export default defineConfig({
       },
       ".retro-layout .download-screen-caret": {
         animation: "none"
+      },
+      /* Review surface: the letterpress lift, the nib bob, and the pass
+         sweep all collapse to a plain state change rather than moving. */
+      ".keating-duo-icon,\n  .keating-duo-icon > svg,\n  .keating-review-card,\n  .keating-margin-note": {
+        transition: "none !important",
+        animation: "none !important"
+      },
+      ".keating-review-card:hover": {
+        transform: "none !important"
+      },
+      ".keating-duo-icon": {
+        transform: "none !important"
       }
     },
     "@media (min-width: 1180px)": {

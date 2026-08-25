@@ -40,6 +40,44 @@ describe("RunnableCodeBlock helpers", () => {
 		})).toBe("unavailable");
 	});
 
+	test("never routes to hosted execution when hosted access is unavailable", () => {
+		// chooseCodeExecutor used to return "cloud" for Python whenever the browser
+		// was online, without consulting the Not Organic feature gate. That sent
+		// every Python run to a route that answers 503, so the block just errored.
+		expect(chooseCodeExecutor("python", "print(1)", {
+			online: true,
+			deviceClass: "desktop",
+			networkClass: "normal",
+			hostedAvailable: false,
+		})).toBe("unavailable");
+
+		// TypeScript is promoted to hosted execution only as an optimisation, so
+		// it degrades to a local run rather than failing.
+		expect(chooseCodeExecutor("typescript", "x".repeat(9_000), {
+			online: true,
+			deviceClass: "desktop",
+			networkClass: "normal",
+			hostedAvailable: false,
+		})).toBe("local");
+
+		// Hosted availability must not resurrect an offline run.
+		expect(chooseCodeExecutor("python", "print(1)", {
+			online: false,
+			deviceClass: "desktop",
+			networkClass: "normal",
+			hostedAvailable: true,
+		})).toBe("unavailable");
+	});
+
+	test("keeps hosted execution when it is available", () => {
+		expect(chooseCodeExecutor("python", "print(1)", {
+			online: true,
+			deviceClass: "desktop",
+			networkClass: "normal",
+			hostedAvailable: true,
+		})).toBe("cloud");
+	});
+
 	test("transpiles TypeScript snippets before NodePod execution", async () => {
 		const prepared = await prepareRunnableCode("const x: number = 2;\nconsole.log(x);", "typescript");
 		expect(prepared.filename).toEndWith(".js");

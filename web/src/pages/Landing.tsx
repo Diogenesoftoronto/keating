@@ -24,15 +24,6 @@ import {
 
 const KeatingHero3D = lazy(() => import("../components/three/KeatingHero3D"));
 
-function supportsWebGL(): boolean {
-  try {
-    const canvas = document.createElement("canvas");
-    return Boolean(canvas.getContext("webgl2") || canvas.getContext("webgl"));
-  } catch {
-    return false;
-  }
-}
-
 type InstallTab = "npm" | "bun" | "pnpm" | "curl" | "agent";
 
 const INSTALL_TABS: { id: InstallTab; label: string; isAgent?: boolean }[] = [
@@ -177,19 +168,12 @@ function TerminalDemo() {
 
 function HeroTerminal() {
   const navigate = useNavigate();
-  const [use3d, setUse3d] = useState(false);
-  useEffect(() => {
-    // Client-only gate: skip the 3D monitor during SSR and on devices without WebGL.
-    if (supportsWebGL()) setUse3d(true);
-  }, []);
-
-  if (!use3d) return <TerminalDemo />;
   return (
-    <Suspense fallback={<TerminalDemo />}>
-      <div className="term-3d" aria-label="Interactive Keating terminal on a retro CRT monitor">
+    <div className="term-3d" aria-label="Interactive Keating terminal on a retro CRT monitor">
+      <Suspense fallback={null}>
         <KeatingHero3D onNavigate={() => navigate({ to: "/chat" })} />
-      </div>
-    </Suspense>
+      </Suspense>
+    </div>
   );
 }
 

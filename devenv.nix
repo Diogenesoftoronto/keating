@@ -45,6 +45,53 @@ in
     typst
   ];
 
+  # ---------------------------------------------------------------------------
+  # Non-secret build/runtime configuration.
+  #
+  # devenv.nix is committed, so ONLY non-secret defaults belong here. Secrets
+  # (PostHog project token, OAuth client secrets, provider API keys) live in
+  # web/.env.local, which is gitignored. web/.env.example documents every
+  # variable, secret or not.
+  #
+  # Not Organic hosted access -- the hosted model, credit packs, course
+  # workspaces, and hosted notebooks -- is OFF by default. Setting these flags
+  # to "true" is necessary but NOT sufficient to authenticate anyone: the Nitro
+  # server also needs a NotOrganicSessionAdapter registered on each authenticated
+  # request, and nothing in the repo registers one outside tests. Until that
+  # exists, every hosted call returns 503 notorganic_auth_adapter_unavailable.
+  # That is intentional -- see web/src/notorganic-provider/OPERATIONS.md.
+  #
+  # This block, web/.env.example, and OPERATIONS.md must agree. That is enforced:
+  #   devenv tasks run keating:check-env
+  env = {
+    # Server-side gate for the hosted provider routes under
+    # web/server/api/notorganic/**.
+    NOTORGANIC_ENABLED = "false";
+
+    # Client-side gate. Vite exposes VITE_-prefixed shell variables on
+    # import.meta.env, so this value reaches the browser bundle. While it is
+    # "false" the hosted UI stays hidden instead of rendering dead controls.
+    VITE_NOTORGANIC_ENABLED = "false";
+
+    # Browser-to-provider OAuth/DPoP contract. Deployment-specific values stay
+    # blank so a local shell cannot accidentally advertise working checkout.
+    VITE_NOTORGANIC_PUBLIC_ISSUER = "";
+    VITE_NOTORGANIC_AUTHORIZATION_URL = "";
+    VITE_NOTORGANIC_CLIENT_ID = "";
+    VITE_NOTORGANIC_REDIRECT_URI = "";
+    VITE_NOTORGANIC_SCOPE = "wallet:read usage:read billing:checkout infer:balanced";
+
+    # Browser inference reservation ceiling (100000 micro-USD = $0.10).
+    VITE_NOTORGANIC_MAX_COST_MICROUSD = "100000";
+
+    # HTTPS gateway origin. Must have no /v1 path, query, or fragment; the
+    # server rejects anything else at startup.
+    NOTORGANIC_ISSUER = "https://api.notorganic.info";
+
+    # Positive per-request reservation ceiling in micro-USD (50000 = $0.05).
+    NOTORGANIC_MAX_COST_MICROUSD = "50000";
+  };
+
   # Stryker is a project dependency so its version stays pinned in bun.lock.
   # Expose that local executable in the devenv shell like a system package.
   scripts.stryker.exec = ''
@@ -127,6 +174,13 @@ in
     description = "Verify all version strings are in sync (CI-friendly)";
     exec = ''
       bun scripts/sync-version.ts --check
+    '';
+  };
+
+  tasks."keating:check-env" = {
+    description = "Verify Not Organic config docs agree (devenv.nix, .env.example, OPERATIONS.md)";
+    exec = ''
+      bun scripts/check-env-docs.ts
     '';
   };
 
@@ -436,6 +490,18 @@ in
       enable = true;
       name = "keating-version-check";
       entry = "devenv tasks run keating:check-version";
+      language = "system";
+      pass_filenames = false;
+      always_run = true;
+      stages = [ "pre-commit" ];
+    };
+
+    # Documentation that drifts is worse than none: an operator follows it and
+    # gets a 503 with no explanation. Keep the three sources honest at commit.
+    keating-env-docs-check = {
+      enable = true;
+      name = "keating-env-docs-check";
+      entry = "devenv tasks run keating:check-env";
       language = "system";
       pass_filenames = false;
       always_run = true;

@@ -9,7 +9,7 @@ export function EmptyState({ title, body, action }: { title: string; body: strin
       <Image
         accessibilityIgnoresInvertColors
         accessibilityLabel="Keating"
-        source={require("../../assets/brand/logo-lockup.png")}
+      source={require("../../assets/brand/logo-lockup-hd.png")}
         style={styles.mark}
         resizeMode="contain"
       />

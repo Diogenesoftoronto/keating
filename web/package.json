@@ -1,6 +1,6 @@
 {
   "name": "keating-web",
-  "version": "3.7.0",
+  "version": "3.8.0",
   "type": "module",
   "private": true,
   "scripts": {
@@ -92,6 +92,7 @@
     "react-syntax-highlighter": "^16.1.1",
     "recharts": "^3.9.0",
     "rehype-katex": "^7.0.1",
+    "reicon-react": "^1.2.0",
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
     "sql.js": "^1.14.1",

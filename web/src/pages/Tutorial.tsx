@@ -4,6 +4,10 @@ import { SimpleFooter } from "../components/Footer";
 import { useSeo } from "../hooks/useSeo";
 import { ArrowRight } from "lucide-react";
 import { css, cx } from "../../styled-system/css";
+import { paperCard } from "../../styled-system/recipes";
+import { TutorialShot } from "../components/TutorialShot";
+import PenNib from "reicon-react/icons/PenNib";
+import { KeatingIcon } from "../components/KeatingIcon";
 
 type TutorialTab = "browser" | "ollama" | "llamacpp" | "litellm" | "cloud" | "advanced";
 
@@ -65,6 +69,12 @@ const TUTORIAL_JUMPS: TutorialJump[] = [
     detail: "Providers, persona, speech, interface, sharing, and proxy.",
     targetId: "settings",
     tags: ["settings", "persona", "speech", "proxy"],
+  },
+  {
+    label: "Review a session",
+    detail: "Mark up a finished lesson, run an AI pass, and export the result.",
+    targetId: "review-sessions",
+    tags: ["review", "annotate", "rubric", "training", "critique"],
   },
   {
     label: "Export or fine-tune",
@@ -299,12 +309,12 @@ export function Tutorial() {
 
       <main className={styles.main}>
         <div className={styles.container}>
-          <div className={cx("paper-fold distressed-border", styles.heroCard)}>
+          <div className={cx(paperCard(), styles.heroCard)}>
             <h1 className={styles.h1}>Getting Started with Keating</h1>
             <p className={cx("font-terminal", styles.muted)}>How to learn, plan, and assess with your AI tutor</p>
           </div>
 
-          <section className={cx("paper-fold distressed-border", styles.searchSection)}>
+          <section className={cx(paperCard(), styles.searchSection)}>
             <div className={styles.stack4}>
               <div>
                 <h2 className={styles.h2Tight}>Find What You Need</h2>
@@ -345,7 +355,7 @@ export function Tutorial() {
           </section>
 
           {/* What Is Keating */}
-          <section id="what-is-keating" className={cx("paper-fold distressed-border", styles.section)}>
+          <section id="what-is-keating" className={cx(paperCard(), styles.section)}>
             <h2 className={styles.h2}>What Is Keating?</h2>
             <p className={styles.paraMb4}>
               Keating is a Socratic AI tutor. It does not give answers — it forces you to
@@ -373,7 +383,7 @@ export function Tutorial() {
           </section>
 
           {/* Suggested Prompts */}
-          <section id="suggested-prompts" className={cx("paper-fold distressed-border", styles.section)}>
+          <section id="suggested-prompts" className={cx(paperCard(), styles.section)}>
             <h2 className={styles.h2}>Suggested Prompts</h2>
             <p className={styles.paraSmallMb4}>
               Click any prompt to copy it. Paste it into the chat to get started.
@@ -452,7 +462,7 @@ export function Tutorial() {
           </section>
 
           {/* Tool Commands Reference */}
-          <section id="tool-commands" className={cx("paper-fold distressed-border", styles.section)}>
+          <section id="tool-commands" className={cx(paperCard(), styles.section)}>
             <h2 className={styles.h2}>Tool Commands</h2>
             <p className={styles.paraSmallMb4}>
               Keating can invoke tools directly. Prefix your message with a command or ask
@@ -480,7 +490,7 @@ export function Tutorial() {
           </section>
 
           {/* Settings Explained */}
-          <section id="settings" className={cx("paper-fold distressed-border", styles.section)}>
+          <section id="settings" className={cx(paperCard(), styles.section)}>
             <h2 className={styles.h2}>Settings Explained</h2>
             <p className={styles.paraSmallMb4}>
               Open settings with the gear icon in the chat header (on a phone, tap the{" "}
@@ -629,7 +639,143 @@ export function Tutorial() {
             </div>
           </section>
 
-          <section id="problems" className={cx("paper-fold distressed-border", styles.section)}>
+          <section id="review-sessions" className={cx(paperCard(), styles.section)}>
+            <h2 className={styles.headingInline}>
+              <KeatingIcon icon={PenNib} size={20} />
+              Reviewing a session
+            </h2>
+            <p className={styles.paraSmallMb4}>
+              Every conversation you have with Keating can be read back and marked up the way a
+              teacher marks an essay. That is what <code className={styles.inlineCode}>/review</code>{" "}
+              is for: you reread the lesson, say what worked and what did not, and the result becomes
+              a record you can export as training data. Reviews are stored locally in your browser.
+            </p>
+
+            <h3 className={styles.h3Tight}>The three columns</h3>
+            <p className={styles.paraSmallMb3}>
+              A review opens as a book being marked up. <strong className={styles.strongLabel}>Contents</strong>{" "}
+              on the left is every turn of the lesson in order. <strong className={styles.strongLabel}>The page</strong>{" "}
+              in the middle is the transcript or artifact you are reading. <strong className={styles.strongLabel}>The
+              margin</strong> on the right is where your notes go. On a narrow screen the three become tabs.
+            </p>
+
+            <TutorialShot
+              slate="STEP 01"
+              alt="The review workspace: turn list on the left, transcript in the middle, review desk on the right."
+              caption="Open a session from /review. The turn you select in Contents is the one you are marking."
+            />
+
+            <h3 className={styles.h3Tight}>Marking a line</h3>
+            <ol className={styles.ordered}>
+              <li>
+                <strong className={styles.strongLabel}>1.</strong> Select any text in the transcript. The
+                margin opens a new note anchored to exactly that span, quote included.
+              </li>
+              <li>
+                <strong className={styles.strongLabel}>2.</strong> Choose a signal — problem, strength, or
+                suggestion — and a category. Strengths matter as much as faults; a review that only
+                records failures teaches a model only what to avoid.
+              </li>
+              <li>
+                <strong className={styles.strongLabel}>3.</strong> Write what happened. Under{" "}
+                <em>Pedagogical impact and better move</em> you can add what it cost the learner and the
+                line the tutor should have used instead.
+              </li>
+              <li>
+                <strong className={styles.strongLabel}>4.</strong> Save with the button, or press{" "}
+                <code className={styles.inlineCode}>Ctrl+Enter</code> /{" "}
+                <code className={styles.inlineCode}>Cmd+Enter</code>.
+              </li>
+            </ol>
+
+            <TutorialShot
+              slate="STEP 02"
+              alt="A note being written in the margin, showing the quoted span, signal buttons, and severity."
+              caption="Selected text becomes the note's anchor, so the mark survives even if you reread the session later."
+            />
+
+            <h3 className={styles.h3Tight}>Socratic passes</h3>
+            <p className={styles.paraSmallMb3}>
+              The feather at the top of the margin opens Keating's own reading of the session. Every
+              pass produces <em>proposals</em>, drawn as dashed notes — nothing is written to your
+              review until you accept it.
+            </p>
+            <div className={styles.toolGrid}>
+              <div className={styles.smallCard}>
+                <h4 className={styles.h4}>Read the session</h4>
+                <p className={styles.mutedTiny}>
+                  Marks the moments an examiner would flag, strengths included, each quoting the line
+                  it is about. Accept the ones you agree with; dismiss the rest.
+                </p>
+              </div>
+              <div className={styles.smallCard}>
+                <h4 className={styles.h4}>Score the rubric</h4>
+                <p className={styles.mutedTiny}>
+                  Proposes a 1–5 score for all six dimensions with a reason and a citation for each.
+                  Applying it fills your scoring controls; your own summary and verdict are kept.
+                </p>
+              </div>
+              <div className={styles.smallCard}>
+                <h4 className={styles.h4}>Finish this note</h4>
+                <p className={styles.mutedTiny}>
+                  Appears while you are writing. Takes your shorthand and fills in the impact and a
+                  concrete alternative, keeping your judgement exactly as you stated it.
+                </p>
+              </div>
+              <div className={styles.smallCard}>
+                <h4 className={styles.h4}>Find patterns</h4>
+                <p className={styles.mutedTiny}>
+                  On the <code className={styles.inlineCode}>/review</code> index. Reads every finished
+                  review and names the habits that recur across sessions.
+                </p>
+              </div>
+            </div>
+
+            <TutorialShot
+              slate="STEP 03"
+              alt="Proposed notes from a critique sweep, shown as dashed cards with accept and dismiss controls."
+              caption="Proposals are dashed until accepted. Accepting one saves it as an ordinary note — nothing marks it as machine-drafted."
+            />
+
+            <h3 className={styles.h3Tight}>Scoring and finishing</h3>
+            <p className={styles.paraSmallMb3}>
+              The <strong className={styles.strongLabel}>Assess</strong> tab holds the pedagogy rubric —
+              diagnosis, accuracy, scaffolding, adaptation, learner agency, and verification — plus an
+              overall rating, a summary, and a verdict. Hover a dimension to see what it is asking.
+              Set the status to <em>Final</em> when you are done; drafts stay editable.
+            </p>
+
+            <TutorialShot
+              slate="STEP 04"
+              alt="The Assess tab with the six rubric dimensions scored one to five, a summary, and a verdict."
+              caption="A finished review carries scores, a summary, and every anchored note you wrote."
+            />
+
+            <h3 className={styles.h3Tight}>Rewrites and export</h3>
+            <p className={styles.paraSmallMb3}>
+              The <strong className={styles.strongLabel}>Rewrite</strong> tab generates alternative tutor
+              responses for the turn you are on, across a pool of models at once, and shows what each
+              one cost. Choose the one you would have wanted, or insert it back into the session. Model
+              pools are configured underneath the same tab.
+            </p>
+            <p className={styles.paraSmallMb4}>
+              Export from the header to download the review as an archive — the transcript, your notes
+              with their anchors, the rubric, and any chosen rewrites. That archive is the input to the
+              fine-tuning paths in the <strong className={styles.strongLabel}>[ADVANCED]</strong> tab
+              below.
+            </p>
+
+            <div className={styles.note("#e8a33d")}>
+              <p className={styles.textSm}>
+                <strong className={styles.strongLabel}>On privacy.</strong> Reviews, notes, and rubric
+                scores live in your browser. Running a Socratic pass or generating a rewrite sends the
+                session's text to whichever model you selected, with secrets redacted first — so a
+                local model via Ollama keeps the whole review on your machine.
+              </p>
+            </div>
+          </section>
+
+          <section id="problems" className={cx(paperCard(), styles.section)}>
             <h2 className={styles.h2Compact}>Problems or Bugs</h2>
             <p className={styles.mutedSmall}>
               If Keating breaks, a provider setup fails, or a tutorial step is unclear, open a{" "}
@@ -647,7 +793,7 @@ export function Tutorial() {
 
           {/* Model Types Overview */}
           <div className={styles.twoGrid}>
-            <div className={cx("paper-fold distressed-border", styles.overviewCard("#1e9b50"))}>
+            <div className={cx(paperCard(), styles.overviewCard("#1e9b50"))}>
               <h2 className={styles.headingInline}>
                 <span className={css({ color: "#1e9b50" })}>BROWSER</span>
                 <span className={styles.badge("#1e9b50")}>
@@ -666,7 +812,7 @@ export function Tutorial() {
               </ul>
             </div>
 
-            <div className={cx("paper-fold distressed-border", styles.overviewCard("#6366f1"))}>
+            <div className={cx(paperCard(), styles.overviewCard("#6366f1"))}>
               <h2 className={styles.headingInline}>
                 <span className={css({ color: "#6366f1" })}>LOCAL</span>
                 <span className={styles.badge("#6366f1")}>
@@ -690,7 +836,7 @@ export function Tutorial() {
           <div
             id="model-setup"
             aria-busy={isTabPending}
-            className={cx("paper-fold distressed-border", styles.tabsShell)}
+            className={cx(paperCard(), styles.tabsShell)}
             style={{ opacity: isTabPending ? 0.72 : 1, transition: "opacity 120ms ease-out" }}
           >
             <div

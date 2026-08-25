@@ -96,7 +96,7 @@ export function Terms() {
             <h2>6. Shared sessions and public links</h2>
             <p>
               Share links are effectively public: anyone who obtains a link may be able to read the
-              shared conversation or artifact, and copies may be cached by browsers, intermediaries,
+              shared conversation, artifacts, or finalized review feedback, and copies may be cached by browsers, intermediaries,
               or recipients even after removal. Review content before sharing, and do not share
               material containing personal data, credentials, or anything you lack the right to
               publish. We may remove shared content that violates these Terms or applicable law.

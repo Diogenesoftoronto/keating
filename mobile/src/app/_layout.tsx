@@ -42,7 +42,7 @@ function AppNavigator() {
   if (!ready) {
     return (
       <View style={[styles.loading, { backgroundColor: theme.colors.background }]}>
-        <Image accessibilityLabel="Keating" source={require("../../assets/brand/logo-lockup.png")} style={styles.lockup} resizeMode="contain" />
+        <Image accessibilityLabel="Keating" source={require("../../assets/brand/logo-lockup-hd.png")} style={styles.lockup} resizeMode="contain" />
         <ActivityIndicator color={theme.colors.primaryText} size="small" />
       </View>
     );

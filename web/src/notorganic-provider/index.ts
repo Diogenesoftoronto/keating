@@ -1,4 +1,8 @@
 import type { Model } from "@earendil-works/pi-ai";
+import {
+	NotOrganicPublicClient,
+	publicClientConfig,
+} from "./public-client";
 
 export const NOTORGANIC_PROVIDER_ID = "notorganic";
 export const NOTORGANIC_MODEL_ALIAS = "balanced";
@@ -6,7 +10,10 @@ export const NOTORGANIC_FEATURE = "keating:web-chat";
 export const NOTORGANIC_PROXY_BASE_PATH = "/api/notorganic/openai/v1";
 
 export function notOrganicOpenAiBaseUrl(origin = currentOrigin()): string {
-	return `${origin.replace(/\/+$/, "")}${NOTORGANIC_PROXY_BASE_PATH}`;
+	const publicConfig = publicClientConfig();
+	return publicConfig
+		? `${publicConfig.issuer}/v1`
+		: `${origin.replace(/\/+$/, "")}${NOTORGANIC_PROXY_BASE_PATH}`;
 }
 
 export const NOTORGANIC_DEFAULT_MODEL: Model<"openai-completions"> = {
@@ -55,7 +62,13 @@ async function providerJson<T>(
 	init?: RequestInit,
 	fetcher: typeof fetch = fetch,
 ): Promise<T> {
-	const response = await fetcher(`/api/notorganic/provider/${path}`, init);
+	const publicConfig = fetcher === fetch ? publicClientConfig() : null;
+	const response = publicConfig
+		? await new NotOrganicPublicClient(publicConfig, fetcher).request(
+			path === "checkout" ? "/v1/billing/checkout" : `/v1/${path}`,
+			init,
+		)
+		: await fetcher(`/api/notorganic/provider/${path}`, init);
 	const body = await response.json().catch(() => ({}));
 	if (!response.ok) {
 		const message =
@@ -67,6 +80,17 @@ async function providerJson<T>(
 		throw new Error(message);
 	}
 	return body as T;
+}
+
+export function notOrganicPublicClient(): NotOrganicPublicClient | null {
+	const config = publicClientConfig();
+	return config ? new NotOrganicPublicClient(config) : null;
+}
+
+export async function beginNotOrganicAuthorization(returnTo = window.location.pathname): Promise<void> {
+	const client = notOrganicPublicClient();
+	if (!client) throw new Error("This Keating deployment has not enabled Not Organic sign-in.");
+	window.location.assign(await client.authorizationUrl(returnTo));
 }
 
 export function getNotOrganicAccount(fetcher?: typeof fetch): Promise<NotOrganicAccount> {

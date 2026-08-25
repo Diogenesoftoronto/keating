@@ -16,6 +16,7 @@ import {
 import {
   compactShareIdFromBytes,
   isValidShareId,
+  projectSharedSessionPayload,
   SHARE_ID_BYTES,
   SHARE_MAX_BYTES,
   validateSharedSessionPayload,
@@ -107,11 +108,32 @@ function chatProxyPlugin(): Plugin {
               sendJson(res, 413, { error: "Shared session is too large" });
               return;
             }
-
             const body = JSON.parse(bodyBuffer.toString("utf8"));
+            const inputSize = Buffer.byteLength(JSON.stringify(body), "utf8");
+            if (inputSize > SHARE_MAX_BYTES) {
+              sendJson(res, 413, { error: "Shared session is too large" });
+              return;
+            }
+
             const validationError = validateSharedSessionPayload(body);
             if (validationError) {
               sendJson(res, 400, { error: validationError });
+              return;
+            }
+            const projected = projectSharedSessionPayload(body);
+            if (!projected) {
+              sendJson(res, 400, {
+                error: "Shared session could not be projected safely",
+              });
+              return;
+            }
+
+            const projectedSize = Buffer.byteLength(
+              JSON.stringify(projected),
+              "utf8",
+            );
+            if (projectedSize > SHARE_MAX_BYTES) {
+              sendJson(res, 413, { error: "Shared session is too large" });
               return;
             }
 
@@ -125,10 +147,8 @@ function chatProxyPlugin(): Plugin {
             }
 
             const shared = {
-              ...body,
+              ...projected,
               id,
-              schemaVersion: 2,
-              messageCount: body.messages.length,
             };
             devShareStore.set(id, shared);
             sendJson(res, 200, { id });
@@ -440,7 +460,7 @@ export default defineConfig({
     ...posthogSourceMapPlugins,
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.svg", "apple-touch-icon.png"],
+      includeAssets: ["favicon-lockup.png", "apple-touch-icon-lockup.png"],
       manifest: {
         name: "Keating - Hyperteacher",
         short_name: "Keating",
@@ -453,17 +473,17 @@ export default defineConfig({
         start_url: "/",
         icons: [
           {
-            src: "pwa-192x192.png",
+            src: "pwa-lockup-192x192.png",
             sizes: "192x192",
             type: "image/png",
           },
           {
-            src: "pwa-512x512.png",
+            src: "pwa-lockup-512x512.png",
             sizes: "512x512",
             type: "image/png",
           },
           {
-            src: "pwa-maskable-512x512.png",
+            src: "pwa-lockup-maskable-512x512.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "maskable",

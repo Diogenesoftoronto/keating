@@ -6,6 +6,7 @@ import {
   Bug,
   ChevronDown,
   ChevronRight,
+  ClipboardCheck,
   Cpu,
   LibraryBig,
   Map as MapIcon,
@@ -988,19 +989,18 @@ function ChatContent() {
     }
   };
 
-  // Gate the first public share behind a one-time confirmation. `portable-short`
-  // and `compressed-hash` both make the transcript readable by anyone with the
-  // link, so warn once, remember the acknowledgement in settings, and never nag
-  // again. `local-short` stays on-device, so it shares immediately.
+  // Rich session shares publish more than the old transcript-only links. Gate
+  // the first expanded share behind fresh consent even when the legacy
+  // transcript warning was already acknowledged. Local links stay on-device.
   const handleShare = async () => {
     const settings = loadKeatingUiSettings();
     const exposesPublicly = shareModeExposesDataPublicly(
       settings.shareLinkMode,
     );
-    if (exposesPublicly && !settings.shareWarningAcknowledged) {
+    if (exposesPublicly && !settings.trajectoryShareWarningAcknowledged) {
       setShareUrl(null);
       setShareMessage(
-        "Heads up: this share link makes the whole session readable by anyone who has it. Share again to confirm — you won't be asked next time.",
+        "This link publishes the visible conversation, safe session artifacts, and any finalized review feedback. It excludes drafts, hidden tool traffic, and unsupported or oversized artifacts. Anyone with the link can read it. Share again to confirm.",
       );
       setShareState("confirm");
       return;
@@ -1012,8 +1012,12 @@ function ChatContent() {
   // never shows again, then create the link.
   const confirmShare = async () => {
     const settings = loadKeatingUiSettings();
-    if (!settings.shareWarningAcknowledged) {
-      saveKeatingUiSettings({ ...settings, shareWarningAcknowledged: true });
+    if (!settings.trajectoryShareWarningAcknowledged) {
+      saveKeatingUiSettings({
+        ...settings,
+        shareWarningAcknowledged: true,
+        trajectoryShareWarningAcknowledged: true,
+      });
     }
     await performShare();
   };
@@ -1099,7 +1103,7 @@ function ChatContent() {
           aria-label="Go to Keating home"
         >
           <img
-            src="/brand/logo-lockup.png"
+								src="/brand/logo-lockup-hd.png"
             alt="Keating"
             className={css({
               height: "1.5rem",
@@ -1275,6 +1279,16 @@ function ChatContent() {
           >
             <BarChart3 size={16} />
           </button>
+          <button
+            className={cx(actionButtonClass, "chat-only-desktop")}
+            title={activeSessionId ? "Review this session" : "Open session reviews"}
+            aria-label={activeSessionId ? "Review this session" : "Open session reviews"}
+            onClick={() => activeSessionId
+              ? navigate({ to: "/review/sessions/$sessionId", params: { sessionId: activeSessionId } })
+              : navigate({ to: "/review" })}
+          >
+            <ClipboardCheck size={16} />
+          </button>
           <a
             className={cx(actionButtonClass, "chat-only-desktop")}
             title="Report an issue"
@@ -1426,6 +1440,20 @@ function ChatContent() {
               >
                 <BarChart3 size={14} />
                 Learning usage
+              </button>
+              <button
+                className={menuItemClass}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  if (activeSessionId) {
+                    navigate({ to: "/review/sessions/$sessionId", params: { sessionId: activeSessionId } });
+                  } else {
+                    navigate({ to: "/review" });
+                  }
+                }}
+              >
+                <ClipboardCheck size={14} />
+                Review session
               </button>
               <div
                 className={cx(

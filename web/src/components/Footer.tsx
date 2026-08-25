@@ -8,7 +8,7 @@ export function Footer() {
       <div className="wrap">
         <div className="foot-grid">
           <div className="foot-brand">
-            <img src="/brand/logo-lockup.png" alt="Keating" />
+			<img src="/brand/logo-lockup-hd.png" alt="Keating" />
             <p>
               <T>The hyperteacher. Socratic reconstruction for people who&apos;d rather understand than memorize.</T>
             </p>
