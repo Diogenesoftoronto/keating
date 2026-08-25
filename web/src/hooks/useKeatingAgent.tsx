@@ -132,6 +132,7 @@ import {
   prepareMessagesForRetry,
 } from "./session-recovery";
 import {
+  buildSharedTrajectory,
   saveSharedSession,
   sharedSessionUrl,
   type SharedSessionUrlResult,
@@ -1823,13 +1824,30 @@ export function useKeatingAgent(
   const shareSession = useCallback(async () => {
     const agent = agentRef.current;
     if (!agent) throw new Error("No active session to share");
+    const originalSessionId = sessionIdRef.current;
+    const originalCreatedAt = sessionCreatedAtRef.current;
+    const originalMessages = [...agent.state.messages];
+    const originalModel = agent.state.model;
+    const originalThinkingLevel = agent.state.thinkingLevel;
+    const assertShareSourceIsCurrent = () => {
+      if (agentRef.current !== agent || sessionIdRef.current !== originalSessionId) {
+        throw new Error("The active session changed while the share was being prepared. Share it again from the session you want.");
+      }
+    };
     await saveSessionSnapshot(agent);
+    assertShareSourceIsCurrent();
+    const trajectory = await buildSharedTrajectory(
+      originalSessionId,
+      originalMessages,
+    );
+    assertShareSourceIsCurrent();
     const shared = saveSharedSession(
-      [...agent.state.messages],
-      sessionCreatedAtRef.current,
+      originalMessages,
+      originalCreatedAt,
       {
-        model: agent.state.model,
-        thinkingLevel: agent.state.thinkingLevel,
+        model: originalModel,
+        thinkingLevel: originalThinkingLevel,
+        trajectory,
       },
     );
     const result = await sharedSessionUrl(

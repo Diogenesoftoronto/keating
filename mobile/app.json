@@ -2,19 +2,19 @@
   "expo": {
     "name": "Keating",
     "slug": "keating",
-    "version": "3.7.0",
+    "version": "3.8.0",
     "orientation": "portrait",
     "scheme": "keating",
     "userInterfaceStyle": "automatic",
     "backgroundColor": "#0c1510",
     "primaryColor": "#1e9b50",
-    "icon": "./assets/brand/app-icon.png",
+    "icon": "./assets/brand/app-icon-lockup.png",
     "android": {
       "package": "com.diogenesoftoronto.keating",
       "versionCode": 1,
       "predictiveBackGestureEnabled": true,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/brand/adaptive-icon.png",
+        "foregroundImage": "./assets/brand/adaptive-icon-lockup.png",
         "backgroundColor": "#0c1510"
       }
     },
@@ -42,7 +42,7 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#f1ece0",
-          "image": "./assets/brand/adaptive-icon.png",
+          "image": "./assets/brand/logo-lockup-hd.png",
           "imageWidth": 220,
           "resizeMode": "contain",
           "dark": {

@@ -3,10 +3,12 @@ import { KeyRound, X } from "lucide-react";
 import { css, cx } from "../../styled-system/css";
 import { iconButton, primaryButton } from "../../styled-system/recipes";
 import {
+	beginNotOrganicAuthorization,
 	createNotOrganicCheckout,
 	getNotOrganicAccount,
 	getNotOrganicWallet,
 	isNotOrganicFeatureEnabled,
+	notOrganicPublicClient,
 	type NotOrganicAccount,
 	type NotOrganicWallet,
 } from "../notorganic-provider";
@@ -34,6 +36,7 @@ function emitPromptChange() {
 
 export async function hasNotOrganicProductSession(): Promise<boolean> {
 	if (!isNotOrganicFeatureEnabled()) return false;
+	if (notOrganicPublicClient()) return notOrganicPublicClient()?.getSession() !== null;
 	try {
 		await getNotOrganicAccount();
 		return true;
@@ -99,6 +102,10 @@ export function NotOrganicAccessPromptDialog() {
 		setLoading(true);
 		setError("");
 		try {
+			if (notOrganicPublicClient() && !notOrganicPublicClient()?.getSession()) {
+				await beginNotOrganicAuthorization(window.location.pathname);
+				return;
+			}
 			const [account, wallet] = await Promise.all([
 				getNotOrganicAccount(),
 				getNotOrganicWallet(),
@@ -118,6 +125,10 @@ export function NotOrganicAccessPromptDialog() {
 		setLoading(true);
 		setError("");
 		try {
+			if (notOrganicPublicClient() && !notOrganicPublicClient()?.getSession()) {
+				await beginNotOrganicAuthorization("/pricing");
+				return;
+			}
 			const returnUrl = new URL("/pricing?checkout=success", window.location.origin);
 			const checkout = await createNotOrganicCheckout(pack.id, returnUrl.toString());
 			const checkoutUrl = checkout.url ?? checkout.checkout_url;
@@ -150,8 +161,8 @@ export function NotOrganicAccessPromptDialog() {
 				</div>
 				<div className={css({ display: "flex", flexDirection: "column", gap: "0.75rem", padding: "1rem" })}>
 					<p className={css({ fontSize: "0.875rem", color: "var(--muted-foreground)" })}>
-						Not Organic uses Keating&apos;s server-validated product session and shared wallet.
-						No provider token or virtual key is stored in this browser.
+						Not Organic uses a short-lived, device-bound capability and shared wallet.
+						Its non-extractable signing key stays in this browser.
 					</p>
 					{pack && request.packId && (
 						<p className={css({ fontSize: "0.875rem" })}>
@@ -167,7 +178,7 @@ export function NotOrganicAccessPromptDialog() {
 							onClick={() => void refreshSession()}
 							disabled={loading}
 						>
-							{loading ? "Checking…" : "Check session"}
+							{loading ? "Checking…" : notOrganicPublicClient()?.getSession() ? "Refresh wallet" : "Connect account"}
 						</button>
 						{request.packId && (
 							<button

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { usePostHog } from "@posthog/react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight,
@@ -22,6 +23,7 @@ import {
 import { useSeo } from "../hooks/useSeo";
 
 function CourseLibrary({ account }: { account: CoursesAccount }) {
+  const posthog = usePostHog();
   const navigate = useNavigate();
   const [courses, setCourses] = useState<CourseListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,15 +34,28 @@ function CourseLibrary({ account }: { account: CoursesAccount }) {
     let cancelled = false;
     listCourses()
       .then((items) => {
-        if (!cancelled) setCourses(items);
+        if (!cancelled) {
+          setCourses(items);
+          posthog?.capture("course_library_loaded", {
+            success: true,
+            course_count: items.length,
+            workspace_mode: account.mode,
+          });
+        }
       })
       .catch((cause) => {
-        if (!cancelled)
+        if (!cancelled) {
+          posthog?.capture("course_library_loaded", {
+            success: false,
+            failure_type: cause instanceof Error ? cause.name : "unknown",
+            workspace_mode: account.mode,
+          });
           setError(
             cause instanceof Error
               ? cause.message
               : "Courses could not be loaded.",
           );
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -48,7 +63,19 @@ function CourseLibrary({ account }: { account: CoursesAccount }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [account.mode, posthog]);
+
+  const selectCreationMethod = (
+    method: "chat" | "manual",
+    source: "header" | "empty_state",
+  ) => {
+    posthog?.capture("course_creation_method_selected", {
+      method,
+      source,
+      workspace_mode: account.mode,
+    });
+    if (method === "manual") setAssemblerOpen(true);
+  };
 
   return (
     <main
@@ -121,6 +148,7 @@ function CourseLibrary({ account }: { account: CoursesAccount }) {
           <Link
             to="/chat"
             search={{ courseMode: "create" }}
+            onClick={() => selectCreationMethod("chat", "header")}
             className={css({
               display: "inline-flex",
               alignItems: "center",
@@ -140,7 +168,10 @@ function CourseLibrary({ account }: { account: CoursesAccount }) {
           </Link>
           <button
             type="button"
-            onClick={() => setAssemblerOpen((open) => !open)}
+            onClick={() => {
+              if (assemblerOpen) setAssemblerOpen(false);
+              else selectCreationMethod("manual", "header");
+            }}
             aria-expanded={assemblerOpen}
             className={css({
               display: "inline-flex",
@@ -239,6 +270,7 @@ function CourseLibrary({ account }: { account: CoursesAccount }) {
               <Link
                 to="/chat"
                 search={{ courseMode: "create" }}
+                onClick={() => selectCreationMethod("chat", "empty_state")}
                 className={css({
                   display: "inline-flex",
                   alignItems: "center",
@@ -255,7 +287,7 @@ function CourseLibrary({ account }: { account: CoursesAccount }) {
               </Link>
               <button
                 type="button"
-                onClick={() => setAssemblerOpen(true)}
+                onClick={() => selectCreationMethod("manual", "empty_state")}
                 className={css({
                   borderBottom: "1px solid currentColor",
                   py: "0.25rem",

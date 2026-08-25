@@ -24,6 +24,7 @@ desktop/release/
 !web/public/*.svg
 !web/public/*.pdf
 !web/public/brand/logo-badge.png
+!web/public/brand/logo-lockup-hd.png
 !web/public/brand/mascot-head-v2.png
 !web/public/brand/mascot-live-idle.png
 !web/public/brand/mascot-live-listening.png
@@ -66,6 +67,7 @@ web/public/manim-web/
 
 # Environment
 .env*
+!web/.env.example
 *.local
 mise.local.toml
 

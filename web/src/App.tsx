@@ -82,9 +82,21 @@ const Pricing = lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/Pricing")),
   "Pricing",
 );
+const NotOrganicCallback = lazyRouteComponent(
+  () => loadRouteChunk(() => import("./pages/NotOrganicCallback")),
+  "NotOrganicCallback",
+);
 const LatestCommitReview = lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/LatestCommitReview")),
   "LatestCommitReview",
+);
+const TrajectoryReviewIndex = lazyRouteComponent(
+  () => loadRouteChunk(() => import("./pages/TrajectoryReviewIndex")),
+  "TrajectoryReviewIndex",
+);
+const TrajectoryReview = lazyRouteComponent(
+  () => loadRouteChunk(() => import("./pages/TrajectoryReview")),
+  "TrajectoryReview",
 );
 const Courses = lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/Courses")),
@@ -233,10 +245,28 @@ const pricingRoute = createRoute({
   component: Pricing,
 });
 
+const notOrganicCallbackRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/notorganic/callback",
+  component: NotOrganicCallback,
+});
+
 const latestCommitReviewRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/review/latest-commit",
   component: LatestCommitReview,
+});
+
+const trajectoryReviewIndexRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/review",
+  component: TrajectoryReviewIndex,
+});
+
+const trajectoryReviewRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/review/sessions/$sessionId",
+  component: TrajectoryReview,
 });
 
 const coursesRoute = createRoute({
@@ -276,7 +306,10 @@ const routeTree = rootRoute.addChildren([
   termsRoute,
   privacyRoute,
   pricingRoute,
+  notOrganicCallbackRoute,
   latestCommitReviewRoute,
+  trajectoryReviewIndexRoute,
+  trajectoryReviewRoute,
   coursesRoute,
   courseJoinRoute,
   courseWorkspaceRoute,

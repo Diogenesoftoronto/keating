@@ -14,9 +14,11 @@ import {
 	type OAuthProviderId,
 } from "../../keating/oauth";
 import {
+	beginNotOrganicAuthorization,
 	getNotOrganicAccount,
 	getNotOrganicWallet,
 	NOTORGANIC_PROVIDER_ID,
+	notOrganicPublicClient,
 } from "../../notorganic-provider";
 import { css } from "../../../styled-system/css";
 
@@ -243,6 +245,14 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 		if (provider === NOTORGANIC_PROVIDER_ID) {
 			setOAuthErrors((prev) => ({ ...prev, [provider]: "" }));
 			setOauthLoading((prev) => ({ ...prev, [provider]: true }));
+			if (!notOrganicPublicClient()?.getSession()) {
+				void beginNotOrganicAuthorization(window.location.pathname)
+					.catch((error) => {
+						setOAuthErrors((prev) => ({ ...prev, [provider]: error instanceof Error ? error.message : "Not Organic sign-in could not start." }));
+						setOauthLoading((prev) => ({ ...prev, [provider]: false }));
+					});
+				return;
+			}
 			void Promise.all([getNotOrganicAccount(), getNotOrganicWallet()])
 				.then(([account, wallet]) => {
 					setOAuthStatus((prev) => ({ ...prev, [provider]: true }));
@@ -325,6 +335,12 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 	};
 
 	const handleSignOut = async (provider: string) => {
+		if (provider === NOTORGANIC_PROVIDER_ID) {
+			await notOrganicPublicClient()?.signOut();
+			setOAuthStatus((prev) => ({ ...prev, [provider]: false }));
+			setHostedSummary("");
+			return;
+		}
 		const oauthId = providerToOAuthId(provider);
 		if (!oauthId) return;
 		await deleteOAuthCredentials(oauthId);
@@ -360,7 +376,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 							</div>
 							<div className={css({ borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "color-mix(in srgb, var(--muted) 20%, transparent)", padding: "0.75rem" })}>
 								<p className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-									Hosted sign-in is owned by Keating&apos;s server session. Browser DID and email values are never treated as authentication.
+									Hosted sign-in uses a five-minute, device-bound Not Organic capability. The non-extractable DPoP key stays in this browser.
 								</p>
 								{hasSession && hostedSummary && (
 									<p className={css({ marginTop: "0.5rem", fontSize: "0.75rem", color: "var(--foreground)" })}>
@@ -372,8 +388,13 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 									disabled={loading}
 									onClick={() => handleSignIn(provider)}
 								>
-									{loading ? "Checking session…" : hasSession ? "Refresh account" : "Check product session"}
+									{loading ? "Checking session…" : hasSession ? "Refresh account" : "Connect Not Organic"}
 								</button>
+								{hasSession && (
+									<button className={smallButtonClass} type="button" onClick={() => void handleSignOut(provider)}>
+										Sign out
+									</button>
+								)}
 								{oauthErrors[provider] && (
 									<p className={css({ marginTop: "0.5rem", fontSize: "0.75rem", color: "var(--destructive)" })}>
 										{oauthErrors[provider]}

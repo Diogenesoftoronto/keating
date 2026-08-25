@@ -1,14 +1,37 @@
+import { useState } from "react";
 import { ArrowRight, KeyRound, RadioTower } from "lucide-react";
+import { usePostHog } from "@posthog/react";
 import { css } from "../../../styled-system/css";
 import {
 	NotOrganicAccessPromptDialog,
 	promptNotOrganicAccess,
 } from "../NotOrganicAccessPromptDialog";
+import { isNotOrganicFeatureEnabled } from "../../notorganic-provider";
 import type { CoursesAccessState } from "../../courses/useCoursesAccess";
 
 type CoursesAccessGateState = Exclude<CoursesAccessState, { status: "ready" }>;
 
 export function CoursesAccessGate({ state, onRetry }: { state: CoursesAccessGateState; onRetry: () => void }) {
+	const posthog = usePostHog();
+	const [notice, setNotice] = useState("");
+
+	// promptNotOrganicAccess resolves false both when the user declines and when
+	// hosted access is switched off, so calling it while the feature is disabled
+	// left this button doing nothing at all with no explanation.
+	const checkAccount = async () => {
+		if (!isNotOrganicFeatureEnabled()) {
+			posthog?.capture("hosted_access_unavailable", {
+				surface: "courses_gate",
+				recovery: state.status === "loading" ? "loading" : state.recovery,
+			});
+			setNotice(
+				"Hosted course workspaces aren't available yet — that access is still being built. Courses run today with your own API keys.",
+			);
+			return;
+		}
+		if (await promptNotOrganicAccess({ force: true })) onRetry();
+	};
+
 	if (state.status === "loading") {
 		return <div className={css({ py: "8rem", textAlign: "center", color: "var(--ink-soft)" })}>Checking your course workspace…</div>;
 	}
@@ -25,7 +48,7 @@ export function CoursesAccessGate({ state, onRetry }: { state: CoursesAccessGate
 					</p>
 					<div className={css({ mt: "2rem", display: "flex", flexWrap: "wrap", gap: "0.75rem" })}>
 						{state.recovery === "account" ? (
-							<button type="button" onClick={async () => { if (await promptNotOrganicAccess({ force: true })) onRetry(); }} className={css({ display: "inline-flex", alignItems: "center", gap: "0.5rem", bg: "var(--ink)", px: "1rem", py: "0.75rem", fontWeight: 700, color: "var(--paper)", _hover: { bg: "var(--course-green-dark, #14743c)" } })}>
+							<button type="button" onClick={() => { void checkAccount(); }} className={css({ display: "inline-flex", alignItems: "center", gap: "0.5rem", bg: "var(--ink)", px: "1rem", py: "0.75rem", fontWeight: 700, color: "var(--paper)", _hover: { bg: "var(--course-green-dark, #14743c)" } })}>
 								Check account <ArrowRight size={16} />
 							</button>
 						) : (
@@ -35,6 +58,9 @@ export function CoursesAccessGate({ state, onRetry }: { state: CoursesAccessGate
 						)}
 					</div>
 					<p role="alert" className={css({ mt: "1rem", fontSize: "0.78rem", color: "var(--destructive)" })}>{state.error}</p>
+					{notice ? (
+						<p role="status" className={css({ mt: "0.75rem", maxW: "52ch", fontSize: "0.78rem", lineHeight: 1.6, color: "var(--ink-soft)" })}>{notice}</p>
+					) : null}
 					{state.recovery === "start-server" ? (
 						<code className={css({ mt: "0.75rem", display: "block", overflowX: "auto", bg: "var(--ink)", px: "0.75rem", py: "0.625rem", fontFamily: "var(--mono-body)", fontSize: "0.75rem", color: "var(--paper)", whiteSpace: "nowrap" })}>
 							devenv tasks run keating:web

@@ -1,4 +1,5 @@
 import { Suspense, use, useEffect, useMemo, useState } from "react";
+import { usePostHog } from "@posthog/react";
 import { useNavigate } from "@tanstack/react-router";
 import { BookOpenCheck, Brain, CalendarDays, ChevronRight, Clock3, Cpu, Download, Flame, Gem, MessageSquareText, TrendingUp, Upload } from "lucide-react";
 import { useSeo } from "../hooks/useSeo";
@@ -152,6 +153,7 @@ function SegmentedControl<T extends string>({
 }
 
 function FineTuneExportPanel() {
+	const posthog = usePostHog();
 	const [format, setFormat] = useState<WebFineTuneFormat>("both");
 	const [source, setSource] = useState<WebExportSource>("all");
 	const [redact, setRedact] = useState(true);
@@ -177,6 +179,15 @@ function FineTuneExportPanel() {
 				judge,
 			});
 			if (bundle.recordCount === 0) {
+				posthog?.capture("training_data_exported", {
+					success: false,
+					outcome: "empty",
+					format,
+					source,
+					redact_secrets: redact,
+					judge_scoring: judgeScoring,
+					skipped_count: bundle.skippedCount,
+				});
 				setError("No training records were generated. Create sessions or artifacts first.");
 				setResult({
 					examples: 0,
@@ -190,6 +201,18 @@ function FineTuneExportPanel() {
 			}
 			const archive = buildWebTrainingArchive(bundle);
 			downloadFile(archive.filename, archive.bytes, "application/zip");
+			posthog?.capture("training_data_exported", {
+				success: true,
+				outcome: "downloaded",
+				format,
+				source,
+				redact_secrets: redact,
+				judge_scoring: judgeScoring,
+				record_count: bundle.recordCount,
+				example_count: bundle.exampleCount,
+				skipped_count: bundle.skippedCount,
+				redaction_count: bundle.redactionCount,
+			});
 			setResult({
 				examples: bundle.exampleCount,
 				records: bundle.recordCount,
@@ -199,6 +222,15 @@ function FineTuneExportPanel() {
 				unscored: bundle.rewardStats?.unscored,
 			});
 		} catch (err) {
+			posthog?.capture("training_data_exported", {
+				success: false,
+				outcome: "error",
+				format,
+				source,
+				redact_secrets: redact,
+				judge_scoring: judgeScoring,
+				failure_type: err instanceof Error ? err.name : "unknown",
+			});
 			setError(err instanceof Error ? err.message : String(err));
 		} finally {
 			setExporting(false);
@@ -220,8 +252,20 @@ function FineTuneExportPanel() {
 				setError("No importable fine-tune examples were found. Choose ChatML or Alpaca JSONL files.");
 			}
 			metadataPromise = null;
+			posthog?.capture("training_data_imported", {
+				success: imported.examplesImported > 0,
+				file_count: files.length,
+				example_count: imported.examplesImported,
+				session_count: imported.sessionsImported,
+				skipped_count: imported.skipped,
+			});
 			setImportResult(imported);
 		} catch (err) {
+			posthog?.capture("training_data_imported", {
+				success: false,
+				file_count: files.length,
+				failure_type: err instanceof Error ? err.name : "unknown",
+			});
 			setError(err instanceof Error ? err.message : String(err));
 		} finally {
 			setExporting(false);
@@ -334,6 +378,7 @@ function FineTuneExportPanel() {
 }
 
 function PortableDataPanel() {
+	const posthog = usePostHog();
 	const [includeSandbox, setIncludeSandbox] = useState(true);
 	const [busy, setBusy] = useState(false);
 	const [result, setResult] = useState<string>("");
@@ -346,8 +391,19 @@ function PortableDataPanel() {
 		try {
 			const bundle = await buildKeatingPortableDataBundle({ includeSandbox });
 			downloadTextFile("keating-portable-data.json", `${JSON.stringify(bundle, null, 2)}\n`);
+			posthog?.capture("portable_data_exported", {
+				success: true,
+				include_sandbox: includeSandbox,
+				session_count: bundle.sessions.length,
+				feedback_count: bundle.storage.feedback.length,
+			});
 			setResult(`Exported ${formatNumber(bundle.sessions.length)} sessions and ${formatNumber(bundle.storage.feedback.length)} feedback records.`);
 		} catch (err) {
+			posthog?.capture("portable_data_exported", {
+				success: false,
+				include_sandbox: includeSandbox,
+				failure_type: err instanceof Error ? err.name : "unknown",
+			});
 			setError(err instanceof Error ? err.message : String(err));
 		} finally {
 			setBusy(false);
@@ -378,8 +434,18 @@ function PortableDataPanel() {
 			const bundle = parseKeatingPortableDataBundle(JSON.parse(text));
 			const imported = await importKeatingPortableDataBundle(bundle);
 			metadataPromise = null;
+			posthog?.capture("portable_data_imported", {
+				success: true,
+				session_count: imported.sessions,
+				feedback_count: imported.feedback,
+				sandbox_commit_count: imported.sandboxCommitsImported,
+			});
 			setResult(summarizeImport(imported));
 		} catch (err) {
+			posthog?.capture("portable_data_imported", {
+				success: false,
+				failure_type: err instanceof Error ? err.name : "unknown",
+			});
 			setError(err instanceof Error ? err.message : String(err));
 		} finally {
 			setBusy(false);

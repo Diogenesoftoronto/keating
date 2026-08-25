@@ -144,7 +144,13 @@ export function RunnableCodeBlock({
 		if (error) return "Run failed";
 		if (hostedResult) return hostedResult.status === "succeeded" ? "Finished" : hostedResult.status;
 		if (result) return result.ok ? "Finished" : `Exit ${result.exitCode ?? "unknown"}`;
-		if (executor === "unavailable" && isRunnableCodeLanguage(language)) return "Unavailable offline";
+		if (executor === "unavailable" && isRunnableCodeLanguage(language)) {
+			// Distinguish "no network" from "hosted execution is switched off";
+			// both reach this branch but they mean different things to the reader.
+			return typeof navigator !== "undefined" && !navigator.onLine
+				? "Unavailable offline"
+				: "Hosted runs unavailable";
+		}
 		return runnable ? (hosted ? "Runs in Cloudflare" : "Runs on this device") : "Not runnable";
 	}, [error, executor, hosted, hostedResult, language, result, runnable, running, streaming]);
 

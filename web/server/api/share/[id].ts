@@ -1,6 +1,9 @@
 import { createError, defineEventHandler, getRequestURL } from "h3";
 import { useStorage } from "nitro/storage";
-import { isValidShareId } from "../../../src/keating/share-contract";
+import {
+	isValidShareId,
+	projectSharedSessionPayload,
+} from "../../../src/keating/share-contract";
 
 function shareIdFromPath(pathname: string) {
 	const id = pathname.split("/").filter(Boolean).pop() ?? "";
@@ -22,5 +25,9 @@ export default defineEventHandler(async (event) => {
 		throw createError({ statusCode: 404, statusMessage: "Shared session not found" });
 	}
 
-	return shared;
+	const projected = projectSharedSessionPayload(shared);
+	if (!projected) {
+		throw createError({ statusCode: 404, statusMessage: "Shared session is no longer readable" });
+	}
+	return { ...projected, id };
 });

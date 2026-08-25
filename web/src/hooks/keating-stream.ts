@@ -13,7 +13,9 @@ import { chatProxyBaseUrl, proxyTargetHeader, shouldProxyModel } from "../lib/pr
 import {
 	isNotOrganicProvider,
 	NOTORGANIC_DEFAULT_MODEL,
+	notOrganicPublicClient,
 } from "../notorganic-provider";
+import { publicClientMaxCostMicrousd } from "../notorganic-provider/public-client";
 import {
 	applyGoogleSearchGrounding,
 	applyProviderWebSearch,
@@ -28,6 +30,14 @@ import { getProviderApiKey } from "../lib/provider-models";
 import { localModel, DEFAULT_BROWSER_MODEL_ID } from "../stores/local-model";
 
 export const DEFAULT_MODEL = NOTORGANIC_DEFAULT_MODEL;
+
+export type KeatingStreamOptions = SimpleStreamOptions & {
+	/**
+	 * Provider-native search is normally enabled for capable hosted models.
+	 * Set this to false for isolated generations that must not invoke any tool.
+	 */
+	hostedWebSearch?: boolean;
+};
 
 export function withProviderWebSearch(
 	options: SimpleStreamOptions | undefined,
@@ -182,19 +192,32 @@ function createBrowserStreamFn() {
 	};
 }
 
-export async function hybridStreamFn(model: Model<Api>, context: Context, options?: SimpleStreamOptions) {
+export async function hybridStreamFn(model: Model<Api>, context: Context, options?: KeatingStreamOptions) {
+	const { hostedWebSearch = true, ...requestOptions } = options ?? {};
+	const cleanOptions: SimpleStreamOptions = requestOptions;
 	if (model.provider === "browser") {
-		return normalizeToolCallStream(await createBrowserStreamFn()(model, context, options), context);
+		return normalizeToolCallStream(await createBrowserStreamFn()(model, context, cleanOptions), context);
 	}
 
-	const apiKey = options?.apiKey ?? await getProviderApiKey(model.provider);
-	let streamOptions: SimpleStreamOptions | undefined = apiKey ? { ...options, apiKey } : options;
+	const apiKey = cleanOptions.apiKey ?? await getProviderApiKey(model.provider);
+	let streamOptions: SimpleStreamOptions | undefined = apiKey ? { ...cleanOptions, apiKey } : cleanOptions;
 	if (isNotOrganicProvider(model.provider)) {
+		const client = notOrganicPublicClient();
+		if (!client) throw new Error("This Keating deployment has not enabled Not Organic sign-in.");
+		const requestUrl = `${model.baseUrl.replace(/\/+$/, "")}/chat/completions`;
+		const initialHeaders = Object.fromEntries(
+			Object.entries(streamOptions?.headers ?? {}).filter(
+				(entry): entry is [string, string] => typeof entry[1] === "string",
+			),
+		);
+		const authenticated = await client.headersFor("POST", requestUrl, initialHeaders);
 		streamOptions = {
 			...streamOptions,
+			apiKey: undefined,
 			headers: {
-				...streamOptions?.headers,
+				...Object.fromEntries(authenticated.entries()),
 				"idempotency-key": `keating_${crypto.randomUUID()}`,
+				"x-notorganic-max-cost-microusd": String(publicClientMaxCostMicrousd()),
 			},
 		};
 	}
@@ -215,14 +238,18 @@ export async function hybridStreamFn(model: Model<Api>, context: Context, option
 			const hasApiKey = !!proxiedOptions.apiKey;
 			console.log(`[keating:stream] proxy ${model.provider} -> ${model.baseUrl} (apiKey=${hasApiKey})`);
 		}
-		const mergedOptions = withProviderWebSearch(proxiedOptions, proxiedModel, !!apiKey);
+		const mergedOptions = hostedWebSearch
+			? withProviderWebSearch(proxiedOptions, proxiedModel, !!apiKey)
+			: proxiedOptions;
 		return normalizeToolCallStream(
 			streamWithApiRetry(proxiedModel, context, mergedOptions, (nextOptions) => streamSimple(proxiedModel, context, nextOptions)),
 			context,
 		);
 	}
 
-	const mergedOptions = withProviderWebSearch(streamOptions, model, !!apiKey);
+	const mergedOptions = hostedWebSearch
+		? withProviderWebSearch(streamOptions, model, !!apiKey)
+		: streamOptions;
 	return normalizeToolCallStream(
 		streamWithApiRetry(model, context, mergedOptions, (nextOptions) => streamSimple(model, context, nextOptions)),
 		context,

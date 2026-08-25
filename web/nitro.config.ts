@@ -27,6 +27,12 @@ export default defineNitroConfig({
       driver: "fs",
       base: process.env.KEATING_COURSES_STORAGE_DIR ?? ".data/keating-courses",
     },
+    // Portable trajectory shares must survive process restarts just like course
+    // state. Production deployments should point this at their mounted volume.
+    "keating:share": {
+      driver: "fs",
+      base: process.env.KEATING_SHARE_STORAGE_DIR ?? ".data/keating-shares",
+    },
   },
   renderer: {
     // Nitro was inlining the source web/index.html template into the server

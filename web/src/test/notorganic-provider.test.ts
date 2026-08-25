@@ -21,7 +21,7 @@ import {
 } from "../notorganic-provider/server";
 
 describe("Not Organic provider definition", () => {
-	it("uses the stable balanced alias and dedicated same-origin path", () => {
+	it("uses the stable balanced alias and retains a same-origin fallback", () => {
 		expect(NOTORGANIC_DEFAULT_MODEL.id).toBe(NOTORGANIC_MODEL_ALIAS);
 		expect(NOTORGANIC_DEFAULT_MODEL.provider).toBe(NOTORGANIC_PROVIDER_ID);
 		expect(notOrganicOpenAiBaseUrl("https://keating.test/")).toBe(
@@ -63,6 +63,43 @@ describe("Not Organic SDK-compatible fetch adapter", () => {
 		expect(headers.get("dpop")).toContain("server-capability");
 		expect(headers.get(NOTORGANIC_MAX_COST_HEADER)).toBe("50000");
 		expect(headers.get(NOTORGANIC_IDEMPOTENCY_HEADER)).toBe("idem-keating");
+	});
+
+	it("sends an idempotency key on billing POSTs that carry no cost ceiling", async () => {
+		// The idempotency header used to be set only inside the maxCostMicrousd
+		// branch, so /v1/billing/checkout -- the one request where a duplicate
+		// becomes a second charge -- went out without a key.
+		const seen: Headers[] = [];
+		const adapter = new NotOrganicFetchAdapter({
+			baseUrl: "https://provider.test",
+			session: {
+				accountId: "did:plc:alice",
+				accessToken: "server-capability",
+				createDpopProof: async () => "proof",
+			},
+			fetch: (async (_url, init) => {
+				seen.push(new Headers(init?.headers));
+				return Response.json({ ok: true });
+			}) as typeof fetch,
+		});
+
+		await adapter.request("/v1/billing/checkout", {
+			method: "POST",
+			body: JSON.stringify({ product_id: "keating_pack_10" }),
+		});
+		expect(seen[0]?.get(NOTORGANIC_IDEMPOTENCY_HEADER)).toMatch(/^keating_/);
+		expect(seen[0]?.get(NOTORGANIC_MAX_COST_HEADER)).toBeNull();
+
+		await adapter.request("/v1/billing/checkout", {
+			method: "POST",
+			body: "{}",
+			idempotencyKey: "caller-supplied",
+		});
+		expect(seen[1]?.get(NOTORGANIC_IDEMPOTENCY_HEADER)).toBe("caller-supplied");
+
+		// Reads are naturally idempotent and must not acquire a key.
+		await adapter.request("/v1/wallet", { method: "GET" });
+		expect(seen[2]?.get(NOTORGANIC_IDEMPOTENCY_HEADER)).toBeNull();
 	});
 });
 

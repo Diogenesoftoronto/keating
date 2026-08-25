@@ -67,7 +67,18 @@ export class NotOrganicFetchAdapter {
 				throw new TypeError("maxCostMicrousd must be a positive safe integer");
 			}
 			headers.set(NOTORGANIC_MAX_COST_HEADER, String(options.maxCostMicrousd));
-			headers.set(NOTORGANIC_IDEMPOTENCY_HEADER, options.idempotencyKey?.trim() || requestId());
+		}
+
+		// Idempotency is independent of the cost ceiling. Any non-idempotent
+		// method can be replayed by a retry, a proxy, or an impatient user, and
+		// billing POSTs are precisely where a duplicate must not become a second
+		// charge -- those carry no cost ceiling, so gating the key on
+		// maxCostMicrousd left checkout unprotected.
+		if (method !== "GET" && method !== "HEAD") {
+			headers.set(
+				NOTORGANIC_IDEMPOTENCY_HEADER,
+				options.idempotencyKey?.trim() || requestId(),
+			);
 		}
 
 		return this.fetcher(url, {

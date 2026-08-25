@@ -163,7 +163,13 @@ describe("Keating UI Settings", () => {
 
 		it("persists an explicit share warning acknowledgement", () => {
 			localStorage.setItem("keating_ui_settings", JSON.stringify({ shareWarningAcknowledged: true }));
-			expect(loadKeatingUiSettings().shareWarningAcknowledged).toBe(true);
+			let settings = loadKeatingUiSettings();
+			expect(settings.shareWarningAcknowledged).toBe(true);
+			expect(settings.trajectoryShareWarningAcknowledged).toBe(false);
+
+			localStorage.setItem("keating_ui_settings", JSON.stringify({ trajectoryShareWarningAcknowledged: true }));
+			settings = loadKeatingUiSettings();
+			expect(settings.trajectoryShareWarningAcknowledged).toBe(true);
 			localStorage.setItem("keating_ui_settings", JSON.stringify({ shareWarningAcknowledged: "yes" }));
 			expect(loadKeatingUiSettings().shareWarningAcknowledged).toBe(false);
 		});

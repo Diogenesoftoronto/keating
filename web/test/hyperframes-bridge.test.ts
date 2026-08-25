@@ -17,8 +17,18 @@ describe("withHyperframesBridge", () => {
 
 	test("appends the bridge script to body fragments", () => {
 		const bridged = withHyperframesBridge("<main>microworld</main>");
-		expect(bridged.startsWith("<main>microworld</main><script>")).toBe(true);
+		expect(bridged).toStartWith('<script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>');
+		expect(bridged).toContain("<main>microworld</main><script>");
 		expect(bridged).toContain("installHyperframesBridge");
+	});
+
+	test("moves a single GSAP dependency before authored scene scripts", () => {
+		const bridged = withHyperframesBridge(
+			'<main>scene</main><script>window.gsap.timeline()</script><script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>',
+		);
+
+		expect(bridged.match(/gsap\.min\.js/g)).toHaveLength(1);
+		expect(bridged.indexOf("gsap.min.js")).toBeLessThan(bridged.indexOf("window.gsap.timeline()"));
 	});
 
 	test("injects before the closing html tag when a body closer is absent", () => {

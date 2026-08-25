@@ -29,6 +29,7 @@ export interface KeatingUiSettings {
 	fontFamily: UiFontFamily;
 	shareLinkMode: ShareLinkMode;
 	shareWarningAcknowledged: boolean;
+	trajectoryShareWarningAcknowledged: boolean;
 	alternativeResponseChance: number;
 	userProfileImage: string | null;
 	imageGenerator: ImageGeneratorId;
@@ -52,6 +53,7 @@ export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
 	fontFamily: "jetbrains-mono",
 	shareLinkMode: "portable-short",
 	shareWarningAcknowledged: false,
+	trajectoryShareWarningAcknowledged: false,
 	alternativeResponseChance: 0.01,
 	userProfileImage: null,
 	imageGenerator: DEFAULT_IMAGE_GENERATOR_ID,
@@ -187,6 +189,7 @@ function normalizeSettings(value: LegacyUiSettingsInput | null): KeatingUiSettin
 				: DEFAULT_UI_SETTINGS.fontFamily,
 		shareLinkMode: normalizeShareLinkMode(value?.shareLinkMode),
 		shareWarningAcknowledged: value?.shareWarningAcknowledged === true,
+		trajectoryShareWarningAcknowledged: value?.trajectoryShareWarningAcknowledged === true,
 		// Older builds shipped either 5% or 0% as automatic defaults. Version 3
 		// makes comparisons deliberately rare at 1%, while preserving every other
 		// explicitly chosen probability.

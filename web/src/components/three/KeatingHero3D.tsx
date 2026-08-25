@@ -93,7 +93,18 @@ function useBrandTexture(url: string) {
   return tex;
 }
 
-function makeScreenTexture(
+function createScreenTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = SCREEN_CANVAS_W;
+  canvas.height = SCREEN_CANVAS_H;
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  return texture;
+}
+
+function drawScreenTexture(
+  texture: THREE.CanvasTexture,
   powered: boolean,
   bootProgress: number,
   typeProgress: number,
@@ -101,14 +112,9 @@ function makeScreenTexture(
   cursorBlink: number,
   hoverLine: number,
 ) {
-  const canvas = document.createElement("canvas");
-  canvas.width = SCREEN_CANVAS_W;
-  canvas.height = SCREEN_CANVAS_H;
+  const canvas = texture.image as HTMLCanvasElement;
   const ctx = canvas.getContext("2d");
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.anisotropy = 4;
-  if (!ctx) return texture;
+  if (!ctx) return;
 
   ctx.fillStyle = powered ? C.screen : "#050806";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -127,7 +133,8 @@ function makeScreenTexture(
     ctx.fillStyle = "#2e9a5c";
     ctx.font = "22px 'JetBrains Mono', 'Space Mono', monospace";
     ctx.fillText("press the green hardware button", 34, 104);
-    return texture;
+    texture.needsUpdate = true;
+    return;
   }
 
   if (bootProgress < BOOT_SEQUENCE.length) {
@@ -142,7 +149,8 @@ function makeScreenTexture(
       ctx.fillText(line.slice(0, chars), 34, 60 + i * 36);
     }
     ctx.globalAlpha = 1;
-    return texture;
+    texture.needsUpdate = true;
+    return;
   }
 
   let totalChars = 0;
@@ -224,7 +232,7 @@ function makeScreenTexture(
     ctx.fillRect(0, Math.random() * canvas.height, canvas.width, 4);
   }
 
-  return texture;
+  texture.needsUpdate = true;
 }
 
 function TuiScreen({
@@ -244,14 +252,15 @@ function TuiScreen({
   const [hoverLine, setHoverLine] = useState(-1);
   const version = String(import.meta.env.APP_VERSION ?? "dev");
 
-  const texture = useMemo(() => {
-    const tex = makeScreenTexture(powered, bootProgress, typeProgress, version, cursorBlink, hoverLine);
-    tex.needsUpdate = true;
-    return tex;
-  }, [powered, bootProgress, typeProgress, version, cursorBlink, hoverLine]);
+  // Keep one GPU texture for the lifetime of the screen. Replacing this with
+  // a new CanvasTexture on every animation-frame render eventually exhausts
+  // the browser's WebGL texture budget and loses the context.
+  const texture = useMemo(() => createScreenTexture(), []);
+
+  useEffect(() => () => texture.dispose(), [texture]);
 
   useFrame(() => {
-    if (texture) texture.needsUpdate = true;
+    drawScreenTexture(texture, powered, bootProgress, typeProgress, version, cursorBlink, hoverLine);
   });
 
   const handlePointerMove = useCallback(
@@ -304,7 +313,7 @@ function Monitor({
   cursorBlink: number;
 }) {
   const [hoverPart, setHoverPart] = useState<string | null>(null);
-  const lockupTex = useBrandTexture("/brand/logo-lockup.png");
+	const lockupTex = useBrandTexture("/brand/logo-lockup-hd.png");
   const kMarkTex = useBrandTexture("/brand/logo-k-cream.png");
 
   return (

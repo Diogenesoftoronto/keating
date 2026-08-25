@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.8.0] - 2026-08-25
+
+### Added
+- Added a pedagogy-first trajectory review workspace for annotating learner and model turns, reviewing text and native artifacts, comparing exact model candidates, recording rubric evidence and a preferred correction, and exporting approved SFT, DPO, and KTO datasets.
+- Added a strict versioned public-share contract for curated trajectories, artifacts, anchors, regions, fingerprints, and final review annotations, plus a read-only shared trajectory workspace that preserves the complete published teaching context.
+- Added a public Not Organic PKCE client with a state-bound authorization callback and DPoP-bound browser capabilities for hosted inference, usage, and provider-hosted checkout when a deployment supplies the complete public configuration.
+- Added an interactive Artifact Atlas covering 17 pedagogical artifact interfaces with executable contract checks for every variant and interaction.
+- Added canonical Keating lockup assets for web favicons, PWA installation, Apple touch identity, Android adaptive icons, and mobile splash screens.
+
+### Changed
+- Made hosted-credit pricing truthful across deployment states: unavailable checkout presents a waitlist, incomplete account setup presents provider connection, and only a fully configured connected client offers checkout.
+- Expanded shared course and session presentation to retain curated trajectory artifacts and review evidence while keeping public views read-only.
+- Normalized GSAP before generated Hyperframes scene scripts and kept the inline control bridge inside the sandboxed player.
+- Added reproducible environment-documentation and artifact-atlas checks to the canonical devenv and pre-commit workflows.
+
+### Fixed
+- Prevented missing, duplicate, or late-authored GSAP tags from breaking generated Hyperframes scenes.
+- Kept valid portable and compressed share links usable when local cache quota is exhausted, and surfaced storage or decoding failures explicitly.
+
+### Security
+- Restricted public trajectory projection to reviewed wire fields, rejecting executable artifact bodies, per-turn timestamps, dangling or cyclic references, invalid media targets, and mismatched content fingerprints.
+- Bound browser provider authorization to PKCE state and a non-extractable DPoP key while keeping product assertions, wallet authority, and provider credentials outside the public client.
+
 ## [3.7.0] - 2026-08-16
 
 ### Added

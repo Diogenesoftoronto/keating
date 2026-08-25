@@ -54,6 +54,7 @@
         "react-syntax-highlighter": "^16.1.1",
         "recharts": "^3.9.0",
         "rehype-katex": "^7.0.1",
+        "reicon-react": "^1.2.0",
         "remark-gfm": "^4.0.1",
         "remark-math": "^6.0.0",
         "sql.js": "^1.14.1",
@@ -2650,6 +2651,8 @@
     "regjsparser": ["regjsparser@0.13.1", "", { "dependencies": { "jsesc": "~3.1.0" }, "bin": { "regjsparser": "bin/parser" } }, "sha512-dLsljMd9sqwRkby8zhO1gSg3PnJIBFid8f4CQj/sXx+7cKx+E7u0PKhZ+U4wmhx7EfmtvnA318oVaIkAB1lRJw=="],
 
     "rehype-katex": ["rehype-katex@7.0.1", "", { "dependencies": { "@types/hast": "^3.0.0", "@types/katex": "^0.16.0", "hast-util-from-html-isomorphic": "^2.0.0", "hast-util-to-text": "^4.0.0", "katex": "^0.16.0", "unist-util-visit-parents": "^6.0.0", "vfile": "^6.0.0" } }, "sha512-OiM2wrZ/wuhKkigASodFoo8wimG3H12LWQaH8qSPVJn9apWKFSH3YOCtbKpBorTVw/eI7cuT21XBbvwEswbIOA=="],
+
+    "reicon-react": ["reicon-react@1.2.0", "", { "peerDependencies": { "react": ">=16.8.0" } }, "sha512-1+6kKPSJPnNHYcA9rEbUVMpzKSXJuJPVHEkIo6l6DQnhNnEEpBXBn/XgBqEFniokMyXy+sitLv7vVpQ/xsJ26Q=="],
 
     "remark-frontmatter": ["remark-frontmatter@5.0.0", "", { "dependencies": { "@types/mdast": "^4.0.0", "mdast-util-frontmatter": "^2.0.0", "micromark-extension-frontmatter": "^2.0.0", "unified": "^11.0.0" } }, "sha512-XTFYvNASMe5iPN0719nPrdItC9aU0ssC4v14mH1BCi1u0n1gAocqcujWUrByftZTbLhRtiKRyjYTSIOcr69UVQ=="],
 

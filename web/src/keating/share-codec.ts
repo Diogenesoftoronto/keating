@@ -1,5 +1,9 @@
 import { gzipSync, gunzipSync } from "fflate";
 import type { SharedModelInfo, SharedSession } from "./shared-sessions";
+import {
+	projectSharedSessionPayload,
+	SHARE_MAX_BYTES,
+} from "./share-contract";
 
 // Hash-embedded share links carry the whole session in the URL fragment. To keep
 // those links short the payload is gzip-compressed and base64url-encoded. This
@@ -17,6 +21,7 @@ export function bytesToBase64Url(bytes: Uint8Array): string {
 }
 
 export function base64UrlToBytes(value: string): Uint8Array {
+	if (!/^[A-Za-z0-9_-]*$/.test(value)) throw new Error("Invalid base64url payload");
 	const base64 = value.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
 	const binary = atob(base64);
 	return Uint8Array.from(binary, (char) => char.charCodeAt(0));
@@ -34,8 +39,8 @@ function gzipBytes(bytes: Uint8Array): Uint8Array {
 	return gzipSync(bytes, { level: 9 });
 }
 
-function gunzipBytes(bytes: Uint8Array): Uint8Array {
-	return gunzipSync(bytes);
+function gunzipBytes(bytes: Uint8Array, outputSize: number): Uint8Array {
+	return gunzipSync(bytes, { out: new Uint8Array(outputSize) });
 }
 
 export function textFromContent(content: unknown): string {
@@ -58,7 +63,7 @@ interface MinimalSharedMessage {
 
 interface MinimalSharedSession {
 	id: string;
-	schemaVersion: 2;
+	schemaVersion: 2 | 3;
 	title: string;
 	createdAt: string;
 	sharedAt: string;
@@ -66,27 +71,18 @@ interface MinimalSharedSession {
 	model?: SharedModelInfo;
 	thinkingLevel?: SharedSession["thinkingLevel"];
 	messages: MinimalSharedMessage[];
+	trajectory?: SharedSession["trajectory"];
 }
 
 export function minifySharedSession(shared: SharedSession): MinimalSharedSession {
-	return {
-		id: shared.id,
-		schemaVersion: 2,
-		title: shared.title,
-		createdAt: shared.createdAt,
-		sharedAt: shared.sharedAt,
-		messageCount: shared.messageCount,
-		model: shared.model,
-		thinkingLevel: shared.thinkingLevel,
-		messages: shared.messages.map((message) => ({
-			role: (message as any).role,
-			content: [{ type: "text", text: textFromContent((message as any).content) }],
-		})),
-	};
+	const projected = projectSharedSessionPayload(shared);
+	if (!projected || typeof projected.id !== "string") throw new Error("Shared session cannot be projected onto the public wire contract.");
+	return projected as unknown as MinimalSharedSession;
 }
 
 export function encodeSharedSession(shared: SharedSession): string {
 	const bytes = new TextEncoder().encode(JSON.stringify(minifySharedSession(shared)));
+	if (bytes.length > SHARE_MAX_BYTES) throw new Error("Shared session is too large");
 	try {
 		const compressed = gzipBytes(bytes);
 		if (compressed.length < bytes.length) return `${COMPRESSED_PREFIX}${bytesToBase64Url(compressed)}`;
@@ -101,12 +97,20 @@ export function encodeSharedSession(shared: SharedSession): string {
 // bare/legacy base64url payloads.
 export function decodeSharedSessionPayload(value: string): Partial<SharedSession> | null {
 	try {
+		if (value.length > Math.ceil(SHARE_MAX_BYTES * 4 / 3) + 16) return null;
 		const isCompressed = value.startsWith(COMPRESSED_PREFIX);
 		const isJson = value.startsWith(JSON_PREFIX);
 		const encoded = isCompressed || isJson ? value.slice(value.indexOf(".") + 1) : value;
 		const bytes = base64UrlToBytes(encoded);
-		const decoded = isCompressed ? gunzipBytes(bytes) : bytes;
-		return JSON.parse(new TextDecoder().decode(decoded)) as Partial<SharedSession>;
+		if (bytes.length > SHARE_MAX_BYTES || (isCompressed && bytes.length < 4)) return null;
+		const outputSize = isCompressed
+			? (bytes[bytes.length - 4] | bytes[bytes.length - 3] << 8 | bytes[bytes.length - 2] << 16 | bytes[bytes.length - 1] << 24) >>> 0
+			: bytes.length;
+		if (outputSize > SHARE_MAX_BYTES) return null;
+		const decoded = isCompressed ? gunzipBytes(bytes, outputSize) : bytes;
+		if (decoded.length > SHARE_MAX_BYTES) return null;
+		const parsed = JSON.parse(new TextDecoder().decode(decoded));
+		return projectSharedSessionPayload(parsed) as Partial<SharedSession> | null;
 	} catch {
 		return null;
 	}

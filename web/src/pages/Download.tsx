@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { usePostHog } from "@posthog/react";
 import { Link } from "@tanstack/react-router";
 import { Nav } from "../components/Nav";
 import { Footer } from "../components/Footer";
@@ -63,6 +64,7 @@ const MOBILE_PLATFORMS = [
 ];
 
 export function Download() {
+  const posthog = usePostHog();
   useSeo({
     title: "Download Keating Desktop | Electron App",
     description:
@@ -94,6 +96,18 @@ export function Download() {
       : detection.platform === "android"
         ? "Android"
         : null;
+
+  const captureDownloadIntent = (
+    source: "hero" | "platform_card" | "source" | "mobile",
+    platform: string,
+    destination: "github_releases" | "desktop_source",
+  ) => {
+    posthog?.capture("download_intent", {
+      source,
+      platform,
+      destination,
+    });
+  };
 
   return (
     <div className={cx("retro-layout", "retro-page")}>
@@ -140,13 +154,28 @@ export function Download() {
                   href={GITHUB_RELEASES_URL}
                   target="_blank"
                   rel="noreferrer"
+                  onClick={() =>
+                    captureDownloadIntent(
+                      "hero",
+                      recommended,
+                      "github_releases",
+                    )
+                  }
                 >
                   <span className={cx("btn-logo")} aria-hidden="true">
                     <RecommendedLogo width={16} height={16} />
                   </span>
                   Download_for_{DESKTOP_LABELS[recommended].replace(/\s+/g, "_")} →
                 </a>
-                <Link className={btnRetro()} to="/chat">
+                <Link
+                  className={btnRetro()}
+                  to="/chat"
+                  onClick={() =>
+                    posthog?.capture("start_session_clicked", {
+                      source: "download_page",
+                    })
+                  }
+                >
                   Try_In_Browser
                 </Link>
               </div>
@@ -208,7 +237,18 @@ export function Download() {
                     </div>
                     <p>{item.detail}</p>
                     <code>{item.command}</code>
-                    <a href={GITHUB_RELEASES_URL} target="_blank" rel="noreferrer">
+                    <a
+                      href={GITHUB_RELEASES_URL}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={() =>
+                        captureDownloadIntent(
+                          "platform_card",
+                          item.id,
+                          "github_releases",
+                        )
+                      }
+                    >
                       Check latest release
                     </a>
                   </article>
@@ -231,7 +271,19 @@ export function Download() {
                 <div>bun run build:main</div>
                 <div>bun run dist</div>
               </div>
-              <a className={btnRetro()} href={DESKTOP_SOURCE_URL} target="_blank" rel="noreferrer">
+              <a
+                className={btnRetro()}
+                href={DESKTOP_SOURCE_URL}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() =>
+                  captureDownloadIntent(
+                    "source",
+                    recommended,
+                    "desktop_source",
+                  )
+                }
+              >
                 View_Source
               </a>
             </div>
@@ -285,7 +337,18 @@ export function Download() {
                 Follow the release feed for mobile availability, TestFlight, and Android testing
                 notes.
               </p>
-              <a href={GITHUB_RELEASES_URL} target="_blank" rel="noreferrer">
+              <a
+                href={GITHUB_RELEASES_URL}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() =>
+                  captureDownloadIntent(
+                    "mobile",
+                    detection.platform,
+                    "github_releases",
+                  )
+                }
+              >
                 Watch releases
               </a>
             </div>
