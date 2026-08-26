@@ -68,6 +68,7 @@ export function tuiSettingsMarkdown(settings: TuiRuntimeSettings): string {
 }
 
 export const TUI_SETTINGS_ACTIONS = [
+  "Replay onboarding tour",
   "Select model",
   "Connect or repair provider",
   "Cycle thinking",

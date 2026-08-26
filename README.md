@@ -152,6 +152,15 @@ The setup screen uses an Ink-powered terminal UI with arrow-key choices for prov
 
 Non-interactive environments can write the default config with `keating setup --yes`.
 
+The first OpenTUI tour continues into a keyboard-driven Profile & setup chooser for your display name and terminal portrait. Choose Keating's built-in learner portrait, initials, or a local PNG, JPEG, GIF, BMP, or TIFF image up to 5 MiB. Images are read locally and are not uploaded by setup. Replay the chooser with `/setup`, or configure the same identity directly from the CLI:
+
+```bash
+keating profile --name="Ada Lovelace" --image=./portrait.png
+keating profile --name="Ada Lovelace" --initials=AL
+keating profile --learner
+keating profile                 # inspect the current choice and usage
+```
+
 Keating checks credentials before launching the shell. It tries the configured provider first, then an active Not Organic capability, followed by configured Google, OpenAI, Anthropic, OpenRouter, Zyphra, or MiniMax credentials. An expired Not Organic capability is not reported as configured. Supported long-lived environment variables are:
 
 ```bash
