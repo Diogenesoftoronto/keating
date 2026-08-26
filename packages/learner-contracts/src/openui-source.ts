@@ -30,10 +30,17 @@ export type OpenUISourceCompileResult =
 
 export const SHARED_OPENUI_COMPONENT_MAPPERS = [
   "LearningSurface", "Explanation", "Callout", "Question", "Quiz", "Flashcards",
-  "StudyPlan", "ConceptMap", "LearningImage", "LearningAnimation", "SharedNotes",
+  "StudyPlan", "ConceptMap", "LearningImage", "SharedNotes",
 ] as const satisfies typeof WEB_OPENUI_COMPONENTS;
 
-const COMPONENTS = new Set<string>(SHARED_OPENUI_COMPONENT_MAPPERS);
+// Persisted sessions may still contain the retired streamed animation component.
+// Keep it parser-only so old content degrades to a trusted-surface handoff without
+// advertising it to current generators through WEB_OPENUI_COMPONENTS.
+const LEGACY_COMPILE_ONLY_COMPONENTS = ["LearningAnimation"] as const;
+const COMPONENTS = new Set<string>([
+  ...SHARED_OPENUI_COMPONENT_MAPPERS,
+  ...LEGACY_COMPILE_ONLY_COMPONENTS,
+]);
 const MAX_SOURCE_LENGTH = 131_072;
 const MAX_STATEMENTS = 64;
 const MAX_COLLECTION_LENGTH = 512;
@@ -452,7 +459,13 @@ function mapElement(element: SourceElement, index: number): UiDocumentNode[] {
     }];
     case "ConceptMap": return [{ type: "concept-map", id, source: text(props.code), ...(optionalText(props.title) ? { title: text(props.title) } : {}) }];
     case "LearningImage": return [{ type: "image", id, alt: text(props.alt, "Learning image"), resource: { id: childId(id, "resource"), title: text(props.title, "Learning image"), format: "uri", uri: text(props.src) } }];
-    case "LearningAnimation": return [{ type: "handoff", id, target: "web", reason: text(props.summary, `Open the ${text(props.topic, "learning")} animation in Keating web`), context: "The source interaction contains executable HTML, so the portable learner contract records an explicit trusted-surface handoff instead of embedding or executing it." }];
+    case "LearningAnimation": return [{
+      type: "handoff",
+      id,
+      target: "web",
+      reason: text(props.summary, `Open the ${text(props.topic, "learning")} animation in Keating web`),
+      context: "This persisted interaction contains executable HTML. The portable learner contract records a trusted-surface handoff without embedding or executing that HTML.",
+    }];
     case "SharedNotes": return [{ type: "notes", id: contractId(text(props.id, id), id), title: text(props.title, "Learner notes"), value: text(props.initialValue), ...(optionalText(props.placeholder) ? { placeholder: text(props.placeholder) } : {}) }];
     default: throw new OpenUISourceError("unsupported", `OpenUI component ${element.typeName} has no shared semantic mapping.`);
   }
