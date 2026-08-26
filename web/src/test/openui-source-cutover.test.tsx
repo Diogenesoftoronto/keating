@@ -49,18 +49,19 @@ describe("completed browser OpenUI source cutover", () => {
 		expect(html).not.toContain("Submit answers");
 	});
 
-	test("never mounts authored animation HTML when a sibling is unsupported", () => {
+	test("lowers a persisted animation to a safe handoff without mounting its authored HTML", () => {
 		const unsafe = [
-			'root = LearningSurface([animation, future], "Unsafe fallback")',
+			'root = LearningSurface([animation], "Retired component")',
 			'animation = LearningAnimation("Topic", "<script>globalThis.__executed = true</script>")',
-			'future = FutureWidget({ value: "unknown" })',
 		].join("\n");
 		const html = renderToStaticMarkup(
 			<KeatingOpenUIRenderer program={unsafe} source={unsafe} metadata={metadata} sourceComplete />,
 		);
-		expect(html).toContain('data-openui-source-recovery="rejected"');
+		expect(html).toContain('data-shared-openui-document="session-message-source"');
+		expect(html).not.toContain('data-openui-source-recovery="rejected"');
 		expect(html).not.toContain("<iframe");
 		expect(html).not.toContain("<script>");
-		expect(html).toContain("&lt;script&gt;");
+		expect(html).not.toContain("&lt;script&gt;");
+		expect(html).toContain("Open the Topic animation in Keating web");
 	});
 });

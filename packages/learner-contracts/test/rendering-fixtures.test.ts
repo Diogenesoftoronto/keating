@@ -59,7 +59,7 @@ function collectDocumentIds(document: UiDocument): string[] {
 
 describe("cross-surface rendering fixture contract", () => {
   test("is versioned, unique, and contains every declared family", () => {
-    expect(RENDERING_FIXTURE_PACK_VERSION).toBe(2);
+    expect(RENDERING_FIXTURE_PACK_VERSION).toBe(3);
     expect(new Set(WEB_MARKDOWN_FEATURES).size).toBe(WEB_MARKDOWN_FEATURES.length);
     expect(new Set(WEB_MERMAID_GRAMMARS).size).toBe(WEB_MERMAID_GRAMMARS.length);
     expect(new Set(WEB_OPENUI_COMPONENTS).size).toBe(WEB_OPENUI_COMPONENTS.length);

@@ -184,6 +184,13 @@ in
     '';
   };
 
+  tasks."keating:check-atlas" = {
+    description = "Verify the artifact atlas archetypes, modes, presets, and folded map still behave";
+    exec = ''
+      bun scripts/check-artifact-atlas.mjs
+    '';
+  };
+
   # ── Build ───────────────────────────────────────────────────────
   tasks."keating:build" = {
     description = "Build root TypeScript project (requires versions in sync)";
@@ -502,6 +509,18 @@ in
       enable = true;
       name = "keating-env-docs-check";
       entry = "devenv tasks run keating:check-env";
+      language = "system";
+      pass_filenames = false;
+      always_run = true;
+      stages = [ "pre-commit" ];
+    };
+
+    # The atlas is a catalogue of working miniatures, so a broken demo reads exactly
+    # like a working one in a diff. Run its contracts at commit.
+    keating-atlas-check = {
+      enable = true;
+      name = "keating-atlas-check";
+      entry = "devenv tasks run keating:check-atlas";
       language = "system";
       pass_filenames = false;
       always_run = true;
