@@ -57,9 +57,9 @@ The consolidated operations are the model-facing API. The older fine-grained too
 
 `keating tui` is a separate OpenTUI host connected to the same Pi runtime through RPC. `keating shell` is unchanged, so existing Pi prompts, skills, extensions, sessions, provider configuration, and direct Pi workflows remain portable.
 
-The alternate host currently supports the shared transcript, streaming responses, prompts and follow-ups, notifications, status, and editor-text requests. `/shell` switches into the classic Pi interface. Pi-specific modal extension requests are cancelled with an explicit switch notice because silently approximating them could lose information.
+The alternate host supports the shared transcript, streaming responses, prompts and follow-ups, notifications, status, editor-text requests, and Pi extension dialogs. `/shell` switches into the classic Pi interface while preserving the exact Pi session.
 
-This makes the sacrifice visible: OpenTUI does not yet have semantic renderers for the web OpenUI document model or every Pi extension UI primitive. Reaching parity requires terminal renderers and lifecycle storage adapters, not a fork of the pedagogy engine. Until then, the classic shell is the compatibility surface and the web app is the complete component surface.
+OpenTUI now compiles supported browser OpenUI source through the trusted shared adapter, renders every canonical semantic node in terminal-safe form, exposes keyboard actions for stateful nodes, and journals action delivery durably. The remaining parity work is above basic rendering: materializing actions into shared learner records, restoring active document state and exact entered work across session/process restart, completing learner/session/course workflows, and opening context-preserving capable-surface handoffs. The current prioritized assessment is [OpenUI to OpenTUI portability gaps](plans/openui-opentui-portability-gaps.md). The classic shell remains the compatibility surface for third-party Pi packages and workflows outside the shared learner contract.
 
 ## Migration constraints
 
