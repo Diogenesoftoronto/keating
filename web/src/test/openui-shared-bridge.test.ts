@@ -27,7 +27,7 @@ describe("browser OpenUI to shared learner contract", () => {
 		expect(document.retention).toBe("workspace");
 		expect(document.nodes.map((node) => node.type)).toEqual([
 			"markdown", "callout", "question-group",
-			"quiz", "deck", "study-plan", "concept-map", "image", "handoff", "notes",
+			"quiz", "deck", "study-plan", "concept-map", "image", "notes",
 		]);
 		const group = document.nodes.find((node) => node.type === "question-group");
 		expect(group?.type === "question-group" ? {

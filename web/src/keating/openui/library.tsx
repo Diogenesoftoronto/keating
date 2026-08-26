@@ -18,7 +18,6 @@ import {
 } from "../../components/QuestionRenderer";
 import { QuizRenderer } from "../../components/QuizRenderer";
 import { FlashcardRenderer } from "../../components/FlashcardRenderer";
-import { AnimatedScene } from "../../components/AnimatedScene";
 import { initialSrsState, type FlashcardDeck } from "../srs";
 import type { Quiz } from "../core";
 import { StudyPlan } from "./study-plan";
@@ -338,18 +337,6 @@ export const LearningImage = defineComponent({
 	),
 });
 
-export const LearningAnimation = defineComponent({
-	name: "LearningAnimation",
-	description: "A sandboxed Hyperframes animation authored as a complete HTML document.",
-	props: z.object({
-		topic: z.string(),
-		html: z.string(),
-		lifecycle: lifecycleSchema.default("workspace"),
-		summary: z.string().optional(),
-	}),
-	component: ({ props }) => <AnimatedScene payload={{ kind: "hyperframes", topic: props.topic, summary: props.summary, body: props.html }} />,
-});
-
 const sharedNotesPropsSchema = z.object({
 	id: z.string(),
 	title: z.string(),
@@ -395,7 +382,6 @@ const learningBlock = z.union([
 	StudyPlan.ref,
 	ConceptMap.ref,
 	LearningImage.ref,
-	LearningAnimation.ref,
 	SharedNotes.ref,
 ]);
 
@@ -434,12 +420,11 @@ export const keatingOpenUILibrary = createLibrary({
 		StudyPlan,
 		ConceptMap,
 		LearningImage,
-		LearningAnimation,
 		SharedNotes,
 	],
 	componentGroups: [
 		{ name: "Teaching", components: ["Explanation", "Callout", "Question", "Quiz", "Flashcards"] },
-		{ name: "Workspace", components: ["StudyPlan", "ConceptMap", "LearningImage", "LearningAnimation", "SharedNotes"] },
+		{ name: "Workspace", components: ["StudyPlan", "ConceptMap", "LearningImage", "SharedNotes"] },
 	],
 });
 
