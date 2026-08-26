@@ -69,11 +69,13 @@ export function tuiSettingsMarkdown(settings: TuiRuntimeSettings): string {
 
 export const TUI_SETTINGS_ACTIONS = [
   "Select model",
+  "Connect or repair provider",
   "Cycle thinking",
   "Toggle automatic retry",
   "Toggle automatic compaction",
   "Toggle steering queue mode",
   "Toggle follow-up queue mode",
-  "Prepare /shell provider or code handoff",
+  "Open debug service",
+  "Prepare /shell code-capability handoff",
   "Close settings",
 ] as const;

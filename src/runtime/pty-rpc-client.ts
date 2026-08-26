@@ -27,6 +27,13 @@ export interface KeatingPtyRpcClientOptions {
   spawnTransport?: SpawnTransport;
 }
 
+export interface KeatingPtyRpcRestartOptions {
+  /** Resume the exact project session after credentials change. */
+  sessionPath?: string;
+  /** Environment overrides merged into the next RPC process. */
+  env?: Record<string, string>;
+}
+
 export type KeatingRpcExtensionUiResponse =
   | { type: "extension_ui_response"; id: string; value: string }
   | { type: "extension_ui_response"; id: string; confirmed: boolean }
@@ -179,6 +186,28 @@ export class KeatingPtyRpcClient {
     this.exitSubscription = null;
     this.process = null;
     this.rejectPending(new Error("Pi RPC client stopped."));
+  }
+
+  /** Restart Pi without discarding host event subscriptions. */
+  async restart(options: KeatingPtyRpcRestartOptions = {}): Promise<void> {
+    await this.stop();
+    if (options.sessionPath !== undefined) {
+      const args: string[] = [];
+      const current = this.options.args ?? [];
+      for (let index = 0; index < current.length; index += 1) {
+        const argument = current[index]!;
+        if (argument === "--session") {
+          index += 1;
+          continue;
+        }
+        if (argument.startsWith("--session=")) continue;
+        args.push(argument);
+      }
+      args.push("--session", options.sessionPath);
+      this.options.args = args;
+    }
+    if (options.env) this.options.env = { ...this.options.env, ...options.env };
+    await this.start();
   }
 
   onEvent(listener: (event: unknown) => void): () => void {

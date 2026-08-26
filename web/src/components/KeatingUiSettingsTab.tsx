@@ -537,7 +537,7 @@ export function KeatingUiSettingsTab() {
 			</div>
 
 			<div id="settings-section-ui-privacy" className={sectionAnchorClass}>
-				<h3 className={sectionTitleClass}>Privacy and diagnostics</h3>
+				<h3 className={sectionTitleClass}>Privacy</h3>
 				<p className={sectionDescriptionSpacedClass}>
 					Control anonymous product analytics and optional evaluation sharing for this browser.
 					Keating never sends prompts, replies, file contents, provider keys, or full share links to PostHog. Read the{" "}

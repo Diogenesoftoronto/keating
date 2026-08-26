@@ -89,6 +89,6 @@ export function providerSetupMessage(provider: string): string {
     ...providerAuthHints(provider).map((hint) => `  ${hint}`),
     "  /setup   # change Keating provider/model defaults inside this TUI",
     "",
-    "The Keating shell can still open so you can configure credentials without leaving the TUI."
+    "OpenTUI can connect providers from its model picker or /settings; classic Pi /login remains available as an alternative."
   ].join("\n");
 }

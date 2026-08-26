@@ -22,6 +22,11 @@ describe("OpenTUI composer keyboard contract", () => {
       await setup.flush();
       expect(submitted).toBe("hello");
       expect(keyEvents).toContainEqual({ name: ":", ctrl: false });
+
+      input.value = "";
+      await mockInput.typeText("@src/core/project.ts");
+      await setup.flush();
+      expect(input.value).toBe("@src/core/project.ts");
     } finally {
       renderer.destroy();
     }

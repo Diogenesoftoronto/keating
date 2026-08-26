@@ -22,6 +22,7 @@ import {
   SETTINGS_DIALOG_TAB_IDS,
 } from "../components/settings/section-ids";
 import { KeatingUiSettingsTab } from "../components/KeatingUiSettingsTab";
+import { DiagnosticsTab } from "../components/settings/DiagnosticsTab";
 import { LearningTab } from "../components/settings/LearningTab";
 import { ModelsProvidersTab } from "../components/settings/ModelsProvidersTab";
 import {
@@ -40,6 +41,13 @@ import {
   getProviderApiKey,
   resolveAvailableChatModel,
 } from "../lib/provider-models";
+import { recordDiagnostic } from "../lib/diagnostics";
+import {
+  captureSessionModelContext,
+  recordSessionDebugAgentEvent,
+  recordSessionHook,
+  subscribeLifecycleDebug,
+} from "../lib/session-debug";
 import {
   DEFAULT_IMAGE_GENERATOR_ID,
   getImageGenerator,
@@ -338,6 +346,10 @@ export function useKeatingAgent(
     DEFAULT_MODEL.name ?? DEFAULT_MODEL.id,
   );
   const selectModel = useCallback((model: Model<Api>) => {
+    recordDiagnostic("info", "model", "Active model selected", {
+      provider: model.provider,
+      model: model.id,
+    });
     selectedModelRef.current = model;
     setModelLabel(model.name ?? model.id);
   }, []);
@@ -1252,11 +1264,30 @@ export function useKeatingAgent(
       const ensureSessionStartContext = async () => {
         if (!sessionStartRecord.context && sessionAlreadyAnswered) return;
         sessionStartRecord.promise ??= (async () => {
-          await keatingLifecycle.emit({
-            type: "session_start",
-            sessionId: agentSessionId,
-          });
-          return runSessionStartHooks(keatingStorage);
+          const hookStartedAt = performance.now();
+          recordSessionHook("session-start-hooks", "started", { sessionId: agentSessionId });
+          try {
+            await keatingLifecycle.emit({
+              type: "session_start",
+              sessionId: agentSessionId,
+            });
+            const context = await runSessionStartHooks(keatingStorage);
+            recordSessionHook(
+              "session-start-hooks",
+              "completed",
+              { sessionId: agentSessionId, contextCharacters: context.length },
+              Math.round(performance.now() - hookStartedAt),
+            );
+            return context;
+          } catch (error) {
+            recordSessionHook(
+              "session-start-hooks",
+              "failed",
+              { sessionId: agentSessionId, error: error instanceof Error ? error.message : String(error) },
+              Math.round(performance.now() - hookStartedAt),
+            );
+            throw error;
+          }
         })();
         sessionStartRecord.context = await sessionStartRecord.promise;
         agent.state.systemPrompt = buildAgentSystemPrompt(
@@ -1364,6 +1395,7 @@ export function useKeatingAgent(
       };
       persistCurrentSnapshotRef.current = persistSnapshot;
       const unsubscribePersistence = agent.subscribe((ev) => {
+        recordSessionDebugAgentEvent(agent, ev);
         const canonicalRuntime = conversationRuntime(agentSessionId);
         if (canonicalRuntime) recordAgentEvent(canonicalRuntime, ev);
         if (ev.type === "message_update") {
@@ -1657,6 +1689,24 @@ export function useKeatingAgent(
         "keating:live-speech-bridge",
         handleBridgeRequest,
       );
+  }, []);
+
+  useEffect(() => {
+    const unsubscribeLifecycle = subscribeLifecycleDebug(keatingLifecycle);
+    const captureCurrentContext = () => {
+      const agent = agentRef.current;
+      if (!agent) return;
+      captureSessionModelContext(agent.state.model, {
+        systemPrompt: agent.state.systemPrompt,
+        messages: agent.state.messages,
+        tools: agent.state.tools,
+      }, "agent-state");
+    };
+    window.addEventListener("keating:session-debug-enabled", captureCurrentContext);
+    return () => {
+      unsubscribeLifecycle();
+      window.removeEventListener("keating:session-debug-enabled", captureCurrentContext);
+    };
   }, []);
 
   // Apply teacher-persona edits to the live agent so changes take effect on the
@@ -2142,6 +2192,7 @@ export function useKeatingAgent(
           component: <LearningTab onSpeechSettingsChange={setSpeechSettings} />,
         },
         { id: "app", label: "App", component: <KeatingUiSettingsTab /> },
+        { id: "diagnostics", label: "Diagnostics", component: <DiagnosticsTab /> },
       ]}
     />
   );

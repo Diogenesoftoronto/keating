@@ -22,6 +22,12 @@ import {
 	resolveProviderWebSearchRoute,
 } from "../keating/provider-web-search";
 import { signalHostedSearchActivation } from "../keating/search";
+import { recordDiagnostic } from "../lib/diagnostics";
+import {
+	captureSessionModelContext,
+	recordSessionRetryAttempt,
+	recordSessionTransport,
+} from "../lib/session-debug";
 
 // Compatibility exports for existing integrations and tests. New routing should
 // prefer applyProviderWebSearch so capability negotiation stays centralized.
@@ -195,7 +201,20 @@ function createBrowserStreamFn() {
 export async function hybridStreamFn(model: Model<Api>, context: Context, options?: KeatingStreamOptions) {
 	const { hostedWebSearch = true, ...requestOptions } = options ?? {};
 	const cleanOptions: SimpleStreamOptions = requestOptions;
+	captureSessionModelContext(model, context);
 	if (model.provider === "browser") {
+		recordSessionTransport({
+			provider: model.provider,
+			model: model.id,
+			transport: "browser",
+			hostedWebSearch: false,
+		});
+		recordDiagnostic("info", "stream", "Inference stream prepared", {
+			provider: model.provider,
+			model: model.id,
+			transport: "browser",
+			hosted_web_search: false,
+		});
 		return normalizeToolCallStream(await createBrowserStreamFn()(model, context, cleanOptions), context);
 	}
 
@@ -241,8 +260,25 @@ export async function hybridStreamFn(model: Model<Api>, context: Context, option
 		const mergedOptions = hostedWebSearch
 			? withProviderWebSearch(proxiedOptions, proxiedModel, !!apiKey)
 			: proxiedOptions;
+		recordSessionTransport({
+			provider: model.provider,
+			model: model.id,
+			transport: "same-origin-proxy",
+			hostedWebSearch: hostedWebSearch,
+		});
+		recordDiagnostic("info", "stream", "Inference stream prepared", {
+			provider: model.provider,
+			model: model.id,
+			transport: "same-origin-proxy",
+			hosted_web_search: hostedWebSearch,
+		});
+		let attempt = 0;
 		return normalizeToolCallStream(
-			streamWithApiRetry(proxiedModel, context, mergedOptions, (nextOptions) => streamSimple(proxiedModel, context, nextOptions)),
+			streamWithApiRetry(proxiedModel, context, mergedOptions, (nextOptions) => {
+				attempt += 1;
+				recordSessionRetryAttempt(model.provider, model.id, attempt);
+				return streamSimple(proxiedModel, context, nextOptions);
+			}),
 			context,
 		);
 	}
@@ -250,8 +286,25 @@ export async function hybridStreamFn(model: Model<Api>, context: Context, option
 	const mergedOptions = hostedWebSearch
 		? withProviderWebSearch(streamOptions, model, !!apiKey)
 		: streamOptions;
+	recordSessionTransport({
+		provider: model.provider,
+		model: model.id,
+		transport: isNotOrganicProvider(model.provider) ? "hosted-capability" : "direct",
+		hostedWebSearch: hostedWebSearch,
+	});
+	recordDiagnostic("info", "stream", "Inference stream prepared", {
+		provider: model.provider,
+		model: model.id,
+		transport: isNotOrganicProvider(model.provider) ? "hosted-capability" : "direct",
+		hosted_web_search: hostedWebSearch,
+	});
+	let attempt = 0;
 	return normalizeToolCallStream(
-		streamWithApiRetry(model, context, mergedOptions, (nextOptions) => streamSimple(model, context, nextOptions)),
+		streamWithApiRetry(model, context, mergedOptions, (nextOptions) => {
+			attempt += 1;
+			recordSessionRetryAttempt(model.provider, model.id, attempt);
+			return streamSimple(model, context, nextOptions);
+		}),
 		context,
 	);
 }

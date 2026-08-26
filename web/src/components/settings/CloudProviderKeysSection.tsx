@@ -20,6 +20,7 @@ import {
 	NOTORGANIC_PROVIDER_ID,
 	notOrganicPublicClient,
 } from "../../notorganic-provider";
+import { recordDiagnostic } from "../../lib/diagnostics";
 import { css } from "../../../styled-system/css";
 
 const sectionClass = css({ display: "flex", flexDirection: "column", gap: "1rem", scrollMarginTop: "5rem" });
@@ -106,10 +107,12 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 		const result = await completeOAuthDeviceFlow(oauthProvider, controller.signal);
 		if (controller.signal.aborted) return;
 		if (result.success && result.provider) {
+			recordDiagnostic("info", "auth", "Provider sign-in completed", { provider: result.provider, method: "device-code" });
 			const providerNames = oauthProviderToProviderNames(result.provider);
 			setOAuthStatus((prev) => setProviderAliases(prev, providerNames, true));
 			setOAuthErrors((prev) => setProviderAliases(prev, providerNames, ""));
 		} else {
+			recordDiagnostic("error", "auth", "Provider sign-in failed", { provider, method: "device-code" });
 			setOAuthErrors((prev) => ({
 				...prev,
 				[provider]: result.error ?? "GitHub Copilot sign-in failed.",
@@ -202,10 +205,12 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 			const { success, provider: oauthProvider } = event.data;
 			const providerNames = oauthProviderToProviderNames(oauthProvider);
 			if (success && oauthProvider) {
+				recordDiagnostic("info", "auth", "Provider sign-in completed", { provider: oauthProvider, method: "browser-oauth" });
 				setOAuthStatus((prev) => setProviderAliases(prev, providerNames, true));
 				setOAuthInputs((prev) => setProviderAliases(prev, providerNames, ""));
 				setOAuthErrors((prev) => setProviderAliases(prev, providerNames, ""));
 			} else if (providerNames.length > 0) {
+				recordDiagnostic("error", "auth", "Provider sign-in failed", { provider: oauthProvider ?? "unknown", method: "browser-oauth" });
 				setOAuthErrors((prev) => setProviderAliases(prev, providerNames, event.data.error ?? "OAuth sign-in failed."));
 			}
 			setOauthLoading((prev) => {
@@ -233,7 +238,9 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 				await storage.providerKeys.delete(provider);
 			}
 			setKeyErrors((prev) => ({ ...prev, [provider]: "" }));
+			recordDiagnostic("info", "auth", value.trim() ? "Provider API key saved" : "Provider API key removed", { provider, method: "api-key" });
 		} catch (error) {
+			recordDiagnostic("error", "auth", "Provider API key storage failed", { provider, method: "api-key" });
 			setKeyErrors((prev) => ({
 				...prev,
 				[provider]: error instanceof Error ? error.message : "Secure credential storage is unavailable.",
@@ -242,6 +249,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 	};
 
 	const handleSignIn = (provider: string) => {
+		recordDiagnostic("info", "auth", "Provider sign-in started", { provider, method: "subscription" });
 		if (provider === NOTORGANIC_PROVIDER_ID) {
 			setOAuthErrors((prev) => ({ ...prev, [provider]: "" }));
 			setOauthLoading((prev) => ({ ...prev, [provider]: true }));
@@ -294,6 +302,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 				void finishDeviceSignIn(provider, initiation.provider);
 			})
 			.catch((error) => {
+				recordDiagnostic("error", "auth", "Provider sign-in could not start", { provider, method: "subscription" });
 				setOAuthErrors((prev) => ({
 					...prev,
 					[provider]: error instanceof Error ? error.message : "OAuth sign-in failed.",
@@ -323,12 +332,14 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 		setOAuthErrors((prev) => ({ ...prev, [provider]: "" }));
 		const result = await completeOAuthFromInput(input);
 		if (result.success && result.provider) {
+			recordDiagnostic("info", "auth", "Provider sign-in completed", { provider: result.provider, method: "manual-code" });
 			const statusProviders = oauthProviderToProviderNames(result.provider);
 			setOAuthStatus((prev) => setProviderAliases(prev, statusProviders, true));
 			setOAuthInputs((prev) => setProviderAliases(prev, statusProviders, ""));
 			setOAuthErrors((prev) => setProviderAliases(prev, statusProviders, ""));
 			setOauthLoading((prev) => setProviderAliases(prev, statusProviders, false));
 		} else {
+			recordDiagnostic("error", "auth", "Provider sign-in failed", { provider, method: "manual-code" });
 			setOAuthErrors((prev) => ({ ...prev, [provider]: result.error ?? "OAuth sign-in failed." }));
 			setOauthLoading((prev) => ({ ...prev, [provider]: false }));
 		}
@@ -339,6 +350,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 			await notOrganicPublicClient()?.signOut();
 			setOAuthStatus((prev) => ({ ...prev, [provider]: false }));
 			setHostedSummary("");
+			recordDiagnostic("info", "auth", "Provider signed out", { provider });
 			return;
 		}
 		const oauthId = providerToOAuthId(provider);
@@ -348,6 +360,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 		await storage.providerKeys.delete(provider);
 		setOAuthStatus((prev) => ({ ...prev, [provider]: false }));
 		setKeys((prev) => ({ ...prev, [provider]: "" }));
+		recordDiagnostic("info", "auth", "Provider signed out", { provider });
 	};
 
 	const OAUTH_PROVIDER_LABELS: Record<string, string> = {

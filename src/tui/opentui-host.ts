@@ -13,7 +13,14 @@ import {
   createCliRenderer,
   type ColorInput,
 } from "@opentui/core";
+import { spawn } from "node:child_process";
 import { launchRpcClient } from "../runtime/pi.js";
+import {
+  ProviderLoginCancelledError,
+  interactiveProviderChoices,
+  loginProvider,
+  type ProviderLoginMethod,
+} from "../runtime/provider-login.js";
 import { flashcardsTopicArtifact } from "../core/project.js";
 import { HostController, type HostControllerOptions, type HostSurface, type UiDocumentControl } from "./host-controller.js";
 import { formatDueIn, type SrsRating, type UiActionDispatcher, type UiDocument } from "./learner-contracts.js";
@@ -57,9 +64,11 @@ import {
   type TuiSessionInfo,
 } from "./session-browser.js";
 import {
+  activeComposerFileReference,
   commandSuggestions,
   composerReferenceErrors,
   parseComposerInput,
+  projectFileSuggestions,
   resolveComposerInput,
   type ComposerCommand,
 } from "./composer.js";
@@ -104,12 +113,23 @@ import {
   type TuiProfile,
 } from "./profile.js";
 import { SacredTranscriptRenderable } from "./sacred-transcript.js";
+import {
+  TUI_DEBUG_ACTIONS,
+  captureTuiDebugEvent,
+  tuiDebugEventsMarkdown,
+  tuiDebugMessagesMarkdown,
+  tuiDebugSummary,
+  tuiProcessDiagnosticsMarkdown,
+  type TuiDebugEvent,
+} from "./debug.js";
 
 export interface OpenTuiOptions extends Pick<HostControllerOptions, "uiActionDispatcher"> {
   /** Alias retained for direct host embedding callers. */
   uiActionDispatcher?: UiActionDispatcher;
   /** Test/integration seam; production reads Pi's project-scoped session catalog. */
   listSessions?: (cwd: string) => Promise<TuiSessionInfo[]>;
+  /** Test/integration seam for opening provider authorization pages. */
+  openExternalUrl?: (url: string) => void;
 }
 
 type TerminalColorRole = keyof TuiPresentationProfile["design"]["colors"];
@@ -119,6 +139,13 @@ interface SelectPresentationOptions {
   initialFocus?: "filter" | "list";
   descriptions?: ReadonlyMap<string, string>;
   showDescription?: boolean;
+  signal?: AbortSignal;
+}
+
+interface TextInputPresentationOptions {
+  secret?: boolean;
+  signal?: AbortSignal;
+  preserveOnCancel?: boolean;
 }
 
 const ASCII_BORDER_CHARS = {
@@ -144,6 +171,21 @@ function currentSidebarWidth(terminalWidth: number): number {
 
 function terminalCanShowSidebar(terminalWidth: number, terminalHeight: number): boolean {
   return terminalWidth >= 88 && terminalHeight >= 22;
+}
+
+function tryOpenExternalUrl(url: string): void {
+  try {
+    const command = process.platform === "darwin"
+      ? { executable: "open", args: [url] }
+      : process.platform === "win32"
+        ? { executable: "rundll32", args: ["url.dll,FileProtocolHandler", url] }
+        : { executable: "xdg-open", args: [url] };
+    const child = spawn(command.executable, command.args, { stdio: "ignore" });
+    child.on("error", () => {});
+    child.unref();
+  } catch {
+    // The URL remains visible in the terminal when no desktop opener exists.
+  }
 }
 
 function markdownSyntaxStyle(profile: TuiPresentationProfile): SyntaxStyle {
@@ -195,6 +237,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
   let tuiAvatar = await terminalAvatarForProfile(tuiProfile, cwd);
   const client = await launchRpcClient(cwd);
   const listSessions = options.listSessions ?? listProjectTuiSessions;
+  const openExternalUrl = options.openExternalUrl ?? tryOpenExternalUrl;
   const rpcUiActionDispatcher = options.uiActionDispatcher ? undefined : new RpcUiActionDispatcher(client);
   const journalStore = rpcUiActionDispatcher
     ? new UiActionJournalStore({ storage: new FileUiActionJournalStorage(cwd), dispatcher: rpcUiActionDispatcher })
@@ -416,6 +459,8 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
   let dialogFocusPrevious: (() => void) | null = null;
   let dialogSearchInput: InputRenderable | null = null;
   let knownPiCommands: ComposerCommand[] = [];
+  const runtimeDebugEvents: TuiDebugEvent[] = [];
+  let activeProviderLoginAbort: AbortController | null = null;
   const editorMode: TuiEditorMode = detectTuiEditorMode(process.env);
   let vimState: VimState = "insert";
   let focusArea: "composer" | "transcript" | "sidebar" = "composer";
@@ -756,9 +801,11 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       modal.add(select);
       shell.add(modal);
       let done = false;
+      let onAbort: (() => void) | undefined;
       const finish = (value?: string) => {
         if (done) return;
         done = true;
+        if (onAbort) presentation.signal?.removeEventListener("abort", onAbort);
         dialogCancel = null;
         dialogFocusNext = null;
         dialogFocusPrevious = null;
@@ -769,6 +816,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
         setFocusArea(returnFocus === "sidebar" && !sacredSidebar?.visible ? "composer" : returnFocus);
         resolve(value);
       };
+      onAbort = () => finish(undefined);
       const updateOptions = () => {
         const ranked = filterSearchOptions(options.map((option): SearchOption => ({ label: option, value: option })), filterInput.value);
         select.options = ranked.length > 0
@@ -788,12 +836,22 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
         const value = select.getSelectedOption()?.value;
         if (typeof value === "string") finish(value);
       });
+      if (presentation.signal?.aborted) {
+        finish(undefined);
+        return;
+      }
+      presentation.signal?.addEventListener("abort", onAbort, { once: true });
       paintSelectedResponse();
       if (presentation.initialFocus === "list") select.focus();
       else filterInput.focus();
     });
 
-  const presentTextInput = (title: string, prefill?: string, placeholder?: string): Promise<string | undefined> =>
+  const presentTextInput = (
+    title: string,
+    prefill?: string,
+    placeholder?: string,
+    presentation: TextInputPresentationOptions = {},
+  ): Promise<string | undefined> =>
     new Promise((resolve) => {
       const returnFocus = focusArea;
       const overlayWidth = Math.max(24, Math.floor(renderer.terminalWidth * 0.8));
@@ -828,20 +886,23 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
         width: "100%",
         value: prefill ?? "",
         placeholder: placeholder ?? "Type a response…",
-        textColor,
+        textColor: presentation.secret ? sidebarSurfaceColor : textColor,
         placeholderColor: mutedColor,
         backgroundColor: sidebarSurfaceColor,
         focusedBackgroundColor: sidebarSurfaceColor,
-        focusedTextColor: textColor,
+        focusedTextColor: presentation.secret ? sidebarSurfaceColor : textColor,
+        showCursor: !presentation.secret,
       });
       modal.add(titleView);
       modal.add(dialogInput);
       shell.add(modal, 3);
       let done = false;
+      let onAbort: (() => void) | undefined;
       const finish = (value?: string, preserveInComposer = false) => {
         if (done) return;
         done = true;
         const preservedDraft = dialogInput.value;
+        if (onAbort) presentation.signal?.removeEventListener("abort", onAbort);
         dialogCancel = null;
         dialogFocusNext = null;
         dialogFocusPrevious = null;
@@ -854,10 +915,16 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
         setFocusArea(returnFocus === "sidebar" && !sacredSidebar?.visible ? "composer" : returnFocus);
         resolve(value);
       };
-      dialogCancel = () => finish(undefined, true);
+      onAbort = () => finish(undefined);
+      dialogCancel = () => finish(undefined, presentation.preserveOnCancel ?? true);
       dialogFocusNext = () => dialogInput.focus();
       dialogFocusPrevious = () => dialogInput.focus();
       dialogInput.on(InputRenderableEvents.ENTER, () => finish(dialogInput.value));
+      if (presentation.signal?.aborted) {
+        finish(undefined);
+        return;
+      }
+      presentation.signal?.addEventListener("abort", onAbort, { once: true });
       dialogInput.focus();
     });
 
@@ -927,13 +994,18 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       id: `prompt-recovery-${Date.now()}`,
       kind: "notice",
       title,
-      body: `${sanitizeDiagnostic(reason)}\n\nEdit the restored composer text, press Ctrl+R to retry, open /settings, or use /shell with this same session.`,
+      body: `${sanitizeDiagnostic(reason)}\n\nEdit the restored composer text, press Ctrl+R to retry, or open /settings to repair provider access. /shell remains available only for the code-capable interface.`,
     });
-    status.content = "Response did not complete. Exact draft restored · Ctrl+R retries · /settings or /shell repairs access.";
+    status.content = "Response did not complete. Exact draft restored · Ctrl+R retries · /settings repairs provider access.";
     return restored;
   };
   let terminalResponseError: string | null = null;
   detachRecoveryEvents = client.onEvent((event) => {
+    const debugEvent = captureTuiDebugEvent(event);
+    if (debugEvent) {
+      runtimeDebugEvents.push(debugEvent);
+      if (runtimeDebugEvents.length > 100) runtimeDebugEvents.shift();
+    }
     const candidate = event as {
       type?: string;
       message?: { role?: string; stopReason?: string; errorMessage?: string };
@@ -978,15 +1050,18 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
   const controller = new HostController(client, surface, { uiActionDispatcher });
   controller.attach();
   await controller.initialize();
-  try {
-    knownPiCommands = (await client.getCommands?.() ?? []).map((command) => ({
-      name: command.name,
-      ...(command.description ? { description: command.description } : {}),
-      ...(command.source ? { source: command.source } : {}),
-    }));
-  } catch {
-    knownPiCommands = [];
-  }
+  const refreshKnownPiCommands = async () => {
+    try {
+      knownPiCommands = (await client.getCommands?.() ?? []).map((command) => ({
+        name: command.name,
+        ...(command.description ? { description: command.description } : {}),
+        ...(command.source ? { source: command.source } : {}),
+      }));
+    } catch {
+      knownPiCommands = [];
+    }
+  };
+  await refreshKnownPiCommands();
 
   const exitToShell = async () => {
     settled = true;
@@ -1017,6 +1092,9 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
         return;
       case "settings":
         await showSettings();
+        return;
+      case "debug":
+        await showDebug();
         return;
       case "model":
         await showModelPicker();
@@ -1082,9 +1160,113 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
     }
   };
 
+  const showProviderLogin = async (): Promise<boolean> => {
+    if (busySurfaceNotice("Provider connection")) return false;
+    const providers = interactiveProviderChoices();
+    const providerLabels = providers.map((provider) => `${provider.name} (${provider.id}) · ${provider.modelCount} models`);
+    const selected = await presentSelect("Connect or repair a provider", providerLabels, {
+      descriptions: new Map(providers.map((provider, index) => [
+        providerLabels[index]!,
+        provider.methods.map((method) => provider.methodLabels[method]).filter(Boolean).join(" or "),
+      ])),
+      showDescription: true,
+    });
+    if (selected === undefined) return false;
+    const provider = providers[providerLabels.indexOf(selected)];
+    if (!provider) return false;
+
+    let method: ProviderLoginMethod | undefined = provider.methods[0];
+    if (provider.methods.length > 1) {
+      const methodLabels = provider.methods.map((candidate) => provider.methodLabels[candidate] ?? candidate);
+      const selectedMethod = await presentSelect(`Connect ${provider.name}`, methodLabels, { initialFocus: "list" });
+      if (selectedMethod === undefined) return false;
+      method = provider.methods[methodLabels.indexOf(selectedMethod)];
+    }
+    if (!method) return false;
+
+    const loginAbort = new AbortController();
+    activeProviderLoginAbort = loginAbort;
+    status.content = `Connecting ${provider.name}…  ·  Ctrl+X cancels`;
+    try {
+      await loginProvider(cwd, provider.id, method, {
+        prompt: async (prompt) => {
+          if (prompt.type === "select") {
+            const labels = prompt.options.map((option) => option.description
+              ? `${option.label} · ${option.description}`
+              : option.label);
+            const value = await presentSelect(prompt.message, labels, {
+              initialFocus: "list",
+              signal: prompt.signal,
+            });
+            return value === undefined ? undefined : prompt.options[labels.indexOf(value)]?.id;
+          }
+          return presentTextInput(prompt.message, undefined, prompt.placeholder, {
+            secret: prompt.type === "secret",
+            signal: prompt.signal,
+            preserveOnCancel: false,
+          });
+        },
+        notify: (event) => {
+          if (event.type === "progress") {
+            status.content = `${event.message}  ·  Ctrl+X cancels`;
+            return;
+          }
+          if (event.type === "auth_url") {
+            appendEntry({
+              id: `provider-auth-url-${Date.now()}`,
+              kind: "notice",
+              title: `Authorize ${provider.name}`,
+              body: `${event.instructions ?? "Complete sign-in in your browser."}\n\n${event.url}`,
+            });
+            try { openExternalUrl(event.url); } catch {}
+            return;
+          }
+          appendEntry({
+            id: `provider-device-code-${Date.now()}`,
+            kind: "notice",
+            title: `${provider.name} device login`,
+            body: `Open ${event.verificationUri}\n\nEnter this one-time code: ${event.userCode}`,
+          });
+          try { openExternalUrl(event.verificationUri); } catch {}
+        },
+      }, { signal: loginAbort.signal });
+
+      status.content = `Refreshing ${provider.name} models in this session…`;
+      await client.restart({
+        sessionPath: controller.getCurrentSessionPath(),
+        env: { KEATING_AUTH_MISSING_PROVIDER: "" },
+      });
+      await controller.initialize();
+      await refreshKnownPiCommands();
+      const modelCount = (await client.getAvailableModels()).filter((model) => model.provider === provider.id).length;
+      appendEntry({
+        id: `provider-connected-${Date.now()}`,
+        kind: "notice",
+        title: `${provider.name} connected`,
+        body: `${modelCount} authenticated model${modelCount === 1 ? "" : "s"} available. The current OpenTUI session was preserved and refreshed.`,
+      });
+      return true;
+    } catch (error) {
+      if (error instanceof ProviderLoginCancelledError || loginAbort.signal.aborted) {
+        status.content = `${provider.name} connection cancelled. No credential was changed.`;
+        return false;
+      }
+      appendEntry({
+        id: `provider-login-error-${Date.now()}`,
+        kind: "error",
+        title: `${provider.name} connection failed`,
+        body: `${sanitizeDiagnostic(error)}\n\nNo successful-looking fallback was applied. Retry from the model picker or settings.`,
+      });
+      return false;
+    } finally {
+      if (activeProviderLoginAbort === loginAbort) activeProviderLoginAbort = null;
+      if (!busy && !dialogCancel && !activeProviderLoginAbort) status.content = idleStatus();
+    }
+  };
+
   const showModelPicker = async (): Promise<void> => {
     if (busySurfaceNotice("Model selection")) return;
-    status.content = "Loading authenticated Pi models…";
+    status.content = "Loading authenticated models…";
     try {
       const models = await client.getAvailableModels();
       if (models.length === 0) {
@@ -1092,8 +1274,9 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
           id: `models-empty-${Date.now()}`,
           kind: "notice",
           title: "No authenticated models",
-          body: "Pi returned no models with configured credentials. Use /shell or /settings to repair provider access, then reopen the model picker.",
+          body: "No provider credentials are configured yet. Connect one here without leaving OpenTUI.",
         });
+        if (await showProviderLogin()) await showModelPicker();
         return;
       }
       const current = models.find((model) => `${model.provider}/${model.id}` === headerState.model);
@@ -1107,24 +1290,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       });
       if (selectedProvider === undefined) return;
       if (selectedProvider === connectProvider) {
-        const target = await presentSelect("Provider sign-in", ["Not Organic hosted inference", "anthropic", "openai-codex", "openai", "google", "openrouter", "zyphra", "minimax", "Cancel"]);
-        if (!target || target === "Cancel") return;
-        if (target === "Not Organic hosted inference") {
-          appendEntry({
-            id: `provider-login-notorganic-${Date.now()}`,
-            kind: "notice",
-            title: "Connect Not Organic",
-            body: "Run `keating login` in a terminal. It opens a five-minute, DPoP-bound hosted inference session; return here and use :m to refresh the catalog. Rerun login when the short-lived capability expires.",
-          });
-          return;
-        }
-        input.value = "/shell";
-        appendEntry({
-          id: `provider-login-${Date.now()}`,
-          kind: "notice",
-          title: `Connect ${target}`,
-          body: `/shell is ready in the composer. Submit it, then run /login ${target}. Return to OpenTUI and use :m; the complete authenticated catalog will refresh without exposing credentials here.`,
-        });
+        if (await showProviderLogin()) await showModelPicker();
         return;
       }
       const provider = providers.find((candidate) => candidate.label === selectedProvider);
@@ -1143,7 +1309,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
         id: `models-error-${Date.now()}`,
         kind: "error",
         title: "Model picker unavailable",
-        body: `${sanitizeDiagnostic(error)}\n\nNo model was changed. Use /shell or /settings for provider recovery, then retry.`,
+        body: `${sanitizeDiagnostic(error)}\n\nNo model was changed. Connect or repair a provider in /settings, then retry.`,
       });
     } finally {
       if (!busy && !dialogCancel) status.content = idleStatus();
@@ -1155,7 +1321,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
     if (options.confirm !== false) {
       const begin = await surface.presentConfirm(
         "Profile & setup · about one minute",
-        "First choose the name and profile image shown beside your messages, then connect inference and runtime preferences. Secrets stay in dedicated login flows.",
+        "First choose the name and profile image shown beside your messages, then connect inference and runtime preferences without leaving OpenTUI. Secret inputs are hidden.",
       );
       if (!begin) return;
     }
@@ -1218,29 +1384,14 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
     }
 
     try {
-      const models = await client.getAvailableModels();
+      let models = await client.getAvailableModels();
       if (models.length === 0) {
-        const recovery = await presentSelect("No connected inference provider", [
-          "Run keating login · Not Organic hosted inference",
-          "Prepare secure /login in classic Pi",
-          "Continue with local interface tour",
-          "Cancel",
-        ]);
-        if (recovery === "Run keating login · Not Organic hosted inference") {
-          appendEntry({
-            id: `setup-notorganic-${Date.now()}`,
-            kind: "notice",
-            title: "Not Organic sign-in",
-            body: "Run `keating login` in a terminal for a five-minute, DPoP-bound Not Organic inference session. Reopen Keating afterward and use :m to select the hosted model; rerun login when the capability expires.",
-          });
-          return;
-        }
-        if (recovery === "Prepare secure /login in classic Pi") {
-          input.value = "/shell";
-          appendEntry({ id: `setup-provider-${Date.now()}`, kind: "notice", title: "Provider sign-in prepared", body: "Submit /shell, then run /login for your provider. Reopen /setup afterward; credentials are never entered into this unmasked composer." });
-          return;
-        }
-        if (recovery !== "Continue with local interface tour") return;
+        const recovery = await presentSelect("No connected inference provider", ["Connect a provider in OpenTUI", "Continue with local interface tour", "Cancel"]);
+        if (recovery === "Connect a provider in OpenTUI") {
+          if (!await showProviderLogin()) return;
+          models = await client.getAvailableModels();
+          if (models.length > 0) await showModelPicker();
+        } else if (recovery !== "Continue with local interface tour") return;
       } else {
         await showModelPicker();
       }
@@ -1514,7 +1665,9 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       const action = await presentSelect("Terminal settings · changes apply to the real Pi runtime", [...TUI_SETTINGS_ACTIONS]);
       if (action === undefined || action === "Close settings") return;
       if (action === "Select model") await showModelPicker();
-      else if (action === "Cycle thinking") await controller.cycleThinking();
+      else if (action === "Connect or repair provider") {
+        if (await showProviderLogin()) await showModelPicker();
+      } else if (action === "Cycle thinking") await controller.cycleThinking();
       else if (action === "Toggle automatic retry") {
         await client.setAutoRetry(!settings.autoRetry);
         appendEntry({ id: `settings-retry-${Date.now()}`, kind: "notice", title: "Automatic retry changed", body: settings.autoRetry ? "Off" : "On" });
@@ -1529,17 +1682,72 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
         const mode = settings.followUpMode === "all" ? "one-at-a-time" : "all";
         await client.setFollowUpMode(mode);
         appendEntry({ id: `settings-followup-${Date.now()}`, kind: "notice", title: "Follow-up queue changed", body: mode });
-      } else if (action === "Prepare /shell provider or code handoff") {
+      } else if (action === "Open debug service") {
+        await showDebug();
+      } else if (action === "Prepare /shell code-capability handoff") {
         input.value = "/shell";
         appendEntry({
           id: `settings-shell-${Date.now()}`,
           kind: "notice",
           title: "Classic Pi handoff prepared",
-          body: "/shell is in the composer. Submit when ready; OpenTUI has not mutated source or credentials.",
+          body: "/shell is in the composer. Submit when ready to use execution and source-mutation tools; provider login and model selection stay available here.",
         });
       }
     } catch (error) {
-      appendEntry({ id: `settings-error-${Date.now()}`, kind: "error", title: "Settings change failed", body: `${sanitizeDiagnostic(error)}\n\nThe prior runtime setting remains in effect. Retry or prepare /shell for provider recovery.` });
+      appendEntry({ id: `settings-error-${Date.now()}`, kind: "error", title: "Settings change failed", body: `${sanitizeDiagnostic(error)}\n\nThe prior runtime setting remains in effect. Retry provider connection directly from settings.` });
+    } finally {
+      if (!busy && !dialogCancel) status.content = idleStatus();
+    }
+  };
+
+  const showDebug = async (): Promise<void> => {
+    if (busySurfaceNotice("Debug service")) return;
+    status.content = "Collecting local runtime diagnostics…";
+    try {
+      const [stateResult, messagesResult, modelsResult, commandsResult, statsResult] = await Promise.allSettled([
+        client.getState(),
+        client.getMessages(),
+        client.getAvailableModels(),
+        client.getCommands(),
+        client.getSessionStats(),
+      ]);
+      const state = stateResult.status === "fulfilled" ? stateResult.value : {};
+      const messages = messagesResult.status === "fulfilled" ? messagesResult.value : [];
+      const models = modelsResult.status === "fulfilled" ? modelsResult.value : [];
+      const commands = commandsResult.status === "fulfilled" ? commandsResult.value : [];
+      const sessionStats = statsResult.status === "fulfilled" ? statsResult.value : undefined;
+      appendEntry({
+        id: `debug-summary-${Date.now()}`,
+        kind: "artifact",
+        title: "Debug service",
+        body: tuiDebugSummary({
+          state,
+          messages,
+          models,
+          commands,
+          sessionStats,
+          events: runtimeDebugEvents,
+          processDiagnostics: client.getStderr(),
+        }),
+      });
+      const action = await presentSelect("Terminal debug service · local and read-only", [...TUI_DEBUG_ACTIONS]);
+      if (action === "Show model-facing messages") {
+        appendEntry({ id: `debug-messages-${Date.now()}`, kind: "artifact", title: "Model-facing messages", body: tuiDebugMessagesMarkdown(messages) });
+      } else if (action === "Show recent runtime events") {
+        appendEntry({ id: `debug-events-${Date.now()}`, kind: "artifact", title: "Runtime events", body: tuiDebugEventsMarkdown(runtimeDebugEvents) });
+      } else if (action === "Show Pi process diagnostics") {
+        appendEntry({ id: `debug-process-${Date.now()}`, kind: "artifact", title: "Pi process diagnostics", body: tuiProcessDiagnosticsMarkdown(client.getStderr()) });
+      } else if (action === "Clear captured runtime events") {
+        runtimeDebugEvents.splice(0);
+        appendEntry({ id: `debug-cleared-${Date.now()}`, kind: "notice", title: "Runtime event ring cleared", body: "No session messages, provider credentials, or saved Pi state were changed." });
+      }
+    } catch (error) {
+      appendEntry({
+        id: `debug-error-${Date.now()}`,
+        kind: "error",
+        title: "Debug service could not inspect the runtime",
+        body: `${sanitizeDiagnostic(error)}\n\nThe active session was not changed. Pi process diagnostics remain available after the next RPC response.`,
+      });
     } finally {
       if (!busy && !dialogCancel) status.content = idleStatus();
     }
@@ -1673,7 +1881,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       title: "Message not sent",
       body: `${sanitizeDiagnostic(outcome.error)}\n\nYour exact draft is restored below. Edit it or press Ctrl+R to retry.`,
     });
-    status.content = "Message not sent. Exact draft restored · Ctrl+R retries it · /settings or /shell can repair provider access.";
+    status.content = "Message not sent. Exact draft restored · Ctrl+R retries it · /settings repairs provider access.";
   };
 
   async function retryLastPrompt(): Promise<void> {
@@ -1720,6 +1928,27 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       status.content = "Shell command failed. Edit the preserved command and retry.";
       setFocusArea("composer");
     }
+  };
+
+  const showFileReferencePicker = async (): Promise<void> => {
+    if (busySurfaceNotice("File reference picker")) return;
+    const draft = input.value;
+    const activeReference = activeComposerFileReference(draft);
+    if (!activeReference) return;
+    status.content = "Finding project files…";
+    const suggestions = await projectFileSuggestions(cwd, activeReference.query);
+    if (suggestions.length === 0) {
+      status.content = `No project files match @${activeReference.query}. The draft is unchanged.`;
+      input.focus();
+      return;
+    }
+    const selected = await presentSelect("Attach a project file to this prompt", suggestions);
+    if (!selected) return;
+    const escaped = selected.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
+    const token = /\s/.test(selected) ? `@"${escaped}"` : `@${escaped}`;
+    input.value = `${draft.slice(0, activeReference.start)}${token}${draft.slice(activeReference.end)}`;
+    status.content = `${token} will be attached when you send · continue typing or press Enter`;
+    input.focus();
   };
 
   const submit = async (raw: string) => {
@@ -1782,7 +2011,16 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       status.content = "File reference failed. The draft remains in the composer.";
       return;
     }
-    appendEntry({ id: `user-${Date.now()}`, kind: "user", title: "You", body: raw });
+    const attached = resolved.fileReferences.filter((reference) => reference.content !== undefined);
+    appendEntry({
+      id: `user-${Date.now()}`,
+      kind: "user",
+      title: "You",
+      body: raw,
+      ...(attached.length > 0 ? {
+        detail: `Attached ${attached.length} file${attached.length === 1 ? "" : "s"}: ${attached.map((reference) => reference.path).join(", ")}`,
+      } : {}),
+    });
     presentPromptOutcome(await promptRecovery.send(raw, busy, resolved.prompt), false);
   };
 
@@ -1928,6 +2166,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       { name: "models", description: "Search and select an authenticated Pi model" },
       ...knownPiCommands,
     ]);
+    const activeReference = activeComposerFileReference(input.value);
     if (parsed.mode === "command" && !parsed.commandArgument) {
       const suggestions = commandSuggestions(parsed.commandName ?? "", [
         ...TUI_COMMANDS.map((command) => ({ name: command.id, description: command.description })),
@@ -1939,6 +2178,9 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
         : "Unknown / command will be passed to Pi · Ctrl+P opens local commands";
     } else if (parsed.mode === "shell") {
       status.content = "Shell mode · Enter runs exactly what follows ! · Ctrl+X stops an active response";
+    } else if (activeReference || parsed.fileReferences.length > 0) {
+      const reference = activeReference ? `@${activeReference.query}` : parsed.fileReferences.at(-1)?.token;
+      status.content = `${reference || "File reference"} recognized · Enter attaches contents · Tab browses project files`;
     } else {
       status.content = idleStatus();
     }
@@ -1967,6 +2209,14 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
   });
   renderer.keyInput.on("keypress", (key) => {
     if (dialogCancel) {
+      if (key.ctrl && key.name.toLowerCase() === "x" && activeProviderLoginAbort) {
+        key.preventDefault();
+        key.stopPropagation();
+        activeProviderLoginAbort.abort();
+        dialogCancel();
+        status.content = "Cancelling provider connection…";
+        return;
+      }
       // Ctrl+P is a toggle for the command palette. Treat it as a modal close
       // for any selector/input dialog so the same muscle memory always exits.
       if (key.ctrl && key.name === "p") {
@@ -2034,6 +2284,10 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       if (focusArea === "sidebar") return;
       key.preventDefault();
       key.stopPropagation();
+      if (focusArea === "composer" && activeComposerFileReference(input.value)) {
+        void showFileReferencePicker();
+        return;
+      }
       setFocusArea(focusArea === "composer"
         ? "transcript"
         : sacredSidebar?.visible ? "sidebar" : "composer");
@@ -2055,6 +2309,13 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       }
     }
     if (!key.ctrl) return;
+    if (normalizedKeyName === "x" && activeProviderLoginAbort) {
+      key.preventDefault();
+      key.stopPropagation();
+      activeProviderLoginAbort.abort();
+      status.content = "Cancelling provider connection…";
+      return;
+    }
     const commandByKey: Partial<Record<string, TuiCommand["id"] | "palette">> = {
       p: "palette",
       s: "sessions",
