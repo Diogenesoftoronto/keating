@@ -478,7 +478,6 @@ export async function launchRpcClient(cwd: string, args: string[] = []): Promise
   const skillsDir = join(packageRoot, "pi", "skills");
   const systemPrompt = readFileSync(join(packageRoot, "SYSTEM.md"), "utf8");
   const authSelection = selectAuthenticatedProvider(cwd, config, args);
-  if (authSelection.note) console.error(authSelection.note);
 
   const sharedArgs = mergePiDefaultsWithOverrides(config, [
     "--no-extensions",
@@ -504,7 +503,9 @@ export async function launchRpcClient(cwd: string, args: string[] = []): Promise
     args: sharedArgs,
     env: {
       ...authSelection.env,
-      KEATING_AUTH_MISSING_PROVIDER: authSelection.missingProvider ?? "",
+      // OpenTUI owns provider recovery end-to-end and must not redirect to
+      // classic Pi's /login surface during extension startup.
+      KEATING_AUTH_MISSING_PROVIDER: "",
       PI_SKIP_VERSION_CHECK: process.env.PI_SKIP_VERSION_CHECK ?? "1",
       PI_CODING_AGENT_DIR: configDir(cwd),
     } as Record<string, string>,

@@ -8,12 +8,17 @@ import "./hooks/keating-storage";
 import { App } from "./App";
 import { initializeKeatingGT, KeatingGTProvider } from "./i18n/general-translation";
 import { applyKeatingUiTypography, loadKeatingUiSettings } from "./keating/ui-settings";
+import { installBrowserDiagnosticsCapture, recordDiagnostic } from "./lib/diagnostics";
 import { initPostHog } from "./lib/posthog";
 import { installStaleBuildRecovery } from "./lib/stale-build-recovery";
 import { initThemeSync } from "./theme-sync";
 
+installBrowserDiagnosticsCapture();
+
 if (import.meta.env.DEV) {
-  import("react-grab");
+  void import("react-grab")
+    .then(() => recordDiagnostic("info", "devtools", "React Grab loaded", { version: "0.2.0" }))
+    .catch((error) => console.warn("React Grab failed to load:", error));
 }
 
 initThemeSync();

@@ -1,5 +1,5 @@
-import { lstat, readFile, realpath, stat } from "node:fs/promises";
-import { extname, relative, resolve } from "node:path";
+import { lstat, readFile, readdir, realpath, stat } from "node:fs/promises";
+import { extname, join, relative, resolve } from "node:path";
 
 export type ComposerMode = "prompt" | "command" | "shell";
 
@@ -39,8 +39,19 @@ export interface ResolvedComposerInput extends ParsedComposerInput {
   prompt: string;
 }
 
+export interface ActiveComposerFileReference {
+  start: number;
+  end: number;
+  query: string;
+}
+
 const DEFAULT_MAX_FILE_BYTES = 64 * 1024;
 const DEFAULT_MAX_TOTAL_BYTES = 256 * 1024;
+const MAX_DISCOVERED_FILES = 20_000;
+const DEFAULT_FILE_SUGGESTION_LIMIT = 2_000;
+const IGNORED_FILE_REFERENCE_DIRECTORIES = new Set([
+  ".amp", ".git", ".keating", ".output", "coverage", "dist", "node_modules",
+]);
 const DEFAULT_TEXT_EXTENSIONS = new Set([
   ".c", ".cc", ".cpp", ".css", ".csv", ".d.ts", ".go", ".html", ".java", ".js", ".json",
   ".jsx", ".md", ".mdx", ".mjs", ".mmd", ".py", ".rs", ".sh", ".sql", ".svelte", ".toml",
@@ -52,7 +63,7 @@ function normalizedCommands(commands: readonly ComposerCommand[]): Set<string> {
 }
 
 function unescapePath(value: string): string {
-  return value.replace(/\\([\\\s])/g, "$1");
+  return value.replace(/\\([\\"'\s])/g, "$1");
 }
 
 function parseFileReferences(source: string): ComposerFileReference[] {
@@ -60,7 +71,7 @@ function parseFileReferences(source: string): ComposerFileReference[] {
   const seen = new Set<string>();
   // Keep the syntax deliberately shell-like: @path, @"path with spaces", or
   // @path/to/file. A trailing comma/period is prose punctuation, not a path.
-  const pattern = /(^|\s)@("[^"]+"|'[^']+'|[^\s]+)/g;
+  const pattern = /(^|\s)@("(?:\\.|[^"])+"|'(?:\\.|[^'])+'|(?:\\.|[^\s])+)/g;
   for (const match of source.matchAll(pattern)) {
     const quoted = match[2] ?? "";
     const path = unescapePath(
@@ -71,6 +82,53 @@ function parseFileReferences(source: string): ComposerFileReference[] {
     references.push({ token: `@${path}`, path });
   }
   return references;
+}
+
+/** Return the unfinished @ token at the end of the composer, if present. */
+export function activeComposerFileReference(raw: string): ActiveComposerFileReference | null {
+  const match = /(^|\s)@([^\s]*)$/.exec(raw);
+  if (!match) return null;
+  const start = (match.index ?? 0) + (match[1]?.length ?? 0);
+  return { start, end: raw.length, query: unescapePath(match[2] ?? "") };
+}
+
+/** List regular project files for the Tab-triggered @ reference picker. */
+export async function projectFileSuggestions(
+  cwd: string,
+  query = "",
+  limit = DEFAULT_FILE_SUGGESTION_LIMIT,
+): Promise<string[]> {
+  const root = await realpath(cwd).catch(() => resolve(cwd));
+  const discovered: string[] = [];
+  let visited = 0;
+  const walk = async (directory: string): Promise<void> => {
+    if (visited >= MAX_DISCOVERED_FILES) return;
+    const entries = await readdir(directory, { withFileTypes: true }).catch(() => []);
+    entries.sort((left, right) => left.name.localeCompare(right.name));
+    for (const entry of entries) {
+      if (visited >= MAX_DISCOVERED_FILES) return;
+      if (entry.isSymbolicLink()) continue;
+      const path = join(directory, entry.name);
+      if (entry.isDirectory()) {
+        if (!IGNORED_FILE_REFERENCE_DIRECTORIES.has(entry.name)) await walk(path);
+        continue;
+      }
+      if (!entry.isFile()) continue;
+      visited += 1;
+      if (!extensionAllowed(path, DEFAULT_TEXT_EXTENSIONS)) continue;
+      discovered.push(relative(root, path).replaceAll("\\", "/"));
+    }
+  };
+  await walk(root);
+  const needle = query.replace(/^\.\//, "").toLowerCase();
+  return discovered
+    .filter((path) => !needle || path.toLowerCase().includes(needle))
+    .sort((left, right) => {
+      const leftPrefix = needle && left.toLowerCase().startsWith(needle) ? 0 : 1;
+      const rightPrefix = needle && right.toLowerCase().startsWith(needle) ? 0 : 1;
+      return leftPrefix - rightPrefix || left.length - right.length || left.localeCompare(right);
+    })
+    .slice(0, Math.max(1, limit));
 }
 
 /** Parse the terminal grammar without touching the filesystem or RPC. */

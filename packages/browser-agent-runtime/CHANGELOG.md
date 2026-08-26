@@ -5,6 +5,13 @@
 
 
 
+
+## 3.9.0
+<sub>2026-08-26</sub>
+
+- *(minor)*
+  Add self-contained OpenTUI model discovery and provider authentication, Codex login, `@file` references, model-context and tool diagnostics, React Grab 0.2.0, portability guidance, and keyboard-first onboarding with learner profiles and an animated stereogram.
+
 ## 3.6.0
 <sub>2026-08-14</sub>
 

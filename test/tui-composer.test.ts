@@ -3,9 +3,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 import {
+  activeComposerFileReference,
   commandSuggestions,
   composerReferenceErrors,
   parseComposerInput,
+  projectFileSuggestions,
   resolveComposerInput,
 } from "../src/tui/composer.js";
 
@@ -33,5 +35,25 @@ describe("TUI composer grammar", () => {
     const missing = await resolveComposerInput(parseComposerInput("Explain @missing.md"), cwd);
     expect(composerReferenceErrors(missing)).toHaveLength(1);
     expect(missing.prompt).toBe("Explain @missing.md");
+  });
+
+  test("discovers project files for an active @ reference", async () => {
+    const cwd = await mkdtemp(join(tmpdir(), "keating-composer-picker-"));
+    await mkdir(join(cwd, "notes"));
+    await mkdir(join(cwd, "node_modules"));
+    await writeFile(join(cwd, "notes", "limits guide.md"), "Limits", "utf8");
+    await writeFile(join(cwd, "node_modules", "hidden.ts"), "hidden", "utf8");
+
+    expect(activeComposerFileReference("Compare @notes/lim")).toEqual({
+      start: 8,
+      end: 18,
+      query: "notes/lim",
+    });
+    expect(await projectFileSuggestions(cwd, "limits")).toEqual(["notes/limits guide.md"]);
+  });
+
+  test("accepts quoted and escaped-space references", () => {
+    expect(parseComposerInput('Explain @"notes/limits guide.md"').fileReferences[0]?.path).toBe("notes/limits guide.md");
+    expect(parseComposerInput("Explain @notes/limits\\ guide.md").fileReferences[0]?.path).toBe("notes/limits guide.md");
   });
 });

@@ -31,4 +31,4 @@ export const MODELS_TAB_ALL_SECTION_IDS = [
 ] as const;
 
 /** Top-level settings dialog tab ids, used for `?settings=<id>` deep links. */
-export const SETTINGS_DIALOG_TAB_IDS = ["models", "learning", "app"] as const;
+export const SETTINGS_DIALOG_TAB_IDS = ["models", "learning", "app", "diagnostics"] as const;
