@@ -388,7 +388,7 @@ describe("persona composition", () => {
   it("switches to a complete plain-text interaction protocol when cards are off", () => {
     const prompt = composeSystemPrompt(DEFAULT_TEACHER_PERSONA, "", false);
     expect(prompt).toContain(PLAIN_TEXT_INTERACTION_PROTOCOL);
-    expect(prompt).toContain("Never emit a <keating-quiz>");
-    expect(prompt).not.toContain("Say \"Quiz ready\" and stop");
+    expect(prompt).toContain("ask the learner to answer in the composer");
+    expect(prompt).not.toContain("```keating-ui");
   });
 });

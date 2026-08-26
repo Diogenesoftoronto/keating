@@ -13,8 +13,8 @@ class MemoryStorage implements Storage {
 }
 
 function installBrowser(): void {
-	Object.defineProperty(globalThis, "sessionStorage", { configurable: true, value: new MemoryStorage() });
-	Object.defineProperty(globalThis, "indexedDB", { configurable: true, value: new IDBFactory() });
+	Object.defineProperty(globalThis, "sessionStorage", { configurable: true, writable: true, value: new MemoryStorage() });
+	Object.defineProperty(globalThis, "indexedDB", { configurable: true, writable: true, value: new IDBFactory() });
 }
 
 describe("Not Organic public client", () => {

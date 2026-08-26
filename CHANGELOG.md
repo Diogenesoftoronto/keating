@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.9.0] - 2026-08-26
+
+### Added
+- Added a self-contained Sacred-inspired OpenTUI experience with searchable model selection, models.dev-backed provider metadata, in-place API-key and subscription authentication, OpenAI Codex login, and hosted Not Organic account commands without leaving the terminal workflow for a separate Pi login.
+- Added explicit local debug services to the web app and OpenTUI for inspecting provider-bound system prompts, messages, tools, token estimates, lifecycle hooks, retries, tool-call payloads and failures, recent RPC events, and sanitized process diagnostics, with safe and raw report exports.
+- Added bounded `@path/to/file` references in the terminal composer so local text files can be included directly in a model turn with visible validation and size limits.
+- Added a keyboard-first first-run tour and profile flow with learner names, built-in portraits, initials, local image rasterization, replayable setup, and an animated Keating stereogram.
+- Added an explicit OpenUI-to-OpenTUI portability assessment covering current parity, honest terminal degradation, remaining gaps, and implementation priorities.
+
+### Changed
+- Updated React Grab to 0.2.0 and integrated it with explicit local web debug mode so component inspection and hook/session diagnostics are available together without enabling production telemetry.
+- Reworked the terminal transcript, session tree, action bars, dialogs, onboarding, and provider/model settings around a consistent keyboard and mouse interaction grammar.
+
+### Fixed
+- Preserved writable IndexedDB test globals across the shared Bun web-test process so storage, learner-record materialization, and LightningFS coverage run reliably in the complete suite.
+
 ## [3.8.1] - 2026-08-25
 
 ### Fixed
@@ -780,7 +796,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v3.8.1...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v3.9.0...HEAD
+[3.9.0]: https://github.com/Diogenesoftoronto/keating/compare/v3.8.1...v3.9.0
 [3.8.1]: https://github.com/Diogenesoftoronto/keating/compare/v3.8.0...v3.8.1
 [3.8.0]: https://github.com/Diogenesoftoronto/keating/compare/v3.7.0...v3.8.0
 [3.7.0]: https://github.com/Diogenesoftoronto/keating/compare/v3.6.1...v3.7.0

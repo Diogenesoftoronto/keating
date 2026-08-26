@@ -103,7 +103,7 @@ const bundle = {
 
 describe("Keating GUN sync coordination", () => {
 	it("persists non-extractable account keys in browser storage and supports revocation", async () => {
-		Object.defineProperty(globalThis, "indexedDB", { configurable: true, value: new IDBFactory() });
+		Object.defineProperty(globalThis, "indexedDB", { configurable: true, writable: true, value: new IDBFactory() });
 		const store = new IndexedDbAccountSyncKeyStore();
 		const generated = await generateAccountSyncKey();
 		await store.save(generated, { active: true });
