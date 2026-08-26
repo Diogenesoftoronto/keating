@@ -1,0 +1,29 @@
+{
+  "providers": {
+    "keating-demo": {
+      "baseUrl": "http://127.0.0.1:58173/v1",
+      "api": "openai-completions",
+      "apiKey": "capture-local-only",
+      "authHeader": true,
+      "compat": {
+        "supportsDeveloperRole": false,
+        "supportsReasoningEffort": false
+      },
+      "models": [
+        {
+          "id": "local-tutor",
+          "name": "Keating capture tutor",
+          "reasoning": false,
+          "contextWindow": 32768,
+          "maxTokens": 2048,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          }
+        }
+      ]
+    }
+  }
+}

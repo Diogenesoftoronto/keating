@@ -16,6 +16,15 @@ export function composeKeatingSystemPrompt(persona: string = DEFAULT_TEACHER_PER
 
 export const KEATING_SYSTEM_PROMPT = composeKeatingSystemPrompt(DEFAULT_TEACHER_PERSONA);
 
+const OPERATIONAL_PROTOCOL_HEADING = "## Self-Evolution Protocol";
+
+/** Keep evolved voice/persona text while making the checked-in protocol authoritative. */
+export function refreshKeatingOperationalProtocol(prompt: string): string {
+	const heading = prompt.indexOf(OPERATIONAL_PROTOCOL_HEADING);
+	const persona = (heading >= 0 ? prompt.slice(0, heading) : prompt).trim();
+	return composeKeatingSystemPrompt(persona);
+}
+
 export function buildKeatingSystemPrompt(speechEnabled = false, basePrompt = KEATING_SYSTEM_PROMPT, learnerContext = ""): string {
 	const personalized = `${basePrompt}${learnerContextPrompt(learnerContext)}`;
 	return speechEnabled ? `${personalized}${SPEECH_SYSTEM_PROMPT}` : personalized;
@@ -24,5 +33,7 @@ export function buildKeatingSystemPrompt(speechEnabled = false, basePrompt = KEA
 export async function getActiveKeatingPrompt(storage: KeatingStorage, promptName = "learn"): Promise<string> {
 	const evolutions = await storage.getPromptEvolutions(promptName);
 	const latest = evolutions.sort((left, right) => right.createdAt - left.createdAt)[0];
-	return latest?.bestPrompt || KEATING_SYSTEM_PROMPT;
+	return latest?.bestPrompt
+		? refreshKeatingOperationalProtocol(latest.bestPrompt)
+		: KEATING_SYSTEM_PROMPT;
 }

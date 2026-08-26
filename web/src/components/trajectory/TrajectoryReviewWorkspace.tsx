@@ -8,6 +8,7 @@ import { artifactReviewTask } from "./pool-compatibility";
 import { annotationKindColor, verdictLabel } from "./review-vocabulary";
 import { useSurfaceCollapse } from "./use-surface-collapse";
 import { ReviewDesk } from "./ReviewDesk";
+import { CandidateLedger } from "./CandidateLedger";
 import { compactButtonClass, metaTextClass, primaryButtonClass } from "./styles";
 import { TrajectoryCanvas, type TrajectoryCanvasMode } from "./TrajectoryCanvas";
 import { TurnPicker, TurnRail } from "./TurnRail";
@@ -86,6 +87,7 @@ export function TrajectoryReviewWorkspace({ data, callbacks, renderArtifact, pas
 	// it has a rect to anchor to; otherwise (a whole-turn note, say) the desk keeps it.
 	const [draftAnchored, setDraftAnchored] = useState(false);
 	const [canvasMode, setCanvasMode] = useState<TrajectoryCanvasMode>(() => data.activeTargetKey.startsWith("artifact:") ? "artifact" : "transcript");
+	const [transcriptMode, setTranscriptMode] = useState<"single" | "continuous">("continuous");
 	const activeMessage = data.messages.find((message) => message.id === data.activeTurnId) ?? data.messages[0];
 	const activeArtifact = data.artifacts.find((artifact) => artifact.id === data.activeArtifactId) ?? data.artifacts[0];
 	const targetIsArtifact = data.activeTargetKey.startsWith("artifact:");
@@ -141,9 +143,18 @@ export function TrajectoryReviewWorkspace({ data, callbacks, renderArtifact, pas
 		setCanvasMode(data.activeTargetKey.startsWith("artifact:") ? "artifact" : "transcript");
 	}, [data.activeTargetKey, data.session.id]);
 
+	useEffect(() => {
+		setTranscriptMode("continuous");
+	}, [data.session.id]);
+
+	useEffect(() => {
+		if (canvasMode === "artifact" && data.artifacts.length === 0) setCanvasMode("transcript");
+	}, [canvasMode, data.artifacts.length]);
+
 	function selectTurn(messageId: string) {
 		callbacks.onSelectTurn(messageId);
 		setCanvasMode("transcript");
+		setTranscriptMode("single");
 		setMobileTab("session");
 	}
 
@@ -154,6 +165,10 @@ export function TrajectoryReviewWorkspace({ data, callbacks, renderArtifact, pas
 	}
 
 	function changeCanvasMode(mode: TrajectoryCanvasMode) {
+		if (mode === "candidates") {
+			setCanvasMode(mode);
+			return;
+		}
 		if (mode === "artifact") {
 			if (!activeArtifact) return;
 			callbacks.onSelectArtifact(activeArtifact.id);
@@ -166,11 +181,13 @@ export function TrajectoryReviewWorkspace({ data, callbacks, renderArtifact, pas
 
 	function beginAnnotation(target: TrajectoryReviewTarget) {
 		callbacks.onStartAnnotation(target);
+		setDeskOpen(true);
 		setMobileTab("review");
 	}
 
 	function textSelection(selection: TrajectoryTextSelection) {
 		callbacks.onTextSelection(selection);
+		setDeskOpen(true);
 		setMobileTab("review");
 	}
 
@@ -178,6 +195,7 @@ export function TrajectoryReviewWorkspace({ data, callbacks, renderArtifact, pas
 		const annotation = data.annotations.find((item) => item.id === annotationId);
 		if (annotation) {
 			callbacks.onEditAnnotation(annotation);
+			setDeskOpen(true);
 			setMobileTab("review");
 		}
 	}
@@ -201,7 +219,11 @@ export function TrajectoryReviewWorkspace({ data, callbacks, renderArtifact, pas
 			)}
 		>
 			<header className={css({ display: "flex", minHeight: "4rem", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.625rem", borderBottom: "1px solid var(--border)", background: "var(--paper, var(--background))", padding: { base: "0.625rem 0.75rem", md: "0.625rem 1rem" } })}>
-				<div className={css({ minWidth: 0 })}>
+				<div className={css({ display: "flex", minWidth: 0, alignItems: "center", gap: "0.75rem" })}>
+					<a href={`/chat?session=${encodeURIComponent(data.session.id)}`} className={compactButtonClass} title="Return to this chat session">
+						<KeatingIcon icon={reviewIcon.back} size={13} /> Back to session
+					</a>
+					<div className={css({ minWidth: 0 })}>
 					<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
 						<h1 className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "serif", fontSize: { base: "1rem", md: "1.125rem" }, fontWeight: 700, color: "var(--foreground)" })}>{data.session.title}</h1>
 						<span className={css({ display: "inline-flex", flex: "0 0 auto", alignItems: "center", gap: "0.2rem", borderRadius: "9999px", background: data.review.status === "final" ? "color-mix(in srgb, var(--accent-green) 25%, transparent)" : "var(--muted)", padding: "0.15rem 0.4rem", fontSize: "0.5625rem", fontWeight: 750, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--muted-foreground)" })}>
@@ -212,6 +234,7 @@ export function TrajectoryReviewWorkspace({ data, callbacks, renderArtifact, pas
 						<span className={css({ display: "inline-flex", alignItems: "center", gap: "0.2rem" })}><KeatingIcon icon={reviewIcon.verdict} size={11} /> Review records stay local</span>
 						{data.session.subtitle ? <><span aria-hidden="true">·</span><span>{data.session.subtitle}</span></> : null}
 						{sessionDate ? <><span aria-hidden="true">·</span><span>{sessionDate}</span></> : null}
+					</div>
 					</div>
 				</div>
 				<div className={css({ display: "flex", alignItems: "center", gap: "0.375rem" })}>
@@ -297,8 +320,10 @@ export function TrajectoryReviewWorkspace({ data, callbacks, renderArtifact, pas
 								width: "0.7rem",
 								height: "0.7rem",
 								flex: "0 0 auto",
+								cursor: "pointer",
 								borderRadius: "9999px",
 								border: "1.5px solid var(--border)",
+								_hover: { outline: "2px solid var(--ink)", outlineOffset: "3px" },
 								_focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "2px" },
 							})}
 							style={{
@@ -348,6 +373,8 @@ export function TrajectoryReviewWorkspace({ data, callbacks, renderArtifact, pas
 						activeAnnotationId={data.activeAnnotationId}
 						mode={canvasMode}
 						onModeChange={changeCanvasMode}
+						transcript={transcriptMode}
+						onTranscriptChange={setTranscriptMode}
 						onSelectMessage={selectTurn}
 						onSelectArtifact={selectArtifact}
 						onSelectAnnotation={selectAnnotation}
@@ -363,6 +390,28 @@ export function TrajectoryReviewWorkspace({ data, callbacks, renderArtifact, pas
 						isExpandingAnnotation={passes?.running === "annotation-expand"}
 						onDraftAnchoredChange={setDraftAnchored}
 						renderArtifact={renderArtifact}
+						candidateCount={data.candidates.filter((candidate) => candidate.targetKey === data.activeTargetKey).length}
+						candidatePanel={(
+							<CandidateLedger
+								candidates={data.candidates}
+								modelPools={data.modelPools}
+								availableModels={data.availableModels}
+								activeTargetKey={data.activeTargetKey}
+								activeTask={activeTask}
+								generationUnavailableReason={generationUnavailableReason}
+								promptCharacters={promptCharacters}
+								activeCandidateId={data.activeCandidateId}
+								activeModelPoolId={data.activeModelPoolId}
+								selectedCandidateId={data.review.selectedCandidateIds[data.activeTargetKey]}
+								isGenerating={data.busy?.generating}
+								onSelectCandidate={callbacks.onSelectCandidate}
+								onSelectModelPool={callbacks.onSelectModelPool}
+								onGenerate={callbacks.onGenerateCandidates}
+								onChoose={callbacks.onChooseCandidate}
+								onInsert={callbacks.onInsertCandidate}
+								onRegenerate={callbacks.onRegenerateCandidate}
+							/>
+						)}
 						className={css({ minHeight: 0, flex: 1 })}
 					/>
 				</div>
@@ -390,7 +439,7 @@ export function TrajectoryReviewWorkspace({ data, callbacks, renderArtifact, pas
 						},
 					})}
 				>
-					<ReviewDesk data={data} callbacks={callbacks} activeTarget={activeTarget} activeTask={activeTask} generationUnavailableReason={generationUnavailableReason} promptCharacters={promptCharacters} passes={passes} passCallbacks={passCallbacks} draftAnchored={draftAnchored} />
+					<ReviewDesk data={data} callbacks={callbacks} activeTarget={activeTarget} passes={passes} passCallbacks={passCallbacks} draftAnchored={draftAnchored} onOpenCandidates={() => { setCanvasMode("candidates"); setMobileTab("session"); }} />
 				</div>
 
 				<nav

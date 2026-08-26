@@ -1,0 +1,6 @@
+{
+  "keating-demo": {
+    "type": "api_key",
+    "key": "capture-local-only"
+  }
+}

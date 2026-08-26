@@ -2,7 +2,6 @@ import { useState } from "react";
 import {
 	PEDAGOGY_RUBRIC_KEYS,
 	type PedagogyRubricKey,
-	type ReviewGenerationTask,
 	type ReviewRating,
 	type TrajectoryReview,
 	type TrajectoryReviewTarget,
@@ -11,7 +10,6 @@ import { css, cx } from "../../../styled-system/css";
 import { eyebrow, marginNote, reviewPanel } from "../../../styled-system/recipes";
 import { KeatingIcon } from "../KeatingIcon";
 import { AnnotationEditor } from "./AnnotationEditor";
-import { CandidateLedger } from "./CandidateLedger";
 import { ModelPoolEditor } from "./ModelPoolEditor";
 import { CritiqueProposals, RubricProposal } from "./MarginProposals";
 import { reviewIcon } from "./review-icons";
@@ -226,9 +224,6 @@ export interface ReviewDeskProps {
 	data: TrajectoryReviewWorkspaceData;
 	callbacks: TrajectoryReviewWorkspaceCallbacks;
 	activeTarget: TrajectoryReviewTarget;
-	activeTask: ReviewGenerationTask | null;
-	generationUnavailableReason?: string;
-	promptCharacters: number;
 	/** Omit to render the desk with no AI affordances at all. */
 	passes?: TrajectoryPassState;
 	passCallbacks?: TrajectoryPassCallbacks;
@@ -238,6 +233,7 @@ export interface ReviewDeskProps {
 	 * desktop copy so the same form is never on screen twice.
 	 */
 	draftAnchored?: boolean;
+	onOpenCandidates?: () => void;
 	className?: string;
 }
 
@@ -245,12 +241,10 @@ export function ReviewDesk({
 	data,
 	callbacks,
 	activeTarget,
-	activeTask,
-	generationUnavailableReason,
-	promptCharacters,
 	passes,
 	passCallbacks,
 	draftAnchored,
+	onOpenCandidates,
 	className,
 }: ReviewDeskProps) {
 	// One movement open at a time. Nothing opens itself: the desk is normally
@@ -595,25 +589,15 @@ export function ReviewDesk({
 					hidden={openMovement !== "alternatives"}
 					className={PANEL}
 				>
-					<CandidateLedger
-						candidates={candidates}
-						modelPools={modelPools}
-						availableModels={data.availableModels}
-						activeTargetKey={data.activeTargetKey}
-						activeTask={activeTask}
-						generationUnavailableReason={generationUnavailableReason}
-						promptCharacters={promptCharacters}
-						activeCandidateId={data.activeCandidateId}
-						activeModelPoolId={data.activeModelPoolId}
-						selectedCandidateId={review.selectedCandidateIds[data.activeTargetKey]}
-						isGenerating={busy?.generating}
-						onSelectCandidate={callbacks.onSelectCandidate}
-						onSelectModelPool={callbacks.onSelectModelPool}
-						onGenerate={callbacks.onGenerateCandidates}
-						onChoose={callbacks.onChooseCandidate}
-						onInsert={callbacks.onInsertCandidate}
-						onRegenerate={callbacks.onRegenerateCandidate}
-					/>
+					<div className={css({ display: "grid", gap: "0.625rem", border: "1px solid var(--line)", borderRadius: "0.5rem", padding: "0.75rem" })}>
+						<div>
+							<div className={deskSectionHeading}>Model results</div>
+							<div className={cx(metaTextClass, css({ marginTop: "0.2rem" }))}>{rewriteState}. Compare full responses in the main page.</div>
+						</div>
+						<button type="button" className={primaryButtonClass} onClick={onOpenCandidates}>
+							<KeatingIcon icon={reviewIcon.alternatives} size={13} /> Open model results
+						</button>
+					</div>
 
 					{/* Pools are settings for the panel above, so they fold away under it
 					    rather than claiming a tab of their own. */}

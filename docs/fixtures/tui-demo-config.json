@@ -1,0 +1,8 @@
+{
+  "pi": {
+    "runtimePreference": "embedded-only",
+    "defaultProvider": "keating-demo",
+    "defaultModel": "local-tutor",
+    "defaultThinking": "off"
+  }
+}

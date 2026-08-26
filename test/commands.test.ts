@@ -17,5 +17,8 @@ describe("CLI command catalog", () => {
     expect(usages).toContain("keating shell [prompt]");
     expect(usages).toContain("keating tui [prompt]");
     expect(usages).toContain("keating web [port] [runtime options]");
+    expect(usages).toContain("keating login [notorganic] [--manual|--status]");
+    expect(usages).toContain("keating logout [notorganic]");
+    expect(usages).toContain("keating auth status");
   });
 });

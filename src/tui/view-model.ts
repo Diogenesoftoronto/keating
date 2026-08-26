@@ -51,7 +51,7 @@ export interface TuiCommand {
 }
 
 export const TUI_COMMANDS: readonly TuiCommand[] = [
-  { id: "setup", label: "Setup Keating", description: "Configure providers, model, thinking, and runtime defaults" },
+  { id: "setup", label: "Profile & setup", description: "Change your name or profile image; configure providers, model, thinking, and runtime defaults" },
   { id: "sessions", label: "Sessions", shortcut: "Ctrl+S", description: "Resume, rename, or fork a saved learning session" },
   { id: "library", label: "Library", shortcut: "Ctrl+L", description: "Preview, export, or recoverably remove a saved artifact" },
   { id: "review", label: "Review", description: "Review due cards and inspect estimated topic urgency" },

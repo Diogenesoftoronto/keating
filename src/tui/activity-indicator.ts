@@ -6,12 +6,62 @@ export type ActivityPhase = "thinking" | "tool" | "responding";
 const UNICODE_SPINNER = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"] as const;
 const ASCII_SPINNER = ["|", "/", "-", "\\"] as const;
 
+const PHASE_LOADER: Readonly<Record<ActivityPhase, Readonly<Record<TerminalGlyphMode, readonly string[]>>>> = {
+  thinking: {
+    unicode: ["◜", "◠", "◝", "◞", "◡", "◟"],
+    ascii: ["o", "O", "0", "O"],
+  },
+  tool: {
+    unicode: ["▱▱▱", "▰▱▱", "▰▰▱", "▰▰▰", "▱▰▰", "▱▱▰"],
+    ascii: ["[   ]", "[=  ]", "[== ]", "[===]", "[ ==]", "[  =]"],
+  },
+  responding: {
+    unicode: ["▸  ", " ▸ ", "  ▸", " ▸ "],
+    ascii: [">  ", " > ", "  >", " > "],
+  },
+};
+
+const PHASE_PHRASES: Readonly<Record<ActivityPhase, readonly string[]>> = {
+  thinking: [
+    "Turning the question over",
+    "Looking for the hinge",
+    "Testing the first answer",
+  ],
+  tool: [
+    "Checking the record",
+    "Following the evidence",
+    "Opening the source",
+  ],
+  responding: [
+    "Putting it into words",
+    "Laying out the next step",
+    "Making the thinking visible",
+  ],
+};
+
 /** One spinner step per ~80ms reads as motion without shredding the frame budget. */
 export const SPINNER_INTERVAL_MS = 80;
 
 export function spinnerFrame(frame: number, glyphMode: TerminalGlyphMode = "unicode"): string {
   const frames = glyphMode === "ascii" ? ASCII_SPINNER : UNICODE_SPINNER;
   return frames[Math.abs(Math.floor(frame)) % frames.length]!;
+}
+
+/** A distinct motion grammar makes the current phase legible without color. */
+export function activityLoaderFrame(
+  phase: ActivityPhase,
+  frame: number,
+  glyphMode: TerminalGlyphMode = "unicode",
+): string {
+  const frames = PHASE_LOADER[phase][glyphMode];
+  return frames[Math.abs(Math.floor(frame)) % frames.length]!;
+}
+
+/** Copy changes slowly enough to be read; it never flickers at spinner speed. */
+export function activityPhrase(phase: ActivityPhase, elapsedMs: number): string {
+  const phrases = PHASE_PHRASES[phase];
+  const phraseIndex = Math.floor(Math.max(0, elapsedMs) / 4_500) % phrases.length;
+  return phrases[phraseIndex]!;
 }
 
 /** Whole seconds below a minute, then `m:ss` — long turns stay readable. */
@@ -44,7 +94,8 @@ export function activityIndicatorText(state: ActivityIndicatorState): string {
   const label = state.phase === "tool" && state.detail
     ? `${PHASE_LABEL.tool} ${state.detail}`
     : PHASE_LABEL[state.phase];
-  const head = `${spinnerFrame(state.frame, glyphMode)} ${label}${glyphMode === "ascii" ? "..." : "…"}`;
+  const separator = glyphMode === "ascii" ? ": " : " — ";
+  const head = `${activityLoaderFrame(state.phase, state.frame, glyphMode)} ${label}${separator}${activityPhrase(state.phase, state.elapsedMs)}`;
   const parts = [head, formatElapsed(state.elapsedMs)];
   if (state.hint) parts.push(state.hint);
   return parts.join("  ·  ");

@@ -85,6 +85,46 @@ export function keatingLogoLabel(glyphMode: LogoGlyphMode = "unicode"): string {
   return glyphMode === "ascii" ? "KEATING" : "◆ KEATING";
 }
 
+export type KeatingSplashMode = "full" | "compact" | "hidden";
+
+export interface KeatingSplashLayoutOptions {
+  width: number;
+  height: number;
+  glyphMode?: LogoGlyphMode;
+  shellPadding?: number;
+  hintLines?: number;
+  /** Optional visual rows placed above the flat wordmark, such as the WebGPU mark. */
+  extraLogoRows?: number;
+}
+
+/**
+ * Choose a startup treatment that fits in terminal cells without clipping.
+ * The shell always reserves one header row, a three-row composer, and one
+ * status row; padding consumes both outer edges. A compact label preserves a
+ * clear first-run affordance when the full raster cannot fit.
+ */
+export function keatingSplashMode(options: KeatingSplashLayoutOptions): KeatingSplashMode {
+  const glyphMode = options.glyphMode ?? "unicode";
+  const width = Math.max(0, Math.floor(options.width));
+  const height = Math.max(0, Math.floor(options.height));
+  const shellPadding = Math.max(0, Math.floor(options.shellPadding ?? 0));
+  const hintLines = Math.max(0, Math.floor(options.hintLines ?? 2));
+  const extraLogoRows = Math.max(0, Math.floor(options.extraLogoRows ?? 0));
+  const shellChromeRows = 5 + (shellPadding * 2);
+  const contentGapRows = hintLines > 0 ? 1 : 0;
+  const fullWidth = keatingWordmarkWidth(glyphMode) + (shellPadding * 2) + 4;
+  const fullHeight = shellChromeRows
+    + keatingWordmarkHeight(glyphMode)
+    + hintLines
+    + contentGapRows
+    + extraLogoRows;
+
+  if (width >= fullWidth && height >= fullHeight) return "full";
+
+  const compactHeight = shellChromeRows + 1 + hintLines + contentGapRows;
+  return width >= 20 && height >= compactHeight ? "compact" : "hidden";
+}
+
 export function shouldAnimateLogo(env: Readonly<Record<string, string | undefined>> = process.env): boolean {
   return env.KEATING_NO_MOTION !== "1" && env.KEATING_NO_MOTION !== "true" && env.TERM !== "dumb";
 }

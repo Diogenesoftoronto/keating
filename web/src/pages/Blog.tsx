@@ -2190,10 +2190,9 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
           positions between frames, draws arrows, pulses highlighted nodes,
           and auto-advances. Play / pause / scrub controls and a frame
           timeline live in the sidebar. Animations can also include a
-          follow-up CTA on the last frame that hands off to
-          <Code>ask_user_question</Code> or <Code>quiz</Code> for
-          check-your-understanding, so visuals and assessments compose in
-          the same chat flow.
+          follow-up CTA on the last frame that hands off to an OpenUI
+          <Code>Question</Code> or <Code>Quiz</Code> for a
+          check-your-understanding interaction in the same chat flow.
         </p>
         <h3 id="dark-mode-fix" className={styles.sectionHeading}>Dark Mode Contrast Fix</h3>
         <p className={styles.smallParagraph}>

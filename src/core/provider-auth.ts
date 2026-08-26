@@ -2,8 +2,10 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { configDir } from "./paths.js";
+import { notOrganicAuthStatus } from "./notorganic-auth.js";
 
 export const PROVIDER_ENV_KEYS: Record<string, string[]> = {
+  notorganic: [],
   google: ["GEMINI_API_KEY", "GOOGLE_API_KEY"],
   openai: ["OPENAI_API_KEY"],
   anthropic: ["ANTHROPIC_OAUTH_TOKEN", "ANTHROPIC_API_KEY"],
@@ -13,6 +15,10 @@ export const PROVIDER_ENV_KEYS: Record<string, string[]> = {
 };
 
 export const PROVIDER_SETUP_HINTS: Record<string, string[]> = {
+  notorganic: [
+    "run `keating login` for a five-minute, DPoP-bound infer:balanced capability",
+    "use `keating login --manual` on a remote or headless terminal"
+  ],
   google: [
     "export GEMINI_API_KEY=your_google_ai_studio_key",
     "or run `/login google` inside the Keating shell"
@@ -50,6 +56,7 @@ export function envWithProviderAliases(env: NodeJS.ProcessEnv): NodeJS.ProcessEn
 }
 
 export function authJsonHasProvider(cwd: string, provider: string): boolean {
+  if (provider === "notorganic") return notOrganicAuthStatus(cwd).configured;
   const path = join(configDir(cwd), "auth.json");
   try {
     const parsed = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
@@ -85,4 +92,3 @@ export function providerSetupMessage(provider: string): string {
     "The Keating shell can still open so you can configure credentials without leaving the TUI."
   ].join("\n");
 }
-

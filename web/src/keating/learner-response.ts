@@ -1,5 +1,6 @@
+import type { UiQuestion, UiQuestionGroupResponse } from "@keating/learner-contracts";
 import type { AnsweredQuestion } from "../components/QuestionRenderer";
-import type { KeatingOpenUIAction } from "./openui/types";
+import type { CanonicalKeatingOpenUIAction, KeatingOpenUIAction } from "./openui/types";
 
 export const LEARNER_RESPONSE_TAG = "keating-learner-response";
 
@@ -130,7 +131,54 @@ function genericActionItems(action: KeatingOpenUIAction): LearnerResponseReviewI
 		.slice(0, 8);
 }
 
+function questionGroupResponseValue(response: UiQuestionGroupResponse, question?: UiQuestion): string {
+	switch (response.type) {
+		case "text":
+			return response.answer.trim();
+		case "choice": {
+			const choices = response.optionIds.map((optionId) =>
+				question?.choices?.find((choice) => choice.id === optionId)?.label ?? optionId,
+			);
+			if (response.text?.trim()) choices.push(response.text.trim());
+			return choices.join("; ");
+		}
+		case "blanks":
+			return response.answers.join(", ");
+		case "rows":
+			return response.rows.map((row) => {
+				const selection = question?.choices?.find((choice) => choice.id === row.optionId)?.label ?? row.optionId;
+				return `${row.item}: ${selection}${row.reason?.trim() ? ` (${row.reason.trim()})` : ""}`;
+			}).join("; ");
+	}
+}
+
+function canonicalQuestionGroupReview(action: CanonicalKeatingOpenUIAction): LearnerResponseReview | null {
+	const submitted = action.action;
+	if (submitted.type !== "submit-question-group") return null;
+	const group = action.sourceDocument.nodes.find(
+		(node) => node.type === "question-group" && node.id === submitted.nodeId,
+	);
+	if (!group || group.type !== "question-group") return null;
+	const items = submitted.responses.map((response, index) => {
+		const question = group.questions.find((candidate) => candidate.id === response.questionId);
+		return {
+			label: question?.header?.trim() || question?.prompt.trim() || `Answer ${index + 1}`,
+			value: questionGroupResponseValue(response, question) || "No answer provided.",
+		};
+	});
+	const count = items.length;
+	return {
+		title: "Your response",
+		summary: `${count} ${count === 1 ? "question" : "questions"} answered${group.topic?.trim() ? ` about ${group.topic.trim()}` : ""}.`,
+		items,
+	};
+}
+
 function openUIActionReview(action: KeatingOpenUIAction): LearnerResponseReview {
+	if (action.kind === "canonical") {
+		const questionGroup = canonicalQuestionGroupReview(action);
+		if (questionGroup) return questionGroup;
+	}
 	const interaction = typeof action.params.interaction === "string"
 		? action.params.interaction
 		: action.type;
@@ -225,12 +273,37 @@ export function parseLearnerResponse(text: string): LearnerResponseEnvelope | nu
 	}
 }
 
+/** Resolve historical envelopes against their structured payload before displaying them. */
+export function resolvedLearnerResponseReview(response: LearnerResponseEnvelope): LearnerResponseReview {
+	return response.kind === "openui-action" ? openUIActionReview(response.payload) : response.review;
+}
+
 export function learnerResponseReviewText(text: string): string {
 	const response = parseLearnerResponse(text);
 	if (!response) return text;
+	const review = resolvedLearnerResponseReview(response);
 	return [
-		response.review.title,
-		response.review.summary,
-		...response.review.items.map((item) => `${item.label}: ${item.value}`),
+		review.title,
+		review.summary,
+		...review.items.map((item) => `${item.label}: ${item.value}`),
 	].filter(Boolean).join("\n");
+}
+
+function escapeMarkdownLabel(value: string): string {
+	return value.replace(/([\\`*_{}\[\]()<>#+.!|])/g, "\\$1");
+}
+
+/** A compact, readable transcript view. The complete envelope remains available in Raw. */
+export function learnerResponseReviewMarkdown(text: string): string {
+	const response = parseLearnerResponse(text);
+	if (!response) return text;
+	const review = resolvedLearnerResponseReview(response);
+	return [
+		`### ${escapeMarkdownLabel(review.title)}`,
+		review.summary,
+		...review.items.flatMap((item) => [
+			`**${escapeMarkdownLabel(item.label)}**`,
+			item.value,
+		]),
+	].filter(Boolean).join("\n\n");
 }

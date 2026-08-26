@@ -1,5 +1,6 @@
 import { relative } from "node:path";
 import { join, resolve } from "node:path";
+import { spawn } from "node:child_process";
 
 import { DEFAULT_KEATING_CONFIG, configPath, loadKeatingConfig, writeKeatingConfig } from "../core/config.js";
 import { learnerStatePath } from "../core/paths.js";
@@ -45,6 +46,13 @@ import {
   recommendedPiPackagesMarkdown,
   removeConfiguredPiPackage
 } from "../core/pi-packages.js";
+import {
+  loginNotOrganic,
+  logoutNotOrganic,
+  NOTORGANIC_MODEL_ID,
+  NOTORGANIC_PROVIDER_ID,
+  notOrganicAuthStatus
+} from "../core/notorganic-auth.js";
 
 function printUsage(): void {
   printAsciiHeader();
@@ -57,6 +65,9 @@ function printUsage(): void {
   console.log(`  ${color.primary}shell${color.reset}  [initial prompt...]  Launch the AI-powered hyperteacher shell`);
   console.log(`  ${color.primary}tui${color.reset}    [initial prompt...]  Launch the OpenTUI host over Pi RPC`);
   console.log(`  ${color.primary}setup${color.reset}  [--yes]             Configure Keating for this project`);
+  console.log(`  ${color.primary}login${color.reset}  [notorganic] [--manual|--status]  Connect five-minute hosted inference`);
+  console.log(`  ${color.primary}logout${color.reset} [notorganic]             Remove the hosted capability`);
+  console.log(`  ${color.primary}auth${color.reset}    status                   Inspect hosted capability status`);
   console.log(`  ${color.primary}doctor${color.reset}                    Inspect AI runtime and renderer configuration`);
   console.log(`  ${color.primary}package${color.reset} list|add|remove|recommended  Manage extra Pi packages`);
   console.log(`  ${color.primary}web${color.reset}     [port] [runtime options]  Start the browser UI; run ${color.primary}keating web --help${color.reset} for NodePod, host, external, and cloud setup`);
@@ -64,6 +75,189 @@ function printUsage(): void {
   console.log(`  ${color.primary}policy${color.reset}                    Print the active teaching policy`);
   console.log(`  ${color.primary}trace${color.reset}   [substring]        Browse debug traces and artifacts`);
   console.log("");
+}
+
+function validateNotOrganicProvider(provider: string, command: "login" | "logout"): string {
+  if (provider !== NOTORGANIC_PROVIDER_ID) {
+    throw new Error(`Unsupported ${command} provider: ${provider}. Only Not Organic hosted inference is supported.`);
+  }
+  return provider;
+}
+
+function printNotOrganicLoginUsage(): void {
+  console.log([
+    "Usage: keating login [notorganic] [--manual|--headless|--status]",
+    "",
+    "Connect a five-minute Not Organic infer:balanced capability.",
+    "  --manual, --headless  Print the URL and read the callback from stdin",
+    "  --status              Show the current capability status",
+    "  --help, -h            Show this help without starting login"
+  ].join("\n"));
+}
+
+function printNotOrganicLogoutUsage(): void {
+  console.log([
+    "Usage: keating logout [notorganic]",
+    "",
+    "Remove only the project-scoped Not Organic capability.",
+    "  --help, -h  Show this help without removing credentials"
+  ].join("\n"));
+}
+
+function unknownNotOrganicOption(command: "login" | "logout", option: string): Error {
+  return new Error(`Unknown ${command} option: ${option}. Run \`keating ${command} --help\`.`);
+}
+
+function openAuthorizationUrl(url: string): void {
+  const command = process.platform === "darwin"
+    ? "open"
+    : process.platform === "win32" ? "rundll32.exe" : "xdg-open";
+  const args = process.platform === "win32" ? ["url.dll,FileProtocolHandler", url] : [url];
+  try {
+    const child = spawn(command, args, { detached: true, stdio: "ignore" });
+    child.once("error", () => {
+      console.error(`${color.sepia}Could not open a browser. Open the authorization URL above, or rerun with --manual.${color.reset}`);
+    });
+    child.unref();
+  } catch {
+    console.error(`${color.sepia}Could not open a browser. Open the authorization URL above, or rerun with --manual.${color.reset}`);
+  }
+}
+
+async function readPipedManualCallback(signal: AbortSignal): Promise<string> {
+  if (signal.aborted) throw new Error("Not Organic login input was cancelled.");
+  return await new Promise<string>((resolveInput, rejectInput) => {
+    let value = "";
+    let settled = false;
+    const wasPaused = process.stdin.isPaused();
+    const cleanup = () => {
+      process.stdin.off("data", onData);
+      process.stdin.off("end", onEnd);
+      process.stdin.off("error", onError);
+      signal.removeEventListener("abort", onAbort);
+      if (wasPaused) process.stdin.pause();
+    };
+    const finish = (result: { value: string } | { error: Error }) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      if ("error" in result) rejectInput(result.error);
+      else resolveInput(result.value.trim());
+    };
+    const onData = (chunk: string | Buffer) => { value += String(chunk); };
+    const onEnd = () => finish({ value });
+    const onError = (error: Error) => finish({ error });
+    const onAbort = () => finish({ error: new Error("Not Organic login input was cancelled.") });
+    process.stdin.on("data", onData);
+    process.stdin.once("end", onEnd);
+    process.stdin.once("error", onError);
+    signal.addEventListener("abort", onAbort, { once: true });
+    process.stdin.resume();
+  });
+}
+
+async function readManualCallback(signal: AbortSignal): Promise<string> {
+  if (!process.stdin.isTTY) {
+    return await readPipedManualCallback(signal);
+  }
+  const readline = await import("node:readline/promises");
+  const terminal = readline.createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    return (await terminal.question(
+      "Paste the complete callback URL (or code#state): ",
+      { signal }
+    )).trim();
+  } finally {
+    terminal.close();
+  }
+}
+
+function shouldUseManualLogin(args: string[]): boolean {
+  if (args.includes("--manual") || args.includes("--headless")) return true;
+  if (!process.stdin.isTTY || !process.stdout.isTTY || process.env.CI) return true;
+  return process.platform === "linux" && !process.env.DISPLAY && !process.env.WAYLAND_DISPLAY;
+}
+
+function printNotOrganicStatus(cwd: string): void {
+  const status = notOrganicAuthStatus(cwd);
+  if (status.expired) {
+    console.log(`${color.sepia}Not Organic is not configured: the stored five-minute capability expired.${color.reset}`);
+    console.log(`Run ${color.primary}keating login${color.reset} to reconnect infer:balanced.`);
+    return;
+  }
+  if (!status.configured) {
+    console.log(`${color.sepia}Not Organic is not connected for this project.${color.reset}`);
+    console.log(`Run ${color.primary}keating login${color.reset} to enable infer:balanced.`);
+    return;
+  }
+  console.log(`${color.ok}Not Organic is connected.${color.reset} infer:balanced · ${status.secondsRemaining ?? 0}s remaining`);
+}
+
+async function runLoginCommand(cwd: string, args: string[]): Promise<void> {
+  if (args.includes("--help") || args.includes("-h")) {
+    printNotOrganicLoginUsage();
+    return;
+  }
+  const knownFlags = new Set(["--manual", "--headless", "--status"]);
+  const unknownFlag = args.find((arg) => arg.startsWith("-") && !knownFlags.has(arg));
+  if (unknownFlag) throw unknownNotOrganicOption("login", unknownFlag);
+  const positionals = args.filter((arg) => !arg.startsWith("-"));
+  const statusPositional = positionals[0] === "status";
+  if (positionals.length > 1) {
+    throw new Error(`Unexpected login argument: ${positionals[1]}. Run \`keating login --help\`.`);
+  }
+  const status = args.includes("--status") || statusPositional;
+  const manual = shouldUseManualLogin(args);
+  const provider = statusPositional
+    ? NOTORGANIC_PROVIDER_ID
+    : positionals[0] ?? NOTORGANIC_PROVIDER_ID;
+  validateNotOrganicProvider(provider, "login");
+  if (status && (args.includes("--manual") || args.includes("--headless"))) {
+    throw new Error("Not Organic login status cannot be combined with --manual or --headless.");
+  }
+  if (status) {
+    printNotOrganicStatus(cwd);
+    return;
+  }
+  const result = await loginNotOrganic(cwd, {
+    onAuth: ({ url, instructions }) => {
+      console.log(`${bold("primary", "Not Organic login")}`);
+      if (instructions) console.log(`${color.sepia}${instructions}${color.reset}`);
+      console.log(url);
+      if (!manual) openAuthorizationUrl(url);
+    },
+    onProgress: (message) => console.error(`${color.sepia}${message}${color.reset}`),
+    ...(manual ? { onManualCodeInput: readManualCallback } : {})
+  });
+
+  const config = await loadKeatingConfig(cwd);
+  await writeKeatingConfig(cwd, {
+    ...config,
+    pi: {
+      ...config.pi,
+      defaultProvider: NOTORGANIC_PROVIDER_ID,
+      defaultModel: NOTORGANIC_MODEL_ID
+    }
+  });
+  console.log(`${color.ok}${result.message}${color.reset}`);
+  console.log(`Run ${color.primary}keating shell${color.reset} now to use ${result.provider}/${result.model}.`);
+}
+
+function runLogoutCommand(cwd: string, args: string[]): void {
+  if (args.includes("--help") || args.includes("-h")) {
+    printNotOrganicLogoutUsage();
+    return;
+  }
+  const unknownFlag = args.find((arg) => arg.startsWith("-"));
+  if (unknownFlag) throw unknownNotOrganicOption("logout", unknownFlag);
+  if (args.length > 1) {
+    throw new Error(`Unexpected logout argument: ${args[1]}. Run \`keating logout --help\`.`);
+  }
+  validateNotOrganicProvider(args[0] ?? NOTORGANIC_PROVIDER_ID, "logout");
+  const removed = logoutNotOrganic(cwd);
+  console.log(removed
+    ? `${color.ok}Removed the project-scoped Not Organic capability.${color.reset}`
+    : `${color.sepia}Not Organic was not connected for this project.${color.reset}`);
 }
 
 function normalizeTopLevelShellArgs(args: string[]): string[] | null {
@@ -390,6 +584,9 @@ async function setupProject(cwd: string, args: string[]): Promise<void> {
 
   await writeKeatingConfig(cwd, next);
   console.log(`${color.ok}Wrote ${relative(cwd, configPath(cwd))}${color.reset}`);
+  if (next.pi.defaultProvider === NOTORGANIC_PROVIDER_ID) {
+    console.log(`Run ${color.primary}keating login${color.reset} to connect the five-minute infer:balanced capability.`);
+  }
   console.log(`Run ${color.primary}keating doctor${color.reset} to verify the runtime, then ${color.primary}keating shell${color.reset}.`);
 }
 
@@ -469,6 +666,20 @@ async function run(): Promise<void> {
   const [command = "shell", ...args] = rawArgs;
 
   switch (command) {
+    case "login": {
+      await runLoginCommand(cwd, args);
+      return;
+    }
+    case "logout": {
+      runLogoutCommand(cwd, args);
+      return;
+    }
+    case "auth": {
+      const subcommand = args[0] ?? "status";
+      if (subcommand !== "status") throw commandUsage("auth", "keating auth status");
+      printNotOrganicStatus(cwd);
+      return;
+    }
     case "setup": {
       await setupProject(cwd, args);
       return;
@@ -725,6 +936,13 @@ async function run(): Promise<void> {
       console.log(`  ${color.cream}ai_default_provider${color.reset}   ${config.pi.defaultProvider ?? color.sepia + "unset" + color.reset}`);
       console.log(`  ${color.cream}ai_default_model${color.reset}      ${config.pi.defaultModel ?? color.sepia + "unset" + color.reset}`);
       console.log(`  ${color.cream}ai_default_thinking${color.reset}   ${config.pi.defaultThinking ?? color.sepia + "unset" + color.reset}`);
+      const hostedStatus = notOrganicAuthStatus(cwd);
+      const hostedLabel = hostedStatus.expired
+        ? `${color.err}expired (run keating login)${color.reset}`
+        : hostedStatus.configured
+          ? `${color.ok}connected · ${hostedStatus.secondsRemaining ?? 0}s remaining${color.reset}`
+          : `${color.sepia}not connected${color.reset}`;
+      console.log(`  ${color.cream}ai_notorganic${color.reset}         ${hostedLabel}`);
       console.log(`  ${color.cream}debug_persist_traces${color.reset}  ${color.primary}${String(config.debug.persistTraces)}${color.reset}`);
       console.log(`  ${color.cream}debug_trace_top_learners${color.reset} ${color.primary}${String(config.debug.traceTopLearners)}${color.reset}`);
       console.log(`  ${color.cream}debug_console_summary${color.reset} ${color.primary}${String(config.debug.consoleSummary)}${color.reset}`);

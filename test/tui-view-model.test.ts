@@ -113,6 +113,10 @@ describe("TUI view model", () => {
       "retry",
       "shell",
     ]);
+    expect(TUI_COMMANDS.find((command) => command.id === "setup")).toMatchObject({
+      label: "Profile & setup",
+      description: expect.stringContaining("name or profile image"),
+    });
     expect(TUI_COMMANDS.find((command) => command.id === "library")?.shortcut).toBe("Ctrl+L");
   });
 });

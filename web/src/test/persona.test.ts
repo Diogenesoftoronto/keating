@@ -6,7 +6,12 @@ import {
 	resetPersona,
 	savePersona,
 } from "../keating/persona";
-import { composeKeatingSystemPrompt, KEATING_SYSTEM_PROMPT } from "../keating/browser-tools";
+import {
+	composeKeatingSystemPrompt,
+	getActiveKeatingPrompt,
+	KEATING_SYSTEM_PROMPT,
+	refreshKeatingOperationalProtocol,
+} from "../keating/browser-tools";
 
 function createMockStorage(): Storage {
 	const store = new Map<string, string>();
@@ -61,10 +66,29 @@ describe("composeKeatingSystemPrompt", () => {
 		expect(composed).toContain("You are Socrates.");
 		expect(composed).toContain("## Self-Evolution Protocol");
 		expect(composed).toContain("OpenUI `Question`");
+		expect(composed).toContain("Use an OpenUI `Question`");
 		expect(composed).toContain("stop and wait for its submitted answer");
 	});
 
 	it("uses the default persona when given blank text", () => {
 		expect(composeKeatingSystemPrompt("   ")).toBe(KEATING_SYSTEM_PROMPT);
+	});
+
+	it("replaces a stale evolved operational section with the current OpenUI protocol", async () => {
+		const stale = [
+			"You are an evolved Socratic tutor.",
+			"",
+			"## Self-Evolution Protocol",
+			"Use ask_user_question whenever you need learner input.",
+		].join("\n");
+		const refreshed = refreshKeatingOperationalProtocol(stale);
+		expect(refreshed).toContain("You are an evolved Socratic tutor.");
+		expect(refreshed).toContain("Use an OpenUI `Question`");
+		expect(refreshed).not.toContain("ask_user_question");
+
+		const active = await getActiveKeatingPrompt({
+			getPromptEvolutions: async () => [{ createdAt: 1, bestPrompt: stale }],
+		} as any);
+		expect(active).toBe(refreshed);
 	});
 });

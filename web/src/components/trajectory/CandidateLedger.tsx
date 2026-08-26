@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	estimatePoolCostUsd,
 	type ReviewGenerationCandidate,
@@ -8,6 +8,7 @@ import {
 } from "../../keating/trajectory-review";
 import { css, cx } from "../../../styled-system/css";
 import { KeatingIcon } from "../KeatingIcon";
+import { MarkdownBlock } from "../MarkdownBlock";
 import { reviewIcon } from "./review-icons";
 import {
 	compatibleReviewModelPools,
@@ -15,7 +16,7 @@ import {
 	reviewPoolGenerationAvailability,
 	reviewTaskLabel,
 } from "./pool-compatibility";
-import { compactButtonClass, inputClass, metaTextClass, primaryButtonClass, sectionHeadingClass } from "./styles";
+import { compactButtonClass, inputClass, metaTextClass, primaryButtonClass } from "./styles";
 
 export interface CandidateLedgerProps {
 	candidates: ReviewGenerationCandidate[];
@@ -83,6 +84,9 @@ export function CandidateLedger({
 	onInsert,
 	onRegenerate,
 }: CandidateLedgerProps) {
+	const [contentView, setContentView] = useState<"rendered" | "raw">("rendered");
+	const [copyStatus, setCopyStatus] = useState<{ candidateId: string; state: "copied" | "failed" } | null>(null);
+	const copyResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const relevant = useMemo(
 		() => candidates.filter((candidate) => candidate.targetKey === activeTargetKey).sort((left, right) => right.updatedAt - left.updatedAt),
 		[candidates, activeTargetKey],
@@ -114,6 +118,15 @@ export function CandidateLedger({
 		if (poolId && poolId !== activeModelPoolId) onSelectModelPool(poolId);
 	}, [activeModelPoolId, activeTargetKey, activeTask, onSelectModelPool, poolId]);
 
+	useEffect(() => {
+		setContentView("rendered");
+		setCopyStatus(null);
+	}, [active?.id]);
+
+	useEffect(() => () => {
+		if (copyResetTimer.current) clearTimeout(copyResetTimer.current);
+	}, []);
+
 	function generate() {
 		if (!canGenerate || !selectedPool) return;
 		onGenerate(selectedPool.id, activeTargetKey);
@@ -124,8 +137,28 @@ export function CandidateLedger({
 		onRegenerate(active.id);
 	}
 
+	async function copyResponse() {
+		if (!active?.content?.trim()) return;
+		if (copyResetTimer.current) clearTimeout(copyResetTimer.current);
+		try {
+			if (!navigator.clipboard) throw new Error("Clipboard access is unavailable");
+			await navigator.clipboard.writeText(active.content);
+			setCopyStatus({ candidateId: active.id, state: "copied" });
+		} catch {
+			setCopyStatus({ candidateId: active.id, state: "failed" });
+		}
+		copyResetTimer.current = setTimeout(() => setCopyStatus(null), 1_800);
+	}
+
 	return (
 		<div className={css({ display: "flex", minHeight: 0, flexDirection: "column", gap: "0.75rem" })}>
+			<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: "0.5rem" })}>
+				<div>
+					<h2 className={css({ fontSize: "1rem", fontWeight: 750, color: "var(--foreground)" })}>Model results</h2>
+					<p className={cx(metaTextClass, css({ marginTop: "0.2rem" }))}>Compare parallel teaching moves against the active transcript turn or artifact.</p>
+				</div>
+				<div className={metaTextClass}>{relevant.length} result{relevant.length === 1 ? "" : "s"} for this target</div>
+			</div>
 			<div className={css({ display: "flex", alignItems: "flex-end", gap: "0.5rem" })}>
 				<label className={css({ minWidth: 0, flex: 1, fontSize: "0.6875rem", fontWeight: 650, color: "var(--foreground)" })}>
 					{activeTask ? `Model pool for ${reviewTaskLabel(activeTask).toLowerCase()}` : "Model pool"}
@@ -165,14 +198,10 @@ export function CandidateLedger({
 				Review records stay local. If this pool uses a remote model, generating sends that provider redacted session context and the selected feedback.
 			</p>
 
-			<div className={css({ display: "grid", minHeight: 0, gridTemplateRows: "auto minmax(0, 1fr)", borderTop: "1px solid var(--border)", paddingTop: "0.75rem" })}>
-				<div className={css({ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "0.5rem" })}>
-					<div className={sectionHeadingClass}>Candidate ledger</div>
-					<div className={metaTextClass}>{relevant.length} for this target</div>
-				</div>
+			<div className={css({ minHeight: 0, borderTop: "1px solid var(--border)", paddingTop: "0.75rem" })}>
 				{relevant.length > 0 ? (
-					<div className={css({ minHeight: 0, paddingTop: "0.5rem" })}>
-						<div role="radiogroup" aria-label="Generated candidates" className={css({ display: "flex", gap: "0.375rem", overflowX: "auto", paddingBottom: "0.375rem" })}>
+					<div className={css({ display: "grid", minHeight: 0, gap: "1rem", md: { gridTemplateColumns: "13rem minmax(0, 1fr)" } })}>
+						<div role="radiogroup" aria-label="Generated candidates" className={css({ display: "flex", gap: "0.375rem", overflowX: "auto", paddingBottom: "0.375rem", md: { flexDirection: "column", overflowX: "visible", paddingRight: "1rem", paddingBottom: 0, borderRight: "1px solid var(--border)" } })}>
 							{relevant.map((candidate, index) => {
 								const chosen = selectedCandidateId === candidate.id || candidate.preferred;
 								const selected = active?.id === candidate.id;
@@ -182,7 +211,7 @@ export function CandidateLedger({
 										type="button"
 										role="radio"
 										aria-checked={selected}
-										className={css({ display: "inline-flex", minWidth: "7rem", alignItems: "center", gap: "0.375rem", borderRadius: "0.375rem", border: "1px solid", borderColor: selected ? "var(--ink)" : "var(--border)", background: selected ? "var(--muted)" : "var(--background)", padding: "0.375rem 0.5rem", textAlign: "left", _hover: { borderColor: "var(--ink)" }, _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" } })}
+										className={css({ display: "inline-flex", minWidth: "8rem", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", border: "1px solid", borderColor: selected ? "var(--ink)" : "transparent", background: selected ? "var(--muted)" : "transparent", padding: "0.5rem", textAlign: "left", _hover: { borderColor: "var(--border)", background: "var(--muted)" }, _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" }, md: { width: "100%" } })}
 										onClick={() => onSelectCandidate(candidate.id)}
 									>
 										<span className={css({ display: "inline-flex", width: "1.25rem", height: "1.25rem", flex: "0 0 auto", alignItems: "center", justifyContent: "center", borderRadius: "9999px", background: chosen ? "var(--accent-green)" : "var(--muted)", fontSize: "0.625rem", fontWeight: 700, color: chosen ? "var(--ink)" : "var(--muted-foreground)" })}>
@@ -198,19 +227,37 @@ export function CandidateLedger({
 						</div>
 
 						{active ? (
-							<article className={css({ marginTop: "0.5rem", borderTop: "1px solid var(--border)", paddingTop: "0.625rem" })}>
-								<header className={css({ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.5rem" })}>
+							<article className={css({ minWidth: 0 })}>
+								<header className={css({ display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: "0.625rem", borderBottom: "1px solid var(--border)", paddingBottom: "0.75rem" })}>
 									<div className={css({ minWidth: 0 })}>
-										<div className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.75rem", fontWeight: 700, color: "var(--foreground)" })}>{active.model.provider} / {active.model.name}</div>
+										<div className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 750, color: "var(--foreground)" })}>{active.model.provider} / {active.model.name}</div>
 										<div className={metaTextClass}>{usageLabel(active) ?? stateLabel(active.state)}</div>
 									</div>
-									<button type="button" className={compactButtonClass} disabled={!canRegenerate} title={canRegenerate ? undefined : regenerationAvailability?.unavailableModels.length ? `Unavailable model: ${unavailableModelLabel(regenerationAvailability.unavailableModels)}` : "The original pool no longer supports this target or has no models."} onClick={regenerate}>
-										<KeatingIcon icon={reviewIcon.retry} size={12} /> Regenerate
-									</button>
+									<div className={css({ display: "flex", alignItems: "center", gap: "0.375rem" })}>
+										<div role="group" aria-label="Candidate view" className={css({ display: "inline-flex", border: "1px solid var(--border)", borderRadius: "0.375rem", padding: "0.125rem" })}>
+											{(["rendered", "raw"] as const).map((view) => <button key={view} type="button" aria-pressed={contentView === view} className={css({ borderRadius: "0.25rem", background: contentView === view ? "var(--ink)" : "transparent", padding: "0.25rem 0.45rem", fontSize: "0.625rem", fontWeight: 700, textTransform: "capitalize", color: contentView === view ? "var(--paper, var(--background))" : "var(--muted-foreground)", _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" } })} onClick={() => setContentView(view)}>{view}</button>)}
+										</div>
+										<button
+											type="button"
+											className={compactButtonClass}
+											disabled={!active.content?.trim()}
+											onClick={() => void copyResponse()}
+										>
+											<KeatingIcon icon={copyStatus?.candidateId === active.id && copyStatus.state === "copied" ? reviewIcon.accept : copyStatus?.candidateId === active.id && copyStatus.state === "failed" ? reviewIcon.problem : reviewIcon.copy} size={12} active={copyStatus?.candidateId === active.id} />
+											<span aria-live="polite">{copyStatus?.candidateId === active.id ? copyStatus.state === "copied" ? "Copied" : "Copy failed" : "Copy response"}</span>
+										</button>
+										<button type="button" className={compactButtonClass} disabled={!canRegenerate} title={canRegenerate ? undefined : regenerationAvailability?.unavailableModels.length ? `Unavailable model: ${unavailableModelLabel(regenerationAvailability.unavailableModels)}` : "The original pool no longer supports this target or has no models."} onClick={regenerate}>
+											<KeatingIcon icon={reviewIcon.retry} size={12} /> Regenerate
+										</button>
+									</div>
 								</header>
 								{regenerationAvailability?.unavailableModels.length ? <div className={cx(metaTextClass, css({ marginTop: "0.375rem" }))}>Cannot regenerate. Unavailable in the current model catalog: {unavailableModelLabel(regenerationAvailability.unavailableModels)}.</div> : null}
-								{active.error ? <div role="alert" className={css({ marginTop: "0.5rem", borderLeft: "2px solid var(--destructive)", paddingLeft: "0.5rem", fontSize: "0.75rem", color: "var(--destructive)" })}>{active.error}</div> : null}
-								{active.content ? <pre className={css({ marginTop: "0.625rem", maxHeight: "20rem", overflow: "auto", whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontFamily: "inherit", fontSize: "0.8125rem", lineHeight: 1.55, color: "var(--foreground)" })}>{active.content}</pre> : active.state === "running" || active.state === "queued" ? <div className={cx(metaTextClass, css({ marginTop: "0.75rem" }))}>Waiting for model output...</div> : null}
+								{active.error ? <div role="alert" className={css({ marginTop: "0.75rem", border: "1px solid color-mix(in srgb, var(--destructive) 45%, var(--border))", borderRadius: "0.375rem", background: "color-mix(in srgb, var(--destructive) 8%, transparent)", padding: "0.625rem", fontSize: "0.75rem", color: "var(--destructive)" })}>{active.error}</div> : null}
+								{active.content ? (
+									<div className={css({ marginTop: "1rem", maxWidth: "72ch", overflowWrap: "anywhere", fontSize: "0.875rem", lineHeight: 1.65, color: "var(--foreground)" })}>
+										{contentView === "rendered" ? <MarkdownBlock content={active.content} /> : <pre className={css({ overflow: "auto", whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontFamily: "var(--font-mono, ui-monospace, monospace)", fontSize: "0.8125rem", lineHeight: 1.6 })}>{active.content}</pre>}
+									</div>
+								) : active.state === "running" || active.state === "queued" ? <div className={cx(metaTextClass, css({ marginTop: "0.75rem" }))}>Waiting for model output...</div> : null}
 								<div className={css({ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: "0.375rem", borderTop: "1px solid var(--border)", marginTop: "0.75rem", paddingTop: "0.625rem" })}>
 									<button type="button" className={compactButtonClass} disabled={active.state !== "completed" || !active.content?.trim()} onClick={() => onChoose(active.id)}>
 										<KeatingIcon icon={reviewIcon.accept} size={12} /> Choose

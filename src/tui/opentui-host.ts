@@ -3,8 +3,8 @@ import {
   CliRenderEvents,
   InputRenderable,
   InputRenderableEvents,
-  MarkdownRenderable,
   RGBA,
+  RenderableEvents,
   SelectRenderable,
   SelectRenderableEvents,
   ScrollBoxRenderable,
@@ -25,7 +25,6 @@ import {
   commandOption,
   headerText,
   sanitizeDiagnostic,
-  transcriptMarkdown,
   type TranscriptEntry,
   type TuiCommand,
   type TuiHeaderState,
@@ -52,7 +51,9 @@ import {
   forkMessageOption,
   listProjectTuiSessions,
   sessionOption,
+  sessionTreeOption,
   tuiSessionItems,
+  tuiSessionTreeRows,
   type TuiSessionInfo,
 } from "./session-browser.js";
 import {
@@ -74,7 +75,13 @@ import {
   type TuiCourseModule,
 } from "./courses.js";
 import { onboardingMarkdown, loadTuiOnboardingState, markTuiOnboardingSeen, shouldShowTuiOnboarding } from "./onboarding.js";
-import { keatingLogoFrame, keatingWordmarkHeight, keatingWordmarkWidth, shouldAnimateLogo } from "./logo.js";
+import {
+  keatingLogoFrame,
+  keatingLogoLabel,
+  keatingSplashMode,
+  keatingWordmarkHeight,
+  shouldAnimateLogo,
+} from "./logo.js";
 import { tryCreateThreeLogo } from "./three-logo.js";
 import {
   SPINNER_INTERVAL_MS,
@@ -87,6 +94,16 @@ import { publishTuiSession } from "./share.js";
 import { isTuiLeaderKey, TUI_LEADER_HINT, tuiLeaderAction } from "./leader.js";
 import { KEATING_VERSION } from "../core/version.js";
 import { overlayResponseTone, overlayTitleLines, truncateOverlayLabel } from "./overlay.js";
+import { createSacredSidebar, type SacredSidebar, type SacredSidebarNavigationItem } from "./sacred-sidebar.js";
+import {
+  KEATINGBOT_TERMINAL_AVATAR,
+  loadTuiProfile,
+  saveTuiProfile,
+  terminalAvatarForProfile,
+  validateCustomAvatarPath,
+  type TuiProfile,
+} from "./profile.js";
+import { SacredTranscriptRenderable } from "./sacred-transcript.js";
 
 export interface OpenTuiOptions extends Pick<HostControllerOptions, "uiActionDispatcher"> {
   /** Alias retained for direct host embedding callers. */
@@ -117,6 +134,16 @@ function openTuiColor(profile: TuiPresentationProfile, role: TerminalColorRole):
   if (profile.design.colorMode === "truecolor") return token.truecolor;
   const index = profile.design.colorMode === "ansi256" ? token.ansi256 : token.ansi16;
   return index === undefined ? undefined : RGBA.fromIndex(index);
+}
+
+function currentSidebarWidth(terminalWidth: number): number {
+  if (terminalWidth >= 140) return 34;
+  if (terminalWidth >= 112) return 30;
+  return 24;
+}
+
+function terminalCanShowSidebar(terminalWidth: number, terminalHeight: number): boolean {
+  return terminalWidth >= 88 && terminalHeight >= 22;
 }
 
 function markdownSyntaxStyle(profile: TuiPresentationProfile): SyntaxStyle {
@@ -163,6 +190,9 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
   const mutedColor = openTuiColor(presentationProfile, "mutedText");
   const accentColor = openTuiColor(presentationProfile, "accent");
   const borderColor = mutedColor;
+  const sidebarSurfaceColor = surfaceColor ?? RGBA.defaultBackground();
+  let tuiProfile = await loadTuiProfile(cwd);
+  let tuiAvatar = await terminalAvatarForProfile(tuiProfile, cwd);
   const client = await launchRpcClient(cwd);
   const listSessions = options.listSessions ?? listProjectTuiSessions;
   const rpcUiActionDispatcher = options.uiActionDispatcher ? undefined : new RpcUiActionDispatcher(client);
@@ -176,6 +206,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       return outcome.result;
     },
   } : undefined);
+  let sacredSidebar: SacredSidebar<string> | null = null;
   let settle: ((result: OpenTuiExitResult) => void) | null = null;
   let settled = false;
   let detachRecoveryEvents: (() => void) | undefined;
@@ -188,6 +219,8 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
     useKittyKeyboard: { disambiguate: true, alternateKeys: true, allKeysAsEscapes: true },
     ...(surfaceColor ? { backgroundColor: surfaceColor } : {}),
     onDestroy: () => {
+      sacredSidebar?.destroy();
+      sacredSidebar = null;
       detachRecoveryEvents?.();
       if (!settled) {
         settled = true;
@@ -271,15 +304,16 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       ? { visible: false }
       : undefined,
   });
-  const transcript = new MarkdownRenderable(renderer, {
+  const transcript = new SacredTranscriptRenderable(renderer, {
     id: "keating-open-tui-transcript",
-    content: "Ask a question, continue a learning goal, or type /shell for the classic Pi interface.",
+    entries: [],
+    streaming: null,
+    profile: presentationProfile,
+    width: Math.max(20, renderer.terminalWidth - 6),
     syntaxStyle: markdownSyntaxStyle(presentationProfile),
-    fg: textColor,
-    width: "100%",
-    conceal: true,
-    concealCode: false,
-    streaming: false,
+    userIdentity: { label: tuiProfile.displayName, avatar: tuiAvatar },
+    assistantIdentity: { label: "Keating", avatar: KEATINGBOT_TERMINAL_AVATAR },
+    emptyText: "Ask a question, continue a learning goal, or type /shell for the classic Pi interface.",
     tableOptions: {
       style: "columns",
       widthMode: "full",
@@ -368,6 +402,11 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
   let streaming: TranscriptEntry | null = null;
   let headerState: TuiHeaderState = { ...EMPTY_HEADER_STATE };
   let headerLabel = "keating";
+  let sidebarSessionTree: ReturnType<typeof tuiSessionTreeRows> = [];
+  let sidebarExpanded = true;
+  let sidebarWidth = currentSidebarWidth(renderer.terminalWidth);
+  let sidebarWasResized = false;
+  let refreshSidebarSessions: () => Promise<void> = async () => {};
   let busy = false;
   let busyStartedAt: number | null = null;
   let activityPhase: ActivityPhase = "thinking";
@@ -376,41 +415,88 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
   let dialogFocusNext: (() => void) | null = null;
   let dialogFocusPrevious: (() => void) | null = null;
   let dialogSearchInput: InputRenderable | null = null;
-  let dialogSelect: SelectRenderable | null = null;
   let knownPiCommands: ComposerCommand[] = [];
   const editorMode: TuiEditorMode = detectTuiEditorMode(process.env);
   let vimState: VimState = "insert";
-  let focusArea: "composer" | "transcript" = "composer";
+  let focusArea: "composer" | "transcript" | "sidebar" = "composer";
   let activeUiDocument: UiDocument | null = null;
   let activeUiControls: UiDocumentControl[] = [];
   let leaderActive = false;
+  let onboardingSplashActive = false;
+  let firstRunHasProvider: boolean | undefined;
+  let activeSplashMode: ReturnType<typeof keatingSplashMode> = "hidden";
   const promptRecovery = new TuiPromptRecovery(client);
   let currentLayout = terminalLayoutProfile(renderer.terminalWidth, renderer.terminalHeight);
+  const refreshSidebarIdentity = () => {
+    transcript.setIdentity("user", { label: tuiProfile.displayName, avatar: tuiAvatar });
+    sacredSidebar?.setIdentity({
+      label: tuiProfile.displayName,
+      detail: headerState.model,
+      avatarLines: tuiAvatar.unicode,
+      asciiAvatarLines: tuiAvatar.ascii,
+    });
+  };
+  const refreshSidebarActivity = () => {
+    if (!sacredSidebar) return;
+    const recent = entries.slice(-3).reverse().map((entry) => {
+      const mark = presentationProfile.marks[entry.kind];
+      return `${mark} ${entry.title.replace(/\s+/g, " ").trim() || entry.kind}`;
+    });
+    sacredSidebar.setActivity(recent.length > 0 ? recent : ["· No activity yet"]);
+  };
   const retryHint = () => promptRecovery.draft === null ? "" : " · Ctrl+R retry preserved prompt";
   const idleStatus = () => {
     const shortcuts = currentLayout.compactStatus
       ? activeUiDocument
-        ? `Ctrl+U actions (${activeUiControls.length}) · :m model · :p commands${retryHint()}`
-        : `:m model · :p commands · :s sessions · /shell classic Pi${retryHint()}`
+        ? `Ctrl+U actions (${activeUiControls.length}) · Ctrl+B panel · :m model${retryHint()}`
+        : `Ctrl+B panel · :m model · :p commands · /shell classic Pi${retryHint()}`
       : activeUiDocument
-        ? `Ctrl+U document actions (${activeUiControls.length})  ·  :m model  ·  :p commands  ·  :s sessions  ·  :t thinking  ·  :n new${retryHint()}`
-        : `:m model  ·  :p commands  ·  :s sessions  ·  :t thinking  ·  :n new  ·  :x stop${retryHint()}`;
+        ? `Ctrl+U document actions (${activeUiControls.length})  ·  Ctrl+B panel  ·  :m model  ·  :p commands  ·  :s sessions${retryHint()}`
+        : `Ctrl+B panel  ·  :m model  ·  :p commands  ·  :s sessions  ·  :t thinking  ·  :n new${retryHint()}`;
     return `${editorModeLabel(editorMode, vimState)}  ·  ${shortcuts}`;
   };
-  const setFocusArea = (next: "composer" | "transcript") => {
+  const synchronizeFocusArea = (next: "composer" | "transcript" | "sidebar") => {
     focusArea = next;
     if (next === "composer") {
-      input.focus();
       inputFrame.borderColor = accentColor ?? RGBA.defaultForeground();
       scroll.borderColor = borderColor ?? RGBA.defaultForeground();
       if (!busy) status.content = idleStatus();
-    } else {
-      scroll.focus();
+    } else if (next === "transcript") {
       inputFrame.borderColor = borderColor ?? RGBA.defaultForeground();
       scroll.borderColor = accentColor ?? RGBA.defaultForeground();
-      status.content = `${editorModeLabel(editorMode, vimState)}  ·  Transcript focused · Tab returns to composer · ↑/↓ scroll · Ctrl+F searches`;
+      status.content = `${editorModeLabel(editorMode, vimState)}  ·  Transcript focused · Tab ${sacredSidebar?.visible ? "opens side panel" : "returns to composer"} · ↑/↓ scroll · Ctrl+F searches`;
+    } else {
+      inputFrame.borderColor = borderColor ?? RGBA.defaultForeground();
+      scroll.borderColor = borderColor ?? RGBA.defaultForeground();
+      status.content = `${editorModeLabel(editorMode, vimState)}  ·  Side panel focused · Enter opens · Tab advances · Shift+Tab returns · Esc returns`;
     }
   };
+  const setFocusArea = (next: "composer" | "transcript" | "sidebar") => {
+    if (next === "sidebar" && !sacredSidebar?.visible) {
+      setFocusArea("composer");
+      return;
+    }
+    if (next === "composer") {
+      sacredSidebar?.navigationSelect.blur();
+      sacredSidebar?.sessionSelect.blur();
+      sacredSidebar?.resizeHandle.blur();
+      input.focus();
+    } else if (next === "transcript") {
+      sacredSidebar?.navigationSelect.blur();
+      sacredSidebar?.sessionSelect.blur();
+      sacredSidebar?.resizeHandle.blur();
+      scroll.focus();
+    } else {
+      sacredSidebar?.focusNavigation();
+    }
+    synchronizeFocusArea(next);
+  };
+  input.on(RenderableEvents.FOCUSED, () => {
+    if (!dialogCancel) synchronizeFocusArea("composer");
+  });
+  scroll.on(RenderableEvents.FOCUSED, () => {
+    if (!dialogCancel) synchronizeFocusArea("transcript");
+  });
   const setVimState = (next: VimState) => {
     vimState = next;
     input.cursorStyle = { style: next === "normal" ? "block" : "line", blinking: true };
@@ -469,9 +555,23 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
   /** The welcome mark owns the workspace until the transcript has something in it. */
   const updateSplash = () => {
     const empty = entries.length === 0 && streaming === null;
-    const roomForSplash = renderer.terminalHeight >= 16
-      && renderer.terminalWidth >= keatingWordmarkWidth(presentationProfile.design.glyphMode) + 6;
-    splash.visible = empty && roomForSplash;
+    const hintLines = onboardingSplashActive ? 3 : 2;
+    const mode = keatingSplashMode({
+      width: renderer.terminalWidth,
+      height: renderer.terminalHeight,
+      glyphMode: presentationProfile.design.glyphMode,
+      shellPadding: currentLayout.shellPadding,
+      hintLines,
+    });
+    activeSplashMode = mode;
+    logo.content = mode === "full"
+      ? keatingLogoFrame(0, presentationProfile.design.glyphMode)
+      : keatingLogoLabel(presentationProfile.design.glyphMode);
+    logo.height = mode === "full"
+      ? keatingWordmarkHeight(presentationProfile.design.glyphMode)
+      : 1;
+    splashHint.height = hintLines;
+    splash.visible = empty && mode !== "hidden";
     workspace.visible = !splash.visible;
   };
   /**
@@ -481,13 +581,16 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
   let transcriptDirty = false;
   const paintTranscript = () => {
     transcriptDirty = false;
-    transcript.streaming = streaming !== null;
+    const panelWidth = sacredSidebar?.visible ? sacredSidebar.width + 1 : 0;
+    const legacyRailWidth = activityRail.visible ? currentLayout.activityRailWidth + 1 : 0;
     const transcriptWidth = renderer.terminalWidth
       - (2 * currentLayout.shellPadding)
-      - (currentLayout.showActivityRail ? currentLayout.activityRailWidth + 1 : 0)
+      - panelWidth
+      - legacyRailWidth
       - 4;
-    transcript.content = transcriptMarkdown(entries, streaming, presentationProfile, transcriptWidth);
+    transcript.reconcile(entries, streaming, transcriptWidth);
     activity.content = activityText(entries, headerState, presentationProfile, currentLayout.activityRailWidth);
+    refreshSidebarActivity();
     updateSplash();
     scroll.scrollTo({ y: scroll.scrollHeight, x: 0 });
   };
@@ -514,7 +617,15 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
   };
   const updateResponsiveLayout = () => {
     currentLayout = terminalLayoutProfile(renderer.terminalWidth, renderer.terminalHeight);
-    activityRail.visible = currentLayout.showActivityRail;
+    const sidebarEligible = terminalCanShowSidebar(renderer.terminalWidth, renderer.terminalHeight);
+    const showSidebar = sidebarEligible && sidebarExpanded;
+    sacredSidebar?.setVisible(showSidebar);
+    if (!showSidebar && focusArea === "sidebar") setFocusArea("composer");
+    if (!sidebarWasResized) sidebarWidth = currentSidebarWidth(renderer.terminalWidth);
+    if (sacredSidebar) sidebarWidth = sacredSidebar.setWidth(sidebarWidth);
+    // Recent activity now lives in the layered side panel. The legacy rail is
+    // retained as a construction fallback, but never competes for width.
+    activityRail.visible = currentLayout.showActivityRail && !sidebarEligible;
     activityRail.width = currentLayout.activityRailWidth;
     shell.padding = currentLayout.shellPadding;
     transcript.tableOptions = {
@@ -524,15 +635,22 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
         && presentationProfile.design.glyphMode === "unicode"
         && currentLayout.size === "wide",
     };
-    splashHint.content = [
-      `${cwd}`,
-      currentLayout.compactStatus
-        ? "Ctrl+P commands  ·  Ctrl+M model"
-        : "Ctrl+P commands  ·  Ctrl+S sessions  ·  Ctrl+M model  ·  Ctrl+T thinking",
-    ].join("\n");
+    splashHint.content = onboardingSplashActive
+      ? [
+        "First run · make Keating yours",
+        "Enter  set your name + profile image",
+        "or type a question now · /setup changes your profile later",
+      ].join("\n")
+      : [
+        `${cwd}`,
+        currentLayout.compactStatus
+          ? "Ctrl+P commands  ·  Ctrl+M model"
+          : "Ctrl+P commands  ·  Ctrl+S sessions  ·  Ctrl+M model  ·  Ctrl+T thinking",
+      ].join("\n");
     updateSplash();
     renderHeader();
     if (!busy) status.content = idleStatus();
+    renderTranscript();
   };
   updateResponsiveLayout();
   renderer.on(CliRenderEvents.RESIZE, updateResponsiveLayout);
@@ -564,7 +682,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
         paintIndicator();
       }
     }
-    if (!motion || !splash.visible) return;
+    if (!motion || !splash.visible || activeSplashMode !== "full") return;
     logoElapsed += deltaTime;
     if (logoElapsed < 900) return;
     logoElapsed = 0;
@@ -574,6 +692,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
 
   const presentSelect = (title: string, options: string[], presentation: SelectPresentationOptions = {}): Promise<string | undefined> =>
     new Promise((resolve) => {
+      const returnFocus = focusArea;
       const overlayWidth = Math.max(24, Math.floor(renderer.terminalWidth * 0.8));
       const innerWidth = Math.max(12, overlayWidth - 4);
       const titleLines = overlayTitleLines(title, innerWidth, 2);
@@ -592,11 +711,14 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
         borderStyle: "single",
         customBorderChars,
         borderColor: accentColor,
+        backgroundColor: sidebarSurfaceColor,
+        shouldFill: true,
         padding: 1,
       });
       const titleView = new TextRenderable(renderer, {
         content: [...titleLines, hint].join("\n"),
         fg: accentColor,
+        bg: sidebarSurfaceColor,
         height: titleLines.length + 1,
       });
       const filterInput = new InputRenderable(renderer, {
@@ -605,8 +727,8 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
         placeholder: "Filter options…",
         textColor,
         placeholderColor: mutedColor,
-        backgroundColor: surfaceColor,
-        focusedBackgroundColor: surfaceColor,
+        backgroundColor: sidebarSurfaceColor,
+        focusedBackgroundColor: sidebarSurfaceColor,
         focusedTextColor: textColor,
       });
       const select = new SelectRenderable(renderer, {
@@ -615,8 +737,14 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
         options: options.map((option) => ({ name: optionName(option), description: presentation.descriptions?.get(option) ?? "", value: option })),
         showDescription: presentation.showDescription ?? false,
         wrapSelection: true,
+        backgroundColor: sidebarSurfaceColor,
+        textColor: textColor,
+        focusedBackgroundColor: sidebarSurfaceColor,
+        focusedTextColor: textColor,
         selectedBackgroundColor: accentColor,
-        selectedTextColor: surfaceColor ?? RGBA.defaultBackground(),
+        selectedTextColor: sidebarSurfaceColor,
+        descriptionColor: mutedColor,
+        selectedDescriptionColor: sidebarSurfaceColor,
       });
       const paintSelectedResponse = () => {
         const value = select.getSelectedOption()?.value;
@@ -635,9 +763,10 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
         dialogFocusNext = null;
         dialogFocusPrevious = null;
         dialogSearchInput = null;
-        dialogSelect = null;
-        shell.remove(modal);
-        setFocusArea("composer");
+        // OpenTUI's remove() only detaches; destroy the complete modal tree so
+        // repeated palettes do not retain inputs, listeners, buffers, or Yoga nodes.
+        modal.destroyRecursively();
+        setFocusArea(returnFocus === "sidebar" && !sacredSidebar?.visible ? "composer" : returnFocus);
         resolve(value);
       };
       const updateOptions = () => {
@@ -652,7 +781,6 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       filterInput.on(InputRenderableEvents.ENTER, () => select.focus());
       dialogCancel = () => finish(undefined);
       dialogSearchInput = filterInput;
-      dialogSelect = select;
       dialogFocusNext = () => select.focus();
       dialogFocusPrevious = () => filterInput.focus();
       select.on(SelectRenderableEvents.SELECTION_CHANGED, paintSelectedResponse);
@@ -667,6 +795,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
 
   const presentTextInput = (title: string, prefill?: string, placeholder?: string): Promise<string | undefined> =>
     new Promise((resolve) => {
+      const returnFocus = focusArea;
       const overlayWidth = Math.max(24, Math.floor(renderer.terminalWidth * 0.8));
       const innerWidth = Math.max(12, overlayWidth - 4);
       const titleLines = overlayTitleLines(title, innerWidth, 2);
@@ -684,11 +813,14 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
         borderStyle: "single",
         customBorderChars,
         borderColor: accentColor,
+        backgroundColor: sidebarSurfaceColor,
+        shouldFill: true,
         padding: 1,
       });
       const titleView = new TextRenderable(renderer, {
         content: [...titleLines, hint].join("\n"),
         fg: accentColor,
+        bg: sidebarSurfaceColor,
         height: titleLines.length + 1,
       });
       const dialogInput = new InputRenderable(renderer, {
@@ -698,8 +830,8 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
         placeholder: placeholder ?? "Type a response…",
         textColor,
         placeholderColor: mutedColor,
-        backgroundColor: surfaceColor,
-        focusedBackgroundColor: surfaceColor,
+        backgroundColor: sidebarSurfaceColor,
+        focusedBackgroundColor: sidebarSurfaceColor,
         focusedTextColor: textColor,
       });
       modal.add(titleView);
@@ -709,17 +841,17 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       const finish = (value?: string, preserveInComposer = false) => {
         if (done) return;
         done = true;
+        const preservedDraft = dialogInput.value;
         dialogCancel = null;
         dialogFocusNext = null;
         dialogFocusPrevious = null;
         dialogSearchInput = null;
-        dialogSelect = null;
-        shell.remove(modal);
-        if (value === undefined && preserveInComposer && dialogInput.value) {
-          input.value = dialogInput.value;
+        modal.destroyRecursively();
+        if (value === undefined && preserveInComposer && preservedDraft) {
+          input.value = preservedDraft;
           status.content = "Draft preserved in composer. Edit it or reopen document actions with Ctrl+U.";
         }
-        setFocusArea("composer");
+        setFocusArea(returnFocus === "sidebar" && !sacredSidebar?.visible ? "composer" : returnFocus);
         resolve(value);
       };
       dialogCancel = () => finish(undefined, true);
@@ -756,6 +888,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
         activityDetail = undefined;
         indicator.visible = false;
       }
+      refreshSidebarIdentity();
       renderHeader();
       renderTranscript();
       status.content = busy
@@ -835,6 +968,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       return;
     }
     if (candidate.type !== "agent_end") return;
+    void refreshSidebarSessions();
     if (!terminalResponseError) {
       promptRecovery.completePending();
       return;
@@ -894,7 +1028,10 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
         const confirmed = entries.length === 0
           ? true
           : await surface.presentConfirm("Start a new session?", "Your current session remains saved and can be reopened in Pi.");
-        if (confirmed) await controller.newSession();
+        if (confirmed) {
+          await controller.newSession();
+          await refreshSidebarSessions();
+        }
         return;
       }
       case "abort":
@@ -970,8 +1107,17 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       });
       if (selectedProvider === undefined) return;
       if (selectedProvider === connectProvider) {
-        const target = await presentSelect("Provider sign-in", ["anthropic", "openai-codex", "openai", "google", "openrouter", "zyphra", "minimax", "Cancel"]);
+        const target = await presentSelect("Provider sign-in", ["Not Organic hosted inference", "anthropic", "openai-codex", "openai", "google", "openrouter", "zyphra", "minimax", "Cancel"]);
         if (!target || target === "Cancel") return;
+        if (target === "Not Organic hosted inference") {
+          appendEntry({
+            id: `provider-login-notorganic-${Date.now()}`,
+            kind: "notice",
+            title: "Connect Not Organic",
+            body: "Run `keating login` in a terminal. It opens a five-minute, DPoP-bound hosted inference session; return here and use :m to refresh the catalog. Rerun login when the short-lived capability expires.",
+          });
+          return;
+        }
         input.value = "/shell";
         appendEntry({
           id: `provider-login-${Date.now()}`,
@@ -1004,48 +1150,135 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
     }
   };
 
-  const showSetupWizard = async (): Promise<void> => {
+  const showSetupWizard = async (options: { confirm?: boolean } = {}): Promise<void> => {
     if (busySurfaceNotice("Setup")) return;
-    const begin = await surface.presentConfirm(
-      "Set up Keating?",
-      "This checks connected providers, lets you choose from the complete authenticated model catalog, and applies runtime preferences. Secrets stay in Pi's /login flow.",
+    if (options.confirm !== false) {
+      const begin = await surface.presentConfirm(
+        "Profile & setup · about one minute",
+        "First choose the name and profile image shown beside your messages, then connect inference and runtime preferences. Secrets stay in dedicated login flows.",
+      );
+      if (!begin) return;
+    }
+
+    const displayNameResponse = await presentTextInput(
+      "Set your learner name\nShown beside your messages. Change it later with /setup.",
+      tuiProfile.displayName,
+      "Display name…",
     );
-    if (!begin) return;
-    const models = await client.getAvailableModels();
-    if (models.length === 0) {
-      const recovery = await presentSelect("No connected provider", ["Prepare secure /login in classic Pi", "Continue with local interface tour", "Cancel"]);
-      if (recovery === "Prepare secure /login in classic Pi") {
-        input.value = "/shell";
-        appendEntry({ id: `setup-provider-${Date.now()}`, kind: "notice", title: "Provider sign-in prepared", body: "Submit /shell, then run /login for your provider. Reopen /setup afterward; credentials are never entered into this unmasked composer." });
-        return;
+    const displayName = displayNameResponse?.trim() || tuiProfile.displayName;
+    const avatarChoice = await presentSelect(
+      "Choose your profile image\nUse a built-in portrait, initials, or a local file. Change it later with /setup.",
+      ["Built-in learner portrait", "Use my initials", "Choose local image…", "Keep current image"],
+      { initialFocus: "list" },
+    );
+    let avatar: TuiProfile["avatar"] = tuiProfile.avatar;
+    if (avatarChoice === "Built-in learner portrait") {
+      avatar = { kind: "learner" };
+    } else if (avatarChoice === "Use my initials") {
+      const initials = await presentTextInput(
+        "Initials · one or two characters",
+        tuiProfile.avatar.initials ?? displayName.slice(0, 2).toUpperCase(),
+        "ME",
+      );
+      if (initials !== undefined) avatar = { kind: "initials", initials };
+    } else if (avatarChoice === "Choose local image…") {
+      let customPath: string | undefined;
+      while (customPath === undefined) {
+        const supplied = await presentTextInput(
+          "Local profile image path\nPNG, JPEG, GIF, BMP, or TIFF · 5 MiB max · read locally",
+          tuiProfile.avatar.kind === "custom" ? tuiProfile.avatar.path : undefined,
+          "./portrait.png",
+        );
+        if (supplied === undefined) break;
+        try {
+          customPath = await validateCustomAvatarPath(cwd, supplied);
+        } catch (error) {
+          const retry = await surface.presentConfirm(
+            "That portrait could not be read",
+            `${sanitizeDiagnostic(error)}\n\nChoose another local image?`,
+          );
+          if (!retry) break;
+        }
       }
-      if (recovery !== "Continue with local interface tour") return;
-    } else {
-      await showModelPicker();
+      if (customPath) avatar = { kind: "custom", path: customPath };
     }
-    const thinking = await presentSelect("Thinking effort", ["off", "minimal", "low", "medium", "high", "xhigh"]);
-    if (thinking) await client.setThinkingLevel(thinking);
-    const defaults = await presentSelect("Runtime behavior", ["Recommended · retry on, compaction on, queues all", "Keep current runtime behavior"]);
-    if (defaults?.startsWith("Recommended")) {
-      await Promise.all([
-        client.setAutoRetry(true),
-        client.setAutoCompaction(true),
-        client.setSteeringMode("all"),
-        client.setFollowUpMode("all"),
-      ]);
+    try {
+      const nextProfile: TuiProfile = { schemaVersion: 1, displayName, avatar };
+      await saveTuiProfile(cwd, nextProfile);
+      tuiProfile = await loadTuiProfile(cwd);
+      tuiAvatar = await terminalAvatarForProfile(tuiProfile, cwd);
+      refreshSidebarIdentity();
+    } catch (error) {
+      appendEntry({
+        id: `setup-profile-error-${Date.now()}`,
+        kind: "error",
+        title: "Terminal portrait was not saved",
+        body: `${sanitizeDiagnostic(error)}\n\nThe prior terminal identity remains active. Provider and model setup can continue.`,
+      });
     }
-    await markTuiOnboardingSeen(cwd, KEATING_VERSION);
-    appendEntry({
-      id: `setup-complete-${Date.now()}`,
-      kind: "notice",
-      title: "Keating setup complete",
-      body: [
-        `${models.length} authenticated model${models.length === 1 ? "" : "s"} detected.`,
-        thinking ? `Thinking set to ${thinking}.` : "Thinking was not changed.",
-        "Use :m for models, :p for every command, @path for files, and /setup to run this again.",
-        "Share publishes only after explicit confirmation and requires KEATING_SHARE_ORIGIN.",
-      ].join("\n\n"),
-    });
+
+    try {
+      const models = await client.getAvailableModels();
+      if (models.length === 0) {
+        const recovery = await presentSelect("No connected inference provider", [
+          "Run keating login · Not Organic hosted inference",
+          "Prepare secure /login in classic Pi",
+          "Continue with local interface tour",
+          "Cancel",
+        ]);
+        if (recovery === "Run keating login · Not Organic hosted inference") {
+          appendEntry({
+            id: `setup-notorganic-${Date.now()}`,
+            kind: "notice",
+            title: "Not Organic sign-in",
+            body: "Run `keating login` in a terminal for a five-minute, DPoP-bound Not Organic inference session. Reopen Keating afterward and use :m to select the hosted model; rerun login when the capability expires.",
+          });
+          return;
+        }
+        if (recovery === "Prepare secure /login in classic Pi") {
+          input.value = "/shell";
+          appendEntry({ id: `setup-provider-${Date.now()}`, kind: "notice", title: "Provider sign-in prepared", body: "Submit /shell, then run /login for your provider. Reopen /setup afterward; credentials are never entered into this unmasked composer." });
+          return;
+        }
+        if (recovery !== "Continue with local interface tour") return;
+      } else {
+        await showModelPicker();
+      }
+      const thinking = await presentSelect("Thinking effort", ["off", "minimal", "low", "medium", "high", "xhigh"]);
+      if (thinking) await client.setThinkingLevel(thinking);
+      const defaults = await presentSelect("Runtime behavior", ["Recommended · retry on, compaction on, queues all", "Keep current runtime behavior"]);
+      if (defaults?.startsWith("Recommended")) {
+        await Promise.all([
+          client.setAutoRetry(true),
+          client.setAutoCompaction(true),
+          client.setSteeringMode("all"),
+          client.setFollowUpMode("all"),
+        ]);
+      }
+      await markTuiOnboardingSeen(cwd, KEATING_VERSION);
+      appendEntry({
+        id: `setup-complete-${Date.now()}`,
+        kind: "notice",
+        title: "Keating setup complete",
+        body: [
+          `${tuiProfile.displayName}'s terminal portrait is ready.`,
+          `${models.length} authenticated model${models.length === 1 ? "" : "s"} detected.`,
+          thinking ? `Thinking set to ${thinking}.` : "Thinking was not changed.",
+          "Use Ctrl+B for the side panel, :m for models, :p for every command, @path for files, and /setup to run this again.",
+          "Change your name or profile image anytime: type /setup, or open [S] PROFILE in the side panel.",
+          "Share publishes only after explicit confirmation and requires KEATING_SHARE_ORIGIN.",
+        ].join("\n\n"),
+      });
+    } catch (error) {
+      appendEntry({
+        id: `setup-runtime-error-${Date.now()}`,
+        kind: "error",
+        title: "Setup paused safely",
+        body: `${sanitizeDiagnostic(error)}\n\nYour saved terminal identity remains active. Provider, model, or runtime settings were not marked complete; repair access and reopen /setup to continue.`,
+      });
+      status.content = "Setup paused. Saved identity retained · repair provider access, then reopen /setup.";
+      setFocusArea("composer");
+    }
   };
 
   const showSessions = async (): Promise<void> => {
@@ -1083,16 +1316,19 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       if (action === undefined || action === "Cancel") return;
       if (action === "Resume session") {
         await controller.resumeSession(item.path);
+        await refreshSidebarSessions();
         return;
       }
       if (action === "Resume and rename") {
         if (!await controller.resumeSession(item.path)) return;
         const name = await presentTextInput("Rename active session", item.name || item.title, "Session name…");
         if (name !== undefined) await controller.renameCurrentSession(name);
+        await refreshSidebarSessions();
         return;
       }
       if (action === "Fork whole current branch") {
         if (await controller.resumeSession(item.path)) await controller.cloneCurrentSession();
+        await refreshSidebarSessions();
         return;
       }
       if (action === "Fork from an earlier turn") {
@@ -1111,7 +1347,10 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
         const selectedMessage = await presentSelect("Fork from earlier turn · original remains saved", messageOptions);
         if (selectedMessage === undefined) return;
         const message = messages[messageOptions.indexOf(selectedMessage)];
-        if (message) await controller.forkFromMessage(message.entryId);
+        if (message) {
+          await controller.forkFromMessage(message.entryId);
+          await refreshSidebarSessions();
+        }
       }
     } catch (error) {
       appendEntry({
@@ -1316,9 +1555,12 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
     if (selected === undefined) return;
     const index = options.indexOf(selected);
     if (index < 0) return;
-    // MarkdownRenderable owns exact geometry, so use its scroll height as a
-    // safe proportional target instead of pretending every entry is one row.
-    const target = entries.length <= 1 ? 0 : Math.round((index / (entries.length - 1)) * scroll.scrollHeight);
+    const matchedEntry = transcript.getEntryRenderable(entries[index]!.id);
+    // Reconciled message layers expose their measured content position. The
+    // proportional fallback covers the first frame before layout has measured.
+    const target = matchedEntry && matchedEntry.y > 0
+      ? matchedEntry.y
+      : entries.length <= 1 ? 0 : Math.round((index / (entries.length - 1)) * scroll.scrollHeight);
     scroll.scrollTo({ y: target, x: 0 });
     setFocusArea("transcript");
     status.content = `Showing transcript match ${index + 1}/${entries.length} · Ctrl+F searches again`;
@@ -1544,8 +1786,143 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
     presentPromptOutcome(await promptRecovery.send(raw, busy, resolved.prompt), false);
   };
 
+  const sidebarNavigation: readonly SacredSidebarNavigationItem[] = [
+    { id: "commands", label: "[P] COMMANDS" },
+    { id: "new-session", label: "[N] NEW SESSION" },
+    { id: "model", label: "[M] MODELS" },
+    { id: "setup", label: "[S] PROFILE" },
+    { id: "library", label: "[L] LIBRARY" },
+    { id: "courses", label: "[O] COURSES" },
+    { id: "review", label: "[R] REVIEW" },
+  ];
+  const paintSidebarSessions = () => {
+    if (!sacredSidebar) return;
+    const displayWidth = Math.max(24, sacredSidebar.width - 8);
+    sacredSidebar.setSessions(sidebarSessionTree.map((row) => ({
+      display: sessionTreeOption(row, new Date(), "unicode", displayWidth),
+      asciiDisplay: sessionTreeOption(row, new Date(), "ascii", displayWidth),
+      value: row.item.path,
+    })));
+  };
+  let sidebarSessionRequest = 0;
+  refreshSidebarSessions = async () => {
+    const request = ++sidebarSessionRequest;
+    try {
+      const sessions = await listSessions(cwd);
+      if (request !== sidebarSessionRequest) return;
+      sidebarSessionTree = tuiSessionTreeRows(sessions, controller.getCurrentSessionPath());
+      paintSidebarSessions();
+    } catch {
+      if (request !== sidebarSessionRequest) return;
+      sidebarSessionTree = [];
+      sacredSidebar?.setSessions([]);
+    }
+  };
+  const activateSidebarNavigation = (item: SacredSidebarNavigationItem) => {
+    synchronizeFocusArea("sidebar");
+    void (async () => {
+      if (item.id === "commands") {
+        await showCommandPalette();
+        return;
+      }
+      const command = TUI_COMMANDS.find((candidate) => candidate.id === item.id);
+      if (command) await runCommand(command);
+      if (!settled && sacredSidebar?.visible) setFocusArea("sidebar");
+    })();
+  };
+  sacredSidebar = createSacredSidebar(renderer, {
+    id: "keating-open-tui-sacred-sidebar",
+    width: sidebarWidth,
+    minWidth: 20,
+    maxWidth: 44,
+    height: "100%",
+    glyphMode: presentationProfile.design.glyphMode,
+    surface: sidebarSurfaceColor,
+    colors: {
+      text: textColor ?? RGBA.defaultForeground(),
+      muted: mutedColor ?? RGBA.defaultForeground(),
+      accent: accentColor ?? RGBA.defaultForeground(),
+      border: borderColor ?? RGBA.defaultForeground(),
+      focus: accentColor ?? RGBA.defaultForeground(),
+      selection: accentColor ?? RGBA.defaultForeground(),
+      onSelection: sidebarSurfaceColor,
+    },
+    identity: {
+      label: tuiProfile.displayName,
+      detail: headerState.model,
+      avatarLines: tuiAvatar.unicode,
+      asciiAvatarLines: tuiAvatar.ascii,
+    },
+    navigation: sidebarNavigation,
+    sessions: [],
+    activity: ["· No activity yet"],
+    activityRows: 4,
+    maxNavigationRows: 5,
+    labels: { navigation: "ACTIONS", sessions: "SESSION TREE", recent: "RECENT" },
+    onNavigationSelection(item) {
+      synchronizeFocusArea("sidebar");
+      status.content = `${item.label} · Enter opens · Tab moves to session tree · Shift+Tab returns · Esc returns to composer`;
+    },
+    onNavigate: activateSidebarNavigation,
+    onSessionSelection(_path, row) {
+      synchronizeFocusArea("sidebar");
+      status.content = `${row.display} · Enter resumes this exact session · Esc returns`;
+    },
+    onSessionActivate(path) {
+      synchronizeFocusArea("sidebar");
+      void (async () => {
+        if (busy) {
+          appendEntry({
+            id: `sidebar-session-busy-${Date.now()}`,
+            kind: "notice",
+            title: "Session switch waits for the response",
+            body: "Stop the active response with Ctrl+X, then activate this session again.",
+          });
+          return;
+        }
+        status.content = "Resuming selected session…";
+        await controller.resumeSession(path);
+        await refreshSidebarSessions();
+        setFocusArea("composer");
+      })();
+    },
+    onResizeRequest(requestedWidth) {
+      sidebarWasResized = true;
+      sidebarWidth = sacredSidebar?.setWidth(requestedWidth) ?? requestedWidth;
+      paintSidebarSessions();
+      renderTranscript();
+    },
+    onFocusChange(target) {
+      if (target) synchronizeFocusArea("sidebar");
+    },
+    onFocusEscape(direction) {
+      setFocusArea(direction === "forward" ? "composer" : "transcript");
+    },
+  });
+  workspace.add(sacredSidebar.root, 0);
+  refreshSidebarIdentity();
+  refreshSidebarActivity();
+  updateResponsiveLayout();
+  void refreshSidebarSessions();
+  const toggleSidebar = () => {
+    if (!terminalCanShowSidebar(renderer.terminalWidth, renderer.terminalHeight)) {
+      status.content = "The side panel needs at least 88 columns × 22 rows. Sessions remain available with :s.";
+      return;
+    }
+    sidebarExpanded = !sidebarExpanded;
+    updateResponsiveLayout();
+    if (sidebarExpanded) setFocusArea("sidebar");
+    else setFocusArea("composer");
+  };
+
   input.on(InputRenderableEvents.INPUT, () => {
     if (dialogCancel || busy) return;
+    if (onboardingSplashActive) {
+      status.content = input.value.trim()
+        ? "Enter asks this question now · /setup changes your name or profile image later"
+        : "Enter begins profile setup · or type a question to start now";
+      return;
+    }
     const parsed = parseComposerInput(input.value, [
       ...TUI_COMMANDS.map((command) => ({ name: command.id, description: command.description })),
       { name: "models", description: "Search and select an authenticated Pi model" },
@@ -1566,7 +1943,28 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       status.content = idleStatus();
     }
   });
-  input.on(InputRenderableEvents.ENTER, () => { void submit(input.value); });
+  const beginFirstRunSetup = async () => {
+    if (!onboardingSplashActive) return;
+    onboardingSplashActive = false;
+    appendEntry({
+      id: `onboarding-${Date.now()}`,
+      kind: "notice",
+      title: "Welcome",
+      body: onboardingMarkdown({ version: KEATING_VERSION, hasProvider: firstRunHasProvider }),
+    });
+    await showSetupWizard({ confirm: false });
+  };
+  input.on(InputRenderableEvents.ENTER, () => {
+    if (onboardingSplashActive && input.value.trim() === "") {
+      void beginFirstRunSetup();
+      return;
+    }
+    if (onboardingSplashActive) {
+      onboardingSplashActive = false;
+      updateResponsiveLayout();
+    }
+    void submit(input.value);
+  });
   renderer.keyInput.on("keypress", (key) => {
     if (dialogCancel) {
       // Ctrl+P is a toggle for the command palette. Treat it as a modal close
@@ -1585,11 +1983,22 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       } else if (key.name === "down" && dialogSearchInput?.focused) {
         key.preventDefault();
         dialogFocusNext?.();
-        dialogSelect?.moveDown();
       }
       return;
     }
     const normalizedKeyName = key.name.toLowerCase();
+    if (focusArea === "sidebar" && normalizedKeyName === "escape") {
+      key.preventDefault();
+      key.stopPropagation();
+      setFocusArea("composer");
+      return;
+    }
+    if (key.ctrl && normalizedKeyName === "b") {
+      key.preventDefault();
+      key.stopPropagation();
+      toggleSidebar();
+      return;
+    }
     if (leaderActive) {
       key.preventDefault();
       key.stopPropagation();
@@ -1622,9 +2031,12 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       return;
     }
     if (key.name === "tab" && !key.ctrl && !key.meta) {
+      if (focusArea === "sidebar") return;
       key.preventDefault();
       key.stopPropagation();
-      setFocusArea(focusArea === "composer" ? "transcript" : "composer");
+      setFocusArea(focusArea === "composer"
+        ? "transcript"
+        : sacredSidebar?.visible ? "sidebar" : "composer");
       return;
     }
     if (editorMode === "vim" && focusArea === "composer") {
@@ -1694,9 +2106,15 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
   } else if (entries.length === 0) {
     void (async () => {
       const state = await loadTuiOnboardingState(cwd);
-      if (!shouldShowTuiOnboarding(state, { version: KEATING_VERSION, hasProvider: headerState.model !== "model unavailable" })) return;
-      appendEntry({ id: `onboarding-${Date.now()}`, kind: "notice", title: "Welcome", body: onboardingMarkdown({ version: KEATING_VERSION, hasProvider: headerState.model !== "model unavailable" }) });
-      await showSetupWizard();
+      if (!shouldShowTuiOnboarding(state, { version: KEATING_VERSION })) return;
+      try {
+        firstRunHasProvider = (await client.getAvailableModels()).length > 0;
+      } catch {
+        firstRunHasProvider = false;
+      }
+      onboardingSplashActive = true;
+      status.content = "Enter begins profile setup · or type a question to start now";
+      updateResponsiveLayout();
     })();
   }
 

@@ -125,9 +125,29 @@ function briefArgs(args: unknown): string {
 }
 
 const PEDAGOGICAL_UI_TOOLS = new Set([
-  "animate", "ask_user_question", "deck", "generate_image", "grade_quiz", "map", "plan", "quiz", "scene",
+  "animate", "deck", "generate_image", "grade_quiz", "map", "plan", "quiz", "scene",
   "set_learner_goal", "verify",
 ]);
+
+const CANONICAL_OPENUI_FENCE = /```(?:keating-ui|ui-document|openui-json)(?:[^\n]*)\n([\s\S]*?)```/gi;
+const INCOMPLETE_CANONICAL_OPENUI_FENCE = /```(?:keating-ui|ui-document|openui-json)(?:[^\n]*)\n[\s\S]*$/i;
+
+/** Keep canonical OpenUI transport out of the transcript and hand it to the terminal renderer. */
+export function splitAssistantOpenUiDocuments(source: string): { content: string; documents: string[] } {
+  const documents: string[] = [];
+  const withoutComplete = source.replace(CANONICAL_OPENUI_FENCE, (_match, body: string) => {
+    const candidate = body.trim();
+    if (candidate) documents.push(candidate);
+    return "";
+  });
+  return {
+    content: withoutComplete
+      .replace(INCOMPLETE_CANONICAL_OPENUI_FENCE, "")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim(),
+    documents,
+  };
+}
 
 function carriesUiDocument(toolName: string, result: unknown): boolean {
   if (PEDAGOGICAL_UI_TOOLS.has(toolName)) return true;
@@ -416,7 +436,8 @@ export class HostController {
       case "message_update": {
         const message = (event as { message?: { role?: string } }).message;
         if (message?.role === "assistant") {
-          const hydrated = transcriptEntriesFromMessages([message]);
+          const prepared = splitAssistantOpenUiDocuments(messageText(message));
+          const hydrated = transcriptEntriesFromMessages([{ ...message, content: prepared.content }]);
           const entry = hydrated.find((item) => item.kind === "assistant");
           if (entry) this.surface.setStreaming({ ...entry, id: "assistant-streaming" });
         }
@@ -426,8 +447,10 @@ export class HostController {
         const message = (event as { message?: { role?: string } }).message;
         if (message?.role === "assistant") {
           this.surface.setStreaming(null);
-          const entries = transcriptEntriesFromMessages([message]);
+          const prepared = splitAssistantOpenUiDocuments(messageText(message));
+          const entries = transcriptEntriesFromMessages([{ ...message, content: prepared.content }]);
           for (const entry of entries) this.surface.appendEntry({ ...entry, id: this.nextId(entry.kind) });
+          for (const document of prepared.documents) this.activateUiDocument(document);
         }
         return;
       }

@@ -44,13 +44,11 @@ The native UI is purpose-built with React Native. It does not embed the web app.
 
 Replies stream token by token. The web app streams through `@earendil-works/pi-ai`, which does not run under Metro, so `src/lib/provider-client.ts` implements SSE directly for the OpenAI-compatible, Anthropic, and Gemini wire formats and reads the response body with `expo/fetch` (React Native's built-in `fetch` exposes no readable stream). Deltas are buffered and committed to React state on a fixed cadence so the chat list is not re-rendered per token. Servers that ignore `stream: true` and answer with one JSON body still work through a whole-payload fallback. Stopping a response keeps whatever text already arrived.
 
-## Interactive cards
+## OpenUI interactions
 
-Replies can carry `<keating-quiz />`, `<keating-question />`, and `<keating-goal />` tags in the same double-encoded JSON wire format the web tools emit. The web app produces them from browser tools; the mobile app has no tool loop, so the teaching protocol in `src/lib/system-prompt.ts` asks the model to emit them inline and `src/lib/interactive-tags.ts` parses them back out. Malformed payloads are dropped rather than shown as raw markup, and a tag still mid-stream stays hidden until its closing `/>` arrives.
+Learner-facing questions, question groups, quizzes, goals, decks, study plans, notes, media references, and handoffs travel as canonical `keating-ui` documents shared with the web and terminal clients. `src/lib/system-prompt.ts` teaches that wire format, `src/lib/ui-document-wire.ts` validates and extracts streamed documents, and `src/components/UiDocumentRenderer.tsx` renders them with durable action journals. Incomplete or invalid payloads remain hidden instead of leaking transport data into the transcript.
 
-Quizzes are graded locally by `src/lib/quiz-grading.ts` — exactly for multiple choice, true/false, and multi-blank fill-ins, and by a partial-credit heuristic for written answers, which the teacher then judges properly when the results are reported back as a learner turn. Submitting a card sends that report as a normal message, so the whole exchange stays in the transcript. Answers are also held in memory by `src/state/card-state.ts` so a completed card scrolled off screen comes back completed.
-
-The web app's scene, image, animation, and flashcard deck cards are not ported yet.
+Submitting an OpenUI interaction records the completed action, produces a clean learner-turn summary, and restores the completed state when the document is rendered again. `src/lib/interactive-tags.ts` remains only as an import compatibility parser for older transcripts; current prompts do not author that retired format.
 
 ## Storage and sync boundary
 

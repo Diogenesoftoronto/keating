@@ -18,7 +18,8 @@ import {
   questionCredit,
   scoreQuiz,
 } from "../src/lib/quiz-grading";
-import { INTERACTIVE_CARD_PROTOCOL, composeSystemPrompt } from "../src/lib/system-prompt";
+import { validateUiDocument } from "@keating/learner-contracts";
+import { OPENUI_DOCUMENT_PROTOCOL, composeSystemPrompt } from "../src/lib/system-prompt";
 
 /** Emit a tag exactly the way the teaching protocol asks for it. */
 function emitTag(tag: string, payload: unknown): string {
@@ -223,17 +224,18 @@ describe("learner reports", () => {
   });
 });
 
-describe("card protocol in the system prompt", () => {
-  it("teaches a tag the parser can actually read back", () => {
-    const match = INTERACTIVE_CARD_PROTOCOL.match(/<keating-quiz[\s\S]*?\/>/);
-    if (!match) throw new Error("expected a quiz example in the protocol");
-    const segments = parseInteractiveSegments(match[0]);
-    const quiz = segments.find((segment) => segment.type === "quiz");
-    if (quiz?.type !== "quiz") throw new Error("the documented example must parse");
-    expect(quiz.quiz.questions[0].options).toContain("Thylakoid membrane");
+describe("OpenUI protocol in the system prompt", () => {
+  it("teaches a canonical document the shared contract accepts", () => {
+    const match = OPENUI_DOCUMENT_PROTOCOL.match(/```keating-ui\n([\s\S]*?)\n```/);
+    if (!match) throw new Error("expected an OpenUI example in the protocol");
+    expect(validateUiDocument(JSON.parse(match[1]))).toBe(true);
   });
 
-  it("ships the protocol with every composed prompt", () => {
-    expect(composeSystemPrompt("Be terse.")).toContain("<keating-goal");
-  });
+	it("ships OpenUI without advertising legacy card tags", () => {
+		const prompt = composeSystemPrompt("Be terse.");
+		expect(prompt).toContain("For learner-facing interaction");
+		expect(prompt).toContain("```keating-ui");
+		expect(prompt).not.toContain("<keating-question");
+		expect(prompt).not.toContain("<keating-quiz");
+	});
 });

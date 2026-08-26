@@ -2583,9 +2583,8 @@ function ToolPart({
   const resultText = formatToolResult(result);
   const state = resolveToolVisualState({ result, isError, status });
 
-  // Tools emit interactive cards (ask_user_question, quiz, goal, animation) as
-  // tags in their result text. Render those as live components — always visible,
-  // independent of the "Show tool details" toggle.
+  // Older tool results can contain legacy quiz, goal, or animation tags. Keep
+  // them renderable for saved sessions, independent of the details toggle.
   const interactiveCards =
     state === "success" ? extractInteractiveCards(resultText) : [];
   if (interactiveCards.length > 0) {
@@ -4424,8 +4423,8 @@ function AssistantThread({
 	if (next) void deliverPendingSend(next);
 	}, [isRunning, agent, deliverPendingSend]);
 
-  // When the learner submits an ask_user_question form, feed their answers back
-  // into the conversation as a user turn so the agent actually receives them.
+  // When the learner submits a legacy question form, feed its answers back into
+  // the conversation. New question interactions arrive through OpenUI actions.
   useEffect(() => {
     const handler = (event: Event) => {
       const detail = (event as CustomEvent).detail as

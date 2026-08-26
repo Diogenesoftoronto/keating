@@ -39,6 +39,7 @@ import { registerKeatingTools, setActiveCtx } from "./tools/index.js";
 import { registerSpeechTool } from "./tools/speech.js";
 import { feedbackOnlyTopics } from "./tools/shared.js";
 import { registerPiUiActionCommand } from "../../tui/ui/rpc-action-transport.js";
+import registerNotOrganicProvider from "../notorganic-provider-extension.js";
 
 function topicFromArgs(args: string | string[]): string {
   return (Array.isArray(args) ? args.join(" ") : String(args ?? "")).trim();
@@ -47,6 +48,7 @@ function topicFromArgs(args: string | string[]): string {
 let greetingShown = false;
 
 export default function hyperteacher(pi: any): void {
+  if (typeof pi.registerProvider === "function") registerNotOrganicProvider(pi);
   registerPiUiActionCommand(pi);
 
   pi.registerCommand("plan", {
