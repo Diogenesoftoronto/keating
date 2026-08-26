@@ -17,6 +17,7 @@ import {
 } from "../../keating/trajectory-review";
 import { css, cx } from "../../../styled-system/css";
 import { KeatingIcon } from "../KeatingIcon";
+import { MarkdownBlock, type MarkdownHighlightRange } from "../MarkdownBlock";
 import { reviewIcon } from "./review-icons";
 import { containedMediaRect, normalizedContainedMediaPoint, type MediaSize } from "./media-geometry";
 import { AnnotationHoverCard } from "./AnnotationHoverCard";
@@ -34,7 +35,7 @@ import type {
 	TrajectoryTextSelection,
 } from "./types";
 
-export type TrajectoryCanvasMode = "transcript" | "artifact";
+export type TrajectoryCanvasMode = "transcript" | "artifact" | "candidates";
 
 export interface TrajectoryCanvasProps {
 	messages: TrajectorySessionMessage[];
@@ -73,7 +74,10 @@ export interface TrajectoryCanvasProps {
 	 * right for reading a shared session, where the point is what happened.
 	 */
 	transcript?: "single" | "continuous";
+	onTranscriptChange?: (mode: "single" | "continuous") => void;
 	renderArtifact?: ArtifactRenderer;
+	candidatePanel?: ReactNode;
+	candidateCount?: number;
 	className?: string;
 }
 
@@ -88,13 +92,30 @@ function readSelection(container: HTMLElement): TextRange | null {
 	if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return null;
 	const range = selection.getRangeAt(0);
 	if (!container.contains(range.startContainer) || !container.contains(range.endContainer)) return null;
+	const sourceOffset = (node: Node, offset: number): number | null => {
+		const element = node.nodeType === Node.ELEMENT_NODE ? node as Element : (node as ChildNode).parentElement;
+		const segment = element?.closest<HTMLElement>("[data-source-start]");
+		if (!segment || !container.contains(segment)) return null;
+		const base = Number(segment.dataset.sourceStart);
+		if (!Number.isFinite(base)) return null;
+		const within = document.createRange();
+		within.selectNodeContents(segment);
+		try {
+			within.setEnd(node, offset);
+		} catch {
+			return null;
+		}
+		return base + within.toString().length;
+	};
+	const mappedStart = sourceOffset(range.startContainer, range.startOffset);
+	const mappedEnd = sourceOffset(range.endContainer, range.endOffset);
 	const before = range.cloneRange();
 	before.selectNodeContents(container);
 	before.setEnd(range.startContainer, range.startOffset);
-	const start = before.toString().length;
+	const start = mappedStart ?? before.toString().length;
 	const text = range.toString();
 	if (!text.trim()) return null;
-	return { start, end: start + text.length, text };
+	return { start, end: mappedEnd ?? start + text.length, text };
 }
 
 function annotationsForMessage(annotations: TrajectoryAnnotation[], messageId: string): TrajectoryAnnotation[] {
@@ -187,6 +208,26 @@ function annotatedText(
 				{content}
 			</mark>
 		);
+	});
+}
+
+function markdownHighlights(
+	text: string,
+	annotations: TrajectoryAnnotation[],
+	activeAnnotationId?: string,
+): MarkdownHighlightRange[] {
+	return annotations.flatMap((annotation) => {
+		if (annotation.target.kind !== "message-span" && annotation.target.kind !== "artifact-span") return [];
+		const anchored = reanchorText(text, annotation.target.anchor);
+		if (anchored.status === "stale" || anchored.end <= anchored.start) return [];
+		return [{
+			start: anchored.start,
+			end: anchored.end,
+			ids: [annotation.id],
+			color: annotationKindColor(annotation.kind),
+			active: annotation.id === activeAnnotationId,
+			dashed: Boolean(annotation.revision),
+		}];
 	});
 }
 
@@ -303,6 +344,7 @@ function TranscriptTurn({
 	readOnly,
 	onStartAnnotation,
 	onCaptureSelection,
+	onFocus,
 	conversational = false,
 }: {
 	message: TrajectorySessionMessage;
@@ -312,12 +354,23 @@ function TranscriptTurn({
 	readOnly: boolean;
 	onStartAnnotation?: (target: TrajectoryReviewTarget) => void;
 	onCaptureSelection?: (container: HTMLElement, message: TrajectorySessionMessage) => void;
+	onFocus?: (messageId: string) => void;
 	/** Renders as a chat turn rather than a reviewed document. */
 	conversational?: boolean;
 }) {
 	const textRef = useRef<HTMLDivElement | null>(null);
+	const hasPublishedSpan = readOnly && annotations.some((annotation) => annotation.target.kind === "message-span");
+	const [contentView, setContentView] = useState<"rendered" | "raw">(hasPublishedSpan ? "raw" : "rendered");
 	const learner = message.role === "user";
 	const roleLabel = message.label ?? (message.role === "assistant" ? "Tutor response" : learner ? "Learner message" : message.role);
+	const markdown = message.markdown?.trim() || message.text;
+	const rawSource = message.rawSource ?? message.text;
+	const rawSourceDiffers = rawSource !== message.text;
+	const tools = message.tools ?? [];
+	const renderedHighlights = useMemo(
+		() => markdownHighlights(message.text, annotations, activeAnnotationId),
+		[activeAnnotationId, annotations, message.text],
+	);
 
 	return (
 		<article
@@ -351,15 +404,36 @@ function TranscriptTurn({
 						Turn {message.ordinal + 1}{message.model ? ` · ${message.model}` : ""}
 					</div>
 				</div>
-				{readOnly || !onStartAnnotation ? null : (
-					<button
-						type="button"
-						className={css({ borderRadius: "0.375rem", padding: "0.375rem 0.5rem", fontSize: "0.6875rem", fontWeight: 650, color: "var(--muted-foreground)", _hover: { background: "var(--accent)", color: "var(--accent-foreground)" }, _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" } })}
-						onClick={() => onStartAnnotation({ kind: "message", messageId: message.id, role: message.role, messageTimestamp: message.timestamp, contentFingerprint: message.contentFingerprint })}
-					>
-						Annotate turn
-					</button>
-				)}
+				<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "flex-end", gap: "0.375rem" })}>
+					{onFocus ? (
+						<button type="button" title="Open this turn in focused review" className={css({ display: "inline-flex", alignItems: "center", gap: "0.3rem", borderRadius: "0.375rem", padding: "0.375rem 0.5rem", fontSize: "0.6875rem", fontWeight: 650, color: "var(--muted-foreground)", _hover: { background: "var(--muted)", color: "var(--foreground)" }, _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" } })} onClick={() => onFocus(message.id)}>
+							<KeatingIcon icon={reviewIcon.inspect} size={12} /> Focus turn
+						</button>
+					) : null}
+					<div role="group" aria-label="Message view" className={css({ display: "inline-flex", border: "1px solid var(--border)", borderRadius: "0.375rem", padding: "0.125rem" })}>
+						{(["rendered", "raw"] as const).map((view) => (
+							<button
+								key={view}
+								type="button"
+								aria-pressed={contentView === view}
+								className={css({ borderRadius: "0.25rem", background: contentView === view ? "var(--ink)" : "transparent", padding: "0.25rem 0.45rem", fontSize: "0.625rem", fontWeight: 700, color: contentView === view ? "var(--paper, var(--background))" : "var(--muted-foreground)", textTransform: "capitalize", _hover: { color: contentView === view ? "var(--paper, var(--background))" : "var(--foreground)" }, _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" } })}
+								onClick={() => setContentView(view)}
+							>
+								{view}
+							</button>
+						))}
+					</div>
+					{readOnly || !onStartAnnotation ? null : (
+						<button
+							type="button"
+							title="Open a note about this whole turn"
+							className={css({ borderRadius: "0.375rem", padding: "0.375rem 0.5rem", fontSize: "0.6875rem", fontWeight: 650, color: "var(--muted-foreground)", _hover: { background: "var(--accent)", color: "var(--accent-foreground)" }, _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" } })}
+							onClick={() => onStartAnnotation({ kind: "message", messageId: message.id, role: message.role, messageTimestamp: message.timestamp, contentFingerprint: message.contentFingerprint })}
+						>
+							Note on this turn
+						</button>
+					)}
+				</div>
 			</header>
 			<div className={css({ position: "relative", marginTop: "1rem", paddingLeft: "1.5rem" })}>
 				<MarginGutter
@@ -370,17 +444,54 @@ function TranscriptTurn({
 					onConceal={handlers.onConceal}
 					onOpen={handlers.onOpen}
 				/>
-				<div
-					ref={textRef}
-					data-message-text={message.id}
-					className={css({ whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontSize: "0.9375rem", lineHeight: 1.72, color: "var(--foreground)", _selection: { background: "color-mix(in srgb, var(--accent) 65%, transparent)" } })}
-					style={conversational && learner ? { color: "var(--muted-foreground)" } : undefined}
-					onMouseUp={readOnly || !onCaptureSelection ? undefined : (event) => onCaptureSelection(event.currentTarget, message)}
-					onKeyUp={readOnly || !onCaptureSelection ? undefined : (event) => onCaptureSelection(event.currentTarget, message)}
-				>
-					{annotatedText(message.text, annotations, activeAnnotationId, handlers)}
-				</div>
+				{contentView === "rendered" ? (
+					<div
+						ref={textRef}
+						data-message-text={message.id}
+						className={css({ overflowWrap: "anywhere", fontSize: "0.9375rem", lineHeight: 1.72, color: "var(--foreground)", _selection: { background: "color-mix(in srgb, var(--accent) 65%, transparent)" } })}
+						style={conversational && learner ? { color: "var(--muted-foreground)" } : undefined}
+						onMouseUp={readOnly || !onCaptureSelection ? undefined : (event) => onCaptureSelection(event.currentTarget, message)}
+						onKeyUp={readOnly || !onCaptureSelection ? undefined : (event) => onCaptureSelection(event.currentTarget, message)}
+					>
+						{markdown ? <MarkdownBlock content={markdown} sourceMapped highlights={renderedHighlights} onHighlightReveal={handlers.onReveal} onHighlightConceal={handlers.onConceal} onHighlightOpen={handlers.onOpen} /> : null}
+					</div>
+				) : (
+					<div
+						ref={textRef}
+						data-message-text={message.id}
+						className={css({ whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontFamily: "var(--font-mono, ui-monospace, monospace)", fontSize: "0.8125rem", lineHeight: 1.65, color: "var(--foreground)", _selection: { background: "color-mix(in srgb, var(--accent) 65%, transparent)" } })}
+						style={conversational && learner ? { color: "var(--muted-foreground)" } : undefined}
+						onMouseUp={readOnly || rawSourceDiffers || !onCaptureSelection ? undefined : (event) => onCaptureSelection(event.currentTarget, message)}
+						onKeyUp={readOnly || rawSourceDiffers || !onCaptureSelection ? undefined : (event) => onCaptureSelection(event.currentTarget, message)}
+					>
+						{rawSourceDiffers ? rawSource : annotatedText(message.text, annotations, activeAnnotationId, handlers)}
+					</div>
+				)}
+				{tools.length > 0 ? (
+					<div className={css({ display: "grid", gap: "0.5rem", marginTop: "1rem" })}>
+						{tools.map((tool, index) => (
+							<details key={`${tool.kind}:${tool.callId ?? tool.name}:${index}`} open={tool.status === "failed" || tool.kind === "result"} className={css({ border: "1px solid var(--border)", borderRadius: "0.5rem", background: "var(--card, var(--background))" })}>
+								<summary className={css({ display: "flex", cursor: "pointer", listStyle: "none", alignItems: "center", gap: "0.5rem", padding: "0.625rem 0.75rem", fontSize: "0.75rem", fontWeight: 700, color: tool.isError ? "var(--destructive)" : "var(--foreground)", _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "-3px" }, "&::-webkit-details-marker": { display: "none" } })}>
+									<KeatingIcon icon={reviewIcon.tool} size={14} />
+									<span>{tool.kind === "call" ? "Tool call" : tool.isError ? "Tool error" : "Tool result"}: {tool.name}</span>
+									<span className={css({ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "0.25rem", borderRadius: "9999px", background: tool.status === "succeeded" ? "color-mix(in srgb, var(--accent-green) 22%, transparent)" : tool.status === "failed" ? "color-mix(in srgb, var(--destructive) 10%, transparent)" : "var(--muted)", padding: "0.15rem 0.4rem", fontSize: "0.625rem", fontWeight: 700, color: tool.status === "failed" ? "var(--destructive)" : "var(--foreground)" })}>
+										<KeatingIcon icon={tool.status === "succeeded" ? reviewIcon.accept : tool.status === "failed" ? reviewIcon.problem : reviewIcon.retry} size={10} active={tool.status !== "pending"} />
+										{tool.status === "succeeded" ? "Succeeded" : tool.status === "failed" ? "Failed" : "Pending"}
+									</span>
+									{tool.callId ? <code className={css({ fontSize: "0.625rem", fontWeight: 500, color: "var(--muted-foreground)" })}>{tool.callId}</code> : null}
+								</summary>
+								<div className={css({ display: "grid", gap: "0.75rem", borderTop: "1px solid var(--border)", padding: "0.75rem" })}>
+									{tool.input ? <div><div className={metaTextClass}>Input</div><pre className={css({ marginTop: "0.35rem", overflowX: "auto", whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontSize: "0.75rem", lineHeight: 1.55 })}>{tool.input}</pre></div> : null}
+									{tool.output ? <div><div className={metaTextClass}>Output</div><div className={css({ marginTop: "0.35rem", fontSize: "0.8125rem", lineHeight: 1.6 })}><MarkdownBlock content={tool.output} /></div></div> : null}
+									{tool.details ? <details><summary className={css({ cursor: "pointer", fontSize: "0.6875rem", fontWeight: 650, color: "var(--muted-foreground)" })}>Raw details</summary><pre className={css({ marginTop: "0.35rem", overflowX: "auto", whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontSize: "0.6875rem", lineHeight: 1.5 })}>{tool.details}</pre></details> : null}
+								</div>
+							</details>
+						))}
+						{message.raw ? <details className={css({ fontSize: "0.6875rem" })}><summary className={css({ cursor: "pointer", color: "var(--muted-foreground)", _hover: { color: "var(--foreground)" } })}>Inspect message record</summary><pre className={css({ marginTop: "0.5rem", maxHeight: "20rem", overflow: "auto", whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontSize: "0.6875rem", lineHeight: 1.5 })}>{message.raw}</pre></details> : null}
+					</div>
+				) : null}
 			</div>
+			{contentView === "rendered" ? <AnnotationStrip annotations={annotations} activeAnnotationId={activeAnnotationId} /> : null}
 		</article>
 	);
 }
@@ -714,7 +825,12 @@ function viewTabKeyDown(
 ) {
 	if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
 	event.preventDefault();
-	const next = event.key === "Home" ? "transcript" : event.key === "End" ? "artifact" : mode === "transcript" ? "artifact" : "transcript";
+	const tabs = Array.from(event.currentTarget.parentElement?.querySelectorAll<HTMLElement>("[data-canvas-mode]") ?? [])
+		.map((tab) => tab.dataset.canvasMode as TrajectoryCanvasMode);
+	const current = Math.max(0, tabs.indexOf(mode));
+	const nextIndex = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : event.key === "ArrowRight" ? (current + 1) % tabs.length : (current - 1 + tabs.length) % tabs.length;
+	const next = tabs[nextIndex];
+	if (!next) return;
 	onModeChange(next);
 	const target = event.currentTarget.parentElement?.querySelector<HTMLButtonElement>(`[data-canvas-mode="${next}"]`);
 	target?.focus();
@@ -745,11 +861,15 @@ export function TrajectoryCanvas({
 	onDraftAnchoredChange,
 	readOnly = false,
 	transcript = "single",
+	onTranscriptChange,
 	renderArtifact,
+	candidatePanel,
+	candidateCount = 0,
 	className,
 }: TrajectoryCanvasProps) {
 	const activeMessage = messages.find((message) => message.id === activeMessageId) ?? messages[0];
 	const activeArtifact = artifacts.find((artifact) => artifact.id === activeArtifactId) ?? artifacts[0];
+	const artifactIsMarkdown = activeArtifact?.reference.format.toLowerCase().includes("markdown") ?? false;
 	const messageAnnotations = useMemo(
 		() => activeMessage ? annotationsForMessage(annotations, activeMessage.id) : [],
 		[activeMessage, annotations],
@@ -757,6 +877,10 @@ export function TrajectoryCanvas({
 	const artifactAnnotations = useMemo(
 		() => activeArtifact ? annotationsForArtifact(annotations, activeArtifact) : [],
 		[activeArtifact, annotations],
+	);
+	const artifactRenderedHighlights = useMemo(
+		() => activeArtifact?.plainText ? markdownHighlights(activeArtifact.plainText, artifactAnnotations, activeAnnotationId) : [],
+		[activeAnnotationId, activeArtifact?.plainText, artifactAnnotations],
 	);
 
 	const hostRef = useRef<HTMLDivElement | null>(null);
@@ -767,6 +891,7 @@ export function TrajectoryCanvas({
 	// for the same anchor would fight over placement.
 	const [hovered, setHovered] = useState<{ ids: string[]; rect: DOMRect } | null>(null);
 	const [pending, setPending] = useState<{ selection: TrajectoryTextSelection; rect: DOMRect } | null>(null);
+	const [artifactContentView, setArtifactContentView] = useState<"rendered" | "raw">("rendered");
 	// Where the open draft attaches. Captured at the moment the teacher acts, because
 	// that is the only time the rect is known; cleared when the draft closes.
 	const [draftAnchor, setDraftAnchor] = useState<DOMRect | null>(null);
@@ -774,6 +899,10 @@ export function TrajectoryCanvas({
 	useEffect(() => {
 		if (!annotationDraft) setDraftAnchor(null);
 	}, [annotationDraft]);
+
+	useEffect(() => {
+		setArtifactContentView(artifactIsMarkdown ? "rendered" : "raw");
+	}, [activeArtifact?.id, artifactIsMarkdown]);
 
 	const anchoredHere = Boolean(annotationDraft && draftAnchor);
 	useEffect(() => {
@@ -879,7 +1008,7 @@ export function TrajectoryCanvas({
 		>
 			<header className={css({ display: "flex", minHeight: "3.25rem", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", borderBottom: "1px solid var(--border)", paddingInline: "0.75rem" })}>
 				<div role="tablist" aria-label="Session content" className={css({ display: "flex", alignSelf: "stretch", gap: "0.125rem" })}>
-					{(["transcript", "artifact"] as const).map((item) => {
+					{(["transcript", ...(artifacts.length > 0 ? ["artifact" as const] : []), ...(candidatePanel ? ["candidates" as const] : [])] as const).map((item) => {
 						const selected = mode === item;
 						return (
 							<button
@@ -906,14 +1035,25 @@ export function TrajectoryCanvas({
 								onClick={() => onModeChange(item)}
 								onKeyDown={(event) => viewTabKeyDown(event, item, onModeChange)}
 							>
-								<KeatingIcon icon={item === "transcript" ? reviewIcon.message : reviewIcon.alternatives} size={14} />
-								{item === "transcript" ? "Transcript" : `Artifacts ${artifacts.length ? `(${artifacts.length})` : ""}`}
+								<KeatingIcon icon={item === "transcript" ? reviewIcon.message : item === "artifact" ? reviewIcon.page : reviewIcon.alternatives} size={14} />
+								{item === "transcript" ? "Transcript" : item === "artifact" ? `Artifacts ${artifacts.length ? `(${artifacts.length})` : ""}` : `Model results ${candidateCount ? `(${candidateCount})` : ""}`}
 							</button>
 						);
 					})}
 				</div>
-				<div className={cx(metaTextClass, css({ display: "none", alignItems: "center", gap: "0.25rem", sm: { display: "flex" } }))}>
-					<KeatingIcon icon={reviewIcon.annotate} size={12} /> {readOnly ? `${annotations.length} published note${annotations.length === 1 ? "" : "s"}` : "Select text to annotate"}
+				<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
+					{mode === "transcript" && onTranscriptChange ? (
+						<div role="group" aria-label="Transcript layout" className={css({ display: "inline-flex", border: "1px solid var(--border)", borderRadius: "0.375rem", padding: "0.125rem" })}>
+							{(["continuous", "single"] as const).map((layout) => (
+								<button key={layout} type="button" aria-pressed={transcript === layout} className={css({ borderRadius: "0.25rem", background: transcript === layout ? "var(--ink)" : "transparent", padding: "0.25rem 0.45rem", fontSize: "0.625rem", fontWeight: 700, color: transcript === layout ? "var(--paper, var(--background))" : "var(--muted-foreground)", _hover: { color: transcript === layout ? "var(--paper, var(--background))" : "var(--foreground)" }, _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" } })} onClick={() => onTranscriptChange(layout)}>
+									{layout === "continuous" ? "Session" : "Focused turn"}
+								</button>
+							))}
+						</div>
+					) : null}
+					<div className={cx(metaTextClass, css({ display: "none", alignItems: "center", gap: "0.25rem", sm: { display: "flex" } }))}>
+						<KeatingIcon icon={reviewIcon.annotate} size={12} /> {readOnly ? `${annotations.length} published note${annotations.length === 1 ? "" : "s"}` : "Select text to annotate"}
+					</div>
 				</div>
 			</header>
 
@@ -934,6 +1074,7 @@ export function TrajectoryCanvas({
 										readOnly={readOnly}
 										onStartAnnotation={onStartAnnotation}
 										onCaptureSelection={captureMessageSelection}
+										onFocus={onTranscriptChange ? (messageId) => { onSelectMessage(messageId); onTranscriptChange("single"); } : undefined}
 										conversational
 									/>
 								</div>
@@ -990,13 +1131,18 @@ export function TrajectoryCanvas({
 											{activeArtifact.reference.artifactType} · {activeArtifact.reference.format} · {activeArtifact.reference.frozen ? "frozen" : "mutable source"}
 										</div>
 									</div>
-									{readOnly || !onStartAnnotation ? null : <button
-										type="button"
-										className={css({ borderRadius: "0.375rem", padding: "0.375rem 0.5rem", fontSize: "0.6875rem", fontWeight: 650, color: "var(--muted-foreground)", _hover: { background: "var(--accent)", color: "var(--accent-foreground)" }, _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" } })}
-										onClick={() => onStartAnnotation({ kind: "artifact", artifact: activeArtifact.reference })}
-									>
-										Annotate artifact
-									</button>}
+									<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.375rem" })}>
+										{activeArtifact.plainText && artifactIsMarkdown && !renderArtifact && !activeArtifact.renderContent ? <div role="group" aria-label="Artifact view" className={css({ display: "inline-flex", border: "1px solid var(--border)", borderRadius: "0.375rem", padding: "0.125rem" })}>
+											{(["rendered", "raw"] as const).map((view) => <button key={view} type="button" aria-pressed={artifactContentView === view} className={css({ borderRadius: "0.25rem", background: artifactContentView === view ? "var(--ink)" : "transparent", padding: "0.25rem 0.45rem", fontSize: "0.625rem", fontWeight: 700, textTransform: "capitalize", color: artifactContentView === view ? "var(--paper, var(--background))" : "var(--muted-foreground)", _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" } })} onClick={() => setArtifactContentView(view)}>{view}</button>)}
+										</div> : null}
+										{readOnly || !onStartAnnotation ? null : <button
+											type="button"
+											className={css({ borderRadius: "0.375rem", padding: "0.375rem 0.5rem", fontSize: "0.6875rem", fontWeight: 650, color: "var(--muted-foreground)", _hover: { background: "var(--accent)", color: "var(--accent-foreground)" }, _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" } })}
+											onClick={() => onStartAnnotation({ kind: "artifact", artifact: activeArtifact.reference })}
+										>
+											Annotate artifact
+										</button>}
+									</div>
 								</header>
 								{activeArtifact.summary ? <p className={css({ marginTop: "0.75rem", fontSize: "0.8125rem", color: "var(--muted-foreground)" })}>{activeArtifact.summary}</p> : null}
 								<div className={css({ marginTop: "1rem", minHeight: "8rem" })}>
@@ -1004,7 +1150,17 @@ export function TrajectoryCanvas({
 										<ImageRegionPreview artifact={activeArtifact} media={activeArtifact.media} annotations={artifactAnnotations} activeAnnotationId={activeAnnotationId} onStartAnnotation={onStartAnnotation} readOnly={readOnly} />
 									) : activeArtifact.media?.kind === "video" ? (
 										<VideoTimePreview artifact={activeArtifact} media={activeArtifact.media} annotations={artifactAnnotations} onStartAnnotation={onStartAnnotation} readOnly={readOnly} />
-									) : renderArtifact ? renderArtifact(activeArtifact) : activeArtifact.renderContent ? activeArtifact.renderContent : activeArtifact.plainText ? (
+									) : renderArtifact ? renderArtifact(activeArtifact) : activeArtifact.renderContent ? activeArtifact.renderContent : activeArtifact.plainText && artifactIsMarkdown && artifactContentView === "rendered" ? (
+										<div
+											ref={artifactTextRef}
+											data-artifact-text={activeArtifact.id}
+											className={css({ maxWidth: "72ch", fontSize: "0.875rem", lineHeight: 1.65, color: "var(--foreground)", _selection: { background: "color-mix(in srgb, var(--accent) 65%, transparent)" } })}
+											onMouseUp={readOnly ? undefined : (event) => captureArtifactSelection(event.currentTarget)}
+											onKeyUp={readOnly ? undefined : (event) => captureArtifactSelection(event.currentTarget)}
+										>
+											<MarkdownBlock content={activeArtifact.plainText} sourceMapped highlights={artifactRenderedHighlights} onHighlightReveal={markHandlers.onReveal} onHighlightConceal={markHandlers.onConceal} onHighlightOpen={markHandlers.onOpen} />
+										</div>
+									) : activeArtifact.plainText ? (
 										<div className={css({ position: "relative", paddingLeft: "1.5rem" })}>
 											<MarginGutter
 												textRef={artifactTextRef}
@@ -1040,6 +1196,12 @@ export function TrajectoryCanvas({
 					</div>
 				)}
 			</div>
+
+			{candidatePanel ? (
+				<div id="trajectory-candidates-panel" role="tabpanel" aria-labelledby="trajectory-candidates-tab" hidden={mode !== "candidates"} className={css({ minHeight: 0, flex: 1, overflowY: "auto", padding: { base: "1rem", md: "1.25rem" } })}>
+					{candidatePanel}
+				</div>
+			) : null}
 
 			{/* L1 — the reading layer. Read-only viewers keep it: they came for the marks. */}
 			{hovered && hoveredAnnotations.length > 0 ? (

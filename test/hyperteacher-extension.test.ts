@@ -7,6 +7,7 @@ import { tmpdir } from "node:os";
 import { configPath } from "../src/core/config.js";
 import { ensureProjectScaffold } from "../src/core/project.js";
 import hyperteacher, { createKeatingHeaderComponent } from "../src/pi/hyper-teacher/index.js";
+import { registerKeatingTools } from "../src/pi/hyper-teacher/tools/index.js";
 
 const ANSI_RE = /\x1b\[[0-9;]*[a-zA-Z]/g;
 
@@ -117,6 +118,12 @@ test("/plan with string arg produces notification", async () => {
 test("registers the canonical terminal UI action receiver", async () => {
   const { pi } = await setup();
   assert.ok(pi.commands.has("keating-ui-action-v1"));
+});
+
+test("does not register the removed question tool", async () => {
+  const pi = createMockPi();
+  registerKeatingTools(pi);
+  assert.equal(pi.tools.has("ask_user_question"), false);
 });
 
 test("/plan with array arg joins words", async () => {

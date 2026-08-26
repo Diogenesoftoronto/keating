@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { cardLines, toolResultCardLines } from "../src/core/cards.js";
-import { HostController, type HostClientLike, type HostSurface, type UiDocumentControl } from "../src/tui/host-controller.js";
+import { HostController, splitAssistantOpenUiDocuments, type HostClientLike, type HostSurface, type UiDocumentControl } from "../src/tui/host-controller.js";
 import type { TranscriptEntry } from "../src/tui/view-model.js";
 import type { UiAction, UiActionDispatcher, UiDocument } from "@keating/learner-contracts";
 
@@ -78,6 +78,25 @@ function harness(dispatcher?: UiActionDispatcher, clientOverrides: Partial<HostC
 }
 
 describe("OpenTUI host controller", () => {
+  test("extracts canonical OpenUI from assistant text without exposing its wire payload", () => {
+    const document = documentFixture();
+    const source = `Before\n\n\`\`\`keating-ui\n${JSON.stringify(document)}\n\`\`\`\n\nAfter`;
+    const parsed = splitAssistantOpenUiDocuments(source);
+    expect(parsed.content).toBe("Before\n\nAfter");
+    expect(parsed.documents).toEqual([JSON.stringify(document)]);
+
+    const h = harness();
+    h.emit({ type: "message_end", message: { role: "assistant", content: source, timestamp: 1 } });
+    expect(h.entries.some((entry) => entry.kind === "assistant" && entry.body === "Before\n\nAfter")).toBe(true);
+    expect(h.entries.some((entry) => entry.body.includes("schemaVersion"))).toBe(false);
+    expect(h.controller.getActiveUiDocument()).toEqual(document);
+  });
+
+  test("hides an incomplete canonical OpenUI fence while the assistant is streaming", () => {
+    const parsed = splitAssistantOpenUiDocuments("Visible\n\n```keating-ui\n{\"schemaVersion\":1");
+    expect(parsed).toEqual({ content: "Visible", documents: [] });
+  });
+
   test("answers RPC dialogs instead of cancelling Pi extension UI", async () => {
     const h = harness();
     h.emit({ type: "extension_ui_request", id: "s", method: "select", title: "Pick", options: ["a", "b"] });

@@ -106,6 +106,40 @@ Then launch the shell:
 keating shell
 ```
 
+To use hosted inference from an installed Keating download, connect a Not
+Organic account and start the shell while the capability is active:
+
+```bash
+keating login
+keating shell
+```
+
+`keating login` defaults to the `notorganic/balanced` model. It opens the Not
+Organic approval page and stores a project-scoped, DPoP-bound capability in
+`.keating/pi-config/auth.json` with owner-only permissions. The capability is
+valid for 300 seconds and has no refresh token, so rerun `keating login` after
+it expires. Keating does not store your Not Organic password or a provider
+client secret.
+
+On SSH, CI, or another headless terminal, use the manual callback flow:
+
+```bash
+keating login --manual
+# Paste the complete callback URL, or its code#state value.
+```
+
+Check or remove the project-scoped connection without printing credentials:
+
+```bash
+keating auth status
+keating logout
+```
+
+The repository test suite verifies the PKCE exchange, DPoP proof, storage, and
+provider-stream contracts without external calls. A live production
+portal-to-gateway acceptance run is separate deployment evidence and is not
+claimed by those local tests.
+
 For a guided local setup:
 
 ```bash
@@ -114,11 +148,11 @@ keating doctor
 keating shell
 ```
 
-The setup screen uses an Ink-powered terminal UI with arrow-key choices for provider, model, thinking effort, and runtime preference. Choose the recommended default path for `openai` + `gpt-5.5`, or select custom provider/model values when your Pi runtime supports them.
+The setup screen uses an Ink-powered terminal UI with arrow-key choices for provider, model, thinking effort, and runtime preference. It includes Not Organic Hosted + Balanced alongside OpenAI, Anthropic, Google, OpenRouter, Zyphra, and custom provider/model values. Choosing Not Organic in setup still requires `keating login` before inference.
 
 Non-interactive environments can write the default config with `keating setup --yes`.
 
-Keating checks credentials before launching the shell. It tries the configured provider first, then falls back to configured OpenAI or Anthropic credentials when the default Google key is missing. Supported environment variables are:
+Keating checks credentials before launching the shell. It tries the configured provider first, then an active Not Organic capability, followed by configured Google, OpenAI, Anthropic, OpenRouter, Zyphra, or MiniMax credentials. An expired Not Organic capability is not reported as configured. Supported long-lived environment variables are:
 
 ```bash
 export GEMINI_API_KEY=...

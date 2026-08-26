@@ -36,6 +36,7 @@ export interface KeatingConfig {
 export const DEFAULT_PI_PROVIDER = "openai";
 export const DEFAULT_PI_MODEL = "gpt-5.5";
 export const FALLBACK_PI_MODELS: Record<string, string> = {
+  notorganic: "balanced",
   google: "gemini-3.5-flash",
   openai: DEFAULT_PI_MODEL,
   // Keep fallback ids within the installed Pi registry; an unknown model makes

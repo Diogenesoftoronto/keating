@@ -19,7 +19,12 @@ import type { CritiqueProposal, RubricSweepProposal } from "../keating/trajector
 import type { TrajectoryPassCallbacks, TrajectoryPassState } from "../components/trajectory/types";
 import { checkBrowserModelAvailability, discoverModels } from "../lib/model-catalog";
 import { reviewArtifactDisplayText } from "../keating/trajectory-artifacts";
+import {
+	learnerResponseReviewMarkdown,
+	learnerResponseReviewText,
+} from "../keating/learner-response";
 import { assertTextReviewCandidateGeneration } from "../keating/trajectory-generation";
+import { collectReviewToolOutcomes, reviewMessageDisplay } from "../keating/trajectory-message-display";
 import {
 	initialReviewWorkspaceUiState,
 	reviewWorkspaceUiReducer,
@@ -48,14 +53,21 @@ function labelForRole(role: string): string {
 }
 
 function normalizedMessages(sessionId: string, messages: readonly AgentMessage[]): TrajectorySessionMessage[] {
+	const toolOutcomes = collectReviewToolOutcomes(messages);
 	return messages.map((message, ordinal) => {
 		const anchor = messageReviewAnchor(sessionId, message, ordinal);
 		const entry = message as { role?: string; model?: string; stopReason?: string; errorMessage?: string };
-		const displayText = reviewArtifactDisplayText(anchor.text);
+		const display = reviewMessageDisplay(message, toolOutcomes);
+		const rawSource = reviewArtifactDisplayText(anchor.text);
+		const displayText = learnerResponseReviewText(rawSource);
 		return {
 			...anchor,
 			role: entry.role === "user-with-attachments" ? "user" : entry.role === "toolResult" ? "tool" : anchor.role,
 			text: displayText || entry.errorMessage || `[${labelForRole(anchor.role)}]`,
+			markdown: learnerResponseReviewMarkdown(rawSource),
+			rawSource,
+			raw: display.raw,
+			tools: display.tools,
 			label: labelForRole(anchor.role),
 			model: entry.model,
 			status: entry.stopReason === "error" || entry.stopReason === "aborted" ? "failed" : "complete",

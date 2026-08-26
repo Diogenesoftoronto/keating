@@ -176,7 +176,7 @@ async function syncPiSettings(cwd: string, config: KeatingConfig): Promise<void>
   await writeFile(settingsPath, `${JSON.stringify(nextSettings, null, 2)}\n`, "utf8");
 }
 
-interface ProviderAuthSelection {
+export interface ProviderAuthSelection {
   provider?: string;
   model?: string;
   env: NodeJS.ProcessEnv;
@@ -195,7 +195,7 @@ function flagValue(args: string[], flag: string): string | undefined {
   return index >= 0 ? args[index + 1] : undefined;
 }
 
-function selectAuthenticatedProvider(cwd: string, config: KeatingConfig, args: string[]): ProviderAuthSelection {
+export function selectAuthenticatedProvider(cwd: string, config: KeatingConfig, args: string[]): ProviderAuthSelection {
   const env = envWithProviderAliases(process.env);
   if (hasFlag(args, "--list-models") || hasFlag(args, "--list-providers")) return { env };
 
@@ -212,7 +212,7 @@ function selectAuthenticatedProvider(cwd: string, config: KeatingConfig, args: s
     return { env };
   }
 
-  const candidates = [configuredProvider, "google", "openai", "anthropic", "openrouter", "zyphra", "minimax"].filter((provider, index, all) =>
+  const candidates = [configuredProvider, "notorganic", "google", "openai", "anthropic", "openrouter", "zyphra", "minimax"].filter((provider, index, all) =>
     provider && all.indexOf(provider) === index
   );
   const selected = candidates.find((provider) => providerIsConfigured(cwd, env, provider));
@@ -223,7 +223,9 @@ function selectAuthenticatedProvider(cwd: string, config: KeatingConfig, args: s
       note: [
       providerSetupMessage(configuredProvider),
       "",
-      "Keating also checked for OpenAI, Anthropic, OpenRouter, Zyphra, and MiniMax credentials and did not find them.",
+      "Keating also checked for Not Organic, OpenAI, Anthropic, OpenRouter, Zyphra, and MiniMax credentials and did not find them.",
+      "Hosted fallback:",
+      "  keating login (five-minute Not Organic infer:balanced capability)",
       "Supported fallback env vars:",
       "  GEMINI_API_KEY or GOOGLE_API_KEY",
       "  OPENAI_API_KEY",
@@ -243,6 +245,18 @@ function selectAuthenticatedProvider(cwd: string, config: KeatingConfig, args: s
     env,
     note: `No credentials found for "${configuredProvider}". Using configured ${selected} credentials instead.`
   };
+}
+
+export function resolveNotOrganicProviderExtensionPath(): string {
+  const packageRoot = resolvePackageRoot();
+  const isDist = __dirname.replace(/\\/g, "/").includes("/dist/src/runtime");
+  const built = isDist
+    ? join(__dirname, "..", "pi", "notorganic-provider-extension.js")
+    : join(packageRoot, "dist", "src", "pi", "notorganic-provider-extension.js");
+  if (isDist || existsSync(built)) return built;
+  // Pi's extension loader uses jiti, so source-checkout commands can load the
+  // one explicit TypeScript extension before the first build.
+  return join(packageRoot, "src", "pi", "notorganic-provider-extension.ts");
 }
 
 function resolveAgentInNodeModules(nodeModulesDir: string): AiRuntimeDetails | null {

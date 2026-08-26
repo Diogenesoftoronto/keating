@@ -1,7 +1,12 @@
 import { spawnSync } from "node:child_process";
-import { loadKeatingConfig, mergePiDefaults } from "./config.js";
+import { existsSync } from "node:fs";
+import { loadKeatingConfig, mergePiDefaultsWithOverrides } from "./config.js";
 import { configDir } from "./paths.js";
-import { detectAiRuntime } from "../runtime/pi.js";
+import {
+  detectAiRuntime,
+  resolveNotOrganicProviderExtensionPath,
+  selectAuthenticatedProvider
+} from "../runtime/pi.js";
 import { withApiRetry } from "./api-retry.js";
 import { classifyObservationError, exportProviderCompletion } from "../observability/arize.js";
 import { KEATING_VERSION } from "./version.js";
@@ -30,7 +35,21 @@ export async function piComplete(cwd: string, prompt: string, options: PiComplet
   }
   const selectedRuntime = runtime.selected;
 
-  const args = ["-p", "--no-session", "--no-tools", "--no-extensions", "--no-skills"];
+  const providerExtensionPath = resolveNotOrganicProviderExtensionPath();
+  if (!existsSync(providerExtensionPath)) {
+    throw new Error(`Missing built Not Organic provider extension: ${providerExtensionPath}. Run bun run build before using noninteractive completions.`);
+  }
+  // Keep ambient/project extensions disabled. This explicit provider extension
+  // is the only extension loaded for deterministic noninteractive completions.
+  const args = [
+    "-p",
+    "--no-session",
+    "--no-tools",
+    "--no-extensions",
+    "--extension",
+    providerExtensionPath,
+    "--no-skills"
+  ];
 
   if (options.systemPrompt) {
     args.push("--system-prompt", options.systemPrompt);
@@ -44,7 +63,15 @@ export async function piComplete(cwd: string, prompt: string, options: PiComplet
     args.push("--thinking", options.thinking);
   }
 
-  const finalArgs = mergePiDefaults(config, [...args, prompt]);
+  const authSelection = selectAuthenticatedProvider(cwd, config, []);
+  if (authSelection.missingProvider && authSelection.note) {
+    throw new Error(authSelection.note);
+  }
+  const finalArgs = mergePiDefaultsWithOverrides(
+    config,
+    [...args, prompt],
+    { provider: authSelection.provider, model: authSelection.model }
+  );
 
   try {
     const response = await withApiRetry(() => {
@@ -59,7 +86,7 @@ export async function piComplete(cwd: string, prompt: string, options: PiComplet
         stdio: "pipe",
         encoding: "utf8",
         env: {
-          ...process.env,
+          ...authSelection.env,
           PI_SKIP_VERSION_CHECK: "1",
           PI_CODING_AGENT_DIR: configDir(cwd)
         }

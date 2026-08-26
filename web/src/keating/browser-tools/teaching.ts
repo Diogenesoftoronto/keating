@@ -193,7 +193,7 @@ ${profileBeliefs}
 			}
 		),
 
-		// ask_user_question - Ask the learner one or more questions as an interactive form
+		// Learner-profile evidence is recorded after OpenUI Question interactions.
 		createTool(
 			"remember_learner_profile",
 			"Preserve a useful, non-sensitive fact about how this learner wants to learn or communicate. Use this proactively when the learner states a preference, motivation, or interest, or when repeated behavior provides concrete evidence. Explicit statements are certain; observations must remain tentative. Never infer protected, medical, psychological, or identity traits.",

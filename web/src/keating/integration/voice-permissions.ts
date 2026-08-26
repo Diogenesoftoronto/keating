@@ -8,7 +8,7 @@ export interface VoicePermissionResult {
 
 export function authorizeVoiceToolCall(call: LiveSpeechToolCall): VoicePermissionResult {
 	// Compatibility preflight. Actual execution must use executeAuthorizedVoiceToolCall.
-	const knownInformational = ["bench", "deck", "quiz", "ask_user_question", "prompt_eval", "evaluate_teaching", "keating_voice"].includes(call.name);
+	const knownInformational = ["bench", "deck", "quiz", "prompt_eval", "evaluate_teaching", "keating_voice"].includes(call.name);
 	return knownInformational
 		? { allowed: true }
 		: { allowed: false, reason: `Voice tool "${call.name}" is not permitted without authorized execution.` };

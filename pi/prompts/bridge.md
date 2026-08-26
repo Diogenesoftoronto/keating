@@ -11,4 +11,4 @@ Structure:
 1. Define the core invariant idea.
 2. Show how that idea appears in at least two domains.
 3. Point out where the analogy stops working.
-4. End with a transfer question for the learner.
+4. End with one ephemeral OpenUI `question` that checks transfer, then stop and wait for the learner's submitted answer.

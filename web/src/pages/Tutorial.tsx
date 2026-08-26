@@ -6,6 +6,7 @@ import { ArrowRight } from "lucide-react";
 import { css, cx } from "../../styled-system/css";
 import { paperCard } from "../../styled-system/recipes";
 import { TutorialShot } from "../components/TutorialShot";
+import { TutorialSurfaceAtlas } from "../components/TutorialSurfaceAtlas";
 import PenNib from "reicon-react/icons/PenNib";
 import { KeatingIcon } from "../components/KeatingIcon";
 
@@ -38,10 +39,22 @@ const TUTORIAL_JUMPS: TutorialJump[] = [
     tags: ["overview", "start", "prompts"],
   },
   {
+    label: "Explore every surface",
+    detail: "Classroom, Live, Review, Coming Up, Courses, Usage, Bench, terminal, and artifacts.",
+    targetId: "surfaces",
+    tags: ["surface", "classroom", "live", "review", "courses", "usage", "bench", "tui", "cli"],
+  },
+  {
     label: "Choose a model path",
     detail: "Browser, local runners, LiteLLM, or cloud providers.",
     targetId: "model-setup",
     tags: ["model", "provider", "setup"],
+  },
+  {
+    label: "Set up the terminal",
+    detail: "See the startup logo, then set your learner name and profile image.",
+    targetId: "terminal-onboarding",
+    tags: ["terminal", "tui", "name", "profile", "avatar", "setup"],
   },
   {
     label: "Set up API keys",
@@ -105,6 +118,25 @@ const styles = {
   main: css({ pt: "1.5rem", pb: "4rem", px: "1.5rem" }),
   container: css({ maxW: "56rem", mx: "auto" }),
   heroCard: css({ p: "2rem", mb: "2rem" }),
+  heroGrid: css({ display: "grid", gap: "1.5rem", alignItems: "center", md: { gridTemplateColumns: "minmax(0, 0.8fr) minmax(18rem, 1.2fr)" } }),
+  heroCollage: css({
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: "0.3rem",
+    overflow: "hidden",
+    border: "2px solid var(--ink)",
+    background: "var(--ink)",
+    boxShadow: "5px 5px 0 var(--accent-dim)",
+  }),
+  heroCollageImage: css({
+    display: "block",
+    width: "100%",
+    height: "100%",
+    minHeight: "7rem",
+    aspectRatio: "16 / 10",
+    objectFit: "cover",
+    objectPosition: "top",
+  }),
   section: css({ p: "1.5rem", mb: "2rem", scrollMarginTop: "6rem" }),
   searchSection: css({ p: "1.25rem", mb: "2rem" }),
   h1: css({ mb: "0.5rem", fontSize: "1.875rem", fontWeight: "700", md: { fontSize: "2.25rem" } }),
@@ -161,6 +193,12 @@ const styles = {
   fourGrid: css({ display: "grid", gap: "1rem", mb: "1rem", md: { gridTemplateColumns: "repeat(4, minmax(0, 1fr))" } }),
   twoGrid: css({ display: "grid", gap: "1.5rem", mb: "2rem", md: { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" } }),
   toolGrid: css({ display: "grid", gap: "0.75rem", fontSize: "0.875rem", sm: { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" } }),
+  terminalShotGrid: css({
+    display: "grid",
+    gap: "1rem",
+    md: { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" },
+    "& figure": { marginBlock: 0 },
+  }),
   smallCard: css({ rounded: "0.25rem", borderWidth: "1px", borderColor: "color-mix(in srgb, var(--border) 30%, transparent)", p: "1rem" }),
   accentLine: (color: string) => css({ borderLeftWidth: "4px", borderLeftColor: color, pl: "1rem" }),
   promptGroupHeader: css({ display: "flex", alignItems: "center", gap: "0.5rem", mb: "0.5rem" }),
@@ -310,8 +348,44 @@ export function Tutorial() {
       <main className={styles.main}>
         <div className={styles.container}>
           <div className={cx(paperCard(), styles.heroCard)}>
-            <h1 className={styles.h1}>Getting Started with Keating</h1>
-            <p className={cx("font-terminal", styles.muted)}>How to learn, plan, and assess with your AI tutor</p>
+            <div className={styles.heroGrid}>
+              <div>
+                <h1 className={styles.h1}>Getting Started with Keating</h1>
+                <p className={cx("font-terminal", styles.muted)}>
+                  How to learn, plan, assess, and choose the right room for the work.
+                </p>
+              </div>
+              <div
+                className={styles.heroCollage}
+                role="group"
+                aria-label="Real Keating classroom, review, terminal, and training-export screens."
+              >
+                <img
+                  src="/tutorial/classroom-openui.png"
+                  alt="Keating classroom showing an interactive question card."
+                  className={styles.heroCollageImage}
+                  decoding="async"
+                />
+                <img
+                  src="/tutorial/review-workspace.png"
+                  alt="Keating Review with its contents list and transcript visible while the margin is collapsed at the right edge."
+                  className={styles.heroCollageImage}
+                  decoding="async"
+                />
+                <img
+                  src="/tutorial/tui-startup-logo.png"
+                  alt="Keating terminal first-run screen with the complete raster logo and profile-setup prompt."
+                  className={styles.heroCollageImage}
+                  decoding="async"
+                />
+                <img
+                  src="/tutorial/usage-training-export.png"
+                  alt="Keating Usage screen configured to export review data for training."
+                  className={styles.heroCollageImage}
+                  decoding="async"
+                />
+              </div>
+            </div>
           </div>
 
           <section className={cx(paperCard(), styles.searchSection)}>
@@ -380,6 +454,17 @@ export function Tutorial() {
               The system has 19 teaching tools — from lesson plans to concept maps to quizzes
               and benchmarked self-improvement. You drive the conversation. Keating responds.
             </p>
+          </section>
+
+          <section id="surfaces" className={cx(paperCard(), styles.section)}>
+            <h2 className={styles.h2}>Choose the room that fits the work</h2>
+            <p className={styles.paraSmallMb4}>
+              Keating is one teaching system with several working surfaces. Start in the classroom,
+              then move only when the task changes: speak live, review the teaching, schedule a return,
+              build a course, compare models, or leave an inspectable artifact behind. Every card opens
+              the real surface it describes.
+            </p>
+            <TutorialSurfaceAtlas />
           </section>
 
           {/* Suggested Prompts */}
@@ -489,6 +574,53 @@ export function Tutorial() {
             </div>
           </section>
 
+          <section id="terminal-onboarding" className={cx(paperCard(), styles.section)}>
+            <h2 className={styles.h2}>Make the Terminal Yours</h2>
+            <p className={styles.paraSmallMb4}>
+              Run <code className={styles.inlineCode}>keating tui</code>. On a first launch, the
+              complete Keating lockup stays on screen until you are ready. Press <strong>Enter</strong>{" "}
+              to set up your profile, or type a real question to start immediately.
+            </p>
+            <div className={styles.terminalShotGrid}>
+              <TutorialShot
+                src="/tutorial/tui-startup-logo.png"
+                slate="TUI · FIRST FRAME"
+                alt="Keating terminal startup with the complete green raster logo and a prompt to set a name and profile image."
+                caption="The full lockup is a deliberate first screen on terminals with room; smaller terminals use a compact KEATING mark instead of clipping it."
+              />
+              <TutorialShot
+                src="/tutorial/tui-startup-compact.png"
+                slate="TUI · COMPACT"
+                alt="Narrow Keating terminal startup with a compact green KEATING mark and the complete first-run actions."
+                caption="At roughly 80 columns, the mark contracts while the two useful paths remain visible: Enter starts profile setup, or typing starts a lesson."
+              />
+              <TutorialShot
+                src="/tutorial/tui-onboarding-name.png"
+                slate="PROFILE · NAME"
+                alt="Opaque Keating terminal dialog asking for the learner name shown beside messages."
+                caption="Enter the name Keating should use beside your messages. The dialog points back to /setup so the choice is never permanent."
+              />
+              <TutorialShot
+                src="/tutorial/tui-onboarding-avatar.png"
+                slate="PROFILE · IMAGE"
+                alt="Opaque Keating terminal profile-image picker with built-in portrait, initials, local image, and keep-current options."
+                caption="Choose the built-in portrait, initials, a local image, or keep the current image. The highlighted row is both keyboard- and mouse-selectable."
+              />
+              <TutorialShot
+                src="/tutorial/tui-onboarding-custom-avatar.png"
+                slate="PROFILE · LOCAL FILE"
+                alt="Opaque Keating terminal input for a local PNG, JPEG, GIF, BMP, or TIFF profile image path."
+                caption="Local images are read by the TUI, rasterized into its four-column portrait slot, and never uploaded by this flow."
+              />
+              <TutorialShot
+                src="/tutorial/tui-onboarding-complete.png"
+                slate="TUI · READY"
+                alt="Completed Keating terminal setup showing Mina's saved portrait and the visible Profile action in the side panel."
+                caption="Change the name or image later with /setup, or open [S] PROFILE in the Ctrl+B side panel. Setup also continues through provider, model, thinking, and runtime choices."
+              />
+            </div>
+          </section>
+
           {/* Settings Explained */}
           <section id="settings" className={cx(paperCard(), styles.section)}>
             <h2 className={styles.h2}>Settings Explained</h2>
@@ -514,6 +646,28 @@ export function Tutorial() {
                   model, a local GGUF, or a frontier cloud model — you choose the tradeoff between
                   privacy, cost, and capability. Keys live only in this browser's storage.
                 </p>
+              </div>
+
+              {/* Learner context */}
+              <div className={styles.accentLine("#1e9b50")}>
+                <h3 className={css({ fontWeight: "700", mb: "0.25rem" })}>Learning context</h3>
+                <p className={css({ fontSize: "0.875rem", color: "var(--muted-foreground)", mb: "0.5rem" })}>
+                  Under <strong>Learning → About You</strong>, tell Keating about your goals,
+                  existing knowledge, interests, preferred examples, languages, or accessibility
+                  needs. It is stored in this browser and is empty until you choose to fill it.
+                </p>
+                <p className={styles.mutedTiny}>
+                  Saved context is appended to the next model prompt. A hosted provider therefore
+                  receives it with that request; a local model keeps inference on your device. The
+                  neighboring tabs keep learner context separate from persona, provider, voice,
+                  microphone, and custom learning controls.
+                </p>
+                <TutorialShot
+                  src="/tutorial/settings-learning-about-you.png"
+                  slate="SETTINGS · LEARNING"
+                  alt="Settings open to Learning and About You, with the optional learner-context field empty."
+                  caption="About You is explicit, editable context. It persists locally, then travels with a hosted-model request when used."
+                />
               </div>
 
               {/* Teacher Persona */}
@@ -636,6 +790,27 @@ export function Tutorial() {
                   requests on to the upstream provider.
                 </p>
               </div>
+
+              {/* Privacy and diagnostics */}
+              <div className={styles.accentLine("#d5604b")}>
+                <h3 className={css({ fontWeight: "700", mb: "0.25rem" })}>App privacy and diagnostics</h3>
+                <p className={css({ fontSize: "0.875rem", color: "var(--muted-foreground)", mb: "0.5rem" })}>
+                  Under <strong>App → Privacy</strong>, each data path has its own control and
+                  availability state. Anonymous product analytics can be enabled without sending
+                  prompts, replies, file contents, provider keys, or full share links to PostHog.
+                </p>
+                <p className={styles.mutedTiny}>
+                  Session replay and Arize evaluation remain visibly disabled when the deployment
+                  has not made them available. An unavailable control is not presented as a working
+                  privacy choice.
+                </p>
+                <TutorialShot
+                  src="/tutorial/settings-privacy-diagnostics.png"
+                  slate="SETTINGS · PRIVACY"
+                  alt="App privacy settings showing anonymous analytics enabled while session replay and Arize evaluation are unavailable."
+                  caption="The visible state matters: analytics is on here, while replay and evaluation sharing are unavailable and off."
+                />
+              </div>
             </div>
           </section>
 
@@ -651,6 +826,34 @@ export function Tutorial() {
               a record you can export as training data. Reviews are stored locally in your browser.
             </p>
 
+            <h3 className={styles.h3Tight}>Choose a review</h3>
+            <p className={styles.paraSmallMb3}>
+              The Review index lists locally available sessions and searches both titles and
+              transcripts. Cross-session pattern finding becomes available after you finish two
+              reviews, so Keating has evidence of a recurring habit instead of a one-off moment.
+            </p>
+
+            <TutorialShot
+              src="/tutorial/review-index.png"
+              slate="START · INDEX"
+              alt="The live Review index with local-session search and the cross-review pattern panel."
+              caption="A clean browser starts empty; completed teaching sessions appear here without being uploaded."
+            />
+
+            <h3 className={styles.h3Tight}>Read the lesson in context</h3>
+            <p className={styles.paraSmallMb3}>
+              Review begins with the original learner message, tutor response, and tool evidence.
+              Keep the page focused when you want to read closely; open Contents when you need to
+              move between turns.
+            </p>
+
+            <TutorialShot
+              src="/tutorial/review-reading.png"
+              slate="READ · FOCUS"
+              alt="A focused Review transcript showing a learner message, tutor response, and tool result."
+              caption="The focused reading view keeps the original teaching record intact before you add judgement."
+            />
+
             <h3 className={styles.h3Tight}>The three columns</h3>
             <p className={styles.paraSmallMb3}>
               A review opens as a book being marked up. <strong className={styles.strongLabel}>Contents</strong>{" "}
@@ -660,38 +863,49 @@ export function Tutorial() {
             </p>
 
             <TutorialShot
-              slate="STEP 01"
-              alt="The review workspace: turn list on the left, transcript in the middle, review desk on the right."
-              caption="Open a session from /review. The turn you select in Contents is the one you are marking."
+              src="/tutorial/review-workspace.png"
+              slate="NAVIGATE"
+              alt="The review workspace with its turn list on the left, transcript in the middle, and collapsed margin control at the right edge."
+              caption="Select a turn in Contents to mark it; this capture keeps the Margin folded away so the transcript has more room."
             />
 
             <h3 className={styles.h3Tight}>Marking a line</h3>
             <ol className={styles.ordered}>
               <li>
-                <strong className={styles.strongLabel}>1.</strong> Select any text in the transcript. The
-                margin opens a new note anchored to exactly that span, quote included.
+                <strong className={styles.strongLabel}>1.</strong> Select text in a transcript or
+                artifact. A toolbar appears against the highlighted range; nothing is saved yet.
               </li>
               <li>
-                <strong className={styles.strongLabel}>2.</strong> Choose a signal — problem, strength, or
-                suggestion — and a category. Strengths matter as much as faults; a review that only
-                records failures teaches a model only what to avoid.
+                <strong className={styles.strongLabel}>2.</strong> Choose Problem, Strength, or
+                Suggestion to open an anchored note with that signal selected. Choose Rewrite to
+                preserve the original and start an editable replacement with the selected text.
               </li>
               <li>
-                <strong className={styles.strongLabel}>3.</strong> Write what happened. Under{" "}
-                <em>Pedagogical impact and better move</em> you can add what it cost the learner and the
-                line the tutor should have used instead.
+                <strong className={styles.strongLabel}>3.</strong> Answer “Why does this matter?” — the
+                only required field. Category, severity, pedagogical impact, and an alternative are
+                optional layers you can add when the evidence needs them.
               </li>
               <li>
                 <strong className={styles.strongLabel}>4.</strong> Save with the button, or press{" "}
                 <code className={styles.inlineCode}>Ctrl+Enter</code> /{" "}
-                <code className={styles.inlineCode}>Cmd+Enter</code>.
+                <code className={styles.inlineCode}>Cmd+Enter</code>. The record starts as a human-authored
+                draft; Rewrite records a contrast and does not replace the transcript.
               </li>
             </ol>
 
             <TutorialShot
-              slate="STEP 02"
-              alt="A note being written in the margin, showing the quoted span, signal buttons, and severity."
-              caption="Selected text becomes the note's anchor, so the mark survives even if you reread the session later."
+              src="/tutorial/review-selection-menu.png"
+              slate="SELECT TEXT"
+              ratio="1062 / 300"
+              alt="Highlighted transcript text with the Problem, Strength, Suggestion, and Rewrite action bar."
+              caption="Classification comes before form-filling: pick the kind of evidence, or open a before-and-after rewrite draft."
+            />
+
+            <TutorialShot
+              src="/tutorial/review-annotation.png"
+              slate="WRITE NOTE"
+              alt="The Margin showing a new whole-turn annotation with signal choices, the required rationale field, and optional category, severity, impact, and alternative controls."
+              caption="This capture is a whole-turn draft: choose a signal and explain why it matters, then add optional detail only when it helps."
             />
 
             <h3 className={styles.h3Tight}>Socratic passes</h3>
@@ -732,9 +946,10 @@ export function Tutorial() {
             </div>
 
             <TutorialShot
-              slate="STEP 03"
-              alt="Proposed notes from a critique sweep, shown as dashed cards with accept and dismiss controls."
-              caption="Proposals are dashed until accepted. Accepting one saves it as an ordinary note — nothing marks it as machine-drafted."
+              src="/tutorial/review-socratic-pass.png"
+              slate="RUN A PASS"
+              alt="The Socratic pass menu with controls to read the session and score the rubric."
+              caption="Choose the pass deliberately: read the session for anchored notes, or score the rubric for six cited dimensions."
             />
 
             <h3 className={styles.h3Tight}>Scoring and finishing</h3>
@@ -746,24 +961,69 @@ export function Tutorial() {
             </p>
 
             <TutorialShot
-              slate="STEP 04"
-              alt="The Assess tab with the six rubric dimensions scored one to five, a summary, and a verdict."
-              caption="A finished review carries scores, a summary, and every anchored note you wrote."
+              src="/tutorial/review-rubric.png"
+              slate="ASSESS"
+              alt="The Assess tab in Draft status with an Undecided verdict, zero of six rubric dimensions completed, and one-to-five score controls."
+              caption="The captured rubric is still Draft at 0/6; scoring each dimension is what moves it toward a finished review."
+            />
+
+            <h3 className={styles.h3Tight}>Rendered, raw, and tool evidence</h3>
+            <p className={styles.paraSmallMb3}>
+              Use <strong className={styles.strongLabel}>Rendered</strong> for normal reading and{" "}
+              <strong className={styles.strongLabel}>Raw</strong> when exact Markdown matters. Tool
+              calls and their results stay in the transcript, so a review can distinguish what the
+              tutor claimed from what it actually ran.
+            </p>
+
+            <TutorialShot
+              src="/tutorial/review-raw-tools.png"
+              slate="INSPECT"
+              alt="A tutor response with Raw selected and a visible Tool call: Question header marked Failed."
+              caption="This frame exposes the raw Markdown and the failed call header in place; it does not show an expanded tool result."
             />
 
             <h3 className={styles.h3Tight}>Rewrites and export</h3>
             <p className={styles.paraSmallMb3}>
-              The <strong className={styles.strongLabel}>Rewrite</strong> tab generates alternative tutor
-              responses for the turn you are on, across a pool of models at once, and shows what each
-              one cost. Choose the one you would have wanted, or insert it back into the session. Model
-              pools are configured underneath the same tab.
+              <strong className={styles.strongLabel}>Model results</strong> generates alternative tutor
+              responses for the active turn or artifact using the selected pool. Each candidate keeps
+              its own provider, model, run state, usage, and cost evidence. Choose the response you
+              would have wanted, or insert it as a visible fork without overwriting the source session.
             </p>
+
+            <TutorialShot
+              src="/tutorial/review-model-pools.png"
+              slate="CONFIGURE"
+              alt="The Model pools editor with pool name, candidate count, temperature, token limit, and generation tasks."
+              caption="A pool is an explicit comparison recipe: choose candidates, sampling limits, and the teaching tasks each model should attempt."
+            />
+
+            <TutorialShot
+              src="/tutorial/review-model-results-empty.png"
+              slate="GENERATE"
+              alt="The Model results tab before generation, with a pool selector and Generate button."
+              caption="The empty state says exactly what will be sent and waits for you to start the comparison."
+            />
+
+            <TutorialShot
+              src="/tutorial/review-model-results.png"
+              slate="COMPARE"
+              alt="Three MiniMax-M2.7 candidate rows all marked Running while tutor-response generation is in progress."
+              caption="This pool is a three-candidate MiniMax run in progress; each row exposes its own Running state before any response is available to choose."
+            />
+
             <p className={styles.paraSmallMb4}>
               Export from the header to download the review as an archive — the transcript, your notes
               with their anchors, the rubric, and any chosen rewrites. That archive is the input to the
               fine-tuning paths in the <strong className={styles.strongLabel}>[ADVANCED]</strong> tab
               below.
             </p>
+
+            <TutorialShot
+              src="/tutorial/review-export.png"
+              slate="EXPORT"
+              alt="Review after exporting its archive, with the browser download confirmation visible."
+              caption="Export preserves the transcript, annotations, rubric, and selected model work as a portable review archive."
+            />
 
             <div className={styles.note("#e8a33d")}>
               <p className={styles.textSm}>
@@ -1295,6 +1555,12 @@ export function Tutorial() {
                     <p className={cx(styles.textGreen, styles.mt3)}># Web export</p>
                     <p className={styles.textCream}>Open Usage → Fine-tune export → Export fine-tune data</p>
                   </div>
+                  <TutorialShot
+                    src="/tutorial/usage-training-export.png"
+                    slate="DIRECT CAPTURE"
+                    alt="The Usage page Training data export panel with Both formats, All sources, minimum assistant length 80, secret redaction on, and judge scoring off."
+                    caption="This is the training ZIP exporter, not the usage dashboard: choose format, source, length threshold, and redaction before exporting."
+                  />
                 </section>
 
                 <section id="runpod-training" className={css({ scrollMarginTop: "6rem" })}>

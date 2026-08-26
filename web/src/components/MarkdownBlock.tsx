@@ -7,7 +7,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import { MermaidRenderer } from "./MermaidRenderer";
-import { css } from "../../styled-system/css";
+import { css, cx } from "../../styled-system/css";
 import { RunnableCodeBlock, StreamingCodeContext, inProgressFenceCode } from "./RunnableCodeBlock";
 
 // Syntax highlighter (react-syntax-highlighter + Prism language packs) is the
@@ -21,6 +21,21 @@ interface MarkdownBlockProps {
 	 * state on the code fence that is still open.
 	 */
 	streaming?: boolean;
+	/** Preserve source offsets so review selections can map back to Markdown. */
+	sourceMapped?: boolean;
+	highlights?: MarkdownHighlightRange[];
+	onHighlightReveal?: (ids: string[], rect: DOMRect) => void;
+	onHighlightConceal?: () => void;
+	onHighlightOpen?: (ids: string[], rect: DOMRect) => void;
+}
+
+export interface MarkdownHighlightRange {
+	start: number;
+	end: number;
+	ids: string[];
+	color: string;
+	active?: boolean;
+	dashed?: boolean;
 }
 
 // Click-to-reveal "spoiler" / mask: authors wrap a clue or answer in ||double
@@ -33,6 +48,66 @@ interface MdastNode {
 	value?: string;
 	children?: MdastNode[];
 	data?: { hName?: string; hProperties?: Record<string, unknown> };
+	position?: { start?: { offset?: number }; end?: { offset?: number } };
+}
+
+function remarkSourceMap(highlights: MarkdownHighlightRange[]) {
+	return () => (tree: MdastNode) => {
+		function transform(node: MdastNode) {
+			if (!Array.isArray(node.children)) return;
+			const output: MdastNode[] = [];
+			for (const child of node.children) {
+				const sourceStart = child.position?.start?.offset;
+				const sourceEnd = child.position?.end?.offset;
+				if (child.type !== "text" || typeof child.value !== "string" || sourceStart == null || sourceEnd == null) {
+					transform(child);
+					output.push(child);
+					continue;
+				}
+
+				const applicable = highlights.filter((range) => range.start < sourceEnd && range.end > sourceStart);
+				const boundaries = Array.from(new Set([
+					sourceStart,
+					sourceEnd,
+					...applicable.flatMap((range) => [Math.max(sourceStart, range.start), Math.min(sourceEnd, range.end)]),
+				])).sort((left, right) => left - right);
+
+				for (let index = 0; index < boundaries.length - 1; index += 1) {
+					const start = boundaries[index];
+					const end = boundaries[index + 1];
+					if (end <= start) continue;
+					const localStart = Math.max(0, Math.min(child.value.length, start - sourceStart));
+					const localEnd = Math.max(localStart, Math.min(child.value.length, end - sourceStart));
+					const value = child.value.slice(localStart, localEnd);
+					if (!value) continue;
+					const covering = applicable.filter((range) => range.start <= start && range.end >= end);
+					const primary = covering[0];
+					const highlightIds = Array.from(new Set(covering.flatMap((range) => range.ids)));
+					output.push({
+						type: primary ? "reviewHighlight" : "reviewSource",
+						data: {
+							hName: primary ? "mark" : "span",
+							hProperties: {
+								"data-source-start": start,
+								"data-source-end": end,
+								...(primary ? {
+									"data-review-highlight": "true",
+									"data-highlight-ids": highlightIds.join(","),
+									"data-highlight-color": primary.color,
+									"data-highlight-active": covering.some((range) => range.active) ? "true" : "false",
+									"data-highlight-dashed": covering.some((range) => range.dashed) ? "true" : "false",
+									"aria-label": `${highlightIds.length} note${highlightIds.length === 1 ? "" : "s"} on “${value}”`,
+								} : {}),
+							},
+						},
+						children: [{ type: "text", value }],
+					});
+				}
+			}
+			node.children = output;
+		}
+		transform(tree);
+	};
 }
 
 // Dependency-free remark transform: split text nodes on ||...|| into spoiler
@@ -205,11 +280,56 @@ const COMPONENTS: Components = {
 	td: ({ children }) => <td className={css({ borderBottom: "1px solid var(--border)", paddingInline: "0.75rem", paddingBlock: "0.5rem" })}>{children}</td>,
 };
 
-export function MarkdownBlock({ content, streaming = false }: MarkdownBlockProps) {
+const reviewMarkClass = css({
+	borderBottom: "1.5px solid",
+	background: "transparent",
+	color: "inherit",
+	cursor: "pointer",
+	transitionProperty: "background-color",
+	transitionDuration: "120ms",
+	_motionReduce: { transitionDuration: "0ms" },
+	_focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" },
+});
+const reviewMarkSolidClass = css({ borderBottomStyle: "solid" });
+const reviewMarkDashedClass = css({ borderBottomStyle: "dashed" });
+
+export function MarkdownBlock({ content, streaming = false, sourceMapped = false, highlights = [], onHighlightReveal, onHighlightConceal, onHighlightOpen }: MarkdownBlockProps) {
 	const plugins = useMemo(
-		() => ({ remark: [remarkGfm, remarkMath, remarkSpoiler], rehype: [rehypeKatex] }),
-		[],
+		() => ({ remark: [remarkGfm, remarkMath, ...(sourceMapped ? [remarkSourceMap(highlights)] : []), remarkSpoiler], rehype: [rehypeKatex] }),
+		[highlights, sourceMapped],
 	);
+	const components = useMemo<Components>(() => ({
+		...COMPONENTS,
+		mark({ children, ...props }) {
+			const attributes = props as Record<string, unknown>;
+			if (attributes["data-review-highlight"] !== "true") return <mark {...props}>{children}</mark>;
+			const ids = String(attributes["data-highlight-ids"] ?? "").split(",").filter(Boolean);
+			const color = String(attributes["data-highlight-color"] ?? "var(--accent)");
+			const active = attributes["data-highlight-active"] === "true";
+			const dashed = attributes["data-highlight-dashed"] === "true";
+			return (
+				<mark
+					{...props}
+					tabIndex={0}
+					role="button"
+					className={cx(reviewMarkClass, dashed ? reviewMarkDashedClass : reviewMarkSolidClass)}
+					style={{ borderBottomColor: color, background: active ? "color-mix(in srgb, var(--accent) 18%, transparent)" : "transparent" }}
+					onMouseEnter={(event) => onHighlightReveal?.(ids, event.currentTarget.getBoundingClientRect())}
+					onFocus={(event) => onHighlightReveal?.(ids, event.currentTarget.getBoundingClientRect())}
+					onMouseLeave={onHighlightConceal}
+					onBlur={onHighlightConceal}
+					onClick={(event) => onHighlightOpen?.(ids, event.currentTarget.getBoundingClientRect())}
+					onKeyDown={(event) => {
+						if (event.key !== "Enter" && event.key !== " ") return;
+						event.preventDefault();
+						onHighlightOpen?.(ids, event.currentTarget.getBoundingClientRect());
+					}}
+				>
+					{children}
+				</mark>
+			);
+		},
+	}), [onHighlightConceal, onHighlightOpen, onHighlightReveal]);
 
 	// Only an unterminated fence is still being written; a closed one is done
 	// even if the message itself keeps streaming prose after it.
@@ -220,7 +340,7 @@ export function MarkdownBlock({ content, streaming = false }: MarkdownBlockProps
 
 	return (
 		<StreamingCodeContext.Provider value={openFenceCode}>
-			<ReactMarkdown remarkPlugins={plugins.remark} rehypePlugins={plugins.rehype} components={COMPONENTS}>
+			<ReactMarkdown remarkPlugins={plugins.remark} rehypePlugins={plugins.rehype} components={components}>
 				{content}
 			</ReactMarkdown>
 		</StreamingCodeContext.Provider>

@@ -78,7 +78,6 @@ const browserOnlyToolOrder = [
   "prompt_eval",
   "timeline",
   "due",
-  "ask_user_question",
   "grade_question_checks",
   "remember_learner_profile",
   "set_learner_goal",

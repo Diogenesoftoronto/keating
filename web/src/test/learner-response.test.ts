@@ -4,10 +4,12 @@ import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import {
 	createOpenUIActionLearnerResponse,
 	createQuestionLearnerResponse,
+	learnerResponseReviewMarkdown,
 	learnerResponseReviewText,
 	parseLearnerResponse,
 	serializeLearnerResponse,
 } from "../keating/learner-response";
+import type { KeatingOpenUIAction } from "../keating/openui/types";
 import { sessionPreview, sessionSearchText } from "../hooks/session-metadata";
 
 const fixed = { id: "response-1", submittedAt: "2026-07-15T12:00:00.000Z" };
@@ -87,6 +89,59 @@ describe("learner response envelopes", () => {
 			"Marked for review: 1",
 		].join("\n"));
 		expect(learnerResponseReviewText(serialized)).not.toContain("mitochondria");
+	});
+
+	it("renders canonical question-group submissions as the learner's actual answer", () => {
+		const action = {
+			kind: "canonical",
+			type: "submit-question-group",
+			humanFriendlyMessage: "Answered 1 questions about Synth sounds in Strudel",
+			params: { type: "submit-question-group", nodeId: "check" },
+			document: { id: "synth-diagnostic", lifecycle: "ephemeral", revision: 0 },
+			action: {
+				schemaVersion: 1,
+				type: "submit-question-group",
+				documentId: "synth-diagnostic",
+				documentRevision: 0,
+				nodeId: "check",
+				responses: [{ questionId: "check-question-1", type: "choice", optionIds: [], text: "I used sawtooth and piano in the tutorial." }],
+				idempotencyKey: "web-ui-1",
+			},
+			sourceDocument: {
+				schemaVersion: 1,
+				id: "synth-diagnostic",
+				revision: 0,
+				lifecycle: "ready",
+				retention: "ephemeral",
+				supportedSurfaces: ["web"],
+				title: "Quick check",
+				nodes: [{
+					type: "question-group",
+					id: "check",
+					topic: "Synth sounds in Strudel",
+					questions: [{ id: "check-question-1", prompt: "Which synth sounds have you tried?", kind: "choice", choices: [] }],
+				}],
+				createdAt: fixed.submittedAt,
+				updatedAt: fixed.submittedAt,
+			},
+			receipt: {},
+		} as unknown as KeatingOpenUIAction;
+		const envelope = createOpenUIActionLearnerResponse(action, fixed);
+		// Simulate an older stored envelope whose generic review omitted the nested answers.
+		envelope.review = {
+			title: "Your response",
+			summary: action.humanFriendlyMessage,
+			items: [{ label: "Type", value: "submit-question-group" }, { label: "Node Id", value: "check" }],
+		};
+		const serialized = serializeLearnerResponse(envelope);
+
+		expect(learnerResponseReviewText(serialized)).toBe([
+			"Your response",
+			"1 question answered about Synth sounds in Strudel.",
+			"Which synth sounds have you tried?: I used sawtooth and piano in the tutorial.",
+		].join("\n"));
+		expect(learnerResponseReviewMarkdown(serialized)).toContain("**Which synth sounds have you tried?**");
+		expect(learnerResponseReviewMarkdown(serialized)).not.toContain("Node Id");
 	});
 
 	it("parses answers containing the envelope closing tag", () => {

@@ -203,6 +203,7 @@ export function adaptUiDocument(value: unknown): UiDocumentAdaptation {
 
 function inferredKind(toolName: string, details: Record<string, unknown>): LegacyUiDocumentKind {
   if (toolName === "quiz" || toolName === "grade_quiz" || details.quiz) return "quiz";
+  // Preserve imported results produced before conversational questions moved to OpenUI.
   if (toolName === "ask_user_question" || details.question || details.questions) return "question";
   if (details.goal || details.goals) return "goal";
   if (toolName === "deck" || details.deck || details.cards) return "deck";

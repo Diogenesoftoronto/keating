@@ -32,6 +32,12 @@ desktop/release/
 !web/public/brand/mascot-live-working.png
 !web/public/brand/masters/
 !web/public/brand/masters/*.png
+!web/public/avatars/
+!web/public/avatars/*.png
+!web/public/tutorial/
+!web/public/tutorial/*.png
+!docs/assets/screenshots/
+!docs/assets/screenshots/*.png
 !mobile/assets/*.png
 !mobile/assets/brand/*.png
 

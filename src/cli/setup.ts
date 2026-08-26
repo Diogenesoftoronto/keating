@@ -17,6 +17,7 @@ interface Choice<T extends string = string> {
 }
 
 const PROVIDERS: Choice[] = [
+  { label: "Not Organic Hosted", value: "notorganic", hint: "Balanced hosted inference; sign in with keating login" },
   { label: "OpenRouter (free)", value: "openrouter", hint: "Free models, no credit card required" },
   { label: "Zyphra Cloud", value: "zyphra", hint: "ZAYA1-8B local reasoning model" },
   { label: "Google", value: "google", hint: "Recommended for best performance" },
@@ -26,6 +27,9 @@ const PROVIDERS: Choice[] = [
 ];
 
 const MODELS_BY_PROVIDER: Record<string, Choice[]> = {
+  notorganic: [
+    { label: "Balanced", value: "balanced", hint: "Five-minute device-bound capability" }
+  ],
   zyphra: [
     { label: "ZAYA1-8B", value: "zyphra/ZAYA1-8B", hint: "Recommended" },
     { label: "Custom", value: "custom", hint: "Type a model name" }

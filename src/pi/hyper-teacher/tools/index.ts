@@ -3,7 +3,6 @@ import { selfEvaluationTools } from "./self-evaluation.js";
 import { selfEvolutionTools } from "./self-evolution.js";
 import { feedbackTools } from "./feedback.js";
 import { goalTools } from "./goals.js";
-import { askUserQuestionTools } from "./ask-user-question.js";
 
 const keatingToolRegistrations = new WeakSet<object>();
 
@@ -17,7 +16,6 @@ export function registerKeatingTools(pi: any): void {
     ...selfEvolutionTools,
     ...feedbackTools,
     ...goalTools,
-    ...askUserQuestionTools,
   ];
 
   for (const tool of tools) {

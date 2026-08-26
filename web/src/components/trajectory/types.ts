@@ -17,6 +17,22 @@ export interface TrajectorySessionMessage {
 	role: string;
 	ordinal: number;
 	text: string;
+	/** Markdown source shown in the rendered review view. */
+	markdown?: string;
+	/** Original message source shown by the Raw toggle when rendered text is normalized. */
+	rawSource?: string;
+	/** Sanitized structured source for exact inspection. */
+	raw?: string;
+	tools?: Array<{
+		kind: "call" | "result";
+		name: string;
+		callId?: string;
+		status: "pending" | "succeeded" | "failed";
+		input?: string;
+		output?: string;
+		details?: string;
+		isError?: boolean;
+	}>;
 	contentFingerprint: string;
 	timestamp?: number;
 	label?: string;

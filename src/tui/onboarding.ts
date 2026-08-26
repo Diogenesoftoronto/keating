@@ -52,22 +52,25 @@ export function shouldShowTuiOnboarding(
 
 export function onboardingMarkdown(options: TuiOnboardingOptions = {}): string {
   const providerLine = options.hasProvider === false
-    ? "Provider setup is not complete. Use **/settings** or **/shell** to repair access."
-    : "Your configured provider is ready. Ask a question to begin.";
+    ? "3. **Inference** — connect Not Organic with **keating login**, or use **/shell** for another provider."
+    : options.hasProvider === true
+      ? "3. **Inference** — your configured provider is ready; choose its model."
+      : "3. **Inference** — choose a connected provider and model.";
   return [
     "# Welcome to Keating",
     "",
-    "A local-first teaching workspace for questions, study plans, review cards, and courses.",
+    "A local-first teaching workspace where questions branch into sessions, evidence, study plans, and review.",
     "",
+    "## One-minute setup",
+    "",
+    "1. **Name** — enter what Keating should call you.",
+    "2. **Profile image** — use the built-in portrait, your initials, or a local image. The TUI reads it locally and never uploads it.",
     providerLine,
+    "   Not Organic uses **keating login** for a five-minute, device-bound session.",
     "",
-    "- Type a question and press **Enter**.",
-    "- Use **@path/to/file** to attach a text file to your prompt.",
-    "- Type **/** for commands, or **! command** for an explicit shell handoff.",
-    "- Press **Ctrl+F** to search this transcript and **Ctrl+P** for the command palette.",
-    "- Open **Courses** from the palette to continue a local course.",
+    "Then type a real question and press **Enter**. Use **@path/to/file** to include a text file.",
     "",
-    "The setup wizard will open now. You can cancel safely and reopen it later with **/setup**.",
+    "Change your name or profile image later with **/setup**, or open **[S] PROFILE** in the **Ctrl+B** side panel. The panel also holds the model, actions, and tree of forked sessions; **Ctrl+P** lists every command.",
   ].join("\n");
 }
 

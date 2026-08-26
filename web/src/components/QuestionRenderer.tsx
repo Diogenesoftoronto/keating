@@ -20,7 +20,7 @@ export interface BlankField {
 	hint?: string;
 }
 
-/** A single question within an ask_user_question form. */
+/** A single question within an OpenUI or legacy imported form. */
 export interface QuestionField {
 	/** Short chip/label shown above the question (e.g. "Goal", "Approach"). */
 	header?: string;

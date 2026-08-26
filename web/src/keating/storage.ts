@@ -352,7 +352,7 @@ export interface CardReviewRecord {
 	sessionId?: string;
 }
 
-/** A structured comprehension checkpoint from ask_user_question. */
+/** A structured comprehension checkpoint from an OpenUI Question response. */
 export interface QuestionCheckRecord {
 	id: string;
 	topic: string;

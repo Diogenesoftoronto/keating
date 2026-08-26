@@ -18,6 +18,7 @@ import ChatRoundLine from "reicon-react/icons/ChatRoundLine";
 import Check from "reicon-react/icons/Check";
 import ClipboardExport from "reicon-react/icons/ClipboardExport";
 import Compass from "reicon-react/icons/Compass";
+import Copy from "reicon-react/icons/Copy";
 import Eye from "reicon-react/icons/Eye";
 import Feather from "reicon-react/icons/Feather";
 import Gear from "reicon-react/icons/Gear";
@@ -71,6 +72,7 @@ export const reviewIcon = {
 	add: Plus as ReiconIcon,
 	retry: Refresh as ReiconIcon,
 	export: ClipboardExport as ReiconIcon,
+	copy: Copy as ReiconIcon,
 	search: Magnifier as ReiconIcon,
 	inspect: Eye as ReiconIcon,
 	settings: Sliders as ReiconIcon,

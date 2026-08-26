@@ -5,7 +5,7 @@ import { useReducedMotion } from "../hooks/use-media-query";
 import { ShaderField } from "./ShaderField";
 import { ScrambleText } from "./ScrambleText";
 
-type ChannelId = "web" | "tui" | "cli" | "tour";
+type ChannelId = "web" | "tui" | "onboarding" | "cli" | "tour";
 
 interface Channel {
   id: ChannelId;
@@ -17,7 +17,7 @@ interface Channel {
   poster: string;
 }
 
-/** Four tapes in one deck — the three surfaces, then the whole product in 32 seconds. */
+/** Five tapes in one deck — the surfaces, first minute, then the whole product. */
 const CHANNELS: Channel[] = [
   {
     id: "web",
@@ -33,16 +33,26 @@ const CHANNELS: Channel[] = [
     id: "tui",
     label: "TUI",
     slate: "CH 02 · TERMINAL",
-    title: "Keep the dialogue in your terminal.",
+    title: "Branch the dialogue in your terminal.",
     blurb:
-      "The same conversation, running through Pi. Plans, concept maps, and everything Keating knows about you stay one keystroke away.",
+      "A layered sidepanel, keyboard-first model and action rows with direct mouse support, custom avatars, and the full tree of forked sessions — including ASCII-safe paths.",
     src: "/tapes/tui-collaborative.mp4",
     poster: "/tapes/posters/tui-collaborative.jpg",
   },
   {
+    id: "onboarding",
+    label: "Onboard",
+    slate: "CH 03 · FIRST MINUTE",
+    title: "Make the terminal yours.",
+    blurb:
+      "Choose a name, generated portrait, initials, or a local image; then learn the panel, model, thinking, and focus controls without needing provider credentials.",
+    src: "/tapes/tui-onboarding.mp4",
+    poster: "/tapes/posters/tui-onboarding.jpg",
+  },
+  {
     id: "cli",
     label: "CLI",
-    slate: "CH 03 · ARTIFACTS",
+    slate: "CH 04 · ARTIFACTS",
     title: "Turn the lesson into files.",
     blurb:
       "One Special Relativity session becomes a plan, a concept map, a verification checklist, and a full trace — generated live, not staged for the camera.",
@@ -52,7 +62,7 @@ const CHANNELS: Channel[] = [
   {
     id: "tour",
     label: "Tour",
-    slate: "CH 04 · FULL TOUR",
+    slate: "CH 05 · FULL TOUR",
     title: "The whole room in 32 seconds.",
     blurb:
       "Every route shipping today, in order: model routing, live media, the review runway, courses, and publishing. Loading states and access gates included.",
@@ -66,7 +76,7 @@ interface ProductFeature {
   title: string;
   description: string;
   poster: string;
-  to: "/chat" | "/live" | "/coming-up" | "/courses" | "/blog";
+  to: "/chat" | "/live" | "/review" | "/coming-up" | "/courses" | "/blog";
   action: string;
 }
 
@@ -90,7 +100,16 @@ const PRODUCT_FEATURES: ProductFeature[] = [
     action: "Open Live",
   },
   {
-    label: "Review runway",
+    label: "Review desk",
+    title: "Mark the teaching, not just the answer.",
+    description:
+      "Browse the recorded turns, switch between rendered and raw text, and open the folded Margin or Model results when the review needs them.",
+    poster: "/tutorial/review-workspace.png",
+    to: "/review",
+    action: "Open Review",
+  },
+  {
+    label: "Return runway",
     title: "Turn sessions into a return path.",
     description:
       "What is due, what you flagged, and what still needs verifying — in one place, with two-way Anki transfer.",
@@ -100,10 +119,10 @@ const PRODUCT_FEATURES: ProductFeature[] = [
   },
   {
     label: "Courses",
-    title: "Make learning a room you return to.",
+    title: "Assemble the room before you teach in it.",
     description:
-      "Lessons, sources, shared notes, decks, and peer work kept together behind the Not Organic gateway.",
-    poster: "/tapes/posters/feature-courses.jpg",
+      "Start a blank course or select generated interaction cards from the artifact tray; empty plan and deck sections say what will appear there later.",
+    poster: "/tutorial/surface-course-builder.png",
     to: "/courses",
     action: "Explore Courses",
   },
@@ -183,9 +202,9 @@ export function SurfaceScreencasts() {
 
   function handleTabKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
     let nextIndex = activeIndex;
-    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+    if (event.key === "ArrowRight") {
       nextIndex = (activeIndex + 1) % CHANNELS.length;
-    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+    } else if (event.key === "ArrowLeft") {
       nextIndex = (activeIndex - 1 + CHANNELS.length) % CHANNELS.length;
     } else if (event.key === "Home") {
       nextIndex = 0;
@@ -224,19 +243,76 @@ export function SurfaceScreencasts() {
             gridTemplateColumns: { base: "1fr", md: "minmax(0, 1.1fr) minmax(0, 0.9fr)" },
           })}
         >
-          <h2
-            id="surface-screencasts-title"
-            className={css({
-              margin: 0,
-              fontFamily: "var(--mono-display)",
-              fontWeight: 700,
-              fontSize: { base: "2rem", md: "3.2rem" },
-              lineHeight: 1,
-              letterSpacing: "-0.035em",
-            })}
-          >
-            <ScrambleText text="Watch it work." />
-          </h2>
+          <div>
+            <h2
+              id="surface-screencasts-title"
+              className={css({
+                margin: 0,
+                fontFamily: "var(--mono-display)",
+                fontWeight: 700,
+                fontSize: { base: "2rem", md: "3.2rem" },
+                lineHeight: 1,
+                letterSpacing: "-0.035em",
+              })}
+            >
+              <ScrambleText text="Watch it work." />
+            </h2>
+            <div
+              className={css({
+                display: "flex",
+                alignItems: "center",
+                gap: "0.8rem",
+                marginTop: "1.25rem",
+              })}
+            >
+              <div
+                className={css({
+                  display: "flex",
+                  flexShrink: 0,
+                  paddingRight: "0.35rem",
+                })}
+                aria-label="Keatingbot, learner, and tutor portrait styles"
+              >
+                {[
+                  ["/avatars/keatingbot-newsprint.png", "Keatingbot in the terminal print style"],
+                  ["/avatars/learner-newsprint.png", "Generated learner portrait in the terminal print style"],
+                  ["/avatars/tutor-newsprint.png", "Generated tutor portrait in the terminal print style"],
+                ].map(([src, alt], index) => (
+                  <img
+                    key={src}
+                    src={src}
+                    alt={alt}
+                    width={54}
+                    height={54}
+                    loading="lazy"
+                    decoding="async"
+                    className={css({
+                      display: "block",
+                      width: "3.4rem",
+                      height: "3.4rem",
+                      marginLeft: index === 0 ? 0 : "-0.55rem",
+                      border: "2px solid var(--ink)",
+                      background: "var(--terminal)",
+                      boxShadow: "3px 3px 0 var(--accent-dim)",
+                      objectFit: "cover",
+                    })}
+                  />
+                ))}
+              </div>
+              <p
+                className={css({
+                  margin: 0,
+                  maxWidth: "30ch",
+                  color: "var(--ink-soft)",
+                  fontFamily: "var(--mono-body)",
+                  fontSize: "0.7rem",
+                  lineHeight: 1.45,
+                })}
+              >
+                One visual family for Keatingbot, tutor, and learner. Your own image can take the learner slot.
+              </p>
+            </div>
+          </div>
           <p
             className={css({
               margin: 0,
@@ -245,8 +321,8 @@ export function SurfaceScreencasts() {
               lineHeight: 1.7,
             })}
           >
-            Four tapes, recorded against the shipping build. Follow one question from the browser,
-            into the terminal, out to the files it leaves behind.
+            Five tapes, captured from the current Keating interface. Follow one question from the browser,
+            through a personal first minute, into the terminal, and out to the files it leaves behind.
           </p>
         </div>
 
@@ -417,7 +493,7 @@ export function SurfaceScreencasts() {
             className={css({
               display: "grid",
               borderTop: "3px solid var(--ink)",
-              gridTemplateColumns: { base: "repeat(2, minmax(0, 1fr))", md: "repeat(4, minmax(0, 1fr))" },
+              gridTemplateColumns: { base: "repeat(2, minmax(0, 1fr))", md: "repeat(5, minmax(0, 1fr))" },
             })}
           >
             {CHANNELS.map((channel, index) => {
@@ -442,8 +518,22 @@ export function SurfaceScreencasts() {
                     alignItems: "baseline",
                     gap: "0.5rem",
                     border: 0,
-                    borderRight: "2px solid var(--ink)",
-                    borderBottom: { base: "2px solid var(--ink)", md: "0" },
+                    borderRight: {
+                      base:
+                        index === CHANNELS.length - 1 && CHANNELS.length % 2 === 1
+                          ? 0
+                          : index % 2 === 0
+                            ? "2px solid var(--ink)"
+                            : 0,
+                      md: index === CHANNELS.length - 1 ? 0 : "2px solid var(--ink)",
+                    },
+                    borderBottom: {
+                      base:
+                        index < CHANNELS.length - (CHANNELS.length % 2 === 0 ? 2 : 1)
+                          ? "2px solid var(--ink)"
+                          : 0,
+                      md: 0,
+                    },
                     background: selected ? "var(--ink)" : "transparent",
                     color: selected ? "var(--paper)" : "var(--ink)",
                     padding: { base: "0.8rem 0.9rem", md: "0.95rem 1.2rem" },
@@ -455,7 +545,13 @@ export function SurfaceScreencasts() {
                     textAlign: "left",
                     textTransform: "uppercase",
                     transition: "background-color 140ms ease, color 140ms ease",
-                    _last: { borderRight: 0 },
+                    gridColumn: {
+                      base:
+                        index === CHANNELS.length - 1 && CHANNELS.length % 2 === 1
+                          ? "1 / -1"
+                          : "auto",
+                      md: "auto",
+                    },
                     _hover: {
                       background: selected ? "var(--ink)" : "color-mix(in srgb, var(--accent) 22%, transparent)",
                     },
@@ -550,7 +646,7 @@ export function SurfaceScreencasts() {
               },
             })}
           >
-            {PRODUCT_FEATURES.map((feature, index) => (
+            {PRODUCT_FEATURES.map((feature) => (
               <article
                 key={feature.label}
                 className={css({
@@ -561,7 +657,7 @@ export function SurfaceScreencasts() {
                   background: "var(--card)",
                   boxShadow: "4px 4px 0 var(--ink)",
                   transition: "transform 160ms ease, box-shadow 160ms ease",
-                  gridColumn: { base: "auto", lg: index < 2 ? "span 3" : "span 2" },
+                  gridColumn: { base: "auto", lg: "span 2" },
                   _hover: { transform: "translate(-2px, -2px)", boxShadow: "7px 7px 0 var(--accent-dim)" },
                 })}
               >
