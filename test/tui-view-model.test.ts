@@ -99,6 +99,7 @@ describe("TUI view model", () => {
 
   test("exposes the connected product surfaces through the command catalog", () => {
     expect(TUI_COMMANDS.map((command) => command.id)).toEqual([
+      "onboarding",
       "setup",
       "sessions",
       "library",
@@ -106,6 +107,7 @@ describe("TUI view model", () => {
       "courses",
       "share",
       "settings",
+      "debug",
       "model",
       "thinking",
       "new-session",

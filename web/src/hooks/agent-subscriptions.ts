@@ -1,5 +1,6 @@
 import type { Agent } from "@earendil-works/pi-agent-core";
 import { createAnimationArgAccumulator, emitAnimationProgress } from "../keating/tool-arg-stream";
+import { recordDiagnostic } from "../lib/diagnostics";
 
 interface AgentInterfaceLike {
   requestUpdate?: () => unknown;
@@ -26,6 +27,14 @@ export function subscribeAgentEvents(agent: Agent, panel: AgentPanelLike) {
   const animationArgs = createAnimationArgAccumulator();
 
   return agent.subscribe((ev) => {
+    if (ev.type === "agent_start" || ev.type === "agent_end") {
+      recordDiagnostic("info", "agent", ev.type === "agent_start" ? "Agent turn started" : "Agent turn ended", {
+        provider: agent.state.model.provider,
+        model: agent.state.model.id,
+        message_count: agent.state.messages.length,
+      });
+    }
+
     if (ev.type === "message_end" || ev.type === "agent_end" || ev.type === "message_update" || ev.type === "message_start") {
       const msgs = agent.state.messages;
       agent.state.messages = [...msgs];

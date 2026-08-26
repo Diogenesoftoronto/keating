@@ -85,6 +85,56 @@ export function keatingLogoLabel(glyphMode: LogoGlyphMode = "unicode"): string {
   return glyphMode === "ascii" ? "KEATING" : "◆ KEATING";
 }
 
+export const KEATING_STEREOGRAM_WIDTH = 48;
+export const KEATING_STEREOGRAM_HEIGHT = 10;
+
+function isKeatingKPoint(x: number, y: number): boolean {
+  if (x >= 0 && x <= 4 && y >= 0 && y <= 9) return true;
+  if (x < 3 || x > 27) return false;
+  const upperArm = 4.8 - ((x - 3) * 0.2);
+  const lowerArm = 4.2 + ((x - 3) * 0.22);
+  return Math.abs(y - upperArm) <= 1.15 || Math.abs(y - lowerArm) <= 1.15;
+}
+
+/**
+ * Large terminal-native stereogram of Keating's K mark. Several sparse depth
+ * planes are projected back-to-front; a slow bounded yaw changes their spacing
+ * without ever making the mark illegible or requiring terminal graphics.
+ */
+export function keatingStereogramFrame(frame = 0, glyphMode: LogoGlyphMode = "unicode"): string {
+  const phase = Math.abs(Math.floor(frame)) % 24;
+  const yaw = Math.sin((phase / 24) * Math.PI * 2);
+  const faceScale = 0.9 + (Math.cos((phase / 24) * Math.PI * 2) * 0.08);
+  const glyphs = glyphMode === "ascii"
+    ? [".", ":", "o", "O", "@"]
+    : ["·", "⠂", "•", "●", "◆"];
+  const cells = Array.from({ length: KEATING_STEREOGRAM_HEIGHT }, () =>
+    Array.from({ length: KEATING_STEREOGRAM_WIDTH }, () => " "));
+
+  for (let depth = 0; depth < glyphs.length; depth += 1) {
+    const depthOffsetX = Math.round(depth * (1.15 + (yaw * 0.35)));
+    const depthOffsetY = Math.round(depth * 0.18);
+    for (let row = 0; row < KEATING_STEREOGRAM_HEIGHT; row += 1) {
+      for (let column = 0; column < KEATING_STEREOGRAM_WIDTH; column += 1) {
+        const localX = (column - 7 - depthOffsetX) / faceScale;
+        const localY = row - depthOffsetY;
+        if (!isKeatingKPoint(localX, localY)) continue;
+        // A stable checker leaves enough negative space for the depth planes
+        // to remain visible instead of collapsing into a solid raster.
+        if ((column + row + depth) % 2 !== 0) continue;
+        cells[row]![column] = glyphs[depth]!;
+      }
+    }
+  }
+
+  return cells.map((row) => row.join("").trimEnd()).join("\n");
+}
+
+/** Compatibility name for embedders of the first animated onboarding mark. */
+export function keatingObjectFrame(frame = 0, glyphMode: LogoGlyphMode = "unicode"): string {
+  return keatingStereogramFrame(frame, glyphMode);
+}
+
 export type KeatingSplashMode = "full" | "compact" | "hidden";
 
 export interface KeatingSplashLayoutOptions {
@@ -125,6 +175,13 @@ export function keatingSplashMode(options: KeatingSplashLayoutOptions): KeatingS
   return width >= 20 && height >= compactHeight ? "compact" : "hidden";
 }
 
-export function shouldAnimateLogo(env: Readonly<Record<string, string | undefined>> = process.env): boolean {
-  return env.KEATING_NO_MOTION !== "1" && env.KEATING_NO_MOTION !== "true" && env.TERM !== "dumb";
+export function shouldAnimateLogo(
+  env: Readonly<Record<string, string | undefined>> = process.env,
+  interactive = true,
+): boolean {
+  const reduced = env.KEATING_NO_MOTION === "1"
+    || env.KEATING_NO_MOTION === "true"
+    || env.REDUCE_MOTION === "1"
+    || env.REDUCE_MOTION === "true";
+  return interactive && !reduced && env.TERM !== "dumb";
 }

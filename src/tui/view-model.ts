@@ -44,13 +44,14 @@ export const EMPTY_HEADER_STATE: TuiHeaderState = {
 };
 
 export interface TuiCommand {
-  id: "setup" | "sessions" | "library" | "review" | "courses" | "share" | "settings" | "model" | "thinking" | "new-session" | "abort" | "retry" | "shell";
+  id: "onboarding" | "setup" | "sessions" | "library" | "review" | "courses" | "share" | "settings" | "debug" | "model" | "thinking" | "new-session" | "abort" | "retry" | "shell";
   label: string;
   shortcut?: string;
   description: string;
 }
 
 export const TUI_COMMANDS: readonly TuiCommand[] = [
+  { id: "onboarding", label: "Replay onboarding", description: "Reset and replay the keyboard-first Keating tour" },
   { id: "setup", label: "Profile & setup", description: "Change your name or profile image; configure providers, model, thinking, and runtime defaults" },
   { id: "sessions", label: "Sessions", shortcut: "Ctrl+S", description: "Resume, rename, or fork a saved learning session" },
   { id: "library", label: "Library", shortcut: "Ctrl+L", description: "Preview, export, or recoverably remove a saved artifact" },
@@ -58,6 +59,7 @@ export const TUI_COMMANDS: readonly TuiCommand[] = [
   { id: "courses", label: "Courses", shortcut: "Ctrl+O", description: "Browse local or hosted courses and continue a lesson" },
   { id: "share", label: "Share session", description: "Publish a read-only web rendering of this session" },
   { id: "settings", label: "Settings", description: "Inspect capabilities and change real Pi runtime behavior" },
+  { id: "debug", label: "Debug service", description: "Inspect context, runtime events, tools, and Pi process diagnostics" },
   { id: "model", label: "Select model", shortcut: ":m", description: "Search and select an authenticated Pi model" },
   { id: "thinking", label: "Change thinking", shortcut: "Ctrl+T", description: "Cycle the reasoning level" },
   { id: "new-session", label: "New session", shortcut: "Ctrl+N", description: "Start a fresh learning session" },
