@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { BookOpen, Brain, Cpu, Settings2, X } from "lucide-react";
+import { BookOpen, Brain, Bug, Cpu, Settings2, X } from "lucide-react";
 import { css, cx } from "../../styled-system/css";
 
 export interface SettingsTabDef {
@@ -222,6 +222,7 @@ export function SettingsDialog({ open, tabs, onClose, defaultTabId }: SettingsDi
 		if (id === "models") return <Cpu size={15} />;
 		if (id === "learning") return <Brain size={15} />;
 		if (id === "app") return <Settings2 size={15} />;
+		if (id === "diagnostics") return <Bug size={15} />;
 		return <BookOpen size={15} />;
 	};
 

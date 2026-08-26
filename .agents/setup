@@ -1,0 +1,121 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+readonly BUN_VERSION="1.3.13"
+
+cd "$REPO_ROOT"
+
+install_system_dependencies() {
+  local packages=(build-essential ca-certificates curl git python3 unzip)
+  local missing=()
+  local package
+
+  if ! command -v dpkg-query >/dev/null 2>&1; then
+    return
+  fi
+
+  for package in "${packages[@]}"; do
+    if ! dpkg-query -W -f='${Status}' "$package" 2>/dev/null | grep -q 'ok installed'; then
+      missing+=("$package")
+    fi
+  done
+
+  if ((${#missing[@]} == 0)); then
+    return
+  fi
+
+  local apt=(apt-get)
+  if ((EUID != 0)); then
+    if ! command -v sudo >/dev/null 2>&1; then
+      echo "Missing system packages and sudo is unavailable: ${missing[*]}" >&2
+      exit 1
+    fi
+    apt=(sudo apt-get)
+  fi
+
+  echo "Installing missing system packages: ${missing[*]}"
+  "${apt[@]}" update
+  DEBIAN_FRONTEND=noninteractive "${apt[@]}" install -y --no-install-recommends "${missing[@]}"
+}
+
+require_supported_node() {
+  if ! command -v node >/dev/null 2>&1; then
+    echo "Node.js >=20.19.0 is required by package.json and is not installed." >&2
+    exit 1
+  fi
+
+  local major minor
+  major="$(node -p 'process.versions.node.split(".")[0]')"
+  minor="$(node -p 'process.versions.node.split(".")[1]')"
+  if ((major < 20 || (major == 20 && minor < 19))); then
+    echo "Node.js >=20.19.0 is required; found $(node --version)." >&2
+    exit 1
+  fi
+}
+
+install_bun() {
+  local bun_bin=""
+  local user_bun="$HOME/.bun/bin/bun"
+  if [[ -x "$user_bun" && "$("$user_bun" --version)" == "$BUN_VERSION" ]]; then
+    bun_bin="$user_bun"
+  else
+    bun_bin="$(command -v bun || true)"
+  fi
+
+  if [[ -z "$bun_bin" || "$("$bun_bin" --version)" != "$BUN_VERSION" ]]; then
+    echo "Installing Bun $BUN_VERSION in $HOME/.bun"
+    curl -fsSL https://bun.sh/install | bash -s "bun-v$BUN_VERSION"
+    bun_bin="$user_bun"
+  fi
+
+  if [[ ! -x "$bun_bin" || "$("$bun_bin" --version)" != "$BUN_VERSION" ]]; then
+    echo "Unable to install the required Bun $BUN_VERSION toolchain." >&2
+    exit 1
+  fi
+
+  export BUN_INSTALL="${BUN_INSTALL:-$HOME/.bun}"
+  case ":$PATH:" in
+    *":$(dirname "$bun_bin"):"*) ;;
+    *) export PATH="$(dirname "$bun_bin"):$PATH" ;;
+  esac
+
+  readonly PROFILE_MARKER="# Keating orb Bun toolchain"
+  local profile
+  for profile in "$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.profile"; do
+    if grep -Fq "$PROFILE_MARKER" "$profile" 2>/dev/null; then
+      continue
+    fi
+    cat >>"$profile" <<'EOF'
+
+# Keating orb Bun toolchain
+export BUN_INSTALL="$HOME/.bun"
+if [ -d "$BUN_INSTALL/bin" ]; then
+  case ":$PATH:" in
+    *":$BUN_INSTALL/bin:"*) ;;
+    *) export PATH="$BUN_INSTALL/bin:$PATH" ;;
+  esac
+fi
+EOF
+  done
+}
+
+install_dependencies() {
+  echo "Installing root workspace dependencies"
+  env -u CPLUS_INCLUDE_PATH -u C_INCLUDE_PATH -u LIBRARY_PATH \
+    bun install --frozen-lockfile
+
+  echo "Installing web dependencies"
+  (
+    cd web
+    bun install --frozen-lockfile
+  )
+}
+
+install_system_dependencies
+require_supported_node
+install_bun
+install_dependencies
+
+echo "Keating orb setup complete (Bun $(bun --version), Node $(node --version))."
+echo "Builds and tests need no secrets; model-provider logins are optional at runtime."

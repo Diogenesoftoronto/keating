@@ -106,6 +106,7 @@ describe("TUI view model", () => {
       "courses",
       "share",
       "settings",
+      "debug",
       "model",
       "thinking",
       "new-session",

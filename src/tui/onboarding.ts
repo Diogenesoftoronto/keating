@@ -52,7 +52,7 @@ export function shouldShowTuiOnboarding(
 
 export function onboardingMarkdown(options: TuiOnboardingOptions = {}): string {
   const providerLine = options.hasProvider === false
-    ? "3. **Inference** — connect Not Organic with **keating login**, or use **/shell** for another provider."
+    ? "3. **Inference** — connect Not Organic with **keating login**, or connect another provider directly from **/settings** or the model picker."
     : options.hasProvider === true
       ? "3. **Inference** — your configured provider is ready; choose its model."
       : "3. **Inference** — choose a connected provider and model.";
@@ -68,7 +68,11 @@ export function onboardingMarkdown(options: TuiOnboardingOptions = {}): string {
     providerLine,
     "   Not Organic uses **keating login** for a five-minute, device-bound session.",
     "",
-    "Then type a real question and press **Enter**. Use **@path/to/file** to include a text file.",
+    "- Type a question and press **Enter**.",
+    "- Use **@path/to/file** to attach a text file to your prompt; press **Tab** after `@` to browse project files.",
+    "- Type **/** for commands, or **! command** for an explicit shell handoff.",
+    "- Press **Ctrl+F** to search this transcript and **Ctrl+P** for the command palette.",
+    "- Open **Courses** from the palette to continue a local course.",
     "",
     "Change your name or profile image later with **/setup**, or open **[S] PROFILE** in the **Ctrl+B** side panel. The panel also holds the model, actions, and tree of forked sessions; **Ctrl+P** lists every command.",
   ].join("\n");

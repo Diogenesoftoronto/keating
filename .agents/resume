@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO_ROOT"
+
+export BUN_INSTALL="${BUN_INSTALL:-$HOME/.bun}"
+if [[ -d "$BUN_INSTALL/bin" && ":$PATH:" != *":$BUN_INSTALL/bin:"* ]]; then
+  export PATH="$BUN_INSTALL/bin:$PATH"
+fi
+
+if ! command -v bun >/dev/null 2>&1 \
+  || [[ "$(bun --version)" != "1.3.13" ]] \
+  || [[ ! -d node_modules || ! -d web/node_modules ]]; then
+  "$REPO_ROOT/.agents/setup"
+else
+  env -u CPLUS_INCLUDE_PATH -u C_INCLUDE_PATH -u LIBRARY_PATH \
+    bun install --frozen-lockfile --silent
+  (
+    cd web
+    bun install --frozen-lockfile --silent
+  )
+fi
+
+pending_paths="$(git status --short | wc -l | tr -d ' ')"
+echo "Keating workspace resumed with Bun $(bun --version); $pending_paths pending worktree path(s) preserved."
+echo "Quick checks: bun test ./test/*.test.ts | cd web && bun test"
+echo "Web UI: amp orb service start keating-web --command 'cd web && bun run dev' --portal"
