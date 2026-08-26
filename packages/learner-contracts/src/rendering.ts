@@ -4,7 +4,7 @@ import type { UiDocument } from "./ui.js";
  * Increment when a fixture's semantics change so downstream renderers can
  * deliberately refresh their recovery and visual-regression snapshots.
  */
-export const RENDERING_FIXTURE_PACK_VERSION = 2 as const;
+export const RENDERING_FIXTURE_PACK_VERSION = 3 as const;
 
 export const RENDERING_FIXTURE_MARKDOWN_LIMIT = 65_536 as const;
 export const RENDERING_FIXTURE_DOCUMENT_NODE_LIMIT = 64 as const;
@@ -79,7 +79,7 @@ export function detectSupportedMermaidGrammar(source: string): WebMermaidGrammar
 
 export const WEB_OPENUI_COMPONENTS = [
   "LearningSurface", "Explanation", "Callout", "Question", "Quiz", "Flashcards",
-  "StudyPlan", "ConceptMap", "LearningImage", "LearningAnimation", "SharedNotes",
+  "StudyPlan", "ConceptMap", "LearningImage", "SharedNotes",
 ] as const;
 
 export interface MermaidParityFixture {
@@ -142,7 +142,7 @@ export const MERMAID_PARITY_FIXTURES: readonly MermaidParityFixture[] = [
 
 /** One parser-valid browser program containing every registered Keating OpenUI component. */
 export const OPENUI_SOURCE_PARITY_FIXTURE = [
-  'root = LearningSurface([explanation, callout, question, quiz, flashcards, plan, map, image, animation, notes], "Rendering parity", "Every registered component in one semantic fixture.", "workspace")',
+  'root = LearningSurface([explanation, callout, question, quiz, flashcards, plan, map, image, notes], "Rendering parity", "Every registered component in one semantic fixture.", "workspace")',
   'explanation = Explanation("## A compact explanation\\nThe posterior combines prior belief and evidence.", "Explanation")',
   'callout = Callout("Do not confuse confidence with observed evidence.", "warning", "Check the claim")',
   'question = Question([{ header: "Choice", question: "What changes a posterior?", type: "choice", choices: ["Observed evidence", "New notation"] }, { header: "Explain", question: "Why does evidence matter?", type: "text" }, { header: "Recall", question: "A belief before evidence is the ___.", type: "blanks", blanks: [{ placeholder: "term" }] }, { header: "Classify", question: "Classify each item.", type: "classification", items: ["prior", "likelihood"], choices: ["belief", "evidence model"], requireReasons: true }, { header: "Match", question: "Match each term.", type: "matching", items: ["prior", "posterior"], choices: ["before evidence", "after evidence"], correctMatches: ["before evidence", "after evidence"] }], "resumable", "Bayes", "Use every conversational question format.")',
@@ -151,7 +151,6 @@ export const OPENUI_SOURCE_PARITY_FIXTURE = [
   'plan = StudyPlan("rendering-plan", "Bayes study plan", [{ id: "foundation", title: "Build the model", detail: "Connect prior, likelihood, and posterior.", estimatedMinutes: 20, outcomes: ["Explain the update"], children: [{ id: "retrieve", title: "Retrieve the terms", detail: "Answer without notes." }] }], "workspace", "A nested plan fixture.")',
   'map = ConceptMap("flowchart LR\\n  Prior --> Evidence --> Posterior", "workspace", "Concept map")',
   'image = LearningImage("https://example.com/bayes.png", "A probability update diagram", "workspace", "Learning image", "Consent-gated remote media.")',
-  'animation = LearningAnimation("Bayes", "<html><body><main>Safe fixture source</main></body></html>", "workspace", "A sandboxed animation fixture.")',
   'notes = SharedNotes("rendering-notes", "Learner notes", "workspace", "My current model", "Write what remains unclear.")',
 ].join("\n");
 

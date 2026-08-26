@@ -11,7 +11,7 @@ import {
 const AT = "2026-08-10T00:00:00.000Z";
 
 describe("trusted OpenUI source compiler", () => {
-  test("compiles fixture pack v2 through every registered component mapper", () => {
+  test("compiles fixture pack v3 through every registered component mapper", () => {
     const document = compileOpenUISourceToSharedDocument(OPENUI_SOURCE_PARITY_FIXTURE, {
       documentId: "session-1-message-1-openui-1",
       createdAt: AT,
@@ -22,10 +22,11 @@ describe("trusted OpenUI source compiler", () => {
     expect(document.retention).toBe("workspace");
     expect(document.nodes.map((node) => node.type)).toEqual([
       "markdown", "callout", "question-group", "quiz", "deck", "study-plan",
-      "concept-map", "image", "handoff", "notes",
+      "concept-map", "image", "notes",
     ]);
-    const handoff = document.nodes.find((node) => node.type === "handoff");
-    expect(handoff?.type === "handoff" ? handoff.context : "").not.toContain("<html>");
+    // The current generation fixture contains only advertised components. Persisted
+    // LearningAnimation programs are covered separately as a compile-only legacy path.
+    expect(document.nodes.some((node) => node.type === "handoff")).toBe(false);
   });
 
   test("accepts the browser object form without evaluating it", () => {

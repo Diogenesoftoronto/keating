@@ -34,7 +34,7 @@ describe("mobile OpenUI document wire", () => {
       "After",
     ].join("\n"));
 
-    expect(RENDERING_FIXTURE_PACK_VERSION).toBe(2);
+    expect(RENDERING_FIXTURE_PACK_VERSION).toBe(3);
     expect(parsed.errors).toEqual([]);
     expect(parsed.documents).toEqual([OPENUI_JSON_PARITY_FIXTURE, NESTED_RENDERING_DOCUMENT_FIXTURE]);
     expect(parsed.content).toBe("Before\nAfter");
@@ -76,7 +76,7 @@ describe("mobile OpenUI document wire", () => {
     expect(parsed.documents[0]?.retention).toBe("workspace");
     expect(parsed.documents[0]?.nodes.map((node) => node.type)).toEqual([
       "markdown", "callout", "question-group", "quiz", "deck", "study-plan",
-      "concept-map", "image", "handoff", "notes",
+      "concept-map", "image", "notes",
     ]);
     expect(parsed.content).toBe("Before\nAfter");
     expect(parsed.content).not.toContain("LearningSurface");
