@@ -16,6 +16,11 @@ import {
   tuiProfilePath,
   validateCustomAvatarPath,
 } from "../src/tui/profile.js";
+import {
+  configureTuiProfile,
+  parseProfileCommandArgs,
+  PROFILE_HELP,
+} from "../src/cli/profile.js";
 import { sacredTextWidth } from "../src/tui/sacred.js";
 
 describe("TUI profile avatars", () => {
@@ -48,6 +53,28 @@ describe("TUI profile avatars", () => {
     await saveTuiProfile(cwd, { schemaVersion: 1, displayName: "Octavia Butler", avatar: { kind: "initials", initials: "OB" } });
     expect(await loadTuiProfile(cwd)).toEqual({ schemaVersion: 1, displayName: "Octavia Butler", avatar: { kind: "initials", initials: "OB" } });
     expect(JSON.parse(await readFile(tuiProfilePath(cwd), "utf8"))).toMatchObject({ displayName: "Octavia Butler" });
+  });
+
+  test("configures every profile image choice through the standalone CLI contract", async () => {
+    const cwd = await mkdtemp(join(tmpdir(), "keating-tui-profile-cli-"));
+    const image = join(cwd, "portrait.png");
+    await new Jimp({ width: 8, height: 8, color: 0x33aa66ff }).write(image);
+
+    expect(parseProfileCommandArgs(["--name=Ada Lovelace", "--image=./portrait.png"])).toEqual({
+      help: false,
+      options: { name: "Ada Lovelace", image: "./portrait.png" },
+    });
+    expect(PROFILE_HELP).toContain("keating tui");
+    expect(PROFILE_HELP).toContain("/setup");
+    expect(await configureTuiProfile(cwd, { name: "Ada Lovelace", image: "./portrait.png" })).toEqual({
+      schemaVersion: 1,
+      displayName: "Ada Lovelace",
+      avatar: { kind: "custom", path: image },
+    });
+    expect((await configureTuiProfile(cwd, { initials: "AL" })).avatar).toEqual({ kind: "initials", initials: "AL" });
+    expect((await configureTuiProfile(cwd, { learner: true })).avatar).toEqual({ kind: "learner" });
+    expect(() => parseProfileCommandArgs(["--image=a.png", "--learner"])).toThrow("Choose only one");
+    expect(() => parseProfileCommandArgs(["--unknown"])).toThrow("Unknown profile option");
   });
 
   test("accepts bounded local images and rejects URLs and unsupported files", async () => {

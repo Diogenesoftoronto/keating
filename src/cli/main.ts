@@ -65,6 +65,7 @@ function printUsage(): void {
   console.log(`  ${color.primary}shell${color.reset}  [initial prompt...]  Launch the AI-powered hyperteacher shell`);
   console.log(`  ${color.primary}tui${color.reset}    [initial prompt...]  Launch the OpenTUI host over Pi RPC`);
   console.log(`  ${color.primary}setup${color.reset}  [--yes]             Configure Keating for this project`);
+  console.log(`  ${color.primary}profile${color.reset} [--name=…] [--image=…|--initials=…|--learner]  Configure TUI identity`);
   console.log(`  ${color.primary}login${color.reset}  [notorganic] [--manual|--status]  Connect five-minute hosted inference`);
   console.log(`  ${color.primary}logout${color.reset} [notorganic]             Remove the hosted capability`);
   console.log(`  ${color.primary}auth${color.reset}    status                   Inspect hosted capability status`);
@@ -682,6 +683,11 @@ async function run(): Promise<void> {
     }
     case "setup": {
       await setupProject(cwd, args);
+      return;
+    }
+    case "profile": {
+      const { runProfileCommand } = await import("./profile.js");
+      await runProfileCommand(cwd, args);
       return;
     }
     case "package":

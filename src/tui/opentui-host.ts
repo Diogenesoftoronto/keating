@@ -83,10 +83,20 @@ import {
   type TuiCourseLesson,
   type TuiCourseModule,
 } from "./courses.js";
-import { onboardingMarkdown, loadTuiOnboardingState, markTuiOnboardingSeen, shouldShowTuiOnboarding } from "./onboarding.js";
+import {
+  loadTuiOnboardingState,
+  markTuiOnboardingSeen,
+  navigateTuiOnboarding,
+  resetTuiOnboarding,
+  shouldShowTuiOnboarding,
+  tuiOnboardingActionForKey,
+  tuiOnboardingLayout,
+  tuiOnboardingPages,
+} from "./onboarding.js";
 import {
   keatingLogoFrame,
   keatingLogoLabel,
+  keatingObjectFrame,
   keatingSplashMode,
   keatingWordmarkHeight,
   shouldAnimateLogo,
@@ -290,6 +300,38 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
     height: 1,
     width: "100%",
   });
+  const onboarding = new BoxRenderable(renderer, {
+    id: "keating-open-tui-onboarding",
+    flexGrow: 1,
+    width: "100%",
+    flexDirection: "column",
+    alignItems: "center",
+    paddingTop: 1,
+    paddingBottom: 1,
+    gap: 1,
+    visible: false,
+  });
+  const onboardingObject = new TextRenderable(renderer, {
+    id: "keating-open-tui-onboarding-object",
+    content: keatingObjectFrame(0, presentationProfile.design.glyphMode),
+    fg: accentColor,
+    width: 48,
+    height: 10,
+  });
+  const onboardingCopy = new TextRenderable(renderer, {
+    id: "keating-open-tui-onboarding-copy",
+    content: "",
+    fg: textColor,
+    width: "82%",
+    flexGrow: 1,
+  });
+  const onboardingProgress = new TextRenderable(renderer, {
+    id: "keating-open-tui-onboarding-progress",
+    content: "",
+    fg: mutedColor,
+    width: 72,
+    height: 2,
+  });
   // Welcome state: the brand mark owns the empty workspace, then steps aside.
   const splash = new BoxRenderable(renderer, {
     id: "keating-open-tui-splash",
@@ -386,7 +428,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
   const inputFrame = new BoxRenderable(renderer, {
     id: "keating-open-tui-input-frame",
     width: "100%",
-    height: 3,
+    height: 5,
     border: true,
     borderStyle: presentationProfile.design.glyphMode === "ascii" ? "single" : "rounded",
     customBorderChars,
@@ -394,6 +436,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
     flexDirection: "row",
     paddingLeft: 1,
     paddingRight: 1,
+    alignItems: "center",
     gap: 1,
   });
   const inputPrompt = new TextRenderable(renderer, {
@@ -420,9 +463,13 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
   workspace.add(activityRail);
   inputFrame.add(inputPrompt);
   inputFrame.add(input);
+  onboarding.add(onboardingObject);
+  onboarding.add(onboardingCopy);
+  onboarding.add(onboardingProgress);
   splash.add(logo);
   splash.add(splashHint);
   shell.add(header);
+  shell.add(onboarding);
   shell.add(splash);
   shell.add(workspace);
   shell.add(indicator);
@@ -446,7 +493,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
   let headerState: TuiHeaderState = { ...EMPTY_HEADER_STATE };
   let headerLabel = "keating";
   let sidebarSessionTree: ReturnType<typeof tuiSessionTreeRows> = [];
-  let sidebarExpanded = true;
+  let sidebarExpanded = false;
   let sidebarWidth = currentSidebarWidth(renderer.terminalWidth);
   let sidebarWasResized = false;
   let refreshSidebarSessions: () => Promise<void> = async () => {};
@@ -467,7 +514,11 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
   let activeUiDocument: UiDocument | null = null;
   let activeUiControls: UiDocumentControl[] = [];
   let leaderActive = false;
-  let onboardingSplashActive = false;
+  let onboardingActive = false;
+  let onboardingPageIndex = 0;
+  let onboardingObjectFrame = 0;
+  let onboardingObjectElapsed = 0;
+  let suppressEmptySplash = false;
   let firstRunHasProvider: boolean | undefined;
   let activeSplashMode: ReturnType<typeof keatingSplashMode> = "hidden";
   const promptRecovery = new TuiPromptRecovery(client);
@@ -599,8 +650,8 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
   };
   /** The welcome mark owns the workspace until the transcript has something in it. */
   const updateSplash = () => {
-    const empty = entries.length === 0 && streaming === null;
-    const hintLines = onboardingSplashActive ? 3 : 2;
+    const empty = entries.length === 0 && streaming === null && !suppressEmptySplash;
+    const hintLines = 2;
     const mode = keatingSplashMode({
       width: renderer.terminalWidth,
       height: renderer.terminalHeight,
@@ -616,8 +667,31 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       ? keatingWordmarkHeight(presentationProfile.design.glyphMode)
       : 1;
     splashHint.height = hintLines;
-    splash.visible = empty && mode !== "hidden";
-    workspace.visible = !splash.visible;
+    splash.visible = !onboardingActive && empty && mode !== "hidden";
+    workspace.visible = !onboardingActive && !splash.visible;
+    inputFrame.visible = !onboardingActive;
+    status.visible = !onboardingActive;
+    indicator.visible = !onboardingActive && busy;
+  };
+
+  const renderOnboarding = () => {
+    const pages = tuiOnboardingPages({ version: KEATING_VERSION, hasProvider: firstRunHasProvider });
+    const page = pages[Math.min(onboardingPageIndex, pages.length - 1)]!;
+    const layout = tuiOnboardingLayout(renderer.terminalWidth, renderer.terminalHeight);
+    onboarding.visible = onboardingActive;
+    onboardingObject.visible = onboardingActive && layout === "full";
+    onboardingObject.height = 10;
+    onboardingCopy.width = layout === "minimal" ? "100%" : layout === "compact" ? "94%" : "82%";
+    onboardingProgress.width = Math.max(20, Math.min(72, renderer.terminalWidth - (2 * currentLayout.shellPadding)));
+    onboardingCopy.content = layout === "minimal"
+      ? `${page.title.toUpperCase()}\n\nResize to at least 42 × 15 to read this step.`
+      : `${page.title.toUpperCase()}\n\n${page.body.join("\n\n")}`;
+    const finalPage = onboardingPageIndex === pages.length - 1;
+    onboardingProgress.content = [
+      `${onboardingPageIndex + 1}/${pages.length}`,
+      `${finalPage ? "Space  choose name + image" : "Space  continue"}  ·  Backspace/←  back  ·  S/Esc  ${finalPage ? "skip to prompt" : "skip"}`,
+    ].join("\n");
+    updateSplash();
   };
   /**
    * Re-parsing the whole transcript on every token is the expensive part of
@@ -680,19 +754,13 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
         && presentationProfile.design.glyphMode === "unicode"
         && currentLayout.size === "wide",
     };
-    splashHint.content = onboardingSplashActive
-      ? [
-        "First run · make Keating yours",
-        "Enter  set your name + profile image",
-        "or type a question now · /setup changes your profile later",
-      ].join("\n")
-      : [
-        `${cwd}`,
-        currentLayout.compactStatus
-          ? "Ctrl+P commands  ·  Ctrl+M model"
-          : "Ctrl+P commands  ·  Ctrl+S sessions  ·  Ctrl+M model  ·  Ctrl+T thinking",
-      ].join("\n");
-    updateSplash();
+    splashHint.content = [
+      `${cwd}`,
+      currentLayout.compactStatus
+        ? "Ctrl+P commands  ·  Ctrl+M model"
+        : "Ctrl+P commands  ·  Ctrl+S sessions  ·  Ctrl+M model  ·  Ctrl+T thinking",
+    ].join("\n");
+    renderOnboarding();
     renderHeader();
     if (!busy) status.content = idleStatus();
     renderTranscript();
@@ -700,13 +768,13 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
   updateResponsiveLayout();
   renderer.on(CliRenderEvents.RESIZE, updateResponsiveLayout);
 
-  const motion = shouldAnimateLogo(process.env);
+  const motion = shouldAnimateLogo(process.env, process.stdout.isTTY === true);
   let spinnerFrameIndex = 0;
   let spinnerElapsed = 0;
   let logoElapsed = 0;
   let logoFrame = 0;
   const paintIndicator = () => {
-    indicator.visible = busy;
+    indicator.visible = !onboardingActive && busy;
     if (!busy) return;
     indicator.content = activityIndicatorText({
       phase: activityPhase,
@@ -725,6 +793,14 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
         spinnerElapsed = 0;
         if (motion) spinnerFrameIndex += 1;
         paintIndicator();
+      }
+    }
+    if (motion && onboardingActive && onboardingObject.visible) {
+      onboardingObjectElapsed += deltaTime;
+      if (onboardingObjectElapsed >= 180) {
+        onboardingObjectElapsed = 0;
+        onboardingObjectFrame += 1;
+        onboardingObject.content = keatingObjectFrame(onboardingObjectFrame, presentationProfile.design.glyphMode);
       }
     }
     if (!motion || !splash.visible || activeSplashMode !== "full") return;
@@ -1063,6 +1139,38 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
   };
   await refreshKnownPiCommands();
 
+  const beginOnboarding = async (reset = false): Promise<void> => {
+    if (reset) await resetTuiOnboarding(cwd);
+    try {
+      firstRunHasProvider = (await client.getAvailableModels()).length > 0;
+    } catch {
+      firstRunHasProvider = false;
+    }
+    onboardingPageIndex = 0;
+    onboardingObjectFrame = 0;
+    onboardingObjectElapsed = 0;
+    onboardingObject.content = keatingObjectFrame(0, presentationProfile.design.glyphMode);
+    onboardingActive = true;
+    input.blur();
+    renderOnboarding();
+  };
+
+  const finishOnboarding = async (outcome: "completed" | "skipped"): Promise<void> => {
+    onboardingActive = false;
+    suppressEmptySplash = true;
+    renderOnboarding();
+    setFocusArea("composer");
+    try {
+      await markTuiOnboardingSeen(cwd, KEATING_VERSION);
+      status.content = outcome === "skipped"
+        ? "Tour skipped · /onboarding replays it · Ctrl+P opens every command"
+        : "Ready · ask a real question · @path adds a file · Ctrl+P opens every command";
+    } catch (error) {
+      status.content = `Ready, but tour completion was not saved: ${sanitizeDiagnostic(error, 160)} · /onboarding replays it`;
+    }
+    if (outcome === "completed") await showSetupWizard({ confirm: false });
+  };
+
   const exitToShell = async () => {
     settled = true;
     settle?.({ action: "shell", sessionPath: controller.getCurrentSessionPath() || undefined });
@@ -1072,6 +1180,9 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
 
   const runCommand = async (command: TuiCommand): Promise<void> => {
     switch (command.id) {
+      case "onboarding":
+        await beginOnboarding(true);
+        return;
       case "setup":
         await showSetupWizard();
         return;
@@ -1664,7 +1775,8 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       appendEntry({ id: `settings-summary-${Date.now()}`, kind: "artifact", title: "Settings", body: tuiSettingsMarkdown(settings) });
       const action = await presentSelect("Terminal settings · changes apply to the real Pi runtime", [...TUI_SETTINGS_ACTIONS]);
       if (action === undefined || action === "Close settings") return;
-      if (action === "Select model") await showModelPicker();
+      if (action === "Replay onboarding tour") await beginOnboarding(true);
+      else if (action === "Select model") await showModelPicker();
       else if (action === "Connect or repair provider") {
         if (await showProviderLogin()) await showModelPicker();
       } else if (action === "Cycle thinking") await controller.cycleThinking();
@@ -1969,6 +2081,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       return;
     }
     const slashCommands: Record<string, TuiCommand["id"] | "palette" | "search"> = {
+      onboarding: "onboarding",
       setup: "setup",
       commands: "palette",
       sessions: "sessions",
@@ -2155,12 +2268,6 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
 
   input.on(InputRenderableEvents.INPUT, () => {
     if (dialogCancel || busy) return;
-    if (onboardingSplashActive) {
-      status.content = input.value.trim()
-        ? "Enter asks this question now · /setup changes your name or profile image later"
-        : "Enter begins profile setup · or type a question to start now";
-      return;
-    }
     const parsed = parseComposerInput(input.value, [
       ...TUI_COMMANDS.map((command) => ({ name: command.id, description: command.description })),
       { name: "models", description: "Search and select an authenticated Pi model" },
@@ -2185,29 +2292,25 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       status.content = idleStatus();
     }
   });
-  const beginFirstRunSetup = async () => {
-    if (!onboardingSplashActive) return;
-    onboardingSplashActive = false;
-    appendEntry({
-      id: `onboarding-${Date.now()}`,
-      kind: "notice",
-      title: "Welcome",
-      body: onboardingMarkdown({ version: KEATING_VERSION, hasProvider: firstRunHasProvider }),
-    });
-    await showSetupWizard({ confirm: false });
-  };
   input.on(InputRenderableEvents.ENTER, () => {
-    if (onboardingSplashActive && input.value.trim() === "") {
-      void beginFirstRunSetup();
-      return;
-    }
-    if (onboardingSplashActive) {
-      onboardingSplashActive = false;
-      updateResponsiveLayout();
-    }
     void submit(input.value);
   });
   renderer.keyInput.on("keypress", (key) => {
+    if (onboardingActive) {
+      const action = tuiOnboardingActionForKey(key);
+      if (!action) return;
+      key.preventDefault();
+      key.stopPropagation();
+      const navigation = navigateTuiOnboarding(
+        onboardingPageIndex,
+        action,
+        tuiOnboardingPages({ hasProvider: firstRunHasProvider }).length,
+      );
+      onboardingPageIndex = navigation.pageIndex;
+      if (navigation.outcome === "active") renderOnboarding();
+      else void finishOnboarding(navigation.outcome);
+      return;
+    }
     if (dialogCancel) {
       if (key.ctrl && key.name.toLowerCase() === "x" && activeProviderLoginAbort) {
         key.preventDefault();
@@ -2360,23 +2463,17 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
     }
   });
   setVimState(editorMode === "vim" ? "insert" : "insert");
-  setFocusArea("composer");
+  if (!initialPrompt?.trim() && entries.length === 0) {
+    const state = await loadTuiOnboardingState(cwd);
+    if (shouldShowTuiOnboarding(state, { version: KEATING_VERSION, hasSavedSession: entries.length > 0 })) {
+      await beginOnboarding();
+    }
+  }
+  if (onboardingActive) input.blur();
+  else setFocusArea("composer");
   renderer.start();
   if (initialPrompt?.trim()) {
     void submit(initialPrompt);
-  } else if (entries.length === 0) {
-    void (async () => {
-      const state = await loadTuiOnboardingState(cwd);
-      if (!shouldShowTuiOnboarding(state, { version: KEATING_VERSION })) return;
-      try {
-        firstRunHasProvider = (await client.getAvailableModels()).length > 0;
-      } catch {
-        firstRunHasProvider = false;
-      }
-      onboardingSplashActive = true;
-      status.content = "Enter begins profile setup · or type a question to start now";
-      updateResponsiveLayout();
-    })();
   }
 
   return result;
