@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.10.1] - 2026-08-27
+
+### Fixed
+- Prevented browser storage quota and availability failures from aborting model responses by compacting stream events, pruning bounded stale auxiliary sessions, and continuing with shared page-local state.
+- Coupled saved-session deletion to auxiliary event cleanup and added deterministic quota and memory-pressure invariants that protect active sessions and pending deliveries.
+
 ## [3.10.0] - 2026-08-26
 
 ### Added
@@ -809,7 +815,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v3.10.0...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v3.10.1...HEAD
+[3.10.1]: https://github.com/Diogenesoftoronto/keating/compare/v3.10.0...v3.10.1
 [3.10.0]: https://github.com/Diogenesoftoronto/keating/compare/v3.9.0...v3.10.0
 [3.9.0]: https://github.com/Diogenesoftoronto/keating/compare/v3.8.1...v3.9.0
 [3.8.1]: https://github.com/Diogenesoftoronto/keating/compare/v3.8.0...v3.8.1
