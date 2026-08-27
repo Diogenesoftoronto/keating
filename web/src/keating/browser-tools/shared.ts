@@ -9,6 +9,9 @@ export interface KeatingToolsOptions {
     activeCourseId?: string;
     mode?: "create" | "edit";
   };
+  webSearch?: {
+    search: (query: string, signal?: AbortSignal) => Promise<string>;
+  };
   speech?: {
     settings: WebSpeechSettings;
     getApiKey: (provider: string) => Promise<string | undefined>;

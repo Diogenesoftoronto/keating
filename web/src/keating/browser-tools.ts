@@ -21,6 +21,7 @@ import {
   createImprovementTools,
 } from "./browser-tools/improvement";
 import { createMediaTools } from "./browser-tools/media";
+import { createSearchTools } from "./browser-tools/search";
 import { createTeachingTools } from "./browser-tools/teaching";
 import {
   createToolRegistry,
@@ -55,6 +56,7 @@ export {
 export const TOOL_REGISTRATION_ORDER = [
   "agent_runtime",
   "remote_execute",
+  "client-web-search",
   "animate",
   "deck",
   "course_list",
@@ -146,6 +148,7 @@ export async function createKeatingTools(
   );
   const tools = preserveRegistrationOrder([
     createWorkspaceTools(options),
+    createSearchTools(options),
     createMediaTools(storage),
     createCourseTools(options),
     createTeachingTools(storage),
