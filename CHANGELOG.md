@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.10.2] - 2026-08-27
+
+### Fixed
+- Added cross-provider web search fallback so models without native search can use a configured OpenAI, Gemini, or Anthropic key.
+- Rendered model-generated `\(...\)` and `\[...\]` LaTeX delimiters correctly in chat and added canonical math-format examples to the system prompt.
+
 ## [3.10.1] - 2026-08-27
 
 ### Fixed
@@ -815,7 +821,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v3.10.1...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v3.10.2...HEAD
+[3.10.2]: https://github.com/Diogenesoftoronto/keating/compare/v3.10.1...v3.10.2
 [3.10.1]: https://github.com/Diogenesoftoronto/keating/compare/v3.10.0...v3.10.1
 [3.10.0]: https://github.com/Diogenesoftoronto/keating/compare/v3.9.0...v3.10.0
 [3.9.0]: https://github.com/Diogenesoftoronto/keating/compare/v3.8.1...v3.9.0
