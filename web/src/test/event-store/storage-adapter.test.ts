@@ -9,8 +9,42 @@ class MemoryStorage implements StorageLike {
 	removeItem(key: string) { this.values.delete(key); }
 }
 
+class FaultingStorage extends MemoryStorage {
+	readonly setAttempts: string[] = [];
+	readonly removeAttempts: string[] = [];
+	failSet = false;
+	failRemove = false;
+	failIndexSet = false;
+
+	override setItem(key: string, value: string) {
+		this.setAttempts.push(key);
+		if (this.failSet || (this.failIndexSet && key.endsWith(":sessions"))) {
+			const error = new Error(`Quota exceeded while writing ${key}`);
+			error.name = "QuotaExceededError";
+			throw error;
+		}
+		super.setItem(key, value);
+	}
+
+	override removeItem(key: string) {
+		this.removeAttempts.push(key);
+		if (this.failRemove) throw new Error(`Removal failed for ${key}`);
+		super.removeItem(key);
+	}
+}
+
 function event(id: string, sequence: number, sessionId = "session-1"): ConversationEvent {
 	return conversationEvent("text.delta", { messageId: "message-1", role: "assistant", delta: id }, {
+		id,
+		sequence,
+		timestamp: `2026-07-18T00:00:0${sequence}.000Z`,
+		sessionId,
+		runId: "run-1",
+	});
+}
+
+function messageEvent(id: string, sequence: number, messageId: string, delta: string, sessionId = "session-1"): ConversationEvent {
+	return conversationEvent("text.delta", { messageId, role: "assistant", delta }, {
 		id,
 		sequence,
 		timestamp: `2026-07-18T00:00:0${sequence}.000Z`,
@@ -101,6 +135,140 @@ describe("StorageConversationEventStore", () => {
 		expect(store.listSessionIds()).toEqual(["session-1"]);
 	});
 
+	test("coalesces adjacent text deltas without changing the replayed message", () => {
+		const storage = new MemoryStorage();
+		const store = new StorageConversationEventStore(storage, { maxSessionBytes: 8_192 });
+
+		expect(store.append(event("hello ", 1))).toEqual({ appended: true, eventCount: 1 });
+		expect(store.append(event("world", 2))).toEqual({ appended: true, eventCount: 1 });
+
+		const replay = store.replay("session-1");
+		expect(replay.events).toHaveLength(1);
+		expect(replay.events[0]?.type).toBe("text.delta");
+		expect(replay.events[0]?.payload).toMatchObject({ delta: "hello world" });
+		expect(replayConversation(replay.events).messages["message-1"]?.text).toBe("hello world");
+	});
+
+	test("keeps an oversized active session replayable without writing beyond its byte budget", () => {
+		const probeStorage = new MemoryStorage();
+		const probe = new StorageConversationEventStore(probeStorage);
+		probe.append(messageEvent("probe", 1, "probe", "x".repeat(256)));
+		const oneEventBytes = new TextEncoder().encode(
+			probeStorage.values.get("keating:conversation-events:v1:session:session-1") ?? "",
+		).byteLength;
+		const storage = new MemoryStorage();
+		const diagnostics: string[] = [];
+		const maxSessionBytes = oneEventBytes + 32;
+		const store = new StorageConversationEventStore(storage, {
+			maxSessionBytes,
+			onDiagnostic: ({ code }) => diagnostics.push(code),
+		});
+
+		store.append(messageEvent("old", 1, "old-message", "x".repeat(256)));
+		expect(() => store.append(messageEvent("new", 2, "new-message", "y".repeat(256)))).not.toThrow();
+
+		expect(store.replay("session-1").events.map(({ id }) => id)).toEqual(["old", "new"]);
+		expect(diagnostics).toContain("storage-error");
+		expect(new TextEncoder().encode(
+			storage.values.get("keating:conversation-events:v1:session:session-1") ?? "",
+		).byteLength).toBeLessThanOrEqual(maxSessionBytes);
+		const index = JSON.parse(storage.values.get("keating:conversation-events:v1:sessions") ?? "{}") as { sessions?: Array<{ id: string }> };
+		expect(index.sessions?.map(({ id }) => id) ?? []).not.toContain("session-1");
+	});
+
+	test("prunes the oldest sessions to bounded retention while preserving the active session", () => {
+		const storage = new MemoryStorage();
+		const store = new StorageConversationEventStore(storage, {
+			maxSessionBytes: 2_048,
+			maxTotalBytes: 3_000,
+			maxSessions: 2,
+		});
+
+		store.append(event("old-a", 1, "old-a"));
+		store.append(event("old-b", 2, "old-b"));
+		store.append(event("active", 3, "active"));
+
+		expect(store.listSessionIds()).toEqual(["active", "old-b"]);
+		expect(store.replay("old-a").events).toEqual([]);
+		expect(store.replay("active").events.map(({ id }) => id)).toEqual(["active"]);
+	});
+
+	test("enforces the total byte budget by pruning older sessions before the active session", () => {
+		const storage = new MemoryStorage();
+		const seed = new StorageConversationEventStore(storage);
+		seed.append(event("old", 1, "old"));
+		const oldRecordBytes = new TextEncoder().encode(storage.values.get("keating:conversation-events:v1:session:old") ?? "").byteLength;
+		const store = new StorageConversationEventStore(storage, {
+			maxSessionBytes: oldRecordBytes * 2,
+			maxTotalBytes: oldRecordBytes + Math.floor(oldRecordBytes / 2),
+			maxSessions: 10,
+		});
+
+		store.append(event("current", 2, "current"));
+
+		expect(store.listSessionIds()).toEqual(["current"]);
+		expect(store.replay("old").events).toEqual([]);
+		expect(store.replay("current").events.map(({ id }) => id)).toEqual(["current"]);
+	});
+
+	test("retention preserves older sessions with pending deliveries and prunes an unpinned session first", () => {
+		const storage = new MemoryStorage();
+		let clock = 1;
+		const seed = new StorageConversationEventStore(storage, { now: () => clock++ });
+		seed.putPendingAction({
+			sessionId: "pinned-action",
+			runId: "run-1",
+			createdAt: "2026-07-18T00:00:01.000Z",
+			action: { id: "answer", documentId: "quiz", documentRevision: 0, type: "submit", params: { answer: 4 } },
+		});
+		seed.putPendingLearnerResponse({
+			version: 1,
+			sessionId: "pinned-response",
+			receiptId: "receipt",
+			uiActionId: "answer",
+			sessionMessageId: "openui:receipt",
+			serialized: "serialized response",
+			createdAt: "2026-07-18T00:00:02.000Z",
+		});
+		seed.append(event("unpinned", 3, "unpinned"));
+
+		const sessionPrefix = "keating:conversation-events:v1:session:";
+		const existingBytes = [...storage.values.entries()]
+			.filter(([key]) => key.startsWith(sessionPrefix))
+			.reduce((total, [, value]) => total + new TextEncoder().encode(value).byteLength, 0);
+		const probeStorage = new MemoryStorage();
+		new StorageConversationEventStore(probeStorage).append(event("active", 4, "active"));
+		const activeBytes = new TextEncoder().encode(probeStorage.values.get(`${sessionPrefix}active`) ?? "").byteLength;
+		const unpinnedBytes = new TextEncoder().encode(storage.values.get(`${sessionPrefix}unpinned`) ?? "").byteLength;
+		const store = new StorageConversationEventStore(storage, {
+			maxSessionBytes: 4_096,
+			maxTotalBytes: existingBytes + activeBytes - Math.max(1, Math.floor(unpinnedBytes / 2)),
+			maxSessions: 3,
+			now: () => clock++,
+		});
+
+		store.append(event("active", 4, "active"));
+
+		expect(store.listSessionIds()).toEqual(["active", "pinned-action", "pinned-response"]);
+		expect(store.replay("unpinned").events).toEqual([]);
+		expect(store.replay("active").events.map(({ id }) => id)).toEqual(["active"]);
+		expect(store.listPendingActions("pinned-action")).toHaveLength(1);
+		expect(store.listPendingLearnerResponses("pinned-response")).toHaveLength(1);
+	});
+
+	test("keeps quota-failed appends replayable in memory and reports a storage diagnostic", () => {
+		const storage = new FaultingStorage();
+		const diagnostics: string[] = [];
+		const store = new StorageConversationEventStore(storage, {
+			onDiagnostic: ({ code }) => diagnostics.push(code),
+		});
+		storage.failSet = true;
+
+		expect(() => store.append(event("survives", 1))).not.toThrow();
+		expect(store.replay("session-1").events.map(({ id }) => id)).toEqual(["survives"]);
+		expect(diagnostics).toContain("storage-error");
+	});
+
 	test("persists pending UI actions until explicitly removed", () => {
 		const storage = new MemoryStorage();
 		const store = new StorageConversationEventStore(storage);
@@ -189,5 +357,31 @@ describe("StorageConversationEventStore", () => {
 		expect(store.replay("a").events).toEqual([]);
 		expect(store.replay("b").events.map(({ id }) => id)).toEqual(["b"]);
 		expect(store.listSessionIds()).toEqual(["b"]);
+	});
+
+	test("does not throw while clearing when record removal or index persistence fails", () => {
+		const removalStorage = new FaultingStorage();
+		const removalDiagnostics: string[] = [];
+		const removalStore = new StorageConversationEventStore(removalStorage, {
+			onDiagnostic: ({ code }) => removalDiagnostics.push(code),
+		});
+		removalStore.append(event("one", 1));
+		removalStorage.failRemove = true;
+
+		expect(() => removalStore.clearSession("session-1")).not.toThrow();
+		expect(removalStorage.removeAttempts).toContain("keating:conversation-events:v1:session:session-1");
+		expect(removalDiagnostics).toContain("storage-error");
+
+		const indexStorage = new FaultingStorage();
+		const indexDiagnostics: string[] = [];
+		const indexStore = new StorageConversationEventStore(indexStorage, {
+			onDiagnostic: ({ code }) => indexDiagnostics.push(code),
+		});
+		indexStore.append(event("one", 1));
+		indexStorage.failIndexSet = true;
+
+		expect(() => indexStore.clearSession("session-1")).not.toThrow();
+		expect(indexStorage.values.has("keating:conversation-events:v1:session:session-1")).toBe(false);
+		expect(indexDiagnostics).toContain("storage-error");
 	});
 });

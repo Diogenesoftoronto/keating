@@ -81,7 +81,17 @@ export function createConversationRuntime(options: ConversationRuntimeOptions): 
 }
 
 export function browserConversationRuntime(sessionId: string, storage: StorageLike): ConversationRuntime {
-	return createConversationRuntime({ sessionId, store: new StorageConversationEventStore(storage) });
+	let warnedAboutStorage = false;
+	return createConversationRuntime({
+		sessionId,
+		store: new StorageConversationEventStore(storage, {
+			onDiagnostic: (diagnostic) => {
+				if (diagnostic.code !== "storage-error" || warnedAboutStorage) return;
+				warnedAboutStorage = true;
+				console.warn("Keating conversation replay storage is unavailable; continuing with page-local state.", diagnostic);
+			},
+		}),
+	});
 }
 
 export function jsonSafe(value: unknown): JsonValue {

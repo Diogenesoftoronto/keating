@@ -3,6 +3,7 @@ import { keatingStorage, sessions, updateSessionTitle } from "./keating-storage"
 import { sessionSearchText } from "./session-metadata";
 import type { SessionData, SessionMetadata } from "../types/session";
 import { buildSessionTree, type SessionTreeNode } from "../components/session-tree";
+import { StorageConversationEventStore } from "../keating/event-store/storage-adapter";
 import {
 	type ArtifactHero,
 	buildArtifactHeroMap,
@@ -37,6 +38,23 @@ export interface UseSessionsResult {
 
 export function notifySessionsChanged() {
 	window.dispatchEvent(new CustomEvent("keating:sessions-changed"));
+}
+
+/** Best-effort cleanup for event replay data associated with a deleted session. */
+export function clearSessionConversationEvents(id: string): void {
+	try {
+		new StorageConversationEventStore(window.localStorage).clearSession(id);
+	} catch {
+		// The durable session is already deleted; unavailable auxiliary storage
+		// must not turn that successful deletion into a user-visible failure.
+	}
+}
+
+/** Delete primary session data, then its auxiliary replay data, and notify UIs. */
+export async function deleteSavedSession(id: string): Promise<void> {
+	await sessions.deleteSession(id);
+	clearSessionConversationEvents(id);
+	notifySessionsChanged();
 }
 
 export function sortSessionsByLastModified(items: SessionMetadata[]): SessionMetadata[] {
@@ -201,10 +219,7 @@ export function useSessions(opts: UseSessionsOptions = {}): UseSessionsResult {
 		[],
 	);
 
-	const remove = useCallback(async (id: string) => {
-		await sessions.deleteSession(id);
-		notifySessionsChanged();
-	}, []);
+	const remove = useCallback(deleteSavedSession, []);
 
 	return {
 		items,

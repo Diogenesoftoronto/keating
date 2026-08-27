@@ -67,4 +67,7 @@ export interface StorageLike {
 	getItem(key: string): string | null;
 	setItem(key: string, value: string): void;
 	removeItem(key: string): void;
+	/** Optional Web Storage iteration surface, used to recover orphaned records. */
+	readonly length?: number;
+	key?(index: number): string | null;
 }
