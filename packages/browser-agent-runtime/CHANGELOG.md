@@ -6,6 +6,13 @@
 
 
 
+
+## 3.10.0
+<sub>2026-08-26</sub>
+
+- *(minor)*
+  Rebuild the Artifact Atlas as five stateful learner-facing archetypes with deterministic interaction contracts, and reserve animation for explicit learner requests while keeping persisted legacy sessions safe.
+
 ## 3.9.0
 <sub>2026-08-26</sub>
 

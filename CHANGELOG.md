@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.10.0] - 2026-08-26
+
+### Added
+- Added deterministic interaction contracts for every Artifact Atlas archetype, mode, preset, and folded legacy surface, and wired the checker into the canonical devenv and pre-commit workflows.
+
+### Changed
+- Consolidated the Artifact Atlas from seventeen shallow specimens into five stateful learner-facing archetypes with meaningful controls, causal feedback, multiple modes, and domain-specific presets.
+- Demoted streamed `LearningAnimation` authoring from OpenUI so static explanations, concept maps, and images remain the default, while reserving the explicit `animate` tool for learner requests for motion.
+- Advanced the shared cross-surface rendering fixture pack to version 3 across web and mobile.
+
+### Fixed
+- Preserved historical `LearningAnimation` session content as an inert trusted-surface handoff without mounting or executing authored HTML.
+
 ## [3.9.0] - 2026-08-26
 
 ### Added
@@ -796,7 +809,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v3.9.0...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v3.10.0...HEAD
+[3.10.0]: https://github.com/Diogenesoftoronto/keating/compare/v3.9.0...v3.10.0
 [3.9.0]: https://github.com/Diogenesoftoronto/keating/compare/v3.8.1...v3.9.0
 [3.8.1]: https://github.com/Diogenesoftoronto/keating/compare/v3.8.0...v3.8.1
 [3.8.0]: https://github.com/Diogenesoftoronto/keating/compare/v3.7.0...v3.8.0
