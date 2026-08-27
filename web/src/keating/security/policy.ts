@@ -58,6 +58,7 @@ export const KEATING_TOOL_RISKS: Readonly<Record<string, ToolRiskClass>> = {
   deck: "informational",
   prompt_eval: "informational",
   evaluate_teaching: "informational",
+  "client-web-search": "informational",
   keating_voice: "informational",
 };
 

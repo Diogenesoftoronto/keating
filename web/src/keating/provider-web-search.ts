@@ -80,21 +80,40 @@ export function resolveProviderWebSearchRoute(
 		allowAdapters: true,
 	});
 	const available = enabled(hasApiKey);
+	const nativeSupported = negotiation.webSearch === "native" && (
+		(negotiation.searchTool === "google-search-grounding" && isGoogleModel(model))
+		|| (negotiation.searchTool === "openai-web-search" && isOpenAiModel(model))
+		|| (negotiation.searchTool === "anthropic-web-search" && isAnthropicModel(model))
+	);
 	const kind = !available
 		? "unavailable"
-		: negotiation.webSearch === "native"
+		: nativeSupported
 			? "native"
-			: negotiation.webSearch === "adapter"
+			: negotiation.webSearch === "native" || negotiation.webSearch === "adapter"
 				? "client-adapter"
 				: "unavailable";
 	return {
 		provider: model.provider,
 		modelId: model.id,
 		kind,
-		tool: kind === "unavailable" ? undefined : negotiation.searchTool,
-		citationKind: kind === "unavailable" ? undefined : negotiation.capabilities.citationKind,
+		tool: kind === "native"
+			? negotiation.searchTool
+			: kind === "client-adapter" ? "client-web-search" : undefined,
+		citationKind: kind === "native"
+			? negotiation.capabilities.citationKind
+			: kind === "client-adapter" ? "tool-results" : undefined,
 		providerNative: kind === "native",
 	};
+}
+
+/** Whether the selected chat model needs Keating's cross-provider search tool. */
+export function shouldExposeClientWebSearch(model: Model<Api>): boolean {
+	if (model.provider === "browser") return false;
+	const route = resolveProviderWebSearchRoute(model, true);
+	return route.kind === "client-adapter"
+		// Gemini 2.x supports grounding in isolation, but rejects it alongside
+		// Keating's function tools. Let the separate search request ground instead.
+		|| (route.kind === "native" && isGoogleModel(model) && !/^gemini-3/.test(model.id));
 }
 
 /** Add the active provider's hosted search tool without disturbing app tools. */

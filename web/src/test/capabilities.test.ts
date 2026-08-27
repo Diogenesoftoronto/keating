@@ -11,6 +11,7 @@ import {
 const tool = (name: string) => ({ name } as AgentTool);
 const allTools = [
 	"quiz",
+	"client-web-search",
 	"animate",
 	"generate_image",
 	"workspace_inspect",
@@ -96,6 +97,15 @@ describe("capability availability", () => {
 			runtime: DEFAULT_AGENT_RUNTIME_CONFIG,
 			speechEnabled: true,
 		}).map((item) => item.name)).toContain("keating_voice");
+	});
+
+	it("exposes cross-provider search only for a model that needs the client adapter", () => {
+		expect(filterAvailableKeatingTools(allTools, {
+			clientWebSearch: false,
+		}).map((item) => item.name)).not.toContain("client-web-search");
+		expect(filterAvailableKeatingTools(allTools, {
+			clientWebSearch: true,
+		}).map((item) => item.name)).toContain("client-web-search");
 	});
 
 	it("keeps unavailable environments visible to diagnostics without exposing schemas", () => {
