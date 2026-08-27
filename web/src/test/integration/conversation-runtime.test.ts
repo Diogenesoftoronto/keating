@@ -18,6 +18,46 @@ describe("conversation integration runtime", () => {
 		expect(runtime.replay().messages.m1?.text).toBe("hello");
 	});
 
+	test("continues the runtime from page-local state when durable storage rejects writes", () => {
+		class QuotaStorage extends MemoryStorage {
+			override setItem() {
+				throw new DOMException("Quota exceeded", "QuotaExceededError");
+			}
+		}
+		const diagnostics: string[] = [];
+		const store = new StorageConversationEventStore(new QuotaStorage(), {
+			onDiagnostic: ({ code }) => diagnostics.push(code),
+		});
+		const runtime = createConversationRuntime({
+			sessionId: "quota-session",
+			runId: "quota-run",
+			store,
+			id: (() => { let index = 0; return () => `quota-${++index}`; })(),
+		});
+
+		expect(() => runtime.emit("run.started", { mode: "text" })).not.toThrow();
+		expect(() => runtime.emit("text.delta", { messageId: "answer", role: "assistant", delta: "still teaching" })).not.toThrow();
+		expect(runtime.replay().messages.answer?.text).toBe("still teaching");
+		expect(diagnostics).toContain("storage-error");
+	});
+
+	test("continues when every Web Storage operation is unavailable", () => {
+		const unavailable = {
+			get length(): number { throw new DOMException("Storage unavailable", "SecurityError"); },
+			getItem(): string | null { throw new DOMException("Storage unavailable", "SecurityError"); },
+			setItem(): void { throw new DOMException("Storage unavailable", "SecurityError"); },
+			removeItem(): void { throw new DOMException("Storage unavailable", "SecurityError"); },
+			key(): string | null { throw new DOMException("Storage unavailable", "SecurityError"); },
+		};
+		const runtime = createConversationRuntime({
+			sessionId: "blocked-storage-session",
+			store: new StorageConversationEventStore(unavailable),
+		});
+
+		expect(() => runtime.emit("run.started", { mode: "text" })).not.toThrow();
+		expect(runtime.replay().status).toBe("active");
+	});
+
 	test("retains pending UI actions until resolved", () => {
 		const store = new StorageConversationEventStore(new MemoryStorage());
 		const runtime = createConversationRuntime({ sessionId: "s1", store });
