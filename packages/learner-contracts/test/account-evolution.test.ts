@@ -11,6 +11,7 @@ import {
   validateLearnerEvidenceRef,
   validatePedagogyActivationRequest,
   validatePedagogyArtifactRef,
+  validatePedagogyRevisionManifest,
   validatePedagogyRevisionRef,
   type AccountEvolutionJobRecord,
   type AccountEvolutionJobRequest,
@@ -36,6 +37,14 @@ function revision(id = "revision-1", parentId?: string, createdAt = "2026-08-30T
       mediaType: "application/json",
       sizeBytes: 4096,
     }],
+    compatibility: {
+      agentApi: "keating-portable-agent-v1",
+      learnerContract: 1,
+      targets: ["browser-nodepod", "mobile-declarative", "flue-node"],
+      minimumFlue: "2.0.3",
+      mobileSdk: "54",
+      requiredCapabilities: ["prompt-set", "teacher-policy"],
+    },
   };
 }
 
@@ -111,6 +120,10 @@ describe("Not Organic account evolution contracts", () => {
     const base = revision();
     expect(validatePedagogyArtifactRef(base.artifacts[0])).toBe(true);
     expect(validatePedagogyRevisionRef(base)).toBe(true);
+    const { manifestDigest, ...manifest } = base;
+    expect(manifestDigest).toMatch(/^sha256:/);
+    expect(validatePedagogyRevisionManifest(manifest)).toBe(true);
+    expect(validatePedagogyRevisionManifest(base)).toBe(false);
     expect(validateLearnerEvidenceRef(evidence())).toBe(true);
 
     expect(validatePedagogyArtifactRef({ ...base.artifacts[0], digest: "sha256:nope" })).toBe(false);
@@ -119,6 +132,18 @@ describe("Not Organic account evolution contracts", () => {
     expect(validateLearnerEvidenceRef({ ...evidence(), exposureCount: 0 })).toBe(false);
     expect(validatePedagogyRevisionRef({ ...base, artifacts: [...base.artifacts, base.artifacts[0]] })).toBe(false);
     expect(validatePedagogyRevisionRef({ ...base, parentId: base.id })).toBe(false);
+    expect(validatePedagogyRevisionRef({
+      ...base,
+      compatibility: { ...base.compatibility, targets: ["mobile-declarative", "mobile-declarative"] },
+    })).toBe(false);
+    expect(validatePedagogyRevisionRef({
+      ...base,
+      compatibility: { ...base.compatibility, targets: ["unknown-target"] },
+    })).toBe(false);
+    expect(validatePedagogyRevisionRef({
+      ...base,
+      compatibility: { ...base.compatibility, requiredCapabilities: ["prompt-set", "prompt-set"] },
+    })).toBe(false);
   });
 
   test("keeps runner requirements capability-based and rejects vendor extensions", () => {

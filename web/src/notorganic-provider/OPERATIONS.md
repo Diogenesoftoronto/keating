@@ -39,7 +39,7 @@ Browser gate:
 - `VITE_NOTORGANIC_REDIRECT_URI` — exact registered callback URL for this
   Keating deployment.
 - `VITE_NOTORGANIC_SCOPE` — requested public capability scopes. Keating needs
-  `wallet:read usage:read billing:checkout infer:balanced` for the complete
+  `wallet:read usage:read billing:checkout infer:balanced evolution:read evolution:write evolution:execute` for the complete
   wallet, checkout, and balanced-inference surface.
 - `VITE_NOTORGANIC_MAX_COST_MICROUSD` — positive per-request browser inference
   reservation ceiling; defaults to `100000` ($0.10). Direct browser inference

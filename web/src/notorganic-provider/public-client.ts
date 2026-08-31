@@ -168,7 +168,14 @@ export function publicClientConfig(env: Record<string, string | undefined> = pub
 	const clientId = env.VITE_NOTORGANIC_CLIENT_ID;
 	const redirectUri = env.VITE_NOTORGANIC_REDIRECT_URI;
 	if (!issuer || !authorizationUrl || !clientId || !redirectUri) return null;
-	return { issuer, authorizationUrl, clientId, redirectUri, scope: env.VITE_NOTORGANIC_SCOPE ?? "wallet:read usage:read billing:checkout infer:balanced" };
+	return {
+		issuer,
+		authorizationUrl,
+		clientId,
+		redirectUri,
+		scope: env.VITE_NOTORGANIC_SCOPE
+			?? "wallet:read usage:read billing:checkout infer:balanced evolution:read evolution:write evolution:execute",
+	};
 }
 
 export function publicClientMaxCostMicrousd(env: Record<string, string | undefined> = publicClientEnv()): number {

@@ -50,13 +50,30 @@ export interface LearnerEvidenceRef {
   sizeBytes: number;
 }
 
-/** A content-addressed, immutable account pedagogy revision. */
-export interface PedagogyRevisionRef {
+export type PedagogyTarget = "browser-nodepod" | "mobile-declarative" | "flue-node";
+
+/** Compatibility is part of the signed/content-addressed manifest, never an out-of-band hint. */
+export interface PedagogyCompatibility {
+  agentApi: string;
+  learnerContract: number;
+  targets: PedagogyTarget[];
+  minimumFlue?: string;
+  mobileSdk?: string;
+  requiredCapabilities: string[];
+}
+
+/** Exact immutable payload stored at the active revision manifest digest. */
+export interface PedagogyRevisionManifest {
   id: string;
   parentId?: string;
   createdAt: string;
-  manifestDigest: string;
   artifacts: PedagogyArtifactRef[];
+  compatibility: PedagogyCompatibility;
+}
+
+/** A manifest plus the digest of its exact serialized payload. */
+export interface PedagogyRevisionRef extends PedagogyRevisionManifest {
+  manifestDigest: string;
 }
 
 export type EvolutionOperation =
@@ -212,6 +229,9 @@ const ARTIFACT_KINDS = new Set<PedagogyArtifactKind>([
 const EVIDENCE_KINDS = new Set<LearnerEvidenceKind>([
   "observed", "delayed-observed", "explicit-feedback", "retrospective", "synthetic", "heuristic",
 ]);
+const PEDAGOGY_TARGETS = new Set<PedagogyTarget>([
+  "browser-nodepod", "mobile-declarative", "flue-node",
+]);
 const OPERATIONS = new Set<EvolutionOperation>([
   "evaluate", "prompt-evolution", "policy-evolution", "optimizer-evolution", "source-evolution",
 ]);
@@ -228,7 +248,11 @@ const FAILURE_CODES = new Set<AccountEvolutionJobFailure["code"]>([
 
 const ARTIFACT_KEYS = new Set(["id", "kind", "digest", "mediaType", "sizeBytes"]);
 const EVIDENCE_KEYS = new Set(["id", "kind", "digest", "capturedAt", "exposureCount", "sizeBytes"]);
-const REVISION_KEYS = new Set(["id", "parentId", "createdAt", "manifestDigest", "artifacts"]);
+const COMPATIBILITY_KEYS = new Set([
+  "agentApi", "learnerContract", "targets", "minimumFlue", "mobileSdk", "requiredCapabilities",
+]);
+const REVISION_MANIFEST_KEYS = new Set(["id", "parentId", "createdAt", "artifacts", "compatibility"]);
+const REVISION_KEYS = new Set(["id", "parentId", "createdAt", "manifestDigest", "artifacts", "compatibility"]);
 const RUNTIME_KEYS = new Set(["kind", "version", "abi", "entrypoint"]);
 const NETWORK_KEYS = new Set(["mode", "allowedHosts"]);
 const FILESYSTEM_KEYS = new Set(["mode", "maximumWritableBytes"]);
@@ -289,18 +313,48 @@ export function validateLearnerEvidenceRef(value: unknown): value is LearnerEvid
     && isIntegerInRange(value.sizeBytes, 1, MAX_EVIDENCE_BYTES);
 }
 
+function validatePedagogyRevisionFields(value: Record<string, unknown>): boolean {
+  if (
+    !isContractId(value.id)
+    || (value.parentId !== undefined && (!isContractId(value.parentId) || value.parentId === value.id))
+    || !isContractTimestamp(value.createdAt)
+    || !isBoundedArray(value.artifacts, MAX_ARTIFACTS)
+    || value.artifacts.length === 0
+    || !value.artifacts.every(validatePedagogyArtifactRef)
+    || !validatePedagogyCompatibility(value.compatibility)
+  ) return false;
+  const artifacts = value.artifacts as PedagogyArtifactRef[];
+  const ids = artifacts.map((artifact) => artifact.id);
+  const digests = artifacts.map((artifact) => artifact.digest);
+  return new Set(ids).size === ids.length && new Set(digests).size === digests.length;
+}
+
+export function validatePedagogyRevisionManifest(value: unknown): value is PedagogyRevisionManifest {
+  return isRecord(value)
+    && hasOnlyKeys(value, REVISION_MANIFEST_KEYS)
+    && validatePedagogyRevisionFields(value);
+}
+
 export function validatePedagogyRevisionRef(value: unknown): value is PedagogyRevisionRef {
   if (!isRecord(value) || !hasOnlyKeys(value, REVISION_KEYS)
     || !isContractId(value.id)
-    || (value.parentId !== undefined && (!isContractId(value.parentId) || value.parentId === value.id))
-    || !isContractTimestamp(value.createdAt)
-    || !isDigest(value.manifestDigest)
-    || !isBoundedArray(value.artifacts, MAX_ARTIFACTS)
-    || value.artifacts.length === 0
-    || !value.artifacts.every(validatePedagogyArtifactRef)) return false;
-  const ids = value.artifacts.map((artifact) => artifact.id);
-  const digests = value.artifacts.map((artifact) => artifact.digest);
-  return new Set(ids).size === ids.length && new Set(digests).size === digests.length;
+    || !isDigest(value.manifestDigest)) return false;
+  return validatePedagogyRevisionFields(value);
+}
+
+export function validatePedagogyCompatibility(value: unknown): value is PedagogyCompatibility {
+  if (!isRecord(value) || !hasOnlyKeys(value, COMPATIBILITY_KEYS)
+    || !isContractId(value.agentApi)
+    || !isIntegerInRange(value.learnerContract, 1, 1_000)
+    || !isBoundedArray(value.targets, 3) || value.targets.length === 0
+    || !value.targets.every((target) => PEDAGOGY_TARGETS.has(target as PedagogyTarget))
+    || new Set(value.targets).size !== value.targets.length
+    || (value.minimumFlue !== undefined && !isBoundedString(value.minimumFlue, 64, false))
+    || (value.mobileSdk !== undefined && !isBoundedString(value.mobileSdk, 64, false))
+    || !isBoundedArray(value.requiredCapabilities, 64)
+    || !value.requiredCapabilities.every(isContractId)
+    || new Set(value.requiredCapabilities).size !== value.requiredCapabilities.length) return false;
+  return true;
 }
 
 export function validateEvolutionRunnerRequirements(value: unknown): value is EvolutionRunnerRequirements {
