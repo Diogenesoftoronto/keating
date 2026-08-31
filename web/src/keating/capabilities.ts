@@ -20,6 +20,7 @@ export interface CapabilityBundle {
 export interface CapabilityEnvironment {
   runtime?: KeatingAgentRuntimeConfig;
   speechEnabled?: boolean;
+  clientWebSearch?: boolean;
 }
 
 /**
@@ -197,6 +198,9 @@ export function filterAvailableKeatingTools(
 ): AgentTool[] {
   const registered = new Set(tools.map((tool) => tool.name));
   const visible = new Set(BASELINE_TEACHING_TOOLS);
+  if (environment.clientWebSearch && registered.has("client-web-search")) {
+    visible.add("client-web-search");
+  }
 
   for (const bundle of buildCapabilityCatalog(environment)) {
     if (bundle.availability !== "available") continue;

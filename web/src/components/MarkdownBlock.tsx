@@ -38,6 +38,59 @@ export interface MarkdownHighlightRange {
 	dashed?: boolean;
 }
 
+/**
+ * remark-math recognizes dollar delimiters, while many models emit LaTeX's
+ * \(...\) and \[...\] forms. Convert those forms outside Markdown code to
+ * same-length `$$` delimiters so KaTeX sees them and source offsets stay valid.
+ */
+export function normalizeLatexDelimiters(content: string): string {
+	let fence: { character: string; length: number } | null = null;
+	let inlineTicks = 0;
+	return content.split("\n").map((line) => {
+		const fenceMatch = /^(?: {0,3})(`{3,}|~{3,})/.exec(line);
+		if (fence) {
+			if (
+				fenceMatch
+				&& fenceMatch[1][0] === fence.character
+				&& fenceMatch[1].length >= fence.length
+				&& line.slice(fenceMatch[0].length).trim() === ""
+			) fence = null;
+			return line;
+		}
+		if (inlineTicks === 0 && fenceMatch) {
+			fence = { character: fenceMatch[1][0], length: fenceMatch[1].length };
+			return line;
+		}
+
+		let normalized = "";
+		for (let index = 0; index < line.length;) {
+			if (line[index] === "`") {
+				let end = index + 1;
+				while (line[end] === "`") end += 1;
+				const runLength = end - index;
+				if (inlineTicks === 0) inlineTicks = runLength;
+				else if (inlineTicks === runLength) inlineTicks = 0;
+				normalized += line.slice(index, end);
+				index = end;
+				continue;
+			}
+			if (
+				inlineTicks === 0
+				&& line[index] === "\\"
+				&& line[index - 1] !== "\\"
+				&& "()[]".includes(line[index + 1] ?? "")
+			) {
+				normalized += "$$";
+				index += 2;
+				continue;
+			}
+			normalized += line[index];
+			index += 1;
+		}
+		return normalized;
+	}).join("\n");
+}
+
 // Click-to-reveal "spoiler" / mask: authors wrap a clue or answer in ||double
 // pipes|| and the learner clicks to reveal it. Lets the teacher hide hints so
 // the learner can attempt recall first.
@@ -294,6 +347,7 @@ const reviewMarkSolidClass = css({ borderBottomStyle: "solid" });
 const reviewMarkDashedClass = css({ borderBottomStyle: "dashed" });
 
 export function MarkdownBlock({ content, streaming = false, sourceMapped = false, highlights = [], onHighlightReveal, onHighlightConceal, onHighlightOpen }: MarkdownBlockProps) {
+	const normalizedContent = useMemo(() => normalizeLatexDelimiters(content), [content]);
 	const plugins = useMemo(
 		() => ({ remark: [remarkGfm, remarkMath, ...(sourceMapped ? [remarkSourceMap(highlights)] : []), remarkSpoiler], rehype: [rehypeKatex] }),
 		[highlights, sourceMapped],
@@ -334,14 +388,14 @@ export function MarkdownBlock({ content, streaming = false, sourceMapped = false
 	// Only an unterminated fence is still being written; a closed one is done
 	// even if the message itself keeps streaming prose after it.
 	const openFenceCode = useMemo(
-		() => (streaming ? inProgressFenceCode(content) : null),
-		[content, streaming],
+		() => (streaming ? inProgressFenceCode(normalizedContent) : null),
+		[normalizedContent, streaming],
 	);
 
 	return (
 		<StreamingCodeContext.Provider value={openFenceCode}>
 			<ReactMarkdown remarkPlugins={plugins.remark} rehypePlugins={plugins.rehype} components={components}>
-				{content}
+				{normalizedContent}
 			</ReactMarkdown>
 		</StreamingCodeContext.Provider>
 	);
