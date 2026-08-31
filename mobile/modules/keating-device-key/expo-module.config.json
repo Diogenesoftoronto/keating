@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["KeatingDeviceKeyModule"]
+  },
+  "android": {
+    "modules": ["com.diogenesoftoronto.keating.devicekey.KeatingDeviceKeyModule"]
+  }
+}

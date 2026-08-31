@@ -54,6 +54,7 @@
     "@huggingface/transformers": "^4.2.0",
     "@isomorphic-git/lightning-fs": "^4.7.0",
     "@jason.today/webmcp": "0.1.13",
+    "@keating/agent-runtime": "file:../packages/agent-runtime",
     "@keating/learner-contracts": "file:../packages/learner-contracts",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/exporter-trace-otlp-proto": "^0.208.0",

@@ -18,6 +18,9 @@
         "backgroundColor": "#0c1510"
       }
     },
+    "ios": {
+      "bundleIdentifier": "com.diogenesoftoronto.keating"
+    },
     "plugins": [
       "expo-router",
       [
@@ -49,7 +52,8 @@
             "backgroundColor": "#0c1510"
           }
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -27,6 +27,7 @@ export default function MoreScreen() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account</Text>
+        <MenuRow icon="person-circle-outline" label="Not Organic account" detail="Sign in, sync learning evolution, and manage hosted access" color={colors.primaryText} onPress={() => router.push("/account" as never)} styles={styles} />
         <MenuRow icon="wallet-outline" label="Buy tokens / credits" detail="Open account checkout and wallet options" color={colors.primaryText} onPress={() => void openProductLink("token checkout", PRODUCT_LINKS.credits)} styles={styles} />
       </View>
 
