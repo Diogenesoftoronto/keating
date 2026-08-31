@@ -1,0 +1,25 @@
+{
+  "name": "@keating/flue-browser-spike",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "scripts": {
+    "build": "vite build",
+    "probe": "node --experimental-strip-types scripts/probe-browser.ts",
+    "test": "bun run probe && bun test tests/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@flue/runtime": "2.0.3",
+    "@flue/sdk": "2.0.3"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.13",
+    "@types/node": "^24.3.0",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.3"
+  }
+}
