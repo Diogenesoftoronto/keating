@@ -14,6 +14,11 @@ import {
   type ThinkingLevel,
 } from "@earendil-works/pi-agent-core";
 import { PortableAgentInstance } from "@keating/agent-runtime";
+import {
+  BROWSER_DECLARATIVE_ARTIFACT_KINDS,
+  browserSystemPromptFromRevision,
+  createBrowserAccountEvolutionClient,
+} from "../keating/account-evolution";
 import { useDialogState } from "./useDialogState";
 import { type Model, type Api, type Context } from "@earendil-works/pi-ai";
 import { defaultConvertToLlm } from "@earendil-works/pi-web-ui";
@@ -43,6 +48,7 @@ import {
   resolveAvailableChatModel,
 } from "../lib/provider-models";
 import { recordDiagnostic } from "../lib/diagnostics";
+import { notOrganicPublicClient } from "../notorganic-provider";
 import {
   captureSessionModelContext,
   recordSessionDebugAgentEvent,
@@ -339,6 +345,49 @@ async function withSessionRestoreTimeout<T>(
     return await Promise.race([operation, timeout]);
   } finally {
     if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+  }
+}
+
+const BROWSER_EVOLUTION_COMPATIBILITY = Object.freeze({
+  agentApi: "keating-agent-hooks-v1",
+  learnerContract: 1,
+  capabilities: BROWSER_DECLARATIVE_ARTIFACT_KINDS,
+});
+
+async function resolveConnectedAccountPrompt(localPrompt: string): Promise<string> {
+  const publicClient = notOrganicPublicClient();
+  if (!publicClient?.getSession()) return localPrompt;
+  try {
+    const revision = await createBrowserAccountEvolutionClient(
+      publicClient,
+      BROWSER_EVOLUTION_COMPATIBILITY,
+    ).resolveActiveRevision();
+    if (!revision) return localPrompt;
+    const prompt = browserSystemPromptFromRevision(revision);
+    if (!prompt) {
+      recordDiagnostic(
+        "warning",
+        "account-evolution",
+        "The active account revision has no supported system prompt; using the local prompt.",
+        { revisionId: revision.revisionId, generation: revision.generation },
+      );
+      return localPrompt;
+    }
+    recordDiagnostic(
+      "info",
+      "account-evolution",
+      "Activated the connected Not Organic account pedagogy revision.",
+      { revisionId: revision.revisionId, generation: revision.generation },
+    );
+    return prompt;
+  } catch (error) {
+    recordDiagnostic(
+      "warning",
+      "account-evolution",
+      error,
+      { fallback: "local-prompt" },
+    );
+    return localPrompt;
   }
 }
 
@@ -1266,7 +1315,9 @@ export function useKeatingAgent(
         (initialState?.systemPrompt && systemPromptBaseRef.current) ||
         initialState?.systemPrompt ||
         (isDefaultPersona(persona)
-          ? await getActiveKeatingPrompt(keatingStorage)
+          ? await resolveConnectedAccountPrompt(
+              await getActiveKeatingPrompt(keatingStorage),
+            )
           : composeKeatingSystemPrompt(persona));
       systemPromptBaseRef.current = promptBase;
       if (sessionStartContextRef.current.sessionId !== agentSessionId) {

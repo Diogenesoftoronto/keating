@@ -31,6 +31,7 @@ import {
   useState,
 } from "react";
 import { fetch as streamingFetch } from "expo/fetch";
+import { useNotOrganicAccount } from "@/state/NotOrganicAccountProvider";
 import { DEFAULT_PROVIDER_SETTINGS, providerDefinition, PROVIDERS, settingsForProvider } from "@/lib/provider-config";
 import {
   BUILT_IN_MODEL_CATALOG,
@@ -244,6 +245,7 @@ const KeatingContext = createContext<KeatingContextValue | null>(null);
 
 export function KeatingProvider({ children }: PropsWithChildren) {
   const mobileWorkspace = useMobileWorkspace();
+  const { activePedagogy } = useNotOrganicAccount();
   const { settings: uiSettings } = useUiSettings();
   const [state, setState] = useState<PersistedAppState>(initialState);
   const [hydrated, setHydrated] = useState(false);
@@ -268,12 +270,14 @@ export function KeatingProvider({ children }: PropsWithChildren) {
   const catalogRef = useRef(catalog);
   const uiSettingsRef = useRef(uiSettings);
   const learnerContextRef = useRef(learnerContext);
+  const activePedagogyRef = useRef(activePedagogy);
   const learnerRepositoryRef = useRef<LearnerRepository | null>(null);
   const learnerRepositoryWriteTailRef = useRef<Promise<void>>(Promise.resolve());
   const learnerRepositoryClearingRef = useRef(false);
 
   personaRef.current = persona;
   learnerContextRef.current = learnerContext;
+  activePedagogyRef.current = activePedagogy;
   catalogRef.current = catalog;
   uiSettingsRef.current = uiSettings;
 
@@ -643,6 +647,20 @@ export function KeatingProvider({ children }: PropsWithChildren) {
       )));
       const triggeringMessage = [...providerMessages].reverse().find((message) => message.role === "user");
       if (!triggeringMessage) throw new Error("The tool loop requires a triggering learner message.");
+      const accountPedagogy = activePedagogyRef.current;
+      const localSystemPrompt = composeSystemPrompt(
+        personaRef.current,
+        learnerContextRef.current,
+        uiSettingsRef.current.showToolUi,
+      );
+      const evolvedSystemPrompt = accountPedagogy
+        && personaRef.current === DEFAULT_TEACHER_PERSONA
+        && accountPedagogy.systemPrompt
+        ? accountPedagogy.systemPrompt
+        : localSystemPrompt;
+      const accountPolicyPrompt = accountPedagogy?.teacherPolicy
+        ? `\n\nAccount pedagogy policy (verified revision ${accountPedagogy.revisionId}):\n${accountPedagogy.teacherPolicy}`
+        : "";
       const toolLoop = await runMobileToolLoop(settings, apiKey, providerMessages, {
         sessionId,
         triggeringMessageId: triggeringMessage.id,
@@ -651,11 +669,7 @@ export function KeatingProvider({ children }: PropsWithChildren) {
         createdAt: triggeringMessage.createdAt,
         advertiseTools: settings.provider !== "custom" && modelSupportsToolCalls(catalogRef.current, settings),
         signal: controller.signal,
-        systemPrompt: `${composeSystemPrompt(
-          personaRef.current,
-          learnerContextRef.current,
-          uiSettingsRef.current.showToolUi,
-        )}\n\nNative capability limits (do not claim these as available):\n${unavailableMobileCapabilityPrompt()}`,
+        systemPrompt: `${evolvedSystemPrompt}${accountPolicyPrompt}\n\nNative capability limits (do not claim these as available):\n${unavailableMobileCapabilityPrompt()}`,
         reasoningLevel: resolveModelReasoningLevel(
           catalogRef.current,
           settings,

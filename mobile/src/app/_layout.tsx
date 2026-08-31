@@ -64,11 +64,11 @@ export default function RootLayout() {
         <UiSettingsProvider>
           <KeatingThemeProvider>
             <MobileWorkspaceProvider>
-              <KeatingProvider>
-                <NotOrganicAccountProvider>
+              <NotOrganicAccountProvider>
+                <KeatingProvider>
                   <AppNavigator />
-                </NotOrganicAccountProvider>
-              </KeatingProvider>
+                </KeatingProvider>
+              </NotOrganicAccountProvider>
             </MobileWorkspaceProvider>
           </KeatingThemeProvider>
         </UiSettingsProvider>
