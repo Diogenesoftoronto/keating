@@ -13,6 +13,7 @@ import {
   type AgentState,
   type ThinkingLevel,
 } from "@earendil-works/pi-agent-core";
+import { PortableAgentInstance } from "@keating/agent-runtime";
 import { useDialogState } from "./useDialogState";
 import { type Model, type Api, type Context } from "@earendil-works/pi-ai";
 import { defaultConvertToLlm } from "@earendil-works/pi-web-ui";
@@ -105,6 +106,11 @@ import {
 import { bootNodePod } from "../keating/nodepod-runtime";
 import { registerKeatingWebMcp } from "../keating/webmcp";
 import {
+  appendKeatingPortableCatalog,
+  authorKeatingBrowserAgent,
+  type DelegationRequest,
+} from "../keating/portable-agent";
+import {
   type LiveSpeechBridge,
   type WebSpeechSettings,
 } from "../keating/speech";
@@ -196,6 +202,66 @@ function buildAgentSystemPrompt(
     { runtime: agentRuntime },
   );
   return appendCourseCollaborationPrompt(promptWithWorkspace, course);
+}
+
+async function runPortableBrowserDelegate(
+  request: DelegationRequest,
+  model: Model<Api>,
+  thinkingLevel: ThinkingLevel,
+  signal?: AbortSignal,
+): Promise<string> {
+  const instance = new PortableAgentInstance({
+    id: `browser-delegate-${crypto.randomUUID()}`,
+  });
+  const frame = instance.render(request.subagent.agent);
+  const child = new Agent({
+    initialState: {
+      model,
+      thinkingLevel,
+      messages: [],
+      tools: [],
+      systemPrompt: frame.system,
+    },
+    convertToLlm: defaultConvertToLlm,
+    streamFn: hybridStreamFn,
+    sessionId: `delegate-${crypto.randomUUID()}`,
+  });
+  child.getApiKey = (provider: string) => getProviderApiKey(provider);
+  const abort = () => child.abort();
+  signal?.addEventListener("abort", abort, { once: true });
+  try {
+    await child.prompt(request.task);
+  } finally {
+    signal?.removeEventListener("abort", abort);
+  }
+  const output = lastAssistantText(child.state.messages);
+  if (!output) throw new Error(`Portable subagent ${request.subagent.name} returned no text.`);
+  return output;
+}
+
+function lastAssistantText(messages: readonly AgentMessage[]): string {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index] as {
+      role?: unknown;
+      content?: unknown;
+    };
+    if (message.role !== "assistant" || !Array.isArray(message.content)) continue;
+    const text = message.content
+      .filter(
+        (part): part is { type: "text"; text: string } =>
+          Boolean(
+            part &&
+              typeof part === "object" &&
+              (part as { type?: unknown }).type === "text" &&
+              typeof (part as { text?: unknown }).text === "string",
+          ),
+      )
+      .map((part) => part.text)
+      .join("\n")
+      .trim();
+    if (text) return text;
+  }
+  return "";
 }
 
 function cleanSuggestedTitle(text: string) {
@@ -863,14 +929,14 @@ export function useKeatingAgent(
       setSystemPrompt: (basePrompt: string) => {
         systemPromptBaseRef.current = basePrompt;
         if (agentRef.current) {
-          agentRef.current.state.systemPrompt = buildAgentSystemPrompt(
+          agentRef.current.state.systemPrompt = appendKeatingPortableCatalog(buildAgentSystemPrompt(
             settings.enabled,
             basePrompt,
             loadLearnerContext(),
             sessionStartContextRef.current.context,
             agentRuntime,
             courseContext,
-          );
+          ));
         }
       },
       getSessionSamples: async () => {
@@ -1226,22 +1292,41 @@ export function useKeatingAgent(
         { allowFallback: !options?.preserveSelectedModel },
       );
       selectModel(resolvedModel);
+      const thinkingLevel =
+        initialState?.thinkingLevel ?? loadKeatingUiSettings().reasoningLevel;
+      const systemPrompt = buildAgentSystemPrompt(
+        speechSettings.enabled,
+        promptBase,
+        loadLearnerContext(),
+        sessionStartRecord.context,
+        agentRuntime,
+        courseContext,
+      );
+      const portableHosts = {
+        delegate: (request: DelegationRequest, signal?: AbortSignal) =>
+          runPortableBrowserDelegate(
+            request,
+            resolvedModel,
+            thinkingLevel,
+            signal,
+          ),
+        resolveMcpConnection: async () => [],
+      };
+      const authored = await authorKeatingBrowserAgent({
+        instanceId: `browser-teacher-${agentSessionId}`,
+        modelKey: `${resolvedModel.provider}/${resolvedModel.id}`,
+        systemPrompt,
+        tools,
+        hosts: portableHosts,
+      });
       const nextState: Partial<AgentState> = {
 		...initialState,
         model: resolvedModel,
-        thinkingLevel:
-          initialState?.thinkingLevel ?? loadKeatingUiSettings().reasoningLevel,
+        thinkingLevel,
         messages: [],
-        tools,
+        tools: [...authored.tools],
 		...(initialState?.messages ? { messages: initialState.messages } : {}),
-        systemPrompt: buildAgentSystemPrompt(
-          speechSettings.enabled,
-          promptBase,
-          loadLearnerContext(),
-          sessionStartRecord.context,
-          agentRuntime,
-          courseContext,
-        ),
+        systemPrompt: authored.systemPrompt,
       };
 
       const agent = new Agent({
@@ -1251,7 +1336,7 @@ export function useKeatingAgent(
         sessionId: agentSessionId,
       });
       agent.getApiKey = (provider: string) => getProviderApiKey(provider);
-      agent.state.tools = tools;
+      agent.state.tools = [...authored.tools];
       agentRef.current = agent;
       const sessionAlreadyAnswered = agent.state.messages.some((message) => {
         const candidate = message as { role?: unknown; stopReason?: unknown };
@@ -1290,14 +1375,14 @@ export function useKeatingAgent(
           }
         })();
         sessionStartRecord.context = await sessionStartRecord.promise;
-        agent.state.systemPrompt = buildAgentSystemPrompt(
+        agent.state.systemPrompt = appendKeatingPortableCatalog(buildAgentSystemPrompt(
           speechEnabledRef.current,
           systemPromptBaseRef.current,
           loadLearnerContext(),
           sessionStartRecord.context,
           agentRuntimeRef.current,
           courseContext,
-        );
+        ));
       };
       ensureSessionStartContextRef.current = ensureSessionStartContext;
 
@@ -1315,7 +1400,7 @@ export function useKeatingAgent(
                   toolOptions(speechSettings, runtime),
                 ),
               }))
-              .then(({ runtime, tools: refreshedTools }) => {
+              .then(async ({ runtime, tools: refreshedTools }) => {
                 if (agentRef.current !== agent) return;
                 agentRuntimeRef.current = runtime;
                 const availableTools = filterAvailableKeatingTools(
@@ -1325,8 +1410,7 @@ export function useKeatingAgent(
                     speechEnabled: speechSettings.enabled,
                   },
                 );
-                agent.state.tools = availableTools;
-                agent.state.systemPrompt = buildAgentSystemPrompt(
+                const refreshedPrompt = buildAgentSystemPrompt(
                   speechSettings.enabled,
                   systemPromptBaseRef.current,
                   loadLearnerContext(),
@@ -1334,6 +1418,16 @@ export function useKeatingAgent(
                   runtime,
                   courseContext,
                 );
+                const refreshed = await authorKeatingBrowserAgent({
+                  instanceId: `browser-teacher-${agentSessionId}-nodepod`,
+                  modelKey: `${resolvedModel.provider}/${resolvedModel.id}`,
+                  systemPrompt: refreshedPrompt,
+                  tools: availableTools,
+                  hosts: portableHosts,
+                });
+                if (agentRef.current !== agent) return;
+                agent.state.tools = [...refreshed.tools];
+                agent.state.systemPrompt = refreshed.systemPrompt;
                 registerKeatingWebMcp(keatingStorage, availableTools).catch(
                   console.warn,
                 );
@@ -1612,14 +1706,14 @@ export function useKeatingAgent(
           toolOptions(speechSettings, agentRuntime),
         ),
       }))
-      .then(({ agentRuntime, tools }) => {
+      .then(async ({ agentRuntime, tools }) => {
         if (cancelled) return;
         agentRuntimeRef.current = agentRuntime;
-        agent.state.tools = filterAvailableKeatingTools(tools, {
+        const availableTools = filterAvailableKeatingTools(tools, {
           runtime: agentRuntime,
           speechEnabled: speechSettings.enabled,
         });
-        agent.state.systemPrompt = buildAgentSystemPrompt(
+        const systemPrompt = buildAgentSystemPrompt(
           speechSettings.enabled,
           systemPromptBaseRef.current,
           loadLearnerContext(),
@@ -1627,7 +1721,26 @@ export function useKeatingAgent(
           agentRuntime,
           courseContext,
         );
-        registerKeatingWebMcp(keatingStorage, agent.state.tools).catch(
+        const authored = await authorKeatingBrowserAgent({
+          instanceId: `browser-teacher-${sessionIdRef.current}-capabilities`,
+          modelKey: `${agent.state.model.provider}/${agent.state.model.id}`,
+          systemPrompt,
+          tools: availableTools,
+          hosts: {
+            delegate: (request, signal) =>
+              runPortableBrowserDelegate(
+                request,
+                agent.state.model,
+                agent.state.thinkingLevel,
+                signal,
+              ),
+            resolveMcpConnection: async () => [],
+          },
+        });
+        if (cancelled || agentRef.current !== agent) return;
+        agent.state.tools = [...authored.tools];
+        agent.state.systemPrompt = authored.systemPrompt;
+        registerKeatingWebMcp(keatingStorage, availableTools).catch(
           console.warn,
         );
       })
@@ -1716,14 +1829,14 @@ export function useKeatingAgent(
       const base = composeKeatingSystemPrompt(persona);
       systemPromptBaseRef.current = base;
       if (agentRef.current) {
-        agentRef.current.state.systemPrompt = buildAgentSystemPrompt(
+        agentRef.current.state.systemPrompt = appendKeatingPortableCatalog(buildAgentSystemPrompt(
           speechSettings.enabled,
           base,
           loadLearnerContext(),
           sessionStartContextRef.current.context,
           agentRuntimeRef.current,
           courseContext,
-        );
+        ));
       }
     });
   }, [speechSettings.enabled]);
@@ -1731,14 +1844,14 @@ export function useKeatingAgent(
   useEffect(() => {
     return subscribeLearnerContext((context) => {
       if (agentRef.current) {
-        agentRef.current.state.systemPrompt = buildAgentSystemPrompt(
+        agentRef.current.state.systemPrompt = appendKeatingPortableCatalog(buildAgentSystemPrompt(
           speechSettings.enabled,
           systemPromptBaseRef.current,
           context,
           sessionStartContextRef.current.context,
           agentRuntimeRef.current,
           courseContext,
-        );
+        ));
       }
     });
   }, [speechSettings.enabled]);

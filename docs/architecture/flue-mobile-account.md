@@ -1,6 +1,6 @@
 # Flue, Mobile Self-Modification, and Not Organic Accounts
 
-Status: proposed target architecture  
+Status: implemented vertical slice with production integration gates called out below
 Scope: browser, Expo mobile, hosted/self-hosted agent execution, and account-wide evolution  
 Flue baseline inspected: `@flue/runtime`, `@flue/sdk`, and `@flue/vite` 2.0.3
 
@@ -20,6 +20,18 @@ The durable design is:
 6. Put all code execution behind a provider-neutral runner interface. Cloudflare Sandbox may be one adapter, but no artifact, API, job record, or Keating agent imports a Cloudflare type.
 
 This preserves the strongest current property: a learner can open Keating in a browser, remain signed out and offline, and still run the browser agent and its local evolution loop entirely on the client.
+
+## Implemented in `spike/flue-runtime`
+
+- `packages/agent-runtime` supplies the environment-neutral hook facade, strict render topology, JSON state, lifecycle, skill, subagent, MCP, sandbox, and data-writer contracts.
+- `web/src/keating/portable-agent` renders that facade onto the existing browser Pi loop. New browser teachers now pass their actual prompt and secured tool catalog through it; native Pi tool objects are preserved so streaming, OpenUI details, and authorization behavior do not change.
+- The browser teacher exposes a progressive `teaching-improvement` skill and a fresh-context `lesson-critic` delegate. Runtime capability refreshes are re-authored through the same facade.
+- `spikes/flue-host` is a production-built Flue 2.0.3 Node host. Its integration test executes skill activation, authenticated allowlisted Streamable HTTP MCP discovery/call, an isolated child task, parent resumption, and persistent state.
+- Expo mobile has Not Organic authorization-code login with PKCE S256, a DPoP-bound native device key, rotating durable device sessions, account loading, logout, and account UI. Android uses Keystore and iOS uses the Secure Enclave through the local Expo module.
+- `packages/learner-contracts/src/account-evolution.ts` defines account-relative revisions, learner evidence, runner requirements, attestations, jobs, and compare-and-swap activation without a client-selected account ID or provider discriminator.
+- The Not Organic provider has a provider-neutral evolution service core plus authenticated `/v1/evolution/*` route wiring and mobile-approved evolution scopes. The gateway derives account and product exclusively from the verified DPoP principal.
+
+The branch is an integration implementation, not deployment proof. The provider still needs its configured durable store, runner registry, attestation verifier, and production deployment; device login still needs a real iOS/Android deep-link and key-signing E2E; no real account evolution job has been dispatched against production. These are release gates, not browser/runtime design gaps.
 
 ## Non-negotiable invariants
 

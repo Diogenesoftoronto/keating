@@ -3,6 +3,11 @@
   "version": "3.10.1",
   "private": true,
   "main": "expo-router/entry",
+  "expo": {
+    "autolinking": {
+      "nativeModulesDir": "./modules"
+    }
+  },
   "scripts": {
     "start": "expo start --dev-client",
     "android": "expo run:android --device",
@@ -45,6 +50,7 @@
     "expo-sqlite": "~56.0.5",
     "expo-status-bar": "~56.0.4",
     "expo-system-ui": "~56.0.5",
+    "expo-web-browser": "~56.0.6",
     "fflate": "^0.8.3",
     "gt-react-native": "^11.0.12",
     "katex": "^0.17.0",
