@@ -21,13 +21,13 @@ export function WebSearchSection({
 			<div>
 				<h3 className={sectionTitleClass}>Web Search</h3>
 				<p className={sectionDescriptionClass}>
-					Let keyed chats use each provider's own web search: Google Search grounding on Gemini, the hosted <code>web_search</code> tool on OpenAI Responses models, and Anthropic's server-side <code>web_search</code> on Claude. Applies automatically when the active model and key support it.
+					Use Google Search grounding on Gemini, hosted <code>web_search</code> on OpenAI Responses models, and server-side search on Claude. When the active model has no search, Keating can use a configured OpenAI, Gemini, or Anthropic key as an auxiliary search provider.
 				</p>
 			</div>
 			<div className={settingsCard({ tone: "subtle" })}>
 				<div>
-					<div className={titleClass}>Provider-native web search</div>
-					<div className={descriptionClass}>Enables Gemini grounding plus OpenAI and Anthropic native web search when the active model supports it.</div>
+					<div className={titleClass}>Automatic web search</div>
+					<div className={descriptionClass}>Uses native search when possible and a search-capable configured provider for models such as MiniMax.</div>
 				</div>
 				<Toggle
 					tone="success"

@@ -3,9 +3,14 @@ import { describe, expect, it } from "bun:test";
 import {
 	applyProviderWebSearch,
 	resolveProviderWebSearchRoute,
+	shouldExposeClientWebSearch,
 } from "../keating/provider-web-search";
 import { setSearchProvenanceSignalSink } from "../keating/search";
-import { withProviderWebSearch } from "../hooks/keating-stream";
+import {
+	resolveAuxiliaryWebSearchModel,
+	selectAuxiliaryWebSearchModel,
+	withProviderWebSearch,
+} from "../hooks/keating-stream";
 
 describe("provider-native web search", () => {
 	it("keeps the request transformer pure outside the production stream", () => {
@@ -103,6 +108,7 @@ describe("provider-native web search", () => {
 			providerNative: false,
 		});
 		expect(applyProviderWebSearch({}, model, true)).toBeUndefined();
+		expect(shouldExposeClientWebSearch(model)).toBe(true);
 	});
 
 	it("routes unknown providers through the same explicit adapter", () => {
@@ -112,5 +118,44 @@ describe("provider-native web search", () => {
 		);
 		expect(route.kind).toBe("client-adapter");
 		expect(route.providerNative).toBe(false);
+	});
+
+	it("falls back when a provider family supports search but the selected model does not", () => {
+		const model = { provider: "openai", api: "openai-responses", id: "gpt-4" } as any;
+		expect(resolveProviderWebSearchRoute(model, true)).toMatchObject({
+			kind: "client-adapter",
+			tool: "client-web-search",
+			citationKind: "tool-results",
+		});
+		expect(shouldExposeClientWebSearch(model)).toBe(true);
+		expect(shouldExposeClientWebSearch(
+			{ provider: "openai", api: "openai-responses", id: "gpt-5.6-sol" } as any,
+		)).toBe(false);
+	});
+
+	it("uses the client adapter when Gemini grounding cannot coexist with app tools", () => {
+		const model = { provider: "google", api: "google-generative-ai", id: "gemini-2.5-flash" } as any;
+		expect(resolveProviderWebSearchRoute(model, true).kind).toBe("native");
+		expect(shouldExposeClientWebSearch(model)).toBe(true);
+		expect(applyProviderWebSearch(
+			{ config: { tools: [{ functionDeclarations: [{ name: "quiz" }] }] } },
+			model,
+			true,
+		)).toBeUndefined();
+	});
+
+	it("prefers a keyed OpenAI search model independently of the active model", async () => {
+		const models = [
+			{ provider: "google", api: "google-generative-ai", id: "gemini-2.5-flash" },
+			{ provider: "openai", api: "openai-responses", id: "gpt-5-mini" },
+		] as any[];
+		expect(selectAuxiliaryWebSearchModel(models, new Set(["openai", "google"]))?.id).toBe("gpt-5-mini");
+
+		const resolved = await resolveAuxiliaryWebSearchModel({
+			models,
+			getApiKey: async (provider) => provider === "google" ? "google-test-key" : undefined,
+		});
+		expect(resolved?.model).toMatchObject({ provider: "google", id: "gemini-2.5-flash" });
+		expect(resolved?.apiKey).toBe("google-test-key");
 	});
 });

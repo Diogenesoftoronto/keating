@@ -151,6 +151,7 @@ import { FlashcardRenderer } from "./FlashcardRenderer";
 import type { FlashcardDeck } from "../keating/srs";
 import { MermaidRenderer } from "./MermaidRenderer";
 import { MarkdownBlock } from "./MarkdownBlock";
+import { normalizeLatexDelimiters } from "./MarkdownBlock";
 import {
   pickDiverseStarterPrompts,
   STARTER_PROMPTS,
@@ -2537,7 +2538,7 @@ export function ReasoningPart({
           rehypePlugins={[rehypeKatex]}
           components={MARKDOWN_COMPONENTS}
         >
-          {text}
+          {normalizeLatexDelimiters(text)}
         </ReactMarkdown>
       </div>
     </details>

@@ -68,6 +68,9 @@ describe("composeKeatingSystemPrompt", () => {
 		expect(composed).toContain("OpenUI `Question`");
 		expect(composed).toContain("Use an OpenUI `Question`");
 		expect(composed).toContain("stop and wait for its submitted answer");
+		expect(composed).toContain("`client-web-search`");
+		expect(composed).toContain("inline math like `$g \\approx 1$`");
+		expect(composed).toContain("h^{(r)} = g^{(r)} \\odot h^{(r-1)}");
 	});
 
 	it("uses the default persona when given blank text", () => {

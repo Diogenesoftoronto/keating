@@ -111,6 +111,7 @@ import {
 } from "../keating/response-comparison";
 import { bootNodePod } from "../keating/nodepod-runtime";
 import { registerKeatingWebMcp } from "../keating/webmcp";
+import { shouldExposeClientWebSearch } from "../keating/provider-web-search";
 import {
   appendKeatingPortableCatalog,
   authorKeatingBrowserAgent,
@@ -128,7 +129,11 @@ import {
   type PersistentStorageStatus,
 } from "../stores/keating-agent-store";
 import { subscribeAgentEvents } from "./agent-subscriptions";
-import { DEFAULT_MODEL, hybridStreamFn } from "./keating-stream";
+import {
+  DEFAULT_MODEL,
+  hybridStreamFn,
+  searchWithConfiguredProvider,
+} from "./keating-stream";
 import {
   getInitPromise,
   keatingStorage,
@@ -971,6 +976,9 @@ export function useKeatingAgent(
     ) => ({
       agentRuntime,
       course: courseContext,
+      webSearch: {
+        search: searchWithConfiguredProvider,
+      },
       speech: {
         settings,
         getApiKey: (provider: string) => getProviderApiKey(provider),
@@ -1330,18 +1338,22 @@ export function useKeatingAgent(
       const sessionStartRecord = sessionStartContextRef.current;
       const agentRuntime = await loadAgentRuntimeConfig();
       agentRuntimeRef.current = agentRuntime;
+      const resolvedModel = await resolveAvailableChatModel(
+        initialState?.model ?? selectedModelRef.current,
+        { allowFallback: !options?.preserveSelectedModel },
+      );
       const tools = filterAvailableKeatingTools(
         await createKeatingTools(
           keatingStorage,
           toolOptions(speechSettings, agentRuntime),
         ),
-        { runtime: agentRuntime, speechEnabled: speechSettings.enabled },
+        {
+          runtime: agentRuntime,
+          speechEnabled: speechSettings.enabled,
+          clientWebSearch: shouldExposeClientWebSearch(resolvedModel),
+        },
       );
       registerKeatingWebMcp(keatingStorage, tools).catch(console.warn);
-      const resolvedModel = await resolveAvailableChatModel(
-        initialState?.model ?? selectedModelRef.current,
-        { allowFallback: !options?.preserveSelectedModel },
-      );
       selectModel(resolvedModel);
       const thinkingLevel =
         initialState?.thinkingLevel ?? loadKeatingUiSettings().reasoningLevel;
@@ -1459,6 +1471,9 @@ export function useKeatingAgent(
                   {
                     runtime,
                     speechEnabled: speechSettings.enabled,
+                    clientWebSearch: shouldExposeClientWebSearch(
+                      agent.state.model as Model<Api>,
+                    ),
                   },
                 );
                 const refreshedPrompt = buildAgentSystemPrompt(
@@ -1763,6 +1778,9 @@ export function useKeatingAgent(
         const availableTools = filterAvailableKeatingTools(tools, {
           runtime: agentRuntime,
           speechEnabled: speechSettings.enabled,
+          clientWebSearch: shouldExposeClientWebSearch(
+            agent.state.model as Model<Api>,
+          ),
         });
         const systemPrompt = buildAgentSystemPrompt(
           speechSettings.enabled,

@@ -191,6 +191,29 @@ describe("browser tool assembly contract", () => {
     expect(credentialCalls).toBe(0);
   });
 
+  test("connects the cross-provider web search adapter when supplied", async () => {
+    const { createKeatingTools } = await import("../keating/browser-tools");
+    const queries: string[] = [];
+    const tools = await createKeatingTools({} as any, {
+      agentRuntime: baseRuntime,
+      webSearch: {
+        search: async (query) => {
+          queries.push(query);
+          return "Finding from [source](https://example.com/research).";
+        },
+      },
+    });
+    const search = tools.find((tool) => tool.name === "client-web-search");
+
+    expect(search).toBeDefined();
+    const result = await search!.execute("search-1", { query: "recent research" } as any);
+    expect(queries).toEqual(["recent research"]);
+    expect(result.content[0]).toMatchObject({
+      type: "text",
+      text: "Finding from [source](https://example.com/research).",
+    });
+  });
+
   test("makes every runtime-supported public schema callable immediately", async () => {
     const [{ createKeatingTools }, { filterAvailableKeatingTools }] =
       await Promise.all([
