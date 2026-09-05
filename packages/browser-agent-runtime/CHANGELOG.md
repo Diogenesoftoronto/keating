@@ -7,6 +7,12 @@
 
 
 
+
+## 3.11.0
+<sub>2026-09-05</sub>
+
+- Align the browser agent runtime with Keating 3.11.0.
+
 ## 3.10.0
 <sub>2026-08-26</sub>
 

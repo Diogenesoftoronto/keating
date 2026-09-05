@@ -1,6 +1,6 @@
 {
   "name": "@keating/browser-agent-runtime",
-  "version": "3.10.2",
+  "version": "3.11.0",
   "type": "module",
   "description": "Local-first browser agent sandbox runtime with Daytona-shaped adapters.",
   "license": "MIT",

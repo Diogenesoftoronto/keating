@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.11.0] - 2026-09-05
+
+### Added
+- Tavus live teaching on web and mobile through account-authenticated Not Organic access, with lesson context, transcripts, and teaching tools.
+- Mobile Not Organic sign-in with native device keys, protected refresh credentials, and an account screen.
+- Deliberate still-image sharing for image-capable realtime models, with separate image and live-video controls.
+- Shared account-evolution contracts and an all-surface Devenv development workspace.
+
+### Fixed
+- Clean up cancelled or failed live-call allocations, leave the media room immediately on end, and bound provider cleanup requests.
+- Prevent delayed mobile credential refresh or login responses from restoring a signed-out account or replacing a newer session.
+- Register production Tavus API routes so requests reach the authenticated handlers instead of returning the app HTML.
+
+### Changed
+- Use `bun pm version` for release versioning and remove the Bumpy dependency.
+- Consolidate shared pedagogy, retry, source-edit, setup, and review-label logic across terminal and browser surfaces.
+
 ## [3.10.2] - 2026-08-27
 
 ### Fixed
@@ -821,7 +838,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v3.10.2...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v3.11.0...HEAD
+[3.11.0]: https://github.com/Diogenesoftoronto/keating/compare/v3.10.2...v3.11.0
 [3.10.2]: https://github.com/Diogenesoftoronto/keating/compare/v3.10.1...v3.10.2
 [3.10.1]: https://github.com/Diogenesoftoronto/keating/compare/v3.10.0...v3.10.1
 [3.10.0]: https://github.com/Diogenesoftoronto/keating/compare/v3.9.0...v3.10.0
