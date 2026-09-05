@@ -1,7 +1,11 @@
 import type {
   BenchmarkResult,
   Domain,
+  EngagementPolicy,
+  EvolutionCandidate,
   LearnerProfile,
+  MapElitesGrid,
+  MapElitesRun,
   SimulationWeights,
   TeacherPolicy,
   TopicDefinition,
@@ -11,56 +15,23 @@ export type {
   BenchmarkResult,
   BenchmarkTopicTrace,
   BenchmarkTrace,
+  CandidateDecision,
   Domain,
+  EngagementPolicy,
+  EvolutionCandidate,
   LearnerProfile,
+  LessonPhase,
+  LessonPlan,
+  MapElitesCell,
+  MapElitesGrid,
+  MapElitesRun,
+  PolicyDelta,
   SimulationWeights,
   TeacherPolicy,
   TeachingSimulation,
   TopicBenchmark,
   TopicDefinition,
 } from "../../shared/pedagogy/types.js";
-
-export interface LessonPhase {
-  id: string;
-  title: string;
-  purpose: string;
-  bullets: string[];
-}
-
-export interface LessonPlan {
-  topic: TopicDefinition;
-  policy: TeacherPolicy;
-  phases: LessonPhase[];
-}
-
-export interface EvolutionCandidate {
-  policy: TeacherPolicy;
-  benchmark: BenchmarkResult;
-  counterfactualBenchmark?: BenchmarkResult;
-  parentName: string | null;
-  iteration: number;
-  novelty: number;
-  accepted: boolean;
-  decision: CandidateDecision;
-  parameterDelta: PolicyDelta[];
-  preferenceScore?: number;
-}
-
-export interface PolicyDelta {
-  field: keyof TeacherPolicy;
-  before: number | string;
-  after: number | string;
-  delta: number;
-}
-
-export interface CandidateDecision {
-  improves: boolean;
-  safe: boolean;
-  novelEnough: boolean;
-  scoreDelta: number;
-  weakestTopicDelta: number;
-  reasons: string[];
-}
 
 export interface QuizResultRecord {
   topic: string;
@@ -97,18 +68,6 @@ export interface VerificationResult {
   checkedAt: string;
 }
 
-export interface EngagementPolicy {
-  name: string;
-  /** Retention half-life in days at mastery=1.0 */
-  retentionHalfLifeDays: number;
-  /** Threshold below which a topic is "due" for review */
-  dueThreshold: number;
-  /** Minimum days between reviews even if retention is low */
-  minReviewIntervalDays: number;
-  /** Urgency tiers: [critical, high, moderate, low] day thresholds */
-  urgencyTiers: [number, number, number, number];
-}
-
 export interface TopicEngagement {
   slug: string;
   title: string;
@@ -137,29 +96,6 @@ export interface EngagementTimeline {
     averageRetention: number;
     oldestUnreviewedDays: number;
   };
-}
-
-export interface MapElitesCell {
-  policy: TeacherPolicy;
-  weights: SimulationWeights;
-  score: number;
-  benchmark: BenchmarkResult;
-  iteration: number;
-}
-
-export interface MapElitesGrid {
-  descriptors: string[];
-  resolution: number;
-  cells: Map<string, MapElitesCell | null>;
-}
-
-export interface MapElitesRun {
-  baseline: BenchmarkResult;
-  best: BenchmarkResult;
-  grid: MapElitesGrid;
-  filledCellCount: number;
-  totalCells: number;
-  exploredCandidates: EvolutionCandidate[];
 }
 
 export interface LearnerState {

@@ -28,21 +28,39 @@ describe("live model catalog", () => {
 		expect(new Set(ids).size).toBe(ids.length);
 	});
 
-	test("only legacy models are allowed to lack vision", () => {
+	test("only legacy models are allowed to lack both video and image input", () => {
 		for (const model of LIVE_MODELS) {
-			if (model.video === "none") expect(model.grade).toBe("legacy");
+			if (model.video === "none" && !model.image) expect(model.grade).toBe("legacy");
 		}
 	});
 
-	test("a model without vision explains itself, since the camera button goes dead", () => {
+	test("a model without video or image input explains itself", () => {
 		for (const model of LIVE_MODELS) {
-			if (model.video === "none") expect(model.note).toBeTruthy();
+			if (model.video === "none" && !model.image) expect(model.note).toBeTruthy();
 		}
 	});
 
-	test("gemini gets the native video lane and openai the sampled one", () => {
-		for (const model of liveModelsFor("gemini-live")) expect(model.video).toBe("native");
-		for (const model of liveModelsFor("openai-realtime")) expect(model.video).not.toBe("native");
+	test("Gemini has native video and images while modern GPT Realtime has images only", () => {
+		for (const model of liveModelsFor("gemini-live")) {
+			expect(model.video).toBe("native");
+			expect(model.image).toBe(true);
+		}
+
+		for (const model of liveModelsFor("openai-realtime")) {
+			expect(model.video).toBe("none");
+			expect(model.image).toBe(model.grade !== "legacy");
+		}
+	});
+
+	test("KeatingBot is an embedded Tavus video PAL with Magic Canvas", () => {
+		const tavus = liveModelsFor("tavus");
+		expect(tavus).toHaveLength(1);
+		expect(tavus[0]).toMatchObject({
+			value: "keatingbot",
+			video: "native",
+			image: false,
+			surface: "embedded",
+		});
 	});
 });
 
@@ -80,6 +98,8 @@ describe("unknown models", () => {
 		const described = describeLiveModel("gemini-live", "gemini-99-experimental");
 		expect(described.value).toBe("gemini-99-experimental");
 		expect(described.label).toBe("gemini-99-experimental");
+		expect(described.video).toBe("native");
+		expect(described.image).toBe(true);
 		expect(described.note).toContain("tested list");
 	});
 

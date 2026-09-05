@@ -3,21 +3,10 @@
  * No filesystem or NodePod dependencies — just string → string transformations.
  */
 
-export interface StringEdit {
-	search: string;
-	replace: string;
-	reason?: string;
-}
+import type { EditResult, SourceEdit } from "../../../shared/source-edit";
 
-export interface StringEditResult {
-	success: boolean;
-	message: string;
-	diff?: {
-		linesRemoved: number;
-		linesAdded: number;
-		charDelta: number;
-	};
-}
+export type StringEdit = Omit<SourceEdit, "file">;
+export type StringEditResult = Omit<EditResult, "file">;
 
 /**
  * Apply a search/replace to a string, matching the exact algorithm used

@@ -12,7 +12,7 @@
  * and reused by the settings tab and the live surface alike.
  */
 
-export type LiveProviderId = "gemini-live" | "openai-realtime";
+export type LiveProviderId = "tavus" | "gemini-live" | "openai-realtime";
 
 /**
  * How much we trust a model to carry a whole lesson.
@@ -28,10 +28,14 @@ export interface LiveModelOption {
 	value: string;
 	label: string;
 	grade: LiveModelGrade;
-	/** How this model can see the learner, if at all. */
-	video: "native" | "sampled" | "none";
+	/** Whether this model has a genuine live video lane. */
+	video: "native" | "none";
+	/** Whether this model accepts a deliberate still image during the session. */
+	image: boolean;
 	/** One line explaining the trade-off, shown next to the option. */
 	note?: string;
+	/** Tavus owns the WebRTC controls and renders its video/canvas in an embed. */
+	surface?: "embedded";
 }
 
 /**
@@ -51,11 +55,22 @@ export interface LiveSpeechModelOption {
  */
 export const LIVE_MODELS: readonly LiveModelOption[] = [
 	{
+		providerId: "tavus",
+		value: "keatingbot",
+		label: "KeatingBot PAL",
+		grade: "recommended",
+		video: "native",
+		image: false,
+		surface: "embedded",
+		note: "Interactive Tavus video PAL with voice, vision, and Magic Canvas activities.",
+	},
+	{
 		providerId: "gemini-live",
 		value: "gemini-3.1-flash-live-preview",
 		label: "Gemini 3.1 Flash Live",
 		grade: "recommended",
 		video: "native",
+		image: true,
 		note: "Native live video and the fastest turn-taking.",
 	},
 	{
@@ -64,6 +79,7 @@ export const LIVE_MODELS: readonly LiveModelOption[] = [
 		label: "Gemini 2.5 Flash Live",
 		grade: "capable",
 		video: "native",
+		image: true,
 		note: "Widest availability. Runs tools without pausing the conversation.",
 	},
 	{
@@ -72,6 +88,7 @@ export const LIVE_MODELS: readonly LiveModelOption[] = [
 		label: "Gemini 3.0 Flash Live",
 		grade: "capable",
 		video: "native",
+		image: true,
 	},
 	{
 		providerId: "gemini-live",
@@ -79,6 +96,7 @@ export const LIVE_MODELS: readonly LiveModelOption[] = [
 		label: "Gemini 2.0 Flash Live",
 		grade: "legacy",
 		video: "native",
+		image: true,
 		note: "Older generation. Keep it for accounts without preview access.",
 	},
 	{
@@ -86,22 +104,25 @@ export const LIVE_MODELS: readonly LiveModelOption[] = [
 		value: "gpt-realtime-2.1",
 		label: "gpt-realtime-2.1",
 		grade: "recommended",
-		video: "sampled",
-		note: "Sees sampled frames rather than live video.",
+		video: "none",
+		image: true,
+		note: "Full-duplex voice with still-image input; no live video.",
 	},
 	{
 		providerId: "openai-realtime",
 		value: "gpt-realtime",
 		label: "gpt-realtime",
 		grade: "capable",
-		video: "sampled",
+		video: "none",
+		image: true,
 	},
 	{
 		providerId: "openai-realtime",
 		value: "gpt-realtime-2.1-mini",
 		label: "gpt-realtime-2.1-mini",
 		grade: "capable",
-		video: "sampled",
+		video: "none",
+		image: true,
 		note: "Cheaper and quicker; less patient with a long explanation.",
 	},
 	{
@@ -109,7 +130,8 @@ export const LIVE_MODELS: readonly LiveModelOption[] = [
 		value: "gpt-realtime-mini",
 		label: "gpt-realtime-mini",
 		grade: "capable",
-		video: "sampled",
+		video: "none",
+		image: true,
 	},
 	{
 		providerId: "openai-realtime",
@@ -117,6 +139,7 @@ export const LIVE_MODELS: readonly LiveModelOption[] = [
 		label: "gpt-4o-realtime-preview",
 		grade: "legacy",
 		video: "none",
+		image: false,
 		note: "Voice only — this generation cannot look at your camera or screen.",
 	},
 	{
@@ -125,12 +148,13 @@ export const LIVE_MODELS: readonly LiveModelOption[] = [
 		label: "gpt-4o-mini-realtime-preview",
 		grade: "legacy",
 		video: "none",
+		image: false,
 		note: "Voice only — this generation cannot look at your camera or screen.",
 	},
 ] as const;
 
 export function isLiveProviderId(id: string): id is LiveProviderId {
-	return id === "gemini-live" || id === "openai-realtime";
+	return id === "tavus" || id === "gemini-live" || id === "openai-realtime";
 }
 
 export function liveModelsFor(providerId: string): LiveModelOption[] {
@@ -174,7 +198,9 @@ export function describeLiveModel(providerId: string, value: string): LiveModelO
 		value,
 		label: value,
 		grade: "capable",
-		video: providerId === "gemini-live" ? "native" : "sampled",
+		video: providerId === "openai-realtime" ? "none" : "native",
+		image: providerId !== "tavus",
+		surface: providerId === "tavus" ? "embedded" : undefined,
 		note: "Not in Keating's tested list — it may refuse the session.",
 	};
 }

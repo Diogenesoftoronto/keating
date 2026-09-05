@@ -1,4 +1,5 @@
 import type { Nodepod } from "@scelar/nodepod";
+import type { EditResult, SourceEdit as SharedSourceEdit } from "../../../shared/source-edit";
 import type * as TypeScript from "typescript";
 import { persistSnapshot, loadSnapshots, type SnapshotRecord } from "./nodepod-snapshot-db";
 
@@ -275,23 +276,8 @@ export async function nodePodExists(path: string): Promise<boolean> {
 
 /* ─── Source editing ────────────────────────────────────── */
 
-export interface SourceEdit {
-	file: string;
-	search: string;
-	replace: string;
-	reason?: string;
-}
-
-export interface EditResult {
-	success: boolean;
-	file: string;
-	message: string;
-	diff?: {
-		linesRemoved: number;
-		linesAdded: number;
-		charDelta: number;
-	};
-}
+export type SourceEdit = SharedSourceEdit;
+export type { EditResult } from "../../../shared/source-edit";
 
 /**
  * Apply a single search/replace edit to a file in the NodePod VFS.

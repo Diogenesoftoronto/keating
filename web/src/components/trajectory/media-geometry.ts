@@ -3,15 +3,12 @@ export interface MediaPoint {
 	y: number;
 }
 
-export interface MediaRect extends MediaPoint {
-	width: number;
-	height: number;
-}
-
 export interface MediaSize {
 	width: number;
 	height: number;
 }
+
+export interface MediaRect extends MediaPoint, MediaSize {}
 
 function isPositiveFinite(value: number): boolean {
 	return Number.isFinite(value) && value > 0;

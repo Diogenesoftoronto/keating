@@ -96,6 +96,16 @@ export default defineNitroConfig({
   // via useStorage("assets:server") (see server/utils/og-render.ts).
   serverAssets: [{ baseName: "server", dir: "server/assets" }],
   handlers: [
+    {
+      route: "/api/tavus/conversations",
+      method: "POST",
+      handler: "server/api/tavus/conversations/index.post.ts",
+    },
+    {
+      route: "/api/tavus/conversations/:conversationId/end",
+      method: "POST",
+      handler: "server/api/tavus/conversations/[conversationId]/end.post.ts",
+    },
 	{
 	  route: "/api/blog",
 	  handler: "server/api/blog/index.ts",

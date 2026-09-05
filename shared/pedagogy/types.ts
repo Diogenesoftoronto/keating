@@ -138,3 +138,124 @@ export interface BenchmarkResult {
   weakestTopic: string;
   trace: BenchmarkTrace;
 }
+
+export interface LessonPhase {
+  id: string;
+  title: string;
+  purpose: string;
+  bullets: string[];
+}
+
+export interface LessonPlan {
+  topic: TopicDefinition;
+  policy: TeacherPolicy;
+  phases: LessonPhase[];
+}
+
+export interface CandidateDecision {
+  improves: boolean;
+  safe: boolean;
+  novelEnough: boolean;
+  scoreDelta: number;
+  weakestTopicDelta: number;
+  reasons: string[];
+}
+
+export interface PolicyDelta {
+  field: keyof TeacherPolicy;
+  before: number | string;
+  after: number | string;
+  delta: number;
+}
+
+export interface EvolutionCandidate {
+  policy: TeacherPolicy;
+  benchmark: BenchmarkResult;
+  counterfactualBenchmark?: BenchmarkResult;
+  parentName: string | null;
+  iteration: number;
+  novelty: number;
+  accepted: boolean;
+  decision: CandidateDecision;
+  parameterDelta: PolicyDelta[];
+  preferenceScore?: number;
+}
+
+export interface PromptObjectiveVector {
+  voice_divergence: number;
+  diagnosis: number;
+  verification: number;
+  retrieval: number;
+  transfer: number;
+  structure: number;
+}
+
+export interface EngagementPolicy {
+  name: string;
+  /** Retention half-life in days at mastery=1.0. */
+  retentionHalfLifeDays: number;
+  /** Threshold below which a topic is due for review. */
+  dueThreshold: number;
+  /** Minimum days between reviews even if retention is low. */
+  minReviewIntervalDays: number;
+  /** Urgency tiers: critical, high, moderate, and low day thresholds. */
+  urgencyTiers: [number, number, number, number];
+}
+
+export interface MapElitesCell {
+  policy: TeacherPolicy;
+  weights: SimulationWeights;
+  score: number;
+  benchmark: BenchmarkResult;
+  iteration: number;
+}
+
+export interface MapElitesGrid {
+  descriptors: string[];
+  resolution: number;
+  cells: Map<string, MapElitesCell | null>;
+}
+
+export interface MapElitesRun {
+  baseline: BenchmarkResult;
+  best: BenchmarkResult;
+  grid: MapElitesGrid;
+  filledCellCount: number;
+  totalCells: number;
+  exploredCandidates: EvolutionCandidate[];
+}
+
+export interface LearnerTurnSignal {
+  topic: string;
+  signal: "thumbs-up" | "thumbs-down" | "confused";
+  masteryEstimate: number;
+  evidence: string;
+}
+
+export interface PolicyJudgementCandidate {
+  label: string;
+  policy: TeacherPolicy;
+  benchmark: BenchmarkResult;
+  counterfactualBenchmark?: BenchmarkResult;
+  preferenceScore: number;
+}
+
+export interface QuizLimits {
+  questionChars: number;
+  answerChars: number;
+  explanationChars: number;
+  rubricChars: number;
+  optionChars: number;
+}
+
+export interface QuizReview {
+  status: "passed" | "revised";
+  issues: string[];
+  duplicatesRemoved: number;
+  maxQuestionChars: number;
+  maxAnswerChars: number;
+  maxExplanationChars: number;
+  maxRubricChars: number;
+  maxOptionChars: number;
+  limits: QuizLimits;
+}

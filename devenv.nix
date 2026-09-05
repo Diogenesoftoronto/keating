@@ -45,6 +45,57 @@ in
     typst
   ];
 
+  # `devenv up` is an interactive, all-surface development workspace. The two
+  # terminal clients need real PTYs, so use process-compose rather than the
+  # non-interactive native log viewer.
+  process.manager.implementation = "process-compose";
+  process.managers.process-compose.tui.enable = true;
+
+  processes = {
+    terminal-shell = {
+      exec = "bun src/cli/main.ts shell";
+      process-compose.is_interactive = true;
+    };
+
+    tui = {
+      exec = "bun src/cli/main.ts tui";
+      process-compose.is_interactive = true;
+    };
+
+    web = {
+      exec = "bun run dev";
+      cwd = "./web";
+      ready = {
+        http.get.port = 3000;
+        timeout = 120;
+      };
+    };
+
+    desktop = {
+      exec = "bun run dev";
+      cwd = "./desktop";
+      after = [ "devenv:processes:web" ];
+    };
+
+    mobile-web = {
+      exec = "bun run web";
+      cwd = "./mobile";
+      ready = {
+        http.get.port = 8081;
+        timeout = 120;
+      };
+    };
+
+    storybook = {
+      exec = "bun run storybook";
+      cwd = "./web";
+      ready = {
+        http.get.port = 6006;
+        timeout = 120;
+      };
+    };
+  };
+
   # ---------------------------------------------------------------------------
   # Non-secret build/runtime configuration.
   #
@@ -79,7 +130,7 @@ in
     VITE_NOTORGANIC_AUTHORIZATION_URL = "";
     VITE_NOTORGANIC_CLIENT_ID = "";
     VITE_NOTORGANIC_REDIRECT_URI = "";
-    VITE_NOTORGANIC_SCOPE = "wallet:read usage:read billing:checkout infer:balanced";
+    VITE_NOTORGANIC_SCOPE = "wallet:read usage:read billing:checkout infer:balanced realtime:connect";
 
     # Browser inference reservation ceiling (100000 micro-USD = $0.10).
     VITE_NOTORGANIC_MAX_COST_MICROUSD = "100000";
@@ -285,6 +336,13 @@ in
     '';
   };
 
+  tasks."keating:mobile-web" = {
+    description = "Start the React Native app in Expo's web runtime (port 8081)";
+    exec = ''
+      cd mobile && bun run web
+    '';
+  };
+
   tasks."keating:mobile-prebuild" = {
     description = "Generate the Android native project from Expo configuration";
     exec = ''
@@ -345,6 +403,13 @@ in
   };
 
   # ── Desktop ─────────────────────────────────────────────────────
+  tasks."keating:desktop" = {
+    description = "Build and launch the Electron desktop app against the web dev server";
+    exec = ''
+      cd desktop && bun run dev
+    '';
+  };
+
   tasks."keating:desktop-check" = {
     description = "Typecheck + test the Electron desktop host";
     exec = ''
@@ -386,6 +451,13 @@ in
     description = "Launch the hyperteacher shell";
     exec = ''
       bun src/cli/main.ts shell
+    '';
+  };
+
+  tasks."keating:tui" = {
+    description = "Launch the OpenTUI host over Pi RPC";
+    exec = ''
+      bun src/cli/main.ts tui
     '';
   };
 

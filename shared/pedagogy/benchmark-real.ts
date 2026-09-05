@@ -27,6 +27,26 @@ function mean(values: number[]): number {
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
+export function classifyDominantSignal(
+  simulations: readonly TeachingSimulation[],
+  kind: "strength" | "weakness",
+): string {
+  if (simulations.length === 0) return "no learner feedback";
+  const metrics = {
+    intuitionFit: mean(simulations.map((entry) => entry.breakdown.intuitionFit)),
+    rigorFit: mean(simulations.map((entry) => entry.breakdown.rigorFit)),
+    dialogueFit: mean(simulations.map((entry) => entry.breakdown.dialogueFit)),
+    diagramFit: mean(simulations.map((entry) => entry.breakdown.diagramFit)),
+    practiceFit: mean(simulations.map((entry) => entry.breakdown.practiceFit)),
+    reflectionFit: mean(simulations.map((entry) => entry.breakdown.reflectionFit)),
+    overload: mean(simulations.map((entry) => entry.breakdown.overload)),
+  };
+  const ordered = Object.entries(metrics).sort((left, right) =>
+    kind === "strength" ? right[1] - left[1] : left[1] - right[1]
+  );
+  return ordered[0]?.[0] ?? "unknown";
+}
+
 export function feedbackToOutcomeScore(signal: OutcomeSignal): number {
   switch (signal) {
     case "thumbs-up": return 0.85;

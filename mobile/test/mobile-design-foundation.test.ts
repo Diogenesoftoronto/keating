@@ -167,7 +167,7 @@ test("live is reachable from the composer rather than the tab bar", async () => 
   expect(composer).toContain('>Live</Text>');
 });
 
-test("secondary mobile destinations use canonical, recoverable product links", async () => {
+test("secondary mobile destinations use canonical links and native Live", async () => {
   const { PRODUCT_LINKS } = await import("../src/lib/product-links");
   const more = await Bun.file("src/app/(tabs)/more.tsx").text();
   const live = await Bun.file("src/app/(tabs)/live.tsx").text();
@@ -178,8 +178,14 @@ test("secondary mobile destinations use canonical, recoverable product links", a
   expect(more).toContain("Buy tokens / credits");
   expect(more).toContain("Tutorial");
   expect(more).toContain("Manual");
-  expect(live).toContain("Native Live is not available in this build");
-  expect(live).toContain("remain required before mobile reaches feature parity");
+  expect(live).toContain("TavusLiveCall");
+  expect(live).toContain("Native voice and PAL video");
+  expect(live).toContain("Flashcard and quiz tools");
+  expect(live).toContain("preserveLiveConversation");
+  const call = await Bun.file("src/components/live/TavusLiveCall.tsx").text();
+  expect(call).toContain("Daily.createCallObject");
+  expect(call).toContain("DailyMediaView");
+  expect(call).not.toContain("iframe");
 });
 
 test("courses reads the course API natively and names what stays on the web", async () => {
@@ -195,7 +201,8 @@ test("courses reads the course API natively and names what stays on the web", as
   expect(courses).toContain("Approve and join");
   expect(detail).toContain("fetchCourse");
   expect(detail).toContain("shareCourseMaterial");
-  expect(detail).toContain("Study this with Keating");
+  expect(detail).toContain("Study in Tutor");
+  expect(detail).toContain("Study Live");
   expect(detail).toContain("Course building, discussion, and review happen in the web workspace.");
 });
 

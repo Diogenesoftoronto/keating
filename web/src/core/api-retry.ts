@@ -1,18 +1,10 @@
-export interface ApiRetryPolicy {
-  maxAttempts: number;
-  initialDelayMs: number;
-  maxDelayMs: number;
-  rateLimitIntervalMs: number;
-  jitterRatio: number;
-}
+import {
+  DEFAULT_API_RETRY_POLICY,
+  sanitizeApiRetryPolicy,
+  type ApiRetryPolicy,
+} from "../../../shared/api-retry-policy";
 
-export const DEFAULT_API_RETRY_POLICY: ApiRetryPolicy = {
-  maxAttempts: 4,
-  initialDelayMs: 750,
-  maxDelayMs: 30_000,
-  rateLimitIntervalMs: 500,
-  jitterRatio: 0.2
-};
+export { DEFAULT_API_RETRY_POLICY, sanitizeApiRetryPolicy, type ApiRetryPolicy };
 
 const RETRYABLE_STATUS_CODES = new Set([408, 409, 425, 429, 500, 502, 503, 504, 529]);
 
@@ -52,28 +44,6 @@ const RATE_LIMIT_ERROR_PATTERN = /\b(rate[_ -]?limit|too many requests|resource[
 const SERVER_ERROR_PATTERN = /\b(overload|overloaded|service unavailable|temporarily unavailable|upstream error|bad gateway|server error|try again later)\b/i;
 
 let nextStartAt = 0;
-
-function clampNumber(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
-
-export function sanitizeApiRetryPolicy(value: unknown): ApiRetryPolicy {
-  const entry = value && typeof value === "object" ? value as Record<string, unknown> : {};
-  const fromNumber = (key: keyof ApiRetryPolicy, fallback: number, min: number, max: number) => {
-    const raw = entry[key];
-    return typeof raw === "number" && Number.isFinite(raw)
-      ? clampNumber(raw, min, max)
-      : fallback;
-  };
-
-  return {
-    maxAttempts: Math.round(fromNumber("maxAttempts", DEFAULT_API_RETRY_POLICY.maxAttempts, 1, 8)),
-    initialDelayMs: Math.round(fromNumber("initialDelayMs", DEFAULT_API_RETRY_POLICY.initialDelayMs, 0, 60_000)),
-    maxDelayMs: Math.round(fromNumber("maxDelayMs", DEFAULT_API_RETRY_POLICY.maxDelayMs, 0, 300_000)),
-    rateLimitIntervalMs: Math.round(fromNumber("rateLimitIntervalMs", DEFAULT_API_RETRY_POLICY.rateLimitIntervalMs, 0, 60_000)),
-    jitterRatio: fromNumber("jitterRatio", DEFAULT_API_RETRY_POLICY.jitterRatio, 0, 1)
-  };
-}
 
 export function apiErrorText(error: unknown): string {
   if (error instanceof Error) return error.message;
