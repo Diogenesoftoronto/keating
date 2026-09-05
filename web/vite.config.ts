@@ -612,6 +612,10 @@ export default defineConfig({
               changeOrigin: true,
               ws: true,
             },
+			"/api/tavus": {
+			  target: devCoursesApiOrigin,
+			  changeOrigin: true,
+			},
           }
         : {}),
       "/ingest/static": {

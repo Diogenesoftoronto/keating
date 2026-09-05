@@ -1,6 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
+import type { PromptObjectiveVector } from "../../shared/pedagogy/types.js";
 import { loadEnv } from "./env.js";
 import { promptEvolutionArchivePath, promptEvolutionDir } from "./paths.js";
 import { piComplete, piCompleteJson } from "./pi-agent.js";
@@ -17,14 +18,7 @@ function promptNameFromPath(promptPath: string): string {
   return fileName.replace(/\.md$/, "");
 }
 
-export interface PromptObjectiveVector {
-  voice_divergence: number;
-  diagnosis: number;
-  verification: number;
-  retrieval: number;
-  transfer: number;
-  structure: number;
-}
+export type { PromptObjectiveVector } from "../../shared/pedagogy/types.js";
 
 export interface PromptEvaluation {
   promptPath: string;

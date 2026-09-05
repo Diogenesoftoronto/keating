@@ -1,13 +1,8 @@
 import { relative } from "node:path";
 import { DEFAULT_PI_PROVIDER, type KeatingConfig, configPath, loadKeatingConfig, writeKeatingConfig } from "../../core/config.js";
 import { envWithProviderAliases, providerIsConfigured } from "../../core/provider-auth.js";
+import type { SetupChoice } from "../../runtime/setup-choice.js";
 import { info } from "./ui-helpers.js";
-
-interface SetupChoice<T extends string = string> {
-  label: string;
-  value: T;
-  hint?: string;
-}
 
 const SETUP_PROVIDERS: SetupChoice[] = [
   { label: "OpenRouter (free)", value: "openrouter", hint: "Free models, no credit card required" },

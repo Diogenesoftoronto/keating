@@ -7,6 +7,7 @@ import {
 
 const GEMINI = { providerId: "gemini-live", model: "gemini-3.1-flash-live-preview" };
 const OPENAI = { providerId: "openai-realtime", model: "gpt-realtime-2.1" };
+const TAVUS = { providerId: "tavus", model: "keatingbot" };
 
 /** A DOMException-shaped error, which is what getUserMedia actually rejects with. */
 function mediaError(name: string, message = ""): Error {
@@ -58,6 +59,19 @@ describe("session failures", () => {
 		expect(failure.kind).toBe("network");
 		expect(failure.retry).toBe(true);
 		expect(failure.switchModel).toBe(false);
+	});
+
+	test("Tavus failures name Tavus and provide account and capacity recovery", () => {
+		const auth = classifyLiveFailure(new Error("Connect your Not Organic account to start Tavus Live."), TAVUS);
+		expect(auth).toMatchObject({ kind: "auth", title: "Not Organic account needed", settings: "providers", retry: false });
+		expect(auth.message).toContain("Not Organic");
+
+		const capacity = classifyLiveFailure(new Error("429 Too many Tavus conversations"), TAVUS);
+		expect(capacity).toMatchObject({ kind: "rate-limit", title: "Tavus is at capacity", retry: true, switchModel: false });
+
+		const network = classifyLiveFailure(new Error("network disconnected"), TAVUS);
+		expect(network.message).toContain("Tavus");
+		expect(network.message).not.toContain("Google");
 	});
 
 	test("a model with no realtime lane cannot be fixed by retrying", () => {

@@ -110,6 +110,7 @@ import {
   type WebSpeechSettings,
 } from "../keating/speech";
 import { buildLiveHistory } from "../keating/live-history";
+import { buildLiveSessionContext } from "../keating/live-context";
 import {
   savePersistentStorageStatus,
   useKeatingAgentStore,
@@ -345,6 +346,8 @@ export function useKeatingAgent(
   const sessionParentIdRef = useRef<string | null>(null);
   const sessionForkedAtRef = useRef<string | undefined>(undefined);
   const selectedModelRef = useRef<Model<Api>>(DEFAULT_MODEL);
+  const courseContextRef = useRef(courseContext);
+  courseContextRef.current = courseContext;
   // The ref is what the agent reads; this mirrors it for anything that has to
   // re-render when the model changes, such as the chat header's model button.
   const [modelLabel, setModelLabel] = useState<string>(
@@ -1671,6 +1674,13 @@ export function useKeatingAgent(
         // teacher as the text session rather than a generic assistant.
         instructions: agent.state.systemPrompt,
         history: buildLiveHistory(agent.state.messages ?? []),
+		loadContext: () => buildLiveSessionContext({
+			storage: keatingStorage,
+			sessionId: sessionIdRef.current,
+			messages: agent.state.messages ?? [],
+			providedProfile: loadLearnerContext(),
+			activeCourseId: courseContextRef.current?.activeCourseId,
+		}),
         tools: tools.map((tool) => ({
           name: tool.name,
           description: tool.description ?? tool.label ?? tool.name,

@@ -1,6 +1,7 @@
 import {
 	getAudioContext,
 	type LiveHistoryTurn,
+	type LiveImageInput,
 	type LiveSpeechRequest,
 	type LiveSpeechSession,
 	type LiveSpeechTool,
@@ -15,7 +16,6 @@ import {
 	createRealtimeTelemetry,
 	type RealtimeTelemetryObserver,
 } from "../observability";
-import type { CapturedFrame } from "../video-capture";
 import {
 	createRealtimeCanonicalBridge,
 	jsonRecord,
@@ -27,25 +27,12 @@ import {
 	addAbortListener,
 	createLiveSessionLifecycle,
 	createLiveTurnTelemetry,
-	createLiveVideoSubscription,
 } from "./live-session-lifecycle";
 
 export {
 	createRealtimeCanonicalBridge,
 	type RealtimeCanonicalBridge,
 } from "./live-session-shared";
-
-/** Tool the model can call to look at what the learner is showing right now. */
-export const LOOK_AT_SCREEN_TOOL_NAME = "look_at_screen";
-
-const LOOK_AT_SCREEN_TOOL: LiveSpeechTool = {
-	name: LOOK_AT_SCREEN_TOOL_NAME,
-	description:
-		"Look at what the learner is currently showing on their camera or shared screen. "
-		+ "Call this when the learner refers to something visual ('this', 'here', 'what I'm holding') "
-		+ "or when you need to check their work before answering.",
-	parameters: { type: "object", properties: {}, additionalProperties: false },
-};
 
 function protocolError(error: unknown, code: string) {
 	return sharedProtocolError(error, code, "openai");
@@ -140,6 +127,40 @@ export function realtimeImageItem(dataUrl: string): Record<string, unknown> {
 			content: [{ type: "input_image", image_url: dataUrl }],
 		},
 	};
+}
+
+/** Wait for an RTC data channel instead of silently dropping a learner action. */
+export function waitForRealtimeDataChannel(
+	channel: Pick<RTCDataChannel, "readyState" | "addEventListener" | "removeEventListener">,
+	signal?: AbortSignal,
+): Promise<void> {
+	if (channel.readyState === "open") return Promise.resolve();
+	if (channel.readyState === "closing" || channel.readyState === "closed") {
+		return Promise.reject(new Error("The Realtime image channel is closed."));
+	}
+	if (signal?.aborted) return Promise.reject(new DOMException("Aborted", "AbortError"));
+
+	return new Promise((resolve, reject) => {
+		const cleanup = () => {
+			channel.removeEventListener("open", onOpen);
+			channel.removeEventListener("close", onClose);
+			channel.removeEventListener("error", onError);
+			signal?.removeEventListener("abort", onAbort);
+		};
+		const settle = (callback: () => void) => {
+			cleanup();
+			callback();
+		};
+		const onOpen = () => settle(resolve);
+		const onClose = () => settle(() => reject(new Error("The Realtime image channel closed before the image was sent.")));
+		const onError = () => settle(() => reject(new Error("The Realtime image channel could not send the image.")));
+		const onAbort = () => settle(() => reject(new DOMException("Aborted", "AbortError")));
+
+		channel.addEventListener("open", onOpen, { once: true });
+		channel.addEventListener("close", onClose, { once: true });
+		channel.addEventListener("error", onError, { once: true });
+		signal?.addEventListener("abort", onAbort, { once: true });
+	});
 }
 
 /** Seed a prior chat turn so a voice session continues the same conversation. */
@@ -382,7 +403,7 @@ async function startLiveSession(
 	request: LiveSpeechRequest,
 	observer?: RealtimeTelemetryObserver,
 ): Promise<LiveSpeechSession> {
-	const { settings, getApiKey, signal, instructions, tools, history, video, onToolCall, onState, onUserTranscript, onAssistantTranscript, onError } = request;
+	const { settings, getApiKey, signal, instructions, tools, history, onToolCall, onState, onUserTranscript, onAssistantTranscript, onError } = request;
 	const telemetry = createRealtimeTelemetry(observer);
 	const canonical = createRealtimeCanonicalBridge(request.onConversationEvent, request.conversationIds);
 	const setupStartedAt = telemetry.start();
@@ -397,13 +418,11 @@ async function startLiveSession(
 		telemetry.emit("session.completed", { provider: "openai", outcome: "error" });
 		throw new Error(`OpenAI Realtime model ${settings.model} cannot satisfy duplex WebRTC and native tool-call requirements.`);
 	}
-	// Vision is only offered when the model can actually accept still images;
-	// on a legacy preview model the frame sink stays dark rather than erroring.
-	// Capability is fixed for the session, but whether frames are flowing is not:
-	// the learner can turn the camera on and off mid-conversation.
-	const visionCapable = capability.capabilities.realtimeImage === "native";
-	const initialVideo = visionCapable ? video ?? null : null;
-	canonical.emit("run.started", { mode: initialVideo ? "multimodal" : "voice" });
+	// Still-image input is distinct from video. GPT Realtime can accept an image
+	// item mid-conversation, but Keating never opens a camera or screen stream for
+	// it and never drips sampled frames into the session.
+	const imageCapable = capability.capabilities.realtimeImage === "native";
+	canonical.emit("run.started", { mode: "voice" });
 	const apiKey = await getApiKey("openai");
 	if (!apiKey) {
 		const error = new Error("No OpenAI API key configured. Add one in Settings → Providers & Models.");
@@ -448,8 +467,6 @@ async function startLiveSession(
 	}
 
 	let micStream: MediaStream | null = null;
-	let videoSubscription: ReturnType<typeof createLiveVideoSubscription> | null = null;
-	let framesSent = 0;
 	const lifecycle = createLiveSessionLifecycle({
 		signal,
 		onState,
@@ -466,7 +483,6 @@ async function startLiveSession(
 		},
 	});
 	lifecycle.addCleanup(() => {
-		videoSubscription?.stop();
 		try { pc.close(); } catch {}
 		micStream?.getTracks().forEach((track) => track.stop());
 		if (audioEl) {
@@ -508,11 +524,7 @@ async function startLiveSession(
 	const dataChannel = pc.createDataChannel("oai-events");
 	let responseActive = false;
 
-	// The frame drip gives the model ambient context; look_at_screen lets it
-	// deliberately check the learner's work at the moment it matters. Registered
-	// on capability rather than on the camera being on right now, because tools
-	// are fixed at session setup and the camera is not.
-	const sessionTools = visionCapable ? [...(tools ?? []), LOOK_AT_SCREEN_TOOL] : (tools ?? []);
+	const sessionTools = tools ?? [];
 
 	micStream = await attachMicrophone(pc);
 	if (!micStream) {
@@ -535,17 +547,6 @@ async function startLiveSession(
 		}
 	};
 
-	const sendFrame = (frame: CapturedFrame) => {
-		send(realtimeImageItem(frame.dataUrl));
-		framesSent += 1;
-	};
-
-	videoSubscription = createLiveVideoSubscription({
-		capable: visionCapable,
-		initial: initialVideo,
-		onFrame: sendFrame,
-	});
-
 	dataChannel.addEventListener("open", () => {
 		// Re-sent even though the same config rode along with the SDP offer: the
 		// update is idempotent and guarantees tools are registered before the
@@ -557,8 +558,6 @@ async function startLiveSession(
 		for (const turnItem of history ?? []) {
 			if (turnItem.text.trim()) send(realtimeHistoryItem(turnItem));
 		}
-
-		videoSubscription?.setReady();
 
 		lifecycle.setState("listening");
 		telemetry.emit("connection.setup.completed", {
@@ -653,21 +652,6 @@ async function startLiveSession(
 					canonical,
 					telemetry,
 					execute: async (pending) => {
-						// look_at_screen is served locally from the capture handle
-						// rather than round-tripping through the agent tool catalog.
-						if (pending.name === LOOK_AT_SCREEN_TOOL_NAME) {
-							const activeVideo = videoSubscription?.active;
-							const frame = await activeVideo?.captureFrameNow();
-							if (!frame) {
-								return {
-									ok: false,
-									error: activeVideo
-										? "The camera is still warming up. Ask the learner to describe what they are showing."
-										: "The learner's camera and screen sharing are both off. Ask them to turn one on if you need to see it.",
-								};
-							}
-							return { ok: true, note: "A current frame has been added to the conversation." };
-						}
 						if (!onToolCall) throw new Error(`No handler is available for tool ${pending.name}.`);
 						return await onToolCall(pending);
 					},
@@ -723,13 +707,9 @@ async function startLiveSession(
 		get state() {
 			return lifecycle.state;
 		},
-		get framesSent() {
-			return framesSent;
-		},
-		get videoRoute() {
-			return videoSubscription?.active ? "sampled" as const : "none" as const;
-		},
-		visionCapable,
+		videoRoute: "none",
+		videoCapable: false,
+		imageCapable,
 		get inputStream() {
 			return micStream;
 		},
@@ -739,8 +719,17 @@ async function startLiveSession(
 			// the track would end the session's input stream outright.
 			micStream?.getAudioTracks().forEach((track) => { track.enabled = !muted; });
 		},
-		setVideo(next) {
-			videoSubscription?.attach(next);
+		async sendImage(image: LiveImageInput) {
+			if (!imageCapable) throw new Error(`${model} cannot accept image input.`);
+			if (!image.data) throw new Error("The selected image is empty.");
+			await waitForRealtimeDataChannel(dataChannel, signal);
+			if (lifecycle.state === "closed") throw new Error("The Realtime session is closed.");
+			const dataUrl = `data:${image.mimeType};base64,${image.data}`;
+			try {
+				dataChannel.send(JSON.stringify(realtimeImageItem(dataUrl)));
+			} catch (error) {
+				throw new Error("OpenAI Realtime could not accept the image payload.", { cause: error });
+			}
 		},
 		async stop() {
 			lifecycle.close("cancelled");

@@ -6,17 +6,32 @@
 import {
 	MIN_REAL_OUTCOMES,
 	blendRealSyntheticScore,
+	classifyDominantSignal,
 	computeRealOutcomeScore,
 	feedbackToOutcomeScore,
 	hasEnoughRealData,
 	simulateDeterministicTeaching,
 } from "../../../shared/pedagogy/benchmark-real";
+import { DEFAULT_ENGAGEMENT_POLICY, formatDaysAgo } from "../../../shared/pedagogy/engagement";
+import { formatMapElitesRun, placeInMapElitesGrid } from "../../../shared/pedagogy/map-elites";
 import type { ScoreableLearnerOutcome } from "../../../shared/pedagogy/benchmark-real";
 import type {
 	BenchmarkResult,
 	BenchmarkTopicTrace,
 	Domain,
+	EngagementPolicy,
+	EvolutionCandidate,
 	LearnerProfile,
+	LearnerTurnSignal,
+	LessonPhase,
+	LessonPlan,
+	MapElitesCell,
+	MapElitesGrid,
+	MapElitesRun,
+	PolicyJudgementCandidate,
+	PromptObjectiveVector,
+	QuizLimits,
+	QuizReview,
 	SimulationWeights,
 	TeacherPolicy,
 	TeachingSimulation,
@@ -27,6 +42,7 @@ import type {
 export {
 	MIN_REAL_OUTCOMES,
 	blendRealSyntheticScore,
+	classifyDominantSignal,
 	computeRealOutcomeScore,
 	feedbackToOutcomeScore,
 	hasEnoughRealData,
@@ -38,64 +54,25 @@ export type {
 	BenchmarkTopicTrace,
 	BenchmarkTrace,
 	Domain,
+	EngagementPolicy,
+	EvolutionCandidate,
 	LearnerProfile,
+	LearnerTurnSignal,
+	LessonPhase,
+	LessonPlan,
+	MapElitesCell,
+	MapElitesGrid,
+	MapElitesRun,
+	PromptObjectiveVector,
+	QuizLimits,
+	QuizReview,
 	SimulationWeights,
 	TeacherPolicy,
 	TeachingSimulation,
 	TopicBenchmark,
 	TopicDefinition,
 } from "../../../shared/pedagogy/types";
-
-// ============================================================================
-// Types (from src/core/types.ts)
-// ============================================================================
-
-export interface LessonPhase {
-	id: string;
-	title: string;
-	purpose: string;
-	bullets: string[];
-}
-
-export interface LessonPlan {
-	topic: TopicDefinition;
-	policy: TeacherPolicy;
-	phases: LessonPhase[];
-}
-
-export interface EvolutionCandidate {
-	policy: TeacherPolicy;
-	benchmark: BenchmarkResult;
-	counterfactualBenchmark?: BenchmarkResult;
-	parentName: string | null;
-	iteration: number;
-	novelty: number;
-	accepted: boolean;
-	decision: {
-		improves: boolean;
-		safe: boolean;
-		novelEnough: boolean;
-		scoreDelta: number;
-		weakestTopicDelta: number;
-		reasons: string[];
-	};
-	parameterDelta: Array<{
-		field: keyof TeacherPolicy;
-		before: number | string;
-		after: number | string;
-		delta: number;
-	}>;
-	preferenceScore?: number;
-}
-
-export interface PromptObjectiveVector {
-	voice_divergence: number;
-	diagnosis: number;
-	verification: number;
-	retrieval: number;
-	transfer: number;
-	structure: number;
-}
+export { DEFAULT_ENGAGEMENT_POLICY } from "../../../shared/pedagogy/engagement";
 
 // ============================================================================
 // Utilities
@@ -625,24 +602,6 @@ export function simulateTeaching(
 	return simulateDeterministicTeaching(policy, topic, learner, weights);
 }
 
-function classifyDominantSignal(simulations: TeachingSimulation[], kind: "strength" | "weakness"): string {
-	if (simulations.length === 0) return "no learner feedback";
-	const metrics = {
-		intuitionFit: mean(simulations.map((entry) => entry.breakdown.intuitionFit)),
-		rigorFit: mean(simulations.map((entry) => entry.breakdown.rigorFit)),
-		dialogueFit: mean(simulations.map((entry) => entry.breakdown.dialogueFit)),
-		diagramFit: mean(simulations.map((entry) => entry.breakdown.diagramFit)),
-		practiceFit: mean(simulations.map((entry) => entry.breakdown.practiceFit)),
-		reflectionFit: mean(simulations.map((entry) => entry.breakdown.reflectionFit)),
-		overload: mean(simulations.map((entry) => entry.breakdown.overload)),
-	};
-	const ordered = Object.entries(metrics).sort((left, right) =>
-		kind === "strength" ? right[1] - left[1] : left[1] - right[1]
-	);
-	const [name] = ordered[0] ?? ["unknown"];
-	return name;
-}
-
 function summarizeTopic(topic: TopicDefinition, simulations: TeachingSimulation[], traceLimit: number): TopicBenchmark {
 	const ranked = [...simulations].sort((left, right) => right.score - left.score);
 	return {
@@ -670,12 +629,7 @@ export interface BrowserLearnerOutcome extends ScoreableLearnerOutcome {
 	model?: string;
 }
 
-export interface BrowserLearnerTurnSignal {
-	topic: string;
-	signal: "thumbs-up" | "thumbs-down" | "confused";
-	masteryEstimate: number;
-	evidence: string;
-}
+export type BrowserLearnerTurnSignal = LearnerTurnSignal;
 
 export function inferBrowserLearnerTurnSignal(text: string, fallbackTopic = "general"): BrowserLearnerTurnSignal | null {
 	const compact = text.replace(/\s+/g, " ").trim();
@@ -1147,62 +1101,8 @@ export function evolvePolicy(
 	};
 }
 
-export interface MapElitesCell {
-	policy: TeacherPolicy;
-	weights: SimulationWeights;
-	score: number;
-	benchmark: BenchmarkResult;
-	iteration: number;
-}
-
-export interface MapElitesGrid {
-	descriptors: string[];
-	resolution: number;
-	cells: Map<string, MapElitesCell | null>;
-}
-
-export interface MapElitesRun {
-	baseline: BenchmarkResult;
-	best: BenchmarkResult;
-	grid: MapElitesGrid;
-	filledCellCount: number;
-	totalCells: number;
-	exploredCandidates: EvolutionCandidate[];
-}
-
 const DEFAULT_DESCRIPTORS = ["formalism", "socraticRatio"];
 const DEFAULT_RESOLUTION = 10;
-
-function meCellKey(descriptors: number[], resolution: number): string {
-	return descriptors
-		.map((d) => Math.min(Math.floor(d * resolution), resolution - 1))
-		.join(",");
-}
-
-function meGetDescriptorValues(policy: TeacherPolicy, descriptors: string[]): number[] {
-	return descriptors.map((d) => {
-		const val = policy[d as keyof TeacherPolicy];
-		return typeof val === "number" ? val : 0;
-	});
-}
-
-function mePlaceInGrid(
-	grid: MapElitesGrid,
-	policy: TeacherPolicy,
-	weights: SimulationWeights,
-	score: number,
-	benchmark: BenchmarkResult,
-	iteration: number
-): boolean {
-	const descVals = meGetDescriptorValues(policy, grid.descriptors);
-	const key = meCellKey(descVals, grid.resolution);
-	const existing = grid.cells.get(key);
-	if (!existing || score > existing.score) {
-		grid.cells.set(key, { policy, weights, score, benchmark, iteration });
-		return !existing;
-	}
-	return false;
-}
 
 function meSelectParent(grid: MapElitesGrid, prng: Prng): { policy: TeacherPolicy; weights: SimulationWeights } {
 	const filled = Array.from(grid.cells.values()).filter((c): c is MapElitesCell => c !== null);
@@ -1252,14 +1152,6 @@ function browserCounterfactualOutcomes(outcomes: BrowserLearnerOutcome[]): Brows
 		}));
 	});
 }
-
-type PolicyJudgementCandidate = {
-	label: string;
-	policy: TeacherPolicy;
-	benchmark: BenchmarkResult;
-	counterfactualBenchmark?: BenchmarkResult;
-	preferenceScore: number;
-};
 
 function policyJudgementVector(candidate: PolicyJudgementCandidate): number[] {
 	const mean = (values: number[]) => values.length === 0 ? 0 : values.reduce((sum, value) => sum + value, 0) / values.length;
@@ -1319,7 +1211,7 @@ export function mapElitesEvolve(
 	const baselineCounterfactual = cfOutcomes
 		? runBenchmarkSuite(basePolicy, focusTopic, seed + 7, 3, DEFAULT_WEIGHTS, cfOutcomes)
 		: undefined;
-	mePlaceInGrid(grid, basePolicy, DEFAULT_WEIGHTS, baseline.overallScore, baseline, 0);
+	placeInMapElitesGrid(grid, basePolicy, DEFAULT_WEIGHTS, baseline.overallScore, baseline, 0);
 
 	const exploredCandidates: EvolutionCandidate[] = [];
 	const judgementCandidates: PolicyJudgementCandidate[] = [{
@@ -1347,7 +1239,7 @@ export function mapElitesEvolve(
 		const candidateCounterfactual = cfOutcomes
 			? runBenchmarkSuite(candidatePolicy, focusTopic, seed + i * 11 + 7, 3, candidateWeights, cfOutcomes)
 			: undefined;
-		const isNewCell = mePlaceInGrid(grid, candidatePolicy, candidateWeights, candidateBenchmark.overallScore, candidateBenchmark, i);
+		const isNewCell = placeInMapElitesGrid(grid, candidatePolicy, candidateWeights, candidateBenchmark.overallScore, candidateBenchmark, i);
 
 		exploredCandidates.push({
 			policy: candidatePolicy,
@@ -1407,58 +1299,7 @@ export function mapElitesToEvolutionRun(run: MapElitesRun): EvolutionRun {
 }
 
 export function mapElitesToMarkdown(run: MapElitesRun): string {
-	const lines = [
-		"# MAP-Elites Evolution Report",
-		"",
-		`- Descriptors: ${run.grid.descriptors.join(" × ")}`,
-		`- Grid: ${run.grid.resolution}^${run.grid.descriptors.length} = ${run.totalCells} cells`,
-		`- Filled cells: ${run.filledCellCount} / ${run.totalCells} (${((run.filledCellCount / run.totalCells) * 100).toFixed(1)}%)`,
-		`- Baseline score: ${run.baseline.overallScore.toFixed(2)}`,
-		`- Best score: ${run.best.overallScore.toFixed(2)}`,
-		`- Explored candidates: ${run.exploredCandidates.length}`,
-		`- Judgement: PROSPER-style pairwise preference over real feedback, counterfactual robustness, mastery, transfer, low confusion, and evidence readiness.`,
-		"",
-		"## Elite Archive",
-		"",
-	];
-
-	const sorted = Array.from(run.grid.cells.entries()).sort(([a], [b]) => a.localeCompare(b));
-	const header = run.grid.descriptors.map((d, i) => `${d}[${i}]`).join(" | ");
-	lines.push(`| ${header} | Policy | Score | Weights (m/r/e/t/c) |`);
-	lines.push(`| ${run.grid.descriptors.map(() => "---").join(" | ")} | --- | ---: | --- |`);
-
-	for (const [key, cell] of sorted) {
-		if (!cell) continue;
-		const indices = key.split(",").map(Number);
-		const labels = indices
-			.map((idx, i) => {
-				const lo = (idx / run.grid.resolution).toFixed(2);
-				const hi = ((idx + 1) / run.grid.resolution).toFixed(2);
-				return `${lo}–${hi}`;
-			})
-			.join(" | ");
-		const w = cell.weights;
-		lines.push(
-			`| ${labels} | ${cell.policy.name} | ${cell.score.toFixed(2)} | ${w.masteryGain.toFixed(2)}/${w.retention.toFixed(2)}/${w.engagement.toFixed(2)}/${w.transfer.toFixed(2)}/${w.confusion.toFixed(2)} |`
-		);
-	}
-
-	lines.push("");
-	lines.push("## PROSPER Candidate Judgement");
-	lines.push("");
-	lines.push("| Candidate | Real Score | Counterfactual Score | Preference | Accepted |");
-	lines.push("| --- | ---: | ---: | ---: | :---: |");
-	for (const candidate of run.exploredCandidates.slice().sort((left, right) => (right.preferenceScore ?? 0) - (left.preferenceScore ?? 0)).slice(0, 12)) {
-		lines.push(
-			`| ${candidate.policy.name} | ${candidate.benchmark.overallScore.toFixed(2)} | ${candidate.counterfactualBenchmark?.overallScore.toFixed(2) ?? "n/a"} | ${(candidate.preferenceScore ?? 0).toFixed(2)} | ${candidate.accepted ? "yes" : "no"} |`
-		);
-	}
-	lines.push("");
-	lines.push("## Best Benchmark Snapshot");
-	lines.push("");
-	lines.push(benchmarkToMarkdown(run.best).trim());
-	lines.push("");
-	return `${lines.join("\n")}\n`;
+	return formatMapElitesRun(run, benchmarkToMarkdown);
 }
 
 export function evolutionToMarkdown(run: EvolutionRun): string {
@@ -1905,22 +1746,6 @@ export function diagnoseBenchmark(benchmark: BenchmarkResult): ImprovementSugges
 // Engagement Timeline (spaced revisit system)
 // ============================================================================
 
-export interface EngagementPolicy {
-	name: string;
-	retentionHalfLifeDays: number;
-	dueThreshold: number;
-	minReviewIntervalDays: number;
-	urgencyTiers: [number, number, number, number];
-}
-
-export const DEFAULT_ENGAGEMENT_POLICY: EngagementPolicy = {
-	name: "spaced-revisit-default",
-	retentionHalfLifeDays: 7,
-	dueThreshold: 0.5,
-	minReviewIntervalDays: 1,
-	urgencyTiers: [21, 14, 7, 3],
-};
-
 export type UrgencyLabel = "critical" | "high" | "moderate" | "low" | "fresh";
 
 export interface TopicEngagement {
@@ -2049,16 +1874,6 @@ export function getDueTopics(
 	return buildEngagementTimeline(coveredTopics, policy, now).topics.filter((t) => t.isDue);
 }
 
-function formatDaysAgo(days: number): string {
-	if (days < 1) return "today";
-	if (days < 2) return "1 day ago";
-	if (days < 7) return `${Math.floor(days)} days ago`;
-	if (days < 14) return "1 week ago";
-	if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
-	if (days < 60) return "1 month ago";
-	return `${Math.floor(days / 30)} months ago`;
-}
-
 function urgencyEmoji(label: UrgencyLabel): string {
 	switch (label) {
 		case "critical": return "🔴";
@@ -2179,18 +1994,6 @@ export interface QuizGradePayload {
 	grades: QuizQuestionGrade[];
 }
 
-export interface QuizReview {
-	status: "passed" | "revised";
-	issues: string[];
-	duplicatesRemoved: number;
-	maxQuestionChars: number;
-	maxAnswerChars: number;
-	maxExplanationChars: number;
-	maxRubricChars: number;
-	maxOptionChars: number;
-	limits: QuizLimits;
-}
-
 export interface AdaptiveRule {
 	level: "recall" | "comprehension" | "application" | "analysis" | "transfer";
 	threshold: number;
@@ -2204,14 +2007,6 @@ export interface Quiz {
 	totalPoints: number;
 	adaptiveRules?: AdaptiveRule[];
 	review: QuizReview;
-}
-
-export interface QuizLimits {
-	questionChars: number;
-	answerChars: number;
-	explanationChars: number;
-	rubricChars: number;
-	optionChars: number;
 }
 
 export type QuizLimitOverrides = Partial<QuizLimits>;

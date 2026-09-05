@@ -525,7 +525,8 @@ async function startLiveSession(
 		get videoRoute() {
 			return videoSubscription?.active ? "native" as const : "none" as const;
 		},
-		visionCapable,
+		videoCapable: visionCapable,
+		imageCapable: false,
 		get inputStream() {
 			return capture?.stream ?? null;
 		},

@@ -89,7 +89,47 @@ export function classifyLiveFailure(
 	const haystack = text(error).toLowerCase();
 	const detail = rawDetail(error);
 	const modelLabel = describeLiveModel(context.providerId, context.model).label;
-	const providerLabel = context.providerId === "openai-realtime" ? "OpenAI" : "Google";
+	const isTavus = context.providerId === "tavus";
+	const providerLabel = isTavus ? "Tavus" : context.providerId === "openai-realtime" ? "OpenAI" : "Google";
+
+	if (isTavus && /tavus live.*not configured|not organic.*disabled|deployment.*not enabled/.test(haystack)) {
+		return {
+			...BASE,
+			kind: "unsupported-provider",
+			title: "Tavus Live is unavailable",
+			message: "This Keating deployment has not enabled the Not Organic account service required by Tavus Live.",
+			hint: "Use another live provider or continue by typing or dictating.",
+			switchModel: true,
+			dictation: true,
+			detail,
+		};
+	}
+
+	if (isTavus && /connect.*not organic|not organic.*(?:account|session|sign-in)|\b401\b|\b403\b|unauthorized|forbidden/.test(haystack)) {
+		return {
+			...BASE,
+			kind: "auth",
+			title: "Not Organic account needed",
+			message: "Tavus Live requires an active device-bound Not Organic account session.",
+			hint: "Connect your account under Providers & Models, then start the conversation again.",
+			settings: "providers",
+			dictation: true,
+			detail,
+		};
+	}
+
+	if (isTavus && /\b429\b|rate limit|conversation limit|too many tavus|quota/.test(haystack)) {
+		return {
+			...BASE,
+			kind: "rate-limit",
+			title: "Tavus is at capacity",
+			message: "Tavus cannot open another KeatingBot conversation for this account yet.",
+			hint: "Wait a moment, then try again.",
+			retry: true,
+			dictation: true,
+			detail,
+		};
+	}
 
 	if (/no (openai|google|anthropic)? ?api key|missing_api_key|no api key configured/.test(haystack)) {
 		return {
@@ -106,7 +146,7 @@ export function classifyLiveFailure(
 
 	// 404 on the mint/connect call almost always means the model id is not
 	// enabled for this account, not that the endpoint moved.
-	if (/\b404\b|not found|does not exist|unknown model|unsupported model|model_not_found/.test(haystack)) {
+	if (!isTavus && /\b404\b|not found|does not exist|unknown model|unsupported model|model_not_found/.test(haystack)) {
 		return {
 			...BASE,
 			kind: "model-unavailable",

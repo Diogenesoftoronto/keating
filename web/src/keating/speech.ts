@@ -11,6 +11,7 @@ import {
 
 export const KEATING_VOICE_TOOL_NAME = "keating_voice";
 export const GEMINI_LIVE_SPEECH_MODEL = "gemini-3.1-flash-live-preview";
+export const TAVUS_KEATINGBOT_MODEL = "keatingbot";
 export const DEFAULT_SPEECH_VOICE = "Kore";
 const SPEECH_SETTINGS_KEY = "keating:web:speech";
 export const RECEIVE_SAMPLE_RATE = 24_000;
@@ -26,6 +27,7 @@ const VOICE_TAGS = new Set([
 ]);
 
 export type SpeechProviderId =
+	| "tavus"
 	| "gemini-live"
 	| "openai-tts"
 	| "openai-realtime"
@@ -74,8 +76,8 @@ export interface VoiceUtterance {
 
 export const DEFAULT_WEB_SPEECH_SETTINGS: WebSpeechSettings = {
 	enabled: false,
-	providerId: "gemini-live",
-	model: GEMINI_LIVE_SPEECH_MODEL,
+	providerId: "tavus",
+	model: TAVUS_KEATINGBOT_MODEL,
 	voiceName: DEFAULT_SPEECH_VOICE,
 	customModels: [],
 	microphoneEnabled: false,
@@ -89,9 +91,13 @@ const speechSetting = createLocalSetting<WebSpeechSettings>({
 	key: SPEECH_SETTINGS_KEY,
 	event: "keating:web:speech-changed",
 	normalize: (raw) => {
-		if (typeof raw !== "string" || raw.length === 0) return DEFAULT_WEB_SPEECH_SETTINGS;
 		try {
-			const parsed = JSON.parse(raw) as Partial<WebSpeechSettings>;
+			const parsed = typeof raw === "string"
+				? raw.length > 0 ? JSON.parse(raw) as Partial<WebSpeechSettings> : null
+				: raw && typeof raw === "object" && !Array.isArray(raw)
+					? raw as Partial<WebSpeechSettings>
+					: null;
+			if (!parsed) return DEFAULT_WEB_SPEECH_SETTINGS;
 			const customModels = Array.isArray(parsed.customModels)
 				? parsed.customModels.filter(
 						(m): m is CustomSpeechModel =>
@@ -187,10 +193,15 @@ export async function resolveSpeechCredential(
 	return null;
 }
 
-const DUPLEX_PROVIDER_IDS = new Set<SpeechProviderId>(["gemini-live", "openai-realtime"]);
+const DUPLEX_PROVIDER_IDS = new Set<SpeechProviderId>(["tavus", "gemini-live", "openai-realtime"]);
 
 export function isDuplexSpeechProvider(id: SpeechProviderId): boolean {
 	return DUPLEX_PROVIDER_IDS.has(id);
+}
+
+/** True when the provider's embedded call owns camera, microphone, and visual controls. */
+export function usesProviderHostedLiveSurface(settings: Pick<WebSpeechSettings, "providerId">): boolean {
+	return settings.providerId === "tavus";
 }
 
 /**
@@ -204,6 +215,7 @@ export function speechInputMode(settings: WebSpeechSettings): "duplex" | "stt" {
 
 /** Which LLM provider backs a speech provider, for capability lookup. */
 export function speechProviderModel(settings: WebSpeechSettings): ProviderModelDescriptor | null {
+	if (settings.providerId === "tavus") return { provider: "tavus", id: settings.model, api: "tavus-cvi" };
 	if (settings.providerId === "openai-realtime") return { provider: "openai", id: settings.model, api: "openai-realtime" };
 	if (settings.providerId === "gemini-live") return { provider: "google", id: settings.model, api: "google-live" };
 	return null;
@@ -220,6 +232,7 @@ export function resolveSpeechRealtimeTier(settings: WebSpeechSettings): Realtime
 			tier: 0,
 			label: "Half duplex (push to talk)",
 			video: false,
+			image: false,
 			videoRoute: "none",
 			capReason: "This provider only synthesizes speech; it cannot hold a live session.",
 		};
@@ -359,10 +372,57 @@ export interface LiveSpeechToolCall {
 	arguments: Record<string, unknown>;
 }
 
+export type LiveImageMimeType = "image/jpeg" | "image/png";
+
+/** A bounded still image ready to send through an active live transport. */
+export interface LiveImageInput {
+	/** Raw base64 without a data-URL prefix. */
+	data: string;
+	mimeType: LiveImageMimeType;
+	filename?: string;
+}
+
 /** A prior chat turn, replayed into a live session so voice continues the conversation. */
 export interface LiveHistoryTurn {
 	role: "user" | "assistant";
 	text: string;
+}
+
+export interface LiveContextResource {
+	title: string;
+	kind: string;
+	source: "session" | "course";
+}
+
+/** A deliberately bounded learner dossier supplied to a provider-hosted session. */
+export interface LiveSessionContext {
+	sessionId?: string;
+	learner: {
+		displayName?: string;
+		role?: string;
+		providedProfile?: string;
+		strengths: string[];
+		needsReview: string[];
+		recentTopics: string[];
+		studyPriorities: string[];
+	};
+	course?: {
+		id: string;
+		title: string;
+		description?: string;
+		outcomes: string[];
+		currentLesson?: {
+			id: string;
+			title: string;
+			summary?: string;
+			objectives: string[];
+			readingExcerpt?: string;
+		};
+		completedLessons: number;
+		totalLessons: number;
+	};
+	documents: Array<LiveContextResource & { excerpt?: string }>;
+	artifacts: Array<LiveContextResource & { excerpt: string }>;
 }
 
 export interface LiveSpeechBridge {
@@ -375,6 +435,8 @@ export interface LiveSpeechBridge {
 	instructions?: string;
 	/** Recent conversation turns, oldest first. */
 	history?: LiveHistoryTurn[];
+	/** Load the latest learner/course/artifact context immediately before joining. */
+	loadContext?: () => Promise<LiveSessionContext>;
 }
 
 export function getLiveSpeechBridge(): LiveSpeechBridge | undefined {
@@ -393,6 +455,8 @@ export interface LiveSpeechRequest {
 	instructions?: string;
 	/** Prior conversation turns to seed the session with, oldest first. */
 	history?: LiveHistoryTurn[];
+	/** Bounded Keating context for this learner and lesson. */
+	context?: LiveSessionContext;
 	/**
 	 * An already-running frame source. The caller owns capture so the same
 	 * MediaStream can be previewed in the UI; the provider only consumes frames
@@ -415,10 +479,24 @@ export interface LiveSpeechSession {
 	readonly state: LiveSpeechState;
 	/** Frames delivered to the model so far, for the live HUD. */
 	readonly framesSent?: number;
-	/** How vision reached the model in this session, if at all. */
-	readonly videoRoute?: "native" | "sampled" | "none";
-	/** True when this model could accept frames, even if none are flowing yet. */
-	readonly visionCapable?: boolean;
+	/** How live video reached the model in this session, if at all. */
+	readonly videoRoute?: "native" | "provider-hosted" | "none";
+	/** A provider-owned room rendered by Keating's native Daily media surface. */
+	readonly embeddedSurface?: {
+		kind: "tavus";
+		url: string;
+		title: string;
+	};
+	/**
+	 * Deliver provider data-channel events to the live session. Returning a
+	 * value sends it back over that same channel (for example a Tavus tool
+	 * result after Keating executes the requested capability).
+	 */
+	handleEmbeddedEvent?(event: unknown): unknown | Promise<unknown>;
+	/** True only when the session has a genuine live camera/screen lane. */
+	readonly videoCapable?: boolean;
+	/** True when the session accepts an explicitly shared still image. */
+	readonly imageCapable?: boolean;
 	/**
 	 * The learner's microphone, for metering.
 	 *
@@ -443,6 +521,11 @@ export interface LiveSpeechSession {
 	 * handle — the caller owns capture and may still be previewing it.
 	 */
 	setVideo?(video: VideoCaptureHandle | null): void;
+	/**
+	 * Send one deliberate still image as context for a future model response.
+	 * Resolves only after the active transport accepts the image payload.
+	 */
+	sendImage?(image: LiveImageInput): Promise<void>;
 	stop(): Promise<void>;
 }
 
@@ -468,12 +551,14 @@ function withCanonicalDuplexModels<T extends SpeechProviderDescriptor>(provider:
 async function ensureProvidersRegistered(): Promise<void> {
 	if (registrationPromise) return registrationPromise;
 	registrationPromise = (async () => {
-		const [gemini, oaiTts, oaiRealtime, supertonic] = await Promise.all([
+		const [tavus, gemini, oaiTts, oaiRealtime, supertonic] = await Promise.all([
+			import("./speech-providers/tavus-live"),
 			import("./speech-providers/gemini-live"),
 			import("./speech-providers/openai-tts"),
 			import("./speech-providers/openai-realtime"),
 			import("./speech-providers/supertonic"),
 		]);
+		providerRegistry.set("tavus", withCanonicalDuplexModels(tavus.tavusLiveProvider));
 		providerRegistry.set("gemini-live", withCanonicalDuplexModels(gemini.geminiLiveProvider));
 		providerRegistry.set("openai-tts", oaiTts.openAITtsProvider);
 		providerRegistry.set("openai-realtime", withCanonicalDuplexModels(oaiRealtime.openAIRealtimeProvider));

@@ -1,15 +1,14 @@
 /**
  * Provider-agnostic frame capture for live sessions.
  *
- * Both realtime providers Keating targets consume sampled JPEG frames rather
- * than a continuous video track — Gemini Live has a dedicated video lane capped
- * at 1 fps, and GPT Realtime accepts still images as conversation items. So
- * there is one capture pipeline here and the providers supply their own sink.
+ * Gemini Live consumes sampled JPEG frames through its dedicated video lane,
+ * capped at 1 fps. GPT Realtime is deliberately absent: its still-image input
+ * is a learner-triggered conversation item, not a camera or screen stream.
  *
  * Nothing in this module may import provider types.
  */
 
-/** Both providers cap video at one frame per second. */
+/** Gemini Live accepts at most one video frame per second. */
 export const MIN_FRAME_INTERVAL_MS = 1000;
 export const DEFAULT_MAX_EDGE = 768;
 export const DEFAULT_JPEG_QUALITY = 0.6;
@@ -42,15 +41,7 @@ export interface VideoCaptureOptions {
 	deviceId?: string;
 }
 
-export interface NormalizedCaptureOptions {
-	source: VideoSource;
-	intervalMs: number;
-	maxEdge: number;
-	jpegQuality: number;
-	similarityThreshold: number;
-	facing: CameraFacing;
-	deviceId?: string;
-}
+export type NormalizedCaptureOptions = Required<Omit<VideoCaptureOptions, "deviceId">> & Pick<VideoCaptureOptions, "deviceId">;
 
 export interface CapturedFrame {
 	/** Base64 JPEG payload, no data-URL prefix. */

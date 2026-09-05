@@ -20,6 +20,7 @@ import { DEFAULT_WEIGHTS, clampWeights } from "./policy.js";
 import { piCompleteJson } from "./pi-agent.js";
 import {
   MIN_REAL_OUTCOMES,
+  classifyDominantSignal,
   hasEnoughRealData,
   computeRealOutcomeScore,
   feedbackToOutcomeScore,
@@ -226,24 +227,6 @@ Respond ONLY as a JSON matching:
     console.error("LLM simulation failed, falling back to algebraic baseline", error);
     return deterministicBaseline();
   }
-}
-
-function classifyDominantSignal(simulations: TeachingSimulation[], kind: "strength" | "weakness"): string {
-  if (simulations.length === 0) return "no learner feedback";
-  const metrics = {
-    intuitionFit: mean(simulations.map((entry) => entry.breakdown.intuitionFit)),
-    rigorFit: mean(simulations.map((entry) => entry.breakdown.rigorFit)),
-    dialogueFit: mean(simulations.map((entry) => entry.breakdown.dialogueFit)),
-    diagramFit: mean(simulations.map((entry) => entry.breakdown.diagramFit)),
-    practiceFit: mean(simulations.map((entry) => entry.breakdown.practiceFit)),
-    reflectionFit: mean(simulations.map((entry) => entry.breakdown.reflectionFit)),
-    overload: mean(simulations.map((entry) => entry.breakdown.overload))
-  };
-  const ordered = Object.entries(metrics).sort((left, right) =>
-    kind === "strength" ? right[1] - left[1] : left[1] - right[1]
-  );
-  const [name] = ordered[0] ?? ["unknown"];
-  return name;
 }
 
 export function summarizeTopic(topic: TopicDefinition, simulations: TeachingSimulation[], traceLimit: number): TopicBenchmark {

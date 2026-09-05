@@ -5,9 +5,8 @@ export interface SearchOption {
   description?: string;
   value?: string;
 }
-export interface RankedSearchOption extends SearchOption {
-  score: number;
-}
+export type Ranked<T> = T & { score: number };
+export type RankedSearchOption = Ranked<SearchOption>;
 
 export interface TranscriptSearchResult {
   entry: TranscriptEntry;

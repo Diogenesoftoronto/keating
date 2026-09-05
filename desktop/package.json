@@ -8,7 +8,7 @@
   "main": "dist/main.js",
   "scripts": {
     "build:main": "bun run --cwd ../packages/p2p-core build && tsc -p tsconfig.json && bun run --cwd ../web build && node scripts/stage-nitro.mjs",
-    "dev": "KEATING_DEV_SERVER=http://localhost:5173 electron .",
+    "dev": "bun run --cwd ../packages/p2p-core build && tsc -p tsconfig.json && KEATING_DEV_SERVER=${KEATING_DEV_SERVER:-http://localhost:3000} electron .",
     "start": "electron .",
     "test": "bun test ./test/*.test.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",

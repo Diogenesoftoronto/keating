@@ -119,6 +119,7 @@ import {
   KEATING_VOICE_TOOL_NAME,
   loadWebSpeechSettings,
   primeSpeechAudio,
+  resolveSpeechRealtimeTier,
   resolveSpeechCredential,
 } from "../keating/speech";
 import {
@@ -914,7 +915,8 @@ function SpeechComposerControl({
     // enforce the screen-sharing permission contract. Start this request from
     // the button click; the overlay will consume the resulting handle after
     // the provider connection is ready.
-    if (settings.videoEnabled && settings.videoSource === "screen") {
+    const liveTier = resolveSpeechRealtimeTier(settings);
+    if (settings.providerId !== "tavus" && liveTier.video && settings.videoEnabled && settings.videoSource === "screen") {
       pendingLiveVideoRef.current = startVideoCapture({
         source: settings.videoSource,
         intervalMs: settings.frameIntervalMs,

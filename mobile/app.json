@@ -18,6 +18,16 @@
         "backgroundColor": "#0c1510"
       }
     },
+    "ios": {
+      "bundleIdentifier": "com.diogenesoftoronto.keating",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Allow Keating to share your camera with KeatingBot during Live lessons.",
+        "NSMicrophoneUsageDescription": "Allow Keating to hear you during Live lessons.",
+        "UIBackgroundModes": [
+          "voip"
+        ]
+      }
+    },
     "plugins": [
       "expo-router",
       [
@@ -39,6 +49,14 @@
         }
       ],
       [
+        "@daily-co/config-plugin-rn-daily-js",
+        {
+          "enableCamera": true,
+          "enableMicrophone": true,
+          "enableScreenShare": true
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#f1ece0",
@@ -49,7 +67,8 @@
             "backgroundColor": "#0c1510"
           }
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
