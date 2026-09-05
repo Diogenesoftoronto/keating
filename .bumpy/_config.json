@@ -1,6 +1,0 @@
-{
-  "$schema": "../node_modules/@varlock/bumpy/config-schema.json",
-  "baseBranch": "main",
-  "changelog": "default",
-  "fixed": [["keating", "@keating/browser-agent-runtime"]]
-}

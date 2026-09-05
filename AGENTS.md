@@ -182,13 +182,16 @@ The selector is PROSPER-style: balanced multi-objective candidates beat narrow o
 All system-level dev dependencies are managed by devenv (`devenv.nix`):
 - **bun** — JS runtime, bundler, package manager
 - **devenv tasks** — namespaced task runner (`keating:*`)
-- **bumpy** — canonical package-version bumps (when available in nixpkgs)
+- **bun pm version** — canonical package-version bumps
 
 Run `devenv shell` to enter the dev environment (or use direnv via the existing `.envrc`). Repo-local git hooks are also configured via devenv:
 - `pre-commit`: `devenv tasks run keating:check-version`
 - `pre-push`: `devenv tasks run keating:test` + `devenv tasks run keating:test-web`
 
-A `bump-version` script wraps `bumpy` and syncs version strings.
+`devenv tasks run keating:bump-version --input version=minor` runs `bun pm version`
+with `--no-git-tag-version`, then synchronizes version strings. Use `patch`,
+`minor`, `major`, or an exact stable version. Update the changelog and run release
+checks before committing and tagging the complete release.
 
 ## Speech Module
 

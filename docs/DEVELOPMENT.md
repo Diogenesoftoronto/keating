@@ -36,8 +36,8 @@ See the [devenv tasks documentation](https://devenv.sh/tasks/) for how tasks wor
 
 | Task | Description |
 |------|-------------|
-| `keating:bumpy` | Run bumpy (version bumper). Passes through args. |
-| `keating:bump-version` | Bump version and sync across manifests (e.g. `keating:bump-version version`) |
+| `keating:version` | Show the current package version and Bun version commands. |
+| `keating:bump-version` | Run `bun pm version` and sync manifests, e.g. `devenv tasks run keating:bump-version --input version=minor`. Commits and tags follow release checks. |
 | `keating:sync-version` | Sync version numbers across all manifests and source files |
 | `keating:check-version` | Verify all version strings are in sync (CI-friendly) |
 

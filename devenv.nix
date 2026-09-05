@@ -189,27 +189,23 @@ in
   };
 
   # ── Version sync ────────────────────────────────────────────────
-  tasks."keating:bumpy" = {
-    description = "Show the pending Bumpy release plan";
+  tasks."keating:version" = {
+    description = "Show the current version and Bun version commands";
     exec = ''
-      bumpy_bin="$DEVENV_ROOT/node_modules/.bin/bumpy"
-      if [ ! -x "$bumpy_bin" ]; then
-        echo "bumpy is not installed. Run: bun install" >&2
-        exit 1
-      fi
-      exec "$bumpy_bin" status
+      bun pm version
     '';
   };
 
   tasks."keating:bump-version" = {
-    description = "Consume pending Bumpy files and synchronize every version surface";
+    description = "Bump with bun pm version and synchronize every version surface";
+    input.version = "";
     exec = ''
-      bumpy_bin="$DEVENV_ROOT/node_modules/.bin/bumpy"
-      if [ ! -x "$bumpy_bin" ]; then
-        echo "bumpy is not installed. Run: bun install" >&2
+      release_version="$(bun -e 'const input = JSON.parse(process.env.DEVENV_TASK_INPUT ?? "{}"); process.stdout.write(typeof input.version === "string" ? input.version : "")')"
+      if [ -z "$release_version" ]; then
+        echo "usage: devenv tasks run keating:bump-version --input version=<patch|minor|major|version>" >&2
         exit 1
       fi
-      "$bumpy_bin" version
+      bun pm version "$release_version" --no-git-tag-version
       bun scripts/sync-version.ts
     '';
   };
