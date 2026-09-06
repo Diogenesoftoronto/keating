@@ -62,6 +62,25 @@ export interface LearnerProfile {
   anxiety: number;
 }
 
+export interface BenchmarkMeasurement {
+  /** Null means unmeasured, rather than a measured failure. */
+  value: number | null;
+  source: "observed" | "proxy" | "unavailable";
+  sampleSize: number;
+  note: string;
+}
+
+export interface RetrospectiveBenchmarkEvidence {
+  kind: "retrospective";
+  scoringRule: "assessment-mean-or-feedback-proxy-v1";
+  score: BenchmarkMeasurement;
+  assessmentPerformance: BenchmarkMeasurement;
+  metrics: Record<keyof SimulationWeights, BenchmarkMeasurement>;
+  feedbackCounts: { explicit: number; inferred: number; unclassified: number };
+  /** Re-scoring historical records cannot validate an unexecuted candidate. */
+  eligibleForPromotion: false;
+}
+
 export interface TeachingSimulation {
   learner: LearnerProfile;
   topic: TopicDefinition;
@@ -81,6 +100,8 @@ export interface TeachingSimulation {
     overload: number;
   };
   explanation: string[];
+  /** Authoritative availability for retrospective records; legacy scalars use zero for unknown. */
+  evidence?: RetrospectiveBenchmarkEvidence;
 }
 
 export interface TopicBenchmark {
@@ -96,6 +117,7 @@ export interface TopicBenchmark {
   strugglingLearners: TeachingSimulation[];
   dominantStrength: string;
   dominantWeakness: string;
+  evidence?: RetrospectiveBenchmarkEvidence;
 }
 
 export interface BenchmarkTopicTrace {
@@ -119,6 +141,7 @@ export interface BenchmarkTopicTrace {
   };
   dominantStrength: string;
   dominantWeakness: string;
+  evidence?: RetrospectiveBenchmarkEvidence;
 }
 
 export interface BenchmarkTrace {
@@ -128,6 +151,8 @@ export interface BenchmarkTrace {
   realOutcomeCount: number;
   syntheticFallback: boolean;
   dataSource?: "learner-feedback" | "learner-feedback-sparse" | "synthetic" | "no-learner-feedback";
+  evaluationMode?: "retrospective" | "synthetic";
+  eligibleForPromotion?: boolean;
 }
 
 export interface BenchmarkResult {

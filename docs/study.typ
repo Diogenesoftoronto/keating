@@ -15,12 +15,12 @@
 #include "study/frontmatter.typ"
 #include "study/sections/introduction.typ"
 #include "study/sections/metaharness.typ"
+#include "study/sections/methods.typ"
 #include "study/sections/results.typ"
 #include "study/sections/discussion.typ"
-#include "study/sections/methods.typ"
 #include "study/sections/limitations.typ"
 #include "study/sections/availability.typ"
 
-#v(1.2em)
+#pagebreak(weak: true)
 
 #bibliography("refs.bib", style: "apa")

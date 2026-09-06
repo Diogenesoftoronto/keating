@@ -30,6 +30,21 @@ let
       runHook postInstall
     '';
   };
+  # Structured task input becomes argv, never shell-interpolated user text.
+  learningCliTask = command: arguments: ''
+    bun -e '
+      const input = JSON.parse(process.env.DEVENV_TASK_INPUT ?? "{}");
+      const required = key => {
+        const value = input[key];
+        if (typeof value !== "string" || !value) throw new Error("Missing task input: " + key);
+        return value;
+      };
+      const args = ["bun", "src/cli/main.ts", ${builtins.toJSON command}];
+      ${arguments}
+      const child = Bun.spawn(args, { stdin: "inherit", stdout: "inherit", stderr: "inherit" });
+      process.exit(await child.exited);
+    '
+  '';
 in
 {
   # Per-project devenv config. See https://devenv.sh
@@ -465,16 +480,61 @@ in
   };
 
   tasks."keating:bench" = {
-    description = "Run benchmarks with the default topic";
+    description = "Summarize historical learner evidence and measurement limits";
     exec = ''
       bun src/cli/main.ts bench
     '';
   };
 
   tasks."keating:evolve" = {
-    description = "Evolve the teaching policy with the default topic";
+    description = "Save unvalidated policy proposals without activating them";
     exec = ''
       bun src/cli/main.ts evolve
+    '';
+  };
+
+  tasks."keating:teaching-bench" = {
+    description = "Execute training cases without exposing a release holdout";
+    input.cases = "";
+    exec = learningCliTask "teaching-bench" ''
+      if (input.cases) args.push("--cases", required("cases"));
+    '';
+  };
+
+  tasks."keating:auto-improve" = {
+    description = "Propose one skill and gate activation on fresh validation and holdout";
+    input = { cases = ""; force = false; };
+    exec = learningCliTask "auto-improve" ''
+      if (input.cases) args.push("--cases", required("cases"));
+      if (input.force === true || input.force === "true") args.push("--force");
+    '';
+  };
+
+  tasks."keating:learning-check:start" = {
+    description = "Start revision-linked learner assessments";
+    input = { topic = "fractions"; learner = ""; };
+    exec = learningCliTask "learning-check" ''
+      args.push("start", required("topic"));
+      if (input.learner) args.push("--learner", required("learner"));
+    '';
+  };
+
+  tasks."keating:learning-check:show" = {
+    description = "Show currently available assessment prompts and recorded results";
+    input.id = "";
+    exec = learningCliTask "learning-check" ''args.push("show", required("id"));'';
+  };
+
+  tasks."keating:learning-check:list" = {
+    description = "List learner assessments and due follow-ups";
+    exec = learningCliTask "learning-check" ''args.push("list");'';
+  };
+
+  tasks."keating:learning-check:submit" = {
+    description = "Submit fixed assessment answers with explicit assistance status";
+    input = { id = ""; stage = ""; answers = ""; assistance = ""; };
+    exec = learningCliTask "learning-check" ''
+      args.push("submit", required("id"), required("stage"), "--answers", required("answers"), "--assistance", required("assistance"));
     '';
   };
 

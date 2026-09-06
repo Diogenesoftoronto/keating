@@ -92,6 +92,7 @@ describe("composeKeatingSystemPrompt", () => {
 		const active = await getActiveKeatingPrompt({
 			getPromptEvolutions: async () => [{ createdAt: 1, bestPrompt: stale }],
 		} as any);
-		expect(active).toBe(refreshed);
+		// A stored prompt proposal is not evidence that it should become active.
+		expect(active).toBe(KEATING_SYSTEM_PROMPT);
 	});
 });

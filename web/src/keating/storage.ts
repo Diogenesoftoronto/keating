@@ -608,6 +608,27 @@ export function mergeFeedbackById(...lists: Array<FeedbackEntry[] | undefined>):
 }
 
 export class KeatingStorage {
+	private destroyed = false;
+	constructor(private readonly databaseName: string = DB_NAME) {}
+
+	/** Only disposable evaluation stores may be deleted through this method. */
+	async destroyIsolatedDatabase(): Promise<void> {
+		if (!this.databaseName.startsWith("keating-eval-")) {
+			throw new Error("Only an isolated evaluation database can be destroyed.");
+		}
+		this.destroyed = true;
+		await this.dbPromise?.catch(() => undefined);
+		this.db?.close();
+		this.db = null;
+		this.dbPromise = null;
+		await new Promise<void>((resolve, reject) => {
+			const request = indexedDB.deleteDatabase(this.databaseName);
+			request.onsuccess = () => resolve();
+			request.onerror = () => reject(request.error);
+			request.onblocked = () => reject(new Error("Evaluation database is still open."));
+		});
+	}
+
 	private db: IDBDatabase | null = null;
 	private dbPromise: Promise<IDBDatabase> | null = null;
 	private learnerStateWriteQueue: Promise<void> = Promise.resolve();
@@ -618,6 +639,7 @@ export class KeatingStorage {
 	}
 
 	async init(): Promise<void> {
+		if (this.destroyed) throw new Error("Evaluation database has been destroyed.");
 		if (this.db) return;
 		if (this.dbPromise) {
 			await this.dbPromise;
@@ -625,7 +647,7 @@ export class KeatingStorage {
 		}
 
 		this.dbPromise = new Promise((resolve, reject) => {
-			const request = indexedDB.open(DB_NAME, DB_VERSION);
+			const request = indexedDB.open(this.databaseName, DB_VERSION);
 
 			request.onerror = () => {
 				this.dbPromise = null;

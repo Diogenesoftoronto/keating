@@ -16,6 +16,7 @@ import { DEFAULT_ENGAGEMENT_POLICY, formatDaysAgo } from "../../../shared/pedago
 import { formatMapElitesRun, placeInMapElitesGrid } from "../../../shared/pedagogy/map-elites";
 import type { ScoreableLearnerOutcome } from "../../../shared/pedagogy/benchmark-real";
 import type {
+	BenchmarkMeasurement,
 	BenchmarkResult,
 	BenchmarkTopicTrace,
 	Domain,
@@ -617,6 +618,7 @@ function summarizeTopic(topic: TopicDefinition, simulations: TeachingSimulation[
 		strugglingLearners: ranked.slice(-traceLimit).reverse(),
 		dominantStrength: classifyDominantSignal(simulations, "strength"),
 		dominantWeakness: classifyDominantSignal(simulations, "weakness"),
+		evidence: simulations.length === 1 ? simulations[0]?.evidence : undefined,
 	};
 }
 
@@ -656,6 +658,7 @@ export function extractBrowserOutcomes(feedbackHistory: Array<{ topic: string; s
 		feedbackSignal: fb.signal,
 		masteryEstimate: topicsExplored.includes(fb.topic) ? 0.6 : 0.4,
 		outcomeScore: feedbackToOutcomeScore(fb.signal),
+		evidenceKind: "explicit-feedback",
 	}));
 }
 
@@ -707,6 +710,7 @@ export function extractSessionTurnOutcomes(samples: BenchSessionSample[]): Brows
 				feedbackSignal: inferred.signal,
 				masteryEstimate: inferred.masteryEstimate,
 				outcomeScore: feedbackToOutcomeScore(inferred.signal),
+				evidenceKind: "inferred-feedback",
 				model,
 			});
 		}
@@ -720,7 +724,8 @@ export function quizRecordsToOutcomes(
 ): BrowserLearnerOutcome[] {
 	const outcomes: BrowserLearnerOutcome[] = [];
 	for (const record of records) {
-		if (!(record.totalQuestions > 0)) continue;
+		if (!Number.isFinite(record.totalQuestions) || !(record.totalQuestions > 0)
+			|| !Number.isFinite(record.score) || record.score < 0 || record.score > record.totalQuestions) continue;
 		const score = clamp(record.score / record.totalQuestions);
 		outcomes.push({
 			topic: resolveTopic(record.topic).slug,
@@ -728,6 +733,7 @@ export function quizRecordsToOutcomes(
 			quizScore: score,
 			masteryEstimate: score,
 			outcomeScore: score,
+			evidenceKind: "graded-assessment",
 			model: (record.sessionId && modelBySessionId?.get(record.sessionId)) || "unattributed",
 		});
 	}
@@ -744,6 +750,7 @@ export interface ModelBenchmarkBreakdown {
 	quizCount: number;
 	quizAverage: number | null;
 	dataSource: string;
+	scoreSource?: "observed" | "proxy" | "mixed" | "unavailable";
 }
 
 export function benchmarkPerModel(
@@ -755,6 +762,7 @@ export function benchmarkPerModel(
 ): ModelBenchmarkBreakdown[] {
 	const groups = new Map<string, BrowserLearnerOutcome[]>();
 	for (const outcome of outcomes) {
+		if (focusTopic && outcome.topic !== resolveTopic(focusTopic).slug) continue;
 		const key = outcome.model ?? "unattributed";
 		const group = groups.get(key) ?? [];
 		group.push(outcome);
@@ -765,17 +773,23 @@ export function benchmarkPerModel(
 			const result = runBenchmarkSuite(policy, focusTopic, seed, 3, weights, group);
 			const quizScores = group
 				.map((outcome) => outcome.quizScore)
-				.filter((value): value is number => typeof value === "number" && !Number.isNaN(value));
+				.filter((value): value is number => typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 1);
+			const feedback = group.filter((outcome) => outcome.quizScore == null && outcome.evidenceKind !== "graded-assessment");
+			const sources = new Set(result.topicBenchmarks.map((entry) => entry.evidence?.score.source)
+				.filter((source) => source !== undefined && source !== "unavailable"));
+			const scoreSource: ModelBenchmarkBreakdown["scoreSource"] = sources.size > 1 ? "mixed"
+				: sources.has("observed") ? "observed" : sources.has("proxy") ? "proxy" : "unavailable";
 			return {
 				model,
 				overallScore: result.overallScore,
 				outcomes: group.length,
-				thumbsUp: group.filter((outcome) => outcome.feedbackSignal === "thumbs-up").length,
-				thumbsDown: group.filter((outcome) => outcome.feedbackSignal === "thumbs-down").length,
-				confused: group.filter((outcome) => outcome.feedbackSignal === "confused").length,
+				thumbsUp: feedback.filter((outcome) => outcome.feedbackSignal === "thumbs-up").length,
+				thumbsDown: feedback.filter((outcome) => outcome.feedbackSignal === "thumbs-down").length,
+				confused: feedback.filter((outcome) => outcome.feedbackSignal === "confused").length,
 				quizCount: quizScores.length,
 				quizAverage: quizScores.length > 0 ? mean(quizScores) : null,
 				dataSource: result.trace.dataSource ?? "learner-feedback",
+				scoreSource,
 			};
 		})
 		.sort((a, b) => b.overallScore - a.overallScore);
@@ -786,15 +800,16 @@ export function perModelBreakdownToMarkdown(breakdown: ModelBenchmarkBreakdown[]
 	const lines = [
 		"## Per-Model Results",
 		"",
-		"Each signal is attributed to the model that was teaching in the session where it was collected.",
+		"Records are grouped by the model recorded for their session. These historical groups are not matched experiments and do not establish that one model teaches better. Quiz grades are not counted as feedback labels.",
 		"",
-		"| Model | Score | Signals | 👍 | 👎 | 🤔 | Quiz avg | Evidence |",
+		"| Model | Descriptive score | Records | 👍 | 👎 | 🤔 | Quiz avg | Evidence |",
 		"| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
 	];
 	for (const row of breakdown) {
 		const quiz = row.quizAverage === null ? "—" : `${Math.round(row.quizAverage * 100)}% (n=${row.quizCount})`;
+		const score = row.scoreSource === "unavailable" ? "unknown" : row.overallScore.toFixed(2);
 		lines.push(
-			`| ${row.model} | ${row.overallScore.toFixed(2)} | ${row.outcomes} | ${row.thumbsUp} | ${row.thumbsDown} | ${row.confused} | ${quiz} | ${row.dataSource} |`
+			`| ${row.model} | ${score} | ${row.outcomes} | ${row.thumbsUp} | ${row.thumbsDown} | ${row.confused} | ${quiz} | ${row.dataSource}; ${row.scoreSource ?? "unclassified"} |`
 		);
 	}
 	return lines.join("\n");
@@ -808,7 +823,9 @@ export function runBenchmarkSuite(
 	weights: SimulationWeights = DEFAULT_WEIGHTS,
 	realOutcomes?: BrowserLearnerOutcome[]
 ): BenchmarkResult {
-	const outcomes = realOutcomes ?? [];
+	const outcomes = focusTopic
+		? (realOutcomes ?? []).filter((outcome) => outcome.topic === resolveTopic(focusTopic).slug)
+		: realOutcomes ?? [];
 	const hasLearnerContext = realOutcomes !== undefined;
 	const hasFeedback = outcomes.length > 0;
 	const hasEnoughFeedback = hasEnoughRealData(outcomes);
@@ -854,11 +871,13 @@ export function runBenchmarkSuite(
 			},
 			dominantStrength: summary.dominantStrength,
 			dominantWeakness: summary.dominantWeakness,
+			evidence: summary.evidence,
 		});
 		return summary;
 	});
 
-	const weakest = [...topicBenchmarks].sort((left, right) => left.meanScore - right.meanScore)[0];
+	const scoredTopics = topicBenchmarks.filter((entry) => !hasLearnerContext || entry.evidence?.score.value != null);
+	const weakest = [...scoredTopics].sort((left, right) => left.meanScore - right.meanScore)[0];
 	const dataSource = hasLearnerContext
 		? hasFeedback
 			? hasEnoughFeedback
@@ -871,7 +890,7 @@ export function runBenchmarkSuite(
 		policy,
 		suiteName: focusTopic ? `focused:${focusTopic}` : "core-suite",
 		topicBenchmarks,
-		overallScore: mean(topicBenchmarks.map((entry) => entry.meanScore)),
+		overallScore: mean(scoredTopics.map((entry) => entry.meanScore)),
 		weakestTopic: weakest?.topic.title ?? "n/a",
 		trace: {
 			seed,
@@ -880,44 +899,60 @@ export function runBenchmarkSuite(
 			realOutcomeCount: outcomes.length,
 			syntheticFallback: !hasLearnerContext,
 			dataSource,
+			evaluationMode: hasLearnerContext ? "retrospective" : "synthetic",
+			eligibleForPromotion: false,
 		},
 	};
 }
 
 export function benchmarkToMarkdown(result: BenchmarkResult): string {
+	const retrospective = result.trace.evaluationMode === "retrospective" || !result.trace.syntheticFallback;
+	const sources = new Set(result.topicBenchmarks.map((entry) => entry.evidence?.score.source)
+		.filter((source) => source !== undefined && source !== "unavailable"));
+	const overallLabel = !retrospective ? "synthetic" : sources.size > 1 ? "mixed assessment and feedback proxy"
+		: sources.has("observed") ? "recorded assessment performance" : sources.has("proxy") ? "feedback proxy" : "unknown";
+	const measurementText = (measurement: BenchmarkMeasurement | undefined, fallback: number, scale = 1): string => {
+		if (measurement?.value != null) return `${(measurement.value * scale).toFixed(2)}${measurement.source === "proxy" ? " (proxy)" : ""}`;
+		return retrospective ? "unknown" : fallback.toFixed(2);
+	};
 	const lines = [
 		`# Benchmark Report: ${result.policy.name}`,
 		"",
 		`- Suite: ${result.suiteName}`,
-		`- Overall score: ${result.overallScore.toFixed(2)}`,
-		`- Weakest topic: ${result.weakestTopic}`,
+		`- Overall descriptive score: ${overallLabel === "unknown" ? "unknown" : result.overallScore.toFixed(2)} (${overallLabel})`,
+		`- Lowest recorded topic score: ${result.weakestTopic}`,
+		`- Learner evidence records: ${result.trace.realOutcomeCount}`,
+		`- Data source: ${result.trace.dataSource ?? (result.trace.syntheticFallback ? "synthetic" : "learner-feedback")}`,
+		"- Validates a candidate policy: no",
 		"",
-		"| Topic | Score | Mastery | Retention | Engagement | Transfer | Confusion |",
+		"| Topic | Score | Learning gain | Retention | Engagement | Transfer | Confusion |",
 		"| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
 	];
 
 	for (const benchmark of result.topicBenchmarks) {
+		const evidence = benchmark.evidence;
 		lines.push(
-			`| ${benchmark.topic.title} | ${benchmark.meanScore.toFixed(2)} | ${benchmark.meanMasteryGain.toFixed(2)} | ${benchmark.meanRetention.toFixed(2)} | ${benchmark.meanEngagement.toFixed(2)} | ${benchmark.meanTransfer.toFixed(2)} | ${benchmark.meanConfusion.toFixed(2)} |`
+			`| ${benchmark.topic.title} | ${measurementText(evidence?.score, benchmark.meanScore, 100)} | ${measurementText(evidence?.metrics.masteryGain, benchmark.meanMasteryGain)} | ${measurementText(evidence?.metrics.retention, benchmark.meanRetention)} | ${measurementText(evidence?.metrics.engagement, benchmark.meanEngagement)} | ${measurementText(evidence?.metrics.transfer, benchmark.meanTransfer)} | ${measurementText(evidence?.metrics.confusion, benchmark.meanConfusion)} |`
 		);
 	}
 
 	lines.push("");
 	lines.push("## Interpretation");
 	lines.push("");
-	lines.push(
-		`- The policy currently underperforms most on ${result.weakestTopic}, which is a useful anchor for mutation and curriculum repair.`
-	);
-	const realCount = (result as any).trace?.realOutcomeCount ?? 0;
-	const dataSource = (result as any).trace?.dataSource;
-	if (dataSource === "learner-feedback") {
-		lines.push(`- Benchmark uses **learner feedback only** (${realCount} data points). This is ready for policy evolution.`);
-	} else if (dataSource === "learner-feedback-sparse") {
-		lines.push(`- Benchmark uses **learner feedback only**, but the corpus is sparse (${realCount}/${MIN_REAL_OUTCOMES} minimum signals). Treat this as directional and do not evolve policy yet.`);
-	} else if (dataSource === "no-learner-feedback") {
-		lines.push(`- Benchmark has no learner feedback yet. Teach first, collect at least ${MIN_REAL_OUTCOMES} feedback signals for this learner, then benchmark/evolve.`);
+	if (retrospective) {
+		lines.push(
+			"- This is a retrospective evidence summary. Changing policy settings or weights cannot change recorded outcomes or establish that a candidate teaches better.",
+			"- Recorded quiz performance does not measure learning gain without a comparable baseline. Retention and transfer require delayed and novel unaided assessments. Unknown values are not measured failures.",
+			"- Feedback and inferred conversation signals are proxies. Five signals or any other record count cannot authorize policy promotion; fresh executions and an independent evaluation gate are required.",
+			"- The overall score averages topic summaries and can mix assessment and proxy evidence; use the source and sample counts for each topic."
+		);
+		for (const benchmark of result.topicBenchmarks) {
+			const evidence = benchmark.evidence;
+			if (evidence) lines.push(`- ${benchmark.topic.title}: ${evidence.assessmentPerformance.sampleSize} assessment records; ${evidence.feedbackCounts.explicit} explicit, ${evidence.feedbackCounts.inferred} inferred, ${evidence.feedbackCounts.unclassified} unclassified feedback signals. ${evidence.score.note}`);
+		}
+		if (sources.size === 0) lines.push("- No usable learner assessment or feedback score is available for the requested topic(s).");
 	} else {
-		lines.push("- Benchmark uses the deterministic synthetic fallback because no learner feedback corpus was supplied.");
+		lines.push("- This benchmark uses synthetic learner simulations. Synthetic scores test model assumptions and do not establish human learning effectiveness.");
 	}
 	lines.push("");
 	return `${lines.join("\n")}\n`;
@@ -1201,6 +1236,9 @@ export function mapElitesEvolve(
 	resolution = DEFAULT_RESOLUTION,
 	realOutcomes?: BrowserLearnerOutcome[]
 ): MapElitesRun {
+	if (realOutcomes !== undefined) {
+		throw new Error("Retrospective learner records cannot validate policy evolution. Run fresh teaching episodes with independent evaluation.");
+	}
 	const prng = new Prng(seed);
 	const grid: MapElitesGrid = { descriptors, resolution, cells: new Map() };
 	const totalCells = resolution ** descriptors.length;
@@ -1605,7 +1643,9 @@ export function generateImprovementProposal(benchmark: BenchmarkResult): Improve
 		suggestion: w.suggestion,
 	}));
 
-	const hypothesis = targets.length > 0
+	const hypothesis = benchmark.trace.evaluationMode === "retrospective" || !benchmark.trace.syntheticFallback
+		? "These historical records suggest questions to investigate. Test any teaching change with fresh executions; unmeasured retention or transfer is not evidence of failure."
+		: targets.length > 0
 		? `Improving ${targets.map((t) => t.area).join(", ")} should raise the overall benchmark score from ${benchmark.overallScore.toFixed(2)} by addressing the identified weak areas.`
 		: `The benchmark score is ${benchmark.overallScore.toFixed(2)} with no severe weaknesses detected. Consider exploring novel teaching strategies.`;
 
@@ -1707,7 +1747,9 @@ export function diagnoseBenchmark(benchmark: BenchmarkResult): ImprovementSugges
 	const suggestions: ImprovementSuggestion[] = [];
 
 	// Find weakest topic
-	const weakest = [...benchmark.topicBenchmarks].sort((a, b) => a.meanScore - b.meanScore)[0];
+	const retrospective = benchmark.trace.evaluationMode === "retrospective" || !benchmark.trace.syntheticFallback;
+	const scoredTopics = benchmark.topicBenchmarks.filter((entry) => !retrospective || entry.evidence?.score.value != null);
+	const weakest = [...scoredTopics].sort((a, b) => a.meanScore - b.meanScore)[0];
 	if (weakest && weakest.meanScore < 55) {
 		suggestions.push({
 			area: `Topic: ${weakest.topic.title}`,
@@ -1729,8 +1771,9 @@ export function diagnoseBenchmark(benchmark: BenchmarkResult): ImprovementSugges
 	}
 
 	// Check transfer
-	const allTransfer = mean(benchmark.topicBenchmarks.map((t) => t.meanTransfer));
-	if (allTransfer < 0.35) {
+	const measuredTransfer = benchmark.topicBenchmarks.filter((entry) => !retrospective || entry.evidence?.metrics.transfer.value != null);
+	const allTransfer = mean(measuredTransfer.map((t) => t.meanTransfer));
+	if (measuredTransfer.length > 0 && allTransfer < 0.35) {
 		suggestions.push({
 			area: "Knowledge Transfer",
 			metric: "meanTransfer",

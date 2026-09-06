@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.12.0] - 2026-09-06
+
+### Added
+- Teaching benchmarks that execute the real Pi and browser teaching tools against a fixed, versioned case suite, preserving episode evidence and explicit execution failures.
+- A teaching improvement loop with persistent hypotheses, immutable skill revisions, paired validation, single-use holdouts, and activation gates for critical criteria and task-family regressions.
+- Independent learning checks for fractions and loop bounds, with pretests, immediate checks, delayed retention, transfer, and explicit assistance and missing-data records.
+
+### Changed
+- Report observed learner outcomes separately from feedback proxies; keep missing retention and transfer evidence unknown and benchmark objectives independent of policy weights.
+- Activate validated prompt revisions in new sessions when they match the selected persona. Legacy policy and prompt evolution now produce unvalidated proposals.
+- Replace topic-based `auto-improve` with case-suite experiments; use `auto-improve --cases <json>` for an independent case pack. `--force` bypasses cooldown only, never holdout reuse protections.
+- Update the research paper with the current architecture, WikiSkill-inspired method, reproduced historical diagnostics, and evaluation plan. The paper does not claim live-provider improvement or demonstrated human learning gains from the new loop.
+
+### Fixed
+- Isolate browser evaluation storage from learner sessions and clean it up after experiments.
+- Include the base teaching prompt and verify the new runtime modules in standalone release bundles and npm packages.
+
 ## [3.11.0] - 2026-09-05
 
 ### Added

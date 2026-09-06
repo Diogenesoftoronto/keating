@@ -92,7 +92,7 @@ jobs:
           cp "$(command -v bun)" "${STAGE_DIR}/runtime/bun"
           chmod +x "${STAGE_DIR}/runtime/bun"
           cp -r dist pi scripts/install "${STAGE_DIR}/"
-          cp package.json "${STAGE_DIR}/"
+          cp package.json SYSTEM.md "${STAGE_DIR}/"
           # Bundle node_modules so the tarball is truly standalone
           cp -r node_modules "${STAGE_DIR}/"
           mv "${STAGE_DIR}/install/install.sh" "${STAGE_DIR}/install.sh"
@@ -107,6 +107,9 @@ jobs:
           grep -Fx "${BUNDLE_NAME}/bin/keating.js" bundle-files.txt
           grep -Fx "${BUNDLE_NAME}/dist/src/cli/main.js" bundle-files.txt
           grep -Fx "${BUNDLE_NAME}/dist/src/pi/hyper-teacher/index.js" bundle-files.txt
+          grep -Fx "${BUNDLE_NAME}/dist/src/runtime/teaching-episode-child.js" bundle-files.txt
+          grep -Fx "${BUNDLE_NAME}/dist/shared/evolution/loop.js" bundle-files.txt
+          grep -Fx "${BUNDLE_NAME}/SYSTEM.md" bundle-files.txt
           grep -Fx "${BUNDLE_NAME}/runtime/bun" bundle-files.txt
           ! grep -F "${BUNDLE_NAME}/bin/.keating/" bundle-files.txt
           ! grep -F "${BUNDLE_NAME}/bin/keating.config.json" bundle-files.txt

@@ -40,6 +40,7 @@ import { registerSpeechTool } from "./tools/speech.js";
 import { feedbackOnlyTopics } from "./tools/shared.js";
 import { registerPiUiActionCommand } from "../../tui/ui/rpc-action-transport.js";
 import registerNotOrganicProvider from "../notorganic-provider-extension.js";
+import { activeTeachingPrompt, teachingBasePrompt } from "../../core/teaching-evolution.js";
 
 function topicFromArgs(args: string | string[]): string {
   return (Array.isArray(args) ? args.join(" ") : String(args ?? "")).trim();
@@ -48,6 +49,8 @@ function topicFromArgs(args: string | string[]): string {
 let greetingShown = false;
 
 export default function hyperteacher(pi: any): void {
+  let pinnedTeaching: Awaited<ReturnType<typeof activeTeachingPrompt>> | null = null;
+  let hostTeachingBase = "";
   if (typeof pi.registerProvider === "function") registerNotOrganicProvider(pi);
   registerPiUiActionCommand(pi);
 
@@ -111,7 +114,7 @@ export default function hyperteacher(pi: any): void {
   });
 
   pi.registerCommand("evolve", {
-    description: "Mutate and benchmark teaching policies, then keep the strongest safe candidate.",
+    description: "Save unvalidated policy parameter proposals. Use /auto-improve for evaluated skill activation.",
     handler: async (args: string[], ctx: any) => {
       const topic = topicFromArgs(args) || undefined;
       const artifact = await evolvePolicyArtifact(ctx.cwd, topic, "pi");
@@ -279,14 +282,13 @@ export default function hyperteacher(pi: any): void {
   });
 
   pi.registerCommand("auto-improve", {
-    description: "Run the full self-improvement loop: benchmark → evolve policy → evolve prompt → benchmark again.",
+    description: "Evaluate fresh teaching episodes and gate one skill revision against validation and holdout cases.",
     handler: async (args: string[], ctx: any) => {
       const topic = topicFromArgs(args) || undefined;
-      info(ctx, "Running auto-improve loop (bench → evolve → prompt-evolve → bench)...");
+      info(ctx, "Running a bounded teaching experiment. Accepted revisions apply next session.");
       const result = await autoImproveArtifact(ctx.cwd, topic, { surface: "pi" });
-      const verdict = result.delta > 0 ? "IMPROVED" : result.delta < -0.5 ? "REGRESSED" : "NO SIGNIFICANT CHANGE";
       ctx.ui.setEditorText(`read ${relative(ctx.cwd, result.reportPath)}`);
-      info(ctx, `Auto-improve: ${result.baselineScore.toFixed(2)} → ${result.afterScore.toFixed(2)} (${verdict}, Δ${result.delta >= 0 ? "+" : ""}${result.delta.toFixed(2)})`);
+      info(ctx, `Teaching experiment: ${result.status}. Human learning remains unmeasured. See ${relative(ctx.cwd, result.reportPath)}.`);
     }
   });
 
@@ -357,6 +359,14 @@ export default function hyperteacher(pi: any): void {
 
   pi.on("session_start", async (_event: any, ctx: any) => {
     await ensureProjectScaffold(ctx.cwd);
+    const priorRevision = ctx.sessionManager?.getBranch?.().find((entry: any) =>
+      entry.type === "custom" && entry.customType === "keating-teaching-revision"
+      && typeof entry.data?.revisionId === "string")?.data;
+    pinnedTeaching = await activeTeachingPrompt(ctx.cwd, priorRevision);
+    hostTeachingBase = await teachingBasePrompt();
+    if (!priorRevision && typeof pi.appendEntry === "function") {
+      pi.appendEntry("keating-teaching-revision", { revisionId: pinnedTeaching.revisionId, experimentId: pinnedTeaching.experimentId });
+    }
     // Record session start in learner state
     const statePath = learnerStatePath(ctx.cwd);
     const state = await loadLearnerState(statePath);
@@ -392,5 +402,13 @@ export default function hyperteacher(pi: any): void {
         info(ctx, `Keating loaded — ready to teach. Type a topic or a command.`);
       }
     }
+  });
+
+  pi.on("before_agent_start", async (event: { systemPrompt: string }, ctx: { cwd: string }) => {
+    pinnedTeaching ??= await activeTeachingPrompt(ctx.cwd);
+    // Preserve Pi's host/user context while applying the exact evaluated teaching supplement.
+    const supplement = pinnedTeaching.prompt.slice(pinnedTeaching.basePrompt.length);
+    const hostPrompt = hostTeachingBase ? event.systemPrompt.replace(hostTeachingBase, pinnedTeaching.basePrompt) : event.systemPrompt;
+    return { systemPrompt: `${hostPrompt}${supplement}` };
   });
 }
