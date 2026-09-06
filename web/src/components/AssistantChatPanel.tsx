@@ -85,6 +85,7 @@ import {
   tutorialApiKeyHref,
 } from "../lib/tutorial-links";
 import { isOpenEnded, QuizRenderer } from "./QuizRenderer";
+import { formatQuizDuration, isQuickQuizAnswer } from "./quiz/game";
 import {
   foldedToolResult,
   hasMeaningfulToolResult,
@@ -1634,6 +1635,7 @@ function renderInteractiveSegment(
                     question: q.question,
                     correctAnswer: q.correctAnswer,
                     type: q.type,
+                    timeLimit: q.timeLimit,
                     openEnded: isOpenEnded(q),
                   })),
                   answers: result.answers,
@@ -1642,6 +1644,8 @@ function renderInteractiveSegment(
                   partialCredits: result.partialCredits,
                   flagged: result.flagged,
                   timing: result.timing,
+                  timedOutQuestionIds: result.timedOutQuestionIds,
+                  examTimedOut: result.examTimedOut,
                 },
               }),
             );
@@ -4464,12 +4468,15 @@ function AssistantThread({
             partialCreditPoints?: number;
             partialCredits?: Record<string, number>;
             flagged?: string[];
+            timedOutQuestionIds?: string[];
+            examTimedOut?: boolean;
             timing?: { totalMs: number; perQuestionMs: Record<string, number> };
             questions?: Array<{
               id: string;
               question: string;
               correctAnswer: string;
               type?: string;
+              timeLimit?: number;
               openEnded?: boolean;
             }>;
             answers?: Record<string, string>;
@@ -4489,13 +4496,15 @@ function AssistantThread({
           question.type === "fill_in");
       const openEndedTotal = (detail.questions ?? []).filter(isOpen).length;
       const objectiveTotal = total - openEndedTotal;
-      const seconds = detail.timing
-        ? Math.round(detail.timing.totalMs / 1000)
+      const duration = detail.timing
+        ? formatQuizDuration(detail.timing.totalMs)
         : null;
       const lines: string[] = [
         `I finished the quiz${detail.topic ? ` on "${detail.topic}"` : ""}.`,
-        `Objective score: ${detail.score}/${objectiveTotal}${openEndedTotal > 0 ? ` (${openEndedTotal} open-ended pending your review)` : ""}${seconds !== null ? ` in ${seconds}s` : ""}.`,
+        `Objective score: ${detail.score}/${objectiveTotal}${openEndedTotal > 0 ? ` (${openEndedTotal} open-ended pending your review)` : ""}${duration !== null ? ` in ${duration}` : ""}.`,
       ];
+      if (detail.examTimedOut) lines.push("The exam time budget expired.");
+      const timedOutIds = new Set(detail.timedOutQuestionIds ?? []);
       if (typeof detail.partialCreditPoints === "number") {
         lines.push(
           `Partial-credit points: ${detail.partialCreditPoints.toFixed(2)}/${objectiveTotal}.`,
@@ -4523,8 +4532,9 @@ function AssistantThread({
               parts.push(`(partial credit: ${Math.round(pc * 100)}%)`);
             }
           }
-          const t = perQ[q.id] ? ` (${Math.round(perQ[q.id] / 1000)}s)` : "";
-          parts.push(t);
+          if (typeof perQ[q.id] === "number") parts.push(`(${formatQuizDuration(perQ[q.id])})`);
+          if (timedOutIds.has(q.id)) parts.push("[timed out]");
+          else if (isQuickQuizAnswer({ timeMs: perQ[q.id], timeLimitSeconds: q.timeLimit, answered: Boolean(mine) })) parts.push("[quick answer: within 25% of question time budget; timing only]");
           lines.push(parts.join(" "));
         }
         if (hasOpenEnded) {
@@ -4553,9 +4563,11 @@ function AssistantThread({
           answers: detail.answers ?? {},
           score: detail.score ?? 0,
           partialCreditPoints: detail.partialCreditPoints ?? 0,
-          timing: detail.timing ?? { totalMs: 0, perQuestionMs: {} },
+          timing: detail.timing,
           partialCredits: detail.partialCredits ?? {},
           flagged: detail.flagged ?? [],
+          timedOutQuestionIds: detail.timedOutQuestionIds ?? [],
+          examTimedOut: detail.examTimedOut,
         },
       };
       const tag = `<keating-quiz-result json=${JSON.stringify(JSON.stringify(resultPayload))} />`;
@@ -4810,6 +4822,7 @@ function AssistantThread({
                                     question: q.question,
                                     correctAnswer: q.correctAnswer,
                                     type: q.type,
+                                    timeLimit: q.timeLimit,
                                     openEnded: isOpenEnded(q),
                                   }),
                                 ),
@@ -4819,6 +4832,8 @@ function AssistantThread({
                                 partialCredits: result.partialCredits,
                                 flagged: result.flagged,
                                 timing: result.timing,
+                                timedOutQuestionIds: result.timedOutQuestionIds,
+                                examTimedOut: result.examTimedOut,
                               },
                             }),
                           );

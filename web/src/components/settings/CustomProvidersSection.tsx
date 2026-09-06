@@ -1,3 +1,4 @@
+import { Select } from "../Select";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Trash2, X } from "lucide-react";
 import { getAppStorage } from "@earendil-works/pi-web-ui";
@@ -306,27 +307,27 @@ export function ProviderDialog({
 					) : null}
 					<div className={css({ display: "flex", flexDirection: "column", gap: "0.25rem" })}>
 						<label className={labelClass}>Provider Type</label>
-						<select
+						<Select aria-label="Provider type"
 							className={inputClass}
 							value={form.type}
-							onChange={(e) => {
-								const t = e.target.value as KeatingCustomProviderType;
+							onValueChange={(value) => {
+								const t = value as KeatingCustomProviderType;
 								onChange({ ...form, type: t });
 							}}
 						>
 							{PROVIDER_TYPE_OPTIONS.map((o) => (
 								<option key={o.value} value={o.value}>{o.label}</option>
 							))}
-						</select>
+						</Select>
 					</div>
 					{form.type === "gateway" && (
 						<div className={css({ display: "flex", flexDirection: "column", gap: "0.25rem" })}>
 							<label className={labelClass}>Gateway Kind</label>
-							<select
+							<Select aria-label="Gateway"
 								className={inputClass}
 								value={form.gatewayKind}
-								onChange={(e) => {
-									const gatewayKind = e.target.value as KeatingGatewayKind;
+								onValueChange={(value) => {
+									const gatewayKind = value as KeatingGatewayKind;
 									onChange({
 										...form,
 										gatewayKind,
@@ -337,7 +338,7 @@ export function ProviderDialog({
 								{GATEWAY_KIND_OPTIONS.map((option) => (
 									<option key={option.value} value={option.value}>{option.label}</option>
 								))}
-							</select>
+							</Select>
 						</div>
 					)}
 					<div className={css({ display: "flex", flexDirection: "column", gap: "0.25rem" })}>

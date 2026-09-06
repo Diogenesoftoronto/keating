@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { fn } from "storybook/test";
+import { expect, fn, userEvent, within } from "storybook/test";
 import { QuizResultCard } from "./QuizResultCard";
 import type { Quiz } from "../keating/core";
 import type { QuizResult } from "./QuizRenderer";
@@ -142,6 +142,29 @@ export const WithoutReviewAction: Story = {
 	args: {
 		data: stored({ q1: "Thylakoid membrane", q2: "False", q3: "chlorophyll", q4: "Oxygen" }),
 		onReview: undefined,
+	},
+};
+
+export const RestoredPreciseTiming: Story = {
+	args: {
+		data: {
+			...stored({ q1: "Thylakoid membrane", q2: "True", q3: "chlorophyll", q4: "" }, {
+				score: 1,
+				flagged: [],
+				timing: { totalMs: 64_238, perQuestionMs: { q1: 4_238, q2: 3_125, q3: 26_875, q4: 30_000 } },
+				timedOutQuestionIds: ["q4"],
+			}),
+			quiz: { ...baseQuiz, questions: baseQuiz.questions.map((question) => ({ ...question, timeLimit: 30 })) },
+		},
+	},
+	play: async ({ canvasElement }) => {
+		const canvas = within(canvasElement);
+		await expect(canvas.getByLabelText("Total quiz time: 64238 milliseconds")).toHaveTextContent("1:04.238");
+		await userEvent.click(canvas.getByRole("button", { name: "Show breakdown" }));
+		await expect(canvas.getByLabelText("Time on question: 4238 milliseconds")).toHaveTextContent("4.238s");
+		await expect(canvas.getByLabelText("Time on question: 3125 milliseconds")).toHaveTextContent("3.125s");
+		await expect(canvas.getAllByText("Quick answer")).toHaveLength(2);
+		await expect(canvas.getByText("Timed out", { exact: true })).toBeVisible();
 	},
 };
 

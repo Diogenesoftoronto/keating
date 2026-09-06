@@ -18,6 +18,7 @@ import { css, cx } from "../../styled-system/css";
 import { FlashcardRenderer } from "../components/FlashcardRenderer";
 import { LearningInsightsHeader, LearningMetric } from "../components/LearningInsightsHeader";
 import { Nav } from "../components/Nav";
+import { Select } from "../components/Select";
 import { getInitPromise, keatingStorage } from "../hooks/keating-storage";
 import { useSeo } from "../hooks/useSeo";
 import { buildAnkiPackage, buildAnkiTsv, mergeAnkiDeck, parseAnkiPackage, parseAnkiText } from "../keating/anki-package";
@@ -168,9 +169,9 @@ function QueueCard({
 			<div className={styles.cardFooter}>
 				<label className={styles.selectLabel}>
 					<span>Learning priority</span>
-					<select className={styles.select} value={item.priority} onChange={(event) => onPriority(event.target.value as StudyPriority)}>
+					<Select className={styles.select} value={item.priority} onValueChange={(value) => onPriority(value as StudyPriority)}>
 						{PRIORITIES.map((priority) => <option key={priority.id} value={priority.id}>{priority.label}</option>)}
-					</select>
+					</Select>
 				</label>
 				{item.targetType === "deck" && item.dueCount > 0 ? <button type="button" className={styles.cardAction} onClick={onReview}>Review this deck</button> : null}
 				{item.targetType === "verification" ? <button type="button" className={styles.cardAction} onClick={onCompleteCheck}>Mark checklist complete</button> : null}

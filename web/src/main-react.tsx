@@ -1,3 +1,4 @@
+import { startSubmissionSync } from "./submissions/course-outbox";
 import ReactDOM from "react-dom/client";
 import { PostHogProvider } from "@posthog/react";
 import "@earendil-works/pi-web-ui/app.css";
@@ -21,6 +22,8 @@ if (import.meta.env.DEV) {
     .catch((error) => console.warn("React Grab failed to load:", error));
 }
 
+const stopSubmissionSync = startSubmissionSync();
+if (import.meta.hot) import.meta.hot.dispose(stopSubmissionSync);
 initThemeSync();
 installStaleBuildRecovery();
 applyKeatingUiTypography(loadKeatingUiSettings().fontFamily);

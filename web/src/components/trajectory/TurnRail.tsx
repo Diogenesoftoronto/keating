@@ -1,3 +1,4 @@
+import { Select } from "../Select";
 import type { TrajectoryAnnotation } from "../../keating/trajectory-review";
 import { css, cx } from "../../../styled-system/css";
 import { eyebrow, reviewPanel } from "../../../styled-system/recipes";
@@ -167,7 +168,7 @@ export function TurnPicker({ messages, activeMessageId, onSelect, className }: T
 			<span className={css({ flex: "0 0 auto", fontSize: "0.6875rem", fontWeight: 700, color: "var(--muted-foreground)" })}>
 				Turn
 			</span>
-			<select
+			<Select
 				value={activeMessageId ?? ""}
 				aria-label="Active session turn"
 				className={css({
@@ -182,14 +183,14 @@ export function TurnPicker({ messages, activeMessageId, onSelect, className }: T
 					color: "var(--foreground)",
 					_focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" },
 				})}
-				onChange={(event) => onSelect(event.currentTarget.value)}
+				onValueChange={(value) => onSelect(value)}
 			>
 				{messages.map((message, index) => (
 					<option key={message.id} value={message.id}>
 						{index + 1}. {message.label ?? message.role}
 					</option>
 				))}
-			</select>
+			</Select>
 		</label>
 	);
 }

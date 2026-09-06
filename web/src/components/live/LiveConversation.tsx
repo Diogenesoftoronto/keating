@@ -1,8 +1,8 @@
+import { Select } from "../Select";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	Camera,
 	CameraOff,
-	ChevronDown,
 	ImagePlus,
 	Mic,
 	MicOff,
@@ -404,9 +404,9 @@ export default function LiveConversation({ session, connectEmbeddedSurface = tru
 				<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
 					{/* Model switching is available at any time, not only after a failure. */}
 					<div className={css({ position: "relative", display: { base: "none", sm: "block" } })}>
-						<select
+						<Select
 							value={session.model.value}
-							onChange={(event) => session.switchModel(event.target.value)}
+							onValueChange={(value) => session.switchModel(value)}
 							aria-label="Live model"
 							className={css({
 								appearance: "none",
@@ -435,11 +435,7 @@ export default function LiveConversation({ session, connectEmbeddedSurface = tru
 												: ""}
 								</option>
 							))}
-						</select>
-						<ChevronDown
-							size={12}
-							className={css({ position: "absolute", right: "0.5rem", top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--muted-foreground)" })}
-						/>
+						</Select>
 					</div>
 					{onClose ? (
 						<button

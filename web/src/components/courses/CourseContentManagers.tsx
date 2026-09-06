@@ -1,3 +1,4 @@
+import { Select } from "../Select";
 import { useEffect, useState } from "react";
 import {
   BookUp,
@@ -77,9 +78,9 @@ function targetSelect(
   label: string,
 ) {
   return (
-    <select
+    <Select
       value={value}
-      onChange={(event) => onChange(event.target.value)}
+      onValueChange={(value) => onChange(value)}
       className={inputClass}
       aria-label={label}
     >
@@ -89,7 +90,7 @@ function targetSelect(
           {lesson.title}
         </option>
       ))}
-    </select>
+    </Select>
   );
 }
 
@@ -155,11 +156,11 @@ function QuizQuestionFields({
           <Trash2 size={11} /> Remove
         </button>
       </div>
-      <select
+      <Select
         value={question.type}
         className={inputClass}
-        onChange={(event) => {
-          const type = event.target.value as QuizQuestion["type"];
+        onValueChange={(value) => {
+          const type = value as QuizQuestion["type"];
           onChange({
             ...question,
             type,
@@ -183,7 +184,7 @@ function QuizQuestionFields({
         <option value="fill_in">Fill in</option>
         <option value="dropdown">Dropdown</option>
         <option value="slider">Slider</option>
-      </select>
+      </Select>
       <textarea
         value={question.question}
         onChange={(event) =>
@@ -546,9 +547,9 @@ export function ArtifactManager({
           </p>
         ) : (
           <>
-            <select
+            <Select
               value={sourceId}
-              onChange={(event) => setSourceId(event.target.value)}
+              onValueChange={(value) => setSourceId(value)}
               className={inputClass}
             >
               <option value="">Choose a saved artifact…</option>
@@ -557,7 +558,7 @@ export function ArtifactManager({
                   {source.title} · {source.kind.replaceAll("-", " ")}
                 </option>
               ))}
-            </select>
+            </Select>
             <button
               type="button"
               className={buttonClass}
@@ -655,11 +656,17 @@ function AssignmentEditor({
   const [dueAt, setDueAt] = useState(
     assignment.dueAt ? assignment.dueAt.slice(0, 16) : "",
   );
+  const [availableFrom, setAvailableFrom] = useState(assignment.availableFrom?.slice(0, 16) ?? "");
+  const [taskKind, setTaskKind] = useState(assignment.taskKind ?? "assignment");
+  const [taskItems, setTaskItems] = useState(assignment.taskItems ?? []);
   const [hours, setHours] = useState(
     assignment.estimatedHours?.toString() ?? "",
   );
   useEffect(() => {
     setTitle(assignment.title);
+    setAvailableFrom(assignment.availableFrom?.slice(0, 16) ?? "");
+    setTaskKind(assignment.taskKind ?? "assignment");
+    setTaskItems(assignment.taskItems ?? []);
     setBrief(assignment.brief);
     setDeliverables(assignment.deliverables.join("\n"));
     setRubric(assignment.rubric.join("\n"));
@@ -693,6 +700,16 @@ function AssignmentEditor({
           onChange={(event) => setTitle(event.target.value)}
           className={inputClass}
         />
+        <label>Work type<Select value={taskKind} onValueChange={(value) => setTaskKind(value as typeof taskKind)} className={inputClass}>
+          <option value="assignment">Assignment</option><option value="practice">Practice</option><option value="draft">Draft</option><option value="fieldwork">Fieldwork</option>
+        </Select></label>
+        <label>Available from<input type="datetime-local" className={inputClass} value={availableFrom} onChange={(event) => setAvailableFrom(event.target.value)} /></label>
+        {taskItems.map((item, index) => <div key={item.id}>
+          <input aria-label={`Step ${index + 1}`} className={inputClass} value={item.title} onChange={(event) => { const title = event.target.value; setTaskItems((items) => items.map((entry, i) => i === index ? { ...entry, title } : entry)); }} />
+          <textarea aria-label={`Step ${index + 1} detail`} className={inputClass} value={item.detail ?? ""} onChange={(event) => { const detail = event.target.value; setTaskItems((items) => items.map((entry, i) => i === index ? { ...entry, detail } : entry)); }} />
+          <button type="button" onClick={() => setTaskItems((items) => items.filter((entry) => entry.id !== item.id))}>Remove step</button>
+        </div>)}
+        <button type="button" onClick={() => setTaskItems((items) => [...items, { id: `step_${crypto.randomUUID().replaceAll("-", "")}`, title: "New step" }])}>Add step</button>
         <textarea
           value={brief}
           onChange={(event) => setBrief(event.target.value)}
@@ -769,6 +786,11 @@ function AssignmentEditor({
                   ...operationBase(snapshot),
                   type: "assignment.upsert",
                   assignment: {
+                    taskKind,
+                    taskItems,
+                    availableFrom: availableFrom ? new Date(availableFrom).toISOString() : undefined,
+                    targetWords: assignment.targetWords,
+                    round: assignment.round,
                     id: assignment.id,
                     title: title.trim(),
                     brief: brief.trim(),

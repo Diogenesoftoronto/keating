@@ -1,10 +1,14 @@
+import { LANGUAGE_PRACTICE_ROUNDS_FIXTURE } from "./language-fixture.js";
+export { LANGUAGE_PRACTICE_ROUNDS_FIXTURE } from "./language-fixture.js";
 import type { UiDocument } from "./ui.js";
+import { EXAM_SOURCE_QUESTIONS_FIXTURE } from "./exam-fixture.js";
+export { EXAM_SOURCE_QUESTIONS_FIXTURE } from "./exam-fixture.js";
 
 /**
  * Increment when a fixture's semantics change so downstream renderers can
  * deliberately refresh their recovery and visual-regression snapshots.
  */
-export const RENDERING_FIXTURE_PACK_VERSION = 3 as const;
+export const RENDERING_FIXTURE_PACK_VERSION = 5 as const;
 
 export const RENDERING_FIXTURE_MARKDOWN_LIMIT = 65_536 as const;
 export const RENDERING_FIXTURE_DOCUMENT_NODE_LIMIT = 64 as const;
@@ -78,8 +82,9 @@ export function detectSupportedMermaidGrammar(source: string): WebMermaidGrammar
 }
 
 export const WEB_OPENUI_COMPONENTS = [
-  "LearningSurface", "Explanation", "Callout", "Question", "Quiz", "Flashcards",
+  "LearningSurface", "Explanation", "Callout", "Question", "Quiz", "Exam", "Flashcards",
   "StudyPlan", "ConceptMap", "LearningImage", "SharedNotes",
+  "Assignment", "Practice", "Draft", "Fieldwork", "Simulation", "CodingChallenge", "MusicLab", "LanguagePractice",
 ] as const;
 
 export interface MermaidParityFixture {
@@ -142,7 +147,11 @@ export const MERMAID_PARITY_FIXTURES: readonly MermaidParityFixture[] = [
 
 /** One parser-valid browser program containing every registered Keating OpenUI component. */
 export const OPENUI_SOURCE_PARITY_FIXTURE = [
-  'root = LearningSurface([explanation, callout, question, quiz, flashcards, plan, map, image, notes], "Rendering parity", "Every registered component in one semantic fixture.", "workspace")',
+  'root = LearningSurface([explanation, callout, question, quiz, exam, language, flashcards, plan, map, image, notes, assignment, practice, draft, fieldwork, simulation, coding, music], "Rendering parity", "Every registered component in one semantic fixture.", "workspace")',
+  'coding = CodingChallenge("rendering-coding", "Double a number", "Return twice the input.", "javascript", "function double(value) { return value; }", "double", [{ id: "positive", label: "Positive input", args: [3], expected: 6 }, { id: "zero", label: "Zero", args: [0], expected: 0 }], "workspace")',
+  'music = MusicLab("rendering-music", "Hear a major triad", "note(\\"c4 e4 g4\\").s(\\"sine\\").gain(0.1)", "workspace", "Press Play, then replace e4 with eb4.")',
+  `exam = Exam("rendering-exam", "Caches & tradeoffs", ${JSON.stringify(EXAM_SOURCE_QUESTIONS_FIXTURE)}, "resumable", 1800)`,
+  `language = LanguagePractice("rendering-language", "A little Spanish", "Spanish", ${JSON.stringify(LANGUAGE_PRACTICE_ROUNDS_FIXTURE)}, "resumable")`,
   'explanation = Explanation("## A compact explanation\\nThe posterior combines prior belief and evidence.", "Explanation")',
   'callout = Callout("Do not confuse confidence with observed evidence.", "warning", "Check the claim")',
   'question = Question([{ header: "Choice", question: "What changes a posterior?", type: "choice", choices: ["Observed evidence", "New notation"] }, { header: "Explain", question: "Why does evidence matter?", type: "text" }, { header: "Recall", question: "A belief before evidence is the ___.", type: "blanks", blanks: [{ placeholder: "term" }] }, { header: "Classify", question: "Classify each item.", type: "classification", items: ["prior", "likelihood"], choices: ["belief", "evidence model"], requireReasons: true }, { header: "Match", question: "Match each term.", type: "matching", items: ["prior", "posterior"], choices: ["before evidence", "after evidence"], correctMatches: ["before evidence", "after evidence"] }], "resumable", "Bayes", "Use every conversational question format.")',
@@ -152,6 +161,11 @@ export const OPENUI_SOURCE_PARITY_FIXTURE = [
   'map = ConceptMap("flowchart LR\\n  Prior --> Evidence --> Posterior", "workspace", "Concept map")',
   'image = LearningImage("https://example.com/bayes.png", "A probability update diagram", "workspace", "Learning image", "Consent-gated remote media.")',
   'notes = SharedNotes("rendering-notes", "Learner notes", "workspace", "My current model", "Write what remains unclear.")',
+  'assignment = Assignment("rendering-assignment", "Diagnose a real update", "Find a published base rate, then compute the posterior after one test result and write up where your intuition disagreed.", ["States the prior explicitly", "Shows the update arithmetic", "Names the intuition that broke"], "workspace", 90, [{ id: "source", title: "Find a published base rate", detail: "Cite where it came from." }, { id: "compute", title: "Compute the posterior" }])',
+  'practice = Practice("rendering-practice", "Update drills", "Work ten updates by hand until the arithmetic stops being the hard part.", [{ id: "drill-easy", title: "Five updates with a clean prior" }, { id: "drill-hard", title: "Five updates with a rare condition", detail: "Notice what happens as the base rate falls." }], "workspace", 45)',
+  'draft = Draft("rendering-draft", "Explain the update to a sceptic", "Write an explanation of Bayesian updating for someone who thinks it is a trick. No formulas until the third paragraph.", ["Leads with a concrete case", "Defines the prior before using it", "Answers the sceptic rather than ignoring them"], "workspace", 600, 1)',
+  'fieldwork = Fieldwork("rendering-fieldwork", "Collect real base rates", "Gather five published base rates from sources you trust, and record how hard each was to find.", [{ id: "collect", title: "Record five base rates with citations" }, { id: "reflect", title: "Note which sources disagreed", detail: "Disagreement is the interesting part." }], "workspace", 60)',
+  'simulation = Simulation("rendering-simulation", "A positive test result", [{ id: "prevalence", label: "Prevalence", unit: "per 100k", min: 1, max: 5000, step: 1, value: 10 }, { id: "sensitivity", label: "Sensitivity", unit: "%", min: 50, max: 100, step: 0.1, value: 99 }, { id: "specificity", label: "Specificity", unit: "%", min: 50, max: 100, step: 0.1, value: 99 }], [{ id: "ppv", label: "Chance they actually have it", unit: "%", emphasis: true, expr: "100 * (prevalence/100000 * sensitivity/100) / (prevalence/100000 * sensitivity/100 + (1 - prevalence/100000) * (1 - specificity/100))" }, { id: "ratio", label: "False positives per true positive", precision: 1, expr: "((1 - prevalence/100000) * (1 - specificity/100)) / (prevalence/100000 * sensitivity/100)" }], "workspace", "Predict the answer, then raise specificity to 99.9 and watch one decimal place change it.")',
 ].join("\n");
 
 /** Canonical JSON interchange fixture containing every current shared node kind. */
@@ -183,6 +197,7 @@ export const OPENUI_JSON_PARITY_FIXTURE: UiDocument = {
       ],
     },
     { type: "quiz", id: "quiz", title: "Retrieval check", questions: [{ id: "quiz-question", kind: "multiple_choice", level: "recall", prompt: "What precedes evidence?", choices: [{ id: "prior", label: "Prior" }, { id: "posterior", label: "Posterior" }], correctAnswer: "prior", explanation: "The prior is the belief before new evidence." }] },
+    { type: "language-practice", id: "language", title: "A little Spanish", language: "Spanish", rounds: LANGUAGE_PRACTICE_ROUNDS_FIXTURE },
     { type: "goal", id: "goal", title: "Explain Bayesian updating", status: "active", steps: [{ id: "goal-step", title: "Connect the terms", status: "not_started", successCriteria: ["Name prior, likelihood, and posterior"] }] },
     { type: "deck", id: "deck", title: "Bayes cards", topic: "Bayes", cards: [{ id: "card", front: "Prior?", back: "Belief before evidence", tags: ["bayes"] }] },
     { type: "study-plan", id: "study-plan", title: "Bayes plan", overview: "Build, retrieve, and transfer the model.", items: [{ id: "plan-foundation", title: "Build the model", detail: "Connect prior, likelihood, and posterior.", estimatedMinutes: 20, outcomes: ["Explain the update"], status: "not_started", children: [{ id: "plan-retrieve", title: "Retrieve the terms", status: "not_started" }] }] },
@@ -201,7 +216,7 @@ export const OPENUI_JSON_PARITY_FIXTURE: UiDocument = {
 
 /** Keep this explicit so a new node discriminant updates the fixture pack. */
 export const UI_DOCUMENT_NODE_TYPES = [
-  "markdown", "callout", "question", "question-group", "quiz", "goal", "deck", "study-plan",
+  "markdown", "callout", "question", "question-group", "quiz", "language-practice", "goal", "deck", "study-plan",
   "artifact", "concept-map", "notes", "image", "media", "handoff",
 ] as const;
 

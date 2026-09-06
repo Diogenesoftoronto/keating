@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.13.0] - 2026-09-06
+
+### Added
+- A new download page with real mobile screenshots, platform and processor selection, verified release assets, and direct download links.
+- Interactive exam, language-practice, simulation, coding, and music activities, with shared learner contracts and mobile rendering support.
+- Course task assignment and submission attachments, delivery status, and review controls.
+
+### Changed
+- Rework the session library, saved-session switching, flashcard practice, timed quizzes, sandbox presentation, and shared activity rendering.
+- Unify select controls across settings, courses, live teaching, and trajectory review, with additional component stories and interaction coverage.
+- Include the updated teaching-evolution paper and regenerate its source manifest for the complete application release.
+
+### Fixed
+- Preserve session metadata and learner progress across session switches and activity completion.
+- Improve speech playback cancellation and language-practice persistence, and capture NodePod process output consistently.
+- Serve the download screenshots, audio, textures, and vendored activity assets with their matching application changes.
+
 ## [3.12.0] - 2026-09-06
 
 ### Added

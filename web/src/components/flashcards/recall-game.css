@@ -1,0 +1,24 @@
+.recall-game { border: 1px solid var(--border); border-radius: 16px; box-shadow: none; background: var(--background); color: var(--foreground); }
+.recall-game .recall-inner { gap: 1rem; padding: 1rem; }
+.recall-game .recall-title { font-family: inherit; font-size: .9375rem; line-height: 1.4; white-space: normal; overflow-wrap: anywhere; }
+.recall-progress { display: flex; min-width: 0; align-items: center; gap: 1rem; }
+.recall-score { display: inline-flex; flex-shrink: 0; align-items: center; gap: .25rem; font-size: .75rem; font-weight: 600; color: var(--foreground); animation: activity-lock 200ms ease-out; }
+.recall-game .recall-arena { min-height: 17rem; padding: 1.75rem 1rem 2rem; border: 0; border-radius: 12px; }
+.recall-game .recall-arena::before { content: ""; position: absolute; inset: 0; z-index: 1; background: url("/textures/recall-felt-v1.webp") center / cover; opacity: .22; mix-blend-mode: soft-light; pointer-events: none; }
+.recall-game .recall-face { min-height: 13rem; border: 0; border-radius: 12px; padding: 1.25rem; box-shadow: 0 5px 0 color-mix(in srgb, var(--arena-accent) 38%, var(--crt)); }
+.recall-game .recall-copy { font-size: 1.25rem; line-height: 1.5; font-weight: 600; letter-spacing: -.015em; }
+.recall-game .recall-face-label { font-family: inherit; font-size: .75rem; font-weight: 500; letter-spacing: 0; text-transform: none; }
+.recall-game .recall-face-hint { margin-top: .5rem; font-family: inherit; font-size: .75rem; }
+.recall-stack:focus-within { outline: 3px solid var(--primary); outline-offset: 5px; border-radius: 12px; }
+.recall-game .recall-rating-grid { grid-template-columns: repeat(4, minmax(0,1fr)); gap: .5rem; }
+.recall-game .recall-rating { min-width: 0; min-height: 3.75rem; padding: .625rem .25rem; border-width: 1px; border-radius: 10px; box-shadow: 0 3px 0 var(--border); }
+.recall-game .recall-rating[data-rating="2"] { border-color: var(--primary); background: var(--primary); color: var(--primary-foreground); box-shadow: 0 3px 0 color-mix(in srgb,var(--primary) 60%,var(--foreground)); }
+.recall-game .recall-reveal { background: var(--primary); color: var(--primary-foreground); border: 0; }
+.recall-details { margin-top: .25rem; }
+.recall-details > summary { color: var(--muted-foreground); font-size: .75rem; font-weight: 500; }
+.recall-details > div { margin-block: .75rem; }
+.recall-game .activity-completion { color: var(--foreground); text-align: left; }
+.recall-finish-stats { display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; font-size: .875rem; font-weight: 600; }
+.recall-finish-stats span { display: inline-flex; align-items: center; gap: .375rem; }
+@media (max-width: 420px) { .recall-game .recall-inner { padding: .875rem; gap: .875rem; } .recall-game .recall-arena { padding-inline: .75rem; } .recall-game .recall-copy { font-size: 1.125rem; } .recall-score { font-size: .6875rem; } }
+@media (prefers-reduced-motion: reduce) { .recall-game *, .recall-game *::before, .recall-game *::after { animation: none !important; transition: none !important; } }

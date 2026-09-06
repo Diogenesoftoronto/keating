@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-09-06T13:25:43.113Z",
+  "generatedAt": "2026-09-06T13:42:05.473Z",
   "protocol": {
-    "softwareVersion": "3.12.0",
+    "softwareVersion": "3.13.0",
     "frozenPolicyOriginVersion": "3.3.0",
     "evaluatedPolicyPath": "docs/study/evaluated-policy.json",
     "benchmarkMode": "deterministic-synthetic-fallback",
@@ -18,9 +18,9 @@
     }
   },
   "currentImplementation": {
-    "softwareVersion": "3.12.0",
+    "softwareVersion": "3.13.0",
     "provenance": "working-tree source manifest; package version alone does not identify this revision",
-    "sourceDigest": "sha256:0066a2356b991c05b931cfd76d727053b20664a7b9a5b0ee9013d325489b2b7b",
+    "sourceDigest": "sha256:815c8b02db849118e0e81750554f765029e0537a2ef5254a3e9454e3cac8056b",
     "sourceManifest": [
       {
         "path": "SYSTEM.md",
@@ -32,7 +32,7 @@
       },
       {
         "path": "package.json",
-        "sha256": "138a4a58e17335c3a95b279013d1a72bef19afdb4a01091e1dce356a8fd77df7"
+        "sha256": "4630fbab3e3737aa6eb3e7b8270daf76849aaff3a605fe1bdcc2c68801fc119e"
       },
       {
         "path": "scripts/generate-nodepod-boot-files.ts",
@@ -124,15 +124,15 @@
       },
       {
         "path": "web/bun.lock",
-        "sha256": "53c4f9aa84ab1f6c4ed210a1c905cb84baaa1a383dfd274803e18df925ba5c13"
+        "sha256": "0695cdafbac8d5e4bcf7790cf3303ae99b02013c32e261bc60b1f6c615fdfba4"
       },
       {
         "path": "web/package.json",
-        "sha256": "3e8f6d84d77e1089bbe31e46f15265850c4c7b142160a7b484015c1493fe6fc4"
+        "sha256": "7fb94b46e847e15d6c26cd1f752a745a561fdc389d6c59d5fca921bcb8991b41"
       },
       {
         "path": "web/src/hooks/useKeatingAgent.tsx",
-        "sha256": "e9f7b90c9bd412d5a09ecdfe38e0e4c260a065d7a83a216e72f106fb1c20e064"
+        "sha256": "f9f00428e11b76fa66aa20ab8ebf2b2a94764c8e4b13387aeb3c354da9246774"
       },
       {
         "path": "web/src/keating/browser-tools/improvement.ts",
@@ -144,7 +144,7 @@
       },
       {
         "path": "web/src/keating/storage.ts",
-        "sha256": "a6a5bb2ec8e6782130ecbd942a616b145e0a10ae7b1e9cdd9c76b2518ac313da"
+        "sha256": "5115a126bb1819a09a55c40c47d233003109ca53b2329a4a54bbe478a000de21"
       },
       {
         "path": "web/src/keating/teaching-episode-runner.ts",

@@ -2,9 +2,9 @@
 
 ## Protocol
 
-- Executed Keating package version: 3.12.0
+- Executed Keating package version: 3.13.0
 - Frozen policy origin version: 3.3.0
-- Working-tree source digest: `sha256:0066a2356b991c05b931cfd76d727053b20664a7b9a5b0ee9013d325489b2b7b`
+- Working-tree source digest: `sha256:815c8b02db849118e0e81750554f765029e0537a2ef5254a3e9454e3cac8056b`
 - Evaluated policy: me-candidate-33 (docs/study/evaluated-policy.json)
 - Benchmark mode: deterministic-synthetic-fallback
 - Synthetic learners per topic: 3

@@ -1,0 +1,58 @@
+.submission-attachments,
+.task-course { min-width: 0; color: var(--foreground); font-family: inherit; font-size: .8125rem; line-height: 1.45; }
+.submission-attachments { display: grid; gap: .625rem; padding-block: .75rem; }
+.submission-attachments__toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .875rem; min-width: 0; }
+.submission-attachments .submission-attachments__button,
+.task-course .task-course__button { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; flex-shrink: 0; min-width: 44px; min-height: 44px; max-width: 100%; width: fit-content; margin: 0; border: 1px solid var(--border); border-radius: 8px; padding: .5rem .875rem; background: var(--background); color: var(--foreground); font-family: inherit; font-size: .8125rem; font-weight: 650; line-height: 1.3; text-align: center; text-transform: none; letter-spacing: normal; box-shadow: none; cursor: pointer; transition: background-color 160ms ease-out, border-color 160ms ease-out, transform 120ms ease-out; }
+.submission-attachments .submission-attachments__add,
+.task-course .task-course__open { border-color: color-mix(in srgb, var(--primary) 55%, var(--border)); background: color-mix(in srgb, var(--primary) 8%, var(--background)); }
+.task-course .task-course__save { border-color: var(--primary); background: var(--primary); color: var(--primary-foreground); }
+.submission-attachments .submission-attachments__button:hover:not(:disabled),
+.task-course .task-course__button:hover:not(:disabled) { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 14%, var(--background)); }
+.task-course .task-course__save:hover:not(:disabled) { background: color-mix(in srgb, var(--primary) 88%, black); color: var(--primary-foreground); }
+.submission-attachments .submission-attachments__button:active:not(:disabled),
+.task-course .task-course__button:active:not(:disabled) { transform: translateY(1px); }
+.submission-attachments .submission-attachments__button:focus-visible,
+.task-course .task-course__button:focus-visible,
+.task-course .task-course__select:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 75%, transparent); outline-offset: 3px; }
+.submission-attachments .submission-attachments__button:disabled,
+.task-course .task-course__button:disabled { opacity: .55; cursor: not-allowed; }
+.submission-attachments .submission-attachments__button svg,
+.task-course .task-course__button svg { flex: 0 0 17px; width: 17px; height: 17px; }
+.submission-attachments .submission-attachments__input { position: absolute; width: 1px; height: 1px; min-width: 0; min-height: 0; max-width: 1px; max-height: 1px; padding: 0; margin: -1px; border: 0; clip-path: inset(50%); overflow: hidden; white-space: nowrap; }
+.assignment-control__hint { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .375rem .625rem; font-size: .6875rem; font-weight: 400; color: var(--muted-foreground); }
+.submission-attachments .submission-attachments__files { display: grid; gap: 0; min-width: 0; margin: 0; padding: 0; list-style: none; }
+.submission-attachments__file { display: flex; align-items: center; gap: .625rem; min-width: 0; padding-block: .5rem; border-bottom: 1px solid var(--border); }
+.submission-attachments__file-icon { flex: 0 0 18px; width: 18px; height: 18px; color: var(--muted-foreground); }
+.submission-attachments__file-copy { display: grid; gap: .125rem; min-width: 0; flex: 1; }
+.submission-attachments__filename { overflow-wrap: anywhere; font-size: .75rem; font-weight: 550; }
+.submission-attachments__ready { display: inline-flex; align-items: center; gap: .2rem; }
+.submission-attachments__ready svg { width: 12px; height: 12px; }
+.submission-attachments .submission-attachments__remove { flex: 0 0 44px; width: 44px; height: 44px; padding: 0; border-color: transparent; background: transparent; color: var(--muted-foreground); }
+.assignment-control__status { min-width: 0; margin: 0; overflow-wrap: anywhere; font-size: .6875rem; color: var(--muted-foreground); }
+.assignment-control__status:empty { display: none; }
+.assignment-control__error { display: grid; justify-items: start; gap: .5rem; min-width: 0; margin: 0; color: var(--destructive); font-size: .75rem; overflow-wrap: anywhere; }
+.assignment-control__error p { margin: 0; }
+.task-course { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; padding-block: .625rem; }
+.task-course__fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; min-width: 0; width: 100%; }
+.task-course__field { display: grid; gap: .375rem; min-width: 0; font-size: .75rem; font-weight: 650; }
+.task-course .task-course__select { width: 100%; min-width: 0; max-width: 100%; min-height: 44px; margin: 0; border: 1px solid var(--border); border-radius: 8px; padding: .625rem 1.875rem .625rem .75rem; background-color: var(--background); color: var(--foreground); font-family: inherit; font-size: .8125rem; font-weight: 450; line-height: 1.3; text-overflow: ellipsis; }
+.task-course .task-course__select:disabled { background-color: var(--muted); opacity: .65; }
+.task-course__location { display: flex; align-items: center; gap: .5rem; flex: 1 1 10rem; min-width: 0; margin: 0; font-size: .75rem; }
+.task-course__location > svg { flex: 0 0 17px; width: 17px; height: 17px; color: var(--muted-foreground); }
+.task-course__location > span { display: grid; gap: .125rem; min-width: 0; overflow-wrap: anywhere; }
+.task-course__empty { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem .75rem; }
+.task-course__empty p { margin: 0; font-size: .75rem; color: var(--muted-foreground); }
+.task-course--saved { align-items: flex-start; }
+.task-course--saved > svg { flex: 0 0 19px; width: 19px; height: 19px; color: var(--primary); }
+.task-course--saved > span { display: grid; gap: .25rem; min-width: 0; overflow-wrap: anywhere; }
+.task-course--saved strong { font-size: .8125rem; font-weight: 650; }
+@media (max-width: 480px) {
+  .task-course__fields { grid-template-columns: minmax(0, 1fr); }
+  .task-course .task-course__save { width: 100%; }
+  .task-course .task-course__select { font-size: max(16px, .8125rem); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .submission-attachments .submission-attachments__button,
+  .task-course .task-course__button { transition: none; }
+}

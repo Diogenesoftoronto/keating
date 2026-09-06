@@ -245,6 +245,14 @@ function applyActionToNodes(nodes: readonly UiDocumentNode[], action: UiAction):
 		if (action.type === "update-notes" && node.type === "notes" && node.id === action.nodeId) {
 			return { ...node, value: action.value };
 		}
+		if (action.type === "complete-task-item" && node.type === "task" && node.id === action.nodeId && node.items) {
+			return {
+				...node,
+				items: node.items.map((item) => item.id === action.itemId
+					? { ...item, status: action.completed ? "done" as const : "not_started" as const, ...(action.note ? { note: action.note } : {}) }
+					: item),
+			};
+		}
 		return node;
 	});
 }

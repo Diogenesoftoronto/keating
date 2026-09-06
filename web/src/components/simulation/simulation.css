@@ -1,0 +1,117 @@
+/* Keep embedded experiments compact even under the public pages' global controls. */
+.simulation .simulation__header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 0.5rem;
+}
+
+.simulation .simulation__title {
+	display: flex;
+	align-items: baseline;
+	gap: 0.5rem;
+	min-width: 0;
+	margin: 0;
+	padding-block: 0.4rem;
+	font-size: 1rem;
+	font-weight: 700;
+	line-height: 1.35;
+	overflow-wrap: anywhere;
+}
+
+.simulation button.simulation__reset {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.375rem;
+	flex: 0 0 auto;
+	min-width: 44px;
+	min-height: 44px;
+	padding: 0 0.5rem;
+	border: 0;
+	border-radius: 0.5rem;
+	background: transparent;
+	color: var(--foreground);
+	font: inherit;
+	font-size: 0.75rem;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.simulation button.simulation__reset svg {
+	width: 16px;
+	height: 16px;
+}
+
+.simulation button.simulation__reset:disabled {
+	opacity: 0.45;
+	cursor: default;
+}
+
+.simulation button.simulation__reset:hover:not(:disabled) {
+	background: var(--muted);
+}
+
+.simulation button.simulation__reset:focus-visible,
+.simulation .keating-select.simulation__select:focus-visible {
+	outline: 2px solid var(--ring);
+	outline-offset: 3px;
+}
+
+.simulation .keating-select.simulation__select {
+	box-sizing: border-box;
+	width: 100%;
+	min-width: 0;
+	height: 44px;
+	min-height: 44px;
+	padding: 0 0.375rem;
+	font-size: 0.8125rem;
+	line-height: normal;
+	text-overflow: ellipsis;
+}
+
+.simulation .simulation__parameters input[type="range"] {
+	box-sizing: border-box;
+	height: 44px;
+	min-height: 44px;
+	padding: 0;
+}
+
+.simulation .simulation__readouts {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 0.75rem 1rem;
+	margin: 0;
+	border-top: 1px solid var(--border);
+	padding-top: 0.75rem;
+}
+
+.simulation .simulation__readout {
+	display: flex;
+	min-width: 0;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.simulation .simulation__readout[data-primary] {
+	grid-column: 1 / -1;
+	flex-direction: row;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 1rem;
+}
+
+@media (max-width: 640px) {
+	.simulation button.simulation__reset {
+		width: 44px;
+		padding: 0;
+	}
+
+	.simulation .simulation__reset-label {
+		display: none;
+	}
+
+	.simulation .simulation__parameters {
+		row-gap: 0.375rem;
+	}
+}

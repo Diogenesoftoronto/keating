@@ -88,15 +88,15 @@ export const OpenQuestionsSubmitted: Story = {
 			await canvas.findByRole("textbox"),
 			"I write down the failure mode, correct it from memory, then retry it two days later.",
 		);
-		await userEvent.click(canvas.getByRole("button", { name: "Next" }));
+		await userEvent.click(canvas.getByRole("button", { name: "Lock in & next" }));
 		await userEvent.type(
 			await canvas.findByRole("textbox"),
 			"I will schedule two delayed retrieval attempts and compare how much I can reconstruct without notes.",
 		);
 		await userEvent.click(
-			canvas.getByRole("button", { name: "Submit answers" }),
+			canvas.getByRole("button", { name: "Finish round" }),
 		);
-		await expect(canvas.findByText("Submitted")).resolves.toBeTruthy();
+		await expect(canvas.findByText("Round complete")).resolves.toBeTruthy();
 	},
 };
 
@@ -146,6 +146,24 @@ export const ClassificationDependencies: Story = {
 	},
 };
 
+export const MatchingMenuComplete: Story = {
+	args: MatchingDependencies.args,
+	play: async ({ canvasElement, args }) => {
+		const canvas = within(canvasElement);
+		const page = within(canvasElement.ownerDocument.body);
+		await userEvent.click(canvas.getByRole("combobox", { name: /Match for requests/ }));
+		await userEvent.click(await page.findByRole("option", { name: "C. propagated-inputs" }));
+		await userEvent.click(canvas.getByRole("combobox", { name: /Match for pytest/ }));
+		await expect(await page.findByRole("option", { name: "C. propagated-inputs" })).toHaveAttribute("aria-disabled", "true");
+		await userEvent.click(page.getByRole("option", { name: "B. native-inputs" }));
+		await userEvent.click(canvas.getByRole("combobox", { name: /Match for libcrypto/ }));
+		await userEvent.click(await page.findByRole("option", { name: "A. inputs" }));
+		await userEvent.click(canvas.getByRole("button", { name: "Lock in answer" }));
+		await expect(canvas.findByText("Round complete")).resolves.toBeTruthy();
+		await expect(args.onSubmit).toHaveBeenCalledTimes(1);
+	},
+};
+
 export const ClassificationCases: Story = {
 	args: {
 		data: {
@@ -188,5 +206,21 @@ export const ClassificationWithoutReasons: Story = {
 				},
 			],
 		},
+	},
+};
+
+export const QuickChoiceRound: Story = {
+	args: { data: { topic: "Space science", questions: [{ question: "Where should we explore next?", choices: ["Life beyond Earth", "Black holes", "Our solar system", "How stars form"], allowText: false }] } },
+};
+
+export const QuickChoiceComplete: Story = {
+	args: QuickChoiceRound.args,
+	parameters: { viewport: { defaultViewport: "mobile1" } },
+	play: async ({ canvasElement, args }) => {
+		const canvas = within(canvasElement);
+		await userEvent.click(await canvas.findByRole("button", { name: "Black holes" }));
+		await userEvent.click(canvas.getByRole("button", { name: "Lock in answer" }));
+		await expect(canvas.findByText("Round complete")).resolves.toBeTruthy();
+		await expect(args.onSubmit).toHaveBeenCalledWith([{ header: undefined, question: "Where should we explore next?", answer: "Black holes", score: undefined, grading: "pending" }]);
 	},
 };

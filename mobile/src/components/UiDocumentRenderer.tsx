@@ -8,7 +8,11 @@ import {
   type UiDocumentNode,
   type UiQuestionGroupResponse,
   type UiQuestion,
+  type UiSimulationNode,
   type UiStudyPlanItem,
+  type UiTaskNode,
+  evaluateSimulationExpression,
+  parseSimulationExpression,
 } from "@keating/learner-contracts";
 import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -188,12 +192,18 @@ function UiNode({
   </View>;
   if (node.type === "question") return <QuestionNode question={node} document={document} disabled={disabled} busy={busy} completedAction={completedQuestionAction(durableActions, node.id)} run={run} />;
   if (node.type === "question-group") return <QuestionGroupNode node={node} document={document} disabled={disabled} busy={busy} durableActions={durableActions} run={run} />;
+  if (node.type === "quiz" && node.mode === "exam") return <View style={styles.node}><Text style={styles.nodeTitle}>{node.title}</Text><Text style={styles.notice}>{node.questions.length} questions · {Math.ceil((node.examTimeLimit ?? 1800) / 60)} minutes</Text><Text style={styles.notice}>Open this exam in the web app to start its timed attempt.</Text></View>;
   if (node.type === "quiz") return <QuizNode node={node} document={document} disabled={disabled} busy={busy} durableActions={durableActions} run={run} />;
   if (node.type === "goal") return <GoalNode node={node} document={document} disabled={disabled} busy={busy} run={run} />;
   if (node.type === "study-plan") return <StudyPlanNode node={node} document={document} disabled={disabled} busy={busy} durableActions={durableActions} run={run} />;
   if (node.type === "deck") return <DeckNode node={node} document={document} disabled={disabled} busy={busy} durableActions={durableActions} run={run} />;
   if (node.type === "concept-map") return <View style={styles.node}>{node.title ? <Text style={styles.nodeTitle}>{node.title}</Text> : null}<MermaidDiagram source={node.source} /></View>;
   if (node.type === "notes") return <NotesNode node={node} document={document} disabled={disabled} busy={busy} run={run} />;
+  if (node.type === "simulation") return <SimulationNode node={node} />;
+  if (node.type === "coding-challenge") return <View style={styles.node}><Text style={styles.nodeTitle}>{node.title}</Text><MarkdownText content={node.prompt} /><Text selectable>{node.starterCode}</Text><Text style={styles.notice}>Open this challenge in the web app to edit and run the sample tests.</Text></View>;
+  if (node.type === "music-lab") return <View style={styles.node}><Text style={styles.nodeTitle}>{node.title}</Text>{node.brief ? <MarkdownText content={node.brief} /> : null}<Text selectable>{node.code}</Text><Text style={styles.notice}>Open this lab in the web app for Strudel playback and controls.</Text></View>;
+  if (node.type === "language-practice") return <View style={styles.node}><Text style={styles.nodeTitle}>{node.title}</Text><Text style={styles.notice}>{node.language} · {node.rounds.length} rounds</Text><Text style={styles.notice}>Open this practice in the web app for word tiles, listening, and pronunciation recording.</Text></View>;
+  if (node.type === "task") return <TaskNode node={node} document={document} disabled={disabled} busy={busy} durableActions={durableActions} run={run} />;
   if (node.type === "handoff") return <HandoffNode node={node} document={document} disabled={disabled} busy={busy} run={run} />;
   return <ResourceNode node={node} document={document} disabled={disabled} busy={busy} durableActions={durableActions} run={run} />;
 }
@@ -236,9 +246,12 @@ function QuestionNode({
   const [rowSelections, setRowSelections] = useState<string[]>(() => question.items?.map((item) => initialRows?.find((row) => row.item === item)?.optionId ?? savedRows?.find((row) => row.item === item)?.optionId ?? "") ?? []);
   const [rowReasons, setRowReasons] = useState<string[]>(() => question.items?.map((item) => initialRows?.find((row) => row.item === item)?.reason ?? savedRows?.find((row) => row.item === item)?.reason ?? "") ?? []);
   const blankCount = question.blanks?.length ?? (question.prompt.match(/_{3,}|\{\{blank\}\}/g)?.length ?? 0);
+  const [order, setOrder] = useState<string[]>(() => (groupResponse?.type === "order" ? groupResponse.items : undefined)
+    ?? (Array.isArray(savedAnswer) && savedAnswer.every((entry) => typeof entry === "string") ? [...savedAnswer] : [...(question.items ?? [])]));
   const [blankAnswers, setBlankAnswers] = useState<string[]>(() => initialBlanks ?? (Array.isArray(savedAnswer) && savedAnswer.every((entry) => typeof entry === "string") ? [...savedAnswer] : Array.from({ length: blankCount }, () => "")));
   const questionDisabled = disabled || completedAction !== undefined || aggregateCompleted;
   const isRowQuestion = question.kind === "classification" || question.kind === "matching";
+  const isOrdering = question.kind === "ordering";
   const isBlankQuestion = question.kind === "blanks" || question.kind === "fill_in";
   const isMultiSelect = question.multiSelect || question.kind === "multi_select";
   const toggle = (id: string) => setSelected((current) => isMultiSelect
@@ -249,8 +262,8 @@ function QuestionNode({
     optionId: rowSelections[index] ?? "",
     ...(question.requireReasons ? { reason: rowReasons[index] ?? "" } : {}),
   }));
-  const payload = isRowQuestion ? rowAnswers : isBlankQuestion ? blankAnswers : question.choices ? selected.length > 0 ? selected : answer : answer;
-  const choose = !!question.choices && !isRowQuestion && !(question.allowText && selected.length === 0 && answer.trim().length > 0);
+  const payload = isOrdering ? order : isRowQuestion ? rowAnswers : isBlankQuestion ? blankAnswers : question.choices ? selected.length > 0 ? selected : answer : answer;
+  const choose = !!question.choices && !isRowQuestion && !isOrdering && !(question.allowText && selected.length === 0 && answer.trim().length > 0);
   const key = actionKey(document, choose ? "choose-option" : "submit-answer", question.id, payload);
   const action: UiAction = choose ? {
     schemaVersion: UI_CONTRACT_VERSION,
@@ -280,7 +293,13 @@ function QuestionNode({
     <View style={styles.node}>
       {question.header ? <Text style={styles.nodeKicker}>{question.header}</Text> : null}
       <Text style={styles.question}>{question.prompt}</Text>
-      {isRowQuestion ? <View style={styles.options}>{(question.items ?? []).map((item, rowIndex) => <View key={`${question.id}-${rowIndex}`} style={styles.rowQuestion}>
+      {isOrdering ? <View style={styles.options}>{order.map((item, index) => <View key={`${question.id}-order-${item}`} style={styles.rowQuestion}>
+        <Text>{`${index + 1}. ${item}`}</Text>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <Button compact disabled={questionDisabled || index === 0} onPress={() => setOrder((current) => moveItem(current, index, index - 1))}>{"\u2191"}</Button>
+          <Button compact disabled={questionDisabled || index === order.length - 1} onPress={() => setOrder((current) => moveItem(current, index, index + 1))}>{"\u2193"}</Button>
+        </View>
+      </View>)}</View> : isRowQuestion ? <View style={styles.options}>{(question.items ?? []).map((item, rowIndex) => <View key={`${question.id}-${rowIndex}`} style={styles.rowQuestion}>
         <Text style={styles.stepTitle}>{item}</Text>
         <View style={styles.choiceWrap}>{question.choices?.map((option) => {
           const active = rowSelections[rowIndex] === option.id;
@@ -352,10 +371,21 @@ function questionResponse(
   return { questionId: question.id, type: "text", answer };
 }
 
+/** Reordering is by button on mobile: pointer dragging is unreliable here. */
+function moveItem(items: string[], from: number, to: number): string[] {
+  if (from === to || to < 0 || to >= items.length) return items;
+  const next = [...items];
+  const [moved] = next.splice(from, 1);
+  if (moved === undefined) return items;
+  next.splice(to, 0, moved);
+  return next;
+}
+
 function answerForQuizResponse(response: UiQuestionGroupResponse): string {
   if (response.type === "text") return response.answer;
   if (response.type === "choice") return response.optionIds.join(",") || (response.text ?? "");
   if (response.type === "blanks") return response.answers.join(",");
+  if (response.type === "order") return response.items.join(",");
   return response.rows.map((row) => `${row.item}:${row.optionId}${row.reason ? ` (${row.reason})` : ""}`).join("; ");
 }
 
@@ -567,6 +597,137 @@ function StudyPlanItemRow({ item, nodeId, document, disabled, busy, run, depth =
       </View>
     </Pressable>
     {item.children?.map((child) => <StudyPlanItemRow key={child.id} item={child} nodeId={nodeId} document={document} disabled={disabled} busy={busy} run={run} depth={depth + 1} />)}
+  </View>;
+}
+
+/** One step of a parameter, clamped to its declared range. */
+function stepParameter(parameter: UiSimulationNode["parameters"][number], current: number, direction: 1 | -1): number {
+  const step = parameter.step ?? (parameter.max - parameter.min) / 20;
+  const next = current + step * direction;
+  return Math.min(Math.max(next, parameter.min), parameter.max);
+}
+
+/** Local-only: readouts recompute on each step, with no action dispatched. */
+function SimulationNode({ node }: { node: UiSimulationNode }) {
+  const theme = useKeatingTheme();
+  const styles = createStyles(theme);
+  const [values, setValues] = useState<Record<string, number>>(
+    () => Object.fromEntries(node.parameters.map((parameter) => [parameter.id, parameter.value])),
+  );
+  const compiled = useMemo(() => {
+    const ids = node.parameters.map((parameter) => parameter.id);
+    return node.readouts.map((readout) => {
+      const parsed = parseSimulationExpression(readout.expr, ids);
+      return { readout, expression: parsed.ok ? parsed.node : undefined };
+    });
+  }, [node]);
+
+  return <View style={styles.node}>
+    <Text style={styles.nodeKicker}>MODEL</Text>
+    <Text style={styles.nodeTitle}>{node.title}</Text>
+    {node.brief ? <MarkdownText content={node.brief} /> : null}
+    {node.parameters.map((parameter) => (
+      <View key={parameter.id}>
+        <Text>{`${parameter.label}: ${(values[parameter.id] ?? parameter.value)}${parameter.unit ? ` ${parameter.unit}` : ""}`}</Text>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <Button compact onPress={() => setValues((current) => ({ ...current, [parameter.id]: stepParameter(parameter, current[parameter.id] ?? parameter.value, -1) }))}>{"\u2212"}</Button>
+          <Button compact onPress={() => setValues((current) => ({ ...current, [parameter.id]: stepParameter(parameter, current[parameter.id] ?? parameter.value, 1) }))}>{"+"}</Button>
+        </View>
+      </View>
+    ))}
+    {compiled.map(({ readout, expression }) => {
+      const value = expression ? evaluateSimulationExpression(expression, values) : undefined;
+      return <View key={readout.id}>
+        <Text style={readout.emphasis ? styles.nodeTitle : undefined}>
+          {`${readout.label}: ${value === undefined ? "\u2014" : value.toFixed(readout.precision ?? 2)}${value !== undefined && readout.unit ? ` ${readout.unit}` : ""}`}
+        </Text>
+      </View>;
+    })}
+  </View>;
+}
+
+const TASK_KICKER: Record<UiTaskNode["kind"], { kicker: string; items: string; verb: string }> = {
+  assignment: { kicker: "ASSIGNMENT", items: "Steps", verb: "Submit assignment" },
+  practice: { kicker: "PRACTICE", items: "Exercises", verb: "Log this session" },
+  draft: { kicker: "DRAFT", items: "Steps", verb: "Submit draft" },
+  fieldwork: { kicker: "FIELDWORK", items: "Collection protocol", verb: "Record findings" },
+};
+
+/** Work the learner does away from the app; items persist so it can be resumed. */
+function TaskNode({ node, document, disabled, busy, durableActions, run }: NodeActionProps<UiTaskNode> & { durableActions: readonly UiAction[] }) {
+  const theme = useKeatingTheme();
+  const styles = createStyles(theme);
+  const labels = TASK_KICKER[node.kind];
+  const submitted = durableActions.find((action): action is Extract<UiAction, { type: "submit-task" }> => action.type === "submit-task" && action.nodeId === node.id);
+  const [submission, setSubmission] = useState(submitted?.submission ?? "");
+  const format = node.submission?.format ?? "none";
+  const submitKey = actionKey(document, "submit-task", node.id, submission);
+
+  return <View style={styles.node}>
+    <Text style={styles.nodeKicker}>{labels.kicker}</Text>
+    <Text style={styles.nodeTitle}>{node.title}</Text>
+    <MarkdownText content={node.brief} />
+    {node.criteria?.length ? <View>
+      <Text style={styles.nodeKicker}>JUDGED ON</Text>
+      {node.criteria.map((criterion) => <Text key={criterion}>{`\u2022 ${criterion}`}</Text>)}
+    </View> : null}
+    {node.items?.length ? <View>
+      <Text style={styles.nodeKicker}>{labels.items.toUpperCase()}</Text>
+      {node.items.map((item) => {
+        const done = item.status === "done";
+        const itemKey = actionKey(document, "complete-task-item", node.id, `${item.id}:${!done}`);
+        return <View key={item.id}>
+          <Text>{`${done ? "\u2611" : "\u2610"} ${item.title}`}</Text>
+          {item.detail ? <Text style={styles.nodeKicker}>{item.detail}</Text> : null}
+          <Button
+            compact
+            disabled={disabled}
+            loading={busy === itemKey}
+            onPress={() => void run({
+              schemaVersion: UI_CONTRACT_VERSION,
+              type: "complete-task-item",
+              documentId: document.id,
+              documentRevision: document.revision,
+              nodeId: node.id,
+              itemId: item.id,
+              completed: !done,
+              idempotencyKey: itemKey,
+            }, false)}
+          >{done ? "Reopen" : "Mark done"}</Button>
+        </View>;
+      })}
+    </View> : null}
+    {format === "none" ? null : submitted ? <View>
+      <Text style={styles.nodeKicker}>SUBMITTED</Text>
+      <Text>{submitted.submission}</Text>
+    </View> : <View>
+      <TextInput
+        accessibilityLabel={node.submission?.label ?? "Your submission"}
+        editable={!disabled}
+        multiline={format === "text"}
+        onChangeText={setSubmission}
+        placeholder={node.submission?.placeholder ?? "Your work"}
+        placeholderTextColor={theme.colors.textFaint}
+        style={styles.notesInput}
+        textAlignVertical="top"
+        value={submission}
+      />
+      <Button
+        compact
+        disabled={disabled || !submission.trim()}
+        loading={busy === submitKey}
+        onPress={() => void run({
+          schemaVersion: UI_CONTRACT_VERSION,
+          type: "submit-task",
+          documentId: document.id,
+          documentRevision: document.revision,
+          nodeId: node.id,
+          submission: submission.trim(),
+          ...(node.round !== undefined ? { round: node.round } : {}),
+          idempotencyKey: submitKey,
+        }, false)}
+      >{labels.verb}</Button>
+    </View>}
   </View>;
 }
 

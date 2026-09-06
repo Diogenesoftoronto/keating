@@ -1,4 +1,5 @@
-import { codePointCompare, compareContractTimestamps, hasOnlyKeys, isContractId, isContractTimestamp, isRecord } from "./validation.js";
+import { isValidSimulationExpression } from "./simulation-expression.js";
+import { codePointCompare, compareContractTimestamps, hasOnlyKeys, isBoundedJsonValue, isContractId, isContractTimestamp, isRecord } from "./validation.js";
 
 export const UI_CONTRACT_VERSION = 1 as const;
 export const UI_ACTION_JOURNAL_KIND = "keating-ui-action-journal" as const;
@@ -10,7 +11,7 @@ export type UiGoalStepStatus = "not_started" | "in_progress" | "done";
 export type UiArtifactFormat = "markdown" | "text" | "json" | "uri";
 export type UiQuestionType = "choice" | "text" | "blanks" | "classification" | "matching"
   | "multiple_choice" | "multi_select" | "true_false" | "fill_in" | "short_answer"
-  | "transfer" | "slider" | "dropdown";
+  | "transfer" | "slider" | "dropdown" | "ordering";
 export type UiQuestionLevel = "recall" | "comprehension" | "application" | "analysis" | "transfer";
 
 export interface UiOption {
@@ -36,7 +37,9 @@ export type UiQuestionGroupResponse =
   | { questionId: string; type: "text"; answer: string }
   | { questionId: string; type: "choice"; optionIds: string[]; text?: string }
   | { questionId: string; type: "blanks"; answers: string[] }
-  | { questionId: string; type: "rows"; rows: UiRowAnswer[] };
+  | { questionId: string; type: "rows"; rows: UiRowAnswer[] }
+  /** A sequence the learner arranged; always a permutation of the question's items. */
+  | { questionId: string; type: "order"; items: string[] };
 
 /** A source quiz uses strings for its typed responses, in question order. */
 export interface UiQuizResponse {
@@ -144,18 +147,213 @@ export interface UiStudyPlanNode {
   resource?: UiArtifactResource;
 }
 
+/**
+ * Work the learner does away from the conversation.
+ *
+ * One node covers four shapes because they differ in framing and in what the
+ * learner hands back, not in structure: an `assignment` produces one
+ * deliverable, a `practice` set is repeated drills, a `draft` is long-form
+ * writing revised over rounds, and `fieldwork` collects evidence from the world
+ * against a protocol.
+ */
+export type UiTaskKind = "assignment" | "practice" | "draft" | "fieldwork";
+
+export interface UiTaskItem {
+  id: string;
+  title: string;
+  detail?: string;
+  status?: UiGoalStepStatus;
+  /** What the learner recorded while doing it. */
+  note?: string;
+}
+
+export interface UiSubmissionAttachment {
+  id: string;
+  name: string;
+  mimeType: string;
+  sizeBytes: number;
+}
+
+export function validateSubmissionAttachment(value: unknown): value is UiSubmissionAttachment {
+  if (!isRecord(value)) return false;
+  return hasOnlyKeys(value, new Set(["id", "name", "mimeType", "sizeBytes"]))
+    && typeof value.id === "string" && /^attachment_[a-f0-9]{32}$/.test(value.id)
+    && boundedString(value.name, 255) && boundedString(value.mimeType, 160)
+    && Number.isInteger(value.sizeBytes) && (value.sizeBytes as number) > 0
+    && (value.sizeBytes as number) <= 25 * 1024 * 1024;
+}
+
+export interface UiTaskSubmission {
+  /** `none` is a task tracked only by its items, with nothing handed back. */
+  format: "text" | "link" | "none";
+  label?: string;
+  placeholder?: string;
+  /** Length target for a draft, in words. Advisory, never enforced. */
+  targetWords?: number;
+}
+
+export interface UiTaskNode {
+  type: "task";
+  kind: UiTaskKind;
+  id: string;
+  title: string;
+  /** Agent-authored brief, prompt, or objective, as markdown. */
+  brief: string;
+  /** Success criteria or rubric lines the work is judged against. */
+  criteria?: string[];
+  /** Steps, exercises, or collection protocol, depending on `kind`. */
+  items?: UiTaskItem[];
+  estimatedMinutes?: number;
+  /** When the work is due. Advisory: a late submission is still accepted. */
+  dueAt?: string;
+  /** Before this, the task is visible but not yet open for submission. */
+  availableFrom?: string;
+  /** 1-based revision round, for a draft carried across submissions. */
+  round?: number;
+  submission?: UiTaskSubmission;
+}
+
+/**
+ * A model the learner manipulates directly, recomputed locally on every change.
+ *
+ * This is the one component with a feedback loop that costs no conversational
+ * turn: the learner moves a parameter and sees the consequence immediately.
+ * `expr` is a closed arithmetic language over this node's own parameter ids —
+ * see `simulation-expression.ts`. Nothing about it is evaluated as code.
+ */
+export interface UiSimulationParameter {
+  id: string;
+  label: string;
+  unit?: string;
+  min: number;
+  max: number;
+  step?: number;
+  value: number;
+}
+
+export interface UiSimulationReadout {
+  id: string;
+  label: string;
+  unit?: string;
+  /** Arithmetic over parameter ids only. No calls, no free identifiers. */
+  expr: string;
+  /** Decimal places; defaults to 2. */
+  precision?: number;
+  /** Marks the one number the learner is meant to watch. */
+  emphasis?: boolean;
+}
+
+export interface UiSimulationNode {
+  type: "simulation";
+  id: string;
+  title: string;
+  /** What to try, and what to watch for. Markdown. */
+  brief?: string;
+  parameters: UiSimulationParameter[];
+  readouts: UiSimulationReadout[];
+}
+
+export type UiCodeValue = null | boolean | number | string | UiCodeValue[] | { [key: string]: UiCodeValue };
+
+/** Pure function exercises. Test inputs and expected outputs are data, never test code. */
+export interface UiCodingChallengeNode {
+  type: "coding-challenge";
+  id: string;
+  title: string;
+  prompt: string;
+  language: "javascript" | "typescript";
+  starterCode: string;
+  entrypoint: string;
+  tests: Array<{ id: string; label: string; args: UiCodeValue[]; expected: UiCodeValue }>;
+  hint?: string;
+}
+
+/** Authored Strudel code is editable data until explicit playback in an isolated surface. */
+export interface UiMusicLabNode {
+  type: "music-lab";
+  id: string;
+  title: string;
+  code: string;
+  brief?: string;
+  /** Numeric values available to the pattern as controls.<id>. */
+  controls?: UiSimulationParameter[];
+  visualization?: "pianoroll" | "scope";
+}
+
+interface UiLanguageRoundBase {
+  id: string;
+  prompt: string;
+  hint?: string;
+}
+
+export type UiLanguageRound =
+  | (UiLanguageRoundBase & { kind: "translation"; text: string; acceptedAnswers: string[] })
+  | (UiLanguageRoundBase & { kind: "word-order"; tokens: UiOption[]; correctOrder: string[] })
+  | (UiLanguageRoundBase & { kind: "listening"; text: string; acceptedAnswers: string[]; referenceAudioUrl?: string; audioCreditUrl?: string })
+  | (UiLanguageRoundBase & { kind: "pronunciation"; text: string; referenceAudioUrl?: string; audioCreditUrl?: string });
+
+export interface UiLanguagePracticeNode {
+  type: "language-practice";
+  id: string;
+  title: string;
+  /** Target language, for example French or fr-FR. */
+  language: string;
+  rounds: UiLanguageRound[];
+}
+
+/** Pronunciation records practice only; recordings stay on the learner's device. */
+export interface UiLanguageRoundResult {
+  roundId: string;
+  outcome: "correct" | "retry" | "practiced" | "skipped";
+  attempts: number;
+  timeMs: number;
+  answer?: string;
+}
+
+export function normalizeLanguagePracticeAnswer(value: string): string {
+  return value.normalize("NFC").trim().toLowerCase().replace(/[‘’]/gu, "'").replace(/\s+/gu, " ").replace(/^[¡¿]+|[.!?]+$/gu, "").trim();
+}
+
+function languageRoundAnswerMatches(round: UiLanguageRound, answer: string): boolean {
+  if (round.kind === "pronunciation") return false;
+  const accepted = round.kind === "word-order"
+    ? [round.correctOrder.map((id) => round.tokens.find((token) => token.id === id)!.label).join(" ")]
+    : round.acceptedAnswers;
+  return accepted.some((value) => normalizeLanguagePracticeAnswer(value) === normalizeLanguagePracticeAnswer(answer));
+}
+
 export type UiDocumentNode =
   | { type: "markdown"; id: string; markdown: string }
   | { type: "callout"; id: string; markdown: string; tone: "info" | "hint" | "check" | "warning"; title?: string }
   | ({ type: "question" } & UiQuestion)
   | { type: "question-group"; id: string; title?: string; intro?: string; topic?: string; questions: UiQuestion[] }
-  | { type: "quiz"; id: string; title: string; questions: UiQuestion[] }
+  | {
+    type: "quiz";
+    id: string;
+    title: string;
+    questions: UiQuestion[];
+    /** Exams use one overall deadline and reveal grades only after submission. */
+    mode?: "exam";
+    /** Whole-exam seconds. Omitted means 30 minutes; independent of per-question timeLimit. */
+    examTimeLimit?: number;
+    /**
+     * Seconds allowed per question unless a question overrides it. Omitted
+     * means the surface default; 0 means untimed, which is how a model opts a
+     * reflective quiz out of the clock entirely.
+     */
+    timeLimit?: number;
+  }
   | { type: "goal"; id: string; title: string; description?: string; status: "active" | "completed" | "paused"; steps: UiGoalStep[] }
   | { type: "deck"; id: string; title: string; topic: string; description?: string; cards: UiDeckCard[] }
   | UiStudyPlanNode
   | { type: "artifact"; id: string; resource: UiArtifactResource }
   | { type: "concept-map"; id: string; title?: string; source: string }
   | { type: "notes"; id: string; title: string; value: string; placeholder?: string }
+  | UiTaskNode
+  | UiSimulationNode
+  | UiCodingChallengeNode
+  | UiMusicLabNode
+  | UiLanguagePracticeNode
   | { type: "image"; id: string; alt: string; resource: UiArtifactResource }
   | { type: "media"; id: string; kind: "animation" | "audio" | "video"; resource: UiArtifactResource }
   | { type: "handoff"; id: string; target: LearnerSurface; reason: string; context: string };
@@ -176,13 +374,16 @@ export interface UiDocument {
 }
 
 export type UiAction =
+  | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "complete-language-practice"; documentId: string; documentRevision: number; nodeId: string; rounds: UiLanguageRoundResult[]; correct: number; objectiveTotal: number; pronunciationPracticed: number; totalMs: number; idempotencyKey: string }
   | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "submit-answer"; documentId: string; documentRevision: number; nodeId: string; answer: UiAnswer; idempotencyKey: string }
   | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "choose-option"; documentId: string; documentRevision: number; nodeId: string; optionIds: string[]; idempotencyKey: string }
   | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "submit-question-group"; documentId: string; documentRevision: number; nodeId: string; responses: UiQuestionGroupResponse[]; idempotencyKey: string }
-  | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "complete-quiz"; documentId: string; documentRevision: number; nodeId: string; resultId: string; answers: UiQuizResponse[]; score: number; partialCreditPoints: number; partialCredits: Record<string, number>; timing: UiQuizTiming; flaggedQuestionIds: string[]; pendingGradeQuestionIds: string[]; skippedQuestionIds: string[]; idempotencyKey: string }
+  | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "complete-quiz"; documentId: string; documentRevision: number; nodeId: string; resultId: string; answers: UiQuizResponse[]; score: number; partialCreditPoints: number; partialCredits: Record<string, number>; timing: UiQuizTiming; flaggedQuestionIds: string[]; pendingGradeQuestionIds: string[]; skippedQuestionIds: string[]; timedOutQuestionIds?: string[]; examTimedOut?: boolean; idempotencyKey: string }
   | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "complete-goal-step"; documentId: string; documentRevision: number; nodeId: string; stepId: string; idempotencyKey: string }
   | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "complete-plan-item"; documentId: string; documentRevision: number; nodeId: string; itemId: string; completed: boolean; idempotencyKey: string }
   | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "update-notes"; documentId: string; documentRevision: number; nodeId: string; value: string; idempotencyKey: string }
+  | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "complete-task-item"; documentId: string; documentRevision: number; nodeId: string; itemId: string; completed: boolean; note?: string; idempotencyKey: string }
+  | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "submit-task"; documentId: string; documentRevision: number; nodeId: string; submission: string; attachments?: UiSubmissionAttachment[]; round?: number; idempotencyKey: string }
   | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "rate-card"; documentId: string; documentRevision: number; nodeId: string; cardId: string; rating: 0 | 1 | 2 | 3; idempotencyKey: string }
   | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "complete-deck"; documentId: string; documentRevision: number; nodeId: string; ratings: UiDeckRating[]; summary: UiDeckCompletionSummary; idempotencyKey: string }
   | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "save-artifact"; documentId: string; documentRevision: number; nodeId: string; idempotencyKey: string }
@@ -238,7 +439,7 @@ const LIFECYCLES = new Set<DocumentLifecycle>(["draft", "streaming", "ready", "s
 const RETENTION_POLICIES = new Set<UiDocumentRetention>(["ephemeral", "resumable", "workspace"]);
 const GOAL_STEP_STATUSES = new Set<UiGoalStepStatus>(["not_started", "in_progress", "done"]);
 const ARTIFACT_FORMATS = new Set<UiArtifactFormat>(["markdown", "text", "json", "uri"]);
-const ACTION_TYPES = new Set<UiAction["type"]>(["submit-answer", "choose-option", "submit-question-group", "complete-quiz", "complete-goal-step", "complete-plan-item", "update-notes", "rate-card", "complete-deck", "save-artifact", "retry", "open-handoff"]);
+const ACTION_TYPES = new Set<UiAction["type"]>(["complete-language-practice", "submit-answer", "choose-option", "submit-question-group", "complete-quiz", "complete-goal-step", "complete-plan-item", "update-notes", "rate-card", "complete-deck", "save-artifact", "retry", "open-handoff", "complete-task-item", "submit-task"]);
 const RECEIPT_STATES = new Set<UiActionReceipt["state"]>(["pending", "accepted", "completed", "rejected", "retryable"]);
 const DOCUMENT_KEYS = new Set(["schemaVersion", "id", "revision", "lifecycle", "retention", "supportedSurfaces", "title", "description", "nodes", "createdAt", "updatedAt"]);
 const OPTION_KEYS = new Set(["id", "label"]);
@@ -247,7 +448,10 @@ const QUESTION_FIELD_KEYS = ["id", "prompt", "kind", "header", "choices", "items
 const QUESTION_KEYS = new Set(["type", ...QUESTION_FIELD_KEYS]);
 const NESTED_QUESTION_KEYS = new Set(QUESTION_FIELD_KEYS);
 const QUESTION_GROUP_KEYS = new Set(["type", "id", "title", "intro", "topic", "questions"]);
-const QUIZ_KEYS = new Set(["type", "id", "title", "questions"]);
+const LANGUAGE_KEYS = new Set(["type", "id", "title", "language", "rounds"]);
+const LANGUAGE_ROUND_KEYS = new Set(["id", "kind", "prompt", "hint", "text", "acceptedAnswers", "tokens", "correctOrder", "referenceAudioUrl", "audioCreditUrl"]);
+const LANGUAGE_RESULT_KEYS = new Set(["roundId", "outcome", "attempts", "timeMs", "answer"]);
+const QUIZ_KEYS = new Set(["type", "id", "title", "questions", "timeLimit", "mode", "examTimeLimit"]);
 const GOAL_KEYS = new Set(["type", "id", "title", "description", "status", "steps"]);
 const GOAL_STEP_KEYS = new Set(["id", "title", "status", "successCriteria"]);
 const DECK_KEYS = new Set(["type", "id", "title", "topic", "description", "cards"]);
@@ -260,6 +464,17 @@ const PLAN_LINK_KEYS = new Set(["planId", "title", "relation", "detail"]);
 const CALLOUT_KEYS = new Set(["type", "id", "markdown", "tone", "title"]);
 const CONCEPT_MAP_KEYS = new Set(["type", "id", "title", "source"]);
 const NOTES_KEYS = new Set(["type", "id", "title", "value", "placeholder"]);
+const TASK_KEYS = new Set(["type", "kind", "id", "title", "brief", "criteria", "items", "estimatedMinutes", "dueAt", "availableFrom", "round", "submission"]);
+const TASK_ITEM_KEYS = new Set(["id", "title", "detail", "status", "note"]);
+const TASK_SUBMISSION_KEYS = new Set(["format", "label", "placeholder", "targetWords"]);
+const SIMULATION_KEYS = new Set(["type", "id", "title", "brief", "parameters", "readouts"]);
+const CODING_CHALLENGE_KEYS = new Set(["type", "id", "title", "prompt", "language", "starterCode", "entrypoint", "tests", "hint"]);
+const CODING_TEST_KEYS = new Set(["id", "label", "args", "expected"]);
+const MUSIC_LAB_KEYS = new Set(["type", "id", "title", "code", "brief", "controls", "visualization"]);
+const SIMULATION_PARAMETER_KEYS = new Set(["id", "label", "unit", "min", "max", "step", "value"]);
+const SIMULATION_READOUT_KEYS = new Set(["id", "label", "unit", "expr", "precision", "emphasis"]);
+const TASK_KINDS = new Set<UiTaskKind>(["assignment", "practice", "draft", "fieldwork"]);
+const TASK_SUBMISSION_FORMATS = new Set(["text", "link", "none"]);
 const IMAGE_KEYS = new Set(["type", "id", "alt", "resource"]);
 const MEDIA_KEYS = new Set(["type", "id", "kind", "resource"]);
 const HANDOFF_KEYS = new Set(["type", "id", "target", "reason", "context"]);
@@ -269,7 +484,8 @@ const ACTION_KEYS: Readonly<Record<UiAction["type"], ReadonlySet<string>>> = {
   "submit-answer": new Set([...ACTION_BASE_KEYS, "answer"]),
   "choose-option": new Set([...ACTION_BASE_KEYS, "optionIds"]),
   "submit-question-group": new Set([...ACTION_BASE_KEYS, "responses"]),
-  "complete-quiz": new Set([...ACTION_BASE_KEYS, "resultId", "answers", "score", "partialCreditPoints", "partialCredits", "timing", "flaggedQuestionIds", "pendingGradeQuestionIds", "skippedQuestionIds"]),
+  "complete-language-practice": new Set([...ACTION_BASE_KEYS, "rounds", "correct", "objectiveTotal", "pronunciationPracticed", "totalMs"]),
+  "complete-quiz": new Set([...ACTION_BASE_KEYS, "resultId", "answers", "score", "partialCreditPoints", "partialCredits", "timing", "flaggedQuestionIds", "pendingGradeQuestionIds", "skippedQuestionIds", "timedOutQuestionIds", "examTimedOut"]),
   "complete-goal-step": new Set([...ACTION_BASE_KEYS, "stepId"]),
   "complete-plan-item": new Set([...ACTION_BASE_KEYS, "itemId", "completed"]),
   "update-notes": new Set([...ACTION_BASE_KEYS, "value"]),
@@ -278,12 +494,15 @@ const ACTION_KEYS: Readonly<Record<UiAction["type"], ReadonlySet<string>>> = {
   "save-artifact": ACTION_BASE_KEYS,
   "retry": new Set(["schemaVersion", "type", "documentId", "documentRevision", "idempotencyKey"]),
   "open-handoff": ACTION_BASE_KEYS,
+  "complete-task-item": new Set([...ACTION_BASE_KEYS, "itemId", "completed", "note"]),
+  "submit-task": new Set([...ACTION_BASE_KEYS, "submission", "round", "attachments"]),
 };
 const RESULT_KEYS = new Set(["schemaVersion", "documentId", "sourceRevision", "actionIdempotencyKey", "status", "documentLifecycle", "resultingDocument", "message", "retryAfterMs"]);
 const RECEIPT_KEYS = new Set(["schemaVersion", "action", "actionFingerprint", "state", "createdAt", "updatedAt", "result"]);
 const JOURNAL_KEYS = new Set(["kind", "schemaVersion", "documentId", "receipts"]);
 
 const MAX_DOCUMENT_NODES = 64;
+export const MIN_EXAM_QUESTIONS = 20;
 const MAX_QUIZ_QUESTIONS = 32;
 const MAX_CHOICES = 32;
 const MAX_GOAL_STEPS = 64;
@@ -294,6 +513,10 @@ const MAX_TEXT = 16_384;
 const MAX_MARKDOWN = 65_536;
 const MAX_RESOURCE_CONTENT = 131_072;
 const MAX_PLAN_ITEMS = 256;
+const MAX_TASK_ITEMS = 64;
+const MAX_TASK_CRITERIA = 32;
+const MAX_SIMULATION_PARAMETERS = 8;
+const MAX_SIMULATION_READOUTS = 8;
 const MAX_PLAN_DEPTH = 6;
 
 function validRevision(value: unknown): value is number {
@@ -394,6 +617,67 @@ function validateStudyPlanItem(value: unknown, depth: number, seen: Set<string>)
   return item.children === undefined || (boundedArray(item.children, 20) && item.children.length > 0 && item.children.every((child) => validateStudyPlanItem(child, depth + 1, seen)));
 }
 
+function finiteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function validateSimulationParameter(value: unknown): value is UiSimulationParameter {
+  const parameter = value as UiSimulationParameter;
+  return hasOnlyKeys(value, SIMULATION_PARAMETER_KEYS) && isContractId(parameter.id) && boundedString(parameter.label, 512)
+    && (parameter.unit === undefined || boundedString(parameter.unit, 64, true))
+    && finiteNumber(parameter.min) && finiteNumber(parameter.max) && parameter.min < parameter.max
+    && (parameter.step === undefined || (finiteNumber(parameter.step) && parameter.step > 0))
+    && finiteNumber(parameter.value) && parameter.value >= parameter.min && parameter.value <= parameter.max;
+}
+
+function validateSimulationNode(value: Record<string, unknown>): boolean {
+  const node = value as unknown as UiSimulationNode;
+  if (!hasOnlyKeys(value, SIMULATION_KEYS) || !boundedString(node.title, 512)) return false;
+  if (node.brief !== undefined && !boundedString(node.brief, MAX_MARKDOWN, true)) return false;
+  if (!boundedArray(node.parameters, MAX_SIMULATION_PARAMETERS) || node.parameters.length === 0) return false;
+  if (!node.parameters.every(validateSimulationParameter) || !uniqueField(node.parameters, "id")) return false;
+  if (!boundedArray(node.readouts, MAX_SIMULATION_READOUTS) || node.readouts.length === 0) return false;
+  if (!uniqueField(node.readouts, "id")) return false;
+  const parameterIds = node.parameters.map((parameter) => parameter.id);
+  return node.readouts.every((readout) => hasOnlyKeys(readout, SIMULATION_READOUT_KEYS)
+    && isContractId(readout.id) && boundedString(readout.label, 512)
+    && (readout.unit === undefined || boundedString(readout.unit, 64, true))
+    && (readout.precision === undefined || (Number.isInteger(readout.precision) && readout.precision >= 0 && readout.precision <= 6))
+    && (readout.emphasis === undefined || typeof readout.emphasis === "boolean")
+    // A readout that references anything undeclared is rejected at the door, so
+    // no surface has to decide what an unknown identifier means at render time.
+    && isValidSimulationExpression(readout.expr, parameterIds));
+}
+
+function validateTaskItem(value: unknown): value is UiTaskItem {
+  const item = value as UiTaskItem;
+  return hasOnlyKeys(value, TASK_ITEM_KEYS) && isContractId(item.id) && boundedString(item.title, 512)
+    && (item.detail === undefined || boundedString(item.detail, MAX_TEXT, true))
+    && (item.status === undefined || GOAL_STEP_STATUSES.has(item.status))
+    && (item.note === undefined || boundedString(item.note, MAX_TEXT, true));
+}
+
+function validateTaskSubmission(value: unknown): value is UiTaskSubmission {
+  const submission = value as UiTaskSubmission;
+  return hasOnlyKeys(value, TASK_SUBMISSION_KEYS) && TASK_SUBMISSION_FORMATS.has(submission.format)
+    && (submission.label === undefined || boundedString(submission.label, 512, true))
+    && (submission.placeholder === undefined || boundedString(submission.placeholder, 4096, true))
+    && (submission.targetWords === undefined || (isNonNegativeFinite(submission.targetWords) && submission.targetWords <= 100_000));
+}
+
+function validateTaskNode(value: Record<string, unknown>): boolean {
+  const node = value as unknown as UiTaskNode;
+  return hasOnlyKeys(value, TASK_KEYS) && TASK_KINDS.has(node.kind)
+    && boundedString(node.title, 512) && boundedString(node.brief, MAX_MARKDOWN)
+    && (node.criteria === undefined || (boundedArray(node.criteria, MAX_TASK_CRITERIA) && node.criteria.every((entry) => boundedString(entry, 2048))))
+    && (node.items === undefined || (boundedArray(node.items, MAX_TASK_ITEMS) && node.items.every(validateTaskItem) && uniqueField(node.items, "id")))
+    && (node.estimatedMinutes === undefined || (isNonNegativeFinite(node.estimatedMinutes) && node.estimatedMinutes <= 100_000))
+    && (node.dueAt === undefined || isContractTimestamp(node.dueAt))
+    && (node.availableFrom === undefined || isContractTimestamp(node.availableFrom))
+    && (node.round === undefined || (isNonNegativeFinite(node.round) && node.round <= 1000))
+    && (node.submission === undefined || validateTaskSubmission(node.submission));
+}
+
 function validateStudyPlanNode(value: Record<string, unknown>): boolean {
   if (!hasOnlyKeys(value, STUDY_PLAN_KEYS)) return false;
   const resourceValid = value.resource !== undefined && validateArtifactResource(value.resource);
@@ -461,6 +745,35 @@ function isSafeResourceUri(value: unknown): value is string {
   }
 }
 
+function validateLanguageRound(value: unknown): value is UiLanguageRound {
+  if (!isRecord(value) || !hasOnlyKeys(value, LANGUAGE_ROUND_KEYS) || !isContractId(value.id)
+    || !boundedString(value.prompt, 1024) || (value.hint !== undefined && !boundedString(value.hint, 1024))) return false;
+  if (value.kind === "word-order") return value.text === undefined && value.acceptedAnswers === undefined && value.referenceAudioUrl === undefined && value.audioCreditUrl === undefined
+    && boundedArray(value.tokens, 24) && value.tokens.length > 0 && value.tokens.every((token): token is UiOption => hasOnlyKeys(token, OPTION_KEYS)
+      && isContractId((token as UiOption).id) && boundedString((token as UiOption).label, 128))
+    && uniqueIds(value.tokens) && validateContractIdList(value.correctOrder, 24)
+    && value.correctOrder.length === value.tokens.length
+    && value.correctOrder.every((id) => (value.tokens as UiOption[]).some((token) => token.id === id));
+  if (!(value.kind === "translation" || value.kind === "listening" || value.kind === "pronunciation")
+    || !boundedString(value.text, 2048) || value.tokens !== undefined || value.correctOrder !== undefined) return false;
+  for (const uri of [value.referenceAudioUrl, value.audioCreditUrl]) {
+    if (uri === undefined) continue;
+    if (value.kind === "translation" || typeof uri !== "string" || !boundedString(uri, 4096)) return false;
+    if (!(uri.startsWith("/") && !uri.startsWith("//") && !/[\\?#]/u.test(uri))
+      && !(isSafeResourceUri(uri) && !uri.startsWith("artifact:"))) return false;
+  }
+  return value.kind === "pronunciation" ? value.acceptedAnswers === undefined
+    : boundedArray(value.acceptedAnswers, 16) && value.acceptedAnswers.length > 0
+      && value.acceptedAnswers.every((answer) => boundedString(answer, 2048));
+}
+
+function validateLanguageRoundResult(value: unknown): value is UiLanguageRoundResult {
+  if (!isRecord(value) || !hasOnlyKeys(value, LANGUAGE_RESULT_KEYS) || !isContractId(value.roundId)
+    || !validRevision(value.attempts) || value.attempts > 1000 || !validRevision(value.timeMs)
+    || (value.answer !== undefined && !boundedString(value.answer, 4096, true))) return false;
+  return value.outcome === "skipped" || ((value.outcome === "correct" || value.outcome === "retry" || value.outcome === "practiced") && value.attempts > 0);
+}
+
 function validateArtifactResource(value: unknown, requireUri = false): value is UiArtifactResource {
   const resource = value as UiArtifactResource;
   if (!hasOnlyKeys(value, RESOURCE_KEYS) || !isContractId(resource.id) || !boundedString(resource.title, 512)
@@ -480,8 +793,16 @@ function validateUiDocumentNode(value: unknown): value is UiDocumentNode {
       && (value.title === undefined || boundedString(value.title, 512, true));
     case "question": return hasOnlyKeys(value, QUESTION_KEYS) && validateQuestionFields(value);
     case "question-group": return validateQuestionGroupNode(value);
-    case "quiz": return hasOnlyKeys(value, QUIZ_KEYS) && boundedString(value.title, 512)
-      && boundedArray(value.questions, MAX_QUIZ_QUESTIONS) && value.questions.every(validateUiQuestion) && uniqueIds(value.questions);
+    case "language-practice": return hasOnlyKeys(value, LANGUAGE_KEYS) && boundedString(value.title, 512)
+      && boundedString(value.language, 128) && boundedArray(value.rounds, 16) && value.rounds.length > 0
+      && value.rounds.every(validateLanguageRound) && uniqueIds(value.rounds);
+    case "quiz": return (value.timeLimit === undefined || (isNonNegativeFinite(value.timeLimit) && value.timeLimit <= 86_400))
+      && (value.mode === undefined || value.mode === "exam")
+      && (value.examTimeLimit === undefined || (value.mode === "exam" && typeof value.examTimeLimit === "number" && Number.isSafeInteger(value.examTimeLimit) && value.examTimeLimit > 0 && value.examTimeLimit <= 86_400))
+      && hasOnlyKeys(value, QUIZ_KEYS) && boundedString(value.title, 512)
+      && boundedArray(value.questions, MAX_QUIZ_QUESTIONS)
+      && (value.mode !== "exam" || value.questions.length >= MIN_EXAM_QUESTIONS)
+      && value.questions.every(validateUiQuestion) && uniqueIds(value.questions);
     case "goal": return hasOnlyKeys(value, GOAL_KEYS) && boundedString(value.title, 512)
       && (value.description === undefined || boundedString(value.description, 4096, true))
       && (value.status === "active" || value.status === "completed" || value.status === "paused")
@@ -497,6 +818,25 @@ function validateUiDocumentNode(value: unknown): value is UiDocumentNode {
       && (value.placeholder === undefined || boundedString(value.placeholder, 4096, true));
     case "image": return hasOnlyKeys(value, IMAGE_KEYS) && boundedString(value.alt, 4096) && validateArtifactResource(value.resource, true);
     case "media": return hasOnlyKeys(value, MEDIA_KEYS) && (value.kind === "animation" || value.kind === "audio" || value.kind === "video") && validateArtifactResource(value.resource, true);
+    case "task": return validateTaskNode(value);
+    case "simulation": return validateSimulationNode(value);
+    case "coding-challenge": return hasOnlyKeys(value, CODING_CHALLENGE_KEYS)
+      && boundedString(value.title, 512) && boundedString(value.prompt, 8192)
+      && (value.language === "javascript" || value.language === "typescript")
+      && boundedString(value.starterCode, 32768, true)
+      && typeof value.entrypoint === "string" && /^[A-Za-z_$][\w$]{0,127}$/.test(value.entrypoint)
+      && boundedArray(value.tests, 24) && value.tests.length > 0
+      && value.tests.every((test) => isRecord(test) && hasOnlyKeys(test, CODING_TEST_KEYS) && isContractId(test.id)
+        && boundedString(test.label, 256) && Array.isArray(test.args) && test.args.length <= 16
+        && isBoundedJsonValue(test.args, { maximumDepth: 6, maximumItems: 128, maximumStringLength: 4096 })
+        && isBoundedJsonValue(test.expected, { maximumDepth: 6, maximumItems: 128, maximumStringLength: 4096 }))
+      && new Set(value.tests.map((test) => (test as { id: string }).id)).size === value.tests.length
+      && (value.hint === undefined || boundedString(value.hint, 4096, true));
+    case "music-lab": return hasOnlyKeys(value, MUSIC_LAB_KEYS) && boundedString(value.title, 512)
+      && boundedString(value.code, 32768) && (value.brief === undefined || boundedString(value.brief, 4096, true))
+      && (value.visualization === undefined || value.visualization === "pianoroll" || value.visualization === "scope")
+      && (value.controls === undefined || (boundedArray(value.controls, 8)
+        && value.controls.every(validateSimulationParameter) && uniqueField(value.controls, "id")));
     case "handoff": return hasOnlyKeys(value, HANDOFF_KEYS) && SURFACES.has(value.target as LearnerSurface)
       && boundedString(value.reason, 2048) && boundedString(value.context, 8192);
     default: return false;
@@ -547,6 +887,14 @@ export function validateUiAction(value: unknown): value is UiAction {
     case "choose-option": return boundedArray(value.optionIds, MAX_CHOICES) && value.optionIds.length > 0 && value.optionIds.every(isContractId) && new Set(value.optionIds).size === value.optionIds.length;
     case "submit-question-group": return boundedArray(value.responses, MAX_QUIZ_QUESTIONS) && value.responses.length > 0
       && value.responses.every(validateQuestionGroupResponse);
+    case "complete-language-practice": return boundedArray(value.rounds, 16) && value.rounds.length > 0
+      && value.rounds.every(validateLanguageRoundResult) && uniqueField(value.rounds as UiLanguageRoundResult[], "roundId")
+      && validRevision(value.totalMs) && validRevision(value.correct) && validRevision(value.objectiveTotal)
+      && validRevision(value.pronunciationPracticed) && value.correct <= value.objectiveTotal
+      && value.objectiveTotal + value.pronunciationPracticed <= value.rounds.length
+      && value.correct === value.rounds.filter((round) => (round as UiLanguageRoundResult).outcome === "correct").length
+      && value.pronunciationPracticed === value.rounds.filter((round) => (round as UiLanguageRoundResult).outcome === "practiced").length
+      && value.rounds.reduce<number>((total, round) => total + (round as UiLanguageRoundResult).timeMs, 0) <= value.totalMs;
     case "complete-quiz": return isContractId(value.resultId)
       && boundedArray(value.answers, MAX_QUIZ_QUESTIONS) && value.answers.every(validateQuizResponse)
       && uniqueField(value.answers as UiQuizResponse[], "questionId")
@@ -554,13 +902,20 @@ export function validateUiAction(value: unknown): value is UiAction {
       && validatePartialCredits(value.partialCredits) && validateQuizTiming(value.timing)
       && validateContractIdList(value.flaggedQuestionIds, MAX_QUIZ_QUESTIONS)
       && validateContractIdList(value.pendingGradeQuestionIds, MAX_QUIZ_QUESTIONS)
-      && validateContractIdList(value.skippedQuestionIds, MAX_QUIZ_QUESTIONS);
+      && validateContractIdList(value.skippedQuestionIds, MAX_QUIZ_QUESTIONS)
+      && (value.timedOutQuestionIds === undefined || validateContractIdList(value.timedOutQuestionIds, MAX_QUIZ_QUESTIONS))
+      && (value.examTimedOut === undefined || typeof value.examTimedOut === "boolean");
     case "complete-goal-step": return isContractId(value.stepId);
     case "complete-plan-item": return isContractId(value.itemId) && typeof value.completed === "boolean";
     case "update-notes": return boundedString(value.value, MAX_RESOURCE_CONTENT, true);
     case "rate-card": return isContractId(value.cardId) && (value.rating === 0 || value.rating === 1 || value.rating === 2 || value.rating === 3);
     case "complete-deck": return boundedArray(value.ratings, MAX_DECK_CARDS) && value.ratings.every(validateDeckRating)
       && uniqueField(value.ratings as UiDeckRating[], "cardId") && validateDeckCompletionSummary(value.summary);
+    case "complete-task-item": return isContractId(value.itemId) && typeof value.completed === "boolean"
+      && (value.note === undefined || boundedString(value.note, MAX_TEXT, true));
+    case "submit-task": return boundedString(value.submission, MAX_RESOURCE_CONTENT, true)
+      && (value.attachments === undefined || (boundedArray(value.attachments, 10) && value.attachments.every(validateSubmissionAttachment)))
+      && (value.round === undefined || (isNonNegativeFinite(value.round) && value.round <= 1000));
     case "save-artifact": case "retry": case "open-handoff": return true;
   }
 }
@@ -589,6 +944,8 @@ function validateQuestionGroupResponse(value: unknown): value is UiQuestionGroup
       && boundedArray(value.answers, MAX_CHOICES) && value.answers.every((answer) => boundedString(answer, 8192, true));
     case "rows": return hasOnlyKeys(value, new Set(["questionId", "type", "rows"]))
       && boundedArray(value.rows, MAX_CHOICES) && value.rows.every(validateUiRowAnswer);
+    case "order": return hasOnlyKeys(value, new Set(["questionId", "type", "items"]))
+      && boundedArray(value.items, MAX_CHOICES) && value.items.every((item) => boundedString(item, 8192, true));
     default: return false;
   }
 }
@@ -655,6 +1012,10 @@ export function validateUiActionAgainstDocument(action: unknown, document: unkno
       if (question.kind === "blanks" || question.kind === "fill_in") {
         return Array.isArray(action.answer) && action.answer.length > 0 && action.answer.every((entry) => typeof entry === "string");
       }
+      if (question.kind === "ordering") {
+        return Array.isArray(action.answer) && action.answer.every((entry) => typeof entry === "string")
+          && isPermutationOf(action.answer as string[], question.items);
+      }
       if (question.kind === "classification" || question.kind === "matching") {
         if (!Array.isArray(action.answer) || !action.answer.every(validateUiRowAnswer)
           || action.answer.length !== question.items?.length) return false;
@@ -674,6 +1035,20 @@ export function validateUiActionAgainstDocument(action: unknown, document: unkno
     }
     case "submit-question-group": return target.node.type === "question-group"
       && validateQuestionGroupResponsesAgainstQuestions(action.responses, target.node.questions);
+    case "complete-language-practice": {
+      if (target.node.type !== "language-practice") return false;
+      const node = target.node;
+      return action.rounds.length === node.rounds.length
+      && action.objectiveTotal === node.rounds.filter((round) => round.kind !== "pronunciation").length
+      && action.rounds.every((result, index) => {
+        const round = node.rounds[index]!;
+        return result.roundId === round.id && (round.kind === "pronunciation"
+          ? (result.outcome === "practiced" || result.outcome === "skipped") && result.answer === undefined
+          : result.outcome === "skipped" || (typeof result.answer === "string"
+            && (result.outcome === "correct" ? languageRoundAnswerMatches(round, result.answer)
+              : result.outcome === "retry" && !languageRoundAnswerMatches(round, result.answer))));
+      });
+    }
     case "complete-quiz": return target.node.type === "quiz"
       && validateQuizCompletionAgainstQuestions(action, target.node.questions);
     case "complete-goal-step": return target.node.type === "goal" && target.node.steps.some((step) => step.id === action.stepId && step.status !== "done");
@@ -682,11 +1057,30 @@ export function validateUiActionAgainstDocument(action: unknown, document: unkno
     case "rate-card": return target.node.type === "deck" && target.node.cards.some((card) => card.id === action.cardId);
     case "complete-deck": return target.node.type === "deck" && validateDeckCompletionAgainstCards(action, target.node.cards);
     case "save-artifact": return target.node.type === "study-plan" || target.node.type === "artifact" || target.node.type === "image" || target.node.type === "media";
+    case "complete-task-item": return target.node.type === "task" && !!target.node.items && target.node.items.some((item) => item.id === action.itemId);
+    case "submit-task": return target.node.type === "task" && target.node.submission?.format !== "none";
     case "open-handoff": return target.node.type === "handoff";
   }
 }
 
+/**
+ * An arrangement must contain exactly the question's items, each once. Anything
+ * else is a client that dropped, duplicated, or invented one.
+ */
+function isPermutationOf(candidate: readonly string[], items: readonly string[] | undefined): boolean {
+  if (!items || candidate.length !== items.length) return false;
+  const remaining = new Map<string, number>();
+  for (const item of items) remaining.set(item, (remaining.get(item) ?? 0) + 1);
+  for (const entry of candidate) {
+    const count = remaining.get(entry);
+    if (!count) return false;
+    remaining.set(entry, count - 1);
+  }
+  return true;
+}
+
 function responseTypeForQuestion(question: UiQuestion): UiQuestionGroupResponse["type"] {
+  if (question.kind === "ordering") return "order";
   if (question.kind === "classification" || question.kind === "matching") return "rows";
   if (question.kind === "blanks" || question.kind === "fill_in") return "blanks";
   if (question.choices !== undefined || question.kind === "choice" || question.kind === "multiple_choice"
@@ -713,6 +1107,7 @@ function validateQuestionGroupResponsesAgainstQuestions(
     if (response.type === "blanks") {
       return question.blanks === undefined || response.answers.length === question.blanks.length;
     }
+    if (response.type === "order") return isPermutationOf(response.items, question.items);
     if (response.rows.length !== question.items?.length) return false;
     const allowed = new Set(question.choices?.map((choice) => choice.id) ?? []);
     if (response.rows.some((row, rowIndex) => row.item !== question.items?.[rowIndex] || !allowed.has(row.optionId)

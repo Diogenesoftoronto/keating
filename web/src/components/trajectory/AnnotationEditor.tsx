@@ -1,3 +1,4 @@
+import { Select } from "../Select";
 import { useId, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
 import type { AnnotationKind, ReviewSeverity, TrajectoryReviewTarget } from "../../keating/trajectory-review";
 import { css, cx } from "../../../styled-system/css";
@@ -324,10 +325,10 @@ export function AnnotationEditor({
 			<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", borderTop: "1px solid var(--border)", paddingTop: "0.75rem" })}>
 				<label className={css({ display: "flex", alignItems: "center", gap: "0.375rem", fontSize: "0.6875rem", color: "var(--muted-foreground)" })}>
 					Status
-					<select value={draft.status} className={cx(inputClass, css({ width: "auto", minHeight: "2rem", paddingInline: "0.375rem" }))} onChange={(event) => onChange({ ...draft, status: event.currentTarget.value as TrajectoryAnnotationDraft["status"] })}>
+					<Select aria-label="Annotation status" value={draft.status} className={cx(inputClass, css({ width: "auto", minHeight: "2rem", paddingInline: "0.375rem" }))} onValueChange={(value) => onChange({ ...draft, status: value as TrajectoryAnnotationDraft["status"] })}>
 						<option value="draft">Draft</option>
 						<option value="final">Final</option>
-					</select>
+					</Select>
 				</label>
 				<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
 					<span className={cx(eyebrow(), css({ fontSize: "9px" }))}>
