@@ -1,6 +1,7 @@
 import { relative } from "node:path";
 import { join, resolve } from "node:path";
 import { spawn } from "node:child_process";
+import { readFile } from "node:fs/promises";
 
 import { DEFAULT_KEATING_CONFIG, configPath, loadKeatingConfig, writeKeatingConfig } from "../core/config.js";
 import { learnerStatePath } from "../core/paths.js";
@@ -30,6 +31,11 @@ import {
 } from "../core/project.js";
 import type { ExportSource, FineTuneFormat } from "../core/export.js";
 import type { FineTuneImportFormat } from "../core/import.js";
+import { activeTeachingPrompt, teachingBenchmarkArtifact } from "../core/teaching-evolution.js";
+import { getLearningCheck, listLearningChecks, startLearningCheck, submitLearningCheck } from "../core/learning-checks.js";
+import { validateTeachingCases } from "../../shared/evolution/benchmark.js";
+import type { TeachingCase } from "../../shared/evolution/contracts.js";
+import type { LearningCheckAssistance, LearningCheckStage, LearningCheckTopic } from "../../shared/evolution/learning-checks.js";
 import { detectAiRuntime, launchShell } from "../runtime/pi.js";
 import { launchOpenTui } from "../tui/opentui-host.js";
 import { shellHandoffArgs } from "../tui/shell-handoff.js";
@@ -76,6 +82,116 @@ function printUsage(): void {
   console.log(`  ${color.primary}policy${color.reset}                    Print the active teaching policy`);
   console.log(`  ${color.primary}trace${color.reset}   [substring]        Browse debug traces and artifacts`);
   console.log("");
+}
+
+function teachingCommandHelp(command: "teaching-bench" | "auto-improve"): string {
+  return [
+    `Usage: keating ${command} [--cases <JSON pack>]${command === "auto-improve" ? " [--force]" : ""}`,
+    "",
+    command === "teaching-bench"
+      ? "Execute the active tutor on training cases only. Validation and holdout cannot be requested here."
+      : "Propose one teaching skill, execute paired validation and a sealed holdout, and activate only if both gates pass.",
+    "--cases accepts a JSON array of independent TeachingCase records (at most 60).",
+    "Evidence covers executed teaching behavior on synthetic cases; human learning remains unmeasured.",
+    ...(command === "auto-improve" ? ["--force overrides the 30-minute cooldown only. Consumed holdout evidence cannot be reused."] : []),
+  ].join("\n");
+}
+
+async function teachingCommandOptions(cwd: string, args: string[], command: "teaching-bench" | "auto-improve") {
+  let casesPath: string | undefined;
+  let force = false;
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index]!;
+    if (arg === "--force" && command === "auto-improve") { force = true; continue; }
+    if (arg === "--cases" || arg.startsWith("--cases=")) {
+      if (casesPath !== undefined) throw new Error("Pass --cases only once.");
+      casesPath = arg === "--cases" ? args[++index] : arg.slice("--cases=".length);
+      if (!casesPath || casesPath.startsWith("--")) throw new Error("--cases requires a JSON file path.");
+      continue;
+    }
+    throw new Error(`Unsupported ${command} argument. ${command} evaluates a case pack; run keating ${command} --help.`);
+  }
+  let cases: TeachingCase[] | undefined;
+  if (casesPath) {
+    const text = await readFile(resolve(cwd, casesPath), "utf8");
+    if (text.length > 1_000_000) throw new Error("Teaching case pack exceeds the 1 MB input limit.");
+    let value: unknown;
+    try { value = JSON.parse(text); } catch { throw new Error("Teaching case pack must be valid JSON."); }
+    if (!Array.isArray(value) || value.length === 0 || value.length > 60) throw new Error("Teaching case pack must contain 1 to 60 case records.");
+    for (const item of value) {
+      if (!item || typeof item !== "object" || typeof item.id !== "string" || typeof item.family !== "string"
+        || !["mathematics", "programming"].includes(item.domain)
+        || !Array.isArray(item.messages) || !Array.isArray(item.rubric)
+        || item.messages.some((message: unknown) => !message || typeof message !== "object" || !("content" in message) || typeof message.content !== "string")
+        || item.rubric.some((criterion: unknown) => !criterion || typeof criterion !== "object"
+          || !("id" in criterion) || typeof criterion.id !== "string"
+          || !("description" in criterion) || typeof criterion.description !== "string"
+          || !("critical" in criterion) || typeof criterion.critical !== "boolean")) {
+        throw new Error("Invalid teaching case record. Expected id, family, domain, split, messages, and fixed rubric criteria.");
+      }
+    }
+    cases = value as TeachingCase[];
+    validateTeachingCases(cases);
+  }
+  return { cases, force };
+}
+
+async function runLearningCheckCommand(cwd: string, args: string[]): Promise<void> {
+  if (!args.length || args.includes("--help") || args.includes("-h")) {
+    console.log([
+      "Usage: keating learning-check start <fractions|loop-bounds> [--learner <id>]",
+      "       keating learning-check show <id>",
+      "       keating learning-check list",
+      "       keating learning-check submit <id> <precheck|immediate|delayed|transfer> --answers '<JSON object>' --assistance <none|assisted|unknown>",
+      "",
+      "Start records the active teaching revision. Submit answers keyed by the item IDs shown in the check.",
+      "Recall opens one day after the postcheck; transfer opens seven days after it. Assistance is self-reported.",
+    ].join("\n"));
+    return;
+  }
+  const positionals: string[] = [];
+  const flags = new Map<string, string>();
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index]!;
+    if (!arg.startsWith("--")) { positionals.push(arg); continue; }
+    const [flag, ...rest] = arg.split("=");
+    if (!["--answers", "--assistance", "--learner"].includes(flag!)) throw new Error("Unknown learning-check option.");
+    if (flags.has(flag!)) throw new Error("Pass each learning-check option only once.");
+    const value = rest.length ? rest.join("=") : args[++index];
+    if (!value || value.startsWith("--")) throw new Error(`${flag} requires a value.`);
+    flags.set(flag!, value);
+  }
+  const [action, idOrTopic, requestedStage] = positionals;
+  if (action === "start" && positionals.length === 2 && [...flags.keys()].every((flag) => flag === "--learner")) {
+    if (idOrTopic !== "fractions" && idOrTopic !== "loop-bounds") throw new Error("Learning checks support fractions and loop-bounds.");
+    const { revisionId } = await activeTeachingPrompt(cwd);
+    const learnerId = flags.get("--learner") ?? (await loadLearnerState(learnerStatePath(cwd))).profile.id;
+    console.log(JSON.stringify(await startLearningCheck(cwd, { topic: idOrTopic as LearningCheckTopic, revisionId, learnerId }), null, 2));
+    return;
+  }
+  if (action === "show" && positionals.length === 2 && !flags.size) {
+    console.log(JSON.stringify(await getLearningCheck(cwd, idOrTopic!), null, 2));
+    return;
+  }
+  if (action === "list" && positionals.length === 1 && !flags.size) {
+    console.log(JSON.stringify(await listLearningChecks(cwd), null, 2));
+    return;
+  }
+  if (action === "submit" && positionals.length === 3 && flags.size === 2 && flags.has("--answers") && flags.has("--assistance")) {
+    const assistance = flags.get("--assistance")!;
+    if (!["none", "assisted", "unknown"].includes(assistance)) throw new Error("Assistance must be none, assisted, or unknown.");
+    if (!["precheck", "immediate", "delayed", "transfer"].includes(requestedStage!)) throw new Error("Unknown learning-check stage.");
+    let answers: unknown;
+    try { answers = JSON.parse(flags.get("--answers")!); } catch { throw new Error("--answers must be a JSON object mapping item IDs to answer strings."); }
+    if (!answers || typeof answers !== "object" || Array.isArray(answers) || Object.values(answers).some((answer) => typeof answer !== "string")) {
+      throw new Error("--answers must map item IDs to answer strings.");
+    }
+    console.log(JSON.stringify(await submitLearningCheck(cwd, idOrTopic!, {
+      stage: requestedStage as LearningCheckStage, assistance: assistance as LearningCheckAssistance, answers: answers as Record<string, string>,
+    }), null, 2));
+    return;
+  }
+  throw new Error("Invalid learning-check arguments. Run keating learning-check --help.");
 }
 
 function validateNotOrganicProvider(provider: string, command: "login" | "logout"): string {
@@ -779,10 +895,24 @@ async function run(): Promise<void> {
       if (result.tracePath) console.log(relative(cwd, result.tracePath));
       return;
     }
+    case "teaching-bench": {
+      if (args.includes("--help") || args.includes("-h")) { console.log(teachingCommandHelp("teaching-bench")); return; }
+      const options = await teachingCommandOptions(cwd, args, "teaching-bench");
+      const { report, reportPath } = await teachingBenchmarkArtifact(cwd, options);
+      console.log(`Training behavior score: ${report.meanScore === null ? "unavailable" : `${(report.meanScore * 100).toFixed(2)}%`}; execution errors: ${report.errorCount}.`);
+      console.log("Evidence: synthetic cases and executed tutor behavior. Human learning: unmeasured. This command cannot promote a revision.");
+      console.log(relative(cwd, reportPath));
+      if (report.errorCount) process.exitCode = 1;
+      return;
+    }
+    case "learning-check": {
+      await runLearningCheckCommand(cwd, args);
+      return;
+    }
     case "evolve": {
       const topic = args.join(" ").trim() || undefined;
       const result = await evolvePolicyArtifact(cwd, topic);
-      console.log(`${result.bestScore.toFixed(2)} ${relative(cwd, result.reportPath)}`);
+      console.log(`Unvalidated proposals saved; active policy unchanged. ${relative(cwd, result.reportPath)}`);
       if (result.tracePath) console.log(relative(cwd, result.tracePath));
       return;
     }
@@ -827,16 +957,19 @@ async function run(): Promise<void> {
       return;
     }
     case "auto-improve": {
-      const force = args.includes("--force");
-      const topic = args.filter((arg) => arg !== "--force").join(" ").trim() || undefined;
-      const result = await autoImproveArtifact(cwd, topic, { force });
-      const verdict = result.delta > 0
-        ? `${color.ok}IMPROVED by +${result.delta.toFixed(2)}${color.reset}`
-        : result.delta < -0.5
-          ? `${color.err}REGRESSED by ${result.delta.toFixed(2)}${color.reset}`
-          : `${color.sepia}NO SIGNIFICANT CHANGE (Δ${result.delta.toFixed(2)})${color.reset}`;
-      console.log(`Baseline: ${result.baselineScore.toFixed(2)} → After: ${result.afterScore.toFixed(2)} — ${verdict}`);
+      if (args.includes("--help") || args.includes("-h")) { console.log(teachingCommandHelp("auto-improve")); return; }
+      const options = await teachingCommandOptions(cwd, args, "auto-improve");
+      const result = await autoImproveArtifact(cwd, undefined, options);
+      const score = (value: number | null) => value === null ? "unavailable" : value.toFixed(2);
+      console.log(`Teaching experiment: ${result.status.toUpperCase()}.`);
+      console.log(`Behavior scores: ${score(result.baselineScore)} → ${score(result.afterScore)}; delta: ${score(result.delta)}.`);
+      console.log(result.status === "accepted" ? "Both independent gates passed; the candidate applies to subsequent sessions."
+        : "The active teaching revision is unchanged.");
+      console.log("Human learning, retention, and transfer: unmeasured. A higher behavior score alone does not authorize promotion.");
+      if (result.experiment.reasons.length) console.log(`Decision: ${result.experiment.reasons.join(", ")}`);
       console.log(relative(cwd, result.reportPath));
+      console.log(relative(cwd, result.observabilityPath));
+      if (result.status === "failed") process.exitCode = 1;
       return;
     }
     case "edit": {

@@ -13,7 +13,7 @@ export const selfEvolutionTools = [
   keatingToolMaker(
     "auto_improve",
     "auto_improve",
-    "Run the full autonomous self-improvement loop: benchmark current policy → evolve policy via MAP-Elites → evolve prompt template → record improvement. Use this instead of calling bench/evolve/improve separately. Triggers automatically on first session and periodically thereafter.",
+    "Run fresh teaching episodes, propose one skill, and activate only after independent validation and holdout gates. Changes apply next session. Synthetic behavior evidence does not establish human learning.",
     {
       topic: { type: "string", description: "Optional topic to focus the improvement on" },
       force: { type: "boolean", description: "Set true only when the learner explicitly asks to run auto_improve again in this session" }
@@ -21,9 +21,9 @@ export const selfEvolutionTools = [
     async (params) => {
       const topic = (params.topic as string) || undefined;
       const result = await autoImproveArtifact(getCwd(), topic, { force: params.force === true, surface: "pi" });
-      const verdict = result.delta > 0 ? "IMPROVED" : result.delta < -0.5 ? "REGRESSED" : "NO SIGNIFICANT CHANGE";
+      const score = (value: number | null) => value === null ? "unavailable" : value.toFixed(1);
       return {
-        content: [{ type: "text", text: `Auto-improve: ${result.baselineScore.toFixed(2)} → ${result.afterScore.toFixed(2)} (${verdict}, Δ${result.delta >= 0 ? "+" : ""}${result.delta.toFixed(2)})\nReport: ${relative(getCwd(), result.reportPath)}` }],
+        content: [{ type: "text", text: `Teaching experiment: ${result.status}. Behavior: ${score(result.baselineScore)} → ${score(result.afterScore)}. Human learning: unmeasured. Accepted revisions apply next session.\nReport: ${relative(getCwd(), result.reportPath)}` }],
         details: result
       };
     }
@@ -31,13 +31,13 @@ export const selfEvolutionTools = [
   keatingToolMaker(
     "evolve",
     "evolve",
-    "Evolve the teaching policy using MAP-Elites algorithm. Use to search for better policy parameters when benchmarks show room for improvement.",
+    "Save unvalidated policy parameter proposals from retrospective evidence. This does not change the active teacher. Use auto_improve for fresh episode evaluation and gated skill activation.",
     { topic: { type: "string", description: "Optional topic to focus the evolution on" } },
     async (params) => {
       const topic = (params.topic as string) || undefined;
       const artifact = await evolvePolicyArtifact(getCwd(), topic, "pi");
       return {
-        content: [{ type: "text", text: `[artifact://evolution]\nBest: ${artifact.bestScore.toFixed(2)}\nPolicy: ${relative(getCwd(), artifact.policyPath)}` }],
+        content: [{ type: "text", text: `[artifact://evolution]\nUnvalidated proposals saved. Descriptive baseline: ${artifact.bestScore.toFixed(2)}. Active teaching revision unchanged.\nProposals: ${relative(getCwd(), artifact.policyPath)}` }],
         details: artifact
       };
     }
@@ -77,7 +77,7 @@ export const selfEvolutionTools = [
   keatingToolMaker(
     "prompt_eval",
     "prompt_eval",
-    "Evaluate a prompt template for teaching effectiveness in a single pass. Returns score, per-objective breakdown, and improvement feedback.",
+    "Inspect prompt wording against pedagogical criteria. This diagnostic does not measure learner outcomes or authorize activation.",
     { prompt: { type: "string", description: "The prompt template content to evaluate" } },
     async (params) => {
       const promptContent = (params.prompt as string) || "";

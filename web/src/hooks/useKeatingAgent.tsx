@@ -63,6 +63,7 @@ import {
   type KeatingToolsOptions,
 } from "../keating/browser-tools";
 import { toolExecutionSucceeded } from "../keating/tool-result";
+import { runBrowserTeachingExperiment } from "../keating/teaching-evolution";
 import {
   loadAgentRuntimeConfig,
   shouldAutoBootNodePod,
@@ -85,7 +86,6 @@ import type { ConversationEvent } from "../keating/protocol";
 import type { KeatingOpenUIAction } from "../keating/openui/types";
 import { keatingOpenUIPrompt } from "../keating/openui/library";
 import {
-  isDefaultPersona,
   loadPersona,
   subscribePersona,
 } from "../keating/persona";
@@ -884,6 +884,17 @@ export function useKeatingAgent(
           );
         }
       },
+      runTeachingExperiment: async (options: { force?: boolean; signal?: AbortSignal }) => {
+        const model = agentRef.current?.state.model;
+        if (!model) throw new Error("Select a model before running a teaching experiment.");
+        return runBrowserTeachingExperiment({
+          model,
+          streamFn: hybridStreamFn,
+          getApiKey: getProviderApiKey,
+          convertToLlm: defaultConvertToLlm,
+          thinkingLevel: agentRef.current?.state.thinkingLevel,
+        }, { ...options, basePrompt: composeKeatingSystemPrompt(loadPersona()) });
+      },
       getSessionSamples: async () => {
         const metadata = await sessions.getAllMetadata();
         const loaded = await Promise.all(
@@ -1204,15 +1215,13 @@ export function useKeatingAgent(
     ) => {
       const agentSessionId = sessionIdRef.current;
       const agentCreatedAt = sessionCreatedAtRef.current;
-      // Custom personas take precedence; the untouched default still honors any
-      // evolved prompt produced by the self-improvement loop.
+      // Resume the session's prompt; new sessions may activate a validated
+      // revision whose base prompt matches the selected persona.
       const persona = loadPersona();
       const promptBase =
         (initialState?.systemPrompt && systemPromptBaseRef.current) ||
         initialState?.systemPrompt ||
-        (isDefaultPersona(persona)
-          ? await getActiveKeatingPrompt(keatingStorage)
-          : composeKeatingSystemPrompt(persona));
+        await getActiveKeatingPrompt(keatingStorage, "learn", undefined, composeKeatingSystemPrompt(persona));
       systemPromptBaseRef.current = promptBase;
       if (sessionStartContextRef.current.sessionId !== agentSessionId) {
         sessionStartContextRef.current = {

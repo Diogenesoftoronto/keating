@@ -8,7 +8,7 @@ Keating is a Pi-powered "hyperteacher" — a CLI tool + web app that generates p
 
 ## Project Structure
 
-- **`src/core/`** — Deterministic pedagogy engine. All local, testable, no LLM calls except `animation.ts` (scene generation) and `pi-agent.ts` (thin LLM wrapper).
+- **`src/core/`** — Local pedagogy artifacts plus explicit model boundaries for animation, prompt evaluation, and fresh teaching experiments. Keep deterministic tests independent of provider calls.
 - **`src/cli/`** — Terminal CLI entrypoint (`main.ts`) and interactive setup (`setup.ts`).
 - **`src/runtime/`** — Pi/Feynman runtime detection and shell launcher.
 - **`src/pi/`** — Pi extension entrypoint (`hyperteacher-extension.ts`). Registers `/plan`, `/map`, `/animate`, `/bench`, `/evolve`, `/prompt-evolve`, `/feedback`, `/policy`, `/outputs`, `/trace`, etc.
@@ -16,6 +16,7 @@ Keating is a Pi-powered "hyperteacher" — a CLI tool + web app that generates p
 - **`pi/skills/`** — Pi skills directory for the runtime.
 - **`web/`** — Browser UI (React + TanStack Router + Vite + Nitro). Separate `package.json`, separate build.
 - **`test/`** — Root-level test suite. **Not** in `web/test/`, which is for web-specific tests.
+- **`shared/evolution/`** — Fresh teaching-episode benchmarks, immutable skill revisions, independent promotion gates, and fixed learner assessments. See `docs/teaching-evolution.md`.
 - **`scripts/`** — Build/utility scripts, plus `install/install.sh` used in release bundles.
 - **`docs/`** — Architecture docs, Typst study paper, VHS tape scripts for recordings.
 - **`video/`** — Remotion video project (`keating-intro/`).
@@ -54,11 +55,14 @@ Run `devenv tasks list` to see the available tasks, and invoke them by their ful
 
 ### Deterministic vs Non-Deterministic Boundary
 
-Everything in `src/core/` is deterministic **except**:
+The legacy artifact engine is deterministic **except** its explicit model boundaries:
 - `animation.ts` — calls `piComplete()` (LLM) to generate Hyperframes HTML. Falls back to a basic stub if the LLM call fails.
 - `pi-agent.ts` — thin wrapper over the Pi AI runtime for completions.
+- `teaching-evolution.ts` / `teaching-episode-runner.ts` — fresh Pi tutor executions plus independent judge/proposer calls.
 
-All topic definitions, lesson plans, benchmarks, policy mutations, and prompt scoring are deterministic — this makes the test suite fast and LLM-independent.
+Topic definitions, lesson plans, algebraic simulations, policy mutations, and fixed learner-assessment grading are deterministic. Model-backed evaluation paths use injected doubles in tests.
+
+The new teaching experiment path is a separate nondeterministic boundary: `src/core/teaching-evolution.ts` executes Pi teaching episodes and independent model judge/proposer calls. Its shared gate and fixed learner-assessment grader are deterministic. Tests inject episode runners/judges/proposers; never make the test suite require hosted inference. Historical `bench` records are descriptive, not counterfactual candidate execution, and missing retention/transfer must remain unknown.
 
 ### Key Data Flows
 
@@ -214,11 +218,16 @@ keating animate <topic>
 keating verify <topic>
 
 # Evaluation & improvement
-keating bench [topic]           # Benchmark current policy (weights derived from learner feedback)
-keating evolve [topic]          # Policy evolution with MAP-Elites (grids persist between runs)
+keating bench [topic]           # Summarize retrospective learner evidence and missing measurements
+keating teaching-bench [--cases <json>] # Execute training episodes; never access holdout or activate
+keating evolve [topic]          # Save unvalidated parameter proposals; active policy unchanged
 keating prompt-evolve [prompt]  # Prompt evolution (default: "learn")
-keating auto-improve [topic]    # Full loop: bench → evolve → prompt-evolve → bench (30-min cooldown, auto-rollback on regression)
-keating auto-improve [topic] --force  # Override cooldown
+keating auto-improve [--cases <json>] # One skill proposal, fresh paired validation, sealed holdout, gated activation
+keating auto-improve --force    # Override cooldown only; never reopen consumed holdout or bypass gates
+keating learning-check start <fractions|loop-bounds> [--learner <id>]
+keating learning-check show <id>
+keating learning-check list
+keating learning-check submit <id> <precheck|immediate|delayed|transfer> --answers '<json>' --assistance <none|assisted|unknown>
 keating improve                 # Self-improvement proposal from benchmark weaknesses
 keating improve accept <id>     # Accept a pending improvement proposal
 keating improve reject <id>     # Reject a pending proposal and restore snapshots
@@ -278,8 +287,10 @@ Keating.
 | `src/core/topics.ts` | Hardcoded topic definitions + domain keyword heuristics for fallback generation. |
 | `src/core/policy.ts` | Default policy, clamping, signature hashing. |
 | `src/core/project.ts` | Central artifact coordinator. All CLI and Pi commands funnel through here. |
-| `src/core/animation.ts` | Hyperframes animation bundle generation. Only core file that calls LLM. |
-| `src/core/benchmark.ts` | Synthetic learner suite. Deterministic unless using real LLM judge mode. |
+| `src/core/animation.ts` | Hyperframes animation bundle generation with a model-generated scene and deterministic fallback. |
+| `src/core/benchmark.ts` | Descriptive historical learner evidence; separate synthetic simulation mode for internal callers. |
+| `src/core/teaching-evolution.ts` | Fresh episode artifacts and content-addressed active teaching revisions. |
+| `src/core/learning-checks.ts` | Durable pre/post, delayed recall, and transfer assessment records. |
 | `src/core/prompt-evolution.ts` | Prompt scoring + PROSPER selection. |
 | `web/src/hooks/useKeatingAgent.tsx` | Web app state machine (Agent, sessions, speech, storage). |
 | `web/src/keating/browser-tools.ts` | Web-ported tool definitions matching CLI capabilities. |
@@ -289,6 +300,8 @@ Keating.
 
 - Do not add a new topic without checking if domain-specific phase injections are appropriate (see `lesson-plan.ts`).
 - Do not make benchmark or evolution code depend on LLM calls in tests — the test suite expects deterministic stubs.
+- Teaching revision activation requires both independent behavior gates; a positive score delta or five feedback records is insufficient. Holdout families are consumed before use and need independent renewal. Pi episode tools are restricted to `plan`, `map`, `verify`, `quiz`, `grade_quiz`, and workspace-contained `read`.
+- Keep synthetic/model-judged teaching behavior separate from actual learner assessments. Learning-check assistance is self-reported and revision exposure operator-recorded; neither establishes causal human effectiveness.
 - Do not change `pi.registerCommand()` handler signatures without updating `src/core/commands.ts` which generates command help text.
 - Do not assume the web build is just `vite build` — it is `vite build && npx nitro build`.
 - Do not commit generated artifacts — `.keating/`, `dist/`, `web/dist/`, `web/.output/` are all gitignored.
