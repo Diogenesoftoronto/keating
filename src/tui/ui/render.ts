@@ -1,4 +1,4 @@
-import type { UiArtifactResource, UiDocument, UiDocumentNode, UiQuestion, UiStudyPlanItem } from "../learner-contracts.js";
+import type { UiArtifactResource, UiDocument, UiDocumentNode, UiQuestion, UiStudyPlanItem, UiTaskNode } from "../learner-contracts.js";
 
 export interface UiDocumentPresentation {
   heading: string;
@@ -36,13 +36,22 @@ function studyPlanLines(items: readonly UiStudyPlanItem[], indent = ""): string[
   ]);
 }
 
+function taskKindLabel(kind: UiTaskNode["kind"]): string {
+  if (kind === "practice") return "Practice";
+  if (kind === "draft") return "Draft";
+  if (kind === "fieldwork") return "Fieldwork";
+  return "Assignment";
+}
+
 function nodePresentation(node: UiDocumentNode): UiDocumentPresentation {
   switch (node.type) {
     case "markdown": return { heading: "Explanation", body: node.markdown.split("\n") };
     case "callout": return { heading: `${node.tone.toUpperCase()}: ${node.title || "Callout"}`, body: node.markdown.split("\n") };
     case "question": return { heading: node.header || "Question", body: questionLines(node) };
     case "question-group": return { heading: node.title || "Question group", body: [...nonEmpty(node.intro, node.topic && `Topic: ${node.topic}`), ...node.questions.flatMap((question, index) => questionLines(question, `${index + 1}. `))] };
-    case "quiz": return { heading: `Quiz: ${node.title}`, body: node.questions.flatMap((question, index) => questionLines(question, `${index + 1}. `)) };
+    case "quiz": return node.mode === "exam"
+      ? { heading: `Exam: ${node.title}`, body: [`${node.questions.length} questions · ${Math.ceil((node.examTimeLimit ?? 1800) / 60)} minutes`, "Open this exam in the web app to start its timed attempt.", ...node.questions.flatMap((question, index) => questionLines({ ...question, hint: undefined, explanation: undefined }, `${index + 1}. `))] }
+      : { heading: `Quiz: ${node.title}`, body: node.questions.flatMap((question, index) => questionLines(question, `${index + 1}. `)) };
     case "goal": return { heading: `Goal: ${node.title}`, body: [...nonEmpty(node.description, `Status: ${node.status}`), ...node.steps.flatMap((step) => [`${step.status === "done" ? "[x]" : "[ ]"} ${step.title}`, ...(step.successCriteria?.map((criterion) => `  Success: ${criterion}`) ?? [])])] };
     case "deck": return { heading: `Deck: ${node.title}`, body: [...nonEmpty(`Topic: ${node.topic}`, node.description), ...node.cards.flatMap((card, index) => [`${index + 1}. ${card.front}`, `   ${card.back}`, ...(card.tags?.length ? [`   Tags: ${card.tags.join(", ")}`] : [])])] };
     case "study-plan": return {
@@ -54,6 +63,42 @@ function nodePresentation(node: UiDocumentNode): UiDocumentPresentation {
     case "notes": return { heading: `Notes: ${node.title}`, body: [...node.value.split("\n"), ...nonEmpty(node.placeholder && `Prompt: ${node.placeholder}`)] };
     case "image": return { heading: `Image: ${node.resource.title}`, body: [`Alt text: ${node.alt}`, ...resourceLines(node.resource, "Image provenance"), "Open on web or desktop to view the image."] };
     case "media": return { heading: `${node.kind[0]!.toUpperCase()}${node.kind.slice(1)}: ${node.resource.title}`, body: [...resourceLines(node.resource, "Media provenance"), `Terminal playback is unavailable; open on web or desktop for this ${node.kind}.`] };
+    case "simulation": return {
+      heading: `Model: ${node.title}`,
+      body: [
+        ...nonEmpty(node.brief),
+        "Parameters:",
+        ...node.parameters.map((parameter) => `  ${parameter.label}: ${parameter.value}${parameter.unit ? ` ${parameter.unit}` : ""} (${parameter.min}\u2013${parameter.max})`),
+        "Readouts:",
+        ...node.readouts.map((readout) => `  ${readout.label}${readout.unit ? ` (${readout.unit})` : ""}`),
+        "This model is interactive on web, desktop, or mobile; the terminal shows its starting values only.",
+      ],
+    };
+    case "coding-challenge": return {
+      heading: `Code challenge: ${node.title}`,
+      body: [...node.prompt.split("\n"), `Language: ${node.language}`, ...node.starterCode.split("\n"), "Sample tests:", ...node.tests.map((sample) => `  ${sample.label}: ${JSON.stringify(sample.args)} → ${JSON.stringify(sample.expected)}`), "Open this challenge in the web app to edit and run your solution."],
+    };
+    case "music-lab": return {
+      heading: `Music lab: ${node.title}`,
+      body: [...nonEmpty(node.brief), ...node.code.split("\n"), "Open this lab in the web app for Strudel playback and controls."],
+    };
+    case "language-practice": return {
+      heading: `Language practice: ${node.title}`,
+      body: [node.language, `${node.rounds.length} rounds`, ...node.rounds.map((round, index) => `${index + 1}. ${round.prompt}`), "Open this practice in the web app for word tiles, listening, and pronunciation recording."],
+    };
+    case "task": return {
+      heading: `${taskKindLabel(node.kind)}: ${node.title}`,
+      body: [
+        ...node.brief.split("\n"),
+        ...nonEmpty(node.estimatedMinutes === undefined ? undefined : `Estimated effort: ${node.estimatedMinutes} minutes`),
+        ...nonEmpty(node.round === undefined ? undefined : `Revision round: ${node.round}`),
+        ...(node.criteria?.length ? ["Judged on:", ...node.criteria.map((criterion) => `  - ${criterion}`)] : []),
+        ...(node.items?.length ? [`${node.kind === "fieldwork" ? "Protocol" : node.kind === "practice" ? "Exercises" : "Steps"}:`, ...node.items.flatMap((item) => [`${item.status === "done" ? "[x]" : "[ ]"} ${item.title}`, ...nonEmpty(item.detail && `    ${item.detail}`), ...nonEmpty(item.note && `    Recorded: ${item.note}`)])] : []),
+        ...(node.submission && node.submission.format !== "none"
+          ? [`${node.submission.label ?? "Submission"}: hand back ${node.submission.format === "link" ? "a link" : "your written work"}${node.submission.targetWords ? ` (target ${node.submission.targetWords} words)` : ""}.`]
+          : []),
+      ],
+    };
     case "handoff": return { heading: `Continue on ${node.target}`, body: [node.reason, `Context: ${node.context}`, `Handoff target: ${node.target}`] };
   }
 }

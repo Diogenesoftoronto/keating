@@ -1,3 +1,4 @@
+import { Select } from "../Select";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   ArrowDown,
@@ -1095,9 +1096,9 @@ function DocumentRow({
             className={courseInputClass}
             aria-label={`Title for ${material.title}`}
           />
-          <select
+          <Select
             value={lessonId}
-            onChange={(event) => setLessonId(event.target.value)}
+            onValueChange={(value) => setLessonId(value)}
             className={courseInputClass}
             aria-label={`Attach ${material.title} to a lesson`}
           >
@@ -1107,7 +1108,7 @@ function DocumentRow({
                 {lesson.title}
               </option>
             ))}
-          </select>
+          </Select>
           <div
             className={css({
               display: "flex",
@@ -1292,9 +1293,9 @@ function DocumentsSection({
             >
               {busy ? <RefreshCw size={13} /> : <Upload size={13} />} Choose file
             </button>
-            <select
+            <Select
               value={target}
-              onChange={(event) => setTarget(event.target.value)}
+              onValueChange={(value) => setTarget(value)}
               className={cx(courseInputClass, css({ w: "auto", maxW: "16rem" }))}
               aria-label="Attach new sources to"
             >
@@ -1304,7 +1305,7 @@ function DocumentsSection({
                   Attach to: {lesson.title}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
         </div>
         <div
@@ -1461,9 +1462,9 @@ function CardEditor({
           className={courseInputClass}
           placeholder="tags, separated, by commas"
         />
-        <select
+        <Select
           value={lessonId}
-          onChange={(event) => setLessonId(event.target.value)}
+          onValueChange={(value) => setLessonId(value)}
           className={courseInputClass}
           aria-label="Attach card to lesson"
         >
@@ -1473,7 +1474,7 @@ function CardEditor({
               {lesson.title}
             </option>
           ))}
-        </select>
+        </Select>
         <div
           className={css({
             display: "flex",
@@ -2035,9 +2036,9 @@ function CardsSection({
               p: "0.6rem",
             })}
           >
-            <select
+            <Select
               value={deckId}
-              onChange={(event) => setDeckId(event.target.value)}
+              onValueChange={(value) => setDeckId(value)}
               className={courseInputClass}
               aria-label="Saved deck to import"
             >
@@ -2047,7 +2048,7 @@ function CardsSection({
                   {deck.title} ({deck.cards.length})
                 </option>
               ))}
-            </select>
+            </Select>
             {activeLesson ? (
               <label
                 className={css({
@@ -2187,13 +2188,12 @@ function AccessSection({
             </label>
             <label className={css({ fontSize: "0.8rem" })}>
               <FieldLabel>Teacher access policy</FieldLabel>
-              <select
+              <Select
                 value={course.settings.teacherAccessPolicy}
                 disabled={saving === "course-settings"}
-                onChange={(event) =>
+                onValueChange={(value) =>
                   setSettings({
-                    teacherAccessPolicy: event.target
-                      .value as typeof course.settings.teacherAccessPolicy,
+                    teacherAccessPolicy: value as typeof course.settings.teacherAccessPolicy,
                   })
                 }
                 className={courseInputClass}
@@ -2204,7 +2204,7 @@ function AccessSection({
                 <option value="required-on-enrollment">
                   Require full access when joining
                 </option>
-              </select>
+              </Select>
             </label>
           </div>
         </div>
@@ -2245,18 +2245,18 @@ function AccessSection({
                   </small>
                 </span>
                 {isOwner && member.role !== "owner" ? (
-                  <select
+                  <Select
                     value={member.role}
                     disabled={saving === `role-${member.accountId}`}
                     className={cx(courseInputClass, css({ w: "auto" }))}
                     aria-label={`Role for ${member.displayName}`}
-                    onChange={(event) =>
+                    onValueChange={(value) =>
                       void mutate(
                         {
                           ...operationBase(snapshot),
                           type: "member.role.update",
                           memberAccountId: member.accountId,
-                          role: event.target.value as
+                          role: value as
                             | "teacher"
                             | "student"
                             | "peer",
@@ -2268,7 +2268,7 @@ function AccessSection({
                     <option value="teacher">teacher</option>
                     <option value="student">student</option>
                     <option value="peer">peer</option>
-                  </select>
+                  </Select>
                 ) : (
                   <span
                     className={css({

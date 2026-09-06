@@ -1,39 +1,41 @@
-= Keating as a Teaching Metaharness
+#import "../preamble.typ": modest-table
 
-== Why a metaharness is different from a chatbot
+= Current System and Design Rationale
 
-A tutoring chatbot takes a learner message and emits a response. Its behavior is largely determined by a model, a prompt, and conversational context. A teaching metaharness also decides what instructional act should happen next, which artifacts and evidence should exist around that act, what counts as sufficient evidence for improvement, and how a future policy may be revised when the current one fails.
+== What changed
 
-Keating is metaharnessed along five axes:
+Keating now has three distinct evaluation entry points. `bench` summarizes recorded assessment and feedback evidence. `teaching-bench` executes new tutor continuations on training cases. `auto-improve` proposes a teaching skill and evaluates its exact revision on fresh paired comparisons before activation. The first operation cannot establish the effect of changing a tutor; the second can expose teaching behavior; the third makes a bounded decision about experimental use.
 
-1. *Interaction layer.* Provider-backed text, dictation, full-duplex voice, camera, and screen-sharing sessions deliver the teaching exchange through web and terminal surfaces.
-2. *Evidence layer.* Learner profiles, session history, feedback, quizzes, question checks, flashcard reviews, goals, and revisit priorities persist beyond a single response.
-3. *Artifact layer.* The system produces lesson plans, concept maps, animations, verification records, study plans, decks, benchmark reports, prompt-evolution snapshots, and policy traces.
-4. *Governance layer.* Teaching behavior is parameterized by explicit policy controls, and learner-facing evolution is blocked until at least five real outcome signals exist.
-5. *Improvement layer.* MAP-Elites explores diverse policies, PROSPER-style comparison selects across multiple objectives, prompt evolution writes reviewable snapshots, and auto-improvement can roll back a regressing candidate.
+#figure(
+  modest-table(
+    columns: (1fr, 1.35fr, 1.35fr),
+    table.header([Earlier failure mode], [Implemented response], [Remaining evidence gap]),
+    [A policy change alters a retrospective proxy score], [A fixed recorded corpus has policy- and weight-independent scores], [Observed performance is not a causal treatment effect],
+    [A prompt diagnostic or synthetic policy score authorizes use], [Only a validated skill revision can enter the new activation path], [Rubric judgments still need human calibration],
+    [Evidence used for search appears to validate the result], [Training informs proposals; validation and a consumed holdout gate activation], [Public cases and semantic overlap can contaminate evaluation],
+    [Discarding an edit also discards its rationale], [Evidence-linked hypotheses persist after rejection], [Long-run benefits of accumulated hypotheses remain unmeasured],
+    [A changed prompt inherits an old score or changes a live session], [Content-addressed revisions and session pinning bind evaluation to instructions], [The bounded evaluator does not cover every live tool or interface]
+  ),
+  caption: [The redesign addresses specific evaluation defects without converting implementation safeguards into efficacy claims.],
+  placement: top,
+)
 
-In practical terms, Keating does not ask only "what should the tutor say next?" It also asks:
+Legacy `evolve` still produces parameter proposals for inspection and research. It no longer installs an unvalidated policy through that command. Legacy `prompt-evolve` scores and snapshots remain diagnostics; the newest saved snapshot is not automatically the active teaching prompt. MAP-Elites and PROSPER-style selection remain available as research mechanisms, but they are not the new skill activation gate. A count of five feedback records is not a validation sample or evidence of improvement.
 
-- What diagnostic and learner state should exist before explanation begins?
-- What scaffold should require reconstruction rather than agreement?
-- What evidence distinguishes a plausible response from retained or transferable understanding?
-- When a learner returns after time away, which material should be retrieved before new material is introduced?
-- Which changes may be accepted, rejected, or rolled back after evaluation?
+== Runtime, evidence, and revision state
 
-Those are metaharness questions, not only chatbot questions.
+The live runtime uses Pi in the terminal and a Pi Agent in the browser. It combines a base teaching prompt or selected persona with teaching tools and learner context. Local deterministic functions continue to produce inspectable pedagogical artifacts. The new shared experiment engine in `shared/evolution/` controls the evaluator, corpus, proposal, and decision independently of those live interfaces.
 
-== Operational architecture and evidence boundary
+The experiment state has three complementary parts. *Raw evidence* stores the fixed case manifest, actual messages and tool calls, criterion judgments, errors, model/runtime attribution, and unique execution identifiers. *Hypotheses* record a proposed explanation or teaching adjustment, its evidence references, and whether it remains proposed, was supported offline, or was rejected. *Revisions* bind the base prompt and complete skill contents to a SHA-256 identifier, a parent revision, and an experiment record. Rejecting a candidate preserves its evidence and hypothesis; it leaves the incumbent active.
 
-The implementation has four operational layers. First, the Pi/OpenTUI runtime and React web agent run the live, provider-backed exchange. These paths may stream model text, structured tools, images, animations, audio, and video; they are intentionally non-deterministic and provider-dependent. Second, a shared tool and storage layer turns interactions into durable learner evidence and portable artifacts. Third, the local pedagogy core generates inspectable plans, maps, policies, traces, and deterministic fallback scores. Fourth, the improvement layer consumes that evidence through MAP-Elites, counterfactual evaluation when learner data exist, PROSPER-style preference, prompt evolution, and rollback-aware auto-improvement.
+The deployed teaching procedure receives the base prompt and active skill instructions. It does not receive the hypothesis ledger, rubric, or held-out evaluation results through the evaluator interface. The proposer receives training evidence and retained hypotheses. A separate judging call receives the case rubric and actual execution, without the candidate's skill instructions. These are role and information boundaries; the default adapters can use the same underlying provider and model for all roles.
 
-Several current product capabilities sit beside this core loop: browser-local model execution, remote sandbox routing, course workspaces, real-time collaboration, Anki import/export, and peer-to-peer course projection. They matter to delivery, privacy, and portability, but the present experiments do not evaluate their educational effect. Likewise, a successful build or deterministic benchmark is not evidence that a provider exchange, live audio path, collaborative room, or human-learning outcome works in deployment.
+Before activation, the store saves the complete decision record and checks the active pointer under an exclusive lock. Later activation and resumed-session loading revalidate the revision and its saved evaluation evidence. Existing sessions retain their prompt revision; new sessions can use an accepted revision with the matching base persona. Changing the base prompt starts from that base's own empty skill revision instead of inheriting an unrelated evaluation result.
 
-The production evidence boundary is stricter than the paper's internal stress-test path. When `LearnerState` is supplied, the benchmark uses recorded feedback, quiz results, and inferred learner-turn signals; policy evolution refuses to run below five outcome records. Synthetic learners remain available only when no learner state is supplied, principally for tests and optimizer experiments. The study invokes that fallback deliberately and labels all resulting gains as *within-harness*.
+CLI/Pi records live under the current project's `.keating/state/teaching-evolution/`. Browser records use a separate IndexedDB database and Web Locks. The browser evaluator uses disposable storage; its evaluation and activation modules are excluded from the mutable NodePod boot bundle. This is a local trust boundary, not protection from a malicious owner rewriting the application or its database. Durable state is currently project-local or browser-origin-local, with no account-wide synchronization and no browser account namespace.
 
-The nearest systems analogues are frameworks that optimize harness code or editable self-improvement procedures outside education @lee2026metaharness; @zhang2026hyperagents. Keating differs in the object being optimized: a pedagogical environment whose state, artifacts, objectives, and mutation rules are organized around diagnosis, retrieval, reconstruction, and transfer.
+== Bounded teaching execution
 
-== Natural entry points for different readers
+Evaluation invokes the actual pedagogical runtime with a restricted tool set. A CLI episode starts a fresh Pi child process and temporary workspace, with in-memory sessions and no ambient project context or user extensions. Allowed tools are `plan`, `map`, `verify`, `quiz`, `grade_quiz`, and workspace-confined `read`. The browser adapter creates a fresh Pi Agent and disposable IndexedDB database with `deck`, `quiz`, `grade_quiz`, and `grade_question_checks`. It uses the selected model and thinking level. Shell execution, source edits, recursive evolution, and animation's nested inference are excluded from these evaluators.
 
-Readers from education can view Keating as an attempt to operationalize a mastery loop: diagnose, teach, probe, repair, retrieve, and transfer. Readers from ML can view it as a structured controller over provider-backed instructional policies. Readers from systems can view it as an orchestration layer that moves some intelligence from hidden model behavior into inspectable state, artifacts, and objective functions.
-
-The rest of the paper keeps those perspectives aligned. The results section reports what the archived and synthetic evidence can support. The methods section formalizes the benchmark and optimization protocol. The limitations section marks the larger live system as unevaluated wherever direct evidence is absent.
+The default episode limits are 90 seconds, six provider calls, eight tool calls, and 2,048 output tokens per provider call. CLI subprocess output is limited to 1 MiB; browser output is limited to 128,000 characters. Timeout and cancellation reach the running actor, and disposable workspaces are cleaned up. The judging and proposing adapters have no tools. These controls make experiments bounded and inspectable, but do not reproduce the full live environment: speech, arbitrary sandbox tasks, courses, collaboration, deployed authentication, and UI usability require separate evaluation.

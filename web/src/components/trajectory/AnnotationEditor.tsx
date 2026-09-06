@@ -1,10 +1,11 @@
+import { Select } from "../Select";
 import { useId, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
 import type { AnnotationKind, ReviewSeverity, TrajectoryReviewTarget } from "../../keating/trajectory-review";
 import { css, cx } from "../../../styled-system/css";
 import { eyebrow } from "../../../styled-system/recipes";
 import { KeatingIcon } from "../KeatingIcon";
 import { reviewIcon } from "./review-icons";
-import { annotationKindColor } from "./review-vocabulary";
+import { annotationKindColor, reviewTargetLabel } from "./review-vocabulary";
 import { compactButtonClass, inputClass, metaTextClass, primaryButtonClass, sectionHeadingClass, textareaClass } from "./styles";
 import type { TrajectoryAnnotationDraft } from "./types";
 
@@ -40,17 +41,6 @@ const OPTIONAL_LABELS: Record<OptionalField, string> = {
 function targetQuote(target: TrajectoryReviewTarget): string | undefined {
 	if (target.kind === "message-span" || target.kind === "artifact-span") return target.anchor.quote;
 	return undefined;
-}
-
-function targetLabel(target: TrajectoryReviewTarget): string {
-	if (target.kind === "session") return "Whole session";
-	if (target.kind === "message") return "Whole turn";
-	if (target.kind === "message-span") return "Selected turn text";
-	if (target.kind === "event") return `Event ${target.sequence}`;
-	if (target.kind === "artifact") return `Whole ${target.artifact.artifactType}`;
-	if (target.kind === "artifact-span") return `Selected ${target.artifact.artifactType} text`;
-	if (target.kind === "artifact-region") return `${target.artifact.artifactType} region · ${Math.round(target.x * 100)}%, ${Math.round(target.y * 100)}%`;
-	return `${target.artifact.artifactType} · ${(target.startMs / 1_000).toFixed(1)}s to ${(target.endMs / 1_000).toFixed(1)}s`;
 }
 
 /** Fields that already carry text open on mount; the rest wait to be asked for. */
@@ -150,7 +140,7 @@ export function AnnotationEditor({
 					<div className={sectionHeadingClass}>
 						{draft.id ? "Edit annotation" : revising ? "Revise this text" : "New annotation"}
 					</div>
-					<div className={cx(metaTextClass, css({ marginTop: "0.125rem" }))}>{targetLabel(draft.target)}</div>
+				<div className={cx(metaTextClass, css({ marginTop: "0.125rem" }))}>{reviewTargetLabel(draft.target, "editor")}</div>
 				</div>
 				<button type="button" className={compactButtonClass} onClick={onCancel}>
 					<KeatingIcon icon={reviewIcon.dismiss} size={13} /> Cancel
@@ -335,10 +325,10 @@ export function AnnotationEditor({
 			<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", borderTop: "1px solid var(--border)", paddingTop: "0.75rem" })}>
 				<label className={css({ display: "flex", alignItems: "center", gap: "0.375rem", fontSize: "0.6875rem", color: "var(--muted-foreground)" })}>
 					Status
-					<select value={draft.status} className={cx(inputClass, css({ width: "auto", minHeight: "2rem", paddingInline: "0.375rem" }))} onChange={(event) => onChange({ ...draft, status: event.currentTarget.value as TrajectoryAnnotationDraft["status"] })}>
+					<Select aria-label="Annotation status" value={draft.status} className={cx(inputClass, css({ width: "auto", minHeight: "2rem", paddingInline: "0.375rem" }))} onValueChange={(value) => onChange({ ...draft, status: value as TrajectoryAnnotationDraft["status"] })}>
 						<option value="draft">Draft</option>
 						<option value="final">Final</option>
-					</select>
+					</Select>
 				</label>
 				<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
 					<span className={cx(eyebrow(), css({ fontSize: "9px" }))}>

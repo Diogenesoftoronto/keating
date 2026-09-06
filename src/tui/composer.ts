@@ -1,6 +1,8 @@
 import { lstat, readFile, readdir, realpath, stat } from "node:fs/promises";
 import { extname, join, relative, resolve } from "node:path";
 
+import { searchScore, type Ranked } from "./search.js";
+
 export type ComposerMode = "prompt" | "command" | "shell";
 
 export interface ComposerCommand {
@@ -236,27 +238,7 @@ export async function resolveComposerInput(
   };
 }
 
-export interface ComposerSuggestion extends ComposerCommand {
-  score: number;
-}
-
-function fuzzyScore(candidate: string, query: string): number {
-  const value = candidate.toLowerCase();
-  const needle = query.replace(/^\//, "").toLowerCase();
-  if (!needle) return 0;
-  if (value === needle) return 100;
-  if (value.startsWith(needle)) return 80 - value.length;
-  if (value.includes(needle)) return 50 - value.indexOf(needle);
-  let cursor = 0;
-  let score = 0;
-  for (const character of needle) {
-    const index = value.indexOf(character, cursor);
-    if (index === -1) return -1;
-    score += index === cursor ? 4 : 1;
-    cursor = index + 1;
-  }
-  return score;
-}
+export type ComposerSuggestion = Ranked<ComposerCommand>;
 
 /** Rank slash-command completions for the current composer token. */
 export function commandSuggestions(
@@ -264,8 +246,9 @@ export function commandSuggestions(
   commands: readonly ComposerCommand[],
   limit = 8,
 ): ComposerSuggestion[] {
+  const needle = query.replace(/^\//, "");
   return commands
-    .map((command) => ({ ...command, score: fuzzyScore(command.name, query) }))
+    .map((command) => ({ ...command, score: searchScore(command.name, needle) }))
     .filter((command) => command.score >= 0)
     .sort((left, right) => right.score - left.score || left.name.localeCompare(right.name))
     .slice(0, Math.max(1, limit));

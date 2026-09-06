@@ -12,6 +12,7 @@ import {
   type PortableResponseFinishContext,
   type SkillDefinition,
   type ToolDefinition,
+  type VersionedResource,
 } from "@keating/agent-runtime";
 import type {
   BrowserAgentResources,
@@ -29,9 +30,7 @@ const PORTABLE_PARAMETERS = Object.freeze({
 });
 const NAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
 
-interface ToolRevision {
-  revision: string;
-}
+type ToolRevision = Required<VersionedResource>;
 
 interface ResolvedConnection {
   declaration: McpConnectionDefinition;

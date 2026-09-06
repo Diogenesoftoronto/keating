@@ -1,3 +1,4 @@
+import { Select } from "./Select";
 import { useCallback, useEffect, useState } from "react";
 import { Toggle } from "./Toggle";
 import { SettingRow } from "./SettingRow";
@@ -247,17 +248,17 @@ export function KeatingUiSettingsTab() {
 						Choose the default typeface for the app interface.
 					</p>
 				</div>
-				<select
+				<Select aria-label="Font family"
 					className={responsiveSelectClass}
 					value={settings.fontFamily}
-					onChange={(e) => update({ fontFamily: e.target.value as UiFontFamily })}
+					onValueChange={(value) => update({ fontFamily: value as UiFontFamily })}
 				>
 					{FONT_FAMILY_OPTIONS.map((option) => (
 						<option key={option.value} value={option.value}>
 							{option.label}
 						</option>
 					))}
-				</select>
+				</Select>
 			</div>
 
 			<div id="settings-section-ui-share" className={sectionAnchorClass}>
@@ -420,12 +421,12 @@ export function KeatingUiSettingsTab() {
 									<div className={smallHeadingClass}>Generator</div>
 									<p className={cx(mutedSmallClass, css({ marginTop: "0.25rem" }))}>{generator.description}</p>
 								</div>
-								<select
+								<Select aria-label="Image generator"
 									className={responsiveSelectClass}
 									value={settings.imageGenerator}
-									onChange={(e) =>
+									onValueChange={(value) =>
 										update({
-											imageGenerator: e.target.value as ImageGeneratorId,
+											imageGenerator: value as ImageGeneratorId,
 											imageModel: "",
 											imageSize: "",
 											imageQuality: "",
@@ -437,7 +438,7 @@ export function KeatingUiSettingsTab() {
 											{option.label}
 										</option>
 									))}
-								</select>
+								</Select>
 							</div>
 
 							{generator.needsBaseUrl && (
@@ -505,10 +506,10 @@ export function KeatingUiSettingsTab() {
 									<p className={cx(mutedSmallClass, css({ marginTop: "0.25rem" }))}>Defaults used when the tool does not override them.</p>
 								</div>
 								<div className={css({ display: "flex", width: "100%", flexWrap: "wrap", alignItems: "center", gap: "0.5rem", sm: { width: "auto" } })}>
-									<select
+									<Select
 										className={css({ borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "var(--background)", paddingInline: "0.75rem", paddingBlock: "0.5rem", fontSize: "0.875rem", color: "var(--foreground)" })}
 										value={settings.imageSize || generator.sizes[0]}
-										onChange={(e) => update({ imageSize: e.target.value })}
+										onValueChange={(value) => update({ imageSize: value })}
 										aria-label="Image size"
 									>
 										{generator.sizes.map((size) => (
@@ -516,11 +517,11 @@ export function KeatingUiSettingsTab() {
 												{size}
 											</option>
 										))}
-									</select>
-									<select
+									</Select>
+									<Select
 										className={css({ borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "var(--background)", paddingInline: "0.75rem", paddingBlock: "0.5rem", fontSize: "0.875rem", color: "var(--foreground)" })}
 										value={settings.imageQuality || generator.qualities[0]}
-										onChange={(e) => update({ imageQuality: e.target.value })}
+										onValueChange={(value) => update({ imageQuality: value })}
 										aria-label="Image quality"
 									>
 										{generator.qualities.map((quality) => (
@@ -528,7 +529,7 @@ export function KeatingUiSettingsTab() {
 												{quality}
 											</option>
 										))}
-									</select>
+									</Select>
 								</div>
 							</div>
 						</div>

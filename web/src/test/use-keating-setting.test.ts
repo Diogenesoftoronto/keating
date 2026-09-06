@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "bun:test";
 import { loadKeatingUiSettings, saveKeatingUiSettings } from "../keating/ui-settings";
 import { loadModelPrefs, saveModelPrefs } from "../keating/model-prefs";
 import { loadPersona, savePersona } from "../keating/persona";
+import { loadWebSpeechSettings, saveWebSpeechSettings } from "../keating/speech";
 import { KEATING_SETTING_KEYS } from "../hooks/use-keating-setting";
 
 function createMockStorage(): Storage {
@@ -64,5 +65,19 @@ describe("useKeatingSetting facade", () => {
 		const stored = (globalThis as unknown as { localStorage: Storage }).localStorage.getItem("keating:teacher-persona");
 		expect(stored).toBe("custom persona text");
 		expect(loadPersona()).toBe("custom persona text");
+	});
+
+	it("Speech settings preserve a selected live provider instead of resetting to Gemini", () => {
+		saveWebSpeechSettings({
+			...loadWebSpeechSettings(),
+			providerId: "openai-realtime",
+			model: "gpt-realtime-2.1",
+			microphoneEnabled: true,
+		});
+		const stored = JSON.parse((globalThis as unknown as { localStorage: Storage }).localStorage.getItem("keating:web:speech")!);
+		expect(stored.providerId).toBe("openai-realtime");
+		expect(stored.model).toBe("gpt-realtime-2.1");
+		expect(stored.microphoneEnabled).toBe(true);
+		expect(loadWebSpeechSettings().providerId).toBe("openai-realtime");
 	});
 });

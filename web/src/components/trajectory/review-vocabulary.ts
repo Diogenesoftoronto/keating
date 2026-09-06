@@ -62,13 +62,19 @@ export function annotationKindColor(kind: AnnotationKind): string {
 	return kind === "problem" ? "var(--destructive)" : kind === "strength" ? "var(--accent-green)" : "var(--amber)";
 }
 
-export function reviewTargetLabel(target: TrajectoryReviewTarget): string {
+export function reviewTargetLabel(target: TrajectoryReviewTarget, mode: "compact" | "editor" = "compact"): string {
 	if (target.kind === "session") return "Whole session";
-	if (target.kind === "message") return "Turn";
-	if (target.kind === "message-span") return `“${target.anchor.quote}”`;
+	if (target.kind === "message") return mode === "editor" ? "Whole turn" : "Turn";
+	if (target.kind === "message-span") return mode === "editor" ? "Selected turn text" : `“${target.anchor.quote}”`;
 	if (target.kind === "event") return `Event ${target.sequence}`;
-	if (target.kind === "artifact") return target.artifact.artifactType;
-	if (target.kind === "artifact-span") return `“${target.anchor.quote}”`;
-	if (target.kind === "artifact-region") return `${target.artifact.artifactType} region`;
-	return `${target.artifact.artifactType} time range`;
+	if (target.kind === "artifact") return mode === "editor" ? `Whole ${target.artifact.artifactType}` : target.artifact.artifactType;
+	if (target.kind === "artifact-span") return mode === "editor" ? `Selected ${target.artifact.artifactType} text` : `“${target.anchor.quote}”`;
+	if (target.kind === "artifact-region") {
+		return mode === "editor"
+			? `${target.artifact.artifactType} region · ${Math.round(target.x * 100)}%, ${Math.round(target.y * 100)}%`
+			: `${target.artifact.artifactType} region`;
+	}
+	return mode === "editor"
+		? `${target.artifact.artifactType} · ${(target.startMs / 1_000).toFixed(1)}s to ${(target.endMs / 1_000).toFixed(1)}s`
+		: `${target.artifact.artifactType} time range`;
 }

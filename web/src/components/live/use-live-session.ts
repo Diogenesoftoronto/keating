@@ -36,6 +36,7 @@ import {
 	type VideoSource,
 } from "../../keating/video-capture";
 import type { ConversationEvent } from "../../keating/protocol";
+import { prepareLiveImage } from "../../keating/live-image";
 import { getProviderApiKey } from "../../lib/provider-models";
 
 /**
@@ -90,7 +91,10 @@ export interface LiveSessionController {
 	models: LiveModelOption[];
 	alternativeModel: LiveModelOption | undefined;
 	tierLabel: string;
-	visionCapable: boolean;
+	videoCapable: boolean;
+	imageCapable: boolean;
+	embeddedSurface: LiveSpeechSession["embeddedSurface"] | null;
+	handleEmbeddedEvent: (event: unknown) => unknown | Promise<unknown>;
 
 	micMuted: boolean;
 	toggleMic: () => void;
@@ -104,6 +108,10 @@ export interface LiveSessionController {
 	startVideo: (source: VideoSource) => void;
 	stopVideo: () => void;
 	flipCamera: () => void;
+	sharedImage: { previewUrl: string; filename: string } | null;
+	imageSending: boolean;
+	imageError: string | null;
+	shareImage: (file: File) => Promise<void>;
 
 	framesSent: number;
 	elapsedMs: number;
@@ -137,7 +145,12 @@ export function useLiveSession(options: UseLiveSessionOptions): LiveSessionContr
 	const [framesSent, setFramesSent] = useState(0);
 	const [elapsedMs, setElapsedMs] = useState(0);
 	const [triedModels, setTriedModels] = useState<string[]>([]);
-	const [visionCapable, setVisionCapable] = useState(false);
+	const [videoCapable, setVideoCapable] = useState(false);
+	const [imageCapable, setImageCapable] = useState(false);
+	const [embeddedSurface, setEmbeddedSurface] = useState<LiveSpeechSession["embeddedSurface"] | null>(null);
+	const [sharedImage, setSharedImage] = useState<{ previewUrl: string; filename: string } | null>(null);
+	const [imageSending, setImageSending] = useState(false);
+	const [imageError, setImageError] = useState<string | null>(null);
 	// Held in state, not read off the session ref, so the visualizer remounts its
 	// analyser when a reconnect hands us a different microphone.
 	const [inputStream, setInputStream] = useState<MediaStream | null>(null);
@@ -216,6 +229,10 @@ export function useLiveSession(options: UseLiveSessionOptions): LiveSessionContr
 		}
 	}, []);
 
+	const handleEmbeddedEvent = useCallback((event: unknown) => (
+		sessionRef.current?.handleEmbeddedEvent?.(event)
+	), []);
+
 	// The connection itself. Re-runs on every retry and model switch; the
 	// transcript, camera, and mute state deliberately live outside it.
 	useEffect(() => {
@@ -225,6 +242,9 @@ export function useLiveSession(options: UseLiveSessionOptions): LiveSessionContr
 		setPhase("connecting");
 		setSpeechState("connecting");
 		setFailure(null);
+		setVideoCapable(false);
+		setImageCapable(false);
+		setEmbeddedSurface(null);
 
 		(async () => {
 			try {
@@ -235,6 +255,7 @@ export function useLiveSession(options: UseLiveSessionOptions): LiveSessionContr
 				}
 
 				const bridge = getLiveSpeechBridge();
+				const context = await bridge?.loadContext?.();
 				const conversationDetail: { ids?: { sessionId: string } } = {};
 				window.dispatchEvent(new CustomEvent("keating:conversation-ids", { detail: conversationDetail }));
 
@@ -258,6 +279,7 @@ export function useLiveSession(options: UseLiveSessionOptions): LiveSessionContr
 					signal: abort.signal,
 					instructions: bridge?.instructions,
 					history: bridge?.history,
+					context,
 					tools: bridge?.tools,
 					video,
 					onToolCall: bridge ? (call) => bridge.execute(call, abort.signal) : undefined,
@@ -282,7 +304,9 @@ export function useLiveSession(options: UseLiveSessionOptions): LiveSessionContr
 					return;
 				}
 				sessionRef.current = session;
-				setVisionCapable(session.visionCapable !== false);
+				setVideoCapable(session.videoCapable === true);
+				setImageCapable(session.imageCapable === true && typeof session.sendImage === "function");
+				setEmbeddedSurface(session.embeddedSurface ?? null);
 				setInputStream(session.inputStream ?? null);
 				setPhase("live");
 				// Re-apply choices the learner made before this connection existed.
@@ -339,7 +363,7 @@ export function useLiveSession(options: UseLiveSessionOptions): LiveSessionContr
 	}, []);
 
 	const startVideo = useCallback((source: VideoSource) => {
-		if (videoStarting) return;
+		if (!videoCapable || videoStarting) return;
 		setNotice(null);
 		setVideoStarting(true);
 		const facing = source === "camera" ? cameraFacing : undefined;
@@ -370,7 +394,7 @@ export function useLiveSession(options: UseLiveSessionOptions): LiveSessionContr
 				setNotice(classifyCaptureFailure(error, source));
 			})
 			.finally(() => setVideoStarting(false));
-	}, [bindVideo, cameraFacing, settings.frameIntervalMs, videoStarting]);
+	}, [bindVideo, cameraFacing, settings.frameIntervalMs, videoCapable, videoStarting]);
 
 	const stopVideo = useCallback(() => {
 		detachVideo();
@@ -379,6 +403,7 @@ export function useLiveSession(options: UseLiveSessionOptions): LiveSessionContr
 	}, [detachVideo]);
 
 	const flipCamera = useCallback(() => {
+		if (!videoCapable) return;
 		const next: CameraFacing = cameraFacing === "user" ? "environment" : "user";
 		setCameraFacing(next);
 		if (videoRef.current?.source !== "camera") return;
@@ -397,7 +422,28 @@ export function useLiveSession(options: UseLiveSessionOptions): LiveSessionContr
 				setNotice(classifyCaptureFailure(error, "camera"));
 			})
 			.finally(() => setVideoStarting(false));
-	}, [bindVideo, cameraFacing, settings.frameIntervalMs]);
+	}, [bindVideo, cameraFacing, settings.frameIntervalMs, videoCapable]);
+
+	const shareImage = useCallback(async (file: File) => {
+		setImageSending(true);
+		setImageError(null);
+		try {
+			const session = sessionRef.current;
+			if (!session?.imageCapable || !session.sendImage) {
+				throw new Error("This live model cannot accept a still image.");
+			}
+			const prepared = await prepareLiveImage(file);
+			await session.sendImage(prepared.image);
+			setSharedImage({ previewUrl: prepared.previewUrl, filename: prepared.image.filename ?? file.name });
+		} catch (error) {
+			const message = error instanceof Error && error.message.trim()
+				? error.message
+				: "The image could not be shared.";
+			setImageError(message);
+		} finally {
+			setImageSending(false);
+		}
+	}, []);
 
 	const retry = useCallback(() => {
 		setNotice(null);
@@ -418,19 +464,28 @@ export function useLiveSession(options: UseLiveSessionOptions): LiveSessionContr
 		if (finishedRef.current) return;
 		finishedRef.current = true;
 		abortRef.current?.abort();
-		void sessionRef.current?.stop().catch(() => {});
+		const activeSession = sessionRef.current;
 		sessionRef.current = null;
 		videoRef.current?.stop();
 		videoRef.current = null;
-		setPhase("ended");
-
-		const completed = flushLiveTranscript(transcriptRef.current);
-		transcriptRef.current = completed;
-		if (completed.turns.length > 0) {
-			void Promise.resolve(onConversationComplete(completed.turns)).catch((error) => {
-				console.error("Could not preserve the live conversation in chat:", error);
+		// Leave the Daily room immediately; authenticated provider cleanup may
+		// fail or time out and must not keep the camera or microphone connected.
+		setEmbeddedSurface(null);
+		setSpeechState("closed");
+		void (async () => {
+			await activeSession?.stop().catch(() => {
+				// Never expose provider messages, room URLs, or capability tokens.
+				console.warn("[keating:live] Provider cleanup was not confirmed after leaving the call.");
 			});
-		}
+			const completed = flushLiveTranscript(transcriptRef.current);
+			transcriptRef.current = completed;
+			if (completed.turns.length > 0) {
+				await Promise.resolve(onConversationComplete(completed.turns)).catch((error) => {
+					console.error("Could not preserve the live conversation in chat:", error);
+				});
+			}
+			setPhase("ended");
+		})();
 	}, [onConversationComplete]);
 
 	return {
@@ -446,7 +501,10 @@ export function useLiveSession(options: UseLiveSessionOptions): LiveSessionContr
 		models,
 		alternativeModel,
 		tierLabel,
-		visionCapable,
+		videoCapable,
+		imageCapable,
+		embeddedSurface,
+		handleEmbeddedEvent,
 		micMuted,
 		toggleMic,
 		inputStream,
@@ -457,6 +515,10 @@ export function useLiveSession(options: UseLiveSessionOptions): LiveSessionContr
 		startVideo,
 		stopVideo,
 		flipCamera,
+		sharedImage,
+		imageSending,
+		imageError,
+		shareImage,
 		framesSent,
 		elapsedMs,
 		retry,

@@ -15,12 +15,14 @@ export const extensionCommandSpecs: CommandSpec[] = [
 	{ name: "diagnose",     args: "<topic>",        section: "Teaching",      description: "Map prerequisites and knowledge gaps.", shellOnly: true },
 	{ name: "quiz",         args: "<topic>",        section: "Assessment",    description: "Generate retrieval practice questions." },
 	{ name: "verify",       args: "<topic>",        section: "Assessment",    description: "Generate a fact-checking checklist before teaching." },
-	{ name: "bench",        args: "[topic]",        section: "Optimization",  description: "Benchmark the current teaching policy." },
-	{ name: "evolve",       args: "[topic]",        section: "Optimization",  description: "Evolve teaching policies via MAP-Elites." },
+	{ name: "bench",        args: "[topic]",        section: "Optimization",  description: "Summarize recorded learner evidence and its measurement limits." },
+	{ name: "teaching-bench", args: "[--cases <JSON pack>]", section: "Optimization", description: "Execute training episodes without accessing a release holdout.", cliOnly: true },
+	{ name: "learning-check", args: "start|show|list|submit [options]", section: "Assessment", description: "Record revision-linked prechecks, postchecks, delayed recall, and transfer.", cliOnly: true },
+	{ name: "evolve",       args: "[topic]",        section: "Optimization",  description: "Save unvalidated policy proposals; preserve the active policy." },
 	{ name: "prompt-evolve",args: "[name]",         section: "Optimization",  description: "Evolve a prompt template with ACE." },
 	{ name: "prompt-eval",  args: "<prompt>",         section: "Optimization",  description: "Evaluate a prompt template in a single pass." },
 	{ name: "improve",      args: "[history|accept <id>|reject <id>]", section: "Self-Improvement", description: "Generate or resolve a self-improvement proposal." },
-	{ name: "auto-improve", args: "[topic] [--force]", section: "Self-Improvement", description: "Run full self-improvement loop: bench → evolve → prompt-evolve → bench." },
+	{ name: "auto-improve", args: "[--force]", section: "Self-Improvement", description: "Propose one teaching skill and require fresh validation and sealed holdout gates." },
 	{ name: "edit",         args: "<file> [--backup-dir=DIR]", section: "Self-Improvement", description: "Apply a search/replace edit to a source file. Reads search/replace from stdin or prompts interactively." },
 	{ name: "export",       args: "--finetune [options]", section: "Export", description: "Export Keating data for fine-tuning or downstream workflows.", cliOnly: true },
 	{ name: "import",       args: "--finetune <path> [options]", section: "Export", description: "Import fine-tune JSONL as Keating session data.", cliOnly: true },
@@ -47,7 +49,8 @@ export const cliCommandSpecs: CommandSpec[] = [
 	{ name: "doctor",       args: "",               section: "Core",          description: "Inspect AI runtime and renderer configuration." },
 	{ name: "package",      args: "list|add <source>|remove <source>|recommended", section: "Core", description: "Manage extra Pi packages loaded by Keating." },
 	{ name: "version",      args: "",               section: "Core",          description: "Show the Keating version number." },
-	...extensionCommandSpecs.filter(s => !s.shellOnly),
+	...extensionCommandSpecs.filter(s => !s.shellOnly).map(spec => spec.name === "auto-improve"
+		? { ...spec, args: "[--cases <JSON pack>] [--force]" } : spec),
 ];
 
 export interface CommandSection {

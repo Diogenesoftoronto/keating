@@ -172,11 +172,12 @@ async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthe
 				model: settings.model || GEMINI_LIVE_SPEECH_MODEL,
 				callbacks: {
 					onmessage: (message: any) => {
+						if (done || signal?.aborted) return;
 						for (const part of contentParts(message)) {
 							const data = part.inlineData?.data;
 							if (typeof data === "string" && data.length > 0) {
 								audioChunks += 1;
-								if (schedulePcmAudio(data)) playedChunks += 1;
+								if (schedulePcmAudio(data, undefined, { signal })) playedChunks += 1;
 							}
 							if (typeof part.text === "string") transcript += part.text;
 						}
@@ -525,7 +526,8 @@ async function startLiveSession(
 		get videoRoute() {
 			return videoSubscription?.active ? "native" as const : "none" as const;
 		},
-		visionCapable,
+		videoCapable: visionCapable,
+		imageCapable: false,
 		get inputStream() {
 			return capture?.stream ?? null;
 		},

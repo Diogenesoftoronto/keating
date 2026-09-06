@@ -1,3 +1,9 @@
+import { SubmissionDeliveryStatus } from "../components/SubmissionDeliveryStatus";
+import { latestCourseSubmission, queueCourseSubmission, submissionKey, syncCourseSubmissions, type QueuedSubmission } from "../submissions/course-outbox";
+import type { UiSubmissionAttachment } from "@keating/learner-contracts";
+import { TaskBrief } from "../keating/openui/shared-renderer";
+import { courseAssignmentToTask } from "../courses/task-assignments";
+import { SubmissionAttachments, AttachmentLinks } from "../components/SubmissionAttachments";
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { Link, useParams } from "@tanstack/react-router";
 import {
@@ -1622,8 +1628,6 @@ function CourseSourceCard({
 function AssignmentSubmissionCard({
   snapshot,
   assignment,
-  mutate,
-  saving,
   onToggleReaction,
   courseWide = false,
 }: {
@@ -1640,29 +1644,47 @@ function AssignmentSubmissionCard({
       candidate.accountId === snapshot.viewer.accountId,
   );
   const [answer, setAnswer] = useState(submission?.answer ?? "");
+  const [attachments, setAttachments] = useState<UiSubmissionAttachment[]>(submission?.attachments ?? []);
+  const [uploading, setUploading] = useState(false);
+  const notYetOpen = !!assignment.availableFrom && Date.now() < Date.parse(assignment.availableFrom);
   const [share, setShare] = useState(submission?.sharedWithPeers ?? false);
+  const [localSubmission, setLocalSubmission] = useState<QueuedSubmission>();
+  const [localError, setLocalError] = useState("");
+  const [localSaving, setLocalSaving] = useState(false);
+  const [restored, setRestored] = useState(false);
+  const localKey = submissionKey(snapshot.viewer.accountId, snapshot.course.id, assignment.id);
   useEffect(() => {
-    setAnswer(submission?.answer ?? "");
-    setShare(submission?.sharedWithPeers ?? false);
-  }, [submission?.id, submission?.version]);
-  const save = (status: "draft" | "submitted") =>
-    mutate(
-      {
-        id: newCourseOperationId(),
-        courseId: snapshot.course.id,
-        baseRevision: snapshot.course.revision,
-        type: "assignment.submission.save",
-        submissionId:
-          submission?.id ??
-          `assignment_submission_${crypto.randomUUID().replaceAll("-", "")}`,
-        assignmentId: assignment.id,
-        answer,
-        status,
-        sharedWithPeers: share,
-        baseVersion: submission?.version ?? 0,
-      },
-      `assignment-submit-${assignment.id}`,
-    );
+    let active = true;
+    setRestored(false);
+    void latestCourseSubmission(localKey).then((stored) => {
+      if (!active) return;
+      const local = stored?.state === "delivered" && (submission?.version ?? 0) > (stored.deliveredVersion ?? 0) ? undefined : stored;
+      setLocalSubmission(local);
+      setAnswer(local?.operation.answer ?? submission?.answer ?? "");
+      setAttachments(local?.operation.attachments ?? submission?.attachments ?? []);
+      setShare(local?.operation.sharedWithPeers ?? submission?.sharedWithPeers ?? false);
+      setRestored(true);
+    }).catch(() => { if (active) { setLocalError("Local storage is unavailable. Your work cannot be saved on this device yet."); setRestored(true); } });
+    const update = () => { void latestCourseSubmission(localKey).then((local) => { if (active) setLocalSubmission(local); }).catch(() => {}); };
+    window.addEventListener("keating:submission-saved", update);
+    return () => { active = false; window.removeEventListener("keating:submission-saved", update); };
+  }, [localKey]);
+  const save = async (status: "draft" | "submitted") => {
+    setLocalSaving(true); setLocalError("");
+    try {
+      const local = await queueCourseSubmission(snapshot.viewer.accountId, {
+        id: newCourseOperationId(), courseId: snapshot.course.id,
+        baseRevision: snapshot.course.revision, type: "assignment.submission.save",
+        submissionId: submission?.id ?? `assignment_submission_${crypto.randomUUID().replaceAll("-", "")}`,
+        assignmentId: assignment.id, answer, attachments, status,
+        sharedWithPeers: share, baseVersion: submission?.version ?? 0,
+      });
+      setLocalSubmission(local);
+      // A network failure cannot undo the completed local transaction.
+      void syncCourseSubmissions().catch(() => {});
+    } catch (cause) { setLocalError(cause instanceof Error ? cause.message : "Could not save on this device."); }
+    finally { setLocalSaving(false); }
+  };
   return (
     <section
       className={css({
@@ -1714,60 +1736,16 @@ function AssignmentSubmissionCard({
         </div>
       </header>
       <div className={css({ p: "1rem" })}>
-        <p
-          className={css({
-            whiteSpace: "pre-wrap",
-            fontFamily: "Georgia, serif",
-            fontSize: "1rem",
-            lineHeight: 1.65,
-          })}
-        >
-          {assignment.brief}
-        </p>
-        {assignment.deliverables.length ? (
-          <div className={css({ mt: "1rem" })}>
-            <p className={s.sectionLabel}>Deliverables</p>
-            <ul
-              className={css({
-                mt: "0.4rem",
-                pl: "1.1rem",
-                listStyle: "square",
-                lineHeight: 1.6,
-              })}
-            >
-              {assignment.deliverables.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-        {assignment.rubric.length ? (
-          <details className={css({ mt: "0.9rem" })}>
-            <summary
-              className={css({
-                cursor: "pointer",
-                fontSize: "0.78rem",
-                fontWeight: 750,
-              })}
-            >
-              Review rubric
-            </summary>
-            <ul
-              className={css({
-                mt: "0.4rem",
-                pl: "1.1rem",
-                listStyle: "square",
-                fontSize: "0.8rem",
-                lineHeight: 1.6,
-              })}
-            >
-              {assignment.rubric.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </details>
-        ) : null}
+        <TaskBrief node={courseAssignmentToTask(assignment)} />
+        {(assignment.taskItems?.length || assignment.deliverables.length) ? <ol>
+          {(assignment.taskItems ?? assignment.deliverables.map((title, index) => ({ id: String(index), title, detail: undefined }))).map((item) => <li key={item.id}><strong>{item.title}</strong>{item.detail ? <p>{item.detail}</p> : null}</li>)}
+        </ol> : null}
+        {localSubmission ? <SubmissionDeliveryStatus state={localSubmission.state} error={localSubmission.error} onRetry={() => void syncCourseSubmissions().catch(() => {})} /> : null}
+        {localError ? <p role="alert">{localError}</p> : null}
+        <SubmissionAttachments value={attachments} onChange={setAttachments} disabled={!restored || localSaving} onBusyChange={setUploading} />
+        <AttachmentLinks attachments={attachments} courseId={snapshot.course.id} />
         <textarea
+          disabled={!restored || localSaving}
           value={answer}
           onChange={(event) => setAnswer(event.target.value)}
           rows={9}
@@ -1806,7 +1784,7 @@ function AssignmentSubmissionCard({
             <button
               type="button"
               className={s.button}
-              disabled={saving === `assignment-submit-${assignment.id}`}
+              disabled={!restored || uploading || localSaving}
               onClick={() => void save("draft")}
             >
               Save draft
@@ -1815,7 +1793,7 @@ function AssignmentSubmissionCard({
               type="button"
               className={cx(s.button, s.primaryButton)}
               disabled={
-                !answer.trim() || saving === `assignment-submit-${assignment.id}`
+                !restored || uploading || localSaving || notYetOpen || (!answer.trim() && !attachments.length)
               }
               onClick={() => void save("submitted")}
             >

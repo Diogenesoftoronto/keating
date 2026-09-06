@@ -1,6 +1,7 @@
 import type { UiQuestion, UiQuestionGroupResponse } from "@keating/learner-contracts";
 import type { AnsweredQuestion } from "../components/QuestionRenderer";
 import type { CanonicalKeatingOpenUIAction, KeatingOpenUIAction } from "./openui/types";
+import { formatQuizDuration } from "../components/quiz/game";
 
 export const LEARNER_RESPONSE_TAG = "keating-learner-response";
 
@@ -149,6 +150,8 @@ function questionGroupResponseValue(response: UiQuestionGroupResponse, question?
 				const selection = question?.choices?.find((choice) => choice.id === row.optionId)?.label ?? row.optionId;
 				return `${row.item}: ${selection}${row.reason?.trim() ? ` (${row.reason.trim()})` : ""}`;
 			}).join("; ");
+		case "order":
+			return response.items.map((item, index) => `${index + 1}. ${item}`).join("; ");
 	}
 }
 
@@ -174,6 +177,21 @@ function canonicalQuestionGroupReview(action: CanonicalKeatingOpenUIAction): Lea
 	};
 }
 
+function stringList(value: unknown): string[] {
+	return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : [];
+}
+
+function quizTimingReview(params: Record<string, unknown>): LearnerResponseReviewItem[] {
+	const timing = params.timing && typeof params.timing === "object" ? params.timing as Record<string, unknown> : undefined;
+	const totalMs = finiteNumber(timing?.totalMs);
+	const timeouts = stringList(params.timedOutQuestionIds);
+	return [
+		...(totalMs !== undefined ? [{ label: "Total time", value: formatQuizDuration(totalMs) }] : []),
+		...(timeouts.length ? [{ label: "Timed out", value: timeouts.join(", ") }] : []),
+		...(params.examTimedOut === true ? [{ label: "Exam timer", value: "Time limit reached" }] : []),
+	];
+}
+
 function openUIActionReview(action: KeatingOpenUIAction): LearnerResponseReview {
 	if (action.kind === "canonical") {
 		const questionGroup = canonicalQuestionGroupReview(action);
@@ -192,10 +210,27 @@ function openUIActionReview(action: KeatingOpenUIAction): LearnerResponseReview 
 			title: "Quiz completed",
 			summary: topic ? `Results saved for ${topic}.` : "Results saved.",
 			items: [
+				...quizTimingReview(action.params),
 				...(score !== undefined
 					? [{ label: "Score", value: total !== undefined ? `${score} of ${total}` : String(score) }]
 					: []),
 				...(flagged > 0 ? [{ label: "Marked for review", value: String(flagged) }] : []),
+			],
+		};
+	}
+
+	if (interaction === "complete-language-practice") {
+		const correct = finiteNumber(action.params.correct);
+		const total = finiteNumber(action.params.objectiveTotal);
+		const practiced = finiteNumber(action.params.pronunciationPracticed);
+		const totalMs = finiteNumber(action.params.totalMs);
+		return {
+			title: "Language practice completed",
+			summary: action.humanFriendlyMessage.trim() || "Practice saved.",
+			items: [
+				...(correct !== undefined && total !== undefined ? [{ label: "Checked answers", value: `${correct} of ${total}` }] : []),
+				...(practiced !== undefined && practiced > 0 ? [{ label: "Pronunciation", value: `${practiced} practiced · self-reviewed` }] : []),
+				...(totalMs !== undefined ? [{ label: "Time", value: formatQuizDuration(totalMs) }] : []),
 			],
 		};
 	}
@@ -209,6 +244,64 @@ function openUIActionReview(action: KeatingOpenUIAction): LearnerResponseReview 
 			items: [
 				...(reviewed !== undefined ? [{ label: "Cards reviewed", value: String(reviewed) }] : []),
 				...(lapses !== undefined ? [{ label: "Difficult recalls", value: String(lapses) }] : []),
+			],
+		};
+	}
+
+	if (action.kind === "canonical" && action.action.type === "submit-task") {
+    const submission = action.action;
+    return {
+      title: "Work submitted",
+      summary: action.humanFriendlyMessage,
+      items: [
+        ...(submission.submission ? [{ label: "Submission", value: submission.submission }] : []),
+        ...(submission.attachments ?? []).map((file) => ({ label: "Attached file", value: `${file.name} (${file.mimeType}, ${file.sizeBytes} bytes); saved on this device as ${file.id}` })),
+      ],
+    };
+  }
+
+	// A canonical quiz completion arrives as `complete-quiz`, not as an
+	// `interaction` param. Surface the result id and the open-ended questions so
+	// the teacher knows exactly what still needs `grade_quiz`.
+	if (interaction === "complete-quiz") {
+		const score = finiteNumber(action.params.score);
+		const points = finiteNumber(action.params.partialCreditPoints);
+		const answered = Array.isArray(action.params.answers) ? action.params.answers.length : undefined;
+		const pending = stringList(action.params.pendingGradeQuestionIds);
+		const skipped = stringList(action.params.skippedQuestionIds);
+		const flagged = stringList(action.params.flaggedQuestionIds);
+		const resultId = readableValue(action.params.resultId);
+		return {
+			title: "Quiz submitted",
+			summary: pending.length > 0
+				? `Objective questions are scored. ${pending.length} open-ended answer${pending.length === 1 ? "" : "s"} still need your judgement.`
+				: "Results saved.",
+			items: [
+				...quizTimingReview(action.params),
+				...(score !== undefined && answered !== undefined ? [{ label: "Auto-scored", value: `${score} of ${answered}` }] : []),
+				...(points !== undefined ? [{ label: "Points", value: String(points) }] : []),
+				...(skipped.length > 0 ? [{ label: "Skipped", value: skipped.join(", ") }] : []),
+				...(flagged.length > 0 ? [{ label: "Flagged for review", value: flagged.join(", ") }] : []),
+				...(pending.length > 0 && resultId
+					? [{ label: "Needs grading", value: `Call grade_quiz with result_id ${resultId} for: ${pending.join(", ")}` }]
+					: []),
+			],
+		};
+	}
+
+	// A component that failed to compile. The learner cannot act on this; the
+	// teacher has to re-emit a corrected component.
+	if (interaction === "regenerate") {
+		const reason = readableValue(action.params.reason);
+		const attempt = finiteNumber(action.params.attempt);
+		const limit = finiteNumber(action.params.maxAttempts);
+		return {
+			title: "Interaction failed to build",
+			summary: "The component you streamed could not be compiled, so the learner saw nothing. Re-emit a corrected version of it.",
+			items: [
+				...(reason ? [{ label: "Compiler error", value: reason }] : []),
+				...(attempt !== undefined ? [{ label: "Attempt", value: limit !== undefined ? `${attempt} of ${limit}` : String(attempt) }] : []),
+				{ label: "What to do", value: "Check the component's argument count and order against the OpenUI grammar, then stream the corrected component again. Do not apologize in prose or repeat the broken source." },
 			],
 		};
 	}
@@ -246,7 +339,9 @@ export function createOpenUIActionLearnerResponse(
 		...responseIdentity("openui-action", options),
 		review: openUIActionReview(action),
 		payload: action,
-		agentInstruction: "Continue from this learner action using the complete structured payload.",
+		agentInstruction: action.type === "complete-language-practice"
+			? "Continue from the recorded language answers, attempts, and exact timings. Pronunciation entries record self-reviewed practice only: the audio stayed on the learner's device and pronunciation accuracy was not assessed. Do not infer a pronunciation score from completion."
+			: "Continue from this learner action using the complete structured payload.",
 	};
 }
 

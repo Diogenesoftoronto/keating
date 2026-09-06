@@ -23,6 +23,10 @@ export default defineNitroConfig({
   // Courses are account state, not ephemeral share payloads. Deployments should
   // point this at a persistent volume (for example /data/keating-courses).
   storage: {
+    "keating:submission-attachments": {
+      driver: "fs",
+      base: process.env.KEATING_SUBMISSION_STORAGE_DIR ?? ".data/keating-submissions",
+    },
     "keating:courses": {
       driver: "fs",
       base: process.env.KEATING_COURSES_STORAGE_DIR ?? ".data/keating-courses",
@@ -96,6 +100,16 @@ export default defineNitroConfig({
   // via useStorage("assets:server") (see server/utils/og-render.ts).
   serverAssets: [{ baseName: "server", dir: "server/assets" }],
   handlers: [
+    {
+      route: "/api/tavus/conversations",
+      method: "POST",
+      handler: "server/api/tavus/conversations/index.post.ts",
+    },
+    {
+      route: "/api/tavus/conversations/:conversationId/end",
+      method: "POST",
+      handler: "server/api/tavus/conversations/[conversationId]/end.post.ts",
+    },
 	{
 	  route: "/api/blog",
 	  handler: "server/api/blog/index.ts",

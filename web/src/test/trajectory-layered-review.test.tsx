@@ -188,4 +188,30 @@ describe("progressive annotation editor", () => {
 		expect(html).toContain("Replacement text");
 		expect(html).toContain("line-through");
 	});
+
+	it("uses the detailed shared target label while editing", () => {
+		const html = editor(draft({
+				target: {
+					kind: "artifact-region",
+					artifact: {
+						source: { source: "session", sessionId: "session-1", id: "map-1" },
+						artifactType: "map",
+						format: "text/markdown",
+						versionId: "map-1-v1",
+						contentHash: "map-1-hash",
+						frozen: true,
+					},
+					assetHash: "map-1-asset",
+					coordinateSpace: "normalized-intrinsic",
+					x: 0.25,
+					y: 0.75,
+					width: 0.2,
+					height: 0.1,
+					naturalWidth: 1_200,
+					naturalHeight: 800,
+				},
+			targetKey: "artifact:map-1:region",
+		}));
+		expect(html).toContain("map region · 25%, 75%");
+	});
 });

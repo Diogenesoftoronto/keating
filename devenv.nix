@@ -30,6 +30,21 @@ let
       runHook postInstall
     '';
   };
+  # Structured task input becomes argv, never shell-interpolated user text.
+  learningCliTask = command: arguments: ''
+    bun -e '
+      const input = JSON.parse(process.env.DEVENV_TASK_INPUT ?? "{}");
+      const required = key => {
+        const value = input[key];
+        if (typeof value !== "string" || !value) throw new Error("Missing task input: " + key);
+        return value;
+      };
+      const args = ["bun", "src/cli/main.ts", ${builtins.toJSON command}];
+      ${arguments}
+      const child = Bun.spawn(args, { stdin: "inherit", stdout: "inherit", stderr: "inherit" });
+      process.exit(await child.exited);
+    '
+  '';
 in
 {
   # Per-project devenv config. See https://devenv.sh
@@ -44,6 +59,57 @@ in
     similarityTs
     typst
   ];
+
+  # `devenv up` is an interactive, all-surface development workspace. The two
+  # terminal clients need real PTYs, so use process-compose rather than the
+  # non-interactive native log viewer.
+  process.manager.implementation = "process-compose";
+  process.managers.process-compose.tui.enable = true;
+
+  processes = {
+    terminal-shell = {
+      exec = "bun src/cli/main.ts shell";
+      process-compose.is_interactive = true;
+    };
+
+    tui = {
+      exec = "bun src/cli/main.ts tui";
+      process-compose.is_interactive = true;
+    };
+
+    web = {
+      exec = "bun run dev";
+      cwd = "./web";
+      ready = {
+        http.get.port = 3000;
+        timeout = 120;
+      };
+    };
+
+    desktop = {
+      exec = "bun run dev";
+      cwd = "./desktop";
+      after = [ "devenv:processes:web" ];
+    };
+
+    mobile-web = {
+      exec = "bun run web";
+      cwd = "./mobile";
+      ready = {
+        http.get.port = 8081;
+        timeout = 120;
+      };
+    };
+
+    storybook = {
+      exec = "bun run storybook";
+      cwd = "./web";
+      ready = {
+        http.get.port = 6006;
+        timeout = 120;
+      };
+    };
+  };
 
   # ---------------------------------------------------------------------------
   # Non-secret build/runtime configuration.
@@ -79,7 +145,7 @@ in
     VITE_NOTORGANIC_AUTHORIZATION_URL = "";
     VITE_NOTORGANIC_CLIENT_ID = "";
     VITE_NOTORGANIC_REDIRECT_URI = "";
-    VITE_NOTORGANIC_SCOPE = "wallet:read usage:read billing:checkout infer:balanced";
+    VITE_NOTORGANIC_SCOPE = "wallet:read usage:read billing:checkout infer:balanced realtime:connect";
 
     # Browser inference reservation ceiling (100000 micro-USD = $0.10).
     VITE_NOTORGANIC_MAX_COST_MICROUSD = "100000";
@@ -138,27 +204,23 @@ in
   };
 
   # ── Version sync ────────────────────────────────────────────────
-  tasks."keating:bumpy" = {
-    description = "Show the pending Bumpy release plan";
+  tasks."keating:version" = {
+    description = "Show the current version and Bun version commands";
     exec = ''
-      bumpy_bin="$DEVENV_ROOT/node_modules/.bin/bumpy"
-      if [ ! -x "$bumpy_bin" ]; then
-        echo "bumpy is not installed. Run: bun install" >&2
-        exit 1
-      fi
-      exec "$bumpy_bin" status
+      bun pm version
     '';
   };
 
   tasks."keating:bump-version" = {
-    description = "Consume pending Bumpy files and synchronize every version surface";
+    description = "Bump with bun pm version and synchronize every version surface";
+    input.version = "";
     exec = ''
-      bumpy_bin="$DEVENV_ROOT/node_modules/.bin/bumpy"
-      if [ ! -x "$bumpy_bin" ]; then
-        echo "bumpy is not installed. Run: bun install" >&2
+      release_version="$(bun -e 'const input = JSON.parse(process.env.DEVENV_TASK_INPUT ?? "{}"); process.stdout.write(typeof input.version === "string" ? input.version : "")')"
+      if [ -z "$release_version" ]; then
+        echo "usage: devenv tasks run keating:bump-version --input version=<patch|minor|major|version>" >&2
         exit 1
       fi
-      "$bumpy_bin" version
+      bun pm version "$release_version" --no-git-tag-version
       bun scripts/sync-version.ts
     '';
   };
@@ -256,6 +318,24 @@ in
     '';
   };
 
+  tasks."keating:test-flue-host" = {
+    description = "Build and test the official Flue host with a local deterministic provider";
+    exec = ''
+      cd spikes/flue-host
+      bun run typecheck
+      bun run build
+      bun run test
+    '';
+  };
+
+  tasks."keating:test-flue-nodepod" = {
+    description = "Test portable runtime execution and the official Flue compatibility boundary in real NodePod";
+    exec = ''
+      cd spikes/flue-host
+      bun run test:nodepod
+    '';
+  };
+
   tasks."keating:test-e2e" = {
     description = "Real Pi RPC + tool-loop smoke test (requires KEATING_E2E=1 and secrets)";
     exec = ''
@@ -282,6 +362,13 @@ in
     description = "Start Metro for the installed native dev client";
     exec = ''
       cd mobile && bun run start
+    '';
+  };
+
+  tasks."keating:mobile-web" = {
+    description = "Start the React Native app in Expo's web runtime (port 8081)";
+    exec = ''
+      cd mobile && bun run web
     '';
   };
 
@@ -345,6 +432,13 @@ in
   };
 
   # ── Desktop ─────────────────────────────────────────────────────
+  tasks."keating:desktop" = {
+    description = "Build and launch the Electron desktop app against the web dev server";
+    exec = ''
+      cd desktop && bun run dev
+    '';
+  };
+
   tasks."keating:desktop-check" = {
     description = "Typecheck + test the Electron desktop host";
     exec = ''
@@ -389,6 +483,13 @@ in
     '';
   };
 
+  tasks."keating:tui" = {
+    description = "Launch the OpenTUI host over Pi RPC";
+    exec = ''
+      bun src/cli/main.ts tui
+    '';
+  };
+
   tasks."keating:doctor" = {
     description = "Run the hyperteacher doctor";
     exec = ''
@@ -397,16 +498,61 @@ in
   };
 
   tasks."keating:bench" = {
-    description = "Run benchmarks with the default topic";
+    description = "Summarize historical learner evidence and measurement limits";
     exec = ''
       bun src/cli/main.ts bench
     '';
   };
 
   tasks."keating:evolve" = {
-    description = "Evolve the teaching policy with the default topic";
+    description = "Save unvalidated policy proposals without activating them";
     exec = ''
       bun src/cli/main.ts evolve
+    '';
+  };
+
+  tasks."keating:teaching-bench" = {
+    description = "Execute training cases without exposing a release holdout";
+    input.cases = "";
+    exec = learningCliTask "teaching-bench" ''
+      if (input.cases) args.push("--cases", required("cases"));
+    '';
+  };
+
+  tasks."keating:auto-improve" = {
+    description = "Propose one skill and gate activation on fresh validation and holdout";
+    input = { cases = ""; force = false; };
+    exec = learningCliTask "auto-improve" ''
+      if (input.cases) args.push("--cases", required("cases"));
+      if (input.force === true || input.force === "true") args.push("--force");
+    '';
+  };
+
+  tasks."keating:learning-check:start" = {
+    description = "Start revision-linked learner assessments";
+    input = { topic = "fractions"; learner = ""; };
+    exec = learningCliTask "learning-check" ''
+      args.push("start", required("topic"));
+      if (input.learner) args.push("--learner", required("learner"));
+    '';
+  };
+
+  tasks."keating:learning-check:show" = {
+    description = "Show currently available assessment prompts and recorded results";
+    input.id = "";
+    exec = learningCliTask "learning-check" ''args.push("show", required("id"));'';
+  };
+
+  tasks."keating:learning-check:list" = {
+    description = "List learner assessments and due follow-ups";
+    exec = learningCliTask "learning-check" ''args.push("list");'';
+  };
+
+  tasks."keating:learning-check:submit" = {
+    description = "Submit fixed assessment answers with explicit assistance status";
+    input = { id = ""; stage = ""; answers = ""; assistance = ""; };
+    exec = learningCliTask "learning-check" ''
+      args.push("submit", required("id"), required("stage"), "--answers", required("answers"), "--assistance", required("assistance"));
     '';
   };
 

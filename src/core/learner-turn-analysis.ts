@@ -1,14 +1,10 @@
+import type { LearnerTurnSignal } from "../../shared/pedagogy/types.js";
 import type { RealLearnerOutcome } from "./types.js";
 import { resolveTopic } from "./topics.js";
 import { clamp } from "./util.js";
 import { feedbackToOutcomeScore } from "./benchmark-real.js";
 
-export interface LearnerTurnSignal {
-  topic: string;
-  signal: "thumbs-up" | "thumbs-down" | "confused";
-  masteryEstimate: number;
-  evidence: string;
-}
+export type { LearnerTurnSignal } from "../../shared/pedagogy/types.js";
 
 const CONFUSION_PATTERNS = [
   /\b(confused|lost|stuck|unclear|not sure|don't understand|dont understand|doesn't make sense|doesnt make sense)\b/i,

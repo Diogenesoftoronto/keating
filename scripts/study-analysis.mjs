@@ -6,13 +6,16 @@ import { createHash } from "node:crypto";
 import { runBenchmarkSuite } from "../src/core/benchmark.ts";
 import { mapElitesEvolve } from "../src/core/map-elites.ts";
 import { DEFAULT_POLICY, DEFAULT_WEIGHTS, clampPolicy } from "../src/core/policy.ts";
+import { TEACHING_CASES, TEACHING_SUITE_VERSION } from "../shared/evolution/cases.ts";
+import { contentDigest, validateTeachingCases } from "../shared/evolution/benchmark.ts";
+import { LEARNING_CHECK_BANK_VERSION, LEARNING_CHECK_STAGES } from "../shared/evolution/learning-checks.ts";
 
 const SCORE_KEYS = ["mastery", "engagement", "clarity"];
 const GENERATED_DIR = join(process.cwd(), "docs", "generated");
 const TRACE_DIR = join(process.cwd(), "test", "traces");
 const SNAPSHOT_PATH = join(process.cwd(), "test", "final_dataset.json");
 const EVALUATED_POLICY_PATH = join(process.cwd(), "docs", "study", "evaluated-policy.json");
-const STUDY_SOFTWARE_VERSION = "3.3.0";
+const FROZEN_POLICY_ORIGIN_VERSION = "3.3.0";
 const BENCHMARK_SEED_COUNT = 200;
 const EVOLUTION_RUN_COUNT = 30;
 const EVOLUTION_ITERATIONS = 24;
@@ -135,6 +138,53 @@ async function sha256TraceCorpus() {
     hash.update("\0");
   }
   return hash.digest("hex");
+}
+
+async function describeCurrentImplementation() {
+  validateTeachingCases(TEACHING_CASES);
+  const sources = [
+    "package.json", "bun.lock", "web/package.json", "web/bun.lock", "SYSTEM.md",
+    "scripts/study-analysis.mjs", "scripts/generate-nodepod-boot-files.ts",
+    "src/core/benchmark.ts", "shared/pedagogy/benchmark-real.ts", "shared/pedagogy/types.ts",
+    "src/core/map-elites.ts", "src/core/policy.ts", "src/core/policy-judgement.ts", "src/core/topics.ts",
+    "src/core/project.ts", "src/core/teaching-evolution.ts", "src/core/teaching-evolution-store.ts",
+    "src/core/teaching-episode-runner.ts", "src/runtime/teaching-episode-child.ts", "src/core/learning-checks.ts",
+    "src/pi/hyper-teacher/index.ts", "web/src/hooks/useKeatingAgent.tsx",
+    "web/src/keating/teaching-evolution.ts", "web/src/keating/teaching-evolution-store.ts",
+    "web/src/keating/teaching-episode-runner.ts", "web/src/keating/browser-tools/prompt.ts",
+    "web/src/keating/browser-tools/improvement.ts", "web/src/keating/storage.ts",
+    ...(await readdir(join(process.cwd(), "shared/evolution"))).filter((name) => name.endsWith(".ts"))
+      .map((name) => `shared/evolution/${name}`),
+  ].sort();
+  const sourceManifest = await Promise.all(sources.map(async (path) => ({ path, sha256: await sha256File(path) })));
+  const splitCounts = Object.fromEntries(["train", "validation", "holdout"].map((split) => {
+    const cases = TEACHING_CASES.filter((item) => item.split === split);
+    return [split, {
+      cases: cases.length, families: new Set(cases.map((item) => item.family)).size,
+      domains: Object.fromEntries(["mathematics", "programming"].map((domain) =>
+        [domain, cases.filter((item) => item.domain === domain).length])),
+      criteria: cases.reduce((total, item) => total + item.rubric.length, 0),
+      criticalCriteria: cases.reduce((total, item) => total + item.rubric.filter((criterion) => criterion.critical).length, 0),
+    }];
+  }));
+  return {
+    softwareVersion: (await loadJson(join(process.cwd(), "package.json"))).version,
+    provenance: "working-tree source manifest; package version alone does not identify this revision",
+    sourceDigest: await contentDigest(sourceManifest), sourceManifest,
+    teachingSuite: {
+      version: TEACHING_SUITE_VERSION, digest: await contentDigest(TEACHING_CASES),
+      caseCount: TEACHING_CASES.length, familyCount: new Set(TEACHING_CASES.map((item) => item.family)).size,
+      splitCounts,
+      plannedTutorEpisodesAtOneRepeat: TEACHING_CASES.reduce((total, item) => total + (item.split === "train" ? 1 : 2), 0),
+    },
+    learningChecks: { bankVersion: LEARNING_CHECK_BANK_VERSION, stages: [...LEARNING_CHECK_STAGES], topics: ["fractions", "loop-bounds"] },
+    evidenceBoundary: {
+      inventoryIsPerformanceEvaluation: false,
+      newLoopLiveProviderResults: "not collected for this paper",
+      humanLearningResults: "not collected for this paper",
+      legacySyntheticResultsEstablishSkillImprovement: false,
+    },
+  };
 }
 
 function normalizeScores(record) {
@@ -552,7 +602,9 @@ function toMarkdownReport(data) {
     "",
     "## Protocol",
     "",
-    `- Keating version: ${data.protocol.softwareVersion}`,
+    `- Executed Keating package version: ${data.protocol.softwareVersion}`,
+    `- Frozen policy origin version: ${data.protocol.frozenPolicyOriginVersion}`,
+    `- Working-tree source digest: \`${data.currentImplementation.sourceDigest}\``,
     `- Evaluated policy: ${data.syntheticBenchmark.policyName} (${data.protocol.evaluatedPolicyPath})`,
     `- Benchmark mode: ${data.protocol.benchmarkMode}`,
     `- Synthetic learners per topic: ${data.protocol.syntheticLearnersPerTopic}`,
@@ -577,7 +629,7 @@ function toMarkdownReport(data) {
     `- Highest-scoring topic: ${data.externalEvaluation.topicSummary[0]?.topic}`,
     `- Lowest-scoring topic: ${data.externalEvaluation.topicSummary[data.externalEvaluation.topicSummary.length - 1]?.topic}`,
     "",
-    "## Synthetic Benchmark",
+    "## Legacy Synthetic Benchmark (not the skill activation gate)",
     "",
     `- Policy under analysis: ${data.syntheticBenchmark.policyName}`,
     `- Full-suite delta versus default across ${data.syntheticBenchmark.seedCount} seeds: ${data.syntheticBenchmark.benchmarkSummary.deltaOverall.mean} (${data.syntheticBenchmark.benchmarkSummary.deltaOverall.p025}, ${data.syntheticBenchmark.benchmarkSummary.deltaOverall.p975})`,
@@ -585,6 +637,17 @@ function toMarkdownReport(data) {
     `- Evolution comparison: ${data.syntheticBenchmark.derivativeEvolutionStability.comparison}`,
     `- Isolated derivative evolution: ${data.syntheticBenchmark.derivativeEvolutionStability.wins} wins, ${evolutionTies} ties, ${evolutionRegressions} regressions across ${data.syntheticBenchmark.derivativeEvolutionStability.runCount} runs`,
     `- Evolution mean delta (observed range): ${data.syntheticBenchmark.derivativeEvolutionStability.deltaSummary.mean} (${data.syntheticBenchmark.derivativeEvolutionStability.deltaSummary.min}, ${data.syntheticBenchmark.derivativeEvolutionStability.deltaSummary.max})`,
+    "",
+    "## Current Teaching Evolution: Implementation Inventory",
+    "",
+    `- Suite: ${data.currentImplementation.teachingSuite.version} (${data.currentImplementation.teachingSuite.digest})`,
+    `- Cases / independent family labels: ${data.currentImplementation.teachingSuite.caseCount} / ${data.currentImplementation.teachingSuite.familyCount}`,
+    ...Object.entries(data.currentImplementation.teachingSuite.splitCounts).map(([split, count]) =>
+      `- ${split}: ${count.cases} cases, ${count.families} families, ${count.domains.mathematics} mathematics and ${count.domains.programming} programming; ${count.criteria} criteria, ${count.criticalCriteria} critical`),
+    `- Planned tutor episodes for a complete one-repeat experiment: ${data.currentImplementation.teachingSuite.plannedTutorEpisodesAtOneRepeat}`,
+    `- Independent assessment bank: ${data.currentImplementation.learningChecks.bankVersion}`,
+    "- Inventory and code checks do not measure tutor performance.",
+    "- No live-provider results for the new loop or human learning results were collected for this paper.",
     ""
   ];
   return lines.join("\n");
@@ -614,11 +677,13 @@ async function main() {
   );
   const externalEvaluation = summarizeExternalEvaluation(latestTraceSelection.retained);
   const syntheticBenchmark = await runSyntheticBenchmarkAnalysis(currentPolicy);
+  const currentImplementation = await describeCurrentImplementation();
 
   const payload = {
     generatedAt: new Date().toISOString(),
     protocol: {
-      softwareVersion: STUDY_SOFTWARE_VERSION,
+      softwareVersion: currentImplementation.softwareVersion,
+      frozenPolicyOriginVersion: FROZEN_POLICY_ORIGIN_VERSION,
       evaluatedPolicyPath: "docs/study/evaluated-policy.json",
       benchmarkMode: "deterministic-synthetic-fallback",
       syntheticLearnersPerTopic: 3,
@@ -633,6 +698,7 @@ async function main() {
         evaluatedPolicySha256
       }
     },
+    currentImplementation,
     dataIntegrity: {
       rawTraceCount: traceRecords.length,
       latestTraceCount: latestTraceSelection.retained.length,
@@ -649,7 +715,7 @@ async function main() {
 
   await mkdir(GENERATED_DIR, { recursive: true });
   await writeFile(join(GENERATED_DIR, "study-analysis.json"), `${JSON.stringify(payload, null, 2)}\n`);
-  await writeFile(join(GENERATED_DIR, "study-analysis.md"), `${toMarkdownReport(payload)}\n`);
+  await writeFile(join(GENERATED_DIR, "study-analysis.md"), `${toMarkdownReport(payload).trimEnd()}\n`);
 }
 
 await main();

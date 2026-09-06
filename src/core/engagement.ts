@@ -1,5 +1,6 @@
 import { readFile, writeFile } from "node:fs/promises";
 
+import { DEFAULT_ENGAGEMENT_POLICY, formatDaysAgo } from "../../shared/pedagogy/engagement.js";
 import {
   EngagementPolicy,
   EngagementTimeline,
@@ -9,13 +10,7 @@ import {
 import { mean } from "./util.js";
 import { titleCase, slugify } from "./util.js";
 
-export const DEFAULT_ENGAGEMENT_POLICY: EngagementPolicy = {
-  name: "spaced-revisit-default",
-  retentionHalfLifeDays: 7,
-  dueThreshold: 0.5,
-  minReviewIntervalDays: 1,
-  urgencyTiers: [21, 14, 7, 3]
-};
+export { DEFAULT_ENGAGEMENT_POLICY } from "../../shared/pedagogy/engagement.js";
 
 const MS_PER_DAY = 86_400_000;
 
@@ -209,16 +204,6 @@ function urgencyEmoji(label: TopicEngagement["urgencyLabel"]): string {
   }
 }
 
-function formatDays(days: number): string {
-  if (days < 1) return "today";
-  if (days < 2) return "1 day ago";
-  if (days < 7) return `${Math.floor(days)} days ago`;
-  if (days < 14) return "1 week ago";
-  if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
-  if (days < 60) return "1 month ago";
-  return `${Math.floor(days / 30)} months ago`;
-}
-
 export function engagementTimelineToMarkdown(timeline: EngagementTimeline): string {
   const lines = [
     "# Engagement Timeline",
@@ -231,7 +216,7 @@ export function engagementTimelineToMarkdown(timeline: EngagementTimeline): stri
     `- **Due for review:** ${timeline.summary.dueCount}`,
     `- **Critical:** ${timeline.summary.criticalCount}`,
     `- **Average retention:** ${(timeline.summary.averageRetention * 100).toFixed(1)}%`,
-    `- **Oldest unreviewed:** ${formatDays(timeline.summary.oldestUnreviewedDays)}`,
+    `- **Oldest unreviewed:** ${formatDaysAgo(timeline.summary.oldestUnreviewedDays)}`,
     ""
   ];
 
@@ -247,7 +232,7 @@ export function engagementTimelineToMarkdown(timeline: EngagementTimeline): stri
 
   for (const topic of timeline.topics) {
     lines.push(
-      `| ${urgencyEmoji(topic.urgencyLabel)} | **${topic.title}** (${topic.domain}) | ${formatDays(topic.daysSinceLastSeen)} | ${retentionBar(topic.estimatedRetention)} ${(topic.estimatedRetention * 100).toFixed(0)}% | ${(topic.masteryEstimate * 100).toFixed(0)}% | ${topic.sessionCount} | ${topic.isDue ? "**NOW**" : new Date(topic.nextReviewAt).toLocaleDateString()} |`
+      `| ${urgencyEmoji(topic.urgencyLabel)} | **${topic.title}** (${topic.domain}) | ${formatDaysAgo(topic.daysSinceLastSeen)} | ${retentionBar(topic.estimatedRetention)} ${(topic.estimatedRetention * 100).toFixed(0)}% | ${(topic.masteryEstimate * 100).toFixed(0)}% | ${topic.sessionCount} | ${topic.isDue ? "**NOW**" : new Date(topic.nextReviewAt).toLocaleDateString()} |`
     );
   }
 
@@ -281,7 +266,7 @@ export function dueTopicsToMarkdown(topics: TopicEngagement[]): string {
   for (const topic of topics) {
     lines.push(`### ${urgencyEmoji(topic.urgencyLabel)} ${topic.title}`);
     lines.push(`- Domain: ${topic.domain}`);
-    lines.push(`- Last seen: ${formatDays(topic.daysSinceLastSeen)}`);
+    lines.push(`- Last seen: ${formatDaysAgo(topic.daysSinceLastSeen)}`);
     lines.push(`- Retention: ${retentionBar(topic.estimatedRetention)} ${(topic.estimatedRetention * 100).toFixed(0)}%`);
     lines.push(`- Mastery at last review: ${(topic.masteryEstimate * 100).toFixed(0)}%`);
     lines.push(`- Sessions: ${topic.sessionCount}`);

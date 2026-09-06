@@ -5,13 +5,16 @@ import {
 } from "../src/lib/notorganic-account/auth";
 import {
   activeDeviceSession,
-  exchangeAuthorizationCode,
   loadAccountSnapshot,
+  refreshDeviceSession,
+  exchangeAuthorizationCode,
+	notOrganicAccountCapabilityHeaders,
   notOrganicAccountRequest,
   setAccountFetchForTests,
 } from "../src/lib/notorganic-account/client";
 import {
   accountCredentialKeysForTests,
+  clearDeviceSession,
   loadDeviceSession,
   loadPendingAuthorization,
   saveDeviceSession,
@@ -20,9 +23,9 @@ import {
 import { setAccountCryptoAdapterForTests } from "../src/lib/notorganic-account/crypto";
 import { createDpopProof, setDeviceKeyAdapterForTests } from "../src/lib/notorganic-account/dpop";
 import {
+  NOTORGANIC_MOBILE_SCOPE,
   NOTORGANIC_MOBILE_CLIENT_ID,
   NOTORGANIC_MOBILE_REDIRECT_URI,
-  NOTORGANIC_MOBILE_SCOPE,
   type NotOrganicAccountConfig,
 } from "../src/lib/notorganic-account/contracts";
 
@@ -56,18 +59,6 @@ afterEach(() => {
 });
 
 describe("Not Organic mobile account", () => {
-  test("requests the account evolution capabilities used for cross-device learning", () => {
-    expect(new Set(NOTORGANIC_MOBILE_SCOPE.split(" "))).toEqual(new Set([
-      "infer:balanced",
-      "sync:key:read",
-      "usage:read",
-      "wallet:read",
-      "evolution:read",
-      "evolution:write",
-      "evolution:execute",
-    ]));
-  });
-
   test("persists PKCE state and builds the exact registered native authorization request", async () => {
     const credentials = memoryCredentials();
     setAccountCredentialStoreForTests(credentials.store);
@@ -124,48 +115,54 @@ describe("Not Organic mobile account", () => {
     const second = await createAuthorizationRequest(config);
     await expect(completeAuthorizationFromUrl(`${NOTORGANIC_MOBILE_REDIRECT_URI}?code=attacker&state=wrong`, config)).rejects.toThrow("did not match");
     expect(second.state).not.toBe("wrong");
-    expect(credentials.values.has(keys.pending)).toBe(false);
+		expect(await loadPendingAuthorization()).toMatchObject({ state: second.state });
+		await completeAuthorizationFromUrl(`${NOTORGANIC_MOBILE_REDIRECT_URI}?code=legitimate&state=${second.state}`, config);
+		expect(credentials.values.has(keys.pending)).toBe(false);
   });
 
-  test("deduplicates concurrent callback completion from the router and browser session", async () => {
-    const credentials = memoryCredentials();
-    setAccountCredentialStoreForTests(credentials.store);
-    setAccountCryptoAdapterForTests({
-      randomBytes: async (length) => new Uint8Array(length).fill(8),
-      sha256Base64: async (value) => Buffer.from(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value))).toString("base64"),
-    });
-    setDeviceKeyAdapterForTests({
-      getOrCreatePublicJwkAsync: async () => publicJwk,
-      signAsync: async () => "native-signature",
-      deleteKeyAsync: async () => {},
-    });
-    let exchangeCalls = 0;
-    let releaseExchange!: (response: Response) => void;
-    const exchangeResponse = new Promise<Response>((resolve) => { releaseExchange = resolve; });
-    setAccountFetchForTests((async () => {
-      exchangeCalls += 1;
-      return exchangeResponse;
-    }) as typeof fetch);
+	test("deduplicates concurrent delivery of the same OAuth callback", async () => {
+		const credentials = memoryCredentials();
+		setAccountCredentialStoreForTests(credentials.store);
+		setAccountCryptoAdapterForTests({
+			randomBytes: async (length) => new Uint8Array(length).fill(6),
+			sha256Base64: async (value) => Buffer.from(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value))).toString("base64"),
+		});
+		setDeviceKeyAdapterForTests({
+			getOrCreatePublicJwkAsync: async () => publicJwk,
+			signAsync: async () => "native-signature",
+			deleteKeyAsync: async () => {},
+		});
+		let exchangeCalls = 0;
+		let signalExchangeStarted!: () => void;
+		const exchangeStarted = new Promise<void>((resolve) => { signalExchangeStarted = resolve; });
+		let releaseExchange!: () => void;
+		const exchangeReleased = new Promise<void>((resolve) => { releaseExchange = resolve; });
+		setAccountFetchForTests((async () => {
+			exchangeCalls += 1;
+			signalExchangeStarted();
+			await exchangeReleased;
+			return Response.json({
+				access_token: "access-concurrent",
+				token_type: "DPoP",
+				expires_in: 300,
+				scope: config.scope,
+				refresh_token: "nou_ds_00000000-0000-4000-8000-000000000000.concurrent",
+				refresh_expires_in: 2_592_000,
+			});
+		}) as unknown as typeof fetch);
 
-    const request = await createAuthorizationRequest(config);
-    const callback = `${NOTORGANIC_MOBILE_REDIRECT_URI}?code=once&state=${request.state}`;
-    const fromRouter = completeAuthorizationFromUrl(callback, config);
-    const fromBrowser = completeAuthorizationFromUrl(callback, config);
-    await Promise.resolve();
-    releaseExchange(Response.json({
-      access_token: "access-concurrent",
-      token_type: "DPoP",
-      expires_in: 300,
-      scope: config.scope,
-      refresh_token: "refresh-concurrent",
-      refresh_expires_in: 2_592_000,
-    }));
-
-    const [routerSession, browserSession] = await Promise.all([fromRouter, fromBrowser]);
-    expect(exchangeCalls).toBe(1);
-    expect(routerSession).toEqual(browserSession);
-    expect(routerSession.accessToken).toBe("access-concurrent");
-  });
+		const request = await createAuthorizationRequest(config);
+		const callback = `${NOTORGANIC_MOBILE_REDIRECT_URI}?code=single-code&state=${request.state}`;
+		const first = completeAuthorizationFromUrl(callback, config);
+		await exchangeStarted;
+		const second = completeAuthorizationFromUrl(callback, config);
+		releaseExchange();
+		const [firstSession, secondSession] = await Promise.all([first, second]);
+		expect(exchangeCalls).toBe(1);
+		expect(secondSession).toEqual(firstSession);
+		expect(await loadPendingAuthorization()).toBeNull();
+		expect(await loadDeviceSession()).toMatchObject({ accessToken: "access-concurrent" });
+	});
 
   test("rotates an expired access capability and signs account requests with DPoP", async () => {
     const credentials = memoryCredentials();
@@ -196,6 +193,66 @@ describe("Not Organic mobile account", () => {
     expect(calls[0]?.dpop).toStartWith("ey");
     expect(calls[1]).toMatchObject({ authorization: "DPoP access-2" });
     expect(calls[1]?.dpop).toStartWith("ey");
+		const capabilityHeaders = await notOrganicAccountCapabilityHeaders("/v1/tavus/conversations", "POST", config);
+		expect(capabilityHeaders.get("authorization")).toBe("DPoP access-2");
+		expect(capabilityHeaders.get("x-notorganic-dpop")).toStartWith("ey");
+		const capabilityPayload = JSON.parse(Buffer.from(capabilityHeaders.get("x-notorganic-dpop")!.split(".")[1]!, "base64url").toString("utf8"));
+		expect(capabilityPayload).toMatchObject({ htm: "POST", htu: "https://gateway.test/v1/tavus/conversations" });
+  });
+
+  test("builds a proof whose payload is bound to the supplied token", async () => {
+    setAccountCryptoAdapterForTests({
+      randomBytes: async (length) => new Uint8Array(length).fill(1),
+      sha256Base64: async (value) => Buffer.from(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value))).toString("base64"),
+    });
+    setDeviceKeyAdapterForTests({
+      getOrCreatePublicJwkAsync: async () => publicJwk,
+      signAsync: async () => "signature",
+      deleteKeyAsync: async () => {},
+    });
+    const proof = await createDpopProof({ url: "https://gateway.test/v1/account", method: "GET", boundToken: "access", now: 1_000, jti: "proof-1" });
+    const payload = JSON.parse(Buffer.from(proof.split(".")[1]!, "base64url").toString("utf8"));
+    expect(payload).toMatchObject({ htm: "GET", htu: "https://gateway.test/v1/account", iat: 1, jti: "proof-1" });
+    expect(payload.ath).toBeTypeOf("string");
+  });
+});
+
+for (const change of ["logout", "new login"] as const) {
+  test(`a delayed refresh cannot overwrite ${change}`, async () => {
+    const credentials = memoryCredentials();
+    setAccountCredentialStoreForTests(credentials.store);
+    setAccountCryptoAdapterForTests({ randomBytes: async (length) => new Uint8Array(length), sha256Base64: async () => "hash" });
+    setDeviceKeyAdapterForTests({ getOrCreatePublicJwkAsync: async () => publicJwk, signAsync: async () => "signature", deleteKeyAsync: async () => undefined });
+    const initial = { accessToken: "expired", accessExpiresAt: 0, refreshToken: "refresh-old", refreshExpiresAt: Date.now() + 60_000, scope: config.scope };
+    await saveDeviceSession(initial);
+    let reply!: (response: Response) => void;
+    let started!: () => void;
+    const sent = new Promise<void>((resolve) => { started = resolve; });
+    setAccountFetchForTests((async () => {
+      started();
+      return new Promise<Response>((resolve) => { reply = resolve; });
+    }) as typeof fetch);
+    const refresh = refreshDeviceSession(config);
+    await sent;
+    if (change === "logout") await clearDeviceSession();
+    else await saveDeviceSession({ ...initial, accessToken: "new-login", refreshToken: "new-login-refresh" });
+    reply(Response.json({ access_token: "stale", token_type: "DPoP", expires_in: 300, refresh_token: "stale-refresh", refresh_expires_in: 600, scope: config.scope }));
+    await expect(refresh).rejects.toThrow("account session changed");
+    expect((await loadDeviceSession())?.accessToken ?? null).toBe(change === "logout" ? null : "new-login");
+  });
+}
+
+  test("requests the account evolution capabilities used for cross-device learning", () => {
+    expect(new Set(NOTORGANIC_MOBILE_SCOPE.split(" "))).toEqual(new Set([
+      "infer:balanced",
+      "realtime:connect",
+      "sync:key:read",
+      "usage:read",
+      "wallet:read",
+      "evolution:read",
+      "evolution:write",
+      "evolution:execute",
+    ]));
   });
 
   test("parses the nested account envelope returned by /v1/account", async () => {
@@ -221,20 +278,3 @@ describe("Not Organic mobile account", () => {
     expect(account).toMatchObject({ did: "did:plc:nested", handle: "nested.test" });
     expect(await loadDeviceSession()).toMatchObject({ accountId: "did:plc:nested" });
   });
-
-  test("builds a proof whose payload is bound to the supplied token", async () => {
-    setAccountCryptoAdapterForTests({
-      randomBytes: async (length) => new Uint8Array(length).fill(1),
-      sha256Base64: async (value) => Buffer.from(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value))).toString("base64"),
-    });
-    setDeviceKeyAdapterForTests({
-      getOrCreatePublicJwkAsync: async () => publicJwk,
-      signAsync: async () => "signature",
-      deleteKeyAsync: async () => {},
-    });
-    const proof = await createDpopProof({ url: "https://gateway.test/v1/account", method: "GET", boundToken: "access", now: 1_000, jti: "proof-1" });
-    const payload = JSON.parse(Buffer.from(proof.split(".")[1]!, "base64url").toString("utf8"));
-    expect(payload).toMatchObject({ htm: "GET", htu: "https://gateway.test/v1/account", iat: 1, jti: "proof-1" });
-    expect(payload.ath).toBeTypeOf("string");
-  });
-});

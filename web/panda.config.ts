@@ -962,6 +962,176 @@ export default defineConfig({
           from: { transform: "translateY(14px) scale(0.97)", opacity: 0 },
           to: { transform: "translateY(0) scale(1)", opacity: 1 }
         },
+        "flashcard-enter-phosphor": {
+          "0%": {
+            opacity: 0.25,
+            transform: "translateY(8px) scale(0.985)",
+            filter: "brightness(1.8) contrast(1.25)",
+            clipPath: "inset(46% 0 46% 0)"
+          },
+          "100%": {
+            opacity: 1,
+            transform: "translateY(0) scale(1)",
+            filter: "brightness(1) contrast(1)",
+            clipPath: "inset(0 0 0 0)"
+          }
+        },
+        "flashcard-enter-solar": {
+          "0%": {
+            opacity: 0,
+            transform: "scale(0.94)",
+            filter: "brightness(1.55) saturate(1.45)"
+          },
+          "100%": {
+            opacity: 1,
+            transform: "scale(1)",
+            filter: "brightness(1) saturate(1)"
+          }
+        },
+        "flashcard-enter-orbit": {
+          "0%": {
+            opacity: 0,
+            transform: "translateY(10px) rotate(-1.5deg) scale(0.97)"
+          },
+          "100%": {
+            opacity: 1,
+            transform: "translateY(0) rotate(0deg) scale(1)"
+          }
+        },
+        "flashcard-enter-prism": {
+          "0%": {
+            opacity: 0.35,
+            transform: "translateX(-8px)",
+            filter: "blur(5px) saturate(1.35)",
+            clipPath: "polygon(0 0, 4% 0, 20% 100%, 0 100%)"
+          },
+          "100%": {
+            opacity: 1,
+            transform: "translateX(0)",
+            filter: "blur(0) saturate(1)",
+            clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)"
+          }
+        },
+        "flashcard-enter-current": {
+          "0%": {
+            opacity: 0,
+            transform: "translateX(-14px) skewX(-2deg)",
+            filter: "blur(4px) brightness(1.4)"
+          },
+          "65%": {
+            opacity: 1,
+            transform: "translateX(2px) skewX(0.5deg)",
+            filter: "blur(0) brightness(1.08)"
+          },
+          "100%": {
+            opacity: 1,
+            transform: "translateX(0) skewX(0deg)",
+            filter: "blur(0) brightness(1)"
+          }
+        },
+        "flashcard-enter-contour": {
+          "0%": {
+            opacity: 0.3,
+            transform: "translateY(6px) scale(0.98)",
+            filter: "contrast(1.8) grayscale(0.7)"
+          },
+          "100%": {
+            opacity: 1,
+            transform: "translateY(0) scale(1)",
+            filter: "contrast(1) grayscale(0)"
+          }
+        },
+        "flashcard-shader-tune": {
+          "0%": { opacity: 0.35, filter: "blur(7px) brightness(1.3)" },
+          "100%": { opacity: 1, filter: "blur(0) brightness(1)" }
+        },
+        "flashcard-impact-ring": {
+          "0%": { opacity: 0, transform: "scale(0.35)" },
+          "32%": { opacity: 0.9, transform: "scale(0.82)" },
+          "100%": { opacity: 0, transform: "scale(1.38)" }
+        },
+        "flashcard-impact-label": {
+          "0%": { opacity: 0, transform: "translateY(8px) scale(0.88)", filter: "blur(4px)" },
+          "30%": { opacity: 1, transform: "translateY(0) scale(1)", filter: "blur(0)" },
+          "78%": { opacity: 1, transform: "translateY(0) scale(1)", filter: "blur(0)" },
+          "100%": { opacity: 0, transform: "translateY(-5px) scale(0.98)", filter: "blur(1px)" }
+        },
+        "flashcard-score-pop": {
+          "0%": { transform: "scale(1)", color: "inherit" },
+          "45%": { transform: "scale(1.18)", color: "var(--accent-dim)" },
+          "100%": { transform: "scale(1)", color: "inherit" }
+        },
+        "flashcard-completion-arrive": {
+          "0%": { opacity: 0, transform: "translateY(12px) scale(0.97)", filter: "blur(6px)" },
+          "100%": { opacity: 1, transform: "translateY(0) scale(1)", filter: "blur(0)" }
+        },
+        "quiz-question-enter": {
+          "0%": { opacity: 0, transform: "translateY(8px)" },
+          "100%": { opacity: 1, transform: "translateY(0)" }
+        },
+        "quiz-question-enter-phosphor": {
+          "0%": {
+            opacity: 0.2,
+            transform: "translateY(5px)",
+            filter: "brightness(1.45) contrast(1.3)",
+            clipPath: "inset(42% 0 42% 0)"
+          },
+          "100%": {
+            opacity: 1,
+            transform: "translateY(0)",
+            filter: "brightness(1) contrast(1)",
+            clipPath: "inset(0 0 0 0)"
+          }
+        },
+        "quiz-question-enter-solar": {
+          "0%": { opacity: 0, transform: "scale(0.975)", filter: "brightness(1.4) saturate(1.35)" },
+          "100%": { opacity: 1, transform: "scale(1)", filter: "brightness(1) saturate(1)" }
+        },
+        "quiz-question-enter-orbit": {
+          "0%": { opacity: 0, transform: "translateX(10px) rotate(0.5deg)" },
+          "100%": { opacity: 1, transform: "translateX(0) rotate(0deg)" }
+        },
+        "quiz-question-enter-prism": {
+          "0%": {
+            opacity: 0.25,
+            transform: "translateX(-6px)",
+            filter: "blur(4px) saturate(1.35)",
+            clipPath: "polygon(0 0, 8% 0, 24% 100%, 0 100%)"
+          },
+          "100%": {
+            opacity: 1,
+            transform: "translateX(0)",
+            filter: "blur(0) saturate(1)",
+            clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)"
+          }
+        },
+        "quiz-question-enter-current": {
+          "0%": { opacity: 0, transform: "translateX(-10px) skewX(-1deg)", filter: "blur(3px) brightness(1.35)" },
+          "70%": { opacity: 1, transform: "translateX(1px) skewX(0.2deg)", filter: "blur(0) brightness(1.05)" },
+          "100%": { opacity: 1, transform: "translateX(0) skewX(0deg)", filter: "blur(0) brightness(1)" }
+        },
+        "quiz-question-enter-contour": {
+          "0%": { opacity: 0.3, transform: "translateY(5px)", filter: "contrast(1.6) grayscale(0.65)" },
+          "100%": { opacity: 1, transform: "translateY(0)", filter: "contrast(1) grayscale(0)" }
+        },
+        "quiz-answer-lock": {
+          "0%": { transform: "scale(0.985)", filter: "brightness(1.25)" },
+          "100%": { transform: "scale(1)", filter: "brightness(1)" }
+        },
+        "quiz-result-arrive": {
+          "0%": { opacity: 0, transform: "translateY(8px)", filter: "blur(4px)" },
+          "100%": { opacity: 1, transform: "translateY(0)", filter: "blur(0)" }
+        },
+        "quiz-timer-critical": {
+          "0%, 100%": {
+            transform: "scale(1)",
+            filter: "brightness(1)"
+          },
+          "50%": {
+            transform: "scale(1.035)",
+            filter: "brightness(1.24)"
+          }
+        },
         "flashcard-streak-pop": {
           "0%": { transform: "scale(1)" },
           "40%": { transform: "scale(1.35)" },
@@ -1743,6 +1913,69 @@ export default defineConfig({
     },
     ".flashcard-enter": {
       animation: "flashcard-enter 200ms ease-out"
+    },
+    ".flashcard-enter-phosphor": {
+      animation: "flashcard-enter-phosphor 230ms cubic-bezier(0.22, 1, 0.36, 1)"
+    },
+    ".flashcard-enter-solar": {
+      animation: "flashcard-enter-solar 240ms cubic-bezier(0.16, 1, 0.3, 1)"
+    },
+    ".flashcard-enter-orbit": {
+      animation: "flashcard-enter-orbit 250ms cubic-bezier(0.22, 1, 0.36, 1)"
+    },
+    ".flashcard-enter-prism": {
+      animation: "flashcard-enter-prism 220ms cubic-bezier(0.25, 1, 0.5, 1)"
+    },
+    ".flashcard-enter-current": {
+      animation: "flashcard-enter-current 210ms cubic-bezier(0.16, 1, 0.3, 1)"
+    },
+    ".flashcard-enter-contour": {
+      animation: "flashcard-enter-contour 250ms cubic-bezier(0.22, 1, 0.36, 1)"
+    },
+    ".flashcard-shader-field": {
+      animation: "flashcard-shader-tune 260ms cubic-bezier(0.22, 1, 0.36, 1)"
+    },
+    ".flashcard-grade-impact::before": {
+      animation: "flashcard-impact-ring 320ms cubic-bezier(0.16, 1, 0.3, 1) forwards"
+    },
+    ".flashcard-grade-impact-label": {
+      animation: "flashcard-impact-label 330ms cubic-bezier(0.22, 1, 0.36, 1) forwards"
+    },
+    ".flashcard-score-pop": {
+      animation: "flashcard-score-pop 260ms cubic-bezier(0.22, 1, 0.36, 1)"
+    },
+    ".flashcard-completion-arrive": {
+      animation: "flashcard-completion-arrive 360ms cubic-bezier(0.16, 1, 0.3, 1)"
+    },
+    ".quiz-question-enter": {
+      animation: "quiz-question-enter 190ms cubic-bezier(0.22, 1, 0.36, 1)"
+    },
+    ".quiz-question-enter-phosphor": {
+      animation: "quiz-question-enter-phosphor 220ms cubic-bezier(0.22, 1, 0.36, 1)"
+    },
+    ".quiz-question-enter-solar": {
+      animation: "quiz-question-enter-solar 230ms cubic-bezier(0.16, 1, 0.3, 1)"
+    },
+    ".quiz-question-enter-orbit": {
+      animation: "quiz-question-enter-orbit 240ms cubic-bezier(0.22, 1, 0.36, 1)"
+    },
+    ".quiz-question-enter-prism": {
+      animation: "quiz-question-enter-prism 210ms cubic-bezier(0.25, 1, 0.5, 1)"
+    },
+    ".quiz-question-enter-current": {
+      animation: "quiz-question-enter-current 200ms cubic-bezier(0.16, 1, 0.3, 1)"
+    },
+    ".quiz-question-enter-contour": {
+      animation: "quiz-question-enter-contour 235ms cubic-bezier(0.22, 1, 0.36, 1)"
+    },
+    ".quiz-answer-lock": {
+      animation: "quiz-answer-lock 220ms cubic-bezier(0.22, 1, 0.36, 1)"
+    },
+    ".quiz-result-arrive": {
+      animation: "quiz-result-arrive 280ms cubic-bezier(0.16, 1, 0.3, 1)"
+    },
+    ".quiz-timer-critical": {
+      animation: "quiz-timer-critical 900ms ease-in-out infinite"
     },
     ".flashcard-streak-pop": {
       animation: "flashcard-streak-pop 320ms ease-out"
@@ -4593,6 +4826,16 @@ export default defineConfig({
       ".flashcard-exit-left,\n  .flashcard-exit-right,\n  .flashcard-exit-up,\n  .flashcard-exit-down,\n  .flashcard-exit-fade,\n  .flashcard-enter,\n  .flashcard-streak-pop,\n  .flashcard-milestone-pulse": {
         animationDuration: "1ms",
         animationIterationCount: "1"
+      },
+      ".flashcard-enter-phosphor,\n  .flashcard-enter-solar,\n  .flashcard-enter-orbit,\n  .flashcard-enter-prism,\n  .flashcard-enter-current,\n  .flashcard-enter-contour,\n  .flashcard-shader-field,\n  .flashcard-grade-impact::before,\n  .flashcard-grade-impact-label,\n  .flashcard-score-pop,\n  .flashcard-completion-arrive": {
+        animationDuration: "1ms",
+        animationIterationCount: "1",
+        filter: "none"
+      },
+      ".quiz-question-enter,\n  .quiz-question-enter-phosphor,\n  .quiz-question-enter-solar,\n  .quiz-question-enter-orbit,\n  .quiz-question-enter-prism,\n  .quiz-question-enter-current,\n  .quiz-question-enter-contour,\n  .quiz-answer-lock,\n  .quiz-result-arrive,\n  .quiz-timer-critical": {
+        animationDuration: "1ms",
+        animationIterationCount: "1",
+        filter: "none"
       },
       ".retro-layout .hero h1 .cursor,\n  .retro-layout .t-caret,\n  .retro-layout .nav-status .dot": {
         animation: "none !important"

@@ -1,5 +1,6 @@
 import {
   UI_CONTRACT_VERSION,
+  MIN_EXAM_QUESTIONS,
   validateUiDocument,
   type UiDeckCard,
   type UiDocument,
@@ -11,8 +12,17 @@ import {
   type UiQuestionType,
   type UiStudyPlanItem,
   type UiStudyPlanLink,
+  type UiTaskItem,
+  type UiTaskKind,
+  type UiTaskNode,
+  type UiSimulationParameter,
+  type UiSimulationReadout,
+  type UiTaskSubmission,
+  type UiCodingChallengeNode,
+  type UiLanguageRound,
 } from "./ui.js";
 import { WEB_OPENUI_COMPONENTS } from "./rendering.js";
+import { isValidSimulationExpression } from "./simulation-expression.js";
 
 export interface CompileSharedOpenUIOptions {
   documentId: string;
@@ -29,8 +39,9 @@ export type OpenUISourceCompileResult =
   | { ok: false; kind: OpenUISourceFailureKind; message: string; source: string };
 
 export const SHARED_OPENUI_COMPONENT_MAPPERS = [
-  "LearningSurface", "Explanation", "Callout", "Question", "Quiz", "Flashcards",
+  "LearningSurface", "Explanation", "Callout", "Question", "Quiz", "Exam", "Flashcards",
   "StudyPlan", "ConceptMap", "LearningImage", "SharedNotes",
+  "Assignment", "Practice", "Draft", "Fieldwork", "Simulation", "CodingChallenge", "MusicLab", "LanguagePractice",
 ] as const satisfies typeof WEB_OPENUI_COMPONENTS;
 
 // Persisted sessions may still contain the retired streamed animation component.
@@ -258,13 +269,22 @@ const POSITIONAL_FIELDS: Readonly<Record<string, readonly string[]>> = {
   Explanation: ["markdown", "title"],
   Callout: ["markdown", "tone", "title"],
   Question: ["questions", "lifecycle", "topic", "intro"],
-  Quiz: ["id", "topic", "questions", "lifecycle"],
+  Quiz: ["id", "topic", "questions", "lifecycle", "timeLimit"],
+  Exam: ["id", "topic", "questions", "lifecycle", "examTimeLimit"],
+  LanguagePractice: ["id", "title", "language", "rounds", "lifecycle"],
   Flashcards: ["id", "topic", "title", "cards", "lifecycle", "description"],
   StudyPlan: ["id", "title", "items", "lifecycle", "overview", "relatedPlans"],
   ConceptMap: ["code", "lifecycle", "title"],
   LearningImage: ["src", "alt", "lifecycle", "title", "caption"],
   LearningAnimation: ["topic", "html", "lifecycle", "summary"],
   SharedNotes: ["id", "title", "lifecycle", "initialValue", "placeholder"],
+  Assignment: ["id", "title", "brief", "criteria", "lifecycle", "estimatedMinutes", "steps", "dueAt", "availableFrom"],
+  Practice: ["id", "title", "brief", "exercises", "lifecycle", "estimatedMinutes", "dueAt", "availableFrom"],
+  Draft: ["id", "title", "prompt", "rubric", "lifecycle", "targetWords", "round", "dueAt", "availableFrom"],
+  Fieldwork: ["id", "title", "objective", "protocol", "lifecycle", "estimatedMinutes", "dueAt", "availableFrom"],
+  Simulation: ["id", "title", "parameters", "readouts", "lifecycle", "brief"],
+  CodingChallenge: ["id", "title", "prompt", "language", "starterCode", "entrypoint", "tests", "lifecycle", "hint"],
+  MusicLab: ["id", "title", "code", "lifecycle", "brief", "controls", "visualization"],
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -332,6 +352,103 @@ function textArray(value: unknown): string[] | undefined { return Array.isArray(
 function numberValue(value: unknown): number | undefined { return typeof value === "number" && Number.isFinite(value) ? value : undefined; }
 function booleanValue(value: unknown): boolean | undefined { return typeof value === "boolean" ? value : undefined; }
 function retentionValue(value: unknown): UiDocumentRetention | undefined { return value === "ephemeral" || value === "resumable" || value === "workspace" ? value : undefined; }
+
+function numberOr(value: unknown, fallback: number): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function simulationParameter(entry: unknown, index: number, parentId: string): UiSimulationParameter {
+  const parameter = record(entry);
+  const fallback = childId(parentId, "parameter", index);
+  const min = numberOr(parameter.min, 0);
+  const max = numberOr(parameter.max, min + 1);
+  const span = max > min ? max : min + 1;
+  const step = positiveNumber(parameter.step);
+  return {
+    id: contractId(text(parameter.id, fallback), fallback),
+    label: text(parameter.label, `Parameter ${index + 1}`),
+    ...(optionalText(parameter.unit) ? { unit: text(parameter.unit) } : {}),
+    min,
+    max: span,
+    ...(step !== undefined && step > 0 ? { step } : {}),
+    value: Math.min(Math.max(numberOr(parameter.value, min), min), span),
+  };
+}
+
+function simulationReadout(entry: unknown, index: number, parentId: string): UiSimulationReadout {
+  const readout = record(entry);
+  const fallback = childId(parentId, "readout", index);
+  const precision = positiveNumber(readout.precision);
+  return {
+    id: contractId(text(readout.id, fallback), fallback),
+    label: text(readout.label, `Readout ${index + 1}`),
+    ...(optionalText(readout.unit) ? { unit: text(readout.unit) } : {}),
+    expr: text(readout.expr),
+    ...(precision !== undefined && Number.isInteger(precision) && precision <= 6 ? { precision } : {}),
+    ...(readout.emphasis === true ? { emphasis: true } : {}),
+  };
+}
+
+/** Only a well-formed instant is carried through; anything else is dropped. */
+function isoTimestamp(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const at = new Date(value);
+  return Number.isNaN(at.getTime()) ? undefined : at.toISOString();
+}
+
+function positiveNumber(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : undefined;
+}
+
+/**
+ * The four away-from-the-chat components share one contract node; they differ
+ * in framing, in what the item list means, and in what is handed back.
+ */
+function taskNode(
+  kind: UiTaskKind,
+  id: string,
+  props: Record<string, unknown>,
+  brief: unknown,
+  criteria: unknown,
+  items: unknown,
+  submission: UiTaskSubmission,
+): UiTaskNode {
+  const nodeId = contractId(text(props.id, id), id);
+  const criteriaList = textArray(criteria);
+  const round = positiveNumber(props.round);
+  const estimatedMinutes = positiveNumber(props.estimatedMinutes);
+  return {
+    type: "task",
+    kind,
+    id: nodeId,
+    title: text(props.title, defaultTaskTitle(kind)),
+    brief: text(brief),
+    ...(criteriaList?.length ? { criteria: criteriaList } : {}),
+    ...(Array.isArray(items) ? { items: items.map((entry, itemIndex) => taskItem(entry, itemIndex, nodeId)) } : {}),
+    ...(estimatedMinutes !== undefined ? { estimatedMinutes } : {}),
+    ...(isoTimestamp(props.dueAt) ? { dueAt: isoTimestamp(props.dueAt)! } : {}),
+    ...(isoTimestamp(props.availableFrom) ? { availableFrom: isoTimestamp(props.availableFrom)! } : {}),
+    ...(round !== undefined ? { round } : {}),
+    submission,
+  };
+}
+
+function defaultTaskTitle(kind: UiTaskKind): string {
+  if (kind === "practice") return "Practice set";
+  if (kind === "draft") return "Draft";
+  if (kind === "fieldwork") return "Fieldwork";
+  return "Assignment";
+}
+
+function taskItem(entry: unknown, index: number, parentId: string): UiTaskItem {
+  const item = record(entry);
+  const fallback = childId(parentId, "item", index);
+  return {
+    id: contractId(text(item.id, fallback), fallback),
+    title: text(item.title, `Step ${index + 1}`),
+    ...(optionalText(item.detail) ? { detail: text(item.detail) } : {}),
+  };
+}
 
 function contractId(value: string, fallback: string): string {
   const normalized = value.normalize("NFKD").replace(/[^a-zA-Z0-9._:-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 128);
@@ -442,7 +559,14 @@ function mapElement(element: SourceElement, index: number): UiDocumentNode[] {
     }
     case "Callout": return [{ type: "callout", id, markdown: text(props.markdown), tone: text(props.tone, "info") as "info" | "hint" | "check" | "warning", ...(optionalText(props.title) ? { title: text(props.title) } : {}) }];
     case "Question": return [{ type: "question-group", id, ...(optionalText(props.topic) !== undefined ? { topic: text(props.topic) } : {}), ...(optionalText(props.intro) !== undefined ? { intro: text(props.intro) } : {}), questions: Array.isArray(props.questions) ? props.questions.map((entry, questionIndex) => question(id, entry, questionIndex)) : [] }];
-    case "Quiz": return [{ type: "quiz", id: contractId(text(props.id, id), id), title: text(props.topic, "Quiz"), questions: Array.isArray(props.questions) ? props.questions.map((entry, questionIndex) => question(id, entry, questionIndex, true)) : [] }];
+    case "Quiz": return [{ type: "quiz", id: contractId(text(props.id, id), id), title: text(props.topic, "Quiz"), ...(positiveNumber(props.timeLimit) !== undefined ? { timeLimit: positiveNumber(props.timeLimit)! } : {}), questions: Array.isArray(props.questions) ? props.questions.map((entry, questionIndex) => question(id, entry, questionIndex, true)) : [] }];
+    case "LanguagePractice": return [{ type: "language-practice", id: contractId(text(props.id, id), id), title: text(props.title, "Language practice"), language: text(props.language), rounds: props.rounds as UiLanguageRound[] }];
+    case "Exam": {
+      if (!Array.isArray(props.questions) || props.questions.length < MIN_EXAM_QUESTIONS) {
+        throw new OpenUISourceError("invalid", `Exam requires at least ${MIN_EXAM_QUESTIONS} questions.`);
+      }
+      return [{ type: "quiz", mode: "exam", id: contractId(text(props.id, id), id), title: text(props.topic, "Exam"), examTimeLimit: props.examTimeLimit === undefined ? 1800 : props.examTimeLimit as number, questions: props.questions.map((entry, questionIndex) => question(id, entry, questionIndex, true)) }];
+    }
     case "Flashcards": return [{
       type: "deck", id: contractId(text(props.id, id), id), title: text(props.title, "Flashcards"), topic: text(props.topic, "Study"),
       ...(optionalText(props.description) !== undefined ? { description: text(props.description) } : {}),
@@ -466,6 +590,49 @@ function mapElement(element: SourceElement, index: number): UiDocumentNode[] {
       reason: text(props.summary, `Open the ${text(props.topic, "learning")} animation in Keating web`),
       context: "This persisted interaction contains executable HTML. The portable learner contract records a trusted-surface handoff without embedding or executing that HTML.",
     }];
+    case "Simulation": {
+      const simulationId = contractId(text(props.id, id), id);
+      const parameters = Array.isArray(props.parameters) ? props.parameters.map((entry, parameterIndex) => simulationParameter(entry, parameterIndex, simulationId)) : [];
+      const parameterIds = parameters.map((parameter) => parameter.id);
+      return [{
+        type: "simulation",
+        id: simulationId,
+        title: text(props.title, "Simulation"),
+        ...(optionalText(props.brief) ? { brief: text(props.brief) } : {}),
+        parameters,
+        // A readout whose expression does not parse against the declared
+        // parameters is dropped here rather than failing the whole document:
+        // the rest of the lesson is still worth showing.
+        readouts: Array.isArray(props.readouts)
+          ? props.readouts.flatMap((entry, readoutIndex) => {
+            const readout = simulationReadout(entry, readoutIndex, simulationId);
+            return isValidSimulationExpression(readout.expr, parameterIds) ? [readout] : [];
+          })
+          : [],
+      }];
+    }
+    case "CodingChallenge": return [{
+      type: "coding-challenge", id: contractId(text(props.id, id), id), title: text(props.title, "Coding challenge"),
+      prompt: text(props.prompt), language: text(props.language) as UiCodingChallengeNode["language"],
+      starterCode: text(props.starterCode), entrypoint: text(props.entrypoint),
+      tests: (Array.isArray(props.tests) ? props.tests : []) as UiCodingChallengeNode["tests"],
+      ...(optionalText(props.hint) ? { hint: text(props.hint) } : {}),
+    }];
+    case "MusicLab": return [{
+      type: "music-lab", id: contractId(text(props.id, id), id), title: text(props.title, "Music lab"), code: text(props.code),
+      ...(optionalText(props.brief) ? { brief: text(props.brief) } : {}),
+      ...(props.controls !== undefined ? { controls: props.controls as UiSimulationParameter[] } : {}),
+      ...(props.visualization !== undefined ? { visualization: props.visualization as "pianoroll" | "scope" } : {}),
+    }];
+    case "Assignment": return [taskNode("assignment", id, props, props.brief, props.criteria, props.steps, { format: "text", label: "Your submission", placeholder: "Paste or describe the work you produced." })];
+    case "Practice": return [taskNode("practice", id, props, props.brief, undefined, props.exercises, { format: "text", label: "What happened while you practised?", placeholder: "Where did you get stuck, and what did you notice?" })];
+    case "Draft": return [taskNode("draft", id, props, props.prompt, props.rubric, undefined, {
+      format: "text",
+      label: "Your draft",
+      placeholder: "Write your draft here.",
+      ...(positiveNumber(props.targetWords) !== undefined ? { targetWords: positiveNumber(props.targetWords)! } : {}),
+    })];
+    case "Fieldwork": return [taskNode("fieldwork", id, props, props.objective, undefined, props.protocol, { format: "text", label: "Your findings", placeholder: "Record what you observed, and anything that surprised you." })];
     case "SharedNotes": return [{ type: "notes", id: contractId(text(props.id, id), id), title: text(props.title, "Learner notes"), value: text(props.initialValue), ...(optionalText(props.placeholder) ? { placeholder: text(props.placeholder) } : {}) }];
     default: throw new OpenUISourceError("unsupported", `OpenUI component ${element.typeName} has no shared semantic mapping.`);
   }

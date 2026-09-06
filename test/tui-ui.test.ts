@@ -69,7 +69,8 @@ describe("shared terminal UI document adapter and presentation", () => {
     const nodeHeadings = OPENUI_JSON_PARITY_FIXTURE.nodes.map((node) => uiNodePresentation(node).heading);
     expect(nodeHeadings).toEqual([
       "Explanation", "WARNING: Check the claim", "Question", "Question", "Question",
-      "Grouped retrieval", "Quiz: Retrieval check", "Goal: Explain Bayesian updating", "Deck: Bayes cards", "Bayes plan",
+      "Grouped retrieval", "Quiz: Retrieval check", "Language practice: A little Spanish",
+      "Goal: Explain Bayesian updating", "Deck: Bayes cards", "Bayes plan",
       "Artifact", "Bayes map", "Notes: Learner notes", "Image: Update diagram",
       "Audio: Bayes narration", "Video: Bayes video", "Animation: Bayes animation", "Continue on web",
     ]);

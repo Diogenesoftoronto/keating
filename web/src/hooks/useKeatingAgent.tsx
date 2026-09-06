@@ -70,6 +70,7 @@ import {
   type KeatingToolsOptions,
 } from "../keating/browser-tools";
 import { toolExecutionSucceeded } from "../keating/tool-result";
+import { runBrowserTeachingExperiment } from "../keating/teaching-evolution";
 import {
   loadAgentRuntimeConfig,
   shouldAutoBootNodePod,
@@ -122,6 +123,7 @@ import {
   type WebSpeechSettings,
 } from "../keating/speech";
 import { buildLiveHistory } from "../keating/live-history";
+import { buildLiveSessionContext } from "../keating/live-context";
 import {
   savePersistentStorageStatus,
   useKeatingAgentStore,
@@ -141,6 +143,7 @@ import {
   storageBackendKind,
   updateSessionTitle,
 } from "./keating-storage";
+import { runSessionSwitch, SessionSaveQueue, SessionSnapshotTracker, SessionSwitchRequests } from "./session-switch";
 import { hasAutoTitleContext } from "./session-auto-title";
 import {
   cloneMessages,
@@ -452,6 +455,10 @@ export function useKeatingAgent(
       : undefined;
   const title = "Keating";
   const agentRef = useRef<Agent | null>(null);
+  const sessionSwitchRequestsRef = useRef(new SessionSwitchRequests());
+  const sessionSaveQueueRef = useRef(new SessionSaveQueue());
+  const sessionSnapshotsRef = useRef(new SessionSnapshotTracker());
+  const learnerBookkeepingRef = useRef(Promise.resolve());
   const panelRef = useRef<ChatPanelHandle | null>(null);
   const sessionIdRef = useRef<string>(createSessionId());
   const toolExecutorRef = useRef(new AuthorizedToolExecutor());
@@ -460,6 +467,8 @@ export function useKeatingAgent(
   const sessionParentIdRef = useRef<string | null>(null);
   const sessionForkedAtRef = useRef<string | undefined>(undefined);
   const selectedModelRef = useRef<Model<Api>>(DEFAULT_MODEL);
+  const courseContextRef = useRef(courseContext);
+  courseContextRef.current = courseContext;
   // The ref is what the agent reads; this mirrors it for anything that has to
   // re-render when the model changes, such as the chat header's model button.
   const [modelLabel, setModelLabel] = useState<string>(
@@ -603,31 +612,16 @@ export function useKeatingAgent(
   }, []);
 
   const restorePendingResponseComparison = useCallback(
-    async (sourceSessionId: string) => {
+    async (source: SessionData, isCurrent: () => boolean) => {
       const metadata = (await sessions.getAllMetadata()) as SessionMetadata[];
+      if (!isCurrent()) return;
       const pending = metadata
-        .filter(
-          (entry) =>
-            entry.parentSessionId === sourceSessionId &&
-            entry.generatedAlternative &&
-            !entry.responsePreference,
-        )
-        .sort((left, right) =>
-          right.lastModified.localeCompare(left.lastModified),
-        )[0];
-      if (!pending) {
-        setResponseComparison(null);
-        return;
-      }
-      const [source, alternative] = await Promise.all([
-        sessions.loadSession(sourceSessionId) as Promise<SessionData | null>,
-        sessions.loadSession(pending.id) as Promise<SessionData | null>,
-      ]);
-      setResponseComparison(
-        source && alternative
-          ? buildPendingResponseComparison(source, alternative)
-          : null,
-      );
+        .filter((entry) => entry.parentSessionId === source.id && entry.generatedAlternative && !entry.responsePreference)
+        .sort((left, right) => right.lastModified.localeCompare(left.lastModified))[0];
+      if (!pending) return;
+      const alternative = await sessions.loadSession(pending.id) as SessionData | null;
+      if (!isCurrent()) return;
+      setResponseComparison(alternative ? buildPendingResponseComparison(source, alternative) : null);
     },
     [],
   );
@@ -996,6 +990,17 @@ export function useKeatingAgent(
           ));
         }
       },
+      runTeachingExperiment: async (options: { force?: boolean; signal?: AbortSignal }) => {
+        const model = agentRef.current?.state.model;
+        if (!model) throw new Error("Select a model before running a teaching experiment.");
+        return runBrowserTeachingExperiment({
+          model,
+          streamFn: hybridStreamFn,
+          getApiKey: getProviderApiKey,
+          convertToLlm: defaultConvertToLlm,
+          thinkingLevel: agentRef.current?.state.thinkingLevel,
+        }, { ...options, basePrompt: composeKeatingSystemPrompt(loadPersona()) });
+      },
       getSessionSamples: async () => {
         const metadata = await sessions.getAllMetadata();
         const loaded = await Promise.all(
@@ -1040,138 +1045,152 @@ export function useKeatingAgent(
       createdAt = sessionCreatedAtRef.current,
     ) => {
       if (!agent || agent.state.messages.length === 0) return;
+      const ancestry = sessionId === sessionIdRef.current
+        ? { parentSessionId: sessionParentIdRef.current, forkedAt: sessionForkedAtRef.current }
+        : undefined;
+      return sessionSaveQueueRef.current.run(sessionId, async () => {
+        const stamp = sessionSnapshotsRef.current.capture(agent, agent.state);
+        if (sessionSnapshotsRef.current.isSaved(agent, stamp)) return;
+        const model = agent.state.model;
+        const thinkingLevel = agent.state.thinkingLevel;
+        const now = new Date().toISOString();
+        const snapshot = messagesForSessionSnapshot(
+          agent.state.messages,
+          agent.state.streamingMessage,
+        );
+        const messages = snapshot.messages;
+        const fallbackTitle = sessionTitle(messages);
+        const existing = (await sessions.loadSession(
+          sessionId,
+        )) as SessionData | null;
+        const existingFallbackTitle = existing
+          ? sessionTitle(existing.messages)
+          : "";
+        const hasManualTitle = Boolean(
+          existing &&
+          existing.aiGeneratedTitle !== true &&
+          existing.title.trim() &&
+          existing.title.trim() !== existingFallbackTitle.trim(),
+        );
+        const title =
+          existing && (hasManualTitle || existing.aiGeneratedTitle)
+            ? existing.title
+            : fallbackTitle;
+        const aiGeneratedTitle = existing?.aiGeneratedTitle ?? false;
+        const metadata: SessionMetadata = {
+          id: sessionId,
+          title,
+          parentSessionId: ancestry ? ancestry.parentSessionId : existing?.parentSessionId ?? null,
+          forkedAt: ancestry ? ancestry.forkedAt : existing?.forkedAt,
+          forkedFromMessageTimestamp: existing?.forkedFromMessageTimestamp,
+          createdAt,
+          lastModified: now,
+          messageCount: messages.length,
+          usage: sessionUsage(messages),
+          thinkingLevel,
+          ...sessionModelMetadata(model),
+          preview: sessionPreview(messages),
+          searchText: sessionSearchText(messages),
+          aiGeneratedTitle,
+          generatedAlternative: existing?.generatedAlternative,
+          hiddenAlternative: existing?.hiddenAlternative,
+          alternativeForMessageTimestamp:
+            existing?.alternativeForMessageTimestamp,
+          responsePreference: existing?.responsePreference,
+        };
+        const data: SessionData = {
+          id: sessionId,
+          title,
+          parentSessionId: ancestry ? ancestry.parentSessionId : existing?.parentSessionId ?? null,
+          forkedAt: ancestry ? ancestry.forkedAt : existing?.forkedAt,
+          forkedFromMessageTimestamp: existing?.forkedFromMessageTimestamp,
+          model,
+          thinkingLevel,
+          messages,
+          createdAt,
+          lastModified: now,
+          aiGeneratedTitle,
+          generatedAlternative: existing?.generatedAlternative,
+          hiddenAlternative: existing?.hiddenAlternative,
+          alternativeForMessageTimestamp:
+            existing?.alternativeForMessageTimestamp,
+          responsePreference: existing?.responsePreference,
+        };
 
-      const now = new Date().toISOString();
-      const snapshot = messagesForSessionSnapshot(
-        agent.state.messages,
-        agent.state.streamingMessage,
-      );
-      const messages = snapshot.messages;
-      const fallbackTitle = sessionTitle(messages);
-      const existing = (await sessions.loadSession(
-        sessionId,
-      )) as SessionData | null;
-      const existingFallbackTitle = existing
-        ? sessionTitle(existing.messages)
-        : "";
-      const hasManualTitle = Boolean(
-        existing &&
-        existing.aiGeneratedTitle !== true &&
-        existing.title.trim() &&
-        existing.title.trim() !== existingFallbackTitle.trim(),
-      );
-      const title =
-        existing && (hasManualTitle || existing.aiGeneratedTitle)
-          ? existing.title
-          : fallbackTitle;
-      const aiGeneratedTitle = existing?.aiGeneratedTitle ?? false;
-      const metadata: SessionMetadata = {
-        id: sessionId,
-        title,
-        parentSessionId: sessionParentIdRef.current,
-        forkedAt: sessionForkedAtRef.current,
-		forkedFromMessageTimestamp: existing?.forkedFromMessageTimestamp,
-        createdAt,
-        lastModified: now,
-        messageCount: messages.length,
-        usage: sessionUsage(messages),
-        thinkingLevel: agent.state.thinkingLevel,
-        ...sessionModelMetadata(agent.state.model),
-        preview: sessionPreview(messages),
-        searchText: sessionSearchText(messages),
-        aiGeneratedTitle,
-        generatedAlternative: existing?.generatedAlternative,
-        hiddenAlternative: existing?.hiddenAlternative,
-        alternativeForMessageTimestamp:
-          existing?.alternativeForMessageTimestamp,
-        responsePreference: existing?.responsePreference,
-      };
-      const data: SessionData = {
-        id: sessionId,
-        title,
-        parentSessionId: sessionParentIdRef.current,
-        forkedAt: sessionForkedAtRef.current,
-		forkedFromMessageTimestamp: existing?.forkedFromMessageTimestamp,
-        model: agent.state.model,
-        thinkingLevel: agent.state.thinkingLevel,
-        messages,
-        createdAt,
-        lastModified: now,
-        aiGeneratedTitle,
-        generatedAlternative: existing?.generatedAlternative,
-        hiddenAlternative: existing?.hiddenAlternative,
-        alternativeForMessageTimestamp:
-          existing?.alternativeForMessageTimestamp,
-        responsePreference: existing?.responsePreference,
-      };
+        await sessions.save(data, metadata);
+        sessionSnapshotsRef.current.remember(agent, stamp);
+        window.dispatchEvent(new CustomEvent("keating:sessions-changed"));
 
-      await sessions.save(data, metadata);
-      window.dispatchEvent(new CustomEvent("keating:sessions-changed"));
+        // Live snapshots exist only so a suspended or killed tab can recover the
+        // visible response. Derive learner signals and titles from settled turns.
+        if (snapshot.interrupted) return;
 
-      // Live snapshots exist only so a suspended or killed tab can recover the
-      // visible response. Derive learner signals and titles from settled turns.
-      if (snapshot.interrupted) return;
+        const bookkeeping = async () => {
+          await keatingStorage.recordLearnerTurnFeedback(
+            messages as Array<{ role?: unknown; content?: unknown }>,
+          );
 
-      await keatingStorage.recordLearnerTurnFeedback(
-        messages as Array<{ role?: unknown; content?: unknown }>,
-      );
+          void detectTopicCategoryShift(
+            model as Model<Api>,
+            sessionId,
+            messages as Array<{ role?: unknown; content?: unknown }>,
+          ).catch((error) => {
+            console.warn("Topic-shift detection failed:", error);
+          });
 
-      void detectTopicCategoryShift(
-        agent.state.model as Model<Api>,
-        sessionId,
-        messages as Array<{ role?: unknown; content?: unknown }>,
-      ).catch((error) => {
-        console.warn("Topic-shift detection failed:", error);
-      });
-
-      if (
-        !hasManualTitle &&
-        !aiGeneratedTitle &&
-        hasAutoTitleContext(messages) &&
-        !autoTitleRequestedRef.current.has(sessionId)
-      ) {
-        autoTitleRequestedRef.current.add(sessionId);
-        void (async () => {
-          const model = agent.state.model as Model<Api>;
-          try {
-            if (model.provider === "browser") {
-              await loadBrowserModel(model.id);
-            } else if (!(await getProviderApiKey(model.provider))) {
-              return;
-            }
-            const apiKey =
-              model.provider === "browser"
-                ? undefined
-                : await getProviderApiKey(model.provider);
-            const context: Context = {
-              systemPrompt:
-                "You rename learning chat sessions. Return only a concise, specific title. No quotes. No punctuation-only titles. Maximum 7 words.",
-              messages: [
-                {
-                  role: "user",
-                  timestamp: Date.now(),
-                  content: `Conversation preview:\n${sessionPreview(messages).slice(0, 2400)}\n\nCurrent title: ${title}`,
-                },
-              ],
-            };
-            const stream = await hybridStreamFn(model, context, {
-              apiKey,
-              maxTokens: 32,
-              temperature: 0.2,
-              reasoning: "minimal",
-            });
-            const message = await stream.result();
-            const text = message.content
-              .filter((part) => part.type === "text")
-              .map((part) => part.text)
-              .join(" ");
-            const nextTitle = cleanSuggestedTitle(text);
-            if (nextTitle) await updateSessionTitle(sessionId, nextTitle, true);
-          } catch (error) {
-            console.warn("Failed to auto-generate session title:", error);
+          if (
+            !hasManualTitle &&
+            !aiGeneratedTitle &&
+            hasAutoTitleContext(messages) &&
+            !autoTitleRequestedRef.current.has(sessionId)
+          ) {
+            autoTitleRequestedRef.current.add(sessionId);
+            void (async () => {
+              try {
+                if (model.provider === "browser") {
+                  await loadBrowserModel(model.id);
+                } else if (!(await getProviderApiKey(model.provider))) {
+                  return;
+                }
+                const apiKey =
+                  model.provider === "browser"
+                    ? undefined
+                    : await getProviderApiKey(model.provider);
+                const context: Context = {
+                  systemPrompt:
+                    "You rename learning chat sessions. Return only a concise, specific title. No quotes. No punctuation-only titles. Maximum 7 words.",
+                  messages: [
+                    {
+                      role: "user",
+                      timestamp: Date.now(),
+                      content: `Conversation preview:\n${sessionPreview(messages).slice(0, 2400)}\n\nCurrent title: ${title}`,
+                    },
+                  ],
+                };
+                const stream = await hybridStreamFn(model, context, {
+                  apiKey,
+                  maxTokens: 32,
+                  temperature: 0.2,
+                  reasoning: "minimal",
+                });
+                const message = await stream.result();
+                const text = message.content
+                  .filter((part) => part.type === "text")
+                  .map((part) => part.text)
+                  .join(" ");
+                const nextTitle = cleanSuggestedTitle(text);
+                if (nextTitle) await updateSessionTitle(sessionId, nextTitle, true);
+              } catch (error) {
+                console.warn("Failed to auto-generate session title:", error);
+              }
+            })();
           }
-        })();
-      }
+        };
+        // History is durable now. Derived learner signals and title work must not
+        // delay navigation, and remain ordered to avoid duplicate feedback writes.
+        learnerBookkeepingRef.current = learnerBookkeepingRef.current.catch(() => {}).then(bookkeeping);
+        void learnerBookkeepingRef.current.catch((error) => console.warn("Session learner bookkeeping failed:", error));
+      });
     },
     [],
   );
@@ -1308,51 +1327,48 @@ export function useKeatingAgent(
     [],
   );
 
+  const prepareAgent = useCallback(async (initialState?: Partial<AgentState>, preserveSelectedModel = false) => {
+    const persona = loadPersona();
+    const [promptBase, agentRuntime, resolvedModel] = await Promise.all([
+      (initialState?.systemPrompt && systemPromptBaseRef.current) || initialState?.systemPrompt
+        || getActiveKeatingPrompt(keatingStorage, "learn", undefined, composeKeatingSystemPrompt(persona))
+          .then((prompt) => isDefaultPersona(persona) ? resolveConnectedAccountPrompt(prompt) : prompt),
+      loadAgentRuntimeConfig(),
+      resolveAvailableChatModel(initialState?.model ?? selectedModelRef.current, { allowFallback: !preserveSelectedModel }),
+    ]);
+    const tools = filterAvailableKeatingTools(await createKeatingTools(keatingStorage, toolOptions(speechSettings, agentRuntime)), {
+      runtime: agentRuntime, speechEnabled: speechSettings.enabled, clientWebSearch: shouldExposeClientWebSearch(resolvedModel),
+    });
+    return { promptBase, agentRuntime, resolvedModel, tools };
+  }, [speechSettings, toolOptions]);
+
   const createAgent = useCallback(
     async (
       panel: ChatPanelHandle,
       initialState?: Partial<AgentState>,
-      options?: { preserveSelectedModel?: boolean },
+      options?: {
+        preserveSelectedModel?: boolean;
+        prepared?: Awaited<ReturnType<typeof prepareAgent>>;
+        isCurrent?: () => boolean;
+        onCommit?: () => void;
+        alreadySaved?: boolean;
+      },
     ) => {
+      const sourceSessionId = sessionIdRef.current;
+      const request = sessionSwitchRequestsRef.current.current;
+      const isCurrent = options?.isCurrent ?? (() =>
+        sessionSwitchRequestsRef.current.isCurrent(request) && sessionIdRef.current === sourceSessionId && panelRef.current === panel);
+      const { promptBase, agentRuntime, resolvedModel, tools } = options?.prepared ?? await prepareAgent(initialState, options?.preserveSelectedModel);
+      if (!isCurrent()) return;
+      options?.onCommit?.();
       const agentSessionId = sessionIdRef.current;
       const agentCreatedAt = sessionCreatedAtRef.current;
-      // Custom personas take precedence; the untouched default still honors any
-      // evolved prompt produced by the self-improvement loop.
-      const persona = loadPersona();
-      const promptBase =
-        (initialState?.systemPrompt && systemPromptBaseRef.current) ||
-        initialState?.systemPrompt ||
-        (isDefaultPersona(persona)
-          ? await resolveConnectedAccountPrompt(
-              await getActiveKeatingPrompt(keatingStorage),
-            )
-          : composeKeatingSystemPrompt(persona));
       systemPromptBaseRef.current = promptBase;
       if (sessionStartContextRef.current.sessionId !== agentSessionId) {
-        sessionStartContextRef.current = {
-          sessionId: agentSessionId,
-          context: "",
-          promise: null,
-        };
+        sessionStartContextRef.current = { sessionId: agentSessionId, context: "", promise: null };
       }
       const sessionStartRecord = sessionStartContextRef.current;
-      const agentRuntime = await loadAgentRuntimeConfig();
       agentRuntimeRef.current = agentRuntime;
-      const resolvedModel = await resolveAvailableChatModel(
-        initialState?.model ?? selectedModelRef.current,
-        { allowFallback: !options?.preserveSelectedModel },
-      );
-      const tools = filterAvailableKeatingTools(
-        await createKeatingTools(
-          keatingStorage,
-          toolOptions(speechSettings, agentRuntime),
-        ),
-        {
-          runtime: agentRuntime,
-          speechEnabled: speechSettings.enabled,
-          clientWebSearch: shouldExposeClientWebSearch(resolvedModel),
-        },
-      );
       registerKeatingWebMcp(keatingStorage, tools).catch(console.warn);
       selectModel(resolvedModel);
       const thinkingLevel =
@@ -1401,6 +1417,7 @@ export function useKeatingAgent(
       agent.getApiKey = (provider: string) => getProviderApiKey(provider);
       agent.state.tools = [...authored.tools];
       agentRef.current = agent;
+      if (options?.alreadySaved) sessionSnapshotsRef.current.remember(agent, sessionSnapshotsRef.current.capture(agent, agent.state));
       const sessionAlreadyAnswered = agent.state.messages.some((message) => {
         const candidate = message as { role?: unknown; stopReason?: unknown };
         return (
@@ -1410,6 +1427,9 @@ export function useKeatingAgent(
         );
       });
       const ensureSessionStartContext = async () => {
+        // Navigation stays immediate; a new teaching turn still sees feedback
+        // and session-end records from the conversation we left.
+        await learnerBookkeepingRef.current.catch(() => {});
         if (!sessionStartRecord.context && sessionAlreadyAnswered) return;
         sessionStartRecord.promise ??= (async () => {
           const hookStartedAt = performance.now();
@@ -1555,6 +1575,7 @@ export function useKeatingAgent(
       };
       persistCurrentSnapshotRef.current = persistSnapshot;
       const unsubscribePersistence = agent.subscribe((ev) => {
+        if (ev.type === "message_update" || ev.type === "message_end" || ev.type === "message_start") sessionSnapshotsRef.current.changed(agent);
         recordSessionDebugAgentEvent(agent, ev);
         const canonicalRuntime = conversationRuntime(agentSessionId);
         if (canonicalRuntime) recordAgentEvent(canonicalRuntime, ev);
@@ -1706,8 +1727,10 @@ export function useKeatingAgent(
             });
           }
         },
-        onLocalMessagesChanged: () =>
-          saveSessionSnapshot(agent, agentSessionId, agentCreatedAt),
+        onLocalMessagesChanged: () => {
+          sessionSnapshotsRef.current.changed(agent);
+          return saveSessionSnapshot(agent, agentSessionId, agentCreatedAt);
+        },
         onModelSelect: () => {
           posthog.capture("model_selector_opened", {
             session_id: agentSessionId,
@@ -1733,6 +1756,7 @@ export function useKeatingAgent(
       await panel.setAgent(agent, setupCallbacks);
     },
     [
+      prepareAgent,
       applyThinkingLevel,
       maybeGenerateAlternativeResponse,
       posthog,
@@ -1835,6 +1859,13 @@ export function useKeatingAgent(
         // teacher as the text session rather than a generic assistant.
         instructions: agent.state.systemPrompt,
         history: buildLiveHistory(agent.state.messages ?? []),
+		loadContext: () => buildLiveSessionContext({
+			storage: keatingStorage,
+			sessionId: sessionIdRef.current,
+			messages: agent.state.messages ?? [],
+			providedProfile: loadLearnerContext(),
+			activeCourseId: courseContextRef.current?.activeCourseId,
+		}),
         tools: tools.map((tool) => ({
           name: tool.name,
           description: tool.description ?? tool.label ?? tool.name,
@@ -2001,16 +2032,16 @@ export function useKeatingAgent(
     setPersistentStorageStatus,
   ]);
 
-  const endLearnerSession = useCallback(async () => {
-    try {
-      await keatingStorage.recordSessionEnd([]);
-    } catch (error) {
-      console.warn("Failed to record session end:", error);
-    }
-    await keatingLifecycle.emit({
-      type: "session_end",
-      sessionId: sessionIdRef.current,
+  const endLearnerSession = useCallback((sessionId: string) => {
+    learnerBookkeepingRef.current = learnerBookkeepingRef.current.catch(() => {}).then(async () => {
+      try {
+        await keatingStorage.recordSessionEnd([], sessionId);
+      } catch (error) {
+        console.warn("Failed to record session end:", error);
+      }
+      await keatingLifecycle.emit({ type: "session_end", sessionId });
     });
+    void learnerBookkeepingRef.current.catch((error) => console.warn("Session end hook failed:", error));
   }, []);
 
   useEffect(() => {
@@ -2022,36 +2053,46 @@ export function useKeatingAgent(
   }, []);
 
   const newSession = useCallback(() => {
+    const request = sessionSwitchRequestsRef.current.begin();
     const panel = panelRef.current;
     if (!panel) return;
-
+    const currentAgent = agentRef.current;
+    const previousId = sessionIdRef.current;
+    const previousCreatedAt = sessionCreatedAtRef.current;
+    const id = createSessionId();
+    const createdAt = new Date().toISOString();
+    const initialState = { messages: [], model: selectedModelRef.current };
+    const isCurrent = () => sessionSwitchRequestsRef.current.isCurrent(request) && panelRef.current === panel;
     startTransition(async () => {
-      const currentAgent = agentRef.current;
-      if (currentAgent?.state.isStreaming) {
-        currentAgent.abort();
-        await currentAgent.waitForIdle();
-      }
-      await saveSessionSnapshot(currentAgent);
-      await endLearnerSession();
-      sessionIdRef.current = createSessionId();
-      keatingStorage.setCurrentSessionId(sessionIdRef.current);
-      sessionCreatedAtRef.current = new Date().toISOString();
-      sessionParentIdRef.current = null;
-      sessionForkedAtRef.current = undefined;
-      setActiveSessionId(sessionIdRef.current);
-      setForkInfo(null);
-      setResponseComparison(null);
-      await createAgent(panel, {
-        messages: [],
-        model: selectedModelRef.current,
-      });
-      posthog.capture("session_started", {
-        session_id: sessionIdRef.current,
-        source: "new_button",
-        is_initial: false,
+      await runSessionSwitch({
+        isCurrent,
+        prepare: () => prepareAgent(initialState),
+        needsFinalSave: () => currentAgent ? sessionSnapshotsRef.current.needsSave(currentAgent, currentAgent.state) : false,
+        persist: async () => {
+          if (currentAgent?.state.isStreaming) {
+            currentAgent.abort();
+            await currentAgent.waitForIdle();
+          }
+          await saveSessionSnapshot(currentAgent, previousId, previousCreatedAt);
+        },
+        commit: (prepared) => createAgent(panel, initialState, {
+          prepared, isCurrent,
+          onCommit: () => {
+            if (currentAgent) endLearnerSession(previousId);
+            sessionIdRef.current = id;
+            keatingStorage.setCurrentSessionId(id);
+            sessionCreatedAtRef.current = createdAt;
+            sessionParentIdRef.current = null;
+            sessionForkedAtRef.current = undefined;
+            setActiveSessionId(id);
+            setForkInfo(null);
+            setResponseComparison(null);
+            posthog.capture("session_started", { session_id: id, source: "new_button", is_initial: false });
+          },
+        }),
       });
     });
-  }, [createAgent, endLearnerSession, posthog, saveSessionSnapshot]);
+  }, [createAgent, endLearnerSession, posthog, prepareAgent, saveSessionSnapshot]);
 
   const shareSession = useCallback(async () => {
     const agent = agentRef.current;
@@ -2094,64 +2135,75 @@ export function useKeatingAgent(
   }, [saveSessionSnapshot]);
 
   const loadSession = useCallback(
-    async (session: SessionData) => {
+    async (session: SessionData, request = sessionSwitchRequestsRef.current.begin()) => {
       const panel = panelRef.current;
-      if (!panel) return;
-
+      const isCurrent = () => sessionSwitchRequestsRef.current.isCurrent(request) && panelRef.current === panel;
+      if (!panel || !isCurrent()) return;
       const currentAgent = agentRef.current;
-      if (currentAgent?.state.isStreaming) {
-        currentAgent.abort();
-        await currentAgent.waitForIdle();
-      }
-      await saveSessionSnapshot(currentAgent);
-      if (currentAgent) await endLearnerSession();
-
-      sessionIdRef.current = session.id;
-      keatingStorage.setCurrentSessionId(session.id);
-      sessionCreatedAtRef.current = session.createdAt;
-      sessionParentIdRef.current = session.parentSessionId ?? null;
-      sessionForkedAtRef.current = session.forkedAt;
-      setActiveSessionId(session.id);
-      setResponseComparison(null);
+      const previousId = sessionIdRef.current;
+      const previousCreatedAt = sessionCreatedAtRef.current;
+      if (currentAgent && previousId === session.id) return;
+      const initialState = { model: session.model, thinkingLevel: session.thinkingLevel, messages: session.messages };
+      const committed = await runSessionSwitch({
+        isCurrent,
+        needsFinalSave: () => currentAgent ? sessionSnapshotsRef.current.needsSave(currentAgent, currentAgent.state) : false,
+        // Restoring history must not refresh credentials or replace its saved
+        // model. The existing send callbacks still obtain/refresh provider keys.
+        prepare: () => prepareAgent(initialState, true),
+        persist: async () => {
+          if (currentAgent?.state.isStreaming) {
+            currentAgent.abort();
+            await currentAgent.waitForIdle();
+          }
+          await saveSessionSnapshot(currentAgent, previousId, previousCreatedAt);
+        },
+        commit: (prepared) => createAgent(panel, initialState, {
+          prepared, isCurrent, alreadySaved: true,
+          onCommit: () => {
+            if (currentAgent) endLearnerSession(previousId);
+            sessionIdRef.current = session.id;
+            keatingStorage.setCurrentSessionId(session.id);
+            sessionCreatedAtRef.current = session.createdAt;
+            sessionParentIdRef.current = session.parentSessionId ?? null;
+            sessionForkedAtRef.current = session.forkedAt;
+            setActiveSessionId(session.id);
+            setResponseComparison(null);
+            setForkInfo(session.parentSessionId && session.forkedAt
+              ? { parentId: session.parentSessionId, parentTitle: "original session", forkedAt: session.forkedAt }
+              : null);
+            posthog.capture("session_loaded", { session_id: session.id, is_restored: true, has_parent: !!session.parentSessionId });
+          },
+        }),
+      });
+      if (!committed) return;
+      // These details can arrive after the saved messages are already visible.
       if (session.parentSessionId && session.forkedAt) {
         const parentId = session.parentSessionId;
-        const parentMeta = await sessions
-          .getMetadata(parentId)
-          .catch(() => null);
-        setForkInfo({
-          parentId,
-          parentTitle: parentMeta?.title ?? "original session",
-          forkedAt: session.forkedAt,
-        });
-      } else {
-        setForkInfo(null);
+        const forkedAt = session.forkedAt;
+        void sessions.getMetadata(parentId).then((parentMeta) => {
+          if (isCurrent()) setForkInfo({ parentId, parentTitle: parentMeta?.title ?? "original session", forkedAt });
+        }).catch((error) => console.warn("Could not load the parent session title:", error));
       }
-      selectModel(session.model);
-      posthog.capture("session_loaded", {
-        session_id: session.id,
-        is_restored: true,
-        has_parent: !!session.parentSessionId,
-      });
-      await createAgent(panel, {
-        model: session.model,
-        thinkingLevel: session.thinkingLevel,
-        messages: session.messages,
-      });
-      if (!session.generatedAlternative)
-        await restorePendingResponseComparison(session.id);
+      if (!session.generatedAlternative) {
+        void restorePendingResponseComparison(session, isCurrent).catch((error) => console.warn("Could not restore the response comparison:", error));
+      }
     },
-    [
-      createAgent,
-      endLearnerSession,
-      restorePendingResponseComparison,
-      saveSessionSnapshot,
-    ],
+    [createAgent, endLearnerSession, posthog, prepareAgent, restorePendingResponseComparison, saveSessionSnapshot],
   );
+
+  const loadSessionById = useCallback(async (sessionId: string, request = sessionSwitchRequestsRef.current.begin()) => {
+    if (agentRef.current && sessionIdRef.current === sessionId) return;
+    const session = await sessionSwitchRequestsRef.current.read(request, () => sessions.loadSession(sessionId));
+    if (session === undefined) return;
+    if (!session) throw new Error("Session not found");
+    await loadSession(session as SessionData, request);
+  }, [loadSession]);
 
   const chooseResponse = useCallback(
     async (preference: ResponseComparisonDecision) => {
       const comparison = responseComparison;
       if (!comparison) return;
+      const request = sessionSwitchRequestsRef.current.begin();
       const alternative = (await sessions.loadSession(
         comparison.alternativeSessionId,
       )) as SessionData | null;
@@ -2193,7 +2245,7 @@ export function useKeatingAgent(
         session_id: comparison.sourceSessionId,
         alternative_session_id: comparison.alternativeSessionId,
       });
-      if (preference === "alternative") await loadSession(nextAlternative);
+      if (preference === "alternative") await loadSession(nextAlternative, request);
     },
     [loadSession, posthog, responseComparison],
   );
@@ -2201,14 +2253,13 @@ export function useKeatingAgent(
   const openOriginalSession = useCallback(() => {
     const parentId = forkInfo?.parentId;
     if (!parentId) return;
-    startTransition(async () => {
-      const session = await sessions.loadSession(parentId);
-      if (session) await loadSession(session as SessionData);
-    });
-  }, [forkInfo, loadSession]);
+    const request = sessionSwitchRequestsRef.current.begin();
+    startTransition(() => loadSessionById(parentId, request));
+  }, [forkInfo, loadSessionById]);
 
   const forkSession = useCallback(
     async (sessionId: string, forkPoint?: number) => {
+      const request = sessionSwitchRequestsRef.current.begin();
       // Persist the live session first so forking the current session captures its
       // latest messages before we read the stored copy below.
       await saveSessionSnapshot();
@@ -2248,7 +2299,7 @@ export function useKeatingAgent(
           new_session_id: id,
 		  forked_from_message_timestamp: forkPoint,
         });
-        if (panel) await loadSession(data);
+        if (panel) await loadSession(data, request);
         setForkedSessionId(id);
         window.dispatchEvent(
           new CustomEvent("keating:session-fork-end", {
@@ -2343,11 +2394,9 @@ export function useKeatingAgent(
       collapsed={sessionSidebarCollapsed}
       onCollapsedChange={setSidebarCollapsed}
       onLoad={(sessionId: string) => {
+        const request = sessionSwitchRequestsRef.current.begin();
         closeMobileSidebar();
-        startTransition(async () => {
-          const session = await sessions.loadSession(sessionId);
-          if (session) await loadSession(session as SessionData);
-        });
+        return loadSessionById(sessionId, request);
       }}
       onFork={forkSession}
       mobileOpen={mobileSidebarOpen}
@@ -2407,8 +2456,10 @@ export function useKeatingAgent(
           during_turn: false,
           session_id: sessionIdRef.current,
         });
+        const request = sessionSwitchRequestsRef.current.current;
         startTransition(async () => {
           if (model.provider === "browser") await loadBrowserModel(model.id);
+          if (!sessionSwitchRequestsRef.current.isCurrent(request) || agentRef.current !== activeAgent) return;
           selectModel(model);
           const agent = agentRef.current;
           if (agent) {
@@ -2563,7 +2614,10 @@ export function useKeatingAgent(
                 });
               }
             },
-            onLocalMessagesChanged: () => saveSessionSnapshot(existingAgent),
+            onLocalMessagesChanged: () => {
+              sessionSnapshotsRef.current.changed(existingAgent);
+              return saveSessionSnapshot(existingAgent);
+            },
             onModelSelect: () => {
               posthog.capture("model_selector_opened", {
                 session_id: sessionIdRef.current,
@@ -2587,9 +2641,11 @@ export function useKeatingAgent(
         }
 
         const generation = bootstrapGenerationRef.current;
+        const request = sessionSwitchRequestsRef.current.current;
         bootstrapTimerRef.current = window.setTimeout(() => {
           if (
             bootstrapGenerationRef.current !== generation ||
+            !sessionSwitchRequestsRef.current.isCurrent(request) ||
             panelRef.current !== node ||
             agentRef.current
           ) {
@@ -2621,6 +2677,7 @@ export function useKeatingAgent(
               );
               if (
                 bootstrapGenerationRef.current !== generation ||
+                !sessionSwitchRequestsRef.current.isCurrent(request) ||
                 panelRef.current !== node ||
                 agentRef.current
               ) {
@@ -2634,13 +2691,14 @@ export function useKeatingAgent(
                 );
                 if (
                   bootstrapGenerationRef.current !== generation ||
+                  !sessionSwitchRequestsRef.current.isCurrent(request) ||
                   panelRef.current !== node ||
                   agentRef.current
                 ) {
                   return;
                 }
                 if (session) {
-                  await loadSession(session);
+                  await loadSession(session, request);
                   if (requestedSessionId) {
                     const params = new URLSearchParams(window.location.search);
                     params.delete("session");
@@ -2657,6 +2715,7 @@ export function useKeatingAgent(
 
               if (
                 bootstrapGenerationRef.current !== generation ||
+                !sessionSwitchRequestsRef.current.isCurrent(request) ||
                 panelRef.current !== node ||
                 agentRef.current
               ) {
@@ -2677,7 +2736,8 @@ export function useKeatingAgent(
               if (
                 !agentRef.current &&
                 panelRef.current === node &&
-                bootstrapGenerationRef.current === generation
+                bootstrapGenerationRef.current === generation &&
+                sessionSwitchRequestsRef.current.isCurrent(request)
               ) {
                 await createAgent(node).catch(console.error);
               }

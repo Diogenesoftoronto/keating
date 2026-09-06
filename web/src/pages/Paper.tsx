@@ -28,7 +28,7 @@ const styles = {
 export function Paper() {
   useSeo({
     title: "Keating Paper — A Metaharness for Agency-Preserving AI Instruction",
-    description: "The Keating paper: a metaharness for teaching, a control layer that organizes planning, prompting, retrieval, transfer, verification, and evaluation around the live teaching exchange.",
+    description: "The Keating paper: fresh teaching benchmarks, persistent hypotheses, validated skill revisions, and independent learner assessments, with explicit limits on evidence of learning.",
     canonical: "https://keating.help/paper",
   });
   return (
@@ -44,7 +44,7 @@ export function Paper() {
             <div className={styles.metaRow}>
               <div className={styles.meta}>
                 <span className={styles.accent}>AUTHOR:</span> Dio the Debugger <br />
-                <span className={styles.accentDate}>DATE:</span> August 8, 2026
+                <span className={styles.accentDate}>DATE:</span> September 6, 2026
               </div>
               <a
                 href="/keating-metaharness.pdf"
@@ -71,39 +71,39 @@ export function Paper() {
 
             <div className={styles.body}>
               <p className={styles.paragraph}>
-                Keating is designed around that distinction. It is not a single tutoring chatbot;
-                it is a metaharness for teaching, a control layer that organizes planning,
-                prompting, retrieval, transfer, verification, and evaluation around the live
-                teaching exchange.
+                Keating organizes live teaching, learner records, and inspectable artifacts around
+                a control layer that can revise teaching procedures. This revision describes a new
+                loop that executes tutor continuations, preserves evidence-linked hypotheses, and
+                evaluates a proposed skill before activating its exact revision for later sessions.
               </p>
 
               <p className={styles.paragraph}>
-                Keating 3.3.0 coordinates live interaction, persistent learner evidence, inspectable
-                teaching artifacts, and evaluation-gated policy improvement across browser and
-                terminal surfaces. The paper separates those implementation claims from measured
-                learning outcomes.
+                An 18-case mathematics and programming suite separates training, validation, and a
+                single-use holdout. Both comparisons must show improvement, preserve every case
+                family&apos;s score, and pass all critical criteria. The tutor cannot change the
+                scoring weights or promote a saved prompt merely because it is the newest one.
               </p>
               
               <p className={styles.paragraph}>
-                We analyze two evidence layers: 22 model-generated teaching traces curated to 16
-                topic x learner pairs, and a deterministic synthetic benchmark implemented in the
-                repository. The archival set yields a normalized overall score of 0.61 (95%
-                bootstrap interval 0.515-0.705) and surfaces student-role contamination as a
-                concrete failure mode.
+                Recorded quiz performance, feedback proxies, synthetic teaching behavior, and
+                independent learner assessments remain separate. New assessment records cover
+                immediate performance, delayed recall, and transfer, preserving missing data and
+                the learner&apos;s reported use of assistance.
               </p>
 
               <p className={styles.paragraph}>
-                The frozen 3.3.0 policy improves the default across all 200 sampled benchmark seeds
-                by 3.982 points on average. In 30 isolated derivative-focused MAP-Elites reruns,
-                selected policies reevaluated on the same seed and fixed objective weights improve
-                in 11, tie in four, and regress in 15, with a mean delta of -0.014.
+                Historical analysis explains the redesign. A frozen policy gains 3.982 points
+                inside an algebraic score model, yet 30 standardized MAP-Elites reruns yield 11
+                improvements, four ties, and 15 regressions. Archived model-to-model teaching
+                traces also expose student-role contamination. These findings diagnose the earlier
+                system; they do not evaluate the new skill loop.
               </p>
 
               <p className={styles.paragraph}>
-                The contribution is a formal account of a teaching metaharness and a versioned,
-                reproducible benchmark-and-analysis stack. The present evidence supports systems
-                and methodology claims only; a human randomized trial remains necessary for causal
-                pedagogical claims.
+                The contribution is an implemented method with reproducible integrity checks.
+                No live-provider performance results for the new loop or human learning effects
+                are reported. Judge calibration, fresh independent cases, and randomized trials
+                with delayed and transfer assessments remain necessary.
               </p>
             </div>
 

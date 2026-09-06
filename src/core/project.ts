@@ -261,29 +261,49 @@ export async function evolvePolicyArtifact(
   const policyPath = currentPolicyPath(cwd);
   const basePolicy = await loadPolicy(policyPath);
   const learnerState = await loadLearnerState(learnerStatePath(cwd));
-  const realOutcomes = await extractHarnessOutcomes(cwd, learnerState);
+  const gathered = await extractHarnessOutcomes(cwd, learnerState);
+  const realOutcomes = focusTopic ? gathered.filter((outcome) => outcome.topic === resolveTopic(focusTopic).slug) : gathered;
   if (!hasEnoughRealData(realOutcomes)) {
     await observeEvaluation("policy_evolution", "learner-feedback", focusTopic ? "focused" : "core", startedAt, surface, {
       status: "rejected",
       outcome_count: realOutcomes.length,
       error_category: "insufficient_feedback",
     });
-    throw new Error(`Not ready to evolve: need at least ${MIN_REAL_OUTCOMES} learner feedback signals; found ${realOutcomes.length}.`);
+    throw new Error(`Not ready to evolve: need at least ${MIN_REAL_OUTCOMES} learner signals to ground a proposal; found ${realOutcomes.length}. This corpus-size threshold does not validate improvements.`);
   }
-  const meRun = await mapElitesEvolve(cwd, basePolicy, { focusTopic, learnerState });
-  const run = mapElitesToEvolutionRun(meRun);
-  await savePolicy(policyPath, run.best.policy);
-  await syncPolicyArchive(cwd, run.archive);
+  const baseline = await runBenchmarkSuite(cwd, basePolicy, focusTopic, 20260401, 3, undefined, learnerState);
+  const { mutatePolicy } = await import("./mutation.js");
+  const { Prng } = await import("./random.js");
+  const prng = new Prng(20260401);
+  const proposals = Array.from({ length: 12 }, (_, index) => ({
+    policy: mutatePolicy(basePolicy, prng, index + 1),
+    iteration: index + 1,
+    decision: { accepted: false, reasons: ["Unvalidated proposal: no fresh teaching execution or independent comparison."] },
+  }));
+  const proposal = { schemaVersion: 1, status: "unvalidated-proposal", activePolicy: basePolicy, baselineEvidence: baseline, proposals };
   const slug = focusTopic ? slugify(focusTopic) : "latest";
+  const proposalPath = join(evolutionDir(cwd), `${slug}.proposals.json`);
+  await writeFile(proposalPath, `${JSON.stringify(proposal, null, 2)}\n`, { mode: 0o600 });
+  const report = [
+    "# Unvalidated policy proposals", "",
+    "These parameter mutations are proposals only. The active policy is unchanged.",
+    "Historical feedback does not rank these candidates or demonstrate that any mutation teaches better.",
+    "Use auto-improve for fresh teaching executions and an independent activation gate.", "",
+    `- Proposals: ${proposals.length}`,
+    `- Proposal artifact: ${relative(cwd, proposalPath)}`,
+    `- Active policy: ${basePolicy.name}`,
+    "", benchmarkToMarkdown(baseline),
+  ].join("\n");
   const { reportPath, tracePath } = await writeArtifactWithTrace(
-    cwd, evolutionDir(cwd), slug, mapElitesToMarkdown(meRun), "evolution", run
+    cwd, evolutionDir(cwd), slug, report, "evolution", proposal
   );
   await observeEvaluation("policy_evolution", "learner-feedback", focusTopic ? "focused" : "core", startedAt, surface, {
-    score: run.best.overallScore,
+    status: "rejected",
     outcome_count: realOutcomes.length,
-    candidate_count: run.archive.candidates.length,
+    candidate_count: proposals.length,
+    error_category: "unvalidated_proposals",
   });
-  return { reportPath, tracePath, bestScore: run.best.overallScore, policyPath };
+  return { reportPath, tracePath, bestScore: baseline.overallScore, policyPath };
 }
 
 export async function evolvePromptArtifact(
@@ -380,193 +400,15 @@ export async function improveHistory(cwd: string): Promise<string> {
   return improvementHistoryToMarkdown(archive);
 }
 
-interface AutoImproveState {
-  lastRunAt?: string;
-}
-
-function autoImproveStatePath(cwd: string): string {
-  return join(stateDir(cwd), "auto-improve.json");
-}
-
-async function loadAutoImproveState(cwd: string): Promise<AutoImproveState> {
-  try {
-    return JSON.parse(await readFile(autoImproveStatePath(cwd), "utf8")) as AutoImproveState;
-  } catch {
-    return {};
-  }
-}
-
-async function saveAutoImproveState(cwd: string, state: AutoImproveState): Promise<void> {
-  await writeFile(autoImproveStatePath(cwd), `${JSON.stringify(state, null, 2)}\n`, "utf8");
-}
-
-function assertAutoImproveAllowed(state: AutoImproveState, force: boolean): void {
-  if (force || !state.lastRunAt) return;
-  const lastRunMs = Date.parse(state.lastRunAt);
-  if (!Number.isFinite(lastRunMs)) return;
-  const cooldownMs = 30 * 60 * 1000;
-  const elapsedMs = Date.now() - lastRunMs;
-  if (elapsedMs >= 0 && elapsedMs < cooldownMs) {
-    const remainingMinutes = Math.ceil((cooldownMs - elapsedMs) / 60000);
-    throw new Error(`auto-improve ran recently. Re-run with --force or wait ${remainingMinutes} minute(s).`);
-  }
-}
-
+/** Auto-improve now executes teaching episodes; retrospective feedback cannot activate revisions. */
 export async function autoImproveArtifact(
   cwd: string,
-  focusTopic?: string,
-  options: { force?: boolean; surface?: EvaluationObservationV1["surface"] } = {}
-): Promise<{
-  baselineScore: number;
-  afterScore: number;
-  delta: number;
-  reportPath: string;
-  observabilityPath: string;
-  diagramPath: string;
-}> {
-  const startedAt = Date.now();
+  _focusTopic?: string,
+  options: import("./teaching-evolution.js").TeachingEvolutionOptions & { surface?: EvaluationObservationV1["surface"] } = {}
+) {
   await ensureProjectScaffold(cwd);
-  const state = await loadAutoImproveState(cwd);
-  assertAutoImproveAllowed(state, options.force === true);
-  const policyPath = currentPolicyPath(cwd);
-  const previousPolicy = await loadPolicy(policyPath);
-  const autoSlug = focusTopic ? `${slugify(focusTopic)}-auto-improve` : "auto-improve";
-  const evolvedPromptPath = join(promptEvolutionDir(cwd), "learn.evolved.md");
-  const previousPrompt = await readOptionalFile(evolvedPromptPath);
-
-  const surface = options.surface ?? "cli";
-  const baseline = await benchPolicyArtifact(cwd, focusTopic, surface);
-  const baselineReportPath = await snapshotFile(
-    baseline.reportPath,
-    join(benchmarksDir(cwd), `${autoSlug}-baseline.md`)
-  ) ?? baseline.reportPath;
-  const baselineTracePath = await snapshotFile(
-    baseline.tracePath,
-    join(tracesDir(cwd), `${autoSlug}-baseline-benchmark.json`)
-  );
-
-  const evolved = await evolvePolicyArtifact(cwd, focusTopic, surface);
-
-  const promptEvo = await evolvePromptArtifact(cwd, "learn", surface);
-
-  const after = await benchPolicyArtifact(cwd, focusTopic, surface);
-  const afterReportPath = await snapshotFile(
-    after.reportPath,
-    join(benchmarksDir(cwd), `${autoSlug}-after.md`)
-  ) ?? after.reportPath;
-  const afterTracePath = await snapshotFile(
-    after.tracePath,
-    join(tracesDir(cwd), `${autoSlug}-after-benchmark.json`)
-  );
-
-  const delta = after.overallScore - baseline.overallScore;
-  const rolledBack = delta < -0.5;
-  if (rolledBack) {
-    await savePolicy(policyPath, previousPolicy);
-    await restoreOptionalSnapshot(evolvedPromptPath, previousPrompt);
-  }
-  await saveAutoImproveState(cwd, { lastRunAt: new Date().toISOString() });
-
-  const reportPath = join(benchmarksDir(cwd), `${autoSlug}.md`);
-  const observabilityPath = join(evolutionDir(cwd), `${autoSlug}.json`);
-  const diagramPath = join(evolutionDir(cwd), `${autoSlug}.mmd`);
-  const rel = (path: string | null) => path ? relative(cwd, path) : null;
-  const verdict = delta > 0 ? "IMPROVED" : rolledBack ? "REGRESSED_ROLLED_BACK" : "NO_SIGNIFICANT_CHANGE";
-  const observability = {
-    schemaVersion: 1,
-    generatedAt: new Date().toISOString(),
-    focusTopic: focusTopic ?? null,
-    verdict,
-    scores: {
-      baseline: baseline.overallScore,
-      after: after.overallScore,
-      delta
-    },
-    rollback: {
-      triggered: rolledBack,
-      threshold: -0.5,
-      policy: rolledBack,
-      prompt: rolledBack
-    },
-    policy: {
-      before: previousPolicy.name,
-      candidate: evolved.bestScore,
-      path: rel(policyPath),
-      evolutionReport: rel(evolved.reportPath),
-      evolutionTrace: rel(evolved.tracePath)
-    },
-    prompt: {
-      name: "learn",
-      accepted: promptEvo.accepted,
-      report: rel(promptEvo.reportPath),
-      evolvedPrompt: rel(promptEvo.evolvedPromptPath),
-      hadPriorSnapshot: previousPrompt !== null
-    },
-    artifacts: {
-      report: rel(reportPath),
-      diagram: rel(diagramPath),
-      baselineBenchmark: rel(baselineReportPath),
-      baselineTrace: rel(baselineTracePath),
-      afterBenchmark: rel(afterReportPath),
-      afterTrace: rel(afterTracePath)
-    }
-  };
-
-  const diagram = [
-    "flowchart TD",
-    `  A["Baseline benchmark<br/>${baseline.overallScore.toFixed(2)}/100"]`,
-    `  B["MAP-Elites policy evolution<br/>best ${evolved.bestScore.toFixed(2)}/100"]`,
-    `  C["Prompt evolution<br/>${promptEvo.accepted ? "accepted" : "unchanged"}"]`,
-    `  D["Post-change benchmark<br/>${after.overallScore.toFixed(2)}/100"]`,
-    `  E{"Delta ${delta >= 0 ? "+" : ""}${delta.toFixed(2)}"}`,
-    `  F["Keep current artifacts"]`,
-    `  G["Rollback policy and prompt"]`,
-    "  A --> B --> C --> D --> E",
-    `  E -->|${rolledBack ? "regressed" : "not regressed"}| ${rolledBack ? "G" : "F"}`
-  ].join("\n");
-
-  const report = [
-    `# Auto-Improve Report`,
-    ``,
-    `**Baseline:** ${baseline.overallScore.toFixed(2)}/100`,
-    `**After:** ${after.overallScore.toFixed(2)}/100`,
-    `**Delta:** ${delta >= 0 ? "+" : ""}${delta.toFixed(2)}`,
-    `**Verdict:** ${delta > 0 ? "IMPROVED" : rolledBack ? "REGRESSED (policy and prompt rolled back)" : "NO SIGNIFICANT CHANGE"}`,
-    ``,
-    `## Benchmark`,
-    `- Baseline report: ${relative(cwd, baselineReportPath)}`,
-    ...(baselineTracePath ? [`- Baseline trace: ${relative(cwd, baselineTracePath)}`] : []),
-    `- After report: ${relative(cwd, afterReportPath)}`,
-    ...(afterTracePath ? [`- After trace: ${relative(cwd, afterTracePath)}`] : []),
-    ``,
-    `## Policy Evolution`,
-    `- Best: ${evolved.bestScore.toFixed(2)}/100`,
-    `- Report: ${relative(cwd, evolved.reportPath)}`,
-    `- Rolled back: ${rolledBack ? "yes" : "no"}`,
-    ``,
-    `## Prompt Evolution`,
-    `- Best: ${promptEvo.bestScore.toFixed(2)}/100`,
-    `- Accepted: ${promptEvo.accepted ? "yes" : "no"}`,
-    `- Report: ${relative(cwd, promptEvo.reportPath)}`,
-    `- Rolled back: ${rolledBack ? "yes" : "no"}`,
-    ``,
-    `## Observability Artifacts`,
-    `- JSON transaction: ${relative(cwd, observabilityPath)}`,
-    `- Mermaid flow: ${relative(cwd, diagramPath)}`,
-    ``,
-  ].join("\n");
-
-  await writeFile(reportPath, report, "utf8");
-  await writeFile(observabilityPath, `${JSON.stringify(observability, null, 2)}\n`, "utf8");
-  await writeFile(diagramPath, `${diagram}\n`, "utf8");
-
-  await observeEvaluation("auto_improve", "heuristic", focusTopic ? "focused" : "core", startedAt, surface, {
-    before_score: baseline.overallScore,
-    after_score: after.overallScore,
-    status: rolledBack ? "rolled_back" : undefined,
-  });
-
-  return { baselineScore: baseline.overallScore, afterScore: after.overallScore, delta, reportPath, observabilityPath, diagramPath };
+  const { teachingEvolutionArtifact } = await import("./teaching-evolution.js");
+  return teachingEvolutionArtifact(cwd, options);
 }
 
 export async function promptEvalArtifact(

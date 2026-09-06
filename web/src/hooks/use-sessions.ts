@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createSessionLibraryRefresh } from "./session-library-refresh";
 import { keatingStorage, sessions, updateSessionTitle } from "./keating-storage";
 import { sessionSearchText } from "./session-metadata";
 import type { SessionData, SessionMetadata } from "../types/session";
@@ -107,65 +108,66 @@ export function useSessions(opts: UseSessionsOptions = {}): UseSessionsResult {
 	const [backfilledSearchText, setBackfilledSearchText] = useState<Map<string, string>>(new Map());
 	const backfillRequested = useRef<Set<string>>(new Set());
 
-	const reload = useCallback(async () => {
-		setLoading(true);
-		setError(null);
-		try {
-			const [metadata, heroMap] = await Promise.all([
-				sessions.getAllMetadata() as Promise<SessionMetadata[]>,
-				opts.withHeroes
-					? buildArtifactHeroMap(keatingStorage).catch(
-							() => new Map<string, ArtifactHero>(),
-						)
-					: Promise.resolve(new Map<string, ArtifactHero>()),
-			]);
-			setItems(sortSessionsByLastModified(metadata.filter((session) => !session.hiddenAlternative)));
-			setHeroes(heroMap);
-		} catch (loadError) {
-			setError(
-				loadError instanceof Error ? loadError.message : "Failed to load sessions",
-			);
-			setItems([]);
-			setHeroes(new Map());
-		} finally {
-			setLoading(false);
-		}
-	}, [opts.withHeroes]);
+	const reloadRef = useRef<() => Promise<void>>(async () => {});
+	const reload = useCallback(() => reloadRef.current(), []);
 
 	useEffect(() => {
-		let cancelled = false;
-		const runReload = async () => {
-			setLoading(true);
-			setError(null);
-			try {
-				const [metadata, heroMap] = await Promise.all([
-					sessions.getAllMetadata() as Promise<SessionMetadata[]>,
-					opts.withHeroes
-						? buildArtifactHeroMap(keatingStorage).catch(
-								() => new Map<string, ArtifactHero>(),
-							)
-						: Promise.resolve(new Map<string, ArtifactHero>()),
-				]);
-				if (cancelled) return;
-				setItems(sortSessionsByLastModified(metadata.filter((session) => !session.hiddenAlternative)));
-				setHeroes(heroMap);
-			} catch (loadError) {
-				if (cancelled) return;
-				setError(
-					loadError instanceof Error ? loadError.message : "Failed to load sessions",
-				);
-				setItems([]);
-				setHeroes(new Map());
-			} finally {
-				if (!cancelled) setLoading(false);
+		let sessionIds = "";
+		let cancelArtifactRefresh: (() => void) | undefined;
+		const artifactRefresh = createSessionLibraryRefresh({
+			read: () => buildArtifactHeroMap(keatingStorage),
+			receive: setHeroes,
+			fail: () => {}, // Keep existing activity labels if a background read fails.
+		});
+		const refreshArtifacts = () => {
+			if (!opts.withHeroes || cancelArtifactRefresh) return;
+			const run = () => {
+				cancelArtifactRefresh = undefined;
+				void artifactRefresh.request();
+			};
+			// Artifact payloads can be large. Let the conversation and its session
+			// metadata paint before reading them for secondary activity labels.
+			if (typeof window.requestIdleCallback === "function") {
+				const id = window.requestIdleCallback(run, { timeout: 1_000 });
+				cancelArtifactRefresh = () => window.cancelIdleCallback(id);
+			} else {
+				const id = window.setTimeout(run, 100);
+				cancelArtifactRefresh = () => window.clearTimeout(id);
 			}
 		};
-		void runReload();
-		const onChanged = () => void runReload();
+		const metadataRefresh = createSessionLibraryRefresh({
+			read: () => sessions.getAllMetadata() as Promise<SessionMetadata[]>,
+			receive: (metadata) => {
+				const visible = sortSessionsByLastModified(metadata.filter(session => !session.hiddenAlternative));
+				setItems(visible);
+				setError(null);
+				setLoading(false);
+				const nextIds = JSON.stringify(visible.map(session => session.id).sort());
+				if (nextIds !== sessionIds) { sessionIds = nextIds; refreshArtifacts(); }
+			},
+			fail: (loadError) => {
+				setError(loadError instanceof Error ? loadError.message : "Failed to load sessions");
+				setLoading(false);
+			},
+		});
+		reloadRef.current = () => {
+			setError(null);
+			refreshArtifacts();
+			return metadataRefresh.request();
+		};
+		const onChanged = () => { void metadataRefresh.request(); };
+		void metadataRefresh.request();
 		window.addEventListener("keating:sessions-changed", onChanged);
+		window.addEventListener("keating:artifact-created", refreshArtifacts);
+		window.addEventListener("keating:artifacts-changed", refreshArtifacts);
 		return () => {
-			cancelled = true;
+			metadataRefresh.dispose();
+			artifactRefresh.dispose();
+			cancelArtifactRefresh?.();
+			reloadRef.current = async () => {};
 			window.removeEventListener("keating:sessions-changed", onChanged);
+			window.removeEventListener("keating:artifact-created", refreshArtifacts);
+			window.removeEventListener("keating:artifacts-changed", refreshArtifacts);
 		};
 	}, [opts.withHeroes]);
 

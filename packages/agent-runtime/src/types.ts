@@ -12,11 +12,13 @@ export interface ResourceOptions {
   enabled?: boolean;
 }
 
-export interface InstructionOptions extends ResourceOptions {
+export interface SlottedResourceOptions extends ResourceOptions {
   /** Stable slot identity. Omit only when call order itself is the identity. */
   slot?: string;
   revision?: string;
 }
+
+export type InstructionOptions = SlottedResourceOptions;
 
 export interface VersionedResource {
   /** Content/runtime revision used to report an active-resource change. */
@@ -113,10 +115,7 @@ export interface PortableSandboxFactory extends VersionedResource {
   createSandbox(options: { id: string }): Promise<PortableSandbox>;
 }
 
-export interface SandboxOptions extends ResourceOptions {
-  slot?: string;
-  revision?: string;
-}
+export type SandboxOptions = SlottedResourceOptions;
 
 export interface PersistentStateStore {
   has(name: string): boolean;
@@ -157,10 +156,7 @@ export type LifecycleCallback<Context = PortableLifecycleContext> =
 
 export type LifecycleKind = "agent-start" | "agent-finish" | "response-start" | "response-finish";
 
-export interface LifecycleOptions extends ResourceOptions {
-  slot?: string;
-  revision?: string;
-}
+export type LifecycleOptions = SlottedResourceOptions;
 
 export interface LifecycleRegistrations {
   agentStart: readonly LifecycleCallback[];

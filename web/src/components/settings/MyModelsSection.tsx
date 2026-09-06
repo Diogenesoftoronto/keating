@@ -1,3 +1,4 @@
+import { Select } from "../Select";
 import { useReducer } from "react";
 import { getProviders } from "@earendil-works/pi-ai/compat";
 import { removeCustomModel } from "../../keating/ui-settings";
@@ -226,11 +227,11 @@ export function MyModelsSection({
 					</div>
 					<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
 						<label className={labelClass}>Provider</label>
-						<select
+						<Select aria-label="Model provider"
 							className={inputClass}
 							value={modelForm.provider}
-							onChange={(e) => {
-								const providerName = e.target.value;
+							onValueChange={(value) => {
+								const providerName = value;
 								const customProvider = customProviders.find((provider) => provider.name === providerName);
 								dispatch({
 									type: "change",
@@ -246,22 +247,22 @@ export function MyModelsSection({
 							{providerOptions.map((p) => (
 								<option key={p} value={p}>{p}</option>
 							))}
-						</select>
+						</Select>
 						<p className={css({ fontSize: "0.6875rem", color: "var(--muted-foreground)" })}>
 							Create a custom provider first so the model and its credentials share one provider identity.
 						</p>
 					</div>
 					<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
 						<label className={labelClass}>API Type</label>
-						<select
+						<Select aria-label="Model API"
 							className={inputClass}
 							value={modelForm.api}
-							onChange={(e) => dispatch({ type: "change", form: { ...modelForm, api: e.target.value } })}
+							onValueChange={(value) => dispatch({ type: "change", form: { ...modelForm, api: value } })}
 						>
 							{ADD_MODEL_APIS.map((a) => (
 								<option key={a.value} value={a.value}>{a.label}</option>
 							))}
-						</select>
+						</Select>
 					</div>
 					<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
 						<label className={labelClass}>Base URL (Optional)</label>

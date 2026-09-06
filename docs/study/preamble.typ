@@ -4,9 +4,12 @@
   ]
 }
 
-#let modest-table(..args) = table(
-  stroke: 0.45pt + rgb("666666"),
-  inset: 6pt,
-  align: left + horizon,
-  ..args,
-)
+#let modest-table(..args) = {
+  set par(justify: false)
+  table(
+    stroke: 0.45pt + rgb("666666"),
+    inset: 6pt,
+    align: left + horizon,
+    ..args,
+  )
+}

@@ -4,8 +4,8 @@ import type {
   AgentRenderResult,
   DataEvent,
   JsonValue,
-  LifecycleCallback,
   LifecycleKind,
+  LifecycleRegistrations,
   McpConnectionDefinition,
   PortableLifecycleContext,
   PortableResponseFinishContext,
@@ -75,12 +75,7 @@ export interface BrowserAgentResources {
 
 export type BrowserLifecycleContext = PortableLifecycleContext | PortableResponseFinishContext;
 
-export interface PortableLifecycleFrame {
-  agentStart: readonly LifecycleCallback[];
-  agentFinish: readonly LifecycleCallback[];
-  responseStart: readonly LifecycleCallback[];
-  responseFinish: readonly LifecycleCallback<PortableResponseFinishContext>[];
-}
+export type PortableLifecycleFrame = LifecycleRegistrations;
 
 export interface BrowserFrameSnapshot {
   render: AgentRenderResult;

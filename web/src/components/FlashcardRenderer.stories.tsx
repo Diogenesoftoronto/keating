@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { fn, userEvent, within } from "storybook/test";
+import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 import { css } from "../../styled-system/css";
 import { DeckSummary, FlashcardRenderer, initialSrsState } from "./FlashcardRenderer";
 import type { FlashcardDeck } from "../keating/srs";
@@ -87,6 +87,34 @@ export const InteractiveReview: Story = {
 	},
 };
 
+export const PhosphorArena: Story = {
+	args: { defaultShaderPreset: "phosphor" },
+};
+
+export const SolarArena: Story = {
+	args: { defaultShaderPreset: "solar" },
+};
+
+export const OrbitArena: Story = {
+	args: { defaultShaderPreset: "orbit" },
+};
+
+export const PrismArena: Story = {
+	args: { defaultShaderPreset: "prism" },
+};
+
+export const CurrentArena: Story = {
+	args: { defaultShaderPreset: "current" },
+};
+
+export const ContourArena: Story = {
+	args: { defaultShaderPreset: "contour" },
+};
+
+export const StillArena: Story = {
+	args: { defaultShaderPreset: "still" },
+};
+
 export const DueSubset: Story = {
 	args: {
 		restrictToCardIds: ["bayes-prior", "bayes-likelihood"],
@@ -111,7 +139,7 @@ export const CompactChatEmbedRevealed: Story = {
 	args: CompactChatEmbed.args,
 	play: async ({ canvasElement }) => {
 		const canvas = within(canvasElement);
-		await userEvent.click(canvas.getByRole("button", { name: /reveal/i }));
+		await userEvent.click(canvas.getByRole("button", { name: /^reveal answer$/i }));
 	},
 };
 
@@ -123,4 +151,45 @@ export const Summary: Story = {
 			onStart={fn()}
 		/>
 	),
+};
+
+export const MobileRoundComplete: Story = {
+	args: { restrictToCardIds: ["bayes-prior"], defaultShaderPreset: "still" },
+	parameters: { viewport: { defaultViewport: "mobile1" } },
+	play: async ({ canvasElement, args }) => {
+		const canvas = within(canvasElement);
+		await userEvent.click(canvas.getByRole("button", { name: /^reveal answer$/i }));
+		await userEvent.click(canvas.getByRole("button", { name: /^Good:/ }));
+		await waitFor(() => expect(canvas.getByText("Clean sweep")).toBeTruthy());
+		await expect(args.onReview).toHaveBeenCalledTimes(1);
+		await expect(args.onComplete).toHaveBeenCalledWith({ reviewed: 1, lapses: 0 });
+	},
+};
+
+export const TimedReveal: Story = {
+	args: { restrictToCardIds: ["bayes-prior"], defaultShaderPreset: "still" },
+	play: async ({ canvasElement, args }) => {
+		const canvas = within(canvasElement);
+		const setting = canvas.getByRole("combobox", { name: "Auto-reveal answer" });
+		await expect(setting).toHaveTextContent("Off");
+		await userEvent.click(setting);
+		await userEvent.click(await within(canvasElement.ownerDocument.body).findByRole("option", { name: "5s" }));
+		await expect(canvas.getByRole("button", { name: "Pause reveal timer" })).toBeEnabled();
+		await waitFor(() => expect(canvas.getByRole("button", { name: /^Good:/ })).toBeEnabled(), { timeout: 7_000 });
+		await expect(canvas.getByRole("status")).toHaveTextContent("Answer: The prior is the belief before seeing the new evidence.");
+		await expect(args.onReview).not.toHaveBeenCalled();
+		await expect(args.onComplete).not.toHaveBeenCalled();
+	},
+};
+
+export const PausedReveal: Story = {
+	args: { restrictToCardIds: ["bayes-prior"], defaultShaderPreset: "still" },
+	play: async ({ canvasElement }) => {
+		const canvas = within(canvasElement);
+		await userEvent.click(canvas.getByRole("combobox", { name: "Auto-reveal answer" }));
+		await userEvent.click(await within(canvasElement.ownerDocument.body).findByRole("option", { name: "10s" }));
+		await userEvent.click(canvas.getByRole("button", { name: "Pause reveal timer" }));
+		await expect(canvas.getByRole("button", { name: "Resume reveal timer" })).toBeEnabled();
+		await expect(canvas.queryByRole("button", { name: /^Good:/ })).not.toBeInTheDocument();
+	},
 };

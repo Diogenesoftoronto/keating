@@ -174,7 +174,7 @@ export function publicClientConfig(env: Record<string, string | undefined> = pub
 		clientId,
 		redirectUri,
 		scope: env.VITE_NOTORGANIC_SCOPE
-			?? "wallet:read usage:read billing:checkout infer:balanced evolution:read evolution:write evolution:execute",
+			?? "wallet:read usage:read billing:checkout infer:balanced realtime:connect evolution:read evolution:write evolution:execute",
 	};
 }
 

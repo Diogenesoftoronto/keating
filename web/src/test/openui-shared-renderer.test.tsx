@@ -24,7 +24,8 @@ describe("shared web OpenUI renderer", () => {
 		const html = renderToStaticMarkup(<SharedUiDocumentRenderer document={document("ready")} />);
 		expect(html).toContain('data-shared-openui-document="scoped-document"');
 		expect(html).toContain('data-question-kind="matching"');
-		expect(html).not.toContain("<select disabled");
+		expect(html).toContain('role="combobox"');
+		expect(html).not.toContain('aria-disabled="true"');
 	});
 
 	test("keeps failed content visible while disabling its controls", () => {
@@ -126,8 +127,15 @@ describe("shared web OpenUI renderer", () => {
 
 		expect(dispatched.journal.receipts).toHaveLength(1);
 		expect(dispatched.action.type).toBe("complete-quiz");
-		expect(html).toContain("Quiz saved.");
+		// The objective question settles immediately; the open-ended one stays out
+		// of the score until the teacher grades it.
+		expect(html).toContain("1 of 1 scored");
+		expect(html).toContain("1 awaiting grading");
+		expect(html).toContain("grading…");
 		expect(html).toContain("Evidence updates the prior.");
+		expect(html).toContain("0.012s");
+		expect(html).toContain("0.006s");
+		expect(html).toContain('data-speed="quick"');
 		expect(html).not.toContain("Submit answer");
 	});
 
