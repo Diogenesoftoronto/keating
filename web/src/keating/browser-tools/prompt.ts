@@ -3,6 +3,9 @@ import { DEFAULT_TEACHER_PERSONA } from "../persona";
 import { learnerContextPrompt } from "../learner-context";
 import operationalProtocolMarkdown from "../prompts/operational-protocol.md?raw";
 import speechSystemPromptMarkdown from "../prompts/speech-system-prompt.md?raw";
+import { loadActiveTeachingRevision, type EvolutionStore } from "../../../../shared/evolution/loop";
+import { composeTeachingPrompt } from "../../../../shared/evolution/benchmark";
+import { browserEvolutionStore } from "../teaching-evolution-store";
 
 export const KEATING_OPERATIONAL_PROTOCOL = operationalProtocolMarkdown.trim();
 
@@ -30,10 +33,11 @@ export function buildKeatingSystemPrompt(speechEnabled = false, basePrompt = KEA
 	return speechEnabled ? `${personalized}${SPEECH_SYSTEM_PROMPT}` : personalized;
 }
 
-export async function getActiveKeatingPrompt(storage: KeatingStorage, promptName = "learn"): Promise<string> {
-	const evolutions = await storage.getPromptEvolutions(promptName);
-	const latest = evolutions.sort((left, right) => right.createdAt - left.createdAt)[0];
-	return latest?.bestPrompt
-		? refreshKeatingOperationalProtocol(latest.bestPrompt)
-		: KEATING_SYSTEM_PROMPT;
+export async function getActiveKeatingPrompt(storage: KeatingStorage, promptName = "learn", revisionStore?: EvolutionStore, basePrompt = KEATING_SYSTEM_PROMPT): Promise<string> {
+	// Saved prompt proposals are not activation decisions. Retain arguments for callers.
+	void storage; void promptName;
+	if (!revisionStore && typeof indexedDB === "undefined") return basePrompt;
+	const revision = await loadActiveTeachingRevision(revisionStore ?? browserEvolutionStore);
+	if (!revision || revision.basePrompt !== basePrompt) return basePrompt;
+	return composeTeachingPrompt(revision);
 }

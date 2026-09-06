@@ -36,6 +36,7 @@ describe("realtime tier from speech settings", () => {
 		expect(duplexProviders.map((provider) => provider.id).sort()).toEqual([
 			"gemini-live",
 			"openai-realtime",
+			"tavus",
 		]);
 
 		for (const provider of duplexProviders) {
@@ -51,6 +52,12 @@ describe("realtime tier from speech settings", () => {
 	});
 
 	it("maps each duplex speech provider onto its LLM provider", () => {
+		expect(speechProviderModel({
+			...DEFAULT_WEB_SPEECH_SETTINGS,
+			providerId: "tavus",
+			model: "keatingbot",
+		})).toEqual({ provider: "tavus", id: "keatingbot", api: "tavus-cvi" });
+
 		expect(speechProviderModel({
 			...DEFAULT_WEB_SPEECH_SETTINGS,
 			providerId: "openai-realtime",
@@ -70,20 +77,24 @@ describe("realtime tier from speech settings", () => {
 			const tier = resolveSpeechRealtimeTier({ ...DEFAULT_WEB_SPEECH_SETTINGS, providerId });
 			expect(tier.tier).toBe(0);
 			expect(tier.video).toBe(false);
+			expect(tier.image).toBe(false);
 		}
 	});
 
 	it("resolves the full cascade from settings the user can actually pick", () => {
 		const cases = [
-			["gemini-live", "gemini-3.1-flash-live-preview", 3, "native"],
-			["openai-realtime", "gpt-realtime-2.1", 2, "sampled"],
-			["openai-realtime", "gpt-4o-realtime-preview-2024-12-17", 1, "none"],
+			["tavus", "keatingbot", 3, "native", false],
+			["gemini-live", "gemini-3.1-flash-live-preview", 3, "native", true],
+			["openai-realtime", "gpt-realtime-2.1", 2, "none", true],
+			["openai-realtime", "gpt-4o-realtime-preview-2024-12-17", 1, "none", false],
 		] as const;
 
-		for (const [providerId, model, tier, videoRoute] of cases) {
+		for (const [providerId, model, tier, videoRoute, image] of cases) {
 			const resolved = resolveSpeechRealtimeTier({ ...DEFAULT_WEB_SPEECH_SETTINGS, providerId, model });
 			expect(resolved.tier).toBe(tier);
 			expect(resolved.videoRoute).toBe(videoRoute);
+			expect(resolved.video).toBe(videoRoute === "native");
+			expect(resolved.image).toBe(image);
 		}
 	});
 });

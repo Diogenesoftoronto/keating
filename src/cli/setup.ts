@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Box, Text, render, useApp, useInput } from "ink";
 
 import { type KeatingConfig } from "../core/config.js";
+import type { SetupChoice } from "../runtime/setup-choice.js";
 
 export interface SetupAnswers {
   runtimePreference: KeatingConfig["pi"]["runtimePreference"];
@@ -10,13 +11,7 @@ export interface SetupAnswers {
   defaultThinking: string;
 }
 
-interface Choice<T extends string = string> {
-  label: string;
-  value: T;
-  hint?: string;
-}
-
-const PROVIDERS: Choice[] = [
+const PROVIDERS: SetupChoice[] = [
   { label: "Not Organic Hosted", value: "notorganic", hint: "Balanced hosted inference; sign in with keating login" },
   { label: "OpenRouter (free)", value: "openrouter", hint: "Free models, no credit card required" },
   { label: "Zyphra Cloud", value: "zyphra", hint: "ZAYA1-8B local reasoning model" },
@@ -26,7 +21,7 @@ const PROVIDERS: Choice[] = [
   { label: "Custom", value: "custom", hint: "Type a provider name" }
 ];
 
-const MODELS_BY_PROVIDER: Record<string, Choice[]> = {
+const MODELS_BY_PROVIDER: Record<string, SetupChoice[]> = {
   notorganic: [
     { label: "Balanced", value: "balanced", hint: "Five-minute device-bound capability" }
   ],
@@ -68,26 +63,26 @@ const MODELS_BY_PROVIDER: Record<string, Choice[]> = {
   ]
 };
 
-const THINKING: Choice[] = [
+const THINKING: SetupChoice[] = [
   { label: "Medium", value: "medium", hint: "Recommended" },
   { label: "Low", value: "low" },
   { label: "High", value: "high" }
 ];
 
-const RUNTIMES: Choice<KeatingConfig["pi"]["runtimePreference"]>[] = [
+const RUNTIMES: SetupChoice<KeatingConfig["pi"]["runtimePreference"]>[] = [
   { label: "Prefer standalone", value: "prefer-standalone", hint: "Recommended" },
   { label: "Embedded only", value: "embedded-only" },
   { label: "Standalone only", value: "standalone-only" }
 ];
 
-function selectedIndex<T extends string>(choices: Choice<T>[], value: string | undefined): number {
+function selectedIndex<T extends string>(choices: SetupChoice<T>[], value: string | undefined): number {
   const index = choices.findIndex((choice) => choice.value === value);
   return index >= 0 ? index : 0;
 }
 
 function Menu<T extends string>(props: {
   title: string;
-  choices: Choice<T>[];
+  choices: SetupChoice<T>[];
   selected: number;
   setSelected: (index: number) => void;
   submit: () => void;
@@ -141,7 +136,7 @@ function Summary(props: {
   setSelected: (index: number) => void;
   submit: (confirmed: boolean) => void;
 }): React.ReactElement {
-  const choices: Choice<"yes" | "back">[] = [
+  const choices: SetupChoice<"yes" | "back">[] = [
     { label: "Write config", value: "yes" },
     { label: "Go back", value: "back" }
   ];

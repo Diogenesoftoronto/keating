@@ -1,3 +1,4 @@
+import { AttachmentLinks } from "../SubmissionAttachments";
 import { useMemo, useState } from "react";
 import { ClipboardCheck, Users } from "lucide-react";
 import { css, cx } from "../../../styled-system/css";
@@ -305,6 +306,7 @@ export function CourseReviewPanel({
                   >
                     {submission.answer}
                   </p>
+                  <AttachmentLinks attachments={submission.attachments ?? []} courseId={snapshot.course.id} />
                   <textarea
                     rows={3}
                     value={feedback}

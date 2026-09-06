@@ -1,6 +1,7 @@
 export {
   MIN_REAL_OUTCOMES,
   blendRealSyntheticScore,
+  classifyDominantSignal,
   computeRealOutcomeScore,
   feedbackToOutcomeScore,
   hasEnoughRealData,

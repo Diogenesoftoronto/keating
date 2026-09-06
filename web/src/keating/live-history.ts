@@ -1,4 +1,5 @@
 import type { LiveHistoryTurn } from "./speech";
+import { safeLiveContextText } from "./live-context";
 
 /**
  * Build the conversation seed for a live voice session.
@@ -49,7 +50,7 @@ export function buildLiveHistory(
 	for (let i = messages.length - 1; i >= 0 && turns.length < maxTurns; i -= 1) {
 		const role = turnRole(messages[i]);
 		if (!role) continue;
-		const text = turnText(messages[i]);
+		const text = safeLiveContextText(turnText(messages[i]), maxChars);
 		if (!text) continue;
 		turns.push({ role, text });
 	}

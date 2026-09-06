@@ -115,6 +115,7 @@ function questionGroupAnswerText(response: UiQuestionGroupResponse, question: Ui
       const labels = new Map(question.choices?.map((choice) => [choice.id, choice.label]));
       return response.rows.map((row) => `${row.item}: ${labels.get(row.optionId) ?? row.optionId}${row.reason ? ` — ${row.reason}` : ""}`).join("\n");
     }
+    case "order": return response.items.map((item, index) => `${index + 1}. ${item}`).join("\n");
   }
 }
 
@@ -126,6 +127,7 @@ function autoGradeQuestionGroupResponse(response: UiQuestionGroupResponse, quest
     case "choice": return autoGrade(question, response.optionIds);
     case "blanks": return autoGrade(question, response.answers);
     case "rows": return autoGrade(question, response.rows.map((row) => row.optionId), response.rows);
+    case "order": return autoGrade(question, [response.items.join(",")]);
   }
 }
 
@@ -209,6 +211,18 @@ export function applyLocalUiAction(
       data: appendQuestionChecks(current, checks, now),
       resultingDocument: nextDocument(document, now),
       message: "Question-group responses saved on this device.",
+    };
+  }
+
+  if (action.type === "complete-language-practice") {
+    const target = actionTarget(document, action.nodeId);
+    if (target.node.type !== "language-practice") throw new Error("Language-practice action target is invalid.");
+    // The canonical journal retains the complete round results and timings.
+    // Pronunciation practice must not become an objective quiz grade.
+    return {
+      data: current,
+      resultingDocument: nextDocument(document, now),
+      message: "Language practice saved on this device.",
     };
   }
 
@@ -481,6 +495,12 @@ export function applyLocalUiAction(
 }
 
 export function uiActionLearnerMessage(action: UiAction, document: UiDocument): string | null {
+  if (action.type === "complete-language-practice") {
+    const target = actionTarget(document, action.nodeId);
+    return target.node.type === "language-practice"
+      ? `I completed "${target.node.title}" in ${(action.totalMs / 1000).toFixed(3)} seconds. ${action.correct} of ${action.objectiveTotal} checked answers; ${action.pronunciationPracticed} pronunciation rounds self-reviewed. What should I practice next?`
+      : null;
+  }
   if (action.type === "submit-answer" || action.type === "choose-option") {
     const target = actionTarget(document, action.nodeId);
     return `My answer to "${target.questionPrompt ?? "the check"}": ${answerText(action, document)}`;

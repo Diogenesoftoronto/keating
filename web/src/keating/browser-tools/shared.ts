@@ -17,6 +17,8 @@ export interface KeatingToolsOptions {
     getApiKey: (provider: string) => Promise<string | undefined>;
   };
   setSystemPrompt?: (basePrompt: string) => void;
+  /** Uses isolated fresh tutor executions; activation takes effect next session. */
+  runTeachingExperiment?: (options: { force?: boolean; signal?: AbortSignal }) => Promise<string>;
   /** Loads stored chat sessions so benchmarks can mine real transcripts and attribute signals to the model that taught them. */
   getSessionSamples?: () => Promise<BenchSessionSample[]>;
 }

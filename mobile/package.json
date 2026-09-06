@@ -1,6 +1,6 @@
 {
   "name": "keating-mobile",
-  "version": "3.10.2",
+  "version": "3.13.0",
   "private": true,
   "main": "expo-router/entry",
   "expo": {
@@ -10,6 +10,7 @@
   },
   "scripts": {
     "start": "expo start --dev-client",
+    "web": "expo start --web --port 8081",
     "android": "expo run:android --device",
     "android:prebuild": "expo prebuild --platform android",
     "android:prebuild:clean": "expo prebuild --clean --platform android",
@@ -23,6 +24,9 @@
     "gt:check": "gt translate --config gt.config.json --dry-run"
   },
   "dependencies": {
+    "@daily-co/config-plugin-rn-daily-js": "0.0.12",
+    "@daily-co/react-native-daily-js": "0.87.1",
+    "@daily-co/react-native-webrtc": "124.0.6-daily.1",
     "@expo-google-fonts/jetbrains-mono": "^0.4.1",
     "@expo-google-fonts/roboto": "^0.4.3",
     "@expo-google-fonts/space-mono": "^0.4.2",
@@ -59,7 +63,9 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.85.3",
+    "react-native-background-timer": "^2.4.1",
     "react-native-gesture-handler": "~2.31.1",
+    "react-native-get-random-values": "^1.11.0",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "4.25.2",
     "react-native-svg": "15.15.4",

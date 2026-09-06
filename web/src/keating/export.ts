@@ -121,6 +121,11 @@ interface NormalizedSessionResult {
 	pairMessages: NormalizedRewardMessage[];
 }
 
+interface ExportCounters {
+	redactions: number;
+	skipped: number;
+}
+
 type TrainingSplit = "train" | "validation";
 const SECRET_PATTERNS: RegExp[] = [
 	/\bsk-ant-[A-Za-z0-9_-]{12,}\b/g,
@@ -186,7 +191,7 @@ function addArtifactExample(
 	topic: string,
 	content: string,
 	options: WebFineTuneExportOptions,
-	counters: { redactions: number; skipped: number },
+	counters: ExportCounters,
 	conversations?: WebConversation[],
 ) {
 	const trimmed = content.trim();
@@ -266,7 +271,7 @@ function conversationFromSession(
 function normalizeSessionMessages(
 	session: SessionData,
 	options: WebFineTuneExportOptions,
-	counters: { redactions: number; skipped: number },
+	counters: ExportCounters,
 ): NormalizedSessionResult {
 	const messages: NormalizedRewardMessage[] = [];
 	const pairMessages: NormalizedRewardMessage[] = [];
@@ -340,7 +345,7 @@ function addSandboxExamples(
 	examples: FineTuneExample[],
 	sandbox: KeatingSandboxPortableBundle | undefined,
 	options: WebFineTuneExportOptions,
-	counters: { redactions: number; skipped: number },
+	counters: ExportCounters,
 	conversations?: WebConversation[],
 ): { filesRead: number; commitsRead: number } {
 	if (!sandbox) return { filesRead: 0, commitsRead: 0 };

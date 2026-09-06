@@ -68,7 +68,7 @@ function chatProxyPlugin(): Plugin {
       server.middlewares.use(async (req, res, next) => {
         const pathname = new URL(req.url ?? "/", "http://localhost").pathname;
 
-        if (devCoursesApiOrigin && pathname.startsWith("/api/courses")) {
+        if (devCoursesApiOrigin && (pathname.startsWith("/api/courses") || pathname.startsWith("/api/submission-attachments"))) {
           const targetUrl = new URL(req.url ?? pathname, devCoursesApiOrigin);
           const proxyReq = http.request(
             {
@@ -76,7 +76,7 @@ function chatProxyPlugin(): Plugin {
               port: targetUrl.port,
               path: targetUrl.pathname + targetUrl.search,
               method: req.method,
-              headers: { ...req.headers, host: targetUrl.host },
+              headers: { ...req.headers, host: pathname.startsWith("/api/submission-attachments") ? req.headers.host : targetUrl.host },
             },
             (proxyRes) => {
               res.writeHead(proxyRes.statusCode ?? 502, proxyRes.headers);
@@ -607,11 +607,16 @@ export default defineConfig({
     proxy: {
       ...(devCoursesApiOrigin
         ? {
+            "/api/submission-attachments": { target: devCoursesApiOrigin, changeOrigin: false },
             "/api/courses": {
               target: devCoursesApiOrigin,
               changeOrigin: true,
               ws: true,
             },
+			"/api/tavus": {
+			  target: devCoursesApiOrigin,
+			  changeOrigin: true,
+			},
           }
         : {}),
       "/ingest/static": {

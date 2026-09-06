@@ -1,3 +1,4 @@
+import { Select } from "../Select";
 import { useEffect, useId, useRef, useState } from "react";
 import { css, cx } from "../../../styled-system/css";
 import { eyebrow, reviewCard } from "../../../styled-system/recipes";
@@ -152,9 +153,9 @@ export function SocraticPass({
 					{pools.length > 1 ? (
 						<label className={css({ display: "grid", gap: "0.25rem", marginBottom: "0.15rem" })}>
 							<span className={cx(eyebrow(), css({ fontSize: "10px" }))}>Model pool</span>
-							<select
+							<Select aria-label="Socratic model pool"
 								value={poolId}
-								onChange={(event) => onPoolChange(event.target.value)}
+								onValueChange={(value) => onPoolChange(value)}
 								className={css({
 									width: "100%",
 									minHeight: "2rem",
@@ -168,7 +169,7 @@ export function SocraticPass({
 								})}
 							>
 								{pools.map((pool) => <option key={pool.id} value={pool.id}>{pool.name}</option>)}
-							</select>
+							</Select>
 						</label>
 					) : null}
 

@@ -2,6 +2,7 @@ export const NOTORGANIC_MOBILE_CLIENT_ID = "https://keating.help/mobile";
 export const NOTORGANIC_MOBILE_REDIRECT_URI = "keating:///notorganic/callback";
 export const NOTORGANIC_MOBILE_SCOPE = [
   "infer:balanced",
+  "realtime:connect",
   "sync:key:read",
   "usage:read",
   "wallet:read",

@@ -63,6 +63,14 @@ export default function CourseDetailScreen() {
     router.push("/");
   };
 
+  const studyLive = (lesson: CourseLesson) => {
+    if (!snapshot) return;
+    router.push({
+      pathname: "/(tabs)/live",
+      params: { courseId: snapshot.course.id, lessonId: lesson.id },
+    } as never);
+  };
+
   if (error) {
     return (
       <Screen title="Course">
@@ -128,6 +136,7 @@ export default function CourseDetailScreen() {
                 expanded={openLessonId === lesson.id}
                 onToggle={() => setOpenLessonId((current) => current === lesson.id ? null : lesson.id)}
             onStudy={() => void studyWithKeating(lesson)}
+                onLive={() => studyLive(lesson)}
               />
             ))}
             {module.lessons.length === 0 ? <Text style={styles.emptyNote}>No lessons in this module yet.</Text> : null}
@@ -179,6 +188,7 @@ function LessonRow({
   expanded,
   onToggle,
   onStudy,
+  onLive,
 }: {
   lesson: CourseLesson;
   courseId: string;
@@ -187,6 +197,7 @@ function LessonRow({
   expanded: boolean;
   onToggle: () => void;
   onStudy: () => void;
+  onLive: () => void;
 }) {
   const theme = useKeatingTheme();
   const styles = createStyles(theme);
@@ -242,7 +253,10 @@ function LessonRow({
             </>
           ) : null}
 
-          <Button compact onPress={onStudy}>Study this with Keating</Button>
+          <View style={styles.lessonActions}>
+            <Button compact onPress={onStudy}>Study in Tutor</Button>
+            <Button compact variant="secondary" onPress={onLive}>Study Live</Button>
+          </View>
         </View>
       ) : null}
     </View>
@@ -336,6 +350,7 @@ function createStyles(theme: ReturnType<typeof useKeatingTheme>) {
       borderTopColor: colors.border,
       paddingTop: spacing.md,
     },
+    lessonActions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
     lessonSectionTitle: { ...type.caption, ...type.mono, color: colors.textMuted, textTransform: "uppercase" },
     materialRow: {
       minHeight: 52,

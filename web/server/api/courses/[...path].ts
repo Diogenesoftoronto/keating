@@ -39,6 +39,8 @@ import { broadcastCourseUpdated } from "../../utils/course-realtime";
 import { mirrorCourseOnPear } from "../../utils/course-pear-gateway";
 import { requireCourseProductSession } from "../../utils/course-session";
 
+import { ownedAttachments } from "../../utils/submission-attachments";
+
 const displayNameSchema = z.string().trim().min(1).max(120);
 const createBodySchema = courseCreateInputSchema.extend({
   displayName: displayNameSchema.optional(),
@@ -213,6 +215,7 @@ export default defineEventHandler(async (event) => {
           "course_invalid_request",
         );
       }
+      if (operation.type === "assignment.submission.save") await ownedAttachments(session.accountId, operation.attachments);
       const result = await applyStoredCourseOperation(
         session.accountId,
         operation,

@@ -64,6 +64,17 @@ function action<T extends UiAction["type"]>(type: T, values: Omit<Extract<UiActi
 }
 
 describe("canonical OpenUI learner-record materialization", () => {
+	test("preserves precise quiz timing and timeout evidence in saved results", async () => {
+		const storage = new KeatingStorage();
+		const timing = { totalMs: 64_238, perQuestionMs: { first: 4_238, second: 30_000 } };
+		const timeouts = ["second"];
+		await storage.saveQuizResult(1, 1, 2, "recall", { resultId: "precise-result", timing, timedOutQuestionIds: timeouts, examTimedOut: true });
+		timing.perQuestionMs.first = 99;
+		timeouts.push("first");
+		const [restored] = await new KeatingStorage().getQuizResults();
+		expect(restored).toMatchObject({ timing: { totalMs: 64_238, perQuestionMs: { first: 4_238, second: 30_000 } }, timedOutQuestionIds: ["second"], examTimedOut: true });
+	});
+
 	test("replays the exact action without duplicate learner records", async () => {
 		const storage = new KeatingStorage();
 		const source = sourceDocument();

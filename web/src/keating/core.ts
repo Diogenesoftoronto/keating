@@ -6,17 +6,33 @@
 import {
 	MIN_REAL_OUTCOMES,
 	blendRealSyntheticScore,
+	classifyDominantSignal,
 	computeRealOutcomeScore,
 	feedbackToOutcomeScore,
 	hasEnoughRealData,
 	simulateDeterministicTeaching,
 } from "../../../shared/pedagogy/benchmark-real";
+import { DEFAULT_ENGAGEMENT_POLICY, formatDaysAgo } from "../../../shared/pedagogy/engagement";
+import { formatMapElitesRun, placeInMapElitesGrid } from "../../../shared/pedagogy/map-elites";
 import type { ScoreableLearnerOutcome } from "../../../shared/pedagogy/benchmark-real";
 import type {
+	BenchmarkMeasurement,
 	BenchmarkResult,
 	BenchmarkTopicTrace,
 	Domain,
+	EngagementPolicy,
+	EvolutionCandidate,
 	LearnerProfile,
+	LearnerTurnSignal,
+	LessonPhase,
+	LessonPlan,
+	MapElitesCell,
+	MapElitesGrid,
+	MapElitesRun,
+	PolicyJudgementCandidate,
+	PromptObjectiveVector,
+	QuizLimits,
+	QuizReview,
 	SimulationWeights,
 	TeacherPolicy,
 	TeachingSimulation,
@@ -27,6 +43,7 @@ import type {
 export {
 	MIN_REAL_OUTCOMES,
 	blendRealSyntheticScore,
+	classifyDominantSignal,
 	computeRealOutcomeScore,
 	feedbackToOutcomeScore,
 	hasEnoughRealData,
@@ -38,64 +55,25 @@ export type {
 	BenchmarkTopicTrace,
 	BenchmarkTrace,
 	Domain,
+	EngagementPolicy,
+	EvolutionCandidate,
 	LearnerProfile,
+	LearnerTurnSignal,
+	LessonPhase,
+	LessonPlan,
+	MapElitesCell,
+	MapElitesGrid,
+	MapElitesRun,
+	PromptObjectiveVector,
+	QuizLimits,
+	QuizReview,
 	SimulationWeights,
 	TeacherPolicy,
 	TeachingSimulation,
 	TopicBenchmark,
 	TopicDefinition,
 } from "../../../shared/pedagogy/types";
-
-// ============================================================================
-// Types (from src/core/types.ts)
-// ============================================================================
-
-export interface LessonPhase {
-	id: string;
-	title: string;
-	purpose: string;
-	bullets: string[];
-}
-
-export interface LessonPlan {
-	topic: TopicDefinition;
-	policy: TeacherPolicy;
-	phases: LessonPhase[];
-}
-
-export interface EvolutionCandidate {
-	policy: TeacherPolicy;
-	benchmark: BenchmarkResult;
-	counterfactualBenchmark?: BenchmarkResult;
-	parentName: string | null;
-	iteration: number;
-	novelty: number;
-	accepted: boolean;
-	decision: {
-		improves: boolean;
-		safe: boolean;
-		novelEnough: boolean;
-		scoreDelta: number;
-		weakestTopicDelta: number;
-		reasons: string[];
-	};
-	parameterDelta: Array<{
-		field: keyof TeacherPolicy;
-		before: number | string;
-		after: number | string;
-		delta: number;
-	}>;
-	preferenceScore?: number;
-}
-
-export interface PromptObjectiveVector {
-	voice_divergence: number;
-	diagnosis: number;
-	verification: number;
-	retrieval: number;
-	transfer: number;
-	structure: number;
-}
+export { DEFAULT_ENGAGEMENT_POLICY } from "../../../shared/pedagogy/engagement";
 
 // ============================================================================
 // Utilities
@@ -625,24 +603,6 @@ export function simulateTeaching(
 	return simulateDeterministicTeaching(policy, topic, learner, weights);
 }
 
-function classifyDominantSignal(simulations: TeachingSimulation[], kind: "strength" | "weakness"): string {
-	if (simulations.length === 0) return "no learner feedback";
-	const metrics = {
-		intuitionFit: mean(simulations.map((entry) => entry.breakdown.intuitionFit)),
-		rigorFit: mean(simulations.map((entry) => entry.breakdown.rigorFit)),
-		dialogueFit: mean(simulations.map((entry) => entry.breakdown.dialogueFit)),
-		diagramFit: mean(simulations.map((entry) => entry.breakdown.diagramFit)),
-		practiceFit: mean(simulations.map((entry) => entry.breakdown.practiceFit)),
-		reflectionFit: mean(simulations.map((entry) => entry.breakdown.reflectionFit)),
-		overload: mean(simulations.map((entry) => entry.breakdown.overload)),
-	};
-	const ordered = Object.entries(metrics).sort((left, right) =>
-		kind === "strength" ? right[1] - left[1] : left[1] - right[1]
-	);
-	const [name] = ordered[0] ?? ["unknown"];
-	return name;
-}
-
 function summarizeTopic(topic: TopicDefinition, simulations: TeachingSimulation[], traceLimit: number): TopicBenchmark {
 	const ranked = [...simulations].sort((left, right) => right.score - left.score);
 	return {
@@ -658,6 +618,7 @@ function summarizeTopic(topic: TopicDefinition, simulations: TeachingSimulation[
 		strugglingLearners: ranked.slice(-traceLimit).reverse(),
 		dominantStrength: classifyDominantSignal(simulations, "strength"),
 		dominantWeakness: classifyDominantSignal(simulations, "weakness"),
+		evidence: simulations.length === 1 ? simulations[0]?.evidence : undefined,
 	};
 }
 
@@ -670,12 +631,7 @@ export interface BrowserLearnerOutcome extends ScoreableLearnerOutcome {
 	model?: string;
 }
 
-export interface BrowserLearnerTurnSignal {
-	topic: string;
-	signal: "thumbs-up" | "thumbs-down" | "confused";
-	masteryEstimate: number;
-	evidence: string;
-}
+export type BrowserLearnerTurnSignal = LearnerTurnSignal;
 
 export function inferBrowserLearnerTurnSignal(text: string, fallbackTopic = "general"): BrowserLearnerTurnSignal | null {
 	const compact = text.replace(/\s+/g, " ").trim();
@@ -702,6 +658,7 @@ export function extractBrowserOutcomes(feedbackHistory: Array<{ topic: string; s
 		feedbackSignal: fb.signal,
 		masteryEstimate: topicsExplored.includes(fb.topic) ? 0.6 : 0.4,
 		outcomeScore: feedbackToOutcomeScore(fb.signal),
+		evidenceKind: "explicit-feedback",
 	}));
 }
 
@@ -753,6 +710,7 @@ export function extractSessionTurnOutcomes(samples: BenchSessionSample[]): Brows
 				feedbackSignal: inferred.signal,
 				masteryEstimate: inferred.masteryEstimate,
 				outcomeScore: feedbackToOutcomeScore(inferred.signal),
+				evidenceKind: "inferred-feedback",
 				model,
 			});
 		}
@@ -766,7 +724,8 @@ export function quizRecordsToOutcomes(
 ): BrowserLearnerOutcome[] {
 	const outcomes: BrowserLearnerOutcome[] = [];
 	for (const record of records) {
-		if (!(record.totalQuestions > 0)) continue;
+		if (!Number.isFinite(record.totalQuestions) || !(record.totalQuestions > 0)
+			|| !Number.isFinite(record.score) || record.score < 0 || record.score > record.totalQuestions) continue;
 		const score = clamp(record.score / record.totalQuestions);
 		outcomes.push({
 			topic: resolveTopic(record.topic).slug,
@@ -774,6 +733,7 @@ export function quizRecordsToOutcomes(
 			quizScore: score,
 			masteryEstimate: score,
 			outcomeScore: score,
+			evidenceKind: "graded-assessment",
 			model: (record.sessionId && modelBySessionId?.get(record.sessionId)) || "unattributed",
 		});
 	}
@@ -790,6 +750,7 @@ export interface ModelBenchmarkBreakdown {
 	quizCount: number;
 	quizAverage: number | null;
 	dataSource: string;
+	scoreSource?: "observed" | "proxy" | "mixed" | "unavailable";
 }
 
 export function benchmarkPerModel(
@@ -801,6 +762,7 @@ export function benchmarkPerModel(
 ): ModelBenchmarkBreakdown[] {
 	const groups = new Map<string, BrowserLearnerOutcome[]>();
 	for (const outcome of outcomes) {
+		if (focusTopic && outcome.topic !== resolveTopic(focusTopic).slug) continue;
 		const key = outcome.model ?? "unattributed";
 		const group = groups.get(key) ?? [];
 		group.push(outcome);
@@ -811,17 +773,23 @@ export function benchmarkPerModel(
 			const result = runBenchmarkSuite(policy, focusTopic, seed, 3, weights, group);
 			const quizScores = group
 				.map((outcome) => outcome.quizScore)
-				.filter((value): value is number => typeof value === "number" && !Number.isNaN(value));
+				.filter((value): value is number => typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 1);
+			const feedback = group.filter((outcome) => outcome.quizScore == null && outcome.evidenceKind !== "graded-assessment");
+			const sources = new Set(result.topicBenchmarks.map((entry) => entry.evidence?.score.source)
+				.filter((source) => source !== undefined && source !== "unavailable"));
+			const scoreSource: ModelBenchmarkBreakdown["scoreSource"] = sources.size > 1 ? "mixed"
+				: sources.has("observed") ? "observed" : sources.has("proxy") ? "proxy" : "unavailable";
 			return {
 				model,
 				overallScore: result.overallScore,
 				outcomes: group.length,
-				thumbsUp: group.filter((outcome) => outcome.feedbackSignal === "thumbs-up").length,
-				thumbsDown: group.filter((outcome) => outcome.feedbackSignal === "thumbs-down").length,
-				confused: group.filter((outcome) => outcome.feedbackSignal === "confused").length,
+				thumbsUp: feedback.filter((outcome) => outcome.feedbackSignal === "thumbs-up").length,
+				thumbsDown: feedback.filter((outcome) => outcome.feedbackSignal === "thumbs-down").length,
+				confused: feedback.filter((outcome) => outcome.feedbackSignal === "confused").length,
 				quizCount: quizScores.length,
 				quizAverage: quizScores.length > 0 ? mean(quizScores) : null,
 				dataSource: result.trace.dataSource ?? "learner-feedback",
+				scoreSource,
 			};
 		})
 		.sort((a, b) => b.overallScore - a.overallScore);
@@ -832,15 +800,16 @@ export function perModelBreakdownToMarkdown(breakdown: ModelBenchmarkBreakdown[]
 	const lines = [
 		"## Per-Model Results",
 		"",
-		"Each signal is attributed to the model that was teaching in the session where it was collected.",
+		"Records are grouped by the model recorded for their session. These historical groups are not matched experiments and do not establish that one model teaches better. Quiz grades are not counted as feedback labels.",
 		"",
-		"| Model | Score | Signals | 👍 | 👎 | 🤔 | Quiz avg | Evidence |",
+		"| Model | Descriptive score | Records | 👍 | 👎 | 🤔 | Quiz avg | Evidence |",
 		"| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
 	];
 	for (const row of breakdown) {
 		const quiz = row.quizAverage === null ? "—" : `${Math.round(row.quizAverage * 100)}% (n=${row.quizCount})`;
+		const score = row.scoreSource === "unavailable" ? "unknown" : row.overallScore.toFixed(2);
 		lines.push(
-			`| ${row.model} | ${row.overallScore.toFixed(2)} | ${row.outcomes} | ${row.thumbsUp} | ${row.thumbsDown} | ${row.confused} | ${quiz} | ${row.dataSource} |`
+			`| ${row.model} | ${score} | ${row.outcomes} | ${row.thumbsUp} | ${row.thumbsDown} | ${row.confused} | ${quiz} | ${row.dataSource}; ${row.scoreSource ?? "unclassified"} |`
 		);
 	}
 	return lines.join("\n");
@@ -854,7 +823,9 @@ export function runBenchmarkSuite(
 	weights: SimulationWeights = DEFAULT_WEIGHTS,
 	realOutcomes?: BrowserLearnerOutcome[]
 ): BenchmarkResult {
-	const outcomes = realOutcomes ?? [];
+	const outcomes = focusTopic
+		? (realOutcomes ?? []).filter((outcome) => outcome.topic === resolveTopic(focusTopic).slug)
+		: realOutcomes ?? [];
 	const hasLearnerContext = realOutcomes !== undefined;
 	const hasFeedback = outcomes.length > 0;
 	const hasEnoughFeedback = hasEnoughRealData(outcomes);
@@ -900,11 +871,13 @@ export function runBenchmarkSuite(
 			},
 			dominantStrength: summary.dominantStrength,
 			dominantWeakness: summary.dominantWeakness,
+			evidence: summary.evidence,
 		});
 		return summary;
 	});
 
-	const weakest = [...topicBenchmarks].sort((left, right) => left.meanScore - right.meanScore)[0];
+	const scoredTopics = topicBenchmarks.filter((entry) => !hasLearnerContext || entry.evidence?.score.value != null);
+	const weakest = [...scoredTopics].sort((left, right) => left.meanScore - right.meanScore)[0];
 	const dataSource = hasLearnerContext
 		? hasFeedback
 			? hasEnoughFeedback
@@ -917,7 +890,7 @@ export function runBenchmarkSuite(
 		policy,
 		suiteName: focusTopic ? `focused:${focusTopic}` : "core-suite",
 		topicBenchmarks,
-		overallScore: mean(topicBenchmarks.map((entry) => entry.meanScore)),
+		overallScore: mean(scoredTopics.map((entry) => entry.meanScore)),
 		weakestTopic: weakest?.topic.title ?? "n/a",
 		trace: {
 			seed,
@@ -926,44 +899,60 @@ export function runBenchmarkSuite(
 			realOutcomeCount: outcomes.length,
 			syntheticFallback: !hasLearnerContext,
 			dataSource,
+			evaluationMode: hasLearnerContext ? "retrospective" : "synthetic",
+			eligibleForPromotion: false,
 		},
 	};
 }
 
 export function benchmarkToMarkdown(result: BenchmarkResult): string {
+	const retrospective = result.trace.evaluationMode === "retrospective" || !result.trace.syntheticFallback;
+	const sources = new Set(result.topicBenchmarks.map((entry) => entry.evidence?.score.source)
+		.filter((source) => source !== undefined && source !== "unavailable"));
+	const overallLabel = !retrospective ? "synthetic" : sources.size > 1 ? "mixed assessment and feedback proxy"
+		: sources.has("observed") ? "recorded assessment performance" : sources.has("proxy") ? "feedback proxy" : "unknown";
+	const measurementText = (measurement: BenchmarkMeasurement | undefined, fallback: number, scale = 1): string => {
+		if (measurement?.value != null) return `${(measurement.value * scale).toFixed(2)}${measurement.source === "proxy" ? " (proxy)" : ""}`;
+		return retrospective ? "unknown" : fallback.toFixed(2);
+	};
 	const lines = [
 		`# Benchmark Report: ${result.policy.name}`,
 		"",
 		`- Suite: ${result.suiteName}`,
-		`- Overall score: ${result.overallScore.toFixed(2)}`,
-		`- Weakest topic: ${result.weakestTopic}`,
+		`- Overall descriptive score: ${overallLabel === "unknown" ? "unknown" : result.overallScore.toFixed(2)} (${overallLabel})`,
+		`- Lowest recorded topic score: ${result.weakestTopic}`,
+		`- Learner evidence records: ${result.trace.realOutcomeCount}`,
+		`- Data source: ${result.trace.dataSource ?? (result.trace.syntheticFallback ? "synthetic" : "learner-feedback")}`,
+		"- Validates a candidate policy: no",
 		"",
-		"| Topic | Score | Mastery | Retention | Engagement | Transfer | Confusion |",
+		"| Topic | Score | Learning gain | Retention | Engagement | Transfer | Confusion |",
 		"| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
 	];
 
 	for (const benchmark of result.topicBenchmarks) {
+		const evidence = benchmark.evidence;
 		lines.push(
-			`| ${benchmark.topic.title} | ${benchmark.meanScore.toFixed(2)} | ${benchmark.meanMasteryGain.toFixed(2)} | ${benchmark.meanRetention.toFixed(2)} | ${benchmark.meanEngagement.toFixed(2)} | ${benchmark.meanTransfer.toFixed(2)} | ${benchmark.meanConfusion.toFixed(2)} |`
+			`| ${benchmark.topic.title} | ${measurementText(evidence?.score, benchmark.meanScore, 100)} | ${measurementText(evidence?.metrics.masteryGain, benchmark.meanMasteryGain)} | ${measurementText(evidence?.metrics.retention, benchmark.meanRetention)} | ${measurementText(evidence?.metrics.engagement, benchmark.meanEngagement)} | ${measurementText(evidence?.metrics.transfer, benchmark.meanTransfer)} | ${measurementText(evidence?.metrics.confusion, benchmark.meanConfusion)} |`
 		);
 	}
 
 	lines.push("");
 	lines.push("## Interpretation");
 	lines.push("");
-	lines.push(
-		`- The policy currently underperforms most on ${result.weakestTopic}, which is a useful anchor for mutation and curriculum repair.`
-	);
-	const realCount = (result as any).trace?.realOutcomeCount ?? 0;
-	const dataSource = (result as any).trace?.dataSource;
-	if (dataSource === "learner-feedback") {
-		lines.push(`- Benchmark uses **learner feedback only** (${realCount} data points). This is ready for policy evolution.`);
-	} else if (dataSource === "learner-feedback-sparse") {
-		lines.push(`- Benchmark uses **learner feedback only**, but the corpus is sparse (${realCount}/${MIN_REAL_OUTCOMES} minimum signals). Treat this as directional and do not evolve policy yet.`);
-	} else if (dataSource === "no-learner-feedback") {
-		lines.push(`- Benchmark has no learner feedback yet. Teach first, collect at least ${MIN_REAL_OUTCOMES} feedback signals for this learner, then benchmark/evolve.`);
+	if (retrospective) {
+		lines.push(
+			"- This is a retrospective evidence summary. Changing policy settings or weights cannot change recorded outcomes or establish that a candidate teaches better.",
+			"- Recorded quiz performance does not measure learning gain without a comparable baseline. Retention and transfer require delayed and novel unaided assessments. Unknown values are not measured failures.",
+			"- Feedback and inferred conversation signals are proxies. Five signals or any other record count cannot authorize policy promotion; fresh executions and an independent evaluation gate are required.",
+			"- The overall score averages topic summaries and can mix assessment and proxy evidence; use the source and sample counts for each topic."
+		);
+		for (const benchmark of result.topicBenchmarks) {
+			const evidence = benchmark.evidence;
+			if (evidence) lines.push(`- ${benchmark.topic.title}: ${evidence.assessmentPerformance.sampleSize} assessment records; ${evidence.feedbackCounts.explicit} explicit, ${evidence.feedbackCounts.inferred} inferred, ${evidence.feedbackCounts.unclassified} unclassified feedback signals. ${evidence.score.note}`);
+		}
+		if (sources.size === 0) lines.push("- No usable learner assessment or feedback score is available for the requested topic(s).");
 	} else {
-		lines.push("- Benchmark uses the deterministic synthetic fallback because no learner feedback corpus was supplied.");
+		lines.push("- This benchmark uses synthetic learner simulations. Synthetic scores test model assumptions and do not establish human learning effectiveness.");
 	}
 	lines.push("");
 	return `${lines.join("\n")}\n`;
@@ -1147,62 +1136,8 @@ export function evolvePolicy(
 	};
 }
 
-export interface MapElitesCell {
-	policy: TeacherPolicy;
-	weights: SimulationWeights;
-	score: number;
-	benchmark: BenchmarkResult;
-	iteration: number;
-}
-
-export interface MapElitesGrid {
-	descriptors: string[];
-	resolution: number;
-	cells: Map<string, MapElitesCell | null>;
-}
-
-export interface MapElitesRun {
-	baseline: BenchmarkResult;
-	best: BenchmarkResult;
-	grid: MapElitesGrid;
-	filledCellCount: number;
-	totalCells: number;
-	exploredCandidates: EvolutionCandidate[];
-}
-
 const DEFAULT_DESCRIPTORS = ["formalism", "socraticRatio"];
 const DEFAULT_RESOLUTION = 10;
-
-function meCellKey(descriptors: number[], resolution: number): string {
-	return descriptors
-		.map((d) => Math.min(Math.floor(d * resolution), resolution - 1))
-		.join(",");
-}
-
-function meGetDescriptorValues(policy: TeacherPolicy, descriptors: string[]): number[] {
-	return descriptors.map((d) => {
-		const val = policy[d as keyof TeacherPolicy];
-		return typeof val === "number" ? val : 0;
-	});
-}
-
-function mePlaceInGrid(
-	grid: MapElitesGrid,
-	policy: TeacherPolicy,
-	weights: SimulationWeights,
-	score: number,
-	benchmark: BenchmarkResult,
-	iteration: number
-): boolean {
-	const descVals = meGetDescriptorValues(policy, grid.descriptors);
-	const key = meCellKey(descVals, grid.resolution);
-	const existing = grid.cells.get(key);
-	if (!existing || score > existing.score) {
-		grid.cells.set(key, { policy, weights, score, benchmark, iteration });
-		return !existing;
-	}
-	return false;
-}
 
 function meSelectParent(grid: MapElitesGrid, prng: Prng): { policy: TeacherPolicy; weights: SimulationWeights } {
 	const filled = Array.from(grid.cells.values()).filter((c): c is MapElitesCell => c !== null);
@@ -1253,14 +1188,6 @@ function browserCounterfactualOutcomes(outcomes: BrowserLearnerOutcome[]): Brows
 	});
 }
 
-type PolicyJudgementCandidate = {
-	label: string;
-	policy: TeacherPolicy;
-	benchmark: BenchmarkResult;
-	counterfactualBenchmark?: BenchmarkResult;
-	preferenceScore: number;
-};
-
 function policyJudgementVector(candidate: PolicyJudgementCandidate): number[] {
 	const mean = (values: number[]) => values.length === 0 ? 0 : values.reduce((sum, value) => sum + value, 0) / values.length;
 	const topics = candidate.benchmark.topicBenchmarks;
@@ -1309,6 +1236,9 @@ export function mapElitesEvolve(
 	resolution = DEFAULT_RESOLUTION,
 	realOutcomes?: BrowserLearnerOutcome[]
 ): MapElitesRun {
+	if (realOutcomes !== undefined) {
+		throw new Error("Retrospective learner records cannot validate policy evolution. Run fresh teaching episodes with independent evaluation.");
+	}
 	const prng = new Prng(seed);
 	const grid: MapElitesGrid = { descriptors, resolution, cells: new Map() };
 	const totalCells = resolution ** descriptors.length;
@@ -1319,7 +1249,7 @@ export function mapElitesEvolve(
 	const baselineCounterfactual = cfOutcomes
 		? runBenchmarkSuite(basePolicy, focusTopic, seed + 7, 3, DEFAULT_WEIGHTS, cfOutcomes)
 		: undefined;
-	mePlaceInGrid(grid, basePolicy, DEFAULT_WEIGHTS, baseline.overallScore, baseline, 0);
+	placeInMapElitesGrid(grid, basePolicy, DEFAULT_WEIGHTS, baseline.overallScore, baseline, 0);
 
 	const exploredCandidates: EvolutionCandidate[] = [];
 	const judgementCandidates: PolicyJudgementCandidate[] = [{
@@ -1347,7 +1277,7 @@ export function mapElitesEvolve(
 		const candidateCounterfactual = cfOutcomes
 			? runBenchmarkSuite(candidatePolicy, focusTopic, seed + i * 11 + 7, 3, candidateWeights, cfOutcomes)
 			: undefined;
-		const isNewCell = mePlaceInGrid(grid, candidatePolicy, candidateWeights, candidateBenchmark.overallScore, candidateBenchmark, i);
+		const isNewCell = placeInMapElitesGrid(grid, candidatePolicy, candidateWeights, candidateBenchmark.overallScore, candidateBenchmark, i);
 
 		exploredCandidates.push({
 			policy: candidatePolicy,
@@ -1407,58 +1337,7 @@ export function mapElitesToEvolutionRun(run: MapElitesRun): EvolutionRun {
 }
 
 export function mapElitesToMarkdown(run: MapElitesRun): string {
-	const lines = [
-		"# MAP-Elites Evolution Report",
-		"",
-		`- Descriptors: ${run.grid.descriptors.join(" × ")}`,
-		`- Grid: ${run.grid.resolution}^${run.grid.descriptors.length} = ${run.totalCells} cells`,
-		`- Filled cells: ${run.filledCellCount} / ${run.totalCells} (${((run.filledCellCount / run.totalCells) * 100).toFixed(1)}%)`,
-		`- Baseline score: ${run.baseline.overallScore.toFixed(2)}`,
-		`- Best score: ${run.best.overallScore.toFixed(2)}`,
-		`- Explored candidates: ${run.exploredCandidates.length}`,
-		`- Judgement: PROSPER-style pairwise preference over real feedback, counterfactual robustness, mastery, transfer, low confusion, and evidence readiness.`,
-		"",
-		"## Elite Archive",
-		"",
-	];
-
-	const sorted = Array.from(run.grid.cells.entries()).sort(([a], [b]) => a.localeCompare(b));
-	const header = run.grid.descriptors.map((d, i) => `${d}[${i}]`).join(" | ");
-	lines.push(`| ${header} | Policy | Score | Weights (m/r/e/t/c) |`);
-	lines.push(`| ${run.grid.descriptors.map(() => "---").join(" | ")} | --- | ---: | --- |`);
-
-	for (const [key, cell] of sorted) {
-		if (!cell) continue;
-		const indices = key.split(",").map(Number);
-		const labels = indices
-			.map((idx, i) => {
-				const lo = (idx / run.grid.resolution).toFixed(2);
-				const hi = ((idx + 1) / run.grid.resolution).toFixed(2);
-				return `${lo}–${hi}`;
-			})
-			.join(" | ");
-		const w = cell.weights;
-		lines.push(
-			`| ${labels} | ${cell.policy.name} | ${cell.score.toFixed(2)} | ${w.masteryGain.toFixed(2)}/${w.retention.toFixed(2)}/${w.engagement.toFixed(2)}/${w.transfer.toFixed(2)}/${w.confusion.toFixed(2)} |`
-		);
-	}
-
-	lines.push("");
-	lines.push("## PROSPER Candidate Judgement");
-	lines.push("");
-	lines.push("| Candidate | Real Score | Counterfactual Score | Preference | Accepted |");
-	lines.push("| --- | ---: | ---: | ---: | :---: |");
-	for (const candidate of run.exploredCandidates.slice().sort((left, right) => (right.preferenceScore ?? 0) - (left.preferenceScore ?? 0)).slice(0, 12)) {
-		lines.push(
-			`| ${candidate.policy.name} | ${candidate.benchmark.overallScore.toFixed(2)} | ${candidate.counterfactualBenchmark?.overallScore.toFixed(2) ?? "n/a"} | ${(candidate.preferenceScore ?? 0).toFixed(2)} | ${candidate.accepted ? "yes" : "no"} |`
-		);
-	}
-	lines.push("");
-	lines.push("## Best Benchmark Snapshot");
-	lines.push("");
-	lines.push(benchmarkToMarkdown(run.best).trim());
-	lines.push("");
-	return `${lines.join("\n")}\n`;
+	return formatMapElitesRun(run, benchmarkToMarkdown);
 }
 
 export function evolutionToMarkdown(run: EvolutionRun): string {
@@ -1764,7 +1643,9 @@ export function generateImprovementProposal(benchmark: BenchmarkResult): Improve
 		suggestion: w.suggestion,
 	}));
 
-	const hypothesis = targets.length > 0
+	const hypothesis = benchmark.trace.evaluationMode === "retrospective" || !benchmark.trace.syntheticFallback
+		? "These historical records suggest questions to investigate. Test any teaching change with fresh executions; unmeasured retention or transfer is not evidence of failure."
+		: targets.length > 0
 		? `Improving ${targets.map((t) => t.area).join(", ")} should raise the overall benchmark score from ${benchmark.overallScore.toFixed(2)} by addressing the identified weak areas.`
 		: `The benchmark score is ${benchmark.overallScore.toFixed(2)} with no severe weaknesses detected. Consider exploring novel teaching strategies.`;
 
@@ -1866,7 +1747,9 @@ export function diagnoseBenchmark(benchmark: BenchmarkResult): ImprovementSugges
 	const suggestions: ImprovementSuggestion[] = [];
 
 	// Find weakest topic
-	const weakest = [...benchmark.topicBenchmarks].sort((a, b) => a.meanScore - b.meanScore)[0];
+	const retrospective = benchmark.trace.evaluationMode === "retrospective" || !benchmark.trace.syntheticFallback;
+	const scoredTopics = benchmark.topicBenchmarks.filter((entry) => !retrospective || entry.evidence?.score.value != null);
+	const weakest = [...scoredTopics].sort((a, b) => a.meanScore - b.meanScore)[0];
 	if (weakest && weakest.meanScore < 55) {
 		suggestions.push({
 			area: `Topic: ${weakest.topic.title}`,
@@ -1888,8 +1771,9 @@ export function diagnoseBenchmark(benchmark: BenchmarkResult): ImprovementSugges
 	}
 
 	// Check transfer
-	const allTransfer = mean(benchmark.topicBenchmarks.map((t) => t.meanTransfer));
-	if (allTransfer < 0.35) {
+	const measuredTransfer = benchmark.topicBenchmarks.filter((entry) => !retrospective || entry.evidence?.metrics.transfer.value != null);
+	const allTransfer = mean(measuredTransfer.map((t) => t.meanTransfer));
+	if (measuredTransfer.length > 0 && allTransfer < 0.35) {
 		suggestions.push({
 			area: "Knowledge Transfer",
 			metric: "meanTransfer",
@@ -1904,22 +1788,6 @@ export function diagnoseBenchmark(benchmark: BenchmarkResult): ImprovementSugges
 // ============================================================================
 // Engagement Timeline (spaced revisit system)
 // ============================================================================
-
-export interface EngagementPolicy {
-	name: string;
-	retentionHalfLifeDays: number;
-	dueThreshold: number;
-	minReviewIntervalDays: number;
-	urgencyTiers: [number, number, number, number];
-}
-
-export const DEFAULT_ENGAGEMENT_POLICY: EngagementPolicy = {
-	name: "spaced-revisit-default",
-	retentionHalfLifeDays: 7,
-	dueThreshold: 0.5,
-	minReviewIntervalDays: 1,
-	urgencyTiers: [21, 14, 7, 3],
-};
 
 export type UrgencyLabel = "critical" | "high" | "moderate" | "low" | "fresh";
 
@@ -2049,16 +1917,6 @@ export function getDueTopics(
 	return buildEngagementTimeline(coveredTopics, policy, now).topics.filter((t) => t.isDue);
 }
 
-function formatDaysAgo(days: number): string {
-	if (days < 1) return "today";
-	if (days < 2) return "1 day ago";
-	if (days < 7) return `${Math.floor(days)} days ago`;
-	if (days < 14) return "1 week ago";
-	if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
-	if (days < 60) return "1 month ago";
-	return `${Math.floor(days / 30)} months ago`;
-}
-
 function urgencyEmoji(label: UrgencyLabel): string {
 	switch (label) {
 		case "critical": return "🔴";
@@ -2179,18 +2037,6 @@ export interface QuizGradePayload {
 	grades: QuizQuestionGrade[];
 }
 
-export interface QuizReview {
-	status: "passed" | "revised";
-	issues: string[];
-	duplicatesRemoved: number;
-	maxQuestionChars: number;
-	maxAnswerChars: number;
-	maxExplanationChars: number;
-	maxRubricChars: number;
-	maxOptionChars: number;
-	limits: QuizLimits;
-}
-
 export interface AdaptiveRule {
 	level: "recall" | "comprehension" | "application" | "analysis" | "transfer";
 	threshold: number;
@@ -2204,14 +2050,6 @@ export interface Quiz {
 	totalPoints: number;
 	adaptiveRules?: AdaptiveRule[];
 	review: QuizReview;
-}
-
-export interface QuizLimits {
-	questionChars: number;
-	answerChars: number;
-	explanationChars: number;
-	rubricChars: number;
-	optionChars: number;
 }
 
 export type QuizLimitOverrides = Partial<QuizLimits>;

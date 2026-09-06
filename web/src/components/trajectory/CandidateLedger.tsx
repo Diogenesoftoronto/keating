@@ -1,3 +1,4 @@
+import { Select } from "../Select";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	estimatePoolCostUsd,
@@ -8,7 +9,8 @@ import {
 } from "../../keating/trajectory-review";
 import { css, cx } from "../../../styled-system/css";
 import { KeatingIcon } from "../KeatingIcon";
-import { MarkdownBlock } from "../MarkdownBlock";
+import { buildOpenUIPreview } from "../../keating/openui/preview";
+import { OpenUIPreview } from "../OpenUIPreview";
 import { reviewIcon } from "./review-icons";
 import {
 	compatibleReviewModelPools,
@@ -162,7 +164,7 @@ export function CandidateLedger({
 			<div className={css({ display: "flex", alignItems: "flex-end", gap: "0.5rem" })}>
 				<label className={css({ minWidth: 0, flex: 1, fontSize: "0.6875rem", fontWeight: 650, color: "var(--foreground)" })}>
 					{activeTask ? `Model pool for ${reviewTaskLabel(activeTask).toLowerCase()}` : "Model pool"}
-					<select value={poolId} className={cx(inputClass, css({ marginTop: "0.25rem" }))} disabled={compatiblePools.length === 0} onChange={(event) => onSelectModelPool(event.currentTarget.value)}>
+					<Select aria-label="Candidate model pool" value={poolId} className={cx(inputClass, css({ marginTop: "0.25rem" }))} disabled={compatiblePools.length === 0} onValueChange={(value) => onSelectModelPool(value)}>
 						{compatiblePools.length === 0 ? <option value="">No compatible pools</option> : null}
 						{compatiblePools.map((pool) => {
 							const availability = activeTask ? reviewPoolGenerationAvailability(pool, activeTask, availableModels) : undefined;
@@ -173,7 +175,7 @@ export function CandidateLedger({
 									: "";
 							return <option key={pool.id} value={pool.id}>{pool.name}{suffix}</option>;
 						})}
-					</select>
+					</Select>
 				</label>
 				<button type="button" className={primaryButtonClass} disabled={!canGenerate} onClick={generate}>
 					<KeatingIcon icon={isGenerating ? reviewIcon.retry : reviewIcon.pass} size={13} active={isGenerating} className={isGenerating ? css({ animation: "spin 1s linear infinite", _motionReduce: { animation: "none" } }) : undefined} />
@@ -255,7 +257,7 @@ export function CandidateLedger({
 								{active.error ? <div role="alert" className={css({ marginTop: "0.75rem", border: "1px solid color-mix(in srgb, var(--destructive) 45%, var(--border))", borderRadius: "0.375rem", background: "color-mix(in srgb, var(--destructive) 8%, transparent)", padding: "0.625rem", fontSize: "0.75rem", color: "var(--destructive)" })}>{active.error}</div> : null}
 								{active.content ? (
 									<div className={css({ marginTop: "1rem", maxWidth: "72ch", overflowWrap: "anywhere", fontSize: "0.875rem", lineHeight: 1.65, color: "var(--foreground)" })}>
-										{contentView === "rendered" ? <MarkdownBlock content={active.content} /> : <pre className={css({ overflow: "auto", whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontFamily: "var(--font-mono, ui-monospace, monospace)", fontSize: "0.8125rem", lineHeight: 1.6 })}>{active.content}</pre>}
+										{contentView === "rendered" ? <OpenUIPreview blocks={buildOpenUIPreview(active.content, { sessionId: "candidate", messageId: active.id })} /> : <pre className={css({ overflow: "auto", whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontFamily: "var(--font-mono, ui-monospace, monospace)", fontSize: "0.8125rem", lineHeight: 1.6 })}>{active.content}</pre>}
 									</div>
 								) : active.state === "running" || active.state === "queued" ? <div className={cx(metaTextClass, css({ marginTop: "0.75rem" }))}>Waiting for model output...</div> : null}
 								<div className={css({ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: "0.375rem", borderTop: "1px solid var(--border)", marginTop: "0.75rem", paddingTop: "0.625rem" })}>

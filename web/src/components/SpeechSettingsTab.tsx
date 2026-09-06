@@ -1,3 +1,4 @@
+import { Select } from "./Select";
 import { useEffect, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { SettingsSectionNav } from "./SettingsSectionNav";
@@ -7,6 +8,7 @@ import { AudioModelSelectorDialog } from "./ModelSelector";
 import {
 	listSpeechProviders,
 	resolveSpeechRealtimeTier,
+	usesProviderHostedLiveSurface,
 	type CustomSpeechModel,
 	type SpeechProviderDescriptor,
 	type SpeechProviderId,
@@ -116,7 +118,8 @@ export function SpeechSettingsTab({ onSettingsChange, hideNav = false }: SpeechS
 	const [audioModelPickerOpen, setAudioModelPickerOpen] = useState(false);
 	// Vision availability is a property of the chosen model, so the control
 	// explains itself rather than failing when the session starts.
-	const videoTier = resolveSpeechRealtimeTier(settings);
+	const liveTier = resolveSpeechRealtimeTier(settings);
+	const providerHostedLive = usesProviderHostedLiveSurface(settings);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -225,7 +228,7 @@ export function SpeechSettingsTab({ onSettingsChange, hideNav = false }: SpeechS
 				<div>
 					<h3 className={sectionTitleClass}>Provider</h3>
 					<p className={sectionDescriptionClass}>
-						Choose which speech engine generates audio. Cloud providers need an API key in Providers & Models.
+						Choose which speech engine generates audio. Tavus is configured on the Keating server; browser-connected providers use Providers & Models.
 					</p>
 				</div>
 				<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
@@ -332,31 +335,31 @@ export function SpeechSettingsTab({ onSettingsChange, hideNav = false }: SpeechS
 					{settings.providerId === "openai-realtime" && settings.model.startsWith("gpt-realtime-2") && (
 						<div className={fieldStackClass}>
 							<label className={fieldLabelClass}>Reasoning effort</label>
-							<select
+							<Select aria-label="Reasoning effort"
 								className={inputClass}
 								value={settings.reasoningEffort}
-								onChange={(e) => persist({ reasoningEffort: e.target.value as WebSpeechSettings["reasoningEffort"] })}
+								onValueChange={(value) => persist({ reasoningEffort: value as WebSpeechSettings["reasoningEffort"] })}
 							>
 								<option value="minimal">Minimal — lowest latency</option>
 								<option value="low">Low</option>
 								<option value="medium">Medium</option>
 								<option value="high">High</option>
 								<option value="xhigh">Extra high</option>
-							</select>
+							</Select>
 						</div>
 					)}
-					<div className={fieldStackClass}>
+					{settings.providerId !== "tavus" ? <div className={fieldStackClass}>
 						<label className={fieldLabelClass}>Voice</label>
 						{activeProvider && activeProvider.voices.length > 0 ? (
-							<select
+							<Select aria-label="Voice"
 								className={inputClass}
 								value={settings.voiceName}
-								onChange={(e) => persist({ voiceName: e.target.value })}
+								onValueChange={(value) => persist({ voiceName: value })}
 							>
 								{activeProvider.voices.map((v) => (
 									<option key={v} value={v}>{v}</option>
 								))}
-							</select>
+							</Select>
 						) : (
 							<input
 								type="text"
@@ -366,7 +369,7 @@ export function SpeechSettingsTab({ onSettingsChange, hideNav = false }: SpeechS
 								placeholder="Voice name"
 							/>
 						)}
-					</div>
+					</div> : null}
 				</div>
 			)}
 
@@ -381,46 +384,55 @@ export function SpeechSettingsTab({ onSettingsChange, hideNav = false }: SpeechS
 
 			<SettingRow
 				id="settings-section-speech-video"
-				title="Camera or screen (live sessions)"
-				description={videoTier.video
-					? `${videoTier.label}. ${videoTier.videoRoute === "native"
-						? "This model has a live video lane, so Keating streams frames straight to it."
-						: "This model has no video lane, so Keating samples still frames instead."}`
-					: `Not available on this model. ${videoTier.capReason ?? ""}`}
+				title={providerHostedLive ? "Tavus video and activities" : liveTier.video ? "Camera or screen (live sessions)" : liveTier.image ? "Still images (live sessions)" : "Visual input (live sessions)"}
+				description={providerHostedLive
+					? "KeatingBot sees and hears through the private Tavus call. Its Magic Canvas can show questions, inputs, charts, images, and other interactive activities inside the video surface."
+					: liveTier.video
+					? `${liveTier.label}. This model has a live video lane, so Keating can use the camera or a shared screen.`
+					: liveTier.image
+						? `${liveTier.label}. Add a deliberate JPEG or PNG during the conversation. This model does not receive camera or screen video.`
+						: `Not available on this model. ${liveTier.capReason ?? ""}`}
 				className={css({ scrollMarginTop: "5rem" })}
 			>
-				<Toggle
-					checked={settings.videoEnabled && videoTier.video}
-					disabled={!videoTier.video}
-					onChange={(checked) => persist({ videoEnabled: checked })}
-				/>
+				{providerHostedLive ? (
+					<span className={badgeClass}>Controlled in Live</span>
+				) : liveTier.video ? (
+					<Toggle
+						checked={settings.videoEnabled}
+						onChange={(checked) => persist({ videoEnabled: checked })}
+					/>
+				) : liveTier.image ? (
+					<span className={badgeClass}>Available in Live</span>
+				) : (
+					<Toggle checked={false} disabled onChange={() => {}} />
+				)}
 			</SettingRow>
 
-			{settings.videoEnabled && videoTier.video && (
+			{settings.videoEnabled && liveTier.video && !providerHostedLive && (
 				<div className={css({ display: "grid", gap: "0.75rem", sm: { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" } })}>
 					<div className={fieldStackClass}>
 						<label className={fieldLabelClass}>Source</label>
-						<select
+						<Select aria-label="Video source"
 							className={inputClass}
 							value={settings.videoSource}
-							onChange={(e) => persist({ videoSource: e.target.value as WebSpeechSettings["videoSource"] })}
+							onValueChange={(value) => persist({ videoSource: value as WebSpeechSettings["videoSource"] })}
 						>
 							<option value="camera">Camera</option>
 							<option value="screen">Screen share</option>
-						</select>
+						</Select>
 					</div>
 					<div className={fieldStackClass}>
 						<label className={fieldLabelClass}>Frame rate</label>
-						<select
+						<Select aria-label="Video frame rate"
 							className={inputClass}
 							value={String(settings.frameIntervalMs)}
-							onChange={(e) => persist({ frameIntervalMs: Number(e.target.value) })}
+							onValueChange={(value) => persist({ frameIntervalMs: Number(value) })}
 						>
-							{/* Both providers cap video at one frame per second. */}
+							{/* Gemini Live accepts at most one video frame per second. */}
 							<option value="1000">1 frame per second — most responsive</option>
 							<option value="2000">1 frame every 2 seconds</option>
 							<option value="5000">1 frame every 5 seconds — cheapest</option>
-						</select>
+						</Select>
 					</div>
 				</div>
 			)}

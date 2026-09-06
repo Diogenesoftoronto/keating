@@ -110,10 +110,22 @@ export const courseArtifactInputSchema = courseArtifactSchema.omit({
 });
 export type CourseArtifactInput = z.infer<typeof courseArtifactInputSchema>;
 
+export const submissionAttachmentSchema = z.object({
+  id: z.string().regex(/^attachment_[a-f0-9]{32}$/),
+  name: z.string().min(1).max(255),
+  mimeType: z.string().min(1).max(160),
+  sizeBytes: z.number().int().positive().max(25 * 1024 * 1024),
+});
+
 export const courseAssignmentSchema = z.object({
   id: idSchema,
   title: shortTextSchema,
   brief: z.string().trim().min(1).max(120_000),
+  taskKind: z.enum(["assignment", "practice", "draft", "fieldwork"]).optional(),
+  availableFrom: isoDateSchema.optional(),
+  targetWords: z.number().int().positive().optional(),
+  round: z.number().int().positive().optional(),
+  taskItems: z.array(z.object({ id: idSchema, title: shortTextSchema, detail: z.string().optional() })).max(64).optional(),
   deliverables: z
     .array(z.string().trim().min(1).max(2_000))
     .max(24)
@@ -138,6 +150,7 @@ export const courseAssignmentSubmissionSchema = z.object({
   assignmentId: idSchema,
   accountId: z.string().min(1).max(256),
   answer: z.string().max(500_000),
+  attachments: z.array(submissionAttachmentSchema).max(10).optional(),
   status: z.enum(["draft", "submitted"]),
   sharedWithPeers: z.boolean().default(false),
   version: z.number().int().positive(),
@@ -491,6 +504,7 @@ export const courseOperationSchema = z.discriminatedUnion("type", [
     submissionId: idSchema,
     assignmentId: idSchema,
     answer: z.string().max(500_000),
+  attachments: z.array(submissionAttachmentSchema).max(10).optional(),
     status: z.enum(["draft", "submitted"]),
     sharedWithPeers: z.boolean().default(false),
     baseVersion: z.number().int().nonnegative(),

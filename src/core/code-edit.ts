@@ -1,23 +1,10 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { join, dirname, relative } from "node:path";
 
-export interface SourceEdit {
-  file: string;
-  search: string;
-  replace: string;
-  reason: string;
-}
+import type { EditResult, SourceEdit as SharedSourceEdit } from "../../shared/source-edit.js";
 
-export interface EditResult {
-  success: boolean;
-  file: string;
-  message: string;
-  diff?: {
-    linesRemoved: number;
-    linesAdded: number;
-    charDelta: number;
-  };
-}
+export type SourceEdit = SharedSourceEdit<true>;
+export type { EditResult } from "../../shared/source-edit.js";
 
 export interface EditBatchResult {
   results: EditResult[];

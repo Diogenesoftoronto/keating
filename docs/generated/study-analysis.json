@@ -1,7 +1,8 @@
 {
-  "generatedAt": "2026-08-11T16:26:41.368Z",
+  "generatedAt": "2026-09-06T13:42:05.473Z",
   "protocol": {
-    "softwareVersion": "3.3.0",
+    "softwareVersion": "3.13.0",
+    "frozenPolicyOriginVersion": "3.3.0",
     "evaluatedPolicyPath": "docs/study/evaluated-policy.json",
     "benchmarkMode": "deterministic-synthetic-fallback",
     "syntheticLearnersPerTopic": 3,
@@ -14,6 +15,207 @@
       "traceCorpusSha256": "66e93fa46d5d0d8990e92453800d4ac9ecd844db13959a5113ae3557376ef445",
       "snapshotSha256": "87b91f1724a991abbb3f35630a2a67218156ad55848d998f4299eceadac86638",
       "evaluatedPolicySha256": "0234046551bd7699e0f4fb3bda1af59c44bfa3e8500a53cb06cb7052fbcd75e1"
+    }
+  },
+  "currentImplementation": {
+    "softwareVersion": "3.13.0",
+    "provenance": "working-tree source manifest; package version alone does not identify this revision",
+    "sourceDigest": "sha256:815c8b02db849118e0e81750554f765029e0537a2ef5254a3e9454e3cac8056b",
+    "sourceManifest": [
+      {
+        "path": "SYSTEM.md",
+        "sha256": "2559723b219de7e89b0040376c3a41cb8d52cee654857a87cc71be303b2a2728"
+      },
+      {
+        "path": "bun.lock",
+        "sha256": "223f1013a9a8b5a8f98bccf8f745ac0b7f994b88379742d48fada00b3eb7484f"
+      },
+      {
+        "path": "package.json",
+        "sha256": "4630fbab3e3737aa6eb3e7b8270daf76849aaff3a605fe1bdcc2c68801fc119e"
+      },
+      {
+        "path": "scripts/generate-nodepod-boot-files.ts",
+        "sha256": "2bf25492cf2a84b061d29cada3e6275fb0355d471e852c4cf6c239927d61de4c"
+      },
+      {
+        "path": "scripts/study-analysis.mjs",
+        "sha256": "4f41e20cd0d0ca1cc0c212942e08994e0139cfe12d7a9539db05a1a45561a01c"
+      },
+      {
+        "path": "shared/evolution/benchmark.ts",
+        "sha256": "5eba8ac6e4cf497273979f7f7547a33b499b704cce479cae41aa146e313e2929"
+      },
+      {
+        "path": "shared/evolution/cases.ts",
+        "sha256": "57aa6c41892f9e858635f623f2de50ef35328f65712eadedc527e18a7364713c"
+      },
+      {
+        "path": "shared/evolution/contracts.ts",
+        "sha256": "070d5e06238bfbcc2114e3febc6ecd2e8a8da4ac58235a205a758c5fe5c80bb4"
+      },
+      {
+        "path": "shared/evolution/learning-checks.ts",
+        "sha256": "3973fc0628874c24e976e664493d107e291426586058543648282a9ab6d664d7"
+      },
+      {
+        "path": "shared/evolution/loop.ts",
+        "sha256": "e4de4e1920e73a79dd9cd4daf2fa53468fc803a48d5f652842dce8932c2c885f"
+      },
+      {
+        "path": "shared/evolution/model-adapters.ts",
+        "sha256": "6aa401a8392f1d80f10735f1400d0a60318c30c7fba0eca8e8e183aaae0b7102"
+      },
+      {
+        "path": "shared/pedagogy/benchmark-real.ts",
+        "sha256": "046b0d1b28edf9c1e7caf0168385660f5a0080536b4d074cddc613df156a321b"
+      },
+      {
+        "path": "shared/pedagogy/types.ts",
+        "sha256": "636b086db7c5697436d16b0456459518863020eec49701112f7fbdfbb0ac7484"
+      },
+      {
+        "path": "src/core/benchmark.ts",
+        "sha256": "722e596e7d648a005cc97d0b00ffe521a94ab25f3157b8decfa6d4b9974b3284"
+      },
+      {
+        "path": "src/core/learning-checks.ts",
+        "sha256": "e0baf685d7c7817bbd2c9665411d8f961143db3f63f2f2b538241516287ddb11"
+      },
+      {
+        "path": "src/core/map-elites.ts",
+        "sha256": "ac1fc18cb70404dd07c7716a076009f7ac4bb142b5df47b10ff30d786ce1f30a"
+      },
+      {
+        "path": "src/core/policy-judgement.ts",
+        "sha256": "f168b776b0dc783ebf72ab3ea764bda17a67def1140f916b1ccee342542eae69"
+      },
+      {
+        "path": "src/core/policy.ts",
+        "sha256": "864fe0c937eff998f192e00d0ed323793870fda52a10e02f67c170f74d280015"
+      },
+      {
+        "path": "src/core/project.ts",
+        "sha256": "51604ab8fce922fca0aeccd1dedd3fc16732e73e9bba684b51f2910bf4bf7086"
+      },
+      {
+        "path": "src/core/teaching-episode-runner.ts",
+        "sha256": "4b2c1a9422e279017ff911feb6d0f9a7c804ee70cef90d721fc81798ccf8db31"
+      },
+      {
+        "path": "src/core/teaching-evolution-store.ts",
+        "sha256": "0046177aafb0d8c7e0fb5b1dbddbe9a91501c54f1dc1b6c30ae238304501469a"
+      },
+      {
+        "path": "src/core/teaching-evolution.ts",
+        "sha256": "da973fa7014f060c00d506c17d16b62aa2452e245765bc4e94514f0361be5f4f"
+      },
+      {
+        "path": "src/core/topics.ts",
+        "sha256": "445254dad33456779933367e3b5694bf25f0d53994fa48fff7cf6d5e8cbf3bf3"
+      },
+      {
+        "path": "src/pi/hyper-teacher/index.ts",
+        "sha256": "d3d787f10337e30ba5b89f098f8365c1122a2e6f84295059842cd4726be144d6"
+      },
+      {
+        "path": "src/runtime/teaching-episode-child.ts",
+        "sha256": "a49b691bd441b87a8dc251cdd9616e5215ae1986fb68f8f662a0470f237ee74d"
+      },
+      {
+        "path": "web/bun.lock",
+        "sha256": "0695cdafbac8d5e4bcf7790cf3303ae99b02013c32e261bc60b1f6c615fdfba4"
+      },
+      {
+        "path": "web/package.json",
+        "sha256": "7fb94b46e847e15d6c26cd1f752a745a561fdc389d6c59d5fca921bcb8991b41"
+      },
+      {
+        "path": "web/src/hooks/useKeatingAgent.tsx",
+        "sha256": "f9f00428e11b76fa66aa20ab8ebf2b2a94764c8e4b13387aeb3c354da9246774"
+      },
+      {
+        "path": "web/src/keating/browser-tools/improvement.ts",
+        "sha256": "071cac4faef1bf4b6bc802efc4abe9772772887623646cdeeb6d376cf69f641b"
+      },
+      {
+        "path": "web/src/keating/browser-tools/prompt.ts",
+        "sha256": "1b7d1476ab39edb09f7a34812e0022837e80b86c97b0fa9f54c5de1adb9ce673"
+      },
+      {
+        "path": "web/src/keating/storage.ts",
+        "sha256": "5115a126bb1819a09a55c40c47d233003109ca53b2329a4a54bbe478a000de21"
+      },
+      {
+        "path": "web/src/keating/teaching-episode-runner.ts",
+        "sha256": "bdcb4b2feeb455cdfc0f02114820f8d458909bab940e803706e307c5cc5186be"
+      },
+      {
+        "path": "web/src/keating/teaching-evolution-store.ts",
+        "sha256": "6d169e196cc3e9633a2b222017fed36d1b5d0b1829a7ef42f770fcd0a27fb0ff"
+      },
+      {
+        "path": "web/src/keating/teaching-evolution.ts",
+        "sha256": "22e7487196cca9dc8d01832bbc4c0441671c61a1711233d251034e3d3972f93a"
+      }
+    ],
+    "teachingSuite": {
+      "version": "teaching-behavior-v1",
+      "digest": "sha256:98d08fa941d18a069ffd9d94a9e2b7e3ccfb6bb3c0a5e42ecae28b3068ae31d4",
+      "caseCount": 18,
+      "familyCount": 18,
+      "splitCounts": {
+        "train": {
+          "cases": 6,
+          "families": 6,
+          "domains": {
+            "mathematics": 3,
+            "programming": 3
+          },
+          "criteria": 24,
+          "criticalCriteria": 8
+        },
+        "validation": {
+          "cases": 6,
+          "families": 6,
+          "domains": {
+            "mathematics": 3,
+            "programming": 3
+          },
+          "criteria": 24,
+          "criticalCriteria": 6
+        },
+        "holdout": {
+          "cases": 6,
+          "families": 6,
+          "domains": {
+            "mathematics": 3,
+            "programming": 3
+          },
+          "criteria": 24,
+          "criticalCriteria": 7
+        }
+      },
+      "plannedTutorEpisodesAtOneRepeat": 30
+    },
+    "learningChecks": {
+      "bankVersion": "fractions-loop-bounds-v1",
+      "stages": [
+        "precheck",
+        "immediate",
+        "delayed",
+        "transfer"
+      ],
+      "topics": [
+        "fractions",
+        "loop-bounds"
+      ]
+    },
+    "evidenceBoundary": {
+      "inventoryIsPerformanceEvaluation": false,
+      "newLoopLiveProviderResults": "not collected for this paper",
+      "humanLearningResults": "not collected for this paper",
+      "legacySyntheticResultsEstablishSkillImprovement": false
     }
   },
   "dataIntegrity": {

@@ -23,8 +23,9 @@ export interface ProviderCapabilities {
 	/**
 	 * Continuous vision during a live session.
 	 * "native"  — the provider has a dedicated realtime video lane (Gemini Live).
-	 * "adapter" — no video lane, but still images can be injected as conversation
-	 *             items, so Keating's frame sampler can stand in (GPT Realtime).
+	 * "adapter" — Keating can adapt another provider feature into a video-like
+	 *             stream. This is intentionally not used for still-image input:
+	 *             an image-capable model is not presented as video-capable.
 	 * "none"    — the session cannot see anything.
 	 */
 	realtimeVideo: CapabilitySupport;
@@ -113,8 +114,19 @@ const OPENAI_TEXT: ProviderCapabilities = {
  */
 export const PROVIDER_CAPABILITY_RULES: readonly CapabilityRule[] = [
 	{
+		id: "tavus-cvi",
+		provider: "tavus",
+		capabilities: {
+			...GENERIC_CAPABILITIES,
+			realtimeAudio: "native",
+			realtimeTransports: ["webrtc"],
+			realtimeVideo: "native",
+			toolCalls: "native",
+		},
+	},
+	{
 		// gpt-realtime / gpt-realtime-2* accept still images as conversation
-		// items, so Keating's frame sampler can supply continuous vision.
+		// items. They do not have a realtime video lane.
 		id: "openai-realtime-vision",
 		provider: "openai",
 		model: /^gpt-realtime/i,
@@ -122,7 +134,7 @@ export const PROVIDER_CAPABILITY_RULES: readonly CapabilityRule[] = [
 			...GENERIC_CAPABILITIES,
 			realtimeAudio: "native",
 			realtimeTransports: ["webrtc", "websocket"],
-			realtimeVideo: "adapter",
+			realtimeVideo: "none",
 			realtimeImage: "native",
 			toolCalls: "native",
 		},
@@ -288,7 +300,7 @@ export function negotiateProviderCapabilities(
  * it actually supports and degrades explicitly rather than failing:
  *
  *   3 — audio duplex + a native provider video lane + tools
- *   2 — audio duplex + tools, vision supplied by Keating's frame sampler
+ *   2 — audio duplex + tools + deliberate still-image input
  *   1 — audio duplex + tools, no vision at all
  *   0 — no duplex session; push-to-talk STT plus one-shot TTS
  */
@@ -299,8 +311,10 @@ export interface RealtimeTierDescriptor {
 	label: string;
 	/** True when the session can show the model what the learner sees. */
 	video: boolean;
-	/** How frames reach the model, when they can at all. */
-	videoRoute: "native" | "sampled" | "none";
+	/** True when the session accepts a still image as conversation context. */
+	image: boolean;
+	/** How live video reaches the model, when it can at all. */
+	videoRoute: "native" | "none";
 	/**
 	 * Why the tier is not higher, for surfacing in the UI. Undefined at tier 3.
 	 */
@@ -309,7 +323,7 @@ export interface RealtimeTierDescriptor {
 
 const TIER_LABELS: Record<RealtimeTier, string> = {
 	3: "Audio + video duplex",
-	2: "Audio duplex + sampled vision",
+	2: "Audio duplex + image input",
 	1: "Audio duplex",
 	0: "Half duplex (push to talk)",
 };
@@ -332,6 +346,7 @@ export function resolveRealtimeTier(
 			tier: 0,
 			label: TIER_LABELS[0],
 			video: false,
+			image: false,
 			videoRoute: "none",
 			capReason: hasTransport
 				? "This model has no native realtime audio."
@@ -343,26 +358,35 @@ export function resolveRealtimeTier(
 			tier: 0,
 			label: TIER_LABELS[0],
 			video: false,
+			image: false,
 			videoRoute: "none",
 			capReason: "This model cannot call tools in a live session.",
 		};
 	}
 	if (capabilities.realtimeVideo === "native") {
-		return { tier: 3, label: TIER_LABELS[3], video: true, videoRoute: "native" };
+		return {
+			tier: 3,
+			label: TIER_LABELS[3],
+			video: true,
+			image: capabilities.realtimeImage === "native",
+			videoRoute: "native",
+		};
 	}
-	if (capabilities.realtimeVideo === "adapter" || capabilities.realtimeImage === "native") {
+	if (capabilities.realtimeImage === "native") {
 		return {
 			tier: 2,
 			label: TIER_LABELS[2],
-			video: true,
-			videoRoute: "sampled",
-			capReason: "This model has no live video lane, so Keating samples frames as still images.",
+			video: false,
+			image: true,
+			videoRoute: "none",
+			capReason: "This model accepts still images, but it has no live video lane.",
 		};
 	}
 	return {
 		tier: 1,
 		label: TIER_LABELS[1],
 		video: false,
+		image: false,
 		videoRoute: "none",
 		capReason: "This model cannot accept image or video input.",
 	};

@@ -63,3 +63,41 @@ Official contracts inspected for this spike:
 - <https://flueframework.com/docs/guide/mcp/>
 - <https://flueframework.com/docs/guide/skills/>
 - <https://flueframework.com/docs/guide/subagents/>
+
+## NodePod execution evidence
+
+Run `bun install --frozen-lockfile` in this directory and install the test browser
+with `bunx playwright install chromium`. From the repository root, use
+`devenv tasks run keating:test-flue-nodepod`. An existing Chrome binary can be
+selected with `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/absolute/path/to/chrome`.
+
+These tests launch real Chromium with COOP/COEP, boot NodePod 1.8.2, mount a
+Node-targeted bundle, and execute it in a NodePod worker. Browser network requests
+are restricted to the local fixture server. Model responses use the existing
+local faux provider; no account or paid provider credentials are used.
+
+The September 6 integration result is deliberately split:
+
+- Keating's portable hook runtime executes and retains state across renders in
+  NodePod. This is `@keating/agent-runtime`, not the official Flue host.
+- The official Flue 2.0.3 host loads but its default startup fails with
+  `Failed to initialize persistence ... node:sqlite is not supported in the browser environment`.
+  The regression test asserts this exact boundary. It does **not** count as proof
+  that official Flue dispatch works in NodePod.
+- The same official host passes real Node tests for dispatch, tool reconciliation,
+  repeated learner turns, skill activation, an authenticated allowlisted MCP read,
+  and detached subagent completion.
+
+To demand actual official-host execution, run
+`FLUE_NODEPOD_REQUIRE_HOST=1 devenv tasks run keating:test-flue-nodepod`.
+That acceptance probe currently fails at SQLite startup. It requires successful
+dispatch, a tool call, and persisted state observed on a second dispatch before
+it can pass. No skipped assertions or mocked NodePod satisfy that probe.
+
+Flue exposes `StartOptions.db: PersistenceAdapter`. The next implementation step
+is a NodePod-compatible adapter providing submission lifecycle storage,
+conversation streams, and immutable attachments. It must uphold Flue's format
+version, admission/lease, and settlement contracts. The presence of in-memory
+conversation and attachment helpers alone does not provide the required
+submission store. A custom adapter and its contract tests are still needed;
+process restart durability, MCP, and subagents inside NodePod remain unverified.

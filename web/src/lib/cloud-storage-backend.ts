@@ -124,22 +124,10 @@ export class IndexedDBStorageBackend implements StorageBackend {
 		const store = tx.objectStore(storeName);
 		const index = store.index(indexName);
 
-		return new Promise((resolve, reject) => {
-			const results: T[] = [];
-			const request = index.openCursor(null, direction === "desc" ? "prev" : "next");
-
-			request.onsuccess = () => {
-				const cursor = request.result;
-				if (cursor) {
-					results.push(cursor.value as T);
-					cursor.continue();
-				} else {
-					resolve(results);
-				}
-			};
-
-			request.onerror = () => reject(request.error);
-		});
+		// One request instead of one event-loop round trip per session. getAll
+		// preserves index-key/primary-key ordering, including equal timestamps.
+		const results = await this.promisifyRequest(index.getAll()) as T[];
+		return direction === "desc" ? results.reverse() : results;
 	}
 
 	async clear(storeName: string): Promise<void> {

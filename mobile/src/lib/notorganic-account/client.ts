@@ -6,7 +6,7 @@ import type {
   NotOrganicTokenResponse,
 } from "./contracts";
 import { defaultNotOrganicAccountConfig } from "./contracts";
-import { loadDeviceSession, saveDeviceSession } from "./credentials";
+import { deviceSessionGeneration, loadDeviceSession, saveDeviceSessionIfCurrent } from "./credentials";
 import { createDpopProof, getDevicePublicJwk } from "./dpop";
 
 export type AccountFetch = typeof fetch;
@@ -35,6 +35,7 @@ function tokenSession(token: NotOrganicTokenResponse, now = Date.now()): NotOrga
 }
 
 export async function exchangeAuthorizationCode(input: { code: string; verifier: string; deviceName?: string; config?: NotOrganicAccountConfig }): Promise<NotOrganicDeviceSession> {
+  const generation = deviceSessionGeneration();
   const config = input.config ?? defaultNotOrganicAccountConfig();
   const response = await accountFetch(`${config.issuer}/v1/public/token`, {
     method: "POST",
@@ -50,13 +51,14 @@ export async function exchangeAuthorizationCode(input: { code: string; verifier:
     }),
   });
   const session = tokenSession(await parseResponse<NotOrganicTokenResponse>(response));
-  await saveDeviceSession(session);
+  await saveDeviceSessionIfCurrent(session, generation);
   return session;
 }
 
 export async function refreshDeviceSession(config = defaultNotOrganicAccountConfig()): Promise<NotOrganicDeviceSession> {
   if (refreshInFlight) return refreshInFlight;
   refreshInFlight = (async () => {
+    const generation = deviceSessionGeneration();
     const current = await loadDeviceSession();
     if (!current || current.refreshExpiresAt <= Date.now()) throw new Error("Your Not Organic login has expired. Sign in again.");
     const url = `${config.issuer}/v1/public/device/token`;
@@ -67,7 +69,7 @@ export async function refreshDeviceSession(config = defaultNotOrganicAccountConf
     });
     const next = tokenSession(await parseResponse<NotOrganicTokenResponse>(response));
     next.accountId = current.accountId;
-    await saveDeviceSession(next);
+    await saveDeviceSessionIfCurrent(next, generation);
     return next;
   })();
   try { return await refreshInFlight; } finally { refreshInFlight = null; }
@@ -91,16 +93,31 @@ export async function notOrganicAccountRequest<T>(path: string, init: RequestIni
   return parseResponse<T>(response);
 }
 
+/** Headers proving the current mobile account to another Keating service. */
+export async function notOrganicAccountCapabilityHeaders(
+  providerPath = "/v1/account",
+  method = "GET",
+  config = defaultNotOrganicAccountConfig(),
+): Promise<Headers> {
+  const session = await activeDeviceSession(config);
+  const providerUrl = `${config.issuer}${providerPath.startsWith("/") ? providerPath : `/${providerPath}`}`;
+  const headers = new Headers();
+  headers.set("authorization", `DPoP ${session.accessToken}`);
+  headers.set("x-notorganic-dpop", await createDpopProof({ url: providerUrl, method, boundToken: session.accessToken }));
+  return headers;
+}
+
 export async function loadAccountSnapshot(config = defaultNotOrganicAccountConfig()): Promise<NotOrganicAccountSnapshot> {
+  const accountGeneration = deviceSessionGeneration();
   const response = await notOrganicAccountRequest<NotOrganicAccountResponse>("/v1/account", {}, config);
   const account = response?.account;
   if (!account || typeof account !== "object" || Array.isArray(account)) {
     throw new Error("Not Organic did not return an account record.");
   }
   const session = await loadDeviceSession();
-  if (session) {
+  if (session && accountGeneration === deviceSessionGeneration()) {
     session.accountId = typeof account.did === "string" ? account.did : typeof account.id === "string" ? account.id : session.accountId;
-    await saveDeviceSession(session);
+    await saveDeviceSessionIfCurrent(session, accountGeneration);
   }
   return account;
 }

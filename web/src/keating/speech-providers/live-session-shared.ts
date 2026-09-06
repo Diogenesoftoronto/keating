@@ -17,7 +17,7 @@ import {
 } from "../protocol";
 import type { LiveSpeechToolCall } from "../speech";
 
-export type LiveProviderId = "openai" | "google";
+export type LiveProviderId = "openai" | "google" | "tavus";
 
 export function randomId(prefix: string): string {
 	const id = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"

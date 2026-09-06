@@ -89,34 +89,11 @@ export function createImprovementTools(
 	return [
 		createTool(
 			"evolve",
-			"Evolve the teaching policy using MAP-Elites algorithm. Use to search for better policy parameters when benchmarks show room for improvement.",
-			{
-				topic: { type: "string", description: "Optional topic to focus the evolution on" }
-			},
-			async (params) => {
-				const topic = params.topic as string | undefined;
-				const basePolicy = parsePolicyFromStorage(await storage.getActivePolicy());
-				const realOutcomesRef = await collectRealOutcomes();
-				if (!hasEnoughRealData(realOutcomesRef)) {
-					return `Not ready to evolve: need at least ${MIN_REAL_OUTCOMES} learner feedback signals; found ${realOutcomesRef.length}. Keep teaching and collecting explicit or inferred feedback.`;
-				}
-
-				const meRun = mapElitesEvolve(basePolicy, topic, 24, 20260401, undefined, undefined, realOutcomesRef);
-				const run = mapElitesToEvolutionRun(meRun);
-				const report = mapElitesToMarkdown(meRun);
-
-				await storage.savePolicy(policyToMarkdown(run.bestPolicy, run.best.overallScore), true);
-
-				const saved = await storage.saveEvolution(
-					run.best.overallScore,
-					JSON.stringify(run.bestPolicy),
-					report,
-					topic,
-					JSON.stringify(run.exploredCandidates, null, 2)
-				);
-
-				return `[artifact://evolution/${saved.id}]\n\n**Policy evolved (MAP-Elites)**\n\nBest: ${run.best.overallScore.toFixed(2)}/100 | Baseline: ${run.baseline.overallScore.toFixed(2)}/100 | Filled cells: ${meRun.filledCellCount}/${meRun.totalCells} | Accepted: ${run.acceptedCandidates.length}/${run.exploredCandidates.length}\n\n${report}`;
-			}
+			"Propose one teaching skill, compare fresh tutor executions, and activate only after validation and holdout gates. Synthetic behavior evidence does not establish human learning.",
+			{ topic: { type: "string", description: "The starter suite covers mathematics and programming." } },
+			async (_params, signal) => options.runTeachingExperiment
+				? options.runTeachingExperiment({ signal })
+				: "Teaching experiments are unavailable in this host. No teaching revision was changed."
 		),
 
 			// quiz - Generate retrieval practice questions
@@ -135,116 +112,14 @@ export function createImprovementTools(
 		// outputs - Browse artifacts
 		createTool(
 			"auto_improve",
-			"Run the full autonomous self-improvement loop: benchmark current policy → evolve policy via MAP-Elites → evolve prompt template → record improvement. Use this instead of calling bench/evolve/improve separately. Triggers automatically on first session and periodically thereafter.",
+			"Run a bounded teaching experiment: fresh training episodes, one skill proposal, paired validation, and an independent holdout. Accepted experimental skills apply to subsequent sessions. Human retention and transfer remain unmeasured until assessed.",
 			{
-				topic: { type: "string", description: "Optional topic to focus the improvement on" },
-				force: { type: "boolean", description: "Set true only when the learner explicitly asks to run auto_improve again in this session" }
+				topic: { type: "string", description: "The starter suite covers mathematics and programming." },
+				force: { type: "boolean", description: "Override cooldown only; cannot bypass evidence gates or reuse a consumed holdout." }
 			},
-			async (params) => {
-				const topic = params.topic as string | undefined;
-				const force = params.force === true;
-				const previousPolicy = await storage.getActivePolicy();
-				const alreadyRanThisSession = (await storage.getImprovementAttempts()).some(
-					(attempt) => attempt.sessionId === storage.currentSessionId
-				);
-				if (alreadyRanThisSession && !force) {
-					return "auto_improve already ran in this session. Pass force=true only if the learner explicitly asks to run it again.";
-				}
-
-				// Snapshot NodePod VFS before any changes (if active)
-				let nodePodSnapId: string | null = null;
-				if (isNodePodActive()) {
-					try {
-						const snap = await nodePodCreateSnapshot(`auto-improve-${Date.now()}`);
-						nodePodSnapId = snap.id;
-					} catch {
-						// ignore snapshot failures
-					}
-				}
-
-				const basePolicy = parsePolicyFromStorage(await storage.getActivePolicy());
-				const realOutcomes = await collectRealOutcomes();
-				if (!hasEnoughRealData(realOutcomes)) {
-					return `Not ready to auto-improve: need at least ${MIN_REAL_OUTCOMES} learner feedback signals; found ${realOutcomes.length}.`;
-				}
-
-				// Step 1: Baseline benchmark
-				const baseline = runBenchmarkSuite(basePolicy, topic, 20260401, 3, DEFAULT_WEIGHTS, realOutcomes);
-				const baselineReport = benchmarkToMarkdown(baseline);
-				await storage.saveBenchmark(baseline.overallScore, baselineReport, topic);
-
-				// Step 2: Evolve policy via MAP-Elites
-				const meRun = mapElitesEvolve(basePolicy, topic, 24, 20260401, undefined, undefined, realOutcomes);
-				const run = mapElitesToEvolutionRun(meRun);
-				const evolveReport = mapElitesToMarkdown(meRun);
-
-				await storage.savePolicy(policyToMarkdown(run.bestPolicy, run.best.overallScore), true);
-				const saved = await storage.saveEvolution(
-					run.best.overallScore,
-					JSON.stringify(run.bestPolicy),
-					evolveReport,
-					topic,
-					JSON.stringify(run.exploredCandidates, null, 2)
-				);
-
-				// Step 3: Evolve prompt template
-				const promptBase = await getActiveKeatingPrompt(storage, "learn");
-				const promptRun = evolvePromptTemplate(promptBase, "learn", 4);
-				const promptReport = promptEvolutionToMarkdown(promptRun);
-				const promptSaved = await storage.savePromptEvolution("learn", {
-					bestScore: promptRun.best.score,
-					bestPrompt: promptRun.best.prompt,
-					report: promptReport,
-				});
-				options.setSystemPrompt?.(promptRun.best.prompt);
-
-				// Step 4: Post-evolution benchmark
-				const evolvedPolicy = run.bestPolicy;
-				const after = runBenchmarkSuite(evolvedPolicy, topic, 20260401, 3, DEFAULT_WEIGHTS, realOutcomes);
-				const afterReport = benchmarkToMarkdown(after);
-				const benchmarkSaved = await storage.saveBenchmark(after.overallScore, afterReport, topic);
-
-				// Step 5: Record improvement
-				const delta = after.overallScore - baseline.overallScore;
-				if (delta < -0.5) {
-					await storage.savePolicy(previousPolicy?.content ?? policyToMarkdown(basePolicy, baseline.overallScore), true);
-				}
-				const proposalId = `auto-${Date.now().toString(36)}`;
-				const improvementSaved = await storage.saveImprovementAttempt({
-					proposalId,
-					baselineScore: baseline.overallScore,
-					afterScore: after.overallScore,
-					scoreDelta: delta,
-					accepted: delta > -0.5,
-					targets: diagnoseBenchmark(baseline).map((s) => s.area).join(","),
-					hypothesis: `Auto-improve: evolved policy (${run.acceptedCandidates.length} accepted) + evolved prompt (${promptRun.acceptedCandidates.length} accepted)`,
-				});
-
-				const verdict = delta > 0
-					? `IMPROVED by +${delta.toFixed(2)}`
-					: delta < -0.5
-						? `REGRESSED by ${delta.toFixed(2)} (evolved policy reverted)`
-						: `NO SIGNIFICANT CHANGE (Δ${delta.toFixed(2)})`;
-
-				const nodePodNote = nodePodSnapId
-					? `\n**NodePod snapshot:** ${nodePodSnapId} (created before improvement, can restore if needed via \`source_restore\`)`
-					: "";
-
-				return `[artifact://evolution/${saved.id}] [artifact://prompt-evolution/${promptSaved.id}] [artifact://benchmark/${benchmarkSaved.id}] [artifact://improvement/${improvementSaved.id}]\n\nSelf-improvement complete.
-
-**Benchmark:** ${baseline.overallScore.toFixed(2)} → ${after.overallScore.toFixed(2)} (${verdict})
-
-**Policy Evolution (MAP-Elites):**
-- Accepted: ${run.acceptedCandidates.length}/${run.exploredCandidates.length} candidates
-- Filled cells: ${meRun.filledCellCount}/${meRun.totalCells}
-- Best policy: analogyDensity=${evolvedPolicy.analogyDensity.toFixed(3)} socraticRatio=${evolvedPolicy.socraticRatio.toFixed(3)} formalism=${evolvedPolicy.formalism.toFixed(3)}
-
-**Prompt Evolution (PROSPER):**
-- Baseline: ${promptRun.baselineScore.toFixed(2)} → Best: ${promptRun.best.score.toFixed(2)}
-- Accepted: ${promptRun.acceptedCandidates.length}/${promptRun.exploredCandidates.length} candidates${nodePodNote}
-
-**Weaknesses diagnosed:** ${diagnoseBenchmark(baseline).map((s) => s.area).join(", ") || "none"}`;
-			}
+			async (params, signal) => options.runTeachingExperiment
+				? options.runTeachingExperiment({ force: params.force === true, signal })
+				: "Teaching experiments are unavailable in this host. No teaching revision was changed."
 		),
 
 		// improve - Targeted improvement proposal
@@ -331,7 +206,7 @@ export function createImprovementTools(
 					bestPrompt: run.best.prompt,
 					report,
 				});
-				options.setSystemPrompt?.(run.best.prompt);
+				// This is a prompt proposal; activation requires fresh episode evidence.
 
 				const improved = run.best.score > run.baselineScore;
 

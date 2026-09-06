@@ -279,6 +279,8 @@ export interface QuizResultRecord {
 		perQuestionMs: Record<string, number>;
 	};
 	flaggedQuestionIds?: string[];
+	timedOutQuestionIds?: string[];
+	examTimedOut?: boolean;
 	pendingGradeQuestionIds?: string[];
 	openEndedGrades?: QuizQuestionGrade[];
 	sessionId?: string;
@@ -293,6 +295,8 @@ export interface QuizResultDetails {
 		perQuestionMs: Record<string, number>;
 	};
 	flaggedQuestionIds?: string[];
+	timedOutQuestionIds?: string[];
+	examTimedOut?: boolean;
 	pendingGradeQuestionIds?: string[];
 }
 
@@ -500,6 +504,8 @@ function questionGroupResponseText(response: UiQuestionGroupResponse, question: 
 			const labels = new Map(question.choices?.map((choice) => [choice.id, choice.label]));
 			return response.rows.map((row) => `${row.item}: ${labels.get(row.optionId) ?? row.optionId}${row.reason ? ` — ${row.reason}` : ""}`).join("\n");
 		}
+		// The arrangement reads as the sequence the learner settled on.
+		case "order": return response.items.map((item, index) => `${index + 1}. ${item}`).join("\n");
 	}
 }
 
@@ -512,6 +518,8 @@ function automaticallyGradeQuestionGroupResponse(
 		case "choice": return automaticallyGradeValues(question, response.optionIds);
 		case "blanks": return automaticallyGradeValues(question, response.answers);
 		case "rows": return automaticallyGradeValues(question, response.rows.map((row) => row.optionId), response.rows);
+		// An arrangement is graded as a whole: the sequence is right or it is not.
+		case "order": return automaticallyGradeValues(question, [response.items.join(",")]);
 	}
 }
 
@@ -550,6 +558,14 @@ function documentAfterOpenUiAction(source: UiDocument, action: UiAction, now: st
 		}
 		if (action.type === "update-notes" && node.type === "notes" && node.id === action.nodeId) {
 			return { ...node, value: action.value };
+		}
+		if (action.type === "complete-task-item" && node.type === "task" && node.id === action.nodeId && node.items) {
+			return {
+				...node,
+				items: node.items.map((item) => item.id === action.itemId
+					? { ...item, status: action.completed ? "done" as const : "not_started" as const, ...(action.note ? { note: action.note } : {}) }
+					: item),
+			};
 		}
 		return node;
 	});
@@ -608,6 +624,24 @@ export function mergeFeedbackById(...lists: Array<FeedbackEntry[] | undefined>):
 }
 
 export class KeatingStorage {
+  private destroyed = false;
+  constructor(private readonly databaseName: string = DB_NAME) {}
+
+  /** Only disposable evaluation stores may be deleted through this method. */
+  async destroyIsolatedDatabase(): Promise<void> {
+    if (!this.databaseName.startsWith("keating-eval-")) throw new Error("Only an isolated evaluation database can be destroyed.");
+    this.destroyed = true;
+    await this.dbPromise?.catch(() => undefined);
+    this.db?.close();
+    this.db = null;
+    this.dbPromise = null;
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.deleteDatabase(this.databaseName);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+      request.onblocked = () => reject(new Error("Evaluation database is still open."));
+    });
+  }
 	private db: IDBDatabase | null = null;
 	private dbPromise: Promise<IDBDatabase> | null = null;
 	private learnerStateWriteQueue: Promise<void> = Promise.resolve();
@@ -618,6 +652,7 @@ export class KeatingStorage {
 	}
 
 	async init(): Promise<void> {
+		if (this.destroyed) throw new Error("Evaluation database has been destroyed.");
 		if (this.db) return;
 		if (this.dbPromise) {
 			await this.dbPromise;
@@ -625,7 +660,7 @@ export class KeatingStorage {
 		}
 
 		this.dbPromise = new Promise((resolve, reject) => {
-			const request = indexedDB.open(DB_NAME, DB_VERSION);
+			const request = indexedDB.open(this.databaseName, DB_VERSION);
 
 			request.onerror = () => {
 				this.dbPromise = null;
@@ -1467,6 +1502,8 @@ export class KeatingStorage {
 				perQuestionMs: { ...details.timing.perQuestionMs },
 			} : undefined,
 			flaggedQuestionIds: details?.flaggedQuestionIds ? [...details.flaggedQuestionIds] : undefined,
+			timedOutQuestionIds: details?.timedOutQuestionIds ? [...details.timedOutQuestionIds] : undefined,
+			examTimedOut: details?.examTimedOut,
 			pendingGradeQuestionIds: details?.pendingGradeQuestionIds ? [...details.pendingGradeQuestionIds] : undefined,
 			sessionId: this.currentSessionId ?? undefined,
 		};
@@ -1769,15 +1806,22 @@ export class KeatingStorage {
 		});
 	}
 
-	async recordSessionEnd(topicsCovered: string[]): Promise<void> {
-		const state = await this.getLearnerState();
-		if (!state.sessions) state.sessions = [];
-		const current = state.sessions[state.sessions.length - 1];
-		if (current && !current.endedAt) {
-			current.endedAt = Date.now();
+	async recordSessionEnd(topicsCovered: string[], sessionId: string | null = this.currentSessionId): Promise<void> {
+		const endedAt = Date.now();
+		const run = this.learnerStateWriteQueue.then(async () => {
+			// Closing a session changes no evidence; rebuilding the full learner
+			// profile here adds unrelated reads to every navigation.
+			const state = await this.loadLearnerStateRecord();
+			const current = sessionId
+				? [...state.sessions].reverse().find((session) => session.id === sessionId && !session.endedAt)
+				: state.sessions.at(-1);
+			if (!current || current.endedAt) return;
+			current.endedAt = endedAt;
 			current.topicsCovered = topicsCovered;
-		}
-		await this.saveLearnerState(state);
+			await this.saveLearnerState(state);
+		});
+		this.learnerStateWriteQueue = run.catch(() => {});
+		await run;
 	}
 
 	// Prompt Evolutions

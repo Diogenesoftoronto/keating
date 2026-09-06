@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
+import { formatMapElitesRun, placeInMapElitesGrid } from "../../shared/pedagogy/map-elites.js";
 import {
   BenchmarkResult,
   EvolutionCandidate,
@@ -34,19 +35,6 @@ export interface MapElitesOptions {
 export const DEFAULT_DESCRIPTORS: string[] = ["formalism", "socraticRatio"];
 export const DEFAULT_RESOLUTION = 10;
 
-function getDescriptorValues(policy: TeacherPolicy, descriptors: string[]): number[] {
-  return descriptors.map((d) => {
-    const val = policy[d as keyof TeacherPolicy];
-    return typeof val === "number" ? val : 0;
-  });
-}
-
-function cellKey(descriptors: number[], resolution: number): string {
-  return descriptors
-    .map((d) => Math.min(Math.floor(d * resolution), resolution - 1))
-    .join(",");
-}
-
 export function createGrid(descriptors: string[], resolution: number): MapElitesGrid {
   return {
     descriptors,
@@ -55,23 +43,7 @@ export function createGrid(descriptors: string[], resolution: number): MapElites
   };
 }
 
-export function placeInGrid(
-  grid: MapElitesGrid,
-  policy: TeacherPolicy,
-  weights: SimulationWeights,
-  score: number,
-  benchmark: BenchmarkResult,
-  iteration: number
-): boolean {
-  const descVals = getDescriptorValues(policy, grid.descriptors);
-  const key = cellKey(descVals, grid.resolution);
-  const existing = grid.cells.get(key);
-  if (!existing || score > existing.score) {
-    grid.cells.set(key, { policy, weights, score, benchmark, iteration });
-    return !existing;
-  }
-  return false;
-}
+export const placeInGrid = placeInMapElitesGrid;
 
 function selectParent(grid: MapElitesGrid, prng: Prng): { policy: TeacherPolicy; weights: SimulationWeights } {
   const filled = Array.from(grid.cells.values()).filter((c): c is MapElitesCell => c !== null);
@@ -231,58 +203,7 @@ export async function mapElitesEvolve(
 }
 
 export function mapElitesToMarkdown(run: MapElitesRun): string {
-  const lines = [
-    "# MAP-Elites Evolution Report",
-    "",
-    `- Descriptors: ${run.grid.descriptors.join(" × ")}`,
-    `- Grid: ${run.grid.resolution}^${run.grid.descriptors.length} = ${run.totalCells} cells`,
-    `- Filled cells: ${run.filledCellCount} / ${run.totalCells} (${((run.filledCellCount / run.totalCells) * 100).toFixed(1)}%)`,
-    `- Baseline score: ${run.baseline.overallScore.toFixed(2)}`,
-    `- Best score: ${run.best.overallScore.toFixed(2)}`,
-    `- Explored candidates: ${run.exploredCandidates.length}`,
-    `- Judgement: PROSPER-style pairwise preference over real feedback, counterfactual robustness, mastery, transfer, low confusion, and evidence readiness.`,
-    ""
-  ];
-
-  lines.push("## Elite Archive");
-  lines.push("");
-  const sorted = Array.from(run.grid.cells.entries())
-    .sort(([a], [b]) => a.localeCompare(b));
-
-  const header = run.grid.descriptors.map((d, i) => `${d}[${i}]`).join(" | ");
-  lines.push(`| ${header} | Policy | Score | Weights (m/r/e/t/c) |`);
-  lines.push(`| ${run.grid.descriptors.map(() => "---").join(" | ")} | --- | ---: | --- |`);
-
-  for (const [key, cell] of sorted) {
-    if (!cell) continue;
-    const indices = key.split(",").map(Number);
-    const labels = indices.map((idx, i) => {
-      const lo = (idx / run.grid.resolution).toFixed(2);
-      const hi = ((idx + 1) / run.grid.resolution).toFixed(2);
-      return `${lo}–${hi}`;
-    }).join(" | ");
-    const w = cell.weights;
-    lines.push(
-      `| ${labels} | ${cell.policy.name} | ${cell.score.toFixed(2)} | ${w.masteryGain.toFixed(2)}/${w.retention.toFixed(2)}/${w.engagement.toFixed(2)}/${w.transfer.toFixed(2)}/${w.confusion.toFixed(2)} |`
-    );
-  }
-
-  lines.push("");
-  lines.push("## PROSPER Candidate Judgement");
-  lines.push("");
-  lines.push("| Candidate | Real Score | Counterfactual Score | Preference | Accepted |");
-  lines.push("| --- | ---: | ---: | ---: | :---: |");
-  for (const candidate of run.exploredCandidates.slice().sort((left, right) => (right.preferenceScore ?? 0) - (left.preferenceScore ?? 0)).slice(0, 12)) {
-    lines.push(
-      `| ${candidate.policy.name} | ${candidate.benchmark.overallScore.toFixed(2)} | ${candidate.counterfactualBenchmark?.overallScore.toFixed(2) ?? "n/a"} | ${(candidate.preferenceScore ?? 0).toFixed(2)} | ${candidate.accepted ? "yes" : "no"} |`
-    );
-  }
-  lines.push("");
-  lines.push("## Best Benchmark Snapshot");
-  lines.push("");
-  lines.push(benchmarkToMarkdown(run.best).trim());
-  lines.push("");
-  return `${lines.join("\n")}\n`;
+  return formatMapElitesRun(run, benchmarkToMarkdown);
 }
 
 export async function loadMapElitesGrid(filePath: string, descriptors: string[], resolution: number): Promise<MapElitesGrid> {

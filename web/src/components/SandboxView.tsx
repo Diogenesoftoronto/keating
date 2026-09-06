@@ -1,39 +1,36 @@
+import { Select } from "./Select";
 import { useEffect, useMemo, useRef, useState, useCallback, useTransition } from "react";
-import type { ReactNode } from "react";
-import {
-  Activity,
-  Bug,
-  CheckCircle2,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Copy,
-  Cpu,
-  Download,
-  FileCode,
-  FolderOpen,
-  GitBranch,
-  GitCommit,
-  GitCompare,
-  HardDrive,
-  CircleHelp,
-  Home,
-  Maximize2,
-  Play,
-  Plus,
-  Power,
-  PowerOff,
-  RefreshCw,
-  RotateCcw,
-  Save,
-  ScrollText,
-  Terminal,
-  Trash2,
-  Upload,
-  X,
-} from "lucide-react";
+import Activity from "reicon-react/icons/Activity";
+import Bug from "reicon-react/icons/Bug";
+import CheckCircle2 from "reicon-react/icons/CheckCircle";
+import ChevronLeft from "reicon-react/icons/ChevronLeft";
+import Copy from "reicon-react/icons/Copy";
+import Cpu from "reicon-react/icons/Cpu";
+import Download from "reicon-react/icons/Download";
+import FileCode from "reicon-react/icons/CodeFile";
+import FolderOpen from "reicon-react/icons/FolderOpen";
+import GitBranch from "reicon-react/icons/BranchUp";
+import GitCommit from "reicon-react/icons/Save";
+import GitCompare from "reicon-react/icons/Code2";
+import HardDrive from "reicon-react/icons/HardDrive";
+import CircleHelp from "reicon-react/icons/HelpCircle";
+import Home from "reicon-react/icons/Home";
+import Maximize2 from "reicon-react/icons/Maximize2";
+import Play from "reicon-react/icons/Play";
+import Plus from "reicon-react/icons/Plus";
+import Power from "reicon-react/icons/Power";
+import PowerOff from "reicon-react/icons/PowerOff";
+import RefreshCw from "reicon-react/icons/Refresh";
+import RotateCcw from "reicon-react/icons/RotateLeft";
+import Save from "reicon-react/icons/Save";
+import Terminal from "reicon-react/icons/TerminalSquare";
+import Trash2 from "reicon-react/icons/Trash2";
+import Upload from "reicon-react/icons/Upload";
+import X from "reicon-react/icons/X";
+import { KeatingIcon } from "./KeatingIcon";
+import "./sandbox-view.css";
 import { JsonCrackBlock } from "./JsonCrackBlock";
-import { Spinner } from "./Spinner";
+
 import {
   loadAgentRuntimeConfig,
   nodePodControlAction,
@@ -102,14 +99,6 @@ interface LogEvent {
 
 /* ─── helpers ─────────────────────────────────────────────── */
 
-function modeTone(mode: KeatingAgentRuntimeConfig["mode"]): string {
-  if (mode === "browser-only") return css({ background: "rgb(245 158 11 / 0.12)", color: "#b45309", borderColor: "rgb(245 158 11 / 0.4)", _dark: { color: "#fcd34d" } });
-  if (mode === "browser-nodepod") return css({ background: "rgb(20 184 166 / 0.12)", color: "#0f766e", borderColor: "rgb(20 184 166 / 0.4)", _dark: { color: "#5eead4" } });
-  if (mode === "host") return css({ background: "rgb(249 115 22 / 0.12)", color: "#c2410c", borderColor: "rgb(249 115 22 / 0.4)", _dark: { color: "#fdba74" } });
-  if (mode === "remote") return css({ background: "rgb(16 185 129 / 0.12)", color: "#047857", borderColor: "rgb(16 185 129 / 0.4)", _dark: { color: "#6ee7b7" } });
-  return css({ background: "rgb(14 165 233 / 0.12)", color: "#0369a1", borderColor: "rgb(14 165 233 / 0.4)", _dark: { color: "#7dd3fc" } });
-}
-
 function formatJson(value: unknown): string {
   try {
     return JSON.stringify(value, null, 2);
@@ -130,9 +119,9 @@ function uid() {
 
 function runtimeLabel(mode: KeatingAgentRuntimeConfig["mode"]): string {
   switch (mode) {
-    case "browser-nodepod": return "NodePod (local)";
-    case "browser-only": return "Browser-only (no sandbox)";
-    case "host": return "Host execution (trusted)";
+    case "browser-nodepod": return "NodePod · local";
+    case "browser-only": return "This browser";
+    case "host": return "Host machine";
     case "remote": return "Remote server";
     case "cloud": return "Cloud container";
     default: return "Unknown";
@@ -140,53 +129,32 @@ function runtimeLabel(mode: KeatingAgentRuntimeConfig["mode"]): string {
 }
 
 const styles = {
-  overlay: css({ position: "fixed", inset: 0, zIndex: 1000, background: "rgb(0 0 0 / 0.35)", backdropFilter: "blur(4px)" }),
-  panel: css({ marginLeft: "auto", display: "flex", height: "100%", width: "100%", maxWidth: "40rem", flexDirection: "column", borderLeftWidth: "2px", borderColor: "var(--border)", background: "var(--background)", color: "var(--foreground)", boxShadow: "var(--shadow-2xl, 0 25px 50px -12px rgb(0 0 0 / 0.25))" }),
-  header: css({ display: "flex", flexShrink: 0, alignItems: "center", justifyContent: "space-between", gap: "0.75rem", borderBottomWidth: "2px", borderColor: "var(--border)", padding: "0.75rem 1rem" }),
-  minW0: css({ minWidth: 0 }),
-  flexCenter: css({ display: "flex", alignItems: "center", gap: "0.5rem" }),
-  titleIcon: css({ color: "var(--primary)" }),
-  title: css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "1rem", fontWeight: 600 }),
-  subtitle: css({ marginTop: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" }),
-  iconButton: css({ display: "inline-flex", height: "2.25rem", width: "2.25rem", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", _hover: { background: "var(--accent)", color: "var(--accent-foreground)" } }),
-  tabBar: css({ display: "flex", flexShrink: 0, gap: "0.25rem", overflowX: "auto", borderBottomWidth: "1px", borderColor: "var(--border)", background: "rgb(from var(--muted) r g b / 0.2)", padding: "0.375rem 0.5rem" }),
-  tabButton: css({ display: "inline-flex", alignItems: "center", gap: "0.375rem", borderRadius: "0.375rem", padding: "0.375rem 0.625rem", fontSize: "0.75rem", fontWeight: 500, transitionProperty: "color, background-color, border-color", transitionDuration: "150ms" }),
-  tabButtonActive: css({ background: "var(--primary)", color: "var(--primary-foreground)" }),
-  tabButtonIdle: css({ color: "var(--muted-foreground)", _hover: { background: "var(--muted)", color: "var(--foreground)" } }),
-  tabActions: css({ marginLeft: "auto", display: "flex", alignItems: "center", gap: "0.5rem" }),
-  body: css({ flex: 1, overflowY: "auto", padding: "1rem" }),
-  grid2: css({ display: "grid", gap: "0.5rem" }),
-  grid3: css({ display: "grid", gap: "0.75rem" }),
-  grid4: css({ display: "grid", gap: "1rem" }),
-  card: css({ borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)" }),
-  mutedCard: css({ borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "rgb(from var(--muted) r g b / 0.25)", padding: "1rem" }),
-  textXs: css({ fontSize: "0.75rem" }),
-  textXsMuted: css({ fontSize: "0.75rem", color: "var(--muted-foreground)" }),
-  text10Muted: css({ fontSize: "10px", color: "var(--muted-foreground)" }),
-  text10: css({ fontSize: "10px" }),
-  semiboldXs: css({ fontSize: "0.75rem", fontWeight: 600 }),
-  mono: css({ fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)" }),
-  monoXs: css({ fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "0.75rem" }),
-  primaryButtonSm: css({ display: "inline-flex", height: "1.75rem", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", background: "var(--primary)", paddingInline: "0.5rem", fontSize: "0.75rem", color: "var(--primary-foreground)", _hover: { background: "color-mix(in srgb, var(--primary) 90%, transparent)" }, _disabled: { opacity: 0.5 } }),
-  primaryButton: css({ display: "inline-flex", height: "2.25rem", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", background: "var(--primary)", paddingInline: "0.75rem", fontSize: "0.75rem", fontWeight: 500, color: "var(--primary-foreground)", _hover: { background: "color-mix(in srgb, var(--primary) 90%, transparent)" }, _disabled: { opacity: 0.5 } }),
-  outlineButtonSm: css({ display: "inline-flex", height: "1.75rem", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", paddingInline: "0.5rem", fontSize: "0.75rem", _hover: { background: "var(--accent)" }, _disabled: { opacity: 0.5 } }),
-  outlineButtonSmBg: css({ display: "inline-flex", height: "1.75rem", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "var(--background)", paddingInline: "0.5rem", fontSize: "0.75rem", _hover: { background: "rgb(from var(--muted) r g b / 0.5)" }, _disabled: { opacity: 0.5 } }),
-  outlineButton: css({ display: "inline-flex", height: "2.25rem", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", paddingInline: "0.75rem", fontSize: "0.75rem", _hover: { background: "var(--accent)" }, _disabled: { opacity: 0.5 } }),
-  pillBase: css({ display: "inline-flex", alignItems: "center", borderRadius: "9999px", paddingInline: "0.375rem", height: "1.25rem", fontSize: "10px", fontWeight: 600 }),
-  okPill: css({ background: "rgb(from var(--primary) r g b / 0.15)", color: "var(--primary)" }),
-  errPill: css({ background: "rgb(from var(--destructive) r g b / 0.15)", color: "var(--destructive)" }),
-  inputBase: css({ borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "var(--background)", padding: "0.5rem 0.75rem", fontSize: "0.75rem" }),
-  inputMono: css({ flex: 1, borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "var(--background)", padding: "0.5rem 0.75rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "0.75rem" }),
-  hidden: css({ display: "none" }),
-  sectionLabel: css({ marginBottom: "0.5rem", fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.025em", color: "var(--muted-foreground)" }),
-	helpDetails: css({ borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "color-mix(in srgb, var(--muted) 18%, transparent)" }),
-	helpSummary: css({ display: "flex", cursor: "pointer", listStyle: "none", alignItems: "center", gap: "0.5rem", padding: "0.75rem 1rem", fontSize: "0.8125rem", fontWeight: 600, _hover: { background: "var(--accent)" }, _focusVisible: { outline: "2px solid var(--ring)", outlineOffset: "-2px" } }),
-	helpBody: css({ borderTopWidth: "1px", borderColor: "var(--border)", padding: "1rem", fontSize: "0.75rem", lineHeight: "1.55", color: "var(--muted-foreground)" }),
-	helpModeGrid: css({ marginTop: "0.75rem", display: "grid", gap: "0.5rem" }),
-	helpMode: css({ borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "var(--background)", padding: "0.75rem" }),
-	helpModeTitle: css({ color: "var(--foreground)", fontWeight: 600 }),
-	helpCode: css({ marginTop: "0.375rem", overflowX: "auto", borderRadius: "0.25rem", background: "#1c211b", padding: "0.5rem", color: "#f1ece0", fontFamily: "var(--font-mono, ui-monospace, monospace)", fontSize: "0.6875rem", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }),
+  panel: "runtime-panel",
+  header: "runtime-header",
+  minW0: "runtime-min-w0",
+  flexCenter: "runtime-flex-center",
+  body: "runtime-body",
+  grid2: "runtime-grid2",
+  grid3: "runtime-grid3",
+  card: "runtime-card",
+  textXsMuted: "runtime-text-xs-muted",
+  text10Muted: "runtime-text10-muted",
+  semiboldXs: "runtime-semibold-xs",
+  mono: "runtime-mono",
+  monoXs: "runtime-mono-xs",
+  primaryButtonSm: "runtime-primary-button-sm",
+  primaryButton: "runtime-primary-button",
+  outlineButtonSmBg: "runtime-outline-button-sm-bg",
+  outlineButton: "runtime-outline-button",
+  inputBase: "runtime-input-base",
+  inputMono: "runtime-input-mono",
+  hidden: "runtime-hidden",
 };
+
+function RuntimeSpinner({ size = 16 }: { size?: number }) {
+  return <KeatingIcon icon={RefreshCw} size={size} className="runtime-spinner" />;
+}
+
 
 /* ─── component ───────────────────────────────────────────── */
 
@@ -197,6 +165,7 @@ export function SandboxView({
   open: boolean;
   onClose: () => void;
 }) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const [runtime, setRuntime] = useState<KeatingAgentRuntimeConfig | null>(null);
   const [nodePodActive, setNodePodActive] = useState(false);
   const [booting, setBooting] = useState(false);
@@ -253,55 +222,43 @@ export function SandboxView({
 
   const logRef = useRef<HTMLDivElement | null>(null);
 
-  /* tabs availability depends on runtime mode */
-  const availableTabs = useMemo(() => {
-    const all: { id: TabId; label: string; icon: ReactNode }[] = [
-      { id: "status", label: "Status", icon: <Activity size={14} /> },
-      { id: "probes", label: "Probes", icon: <Play size={14} /> },
-      { id: "log", label: "Log", icon: <ScrollText size={14} /> },
-    ];
-    if (nodePodActive) {
-      all.splice(1, 0,
-        { id: "vfs", label: "Files", icon: <FileCode size={14} /> },
-        { id: "shell", label: "Shell", icon: <Terminal size={14} /> },
-        { id: "snapshots", label: "Snapshots", icon: <HardDrive size={14} /> },
-        { id: "vc", label: "Version Control", icon: <GitBranch size={14} /> }
-      );
-    }
-    return all;
-  }, [nodePodActive]);
+  const availableTabs = useMemo(() => [
+    { id: "status" as const, label: "Overview", icon: <KeatingIcon icon={Cpu} size={17} /> },
+    { id: "vfs" as const, label: "Files", icon: <KeatingIcon icon={FolderOpen} size={17} />, disabled: !nodePodActive },
+    { id: "shell" as const, label: "Terminal", icon: <KeatingIcon icon={Terminal} size={17} />, disabled: !nodePodActive },
+    { id: "log" as const, label: "Activity", icon: <KeatingIcon icon={Activity} size={17} /> },
+  ], [nodePodActive]);
 
   useEffect(() => {
     if (!open) return;
-    refreshAll();
+    const dialog = dialogRef.current;
+    dialog?.showModal();
+    void refreshAll();
+    return () => { dialog?.close(); };
   }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
 
   /* ── IndexedDB snapshots on mount ─────────────────────── */
   useEffect(() => {
     nodePodLoadSnapshotsFromDB().then(setDbSnapshots).catch(() => setDbSnapshots([]));
   }, []);
 
-  /* ── Terminal attach when shell tab is active ─────────── */
+  /* Fit the terminal to its visible panel, including after reopening. */
   useEffect(() => {
-    if (!nodePodActive || activeTab !== "shell") return;
+    if (!open || !nodePodActive || activeTab !== "shell") return;
     const term = nodePodGetTerminal();
-    if (term && terminalContainerRef.current) {
-      term.attach(terminalContainerRef.current);
-      requestAnimationFrame(() => {
-        term.fit();
-        setTerminalReady(true);
-      });
-    }
-  }, [activeTab, nodePodActive]);
+    const container = terminalContainerRef.current;
+    if (!term || !container) return;
+    term.attach(container);
+    let frame = 0;
+    const fit = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => { term.fit(); setTerminalReady(true); });
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(container);
+    return () => { observer.disconnect(); cancelAnimationFrame(frame); };
+  }, [open, activeTab, nodePodActive]);
 
   /* ── refresh helpers ──────────────────────────────────── */
 
@@ -313,14 +270,14 @@ export function SandboxView({
     }
   }, []);
 
-  const refreshAll = useCallback(async () => {
+  async function refreshAll() {
     await refreshConfig();
     if (nodePodActive) {
       await refreshVfs();
       await refreshVc();
     }
     refreshSnapshots();
-  }, [nodePodActive]);
+  }
 
   const refreshConfig = useCallback(async () => {
     const config = await loadAgentRuntimeConfig(true);
@@ -345,6 +302,10 @@ export function SandboxView({
     }
   }, [vfsPath]);
 
+  useEffect(() => {
+    if (open && nodePodActive && activeTab === "vfs") void refreshVfs();
+  }, [open, nodePodActive, activeTab, refreshVfs]);
+
   const refreshSnapshots = useCallback(() => {
     setSnapshots(getSnapshotLog());
   }, []);
@@ -355,7 +316,8 @@ export function SandboxView({
     setBooting(true);
     const started = performance.now();
     try {
-      await bootNodePod();
+      const pod = await bootNodePod();
+      if (!pod) throw new Error("NodePod could not start. Try again or check Activity.");
       const term = nodePodCreateTerminal({
         Terminal: XTerm,
         FitAddon,
@@ -383,19 +345,20 @@ export function SandboxView({
     setTerminalReady(false);
     await teardownNodePod();
     setNodePodActive(false);
+    setActiveTab("status");
+    await refreshConfig();
     setNodePodInfoState(null);
     setVfsEntries([]);
     setSelectedFile(null);
     setFileContent("");
     pushEvent("status", "teardownNodePod", true, { mode: "torn down" }, Math.round(performance.now() - started));
-  }, [pushEvent]);
+  }, [pushEvent, refreshConfig]);
 
   /* ── vfs actions ──────────────────────────────────────── */
 
   const openDir = useCallback((path: string) => {
     setVfsPath(path);
-    refreshVfs();
-  }, [refreshVfs]);
+  }, []);
 
   const goUp = useCallback(() => {
     const parts = vfsPath.split("/").filter(Boolean);
@@ -697,14 +660,10 @@ export function SandboxView({
       }
 
       if (latestRuntime.executionEndpoint === NODEPOD_LOCAL_ENDPOINT) {
-        // BUG FIX: was checking "snapshot" but select value is "snapshot.create"
-        const operation =
-          probeKind === "config" ? "runtime.ping" :
-          probeKind === "node-version" ? "shell.exec" :
-          probeKind === "snapshot.create" ? "snapshot.create" :
-          "runtime.ping";
+        const operation = probeKind;
         const output = await nodePodExecute(operation, payload);
-        pushEvent("probes", `probe.${probeKind}`, true, output, Math.round(performance.now() - started));
+        const ok = !(output && typeof output === "object" && "ok" in output && output.ok === false);
+        pushEvent("probes", `probe.${probeKind}`, ok, output, Math.round(performance.now() - started));
         return;
       }
 
@@ -740,90 +699,53 @@ export function SandboxView({
 
   if (!open) return null;
 
-  const runtimeHealth = !runtime
-    ? "unknown"
-    : runtime.mode === "browser-nodepod"
-    ? "sandbox active"
-    : runtime.executionEndpoint
-    ? runtime.mode === "host" ? "host available" : "remote available"
-    : "browser-only fallback";
   const nodePodAction = nodePodControlAction(runtime, nodePodActive);
+  const status = booting ? "Starting…" : nodePodActive ? "Running" : runtime?.executionEndpoint ? "Configured" : "Stopped";
+  const advancedTab = ["snapshots", "vc", "probes"].includes(activeTab) ? activeTab : "";
 
   return (
-    <div className={styles.overlay} role="dialog" aria-modal="true" aria-label="Sandbox runtime view">
+    <dialog ref={dialogRef} className="sandbox-runtime" aria-labelledby="runtime-title" onCancel={onClose} onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <div className={styles.panel}>
-        {/* header */}
         <header className={styles.header}>
-          <div className={styles.minW0}>
-            <div className={styles.flexCenter}>
-              <Cpu size={18} className={styles.titleIcon} />
-              <h2 className={styles.title}>Sandbox View</h2>
+          <div className="runtime-heading">
+            <span className="runtime-mark"><KeatingIcon icon={Cpu} size={24} active={nodePodActive} /></span>
+            <div className={styles.minW0}>
+              <h2 id="runtime-title">Runtime</h2>
+              <p>{runtime ? runtimeLabel(runtime.mode) : "Loading environment…"}</p>
             </div>
-            <p className={styles.subtitle}>
-              {runtime ? runtimeLabel(runtime.mode) : "Loading runtime config…"}
-            </p>
           </div>
-          <button
-            type="button"
-            className={cx("chat-action-button", styles.iconButton)}
-            aria-label="Close sandbox view"
-            onClick={onClose}
-          >
-            <X size={16} />
-          </button>
+          <button type="button" className="runtime-icon-button" aria-label="Close runtime" onClick={onClose} autoFocus><KeatingIcon icon={X} size={20} /></button>
         </header>
 
-        {/* tab bar */}
-        <div className={styles.tabBar}>
-          {availableTabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => startTabTransition(() => setActiveTab(tab.id))}
-              aria-busy={isTabPending && activeTab !== tab.id}
-              className={cx(
-                styles.tabButton,
-                activeTab === tab.id
-                  ? styles.tabButtonActive
-                  : styles.tabButtonIdle
-              )}
-            >
-              {tab.icon}
-              {tab.label}
-            </button>
-          ))}
-          <div className={styles.tabActions}>
+        <div className="runtime-control-bar">
+          <span className="runtime-state" data-running={nodePodActive} role="status"><span className="runtime-state-dot" />{status}</span>
+          <div className="runtime-controls">
+            <button type="button" onClick={refreshAll} className="runtime-icon-button" aria-label="Refresh runtime" title="Refresh runtime"><KeatingIcon icon={RefreshCw} size={18} /></button>
             {nodePodAction === "stop" ? (
-              <button
-                type="button"
-                onClick={handleTeardown}
-                className={css({ display: "inline-flex", height: "1.75rem", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", paddingInline: "0.5rem", fontSize: "0.75rem", color: "var(--destructive)", _hover: { background: "rgb(from var(--destructive) r g b / 0.1)" } })}
-              >
-                <PowerOff size={12} /> Stop
-              </button>
+              <button type="button" onClick={handleTeardown} className="runtime-stop"><KeatingIcon icon={PowerOff} size={17} />Stop</button>
             ) : nodePodAction === "boot" ? (
-              <button
-                type="button"
-                onClick={handleBoot}
-                disabled={booting}
-                className={styles.primaryButtonSm}
-              >
-                {booting ? <Spinner size={12} /> : <Power size={12} />}
-                Boot
+              <button type="button" onClick={handleBoot} disabled={booting} aria-label={booting ? "Starting NodePod" : "Start NodePod"} className={styles.primaryButton}>
+                {booting ? <RuntimeSpinner /> : <KeatingIcon icon={Play} size={17} />}{booting ? "Starting…" : <><span className="runtime-start-full">Start NodePod</span><span className="runtime-start-short">Start</span></>}
               </button>
             ) : null}
-            <button
-              type="button"
-              onClick={refreshAll}
-              className={styles.outlineButtonSm}
-            >
-              <RefreshCw size={12} /> Refresh
-            </button>
           </div>
         </div>
 
-        <div className={styles.body} aria-busy={isTabPending} style={{ opacity: isTabPending ? 0.72 : 1, transition: "opacity 120ms ease-out" }}>{renderTab()}</div>
+        <nav className="runtime-navigation" aria-label="Runtime views">
+          {availableTabs.map((tab) => (
+            <button type="button" key={tab.id} disabled={tab.disabled} onClick={() => startTabTransition(() => setActiveTab(tab.id))} aria-pressed={activeTab === tab.id} className="runtime-nav-button" title={tab.disabled ? "Start NodePod to open " + tab.label.toLowerCase() : undefined}>{tab.icon}<span>{tab.label}</span></button>
+          ))}
+          <Select aria-label="More runtime views" className="runtime-more" data-active={!!advancedTab} value="" onValueChange={(value) => startTabTransition(() => setActiveTab(value as TabId))}>
+            <option value="" disabled>More</option>
+            <option value="snapshots" disabled={!nodePodActive}>Snapshots</option>
+            <option value="vc" disabled={!nodePodActive}>History</option>
+            <option value="probes">Diagnostics</option>
+          </Select>
+        </nav>
+
+        <div className={styles.body} data-view={activeTab} aria-busy={isTabPending}>{renderTab()}</div>
       </div>
-    </div>
+    </dialog>
   );
 
   function renderTab() {
@@ -840,219 +762,68 @@ export function SandboxView({
   }
 
   function renderStatus() {
-    const hasRecentErrors = events.slice(0, 10).some((e) => !e.ok);
-    const recentEvents = events.slice(0, 5);
-    const probeCount = events.filter((e) => e.tab === "probes").length;
-    const snapshotCount = snapshots.length;
-    const vfsFileCount = vfsEntries.filter((e) => !e.isDir).length;
+    const memory = nodePodInfoState?.memoryStats;
+    const recentEvents = events.slice(0, 3);
+    const isLocal = !runtime || runtime.mode === "browser-only" || runtime.mode === "browser-nodepod";
+    const latestFailure = events[0] && !events[0].ok ? events[0] : null;
 
     return (
-      <div className={styles.grid4}>
-        {/* ── runtime identity card ── */}
-        <div className={styles.mutedCard}>
-          <div className={css({ marginBottom: "0.75rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" })}>
-            <div className={styles.flexCenter}>
-              <span className={cx(css({ display: "inline-flex", alignItems: "center", gap: "0.375rem", borderRadius: "0.375rem", borderWidth: "1px", padding: "0.25rem 0.625rem", fontSize: "0.75rem", fontWeight: 500 }), modeTone(runtime?.mode ?? "browser-only"))}>
-                <Activity size={13} />
-                {runtime?.label ?? "Loading runtime"}
-              </span>
-              {hasRecentErrors && (
-                <span className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", background: "rgb(from var(--destructive) r g b / 0.1)", padding: "0.125rem 0.5rem", fontSize: "10px", fontWeight: 600, color: "var(--destructive)" })}>
-                  <Bug size={10} /> Errors in log
-                </span>
-              )}
-            </div>
-            <span className={css({ fontSize: "0.75rem", fontWeight: 500, color: "var(--muted-foreground)" })}>{runtimeHealth}</span>
-          </div>
+      <div className="runtime-overview">
+        {latestFailure && <div className="runtime-error" role="alert"><KeatingIcon icon={Bug} size={18} /><span>{typeof latestFailure.output === "object" && latestFailure.output && "error" in latestFailure.output ? String(latestFailure.output.error) : "An operation failed. Open Activity for details."}</span></div>}
+        <section className="runtime-intro">
+          <p className="runtime-eyebrow">{isLocal ? "Local environment" : "Execution environment"}</p>
+          <h3>{nodePodActive ? "Ready to run." : isLocal ? "Your browser workspace." : runtimeLabel(runtime!.mode)}</h3>
+          <p>{nodePodActive ? "JavaScript, TypeScript, and your files. All in this browser." : isLocal ? "Start NodePod to run code, edit files, and save your experiments." : "Use diagnostics to check the connection and inspect runtime output."}</p>
+        </section>
 
-          <dl className={css({ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", columnGap: "1rem", rowGap: "0.5rem", fontSize: "0.75rem", sm: { gridTemplateColumns: "repeat(4, minmax(0, 1fr))" } })}>
-            <div>
-              <dt className={css({ color: "var(--muted-foreground)" })}>Mode</dt>
-              <dd className={css({ marginTop: "0.125rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "0.875rem" })}>{runtime?.mode ?? "—"}</dd>
-            </div>
-            <div>
-              <dt className={css({ color: "var(--muted-foreground)" })}>Endpoint</dt>
-              <dd className={css({ marginTop: "0.125rem", wordBreak: "break-all", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "0.875rem" })}>{runtime?.executionEndpoint ?? "—"}</dd>
-            </div>
-            <div>
-              <dt className={css({ color: "var(--muted-foreground)" })}>Snapshots</dt>
-              <dd className={css({ marginTop: "0.125rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "0.875rem" })}>{snapshotCount}</dd>
-            </div>
-            <div>
-              <dt className={css({ color: "var(--muted-foreground)" })}>Probes</dt>
-              <dd className={css({ marginTop: "0.125rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "0.875rem" })}>{probeCount}</dd>
-            </div>
+        {nodePodActive && <>
+          <dl className="runtime-metrics">
+            <div><dt>Files</dt><dd>{memory?.vfs.fileCount ?? "—"}</dd></div>
+            <div><dt>Storage</dt><dd>{memory ? fmtBytes(memory.vfs.totalBytes) : "—"}</dd></div>
+            <div><dt>Snapshots</dt><dd>{snapshots.length}</dd></div>
           </dl>
-        </div>
-
-		<details className={styles.helpDetails}>
-			<summary className={styles.helpSummary}>
-				<CircleHelp size={15} aria-hidden="true" /> Which execution mode should I use?
-			</summary>
-			<div className={styles.helpBody}>
-				Keating keeps the teaching UI in the browser while execution can happen locally, directly on a trusted host, or behind an isolated external service. Choose based on the code&apos;s trust level and the capabilities it needs.
-				<div className={styles.helpModeGrid}>
-					<div className={styles.helpMode}>
-						<div className={styles.helpModeTitle}>NodePod: local and contained in the browser</div>
-						<div>Best for ordinary lesson artifacts, JavaScript experiments, snapshots, and offline work. It is not a hard security boundary and cannot run arbitrary native binaries.</div>
-						<pre className={styles.helpCode}>keating web --browser-only-agent 3000</pre>
-					</div>
-					<div className={styles.helpMode}>
-						<div className={styles.helpModeTitle}>Host: direct commands on this machine</div>
-						<div>Best for a trusted personal machine when you need installed binaries. Commands and file operations are localhost-only and confined to the selected root, but this is not a sandbox.</div>
-						<pre className={styles.helpCode}>keating web --host 3000 --allow-local-exec --root=/path/to/project</pre>
-					</div>
-					<div className={styles.helpMode}>
-						<div className={styles.helpModeTitle}>External: isolated provider or custom gateway</div>
-						<div>Best for untrusted code, native binaries, durable jobs, or provider-managed isolation. The service receives POST /api/agent-runtime/execute with an operation and payload.</div>
-						<pre className={styles.helpCode}>KEATING_WEB_REMOTE_AUTH_TOKEN=... keating web --remote 3000 --remote-provider=daytona --remote-endpoint=https://sandbox.example</pre>
-					</div>
-					<div className={styles.helpMode}>
-						<div className={styles.helpModeTitle}>Cloud: Keating&apos;s configured hosted runtime</div>
-						<div>Best when the deployment already supplies a canonical remote execution service and server-brokered credentials.</div>
-						<pre className={styles.helpCode}>keating web --cloud 3000 --cloud-endpoint=https://keating.help</pre>
-					</div>
-				</div>
-			</div>
-		</details>
-
-        {/* ── capabilities grid ── */}
-        <div>
-          <div className={styles.sectionLabel}>Capabilities</div>
-          <div className={css({ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "0.5rem", sm: { gridTemplateColumns: "repeat(4, minmax(0, 1fr))" } })}>
-            {[
-			  { label: "Source Editing", available: nodePodActive || !!runtime?.capabilities.remoteSandbox || !!runtime?.capabilities.localCommandExecution },
-			  { label: "File System", available: nodePodActive || !!runtime?.capabilities.remoteSandbox || !!runtime?.capabilities.hostProjectAccess },
-			  { label: "Shell", available: nodePodActive || !!runtime?.capabilities.remoteSandbox || !!runtime?.capabilities.localCommandExecution },
-			  { label: "Snapshots", available: nodePodActive || !!runtime?.capabilities.durableCompute },
-              { label: "Benchmarks", available: true },
-              { label: "Policy Evolution", available: true },
-              { label: "Prompt Evolution", available: true },
-			  { label: "Self-Improve", available: nodePodActive || !!runtime?.executionEndpoint },
-            ].map((cap) => (
-              <div
-                key={cap.label}
-                className={cx(
-                  css({ display: "flex", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", borderWidth: "1px", padding: "0.5rem 0.75rem", fontSize: "0.75rem" }),
-                  cap.available
-                    ? css({ borderColor: "var(--border)", background: "rgb(from var(--muted) r g b / 0.2)" })
-                    : css({ borderStyle: "dashed", borderColor: "rgb(from var(--muted-foreground) r g b / 0.2)", color: "rgb(from var(--muted-foreground) r g b / 0.6)" })
-                )}
-              >
-                {cap.available ? <CheckCircle2 size={12} className={css({ flexShrink: 0, color: "var(--primary)" })} /> : <div className={css({ height: "0.75rem", width: "0.75rem", flexShrink: 0, borderRadius: "9999px", borderWidth: "1px", borderColor: "rgb(from var(--muted-foreground) r g b / 0.3)" })} />}
-                {cap.label}
-              </div>
-            ))}
+          <div className="runtime-shortcuts">
+            <button type="button" onClick={() => setActiveTab("vfs")}><KeatingIcon icon={FolderOpen} size={22} /><span><strong>Browse files</strong><small>Open your workspace</small></span><KeatingIcon icon={ChevronLeft} size={16} className="runtime-next" /></button>
+            <button type="button" onClick={() => setActiveTab("shell")}><KeatingIcon icon={Terminal} size={22} /><span><strong>Open terminal</strong><small>Run a command</small></span><KeatingIcon icon={ChevronLeft} size={16} className="runtime-next" /></button>
           </div>
-        </div>
+        </>}
 
-        {/* ── runtime-specific detail panel ── */}
-        {runtime?.mode === "browser-nodepod" && (
-          <div className={css({ borderRadius: "0.375rem", borderWidth: "1px", borderColor: "rgb(20 184 166 / 0.3)", background: "rgb(20 184 166 / 0.05)", padding: "1rem" })}>
-            <div className={css({ marginBottom: "0.75rem", display: "flex", alignItems: "center", justifyContent: "space-between" })}>
-              <div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", fontWeight: 600 })}>
-                <Cpu size={14} className={css({ color: "#0d9488", _dark: { color: "#5eead4" } })} />
-                NodePod Sandbox
-              </div>
-              {nodePodActive && (
-                <span className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", borderRadius: "9999px", background: "rgb(20 184 166 / 0.15)", padding: "0.125rem 0.5rem", fontSize: "10px", fontWeight: 500, color: "#0f766e", _dark: { color: "#5eead4" } })}>
-                  <Activity size={9} /> Active
-                </span>
-              )}
-            </div>
+        <section className="runtime-recent">
+          <div className="runtime-section-heading"><h3>Recent activity</h3>{events.length > 0 && <button type="button" className="runtime-text-button" onClick={() => setActiveTab("log")}>View all <span>{events.length}</span></button>}</div>
+          {recentEvents.length === 0 ? <p className="runtime-empty-inline">Your runs and workspace changes will appear here.</p> : recentEvents.map((event) => (
+            <button type="button" className="runtime-event-row" key={event.id} onClick={() => setActiveTab("log")}>
+              <KeatingIcon icon={event.ok ? CheckCircle2 : Bug} size={18} className={event.ok ? "runtime-success" : "runtime-failure"} />
+              <span>{event.operation === "bootNodePod" ? "NodePod started" : event.operation === "teardownNodePod" ? "NodePod stopped" : event.operation}</span>
+              <time dateTime={new Date(event.timestamp).toISOString()}>{new Date(event.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</time>
+            </button>
+          ))}
+        </section>
 
-            {nodePodInfoState ? (
-              <dl className={css({ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", columnGap: "1rem", rowGap: "0.5rem", fontSize: "0.75rem", sm: { gridTemplateColumns: "repeat(3, minmax(0, 1fr))" } })}>
-                <div>
-                  <dt className={css({ color: "var(--muted-foreground)" })}>Instance</dt>
-                  <dd className={css({ marginTop: "0.125rem", wordBreak: "break-all", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)" })}>{nodePodInfoState.instanceId}</dd>
-                </div>
-                <div>
-                  <dt className={css({ color: "var(--muted-foreground)" })}>SharedArrayBuffer</dt>
-                  <dd className={css({ marginTop: "0.125rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)" })}>{nodePodInfoState.sabEnabled ? "enabled" : "disabled"}</dd>
-                </div>
-                {nodePodInfoState.memoryStats ? (
-                  <>
-                    <div>
-                      <dt className={css({ color: "var(--muted-foreground)" })}>VFS Files</dt>
-                      <dd className={css({ marginTop: "0.125rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)" })}>{nodePodInfoState.memoryStats.vfs.fileCount} <span className={css({ color: "var(--muted-foreground)" })}>({fmtBytes(nodePodInfoState.memoryStats.vfs.totalBytes)})</span></dd>
-                    </div>
-                    <div>
-                      <dt className={css({ color: "var(--muted-foreground)" })}>Heap</dt>
-                      <dd className={css({ marginTop: "0.125rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)" })}>{nodePodInfoState.memoryStats.heap ? `${nodePodInfoState.memoryStats.heap.usedMB.toFixed(1)} / ${nodePodInfoState.memoryStats.heap.limitMB.toFixed(1)} MB` : "—"}</dd>
-                    </div>
-                    <div>
-                      <dt className={css({ color: "var(--muted-foreground)" })}>Module Cache</dt>
-                      <dd className={css({ marginTop: "0.125rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)" })}>{nodePodInfoState.memoryStats.engine.moduleCacheSize}</dd>
-                    </div>
-                    <div>
-                      <dt className={css({ color: "var(--muted-foreground)" })}>Transform Cache</dt>
-                      <dd className={css({ marginTop: "0.125rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)" })}>{nodePodInfoState.memoryStats.engine.transformCacheSize}</dd>
-                    </div>
-                  </>
-                ) : null}
-              </dl>
-            ) : nodePodActive ? (
-              <div className={styles.textXsMuted}>Sandbox is active but introspection is not available.</div>
-            ) : (
-              <div className={styles.textXsMuted}>NodePod is not running.</div>
-            )}
+        <details className="runtime-details">
+          <summary><KeatingIcon icon={Cpu} size={18} />Environment details</summary>
+          <dl className="runtime-facts">
+            <div><dt>Environment</dt><dd>{runtime ? runtimeLabel(runtime.mode) : "Loading…"}</dd></div>
+            <div><dt>Endpoint</dt><dd>{runtime?.executionEndpoint ?? "No execution endpoint"}</dd></div>
+            {nodePodInfoState && <><div><dt>Instance</dt><dd>{nodePodInfoState.instanceId}</dd></div><div><dt>Shared memory</dt><dd>{nodePodInfoState.sabEnabled ? "Available" : "Unavailable"}</dd></div></>}
+            {memory && <><div><dt>Heap memory</dt><dd>{memory.heap ? `${memory.heap.usedMB.toFixed(1)} / ${memory.heap.limitMB.toFixed(1)} MB` : "Unavailable"}</dd></div><div><dt>Cached modules</dt><dd>{memory.engine.moduleCacheSize}</dd></div><div><dt>Cached transforms</dt><dd>{memory.engine.transformCacheSize}</dd></div></>}
+          </dl>
+          {runtime && <div className="runtime-capabilities">{[
+            { label: "File access", available: nodePodActive || runtime.capabilities.remoteSandbox || runtime.capabilities.hostProjectAccess },
+            { label: "Shell", available: nodePodActive || runtime.capabilities.remoteSandbox || runtime.capabilities.localCommandExecution },
+            { label: "Snapshots", available: nodePodActive || runtime.capabilities.durableCompute },
+            { label: "Native binaries", available: runtime.capabilities.nativeBinaries },
+          ].map((capability) => <span key={capability.label} data-available={capability.available}><KeatingIcon icon={capability.available ? CheckCircle2 : X} size={15} />{capability.label}<span className="runtime-sr-only">: {capability.available ? "available" : "unavailable"}</span></span>)}</div>}
+        </details>
+
+        <details className="runtime-details">
+          <summary><KeatingIcon icon={CircleHelp} size={18} />Choose an environment</summary>
+          <div className="runtime-environment-guide">
+            <section><h4>NodePod · in your browser</h4><p>JavaScript, files, and snapshots. No native binaries or hard security boundary.</p><code>keating web --browser-only-agent 3000</code></section>
+            <section><h4>Host · your own machine</h4><p>Installed tools and local files. Use for trusted code.</p><code>keating web --host 3000 --allow-local-exec --root=/path/to/project</code></section>
+            <section><h4>Remote · an external service</h4><p>Provider isolation and native tools, through your configured gateway.</p><code>keating web --remote 3000 --remote-provider=daytona --remote-endpoint=https://sandbox.example</code></section>
+            <section><h4>Cloud · a hosted runtime</h4><p>Your deployment supplies execution and credentials.</p><code>keating web --cloud 3000 --cloud-endpoint=https://keating.help</code></section>
           </div>
-        )}
-
-        {(runtime?.mode === "host" || runtime?.mode === "remote") && (
-          <div className={css({ borderRadius: "0.375rem", borderWidth: "1px", borderColor: "rgb(16 185 129 / 0.3)", background: "rgb(16 185 129 / 0.05)", padding: "1rem" })}>
-            <div className={css({ marginBottom: "0.75rem", display: "flex", alignItems: "center", justifyContent: "space-between" })}>
-              <div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", fontWeight: 600 })}>
-                <Cpu size={14} className={css({ color: "#059669", _dark: { color: "#6ee7b7" } })} />
-				{runtime.mode === "host" ? "Host Runtime" : "Remote Runtime"}
-              </div>
-              <span className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", borderRadius: "9999px", background: "rgb(16 185 129 / 0.15)", padding: "0.125rem 0.5rem", fontSize: "10px", fontWeight: 500, color: "#047857", _dark: { color: "#6ee7b7" } })}>
-				<Activity size={9} /> {runtime.executionEndpoint ? "Connected" : "Unavailable"}
-              </span>
-            </div>
-            <dl className={css({ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", columnGap: "1rem", rowGap: "0.5rem", fontSize: "0.75rem" })}>
-              <div>
-                <dt className={css({ color: "var(--muted-foreground)" })}>Endpoint</dt>
-                <dd className={css({ marginTop: "0.125rem", wordBreak: "break-all", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)" })}>{runtime.executionEndpoint}</dd>
-              </div>
-              <div>
-                <dt className={css({ color: "var(--muted-foreground)" })}>Fallback</dt>
-                <dd className={css({ marginTop: "0.125rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)" })}>{runtime.fallback.message ?? "none"}</dd>
-              </div>
-            </dl>
-          </div>
-        )}
-
-        {runtime?.mode === "browser-only" && (
-          <div className={css({ borderRadius: "0.375rem", borderWidth: "1px", borderColor: "rgb(245 158 11 / 0.3)", background: "rgb(245 158 11 / 0.05)", padding: "1rem" })}>
-            <div className={css({ marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", fontWeight: 600 })}>
-              <Bug size={14} className={css({ color: "#d97706", _dark: { color: "#fcd34d" } })} />
-              Browser-Only Mode
-            </div>
-            <p className={css({ fontSize: "0.75rem", lineHeight: 1.625, color: "var(--muted-foreground)" })}>
-              Running without a Node.js sandbox. Source editing, file system, shell, and snapshots are unavailable. Switch to <strong>NodePod</strong> via the Boot button, or configure a <strong>Remote runtime</strong> in Settings.
-            </p>
-          </div>
-        )}
-
-        {/* ── recent activity ── */}
-        {recentEvents.length > 0 && (
-          <div>
-            <div className={styles.sectionLabel}>Recent Activity</div>
-            <div className={css({ display: "grid", gap: "0.375rem" })}>
-              {recentEvents.map((ev) => (
-                <div key={ev.id} className={css({ display: "flex", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", padding: "0.5rem 0.75rem", fontSize: "0.75rem" })}>
-                  <span className={cx(styles.pillBase, ev.ok ? styles.okPill : styles.errPill)}>
-                    {ev.ok ? "OK" : "ERR"}
-                  </span>
-                  <span className={css({ color: "var(--muted-foreground)" })}>{new Date(ev.timestamp).toLocaleTimeString()}</span>
-                  <span className={css({ fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", color: "var(--muted-foreground)" })}>{ev.operation}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        </details>
       </div>
     );
   }
@@ -1061,28 +832,28 @@ export function SandboxView({
     if (!nodePodActive) {
       return (
         <div className={styles.textXsMuted}>
-          Sandbox is not active. Boot NodePod to use the file system.
+          Start NodePod to use the file system.
         </div>
       );
     }
     return (
       <div className={styles.grid3}>
         <div className={styles.flexCenter}>
-          <button type="button" onClick={() => openDir("/workspace")} className={css({ display: "inline-flex", height: "1.75rem", width: "1.75rem", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", _hover: { background: "var(--accent)" } })} title="Go to /workspace"><Home size={13} /></button>
-          <button type="button" onClick={goUp} className={css({ display: "inline-flex", height: "1.75rem", width: "1.75rem", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", _hover: { background: "var(--accent)" } })} title="Go up"><ChevronLeft size={13} /></button>
-          <span className={css({ fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>{vfsPath}</span>
+          <button type="button" onClick={() => openDir("/workspace")} className={css({ display: "inline-flex", height: "1.75rem", width: "1.75rem", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", _hover: { background: "var(--accent)" } })} aria-label="Go to workspace" title="Go to /workspace"><KeatingIcon icon={Home} size={13} /></button>
+          <button type="button" onClick={goUp} className={css({ display: "inline-flex", height: "1.75rem", width: "1.75rem", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", _hover: { background: "var(--accent)" } })} aria-label="Go to parent folder" title="Go up"><KeatingIcon icon={ChevronLeft} size={13} /></button>
+          <span className="runtime-file-path runtime-mono-xs">{vfsPath}</span>
         </div>
 
         {vfsLoading ? (
-          <div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}><Spinner size={13} /> Loading…</div>
+          <div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}><RuntimeSpinner size={13} /> Loading…</div>
         ) : (
           <div className={styles.card}>
             {vfsEntries.length === 0 ? (
               <div className={css({ padding: "0.75rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>Empty directory</div>
             ) : (
               vfsEntries.map((entry) => (
-                <div key={entry.path} className={css({ display: "flex", alignItems: "center", gap: "0.5rem", borderBottomWidth: "1px", borderColor: "var(--border)", padding: "0.5rem 0.75rem", fontSize: "0.75rem", _last: { borderBottomWidth: 0 }, _hover: { background: "rgb(from var(--muted) r g b / 0.3)" } })}>
-                  <span className={css({ flexShrink: 0 })}>{entry.isDir ? <FolderOpen size={14} className={css({ color: "var(--primary)" })} /> : <FileCode size={14} className={css({ color: "var(--muted-foreground)" })} />}</span>
+                <div key={entry.path} data-file-row className={css({ display: "flex", alignItems: "center", gap: "0.5rem", borderBottomWidth: "1px", borderColor: "var(--border)", padding: "0.5rem 0.75rem", fontSize: "0.75rem", _last: { borderBottomWidth: 0 }, _hover: { background: "rgb(from var(--muted) r g b / 0.3)" } })}>
+                  <span className={css({ flexShrink: 0 })}>{entry.isDir ? <KeatingIcon icon={FolderOpen} size={14} className={css({ color: "var(--primary)" })} /> : <KeatingIcon icon={FileCode} size={14} className={css({ color: "var(--muted-foreground)" })} />}</span>
                   <button
                     type="button"
                     className={css({ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "left", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", _hover: { color: "var(--primary)" } })}
@@ -1091,7 +862,7 @@ export function SandboxView({
                     {entry.name}
                   </button>
                   <span className={css({ marginLeft: "auto", flexShrink: 0, fontSize: "0.75rem", color: "var(--muted-foreground)" })}>{entry.isDir ? "dir" : fmtBytes(entry.size)}</span>
-                  <button type="button" className={css({ flexShrink: 0, color: "rgb(from var(--destructive) r g b / 0.7)", _hover: { color: "var(--destructive)" } })} onClick={() => deleteSelected(entry.path, entry.isDir)}><Trash2 size={12} /></button>
+                  <button type="button" className={css({ flexShrink: 0, color: "rgb(from var(--destructive) r g b / 0.7)", _hover: { color: "var(--destructive)" } })} aria-label={`Delete ${entry.name}`} onClick={() => deleteSelected(entry.path, entry.isDir)}><KeatingIcon icon={Trash2} size={12} /></button>
                 </div>
               ))
             )}
@@ -1099,26 +870,26 @@ export function SandboxView({
         )}
 
         {/* create + editor */}
-        <div className={css({ display: "flex", gap: "0.5rem" })}>
+        <div className="runtime-create-item">
           <input
             className={css({ flex: 1, borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "var(--background)", padding: "0.375rem 0.5rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "0.75rem" })}
-            placeholder="new_name.js"
+            aria-label="New file or folder name" placeholder="new_name.js"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && createItem()}
           />
-          <select className={css({ borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "var(--background)", padding: "0.375rem 0.5rem", fontSize: "0.75rem" })} value={createType} onChange={(e) => setCreateType(e.target.value as "file" | "dir")}>
+          <Select aria-label="New item type" className={cx("runtime-item-type", css({ borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "var(--background)", padding: "0.375rem 0.5rem", fontSize: "0.75rem" }))} value={createType} onValueChange={(value) => setCreateType(value as "file" | "dir")}>
             <option value="file">File</option>
-            <option value="dir">Dir</option>
-          </select>
+            <option value="dir">Folder</option>
+          </Select>
           <button type="button" onClick={createItem} className={css({ display: "inline-flex", height: "2rem", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", paddingInline: "0.5rem", fontSize: "0.75rem", _hover: { background: "var(--accent)" } })}>
-            <Plus size={12} /> Add
+            <KeatingIcon icon={Plus} size={12} /> Add
           </button>
         </div>
 
         {selectedFile && (
           <div className={styles.card}>
-            <div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", borderBottomWidth: "1px", borderColor: "var(--border)", background: "rgb(from var(--muted) r g b / 0.2)", padding: "0.5rem 0.75rem" })}>
+            <div className="runtime-file-toolbar">
               <span className={styles.semiboldXs}>{selectedFile}</span>
               <div className={css({ display: "flex", alignItems: "center", gap: "0.25rem" })}>
                 {fileDirty && <span className={css({ fontSize: "0.75rem", color: "#d97706", _dark: { color: "#fcd34d" } })}>unsaved</span>}
@@ -1132,16 +903,16 @@ export function SandboxView({
                       : css({ borderColor: "var(--border)", _hover: { background: "var(--accent)" } })
                   )}
                 >
-                  <GitCompare size={12} /> {showDiff ? "Hide diff" : "Show diff"}
+                  <KeatingIcon icon={GitCompare} size={12} /> {showDiff ? "Hide diff" : "Show diff"}
                 </button>
-                <button type="button" onClick={saveFile} className={styles.primaryButtonSm}><Save size={12} /> Save</button>
+                <button type="button" onClick={saveFile} className={styles.primaryButtonSm}><KeatingIcon icon={Save} size={12} /> Save</button>
               </div>
             </div>
 
             {showDiff ? (
               <div className={css({ minHeight: "12rem", width: "100%", overflow: "auto", background: "var(--background)", padding: "0.5rem 0.75rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "0.75rem", lineHeight: 1.625 })}>
                 {diffLoading ? (
-                  <div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--muted-foreground)" })}><Spinner size={13} /> Computing diff…</div>
+                  <div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--muted-foreground)" })}><RuntimeSpinner size={13} /> Computing diff…</div>
                 ) : diffLines.length === 0 ? (
                   <div className={css({ color: "var(--muted-foreground)" })}>No changes — file matches baseline.</div>
                 ) : (
@@ -1171,6 +942,7 @@ export function SandboxView({
               <textarea
                 className={css({ minHeight: "12rem", width: "100%", resize: "vertical", background: "var(--background)", padding: "0.5rem 0.75rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "0.75rem", lineHeight: 1.625 })}
                 spellCheck={false}
+                aria-label={`Edit ${selectedFile}`}
                 value={fileContent}
                 onChange={(e) => { setFileContent(e.target.value); setFileDirty(true); }}
               />
@@ -1185,21 +957,21 @@ export function SandboxView({
     if (!nodePodActive) {
       return (
         <div className={styles.textXsMuted}>
-          Sandbox is not active. Boot NodePod to use the shell.
+          Start NodePod to use the shell.
         </div>
       );
     }
     return (
-      <div className={css({ display: "grid", height: "100%", gap: "0.5rem" })} style={{ height: "calc(100% - 40px)" }}>
-        <div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between" })}>
-          <span className={styles.semiboldXs}>NodePod Terminal</span>
+      <div className="runtime-terminal-view">
+        <div className="runtime-wrap-toolbar">
+          <span className={styles.semiboldXs}>Terminal</span>
           <div className={css({ display: "flex", gap: "0.25rem" })}>
             <button
               type="button"
               onClick={clearTerminal}
               className={styles.outlineButtonSmBg}
             >
-              <RotateCcw size={12} />
+              <KeatingIcon icon={RotateCcw} size={12} />
               Clear
             </button>
             <button
@@ -1207,7 +979,7 @@ export function SandboxView({
               onClick={focusTerminal}
               className={styles.outlineButtonSmBg}
             >
-              <Maximize2 size={12} />
+              <KeatingIcon icon={Maximize2} size={12} />
               Fit
             </button>
           </div>
@@ -1215,7 +987,7 @@ export function SandboxView({
         <div
           ref={terminalContainerRef}
           className={css({ width: "100%", overflow: "hidden", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "black" })}
-          style={{ height: "400px", minHeight: "300px" }}
+          style={{ flex: 1, minHeight: "18rem" }}
         />
         {!terminalReady && (
           <div className={styles.textXsMuted}>Booting terminal…</div>
@@ -1228,23 +1000,24 @@ export function SandboxView({
     if (!nodePodActive) {
       return (
         <div className={styles.textXsMuted}>
-          Sandbox is not active. Boot NodePod to use snapshots.
+          Start NodePod to use snapshots.
         </div>
       );
     }
     return (
       <div className={styles.grid3}>
-        <div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between" })}>
+        <div className="runtime-view-intro"><h3>Snapshots</h3></div>
+        <div className="runtime-wrap-toolbar">
           <div className={css({ display: "flex", alignItems: "center", gap: "0.75rem" })}>
             <span className={styles.semiboldXs}>
-              {showDbSnapshots ? `Persisted (${dbSnapshots.length})` : `Session (${snapshots.length})`}
+              {showDbSnapshots ? `Saved (${dbSnapshots.length})` : `Session (${snapshots.length})`}
             </span>
             <button
               type="button"
               onClick={() => setShowDbSnapshots((v) => !v)}
               className={css({ fontSize: "10px", color: "var(--muted-foreground)", textDecorationLine: "underline", _hover: { color: "var(--foreground)" } })}
             >
-              {showDbSnapshots ? "Show session" : "Show persisted"}
+              {showDbSnapshots ? "Show session" : "Show saved"}
             </button>
           </div>
           <div className={css({ display: "flex", gap: "0.25rem" })}>
@@ -1254,7 +1027,7 @@ export function SandboxView({
                 onClick={refreshDbSnapshots}
                 className={styles.outlineButtonSmBg}
               >
-                <RefreshCw size={12} /> Refresh
+                <KeatingIcon icon={RefreshCw} size={12} /> Refresh
               </button>
             )}
             <button
@@ -1263,7 +1036,7 @@ export function SandboxView({
               disabled={snapLoading}
               className={styles.primaryButtonSm}
             >
-              {snapLoading ? <Spinner size={12} /> : <Plus size={12} />}
+              {snapLoading ? <RuntimeSpinner size={12} /> : <KeatingIcon icon={Plus} size={12} />}
               Create
             </button>
           </div>
@@ -1271,7 +1044,7 @@ export function SandboxView({
 
         {showDbSnapshots ? (
           dbSnapshots.length === 0 ? (
-            <div className={styles.textXsMuted}>No persisted snapshots yet. They are saved to IndexedDB and survive page reloads.</div>
+            <div className={styles.textXsMuted}>No saved snapshots yet. Create one to return to this workspace later.</div>
           ) : (
             <div className={styles.grid2}>
               {dbSnapshots.map((snap) => (
@@ -1285,7 +1058,7 @@ export function SandboxView({
                     onClick={() => restoreSnapshotAction(snap.data)}
                     className={css({ marginLeft: "0.5rem", display: "inline-flex", height: "1.75rem", flexShrink: 0, alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", paddingInline: "0.5rem", fontSize: "0.75rem", _hover: { background: "var(--accent)" } })}
                   >
-                    <RotateCcw size={12} /> Restore
+                    <KeatingIcon icon={RotateCcw} size={12} /> Restore
                   </button>
                 </div>
               ))}
@@ -1293,7 +1066,7 @@ export function SandboxView({
           )
         ) : (
           snapshots.length === 0 ? (
-            <div className={styles.textXsMuted}>No session snapshots yet.</div>
+            <div className={styles.textXsMuted}>Save a snapshot before your next experiment.</div>
           ) : (
             <div className={styles.grid2}>
               {snapshots.map((snap) => (
@@ -1307,7 +1080,7 @@ export function SandboxView({
                     onClick={() => restoreSnapshotAction(snap.data)}
                     className={css({ marginLeft: "0.5rem", display: "inline-flex", height: "1.75rem", flexShrink: 0, alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", paddingInline: "0.5rem", fontSize: "0.75rem", _hover: { background: "var(--accent)" } })}
                   >
-                    <RotateCcw size={12} /> Restore
+                    <KeatingIcon icon={RotateCcw} size={12} /> Restore
                   </button>
                 </div>
               ))}
@@ -1322,14 +1095,15 @@ export function SandboxView({
     if (!nodePodActive) {
       return (
         <div className={styles.textXsMuted}>
-          Sandbox is not active. Boot NodePod to use version control.
+          Start NodePod to use version control.
         </div>
       );
     }
     return (
       <div className={styles.grid3}>
+        <div className="runtime-view-intro"><h3>History</h3></div>
         {/* Branch controls */}
-        <div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between" })}>
+        <div className="runtime-wrap-toolbar">
           <span className={styles.semiboldXs}>
             Branch: <span className={styles.mono}>{vcActiveBranch}</span>
           </span>
@@ -1350,7 +1124,7 @@ export function SandboxView({
               disabled={portableBusy}
               className={styles.outlineButtonSmBg}
             >
-              <Download size={12} /> Export
+              <KeatingIcon icon={Download} size={12} /> Export
             </button>
             <button
               type="button"
@@ -1358,14 +1132,14 @@ export function SandboxView({
               disabled={portableBusy}
               className={styles.outlineButtonSmBg}
             >
-              <Upload size={12} /> Import
+              <KeatingIcon icon={Upload} size={12} /> Import
             </button>
             <button
               type="button"
               onClick={refreshVc}
               className={styles.outlineButtonSmBg}
             >
-              <RefreshCw size={12} /> Refresh
+              <KeatingIcon icon={RefreshCw} size={12} /> Refresh
             </button>
           </div>
         </div>
@@ -1374,7 +1148,7 @@ export function SandboxView({
         <div className={css({ display: "flex", gap: "0.5rem" })}>
           <input
             className={styles.inputMono}
-            placeholder="experiment-name"
+            aria-label="New branch name" placeholder="experiment-name"
             value={vcNewBranchName}
             onChange={(e) => setVcNewBranchName(e.target.value)}
           />
@@ -1384,7 +1158,7 @@ export function SandboxView({
             disabled={vcLoading || !vcNewBranchName.trim()}
             className={styles.primaryButton}
           >
-            <GitBranch size={13} /> Branch
+            <KeatingIcon icon={GitBranch} size={13} /> Branch
           </button>
         </div>
 
@@ -1392,7 +1166,7 @@ export function SandboxView({
         <div className={css({ display: "flex", gap: "0.5rem" })}>
           <input
             className={cx(styles.inputBase, css({ flex: 1 }))}
-            placeholder="Commit message (optional)"
+            aria-label="Commit message" placeholder="Describe your changes"
             value={vcCommitMessage}
             onChange={(e) => setVcCommitMessage(e.target.value)}
           />
@@ -1402,7 +1176,7 @@ export function SandboxView({
             disabled={vcLoading}
             className={styles.primaryButton}
           >
-            <GitCommit size={13} /> Commit
+            <KeatingIcon icon={GitCommit} size={13} /> Commit
           </button>
         </div>
 
@@ -1420,7 +1194,7 @@ export function SandboxView({
                     disabled={vcLoading}
                     className={css({ display: "inline-flex", height: "1.5rem", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", paddingInline: "0.5rem", fontSize: "10px", _hover: { background: "var(--accent)" }, _disabled: { opacity: 0.5 } })}
                   >
-                    <RotateCcw size={10} /> Switch
+                    <KeatingIcon icon={RotateCcw} size={10} /> Switch
                   </button>
                 )}
               </div>
@@ -1434,7 +1208,7 @@ export function SandboxView({
             <span className={css({ fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.025em", color: "var(--muted-foreground)" })}>Commits</span>
             {vcCommits.map((c, i) => (
               <div key={c.id} className={css({ borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", padding: "0.5rem 0.75rem" })}>
-                <div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between" })}>
+                <div className="runtime-wrap-toolbar">
                   <span className={css({ fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "0.75rem", fontWeight: 500 })}>{c.id.slice(0, 24)}</span>
                   <span className={styles.text10Muted}>{c.fileCount} files</span>
                 </div>
@@ -1447,7 +1221,7 @@ export function SandboxView({
                       onClick={() => diffCommitsAction(c.id, vcCommits[i + 1].id)}
                       className={css({ display: "inline-flex", height: "1.5rem", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", paddingInline: "0.5rem", fontSize: "10px", _hover: { background: "var(--accent)" } })}
                     >
-                      <GitCompare size={10} /> Diff with next
+                      <KeatingIcon icon={GitCompare} size={10} /> Diff with next
                     </button>
                   )}
                   <button
@@ -1457,7 +1231,7 @@ export function SandboxView({
                     title="Write this commit's files back into the sandbox"
                     className={css({ display: "inline-flex", height: "1.5rem", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", paddingInline: "0.5rem", fontSize: "10px", _hover: { background: "var(--accent)" }, _disabled: { opacity: 0.5 } })}
                   >
-                    <RotateCcw size={10} /> Restore
+                    <KeatingIcon icon={RotateCcw} size={10} /> Restore
                   </button>
                 </div>
               </div>
@@ -1465,7 +1239,7 @@ export function SandboxView({
           </div>
         ) : (
           <div className={styles.textXsMuted}>
-            No commits yet. Make changes in the VFS tab and press Commit to track them.
+            No commits yet. Edit a file, then commit to save a version.
           </div>
         )}
 
@@ -1503,23 +1277,14 @@ export function SandboxView({
 
   function renderLog() {
     return (
-      <div className={styles.grid2} ref={logRef}>
-        {events.length === 0 ? (
-          <div className={styles.textXsMuted}>No events yet. Run a probe, shell command, or VFS operation.</div>
-        ) : (
-          events.map((ev, idx) => (
-            <div key={ev.id} className={css({ borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", padding: "0.625rem" })}>
-              <div className={css({ marginBottom: "0.25rem", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem" })}>
-                <span className={cx(styles.pillBase, ev.ok ? styles.okPill : styles.errPill)}>{ev.ok ? "OK" : "ERR"}</span>
-                <span className={styles.text10Muted}>{new Date(ev.timestamp).toLocaleTimeString()}</span>
-                <span className={css({ fontSize: "10px", fontWeight: 500, color: "var(--muted-foreground)" })}>{ev.tab}</span>
-                <span className={css({ fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "10px" })}>{ev.operation}</span>
-                {ev.durationMs !== undefined && <span className={styles.text10Muted}>{ev.durationMs}ms</span>}
-              </div>
-              <JsonCrackBlock value={ev.output} maxHeight="10rem" />
-            </div>
-          ))
-        )}
+      <div className="runtime-activity" ref={logRef}>
+        <div className="runtime-section-heading"><h3>Activity</h3><span className="runtime-count">{events.length} {events.length === 1 ? "event" : "events"}</span></div>
+        {events.length === 0 ? <div className="runtime-empty"><KeatingIcon icon={Activity} size={30} /><h4>No activity yet</h4><p>Run a command or edit a file. Its result will appear here.</p></div> : events.map((event) => (
+          <details key={event.id} className="runtime-log-entry">
+            <summary><KeatingIcon icon={event.ok ? CheckCircle2 : Bug} size={19} className={event.ok ? "runtime-success" : "runtime-failure"} /><span className="runtime-log-title"><strong>{event.operation}</strong><small>{new Date(event.timestamp).toLocaleTimeString()} · {event.ok ? "Completed" : "Failed"}{event.durationMs != null ? ` · ${event.durationMs} ms` : ""}</small></span></summary>
+            <div className="runtime-log-output"><JsonCrackBlock value={event.output} maxHeight="22rem" /></div>
+          </details>
+        ))}
       </div>
     );
   }
@@ -1527,22 +1292,25 @@ export function SandboxView({
   function renderProbes() {
     return (
       <div className={styles.grid3}>
-        <label className={css({ marginBottom: "0.125rem", display: "block", fontSize: "0.75rem", fontWeight: 500, color: "var(--muted-foreground)" })}>Operation</label>
-        <select
+        <div className="runtime-view-intro"><h3>Diagnostics</h3><p>Check the runtime and inspect its response.</p></div>
+        <label htmlFor="runtime-probe-operation">Operation</label>
+        <Select
           className={css({ marginBottom: "0.25rem", width: "100%", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "var(--background)", padding: "0.5rem", fontSize: "0.75rem" })}
+          id="runtime-probe-operation"
           value={probeKind}
-          onChange={(e) => setProbeKind(e.target.value)}
+          onValueChange={setProbeKind}
         >
-          <option value="config">agent_runtime.config</option>
-          <option value="runtime.ping">runtime.ping</option>
-          <option value="shell.exec">shell.exec</option>
-          <option value="snapshot.create">snapshot.create</option>
-        </select>
+          <option value="config">Read configuration</option>
+          <option value="runtime.ping">Ping runtime</option>
+          <option value="shell.exec">Run shell command</option>
+          <option value="snapshot.create">Create snapshot</option>
+        </Select>
 
-        <label className={css({ marginBottom: "0.125rem", display: "block", fontSize: "0.75rem", fontWeight: 500, color: "var(--muted-foreground)" })}>Payload JSON</label>
+        <label htmlFor="runtime-probe-payload">Payload · JSON</label>
         <textarea
           className={css({ minHeight: "7rem", width: "100%", resize: "vertical", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "rgb(from var(--muted) r g b / 0.2)", padding: "0.5rem 0.75rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "0.75rem", lineHeight: 1.625 })}
           spellCheck={false}
+          id="runtime-probe-payload"
           value={payloadText}
           onChange={(e) => setPayloadText(e.target.value)}
         />
@@ -1554,18 +1322,18 @@ export function SandboxView({
             disabled={runningProbe}
             className={styles.primaryButton}
           >
-            {runningProbe ? <Spinner size={15} /> : <Play size={15} />}
-            Run probe
+            {runningProbe ? <RuntimeSpinner size={15} /> : <KeatingIcon icon={Play} size={15} />}
+            Run check
           </button>
           {events.some((e) => e.tab === "probes") && (
             <button type="button" onClick={copyOutput} className={styles.outlineButton}>
-              <Copy size={14} /> {copiedIndex !== null ? "Copied" : "Copy latest"}
+              <KeatingIcon icon={Copy} size={14} /> {copiedIndex !== null ? "Copied" : "Copy latest"}
             </button>
           )}
         </div>
 
         {events.filter((e) => e.tab === "probes").length > 0 && (
-          <div className={css({ marginTop: "0.5rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "rgb(from var(--muted) r g b / 0.2)", padding: "0.75rem" })}>
+          <div className={cx("runtime-probe-output", css({ marginTop: "0.5rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "rgb(from var(--muted) r g b / 0.2)", padding: "0.75rem" }))}>
             <h3 className={css({ marginBottom: "0.5rem", fontSize: "0.75rem", fontWeight: 600 })}>Latest probe result</h3>
             <JsonCrackBlock
               value={events.find((e) => e.tab === "probes")?.output ?? null}

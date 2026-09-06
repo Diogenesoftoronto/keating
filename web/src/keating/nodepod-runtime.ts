@@ -1,6 +1,8 @@
 import type { Nodepod } from "@scelar/nodepod";
+import type { EditResult, SourceEdit as SharedSourceEdit } from "../../../shared/source-edit";
 import type * as TypeScript from "typescript";
 import { persistSnapshot, loadSnapshots, type SnapshotRecord } from "./nodepod-snapshot-db";
+import { captureNodePodProcess } from "./nodepod-process-capture";
 
 let nodePodInstance: Nodepod | null = null;
 let nodePodBootPromise: Promise<Nodepod | null> | null = null;
@@ -275,23 +277,8 @@ export async function nodePodExists(path: string): Promise<boolean> {
 
 /* ─── Source editing ────────────────────────────────────── */
 
-export interface SourceEdit {
-	file: string;
-	search: string;
-	replace: string;
-	reason?: string;
-}
-
-export interface EditResult {
-	success: boolean;
-	file: string;
-	message: string;
-	diff?: {
-		linesRemoved: number;
-		linesAdded: number;
-		charDelta: number;
-	};
-}
+export type SourceEdit = SharedSourceEdit;
+export type { EditResult } from "../../../shared/source-edit";
 
 /**
  * Apply a single search/replace edit to a file in the NodePod VFS.
@@ -517,17 +504,10 @@ export async function nodePodRunCapturing(command: string, args: string[] = []):
 	};
 
 	try {
-		const proc = await pod.spawn(command, args, { cwd: "/workspace" });
-		proc.on("output", (text: string) => {
-			session.stdout += text;
-		});
-		proc.on("error", (text: string) => {
-			session.stderr += text;
-		});
-		proc.on("exit", (code: number) => {
-			session.exitCode = code;
-		});
-		await proc.completion;
+		const completed = await captureNodePodProcess(pod, command, args);
+		session.stdout = completed.stdout;
+		session.stderr = completed.stderr;
+		session.exitCode = completed.exitCode;
 	} catch (e) {
 		session.stderr += `\n[spawn error: ${e instanceof Error ? e.message : String(e)}]`;
 		session.exitCode = session.exitCode ?? -1;

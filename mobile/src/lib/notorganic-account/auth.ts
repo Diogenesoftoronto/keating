@@ -6,11 +6,7 @@ import { randomBase64Url, sha256Base64Url } from "./crypto";
 import { exchangeAuthorizationCode } from "./client";
 
 const PENDING_TTL_MS = 10 * 60_000;
-let completionInFlight: { key: string; promise: Promise<NotOrganicDeviceSession> } | null = null;
-
-function clearCompletion(key: string): void {
-  if (completionInFlight?.key === key) completionInFlight = null;
-}
+const authorizationCompletions = new Map<string, Promise<NotOrganicDeviceSession>>();
 
 function webBrowser(): typeof WebBrowserModule {
   return require("expo-web-browser") as typeof WebBrowserModule;
@@ -32,20 +28,23 @@ export async function createAuthorizationRequest(config = defaultNotOrganicAccou
   return { url: url.toString(), state };
 }
 
-async function completeAuthorizationOnce(callbackUrl: string, config: NotOrganicAccountConfig): Promise<NotOrganicDeviceSession> {
+export async function completeAuthorizationFromUrl(callbackUrl: string, config = defaultNotOrganicAccountConfig()): Promise<NotOrganicDeviceSession> {
+  const callback = new URL(callbackUrl);
+  const state = callback.searchParams.get("state");
+  const inFlight = state ? authorizationCompletions.get(state) : undefined;
+  if (inFlight) return inFlight;
   const pending = await loadPendingAuthorization();
+  const racedInFlight = state ? authorizationCompletions.get(state) : undefined;
+  if (racedInFlight) return racedInFlight;
   if (!pending || Date.now() - pending.createdAt > PENDING_TTL_MS) {
     const existing = await loadDeviceSession();
     if (existing) return existing;
     await clearPendingAuthorization();
     throw new Error("The sign-in request expired. Start again.");
   }
-  const callback = new URL(callbackUrl);
-  const state = callback.searchParams.get("state");
   const code = callback.searchParams.get("code");
   const error = callback.searchParams.get("error");
   if (state !== pending.state) {
-    await clearPendingAuthorization();
     throw new Error("The sign-in response did not match this device.");
   }
   if (error) {
@@ -53,25 +52,21 @@ async function completeAuthorizationOnce(callbackUrl: string, config: NotOrganic
     throw new Error(callback.searchParams.get("error_description") ?? "Not Organic sign-in was denied.");
   }
   if (!code) throw new Error("Not Organic did not return an authorization code.");
-  // Snapshot before exchange so callback delivery by both Expo Router and the
-  // browser session remains idempotent without exposing the verifier elsewhere.
-  await clearPendingAuthorization();
-  return exchangeAuthorizationCode({ code, verifier: pending.verifier, config });
-}
-
-export function completeAuthorizationFromUrl(callbackUrl: string, config = defaultNotOrganicAccountConfig()): Promise<NotOrganicDeviceSession> {
-  const callback = new URL(callbackUrl);
-  const key = [config.clientId, config.redirectUri, callback.searchParams.get("state"), callback.searchParams.get("code"), callback.searchParams.get("error")].join("\n");
-  if (completionInFlight) {
-    if (completionInFlight.key !== key) return Promise.reject(new Error("A different Not Organic sign-in response is already being completed."));
-    return completionInFlight.promise;
+  const completion = exchangeAuthorizationCode({ code, verifier: pending.verifier, config })
+    .then(async (session) => {
+      // exchangeAuthorizationCode persists the device session first. Keeping
+      // pending state until then lets a duplicate deep link join this flight.
+      await clearPendingAuthorization();
+      return session;
+    });
+  authorizationCompletions.set(state, completion);
+  try {
+    return await completion;
+  } finally {
+    if (authorizationCompletions.get(state) === completion) {
+      authorizationCompletions.delete(state);
+    }
   }
-  const promise = (async () => {
-    try { return await completeAuthorizationOnce(callbackUrl, config); }
-    finally { clearCompletion(key); }
-  })();
-  completionInFlight = { key, promise };
-  return promise;
 }
 
 export async function beginNotOrganicLogin(config = defaultNotOrganicAccountConfig()): Promise<NotOrganicDeviceSession | null> {

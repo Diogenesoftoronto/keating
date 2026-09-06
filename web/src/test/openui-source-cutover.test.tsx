@@ -30,7 +30,7 @@ describe("completed browser OpenUI source cutover", () => {
 		expect(html).toContain('data-shared-openui-document="session-message-source"');
 		expect(html).toContain("Explain your choice.");
 		expect(html).toContain("What changes the posterior?");
-		expect(html.match(/Submit answers/g)?.length).toBe(1);
+		expect(html.match(/Finish check/g)?.length).toBe(1);
 		expect(html).not.toContain("canonical migration failed");
 	});
 
@@ -44,7 +44,7 @@ describe("completed browser OpenUI source cutover", () => {
 		);
 		expect(html).not.toContain("data-shared-openui-document");
 		expect(html).toContain('data-openui-source-recovery="rejected"');
-		expect(html).toContain("could not be compiled safely");
+		expect(html).toContain("could not be built");
 		expect(html.match(/Keep my answer/g)?.length).toBe(1);
 		expect(html).not.toContain("Submit answers");
 	});

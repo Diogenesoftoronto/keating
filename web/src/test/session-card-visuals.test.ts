@@ -58,7 +58,7 @@ describe("buildArtifactHeroMap", () => {
 	it("picks the richest artifact per session and keeps the map SVG", async () => {
 		const heroes = await buildArtifactHeroMap(storage as never);
 		// s1 has both a map and an animation; the map (with SVG) wins.
-		expect(heroes.get("s1")).toEqual({ type: "map", topic: "Cells", svg: "<svg/>" });
+		expect(heroes.get("s1")).toEqual({ type: "map", types: ["map", "animation"], topic: "Cells", svg: "<svg/>" });
 		expect(heroes.get("s2")?.type).toBe("animation");
 		expect(heroes.get("s3")?.type).toBe("plan");
 	});

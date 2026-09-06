@@ -1,8 +1,9 @@
-import { useEffect, useRef } from "react";
+import { Select } from "../Select";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	Camera,
 	CameraOff,
-	ChevronDown,
+	ImagePlus,
 	Mic,
 	MicOff,
 	MonitorUp,
@@ -15,7 +16,9 @@ import {
 
 import { css, cx } from "../../../styled-system/css";
 import type { LiveFailure } from "../../keating/live-errors";
+import { LIVE_IMAGE_ACCEPT } from "../../keating/live-image";
 import LiveVisualizer, { type VisualizerState } from "./LiveVisualizer";
+import TavusConversationSurface, { type TavusConversationControls } from "./TavusConversationSurface";
 import type { LiveSessionController } from "./use-live-session";
 
 /**
@@ -33,6 +36,8 @@ import type { LiveSessionController } from "./use-live-session";
 
 export interface LiveConversationProps {
 	session: LiveSessionController;
+	/** Delay a provider-hosted room during preflight and isolated component previews. */
+	connectEmbeddedSurface?: boolean;
 	/** Shown as a dismiss control; omitted on the standalone page. */
 	onClose?: () => void;
 	/** Opens the settings dialog on a given tab, when the host has one. */
@@ -314,8 +319,11 @@ function visualizerState(session: LiveSessionController): VisualizerState {
 	return session.micMuted ? "idle" : "listening";
 }
 
-export default function LiveConversation({ session, onClose, onOpenSettings, onUseDictation }: LiveConversationProps) {
+export default function LiveConversation({ session, connectEmbeddedSurface = true, onClose, onOpenSettings, onUseDictation }: LiveConversationProps) {
 	const transcriptRef = useRef<HTMLDivElement | null>(null);
+	const imageInputRef = useRef<HTMLInputElement | null>(null);
+	const [tavusControls, setTavusControls] = useState<TavusConversationControls | null>(null);
+	const handleTavusControls = useCallback((controls: TavusConversationControls | null) => setTavusControls(controls), []);
 
 	// Keep the newest line in view without stealing focus from the controls.
 	useEffect(() => {
@@ -324,6 +332,7 @@ export default function LiveConversation({ session, onClose, onOpenSettings, onU
 	}, [session.transcript]);
 
 	const videoOn = session.videoSource !== null;
+	const embedded = session.embeddedSurface;
 	const failed = session.phase === "failed";
 	const runningTools = session.tools.filter((tool) => tool.status === "running");
 	const visualState = visualizerState(session);
@@ -332,6 +341,8 @@ export default function LiveConversation({ session, onClose, onOpenSettings, onU
 		? "Not connected"
 		: session.phase === "connecting"
 			? "Connecting…"
+			: embedded
+				? "KeatingBot is live"
 			: session.speechState === "speaking"
 				? "Keating is speaking"
 				: session.micMuted
@@ -393,9 +404,9 @@ export default function LiveConversation({ session, onClose, onOpenSettings, onU
 				<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
 					{/* Model switching is available at any time, not only after a failure. */}
 					<div className={css({ position: "relative", display: { base: "none", sm: "block" } })}>
-						<select
+						<Select
 							value={session.model.value}
-							onChange={(event) => session.switchModel(event.target.value)}
+							onValueChange={(value) => session.switchModel(value)}
 							aria-label="Live model"
 							className={css({
 								appearance: "none",
@@ -415,14 +426,16 @@ export default function LiveConversation({ session, onClose, onOpenSettings, onU
 							{session.models.map((entry) => (
 								<option key={entry.value} value={entry.value}>
 									{entry.label}
-									{entry.grade === "recommended" ? " · recommended" : entry.video === "none" ? " · no vision" : ""}
+									{entry.grade === "recommended"
+										? " · recommended"
+										: entry.video === "none" && entry.image
+											? " · image input"
+											: entry.video === "none"
+												? " · no vision"
+												: ""}
 								</option>
 							))}
-						</select>
-						<ChevronDown
-							size={12}
-							className={css({ position: "absolute", right: "0.5rem", top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--muted-foreground)" })}
-						/>
+						</Select>
 					</div>
 					{onClose ? (
 						<button
@@ -458,6 +471,16 @@ export default function LiveConversation({ session, onClose, onOpenSettings, onU
 					overflow: "hidden",
 				})}
 			>
+				{embedded ? (
+					<TavusConversationSurface
+						key={embedded.url}
+						url={embedded.url}
+						title={embedded.title}
+						onEvent={session.handleEmbeddedEvent}
+						onControlsChange={handleTavusControls}
+						connect={connectEmbeddedSurface}
+					/>
+				) : null}
 				<video
 					ref={session.previewRef}
 					muted
@@ -473,14 +496,14 @@ export default function LiveConversation({ session, onClose, onOpenSettings, onU
 						backgroundColor: "black",
 					})}
 					style={{
-						display: videoOn ? "block" : "none",
+						display: videoOn && !embedded ? "block" : "none",
 						// Only a front camera is mirrored; a rear camera or a shared
 						// screen shown flipped is disorienting.
 						transform: session.videoSource === "camera" && session.cameraFacing === "user" ? "scaleX(-1)" : undefined,
 					}}
 				/>
 
-				{videoOn ? (
+				{embedded ? null : videoOn ? (
 					// Over video the visualizer shrinks into a corner badge, so the
 					// learner's own work stays the largest thing on screen while turn
 					// taking is still readable.
@@ -490,6 +513,40 @@ export default function LiveConversation({ session, onClose, onOpenSettings, onU
 				) : (
 					<LiveVisualizer state={visualState} inputStream={session.inputStream} size={208} />
 				)}
+
+				{session.sharedImage && !videoOn ? (
+					<div
+						className={css({
+							position: "relative",
+							display: "flex",
+							alignItems: "center",
+							gap: "0.625rem",
+							maxWidth: "24rem",
+							padding: "0.5rem",
+							border: "1px solid var(--border)",
+							borderRadius: "0.75rem",
+							backgroundColor: "color-mix(in srgb, var(--foreground) 5%, var(--background))",
+						})}
+					>
+						<img
+							src={session.sharedImage.previewUrl}
+							alt={`Shared image: ${session.sharedImage.filename}`}
+							className={css({ width: "4rem", height: "4rem", objectFit: "cover", borderRadius: "0.5rem" })}
+						/>
+						<div className={css({ minWidth: 0, textAlign: "left" })}>
+							<p className={css({ fontSize: "0.8125rem", fontWeight: 600 })}>Image shared</p>
+							<p className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" })}>
+								{session.sharedImage.filename}
+							</p>
+						</div>
+					</div>
+				) : null}
+
+				{session.imageError ? (
+					<p role="alert" className={css({ position: "relative", fontSize: "0.8125rem", color: "var(--destructive)" })}>
+						{session.imageError}
+					</p>
+				) : null}
 
 				{failed && session.failure ? (
 					<div className={css({ position: "relative", width: "100%", display: "flex", justifyContent: "center" })}>
@@ -532,7 +589,7 @@ export default function LiveConversation({ session, onClose, onOpenSettings, onU
 				) : null}
 			</div>
 
-			{/* Transcript: present, scrollable, but never the main event. */}
+			{/* Every provider writes into the same Keating transcript and chat history. */}
 			<div
 				ref={transcriptRef}
 				className={css({
@@ -583,30 +640,88 @@ export default function LiveConversation({ session, onClose, onOpenSettings, onU
 					borderTop: "1px solid var(--border)",
 				})}
 			>
-				<Control
-					icon={session.micMuted ? <MicOff size={22} /> : <Mic size={22} />}
-					label={session.micMuted ? "Unmute" : "Mute"}
-					onClick={session.toggleMic}
-					active={session.micMuted}
-					disabled={session.phase !== "live"}
-				/>
-				<Control
-					icon={session.videoSource === "camera" ? <CameraOff size={22} /> : <Camera size={22} />}
-					label={session.videoSource === "camera" ? "Camera off" : "Camera"}
-					onClick={() => (session.videoSource === "camera" ? session.stopVideo() : session.startVideo("camera"))}
-					active={session.videoSource === "camera"}
-					disabled={!session.visionCapable || session.videoStarting || session.phase === "failed"}
-					title={session.visionCapable ? undefined : `${session.model.label} cannot see — pick a model with vision`}
-				/>
-				<Control
-					icon={<MonitorUp size={22} />}
-					label={session.videoSource === "screen" ? "Stop sharing" : "Share screen"}
-					onClick={() => (session.videoSource === "screen" ? session.stopVideo() : session.startVideo("screen"))}
-					active={session.videoSource === "screen"}
-					disabled={!session.visionCapable || session.videoStarting || session.phase === "failed"}
-					title={session.visionCapable ? undefined : `${session.model.label} cannot see — pick a model with vision`}
-				/>
-				{session.videoSource === "camera" ? (
+				{embedded ? (
+					<>
+						<Control
+							icon={tavusControls?.microphoneOn === false ? <MicOff size={22} /> : <Mic size={22} />}
+							label={tavusControls?.microphoneOn === false ? "Unmute" : "Mute"}
+							onClick={() => tavusControls?.toggleMicrophone()}
+							active={tavusControls?.microphoneOn === false}
+							disabled={!tavusControls?.ready}
+						/>
+						<Control
+							icon={tavusControls?.cameraOn === false ? <Camera size={22} /> : <CameraOff size={22} />}
+							label={tavusControls?.cameraOn === false ? "Camera" : "Camera off"}
+							onClick={() => tavusControls?.toggleCamera()}
+							active={tavusControls?.cameraOn === true}
+							disabled={!tavusControls?.ready}
+						/>
+						<Control
+							icon={<MonitorUp size={22} />}
+							label={tavusControls?.screenOn ? "Stop sharing" : "Share screen"}
+							onClick={() => tavusControls?.toggleScreen()}
+							active={tavusControls?.screenOn}
+							disabled={!tavusControls?.ready || !tavusControls.screenShareSupported}
+							title={tavusControls && !tavusControls.screenShareSupported ? "Screen sharing is unavailable in this browser" : undefined}
+						/>
+						<Control
+							icon={<SwitchCamera size={22} />}
+							label="Flip"
+							onClick={() => tavusControls?.flipCamera()}
+							disabled={!tavusControls?.ready || tavusControls.cameraOn === false}
+						/>
+					</>
+				) : (
+					<Control
+						icon={session.micMuted ? <MicOff size={22} /> : <Mic size={22} />}
+						label={session.micMuted ? "Unmute" : "Mute"}
+						onClick={session.toggleMic}
+						active={session.micMuted}
+						disabled={session.phase !== "live"}
+					/>
+				)}
+				{!embedded && session.videoCapable ? (
+					<>
+						<Control
+							icon={session.videoSource === "camera" ? <CameraOff size={22} /> : <Camera size={22} />}
+							label={session.videoSource === "camera" ? "Camera off" : "Camera"}
+							onClick={() => (session.videoSource === "camera" ? session.stopVideo() : session.startVideo("camera"))}
+							active={session.videoSource === "camera"}
+							disabled={session.videoStarting || session.phase === "failed"}
+						/>
+						<Control
+							icon={<MonitorUp size={22} />}
+							label={session.videoSource === "screen" ? "Stop sharing" : "Share screen"}
+							onClick={() => (session.videoSource === "screen" ? session.stopVideo() : session.startVideo("screen"))}
+							active={session.videoSource === "screen"}
+							disabled={session.videoStarting || session.phase === "failed"}
+						/>
+					</>
+				) : null}
+				{!embedded && session.imageCapable ? (
+					<>
+						<Control
+							icon={<ImagePlus size={22} />}
+							label={session.imageSending ? "Preparing" : "Add image"}
+							onClick={() => imageInputRef.current?.click()}
+							disabled={session.imageSending || session.phase !== "live"}
+							title="Add a still image to this conversation"
+						/>
+						<input
+							ref={imageInputRef}
+							type="file"
+							accept={LIVE_IMAGE_ACCEPT}
+							aria-label="Choose a still image"
+							className={css({ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap" })}
+							onChange={(event) => {
+								const file = event.currentTarget.files?.[0];
+								event.currentTarget.value = "";
+								if (file) void session.shareImage(file);
+							}}
+						/>
+					</>
+				) : null}
+				{!embedded && session.videoSource === "camera" ? (
 					<Control
 						icon={<SwitchCamera size={22} />}
 						label="Flip"

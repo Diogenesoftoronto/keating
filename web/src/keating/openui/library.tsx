@@ -17,6 +17,11 @@ import {
 	type AnsweredQuestion,
 } from "../../components/QuestionRenderer";
 import { QuizRenderer } from "../../components/QuizRenderer";
+import { LanguagePractice as LanguagePracticeRenderer } from "../../components/LanguagePractice";
+import { ExamRenderer } from "../../components/ExamRenderer";
+import { CodingChallenge as CodingChallengeRenderer } from "../../components/CodingChallenge";
+import { MusicLab as MusicLabRenderer } from "../../components/MusicLab";
+import { compileOpenUISourceToSharedDocument, MIN_EXAM_QUESTIONS, type UiDocumentNode } from "@keating/learner-contracts";
 import { FlashcardRenderer } from "../../components/FlashcardRenderer";
 import { initialSrsState, type FlashcardDeck } from "../srs";
 import type { Quiz } from "../core";
@@ -200,6 +205,7 @@ const quizPropsSchema = z.object({
 	topic: z.string(),
 	questions: z.array(quizQuestionSchema).min(1).max(20),
 	lifecycle: lifecycleSchema.default("resumable"),
+	timeLimit: z.number().optional(),
 });
 
 function OpenUIQuiz({ props }: { props: z.infer<typeof quizPropsSchema> }) {
@@ -243,6 +249,34 @@ export const QuizDocument = defineComponent({
 	description: "A resumable assessment with objective and open-ended questions.",
 	props: quizPropsSchema,
 	component: OpenUIQuiz,
+});
+
+const examPropsSchema = z.object({
+	id: z.string(),
+	topic: z.string(),
+	questions: z.array(quizQuestionSchema).min(MIN_EXAM_QUESTIONS, "Exams require at least 20 questions.").max(32),
+	lifecycle: lifecycleSchema.default("resumable"),
+	examTimeLimit: z.number().int().positive().max(86_400).default(1800).describe("Whole-exam time in seconds, independent of per-question timeLimit"),
+});
+
+function OpenUIExam({ props }: { props: z.infer<typeof examPropsSchema> }) {
+	const triggerAction = useTriggerAction();
+	const streaming = useIsStreaming();
+	const node = useMemo(() => compileOpenUISourceToSharedDocument(
+		`root = LearningSurface([exam], "", "", "resumable")\nexam = Exam(${JSON.stringify(props)})`,
+		{ documentId: "exam-preview" },
+	).nodes[0] as Extract<UiDocumentNode, { type: "quiz" }>, [props]);
+	return <ExamRenderer node={node} disabled={streaming} onAction={(event) => {
+		void triggerAction(event.humanFriendlyMessage, undefined, { type: "continue_conversation", params: { interaction: "quiz", mode: "exam", ...event.intent } });
+		return true;
+	}} />;
+}
+
+export const ExamDocument = defineComponent({
+	name: "Exam",
+	description: "An examination with at least 20 questions, one overall deadline, question navigation, flags, final review, and grading after submission. Use Quiz for short retrieval rounds.",
+	props: examPropsSchema,
+	component: OpenUIExam,
 });
 
 const flashcardSchema = z.object({
@@ -373,16 +407,258 @@ export const SharedNotes = defineComponent({
 	component: OpenUISharedNotes,
 });
 
+// Work the learner does away from the conversation. Key order here IS the
+// positional argument order, and must stay in step with POSITIONAL_FIELDS in
+// @keating/learner-contracts.
+const taskItemSchema = z.object({
+	id: z.string(),
+	title: z.string(),
+	detail: z.string().optional(),
+});
+
+function TaskCard({ badge, title, brief, criteria, items, itemsLabel, footer }: { badge: string; title: string; brief: string; criteria?: string[]; items?: z.infer<typeof taskItemSchema>[]; itemsLabel: string; footer?: string }) {
+	return (
+		<section className={surfaceClass}>
+			<header className={css({ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "0.5rem", borderBottom: "1px solid var(--border)", padding: "0.875rem 1rem" })}>
+				<span className={css({ borderRadius: "999px", background: "var(--muted)", paddingInline: "0.5rem", paddingBlock: "0.125rem", fontSize: "0.6875rem", fontWeight: 650, color: "var(--muted-foreground)" })}>{badge}</span>
+				<h2 className={css({ flex: 1, fontSize: "1rem", fontWeight: 700 })}>{title}</h2>
+				{footer ? <span className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>{footer}</span> : null}
+			</header>
+			<div className={bodyClass}>
+				<p className={css({ maxWidth: "72ch", fontSize: "0.875rem", lineHeight: "1.6" })}>{brief}</p>
+				{criteria?.length ? (
+					<div className={css({ display: "grid", gap: "0.25rem" })}>
+						<span className={css({ fontSize: "0.75rem", fontWeight: 650, color: "var(--muted-foreground)" })}>Judged on</span>
+						<ul className={css({ display: "grid", gap: "0.125rem", margin: 0, paddingLeft: "1.125rem", fontSize: "0.8125rem" })}>
+							{criteria.map((entry) => <li key={entry}>{entry}</li>)}
+						</ul>
+					</div>
+				) : null}
+				{items?.length ? (
+					<div className={css({ display: "grid", gap: "0.25rem" })}>
+						<span className={css({ fontSize: "0.75rem", fontWeight: 650, color: "var(--muted-foreground)" })}>{itemsLabel}</span>
+						<ul className={css({ display: "grid", gap: "0.25rem", margin: 0, paddingLeft: "1.125rem", fontSize: "0.8125rem" })}>
+							{items.map((item) => <li key={item.id}><strong>{item.title}</strong>{item.detail ? <span className={css({ display: "block", color: "var(--muted-foreground)" })}>{item.detail}</span> : null}</li>)}
+						</ul>
+					</div>
+				) : null}
+			</div>
+		</section>
+	);
+}
+
+const assignmentPropsSchema = z.object({
+	id: z.string(),
+	title: z.string(),
+	brief: z.string(),
+	criteria: z.array(z.string()).optional(),
+	lifecycle: lifecycleSchema.default("workspace"),
+	estimatedMinutes: z.number().optional(),
+	steps: z.array(taskItemSchema).optional(),
+	dueAt: z.string().optional(),
+	availableFrom: z.string().optional(),
+});
+
+export const Assignment = defineComponent({
+	name: "Assignment",
+	description: "One deliverable the learner produces away from the conversation, then submits for judgement. Author a concrete brief and explicit success criteria.",
+	props: assignmentPropsSchema,
+	component: ({ props }: { props: z.infer<typeof assignmentPropsSchema> }) => (
+		<TaskCard badge="Assignment" title={props.title} brief={props.brief} criteria={props.criteria} items={props.steps} itemsLabel="Steps" footer={props.estimatedMinutes ? `~${props.estimatedMinutes} min` : undefined} />
+	),
+});
+
+const practicePropsSchema = z.object({
+	id: z.string(),
+	title: z.string(),
+	brief: z.string(),
+	exercises: z.array(taskItemSchema).min(1),
+	lifecycle: lifecycleSchema.default("workspace"),
+	estimatedMinutes: z.number().optional(),
+	dueAt: z.string().optional(),
+	availableFrom: z.string().optional(),
+});
+
+export const Practice = defineComponent({
+	name: "Practice",
+	description: "A set of discrete exercises the learner works through offline, checking each one off. Use for repetition that builds fluency, not for a single deliverable.",
+	props: practicePropsSchema,
+	component: ({ props }: { props: z.infer<typeof practicePropsSchema> }) => (
+		<TaskCard badge="Practice" title={props.title} brief={props.brief} items={props.exercises} itemsLabel="Exercises" footer={props.estimatedMinutes ? `~${props.estimatedMinutes} min` : undefined} />
+	),
+});
+
+const draftPropsSchema = z.object({
+	id: z.string(),
+	title: z.string(),
+	prompt: z.string(),
+	rubric: z.array(z.string()).optional(),
+	lifecycle: lifecycleSchema.default("workspace"),
+	targetWords: z.number().optional(),
+	round: z.number().optional(),
+	dueAt: z.string().optional(),
+	availableFrom: z.string().optional(),
+});
+
+export const Draft = defineComponent({
+	name: "Draft",
+	description: "Long-form writing against a prompt and rubric, revised over numbered rounds. Increment round when asking for a revision of earlier work.",
+	props: draftPropsSchema,
+	component: ({ props }: { props: z.infer<typeof draftPropsSchema> }) => (
+		<TaskCard badge="Draft" title={props.title} brief={props.prompt} criteria={props.rubric} itemsLabel="Steps" footer={props.round ? `Round ${props.round}` : undefined} />
+	),
+});
+
+const fieldworkPropsSchema = z.object({
+	id: z.string(),
+	title: z.string(),
+	objective: z.string(),
+	protocol: z.array(taskItemSchema).min(1),
+	lifecycle: lifecycleSchema.default("workspace"),
+	estimatedMinutes: z.number().optional(),
+	dueAt: z.string().optional(),
+	availableFrom: z.string().optional(),
+});
+
+export const Fieldwork = defineComponent({
+	name: "Fieldwork",
+	description: "Sends the learner to gather evidence from the world against a collection protocol, then record findings. Use when the material is only convincing from real data.",
+	props: fieldworkPropsSchema,
+	component: ({ props }: { props: z.infer<typeof fieldworkPropsSchema> }) => (
+		<TaskCard badge="Fieldwork" title={props.title} brief={props.objective} items={props.protocol} itemsLabel="Collection protocol" footer={props.estimatedMinutes ? `~${props.estimatedMinutes} min` : undefined} />
+	),
+});
+
+const simulationPropsSchema = z.object({
+	id: z.string(),
+	title: z.string(),
+	parameters: z.array(z.object({
+		id: z.string(),
+		label: z.string(),
+		unit: z.string().optional(),
+		min: z.number(),
+		max: z.number(),
+		step: z.number().optional(),
+		value: z.number(),
+	})).min(1).max(8),
+	readouts: z.array(z.object({
+		id: z.string(),
+		label: z.string(),
+		unit: z.string().optional(),
+		expr: z.string(),
+		precision: z.number().optional(),
+		emphasis: z.boolean().optional(),
+	})).min(1).max(8),
+	lifecycle: lifecycleSchema.default("workspace"),
+	brief: z.string().optional(),
+});
+
+export const Simulation = defineComponent({
+	name: "Simulation",
+	description: "A model the learner manipulates directly, recomputed locally with no turn spent. Declare numeric parameters and readouts whose expr is arithmetic over those parameter ids. Use when a relationship is more convincing moved than described.",
+	props: simulationPropsSchema,
+	component: ({ props }: { props: z.infer<typeof simulationPropsSchema> }) => (
+		<section className={surfaceClass}>
+			<header className={css({ borderBottom: "1px solid var(--border)", padding: "0.875rem 1rem" })}>
+				<h2 className={css({ fontSize: "1rem", fontWeight: 700 })}>{props.title}</h2>
+				{props.brief ? <p className={css({ marginTop: "0.25rem", maxWidth: "72ch", fontSize: "0.8125rem", color: "var(--muted-foreground)" })}>{props.brief}</p> : null}
+			</header>
+			<div className={bodyClass}>
+				{props.parameters.map((parameter) => (
+					<div key={parameter.id} className={css({ display: "flex", justifyContent: "space-between", fontSize: "0.8125rem" })}>
+						<span>{parameter.label}</span>
+						<span className={css({ fontVariantNumeric: "tabular-nums" })}>{parameter.value}{parameter.unit ? ` ${parameter.unit}` : ""}</span>
+					</div>
+				))}
+				{props.readouts.map((readout) => (
+					<div key={readout.id} className={css({ display: "flex", justifyContent: "space-between", borderTop: "1px solid var(--border)", paddingTop: "0.375rem", fontSize: "0.8125rem", fontWeight: readout.emphasis ? 700 : 400 })}>
+						<span>{readout.label}</span>
+						<span className={css({ color: "var(--muted-foreground)" })}>computed</span>
+					</div>
+				))}
+			</div>
+		</section>
+	),
+});
+
+const codeValueSchema = z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(z.unknown()), z.record(z.string(), z.unknown())]);
+const codingChallengePropsSchema = z.object({
+	id: z.string(), title: z.string(), prompt: z.string(), language: z.enum(["javascript", "typescript"]),
+	starterCode: z.string(), entrypoint: z.string().describe("Name of the pure function the learner implements, for example twoSum."),
+	tests: z.array(z.object({ id: z.string(), label: z.string(), args: z.array(codeValueSchema), expected: codeValueSchema })).min(1).max(24),
+	lifecycle: lifecycleSchema.default("workspace"), hint: z.string().optional(),
+});
+
+export const CodingChallenge = defineComponent({
+	name: "CodingChallenge",
+	description: "A small JavaScript or TypeScript function exercise with an editable starter and executable sample tests. Each test supplies JSON args and expected output. No imports, DOM, network, or external packages. Runs happen only when the learner presses Run tests, with a three-second limit. Sample results are formative feedback, not a formal grade.",
+	props: codingChallengePropsSchema,
+	component: ({ props }) => {
+		const node = compileOpenUISourceToSharedDocument(`root = LearningSurface([lab])\nlab = CodingChallenge(${JSON.stringify(props)})`, { documentId: props.id }).nodes[0] as Extract<UiDocumentNode, { type: "coding-challenge" }>;
+		return <CodingChallengeRenderer node={node} />;
+	},
+});
+
+const musicLabPropsSchema = z.object({
+	id: z.string(), title: z.string(), code: z.string(), lifecycle: lifecycleSchema.default("workspace"), brief: z.string().optional(),
+	controls: simulationPropsSchema.shape.parameters.element.array().max(8).optional(), visualization: z.enum(["pianoroll", "scope"]).optional(),
+});
+export const MusicLab = defineComponent({
+	name: "MusicLab",
+	description: "An interactive Strudel instrument with live numeric sliders, a real pianoroll or audio scope, and optional code editor. Reference controls.<id> in code, e.g. setcpm(controls.tempo / 4) or freq(controls.frequency). Use pianoroll for rhythm/pitch and scope for timbre. Prefer built-in sine, triangle, sawtooth or square synths with modest gain. No external samples or network. Include useful controls and a short listening experiment in brief; playback is explicit.",
+	props: musicLabPropsSchema,
+	component: ({ props }) => {
+		const node = compileOpenUISourceToSharedDocument(`root = LearningSurface([lab])\nlab = MusicLab(${JSON.stringify(props)})`, { documentId: props.id }).nodes[0] as Extract<UiDocumentNode, { type: "music-lab" }>;
+		return <MusicLabRenderer node={node} />;
+	},
+});
+
+const languageRoundBase = { id: z.string(), prompt: z.string(), hint: z.string().optional() };
+const languageAudioFields = { text: z.string(), referenceAudioUrl: z.string().optional(), audioCreditUrl: z.string().optional() };
+const languagePracticePropsSchema = z.object({
+    id: z.string(), title: z.string(), language: z.string(), lifecycle: lifecycleSchema.default("resumable"),
+    rounds: z.array(z.discriminatedUnion("kind", [
+        z.object({ ...languageRoundBase, kind: z.literal("translation"), text: z.string(), acceptedAnswers: z.array(z.string()).min(1).max(16) }),
+        z.object({ ...languageRoundBase, kind: z.literal("word-order"), tokens: z.array(z.object({ id: z.string(), label: z.string() })).min(1).max(24), correctOrder: z.array(z.string()).min(1).max(24) }),
+        z.object({ ...languageRoundBase, ...languageAudioFields, kind: z.literal("listening"), acceptedAnswers: z.array(z.string()).min(1).max(16) }),
+        z.object({ ...languageRoundBase, ...languageAudioFields, kind: z.literal("pronunciation") }),
+    ])).min(1).max(16),
+});
+function OpenUILanguagePractice({ props }: { props: z.infer<typeof languagePracticePropsSchema> }) {
+    const streaming = useIsStreaming();
+    const triggerAction = useTriggerAction();
+    const node = useMemo(() => compileOpenUISourceToSharedDocument(`root = LearningSurface([practice])\npractice = LanguagePractice(${JSON.stringify(props)})`, { documentId: props.id }).nodes[0] as Extract<UiDocumentNode, { type: "language-practice" }>, [props]);
+    return <LanguagePracticeRenderer node={node} disabled={streaming} onAction={(event) => {
+        void triggerAction(event.humanFriendlyMessage, undefined, { type: "continue_conversation", params: { interaction: "language-practice", ...event.intent } });
+        return true;
+    }} />;
+}
+export const LanguagePracticeDocument = defineComponent({
+    name: "LanguagePractice",
+    description: "Optional short language rounds: translation, tap-to-order words, listening, and listen-record-compare pronunciation. Use acceptedAnswers for objective text rounds and token IDs with correctOrder for word ordering. Audio rounds use referenceAudioUrl when provided, otherwise the learner's configured voice provider. Use audioCreditUrl for source attribution. Pronunciation records practice only, never a fabricated accuracy score. Microphone recordings remain local.",
+    props: languagePracticePropsSchema,
+    component: OpenUILanguagePractice,
+});
+
 const learningBlock = z.union([
 	Explanation.ref,
 	Callout.ref,
 	Question.ref,
 	QuizDocument.ref,
+	ExamDocument.ref,
+	LanguagePracticeDocument.ref,
 	Flashcards.ref,
 	StudyPlan.ref,
 	ConceptMap.ref,
 	LearningImage.ref,
 	SharedNotes.ref,
+	Assignment.ref,
+	Practice.ref,
+	Draft.ref,
+	Fieldwork.ref,
+	Simulation.ref,
+	CodingChallenge.ref,
+	MusicLab.ref,
 ]);
 
 export const LearningSurface = defineComponent({
@@ -416,15 +692,26 @@ export const keatingOpenUILibrary = createLibrary({
 		Callout,
 		Question,
 		QuizDocument,
+		ExamDocument,
+		LanguagePracticeDocument,
 		Flashcards,
 		StudyPlan,
 		ConceptMap,
 		LearningImage,
 		SharedNotes,
+		Assignment,
+		Practice,
+		Draft,
+		Fieldwork,
+		Simulation,
+		CodingChallenge,
+		MusicLab,
 	],
 	componentGroups: [
-		{ name: "Teaching", components: ["Explanation", "Callout", "Question", "Quiz", "Flashcards"] },
+		{ name: "Teaching", components: ["Explanation", "Callout", "Question", "Quiz", "Exam", "Flashcards", "LanguagePractice"] },
 		{ name: "Workspace", components: ["StudyPlan", "ConceptMap", "LearningImage", "SharedNotes"] },
+		{ name: "Work away from the chat", components: ["Assignment", "Practice", "Draft", "Fieldwork"] },
+		{ name: "Manipulable", components: ["Simulation", "CodingChallenge", "MusicLab"] },
 	],
 });
 
@@ -453,6 +740,12 @@ export const keatingOpenUIQuestionExampleProgram = [
 
 /** Model-facing selection guide for every conversational and scored question format. */
 export const keatingOpenUIQuestionTypeGuide = [
+	"## Exams",
+	"Use Exam(id, topic, questions, lifecycle, examTimeLimit) for a full timed test with at least 20 distinct, substantive questions (maximum 32). Exams with fewer than 20 questions are invalid. It uses the same question definitions as Quiz, with one overall countdown (1800 seconds by default), free question navigation, flags, and a final review before submission. It does not reveal correctness while the exam is running. Open-ended answers remain pending until the teacher grades them. examTimeLimit is the total exam duration, never the per-question budget.",
+	"",
+	"## Quiz timing",
+	"Quizzes are timed by default: each question allows 120 seconds, because a retrieval check the learner can sit on indefinitely stops being retrieval. Running out of time advances to the next question and keeps whatever they had written — it never ends the quiz.",
+	"Override it when the default is wrong for the material: `timeLimit` on the Quiz sets the per-question default, and `timeLimit` on a single question overrides that. Use `0` at either level for an untimed question or quiz — do that whenever the question rewards thinking rather than recall, such as a transfer or short-answer prompt where a clock would just produce a worse answer.",
 	"## Question type catalog",
 	"`Question` and `Quiz` use different type names. Never put a Quiz type such as `short_answer` into Question, or a Question type such as `text` into Quiz.",
 	"Choose the format from the learning operation, not from habit. Do not default to choice when the learner should construct, organize, or connect an answer.",
@@ -463,6 +756,7 @@ export const keatingOpenUIQuestionTypeGuide = [
 	'- `blanks`: retrieve exact terms, values, syntax, or ordered parts inside a meaningful sentence. Put `___` or `{{blank}}` in the prompt and optionally provide one `blanks` entry per input.',
 	'- `classification`: assign several `items` to shared `choices`. Use `requireReasons: true` when the classification reasoning matters. Optional `itemLabel`, `choiceLabel`, and `reasonLabel` make the worksheet clearer.',
 	'- `matching`: pair several `items` with shared `choices`. `uniqueMatches` defaults to true. Add `correctMatches` in item order only when immediate objective feedback is appropriate.',
+	'- `ordering`: arrange `items` into a sequence. The learner drags the rows, or moves them with per-row up and down controls. Use it when the order *is* the understanding — a process, a proof, a causal chain, a sort — and supply `correctAnswers` as the correct sequence when objective feedback is appropriate. An arrangement is scored whole: a near-miss sequence is still wrong, so do not use it where several orders are defensible.',
 	"",
 	"Scored `Quiz` types:",
 	'- `multiple_choice`: one correct option; `multi_select`: several correct options; `true_false`: evaluate one precise claim.',
@@ -561,4 +855,17 @@ export const keatingOpenUIPrompt = [
 	"```openui lifecycle=workspace id=dns-learning-path",
 	keatingOpenUIStudyPlanExampleProgram,
 	"```",
+	"## Work away from the conversation",
+	"A learner who only reads and answers in the chat never builds skill. When the next useful step is real effort they have to go and make, stream one of these instead of describing the task in prose. All four are `lifecycle=\"workspace\"` so the learner can leave and come back, and all four are authored by you from the actual material — never a generic template.",
+	"- `Assignment`: one deliverable, done once. Author a brief concrete enough to start from without asking you a question, and criteria that name what a good answer does rather than restating the task. Use when you want to see them produce something whole.",
+	"- `Practice`: several discrete exercises for fluency through repetition. Each exercise is checked off on its own, so make them individually completable and genuinely distinct — five variations that drill the same operation from different angles, not one task split into five steps.",
+	"- `Draft`: long-form writing revised across rounds. Set `targetWords` to shape the scope and `round` to 1 for a first pass. When you ask for a revision, emit a new Draft with the round incremented and a rubric that reflects what their last draft actually got wrong.",
+	"- `Fieldwork`: sends them to gather evidence from the world. Use it when the material only becomes convincing from real data — real base rates, real measurements, real observations. The protocol items are the collection steps; keep them small enough to actually do.",
+	"## Manipulable models",
+	"When a relationship is more convincing moved than described, stream a `Simulation` instead of explaining it. The learner drags a parameter and the readouts recompute instantly with no turn spent, so they can try twenty variations while their attention is still on the question.",
+	"`expr` is arithmetic only: `+ - * / % ^`, parentheses, numeric literals, and the parameter ids you declared on the same node. There are no function calls, no `Math.`, no conditionals, and no identifiers you did not declare — a readout that reaches for anything else is dropped. Build percentages and ratios from the arithmetic you have.",
+	"Set `emphasis: true` on the single number the learner is meant to watch, and write a `brief` that tells them what to predict first and which parameter to move. A simulation that is not preceded by a prediction is just a widget: ask for their answer with a `Question`, then let the model contradict them.",
+	"Choose parameter ranges so the interesting behaviour is reachable — if the lesson is that a rare condition breaks intuition, the prevalence slider must reach genuinely rare values.",
+	"Set `dueAt` (and `availableFrom` when the work should not open yet) as ISO instants to schedule a task. Scheduling is advisory — a late submission is still accepted, because refusing one helps nobody\'s learning — so use a due date to create a rhythm, not a penalty.",
+	"Offer one at a time, after the learner has worked through enough material to attempt it. Do not bundle a task with a plan or a quiz, and do not repeat the brief in your prose — the card carries it. When they submit, respond to the actual work: judge it against the criteria you set, say what is genuinely strong, and name the single most useful thing to change.",
 ].join("\n\n");

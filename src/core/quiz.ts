@@ -2,8 +2,11 @@
  * Quiz Engine — generates question sets, workbooks, and answer keys.
  */
 
+import type { QuizLimits, QuizReview } from "../../shared/pedagogy/types.js";
 import { TopicDefinition, resolveTopic } from "./topics.js";
 import { Prng } from "./random.js";
+
+export type { QuizLimits, QuizReview } from "../../shared/pedagogy/types.js";
 
 export type QuestionType = "multiple_choice" | "short_answer" | "true_false" | "fill_in" | "transfer";
 
@@ -16,18 +19,6 @@ export interface QuizQuestion {
   correctAnswer: string;
   explanation: string;
   rubric?: string; // For short_answer / transfer
-}
-
-export interface QuizReview {
-  status: "passed" | "revised";
-  issues: string[];
-  duplicatesRemoved: number;
-  maxQuestionChars: number;
-  maxAnswerChars: number;
-  maxExplanationChars: number;
-  maxRubricChars: number;
-  maxOptionChars: number;
-  limits: QuizLimits;
 }
 
 export interface Quiz {
@@ -51,14 +42,6 @@ export interface Workbook {
   slug: string;
   sections: WorkbookSection[];
   generatedAt: string;
-}
-
-export interface QuizLimits {
-  questionChars: number;
-  answerChars: number;
-  explanationChars: number;
-  rubricChars: number;
-  optionChars: number;
 }
 
 export type QuizLimitOverrides = Partial<QuizLimits>;

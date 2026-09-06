@@ -6,6 +6,7 @@ import type {
   SimulationWeights,
   TeacherPolicy
 } from "./types.js";
+import type { PolicyJudgementCandidate } from "../../shared/pedagogy/types.js";
 import { runBenchmarkSuite } from "./benchmark.js";
 import { resolveTopic } from "./topics.js";
 import { clamp } from "./util.js";
@@ -19,13 +20,7 @@ export interface PolicyObjectiveVector {
   evidenceReadiness: number;
 }
 
-export interface PolicyJudgementCandidate {
-  label: string;
-  policy: TeacherPolicy;
-  benchmark: BenchmarkResult;
-  counterfactualBenchmark?: BenchmarkResult;
-  preferenceScore: number;
-}
+export type { PolicyJudgementCandidate } from "../../shared/pedagogy/types.js";
 
 export function generateCounterfactualLearnerState(
   base: LearnerState,

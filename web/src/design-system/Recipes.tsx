@@ -1,4 +1,6 @@
 import { Moon } from "lucide-react";
+import { useState } from "react";
+import { Select } from "../components/Select";
 import { css } from "../../styled-system/css";
 import {
 	chip,
@@ -29,6 +31,7 @@ const sectionTitleClass = css({
 const rowClass = css({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.75rem" });
 
 export function Recipes() {
+	const [subject, setSubject] = useState("all");
 	return (
 		<div className={pageClass}>
 			<h1 style={{ fontSize: "1.75rem", fontWeight: 700 }}>Design system recipes</h1>
@@ -88,6 +91,16 @@ export function Recipes() {
 				{(["auto", "wide", "tight"] as const).map((size) => (
 					<input key={size} className={fieldInput({ size })} placeholder={size} defaultValue="" />
 				))}
+			</div>
+
+			<h2 className={sectionTitleClass}>Select</h2>
+			<div style={{ display: "grid", gap: 8, maxWidth: 320 }}>
+				<label htmlFor="recipe-subject" style={{ fontSize: ".875rem", fontWeight: 600 }}>Subject</label>
+				<Select id="recipe-subject" value={subject} onValueChange={setSubject}>
+					<option value="all">All subjects</option>
+					<optgroup label="Your subjects"><option value="math">Mathematics</option><option value="science">Science</option><option value="languages">Languages</option></optgroup>
+					<option value="history" disabled>History · coming soon</option>
+				</Select>
 			</div>
 
 			<h2 className={sectionTitleClass}>textarea</h2>

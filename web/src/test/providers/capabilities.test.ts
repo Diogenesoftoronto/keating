@@ -17,6 +17,8 @@ describe("provider capability registry", () => {
 
 		expect(result.ruleId).toBe("openai-realtime-vision");
 		expect(result.capabilities.realtimeAudio).toBe("native");
+		expect(result.capabilities.realtimeVideo).toBe("none");
+		expect(result.capabilities.realtimeImage).toBe("native");
 		expect(result.capabilities.realtimeTransports).toEqual(["webrtc", "websocket"]);
 	});
 
@@ -127,34 +129,36 @@ describe("provider capability registry", () => {
 
 describe("realtime capability cascade", () => {
 	// This table is the spec for the tier system. Each row states the highest
-	// tier Keating may drive a model at, and how vision reaches it.
-	const CASCADE: ReadonlyArray<readonly [string, string, RealtimeTier, "native" | "sampled" | "none"]> = [
+	// tier Keating may drive a model at, plus its independent video and image lanes.
+	const CASCADE: ReadonlyArray<readonly [string, string, RealtimeTier, "native" | "none", boolean]> = [
 		// tier 3 — provider has a dedicated realtime video lane
-		["google", "gemini-3.1-flash-live-preview", 3, "native"],
-		["google", "gemini-2.5-flash-live-preview", 3, "native"],
-		["google", "gemini-2.0-flash-live-001", 3, "native"],
-		["google", "gemini-live-2.5-flash-native-audio", 3, "native"],
-		// tier 2 — audio duplex, vision sampled as still images
-		["openai", "gpt-realtime-2.1", 2, "sampled"],
-		["openai", "gpt-realtime-2.1-mini", 2, "sampled"],
-		["openai", "gpt-realtime-2", 2, "sampled"],
-		["openai", "gpt-realtime", 2, "sampled"],
-		["openai", "gpt-realtime-mini", 2, "sampled"],
+		["tavus", "keatingbot", 3, "native", false],
+		["google", "gemini-3.1-flash-live-preview", 3, "native", true],
+		["google", "gemini-2.5-flash-live-preview", 3, "native", true],
+		["google", "gemini-2.0-flash-live-001", 3, "native", true],
+		["google", "gemini-live-2.5-flash-native-audio", 3, "native", true],
+		// tier 2 — audio duplex plus deliberate still-image input, but no video
+		["openai", "gpt-realtime-2.1", 2, "none", true],
+		["openai", "gpt-realtime-2.1-mini", 2, "none", true],
+		["openai", "gpt-realtime-2", 2, "none", true],
+		["openai", "gpt-realtime", 2, "none", true],
+		["openai", "gpt-realtime-mini", 2, "none", true],
 		// tier 1 — audio duplex only, cannot see anything
-		["openai", "gpt-4o-realtime-preview-2024-12-17", 1, "none"],
-		["openai", "gpt-4o-mini-realtime-preview-2024-12-17", 1, "none"],
+		["openai", "gpt-4o-realtime-preview-2024-12-17", 1, "none", false],
+		["openai", "gpt-4o-mini-realtime-preview-2024-12-17", 1, "none", false],
 		// tier 0 — no duplex session at all
-		["openai", "gpt-5.4", 0, "none"],
-		["anthropic", "claude-sonnet-4-6", 0, "none"],
-		["google", "gemini-3.1-pro-preview", 0, "none"],
-		["my-gateway", "unknown-model", 0, "none"],
+		["openai", "gpt-5.4", 0, "none", false],
+		["anthropic", "claude-sonnet-4-6", 0, "none", false],
+		["google", "gemini-3.1-pro-preview", 0, "none", false],
+		["my-gateway", "unknown-model", 0, "none", false],
 	];
 
-	test.each(CASCADE)("%s/%s resolves to tier %i (%s video)", (provider, id, tier, videoRoute) => {
+	test.each(CASCADE)("%s/%s resolves to tier %i (%s video)", (provider, id, tier, videoRoute, image) => {
 		const descriptor = resolveRealtimeTier({ provider, id });
 		expect(descriptor.tier).toBe(tier);
 		expect(descriptor.videoRoute).toBe(videoRoute);
 		expect(descriptor.video).toBe(videoRoute !== "none");
+		expect(descriptor.image).toBe(image);
 	});
 
 	test("every tier below the top explains why it is capped", () => {
@@ -165,35 +169,40 @@ describe("realtime capability cascade", () => {
 		}
 	});
 
-	test("sampled vision negotiates through the adapter route, native does not", () => {
-		const sampled = negotiateProviderCapabilities(
+	test("GPT Realtime negotiates native still images without claiming video", () => {
+		const openai = negotiateProviderCapabilities(
 			{ provider: "openai", id: "gpt-realtime-2.1" },
-			{ realtimeAudio: true, realtimeVideo: true, toolCalls: true },
+			{ realtimeAudio: true, realtimeVideo: true, realtimeImage: true, toolCalls: true },
 		);
-		expect(sampled.realtimeVideo).toBe("adapter");
-		expect(sampled.realtimeImage).toBe("not-requested");
+		expect(openai.realtimeVideo).toBe("unavailable");
+		expect(openai.realtimeImage).toBe("native");
+		expect(openai.missing).toEqual(["realtimeVideo"]);
 
-		const native = negotiateProviderCapabilities(
+		const gemini = negotiateProviderCapabilities(
 			{ provider: "google", id: "gemini-3.1-flash-live-preview" },
-			{ realtimeAudio: true, realtimeVideo: true, toolCalls: true },
+			{ realtimeAudio: true, realtimeVideo: true, realtimeImage: true, toolCalls: true },
 		);
-		expect(native.realtimeVideo).toBe("native");
+		expect(gemini.realtimeVideo).toBe("native");
+		expect(gemini.realtimeImage).toBe("native");
+		expect(gemini.missing).toEqual([]);
 	});
 
-	test("disabling adapters strips sampled vision but keeps native vision", () => {
-		const sampled = negotiateProviderCapabilities(
+	test("disabling adapters does not change native still-image support", () => {
+		const openai = negotiateProviderCapabilities(
 			{ provider: "openai", id: "gpt-realtime-2.1" },
-			{ realtimeAudio: true, realtimeVideo: true, allowAdapters: false },
+			{ realtimeAudio: true, realtimeVideo: true, realtimeImage: true, allowAdapters: false },
 		);
-		expect(sampled.realtimeVideo).toBe("unavailable");
-		expect(sampled.missing).toContain("realtimeVideo");
+		expect(openai.realtimeVideo).toBe("unavailable");
+		expect(openai.realtimeImage).toBe("native");
+		expect(openai.missing).toEqual(["realtimeVideo"]);
 
-		const native = negotiateProviderCapabilities(
+		const gemini = negotiateProviderCapabilities(
 			{ provider: "google", id: "gemini-3.1-flash-live-preview" },
-			{ realtimeAudio: true, realtimeVideo: true, allowAdapters: false },
+			{ realtimeAudio: true, realtimeVideo: true, realtimeImage: true, allowAdapters: false },
 		);
-		expect(native.realtimeVideo).toBe("native");
-		expect(native.missing).toEqual([]);
+		expect(gemini.realtimeVideo).toBe("native");
+		expect(gemini.realtimeImage).toBe("native");
+		expect(gemini.missing).toEqual([]);
 	});
 
 	test("legacy realtime previews keep duplex audio but lose image input", () => {

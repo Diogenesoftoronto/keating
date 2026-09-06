@@ -1,4 +1,5 @@
 import type {
+  BenchmarkMeasurement,
   LearnerProfile,
   SimulationWeights,
   TeacherPolicy,
@@ -16,6 +17,7 @@ export interface ScoreableLearnerOutcome {
   quizScore?: number | null;
   masteryEstimate: number;
   outcomeScore: number;
+  evidenceKind?: "explicit-feedback" | "inferred-feedback" | "graded-assessment";
 }
 
 function clamp(value: number, min = 0, max = 1): number {
@@ -27,6 +29,32 @@ function mean(values: number[]): number {
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
+export function classifyDominantSignal(
+  simulations: readonly TeachingSimulation[],
+  kind: "strength" | "weakness",
+): string {
+  if (simulations.length === 0) return "no learner feedback";
+  if (simulations.every((entry) => entry.evidence?.kind === "retrospective")) {
+    if (kind === "weakness") return "learning gain, retention, and transfer unmeasured";
+    return simulations.some((entry) => entry.evidence?.score.source === "observed")
+      ? "graded assessment performance (descriptive)"
+      : "learner feedback proxy";
+  }
+  const metrics = {
+    intuitionFit: mean(simulations.map((entry) => entry.breakdown.intuitionFit)),
+    rigorFit: mean(simulations.map((entry) => entry.breakdown.rigorFit)),
+    dialogueFit: mean(simulations.map((entry) => entry.breakdown.dialogueFit)),
+    diagramFit: mean(simulations.map((entry) => entry.breakdown.diagramFit)),
+    practiceFit: mean(simulations.map((entry) => entry.breakdown.practiceFit)),
+    reflectionFit: mean(simulations.map((entry) => entry.breakdown.reflectionFit)),
+    overload: mean(simulations.map((entry) => entry.breakdown.overload)),
+  };
+  const ordered = Object.entries(metrics).sort((left, right) =>
+    kind === "strength" ? right[1] - left[1] : left[1] - right[1]
+  );
+  return ordered[0]?.[0] ?? "unknown";
+}
+
 export function feedbackToOutcomeScore(signal: OutcomeSignal): number {
   switch (signal) {
     case "thumbs-up": return 0.85;
@@ -36,6 +64,7 @@ export function feedbackToOutcomeScore(signal: OutcomeSignal): number {
 }
 
 export function hasEnoughRealData(outcomes: ScoreableLearnerOutcome[]): boolean {
+  // Compatibility threshold for corpus size only; never a validation or promotion gate.
   return outcomes.length >= MIN_REAL_OUTCOMES;
 }
 
@@ -47,9 +76,9 @@ export function blendRealSyntheticScore(realScore: number, syntheticMean: number
 
 export function computeRealOutcomeScore(
   outcomes: ScoreableLearnerOutcome[],
-  policy: TeacherPolicy,
+  _policy: TeacherPolicy,
   topic: TopicDefinition,
-  weights: SimulationWeights,
+  _weights: SimulationWeights,
 ): TeachingSimulation {
   const defaultLearner: LearnerProfile = {
     id: "real-learner",
@@ -63,63 +92,83 @@ export function computeRealOutcomeScore(
     anxiety: 0.3,
   };
 
-  const avgOutcome = mean(outcomes.map((outcome) => outcome.outcomeScore));
-  const upRatio = outcomes.filter((outcome) => outcome.feedbackSignal === "thumbs-up").length / outcomes.length;
-  const confusedRatio = outcomes.filter((outcome) => outcome.feedbackSignal === "confused").length / outcomes.length;
-  const downRatio = outcomes.filter((outcome) => outcome.feedbackSignal === "thumbs-down").length / outcomes.length;
-  const avgMastery = mean(outcomes.map((outcome) => outcome.masteryEstimate));
+  const validScore = (value: unknown): value is number =>
+    typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 1;
   const quizScores = outcomes
     .map((outcome) => outcome.quizScore)
-    .filter((value): value is number => typeof value === "number" && !Number.isNaN(value));
+    .filter(validScore);
   const avgQuiz = quizScores.length > 0 ? mean(quizScores) : null;
+  // Quiz adapters historically create feedback labels from grades. Those are
+  // not independent reports of satisfaction or confusion.
+  const feedback = outcomes.filter((outcome) => outcome.evidenceKind !== "graded-assessment"
+    && outcome.quizScore == null && validScore(outcome.outcomeScore));
+  const avgFeedback = feedback.length > 0 ? mean(feedback.map((outcome) => outcome.outcomeScore)) : null;
+  const confusedRatio = feedback.length > 0
+    ? feedback.filter((outcome) => outcome.feedbackSignal === "confused").length / feedback.length
+    : null;
+  const unavailable = (note: string): BenchmarkMeasurement => ({ value: null, source: "unavailable", sampleSize: 0, note });
+  const assessmentPerformance: BenchmarkMeasurement = avgQuiz === null
+    ? unavailable("No graded assessment was recorded.")
+    : { value: avgQuiz, source: "observed", sampleSize: quizScores.length, note: "Recorded assessment performance; assistance and starting ability are unspecified." };
+  const feedbackProxy: BenchmarkMeasurement = avgFeedback === null
+    ? unavailable("No feedback signal was recorded.")
+    : { value: avgFeedback, source: "proxy", sampleSize: feedback.length, note: "Feedback proxy; not measured learning or engagement." };
+  const scoreEvidence = avgQuiz === null ? feedbackProxy : assessmentPerformance;
+  // The scoring rule is fixed. Historical evidence must not improve merely
+  // because a candidate changes its policy or the optimizer changes weights.
+  const score = scoreEvidence.value ?? 0;
+  const engagement = avgFeedback ?? 0;
+  const confusion = confusedRatio ?? 0;
 
-  const masteryGain = avgQuiz === null
-    ? clamp(avgOutcome * 0.6 + avgMastery * 0.4)
-    : clamp(avgQuiz * 0.5 + avgOutcome * 0.3 + avgMastery * 0.2);
-  const retention = clamp(masteryGain * (0.55 + policy.retrievalPractice * 0.45));
-  const engagement = clamp(avgOutcome * 0.7 + upRatio * 0.3);
-  const transfer = clamp(retention * (0.55 + policy.interdisciplinaryBias * 0.25 + avgMastery * 0.2));
-  const confusion = clamp(confusedRatio * 0.6 + downRatio * 0.4);
-  const score = clamp(
-    masteryGain * weights.masteryGain
-      + retention * weights.retention
-      + engagement * weights.engagement
-      + transfer * weights.transfer
-      - confusion * weights.confusion,
-    0,
-    1,
-  );
-
-  const explanations: string[] = [];
-  if (upRatio > 0.6) explanations.push("learner gave mostly positive feedback");
-  if (confusedRatio > 0.3) explanations.push("learner was frequently confused");
-  if (downRatio > 0.2) explanations.push("learner gave substantial negative feedback");
-  if (avgMastery > 0.7) explanations.push("mastery estimates are high");
-  if (avgMastery < 0.3) explanations.push("mastery estimates are low");
+  const explanations = ["Historical records describe past interactions; they do not evaluate this candidate policy."];
   if (avgQuiz !== null) {
-    explanations.push(`graded quiz average is ${(avgQuiz * 100).toFixed(0)}% across ${quizScores.length} quiz(zes)`);
+    explanations.push(`Recorded assessment average is ${(avgQuiz * 100).toFixed(0)}% across ${quizScores.length} quiz(zes); this is not measured learning gain.`);
+  } else if (avgFeedback !== null) {
+    explanations.push(`Score is a feedback proxy from ${feedback.length} signal(s), not a learning outcome.`);
+  } else {
+    explanations.push("No usable graded assessment or feedback score was recorded.");
   }
-  if (explanations.length === 0) explanations.push("learner feedback is mixed");
+  explanations.push("Learning gain, retention, and transfer are unknown: paired baseline, delayed, and transfer assessments are absent.");
 
   return {
     learner: defaultLearner,
     topic,
-    masteryGain,
-    retention,
+    masteryGain: 0,
+    retention: 0,
     engagement,
-    transfer,
+    transfer: 0,
     confusion,
     score,
     breakdown: {
-      intuitionFit: avgOutcome,
-      rigorFit: avgOutcome * policy.formalism,
-      dialogueFit: avgOutcome * policy.socraticRatio,
-      diagramFit: avgOutcome * policy.diagramBias,
-      practiceFit: clamp(upRatio * policy.exerciseCount / 5),
-      reflectionFit: avgOutcome * policy.reflectionBias,
+      intuitionFit: 0,
+      rigorFit: 0,
+      dialogueFit: 0,
+      diagramFit: 0,
+      practiceFit: 0,
+      reflectionFit: 0,
       overload: confusion,
     },
-    explanation: [`Real learner outcome (N=${outcomes.length}).`, ...explanations],
+    explanation: [`Retrospective learner evidence (N=${outcomes.length}).`, ...explanations],
+    evidence: {
+      kind: "retrospective",
+      scoringRule: "assessment-mean-or-feedback-proxy-v1",
+      score: scoreEvidence,
+      assessmentPerformance,
+      metrics: {
+        masteryGain: unavailable("Learning gain requires a comparable baseline and post-assessment."),
+        retention: unavailable("Retention requires a delayed unaided assessment."),
+        engagement: feedbackProxy,
+        transfer: unavailable("Transfer requires an unaided assessment in a new context."),
+        confusion: confusedRatio === null ? unavailable("No confusion signal was recorded.")
+          : { value: confusedRatio, source: "proxy", sampleSize: feedback.length, note: "Fraction of feedback signals labeled confused; labels may be inferred." },
+      },
+      feedbackCounts: {
+        explicit: feedback.filter((outcome) => outcome.evidenceKind === "explicit-feedback").length,
+        inferred: feedback.filter((outcome) => outcome.evidenceKind === "inferred-feedback").length,
+        unclassified: feedback.filter((outcome) => outcome.evidenceKind === undefined).length,
+      },
+      eligibleForPromotion: false,
+    },
   };
 }
 
@@ -202,6 +251,6 @@ export function simulateDeterministicTeaching(
       reflectionFit,
       overload,
     },
-    explanation: ["Deterministic algebraic baseline."],
+    explanation: ["Synthetic deterministic algebraic baseline; not observed learner outcomes."],
   };
 }

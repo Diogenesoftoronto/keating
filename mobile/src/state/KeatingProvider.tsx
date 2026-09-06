@@ -150,6 +150,15 @@ interface KeatingContextValue {
   setMessageFeedback: (messageId: string, feedback: MessageFeedback) => void;
   saveArtifact: (messageId: string, kind?: ArtifactKind) => void;
   createLearningArtifact: (topic: string, kind: GeneratedArtifactKind) => string;
+  createLiveQuiz: (
+    topic: string,
+    questions: readonly { question: string; correctAnswer: string; explanation: string; options?: readonly string[] }[],
+  ) => string;
+  /** Appends final Live turns to the current Tutor lesson so both surfaces stay continuous. */
+  preserveLiveConversation: (
+    turns: readonly { role: "user" | "assistant"; text: string }[],
+    sessionId?: string,
+  ) => void;
   deleteArtifact: (artifactId: string) => void;
   setProvider: (provider: ProviderId) => void;
   selectProviderModel: (model: CatalogModel) => void;
@@ -1013,6 +1022,68 @@ export function KeatingProvider({ children }: PropsWithChildren) {
     return id;
   }, [queueLearnerState]);
 
+  const createLiveQuiz = useCallback((
+    topicName: string,
+    questions: readonly { question: string; correctAnswer: string; explanation: string; options?: readonly string[] }[],
+  ) => {
+    const topic = topicName.trim();
+    if (!topic || questions.length < 2) throw new Error("A Live quiz needs a topic and at least two complete questions.");
+    const id = createId("artifact");
+    const content = questions.map((question, index) => [
+      `## ${index + 1}. ${question.question.trim()}`,
+      question.options?.length ? question.options.map((option) => `- ${option.trim()}`).join("\n") : "",
+      `**Answer:** ${question.correctAnswer.trim()}`,
+      `**Why:** ${question.explanation.trim()}`,
+    ].filter(Boolean).join("\n\n")).join("\n\n");
+    const current = stateRef.current;
+    const next: PersistedAppState = {
+      ...current,
+      artifacts: [{
+        id,
+        sessionId: current.activeSessionId,
+        kind: "quiz",
+        source: "assistant",
+        topic,
+        title: `${topic} retrieval quiz`,
+        content,
+        createdAt: Date.now(),
+      }, ...current.artifacts],
+    };
+    stateRef.current = next;
+    setState(next);
+    queueLearnerState(next);
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+    return id;
+  }, [queueLearnerState]);
+
+  const preserveLiveConversation = useCallback((
+    turns: readonly { role: "user" | "assistant"; text: string }[],
+    sessionId?: string,
+  ) => {
+    const accepted = turns
+      .map((turn) => ({ role: turn.role, text: turn.text.trim() }))
+      .filter((turn) => turn.text.length > 0);
+    if (!accepted.length) return;
+    const current = stateRef.current;
+    const now = Date.now();
+    const messages: ChatMessage[] = accepted.map((turn, index) => ({
+      id: createId("message"),
+      role: turn.role,
+      content: turn.text,
+      createdAt: now + index,
+    }));
+    const targetSessionId = sessionId && current.sessions.some((session) => session.id === sessionId)
+      ? sessionId
+      : current.activeSessionId;
+    const sessions = current.sessions.map((session) => session.id === targetSessionId
+      ? { ...session, messages: [...session.messages, ...messages], updatedAt: now + messages.length }
+      : session);
+    const next: PersistedAppState = { ...current, sessions };
+    stateRef.current = next;
+    setState(next);
+    queueLearnerState(next);
+  }, [queueLearnerState]);
+
   const deleteArtifact = useCallback((artifactId: string) => {
     const current = stateRef.current;
     const next = {
@@ -1373,6 +1444,8 @@ export function KeatingProvider({ children }: PropsWithChildren) {
     setMessageFeedback,
     saveArtifact,
     createLearningArtifact,
+    createLiveQuiz,
+    preserveLiveConversation,
     deleteArtifact,
     setProvider,
     selectProviderModel,
@@ -1398,7 +1471,7 @@ export function KeatingProvider({ children }: PropsWithChildren) {
     persona, setPersona, restoreDefaultPersona,
     learnerContext, setLearnerContext,
     sendMessage, startNewSessionWithMessage, retryLastResponse, stopGeneration, newSession, forkSession,
-    selectSession, deleteSession, setMessageFeedback, saveArtifact, createLearningArtifact, deleteArtifact,
+    selectSession, deleteSession, setMessageFeedback, saveArtifact, createLearningArtifact, createLiveQuiz, preserveLiveConversation, deleteArtifact,
     setProvider, selectProviderModel, updateProviderSettings, saveApiKey, removeApiKey,
     exportLearnerData, importLearnerData, saveLearnerGoal, saveLearnerGoalStep, saveLearnerQuizResult, saveLearnerQuestionChecks, createLearnerDeck,
     updateLearnerGoalStep, recordLearnerCardReview,

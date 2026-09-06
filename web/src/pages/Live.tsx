@@ -1,16 +1,22 @@
+import { Select } from "../components/Select";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, Camera, Mic, MonitorUp, Settings2 } from "lucide-react";
+import { ArrowLeft, Camera, ImagePlus, Mic, MonitorUp, Settings2 } from "lucide-react";
 
 import { Nav } from "../components/Nav";
 import { AssistantChatPanel } from "../components/AssistantChatPanel";
 import { css, cx } from "../../styled-system/css";
 import { useKeatingAgent } from "../hooks/useKeatingAgent";
-import { loadWebSpeechSettings, primeSpeechAudio, saveWebSpeechSettings } from "../keating/speech";
+import { loadWebSpeechSettings, primeSpeechAudio, resolveSpeechRealtimeTier, saveWebSpeechSettings, usesProviderHostedLiveSurface } from "../keating/speech";
 import { describeLiveModel, liveModelsFor, recommendedLiveModel } from "../keating/live-models";
 import { getProviderApiKey } from "../lib/provider-models";
 import { liveCredentialProvider } from "../components/live/use-live-session";
 import { useSeo } from "../hooks/useSeo";
+import {
+	beginNotOrganicAuthorization,
+	isNotOrganicFeatureEnabled,
+	notOrganicPublicClient,
+} from "../notorganic-provider";
 
 /**
  * /live — the pre-flight room for a live conversation.
@@ -43,10 +49,21 @@ export function Live() {
 	);
 	const models = useMemo(() => liveModelsFor(settings.providerId), [settings.providerId]);
 	const credentialProvider = liveCredentialProvider(settings.providerId);
+	const liveTier = useMemo(() => resolveSpeechRealtimeTier(settings), [settings]);
+	const providerHostedLive = usesProviderHostedLiveSurface(settings);
+	const tavusSelected = settings.providerId === "tavus";
+	const tavusConfigured = tavusSelected && isNotOrganicFeatureEnabled() && Boolean(notOrganicPublicClient());
 
 	useEffect(() => {
 		let cancelled = false;
 		const check = () => {
+			setHasKey(null);
+			if (settings.providerId === "tavus") {
+				const client = isNotOrganicFeatureEnabled() ? notOrganicPublicClient() : null;
+				const session = client?.getSession();
+				setHasKey(Boolean(session?.scope.split(/\s+/).includes("realtime:connect")));
+				return;
+			}
 			if (!credentialProvider) {
 				setHasKey(false);
 				return;
@@ -57,15 +74,18 @@ export function Live() {
 		};
 		check();
 		window.addEventListener("keating:api-key-prompt-changed", check);
+		window.addEventListener("focus", check);
 		return () => {
 			cancelled = true;
 			window.removeEventListener("keating:api-key-prompt-changed", check);
+			window.removeEventListener("focus", check);
 		};
-	}, [credentialProvider]);
+	}, [credentialProvider, settings.providerId]);
 
 	const update = (patch: Partial<ReturnType<typeof loadWebSpeechSettings>>) => {
 		const next = { ...loadWebSpeechSettings(), ...patch };
 		saveWebSpeechSettings(next);
+		if (patch.providerId) setHasKey(null);
 		setSettings(next);
 	};
 
@@ -77,7 +97,11 @@ export function Live() {
 		window.dispatchEvent(new CustomEvent("keating:start-live"));
 	};
 
-	const providerName = settings.providerId === "openai-realtime" ? "OpenAI" : "Google";
+	const providerName = settings.providerId === "tavus"
+		? "Tavus"
+		: settings.providerId === "openai-realtime"
+			? "OpenAI"
+			: "Google";
 	const notInCatalog = !models.some((entry) => entry.value === model.value);
 
 	return (
@@ -116,8 +140,8 @@ export function Live() {
 					/>
 					<h1 className={css({ fontSize: "1.75rem", fontWeight: 700, lineHeight: 1.15 })}>Live with Keating</h1>
 					<p className={css({ color: "var(--muted-foreground)", fontSize: "0.9375rem", maxWidth: "26rem" })}>
-						Talk out loud and get answers out loud. Turn the camera on and Keating can look at what you are
-						working on while you explain it.
+						Talk out loud and get answers out loud. Depending on the live model, show Keating your work with
+						a camera, a shared screen, or a still image.
 					</p>
 				</div>
 
@@ -131,18 +155,30 @@ export function Live() {
 						})}
 					>
 						<p className={css({ fontWeight: 600, fontSize: "0.9375rem" })}>
-							{credentialProvider ? `${providerName} key needed` : "No live provider selected"}
+							{tavusSelected
+								? tavusConfigured ? "Not Organic account needed" : "Tavus Live is unavailable"
+								: credentialProvider ? `${providerName} key needed` : "No live provider selected"}
 						</p>
 						<p className={css({ fontSize: "0.875rem", color: "var(--muted-foreground)", marginTop: "0.25rem" })}>
-							{credentialProvider
+							{tavusSelected
+								? tavusConfigured
+									? "Connect your Not Organic account before starting KeatingBot. The call uses your device-bound account capability."
+									: "This deployment has not enabled the Not Organic account service required by Tavus Live."
+								: credentialProvider
 								? `Live mode talks to ${providerName} straight from this browser, and there is no key stored for it yet.`
 								: "The current speech provider only synthesizes speech; it cannot hold a conversation."}
 						</p>
-						<button
+						{!tavusSelected || tavusConfigured ? <button
 							type="button"
-							onClick={() => window.dispatchEvent(new CustomEvent("keating:open-settings", {
-								detail: { tab: credentialProvider ? "models" : "learning" },
-							}))}
+							onClick={() => {
+								if (tavusSelected) {
+									void beginNotOrganicAuthorization("/live");
+									return;
+								}
+								window.dispatchEvent(new CustomEvent("keating:open-settings", {
+									detail: { tab: credentialProvider ? "models" : "learning" },
+								}));
+							}}
 							className={cx("dialog-compact-button", css({
 								display: "inline-flex",
 								alignItems: "center",
@@ -157,8 +193,8 @@ export function Live() {
 								_hover: { backgroundColor: "var(--accent)", color: "var(--accent-foreground)" },
 							}))}
 						>
-							<Settings2 size={14} /> {credentialProvider ? "Add a key" : "Choose a live model"}
-						</button>
+							<Settings2 size={14} /> {tavusSelected ? "Connect Not Organic" : credentialProvider ? "Add a key" : "Choose a live model"}
+						</button> : null}
 					</div>
 				) : null}
 
@@ -174,10 +210,38 @@ export function Live() {
 					})}
 				>
 					<label className={css({ display: "flex", flexDirection: "column", gap: "0.375rem" })}>
+						<span className={css({ fontSize: "0.8125rem", fontWeight: 600 })}>Provider</span>
+						<Select aria-label="Live provider"
+							value={settings.providerId}
+							onValueChange={(value) => {
+								const providerId = value as "tavus" | "gemini-live" | "openai-realtime";
+								update({
+									providerId,
+									model: recommendedLiveModel(providerId)?.value ?? "",
+								});
+							}}
+							className={css({
+								width: "100%",
+								borderRadius: "0.5rem",
+								border: "1px solid var(--border)",
+								backgroundColor: "var(--background)",
+								color: "var(--foreground)",
+								paddingInline: "0.625rem",
+								paddingBlock: "0.5rem",
+								fontSize: "0.875rem",
+							})}
+						>
+							<option value="tavus">Tavus KeatingBot</option>
+							<option value="gemini-live">Gemini Live</option>
+							<option value="openai-realtime">OpenAI Realtime</option>
+						</Select>
+					</label>
+
+					<label className={css({ display: "flex", flexDirection: "column", gap: "0.375rem" })}>
 						<span className={css({ fontSize: "0.8125rem", fontWeight: 600 })}>Model</span>
-						<select
+						<Select aria-label="Live model"
 							value={model.value}
-							onChange={(event) => update({ model: event.target.value })}
+							onValueChange={(value) => update({ model: value })}
 							className={css({
 								width: "100%",
 								borderRadius: "0.5rem",
@@ -196,7 +260,7 @@ export function Live() {
 									{entry.grade === "recommended" ? " · recommended" : ""}
 								</option>
 							))}
-						</select>
+						</Select>
 						{model.note ? (
 							<span className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>{model.note}</span>
 						) : null}
@@ -212,35 +276,47 @@ export function Live() {
 								disabled
 								hint="Always on"
 							/>
-							<StartToggle
-								icon={<Camera size={15} />}
-								label="Camera"
-								active={settings.videoEnabled && settings.videoSource === "camera"}
-								disabled={model.video === "none"}
-								hint={model.video === "none" ? "This model cannot see" : undefined}
-								onClick={() => update(
-									settings.videoEnabled && settings.videoSource === "camera"
-										? { videoEnabled: false }
-										: { videoEnabled: true, videoSource: "camera" },
-								)}
-							/>
-							<StartToggle
-								icon={<MonitorUp size={15} />}
-								label="Screen"
-								active={settings.videoEnabled && settings.videoSource === "screen"}
-								disabled={model.video === "none"}
-								hint={model.video === "none" ? "This model cannot see" : undefined}
-								onClick={() => update(
-									settings.videoEnabled && settings.videoSource === "screen"
-										? { videoEnabled: false }
-										: { videoEnabled: true, videoSource: "screen" },
-								)}
-							/>
+							{providerHostedLive ? (
+								<span className={css({ display: "inline-flex", alignItems: "center", gap: "0.4375rem", color: "var(--foreground)", fontSize: "0.8125rem" })}>
+									<Camera size={15} /> Video PAL and Magic Canvas
+								</span>
+							) : liveTier.video ? (
+								<>
+									<StartToggle
+										icon={<Camera size={15} />}
+										label="Camera"
+										active={settings.videoEnabled && settings.videoSource === "camera"}
+										onClick={() => update(
+											settings.videoEnabled && settings.videoSource === "camera"
+												? { videoEnabled: false }
+												: { videoEnabled: true, videoSource: "camera" },
+										)}
+									/>
+									<StartToggle
+										icon={<MonitorUp size={15} />}
+										label="Screen"
+										active={settings.videoEnabled && settings.videoSource === "screen"}
+										onClick={() => update(
+											settings.videoEnabled && settings.videoSource === "screen"
+												? { videoEnabled: false }
+												: { videoEnabled: true, videoSource: "screen" },
+										)}
+									/>
+								</>
+							) : liveTier.image ? (
+								<span className={css({ display: "inline-flex", alignItems: "center", gap: "0.4375rem", color: "var(--foreground)", fontSize: "0.8125rem" })}>
+									<ImagePlus size={15} /> Add an image once the conversation starts
+								</span>
+							) : null}
 						</div>
 						<p className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-							{model.video === "none"
-								? `Pick a model with vision — ${recommendedLiveModel(settings.providerId)?.label ?? "a newer live model"} can see your camera.`
-								: "You can turn either on or off at any point during the conversation."}
+							{providerHostedLive
+								? "The Tavus call requests camera and microphone access inside its own secure video surface. Interactive activities appear beside KeatingBot."
+								: liveTier.video
+								? "You can turn camera or screen sharing on or off at any point during the conversation."
+								: liveTier.image
+									? "This model accepts still images, but it does not receive live video."
+									: `Pick a model with visual input — ${recommendedLiveModel(settings.providerId)?.label ?? "a newer live model"} can see your work.`}
 						</p>
 					</div>
 				</div>
@@ -248,7 +324,7 @@ export function Live() {
 				<button
 					type="button"
 					onClick={start}
-					disabled={started || hasKey === false}
+					disabled={started || hasKey !== true}
 					className={cx("dialog-compact-button", css({
 						display: "inline-flex",
 						alignItems: "center",

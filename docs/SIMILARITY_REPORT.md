@@ -16,9 +16,9 @@ The review focused on voice, provider search, authorization, serializable UI, Op
 
 The first 3.0 pass reported 19 direct function pairs and 53 type pairs. A later
 working-tree scan reported 20 direct function pairs and 48 named-type pairs.
-After the safe consolidations below, the same command now reports 10 direct
-function pairs and 30 named-type pairs (plus one type-literal/type-definition
-pair and six type-literal pairs). The large function clusters remain review
+After the safe consolidations below, the same command now reports 6 direct
+function pairs and 19 named-type pairs (plus two type-literal/type-definition
+pairs and three type-literal pairs). The large function clusters remain review
 queues rather than duplicate counts: their members often share only
 control-flow shape.
 
@@ -88,6 +88,33 @@ The renderer and browser animation tool had exact private copies of
 
 OpenUI now derives its contract with `Pick<EventStoreStorage, "getItem" | "setItem">`. This keeps its deliberately smaller requirement while making the event-store interface the single browser-side definition. The Nodepod boot-file snapshot was regenerated after the source change.
 
+### Retry, editing, and pedagogy contracts
+
+Root and browser retry policy types now come from `shared/api-retry-policy.ts`,
+while each runtime retains its transport-specific retry loop. Source edits and
+edit results similarly share `shared/source-edit.ts` without forcing the root
+filesystem editor and browser sandbox into one implementation.
+
+Exact lesson, evolution, prompt objective, engagement policy, MAP-Elites,
+learner signal, policy judgement, and quiz review contracts now live in
+`shared/pedagogy/types.ts`. Proven pure behavior also moved to small shared
+modules: engagement date formatting, MAP-Elites placement/report formatting,
+and benchmark signal classification. Runtime-specific persistence, topic
+resolution, and UI behavior remain in their original facades.
+
+### Focused same-runtime consolidation
+
+- The command composer now delegates ranking to the canonical TUI search
+  scorer while preserving leading-slash normalization and deterministic ties.
+- CLI and Pi setup wizards share `SetupChoice`; composer results derive from
+  the generic ranked-result contract.
+- Trajectory annotation and review surfaces use one target label formatter with
+  explicit compact and editor presentations.
+- Live session documents and artifacts share a resource base contract; video
+  capture options derive their normalized required form from the public input.
+- Export paths reuse one private counter shape instead of repeating inline
+  redaction/skip records.
+
 ## Intentional duplicates
 
 ### Root TUI and browser UI protocol shapes
@@ -115,14 +142,14 @@ Compatibility is protected by focused protocol and OpenTUI tests. A future works
 
 ### Remaining root/browser pedagogy ports
 
-The scan continues to report near-exact families in `src/core` and
-`web/src/keating/core.ts`, including quiz construction, engagement, MAP-Elites,
-prompt evaluation, and export helpers. These are not all interchangeable:
-engagement uses different timestamp/state models, MAP-Elites has persistent
-asynchronous root behavior versus an in-memory browser runner, and the browser
-quiz implementation is a feature superset. Move only independently proven pure
-kernels into `shared/`; importing the Node core into the browser remains an
-invalid dependency direction.
+The six remaining direct function pairs are five deliberate root/browser
+boundaries (`conversationFromSession`, `engagementTimelineToMarkdown`,
+`computeTopicEngagement`, `heuristicPromptEvaluation`, and
+`buildEngagementTimeline`) plus one AST false positive between annotation
+initialization and realtime transport recommendation. The root/browser pairs
+have different records, persistence, timestamps, or output contracts. Move
+only independently proven pure kernels into `shared/`; importing the Node core
+into the browser remains an invalid dependency direction.
 
 ## False positives
 
@@ -142,19 +169,17 @@ Until then, wire-level tests are safer than forcing root and browser code into t
 
 ## Remaining architectural signals
 
-- The remaining engagement, MAP-Elites, quiz, retry, and policy shapes confirm
-  that the hand-maintained browser port remains the largest duplication
-  boundary. Continue moving only genuinely identical, runtime-neutral kernels;
-  importing the Node core into the browser would violate the build contract.
+- The remaining engagement, quiz, and self-improvement shapes confirm that the
+  hand-maintained browser port remains the largest duplication boundary.
+  Continue moving only genuinely identical, runtime-neutral kernels; importing
+  the Node core into the browser would violate the build contract.
 - `src/core/export.ts` and `web/src/keating/export.ts` still contain a
   high-scoring session-conversation pair. Their source records and output
   contracts differ, so any shared extraction needs explicit cross-runtime
   fixtures rather than a shape-only merge.
-- `src/tui/composer.ts` and `src/tui/search.ts` still report similar scoring
-  functions. They belong to active TUI work and normalize inputs differently;
-  consolidate them with ranking fixtures when that subsystem is integrated.
-- The root and browser `ApiRetryPolicy` definitions are exact. They should join
-  a future shared contracts package if retry behavior gains a third consumer.
+- Root and browser retry engines remain separate even though they now share the
+  exact policy contract; their errors, timing dependencies, and telemetry are
+  runtime-specific.
 - Small formatting and markdown pairs remain below the threshold for a new
   abstraction. Prefer an existing domain helper when editing them, but do not
   introduce a catch-all utility module solely to reduce the scanner count.

@@ -23,6 +23,11 @@ const EXCLUDE_PATTERNS = [
   /\.spec\.ts$/,
   /node_modules/,
   /web\/src\/keating\/nodepod-boot-files\.ts$/,
+  // Evaluation rules, sealed cases, assessment keys, and activation authority
+  // stay in the host. Mutable agent workspaces receive teaching artifacts only.
+  /^shared\/evolution\//,
+  /^src\/core\/(?:teaching-(?:evolution(?:-store)?|episode-runner)|learning-checks)\.ts$/,
+  /^web\/src\/keating\/teaching-(?:evolution(?:-store)?|episode-runner)\.ts$/,
 ];
 
 async function* walkDir(dir: string): AsyncGenerator<string> {

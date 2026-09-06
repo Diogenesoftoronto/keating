@@ -10,6 +10,7 @@ import {
 	realtimeFunctionOutput,
 	realtimeHistoryItem,
 	realtimeImageItem,
+	waitForRealtimeDataChannel,
 } from "../keating/speech-providers/openai-realtime";
 
 describe("OpenAI Realtime 2.1 payloads", () => {
@@ -77,16 +78,36 @@ describe("OpenAI Realtime 2.1 payloads", () => {
 		expect(session.tool_choice).toBeUndefined();
 	});
 
-	it("sends a sampled frame as context, never as a turn", () => {
-		// Realtime has no video lane, so vision arrives as a still image on the
-		// conversation. Following it with response.create would make the model
-		// narrate the camera feed instead of waiting for the learner.
+	it("sends a deliberate still image as context, never as a video frame or forced turn", () => {
+		// Following an image item with response.create would make the model narrate
+		// it immediately instead of letting the learner explain what to inspect.
 		const item = realtimeImageItem("data:image/jpeg;base64,AAAA") as any;
 		expect(item.type).toBe("conversation.item.create");
 		expect(item.item.role).toBe("user");
 		expect(item.item.content).toEqual([
 			{ type: "input_image", image_url: "data:image/jpeg;base64,AAAA" },
 		]);
+	});
+
+	it("waits for the Realtime data channel instead of dropping an early image", async () => {
+		class Channel extends EventTarget {
+			readyState: RTCDataChannelState = "connecting";
+		}
+		const channel = new Channel();
+		let settled = false;
+		const pending = waitForRealtimeDataChannel(channel).then(() => { settled = true; });
+		await Promise.resolve();
+		expect(settled).toBe(false);
+		channel.readyState = "open";
+		channel.dispatchEvent(new Event("open"));
+		await pending;
+		expect(settled).toBe(true);
+	});
+
+	it("rejects an image when the Realtime data channel is already closed", async () => {
+		const channel = new EventTarget() as EventTarget & { readyState: RTCDataChannelState };
+		channel.readyState = "closed";
+		await expect(waitForRealtimeDataChannel(channel)).rejects.toThrow("closed");
 	});
 
 	it("replays prior chat turns with the role-correct content type", () => {
@@ -115,6 +136,8 @@ describe("OpenAI Realtime 2.1 payloads", () => {
 		expect(negotiated.realtimeAudio).toBe("native");
 		expect(negotiated.transport).toBe("webrtc");
 		expect(negotiated.toolCalls).toBe("native");
+		expect(negotiated.capabilities.realtimeVideo).toBe("none");
+		expect(negotiated.capabilities.realtimeImage).toBe("native");
 		expect(negotiated.missing).toEqual([]);
 	});
 

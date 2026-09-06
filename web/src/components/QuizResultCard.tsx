@@ -15,6 +15,7 @@ import {
 import type { Quiz, QuizGradeVerdict, QuizQuestion } from "../keating/core";
 import type { QuizResult } from "./QuizRenderer";
 import { isOpenEnded, questionCredit } from "./QuizRenderer";
+import { formatQuizDuration, isQuickQuizAnswer } from "./quiz/game";
 import { QuizGradesContext } from "./quiz-grades-context";
 import { css, cx } from "../../styled-system/css";
 
@@ -28,13 +29,6 @@ export interface StoredQuizResult {
 interface QuizResultCardProps {
   data: StoredQuizResult;
   onReview?: (data: StoredQuizResult) => void;
-}
-
-function formatDuration(ms: number): string {
-  const totalSeconds = Math.max(0, Math.round(ms / 1000));
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
 type QuestionStatus =
@@ -240,7 +234,8 @@ export function QuizResultCard({ data, onReview }: QuizResultCardProps) {
     });
   };
 
-  const totalTime = result.timing ? formatDuration(result.timing.totalMs) : null;
+  const totalTime = result.timing ? formatQuizDuration(result.timing.totalMs) : null;
+  const timedOutIds = new Set(result.timedOutQuestionIds ?? []);
 
   return (
     <div className={shared.srCard}>
@@ -267,8 +262,8 @@ export function QuizResultCard({ data, onReview }: QuizResultCardProps) {
             {percentage}%
           </span>
           {totalTime !== null && (
-            <span className={css({ display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.625rem", color: "color-mix(in srgb, var(--foreground) 70%, transparent)" })}>
-              <Clock size={10} /> {totalTime}
+            <span aria-label={`Total quiz time: ${result.timing.totalMs} milliseconds`} className={css({ display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", fontVariantNumeric: "tabular-nums", color: "color-mix(in srgb, var(--foreground) 70%, transparent)" })}>
+              <Clock size={12} aria-hidden="true" /> {totalTime}
             </span>
           )}
         </div>
@@ -304,12 +299,15 @@ export function QuizResultCard({ data, onReview }: QuizResultCardProps) {
             {result.flagged.length} flagged
           </span>
         )}
+        {timedOutIds.size > 0 && <span>{timedOutIds.size} timed out</span>}
+        {result.examTimedOut && <span>Exam time expired</span>}
       </div>
 
       {/* Details toggle */}
       <button
         type="button"
         onClick={() => setShowDetails((v) => !v)}
+        aria-expanded={showDetails}
         className={shared.detailsButton}
       >
         {showDetails ? (
@@ -328,6 +326,9 @@ export function QuizResultCard({ data, onReview }: QuizResultCardProps) {
         <div className={css({ marginTop: "0.5rem", display: "grid", gap: "0.375rem" })}>
           {statuses.map(({ q, status }, idx) => {
             const answer = (result.answers[q.id] ?? "").trim();
+            const timeMs = result.timing?.perQuestionMs[q.id];
+            const timedOut = timedOutIds.has(q.id);
+            const quick = isQuickQuizAnswer({ timeMs, timeLimitSeconds: q.timeLimit, answered: Boolean(answer), timedOut });
             const isExpanded = expandedQuestions.has(q.id);
             const pending = status.kind === "open-pending";
             const fullyCorrect =
@@ -372,10 +373,11 @@ export function QuizResultCard({ data, onReview }: QuizResultCardProps) {
                 <button
                   type="button"
                   onClick={() => toggleQuestion(q.id)}
+                  aria-expanded={isExpanded}
                   className={css({ display: "flex", minHeight: "2.75rem", width: "100%", flexWrap: "wrap", alignItems: "flex-start", gap: "0.5rem", textAlign: "left" })}
                 >
                   <Icon size={12} className={cx(css({ marginTop: "0.125rem", flexShrink: 0 }), iconClass)} />
-                  <span className={css({ minWidth: "12rem", flex: "1 1 12rem", overflowWrap: "anywhere", lineHeight: 1.625 })}>
+                  <span className={css({ minWidth: 0, flex: "1 1 12rem", overflowWrap: "anywhere", lineHeight: 1.625 })}>
                     <span className={css({ marginRight: "0.25rem", color: "color-mix(in srgb, var(--foreground) 70%, transparent)" })}>{idx + 1}.</span>
                     {q.question}
                   </span>
@@ -386,6 +388,13 @@ export function QuizResultCard({ data, onReview }: QuizResultCardProps) {
                   )}
                   {isExpanded ? <ChevronUp size={12} className={css({ flexShrink: 0, color: "color-mix(in srgb, var(--foreground) 60%, transparent)" })} /> : <ChevronDown size={12} className={css({ flexShrink: 0, color: "color-mix(in srgb, var(--foreground) 60%, transparent)" })} />}
                 </button>
+                {(typeof timeMs === "number" || timedOut) && (
+                  <div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.625rem", marginTop: "0.25rem", paddingLeft: "1.25rem", fontSize: "0.75rem", fontVariantNumeric: "tabular-nums", color: "var(--muted-foreground)" })}>
+                    {typeof timeMs === "number" && <span aria-label={`Time on question: ${timeMs} milliseconds`}>{formatQuizDuration(timeMs)}</span>}
+                    {timedOut && <span>Timed out</span>}
+                    {quick && <span title="Answered within the first quarter of the time budget. Timing does not indicate correctness.">Quick answer</span>}
+                  </div>
+                )}
                 {isExpanded && (
                   <div className={css({ marginTop: "0.375rem", display: "grid", gap: "0.25rem", paddingLeft: "1.25rem" })}>
                     <p>
