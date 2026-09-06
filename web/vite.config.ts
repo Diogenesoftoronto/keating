@@ -502,7 +502,9 @@ export default defineConfig({
         // (the shell referenced an asset hash the new server no longer has).
         // Share/API routes must reach the server (also required for the
         // server-rendered OpenGraph meta on /s/:id).
-        navigateFallbackDenylist: [/^\/s\//, /^\/api\//, /^\/assets\//],
+        // A PDF navigation must reach the document, including when opened
+        // from an installed PWA. Serving index.html here hides the paper.
+        navigateFallbackDenylist: [/^\/s\//, /^\/api\//, /^\/assets\//, /\.pdf(?:\?|$)/i],
         // vite-plugin-pwa FAILS the build if a precached file exceeds this
         // limit (it does not silently skip), so it must stay above the largest
         // emitted chunk. sandbox-export is currently ~4.3MB; we round up to
