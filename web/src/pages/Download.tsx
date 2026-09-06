@@ -1,359 +1,173 @@
 import { useEffect, useState } from "react";
 import { usePostHog } from "@posthog/react";
 import { Link } from "@tanstack/react-router";
+import { ArrowDown, ArrowDownToLine, ArrowRight, Globe, Terminal } from "lucide-react";
 import { Nav } from "../components/Nav";
 import { Footer } from "../components/Footer";
+import { AndroidLogo, AppleLogo, IosLogo, LinuxLogo, WindowsLogo } from "../components/platform-logos";
 import { useSeo } from "../hooks/useSeo";
-import {
-  DESKTOP_LABELS,
-  type DesktopPlatform,
-  type PlatformDetection,
-  detectPlatform,
-} from "../lib/detect-platform";
-import {
-  AndroidLogo,
-  AppleLogo,
-  IosLogo,
-  LinuxLogo,
-  WindowsLogo,
-} from "../components/platform-logos";
-import { cx } from "../../styled-system/css";
-import { btnRetro, eyebrow, sectionLede, sectionTitle } from "../../styled-system/recipes";
+import { detectDownloadArchitecture, detectPlatform, type DetectedPlatform, type DownloadArchitecture } from "../lib/detect-platform";
+import { downloadArchitectureLabel, downloadSize, fetchDownloadRelease, recommendedDownload, VERIFIED_DOWNLOAD_RELEASE, type DownloadAsset } from "../lib/download-release";
+import "./download.css";
 
-const GITHUB_RELEASES_URL = "https://github.com/Diogenesoftoronto/keating/releases";
-const DESKTOP_SOURCE_URL = "https://github.com/Diogenesoftoronto/keating/tree/main/desktop";
+const PLATFORMS = [
+  { id: "macos", label: "macOS", Logo: AppleLogo },
+  { id: "windows", label: "Windows", Logo: WindowsLogo },
+  { id: "linux", label: "Linux", Logo: LinuxLogo },
+  { id: "android", label: "Android", Logo: AndroidLogo },
+  { id: "ios", label: "iOS", Logo: IosLogo },
+] as const;
 
-type DesktopEntry = {
-  id: DesktopPlatform;
-  detail: string;
-  command: string;
-  Logo: typeof AppleLogo;
-};
-
-const DESKTOP_PLATFORMS: DesktopEntry[] = [
-  {
-    id: "macos",
-    detail: "Apple Silicon and Intel builds are planned as signed release artifacts.",
-    command: "bun run dist --mac",
-    Logo: AppleLogo,
-  },
-  {
-    id: "windows",
-    detail: "Installer builds ship through the same GitHub release channel.",
-    command: "bun run dist --win",
-    Logo: WindowsLogo,
-  },
-  {
-    id: "linux",
-    detail: "AppImage or package artifacts come from the Electron builder config.",
-    command: "bun run dist --linux",
-    Logo: LinuxLogo,
-  },
-];
-
-const DESKTOP_FEATURES = [
-  "Electron shell around the same Keating learning workspace",
-  "Local-first storage for sessions, settings, and study artifacts",
-  "P2P sync scaffold for device-to-device replication and always-on seeders",
-  "Browser UI parity, with Node-only runtime pieces kept out of the renderer",
-];
-
-const MOBILE_PLATFORMS = [
-  { id: "ios" as const, label: "iOS", Logo: IosLogo },
-  { id: "android" as const, label: "Android", Logo: AndroidLogo },
-];
+// Replace these files to refresh the showcase. See public/downloads/README.md.
+const PHONE_SHOTS = [
+  { id: "learn", src: "/downloads/learn.jpg", title: "Follow a question.", description: "Build an idea together.", alt: "Keating on a phone explaining how yeast and gluten make bread rise." },
+  { id: "practice", src: "/downloads/practice.jpg", title: "Try it yourself.", description: "Check what clicked.", alt: "Keating's mobile quiz asking what makes dough expand, with the yeast answer selected." },
+  { id: "review", src: "/downloads/review.jpg", title: "Make it stick.", description: "Come back to your cards.", alt: "Keating's mobile flashcards reviewing the science of bread." },
+] as const;
 
 export function Download() {
   const posthog = usePostHog();
+  const [detected, setDetected] = useState<DetectedPlatform>("unknown");
+  const [detectedArchitecture, setDetectedArchitecture] = useState<DownloadArchitecture>("unknown");
+  const [platformChoice, setPlatformChoice] = useState<DetectedPlatform | null>(null);
+  const [architectureChoice, setArchitectureChoice] = useState<DownloadArchitecture | null>(null);
+  const [release, setRelease] = useState(VERIFIED_DOWNLOAD_RELEASE);
+  const [releaseCheck, setReleaseCheck] = useState<"checking" | "current" | "unavailable">("checking");
+  const platform = platformChoice ?? detected;
+  const architecture = architectureChoice ?? (platform === detected ? detectedArchitecture : "unknown");
+  const selectedPlatform = PLATFORMS.find((entry) => entry.id === platform);
+  const PlatformIcon = selectedPlatform?.Logo ?? Globe;
+  const platformAssets = release.assets.filter((asset) => asset.platform === platform);
+  const recommended = recommendedDownload(release, platform, architecture);
+  const needsArchitecture = platformAssets.length > 0 && !recommended;
+  const architectures = [...new Set(platformAssets.map((asset) => asset.architecture))].filter((arch) => arch !== "universal");
+
   useSeo({
-    title: "Download Keating Desktop | Electron App",
-    description:
-      "Download the Keating Electron desktop app for macOS, Windows, or Linux, or track upcoming native iOS and Android releases.",
+    title: "Download Keating | Learn on your phone or computer",
+    description: "Get the Keating download for your platform, or start learning in your browser. Explore real mobile views of lessons, quizzes, and flashcards.",
     canonical: "https://keating.help/download",
   });
 
-  // Start unknown so SSR/first paint is deterministic; refine on the client.
-  const [detection, setDetection] = useState<PlatformDetection>({
-    platform: "unknown",
-    isMobile: false,
-    recommendedDesktop: "macos",
-  });
-
   useEffect(() => {
-    setDetection(detectPlatform());
+    let active = true;
+    setDetected(detectPlatform().platform);
+    void detectDownloadArchitecture().then((arch) => { if (active) setDetectedArchitecture(arch); });
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 5_000);
+    void fetchDownloadRelease(controller.signal).then((latest) => {
+      if (!active) return;
+      if (latest) { setRelease(latest); setReleaseCheck("current"); }
+      else setReleaseCheck("unavailable");
+    }).catch(() => { if (active) setReleaseCheck("unavailable"); })
+      .finally(() => window.clearTimeout(timeout));
+    return () => { active = false; controller.abort(); window.clearTimeout(timeout); };
   }, []);
 
-  const recommended = detection.recommendedDesktop;
-  const recommendedEntry =
-    DESKTOP_PLATFORMS.find((p) => p.id === recommended) ?? DESKTOP_PLATFORMS[0];
-  const RecommendedLogo = recommendedEntry.Logo;
-
-  const detectedMobile =
-    detection.platform === "ios" || detection.platform === "android";
-  const detectedMobileLabel =
-    detection.platform === "ios"
-      ? "iOS"
-      : detection.platform === "android"
-        ? "Android"
-        : null;
-
-  const captureDownloadIntent = (
-    source: "hero" | "platform_card" | "source" | "mobile",
-    platform: string,
-    destination: "github_releases" | "desktop_source",
-  ) => {
-    posthog?.capture("download_intent", {
-      source,
-      platform,
-      destination,
-    });
+  const captureDownload = (asset: DownloadAsset, source: "hero" | "platform_card") => {
+    posthog?.capture("download_intent", { source, platform: asset.platform, architecture: asset.architecture, destination: "release_asset", artifact: asset.kind, release: release.tag });
   };
+  const captureBrowser = () => posthog?.capture("download_try_browser_click", { platform });
 
   return (
-    <div className={cx("retro-layout", "retro-page")}>
+    <div className="retro-layout retro-page downloads">
       <Nav />
-      <main className={cx("download-page")}>
-        <section className={cx("download-hero")}>
-          <div className={cx("wrap", "download-hero-grid")}>
-            <div>
-              <div className={cx(eyebrow(), "prompt")}>cat DOWNLOADS.txt</div>
-              <h1>Keating on your machine.</h1>
-              <p className={cx("download-hero-copy")}>
-                The Electron app brings Keating&apos;s browser workspace into a desktop shell,
-                with local-first storage and the P2P runtime hooks that cannot run in a normal
-                browser tab.
-              </p>
-
-              <div className={cx("download-recommend")} role="status">
-                <span className={cx("download-recommend-logo")} aria-hidden="true">
-                  <RecommendedLogo width={22} height={22} />
-                </span>
-                <span className={cx("download-recommend-text")}>
-                  {detection.platform === "unknown" ? (
+      <main>
+        <section className="downloads-hero" aria-labelledby="downloads-title">
+          <div className="downloads-wrap downloads-hero-grid">
+            <div className="downloads-intro">
+              <p className="downloads-kicker"><ArrowDownToLine size={15} aria-hidden="true" /> Take Keating with you</p>
+              <h1 id="downloads-title">Wherever<br />curiosity<br /><span>finds you.</span></h1>
+              <p className="downloads-lede">Ask a question, test an idea, and revisit what you’ve learned. Your next lesson can fit in your pocket.</p>
+              <div className="downloads-picker" id="download-picker">
+                <div className="downloads-picker-heading" aria-live="polite">
+                  <PlatformIcon size={22} aria-hidden="true" />
+                  <strong>{selectedPlatform ? `Keating for ${selectedPlatform.label}` : "Choose your platform"}</strong>
+                  {platform !== "unknown" && platform === detected && <span className="downloads-detected">Detected</span>}
+                </div>
+                <div className="downloads-platform-picker" role="group" aria-label="Choose your platform">
+                  {PLATFORMS.map(({ id, label, Logo }) => (
+                    <button type="button" key={id} aria-pressed={platform === id} onClick={() => { setPlatformChoice(id); setArchitectureChoice(null); }}>
+                      <Logo size={23} aria-hidden="true" /><span>{label}</span>
+                    </button>
+                  ))}
+                </div>
+                {architectures.length > 0 && (architectures.length > 1 || needsArchitecture) && (
+                  <fieldset className="downloads-architectures">
+                    <legend>{platform === "macos" ? "Your Mac’s chip" : "Your processor"}</legend>
+                    {architectures.map((arch) => (
+                      <label key={arch}>
+                        <input type="radio" name="download-architecture" value={arch} checked={architecture === arch} onChange={() => setArchitectureChoice(arch)} />
+                        {downloadArchitectureLabel(platform, arch)}
+                      </label>
+                    ))}
+                  </fieldset>
+                )}
+                <div className="downloads-primary-action" aria-live="polite">
+                  {recommended ? (
                     <>
-                      Recommended build: <strong>{DESKTOP_LABELS[recommended]}</strong>
+                      <a className="downloads-button downloads-button-primary" href={recommended.url} onClick={() => captureDownload(recommended, "hero")}>
+                        <PlatformIcon size={20} aria-hidden="true" /> Download for {selectedPlatform?.label}<ArrowDownToLine size={18} aria-hidden="true" />
+                      </a>
+                      <p>{recommended.kind === "terminal" ? "Terminal app" : "App installer"} · {downloadArchitectureLabel(platform, recommended.architecture)} · {recommended.format} · {downloadSize(recommended.size)}</p>
                     </>
-                  ) : detectedMobile ? (
-                    <>
-                      Detected <strong>{detectedMobileLabel}</strong> — the native app is coming
-                      soon. Meanwhile, use the browser app or install {DESKTOP_LABELS[recommended]}
-                      {" "}on a computer.
-                    </>
+                  ) : needsArchitecture ? (
+                    <p className="downloads-choice-hint">Choose your {platform === "macos" ? "Mac’s chip" : "processor"} above to get the right file.{platform === "macos" && <span>Find it in Apple menu → About This Mac.</span>}</p>
                   ) : (
                     <>
-                      Detected <strong>{DESKTOP_LABELS[recommended]}</strong> — recommended
-                      download for your system.
+                      <Link className="downloads-button downloads-button-primary" to="/chat" onClick={captureBrowser}><Globe size={20} aria-hidden="true" /> Open Keating in your browser<ArrowRight size={18} aria-hidden="true" /></Link>
+                      <p>{selectedPlatform ? `No ${selectedPlatform.label} installer is published yet. The browser app is ready.` : "Works on your phone, tablet, or computer."}</p>
                     </>
                   )}
-                </span>
+                </div>
+                {(recommended || needsArchitecture) && <Link className="downloads-browser-link" to="/chat" onClick={captureBrowser}><Globe size={16} aria-hidden="true" /> Or start in your browser<ArrowRight size={15} aria-hidden="true" /></Link>}
               </div>
-
-              <div className={cx("download-actions")}>
-                <a
-                  className={btnRetro({ tone: "primary" })}
-                  href={GITHUB_RELEASES_URL}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={() =>
-                    captureDownloadIntent(
-                      "hero",
-                      recommended,
-                      "github_releases",
-                    )
-                  }
-                >
-                  <span className={cx("btn-logo")} aria-hidden="true">
-                    <RecommendedLogo width={16} height={16} />
-                  </span>
-                  Download_for_{DESKTOP_LABELS[recommended].replace(/\s+/g, "_")} →
-                </a>
-                <Link
-                  className={btnRetro()}
-                  to="/chat"
-                  onClick={() =>
-                    posthog?.capture("start_session_clicked", {
-                      source: "download_page",
-                    })
-                  }
-                >
-                  Try_In_Browser
-                </Link>
-              </div>
-              <p className={cx("download-note")}>
-                Desktop installers are distributed from GitHub Releases as they become available.
-                Source builds are available now for contributors and testers.
-              </p>
+              <a href="#all-downloads" className="downloads-all-link">See all downloads <ArrowDown size={15} aria-hidden="true" /></a>
             </div>
-
-            <aside className={cx("download-device-panel")} aria-label="Desktop app status">
-              <div className={cx("download-device-top")}>
-                <span className={cx("d", "r")} />
-                <span className={cx("d", "y")} />
-                <span className={cx("d", "g")} />
-                <span>KEATING_DESKTOP</span>
+            <div className="downloads-showcase" aria-label="A lesson in three mobile views">
+              <div className="downloads-showcase-heading"><span>A good question goes a long way.</span><span className="downloads-shot-label">Inside Keating</span></div>
+              <div className="downloads-phones">
+                {PHONE_SHOTS.map((shot, index) => (
+                  <figure className={`downloads-phone-shot downloads-phone-shot-${shot.id}`} key={shot.id}>
+                    <a className="downloads-phone" href={shot.src} target="_blank" rel="noreferrer" aria-label={`View ${shot.id} screenshot, opens in a new tab`}>
+                      <span className="downloads-phone-speaker" aria-hidden="true" />
+                      <img src={shot.src} alt={shot.alt} width={390} height={844} fetchPriority={index === 1 ? "high" : "auto"} decoding="async" />
+                      <span className="downloads-phone-home" aria-hidden="true" />
+                    </a>
+                    <figcaption><strong>{shot.title}</strong><span>{shot.description}</span></figcaption>
+                  </figure>
+                ))}
               </div>
-              <div className={cx("download-screen")}>
-                <div className={cx("download-screen-line", "t-ok")}>electron runtime: ready</div>
-                <div className={cx("download-screen-line")}>renderer: web/dist</div>
-                <div className={cx("download-screen-line")}>storage: local-first</div>
-                <div className={cx("download-screen-line")}>sync: p2p scaffold</div>
-                <div className={cx("download-screen-caret")} aria-hidden="true" />
-              </div>
-            </aside>
+              <p className="downloads-showcase-note">One question. A lesson, a quiz, something to remember.<span>Actual mobile browser views · Example lesson</span></p>
+            </div>
           </div>
         </section>
-
-        <section className={cx("download-section")} aria-labelledby="desktop-heading">
-          <div className={cx("wrap")}>
-            <div className={cx("download-section-head")}>
-              <div className={cx(eyebrow(), "prompt")}>open ELECTRON_APP</div>
-              <h2 id="desktop-heading" className={sectionTitle()}>
-                Desktop app
-              </h2>
-              <p className={sectionLede()}>
-                Use the desktop build when you want Keating as an installed app, with access to
-                the Node runtime pieces needed for real desktop P2P storage.
-              </p>
+        <section className="downloads-catalog" id="all-downloads" aria-labelledby="all-downloads-heading">
+          <div className="downloads-wrap">
+            <div className="downloads-catalog-heading">
+              <div><h2 id="all-downloads-heading">Find your version.</h2><p>Every available file, one click away.</p></div>
+              <a href={release.url} target="_blank" rel="noreferrer" className="downloads-release-link">{release.tag} release notes <ArrowRight size={16} aria-hidden="true" /></a>
             </div>
-
-            <div className={cx("desktop-download-grid")}>
-              {DESKTOP_PLATFORMS.map((item) => {
-                const isRecommended = item.id === recommended;
-                const Logo = item.Logo;
+            <div className="downloads-file-list">
+              {PLATFORMS.map(({ id, label, Logo }) => {
+                const assets = release.assets.filter((asset) => asset.platform === id);
+                const terminalOnly = assets.length > 0 && assets.every((asset) => asset.kind === "terminal");
                 return (
-                  <article
-                    className={cx("desktop-download-card", isRecommended && "is-recommended")}
-                    key={item.id}
-                    aria-current={isRecommended ? "true" : undefined}
-                  >
-                    <div className={cx("desktop-card-head")}>
-                      <span className={cx("desktop-card-logo")} aria-hidden="true">
-                        <Logo width={30} height={30} />
-                      </span>
-                      <div className={cx("desktop-platform")}>{DESKTOP_LABELS[item.id]}</div>
-                      {isRecommended && (
-                        <span className={cx("desktop-recommend-tag")}>YOUR OS</span>
-                      )}
-                    </div>
-                    <p>{item.detail}</p>
-                    <code>{item.command}</code>
-                    <a
-                      href={GITHUB_RELEASES_URL}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={() =>
-                        captureDownloadIntent(
-                          "platform_card",
-                          item.id,
-                          "github_releases",
-                        )
-                      }
-                    >
-                      Check latest release
-                    </a>
+                  <article key={id} className="downloads-file-row">
+                    <div className="downloads-file-platform"><Logo size={30} aria-hidden="true" /><div><h3>{label}</h3><p>{terminalOnly ? "Terminal app" : assets.length ? "App installer" : "Native app"}</p></div>{id === detected && <span className="downloads-detected">Your device</span>}</div>
+                    {assets.length ? (
+                      <ul aria-label={`${label} downloads`} className="downloads-files">
+                        {assets.map((asset) => <li key={asset.name}><a href={asset.url} aria-label={`Download Keating ${asset.kind === "terminal" ? "terminal" : "app"} for ${label}, ${downloadArchitectureLabel(id, asset.architecture)}, ${asset.format}, ${downloadSize(asset.size)}`} onClick={() => captureDownload(asset, "platform_card")}><span>{downloadArchitectureLabel(id, asset.architecture)}<small>{asset.format} · {downloadSize(asset.size)}</small></span><ArrowDownToLine size={18} aria-hidden="true" /></a></li>)}
+                      </ul>
+                    ) : <div className="downloads-unavailable"><span>Not published yet</span><Link to="/chat" onClick={captureBrowser}>Use the browser app <ArrowRight size={15} aria-hidden="true" /></Link></div>}
                   </article>
                 );
               })}
             </div>
-
-            <div className={cx("download-source-box")}>
-              <div>
-                <h3>Build from source</h3>
-                <p>
-                  Contributors can build the Electron app from the workspace today. The desktop
-                  package wraps the existing web app and compiles the Electron main and preload
-                  processes with TypeScript.
-                </p>
-              </div>
-              <div className={cx("download-command")} aria-label="Desktop build commands">
-                <div>cd desktop</div>
-                <div>bun install</div>
-                <div>bun run build:main</div>
-                <div>bun run dist</div>
-              </div>
-              <a
-                className={btnRetro()}
-                href={DESKTOP_SOURCE_URL}
-                target="_blank"
-                rel="noreferrer"
-                onClick={() =>
-                  captureDownloadIntent(
-                    "source",
-                    recommended,
-                    "desktop_source",
-                  )
-                }
-              >
-                View_Source
-              </a>
-            </div>
-
-            <ul className={cx("download-feature-list")} aria-label="Desktop app features">
-              {DESKTOP_FEATURES.map((feature) => (
-                <li key={feature}>{feature}</li>
-              ))}
-            </ul>
+            <p className="downloads-catalog-note" role="status">{releaseCheck === "unavailable" ? `Showing verified ${release.tag} files. The latest release check is temporarily unavailable.` : releaseCheck === "checking" ? `Showing verified ${release.tag} files. Checking for a newer release…` : "Files from the latest published release."} Desktop installers appear when published.</p>
+            <details className="downloads-install-help"><summary><Terminal size={18} aria-hidden="true" /> Installing the terminal app</summary><div><p>The macOS and Linux <code>.tar.gz</code> files contain Keating’s terminal app and its runtime. Extract the archive, open a terminal in the extracted folder, and run <code>./install.sh</code>. Then start a lesson with <code>keating shell</code>.</p><p>For the visual workspace shown above, <Link to="/chat">open the browser app</Link>. Developers can also <a href="https://github.com/Diogenesoftoronto/keating/tree/main/desktop" target="_blank" rel="noreferrer">build the desktop app from source</a>.</p></div></details>
           </div>
         </section>
-
-        <section className={cx("download-section", "mobile-coming-soon")} aria-labelledby="mobile-heading">
-          <div className={cx("wrap", "mobile-soon-grid")}>
-            <div>
-              <div className={cx(eyebrow(), "prompt")}>tail -f MOBILE_ROADMAP</div>
-              <h2 id="mobile-heading" className={sectionTitle()}>
-                Native mobile app
-              </h2>
-              <p className={sectionLede()}>
-                iOS and Android builds are coming soon. The native app is planned for the same
-                local-first learning surface, adapted for phone and tablet sessions instead of a
-                compressed desktop web view.
-              </p>
-              <div className={cx("mobile-platform-row")} aria-label="Planned mobile platforms">
-                {MOBILE_PLATFORMS.map(({ id, label, Logo }) => {
-                  const isDetected = detection.platform === id;
-                  return (
-                    <span
-                      key={id}
-                      className={cx("mobile-platform-chip", isDetected && "is-detected")}
-                    >
-                      <Logo width={18} height={18} />
-                      {label}
-                      {isDetected && <em>your device</em>}
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-            <div className={cx("mobile-soon-card")} aria-label="Native mobile status">
-              <div className={cx("mobile-badge")}>COMING SOON</div>
-              <div className={cx("mobile-frame")}>
-                <div className={cx("mobile-notch")} />
-                <div className={cx("mobile-screen-line")}>Keating Mobile</div>
-                <div className={cx("mobile-screen-line", "dim")}>native shell</div>
-                <div className={cx("mobile-screen-line", "dim")}>offline study</div>
-                <div className={cx("mobile-screen-line", "dim")}>push review loop</div>
-              </div>
-              <p>
-                Follow the release feed for mobile availability, TestFlight, and Android testing
-                notes.
-              </p>
-              <a
-                href={GITHUB_RELEASES_URL}
-                target="_blank"
-                rel="noreferrer"
-                onClick={() =>
-                  captureDownloadIntent(
-                    "mobile",
-                    detection.platform,
-                    "github_releases",
-                  )
-                }
-              >
-                Watch releases
-              </a>
-            </div>
-          </div>
-        </section>
+        <section className="downloads-browser-band" aria-labelledby="downloads-browser-heading"><div className="downloads-wrap"><div><Globe size={28} aria-hidden="true" /><h2 id="downloads-browser-heading">A browser is all you need.</h2><p>Start with a question. No installation required.</p></div><Link className="downloads-button" to="/chat" onClick={captureBrowser}>Start learning <ArrowRight size={18} aria-hidden="true" /></Link></div></section>
       </main>
       <Footer />
     </div>

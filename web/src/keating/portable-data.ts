@@ -115,6 +115,7 @@ export async function importKeatingPortableDataBundle(bundle: KeatingPortableDat
 	}
 	if (typeof window !== "undefined") {
 		window.dispatchEvent(new CustomEvent("keating:sessions-changed"));
+		window.dispatchEvent(new CustomEvent("keating:artifacts-changed"));
 	}
 	return {
 		...storageResult,

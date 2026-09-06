@@ -1,3 +1,4 @@
+import { Select } from "../Select";
 import { useState } from "react";
 import {
 	PEDAGOGY_RUBRIC_KEYS,
@@ -512,27 +513,27 @@ export function ReviewDesk({
 					<div className={css({ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: "0.5rem" })}>
 						<label className={fieldLabel}>
 							Verdict
-							<select
+							<Select aria-label="Review verdict"
 								value={review.verdict}
 								className={cx(inputClass, css({ marginTop: "0.25rem" }))}
-								onChange={(event) => callbacks.onReviewChange(nextReview(review, { verdict: event.currentTarget.value as TrajectoryReview["verdict"] }))}
+								onValueChange={(value) => callbacks.onReviewChange(nextReview(review, { verdict: value as TrajectoryReview["verdict"] }))}
 							>
 								<option value="undecided">Undecided</option>
 								<option value="accepted">Accepted</option>
 								<option value="review">Needs revision</option>
 								<option value="rejected">Rejected</option>
-							</select>
+							</Select>
 						</label>
 						<label className={fieldLabel}>
 							Status
-							<select
+							<Select aria-label="Review status"
 								value={review.status}
 								className={cx(inputClass, css({ marginTop: "0.25rem" }))}
-								onChange={(event) => callbacks.onReviewChange(nextReview(review, { status: event.currentTarget.value as TrajectoryReview["status"] }))}
+								onValueChange={(value) => callbacks.onReviewChange(nextReview(review, { status: value as TrajectoryReview["status"] }))}
 							>
 								<option value="draft">Draft</option>
 								<option value="final">Final</option>
-							</select>
+							</Select>
 						</label>
 					</div>
 

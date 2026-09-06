@@ -951,6 +951,10 @@ export function applyCourseOperation(
     }
     case "assignment.submission.save": {
       assertAssignment(next, operation.assignmentId);
+      const assignment = next.assignments.find((entry) => entry.id === operation.assignmentId)!;
+      if (operation.status === "submitted" && assignment.availableFrom && Date.parse(now) < Date.parse(assignment.availableFrom)) {
+        throw new CourseAuthorizationError("This assignment is not open for submission yet.");
+      }
       const index = next.assignmentSubmissions.findIndex(
         (submission) =>
           submission.id === operation.submissionId &&
@@ -968,6 +972,7 @@ export function applyCourseOperation(
         assignmentId: operation.assignmentId,
         accountId: actorAccountId,
         answer: operation.answer,
+        attachments: operation.attachments ?? [],
         status: operation.status,
         sharedWithPeers: operation.sharedWithPeers,
         version: (existing?.version ?? 0) + 1,

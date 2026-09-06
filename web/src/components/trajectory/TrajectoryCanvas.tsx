@@ -18,6 +18,8 @@ import {
 import { css, cx } from "../../../styled-system/css";
 import { KeatingIcon } from "../KeatingIcon";
 import { MarkdownBlock, type MarkdownHighlightRange } from "../MarkdownBlock";
+import { buildOpenUIPreview } from "../../keating/openui/preview";
+import { OpenUIPreview } from "../OpenUIPreview";
 import { reviewIcon } from "./review-icons";
 import { containedMediaRect, normalizedContainedMediaPoint, type MediaSize } from "./media-geometry";
 import { AnnotationHoverCard } from "./AnnotationHoverCard";
@@ -371,6 +373,21 @@ function TranscriptTurn({
 		() => markdownHighlights(message.text, annotations, activeAnnotationId),
 		[activeAnnotationId, annotations, message.text],
 	);
+	// OpenUI artifacts collapse to inert chips here: the canvas is for marking a
+	// turn, not for driving the lesson the turn built.
+	const previewBlocks = useMemo(
+		() => buildOpenUIPreview(markdown, { sessionId: message.id, messageId: String(message.ordinal) }),
+		[markdown, message.id, message.ordinal],
+	);
+	// Annotations anchor into `message.text`, while preview offsets are relative
+	// to `markdown`. They coincide for tutor turns and differ by the trimmed
+	// prefix; a rewritten learner envelope is not a substring at all, and keeps
+	// the existing behaviour of anchoring from the start.
+	const previewHighlights = useMemo(() => {
+		const offset = message.text.indexOf(markdown);
+		if (offset <= 0) return renderedHighlights;
+		return renderedHighlights.map((highlight) => ({ ...highlight, start: highlight.start - offset, end: highlight.end - offset }));
+	}, [markdown, message.text, renderedHighlights]);
 
 	return (
 		<article
@@ -453,7 +470,7 @@ function TranscriptTurn({
 						onMouseUp={readOnly || !onCaptureSelection ? undefined : (event) => onCaptureSelection(event.currentTarget, message)}
 						onKeyUp={readOnly || !onCaptureSelection ? undefined : (event) => onCaptureSelection(event.currentTarget, message)}
 					>
-						{markdown ? <MarkdownBlock content={markdown} sourceMapped highlights={renderedHighlights} onHighlightReveal={handlers.onReveal} onHighlightConceal={handlers.onConceal} onHighlightOpen={handlers.onOpen} /> : null}
+						{markdown ? <OpenUIPreview blocks={previewBlocks} sourceMapped highlights={previewHighlights} onHighlightReveal={handlers.onReveal} onHighlightConceal={handlers.onConceal} onHighlightOpen={handlers.onOpen} /> : null}
 					</div>
 				) : (
 					<div

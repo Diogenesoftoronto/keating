@@ -1,3 +1,4 @@
+import { Select } from "../components/Select";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, Camera, ImagePlus, Mic, MonitorUp, Settings2 } from "lucide-react";
@@ -210,10 +211,10 @@ export function Live() {
 				>
 					<label className={css({ display: "flex", flexDirection: "column", gap: "0.375rem" })}>
 						<span className={css({ fontSize: "0.8125rem", fontWeight: 600 })}>Provider</span>
-						<select
+						<Select aria-label="Live provider"
 							value={settings.providerId}
-							onChange={(event) => {
-								const providerId = event.target.value as "tavus" | "gemini-live" | "openai-realtime";
+							onValueChange={(value) => {
+								const providerId = value as "tavus" | "gemini-live" | "openai-realtime";
 								update({
 									providerId,
 									model: recommendedLiveModel(providerId)?.value ?? "",
@@ -233,14 +234,14 @@ export function Live() {
 							<option value="tavus">Tavus KeatingBot</option>
 							<option value="gemini-live">Gemini Live</option>
 							<option value="openai-realtime">OpenAI Realtime</option>
-						</select>
+						</Select>
 					</label>
 
 					<label className={css({ display: "flex", flexDirection: "column", gap: "0.375rem" })}>
 						<span className={css({ fontSize: "0.8125rem", fontWeight: 600 })}>Model</span>
-						<select
+						<Select aria-label="Live model"
 							value={model.value}
-							onChange={(event) => update({ model: event.target.value })}
+							onValueChange={(value) => update({ model: value })}
 							className={css({
 								width: "100%",
 								borderRadius: "0.5rem",
@@ -259,7 +260,7 @@ export function Live() {
 									{entry.grade === "recommended" ? " · recommended" : ""}
 								</option>
 							))}
-						</select>
+						</Select>
 						{model.note ? (
 							<span className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>{model.note}</span>
 						) : null}

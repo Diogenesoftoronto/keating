@@ -242,8 +242,13 @@ export function resolveSpeechRealtimeTier(settings: WebSpeechSettings): Realtime
 
 let audioContext: AudioContext | null = null;
 let scheduledUntil = 0;
+let playbackGeneration = 0;
 /** Sources queued but not yet finished, so barge-in can cut them off. */
 const scheduledSources = new Set<AudioBufferSourceNode>();
+
+export interface SpeechPlaybackOptions {
+	signal?: AbortSignal;
+}
 
 export function getAudioContext(): AudioContext | null {
 	if (typeof window === "undefined") return null;
@@ -265,7 +270,8 @@ function decodeBase64Pcm(base64: string): Int16Array {
 	return new Int16Array(bytes.buffer);
 }
 
-export function schedulePcmAudio(base64: string, sampleRate = RECEIVE_SAMPLE_RATE): boolean {
+export function schedulePcmAudio(base64: string, sampleRate = RECEIVE_SAMPLE_RATE, options: SpeechPlaybackOptions = {}): boolean {
+	if (options.signal?.aborted) return false;
 	const context = getAudioContext();
 	if (!context) return false;
 
@@ -282,13 +288,46 @@ export function schedulePcmAudio(base64: string, sampleRate = RECEIVE_SAMPLE_RAT
 	const startAt = Math.max(context.currentTime + 0.03, scheduledUntil);
 	source.start(startAt);
 	scheduledUntil = startAt + buffer.duration;
-	trackScheduledSource(source);
+	trackScheduledSource(source, options.signal);
 	return true;
 }
 
-function trackScheduledSource(source: AudioBufferSourceNode): void {
+function trackScheduledSource(source: AudioBufferSourceNode, signal?: AbortSignal): void {
 	scheduledSources.add(source);
-	source.addEventListener("ended", () => scheduledSources.delete(source), { once: true });
+	const stop = () => { try { source.stop(); } catch {} };
+	source.addEventListener("ended", () => {
+		scheduledSources.delete(source);
+		signal?.removeEventListener("abort", stop);
+		source.disconnect();
+		if (!scheduledSources.size) scheduledUntil = audioContext?.currentTime ?? 0;
+	}, { once: true });
+	signal?.addEventListener("abort", stop, { once: true });
+}
+
+/** Call after synthesis has queued its last chunk; resolves on actual source endings. */
+export function waitForSpeechPlayback(signal?: AbortSignal): Promise<void> {
+	if (signal?.aborted) return Promise.reject(new DOMException("Audio playback canceled.", "AbortError"));
+	const generation = playbackGeneration;
+	const pending = new Set(scheduledSources);
+	if (!pending.size) return Promise.resolve();
+	return new Promise((resolve, reject) => {
+		const listeners = new Map<AudioBufferSourceNode, () => void>();
+		const cleanup = () => {
+			for (const [source, listener] of listeners) source.removeEventListener("ended", listener);
+			signal?.removeEventListener("abort", abort);
+		};
+		const abort = () => { cleanup(); reject(new DOMException("Audio playback canceled.", "AbortError")); };
+		for (const source of pending) {
+			const ended = () => {
+				if (signal?.aborted || generation !== playbackGeneration) { abort(); return; }
+				pending.delete(source);
+				if (!pending.size) { cleanup(); resolve(); }
+			};
+			listeners.set(source, ended);
+			source.addEventListener("ended", ended, { once: true });
+		}
+		signal?.addEventListener("abort", abort, { once: true });
+	});
 }
 
 /**
@@ -299,6 +338,7 @@ function trackScheduledSource(source: AudioBufferSourceNode): void {
  * learner interrupting would keep hearing the sentence they just cut off.
  */
 export function stopScheduledAudio(): void {
+	playbackGeneration++;
 	for (const source of scheduledSources) {
 		try {
 			source.stop();
@@ -311,18 +351,21 @@ export function stopScheduledAudio(): void {
 	scheduledUntil = context ? context.currentTime : 0;
 }
 
-export async function scheduleAudioBlob(blob: Blob): Promise<boolean> {
+export async function scheduleAudioBlob(blob: Blob, options: SpeechPlaybackOptions = {}): Promise<boolean> {
+	if (options.signal?.aborted) return false;
 	const context = getAudioContext();
 	if (!context) return false;
+	const generation = playbackGeneration;
 	const arrayBuffer = await blob.arrayBuffer();
 	const audioBuffer = await context.decodeAudioData(arrayBuffer.slice(0));
+	if (options.signal?.aborted || generation !== playbackGeneration) return false;
 	const source = context.createBufferSource();
 	source.buffer = audioBuffer;
 	source.connect(context.destination);
 	const startAt = Math.max(context.currentTime + 0.03, scheduledUntil);
 	source.start(startAt);
 	scheduledUntil = startAt + audioBuffer.duration;
-	trackScheduledSource(source);
+	trackScheduledSource(source, options.signal);
 	return true;
 }
 

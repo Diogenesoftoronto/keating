@@ -88,7 +88,7 @@ async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthe
 	}, { signal });
 
 	const blob = await response.blob();
-	const played = await scheduleAudioBlob(blob).catch(() => false);
+	const played = await scheduleAudioBlob(blob, { signal }).catch(() => false);
 
 	return {
 		audioChunks: 1,

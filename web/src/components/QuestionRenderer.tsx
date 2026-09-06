@@ -1,8 +1,7 @@
+import { Select } from "./Select";
 import { useCallback, useMemo, useReducer, useRef, useTransition } from "react";
 import {
 	ArrowRight,
-	Check,
-	CheckCircle2,
 	ChevronDown,
 	ChevronLeft,
 	ChevronRight,
@@ -11,6 +10,7 @@ import {
 } from "lucide-react";
 import { css, cx } from "../../styled-system/css";
 import { parseQuestionTemplate } from "./question-template";
+import { AnswerTile, CompletionMark, RoundProgress } from "./quiz/ActivityGame";
 
 /** A single blank within a fill-in-the-blank question. */
 export interface BlankField {
@@ -90,20 +90,22 @@ const questionStyles = {
 		width: "100%",
 		maxWidth: "100%",
 		overflowX: "hidden",
-		borderLeft: "2px solid color-mix(in srgb, var(--primary) 55%, transparent)",
+		border: "1px solid var(--border)",
+		borderRadius: "1rem",
 		background: "transparent",
-		padding: "0.375rem 0 0.375rem 0.625rem",
-		[sm]: { marginBlock: "0.5rem", padding: "0.5rem 0 0.5rem 0.75rem" },
+		padding: "1rem",
+		[sm]: { marginBlock: "0.75rem", padding: "1.25rem" },
 	}),
 	submittedShell: css({
 		marginBlock: "0.375rem",
 		width: "100%",
 		maxWidth: "100%",
 		overflowX: "hidden",
-		borderLeft: "2px solid color-mix(in srgb, var(--primary) 55%, transparent)",
+		border: "1px solid var(--border)",
+		borderRadius: "1rem",
 		background: "transparent",
-		padding: "0.375rem 0 0.375rem 0.625rem",
-		[sm]: { marginBlock: "0.5rem", padding: "0.5rem 0 0.5rem 0.75rem" },
+		padding: "1rem",
+		[sm]: { marginBlock: "0.75rem", padding: "1.25rem" },
 	}),
 	iconBox: css({
 		display: "flex",
@@ -124,7 +126,7 @@ const questionStyles = {
 	mutedText: css({ color: "var(--muted-foreground)" }),
 	breakWords: css({ overflowWrap: "break-word" }),
 	field: css({
-		height: "2.25rem",
+		height: "3rem",
 		width: "100%",
 		borderRadius: "0.375rem",
 		border: "1px solid var(--border)",
@@ -133,7 +135,7 @@ const questionStyles = {
 		fontSize: "0.875rem",
 		outline: "none",
 		_focus: { borderColor: "var(--primary)" },
-		"&::placeholder": { color: "color-mix(in srgb, var(--muted-foreground) 70%, transparent)" },
+		"&::placeholder": { color: "var(--muted-foreground)" },
 	}),
 	buttonSecondary: css({
 		display: "inline-flex",
@@ -565,13 +567,13 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 
 	if (submitted) {
 		return (
-			<div className={questionStyles.submittedShell}>
-				<div className={questionStyles.rowStart}>
-					<div className={questionStyles.iconBox}>
-						<CheckCircle2 size={18} className={questionStyles.primaryText} />
-					</div>
+			<div className={cx(questionStyles.submittedShell, "activity-game")}>
+				<CompletionMark detail="Your answers are ready for review.">Round complete</CompletionMark>
+				<details className="activity-review">
+					<summary>Review answers</summary>
+					<div className={questionStyles.rowStart}>
 					<div className={cx(questionStyles.minFlex, questionStyles.stack2)}>
-						<p className={css({ fontSize: "0.875rem", fontWeight: 500, color: "var(--primary)" })}>Submitted</p>
+
 						<div className={css({ display: "grid", gap: "0.5rem", fontSize: "0.875rem", color: "var(--primary)" })}>
 							{questions.map((q, index) => {
 								const state = states[index];
@@ -637,6 +639,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 						</div>
 					</div>
 				</div>
+				</details>
 			</div>
 		);
 	}
@@ -645,104 +648,37 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 	if (!q) return null;
 	const state = states[current] ?? { values: [], selected: [], text: "", classifications: [] };
 	const isLast = current === total - 1;
-	const progress = total > 1 ? ((current + 1) / total) * 100 : 100;
 	const isBlanks = q.type === "blanks" || (q.blanks && q.blanks.length > 0);
 	const isClassification = isClassificationQuestion(q);
 	const isMatching = isMatchingQuestion(q);
 	const selectedMatches = new Set(state.classifications.map((row) => row.choice).filter(Boolean));
 
 	return (
-			<div className={questionStyles.shell} aria-busy={isQuestionPending} style={{ opacity: isQuestionPending ? 0.72 : 1, transition: "opacity 120ms ease-out" }}>
+			<div className={cx(questionStyles.shell, "activity-game")} aria-busy={isQuestionPending} style={{ opacity: isQuestionPending ? 0.72 : 1, transition: "opacity 120ms ease-out" }}>
 				<div className={css({ display: "flex", alignItems: "flex-start" })}>
 				<div className={css({ minWidth: 0, flex: 1, display: "grid", gap: "0.5rem", [sm]: { gap: "1rem" } })}>
-					<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", [sm]: { gap: "0.75rem" } })}>
-						{/* No "Question" label: the question text says what this is. The intro
-						    shares this row so the toggle is not stranded on an empty line. */}
-						<div className={css({ minWidth: 0 })}>
-							{collapsed ? (
-								<p className={css({ lineClamp: 2, fontSize: "0.75rem", lineHeight: "1.25rem", color: "var(--muted-foreground)", overflowWrap: "break-word" })}>
-									{data.intro || q.question}
-								</p>
-							) : (
-								data.intro && (
-									<p className={css({ fontSize: "0.75rem", lineHeight: 1.375, color: "var(--muted-foreground)", overflowWrap: "break-word", [sm]: { fontSize: "0.875rem", lineHeight: "1.5rem" } })}>
-										{data.intro}
-									</p>
-								)
-							)}
-						</div>
-						<button
-							type="button"
-							onClick={() => dispatch({ type: "toggle-collapsed" })}
-							aria-expanded={!collapsed}
-							aria-label={collapsed ? "Show" : "Hide"}
-							title={collapsed ? "Show" : "Hide"}
-							className={css({
-								display: "inline-flex",
-								height: "1.5rem",
-								flexShrink: 0,
-								alignItems: "center",
-								gap: "0.25rem",
-								borderRadius: "0.375rem",
-								border: "1px solid var(--border)",
-								background: "var(--background)",
-								paddingInline: "0.375rem",
-								fontSize: "0.75rem",
-								fontWeight: 500,
-								color: "var(--muted-foreground)",
-								transition: "color 150ms, background-color 150ms, border-color 150ms",
-								_hover: {
-									borderColor: "color-mix(in srgb, var(--primary) 60%, transparent)",
-									background: "color-mix(in srgb, var(--primary) 10%, transparent)",
-									color: "var(--primary)",
-								},
-								[sm]: { height: "2rem", paddingInline: "0.5rem" },
-							})}
-						>
-							{collapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
-							<span className={css({ display: "none", [sm]: { display: "inline" } })}>{collapsed ? "Show" : "Hide"}</span>
+					<div className={css({ display: "flex", alignItems: "center", gap: "0.75rem" })}>
+						<div className={css({ flex: 1, minWidth: 0 })}><RoundProgress current={current} total={total} label="Question progress" /></div>
+						<button type="button" onClick={() => dispatch({ type: "toggle-collapsed" })} aria-expanded={!collapsed} aria-label={collapsed ? "Show questions" : "Hide questions"} className="activity-back-action">
+							{collapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
 						</button>
 					</div>
 					{collapsed ? (
-						<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", paddingBlock: "0.25rem" })}>
-							<div className={css({ height: "0.375rem", flex: 1, overflow: "hidden", borderRadius: "9999px", background: "var(--muted)" })}>
-								<div
-									className={css({ height: "100%", borderRadius: "9999px", background: "var(--primary)", transition: "all 150ms" })}
-									style={{ width: `${progress}%` }}
-								/>
-							</div>
-							<span className={cx("font-terminal", css({ fontSize: "0.6875rem", color: "var(--muted-foreground)", fontVariantNumeric: "tabular-nums" }))}>
-								{current + 1}/{total}
-							</span>
-						</div>
+						<p className={css({ fontSize: "0.875rem", color: "var(--muted-foreground)", overflowWrap: "anywhere" })}>{q.question}</p>
 					) : (
 						<>
-					{/* Progress bar. A single-question form has no progress to report. */}
-					{total > 1 && (
-						<div className={questionStyles.rowCenter}>
-							<div className={css({ height: "0.375rem", flex: 1, overflow: "hidden", borderRadius: "9999px", background: "var(--muted)" })}>
-								<div
-									className={css({ height: "100%", borderRadius: "9999px", background: "var(--primary)", transition: "all 150ms" })}
-									style={{ width: `${progress}%` }}
-								/>
-							</div>
-							<span className={cx("font-terminal", css({ fontSize: "0.6875rem", color: "var(--muted-foreground)", fontVariantNumeric: "tabular-nums" }))}>
-								{current + 1}/{total}
-							</span>
-						</div>
-					)}
 
 					{/* Current question card */}
-					<div className={css({ display: "grid", gap: "0.75rem", maxWidth: "100%", [sm]: { gap: "0.875rem" } })}>
+					<div key={current} className={cx("activity-stage", css({ display: "grid", gap: "1rem", maxWidth: "100%" }))}>
 						{q.header && (
-							<span className={cx("font-terminal", css({ fontSize: "0.6875rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted-foreground)" }))}>
+							<span className={css({ fontSize: "0.8125rem", fontWeight: 550, color: "var(--muted-foreground)" })}>
 								{q.header}
 							</span>
 						)}
 
 						{isMatching ? (
 							<div className={css({ display: "grid", gap: "0.75rem", maxWidth: "100%" })}>
-								<p className={css({ fontSize: "0.75rem", fontWeight: 500, lineHeight: 1.375, overflowWrap: "break-word", [sm]: { fontSize: "0.875rem", lineHeight: "1.5rem" } })}>{q.question}</p>
+								<p className="activity-prompt">{q.question}</p>
 								{/* Frameless: the choices are already outlined, so a wrapper border
 								    would just be a box around boxes. */}
 								<div>
@@ -850,11 +786,11 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 														</button>
 													</div>
 												) : (
-													<select
+													<Select
 														value={row.choice}
 														disabled={submitted}
-														onChange={(e) => setMatchingChoice(current, rowIndex, e.target.value, q.uniqueMatches !== false)}
-														className={css({ height: "2.25rem", width: "100%", borderRadius: "0.375rem", border: "1px dashed var(--border)", background: "color-mix(in srgb, var(--muted) 20%, transparent)", paddingInline: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)", outline: "none", _focus: { borderColor: "var(--primary)" }, [sm]: { fontSize: "0.875rem" } })}
+														onValueChange={(value) => setMatchingChoice(current, rowIndex, value, q.uniqueMatches !== false)}
+														aria-label={`Match for ${row.item}`} className={css({ height: "3rem", width: "100%", borderRadius: "0.375rem", border: "1px dashed var(--border)", background: "color-mix(in srgb, var(--muted) 20%, transparent)", paddingInline: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)", outline: "none", _focus: { borderColor: "var(--primary)" }, [sm]: { fontSize: "0.875rem" } })}
 													>
 														<option value="">Drop or choose...</option>
 														{q.choices?.map((choice, choiceIndex) => {
@@ -865,7 +801,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 																</option>
 															);
 														})}
-													</select>
+													</Select>
 												)}
 											</div>
 										</div>
@@ -874,8 +810,8 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 							</div>
 						) : isClassification ? (
 							<div className={css({ display: "grid", gap: "0.75rem", maxWidth: "100%" })}>
-								<p className={css({ fontSize: "0.75rem", fontWeight: 500, lineHeight: 1.375, overflowWrap: "break-word", [sm]: { fontSize: "0.875rem", lineHeight: "1.5rem" } })}>{q.question}</p>
-								<div className={css({ display: "none", gap: "0.5rem", paddingInline: "0.5rem", fontSize: "0.6875rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted-foreground)", [sm]: { display: "grid", gridTemplateColumns: "minmax(7rem,0.9fr) minmax(9rem,0.9fr) minmax(12rem,1.4fr)" } })}>
+								<p className="activity-prompt">{q.question}</p>
+								<div className={css({ display: "none", gap: "0.5rem", paddingInline: "0.5rem", fontSize: "0.6875rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted-foreground)", [sm]: { display: "grid", gridTemplateColumns: "minmax(0,0.9fr) minmax(0,0.9fr) minmax(0,1.4fr)" } })}>
 									<span>{q.itemLabel ?? "Item"}</span>
 									<span>{q.choiceLabel ?? "Choice"}</span>
 									<span>{q.reasonLabel ?? "Justification"}</span>
@@ -886,7 +822,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 									{state.classifications.map((row, rowIndex) => (
 										<div
 											key={`${row.item}-${rowIndex}`}
-											className={css({ display: "grid", gap: "0.5rem", padding: "0.625rem 0.5rem", "&:not(:last-child)": { borderBottom: "1px solid var(--border)" }, [sm]: { gridTemplateColumns: "minmax(7rem,0.9fr) minmax(9rem,0.9fr) minmax(12rem,1.4fr)", alignItems: "center" } })}
+											className={css({ display: "grid", gap: "0.5rem", padding: "0.625rem 0.5rem", "&:not(:last-child)": { borderBottom: "1px solid var(--border)" }, [sm]: { gridTemplateColumns: "minmax(0,0.9fr) minmax(0,0.9fr) minmax(0,1.4fr)", alignItems: "center" } })}
 										>
 											<div className={css({ minWidth: 0 })}>
 												<span className={css({ fontSize: "0.625rem", fontWeight: 500, color: "var(--muted-foreground)", [sm]: { display: "none" } })}>
@@ -898,10 +834,10 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 												<span className={css({ fontSize: "0.625rem", fontWeight: 500, color: "var(--muted-foreground)", [sm]: { display: "none" } })}>
 													{q.choiceLabel ?? "Choice"}
 												</span>
-												<select
+												<Select
 													value={row.choice}
 													disabled={submitted}
-													onChange={(e) => setClassificationValue(current, rowIndex, "choice", e.target.value)}
+													onValueChange={(value) => setClassificationValue(current, rowIndex, "choice", value)}
 													className={questionStyles.field}
 												>
 													<option value="">Select...</option>
@@ -910,7 +846,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 															{choice}
 														</option>
 													))}
-												</select>
+												</Select>
 											</label>
 											<label className={cx(questionStyles.stack1, css({ minWidth: 0 }))}>
 												<span className={css({ fontSize: "0.625rem", fontWeight: 500, color: "var(--muted-foreground)", [sm]: { display: "none" } })}>
@@ -975,60 +911,11 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 							</div>
 						) : (
 							<>
-								<p className={css({ fontSize: "0.75rem", fontWeight: 500, lineHeight: 1.375, overflowWrap: "break-word", [sm]: { fontSize: "0.875rem", lineHeight: "1.5rem" } })}>{q.question}</p>
+								<p className="activity-prompt">{q.question}</p>
 
 								{q.choices && q.choices.length > 0 && (
-									<div className={css({ display: "grid", gap: "0.375rem", [sm]: { gap: "0.5rem" } })}>
-										{q.choices.map((choice) => {
-											const isSelected = state.selected.includes(choice);
-											return (
-												<button
-													key={choice}
-													type="button"
-													disabled={submitted}
-													aria-pressed={isSelected}
-													className={cx(
-														css({
-															display: "flex",
-															width: "100%",
-															alignItems: "center",
-															gap: "0.5rem",
-															borderRadius: "0.5rem",
-															border: "1px solid",
-															padding: "0.375rem 0.5rem",
-															textAlign: "left",
-															fontSize: "0.75rem",
-															lineHeight: 1.375,
-															transition: "all 150ms",
-															[sm]: { gap: "0.75rem", borderWidth: "2px", padding: "0.75rem 1rem", fontSize: "0.875rem" },
-														}),
-														isSelected
-															? css({ borderColor: "var(--primary)", background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: "var(--primary)" })
-															: css({ borderColor: "var(--border)", background: "var(--background)", _hover: { borderColor: "color-mix(in srgb, var(--primary) 50%, transparent)" } }),
-														submitted ? css({ cursor: "not-allowed", opacity: 0.7 }) : css({ cursor: "pointer" }),
-													)}
-													onClick={() => toggleChoice(current, choice, q.multiSelect ?? false)}
-												>
-													{q.multiSelect ? (
-														<span
-															className={cx(
-																css({ display: "flex", height: "1rem", width: "1rem", flexShrink: 0, alignItems: "center", justifyContent: "center", borderRadius: "0.25rem", borderWidth: "2px" }),
-																isSelected
-																	? css({ borderColor: "var(--primary)", background: "var(--primary)", color: "var(--primary-foreground)" })
-																	: css({ borderColor: "var(--border)" }),
-															)}
-														>
-															{isSelected ? <Check size={12} /> : null}
-														</span>
-													) : isSelected ? (
-														<CheckCircle2 size={16} className={css({ flexShrink: 0 })} />
-													) : (
-														<div className={css({ height: "1rem", width: "1rem", flexShrink: 0, borderRadius: "9999px", borderWidth: "2px", borderColor: "var(--border)" })} />
-													)}
-													<span className={cx(questionStyles.minFlex, questionStyles.breakWords)}>{choice}</span>
-												</button>
-											);
-										})}
+									<div className="activity-answer-grid" role="group" aria-label={q.multiSelect ? "Choose all that apply" : "Choose an answer"}>
+										{q.choices.map((choice, choiceIndex) => <AnswerTile key={choice} label={choice} index={choiceIndex} selected={state.selected.includes(choice)} multiple={q.multiSelect} disabled={submitted} onClick={() => toggleChoice(current, choice, q.multiSelect ?? false)} />)}
 									</div>
 								)}
 
@@ -1043,7 +930,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 										)}
 										<input
 											type="text"
-											className={cx(questionStyles.field, css({ paddingInline: "0.75rem" }))}
+											aria-label="Your answer" className={cx(questionStyles.field, "activity-field", css({ paddingInline: "0.75rem" }))}
 											placeholder="Your answer..."
 											value={state.text}
 											disabled={submitted}
@@ -1060,8 +947,9 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 							</>
 						)}
 
+						{data.intro && <details className="activity-hint"><summary>About this round</summary><p>{data.intro}</p></details>}
 						{q.hint && !submitted && (
-							<p className={css({ fontSize: "0.75rem", fontStyle: "italic", color: "var(--muted-foreground)", overflowWrap: "break-word" })}>💡 {q.hint}</p>
+							<details className="activity-hint"><summary>Need a hint?</summary><p>{q.hint}</p></details>
 						)}
 					</div>
 
@@ -1071,7 +959,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 							type="button"
 							onClick={goPrev}
 							disabled={isQuestionPending || current === 0}
-							className={questionStyles.buttonSecondary}
+							className={cx(questionStyles.buttonSecondary, "activity-back-action")}
 						>
 							<ChevronLeft size={14} />
 							Back
@@ -1082,20 +970,20 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 								type="button"
 								onClick={goNext}
 								disabled={isQuestionPending}
-								className={questionStyles.buttonPrimary}
+								className={cx(questionStyles.buttonPrimary, "activity-main-action")}
 							>
-								Next
+								{currentAnswered ? "Lock in & next" : "Skip for now"}
 								<ChevronRight size={14} />
 							</button>
 						) : (
 							<button
 								type="button"
 								disabled={!allAnswered}
-								className={cx(questionStyles.buttonPrimary, css({ gap: "0.375rem", [sm]: { gap: "0.5rem" } }))}
+								className={cx(questionStyles.buttonPrimary, "activity-main-action", css({ gap: "0.375rem", [sm]: { gap: "0.5rem" } }))}
 								onClick={handleSubmit}
 							>
 								<ArrowRight size={16} />
-								{total === 1 ? "Answer" : "Submit answers"}
+								{total === 1 ? "Lock in answer" : "Finish round"}
 							</button>
 						)}
 					</div>

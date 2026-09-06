@@ -1,18 +1,18 @@
+import { Select } from "./Select";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { usePostHog } from "@posthog/react";
 import {
 	AlertTriangle,
 	Bookmark,
-	Check,
 	CheckCircle2,
 	ChevronLeft,
 	ChevronRight,
-	Circle,
 	Clock,
 	GraduationCap,
 	Lightbulb,
 	RotateCcw,
 	Send,
+	Sparkles,
 	TrendingUp,
 	Volume2,
 	X,
@@ -21,7 +21,19 @@ import {
 import type { Quiz, QuizQuestion } from "../keating/core";
 import { KeatingStorage } from "../keating/storage";
 import { css, cx } from "../../styled-system/css";
+import { FlashcardShaderField } from "./flashcards/FlashcardShaderField";
+import type { FlashcardShaderPreset } from "./flashcards/game";
 import { parseQuestionTemplate } from "./question-template";
+import {
+	QUIZ_SHADER_OPTIONS,
+	QUIZ_SHADER_STORAGE_KEY,
+	formatQuizDuration,
+	isQuickQuizAnswer,
+	quizTimerState,
+	resolveQuizShaderPreset,
+	uniqueQuizQuestions,
+} from "./quiz/game";
+import { AnswerTile, CompletionMark, RoundProgress } from "./quiz/ActivityGame";
 
 const quizStorage = new KeatingStorage();
 
@@ -40,6 +52,9 @@ export interface QuizResult {
 	timing: QuizTiming;
 	partialCredits: Record<string, number>;
 	flagged: string[];
+	/** Authored countdowns that expired during this run. */
+	timedOutQuestionIds?: string[];
+	examTimedOut?: boolean;
 }
 
 export function createQuizResultId(slug: string): string {
@@ -56,10 +71,12 @@ export interface TopicStats {
 	topQuartile: number;
 }
 
-interface QuizRendererProps {
+export interface QuizRendererProps {
 	quiz: Quiz;
 	onSubmit?: (result: QuizResult) => void;
 	topicStats?: TopicStats | null;
+	/** Initial visual atmosphere. A saved learner choice takes precedence. */
+	defaultShaderPreset?: FlashcardShaderPreset;
 }
 
 type AnswerState = Record<string, string>;
@@ -82,6 +99,26 @@ function saveBookmarkIds(ids: string[]) {
 		localStorage.setItem(BOOKMARK_KEY, JSON.stringify(ids));
 	} catch {
 		/* ignore */
+	}
+}
+
+function loadQuizShaderPreset(
+	seed: string,
+	fallback?: FlashcardShaderPreset,
+): FlashcardShaderPreset {
+	if (fallback) return resolveQuizShaderPreset(fallback, seed);
+	try {
+		return resolveQuizShaderPreset(localStorage.getItem(QUIZ_SHADER_STORAGE_KEY), seed);
+	} catch {
+		return resolveQuizShaderPreset(undefined, seed);
+	}
+}
+
+function saveQuizShaderPreset(preset: FlashcardShaderPreset) {
+	try {
+		localStorage.setItem(QUIZ_SHADER_STORAGE_KEY, preset);
+	} catch {
+		/* visual preference only */
 	}
 }
 
@@ -225,40 +262,42 @@ const shared = {
 
 const quizStyles = {
 	optionBase: css({
+		position: "relative",
 		display: "flex",
 		minHeight: "2.75rem",
 		width: "100%",
 		alignItems: "center",
 		gap: "0.75rem",
-		borderRadius: "0.5rem",
-		borderWidth: "1px",
-		padding: "0.5rem 0.875rem",
+		border: 0,
+		borderBottom: "1px solid var(--border)",
+		borderRadius: "0.25rem",
+		background: "transparent",
+		padding: "0.625rem 0.75rem",
 		fontSize: "0.875rem",
 		textAlign: "left",
 		cursor: "pointer",
-		transition: "all 150ms",
+		transition: "background-color 150ms, color 150ms, transform 120ms",
+		_hover: { background: "color-mix(in srgb, var(--accent) 72%, transparent)" },
+		_active: { transform: "translateY(1px)" },
+		_focusVisible: {
+			outline: "3px solid var(--accent-green, var(--ring))",
+			outlineOffset: "2px",
+		},
 	}),
 	optionCorrect: css({
-		borderColor: "rgba(16, 185, 129, 0.6)",
-		background: "rgba(16, 185, 129, 0.1)",
+		background: "color-mix(in srgb, var(--accent-green) 13%, transparent)",
 		color: "#047857",
 		[dark]: { color: "#6ee7b7" },
 	}),
 	optionWrong: css({
-		borderColor: "color-mix(in srgb, var(--destructive) 60%, transparent)",
 		background: "color-mix(in srgb, var(--destructive) 10%, transparent)",
 		color: "var(--destructive)",
 	}),
 	optionSelected: css({
-		borderColor: "var(--primary)",
-		background: "color-mix(in srgb, var(--primary) 10%, transparent)",
-		color: "var(--primary)",
+		background: "color-mix(in srgb, var(--arena-accent, var(--primary)) 14%, transparent)",
+		color: "color-mix(in srgb, var(--arena-accent, var(--primary)) 70%, var(--foreground))",
 	}),
-	optionNeutral: css({
-		borderColor: "var(--border)",
-		background: "var(--background)",
-		_hover: { borderColor: "color-mix(in srgb, var(--primary) 50%, transparent)" },
-	}),
+	optionNeutral: css({}),
 	disabled: css({ cursor: "not-allowed", opacity: 0.7 }),
 	checkboxBase: css({
 		display: "flex",
@@ -286,6 +325,10 @@ const quizStyles = {
 		color: "var(--muted-foreground)",
 		transition: "color 150ms, background-color 150ms",
 		_hover: { background: "var(--accent)", color: "var(--accent-foreground)" },
+		_focusVisible: {
+			outline: "3px solid var(--accent-green, var(--ring))",
+			outlineOffset: "2px",
+		},
 	}),
 	// The quiz shell already draws a frame; question bodies are spacing only so
 	// options don't read as boxes nested inside a box.
@@ -344,6 +387,10 @@ const quizStyles = {
 		fontWeight: 500,
 		transition: "background-color 150ms",
 		_hover: { background: "var(--accent)" },
+		_focusVisible: {
+			outline: "3px solid var(--accent-green, var(--ring))",
+			outlineOffset: "2px",
+		},
 		_disabled: { opacity: 0.4, pointerEvents: "none" },
 	}),
 	buttonPrimary: css({
@@ -361,7 +408,200 @@ const quizStyles = {
 		color: "var(--primary-foreground)",
 		transition: "background-color 150ms",
 		_hover: { background: "color-mix(in srgb, var(--primary) 90%, transparent)" },
+		_focusVisible: {
+			outline: "3px solid var(--accent-green, var(--ring))",
+			outlineOffset: "2px",
+		},
 		_disabled: { opacity: 0.4, pointerEvents: "none" },
+	}),
+	shell: css({
+		position: "relative",
+		isolation: "isolate",
+		display: "grid",
+		gap: "1rem",
+		marginBlock: "0.5rem",
+		paddingBlock: "0.75rem",
+		color: "var(--foreground)",
+		[sm]: { marginBlock: "0.75rem", gap: "1.25rem", paddingBlock: "1rem" },
+	}),
+	effectHeader: css({
+		position: "relative",
+		display: "grid",
+		minHeight: "7.25rem",
+		alignContent: "space-between",
+		gap: "0.875rem",
+		overflow: "hidden",
+		borderRadius: "0.625rem",
+		background: "var(--crt)",
+		padding: { base: "0.875rem", sm: "1rem 1.125rem" },
+		color: "var(--phosphor)",
+	}),
+	effectHeaderContent: css({
+		position: "relative",
+		zIndex: 1,
+		display: "flex",
+		flexWrap: "wrap",
+		alignItems: "flex-start",
+		justifyContent: "space-between",
+		gap: "0.75rem",
+	}),
+	topic: css({
+		minWidth: 0,
+		maxWidth: "62ch",
+		overflowWrap: "anywhere",
+		fontFamily: "var(--mono-display, var(--font-mono))",
+		fontSize: "1rem",
+		fontWeight: 700,
+		lineHeight: 1.35,
+	}),
+	headerMeta: css({
+		display: "flex",
+		flexWrap: "wrap",
+		alignItems: "center",
+		justifyContent: "flex-end",
+		gap: "0.5rem",
+		fontFamily: "var(--mono-body, var(--font-mono))",
+		fontSize: "0.6875rem",
+		fontVariantNumeric: "tabular-nums",
+		color: "var(--phosphor-dim)",
+	}),
+	headerInstruments: css({
+		display: "grid",
+		justifyItems: "end",
+		gap: "0.375rem",
+	}),
+	timer: css({
+		"--timer-color": "var(--arena-accent, var(--phosphor))",
+		display: "grid",
+		minWidth: { base: "7.25rem", sm: "8.75rem" },
+		justifyItems: "end",
+		gap: "0.25rem",
+		color: "var(--timer-color)",
+		"&[data-urgency=warning]": {
+			"--timer-color": "var(--amber, #e8a33d)",
+		},
+		"&[data-urgency=critical]": {
+			"--timer-color": "var(--red, #d95f4f)",
+		},
+	}),
+	timerDigits: css({
+		display: "inline-flex",
+		alignItems: "center",
+		gap: "0.4rem",
+		fontFamily: "var(--mono-display, var(--font-mono))",
+		fontSize: { base: "1.75rem", sm: "2.125rem" },
+		fontWeight: 700,
+		fontVariantNumeric: "tabular-nums",
+		fontFeatureSettings: "\"tnum\" 1",
+		letterSpacing: "-0.03em",
+		lineHeight: 1,
+		textShadow: "0 0 16px color-mix(in srgb, var(--timer-color) 55%, transparent)",
+	}),
+	timerTrack: css({
+		width: "100%",
+		height: "0.3125rem",
+		overflow: "hidden",
+		borderRadius: "9999px",
+		background: "color-mix(in srgb, var(--timer-color) 19%, transparent)",
+	}),
+	timerFill: css({
+		height: "100%",
+		borderRadius: "inherit",
+		background: "var(--timer-color)",
+		boxShadow: "0 0 10px color-mix(in srgb, var(--timer-color) 72%, transparent)",
+		transformOrigin: "left center",
+		transition: "transform 900ms linear, background-color 150ms",
+	}),
+	effectSelectLabel: css({
+		display: "inline-flex",
+		alignItems: "center",
+		gap: "0.25rem",
+	}),
+	effectSelect: css({
+		maxWidth: "7.25rem",
+		border: 0,
+		borderBottom: "1px solid color-mix(in srgb, var(--phosphor) 52%, transparent)",
+		borderRadius: 0,
+		background: "transparent",
+		padding: "0.125rem 1.15rem 0.125rem 0.125rem",
+		font: "inherit",
+		color: "var(--phosphor)",
+		outline: "none",
+		_focusVisible: {
+			outline: "2px solid var(--phosphor)",
+			outlineOffset: "2px",
+		},
+		"& option": {
+			background: "var(--crt)",
+			color: "var(--phosphor)",
+		},
+	}),
+	progressRow: css({
+		position: "relative",
+		zIndex: 1,
+		display: "flex",
+		alignItems: "center",
+		gap: "0.625rem",
+	}),
+	progressTrack: css({
+		height: "0.375rem",
+		flex: 1,
+		overflow: "hidden",
+		borderRadius: "9999px",
+		background: "color-mix(in srgb, var(--phosphor) 18%, transparent)",
+	}),
+	progressFill: css({
+		height: "100%",
+		borderRadius: "inherit",
+		background: "var(--arena-accent, var(--phosphor))",
+		boxShadow: "0 0 12px color-mix(in srgb, var(--arena-accent, var(--phosphor)) 65%, transparent)",
+		transformOrigin: "left center",
+		transition: "transform 240ms cubic-bezier(0.22, 1, 0.36, 1)",
+	}),
+	questionStage: css({
+		position: "relative",
+		minWidth: 0,
+		paddingInline: { base: "0.125rem", sm: "0.5rem" },
+	}),
+	nav: css({
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "space-between",
+		gap: "0.5rem",
+		paddingInline: { base: "0.125rem", sm: "0.5rem" },
+	}),
+	resultIntro: css({
+		display: "grid",
+		gap: "0.25rem",
+	}),
+	resultSignal: css({
+		fontFamily: "var(--mono-display, var(--font-mono))",
+		fontSize: "1.25rem",
+		fontWeight: 700,
+	}),
+	resultMeta: css({
+		display: "flex",
+		flexWrap: "wrap",
+		gap: "0.5rem 0.875rem",
+		fontSize: "0.75rem",
+		color: "var(--muted-foreground)",
+	}),
+	empty: css({
+		display: "grid",
+		minHeight: "8rem",
+		placeItems: "center",
+		borderBlock: "1px solid var(--border)",
+		padding: "1rem",
+		textAlign: "center",
+		color: "var(--muted-foreground)",
+	}),
+	visuallyHidden: css({
+		position: "absolute",
+		width: "1px",
+		height: "1px",
+		overflow: "hidden",
+		clip: "rect(0 0 0 0)",
+		whiteSpace: "nowrap",
 	}),
 };
 
@@ -392,88 +632,16 @@ function isCorrect(q: QuizQuestion, rawAnswer: string): boolean {
 	return rawAnswer.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase();
 }
 
-function QuizOption({
-	label,
-	selected,
-	onClick,
-	disabled,
-	status,
-	checkbox,
-}: {
+function QuizOption({ label, index, selected, onClick, disabled, status, checkbox }: {
 	label: string;
+	index?: number;
 	selected: boolean;
 	onClick: () => void;
 	disabled?: boolean;
 	status?: "correct" | "wrong" | "neutral";
 	checkbox?: boolean;
 }) {
-	const stateClass =
-		status === "correct"
-			? quizStyles.optionCorrect
-			: status === "wrong"
-				? quizStyles.optionWrong
-				: selected
-					? quizStyles.optionSelected
-					: quizStyles.optionNeutral;
-	return (
-		<button
-			type="button"
-			className={cx(quizStyles.optionBase, stateClass, disabled && quizStyles.disabled)}
-			onClick={onClick}
-			disabled={disabled}
-			aria-pressed={selected}
-		>
-			{checkbox ? (
-				<span
-					className={cx(
-						quizStyles.checkboxBase,
-						selected ? quizStyles.checkboxSelected : quizStyles.checkboxNeutral,
-					)}
-				>
-					{selected ? <Check size={12} /> : null}
-				</span>
-			) : status === "correct" ? (
-				<CheckCircle2 size={16} />
-			) : status === "wrong" ? (
-				<XCircle size={16} />
-			) : selected ? (
-				<CheckCircle2 size={16} />
-			) : (
-				<Circle size={16} />
-			)}
-			<span className={css({ minWidth: 0, flex: 1, overflowWrap: "anywhere" })}>{label}</span>
-		</button>
-	);
-}
-
-function QuestionTimer({
-	seconds,
-	warningAt = 5,
-}: {
-	seconds: number;
-	warningAt?: number;
-}) {
-	const display = formatCountdown(seconds);
-	const urgent = seconds <= warningAt;
-	return (
-		<span
-			className={cx(
-				"font-terminal",
-				css({
-					display: "inline-flex",
-					alignItems: "center",
-					gap: "0.25rem",
-					fontSize: "0.875rem",
-					fontVariantNumeric: "tabular-nums",
-					color: urgent ? "var(--destructive)" : "var(--muted-foreground)",
-					animation: urgent ? "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite" : undefined,
-				}),
-			)}
-		>
-			<Clock size={14} />
-			{display}
-		</span>
-	);
+	return <AnswerTile label={label} index={index} selected={selected} onClick={onClick} disabled={disabled} status={status} multiple={checkbox} />;
 }
 
 function ReframeToggle({
@@ -487,56 +655,49 @@ function ReframeToggle({
 }) {
 	if (modes.length === 0) return null;
 	return (
-		<div className={css({ display: "flex", flexWrap: "wrap", gap: "0.25rem" })}>
-			<button
-				type="button"
-				onClick={() => onChange(null)}
-				className={cx(
-					css({
-						borderRadius: "0.375rem",
-						padding: "0.25rem 0.5rem",
-						fontSize: "0.6875rem",
-						fontWeight: 500,
-						transition: "color 150ms, background-color 150ms",
-					}),
-					active === null
-						? css({ background: "var(--primary)", color: "var(--primary-foreground)" })
-						: css({
-							background: "var(--muted)",
-							color: "var(--muted-foreground)",
-							_hover: { background: "var(--accent)", color: "var(--accent-foreground)" },
-						}),
-				)}
+		<label className={css({ display: "inline-flex", alignItems: "center", gap: "0.375rem", fontSize: "0.6875rem", color: "var(--muted-foreground)" })}>
+			<span>View</span>
+			<Select
+				aria-label="Question wording"
+				value={active ?? ""}
+				onValueChange={(value) => onChange(value || null)}
+				className={css({
+					border: 0,
+					borderBottom: "1px solid var(--border)",
+					borderRadius: 0,
+					background: "transparent",
+					padding: "0.2rem 1.25rem 0.2rem 0.125rem",
+					fontSize: "0.6875rem",
+					color: "var(--foreground)",
+					_focusVisible: { outline: "2px solid var(--ring)", outlineOffset: "2px" },
+				})}
 			>
-				Default
-			</button>
-			{modes.map((mode) => (
-				<button
-					key={mode}
-					type="button"
-					onClick={() => onChange(mode)}
-					className={cx(
-						css({
-							borderRadius: "0.375rem",
-							padding: "0.25rem 0.5rem",
-							fontSize: "0.6875rem",
-							fontWeight: 500,
-							transition: "color 150ms, background-color 150ms",
-						}),
-						active === mode
-							? css({ background: "var(--primary)", color: "var(--primary-foreground)" })
-							: css({
-								background: "var(--muted)",
-								color: "var(--muted-foreground)",
-								_hover: { background: "var(--accent)", color: "var(--accent-foreground)" },
-							}),
-					)}
-				>
-					{mode}
-				</button>
-			))}
-		</div>
+				<option value="">Default</option>
+				{modes.map((mode) => <option key={mode} value={mode}>{mode}</option>)}
+			</Select>
+		</label>
 	);
+}
+
+function quizShaderAccent(preset: FlashcardShaderPreset): string {
+	if (preset === "solar" || preset === "contour") return "var(--amber, #e8a33d)";
+	if (preset === "prism") return "var(--red, #d95f4f)";
+	if (preset === "current" || preset === "orbit") return "#67d7e8";
+	if (preset === "still") return "var(--phosphor-dim, #9bd8ad)";
+	return "var(--phosphor, #4be388)";
+}
+
+function quizQuestionEntryClass(preset: FlashcardShaderPreset): string {
+	return preset === "still" ? "quiz-question-enter" : `quiz-question-enter-${preset}`;
+}
+
+function stableQuizSeed(value: string): number {
+	let hash = 2166136261;
+	for (let index = 0; index < value.length; index += 1) {
+		hash ^= value.charCodeAt(index);
+		hash = Math.imul(hash, 16777619);
+	}
+	return (hash >>> 0) / 0xffffffff * 131;
 }
 
 function showsBinaryResult(q: QuizQuestion): boolean {
@@ -623,7 +784,7 @@ function MultiBlankFillIn({
 								aria-label={blankDef?.hint ? `${blankDef.hint} blank` : `Blank ${bIdx + 1}`}
 								title={blankDef?.hint}
 								className={cx(
-									quizStyles.fieldBase,
+									quizStyles.fieldBase, "activity-field",
 									css({ display: "inline-block", height: "1.75rem", width: "7rem", paddingInline: "0.5rem", textAlign: "center", [sm]: { width: "10rem" }, "&::placeholder": { color: "color-mix(in srgb, var(--muted-foreground) 50%, transparent)" } }),
 									isCorrect ? quizStyles.inputCorrect : isWrong ? quizStyles.inputWrong : quizStyles.inputNeutral,
 								)}
@@ -657,7 +818,7 @@ function QuestionCard({
 	onChange,
 	revealed,
 	timeMs,
-	timeRemaining,
+	timedOut = false,
 	bookmarked,
 	onToggleBookmark,
 	onSpeak,
@@ -670,7 +831,7 @@ function QuestionCard({
 	onChange: (val: string) => void;
 	revealed: boolean;
 	timeMs?: number;
-	timeRemaining?: number;
+	timedOut?: boolean;
 	bookmarked: boolean;
 	onToggleBookmark: () => void;
 	onSpeak: () => void;
@@ -710,13 +871,13 @@ function QuestionCard({
 	return (
 		<div className={quizStyles.card}>
 			<div className={css({ display: "flex", flexDirection: "column", alignItems: "stretch", gap: "0.5rem", [sm]: { flexDirection: "row", alignItems: "flex-start" } })}>
-				<div className={cx(shared.minFlex, shared.stack2)}>
-					{/* Level is the eyebrow. The index only appears in the revealed list,
-					    where there is no progress row to carry it. */}
-					<span className={cx("font-terminal", css({ fontSize: "0.6875rem", letterSpacing: "0.06em", color: "var(--muted-foreground)" }))}>
-						{revealed ? `${index + 1} · ${q.level.toUpperCase()}` : q.level.toUpperCase()}
-					</span>
-					<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: "0.5rem" })}>
+					<div className={cx(shared.minFlex, shared.stack2)}>
+						{revealed ? (
+							<span className={cx("font-terminal", css({ fontSize: "0.6875rem", color: "var(--muted-foreground)" }))}>
+								{index + 1} · {q.level}
+							</span>
+						) : null}
+						<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: "0.5rem" })}>
 						{isMultiBlankFillIn ? (
 							<div className={shared.minFlex}>
 								<MultiBlankFillIn
@@ -728,9 +889,9 @@ function QuestionCard({
 									correctAnswers={q.correctAnswers ?? [q.correctAnswer]}
 								/>
 							</div>
-						) : (
-							<p className={css({ minWidth: 0, flex: 1, overflowWrap: "anywhere", fontSize: "0.875rem", fontWeight: 500, lineHeight: "1.5rem" })}>{displayQuestion}</p>
-						)}
+							) : (
+								<p className="activity-prompt">{displayQuestion}</p>
+							)}
 						{revealed && showsBinaryResult(q) && <QuizResultBadge correct={binaryCorrect} />}
 					</div>
 					{reframeModes.length > 0 && !revealed && onReframe && (
@@ -773,21 +934,20 @@ function QuestionCard({
 					>
 						<Bookmark size={14} fill={bookmarked ? "currentColor" : "none"} />
 					</button>
-					{typeof timeRemaining === "number" && !revealed && (
-						<QuestionTimer seconds={timeRemaining} />
-					)}
+					{revealed && timedOut ? <span className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>Timed out</span> : null}
+					{revealed && isQuickQuizAnswer({ timeMs, timeLimitSeconds: q.timeLimit, answered: Boolean(answer.trim()), timedOut }) ? <span title="Answered within the first quarter of the time budget. Timing does not indicate correctness." className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>Quick answer</span> : null}
 					{revealed && typeof timeMs === "number" && (
 						<span className={cx("font-terminal", css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", fontSize: "0.625rem", color: "var(--muted-foreground)" }))}>
-							<Clock size={11} />
-							{formatDuration(timeMs)}
+							<Clock size={11} aria-hidden="true" />
+							<span aria-label={`Time on question: ${timeMs} milliseconds`}>{formatQuizDuration(timeMs)}</span>
 						</span>
 					)}
 				</div>
 			</div>
 
 			{q.type === "multiple_choice" && q.options && (
-				<div className={shared.stack2}>
-					{q.options.map((opt) => {
+				<div className="activity-answer-grid">
+					{q.options.map((opt, optionIndex) => {
 						const chosen = answer === opt;
 						let status: "correct" | "wrong" | "neutral" | undefined;
 						if (revealed) {
@@ -798,6 +958,7 @@ function QuestionCard({
 							<QuizOption
 								key={opt}
 								label={opt}
+								index={optionIndex}
 								selected={chosen}
 								onClick={() => onChange(opt)}
 								disabled={revealed}
@@ -809,8 +970,8 @@ function QuestionCard({
 			)}
 
 			{q.type === "multi_select" && q.options && (
-				<div className={shared.stack2}>
-					{q.options.map((opt) => {
+				<div className="activity-answer-grid">
+					{q.options.map((opt, optionIndex) => {
 						const chosen = selectedMulti.includes(opt);
 						let status: "correct" | "wrong" | "neutral" | undefined;
 						if (revealed) {
@@ -822,6 +983,7 @@ function QuestionCard({
 							<QuizOption
 								key={opt}
 								label={opt}
+								index={optionIndex}
 								selected={chosen}
 								onClick={() => toggleMulti(opt)}
 								disabled={revealed}
@@ -837,7 +999,7 @@ function QuestionCard({
 				<div className={shared.stack2}>
 					<textarea
 						className={cx(
-							quizStyles.fieldBase,
+							quizStyles.fieldBase, "activity-field",
 							css({ minHeight: "80px", resize: "none" }),
 							revealed && q.type === "fill_in"
 								? wrong
@@ -847,27 +1009,27 @@ function QuestionCard({
 										: quizStyles.inputNeutral
 								: quizStyles.inputNeutral,
 						)}
+						aria-label="Your answer"
 						placeholder={q.type === "fill_in" ? "Fill in the blank..." : "Type your answer..."}
 						value={answer}
 						onChange={(e) => onChange(e.target.value)}
 						disabled={revealed}
 					/>
-					{revealed && !(q.type === "fill_in" && q.blanks && q.blanks.length > 0) && (
-						<div className={css({ display: "flex", alignItems: "flex-start", gap: "0.5rem", borderRadius: "0.25rem", background: "color-mix(in srgb, var(--muted) 50%, transparent)", padding: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-							<Lightbulb size={14} className={css({ marginTop: "0.125rem", flexShrink: 0, color: "var(--accent)" })} />
-							<div className={shared.stack1}>
-								<p>
-									<span className={css({ fontWeight: 500 })}>{isOpenEnded(q) ? "Reference answer:" : "Correct:"}</span> {q.correctAnswer}
-								</p>
-								{isOpenEnded(q) && (
-									<p className={css({ fontSize: "0.625rem", fontStyle: "italic" })}>
-										Pending review — your teacher is judging this answer in chat.
-										{credit > 0 && ` Heuristic hint: ${credit >= 0.6 ? "looks close" : "some overlap"} (not a grade).`}
+						{revealed && !(q.type === "fill_in" && q.blanks && q.blanks.length > 0) && (
+							<div className={css({ display: "flex", alignItems: "flex-start", gap: "0.5rem", borderTop: "1px solid var(--border)", paddingTop: "0.625rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+								<Lightbulb size={14} className={css({ marginTop: "0.125rem", flexShrink: 0, color: "var(--accent)" })} />
+								<div className={shared.stack1}>
+									<p>
+										<span className={css({ fontWeight: 600, color: "var(--foreground)" })}>{q.correctAnswer}</span>
 									</p>
-								)}
-								{q.explanation && <p>{q.explanation}</p>}
-								{q.rubric && <p className={css({ fontSize: "0.625rem", opacity: 0.7 })}>{q.rubric}</p>}
-							</div>
+									{isOpenEnded(q) && (
+										<p className={css({ fontSize: "0.625rem" })}>
+											Teacher review pending{credit > 0 ? ` · ${credit >= 0.6 ? "close match" : "partial match"}` : ""}.
+										</p>
+									)}
+									{q.explanation && <p>{q.explanation}</p>}
+									{q.rubric && <p className={css({ fontSize: "0.625rem" })}>{q.rubric}</p>}
+								</div>
 						</div>
 					)}
 				</div>
@@ -875,7 +1037,7 @@ function QuestionCard({
 
 			{q.type === "true_false" && (
 				<div className={css({ display: "flex", gap: "0.75rem" })}>
-					{["True", "False"].map((opt) => {
+					{["True", "False"].map((opt, optionIndex) => {
 						const chosen = answer === opt;
 						let status: "correct" | "wrong" | "neutral" | undefined;
 						if (revealed) {
@@ -886,6 +1048,7 @@ function QuestionCard({
 							<QuizOption
 								key={opt}
 								label={opt}
+								index={optionIndex}
 								selected={chosen}
 								onClick={() => onChange(opt)}
 								disabled={revealed}
@@ -902,6 +1065,7 @@ function QuestionCard({
 						<span className={cx("font-terminal", css({ fontSize: "0.75rem", color: "var(--muted-foreground)" }))}>{q.min ?? 0}</span>
 						<input
 							type="range"
+							aria-label={displayQuestion}
 							min={q.min ?? 0}
 							max={q.max ?? 100}
 							step={q.step ?? 1}
@@ -915,13 +1079,13 @@ function QuestionCard({
 					<div className={css({ textAlign: "center", fontSize: "0.875rem", fontWeight: 500 })}>
 						{answer || (q.min ?? 0).toString()}
 					</div>
-					{revealed && (
-						<div className={css({ display: "flex", alignItems: "flex-start", gap: "0.5rem", borderRadius: "0.25rem", background: "color-mix(in srgb, var(--muted) 50%, transparent)", padding: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-							<Lightbulb size={14} className={css({ marginTop: "0.125rem", flexShrink: 0, color: "var(--accent)" })} />
-							<div className={shared.stack1}>
-								<p>
-									<span className={css({ fontWeight: 500 })}>Correct:</span> {q.correctAnswer}
-								</p>
+						{revealed && (
+							<div className={css({ display: "flex", alignItems: "flex-start", gap: "0.5rem", borderTop: "1px solid var(--border)", paddingTop: "0.625rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+								<Lightbulb size={14} className={css({ marginTop: "0.125rem", flexShrink: 0, color: "var(--accent)" })} />
+								<div className={shared.stack1}>
+									<p>
+										<span className={css({ fontWeight: 600, color: "var(--foreground)" })}>{q.correctAnswer}</span>
+									</p>
 								{q.explanation && <p>{q.explanation}</p>}
 							</div>
 						</div>
@@ -931,12 +1095,13 @@ function QuestionCard({
 
 			{q.type === "dropdown" && q.options && (
 				<div className={shared.stack2}>
-					<select
+					<Select
+						aria-label={displayQuestion}
 						value={answer}
-						onChange={(e) => onChange(e.target.value)}
+						onValueChange={(value) => onChange(value)}
 						disabled={revealed}
 						className={cx(
-							quizStyles.fieldBase,
+							quizStyles.fieldBase, "activity-field",
 							revealed ? (correct ? quizStyles.inputCorrect : quizStyles.inputWrong) : quizStyles.inputNeutral,
 						)}
 					>
@@ -948,14 +1113,14 @@ function QuestionCard({
 								{opt}
 							</option>
 						))}
-					</select>
-					{revealed && (
-						<div className={css({ display: "flex", alignItems: "flex-start", gap: "0.5rem", borderRadius: "0.25rem", background: "color-mix(in srgb, var(--muted) 50%, transparent)", padding: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-							<Lightbulb size={14} className={css({ marginTop: "0.125rem", flexShrink: 0, color: "var(--accent)" })} />
-							<div className={shared.stack1}>
-								<p>
-									<span className={css({ fontWeight: 500 })}>Correct:</span> {q.correctAnswer}
-								</p>
+					</Select>
+						{revealed && (
+							<div className={css({ display: "flex", alignItems: "flex-start", gap: "0.5rem", borderTop: "1px solid var(--border)", paddingTop: "0.625rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+								<Lightbulb size={14} className={css({ marginTop: "0.125rem", flexShrink: 0, color: "var(--accent)" })} />
+								<div className={shared.stack1}>
+									<p>
+										<span className={css({ fontWeight: 600, color: "var(--foreground)" })}>{q.correctAnswer}</span>
+									</p>
 								{q.explanation && <p>{q.explanation}</p>}
 							</div>
 						</div>
@@ -1058,7 +1223,7 @@ function BenchmarkComparison({
 	total: number;
 	stats: TopicStats | null | undefined;
 }) {
-	if (!stats || stats.count < 5) return null;
+	if (!stats || stats.count < 5 || total <= 0) return null;
 	const pct = (score / total) * 100;
 	const avgPct = (stats.avgScore / total) * 100;
 	const qPct = (stats.topQuartile / total) * 100;
@@ -1101,10 +1266,16 @@ function BenchmarkComparison({
 	);
 }
 
-QuizRenderer.displayName = "QuizRenderer";
-
-export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) {
+export function QuizRenderer({
+	quiz,
+	onSubmit,
+	topicStats,
+	defaultShaderPreset,
+}: QuizRendererProps) {
 	const posthog = usePostHog();
+	const questions = useMemo(() => uniqueQuizQuestions(quiz.questions), [quiz.questions]);
+	const normalizedQuiz = useMemo(() => ({ ...quiz, questions }), [questions, quiz]);
+	const quizIdentity = `${quiz.slug ?? quiz.topic}:${questions.map((question) => question.id).join("|")}`;
 	const [answers, setAnswers] = useState<AnswerState>({});
 	const [revealed, setRevealed] = useState(false);
 	const [current, setCurrent] = useState(0);
@@ -1114,131 +1285,269 @@ export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) 
 	const [skippedIds, setSkippedIds] = useState<Set<string>>(new Set());
 	const [reframeModes, setReframeModes] = useState<Record<string, string | null>>({});
 	const [fetchedStats, setFetchedStats] = useState<TopicStats | null | undefined>(topicStats);
+	const [shaderPreset, setShaderPreset] = useState<FlashcardShaderPreset>(() => (
+		loadQuizShaderPreset(quizIdentity, defaultShaderPreset)
+	));
 	const resultIdRef = useRef(createQuizResultId(quiz.slug ?? quiz.topic));
-
-	// Track quiz_started once on mount
-	useEffect(() => {
-		posthog.capture('quiz_started', {
-			question_count: quiz.questions.length,
-			has_stable_slug: Boolean(quiz.slug),
-		});
-	}, []);
+	const submittedRef = useRef(false);
+	const previousQuizIdentityRef = useRef(quizIdentity);
 
 	// Timing: total wall-clock plus accrued time per question while stepping.
 	const startRef = useRef<number>(Date.now());
-	const questionEnteredRef = useRef<number>(Date.now());
+	const questionEnteredRef = useRef<number>(startRef.current);
 	const perQuestionRef = useRef<Record<string, number>>({});
 	const finalTimingRef = useRef<QuizTiming | null>(null);
+	const timedOutIdsRef = useRef(new Set<string>());
+	const [timedOutIds, setTimedOutIds] = useState<Set<string>>(new Set());
+	const deadlineRef = useRef<{ questionId: string; at: number } | undefined>(undefined);
 
-	// Build visible question queue (non-skipped questions)
-	const visibleQuestions = useMemo(() => {
-		return quiz.questions.filter((q) => !skippedIds.has(q.id));
-	}, [quiz.questions, skippedIds]);
-
+	const visibleQuestions = useMemo(
+		() => questions.filter((question) => !skippedIds.has(question.id)),
+		[questions, skippedIds],
+	);
 	const totalVisible = visibleQuestions.length;
-	// Open-ended questions are judged by the teacher (model) in chat, not by the
-	// local heuristic, so they're excluded from the binary score shown here and
-	// surfaced as "pending review" instead.
 	const scorableQuestions = useMemo(
-		() => visibleQuestions.filter((q) => !isOpenEnded(q)),
+		() => visibleQuestions.filter((question) => !isOpenEnded(question)),
 		[visibleQuestions],
 	);
 	const pendingReviewCount = totalVisible - scorableQuestions.length;
 	const totalScored = scorableQuestions.length;
 	const currentQuestion = visibleQuestions[current];
 	const timeLimit = currentQuestion?.timeLimit;
-	const [timeRemaining, setTimeRemaining] = useState<number | undefined>(timeLimit);
+	const [questionTimer, setQuestionTimer] = useState<{ questionId?: string; remaining?: number }>({ questionId: currentQuestion?.id, remaining: timeLimit });
+	const timeRemaining = questionTimer.questionId === currentQuestion?.id ? questionTimer.remaining : timeLimit;
+
+	const accrueCurrent = useCallback((now = Date.now()) => {
+		const questionId = visibleQuestions[current]?.id;
+		if (!questionId) return;
+		const deadline = deadlineRef.current;
+		const resolvedAt = deadline?.questionId === questionId ? Math.min(now, deadline.at) : now;
+		perQuestionRef.current[questionId] = (perQuestionRef.current[questionId] ?? 0) + Math.max(0, resolvedAt - questionEnteredRef.current);
+		questionEnteredRef.current = now;
+	}, [current, visibleQuestions]);
+
+	const recordTimeout = useCallback((now: number) => {
+		const deadline = deadlineRef.current;
+		if (!deadline || deadline.questionId !== currentQuestion?.id || now < deadline.at) return;
+		if (!timedOutIdsRef.current.has(deadline.questionId)) {
+			timedOutIdsRef.current.add(deadline.questionId);
+			setTimedOutIds(new Set(timedOutIdsRef.current));
+		}
+	}, [currentQuestion?.id]);
+
+	const partialCredits = useMemo(() => {
+		const map: Record<string, number> = {};
+		for (const question of scorableQuestions) {
+			map[question.id] = questionCredit(question, answers[question.id] || "");
+		}
+		return map;
+	}, [answers, scorableQuestions]);
+
+	const rawScore = useMemo(() => {
+		let correct = 0;
+		for (const question of scorableQuestions) {
+			if (isCorrect(question, answers[question.id] || "")) correct++;
+		}
+		return correct;
+	}, [answers, scorableQuestions]);
+
+	const partialCreditPoints = useMemo(
+		() => scorableQuestions.reduce((sum, question) => sum + (partialCredits[question.id] ?? 0), 0),
+		[partialCredits, scorableQuestions],
+	);
+	const percent = totalScored > 0 ? Math.round((rawScore / totalScored) * 100) : 0;
+	const answeredCount = visibleQuestions.filter((question) => (answers[question.id] || "").trim().length > 0).length;
+	const allAnswered = totalVisible > 0 && answeredCount === totalVisible;
+
+	const doSubmit = useCallback(() => {
+		if (submittedRef.current || totalVisible === 0) return;
+		submittedRef.current = true;
+		const now = Date.now();
+		recordTimeout(now);
+		const deadline = deadlineRef.current;
+		const completedAt = deadline?.questionId === currentQuestion?.id ? Math.min(now, deadline.at) : now;
+		accrueCurrent(completedAt);
+		const timing: QuizTiming = {
+			totalMs: Math.max(0, completedAt - startRef.current),
+			perQuestionMs: { ...perQuestionRef.current },
+		};
+		finalTimingRef.current = timing;
+		setElapsed(timing.totalMs);
+		setRevealed(true);
+		posthog.capture("quiz_completed", {
+			question_count: questions.length,
+			score: rawScore,
+			partial_credit_points: partialCreditPoints,
+			duration_ms: timing.totalMs,
+		});
+		onSubmit?.({
+			resultId: resultIdRef.current,
+			answers,
+			score: rawScore,
+			partialCreditPoints,
+			timing,
+			partialCredits,
+			flagged: bookmarkIds,
+			timedOutQuestionIds: [...timedOutIdsRef.current],
+		});
+		quizStorage.saveQuizResult(rawScore, partialCreditPoints, totalScored, quiz.slug, {
+			resultId: resultIdRef.current,
+			answers,
+			partialCredits,
+			timing,
+			flaggedQuestionIds: bookmarkIds,
+			timedOutQuestionIds: [...timedOutIdsRef.current],
+			pendingGradeQuestionIds: questions.filter(isOpenEnded).map((question) => question.id),
+		}).catch(() => {});
+		window.speechSynthesis?.cancel();
+	}, [accrueCurrent, answers, bookmarkIds, currentQuestion?.id, onSubmit, partialCreditPoints, partialCredits, posthog, questions, quiz.slug, rawScore, recordTimeout, totalScored, totalVisible]);
+
+	const resetRun = useCallback(() => {
+		setAnswers({});
+		resultIdRef.current = createQuizResultId(quiz.slug ?? quiz.topic);
+		setRevealed(false);
+		setCurrent(0);
+		setElapsed(0);
+		setSkippedIds(new Set());
+		setReframeModes({});
+		setQuestionTimer({ questionId: questions[0]?.id, remaining: questions[0]?.timeLimit });
+		startRef.current = Date.now();
+		questionEnteredRef.current = startRef.current;
+		timedOutIdsRef.current = new Set();
+		deadlineRef.current = undefined;
+		setTimedOutIds(new Set());
+		perQuestionRef.current = {};
+		finalTimingRef.current = null;
+		submittedRef.current = false;
+		window.speechSynthesis?.cancel();
+	}, [questions, quiz.slug, quiz.topic]);
+
+	// Reset state if a parent reuses this component instance for another quiz.
+	useEffect(() => {
+		if (previousQuizIdentityRef.current === quizIdentity) return;
+		previousQuizIdentityRef.current = quizIdentity;
+		resetRun();
+		setShaderPreset(loadQuizShaderPreset(quizIdentity, defaultShaderPreset));
+	}, [defaultShaderPreset, quizIdentity, resetRun]);
 
 	useEffect(() => {
-		setTimeRemaining(timeLimit);
-	}, [current, timeLimit]);
+		if (!defaultShaderPreset) return;
+		setShaderPreset(resolveQuizShaderPreset(defaultShaderPreset, quizIdentity));
+	}, [defaultShaderPreset, quizIdentity]);
 
 	useEffect(() => {
-		if (revealed || typeof timeRemaining !== "number") return;
-		if (timeRemaining <= 0) return;
+		posthog.capture("quiz_started", {
+			question_count: questions.length,
+			has_stable_slug: Boolean(quiz.slug),
+		});
+	}, [posthog, questions.length, quiz.slug, quizIdentity]);
+
+	useEffect(() => {
+		if (revealed) return;
+		deadlineRef.current = currentQuestion && typeof timeLimit === "number" && Number.isFinite(timeLimit)
+			? { questionId: currentQuestion.id, at: questionEnteredRef.current + Math.max(0, timeLimit) * 1000 }
+			: undefined;
+		setQuestionTimer({ questionId: currentQuestion?.id, remaining: timeLimit });
+	}, [currentQuestion?.id, revealed, timeLimit]);
+
+	useEffect(() => {
+		if (revealed || typeof timeLimit !== "number" || !currentQuestion) return;
+		const questionId = currentQuestion.id;
 		const id = window.setInterval(() => {
-			setTimeRemaining((prev) => {
-				if (typeof prev !== "number" || prev <= 1) {
-					window.clearInterval(id);
-					return 0;
-				}
-				return prev - 1;
-			});
-		}, 1000);
+			if (submittedRef.current || deadlineRef.current?.questionId !== questionId) return;
+			const remaining = Math.max(0, Math.ceil((deadlineRef.current.at - Date.now()) / 1000));
+			setQuestionTimer((previous) => previous.questionId === questionId && previous.remaining === remaining ? previous : { questionId, remaining });
+			if (remaining === 0) window.clearInterval(id);
+		}, 100);
 		return () => window.clearInterval(id);
-	}, [revealed, timeLimit, current]);
+	}, [currentQuestion?.id, revealed, timeLimit]);
 
-	// Auto-advance or auto-submit when timer expires.
+	const goTo = useCallback((nextIndex: number) => {
+		if (nextIndex < 0 || nextIndex >= totalVisible) return;
+		const now = Date.now();
+		recordTimeout(now);
+		accrueCurrent(now);
+		startQuestionTransition(() => setCurrent(nextIndex));
+	}, [accrueCurrent, recordTimeout, totalVisible]);
+
 	useEffect(() => {
-		if (revealed || typeof timeRemaining !== "number") return;
-		if (timeRemaining > 0) return;
-		const isLast = current === totalVisible - 1;
+		if (revealed || questionTimer.questionId !== currentQuestion?.id || typeof timeRemaining !== "number" || timeRemaining > 0 || totalVisible === 0) return;
+		recordTimeout(Date.now());
 		const id = window.setTimeout(() => {
-			if (isLast) {
-				accrueCurrent();
-				doSubmit();
-			} else {
-				goTo(current + 1);
-			}
+			if (current >= totalVisible - 1) doSubmit();
+			else goTo(current + 1);
 		}, 200);
 		return () => window.clearTimeout(id);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [timeRemaining, revealed, current, totalVisible]);
+	}, [current, currentQuestion, doSubmit, goTo, questionTimer.questionId, recordTimeout, revealed, timeRemaining, totalVisible]);
 
-	// Fetch topic stats from storage on mount if storage is provided and no stats prop
 	useEffect(() => {
-		if (topicStats !== undefined) return;
-		quizStorage.getTopicQuizStats(quiz.slug).then((s: TopicStats | null) => setFetchedStats(s));
+		if (topicStats !== undefined) {
+			setFetchedStats(topicStats);
+			return;
+		}
+		let cancelled = false;
+		quizStorage.getTopicQuizStats(quiz.slug)
+			.then((stats: TopicStats | null) => {
+				if (!cancelled) setFetchedStats(stats);
+			})
+			.catch(() => {
+				if (!cancelled) setFetchedStats(null);
+			});
+		return () => { cancelled = true; };
 	}, [quiz.slug, topicStats]);
 
-	// Live count-up timer until the quiz is submitted.
 	useEffect(() => {
-		if (revealed) return;
-		const id = window.setInterval(() => setElapsed(Date.now() - startRef.current), 250);
+		if (revealed || totalVisible === 0) return;
+		const id = window.setInterval(() => { if (!submittedRef.current) setElapsed(Math.max(0, Date.now() - startRef.current)); }, 250);
 		return () => window.clearInterval(id);
-	}, [revealed]);
+	}, [revealed, totalVisible]);
 
-	// Adaptive branching: after answering, skip upcoming fallbacks if threshold met
+	// Adaptive branching keeps source order and only removes consecutive fallback
+	// questions once the source question clears its configured threshold.
 	useEffect(() => {
-		if (!quiz.adaptiveRules || !currentQuestion) return;
-		if (revealed) return;
+		if (!quiz.adaptiveRules || !currentQuestion || revealed) return;
 		const answer = answers[currentQuestion.id];
 		if (!answer?.trim()) return;
 		const credit = questionCredit(currentQuestion, answer);
-		const rule = quiz.adaptiveRules.find((r) => r.level === currentQuestion.level);
-		const threshold = rule?.threshold ?? 0.5;
-		if (credit < threshold) return;
-		// Skip all consecutive fallbacks for this level that appear after current question
-		const currentIdxInAll = quiz.questions.findIndex((q) => q.id === currentQuestion.id);
+		const rule = quiz.adaptiveRules.find((candidate) => candidate.level === currentQuestion.level);
+		if (credit < (rule?.threshold ?? 0.5)) return;
+		const sourceIndex = questions.findIndex((question) => question.id === currentQuestion.id);
 		const toSkip = new Set<string>();
-		for (let i = currentIdxInAll + 1; i < quiz.questions.length; i++) {
-			const q = quiz.questions[i];
-			if (q.fallbackFor === currentQuestion.level) {
-				toSkip.add(q.id);
-			} else if (!q.fallbackFor) {
-				break;
-			}
+		for (let index = sourceIndex + 1; index < questions.length; index += 1) {
+			const candidate = questions[index];
+			if (candidate.fallbackFor === currentQuestion.level) toSkip.add(candidate.id);
+			else if (!candidate.fallbackFor) break;
 		}
 		if (toSkip.size > 0) {
-			setSkippedIds((prev) => new Set([...prev, ...toSkip]));
+			setSkippedIds((previous) => {
+				const next = new Set(previous);
+				for (const id of toSkip) next.add(id);
+				return next;
+			});
 		}
-	}, [answers, currentQuestion, quiz.adaptiveRules, quiz.questions, revealed]);
+	}, [answers, currentQuestion, questions, quiz.adaptiveRules, revealed]);
 
-	const accrueCurrent = useCallback(() => {
-		const qid = visibleQuestions[current]?.id;
-		if (!qid) return;
-		const now = Date.now();
-		perQuestionRef.current[qid] = (perQuestionRef.current[qid] ?? 0) + (now - questionEnteredRef.current);
-		questionEnteredRef.current = now;
-	}, [visibleQuestions, current]);
+	useEffect(() => {
+		if (totalVisible === 0) {
+			if (current !== 0) setCurrent(0);
+			return;
+		}
+		if (current >= totalVisible) setCurrent(totalVisible - 1);
+	}, [current, totalVisible]);
 
-	const setAnswer = useCallback((qid: string, val: string) => {
-		setAnswers((prev) => ({ ...prev, [qid]: val }));
+	useEffect(() => () => window.speechSynthesis?.cancel(), []);
+
+	const setAnswer = useCallback((questionId: string, value: string) => {
+		const deadline = deadlineRef.current;
+		if (submittedRef.current || (deadline?.questionId === questionId && Date.now() >= deadline.at)) return;
+		setAnswers((previous) => ({ ...previous, [questionId]: value }));
 	}, []);
 
-	const toggleBookmark = useCallback((qid: string) => {
-		setBookmarkIds((prev) => {
-			const next = prev.includes(qid) ? prev.filter((id) => id !== qid) : [...prev, qid];
+	const toggleBookmark = useCallback((questionId: string) => {
+		setBookmarkIds((previous) => {
+			const next = previous.includes(questionId)
+				? previous.filter((id) => id !== questionId)
+				: [...previous, questionId];
 			saveBookmarkIds(next);
 			return next;
 		});
@@ -1252,268 +1561,185 @@ export function QuizRenderer({ quiz, onSubmit, topicStats }: QuizRendererProps) 
 		window.speechSynthesis.speak(utterance);
 	}, []);
 
-	const goTo = useCallback(
-		(index: number) => {
-			if (index < 0 || index >= totalVisible) return;
-			accrueCurrent();
-			startQuestionTransition(() => setCurrent(index));
-			questionEnteredRef.current = Date.now();
-		},
-		[accrueCurrent, totalVisible],
-	);
-
-	const partialCredits = useMemo(() => {
-		const map: Record<string, number> = {};
-		for (const q of scorableQuestions) {
-			map[q.id] = questionCredit(q, answers[q.id] || "");
-		}
-		return map;
-	}, [answers, scorableQuestions]);
-
-	const rawScore = useMemo(() => {
-		let correct = 0;
-		for (const q of scorableQuestions) {
-			if (isCorrect(q, answers[q.id] || "")) correct++;
-		}
-		return correct;
-	}, [answers, scorableQuestions]);
-
-	const partialCreditPoints = useMemo(() => {
-		return scorableQuestions.reduce((sum, question) => sum + (partialCredits[question.id] ?? 0), 0);
-	}, [scorableQuestions, partialCredits]);
-
-	const percent = totalScored > 0 ? Math.round((rawScore / totalScored) * 100) : 0;
-	const answeredCount = visibleQuestions.filter((q) => (answers[q.id] || "").trim().length > 0).length;
-	const allAnswered = answeredCount === totalVisible;
-
-	const doSubmit = useCallback(() => {
-		accrueCurrent();
-		const timing: QuizTiming = {
-			totalMs: Date.now() - startRef.current,
-			perQuestionMs: { ...perQuestionRef.current },
-		};
-		finalTimingRef.current = timing;
-		setElapsed(timing.totalMs);
-		setRevealed(true);
-		posthog.capture('quiz_completed', {
-			question_count: quiz.questions.length,
-			score: rawScore,
-			partial_credit_points: partialCreditPoints,
-			duration_ms: timing.totalMs,
-		});
-		onSubmit?.({
-			resultId: resultIdRef.current,
-			answers,
-			score: rawScore,
-			partialCreditPoints,
-			timing,
-			partialCredits,
-			flagged: bookmarkIds,
-		});
-		// Save quiz result to storage
-		quizStorage.saveQuizResult(rawScore, partialCreditPoints, totalScored, quiz.slug, {
-			resultId: resultIdRef.current,
-			answers,
-			partialCredits,
-			timing,
-			flaggedQuestionIds: bookmarkIds,
-			pendingGradeQuestionIds: quiz.questions.filter(isOpenEnded).map((question) => question.id),
-		}).catch(() => {});
-		window.speechSynthesis?.cancel();
-	}, [accrueCurrent, answers, rawScore, partialCreditPoints, onSubmit, partialCredits, bookmarkIds, totalScored, quiz.questions, quiz.slug]);
-
-	const handleReset = useCallback(() => {
-		setAnswers({});
-		resultIdRef.current = createQuizResultId(quiz.slug ?? quiz.topic);
-		setRevealed(false);
-		setCurrent(0);
-		setElapsed(0);
-		setSkippedIds(new Set());
-		setReframeModes({});
-		setTimeRemaining(quiz.questions[0]?.timeLimit);
-		startRef.current = Date.now();
-		questionEnteredRef.current = Date.now();
-		perQuestionRef.current = {};
-		finalTimingRef.current = null;
-		window.speechSynthesis?.cancel();
-	}, [quiz.questions, quiz.slug, quiz.topic]);
+	const changeShaderPreset = useCallback((preset: FlashcardShaderPreset) => {
+		const normalized = resolveQuizShaderPreset(preset, quizIdentity);
+		setShaderPreset(normalized);
+		saveQuizShaderPreset(normalized);
+	}, [quizIdentity]);
 
 	const handleRequestRemediation = useCallback((level: string) => {
-		window.dispatchEvent(
-			new CustomEvent("keating:quiz-remediation-requested", {
-				detail: { level, topic: quiz.topic, slug: quiz.slug },
-			})
-		);
-	}, [quiz.topic, quiz.slug]);
+		window.dispatchEvent(new CustomEvent("keating:quiz-remediation-requested", {
+			detail: { level, topic: quiz.topic, slug: quiz.slug },
+		}));
+	}, [quiz.slug, quiz.topic]);
 
-	const cq = currentQuestion;
+	const shaderSeed = stableQuizSeed(`${quizIdentity}:${currentQuestion?.id ?? "result"}`);
+	const shaderEnergy = revealed
+		? Math.min(1, totalScored > 0 ? rawScore / totalScored + 0.16 : 0.35)
+		: Math.min(1, answeredCount / Math.max(1, totalVisible) * 0.65 + current / Math.max(1, totalVisible) * 0.25);
+	const accent = quizShaderAccent(shaderPreset);
+	const headerStyle = { "--arena-accent": accent } as React.CSSProperties;
 	const isLast = current === totalVisible - 1;
-	const hasTimeLimit = typeof timeRemaining === "number";
+	const timer = !revealed && typeof timeRemaining === "number" && typeof timeLimit === "number"
+		? { ...quizTimerState(timeRemaining, timeLimit), remaining: timeRemaining }
+		: null;
 
-	return (
-		<div className={css({ marginBlock: "0.5rem", display: "grid", gap: "1.25rem", borderRadius: "0.75rem", borderWidth: "1px", borderColor: "var(--border)", background: "var(--background)", padding: "1.25rem", boxShadow: "var(--shadow-sm)", [sm]: { marginBlock: "0.75rem", gap: "1.5rem", padding: "1.75rem" } })}>
-			<div className={css({ display: "flex", flexDirection: "column", alignItems: "stretch", gap: "0.5rem", [sm]: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" } })}>
-				<div className={css({ minWidth: 0 })}>
-					<h3 className={css({ overflowWrap: "anywhere", fontSize: "1rem", fontWeight: 700, sm: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } })}>{quiz.topic}</h3>
-					{skippedIds.size > 0 && (
-						<p className={cx("font-terminal", css({ fontSize: "0.75rem", color: "#059669", [dark]: { color: "#34d399" } }))}>
-							{skippedIds.size} skipped by adaptive rules
-						</p>
-					)}
+	const effectHeader = (
+		<header className={cx(quizStyles.effectHeader, "activity-quiz-header")} style={headerStyle}>
+			<FlashcardShaderField
+				key={`${shaderPreset}:${currentQuestion?.id ?? "result"}`}
+				preset={shaderPreset}
+				energy={shaderEnergy}
+				seed={shaderSeed}
+			/>
+			<div className={quizStyles.effectHeaderContent}>
+				<div className={quizStyles.resultIntro}>
+					<h3 className={cx(quizStyles.topic, "activity-quiz-topic")}>{quiz.topic}</h3>
+
 				</div>
-				<div className={css({ display: "flex", width: "100%", flexShrink: 0, alignItems: "center", justifyContent: "space-between", gap: "0.75rem", sm: { width: "auto", justifyContent: "flex-end" } })}>
-					<span className={cx("font-terminal", css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", fontSize: "0.875rem", color: "var(--muted-foreground)", fontVariantNumeric: "tabular-nums" }))}>
-						<Clock size={14} />
-						{formatDuration(elapsed)}
-					</span>
-					{revealed && (
-						<div className={css({ textAlign: "right" })}>
-							<div className={cx("font-terminal", css({ fontSize: "1.5rem", fontWeight: 700, color: percent >= 70 ? "#059669" : percent >= 40 ? "#d97706" : "var(--destructive)", [dark]: { color: percent >= 70 ? "#34d399" : percent >= 40 ? "#f59e0b" : "var(--destructive)" } }))}>
-								{rawScore}/{totalScored}
+				<div className={quizStyles.headerInstruments}>
+					{timer ? (
+						<div
+							role="timer"
+							aria-label={`${timer.urgency === "critical" ? "Critical, " : timer.urgency === "warning" ? "Warning, " : ""}${formatCountdown(timer.remaining)} remaining`}
+							aria-live="off"
+							data-urgency={timer.urgency}
+							className={cx(quizStyles.timer, timer.urgency === "critical" ? "quiz-timer-critical" : "")}
+						>
+							<strong className={quizStyles.timerDigits}>
+								{timer.urgency === "steady" ? <Clock size={20} aria-hidden="true" /> : <AlertTriangle size={20} aria-hidden="true" />}
+								{formatCountdown(timer.remaining)}
+							</strong>
+							<div className={quizStyles.timerTrack} aria-hidden="true">
+								<div className={quizStyles.timerFill} style={{ transform: `scaleX(${timer.progress})` }} />
 							</div>
-							<div className={css({ fontSize: "0.625rem", textTransform: "uppercase", color: "var(--muted-foreground)" })}>{percent}%</div>
-							{pendingReviewCount > 0 && (
-								<div className={css({ fontSize: "0.625rem", color: "var(--muted-foreground)" })}>+{pendingReviewCount} pending review</div>
-							)}
+							{timer.urgency === "critical" ? <span role="status" className={quizStyles.visuallyHidden}>Five seconds or less remaining.</span> : null}
 						</div>
-					)}
+					) : null}
+					<div className={quizStyles.headerMeta}>
+						<span><Clock size={12} aria-hidden="true" /> {revealed && finalTimingRef.current ? formatQuizDuration(finalTimingRef.current.totalMs) : formatDuration(elapsed)}</span>
+						{skippedIds.size > 0 ? <span>+{skippedIds.size} adapted</span> : null}
+						{revealed ? <strong>{totalScored > 0 ? `${rawScore}/${totalScored}` : "review"}</strong> : null}
+						<details className="activity-quiz-effects"><summary aria-label="Quiz appearance"><Sparkles size={16} /></summary><label>Appearance<Select className={quizStyles.effectSelect} aria-label="Quiz visual effect" value={shaderPreset} onValueChange={(value) => changeShaderPreset(value as FlashcardShaderPreset)}>{QUIZ_SHADER_OPTIONS.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}</Select></label></details>
+					</div>
 				</div>
 			</div>
+			<RoundProgress current={current} total={totalVisible} resolved={answeredCount} label="Quiz progress" complete={revealed} />
+		</header>
+	);
+
+	if (questions.length === 0) {
+		return (
+			<section className={cx(quizStyles.shell, "activity-game activity-quiz")} aria-label={`Quiz: ${quiz.topic}`}>
+				{effectHeader}
+				<div className={quizStyles.empty} role="status">No quiz questions yet.</div>
+			</section>
+		);
+	}
+
+	return (
+		<section className={cx(quizStyles.shell, "activity-game activity-quiz")} aria-label={`Quiz: ${quiz.topic}`}>
+			{effectHeader}
 
 			{!revealed ? (
 				<>
-					{/* Progress bar */}
-					<div className={shared.rowCenter2}>
-						<div className={css({ height: "0.375rem", flex: 1, overflow: "hidden", borderRadius: "9999px", background: "var(--muted)" })}>
-							<div
-								className={css({ height: "100%", borderRadius: "9999px", background: "var(--primary)", transition: "all 150ms" })}
-								style={{ width: `${((current + 1) / totalVisible) * 100}%` }}
+					{currentQuestion ? (
+						<div
+							key={`${currentQuestion.id}:${shaderPreset}`}
+							aria-busy={isQuestionPending}
+							className={cx(quizStyles.questionStage, quizQuestionEntryClass(shaderPreset))}
+							style={{ ...headerStyle, opacity: isQuestionPending ? 0.72 : 1 }}
+						>
+							<QuestionCard
+								q={currentQuestion}
+								index={current}
+								answer={answers[currentQuestion.id] || ""}
+								onChange={(value) => setAnswer(currentQuestion.id, value)}
+								revealed={false}
+								bookmarked={bookmarkIds.includes(currentQuestion.id)}
+								onToggleBookmark={() => toggleBookmark(currentQuestion.id)}
+								onSpeak={() => speakQuestion(currentQuestion.question)}
+								reframeMode={reframeModes[currentQuestion.id] ?? null}
+								onReframe={(mode) => setReframeModes((previous) => ({ ...previous, [currentQuestion.id]: mode }))}
 							/>
 						</div>
-						<span className={cx("font-terminal", css({ fontSize: "0.6875rem", color: "var(--muted-foreground)", fontVariantNumeric: "tabular-nums" }))}>
-							{current + 1}/{totalVisible}
-						</span>
-					</div>
+					) : null}
 
-					{/* Timer warning */}
-					{hasTimeLimit && timeRemaining !== undefined && timeRemaining <= 5 && (
-						<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", border: "1px solid color-mix(in srgb, var(--destructive) 30%, transparent)", background: "color-mix(in srgb, var(--destructive) 10%, transparent)", padding: "0.375rem 0.75rem", fontSize: "0.75rem", color: "var(--destructive)" })}>
-							<AlertTriangle size={14} />
-							<span>Time is running out for this question.</span>
-						</div>
-					)}
-
-					{cq && (
-						<div aria-busy={isQuestionPending} style={{ opacity: isQuestionPending ? 0.72 : 1, transition: "opacity 120ms ease-out" }}>
-						<QuestionCard
-							key={cq.id}
-							q={cq}
-							index={current}
-							answer={answers[cq.id] || ""}
-							onChange={(val) => setAnswer(cq.id, val)}
-							revealed={false}
-							timeRemaining={timeRemaining}
-							bookmarked={bookmarkIds.includes(cq.id)}
-							onToggleBookmark={() => toggleBookmark(cq.id)}
-							onSpeak={() => speakQuestion(cq.question)}
-							reframeMode={reframeModes[cq.id] ?? null}
-							onReframe={(mode) => {
-								setReframeModes((prev) => ({ ...prev, [cq.id]: mode }));
-							}}
-						/>
-						</div>
-					)}
-
-					<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" })}>
+					<nav className={quizStyles.nav} aria-label="Quiz questions">
 						<button
+							type="button"
 							onClick={() => goTo(current - 1)}
 							disabled={isQuestionPending || current === 0}
-							className={cx(quizStyles.buttonSecondary, css({ flex: 1, justifyContent: "center", sm: { flex: "0 0 auto" } }))}
+							className={cx(quizStyles.buttonSecondary, "activity-back-action", css({ flex: 1, justifyContent: "center", [sm]: { flex: "0 0 auto" } }))}
 						>
-							<ChevronLeft size={14} />
-							Back
+							<ChevronLeft size={14} /> Back
 						</button>
-
 						{!isLast ? (
 							<button
+								type="button"
 								onClick={() => goTo(current + 1)}
 								disabled={isQuestionPending}
-								className={cx(quizStyles.buttonPrimary, css({ flex: 1, justifyContent: "center", sm: { flex: "0 0 auto" } }))}
+								className={cx(quizStyles.buttonPrimary, "activity-main-action", css({ flex: 1, justifyContent: "center", [sm]: { flex: "0 0 auto" } }))}
 							>
-								Next
-								<ChevronRight size={14} />
+								{currentQuestion && answers[currentQuestion.id]?.trim() ? "Lock in & next" : "Skip for now"} <ChevronRight size={16} />
 							</button>
 						) : (
 							<button
+								type="button"
 								onClick={doSubmit}
-								disabled={!allAnswered}
+								disabled={!allAnswered || submittedRef.current}
 								title={allAnswered ? undefined : `${totalVisible - answeredCount} unanswered`}
-								className={cx(quizStyles.buttonPrimary, css({ flex: 1, justifyContent: "center", gap: "0.5rem", sm: { flex: "0 0 auto" } }))}
+								className={cx(quizStyles.buttonPrimary, "activity-main-action", css({ flex: 1, justifyContent: "center", gap: "0.5rem", [sm]: { flex: "0 0 auto" } }))}
 							>
-								<Send size={14} />
-								{allAnswered ? "Submit Quiz" : `${totalVisible - answeredCount} left`}
+								<Send size={14} /> {allAnswered ? "Finish round" : `${totalVisible - answeredCount} left`}
 							</button>
 						)}
-					</div>
+					</nav>
 				</>
 			) : (
 				<>
-					{/* Summary. The header already shows the raw score, so this only adds
-					    what it does not: partial credit and anything flagged for review. */}
-					<div className={css({ display: "grid", gap: "0.5rem" })}>
-						<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.875rem" })}>
-							<span className={shared.mutedText}>Partial-credit points</span>
-							<span className={cx("font-terminal")}>{partialCreditPoints.toFixed(2)}/{totalScored}</span>
+					<div className={cx(quizStyles.resultIntro, "quiz-result-arrive")}>
+						<CompletionMark detail={totalScored > 0 ? `${rawScore} of ${totalScored} correct${pendingReviewCount ? ` · ${pendingReviewCount} awaiting review` : ""}` : "Your teacher will review your answers."}>{totalScored === 0 ? "Ready for review" : rawScore === totalScored ? "Clean sweep" : "Round complete"}</CompletionMark>
+						<div className={quizStyles.resultMeta}>
+							{finalTimingRef.current ? <span aria-label={`Total quiz time: ${finalTimingRef.current.totalMs} milliseconds`}>{formatQuizDuration(finalTimingRef.current.totalMs)} total</span> : null}
+							{timedOutIds.size ? <span>{timedOutIds.size} timed out</span> : null}
+							{totalScored > 0 ? <span>{percent}% objective score</span> : null}
+							{pendingReviewCount > 0 ? <span>{pendingReviewCount} pending review</span> : null}
+							{bookmarkIds.length > 0 ? <span>{bookmarkIds.length} flagged</span> : null}
+							{partialCreditPoints !== rawScore ? <span>{partialCreditPoints.toFixed(2)} partial points</span> : null}
 						</div>
-						{bookmarkIds.length > 0 && (
-							<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", color: "#d97706", [dark]: { color: "#f59e0b" } })}>
-								<Bookmark size={12} fill="currentColor" />
-								{bookmarkIds.length} question{bookmarkIds.length > 1 ? "s" : ""} bookmarked for review
-							</div>
-						)}
 					</div>
 
-					<RemediationDashboard
-						quiz={quiz}
-						answers={answers}
-						onRequestRemediation={handleRequestRemediation}
-					/>
+					<details className="activity-review"><summary>Review answers & next steps</summary>
+					<RemediationDashboard quiz={normalizedQuiz} answers={answers} onRequestRemediation={handleRequestRemediation} />
+					<BenchmarkComparison score={rawScore} partialCreditPoints={partialCreditPoints} total={totalScored} stats={fetchedStats} />
 
-					<BenchmarkComparison
-						score={rawScore}
-						partialCreditPoints={partialCreditPoints}
-						total={totalScored}
-						stats={fetchedStats}
-					/>
-
-					{/* Question bodies have no frame of their own, so hairlines keep the
-					    revealed list readable without nesting another box. */}
 					<div className={css({ display: "grid", gap: "1.5rem", "& > * + *": { borderTop: "1px solid var(--border)", paddingTop: "1.5rem" } })}>
-						{visibleQuestions.map((q, i) => (
+						{visibleQuestions.map((question, index) => (
 							<QuestionCard
-								key={q.id}
-								q={q}
-								index={i}
-								answer={answers[q.id] || ""}
-								onChange={(val) => setAnswer(q.id, val)}
+								key={question.id}
+								q={question}
+								index={index}
+								answer={answers[question.id] || ""}
+								onChange={(value) => setAnswer(question.id, value)}
 								revealed
-								timeMs={finalTimingRef.current?.perQuestionMs[q.id]}
-								bookmarked={bookmarkIds.includes(q.id)}
-								onToggleBookmark={() => toggleBookmark(q.id)}
-								onSpeak={() => speakQuestion(q.question)}
-								reframeMode={reframeModes[q.id] ?? null}
+								timeMs={finalTimingRef.current?.perQuestionMs[question.id]}
+							timedOut={timedOutIds.has(question.id)}
+								bookmarked={bookmarkIds.includes(question.id)}
+								onToggleBookmark={() => toggleBookmark(question.id)}
+								onSpeak={() => speakQuestion(question.question)}
+								reframeMode={reframeModes[question.id] ?? null}
 							/>
 						))}
 					</div>
-					<button
-						onClick={handleReset}
-						className={cx(quizStyles.buttonSecondary, css({ width: "100%", justifyContent: "center", gap: "0.5rem", padding: "0.625rem 1rem" }))}
-					>
-						<RotateCcw size={14} />
-						Retake
+					</details>
+					<button type="button" onClick={resetRun} className={cx(quizStyles.buttonSecondary, "activity-back-action", css({ width: "100%", justifyContent: "center", gap: "0.5rem" }))}>
+						<RotateCcw size={14} /> Retake
 					</button>
 				</>
 			)}
-		</div>
+		</section>
 	);
 }
+
+QuizRenderer.displayName = "QuizRenderer";

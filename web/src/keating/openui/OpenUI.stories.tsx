@@ -107,6 +107,6 @@ export const RejectedSourceRecovery: Story = {
 	play: async ({ canvasElement }) => {
 		const canvas = within(canvasElement);
 		await expect(canvas.findByRole("alert")).resolves.toBeTruthy();
-		await expect(canvas.findByText(/could not be compiled safely/i)).resolves.toBeTruthy();
+		await expect(canvas.findByText(/could not be built/i)).resolves.toBeTruthy();
 	},
 };

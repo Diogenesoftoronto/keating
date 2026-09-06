@@ -45,7 +45,7 @@ function useIsDesktop(): boolean {
  */
 export function SessionBrowser(props: SessionBrowserProps) {
 	const isDesktop = useIsDesktop();
-	const store = useSessions({ withHeroes: !isDesktop });
+	const store = useSessions({ withHeroes: true, flatLimit: Number.POSITIVE_INFINITY });
 
 	if (isDesktop) {
 		return <SessionBrowserDesktop {...props} store={store} />;

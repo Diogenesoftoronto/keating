@@ -1,3 +1,4 @@
+import { Select } from "../Select";
 import { useEffect, useMemo, useState } from "react";
 import {
   CornerDownRight,
@@ -405,10 +406,10 @@ export function CourseDiscussion({
           <span className={cx(courseLabelClass, css({ display: "block", mb: "0.2rem" }))}>
             Channel
           </span>
-          <select
+          <Select
             value={channel}
-            onChange={(event) => {
-              const next = event.target.value;
+            onValueChange={(value) => {
+              const next = value;
               setReplyTo(null);
               if (next !== COURSE_CHANNEL && next !== ALL_CHANNEL)
                 onSelectLesson(next);
@@ -427,7 +428,7 @@ export function CourseDiscussion({
             <option value={ALL_CHANNEL}>
               Everything ({snapshot.course.comments.length})
             </option>
-          </select>
+          </Select>
         </label>
         <label>
           <span className={cx(courseLabelClass, css({ display: "block", mb: "0.2rem" }))}>

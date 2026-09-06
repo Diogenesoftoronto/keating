@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { fn, userEvent, within } from "storybook/test";
+import { expect, fn, userEvent, within } from "storybook/test";
 import { css } from "../../styled-system/css";
 import { QuizRenderer } from "./QuizRenderer";
 import type { Quiz } from "../keating/core";
@@ -210,6 +210,24 @@ type Story = StoryObj<typeof meta>;
 
 export const FullMiniApplication: Story = {};
 
+export const DropdownAnswer: Story = {
+	args: {
+		quiz: { ...fullMiniQuiz, topic: "Runtime libraries", slug: "dropdown-runtime-library", totalPoints: 1, adaptiveRules: undefined, questions: [fullMiniQuiz.questions[6]!] },
+		topicStats: null,
+	},
+	play: async ({ canvasElement, args }) => {
+		const canvas = within(canvasElement);
+		const answer = canvas.getByRole("combobox", { name: /Pick the best slot/ });
+		await expect(answer).toHaveTextContent("Select an answer");
+		await userEvent.click(answer);
+		await userEvent.click(await within(canvasElement.ownerDocument.body).findByRole("option", { name: "inputs" }));
+		await expect(answer).toHaveTextContent("inputs");
+		await userEvent.click(canvas.getByRole("button", { name: "Finish round" }));
+		await expect(canvas.findByText("1 of 1 correct")).resolves.toBeTruthy();
+		await expect(args.onSubmit).toHaveBeenCalledWith(expect.objectContaining({ answers: { "q7-dropdown": "inputs" }, score: 1 }));
+	},
+};
+
 export const MobileFullMini: Story = {
 	parameters: {
 		layout: "fullscreen",
@@ -243,7 +261,7 @@ export const FillInTheMiddleRevealed: Story = {
 		await userEvent.type(blanks[0], "native-inputs");
 		await userEvent.type(blanks[1], "propagated-inputs");
 		await userEvent.type(blanks[2], "inputs");
-		await userEvent.click(canvas.getByRole("button", { name: /submit quiz/i }));
+		await userEvent.click(canvas.getByRole("button", { name: /finish round/i }));
 	},
 };
 
@@ -263,6 +281,33 @@ export const FastTimedQuestion: Story = {
 				},
 			],
 		},
+	},
+};
+
+export const ExactTimeout: Story = {
+	args: {
+		...FastTimedQuestion.args,
+		quiz: {
+			...fullMiniQuiz,
+			topic: "A short timed round",
+			slug: "exact-timeout-round",
+			totalPoints: 1,
+			adaptiveRules: undefined,
+			questions: [{ ...fullMiniQuiz.questions[0], id: "timed-exact", timeLimit: 2 }],
+		},
+		topicStats: null,
+	},
+	play: async ({ canvasElement, args }) => {
+		const canvas = within(canvasElement);
+		await canvas.findByText("Round complete", { exact: true }, { timeout: 4_000 });
+		await userEvent.click(canvas.getByText("Review answers & next steps"));
+		await expect(canvas.getByText("Timed out", { exact: true })).toBeVisible();
+		await expect(canvas.getByLabelText("Time on question: 2000 milliseconds")).toHaveTextContent("2.000s");
+		await expect(canvas.getByLabelText("Total quiz time: 2000 milliseconds")).toHaveTextContent("2.000s total");
+		await expect(args.onSubmit).toHaveBeenCalledWith(expect.objectContaining({
+			timedOutQuestionIds: ["timed-exact"],
+			timing: { totalMs: 2_000, perQuestionMs: { "timed-exact": 2_000 } },
+		}));
 	},
 };
 
@@ -288,5 +333,29 @@ export const ClosedQuestionFeedback: Story = {
 export const NoBenchmarkData: Story = {
 	args: {
 		topicStats: null,
+	},
+};
+
+/** A short round gives browser checks a complete choice, submit, review, retry path. */
+export const MobileRoundComplete: Story = {
+	args: {
+		quiz: {
+			...fullMiniQuiz,
+			topic: "A little space science",
+			slug: "mobile-space-round",
+			totalPoints: 1,
+			adaptiveRules: undefined,
+			questions: [{ id: "space-one", type: "multiple_choice", level: "recall", question: "Which planet has the most visible rings?", options: ["Mars", "Saturn", "Venus", "Earth"], correctAnswer: "Saturn", explanation: "Saturn’s icy rings reflect sunlight." }],
+		},
+		topicStats: null,
+	},
+	parameters: { viewport: { defaultViewport: "mobile1" } },
+	play: async ({ canvasElement, args }) => {
+		const canvas = within(canvasElement);
+		await userEvent.click(await canvas.findByRole("button", { name: "Saturn" }));
+		await expect(canvas.getByRole("button", { name: "Saturn" })).toHaveAttribute("aria-pressed", "true");
+		await userEvent.click(canvas.getByRole("button", { name: "Finish round" }));
+		await expect(canvas.findByText("1 of 1 correct")).resolves.toBeTruthy();
+		await expect(args.onSubmit).toHaveBeenCalledTimes(1);
 	},
 };

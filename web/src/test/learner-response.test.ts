@@ -91,6 +91,22 @@ describe("learner response envelopes", () => {
 		expect(learnerResponseReviewText(serialized)).not.toContain("mitochondria");
 	});
 
+	it("keeps exact timing and timeout evidence in the learner response", () => {
+		const timing = { totalMs: 64_238, perQuestionMs: { q1: 4_238, q2: 30_000 } };
+		const envelope = createOpenUIActionLearnerResponse({
+			type: "complete-quiz", humanFriendlyMessage: "Completed the exam.",
+			params: { timing, timedOutQuestionIds: ["q2"], examTimedOut: true, answers: [], score: 0 },
+			formState: {}, document: { id: "timed-check", lifecycle: "resumable", revision: 0 },
+		}, fixed);
+		const restored = parseLearnerResponse(serializeLearnerResponse(envelope));
+		expect(restored?.kind).toBe("openui-action");
+		if (restored?.kind !== "openui-action") throw new Error("expected action response");
+		expect(restored.payload.params.timing).toEqual(timing);
+		expect(restored.review.items).toContainEqual({ label: "Total time", value: "1:04.238" });
+		expect(restored.review.items).toContainEqual({ label: "Timed out", value: "q2" });
+		expect(restored.review.items).toContainEqual({ label: "Exam timer", value: "Time limit reached" });
+	});
+
 	it("renders canonical question-group submissions as the learner's actual answer", () => {
 		const action = {
 			kind: "canonical",

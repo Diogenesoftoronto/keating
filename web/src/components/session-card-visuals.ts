@@ -130,6 +130,8 @@ export type ArtifactHeroType = "map" | "animation" | "plan";
 
 export interface ArtifactHero {
 	type: ArtifactHeroType;
+	/** All saved artifact types, so filtering is not limited to the preview winner. */
+	types?: ArtifactHeroType[];
 	topic: string;
 	/** Inline SVG markup for lesson maps; absent for other artifact types. */
 	svg?: string;
@@ -156,9 +158,9 @@ export async function buildArtifactHeroMap(
 	const consider = (sessionId: string | undefined, hero: ArtifactHero) => {
 		if (!sessionId) return;
 		const existing = heroes.get(sessionId);
-		if (!existing || HERO_RANK[hero.type] > HERO_RANK[existing.type]) {
-			heroes.set(sessionId, hero);
-		}
+		const types = [...new Set([...(existing?.types ?? (existing ? [existing.type] : [])), hero.type])];
+		const preview = !existing || HERO_RANK[hero.type] > HERO_RANK[existing.type] ? hero : existing;
+		heroes.set(sessionId, { ...preview, types });
 	};
 
 	for (const m of maps) consider(m.sessionId, { type: "map", topic: m.topic, svg: m.svgContent });

@@ -5,7 +5,9 @@ import type {
 	PendingResponseComparison,
 	ResponseComparisonDecision,
 } from "../keating/response-comparison";
-import { MarkdownBlock } from "./MarkdownBlock";
+import { buildOpenUIPreview } from "../keating/openui/preview";
+import type { OpenUIDocumentScope } from "../keating/openui/types";
+import { OpenUIPreview } from "./OpenUIPreview";
 import { Spinner } from "./Spinner";
 
 interface ResponseComparisonPanelProps {
@@ -162,8 +164,8 @@ export function ResponseComparisonPanel({ comparison, onChoose }: ResponseCompar
 						</div>
 
 						<div aria-busy={isAnswerPending} className={css({ minHeight: 0, flex: 1, overflowY: "auto", padding: "0.75rem", sm: { padding: "1rem" }, md: { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "1rem" } })} style={{ opacity: isAnswerPending ? 0.72 : 1, transition: "opacity 120ms ease-out" }}>
-							<ResponseOption label="Original response" content={comparison.originalResponse} choice="original" active={active} decision={decision} onChoose={choose} />
-							<ResponseOption label="Alternative response" content={comparison.alternativeResponse} choice="alternative" active={active} decision={decision} onChoose={choose} />
+							<ResponseOption label="Original response" content={comparison.originalResponse} scope={{ sessionId: comparison.sourceSessionId, messageId: String(comparison.originalMessageTimestamp) }} choice="original" active={active} decision={decision} onChoose={choose} />
+							<ResponseOption label="Alternative response" content={comparison.alternativeResponse} scope={{ sessionId: comparison.alternativeSessionId, messageId: String(comparison.alternativeMessageTimestamp) }} choice="alternative" active={active} decision={decision} onChoose={choose} />
 						</div>
 
 						<footer className={css({ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.75rem", borderTop: "1px solid var(--border)", padding: "0.75rem 1rem" })}>
@@ -183,6 +185,7 @@ export function ResponseComparisonPanel({ comparison, onChoose }: ResponseCompar
 function ResponseOption({
 	label,
 	content,
+	scope,
 	choice,
 	active,
 	decision,
@@ -190,6 +193,8 @@ function ResponseOption({
 }: {
 	label: string;
 	content: string;
+	/** Distinct per side so the two previews never collide on document id. */
+	scope: OpenUIDocumentScope;
 	choice: ResponseChoice;
 	active: ResponseChoice;
 	decision: ResponseComparisonDecision | null;
@@ -207,7 +212,7 @@ function ResponseOption({
 		>
 			<h3 className={css({ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted-foreground)" })}>{label}</h3>
 			<div className={css({ minHeight: 0, flex: 1, overflowWrap: "anywhere", borderRadius: "0.5rem", backgroundColor: "color-mix(in srgb, var(--muted) 42%, transparent)", padding: "0.875rem", fontSize: "0.875rem", lineHeight: "1.5rem" })}>
-				<MarkdownBlock content={content} />
+				<OpenUIPreview blocks={buildOpenUIPreview(content, scope)} />
 			</div>
 			<button
 				type="button"

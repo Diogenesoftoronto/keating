@@ -1,3 +1,4 @@
+import { Select } from "./Select";
 import { useEffect, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { SettingsSectionNav } from "./SettingsSectionNav";
@@ -334,31 +335,31 @@ export function SpeechSettingsTab({ onSettingsChange, hideNav = false }: SpeechS
 					{settings.providerId === "openai-realtime" && settings.model.startsWith("gpt-realtime-2") && (
 						<div className={fieldStackClass}>
 							<label className={fieldLabelClass}>Reasoning effort</label>
-							<select
+							<Select aria-label="Reasoning effort"
 								className={inputClass}
 								value={settings.reasoningEffort}
-								onChange={(e) => persist({ reasoningEffort: e.target.value as WebSpeechSettings["reasoningEffort"] })}
+								onValueChange={(value) => persist({ reasoningEffort: value as WebSpeechSettings["reasoningEffort"] })}
 							>
 								<option value="minimal">Minimal — lowest latency</option>
 								<option value="low">Low</option>
 								<option value="medium">Medium</option>
 								<option value="high">High</option>
 								<option value="xhigh">Extra high</option>
-							</select>
+							</Select>
 						</div>
 					)}
 					{settings.providerId !== "tavus" ? <div className={fieldStackClass}>
 						<label className={fieldLabelClass}>Voice</label>
 						{activeProvider && activeProvider.voices.length > 0 ? (
-							<select
+							<Select aria-label="Voice"
 								className={inputClass}
 								value={settings.voiceName}
-								onChange={(e) => persist({ voiceName: e.target.value })}
+								onValueChange={(value) => persist({ voiceName: value })}
 							>
 								{activeProvider.voices.map((v) => (
 									<option key={v} value={v}>{v}</option>
 								))}
-							</select>
+							</Select>
 						) : (
 							<input
 								type="text"
@@ -411,27 +412,27 @@ export function SpeechSettingsTab({ onSettingsChange, hideNav = false }: SpeechS
 				<div className={css({ display: "grid", gap: "0.75rem", sm: { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" } })}>
 					<div className={fieldStackClass}>
 						<label className={fieldLabelClass}>Source</label>
-						<select
+						<Select aria-label="Video source"
 							className={inputClass}
 							value={settings.videoSource}
-							onChange={(e) => persist({ videoSource: e.target.value as WebSpeechSettings["videoSource"] })}
+							onValueChange={(value) => persist({ videoSource: value as WebSpeechSettings["videoSource"] })}
 						>
 							<option value="camera">Camera</option>
 							<option value="screen">Screen share</option>
-						</select>
+						</Select>
 					</div>
 					<div className={fieldStackClass}>
 						<label className={fieldLabelClass}>Frame rate</label>
-						<select
+						<Select aria-label="Video frame rate"
 							className={inputClass}
 							value={String(settings.frameIntervalMs)}
-							onChange={(e) => persist({ frameIntervalMs: Number(e.target.value) })}
+							onValueChange={(value) => persist({ frameIntervalMs: Number(value) })}
 						>
 							{/* Gemini Live accepts at most one video frame per second. */}
 							<option value="1000">1 frame per second — most responsive</option>
 							<option value="2000">1 frame every 2 seconds</option>
 							<option value="5000">1 frame every 5 seconds — cheapest</option>
-						</select>
+						</Select>
 					</div>
 				</div>
 			)}

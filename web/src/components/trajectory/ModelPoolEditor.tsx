@@ -1,3 +1,4 @@
+import { Select } from "../Select";
 import { Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { ReviewGenerationTask, ReviewModelPool, StoredModelReference } from "../../keating/trajectory-review";
@@ -49,10 +50,10 @@ export function ModelPoolEditor({ pools, availableModels, activePoolId, onSelect
 			<div className={css({ display: "flex", alignItems: "flex-end", gap: "0.5rem" })}>
 				<label className={css({ minWidth: 0, flex: 1, fontSize: "0.6875rem", fontWeight: 650, color: "var(--foreground)" })}>
 					Pool
-					<select value={pool?.id ?? ""} className={cx(inputClass, css({ marginTop: "0.25rem" }))} disabled={pools.length === 0} onChange={(event) => onSelectPool(event.currentTarget.value)}>
+					<Select aria-label="Model pool" value={pool?.id ?? ""} className={cx(inputClass, css({ marginTop: "0.25rem" }))} disabled={pools.length === 0} onValueChange={(value) => onSelectPool(value)}>
 						{pools.length === 0 ? <option value="">No model pools</option> : null}
 						{pools.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-					</select>
+					</Select>
 				</label>
 				<button type="button" className={compactButtonClass} onClick={onCreatePool}><Plus size={12} aria-hidden="true" /> New</button>
 			</div>
