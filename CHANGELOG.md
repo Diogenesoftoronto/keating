@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.13.1] - 2026-09-06
+
+### Fixed
+- Keep PDF navigation outside the PWA app fallback so the production paper opens correctly after the service worker takes control.
+- Pin the tested Pi runtime dependencies so fresh npm installs retain the `AuthStorage` API used by the CLI.
+- Require Node.js 22.19 or newer, matching the installed Pi runtime dependencies.
+- Verify lesson generation and persisted learner checks from a clean package installation before npm publication.
+
 ## [3.13.0] - 2026-09-06
 
 ### Added

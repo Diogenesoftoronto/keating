@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-const MIN_NODE_VERSION = "20.19.0";
+const MIN_NODE_VERSION = "22.19.0";
 
 import { readFileSync } from "fs";
 import { dirname, join } from "path";
@@ -11,7 +11,7 @@ try {
   const pkg = JSON.parse(readFileSync(join(__dirname, "..", "package.json"), "utf8"));
   KEATING_VERSION = pkg.version;
 } catch {
-  KEATING_VERSION = "3.13.0";
+  KEATING_VERSION = "3.13.1";
 }
 
 function parseNodeVersion(version) {
@@ -34,7 +34,7 @@ if (compareNodeVersions(parseNodeVersion(process.versions.node), parseNodeVersio
   console.error(`keating requires Node.js ${MIN_NODE_VERSION} or later (detected ${process.versions.node}).`);
   console.error(isWindows
     ? "Install a newer Node.js from https://nodejs.org, or use the standalone installer:"
-    : "Switch to Node 20 with `nvm install 20 && nvm use 20`, or use the standalone installer:");
+    : "Switch to Node 22 with `nvm install 22 && nvm use 22`, or use the standalone installer:");
   console.error(isWindows
     ? "irm https://keating.help/install.ps1 | iex"
     : "curl -fsSL https://keating.help/install | bash");

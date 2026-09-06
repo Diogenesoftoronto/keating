@@ -169,7 +169,13 @@ jobs:
         run: |
           npm pack --ignore-scripts --dry-run --json > npm-pack.json
           node scripts/verify-package-manifest.mjs npm-pack.json
-          npm publish --ignore-scripts --provenance --access public
+          npm pack --ignore-scripts --json > npm-packed.json
+          PACKAGE_ARCHIVE=$(node -p "JSON.parse(require('fs').readFileSync('npm-packed.json', 'utf8'))[0].filename")
+          INSTALL_CHECK_DIR=$(mktemp -d)
+          trap 'rm -rf "$INSTALL_CHECK_DIR"' EXIT
+          npm install --prefix "$INSTALL_CHECK_DIR" "$PWD/$PACKAGE_ARCHIVE" --no-audit --no-fund
+          node scripts/verify-installed-cli.mjs "$INSTALL_CHECK_DIR/node_modules/keating"
+          npm publish "$PACKAGE_ARCHIVE" --ignore-scripts --provenance --access public
 
   deploy-web:
     needs: release
