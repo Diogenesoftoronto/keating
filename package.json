@@ -1,6 +1,6 @@
 {
   "name": "keating",
-  "version": "3.13.0",
+  "version": "3.13.1",
   "packageManager": "bun@1.3.13",
   "type": "module",
   "description": "A Pi-powered hyperteacher package with self-improving teaching policies, lesson maps, and animated visual teaching artifacts.",
@@ -32,7 +32,7 @@
     "keating": "bin/keating.js"
   },
   "engines": {
-    "node": ">=20.19.0"
+    "node": ">=22.19.0"
   },
   "files": [
     "bin/keating.js",
@@ -71,9 +71,9 @@
   "dependencies": {
     "@arizeai/openinference-semantic-conventions": "^2.5.0",
     "@ax-llm/ax": "^22.0.7",
-    "@earendil-works/pi-ai": "^0.80.2",
-    "@earendil-works/pi-coding-agent": "^0.80.2",
-    "@earendil-works/pi-tui": "^0.80.2",
+    "@earendil-works/pi-ai": "0.80.2",
+    "@earendil-works/pi-coding-agent": "0.80.2",
+    "@earendil-works/pi-tui": "0.80.2",
     "@google/generative-ai": "^0.24.1",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@opentelemetry/api": "^1.9.0",

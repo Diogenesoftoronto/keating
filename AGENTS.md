@@ -157,7 +157,7 @@ The narrated intro is composed at build time from two kinds of source footage:
 The Remotion composition in `video/keating-intro/src/{root.tsx,video.tsx}` consumes clips by name, and `scripts/render-keating-intro.mjs` mirrors the scene list (kept in sync manually — verify both files list the same scene count before rendering). Total intro duration: 104s across 10 scenes (7 TUI + 3 web). `devenv tasks run keating:video-intro` produces `.keating/outputs/video/keating-intro/keating-intro.mp4`.
 
 ### Node Version
-`package.json` specifies `engines: { "node": ">=20.19.0" }`. Bun is the primary runtime used in CI.
+`package.json` specifies `engines: { "node": ">=22.19.0" }`. Bun is the primary runtime used in CI.
 
 ## Testing Strategy
 
