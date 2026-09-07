@@ -9,7 +9,7 @@ export class FileEvolutionStore implements EvolutionStore {
   readonly directory: string;
   constructor(cwd: string) { this.directory = join(cwd, ".keating", "state", "teaching-evolution"); }
   private path(key: string): string {
-    if (!/^(state|(?:revisions|raw|experiments|suites)\/[a-zA-Z0-9-]+)$/.test(key)) throw new Error("invalid_evolution_storage_key");
+    if (!/^(state|(?:revisions|raw|experiments|suites|wiki)\/[a-zA-Z0-9-]+)$/.test(key)) throw new Error("invalid_evolution_storage_key");
     return join(this.directory, `${key}.json`);
   }
   async read<T>(key: string): Promise<T | null> {

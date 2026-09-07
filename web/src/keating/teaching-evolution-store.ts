@@ -12,7 +12,7 @@ export class BrowserEvolutionStore implements EvolutionStore {
     });
   }
   private validateKey(key: string): void {
-    if (!/^(state|(?:revisions|raw|experiments|suites)\/[a-zA-Z0-9-]+)$/.test(key)) throw new Error("invalid_evolution_storage_key");
+    if (!/^(state|(?:revisions|raw|experiments|suites|wiki)\/[a-zA-Z0-9-]+)$/.test(key)) throw new Error("invalid_evolution_storage_key");
   }
   async read<T>(key: string): Promise<T | null> {
     this.validateKey(key);

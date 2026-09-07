@@ -16,7 +16,7 @@ Local fixtures test the code and actual tool paths with controlled responses. No
 
 ## What is borrowed from WikiSkill?
 
-The separation of raw experience, persistent knowledge, and active procedures informed the architecture. The citation is Tang et al. (2026), arXiv:2608.27454. Keating has a compact hypothesis ledger and one bounded reflective proposal; it does not implement the full WikiSkill wiki-maintenance workflow or reproduce its benchmark results. It is also not a completed GEPA implementation.
+The separation of raw experience, persistent knowledge, and active procedures informed the architecture. The citation is Tang et al. (2026), arXiv:2608.27454. Keating now has a bounded wiki maintainer, indexed pattern pages, maintenance logs, programmatic skill-impact history, and selective training-evidence reads before one skill proposal. Knowledge persists independently of skill acceptance. This implements the maintenance separation but does not reproduce WikiSkill's benchmark results or provide an unbounded, autonomously curated knowledge base. It is also not a completed GEPA implementation.
 
 ## What does the new gate establish?
 

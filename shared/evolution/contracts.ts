@@ -23,6 +23,8 @@ export interface TeachingSkill {
   instructions: string;
   hypothesis: string;
   evidenceIds: string[];
+  /** Persistent wiki patterns motivating this procedure; absent on legacy revisions. */
+  patternIds?: string[];
 }
 export interface TeachingRevision {
   schemaVersion: 1;
@@ -116,5 +118,6 @@ export type SkillProposer = (input: {
   incumbent: TeachingRevision;
   training: EpisodeBenchmark;
   hypotheses: TeachingHypothesis[];
+  wiki?: import("./wiki.js").WikiAccess;
   signal: AbortSignal;
 }) => Promise<SkillProposal>;

@@ -6,6 +6,7 @@ import { KEATING_SYSTEM_PROMPT, getActiveKeatingPrompt } from "../keating/browse
 import { TEACHING_CASES } from "../../../shared/evolution/cases";
 import { composeTeachingPrompt } from "../../../shared/evolution/benchmark";
 import { loadActiveTeachingRevision, runTeachingEvolution } from "../../../shared/evolution/loop";
+import { loadWiki, wikiAccess } from "../../../shared/evolution/wiki";
 
 beforeEach(() => { globalThis.indexedDB = new IDBFactory(); });
 
@@ -15,24 +16,40 @@ test("browser persistence activates only the exact revision with complete evalua
   store.exclusive = async (operation) => operation();
   const report = await runTeachingEvolution({
     store, cases: TEACHING_CASES, basePrompt: KEATING_SYSTEM_PROMPT,
-    runner: async ({ systemPrompt }) => ({
+    runner: async ({ systemPrompt }) => {
+      expect(systemPrompt).not.toContain("PRIVATE_WIKI_SENTINEL");
+      return ({
       messages: [{ role: "assistant", content: systemPrompt.includes("fixture-procedure") ? "improved" : "baseline" }],
       toolCalls: [], model: "fixture", runtime: "test-only",
-    }),
+    }); },
     judge: async ({ testCase, execution }) => testCase.rubric.map((criterion, index) => ({
       criterionId: criterion.id, passed: execution.messages[0].content === "improved" || index < testCase.rubric.length - 1,
       rationale: "Deterministic storage integration fixture.",
     })),
-    proposer: async ({ training }) => ({
+    maintainer: async ({ training }) => ({ summary: "Keep diagnostic checks grounded in observed reasoning.", patches: [{
+      id: "diagnostic-check", title: "Diagnostic check", summary: "Probe reasoning before advancing.",
+      markdown: "PRIVATE_WIKI_SENTINEL: distinguish remembered words from explained reasoning.",
+      evidenceIds: [training.results[0].id], expectedRevision: 0,
+    }] }),
+    proposer: async ({ training, wiki }) => {
+      expect(await wiki!.read("wiki/patterns/diagnostic-check.md")).toContain("PRIVATE_WIKI_SENTINEL");
+      return ({
       skill: { id: "check-understanding", title: "Check understanding", instructions: "fixture-procedure",
-        hypothesis: "A fresh check reveals repetition.", evidenceIds: [training.results[0].id] },
+        hypothesis: "A fresh check reveals repetition.", evidenceIds: [training.results[0].id], patternIds: ["diagnostic-check"] },
       hypothesis: { id: "ignored", statement: "A fresh check reveals repetition.", evidenceIds: [], status: "proposed" },
-    }),
+    }); },
   });
   expect(report.status).toBe("accepted");
   const revision = (await loadActiveTeachingRevision(store))!;
+  expect(revision.skills[0].patternIds).toEqual(["diagnostic-check"]);
+  const reopened = new BrowserEvolutionStore();
+  const wiki = await loadWiki(reopened, report.wikiRevisionId, KEATING_SYSTEM_PROMPT);
+  expect(wiki.impacts[0].status).toBe("accepted");
+  expect(wiki.impacts[0].after).toEqual(revision.skills[0]);
+  expect(await wikiAccess(reopened, wiki).read("wiki/patterns/diagnostic-check.md")).toContain("PRIVATE_WIKI_SENTINEL");
   const active = await getActiveKeatingPrompt(new KeatingStorage(), "learn", store);
   expect(active).toBe(composeTeachingPrompt(revision));
+  expect(active).not.toContain("PRIVATE_WIKI_SENTINEL");
   expect(await getActiveKeatingPrompt(new KeatingStorage(), "learn", store, "A different chosen persona")).toBe("A different chosen persona");
   await expect(store.put(`experiments/${report.id}`, { ...report, status: "rejected" })).rejects.toThrow("immutable");
 });

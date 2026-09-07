@@ -2,7 +2,7 @@
 
 Keating can now execute teaching experiments, propose one teaching skill, and activate its exact revision when independent validation and holdout gates pass. This establishes eligibility for experimental teaching use. It does not establish improved human learning.
 
-The design separates raw executions, accumulated hypotheses, and deployable teaching procedures, informed by [WikiSkill](https://arxiv.org/html/2608.27454). Failed proposals remain inspectable. The current implementation evolves bounded skill instructions, not its own evaluator, assessment keys, tool permissions, source code, or scoring thresholds.
+The design separates raw executions, a maintained pattern wiki, and deployable teaching procedures, informed by [WikiSkill](https://arxiv.org/html/2608.27454). Failed proposals remain inspectable. The current implementation evolves bounded skill instructions, not its own evaluator, assessment keys, tool permissions, source code, or scoring thresholds.
 
 ## Commands
 
@@ -44,20 +44,45 @@ The shared implementation is in `shared/evolution/`. Each experiment:
 
 1. Loads and verifies the incumbent's content-addressed revision and its prior activation evidence.
 2. Executes fresh tutor responses to training conversation prefixes. It never reuses a historical learner response as the counterfactual reaction to changed teaching.
-3. Supplies training evidence and retained hypotheses to a proposer, which creates or replaces one skill with explicit evidence references.
-4. Runs incumbent and candidate independently on the same validation cases, using the same recorded model/runtime.
-5. If validation passes, marks the release holdout consumed before executing it and independently compares both revisions there.
-6. Persists the experiment before atomically changing the active revision pointer. Accepted skills apply to subsequent sessions; running sessions keep their revision.
+3. Runs a separate wiki maintainer over fresh training evidence and indexed prior knowledge. It commits pattern refinements and a maintenance log before any skill proposal.
+4. Lets the proposer selectively read the wiki and training traces, then create or replace one skill with explicit evidence and pattern references.
+5. Runs incumbent and candidate independently on the same validation cases, using the same recorded model/runtime.
+6. If validation passes, marks the release holdout consumed before executing it and independently compares both revisions there.
+7. Persists the experiment before atomically changing the active revision pointer. Accepted skills apply to subsequent sessions; running sessions keep their revision.
 
-The actor sees the learner conversation prefix and composed teaching instructions. It does not receive the case rubric, validation results, holdout results, or the hypothesis ledger. The judge sees the fixed case and actual execution, not candidate instructions. The proposer sees training evidence and accumulated hypotheses, not the held-out conversations or their answer criteria.
+The actor sees the learner conversation prefix and composed teaching instructions. It does not receive the case rubric, validation results, holdout results, the hypothesis ledger, or wiki pages. The judge sees the fixed case and actual execution, not candidate instructions. The maintainer and proposer see training evidence, indexed patterns, maintenance logs, and aggregate skill-impact history, never held-out conversations or their answer criteria.
 
 The promotion gate is fixed: at least six independent case families, no family regression, no failed critical candidate criterion, mean improvement of at least 0.05, and a one-sided paired sign-test p-value at most 0.05. Validation and holdout must each pass. Missing execution/judge results invalidate the comparison. These are behavior-benchmark gates, not a power analysis or causal test of human learning.
 
-The bundled suite has 6 training, 6 validation, and 6 holdout cases. A full successful invocation executes 30 tutor episodes, 30 judgments, and one proposal. Default episode limits are 90 seconds, six provider calls, eight tool calls, 2,048 output tokens per provider call, and 1 MiB subprocess output. Experiments allow one candidate, at most two repeats, and at most 60 tutor episode executions, counting both incumbent and candidate runs. CLI packs are bounded to 60 cases and 1 MB. Model-backed commands require a configured authenticated provider and incur provider usage.
+The bundled suite has 6 training, 6 validation, and 6 holdout cases. A full successful invocation executes 30 tutor episodes, 30 judgments, one maintenance pass, and one proposal. Maintenance and proposal each allow up to six model calls (twelve extra calls total), including selective reads; they are not a single-call cost estimate. Default episode limits are 90 seconds, six provider calls, eight tool calls, 2,048 output tokens per provider call, and 1 MiB subprocess output. Experiments allow one candidate, at most two repeats, and at most 60 tutor episode executions, counting both incumbent and candidate runs. CLI packs are bounded to 60 cases and 1 MB. Model-backed commands require a configured authenticated provider and incur provider usage.
 
-The Pi evaluator runs the production pedagogical tool implementations in a disposable workspace with in-memory session state. Its allowed tools are `plan`, `map`, `verify`, `quiz`, `grade_quiz`, and `read`; reads stay inside that workspace. It excludes shell execution, source editing, recursive evolution, animation's nested inference, external context files, and user extensions. The judge and proposer have no tools. This tests the bounded pedagogical subset; it is not full UI, browser, speech, arbitrary tool, or deployment proof.
+The Pi evaluator runs the production pedagogical tool implementations in a disposable workspace with in-memory session state. Its allowed tools are `plan`, `map`, `verify`, `quiz`, `grade_quiz`, and `read`; reads stay inside that workspace. It excludes shell execution, source editing, recursive evolution, animation's nested inference, external context files, and user extensions. The judge has no tools. The maintainer and proposer can request up to three allowlisted wiki/training paths per round; they have no filesystem or host tool access. This tests the bounded pedagogical subset; it is not full UI, browser, speech, arbitrary tool, or deployment proof.
 
 The browser adapter uses a fresh Pi Agent, the selected model and thinking level, and a disposable IndexedDB database. Its allowed tools are `deck`, `quiz`, `grade_quiz`, and `grade_question_checks`. It applies a revision to subsequent sessions using the same base persona; changing the persona leaves the old revision archived. Evaluators, sealed cases, assessment keys, and activation modules are excluded from the mutable NodePod boot bundle.
+
+## Maintained wiki
+
+`shared/evolution/wiki.ts` stores immutable, content-addressed knowledge snapshots.
+`state.wikiRevisionId` points to the latest one. The generated index advertises
+pattern summaries, maintenance logs, impact records, and training trace paths;
+full pages and raw executions are read on demand. Every trace is digest-checked.
+Neither arbitrary paths nor validation/holdout traces are readable through this
+interface.
+
+The maintainer creates or replaces pattern pages using an expected revision and
+fresh training evidence. Prior evidence references remain attached. A separate
+proposer links its procedure to these patterns through `TeachingSkill.patternIds`.
+The loop records the procedure before/after, its verdict, and aggregate validation
+delta itself; the model cannot invent an impact record. A failed or rejected
+proposal preserves the committed knowledge. Changing the base persona starts a
+separate empty wiki while keeping previous snapshots archived.
+
+The implementation is deliberately bounded: 128 patterns, 16 patches per pass,
+12,000 characters per page, 2 MB per snapshot, and bounded model inspection. Limits
+fail explicitly rather than silently dropping evidence. There is no automatic
+archive compaction, page deletion/merging, account-wide wiki synchronization, or
+claim to reproduce WikiSkill's published benchmark gains. Long-running curation
+will need an explicit archival policy before these limits are reached.
 
 ## Case packs and holdout renewal
 
@@ -106,7 +131,7 @@ The immediate score difference is descriptive within-person performance, not a c
 
 ## Storage and scope
 
-- CLI/Pi revisions, raw episodes, hypotheses, and activation state live under the current project's `.keating/state/teaching-evolution/`. Reports are under `.keating/outputs/benchmarks/teaching-experiments/` and `teaching-episodes/`.
+- CLI/Pi revisions, raw episodes, wiki snapshots (`wiki/<digest>.json`), hypotheses, and activation state live under the current project's `.keating/state/teaching-evolution/`. Reports are under `.keating/outputs/benchmarks/teaching-experiments/` and `teaching-episodes/`.
 - Learning checks live under `.keating/state/learning-checks/`, separate from disposable tutor workspaces.
 - Browser state lives in the current origin's `keating-teaching-evolution` IndexedDB database, with Web Locks coordinating tabs. It is browser-local and currently has no account namespace or cross-device synchronization.
 

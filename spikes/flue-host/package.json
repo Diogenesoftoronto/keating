@@ -10,13 +10,16 @@
     "build": "vite build",
     "test": "node --experimental-strip-types --test --test-concurrency=1 test/*.test.ts",
     "typecheck": "tsc --noEmit",
-    "test:nodepod": "node --experimental-strip-types --test nodepod/run.test.ts"
+    "test:nodepod": "node --experimental-strip-types --test nodepod/run.test.ts",
+    "test:contracts": "bun test --preload ./contracts/bun-preload.ts ./contracts/persistence.test.ts"
   },
   "dependencies": {
     "@earendil-works/pi-ai": "0.83.0",
+    "@flue/libsql": "2.0.3",
     "@flue/runtime": "2.0.3",
     "@flue/vite": "2.0.3",
     "hono": "^4.8.3",
+    "sql.js": "1.14.2",
     "valibot": "^1.1.0"
   },
   "devDependencies": {

@@ -325,11 +325,12 @@ in
       bun run typecheck
       bun run build
       bun run test
+      bun run test:contracts
     '';
   };
 
   tasks."keating:test-flue-nodepod" = {
-    description = "Test portable runtime execution and the official Flue compatibility boundary in real NodePod";
+    description = "Test portable runtime and official Flue dispatch and persistence in real NodePod";
     exec = ''
       cd spikes/flue-host
       bun run test:nodepod
