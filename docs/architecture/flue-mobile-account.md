@@ -6,7 +6,7 @@ Flue baseline inspected: `@flue/runtime`, `@flue/sdk`, and `@flue/vite` 2.0.3
 
 ## Decision
 
-Use Flue as Keating's canonical **agent authoring and hosted harness model**, but do not replace the working browser agent with Flue's published runtime.
+Use Flue as Keating's canonical **agent authoring and execution model**. Browser chat now executes the official Node runtime inside a dedicated NodePod; its React UI observes native `@flue/sdk` conversation state. See [browser chat](flue-browser-chat.md).
 
 Flue gives Keating the right high-level vocabulary: agent functions, dynamic hooks, tools, skills, subagents, MCP connections, lifecycle hooks, persistent conversation state, durable submissions, and a provider-neutral sandbox contract. It does not currently provide a browser or React Native agent runtime. Its published runtime requires Node.js 22.19 or newer, imports Node APIs, and officially builds only for Node and Cloudflare. `@flue/sdk` is browser-safe, but it is a transport client for a deployed Flue conversation; it does not execute the agent locally. Flue also continues to use Pi's model/provider protocol internally. Adopting Flue therefore reduces the amount of harness architecture Keating owns, but it does not eliminate Pi underneath or satisfy client-side execution by itself.
 
@@ -14,7 +14,7 @@ The durable design is:
 
 1. Define Keating agents once through a small `@keating/agent-runtime` facade whose semantics deliberately match the useful Flue hooks.
 2. Back that facade with the real Flue runtime on Node-hosted and remote sandbox surfaces.
-3. Back the same facade with a narrow browser renderer on top of the existing `pi-agent-core`, NodePod, IndexedDB, and Keating tool authorization. This is a compatibility adapter, not a second product-level agent API.
+3. Render the same facade into a secured tool catalog, then execute it through official Flue in NodePod. Keep provider credentials and existing tool authorization in the browser, with IndexedDB storing settled runtime checkpoints.
 4. Treat mobile as both a native client of account-hosted Flue conversations and a controller for remote self-modification. Mobile locally activates only the bounded, declarative parts of an evolved revision that React Native can safely execute.
 5. Put identity, durable device sessions, account-wide evolution state, artifact synchronization, job scheduling, and active-revision compare-and-swap behind the Not Organic account.
 6. Put all code execution behind a provider-neutral runner interface. Cloudflare Sandbox may be one adapter, but no artifact, API, job record, or Keating agent imports a Cloudflare type.
@@ -24,10 +24,10 @@ This preserves the strongest current property: a learner can open Keating in a b
 ## Implemented on local `main` (merged from `spike/flue-runtime`)
 
 - `packages/agent-runtime` supplies the environment-neutral hook facade, strict render topology, JSON state, lifecycle, skill, subagent, MCP, sandbox, and data-writer contracts.
-- `web/src/keating/portable-agent` renders that facade onto the existing browser Pi loop. New browser teachers now pass their actual prompt and secured tool catalog through it; native Pi tool objects are preserved so streaming, OpenUI details, and authorization behavior do not change.
+- `web/src/keating/portable-agent` renders that facade into the browser tool catalog used by official Flue. New browser teachers now pass their actual prompt and secured tool catalog through it; native Pi tool objects are preserved so streaming, OpenUI details, and authorization behavior do not change.
 - The browser teacher exposes a progressive `teaching-improvement` skill and a fresh-context `lesson-critic` delegate. Runtime capability refreshes are re-authored through the same facade.
 - `spikes/flue-host` is a production-built Flue 2.0.3 Node host. Its integration test executes skill activation, authenticated allowlisted Streamable HTTP MCP discovery/call, an isolated child task, parent resumption, and persistent state.
-- A custom sql.js persistence runner also executes the official host in real NodePod: dispatch, tool state, and runtime restart against the same pod file are tested. This does not replace the browser Pi loop or provide account-wide storage. See [execution evidence](../../spikes/flue-host/README.md#nodepod-execution-evidence).
+- A custom sql.js persistence runner also executes the official host in real NodePod: dispatch, tool state, and runtime restart against the same pod file are tested. Browser chat uses that runtime through a local SDK transport; it does not provide account-wide storage. See [execution evidence](../../spikes/flue-host/README.md#nodepod-execution-evidence).
 - Expo mobile has Not Organic authorization-code login with PKCE S256, a DPoP-bound native device key, rotating durable device sessions, account loading, logout, and account UI. Android uses Keystore and iOS uses the Secure Enclave through the local Expo module.
 - `packages/learner-contracts/src/account-evolution.ts` defines account-relative revisions, learner evidence, runner requirements, attestations, jobs, and compare-and-swap activation without a client-selected account ID or provider discriminator.
 - The Not Organic provider has a provider-neutral evolution service core plus authenticated `/v1/evolution/*` route wiring and mobile-approved evolution scopes. The gateway derives account and product exclusively from the verified DPoP principal.
@@ -67,7 +67,7 @@ The branch is an integration implementation, not deployment proof. The provider 
 |                       |  |                        |  | Flue runtime             |
 | Keating hook facade   |  | @flue/sdk for remote  |  |                        |
 | browser renderer      |  | conversations          |  | real Flue hooks         |
-| pi-agent-core         |  |                        |  | durable submissions     |
+| Flue SDK + NodePod    |  |                        |  | durable submissions     |
 | NodePod sandbox       |  | native DPoP signer    |  | skills/subagents/MCP    |
 | IndexedDB revisions   |  | SecureStore session   |  | neutral sandbox adapter |
 | local/offline first   |  | bounded local overlays|  | Not Organic model broker|
@@ -153,7 +153,7 @@ Until such a failed contract test exists, prefer adapters and upstream proposals
 | `useSandbox` | Attach the active source workspace | Adapt `AgentSandbox`/NodePod to the Flue `Sandbox` shape | No arbitrary local shell; remote runner selected by job requirements | Flue has one sandbox and no snapshot verb; snapshots remain in the Keating runner transaction layer |
 | `useTool` | Deterministic pedagogy, learner, artifact, mutation, and account actions | Existing browser tools wrapped by `AuthorizedToolExecutor` | Native bounded tools locally; full tools remotely | Flue has no Keating permission policy; every tool still passes through the Keating authorization wrapper |
 | `useSkill` | Teaching methods, evaluation rubrics, evolution procedures | Read active skill files from NodePod/IndexedDB | Download signed text/resources; remote agent loads full skill | Active revision must be loaded before synchronous render; arbitrary skill scripts are remote-only |
-| `useSubagent` | Researcher, diagnostician, evolver, evaluator, reviewer | Fresh `pi-agent-core` child context sharing the selected sandbox | Remote Flue subagents | A Flue subagent shares the parent's sandbox and has no persistent identity; use registered agents/jobs for isolated parallel candidates |
+| `useSubagent` | Researcher, diagnostician, evolver, evaluator, reviewer | Fresh `FlueConversation` and dedicated runtime with a bounded tool catalog | Remote Flue subagents | A Flue subagent shares the parent's sandbox and has no persistent identity; use registered agents/jobs for isolated parallel candidates |
 | `useMcpConnection` | Optional external tools | Browser-safe WebMCP or fetch transport when CORS/auth permits | Remote broker initially | Credentials are references to Not Organic broker capabilities, never revision bytes; published Flue MCP runs with the hosted runtime |
 | `usePersistentState` | Per-conversation phase, idempotency guards, cached revision pointer | IndexedDB conversation stream | Remote conversation stream | Never use it as the MAP-Elites archive or account-global active pointer |
 | `useAgentStart` | Resolve and pin active revision before first model work | Async account/local lookup then rerender | Remote runtime | Offline lookup must fall back to latest locally verified revision |
@@ -161,8 +161,8 @@ Until such a failed contract test exists, prefer adapters and upstream proposals
 | `useResponseStart` / `useResponseFinish` | Stamp revision, runtime, latency, and usage metadata | Browser trace metadata | `@flue/sdk` response metadata | Completed canonical response is authoritative; partial deltas are not learner evidence |
 | `useDataWriter` | Stream OpenUI documents and evaluation status | Map directly to existing OpenUI document stream | Render supported mobile document nodes | This should replace parsing special UI tags from assistant prose over time |
 | `observe` / `instrument` | Operational tracing, runner cost, model/tool telemetry | Local diagnostics and optional privacy-safe export | Hosted telemetry | Runtime events are diagnostics; only validated learner interactions become learner evidence |
-| `PersistenceAdapter` | Hosted durable conversations | Not used by local renderer | Reached through hosted runtime | Needs a Not Organic/Convex or Postgres adapter; it does not provide IndexedDB or account sync |
-| `@flue/sdk` / `@flue/react` | Consume a hosted conversation | Optional hosted mode | Primary mobile remote-agent transport | SDK transports to a server; it is not the client-side harness |
+| `PersistenceAdapter` | Durable conversations | Custom sql.js runner, official stores, IndexedDB checkpoints | Reached through hosted runtime | Browser checkpoints do not provide account sync |
+| `@flue/sdk` / `@flue/react` | Observe native conversations | SDK fetch bridge to the local NodePod router | Primary mobile remote-agent transport | Official Node runtime executes separately from the DOM |
 
 ## Sandboxes and runner neutrality
 
@@ -441,22 +441,25 @@ The sandbox is responsible only for the leased job. The Flue agent is responsibl
 | Work item | Adapter, upstream change, or fork? | Reason |
 |---|---|---|
 | Flue on hosted Node | Direct dependency behind Keating custom hooks | Supported target |
-| Browser-local Flue semantics | Keating browser adapter now; propose environment-neutral Flue core upstream | Published runtime is not browser-safe |
+| Browser-local Flue execution | Official Node runtime inside NodePod, local SDK bridge | Node-only imports stay outside the DOM bundle |
 | React Native Flue runtime | Do not fork initially; use SDK plus bounded local engine | Arbitrary runtime adds security/App Store/JIT problems and duplicates remote capability |
 | Existing `AgentSandbox` to Flue `Sandbox` | Adapter | Shapes map mechanically; preserve Keating capabilities/snapshots outside Flue |
-| NodePod | Adapter | Browser provider, not a Flue target |
+| NodePod | Custom persistence and transport adapters | Executes the official Node target |
 | Cloudflare Sandbox | Separate provider adapter/target | Prevent bindings and Durable Objects entering shared contracts |
 | Other microVM/container services | `EvolutionRunnerAdapter` implementations | Selected by capabilities |
 | Not Organic models | Pi provider adapter registered with Flue | Flue model protocol is Pi's protocol |
 | Request/job-scoped model auth | Adapter plus isolated job context; upstream hook if context cannot reach provider auth | Module-global provider registration must not mix tenant credentials |
 | Not Organic conversation durability | Flue `PersistenceAdapter` over the chosen durable store | Conversation state only |
 | Account pedagogy sync | Keating/Not Organic service, not Flue persistence | Cross-instance, account-global immutable graph |
-| Browser conversation persistence | Existing IndexedDB event store/browser renderer | Flue ships no IndexedDB persistence adapter |
+| Browser conversation persistence | Official SQL stores plus settled IndexedDB checkpoints | Custom adapter; interrupted work is not replayed |
 | Dynamic prompt/policy/weights | Revision loader + Flue state/instruction hooks | Data is naturally dynamic |
 | Dynamic executable hooks/tools/agents | Rebuild/restart a pinned runtime revision | Flue agent discovery is build-time |
 | Tool authorization | Keating wrapper around every tool/MCP tool | Flue resource mounting is not the product permission policy |
 
-## Delivery order
+## Original delivery order
+
+The initial slices below are historical staging steps. Browser execution has since
+moved to official Flue in NodePod; see the implementation status above.
 
 ### Slice 1: prove the authoring boundary
 

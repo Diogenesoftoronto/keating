@@ -1,3 +1,5 @@
+import type { FlueConversationMessage } from "@flue/sdk";
+import type { FlueConversation } from "../keating/flue/conversation";
 import {
   createContext,
   forwardRef,
@@ -13,7 +15,6 @@ import {
 import type { Key, ReactNode } from "react";
 import { createPortal } from "react-dom";
 import type {
-  Agent,
   AgentMessage,
   ThinkingLevel,
 } from "@earendil-works/pi-agent-core";
@@ -2553,7 +2554,17 @@ export function ReasoningPart({
 
 function formatToolResult(result: unknown) {
   if (result === undefined) return "";
-  if (typeof result === "string") return result;
+  if (typeof result === "string") {
+    // Flue persists JSON tool outputs as text in its model-facing result.
+    try {
+      const parsed: unknown = JSON.parse(result);
+      if (parsed && typeof parsed === "object" && "content" in parsed && Array.isArray(parsed.content)) return formatToolResult(parsed.content);
+    } catch { /* Plain text tool results need no decoding. */ }
+    return result;
+  }
+  if (result && typeof result === "object" && "content" in result) {
+    return formatToolResult(result.content);
+  }
   if (Array.isArray(result)) {
     const text = result
       .map((part) => {
@@ -2563,7 +2574,7 @@ function formatToolResult(result: unknown) {
       })
       .filter(Boolean)
       .join("\n");
-    if (text) return text;
+    if (text) return formatToolResult(text);
   }
   return JSON.stringify(result, null, 2);
 }
@@ -3041,12 +3052,12 @@ function isSameStreamingAssistantMessage(
 }
 
 function visibleAgentMessages(
-  agent: Agent | null,
+  agent: FlueConversation | null,
   speechEnabled: boolean,
 ): AgentMessage[] {
   if (!agent) return [];
-  const messages = [...agent.state.messages];
-  const streamingMessage = agent.state.streamingMessage as any;
+  const messages = [...agent.context.messages];
+  const streamingMessage = agent.context.streamingMessage as any;
   if (
     streamingMessage?.role === "assistant" &&
     hasRenderableAssistantContent(streamingMessage.content)
@@ -3369,6 +3380,33 @@ function toAssistantMessage(
   };
 }
 
+/** Render the SDK projection directly: stable Flue identities and explicit tool states. */
+function flueThreadMessage(message: FlueConversationMessage, running: boolean): ThreadMessageLike {
+  const content = message.parts.flatMap((part): any[] => {
+    if (part.type === "text") return assistantTextParts(part.text);
+    if (part.type === "reasoning") return [{ type: "reasoning", text: part.text }];
+    if (part.type === "file" && part.url) return [{ type: "image", image: part.url }];
+    if (part.type === "dynamic-tool") {
+      const output = part.state === "output-available" ? part.output : undefined;
+      return [{ type: "tool-call", toolCallId: part.toolCallId, toolName: part.toolName,
+        args: part.input, argsText: JSON.stringify(part.input),
+        result: part.state === "output-error" ? part.errorText : output,
+        isError: part.state === "output-error" }];
+    }
+    return [];
+  });
+  const failed = message.settlement?.outcome;
+  const active = running && message.parts.some(part =>
+    ((part.type === "text" || part.type === "reasoning") && part.state === "streaming") ||
+    (part.type === "dynamic-tool" && part.state === "input-available"));
+  return { id: message.id, role: message.role === "user" ? "user" : "assistant", content,
+    ...(typeof message.metadata?.timestamp === "number" ? { createdAt: new Date(message.metadata.timestamp) } : {}),
+    ...(message.role !== "user" ? { status: failed ? { type: "incomplete", reason: failed === "aborted" ? "cancelled" : "error" } :
+      active ? { type: "running" } : { type: "complete", reason: "stop" } } : {}),
+    metadata: { custom: { ...message.metadata, keatingRetryable: !!failed } },
+  } as ThreadMessageLike;
+}
+
 function makeUserMessageFromAppend(
   message: AppendMessage,
 ): AgentMessage | null {
@@ -3390,7 +3428,7 @@ function makeUserTextMessage(text: string): AgentMessage {
 }
 
 function messagesFromLiveTranscript(
-  agent: Agent,
+  agent: FlueConversation,
   turns: LiveTranscriptTurn[],
 ): AgentMessage[] {
   const messages: AgentMessage[] = [];
@@ -3407,9 +3445,9 @@ function messagesFromLiveTranscript(
       messages.push({
         role: "assistant",
         content: [{ type: "text", text: turn.assistant.trim() }],
-        api: agent.state.model.api,
-        provider: agent.state.model.provider,
-        model: agent.state.model.id,
+        api: agent.context.model.api,
+        provider: agent.context.model.provider,
+        model: agent.context.model.id,
         usage: {
           input: 0,
           output: 0,
@@ -3437,15 +3475,15 @@ function hasUserTextMessage(messages: AgentMessage[], text: string): boolean {
 }
 
 function makeAttachmentErrorMessage(
-  agent: Agent,
+  agent: FlueConversation,
   errorMessage: string,
 ): AgentMessage {
   return {
     role: "assistant",
     content: [],
-    api: agent.state.model.api,
-    provider: agent.state.model.provider,
-    model: agent.state.model.id,
+    api: agent.context.model.api,
+    provider: agent.context.model.provider,
+    model: agent.context.model.id,
     usage: {
       input: 0,
       output: 0,
@@ -3476,20 +3514,20 @@ function errorMessageText(error: unknown): string {
   }
 }
 
-function makePromptErrorMessage(agent: Agent, error: unknown): AgentMessage {
+function makePromptErrorMessage(agent: FlueConversation, error: unknown): AgentMessage {
   return makeAttachmentErrorMessage(agent, errorMessageText(error));
 }
 
 function recordCredentialBlockedSend(
-  agent: Agent,
+  agent: FlueConversation,
   userMessage: AgentMessage,
   provider: string,
 ): void {
   const userText = textFromContent((userMessage as any).content);
-  if (!userText || !hasUserTextMessage(agent.state.messages, userText)) {
-    agent.state.messages.push(userMessage);
+  if (!userText || !hasUserTextMessage(agent.context.messages, userText)) {
+    agent.context.messages.push(userMessage);
   }
-  agent.state.messages.push(
+  agent.context.messages.push(
     makePromptErrorMessage(
       agent,
       new Error(
@@ -3499,7 +3537,7 @@ function recordCredentialBlockedSend(
   );
 }
 
-function makePrefillStatusMessage(agent: Agent, step: number): AgentMessage {
+function makePrefillStatusMessage(agent: FlueConversation, step: number): AgentMessage {
   return {
     role: "assistant",
     content: [
@@ -3508,9 +3546,9 @@ function makePrefillStatusMessage(agent: Agent, step: number): AgentMessage {
         text: PREFILL_STATUS_LINES[step % PREFILL_STATUS_LINES.length],
       },
     ],
-    api: agent.state.model.api,
-    provider: agent.state.model.provider,
-    model: agent.state.model.id,
+    api: agent.context.model.api,
+    provider: agent.context.model.provider,
+    model: agent.context.model.id,
     usage: {
       input: 0,
       output: 0,
@@ -4143,7 +4181,7 @@ function AssistantThread({
   emptyStateDescription,
   pendingPrompt,
 }: {
-  agent: Agent | null;
+  agent: FlueConversation | null;
   callbacks: ChatPanelSetupCallbacks;
   version: number;
   speechEnabled: boolean;
@@ -4161,9 +4199,9 @@ function AssistantThread({
   const [voiceComposerOpen, setVoiceComposerOpen] = useState(false);
   const [dismissedQuizId, setDismissedQuizId] = useState<string | null>(null);
   const [hasGoogleKey, setHasGoogleKey] = useState<boolean | null>(null);
-  const isRunning = agent?.state.isStreaming ?? false;
+  const isRunning = agent?.getSnapshot().running ?? false;
   const currentThinkingLevel =
-    agent?.state.thinkingLevel ?? callbacks.thinkingLevel ?? "medium";
+    agent?.context.thinkingLevel ?? callbacks.thinkingLevel ?? "medium";
   const [selectedThinkingLevel, setSelectedThinkingLevel] =
     useState<ThinkingLevel>(currentThinkingLevel);
   useEffect(() => {
@@ -4174,7 +4212,7 @@ function AssistantThread({
       if (!agent || turns.length === 0) return;
       const messages = messagesFromLiveTranscript(agent, turns);
       if (messages.length === 0) return;
-      agent.state.messages.push(...messages);
+      agent.context.messages.push(...messages);
       setLocalVersion((current) => current + 1);
       await callbacks.onLocalMessagesChanged?.();
     },
@@ -4219,27 +4257,28 @@ function AssistantThread({
       callbacks.onImageGenerationModelSelect,
     ],
   );
-  const modelRef = useRef(agent?.state.model);
-  if (agent) modelRef.current = agent.state.model;
+  const modelRef = useRef(agent?.context.model);
+  if (agent) modelRef.current = agent.context.model;
 
-  const totalMessages = messages.length;
-  const convertMessage = useCallback(
-    (message: AgentMessage, index: number) =>
-      toAssistantMessage(
-        message,
-        index,
-        totalMessages,
-        isRunning,
-        modelRef.current?.provider,
-      ),
-    [totalMessages, isRunning],
-  );
+  const threadMessages = useMemo(() => {
+    const native = agent?.getSnapshot().conversation;
+    if (!native) return messages.map((message, index) => toAssistantMessage(message, index, messages.length, isRunning, modelRef.current?.provider));
+    const legacy = mergeConsecutiveAssistantMessages(foldToolResults(filterSpeechMessages(agent!.legacyMessages, speechEnabled)));
+    const local = mergeConsecutiveAssistantMessages(foldToolResults(filterSpeechMessages(agent!.localMessages, speechEnabled)));
+    const localError = local.some(message => message.role === "assistant" && ["error", "aborted"].includes(message.stopReason));
+    return [
+      ...legacy.map((message, index) => toAssistantMessage(message, index, legacy.length, false, modelRef.current?.provider)),
+      ...native.messages.filter(message => (message.display === "visible" || !!message.settlement) && !(localError && message.settlement)).map(message => flueThreadMessage(message, isRunning)),
+      ...local.map((message, index) => toAssistantMessage(message, legacy.length + index, legacy.length + local.length, false, modelRef.current?.provider)),
+    ].sort((left, right) => (left.createdAt?.getTime() ?? 0) - (right.createdAt?.getTime() ?? 0));
+  }, [agent, version, localVersion, messages, isRunning, speechEnabled]);
+  const convertMessage = useCallback((message: ThreadMessageLike) => message, []);
 
   const sendText = useCallback(
     async (text: string) => {
       if (!agent || !text.trim()) return;
-      if (agent.state.isStreaming) return;
-      const provider = agent.state.model.provider;
+      if (agent.context.isStreaming) return;
+      const provider = agent.context.model.provider;
       if (
         callbacks.onApiKeyRequired &&
         !(await callbacks.onApiKeyRequired(provider))
@@ -4252,17 +4291,17 @@ function AssistantThread({
       await callbacks.onBeforeSend?.();
       setComposerHasUrl(false);
       try {
-        await agent.prompt(text);
+        await agent.send(text);
       } catch (error) {
         console.error(
           "Keating send failed before the model stream started:",
           error,
         );
         posthog.capture("message_send_failed", { error_type: "prompt_error" });
-        if (!hasUserTextMessage(agent.state.messages, text)) {
-          agent.state.messages.push(makeUserTextMessage(text));
+        if (!hasUserTextMessage(agent.context.messages, text)) {
+          agent.context.messages.push(makeUserTextMessage(text));
         }
-        agent.state.messages.push(makePromptErrorMessage(agent, error));
+        agent.context.messages.push(makePromptErrorMessage(agent, error));
         setLocalVersion((current) => current + 1);
         await callbacks.onLocalMessagesChanged?.();
       }
@@ -4275,18 +4314,18 @@ function AssistantThread({
       if (!agent) return false;
       const userMessage = makeUserMessageFromAppend(message);
       if (!userMessage) return false;
-      if (agent.state.isStreaming) return false;
+      if (agent.context.isStreaming) return false;
 
       const content = (userMessage as any).content;
       const hasImage =
         Array.isArray(content) &&
         content.some((part: any) => part?.type === "image");
-      if (hasImage && !modelSupportsImages(agent.state.model)) {
-        agent.state.messages.push(userMessage);
-        agent.state.messages.push(
+      if (hasImage && !modelSupportsImages(agent.context.model)) {
+        agent.context.messages.push(userMessage);
+        agent.context.messages.push(
           makeAttachmentErrorMessage(
             agent,
-            visionCapabilityError(agent.state.model),
+            visionCapabilityError(agent.context.model),
           ),
         );
         setLocalVersion((current) => current + 1);
@@ -4294,7 +4333,7 @@ function AssistantThread({
         return true;
       }
 
-      const provider = agent.state.model.provider;
+      const provider = agent.context.model.provider;
       if (
         callbacks.onApiKeyRequired &&
         !(await callbacks.onApiKeyRequired(provider))
@@ -4307,7 +4346,7 @@ function AssistantThread({
       await callbacks.onBeforeSend?.();
       setComposerHasUrl(false);
       try {
-        await agent.prompt(userMessage);
+        await agent.send(userMessage);
 		await callbacks.onLocalMessagesChanged?.();
 		return true;
       } catch (error) {
@@ -4317,10 +4356,10 @@ function AssistantThread({
         );
         posthog.capture("message_send_failed", { error_type: "prompt_error" });
         const userText = textFromContent((userMessage as any).content);
-        if (!userText || !hasUserTextMessage(agent.state.messages, userText)) {
-          agent.state.messages.push(userMessage);
+        if (!userText || !hasUserTextMessage(agent.context.messages, userText)) {
+          agent.context.messages.push(userMessage);
         }
-        agent.state.messages.push(makePromptErrorMessage(agent, error));
+        agent.context.messages.push(makePromptErrorMessage(agent, error));
         setLocalVersion((current) => current + 1);
         await callbacks.onLocalMessagesChanged?.();
 		return true;
@@ -4331,7 +4370,7 @@ function AssistantThread({
 
   const onCancel = useCallback(async () => {
     posthog.capture("message_cancelled", {});
-    agent?.abort();
+    agent?.cancel();
   }, [agent, posthog]);
 
   // System-initiated sends (quiz remediation/reframe requests, etc.) can fire
@@ -4368,7 +4407,7 @@ function AssistantThread({
 			activeDeliveryKeysRef.current.add(options.deliveryKey);
 		}
 		const pending = { message, ...options };
-      if (agent && !agent.state.isStreaming) {
+      if (agent && !agent.context.isStreaming) {
 		void deliverPendingSend(pending);
       } else {
 		pendingSendsRef.current.push(pending);
@@ -4628,7 +4667,7 @@ function AssistantThread({
 
   const storeAdapter = useMemo(
     () => ({
-      messages,
+      messages: threadMessages,
       isRunning,
       convertMessage,
 	  onNew: async (message: AppendMessage) => {
@@ -4639,10 +4678,10 @@ function AssistantThread({
         attachments: keatingAttachmentAdapter,
       },
     }),
-    [messages, isRunning, convertMessage, onNew, onCancel],
+    [threadMessages, isRunning, convertMessage, onNew, onCancel],
   );
 
-  const runtime = useExternalStoreRuntime<AgentMessage>(storeAdapter);
+  const runtime = useExternalStoreRuntime<ThreadMessageLike>(storeAdapter);
   const modelLabel = modelRef.current?.name ?? modelRef.current?.id ?? "Model";
   const usingGoogleModel = modelRef.current?.provider === "google";
 
@@ -4748,7 +4787,7 @@ function AssistantThread({
                 >
                   <AuiIf condition={(state) => state.thread.isEmpty}>
                     <SuggestedPrompts
-                      model={agent?.state.model ?? null}
+                      model={agent?.context.model ?? null}
                       initialPrompts={initialPrompts}
                       heading={emptyStateTitle}
                       description={emptyStateDescription}
@@ -4762,10 +4801,10 @@ function AssistantThread({
                               ? "tailored"
                               : "starter",
                           model: agent
-                            ? `${agent.state.model.provider}/${agent.state.model.id}`
+                            ? `${agent.context.model.provider}/${agent.context.model.id}`
                             : "unavailable",
                           provider:
-                            agent?.state.model.provider ?? "unavailable",
+                            agent?.context.model.provider ?? "unavailable",
                         });
                         sendText(text);
                       }}
@@ -5336,8 +5375,9 @@ function AssistantMessage({
       ),
     ),
   ).trim();
+  const createdAt = useMessage(message => message.createdAt);
   const handleFork = () => {
-    const ts = Number(messageId.slice(messageId.lastIndexOf("-") + 1));
+    const ts = createdAt?.getTime() ?? Number(messageId.slice(messageId.lastIndexOf("-") + 1));
     onFork?.(Number.isFinite(ts) ? ts : undefined);
   };
   const [retrying, setRetrying] = useState(false);
@@ -5749,7 +5789,7 @@ export const AssistantChatPanel = forwardRef<
     },
     ref,
   ) => {
-    const [agent, setAgentState] = useState<Agent | null>(null);
+    const [agent, setAgentState] = useState<FlueConversation | null>(null);
     const [callbacks, setCallbacks] = useState<ChatPanelSetupCallbacks>({});
     const [version, setVersion] = useState(0);
 
@@ -5758,7 +5798,7 @@ export const AssistantChatPanel = forwardRef<
     useImperativeHandle(
       ref,
       () => ({
-        async setAgent(nextAgent, nextCallbacks = {}) {
+        async setConversation(nextAgent, nextCallbacks = {}) {
           setAgentState(nextAgent);
           setCallbacks(nextCallbacks);
           refresh();
@@ -5769,7 +5809,7 @@ export const AssistantChatPanel = forwardRef<
 
     return (
       <div className={className}>
-        <AgentSubscription agent={agent} onChange={refresh} />
+        <ConversationSubscription agent={agent} onChange={refresh} />
         <AssistantThread
           agent={agent}
           callbacks={callbacks}
@@ -5795,11 +5835,11 @@ export const __test_parseInteractiveSegments = parseInteractiveSegments;
 export const __test_interactiveTagPattern = interactiveTagPattern;
 export const __test_recordCredentialBlockedSend = recordCredentialBlockedSend;
 
-function AgentSubscription({
+function ConversationSubscription({
   agent,
   onChange,
 }: {
-  agent: Agent | null;
+  agent: FlueConversation | null;
   onChange: () => void;
 }) {
   useEffect(() => {

@@ -15,4 +15,11 @@ async function run() {
     state.stage = "done";
   } finally { pod.teardown(); }
 }
-run().catch((error) => { state.error = error.stack ?? String(error); state.stage = "failed"; });
+const selected = new URLSearchParams(location.search).get("fixture");
+const execute = selected === "chat" ? async () => {
+  const { runFlueChatFixture } = await import("../../../web/src/test/fixtures/flue-chat");
+  const result = await runFlueChatFixture();
+  state.result = { exitCode: 0, stdout: "FLUE_CHAT_RESULT=" + JSON.stringify(result) };
+  state.stage = "done";
+} : run;
+execute().catch((error) => { state.error = error.stack ?? String(error); state.stage = "failed"; });

@@ -6,6 +6,14 @@ FROM oven/bun:1 AS builder
 WORKDIR /app/packages/learner-contracts
 COPY packages/learner-contracts/ ./
 
+WORKDIR /app/packages/agent-runtime
+COPY packages/agent-runtime/ ./
+
+WORKDIR /app/spikes/flue-host
+COPY spikes/flue-host/package.json spikes/flue-host/bun.lock ./
+RUN bun install --frozen-lockfile
+COPY spikes/flue-host/src ./src
+
 WORKDIR /app/web
 COPY web/package.json web/bun.lock* ./
 RUN bun install

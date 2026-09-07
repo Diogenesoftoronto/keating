@@ -1,4 +1,5 @@
 import { defineConfig, Plugin } from "vite";
+import { flueBrowserRuntime } from "./scripts/flue/vite-plugin";
 import { resolve } from "path";
 import { VitePWA } from "vite-plugin-pwa";
 import react from "@vitejs/plugin-react";
@@ -453,6 +454,7 @@ export default defineConfig({
   root: ".",
   publicDir: "public",
   plugins: [
+    flueBrowserRuntime(),
     react(),
     nodepod(),
     chatProxyPlugin(),
@@ -491,7 +493,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2,woff}"],
+        globPatterns: ["**/*.{js,cjs,css,html,ico,png,svg,woff2,woff}"],
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,

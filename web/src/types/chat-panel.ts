@@ -1,4 +1,5 @@
-import type { Agent, ThinkingLevel } from "@earendil-works/pi-agent-core";
+import type { FlueConversation } from "../keating/flue/conversation";
+import type { ThinkingLevel } from "@earendil-works/pi-agent-core";
 import type { PendingLearnerResponse } from "../keating/event-store";
 
 export interface ChatPanelSetupCallbacks {
@@ -20,5 +21,5 @@ export interface ChatPanelSetupCallbacks {
 }
 
 export interface ChatPanelHandle {
-	setAgent(agent: Agent, config?: ChatPanelSetupCallbacks): Promise<void>;
+	setConversation(conversation: FlueConversation, config?: ChatPanelSetupCallbacks): Promise<void>;
 }

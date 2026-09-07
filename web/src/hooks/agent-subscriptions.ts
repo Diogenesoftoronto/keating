@@ -20,7 +20,7 @@ interface AgentPanelLike {
 // and never re-renders. We force a follow-up render once `waitForIdle()`
 // resolves (post-finishRun), at which point `isStreaming` is false and the
 // Send button comes back.
-export function subscribeAgentEvents(agent: Agent, panel: AgentPanelLike) {
+export function subscribeAgentEvents(agent: Pick<Agent, "state" | "subscribe" | "waitForIdle">, panel: AgentPanelLike) {
   // `animate` writes its HTML as a tool argument, so the authored source is
   // available token by token. Accumulate it and publish partial renders the
   // same way image generation publishes partial frames.

@@ -28,6 +28,9 @@ jobs:
 
       - name: Build web
         run: |
+          cd spikes/flue-host
+          bun install --frozen-lockfile
+          cd ../..
           cd web
           bun install
           bun run build
