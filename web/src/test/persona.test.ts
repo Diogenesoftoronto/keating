@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "bun:test";
 import {
 	DEFAULT_TEACHER_PERSONA,
+	LEGACY_DEFAULT_TEACHER_PERSONA,
 	isDefaultPersona,
 	loadPersona,
 	resetPersona,
@@ -30,11 +31,21 @@ beforeEach(() => {
 });
 
 describe("persona storage", () => {
-	it("defaults to the John Keating persona", () => {
+	it("defaults to Keating Bot with John Keating as inspiration", () => {
 		expect(loadPersona()).toBe(DEFAULT_TEACHER_PERSONA);
 		expect(isDefaultPersona()).toBe(true);
 		expect(DEFAULT_TEACHER_PERSONA).toContain("John Keating");
 		expect(DEFAULT_TEACHER_PERSONA).toContain("Carpe diem");
+	});
+
+	it("upgrades the exact saved former default while preserving edited versions", () => {
+		localStorage.setItem("keating:teacher-persona", LEGACY_DEFAULT_TEACHER_PERSONA);
+		expect(loadPersona()).toBe(DEFAULT_TEACHER_PERSONA);
+		expect(isDefaultPersona()).toBe(true);
+		const custom = `${LEGACY_DEFAULT_TEACHER_PERSONA}\nUse examples from music.`;
+		localStorage.setItem("keating:teacher-persona", custom);
+		expect(loadPersona()).toBe(custom);
+		expect(isDefaultPersona()).toBe(false);
 	});
 
 	it("persists and reloads a custom persona", () => {

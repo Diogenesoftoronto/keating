@@ -52,8 +52,7 @@ describe("Keating OpenUI library", () => {
 		expect(keatingOpenUIPrompt).toContain("```openui lifecycle=ephemeral id=dns-caching-check");
 		expect(keatingOpenUIPrompt).toContain("```openui lifecycle=ephemeral id=dns-question-variety");
 		expect(keatingOpenUIPrompt).toContain("## Canonical detailed lesson plan");
-		expect(keatingOpenUIPrompt).toContain("at least four meaningful top-level coverage areas");
-		expect(keatingOpenUIPrompt).toContain("at least two nested levels");
+		expect(keatingOpenUIPrompt).toContain("No fixed section count or nesting depth is required");
 		expect(keatingOpenUIPrompt).toContain("expandable dependency graph");
 		expect(keatingOpenUIPrompt).toContain("relatedPlans");
 	});

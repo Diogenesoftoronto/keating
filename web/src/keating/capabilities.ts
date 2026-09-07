@@ -29,8 +29,8 @@ export interface CapabilityEnvironment {
  * added alongside this baseline before the model starts responding.
  */
 export const BASELINE_TEACHING_TOOLS = new Set([
-  "quiz",
-  "deck",
+  // Quiz/deck creation is inline OpenUI. Keep legacy handlers for existing
+  // artifacts, but do not advertise competing creation paths to the chat model.
   "course_list",
   "course_inspect",
   "course_create",
