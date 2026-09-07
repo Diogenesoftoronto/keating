@@ -11,6 +11,9 @@ import {
 const tool = (name: string) => ({ name } as AgentTool);
 const allTools = [
 	"quiz",
+	"deck",
+	"grade_quiz",
+	"grade_question_checks",
 	"client-web-search",
 	"animate",
 	"generate_image",
@@ -30,13 +33,16 @@ describe("capability availability", () => {
 		}).map((item) => item.name);
 
 		expect(visible).toEqual([
-			"quiz",
+			"grade_quiz",
+			"grade_question_checks",
 			"animate",
 			"generate_image",
 			"evaluate_teaching",
 			"request_teaching_improvement",
 		]);
 		expect(visible).not.toContain("remote_execute");
+		expect(visible).not.toContain("quiz");
+		expect(visible).not.toContain("deck");
 	});
 
 	it("exposes only workspace schemas backed by the live runtime", () => {

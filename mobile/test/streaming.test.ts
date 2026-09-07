@@ -14,7 +14,7 @@ import {
   KEATING_TEACHING_PROTOCOL,
   PLAIN_TEXT_INTERACTION_PROTOCOL,
 } from "../src/lib/system-prompt";
-import { DEFAULT_TEACHER_PERSONA, isDefaultPersona, normalizePersona } from "../src/lib/persona";
+import { DEFAULT_TEACHER_PERSONA, LEGACY_DEFAULT_TEACHER_PERSONA, isDefaultPersona, normalizePersona } from "../src/lib/persona";
 import type { ChatMessage } from "../src/lib/types";
 
 const messages: ChatMessage[] = [
@@ -374,10 +374,17 @@ describe("persona composition", () => {
     expect(prompt).toContain(KEATING_TEACHING_PROTOCOL);
   });
 
-  it("falls back to John Keating for blank personas", () => {
+  it("falls back to Keating Bot for blank personas", () => {
     expect(normalizePersona("   ")).toBe(DEFAULT_TEACHER_PERSONA);
     expect(normalizePersona(null)).toBe(DEFAULT_TEACHER_PERSONA);
-    expect(composeSystemPrompt("")).toContain("O Captain, my Captain");
+    expect(composeSystemPrompt("")).toStartWith(DEFAULT_TEACHER_PERSONA);
+  });
+
+  it("upgrades the previous default while preserving custom additions", () => {
+    expect(normalizePersona(LEGACY_DEFAULT_TEACHER_PERSONA)).toBe(DEFAULT_TEACHER_PERSONA);
+    const custom = `${LEGACY_DEFAULT_TEACHER_PERSONA}\nUse music examples.`;
+    expect(normalizePersona(custom)).toBe(custom);
+    expect(isDefaultPersona(custom)).toBe(false);
   });
 
   it("detects an untouched default persona", () => {
