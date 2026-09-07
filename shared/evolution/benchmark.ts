@@ -16,6 +16,8 @@ export function validateSkills(skills: readonly TeachingSkill[]): void {
   for (const skill of skills) {
     if (!skill || !/^[a-z][a-z0-9-]{0,63}$/.test(skill.id) || ids.has(skill.id)) throw new Error("invalid_skill_id");
     ids.add(skill.id);
+    if (skill.patternIds !== undefined && (!Array.isArray(skill.patternIds) || skill.patternIds.length > 16
+      || new Set(skill.patternIds).size !== skill.patternIds.length || skill.patternIds.some(id => !/^[a-z][a-z0-9-]{0,63}$/.test(id)))) throw new Error("invalid_skill_pattern_links");
     for (const [value, maximum] of [[skill.title, 120], [skill.instructions, 8000], [skill.hypothesis, 1200]] as const) {
       if (typeof value !== "string" || !value.trim() || value.length > maximum) throw new Error("invalid_skill_content");
     }

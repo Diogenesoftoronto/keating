@@ -47,6 +47,7 @@ bun install
 bun run typecheck
 bun run build
 bun run test
+bun run test:contracts
 ```
 
 The production build should emit `dist/server.mjs` and `dist/app.mjs`. Run the
@@ -76,28 +77,37 @@ Node-targeted bundle, and execute it in a NodePod worker. Browser network reques
 are restricted to the local fixture server. Model responses use the existing
 local faux provider; no account or paid provider credentials are used.
 
-The September 6 integration result is deliberately split:
+The September 6 integration checks now prove:
 
-- Keating's portable hook runtime executes and retains state across renders in
-  NodePod. This is `@keating/agent-runtime`, not the official Flue host.
-- The official Flue 2.0.3 host loads but its default startup fails with
-  `Failed to initialize persistence ... node:sqlite is not supported in the browser environment`.
-  The regression test asserts this exact boundary. It does **not** count as proof
-  that official Flue dispatch works in NodePod.
-- The same official host passes real Node tests for dispatch, tool reconciliation,
-  repeated learner turns, skill activation, an authenticated allowlisted MCP read,
-  and detached subagent completion.
+- Keating's portable hook runtime executes and retains state across renders.
+- The official Flue 2.0.3 runtime dispatches, executes a teaching tool, and reads
+  reconciled learner state on a second dispatch inside NodePod.
+- Stopping and reopening the official runtime against the same NodePod file
+  preserves that state for another dispatch. The test requires this result;
+  unsupported SQLite startup is a failure, with no environment-variable bypass.
+- The separate Node host tests cover skill activation, an authenticated
+  allowlisted MCP read, and detached subagent completion. Those two capabilities
+  have not yet been exercised inside NodePod.
 
-To demand actual official-host execution, run
-`FLUE_NODEPOD_REQUIRE_HOST=1 devenv tasks run keating:test-flue-nodepod`.
-That acceptance probe currently fails at SQLite startup. It requires successful
-dispatch, a tool call, and persisted state observed on a second dispatch before
-it can pass. No skipped assertions or mocked NodePod satisfy that probe.
+## Custom persistence adapter
 
-Flue exposes `StartOptions.db: PersistenceAdapter`. The next implementation step
-is a NodePod-compatible adapter providing submission lifecycle storage,
-conversation streams, and immutable attachments. It must uphold Flue's format
-version, admission/lease, and settlement contracts. The presence of in-memory
-conversation and attachment helpers alone does not provide the required
-submission store. A custom adapter and its contract tests are still needed;
-process restart durability, MCP, and subagents inside NodePod remain unverified.
+`src/nodepod-persistence.ts` supplies Flue's `StartOptions.db` using the official
+`@flue/libsql` stores and a custom SQL runner. The engine is sql.js's pure-JavaScript
+asm build, so it requires neither `node:sqlite`, a native addon, nor a WASM loader.
+It supports submission lifecycle storage, conversation streams, and immutable
+attachments through the upstream store implementations.
+
+The runner serializes operations, rolls back failed transactions, and writes an
+atomic file snapshot before acknowledging success. An exclusive directory lock
+refuses a second owner; this is a single-runtime adapter, not a distributed
+multiwriter backend. Closing releases the lock. After an abrupt process death,
+verify the owner is gone before removing its stale `.lock` directory. Browser
+storage clearing or destroying the NodePod filesystem still loses the database;
+the test proves runtime restart within the same pod, not cross-device durability
+or recovery after a browser/process crash.
+
+`bun run test:contracts` runs all three upstream Flue store-contract suites and
+format-version checks against this engine, plus file reopen, transaction rollback,
+and exclusive-owner checks. The suites run under Bun through a narrow Vitest-import
+shim; their assertions are unchanged. The canonical `keating:test-flue-host` task
+includes these checks. No paid model provider is required.

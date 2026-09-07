@@ -6,6 +6,7 @@ import type {
   EpisodeBenchmark, EpisodeJudge, EpisodeRunner, PromotionDecision, SkillProposer,
   TeachingCase, TeachingHypothesis, TeachingRevision,
 } from "./contracts.js";
+import { applyWikiMaintenance, loadWiki, registerTrainingTrace, saveWiki, validatePatternLinks, wikiAccess, type WikiMaintainer } from "./wiki.js";
 
 export interface EvolutionState {
   schemaVersion: 1;
@@ -14,6 +15,8 @@ export interface EvolutionState {
   consumedHoldouts: string[];
   consumedHoldoutFamilies: string[];
   hypotheses: TeachingHypothesis[];
+  /** Optional for pre-wiki state; points at an immutable knowledge snapshot. */
+  wikiRevisionId?: string;
 }
 export interface EvolutionStore {
   read<T>(key: string): Promise<T | null>;
@@ -39,6 +42,7 @@ export interface TeachingExperiment {
   validation: { baseline: EpisodeBenchmark; candidate: EpisodeBenchmark; decision: PromotionDecision } | null;
   holdout: { baseline: EpisodeBenchmark; candidate: EpisodeBenchmark; decision: PromotionDecision } | null;
   reasons: string[];
+  wikiRevisionId?: string;
 }
 
 interface TeachingSuiteManifest {
@@ -65,6 +69,7 @@ export async function readEvolutionState(store: EvolutionStore): Promise<Evoluti
   const state = await store.read<EvolutionState>("state");
   if (!state) return emptyEvolutionState();
   if (state.schemaVersion !== 1 || !Array.isArray(state.hypotheses) || !Array.isArray(state.consumedHoldouts)
+    || (state.wikiRevisionId !== undefined && !/^sha256:[a-f0-9]{64}$/.test(state.wikiRevisionId))
     || !Array.isArray(state.consumedHoldoutFamilies)
     || state.consumedHoldouts.some((id) => typeof id !== "string" || !/^sha256:[a-f0-9]{64}$/.test(id))
     || state.consumedHoldoutFamilies.some((family) => typeof family !== "string" || !family.trim())
@@ -142,6 +147,7 @@ export async function runTeachingEvolution(input: {
   runner: EpisodeRunner;
   judge: EpisodeJudge;
   proposer: SkillProposer;
+  maintainer?: WikiMaintainer;
   repeats?: number;
   timeoutMs?: number;
   force?: boolean;
@@ -189,19 +195,36 @@ export async function runTeachingEvolution(input: {
       return result;
     };
     let hypothesis: TeachingHypothesis | undefined;
+    let wiki = input.maintainer ? await loadWiki(input.store, state.wikiRevisionId, input.basePrompt) : undefined;
+    let proposedSkill: import("./contracts.js").TeachingSkill | undefined;
     try {
       report.training = await benchmark(incumbent, "train");
       if (report.training.errorCount) throw new Error("training_execution_incomplete");
+      if (wiki && input.maintainer) {
+        input.onProgress?.("maintain-wiki");
+        wiki = await registerTrainingTrace(wiki, `raw/${report.id}-train-incumbent`, report.training);
+        const maintained = await withDeadline(signal => input.maintainer!({
+          wiki: wikiAccess(input.store, wiki!), training: structuredClone(report.training!), signal,
+        }), input.timeoutMs ?? 90_000, input.signal);
+        wiki = applyWikiMaintenance(wiki, maintained, report.training, report.id, report.createdAt);
+        // Knowledge commits before proposal; rejection or proposer failure cannot erase it.
+        state.wikiRevisionId = await saveWiki(input.store, wiki);
+        report.wikiRevisionId = state.wikiRevisionId;
+        await input.store.writeState(state);
+      }
       input.onProgress?.("propose-skill");
       const proposal = structuredClone(await withDeadline((signal) => input.proposer({
         incumbent: structuredClone(incumbent), training: structuredClone(report.training!),
         hypotheses: structuredClone(state.hypotheses.slice(-40)), signal,
+        ...(wiki ? { wiki: wikiAccess(input.store, wiki) } : {}),
       }), input.timeoutMs ?? 90_000, input.signal));
       validateSkills([proposal.skill]);
+      if (wiki) validatePatternLinks(proposal.skill, wiki);
       const evidence = new Set(report.training.results.map((row) => row.id));
       if (!proposal.skill.evidenceIds.every((id) => evidence.has(id))
         || typeof proposal.hypothesis?.statement !== "string" || !proposal.hypothesis.statement.trim()
         || proposal.hypothesis.statement.length > 1200) throw new Error("proposal_evidence_invalid");
+      proposedSkill = proposal.skill;
       hypothesis = {
         id: report.id, statement: proposal.hypothesis.statement,
         evidenceIds: [...proposal.skill.evidenceIds], status: "proposed",
@@ -242,6 +265,13 @@ export async function runTeachingEvolution(input: {
       report.reasons = [error instanceof Error && safeCodes.includes(error.message) ? error.message : "experiment_execution_failed"];
     }
     if (hypothesis) hypothesis.status = report.status === "accepted" ? "supported-offline" : report.status === "rejected" ? "rejected" : "proposed";
+    if (wiki && proposedSkill) {
+      wiki.impacts.push({ experimentId: report.id, skillId: proposedSkill.id, patternIds: proposedSkill.patternIds ?? [],
+        before: incumbent.skills.find(skill => skill.id === proposedSkill!.id) ?? null, after: proposedSkill,
+        status: report.status, validationMeanDelta: report.validation?.decision.meanDelta ?? null });
+      state.wikiRevisionId = await saveWiki(input.store, wiki);
+      report.wikiRevisionId = state.wikiRevisionId;
+    }
     // Evidence is durable before its revision becomes active. Failed/rejected knowledge persists.
     await input.store.put(`experiments/${report.id}`, report);
     if (report.status === "accepted") {
@@ -266,6 +296,7 @@ export function teachingExperimentMarkdown(report: TeachingExperiment): string {
     `- Human learning, retention, and transfer: unmeasured`,
     `- Baseline revision: ${report.baselineRevisionId}`,
     `- Candidate revision: ${report.candidateRevisionId ?? "none"}`,
+    `- Wiki revision: ${report.wikiRevisionId ?? "none"}`,
     `- Baseline behavior score: ${score(comparison?.baseline.meanScore)}`,
     `- Candidate behavior score: ${score(comparison?.candidate.meanScore)}`,
     `- Validation: ${report.validation?.decision.accepted ? "passed" : "not passed"}`,

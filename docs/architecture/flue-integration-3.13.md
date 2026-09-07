@@ -13,12 +13,20 @@ Account prompt resolution now runs in the release's asynchronous agent preparati
 path, with custom personas retaining precedence. NodePod source snapshots were
 regenerated, including the pre-existing portable type consolidation.
 
-Validation on September 6, 2026: 471 root tests, 1,342 web tests, 346 mobile tests,
-89 shared-contract/portable-runtime tests, and three official Node-host integration
-tests pass. Root and production web builds pass. Two real-browser NodePod checks
-pass: portable state execution and explicit rejection of the unsupported official
-Flue SQLite adapter. The strict official-host NodePod acceptance probe fails;
-this work does not claim official Flue currently runs in NodePod.
+The Flue branch was fast-forwarded into local `main` on September 6, 2026.
+The initial integration passed 471 root tests, 1,342 web tests, 346 mobile tests,
+89 shared-contract/portable-runtime tests, three official Node-host integration
+tests, and root/production web builds.
 
-See [the host spike](../../spikes/flue-host/README.md#nodepod-execution-evidence)
-for commands, the exact limitation, and the adapter work still required.
+The subsequent custom persistence adapter removes the official host's NodePod
+SQLite startup blocker. Real Chromium/NodePod tests now require successful
+Flue dispatch, tool reconciliation, repeated learner turns, and preserved state
+after stopping and reopening the runtime against the same pod file. Upstream
+submission, conversation, attachment, and format-version contract tests exercise
+the adapter independently. MCP and detached subagents remain verified on the
+Node host, not inside NodePod.
+
+The browser chat still uses Pi's model/tool loop with the portable Flue-style
+authoring integration; merging this work does not switch every product chat to
+the standalone official host. See [the host spike](../../spikes/flue-host/README.md#nodepod-execution-evidence)
+for commands and persistence limits.

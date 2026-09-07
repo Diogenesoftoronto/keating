@@ -3,7 +3,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { TEACHING_CASES } from "../../shared/evolution/cases.js";
 import { composeTeachingPrompt, createTeachingRevision, runEpisodeBenchmark, verifyTeachingRevision } from "../../shared/evolution/benchmark.js";
-import { createEpisodeJudge, createSkillProposer } from "../../shared/evolution/model-adapters.js";
+import { createEpisodeJudge, createSkillProposer, createWikiMaintainer } from "../../shared/evolution/model-adapters.js";
+import type { WikiMaintainer } from "../../shared/evolution/wiki.js";
 import { loadActiveTeachingRevision, loadEvaluatedTeachingRevision, readEvolutionState, revisionKey, runTeachingEvolution, teachingExperimentMarkdown } from "../../shared/evolution/loop.js";
 import type { EpisodeJudge, EpisodeRunner, SkillProposer, TeachingCase, TeachingRevision } from "../../shared/evolution/contracts.js";
 import { createPiCompletionRunner, createPiEpisodeRunner } from "./teaching-episode-runner.js";
@@ -44,6 +45,7 @@ export interface TeachingEvolutionOptions {
   runner?: EpisodeRunner;
   judge?: EpisodeJudge;
   proposer?: SkillProposer;
+  maintainer?: WikiMaintainer;
   signal?: AbortSignal;
   onProgress?: (stage: string) => void;
 }
@@ -54,6 +56,7 @@ export async function teachingEvolutionArtifact(cwd: string, options: TeachingEv
     store: new FileEvolutionStore(cwd), cases: options.cases ?? TEACHING_CASES,
     basePrompt: await teachingBasePrompt(), runner: options.runner ?? await createPiEpisodeRunner(cwd),
     judge: options.judge ?? createEpisodeJudge(complete!), proposer: options.proposer ?? createSkillProposer(complete!),
+    maintainer: options.maintainer ?? (complete ? createWikiMaintainer(complete) : undefined),
     force: options.force, signal: options.signal, onProgress: options.onProgress,
   });
   const dir = join(benchmarksDir(cwd), "teaching-experiments");

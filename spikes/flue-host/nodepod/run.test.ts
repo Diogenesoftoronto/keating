@@ -10,7 +10,7 @@ import { createServer } from "vite";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 for (const fixture of ["portable", "official"] as const) {
-test(fixture === "portable" ? "portable Keating state survives renders inside real NodePod" : "official Flue host reports the unsupported NodePod SQLite dependency", { timeout: 90_000 }, async () => {
+test(fixture === "portable" ? "portable Keating state survives renders inside real NodePod" : "official Flue dispatch and tool state work with the NodePod SQL adapter", { timeout: 90_000 }, async () => {
   const directory = await mkdtemp(join(tmpdir(), "flue-nodepod-"));
   const bundle = join(directory, "scenario.cjs");
   let server: Awaited<ReturnType<typeof createServer>> | undefined;
@@ -43,14 +43,9 @@ test(fixture === "portable" ? "portable Keating state survives renders inside re
     if (fixture === "portable") {
       assert.equal(evidence.result?.exitCode, 0, JSON.stringify({ evidence, errors }, null, 2));
       assert.match(evidence.result.stdout, /PORTABLE_NODEPOD_RESULT=ok/);
-    } else if (process.env.FLUE_NODEPOD_REQUIRE_HOST === "1") {
-      // Acceptance probe: deliberately fails until a supported adapter exists.
-      assert.equal(evidence.result?.exitCode, 0, JSON.stringify({ evidence, errors }, null, 2));
-      assert.match(evidence.result.stdout, /FLUE_NODEPOD_RESULT=.*"ok":true.*"sawPersistedState":true/);
     } else {
-      assert.equal(evidence.result?.exitCode, 1, JSON.stringify(evidence));
-      assert.match(evidence.result.stderr, /Failed to initialize persistence.*node:sqlite is not supported in the browser environment/);
-      assert.doesNotMatch(evidence.result.stdout, /FLUE_NODEPOD_RESULT=/);
+      assert.equal(evidence.result?.exitCode, 0, JSON.stringify({ evidence, errors }, null, 2));
+      assert.match(evidence.result.stdout, /FLUE_NODEPOD_RESULT=.*"ok":true.*"sawPersistedState":true.*"sawRestartedState":true/);
     }
   } finally { await browser?.close(); await server?.close(); await rm(directory, { recursive: true, force: true }); }
 });
