@@ -26,6 +26,7 @@ const EXCLUDE_PATTERNS = [
   // Evaluation rules, sealed cases, assessment keys, and activation authority
   // stay in the host. Mutable agent workspaces receive teaching artifacts only.
   /^shared\/evolution\//,
+  /^web\/src\/keating\/flue\//,
   /^src\/core\/(?:teaching-(?:evolution(?:-store)?|episode-runner)|learning-checks)\.ts$/,
   /^web\/src\/keating\/teaching-(?:evolution(?:-store)?|episode-runner)\.ts$/,
 ];

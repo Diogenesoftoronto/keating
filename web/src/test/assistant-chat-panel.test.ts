@@ -49,7 +49,7 @@ describe("AssistantChatPanel credential preflight recovery", () => {
 	it("persists the exact user turn and a retryable auth error when credentials are unavailable", () => {
 		const messages: any[] = [];
 		const agent = {
-			state: {
+      context: {
 				messages,
 				model: {
 					api: "openai-completions",
@@ -89,7 +89,7 @@ describe("AssistantChatPanel credential preflight recovery", () => {
 		};
 		const messages: any[] = [existing];
 		const agent = {
-			state: {
+			context: {
 				messages,
 				model: {
 					api: "openai-completions",

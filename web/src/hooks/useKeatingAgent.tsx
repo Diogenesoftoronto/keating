@@ -1,3 +1,5 @@
+import { FlueConversation } from "../keating/flue/conversation";
+import flueRuntimeUrl from "virtual:keating-flue-runtime";
 import {
   useRef,
   useTransition,
@@ -8,7 +10,6 @@ import {
 } from "react";
 import { usePostHog } from "@posthog/react";
 import {
-  Agent,
   type AgentMessage,
   type AgentState,
   type ThinkingLevel,
@@ -228,7 +229,7 @@ async function runPortableBrowserDelegate(
     id: `browser-delegate-${crypto.randomUUID()}`,
   });
   const frame = instance.render(request.subagent.agent);
-  const child = new Agent({
+  const child = new FlueConversation({
     initialState: {
       model,
       thinkingLevel,
@@ -239,16 +240,17 @@ async function runPortableBrowserDelegate(
     convertToLlm: defaultConvertToLlm,
     streamFn: hybridStreamFn,
     sessionId: `delegate-${crypto.randomUUID()}`,
-  });
+  }, flueRuntimeUrl);
   child.getApiKey = (provider: string) => getProviderApiKey(provider);
-  const abort = () => child.abort();
+  const abort = () => child.cancel();
   signal?.addEventListener("abort", abort, { once: true });
   try {
-    await child.prompt(request.task);
+    await child.send(request.task);
   } finally {
     signal?.removeEventListener("abort", abort);
+    await child.dispose();
   }
-  const output = lastAssistantText(child.state.messages);
+  const output = lastAssistantText(child.context.messages);
   if (!output) throw new Error(`Portable subagent ${request.subagent.name} returned no text.`);
   return output;
 }
@@ -454,7 +456,7 @@ export function useKeatingAgent(
       ? { activeCourseId, mode: courseMode }
       : undefined;
   const title = "Keating";
-  const agentRef = useRef<Agent | null>(null);
+  const agentRef = useRef<FlueConversation | null>(null);
   const sessionSwitchRequestsRef = useRef(new SessionSwitchRequests());
   const sessionSaveQueueRef = useRef(new SessionSaveQueue());
   const sessionSnapshotsRef = useRef(new SessionSnapshotTracker());
@@ -952,7 +954,7 @@ export function useKeatingAgent(
   const applyThinkingLevel = useCallback((level: ThinkingLevel) => {
     const agent = agentRef.current;
     if (agent) {
-      agent.state.thinkingLevel = level;
+      agent.context.thinkingLevel = level;
     }
 
     const settings = loadKeatingUiSettings();
@@ -980,7 +982,7 @@ export function useKeatingAgent(
       setSystemPrompt: (basePrompt: string) => {
         systemPromptBaseRef.current = basePrompt;
         if (agentRef.current) {
-          agentRef.current.state.systemPrompt = appendKeatingPortableCatalog(buildAgentSystemPrompt(
+          agentRef.current.context.systemPrompt = appendKeatingPortableCatalog(buildAgentSystemPrompt(
             settings.enabled,
             basePrompt,
             loadLearnerContext(),
@@ -991,14 +993,14 @@ export function useKeatingAgent(
         }
       },
       runTeachingExperiment: async (options: { force?: boolean; signal?: AbortSignal }) => {
-        const model = agentRef.current?.state.model;
+        const model = agentRef.current?.context.model;
         if (!model) throw new Error("Select a model before running a teaching experiment.");
         return runBrowserTeachingExperiment({
           model,
           streamFn: hybridStreamFn,
           getApiKey: getProviderApiKey,
           convertToLlm: defaultConvertToLlm,
-          thinkingLevel: agentRef.current?.state.thinkingLevel,
+          thinkingLevel: agentRef.current?.context.thinkingLevel,
         }, { ...options, basePrompt: composeKeatingSystemPrompt(loadPersona()) });
       },
       getSessionSamples: async () => {
@@ -1040,23 +1042,23 @@ export function useKeatingAgent(
 
   const saveSessionSnapshot = useCallback(
     async (
-      agent: Agent | null = agentRef.current,
+      agent: FlueConversation | null = agentRef.current,
       sessionId = sessionIdRef.current,
       createdAt = sessionCreatedAtRef.current,
     ) => {
-      if (!agent || agent.state.messages.length === 0) return;
+      if (!agent || agent.context.messages.length === 0) return;
       const ancestry = sessionId === sessionIdRef.current
         ? { parentSessionId: sessionParentIdRef.current, forkedAt: sessionForkedAtRef.current }
         : undefined;
       return sessionSaveQueueRef.current.run(sessionId, async () => {
-        const stamp = sessionSnapshotsRef.current.capture(agent, agent.state);
+        const stamp = sessionSnapshotsRef.current.capture(agent, agent.context);
         if (sessionSnapshotsRef.current.isSaved(agent, stamp)) return;
-        const model = agent.state.model;
-        const thinkingLevel = agent.state.thinkingLevel;
+        const model = agent.context.model;
+        const thinkingLevel = agent.context.thinkingLevel;
         const now = new Date().toISOString();
         const snapshot = messagesForSessionSnapshot(
-          agent.state.messages,
-          agent.state.streamingMessage,
+          agent.context.messages,
+          agent.context.streamingMessage,
         );
         const messages = snapshot.messages;
         const fallbackTitle = sessionTitle(messages);
@@ -1196,7 +1198,7 @@ export function useKeatingAgent(
   );
 
   const maybeGenerateAlternativeResponse = useCallback(
-    async (agent: Agent, sourceSessionId: string) => {
+    async (agent: FlueConversation, sourceSessionId: string) => {
       if (sessionIdRef.current !== sourceSessionId) return;
       const settings = loadKeatingUiSettings();
       if (
@@ -1204,7 +1206,7 @@ export function useKeatingAgent(
       )
         return;
 
-      const sourceMessages = cloneMessages(agent.state.messages);
+      const sourceMessages = cloneMessages(agent.context.messages);
       const assistantTimestamp = lastAssistantTimestamp(sourceMessages);
       if (assistantTimestamp == null) return;
       const generationKey = `${sourceSessionId}:${assistantTimestamp}`;
@@ -1217,7 +1219,7 @@ export function useKeatingAgent(
       if (!canGenerateAlternativeFromBranch(branchMessages)) return;
       alternativeGenerationRef.current.add(generationKey);
 
-      const model = agent.state.model as Model<Api>;
+      const model = agent.context.model as Model<Api>;
       try {
         if (model.provider === "browser") {
           await loadBrowserModel(model.id);
@@ -1227,7 +1229,7 @@ export function useKeatingAgent(
         const stream = await hybridStreamFn(
           model,
           {
-            systemPrompt: agent.state.systemPrompt,
+            systemPrompt: agent.context.systemPrompt,
             messages: branchMessages as unknown as Context["messages"],
           },
           {
@@ -1275,8 +1277,8 @@ export function useKeatingAgent(
           lastModified: now,
           messageCount: messages.length,
           usage: sessionUsage(messages),
-          thinkingLevel: agent.state.thinkingLevel,
-          ...sessionModelMetadata(agent.state.model),
+          thinkingLevel: agent.context.thinkingLevel,
+          ...sessionModelMetadata(agent.context.model),
           preview: sessionPreview(messages),
           searchText: sessionSearchText(messages),
           aiGeneratedTitle: false,
@@ -1290,8 +1292,8 @@ export function useKeatingAgent(
           parentSessionId: sourceSessionId,
           forkedAt: now,
 		  forkedFromMessageTimestamp: assistantTimestamp,
-          model: agent.state.model,
-          thinkingLevel: agent.state.thinkingLevel,
+          model: agent.context.model,
+          thinkingLevel: agent.context.thinkingLevel,
           messages,
           createdAt: now,
           lastModified: now,
@@ -1408,17 +1410,19 @@ export function useKeatingAgent(
         systemPrompt: authored.systemPrompt,
       };
 
-      const agent = new Agent({
+      if (agentRef.current instanceof FlueConversation) await agentRef.current.dispose();
+      if (!isCurrent()) return;
+      const agent = new FlueConversation({
         initialState: nextState,
         convertToLlm: defaultConvertToLlm,
         streamFn: hybridStreamFn,
         sessionId: agentSessionId,
-      });
+      }, flueRuntimeUrl);
       agent.getApiKey = (provider: string) => getProviderApiKey(provider);
-      agent.state.tools = [...authored.tools];
+      agent.context.tools = [...authored.tools];
       agentRef.current = agent;
-      if (options?.alreadySaved) sessionSnapshotsRef.current.remember(agent, sessionSnapshotsRef.current.capture(agent, agent.state));
-      const sessionAlreadyAnswered = agent.state.messages.some((message) => {
+      if (options?.alreadySaved) sessionSnapshotsRef.current.remember(agent, sessionSnapshotsRef.current.capture(agent, agent.context));
+      const sessionAlreadyAnswered = agent.context.messages.some((message) => {
         const candidate = message as { role?: unknown; stopReason?: unknown };
         return (
           candidate.role === "assistant" &&
@@ -1458,7 +1462,7 @@ export function useKeatingAgent(
           }
         })();
         sessionStartRecord.context = await sessionStartRecord.promise;
-        agent.state.systemPrompt = appendKeatingPortableCatalog(buildAgentSystemPrompt(
+        agent.context.systemPrompt = appendKeatingPortableCatalog(buildAgentSystemPrompt(
           speechEnabledRef.current,
           systemPromptBaseRef.current,
           loadLearnerContext(),
@@ -1492,7 +1496,7 @@ export function useKeatingAgent(
                     runtime,
                     speechEnabled: speechSettings.enabled,
                     clientWebSearch: shouldExposeClientWebSearch(
-                      agent.state.model as Model<Api>,
+                      agent.context.model as Model<Api>,
                     ),
                   },
                 );
@@ -1512,8 +1516,8 @@ export function useKeatingAgent(
                   hosts: portableHosts,
                 });
                 if (agentRef.current !== agent) return;
-                agent.state.tools = [...refreshed.tools];
-                agent.state.systemPrompt = refreshed.systemPrompt;
+                agent.context.tools = [...refreshed.tools];
+                agent.context.systemPrompt = refreshed.systemPrompt;
                 registerKeatingWebMcp(keatingStorage, availableTools).catch(
                   console.warn,
                 );
@@ -1523,17 +1527,17 @@ export function useKeatingAgent(
       }
 
       if (unsubRef.current) unsubRef.current();
-      unsubRef.current = subscribeAgentEvents(agent, panel as any);
+      unsubRef.current = subscribeAgentEvents(agent.execution, panel as any);
       if (analyticsUnsubRef.current) analyticsUnsubRef.current();
-      analyticsUnsubRef.current = subscribeAgentAnalytics(agent, {
+      analyticsUnsubRef.current = subscribeAgentAnalytics(agent.execution, {
         capture: (event, properties) => posthog.capture(event, properties),
         sessionId: agentSessionId,
         getModel: () => ({
-          id: agent.state.model.id,
-          provider: agent.state.model.provider,
+          id: agent.context.model.id,
+          provider: agent.context.model.provider,
         }),
         getSource: () =>
-          agent.state.model.provider === "browser" ? "local" : "provider",
+          agent.context.model.provider === "browser" ? "local" : "provider",
         getTurnIndex: () => analyticsTurnIndexRef.current,
         appVersion: String(import.meta.env.APP_VERSION ?? "dev"),
         isArtifactTool: (toolName) => ARTIFACT_TOOL_NAMES.has(toolName),
@@ -1544,7 +1548,7 @@ export function useKeatingAgent(
             !arizeConfigRef.current.evaluationContentEnabled
           )
             return undefined;
-          return currentTurnEvaluationContent(agent.state.messages);
+          return currentTurnEvaluationContent(agent.context.messages);
         },
         onCompletedRun: (envelope) => {
           const preference = readAnalyticsPreferences(false);
@@ -1574,7 +1578,7 @@ export function useKeatingAgent(
         }, 400);
       };
       persistCurrentSnapshotRef.current = persistSnapshot;
-      const unsubscribePersistence = agent.subscribe((ev) => {
+      const unsubscribePersistence = agent.observeExecution((ev) => {
         if (ev.type === "message_update" || ev.type === "message_end" || ev.type === "message_start") sessionSnapshotsRef.current.changed(agent);
         recordSessionDebugAgentEvent(agent, ev);
         const canonicalRuntime = conversationRuntime(agentSessionId);
@@ -1608,7 +1612,7 @@ export function useKeatingAgent(
         if (ev.type === "agent_end") {
           untrustedSearchProvenanceRef.current = false;
           agent
-            .waitForIdle()
+            .whenIdle()
             .then(() => persistSnapshot())
             .then(async () => {
               await keatingLifecycle.emit({
@@ -1629,18 +1633,18 @@ export function useKeatingAgent(
       };
 
       const retryLastResponse = async () => {
-        if (agent.state.isStreaming) return;
-        const retryMessages = prepareMessagesForRetry(agent.state.messages);
+        if (agent.context.isStreaming) return;
+        const retryMessages = prepareMessagesForRetry(agent.context.messages);
         if (!retryMessages) return;
         await ensureSessionStartContext();
         untrustedSearchProvenanceRef.current = false;
-        agent.state.messages = retryMessages;
+        agent.context.messages = retryMessages;
         await persistSnapshot();
         analyticsTurnIndexRef.current = Math.max(
           0,
           retryMessages.filter((message) => message.role === "user").length - 1,
         );
-        await agent.continue();
+        await agent.resume();
       };
 
       const setupCallbacks = {
@@ -1699,20 +1703,20 @@ export function useKeatingAgent(
           });
           if (import.meta.env.DEV) {
             console.log(
-              `[keating:send] model=${agent.state.model.provider}/${agent.state.model.id} messages=${agent.state.messages.length}`,
+              `[keating:send] model=${agent.context.model.provider}/${agent.context.model.id} messages=${agent.context.messages.length}`,
             );
           }
-          const turnIndex = agent.state.messages.filter(
+          const turnIndex = agent.context.messages.filter(
             (m) => m.role === "user",
           ).length;
           analyticsTurnIndexRef.current = turnIndex;
-          const model = `${agent.state.model.provider}/${agent.state.model.id}`;
+          const model = `${agent.context.model.provider}/${agent.context.model.id}`;
           posthog.capture("message_sent", {
             session_id: agentSessionId,
             turn_index: turnIndex,
             turn_number: turnIndex + 1,
             model,
-            provider: agent.state.model.provider,
+            provider: agent.context.model.provider,
           });
           window.dispatchEvent(
             new CustomEvent("keating:message-sent", {
@@ -1723,7 +1727,7 @@ export function useKeatingAgent(
             posthog.capture("first_message_sent", {
               session_id: agentSessionId,
               model,
-              provider: agent.state.model.provider,
+              provider: agent.context.model.provider,
             });
           }
         },
@@ -1743,7 +1747,7 @@ export function useKeatingAgent(
         },
         onFork: (forkPoint?: number) => forkSession(agentSessionId, forkPoint),
         onRetry: retryLastResponse,
-        thinkingLevel: agent.state.thinkingLevel,
+        thinkingLevel: agent.context.thinkingLevel,
         onThinkingLevelChange: (level: ThinkingLevel) => {
           applyThinkingLevel(level);
           posthog.capture("thinking_level_changed", {
@@ -1753,7 +1757,7 @@ export function useKeatingAgent(
         },
       };
 
-      await panel.setAgent(agent, setupCallbacks);
+      await panel.setConversation(agent, setupCallbacks);
     },
     [
       prepareAgent,
@@ -1803,7 +1807,7 @@ export function useKeatingAgent(
           runtime: agentRuntime,
           speechEnabled: speechSettings.enabled,
           clientWebSearch: shouldExposeClientWebSearch(
-            agent.state.model as Model<Api>,
+            agent.context.model as Model<Api>,
           ),
         });
         const systemPrompt = buildAgentSystemPrompt(
@@ -1816,23 +1820,23 @@ export function useKeatingAgent(
         );
         const authored = await authorKeatingBrowserAgent({
           instanceId: `browser-teacher-${sessionIdRef.current}-capabilities`,
-          modelKey: `${agent.state.model.provider}/${agent.state.model.id}`,
+          modelKey: `${agent.context.model.provider}/${agent.context.model.id}`,
           systemPrompt,
           tools: availableTools,
           hosts: {
             delegate: (request, signal) =>
               runPortableBrowserDelegate(
                 request,
-                agent.state.model,
-                agent.state.thinkingLevel,
+                agent.context.model,
+                agent.context.thinkingLevel,
                 signal,
               ),
             resolveMcpConnection: async () => [],
           },
         });
         if (cancelled || agentRef.current !== agent) return;
-        agent.state.tools = [...authored.tools];
-        agent.state.systemPrompt = authored.systemPrompt;
+        agent.context.tools = [...authored.tools];
+        agent.context.systemPrompt = authored.systemPrompt;
         registerKeatingWebMcp(keatingStorage, availableTools).catch(
           console.warn,
         );
@@ -1844,7 +1848,7 @@ export function useKeatingAgent(
     };
   }, [speechSettings, toolOptions]);
 
-  // Realtime voice has its own WebRTC model connection. Expose the active Pi
+  // Realtime voice has its own WebRTC model connection. Expose the active Flue
   // tool catalog synchronously so voice function calls use the same tools and
   // learner state as typed chat.
   useEffect(() => {
@@ -1853,16 +1857,16 @@ export function useKeatingAgent(
         .detail;
       const agent = agentRef.current;
       if (!detail || !agent) return;
-      const tools = (agent.state.tools ?? []) as any[];
+      const tools = (agent.context.tools ?? []) as any[];
       detail.bridge = {
         // The real Keating system prompt, so a voice session is the same
         // teacher as the text session rather than a generic assistant.
-        instructions: agent.state.systemPrompt,
-        history: buildLiveHistory(agent.state.messages ?? []),
+        instructions: agent.context.systemPrompt,
+        history: buildLiveHistory(agent.context.messages ?? []),
 		loadContext: () => buildLiveSessionContext({
 			storage: keatingStorage,
 			sessionId: sessionIdRef.current,
-			messages: agent.state.messages ?? [],
+			messages: agent.context.messages ?? [],
 			providedProfile: loadLearnerContext(),
 			activeCourseId: courseContextRef.current?.activeCourseId,
 		}),
@@ -1909,10 +1913,10 @@ export function useKeatingAgent(
     const captureCurrentContext = () => {
       const agent = agentRef.current;
       if (!agent) return;
-      captureSessionModelContext(agent.state.model, {
-        systemPrompt: agent.state.systemPrompt,
-        messages: agent.state.messages,
-        tools: agent.state.tools,
+      captureSessionModelContext(agent.context.model, {
+        systemPrompt: agent.context.systemPrompt,
+        messages: agent.context.messages,
+        tools: agent.context.tools,
       }, "agent-state");
     };
     window.addEventListener("keating:session-debug-enabled", captureCurrentContext);
@@ -1929,7 +1933,7 @@ export function useKeatingAgent(
       const base = composeKeatingSystemPrompt(persona);
       systemPromptBaseRef.current = base;
       if (agentRef.current) {
-        agentRef.current.state.systemPrompt = appendKeatingPortableCatalog(buildAgentSystemPrompt(
+        agentRef.current.context.systemPrompt = appendKeatingPortableCatalog(buildAgentSystemPrompt(
           speechSettings.enabled,
           base,
           loadLearnerContext(),
@@ -1944,7 +1948,7 @@ export function useKeatingAgent(
   useEffect(() => {
     return subscribeLearnerContext((context) => {
       if (agentRef.current) {
-        agentRef.current.state.systemPrompt = appendKeatingPortableCatalog(buildAgentSystemPrompt(
+        agentRef.current.context.systemPrompt = appendKeatingPortableCatalog(buildAgentSystemPrompt(
           speechSettings.enabled,
           systemPromptBaseRef.current,
           context,
@@ -2067,11 +2071,11 @@ export function useKeatingAgent(
       await runSessionSwitch({
         isCurrent,
         prepare: () => prepareAgent(initialState),
-        needsFinalSave: () => currentAgent ? sessionSnapshotsRef.current.needsSave(currentAgent, currentAgent.state) : false,
+        needsFinalSave: () => currentAgent ? sessionSnapshotsRef.current.needsSave(currentAgent, currentAgent.context) : false,
         persist: async () => {
-          if (currentAgent?.state.isStreaming) {
-            currentAgent.abort();
-            await currentAgent.waitForIdle();
+          if (currentAgent?.context.isStreaming) {
+            currentAgent.cancel();
+            await currentAgent.whenIdle();
           }
           await saveSessionSnapshot(currentAgent, previousId, previousCreatedAt);
         },
@@ -2099,9 +2103,9 @@ export function useKeatingAgent(
     if (!agent) throw new Error("No active session to share");
     const originalSessionId = sessionIdRef.current;
     const originalCreatedAt = sessionCreatedAtRef.current;
-    const originalMessages = [...agent.state.messages];
-    const originalModel = agent.state.model;
-    const originalThinkingLevel = agent.state.thinkingLevel;
+    const originalMessages = [...agent.context.messages];
+    const originalModel = agent.context.model;
+    const originalThinkingLevel = agent.context.thinkingLevel;
     const assertShareSourceIsCurrent = () => {
       if (agentRef.current !== agent || sessionIdRef.current !== originalSessionId) {
         throw new Error("The active session changed while the share was being prepared. Share it again from the session you want.");
@@ -2146,14 +2150,14 @@ export function useKeatingAgent(
       const initialState = { model: session.model, thinkingLevel: session.thinkingLevel, messages: session.messages };
       const committed = await runSessionSwitch({
         isCurrent,
-        needsFinalSave: () => currentAgent ? sessionSnapshotsRef.current.needsSave(currentAgent, currentAgent.state) : false,
+        needsFinalSave: () => currentAgent ? sessionSnapshotsRef.current.needsSave(currentAgent, currentAgent.context) : false,
         // Restoring history must not refresh credentials or replace its saved
         // model. The existing send callbacks still obtain/refresh provider keys.
         prepare: () => prepareAgent(initialState, true),
         persist: async () => {
-          if (currentAgent?.state.isStreaming) {
-            currentAgent.abort();
-            await currentAgent.waitForIdle();
+          if (currentAgent?.context.isStreaming) {
+            currentAgent.cancel();
+            await currentAgent.whenIdle();
           }
           await saveSessionSnapshot(currentAgent, previousId, previousCreatedAt);
         },
@@ -2363,7 +2367,7 @@ export function useKeatingAgent(
 
   const generateCurrentSessionTitle = useCallback(async () => {
     const agent = agentRef.current;
-    if (!agent || agent.state.messages.length === 0) {
+    if (!agent || agent.context.messages.length === 0) {
       throw new Error(
         "Send a message first — there's nothing for the model to title yet.",
       );
@@ -2431,13 +2435,13 @@ export function useKeatingAgent(
   const modelSelectorDialogElement = (
     <ModelSelectorDialog
       open={modelSelectorDialog.open}
-      currentModel={agentRef.current?.state.model ?? selectedModelRef.current}
+      currentModel={agentRef.current?.context.model ?? selectedModelRef.current}
       onClose={modelSelectorDialog.onClose}
       onSelect={(model: Model<Api>) => {
         modelSelectorDialog.onClose();
         const prevModel = selectedModelRef.current;
         const activeAgent = agentRef.current;
-        if (activeAgent?.state.isStreaming) {
+        if (activeAgent?.context.isStreaming) {
           posthog.capture("model_change_blocked", {
             reason: "active_turn",
             from_model: `${prevModel.provider}/${prevModel.id}`,
@@ -2463,7 +2467,7 @@ export function useKeatingAgent(
           selectModel(model);
           const agent = agentRef.current;
           if (agent) {
-            const current = agent.state;
+            const current = agent.context;
             await createAgent(panelRef.current!, {
               ...current,
               model,
@@ -2526,23 +2530,23 @@ export function useKeatingAgent(
         if (existingAgent) {
           // Re-attach existing agent if component re-mounted (e.g. strict mode)
           if (unsubRef.current) unsubRef.current();
-          unsubRef.current = subscribeAgentEvents(existingAgent, node as any);
+          unsubRef.current = subscribeAgentEvents(existingAgent.execution, node as any);
           const retryExistingResponse = async () => {
-            if (existingAgent.state.isStreaming) return;
+            if (existingAgent.context.isStreaming) return;
             const retryMessages = prepareMessagesForRetry(
-              existingAgent.state.messages,
+              existingAgent.context.messages,
             );
             if (!retryMessages) return;
             await ensureSessionStartContextRef.current();
             untrustedSearchProvenanceRef.current = false;
-            existingAgent.state.messages = retryMessages;
+            existingAgent.context.messages = retryMessages;
             await persistCurrentSnapshotRef.current();
             analyticsTurnIndexRef.current = Math.max(
               0,
               retryMessages.filter((message) => message.role === "user")
                 .length - 1,
             );
-            await existingAgent.continue();
+            await existingAgent.resume();
           };
           const setupCallbacks = {
 			sessionId: sessionIdRef.current,
@@ -2586,20 +2590,20 @@ export function useKeatingAgent(
               });
               if (import.meta.env.DEV) {
                 console.log(
-                  `[keating:send] model=${existingAgent.state.model.provider}/${existingAgent.state.model.id} messages=${existingAgent.state.messages.length}`,
+                  `[keating:send] model=${existingAgent.context.model.provider}/${existingAgent.context.model.id} messages=${existingAgent.context.messages.length}`,
                 );
               }
-              const turnIndex = existingAgent.state.messages.filter(
+              const turnIndex = existingAgent.context.messages.filter(
                 (m) => m.role === "user",
               ).length;
               analyticsTurnIndexRef.current = turnIndex;
-              const model = `${existingAgent.state.model.provider}/${existingAgent.state.model.id}`;
+              const model = `${existingAgent.context.model.provider}/${existingAgent.context.model.id}`;
               posthog.capture("message_sent", {
                 session_id: sessionIdRef.current,
                 turn_index: turnIndex,
                 turn_number: turnIndex + 1,
                 model,
-                provider: existingAgent.state.model.provider,
+                provider: existingAgent.context.model.provider,
               });
               window.dispatchEvent(
                 new CustomEvent("keating:message-sent", {
@@ -2610,7 +2614,7 @@ export function useKeatingAgent(
                 posthog.capture("first_message_sent", {
                   session_id: sessionIdRef.current,
                   model,
-                  provider: existingAgent.state.model.provider,
+                  provider: existingAgent.context.model.provider,
                 });
               }
             },
@@ -2631,12 +2635,12 @@ export function useKeatingAgent(
             onFork: (forkPoint?: number) =>
               forkSession(sessionIdRef.current, forkPoint),
             onRetry: retryExistingResponse,
-            thinkingLevel: existingAgent.state.thinkingLevel,
+            thinkingLevel: existingAgent.context.thinkingLevel,
             onThinkingLevelChange: (level: ThinkingLevel) => {
               applyThinkingLevel(level);
             },
           };
-          node.setAgent(existingAgent, setupCallbacks).catch(console.error);
+          node.setConversation(existingAgent, setupCallbacks).catch(console.error);
           return;
         }
 

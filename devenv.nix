@@ -194,12 +194,13 @@ in
 
   # ── Install / bootstrap ─────────────────────────────────────────
   tasks."keating:install" = {
-    description = "Install dependencies (root + web workspaces)";
+    description = "Install dependencies (root, web, and Flue harness)";
     exec = ''
       # node-pty is compiled on Linux. Do not leak foreign toolchain include
       # paths into node-gyp's reproducible devenv build.
       env -u CPLUS_INCLUDE_PATH -u C_INCLUDE_PATH -u LIBRARY_PATH bun install
       cd web && bun install
+      cd ../spikes/flue-host && bun install --frozen-lockfile
     '';
   };
 

@@ -51,6 +51,7 @@
     "@earendil-works/pi-agent-core": "^0.84.2",
     "@earendil-works/pi-ai": "^0.84.2",
     "@earendil-works/pi-web-ui": "^0.75.3",
+    "@flue/sdk": "2.0.3",
     "@google/genai": "^2.10.0",
     "@huggingface/transformers": "^4.2.0",
     "@isomorphic-git/lightning-fs": "^4.7.0",

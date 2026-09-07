@@ -5,6 +5,7 @@ import { sessionSearchText } from "./session-metadata";
 import type { SessionData, SessionMetadata } from "../types/session";
 import { buildSessionTree, type SessionTreeNode } from "../components/session-tree";
 import { StorageConversationEventStore } from "../keating/event-store/storage-adapter";
+import { deleteCheckpoint } from "../keating/flue/persistence";
 import {
 	type ArtifactHero,
 	buildArtifactHeroMap,
@@ -54,6 +55,7 @@ export function clearSessionConversationEvents(id: string): void {
 /** Delete primary session data, then its auxiliary replay data, and notify UIs. */
 export async function deleteSavedSession(id: string): Promise<void> {
 	await sessions.deleteSession(id);
+	await deleteCheckpoint(id).catch(() => {});
 	clearSessionConversationEvents(id);
 	notifySessionsChanged();
 }

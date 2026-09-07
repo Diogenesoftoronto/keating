@@ -268,7 +268,7 @@ export function recordSessionHook(
 	event("hook", name, status, details, durationMs);
 }
 
-export function recordSessionDebugAgentEvent(agent: Agent, agentEvent: AgentEvent): void {
+export function recordSessionDebugAgentEvent(agent: Pick<Agent, "sessionId">, agentEvent: AgentEvent): void {
 	if (!enabled || agentEvent.type === "message_update") return;
 	sessionId = agent.sessionId ?? sessionId;
 	if (agentEvent.type === "tool_execution_start") {

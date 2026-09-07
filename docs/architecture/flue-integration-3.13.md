@@ -26,7 +26,11 @@ submission, conversation, attachment, and format-version contract tests exercise
 the adapter independently. MCP and detached subagents remain verified on the
 Node host, not inside NodePod.
 
-The browser chat still uses Pi's model/tool loop with the portable Flue-style
-authoring integration; merging this work does not switch every product chat to
-the standalone official host. See [the host spike](../../spikes/flue-host/README.md#nodepod-execution-evidence)
-for commands and persistence limits.
+The browser chat now runs official Flue inside a dedicated NodePod and observes
+its native conversation projection with `@flue/sdk`. `AssistantChatPanel` accepts
+`FlueConversation`, rather than a Pi `Agent`. The application keeps its existing
+provider transcript for exports, model context, and learner evidence; the UI
+renders Flue message identities and explicit tool states.
+
+See [browser chat architecture](flue-browser-chat.md) for the execution boundary,
+checkpoint behavior, and verification commands.
