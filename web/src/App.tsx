@@ -294,7 +294,7 @@ const courseWorkspaceRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   chatRoute,
-  renderingSmokeRoute,
+  ...(import.meta.env.DEV ? [renderingSmokeRoute] : []),
   liveRoute,
   usageRoute,
   trainingDataRoute,
