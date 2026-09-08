@@ -80,9 +80,15 @@ in
     web = {
       exec = "bun run dev";
       cwd = "./web";
+      # Startup builds the Nitro API before Vite starts listening. Give that
+      # cold build enough time; the default three probes exhausted readiness
+      # after ~20 seconds and left desktop waiting forever for a healthy web.
+      # Let process-compose own this probe instead of adding a second supervisor.
       ready = {
         http.get.port = 3000;
-        timeout = 120;
+        period = 2;
+        probe_timeout = 5;
+        failure_threshold = 150;
       };
     };
 

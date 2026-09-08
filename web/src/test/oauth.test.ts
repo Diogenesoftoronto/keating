@@ -139,6 +139,7 @@ describe("OAuth provider wiring", () => {
 	});
 
 	it("hands a desktop loopback callback through the existing state-validated completion path", async () => {
+		installLocalStorage();
 		let callback: ((url: string) => void) | undefined;
 		let unsubscribed = false;
 		Object.defineProperty(globalThis, "window", {
