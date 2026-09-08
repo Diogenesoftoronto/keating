@@ -84,11 +84,17 @@ export async function fetchDownloadRelease(signal: AbortSignal): Promise<Downloa
 }
 
 /** Do not silently select the other CPU architecture or a different platform. */
-export function recommendedDownload(release: DownloadRelease, platform: DetectedPlatform, architecture: DownloadArchitecture): DownloadAsset | undefined {
+export function recommendedDownload(release: DownloadRelease, platform: DetectedPlatform, architecture: DownloadArchitecture, format?: string): DownloadAsset | undefined {
 	return release.assets.filter((asset) => asset.platform === platform
+		&& (!format || asset.format.toLowerCase() === format.toLowerCase())
 		&& (asset.architecture === architecture || asset.architecture === "universal"))
 		.sort((a, b) => Number(a.kind === "terminal") - Number(b.kind === "terminal")
+			|| Number(b.format.toLowerCase() === ".appimage") - Number(a.format.toLowerCase() === ".appimage")
 			|| Number(a.architecture === "universal") - Number(b.architecture === "universal"))[0];
+}
+
+export function downloadFormatLabel(format: string): string {
+	return ({ ".deb": "DEB · Ubuntu / Debian", ".rpm": "RPM · Fedora / openSUSE", ".appimage": "AppImage · Portable", ".tar.gz": "Terminal archive" } as Record<string, string>)[format.toLowerCase()] ?? format;
 }
 
 export function downloadArchitectureLabel(platform: DetectedPlatform, architecture: DownloadAsset["architecture"]): string {

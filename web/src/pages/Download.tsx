@@ -8,7 +8,7 @@ import { TerminalInstall } from "../components/TerminalInstall";
 import { AndroidLogo, AppleLogo, IosLogo, LinuxLogo, WindowsLogo } from "../components/platform-logos";
 import { useSeo } from "../hooks/useSeo";
 import { detectDownloadArchitecture, detectPlatform, type DetectedPlatform, type DownloadArchitecture } from "../lib/detect-platform";
-import { downloadArchitectureLabel, downloadSize, fetchDownloadRelease, recommendedDownload, VERIFIED_DOWNLOAD_RELEASE, type DownloadAsset } from "../lib/download-release";
+import { downloadArchitectureLabel, downloadFormatLabel, downloadSize, fetchDownloadRelease, recommendedDownload, VERIFIED_DOWNLOAD_RELEASE, type DownloadAsset } from "../lib/download-release";
 import "./download.css";
 
 const PLATFORMS = [
@@ -32,6 +32,7 @@ export function Download() {
   const [detectedArchitecture, setDetectedArchitecture] = useState<DownloadArchitecture>("unknown");
   const [platformChoice, setPlatformChoice] = useState<DetectedPlatform | null>(null);
   const [architectureChoice, setArchitectureChoice] = useState<DownloadArchitecture | null>(null);
+  const [formatChoice, setFormatChoice] = useState<string | null>(null);
   const [release, setRelease] = useState(VERIFIED_DOWNLOAD_RELEASE);
   const [releaseCheck, setReleaseCheck] = useState<"checking" | "current" | "unavailable">("checking");
   const platform = platformChoice ?? detected;
@@ -39,7 +40,9 @@ export function Download() {
   const selectedPlatform = PLATFORMS.find((entry) => entry.id === platform);
   const PlatformIcon = selectedPlatform?.Logo ?? Globe;
   const platformAssets = release.assets.filter((asset) => asset.platform === platform);
-  const recommended = recommendedDownload(release, platform, architecture);
+  const formats = [...new Set(platformAssets.filter((asset) => asset.architecture === architecture || asset.architecture === "universal").map((asset) => asset.format))];
+  const selectedFormat = formatChoice && formats.includes(formatChoice) ? formatChoice : undefined;
+  const recommended = recommendedDownload(release, platform, architecture, selectedFormat);
   const needsArchitecture = platformAssets.length > 0 && !recommended;
   const architectures = [...new Set(platformAssets.map((asset) => asset.architecture))].filter((arch) => arch !== "universal");
 
@@ -87,7 +90,7 @@ export function Download() {
                 </div>
                 <div className="downloads-platform-picker" role="group" aria-label="Choose your platform">
                   {PLATFORMS.map(({ id, label, Logo }) => (
-                    <button type="button" key={id} aria-pressed={platform === id} onClick={() => { setPlatformChoice(id); setArchitectureChoice(null); }}>
+                    <button type="button" key={id} aria-pressed={platform === id} onClick={() => { setPlatformChoice(id); setArchitectureChoice(null); setFormatChoice(null); }}>
                       <Logo size={23} aria-hidden="true" /><span>{label}</span>
                     </button>
                   ))}
@@ -99,6 +102,17 @@ export function Download() {
                       <label key={arch}>
                         <input type="radio" name="download-architecture" value={arch} checked={architecture === arch} onChange={() => setArchitectureChoice(arch)} />
                         {downloadArchitectureLabel(platform, arch)}
+                      </label>
+                    ))}
+                  </fieldset>
+                )}
+                {platform === "linux" && formats.length > 1 && (
+                  <fieldset className="downloads-architectures">
+                    <legend>Package format</legend>
+                    {formats.map((format) => (
+                      <label key={format}>
+                        <input type="radio" name="download-format" value={format} checked={recommended?.format === format} onChange={() => setFormatChoice(format)} />
+                        {downloadFormatLabel(format)}
                       </label>
                     ))}
                   </fieldset>
