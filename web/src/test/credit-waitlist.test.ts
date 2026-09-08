@@ -36,3 +36,11 @@ test("validation, consent, honeypot, origin and missing config fail before provi
 test("existing email opt-out is preserved", async () => { const f = fixture([[200, { id: "contact", unsubscribed: true }]]); await expect(joinCreditWaitlist(request(), f.options)).rejects.toMatchObject({ statusCode: 409 }); expect(f.calls).toHaveLength(1); });
 test("oversized stream is rejected before provider", async () => { const f = fixture([]); await expect(joinCreditWaitlist(request({ ...body, email: "x".repeat(3000) }), f.options)).rejects.toMatchObject({ statusCode: 413 }); });
 test("limiter allows five requests per identity and resets after window", () => { let now = 0; const limit = createWaitlistRateLimiter(() => now); for (let i = 0; i < 5; i++) limit("ip"); expect(() => limit("ip")).toThrow("Too many attempts"); expect(() => limit("other")).not.toThrow(); now += 900_001; expect(() => limit("ip")).not.toThrow(); });
+
+test("rate limiting uses the validated normalized email before provider access", async () => {
+  const identities: string[] = [];
+  const f = fixture([]);
+  await expect(joinCreditWaitlist(request(), { ...f.options, limitEmail: identity => { identities.push(identity); throw new Error("limited"); } })).rejects.toThrow("limited");
+  expect(identities).toEqual(["learner@example.com"]);
+  expect(f.calls).toHaveLength(0);
+});
