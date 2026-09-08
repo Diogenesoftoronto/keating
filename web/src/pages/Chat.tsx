@@ -26,7 +26,9 @@ import {
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { css, cx } from "../../styled-system/css";
 import { useKeatingAgent } from "../hooks/useKeatingAgent";
-import { keatingStorage, sessions } from "../hooks/keating-storage";
+import { getInitPromise, keatingStorage, sessions } from "../hooks/keating-storage";
+import { ChatOnboarding, hasCompletedChatOnboarding } from "../components/ChatOnboarding";
+import { beginNotOrganicAuthorization } from "../notorganic-provider";
 import { useSeo } from "../hooks/useSeo";
 import { useMediaQuery } from "../hooks/use-media-query";
 import { isCanvasFeatureEnabled } from "../lib/feature-flags";
@@ -89,6 +91,7 @@ const iconButtonClass = css({
 });
 
 const actionButtonPandaClass = css({
+  display: "inline-flex",
   flexShrink: 0,
   alignItems: "center",
   justifyContent: "center",
@@ -778,7 +781,17 @@ function ChatContent() {
     courseMode?: "create" | "edit";
     ask?: string;
   };
-  const pendingPrompt = search.ask?.trim() || undefined;
+  const [onboardingGoal, setOnboardingGoal] = useState<string>();
+  const pendingPrompt = search.ask?.trim() || onboardingGoal;
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  useEffect(() => {
+    if (hasCompletedChatOnboarding() || search.ask || search.course) return;
+    let cancelled = false;
+    void getInitPromise().then(() => sessions.getAllMetadata()).then(metadata => {
+      if (!cancelled && !hasCompletedChatOnboarding() && metadata.length === 0) setShowOnboarding(true);
+    }).catch(() => { /* Storage problems must not prevent reaching chat. */ });
+    return () => { cancelled = true; };
+  }, [search.ask, search.course]);
   const courseContext = useMemo(
     () => courseChatContext(search),
     [search.course, search.courseMode],
@@ -1177,134 +1190,14 @@ function ChatContent() {
             }),
           )}
         >
+          <button className={actionButtonClass} aria-label="Settings" title="Settings" onClick={openSettings}><Settings size={16}/></button>
+          {canvasEnabled && <button className={actionButtonClass} aria-label={artifactBrowserOpen ? "Close materials" : "Open materials"} aria-pressed={artifactBrowserOpen} onClick={() => toggleArtifactBrowser("toolbar")}><LibraryBig size={16}/></button>}
           <button
-            className={cx(actionButtonClass, "chat-only-desktop")}
-            title="New session"
-            aria-label="New session"
-            disabled={isPending}
-            onClick={newSession}
-          >
-            <Plus size={16} />
-          </button>
-          <button
-            className={cx(actionButtonClass, css({ display: "inline-flex" }))}
-            title="Settings"
-            aria-label="Settings"
-            onClick={openSettings}
-          >
-            <Settings size={16} />
-          </button>
-          <span className="chat-only-desktop">
-            <ThemeToggle />
-          </span>
-          <button
-            className={cx(
-              actionButtonClass,
-              "chat-only-desktop",
-              shareState === "copied" ? css({ color: "var(--primary)" }) : "",
-              shareState === "error"
-                ? css({ color: "var(--destructive)" })
-                : "",
-            )}
-            title={
-              shareState === "copied"
-                ? "Copied share link"
-                : shareState === "error"
-                  ? "Could not share yet"
-                  : shareState === "confirm"
-                    ? "Confirm public share"
-                    : "Share session"
-            }
-            aria-label="Share session"
-            disabled={isPending || shareState === "sharing"}
-            onClick={shareState === "confirm" ? confirmShare : handleShare}
-          >
-            <Share2 size={16} />
-          </button>
-          <button
-            className={cx(
-              actionButtonClass,
-              "chat-only-desktop",
-              speechEnabled ? css({ color: "var(--primary)" }) : "",
-            )}
-            title={speechEnabled ? "Disable speech" : "Enable speech"}
-            aria-pressed={speechEnabled}
-            onClick={() => {
-              posthog.capture("speech_toggled", { enabled: !speechEnabled });
-              toggleSpeech();
-            }}
-          >
-            {speechEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-          </button>
-          {canvasEnabled && (
-            <button
-              className={cx(
-                actionButtonClass,
-                "chat-only-desktop",
-                artifactBrowserOpen ? css({ color: "var(--primary)" }) : "",
-              )}
-              title={artifactBrowserOpen ? "Close artifacts" : "Open artifacts"}
-              aria-label={
-                artifactBrowserOpen ? "Close artifacts" : "Open artifacts"
-              }
-              aria-pressed={artifactBrowserOpen}
-              onClick={() => toggleArtifactBrowser("toolbar")}
-            >
-              <LibraryBig size={16} />
-            </button>
-          )}
-          <Link
-            to="/courses"
-            className={cx(actionButtonClass, "chat-only-desktop")}
-            title="Open courses"
-            aria-label="Open courses"
-          >
-            <BookOpen size={16} />
-          </Link>
-          {import.meta.env.DEV && (
-            <button
-              className={cx(actionButtonClass, "chat-only-desktop")}
-              title="NodePod runtime"
-              aria-label="NodePod runtime"
-              onClick={() => setNodePodOpen(true)}
-            >
-              <Cpu size={16} />
-            </button>
-          )}
-          <button
-            className={cx(actionButtonClass, "chat-only-desktop")}
-            title="Learning usage"
-            aria-label="Learning usage"
-            onClick={() => navigate({ to: "/usage" })}
-          >
-            <BarChart3 size={16} />
-          </button>
-          <button
-            className={cx(actionButtonClass, "chat-only-desktop")}
-            title={activeSessionId ? "Review this session" : "Open session reviews"}
-            aria-label={activeSessionId ? "Review this session" : "Open session reviews"}
-            onClick={() => activeSessionId
-              ? navigate({ to: "/review/sessions/$sessionId", params: { sessionId: activeSessionId } })
-              : navigate({ to: "/review" })}
-          >
-            <ClipboardCheck size={16} />
-          </button>
-          <a
-            className={cx(actionButtonClass, "chat-only-desktop")}
-            title="Report an issue"
-            aria-label="Report an issue on GitHub"
-            href={GITHUB_ISSUE_URL}
-            target="_blank"
-            rel="noreferrer"
-          >
-            <Bug size={16} />
-          </a>
-          <button
-            className={cx(actionButtonClass, css({ display: "inline-flex" }))}
+            className={actionButtonClass}
             title="Menu"
             aria-label="More menu"
             aria-expanded={mobileMenuOpen}
-            aria-haspopup="menu"
+            aria-haspopup="true"
             onClick={() => setMobileMenuOpen((o) => !o)}
           >
             {mobileMenuOpen ? <X size={16} /> : <Menu size={16} />}
@@ -1315,7 +1208,7 @@ function ChatContent() {
         {mobileMenuOpen && (
           <div
             ref={mobileMenuRef}
-            role="menu"
+            role="navigation" aria-label="Chat actions"
             className={cx(
               "font-terminal",
               css({
@@ -1324,7 +1217,9 @@ function ChatContent() {
                 top: "100%",
                 zIndex: 50,
                 marginTop: "0.25rem",
-                width: "14rem",
+                width: "16rem",
+                maxHeight: "min(70dvh, 36rem)",
+                overflowY: "auto",
                 borderRadius: "0.375rem",
                 border: "1px solid var(--border)",
                 backgroundColor: "var(--background)",
@@ -1342,20 +1237,20 @@ function ChatContent() {
               })}
             >
               <button
-                className={cx(menuItemClass, "chat-only-compact")}
+                className={cx(menuItemClass, "")}
                 disabled={isPending}
                 onClick={() => {
                   setMobileMenuOpen(false);
                   newSession();
                 }}
               >
-                <Plus size={14} />
+
                 New session
               </button>
               <button
                 className={cx(
                   menuItemClass,
-                  "chat-only-compact",
+                  "",
                   shareState === "copied"
                     ? css({ color: "var(--primary)" })
                     : "",
@@ -1370,7 +1265,7 @@ function ChatContent() {
                 }}
                 disabled={isPending || shareState === "sharing"}
               >
-                <Share2 size={14} />
+
                 {shareState === "copied"
                   ? "Link copied"
                   : shareState === "confirm"
@@ -1380,7 +1275,7 @@ function ChatContent() {
               <button
                 className={cx(
                   menuItemClass,
-                  "chat-only-compact",
+                  "",
                   speechEnabled ? css({ color: "var(--primary)" }) : "",
                 )}
                 onClick={() => {
@@ -1391,54 +1286,42 @@ function ChatContent() {
                   toggleSpeech();
                 }}
               >
-                {speechEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+
                 {speechEnabled ? "Disable speech" : "Enable speech"}
               </button>
               <ThemeToggle
-                className="chat-only-compact"
+                className=""
                 variant="menu"
                 onToggled={() => setMobileMenuOpen(false)}
               />
-              {canvasEnabled && (
-                <button
-                  className={cx(menuItemClass, "chat-only-compact")}
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    toggleArtifactBrowser("mobile_menu");
-                  }}
-                >
-                  <LibraryBig size={14} />
-                  {artifactBrowserOpen ? "Close artifacts" : "Open artifacts"}
-                </button>
-              )}
               <Link
                 to="/courses"
                 className={menuItemClass}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                <BookOpen size={14} />
+
                 Courses
               </Link>
               {import.meta.env.DEV && (
                 <button
-                  className={cx(menuItemClass, "chat-only-compact")}
+                  className={cx(menuItemClass, "")}
                   onClick={() => {
                     setMobileMenuOpen(false);
                     setNodePodOpen(true);
                   }}
                 >
-                  <Cpu size={14} />
+
                   NodePod runtime
                 </button>
               )}
               <button
-                className={cx(menuItemClass, "chat-only-compact")}
+                className={cx(menuItemClass, "")}
                 onClick={() => {
                   setMobileMenuOpen(false);
                   navigate({ to: "/usage" });
                 }}
               >
-                <BarChart3 size={14} />
+
                 Learning usage
               </button>
               <button
@@ -1452,12 +1335,12 @@ function ChatContent() {
                   }
                 }}
               >
-                <ClipboardCheck size={14} />
+
                 Review session
               </button>
               <div
                 className={cx(
-                  "chat-only-compact",
+                  "",
                   css({
                     marginBlock: "0.25rem",
                     borderTop: "1px solid var(--border)",
@@ -1505,7 +1388,7 @@ function ChatContent() {
                 href={GITHUB_ISSUE_URL}
                 target="_blank"
                 rel="noreferrer"
-                className={cx(menuItemClass, "chat-only-compact")}
+                className={cx(menuItemClass, "")}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Report issue
@@ -1693,6 +1576,14 @@ function ChatContent() {
         </div>
       )}
 
+      {showOnboarding && <div className={css({ flex: 1, minHeight: 0, overflowY: "auto", paddingInline: "1rem" })}>
+        <ChatOnboarding
+          onConnectAccount={() => beginNotOrganicAuthorization("/chat")}
+          onChooseModel={openModelSelector}
+          onSkip={() => setShowOnboarding(false)}
+          onComplete={goal => { setOnboardingGoal(goal); setShowOnboarding(false); }}
+        />
+      </div>}
       <div
         className={css({
           display: "flex",
@@ -1700,6 +1591,7 @@ function ChatContent() {
           flex: 1,
           overflow: "hidden",
         })}
+        style={showOnboarding ? { display: "none" } : undefined}
       >
         {sessionSidebar}
         <AssistantChatPanel

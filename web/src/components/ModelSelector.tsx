@@ -1,718 +1,94 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { RefreshCw, Search, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import type { Api, Model } from "@earendil-works/pi-ai/compat";
-import {
-	localModel,
-	BROWSER_MODELS,
-	getBrowserModel,
-	type LocalModel,
-} from "../stores/local-model";
-import {
-	checkBrowserModelAvailability,
-	discoverModels,
-	modelKey,
-	type BrowserModelAvailability,
-	type SelectableModel,
-} from "../lib/model-catalog";
-import { searchFullText } from "../lib/full-text-search";
+import { localModel, getBrowserModel } from "../stores/local-model";
+import { checkBrowserModelAvailability, discoverModels, displayModelProvider, modelKey, type SelectableModel } from "../lib/model-catalog";
 import type { ImageGeneratorOption } from "../lib/image-generators";
 import type { SpeechProviderDescriptor } from "../keating/speech";
-import { addRecentModel, getRecentModels } from "../keating/ui-settings";
-import {
-	CHAT_CAPABILITY_FILTERS,
-	modelCapabilityBadges,
-	modelHasCapabilities,
-	type ChatCapabilityFilter,
-} from "../keating/model-capabilities";
-import { MultiSelectDropdown } from "./MultiSelectDropdown";
-import { ModelCacheControls, ModelDownloadBar } from "./ModelDownloadBar";
-import { refreshCachedModelSizes, useCachedModelSize } from "../hooks/useCachedModelSize";
-import { css } from "../../styled-system/css";
+import { addRecentModel } from "../keating/ui-settings";
+import { ModelPicker } from "./ModelPicker";
+import { ModelDownloadBar, ModelCacheControls } from "./ModelDownloadBar";
+import { useCachedModelSize, refreshCachedModelSizes } from "../hooks/useCachedModelSize";
 
-interface ModelCatalogState {
-	models: SelectableModel[];
-	status: "loading" | "ready" | "error";
-	error: string;
-	browserAvailability: BrowserModelAvailability;
-}
-
-type ModelCatalogAction =
-	| { type: "loading" }
-	| { type: "ready"; models: SelectableModel[]; browserAvailability: BrowserModelAvailability }
-	| { type: "error"; message: string; fallbackModels: SelectableModel[]; browserAvailability: BrowserModelAvailability };
-
-const INITIAL_CATALOG: ModelCatalogState = {
-	models: [],
-	status: "loading",
-	error: "",
-	browserAvailability: {},
-};
-
-function modelCatalogReducer(state: ModelCatalogState, action: ModelCatalogAction): ModelCatalogState {
-	switch (action.type) {
-		case "loading":
-			return { ...state, status: "loading", error: "" };
-		case "ready":
-			return { models: action.models, status: "ready", error: "", browserAvailability: action.browserAvailability };
-		case "error":
-			return {
-				models: action.fallbackModels,
-				status: "error",
-				error: action.message,
-				browserAvailability: action.browserAvailability,
-			};
-	}
+function BrowserCache({ id }: { id: string }) {
+ const cached = useCachedModelSize(id, true);
+ return <ModelCacheControls cachedBytes={cached.bytes}
+  loaded={localModel.getState().modelId === id && localModel.getState().loaded}
+  onRemove={async () => { await localModel.removeDownload(id); refreshCachedModelSizes(); }}/>;
 }
 
 export interface ModelSelectorDialogProps {
-	open: boolean;
-	currentModel: Model<Api> | null;
-	onClose: () => void;
-	onSelect: (model: Model<Api>) => void;
-	/** Copy overrides for callers picking a model for something other than chat. */
-	title?: string;
-	description?: string;
-	actionLabel?: string;
-	/** Catalog keys to hide — e.g. models a review pool already holds. */
-	excludeKeys?: readonly string[];
-	/**
-	 * Chat downloads a browser model the moment it is chosen, because chat runs
-	 * it next. Callers that merely record the choice pass false and let the run
-	 * itself pay the download.
-	 */
-	preloadBrowserModel?: boolean;
+ open: boolean; currentModel: Model<Api> | null; onClose: () => void;
+ onSelect: (model: Model<Api>) => void;
+ title?: string; description?: string; actionLabel?: string;
+ excludeKeys?: readonly string[]; preloadBrowserModel?: boolean;
 }
-
-export function ModelSelectorDialog({
-	open,
-	currentModel,
-	onClose,
-	onSelect,
-	title = "Select Model",
-	description = "Built-in providers and discovered custom-provider models.",
-	actionLabel = "Use Selected Model",
-	excludeKeys,
-	preloadBrowserModel = true,
-}: ModelSelectorDialogProps) {
-	const [catalog, dispatchCatalog] = useReducer(modelCatalogReducer, INITIAL_CATALOG);
-	const [search, setSearch] = useState("");
-	const [providerFilters, setProviderFilters] = useState<string[]>([]);
-	const [capabilityFilters, setCapabilityFilters] = useState<ChatCapabilityFilter[]>([]);
-	const [selectedKey, setSelectedKey] = useState(currentModel ? modelKey(currentModel) : "");
-	const [localState, setLocalState] = useState<LocalModel | null>(null);
-	const inputRef = useRef<HTMLInputElement>(null);
-	const loadRequestRef = useRef(0);
-	const { models, status, error, browserAvailability } = catalog;
-	const loading = status === "loading";
-
-	const refreshModels = useCallback(async () => {
-		const requestId = ++loadRequestRef.current;
-		dispatchCatalog({ type: "loading" });
-		const nextBrowserAvailability = await checkBrowserModelAvailability();
-		try {
-			const nextModels = await discoverModels(nextBrowserAvailability);
-			if (requestId !== loadRequestRef.current) return;
-			dispatchCatalog({ type: "ready", models: nextModels, browserAvailability: nextBrowserAvailability });
-		} catch (err) {
-			if (requestId !== loadRequestRef.current) return;
-			dispatchCatalog({
-				type: "error",
-				message: err instanceof Error ? err.message : String(err),
-				fallbackModels: [],
-				browserAvailability: nextBrowserAvailability,
-			});
-		}
-	}, []);
-
-	useEffect(() => {
-		if (!open) {
-			loadRequestRef.current += 1;
-			return;
-		}
-		setSearch("");
-		setProviderFilters([]);
-		setCapabilityFilters([]);
-		setSelectedKey(currentModel ? modelKey(currentModel) : "");
-		const unsub = localModel.subscribe(setLocalState);
-		void refreshModels();
-		const focusTimer = window.setTimeout(() => inputRef.current?.focus(), 50);
-		return () => {
-			loadRequestRef.current += 1;
-			window.clearTimeout(focusTimer);
-			unsub();
-		};
-	}, [open, currentModel, refreshModels]);
-
-	const filtered = useMemo(() => {
-		const excluded = new Set(excludeKeys ?? []);
-		const eligible = models.filter(({ model, key }) => {
-			if (excluded.has(key)) return false;
-			if (providerFilters.length > 0 && !providerFilters.includes(model.provider)) return false;
-			if (!modelHasCapabilities(model, capabilityFilters)) return false;
-			return true;
-		});
-		return searchFullText(eligible, search, ({ model, group }) => [
-			model.name,
-			model.id,
-			model.provider,
-			model.api,
-			group,
-		]);
-	}, [search, providerFilters, capabilityFilters, models, excludeKeys]);
-
-	const providerOptions = useMemo(
-		() =>
-			Array.from(new Set(models.map(({ model }) => model.provider))).sort((left, right) =>
-				left.localeCompare(right),
-			),
-		[models],
-	);
-
-	const recentKeys = useMemo(
-		() => new Set(search.trim() === "" ? getRecentModels().map((m) => m.key) : []),
-		[search],
-	);
-
-	const recentModels = filtered.filter((e) => recentKeys.has(e.key));
-	const browserModels = filtered.filter((e) => e.group === "browser" && !recentKeys.has(e.key));
-	const cloudModels = filtered.filter((e) => e.group === "cloud" && !recentKeys.has(e.key));
-	const customModels = filtered.filter((e) => e.group === "custom" && !recentKeys.has(e.key));
-	const browserUnavailableReason = useMemo(
-		() => BROWSER_MODELS.map((spec) => browserAvailability[spec.id]?.reason).find(Boolean),
-		[browserAvailability],
-	);
-	const hasCompatibleBrowserModel = useMemo(
-		() => BROWSER_MODELS.some((spec) => browserAvailability[spec.id]?.available),
-		[browserAvailability],
-	);
-
-	const handleSelect = async () => {
-		const selected = models.find((e) => e.key === selectedKey)?.model;
-		if (!selected) return;
-		if (preloadBrowserModel && selected.provider === "browser" && localModel.getState().modelId !== selected.id) {
-			await localModel.load(selected.id);
-			if (!localModel.getState().loaded) return;
-		}
-		addRecentModel(modelKey(selected));
-		onSelect(selected);
-		setSearch("");
-	};
-
-	if (!open) return null;
-
-	return (
-		<div
-			className={css({
-				position: "fixed",
-				inset: 0,
-				zIndex: 1000,
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "center",
-				background: "rgba(0, 0, 0, 0.6)",
-				paddingInline: { base: "0.75rem", sm: "1rem" },
-				fontFamily: "monospace",
-			})}
-			onClick={onClose}
-		>
-			<div
-				role="dialog"
-				aria-modal="true"
-				className={css({
-					display: "flex",
-					width: "min(720px, 96vw)",
-					height: "min(44rem, 85vh)",
-					maxHeight: { base: "92vh", sm: "85vh" },
-					minHeight: 0,
-					flexDirection: "column",
-					overflow: "clip",
-					borderRadius: "0.5rem",
-					border: "2px solid var(--border)",
-					background: "var(--background)",
-				})}
-				onClick={(e) => e.stopPropagation()}
-			>
-				<div className={css({ flexShrink: 0, borderBottom: "1px solid var(--border)", padding: { base: "0.75rem", sm: "1rem" } })}>
-					<div>
-						<h2 className={css({ fontSize: { base: "0.875rem", sm: "1rem" }, fontWeight: 600, color: "var(--foreground)" })}>{title}</h2>
-						<p className={css({ marginTop: "0.125rem", fontSize: { base: "0.6875rem", sm: "0.75rem" }, color: "var(--muted-foreground)" })}>{description}</p>
-						{status === "ready" && browserUnavailableReason && !hasCompatibleBrowserModel && (
-							<p role="status" className={css({ marginTop: "0.375rem", fontSize: { base: "0.6875rem", sm: "0.75rem" }, color: "var(--muted-foreground)" })}>
-								Browser models are unavailable: {browserUnavailableReason}
-							</p>
-						)}
-					</div>
-					<div
-						className={css({
-							marginTop: { base: "0.5rem", sm: "0.75rem" },
-							display: "grid",
-							gap: "0.5rem",
-							sm: { gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr) auto" },
-							lg: { gridTemplateColumns: "minmax(0, 1.5fr) minmax(7.5rem, 0.75fr) minmax(7.5rem, 0.75fr) auto" },
-						})}
-					>
-						<label className={css({ minWidth: 0, sm: { gridColumn: "1 / -1" }, lg: { gridColumn: "auto" } })}>
-							<span className={css({ position: "absolute", width: "1px", height: "1px", padding: 0, margin: "-1px", overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", borderWidth: 0 })}>Search models</span>
-							<div className={css({ position: "relative" })}>
-								<Search
-									size={15}
-									aria-hidden="true"
-									className={css({
-										position: "absolute",
-										left: "0.625rem",
-										top: "50%",
-										transform: "translateY(-50%)",
-										color: "var(--muted-foreground)",
-										pointerEvents: "none",
-									})}
-								/>
-								<input
-									ref={inputRef}
-									type="search"
-									placeholder="Search by model, ID, or provider"
-									className={css({
-										width: "100%",
-										minHeight: "2.25rem",
-										borderRadius: "0.375rem",
-										border: "2px solid var(--border)",
-										background: "var(--background)",
-										paddingBlock: "0.375rem",
-										paddingLeft: "2rem",
-										paddingRight: search ? "2rem" : "0.625rem",
-										fontSize: { base: "0.75rem", sm: "0.875rem" },
-									})}
-									value={search}
-									onChange={(e) => setSearch(e.target.value)}
-								/>
-								{search && (
-									<button
-										type="button"
-										aria-label="Clear model search"
-										onClick={() => {
-											setSearch("");
-											inputRef.current?.focus();
-										}}
-										className={css({
-											position: "absolute",
-											right: "0.375rem",
-											top: "50%",
-											display: "inline-flex",
-											height: "1.5rem",
-											width: "1.5rem",
-											transform: "translateY(-50%)",
-											alignItems: "center",
-											justifyContent: "center",
-											borderRadius: "0.25rem",
-											color: "var(--muted-foreground)",
-											_hover: { background: "var(--accent)", color: "var(--accent-foreground)" },
-										})}
-									>
-										<X size={13} />
-									</button>
-								)}
-							</div>
-						</label>
-						<MultiSelectDropdown
-							label="Filter by provider"
-							allLabel="All providers"
-							options={providerOptions.map((provider) => ({ value: provider, label: provider }))}
-							selected={providerFilters}
-							onChange={setProviderFilters}
-						/>
-						<MultiSelectDropdown
-							label="Filter by capability"
-							allLabel="All capabilities"
-							options={CHAT_CAPABILITY_FILTERS}
-							selected={capabilityFilters}
-							onChange={setCapabilityFilters}
-						/>
-						<button
-							onClick={() => void refreshModels()}
-							className={css({
-								display: "inline-flex",
-								alignItems: "center",
-								justifyContent: "center",
-								gap: "0.25rem",
-								borderRadius: "0.375rem",
-								border: "2px solid var(--border)",
-								padding: "0.375rem 0.625rem",
-								fontSize: { base: "0.75rem", sm: "0.875rem" },
-								transition: "color 150ms, background-color 150ms",
-								_hover: { background: "var(--ink)", color: "var(--paper)" },
-							})}
-						>
-							<RefreshCw size={13} />
-							Refresh
-							</button>
-					</div>
-				</div>
-
-				<div className={css({ margin: "0.25rem", minHeight: 0, flex: 1, overflowX: "hidden", overflowY: "auto", border: "1px solid var(--border)", background: "color-mix(in srgb, var(--muted) 20%, transparent)" })}>
-					{loading ? (
-						<div className={css({ padding: { base: "0.75rem", sm: "1rem" }, textAlign: "center", fontSize: "0.875rem", color: "var(--muted-foreground)" })}>Loading models…</div>
-						) : error ? (
-						<div className={css({ padding: { base: "0.75rem", sm: "1rem" }, textAlign: "center", fontSize: "0.875rem", color: "var(--destructive)" })}>{error}</div>
-					) : filtered.length === 0 ? (
-						<div className={css({ padding: { base: "0.75rem", sm: "1rem" }, textAlign: "center", fontSize: "0.875rem", color: "var(--muted-foreground)" })}>No models matched the current search.</div>
-					) : (
-						<>
-							{renderGroup("Recent", recentModels, selectedKey, setSelectedKey, localState)}
-							{renderGroup("Browser", browserModels, selectedKey, setSelectedKey, localState)}
-							{renderGroup("Cloud", cloudModels, selectedKey, setSelectedKey, localState)}
-							{renderGroup("Custom Providers", customModels, selectedKey, setSelectedKey, localState)}
-						</>
-					)}
-				</div>
-
-				<div className={css({ display: "flex", flexShrink: 0, justifyContent: "flex-end", gap: "0.5rem", borderTop: "1px solid var(--border)", padding: { base: "0.75rem", sm: "1rem" } })}>
-					<button
-						onClick={onClose}
-						className={css({
-							borderRadius: "0.375rem",
-							border: "2px solid var(--border)",
-							paddingInline: { base: "0.75rem", sm: "1rem" },
-							paddingBlock: { base: "0.375rem", sm: "0.5rem" },
-							fontSize: { base: "0.75rem", sm: "0.875rem" },
-							transition: "color 150ms, background-color 150ms",
-							_hover: { background: "var(--ink)", color: "var(--paper)" },
-						})}
-					>
-						Cancel
-					</button>
-					<button
-						onClick={handleSelect}
-						disabled={!selectedKey}
-						className={css({
-							borderRadius: "0.375rem",
-							border: "2px solid var(--primary)",
-							background: "var(--primary)",
-							paddingInline: { base: "0.75rem", sm: "1rem" },
-							paddingBlock: { base: "0.375rem", sm: "0.5rem" },
-							fontSize: { base: "0.75rem", sm: "0.875rem" },
-							color: "var(--primary-foreground)",
-							transition: "color 150ms, background-color 150ms",
-							_hover: { background: "color-mix(in srgb, var(--primary) 90%, black)" },
-							_disabled: { cursor: "not-allowed", opacity: 0.55 },
-						})}
-					>
-						{actionLabel}
-					</button>
-				</div>
-			</div>
-		</div>
-	);
+export function ModelSelectorDialog({ open, currentModel, onClose, onSelect, excludeKeys, preloadBrowserModel = true }: ModelSelectorDialogProps) {
+ const [models, setModels] = useState<SelectableModel[]>([]);
+ const [loading, setLoading] = useState(false);
+ const [error, setError] = useState("");
+ const [selected, setSelected] = useState(currentModel ? modelKey(currentModel) : "");
+ const [provider, setProvider] = useState("");
+ const [capability, setCapability] = useState("");
+ const [notice, setNotice] = useState("");
+ const [local, setLocal] = useState(localModel.getState());
+ useEffect(() => localModel.subscribe(setLocal), []);
+ useEffect(() => { setSelected(currentModel ? modelKey(currentModel) : ""); }, [currentModel]);
+ useEffect(() => {
+  if (!open) return;
+  let cancelled = false;
+  setLoading(true); setError(""); setProvider(""); setCapability("");
+  void (async () => {
+   try {
+    const availability = await checkBrowserModelAvailability();
+    const next = await discoverModels(availability);
+    if (cancelled) return;
+    setModels(next);
+    setNotice(Object.values(availability).find(value => !value.available)?.reason ?? "");
+   } catch (error) { if (!cancelled) setError(error instanceof Error ? error.message : "Could not load models."); }
+   finally { if (!cancelled) setLoading(false); }
+  })();
+  return () => { cancelled = true; };
+ }, [open]);
+ const providers = Array.from(new Set(models.map(entry => entry.model.provider)));
+ const items = models.filter(entry => !excludeKeys?.includes(entry.key) &&
+  (!provider || entry.model.provider === provider) &&
+  (!capability || (capability === "reasoning" ? entry.model.reasoning : entry.model.input.includes("image"))))
+ .map(({ key, model }) => ({
+  id: key, name: model.name, group: displayModelProvider(model.provider),
+  summary: [displayModelProvider(model.provider), model.reasoning ? "Step-by-step reasoning" : "", model.input.includes("image") ? "Understands images" : ""].filter(Boolean).join(" · "),
+  details: <div><p>Model ID: {model.id}</p>
+   {model.provider === "browser" ? <p>{getBrowserModel(model.id)?.blurb} Downloads when selected.</p> : <p>Context: {model.contextWindow.toLocaleString()} tokens</p>}
+   {model.provider === "browser" && local.modelId === model.id && local.loading &&
+    <ModelDownloadBar progress={local.download} modelName={model.name} onCancel={() => localModel.cancel()}/>}
+   {model.provider === "browser" && !local.loading && <BrowserCache id={model.id}/>}
+  </div>
+ }));
+ return <ModelPicker open={open} label="Find a model" items={items} selected={selected} onClose={onClose} loading={loading} error={error}
+  notice={notice ? <p>{notice}</p> : undefined}
+  filters={<><label>Provider<select value={provider} onChange={e => setProvider(e.target.value)}><option value="">All providers</option>{providers.map(id => <option key={id} value={id}>{displayModelProvider(id)}</option>)}</select></label>
+   <label>Use it for<select value={capability} onChange={e => setCapability(e.target.value)}><option value="">Any conversation</option><option value="reasoning">Step-by-step reasoning</option><option value="image">Understanding images</option></select></label></>}
+  onSelect={async key => {
+   const model = models.find(entry => entry.key === key)?.model;
+   if (!model) return;
+   if (preloadBrowserModel && model.provider === "browser" && !(localModel.getState().modelId === model.id && localModel.getState().loaded)) {
+    await localModel.load(model.id);
+    if (!localModel.getState().loaded) throw new Error(localModel.getState().error || "Download did not complete. Choose the model to retry.");
+   }
+   onSelect(model); setSelected(key); addRecentModel(key);
+  }}/>;
 }
-
-function renderGroup(
-	title: string,
-	models: SelectableModel[],
-	selectedKey: string,
-	onSelect: (key: string) => void,
-	localState: LocalModel | null,
-) {
-	if (models.length === 0) return null;
-	return (
-		<div>
-			<div className={css({
-				position: "sticky",
-				top: 0,
-				zIndex: 10,
-				borderBlock: "1px solid var(--border)",
-				background: "color-mix(in srgb, var(--muted) 80%, transparent)",
-				paddingInline: { base: "0.75rem", sm: "1rem" },
-				paddingBlock: "0.25rem",
-				fontSize: "0.625rem",
-				fontWeight: 600,
-				letterSpacing: "0.05em",
-				textTransform: "uppercase",
-				color: "var(--muted-foreground)",
-				backdropFilter: "blur(8px)",
-			})}>
-				{title}
-			</div>
-			{models.map((entry) => (
-				<ModelOption
-					key={entry.key}
-					entry={entry}
-					isSelected={selectedKey === entry.key}
-					onClick={() => onSelect(entry.key)}
-					localState={localState}
-				/>
-			))}
-		</div>
-	);
-}
-
-function ModelOption({
-	entry,
-	isSelected,
-	onClick,
-	localState,
-}: {
-	entry: SelectableModel;
-	isSelected: boolean;
-	onClick: () => void;
-	localState: LocalModel | null;
-}) {
-	const { model, key } = entry;
-	const isBrowser = model.provider === "browser";
-
-	const badges = [
-		isBrowser ? "WebGPU" : "",
-		entry.group === "cloud" ? "Cloud" : "",
-		entry.group === "custom" ? "Custom" : "",
-		...modelCapabilityBadges(model),
-	].filter(Boolean);
-
-	// The store holds one model at a time, so every status below is scoped to the
-	// row whose id it actually refers to.
-	const isActive = isBrowser && localState?.modelId === model.id;
-	const spec = isBrowser ? getBrowserModel(model.id) : undefined;
-	const cached = useCachedModelSize(model.id, isBrowser);
-	const justLoaded = Boolean(isActive && localState?.loaded);
-
-	// A finished download changes what is on disk, so the size shown alongside
-	// the delete control has to be re-read.
-	useEffect(() => {
-		if (justLoaded) refreshCachedModelSizes();
-	}, [justLoaded]);
-
-	const status = (): string => {
-		if (!isBrowser) return "";
-		// The loading case renders ModelDownloadBar instead of a status line.
-		if (isActive && localState?.loaded) return "Model ready";
-		if (isActive && localState?.error) return localState.error;
-		return `Downloads on demand — ${spec?.downloadLabel ?? "size unknown"}`;
-	};
-
-	return (
-		<div
-			className={css({
-				display: "flex",
-				alignItems: "flex-start",
-				gap: { base: "0.625rem", sm: "0.75rem" },
-				borderBottom: "1px solid var(--border)",
-				background: isSelected ? "color-mix(in srgb, var(--primary) 5%, transparent)" : undefined,
-				paddingInline: { base: "0.75rem", sm: "1rem" },
-				paddingBlock: { base: "0.5rem", sm: "0.75rem" },
-				cursor: "pointer",
-				transition: "color 150ms, background-color 150ms",
-				_hover: { background: "color-mix(in srgb, var(--accent) 30%, transparent)" },
-			})}
-			onClick={onClick}
-		>
-			<input
-				type="radio"
-				name="model"
-				checked={isSelected}
-				readOnly
-				className={css({ marginTop: { base: "0.125rem", sm: "0.25rem" }, flexShrink: 0 })}
-			/>
-			<div className={css({ minWidth: 0, flex: 1 })}>
-				<div className={css({ fontSize: "0.875rem", fontWeight: 700, lineHeight: 1.25 })}>{model.name}</div>
-				<div className={css({ marginTop: "0.125rem", fontSize: { base: "0.6875rem", sm: "0.75rem" }, color: "var(--muted-foreground)" })}>
-					{isBrowser ? spec?.blurb ?? "Runs in this browser" : `Provider: ${model.provider}`}
-				</div>
-				<div className={css({ fontSize: { base: "0.6875rem", sm: "0.75rem" }, color: "var(--muted-foreground)" })}>{model.id}</div>
-				{badges.length > 0 && (
-					<div className={css({ marginTop: "0.375rem", display: "flex", flexWrap: "wrap", gap: "0.25rem" })}>
-						{badges.map((b) => (
-							<span key={b} className={css({ display: "inline-flex", borderRadius: "9999px", background: "var(--muted)", padding: "0.125rem 0.5rem", fontSize: "0.625rem", fontWeight: 600, color: "var(--muted-foreground)" })}>
-								{b}
-							</span>
-							))}
-						</div>
-					)}
-					{isActive && localState?.loading ? (
-						<ModelDownloadBar
-							progress={localState.download}
-							modelName={model.name.replace(/\s*\(Browser\)$/, "")}
-							sizeLabel={spec?.downloadLabel}
-							onCancel={() => {
-								localModel.cancel();
-								// Partial transfers leave cached files behind.
-								refreshCachedModelSizes();
-							}}
-						/>
-					) : (
-						status() && (
-							<div className={css({
-								marginTop: "0.25rem",
-								fontSize: "0.75rem",
-								color: isActive && localState?.error
-									? "var(--destructive)"
-									: isActive && localState?.loaded
-										? "var(--primary)"
-										: "var(--muted-foreground)",
-							})}>
-								{status()}
-							</div>
-						)
-					)}
-					{isBrowser && !(isActive && localState?.loading) && (
-						<ModelCacheControls
-							cachedBytes={cached.bytes}
-							loaded={Boolean(isActive && localState?.loaded)}
-							onRemove={async () => {
-								await localModel.removeDownload(model.id);
-								refreshCachedModelSizes();
-							}}
-						/>
-					)}
-				</div>
-			</div>
-		);
-	}
-
 interface ContextModelSelectorDialogProps {
-	open: boolean;
-	title: string;
-	description: string;
-	searchLabel: string;
-	emptyLabel: string;
-	badge: string;
-	actionLabel: string;
-	options: readonly { value: string; label: string }[];
-	currentModelId: string;
-	onClose: () => void;
-	onSelect: (modelId: string) => void;
+ open: boolean; title: string; description: string; searchLabel: string; emptyLabel: string; badge: string;
+ options: readonly { value: string; label: string }[]; currentModelId: string;
+ onClose: () => void; onSelect: (id: string) => void;
 }
-
-function ContextModelSelectorDialog({
-	open,
-	title,
-	description,
-	searchLabel,
-	emptyLabel,
-	badge,
-	actionLabel,
-	options,
-	currentModelId,
-	onClose,
-	onSelect,
-}: ContextModelSelectorDialogProps) {
-	const defaultModel = currentModelId || options[0]?.value || "";
-	const [selectedModel, setSelectedModel] = useState(defaultModel);
-	const [search, setSearch] = useState("");
-	const inputRef = useRef<HTMLInputElement>(null);
-
-	useEffect(() => {
-		if (!open) return;
-		setSelectedModel(currentModelId || options[0]?.value || "");
-		setSearch("");
-		window.setTimeout(() => inputRef.current?.focus(), 50);
-	}, [open, currentModelId, options]);
-
-	if (!open) return null;
-
-	const models = searchFullText(options, search, (model) => [model.label, model.value, badge]);
-
-	return (
-		<div
-			className={css({
-				position: "fixed",
-				inset: 0,
-				zIndex: 1010,
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "center",
-				background: "rgba(0, 0, 0, 0.6)",
-				paddingInline: { base: "0.75rem", sm: "1rem" },
-				fontFamily: "monospace",
-			})}
-			onClick={onClose}
-		>
-			<div
-				role="dialog"
-				aria-modal="true"
-				aria-labelledby="context-model-selector-title"
-				className={css({
-					display: "flex",
-					width: "min(640px, 96vw)",
-					height: "min(38rem, 85vh)",
-					minHeight: 0,
-					flexDirection: "column",
-					overflow: "clip",
-					borderRadius: "0.5rem",
-					border: "2px solid var(--border)",
-					background: "var(--background)",
-				})}
-				onClick={(event) => event.stopPropagation()}
-			>
-				<div className={css({ flexShrink: 0, borderBottom: "1px solid var(--border)", padding: { base: "0.75rem", sm: "1rem" } })}>
-					<h2 id="context-model-selector-title" className={css({ fontSize: { base: "0.875rem", sm: "1rem" }, fontWeight: 600, color: "var(--foreground)" })}>
-						{title}
-					</h2>
-					<p className={css({ marginTop: "0.125rem", fontSize: { base: "0.6875rem", sm: "0.75rem" }, color: "var(--muted-foreground)" })}>
-						{description}
-					</p>
-					<label className={css({ marginTop: "0.75rem", display: "block" })}>
-						<span className={css({ position: "absolute", width: "1px", height: "1px", padding: 0, margin: "-1px", overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", borderWidth: 0 })}>
-							{searchLabel}
-						</span>
-						<div className={css({ position: "relative" })}>
-							<Search size={15} aria-hidden="true" className={css({ position: "absolute", left: "0.625rem", top: "50%", transform: "translateY(-50%)", color: "var(--muted-foreground)", pointerEvents: "none" })} />
-							<input
-								ref={inputRef}
-								type="search"
-								placeholder={searchLabel}
-								value={search}
-								onChange={(event) => setSearch(event.target.value)}
-								className={css({ width: "100%", minHeight: "2.25rem", borderRadius: "0.375rem", border: "2px solid var(--border)", background: "var(--background)", paddingBlock: "0.375rem", paddingLeft: "2rem", paddingRight: "0.625rem", fontSize: { base: "0.75rem", sm: "0.875rem" } })}
-							/>
-						</div>
-					</label>
-				</div>
-
-				<div className={css({ margin: "0.25rem", minHeight: 0, flex: 1, overflowX: "hidden", overflowY: "auto", border: "1px solid var(--border)", background: "color-mix(in srgb, var(--muted) 20%, transparent)" })}>
-					{models.length === 0 ? (
-						<div className={css({ padding: "1rem", textAlign: "center", fontSize: "0.875rem", color: "var(--muted-foreground)" })}>
-							{emptyLabel}
-						</div>
-					) : models.map((model) => (
-						<label
-							key={model.value}
-							className={css({
-								display: "flex",
-								cursor: "pointer",
-								alignItems: "flex-start",
-								gap: "0.75rem",
-								borderBottom: "1px solid var(--border)",
-								background: selectedModel === model.value ? "color-mix(in srgb, var(--primary) 5%, transparent)" : undefined,
-								padding: { base: "0.75rem", sm: "1rem" },
-								_hover: { background: "color-mix(in srgb, var(--accent) 30%, transparent)" },
-							})}
-						>
-							<input type="radio" name="context-model" checked={selectedModel === model.value} onChange={() => setSelectedModel(model.value)} />
-							<span className={css({ minWidth: 0, flex: 1 })}>
-								<span className={css({ display: "block", overflowWrap: "anywhere", fontSize: "0.875rem", fontWeight: 700, color: "var(--foreground)" })}>{model.label}</span>
-								{model.label !== model.value && <span className={css({ display: "block", overflowWrap: "anywhere", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>{model.value}</span>}
-								<span className={css({ marginTop: "0.375rem", display: "inline-flex", borderRadius: "9999px", background: "var(--muted)", padding: "0.125rem 0.5rem", fontSize: "0.625rem", fontWeight: 600, color: "var(--muted-foreground)" })}>
-									{badge}
-								</span>
-							</span>
-						</label>
-					))}
-				</div>
-
-				<div className={css({ display: "flex", flexShrink: 0, justifyContent: "flex-end", gap: "0.5rem", borderTop: "1px solid var(--border)", padding: { base: "0.75rem", sm: "1rem" } })}>
-					<button type="button" onClick={onClose} className={css({ borderRadius: "0.375rem", border: "2px solid var(--border)", paddingInline: "1rem", paddingBlock: "0.5rem", fontSize: "0.875rem", _hover: { background: "var(--ink)", color: "var(--paper)" } })}>
-						Cancel
-					</button>
-					<button
-						type="button"
-						disabled={!selectedModel}
-						onClick={() => onSelect(selectedModel)}
-						className={css({ borderRadius: "0.375rem", border: "2px solid var(--primary)", background: "var(--primary)", paddingInline: "1rem", paddingBlock: "0.5rem", fontSize: "0.875rem", color: "var(--primary-foreground)", _hover: { background: "color-mix(in srgb, var(--primary) 90%, black)" }, _disabled: { cursor: "not-allowed", opacity: 0.5 } })}
-					>
-						{actionLabel}
-					</button>
-				</div>
-			</div>
-		</div>
-	);
+function ContextModelSelectorDialog({ open, searchLabel, badge, options, currentModelId, onClose, onSelect }: ContextModelSelectorDialogProps) {
+ const [selected, setSelected] = useState(currentModelId);
+ useEffect(() => setSelected(currentModelId), [currentModelId]);
+ return <ModelPicker open={open} label={searchLabel} selected={selected} onClose={onClose}
+  items={options.map(option => ({ id: option.value, name: option.label, group: badge, summary: badge }))}
+  onSelect={id => { onSelect(id); setSelected(id); }}/>;
 }
-
 export interface ImageGenerationModelSelectorDialogProps {
 	open: boolean;
 	generator: ImageGeneratorOption;
@@ -741,7 +117,6 @@ export function ImageGenerationModelSelectorDialog({
 			searchLabel="Search image models"
 			emptyLabel="No image-generation models matched this search."
 			badge="Image generation"
-			actionLabel="Use image model"
 			options={options}
 			currentModelId={currentModelId}
 			onClose={onClose}
@@ -775,7 +150,6 @@ export function AudioModelSelectorDialog({
 			searchLabel={isRealtime ? "Search realtime voice models" : "Search speech models"}
 			emptyLabel={`No ${isRealtime ? "realtime voice" : "speech synthesis"} models matched this search.`}
 			badge={isRealtime ? "Realtime voice" : "Speech output"}
-			actionLabel="Use audio model"
 			options={provider.models}
 			currentModelId={currentModelId}
 			onClose={onClose}

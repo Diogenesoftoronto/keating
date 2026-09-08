@@ -100,6 +100,12 @@ export default defineNitroConfig({
   // via useStorage("assets:server") (see server/utils/og-render.ts).
   serverAssets: [{ baseName: "server", dir: "server/assets" }],
   handlers: [
+    { route: "/api/credit-waitlist", method: "POST", handler: "server/api/credit-waitlist/index.post.ts" },
+    {
+      route: "/api/training-datasets",
+      method: "POST",
+      handler: "server/api/training-datasets/index.post.ts",
+    },
     {
       route: "/api/tavus/conversations",
       method: "POST",

@@ -41,14 +41,25 @@ export interface WebFineTuneExportOptions {
 	format: WebFineTuneFormat;
 	redact: boolean;
 	minAssistantChars: number;
+	maxAssistantChars?: number;
+	maxRecords?: number;
+	validationPercent?: number;
+	deduplicate?: boolean;
+	keepAllResponses?: boolean;
 	judge?: ExportJudge;
+	judgeModel?: { provider: string; id: string };
+	judgeThinkingLevel?: string;
 	now?: number;
 }
 
 export interface WebFineTuneExportResult {
+	readmeSummary?: { text: string; included: boolean; createdAt: string; model?: { provider: string; id: string; thinkingLevel: string } };
+	reviewNotesJsonl?: string;
+	reviewSummariesJsonl?: string;
 	chatmlJsonl?: string;
 	alpacaJsonl?: string;
 	canonicalJsonl?: string;
+	sourceDataJson?: string;
 	rewardedJsonl?: string;
 	ktoJsonl?: string;
 	preferenceJsonl?: string;
@@ -237,7 +248,7 @@ function conversationFromSession(
 		}
 		const key = rewardTurnKey(session.id, message.timestamp);
 		const turn = key ? turnsByKey.get(key) : undefined;
-		const rejectedForSft = Boolean(turn?.scored && turn.reward < KTO_GOOD_THRESHOLD);
+		const rejectedForSft = !options.keepAllResponses && Boolean(turn?.scored && turn.reward < KTO_GOOD_THRESHOLD);
 		if (message.shortAssistant || rejectedForSft) {
 			pendingUsers = [];
 			continue;
@@ -291,7 +302,7 @@ function normalizeSessionMessages(
 			counters.skipped += 1;
 			continue;
 		}
-		if (role === "assistant" && isBadAssistantText(text, message)) {
+		if (role === "assistant" && !options.keepAllResponses && isBadAssistantText(text, message)) {
 			counters.skipped += 1;
 			continue;
 		}
@@ -441,8 +452,11 @@ function stableHash(value: string): number {
 	return hash >>> 0;
 }
 
-function splitFor(sourceKey: string): TrainingSplit {
-	return stableHash(sourceKey) % 10 === 0 ? "validation" : "train";
+function splitFor(sourceKey: string, validationPercent: number): TrainingSplit {
+	// Keep the original default 10% partition stable as the allocation changes.
+	const hash = stableHash(sourceKey);
+	const bucket = (hash % 10) * 10 + Math.floor(hash / 10) % 10;
+	return bucket < validationPercent ? "validation" : "train";
 }
 
 function rewardTurnKey(sessionId?: string, messageTimestamp?: number): string | null {
@@ -470,15 +484,15 @@ function buildCanonicalRecords(
 	examples: FineTuneExample[],
 	rewardedTurns: RewardedTurn[],
 	persona: string,
+	validationPercent: number,
 ): { records: CanonicalTrainingRecord[]; duplicateCount: number } {
 	const turnsByKey = new Map<string, RewardedTurn>();
 	for (const turn of rewardedTurns) {
 		const key = rewardTurnKey(turn.sessionId, turn.messageTimestamp);
 		if (key) turnsByKey.set(key, turn);
 	}
-	const seen = new Set<string>();
 	const records: CanonicalTrainingRecord[] = [];
-	let duplicateCount = 0;
+	const duplicateCount = 0;
 	for (const example of examples) {
 		const turnKey = rewardTurnKey(example.sessionId, example.messageTimestamp);
 		const turn = turnKey ? turnsByKey.get(turnKey) : undefined;
@@ -495,11 +509,6 @@ function buildCanonicalRecords(
 		const completion = messages.at(-1)?.content ?? example.output;
 		const prompt = messages.slice(0, -1);
 		const fingerprint = JSON.stringify([...prompt.map((message) => [message.role, message.content.trim()]), ["assistant", completion.trim()]]);
-		if (seen.has(fingerprint)) {
-			duplicateCount += 1;
-			continue;
-		}
-		seen.add(fingerprint);
 		const quality = example.source === "sandbox"
 			? { status: "reference" as const, recommendedForSft: false, scored: false }
 			: example.source === "artifact"
@@ -508,7 +517,7 @@ function buildCanonicalRecords(
 		records.push({
 			schemaVersion: 2,
 			id: `${example.id}-${stableHash(fingerprint).toString(36)}`,
-			split: splitFor(example.sessionId ?? example.path ?? example.commitId ?? example.id),
+			split: splitFor(example.sessionId ?? example.path ?? example.commitId ?? example.id, validationPercent),
 			task: quality.status === "rejected" ? "preference-learning" : quality.status === "reference" ? "reference" : "supervised-finetuning",
 			source: {
 				type: example.source,
@@ -576,6 +585,17 @@ export async function buildWebFineTuneExportFromSources(
 	sources: WebExportSources,
 	options: WebFineTuneExportOptions,
 ): Promise<WebFineTuneExportResult> {
+	if (options.keepAllResponses) {
+		options = { ...options, minAssistantChars: 1, maxAssistantChars: undefined, maxRecords: undefined, deduplicate: false };
+	}
+	const positiveInteger = (value: number | undefined, name: string) => {
+		if (value !== undefined && (!Number.isInteger(value) || value < 1)) throw new Error(`${name} must be a positive integer.`);
+	};
+	positiveInteger(options.maxAssistantChars, "Maximum assistant characters");
+	positiveInteger(options.maxRecords, "Maximum records");
+	if (options.maxAssistantChars !== undefined && options.maxAssistantChars < options.minAssistantChars) throw new Error("Maximum assistant characters must be at least the minimum.");
+	const validationPercent = options.validationPercent ?? 10;
+	if (!Number.isFinite(validationPercent) || validationPercent < 0 || validationPercent > 50) throw new Error("Validation percentage must be between 0 and 50.");
 	const examples: FineTuneExample[] = [];
 	const rewardedTurns: RewardedTurn[] = [];
 	const normalizedSessions = new Map<string, NormalizedSessionResult>();
@@ -609,7 +629,6 @@ export async function buildWebFineTuneExportFromSources(
 	}
 
 	if (includeSessions) {
-		const usedFeedbackIds = new Set<string>();
 		const persona = sources.persona
 			? redactText(sources.persona, options.redact)
 			: { text: "", count: 0 };
@@ -620,19 +639,7 @@ export async function buildWebFineTuneExportFromSources(
 			const normalized = normalizeSessionMessages(session, options, counters);
 			normalizedSessions.set(session.id, normalized);
 			addSessionExamples(examples, normalized, session);
-			const turns = computeSessionRewardedTurns({
-				sessionId: session.id,
-				title: session.title,
-				persona: persona.text,
-				messages: normalized.messages,
-				feedback: sources.feedback ?? [],
-				quizResults: sources.quizResults ?? [],
-				usedFeedbackIds,
-			});
-			if (options.judge) {
-				applyJudgeScores(turns, await options.judge(turns));
-			}
-			rewardedTurns.push(...turns);
+
 		}
 	}
 
@@ -642,18 +649,66 @@ export async function buildWebFineTuneExportFromSources(
 		sandboxCommitsRead = sandboxCounts.commitsRead;
 	}
 
+	// Select once, then rebuild session contexts so excluded completions cannot leak
+	// into reward, preference, or conversation payloads as historical messages.
+	const withinBounds = examples.filter((example) => example.output.length >= options.minAssistantChars && (options.maxAssistantChars === undefined || example.output.length <= options.maxAssistantChars));
+	const lengthExcluded = examples.length - withinBounds.length;
+	const deduplicated = options.deduplicate ? dedupeExamples(withinBounds) : { examples: withinBounds, duplicateCount: 0 };
+	const limitExcluded = Math.max(0, deduplicated.examples.length - (options.maxRecords ?? deduplicated.examples.length));
+	deduplicated.examples = deduplicated.examples.slice(0, options.maxRecords);
+	counters.skipped += lengthExcluded + deduplicated.duplicateCount + limitExcluded;
+	const selectedAssistantCounts = new Map<string, number>();
+	for (const example of deduplicated.examples) {
+		if (example.source !== "session") continue;
+		const key = JSON.stringify([example.sessionId, example.messageTimestamp, example.output]);
+		selectedAssistantCounts.set(key, (selectedAssistantCounts.get(key) ?? 0) + 1);
+	}
+	const selectedAssistantKeys = new Set(selectedAssistantCounts.keys());
+	const filteredSessionIds = new Set<string>();
+	rewardedTurns.length = 0;
+	const selectedFeedbackIds = new Set<string>();
+	for (const session of sources.sessions ?? []) {
+		const normalized = normalizedSessions.get(session.id);
+		if (!normalized) continue;
+		const selected: NormalizedRewardMessage[] = [];
+		let pendingUsers: NormalizedRewardMessage[] = [];
+		for (const message of normalized.messages) {
+			if (message.role === "user") {
+				pendingUsers.push(message);
+				continue;
+			}
+			const key = JSON.stringify([session.id, message.timestamp, message.content]);
+			const remaining = selectedAssistantCounts.get(key) ?? 0;
+			if (remaining > 0) {
+				selectedAssistantCounts.set(key, remaining - 1);
+				selected.push(...pendingUsers, message);
+			}
+			// The prompt for an excluded response must not become the prompt of
+			// a later response when the removed turn joins adjacent user messages.
+			pendingUsers = [];
+		}
+		if (selected.length > 0) selected.push(...pendingUsers);
+		if (selected.length !== normalized.messages.length) filteredSessionIds.add(session.id);
+		normalized.messages = selected;
+		normalized.pairMessages = selected;
+		rewardedTurns.push(...computeSessionRewardedTurns({ sessionId: session.id, title: session.title, persona: normalizedPersona, messages: selected, feedback: sources.feedback ?? [], quizResults: sources.quizResults ?? [], usedFeedbackIds: selectedFeedbackIds }));
+	}
+	// One batch keeps the judge's budget global across the export, not per session.
+	if (options.judge && rewardedTurns.length > 0) {
+		applyJudgeScores(rewardedTurns, await options.judge(rewardedTurns));
+	}
+	const judgeScored = rewardedTurns.filter((turn) => turn.signals.judge).length;
 	const turnsByKey = new Map<string, RewardedTurn>();
 	for (const turn of rewardedTurns) {
 		const key = rewardTurnKey(turn.sessionId, turn.messageTimestamp);
 		if (key) turnsByKey.set(key, turn);
 	}
-	const deduplicated = dedupeExamples(examples);
 	const sftExamples = deduplicated.examples.filter((example) => {
 		const key = rewardTurnKey(example.sessionId, example.messageTimestamp);
 		const turn = key ? turnsByKey.get(key) : undefined;
-		return !(turn?.scored && turn.reward < KTO_GOOD_THRESHOLD);
+		return options.keepAllResponses || !(turn?.scored && turn.reward < KTO_GOOD_THRESHOLD);
 	});
-	const canonical = buildCanonicalRecords(deduplicated.examples, rewardedTurns, normalizedPersona);
+	const canonical = buildCanonicalRecords(deduplicated.examples, rewardedTurns, normalizedPersona, validationPercent);
 	const conversations: WebConversation[] = sftExamples
 		.filter((example) => example.source !== "session")
 		.map((example) => {
@@ -681,10 +736,32 @@ export async function buildWebFineTuneExportFromSources(
 		const normalized = normalizedSessions.get(session.id);
 		if (!normalized) continue;
 		const conversation = conversationFromSession(session, normalized, options, normalizedPersona, turnsByKey);
-		if (conversation) conversations.push(conversation);
+		if (conversation) {
+			if (filteredSessionIds.has(session.id) && conversation.envelope) conversation.envelope.messages = undefined;
+			conversations.push(conversation);
+		}
 	}
 
+	const sourceDataJson = options.keepAllResponses ? `${JSON.stringify({
+		schemaVersion: 1,
+		kind: "keating-training-source-snapshot",
+		source: options.source,
+		...(includeArtifacts ? {
+			plans: sources.plans ?? [], maps: sources.maps ?? [], animations: sources.animations ?? [],
+			verifications: sources.verifications ?? [], benchmarks: sources.benchmarks ?? [], evolutions: sources.evolutions ?? [],
+		} : {}),
+		...(includeSessions ? {
+			sessions: sources.sessions ?? [], feedback: sources.feedback ?? [], quizResults: sources.quizResults ?? [], persona: sources.persona ?? "",
+		} : {}),
+		...(includeSandbox ? { sandbox: sources.sandbox ?? null } : {}),
+	}, (_key, value: unknown) => {
+		if (typeof value !== "string") return value;
+		const redacted = redactText(value, options.redact);
+		counters.redactions += redacted.count;
+		return redacted.text;
+	}, 2)}\n` : undefined;
 	const result: WebFineTuneExportResult = {
+		sourceDataJson,
 		exampleCount: sftExamples.length,
 		recordCount: canonical.records.length,
 		skippedCount: counters.skipped,
@@ -707,6 +784,8 @@ export async function buildWebFineTuneExportFromSources(
 			const original = normalizedSessions.get(alternative.parentSessionId);
 			const alternate = normalizedSessions.get(alternative.id);
 			if (!original || !alternate) return [];
+			const finalAssistant = [...alternative.messages].reverse().find((message) => message.role === "assistant");
+			if (!finalAssistant || !selectedAssistantKeys.has(JSON.stringify([alternative.id, (finalAssistant as any).timestamp, redactText(parseMessageText(finalAssistant).trim(), options.redact).text]))) return [];
 			const pair = buildExplicitResponsePreference({
 				originalMessages: original.messages,
 				alternativeMessages: alternate.messages,
@@ -739,10 +818,13 @@ export async function buildWebFineTuneExportFromSources(
 	const validationRecords = canonical.records.length - trainRecords;
 	const sftExcluded = deduplicated.examples.length - sftExamples.length;
 	const warnings = [
+		...(options.keepAllResponses ? ["Keep everything is enabled: short, error-like, and low-scoring text responses are retained in compatibility exports. Quality labels remain descriptive, not an endorsement. The source snapshot preserves original message structures, including non-text and empty messages; text training files cannot represent every source item."] : []),
+		"Compatibility files combine partitions. Use the canonical record split field to construct training and validation datasets; train.* filenames do not enforce a held-out partition.",
+		...(options.judge && judgeScored < rewardedTurns.length ? [`Judge scored ${judgeScored} of ${rewardedTurns.length} eligible responses. Missing scores may reflect failed requests, invalid responses, or the scoring limit; they are not quality judgments.`] : []),
 		...(sftExamples.length === 0 ? ["No supervised fine-tuning examples were generated."] : []),
 		...(quality.unscored > 0 ? [`${quality.unscored} captured responses have no quality signal; review them before high-stakes training.`] : []),
 		...(quality.reference > 0 ? [`${quality.reference} sandbox records are reference material, not recommended SFT examples.`] : []),
-		...(validationRecords === 0 && canonical.records.length >= 2 ? ["The deterministic 90/10 split produced no validation records for this small dataset."] : []),
+		...(validationPercent > 0 && validationRecords === 0 && canonical.records.length >= 2 ? ["The deterministic source-group split produced no validation records for this small dataset."] : []),
 	];
 	result.manifestJson = `${JSON.stringify({
 		schemaVersion: 2,
@@ -751,10 +833,24 @@ export async function buildWebFineTuneExportFromSources(
 		source: options.source,
 		format: options.format,
 		redactionEnabled: options.redact,
+		keepAllResponses: options.keepAllResponses ?? false,
+		sourceSnapshotIncluded: Boolean(sourceDataJson),
 		minimumAssistantCharacters: options.minAssistantChars,
+		maximumAssistantCharacters: options.maxAssistantChars ?? null,
+		maximumRecords: options.maxRecords ?? null,
+		validationPercent,
+		deduplicationEnabled: options.deduplicate ?? false,
+		recordSelection: "Source order, after character bounds and optional exact prompt/completion deduplication; limits count canonical records before SFT quality exclusions.",
 		judgeScoringEnabled: Boolean(options.judge),
+		judgeScoring: options.judge ? {
+			model: options.judgeModel ?? null,
+			...(options.judgeThinkingLevel ? { thinkingLevel: options.judgeThinkingLevel } : {}),
+			eligible: rewardedTurns.length,
+			scored: judgeScored,
+			unscored: rewardedTurns.length - judgeScored,
+		} : null,
 		recommendedDataset: "data/keating.training.jsonl",
-		splitStrategy: "Stable source-group hash (90% train / 10% validation)",
+		splitStrategy: `Stable source-group hash (${100 - validationPercent}% train / ${validationPercent}% validation)`,
 		counts: {
 			artifactsRead,
 			sessionsRead,
@@ -765,6 +861,8 @@ export async function buildWebFineTuneExportFromSources(
 			trainRecords,
 			validationRecords,
 			sftExcluded,
+			lengthExcluded,
+			limitExcluded,
 			duplicatesRemoved: deduplicated.duplicateCount + canonical.duplicateCount,
 			skipped: counters.skipped,
 			redactions: counters.redactions,
@@ -781,7 +879,7 @@ export async function buildWebFineTuneExportFromSources(
 	return result;
 }
 
-export async function buildWebFineTuneExport(options: WebFineTuneExportOptions): Promise<WebFineTuneExportResult> {
+export async function loadWebExportSources(): Promise<WebExportSources> {
 	const metadata = await sessions.getAllMetadata();
 	const sessionData = await Promise.all(metadata.map(async (entry) => sessions.loadSession(entry.id) as Promise<SessionData | null>));
 	const [
@@ -807,7 +905,7 @@ export async function buildWebFineTuneExport(options: WebFineTuneExportOptions):
 		keatingStorage.getQuizResults(),
 		Promise.resolve(loadPersona()),
 	]);
-	return buildWebFineTuneExportFromSources({
+	return {
 		plans,
 		maps,
 		animations,
@@ -819,5 +917,9 @@ export async function buildWebFineTuneExport(options: WebFineTuneExportOptions):
 		feedback,
 		quizResults,
 		persona,
-	}, options);
+	};
+}
+
+export async function buildWebFineTuneExport(options: WebFineTuneExportOptions): Promise<WebFineTuneExportResult> {
+	return buildWebFineTuneExportFromSources(await loadWebExportSources(), options);
 }

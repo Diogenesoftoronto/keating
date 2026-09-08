@@ -1,0 +1,51 @@
+.landing-practice { min-width: 0; width: 100%; box-sizing: border-box; padding: 22px; border: 1px solid color-mix(in srgb, var(--ink) 24%, transparent); border-radius: 12px; background: var(--card, var(--paper)); color: var(--ink); font-size: 13px; line-height: 1.45; }
+.landing-practice__header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.landing-practice__label { margin: 0 0 6px; font-size: 11px; color: var(--muted-foreground); }
+.landing-practice__header h2 { margin: 0; font-size: 24px; line-height: 1.2; font-weight: 600; letter-spacing: -.025em; }
+.landing-practice__context { margin: 0 0 12px; font-size: 11px; color: var(--muted-foreground); }
+.landing-practice .landing-practice__code { margin: 0 0 8px; padding: 12px; border-radius: 6px; background: color-mix(in srgb, var(--ink) 5%, transparent); font: 12px/1.6 var(--mono-body, monospace); white-space: pre-wrap; overflow-wrap: anywhere; }
+.landing-practice__code code { font: inherit; }
+.landing-practice__stimulus { margin: 0 0 8px; padding: 12px; border-radius: 6px; background: color-mix(in srgb, var(--ink) 5%, transparent); font-size: 13px; line-height: 1.55; white-space: pre-wrap; }
+.landing-practice__hint { margin: 0 0 12px; font-size: 12px; }
+.landing-practice__hint summary { display: list-item; cursor: pointer; min-height: 44px; padding-block: 12px; box-sizing: border-box; }
+.landing-practice__hint p { margin: 0 0 10px; font-size: 12px; line-height: 1.5; color: var(--muted-foreground); }
+.landing-practice__exercise { min-width: 0; }
+.landing-practice__exercise > .activity-game { padding: 0; margin-block: 8px; border: 0; border-radius: 0; }
+.landing-practice__exercise .activity-game .activity-prompt { margin: 0; font-size: 15px; line-height: 1.45; }
+.landing-practice [data-question-count="1"] [data-question-progress], .landing-practice [data-question-back]:disabled { display: none; }
+.landing-practice .activity-progress-count { font-size: 12px; }
+.landing-practice .activity-progress-wrap { gap: 10px; }
+.landing-practice [data-question-progress] { gap: 10px; }
+.landing-practice .activity-game .activity-back-action { min-height: 44px; font-size: 13px; padding: 8px; }
+.landing-practice .activity-stage, .landing-practice .activity-stage > div, .landing-practice .activity-game > div > div { gap: 16px; }
+.landing-practice [data-matching-bank-label] { font-size: 11px; margin-bottom: 6px; }
+.landing-practice [data-matching-bank] { margin: 0; padding: 0; gap: 6px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.landing-practice [data-matching-bank] button { min-height: 44px; padding: 7px 8px; gap: 6px; font-size: 13px; border-radius: 5px; }
+.landing-practice [data-matching-bank] button span { font-size: inherit; }
+.landing-practice [data-matching-bank] button span:first-child { font-size: 10px; }
+.landing-practice [data-matching-row] { grid-template-columns: 18px minmax(0, 1fr) 145px; gap: 8px; padding: 8px 0; align-items: center; }
+.landing-practice [data-matching-row] > div { font-size: 13px; line-height: 1.4; }
+.landing-practice [data-matching-row] > div:first-child { font-size: 11px; }
+.landing-practice [data-matching-row] > div:last-child > div { min-height: 44px; padding: 6px; gap: 4px; font-size: 12px; }
+.landing-practice [data-matching-row] > div:last-child button:not(.keating-select) { min-height: 32px; padding: 4px; font-size: 10px; }
+body .landing-practice button.keating-select.keating-select { min-height: 44px; padding: 8px; gap: 4px; font-size: 12px; border-radius: 5px; }
+.landing-practice .activity-game .activity-main-action { min-height: 44px; margin-top: 4px; padding: 10px 14px; font-size: 13px; border-radius: 6px; }
+.landing-practice__feedback { padding-top: 12px; border-top: 1px solid var(--border); }
+.landing-practice__feedback summary { min-height: 44px; padding-block: 12px; font-size: 12px; cursor: pointer; box-sizing: border-box; }
+.landing-practice .activity-completion { gap: 12px; padding-block: 12px; }
+.landing-practice .activity-completion strong { font-size: 18px; }
+.landing-practice .activity-completion p { font-size: 12px; }
+.landing-practice .activity-completion-symbol { width: 44px; height: 44px; }
+.landing-practice .activity-review > summary { min-height: 44px; font-size: 12px; padding-block: 12px; box-sizing: border-box; }
+.landing-practice__feedback p { margin: 6px 0 0; font-size: 13px; line-height: 1.55; }
+.landing-practice__footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 12px; padding-top: 10px; }
+.landing-practice__footer p { flex: 1 1 18ch; margin: 0; font-size: 11px; line-height: 1.5; color: var(--muted-foreground); }
+.landing-practice__reset { flex: 0 0 auto; min-height: 44px; padding: 8px; border: 0; border-radius: 5px; background: transparent; color: inherit; font: inherit; font-size: 12px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.landing-practice__reset:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.landing-practice__reset:focus-visible, .landing-practice__hint summary:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+@media (max-width: 460px) {
+  .landing-practice { padding: 16px; }
+  .landing-practice__header h2 { font-size: 22px; }
+  .landing-practice [data-matching-row] { grid-template-columns: 18px minmax(0, 1fr); gap: 6px; }
+  .landing-practice [data-matching-row] > div:last-child { grid-column: 2; }
+}

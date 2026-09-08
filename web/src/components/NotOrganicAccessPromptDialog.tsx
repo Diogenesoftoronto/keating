@@ -122,6 +122,10 @@ export function NotOrganicAccessPromptDialog() {
 
 	const openCheckout = async () => {
 		if (!pack) return;
+		if (import.meta.env.VITE_NOTORGANIC_CHECKOUT_ENABLED !== "true") {
+			window.location.assign(`/pricing?pack=${pack.id}`);
+			return;
+		}
 		setLoading(true);
 		setError("");
 		try {
@@ -129,12 +133,11 @@ export function NotOrganicAccessPromptDialog() {
 				await beginNotOrganicAuthorization("/pricing");
 				return;
 			}
-			const returnUrl = new URL("/pricing?checkout=success", window.location.origin);
+			const returnUrl = new URL("/pricing?checkout=returned", window.location.origin);
 			const checkout = await createNotOrganicCheckout(pack.id, returnUrl.toString());
 			const checkoutUrl = checkout.url ?? checkout.checkout_url;
-			if (!checkoutUrl) throw new Error("Not Organic returned no checkout URL.");
-			window.open(checkoutUrl, "_blank", "noopener,noreferrer");
-			setSummary("Checkout opened. Your wallet updates after the provider confirms payment.");
+			if (!checkoutUrl || new URL(checkoutUrl).protocol !== "https:") throw new Error("Checkout could not be opened.");
+			window.location.assign(checkoutUrl);
 		} catch (cause) {
 			setError(cause instanceof Error ? cause.message : "Could not open Not Organic checkout.");
 		} finally {

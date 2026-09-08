@@ -34,7 +34,11 @@ function navMenuReducer(state: NavMenuState, action: NavMenuAction): NavMenuStat
   }
 }
 
-export function Nav() {
+interface NavProps {
+  primaryAction?: "chat" | "download";
+}
+
+export function Nav({ primaryAction = "chat" }: NavProps) {
   const [menus, dispatch] = useReducer(navMenuReducer, { mobileOpen: false, moreOpen: false });
   const navigate = useNavigate();
   const gt = useGT();
@@ -167,10 +171,11 @@ export function Nav() {
                   }
                 })}
               >
-                <Link to="/download" className="nav-link glitch-hover font-terminal" onClick={closeMenus}><T>[DOWNLOAD]</T></Link>
+                {primaryAction !== "download" && <Link to="/download" className="nav-link glitch-hover font-terminal" onClick={closeMenus}><T>[DOWNLOAD]</T></Link>}
                 <Link to="/tutorial" className="nav-link glitch-hover font-terminal" onClick={closeMenus}><T>[TUTORIAL]</T></Link>
                 <Link to="/paper" className="nav-link glitch-hover font-terminal" onClick={closeMenus}><T>[PAPER]</T></Link>
                 <Link to="/usage" className="nav-link glitch-hover font-terminal" onClick={closeMenus}><T>[USAGE]</T></Link>
+                <Link to="/training-data" className="nav-link glitch-hover font-terminal" onClick={closeMenus}><T>[TRAINING DATA]</T></Link>
                 <Link to="/bench" className="nav-link glitch-hover font-terminal" onClick={closeMenus}><T>[BENCH]</T></Link>
                 <a href="https://github.com/Diogenesoftoronto/keating" target="_blank" rel="noreferrer" className="nav-link glitch-hover font-terminal" onClick={closeMenus}><T>[GITHUB]</T></a>
               </div>
@@ -185,9 +190,9 @@ export function Nav() {
               fontSize: "0.875rem",
               fontFamily: "'VT323', monospace",
             }}
-            onClick={() => navigate({ to: "/chat" })}
+            onClick={() => navigate({ to: primaryAction === "download" ? "/download" : "/chat" })}
           >
-            <T>TRY_KEATING</T>
+            {primaryAction === "download" ? <T>Download Keating</T> : <T>TRY_KEATING</T>}
           </button>
         </div>
 
@@ -252,14 +257,14 @@ export function Nav() {
               onToggled={closeMenus}
               className={css({ width: "100%", marginBottom: "0.25rem" })}
             />
-            <Link
+            {primaryAction !== "download" && <Link
               to="/download"
               className="nav-link glitch-hover"
               style={{ padding: "0.75rem 0.5rem" }}
               onClick={closeMenus}
             >
               <T>[DOWNLOAD]</T>
-            </Link>
+            </Link>}
             <Link
               to="/pricing"
               className="nav-link glitch-hover"
@@ -316,6 +321,7 @@ export function Nav() {
             >
               <T>[USAGE]</T>
             </Link>
+            <Link to="/training-data" className="nav-link glitch-hover font-terminal" onClick={closeMenus}><T>[TRAINING DATA]</T></Link>
             <Link
               to="/bench"
               className="nav-link glitch-hover"
@@ -354,10 +360,10 @@ export function Nav() {
               }}
               onClick={() => {
                 closeMenus();
-                navigate({ to: "/chat" });
+                navigate({ to: primaryAction === "download" ? "/download" : "/chat" });
               }}
             >
-              <T>TRY_KEATING</T>
+              {primaryAction === "download" ? <T>Download Keating</T> : <T>TRY_KEATING</T>}
             </button>
           </div>
         </div>

@@ -1,0 +1,14 @@
+.training-record-review { display: grid; gap: .75rem; min-width: 0; }
+.training-record-review details { min-width: 0; }
+.training-record-review textarea { width: 100%; min-width: 0; border: 1px solid var(--training-line); background: var(--paper); color: var(--ink); border-radius: 5px; padding: .5rem; font: inherit; resize: vertical; }
+.training-record-review h4 { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem; margin: .25rem 0 .5rem; }
+.training-record-review h4 span { font-weight: 400; color: var(--muted-foreground); }
+.training-record-review .training-review-response pre { max-height: 22rem; overflow: auto; padding: .75rem; background: var(--paper); border: 1px solid var(--training-line); border-radius: 5px; line-height: 1.6; }
+.training-record-review .training-record-prompt pre { max-height: 10rem; }
+.training-record-review .training-note-composer[open], .training-record-review .training-model-review[open] { display: grid; gap: .625rem; }
+.training-record-review .training-review-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .5rem; }
+.training-record-review .training-annotations { display: grid; gap: .625rem; }
+.training-record-review .training-annotations article { border-top: 1px solid var(--training-line); padding-block: .75rem; display: grid; gap: .5rem; font-size: .8125rem; overflow-wrap: anywhere; }
+.training-record-review .training-annotations article > header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem; }
+.training-record-review blockquote { border-left: 2px solid var(--primary); padding-left: .625rem; color: var(--muted-foreground); white-space: pre-wrap; max-height: 8rem; overflow: auto; }
+.training-record-review [data-status="rejected"] { opacity: .65; }

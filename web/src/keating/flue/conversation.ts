@@ -18,6 +18,8 @@ import {
   type ImageContent,
   type ToolResultMessage,
   type AssistantMessageEvent,
+  type Api,
+  type Model,
 } from "@earendil-works/pi-ai";
 import { FlueTransport, type FlueConfiguration } from "./transport";
 
@@ -26,6 +28,94 @@ type Subscriber = (
   event: AgentEvent,
   signal: AbortSignal,
 ) => void | Promise<void>;
+
+export interface KeatingAudioContent {
+  type: "audio";
+  data: string;
+  mimeType: string;
+  filename?: string;
+  /** Preserve locally for playback, without sending bytes to the model. */
+  sendToModel?: boolean;
+}
+
+function audioContent(part: unknown): part is KeatingAudioContent {
+  if (!part || typeof part !== "object") return false;
+  const value = part as Record<string, unknown>;
+  return value.type === "audio" && typeof value.data === "string" && typeof value.mimeType === "string";
+}
+
+export function supportsAudioProviderRoute(model: Pick<Model<Api>, "api">, mimeType: string): boolean {
+  const mime = mimeType.split(";")[0].trim().toLowerCase();
+  if (model.api === "google-generative-ai" || model.api === "google-vertex") return ["audio/wav", "audio/x-wav", "audio/mpeg", "audio/mp3", "audio/aac", "audio/flac", "audio/ogg", "audio/webm", "audio/mp4", "audio/aiff"].includes(mime);
+  return model.api === "openai-completions" && ["audio/wav", "audio/x-wav", "audio/mpeg", "audio/mp3"].includes(mime);
+}
+
+/** Pi and Flue currently type their inputs as text/image only. Audio stays audio
+ * in saved messages; only the provider request copy gets native audio parts. */
+export function prepareAudioModelInput(messages: AgentMessage[], model: Pick<Model<Api>, "api">) {
+  const attachments = new Map<string, KeatingAudioContent>();
+  const prepared = messages.map((message) => {
+    if (message.role !== "user" || !("content" in message) || !Array.isArray(message.content)) return message;
+    const content = (message.content as unknown[]).flatMap((part): unknown[] => {
+      if (!audioContent(part)) return [part];
+      if (part.sendToModel === false) return [];
+      if (!supportsAudioProviderRoute(model, part.mimeType)) throw new Error(`This model transport cannot receive ${part.mimeType} audio. Use a supported audio model or send the transcript while keeping the recording for playback.`);
+      if (!part.data || !/^[A-Za-z0-9+/]+={0,2}$/.test(part.data)) throw new Error("The recording contains invalid audio data.");
+      const marker = `[keating-audio-${crypto.randomUUID()}]`;
+      attachments.set(marker, part);
+      return [{ type: "text", text: marker }];
+    });
+    return { ...message, content } as AgentMessage;
+  });
+  return {
+    messages: prepared,
+    applyPayload(payload: unknown): unknown {
+      if (!attachments.size) return payload;
+      if (!payload || typeof payload !== "object") throw new Error("The selected provider did not create an audio-capable request.");
+      const next = structuredClone(payload) as Record<string, any>;
+      const google = model.api === "google-generative-ai" || model.api === "google-vertex";
+      const userMessages = google ? next.contents : next.messages;
+      if (!Array.isArray(userMessages)) throw new Error("The selected provider did not create an audio-capable request.");
+      const replaced = new Set<string>();
+      const audioPart = (audio: KeatingAudioContent) => google
+        ? { inlineData: { mimeType: audio.mimeType.split(";")[0].trim(), data: audio.data } }
+        : { type: "input_audio", input_audio: { data: audio.data, format: /wav/i.test(audio.mimeType) ? "wav" : "mp3" } };
+      for (const message of userMessages) {
+        if (message.role !== "user") continue;
+        const original = google ? message.parts : message.content;
+        const parts = typeof original === "string" ? [{ type: "text", text: original }] : original;
+        if (!Array.isArray(parts)) continue;
+        const output: unknown[] = [];
+        for (const part of parts) {
+          if (typeof part.text !== "string") { output.push(part); continue; }
+          let text = part.text;
+          while (text) {
+            const match = [...attachments.keys()].map((marker) => ({ marker, index: text.indexOf(marker) })).filter((item) => item.index >= 0).sort((a, b) => a.index - b.index)[0];
+            if (!match) { output.push({ ...part, text }); break; }
+            if (match.index) output.push({ ...part, text: text.slice(0, match.index) });
+            output.push(audioPart(attachments.get(match.marker)!));
+            replaced.add(match.marker);
+            text = text.slice(match.index + match.marker.length);
+          }
+        }
+        if (google) message.parts = output;
+        else message.content = output;
+      }
+      if (replaced.size !== attachments.size) throw new Error("The provider dropped an audio attachment before sending. No audio request was sent.");
+      return next;
+    },
+  };
+}
+
+export function audioPlaybackParts(message: AgentMessage | undefined) {
+  const content = message && "content" in message ? message.content : undefined;
+  return Array.isArray(content) ? (content as unknown[]).filter(audioContent).map((part) => ({
+    type: "file" as const,
+    mediaType: part.mimeType,
+    filename: part.filename,
+    url: `data:${part.mimeType};base64,${part.data}`,
+  })) : [];
+}
 
 /** Application conversation controller. UI state comes directly from Flue SDK observation. */
 export class FlueConversation {
@@ -77,24 +167,17 @@ export class FlueConversation {
     let userIndex = 0;
     const conversation = this.native && {
       ...this.native,
-      messages: this.native.messages.map((message) => ({
-        ...message,
-        ...(message.role === "user"
-          ? {
-              metadata: {
-                ...message.metadata,
-                timestamp: (
-                  users[userIndex++] as { timestamp?: number } | undefined
-                )?.timestamp,
-              },
-            }
-          : {}),
-        parts: message.parts.map((part) =>
-          part.type === "file" && part.url
-            ? { ...part, url: this.files.get(part.url) ?? part.url }
-            : part,
-        ),
-      })),
+      messages: this.native.messages.map((message) => {
+        const user = message.role === "user" ? users[userIndex++] : undefined;
+        return {
+          ...message,
+          ...(user ? { metadata: { ...message.metadata, timestamp: (user as { timestamp?: number }).timestamp } } : {}),
+          parts: [
+            ...message.parts.map((part) => part.type === "file" && part.url ? { ...part, url: this.files.get(part.url) ?? part.url } : part),
+            ...audioPlaybackParts(user),
+          ],
+        };
+      }),
     };
     this.view = {
       conversation,
@@ -331,7 +414,7 @@ export class FlueConversation {
             : [];
           const admission = await this.client.send({
             message: delivery
-              ? { kind: "user", body, attachments }
+              ? { kind: "user", body: body || (Array.isArray(content) && content.some(audioContent) ? "[Audio recording]" : ""), attachments }
               : {
                   kind: "signal",
                   type: "resume",
@@ -519,11 +602,12 @@ export class FlueConversation {
       const messages = this.transformContext
         ? await this.transformContext([...this.context.messages], signal)
         : [...this.context.messages];
+      const audioInput = prepareAudioModelInput(messages, model);
       const stream = await this.streamFunction(
         model,
         {
           systemPrompt: this.context.systemPrompt,
-          messages: await this.convertToLlm(messages),
+          messages: await this.convertToLlm(audioInput.messages),
           tools: this.context.tools,
         },
         {
@@ -536,7 +620,7 @@ export class FlueConversation {
           thinkingBudgets: this.options.thinkingBudgets,
           transport: this.transportPreference(),
           maxRetryDelayMs: this.options.maxRetryDelayMs,
-          onPayload: this.options.onPayload,
+          onPayload: async (payload, payloadModel) => audioInput.applyPayload(await this.options.onPayload?.(payload, payloadModel) ?? payload),
           onResponse: this.options.onResponse,
         },
       );

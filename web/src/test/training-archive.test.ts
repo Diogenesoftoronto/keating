@@ -4,6 +4,16 @@ import { buildWebFineTuneExportFromSources } from "../keating/export";
 import { buildWebTrainingArchive } from "../keating/training-archive";
 
 describe("web training archive", () => {
+	it("includes an optional global overview only in the README", async () => {
+		const result = await buildWebFineTuneExportFromSources({}, { source: "all", format: "both", redact: true, minAssistantChars: 1 });
+		const summary = { text: "A global overview of the complete teaching dataset.", included: true, createdAt: new Date().toISOString() };
+		const files = unzipSync(buildWebTrainingArchive({ ...result, readmeSummary: summary, reviewSummariesJsonl: '{"text":"legacy sample summary"}\n' }).bytes);
+		expect(strFromU8(files["README.md"])).toContain(summary.text);
+		expect(files["data/review-summaries.jsonl"]).toBeUndefined();
+		const excluded = unzipSync(buildWebTrainingArchive({ ...result, readmeSummary: { ...summary, included: false } }).bytes);
+		expect(strFromU8(excluded["README.md"])).not.toContain(summary.text);
+		expect(files["data/keating.training.jsonl"]).toEqual(excluded["data/keating.training.jsonl"]);
+	});
 	it("packages a documented, self-describing training dataset", async () => {
 		const result = await buildWebFineTuneExportFromSources({
 			persona: "Teach by asking one useful question at a time.",

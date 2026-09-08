@@ -29,6 +29,10 @@ to all three in the same commit.
 
 Browser gate:
 
+- `VITE_NOTORGANIC_CHECKOUT_ENABLED` — separate purchase gate, default `false`.
+  Enable only after live payment credentials, approved prices and signed credit
+  delivery have been verified. Account signup may be enabled independently.
+
 - `VITE_NOTORGANIC_ENABLED` — when `false`, hosted UI stays hidden rather than
   rendering controls that cannot work.
 - `VITE_NOTORGANIC_PUBLIC_ISSUER` — public provider origin used for token,
@@ -39,7 +43,7 @@ Browser gate:
 - `VITE_NOTORGANIC_REDIRECT_URI` — exact registered callback URL for this
   Keating deployment.
 - `VITE_NOTORGANIC_SCOPE` — requested public capability scopes. Keating needs
-  `wallet:read usage:read billing:checkout infer:balanced evolution:read evolution:write evolution:execute` for the complete
+  `wallet:read usage:read billing:checkout infer:balanced realtime:connect` for the complete
   wallet, checkout, and balanced-inference surface.
 - `VITE_NOTORGANIC_MAX_COST_MICROUSD` — positive per-request browser inference
   reservation ceiling; defaults to `100000` ($0.10). Direct browser inference

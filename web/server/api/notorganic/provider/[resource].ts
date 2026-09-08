@@ -53,19 +53,19 @@ export default defineEventHandler(async (event) => {
 			if (typeof query.limit === "string") parameters.set("limit", query.limit);
 			if (parameters.size) path += `?${parameters}`;
 		} else if (resource === "checkout") {
-			const input = await readBody<{ product_id?: unknown; return_url?: unknown }>(event);
+			const input = await readBody<{ pack_id?: unknown; return_url?: unknown }>(event);
 			if (typeof input?.return_url !== "string") {
 				throw createError({ statusCode: 400, statusMessage: "return_url is required" });
 			}
-			if (typeof input?.product_id !== "string" || !isNotOrganicPackId(input.product_id)) {
-				throw createError({ statusCode: 400, statusMessage: "A valid Keating product_id is required" });
+			if (typeof input?.pack_id !== "string" || !isNotOrganicPackId(input.pack_id)) {
+				throw createError({ statusCode: 400, statusMessage: "A valid Keating pack_id is required" });
 			}
 			const returnUrl = new URL(input.return_url);
 			if (returnUrl.protocol !== "https:") {
 				throw createError({ statusCode: 400, statusMessage: "return_url must use HTTPS" });
 			}
 			body = JSON.stringify({
-				product_id: input.product_id,
+				pack_id: input.pack_id,
 				return_url: returnUrl.toString(),
 			});
 		}

@@ -1,0 +1,2283 @@
+{
+  "schemaVersion": 2,
+  "sourceDirectory": "artwork/keatingbot-v1",
+  "frameSize": 256,
+  "backgroundRule": "Only edge-connected pixels with min RGB >= 220 and RGB range <= 22, then one source-pixel alpha boundary erosion; existing alpha is preserved.",
+  "atlases": {
+    "head": {
+      "path": "/brand/keatingbot-sprites-v1.png",
+      "width": 1024,
+      "height": 1024,
+      "frameSize": 256,
+      "rows": [
+        [
+          "head-idle",
+          "head-idle",
+          "head-blink",
+          "head-idle"
+        ],
+        [
+          "head-listening",
+          "head-listening",
+          "head-listening",
+          "head-listening"
+        ],
+        [
+          "head-thinking",
+          "head-thinking",
+          "head-thinking",
+          "head-thinking"
+        ],
+        [
+          "head-speaking",
+          "head-success",
+          "head-success",
+          "head-speaking"
+        ]
+      ]
+    },
+    "body": {
+      "path": "/brand/keatingbot-body-sprites-v1.png",
+      "width": 1024,
+      "height": 1024,
+      "frameSize": 256,
+      "rows": [
+        [
+          "body-rest",
+          "body-wave",
+          "body-wave",
+          "body-rest"
+        ],
+        [
+          "body-listen",
+          "body-listen",
+          "body-listen",
+          "body-listen"
+        ],
+        [
+          "body-work",
+          "body-work",
+          "body-work",
+          "body-work"
+        ],
+        [
+          "body-cheer",
+          "body-hop",
+          "body-cheer",
+          "body-rest"
+        ]
+      ]
+    }
+  },
+  "sequences": [
+    {
+      "variant": "head",
+      "state": "thinking",
+      "path": "/brand/keatingbot-head-thinking-v2.png",
+      "width": 1024,
+      "height": 256,
+      "outputSha256": "7ae1cfcb192ba98464aa4ae8ab9068809a7068a7d08f4957d034148a4eff090c",
+      "frameSize": 256,
+      "frameCount": 4,
+      "sourceGrid": {
+        "columns": 2,
+        "rows": 2,
+        "cellWidth": 627,
+        "cellHeight": 627,
+        "rowBoundaries": [
+          0,
+          627,
+          1254
+        ]
+      },
+      "source": "artwork/keatingbot-v1/head-thinking-sequence.png",
+      "sourceSha256": "a724a72e5301459847314fe6e000fa12a3d71b23d055febbc9d1946a02b01a2d",
+      "sharedScale": 0.4132841328413284,
+      "frames": [
+        {
+          "name": "head-thinking-v2-0",
+          "source": "artwork/keatingbot-v1/head-thinking-sequence.png",
+          "sourceRegion": {
+            "left": 0,
+            "top": 0,
+            "width": 627,
+            "height": 627
+          },
+          "output": "/brand/bot-frames-v1/head-thinking-v2-0.png",
+          "sourceSize": {
+            "width": 627,
+            "height": 627
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 231006,
+          "erodedPixels": 3489,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 59,
+            "top": 80,
+            "width": 542,
+            "height": 483
+          },
+          "greenScreenBounds": {
+            "left": 194,
+            "top": 257,
+            "width": 277,
+            "height": 205
+          },
+          "normalization": "green-screen-center",
+          "geometry": {
+            "left": 15,
+            "top": 12,
+            "width": 224,
+            "height": 200,
+            "scale": 0.4132841328413284,
+            "baseline": null
+          },
+          "index": 0,
+          "sourceCellSha256": "dd4712661312caa90a477973a70be98b60085924d3ef10e5f680776387865de7",
+          "outputSha256": "94e06794048b6d94e0ea67168609bb1a2a0f71da64f0be194a4912098420f66e"
+        },
+        {
+          "name": "head-thinking-v2-1",
+          "source": "artwork/keatingbot-v1/head-thinking-sequence.png",
+          "sourceRegion": {
+            "left": 627,
+            "top": 0,
+            "width": 627,
+            "height": 627
+          },
+          "output": "/brand/bot-frames-v1/head-thinking-v2-1.png",
+          "sourceSize": {
+            "width": 627,
+            "height": 627
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 231895,
+          "erodedPixels": 3923,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 25,
+            "top": 80,
+            "width": 542,
+            "height": 483
+          },
+          "greenScreenBounds": {
+            "left": 164,
+            "top": 257,
+            "width": 272,
+            "height": 205
+          },
+          "normalization": "green-screen-center",
+          "geometry": {
+            "left": 14,
+            "top": 12,
+            "width": 224,
+            "height": 200,
+            "scale": 0.4132841328413284,
+            "baseline": null
+          },
+          "index": 1,
+          "sourceCellSha256": "49ef36088be94399b38fcd4033d7d24ee4a34fe6bf5dcbec3f94c939ded93dba",
+          "outputSha256": "e39567edc7cd89ad80f4826e61a6dee996ff65abc9311cca964123d1e1eb09ee"
+        },
+        {
+          "name": "head-thinking-v2-2",
+          "source": "artwork/keatingbot-v1/head-thinking-sequence.png",
+          "sourceRegion": {
+            "left": 0,
+            "top": 627,
+            "width": 627,
+            "height": 627
+          },
+          "output": "/brand/bot-frames-v1/head-thinking-v2-2.png",
+          "sourceSize": {
+            "width": 627,
+            "height": 627
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 230774,
+          "erodedPixels": 3495,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 59,
+            "top": 38,
+            "width": 542,
+            "height": 484
+          },
+          "greenScreenBounds": {
+            "left": 194,
+            "top": 215,
+            "width": 276,
+            "height": 206
+          },
+          "normalization": "green-screen-center",
+          "geometry": {
+            "left": 15,
+            "top": 12,
+            "width": 224,
+            "height": 200,
+            "scale": 0.4132841328413284,
+            "baseline": null
+          },
+          "index": 2,
+          "sourceCellSha256": "57bc5bc2e904b8278bd45d0af30250cae9c0ded5f203062b30a877bcc469a46f",
+          "outputSha256": "ba82884b179ca4c29edfd76c09f14b0d468b844b694b8a52c50f022d0b8a9ca3"
+        },
+        {
+          "name": "head-thinking-v2-3",
+          "source": "artwork/keatingbot-v1/head-thinking-sequence.png",
+          "sourceRegion": {
+            "left": 627,
+            "top": 627,
+            "width": 627,
+            "height": 627
+          },
+          "output": "/brand/bot-frames-v1/head-thinking-v2-3.png",
+          "sourceSize": {
+            "width": 627,
+            "height": 627
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 230758,
+          "erodedPixels": 3528,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 25,
+            "top": 38,
+            "width": 542,
+            "height": 484
+          },
+          "greenScreenBounds": {
+            "left": 164,
+            "top": 215,
+            "width": 273,
+            "height": 206
+          },
+          "normalization": "green-screen-center",
+          "geometry": {
+            "left": 14,
+            "top": 12,
+            "width": 224,
+            "height": 200,
+            "scale": 0.4132841328413284,
+            "baseline": null
+          },
+          "index": 3,
+          "sourceCellSha256": "ef5d457d9f3e378be98620ddd07b5239df279e593ec178495ba544bb574abc48",
+          "outputSha256": "43072447d85acfec80b08896bead8cf6c3e98808abda6eda2356a81a0a70203e"
+        }
+      ]
+    },
+    {
+      "variant": "head",
+      "state": "speaking",
+      "path": "/brand/keatingbot-head-speaking-v2.png",
+      "width": 2048,
+      "height": 256,
+      "outputSha256": "0046dbfaad0b4ca4ceb3b06d895ae26addb7d6382d14d32b07b14645f0fa0ae8",
+      "frameSize": 256,
+      "frameCount": 8,
+      "sourceGrid": {
+        "columns": 4,
+        "rows": 2,
+        "cellWidth": 443.5,
+        "cellHeight": 443.5,
+        "rowBoundaries": [
+          0,
+          444,
+          887
+        ]
+      },
+      "source": "artwork/keatingbot-v1/head-speaking-sequence.png",
+      "sourceSha256": "16d75cdb38a1eb9aeb5f6da2d814ef1954f00ab08720b7ebd3796bfd5955bd43",
+      "sharedScale": 0.5320665083135392,
+      "frames": [
+        {
+          "name": "head-speaking-v2-0",
+          "source": "artwork/keatingbot-v1/head-speaking-sequence.png",
+          "sourceRegion": {
+            "left": 0,
+            "top": 0,
+            "width": 444,
+            "height": 444
+          },
+          "output": "/brand/bot-frames-v1/head-speaking-v2-0.png",
+          "sourceSize": {
+            "width": 444,
+            "height": 444
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 105367,
+          "erodedPixels": 3425,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 11,
+            "top": 39,
+            "width": 420,
+            "height": 358
+          },
+          "greenScreenBounds": {
+            "left": 113,
+            "top": 173,
+            "width": 216,
+            "height": 159
+          },
+          "normalization": "green-screen-center",
+          "geometry": {
+            "left": 16,
+            "top": 14,
+            "width": 223,
+            "height": 190,
+            "scale": 0.5320665083135392,
+            "baseline": null
+          },
+          "index": 0,
+          "sourceCellSha256": "539981a2eaf542e9332792eda8298ea7c8b46f624f521692b22a6df3d8304334",
+          "outputSha256": "3d60a63e4dc616aec1fe3658d3eb172bfec1fc20a054537028a67aac1676548a"
+        },
+        {
+          "name": "head-speaking-v2-1",
+          "source": "artwork/keatingbot-v1/head-speaking-sequence.png",
+          "sourceRegion": {
+            "left": 444,
+            "top": 0,
+            "width": 443,
+            "height": 444
+          },
+          "output": "/brand/bot-frames-v1/head-speaking-v2-1.png",
+          "sourceSize": {
+            "width": 443,
+            "height": 444
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 104725,
+          "erodedPixels": 3433,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 9,
+            "top": 39,
+            "width": 421,
+            "height": 358
+          },
+          "greenScreenBounds": {
+            "left": 112,
+            "top": 173,
+            "width": 216,
+            "height": 159
+          },
+          "normalization": "green-screen-center",
+          "geometry": {
+            "left": 16,
+            "top": 14,
+            "width": 224,
+            "height": 190,
+            "scale": 0.5320665083135392,
+            "baseline": null
+          },
+          "index": 1,
+          "sourceCellSha256": "92368ae2965d6c09780f2f045187cfa1bc826066e9d96ca4dbe0b65f6a47f961",
+          "outputSha256": "6c0ae5f7b9c202d290813f2b55b550bb3b5a0572f1bb3deb3ea4f7be7ead7a69"
+        },
+        {
+          "name": "head-speaking-v2-2",
+          "source": "artwork/keatingbot-v1/head-speaking-sequence.png",
+          "sourceRegion": {
+            "left": 887,
+            "top": 0,
+            "width": 444,
+            "height": 444
+          },
+          "output": "/brand/bot-frames-v1/head-speaking-v2-2.png",
+          "sourceSize": {
+            "width": 444,
+            "height": 444
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 105196,
+          "erodedPixels": 3392,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 10,
+            "top": 39,
+            "width": 421,
+            "height": 358
+          },
+          "greenScreenBounds": {
+            "left": 112,
+            "top": 173,
+            "width": 216,
+            "height": 159
+          },
+          "normalization": "green-screen-center",
+          "geometry": {
+            "left": 16,
+            "top": 14,
+            "width": 224,
+            "height": 190,
+            "scale": 0.5320665083135392,
+            "baseline": null
+          },
+          "index": 2,
+          "sourceCellSha256": "13abd3510cfba22bc053f9c72b4d491ddb3179d03ddd67426465823b04a0650d",
+          "outputSha256": "5f48cd4b1e4f32651dba31d84aedbe1f98e0ceeed6c098f60e447420d37abe74"
+        },
+        {
+          "name": "head-speaking-v2-3",
+          "source": "artwork/keatingbot-v1/head-speaking-sequence.png",
+          "sourceRegion": {
+            "left": 1331,
+            "top": 0,
+            "width": 443,
+            "height": 444
+          },
+          "output": "/brand/bot-frames-v1/head-speaking-v2-3.png",
+          "sourceSize": {
+            "width": 443,
+            "height": 444
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 104983,
+          "erodedPixels": 3449,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 10,
+            "top": 39,
+            "width": 420,
+            "height": 358
+          },
+          "greenScreenBounds": {
+            "left": 112,
+            "top": 173,
+            "width": 215,
+            "height": 159
+          },
+          "normalization": "green-screen-center",
+          "geometry": {
+            "left": 17,
+            "top": 14,
+            "width": 223,
+            "height": 190,
+            "scale": 0.5320665083135392,
+            "baseline": null
+          },
+          "index": 3,
+          "sourceCellSha256": "6fea90c77e6bfc4e3a255a7be896880fa64f9da865fe3a2d31d844f4094388ca",
+          "outputSha256": "1d2f18cc88587de538c719b7f22ebdfa6e580d9528abedd78435c3ab6c57eb54"
+        },
+        {
+          "name": "head-speaking-v2-4",
+          "source": "artwork/keatingbot-v1/head-speaking-sequence.png",
+          "sourceRegion": {
+            "left": 0,
+            "top": 444,
+            "width": 444,
+            "height": 443
+          },
+          "output": "/brand/bot-frames-v1/head-speaking-v2-4.png",
+          "sourceSize": {
+            "width": 444,
+            "height": 443
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 104190,
+          "erodedPixels": 3490,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 10,
+            "top": 36,
+            "width": 421,
+            "height": 360
+          },
+          "greenScreenBounds": {
+            "left": 113,
+            "top": 171,
+            "width": 216,
+            "height": 159
+          },
+          "normalization": "green-screen-center",
+          "geometry": {
+            "left": 16,
+            "top": 14,
+            "width": 224,
+            "height": 192,
+            "scale": 0.5320665083135392,
+            "baseline": null
+          },
+          "index": 4,
+          "sourceCellSha256": "0c59b595b7d21f11805613d2a861833fa03f26559012753812e98463dcfeaa40",
+          "outputSha256": "d370c6170194719984882dd7333d1e00eb3f606851825f4a349a5e1ea1923099"
+        },
+        {
+          "name": "head-speaking-v2-5",
+          "source": "artwork/keatingbot-v1/head-speaking-sequence.png",
+          "sourceRegion": {
+            "left": 444,
+            "top": 444,
+            "width": 443,
+            "height": 443
+          },
+          "output": "/brand/bot-frames-v1/head-speaking-v2-5.png",
+          "sourceSize": {
+            "width": 443,
+            "height": 443
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 103500,
+          "erodedPixels": 3525,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 9,
+            "top": 36,
+            "width": 421,
+            "height": 360
+          },
+          "greenScreenBounds": {
+            "left": 112,
+            "top": 171,
+            "width": 216,
+            "height": 159
+          },
+          "normalization": "green-screen-center",
+          "geometry": {
+            "left": 16,
+            "top": 14,
+            "width": 224,
+            "height": 192,
+            "scale": 0.5320665083135392,
+            "baseline": null
+          },
+          "index": 5,
+          "sourceCellSha256": "ff9abbface6837b6ff53d36559e5facf67f47e87d684ef1d7657052efb21ad09",
+          "outputSha256": "794072fff5d626f1021ea2d5949e9402f6ae93072b7f5a4245d43f4a990a5885"
+        },
+        {
+          "name": "head-speaking-v2-6",
+          "source": "artwork/keatingbot-v1/head-speaking-sequence.png",
+          "sourceRegion": {
+            "left": 887,
+            "top": 444,
+            "width": 444,
+            "height": 443
+          },
+          "output": "/brand/bot-frames-v1/head-speaking-v2-6.png",
+          "sourceSize": {
+            "width": 444,
+            "height": 443
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 103989,
+          "erodedPixels": 3494,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 10,
+            "top": 36,
+            "width": 421,
+            "height": 360
+          },
+          "greenScreenBounds": {
+            "left": 112,
+            "top": 171,
+            "width": 216,
+            "height": 159
+          },
+          "normalization": "green-screen-center",
+          "geometry": {
+            "left": 16,
+            "top": 14,
+            "width": 224,
+            "height": 192,
+            "scale": 0.5320665083135392,
+            "baseline": null
+          },
+          "index": 6,
+          "sourceCellSha256": "4a6fd5e67bc6cb66b12045d1963197a7acfc490b16262cee1a666f27d1e3a009",
+          "outputSha256": "35c15d81cbb7632b2094c05c1bbf343dba29dff72b63b23d1f1e7e0eacbe85cb"
+        },
+        {
+          "name": "head-speaking-v2-7",
+          "source": "artwork/keatingbot-v1/head-speaking-sequence.png",
+          "sourceRegion": {
+            "left": 1331,
+            "top": 444,
+            "width": 443,
+            "height": 443
+          },
+          "output": "/brand/bot-frames-v1/head-speaking-v2-7.png",
+          "sourceSize": {
+            "width": 443,
+            "height": 443
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 103924,
+          "erodedPixels": 3530,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 10,
+            "top": 36,
+            "width": 420,
+            "height": 360
+          },
+          "greenScreenBounds": {
+            "left": 112,
+            "top": 171,
+            "width": 215,
+            "height": 159
+          },
+          "normalization": "green-screen-center",
+          "geometry": {
+            "left": 17,
+            "top": 14,
+            "width": 223,
+            "height": 192,
+            "scale": 0.5320665083135392,
+            "baseline": null
+          },
+          "index": 7,
+          "sourceCellSha256": "b04298802620e7199f22f6274665c0d4ad7a38b34ae917f9b05d76973c66dd69",
+          "outputSha256": "2414a53d04470a6f75973cdadc4681f96b7da09d1f9288de0617aaa0712e0f95"
+        }
+      ]
+    },
+    {
+      "variant": "body",
+      "state": "thinking",
+      "path": "/brand/keatingbot-body-thinking-v2.png",
+      "width": 1024,
+      "height": 256,
+      "outputSha256": "67e48fdce4d69ef592d9c3ee73f26902976746c85cea8c00cc091b9b2126f298",
+      "frameSize": 256,
+      "frameCount": 4,
+      "sourceGrid": {
+        "columns": 2,
+        "rows": 2,
+        "cellWidth": 627,
+        "cellHeight": 627,
+        "rowBoundaries": [
+          0,
+          627,
+          1254
+        ]
+      },
+      "source": "artwork/keatingbot-v1/body-thinking-sequence.png",
+      "sourceSha256": "534b52097ae572d98ec2ba03a9157efd2ba7acf9c1971e8db3014afc7277dac1",
+      "sharedScale": 0.38956521739130434,
+      "frames": [
+        {
+          "name": "body-thinking-v2-0",
+          "source": "artwork/keatingbot-v1/body-thinking-sequence.png",
+          "sourceRegion": {
+            "left": 0,
+            "top": 0,
+            "width": 627,
+            "height": 627
+          },
+          "output": "/brand/bot-frames-v1/body-thinking-v2-0.png",
+          "sourceSize": {
+            "width": 627,
+            "height": 627
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 276403,
+          "erodedPixels": 5029,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 185,
+            "top": 29,
+            "width": 329,
+            "height": 575
+          },
+          "greenScreenBounds": {
+            "left": 285,
+            "top": 116,
+            "width": 147,
+            "height": 110
+          },
+          "normalization": "screen-center-and-feet-baseline",
+          "geometry": {
+            "left": 60,
+            "top": 12,
+            "width": 128,
+            "height": 224,
+            "scale": 0.38956521739130434,
+            "baseline": 236
+          },
+          "index": 0,
+          "sourceCellSha256": "ca8228c414a07ca68deefe4bf628cd3ceae692799271ce5f9cbdfec8e95ea11d",
+          "outputSha256": "6d145afe042e6fc641fd769a764f863bc9f7826370077cddacde3735bb30a889"
+        },
+        {
+          "name": "body-thinking-v2-1",
+          "source": "artwork/keatingbot-v1/body-thinking-sequence.png",
+          "sourceRegion": {
+            "left": 627,
+            "top": 0,
+            "width": 627,
+            "height": 627
+          },
+          "output": "/brand/bot-frames-v1/body-thinking-v2-1.png",
+          "sourceSize": {
+            "width": 627,
+            "height": 627
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 276053,
+          "erodedPixels": 5063,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 132,
+            "top": 29,
+            "width": 329,
+            "height": 575
+          },
+          "greenScreenBounds": {
+            "left": 231,
+            "top": 117,
+            "width": 148,
+            "height": 108
+          },
+          "normalization": "screen-center-and-feet-baseline",
+          "geometry": {
+            "left": 61,
+            "top": 12,
+            "width": 128,
+            "height": 224,
+            "scale": 0.38956521739130434,
+            "baseline": 236
+          },
+          "index": 1,
+          "sourceCellSha256": "328bb6ebff4ca1a572c49a43e40b5cfd6c8b6dbcfdffef657dd70f5f15b0c9f1",
+          "outputSha256": "4ab05d08aee998de4e1e5b7b828bb70fd5045aca28f7c8d4dee9f7fc1276089b"
+        },
+        {
+          "name": "body-thinking-v2-2",
+          "source": "artwork/keatingbot-v1/body-thinking-sequence.png",
+          "sourceRegion": {
+            "left": 0,
+            "top": 627,
+            "width": 627,
+            "height": 627
+          },
+          "output": "/brand/bot-frames-v1/body-thinking-v2-2.png",
+          "sourceSize": {
+            "width": 627,
+            "height": 627
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 275222,
+          "erodedPixels": 5068,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 184,
+            "top": 23,
+            "width": 330,
+            "height": 575
+          },
+          "greenScreenBounds": {
+            "left": 284,
+            "top": 110,
+            "width": 147,
+            "height": 109
+          },
+          "normalization": "screen-center-and-feet-baseline",
+          "geometry": {
+            "left": 60,
+            "top": 12,
+            "width": 129,
+            "height": 224,
+            "scale": 0.38956521739130434,
+            "baseline": 236
+          },
+          "index": 2,
+          "sourceCellSha256": "1bb9f0dfc2b7f55ea57f7390fd3808f4c32e118a163c73987e0a77a3ef6162c7",
+          "outputSha256": "4fffd622ce008c1e3a350ddd08bfc3329cf1c210e83064280f4e2edff4a7c290"
+        },
+        {
+          "name": "body-thinking-v2-3",
+          "source": "artwork/keatingbot-v1/body-thinking-sequence.png",
+          "sourceRegion": {
+            "left": 627,
+            "top": 627,
+            "width": 627,
+            "height": 627
+          },
+          "output": "/brand/bot-frames-v1/body-thinking-v2-3.png",
+          "sourceSize": {
+            "width": 627,
+            "height": 627
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 274382,
+          "erodedPixels": 4998,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 132,
+            "top": 23,
+            "width": 331,
+            "height": 575
+          },
+          "greenScreenBounds": {
+            "left": 231,
+            "top": 110,
+            "width": 148,
+            "height": 109
+          },
+          "normalization": "screen-center-and-feet-baseline",
+          "geometry": {
+            "left": 61,
+            "top": 12,
+            "width": 129,
+            "height": 224,
+            "scale": 0.38956521739130434,
+            "baseline": 236
+          },
+          "index": 3,
+          "sourceCellSha256": "9c9060b450a010ae725667bd8a37a174dc34fb6b3c22b35848641b87803d8dd4",
+          "outputSha256": "aebad26cbaeaf1caba5c45e023d2469fcb9804896c8356823bfe720dc5cae861"
+        }
+      ]
+    },
+    {
+      "variant": "body",
+      "state": "speaking",
+      "path": "/brand/keatingbot-body-speaking-v2.png",
+      "width": 2048,
+      "height": 256,
+      "outputSha256": "3985ad6af3f4603fca4224af426a2fbffd1f7d10a11dc700a5761069c3ce4039",
+      "frameSize": 256,
+      "frameCount": 8,
+      "sourceGrid": {
+        "columns": 4,
+        "rows": 2,
+        "cellWidth": 443.5,
+        "cellHeight": 443.5,
+        "rowBoundaries": [
+          0,
+          444,
+          887
+        ]
+      },
+      "source": "artwork/keatingbot-v1/body-speaking-sequence.png",
+      "sourceSha256": "27c38d71931128b991a265722d457de65e9aa3018892ea7307624623f201330a",
+      "sharedScale": 0.5463414634146342,
+      "frames": [
+        {
+          "name": "body-speaking-v2-0",
+          "source": "artwork/keatingbot-v1/body-speaking-sequence.png",
+          "sourceRegion": {
+            "left": 0,
+            "top": 0,
+            "width": 444,
+            "height": 444
+          },
+          "output": "/brand/bot-frames-v1/body-speaking-v2-0.png",
+          "sourceSize": {
+            "width": 444,
+            "height": 444
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 132149,
+          "erodedPixels": 4690,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 100,
+            "top": 18,
+            "width": 241,
+            "height": 410
+          },
+          "greenScreenBounds": {
+            "left": 164,
+            "top": 80,
+            "width": 121,
+            "height": 89
+          },
+          "normalization": "screen-center-and-feet-baseline",
+          "geometry": {
+            "left": 60,
+            "top": 12,
+            "width": 132,
+            "height": 224,
+            "scale": 0.5463414634146342,
+            "baseline": 236
+          },
+          "index": 0,
+          "sourceCellSha256": "fbff19ac903e5caebcd54c005b5ad5612ecd4149aed2a84c7f1a22ddc9340b7f",
+          "outputSha256": "fa5ad2ec94745dbb702914b0430d0044c10ff150583392e63d95c3dd7bd8c880"
+        },
+        {
+          "name": "body-speaking-v2-1",
+          "source": "artwork/keatingbot-v1/body-speaking-sequence.png",
+          "sourceRegion": {
+            "left": 444,
+            "top": 0,
+            "width": 443,
+            "height": 444
+          },
+          "output": "/brand/bot-frames-v1/body-speaking-v2-1.png",
+          "sourceSize": {
+            "width": 443,
+            "height": 444
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 132432,
+          "erodedPixels": 4518,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 74,
+            "top": 18,
+            "width": 265,
+            "height": 410
+          },
+          "greenScreenBounds": {
+            "left": 161,
+            "top": 80,
+            "width": 122,
+            "height": 89
+          },
+          "normalization": "screen-center-and-feet-baseline",
+          "geometry": {
+            "left": 47,
+            "top": 12,
+            "width": 145,
+            "height": 224,
+            "scale": 0.5463414634146342,
+            "baseline": 236
+          },
+          "index": 1,
+          "sourceCellSha256": "c587ffc5dc4ab320fd7791b7684142dcbabc483313247a5607c76f21df570e24",
+          "outputSha256": "7f6c3e333c45d818c57d98c85e19f6a46d999b2311c5b4dbfb28fde4f142d8fd"
+        },
+        {
+          "name": "body-speaking-v2-2",
+          "source": "artwork/keatingbot-v1/body-speaking-sequence.png",
+          "sourceRegion": {
+            "left": 887,
+            "top": 0,
+            "width": 444,
+            "height": 444
+          },
+          "output": "/brand/bot-frames-v1/body-speaking-v2-2.png",
+          "sourceSize": {
+            "width": 444,
+            "height": 444
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 132701,
+          "erodedPixels": 4505,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 67,
+            "top": 18,
+            "width": 272,
+            "height": 410
+          },
+          "greenScreenBounds": {
+            "left": 161,
+            "top": 80,
+            "width": 121,
+            "height": 89
+          },
+          "normalization": "screen-center-and-feet-baseline",
+          "geometry": {
+            "left": 44,
+            "top": 12,
+            "width": 149,
+            "height": 224,
+            "scale": 0.5463414634146342,
+            "baseline": 236
+          },
+          "index": 2,
+          "sourceCellSha256": "261e4bbfc7093eef4de537c0a0896dba287846326b8ab687cbf0a1c6dc2bfe63",
+          "outputSha256": "5c47633023d1181133c3a9a087a27db058184c68e90986699daccedec16c41ec"
+        },
+        {
+          "name": "body-speaking-v2-3",
+          "source": "artwork/keatingbot-v1/body-speaking-sequence.png",
+          "sourceRegion": {
+            "left": 1331,
+            "top": 0,
+            "width": 443,
+            "height": 444
+          },
+          "output": "/brand/bot-frames-v1/body-speaking-v2-3.png",
+          "sourceSize": {
+            "width": 443,
+            "height": 444
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 131609,
+          "erodedPixels": 4577,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 58,
+            "top": 18,
+            "width": 280,
+            "height": 410
+          },
+          "greenScreenBounds": {
+            "left": 161,
+            "top": 80,
+            "width": 121,
+            "height": 89
+          },
+          "normalization": "screen-center-and-feet-baseline",
+          "geometry": {
+            "left": 39,
+            "top": 12,
+            "width": 153,
+            "height": 224,
+            "scale": 0.5463414634146342,
+            "baseline": 236
+          },
+          "index": 3,
+          "sourceCellSha256": "89ed8cbee105687198cade1f82d59c29ffe54e7aa76e46f37c6e58e8dc870c0e",
+          "outputSha256": "f917bac228442772f81f2e2f97b4e242ea6ca51b7a9ea2b937b2b9c82d5dd61c"
+        },
+        {
+          "name": "body-speaking-v2-4",
+          "source": "artwork/keatingbot-v1/body-speaking-sequence.png",
+          "sourceRegion": {
+            "left": 0,
+            "top": 444,
+            "width": 444,
+            "height": 443
+          },
+          "output": "/brand/bot-frames-v1/body-speaking-v2-4.png",
+          "sourceSize": {
+            "width": 444,
+            "height": 443
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 131447,
+          "erodedPixels": 4366,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 70,
+            "top": 17,
+            "width": 271,
+            "height": 410
+          },
+          "greenScreenBounds": {
+            "left": 164,
+            "top": 79,
+            "width": 121,
+            "height": 89
+          },
+          "normalization": "screen-center-and-feet-baseline",
+          "geometry": {
+            "left": 44,
+            "top": 12,
+            "width": 148,
+            "height": 224,
+            "scale": 0.5463414634146342,
+            "baseline": 236
+          },
+          "index": 4,
+          "sourceCellSha256": "4467a7ff1085e51c96ccbdaaeb4851e534c1691d9985dc161eb35d83f5c75137",
+          "outputSha256": "b5c59c78ae0e093d11ed6561c2af624e4d726ffa17d9212d729193a16c64ce3d"
+        },
+        {
+          "name": "body-speaking-v2-5",
+          "source": "artwork/keatingbot-v1/body-speaking-sequence.png",
+          "sourceRegion": {
+            "left": 444,
+            "top": 444,
+            "width": 443,
+            "height": 443
+          },
+          "output": "/brand/bot-frames-v1/body-speaking-v2-5.png",
+          "sourceSize": {
+            "width": 443,
+            "height": 443
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 130977,
+          "erodedPixels": 4569,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 74,
+            "top": 17,
+            "width": 265,
+            "height": 410
+          },
+          "greenScreenBounds": {
+            "left": 162,
+            "top": 79,
+            "width": 121,
+            "height": 89
+          },
+          "normalization": "screen-center-and-feet-baseline",
+          "geometry": {
+            "left": 47,
+            "top": 12,
+            "width": 145,
+            "height": 224,
+            "scale": 0.5463414634146342,
+            "baseline": 236
+          },
+          "index": 5,
+          "sourceCellSha256": "e7d6b411a27e694596173ca4be244b9ad67aa04e419a97e20022edd1ad7051bc",
+          "outputSha256": "f5ff8533372550398a0a3d4bf818cd48644c245a77034910bc2eb58f70b3cc63"
+        },
+        {
+          "name": "body-speaking-v2-6",
+          "source": "artwork/keatingbot-v1/body-speaking-sequence.png",
+          "sourceRegion": {
+            "left": 887,
+            "top": 444,
+            "width": 444,
+            "height": 443
+          },
+          "output": "/brand/bot-frames-v1/body-speaking-v2-6.png",
+          "sourceSize": {
+            "width": 444,
+            "height": 443
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 131756,
+          "erodedPixels": 4649,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 95,
+            "top": 17,
+            "width": 244,
+            "height": 410
+          },
+          "greenScreenBounds": {
+            "left": 161,
+            "top": 79,
+            "width": 121,
+            "height": 88
+          },
+          "normalization": "screen-center-and-feet-baseline",
+          "geometry": {
+            "left": 59,
+            "top": 12,
+            "width": 133,
+            "height": 224,
+            "scale": 0.5463414634146342,
+            "baseline": 236
+          },
+          "index": 6,
+          "sourceCellSha256": "ff6f310edef2e611211135cf01de88449dc187eba568662f24ba07274bf4e035",
+          "outputSha256": "29f7d118ae2f99202747a1da58b2615cce1842c50312b6b3e5821f999e35ccec"
+        },
+        {
+          "name": "body-speaking-v2-7",
+          "source": "artwork/keatingbot-v1/body-speaking-sequence.png",
+          "sourceRegion": {
+            "left": 1331,
+            "top": 444,
+            "width": 443,
+            "height": 443
+          },
+          "output": "/brand/bot-frames-v1/body-speaking-v2-7.png",
+          "sourceSize": {
+            "width": 443,
+            "height": 443
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 131198,
+          "erodedPixels": 4689,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 96,
+            "top": 17,
+            "width": 242,
+            "height": 410
+          },
+          "greenScreenBounds": {
+            "left": 161,
+            "top": 79,
+            "width": 120,
+            "height": 88
+          },
+          "normalization": "screen-center-and-feet-baseline",
+          "geometry": {
+            "left": 60,
+            "top": 12,
+            "width": 132,
+            "height": 224,
+            "scale": 0.5463414634146342,
+            "baseline": 236
+          },
+          "index": 7,
+          "sourceCellSha256": "8e246f8e569d20c924619f27d63b4340212e30565f9c9aebd3a28f118428d478",
+          "outputSha256": "db6c3b79908bc7b43a4eee931efb0bf9d922164294a47f856f72d0d17847d946"
+        }
+      ]
+    },
+    {
+      "variant": "body",
+      "state": "waving",
+      "path": "/brand/keatingbot-body-waving-v3.png",
+      "width": 3072,
+      "height": 256,
+      "outputSha256": "e8a41af70ab0b53738ca8b281c3d1302f36536f5b2c606d49f9470f429369506",
+      "frameSize": 256,
+      "frameCount": 12,
+      "sourceGrid": {
+        "columns": 4,
+        "rows": 3,
+        "cellWidth": 362,
+        "cellHeight": 362,
+        "rowBoundaries": [
+          0,
+          331,
+          667,
+          1086
+        ]
+      },
+      "source": "artwork/keatingbot-v1/body-wave-sequence.png",
+      "sourceSha256": "972bb07fdcda307b8b92791e0de520ef5d6a0daa5d0bfac9a81ce2ab9cf2c3d6",
+      "sharedScale": 0.7516778523489933,
+      "frames": [
+        {
+          "name": "body-waving-v3-0",
+          "source": "artwork/keatingbot-v1/body-wave-sequence.png",
+          "sourceRegion": {
+            "left": 0,
+            "top": 0,
+            "width": 362,
+            "height": 331
+          },
+          "output": "/brand/bot-frames-v1/body-waving-v3-0.png",
+          "sourceSize": {
+            "width": 362,
+            "height": 331
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 87521,
+          "erodedPixels": 3092,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 106,
+            "top": 18,
+            "width": 173,
+            "height": 292
+          },
+          "greenScreenBounds": {
+            "left": 157,
+            "top": 59,
+            "width": 81,
+            "height": 60
+          },
+          "normalization": "screen-center-and-feet-baseline",
+          "geometry": {
+            "left": 59,
+            "top": 17,
+            "width": 130,
+            "height": 219,
+            "scale": 0.7516778523489933,
+            "baseline": 236
+          },
+          "index": 0,
+          "sourceCellSha256": "ab4d987661d99dd9f9b5b0d563e23a7df32d23027bce9dfec20f356a5e0469a7",
+          "outputSha256": "61f7191815bb5e9f2ae30ddf1269c86df7a6186bb3ddc39faa3cca967ae1cb2c"
+        },
+        {
+          "name": "body-waving-v3-1",
+          "source": "artwork/keatingbot-v1/body-wave-sequence.png",
+          "sourceRegion": {
+            "left": 362,
+            "top": 0,
+            "width": 362,
+            "height": 331
+          },
+          "output": "/brand/bot-frames-v1/body-waving-v3-1.png",
+          "sourceSize": {
+            "width": 362,
+            "height": 331
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 87705,
+          "erodedPixels": 3025,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 78,
+            "top": 18,
+            "width": 200,
+            "height": 292
+          },
+          "greenScreenBounds": {
+            "left": 156,
+            "top": 59,
+            "width": 81,
+            "height": 60
+          },
+          "normalization": "screen-center-and-feet-baseline",
+          "geometry": {
+            "left": 39,
+            "top": 17,
+            "width": 150,
+            "height": 219,
+            "scale": 0.7516778523489933,
+            "baseline": 236
+          },
+          "index": 1,
+          "sourceCellSha256": "08a04402a97a76b0c1164dde75fdc4b8193708ba470c0a5970741160af6c7e4a",
+          "outputSha256": "7347f83f277a7c8d69b9f02a1347519de8eb00d0fcdf6f72ba3a81befec14637"
+        },
+        {
+          "name": "body-waving-v3-2",
+          "source": "artwork/keatingbot-v1/body-wave-sequence.png",
+          "sourceRegion": {
+            "left": 724,
+            "top": 0,
+            "width": 362,
+            "height": 331
+          },
+          "output": "/brand/bot-frames-v1/body-waving-v3-2.png",
+          "sourceSize": {
+            "width": 362,
+            "height": 331
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 87542,
+          "erodedPixels": 3065,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 76,
+            "top": 18,
+            "width": 202,
+            "height": 292
+          },
+          "greenScreenBounds": {
+            "left": 155,
+            "top": 59,
+            "width": 82,
+            "height": 60
+          },
+          "normalization": "screen-center-and-feet-baseline",
+          "geometry": {
+            "left": 38,
+            "top": 17,
+            "width": 152,
+            "height": 219,
+            "scale": 0.7516778523489933,
+            "baseline": 236
+          },
+          "index": 2,
+          "sourceCellSha256": "45d15d5882dd87114283afd32b3749206a10ce1fef791f0be51ab8a689e27b58",
+          "outputSha256": "71cef9aac5767e4daef62725969927164a60700aaabd9cc282d3451416f2061e"
+        },
+        {
+          "name": "body-waving-v3-3",
+          "source": "artwork/keatingbot-v1/body-wave-sequence.png",
+          "sourceRegion": {
+            "left": 1086,
+            "top": 0,
+            "width": 362,
+            "height": 331
+          },
+          "output": "/brand/bot-frames-v1/body-waving-v3-3.png",
+          "sourceSize": {
+            "width": 362,
+            "height": 331
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 87006,
+          "erodedPixels": 3193,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 64,
+            "top": 18,
+            "width": 213,
+            "height": 292
+          },
+          "greenScreenBounds": {
+            "left": 154,
+            "top": 59,
+            "width": 82,
+            "height": 60
+          },
+          "normalization": "screen-center-and-feet-baseline",
+          "geometry": {
+            "left": 30,
+            "top": 17,
+            "width": 160,
+            "height": 219,
+            "scale": 0.7516778523489933,
+            "baseline": 236
+          },
+          "index": 3,
+          "sourceCellSha256": "c3f69319d3bf0befe8dbbf3aa68e6ce6e76aaacbbfe16f0cddf81a08fc6f8682",
+          "outputSha256": "b82e7bcf559e8b01e64e83b64ab78a98318d33407ccaf326f077c61c908df89c"
+        },
+        {
+          "name": "body-waving-v3-4",
+          "source": "artwork/keatingbot-v1/body-wave-sequence.png",
+          "sourceRegion": {
+            "left": 0,
+            "top": 331,
+            "width": 362,
+            "height": 336
+          },
+          "output": "/brand/bot-frames-v1/body-waving-v3-4.png",
+          "sourceSize": {
+            "width": 362,
+            "height": 336
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 86786,
+          "erodedPixels": 2898,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 70,
+            "top": 19,
+            "width": 210,
+            "height": 298
+          },
+          "greenScreenBounds": {
+            "left": 157,
+            "top": 62,
+            "width": 81,
+            "height": 61
+          },
+          "normalization": "screen-center-and-feet-baseline",
+          "geometry": {
+            "left": 32,
+            "top": 12,
+            "width": 158,
+            "height": 224,
+            "scale": 0.7516778523489933,
+            "baseline": 236
+          },
+          "index": 4,
+          "sourceCellSha256": "9ea3afaae37d0c44fb517af985a258959eee13d95609b642cc00ea4547abb27c",
+          "outputSha256": "3172b84aa42da726de7d2d1ae06af39b9bea047e0dff14afc16bca8bf5d02967"
+        },
+        {
+          "name": "body-waving-v3-5",
+          "source": "artwork/keatingbot-v1/body-wave-sequence.png",
+          "sourceRegion": {
+            "left": 362,
+            "top": 331,
+            "width": 362,
+            "height": 336
+          },
+          "output": "/brand/bot-frames-v1/body-waving-v3-5.png",
+          "sourceSize": {
+            "width": 362,
+            "height": 336
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 87245,
+          "erodedPixels": 2889,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 63,
+            "top": 19,
+            "width": 216,
+            "height": 297
+          },
+          "greenScreenBounds": {
+            "left": 156,
+            "top": 62,
+            "width": 81,
+            "height": 61
+          },
+          "normalization": "screen-center-and-feet-baseline",
+          "geometry": {
+            "left": 28,
+            "top": 13,
+            "width": 162,
+            "height": 223,
+            "scale": 0.7516778523489933,
+            "baseline": 236
+          },
+          "index": 5,
+          "sourceCellSha256": "bff0b5b2eb680dc725a04e40a4e30f329c4e1117235dc1c15db7b786e47061d6",
+          "outputSha256": "e76ce0c7844cc9f52a6a547df5e205a8b6494b110f89e5370a4da1d037d6ffc3"
+        },
+        {
+          "name": "body-waving-v3-6",
+          "source": "artwork/keatingbot-v1/body-wave-sequence.png",
+          "sourceRegion": {
+            "left": 724,
+            "top": 331,
+            "width": 362,
+            "height": 336
+          },
+          "output": "/brand/bot-frames-v1/body-waving-v3-6.png",
+          "sourceSize": {
+            "width": 362,
+            "height": 336
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 87972,
+          "erodedPixels": 3200,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 68,
+            "top": 19,
+            "width": 210,
+            "height": 297
+          },
+          "greenScreenBounds": {
+            "left": 155,
+            "top": 62,
+            "width": 82,
+            "height": 62
+          },
+          "normalization": "screen-center-and-feet-baseline",
+          "geometry": {
+            "left": 32,
+            "top": 13,
+            "width": 158,
+            "height": 223,
+            "scale": 0.7516778523489933,
+            "baseline": 236
+          },
+          "index": 6,
+          "sourceCellSha256": "580a718303dc01de82069a9d365a74bb30ad10e0c886975d1743eafe34a4feb0",
+          "outputSha256": "089ac90a1b1cfdee0dfe8681707cd89574fe8ab47924893a7d3c19c1a6fb7c94"
+        },
+        {
+          "name": "body-waving-v3-7",
+          "source": "artwork/keatingbot-v1/body-wave-sequence.png",
+          "sourceRegion": {
+            "left": 1086,
+            "top": 331,
+            "width": 362,
+            "height": 336
+          },
+          "output": "/brand/bot-frames-v1/body-waving-v3-7.png",
+          "sourceSize": {
+            "width": 362,
+            "height": 336
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 87563,
+          "erodedPixels": 2880,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 67,
+            "top": 19,
+            "width": 210,
+            "height": 297
+          },
+          "greenScreenBounds": {
+            "left": 155,
+            "top": 62,
+            "width": 81,
+            "height": 61
+          },
+          "normalization": "screen-center-and-feet-baseline",
+          "geometry": {
+            "left": 31,
+            "top": 13,
+            "width": 158,
+            "height": 223,
+            "scale": 0.7516778523489933,
+            "baseline": 236
+          },
+          "index": 7,
+          "sourceCellSha256": "7a2406653787669730fc5f0378950f8d7269e546bf4186acab1f1e36d671fadf",
+          "outputSha256": "961869a00dac114155b423881b5b4bb7c285e98f01819db6972b05f2e88d343d"
+        },
+        {
+          "name": "body-waving-v3-8",
+          "source": "artwork/keatingbot-v1/body-wave-sequence.png",
+          "sourceRegion": {
+            "left": 0,
+            "top": 667,
+            "width": 362,
+            "height": 419
+          },
+          "output": "/brand/bot-frames-v1/body-waving-v3-8.png",
+          "sourceSize": {
+            "width": 362,
+            "height": 419
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 116556,
+          "erodedPixels": 2934,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 64,
+            "top": 17,
+            "width": 215,
+            "height": 298
+          },
+          "greenScreenBounds": {
+            "left": 156,
+            "top": 60,
+            "width": 82,
+            "height": 61
+          },
+          "normalization": "screen-center-and-feet-baseline",
+          "geometry": {
+            "left": 28,
+            "top": 12,
+            "width": 162,
+            "height": 224,
+            "scale": 0.7516778523489933,
+            "baseline": 236
+          },
+          "index": 8,
+          "sourceCellSha256": "3c72ab5823c1556cd046bed4e31f4a159087aaa0a422e7e20b4c346961a40470",
+          "outputSha256": "9f8c68dc2e1d18271c34381affa62c2de7318e446be04f6ebdd9a7727c722db1"
+        },
+        {
+          "name": "body-waving-v3-9",
+          "source": "artwork/keatingbot-v1/body-wave-sequence.png",
+          "sourceRegion": {
+            "left": 362,
+            "top": 667,
+            "width": 362,
+            "height": 419
+          },
+          "output": "/brand/bot-frames-v1/body-waving-v3-9.png",
+          "sourceSize": {
+            "width": 362,
+            "height": 419
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 117698,
+          "erodedPixels": 3214,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 64,
+            "top": 17,
+            "width": 215,
+            "height": 298
+          },
+          "greenScreenBounds": {
+            "left": 156,
+            "top": 60,
+            "width": 82,
+            "height": 61
+          },
+          "normalization": "screen-center-and-feet-baseline",
+          "geometry": {
+            "left": 28,
+            "top": 12,
+            "width": 162,
+            "height": 224,
+            "scale": 0.7516778523489933,
+            "baseline": 236
+          },
+          "index": 9,
+          "sourceCellSha256": "bdcd130d03d770433744666be330bdfc65521e29144dc857b895cd0775ddc644",
+          "outputSha256": "dbba13417ec29fd0bdb7b5c89f79924a4fe31a5a799bf052037fc824906478c4"
+        },
+        {
+          "name": "body-waving-v3-10",
+          "source": "artwork/keatingbot-v1/body-wave-sequence.png",
+          "sourceRegion": {
+            "left": 724,
+            "top": 667,
+            "width": 362,
+            "height": 419
+          },
+          "output": "/brand/bot-frames-v1/body-waving-v3-10.png",
+          "sourceSize": {
+            "width": 362,
+            "height": 419
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 118493,
+          "erodedPixels": 3078,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 75,
+            "top": 17,
+            "width": 203,
+            "height": 298
+          },
+          "greenScreenBounds": {
+            "left": 155,
+            "top": 60,
+            "width": 82,
+            "height": 62
+          },
+          "normalization": "screen-center-and-feet-baseline",
+          "geometry": {
+            "left": 37,
+            "top": 12,
+            "width": 153,
+            "height": 224,
+            "scale": 0.7516778523489933,
+            "baseline": 236
+          },
+          "index": 10,
+          "sourceCellSha256": "b3b815eb70c9876d33f6ece33fa2ae535a9ae0bdc0ca32a9c250e634e94833ce",
+          "outputSha256": "a31fd136d57794b5d733e95a43498231d0b47f76bcefd2eec65662ecf32f02d2"
+        },
+        {
+          "name": "body-waving-v3-11",
+          "source": "artwork/keatingbot-v1/body-wave-sequence.png",
+          "sourceRegion": {
+            "left": 1086,
+            "top": 667,
+            "width": 362,
+            "height": 419
+          },
+          "output": "/brand/bot-frames-v1/body-waving-v3-11.png",
+          "sourceSize": {
+            "width": 362,
+            "height": 419
+          },
+          "cleanup": "edge-connected-neutral-white",
+          "removedPixels": 118537,
+          "erodedPixels": 3135,
+          "erosionSteps": 2,
+          "alphaTrim": {
+            "left": 105,
+            "top": 17,
+            "width": 172,
+            "height": 298
+          },
+          "greenScreenBounds": {
+            "left": 155,
+            "top": 60,
+            "width": 82,
+            "height": 61
+          },
+          "normalization": "screen-center-and-feet-baseline",
+          "geometry": {
+            "left": 60,
+            "top": 12,
+            "width": 129,
+            "height": 224,
+            "scale": 0.7516778523489933,
+            "baseline": 236
+          },
+          "index": 11,
+          "sourceCellSha256": "2970423b7a0a3da770ad4b0590a1d67c9fae7b0b4b39696d42752e66b0a64acb",
+          "outputSha256": "072e1c7c347225c0e3ac9c2ea0aadd888203de749346200c5c2864a4587dbb2a"
+        }
+      ]
+    }
+  ],
+  "statuses": [
+    {
+      "status": "loading",
+      "source": "artwork/keatingbot-v1/status-loading.png",
+      "path": "/brand/bot-status-v1/loading.png",
+      "width": 512,
+      "height": 512,
+      "cleanup": "existing-alpha-boundary-cleaned",
+      "removedPixels": 0,
+      "erodedPixels": 20270,
+      "erosionSteps": 2,
+      "alphaTrim": {
+        "left": 325,
+        "top": 100,
+        "width": 587,
+        "height": 1026
+      },
+      "geometry": {
+        "left": 128,
+        "top": 32,
+        "width": 256,
+        "height": 448,
+        "scale": 0.43664717348927873,
+        "baseline": 480
+      },
+      "sourceSha256": "592d17cee7e49a36a40a57b5b6f4ea874fd61da22282374df7f9f712b11c2877",
+      "outputSha256": "803e983f0811dec17725c4757346cacd733e7eefc115d38f63181aaee8f90c98"
+    },
+    {
+      "status": "404",
+      "source": "artwork/keatingbot-v1/status-404.png",
+      "path": "/brand/bot-status-v1/404.png",
+      "width": 512,
+      "height": 512,
+      "cleanup": "existing-alpha-boundary-cleaned",
+      "removedPixels": 0,
+      "erodedPixels": 23772,
+      "erosionSteps": 2,
+      "alphaTrim": {
+        "left": 132,
+        "top": 68,
+        "width": 980,
+        "height": 1085
+      },
+      "geometry": {
+        "left": 54,
+        "top": 32,
+        "width": 405,
+        "height": 448,
+        "scale": 0.4129032258064516,
+        "baseline": 480
+      },
+      "sourceSha256": "02466c2c623cca695f612473fa446be1ea6164718b718e13aac7c42ebb210a1f",
+      "outputSha256": "ed15fc78f30ad3af16eb77ec6c3aea4f9a84ad3593ae87b436577e25b5a1126d"
+    },
+    {
+      "status": "403",
+      "source": "artwork/keatingbot-v1/status-403.png",
+      "path": "/brand/bot-status-v1/403.png",
+      "width": 512,
+      "height": 512,
+      "cleanup": "existing-alpha-boundary-cleaned",
+      "removedPixels": 0,
+      "erodedPixels": 21829,
+      "erosionSteps": 2,
+      "alphaTrim": {
+        "left": 267,
+        "top": 76,
+        "width": 661,
+        "height": 1069
+      },
+      "geometry": {
+        "left": 118,
+        "top": 32,
+        "width": 277,
+        "height": 448,
+        "scale": 0.41908325537885877,
+        "baseline": 480
+      },
+      "sourceSha256": "e90e52797d7b994a8e809a7b497357ba10366bef6d183afe6311888d21edb2fc",
+      "outputSha256": "148ea71d76207b763ad772ef3e589a238d1e740da506f89503632c1f9b930148"
+    },
+    {
+      "status": "500",
+      "source": "artwork/keatingbot-v1/status-500.png",
+      "path": "/brand/bot-status-v1/500.png",
+      "width": 512,
+      "height": 512,
+      "cleanup": "existing-alpha-boundary-cleaned",
+      "removedPixels": 0,
+      "erodedPixels": 23369,
+      "erosionSteps": 2,
+      "alphaTrim": {
+        "left": 306,
+        "top": 114,
+        "width": 731,
+        "height": 1014
+      },
+      "geometry": {
+        "left": 95,
+        "top": 32,
+        "width": 323,
+        "height": 448,
+        "scale": 0.4418145956607495,
+        "baseline": 480
+      },
+      "sourceSha256": "c4cd35390fb09b7aee72c61b1f31e62726e251863cee743d65b1eb4de2a831d7",
+      "outputSha256": "babb67f787f031d39e903a61f80ff9a1c0c8334225ad07b5d206462ec3e1dcf0"
+    }
+  ],
+  "frames": [
+    {
+      "name": "head-idle",
+      "source": "artwork/keatingbot-v1/head-idle.png",
+      "sourceRegion": null,
+      "output": "/brand/bot-frames-v1/head-idle.png",
+      "sourceSize": {
+        "width": 1254,
+        "height": 1254
+      },
+      "cleanup": "preserved-existing-alpha",
+      "removedPixels": 0,
+      "alphaTrim": {
+        "left": 196,
+        "top": 247,
+        "width": 872,
+        "height": 754
+      },
+      "greenScreenBounds": {
+        "left": 416,
+        "top": 526,
+        "width": 440,
+        "height": 328
+      },
+      "normalization": "green-screen-center",
+      "geometry": {
+        "left": 15,
+        "top": 14,
+        "width": 224,
+        "height": 194,
+        "scale": 0.25688073394495414,
+        "baseline": null
+      }
+    },
+    {
+      "name": "head-blink",
+      "source": "artwork/keatingbot-v1/head-blink.png",
+      "sourceRegion": null,
+      "output": "/brand/bot-frames-v1/head-blink.png",
+      "sourceSize": {
+        "width": 1254,
+        "height": 1254
+      },
+      "cleanup": "edge-connected-neutral-white",
+      "removedPixels": 1108793,
+      "erodedPixels": 3924,
+      "erosionSteps": 1,
+      "alphaTrim": {
+        "left": 150,
+        "top": 214,
+        "width": 949,
+        "height": 809
+      },
+      "greenScreenBounds": {
+        "left": 386,
+        "top": 511,
+        "width": 480,
+        "height": 364
+      },
+      "normalization": "green-screen-center",
+      "geometry": {
+        "left": 16,
+        "top": 15,
+        "width": 224,
+        "height": 191,
+        "scale": 0.23603793466807166,
+        "baseline": null
+      }
+    },
+    {
+      "name": "head-listening",
+      "source": "artwork/keatingbot-v1/head-listening.png",
+      "sourceRegion": null,
+      "output": "/brand/bot-frames-v1/head-listening.png",
+      "sourceSize": {
+        "width": 1254,
+        "height": 1254
+      },
+      "cleanup": "edge-connected-neutral-white",
+      "removedPixels": 1042972,
+      "erodedPixels": 3456,
+      "erosionSteps": 1,
+      "alphaTrim": {
+        "left": 119,
+        "top": 168,
+        "width": 1015,
+        "height": 819
+      },
+      "greenScreenBounds": {
+        "left": 370,
+        "top": 488,
+        "width": 511,
+        "height": 382
+      },
+      "normalization": "green-screen-center",
+      "geometry": {
+        "left": 16,
+        "top": 15,
+        "width": 224,
+        "height": 181,
+        "scale": 0.2206896551724138,
+        "baseline": null
+      }
+    },
+    {
+      "name": "head-thinking",
+      "source": "artwork/keatingbot-v1/head-thinking.png",
+      "sourceRegion": null,
+      "output": "/brand/bot-frames-v1/head-thinking.png",
+      "sourceSize": {
+        "width": 1254,
+        "height": 1254
+      },
+      "cleanup": "edge-connected-neutral-white",
+      "removedPixels": 1056995,
+      "erodedPixels": 3590,
+      "erosionSteps": 1,
+      "alphaTrim": {
+        "left": 128,
+        "top": 177,
+        "width": 986,
+        "height": 855
+      },
+      "greenScreenBounds": {
+        "left": 377,
+        "top": 491,
+        "width": 495,
+        "height": 386
+      },
+      "normalization": "green-screen-center",
+      "geometry": {
+        "left": 15,
+        "top": 13,
+        "width": 224,
+        "height": 194,
+        "scale": 0.22718052738336714,
+        "baseline": null
+      }
+    },
+    {
+      "name": "head-speaking",
+      "source": "artwork/keatingbot-v1/head-speaking.png",
+      "sourceRegion": null,
+      "output": "/brand/bot-frames-v1/head-speaking.png",
+      "sourceSize": {
+        "width": 1254,
+        "height": 1254
+      },
+      "cleanup": "edge-connected-neutral-white",
+      "removedPixels": 988548,
+      "erodedPixels": 4515,
+      "erosionSteps": 1,
+      "alphaTrim": {
+        "left": 94,
+        "top": 148,
+        "width": 1057,
+        "height": 912
+      },
+      "greenScreenBounds": {
+        "left": 359,
+        "top": 490,
+        "width": 532,
+        "height": 392
+      },
+      "normalization": "green-screen-center",
+      "geometry": {
+        "left": 15,
+        "top": 14,
+        "width": 224,
+        "height": 193,
+        "scale": 0.2119205298013245,
+        "baseline": null
+      }
+    },
+    {
+      "name": "head-success",
+      "source": "artwork/keatingbot-v1/head-success.png",
+      "sourceRegion": null,
+      "output": "/brand/bot-frames-v1/head-success.png",
+      "sourceSize": {
+        "width": 1254,
+        "height": 1254
+      },
+      "cleanup": "edge-connected-neutral-white",
+      "removedPixels": 1040069,
+      "erodedPixels": 3764,
+      "erosionSteps": 1,
+      "alphaTrim": {
+        "left": 120,
+        "top": 162,
+        "width": 1011,
+        "height": 871
+      },
+      "greenScreenBounds": {
+        "left": 371,
+        "top": 485,
+        "width": 510,
+        "height": 376
+      },
+      "normalization": "green-screen-center",
+      "geometry": {
+        "left": 16,
+        "top": 15,
+        "width": 224,
+        "height": 193,
+        "scale": 0.2215628090999011,
+        "baseline": null
+      }
+    },
+    {
+      "name": "body-rest",
+      "source": "artwork/keatingbot-v1/body-rest.png",
+      "sourceRegion": null,
+      "output": "/brand/bot-frames-v1/body-rest.png",
+      "sourceSize": {
+        "width": 1254,
+        "height": 1254
+      },
+      "cleanup": "edge-connected-neutral-white",
+      "removedPixels": 1190230,
+      "erodedPixels": 5586,
+      "erosionSteps": 1,
+      "alphaTrim": {
+        "left": 325,
+        "top": 100,
+        "width": 583,
+        "height": 1026
+      },
+      "greenScreenBounds": {
+        "left": 489,
+        "top": 253,
+        "width": 283,
+        "height": 212
+      },
+      "normalization": "screen-center-and-feet-baseline",
+      "geometry": {
+        "left": 61,
+        "top": 12,
+        "width": 127,
+        "height": 224,
+        "scale": 0.21832358674463936,
+        "baseline": 236
+      }
+    },
+    {
+      "name": "body-wave",
+      "source": "artwork/keatingbot-v1/body-wave.png",
+      "sourceRegion": null,
+      "output": "/brand/bot-frames-v1/body-wave.png",
+      "sourceSize": {
+        "width": 1254,
+        "height": 1254
+      },
+      "cleanup": "edge-connected-neutral-white",
+      "removedPixels": 1184829,
+      "erodedPixels": 5917,
+      "erosionSteps": 1,
+      "alphaTrim": {
+        "left": 183,
+        "top": 103,
+        "width": 747,
+        "height": 1024
+      },
+      "greenScreenBounds": {
+        "left": 519,
+        "top": 249,
+        "width": 263,
+        "height": 202
+      },
+      "normalization": "screen-center-and-feet-baseline",
+      "geometry": {
+        "left": 26,
+        "top": 12,
+        "width": 163,
+        "height": 224,
+        "scale": 0.21875,
+        "baseline": 236
+      }
+    },
+    {
+      "name": "body-listen",
+      "source": "artwork/keatingbot-v1/body-listen.png",
+      "sourceRegion": null,
+      "output": "/brand/bot-frames-v1/body-listen.png",
+      "sourceSize": {
+        "width": 1254,
+        "height": 1254
+      },
+      "cleanup": "edge-connected-neutral-white",
+      "removedPixels": 1200633,
+      "erodedPixels": 4634,
+      "erosionSteps": 1,
+      "alphaTrim": {
+        "left": 283,
+        "top": 119,
+        "width": 645,
+        "height": 994
+      },
+      "greenScreenBounds": {
+        "left": 527,
+        "top": 269,
+        "width": 265,
+        "height": 212
+      },
+      "normalization": "screen-center-and-feet-baseline",
+      "geometry": {
+        "left": 43,
+        "top": 12,
+        "width": 145,
+        "height": 224,
+        "scale": 0.22535211267605634,
+        "baseline": 236
+      }
+    },
+    {
+      "name": "body-work",
+      "source": "artwork/keatingbot-v1/body-work.png",
+      "sourceRegion": null,
+      "output": "/brand/bot-frames-v1/body-work.png",
+      "sourceSize": {
+        "width": 1254,
+        "height": 1254
+      },
+      "cleanup": "edge-connected-neutral-white",
+      "removedPixels": 1175780,
+      "erodedPixels": 4689,
+      "erosionSteps": 1,
+      "alphaTrim": {
+        "left": 316,
+        "top": 64,
+        "width": 607,
+        "height": 1070
+      },
+      "greenScreenBounds": {
+        "left": 512,
+        "top": 220,
+        "width": 263,
+        "height": 207
+      },
+      "normalization": "screen-center-and-feet-baseline",
+      "geometry": {
+        "left": 59,
+        "top": 12,
+        "width": 127,
+        "height": 224,
+        "scale": 0.20934579439252338,
+        "baseline": 236
+      }
+    },
+    {
+      "name": "body-cheer",
+      "source": "artwork/keatingbot-v1/body-cheer.png",
+      "sourceRegion": null,
+      "output": "/brand/bot-frames-v1/body-cheer.png",
+      "sourceSize": {
+        "width": 1254,
+        "height": 1254
+      },
+      "cleanup": "edge-connected-neutral-white",
+      "removedPixels": 1179913,
+      "erodedPixels": 6145,
+      "erosionSteps": 1,
+      "alphaTrim": {
+        "left": 139,
+        "top": 139,
+        "width": 970,
+        "height": 989
+      },
+      "greenScreenBounds": {
+        "left": 502,
+        "top": 279,
+        "width": 265,
+        "height": 199
+      },
+      "normalization": "screen-center-and-feet-baseline",
+      "geometry": {
+        "left": 16,
+        "top": 12,
+        "width": 220,
+        "height": 224,
+        "scale": 0.22649140546006066,
+        "baseline": 236
+      }
+    },
+    {
+      "name": "body-hop",
+      "source": "artwork/keatingbot-v1/body-hop.png",
+      "sourceRegion": null,
+      "output": "/brand/bot-frames-v1/body-hop.png",
+      "sourceSize": {
+        "width": 1254,
+        "height": 1254
+      },
+      "cleanup": "edge-connected-neutral-white",
+      "removedPixels": 1206982,
+      "erodedPixels": 5443,
+      "erosionSteps": 1,
+      "alphaTrim": {
+        "left": 158,
+        "top": 122,
+        "width": 939,
+        "height": 980
+      },
+      "greenScreenBounds": {
+        "left": 518,
+        "top": 256,
+        "width": 267,
+        "height": 197
+      },
+      "normalization": "screen-center-and-feet-baseline",
+      "geometry": {
+        "left": 15,
+        "top": 0,
+        "width": 215,
+        "height": 224,
+        "scale": 0.22857142857142856,
+        "baseline": 224
+      }
+    }
+  ]
+}

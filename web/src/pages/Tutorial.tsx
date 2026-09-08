@@ -1547,13 +1547,13 @@ export function Tutorial() {
                   <h3 className={styles.h3Tight}>Fine-tune from Keating data</h3>
                   <p className={styles.paraMb3}>
                     Keating can export lesson artifacts and tutoring sessions as ChatML or Alpaca
-                    JSONL. Use the CLI or the Usage page in the web app.
+                    JSONL. Use the CLI or the Training data page in the web app.
                   </p>
                   <div className={cx("terminal-window", styles.terminalNoMb)}>
                     <p className={styles.textGreen}># CLI export</p>
                     <p className={styles.textCream}>keating export --finetune --source=all --format=both</p>
                     <p className={cx(styles.textGreen, styles.mt3)}># Web export</p>
-                    <p className={styles.textCream}>Open Usage → Fine-tune export → Export fine-tune data</p>
+                    <p className={styles.textCream}>Open Training data → Prepare dataset → Download dataset ZIP</p>
                   </div>
                   <TutorialShot
                     src="/tutorial/usage-training-export.png"

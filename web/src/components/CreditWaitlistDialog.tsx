@@ -1,20 +1,13 @@
-import { useEffect, useState } from "react";
-import { Clock, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { usePostHog } from "@posthog/react";
-import { css, cx } from "../../styled-system/css";
-import { iconButton, primaryButton } from "../../styled-system/recipes";
-import {
-	DEFAULT_NOTORGANIC_PACK_ID,
-	getNotOrganicPack,
-	type NotOrganicPack,
-	type NotOrganicPackId,
-} from "../notorganic-provider/packs";
+import { DEFAULT_NOTORGANIC_PACK_ID, getNotOrganicPack, type NotOrganicPack, type NotOrganicPackId } from "../notorganic-provider/packs";
+import "./credit-waitlist.css";
 
 const CHANGE_EVENT = "keating:credit-waitlist-changed";
-export const CREDIT_WAITLIST_SURVEY_NAME = "Keating hosted credits waitlist";
+
 
 export type PricingWaitlistVariant = "control" | "test";
-export type CreditWaitlistPanelState = "prompt" | "loading" | "survey_unavailable";
+export type CreditWaitlistPanelState = "prompt" | "loading" | "success" | "error";
 
 type CreditWaitlistRequest = {
 	id: string;
@@ -32,11 +25,7 @@ function emitChange() {
 	window.dispatchEvent(new CustomEvent(CHANGE_EVENT));
 }
 
-/**
- * Hosted credit checkout is not purchasable yet: the deployment has no durable
- * product-session adapter, so the provider rejects every checkout attempt. Until
- * that exists, purchase intent is routed to a waitlist instead of a dead button.
- */
+/** Collect launch interest when hosted checkout is unavailable on this deployment. */
 export function promptCreditWaitlist(
 	packId: NotOrganicPackId = DEFAULT_NOTORGANIC_PACK_ID,
 	pricingVariant: PricingWaitlistVariant = "control",
@@ -52,195 +41,65 @@ export function closeCreditWaitlist(): void {
 	emitChange();
 }
 
-export function CreditWaitlistPanel({
-	pack,
-	state,
-	onJoin,
-	onDismiss,
-}: {
-	pack: NotOrganicPack;
-	state: CreditWaitlistPanelState;
-	onJoin(): void;
-	onDismiss(): void;
+export function CreditWaitlistPanel({ pack, state, message, onJoin, onDismiss }: {
+  pack: NotOrganicPack; state: CreditWaitlistPanelState; message?: string;
+  onJoin(email: string, website: string): void; onDismiss(): void;
 }) {
-	const surveyUnavailable = state === "survey_unavailable";
-
-	return (
-		<div
-			role="dialog"
-			aria-modal="true"
-			aria-labelledby="credit-waitlist-title"
-			className={css({ width: "100%", maxWidth: "28rem", borderRadius: "0.5rem", border: "1px solid var(--border)", backgroundColor: "var(--background)", boxShadow: "var(--shadow-xl)" })}
-		>
-			<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", borderBottom: "1px solid var(--border)", paddingInline: "1rem", paddingBlock: "0.75rem" })}>
-				<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
-					<Clock size={16} className={css({ color: "var(--primary)" })} />
-					<h2 id="credit-waitlist-title" className={css({ fontSize: "0.875rem", fontWeight: 600 })}>
-						{surveyUnavailable ? "Waitlist form unavailable" : "Not available yet"}
-					</h2>
-				</div>
-				<button
-					type="button"
-					className={cx(iconButton({ size: "md", tone: "ghost" }), css({ _hover: { color: "var(--foreground)" } }))}
-					onClick={onDismiss}
-					aria-label="Close"
-				>
-					<X size={16} />
-				</button>
-			</div>
-
-			<div className={css({ display: "flex", flexDirection: "column", gap: "0.75rem", padding: "1rem" })}>
-				{surveyUnavailable ? (
-					<>
-						<p className={css({ fontSize: "0.875rem", fontWeight: 600 })}>
-							Your interest was recorded, but your email was not.
-						</p>
-						<p className={css({ fontSize: "0.8125rem", color: "var(--muted-foreground)" })}>
-							The notification form could not be loaded, so you are not yet on the
-							email waitlist. Try again later. Keating remains free with your own API
-							keys.
-						</p>
-					</>
-				) : (
-					<>
-						<p className={css({ fontSize: "0.875rem" })}>
-							The <strong>{pack.label}</strong> pack (${pack.priceUsd}) can&apos;t be
-							bought yet — hosted credit checkout isn&apos;t live.
-						</p>
-						<p className={css({ fontSize: "0.8125rem", color: "var(--muted-foreground)" })}>
-							Open the short waitlist form and leave an email address if you want a
-							launch notification. Keating is free today with your own API keys.
-						</p>
-					</>
-				)}
-
-				<div className={css({ display: "flex", justifyContent: "flex-end", gap: "0.5rem", paddingTop: "0.25rem" })}>
-					<button
-						type="button"
-						className={cx("dialog-compact-button", css({ display: "inline-flex", height: "2.25rem", alignItems: "center", borderRadius: "0.375rem", backgroundColor: "var(--secondary)", paddingInline: "0.75rem", fontSize: "0.875rem", fontWeight: 500 }))}
-						onClick={onDismiss}
-					>
-						{surveyUnavailable ? "Close" : "Not now"}
-					</button>
-					<button
-						type="button"
-						className={cx("dialog-compact-button", primaryButton(), css({ paddingInline: "0.75rem" }))}
-						onClick={onJoin}
-						disabled={state === "loading"}
-					>
-						{state === "loading"
-							? "Opening form…"
-							: surveyUnavailable
-								? "Try again"
-								: "Open waitlist form"}
-					</button>
-				</div>
-			</div>
-		</div>
-	);
+  const [email, setEmail] = useState("");
+  const [consent, setConsent] = useState(false);
+  const [website, setWebsite] = useState("");
+  const panel = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const prior = document.activeElement as HTMLElement | null;
+    panel.current?.querySelector<HTMLInputElement>("input[type=email]")?.focus();
+    return () => prior?.focus();
+  }, []);
+  return <div ref={panel} role="dialog" aria-modal="true" aria-labelledby="credit-waitlist-title" className="credit-waitlist" onKeyDown={event => {
+    if (event.key === "Escape") onDismiss();
+    if (event.key === "Tab") {
+      const items = panel.current?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled):not([tabindex="-1"]), a[href]');
+      if (!items?.length) return;
+      const first = items[0]; const last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    }
+  }}>
+    <header><h2 id="credit-waitlist-title">{state === "success" ? "You're on the list" : "Get the launch email"}</h2><button type="button" onClick={onDismiss} aria-label="Close waitlist">×</button></header>
+    {state === "success" ? <div className="credit-waitlist__content"><p role="status">{message || "Your email is saved. We'll let you know when hosted credits are ready."}</p><button type="button" onClick={onDismiss}>Done</button></div> :
+      <form className="credit-waitlist__content" onSubmit={event => { event.preventDefault(); if (consent && state !== "loading") onJoin(email, website); }}>
+        <p>The <strong>{pack.label}</strong> pack (${pack.priceUsd}) isn't available to buy yet. Leave your email to hear when hosted credits launch. Nothing will be charged.</p>
+        <label>Email address<input type="email" name="email" autoComplete="email" required maxLength={254} value={email} onChange={event => setEmail(event.target.value)} disabled={state === "loading"} /></label>
+        <label className="credit-waitlist__honeypot" aria-hidden="true">Website<input name="website" tabIndex={-1} autoComplete="off" value={website} onChange={event => setWebsite(event.target.value)} /></label>
+        <label className="credit-waitlist__consent"><input type="checkbox" required checked={consent} onChange={event => setConsent(event.target.checked)} disabled={state === "loading"} /><span>Email me about the Keating hosted credits launch. You can unsubscribe from launch emails.</span></label>
+        {state === "error" && <p role="alert" className="credit-waitlist__error">{message || "Your email couldn't be saved. Please try again."}</p>}
+        <button type="submit" className="credit-waitlist__submit" disabled={!consent || state === "loading"}>{state === "loading" ? "Saving your email…" : "Join the email waitlist"}</button>
+        <p className="credit-waitlist__note">Keating is free today with your own API keys.</p>
+      </form>}
+  </div>;
 }
 
 export function CreditWaitlistDialog() {
-	const posthog = usePostHog();
-	const [request, setRequest] = useState(activeRequest);
-	const [state, setState] = useState<CreditWaitlistPanelState>("prompt");
-
-	useEffect(() => {
-		const sync = () => {
-			setRequest(activeRequest);
-			setState("prompt");
-		};
-		window.addEventListener(CHANGE_EVENT, sync);
-		return () => window.removeEventListener(CHANGE_EVENT, sync);
-	}, []);
-
-	const pack = request ? getNotOrganicPack(request.packId) : undefined;
-	const requestId = request?.id;
-
-	useEffect(() => {
-		if (!requestId || !pack) return;
-		posthog?.capture("credit_waitlist_prompt_shown", {
-			pack_id: pack.id,
-			price_usd: pack.priceUsd,
-			pricing_cta_variant: request.pricingVariant,
-		});
-	}, [requestId]);
-
-	if (!request || !pack) return null;
-
-	const dismiss = () => {
-		posthog?.capture("credit_waitlist_dismissed", {
-			pack_id: pack.id,
-			price_usd: pack.priceUsd,
-			pricing_cta_variant: request.pricingVariant,
-			survey_state: state,
-		});
-		closeCreditWaitlist();
-	};
-
-	const join = () => {
-		setState("loading");
-		posthog?.capture("credit_waitlist_joined", {
-			pack_id: pack.id,
-			price_usd: pack.priceUsd,
-			pricing_cta_variant: request.pricingVariant,
-		});
-
-		if (!posthog) {
-			setState("survey_unavailable");
-			return;
-		}
-
-		let settled = false;
-		const unavailable = () => {
-			if (settled) return;
-			settled = true;
-			setState("survey_unavailable");
-			posthog.capture("credit_waitlist_survey_unavailable", {
-				pack_id: pack.id,
-				price_usd: pack.priceUsd,
-				pricing_cta_variant: request.pricingVariant,
-			});
-		};
-		const timeout = window.setTimeout(unavailable, 4_000);
-
-		posthog.getSurveys((surveys) => {
-			if (settled) return;
-			const survey = surveys.find((candidate) => candidate.name === CREDIT_WAITLIST_SURVEY_NAME);
-			if (!survey) {
-				window.clearTimeout(timeout);
-				unavailable();
-				return;
-			}
-
-			settled = true;
-			window.clearTimeout(timeout);
-			closeCreditWaitlist();
-			window.setTimeout(() => {
-				posthog.displaySurvey(survey.id, {
-					displayType: "popover",
-					ignoreConditions: true,
-					ignoreDelay: true,
-					properties: {
-						pack_id: pack.id,
-						price_usd: pack.priceUsd,
-						pricing_cta_variant: request.pricingVariant,
-					},
-				});
-			}, 0);
-		}, true);
-	};
-
-	return (
-		<div
-			className={css({ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "color-mix(in srgb, var(--background) 70%, transparent)", padding: "1rem", backdropFilter: "blur(4px)" })}
-		>
-			<CreditWaitlistPanel
-				pack={pack}
-				state={state}
-				onJoin={join}
-				onDismiss={dismiss}
-			/>
-		</div>
-	);
+  const posthog = usePostHog();
+  const [request, setRequest] = useState(activeRequest);
+  const [state, setState] = useState<CreditWaitlistPanelState>("prompt");
+  const [message, setMessage] = useState("");
+  useEffect(() => { const sync = () => { setRequest(activeRequest); setState("prompt"); setMessage(""); }; window.addEventListener(CHANGE_EVENT, sync); return () => window.removeEventListener(CHANGE_EVENT, sync); }, []);
+  const pack = request ? getNotOrganicPack(request.packId) : undefined;
+  useEffect(() => { if (request && pack) posthog?.capture("credit_waitlist_prompt_shown", { pack_id: pack.id, pricing_cta_variant: request.pricingVariant }); }, [request?.id]);
+  if (!request || !pack) return null;
+  async function join(email: string, website: string) {
+    if (!request || !pack) return;
+    const id = request.id;
+    setState("loading");
+    try {
+      const response = await fetch("/api/credit-waitlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, packId: pack.id, consent: true, website }), signal: AbortSignal.timeout(90_000) });
+      const result = await response.json();
+      if (!response.ok || result.joined !== true) throw new Error(response.status === 429 ? "Too many attempts. Please try again in 15 minutes." : response.status === 409 ? "This address has opted out of Keating emails. Use another address or update your email preferences." : "Your email couldn't be saved. Please try again shortly.");
+      if (activeRequest?.id !== id) return;
+      setState("success");
+      setMessage(result.confirmation === "unavailable" ? "Your email is saved on the waitlist. The confirmation email couldn't be sent, but your launch notification registration is complete." : result.confirmation === "already_registered" ? "Your email is on the waitlist. We'll let you know when hosted credits are ready." : "Your email is saved. A confirmation email has been sent; we'll let you know when hosted credits are ready.");
+      posthog?.capture("credit_waitlist_joined", { pack_id: pack.id, pricing_cta_variant: request.pricingVariant });
+    } catch (error) { if (activeRequest?.id !== id) return; setState("error"); setMessage(error instanceof Error && error.name !== "TimeoutError" ? error.message : "The request timed out. Please try again; duplicate signups won't send another confirmation."); }
+  }
+  return <div className="credit-waitlist-overlay"><CreditWaitlistPanel key={request.id} pack={pack} state={state} message={message} onJoin={(email, website) => void join(email, website)} onDismiss={closeCreditWaitlist} /></div>;
 }

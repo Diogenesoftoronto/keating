@@ -108,6 +108,7 @@ describe("Not Organic browser resource client", () => {
 		const calls: string[] = [];
 		const fetcher = (async (input, init) => {
 			calls.push(`${init?.method ?? "GET"} ${String(input)}`);
+			if (String(input).endsWith("/checkout")) expect(JSON.parse(String(init?.body))).toMatchObject({ pack_id: "keating_pack_25" });
 			return Response.json({ object: "list", data: [] });
 		}) as typeof fetch;
 

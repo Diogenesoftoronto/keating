@@ -10,7 +10,7 @@ export function Footer() {
           <div className="foot-brand">
 			<img src="/brand/logo-lockup-hd.png" alt="Keating" />
             <p>
-              <T>The hyperteacher. Socratic reconstruction for people who&apos;d rather understand than memorize.</T>
+              <T>An AI tutor for explanations, practice, and review.</T>
             </p>
           </div>
           <div className="foot-col">
@@ -23,10 +23,10 @@ export function Footer() {
                 <Link to="/tutorial"><T>Tutorial</T></Link>
               </li>
               <li>
-                <a href="/#manifesto"><T>Manifesto</T></a>
+                <Link to="/chat"><T>Open Keating</T></Link>
               </li>
               <li>
-                <a href="/#loop"><T>Harness</T></a>
+                <Link to="/live"><T>Live sessions</T></Link>
               </li>
               <li>
                 <Link to="/bench"><T>Bench</T></Link>
@@ -85,23 +85,19 @@ export function Footer() {
         </div>
         <div className="foot-base">
           <span>
-            © 2026 keating.help — think_for_yourself // v{import.meta.env.APP_VERSION} //
-            BUILT_ON_PI //{" "}
+            © 2026 Keating · v{import.meta.env.APP_VERSION} ·{" "}
             <a
               href="https://www.mozilla.org/en-US/MPL/2.0/"
               target="_blank"
               rel="noreferrer"
             >
-              MPL_2.0
+              MPL 2.0
             </a>
           </span>
           <span className="foot-legal-links" aria-label="Legal links">
             <Link to="/terms"><T>Terms of Service</T></Link>
             <span aria-hidden="true">//</span>
             <Link to="/privacy"><T>Privacy Policy</T></Link>
-          </span>
-          <span>
-            <T>system status: <span className="ok">online</span> // uptime: <span className="ok">optimal</span></T>
           </span>
         </div>
       </div>

@@ -1,0 +1,65 @@
+.landing-page .landing-wrap { width: min(1240px, calc(100% - 80px)); margin-inline: auto; }
+.landing-page .landing-kicker { margin: 0 0 18px; font-size: 11px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--accent-dim); }
+.landing-page h1 { margin: 0; font-family: var(--mono-display); font-size: clamp(48px, 7.2vw, 100px); font-weight: 700; line-height: 1.05; letter-spacing: -.065em; text-wrap: balance; }
+.landing-page h2 { margin: 0; font-family: var(--mono-display); font-size: clamp(28px, 3.3vw, 44px); font-weight: 700; line-height: 1.15; letter-spacing: -.045em; text-wrap: balance; }
+.landing-page .landing-overload-act { overflow: clip; background: var(--paper); }
+.landing-page .landing-opening { padding-top: clamp(38px, 5vw, 70px); }
+.landing-page .landing-opening > h1 { transform: rotate(-2deg); transform-origin: left center; }
+.landing-page .landing-opening-note { margin: 24px 0 0; font-size: 14px; color: var(--ink-soft); line-height: 1.7; }
+.landing-page .landing-frustration { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); align-items: center; gap: 48px; margin-block: 16px 64px; }
+.landing-page .landing-frustration > img { display: block; width: min(100%, 420px); height: auto; aspect-ratio: 1; object-fit: contain; justify-self: center; mix-blend-mode: multiply; transform: rotate(-3deg); }
+.landing-page .landing-frustration figcaption { max-width: 550px; transform: rotate(1deg); }
+.landing-page .landing-frustration-scribble { display: inline-block; font-size: 13px; line-height: 1.7; margin: 0 0 22px; color: var(--ink-soft); padding-bottom: 4px; border-bottom: 2px solid #ad5948; transform: rotate(-3deg); }
+.landing-page .landing-frustration p { margin: 22px 0 0; color: var(--ink-soft); font-size: 14px; line-height: 1.85; max-width: 36ch; }
+.landing-page .landing-response { position: relative; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--card); padding-block: 68px; }
+.landing-page .landing-response-grid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: clamp(32px, 5vw, 76px); align-items: start; }
+.landing-page .landing-response-copy h2 span { color: var(--accent-dim); }
+.landing-page .landing-response-copy > p:not(.landing-kicker) { margin: 22px 0 0; max-width: 45ch; color: var(--ink-soft); font-size: 14px; line-height: 1.85; }
+.landing-page .landing-response-copy .landing-response-invitation { color: var(--ink); font-size: 12px; font-weight: 600; }
+.landing-page .landing-response-invitation span { display: inline-block; margin-left: 8px; font-size: 20px; }
+.landing-page .landing-response-copy .landing-teacher-scene { height: 260px; margin-block: 18px 8px; }
+.landing-page .landing-response-copy .landing-teacher-scene__bot { height: 220px; }
+.landing-page .landing-response-example { min-width: 0; }
+.landing-page .landing-practice__header h2 { font-size: 24px; }
+.landing-page .landing-response .landing-practice { border-color: color-mix(in srgb, var(--accent-dim) 45%, var(--line)); box-shadow: 0 12px 36px color-mix(in srgb, var(--ink) 5%, transparent); }
+.landing-page .landing-deeper { margin-top: 12px; font-size: 12px; line-height: 1.8; }
+.landing-page .landing-deeper details { border-top: 1px solid var(--line); }
+.landing-page .landing-deeper summary { cursor: pointer; padding: 14px 0; min-height: 44px; font-weight: 600; }
+.landing-page .landing-deeper p { margin: 0 0 16px; color: var(--ink-soft); }
+.landing-page .landing-deeper details > div { display: flex; flex-wrap: wrap; gap: 12px 24px; padding-bottom: 14px; }
+.landing-page .landing-deeper a { color: var(--accent-dim); text-underline-offset: 4px; }
+.landing-page main :is(a, button, input, select, summary):focus-visible { outline: 3px solid var(--accent-dim); outline-offset: 5px; }
+@media (max-width: 900px) {
+  .landing-page .landing-wrap { width: min(640px, calc(100% - 48px)); }
+  .landing-page .landing-frustration { gap: 24px; margin-block: 16px 44px; }
+  .landing-page .landing-frustration h2 { font-size: 28px; }
+  .landing-page .landing-response { padding-block: 44px; }
+  .landing-page .landing-response-grid { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .landing-page .landing-response-copy .landing-teacher-scene { display: none; }
+  .landing-page .landing-deeper { margin-top: 24px; }
+  .landing-page .landing-response-invitation span { transform: rotate(90deg); }
+}
+@media (max-width: 520px) {
+  .landing-page .landing-wrap { width: calc(100% - 40px); }
+  .landing-page .landing-frustration { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .landing-page .landing-frustration > img { width: 240px; }
+  .landing-page .landing-frustration figcaption { transform: none; }
+  .landing-page .landing-frustration-scribble { margin-bottom: 14px; }
+  .landing-page .landing-frustration p { margin-top: 16px; }
+  .landing-page .landing-response .landing-kicker { font-size: 10px; }
+  .landing-page .foot-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 20px; }
+  .landing-page .foot-brand { grid-column: 1 / -1; }
+}
+html.dark .landing-page .landing-frustration > img { mix-blend-mode: normal; border-radius: 12px; }
+@media (prefers-reduced-motion: reduce) {
+  .landing-page .landing-opening > h1, .landing-page .landing-frustration > img, .landing-page .landing-frustration figcaption { transform: none; }
+}
+html[data-motion="reduce"] .landing-page .landing-opening > h1, html[data-motion="reduce"] .landing-page .landing-frustration > img, html[data-motion="reduce"] .landing-page .landing-frustration figcaption { transform: none; }
+
+.landing-page .landing-example-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.landing-page .landing-example-picker button { flex: 1 1 auto; min-height: 44px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 5px; background: transparent; color: var(--ink-soft); font: inherit; font-size: 12px; cursor: pointer; }
+.landing-page .landing-example-picker button[aria-pressed="true"] { color: var(--accent-dim); background: var(--green-wash); border-color: var(--accent-dim); font-weight: 700; }
+.landing-page .landing-example-picker button:hover { background: var(--green-wash); }
+
+.landing-page .landing-opening > h1 { font-size: clamp(48px, 7.2vw, 100px); line-height: 1.05; letter-spacing: -.065em; }
+.landing-page #seen-this-before, .landing-page #keating-lesson { scroll-margin-top: 76px; }

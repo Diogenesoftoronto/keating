@@ -32,17 +32,17 @@ describe("credit waitlist", () => {
 		});
 	});
 
-	test("never claims an email was captured when the survey is unavailable", () => {
+	test("never claims an email was captured when registration fails", () => {
 		const html = renderToStaticMarkup(
 			<CreditWaitlistPanel
 				pack={NOTORGANIC_PACKS[0]}
-				state="survey_unavailable"
+				state="error"
 				onJoin={() => {}}
 				onDismiss={() => {}}
 			/>,
 		);
-		expect(html).toContain("your email was not");
-		expect(html).toContain("not yet on the email waitlist");
+		expect(html).toContain("Your email couldn&#x27;t be saved");
+		expect(html).toContain("Join the email waitlist");
 		expect(html).not.toContain("You&#x27;re on the list");
 	});
 });

@@ -27,6 +27,7 @@ export interface NotOrganicProviderSession {
 	accessToken: string;
 	expiresAt: number;
 	scope: string;
+	returnTo?: string;
 }
 
 interface AuthorizationTransaction {
@@ -34,6 +35,14 @@ interface AuthorizationTransaction {
 	verifier: string;
 	redirectUri: string;
 	createdAt: number;
+	returnTo?: string;
+}
+
+export function safeAuthorizationReturnTo(value: string | undefined): string {
+	if (!value?.startsWith("/") || value.startsWith("//")) return "/pricing";
+	const url = new URL(value, "https://keating.help");
+	return url.origin === "https://keating.help" && ["/chat", "/pricing"].includes(url.pathname)
+		? `${url.pathname}${url.search}` : "/pricing";
 }
 
 export class NotOrganicPublicClientError extends Error {}
@@ -174,7 +183,7 @@ export function publicClientConfig(env: Record<string, string | undefined> = pub
 		clientId,
 		redirectUri,
 		scope: env.VITE_NOTORGANIC_SCOPE
-			?? "wallet:read usage:read billing:checkout infer:balanced realtime:connect evolution:read evolution:write evolution:execute",
+			?? "wallet:read usage:read billing:checkout infer:balanced realtime:connect",
 	};
 }
 
@@ -192,7 +201,7 @@ export class NotOrganicPublicClient {
 	async authorizationUrl(returnTo = "/pricing"): Promise<string> {
 		const verifier = randomBase64Url();
 		const state = randomBase64Url();
-		writeJson(TRANSACTION_KEY, { state, verifier, redirectUri: this.config.redirectUri, createdAt: Date.now() } satisfies AuthorizationTransaction);
+		writeJson(TRANSACTION_KEY, { state, verifier, redirectUri: this.config.redirectUri, createdAt: Date.now(), returnTo: safeAuthorizationReturnTo(returnTo) } satisfies AuthorizationTransaction);
 		const url = new URL(this.config.authorizationUrl);
 		url.searchParams.set("client_id", this.config.clientId);
 		url.searchParams.set("redirect_uri", this.config.redirectUri);
@@ -201,7 +210,7 @@ export class NotOrganicPublicClient {
 		url.searchParams.set("code_challenge", await sha256Base64Url(verifier));
 		url.searchParams.set("scope", this.config.scope);
 		url.searchParams.set("state", state);
-		url.searchParams.set("return_to", returnTo);
+		url.searchParams.set("return_to", safeAuthorizationReturnTo(returnTo));
 		return url.toString();
 	}
 
@@ -233,7 +242,7 @@ export class NotOrganicPublicClient {
 		if (!response.ok || !token || typeof token.access_token !== "string" || token.token_type !== "DPoP" || typeof token.expires_in !== "number" || !Number.isFinite(token.expires_in)) {
 			throw new NotOrganicPublicClientError("Not Organic could not finish sign-in. Try connecting again.");
 		}
-		const session = { accessToken: token.access_token, expiresAt: Date.now() + token.expires_in * 1_000, scope: typeof token.scope === "string" ? token.scope : "" };
+		const session = { accessToken: token.access_token, expiresAt: Date.now() + token.expires_in * 1_000, scope: typeof token.scope === "string" ? token.scope : "", returnTo: safeAuthorizationReturnTo(transaction.returnTo) };
 		writeJson(SESSION_KEY, session);
 		return session;
 	}

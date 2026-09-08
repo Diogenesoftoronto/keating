@@ -1,23 +1,26 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Footer } from "../components/Footer";
 import { Nav } from "../components/Nav";
-import { NotOrganicPublicClient, publicClientConfig } from "../notorganic-provider/public-client";
+import { NotOrganicPublicClient, publicClientConfig, safeAuthorizationReturnTo } from "../notorganic-provider/public-client";
 import { btnRetro } from "../../styled-system/recipes";
 
 /** Completes the provider-owned redirect; it never accepts an account id from the URL. */
 export function NotOrganicCallback() {
 	const navigate = useNavigate();
 	const [error, setError] = useState<string | null>(null);
+	const started = useRef(false);
 
 	useEffect(() => {
+		if (started.current) return;
+		started.current = true;
 		const config = publicClientConfig();
 		if (!config) {
 			setError("This Keating deployment has not enabled Not Organic sign-in.");
 			return;
 		}
 		void new NotOrganicPublicClient(config).completeAuthorization(new URLSearchParams(window.location.search))
-			.then(() => navigate({ to: "/pricing", replace: true }))
+			.then(session => window.location.replace(safeAuthorizationReturnTo(session.returnTo)))
 			.catch((cause: unknown) => setError(cause instanceof Error ? cause.message : "Not Organic sign-in could not be completed."));
 	}, [navigate]);
 

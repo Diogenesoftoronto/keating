@@ -25,6 +25,7 @@ import { downloadTextFile } from "../lib/browser-download";
 import { KeatingStorage, type LessonPlan, type LessonMap, type Animation, type BenchmarkResult, type EvolutionResult, type Verification, type PromptEvolutionResult, type ImprovementAttemptRecord, type FlashcardDeck } from "../keating/storage";
 import { sessions, getInitPromise } from "../hooks/keating-storage";
 import type { SessionMetadata } from "../types/session";
+import "./selection-library.css";
 import { css, cx } from "../../styled-system/css";
 
 interface ArtifactViewerProps {
@@ -216,6 +217,7 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 	const [selected, setSelected] = useState<Artifact | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [query, setQuery] = useState("");
+	const [kind, setKind] = useState<string>("all");
 	const [showAgentArtifacts, setShowAgentArtifacts] = useState(() => readShowAgent());
 	const [sessionMap, setSessionMap] = useState<Map<string, SessionMetadata>>(new Map());
 
@@ -282,7 +284,7 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 
 	const filteredArtifacts = useMemo(() => {
 		const normalizedQuery = query.trim().toLowerCase();
-		let result = artifacts;
+		let result = kind === "all" ? artifacts : artifacts.filter(artifact => artifact.type === kind);
 		if (!showAgentArtifacts) {
 			result = result.filter((a) => AUDIENCE_MAP[a.type] === "user");
 		}
@@ -293,7 +295,7 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 			});
 		}
 		return result;
-	}, [artifacts, query, showAgentArtifacts]);
+	}, [artifacts, query, showAgentArtifacts, kind]);
 
 	const agentArtifactCount = useMemo(
 		() => artifacts.filter((a) => AUDIENCE_MAP[a.type] === "agent").length,
@@ -367,6 +369,7 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 						<button onClick={() => setSelected(null)} className={css({ fontSize: "0.875rem", color: "var(--muted-foreground)", _hover: { textDecoration: "underline" } })}>
 							← Back to list
 						</button>
+						<div className={css({ display: "flex", alignItems: "center", gap: "0.75rem", flexShrink: 0 })}>
 						<button
 							type="button"
 							onClick={() => downloadSelected(selected)}
@@ -390,6 +393,8 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 							<Download size={14} />
 							Download
 						</button>
+						{onClose && <button type="button" className="library-icon" aria-label="Close artifact panel" title="Close artifact panel" onClick={onClose}><PanelRightClose size={18}/></button>}
+						</div>
 					</div>
 					<h2 className={css({ marginTop: "0.25rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "1.125rem", fontWeight: 600, color: "var(--foreground)" })}>{selected.label}</h2>
 					<div className={css({ marginTop: "0.25rem", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.375rem 0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
@@ -431,245 +436,27 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 		);
 	}
 
-	return (
-		<div className={cx("artifact-list", css({ color: "var(--foreground)" }))}>
-			{artifacts.length === 0 ? (
-				<p className={css({ fontSize: "0.875rem", color: "var(--muted-foreground)" })}>
-					No artifacts yet. Use /plan, /map, /animate, /bench, or /evolve to create some.
-				</p>
-			) : (
-				<div className={css({ "& > * + *": { marginTop: "1rem" } })}>
-					{/* Search + Toggle */}
-					<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem" })}>
-						<label className={css({ display: "flex", minHeight: "2.25rem", minWidth: 0, flex: "1 1 14rem", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "var(--background)", paddingInline: "0.75rem", fontSize: "0.75rem" })}>
-							<Search size={14} className={css({ flexShrink: 0, color: "var(--muted-foreground)" })} />
-							<input
-								className={css({
-									minWidth: 0,
-									flex: 1,
-									background: "transparent",
-									paddingBlock: "0.5rem",
-									outline: "none",
-									"&::placeholder": { color: "var(--muted-foreground)" },
-								})}
-								value={query}
-								placeholder="Search artifacts"
-								onChange={(event) => setQuery(event.target.value)}
-							/>
-						</label>
-						{onClose && (
-							<button
-								type="button"
-								className={css({
-									display: "inline-flex",
-									height: "2.25rem",
-									width: "2.25rem",
-									flexShrink: 0,
-									alignItems: "center",
-									justifyContent: "center",
-									borderRadius: "0.375rem",
-									borderWidth: "1px",
-									borderColor: "var(--border)",
-									color: "var(--muted-foreground)",
-									transitionProperty: "color, background-color, border-color, text-decoration-color, fill, stroke",
-									transitionDuration: "150ms",
-									_hover: { background: "var(--accent)", color: "var(--accent-foreground)" },
-								})}
-								aria-label="Close artifact panel"
-								title="Close panel"
-								onClick={onClose}
-							>
-								<PanelRightClose size={16} />
-							</button>
-						)}
-						{agentArtifactCount > 0 && (
-							<button
-								type="button"
-								onClick={toggleShowAgent}
-								title={showAgentArtifacts ? "Hide agent artifacts" : "Show agent artifacts"}
-								className={cx(css({
-									display: "inline-flex",
-									minWidth: 0,
-									flexShrink: 0,
-									alignItems: "center",
-									gap: "0.375rem",
-									borderRadius: "0.375rem",
-									borderWidth: "1px",
-									paddingInline: "0.625rem",
-									paddingBlock: "0.375rem",
-									fontSize: "0.75rem",
-									fontWeight: 500,
-									transitionProperty: "color, background-color, border-color, text-decoration-color, fill, stroke",
-									transitionDuration: "150ms",
-								}), showAgentArtifacts
-									? css({
-										borderColor: "color-mix(in srgb, var(--primary) 30%, transparent)",
-										background: "color-mix(in srgb, var(--primary) 10%, transparent)",
-										color: "var(--primary)",
-										_hover: { background: "color-mix(in srgb, var(--primary) 20%, transparent)" },
-									})
-									: css({
-										borderColor: "var(--border)",
-										color: "var(--muted-foreground)",
-										_hover: { background: "var(--accent)", color: "var(--accent-foreground)" },
-									}))}
-							>
-								{showAgentArtifacts ? <Eye size={13} /> : <EyeOff size={13} />}
-								<span className={css({ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" })}>
-									{showAgentArtifacts ? `Hide ${agentArtifactCount} agent` : `Show ${agentArtifactCount} agent`}
-								</span>
-							</button>
-						)}
-						{filteredArtifacts.length > 0 && (
-							<button
-								type="button"
-								onClick={downloadVisibleArtifacts}
-								title="Download visible artifacts"
-								className={css({
-									display: "inline-flex",
-									height: "2.25rem",
-									width: "2.25rem",
-									flexShrink: 0,
-									alignItems: "center",
-									justifyContent: "center",
-									borderRadius: "0.375rem",
-									borderWidth: "1px",
-									borderColor: "var(--border)",
-									color: "var(--muted-foreground)",
-									transitionProperty: "color, background-color, border-color, text-decoration-color, fill, stroke",
-									transitionDuration: "150ms",
-									_hover: { background: "var(--accent)", color: "var(--accent-foreground)" },
-								})}
-							>
-								<Download size={15} />
-							</button>
-						)}
-					</div>
-
-					{filteredArtifacts.length === 0 ? (
-						<div className={css({ paddingBlock: "2rem", textAlign: "center", fontSize: "0.875rem", color: "var(--muted-foreground)" })}>
-							{artifacts.length > 0 ? "No artifacts match your search" : "No artifacts yet"}
-						</div>
-					) : (
-						<div className={css({ "& > * + *": { marginTop: "1.5rem" } })}>
-							{sortedGroupKeys.map((groupKey) => {
-								const groupArtifacts = groupedBySession.get(groupKey)!;
-								const isOther = groupKey === "__other__";
-								const sessionMeta = !isOther ? sessionMap.get(groupKey) : undefined;
-
-								return (
-									<section key={groupKey}>
-										{/* Session header */}
-										<div className={css({ marginBottom: "0.5rem", display: "flex", minWidth: 0, flexWrap: "wrap", alignItems: "center", gap: "0.375rem 0.5rem" })}>
-											{isOther ? (
-												<>
-													<span className={css({ fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted-foreground)" })}>
-														Other artifacts
-													</span>
-													<span className={css({ fontSize: "10px", color: "var(--muted-foreground)" })}>
-														(no session)
-													</span>
-												</>
-											) : sessionMeta ? (
-												<>
-													<MessageSquare size={12} className={css({ flexShrink: 0, color: "var(--muted-foreground)" })} />
-													<span className={css({ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted-foreground)" })}>
-														{sessionMeta.title}
-													</span>
-													<span className={css({ minWidth: 0, flexShrink: 1, fontSize: "10px", color: "var(--muted-foreground)" })}>
-														{formatArtifactDate(new Date(sessionMeta.lastModified ?? sessionMeta.createdAt).getTime())} · {sessionMeta.messageCount} messages
-													</span>
-													{sessionMeta.parentSessionId && (
-														<GitBranch size={10} className={css({ flexShrink: 0, color: "var(--primary)" })} />
-													)}
-												</>
-											) : (
-												<span className={css({ fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted-foreground)" })}>
-													Unknown session
-												</span>
-											)}
-											<span className={css({ marginLeft: "auto", flexShrink: 0, fontSize: "10px", color: "var(--muted-foreground)" })}>
-												{groupArtifacts.length} artifact{groupArtifacts.length === 1 ? "" : "s"}
-											</span>
-										</div>
-
-										{/* Artifact list */}
-										<div className={css({ "& > * + *": { marginTop: "0.375rem" } })}>
-											{groupArtifacts.map((artifact) => {
-												const meta = TYPE_META[artifact.type];
-												const isAgent = AUDIENCE_MAP[artifact.type] === "agent";
-												return (
-													<button
-														key={artifact.id}
-														onClick={() => setSelected(artifact)}
-														className={cx("group", css({
-															width: "100%",
-															minWidth: 0,
-															borderRadius: "0.5rem",
-															borderWidth: "1px",
-															padding: "0.625rem",
-															textAlign: "left",
-															transitionProperty: "color, background-color, border-color, text-decoration-color, fill, stroke",
-															transitionDuration: "150ms",
-														}), isAgent
-															? css({
-																borderColor: "color-mix(in srgb, var(--border) 50%, transparent)",
-																background: "color-mix(in srgb, var(--muted) 20%, transparent)",
-																_hover: { background: "color-mix(in srgb, var(--muted) 40%, transparent)" },
-															})
-															: css({
-																borderColor: "var(--border)",
-																background: "color-mix(in srgb, var(--muted) 30%, transparent)",
-																_hover: { background: "color-mix(in srgb, var(--muted) 50%, transparent)" },
-															}))}
-													>
-														<div className={css({ display: "flex", minWidth: 0, alignItems: "flex-start", gap: "0.625rem" })}>
-															<span className={css({ marginTop: "0.125rem", display: "inline-flex", height: "1.5rem", width: "1.5rem", flexShrink: 0, alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", background: "var(--background)", color: "var(--muted-foreground)" })}>
-																{meta.icon}
-															</span>
-															<div className={css({ minWidth: 0, flex: 1 })}>
-																<div className={css({ display: "flex", minWidth: 0, alignItems: "center", gap: "0.5rem" })}>
-																	<span className={css({ minWidth: 0, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)" })}>
-																		{artifact.label}
-																	</span>
-																	{isAgent && (
-																		<span className={css({
-																			flexShrink: 0,
-																			borderRadius: "0.25rem",
-																			background: "rgb(245 158 11 / 0.1)",
-																			paddingInline: "0.375rem",
-																			paddingBlock: "0.125rem",
-																			fontSize: "10px",
-																			fontWeight: 500,
-																			color: "#d97706",
-																			_dark: { color: "#fbbf24" },
-																		})}>
-																		Agent
-																	</span>
-																	)}
-																</div>
-																<div className={css({ marginTop: "0.125rem", display: "flex", minWidth: 0, flexWrap: "wrap", alignItems: "center", gap: "0.125rem 0.5rem", fontSize: "11px", color: "var(--muted-foreground)" })}>
-																	<span className={css({ flexShrink: 0 })}>{meta.label}</span>
-																	<span className={css({ flexShrink: 0 })}>·</span>
-																	<span className={css({ flexShrink: 0 })}>{formatArtifactDate(artifact.createdAt)}</span>
-																	<span className={css({ flexShrink: 0 })}>·</span>
-																	<span className={css({ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" })}>{artifactPreviewText(artifact)}</span>
-																</div>
-															</div>
-														</div>
-													</button>
-												);
-											})}
-										</div>
-									</section>
-								);
-							})}
-						</div>
-					)}
-				</div>
-			)}
-		</div>
-	);
+ return <section className="material-library" aria-label="Learning materials">
+  <header className="material-library__header"><div><h2>Your materials</h2><p>Plans, maps and practice from your conversations.</p></div>
+   {onClose && <button className="library-icon" type="button" aria-label="Close artifact panel" onClick={onClose}><PanelRightClose size={18}/></button>}
+  </header>
+  <label className="library-search"><Search size={18} aria-hidden="true"/><input aria-label="Search materials" value={query} placeholder="Find a material" onChange={event => setQuery(event.target.value)}/></label>
+  <div className="material-library__filters" aria-label="Material type">
+   {(["all", "plan", "map", "deck", "animation"] as const).map(type => <button type="button" key={type} aria-pressed={kind === type} onClick={() => setKind(type)}>{type === "all" ? "All" : TYPE_META[type].label}</button>)}
+  </div>
+  <details className="material-library__tools"><summary>Library options</summary>
+   <label><input type="checkbox" checked={showAgentArtifacts} onChange={toggleShowAgent}/> Include tutor reports ({agentArtifactCount})</label>
+   <button type="button" onClick={downloadVisibleArtifacts} disabled={!filteredArtifacts.length}>Download these materials</button>
+  </details>
+  {!filteredArtifacts.length ? <div className="library-message"><BookOpen size={24}/><h3>{artifacts.length ? "No matching materials" : "Your learning starts here"}</h3><p>{artifacts.length ? "Try a different search or material type." : "Ask your tutor for a lesson plan, concept map or flashcards. You can return to them here."}</p></div> :
+   <div>{sortedGroupKeys.map(groupKey => <section key={groupKey}>
+    <h3 className="library-group">{sessionMap.get(groupKey)?.title || "Saved materials"}</h3>
+    {groupedBySession.get(groupKey)!.map(artifact => <button type="button" className="material-library__row" key={artifact.id} onClick={() => setSelected(artifact)}>
+     <span className="material-library__type" aria-hidden="true">{TYPE_META[artifact.type].icon}</span>
+     <span><strong>{artifact.label}</strong><small>{TYPE_META[artifact.type].label} · {formatArtifactDate(artifact.createdAt)}{artifact.type === "deck" ? " · " + artifactPreviewText(artifact) : ""}</small></span><ChevronRight size={16} aria-hidden="true"/>
+    </button>)}
+   </section>)}</div>}
+ </section>;
 }
 
 // ── Sub-viewers (unchanged from before) ───────────────────────────────────

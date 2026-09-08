@@ -80,6 +80,7 @@ export interface AnsweredQuestion {
 interface QuestionRendererProps {
 	data: QuestionFormData;
 	onSubmit?: (answers: AnsweredQuestion[]) => void;
+	submitLabel?: string;
 }
 
 const sm = "@media (min-width: 640px)";
@@ -358,7 +359,7 @@ function matchingCorrectness(question: QuestionField, rowIndex: number, choice: 
 	return choice.trim().toLowerCase() === correct.trim().toLowerCase() ? "correct" : "wrong";
 }
 
-export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
+export function QuestionRenderer({ data, onSubmit, submitLabel }: QuestionRendererProps) {
 	const questions = data.questions;
 	const total = questions.length;
 	const blankRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -657,7 +658,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 			<div className={cx(questionStyles.shell, "activity-game")} aria-busy={isQuestionPending} style={{ opacity: isQuestionPending ? 0.72 : 1, transition: "opacity 120ms ease-out" }}>
 				<div className={css({ display: "flex", alignItems: "flex-start" })}>
 				<div className={css({ minWidth: 0, flex: 1, display: "grid", gap: "0.5rem", [sm]: { gap: "1rem" } })}>
-					<div className={css({ display: "flex", alignItems: "center", gap: "0.75rem" })}>
+					<div data-question-progress className={css({ display: "flex", alignItems: "center", gap: "0.75rem" })}>
 						<div className={css({ flex: 1, minWidth: 0 })}><RoundProgress current={current} total={total} label="Question progress" /></div>
 						<button type="button" onClick={() => dispatch({ type: "toggle-collapsed" })} aria-expanded={!collapsed} aria-label={collapsed ? "Show questions" : "Hide questions"} className="activity-back-action">
 							{collapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
@@ -682,10 +683,10 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 								{/* Frameless: the choices are already outlined, so a wrapper border
 								    would just be a box around boxes. */}
 								<div>
-									<div className={css({ marginBottom: "0.5rem", fontSize: "0.6875rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted-foreground)" })}>
+									<div data-matching-bank-label className={css({ marginBottom: "0.5rem", fontSize: "0.6875rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted-foreground)" })}>
 										{q.choiceLabel ?? "Answer bank"}
 									</div>
-									<ol className={css({ display: "grid", gap: "0.5rem", [sm]: { gridTemplateColumns: "repeat(auto-fit,minmax(11rem,1fr))" } })}>
+									<ol data-matching-bank className={css({ display: "grid", gap: "0.5rem", [sm]: { gridTemplateColumns: "repeat(auto-fit,minmax(11rem,1fr))" } })}>
 										{q.choices?.map((choice, choiceIndex) => {
 											const used = selectedMatches.has(choice);
 											return (
@@ -738,6 +739,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 									{state.classifications.map((row, rowIndex) => (
 										<div
 											key={`${row.item}-${rowIndex}`}
+											data-matching-row
 											onDragOver={(event) => {
 												event.preventDefault();
 											dispatch({ type: "drag-over", row: rowIndex });
@@ -959,7 +961,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 							type="button"
 							onClick={goPrev}
 							disabled={isQuestionPending || current === 0}
-							className={cx(questionStyles.buttonSecondary, "activity-back-action")}
+							className={cx(questionStyles.buttonSecondary, "activity-back-action")} data-question-back
 						>
 							<ChevronLeft size={14} />
 							Back
@@ -983,7 +985,7 @@ export function QuestionRenderer({ data, onSubmit }: QuestionRendererProps) {
 								onClick={handleSubmit}
 							>
 								<ArrowRight size={16} />
-								{total === 1 ? "Lock in answer" : "Finish round"}
+								{submitLabel ?? (total === 1 ? "Lock in answer" : "Finish round")}
 							</button>
 						)}
 					</div>

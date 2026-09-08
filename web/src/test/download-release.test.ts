@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { detectDownloadArchitecture, detectPlatform } from "../lib/detect-platform";
 import { parseDownloadRelease, recommendedDownload, RELEASES_URL, VERIFIED_DOWNLOAD_RELEASE } from "../lib/download-release";
 
-const nav = (userAgent: string, platform = "", maxTouchPoints = 0, userAgentData?: object) => ({ userAgent, platform, maxTouchPoints, userAgentData }) as Navigator;
+const nav = (userAgent: string, platform = "", maxTouchPoints = 0, userAgentData?: object) => ({ userAgent, platform, maxTouchPoints, userAgentData }) as unknown as Navigator;
 
 describe("download platform selection", () => {
 	it.each([
@@ -15,7 +15,7 @@ describe("download platform selection", () => {
 		["Mozilla/5.0 (X11; CrOS x86_64 16000.0.0)", "Linux x86_64", 0, "unknown"],
 		["Unrecognized Mobile", "", 1, "unknown"],
 		["", "", 0, "unknown"],
-	])("detects %s", (ua, platform, touch, expected) => {
+	] as const)("detects %s", (ua, platform, touch, expected) => {
 		expect(detectPlatform(nav(ua, platform, touch)).platform).toBe(expected);
 	});
 	it("prefers platform client hints over the fallback UA", () => {

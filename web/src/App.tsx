@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import {
   RouterProvider,
+  useRouter,
+  type ErrorComponentProps,
   createRouter,
   createRoute,
   createRootRoute,
@@ -116,7 +118,7 @@ import {
   subscribeKeatingUiSettings,
 } from "./keating/ui-settings";
 import { loadRouteChunk } from "./lib/stale-build-recovery";
-import { css } from "../styled-system/css";
+import { AppStatusScreen, RouteLoadingScreen, RouteNotFoundScreen } from "./components/AppStatusScreen";
 
 const rootRoute = createRootRoute({ component: () => <Outlet /> });
 
@@ -160,6 +162,8 @@ const liveRoute = createRoute({
   path: "/live",
   component: Live,
 });
+
+const trainingDataRoute = createRoute({ getParentRoute: () => rootRoute, path: "/training-data", component: lazyRouteComponent(() => loadRouteChunk(() => import("./pages/TrainingData")), "TrainingData") });
 
 const usageRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -293,6 +297,7 @@ const routeTree = rootRoute.addChildren([
   renderingSmokeRoute,
   liveRoute,
   usageRoute,
+  trainingDataRoute,
   comingUpRoute,
   evolutionDetailRoute,
   benchRoute,
@@ -317,38 +322,25 @@ const routeTree = rootRoute.addChildren([
 
 // Shown while a lazily-loaded route chunk is in flight (after defaultPendingMs)
 // so navigation doesn't flash a blank screen.
-function RoutePending() {
-  return (
-    <div
-      style={{
-        display: "flex",
-        minHeight: "60vh",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <div
-        className={css({
-          animation: "spin 1s linear infinite",
-        })}
-        aria-label="Loading"
-        style={{
-          width: 28,
-          height: 28,
-          borderRadius: "9999px",
-          border: "3px solid rgba(0,0,0,0.15)",
-          borderTopColor: "rgba(0,0,0,0.55)",
-        }}
-      />
-    </div>
-  );
+function RouteFailure({ error, reset }: ErrorComponentProps) {
+  const currentRouter = useRouter();
+  const statusCode = Number((error as { status?: number; statusCode?: number }).status
+    ?? (error as { statusCode?: number }).statusCode);
+  const status = typeof navigator !== "undefined" && !navigator.onLine ? "offline"
+    : statusCode === 403 ? "403" : statusCode === 404 ? "404" : "500";
+  return <AppStatusScreen status={status} onRetry={() => {
+    reset();
+    void currentRouter.invalidate();
+  }} />;
 }
 
 const browserHistory = createBrowserHistory();
 const router = createRouter({
   routeTree,
   history: browserHistory,
-  defaultPendingComponent: RoutePending,
+  defaultPendingComponent: RouteLoadingScreen,
+  defaultNotFoundComponent: () => <RouteNotFoundScreen />,
+  defaultErrorComponent: RouteFailure,
 });
 
 declare module "@tanstack/react-router" {

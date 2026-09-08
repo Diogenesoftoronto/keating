@@ -112,16 +112,19 @@ export function getNotOrganicUsage(
 }
 
 export function createNotOrganicCheckout(
-	productId: string,
+	packId: string,
 	returnUrl: string,
 	fetcher?: typeof fetch,
 ): Promise<NotOrganicCheckout> {
+	if (!fetcher && import.meta.env?.VITE_NOTORGANIC_CHECKOUT_ENABLED !== "true") {
+		return Promise.reject(new Error("Hosted credit purchases are not available yet."));
+	}
 	return providerJson(
 		"checkout",
 		{
 			method: "POST",
 			headers: { "content-type": "application/json" },
-			body: JSON.stringify({ product_id: productId, return_url: returnUrl }),
+			body: JSON.stringify({ pack_id: packId, return_url: returnUrl }),
 		},
 		fetcher,
 	);

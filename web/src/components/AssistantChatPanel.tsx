@@ -1,4 +1,9 @@
 import type { FlueConversationMessage } from "@flue/sdk";
+import { type KeatingAudioContent } from "../keating/flue/conversation";
+import "./keating-interaction-motion.css";
+import { KeatingBot } from "./KeatingBot";
+import { RecordingWaveform } from "./RecordingWaveform";
+import { prepareAudioAttachment } from "../lib/audio-attachment";
 import type { FlueConversation } from "../keating/flue/conversation";
 import {
   createContext,
@@ -80,6 +85,7 @@ import {
   loadKeatingUiSettings,
   subscribeKeatingUiSettings,
 } from "../keating/ui-settings";
+import { modelSupportsAudio } from "../lib/provider-models";
 import { getProviderApiKey } from "../lib/provider-models";
 import {
   handleTutorialLinkClick,
@@ -145,6 +151,7 @@ import {
 import {
   startMicRecording,
   transcribeAudio,
+  transcriptionErrorMessage,
   type MicRecorder,
 } from "../keating/speech-providers/stt";
 import { JsonCrackBlock } from "./JsonCrackBlock";
@@ -287,7 +294,7 @@ function QuizGradeApplier({ payload }: { payload: QuizGradePayload }) {
 
 const ERROR_TEXT_PREFIX = "\x00__KEATING_ERROR__\x00";
 
-type PromptContent = TextContent | ImageContent;
+type PromptContent = TextContent | ImageContent | KeatingAudioContent;
 
 const PREFILL_STATUS_LINES = [
   "Reading the board before answering...",
@@ -418,7 +425,7 @@ async function readPdfAsAttachmentText(file: File): Promise<string> {
 }
 
 const keatingAttachmentAdapter: AttachmentAdapter = {
-  accept: `image/*,${DOCUMENT_ATTACHMENT_ACCEPT}`,
+  accept: `image/*,audio/*,.wav,.mp3,.m4a,.webm,${DOCUMENT_ATTACHMENT_ACCEPT}`,
   async add({ file }) {
     return {
       id: `${file.name}-${file.size}-${file.lastModified}`,
@@ -431,6 +438,12 @@ const keatingAttachmentAdapter: AttachmentAdapter = {
   },
   async send(attachment) {
     const file = attachment.file;
+    if (file.type.startsWith("audio/") || /\.(wav|mp3|m4a|webm|ogg|flac)$/i.test(file.name)) {
+      const audio = await prepareAudioAttachment(file);
+      return {...attachment, type: "file", status: {type: "complete"},
+        content: [{type: "file", filename: audio.name, mimeType: audio.type,
+          data: await readFileAsDataUrl(audio)}]};
+    }
     if (file.type.startsWith("image/")) {
       return {
         ...attachment,
@@ -800,11 +813,19 @@ function SpeechComposerControl({
   const composer = useComposerRuntime();
   const [available, setAvailable] = useState<boolean | null>(null);
   const [recording, setRecording] = useState(false);
+  const [recordingStream, setRecordingStream] = useState<MediaStream | null>(null);
   const [busy, setBusy] = useState(false);
+  const [audioError, setAudioError] = useState("");
+  const retryAudioRef = useRef<Blob | null>(null);
   const [liveOpen, setLiveOpen] = useState(false);
   const [forceStt, setForceStt] = useState(false);
   const recorderRef = useRef<MicRecorder | null>(null);
   const recordingPromiseRef = useRef<Promise<MicRecorder> | null>(null);
+  useEffect(() => () => {
+    const pending = recordingPromiseRef.current;
+    recordingPromiseRef.current = null;
+    if (pending) void pending.then(recorder => recorder.cancel()).catch(() => {});
+  }, []);
   const pendingLiveVideoRef = useRef<Promise<VideoCaptureHandle | null> | null>(
     null,
   );
@@ -872,18 +893,48 @@ function SpeechComposerControl({
 
   const beginPushToTalk = () => {
     if (busy || recordingPromiseRef.current) return;
+    setAudioError("");
+    retryAudioRef.current = null;
     setRecording(true);
     const pending = startMicRecording();
     recordingPromiseRef.current = pending;
     void pending
       .then((recorder) => {
+        if (recordingPromiseRef.current !== pending) return;
         recorderRef.current = recorder;
+        setRecordingStream(recorder.stream);
       })
       .catch((error) => {
         recordingPromiseRef.current = null;
         setRecording(false);
-        console.warn("[keating:stt] microphone unavailable", error);
+        setAudioError(error instanceof Error ? error.message : "Microphone unavailable.");
       });
+  };
+
+  const transcribeRecording = async (blob: Blob) => {
+    const cred = await resolveSpeechCredential(getProviderApiKey);
+    if (!cred) {
+      setAudioError("Add a speech provider key in Settings to create a transcript. You can still send the recording to an audio-capable model.");
+      return;
+    }
+    const text = await transcribeAudio(blob, { provider: cred.provider, apiKey: cred.apiKey });
+    if (!text.trim()) {
+      setAudioError("No speech was detected. Retry if you spoke, or send the audio without a transcript.");
+      return;
+    }
+    appendToComposer(text);
+    retryAudioRef.current = null;
+    setAudioError("");
+    onExpandedChange(false);
+  };
+
+  const retryTranscription = async () => {
+    if (!retryAudioRef.current || busy) return;
+    setBusy(true);
+    setAudioError("");
+    try { await transcribeRecording(retryAudioRef.current); }
+    catch (error) { setAudioError(transcriptionErrorMessage(error)); }
+    finally { setBusy(false); }
   };
 
   const finishPushToTalk = async () => {
@@ -891,22 +942,20 @@ function SpeechComposerControl({
     if (!pending) return;
     setRecording(false);
     setBusy(true);
+    let attached = false;
     try {
       const recorder = recorderRef.current ?? (await pending);
       const blob = await recorder.stop();
-      const cred = await resolveSpeechCredential(getProviderApiKey);
-      if (!cred) throw new Error("No speech credential available.");
-      const text = await transcribeAudio(blob, {
-        provider: cred.provider,
-        apiKey: cred.apiKey,
-      });
-      appendToComposer(text);
-      onExpandedChange(false);
+      await composer.addAttachment(new File([blob], `Recording-${Date.now()}.webm`, {type: blob.type || "audio/webm"}));
+      attached = true;
+      retryAudioRef.current = blob;
+      await transcribeRecording(blob);
     } catch (error) {
-      console.warn("[keating:stt] transcription failed", error);
+      setAudioError(attached ? transcriptionErrorMessage(error) : "Could not attach the recording. Check microphone access and try recording again.");
     } finally {
       recorderRef.current = null;
       recordingPromiseRef.current = null;
+      setRecordingStream(null);
       setBusy(false);
     }
   };
@@ -982,6 +1031,30 @@ function SpeechComposerControl({
         )
       : null;
 
+  const audioErrorToast = audioError ? createPortal(
+    <div role="status" aria-live="polite" className={css({
+      position: "fixed", bottom: "calc(1rem + env(safe-area-inset-bottom))", right: "1rem",
+      zIndex: 10000, width: "min(24rem, calc(100vw - 2rem))", padding: "1rem",
+      animation: "keating-notice-enter 240ms cubic-bezier(.16,1,.3,1) both",
+      "@media (prefers-reduced-motion: reduce)": {animation: "none"},
+      backgroundColor: "var(--background)", color: "var(--foreground)",
+      border: "1px solid var(--border)", borderRadius: "0.5rem",
+      boxShadow: "0 4px 24px #0003", fontSize: "0.8125rem", lineHeight: 1.5,
+    })}>
+      <div className={css({display: "flex", alignItems: "center", gap: "0.5rem"})}>
+        <CircleAlert size={16} aria-hidden="true" />
+        <strong className={css({flex: 1})}>{retryAudioRef.current ? "Transcript unavailable" : "Recording unavailable"}</strong>
+        <button type="button" onClick={() => setAudioError("")} aria-label="Dismiss notification"
+          className={composerIconButtonClass}><X size={16} /></button>
+      </div>
+      <p>{audioError}</p>
+      {retryAudioRef.current && <>
+        <p className={css({color: "var(--muted-foreground)", marginTop: "0.25rem"})}>Your audio is still attached.</p>
+        <button type="button" disabled={busy} onClick={() => void retryTranscription()}
+          className={css({marginTop: "0.5rem", textDecoration: "underline", cursor: "pointer"})}>Retry transcription</button>
+      </>}
+    </div>, document.body) : null;
+
   if (!expanded) {
     // Dictation and live conversation are different jobs, so they get
     // different buttons rather than one button whose meaning depends on a
@@ -996,8 +1069,8 @@ function SpeechComposerControl({
             setForceStt(true);
             onExpandedChange(true);
           }}
-          title="Dictate a message"
-          aria-label="Dictate a message"
+          title="Record an audio message"
+          aria-label="Record an audio message"
           className={cx(
             composerIconButtonClass,
             css({
@@ -1032,6 +1105,7 @@ function SpeechComposerControl({
         >
           <AudioLines size={16} />
         </button>
+        {audioErrorToast}
         {liveOverlay}
       </>
     );
@@ -1094,21 +1168,22 @@ function SpeechComposerControl({
               },
               _disabled: { opacity: 0.65 },
             }),
-            recording ? pulseClass : "",
+
           )}
         >
           {busy ? (
-            <Spinner size={16} />
+            <KeatingBot state="thinking" size={32} label="" />
           ) : recording ? (
-            <MicOff size={16} />
+            <KeatingBot state="listening" size={32} label="" />
           ) : (
             <Mic size={16} />
           )}
+          {recording && recordingStream && <RecordingWaveform stream={recordingStream} />}
           <span>
             {busy
-              ? "Transcribing"
+              ? "Preparing audio"
               : recording
-                ? "Release to transcribe"
+                ? "Release to attach"
                 : "Hold to speak"}
           </span>
         </button>
@@ -1122,6 +1197,7 @@ function SpeechComposerControl({
           <Keyboard size={16} />
         </button>
       </div>
+      {audioErrorToast}
       {liveOverlay}
     </>
   );
@@ -1188,10 +1264,19 @@ function LiveVoiceOverlay({
 function FilePart({
   filename,
   mimeType,
+  data,
 }: {
   filename?: string;
   mimeType?: string;
+  data?: string;
 }) {
+  if (mimeType?.startsWith("audio/") && data) {
+    const src = data.startsWith("data:audio/") || data.startsWith("blob:") ? data : `data:${mimeType};base64,${data}`;
+    return <figure className={css({marginBlock: "0.5rem", maxWidth: "100%"})}>
+      <audio controls preload="metadata" src={src} aria-label={filename || "Audio message"} style={{maxWidth: "100%", width: 300}} />
+      <figcaption className={css({fontSize: "0.75rem", color: "var(--muted-foreground)"})}>{filename || "Audio message"}</figcaption>
+    </figure>;
+  }
   return (
     <div
       className={css({
@@ -2855,6 +2940,8 @@ function contentFromAppendMessage(message: AppendMessage): PromptContent[] {
     } else if (part.type === "image") {
       const image = dataUrlToImageContent(part.image);
       if (image) content.push(image);
+    } else if (part.type === "file" && part.mimeType.startsWith("audio/")) {
+      content.push({type: "audio", mimeType: part.mimeType, data: part.data.replace(/^data:[^,]+,/, ""), filename: part.filename});
     } else if (part.type === "file") {
       content.push({
         type: "text",
@@ -2870,6 +2957,8 @@ function contentFromAppendMessage(message: AppendMessage): PromptContent[] {
       } else if (part.type === "image") {
         const image = dataUrlToImageContent(part.image);
         if (image) content.push(image);
+      } else if (part.type === "file" && part.mimeType.startsWith("audio/")) {
+        content.push({type: "audio", mimeType: part.mimeType, data: part.data.replace(/^data:[^,]+,/, ""), filename: part.filename});
       } else if (part.type === "file") {
         content.push({
           type: "text",
@@ -2894,6 +2983,7 @@ function assistantContentFromAgentContent(content: unknown) {
           text: displayTextFromAgentText(part.text ?? ""),
         };
       }
+      if (part?.type === "audio") return {type: "file" as const, mimeType: part.mimeType, data: `data:${part.mimeType};base64,${part.data}`, filename: part.filename};
       if (part?.type === "image") {
         return {
           type: "image" as const,
@@ -3385,7 +3475,9 @@ function flueThreadMessage(message: FlueConversationMessage, running: boolean): 
   const content = message.parts.flatMap((part): any[] => {
     if (part.type === "text") return assistantTextParts(part.text);
     if (part.type === "reasoning") return [{ type: "reasoning", text: part.text }];
-    if (part.type === "file" && part.url) return [{ type: "image", image: part.url }];
+    if (part.type === "file" && part.url) return part.mediaType?.startsWith("audio/")
+      ? [{type: "file", mimeType: part.mediaType, data: part.url, filename: part.filename}]
+      : [{ type: "image", image: part.url }];
     if (part.type === "dynamic-tool") {
       const output = part.state === "output-available" ? part.output : undefined;
       return [{ type: "tool-call", toolCallId: part.toolCallId, toolName: part.toolName,
@@ -3689,6 +3781,7 @@ export function SuggestedPrompts({
         sm: { paddingInline: "1rem" },
       })}
     >
+      <KeatingBot variant="body" state="waving" size={120} label="" />
       <div className={css({ maxWidth: "36rem", textAlign: "center" })}>
         <h1
           className={css({
@@ -4317,6 +4410,17 @@ function AssistantThread({
       if (agent.context.isStreaming) return false;
 
       const content = (userMessage as any).content;
+      const audioParts = Array.isArray(content) ? content.filter((part: any) => part?.type === "audio") : [];
+      if (audioParts.length && !modelSupportsAudio(agent.context.model)) {
+        if (!content.some((part: any) => part.type === "text" && part.text.trim())) {
+          agent.context.messages.push(userMessage, makeAttachmentErrorMessage(agent,
+            "This model does not accept audio. Choose an audio-capable model, or add a transcript. Your recording is kept here."));
+          setLocalVersion(current => current + 1);
+          await callbacks.onLocalMessagesChanged?.();
+          return true;
+        }
+        for (const part of audioParts) part.sendToModel = false;
+      }
       const hasImage =
         Array.isArray(content) &&
         content.some((part: any) => part?.type === "image");
@@ -5089,6 +5193,7 @@ function UserMessage({
   components: ReturnType<typeof messagePartComponents>;
   profileImage?: string | null;
 }) {
+  const ownText = useMessage(message => message.content.filter(part => part.type === "text").map(part => part.type === "text" ? part.text : "").join("\n\n"));
   return (
     <MessagePrimitive.Root
       className={css({
@@ -5156,11 +5261,13 @@ function UserMessage({
         >
           <div className="msg-meta">
             <b>YOU</b>
+            {ownText && <CopyButton text={ownText} label="Copy your message" variant="ghost" />}
           </div>
           <div
             className={cx(
               "you-bubble",
               css({
+                userSelect: "text",
                 whiteSpace: "pre-wrap",
                 lineHeight: "1.125rem",
                 fontFamily: "var(--font-ui)",
@@ -5338,6 +5445,13 @@ function AssistantMessage({
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
   const [feedbackType, setFeedbackType] = useState<"up" | "down">("up");
   const onAuthError = useContext(AuthErrorContext);
+  const botState = useMessage(message => {
+    if (message.status?.type !== "running") return "idle" as const;
+    const lastPart = message.content.at(-1);
+    // Reasoning and tool work use the thinking sequence. Mouth animation starts
+    // when this response is actually producing visible text.
+    return lastPart?.type === "text" && lastPart.text.trim() ? "speaking" as const : "thinking" as const;
+  });
   const authError = useMessage(
     (message) =>
       message.metadata.custom?.keatingAuthError as AuthErrorEntry | undefined,
@@ -5457,11 +5571,7 @@ function AssistantMessage({
               }),
             )}
           >
-            <img
-              className="keating-mascot-image"
-              src="/brand/mascot-head-v2.png"
-              alt="Keating"
-            />
+            <KeatingBot state={botState} size={36} animated={botState !== "idle"} label="Keating" />
           </div>
           <div className={css({ minWidth: 0, flex: 1, lineHeight: "1.5rem" })}>
             <div className="msg-meta">
@@ -5712,7 +5822,7 @@ function KeatingThinkingIndicator({ status }: { status: string }) {
     >
       <div
         className={cx(
-          "keating-thinking-mascot",
+          "keating-thinking-avatar",
           css({
             display: "flex",
             height: "2.5rem",
@@ -5726,11 +5836,7 @@ function KeatingThinkingIndicator({ status }: { status: string }) {
           }),
         )}
       >
-        <img
-          src="/brand/mascot-head-v2.png"
-          alt=""
-          className={`keating-mascot-image ${css({ width: "2.125rem", height: "auto" })}`}
-        />
+        <KeatingBot state="thinking" size={38} label="" />
       </div>
       <div className={css({ minWidth: 0 })}>
         <div
@@ -5744,18 +5850,7 @@ function KeatingThinkingIndicator({ status }: { status: string }) {
           })}
         >
           Keating is thinking
-          <span
-            aria-hidden="true"
-            className={css({ display: "inline-flex", gap: "0.1875rem" })}
-          >
-            {[0, 1, 2].map((index) => (
-              <span
-                key={index}
-                className="keating-thinking-dot"
-                style={{ animationDelay: `${index * 140}ms` }}
-              />
-            ))}
-          </span>
+
         </div>
         <p
           className={css({
