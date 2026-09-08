@@ -6,6 +6,15 @@
 .chat-onboarding h2:focus { outline: none; }
 .chat-onboarding > p { margin: 0; font-size: 14px; line-height: 1.6; color: var(--muted-foreground); }
 .chat-onboarding__step { margin-top: 22px; }
+.chat-onboarding__access { display: grid; gap: 10px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.chat-onboarding__access legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.chat-onboarding__access label { display: flex; align-items: center; gap: 12px; padding: 14px; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; }
+.chat-onboarding__access label:has(input:checked) { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 8%, transparent); }
+.chat-onboarding__access input { flex-shrink: 0; width: 18px; height: 18px; margin: 0; accent-color: var(--primary); }
+.chat-onboarding__access input:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+.chat-onboarding__access label > span { display: grid; gap: 3px; }
+.chat-onboarding__access strong { font-size: 14px; font-weight: 600; }
+.chat-onboarding__access label > span > span { font-size: 12px; color: var(--muted-foreground); }
 .chat-onboarding__primary, .chat-onboarding__secondary, .chat-onboarding__skip { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 6px; font: inherit; font-size: 13px; line-height: 1.35; text-align: center; cursor: pointer; color: inherit; background: transparent; }
 .chat-onboarding__primary { background: var(--primary, #198c50); color: var(--primary-foreground, white); border-color: transparent; }
 .chat-onboarding__skip { padding-inline: 5px; border-color: transparent; text-decoration: underline; text-underline-offset: 3px; font-size: 12px; }

@@ -808,6 +808,7 @@ function ChatContent() {
     openSettings,
     modelLabel,
     openModelSelector,
+    chooseKeatingModel,
     newSession,
     shareSession,
     chatPanelRef,
@@ -1578,6 +1579,7 @@ function ChatContent() {
 
       {showOnboarding && <div className={css({ flex: 1, minHeight: 0, overflowY: "auto", paddingInline: "1rem" })}>
         <ChatOnboarding
+          onUseKeating={chooseKeatingModel}
           onConnectAccount={() => beginNotOrganicAuthorization("/chat")}
           onChooseModel={openModelSelector}
           onSkip={() => setShowOnboarding(false)}

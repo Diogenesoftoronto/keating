@@ -28,6 +28,7 @@ COPY packages/p2p-core/src ./src
 
 WORKDIR /app
 COPY shared/ ./shared/
+COPY desktop/src/navigation.ts ./desktop/src/navigation.ts
 COPY web/ ./web/
 WORKDIR /app/web
 # Vite inlines VITE_* env vars at build time. `web/.env.local` is gitignored and

@@ -1,10 +1,20 @@
-import "fake-indexeddb/auto";
-import { expect, it } from "bun:test";
+import { IDBFactory } from "fake-indexeddb";
+import { afterEach, beforeEach, expect, it } from "bun:test";
 import { getModel } from "@earendil-works/pi-ai/compat";
 import { createResumableExportJudge } from "../keating/export-judge";
 import { loadTrainingExportJob, saveTrainingExportJob, trainingScoreCache } from "../keating/training-export-jobs";
 import { buildWebFineTuneExportFromSources } from "../keating/export";
 import type { RewardedTurn } from "../keating/reward";
+
+let originalIndexedDB: PropertyDescriptor | undefined;
+beforeEach(() => {
+	originalIndexedDB = Object.getOwnPropertyDescriptor(globalThis, "indexedDB");
+	Object.defineProperty(globalThis, "indexedDB", { configurable: true, writable: true, value: new IDBFactory() });
+});
+afterEach(() => {
+	if (originalIndexedDB) Object.defineProperty(globalThis, "indexedDB", originalIndexedDB);
+	else Reflect.deleteProperty(globalThis, "indexedDB");
+});
 
 it("restores a saved dataset and reuses durable scores in a new scoring run", async () => {
 	const primary = { model: getModel("google", "gemini-3-flash-preview"), thinkingLevel: "minimal" as const, maxTokens: 512, temperature: 0, retries: 0, timeoutMs: 1000 };

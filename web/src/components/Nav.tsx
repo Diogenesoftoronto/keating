@@ -1,5 +1,7 @@
 import { useEffect, useReducer, useRef } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
+import { AppLink as Link } from "./AppLink";
+import { desktopMarketingUrl, isDesktopShell } from "../lib/desktop-navigation";
 import { T, useGT } from "gt-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { css, cx } from "../../styled-system/css";
@@ -43,6 +45,14 @@ export function Nav({ primaryAction = "chat" }: NavProps) {
   const navigate = useNavigate();
   const gt = useGT();
   const closeMenus = () => dispatch({ type: "close-all" });
+  const openPrimaryAction = () => {
+    closeMenus();
+    if (primaryAction === "download" && isDesktopShell()) {
+      window.open(desktopMarketingUrl("/download")!, "_blank", "noopener,noreferrer");
+      return;
+    }
+    void navigate({ to: primaryAction === "download" ? "/download" : "/chat" });
+  };
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const toggleButtonRef = useRef<HTMLButtonElement>(null);
   const moreMenuRef = useRef<HTMLDivElement>(null);
@@ -101,7 +111,7 @@ export function Nav({ primaryAction = "chat" }: NavProps) {
       >
         {/* Logo */}
         <Link
-          to="/"
+          to={isDesktopShell() ? "/chat" : "/"}
           className="nav-logo"
           style={{
             display: "flex",
@@ -190,9 +200,9 @@ export function Nav({ primaryAction = "chat" }: NavProps) {
               fontSize: "0.875rem",
               fontFamily: "'VT323', monospace",
             }}
-            onClick={() => navigate({ to: primaryAction === "download" ? "/download" : "/chat" })}
+            onClick={openPrimaryAction}
           >
-            {primaryAction === "download" ? <T>Download Keating</T> : <T>TRY_KEATING</T>}
+            {primaryAction === "download" ? <T>Download Keating</T> : isDesktopShell() ? <T>Open chat</T> : <T>TRY_KEATING</T>}
           </button>
         </div>
 
@@ -358,12 +368,9 @@ export function Nav({ primaryAction = "chat" }: NavProps) {
                 width: "100%",
                 fontFamily: "'VT323', monospace",
               }}
-              onClick={() => {
-                closeMenus();
-                navigate({ to: primaryAction === "download" ? "/download" : "/chat" });
-              }}
+              onClick={openPrimaryAction}
             >
-              {primaryAction === "download" ? <T>Download Keating</T> : <T>TRY_KEATING</T>}
+              {primaryAction === "download" ? <T>Download Keating</T> : isDesktopShell() ? <T>Open chat</T> : <T>TRY_KEATING</T>}
             </button>
           </div>
         </div>

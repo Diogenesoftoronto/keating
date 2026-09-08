@@ -18,7 +18,8 @@ export function notOrganicOpenAiBaseUrl(origin = currentOrigin()): string {
 
 export const NOTORGANIC_DEFAULT_MODEL: Model<"openai-completions"> = {
 	id: NOTORGANIC_MODEL_ALIAS,
-	name: "Not Organic Balanced",
+	// The public capability keeps its stable alias; Portkey owns the upstream route.
+	name: "Inkling Small",
 	api: "openai-completions",
 	provider: NOTORGANIC_PROVIDER_ID,
 	baseUrl: notOrganicOpenAiBaseUrl(),

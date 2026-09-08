@@ -46,10 +46,13 @@ import {
 } from "../components/KeatingApiKeyPromptDialog";
 import {
   getProviderApiKey,
+  getSelectableModels,
   resolveAvailableChatModel,
 } from "../lib/provider-models";
 import { recordDiagnostic } from "../lib/diagnostics";
-import { notOrganicPublicClient } from "../notorganic-provider";
+import { NOTORGANIC_DEFAULT_MODEL, notOrganicPublicClient } from "../notorganic-provider";
+import { addRecentModel, getRecentModels } from "../keating/model-prefs";
+import { modelKey } from "../lib/model-catalog";
 import {
   captureSessionModelContext,
   recordSessionDebugAgentEvent,
@@ -414,6 +417,7 @@ export interface UseKeatingAgentReturn {
   /** Display name of the active chat model, for the header's model button. */
   modelLabel: string;
   openModelSelector: () => void;
+  chooseKeatingModel: () => Promise<void>;
   openSessions: () => void;
   newSession: () => void;
   shareSession: () => Promise<SharedSessionUrlResult>;
@@ -469,6 +473,7 @@ export function useKeatingAgent(
   const sessionParentIdRef = useRef<string | null>(null);
   const sessionForkedAtRef = useRef<string | undefined>(undefined);
   const selectedModelRef = useRef<Model<Api>>(DEFAULT_MODEL);
+  const explicitModelSelectionRef = useRef(false);
   const courseContextRef = useRef(courseContext);
   courseContextRef.current = courseContext;
   // The ref is what the agent reads; this mirrors it for anything that has to
@@ -1331,12 +1336,28 @@ export function useKeatingAgent(
 
   const prepareAgent = useCallback(async (initialState?: Partial<AgentState>, preserveSelectedModel = false) => {
     const persona = loadPersona();
+    let requestedModel = initialState?.model ?? selectedModelRef.current;
+    // Restore an explicit model choice after account redirects, even before the
+    // first message creates a saved session. Existing sessions keep their model.
+    if (!initialState?.model && !agentRef.current && !explicitModelSelectionRef.current) {
+      const recent = getRecentModels()[0];
+      if (recent) {
+        const models = recent.key === modelKey(NOTORGANIC_DEFAULT_MODEL)
+          ? [NOTORGANIC_DEFAULT_MODEL]
+          : await getSelectableModels();
+        const saved = models.find((model) => modelKey(model) === recent.key);
+        if (saved) {
+          requestedModel = saved;
+          explicitModelSelectionRef.current = true;
+        }
+      }
+    }
     const [promptBase, agentRuntime, resolvedModel] = await Promise.all([
       (initialState?.systemPrompt && systemPromptBaseRef.current) || initialState?.systemPrompt
         || getActiveKeatingPrompt(keatingStorage, "learn", undefined, composeKeatingSystemPrompt(persona))
           .then((prompt) => isDefaultPersona(persona) ? resolveConnectedAccountPrompt(prompt) : prompt),
       loadAgentRuntimeConfig(),
-      resolveAvailableChatModel(initialState?.model ?? selectedModelRef.current, { allowFallback: !preserveSelectedModel }),
+      resolveAvailableChatModel(requestedModel, { allowFallback: !preserveSelectedModel && !explicitModelSelectionRef.current }),
     ]);
     const tools = filterAvailableKeatingTools(await createKeatingTools(keatingStorage, toolOptions(speechSettings, agentRuntime)), {
       runtime: agentRuntime, speechEnabled: speechSettings.enabled, clientWebSearch: shouldExposeClientWebSearch(resolvedModel),
@@ -2432,49 +2453,57 @@ export function useKeatingAgent(
     />
   );
 
+  const changeChatModel = useCallback(async (model: Model<Api>) => {
+    const prevModel = selectedModelRef.current;
+    const activeAgent = agentRef.current;
+    if (activeAgent?.context.isStreaming) {
+      posthog.capture("model_change_blocked", {
+        reason: "active_turn",
+        from_model: `${prevModel.provider}/${prevModel.id}`,
+        to_model: `${model.provider}/${model.id}`,
+        session_id: sessionIdRef.current,
+      });
+      return;
+    }
+    const request = sessionSwitchRequestsRef.current.current;
+    if (model.provider === "browser") await loadBrowserModel(model.id);
+    if (!sessionSwitchRequestsRef.current.isCurrent(request) || agentRef.current !== activeAgent) return;
+    explicitModelSelectionRef.current = true;
+    selectModel(model);
+    addRecentModel(modelKey(model));
+    posthog.capture("model_changed", {
+      model: `${model.provider}/${model.id}`,
+      provider: model.provider,
+      from_model: `${prevModel.provider}/${prevModel.id}`,
+      to_model: `${model.provider}/${model.id}`,
+      from_provider: prevModel.provider,
+      to_provider: model.provider,
+      during_turn: false,
+      session_id: sessionIdRef.current,
+    });
+    const panel = panelRef.current;
+    if (activeAgent && panel) {
+      const current = activeAgent.context;
+      await createAgent(panel, {
+        ...current,
+        model,
+        messages: [...current.messages],
+      }, { preserveSelectedModel: true });
+    }
+  }, [createAgent, posthog, selectModel]);
+
+  const chooseKeatingModel = useCallback(
+    () => changeChatModel(NOTORGANIC_DEFAULT_MODEL),
+    [changeChatModel],
+  );
+
   const modelSelectorDialogElement = (
     <ModelSelectorDialog
       open={modelSelectorDialog.open}
       currentModel={agentRef.current?.context.model ?? selectedModelRef.current}
       onClose={modelSelectorDialog.onClose}
       onSelect={(model: Model<Api>) => {
-
-        const prevModel = selectedModelRef.current;
-        const activeAgent = agentRef.current;
-        if (activeAgent?.context.isStreaming) {
-          posthog.capture("model_change_blocked", {
-            reason: "active_turn",
-            from_model: `${prevModel.provider}/${prevModel.id}`,
-            to_model: `${model.provider}/${model.id}`,
-            session_id: sessionIdRef.current,
-          });
-          return;
-        }
-        posthog.capture("model_changed", {
-          model: `${model.provider}/${model.id}`,
-          provider: model.provider,
-          from_model: `${prevModel.provider}/${prevModel.id}`,
-          to_model: `${model.provider}/${model.id}`,
-          from_provider: prevModel.provider,
-          to_provider: model.provider,
-          during_turn: false,
-          session_id: sessionIdRef.current,
-        });
-        const request = sessionSwitchRequestsRef.current.current;
-        startTransition(async () => {
-          if (model.provider === "browser") await loadBrowserModel(model.id);
-          if (!sessionSwitchRequestsRef.current.isCurrent(request) || agentRef.current !== activeAgent) return;
-          selectModel(model);
-          const agent = agentRef.current;
-          if (agent) {
-            const current = agent.context;
-            await createAgent(panelRef.current!, {
-              ...current,
-              model,
-              messages: [...current.messages],
-            }, { preserveSelectedModel: true });
-          }
-        });
+        startTransition(() => changeChatModel(model));
       }}
     />
   );
@@ -2789,6 +2818,7 @@ export function useKeatingAgent(
     openSettings,
     modelLabel,
     openModelSelector: modelSelectorDialog.onOpen,
+    chooseKeatingModel,
     openSessions,
     newSession,
     shareSession,

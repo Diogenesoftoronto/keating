@@ -10,6 +10,7 @@ import {
   createBrowserHistory,
   lazyRouteComponent,
   Outlet,
+  redirect,
 } from "@tanstack/react-router";
 // Landing is the entry page — keep it eager so first paint needs no extra
 // round-trip. (Its heavy 3D hero is already lazy-loaded inside the page.)
@@ -118,9 +119,21 @@ import {
   subscribeKeatingUiSettings,
 } from "./keating/ui-settings";
 import { loadRouteChunk } from "./lib/stale-build-recovery";
+import { desktopMarketingUrl, isDesktopShell } from "./lib/desktop-navigation";
 import { AppStatusScreen, RouteLoadingScreen, RouteNotFoundScreen } from "./components/AppStatusScreen";
 
-const rootRoute = createRootRoute({ component: () => <Outlet /> });
+const rootRoute = createRootRoute({
+  component: () => <Outlet />,
+  beforeLoad: ({ location, preload }) => {
+    if (!isDesktopShell()) return;
+    const websiteUrl = desktopMarketingUrl(location.href);
+    if (!websiteUrl) return;
+    if (!preload && location.pathname !== "/") {
+      window.open(websiteUrl, "_blank", "noopener,noreferrer");
+    }
+    throw redirect({ to: "/chat", replace: true });
+  },
+});
 
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
