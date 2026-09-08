@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { IDBFactory } from "fake-indexeddb";
-import { NotOrganicPublicClient, publicClientConfig, publicClientMaxCostMicrousd } from "../notorganic-provider/public-client";
+import { NotOrganicPublicClient, publicClientConfig, publicClientMaxCostMicrousd, safeAuthorizationReturnTo } from "../notorganic-provider/public-client";
 
 class MemoryStorage implements Storage {
 	private readonly values = new Map<string, string>();
@@ -18,11 +18,16 @@ function installBrowser(): void {
 }
 
 describe("Not Organic public client", () => {
+	it("returns to the originating setup page without accepting external redirects", () => {
+		expect(safeAuthorizationReturnTo("/chat")).toBe("/chat");
+		expect(safeAuthorizationReturnTo("/pricing?pack=keating_pack_10")).toBe("/pricing?pack=keating_pack_10");
+		for (const path of ["https://example.com", "//example.com", "/\\example.com", "/notorganic/callback", undefined]) expect(safeAuthorizationReturnTo(path)).toBe("/pricing");
+	});
 	it("requires explicit public-client deployment configuration", () => {
 		expect(publicClientConfig({})).toBeNull();
 		expect(publicClientConfig({ VITE_NOTORGANIC_PUBLIC_ISSUER: "https://provider.test/", VITE_NOTORGANIC_AUTHORIZATION_URL: "https://portal.test/authorize", VITE_NOTORGANIC_CLIENT_ID: "https://keating.test/client", VITE_NOTORGANIC_REDIRECT_URI: "https://keating.test/notorganic/callback" })).toMatchObject({
 			issuer: "https://provider.test",
-			scope: "wallet:read usage:read billing:checkout infer:balanced realtime:connect evolution:read evolution:write evolution:execute",
+			scope: "wallet:read usage:read billing:checkout infer:balanced realtime:connect",
 		});
 		expect(publicClientMaxCostMicrousd({})).toBe(100_000);
 		expect(() => publicClientMaxCostMicrousd({ VITE_NOTORGANIC_MAX_COST_MICROUSD: "0" })).toThrow("positive integer");
@@ -48,9 +53,10 @@ describe("Not Organic public client", () => {
 		expect(authorize.searchParams.get("code_challenge")).toBeTruthy();
 		await expect(client.completeAuthorization(new URLSearchParams({ code: "one-time-code", state: "wrong" }))).rejects.toThrow("could not be verified");
 		await expect(client.completeAuthorization(new URLSearchParams({ code: "one-time-code", state: authorize.searchParams.get("state")! }))).rejects.toThrow("could not be verified");
-		const authorizeAgain = new URL(await client.authorizationUrl());
+		const authorizeAgain = new URL(await client.authorizationUrl("/chat"));
 		const session = await client.completeAuthorization(new URLSearchParams({ code: "one-time-code", state: authorizeAgain.searchParams.get("state")! }));
 		expect(session.accessToken).toBe("short-lived");
+		expect(session.returnTo).toBe("/chat");
 		expect(exchange).toMatchObject({ code: "one-time-code", client_id: "https://keating.test/client", dpop_jwk: { kty: "EC", crv: "P-256" } });
 		expect(exchange?.code_verifier).toBeTypeOf("string");
 		const wallet = await client.request("/v1/wallet");

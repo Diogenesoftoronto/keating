@@ -1,3 +1,4 @@
+import { KeatingBot } from "../components/KeatingBot";
 import { Select } from "../components/Select";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
@@ -133,11 +134,7 @@ export function Live() {
 				})}
 			>
 				<div className={css({ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem", textAlign: "center" })}>
-					<img
-						src="/brand/mascot-head-v2.png"
-						alt=""
-						className={`keating-mascot-image keating-static-mascot ${css({ width: "6.5rem", height: "auto" })}`}
-					/>
+					<KeatingBot variant="body" size={160} state={hasKey === null ? "thinking" : "waving"} label="" />
 					<h1 className={css({ fontSize: "1.75rem", fontWeight: 700, lineHeight: 1.15 })}>Live with Keating</h1>
 					<p className={css({ color: "var(--muted-foreground)", fontSize: "0.9375rem", maxWidth: "26rem" })}>
 						Talk out loud and get answers out loud. Depending on the live model, show Keating your work with

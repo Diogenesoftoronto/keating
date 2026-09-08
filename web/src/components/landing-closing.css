@@ -1,0 +1,30 @@
+.retro-layout .landing-closing {
+  padding: clamp(76px, 10vw, 148px) 24px clamp(84px, 10vw, 144px);
+  border-top: 1px solid var(--ink);
+  background: radial-gradient(ellipse at 50% 0%, rgba(202, 143, 70, .10), transparent 65%);
+}
+.retro-layout .landing-closing__inner { position: relative; max-width: 1240px; margin: 0 auto; text-align: center; }
+.retro-layout .landing-closing__bot { margin: -36px auto 14px; width: 164px; height: 164px; }
+.retro-layout .landing-closing__eyebrow { margin: 0 0 20px; font: 400 13px/1.4 var(--mono-body); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+.retro-layout.landing-page .landing-closing h2,
+.retro-layout .landing-closing h2 { margin: 0; font-family: var(--mono-display); font-size: clamp(46px, 7.4vw, 100px); font-weight: 500; line-height: .98; letter-spacing: -.065em; text-wrap: balance; color: var(--ink); }
+.retro-layout .landing-closing__actions { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; max-width: 760px; margin: 48px auto 0; text-align: left; }
+.retro-layout .landing-closing__action { position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; gap: 22px; padding: 24px 26px; border: 1.5px solid var(--ink); text-decoration: none; transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease; }
+.retro-layout .landing-closing__action-note { position: relative; z-index: 1; font: 400 12px/1.5 var(--mono-body); }
+.retro-layout .landing-closing__action-label { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 16px; font-size: clamp(18px, 2vw, 22px); font-weight: 600; letter-spacing: -.025em; }
+.retro-layout .landing-closing__action svg { flex: none; transition: transform 220ms ease; }
+.retro-layout .landing-closing__session { background: var(--ink); color: var(--paper, #f5f1e6); }
+.retro-layout .landing-closing__session::before { content: ""; pointer-events: none; position: absolute; inset: 0; z-index: 0; opacity: 0; background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(240, 202, 133, .09) 3px 4px), radial-gradient(ellipse at 0% 100%, rgba(230, 164, 76, .23), transparent 75%); transition: opacity 200ms ease; }
+.retro-layout .landing-closing__session:is(:hover, :focus-visible)::before { opacity: 1; }
+.retro-layout .landing-closing__session:is(:hover, :focus-visible) svg { transform: translate(3px, -3px); }
+.retro-layout .landing-closing__download { color: var(--ink); background: var(--paper, #f5f1e6); box-shadow: 4px 4px 0 var(--ink); }
+.retro-layout .landing-closing__download::before { content: ""; pointer-events: none; position: absolute; inset: 5px; border: 1px solid currentColor; opacity: .16; transition: opacity 180ms ease; }
+.retro-layout .landing-closing__download:is(:hover, :focus-visible) { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ink); }
+.retro-layout .landing-closing__download:is(:hover, :focus-visible)::before { opacity: .45; }
+.retro-layout .landing-closing__download:is(:hover, :focus-visible) svg { transform: translateY(4px); }
+.retro-layout .landing-closing__action:focus-visible { outline: 3px solid var(--accent); outline-offset: 6px; }
+.retro-layout .landing-closing__action:active { transform: translate(2px, 2px); box-shadow: none; }
+@media (max-width: 560px) { .retro-layout .landing-closing__actions { grid-template-columns: 1fr; gap: 18px; margin-top: 34px; } .retro-layout .landing-closing__action { gap: 14px; padding: 21px 23px; } }
+@media (prefers-reduced-motion: reduce) { .retro-layout .landing-closing__action, .retro-layout .landing-closing__action svg, .retro-layout .landing-closing__action::before { transition: none; } .retro-layout .landing-closing__action:is(:hover, :focus-visible, :active), .retro-layout .landing-closing__action:is(:hover, :focus-visible) svg { transform: none; } }
+html[data-motion="reduce"] .landing-closing__action, html[data-motion="reduce"] .landing-closing__action svg, html[data-motion="reduce"] .landing-closing__action::before { transition: none; }
+html[data-motion="reduce"] .retro-layout .landing-closing__action:is(:hover, :focus-visible, :active), html[data-motion="reduce"] .retro-layout .landing-closing__action:is(:hover, :focus-visible) svg { transform: none; }

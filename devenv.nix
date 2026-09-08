@@ -138,6 +138,7 @@ in
     # import.meta.env, so this value reaches the browser bundle. While it is
     # "false" the hosted UI stays hidden instead of rendering dead controls.
     VITE_NOTORGANIC_ENABLED = "false";
+    VITE_NOTORGANIC_CHECKOUT_ENABLED = "false";
 
     # Browser-to-provider OAuth/DPoP contract. Deployment-specific values stay
     # blank so a local shell cannot accidentally advertise working checkout.

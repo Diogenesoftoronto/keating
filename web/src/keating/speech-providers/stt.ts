@@ -11,6 +11,7 @@ export interface SttOptions {
 }
 
 export interface MicRecorder {
+	readonly stream: MediaStream;
 	stop(): Promise<Blob>;
 	cancel(): void;
 }
@@ -31,6 +32,7 @@ export async function startMicRecording(): Promise<MicRecorder> {
 	const stopTracks = () => stream.getTracks().forEach((track) => track.stop());
 
 	return {
+		stream,
 		stop: () =>
 			new Promise<Blob>((resolve) => {
 				recorder.addEventListener(
@@ -88,7 +90,7 @@ async function transcribeOpenAi(blob: Blob, opts: SttOptions): Promise<string> {
 		.catch(async () => ({ error: { message: await response.text().catch(() => response.statusText) } }));
 	if (!response.ok) {
 		const message = payload?.error?.message ?? response.statusText;
-		throw new Error(`Transcription failed (${response.status}): ${String(message).slice(0, 500)}`);
+		throw Object.assign(new Error(String(message).slice(0, 500)), { status: response.status });
 	}
 	return String(payload?.text ?? "").trim();
 }
@@ -117,4 +119,25 @@ export async function transcribeAudio(blob: Blob, opts: SttOptions): Promise<str
 	if (blob.size === 0) return "";
 	if (opts.provider === "openai") return transcribeOpenAi(blob, opts);
 	return transcribeGoogle(blob, opts);
+}
+
+/** Product-facing recovery advice; never render raw provider responses. */
+export function transcriptionErrorMessage(error: unknown): string {
+  const value = error as { status?: number; code?: number; message?: string };
+  const status = Number(value?.status ?? value?.code);
+  if (status === 401 || status === 403)
+    return "The speech provider rejected your credentials. Check your speech provider key in Settings.";
+  if (status === 429)
+    return "The speech provider has reached a usage or rate limit. Check your quota, or wait before retrying.";
+  if (status === 413)
+    return "This recording is too large for the speech provider. Try a shorter clip.";
+  if (status === 400 || status === 415 || status === 422)
+    return "The speech provider could not read this recording. Try a shorter clip or a different speech provider.";
+  if (status === 404)
+    return "The transcription model is unavailable. Check your speech provider in Settings.";
+  if (status >= 500)
+    return "The speech provider is temporarily unavailable. Try again in a moment.";
+  if (error instanceof TypeError || /network|fetch|offline|timeout/i.test(value?.message ?? ""))
+    return "Could not reach the speech provider. Check your connection and try again.";
+  return "The speech provider could not transcribe this recording. Try again or choose another speech provider in Settings.";
 }

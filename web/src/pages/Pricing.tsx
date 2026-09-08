@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { ArrowRight, Check, RefreshCw } from "lucide-react";
 import { usePostHog } from "@posthog/react";
 import { Nav } from "../components/Nav";
 import { Footer } from "../components/Footer";
@@ -13,34 +15,13 @@ import {
 	type NotOrganicPack,
 } from "../notorganic-provider/packs";
 import { NotOrganicPublicClient, publicClientConfig } from "../notorganic-provider/public-client";
-import { cx } from "../../styled-system/css";
-import { btnRetro, eyebrow } from "../../styled-system/recipes";
+import "./pricing-page.css";
 
-const WAITLIST_FAQ_ITEMS: Array<{ q: string; a: string }> = [
-	{
-		q: "Can I buy credits today?",
-		a: "Not on this deployment. The packs below are not purchasable until its provider client is configured. Pick a pack to check whether the waitlist signup form is available.",
-	},
-	{
-		q: "Do I need credits to use Keating?",
-		a: "No. Keating is free with your own API keys (Anthropic, OpenAI, Google, and more). Credits are only for Keating's hosted model when you'd rather not manage keys.",
-	},
-	{
-		q: "How will credits work when they launch?",
-		a: "Each pack will add prepaid value to a shared Not Organic wallet. Usage is metered against the provider's published route and rate configuration, and one-time Keating packs will not expire.",
-	},
-	{
-		q: "How will credits work across devices?",
-		a: "The wallet is account-scoped rather than browser-scoped. Each browser connects separately with its own device-bound key; no long-lived provider credential is copied between devices.",
-	},
-];
-
-const CHECKOUT_FAQ_ITEMS: Array<{ q: string; a: string }> = [
-	{
-		q: "Can I buy credits today?",
-		a: "Yes. Connect your Not Organic account, choose a pack, and complete the provider-hosted checkout.",
-	},
-	...WAITLIST_FAQ_ITEMS.slice(1),
+const FAQ_ITEMS = [
+	{ q: "What does the free option include?", a: "Keating’s teaching tools, practice, and review. Connect your own model provider; that provider bills any AI usage separately." },
+	{ q: "How are credits used?", a: "Credits pay for AI usage. The amount used depends on the model and the length of your conversations, so a pack is a dollar balance rather than a fixed number of lessons." },
+	{ q: "Is this a subscription?", a: "No. These are one-time credit packs. Choose a balance that works for you." },
+	{ q: "Can I use credits on another device?", a: "Your credit balance belongs to your account. Connect that same account on each device to use it." },
 ];
 
 export const PRICING_WAITLIST_EXPERIMENT_KEY = "pricing-waitlist-cta-copy";
@@ -49,9 +30,7 @@ export function pricingWaitlistCta(
 	pack: NotOrganicPack,
 	variant: PricingWaitlistVariant,
 ): string {
-	return variant === "test"
-		? "Notify_me_at_launch"
-		: `Join_$${pack.priceUsd}_waitlist`;
+	return variant === "test" ? `Continue with ${pack.label}` : `Choose ${pack.label}`;
 }
 
 export type PricingAvailability = "waitlist" | "checkout_connect_required" | "checkout";
@@ -75,6 +54,7 @@ export function isPublicCheckoutConfigured(
 	].every((value) => Boolean(value?.trim()));
 	const scopes = new Set(env.VITE_NOTORGANIC_SCOPE?.trim().split(/\s+/) ?? []);
 	return env.VITE_NOTORGANIC_ENABLED === "true"
+		&& env.VITE_NOTORGANIC_CHECKOUT_ENABLED === "true"
 		&& fieldsPresent
 		&& REQUIRED_PUBLIC_SCOPES.every((scope) => scopes.has(scope));
 }
@@ -91,21 +71,27 @@ export function Pricing() {
 	const posthog = usePostHog();
 	const [pricingVariant, setPricingVariant] = useState<PricingWaitlistVariant>("control");
 	const checkoutConfigured = isPublicCheckoutConfigured(import.meta.env);
-	const clientConfig = checkoutConfigured ? publicClientConfig() : null;
-	const publicClient = clientConfig ? new NotOrganicPublicClient(clientConfig) : null;
+	const [publicClient] = useState(() => {
+		const config = checkoutConfigured ? publicClientConfig() : null;
+		return config ? new NotOrganicPublicClient(config) : null;
+	});
 	const [providerSession] = useState(() => {
 		return publicClient?.getSession() ?? null;
 	});
 	const [billingError, setBillingError] = useState<string | null>(null);
 	const [walletSummary, setWalletSummary] = useState<string | null>(null);
 	const [walletLoading, setWalletLoading] = useState(false);
+	const [pendingPack, setPendingPack] = useState<string | null>(null);
+	const checkoutPending = useRef(false);
 	const availability = pricingAvailability(checkoutConfigured, Boolean(providerSession));
-	const faqItems = checkoutConfigured ? CHECKOUT_FAQ_ITEMS : WAITLIST_FAQ_ITEMS;
+	useEffect(() => {
+		const selected = new URLSearchParams(window.location.search).get("pack");
+		const pack = NOTORGANIC_PACKS.find(item => item.id === selected);
+		if (pack && !checkoutConfigured) promptCreditWaitlist(pack.id);
+	}, [checkoutConfigured]);
 	useSeo({
 		title: "Pricing — Keating",
-		description: checkoutConfigured
-			? "Buy prepaid Not Organic inference credits for Keating through provider-hosted checkout."
-			: "Keating is free with your own API keys. Hosted inference credits are coming soon — join the waitlist.",
+		description: "Keating is free with your own API keys. Explore one-time prepaid AI credit packs from $10, with no subscription.",
 		canonical: "https://keating.help/pricing",
 	});
 
@@ -129,12 +115,12 @@ export function Pricing() {
 			const response = await publicClient.request("/v1/wallet");
 			const wallet = await response.json().catch(() => null) as { balance_microusd?: unknown } | null;
 			if (!response.ok || typeof wallet?.balance_microusd !== "number") {
-				throw new Error("Not Organic could not read the wallet balance.");
+				throw new Error("We couldn’t load your credit balance. Try refreshing it.");
 			}
 			setWalletSummary(`$${(wallet.balance_microusd / 1_000_000).toFixed(2)} available`);
 			setBillingError(null);
 		} catch (cause) {
-			setBillingError(cause instanceof Error ? cause.message : "Not Organic wallet refresh failed.");
+			setBillingError("We couldn’t load your credit balance. Try refreshing it.");
 		} finally {
 			setWalletLoading(false);
 		}
@@ -150,17 +136,9 @@ export function Pricing() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [providerSession]);
 
-	const connectProvider = async () => {
-		if (!publicClient) return;
-		try {
-			setBillingError(null);
-			window.location.assign(await publicClient.authorizationUrl("/pricing"));
-		} catch (cause) {
-			setBillingError(cause instanceof Error ? cause.message : "Not Organic connection could not be started.");
-		}
-	};
 
 	const buyPack = async (pack: NotOrganicPack) => {
+		if (checkoutPending.current) return;
 		// Keep the established event name stable: selecting a pack is purchase
 		// intent, not a completed checkout. The availability property makes that
 		// distinction explicit without breaking historical funnels.
@@ -174,12 +152,14 @@ export function Pricing() {
 			promptCreditWaitlist(pack.id, pricingVariant);
 			return;
 		}
-		if (!providerSession) {
-			await connectProvider();
-			return;
-		}
+		checkoutPending.current = true;
+		setPendingPack(pack.id);
 		try {
 			setBillingError(null);
+			if (!providerSession) {
+				window.location.assign(await publicClient.authorizationUrl(`/pricing?pack=${pack.id}`));
+				return;
+			}
 			const response = await publicClient.request("/v1/billing/checkout", {
 				method: "POST",
 				headers: { "content-type": "application/json" },
@@ -187,113 +167,51 @@ export function Pricing() {
 			});
 			const result = await response.json().catch(() => null) as { url?: unknown; checkout_url?: unknown } | null;
 			const checkoutUrl = typeof result?.url === "string" ? result.url : typeof result?.checkout_url === "string" ? result.checkout_url : null;
-			if (!response.ok || !checkoutUrl) throw new Error("Not Organic could not create checkout.");
+			if (!response.ok || !checkoutUrl || new URL(checkoutUrl).protocol !== "https:") throw new Error("Checkout unavailable");
 			window.location.assign(checkoutUrl);
-		} catch (cause) {
-			setBillingError(cause instanceof Error ? cause.message : "Not Organic checkout could not be started.");
+		} catch {
+			setBillingError(providerSession
+				? "We couldn’t open checkout. Your selection is still here; please try again."
+				: "We couldn’t open account sign-in. Please try choosing your pack again.");
+		} finally {
+			checkoutPending.current = false;
+			setPendingPack(null);
 		}
 	};
 
 	return (
-		<div className={cx("retro-layout", "retro-page")}>
-			<Nav />
-			<main className={cx("download-page")}>
-				<section className={cx("download-hero")}>
-					<div className={cx("wrap")}>
-						<div className={cx(eyebrow(), "prompt")}>cat PRICING.txt</div>
-						<h1>Pay for tokens. Nothing else.</h1>
-						<p className={cx("download-hero-copy")}>
-							Keating is free when you bring your own API keys. Hosted inference credits
-							route through Not Organic&apos;s prepaid wallet without a long-lived provider
-							secret in Keating. {checkoutConfigured
-								? "Connect your provider account to use hosted credits."
-								: "Hosted checkout is not enabled on this Keating deployment yet."}
-						</p>
-						{publicClient && !providerSession && (
-							<button type="button" className={btnRetro()} onClick={() => void connectProvider()}>
-								Connect_Not_Organic
-							</button>
-						)}
-						{providerSession && (
-							<div>
-								<p>Connected to Not Organic. {walletSummary ?? "Wallet balance is loading."}</p>
-					{checkoutReturned && (
-									<p>Returned from checkout. Creem updates the wallet after its signed webhook arrives.</p>
-								)}
-								<button type="button" className={btnRetro()} disabled={walletLoading} onClick={() => void refreshWallet()}>
-									{walletLoading ? "Refreshing_wallet…" : "Refresh_wallet"}
-								</button>
-							</div>
-						)}
-						{billingError && <p role="alert">{billingError}</p>}
+		<div className="retro-layout retro-page pricing-page">
+			<Nav primaryAction="download" />
+			<main className="pricing-main">
+				<header className="pricing-heading">
+					<p className="pricing-eyebrow">Simple pricing</p>
+					<h1>Keating is free.<br /><span>Choose how you use AI.</span></h1>
+					<p>Bring your own keys, or choose prepaid credits. No subscription.</p>
+				</header>
 
-						<div className={cx("download-source-box")} style={{ marginTop: "1.5rem" }}>
-							<div>
-								<h3>Hosted routing — Not Organic</h3>
-								<p>
-									Keating uses the provider&apos;s balanced model alias. Wallet and usage
-									records remain visible through your account session.
-								</p>
-							</div>
-							<div className={cx("download-command")} aria-label="Hosted provider">
-								<div>provider&nbsp;&nbsp;Not Organic</div>
-								<div>model&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;balanced</div>
-								<div>
-									status&nbsp;&nbsp;&nbsp;&nbsp;{availability}
-								</div>
-							</div>
-						</div>
-					</div>
+				<section className="pricing-own-key" aria-labelledby="own-key-title">
+					<div className="pricing-own-key-copy"><p className="pricing-eyebrow">Your keys. Your choice.</p><h2 id="own-key-title">Use your own model</h2><p>Connect a model provider and start learning.<br />Your provider bills AI usage separately.</p></div>
+					<div className="pricing-free-price"><span>$0</span><span>for Keating</span></div>
+					<Link to="/chat" className="pricing-button pricing-button--outline">Start learning <ArrowRight size={17} aria-hidden="true" /></Link>
 				</section>
 
-				<section aria-label="Credit packs">
-					<div className={cx("wrap")}>
-						<div className={cx(eyebrow(), "prompt")}>ls PACKS/</div>
-						<div className={cx("desktop-download-grid")}>
-							{NOTORGANIC_PACKS.map((pack) => (
-								<article
-									key={pack.id}
-									className={cx("desktop-download-card", pack.popular && "is-recommended")}
-								>
-									<div className={cx("desktop-card-head")}>
-										<div className={cx("desktop-platform")}>{pack.label.toUpperCase()}</div>
-										{pack.popular && <span className={cx("desktop-recommend-tag")}>POPULAR</span>}
-									</div>
-									<p>{pack.blurb}</p>
-									<code>
-										${pack.priceUsd} in prepaid inference value
-									</code>
-									<button
-										type="button"
-										className={btnRetro()}
-										style={{ padding: "0.5rem 1rem", fontWeight: 700 }}
-										onClick={() => void buyPack(pack)}
-									>
-									{availability === "waitlist"
-										? pricingWaitlistCta(pack, pricingVariant)
-										: availability === "checkout_connect_required"
-											? `Connect_to_buy_$${pack.priceUsd}`
-											: `Buy_$${pack.priceUsd}_pack`}
-									</button>
-								</article>
-							))}
-						</div>
+				<section className="pricing-credits" aria-labelledby="credits-title">
+					<div className="pricing-section-heading"><div><p className="pricing-eyebrow">Prepaid credits</p><h2 id="credits-title">A balance that fits you.</h2></div><p>Choose a pack. Pay for the AI you use.</p></div>
+					{providerSession && <div className="pricing-wallet" aria-live="polite"><div><span className="pricing-wallet-label">Your credit balance</span><strong>{walletSummary ?? (walletLoading ? "Loading…" : "Balance unavailable")}</strong></div><button type="button" className="pricing-text-button" disabled={walletLoading} onClick={() => void refreshWallet()}><RefreshCw size={15} aria-hidden="true" />{walletLoading ? "Refreshing…" : "Refresh balance"}</button></div>}
+					{checkoutReturned && <p className="pricing-notice" role="status">You’re back from checkout. Your balance updates once payment is confirmed. Refresh your balance if it hasn’t changed yet.</p>}
+					{billingError && <p className="pricing-error" role="alert">{billingError}</p>}
+					<div className="pricing-packs" aria-busy={pendingPack !== null}>
+						{NOTORGANIC_PACKS.map(pack => <article key={pack.id} className={`pricing-pack${pack.popular ? " pricing-pack--featured" : ""}`}>
+							<h3>{pack.label}</h3>
+							<p className="pricing-pack-amount"><span>$</span>{pack.priceUsd}</p>
+							<p className="pricing-pack-value">${pack.priceUsd} in AI credits</p>
+							<button type="button" className={`pricing-button${pack.popular ? "" : " pricing-button--outline"}`} disabled={pendingPack !== null} onClick={() => void buyPack(pack)}>{pendingPack === pack.id ? (providerSession ? "Opening checkout…" : "Opening sign-in…") : pricingWaitlistCta(pack, pricingVariant)}<ArrowRight size={17} aria-hidden="true" /></button>
+						</article>)}
 					</div>
+					<div className="pricing-pack-notes"><span><Check size={15} aria-hidden="true" /> One-time payment</span><span><Check size={15} aria-hidden="true" /> Same teaching tools</span><span>Prices in USD</span></div>
 				</section>
 
-				<section aria-label="Pricing FAQ">
-					<div className={cx("wrap")}>
-						<div className={cx(eyebrow(), "prompt")}>man CREDITS</div>
-						<div className={cx("desktop-download-grid")}>
-							{faqItems.map((item) => (
-								<article className={cx("desktop-download-card")} key={item.q}>
-									<div className={cx("desktop-platform")}>{item.q}</div>
-									<p>{item.a}</p>
-								</article>
-							))}
-						</div>
-					</div>
-				</section>
+				<section className="pricing-faq" aria-labelledby="pricing-faq-title"><h2 id="pricing-faq-title">A few things to know.</h2><div>{FAQ_ITEMS.map(item => <details key={item.q}><summary>{item.q}</summary><p>{item.a}</p></details>)}</div></section>
 			</main>
 			<Footer />
 			<CreditWaitlistDialog />

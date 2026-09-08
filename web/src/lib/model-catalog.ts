@@ -19,6 +19,44 @@ export type SelectableModel = {
 	group: SelectableModelGroup;
 };
 
+const MODEL_PROVIDER_PRIORITY = [
+	"openai-codex",
+	"anthropic",
+	"openai",
+	"google",
+	"mistral",
+	"groq",
+	"xai",
+	"openrouter",
+	"amazon-bedrock",
+	"vertex",
+];
+
+export function compareModelProviders(left: string, right: string): number {
+	const leftRank = MODEL_PROVIDER_PRIORITY.indexOf(left.toLowerCase());
+	const rightRank = MODEL_PROVIDER_PRIORITY.indexOf(right.toLowerCase());
+	const normalizedLeftRank = leftRank === -1 ? MODEL_PROVIDER_PRIORITY.length : leftRank;
+	const normalizedRightRank = rightRank === -1 ? MODEL_PROVIDER_PRIORITY.length : rightRank;
+	if (normalizedLeftRank !== normalizedRightRank) return normalizedLeftRank - normalizedRightRank;
+	return left.localeCompare(right);
+}
+
+export function displayModelProvider(provider: string): string {
+	const labels: Record<string, string> = {
+		"amazon-bedrock": "Amazon Bedrock",
+		"openai-codex": "OpenAI Codex",
+		openai: "OpenAI",
+		anthropic: "Anthropic",
+		google: "Google",
+		mistral: "Mistral",
+		groq: "Groq",
+		xai: "xAI",
+		openrouter: "OpenRouter",
+		vertex: "Google Vertex",
+	};
+	return labels[provider.toLowerCase()] ?? provider;
+}
+
 export function modelKey(model: Model<any>): string {
 	return `${model.provider}::${model.api}::${model.id}`;
 }
@@ -65,6 +103,12 @@ export async function discoverModels(browserAvailability: BrowserModelAvailabili
 					? "cloud"
 					: "custom",
 	}));
+	selectable.sort((left, right) => {
+		const providerOrder = compareModelProviders(left.model.provider, right.model.provider);
+		if (providerOrder !== 0) return providerOrder;
+		const nameOrder = left.model.name.localeCompare(right.model.name);
+		return nameOrder !== 0 ? nameOrder : left.model.id.localeCompare(right.model.id);
+	});
 
 	const compatibleBrowserModelIds = new Set(
 		Object.entries(browserAvailability)

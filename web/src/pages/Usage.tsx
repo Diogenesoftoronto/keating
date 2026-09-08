@@ -1,15 +1,12 @@
 import { Suspense, use, useEffect, useMemo, useState } from "react";
 import { usePostHog } from "@posthog/react";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { BookOpenCheck, Brain, CalendarDays, ChevronRight, Clock3, Cpu, Download, Flame, Gem, MessageSquareText, TrendingUp, Upload } from "lucide-react";
 import { useSeo } from "../hooks/useSeo";
 import { getInitPromise, keatingStorage, sessions } from "../hooks/keating-storage";
 import type { SessionMetadata } from "../types/session";
 import { UsageCharts } from "../components/UsageCharts";
-import { buildWebFineTuneExport, type WebExportSource, type WebFineTuneFormat } from "../keating/export";
-import { importFineTuneFiles, type WebFineTuneImportResult } from "../keating/import";
-import { buildWebTrainingArchive } from "../keating/training-archive";
-import { downloadFile, downloadTextFile } from "../lib/browser-download";
+import { downloadTextFile } from "../lib/browser-download";
 import {
 	buildKeatingPortableDataBundle,
 	importKeatingPortableDataBundle,
@@ -60,34 +57,17 @@ const styles = {
 	main: css({ mx: "auto", minW: 0, maxW: "72rem", overflow: "hidden", px: "1rem", py: "1.5rem" }),
 	metricGrid: css({ display: "grid", minW: 0, gap: "0.75rem", sm: { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }, lg: { gridTemplateColumns: "repeat(4, minmax(0, 1fr))" } }),
 	metricGridThree: css({ mt: "1.5rem", display: "grid", minW: 0, gap: "0.75rem", sm: { gridTemplateColumns: "repeat(3, minmax(0, 1fr))" } }),
-	muted: css({ color: "var(--muted-foreground)" }),
-	controlWrap: css({ w: "100%", maxW: "100%", sm: { minW: "18rem", flex: "1 1 0%" }, lg: { minW: "22rem" } }),
-	labelText: css({ mb: "0.5rem", fontSize: "0.75rem", fontWeight: "500", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted-foreground)" }),
-	segmented: css({ display: "grid", minW: 0, gridTemplateColumns: "repeat(2, minmax(0, 1fr))", overflow: "hidden", borderRadius: "0.375rem", border: "1px solid var(--border)", sm: { display: "flex", flexWrap: "nowrap", overflowX: "auto" } }),
-	segmentButton: css({ minW: 0, whiteSpace: "nowrap", px: "0.375rem", py: "0.125rem", fontSize: "10px", transitionProperty: "color, background-color", transitionDuration: "150ms", sm: { minW: "max-content", flex: "1 0 auto", px: "0.5rem", py: "0.25rem", fontSize: "11px" }, lg: { px: "0.75rem", py: "0.375rem", fontSize: "0.75rem" } }),
-	segmentActive: css({ bg: "var(--primary)", color: "var(--primary-foreground)" }),
-	segmentInactive: css({ _hover: { bg: "var(--accent)" } }),
 	panel: css({ mt: "1.5rem", overflow: "hidden", border: "1px solid var(--ink)", bg: "var(--card)" }),
 	panelHeader: css({ borderBottom: "1px solid var(--border)", px: "1rem", py: "0.75rem" }),
 	panelTitle: css({ fontSize: "0.875rem", fontWeight: "600" }),
 	panelSubtitle: css({ mt: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" }),
-	exportBody: css({ display: "flex", minW: 0, flexDir: "column", gap: "1rem", p: "1rem", xl: { flexDir: "row", alignItems: "flex-end", justifyContent: "space-between" } }),
-	formGroup: css({ display: "flex", minW: 0, flex: "1 1 0%", flexWrap: "wrap", alignItems: "flex-end", gap: "1rem" }),
-	inputLabel: css({ display: "flex", minW: "9rem", maxW: "100%", flexDir: "column", gap: "0.5rem" }),
-	numberInput: css({ h: "2.25rem", minW: 0, borderRadius: "0.375rem", border: "1px solid var(--border)", bg: "var(--background)", px: "0.5rem", fontSize: "0.875rem" }),
-	checkLabel: css({ display: "flex", h: "2.25rem", maxW: "100%", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", border: "1px solid var(--border)", px: "0.75rem", fontSize: "0.875rem" }),
-	checkLabelRedact: css({ minW: "14rem" }),
-	checkLabelJudge: css({ minW: "18rem" }),
-	checkbox: css({ h: "1rem", w: "1rem", flexShrink: 0 }),
 	truncate: css({ minW: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }),
-	actionColumn: css({ display: "flex", flexShrink: 0, flexDir: "column", alignItems: "flex-start", gap: "0.5rem", xl: { alignItems: "flex-end" } }),
 	actionRow: css({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem", xl: { justifyContent: "flex-end" } }),
-	button: css({ display: "inline-flex", h: "2.25rem", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", px: "0.75rem", fontSize: "0.875rem" }),
+	button: css({ display: "inline-flex", minH: "2.25rem", minW: 0, maxW: "100%", py: "0.5rem", overflowWrap: "anywhere", lineHeight: "1.4", "& svg": { flexShrink: 0 }, alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", px: "0.75rem", fontSize: "0.875rem" }),
 	primaryButton: css({ bg: "var(--primary)", fontWeight: "500", color: "var(--primary-foreground)", _hover: { bg: "color-mix(in srgb, var(--primary) 90%, transparent)" }, _disabled: { opacity: 0.5 } }),
 	borderButton: css({ border: "1px solid var(--border)", _hover: { bg: "var(--accent)" }, _disabled: { opacity: 0.5 } }),
 	fileLabel: css({ cursor: "pointer", "&:has(:disabled)": { cursor: "not-allowed", opacity: 0.5 } }),
 	srOnly: css({ position: "absolute", w: "1px", h: "1px", p: 0, m: "-1px", overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", borderWidth: 0 }),
-	smallMuted: css({ fontSize: "0.75rem", color: "var(--muted-foreground)" }),
 	error: css({ maxW: "24rem", fontSize: "0.75rem", color: "var(--destructive)" }),
 	portableBody: css({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "1rem", p: "1rem" }),
 	inlineLabel: css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem" }),
@@ -98,12 +78,10 @@ const styles = {
 	dividerList: css({ "& > * + *": { borderTop: "1px solid var(--border)" } }),
 	emptyState: css({ px: "1rem", py: "2rem", textAlign: "center", fontSize: "0.875rem", color: "var(--muted-foreground)" }),
 	stack3: css({ "& > * + *": { mt: "0.75rem" }, p: "1rem" }),
-	deepRow: css({ display: "flex", minW: 0, alignItems: "flex-start", gap: "0.75rem" }),
 	deepButton: css({ display: "flex", w: "100%", minW: 0, cursor: "pointer", alignItems: "flex-start", gap: "0.75rem", borderRadius: "0.375rem", p: "0.5rem", textAlign: "left", _hover: { bg: "var(--accent)" }, _focusVisible: { outline: "2px solid var(--ring)", outlineOffset: "2px" } }),
 	rankBox: css({ display: "flex", h: "1.75rem", w: "1.75rem", flexShrink: 0, alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", bg: "var(--muted)", fontSize: "0.75rem", fontWeight: "500" }),
 	flex1: css({ minW: 0, flex: "1 1 0%" }),
 	lineClamp2: css({ overflow: "hidden", textOverflow: "ellipsis", lineClamp: 2 }),
-	lineClamp4: css({ overflow: "hidden", textOverflow: "ellipsis", lineClamp: 4 }),
 	metaRow: css({ mt: "0.25rem", display: "flex", minW: 0, flexWrap: "wrap", alignItems: "center", columnGap: "0.5rem", rowGap: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" }),
 	sessionRow: css({ display: "flex", minH: "9rem", w: "100%", minW: 0, cursor: "pointer", flexDir: "column", gap: "0.75rem", px: "1rem", py: "0.75rem", textAlign: "left", transitionProperty: "background-color", transitionDuration: "150ms", _hover: { bg: "var(--accent)" }, _focusVisible: { outline: "2px solid var(--ring)", outlineOffset: "-2px" } }),
 	sessionTitle: css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: "500" }),
@@ -120,261 +98,6 @@ function useSessionMetadata() {
 		metadataPromise = sessions.getAllMetadata();
 	}
 	return use(metadataPromise);
-}
-
-function SegmentedControl<T extends string>({
-	label,
-	value,
-	options,
-	onChange,
-}: {
-	label: string;
-	value: T;
-	options: Array<{ value: T; label: string }>;
-	onChange: (value: T) => void;
-}) {
-	return (
-		<div className={styles.controlWrap}>
-			<div className={styles.labelText}>{label}</div>
-			<div className={styles.segmented}>
-				{options.map((option) => (
-					<button
-						key={option.value}
-						type="button"
-						className={cx(styles.segmentButton, value === option.value ? styles.segmentActive : styles.segmentInactive)}
-						onClick={() => onChange(option.value)}
-					>
-						{option.label}
-					</button>
-				))}
-			</div>
-		</div>
-	);
-}
-
-function FineTuneExportPanel() {
-	const posthog = usePostHog();
-	const [format, setFormat] = useState<WebFineTuneFormat>("both");
-	const [source, setSource] = useState<WebExportSource>("all");
-	const [redact, setRedact] = useState(true);
-	const [minAssistantChars, setMinAssistantChars] = useState(80);
-	const [judgeScoring, setJudgeScoring] = useState(false);
-	const [exporting, setExporting] = useState(false);
-	const [result, setResult] = useState<{ examples: number; records: number; skipped: number; redactions: number; scored?: number; unscored?: number } | null>(null);
-	const [importResult, setImportResult] = useState<WebFineTuneImportResult | null>(null);
-	const [error, setError] = useState("");
-
-	const handleExport = async () => {
-		setExporting(true);
-		setError("");
-		try {
-			const judge = judgeScoring
-				? (await import("../keating/export-judge")).createKeatingExportJudge()
-				: undefined;
-			const bundle = await buildWebFineTuneExport({
-				source,
-				format,
-				redact,
-				minAssistantChars,
-				judge,
-			});
-			if (bundle.recordCount === 0) {
-				posthog?.capture("training_data_exported", {
-					success: false,
-					outcome: "empty",
-					format,
-					source,
-					redact_secrets: redact,
-					judge_scoring: judgeScoring,
-					skipped_count: bundle.skippedCount,
-				});
-				setError("No training records were generated. Create sessions or artifacts first.");
-				setResult({
-					examples: 0,
-					records: 0,
-					skipped: bundle.skippedCount,
-					redactions: bundle.redactionCount,
-					scored: bundle.rewardStats?.scored,
-					unscored: bundle.rewardStats?.unscored,
-				});
-				return;
-			}
-			const archive = buildWebTrainingArchive(bundle);
-			downloadFile(archive.filename, archive.bytes, "application/zip");
-			posthog?.capture("training_data_exported", {
-				success: true,
-				outcome: "downloaded",
-				format,
-				source,
-				redact_secrets: redact,
-				judge_scoring: judgeScoring,
-				record_count: bundle.recordCount,
-				example_count: bundle.exampleCount,
-				skipped_count: bundle.skippedCount,
-				redaction_count: bundle.redactionCount,
-			});
-			setResult({
-				examples: bundle.exampleCount,
-				records: bundle.recordCount,
-				skipped: bundle.skippedCount,
-				redactions: bundle.redactionCount,
-				scored: bundle.rewardStats?.scored,
-				unscored: bundle.rewardStats?.unscored,
-			});
-		} catch (err) {
-			posthog?.capture("training_data_exported", {
-				success: false,
-				outcome: "error",
-				format,
-				source,
-				redact_secrets: redact,
-				judge_scoring: judgeScoring,
-				failure_type: err instanceof Error ? err.name : "unknown",
-			});
-			setError(err instanceof Error ? err.message : String(err));
-		} finally {
-			setExporting(false);
-		}
-	};
-
-	const handleImport = async (fileList: FileList | null) => {
-		const files = Array.from(fileList ?? []);
-		if (!files.length) return;
-		setExporting(true);
-		setError("");
-		setImportResult(null);
-		try {
-			const imported = await importFineTuneFiles(await Promise.all(files.map(async (file) => ({
-				name: file.name,
-				text: await file.text(),
-			}))));
-			if (imported.examplesImported === 0) {
-				setError("No importable fine-tune examples were found. Choose ChatML or Alpaca JSONL files.");
-			}
-			metadataPromise = null;
-			posthog?.capture("training_data_imported", {
-				success: imported.examplesImported > 0,
-				file_count: files.length,
-				example_count: imported.examplesImported,
-				session_count: imported.sessionsImported,
-				skipped_count: imported.skipped,
-			});
-			setImportResult(imported);
-		} catch (err) {
-			posthog?.capture("training_data_imported", {
-				success: false,
-				file_count: files.length,
-				failure_type: err instanceof Error ? err.name : "unknown",
-			});
-			setError(err instanceof Error ? err.message : String(err));
-		} finally {
-			setExporting(false);
-		}
-	};
-
-	return (
-		<section className={styles.panel}>
-			<div className={styles.panelHeader}>
-				<h2 className={styles.panelTitle}>Training data export</h2>
-				<p className={styles.panelSubtitle}>Download one documented ZIP with canonical records, SFT files, rewards, preferences, schema, and quality notes.</p>
-			</div>
-			<div className={styles.exportBody}>
-				<div className={styles.formGroup}>
-					<SegmentedControl
-						label="Format"
-						value={format}
-						onChange={setFormat}
-						options={[
-							{ value: "chatml", label: "ChatML" },
-							{ value: "alpaca", label: "Alpaca" },
-							{ value: "both", label: "Both" },
-						]}
-					/>
-					<SegmentedControl
-						label="Source"
-						value={source}
-						onChange={setSource}
-						options={[
-							{ value: "all", label: "All" },
-							{ value: "artifacts", label: "Artifacts" },
-							{ value: "sessions", label: "Sessions" },
-							{ value: "sandbox", label: "Sandbox" },
-						]}
-					/>
-					<label className={styles.inputLabel}>
-						<span className={styles.labelText}>Minimum assistant length</span>
-						<input
-							type="number"
-							min={1}
-							className={styles.numberInput}
-							value={minAssistantChars}
-							onChange={(event) => setMinAssistantChars(Math.max(1, Number.parseInt(event.target.value, 10) || 1))}
-						/>
-					</label>
-					<label className={cx(styles.checkLabel, styles.checkLabelRedact)}>
-						<input
-							type="checkbox"
-							className={styles.checkbox}
-							checked={redact}
-							onChange={(event) => setRedact(event.target.checked)}
-						/>
-						<span className={styles.truncate}>Redact secrets</span>
-					</label>
-					<label className={cx(styles.checkLabel, styles.checkLabelJudge)}>
-						<input
-							type="checkbox"
-							className={styles.checkbox}
-							checked={judgeScoring}
-							onChange={(event) => setJudgeScoring(event.target.checked)}
-						/>
-						<span className={styles.truncate}>LLM judge scoring (slower, uses API credits)</span>
-					</label>
-				</div>
-				<div className={styles.actionColumn}>
-					<div className={styles.actionRow}>
-						<button
-							type="button"
-							className={cx(styles.button, styles.primaryButton)}
-							onClick={handleExport}
-							disabled={exporting}
-						>
-							<Download size={16} />
-							{exporting ? "Building ZIP..." : "Export training ZIP"}
-						</button>
-						<label className={cx(styles.button, styles.borderButton, styles.fileLabel)}>
-							<Upload size={16} />
-							Import JSONL
-							<input
-								type="file"
-								accept=".jsonl,application/jsonl,application/x-ndjson"
-								multiple
-								className={styles.srOnly}
-								disabled={exporting}
-								onChange={(event) => {
-									void handleImport(event.target.files);
-									event.currentTarget.value = "";
-								}}
-							/>
-						</label>
-					</div>
-					{result && (
-						<div className={styles.smallMuted}>
-							{formatNumber(result.records)} rich records · {formatNumber(result.examples)} SFT examples · {formatNumber(result.skipped)} skipped · {formatNumber(result.redactions)} redactions
-							{typeof result.scored === "number" && typeof result.unscored === "number"
-								? ` · ${formatNumber(result.scored)} scored · ${formatNumber(result.unscored)} unscored`
-								: ""}
-						</div>
-					)}
-					{importResult && (
-						<div className={styles.smallMuted}>
-							Imported {formatNumber(importResult.examplesImported)} examples into {formatNumber(importResult.sessionsImported)} session{importResult.sessionsImported === 1 ? "" : "s"} · {formatNumber(importResult.skipped)} skipped
-						</div>
-					)}
-					{error && <div className={styles.error}>{error}</div>}
-				</div>
-			</div>
-		</section>
-	);
 }
 
 function PortableDataPanel() {
@@ -612,7 +335,7 @@ function UsageContent() {
 				</div>
 
 				<PortableDataPanel />
-				<FineTuneExportPanel />
+				<div className={styles.panelHeader}><Link to="/training-data">Prepare a training dataset <ChevronRight size={16} /></Link><p className={styles.panelSubtitle}>Filter, inspect, import, and download training data in its dedicated workspace.</p></div>
 
 				<div className={styles.contentGrid}>
 					<section className={styles.section}>

@@ -4,6 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowDown, ArrowDownToLine, ArrowRight, Globe, Terminal } from "lucide-react";
 import { Nav } from "../components/Nav";
 import { Footer } from "../components/Footer";
+import { TerminalInstall } from "../components/TerminalInstall";
 import { AndroidLogo, AppleLogo, IosLogo, LinuxLogo, WindowsLogo } from "../components/platform-logos";
 import { useSeo } from "../hooks/useSeo";
 import { detectDownloadArchitecture, detectPlatform, type DetectedPlatform, type DownloadArchitecture } from "../lib/detect-platform";
@@ -70,7 +71,7 @@ export function Download() {
 
   return (
     <div className="retro-layout retro-page downloads">
-      <Nav />
+      <Nav primaryAction="download" />
       <main>
         <section className="downloads-hero" aria-labelledby="downloads-title">
           <div className="downloads-wrap downloads-hero-grid">
@@ -168,6 +169,7 @@ export function Download() {
           </div>
         </section>
         <section className="downloads-browser-band" aria-labelledby="downloads-browser-heading"><div className="downloads-wrap"><div><Globe size={28} aria-hidden="true" /><h2 id="downloads-browser-heading">A browser is all you need.</h2><p>Start with a question. No installation required.</p></div><Link className="downloads-button" to="/chat" onClick={captureBrowser}>Start learning <ArrowRight size={18} aria-hidden="true" /></Link></div></section>
+        <TerminalInstall />
       </main>
       <Footer />
     </div>

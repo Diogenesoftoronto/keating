@@ -1,0 +1,111 @@
+.keating-bot {
+	--keating-bot-row: 0%;
+	--keating-bot-rest-frame: 0%;
+	display: inline-block;
+	width: var(--keating-bot-size, 64px);
+	height: var(--keating-bot-size, 64px);
+	flex: 0 0 auto;
+	vertical-align: middle;
+	line-height: 0;
+	contain: layout style;
+}
+.keating-bot__motion, .keating-bot__sprite, .keating-bot__fallback { display: block; width: 100%; height: 100%; }
+.keating-bot__fallback { object-fit: contain; }
+.keating-bot__sprite {
+	background-image: url('/brand/keatingbot-sprites-v1.png');
+	background-repeat: no-repeat;
+	background-size: 400% 400%;
+	background-position: var(--keating-bot-rest-frame) var(--keating-bot-row);
+}
+.keating-bot[data-variant="body"] .keating-bot__sprite { background-image: url('/brand/keatingbot-body-sprites-v1.png'); }
+.keating-bot[data-state="listening"] { --keating-bot-row: 33.333333%; }
+.keating-bot[data-state="thinking"] { --keating-bot-row: 66.666667%; }
+.keating-bot[data-state="speaking"], .keating-bot[data-state="success"] { --keating-bot-row: 100%; }
+.keating-bot[data-variant="head"][data-state="success"] { --keating-bot-rest-frame: 66.666667%; }
+.keating-bot[data-strip="true"] { --keating-bot-row: 0%; }
+.keating-bot[data-strip="true"] .keating-bot__sprite { background-size: 400% 100%; }
+.keating-bot[data-strip="true"][data-state="speaking"] .keating-bot__sprite { background-size: 800% 100%; }
+.keating-bot[data-animated="true"] .keating-bot__sprite { animation: keating-bot-blink 6s steps(1, end) infinite; }
+.keating-bot[data-animated="true"][data-variant="body"][data-state="idle"] .keating-bot__sprite { animation: keating-bot-wave 7s steps(1, end) infinite; }
+.keating-bot[data-animated="true"][data-state="listening"] .keating-bot__sprite { animation: keating-bot-frames 1.6s steps(1, end) infinite; }
+.keating-bot[data-animated="true"][data-state="thinking"] .keating-bot__sprite { animation: keating-bot-strip-four 1.6s steps(4, end) infinite; }
+.keating-bot[data-animated="true"][data-state="speaking"] .keating-bot__sprite { animation: keating-bot-strip-eight 1.2s steps(8, end) infinite; }
+.keating-bot[data-animated="true"][data-state="success"] .keating-bot__sprite { animation: keating-bot-frames .8s steps(1, end) 1 both; }
+.keating-bot[data-animated="true"][data-state="listening"] .keating-bot__motion { animation: keating-bot-listen 2.4s ease-in-out infinite; }
+.keating-bot[data-animated="true"][data-state="thinking"] .keating-bot__motion { animation: keating-bot-think 2.8s ease-in-out infinite; }
+.keating-bot[data-animated="true"][data-state="speaking"] .keating-bot__motion { animation: keating-bot-speak .8s ease-in-out infinite; }
+.keating-bot[data-animated="true"][data-variant="body"][data-state="speaking"] .keating-bot__motion { animation: none; }
+.keating-bot[data-animated="true"][data-state="success"] .keating-bot__motion { animation: keating-bot-success .8s ease-out 1 both; }
+.keating-bot[data-paused="true"] .keating-bot__sprite, .keating-bot[data-paused="true"] .keating-bot__motion { animation-play-state: paused; }
+@keyframes keating-bot-frames {
+	0%, 100% { background-position: 0% var(--keating-bot-row); }
+	25% { background-position: 33.333333% var(--keating-bot-row); }
+	50% { background-position: 66.666667% var(--keating-bot-row); }
+	75% { background-position: 100% var(--keating-bot-row); }
+}
+/* The endpoint is one cell beyond the strip; steps hold every visible cell for equal time. */
+@keyframes keating-bot-strip-four { from { background-position: 0% 0%; } to { background-position: 133.333333% 0%; } }
+@keyframes keating-bot-strip-eight { from { background-position: 0% 0%; } to { background-position: 114.285714% 0%; } }
+@keyframes keating-bot-blink {
+	0%, 90%, 100% { background-position: 0% var(--keating-bot-row); }
+	92%, 98% { background-position: 33.333333% var(--keating-bot-row); }
+	94% { background-position: 66.666667% var(--keating-bot-row); }
+	96% { background-position: 100% var(--keating-bot-row); }
+}
+@keyframes keating-bot-wave {
+	0%, 72%, 100% { background-position: 0% var(--keating-bot-row); }
+	76%, 92% { background-position: 33.333333% var(--keating-bot-row); }
+	80%, 88% { background-position: 66.666667% var(--keating-bot-row); }
+	84%, 96% { background-position: 100% var(--keating-bot-row); }
+}
+@keyframes keating-bot-listen { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-2deg); } }
+@keyframes keating-bot-think { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2%); } }
+@keyframes keating-bot-speak { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1.5%); } }
+@keyframes keating-bot-success { 0%, 100% { transform: translateY(0) rotate(0); } 35% { transform: translateY(-5%) rotate(-3deg); } 65% { transform: translateY(-1%) rotate(2deg); } }
+html[data-motion="reduce"] .keating-bot__motion, html[data-motion="reduce"] .keating-bot__sprite { animation: none !important; transform: none !important; }
+html[data-motion="reduce"] .keating-bot__sprite { background-position: var(--keating-bot-rest-frame) var(--keating-bot-row); }
+@media (prefers-reduced-motion: reduce) {
+	.keating-bot__motion, .keating-bot__sprite { animation: none !important; transform: none !important; }
+	.keating-bot__sprite { background-position: var(--keating-bot-rest-frame) var(--keating-bot-row); }
+}
+
+.keating-bot[data-variant="body"][data-state="speaking"] { --keating-bot-row: 0%; }
+.keating-bot[data-animated="true"][data-state="success"] .keating-bot__sprite {
+  animation-name: keating-bot-celebrate;
+}
+.keating-bot[data-animated="true"][data-variant="head"][data-state="success"] .keating-bot__sprite {
+  animation-name: keating-bot-head-celebrate;
+}
+@keyframes keating-bot-head-celebrate {
+  0% { background-position: 0% var(--keating-bot-row); }
+  25% { background-position: 33.333333% var(--keating-bot-row); }
+  50%, 100% { background-position: 66.666667% var(--keating-bot-row); }
+}
+@keyframes keating-bot-celebrate {
+  0% { background-position: 0% var(--keating-bot-row); }
+  25% { background-position: 33.333333% var(--keating-bot-row); }
+  50% { background-position: 66.666667% var(--keating-bot-row); }
+  75%, 100% { background-position: 100% var(--keating-bot-row); }
+}
+.keating-bot[data-frozen="true"] .keating-bot__motion, .keating-bot[data-frozen="true"] .keating-bot__sprite { animation: none !important; transform: none !important; }
+.keating-bot[data-frozen="true"] .keating-bot__sprite { background-position: var(--keating-bot-frame) var(--keating-bot-row) !important; }
+
+/* Twelve authored in-between poses, followed by a quiet resting hold. */
+.keating-bot[data-variant="body"][data-state="waving"] { --keating-bot-rest-frame: 45.454545%; --keating-bot-row: 0%; }
+.keating-bot[data-variant="body"][data-state="waving"] .keating-bot__sprite { background-size: 1200% 100%; }
+.keating-bot[data-animated="true"][data-variant="body"][data-state="waving"] .keating-bot__sprite { animation: keating-bot-wave-twelve 7.5s steps(1, end) infinite; }
+@keyframes keating-bot-wave-twelve {
+  0.000000% { background-position: 0.000000% 0%; }
+  2.666667% { background-position: 9.090909% 0%; }
+  5.333333% { background-position: 18.181818% 0%; }
+  8.000000% { background-position: 27.272727% 0%; }
+  10.666667% { background-position: 36.363636% 0%; }
+  13.333333% { background-position: 45.454545% 0%; }
+  16.000000% { background-position: 54.545455% 0%; }
+  18.666667% { background-position: 63.636364% 0%; }
+  21.333333% { background-position: 72.727273% 0%; }
+  24.000000% { background-position: 81.818182% 0%; }
+  26.666667% { background-position: 90.909091% 0%; }
+  29.333333% { background-position: 100.000000% 0%; }
+  100% { background-position: 100% 0%; }
+}

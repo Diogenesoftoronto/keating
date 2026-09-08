@@ -1,0 +1,4 @@
+.terminal-install .install-layout > * { min-width: 0; }
+.terminal-install .install-term-body pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; }
+.terminal-install .install-term-title { min-width: 0; overflow-wrap: anywhere; }
+.terminal-install .install-term-body [role="status"] { margin: 16px 0 0; font-size: 12px; }

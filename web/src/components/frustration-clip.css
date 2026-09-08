@@ -1,0 +1,11 @@
+.frustration-clip { width: min(100%, 420px); justify-self: center; min-width: 0; transform: rotate(-2deg); }
+.frustration-clip__screen { overflow: hidden; aspect-ratio: 480 / 292; border: 6px solid var(--ink, #242720); border-radius: 6px; background: #22251f; box-shadow: 5px 6px 0 color-mix(in srgb, var(--ink) 18%, transparent); }
+.frustration-clip__screen video, .frustration-clip__screen img { display: block; width: 100%; height: 100%; aspect-ratio: auto; object-fit: contain; }
+.frustration-clip__controls { display: flex; align-items: center; gap: 2px; margin-top: 9px; color: var(--ink-soft); }
+.frustration-clip__controls > span { flex: 1; font-size: 11px; line-height: 1.6; }
+.frustration-clip__controls button { display: grid; place-items: center; min-width: 44px; min-height: 44px; padding: 8px; border: 0; border-radius: 5px; background: transparent; color: var(--ink); cursor: pointer; }
+.frustration-clip__controls button:hover { background: color-mix(in srgb, var(--ink) 7%, transparent); }
+.frustration-clip__controls button:focus-visible { outline: 2px solid var(--accent-dim); outline-offset: 2px; }
+@media (max-width: 520px) { .frustration-clip { max-width: 340px; margin-bottom: 16px; } }
+@media (prefers-reduced-motion: reduce) { .frustration-clip { transform: none; } }
+html[data-motion="reduce"] .frustration-clip { transform: none; }

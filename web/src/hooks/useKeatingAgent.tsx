@@ -2438,7 +2438,7 @@ export function useKeatingAgent(
       currentModel={agentRef.current?.context.model ?? selectedModelRef.current}
       onClose={modelSelectorDialog.onClose}
       onSelect={(model: Model<Api>) => {
-        modelSelectorDialog.onClose();
+
         const prevModel = selectedModelRef.current;
         const activeAgent = agentRef.current;
         if (activeAgent?.context.isStreaming) {
@@ -2499,7 +2499,6 @@ export function useKeatingAgent(
           ...loadKeatingUiSettings(),
           imageModel: modelId,
         });
-        imageModelSelectorDialog.onClose();
         const retry = imageModelRetryRef.current;
         imageModelRetryRef.current = null;
         void retry?.().catch((error) => {

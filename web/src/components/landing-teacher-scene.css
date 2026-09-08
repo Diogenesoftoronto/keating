@@ -1,0 +1,22 @@
+.landing-teacher-scene {
+	position: relative;
+	isolation: isolate;
+	display: grid;
+	place-items: center;
+	width: 100%;
+	max-width: 380px;
+	height: 320px;
+	margin-inline: auto;
+	overflow: hidden;
+	pointer-events: none;
+}
+.landing-teacher-scene__field { position: absolute; inset: 12px 0 24px; z-index: -2; overflow: hidden; border-radius: 50%; background: color-mix(in srgb, var(--accent-green, #187348) 7%, transparent); }
+.landing-teacher-scene__ground { position: absolute; bottom: 26px; left: 20%; right: 20%; height: 20px; z-index: -1; border-radius: 50%; background: color-mix(in srgb, var(--ink, #242720) 9%, transparent); }
+.landing-teacher-scene__bot { display: block; width: auto; height: 270px; max-width: 90%; object-fit: contain; user-select: none; }
+html[data-motion="reduce"] .landing-teacher-scene canvas { display: none; }
+@media (max-width: 600px) {
+	.landing-teacher-scene { max-width: 280px; height: 265px; }
+	.landing-teacher-scene__bot { height: 225px; }
+	.landing-teacher-scene__ground { bottom: 17px; }
+	.landing-teacher-scene__field { inset: 6px 0 16px; }
+}

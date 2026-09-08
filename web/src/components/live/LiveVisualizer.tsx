@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 
 import { css } from "../../../styled-system/css";
 import { createLevelMeter } from "../../keating/live-audio-level";
+import { KeatingBot } from "../KeatingBot";
 
 /**
  * The one thing on the live surface that shows the conversation is alive.
@@ -35,17 +36,9 @@ export interface LiveVisualizerProps {
 /** Ring geometry as a fraction of the radius, from the mascot outwards. */
 const RINGS = [0.62, 0.78, 0.94];
 
-/** Preloaded expression frames keep live-state changes immediate and flicker-free. */
-const MASCOT_FRAMES: readonly VisualizerState[] = [
-	"connecting",
-	"listening",
-	"speaking",
-	"working",
-	"idle",
-];
-
 export default function LiveVisualizer({ state, inputStream, size = 208 }: LiveVisualizerProps) {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
+	const refreshRef = useRef<(() => void) | null>(null);
 	// The loop reads state through a ref so a state change never restarts it —
 	// restarting would reset the phase and make the animation jump.
 	const stateRef = useRef(state);
@@ -65,7 +58,9 @@ export default function LiveVisualizer({ state, inputStream, size = 208 }: LiveV
 		context.scale(ratio, ratio);
 
 		const meter = createLevelMeter(inputStream);
-		const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+		const motionPreference = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+		const prefersReducedMotion = () => (motionPreference?.matches ?? false) || document.documentElement.dataset.motion === "reduce";
+		let reduceMotion = prefersReducedMotion();
 
 		// Read the theme's accent once per loop start; it is a CSS variable, so it
 		// cannot be interpolated inside the canvas without resolving it first.
@@ -86,7 +81,8 @@ export default function LiveVisualizer({ state, inputStream, size = 208 }: LiveV
 			// the learner's own voice is not the subject, and metering it would
 			// make Keating's turn flicker with room noise.
 			const target = current === "listening" ? meter.read() : 0;
-			level += (target - level) * 0.25;
+			const responseTime = target > level ? 0.07 : 0.22;
+			level += (target - level) * (1 - Math.exp(-elapsed / responseTime));
 
 			const centre = size / 2;
 			const radius = size / 2;
@@ -98,15 +94,36 @@ export default function LiveVisualizer({ state, inputStream, size = 208 }: LiveV
 				drawRings(context, centre, radius, phase, level, current, accent, reduceMotion);
 			}
 
-			frame = requestAnimationFrame(draw);
+			// Static preferences and idle/hidden sessions do not need a render loop.
+			if (!reduceMotion && current !== "idle" && !document.hidden) frame = requestAnimationFrame(draw);
 		};
 
-		frame = requestAnimationFrame(draw);
+		const refresh = () => {
+			cancelAnimationFrame(frame);
+			lastTime = performance.now();
+			draw(lastTime);
+		};
+		const onMotionPreference = () => {
+			reduceMotion = prefersReducedMotion();
+			refresh();
+		};
+		refreshRef.current = refresh;
+		motionPreference?.addEventListener("change", onMotionPreference);
+		const motionObserver = new MutationObserver(onMotionPreference);
+		motionObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["data-motion"] });
+		document.addEventListener("visibilitychange", refresh);
+		refresh();
 		return () => {
 			cancelAnimationFrame(frame);
+			refreshRef.current = null;
+			motionPreference?.removeEventListener("change", onMotionPreference);
+			motionObserver.disconnect();
+			document.removeEventListener("visibilitychange", refresh);
 			meter.stop();
 		};
 	}, [inputStream, size]);
+
+	useEffect(() => { refreshRef.current?.(); }, [state]);
 
 	return (
 		<div
@@ -120,19 +137,12 @@ export default function LiveVisualizer({ state, inputStream, size = 208 }: LiveV
 				className={css({ position: "absolute", inset: 0 })}
 				style={{ width: size, height: size }}
 			/>
-			{MASCOT_FRAMES.map((frameState) => (
-				<img
-					key={frameState}
-					src={`/brand/mascot-live-${frameState}.png`}
-					alt=""
-					aria-hidden="true"
-					draggable={false}
-					className={`keating-mascot-image live-mascot-frame live-mascot-${frameState}${
-						state === frameState ? " is-active" : ""
-					} ${css({ position: "absolute", height: "auto" })}`}
-					style={{ width: size * 0.52 }}
-				/>
-			))}
+			<KeatingBot
+				state={state === "connecting" || state === "working" ? "thinking" : state}
+				size={Math.round(size * 0.58)}
+				animated={state !== "idle"}
+				label=""
+			/>
 		</div>
 	);
 }
@@ -157,7 +167,7 @@ function drawRings(
 	const speaking = state === "speaking";
 	const connecting = state === "connecting";
 	// Speaking animates on its own clock; listening rides the microphone.
-	const drive = reduceMotion ? 0 : speaking ? 1 : level;
+	const drive = reduceMotion ? 0 : speaking ? 1 : connecting ? 0.12 : level;
 	const speed = speaking ? 1.5 : connecting ? 0.45 : 0.7;
 
 	RINGS.forEach((fraction, index) => {
@@ -165,8 +175,8 @@ function drawRings(
 		// while Keating speaks instead of every ring throbbing in unison.
 		const lag = index * 0.35;
 		const wave = reduceMotion ? 0 : Math.sin((phase - lag) * Math.PI * speed);
-		const swell = drive * 0.09 * (1 + wave * 0.5);
-		const ringRadius = radius * (fraction + swell);
+		const swell = drive * 0.065 * (1 - index * 0.32) * (1 + wave * 0.5);
+		const ringRadius = Math.min(radius - 2, radius * (fraction + swell));
 
 		const baseAlpha = connecting ? 0.16 : 0.3;
 		const alpha = baseAlpha + drive * 0.45 - index * 0.07;

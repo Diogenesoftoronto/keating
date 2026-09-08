@@ -63,31 +63,36 @@ function toContextWindow(value: unknown, fallback = 0): number {
 	return fallback;
 }
 
-function inferInputModes(model: any): Array<"text" | "image"> {
-	const supported = new Set<string>();
+export type KeatingInputModality = "text" | "image" | "audio";
 
-	if (Array.isArray(model?.input)) {
-		for (const entry of model.input) {
-			if (entry === "image" || entry === "text") supported.add(entry);
-		}
+/** Keep richer registry metadata separately until Pi's Model.input supports audio. */
+export function modelInputModalities(model: unknown): KeatingInputModality[] {
+	if (!model || typeof model !== "object") return ["text"];
+	const record = model as Record<string, any>;
+	const supported = new Set<KeatingInputModality>();
+	for (const values of [record.input, record.inputModalities, record.input_modalities, record.modalities, record.architecture?.input_modalities]) {
+		if (!Array.isArray(values)) continue;
+		for (const entry of values) if (entry === "text" || entry === "image" || entry === "audio") supported.add(entry);
 	}
-
-	if (Array.isArray(model?.input_modalities)) {
-		for (const entry of model.input_modalities) {
-			if (entry === "image" || entry === "text") supported.add(entry);
-		}
-	}
-
-	if (Array.isArray(model?.modalities)) {
-		for (const entry of model.modalities) {
-			if (entry === "image" || entry === "text") supported.add(entry);
-		}
-	}
-
-	if (model?.vision === true) supported.add("image");
+	if (record.vision === true) supported.add("image");
+	// Inkling's registry entry may pass through a Pi catalog which narrows its
+	// input type to text/image. Preserve this known audio model's capability.
+	if (/^thinkingmachines\/inkling(?::free)?$/i.test(String(record.id ?? ""))) supported.add("audio");
 	if (supported.size === 0) supported.add("text");
+	return [...supported];
+}
 
-	return Array.from(supported) as Array<"text" | "image">;
+export function modelSupportsAudio(model: unknown): boolean {
+	return modelInputModalities(model).includes("audio");
+}
+
+function modelCapabilityMetadata(model: unknown) {
+	return { inputModalities: modelInputModalities(model) };
+}
+
+function inferInputModes(model: unknown): Array<"text" | "image"> {
+	const compatible = modelInputModalities(model).filter((mode): mode is "text" | "image" => mode !== "audio");
+	return compatible.length ? compatible : ["text"];
 }
 
 function inferReasoning(model: any): boolean {
@@ -190,6 +195,7 @@ async function discoverOpenAiCompatibleModels(
 						baseUrl: apiBaseUrl,
 						reasoning: inferReasoning(record),
 						input: inferInputModes(record),
+						...modelCapabilityMetadata(record),
 						cost: modelCost(),
 						contextWindow,
 						maxTokens,
@@ -300,6 +306,7 @@ async function discoverLmStudioModels(baseUrl: string): Promise<Model<Api>[]> {
 			baseUrl: `${trimTrailingSlash(baseUrl)}/v1`,
 			reasoning: inferReasoning(model),
 			input: inferInputModes(model),
+			...modelCapabilityMetadata(model),
 			cost: modelCost(),
 			contextWindow,
 			maxTokens: toContextWindow(model?.max_tokens, contextWindow),
@@ -525,7 +532,8 @@ export function buildSavedModel(saved: any): Model<Api> {
 		provider: saved.provider,
 		baseUrl: saved.baseUrl || "",
 		reasoning: saved.reasoning,
-		input: saved.vision ? (["text", "image"] as Array<"text" | "image">) : (["text"] as Array<"text" | "image">),
+		input: inferInputModes(saved),
+		...modelCapabilityMetadata(saved),
 		cost: UNKNOWN_COST,
 		contextWindow: UNKNOWN_CONTEXT_WINDOW,
 		maxTokens: UNKNOWN_MAX_TOKENS,

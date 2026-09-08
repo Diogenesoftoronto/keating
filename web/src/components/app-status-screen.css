@@ -1,0 +1,57 @@
+.app-status {
+	min-height: 100vh;
+	min-height: 100svh;
+	display: grid;
+	place-items: center;
+	padding: 2rem 1.25rem;
+	box-sizing: border-box;
+	background: var(--paper, #f3efe3);
+	color: var(--ink, #242720);
+}
+.app-status__content { width: 100%; max-width: 31rem; display: grid; justify-items: center; text-align: center; gap: 1.25rem; }
+.app-status__art { position: relative; display: block; width: 200px; height: 200px; }
+.app-status__bot { display: block; width: 100%; height: 100%; object-fit: contain; user-select: none; }
+/* Confine moving TV snow to the existing loading illustration's screen. */
+.app-status__screen-static {
+	position: absolute;
+	left: 39.2%;
+	top: 20%;
+	width: 23.4%;
+	height: 17%;
+	border-radius: 20%;
+	pointer-events: none;
+	opacity: .28;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Cpath fill='%23fff' filter='url(%23noise)' d='M0 0h96v96H0z'/%3E%3C/svg%3E");
+	background-size: 72px 72px;
+	animation: app-status-tv-static .7s steps(1, end) infinite;
+}
+@keyframes app-status-tv-static {
+	0%, 100% { background-position: 0 0; }
+	20% { background-position: -17px 23px; }
+	40% { background-position: 31px -11px; }
+	60% { background-position: -9px -37px; }
+	80% { background-position: 43px 13px; }
+}
+.app-status__message { display: grid; gap: .75rem; }
+.app-status__label { margin: 0; font-size: .8125rem; font-weight: 500; color: var(--muted-foreground, #5c6257); }
+.app-status__message h1 { margin: 0; font-size: 1.75rem; font-weight: 600; line-height: 1.2; letter-spacing: -.035em; text-wrap: balance; }
+.app-status__description { margin: 0; max-width: 45ch; font-size: .9375rem; line-height: 1.6; color: var(--muted-foreground, #5c6257); text-wrap: pretty; }
+.app-status__actions { display: flex; justify-content: center; flex-wrap: wrap; gap: .625rem; margin-top: .5rem; }
+.app-status__action { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: .625rem 1rem; border: 1px solid color-mix(in srgb, var(--ink, #242720) 30%, transparent); border-radius: 6px; font: inherit; font-size: .875rem; line-height: 1.2; color: inherit; text-decoration: none; background: transparent; cursor: pointer; box-sizing: border-box; }
+.app-status__action--primary { border-color: var(--ink, #242720); background: var(--ink, #242720); color: var(--paper, #f3efe3); }
+.app-status__action--quiet { border-color: transparent; }
+.app-status__action:hover { background: color-mix(in srgb, var(--ink, #242720) 7%, var(--paper, #f3efe3)); }
+.app-status__action--primary:hover { background: color-mix(in srgb, var(--ink, #242720) 85%, var(--paper, #f3efe3)); }
+.app-status__action:active { transform: translateY(1px); }
+.app-status__action:focus-visible { outline: 2px solid var(--primary, #168b51); outline-offset: 4px; }
+@media (max-width: 35rem), (max-height: 650px) {
+	.app-status { padding-block: 1.5rem; }
+	.app-status__art { width: 160px; height: 160px; }
+	.app-status__message h1 { font-size: 1.5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.app-status__action:active { transform: none; }
+	.app-status__screen-static { animation: none; }
+}
+html[data-motion="reduce"] .app-status__action:active { transform: none; }
+html[data-motion="reduce"] .app-status__screen-static { animation: none; }

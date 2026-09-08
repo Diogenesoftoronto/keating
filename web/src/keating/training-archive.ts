@@ -37,7 +37,7 @@ function trainingRecordSchema(): string {
 	return `${JSON.stringify(canonicalTrainingRecordJsonSchema(), null, 2)}\n`;
 }
 
-function buildDataCard(manifest: TrainingManifest, files: TrainingFile[]): string {
+function buildDataCard(manifest: TrainingManifest, files: TrainingFile[], summary?: string): string {
 	const counts = manifest.counts ?? {};
 	const quality = manifest.quality ?? {};
 	const fileRows = files
@@ -47,7 +47,7 @@ function buildDataCard(manifest: TrainingManifest, files: TrainingFile[]): strin
 
 This bundle separates captured evidence from trainer-specific compatibility files. Start with \`data/keating.training.jsonl\`: it preserves provenance, full prompt context, model and thinking metadata, quality signals, deterministic split assignment, and character counts for every record.
 
-## Dataset summary
+${summary?.trim() ? `## Dataset overview\n\n${summary.trim()}\n\n` : ""}## Dataset summary
 
 - Generated: ${manifest.generatedAt ?? "unknown"}
 - Source selection: ${manifest.source ?? "unknown"}
@@ -58,9 +58,13 @@ This bundle separates captured evidence from trainer-specific compatibility file
 - Responses excluded from SFT because of low scores: ${counts.sftExcluded ?? 0}
 - Redactions applied: ${counts.redactions ?? 0}
 
+## Retention settings
+
+Keep all responses: ${manifest.keepAllResponses ? "yes" : "no"}. ${manifest.keepAllResponses ? "Compatibility files include short, error-like, and low-scoring responses. Inclusion is not a recommendation to train on them. The source snapshot preserves original selected data, with redaction if enabled." : "Configured filters apply before scoring and packaging."}
+
 ## Quality labels
 
-- \`accepted\` (${quality.accepted ?? 0}): suitable for supervised fine-tuning.
+- \`accepted\` (${quality.accepted ?? 0}): passes the export reward threshold; this is not an independent endorsement of correctness or teaching effectiveness.
 - \`unscored\` (${quality.unscored ?? 0}): retained with full context, including generated artifacts without learner-quality evidence; review before training.
 - \`review\` (${quality.review ?? 0}): has mixed or middling evidence and is excluded from SFT compatibility files.
 - \`rejected\` (${quality.rejected ?? 0}): negative training evidence. Use for KTO or preference learning, not as a positive SFT completion.
@@ -77,8 +81,16 @@ ${fileRows}
 1. Validate \`data/keating.training.jsonl\` against \`schemas/keating-training-record.schema.json\`.
 2. Review records where \`quality.recommendedForSft\` is false.
 3. Use ChatML or Alpaca files for SFT only after reviewing unscored examples.
-4. Use KTO and DPO files for preference training. Rejected completions are intentionally kept out of SFT files.
-5. Keep records with the same session or source in one split. Keating assigns splits from a stable source-group hash to reduce leakage.
+4. Use KTO and DPO files for preference training. ${manifest.keepAllResponses ? "Keep-everything mode retains rejected completions in compatibility files; filter quality labels before positive SFT training." : "Rejected completions are intentionally kept out of SFT files."}
+5. Build train and validation datasets from the canonical \`split\` field. Compatibility files combine partitions despite their legacy \`train.*\` names; do not train on these files and evaluate on canonical validation records. Group related forks as well as sessions before evaluation.
+
+## Judge scoring
+
+Enabled: ${manifest.judgeScoringEnabled ? "yes" : "no"}. The manifest's \`judgeScoring\` object, when present, records the selected provider/model and successful versus missing scores. Enabled alone does not establish successful scoring. Judge rubric scores describe model-estimated teaching behavior, not observed retention, transfer, or mastery gains.
+
+## Export warnings
+
+${manifest.warnings.map((warning) => `- ${warning}`).join("\n")}
 
 ## Privacy
 
@@ -94,6 +106,8 @@ function archiveTimestamp(generatedAt: unknown): string {
 
 export function buildWebTrainingArchive(result: WebFineTuneExportResult): WebTrainingArchive {
 	const files: TrainingFile[] = [];
+	addJsonl(files, "data/review-notes.jsonl", "Anchored human annotations and model drafts, with review status and provenance. Original responses are unchanged.", result.reviewNotesJsonl);
+	if (result.sourceDataJson) files.push({ path: "data/source-snapshot.json", purpose: "Original selected source data, including non-text messages; redacted when enabled.", content: result.sourceDataJson });
 	addJsonl(files, "data/keating.training.jsonl", "Canonical, information-rich records. Start here.", result.canonicalJsonl);
 	addJsonl(files, "data/sft/train.chatml.jsonl", "ChatML compatibility data for supervised fine-tuning.", result.chatmlJsonl);
 	addJsonl(files, "data/sft/train.alpaca.jsonl", "Alpaca compatibility data for supervised fine-tuning.", result.alpacaJsonl);
@@ -112,7 +126,7 @@ export function buildWebTrainingArchive(result: WebFineTuneExportResult): WebTra
 
 	const manifest = TrainingManifestSchema.parse(JSON.parse(result.manifestJson));
 	const fileCatalog = files.map(({ path, purpose, records }) => ({ path, purpose, records }));
-	const dataCard = buildDataCard(manifest, files);
+	const dataCard = buildDataCard(manifest, files, result.readmeSummary?.included ? result.readmeSummary.text : undefined);
 	files.unshift({ path: "README.md", purpose: "Dataset card and training guidance.", content: dataCard });
 	fileCatalog.unshift({ path: "README.md", purpose: "Dataset card and training guidance.", records: undefined });
 	const enrichedManifest = { ...manifest, files: fileCatalog };

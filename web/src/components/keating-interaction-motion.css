@@ -1,0 +1,22 @@
+@keyframes keating-notice-enter {
+  from { opacity: 0; transform: translateY(12px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes keating-panel-enter {
+  from { opacity: .25; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .training-primary, .training-secondary, .training-presets button {
+    transition: transform 180ms cubic-bezier(.2,.8,.2,1), background-color 160ms ease, box-shadow 180ms ease;
+  }
+  .training-primary:active:not(:disabled), .training-secondary:active:not(:disabled), .training-presets button:active:not(:disabled) {
+    transform: translateY(2px) scale(.98);
+  }
+  .training-config fieldset:not([hidden]), .training-empty, .training-downloads {
+    animation: keating-panel-enter 240ms cubic-bezier(.16,1,.3,1) both;
+  }
+  .training-primary:hover:not(:disabled) > svg { transform: translateX(2px); }
+  .training-primary > svg { transition: transform 180ms ease; }
+}
+html[data-motion="reduce"] .training-workspace * { animation: none !important; transition: none !important; }

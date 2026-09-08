@@ -34,17 +34,19 @@ type Story = StoryObj<typeof meta>;
 export const Prompt: Story = {
 	play: async ({ canvasElement, args }) => {
 		const canvas = within(canvasElement);
-		await userEvent.click(canvas.getByRole("button", { name: "Open waitlist form" }));
+		await userEvent.type(canvas.getByRole("textbox", { name: "Email address" }), "learner@example.com");
+		await userEvent.click(canvas.getByRole("checkbox"));
+		await userEvent.click(canvas.getByRole("button", { name: "Join the email waitlist" }));
 		await expect(args.onJoin).toHaveBeenCalledTimes(1);
 	},
 };
 
-export const OpeningSurvey: Story = {
+export const SavingEmail: Story = {
 	args: { state: "loading" },
 };
 
-export const SurveyUnavailable: Story = {
-	args: { state: "survey_unavailable" },
+export const SubmissionError: Story = {
+	args: { state: "error" },
 };
 
 export const Mobile: Story = {
@@ -53,3 +55,5 @@ export const Mobile: Story = {
 		viewport: { defaultViewport: "mobile1" },
 	},
 };
+
+export const Saved: Story = { args: { state: "success" } };

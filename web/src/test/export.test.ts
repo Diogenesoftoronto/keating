@@ -235,6 +235,24 @@ describe("web fine-tune export", () => {
 		expect(JSON.parse(withJudge.rewardedJsonl!.trim()).reward).toBeGreaterThan(JSON.parse(withoutJudge.rewardedJsonl!.trim()).reward);
 	});
 
+	it("records a selected judge and reports missing scores across one export-wide batch", async () => {
+		const session = (id: string) => ({ id, title: "Test", model: {} as any, thinkingLevel: "medium" as const, createdAt: "2026-09-06T00:00:00Z", lastModified: "2026-09-06T00:00:00Z", messages: [
+			{ role: "user", content: "Explain this.", timestamp: 1000 },
+			{ role: "assistant", content: "A sufficiently long explanation for this training example.", timestamp: 2000 },
+		] as any });
+		let batches = 0;
+		const result = await buildWebFineTuneExportFromSources({ sessions: [session("one"), session("two")] }, {
+			source: "sessions", format: "both", redact: true, minAssistantChars: 1,
+			judgeModel: { provider: "test", id: "chosen-judge" },
+			judge: async (turns) => { batches++; expect(turns.length).toBe(2); return turns.map(() => null); },
+		});
+		expect(batches).toBe(1);
+		const manifest = JSON.parse(result.manifestJson);
+		expect(manifest.judgeScoring).toEqual({ model: { provider: "test", id: "chosen-judge" }, eligible: 2, scored: 0, unscored: 2 });
+		expect(manifest.warnings.join(" ")).toContain("Judge scored 0 of 2");
+		expect(result.rewardStats?.bySource.judge).toBe(0);
+	});
+
 	it("redacts secrets in rewarded, KTO, and GRPO outputs", async () => {
 		const result = await buildWebFineTuneExportFromSources({
 			sessions: [{
