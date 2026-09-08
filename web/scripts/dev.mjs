@@ -76,19 +76,19 @@ async function run(command, args) {
   }
 }
 
-async function waitForServer(url, child, accept = () => true) {
-  for (let attempt = 0; attempt < 80; attempt += 1) {
+async function waitForServer(url, child, accept = () => true, requestInit) {
+  for (let attempt = 0; attempt < 300; attempt += 1) {
     if (child.exitCode !== null)
-      throw new Error("The Courses API server exited during startup.");
+      throw new Error("A Keating dev server exited during startup.");
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, requestInit);
       if (accept(response)) return response;
     } catch {
       // The Nitro listener is still starting.
     }
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
-  throw new Error(`The Courses API server did not become ready at ${url}.`);
+  throw new Error(`The Keating dev server did not become ready at ${url}.`);
 }
 
 if (!(await canListen(requestedClientPort))) {
@@ -121,11 +121,11 @@ process.once("SIGTERM", stop);
 
 try {
   await waitForServer(`${apiOrigin}/api/courses/session`, api);
-  console.log(`Courses API ready at ${apiOrigin}`);
+  console.log(`Nitro API ready at ${apiOrigin}`);
   const forwardedViteArgs = viteArgs.filter((arg, index) => {
     if (arg.startsWith("--port=")) return false;
     if (arg === "--port") return false;
-    return index !== portFlagIndex + 1;
+    return portFlagIndex < 0 || index !== portFlagIndex + 1;
   });
   client = start(
     "bun",
@@ -150,11 +150,19 @@ try {
     client,
     (response) => response.status !== 404,
   );
-  console.log(`Keating web ready at ${clientOrigin}/courses`);
+  // Readiness must include OAuth, not just the Courses subset. An empty token
+  // request must reach Nitro's validation without contacting any provider.
+  await waitForServer(
+    `${clientOrigin}/api/oauth/token`,
+    client,
+    (response) => response.status === 400,
+    { method: "POST", headers: { "content-type": "application/json" }, body: "{}" },
+  );
+  console.log(`Keating web ready at ${clientOrigin}/chat`);
 
   const result = await Promise.race([
     waitForExit(client).then((exit) => ({ source: "Vite", ...exit })),
-    waitForExit(api).then((exit) => ({ source: "Courses API", ...exit })),
+    waitForExit(api).then((exit) => ({ source: "Nitro API", ...exit })),
   ]);
   const failed = !stopping && result.code !== 0;
   stop();

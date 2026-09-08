@@ -69,30 +69,10 @@ function chatProxyPlugin(): Plugin {
       server.middlewares.use(async (req, res, next) => {
         const pathname = new URL(req.url ?? "/", "http://localhost").pathname;
 
-        if (devCoursesApiOrigin && (pathname.startsWith("/api/courses") || pathname.startsWith("/api/submission-attachments"))) {
-          const targetUrl = new URL(req.url ?? pathname, devCoursesApiOrigin);
-          const proxyReq = http.request(
-            {
-              hostname: targetUrl.hostname,
-              port: targetUrl.port,
-              path: targetUrl.pathname + targetUrl.search,
-              method: req.method,
-              headers: { ...req.headers, host: pathname.startsWith("/api/submission-attachments") ? req.headers.host : targetUrl.host },
-            },
-            (proxyRes) => {
-              res.writeHead(proxyRes.statusCode ?? 502, proxyRes.headers);
-              proxyRes.pipe(res);
-            },
-          );
-          proxyReq.on("error", (error) => {
-            if (!res.headersSent)
-              sendJson(res, 502, {
-                error: `Courses API proxy failed: ${error.message}`,
-              });
-          });
-          req.pipe(proxyReq);
-          return;
-        }
+        // The full dev app runs the same Nitro APIs as production. Let Vite's
+        // proxy handle all API routes before the client-only fallbacks below.
+        // A partial allowlist left OAuth token exchanges trapped in our 404.
+        if (devApiOrigin && pathname.startsWith("/api/")) return next();
 
         // Nitro serves /api/share in production. Vite dev needs the same
         // endpoint; otherwise the browser falls back to a massive compressed
@@ -417,7 +397,7 @@ import pkg from "./package.json";
 
 const posthogPersonalApiKey = env("POSTHOG_API_KEY");
 const posthogProjectId = env("POSTHOG_PROJECT_ID");
-const devCoursesApiOrigin = env("KEATING_WEB_DEV_API_ORIGIN");
+const devApiOrigin = env("KEATING_WEB_DEV_API_ORIGIN");
 const posthogSourceMapPlugins: Plugin[] =
   posthogPersonalApiKey && posthogProjectId
     ? [
@@ -609,18 +589,14 @@ export default defineConfig({
       allow: [".."],
     },
     proxy: {
-      ...(devCoursesApiOrigin
+      ...(devApiOrigin
         ? {
-            "/api/submission-attachments": { target: devCoursesApiOrigin, changeOrigin: false },
-            "/api/courses": {
-              target: devCoursesApiOrigin,
-              changeOrigin: true,
+            "/api/": {
+              target: devApiOrigin,
+              // Preserve the browser-facing origin for Nitro's CSRF checks.
+              changeOrigin: false,
               ws: true,
             },
-			"/api/tavus": {
-			  target: devCoursesApiOrigin,
-			  changeOrigin: true,
-			},
           }
         : {}),
       "/ingest/static": {
