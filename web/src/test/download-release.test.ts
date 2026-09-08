@@ -67,6 +67,25 @@ describe("published download assets", () => {
 		expect(recommendedDownload(parsed, "windows", "x64")?.format).toBe(".exe");
 		expect(recommendedDownload(parsed, "android", "unknown")?.format).toBe(".apk");
 	});
+	it("offers published Linux packages for the selected CPU and format", () => {
+		const packageArch = (arch: "x64" | "arm64", format: string) => arch === "x64" ? format === ".deb" ? "amd64" : "x86_64" : format === ".rpm" ? "aarch64" : "arm64";
+		const parsed = parseDownloadRelease(release([
+			uploaded("keating-3.12.0-linux-x64.tar.gz"),
+			...(["x64", "arm64"] as const).flatMap((arch) => [".deb", ".rpm", ".AppImage"].map((format) => uploaded(`Keating-3.12.0-linux-${packageArch(arch, format)}${format}`))),
+		]))!;
+		expect(parsed.assets).toHaveLength(7);
+		for (const arch of ["x64", "arm64"] as const) {
+			expect(recommendedDownload(parsed, "linux", arch)?.format).toBe(".AppImage");
+			for (const format of [".deb", ".rpm", ".AppImage"]) {
+				const selected = recommendedDownload(parsed, "linux", arch, format);
+				expect(selected?.name).toBe(`Keating-3.12.0-linux-${packageArch(arch, format)}${format}`);
+				expect(selected?.kind).toBe("desktop");
+			}
+		}
+		expect(recommendedDownload(parsed, "linux", "unknown", ".deb")).toBeUndefined();
+		expect(recommendedDownload(parsed, "linux", "x64", ".dmg")).toBeUndefined();
+		expect(recommendedDownload(VERIFIED_DOWNLOAD_RELEASE, "linux", "x64", ".deb")).toBeUndefined();
+	});
 	it("ignores foreign links, incomplete files, ambiguous CPU names, debug builds, and mismatched versions", () => {
 		const parsed = parseDownloadRelease(release([
 			uploaded("keating-3.12.0-linux-x64.tar.gz", { browser_download_url: "https://example.com/fake" }),

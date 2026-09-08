@@ -4,6 +4,8 @@
   "type": "module",
   "private": true,
   "description": "Keating desktop (Electron) app — P2P, local-first teaching client.",
+  "author": "Diogenes of Toronto",
+  "homepage": "https://keating.help",
   "license": "MPL-2.0",
   "main": "dist/main.js",
   "scripts": {
@@ -13,7 +15,8 @@
     "start": "bun run setup:electron && electron .",
     "test": "bun test ./test/*.test.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "dist": "electron-builder"
+    "dist": "electron-builder",
+    "dist:linux": "electron-builder --linux AppImage deb rpm"
   },
   "dependencies": {
     "@keating/p2p-core": "workspace:*"
@@ -27,6 +30,16 @@
   "build": {
     "appId": "help.keating.desktop",
     "productName": "Keating",
+    "linux": {
+      "target": ["AppImage", "deb", "rpm"],
+      "artifactName": "Keating-${version}-linux-${arch}.${ext}",
+      "executableName": "keating-desktop",
+      "maintainer": "Diogenes of Toronto",
+      "category": "Education",
+      "icon": "../web/public/brand/logo-badge.png"
+    },
+    "deb": { "packageName": "keating-desktop" },
+    "rpm": { "packageName": "keating-desktop" },
     "files": ["**/*"],
     "extraResources": [
       {

@@ -37,6 +37,10 @@ await writeFile(
 		{
 			name: desktopPackage.name,
 			version: desktopPackage.version,
+			description: desktopPackage.description,
+			author: desktopPackage.author,
+			homepage: desktopPackage.homepage,
+			license: desktopPackage.license,
 			private: true,
 			type: "module",
 			main: "main.js",
