@@ -10,10 +10,12 @@ function storage() {
 test("first render leaves completion unset and exposes the unconditional skip action", () => {
 	const saved = storage();
 	expect(hasCompletedChatOnboarding(saved)).toBe(false);
-	const html = renderToStaticMarkup(<ChatOnboarding onConnectAccount={() => { throw new Error("must not connect on render"); }} onChooseModel={() => { throw new Error("must not choose on render"); }} onComplete={() => { throw new Error("must not finish on render"); }} onSkip={() => { throw new Error("must not skip on render"); }} />);
+	const html = renderToStaticMarkup(<ChatOnboarding onUseKeating={() => { throw new Error("must not change model on render"); }} onConnectAccount={() => { throw new Error("must not connect on render"); }} onChooseModel={() => { throw new Error("must not choose on render"); }} onComplete={() => { throw new Error("must not finish on render"); }} onSkip={() => { throw new Error("must not skip on render"); }} />);
 	expect(html).toContain("Go straight to chat");
 	expect(html).toContain("Next");
-	expect(html).toContain("without a Not Organic account");
+	expect(html).toContain("Inkling Small");
+	expect(html).toContain("Bring your own key");
+	expect(html).toMatch(/checked=""[^>]*value="keating"/);
 	expect(saved.getItem(CHAT_ONBOARDING_STORAGE_KEY)).toBeNull();
 });
 

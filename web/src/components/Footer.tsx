@@ -1,4 +1,5 @@
-import { Link } from "@tanstack/react-router";
+import { AppLink as Link } from "./AppLink";
+import { isDesktopShell } from "../lib/desktop-navigation";
 import { T } from "gt-react";
 import { css, cx } from "../../styled-system/css";
 
@@ -132,13 +133,13 @@ export function SimpleFooter() {
         )}
       >
         <Link
-          to="/"
+          to={isDesktopShell() ? "/chat" : "/"}
           className={css({
             transition: "color 0.15s ease",
             _hover: { color: "#d5604b" }
           })}
         >
-          [BACK_TO_HOME]
+          {isDesktopShell() ? "[BACK_TO_CHAT]" : "[BACK_TO_HOME]"}
         </Link>
         <span aria-hidden="true">//</span>
         <Link

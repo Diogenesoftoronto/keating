@@ -23,6 +23,7 @@ import {
 import { DesktopLifecycle } from "./lifecycle.js";
 import { installDesktopPermissionPolicy } from "./permissions.js";
 import { resolveDesktopRuntimePaths } from "./runtime-paths.js";
+import { desktopNavigationExternalUrl } from "./navigation.js";
 import {
 	isSafeDevelopmentOrigin,
 	isSafeExternalUrl,
@@ -111,6 +112,12 @@ function loadUserSecret(): Uint8Array {
 
 function installNavigationPolicy(window: BrowserWindow, appOrigin: string): void {
 	const denyOrExternalize = (event: { preventDefault(): void }, url: string) => {
+		const websiteUrl = desktopNavigationExternalUrl(url, appOrigin);
+		if (websiteUrl) {
+			event.preventDefault();
+			void shell.openExternal(websiteUrl).catch(() => {});
+			return;
+		}
 		if (isTrustedAppNavigation(url, appOrigin)) return;
 		event.preventDefault();
 		if (isSafeExternalUrl(url)) void shell.openExternal(url).catch(() => {});
@@ -118,7 +125,8 @@ function installNavigationPolicy(window: BrowserWindow, appOrigin: string): void
 	window.webContents.on("will-navigate", denyOrExternalize);
 	window.webContents.on("will-redirect", denyOrExternalize);
 	window.webContents.setWindowOpenHandler(({ url }) => {
-		if (isSafeExternalUrl(url)) void shell.openExternal(url).catch(() => {});
+		const destination = desktopNavigationExternalUrl(url, appOrigin) ?? url;
+		if (isSafeExternalUrl(destination)) void shell.openExternal(destination).catch(() => {});
 		return { action: "deny" };
 	});
 }
@@ -129,7 +137,7 @@ interface RendererLocation {
 }
 
 async function rendererLocation(): Promise<RendererLocation> {
-	const devServer = process.env["KEATING_DEV_SERVER"];
+	const devServer = app.isPackaged ? undefined : process.env["KEATING_DEV_SERVER"];
 	if (devServer) {
 		if (!isSafeDevelopmentOrigin(devServer)) {
 			throw new Error("KEATING_DEV_SERVER must be a loopback http origin.");

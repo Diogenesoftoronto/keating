@@ -23,6 +23,7 @@ import {
 describe("Not Organic provider definition", () => {
 	it("uses the stable balanced alias and retains a same-origin fallback", () => {
 		expect(NOTORGANIC_DEFAULT_MODEL.id).toBe(NOTORGANIC_MODEL_ALIAS);
+		expect(NOTORGANIC_DEFAULT_MODEL.name).toBe("Inkling Small");
 		expect(NOTORGANIC_DEFAULT_MODEL.provider).toBe(NOTORGANIC_PROVIDER_ID);
 		expect(notOrganicOpenAiBaseUrl("https://keating.test/")).toBe(
 			"https://keating.test/api/notorganic/openai/v1",
