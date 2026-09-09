@@ -1,12 +1,13 @@
 import { describe, expect, it } from "bun:test";
 import { FlueConversation } from "../keating/flue/conversation";
+import { FlueApiError } from "@flue/sdk";
 
 function deferred() {
   let resolve!: () => void;
   const promise = new Promise<void>(done => { resolve = done; });
   return { promise, resolve };
 }
-function fixture(admissionGate?: Promise<void>) {
+function fixture(admissionGate?: Promise<void>, missingHistory = false) {
   const chat = new FlueConversation({ streamFn: () => { throw new Error("Fixture must not invoke hosted inference"); }, initialState: { model: {
     id: "fixture", provider: "openai", api: "openai-completions",
   } as any } }, "unused");
@@ -28,13 +29,29 @@ function fixture(admissionGate?: Promise<void>) {
       state.notify();
       return {};
     },
-    async read() {}, async history() { return native; }, async abort() {},
+    async read() {}, async history() {
+      if (missingHistory && calls === 0) throw new FlueApiError(404, { error: { type: "stream_not_found" } });
+      return native;
+    }, async abort() {},
   };
   return { chat, calls: () => calls };
 }
 const message = (text = "Show this immediately") => ({ role: "user" as const, content: text, timestamp: Date.now() });
 
 describe("immediate learner turns", () => {
+  it("actually submits a resume after restoring a turn interrupted by sign-in", async () => {
+    const { chat, calls } = fixture(undefined, true);
+    const sent = message("Preserve this through sign-in");
+    chat.context.messages = [sent];
+    const gate = deferred();
+    const pending = chat.resume(() => gate.promise);
+    expect(calls()).toBe(0);
+    gate.resolve();
+    await pending;
+    expect(calls()).toBe(1);
+    expect(chat.context.messages.filter(item => item.role === "user")).toEqual([sent]);
+    await chat.dispose();
+  });
   it("publishes the turn with running state before delayed preparation, then reconciles once", async () => {
     const { chat, calls } = fixture();
     const gate = deferred();

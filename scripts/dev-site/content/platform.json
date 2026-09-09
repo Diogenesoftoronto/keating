@@ -1,0 +1,209 @@
+[
+  {
+    "slug": "clients-and-runtimes",
+    "title": "Clients and runtimes",
+    "description": "Follow the shared teaching system across browser, desktop, mobile, and terminal—and understand where their capabilities differ.",
+    "group": "Platform",
+    "sections": [
+      {
+        "heading": "One teaching system, several hosts",
+        "paragraphs": ["Keating separates deterministic pedagogy, agent execution, learner interaction, and account authority. A client renders an explanation and collects learner actions; the teaching engine creates plans, assessments, and artifacts; a runtime supplies model and workspace capabilities. Changing a host should not require inventing a different meaning for a completed quiz or saved study plan.", "The repository contains a browser app, an Electron desktop host, an Expo/React Native mobile client, the Pi shell, and an OpenTUI host. Shared contracts support portability, but a shared type or renderer is not evidence that every released client supports the same complete workflow."],
+        "links": [{"label": "Architecture", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/ARCHITECTURE.md"}]
+      },
+      {
+        "heading": "Browser execution is a capability choice",
+        "paragraphs": ["Browser-compatible work can stay on the learner's device. The runtime contract distinguishes browser-local execution from configured remote execution. Agents inspect capabilities before requesting work that needs native binaries, durable compute, server-held secrets, inbound networking, or stronger isolation.", "The Flue integration documents an official runtime hosted inside NodePod with a browser-safe SDK transport and locally persisted checkpoints. Account-hosted conversation storage is a separate integration boundary. A signed-out local session must not silently become a server-hosted session."],
+        "links": [{"label": "Browser chat runtime", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/architecture/flue-browser-chat.md"}, {"label": "Runtime and account boundaries", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/architecture/flue-mobile-account.md"}]
+      },
+      {
+        "heading": "Desktop adds a native workspace",
+        "paragraphs": ["Electron starts a local workspace service alongside the app. Its Runtime panel and model workspace tools operate on the same persistent files. Installed programs run with the current user's operating-system permissions; this is native execution, not an isolated sandbox.", "The service binds to an ephemeral loopback port. A restricted preload bridge exposes specific operations to the trusted app frame; the public website cannot use that bridge. Filesystem operations check workspace boundaries, while command output, concurrency, duration, and file sizes are bounded. The command panel uses pipes rather than a full terminal emulator."],
+        "links": [{"label": "Desktop workspace", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/desktop-workspace.md"}, {"label": "Desktop sign-in and vault", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/desktop-sign-in.md"}]
+      },
+      {
+        "heading": "Mobile is a native client",
+        "paragraphs": ["The Expo app uses React Native rather than embedding the website. Its portable pedagogy adapter supports local plans, maps, and quizzes. Native streaming adapters handle supported provider protocols, and provider keys use SecureStore. Sessions and study notes are stored on-device.", "The mobile README explicitly keeps its storage local-only: it does not join the Electron P2P mesh or promise cross-device session synchronization. Account login and remote evolution have separate integration and device-verification requirements. Browser recording activities use a capable-surface handoff where native recording is not implemented."],
+        "links": [{"label": "Mobile development and boundaries", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/mobile/README.md"}, {"label": "Recorded activities", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/recorded-learning-activities.md"}]
+      },
+      {
+        "heading": "OpenUI carries meaning across surfaces",
+        "paragraphs": ["Learning interactions use typed semantic documents and host actions. OpenUI is the presentation protocol; it does not replace grading, learner state, persistence, or policy safeguards. Ephemeral documents belong to the current interaction, resumable documents represent unfinished work, and workspace documents are longer-lived learner artifacts.", "The terminal host connects to Pi through RPC and adapts supported semantic nodes into terminal-safe controls. The classic shell remains available for Pi workflows outside the shared learner contract. When adding a component, update the contract, source mapper, parity fixtures, renderer actions, storage behavior, and web/mobile/terminal consumers together."],
+        "links": [{"label": "Streamable learning interfaces", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/openui-opentui-architecture.md"}, {"label": "Portability gaps", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/plans/openui-opentui-portability-gaps.md"}]
+      }
+    ]
+  },
+  {
+    "slug": "courses-and-collaboration",
+    "title": "Courses and collaboration",
+    "description": "Turn study material into a shared course while preserving membership, permissions, learner work, and delivery state.",
+    "group": "Platform",
+    "sections": [
+      {
+        "heading": "A course gives learning a shared structure",
+        "paragraphs": ["Courses organize lessons, source materials, cards, assignments, and generated artifacts so learning can continue beyond a single conversation. The schemas include notes, documents, images, links, and Anki material, alongside artifacts such as quizzes, OpenUI documents, lesson plans, maps, and animations.", "A course is more than a public transcript. Its content, member roles, discussions, assignment submissions, and learner-visible snapshots are explicit records. Build integrations against these contracts rather than inferring course state from chat text."],
+        "links": [{"label": "Course contracts", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/web/src/courses/contracts.ts"}, {"label": "Study-plan conversion", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/web/src/courses/from-study-plan.ts"}]
+      },
+      {
+        "heading": "Membership is not unrestricted access",
+        "paragraphs": ["The course model distinguishes owner, teacher, student, and peer roles. Operations enforce membership and permissions, report authorization failures, and detect conflicting revisions. Teacher access has separate private, requested, and full states; do not assume that enrollment grants access to every learner record.", "For a new operation, define its schema, permission rule, revision behavior, and viewer projection before adding a button. A client-side control can explain what is available, but the operation boundary must enforce the same rule."],
+        "links": [{"label": "Authorized course operations", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/web/src/courses/operations.ts"}, {"label": "Access gate", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/web/src/courses/useCoursesAccess.ts"}]
+      },
+      {
+        "heading": "Assemble material, then invite people into it",
+        "paragraphs": ["The course UI provides assembly, content management, invitations, discussion, and review surfaces. The teaching tool adapter can work with course context, while course-specific modules handle search, comments, artifacts, and cards. Keep these operations explicit so an agent's authored content uses the same validation as manual editing.", "An invitation, a successfully saved course, and a learner's completed activity are different events. Interface copy should show the actual state rather than treating a generated course description as a published or joined course."],
+        "links": [{"label": "Course assembly", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/web/src/courses/course-assembly.ts"}, {"label": "Course tool adapter", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/web/src/keating/browser-tools/courses.ts"}, {"label": "Invitation UI", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/web/src/components/courses/CourseInviteDialog.tsx"}]
+      },
+      {
+        "heading": "Save locally before network delivery",
+        "paragraphs": ["Course submissions use a durable local outbox. Saving work creates an immutable queued revision without waiting for the network. Attachment upload and application of the remote course operation happen later. A predecessor chain preserves ordering even when several edits share a timestamp.", "Treat 'saved on this device' and 'delivered to course' as separate outcomes. Pending delivery, retryable failure, and conflicting remote revisions must not erase entered work or imply that a teacher already received it."],
+        "links": [{"label": "Submission outbox", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/web/src/submissions/course-outbox.ts"}]
+      },
+      {
+        "heading": "Performance activities need honest feedback",
+        "paragraphs": ["AudioResponse and VideoResponse let learners record, replay, select a take, and add reflection. The selected file is saved through the local attachment flow and can be delivered through the course outbox. Recording begins only after an explicit learner gesture; camera and microphone permissions remain browser-controlled.", "Recording is not automated assessment. Attachment metadata does not mean a model has listened to speech or understood a demonstration. Timing is optional, and correctness must not be awarded merely because a learner finished quickly."],
+        "links": [{"label": "Activity semantics and limits", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/recorded-learning-activities.md"}]
+      }
+    ]
+  },
+  {
+    "slug": "data-and-privacy",
+    "title": "Data, privacy, and authority",
+    "description": "Understand what is saved, where credentials belong, and how an export differs from consent to share.",
+    "group": "Platform",
+    "sections": [
+      {
+        "heading": "Store by lifetime and authority",
+        "paragraphs": ["Keating distinguishes UI bootstrap values, app records, and learning records. Small preferences needed before hydration belong in localStorage. Sessions and durable app settings use an app-storage abstraction; learner evidence, goals, reviews, quizzes, and generated artifacts use the learning-record layer.", "Each record has one authoritative backend. Feature code should use the relevant storage abstraction instead of opening IndexedDB or independently writing both local and remote copies. Portable export formats have their own versions, separate from database migration versions."],
+        "links": [{"label": "Storage architecture", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/web-storage-architecture.md"}]
+      },
+      {
+        "heading": "Account authority stays outside the runner",
+        "paragraphs": ["Not Organic supplies the account authority boundary. Authenticated sessions determine the account namespace; a client-selected account identifier is not authorization. The architecture uses PKCE and DPoP for relevant device flows, and keeps account-wide revisions, jobs, and activation authority outside replaceable execution providers.", "A runner should receive a job-scoped lease and named capabilities, not account credentials. Provider-specific provisioning belongs in adapters. Account login, durable storage, remote runner dispatch, and successful revision activation each require their own integration evidence."],
+        "links": [{"label": "Account and runner design", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/architecture/flue-mobile-account.md"}]
+      },
+      {
+        "heading": "Credentials follow the host's security boundary",
+        "paragraphs": ["Desktop stores provider credentials in an encrypted vault when a system keyring is available. When it is unavailable, new credentials remain in main-process memory until the app quits; the UI exposes that storage mode. Mobile provider keys use SecureStore. Browser provider configuration follows its device storage adapter.", "Never include provider keys in learner exports, analytics, generated teaching artifacts, or browser build variables intended for server secrets. An OAuth callback is only one step: state verification, token exchange, capability checks, expiry, and sign-out are part of the complete flow."],
+        "links": [{"label": "Desktop credential behavior", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/desktop-sign-in.md"}, {"label": "Mobile privacy boundary", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/mobile/README.md"}]
+      },
+      {
+        "heading": "Training archives preserve provenance",
+        "paragraphs": ["Training records identify their source, task, split, messages, completion, and quality status. Accepted, unscored, review, rejected, and reference states are distinct; a generated example is not automatically recommended for supervised fine-tuning. Manifests record export configuration, counts, redaction, and optional judging information.", "Building or downloading an archive does not share it. The sharing endpoint requires explicit consent for the selected archive, a server-validated account capability, validated ZIP contents, and configured durable private storage. It does not start a training job or expose public archive downloads. Production collection also needs retention, deletion, and access procedures."],
+        "links": [{"label": "Canonical training schema", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/web/src/keating/training-schema.ts"}, {"label": "Dataset sharing contract", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/training-dataset-sharing.md"}]
+      },
+      {
+        "heading": "Analytics must stay separate from lesson content",
+        "paragraphs": ["The web analytics adapter centralizes PostHog initialization, preference handling, Do Not Track behavior, and event sanitization. Session replay is separately controlled and masks inputs and text. Replay request sanitization excludes request bodies and headers.", "New events should describe a product action using bounded metadata, not copy learner answers, conversation content, account tokens, or provider keys. Instrumentation tests should exercise opt-out and sanitization behavior as well as the successful capture path."],
+        "links": [{"label": "Analytics adapter", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/web/src/lib/posthog.ts"}, {"label": "Privacy sanitizers", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/web/src/lib/analytics-privacy.ts"}]
+      }
+    ]
+  },
+  {
+    "slug": "models-and-providers",
+    "title": "Models and providers",
+    "description": "Keep model selection, credentials, teaching behavior, and workspace execution independently configurable.",
+    "group": "Platform",
+    "sections": [
+      {
+        "heading": "A model is one part of the teacher",
+        "paragraphs": ["Keating's teaching protocol, deterministic tools, learner context, and stored evidence sit around the selected model. Changing providers should not remove the teaching loop or move account authority into a model adapter. A provider configuration defines how inference is reached; runtime capabilities define what tools can execute.", "The CLI integrates with Pi's provider and model configuration. Browser and native clients have their own transport constraints. Treat supported wire formats, streaming, tool calls, images, audio, and authentication as separate capabilities instead of assuming that an OpenAI-compatible URL implements everything."],
+        "links": [{"label": "CLI and configuration overview", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/README.md"}, {"label": "Provider capability model", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/web/src/keating/providers/capabilities.ts"}]
+      },
+      {
+        "heading": "Model discovery is advisory",
+        "paragraphs": ["Provider keys belong to the provider identity and are reused by its models. A failed model-list request must not invalidate a saved provider configuration: some compatible endpoints omit discovery or require a known model identifier.", "When adding an adapter, cover streaming completion, cancellation, error responses, model capability selection, and credential routing. Keep the supplied endpoint and selected model visible enough for a learner to understand where a request goes."],
+        "links": [{"label": "Provider model handling", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/web/src/lib/provider-models.ts"}, {"label": "Storage rules for provider identity", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/web-storage-architecture.md"}]
+      },
+      {
+        "heading": "Browser-local inference has concrete constraints",
+        "paragraphs": ["The browser model registry selects exports supported by the installed Transformers.js and ONNX Runtime stack. Compatibility depends on file layout, supported architecture, quantization kernels, download size, and available device memory. A model card or an ONNX filename alone does not establish that a browser can load it.", "Use the registry and browser-model notes as the implementation source of truth, and verify an actual load on representative hardware when changing it. Model availability and runtime support change; this guide intentionally does not promise a permanent model list or a universal memory requirement."],
+        "links": [{"label": "Local model registry", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/web/src/stores/local-model.ts"}, {"label": "Browser model compatibility notes", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/browser-models.md"}]
+      },
+      {
+        "heading": "Hosted inference and remote tools are different",
+        "paragraphs": ["A hosted model call does not imply that workspace files or tool execution must live on the same server. Conversely, choosing a local model does not grant access to native binaries. The runtime capability boundary lets Keating request a remote operation deliberately when local execution is insufficient.", "Keep credentials and account billing at their intended authority boundary. A browser-local mode should report that a required remote capability is unavailable rather than silently dispatching work to a hosted service."],
+        "links": [{"label": "Runtime separation", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/ARCHITECTURE.md"}, {"label": "Provider-neutral execution", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/architecture/flue-mobile-account.md"}]
+      },
+      {
+        "heading": "Native transport and speech are explicit adapters",
+        "paragraphs": ["Mobile implements streaming for supported OpenAI-compatible, Anthropic, and Gemini wire formats using its native fetch path. It buffers deltas for rendering and preserves partial output when the learner stops a response. The transport implementation is separate from the shared pedagogy adapter.", "Speech is an optional delivery path alongside the reasoning and teaching model. Keep provider-specific live audio behavior in speech adapters, and do not treat an audio attachment's metadata as proof that the selected model received or interpreted its content."],
+        "links": [{"label": "Mobile streaming", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/mobile/README.md"}, {"label": "Speech and teaching configuration", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/README.md"}]
+      }
+    ]
+  },
+  {
+    "slug": "evaluation-and-evolution",
+    "title": "Evaluation and evolution",
+    "description": "Inspect teaching evidence, run bounded experiments, and distinguish benchmark eligibility from demonstrated human learning.",
+    "group": "Research",
+    "sections": [
+      {
+        "heading": "Name what the evidence measures",
+        "paragraphs": ["Historical quiz results are observations of recorded performance. Learner feedback and inferred conversation signals are proxies. Synthetic learners and model judges can expose behavioral weaknesses, but they do not establish improved learning for people. Retention, transfer, and learning gain remain unknown unless the corresponding measurements exist.", "The historical bench command summarizes records. Teaching-bench executes fresh training cases with the active revision. Auto-improve proposes a bounded teaching skill and evaluates it before activation. These are different operations with different claims."],
+        "links": [{"label": "Teaching experiments and evidence", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/teaching-evolution.md"}]
+      },
+      {
+        "heading": "Run a bounded experiment",
+        "paragraphs": ["Teaching-bench runs the training split only and never activates a revision. Auto-improve evaluates an incumbent and candidate on paired validation and an independently gated sealed holdout. Model-backed evaluation requires an authenticated provider and consumes provider usage.", "Use an independently authored case pack to define an experiment. A positional topic is not an experiment specification. Force bypasses the cooldown only; it cannot bypass a failed gate or reopen consumed holdout evidence."],
+        "code": "keating teaching-bench --cases ./independent-cases.json\nkeating auto-improve --cases ./independent-cases.json",
+        "language": "bash",
+        "links": [{"label": "Command parsing and help", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/src/cli/main.ts"}]
+      },
+      {
+        "heading": "Keep proposal and evaluation authority separate",
+        "paragraphs": ["The actor receives the learner conversation prefix and teaching instructions. The judge receives the fixed case and actual execution. The maintainer and proposer work from training evidence and indexed knowledge, not held-out conversations or their answer criteria.", "The activation gate requires both validation and holdout to pass. The documented gate includes at least six independent families, no family regression, no failed critical candidate criterion, mean improvement of at least 0.05, and a one-sided paired sign-test p-value at most 0.05. Missing executions or judgments invalidate the comparison. These are behavior-benchmark rules, not a human-study power analysis."],
+        "links": [{"label": "Gate design and limits", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/teaching-evolution.md"}]
+      },
+      {
+        "heading": "Preserve revisions, failures, and exhausted evidence",
+        "paragraphs": ["Teaching procedures and maintained knowledge snapshots are content-addressed. Experiments persist their verdict before changing the active revision pointer. New sessions use an accepted revision; running sessions retain the one they started with. Failed proposals remain inspectable, and useful maintained knowledge can survive a rejected proposal.", "A release holdout is consumed before execution, including when a run later rejects or crashes. Renaming case IDs or changing numbers does not create independent evidence. Renewal needs genuinely new tasks and families, authored without exposing them to the proposal loop."],
+        "links": [{"label": "Revision and holdout lifecycle", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/teaching-evolution.md"}]
+      },
+      {
+        "heading": "Measure learner outcomes directly",
+        "paragraphs": ["Learning checks distinguish precheck, immediate, delayed, and transfer stages and record whether work was unassisted, assisted, or unknown. This creates a place to collect the measurements that a conversation transcript cannot supply. A recorded score still needs careful interpretation: assistance, missing follow-up, task comparability, and study design affect the conclusion.", "Legacy parameter evolution and prompt-quality scoring remain diagnostic. They do not silently replace source prompts or authorize the bounded teaching-revision gate. Report local deterministic tests, hosted execution, client behavior, and human-learning evidence separately."],
+        "code": "keating learning-check start fractions\nkeating learning-check list\nkeating learning-check show <check-id>",
+        "language": "bash",
+        "links": [{"label": "Learning check commands", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/src/cli/main.ts"}, {"label": "Study limitations", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/study/sections/limitations.typ"}]
+      }
+    ]
+  },
+  {
+    "slug": "contributing",
+    "title": "Contributing",
+    "description": "Find the right subsystem, make a bounded change, and show the evidence needed to review it.",
+    "group": "Platform",
+    "sections": [
+      {
+        "heading": "Start with the repository environment",
+        "paragraphs": ["Keating uses Bun with a Devenv-managed toolchain. Root and web packages have separate responsibilities, and namespaced Devenv tasks provide the build and verification entry points. Read the repository's current agent guidance and development documentation before choosing commands.", "Use a clean checkout or preserve existing work when contributing. A successful isolated component check is useful evidence, but it does not establish that the complete application builds or deploys."],
+        "code": "devenv shell\ndevenv tasks run keating:install\ndevenv tasks list\ndevenv tasks run keating:web",
+        "language": "bash",
+        "links": [{"label": "Development guide", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/DEVELOPMENT.md"}, {"label": "Task definitions", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/devenv.nix"}]
+      },
+      {
+        "heading": "Choose the layer that owns the behavior",
+        "bullets": ["Core artifacts and CLI: src/core and src/cli; deterministic teaching operations belong below the UI.", "Browser UI and teaching adapters: web/src/components, web/src/hooks, and web/src/keating.", "Shared interaction and account contracts: packages/learner-contracts and shared.", "Terminal host: src/tui; native mobile client: mobile; desktop host and bridges: desktop.", "Teaching experiments and revision gates: shared/evolution; evaluation protocols and evidence notes: docs/teaching-evolution.md."],
+        "paragraphs": ["Root TypeScript uses NodeNext-style .js import extensions. Web code uses bundler resolution and its established aliases. Keep provider-specific execution behind adapters and account authority outside the pedagogy engine."],
+        "links": [{"label": "Repository guidance", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/AGENTS.md"}]
+      },
+      {
+        "heading": "Change shared behavior across its consumers",
+        "paragraphs": ["A new learner interaction needs more than a browser component. Define its semantic contract and action result, then update source mapping, validation, web/mobile/terminal rendering, state restoration, and parity fixtures. When a core command signature changes, update generated help and browser parity where relevant.", "For storage changes, version the schema, preserve readable legacy data, and test upgrade, blocked-tab, quota, and write-failure behavior. For course submissions, preserve the distinction between local save and remote delivery."],
+        "links": [{"label": "Interaction architecture", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/openui-opentui-architecture.md"}, {"label": "Storage migration rules", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/web-storage-architecture.md"}]
+      },
+      {
+        "heading": "Verify the boundary you changed",
+        "paragraphs": ["Prefer tests of behavior and system invariants over snapshots that repeat the implementation. Keep deterministic tests independent of hosted inference by injecting model runners and judges at explicit boundaries. Exercise cancellation, persistence, authorization, and failure paths when they are part of the change.", "A web production build includes Vite and Nitro; a frontend-only bundle does not prove API routes work. A mobile bundle is not a device login test. A deployed container is not proof of a successful provider exchange. State exactly which checks completed and which integration boundary remains unverified."],
+        "code": "devenv tasks run keating:test\ndevenv tasks run keating:test-web\ndevenv tasks run keating:web-build\ndevenv tasks run keating:mobile-check",
+        "language": "bash",
+        "links": [{"label": "Testing strategy", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/TESTING.md"}, {"label": "Current task definitions", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/devenv.nix"}]
+      },
+      {
+        "heading": "Make the result reviewable",
+        "paragraphs": ["Describe the learner or developer problem, the resulting behavior, and the evidence for the change. Include a concrete before-and-after example when it helps. Separate implementation status from release availability, and link to the source or experiment artifact behind consequential claims.", "Do not commit generated runtime state, credentials, local build output, or private learner records. Releases use the repository's Bun version workflow and synchronized manifests; a documentation or UI contribution does not require publishing a release."],
+        "links": [{"label": "Contribution and release workflow", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/DEVELOPMENT.md"}, {"label": "Project product principles", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/PRODUCT.md"}]
+      }
+    ]
+  }
+]

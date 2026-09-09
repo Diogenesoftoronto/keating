@@ -1,5 +1,6 @@
 import {
   createFlueClient,
+  FlueApiError,
   FlueExecutionError,
   type FlueClient,
   type AgentConversationObservation,
@@ -305,13 +306,13 @@ export class FlueConversation {
   sendPrepared(message: AgentMessage, prepare: (signal: AbortSignal) => Promise<void>): Promise<void> {
     return this.run([message], prepare);
   }
-  resume(): Promise<void> {
+  resume(prepare?: (signal: AbortSignal) => Promise<void>): Promise<void> {
     const last = this.context.messages.at(-1);
     if (!last || !["user", "toolResult"].includes(last.role))
       return Promise.reject(
         new Error("No unfinished user or tool message to continue."),
       );
-    return this.run([]);
+    return this.run([], prepare);
   }
   async dispose(): Promise<void> {
     this.cancel();
@@ -421,7 +422,14 @@ export class FlueConversation {
         // Establish the restored native history before matching this delivery.
         // Otherwise an older user turn arriving in the first observation could
         // incorrectly acknowledge the new, still-local message.
-        this.acceptNative(await this.client.history());
+        try {
+          this.acceptNative(await this.client.history());
+        } catch (error) {
+          // Flue creates a conversation stream on its first submission. A new
+          // chat (including a first turn restored after OAuth) has no history yet.
+          if (!(error instanceof FlueApiError && error.status === 404
+            && (error.body as { error?: { type?: string } })?.error?.type === "stream_not_found")) throw error;
+        }
         this.notify();
         let delivery = messages.length ? messages.at(-1)! : undefined;
         do {

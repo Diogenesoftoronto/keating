@@ -1,10 +1,12 @@
 import { createError, defineEventHandler, getHeader, getRequestURL } from "h3";
-import { NOTORGANIC_FEATURE } from "../../../../src/notorganic-provider";
 import {
 	createNotOrganicServerClient,
 	getNotOrganicServerConfig,
 	NotOrganicOperationalError,
 } from "../../../../src/notorganic-provider/server";
+
+// This server capability must not pull in the browser provider entrypoint.
+const NOTORGANIC_FEATURE = "keating:web-chat";
 
 const ALLOWED_ROUTES = new Set([
 	"v1/chat/completions",

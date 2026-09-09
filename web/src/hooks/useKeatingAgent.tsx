@@ -53,6 +53,7 @@ import {
 import { recordDiagnostic } from "../lib/diagnostics";
 import { NOTORGANIC_DEFAULT_MODEL, isNotOrganicProvider, notOrganicPublicClient } from "../notorganic-provider";
 import { hasNotOrganicProductSession, promptNotOrganicAccess } from "../components/NotOrganicAccessPromptDialog";
+import { rememberChatTurn, clearPendingChatTurn, claimPendingChatTurn, pendingChatTurn } from "../notorganic-provider/pending-chat-turn";
 import { addRecentModel, getRecentModels } from "../keating/model-prefs";
 import { modelKey } from "../lib/model-catalog";
 import {
@@ -1688,7 +1689,13 @@ export function useKeatingAgent(
         onApiKeyRequired: async (provider: string) => {
           if (provider === "browser") return true;
           if (await getProviderApiKey(provider)) return true;
-          return promptKeatingApiKey(provider);
+          if (isNotOrganicProvider(provider)) {
+            await persistSnapshot();
+            rememberChatTurn(agentSessionId, agent.context.messages);
+          }
+          const allowed = await promptKeatingApiKey(provider);
+          if (isNotOrganicProvider(provider)) clearPendingChatTurn(agentSessionId);
+          return allowed;
         },
         onAuthError: async (provider: string) => {
           if (provider === "browser") return false;
@@ -1701,7 +1708,12 @@ export function useKeatingAgent(
             provider,
             session_id: agentSessionId,
           });
+          if (isNotOrganicProvider(provider)) {
+            await persistSnapshot();
+            rememberChatTurn(agentSessionId, agent.context.messages);
+          }
           const ok = await promptKeatingApiKey(provider, { force: true });
+          if (isNotOrganicProvider(provider)) clearPendingChatTurn(agentSessionId);
           posthog.capture("auth_recovery_action", {
             provider,
             session_id: agentSessionId,
@@ -1788,6 +1800,21 @@ export function useKeatingAgent(
       };
 
       await panel.setConversation(agent, setupCallbacks);
+      if (isNotOrganicProvider(agent.context.model.provider) && await getProviderApiKey(agent.context.model.provider)
+        && agentRef.current === agent && !agent.context.isStreaming) {
+        const pendingMessages = claimPendingChatTurn(agentSessionId, agent.context.messages);
+        if (pendingMessages) {
+          // Claim before starting so StrictMode/remounts cannot submit twice.
+          agent.context.messages = pendingMessages;
+          void (async () => {
+            await agent.resume(async signal => {
+              await ensureSessionStartContext();
+              signal.throwIfAborted();
+            });
+            await persistSnapshot();
+          })().catch(error => console.error("Keating could not resume the signed-in message:", error));
+        }
+      }
     },
     [
       prepareAgent,
@@ -2602,7 +2629,14 @@ export function useKeatingAgent(
             onApiKeyRequired: async (provider: string) => {
               if (provider === "browser") return true;
               if (await getProviderApiKey(provider)) return true;
-              return promptKeatingApiKey(provider);
+              const sourceSessionId = sessionIdRef.current;
+              if (isNotOrganicProvider(provider)) {
+                await saveSessionSnapshot(existingAgent, sourceSessionId, sessionCreatedAtRef.current);
+                rememberChatTurn(sourceSessionId, existingAgent.context.messages);
+              }
+              const allowed = await promptKeatingApiKey(provider);
+              if (isNotOrganicProvider(provider)) clearPendingChatTurn(sourceSessionId);
+              return allowed;
             },
             onAuthError: async (provider: string) => {
               if (provider === "browser") return false;
@@ -2615,7 +2649,13 @@ export function useKeatingAgent(
                 provider,
                 session_id: sessionIdRef.current,
               });
+              const sourceSessionId = sessionIdRef.current;
+              if (isNotOrganicProvider(provider)) {
+                await saveSessionSnapshot(existingAgent, sourceSessionId, sessionCreatedAtRef.current);
+                rememberChatTurn(sourceSessionId, existingAgent.context.messages);
+              }
               const ok = await promptKeatingApiKey(provider, { force: true });
+              if (isNotOrganicProvider(provider)) clearPendingChatTurn(sourceSessionId);
               posthog.capture("auth_recovery_action", {
                 provider,
                 session_id: sessionIdRef.current,
@@ -2706,7 +2746,7 @@ export function useKeatingAgent(
               const requestedSessionId =
                 new URLSearchParams(window.location.search)
                   .get("session")
-                  ?.trim() || null;
+                  ?.trim() || (pendingChatTurn()?.ready ? pendingChatTurn()!.sessionId : null);
               const latestSessionId = await withSessionRestoreTimeout(
                 requestedSessionId
                   ? Promise.resolve(requestedSessionId)
@@ -2798,6 +2838,7 @@ export function useKeatingAgent(
       createAgent,
       loadSession,
       requestPersistentStorageOnce,
+      saveSessionSnapshot,
     ],
   );
 

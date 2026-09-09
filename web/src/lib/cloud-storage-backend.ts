@@ -152,6 +152,13 @@ export class IndexedDBStorageBackend implements StorageBackend {
 	): Promise<T> {
 		const db = await this.getDB();
 		const idbTx = db.transaction(storeNames, mode);
+		const committed = new Promise<void>((resolve, reject) => {
+			idbTx.oncomplete = () => resolve();
+			idbTx.onabort = () => reject(idbTx.error ?? new Error("Storage transaction aborted"));
+			idbTx.onerror = () => reject(idbTx.error ?? new Error("Storage transaction failed"));
+		});
+		// Attach immediately: a request can abort before the operation rejects.
+		void committed.catch(() => {});
 
 		const storageTx: StorageTransaction = {
 			get: async <T>(storeName: string, key: string) => {
@@ -175,7 +182,15 @@ export class IndexedDBStorageBackend implements StorageBackend {
 			},
 		};
 
-		return operation(storageTx);
+		try {
+			const result = await operation(storageTx);
+			// Request success precedes durable commit. OAuth navigation must wait.
+			await committed;
+			return result;
+		} catch (error) {
+			try { idbTx.abort(); } catch { /* Already settled. */ }
+			throw error;
+		}
 	}
 
 	async getQuotaInfo(): Promise<{ usage: number; quota: number; percent: number }> {

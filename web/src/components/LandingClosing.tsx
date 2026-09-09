@@ -16,7 +16,7 @@ export function LandingClosing() {
           <KeatingBot variant="body" state={hovered || focused ? "success" : "idle"} size={164} label="" animated={hovered || focused} />
         </div>
         <p className="landing-closing__eyebrow">Done offloading?</p>
-        <h2 id="landing-closing-title">Ready to think<br />for yourself?</h2>
+        <h2 id="landing-closing-title" data-landing-section="closing">Ready to think<br />for yourself?</h2>
         <div className="landing-closing__actions" onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} onFocus={() => setFocused(true)} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false); }}>
           <Link to="/chat" className="landing-closing__action landing-closing__session" onClick={() => posthog?.capture("start_session_clicked", { source: "landing_closing" })}>
             <span className="landing-closing__action-note">A question is enough.</span>

@@ -5,6 +5,7 @@ import { Footer } from "../components/Footer";
 import { Nav } from "../components/Nav";
 import { NotOrganicPublicClient, publicClientConfig, safeAuthorizationReturnTo } from "../notorganic-provider/public-client";
 import { beginNotOrganicAuthorization } from "../notorganic-provider";
+import { authorizePendingChatTurn, pendingChatTurn } from "../notorganic-provider/pending-chat-turn";
 import "./notorganic-callback.css";
 
 /** Completes the provider-owned redirect; it never accepts an account id from the URL. */
@@ -23,7 +24,13 @@ export function NotOrganicCallback() {
 			return;
 		}
 		void new NotOrganicPublicClient(config).completeAuthorization(new URLSearchParams(window.location.search))
-			.then(session => window.location.replace(safeAuthorizationReturnTo(session.returnTo)))
+			.then(session => {
+				authorizePendingChatTurn();
+				const pending = pendingChatTurn();
+				window.location.replace(pending
+					? `/chat?session=${encodeURIComponent(pending.sessionId)}`
+					: safeAuthorizationReturnTo(session.returnTo));
+			})
 			.catch((cause: unknown) => setError(cause instanceof Error ? cause.message : "Not Organic sign-in could not be completed."));
 	}, [navigate]);
 
