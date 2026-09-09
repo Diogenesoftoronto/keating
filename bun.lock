@@ -43,20 +43,20 @@
     },
     "desktop": {
       "name": "@keating/desktop",
-      "version": "3.13.1",
+      "version": "3.14.1",
       "dependencies": {
         "@keating/p2p-core": "workspace:*",
       },
       "devDependencies": {
         "@types/node": "^22.0.0",
-        "electron": "^33.0.0",
+        "electron": "33.4.11",
         "electron-builder": "^25.0.0",
         "typescript": "^5.7.0",
       },
     },
     "mobile": {
       "name": "keating-mobile",
-      "version": "3.13.1",
+      "version": "3.14.1",
       "dependencies": {
         "@daily-co/config-plugin-rn-daily-js": "0.0.12",
         "@daily-co/react-native-daily-js": "0.87.1",
@@ -122,7 +122,7 @@
     },
     "packages/browser-agent-runtime": {
       "name": "@keating/browser-agent-runtime",
-      "version": "3.13.1",
+      "version": "3.14.1",
       "devDependencies": {
         "@types/bun": "^1.3.12",
         "typescript": "^5.7.0",
@@ -136,7 +136,7 @@
     },
     "packages/design-contract": {
       "name": "@keating/design-contract",
-      "version": "3.13.1",
+      "version": "3.14.1",
       "devDependencies": {
         "@types/bun": "^1.3.12",
         "typescript": "^6.0.3",
