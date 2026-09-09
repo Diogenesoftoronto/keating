@@ -31,6 +31,15 @@ function backend(): IndexedDBStorageBackend {
 	return new IndexedDBStorageBackend({ dbName: "keating", version: 2, stores: legacyStores });
 }
 
+test("a failed paired write aborts instead of saving half a session", async () => {
+	const db = backend();
+	await expect(db.transaction(["sessions", "sessions-metadata"], "readwrite", async tx => {
+		await tx.set("sessions", "pending", { id: "pending", title: "Keep this together" });
+		throw new Error("metadata failed");
+	})).rejects.toThrow("metadata failed");
+	expect(await backend().get("sessions", "pending")).toBeNull();
+});
+
 test("existing settings, serialized OAuth credentials and custom providers survive reopening", async () => {
 	const previous = backend();
 	const oauth = JSON.stringify({ type: "oauth", access: "fixture-access", refresh: "fixture-refresh", expires: 123 });

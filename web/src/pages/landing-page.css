@@ -63,3 +63,14 @@ html[data-motion="reduce"] .landing-page .landing-opening > h1, html[data-motion
 
 .landing-page .landing-opening > h1 { font-size: clamp(48px, 7.2vw, 100px); line-height: 1.05; letter-spacing: -.065em; }
 .landing-page #seen-this-before, .landing-page #keating-lesson { scroll-margin-top: 76px; }
+
+.landing-page .landing-opening-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 28px; margin-block: 28px 32px; }
+.landing-page .landing-opening-actions a { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; font-size: .8125rem; line-height: 1.5; text-decoration: none; }
+.landing-page .landing-opening-download { padding: 12px 18px; border: 2px solid var(--ink); background: var(--ink); color: var(--paper); box-shadow: 3px 3px 0 var(--accent-dim); }
+.landing-page .landing-opening-browser { padding-block: 12px; color: var(--accent-dim); }
+.landing-page .landing-opening-browser:hover { text-decoration: underline; text-underline-offset: 5px; }
+.landing-page .landing-opening-download:hover { background: var(--accent-dim); border-color: var(--accent-dim); color: var(--paper); }
+@media (max-width: 520px) {
+  .landing-page .landing-opening-actions { align-items: flex-start; flex-direction: column; gap: 8px; }
+  .landing-page .landing-opening-actions a { justify-content: flex-start; }
+}

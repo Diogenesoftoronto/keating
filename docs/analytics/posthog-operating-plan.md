@@ -57,6 +57,38 @@ Session-scoped events use `session_id` only for correlation inside the local lea
 | `message_sent` | Immediately before prompting the model | `session_id`, `turn_index`, `turn_number`, `model`, `provider` |
 | `first_message_sent` | The first user turn | `session_id`, `model`, `provider` |
 
+### Landing: learner direction and shared courses
+
+The `learner_direction_v1` landing sequence is overload → lesson → direction →
+continuity → courses → closing. Each new section names a learner problem before
+showing how Keating helps. The plan and course previews are explicitly examples.
+
+| Event | When | Properties |
+| --- | --- | --- |
+| `landing_section_viewed` | At least half of a section heading enters the viewport; once per landing mount | `section`, `landing_version` |
+| `landing_lesson_selected` | A preset lesson subject is selected | `example_id` |
+| `landing_lesson_submitted` | The example exercise is submitted | `example_id`, `question_count`, `attempt` |
+| `landing_plan_changed` | A preset plan choice changes | `control`: `depth`, `method`, or `order`; `value`: fixed option ID |
+| `landing_course_preview_changed` | A course preview is selected | `view`: `lessons` or `discussion` |
+| `landing_cta_clicked` | Guide, course creation, or course library link is chosen | `section`, `action`, `destination` |
+
+Chat CTAs also retain `start_session_clicked`: `source=landing_direction` with
+fixed `depth`/`method` options, or `source=landing_courses` with
+`intent=create_course`. Existing closing events are unchanged. The plan CTA
+hands a preset request to the chat composer through `ask`; it does not send a
+model request automatically. Never attach that request, learner text, answers,
+course names, or invitation links to an event.
+
+Suggested funnel: `landing_section_viewed` → `start_session_clicked` →
+`first_message_sent` → successful `agent_turn_completed`. Break down the first
+step by `section` and CTA by `source`. Section views measure exposure, not
+comprehension; demo interactions do not establish learning outcomes.
+
+This uses the existing PostHog provider, `/ingest` proxy, capture preferences,
+DNT handling, and sanitization. Production collection still requires
+`VITE_POSTHOG_PROJECT_TOKEN`, a working proxy, and a live event receipt check.
+See [PostHog custom events](https://posthog.com/docs/product-analytics/capture-events).
+
 ### AI lifecycle and observability
 
 One user-visible run can contain multiple provider generations when tools are used. Product lifecycle events describe the whole run; PostHog `$ai_generation` events describe each provider call.

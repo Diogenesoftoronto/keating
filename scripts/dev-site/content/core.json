@@ -1,0 +1,221 @@
+[
+  {
+    "slug": "getting-started",
+    "title": "Build your first Keating workspace",
+    "description": "Install the tools, run a local teaching workflow, and find the code you want to change.",
+    "group": "Build",
+    "sections": [
+      {
+        "heading": "Start with a checkout",
+        "paragraphs": ["Keating uses Bun and a Devenv environment to keep its development tools and task graph together. The root package contains the CLI and pedagogy engine. The web app has its own package and build. Enter the environment before installing or running tasks."],
+        "code": "git clone https://github.com/Diogenesoftoronto/keating.git\ncd keating\ndevenv shell\ndevenv tasks run keating:install\ndevenv tasks list",
+        "language": "bash",
+        "links": [{"label": "Development environment", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/devenv.nix"}, {"label": "Task reference", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/DEVELOPMENT.md"}]
+      },
+      {
+        "heading": "Make an inspectable artifact",
+        "paragraphs": ["A lesson plan or concept map is a useful first check because these local artifact builders do not need a hosted model. Run commands from the directory whose learner state and outputs you want to use. The generated files live below that directory's .keating folder."],
+        "code": "bun src/cli/main.ts plan derivative\nbun src/cli/main.ts map derivative\nbun src/cli/main.ts verify derivative",
+        "language": "bash",
+        "bullets": ["plan creates a structured teaching plan; it does not execute a conversation.", "map writes editable Mermaid source.", "verify creates a checklist for checking claims; creating the checklist alone does not verify those claims."],
+        "links": [{"label": "Artifact orchestration", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/src/core/project.ts"}]
+      },
+      {
+        "heading": "Connect an interactive teacher",
+        "paragraphs": ["The interactive shell uses Pi for model execution. Run setup to select the provider, model, thinking level, and runtime preference, then doctor to inspect the configuration. The default standalone-only runtime preference expects a working pi binary on PATH; doctor and setup are the first places to look when the shell cannot start.", "Hosted inference requires provider credentials or a connected Not Organic account. Local artifact generation and model-backed teaching are separate checks: a successful plan does not prove the provider connection works."],
+        "code": "bun src/cli/main.ts setup\nbun src/cli/main.ts doctor\nbun src/cli/main.ts shell\n\n# Inside the shell:\n/learn derivative",
+        "language": "bash",
+        "links": [{"label": "Pi runtime selection", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/src/runtime/pi.ts"}, {"label": "Provider and installation guide", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/README.md"}]
+      },
+      {
+        "heading": "Run the browser app",
+        "paragraphs": ["The browser app uses React, TanStack Router, Vite, and Nitro. The development task starts the web development server. Production output needs both the Vite client build and the Nitro server build; building Vite alone is not a complete production build."],
+        "code": "devenv tasks run keating:web\n\n# Production builds:\ndevenv tasks run keating:web-build\ndevenv tasks run keating:build-all",
+        "language": "bash",
+        "links": [{"label": "Web package", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/web/package.json"}]
+      },
+      {
+        "heading": "Choose a useful first change",
+        "bullets": ["Teaching behavior: begin with pi/prompts/learn.md and pi/skills/adaptive-teaching/SKILL.md.", "Artifact logic: begin with src/core/lesson-plan.ts, topics.ts, or map.ts.", "Browser experience: begin with web/src/components/ and web/src/hooks/useKeatingAgent.tsx.", "Terminal experience: begin with src/tui/ and the Pi runtime adapter.", "Native mobile: begin with mobile/README.md; Android setup has its own toolchain and verification tasks."],
+        "links": [{"label": "Repository guide", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/AGENTS.md"}, {"label": "Android development", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/mobile/README.md"}]
+      },
+      {
+        "heading": "Verify the boundary you changed",
+        "paragraphs": ["Use the existing Bun tests for local behavior and injected model doubles for deterministic checks. Run the relevant package's tests and build. A browser interaction, a real provider exchange, a packaged desktop build, and a deployed service each need their own evidence."],
+        "code": "devenv tasks run keating:test\ndevenv tasks run keating:test-web\ndevenv tasks run keating:build",
+        "language": "bash",
+        "links": [{"label": "Contribution safeguards", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/AGENTS.md"}]
+      }
+    ]
+  },
+  {
+    "slug": "architecture",
+    "title": "How Keating fits together",
+    "description": "Follow a learner request through clients, the teaching engine, model execution, and stored artifacts.",
+    "group": "Reference",
+    "sections": [
+      {
+        "heading": "Three responsibilities",
+        "paragraphs": ["Keating separates local pedagogy, model execution, and account authority. The pedagogy layer describes and records teaching work. The runtime carries the model conversation and tools. Account services handle capabilities and privileged operations. Changing a teaching procedure should not grant it account authority or broader execution permissions."],
+        "code": "Learner interaction\n  ├─ Client: browser / terminal / native mobile\n  ├─ Teaching: prompts, skills, tools, learner artifacts\n  ├─ Execution: Pi and configured model/runtime\n  └─ Authority: explicit account capabilities and server boundaries",
+        "language": "text",
+        "links": [{"label": "Architecture safeguards", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/AGENTS.md"}]
+      },
+      {
+        "heading": "Local pedagogy and artifacts",
+        "paragraphs": ["src/core/project.ts coordinates project-scoped work. Topic definitions, lesson-plan construction, maps, and policy invariants are locally inspectable. The CLI and Pi extension reuse this layer rather than making separate implementations of every teaching operation.", "Deterministic does not describe every operation in src/core. Animation generation, prompt evaluation, and fresh teaching experiments have explicit model boundaries. Tests inject runners, judges, and proposers at those boundaries."],
+        "links": [{"label": "Project orchestration", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/src/core/project.ts"}, {"label": "Lesson construction", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/src/core/lesson-plan.ts"}]
+      },
+      {
+        "heading": "The Pi teaching runtime",
+        "paragraphs": ["src/runtime/ selects and launches Pi. The teaching extension registers Keating's commands and tools, while pi/prompts/ and pi/skills/ supply reusable teaching instructions. The runtime can be selected through standalone-only, prefer-standalone, or embedded-only configuration.", "This structure lets Keating evolve teaching workflows without forking every model execution feature. Additional Pi packages are explicit configuration and execute with local system access; they are not isolated lesson data."],
+        "links": [{"label": "Runtime launcher", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/src/runtime/pi.ts"}, {"label": "Pi extension", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/src/pi/hyper-teacher/index.ts"}]
+      },
+      {
+        "heading": "Browser execution is a separate adapter",
+        "paragraphs": ["The web client combines its agent hook with browser tool implementations. Browser-safe core types and tools need to stay aligned with root changes, but cannot import Node filesystem behavior. The shared browser runtime package provides capability routing and adapter seams for work that cannot run on a learner's device.", "Browser-only mode handles supported work locally. Host mode explicitly executes on a trusted serving machine inside a selected project root. Remote mode proxies to a configured execution service, and cloud mode routes remote-only work through the configured cloud backend. These modes have different trust and availability boundaries."],
+        "links": [{"label": "Browser runtime modes", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/README.md#serving-the-web-agent"}, {"label": "Browser tool definitions", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/web/src/keating/browser-tools.ts"}]
+      },
+      {
+        "heading": "State belongs to a concrete scope",
+        "paragraphs": ["CLI output normally lives under the current workspace's .keating directory. Selected learner profiles redirect learner artifacts into profile-specific roots. Provider configuration remains project-wide, separate from learner history. Browser stores have their own origin and client boundaries; a file existing in a CLI workspace does not imply it has synchronized into a browser session."],
+        "code": ".keating/\n  outputs/plans/\n  outputs/maps/\n  outputs/verifications/\n  outputs/benchmarks/\n  outputs/traces/\n  state/\n  sessions/\n  pi-config/\n  profiles/",
+        "language": "text",
+        "links": [{"label": "Authoritative artifact paths", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/src/core/paths.ts"}, {"label": "Learner profiles", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/learner-profiles.md"}]
+      },
+      {
+        "heading": "Teaching evolution has a fixed outer boundary",
+        "paragraphs": ["shared/evolution/ separates recorded executions, a maintained pattern wiki, immutable teaching revisions, and activation gates. A candidate changes a bounded teaching skill. It cannot rewrite the evaluator, assessment keys, tool permissions, or scoring thresholds.", "CLI and browser experiments have different runtimes, base prompts, and local stores. An accepted revision is eligible for subsequent experimental teaching sessions in that scope; it is not a globally synchronized upgrade or proof of improved human learning."],
+        "links": [{"label": "Teaching evolution design", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/teaching-evolution.md"}]
+      }
+    ]
+  },
+  {
+    "slug": "teaching-system",
+    "title": "Build for understanding",
+    "description": "The teaching loop, learner state, verification, and the limits of automated improvement.",
+    "group": "Reference",
+    "sections": [
+      {
+        "heading": "Start with the learner's next move",
+        "paragraphs": ["Keating's teaching contract begins with diagnosis when learner state is unknown. The learn prompt asks one short diagnostic question, waits for an answer, builds intuition before formal structure, repairs a likely misconception, and then asks for retrieval or reconstruction. It ends with transfer or a practical consequence.", "The design goal is independent understanding. A learner agreeing with a fluent explanation is not the same thing as reconstructing the idea, applying it, or remembering it later."],
+        "links": [{"label": "Learn workflow", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/pi/prompts/learn.md"}, {"label": "Adaptive teaching contract", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/pi/skills/adaptive-teaching/SKILL.md"}]
+      },
+      {
+        "heading": "Make the plan adaptable",
+        "paragraphs": ["The local lesson builder composes orientation, intuition, formal core, misconception repair, worked examples, guided practice, and transfer. Policy settings influence the structure, including diagram use, question emphasis, and practice count. Domain-specific additions connect the structure to the subject: code includes live execution, while law and history call for relevant citations or sources.", "Unknown topics can use a fallback topic definition inferred from domain keywords. This keeps artifact generation available, but a plausible scaffold is not evidence that its examples or domain classification are appropriate."],
+        "links": [{"label": "Lesson phases and domain additions", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/src/core/lesson-plan.ts"}, {"label": "Topic resolution", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/src/core/topics.ts"}]
+      },
+      {
+        "heading": "Use memory to choose the next question",
+        "paragraphs": ["The teaching instructions consult prior learner coverage before repeating orientation. Existing coverage should lead toward retrieval or misconception repair. Goals, learner memory, feedback, review signals, and artifacts have explicit storage locations so they can inform later work and remain inspectable.", "Keep the distinction between recorded evidence and inference. A saved quiz answer is an observed submission. A conversation signal or feedback rating can guide teaching, but cannot establish durable mastery by itself."],
+        "links": [{"label": "State paths", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/src/core/paths.ts"}, {"label": "Evidence and measurement semantics", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/teaching-evolution.md"}]
+      },
+      {
+        "heading": "Render an interaction; save an artifact when useful",
+        "paragraphs": ["The adaptive teaching skill favors inline OpenUI for learner-facing questions, study plans, concept maps, and other teaching surfaces. Questions should give the learner a meaningful action and wait for its completion. Persisted plan and map commands are for cases where a filesystem artifact is useful, rather than a prerequisite for rendering every card.", "Verification is a separate responsibility. The skill asks the teacher to consult or generate a verification checklist before factual instruction, and to keep unconfirmed claims qualified. A generated checklist must still be worked through."],
+        "links": [{"label": "OpenUI teaching guidance", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/pi/skills/adaptive-teaching/SKILL.md"}, {"label": "Verification implementation", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/src/core/verification.ts"}]
+      },
+      {
+        "heading": "Keep improvement evidence independent",
+        "paragraphs": ["teaching-bench runs fresh training episodes with the active tutor revision. auto-improve proposes one skill and compares the candidate against the incumbent on paired validation and a sealed release holdout. Both gates must pass before the exact revision can activate. A failed or rejected proposal stays inspectable.", "The fixed gate requires independent case families, no family regression, no failed critical criterion, and the documented improvement and statistical thresholds. The holdout is consumed before execution; retries, renamed cases, or the force flag cannot renew it. The force flag only bypasses cooldown."],
+        "links": [{"label": "Experiment lifecycle and gates", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/teaching-evolution.md"}]
+      },
+      {
+        "heading": "Measure people separately from models",
+        "paragraphs": ["The learning-check workflow records fixed prechecks, immediate postchecks, delayed recall, and transfer for the currently supported assessment topics. Missing stages stay unknown; they are not converted to zero. Assistance status is recorded, and assisted or unknown-assistance submissions are excluded from unaided outcome summaries.", "Synthetic tutor episodes and model judgments test bounded teaching behavior. Historical benchmarks describe recorded evidence. Neither establishes a causal improvement in human learning. Even observed pre/post differences need careful interpretation because the fixed banks, self-reported assistance, and lack of randomized groups limit conclusions."],
+        "code": "keating teaching-bench\nkeating learning-check start fractions --learner learner-1\nkeating learning-check list\nkeating learning-check show <check-id>",
+        "language": "bash",
+        "links": [{"label": "Learner measurements and limitations", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/teaching-evolution.md#actual-learner-checks"}]
+      }
+    ]
+  },
+  {
+    "slug": "tools-and-cli",
+    "title": "Tools, commands, and artifacts",
+    "description": "Choose the right entry point for teaching, reviewing, exporting, and running Keating.",
+    "group": "Reference",
+    "sections": [
+      {
+        "heading": "CLI commands and shell workflows",
+        "paragraphs": ["The keating executable handles setup, runtime launch, project operations, and artifact generation. Inside the interactive shell, slash commands expose teaching workflows and session operations. The command registry explicitly marks shell-only and CLI-only entries, so the two interfaces are related but not identical."],
+        "code": "keating setup\nkeating doctor\nkeating shell\n\n# Within the interactive shell:\n/diagnose fractions\n/learn fractions\n/quiz fractions\n/outputs",
+        "language": "bash",
+        "links": [{"label": "Command registry", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/src/core/commands.ts"}]
+      },
+      {
+        "heading": "Produce teaching artifacts",
+        "bullets": ["plan <topic>: generate a deterministic lesson plan.", "map <topic>: generate an editable Mermaid concept map.", "verify <topic>: generate a fact-checking checklist to complete before teaching.", "quiz <topic>: generate retrieval practice material.", "animate <topic>: generate a Hyperframes animation bundle; this path includes model-backed generation."],
+        "paragraphs": ["Outputs are project-scoped and can be inspected independently of the conversation. The authoritative directory helpers place plans, maps, verifications, quizzes, and animations below .keating/outputs, or the selected learner profile's corresponding root."],
+        "code": "keating plan derivative\nkeating map derivative\nkeating verify derivative\nkeating quiz derivative",
+        "language": "bash",
+        "links": [{"label": "Artifact paths", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/src/core/paths.ts"}]
+      },
+      {
+        "heading": "Review the learner and the run",
+        "bullets": ["feedback <up|down|confused> [topic] records a feedback signal, optionally with a comment.", "learner-state shows the learner profile and session history.", "timeline shows engagement across topics; due shows topics due for review.", "policy shows the active teaching policy.", "trace [query] browses debugging traces and artifacts; /outputs browses artifacts from the shell."],
+        "paragraphs": ["These commands expose different evidence. Engagement, subjective feedback, and quiz performance should remain distinguishable when you build downstream reports."],
+        "links": [{"label": "Review and session commands", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/src/core/commands.ts"}]
+      },
+      {
+        "heading": "Export data deliberately",
+        "paragraphs": ["The CLI can export fine-tuning data and import supported fine-tune JSONL as session data. Export produces material for downstream workflows; it does not itself start model training or publish learner data. Review what is included before sharing it."],
+        "code": "keating export --finetune --source=all --format=both",
+        "language": "bash",
+        "links": [{"label": "Export overview", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/README.md"}, {"label": "Dataset sharing design", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/training-dataset-sharing.md"}]
+      },
+      {
+        "heading": "Select an execution mode explicitly",
+        "paragraphs": ["keating web serves the production Nitro build. Browser-only mode runs supported agent work on the learner's device. Host mode is opt-in, project-root-confined trusted-machine execution; it is not a security sandbox. Remote mode connects to a separately configured execution service. Cloud mode uses the configured cloud endpoint.", "The webmcp command exposes Keating tools over Streamable HTTP. Its bind address and access boundary are separate from the normal browser application's model execution mode."],
+        "code": "keating web --browser-only-agent 3000\nkeating webmcp 3001 --host=127.0.0.1",
+        "language": "bash",
+        "links": [{"label": "Web runtime configuration", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/README.md#serving-the-web-agent"}, {"label": "CLI entry points", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/src/core/commands.ts"}]
+      },
+      {
+        "heading": "Distinguish the improvement commands",
+        "bullets": ["bench summarizes historical recorded learner evidence and its limits.", "evolve writes unvalidated policy proposals without replacing the active policy.", "prompt-eval and prompt-evolve evaluate or revise prompt templates; prompt snapshots are diagnostics, not learner outcome evidence.", "teaching-bench executes training episodes without release holdout access.", "auto-improve runs a bounded skill proposal through independent validation and holdout gates.", "learning-check records revision-linked learner assessments separately from synthetic experiments."],
+        "links": [{"label": "Improvement semantics", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/teaching-evolution.md#commands"}]
+      }
+    ]
+  },
+  {
+    "slug": "extending-keating",
+    "title": "Extend Keating without losing the teaching contract",
+    "description": "Change prompts, add tools, connect Pi packages, and keep clients and evidence aligned.",
+    "group": "Build",
+    "sections": [
+      {
+        "heading": "Choose the smallest useful extension point",
+        "paragraphs": ["A teaching sequence belongs in a prompt or skill when it can use existing tools. A deterministic artifact transformation belongs in the core. A new model or execution environment belongs at the runtime boundary. A new learner interaction needs a shared contract and the appropriate client renderers.", "Keeping these choices separate makes it possible to review what changed: the teaching instructions, the local algorithm, the permissions available to a model, or the experience the learner sees."],
+        "links": [{"label": "Repository responsibilities", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/AGENTS.md"}]
+      },
+      {
+        "heading": "Write a teaching prompt or skill",
+        "paragraphs": ["pi/prompts/ contains workflows such as learn, diagnose, quiz, and bridge. Prompt templates carry metadata and use the topic argument in the body. pi/skills/adaptive-teaching/SKILL.md defines the broader teaching contract: diagnose, build intuition, repair misconceptions, ask for reconstruction, and probe transfer.", "Preserve the interaction pause. A generated question should wait for the learner's submitted answer rather than continuing with its own answer. Use persisted artifacts when the workflow needs durable files; use inline learner interactions for the immediate teaching turn."],
+        "links": [{"label": "Learn template", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/pi/prompts/learn.md"}, {"label": "Adaptive teaching skill", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/pi/skills/adaptive-teaching/SKILL.md"}]
+      },
+      {
+        "heading": "Add a command or artifact tool",
+        "paragraphs": ["Implement reusable artifact behavior in src/core/, connect project filesystem work through src/core/project.ts, and expose the operation through the CLI or Pi extension as appropriate. Update src/core/commands.ts when the command name, arguments, description, or supported surface changes; it drives generated help.", "Keep root TypeScript imports compatible with NodeNext and use .js import extensions. Check browser-safe types and browser tool implementations when changing a shared core shape. Avoid introducing Node filesystem imports into browser paths."],
+        "links": [{"label": "Command specifications", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/src/core/commands.ts"}, {"label": "Project adapter", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/src/core/project.ts"}, {"label": "Browser tools", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/web/src/keating/browser-tools.ts"}]
+      },
+      {
+        "heading": "Load a Pi package explicitly",
+        "paragraphs": ["Keating supports configured Pi package sources. The package command records additions in Keating's configuration and the runtime synchronizes them into its isolated Pi settings directory when launching. Use the package list to inspect what will load.", "Pi extensions and skills can execute with local system access. Treat adding a package as installing code with that authority, and review its source and requirements before using it with learner data."],
+        "code": "keating package recommended\nkeating package list\nkeating package add npm:pi-subagents\nkeating shell\n\n# Equivalent shell management:\n/packages list",
+        "language": "bash",
+        "links": [{"label": "Package configuration", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/src/core/pi-packages.ts"}, {"label": "Runtime package loading", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/src/runtime/pi.ts"}]
+      },
+      {
+        "heading": "Keep interaction contracts portable",
+        "paragraphs": ["A shared learner interaction affects more than its web component. Check the learner contracts, source mappers, web and mobile renderers, terminal consumer, storage and action handling, and representative fixtures. Update generated runtime files when their source contract changes.", "Client differences should be explicit. A native mobile storage boundary, a terminal interaction, and a browser sandbox capability are not interchangeable merely because they use the same learner-facing concept."],
+        "links": [{"label": "Shared contract safeguards", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/AGENTS.md"}, {"label": "OpenUI and terminal architecture", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/openui-opentui-architecture.md"}]
+      },
+      {
+        "heading": "Test the invariant, then the real boundary",
+        "paragraphs": ["Use Bun tests and existing fixtures for behavior that can be deterministic. Keep policy scalars within zero and one, practice counts integral from one to five, and weights normalized. Exercise domain-specific phases when you change lesson construction. Inject model runners and judges so the local suite does not depend on a hosted provider.", "Model execution, browser behavior, packaging, and deployment need their own checks. Report which boundary a check exercised. Prompt evolution writes reports and evolved snapshots without silently replacing checked-in templates; activating a teaching revision still requires its independent evidence gates."],
+        "links": [{"label": "Development safeguards", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/AGENTS.md"}, {"label": "Teaching revision validation", "href": "https://github.com/Diogenesoftoronto/keating/blob/main/docs/teaching-evolution.md"}]
+      }
+    ]
+  }
+]

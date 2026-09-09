@@ -1,0 +1,11 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "provider": "staticfile",
+  "packages": { "bun": "1.3.13" },
+  "steps": {
+    "build": {
+      "inputs": ["...", { "step": "packages:mise", "include": ["/mise"] }],
+      "commands": ["...", "/mise/installs/bun/1.3.13/bin/bun build.ts"]
+    }
+  }
+}

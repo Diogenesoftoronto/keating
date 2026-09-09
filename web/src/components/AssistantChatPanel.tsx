@@ -1,3 +1,4 @@
+import { clearPendingChatTurn } from "../notorganic-provider/pending-chat-turn";
 import {
   assistantTextParts,
   makeAttachmentErrorMessage,
@@ -4221,8 +4222,9 @@ function AssistantThread({
 
   const onCancel = useCallback(async () => {
     posthog.capture("message_cancelled", {});
+    clearPendingChatTurn(callbacks.sessionId);
     agent?.cancel();
-  }, [agent, posthog]);
+  }, [agent, posthog, callbacks.sessionId]);
 
   // System-initiated sends (quiz remediation/reframe requests, etc.) can fire
   // while the agent is mid-stream, where onNew silently drops them. Queue those

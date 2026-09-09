@@ -66,6 +66,26 @@ in
   process.manager.implementation = "process-compose";
   process.managers.process-compose.tui.enable = true;
 
+  # The developer handbook uses Devenv's native Caddy service locally.
+  services.caddy = {
+    enable = true;
+    ca = null;
+    virtualHosts."http://localhost:4190".extraConfig = ''
+      root * ${config.env.DEVENV_ROOT}/scripts/dev-site/public
+      encode zstd gzip
+      file_server
+      handle_errors {
+        rewrite * /404.html
+        file_server
+      }
+    '';
+  };
+  tasks."keating:dev-site-build" = {
+    description = "Build the public Keating developer handbook";
+    exec = "bun scripts/dev-site/build.ts";
+    before = [ "devenv:processes:caddy" ];
+  };
+
   processes = {
     terminal-shell = {
       exec = "bun src/cli/main.ts shell";
@@ -103,7 +123,9 @@ in
       cwd = "./mobile";
       ready = {
         http.get.port = 8081;
-        timeout = 120;
+        period = 2;
+        probe_timeout = 5;
+        failure_threshold = 150;
       };
     };
 
@@ -112,7 +134,9 @@ in
       cwd = "./web";
       ready = {
         http.get.port = 6006;
-        timeout = 120;
+        period = 2;
+        probe_timeout = 5;
+        failure_threshold = 150;
       };
     };
   };
